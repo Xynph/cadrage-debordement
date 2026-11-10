@@ -369,7 +369,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	squad = wage_rows(squad,str(sort_state.key),bool(sort_state.descending))
 	D.text(wages, 1020, 37, "%d joueurs" % squad.size(), 18, C.MUTED, 500, 250)
 	D.rect(wages, Rect2(12,62,1374,40), Color("182426"), 3)
-	for item: Array in [["JOUEUR",25,"name",450],["POSTE",491,"pos",198],["ÉCHÉANCE",703,"contractEnd",228],[G.salary_period().to_upper(),950,"salary",170]]:
+	for item: Array in [["JOUEUR",25,"name",450],["POSTE",491,"pos",198],["FIN DE CONTRAT",703,"contractEnd",228],[G.salary_period().to_upper(),950,"salary",170]]:
 		var arrow := (" ▼" if sort_state.descending else " ▲") if sort_state.key == item[2] else " ↕"
 		D.button(wages,Rect2(item[1]-4,63,item[3],38),str(item[0])+arrow,_wage_sort.bind(app,str(item[2])),false,"",true,U.GREEN,"FinanceSort_"+str(item[2]))
 	var scroll := ScrollContainer.new()
@@ -392,7 +392,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 		if i%2 == 0: D.rect(rows, Rect2(0,y,1350,33), Color("131e20"))
 		D.text(rows, 25, y+23, player.get("name","—"), 18, C.IVORY, 700, 450)
 		D.text(rows, 491, y+23, player.get("pos","—"), 18, C.MUTED, 500, 198)
-		D.text(rows, 703, y+23, player.get("contractLabel","—"), 18, C.MUTED, 500, 228)
+		D.text(rows, 703, y+23, G.contract_year(player.get("contractEnd")), 18, C.MUTED, 500, 228)
 		D.text(rows, 1096, y+23, G.salary_amount(player.get("salary",0)), 18, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.button(rows, Rect2(1120,y+1,225,31), "Voir le contrat", func(): _open_player(app, str(player.id)), false, "arrow", true, U.GREEN, "FinancePlayer_"+str(player.id).replace(":","_"))
 	if squad.is_empty():

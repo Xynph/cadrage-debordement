@@ -142,7 +142,7 @@ func _build() -> void:
 	if not state.has("sort"): state.sort = "contractEnd"
 	if not state.has("descending"): state.descending = false
 	add_child(_label("Les échéances de votre effectif", 26))
-	add_child(_label("Échéances classées par fin de saison, sans présumer une urgence. Aucune date précise d’expiration n’est fournie.", 17, C.MUTED))
+	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Aucune date précise d’expiration n’est fournie.", 17, C.MUTED))
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
 	add_child(top)
@@ -156,7 +156,7 @@ func _build() -> void:
 		var wage: Variant = player.get("salary")
 		if wage is int or wage is float: known_wage += float(wage)
 		else: unknown_wage += 1
-	for metric in [["Échéances à la fin de saison %d ou avant" % current, "%d / %d joueurs" % [ending, squad.size()]], ["Prolongations accessibles", "%d joueurs" % renewals], ["Salaires actuels projetés · " + G.salary_period(), G.salary_amount(known_wage) + (" · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else "")]]:
+	for metric in [["Échéances en %s ou avant" % G.contract_year(current), "%d / %d joueurs" % [ending, squad.size()]], ["Prolongations accessibles", "%d joueurs" % renewals], ["Salaires actuels projetés · " + G.salary_period(), G.salary_amount(known_wage) + (" · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else "")]]:
 		var card := _panel(top)
 		card.add_child(_label(metric[0], 16, C.MUTED))
 		var value := _label(metric[1], 22, C.IVORY)
@@ -173,7 +173,7 @@ func _build() -> void:
 	search.add_theme_font_size_override("font_size", 18)
 	filters.add_child(search)
 	search.text_changed.connect(func(value): state.search = value; state.scroll = 0; _refresh())
-	_season = _choice(filters, "ContractReviewSeason", "Toutes les saisons", func(index): state.season = int(_season.get_item_metadata(index)); state.scroll = 0; _refresh())
+	_season = _choice(filters, "ContractReviewSeason", "Toutes les années", func(index): state.season = int(_season.get_item_metadata(index)); state.scroll = 0; _refresh())
 	_season.set_item_metadata(0, 0)
 	var years: Array[int] = []
 	for player: Dictionary in squad:
@@ -181,7 +181,7 @@ func _build() -> void:
 		if end >= 0 and not end in years: years.append(end)
 	years.sort()
 	for year in years:
-		_season.add_item("Fin de saison %d" % year)
+		_season.add_item("Fin " + G.contract_year(year))
 		_season.set_item_metadata(_season.item_count - 1, year)
 		if year == int(state.season): _season.select(_season.item_count - 1)
 	var status := _choice(filters, "ContractReviewStatus", "Contrats : tous", func(index): state.status = STATUS_OPTIONS[index]; state.scroll = 0; _refresh())
@@ -209,7 +209,7 @@ func _build() -> void:
 	var inset := Control.new()
 	inset.custom_minimum_size.x = 8
 	header.add_child(inset)
-	for column in [["JOUEUR",300,"name"],["POSTE",160,"pos"],["NIVEAU",72,"rating"],["POTENTIEL",84,"potential"],["ÂGE",60,"age"],["ÉCHÉANCE",145,"contractEnd"],["SALAIRE " + G.salary_period(true).to_upper(),145,"salary"],["MIN.",95,"minutes"],["STATUT",110,"status"],["PROLONGATION",190,"renewal"],["CONSULTER",276,""]]:
+	for column in [["JOUEUR",300,"name"],["POSTE",160,"pos"],["NIVEAU",72,"rating"],["POTENTIEL",84,"potential"],["ÂGE",60,"age"],["FIN DE CONTRAT",145,"contractEnd"],["SALAIRE " + G.salary_period(true).to_upper(),145,"salary"],["MIN.",95,"minutes"],["STATUT",110,"status"],["PROLONGATION",190,"renewal"],["CONSULTER",276,""]]:
 		if str(column[2]).is_empty():
 			header.add_child(_cell(column[0], column[1], C.MUTED, 16))
 			continue
@@ -303,7 +303,7 @@ func _refresh() -> void:
 	if players.is_empty(): _rows.add_child(_label("Aucun joueur ne correspond. Modifiez les filtres ou réinitialisez la recherche.", 18, C.MUTED))
 	for player: Dictionary in players: _row(player)
 	var year := int(state.season) if int(state.season) > 0 else int(app.model.get("meta", {}).get("season", 1))
-	_coverage.add_child(_label("Échéances par saison", 19))
+	_coverage.add_child(_label("Échéances par année", 19))
 	var horizons: Dictionary = {}
 	for player: Dictionary in app.model.get("squad", []):
 		var end := horizon(player)
@@ -311,8 +311,8 @@ func _refresh() -> void:
 	var seasons: Array = horizons.keys()
 	seasons.sort()
 	for end in seasons:
-		_bar(_coverage, "Non renseignée" if int(end) < 0 else "Fin S%d" % int(end), int(horizons[end]), app.model.get("squad", []).size(), C.MUTED if int(end) < 0 else C.GOLD if int(end) <= year else C.MINT)
-	_coverage.add_child(_label("Couverture · horizon fin S%d" % year, 19, C.GOLD))
+		_bar(_coverage, "Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), int(horizons[end]), app.model.get("squad", []).size(), C.MUTED if int(end) < 0 else C.GOLD if int(end) <= year else C.MINT)
+	_coverage.add_child(_label("Couverture · horizon " + G.contract_year(year), 19, C.GOLD))
 	for group: Dictionary in coverage(app.model.get("squad", []), year):
 		var button := _button("%s · %d / %d" % [group.position, group.ending, group.total], "ContractReviewCoverage_" + str(group.position).sha256_text().substr(0,16), func():
 			state.position = str(group.position)
@@ -387,13 +387,13 @@ func _row(player: Dictionary) -> void:
 	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
 	line.add_child(level)
-	var potential := _cell(projected_mark(player, "potential"), 84, C.GOLD, 18)
+	var potential := _cell(projected_mark(player, "potential"), 84, Color("ffb454"), 18)
 	potential.name = action_id("ContractPotential", str(player.id))
 	potential.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	potential.tooltip_text = "Potentiel projeté au poste / 100, identique à la fiche. Ce plafond n’est pas garanti."
 	line.add_child(potential)
 	line.add_child(_cell(G.n(player.age) if player.get("age") != null else "—", 60, C.MUTED))
-	line.add_child(_cell("Fin S%d" % ending if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED))
+	line.add_child(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED))
 	var salary: Variant = player.get("salary")
 	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 145)
 	salary_cell.name = action_id("ContractSalary",str(player.id))

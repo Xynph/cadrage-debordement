@@ -280,7 +280,7 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var renewal: Dictionary = player.get("renewal", {})
 	var reason := str(renewal.get("reason", ""))
 	D.text(card,24,113,G.salary(player.get("salary",0)),40,C.IVORY,700,515)
-	D.text(card,24,151,str(player.get("contractLabel","—")),27,C.MUTED,500,515)
+	D.text(card,24,151,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),27,C.MUTED,500,515)
 	D.text(card,24,183,"Montants de jeu" if reason.is_empty() else reason,19,C.MUTED if reason.is_empty() else C.ALERT,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()

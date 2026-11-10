@@ -338,3 +338,9 @@ static func salary_amount(weekly: Variant) -> String:
 
 static func salary_period(short: bool = false) -> String:
 	return preload("res://ui/salary_display.gd").period_label(short)
+
+# Native calendars start season n in 2025+n; contracts end the following year.
+# Year only: the model supplies no exact expiry day.
+static func contract_year(end_season: Variant) -> String:
+	if not (end_season is int or end_season is float) or not is_finite(float(end_season)) or float(end_season) != floorf(float(end_season)) or end_season < 0 or end_season > 7973: return "—"
+	return str(2026 + int(end_season))

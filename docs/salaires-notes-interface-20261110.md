@@ -17,3 +17,11 @@ Chaque colonne de données d’un tableau de joueurs sert de tri : premier clic 
 Contrats : 161 contrôles graphiques 1440 (dont trois unités) puis 153 contrôles sans affichage après intégration de toutes les vues. Effectif : 104 contrôles ; Fatigue/Individuel : 569 ; Recrutement : 153 ; Académie/tableaux génériques/banc/salaires : 119 ; unités pures : 43 ; paramètres et commandes salariales réelles : 51 en X11 ; préférences existantes : 190. Les tests de lecture vérifient les identifiants, le hash du profil sportif et l’absence de commande. Le rapport du cumul référence le HEAD testé.
 
 Les captures finales Effectif et Paramètres sont celles du cumul sans pagination, pas celles des branches individuelles antérieures. La capture Contrats mensuelle inclut Niveau/Potentiel, les en-têtes triables et le défilement interne.
+
+## Ajustements de présentation après validation visuelle
+
+Les salaires affichés sont arrondis à la centaine d’euros la plus proche après conversion de période (38 046,67 € → 38 000 €). Les valeurs contractuelles, saisies précises et commandes restent inchangées. Les sommes affichées sont arrondies après agrégation, sans sommer des lignes déjà arrondies.
+
+La colonne Fin de contrat utilise l’année civile de fin. Le calendrier natif commence la saison n en 2025+n et la termine l’année suivante ; une échéance interne 1 s’affiche donc 2027, 2 devient 2028. Il n’est pas ajouté de jour d’expiration. Les échéances absentes ou invalides restent inconnues. Le tri conserve les valeurs internes exactes.
+
+Dans l’effectif, tous les niveaux sont verts et tous les potentiels orange, y compris le joueur sélectionné et son dossier. Les seuils de coloration précédents sont supprimés. Niveau correspond à rating ; Note correspond à roleNote, une moyenne pondérée des qualités utiles au poste, sans pondération par la condition physique. Ce n’est pas une note de match. À la demande de Léo, la colonne Note est retirée de l’Effectif (en-tête, valeurs et choix de tri). Le niveau général reste visible. L’évaluation liée au poste doit être traitée dans le futur parcours tactique, selon le poste de placement ; aucun nouveau malus ni changement de poste du moteur n’est introduit par cet ajustement.

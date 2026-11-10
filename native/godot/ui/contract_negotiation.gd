@@ -100,7 +100,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	demand.add_child(C.wrap("Durée possible · %s à %s saison(s)" % [str(int(quote.get("minYears",1))),str(int(quote.get("maxYears",3)))],17,C.MUTED))
 	demand.add_child(C.wrap("Prime à la signature · "+money(quote.get("fee")),18,C.GOLD))
 	if not recruiting:
-		demand.add_child(C.wrap("Contrat actuel · "+str(player.get("contractLabel","Échéance non communiquée")),16,C.MUTED))
+		demand.add_child(C.wrap("Contrat actuel · "+G.contract_year(player.get("contractEnd")),16,C.MUTED))
 		demand.add_child(C.wrap("Salaire actuel · "+G.salary(player.get("salary")),16,C.MUTED))
 	var counter := _card(columns,"DERNIÈRE CONTRE-OFFRE","ContractCounter",C.GOLD)
 	var counter_text := C.wrap("Aucune contre-offre en cours.",20,C.IVORY,true,700)
@@ -141,10 +141,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	var refresh := func():
 		var weekly_salary := Salary.input_weekly(salary)
 		var delta := weekly_salary - (0 if recruiting else int(player.get("salary",0)))
-		var term := "Échéance proposée : fin saison %d" % [first_season + int(years.value) - 1]
+		var term := "Fin de contrat proposée : " + G.contract_year(first_season + int(years.value) - 1)
 		if not recruiting:
 			var end: Variant = player.get("contractEnd")
-			term = "Échéance actuelle : %s · " % ("—" if end == null else "fin saison %d" % int(end)) + term
+			term = "Échéance actuelle : %s · " % ("—" if end == null else G.contract_year(end)) + term
 		summary.text = "IMMÉDIAT À LA SIGNATURE · %s : %s\nNOUVEAU SALAIRE · %s · %s %s\n%s\nDurée totale : %s saison(s) · trésorerie actuelle : %s" % ["acquisition" if recruiting else "prime de prolongation",money(quote.get("fee")),G.salary(weekly_salary),"ajout" if recruiting else "écart",signed_money(delta),term,str(int(years.value)),money(app.model.get("finance",{}).get("cash"))]
 		difference.text = "Écart avec la demande actuelle · %s" % signed_money(weekly_salary-int(quote.get("salary",weekly_salary)))
 		if negotiation.get("status") == "counter":

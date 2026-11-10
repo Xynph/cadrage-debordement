@@ -284,7 +284,7 @@ static func _roster_value(p:Dictionary,key:String) -> String:
 	if key=="salary":return G.salary_amount(p.get(key,0))
 	if key=="condition":return G.n(p.get(key,0))+"%"
 	if key=="watch":return U.watch_reason(p)
-	if key=="contractEnd":return "—" if p.get(key)==null else "S"+G.n(p[key])
+	if key=="contractEnd":return G.contract_year(p.get(key))
 	if key in ["name","pos","status"]:return str(p.get(key,"—"))
 	return "—" if p.get(key)==null else G.n(p[key])
 
@@ -354,7 +354,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	G.fill(note)
 	actions.add_child(note)
 	_profile_attributes(attributes,p,details)
-	contracts.add_child(G.wrap("Contrat courant : "+p.get("contractLabel",""),13))
+	contracts.add_child(G.wrap("Fin de contrat : "+G.contract_year(p.get("contractEnd")),13))
 	contracts.add_child(G.wrap(G.salary(p.get("salary",0)),12,G.MUTED))
 	var compared:bool=str(p.id) in app.management_ui.compare
 	var compare:=G.button("RETIRER DE LA COMPARAISON" if compared else "AJOUTER À LA COMPARAISON",func():
@@ -468,7 +468,7 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 	var plans:Dictionary={"collective":"Collectif","repos":"Récupération","normal":"Normale","intense":"Intense"}
 	_profile_fact(condition,"ProfilePlanValue","Charge prévue",str(plans.get(p.get("loadPlan","collective"),"—")))
 	var contract_tile:=_profile_tile(right,"Contract","Contrat courant")
-	var term:=G.wrap(str(p.get("contractLabel","—")),12,G.INK)
+	var term:=G.wrap("Fin de contrat : "+G.contract_year(p.get("contractEnd")),12,G.INK)
 	term.name="ProfileContractValue";contract_tile.add_child(term)
 	_profile_fact(contract_tile,"ProfileSalaryValue",G.salary_period().capitalize(),G.salary_amount(p.get("salary",0)))
 	var renewal:Dictionary=p.get("renewal",{})
@@ -888,7 +888,7 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 	columns.add_theme_constant_override("h_separation",18)
 	columns.add_theme_constant_override("v_separation",10)
 	list.add_child(columns)
-	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Note globale / 100","rating"],["Condition · %","condition"],["Salaire "+G.salary_period(),"salary"],["Contrat courant","contractLabel"]]
+	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Note globale / 100","rating"],["Condition · %","condition"],["Salaire "+G.salary_period(),"salary"],["Fin de contrat","contractEnd"]]
 	for row in rows:
 		columns.add_child(G.label(row[0],13,G.MUTED))
 		for p:Dictionary in players:
@@ -896,6 +896,7 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 			if not p.is_empty():
 				value=p.get(row[1],"—")
 				if row[1]=="salary":value=G.salary_amount(value)
+				elif row[1]=="contractEnd":value=G.contract_year(value)
 				elif value is float:value=G.n(value)
 			var label:=G.wrap(str(value),14,G.INK)
 			label.custom_minimum_size.x=180

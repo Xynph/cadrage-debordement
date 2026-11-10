@@ -16,7 +16,9 @@ func person(id: String) -> Dictionary:
 func names(players: Array) -> Array:
 	return players.map(func(player: Dictionary):return player.id)
 func projections() -> void:
-	var numeric := {"Numéro":"shirtNumber","Âge":"age","Niveau":"rating","Potentiel":"potential","Condition":"condition","Fatigue":"physicalLoad","Note":"note","Salaire":"salary","Échéance":"contractEnd","Minutes":"minutes"}
+	check(Squad.G.contract_year(1)=="2027" and Squad.G.contract_year(3)=="2029","Fin de contrat exprimée en année civile réelle")
+	check(Squad.G.contract_year(null)=="—" and Squad.G.contract_year(1.5)=="—","Année inconnue non inventée")
+	var numeric := {"Numéro":"shirtNumber","Âge":"age","Niveau":"rating","Potentiel":"potential","Condition":"condition","Fatigue":"physicalLoad","Salaire":"salary","Échéance":"contractEnd","Minutes":"minutes"}
 	for key: String in numeric:
 		var source: Array = []
 		for pair in [["h",10],["u",null],["b",2],["a",2],["z",0]]:
@@ -82,10 +84,26 @@ func run() -> void:
 	var hash:=FileAccess.get_sha256(file)
 	var commands: int=app.bridge._next_id
 	app._navigate("Effectif");await settle()
+	check(app.user_preferences.set_value("salary_period","monthly"),"Salaire mensuel activé")
+	app._render(false);await settle()
 	check(table()!=null,"Vrai tableau d’effectif raccordé")
+	var level_cells: Array = table().rows.find_children("RosterLevel","Label",true,false)
+	var potential_cells: Array = table().rows.find_children("RosterPotential","Label",true,false)
+	check(level_cells.size()==original.squad.size() and level_cells.all(func(label):return label.get_theme_color("font_color")==Squad.C.MINT),"Niveau vert pour tous sans seuil")
+	check(potential_cells.size()==original.squad.size() and potential_cells.all(func(label):return label.get_theme_color("font_color")==Squad.POTENTIAL_COLOR),"Potentiel orange pour tous sans seuil")
+	check(table().sort_headers["Échéance"].caption=="FIN DE CONTRAT","Intitulé Fin de contrat")
+	check(not table().sort_headers.has("Note") and app.find_child("Sort_Note",true,false)==null,"Note au poste absente de l’Effectif")
+	var years_ok := true
+	for row in table().rows.get_children():
+		if not row.has_meta("player_id"): continue
+		var source: Dictionary = original.squad.filter(func(player):return str(player.id)==str(row.get_meta("player_id")))[0]
+		var year_label := row.find_child("RosterContractEnd",true,false) as Label
+		if year_label == null or year_label.text != Squad.G.contract_year(source.get("contractEnd")): years_ok=false
+	check(years_ok,"Chaque ligne affiche l’année de fin, sans S1/S2/S3")
+	await capture("effectif-annees-centaines-1440")
 	check(visible_ids().size()==original.squad.size() and original.squad.size()>24,"Tous les joueurs ont une ligne, au-delà de l’ancienne limite")
 	check(app.find_child("RosterPaginationNext",true,false)==null and app.find_child("RosterPaginationPrevious",true,false)==null,"Pagination supprimée")
-	var keys: Array=["Numéro","Nom","Poste","Âge","Niveau","Potentiel","Condition","Fatigue","Note","Salaire","Échéance","Minutes","Statut"]
+	var keys: Array=["Numéro","Nom","Poste","Âge","Niveau","Potentiel","Condition","Fatigue","Salaire","Échéance","Minutes","Statut"]
 	for criterion: String in keys:
 		var button:=app.find_child("Sort_"+criterion,true,false) as Button
 		check(button!=null,"En-tête triable : "+criterion)
@@ -98,11 +116,11 @@ func run() -> void:
 		var label: Label=table().sort_headers[criterion].label
 		check(label.text.ends_with("↓" if table().state.descending else "↑"),"Flèche du sens actif : "+criterion)
 	var controlled:=original.duplicate(true)
-	for player: Dictionary in controlled.squad:player.note=0
-	controlled.squad[-1].note=100
+	for player: Dictionary in controlled.squad:player.rating=0
+	controlled.squad[-1].rating=100
 	app.model=controlled;app._navigate("Effectif");await settle()
-	table()._toggle_sort("Note")
-	if not table().state.descending:table()._toggle_sort("Note")
+	table()._toggle_sort("Niveau")
+	if not table().state.descending:table()._toggle_sort("Niveau")
 	check(visible_ids()[0]==str(controlled.squad[-1].id),"Tri sur la liste entière, même pour le dernier joueur source")
 	app.model=original.duplicate(true);app._navigate("Effectif");await settle()
 	var scroll:=app.find_child("SquadScroll",true,false) as ScrollContainer

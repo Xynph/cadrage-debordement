@@ -263,3 +263,4 @@ static func cell(text: Variant, width: int, color: Color = INK, expand: bool = f
 static func salary(weekly: Variant) -> String: return Base.salary(weekly)
 static func salary_amount(weekly: Variant) -> String: return Base.salary_amount(weekly)
 static func salary_period(short: bool = false) -> String: return Base.salary_period(short)
+static func contract_year(end_season: Variant) -> String: return Base.contract_year(end_season)

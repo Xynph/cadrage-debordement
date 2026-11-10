@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
+const POTENTIAL_COLOR := Color("ffb454")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 29
 const Training = preload("res://ui/immersive08/training_canvas.gd")
@@ -29,6 +30,8 @@ func _build() -> void:
 	state = app.management_ui.roster
 	state.family = app.roster_filter
 	state.sort = app.roster_sort
+	if state.sort == "Note":
+		state.sort = "Niveau"; state.descending = true; app.roster_sort = "Niveau"
 	var tabs := ["Vue d’ensemble","Condition","Contrats","Développement"]
 	for i in tabs.size():
 		D.button(self,Rect2(i*211,0,199,42),tabs[i],func():
@@ -85,9 +88,9 @@ func _build() -> void:
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["NOTE",994,"Note",72],["SALAIRE "+G.salary_period(true).to_upper(),1083,"Salaire",160],["CONTRAT",1256,"Échéance",107],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",210],["FIN DE CONTRAT",1216,"Échéance",160],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
 	if state.family==U.WATCH_FILTER:
-		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(11)
+		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(10)
 	for column: Array in columns:
 		var caption := D.text(header,column[1],26,column[0],18,C.MUTED,600,column[3])
 		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
@@ -153,7 +156,7 @@ static func sort_value(player: Dictionary, key: String) -> Variant:
 		if not _known_number(source.get("physicalLoad")): source.physicalLoad = 0
 		var reason := U.watch_reason(source)
 		return U.fold(reason) if not reason.is_empty() else null
-	var field: String = {"Numéro":"shirtNumber","Poste":"pos","Nom":"name","Niveau":"rating","Potentiel":"potential","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd","Fatigue":"physicalLoad","Note":"note","Minutes":"minutes"}.get(key,"pos")
+	var field: String = {"Numéro":"shirtNumber","Poste":"pos","Nom":"name","Niveau":"rating","Potentiel":"potential","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd","Fatigue":"physicalLoad","Minutes":"minutes"}.get(key,"pos")
 	var value: Variant = player.get(field)
 	if key in ["Nom","Poste"]:
 		if not value is String or value.strip_edges().is_empty() or value.strip_edges() in ["—","-"]: return null
@@ -185,7 +188,7 @@ func _players() -> Array:
 	return ordered_players(app.model.get("squad",[]),state,int(app.model.meta.get("season",1)))
 
 func _toggle_sort(key: String) -> void:
-	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Note","Minutes"]
+	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes"]
 	state.sort = key
 	app.roster_sort = key
 	state.scroll = 0
@@ -205,6 +208,7 @@ func _sort_header_state() -> void:
 		header.label.add_theme_color_override("font_color",C.GOLD if active else C.MUTED)
 		var detail := "par famille puis poste" if key == "Poste" else "par "+key
 		header.button.tooltip_text = "Tri "+direction+" "+detail+" · cliquer pour inverser" if active else "Trier "+detail+" · valeurs inconnues en dernier"
+		if key == "Niveau": header.button.tooltip_text += "\nNiveau global du joueur / 100."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
 
 func _refresh(reveal: bool) -> void:
@@ -267,8 +271,10 @@ func _row(player:Dictionary,index:int) -> void:
 	D.text(row,95,24,player.name,23,C.IVORY,600,259)
 	D.text(row,363,24,player.pos,21,C.MUTED,500,202)
 	D.text(row,590,24,G.n(player.get("age","—")),22,C.IVORY,500,44,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(row,662,24,G.n(player.get("rating","—")),24,C.MINT if float(player.get("rating",0))>=84 else C.IVORY,700,48,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(row,729,24,G.n(player.get("potential","—")),24,C.GOLD if float(player.get("potential",0))>=87 else C.IVORY,600,48,HORIZONTAL_ALIGNMENT_CENTER)
+	var level := D.text(row,662,24,G.n(player.get("rating","—")),24,C.MINT,700,48,HORIZONTAL_ALIGNMENT_CENTER)
+	var potential := D.text(row,729,24,G.n(player.get("potential","—")),24,POTENTIAL_COLOR,600,48,HORIZONTAL_ALIGNMENT_CENTER)
+	level.name = "RosterLevel"
+	potential.name = "RosterPotential"
 	var condition:float=player.get("condition",0)
 	if float(player.get("injury",0))>0:D.text(row,835,24,"Indisponible",19,C.ALERT,600,110,HORIZONTAL_ALIGNMENT_CENTER)
 	else:
@@ -279,11 +285,10 @@ func _row(player:Dictionary,index:int) -> void:
 	if state.family==U.WATCH_FILTER:
 		D.text(row,1002,24,reason,22,C.AMBER,600,354).name="RosterWatchReason"
 	else:
-		D.text(row,1018,24,G.n(player.get("note","—")),22,C.MINT,600,55,HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row,1198,24,G.salary_amount(player.get("salary",0)),23,C.IVORY,500,162,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(row,1203,24,G.salary_amount(player.get("salary",0)),23,C.IVORY,500,210,HORIZONTAL_ALIGNMENT_RIGHT)
 		var contract_end: Variant = player.get("contractEnd")
 		var expiring: bool = contract_end != null and int(contract_end) <= int(app.model.meta.get("season",1))
-		D.text(row,1289,24,"—" if contract_end == null else "S"+G.n(contract_end),22,C.AMBER if expiring else C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row,1296,24,G.contract_year(contract_end),22,C.AMBER if expiring else C.MUTED,500,150,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterContractEnd"
 	D.text(row,1407,24,G.n(player.get("minutes",0)),22,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_RIGHT)
 	var status:String="Blessé" if float(player.get("injury",0))>0 else str(player.get("status","Disponible"))
 	D.chip(row,Rect2(1477,3,170,26),status,C.ALERT if status=="Blessé" else C.GOLD if status.contains("clé") else C.MINT)
@@ -327,7 +332,7 @@ func _profile() -> void:
 	D.text(hero,227,133,G.n(player.get("age","—"))+" ans",22,C.MUTED,500,281)
 	D.text(hero,227,167,G.n(player.get("appearances",0))+" apparitions · "+G.n(player.get("minutes",0))+" min",22,C.MUTED,500,281)
 	D.text(hero,240,241,G.n(player.get("rating","—")),74,C.MINT,700,123)
-	D.text(hero,372,237,G.n(player.get("potential","—")),53,C.GOLD,700,123)
+	D.text(hero,372,237,G.n(player.get("potential","—")),53,POTENTIAL_COLOR,700,123)
 	D.text(hero,240,271,"NIVEAU",18,C.MUTED,500,123)
 	D.text(hero,372,271,"POTENTIEL",18,C.MUTED,500,123)
 	D.chip(hero,Rect2(19,329,137,31),status,C.ALERT if injury > 0 else C.MINT).name = "SelectedPlayerStatus"
@@ -353,14 +358,13 @@ func _profile() -> void:
 	D.text(health,23,223,availability+" · "+plan,22,C.ALERT if injury > 0 else C.AMBER if recovering else C.IVORY,500,481).name = "SelectedPlayerAvailability"
 	var contract:=D.panel(dossier,Rect2(0,718,528,188),"CONTRAT & STATUT","money")
 	D.text(contract,24,94,G.salary(player.get("salary",0)),34,C.IVORY,600,480)
-	D.text(contract,24,129,str(player.get("contractLabel","—")),23,C.MUTED,500,480)
+	D.text(contract,24,129,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),23,C.MUTED,500,480)
 	var renewal:Dictionary=player.get("renewal",{})
 	var reason := str(renewal.get("reason", ""))
 	var offer:=D.button(contract,Rect2(305,143,198,32),"Prolonger" if reason.is_empty() else "Négociation close",func():app.SquadViews.contract(app,player,false),false,"",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	if not reason.is_empty(): offer.tooltip_text = reason
 	var contract_end: Variant = player.get("contractEnd")
-	D.text(contract,24,167,"Échéance : —" if contract_end == null else "Échéance : saison "+G.n(contract_end),21,C.MUTED,500,280)
 	var depth:=D.panel(dossier,Rect2(0,922,528,206),"L’ÉQUILIBRE DU GROUPE","people")
 	var source:Array=app.model.get("squad",[])
 	var forwards:int=source.filter(func(p:Dictionary):return float(p.get("fam",0))<=3).size()
@@ -379,7 +383,7 @@ func _advanced() -> void:
 	var fields:=C.v(12)
 	dialog.add_child(fields)
 	_choice(fields,Rect2(0,0,500,40),"RosterAvailability",["Tous","Disponibles","Blessés"],str(state.available),"Disponibilité",func(value:String):state.available=value;_refresh(false))
-	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Nom","Niveau","Potentiel","Condition","Fatigue","Note","Minutes","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
+	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
 	var direction:=C.button("Changer le sens du tri",func():state.descending=not state.descending;_refresh(false))
 	direction.name="RosterDirection"
 	fields.add_child(direction)

@@ -1,0 +1,18 @@
+{
+  "salary-display": {
+    "checks": 48,
+    "failures": 0
+  },
+  "squad-column-sort": {
+    "checks": 109,
+    "failures": 0
+  },
+  "contract-review": {
+    "checks": 153,
+    "failures": 0
+  },
+  "salary-preference-live": {
+    "checks": 43,
+    "failures": 0
+  }
+}
