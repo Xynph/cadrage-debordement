@@ -1,5 +1,6 @@
 extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
+const TableOrder = preload("res://ui/player_table_order.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -225,15 +226,32 @@ static func _bench(card:Panel,app:Control) -> int:
 		var action := D.button(card,Rect2(251,12,242,34),"Match · Feuille à 22",func():app._navigate("Match"),false,"arrow",true,app.accent,"LineupOpenMatchAt22")
 		action.tooltip_text=P.reduced_bench_vacancy(vacancy)
 		action.accessibility_name="Ouvrir le jour de match pour une feuille à 22"
-	for pair in [["N°",23],["JOUEUR",72],["POSTE",323]]:D.text(card,pair[1],87,pair[0],18,C.MUTED,500,100)
-	D.text(card,574,87,"COND.",18,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
-	var filled := 0
-	for i in 8:
-		var slot:=15+i
+	var state: Dictionary=app.management_ui.get("bench_reading",{"key":"slot","descending":false})
+	app.management_ui.bench_reading=state
+	for spec in [["N°",3,54,"slot"],["JOUEUR",56,249,"name"],["POSTE",306,180,"pos"],["COND.",484,74,"condition"]]:
+		var key: String=spec[3]
+		var button:=D.button(card,Rect2(20+spec[1],65,spec[2],30),str(spec[0])+((" ↓" if state.descending else " ↑") if state.key==key else ""),func():
+			state.descending=not state.descending if state.key==key else false
+			state.key=key;app._render()
+			var focus: Control=app.root_content.find_child("BenchSort_"+key,true,false)
+			if focus!=null:focus.grab_focus.call_deferred(),false,"",false,app.accent,"BenchSort_"+key)
+		button.add_theme_font_size_override("font_size",C.px(16))
+	var entries: Array=[]
+	for slot in range(15,23):
 		var person:=_player(app,slot)
-		if not person.is_empty(): filled += 1
-		var y:=104+i*47
-		var action:=D.button(card,Rect2(20,y,558,43),"",func():app.selected_slot=slot;app._render();_candidates(app,slot),false,"",true,app.accent,"LineupSlot%02d" % (slot+1))
+		entries.append({"id":str(person.get("id","vacant"))+"/"+str(slot),"slot":slot,"person":person})
+	entries=TableOrder.ordered(entries,state.key,state.descending,func(entry:Dictionary,key:String):return entry.slot if key=="slot" else entry.person.get(key))
+	var scroll:=ScrollContainer.new();scroll.name="BenchPlayerScroll";scroll.follow_focus=true
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	card.add_child(scroll);D.place(scroll,Rect2(20,104,578,376))
+	var rows:=Control.new();rows.name="BenchPlayerRows";rows.custom_minimum_size=Vector2(C.px(558),C.px(376));scroll.add_child(rows)
+	var filled := 0
+	for i in entries.size():
+		var slot: int=entries[i].slot
+		var person: Dictionary=entries[i].person
+		if not person.is_empty():filled+=1
+		var y:=i*47
+		var action:=D.button(rows,Rect2(0,y,558,43),"",func():app.selected_slot=slot;app._render();_candidates(app,slot),false,"",true,app.accent,"LineupSlot%02d" % (slot+1))
 		action.add_theme_stylebox_override("normal",C.box(Color("14201e") if i%2 else Color("10181a"),Color.TRANSPARENT,3,0))
 		D.chip(action,Rect2(8,7,34,28),str(slot+1),C.IVORY)
 		D.text(action,56,29,_slot_name(person),24,C.IVORY,600,239)

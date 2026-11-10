@@ -6,7 +6,7 @@ const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS = ["Effectif U21", "Effectif U18", "Progression", "Passerelles", "Encadrement"]
-const PAGE_SIZE = 12
+const Order = preload("res://ui/player_table_order.gd")
 const GREEN = Color("63ef96")
 const GOLD = Color("ffcf67")
 const RED = Color("f69a91")
@@ -79,7 +79,7 @@ func _build() -> void:
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
 	var default_group: String = ["u21", "u18", "academy", "academy", "academy"][active_tab]
 	var group := str(state.get("group", default_group))
-	var visible := _filtered(group)
+	var visible := Order.ordered(_filtered(group),str(state.get("table_sort","source")),bool(state.get("table_descending",false)),_sort_value)
 	_select_visible(visible)
 	_heading()
 	match active_tab:
@@ -180,10 +180,7 @@ func _filtered(group: String) -> Array:
 func _select_visible(people: Array) -> void:
 	selected = {}
 	if people.is_empty(): return
-	var maximum := maxi(0, ceili(float(people.size()) / PAGE_SIZE) - 1)
-	var index := clampi(int(state.get("page", 0)), 0, maximum)
-	state.page = index
-	var shown := people.slice(index * PAGE_SIZE, (index + 1) * PAGE_SIZE)
+	var shown := people
 	for person: Dictionary in shown:
 		if person.id == state.get("player"):
 			selected = person
@@ -207,22 +204,55 @@ func _table(group: String, people: Array) -> void:
 	_picker(table, Rect2(663, 12, 255, 43), "AcademyImmersivePotential", "Potentiel", {0:"Tous", 80:"80 et +", 85:"85 et +", 90:"90 et +"}, state.get("potential", 0), func(value): _set_filter("potential", value))
 	_picker(table, Rect2(938, 12, 308, 43), "AcademyImmersivePreparation", "Préparation", {"":"Tous", "fit":"Disponibles", "watched":"Condition < 70 %", "planned":"Parcours pro"}, state.get("preparation", ""), func(value): _set_filter("preparation", value))
 	var header := D.rect(table, Rect2(13, 69, 1367, 36), Color("1b2828"), 5)
-	for column: Array in [["#", 22, 40], ["JOUEUR", 127, 247], ["ÂGE", 365, 70], ["POSTE", 462, 194], ["NIVEAU", 657, 90], ["POTENTIEL", 745, 105], ["PROGRESSION", 850, 144], ["TEMPS DE JEU", 997, 143], ["STATUT", 1148, 197]]:
-		D.text(header, column[1], 25, column[0], 18, C.MUTED, 700, column[2])
+	var columns := [["#",22,40,"source"],["JOUEUR",127,247,"name"],["ÂGE",365,70,"age"],["POSTE",462,194,"pos"],["NIVEAU",657,90,"note"],["POTENTIEL",745,105,"potential"],["PROGRESSION",850,144,"change"],["TEMPS DE JEU",997,143,"minutes"],["STATUT",1148,197,"status"]]
+	for column: Array in columns:
+		var key: String = column[3]
+		var caption := str(column[0]) + ((" ↓" if state.get("table_descending",false) else " ↑") if state.get("table_sort","source")==key else "")
+		var action := _action(header,Rect2(column[1],0,column[2],34),caption,_sort_by.bind(key),false,"","AcademySort_"+key)
+		action.add_theme_font_size_override("font_size",C.px(16))
+		action.tooltip_text = "Trier " + str(column[0]) + " · valeurs inconnues en dernier"
+		for mode in ["normal","hover","pressed","disabled","focus"]:
+			var style := action.get_theme_stylebox(mode).duplicate() as StyleBox
+			style.content_margin_left=0; style.content_margin_right=0; style.content_margin_top=0; style.content_margin_bottom=0
+			action.add_theme_stylebox_override(mode,style)
+	var scroll := ScrollContainer.new()
+	scroll.name = "AcademyPlayerScroll"
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	table.add_child(scroll); D.place(scroll,Rect2(13,106,1380,434))
 	rows = Control.new()
 	rows.name = "AcademyImmersiveRows"
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	table.add_child(rows)
-	D.place(rows, Rect2(13, 106, 1367, 434))
+	rows.custom_minimum_size = Vector2(C.px(1367),C.px(36*people.size()))
+	scroll.add_child(rows)
 	_draw_rows(people)
-	var previous_page := _action(table, Rect2(973, 546, 104, 27), "Préc.", func(): _change_page(-1), false, "", "AcademyImmersivePrevious")
-	previous_page.add_theme_font_size_override("font_size", C.px(18))
-	var next_page := _action(table, Rect2(1260, 546, 115, 27), "Suiv.", func(): _change_page(1), false, "", "AcademyImmersiveNext")
-	next_page.add_theme_font_size_override("font_size", C.px(18))
-	previous_page.disabled = int(state.get("page", 0)) <= 0
-	next_page.disabled = (int(state.get("page", 0)) + 1) * PAGE_SIZE >= people.size()
-	D.text(table, 1170, 568, "%s / %s" % [int(state.get("page", 0)) + 1, maxi(1, ceili(float(people.size()) / PAGE_SIZE))], 19, C.MUTED, 500, 172, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(table, 20, 568, "%d joueur(s) · minutes juniors si parcours actifs" % people.size(), 19, C.MUTED, 500, 874)
+	scroll.get_v_scroll_bar().value_changed.connect(func(value): state.table_scroll=value)
+	scroll.set_deferred("scroll_vertical",int(state.get("table_scroll",0)))
+	D.text(table,20,568,"%d joueur(s) · défilement dans la liste · minutes juniors si parcours actifs" % people.size(),19,C.MUTED,500,1300)
+
+func _source_index(person: Dictionary) -> int:
+	var source: Array = professionals if _professional(person) else roster
+	for index in source.size():
+		if source[index].id == person.id: return index
+	return -1
+
+func _sort_value(person: Dictionary, key: String) -> Variant:
+	if key == "source": return _source_index(person)
+	if key == "status": return _status(person)[0]
+	if key == "minutes":
+		if pathway.get("active",false) and not _professional(person): return _path(person).get("minutes",person.get("minutes"))
+		return person.get("minutes")
+	if key == "change":
+		var start: Variant = person.get("development",{}).get("seasonStart")
+		if not (start is int or start is float) or not (person.get("rating") is int or person.get("rating") is float): return null
+		return roundi(float(person.rating)-float(start))
+	return person.get(key)
+
+func _sort_by(key: String) -> void:
+	state.table_descending = not state.get("table_descending",false) if state.get("table_sort","source")==key else false
+	state.table_sort=key; state.table_scroll=0
+	app._render()
+	U.focus(app,"AcademySort_"+key)
 
 func _set_filter(key: String, value: Variant) -> void:
 	state[key] = value
@@ -237,8 +267,8 @@ func _change_page(offset: int) -> void:
 	app._render()
 
 func _draw_rows(people: Array) -> void:
-	var start := int(state.get("page", 0)) * PAGE_SIZE
-	var shown := people.slice(start, start + PAGE_SIZE)
+	var start := 0
+	var shown := people
 	if shown.is_empty():
 		D.text(rows, 24, 65, "Aucun joueur dans cette sélection.", 29, C.IVORY, 600, 1301)
 		D.text(rows, 24, 109, "Changez le groupe d’âge ou les filtres pour retrouver les Espoirs de votre carrière.", 23, C.MUTED, 500, 1301)
@@ -250,7 +280,7 @@ func _draw_rows(people: Array) -> void:
 		hit.accessibility_name = str(p.name) + " · " + str(status[0])
 		hit.tooltip_text = "%s · %s" % [p.name, p.pos]
 		_row_style(hit, p.id == selected.get("id"), i)
-		D.text(hit, 33, 27, G.n(start + i + 1), 25, C.IVORY, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 33, 27, G.n(_source_index(p) + 1), 25, C.IVORY, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
 		_portrait(hit, p, Rect2(78, 0, 44, 35))
 		D.text(hit, 130, 27, str(p.name), 26, C.IVORY, 700, 222)
 		D.text(hit, 365, 26, G.n(p.age) + " ans", 21, C.IVORY, 500, 87)

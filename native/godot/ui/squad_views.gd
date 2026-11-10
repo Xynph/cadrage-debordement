@@ -3,6 +3,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
+const TableOrder = preload("res://ui/player_table_order.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Decisions = preload("res://ui/decision_views.gd")
@@ -94,23 +95,18 @@ static func squad(app: Control) -> Control:
 	list.set_meta("reveal_id", app.selected_player if str(state.get("visible_player", "")) != app.selected_player else "")
 	list.add_theme_constant_override("separation",2)
 	list.get_parent().name="SquadScroll"
-	var pagination := _pagination(table,"RosterPagination",state)
 	var profile := G.panel(page,1.1)
 	profile.name="PlayerDossier"
 	var refresh:=func():_squad_rows(app,list,profile,count,compare)
 	var user_refresh:=func():list.set_meta("reveal_id", "");refresh.call()
-	_bind_pagination(pagination,state,user_refresh)
 	list.get_parent().resized.connect(func():
-		var capacity:=maxi(1,int((list.get_parent().size.y+2)/28))
-		var columns:=_roster_columns(list.get_parent().size.x).size()
-		if capacity!=int(state.get("page_size",4)) or columns!=int(list.get_meta("column_count",0)):
-			state.page_size=capacity;refresh.call_deferred())
+		if _roster_columns(list.get_parent().size.x).size()!=int(list.get_meta("column_count",0)): refresh.call_deferred())
 	search.text_changed.connect(func(text:String):state.search=text;state.scroll=0;state.page=0;user_refresh.call())
 	family.item_selected.connect(func(index:int):state.family=family.get_item_text(index);app.roster_filter=state.family;state.scroll=0;state.page=0;user_refresh.call())
 	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;state.page=0;user_refresh.call())
 	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;state.page=0;user_refresh.call())
 	contract_filter.item_selected.connect(func(index:int):state.contract=contract_filter.get_item_text(index);state.scroll=0;state.page=0;user_refresh.call())
-	sort.item_selected.connect(func(index:int):state.sort=sort.get_item_text(index);app.roster_sort=state.sort;state.descending=state.sort in ["Niveau","Condition"];state.scroll=0;app._render())
+	sort.item_selected.connect(func(index:int):state.erase("table_sort");state.sort=sort.get_item_text(index);app.roster_sort=state.sort;state.descending=state.sort in ["Niveau","Condition"];state.scroll=0;app._render())
 	refresh.call()
 	U.restore(app,page,"roster")
 	return page
@@ -200,23 +196,28 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 	list.set_meta("column_count",columns.size())
 	var header:HBoxContainer=list.get_parent().get_parent().find_child("RosterHeader",false,false)
 	_empty(header)
+	var key: String = str(state.get("table_sort",{"Nom":"name","Poste":"pos","Âge":"age","Niveau":"rating","Condition":"condition","Salaire":"salary","Échéance":"contractEnd"}.get(state.sort,"pos")))
 	for column:Array in columns:
-		var label:=G.cell(column[1],column[2],G.MUTED,column[0]=="name")
-		label.name="RosterColumn_"+str(column[0])
+		var field: String=column[0]
+		var label:=G.button(str(column[1])+((" ↓" if state.descending else " ↑") if key==field else ""),func():
+			state.descending=not state.descending if key==field else false
+			state.table_sort=field;state.scroll=0
+			_squad_rows(app,list,profile,count,compare)
+			var next: Control=header.find_child("RosterColumn_"+field,false,false)
+			if next!=null:next.grab_focus.call_deferred())
+		label.name="RosterColumn_"+field
+		label.custom_minimum_size.x=column[2]
+		if field=="name": G.fill(label)
+		label.tooltip_text="Trier "+str(column[1])+" · valeurs inconnues en dernier"
 		header.add_child(label)
-	var players:Array=U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1)))
-	var capacity:=maxi(1,int(state.get("page_size",4)))
-	var reveal_id := focus_id if not focus_id.is_empty() else str(list.get_meta("reveal_id", ""))
-	if not reveal_id.is_empty():
-		for i in players.size():
-			if str(players[i].id)==reveal_id:state.page=i/capacity;break
-	var bounds:=_page_range(list.get_parent().get_parent().find_child("RosterPagination",false,false),state,players.size(),capacity)
+	var players:Array=TableOrder.ordered(U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1))),key,state.descending,func(person:Dictionary,field:String): return U.watch_reason(person) if field=="watch" else person.get(field))
 	count.text="%d / %d joueurs · lecture seule"%[players.size(),app.model.get("squad",[]).size()]
 	compare.text="COMPARER (%d/2)"%app.management_ui.compare.size()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
 	state.visible_player=app.selected_player
 	if players.is_empty():list.add_child(G.wrap("Aucun joueur ne correspond. Modifiez la recherche ou réinitialisez les filtres.",15))
-	for p in players.slice(bounds.x,bounds.y):
+	var revealed: Button = null
+	for p in players:
 		var b := G.button("",func():
 			list.set_meta("reveal_id", "")
 			app.selected_player=str(p.id);app.management_ui.profile_scroll=0
@@ -228,6 +229,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		b.custom_minimum_size.y=26
 		b.name="SquadPlayer"+str(p.id).replace(":","_")
 		b.set_meta("player_id",str(p.id))
+		if str(p.id)==str(list.get_meta("reveal_id","")):revealed=b
 		b.tooltip_text=str(p.name)+" · "+str(p.pos)
 		if state.family==U.WATCH_FILTER:
 			b.tooltip_text += "\n" + U.watch_reason(p)
@@ -255,7 +257,18 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		list.add_child(b)
 		if str(p.id)==focus_id:b.grab_focus.call_deferred()
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.roster.scroll))
+	if revealed!=null:_reveal_roster_row.call_deferred(app,list,revealed)
 	_show_profile(app,profile)
+
+static func _reveal_roster_row(app: Control, list: Control, row: Control) -> void:
+	if not is_instance_valid(list) or not list.is_inside_tree(): return
+	await list.get_tree().process_frame
+	if not is_instance_valid(row) or not row.is_inside_tree(): return
+	var scroll := list.get_parent() as ScrollContainer
+	if scroll == null: return
+	scroll.ensure_control_visible(row)
+	app.management_ui.roster.scroll=scroll.scroll_vertical
+	list.set_meta("reveal_id","")
 
 static func _roster_columns(width:float) -> Array:
 	var columns:Array=[["name","JOUEUR",130],["pos","POSTE",64],["age","ÂGE",26],["rating","NIV.",30],["condition","COND.",42]]
