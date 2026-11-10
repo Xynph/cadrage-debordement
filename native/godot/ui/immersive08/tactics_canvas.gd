@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
+const Cover = preload("res://ui/lineup_cover.gd")
 
 class JerseyButton extends Button:
 	var density := 1.0
@@ -208,7 +209,10 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 		hit.pressed.connect(func():
 			if i==1:_defense(app)
 			else:app._navigate("Plan de jeu" if i==2 else "Préparation"))
-	if not app.model.get("selection",{}).get("valid",false):D.button(card,Rect2(22,855,504,34),"Compléter avec le centre",func():app.confirm("Renforcer la feuille de match","Le staff sélectionne les joueurs disponibles, puis promeut de vrais joueurs aux postes manquants. Chaque promotion ajoute 2 500 € de salaire par semaine. Confirmer ?",func():app._command("promote_cover",{"confirmed":true})),false,"school",true,app.accent,"LineupCover")
+	var quote := Cover.data(app)
+	if not quote.is_empty():
+		var cover := D.button(card, Rect2(22,855,504,34), Cover.caption(quote), func(): Cover.confirm(app, quote), false, "school", true, app.accent, "LineupCover")
+		Cover.configure(cover, quote)
 	else:D.text(card,23,884,"Indicateurs projetés · choix enregistrés immédiatement",18,C.GOLD,500,502)
 
 static func _bench(card:Panel,app:Control) -> int:

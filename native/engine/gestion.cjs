@@ -38,11 +38,20 @@ module.exports=function nativeGestion(command,p){
  }
  if(command==='set_player_load'){requireThat(setPhysicalTraining(p.playerId,p.mode),'Charge indisponible : séance appliquée, joueur absent ou match en cours.');return;}
  if(command==='promote_cover'){
-  requireThat(p.confirmed===true,'Confirmez la promotion à 2 500 € par semaine et par joueur.');requireThat(!S.live&&S.phase!=='ended','Promotion indisponible pendant le match ou après la saison.');
-  repairSheet();const count=[...S.lineup,...S.reserves].filter(id=>!id).length;
-  requireThat(count>0,'La feuille de match est déjà complète.');requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
-  promoteCover();requireThat(sheetErrors().length===0,'La promotion ne permet pas de compléter une feuille qualifiée.');
-  return {coverage:{count,weeklySalary:2500,totalWeeklySalary:count*2500,message:`${count} espoir(s) promu(s) : ${count*2500} € de salaire hebdomadaire supplémentaire. Feuille à 23 complète.`}};
+  requireThat(p.confirmed===true,'Confirmez le salaire hebdomadaire de chaque renfort.');
+  requireThat(!S.live&&S.phase!=='ended','Promotion indisponible pendant le match ou après la saison.');
+  repairSheet();
+  const slots=vacantMatchSlots(S.lineup,S.reserves),count=slots.length;
+  if(Object.hasOwn(p,'expectedSlots')){
+   requireThat(Array.isArray(p.expectedSlots)&&p.expectedSlots.length===count&&slots.every((slot,i)=>slot===p.expectedSlots[i]),
+    'La feuille a changé. Consultez le nouveau devis de renfort.');
+  }
+  requireThat(count>0,'La feuille de match est déjà complète.');
+  requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
+  promoteCover();
+  requireThat(sheetErrors().length===0,'La promotion ne permet pas de compléter une feuille qualifiée.');
+  const totalWeeklySalary=count*COVER_WEEKLY_SALARY;
+  return {coverage:{count,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
   requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=1000&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');

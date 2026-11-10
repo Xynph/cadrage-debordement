@@ -138,7 +138,7 @@ function factory(eligibility){
     const bench=i>=15,slot=bench?[1,0,2,3,5,8,9,10][i-15]:i,list=bench?S.reserves:S.lineup;
     const p=makePlayer(400+i,slot,56);
     p.id='jlo-academy-'+S.club+'-'+S.season+'-'+S.round+'-'+(S.playerSerial=(S.playerSerial||0)+1);
-    p.rating=rand(52,61);p.age=19;p.condition=100;p.salary=2500;delete p.skills;
+    p.rating=rand(52,61);p.age=19;p.condition=100;p.salary=COVER_WEEKLY_SALARY;delete p.skills;
     ensureSkills(p);ensureContract(p);ensureDevelopment(p);club().players.push(p);list[bench?i-15:i]=p.id;
    }
    if(vacancy.length)news(vacancy.length+' espoir(s) promu(s) pour compléter la feuille de match.');

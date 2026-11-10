@@ -368,7 +368,7 @@ func _run() -> void:
 	await _ask("auto_lineup")
 	if not app.model.get("selection",{}).get("valid",true):
 		app._navigate("Composition")
-		_press("COMPLÉTER AVEC LE CENTRE DE FORMATION")
+		_press_named("LineupCover")
 		await _capture("renforts-confirmation")
 		_confirm()
 		await _wait()

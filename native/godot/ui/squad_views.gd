@@ -4,6 +4,7 @@ const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Cover = preload("res://ui/lineup_cover.gd")
 
 # Keep the bound dictionary when a career reset replaces management_ui. Retiring
 # controls can only update their former UI state, never the new career's state.
@@ -560,10 +561,11 @@ static func lineup(app:Control) -> Control:
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()
 	side.add_child(auto)
-	if not selection.get("valid",true):
-		var cover:=G.button("COMPLÉTER AVEC LE CENTRE DE FORMATION",func():app.confirm("Renforcer la feuille de match", "Le staff sélectionne d'abord les joueurs disponibles, puis promeut de vrais joueurs aux postes manquants. Chaque promotion ajoute 2 500 € de salaire par semaine. Confirmer ?",func():app._command("promote_cover",{"confirmed":true})))
-		cover.disabled=not app._live().is_empty() or app.model.meta.get("canAdvanceSeason",false)
-		cover.tooltip_text="Une solution de secours payante ; vous pouvez aussi composer votre groupe ou recruter."
+	var quote := Cover.data(app)
+	if not quote.is_empty():
+		var cover := G.button(Cover.caption(quote), func(): Cover.confirm(app, quote))
+		cover.name = "LineupCover"
+		Cover.configure(cover, quote)
 		side.add_child(cover)
 	var list:=G.scroll(side)
 	list.get_parent().name="LineupCandidatesScroll"
