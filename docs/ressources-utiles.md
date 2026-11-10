@@ -4,9 +4,10 @@ Registre partagé des liens transmis par Léo ou retenus pendant le développeme
 À consulter à chaque reprise avec AGENTS.md, côté PC comme Cloud. Une nouvelle
 conversation doit avoir accès au dépôt pour réutiliser ce document.
 
-Ce premier inventaire rassemble les références identifiées dans la conversation
-et les fichiers du projet. Il ne constitue pas une archive exhaustive des anciens
-chats. Un lien enregistré ne signifie pas que son contenu a été lu ou approuvé.
+Le registre rassemble des références retrouvées dans les échanges consultés et
+les fichiers du projet. La colonne « Provenance / relevé » précise pour chaque
+entrée si le lien a été transmis par Léo, retrouvé dans le dépôt ou vérifié en ligne.
+La couverture dépend de l’historique accessible à chaque reprise.
 
 ## Tenir le registre à jour
 
@@ -27,27 +28,40 @@ chats. Un lien enregistré ne signifie pas que son contenu a été lu ou approuv
 
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
-| [Publication X de nikosolenne](https://x.com/nikosolenne/status/2119937933264212212) | Lien fourni par Léo dans la conversation ; enregistré le 10 novembre 2026. Adresse du statut sans paramètres de partage. | Piste d’inspiration pour transitions, animations et immersion. | Contenu, disponibilité et droits à vérifier. | **À explorer** : le contenu du post n’est pas attesté par ce registre. Ne pas lui attribuer une bibliothèque ou une recommandation sans le relire. |
-| [Étude de sept outils GitHub — PR 425](https://github.com/Xynph/cadrage-debordement/pull/425) | Étude existante du projet ; titre et référence relevés le 10 novembre 2026. | Retrouver les recherches sur assets et animations avant de recommencer une étude. | Coût/licence propres à chaque outil à vérifier dans son dossier. | **À explorer** : consulter la PR et ses fichiers avant de retenir un outil. L’ouverture d’une PR ne prouve pas une intégration. |
-| [Essais parallèles des sept outils — PR 426](https://github.com/Xynph/cadrage-debordement/pull/426) | Réception existante du projet ; titre et référence relevés le 10 novembre 2026. | Retrouver les essais et leurs limites. | À vérifier par outil. | **À explorer** : rapprocher les résultats de la PR 425 et de l’état actuel du code. |
+| [Publication X de nikosolenne](https://x.com/nikosolenne/status/2119937933264212212) | Lien fourni par Léo. Lecture bloquée par X dans le lecteur web le 10 novembre 2026. | Piste d’inspiration pour transitions, animations et immersion. | Contenu, disponibilité et droits à vérifier. | **À explorer**. Relire la publication pour identifier la technique ou l’outil éventuellement présenté. |
+| [Publication X de Scenario](https://x.com/scenario_gg/status/2113635335267643591) | Lien fourni par Léo dans l’échange sur les visuels. Lecture bloquée dans le lecteur web le 10 novembre 2026. | Retrouver la piste d’origine. Pour les images effectivement utilisées, suivre les crédits de la collection Scenario 3D. | Contenu, disponibilité et droits à vérifier. | **À explorer**. La publication et la collection sont deux références distinctes. |
+| [Publication X de 0xMovez](https://x.com/0xMovez/status/2118756438550196404) | Lien fourni par Léo. Lecture bloquée dans le lecteur web le 10 novembre 2026. | Retrouver une piste évoquée pendant les recherches visuelles. | Contenu, disponibilité et droits à vérifier. | **À explorer**. Relire la publication avant d’en tirer une proposition pour le jeu. |
+| [Penpot](https://github.com/penpot/penpot) | Outil de maquette choisi par Léo pour la refonte graphique. Dépôt officiel relu le 10 novembre 2026. | Maquetter les écrans Bureau, Effectif, Tactiques et Recrutement. | Code MPL-2.0. Coût et conditions de l’hébergement à vérifier. | **Retenu** pour la maquette. Le [studio UI web de la PR 362](https://github.com/Xynph/cadrage-debordement/pull/362) fournit un point de comparaison pour l’implémentation. |
+| [Étude de sept outils GitHub — PR 425](https://github.com/Xynph/cadrage-debordement/pull/425) | Étude des dépôts transmis par Léo. Rapport relu le 10 novembre 2026. | Retrouver les révisions examinées, les usages proposés et les contraintes avant de relancer une recherche. | Licences relevées par outil. Recontrôler la version et les dépendances avant usage. | **Évalué**. PR documentaire ouverte au relevé. Les essais sont documentés séparément dans la PR 426. |
+| [Essais parallèles des sept outils — PR 426](https://github.com/Xynph/cadrage-debordement/pull/426) | Rapport d’essais du 9 novembre, relu le 10 novembre 2026. | Retrouver les commandes, résultats partiels et limites des essais. | Aucun service payant utilisé dans ces essais. | **Évalué**. PR documentaire ouverte au relevé. Les usages repris dans le projet sont détaillés ci-dessous et dans les [six prototypes](animation-six-prototypes-20261109.md). |
 
-## Sept dépôts transmis par Léo le 10 novembre 2026
+## Outils pour la 3D, l’animation et les visuels
 
-Les sept URL ont été relevées directement auprès de Léo. Description, existence
-et licence déclarée dans les métadonnées GitHub consultées le 10 novembre 2026.
-Ces dépôts restent **À explorer** : aucun code installé, aucun essai ni audit
-complet des dépendances, des modèles, des assets ou des tarifs effectué.
-La licence du dépôt ne garantit pas la gratuité des services qu’il utilise.
+La [PR 542](https://github.com/Xynph/cadrage-debordement/pull/542) a consigné les
+sept dépôts transmis par Léo. Les statuts ci-dessous tiennent compte des essais
+documentés et des suites intégrées au projet. Les licences concernent les
+révisions examinées. Les conditions des modèles, médias et services se
+vérifient séparément.
 
-| Ressource | Utilité possible pour Oval Legacy | Licence déclarée / coût à vérifier | Statut et prochaine vérification |
-| --- | --- | --- | --- |
-| [Moh4696/open-3d-skills](https://github.com/Moh4696/open-3d-skills) | Scènes Three.js, transitions, mouvements de caméra et contrôles visuels ; inspirations pour l’immersion. | **MIT** pour le code ; coût des éventuels modèles/services à vérifier. | **À explorer** : workflows orientés web ; étudier leur transposition à Godot avant adoption. |
-| [blendi-remade/prompt2rig](https://github.com/blendi-remade/prompt2rig) | Production et transfert de mouvements sur un personnage riggé ; piste pour joueurs et staff. | **Apache-2.0** pour le code ; modèles vidéo, dépendances et conditions Mixamo à vérifier. | **À explorer** : contrôler qualité des gestes de rugby, export et coût réel de génération. |
-| [scenario-labs/skills](https://github.com/scenario-labs/skills) | Workflows de création d’images, vidéo, audio et 3D ; cohérence visuelle des personnages et clubs. | **MIT** pour le code ; tarifs et conditions des services Scenario à vérifier. | **À explorer** : distinguer compétences gratuites et opérations de génération éventuellement facturées. |
-| [EL4CTEO/blender-skills](https://github.com/EL4CTEO/blender-skills) | Modélisation, UV, matériaux, rigging, animation et export Blender pour préparer les assets du jeu. | **MIT** pour le code ; dépendances et services éventuels à vérifier. | **À explorer** : vérifier versions Blender, exports Godot et réception des modèles. |
-| [elvarofficial/teardown](https://github.com/elvarofficial/teardown) | Principes de scènes 3D interactives et de simulation d’assemblages ; inspiration secondaire. | **MIT** pour le code ; dépendances et éventuels services à vérifier. | **À explorer** : établir une utilité concrète pour le jeu de rugby avant de retenir ce workflow de machines démontables. |
-| [0x0funky/agent-sprite-forge](https://github.com/0x0funky/agent-sprite-forge) | Sprites 2D, cartes, PNG transparents et animations pour interfaces, effets et prototypes. | **MIT** pour le code ; modèles de génération, tarifs et droits des sorties à vérifier. | **À explorer** : essayer un besoin précis et vérifier le coût avant toute génération. |
-| [Donchitos/Claude-Code-Game-Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) | Organisation du développement avec agents spécialisés et workflows de studio. | **MIT** pour le code ; coûts des outils et modèles utilisés indépendants de cette licence. | **À explorer** : comparer aux règles existantes du projet et éviter une orchestration disproportionnée. |
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [Scenario Skills](https://github.com/scenario-labs/skills) | Lien de Léo, étude et essais relus le 10 novembre 2026. | Construire et réimporter un modèle de test Godot, auditer une copie de l’athlète. | Compétences sous MIT. Tarifs et droits des services à vérifier. | **Évalué**. Essais Godot partiels. Les six illustrations intégrées proviennent de la collection Scenario 3D ci-dessous. |
+| [EL4CTEO Blender Skills](https://github.com/EL4CTEO/blender-skills) | Lien de Léo, essais et [PR 427](https://github.com/Xynph/cadrage-debordement/pull/427) relus le 10 novembre 2026. | Réexporter un GLB sans altérer la peau, les poses et les normales de l’athlète. | MIT pour les scripts examinés. | **Retenu**. La chaîne de contrôle corrigée est sur `main`. Suivre la [recette Cloud](animation-pipeline-cloud.md) ou la [recette Windows](animation-pipeline-windows.md) et vérifier la version de Blender. |
+| [Open 3D Skills](https://github.com/Moh4696/open-3d-skills) | Lien de Léo, essais et prototypes relus le 10 novembre 2026. | Contrôler les captures du ralenti aux différents formats et avec mouvements réduits. | MIT. Coût des éventuels services tiers à vérifier. | **Retenu** pour la recette du [ralenti hors ligne](../tools/animation-replay/index.html). Le démonstrateur WebGL reste à qualifier. |
+| [prompt2rig](https://github.com/blendi-remade/prompt2rig) | Lien de Léo, essais et prototypes relus le 10 novembre 2026. | Comparer une célébration animée à la main à un mouvement retargeté à partir de points synthétiques. | Code Apache-2.0. Certains composants de la chaîne HQ ont des licences non commerciales. | **Évalué** sur le [banc de recherche](../tools/animation-bench/README.md). Chaîne HQ écartée de la distribution commerciale en l’état des droits relevés. |
+| [Agent Sprite Forge](https://github.com/0x0funky/agent-sprite-forge) | Lien de Léo, essais relus le 10 novembre 2026. | Tester l’export d’une planche de sprites et préserver la transparence et la cadence dans Godot. | Code MIT. Médias et services de génération soumis à leurs propres conditions. | **Évalué**. Import Godot vérifié sur des sprites de test. Pour Gabi, vérifier la continuité visuelle et la synchronisation avec la voix. |
+| [Teardown](https://github.com/elvarofficial/teardown) | Lien de Léo, essais et prototypes relus le 10 novembre 2026. | S’inspirer d’une horloge commune pour la lecture et le pas à pas du ralenti. | Code MIT. Vérifier les notices des composants réutilisés. | **Évalué**. Trois démonstrateurs compilés, contrôles graphiques partiels. Référence de conception du ralenti. |
+| [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) | Lien de Léo, essais et prototypes relus le 10 novembre 2026. | Reprendre des critères de contrôle des formats, des tailles et des fichiers manquants. | MIT. | **Évalué**. Défauts détectés sur un dossier de test. Adapter le périmètre du scan à l’arborescence du jeu avant de s’en servir comme preuve. |
+| [Ekza Studio](https://github.com/ekza-space/ekza-studio) | Solveur et ancrage des pieds à la demande de Léo. [PR 350](https://github.com/Xynph/cadrage-debordement/pull/350) relue le 10 novembre 2026. | Évaluer la stabilité du pied d’appui sur les animations de rugby. | Code MIT à la révision étudiée. | **Évalué**. Essai sur cibles synthétiques réussi. Sur le prototype V25, la première cible réelle était hors de portée de 3,592 mm. Chantier en pause. En cas de reprise, vérifier la géométrie du rig et la définition de l’ancrage. |
+| [CharacterCreator](https://github.com/kblood/CharacterCreator) | Piste demandée par Léo. README et [PR 300](https://github.com/Xynph/cadrage-debordement/pull/300) relus le 10 novembre 2026. | Utiliser des mannequins pour comparer les rigs, appuis et contacts du match 3D. | Code GPL-3.0-or-later. Sorties de `output/` annoncées sous CC0 1.0. Vérifier la notice de chaque modèle. | **Évalué**. Quatre GLB et leurs notices sont documentés dans la PR de recherche. Contact non qualifié. |
+| [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app), [Ara 3D Gen](https://github.com/olatunde85/3d-gen) et [Rigger](https://github.com/asu37/Rigger) | Pistes demandées par Léo. Dépôts relevés le 10 novembre 2026. | Comparer l’animation d’un personnage existant, la création d’un mannequin et son rig. | Code MIT pour Mesh2Motion et Ara 3D Gen, GPL-3.0-or-later pour Rigger. Vérifier les licences des ressources tierces séparément. | **À explorer** pour un usage dans le jeu. Comparer d’abord leurs résultats sur le même modèle de référence. |
+| [Tripo, image vers 3D](https://www.tripo3d.ai/product-doc) et [TripoSG](https://github.com/VAST-AI-Research/TripoSG) | Piste demandée par Léo. Documentation du service et dépôt de recherche relevés le 10 novembre 2026. | Tester un accessoire du club à partir d’une image, puis contrôler géométrie, textures et import Godot. | Tarifs et droits de sortie du service à vérifier. Code TripoSG sous MIT, conditions des poids à vérifier séparément. | **À explorer**. Première recette à faire sur un accessoire isolé. |
+
+## Recette Windows
+
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [Reverse Engineer Anything (REA)](https://github.com/morluto/rea) | Outil demandé par Léo. Échange sur un candidat Windows relu le 10 novembre 2026. | Inventorier le contenu d’un paquet Godot déjà construit et comparer les ressources embarquées aux fichiers attendus. | Code MIT à la version examinée. | **Évalué**. Inventaire du PCK réalisé sur un candidat. Compléter le contrôle du contenu par un lancement natif et la vérification du manifeste. |
 
 ## Assets et licences
 
@@ -55,18 +69,30 @@ La licence du dépôt ne garantit pas la gratuité des services qu’il utilise.
 | --- | --- | --- | --- | --- |
 | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) | Source conservée dans les crédits 3D ; relevé local du 10 novembre 2026. | Mobilier des scènes contextuelles : banc, chaise de bureau, plante et accessoires. | Ressources gratuites, **CC0 1.0**, selon la notice conservée avec la version intégrée. | **Intégré** : [crédits et inventaire des huit GLB](../native/godot/ui/contextual/rooms/CREDITS.md). |
 | [Quaternius Animated Men Pack](https://quaternius.com/packs/animatedmen.html) | Source conservée dans les crédits 3D ; relevé local du 10 novembre 2026. | Modèle humain stylisé animé et riggé. | Ressource gratuite, **CC0 1.0**, selon la notice conservée avec le modèle. | **Intégré** : [provenance du modèle](../native/godot/ui/contextual/rooms/assets/athlete/QUATERNIUS-CC0.md). |
+| [Collection Scenario 3D](https://huggingface.co/datasets/scenario-labs/3d-collection/tree/8a63e6f72eb91b28fd7d8b03730681e0c2bb6e63) | [PR 437](https://github.com/Xynph/cadrage-debordement/pull/437) et notice du dépôt relues le 10 novembre 2026. | Six vignettes pour les écrans du club, du tapis de course des Infrastructures au sac du Bureau pour un match à l’extérieur. | **CC BY 4.0** pour les six images selon la notice. Conserver l’attribution. | **Intégré**. [Crédits et aperçus d’origine](scenario-visual-credits.md). La PR atteste aussi la présence de la notice dans le ZIP Windows reçu. |
 | [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) | Licence référencée par les deux notices précédentes. | Retrouver le texte de la licence des ressources concernées. | Texte de licence ; vérifier aussi les éventuels éléments tiers d’un nouveau pack. | **Retenu** : les notices des versions effectivement livrées restent la preuve locale. |
 
 Les liens d’auteurs ci-dessus sont relevés depuis les notices du dépôt ; ce
 relevé n’est pas une nouvelle vérification en ligne de leurs pages.
+
+## Lois, règlements et données de compétition
+
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [World Rugby – lois par numéro](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/) et [mise à jour de juillet 2026](https://passport.world.rugby/laws-of-the-game/whats-new/2026-07-law-updates/) | [Référentiel rugby](rugby-rules-reference.md). Index et date d’application relus le 10 novembre 2026. | Arbitrage et moteur de match du XV adulte. | Consultation gratuite. Droits de réutilisation à vérifier. | **Retenu**. Identifier l’édition applicable à la saison de carrière et vérifier les dates propres aux compétitions déjà lancées. |
+| [LNR – Livre 2, Sportif et Compétitions 2026/27](https://assets.lnr.fr/3/0/4/6/9/8/LIVRE-2_Sportif-et-Comp%C3%A9titions_2627_V2_703069b00e686885076f1b627c8c5441.pdf) | [Règles du Monde](world-competition-rules-20261109.md). Couverture et art. 2006 relus le 10 novembre 2026. | Formats, bonus, départages, phases finales et accessions du Top 14 et de la Pro D2. | Consultation gratuite. Droits de réutilisation à vérifier. | **Retenu**. Vérifier l’édition et les circulaires applicables avant de modifier une compétition. |
+| [FFR – livret Nationale 2026/27](https://api.www.ffr.fr/wp-content/uploads/2026/08/2026-2027_nationale_livret-de-la-competition-1.pdf) et [calendrier officiel](https://monclubhouse.ffr.fr/nationales/nationale/qualification-50109/72954/calendrier-resultats) | [Dossier Nationale](nationale-2026-27.md). Livret et calendrier consultés le 10 novembre 2026. | Format de la division à 14 clubs et programmation des 182 rencontres de départ. | Consultation gratuite. Droits de réutilisation à vérifier. | **Retenu** pour la saison initiale. Vérifier les reports et distinguer ces dates des saisons générées. |
+| [LNR – transferts Top 14 2026/27](https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027) | [Dossier de preuves DATA‑06](data06-evidence.md). Page et millésime vérifiés le 10 novembre 2026. | Corroborer les mouvements de joueurs annoncés. | Consultation gratuite. Droits de réutilisation à vérifier. | **Retenu**. Confirmer l’effectif à la date de départ auprès des clubs et traiter les salaires et les durées de contrat comme des données distinctes. |
 
 ## Décisions et points d’entrée du projet
 
 | Référence | Rôle / état constaté le 10 novembre 2026 |
 | --- | --- |
 | [Dépôt du jeu](https://github.com/Xynph/cadrage-debordement) | Référence partagée du code et de l’avancement. Consulter main et les PR pertinentes avant toute reprise. |
+| [Journal de développement](../DEVELOPPEMENT.md) | Retrouver les décisions et la chronologie. Pour reprendre un lot en cours, consulter sa PR. L’[issue 73](https://github.com/Xynph/cadrage-debordement/issues/73) conserve les anciennes passations. |
 | [Règle de collaboration — PR 537](https://github.com/Xynph/cadrage-debordement/pull/537) | **Intégré** : conseil critique, désaccords expliqués, alternatives recommandées, distinction entre réalisé et proposé ; règle conservée dans [AGENTS.md](../AGENTS.md). |
 | [Rendez-vous 3D et staffs — PR 527](https://github.com/Xynph/cadrage-debordement/pull/527) | **Intégré** dans a741f98196b5f9a604915d21ea1df381d68b56c8 ; source des scènes et de leurs validations. |
+| [Six prototypes d’animation](animation-six-prototypes-20261109.md) et [recette de lisibilité en match](animation-lisibilite-direct-20261109.md) | La [PR 433](https://github.com/Xynph/cadrage-debordement/pull/433) intègre le crochet, la passe et l’éclairage de soirée au match. La [PR 434](https://github.com/Xynph/cadrage-debordement/pull/434) documente la réception du crochet et de la passe à cadence réelle. Le rapport des prototypes renvoie aussi au ralenti web et au banc de recherche. |
 | [Références rugby](rugby-rules-reference.md) | Points d’entrée vers les lois et règlements ; recontrôler la saison applicable avant une modification sportive. |
 | [Données du jeu](donnees-du-jeu.md) | Provenance, périmètre et limites des données. |
 | [Crédits des scènes 3D](../native/godot/ui/contextual/rooms/CREDITS.md) | Auteurs, licences et ressources réellement redistribuées. |
