@@ -295,7 +295,9 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 			if is_instance_valid(status): status.text = "Décision en attente de la réponse du moteur…"
 			_present_command_wait(command)
 			return true
-		if not command_wait_overlay.visible and last_command != "snapshot":
+		if last_command == "snapshot": return false
+		var active_command := str(queued_action.get("command", last_command))
+		if not command_wait_overlay.visible or command != active_command:
 			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
 	waiting = true
