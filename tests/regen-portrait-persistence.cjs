@@ -12,7 +12,7 @@ test('Real worker persists new academy portraits through promotion/reopen and ne
  const native=JSON.parse(go('export').meta.exportText).state;a.equal(native.development.academy[0].appearanceBankVersion,2);
  go('promote_academy',{playerId:p.id,confirmed:true});m=go('snapshot');a.deepEqual(describe(m.squad.find(q=>q.id===p.id)),profile);
  const saved=go('export').meta.exportText;b.close();b=createBridge(opts);a.equal(go('export').meta.exportText,saved);
- const old=rewrite(saved,s=>{const visit=o=>{if(!o||typeof o!=='object')return;delete o.appearanceBankVersion;for(const v of Object.values(o))visit(v);};visit(s);});
+ const old=rewrite(saved,s=>{const visit=o=>{if(!o||typeof o!=='object')return;if(o.generation?.policy!=='staff-completion-v1')delete o.appearanceBankVersion;for(const v of Object.values(o))visit(v);};visit(s);});
  go('import',{text:old});const legacy=go('export').meta.exportText,file=path.join(dir,'PrototypeGodot/donnees.json'),bytes=fs.readFileSync(file);
  for(let i=0;i<3;i++){m=go('snapshot');a.equal(m.squad.find(q=>q.id===p.id).appearanceBankVersion,undefined);a.equal(describe(m.squad.find(q=>q.id===p.id)).version,1);}
  a.equal(go('export').meta.exportText,legacy);a.deepEqual(fs.readFileSync(file),bytes);

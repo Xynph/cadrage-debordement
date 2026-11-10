@@ -84,11 +84,11 @@ static func build(app: Control) -> Control:
 			if not needle.is_empty() and not U.fold(str(person.name) + " " + str(person.role)).contains(needle): continue
 			shown += 1
 			_person(list, person)
-		count.text = "%d / %d membres documentés · noms anonymisés hors pack" % [shown, people.size()]
+		count.text = "%d / %d membres · %d personnages fictifs" % [shown, people.size(), people.filter(func(person: Dictionary): return Career.is_fictional(person)).size()]
 		if shown == 0: list.add_child(G.wrap("Aucun membre ne correspond à cette recherche.", 15))
 	search.text_changed.connect(redraw)
 	redraw.call("")
-	right.add_child(G.wrap("Les pages officielles ne précisent pas toutes leur saison. Les références anciennes sont indiquées ; cet annuaire ne simule pas les mutations du staff.", 12))
+	right.add_child(G.wrap("Les personnages fictifs complètent les fonctions manquantes. Les références anciennes restent signalées ; les noms de référence sont anonymisés hors pack.", 12))
 	return page
 
 static func _person(parent: VBoxContainer, person: Dictionary) -> void:
@@ -108,6 +108,10 @@ static func _person(parent: VBoxContainer, person: Dictionary) -> void:
 	text.add_child(G.wrap(person.role, 15, G.GOLD))
 	var season := str(person.get("sourceSeason")) if person.get("sourceSeason") != null else "Saison non précisée"
 	var date := " · source du " + str(person.sourceDate) if person.get("sourceDate") != null else ""
-	text.add_child(G.wrap(("ARCHIVE · " if person.get("historical", false) else "RÉFÉRENCE · ") + season + date, 11, G.ALERT if person.get("historical", false) else G.MUTED))
-	text.add_child(G.wrap("Relevé le " + str(person.get("observedAt", "")) + " · " + ("photo officielle du pack" if person.get("portraitStatus") == "official" else "illustration IA du pack" if person.get("portraitStatus") == "synthetic" else "portrait fictif composé hors ligne"), 11))
+	if Career.is_fictional(person):
+		text.add_child(G.wrap("PERSONNAGE FICTIF · Profil de jeu", 11, G.GOLD))
+		text.add_child(G.wrap("Portrait fictif généré pour le jeu", 11))
+	else:
+		text.add_child(G.wrap(("ARCHIVE · " if person.get("historical", false) else "RÉFÉRENCE · ") + season + date, 11, G.ALERT if person.get("historical", false) else G.MUTED))
+		text.add_child(G.wrap("Relevé le " + str(person.get("observedAt", "")) + " · " + ("photo officielle du pack" if person.get("portraitStatus") == "official" else "illustration IA du pack" if person.get("portraitStatus") == "synthetic" else "portrait fictif composé hors ligne"), 11))
 	card.add_child(G.separator())
