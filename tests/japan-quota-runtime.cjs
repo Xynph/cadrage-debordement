@@ -1,6 +1,8 @@
 'use strict';
 const {test}=require('node:test'),a=require('node:assert/strict');
+const {runInNewContext}=require('node:vm');
 const Q=require('../native/engine/japan-quota-runtime.cjs');
+const eligibility=require('../native/engine/japan-eligibility.cjs');
 const rows=(cat,n,basis='estimated')=>Array.from({length:n},(_,i)=>({id:cat+'-'+i,category:cat,basis}));
 test('registration keeps all locals, ten B/C and no more than three C; official declarations get priority',()=>{
  const A=rows('A-1',22),A2=rows('A-2',3),B=rows('B',10),C=rows('C',7);
@@ -31,4 +33,36 @@ test('substitutions and a card-related vacant place cannot exceed field cap',()=
  a.equal(Q.changeAllowed(withCard,null,B[4]),false);
  a.equal(Q.changeAllowed(withCard,null,A[8]),true);
  a.equal(Q.changeAllowed(withCard,A[1].id,B[4]),false);
+});
+
+test('the opponent keeps legal tactical picks and repairs only a Japanese nomination outside quotas',()=>{
+ const locals=rows('A-1',23), visitors=rows('B',7);
+ const club={id:70,players:[...locals,...visitors]};
+ const categories=Object.fromEntries(club.players.map(p=>[p.id,p]));
+ const standard={lineup:locals.slice(0,15).map(p=>p.id),bench:locals.slice(15).map(p=>p.id)};
+ const eligible={...standard,bench:[...standard.bench].reverse()};
+ const excessive={lineup:[...standard.lineup.slice(0,8),...visitors.map(p=>p.id)],bench:standard.bench};
+ let proposed=eligible, repair=eligible, builds=[];
+ const context={
+  S:{club:68,worldMode:{leagues:{'jlo-d1':{members:[68,70]},'jlo-d2':{members:[]}}}},
+  CDWorldCareer:{edition:()=>({version:3,registry:{japanCategories:categories}}),sourcePlayer:()=>null},
+  buildSheet:(team,lineup,bench)=>{builds.push({team,lineup,bench});return lineup.length?repair:standard;},
+  managerSheet:()=>proposed,slotEligible:()=>false,benchEligible:()=>false,
+  sheetErrors:()=>[],legalChange:()=>true,promoteCover:()=>{},eligibility
+ };
+ runInNewContext(`(${Q.factory.toString()})(eligibility).installHooks()`,context);
+ a.equal(context.managerSheet(club),eligible);
+ a.equal(builds.length,0);
+
+ proposed=excessive;
+ a.equal(context.managerSheet({...club,id:10}),excessive);
+ a.equal(context.managerSheet({...club,id:68}),excessive);
+ a.equal(builds.length,0);
+ a.equal(context.managerSheet(club),eligible);
+ a.deepEqual(builds.map(b=>[b.lineup,b.bench]),[[excessive.lineup,excessive.bench]]);
+
+ builds=[];
+ repair=excessive;
+ a.equal(context.managerSheet(club),standard);
+ a.equal(builds.length,2);
 });

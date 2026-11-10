@@ -95,6 +95,7 @@ function factory(eligibility){
  function installHooks(){
   if(installed)return;installed=true;
   const originalBuild=buildSheet,originalErrors=sheetErrors,originalLegal=legalChange,originalCover=promoteCover;
+  const originalManager=managerSheet;
   const originalSlot=slotEligible,originalBench=benchEligible;
   const qualified=(p,slot,base)=>base(p,slot)||!!p&&p.worldRatingsVersion===1&&p.id.startsWith("world:jlo:")
     &&p.worldProfile?.position?.qualifications?.some(pos=>{const i=POS.indexOf(pos);return i>=0&&pos!==p.pos&&base({...p,pos,fam:FAMILIES[i]},slot);});
@@ -122,6 +123,13 @@ function factory(eligibility){
     if(p&&classified(S,p).category!=='A-1')ids[i]=null;
    }
    return {lineup:ids.slice(0,15),bench:ids.slice(15)};
+  };
+  managerSheet=function(c,opponent,weather,level){
+   const proposed=originalManager(c,opponent,weather,level);
+   if(!activeClub(S,c.id)||c.id===S.club||nominations(S,c,proposed.lineup,proposed.bench))return proposed;
+   // Keep the tactical preferences where the quota-aware builder can use them.
+   const adjusted=buildSheet(c,proposed.lineup,proposed.bench);
+   return nominations(S,c,adjusted.lineup,adjusted.bench)?adjusted:buildSheet(c);
   };
   sheetErrors=function(){
    const errors=originalErrors();
