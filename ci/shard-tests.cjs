@@ -45,6 +45,9 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/regen-portrait-persistence.cjs': 12,
   'tests/staff-career.cjs': 2,
   'tests/native-club-support-season.cjs': 197,
+  // Reproduction complète Node 22.23.4 : 166,988 s et 15,264 s, +15 %.
+  'tests/deepen-staff-native.cjs': 193,
+  'tests/world-worker-atomic.cjs': 18,
   // Profils #409 et #412 du 9 novembre 2026. Maximum mesuré et marge de 15 %.
   'tests/v63-2-stress-native.cjs': 150,
   'tests/v63-1-long-career.cjs': 91,

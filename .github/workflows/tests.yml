@@ -83,6 +83,7 @@ jobs:
               tests/native-academy-integrated-long.cjs) limit=480s ;;
               tests/native-delegate-transaction06.cjs) limit=240s ;;
               tests/native-club-support-season.cjs) limit=240s ;;
+              tests/deepen-staff-native.cjs) limit=240s ;;
             esac
             if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"
