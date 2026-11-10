@@ -15,6 +15,7 @@ var failures: Array[String] = []
 var checks := 0
 class App extends Control:
  var model: Dictionary
+ var management_ui: Dictionary = {}
  var accent := Color("a72436")
  func _clear_dialogs() -> void:
   for child in get_children():
