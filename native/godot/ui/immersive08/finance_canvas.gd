@@ -69,8 +69,20 @@ static func build(app: Control, canvas: Control) -> void:
 		_: _summary(app, canvas, finance, ledger)
 	_footer(app, canvas, finance)
 
+static func hospitality(parent: Node, rectangle: Rect2) -> void:
+	var image := C.photo("finance-hospitality", Vector2.ZERO, true, .5) as C.ArtTexture
+	if image.source != null:
+		# Garder la terrasse et le terrain à droite de l’écusson de la maquette.
+		var crop := AtlasTexture.new()
+		crop.atlas = image.source
+		crop.region = Rect2(265, 34, 324, 92)
+		image.source = crop
+		image.texture = crop
+	parent.add_child(image)
+	D.place(image, rectangle)
+
 static func _header(app: Control, canvas: Control, tab: String) -> void:
-	D.photo(canvas, "finance-hospitality", Rect2(1370,0,878,185))
+	hospitality(canvas, Rect2(1370,0,878,185))
 	U.art_fade(canvas, Rect2(1370,0,185,185))
 	D.chip(canvas, Rect2(2005,11,147,26), "ILLUSTRATION", C.GOLD).name = "FinanceHospitalityIllustration"
 	D.text(canvas, 2, 38, "L’ÉQUILIBRE DU PROJET", 31, C.GOLD, 700, 400)
