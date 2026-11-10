@@ -8,6 +8,7 @@ const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const MatchContext = preload("res://ui/preparation_match_context.gd")
+const Briefing = preload("res://ui/preparation_briefing.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
 const GOLD = Color("ffcd69")
@@ -213,13 +214,21 @@ func _restore() -> void:
 func _dossier() -> void:
 	var section := _section("PreparationDossier")
 	if reports.is_empty():
-		var empty := D.panel(section, Rect2(0, 0, 2248, 435), "Dossier adverse", "search")
+		var empty := D.panel(section, Rect2(0, 0, 1344, 596), "Dossier adverse", "search", "", "PreparationUnknownOpponent")
 		var champ_preparing := fixture.is_empty() and SeasonPreparation.is_champ(app.model.meta) and not SeasonPreparation.data(app.model.meta).is_empty()
-		D.text(empty, 29, 124, CHAMP_DOSSIER_PENDING if champ_preparing else "Aucun dossier disponible pour cette rencontre.", 31, C.IVORY, 600, 1350)
-		if not champ_preparing:
-			D.text(empty, 29, 174, "Consultez le calendrier ou reprenez le match en cours.", 25, C.MUTED, 500, 1350)
-		_button(empty, Rect2(28, 209, 520, 58), "Calendrier", func(): app._navigate("Calendrier"), false, "calendar", "PreparationOpenCalendar")
-		D.photo(section, "analysis-room", Rect2(0, 455, 2248, 444), .48)
+		var opponent := _opponent()
+		if not opponent.is_empty():
+			_crest(empty, opponent, Rect2(30, 86, 92, 94))
+			D.text(empty, 150, 127, G.club_name(opponent), 42, C.IVORY, 700, 1130).name = "PreparationKnownOpponent"
+			D.text(empty, 150, 169, "ADVERSAIRE ANNONCÉ AU CALENDRIER", 24, GOLD, 600, 1130)
+		var lines := D.words(CHAMP_DOSSIER_PENDING if champ_preparing else "Aucun dossier disponible pour cette rencontre.", 86, 3)
+		for line in lines.size(): D.text(empty, 29, 242 + line * 35, lines[line], 28, C.IVORY, 600, 1270)
+		D.text(empty, 29, 371, "Les résultats récents, les notes et les joueurs adverses", 25, C.MUTED, 500, 1270)
+		D.text(empty, 29, 406, "seront affichés lorsque ces informations seront publiées.", 25, C.MUTED, 500, 1270)
+		_button(empty, Rect2(28, 488, 520, 58), "Voir le calendrier", func(): app._navigate("Calendrier"), false, "calendar", "PreparationOpenCalendar")
+		_recommended(section)
+		_recent(section)
+		_threats(section)
 		return
 	var comparison := D.panel(section, Rect2(0, 0, 1344, 596), "Rapport de force", "tactic", "", "PreparationComparison")
 	var opponent := _opponent()
@@ -243,21 +252,30 @@ func _dossier() -> void:
 		D.text(comparison, 674, y + 29, domain.get("label", "Secteur"), 24, C.IVORY, 600, 315, HORIZONTAL_ALIGNMENT_CENTER)
 		D.bar(comparison, Rect2(844, y + 19, 375, 12), float(domain.get("opponent", 0)), GOLD)
 		D.text(comparison, 1264, y + 30, G.n(domain.get("opponent", "—")), 28, GOLD, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(comparison, 23, 576, "Notes de simulation ajustées à la condition · sur 100", 21, C.MUTED, 500, 1297)
+	D.text(comparison, 23, 576, "Notes de simulation ajustées à la condition · sur 100", 24, C.MUTED, 500, 1297)
 	_recommended(section)
 	_recent(section)
 	_threats(section)
 
 func _recommended(section: Control) -> void:
-	var panel := D.panel(section, Rect2(1361, 0, 887, 596), "Le conseil du staff", "flag", "", "PreparationRecommendation")
-	D.photo(panel, "analysis-room", Rect2(16, 67, 855, 159), .51)
+	var panel := D.panel(section, Rect2(1361, 0, 887, 596), "Avant le coup d’envoi", "flag", "", "PreparationRecommendation")
+	var briefing := Briefing.project(app.model)
+	var checks: Array = briefing.checks
+	for index in mini(3, checks.size()):
+		var check: Dictionary = checks[index]
+		var y := 73 + index * 134
+		D.rect(panel, Rect2(18, y, 850, 126), Color(Briefing.color(check), .045), 5, Color(Briefing.color(check), .28))
+		var action := _button(panel, Rect2(29, y + 7, 827, 45), check.title + "  →", Briefing.open_action.bind(app, check.action, _choose.bind(1)), false, "", "PreparationBriefing_" + str(check.id))
+		action.add_theme_font_size_override("font_size", C.px(27))
+		action.tooltip_text = check.detail + "\n" + check.caption
+		action.accessibility_name = check.title + " · " + check.detail
+		var lines := D.words(check.detail, 83, 2)
+		for line in lines.size(): D.text(panel, 39, y + 79 + line * 29, lines[line], 24, C.MUTED, 500, 800, HORIZONTAL_ALIGNMENT_LEFT, true)
+	var all := _button(panel, Rect2(22, 480, 411, 49), "Tous les repères (%d)" % checks.size(), Briefing.open_all.bind(app, _choose.bind(1)), false, "search", "PreparationBriefingAll")
+	all.add_theme_font_size_override("font_size", C.px(24))
+	_button(panel, Rect2(451, 480, 413, 49), "Conseils détaillés", _open_dossier, false, "arrow", "OpenOppositionDossier").disabled = reports.is_empty()
 	var advice: Dictionary = reports.get("advice", {})
-	var tactics: Dictionary = app.model.get("tactics", {})
-	_summary_line(panel, 243, "AVEC LE BALLON", _tactic_label(tactics.get("attacks", []), advice.get("attack", "")), str(advice.get("attackReason", "")), GREEN)
-	_summary_line(panel, 358, "SANS LE BALLON", _tactic_label(tactics.get("defenses", []), advice.get("defence", "")), str(advice.get("defenceReason", "")), GOLD)
-	var open := _button(panel, Rect2(20, 510, 430, 55), "Lire le dossier complet", _open_dossier, false, "search", "OpenOppositionDossier")
-	open.tooltip_text = "Menaces, faits récents, indices de conquête et plan conseillé"
-	var adopt := _button(panel, Rect2(465, 510, 403, 55), "Adopter le plan proposé", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}), true, "arrow", "PreparationAdoptPlan")
+	var adopt := _button(panel, Rect2(22, 540, 842, 44), "Adopter le plan proposé par le staff", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}), true, "arrow", "PreparationAdoptPlan")
 	adopt.disabled = advice.is_empty() or not app._live().is_empty() or app.model.meta.get("phase") == "ended"
 
 func _summary_line(panel: Panel, y: int, label: String, title: String, detail: String, tone: Color) -> void:
@@ -296,7 +314,7 @@ func _recent(section: Control) -> void:
 func _threats(section: Control) -> void:
 	var panel := D.panel(section, Rect2(1361, 614, 887, 352), "Joueurs à surveiller", "people", "", "PreparationThreats")
 	var threats: Array = reports.get("threats", [])
-	if threats.is_empty(): D.text(panel, 23, 106, "Aucun joueur projeté à surveiller.", 25, C.MUTED, 500, 822)
+	if threats.is_empty(): D.text(panel, 23, 106, "Liste adverse non publiée dans le dossier." if reports.is_empty() else "Aucun joueur projeté à surveiller.", 25, C.MUTED, 500, 822)
 	for i in mini(3, threats.size()):
 		var p: Dictionary = threats[i]
 		var y := 69 + i * 77
@@ -371,7 +389,11 @@ func _tactic_label(options: Array, id: Variant) -> String:
 
 func _opponent() -> Dictionary:
 	var opponent: Dictionary = reports.get("opponent", {})
-	if opponent.is_empty(): return {}
+	if opponent.is_empty():
+		for key in ["home", "away"]:
+			var club: Dictionary = fixture.get(key, {})
+			if not club.is_empty() and club.get("id") != app.model.club.get("id"): return club
+		return {}
 	for key in ["home", "away"]:
 		var club: Dictionary = fixture.get(key, {})
 		if club.get("id") == opponent.get("id"): return club
