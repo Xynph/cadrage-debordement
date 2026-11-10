@@ -13,6 +13,7 @@ var opening_title: Label
 var opening_context: Label
 var opening_position: Label
 var opening_status: Label
+var opening_sheet: Button
 var result_strip: PanelContainer
 var result_title: Label
 var result_context: Label
@@ -132,9 +133,9 @@ func _add_pitch_overlays() -> void:
 	var actions := C.h(12)
 	actions.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	lines.add_child(actions)
-	var sheet := C.button("Vérifier la feuille à 23",func():app._navigate("Composition"),false,app.accent)
-	sheet.name="MatchOpenSheet"
-	actions.add_child(sheet)
+	opening_sheet=C.button("Vérifier la feuille à 23",func():app._navigate("Composition"),false,app.accent)
+	opening_sheet.name="MatchOpenSheet"
+	actions.add_child(opening_sheet)
 	var prep := C.button("Dossier adverse",func():
 		if app.management_ui.get("preparation") is Dictionary:app.management_ui.preparation.tab=0
 		app._navigate("Préparation"),false,app.accent)
@@ -190,7 +191,10 @@ func update_frame(value: Dictionary) -> void:
 		opening_position.visible=not fixture.is_empty()
 		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
 		var ready: bool = value.get("selection",{}).get("valid",false)
+		var reduced := _reduced_bench_slot(value) != 0
 		opening_status.text="FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
+		if reduced: opening_status.text="FEUILLE À 22 DISPONIBLE"
+		opening_sheet.text="Vérifier la feuille" if reduced else "Vérifier la feuille à 23"
 		opening_status.visible=not fixture.is_empty()
 		opening_status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
 		return
@@ -244,7 +248,7 @@ func _prematch_notes() -> void:
 	var selection: Dictionary = model.get("selection",{})
 	var slots: Array = selection.get("slots",[])
 	var filled := slots.filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
-	var band := C.card("LES 23 RETENUS")
+	var band := C.card("SÉLECTION ACTUELLE" if _reduced_bench_slot(model) != 0 else "LES 23 RETENUS")
 	band.set_meta("immersive_style_applied",true)
 	side.add_child(band)
 	var content := C.content(band)
