@@ -88,6 +88,8 @@ Les vérifications suivantes utilisent Node22.23.4 et des profils jetables hors 
 
 Les poids CI sont des réserves de planification, pas un compte rendu de performance GitHub. La campagne support a réellement dépassé son ancien cap240s. Le nouveau plafond global60minutes garde un délai fini par suite et le verdict bloquant sur toute erreur ou expiration. Les limites de sécurité de la VM restent inchangées.
 
+Le run42923167916 a détecté une régression du rejeu historique de planification : passer la réserve V63.1 de91 à92 secondes modifiait les trois pics. La mesure79,57s reste conservée dans le JSON de réception, avec l’override explicitement exclu. La réserve91 restaure151/156/165 →148/156/161, sans modifier les assertions ou les délais maximaux. Les25 autres relèvements mesurés restent appliqués.
+
 ## Images et limites de réception
 
 [Captures originales et provenance](integration-cloud-complete-20261110/README.md). La longue recette graphique Tactique a dépassé son délai de 300 s au passage en scène3D sous rendu logiciel ; les captures du terrain sont réelles, mais la fin de ce parcours graphique n’est pas déclarée réussie. Son contrat complet de déplacements et verrouillage passe en Godot headless457/0.
