@@ -7,6 +7,12 @@ const factory=require(file),h=context();
 h.run(`const apt=(${factory.toString()})(); const fixture=(pos,fam,skills)=>({id:'fixture-'+pos,name:pos,pos,fam,rating:80,skillBase:80,condition:100,skills}); const excellent=Object.fromEntries(Object.keys(ATTR).map(k=>[k,80])); const prop=fixture(POS[0],0,{...excellent,pass:30,kick:25,goal:20,mental:40,speed:30}); const centre=fixture(POS[11],7,excellent); const lock=fixture(POS[3],2,excellent);`);
 const value=source=>JSON.parse(h.run(`JSON.stringify(${source})`));
 assert.equal(value('apt.project(prop).primaryPosition'),1);
+for(const [position,family,numbers] of [[3,2,[4,5]],[5,3,[6,7]],[7,3,[8]],[10,6,[11,14]],[11,7,[12,13]]]){
+ const projected=value(`apt.project(fixture(POS[${position}],${family},excellent))`);
+ assert.deepEqual(projected.primaryPositions,numbers,'all shirt numbers of the main role belong together');
+ assert.ok(projected.secondaryPositions.every(n=>!numbers.includes(n)),'same role is never listed as secondary');
+}
+assert.deepEqual(value('apt.project(prop).primaryPositions'),value('apt.project(prop).qualifiedFrontRowPositions').filter(n=>n===1||n===3),'both prop sides only when already qualified');
 assert.equal(value('apt.project(prop).positionRatings[1]'),value('roleNote(prop)'));
 assert.ok(value('apt.project(prop).positionRatings[10]')<30,'prop emergency fly-half strongly penalised');
 assert.equal(value('apt.project(centre).positionRatings[1]'),0,'qualities never qualify a centre for front row');

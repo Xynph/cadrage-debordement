@@ -9,7 +9,7 @@ module.exports=function positionAptitudes(){
  const compareId=(a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0;
  function positionNumber(slot){return slot<15?slot+1:cover[slot-15]??null;}
  function derive(p){
-  if(!p)return {primaryPosition:null,secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
+  if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
   const qualifierKey=[p.nationaleQualifications?.join('|'),p.worldProfile?.position?.qualifications?.join('|'),p.worldRatingsVersion].join(';');
   const cached=playerCache.get(p);
   if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey&&
@@ -22,6 +22,10 @@ module.exports=function positionAptitudes(){
   let result=cache.get(key);
   if(!result){
    const found=POS.indexOf(p.pos),primary=found>=0?found+1:FAMILIES.indexOf(p.fam)+1;
+   // A main role can cover two shirts. These are not secondary roles;
+   // prop sides still come exclusively from existing front-row qualifications.
+   const primaryPositions=primary===1||primary===3?front.filter(n=>n===1||n===3):
+    [[4,5],[6,7],[11,14],[12,13]].find(numbers=>numbers.includes(primary))??[primary];
    const main=baseNote(q),familyNotes=Array.from({length:9},(_,f)=>baseNote(q,f)),raw=FAMILIES.map(f=>familyNotes[f]);
    const candidates=(adjacent[p.fam]||[]).filter(f=>{
     const value=familyNotes[f];return value>=Math.max(55,main*.90)&&critical[f].every(k=>skill(q,k)>=Math.max(50,main*.72));
@@ -38,10 +42,10 @@ module.exports=function positionAptitudes(){
      n=Math.max(5,Math.min(main-8,Math.round(raw[i]*(close?.64:sameUnit?.49:.32))));
     }
     ratings[i+1]=n;
-    if(i+1!==primary&&(i<3?front.includes(i+1):natural||f===mastered))secondary.push(i+1);
+    if(!primaryPositions.includes(i+1)&&(i<3?front.includes(i+1):natural||f===mastered))secondary.push(i+1);
    }
    secondary.sort((a,b)=>ratings[b]-ratings[a]||a-b);
-   result={primaryPosition:primary,secondaryPositions:secondary,positionRatings:ratings,qualifiedFrontRowPositions:front,_familyNotes:familyNotes};
+   result={primaryPosition:primary,primaryPositions,secondaryPositions:secondary,positionRatings:ratings,qualifiedFrontRowPositions:front,_familyNotes:familyNotes};
    if(cache.size>=32768)cache.delete(cache.keys().next().value);cache.set(key,result);
   }
   playerCache.set(p,{id:p.id,name:p.name,rating:p.rating,skillBase:p.skillBase,pos:p.pos,fam:p.fam,qualifierKey,skills:keys.map(k=>p.skills?.[k]),bonuses:keys.map(k=>focusedBonus(p,k)),result});
@@ -49,7 +53,7 @@ module.exports=function positionAptitudes(){
  }
  function project(p){
   const {_familyNotes,...result}=derive(p);
-  return {...result,secondaryPositions:result.secondaryPositions.slice(),positionRatings:{...result.positionRatings},qualifiedFrontRowPositions:result.qualifiedFrontRowPositions.slice()};
+  return {...result,primaryPositions:result.primaryPositions.slice(),secondaryPositions:result.secondaryPositions.slice(),positionRatings:{...result.positionRatings},qualifiedFrontRowPositions:result.qualifiedFrontRowPositions.slice()};
  }
 
  function rating(p,slot){return derive(p).positionRatings[positionNumber(slot)]??0;}

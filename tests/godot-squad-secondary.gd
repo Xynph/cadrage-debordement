@@ -21,6 +21,12 @@ func pure() -> void:
 	check(Squad.secondary_caption({"secondaryPositions":[11,14,15]})=="11·14·15","Aucun intervalle inventé entre des numéros disjoints")
 	check(Squad.secondary_caption({"secondaryPositions":[11,12,13,14,15]})=="11–15","Intervalle limité à une séquence complète exacte")
 	check(Squad.secondary_caption({})=="—" and Squad.secondary_caption({"secondaryPositions":[]})=="—","Valeur absente ou vide : tiret neutre")
+	for group: Array in [[4,5],[6,7],[11,14],[12,13],[1,3]]:
+		check(Squad.secondary_numbers({"primaryPositions":group,"secondaryPositions":group})==[],"Les numéros du poste principal ne sont jamais secondaires : "+str(group))
+	check(Squad.secondary_caption({"primaryPositions":[4,5],"secondaryPositions":[5,8]})=="8","Un deuxième ligne conserve sa vraie polyvalence en 8")
+	check(Squad.secondary_caption({"primaryPositions":[8],"secondaryPositions":[6,7]})=="6·7","Le numéro 8 reste distinct de la troisième ligne aile")
+	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1,3]})=="Pilier G/D","Les deux côtés du pilier appartiennent au principal")
+	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1]})=="Pilier gauche","Pas de polyvalence automatique pour un seul côté")
 	var labels := {"selection":{"slots":[{"slot":10,"label":"Ailier gauche"},{"slot":13,"label":"Ailier droit"}]}}
 	var tip := Squad.secondary_tooltip({"secondaryPositions":[11,14]},labels)
 	check(tip.contains("11 · Ailier gauche") and tip.contains("14 · Ailier droit"),"Noms repris des étiquettes de la feuille")
@@ -74,7 +80,8 @@ func run() -> void:
 		var secondary:=item.find_child("RosterSecondaryPositions",true,false) as Label
 		var id:=str(item.get_meta("player_id"))
 		var person:Dictionary=original.squad.filter(func(player:Dictionary):return str(player.id)==id)[0]
-		check(principal.text==person.pos,"Principal reste le texte publié : "+id)
+		check(principal.text==Squad.primary_caption(person),"Principal reprend le poste et ses côtés maîtrisés : "+id)
+		check(Squad.secondary_numbers(person).all(func(number:int):return not number in person.primaryPositions),"Principal et secondaires ne se recouvrent pas : "+id)
 		check(secondary.text==Squad.secondary_caption(person),"Autres reprennent seulement les numéros projetés : "+id)
 		check(principal.get_rect().end.x<=secondary.get_rect().position.x and secondary.get_rect().end.x<=568*C.density,"Colonnes contenues avant l’âge : "+id)
 		check(secondary.mouse_filter==Control.MOUSE_FILTER_PASS,"Survol et clic de ligne compatibles")

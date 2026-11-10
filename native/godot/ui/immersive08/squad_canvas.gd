@@ -145,14 +145,29 @@ func _choice(parent: Node, rectangle: Rect2, id: String, values: Array, selected
 static func _known_number(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
 
-static func secondary_numbers(player: Dictionary) -> Array[int]:
+static func primary_numbers(player: Dictionary) -> Array[int]:
 	var result: Array[int] = []
-	var source: Variant = player.get("secondaryPositions")
+	var source: Variant = player.get("primaryPositions",[player.get("primaryPosition")])
 	if not source is Array: return result
 	for value: Variant in source:
 		if not _known_number(value): continue
 		var number := int(value)
-		if float(value) != float(number) or number < 1 or number > 15 or number in result: continue
+		if float(value)==float(number) and number>=1 and number<=15 and not number in result: result.append(number)
+	result.sort()
+	return result
+
+static func primary_caption(player: Dictionary) -> String:
+	return "Pilier G/D" if primary_numbers(player)==[1,3] else str(player.get("pos","—"))
+
+static func secondary_numbers(player: Dictionary) -> Array[int]:
+	var result: Array[int] = []
+	var source: Variant = player.get("secondaryPositions")
+	if not source is Array: return result
+	var primary := primary_numbers(player)
+	for value: Variant in source:
+		if not _known_number(value): continue
+		var number := int(value)
+		if float(value) != float(number) or number < 1 or number > 15 or number in result or number in primary: continue
 		result.append(number)
 	result.sort()
 	return result
@@ -205,7 +220,7 @@ static func sort_value(player: Dictionary, key: String) -> Variant:
 		var reason := U.watch_reason(source)
 		return U.fold(reason) if not reason.is_empty() else null
 	var field: String = {"Numéro":"shirtNumber","Poste":"pos","Nom":"name","Niveau":"rating","Potentiel":"potential","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd","Fatigue":"physicalLoad","Minutes":"minutes"}.get(key,"pos")
-	var value: Variant = player.get(field)
+	var value: Variant = primary_caption(player) if key == "Poste" else player.get(field)
 	if key in ["Nom","Poste"]:
 		if not value is String or value.strip_edges().is_empty() or value.strip_edges() in ["—","-"]: return null
 		var text := U.fold(value.strip_edges())
@@ -321,11 +336,12 @@ func _row(player:Dictionary,index:int) -> void:
 	row.add_child(portrait)
 	D.place(portrait,Rect2(54,2,31,30))
 	D.text(row,95,24,player.name,23,C.IVORY,600,190)
-	var main_position := D.text(row,325,24,player.pos,21,C.MUTED,500,154)
+	var main_position := D.text(row,325,24,primary_caption(player),21,C.MUTED,500,154)
 	main_position.name = "RosterPrimaryPosition"
 	main_position.mouse_filter = Control.MOUSE_FILTER_PASS
-	var primary: Variant = player.get("primaryPosition")
-	main_position.tooltip_text = "Poste principal · %d · %s" % [int(primary),str(player.pos)] if _known_number(primary) and int(primary) >= 1 and int(primary) <= 15 else str(player.pos)
+	var primary: Array[String] = []
+	for number: int in primary_numbers(player): primary.append(str(number))
+	main_position.tooltip_text = "Poste principal · %s · %s" % ["·".join(primary),primary_caption(player)] if not primary.is_empty() else primary_caption(player)
 	var other := D.text(row,529,24,secondary_caption(player),18,C.BLUE,600,76,HORIZONTAL_ALIGNMENT_CENTER)
 	other.name = "RosterSecondaryPositions"
 	other.mouse_filter = Control.MOUSE_FILTER_PASS
