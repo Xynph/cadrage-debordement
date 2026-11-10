@@ -156,18 +156,53 @@ func answer_press() -> Dictionary:
 		press_button("PressAnswer_" + str(question.id) + "_" + str(answer.id))
 		answers.append({"questionId":question.id,"answerId":answer.id})
 	check(director.view.choices.size() == data.conference.questions.size(),"Every real question has one permitted answer")
-	return {"context":data.context.duplicate(true),"answers":answers}
+	return {"context":data.context.duplicate(true),"answers":answers,"invitationId":data.conference.invitationId}
 
 func visible_confirmation() -> ConfirmationDialog:
 	for dialog in app.find_children("*","ConfirmationDialog",true,false):
 		if dialog.visible: return dialog
 	return null
 
-func press_flow() -> void:
+func open_press_mail(invitation_id: String, completed: bool = false) -> bool:
+	if app.route == "Accueil":
+		var resume: Button = app.root_content.find_child("EntryResume", true, false)
+		check(resume != null and resume.is_visible_in_tree() and not resume.disabled, "A saved career has a visible Resume action")
+		if resume == null or resume.disabled or not resume.is_visible_in_tree(): return false
+		resume.pressed.emit()
+		await settle()
+	var inbox_visible: bool = app.route == "Réception" and not director.active() and app.root_content.is_visible_in_tree()
+	check(inbox_visible, "A pending or published press appointment leaves Réception visible until its mail is opened")
+	if not inbox_visible: return false
+	app._navigate("Presse")
+	await settle()
+	check(app.route == "Réception" and not director.active(), "Direct navigation to Presse cannot bypass its mail")
+	check(app.body.find_child("InboxOpenPressInvitation", true, false) == null, "The conference action is absent before opening the mail")
+	var mail: Button
+	for row: Button in app.body.find_children("*", "Button", true, false):
+		if row.get_meta("message_id", "") == invitation_id:
+			mail = row
+			break
+	check(mail != null and mail.is_visible_in_tree() and not mail.disabled, "Réception contains the exact persisted press mail")
+	if mail == null or mail.disabled or not mail.is_visible_in_tree(): return false
+	mail.pressed.emit()
+	await settle()
+	check(app.route == "Réception" and not director.active(), "Reading the press mail still leaves Réception visible")
+	var action: Button = app.body.find_child("InboxOpenPressInvitation", true, false)
+	check(action != null and action.is_visible_in_tree() and not action.disabled, "Reading the press mail exposes its enabled conference action")
+	if action == null or action.disabled or not action.is_visible_in_tree(): return false
+	action.pressed.emit()
+	await settle()
+	var opened: bool = director.active() and director.kind == "press"
+	check(opened and app.route == "Réception", "Only the mail action opens the press room over Réception")
+	if opened: check_continue("PressReturn", completed)
+	return opened
+
+func press_flow() -> bool:
 	await ask("new_career",{"mode":"common","club":29})
-	check(meeting().get("kind") == "press" and not meeting().completed,"New career automatically enters its real press appointment")
+	check(meeting().get("kind") == "press" and not meeting().completed,"New career records its real press appointment")
 	var id := str(meeting().id)
-	check_continue("PressReturn",false)
+	var invitation_id := str(app.model.clubLife.press.conference.invitationId)
+	if not await open_press_mail(invitation_id): return false
 	await capture_room("press","PressPublish")
 	var before := await checkpoint()
 	await ask("snapshot")
@@ -175,6 +210,7 @@ func press_flow() -> void:
 	await pending_guards("press")
 	await refused("club_meeting_ack",{"meetingId":id})
 	await restart_meeting(id,false)
+	if not await open_press_mail(invitation_id): return false
 	var original := await checkpoint()
 	var payload := await answer_press()
 	await same_checkpoint(original,"Selecting local press answers")
@@ -195,11 +231,13 @@ func press_flow() -> void:
 	check_continue("PressReturn",true)
 	await refused("press_conference",payload)
 	await restart_meeting(id,true)
+	if not await open_press_mail(invitation_id,true): return false
 	check(app.model.clubLife.press.history.size() == history_size,"Completed restart does not replay any journalist answer")
 	press_button("PressReturn")
 	await wait_command("club_meeting_continue")
 	check(meeting().get("kind") == "board" and str(meeting().get("id")) != id,"Continue advances to the next actual initial board appointment")
 	await refused("club_meeting_continue",{"meetingId":id})
+	return true
 
 func board_flow() -> void:
 	check(meeting().get("kind") == "board" and not meeting().completed,"Board appointment is automatically required")
@@ -317,7 +355,8 @@ func priorities_and_context() -> void:
 	await ask("import",{"text":fixture_text("board")})
 	var prior_id := str(meeting().id)
 	await ask("new_career",{"mode":"common","club":28})
-	check(meeting().get("kind") == "press" and int(meeting().context.club) == 28 and str(meeting().id) != prior_id,"New career invalidates the previous club's appointment and opens its own actual conversation")
+	check(meeting().get("kind") == "press" and int(meeting().context.club) == 28 and str(meeting().id) != prior_id,"New career invalidates the previous club's appointment and records its own conversation")
+	check(app.route == "Réception" and not director.active(),"Changing clubs requires opening the new press mail")
 	await ask("import",{"text":fixture_text("baseline")})
 	check(meeting().is_empty() and not director.active(),"Import restores exactly the saved completed meetings without an old ghost room")
 	# Current-match priority is tested with a real pending pre-match scene.
@@ -343,7 +382,7 @@ func no_global_modal() -> void:
 
 func room_check(kind: String, resolution: Vector2i) -> void:
 	check(root.size == resolution, "Actual client area equals requested " + str(resolution))
-	check(director.active() and director.kind == kind, "Automatic full-screen meeting is " + kind)
+	check(director.active() and director.kind == kind, "Active full-screen meeting is " + kind)
 	check(not app.root_content.is_visible_in_tree(), "Management shell hidden during " + kind)
 	check(not app.coach.is_visible_in_tree(), "Coach hidden during " + kind)
 	check(director.overlay.get_global_rect().size.distance_to(Vector2(resolution)) < 1.0, "Meeting covers the full application")
@@ -391,7 +430,9 @@ func run() -> void:
 	if director == null:
 		await finish()
 		return
-	await press_flow()
+	if not await press_flow():
+		await finish()
+		return
 	await board_flow()
 	await medical_flow()
 	await priorities_and_context()
