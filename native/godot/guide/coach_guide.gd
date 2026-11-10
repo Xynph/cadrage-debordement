@@ -353,7 +353,7 @@ func _priority_rects() -> Array[Rect2]:
 		# player selectors must not force a passive balloon up into page headings.
 		# The balloon itself lets their mouse input pass through.
 		var label: String = button.text.to_lower()
-		var principal: bool = str(button.name) in ["OfficePrimaryAction","PreparationMatch","DecisionFeedbackButton","CreationStart","ClubBoardRequest"]
+		var principal: bool = str(button.name) in ["OfficePrimaryAction","PreparationMatch","DecisionFeedbackButton","CreationStart","ClubBoardRequest","OfferRecruitment"]
 		for action in ["confirmer","valider","proposer","signer","recruter","prolonger","pause","reprendre","coup d’envoi","coup d'envoi","remplacer","terminer la"]:
 			if label.contains(action): principal = true
 		if button.text.is_empty() or not principal: continue
