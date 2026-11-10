@@ -1,6 +1,28 @@
 extends Control
 
 const G = preload("res://ui/game_skin.gd")
+const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
+const COMMAND_WAIT_REVEAL_SECONDS := 0.25
+const COMMAND_WAIT_MESSAGES := {
+	"new_career": "Création de la carrière…",
+	"import": "Importation de la carrière…",
+	"export": "Préparation de l’export…",
+	"save": "Sauvegarde de la carrière…",
+	"recover_profile": "Préservation et récupération du profil…",
+	"pack_inspect": "Analyse du pack d’identités…",
+	"pack_install": "Installation du pack d’identités…",
+	"pack_select": "Application du pack d’identités…",
+	"begin_match": "Préparation du coup d’envoi…",
+	"delegate": "Simulation de la rencontre…",
+	"finish_round": "Mise à jour de la journée…",
+	"train": "Application de la séance…",
+	"next_season": "Préparation de la nouvelle saison…",
+	"advance_pacific_preparation": "Avance de la préparation…",
+	"advance_japan_preparation": "Avance de la préparation…",
+	"advance_champ_preparation": "Avance de la préparation…",
+	"population_enable": "Mise à jour de la base de joueurs…",
+	"promote_cover": "Enregistrement des renforts…"
+}
 const Immersive = preload("res://ui/immersive08/shell.gd")
 const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
 const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -44,6 +66,7 @@ var roster_sort := "Poste"
 var management_ui: Dictionary = {}
 var accent := Color("d43e47")
 var bridge: Node
+var command_wait_overlay: CommandWaitOverlay
 var timer: Timer
 var body: VBoxContainer
 var heading: Label
@@ -166,6 +189,10 @@ func _ready() -> void:
 		get_window().size_changed.connect(_keep_filled_display, CONNECT_DEFERRED)
 		get_window().focus_entered.connect(_keep_filled_display, CONNECT_DEFERRED)
 		_keep_filled_display.call_deferred()
+	command_wait_overlay = CommandWaitOverlay.new()
+	command_wait_overlay.name = "CommandWaitOverlay"
+	add_child(command_wait_overlay)
+	waiting = true
 	_trace_startup("render.begin")
 	_render()
 	_trace_startup("render.end")
@@ -197,6 +224,9 @@ func _receive_model(value: Dictionary) -> void:
 	# A queued action can replace last_command below; keep this response's identity.
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
+	# Keep one uninterrupted wait when the player's action follows an automatic tick.
+	if not response_ok or received_command != "tick" or queued_action.is_empty():
+		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
 	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
@@ -259,12 +289,11 @@ func _receive_model(value: Dictionary) -> void:
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
 	if closing: return false
 	if waiting:
-		if command == "tick": return false
-		if last_command == "tick" and queued_action.is_empty():
+		if command != "tick" and last_command == "tick" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			if is_instance_valid(status): status.text = "Décision en attente de la réponse du moteur…"
+			_present_command_wait(command)
 			return true
-		_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
 	waiting = true
 	last_command = command
@@ -272,8 +301,14 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if is_instance_valid(status): status.text = "Traitement de votre décision…"
 	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
 	if decision_feedback != null: decision_feedback.begin(command, payload, model)
+	_present_command_wait(command)
 	bridge.send(command, payload)
 	return waiting
+
+func _present_command_wait(command: String) -> void:
+	var message: String = COMMAND_WAIT_MESSAGES.get(command, "")
+	if not message.is_empty():
+		command_wait_overlay.present(message, not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
@@ -285,6 +320,7 @@ func _refuse_action(message: String) -> void:
 	notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
+	command_wait_overlay.dismiss()
 	if is_instance_valid(soundscape): soundscape.notify_error()
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
@@ -865,8 +901,10 @@ func recover_profile() -> void:
 	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Vous pourrez ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
 
 func reconnect() -> void:
-	if bridge.child_pid > 0: return
+	if waiting or bridge.child_pid > 0: return
 	connection_error = false
+	waiting = true
+	last_command = "snapshot"
 	bridge.start(_profile_path())
 
 func _live_tick() -> void:
@@ -896,6 +934,7 @@ func request_quit() -> void:
 func _close(exit_code: int = 0) -> void:
 	if closing: return
 	closing = true
+	command_wait_overlay.dismiss()
 	if is_instance_valid(soundscape): soundscape.dispose()
 	if is_instance_valid(coach): coach.destroy()
 	timer.stop()
@@ -903,6 +942,11 @@ func _close(exit_code: int = 0) -> void:
 	var deadline := Time.get_ticks_msec()+2300
 	while bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
 	get_tree().quit(exit_code)
+
+func _input(event: InputEvent) -> void:
+	# Prevent the focused control and shortcuts from bypassing the pointer veil.
+	if is_instance_valid(command_wait_overlay) and command_wait_overlay.visible and (event is InputEventKey or event is InputEventJoypadButton):
+		get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):
