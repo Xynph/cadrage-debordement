@@ -49,7 +49,9 @@ func _run() -> void:
 		"repos bouclé au démarrage")
 	_check(not lab.voice.playing, "aucune voix automatique au démarrage")
 	_check(lab.face_ready, "mâchoire et trois cibles de clignement importées")
-	if not lab.face_ready:
+	var forms_ready: bool = lab.articulation_channels.size() == 3 and not lab.articulation_channels.has(-1)
+	_check(forms_ready, "trois formes de lèvres importées")
+	if not lab.face_ready or not forms_ready:
 		_finish()
 		return
 	player.seek(1.15, true)
@@ -87,19 +89,32 @@ func _run() -> void:
 	lab.clip_buttons[SPEECH].pressed.emit()
 	_check(lab.current_clip == SPEECH and lab.voice.playing, "parole déclenche le clip vocal")
 	_check(absf(lab.voice.stream.get_length() - 1.875) < 0.005, "durée de la voix source conservée")
-	_check(lab.caption.text == "« Continue à construire. »" and "sans visèmes" in lab.feedback.text,
-		"réplique affichée et limite des visèmes signalée")
+	_check(lab.caption.text == "« Continue à construire. »" and "Trois formes" in lab.feedback.text,
+		"réplique affichée et périmètre des trois formes signalé")
 	player.seek(0.69, true)
 	lab._process(0.0)
-	_check(lab.face_mesh.get_blend_shape_value(lab.jaw_channel) > 0.60 and _closed_face(lab),
-		"mâchoire calée et clignement simultanés sur le WAV")
+	var rounded_jaw: float = lab.face_mesh.get_blend_shape_value(lab.jaw_channel)
+	_check(absf(rounded_jaw - 0.442) < 0.01 and _closed_face(lab),
+		"mâchoire adaptée à l’arrondi pendant le clignement")
+	_check(lab.face_mesh.get_blend_shape_value(lab.articulation_channels[0]) > 0.85,
+		"forme arrondie au pic de la réplique")
 	_check(skeleton.get_bone_global_pose(hand).origin.distance_to(hand_at_start.origin) > 0.06,
 		"geste distinct pendant la parole")
 	await _capture("05-parole")
+	player.seek(0.84, true)
+	lab._process(0.0)
+	_check(lab.face_mesh.get_blend_shape_value(lab.articulation_channels[1]) > 0.80,
+		"forme ouverte sur la voyelle à")
+	player.seek(0.595, true)
+	lab._process(0.0)
+	_check(lab.face_mesh.get_blend_shape_value(lab.articulation_channels[2]) > 0.70,
+		"forme étirée sur le premier i")
 	lab.clip_buttons[IDLE].pressed.emit()
 	_check(not lab.voice.playing and lab.caption.text.is_empty(), "interrompre la parole arrête voix et réplique")
 	_check(is_zero_approx(lab.face_mesh.get_blend_shape_value(lab.jaw_channel)) and not _closed_face(lab),
 		"interrompre la parole rend le visage neutre")
+	_check(lab.articulation_channels.all(func(channel: int): return is_zero_approx(lab.face_mesh.get_blend_shape_value(channel))),
+		"interrompre la parole remet les trois formes à zéro")
 	lab.clip_buttons[SPEECH].pressed.emit()
 	player.advance(2.5)
 	_check(lab.current_clip == IDLE and not lab.voice.playing, "fin de parole ramène au repos")

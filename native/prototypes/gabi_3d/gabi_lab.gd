@@ -16,6 +16,24 @@ const JAW_ACCENTS: Array[Vector2] = [
 	Vector2(1.31, 0.25), Vector2(1.35, 0.36), Vector2(1.45, 0.18), Vector2(1.55, 0.02),
 	Vector2(1.65, 0.0), Vector2(1.875, 0.0),
 ]
+const SPEECH_FORMS: Array[StringName] = [&"ArrondiPhrase", &"OuverturePhrase", &"EtirementPhrase"]
+const FORM_ROUND: Array[Vector2] = [
+	Vector2(0, 0), Vector2(0.36, 0), Vector2(0.42, 0.55), Vector2(0.46, 0.52),
+	Vector2(0.51, 0), Vector2(0.6, 0), Vector2(0.65, 0.55), Vector2(0.69, 0.87),
+	Vector2(0.735, 0.92), Vector2(0.78, 0.34), Vector2(0.815, 0), Vector2(0.96, 0),
+	Vector2(1.015, 0.38), Vector2(1.06, 0.57), Vector2(1.09, 0.46), Vector2(1.145, 0),
+	Vector2(1.27, 0), Vector2(1.315, 0.52), Vector2(1.345, 0.6), Vector2(1.39, 0),
+	Vector2(1.875, 0),
+]
+const FORM_OPEN: Array[Vector2] = [
+	Vector2(0, 0), Vector2(0.775, 0), Vector2(0.81, 0.4), Vector2(0.84, 0.83),
+	Vector2(0.875, 0.68), Vector2(0.91, 0), Vector2(1.875, 0),
+]
+const FORM_SPREAD: Array[Vector2] = [
+	Vector2(0, 0), Vector2(0.525, 0), Vector2(0.565, 0.66), Vector2(0.595, 0.71),
+	Vector2(0.64, 0), Vector2(1.33, 0), Vector2(1.37, 0.23), Vector2(1.405, 0.68),
+	Vector2(1.46, 0.61), Vector2(1.535, 0), Vector2(1.875, 0),
+]
 const BLINK: Array[Vector2] = [
 	Vector2(-0.112, 0.0), Vector2(-0.068, 0.14), Vector2(-0.037, 0.52),
 	Vector2(-0.014, 0.88), Vector2(0.0, 1.0), Vector2(0.034, 0.74),
@@ -38,6 +56,7 @@ var clip_buttons: Dictionary = {}
 var view_buttons: Dictionary = {}
 var face_mesh: MeshInstance3D
 var jaw_channel := -1
+var articulation_channels: Array[int] = []
 var blink_targets: Array[Dictionary] = []
 var face_ready := false
 
@@ -80,7 +99,7 @@ func play_clip(clip: StringName) -> void:
 		APPROVAL:
 			feedback.text = "Approbation · hochement et geste de la main"
 		SPEECH:
-			feedback.text = "Mâchoire calée sur une réplique · sans visèmes" if face_ready \
+			feedback.text = "Trois formes calées sur une réplique" if face_ready and not articulation_channels.has(-1) \
 				else "Voix existante · gestuelle sans synchronisation labiale"
 			voice.play()
 
@@ -92,6 +111,8 @@ func _configure_face() -> bool:
 	jaw_channel = face_mesh.find_blend_shape_by_name(&"Machoire")
 	if jaw_channel < 0:
 		return false
+	for name: StringName in SPEECH_FORMS:
+		articulation_channels.append(face_mesh.find_blend_shape_by_name(name))
 	for name: String in ["SK_Gabi", "Globe_L", "Globe_R"]:
 		var mesh := $Gabi.find_child(name, true, false) as MeshInstance3D
 		if mesh == null:
@@ -110,16 +131,23 @@ func _process(_delta: float) -> void:
 	var time := animations.current_animation_position
 	var jaw := 0.0
 	var blink := 0.0
+	var form := Vector3.ZERO
 	if current_clip == SPEECH and voice.playing:
 		jaw = _sample(JAW_ACCENTS, time)
 		blink = _sample(BLINK, time - 0.69)
+		if not articulation_channels.has(-1):
+			form = Vector3(_sample(FORM_ROUND, time), _sample(FORM_OPEN, time), _sample(FORM_SPREAD, time))
 	elif current_clip == IDLE:
 		blink = _sample(BLINK, time - 1.15)
-	_apply_face(jaw, blink)
+	_apply_face(jaw, blink, form)
 
 
-func _apply_face(jaw: float, blink: float) -> void:
-	face_mesh.set_blend_shape_value(jaw_channel, jaw)
+func _apply_face(jaw: float, blink: float, form := Vector3.ZERO) -> void:
+	var articulated_jaw := jaw * (1.0 - 0.38 * form.x - 0.15 * form.z) + 0.04 * form.y
+	face_mesh.set_blend_shape_value(jaw_channel, articulated_jaw)
+	for index in articulation_channels.size():
+		var channel := articulation_channels[index]
+		if channel >= 0: face_mesh.set_blend_shape_value(channel, form[index])
 	var mid := blink / BLINK_MID if blink <= BLINK_MID else (1.0 - blink) / (1.0 - BLINK_MID)
 	var closed := 0.0 if blink <= BLINK_MID else (blink - BLINK_MID) / (1.0 - BLINK_MID)
 	for target: Dictionary in blink_targets:
@@ -223,7 +251,7 @@ func _build_hud() -> void:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 
-	content.add_child(_label("PROTOTYPE 3D · VISAGE V7", 15, ACCENT))
+	content.add_child(_label("PROTOTYPE 3D · ARTICULATION V8", 15, ACCENT))
 	content.add_child(_label("Gabi", 58, INK))
 	content.add_child(_label("Gaston Darroux · ancien pilier", 18, MUTED))
 	_rule(content)
@@ -248,7 +276,7 @@ func _build_hud() -> void:
 		views.add_child(button)
 		button.pressed.connect(set_view.bind(item[2], item[3]))
 		view_buttons[item[0]] = button
-	var disclaimer := _label("Échelle 1,80 m · clignement et mâchoire", 14, MUTED)
+	var disclaimer := _label("Échelle 1,80 m · articulation et clignement", 14, MUTED)
 	disclaimer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(disclaimer)
 
