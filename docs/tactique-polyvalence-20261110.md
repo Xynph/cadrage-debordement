@@ -49,7 +49,7 @@ Une note absente doit rester « — » ; elle ne doit pas devenir la note du pos
 principal. Les notes à zéro doivent rester visibles. Un ID obsolète ou inconnu
 doit être refusé sans commande. Les consultations et annulations conservent
 l'export et le profil. Le défilement de l'effectif reste dans sa carte. La
-projection du banc doit fournir son numéro d'aptitude : aucun numéro16–23
+projection du banc doit fournir son numéro d'aptitude : aucun numéro 16–23
 n'est interprété comme un poste de terrain.
 
 ## Réception intermédiaire du cadrage
@@ -58,7 +58,7 @@ Avec la projection moteur `c45557e`, la vraie application X11 2560×1440 passe
 **192 contrôles**, dont les 105 paires de rectangles du terrain sans intersection,
 les quinze portraits chargés et leurs notes projetées, la partition exacte des
 trois groupes, le choix de la cible au clavier et l'absence d'écriture sportive
-lors de la consultation. Les notes au n°10 chutent fortement pour un pilier
+lors de la consultation. Les notes au n° 10 chutent fortement pour un pilier
 selon le moteur. Cette réception de présentation ne valide pas encore les
 déplacements et effets sportifs du second commit Simulation.
 
@@ -83,7 +83,7 @@ actuel. Sa consultation et son annulation gardent le profil identique.
 
 Le banc historique `godot-immersive08.gd` a aussi été tenté en mode `office`,
 mais s'arrête avant Tactique sur les anciennes assertions Effectif demandant
-une pagination puis un accès `roster.page` absent (ligne1116). Il reste hors
+une pagination puis un accès `roster.page` absent (ligne 1116). Il reste hors
 cible comme décidé dans la base reçue ; aucune attente de ce banc n'est modifiée
 dans ce lot. La réception dédiée ci-dessus exerce le parcours complet.
 
@@ -91,14 +91,39 @@ dans ce lot. La réception dédiée ci-dessus exerce le parcours complet.
 
 Avec le moteur `2a1f767` reçu après `c45557e`, le banc complet passe
 **433 contrôles sans échec** en headless. Il déplace réellement un pilier du
-numéro1 au numéro10, vérifie la chute d'aptitude affichée, la source vide si
+numéro 1 au numéro 10, vérifie la chute d'aptitude affichée, la source vide si
 l'échange inverse est interdit, le reçu `meta.lineupChange.vacatedSlot`,
 l'absence de doublons et la note principale inchangée.
 
 Le résumé DÉFENSE consomme désormais directement `decisions.lineupDefence`,
-entier de0à100 produit par le même dossier contextualisé que le moteur. La
+entier de 0 à 100 produit par le même dossier contextualisé que le moteur. La
 moyenne brute des qualités ne sert que pour une ancienne projection sans ce
 champ. Une projection présente mais invalide est affichée « — ». Aucun malus
 supplémentaire n'est calculé dans l'interface. Le banc vérifie que la défense
 et le dossier changent après le vrai déplacement et que le résumé affiche
 exactement la projection reçue.
+
+## Réception graphique finale
+
+**436 contrôles, aucun échec**, vraie application X11 en 2560×1440, Node
+22.23.4 et Godot 4.7.2. Les trois captures ont été inspectées. Le pilier choisi
+passe de **73 à 13** au numéro 10 ; la place 1 reste à pourvoir puisque le
+retour de l'occupant délogé serait illégal. La défense projetée passe de 76
+au cadrage initial à 72 après les déplacements de la recette. Le dossier
+offensif reflète également le placement. Ces valeurs sont celles du moteur,
+sans modification de niveau global ni calcul sportif dans l'interface.
+
+- [Cadrage final et notes par poste](tactique-polyvalence-20261110/tactique-finale-portraits-1440.png).
+- [Après affectation depuis Hors groupe](tactique-polyvalence-20261110/tactique-finale-affectation-1440.png).
+- [Même pilier au numéro 10](tactique-polyvalence-20261110/tactique-pilier-au10-1440.png).
+- [Rapport complet](tactique-polyvalence-20261110/final-report.json).
+
+```sh
+DISPLAY=:98 LIBGL_ALWAYS_SOFTWARE=1 LP_NUM_THREADS=2 \
+CD_TACTICS_DRAG_GRAPHICS=1 CD_TACTICS_DRAG_OUTPUT=/tmp/oval-tactics-final \
+CD_GODOT_EXECUTABLE=/workspace/.cloud-setup/tools/godot472/Godot_v4.7.2-stable_linux.x86_64 \
+/workspace/.cloud-setup/tools/node22/bin/node --test tests/godot-tactics-position-drag.cjs
+```
+
+Le SDK utilise le cache du worktree privé ; les profils et préférences de la
+recette restent dans `/tmp`. Le serveur privé est fermé après réception.
