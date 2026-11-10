@@ -38,6 +38,17 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     return [...combined.values()].slice(-limit);
   }
 
+  function matchMail(state, players, nation) {
+    if (!nation) return [];
+    const fixture = career.project(state, {players,managedNation:nation}).currentFixture;
+    if (!fixture || fixture.result) return [];
+    return [{
+      id:'match-day/'+fixture.id,kind:'international_match',title:'Jour de match avec votre sélection',
+      body:teamNames[fixture.homeId]+' – '+teamNames[fixture.awayId]+'. Votre feuille de match est prête à vérifier.',
+      date:state.date,action:'international',nation,
+    }];
+  }
+
   function validate(profile) {
     if (profile === null) return;
     if (!profile || Object.keys(profile).length !== 3 || !profile.career || !Array.isArray(profile.mail) || profile.mail.length > limit ||
@@ -90,14 +101,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const clubId = run('S.club');
     const moved = career.advance(profile.career, {from:date,to:dateAfter(date),players,managedNation:managed.nation,
       clubPlayerIds:managed.club ? players.filter(p => p.clubId === clubId).map(p => p.id) : []});
-    if (managed.nation) {
-      const fixture = career.project(moved.state, {players,managedNation:managed.nation}).currentFixture;
-      if (fixture && !fixture.result) moved.mail.push({
-        id:'match-day/'+fixture.id,kind:'international_match',title:'Jour de match avec votre sélection',
-        body:teamNames[fixture.homeId]+' – '+teamNames[fixture.awayId]+'. Votre feuille de match est prête à vérifier.',
-        date:moved.state.date,action:'international',nation:managed.nation,
-      });
-    }
+    moved.mail.push(...matchMail(moved.state,players,managed.nation));
     write({...profile,career:moved.state,mail:append(profile,moved.mail)});
     return offSeason;
   }
@@ -128,10 +132,15 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const offer = manager.nationalOffers(profile.role,teamIds).includes(nation) ? nation : null;
     const next = manager.applyManagerRole(profile.role,{mode,nation,date,fromMode:before.mode,fromNation:before.nation},
       {supportedNations:teamIds,date,nationalOffer:offer,matchInProgress:false});
+    let detail = 'Vous poursuivez votre travail en club.';
+    if (nation && mode === 'dual') detail = 'Vous gardez votre club et prenez en charge la sélection de '+teamNames[nation]+'.';
+    if (nation && mode === 'nation') detail = before.club
+      ? 'Vous quittez votre poste en club pour vous consacrer à la sélection de '+teamNames[nation]+'.'
+      : 'Vous prenez en charge la sélection de '+teamNames[nation]+'.';
     const mail = {id:`national-job/${date}/${profile.role.history.length}/${nation??'club'}`,kind:'international_job',date,
       title:nation?'Mandat international confirmé':'Fin de votre mandat international',
-      body:nation?'Vous prenez en charge la sélection de '+teamNames[nation]+'.':'Vous poursuivez votre travail en club.',action:'international',...(nation?{nation}:{})};
-    write({...profile,role:next,mail:append(profile,[mail])});
+      body:detail,action:'international',...(nation?{nation}:{})};
+    write({...profile,role:next,mail:append(profile,[mail,...(nation ? matchMail(profile.career,roster(),nation) : [])])});
   }
 
   function project(model) {
@@ -155,6 +164,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
         players:camp.playerIds.filter(id=>relevant.has(id)).map(id=>relevant.get(id))
       })).filter(camp=>camp.players.length),
       currentManagedFixture:current,nextManagedFixture:current??overview.nextFixture,squad:overview.squad,sheet:overview.sheet,
+      choicesBySlot:overview.choicesBySlot,
     };
     if (ended() && date < nextOpening()) {
       model.meta.canAdvanceSeason=false;

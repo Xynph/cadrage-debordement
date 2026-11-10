@@ -90,7 +90,7 @@ func run() -> void:
 	await settle()
 	check(app.find_child("Nav_Bureau", true, false) == null and app.find_child("Nav_Effectif", true, false) == null,
 		"Une carrière de sélectionneur masque le club simulé")
-	check(app.primary_button.text == "Jouer la sélection", "Le match international du jour pilote l’action principale")
+	check(app.primary_button.text == "Courrier match", "Le match international du jour pilote l’action principale")
 	app._navigate("Calendrier")
 	await settle()
 	check(app.find_child("InternationalCalendar", true, false) != null, "Le calendrier de sélection affiche les échéances internationales")

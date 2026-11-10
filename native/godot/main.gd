@@ -794,7 +794,7 @@ func _update_live_bar() -> void:
 			if _press_required():
 				if primary_button.name == "ImmersiveContinue": primary_button.text = "Conf. de presse"
 			elif not Immersive.Selections.current_fixture(model).is_empty():
-				if primary_button.name == "ImmersiveContinue": primary_button.text = "Courrier de match"
+				if primary_button.name == "ImmersiveContinue": primary_button.text = "Courrier match"
 			elif not model.meta.get("canAdvanceSeason", false):
 				var daily := _daily_progression()
 				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")

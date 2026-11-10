@@ -30,11 +30,20 @@ function factory() {
   return player.fam === families[i] || player.nationaleQualifications?.some(pos => families[positions.indexOf(pos)] === families[i]);
  }
 
- function selectInternationalSheet({ players, calledIds, preferredLineup = [], preferredReserves = [] }) {
+ function sheetOptions(players, calledIds) {
   const called = new Set(calledIds);
   const pool = players.filter(p => called.has(p.id) && fit(p)).sort(byForm);
+  return Array.from({ length: 23 }, (_, slot) => pool.filter(player => isSlotEligible(player, slot)));
+ }
+
+ function selectInternationalChoices(players) {
+  const choices = sheetOptions(players, players.map(player => player.id)).map(slot => slot.map(player => player.id));
+  return { lineup: choices.slice(0, 15), reserves: choices.slice(15) };
+ }
+
+ function selectInternationalSheet({ players, calledIds, preferredLineup = [], preferredReserves = [] }) {
   const preferences = Array.from({ length: 23 }, (_, slot) => slot < 15 ? preferredLineup[slot] : preferredReserves[slot - 15]);
-  const options = preferences.map((_, slot) => pool.filter(player => isSlotEligible(player, slot)));
+  const options = sheetOptions(players, calledIds);
   const assigned = new Map();
   const slots = Array(23).fill(null);
   const preferred = new Set();
@@ -201,7 +210,7 @@ function factory() {
  }
 
  return Object.freeze({
-  selectCallups, selectInternationalSheet, nationalReservePool, releasePeriods, clubReleaseOn,
+  selectCallups, selectInternationalSheet, selectInternationalChoices, nationalReservePool, releasePeriods, clubReleaseOn,
   recordInternationalAppearances, validateInternationalAppearances, internationalCaps,
  });
 }

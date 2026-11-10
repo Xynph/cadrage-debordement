@@ -300,7 +300,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
     id: player.id, name: player.name, pos: player.pos, fam: player.fam, age: player.age,
     rating: player.rating, condition: player.condition, injury: player.injury,
     nationalReserve: !!player.nationalReserve,
-   })), sheet,
+   })), sheet, choicesBySlot: sheet ? callups.selectInternationalChoices(squad) : null,
   };
  }
 

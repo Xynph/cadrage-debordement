@@ -22,7 +22,7 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
   const hashId = text => Array.from(text).reduce((n, letter) => Math.imul(n ^ letter.charCodeAt(0), 16777619), 2166136261) >>> 0;
   const builds = [
     ['pilier', 184, 116], ['talonneur', 182, 106], ['deuxième', 199, 116],
-    ['troisième', 190, 105], ['demi de mêlée', 177, 82], ["demi d'ouverture", 183, 89],
+    ['troisième', 190, 105], ['numéro 8', 190, 108], ['demi de mêlée', 177, 82], ["demi d'ouverture", 183, 89],
     ['centre', 187, 97], ['ailier', 185, 93], ['arrière', 186, 92],
   ];
 
@@ -40,7 +40,7 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     const generated = /^(?:depth-|youth-|p)(\d+)-/.exec(id);
     const anchor = origins[id] ?? (generated ? clubs[generated[1]] : null);
     const hash = hashId(id + ':rugby-origin');
-    if (Object.hasOwn(nations, anchor) && hash % 100 < 78) return anchor;
+    if (Object.hasOwn(nations, anchor) && (Object.hasOwn(origins, id) || hash % 100 < 78)) return anchor;
     return variations[(hash >>> 8) % variations.length];
   }
 
@@ -48,7 +48,9 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     const record = source(id);
     if (record.seniorNation) return nation === record.seniorNation;
     if (record.eligibilityNations?.length) return record.eligibilityNations.includes(nation);
-    return nation === (byFlag.get(record.flagCode) ?? estimate(id));
+    const documented = byFlag.get(record.flagCode);
+    if (documented) return nation === documented;
+    return !Object.hasOwn(origins, id) && nation === estimate(id);
   }
 
   function project(id, appearance = null, player = null) {

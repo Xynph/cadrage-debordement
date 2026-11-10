@@ -26,7 +26,9 @@ test('Les données manquantes gardent un zéro et une origine stable', () => {
   assert.equal(profile.seniorCaps, 0);
   assert.equal(profile.capsSource, 'game-default');
   assert.equal(profile.nationalitySource, 'simulated');
-  assert.ok(profile.nationality && profile.flagCode);
+  assert.equal(profile.nationality, 'Japon');
+  assert.equal(profile.flagCode, 'jp');
+  assert.equal(facts.eligible('unknown', 'JPN'), false);
   assert.equal(profile.dimensionsSource, 'estimated');
   assert.ok(profile.heightCm >= 165 && profile.weightKg >= 60);
   assert.deepEqual(facts.project('unknown'), profile);
