@@ -126,3 +126,40 @@ test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de 
   assert.equal(imported.meta.calendarToday, legacy.next.date);
   assert.deepEqual(imported.calendar, upgraded.calendar);
 });
+test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans collision', t => {
+  const game = profile(t);
+  for (const mode of ['world', 'world-pacific', 'world-japan', 'world-nationale', 'world-champ']) {
+    const model = game.good('new_career', {mode, club: 26});
+    assert.equal(model.meta.calendarToday, '2026-08-17', mode);
+    const first = model.calendar[0];
+    assert.deepEqual(
+      [first.date, first.kickoffLocal, first.kickoffSource, first.home.id, first.away.id],
+      ['2026-08-27', '21:00', 'simulated-not-official', 26, 22], mode
+    );
+    assert.deepEqual(first.dateWindow, ['2026-08-27', '2026-08-28'], mode);
+    const doc = JSON.parse(game.good('export').meta.exportText);
+    const fixtures = doc.state.worldMode.fixtures;
+    const league = id => fixtures.filter(f => f.competitionId === id);
+    assert.equal(league('elite').length, 182);
+    assert.equal(league('accession').length, 240);
+    assert.equal(league('elite').at(-1).date, '2027-06-06');
+    assert.equal(league('accession').at(-1).date, '2027-05-14');
+    const occupied = fixtures.flatMap(f => [f.homeId, f.awayId].map(id => f.week + ':' + id));
+    assert.equal(new Set(occupied).size, occupied.length, mode);
+    assert.deepEqual(game.good('import', {text: JSON.stringify(doc)}).calendar, model.calendar);
+  }
+});
+
+test('les heures publiées du Pacifique restent locales et les autres créneaux sont signalés', t => {
+  const game = profile(t);
+  const pacific = game.good('new_career', {mode: 'world-pacific', club: 61});
+  const first = pacific.calendar.find(f => f.date === '2027-02-12');
+  assert.equal(first.kickoffUtc, '2027-02-12T06:35:00Z');
+  assert.equal(first.kickoffLocal, '19:35');
+  assert.equal(first.timezone, 'Pacific/Auckland');
+  assert.equal(first.kickoffSource, 'published');
+  const prem = game.good('new_career', {mode: 'world', club: 30});
+  assert.equal(prem.calendar[0].date, '2026-09-25');
+  assert.equal(prem.calendar[0].kickoffSource, 'simulated-not-official');
+  assert.match(prem.calendar[0].kickoffLocal, /^\d{2}:\d{2}$/);
+});
