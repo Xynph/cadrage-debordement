@@ -143,6 +143,113 @@ function factory(){
   const injured=club(s.club)?.players?.find(p=>Number.isFinite(p?.injury)&&p.injury>0&&nameOf(p.name));
   return {fixture,result,injured:nameOf(injured?.name)};
  }
+ const preparationReplies={
+  avant_match:[
+   'Je veux des sorties de camp propres et des soutiens proches du porteur dès nos premières possessions.',
+   'Je vérifierai nos annonces en touche et nos réceptions de renvoi avant de demander plus de vitesse.',
+   'Je veux jouer dans leur camp et obliger leur défense à se retourner. Il faudra suivre chaque coup de pied.',
+   'Je fixerai une consigne simple pour nos premières possessions, puis nous adapterons le rythme.',
+   'Le tableau noir a déjà assez de flèches. Je veux surtout que le porteur trouve quelqu’un à côté de lui.'
+  ],
+  attaque:[
+   'Je veux deux soutiens proches du porteur pour garder le ballon vivant après le premier contact.',
+   'Je regarderai nos sorties de camp et le placement du premier receveur avant de demander plus de passes.',
+   'Je veux fixer la défense dans l’axe, puis attaquer l’espace avec des joueurs lancés.',
+   'Je préfère une sortie de ruck propre à une passe précipitée. La vitesse doit venir du placement.',
+   'Le ballon peut aller vite sans que tout le monde coure après. Je veux des soutiens déjà en place.'
+  ],
+  defense:[
+   'Je veux un appel clair pour monter ensemble et un joueur qui garde la profondeur derrière le premier rideau.',
+   'Je reprendrai les rôles du premier plaqueur et de son soutien avant de changer notre organisation.',
+   'Je veux fermer l’axe et accompagner le porteur vers la touche, sans ouvrir un intervalle à l’intérieur.',
+   'Je travaillerai d’abord le replacement après une perte de balle. Chacun doit retrouver son rôle.',
+   'Quinze départs individuels ne font pas une montée collective. Je veux un seul signal bien entendu.'
+  ],
+  joueurs:[
+   'Je veux une tâche précise sur le terrain et un partenaire proche pour aider le joueur à la remplir.',
+   'Je reprendrai les séquences à la vidéo avec lui avant de modifier ses consignes.',
+   'Je veux qu’il demande le ballon et annonce clairement ses intentions à ses partenaires.',
+   'Je regarderai sa disponibilité et son rôle dans le collectif avant de décider de son utilisation.',
+   'Un nom sur la feuille ne fait pas avancer le ballon. Je veux surtout des appels et des soutiens autour de lui.'
+  ],
+  supporters:[
+   'Je veux qu’ils voient une équipe qui poursuit ses courses, suit ses coups de pied et se replace ensemble.',
+   'Je leur dois des réponses sur le terrain. Je commencerai par des consignes que le groupe peut appliquer.',
+   'Je veux mettre de l’intensité dès les premiers contacts et donner au public des raisons de pousser avec nous.',
+   'Je préfère parler de notre préparation et des choix de jeu plutôt que promettre un résultat.',
+   'Les tribunes ne peuvent pas faire nos replis à notre place. À nous de leur donner envie de chanter.'
+  ],
+  calendrier:[
+   'Je veux garder de la fraîcheur pour les séances avec ballon et ajuster la charge entre deux rencontres.',
+   'Je regarderai la récupération et les joueurs disponibles avant de fixer la durée des oppositions.',
+   'Je veux préparer nos annonces et nos sorties de camp sans ajouter de fatigue inutile.',
+   'Je déciderai des rotations après avoir fait le point sur les disponibilités et les séances de la semaine.',
+   'Ajouter des cases au tableau ne rajoute pas des jambes. Je veux des séances utiles et du temps pour récupérer.'
+  ],
+  carriere:[
+   'Je veux construire une équipe reconnaissable dans ses soutiens, sa défense et sa façon de sortir de son camp.',
+   'Je jugerai mon travail sur les décisions prises avec le groupe et sur ce qu’il arrive à reproduire en match.',
+   'Je veux assumer mes choix de jeu et donner des responsabilités claires au staff comme aux joueurs.',
+   'Je me concentre sur la préparation du groupe et les décisions du club avant de parler de mon avenir.',
+   'Mon avenir n’a pas sa place sur le tableau des combinaisons. Pour l’instant, je veux que nos annonces soient comprises.'
+  ],
+  direction:[
+   'Je présenterai à la direction nos priorités de travail et les choix d’effectif nécessaires pour les tenir.',
+   'Je veux expliquer mes décisions avec les résultats et les disponibilités du groupe, sans chercher d’excuse.',
+   'J’assumerai le plan de jeu et les choix de joueurs qui l’accompagnent devant la direction.',
+   'Je préfère fixer les étapes de travail avec la direction avant de prendre un engagement public.',
+   'Une réunion ne fait pas gagner une touche. Je veux en sortir avec des priorités que le staff peut vraiment travailler.'
+  ],
+  crise:[
+   'Je veux resserrer nos consignes sur les sorties de camp, les renvois et le replacement défensif.',
+   'Je reprendrai les décisions à la vidéo avec le staff et le groupe, en gardant une correction claire par secteur.',
+   'J’assume mes choix. Je veux que chacun sache où intervenir au prochain entraînement.',
+   'Je préfère corriger une séquence à la fois plutôt que changer toute l’organisation dans l’urgence.',
+   'Le tableau noir n’a pas besoin d’une mêlée supplémentaire. Je veux quelques consignes que les quinze comprennent.'
+  ],
+  vestiaire:[
+   'Je veux que titulaires et remplaçants connaissent leur rôle, notamment sur les annonces et les fins de séquence.',
+   'Je prendrai les joueurs à part pour écouter leurs attentes avant de remettre une consigne commune au groupe.',
+   'Je veux que les responsabilités soient dites clairement, puis assumées sur le terrain.',
+   'Je garderai les échanges individuels dans le vestiaire. Les consignes collectives doivent rester simples.',
+   'Le banc a des sièges, mais chacun doit avoir un rôle. Je veux préparer ce que les entrants apporteront au jeu.'
+  ],
+  rotation:[
+   'Je veux préparer les remplaçants aux mêmes annonces que les titulaires pour garder nos repères quand le quinze change.',
+   'Je regarderai la récupération, la disponibilité et les associations travaillées avant de choisir le groupe.',
+   'Je veux une concurrence qui se voit dans les courses de soutien et les efforts de replacement à l’entraînement.',
+   'Je déciderai poste par poste. Une rotation doit servir le jeu et tenir compte des joueurs disponibles.',
+   'Changer les noms ne suffit pas à changer le rythme. Je veux que les entrants sachent déjà quelle annonce arrive.'
+  ],
+  blessures:[
+   'Je veux préparer plusieurs joueurs aux annonces essentielles pour garder une solution quand un poste se découvre.',
+   'Je ferai le point sur les disponibilités avec le staff avant de choisir les associations à travailler.',
+   'Je veux que les joueurs disponibles prennent des responsabilités dans les séances et sur les annonces.',
+   'Je m’appuierai sur les disponibilités confirmées. Je ne fixerai pas un retour pour remplir une feuille de match.',
+   'Le tableau des blessés n’est pas une feuille de composition. Je veux travailler avec les joueurs disponibles.'
+  ],
+  classement:[
+   'Je veux prendre les points par notre travail sur les sorties de camp, les renvois et la maîtrise du ballon.',
+   'Je regarderai les résultats enregistrés avant de fixer la priorité de la prochaine préparation.',
+   'Je veux qu’on joue pour gagner notre rencontre, en gardant la maîtrise de nos décisions au pied et à la main.',
+   'Je préfère préparer le prochain match avant de faire des calculs sur ceux des autres.',
+   'La calculatrice ne plaque personne. Je veux d’abord une équipe qui garde ses repères sous pression.'
+  ],
+  phase_finale:[
+   'Je veux préparer les renvois, les sorties de camp et les annonces qui nous permettent de garder le ballon sous pression.',
+   'Je travaillerai les décisions au pied et à la main selon le score, avec des consignes courtes pour les leaders.',
+   'Je veux qu’on prenne l’initiative dans l’axe et qu’on poursuive nos efforts jusqu’au soutien suivant.',
+   'Je préparerai les rôles du banc et les décisions de fin de rencontre, en tenant compte du groupe disponible.',
+   'Un match couperet ne demande pas des discours deux fois plus longs. Je veux des annonces courtes et bien comprises.'
+  ],
+  formation:[
+   'Je veux donner aux jeunes une tâche claire sur la réception, la passe et le placement défensif, puis la reprendre avec eux.',
+   'Je regarderai ce qu’ils reproduisent dans les oppositions avant de décider de leur place dans le groupe.',
+   'Je veux qu’ils prennent la parole sur les annonces et qu’ils demandent le ballon dans les exercices.',
+   'Je déciderai de leur utilisation avec le staff, selon leurs repères et leur disponibilité.',
+   'Un nouveau survêtement ne fait pas encore un joueur prêt. Je veux d’abord des repères solides autour du ballon.'
+  ]
+ };
  function contextualQuestion(q,{fixture,result,injured}){
   const write=(question,answers)=>({...q,question,answers:q.answers.map((a,i)=>({...a,text:answers[i]}))});
   if(fixture&&(q.theme==='avant_match'||q.theme==='phase_finale'&&fixture.stage)){
@@ -190,7 +297,17 @@ function factory(){
    'Je garderai les détails pour le joueur et le staff. Le retour dépendra de sa disponibilité.',
    'Le calendrier ne soigne personne. Je préfère travailler dès maintenant la couverture du poste.'
   ]);
-  return q;
+  if(q.id.startsWith('joueurs-0-'))return write('Quelle place voulez-vous donner aux jeunes dans votre groupe ?',[
+   'Je veux travailler avec eux la réception, la passe sous pression et le placement en défense, avec une consigne claire à chaque exercice.',
+   'Je regarderai ce qu’ils arrivent à reproduire dans les oppositions avant de décider de leur rôle dans le groupe.',
+   'Je veux qu’ils demandent le ballon et annoncent leurs intentions. Leur place se construit aussi dans les soutiens et les replis.',
+   'Je préparerai leur utilisation avec le staff, selon leurs repères et leur disponibilité. Je ne fixerai pas une titularisation à l’avance.',
+   'Les jeunes n’ont pas besoin de porter tout le club sur leurs épaules. Je veux d’abord des passes et des soutiens autour d’eux.'
+  ]);
+  const questions={blessures:'Comment préparez-vous votre effectif aux indisponibilités ?',
+   crise:'Quand la confiance est sous pression, quelle priorité gardez-vous pour le groupe ?',
+   phase_finale:'Comment préparez-vous un match à élimination directe ?'};
+  return preparationReplies[q.theme]?write(questions[q.theme]||q.question,preparationReplies[q.theme]):q;
  }
  // A callback is a quotation from this saved career, never a reconstruction
  // from a tone or the question bank. Its exact displayed text is archived below.
