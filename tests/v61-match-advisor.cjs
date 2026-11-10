@@ -26,9 +26,10 @@ if(run('matchV61Advice(l).defenceAvailable')){
 }
 run('l.paused=false');
 assert.equal(run('applyMatchV61Advice("attack","large")'),false);
-assert.match(run('matchV61AdviceHtml(l)'),/Mettre en pause pour appliquer une consigne/);
+assert.match(run('matchV61AdviceHtml(l)'),/Aucun changement prioritaire/);
 assert.equal(run('applyMatchV61Advice("attack","occupation")'),false);
 run('l.tactics[side]="equilibre"');
+assert.match(run('matchV61AdviceHtml(l)'),/Mettre en pause pour appliquer une consigne/);
 assert.match(run('matchV61AdviceHtml(l)'),/disabled/);
 run('l.tactics[side]="large"');
 run('l.paused=true;l.finished=true');
@@ -38,4 +39,47 @@ assert.match(run('matchV61AdviceHtml(null)'),/indisponible/);
 const old=context(JSON.parse(state));
 assert.match(old.run('matchV61AdviceHtml(matchViewState(S.live))'),/Conseiller du bord de terrain/);
 assert.equal(old.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
-console.log(JSON.stringify({passed:true,checks:['read-only analysis','RNG isolation','score based attack','defensive contextual advice','pause only','stale advice rejected','no duplicate change','legacy match and save parser']}));
+const lowSample=context().run;
+lowSample(`
+ start(0);beginMatch();pauseMatch();
+ var live=S.live,ours=live.userSide,theirs=1-ours;
+ live.tactics[ours]='large';live.defences[ours]='pression';
+ live.score=[0,0];live.minute=1;
+ function sample(a,b,occupation=50){
+  live.stats[ours].possession=a;live.stats[theirs].possession=b;
+  live.stats[ours].territory=(a+b)*occupation;live.stats[theirs].territory=(a+b)*(100-occupation);
+ }
+`);
+const getAdvice=()=>JSON.parse(lowSample('JSON.stringify(matchV61Advice(live))'));
+for(const observations of [0,1,9]){
+ lowSample(`sample(0,${observations},25)`);
+ const advice=getAdvice();
+ assert.equal(advice.attack,'large',`${observations} observations : keep the selected attack`);
+ assert.equal(advice.defence,'pression',`${observations} observations : keep the selected defence`);
+ assert.equal(advice.attackChanged,false);
+ assert.equal(advice.defenceChanged,false);
+ assert.equal(advice.possession,null);
+ assert.equal(advice.occupation,null);
+ assert.match(advice.attackReason,/pas assez d.observations/i);
+ const html=lowSample('matchV61AdviceHtml(live)');
+ assert.match(html,/Aucun changement prioritaire/);
+ assert.doesNotMatch(html,/Appliquer en (attaque|defense)/);
+}
+lowSample('sample(0,10,50)');
+assert.equal(getAdvice().attack,'conquete');
+assert.equal(getAdvice().possession,0);
+assert.equal(getAdvice().attackChanged,true);
+lowSample('sample(5,5,40)');
+assert.equal(getAdvice().attack,'occupation');
+assert.equal(getAdvice().occupation,40);
+lowSample('sample(5,5,50)');
+assert.equal(getAdvice().attack,'large','hold the selected attack when mature ratios show no issue');
+lowSample('sample(0,1);live.stats[ours].penalties=3');
+assert.equal(getAdvice().defence,'prudente','penalty signal does not depend on the ratio sample');
+assert.equal(getAdvice().attack,'large');
+lowSample('live.stats[ours].penalties=0;live.minute=55;live.score[theirs]=7;live.tactics[ours]="occupation";live.defences[ours]="equilibre"');
+assert.equal(getAdvice().attack,'large','late deficit takes precedence');
+assert.equal(getAdvice().defence,'pression');
+lowSample('live.minute=65;live.score[theirs]=0;live.score[ours]=7');
+assert.equal(getAdvice().defence,'prudente','late lead remains independent of sample maturity');
+console.log(JSON.stringify({passed:true,checks:['read-only analysis','RNG isolation','score based attack','defensive contextual advice','pause only','stale advice rejected','no duplicate change','legacy match and save parser','10-observation boundary for both ratios','maintained tactics without evidence','independent penalty and score signals']}));
