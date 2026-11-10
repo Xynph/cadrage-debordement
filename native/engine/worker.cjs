@@ -8,6 +8,7 @@ const professionalDepth=require('./professional-depth.cjs');
 const epcrPreparation=require('./epcr-preparation.cjs');
 const competitionEditor=require('./competition-editor.cjs');
 const {calendarContext}=require('./calendar-clock.cjs');
+const franceCalendar=require('./france-calendar-cadence.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
 const worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
@@ -114,8 +115,19 @@ function createBridge(options={}){
   run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const nativeProfessionalDepth=(${professionalDepth.toString()})();const CDCommonCareer=(${common.toString()})();${worldVm.bootstrap()}const nativeAttributeStore=(${playerAttributes.toString()})();const nativePlayerAttributes=nativeAttributeStore.project;const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
   run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+  run(`const nativeFranceCalendar=(${franceCalendar.toString()})(CDFranceCompetition.userFixture);
+   const nativeValidateDaily=validateCareer;
+   validateCareer=state=>{const result=nativeValidateDaily(state);nativeFranceCalendar.validate(state);return result;};
+   const nativeDailyStatus=()=>CDWorldCareer.active(S)?CDWorldCareer.dailyStatus(S):nativeFranceCalendar.project(S)?.calendarCadence??null;
+   function nativeEnableDailyCalendar(){
+    if(!S)return;
+    CDWorldCareer.enableDaily(S);
+    if(S.franceCalendar!==undefined)return;
+    const calendar=nativeFranceCalendar.project(S,true);
+    if(calendar)S.franceCalendar={day:calendar.calendarCadence.day};
+   }`);
   try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(normalizeAcademyPotential(S))validateCareer(S);nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S);if(S.live&&!S.live.finished)S.live.paused=true;}");validateCalendarState(calendarState());}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
-  if(options.dailyCalendar)run('if(S)CDWorldCareer.enableDaily(S)');
+  if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
   const legacyDatabase=JSON.parse(run('JSON.stringify(CDCommonRosters)')),packs=mediaPacks.createStore(dataDir,legacyDatabase,worldRegistry,pacificRegistry,japanRegistry,nationaleRegistry,champRegistry);
   const creationKey=mode=>mode==='world-champ'?'identity-pack-champ-creation':mode==='world-nationale'?'identity-pack-nationale-creation':mode==='world-japan'?'identity-pack-japan-creation':mode==='world-pacific'?'identity-pack-pacific-creation':mode==='world'?'identity-pack-world-creation':'identity-pack-creation';
   const creation=(mode='common')=>store[creationKey(mode)]||'base';
@@ -155,7 +167,21 @@ function createBridge(options={}){
     }finally{delete ctx.nativeCalendarState;}
    }
   }
-  const snapshot=operation=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return result;};
+  function projectFranceCalendar(model){
+   const calendar=JSON.parse(run('JSON.stringify(nativeFranceCalendar.project(S))'));
+   if(!calendar)return;
+   Object.assign(model.meta,calendar);
+   if(model.next)Object.assign(model.next,{
+    date:run('nativeFranceCalendar.date(S.season,S.franceMode.week)'),dateSimulated:true,
+    kickoffLocal:'15:00',kickoffSource:'simulated-not-official',timezone:'Europe/Paris'
+   });
+   if(calendar.calendarCadence.resultConfirmed){
+    const fixture=model.calendar.find(f=>f.week===model.meta.week&&!f.played);
+    if(fixture&&model.live){fixture.score=model.live.score;fixture.played=true;}
+    model.next=null;model.live=null;
+   }
+  }
+  const snapshot=operation=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return result;};
   const backup=path.join(dataDir,'donnees-precedentes.json');
   let committedFiles='';
   const profileFilesVersion=()=>{
@@ -212,7 +238,7 @@ function createBridge(options={}){
     try{
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
-     if(BLOCKED_AFTER_RESULT.has(command)&&run('S?.worldMode?.resultConfirmed===true'))throw Error('Résultat confirmé. Continuez jusqu’à la clôture de la semaine.');
+     if(BLOCKED_AFTER_RESULT.has(command)&&run('nativeDailyStatus()?.resultConfirmed===true'))throw Error('Résultat confirmé. Continuez jusqu’à la clôture de la semaine.');
      if(command==='interclub_negotiate'||command==='academy_groups_preview'){
       ctx.nativeCommand=command;
       const extra=command==='academy_groups_preview'?{academyGroups:run('CDNativeAcademyGroups.preview(S)')}:run('nativeSystems.execute(nativeCommand,nativePayload)');
@@ -222,7 +248,7 @@ function createBridge(options={}){
      if(options.now===undefined)clock=Date.now();
      const liveOnly=command==='tick'||command==='delegate';
      const previousAcademyClub=command==='next_season'?run('S.club'):null;
-     const advancesWithinWeek=command==='advance_day'&&run('S.worldMode?.day>=0&&S.worldMode.day<6');
+     const advancesWithinWeek=command==='advance_day'&&run('(nativeDailyStatus()?.day??6)<6');
      ctx.nativeAttributeBaseline=advancesWithinWeek||['new_career','import'].includes(command)?null:run('nativeAttributeStore.before(S,'+liveOnly+');');
      if(command==='population_enable'){
       if(payload.confirmed!==true||Object.keys(payload).some(k=>!['confirmed','context'].includes(k)))throw Error('Confirmez explicitement la nouvelle politique de population.');
@@ -239,7 +265,7 @@ function createBridge(options={}){
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode);if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(payload.club)||payload.club<0||(worldEdition?!worldEdition.playable.includes(payload.club):payload.club>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode)');else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
-      if(options.dailyCalendar&&worldEdition)run('CDWorldCareer.enableDaily(S)');
+      if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='train'){
       const mode=payload.mode??run('S.training');if(!['normal','repos','intense'].includes(mode))throw Error('Entraînement invalide.');
@@ -248,11 +274,16 @@ function createBridge(options={}){
      }else if(command==='auto_lineup'){
       if(run('!!S.live'))throw Error('Composition indisponible pendant un match.');run('autoLineup()');
      }else if(command==='advance_day'){
-      if(!run('S.worldMode?.day!==undefined'))throw Error('Avance journalière indisponible.');
-      run('CDWorldCareer.advanceDay(S,nativePayload.fromDate)');
+      if(run('S.franceCalendar!==undefined')){
+       run(`{const step=nativeFranceCalendar.advance(S,nativePayload.fromDate);
+        if(step.closeWeek)finishRound();S.franceCalendar=step.calendar;}`);
+      }else{
+       if(!run('S.worldMode?.day!==undefined'))throw Error('Avance journalière indisponible.');
+       run('CDWorldCareer.advanceDay(S,nativePayload.fromDate)');
+      }
      }else if(command==='begin_match'){
       if(run("!!S.live||S.phase==='ended'"))throw Error('Aucun nouveau match disponible.');
-      if(run('S.worldMode?.day!==undefined&&!CDWorldCareer.dailyStatus(S).matchReady'))throw Error('Le coup d’envoi est disponible le jour de la rencontre.');
+      if(run('nativeDailyStatus()?.matchReady===false'))throw Error('Le coup d’envoi est disponible le jour de la rencontre.');
       if(payload.reducedBench!==undefined&&typeof payload.reducedBench!=='boolean')throw Error('Confirmation de la feuille à 22 invalide.');
       const reducedBench=payload.reducedBench===true;
       if(reducedBench&&!run('CDNationaleReducedBench?.vacancy(S)'))throw Error('La feuille à 22 n’est pas disponible pour cette rencontre.');
@@ -297,7 +328,9 @@ function createBridge(options={}){
        run(delegateLoop);
       }
      }else if(command==='finish_round'){
-      if(run('S.worldMode?.day!==undefined')){
+      if(run('S.franceCalendar!==undefined')){
+       run("S.franceCalendar=nativeFranceCalendar.confirm(S);view='dashboard';");
+      }else if(run('S.worldMode?.day!==undefined')){
        run(`if(S.worldMode.resultConfirmed)throw Error('Le résultat est déjà confirmé.');
         if(!S.live?.finished)throw Error('Terminez le match avant de valider le résultat.');
         S.worldMode.resultConfirmed=true;view='dashboard';`);
@@ -325,7 +358,7 @@ function createBridge(options={}){
       validateCalendarState(calendarState('pendingSave.state'));
       const imported=JSON.parse(run('JSON.stringify({binding:pendingSave.state.identityPack,database:pendingSave.state.commonDatabase?.id})')),bound=imported.binding&&packs.get(imported.binding.id);if(bound&&bound.meta.databaseId!==imported.database)throw Error('Pack incompatible avec cette édition.');
       run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');normalizeAcademyPotential(S);");
-      if(options.dailyCalendar)run('CDWorldCareer.enableDaily(S)');
+      if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
