@@ -12,7 +12,7 @@ Une fonction canonique doit servir les projections, la composition, le banc, les
 
 1. Moteur/modèle : factory `native/engine/position-aptitudes.cjs`, branchements uniques après les hooks de compétition ; vérifier qualifications, famille du slot actif, cohortes internationales et sauvegardes. Réception pilier→10, centre→aile, deuxième ligne→8, banc/remplacement et état/RNG/export-reprise.
 2. Effectif : `squad_canvas.gd`, Poste principal + Autres numérotés avec infobulle ; tri dans les deux sens, inconnus derniers, lecture seule, défilement interne. Utiliser le modèle sans formule UI.
-3. Tactique : conserver les trois colonnes et le terrain. Ajouter une vue Effectif compacte dans la carte du banc ; drag/drop entre joueurs et maillots, alternative clic/clavier ; note liée au maillot choisi. Utiliser les commandes de composition validées par le moteur, sans affectation lors d’un abandon ou d’un dépôt refusé.
+3. Tactique : conserver les trois colonnes et le terrain. Remplacer les maillots par les portraits, numéros et notes au poste sur le terrain. Intervertir les colonnes centrales/droites : Banc et Hors groupe simultanés juste à droite du terrain (la seconde remplace Joueur sélectionné), Identité de jeu à droite. Hors groupe contient exactement effectif − XV − banc, dans sa liste défilante. Drag/drop entre joueurs et maillots, alternative clic/clavier ; note liée au maillot choisi. Utiliser les commandes de composition validées par le moteur, sans affectation lors d’un abandon ou d’un dépôt refusé.
 4. Intégrateur : revoir la cohérence des trois branches, recevoir sur vraie carrière, vérifier les sources de notes en match et en sélection, capturer les vues réelles, publier une PR empilée sur le lot d’interface #520. Aucune fusion de main dans cette phase.
 
 ## Vérifications d’intégration
@@ -25,3 +25,5 @@ Une fonction canonique doit servir les projections, la composition, le banc, les
 - Un refus ne perd ni ne duplique les joueurs. Les échanges valident les deux affectations avant écriture.
 - Pas de migration silencieuse, de mutation à la lecture, ni de dérive RNG ; import/export et reprise cohérents.
 - Captures natives 1440p avec profils temporaires hors application et caches Godot distincts par branche.
+
+Référence consultée le 10 novembre 2026 : World Rugby, loi 3.10 (postes de première ligne désignés), 3.11 (remplaçant de première ligne pouvant débuter ailleurs), 3.12 (formation/expérience). La maîtrise de postes supplémentaires reste une mécanique de jeu et ne crée aucune qualification de première ligne.
