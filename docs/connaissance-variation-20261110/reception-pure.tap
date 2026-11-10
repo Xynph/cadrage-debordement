@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: bounded variations are concentrated around zero and stable by ID independent of iteration order
+ok 1 - bounded variations are concentrated around zero and stable by ID independent of iteration order
+  ---
+  duration_ms: 232.080821
+  type: 'test'
+  ...
+# Subtest: disabling current-level variation keeps every quality unchanged but still changes potential
+ok 2 - disabling current-level variation keeps every quality unchanged but still changes potential
+  ---
+  duration_ms: 1.166017
+  type: 'test'
+  ...
+# Subtest: actual full and compact qualities move with the level, with caps above the current ability
+ok 3 - actual full and compact qualities move with the level, with caps above the current ability
+  ---
+  duration_ms: 34.135968
+  type: 'test'
+  ...
+# Subtest: initial populations, market copies and coaching references vary once without any RNG draw
+ok 4 - initial populations, market copies and coaching references vary once without any RNG draw
+  ---
+  duration_ms: 2.76794
+  type: 'test'
+  ...
+# Subtest: manifest types, bounds, unknown fields and creation phase are strictly checked
+ok 5 - manifest types, bounds, unknown fields and creation phase are strictly checked
+  ---
+  duration_ms: 0.636453
+  type: 'test'
+  ...
+# Subtest: club exact rating, five inclusive potential values, unknown foreign and pure reads
+ok 6 - club exact rating, five inclusive potential values, unknown foreign and pure reads
+  ---
+  duration_ms: 10.18203
+  type: 'test'
+  ...
+# Subtest: inclusive asymmetric bounded intervals contain truth and deep subset
+ok 7 - inclusive asymmetric bounded intervals contain truth and deep subset
+  ---
+  duration_ms: 74.310266
+  type: 'test'
+  ...
+# Subtest: real missions first then deep, duplicate event does not advance; ranges freeze despite truth growth
+ok 8 - real missions first then deep, duplicate event does not advance; ranges freeze despite truth growth
+  ---
+  duration_ms: 6.7525
+  type: 'test'
+  ...
+# Subtest: archived reports work without a migration and persist after report rotation
+ok 9 - archived reports work without a migration and persist after report rotation
+  ---
+  duration_ms: 1.891689
+  type: 'test'
+  ...
+# Subtest: own actual match participation observes; zero-minute and global AI games do not
+ok 10 - own actual match participation observes; zero-minute and global AI games do not
+  ---
+  duration_ms: 3.307985
+  type: 'test'
+  ...
+# Subtest: departure converts previous own exact to last-known deep intervals, recruitment to own exact
+ok 11 - departure converts previous own exact to last-known deep intervals, recruitment to own exact
+  ---
+  duration_ms: 0.429626
+  type: 'test'
+  ...
+# Subtest: all player copies, report prose, aliases, nested potential, international and preview extras masked
+ok 12 - all player copies, report prose, aliases, nested potential, international and preview extras masked
+  ---
+  duration_ms: 12.491566
+  type: 'test'
+  ...
+# Subtest: observed attrs remain hidden until deep, position ratings always hidden foreign
+ok 13 - observed attrs remain hidden until deep, position ratings always hidden foreign
+  ---
+  duration_ms: 4.325458
+  type: 'test'
+  ...
+# Subtest: strict validation rejects corrupt ranges, duplicates, version, future and extra keys
+ok 14 - strict validation rejects corrupt ranges, duplicates, version, future and extra keys
+  ---
+  duration_ms: 6.659306
+  type: 'test'
+  ...
+# Subtest: more than 2 000 active observed people survive block rollover and a real match
+ok 15 - more than 2 000 active observed people survive block rollover and a real match
+  ---
+  duration_ms: 204.670422
+  type: 'test'
+  ...
+# Subtest: a discovery or shortlist is not an observation; centre candidate IDs come only from trusted event facts
+ok 16 - a discovery or shortlist is not an observation; centre candidate IDs come only from trusted event facts
+  ---
+  duration_ms: 1.046552
+  type: 'test'
+  ...
+# Subtest: national-only manager has no silently owned club; missing development getter stays pure
+ok 17 - national-only manager has no silently owned club; missing development getter stays pure
+  ---
+  duration_ms: 0.812815
+  type: 'test'
+  ...
+# Subtest: targeted observation charges once, never observes at planning, completes after two work cycles, then deep
+ok 18 - targeted observation charges once, never observes at planning, completes after two work cycles, then deep
+  ---
+  duration_ms: 2.658602
+  type: 'test'
+  ...
+# Subtest: targeted queue shares four-mission capacity, rejects stale/malformed/own requests before money
+ok 19 - targeted queue shares four-mission capacity, rejects stale/malformed/own requests before money
+  ---
+  duration_ms: 0.555899
+  type: 'test'
+  ...
+# Subtest: unknown IDs default to hidden, nested qualities cannot escape the player boundary
+ok 20 - unknown IDs default to hidden, nested qualities cannot escape the player boundary
+  ---
+  duration_ms: 0.48068
+  type: 'test'
+  ...
+# Subtest: actual active scout level 70 speeds work, level 65/absent/inactive remains two weeks; planning freezes source
+ok 21 - actual active scout level 70 speeds work, level 65/absent/inactive remains two weeks; planning freezes source
+  ---
+  duration_ms: 0.837255
+  type: 'test'
+  ...
+# Subtest: our loaned player remains exactly known while an actual departure loses exact visibility
+ok 22 - our loaned player remains exactly known while an actual departure loses exact visibility
+  ---
+  duration_ms: 4.508565
+  type: 'test'
+  ...
+# Subtest: old manager cumulative weeks never become a fabricated season date or invalid migration
+ok 23 - old manager cumulative weeks never become a fabricated season date or invalid migration
+  ---
+  duration_ms: 0.494108
+  type: 'test'
+  ...
+# Subtest: a pending report planned without a scout never invents the source of a later hire
+ok 24 - a pending report planned without a scout never invents the source of a later hire
+  ---
+  duration_ms: 0.307399
+  type: 'test'
+  ...
+# Subtest: actual legacy managerWeek and targeted jobs share FIFO and advance only once per work week
+ok 25 - actual legacy managerWeek and targeted jobs share FIFO and advance only once per work week
+  ---
+  duration_ms: 36.076017
+  type: 'test'
+  ...
+# Subtest: a completed targeted report cannot precede its own planning date
+ok 26 - a completed targeted report cannot precede its own planning date
+  ---
+  duration_ms: 1.60922
+  type: 'test'
+  ...
+# Subtest: historical academy plans and unknown playerId copies cannot leak a lone level alias
+ok 27 - historical academy plans and unknown playerId copies cannot leak a lone level alias
+  ---
+  duration_ms: 0.390185
+  type: 'test'
+  ...
+# Subtest: normalized scene actors and selection references preserve their exact transport shape
+ok 28 - normalized scene actors and selection references preserve their exact transport shape
+  ---
+  duration_ms: 1.546139
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 743.59261
