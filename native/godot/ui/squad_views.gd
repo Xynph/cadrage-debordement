@@ -259,7 +259,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 
 static func _roster_columns(width:float) -> Array:
 	var columns:Array=[["name","JOUEUR",130],["pos","POSTE",64],["age","ÂGE",26],["rating","NIV.",30],["condition","COND.",42]]
-	if width>=700:columns.append_array([["salary","SALAIRE / S.",78],["contractEnd","ÉCH.",38]])
+	if width>=700:columns.append_array([["salary","SALAIRE "+G.salary_period(true).to_upper(),78],["contractEnd","ÉCH.",38]])
 	if width>=900:columns.append_array([["minutes","MIN.",42],["appearances","APP.",32],["physicalLoad","CHARGE",42]])
 	if width>=950:
 		columns[1][2]=100
@@ -267,7 +267,7 @@ static func _roster_columns(width:float) -> Array:
 	return columns
 
 static func _roster_value(p:Dictionary,key:String) -> String:
-	if key=="salary":return G.euros(p.get(key,0))
+	if key=="salary":return G.salary_amount(p.get(key,0))
 	if key=="condition":return G.n(p.get(key,0))+"%"
 	if key=="watch":return U.watch_reason(p)
 	if key=="contractEnd":return "—" if p.get(key)==null else "S"+G.n(p[key])
@@ -341,7 +341,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	actions.add_child(note)
 	_profile_attributes(attributes,p,details)
 	contracts.add_child(G.wrap("Contrat courant : "+p.get("contractLabel",""),13))
-	contracts.add_child(G.wrap(G.euros(p.get("salary",0))+" / semaine",12,G.MUTED))
+	contracts.add_child(G.wrap(G.salary(p.get("salary",0)),12,G.MUTED))
 	var compared:bool=str(p.id) in app.management_ui.compare
 	var compare:=G.button("RETIRER DE LA COMPARAISON" if compared else "AJOUTER À LA COMPARAISON",func():
 		if str(p.id) in app.management_ui.compare:app.management_ui.compare.erase(str(p.id))
@@ -456,7 +456,7 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 	var contract_tile:=_profile_tile(right,"Contract","Contrat courant")
 	var term:=G.wrap(str(p.get("contractLabel","—")),12,G.INK)
 	term.name="ProfileContractValue";contract_tile.add_child(term)
-	_profile_fact(contract_tile,"ProfileSalaryValue","Par semaine",G.euros(p.get("salary",0)))
+	_profile_fact(contract_tile,"ProfileSalaryValue",G.salary_period().capitalize(),G.salary_amount(p.get("salary",0)))
 	var renewal:Dictionary=p.get("renewal",{})
 	_profile_fact(contract_tile,"ProfileRenewalValue","Prolongation","Disponible" if renewal.get("available",false) else "Indisponible")
 	if renewal.get("available",false):
@@ -769,7 +769,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		card.add_child(summary)
 		summary.add_child(G.label(G.n(p.age)+" ans",13))
 		summary.add_child(G.label("Niveau "+G.n(p.rating),13,G.GOLD))
-		card.add_child(G.wrap(G.euros(p.get("salary",0))+" / semaine · salaire demandé",13,G.MUTED))
+		card.add_child(G.wrap(G.salary(p.get("salary",0))+" · salaire demandé",13,G.MUTED))
 		var followed:bool=str(p.id) in app.management_ui.shortlist
 		var track:=G.button("RETIRER DU SUIVI" if followed else "SUIVRE CETTE PISTE",func():
 			var saved:Dictionary=app.model.get("clubLife",{}).get("managerCareer",{})
@@ -874,14 +874,14 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 	columns.add_theme_constant_override("h_separation",18)
 	columns.add_theme_constant_override("v_separation",10)
 	list.add_child(columns)
-	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Note globale / 100","rating"],["Condition · %","condition"],["Salaire / semaine","salary"],["Contrat courant","contractLabel"]]
+	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Note globale / 100","rating"],["Condition · %","condition"],["Salaire "+G.salary_period(),"salary"],["Contrat courant","contractLabel"]]
 	for row in rows:
 		columns.add_child(G.label(row[0],13,G.MUTED))
 		for p:Dictionary in players:
 			var value:Variant="—"
 			if not p.is_empty():
 				value=p.get(row[1],"—")
-				if row[1]=="salary":value=G.euros(value)
+				if row[1]=="salary":value=G.salary_amount(value)
 				elif value is float:value=G.n(value)
 			var label:=G.wrap(str(value),14,G.INK)
 			label.custom_minimum_size.x=180
@@ -905,12 +905,12 @@ static func _profile_contexts(parent:VBoxContainer,p:Dictionary,app:Control) -> 
 	var cohort:=G.v(3);cohort.name="ProfileContextCohort";competition.add_child(cohort)
 	var squad:Array=app.model.get("squad",[])
 	cohort.add_child(G.label("Joueur / moyenne de l’effectif · %d joueurs"%squad.size(),11,G.MUTED))
-	for field:Array in [["rating","Niveau",""],["condition","Condition","%"],["age","Âge"," ans"],["salary","Salaire / semaine",""]]:
+	for field:Array in [["rating","Niveau",""],["condition","Condition","%"],["age","Âge"," ans"],["salary","Salaire "+G.salary_period(),""]]:
 		var total:=0.0
 		for member:Dictionary in squad:total+=float(member.get(field[0],0))
 		var mean:float=total/squad.size() if not squad.is_empty() else NAN
-		var average:String="—" if not is_finite(mean) else G.euros(roundi(mean)) if field[0]=="salary" else ("%.1f"%mean).replace(".",",")+field[2]
-		var own:String=G.euros(p.get(field[0],0)) if field[0]=="salary" else G.n(p.get(field[0],0))+field[2]
+		var average:String="—" if not is_finite(mean) else G.salary_amount(mean) if field[0]=="salary" else ("%.1f"%mean).replace(".",",")+field[2]
+		var own:String=G.salary_amount(p.get(field[0],0)) if field[0]=="salary" else G.n(p.get(field[0],0))+field[2]
 		_profile_fact(cohort,"ProfileMean_"+str(field[0]),field[1],own+" / "+average)
 	var peers:=G.v(3);peers.name="ProfileContextPeers";competition.add_child(peers)
 	peers.add_child(G.label("Même poste principal · "+str(p.pos)+" · niveau / condition",11,G.MUTED))

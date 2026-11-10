@@ -131,9 +131,9 @@ static func open(app: Control, chosen: String, reports: Dictionary) -> void:
 		overview.name = "Vue d’ensemble"
 		tabs.add_child(overview)
 		_header(overview)
-		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel observé / 100", "potential", ""], ["Condition", "condition", " %"], ["Prime à la signature", "fee", " €"], ["Salaire demandé / semaine", "salary", " €"]]:
+		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel observé / 100", "potential", ""], ["Condition", "condition", " %"], ["Prime à la signature", "fee", " €"], ["Salaire demandé "+G.salary_period(), "salary", " €"]]:
 			_row(overview, str(field[0]), str(field[1]), pair, reports, str(field[2]))
-		overview.add_child(C.wrap("Prime et salaire hebdomadaire sont des demandes distinctes. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés ; une donnée absente n’est pas remplacée par une estimation.", 22))
+		overview.add_child(C.wrap("Prime et salaire sont des demandes distinctes. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés ; une donnée absente n’est pas remplacée par une estimation.", 22))
 		var attributes := C.v(8)
 		attributes.name = "36 attributs"
 		tabs.add_child(attributes)
@@ -248,12 +248,16 @@ static func _row(parent: Node, title: String, key: String, pair: Array[Dictionar
 	for player: Dictionary in pair:
 		var datum: Variant = value(player, key, reports)
 		values.append(datum)
-		var caption := "Non communiqué" if datum == null else G.euros(datum) if key in ["fee", "salary"] and numeric(datum) else A.caption(datum) + unit if numeric(datum) else str(datum)
+		var caption := "Non communiqué" if datum == null else G.salary_amount(datum) if key == "salary" and numeric(datum) else G.euros(datum) if key == "fee" and numeric(datum) else A.caption(datum) + unit if numeric(datum) else str(datum)
 		var text := C.wrap(caption, 28, C.IVORY, true)
 		text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		C.fill(text)
 		row.add_child(text)
-	var difference := C.wrap(delta(values[0], values[1], unit) if key != "pos" else "Même poste" if values[0] == values[1] else "Postes différents", 27, C.GOLD, true)
+	var difference_text := delta(values[0],values[1],unit) if key != "pos" else "Même poste" if values[0] == values[1] else "Postes différents"
+	if key == "salary" and numeric(values[0]) and numeric(values[1]):
+		var wage_difference := float(values[1])-float(values[0])
+		difference_text = ("+" if wage_difference > 0 else "") + G.salary_amount(wage_difference)
+	var difference := C.wrap(difference_text,27,C.GOLD,true)
 	difference.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	difference.name = "MarketComparisonDelta_" + key.replace(":", "_")
 	C.fill(difference)

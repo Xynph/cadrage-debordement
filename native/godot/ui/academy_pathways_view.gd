@@ -177,7 +177,7 @@ static func _player_details(detail: VBoxContainer, app: Control, data: Dictionar
 	for year in [1,2,3]:
 		_action(detail, app, data, "ENGAGEMENT ESPOIR %d AN(S) · %s" % [year, G.euros(p.contractFees[year-1])], "academy_contract", {"playerId":p.id,"years":year}, int(p.contractFees[year-1]))
 		var salary: int = int(p.promotionSalary[year-1])
-		var b := G.button("PREMIER CONTRAT PRO %d AN(S) · %s/SEM." % [year, G.euros(salary)], func(): _send(app, data, "academy_promote", {"playerId":p.id,"years":year}, "Premier contrat professionnel", "%s quittera le centre et ajoutera %s par semaine à la masse salariale pour %d saison(s). Confirmer ?" % [p.name,G.euros(salary),year]))
+		var b := G.button("PREMIER CONTRAT PRO %d AN(S) · %s" % [year, G.salary(salary)], func(): _send(app, data, "academy_promote", {"playerId":p.id,"years":year}, "Premier contrat professionnel", "%s quittera le centre et ajoutera %s à la masse salariale pour %d saison(s). Confirmer ?" % [p.name,G.salary(salary),year]))
 		b.disabled = data.locked or not data.promotionAvailable
 		detail.add_child(b)
 

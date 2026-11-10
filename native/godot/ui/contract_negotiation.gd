@@ -4,12 +4,13 @@ const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
+const Salary = preload("res://ui/salary_display.gd")
 
 static func money(value: Variant) -> String:
 	return G.euros(value) if value is int or value is float else "Non communiqué"
 
 static func signed_money(value: int) -> String:
-	return ("+" if value >= 0 else "−") + G.euros(absi(value))
+	return ("+" if value >= 0 else "−") + G.salary(absi(value))
 
 static func state_text(quote: Dictionary) -> Dictionary:
 	var negotiation: Dictionary = quote.get("negotiation", {})
@@ -95,29 +96,32 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	var columns := C.h(16)
 	body.add_child(columns)
 	var demand := _card(columns,"DEMANDE ACTUELLE","ContractDemand",C.MINT)
-	demand.add_child(C.label(money(quote.get("salary"))+" / semaine",20,C.IVORY,true,700))
+	demand.add_child(C.label(G.salary(quote.get("salary")),20,C.IVORY,true,700))
 	demand.add_child(C.wrap("Durée possible · %s à %s saison(s)" % [str(int(quote.get("minYears",1))),str(int(quote.get("maxYears",3)))],17,C.MUTED))
 	demand.add_child(C.wrap("Prime à la signature · "+money(quote.get("fee")),18,C.GOLD))
 	if not recruiting:
 		demand.add_child(C.wrap("Contrat actuel · "+str(player.get("contractLabel","Échéance non communiquée")),16,C.MUTED))
-		demand.add_child(C.wrap("Salaire actuel · "+money(player.get("salary"))+" / semaine",16,C.MUTED))
+		demand.add_child(C.wrap("Salaire actuel · "+G.salary(player.get("salary")),16,C.MUTED))
 	var counter := _card(columns,"DERNIÈRE CONTRE-OFFRE","ContractCounter",C.GOLD)
 	var counter_text := C.wrap("Aucune contre-offre en cours.",20,C.IVORY,true,700)
 	counter_text.name = "ContractCurrentNegotiation"
 	if negotiation.get("status") == "counter":
-		counter_text.text = "%s / sem.\n%d saison(s) · Proposition %d/3" % [money(negotiation.get("salary")), int(negotiation.get("years",1)),int(negotiation.get("attempts",0))]
+		counter_text.text = "%s\n%d saison(s) · Proposition %d/3" % [G.salary(negotiation.get("salary")), int(negotiation.get("years",1)),int(negotiation.get("attempts",0))]
 	elif phase.blocked:
 		counter_text.text = "Discussion close.\n" + str(quote.get("reason","Négociation close jusqu’à la prochaine journée."))
 	counter.add_child(counter_text)
 	counter.add_child(C.wrap("Les conditions affichées sont celles de la discussion enregistrée. Aucun accord n’est garanti.",16,C.MUTED))
 	var proposal := _card(columns,"VOTRE NOUVELLE PROPOSITION","ContractProposal",C.BLUE)
-	var salary := _spin(proposal,"OfferSalary","Salaire hebdomadaire",1000,100000,float(quote.get("salary",player.get("salary",5000))),100,"€ / semaine")
+	var salary := _spin(proposal,"OfferSalary",Salary.field_label(),1000,100000,float(quote.get("salary",player.get("salary",5000))),100,"€ / semaine")
+	Salary.bind_input(salary,float(quote.get("salary",player.get("salary",5000))),1000,100000)
 	var years := _spin(proposal,"OfferYears","Durée du contrat",float(quote.get("minYears",1)),float(quote.get("maxYears",3)),maxf(float(quote.get("minYears",1)),2),1,"saison(s)")
 	var difference := C.wrap("",16,C.GOLD)
 	difference.name = "ContractOfferDifference"
 	proposal.add_child(difference)
+	if Salary.period != "weekly":
+		proposal.add_child(C.wrap("Le récapitulatif tient compte de l’arrondi à l’euro hebdomadaire le plus proche.",16,C.MUTED))
 	var reuse := C.button("Reprendre la contre-offre",func():
-		salary.value = float(negotiation.get("salary",salary.value))
+		Salary.set_input_weekly(salary,float(negotiation.get("salary",Salary.input_weekly(salary))))
 		years.value = float(negotiation.get("years",years.value)))
 	reuse.name = "ContractUseCounteroffer"
 	reuse.add_theme_font_size_override("font_size",C.px(18))
@@ -135,15 +139,16 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	var meta: Dictionary = app.model.get("meta",{})
 	var first_season := int(meta.get("season",1)) + (1 if meta.get("phase") == "ended" else 0)
 	var refresh := func():
-		var delta := int(salary.value) - (0 if recruiting else int(player.get("salary",0)))
+		var weekly_salary := Salary.input_weekly(salary)
+		var delta := weekly_salary - (0 if recruiting else int(player.get("salary",0)))
 		var term := "Échéance proposée : fin saison %d" % [first_season + int(years.value) - 1]
 		if not recruiting:
 			var end: Variant = player.get("contractEnd")
 			term = "Échéance actuelle : %s · " % ("—" if end == null else "fin saison %d" % int(end)) + term
-		summary.text = "IMMÉDIAT À LA SIGNATURE · %s : %s\nNOUVEAU SALAIRE · %s / semaine · %s %s / semaine\n%s\nDurée totale : %s saison(s) · trésorerie actuelle : %s" % ["acquisition" if recruiting else "prime de prolongation",money(quote.get("fee")),money(salary.value),"ajout" if recruiting else "écart",signed_money(delta),term,str(int(years.value)),money(app.model.get("finance",{}).get("cash"))]
-		difference.text = "Écart avec la demande actuelle · %s / sem." % signed_money(int(salary.value)-int(quote.get("salary",salary.value)))
+		summary.text = "IMMÉDIAT À LA SIGNATURE · %s : %s\nNOUVEAU SALAIRE · %s · %s %s\n%s\nDurée totale : %s saison(s) · trésorerie actuelle : %s" % ["acquisition" if recruiting else "prime de prolongation",money(quote.get("fee")),G.salary(weekly_salary),"ajout" if recruiting else "écart",signed_money(delta),term,str(int(years.value)),money(app.model.get("finance",{}).get("cash"))]
+		difference.text = "Écart avec la demande actuelle · %s" % signed_money(weekly_salary-int(quote.get("salary",weekly_salary)))
 		if negotiation.get("status") == "counter":
-			difference.text += "\nÉcart avec la contre-offre · %s / sem." % signed_money(int(salary.value)-int(negotiation.salary))
+			difference.text += "\nÉcart avec la contre-offre · %s" % signed_money(weekly_salary-int(negotiation.salary))
 	salary.value_changed.connect(func(_value:float):refresh.call())
 	years.value_changed.connect(func(_value:float):refresh.call())
 	refresh.call()
@@ -158,7 +163,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	dialog.get_cancel_button().text = "FERMER" if blocked else "ANNULER"
 	dialog.confirmed.connect(func():
 		if blocked: return
-		app._command("recruit" if recruiting else "extend_contract",{"playerId":player.id,"salary":int(salary.value),"years":int(years.value),"confirmed":true})
+		app._command("recruit" if recruiting else "extend_contract",{"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true})
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)

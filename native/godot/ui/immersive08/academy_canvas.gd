@@ -499,7 +499,7 @@ func _integration_dialog() -> void:
 	if not preview.terms.is_empty(): body.add_child(C.wrap(preview.terms, 22, C.IVORY, true))
 	var standard := C.button("Premier contrat pro", func():
 		var end_season := int(app.model.meta.get("season", 0)) + (2 if app.model.meta.get("phase") == "ended" else 1)
-		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire par semaine. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.euros(p.salary), G.n(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
+		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.salary(p.salary), G.n(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
 	standard.name = "AcademyPromoteSelected"
 	standard.set_meta("promote_id", p.id)
 	standard.disabled = not development.get("promotionAvailable", false)
@@ -509,11 +509,11 @@ func _integration_dialog() -> void:
 		var salaries: Array = info.get("promotionSalary", [])
 		for i in salaries.size():
 			var years := i + 1
-			var wage := G.euros(salaries[i])
-			var offer := C.button("%d saison(s)  ·  %s / semaine" % [years, wage], func():
+			var wage := G.salary(salaries[i])
+			var offer := C.button("%d saison(s)  ·  %s" % [years, wage], func():
 				var args: Dictionary = pathway.context.duplicate()
 				args.merge({"playerId":p.id, "years":years, "confirmed":true})
-				app.confirm("Premier contrat professionnel", "%s quittera le centre et ajoutera %s par semaine à la masse salariale pour %d saison(s). Confirmer ?" % [p.name, wage, years], func(): app._command("academy_promote", args)))
+				app.confirm("Premier contrat professionnel", "%s quittera le centre et ajoutera %s à la masse salariale pour %d saison(s). Confirmer ?" % [p.name, wage, years], func(): app._command("academy_promote", args)))
 			offer.name = "AcademyOfferYears" + str(years)
 			offer.disabled = standard.disabled or pathway.get("locked", false) or not pathway.get("promotionAvailable", false)
 			body.add_child(offer)

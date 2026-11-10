@@ -223,9 +223,10 @@ static func recruitment(app: Control) -> void:
 	fields.add_child(position)
 	var age := spin(fields, "Âge max.", 18, 40, 28, 1)
 	var fee := spin(fields, "Prime max.", 0, 10000000, 700000, 50000)
-	var wage := spin(fields, "Salaire / sem.", 1000, 100000, 12000, 500)
+	var wage := spin(fields, "Salaire "+G.salary_period(), 1000, 100000, 12000, 500)
+	preload("res://ui/salary_display.gd").bind_input(wage,12000,1000,100000,500)
 	var mission := G.button("CONFIER LA MISSION · 5 000 €", func():
-		var payload := {"family":position.selected, "maxAge":int(age.value), "budget":int(fee.value), "maxWage":int(wage.value), "confirmed":true}
+		var payload := {"family":position.selected, "maxAge":int(age.value), "budget":int(fee.value), "maxWage":preload("res://ui/salary_display.gd").input_weekly(wage), "confirmed":true}
 		d.queue_free()
 		app.confirm("Lancer une mission", "5 000 € seront payés immédiatement. Le rapport porte sur les agents libres de la simulation et arrive après deux journées de travail. Confirmer ?", func(): app._command("scout_mission", payload)))
 	mission.name = "CreateScoutMission"

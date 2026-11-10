@@ -624,7 +624,7 @@ static func _recruitment(parent: VBoxContainer, app: Control) -> void:
 		identity.add_child(C.wrap(player.name, 30, C.IVORY, true))
 		identity.add_child(C.wrap(str(player.pos) + " · " + G.n(player.age) + " ans", 20))
 		identity.add_child(C.chip("NIVEAU  " + G.n(player.rating)))
-		parent.add_child(C.wrap(G.euros(player.fee) + " · " + G.euros(player.salary) + " / sem.", 24, C.IVORY, true))
+		parent.add_child(C.wrap(G.euros(player.fee) + " · " + G.salary(player.salary), 24, C.IVORY, true))
 		var available: bool = player.get("available", false)
 		var status := "Offre possible" if available else "Offre indisponible"
 		var reason := str(player.get("reason", ""))

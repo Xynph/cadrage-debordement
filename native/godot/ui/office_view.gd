@@ -487,7 +487,7 @@ static func _means(parent: Node, app: Control) -> void:
 	# The narrow sport column cannot fit three monetary values side by side.
 	var row := G.v(8)
 	box.add_child(row)
-	for pair in [[G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie"], [G.euros(app.model.get("finance", {}).get("wage", 0)), "Salaires / sem."]]:
+	for pair in [[G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie"], [G.salary_amount(app.model.get("finance", {}).get("wage", 0)), "Salaires "+G.salary_period(true)]]:
 		var metric := G.v(2)
 		G.fill(metric)
 		row.add_child(metric)

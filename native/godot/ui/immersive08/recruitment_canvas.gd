@@ -340,7 +340,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		D.text(row, 582, 37, G.n(item.get("rating", "—")), 32, GREEN, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(row, 675, 37, G.n(report.get("potential", "—")), 30, GREEN if report.has("potential") else C.FAINT, 700, 80, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(row, 742, 36, _money(item.get("fee")), 24, C.IVORY, 600, 111)
-		D.text(row, 864, 29, _money(item.get("salary")) + "/sem.", 23, C.IVORY, 500, 174)
+		D.text(row, 864, 29, G.salary(item.get("salary")), 23, C.IVORY, 500, 174)
 		if max_salary > 0 and (item.get("salary") is float or item.get("salary") is int):
 			D.bar(row, Rect2(864, 36, 163, 10), 100.0 * float(item.salary) / max_salary, GREEN)
 		D.text(row, 1043, 35, "Ancien" if assessment.get("stale", false) else "Daté" if not report.is_empty() else "—", 23, C.MUTED, 500, 112)
@@ -434,7 +434,7 @@ func _deal(parent: Panel, player: Dictionary, report: Dictionary) -> void:
 	var section := _section(parent, Rect2(16, 624, 798, 125), "SYNTHÈSE DU CONTRAT", "money")
 	var quote := player if not player.is_empty() else report
 	var max_years := int(player.get("maxYears", 0))
-	var values := [_money(quote.get("fee", quote.get("price"))), _money(quote.get("salary")) + "/sem.", "%s à %s ans" % [G.n(player.get("minYears", 1)), G.n(max_years)] if max_years > 1 else "1 an" if max_years == 1 else "—"]
+	var values := [_money(quote.get("fee", quote.get("price"))), G.salary(quote.get("salary")), "%s à %s ans" % [G.n(player.get("minYears", 1)), G.n(max_years)] if max_years > 1 else "1 an" if max_years == 1 else "—"]
 	for i in values.size():
 		var x := 14 + i * 260
 		if i > 0: D.line(section, Vector2(x, 55), Vector2(x, 112), C.LINE)

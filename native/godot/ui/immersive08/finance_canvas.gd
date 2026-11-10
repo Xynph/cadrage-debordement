@@ -112,7 +112,7 @@ static func _metrics(app: Control, canvas: Control, accounts: Dictionary, financ
 	var captions := [
 		["Trésorerie", "money", U.amount(cash), "Montants de jeu", C.ALERT if cash != null and float(cash)<0.0 else C.MINT],
 		["Marché du recrutement", "search", "%d profils" % market.size(), "%d accessibles" % available.size(), C.MINT],
-		["Masse salariale", "people", U.amount(wages), "par semaine", C.MINT],
+		["Masse salariale", "people", G.salary_amount(wages), G.salary_period(), C.MINT],
 		["Marge hebdomadaire connue", "shield", U.amount(margin), "Recettes − charges", C.AMBER if margin != null and float(margin)<0.0 else C.MINT]
 	]
 	for i in captions.size():
@@ -369,7 +369,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	squad = wage_rows(squad,str(sort_state.key),bool(sort_state.descending))
 	D.text(wages, 1020, 37, "%d joueurs" % squad.size(), 18, C.MUTED, 500, 250)
 	D.rect(wages, Rect2(12,62,1374,40), Color("182426"), 3)
-	for item: Array in [["JOUEUR",25,"name",450],["POSTE",491,"pos",198],["ÉCHÉANCE",703,"contractEnd",228],["PAR SEMAINE",950,"salary",170]]:
+	for item: Array in [["JOUEUR",25,"name",450],["POSTE",491,"pos",198],["ÉCHÉANCE",703,"contractEnd",228],[G.salary_period().to_upper(),950,"salary",170]]:
 		var arrow := (" ▼" if sort_state.descending else " ▲") if sort_state.key == item[2] else " ↕"
 		D.button(wages,Rect2(item[1]-4,63,item[3],38),str(item[0])+arrow,_wage_sort.bind(app,str(item[2])),false,"",true,U.GREEN,"FinanceSort_"+str(item[2]))
 	var scroll := ScrollContainer.new()
@@ -393,7 +393,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 		D.text(rows, 25, y+23, player.get("name","—"), 18, C.IVORY, 700, 450)
 		D.text(rows, 491, y+23, player.get("pos","—"), 18, C.MUTED, 500, 198)
 		D.text(rows, 703, y+23, player.get("contractLabel","—"), 18, C.MUTED, 500, 228)
-		D.text(rows, 1096, y+23, G.euros(player.get("salary",0)), 18, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(rows, 1096, y+23, G.salary_amount(player.get("salary",0)), 18, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.button(rows, Rect2(1120,y+1,225,31), "Voir le contrat", func(): _open_player(app, str(player.id)), false, "arrow", true, U.GREEN, "FinancePlayer_"+str(player.id).replace(":","_"))
 	if squad.is_empty():
 		var empty := "Aucun contrat à anticiper d’ici cette échéance." if due_only else "Aucun joueur sous contrat dans cette carrière."

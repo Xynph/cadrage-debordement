@@ -165,9 +165,9 @@ func _amount(value: Variant) -> String:
 		result += raw[index]
 	return result + " €"
 func _metric_line(metric: String, before: Variant, after: Variant) -> String:
-	var label: String = {"cash":"Trésorerie","wage":"Salaires / semaine","morale":"Moral collectif"}[metric]
+	var label: String = {"cash":"Trésorerie","wage":"Salaires "+preload("res://ui/salary_display.gd").period_label(),"morale":"Moral collectif"}[metric]
 	if metric == "morale": return "%s : %s → %s / 100%s" % [label,str(before),str(after)," (stable)" if before == after else ""]
-	return "%s : %s → %s%s" % [label,_amount(before),_amount(after)," (stable)" if before == after else ""]
+	return "%s : %s → %s%s" % [label,preload("res://ui/salary_display.gd").amount(before) if metric == "wage" else _amount(before),preload("res://ui/salary_display.gd").amount(after) if metric == "wage" else _amount(after)," (stable)" if before == after else ""]
 
 func control() -> Button:
 	var button := Button.new()

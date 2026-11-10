@@ -76,7 +76,7 @@ static func _finance(app: Control, page: Container, data: Dictionary, locked: bo
 	var amounts := G.h(20)
 	card.add_child(amounts)
 	_amount(amounts, "TRÉSORERIE DISPONIBLE", G.euros(f.cash), G.GOOD if f.cash >= 0 else G.ALERT)
-	_amount(amounts, "SALAIRES / SEMAINE", G.euros(f.weeklyWages))
+	_amount(amounts, "SALAIRES "+G.salary_period(true).to_upper(), G.salary_amount(f.weeklyWages))
 	_amount(amounts, "PROJECTION DES ENGAGEMENTS", G.euros(f.baseForecast), G.GOLD)
 	card.add_child(G.wrap("%d semaines restantes sur %d · %s" % [f.remainingWeeks, f.weeksPerSeason, f.notice], 12))
 	if not f.facility is Dictionary:

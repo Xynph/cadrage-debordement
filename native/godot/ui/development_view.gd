@@ -96,7 +96,7 @@ static func build(app: Control) -> Control:
 
 # Same action as the Formation cards, narrowed to the reviewed player.
 static func _promotion(parent: Node, app: Control, data: Dictionary, person: Dictionary) -> Button:
-	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire par semaine de jeu. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.euros(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
+	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire de jeu. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.salary(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
 	promote.name = "PromoteAcademy" + str(person.id).replace(":","_")
 	promote.set_meta("promote_id",person.id)
 	promote.disabled = app.waiting or not data.get("promotionAvailable",false)
@@ -111,7 +111,7 @@ static func contract_preview(model: Dictionary, person: Dictionary) -> Dictionar
 	var terms: Array[String] = []
 	var salary: Variant = person.get("salary")
 	if salary is int or salary is float:
-		terms.append("Salaire proposé · %s / semaine" % G.euros(salary))
+		terms.append("Salaire proposé · %s" % G.salary(salary))
 	if available:
 		terms.append("Fin du contrat si signature · saison %s" % G.n(season + 1))
 	var capacity := ""

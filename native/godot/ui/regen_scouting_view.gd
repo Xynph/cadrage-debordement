@@ -137,7 +137,7 @@ func _person(person: Dictionary,data: Dictionary) -> void:
 		info.add_child(G.wrap(str(evidence.get("label","Pas encore observé")),13))
 		info.add_child(G.wrap("Niveau : %s · potentiel : %s" % [_interval(evidence.get("noteMin"),evidence.get("noteMax")),_interval(evidence.get("potentialMin"),evidence.get("potentialMax"))],13))
 		if evidence.get("seen",false): info.add_child(G.wrap("Rapport S%s · semaine %s%s" % [G.n(evidence.get("season","—")),G.n(evidence.get("week","—"))," · ancien : à actualiser" if evidence.get("stale",false) else ""],12))
-		info.add_child(G.wrap("Prime %s · salaire demandé %s / semaine · %d besoin(s) compatible(s)" % [G.euros(person.get("fee",0)),G.euros(person.get("salary",0)),person.get("matchingSlots",[]).size()],12))
+		info.add_child(G.wrap("Prime %s · salaire demandé %s · %d besoin(s) compatible(s)" % [G.euros(person.get("fee",0)),G.salary(person.get("salary",0)),person.get("matchingSlots",[]).size()],12))
 		for term: Dictionary in person.get("terms",[]):
 			info.add_child(G.wrap("%d saison(s) · %d échéances · engagement connu %s" % [int(term.years),int(term.payments),G.euros(term.knownCommitment)],12))
 	if not str(person.get("reason","")).is_empty(): info.add_child(G.wrap(str(person.reason),13,G.ALERT))

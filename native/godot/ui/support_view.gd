@@ -156,7 +156,7 @@ static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 				quote.add_child(G.section(str(policy.label) + " · " + str(int(q.years)) + " saison(s)", policy.detail))
 				var amounts := G.h(16)
 				quote.add_child(amounts)
-				amounts.add_child(G.metric(G.euros(q.wage), "par semaine"))
+				amounts.add_child(G.metric(G.salary_amount(q.wage), G.salary_period()))
 				amounts.add_child(G.metric(G.euros(q.fee), "prime à la signature"))
 				quote.add_child(G.wrap("Engagement théorique %s sur %d semaines × %d saison(s)" % [G.euros(q.totalCommitment), q.paidWeeks, q.years], 15))
 				quote.add_child(G.wrap(str(q.likely) + " · " + str(int(q.attempts)) + "/3 tentative(s)", 13))
@@ -174,7 +174,7 @@ static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	list.add_child(G.section("Les derniers mandats", "Historique persistant limité à 24 entrées."))
 	for h: Dictionary in data.agents.history:
 		var status: String = {"ready":"accord de principe", "counter":"contre-offre", "withdrawn":"retrait", "signed":"signé"}.get(str(h.status), str(h.status))
-		list.add_child(G.wrap("S%d · semaine %d · %s · %s / sem. · %s" % [h.season, int(h.week) + 1, _name(app, h.id), G.euros(h.wage), status], 14))
+		list.add_child(G.wrap("S%d · semaine %d · %s · %s · %s" % [h.season, int(h.week) + 1, _name(app, h.id), G.salary(h.wage), status], 14))
 
 static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
 	var dialog := ConfirmationDialog.new()
@@ -185,7 +185,7 @@ static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
 	var paid_weeks: int = 34 if int(app.model.meta.get("clubCount", 0)) == 30 else 29
 	for p: Dictionary in data.agents.players:
 		if p.id == talk.id and not p.quotes.is_empty(): paid_weeks = int(p.quotes[0].paidWeeks)
-	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s / semaine · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison).\nTrésorerie fictive du jeu." % [_name(app, talk.id), G.euros(talk.fee), G.euros(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
+	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison).\nTrésorerie fictive du jeu." % [_name(app, talk.id), G.euros(talk.fee), G.salary(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
 	dialog.confirmed.connect(func(): app._command("agent_confirm", {"context":data.context,"key":talk.key,"confirmed":true,"wage":talk.acceptedSalary,"years":talk.years,"fee":talk.fee}); dialog.queue_free())
 	dialog.canceled.connect(func(): dialog.queue_free())
 	app.add_child(dialog)

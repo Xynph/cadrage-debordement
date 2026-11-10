@@ -268,7 +268,7 @@ static func _recruitment(card: Panel, app: Control) -> void:
 		var reason := str(player.get("reason", ""))
 		if not reason.is_empty(): D.text(card,23,260,reason,20,C.MUTED,500,500)
 		D.text(card,23,336,G.euros(player.fee),32,C.IVORY,600,220)
-		D.text(card,253,336,G.euros(player.salary)+" / sem.",28,C.MUTED,500,270)
+		D.text(card,253,336,G.salary(player.salary),28,C.MUTED,500,270)
 	if not str(spotlight.need).is_empty():
 		D.text(card,23,295,spotlight.need,20,C.IVORY,500,500,HORIZONTAL_ALIGNMENT_LEFT,true)
 	D.button(card,Rect2(23,391,500,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")

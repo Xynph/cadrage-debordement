@@ -12,7 +12,7 @@ static func caption(quote: Dictionary) -> String:
 		if quote.get("reviewAfterTraining", false):
 			return capacity + " · Revoir après entraînement"
 		return "Renforts · " + capacity.to_lower()
-	return "Renforts · +%s/sem." % G.euros(quote.totalWeeklySalary)
+	return "Renforts · +%s" % G.salary(quote.totalWeeklySalary)
 
 static func configure(button: Button, quote: Dictionary) -> void:
 	button.disabled = int(quote.places) < quote.slots.size()
@@ -25,8 +25,8 @@ static func confirm(app: Control, quote: Dictionary) -> void:
 	var numbers := ", ".join(slots.map(func(slot): return str(int(slot))))
 	var places := "la place %s" % numbers if count == 1 else "les places %s" % numbers
 	var detail := "Le club signera %s pour %s de la feuille.\n\n" % [players, places]
-	detail += "Salaires supplémentaires de %s par semaine, soit %s par joueur." % [
-		G.euros(quote.totalWeeklySalary), G.euros(quote.weeklySalary)
+	detail += "Salaires supplémentaires de %s, soit %s par joueur." % [
+		G.salary(quote.totalWeeklySalary), G.salary(quote.weeklySalary)
 	]
 	if quote.get("reviewAfterTraining", false):
 		detail += "\n\nUn retour de blessure pourrait réduire le besoin. Si vous prévoyez une séance, revérifiez la feuille ensuite avant de signer."

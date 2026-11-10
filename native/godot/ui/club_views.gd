@@ -627,7 +627,7 @@ static func finance(app: Control) -> Control:
 	notes.add_child(G.separator())
 	var wage := 0.0
 	for p in app.model.get("squad", []): wage += float(p.get("salary",0))
-	notes.add_child(G.metric(G.euros(info.get("wage",wage)),"Salaires hebdomadaires"))
+	notes.add_child(G.metric(G.salary_amount(info.get("wage",wage)),"Salaires "+G.salary_period()))
 	var recorded_income := 0.0
 	var recorded_expense := 0.0
 	for entry: Dictionary in ledger:

@@ -85,7 +85,7 @@ func _build() -> void:
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["NOTE",994,"Note",72],["SALAIRE / SEM.",1083,"Salaire",160],["CONTRAT",1256,"Échéance",107],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["NOTE",994,"Note",72],["SALAIRE "+G.salary_period(true).to_upper(),1083,"Salaire",160],["CONTRAT",1256,"Échéance",107],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
 	if state.family==U.WATCH_FILTER:
 		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(11)
 	for column: Array in columns:
@@ -280,7 +280,7 @@ func _row(player:Dictionary,index:int) -> void:
 		D.text(row,1002,24,reason,22,C.AMBER,600,354).name="RosterWatchReason"
 	else:
 		D.text(row,1018,24,G.n(player.get("note","—")),22,C.MINT,600,55,HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row,1198,24,G.euros(player.get("salary",0)),23,C.IVORY,500,162,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(row,1198,24,G.salary_amount(player.get("salary",0)),23,C.IVORY,500,162,HORIZONTAL_ALIGNMENT_RIGHT)
 		var contract_end: Variant = player.get("contractEnd")
 		var expiring: bool = contract_end != null and int(contract_end) <= int(app.model.meta.get("season",1))
 		D.text(row,1289,24,"—" if contract_end == null else "S"+G.n(contract_end),22,C.AMBER if expiring else C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
@@ -352,7 +352,7 @@ func _profile() -> void:
 	var plan: String = Training.INDIVIDUAL.get(player.get("loadPlan", "collective"), "Charge non renseignée")
 	D.text(health,23,223,availability+" · "+plan,22,C.ALERT if injury > 0 else C.AMBER if recovering else C.IVORY,500,481).name = "SelectedPlayerAvailability"
 	var contract:=D.panel(dossier,Rect2(0,718,528,188),"CONTRAT & STATUT","money")
-	D.text(contract,24,94,G.euros(player.get("salary",0))+" / semaine",34,C.IVORY,600,480)
+	D.text(contract,24,94,G.salary(player.get("salary",0)),34,C.IVORY,600,480)
 	D.text(contract,24,129,str(player.get("contractLabel","—")),23,C.MUTED,500,480)
 	var renewal:Dictionary=player.get("renewal",{})
 	var reason := str(renewal.get("reason", ""))
