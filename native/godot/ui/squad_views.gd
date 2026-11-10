@@ -553,6 +553,9 @@ static func lineup(app:Control) -> Control:
 	var pitch:=G.panel(page,1.15)
 	if app.size.y<=760:pitch.add_theme_constant_override("separation",3)
 	G.chapter(pitch,"02","La feuille de match","Titulaire ou remplaçant : choisissez un poste.",app.accent)
+	var condition := G.label("Condition du XV · " + P.lineup_condition(app.model), 15)
+	condition.name = "LineupCondition"
+	pitch.add_child(condition)
 	var board:=Board.new()
 	board.app=app
 	pitch.add_child(board)
