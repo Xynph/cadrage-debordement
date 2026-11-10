@@ -9,6 +9,15 @@ static func report_label(report: Dictionary) -> String:
 static func _number(value: Variant) -> Variant:
 	return value if (value is int or value is float) and is_finite(float(value)) else null
 
+static func _date_week(report: Dictionary) -> Variant:
+	var week: Variant = _number(report.get("week"))
+	var season: Variant = _number(report.get("season"))
+	return week if week != null and season != null and float(week) == floorf(float(week)) and float(season) == floorf(float(season)) else null
+
+static func report_status(report: Dictionary) -> String:
+	if report.get("assessment", {}).get("stale", false): return "Ancien"
+	return "—" if report.is_empty() else "Daté" if _date_week(report) != null else "Non daté"
+
 static func value(item: Dictionary, column: String, reports: Dictionary, archive: bool = false) -> Variant:
 	var report: Dictionary = item if archive else reports.get(str(item.get("id", "")), {})
 	if column == "Nom" or column == "Poste":
@@ -16,9 +25,10 @@ static func value(item: Dictionary, column: String, reports: Dictionary, archive
 		return U.fold(text).strip_edges() if text is String and not text.strip_edges().is_empty() else null
 	if NUMERIC.has(column): return _number(item.get(NUMERIC[column]))
 	if column == "Potentiel": return _number(report.get("potential"))
-	if column == "Date du rapport": return _number(report.get("week")) if _number(report.get("season")) != null else null
+	if column == "Date du rapport": return _date_week(report)
 	if column == "Rapport":
-		return "ancien" if report.get("assessment", {}).get("stale", false) else "date" if not report.is_empty() else null
+		var status := report_status(report)
+		return U.fold(status) if status in ["Ancien","Daté"] else null
 	if column == "Avis":
 		if not archive and item.has("available") and not item.available: return "offre indisponible"
 		if report.get("assessment", {}).get("stale", false): return "rapport ancien"

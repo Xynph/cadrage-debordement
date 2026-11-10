@@ -241,6 +241,7 @@ func _table() -> void:
 	table_scroll = ScrollContainer.new()
 	table_scroll.name = "MarketScroll"
 	table_scroll.follow_focus = true
+	table_scroll.mouse_force_pass_scroll_events = false
 	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(table_scroll)
 	D.place(table_scroll,Rect2(1,45,LEFT-2,550))
@@ -365,7 +366,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		D.text(row, 864, 22, _money(item.get("salary")) + "/sem.", 17, C.IVORY, 500, 174)
 		if max_salary > 0 and (item.get("salary") is float or item.get("salary") is int):
 			D.bar(row, Rect2(864, 28, 163, 5), 100.0 * float(item.salary) / max_salary, GREEN)
-		D.text(row, 1043, 25, "Ancien" if assessment.get("stale", false) else "Daté" if not report.is_empty() else "—", 17, C.MUTED, 500, 112)
+		D.text(row, 1043, 25, Sort.report_status(report), 17, C.MUTED, 500, 112)
 		var status := _report_label(report) if item.get("available", false) else "Offre indisponible"
 		_badge(row, Rect2(1179, 5, 205, 27), status, _report_color(report) if item.get("available", false) else C.ALERT,17)
 	row.pressed.connect(func():
