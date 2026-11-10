@@ -73,9 +73,9 @@ static func _fixture(card: Panel, app: Control) -> void:
 		D.button(card,Rect2(27,354,420,45),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
 		return
 	var match_label := str(next.get("label",P.league_name(app.model)))
-	var competition := Office.short_fixture_label(app.model,next) if japan else match_label
+	var competition := Office.fixture_stage(app.model,next,match_label)
 	var chip := D.chip(card,Rect2(24,22,281,29),competition.to_upper(),C.MUTED)
-	if japan: Office.describe_fixture(chip,match_label)
+	Office.describe_fixture(chip,match_label)
 	var location := "NEUTRE" if next.get("neutral",false) else "À DOMICILE" if next.get("home",{}).get("id")==app.model.club.id else "EXTÉRIEUR"
 	D.chip(card,Rect2(323,22,147,29),location,C.GOLD)
 	_crest(card,next.get("home",{}),Rect2(32,70,91,98))
