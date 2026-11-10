@@ -16,7 +16,7 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	var overview := G.v(8)
 	overview.name = "StaffCareerOverview"
 	parent.add_child(overview)
-	overview.add_child(G.wrap("Les contrats descriptifs restent gratuits. Les contrats rémunérés volontaires figurent dans le budget staff ; ils n’accordent aucun bonus de match." if app.model.get("clubLife", {}).get("staffEmployment", {}).get("enabled", false) else data.get("notice", ""), 13))
+	overview.add_child(G.wrap("Seuls les contrats rémunérés sont imputés au budget du staff." if app.model.get("clubLife", {}).get("staffEmployment", {}).get("enabled", false) else data.get("notice", ""), 13))
 	_mentoring(app, overview)
 	_employment(app, overview)
 	var teams: Array = app.model.get("staff", {}).get("teams", data.get("teams", []))

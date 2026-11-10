@@ -217,7 +217,7 @@ function factory(){
   return {active:true,enabled:true,canEnable:false,reason:'',version:1,context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,roles:copy(LABELS),
    teams:s.clubs.map(c=>({id:c.id,name:c.name,members:people(st).filter(p=>p.clubId===c.id).map(display)})),
    candidates,market:copy(candidates),history,retired,archives:copy(retired),
-   costs:{salary:0,signingFee:0},notice:'Âges et niveaux de jeu signalés comme estimés sauf âge sourcé. Reconversion sans diplôme officiel déduit. Aucun coût ni bonus sportif dans cette version.'};
+   costs:{salary:0,signingFee:0},notice:'Suivez les contrats, les candidatures et les départs du staff.'};
  }
  function execute(command,payload){
   check(typeof S!=='undefined'&&!!S,'carrière absente');

@@ -39,10 +39,14 @@ concrète.
 
 ## Immersion et textes du jeu
 
-Préférence explicite de Léo, 10 novembre 2026 : les personnages d’Oval Legacy
-sont présentés normalement dans l’interface. Ne pas afficher de badge ou
-d’avertissement « personnage fictif », « profil généré par IA » ou de rappels
-similaires sur le caractère fictif du jeu. Montrer les noms, fonctions, âges
-et contrats utiles. La provenance et les distinctions de sources restent
+Préférence explicite de Léo, 10 novembre 2026 : tout l’univers d’Oval Legacy
+est présenté naturellement du point de vue du manager pour préserver
+l’immersion : personnages, clubs, événements, finances, dialogues et écrans.
+Ne pas afficher de badge ou d’avertissement « personnage fictif », « profil
+généré par IA », « montant fictif » ou de rappels similaires sur le caractère
+fictif du jeu. Montrer les informations utiles à la décision et employer le
+vocabulaire du club. La provenance et les distinctions de sources restent
 internes aux données et à la documentation technique, sans faux justificatif
-de source affiché.
+de source affiché. Conserver les coûts, risques, inconnues et conditions
+utiles, les erreurs réelles de sauvegarde ou de connexion, les réglages et
+les crédits nécessaires. Cette règle concerne aussi les futurs contenus.

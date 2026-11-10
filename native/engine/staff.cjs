@@ -116,7 +116,7 @@ function project(model){
  const career=model.clubLife?.staffCareer;
  if(career?.active&&Array.isArray(career.teams))return {...model,staff:{version:career.version,observedAt:null,teams:career.teams.map(c=>({...c,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p,personState:'career',portraitStatus:p.portraitStatus??'anonymous',identityStatus:p.identityStatus??'base'}))})),notice:career.notice||'Encadrement de carrière : contrats et passages de saison suivis. Aucun bonus sportif ni salaire ajouté au budget.'}};
  const teams=selected?selected.clubs.map(c=>({id:c.id,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p}))})):[];
- return {...model,staff:{version:registry.version,observedAt:[PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id)?selected.observedAt:registry.observedAt,teams,notice:'Encadrement de référence complété par des personnages de jeu explicitement fictifs. Les fiches historiques restent distinctes des actifs. Aucun coût ni bonus sportif ajouté.'}};
+ return {...model,staff:{version:registry.version,observedAt:[PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id)?selected.observedAt:registry.observedAt,teams,notice:'Retrouvez les membres du staff et leurs fonctions. Les anciens membres restent consultables dans les archives.'}};
 }
 function applyCareerPresentation(model){
  const career=model.clubLife?.staffCareer;if(!career?.active)return model;

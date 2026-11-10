@@ -30,3 +30,7 @@ Rapport par club France30/Monde116 : nombre actif avant/après, ajouts par fonct
 
 ## Présentation demandée par Léo
 Les profils sont présentés normalement dans le jeu : nom, rôle, âge, contrat. Aucun badge « Personnage fictif » ou avertissement sur leur origine. Les marqueurs generated/fictional sont uniquement des métadonnées de provenance et de validation. Préférence durable inscrite dans AGENTS.md.
+
+## Extension de la préférence à tout le jeu
+
+Léo précise que cette règle vaut pour tous les éléments du jeu : personnages, clubs, événements, finances, dialogues et écrans. Chaque contenu est présenté du point de vue du manager, sans rappel sur son caractère fictif ou sa génération. Les coûts, risques, conditions et erreurs réelles restent explicites ; les crédits et la provenance technique sont conservés aux emplacements appropriés. AGENTS.md porte cette règle pour les travaux futurs.
