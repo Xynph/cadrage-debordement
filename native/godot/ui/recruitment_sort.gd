@@ -5,7 +5,7 @@ const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const NUMERIC := {"Âge":"age","Niveau":"rating","Salaire":"salary","Prime":"fee"}
 
 static func report_label(report: Dictionary) -> String:
-	return "Rapport ancien" if report.get("assessment", {}).get("stale", false) else "Avis " + str(report.grade) if report.get("grade") is String and not str(report.grade).strip_edges().is_empty() else "À observer"
+	return {"observed":"Observé","deep":"Approfondie"}.get(report.get("knowledge",{}).get("stage",""),"À observer")
 
 static func _number(value: Variant) -> Variant:
 	return value if (value is int or value is float) and is_finite(float(value)) else null
@@ -32,10 +32,7 @@ static func value(item: Dictionary, column: String, reports: Dictionary, archive
 		var status := report_status(report)
 		return U.fold(status) if status in ["Ancien","Daté"] else null
 	if column == "Avis":
-		if not archive and item.has("available") and not item.available: return "offre indisponible"
-		if report.get("assessment", {}).get("stale", false): return "rapport ancien"
-		var grade: Variant = report.get("grade")
-		return U.fold("Avis " + grade) if grade is String and not grade.strip_edges().is_empty() else null
+		return U.fold(report_label(item)) if item.get("knowledge",{}).get("stage","") in ["observed","deep"] else null
 	return null
 
 static func sorted(source: Array, column: String, descending: bool, reports: Dictionary, archive: bool = false) -> Array:

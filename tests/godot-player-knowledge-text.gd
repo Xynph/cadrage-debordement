@@ -1,4 +1,6 @@
 extends SceneTree
+const Observation = preload("res://ui/player_observation.gd")
+const Sort = preload("res://ui/recruitment_sort.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
 var checks := 0
@@ -40,5 +42,13 @@ func _initialize() -> void:
 	check(P.group({"squad":[own,{"rating":99,"knowledge":{"owned":false,"stage":"unobserved"}}]}).rating=="—","Pas de faux zéro ou moyenne partielle si niveau étranger inconnu")
 	check(P.group({"squad":[foreign]}).rating=="—","Une fourchette ne devient pas une moyenne exacte collective")
 	check(P.group({}).rating=="—" and JSON.stringify(cohort)==before,"Effectif vide inconnu et agrégat sans mutation")
+	check(Sort.report_label({"knowledge":{"stage":"unobserved"},"grade":"A"})=="À observer","Aucun avis chiffré ou lettre ne remplace une connaissance absente")
+	check(Sort.report_label({"knowledge":{"stage":"observed"}})=="Observé","Badge première observation")
+	check(Sort.report_label({"knowledge":{"stage":"deep"}})=="Approfondie","Badge approfondi")
+	check(Sort.report_label({"knowledge":{"stage":"deep"},"assessment":{"stale":true}})=="Approfondie","Le badge décrit la connaissance courante, pas une appréciation historique")
+	check(Observation.caption({"knowledge":{"stage":"unobserved"}})=="Observer","Action initiale")
+	check(Observation.caption({"knowledge":{"stage":"observed"}})=="Approfondir","Action après première observation")
+	check(Observation.caption({"knowledge":{"stage":"deep"}})=="Actualiser","Action après suivi approfondi")
+	check(Observation.caption({"knowledge":{"stage":"deep"},"scouting":{"pending":true}})=="Observation en cours","Travail courant prioritaire sur l’action de suivi")
 	print("CONNAISSANCE UI : %d contrôles ; %d échecs" % [checks,failures])
 	quit(0 if failures==0 else 1)

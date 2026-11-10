@@ -22,7 +22,10 @@ func units() -> void:
 			player.potentialRange={"min":reports[player.id].potential,"max":reports[player.id].potential+10}
 			player.knowledge={"owned":false,"stage":"observed"}
 			reports[player.id].merge({"ratingRange":player.ratingRange,"potentialRange":player.potentialRange,"knowledge":player.knowledge})
-	var expected := {"Nom":[["a","b","z","u"],["z","b","a","u"]],"Poste":[["b","a","z","u"],["z","a","b","u"]],"Âge":[["b","a","z","u"],["z","a","b","u"]],"Niveau":[["a","b","z","u"],["z","b","a","u"]],"Potentiel":[["a","b","z","u"],["z","b","a","u"]],"Prime":[["a","b","z","u"],["z","b","a","u"]],"Salaire":[["z","b","a","u"],["a","b","z","u"]],"Rapport":[["a","b","z","u"],["b","z","a","u"]],"Avis":[["z","b","a","u"],["a","b","z","u"]]}
+	source[0].knowledge.stage="deep"
+	source[0].ratingRange.max=source[0].ratingRange.min+4
+	source[0].potentialRange.max=source[0].potentialRange.min+4
+	var expected := {"Nom":[["a","b","z","u"],["z","b","a","u"]],"Poste":[["b","a","z","u"],["z","a","b","u"]],"Âge":[["b","a","z","u"],["z","a","b","u"]],"Niveau":[["a","b","z","u"],["z","b","a","u"]],"Potentiel":[["a","b","z","u"],["z","b","a","u"]],"Prime":[["a","b","z","u"],["z","b","a","u"]],"Salaire":[["z","b","a","u"],["a","b","z","u"]],"Rapport":[["a","b","z","u"],["b","z","a","u"]],"Avis":[["z","a","b","u"],["a","b","z","u"]]}
 	var before := JSON.stringify([source,reports])
 	for column: String in expected:
 		for descending: bool in [false,true]:
