@@ -190,7 +190,9 @@ func _confirm() -> void:
 	_check(false,"Expected confirmation is visible")
 
 func _press(text:String) -> void:
-	for item in app.root_content.find_children("*","Button",true,false):
+	var director: Node = app.contextual_director
+	var scope: Node = director.view if director.active() else app.root_content
+	for item in scope.find_children("*","Button",true,false):
 		if item is Button and item.text==text and item.is_visible_in_tree():
 			_check(not item.disabled,"Control enabled: "+text)
 			if not item.disabled:item.pressed.emit()
@@ -205,17 +207,28 @@ func _press_named(control_name: String, parent: Node = null) -> bool:
 	if available: button.pressed.emit()
 	return available
 
+func _open_press_mail(id: String) -> bool:
+	app._show_press_inbox()
+	await _settle()
+	_check(app.root_content.find_child("InboxOpenPressInvitation", true, false) == null, "Conference action requires opening its mail")
+	var mail: Button
+	for button: Button in app.root_content.find_children("*", "Button", true, false):
+		if button.get_meta("message_id", "") == id:
+			mail = button
+			break
+	_check(mail != null and mail.is_visible_in_tree() and not mail.disabled, "Visible persisted press mail: " + id)
+	if mail == null or not mail.is_visible_in_tree() or mail.disabled: return false
+	mail.pressed.emit()
+	await _settle()
+	if not _press_named("InboxOpenPressInvitation"): return false
+	await _settle()
+	return true
+
 func _publish_press_invitation(restore_route: bool = true) -> bool:
 	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
 	if not conference.get("required", false): return true
 	var prior_route: String = app.route
-	app._show_press_inbox()
-	await _settle()
-	_check(app.root_content.find_child("InboxOpenPressInvitation", true, false) == null, "Conference action requires opening its mail")
-	if not _press_named("InboxPressInvitation"): return false
-	await _settle()
-	if not _press_named("InboxOpenPressInvitation"): return false
-	await _settle()
+	if not await _open_press_mail(str(conference.invitationId)): return false
 	var director: Node = app.contextual_director
 	var immersive: bool = director.active() and director.kind == "press"
 	var scope: Node = director.view if immersive else app.root_content
@@ -279,10 +292,12 @@ func _capture(name:String) -> void:
 	_check(image.save_png(captures.path_join(name+".png"))==OK,"Capture saved "+name)
 
 func _coverage() -> void:
+	if not await settle_club_meetings(app, get_tree(), _check): return
 	await _ask("auto_lineup")
 	if app.model.get("selection",{}).get("valid",true):return
 	# This real paid action repairs injuries and qualified bench shortages.
 	await _ask("promote_cover",{"confirmed":true})
+	if not await settle_club_meetings(app, get_tree(), _check): return
 	_dismiss()
 	_check(app.model.get("selection",{}).get("valid",false),"Native promotions restore legal selection")
 
@@ -413,7 +428,7 @@ func _run() -> void:
 			palette.hide()
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for page: String in chapter.routes: pages.append(page)
-		_check(pages.size() == 21 and pages.has("Réception"), "Every native career route, including the inbox, is included in the executable reception")
+		_check(pages.size() == 20 and pages.has("Réception") and not pages.has("Presse"), "Every native career route is included, with press entered through its inbox mail")
 		for page in pages:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
@@ -474,6 +489,7 @@ func _run() -> void:
 	await _wait()
 	_check(app.model.meta.trained,"Training performed via real control")
 	if not await _publish_press_invitation(): await _finish(); return
+	if not await _reach_world_match_day(): await _finish(); return
 	app._navigate("Match")
 	_press("COUP D'ENVOI")
 	await _wait()
@@ -484,7 +500,11 @@ func _run() -> void:
 	await _ask("pause",{"paused":true})
 	_check(app.model.live.paused,"Real pause")
 	await _capture("match-live")
-	app.match_view.set_camera("tactical")
+	var live_view: Control = app.contextual_director.view
+	var tactical: Button = live_view._camera_controls[1]
+	_check(tactical.is_visible_in_tree() and not tactical.disabled, "Actual immersive tactical camera control is enabled")
+	if not tactical.disabled: tactical.pressed.emit()
+	_check(app.user_preferences.effective_camera() == "tactical" and live_view.stage._camera_mode == "tactical", "Actual immersive camera control applies and preserves the tactical view")
 	await _capture("match-tactical")
 	var changes:Array=app.model.live.get("substitutions",[])
 	for change in changes:
@@ -499,8 +519,10 @@ func _run() -> void:
 	_press("VALIDER LA JOURNÉE  →")
 	await _wait()
 	_check(app.route=="Réception","Validating the result returns to the reception")
+	if not await _close_world_match_week(): await _finish(); return
 	_check(int(app.model.meta.week)==1,"Both competitions advance once")
 	await settle_club_meetings(app, get_tree(), _check)
+	if not await _reach_world_match_day(): await _finish(); return
 	await _coverage()
 	if not await _publish_press_invitation(): await _finish(); return
 	app._navigate("Match")
@@ -513,10 +535,16 @@ func _run() -> void:
 	await continue_match_phase(app, get_tree(), _check, "pre")
 	await _ask("delegate")
 	await _ask("finish_round")
+	if not await _close_world_match_week(): await _finish(); return
 	await settle_club_meetings(app, get_tree(), _check)
 	app._navigate("Bureau")
 	var rounds:=0
 	while not app.model.meta.get("canAdvanceSeason",false) and rounds<40:
+		if not await settle_club_meetings(app, get_tree(), _check): break
+		if app.model.get("next") == null:
+			if not await _advance_world_day(): break
+			continue
+		if not await _reach_world_match_day(): break
 		if not app.model.meta.get("trained",false):await _ask("train",{"mode":"repos"})
 		if app.model.get("next")!=null:
 			await _coverage()
@@ -524,6 +552,7 @@ func _run() -> void:
 			await continue_match_phase(app, get_tree(), _check, "pre")
 			await _ask("delegate")
 		await _ask("finish_round")
+		if not await _close_world_match_week(): break
 		await settle_club_meetings(app, get_tree(), _check)
 		rounds+=1
 	_check(app.model.meta.get("canAdvanceSeason",false),"Complete season reaches interseason")
@@ -622,7 +651,7 @@ func _systems_reception() -> void:
 	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
 	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
 	await _capture("centre-parcours-s2")
-	app._navigate("Presse")
+	if not await _open_press_mail(str(app.model.clubLife.press.lastOutcome.invitationId)): return
 	var press_tabs: TabContainer = app.root_content.find_child("PressTabs",true,false)
 	_check(press_tabs != null and press_tabs.get_tab_count() == 4, "Exported press exposes Journal, Conference, History and Relations")
 	if press_tabs != null: press_tabs.current_tab = 3
@@ -685,9 +714,10 @@ func _advance_world_day() -> bool:
 func _reach_world_match_day() -> bool:
 	# The longest preparation includes the 23 weeks before the Pacific opener.
 	for day in range(197):
+		if not await settle_club_meetings(app, get_tree(), _check): return false
 		if app.model.meta.get("calendarCadence", {}).get("matchReady", false):
 			var fixture: Variant = app.model.get("next")
-			var ready: bool = fixture is Dictionary and fixture.get("date") == app.model.meta.calendarToday
+			var ready: bool = fixture is Dictionary and fixture.get("date", app.model.meta.calendarToday) == app.model.meta.calendarToday
 			_check(ready, "Kickoff is available on the fixture date")
 			return ready
 		if not await _advance_world_day(): return false
@@ -700,6 +730,7 @@ func _close_world_match_week() -> bool:
 	_check(confirmed, "The confirmed result releases the remaining days of the week")
 	if not confirmed: return false
 	for day in 7:
+		if not await settle_club_meetings(app, get_tree(), _check): return false
 		if not await _advance_world_day(): return false
 		if int(app.model.meta.week) == week + 1: return true
 	_check(false, "The match week closes after the final calendar day")
