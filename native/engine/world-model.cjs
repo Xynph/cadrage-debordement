@@ -15,13 +15,13 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   }
   return {filled,expected,points};
  }
- function rosterProfile(players,profiles){
+ function rosterProfile(players){
   const groups=positions.map((_,family)=>family===0
    ?[{position:POS[0],slots:1,ratings:[]},{position:POS[2],slots:1,ratings:[]}]
    :[{slots:starterSlots[family],ratings:[]}]);
   let forwards=0,backs=0,points=0;
   for(const player of players){
-   const position=profiles?.players[player.id]?.position.primary??player.pos;
+   const position=player.pos;
    const family=FAMILIES[POS.indexOf(position)];
    if(family<4)forwards++;else backs++;
    points+=player.rating;
@@ -66,7 +66,13 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
  function catalogue(R){
   if(!catalogues.has(R)){
    const profiles=CDRosterFoundation.resolve(CDRosterFoundation.marker);
-   const rosters=R.clubs.map(({players})=>rosterProfile(players,profiles)),divisions=new Map();
+   const rosters=R.clubs.map(({id,players})=>{
+    const normalized=players.map(player=>{
+     const pos=profiles?.players[player.id]?.position.primary??player.pos;
+     return pos===player.pos?player:{...player,pos,fam:FAMILIES[POS.indexOf(pos)]};
+    });
+    return rosterProfile(normalized.concat(nativeProfessionalDepth.additions(id,normalized,1)));
+   }),divisions=new Map();
    R.clubs.forEach((club,index)=>{
     if(!divisions.has(club.leagueId))divisions.set(club.leagueId,[]);
     divisions.get(club.leagueId).push(rosters[index]);
@@ -81,10 +87,11 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   }
   return catalogues.get(R);
  }
- const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,clubCount:R.clubCount});
+ const startingCount=R=>R.clubs.reduce((count,club)=>count+Math.max(nativeProfessionalDepth.minimum,club.players.length),0);
+ const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,startingPlayerCount:startingCount(R),clubCount:R.clubCount});
  return function project(){
   const m=base(),old=CDWorldEditions.forMode('world').registry,pacific=CDWorldEditions.forMode('world-pacific')?.registry,japan=CDWorldEditions.forMode('world-japan')?.registry,nationale=CDWorldEditions.forMode('world-nationale')?.registry,champ=CDWorldEditions.forMode('world-champ')?.registry;
-  m.meta.legacyCatalogue=m.meta.catalogue;m.meta.legacyDatabase=m.meta.database;m.meta.worldDatabase=database(old);
+  m.meta.legacyCatalogue=m.meta.catalogue;m.meta.legacyDatabase={...m.meta.database,startingPlayerCount:startingCount(CDCommonRosters)};m.meta.worldDatabase=database(old);
   m.meta.worldCatalogue=catalogue(old);m.meta.availableModes=['fiction','france','common','world'];
   if(pacific){m.meta.pacificCatalogue=catalogue(pacific);m.meta.pacificDatabase=database(pacific);m.meta.availableModes.push('world-pacific');}
   if(japan){m.meta.japanCatalogue=catalogue(japan);m.meta.japanDatabase=database(japan);m.meta.availableModes.push('world-japan');}

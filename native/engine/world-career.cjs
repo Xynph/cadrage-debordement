@@ -234,6 +234,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
    }
   }
   newSeason(S,true);setupOpposition();setupEconomy();
+  if(typeof nativeProfessionalDepth!=='undefined')nativeProfessionalDepth.fill(S);
   S.aiRoster.academyAgingVersion=1;
   setupDevelopment();club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
  }

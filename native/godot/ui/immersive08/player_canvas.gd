@@ -298,7 +298,8 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 static func _sources(card:Panel,app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
-		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,686)
+		var heading := "Joueur généré pour compléter l’effectif" if str(player.id).begins_with("depth-") else "Repères du joueur dans votre carrière"
+		D.text(card,24,120,heading,31,C.IVORY,700,686)
 		D.text(card,24,179,"Aucun dossier de référence externe associé.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var pos:Dictionary=profile.get("position",{})

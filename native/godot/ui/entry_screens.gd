@@ -896,7 +896,7 @@ static func creation(app: Control) -> Control:
 		grid.add_child(b)
 	if modern: list_scroll.resized.connect(_fit_creation_grid.bind(list_scroll, grid, grid_rows))
 	var database: Dictionary = app.pack_manager.database("creation")
-	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("playerCount", 0)), playable.size()]
+	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("startingPlayerCount", database.get("playerCount", 0))), playable.size()]
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"

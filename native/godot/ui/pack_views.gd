@@ -165,7 +165,7 @@ static func _catalogue(app: Control, parent: Container, selected: String, compat
 	var database: Dictionary = app.pack_manager.database()
 	_fact(facts, database.get("clubCount", 0), "Clubs")
 	Editorial.divider(facts)
-	_fact(facts, database.get("playerCount", 0), "Joueurs")
+	_fact(facts, database.get("startingPlayerCount", database.get("playerCount", 0)), "Joueurs")
 	content.add_child(C.rule())
 	content.add_child(C.wrap("Les packs changent les identités et les visuels. Le calendrier et les règles restent ceux du monde commun.", 19))
 	var space := Control.new()

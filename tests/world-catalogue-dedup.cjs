@@ -17,9 +17,10 @@ function fixture(t,club=112){
 }
 function legacyDocument(text){const doc=JSON.parse(text);for(const[id,row]of Object.entries(loadLegacy().aliases))doc.state.clubs[row.clubId].players.push({...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)});const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
 test('Le vrai lecteur conserve les six fiches présentes dans un ancien export : état, RNG et reprise exacts',t=>{
- const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh);h.go('import',{text:old});a.equal(h.export(),old);a.equal(JSON.parse(old).state.clubs.reduce((n,c)=>n+c.players.length,0),5884);
+ const sourceCount=text=>JSON.parse(text).state.clubs.flatMap(c=>c.players).filter(p=>!p.id.startsWith('depth-')).length;
+ const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh);h.go('import',{text:old});a.equal(h.export(),old);a.equal(sourceCount(old),5884);
  const disk=h.disk();h.go('snapshot');a.deepEqual(h.disk(),disk);h.restart();a.equal(h.export(),old);a.deepEqual(h.disk(),disk);
- h.go('new_career',{mode:'world-champ',club:112});a.equal(JSON.parse(h.export()).state.clubs.reduce((n,c)=>n+c.players.length,0),5878);
+ h.go('new_career',{mode:'world-champ',club:112});a.equal(sourceCount(h.export()),5878);
 });
 function archive(root,players,assets=[]){
  const media=require('../native/engine/media-packs.cjs'),manifest={schema:'cd-identity-pack-v1',id:'alias-compat-test',name:'Identités fictives de réception',version:'1',databaseId:delta.id,rightsStatus:'synthetic-test-only',clubs:[],players,assets:assets.map(([id,data])=>({id,path:id+'.png',sha256:crypto.createHash('sha256').update(data).digest('hex'),bytes:data.length}))},items=[['pack.json',Buffer.from(JSON.stringify(manifest))],...assets.map(([id,data])=>[id+'.png',data])];

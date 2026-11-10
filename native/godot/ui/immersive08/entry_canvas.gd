@@ -62,8 +62,9 @@ static func home(app: Control) -> Control:
 		var count := catalogue.filter(func(item: Dictionary): return item.get("playable", true)).size()
 		D.chip(content,Rect2(next_chip,895,270,52),"Monde · %d clubs jouables" % count,C.BLUE).name="EntryWorldCount"
 		next_chip += 284
-	if int(database.get("playerCount",0))>0:
-		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs au départ",C.MINT)
+	var starting_player_count := int(database.get("startingPlayerCount", database.get("playerCount", 0)))
+	if starting_player_count > 0:
+		D.chip(content,Rect2(next_chip,895,305,52),G.n(starting_player_count)+" joueurs au départ",C.MINT)
 	var club: Dictionary = app.model.get("club") if app.model.get("club") is Dictionary else {}
 	var accent: Color = GREEN if club.is_empty() else app.accent
 	_choices(D.panel(content,Rect2(1642,248,827,1008),"","","","EntryCareerCard"),app,club,meta,accent)
