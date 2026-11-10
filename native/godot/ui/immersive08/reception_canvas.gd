@@ -365,7 +365,13 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 		if message.has("international_event"):
 			var event: Dictionary = message.international_event
 			var destination: String = event.get("action", "")
-			if destination in ["international", "national_job"]:
+			if event.get("kind") == "international_host":
+				var edition: Dictionary = app.Immersive.Selections.host_mail_edition(app.model, event)
+				if not edition.is_empty():
+					var caption: String = app.Immersive.Selections.host_mail_caption(edition)
+					var open: Callable = app.Immersive.Selections.open_host.bind(app, edition)
+					D.button(card,Rect2(26,top,545,62),caption,open,true,"arrow",false,app.accent,"InboxOpenInternational")
+			elif destination in ["international", "national_job"]:
 				var caption := "Voir les offres de sélection" if destination == "national_job" else "Ouvrir les sélections"
 				if _has_match_sheet(app, event): caption = "Préparer la feuille de match"
 				elif _is_club_return(app, event): caption = "Voir l’effectif"

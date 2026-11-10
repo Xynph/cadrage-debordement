@@ -183,6 +183,23 @@ static func _edition_title(edition: Dictionary, year: int) -> String:
 	var title: String = edition.get("name", edition.get("id", "Édition"))
 	return title + " · " + str(year) if year > 0 and not title.contains(str(year)) else title
 
+static func host_mail_edition(model: Dictionary, event: Dictionary) -> Dictionary:
+	var id := str(event.get("id", ""))
+	if event.get("kind") != "international_host" or not id.begins_with("host/"): return {}
+	var edition_id := id.trim_prefix("host/")
+	for edition: Dictionary in model.get("international", {}).get("editions", []):
+		if edition.get("id") == edition_id and not _host_data(edition).is_empty(): return edition
+	return {}
+
+static func host_mail_caption(edition: Dictionary) -> String:
+	var year := _edition_year(edition)
+	return "Voir l’accueil %d" % year if year > 0 else "Voir l’accueil"
+
+static func open_host(app: Control, edition: Dictionary) -> void:
+	app.management_ui.international_editions = {"year":_edition_year(edition), "edition":edition.id, "mode":2}
+	app.management_ui.international_section = "editions"
+	app._navigate("Sélections")
+
 static func _default_year(years: Array[int], today: String) -> int:
 	var target := today.left(4).to_int()
 	if target > 0:
@@ -238,15 +255,57 @@ static func _editions(app: Control, international: Dictionary, names: Dictionary
 	_picker(controls, "InternationalEdition", "Édition", titles, index, func(selected: int):
 		state.merge({"edition":ids[selected], "page":0, "pool":0}, true)
 		_refresh_editions(app, "InternationalEdition"))
+	var host := _host_data(current)
+	var modes := ["Classement", "Rencontres"]
+	if not host.is_empty(): modes.append("Accueil")
 	var mode := int(state.get("mode", 0))
-	_picker(controls, "InternationalEditionMode", "Vue", ["Classement", "Rencontres"], mode, func(selected: int):
+	if mode < 0 or mode >= modes.size(): mode = 0
+	_picker(controls, "InternationalEditionMode", "Vue", modes, mode, func(selected: int):
 		state.mode = selected
 		_refresh_editions(app, "InternationalEditionMode"))
 	var list := G.panel(view)
 	list.add_child(G.section(_edition_title(current, year)))
-	if mode == 0: _edition_standings(app, list, current.get("tables", []), names, state)
-	else: _edition_fixtures(app, list, current.get("fixtures", []), names, state)
+	match mode:
+		0: _edition_standings(app, list, current.get("tables", []), names, state)
+		1: _edition_fixtures(app, list, current.get("fixtures", []), names, state)
+		2: _edition_host(list, host)
 	return view
+
+static func _host_data(edition: Dictionary) -> Dictionary:
+	var host: Variant = edition.get("host")
+	return host if host is Dictionary else {}
+
+static func _host_text(data: Dictionary, key: String) -> String:
+	var value: Variant = data.get(key)
+	return value.strip_edges() if value is String else ""
+
+static func _edition_host(parent: Control, host: Dictionary) -> void:
+	var card := G.v(8)
+	card.name = "InternationalHostDetails"
+	parent.add_child(card)
+	var countries: Variant = host.get("countries")
+	var country_names := {}
+	if countries is Array:
+		for country: Dictionary in countries:
+			var name := _host_text(country, "name")
+			if name.is_empty(): continue
+			country_names[country.get("id", name)] = name
+			var capital := _host_text(country, "capital")
+			card.add_child(G.section(name, "Capitale · " + capital if not capital.is_empty() else ""))
+			var details: Variant = country.get("details")
+			if details is Array:
+				for detail: Variant in details:
+					if detail is String and not detail.strip_edges().is_empty():
+						card.add_child(G.wrap(detail, 15, G.INK))
+	var final_country := _host_text(host, "finalCountry")
+	var final_site: Array[String] = []
+	for part: String in [_host_text(host, "stadium"), _host_text(host, "city"), str(country_names.get(final_country, final_country))]:
+		if not part.is_empty(): final_site.append(part)
+	if not final_site.is_empty():
+		card.add_child(G.section("Finale", " · ".join(final_site)))
+	for date_field: Array in [["opens", "Ouverture"], ["ends", "Clôture"], ["announcementDate", "Annonce"]]:
+		var date := P.fixture_date({"date":_host_text(host, date_field[0])})
+		if not date.is_empty(): card.add_child(G.wrap(date_field[1] + " · " + date, 15, G.INK))
 
 static func _edition_standings(app: Control, list: Control, tables: Array, names: Dictionary, state: Dictionary) -> void:
 	if tables.is_empty():
