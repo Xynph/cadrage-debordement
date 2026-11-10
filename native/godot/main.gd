@@ -213,6 +213,7 @@ func _receive_model(value: Dictionary) -> void:
 	if model.get("meta", {}).get("catalogue") is Array:
 		catalogue = model.meta.catalogue.duplicate(true)
 	waiting = false
+	if SeasonPreparation.is_advance(received_command): SeasonPreparation.show_pending(self, false)
 	connection_error = false
 	if _has_career(): accent = Color(G.identity(model.club).get("color", "#d43e47"))
 	if not export_path.is_empty() and not _write_export():
@@ -268,6 +269,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	last_command = command
 	pending_route = target_route
 	if is_instance_valid(status): status.text = "Traitement de votre décision…"
+	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
 	if decision_feedback != null: decision_feedback.begin(command, payload, model)
 	bridge.send(command, payload)
 	return waiting
@@ -285,6 +287,7 @@ func _failed(message: String) -> void:
 	if is_instance_valid(soundscape): soundscape.notify_error()
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
+	if SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, false)
 	queued_action.clear()
 	pending_route = ""
 	connection_error = bridge.child_pid <= 0 or bridge._stopping
@@ -700,6 +703,7 @@ func _update_live_bar() -> void:
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		primary_button.tooltip_text = action
+	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
 
 func primary_text() -> String:
 	var live := _live()
