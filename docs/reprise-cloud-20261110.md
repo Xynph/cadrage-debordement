@@ -53,9 +53,9 @@ après finale, les convocations et la conservation des anciennes données sont
 testés séparément par les suites moteur. Ces captures ne constituent pas une
 simulation graphique de plusieurs saisons réelles.
 
-## Contrôle général encore rouge
+## Contrôle général rouge au premier relevé — désormais reçu
 
-`tests/godot-guide-integration.cjs` échoue : **306 contrôles, 29 échecs** sur
+Ce relevé historique est clos par la [réception des six chantiers](oval-six-chantiers-cloud-20261110.md) : 501 contrôles verts sur le guide corrigé. Au premier passage, `tests/godot-guide-integration.cjs` échouait : **306 contrôles, 29 échecs** sur
 #507. Les échecs concernent le focus de MarketReset, la présence de deux offres,
 la reprise depuis l'accueil, le menu bas attendu par le banc, les commandes
 de match et la réactivation du guide. La suite utilise notamment des libellés
@@ -82,7 +82,7 @@ personnel ; chacun crée son profil sous le dossier temporaire système.
 
 ## Prochaines actions
 
-1. Recevoir ou adapter la suite générale du guide sur ces parcours actuels.
+1. Suite générale du guide reçue : 501/501 ; navigation clavier 133/133. Consulter le bilan cumulatif avant de reprendre les étapes PC.
 2. Sur PC, assembler les deux essais Blender manches/carnet, réexporter le GLB
    et reprendre la recette Windows complète de #507. Les fichiers `D:/` cités
    dans la passation ne sont pas accessibles depuis ce Cloud.
