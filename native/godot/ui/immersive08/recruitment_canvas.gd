@@ -33,6 +33,7 @@ var page_label: Label
 var prev: Button
 var next: Button
 var direction: Button
+var position_filter: OptionButton
 
 static func build(owner_app: Control, canvas: Control) -> void:
 	var page: Control = load("res://ui/immersive08/recruitment_canvas.gd").new()
@@ -58,8 +59,9 @@ func _build() -> void:
 			report_by_player[key] = report
 	for player: Dictionary in app.model.get("market", []):
 		max_salary = maxf(max_salary, float(player.get("salary", 0)))
-	_header()
-	_filters()
+	var positions: Array = app.SquadViews._positions(app.model.get("market", []))
+	_header(positions)
+	_filters(positions)
 	_table()
 	dossier = Control.new()
 	dossier.name = "RecruitmentProfile"
@@ -69,25 +71,23 @@ func _build() -> void:
 	_refresh()
 	U.restore(app, self, "market")
 
-func _header() -> void:
+func _header(positions: Array) -> void:
 	D.text(self, 24, 43, "CONSTRUIRE L’EFFECTIF DE DEMAIN", 31, WARM, 700, 470)
 	D.line(self, Vector2(490, 31), Vector2(568, 31), WARM)
 	D.text(self, 20, 108, "Le prochain renfort.", 74, C.IVORY, 800, 900)
-	var needs: Array = data.get("needs", [])
-	var first: Dictionary = needs[0] if not needs.is_empty() else {}
 	var metrics := [
 		[798, 316, "people", "%d profils suivis" % app.management_ui.shortlist.size(), "", GREEN],
 		[1130, 320, "save", "%d rapports conservés" % data.get("reports", []).size(), "", WARM],
 		[1466, 366, "money", "Trésorerie du club", _money(app.model.get("finance", {}).get("cash")), WARM],
-		[1848, 400, "star", "Priorité de recrutement" if first.get("need", false) else "Poste à surveiller", str(first.get("pos", "—")), WARM]
 	]
 	for item: Array in metrics:
 		var x: int = item[0]
 		var w: int = item[1]
-		var card := D.rect(self, Rect2(x, 40, w, 73), Color("102820") if x < 1848 else Color("302719"), 9, Color("206848") if x < 1848 else Color("8c6b2e"))
+		var card := D.rect(self, Rect2(x, 40, w, 73), Color("102820"), 9, Color("206848"))
 		_icon(card, item[2], Rect2(24, 19, 37, 37), item[5])
 		D.text(card, 77, 46 if item[4] == "" else 27, item[3], 30 if item[4] == "" else 22, C.IVORY, 600, w - 86)
 		if item[4] != "": D.text(card, 77, 59, item[4], 31, C.IVORY, 700, w - 86)
+	_watch(positions)
 	D.photo(self, "scouting", Rect2(0, 130, 634, 156))
 	var fade := Control.new()
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -100,6 +100,27 @@ func _header() -> void:
 		_tab(Rect2(624 + 206 * i, 190, 216, 65), TABS[i], i)
 	D.button(self, Rect2(1510, 181, 230, 61), "Comparer", _compare, false, "people", false, app.accent, "CompareMarket")
 	D.button(self, Rect2(1758, 175, 490, 69), "Lancer une mission", func(): _staff(1), true, "arrow", false, PRIMARY, "OpenScoutMission")
+
+func _watch(positions: Array) -> void:
+	var watch := Decisions.market_watch(app)
+	if watch.is_empty(): return
+	var index := positions.find(watch.position)
+	var can_filter := index > 0 and tab != 3
+	var area := Rect2(1848, 40, 400, 121 if can_filter else 98)
+	var panel: Control
+	if can_filter:
+		var action := D.button(self, area, "", func(): Decisions.select_market_position(position_filter, index), false, "", false, app.accent, "MarketPriorityFilter")
+		action.add_theme_stylebox_override("normal", D.surface(400, 121, Color("302719"), Color("211b15"), Color("8c6b2e")))
+		action.accessibility_name = "Filtrer sur ce poste · " + watch.position
+		panel = action
+	else:
+		panel = D.rect(self, area, Color("302719"), 9, Color("8c6b2e"))
+	_icon(panel, "star", Rect2(24, 19, 37, 37), WARM)
+	D.text(panel, 77, 26, watch.heading, 21, C.IVORY, 600, 309)
+	D.text(panel, 77, 53, watch.position, 29, C.IVORY, 700, 309)
+	D.text(panel, 77, 80, watch.caption, 20, C.MUTED, 600, 309).name = "MarketPriorityStock"
+	if can_filter:
+		D.text(panel, 77, 107, "Filtrer sur ce poste  →", 21, WARM, 700, 309)
 
 func _tab(area: Rect2, caption: String, index: int) -> void:
 	var id := "MarketFollowed" if index == 2 else "MarketTab" + str(index)
@@ -121,7 +142,7 @@ func _tab(area: Rect2, caption: String, index: int) -> void:
 	button.add_theme_stylebox_override("normal", style)
 	button.add_theme_font_size_override("font_size", maxi(12, C.px(27)))
 
-func _filters() -> void:
+func _filters(positions: Array) -> void:
 	var panel := D.panel(self, Rect2(0, 286, LEFT, 62), "", "", "", "MarketFilters")
 	_icon(panel, "search", Rect2(20, 19, 26, 26), WARM)
 	D.text(panel, 58, 41, "FILTRES DE RECHERCHE", 26, C.IVORY, 700, 225)
@@ -142,8 +163,7 @@ func _filters() -> void:
 		state.search = value
 		state.navigation_id = ""
 		_filter_changed())
-	var positions: Array = app.SquadViews._positions(app.model.get("market", []))
-	_choice(panel, Rect2(552, 11, 229, 40), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; _filter_changed())
+	position_filter = _choice(panel, Rect2(552, 11, 229, 40), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; _filter_changed())
 	_choice(panel, Rect2(791, 11, 146, 40), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
 	_choice(panel, Rect2(947, 11, 157, 40), "MarketAvailability", "Offres", ["Tous", "Disponibles"], state.available, func(value: String): state.available = value; _filter_changed())
 	_choice(panel, Rect2(1114, 11, 147, 40), "MarketBudget", "Prime", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
@@ -166,7 +186,7 @@ func _filters() -> void:
 	D.button(reports, Rect2(1110, 10, 274, 42), "Missions et échéances", func(): _staff(1), false, "calendar", true, app.accent, "OpenRecruitmentMissions")
 	reports.visible = tab == 3
 
-func _choice(parent: Node, area: Rect2, id: String, caption: String, values: Array, current: Variant, change: Callable) -> void:
+func _choice(parent: Node, area: Rect2, id: String, caption: String, values: Array, current: Variant, change: Callable) -> OptionButton:
 	var field := OptionButton.new()
 	field.name = id
 	field.fit_to_longest_item = false
@@ -183,6 +203,7 @@ func _choice(parent: Node, area: Rect2, id: String, caption: String, values: Arr
 	field.item_selected.connect(func(index: int): change.call(str(values[index])))
 	parent.add_child(field)
 	D.place(field, area)
+	return field
 
 func _table() -> void:
 	var panel := D.panel(self, Rect2(0, 362, LEFT, 648), "", "", "", "ImmersiveMarketTable")

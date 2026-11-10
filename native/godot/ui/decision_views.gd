@@ -138,6 +138,25 @@ static func recruitment_summary(app: Control, parent: Container) -> void:
 	button.name = "OpenRecruitmentNeeds"
 	row.add_child(button)
 
+static func market_watch(app: Control) -> Dictionary:
+	var needs: Array = app.model.get("decisions", {}).get("recruitment", {}).get("needs", [])
+	if needs.is_empty(): return {}
+	var position: Variant = needs[0].get("pos")
+	if not position is String or position.strip_edges().is_empty(): return {}
+	var stock: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == position).size()
+	var caption := "Aucune piste sur le marché"
+	if stock > 0:
+		caption = "%d piste%s sur le marché" % [stock, "s" if stock > 1 else ""]
+	return {
+		"position": position,
+		"heading": "Priorité de recrutement" if needs[0].get("need", false) else "Poste à surveiller",
+		"caption": caption,
+	}
+
+static func select_market_position(picker: OptionButton, index: int) -> void:
+	picker.select(index)
+	picker.item_selected.emit(index)
+
 static func open_market_position(app: Control, position: String) -> void:
 	var filters: Dictionary = app.management_ui.market
 	filters.merge({

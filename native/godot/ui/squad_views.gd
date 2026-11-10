@@ -4,6 +4,7 @@ const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Decisions = preload("res://ui/decision_views.gd")
 
 # Keep the bound dictionary when a career reset replaces management_ui. Retiring
 # controls can only update their former UI state, never the new career's state.
@@ -604,7 +605,7 @@ static func market(app:Control) -> Control:
 	tabs.add_child(browse)
 	var staff:=G.scroll(tabs)
 	staff.get_parent().name="RecruitmentStaff"
-	preload("res://ui/decision_views.gd").recruitment_summary(app,staff)
+	Decisions.recruitment_summary(app,staff)
 	preload("res://ui/regen_scouting_view.gd").entry(app,staff)
 	preload("res://ui/interclub_market_view.gd").entry(app,staff)
 	tabs.set_tab_title(0,"Pistes")
@@ -613,10 +614,15 @@ static func market(app:Control) -> Control:
 	tabs.tab_changed.connect(func(index:int):app.management_ui.market_tab=index)
 	workspace=browse
 	var state:Dictionary=app.management_ui.market
-	var search:=_search(workspace,"MarketSearch",state)
+	var search_row := G.h(8)
+	workspace.add_child(search_row)
+	var search := _search(search_row, "MarketSearch", state)
+	G.fill(search)
 	var controls:=G.h(8)
 	workspace.add_child(controls)
-	var position:=_choice(controls,"MarketPosition",_positions(app.model.get("market",[])),state.position,"Poste")
+	var positions := _positions(app.model.get("market", []))
+	var position := _choice(controls, "MarketPosition", positions, state.position, "Poste")
+	_market_watch(app, search_row, position, positions)
 	var available:=_choice(controls,"MarketAvailability",["Tous","Disponibles"],state.available,"Offres")
 	var sort:=_choice(controls,"MarketSort",["Poste","Nom","Niveau","Âge","Salaire"],state.sort,"Trier par")
 	var direction:=G.button("↓ Décroissant" if state.descending else "↑ Croissant",func():state.descending=not state.descending;app._render())
@@ -649,6 +655,23 @@ static func market(app:Control) -> Control:
 	refresh.call()
 	U.restore(app,page,"market")
 	return page
+
+static func _market_watch(app: Control, row: HBoxContainer, picker: OptionButton, positions: Array) -> void:
+	var watch := Decisions.market_watch(app)
+	if watch.is_empty(): return
+	var description := G.v(1)
+	description.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(description)
+	description.add_child(G.label(watch.heading + " · " + watch.position, 13, G.INK, true))
+	var stock := G.label(watch.caption, 12, G.MUTED)
+	stock.name = "MarketPriorityStock"
+	description.add_child(stock)
+	var index := positions.find(watch.position)
+	if index > 0:
+		var action := G.button("Filtrer sur ce poste", func(): Decisions.select_market_position(picker, index))
+		action.name = "MarketPriorityFilter"
+		action.accessibility_name = "Filtrer sur ce poste · " + watch.position
+		row.add_child(action)
 
 static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	_empty(list)
