@@ -825,7 +825,7 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	var fields:=G.v(8)
 	# A zero-width autowrap label inflates the initial minimum height of Window.
 	# Two explicit lines give the dialog a bounded minimum before its first layout.
-	fields.add_child(G.label("Salaire hebdomadaire et durée proposés.\nLe joueur peut refuser ou faire une contre-offre.",13,G.MUTED))
+	fields.add_child(G.label("Si le joueur accepte, le contrat est signé et la prime est débitée.\nLe joueur peut refuser ou faire une contre-offre.",13,G.MUTED))
 	var salary:=SpinBox.new()
 	salary.name="OfferSalary"
 	var quote:Dictionary=p if recruiting else p.get("renewal",{})
@@ -847,13 +847,24 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	var summary:=G.label("",13,G.INK)
 	summary.name="OfferSummary"
 	fields.add_child(summary)
+	var meta: Dictionary = app.model.get("meta", {})
+	# Le moteur compte depuis la saison suivante si la saison est terminée.
+	var first_season := int(meta.get("season", 1)) + (1 if meta.get("phase") == "ended" else 0)
+	var current_end: Variant = p.get("contractEnd")
 	var refresh:=func():
 		var delta:=int(salary.value)-(0 if recruiting else int(p.get("salary",0)))
-		summary.text="IMMÉDIAT · %s : %s\nRÉCURRENT · %s / semaine · %s %s / semaine\nDurée : %s saison(s) · trésorerie actuelle : %s\nPaiement à la signature, uniquement si l’offre est acceptée."%["acquisition" if recruiting else "prime de prolongation",G.euros(quote.get("fee",0)),G.euros(salary.value),"ajout" if recruiting else "écart",("+" if delta>=0 else "−")+G.euros(absi(delta)),G.n(years.value),G.euros(app.model.get("finance",{}).get("cash",0))]
+		var term := "Échéance proposée : fin saison %d" % [first_season + int(years.value) - 1]
+		if not recruiting:
+			var current := "—" if current_end == null else "fin saison %d" % int(current_end)
+			term = "Échéance actuelle : %s\n" % current + term
+		summary.text = "IMMÉDIAT À LA SIGNATURE · %s : %s\nNOUVEAU SALAIRE · %s / semaine · %s %s / semaine\n%s\nDurée totale : %s saison(s) · trésorerie actuelle : %s" % [
+			"acquisition" if recruiting else "prime de prolongation", G.euros(quote.get("fee", 0)),
+			G.euros(salary.value), "ajout" if recruiting else "écart", ("+" if delta >= 0 else "−") + G.euros(absi(delta)),
+			term, G.n(years.value), G.euros(app.model.get("finance", {}).get("cash", 0))]
 	salary.value_changed.connect(func(_value:float):refresh.call())
 	years.value_changed.connect(func(_value:float):refresh.call())
 	refresh.call()
-	d.get_ok_button().text="SOUMETTRE L'OFFRE"
+	d.get_ok_button().text="AUTORISER LA SIGNATURE SI ACCORD"
 	d.get_cancel_button().text="ANNULER"
 	d.add_child(fields)
 	d.confirmed.connect(func():app._command("recruit" if recruiting else "extend_contract",{"playerId":p.id,"salary":int(salary.value),"years":int(years.value),"confirmed":true});d.queue_free())
