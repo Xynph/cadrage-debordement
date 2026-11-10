@@ -69,9 +69,11 @@ static func _team_names(international: Dictionary) -> Dictionary:
 	return names
 
 static func _fixture_name(fixture: Dictionary, names: Dictionary) -> String:
-	var home: String = fixture.get("homeId", "")
-	var away: String = fixture.get("awayId", "")
-	return "%s – %s" % [names.get(home, home), names.get(away, away)]
+	var home: Variant = fixture.get("homeId")
+	var away: Variant = fixture.get("awayId")
+	var home_name: String = names.get(home, home) if home is String else "À déterminer"
+	var away_name: String = names.get(away, away) if away is String else "À déterminer"
+	return "%s – %s" % [home_name, away_name]
 
 static func _fixture_row(fixture: Dictionary, names: Dictionary) -> String:
 	var line := "%s · %s" % [P.fixture_date(fixture), _fixture_name(fixture, names)]

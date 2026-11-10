@@ -101,7 +101,9 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"id":invitation.id, "subject":subject, "text":detail, "category":"Compétitions",
 			"route":"Presse", "position":messages.size() + 1, "press_invitation":invitation
 		})
-	for event: Dictionary in international_mail(app.model):
+	var events := international_mail(app.model)
+	for index in range(events.size() - 1, -1, -1):
+		var event := events[index]
 		messages.push_front({
 			"id":"international:" + event.id, "subject":str(event.get("title", "Sélections internationales")),
 			"text":str(event.get("body", "")), "category":"Compétitions",

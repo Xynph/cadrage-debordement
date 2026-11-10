@@ -69,9 +69,11 @@ func run() -> void:
 		"body":"La sélection recherche un entraîneur.", "date":"2026-08-20", "action":"national_job", "nation":"FRA"}
 	next = next.duplicate(true)
 	next.international.jobs = [{"nation":"FRA", "name":"France"}]
-	next.international.mail.append(job)
+	next.international.mail.push_front(job)
 	app._receive_model(next)
 	await settle()
+	rows = app.Immersive.Reception._messages(app).filter(func(message: Dictionary): return message.has("international_event"))
+	check(rows.size() == 2 and rows[0].international_event.id == job.id, "Le courrier international le plus récent apparaît en premier")
 	action = app.find_child("InboxOpenInternational", true, false) as Button
 	if action != null: action.pressed.emit()
 	await settle()
