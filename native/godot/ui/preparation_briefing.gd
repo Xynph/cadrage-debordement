@@ -12,7 +12,7 @@ static func project(model: Dictionary) -> Dictionary:
 	var live: Dictionary = model.get("live") if model.get("live") is Dictionary else {}
 	var fixture: Dictionary = model.get("next") if model.get("next") is Dictionary else {}
 	var report: Dictionary = model.get("decisions", {}).get("preparation", {}) if model.get("decisions", {}).get("preparation") is Dictionary else {}
-	var ended := meta.get("phase") == "ended"
+	var ended: bool = meta.get("phase") == "ended"
 	if not live.is_empty():
 		result.append(_check("live", "Résultat à consulter" if live.get("finished", false) else "Le match est en cours", "Reprenez la rencontre pour retrouver le score et les décisions du direct.", "match", "Retour au match", "important"))
 	if ended and live.is_empty():
@@ -30,13 +30,13 @@ static func project(model: Dictionary) -> Dictionary:
 		var availability: Dictionary = model.get("international", {}).get("availability", {})
 		var absent := int(availability.get("absentCount", 0))
 		if availability.get("clubManaged", false) and absent > 0:
-			var detail := "%d joueur%s convoqué%s. Vérifiez les postes exposés avant de composer." % [absent, "s" if absent > 1 else "", "s" if absent > 1 else ""]
+			var detail := "%d joueur%s convoqué%s. Vérifiez les postes exposés." % [absent, "s" if absent > 1 else "", "s" if absent > 1 else ""]
 			if availability.get("nextReturn") is String: detail += " Premier retour prévu : " + P.fixture_date({"date":availability.nextReturn}) + "."
 			result.append(_check("international", "Absences internationales", detail, "international", "Voir les joueurs et retours", "important"))
 		var injured: Array = model.get("squad", []).filter(func(player: Dictionary): return float(player.get("injury", 0)) > 0)
 		if not injured.is_empty():
 			result.append(_check("injuries", "%d joueur%s blessé%s" % [injured.size(), "s" if injured.size() > 1 else "", "s" if injured.size() > 1 else ""], "Consultez les indisponibilités et les solutions de remplacement dans votre effectif.", "squad", "Ouvrir l’effectif", "important"))
-		result.append(_check("tactics", "Vérifier les consignes", "Vos intentions avec et sans ballon se règlent dans l’onglet Consignes ; les choix par zone restent dans le carnet de jeu.", "consignes", "Revoir les consignes"))
+		result.append(_check("tactics", "Vérifier les consignes", "Attaque et défense dans Consignes ; choix par zone dans le carnet de jeu.", "consignes", "Revoir les consignes"))
 	return {"checks":result,"reportAvailable":not report.is_empty(),"domains":report.get("domains", []).size(),"recent":report.get("recent", []).size(),"threats":report.get("threats", []).size()}
 
 static func open_action(app: Control, action: String, consignes: Callable) -> void:
