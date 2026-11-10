@@ -196,10 +196,11 @@ function factory(){
    const pid=typeof value.playerId==='string'&&Object.hasOwn(visible,value.playerId)?value.playerId:typeof value.id==='string'&&Object.hasOwn(visible,value.id)?value.id:null;
    const unknownId=typeof value.playerId==='string'?value.playerId:value.id;
    const aliases=['rating',...levels.filter(k=>typeof value.playerId==='string'||typeof value.pos==='string'||!['level','quality'].includes(k)),...ceilings,'attributesV2','positionRatings'];
+   const hasPlayerData=aliases.some(k=>Object.hasOwn(value,k))||typeof value.name==='string'&&typeof value.pos==='string';
    const looksLikePlayer=!pid&&id(unknownId)&&(typeof value.playerId==='string'||typeof value.pos==='string'||typeof value.name==='string')&&aliases.some(k=>Object.hasOwn(value,k));
    const unknown={rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}};
    const ownPerson=pid?visible[pid]:looksLikePlayer?unknown:person;
-   if(pid||looksLikePlayer){
+   if(pid&&hasPlayerData||looksLikePlayer){
     Object.assign(value,copy(ownPerson));
     for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
     if(!ownPerson.knowledge.owned){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
