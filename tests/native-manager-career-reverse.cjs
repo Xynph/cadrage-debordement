@@ -10,7 +10,19 @@ function signed(state){const s={format:'cadrage-debordement-save',exportVersion:
 try{
  const b=open('accession');good(b,'new_career',{mode:'common',club:29});act(b,'manager_career_activate');
  if(process.env.CD_MANAGER_REVERSE_PROFILE){const profile=JSON.parse(fs.readFileSync(process.env.CD_MANAGER_REVERSE_PROFILE,'utf8')),state=JSON.parse(profile.store['bdt-v1']),carrier=doc(b),fixture=signed(state);fixture.format=carrier.format;good(b,'import',{text:JSON.stringify(fixture)});}
- else for(let i=0;i<34;i++){if(good(b,'snapshot').next){good(b,'begin_match');good(b,'delegate');}good(b,'finish_round');}
+ else for(let i=0;i<34;i++){
+  let model=good(b,'snapshot');
+  if(model.next){
+   if(!model.selection.valid)model=good(b,'auto_lineup');
+   if(!model.selection.valid){
+    const expectedSlots=model.selection.coverage?.slots;
+    assert.ok(expectedSlots?.length,`Semaine ${model.meta.week} : feuille incomplète sans renfort disponible`);
+    good(b,'promote_cover',{confirmed:true,expectedSlots});
+   }
+   good(b,'begin_match');good(b,'delegate');
+  }
+  good(b,'finish_round');
+ }
  let target=data(b).opportunities.find(x=>x.leagueId==='elite'&&x.accepted);
  if(!target){
   // Actual club29's first season can correctly receive only refusals. Qualify

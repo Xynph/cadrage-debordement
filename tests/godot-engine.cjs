@@ -4,6 +4,8 @@ const {spawn}=require('node:child_process');
 const workerPath=path.resolve(__dirname,'../native/engine/worker.cjs');
 assert.ok(fs.existsSync(workerPath),'Le worker Godot de production doit exister');
 const {createBridge,CORE_FILES}=require(workerPath),{context}=require('./native-reference-harness.cjs');
+const professionalDepth=require('../native/engine/professional-depth.cjs');
+const playerAttributes=require('../native/engine/player-attributes.cjs');
 assert.ok(fs.existsSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd')),'Le pont Godot asynchrone doit exister');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-test-'));
 let count=0;const bridges=[];
@@ -17,31 +19,37 @@ try{
  const b=bridge('main');
  for(const request of [null,{command:'snapshot'},{id:[],command:'snapshot'},{id:1,command:'eval',payload:{code:'process.exit()'}},{id:1,command:'snapshot',payload:[]}])assert.equal(b.handle(request).ok,false);
  assert.equal(good(b,'snapshot').club,null);
- const initial=good(b,'new_career',{club:0});assert.equal(initial.protocol,1);assert.equal(initial.league.length,14);assert.equal(initial.squad.length,30);assert.equal(initial.meta.catalogue.length,30);assert.equal(initial.meta.catalogue.filter(c=>c.playable).length,30);
- assert.equal(Object.keys(initial.squad[0].attributes).length,11);assert.ok(initial.squad[0].portraitIndex<32);
+ const initial=good(b,'new_career',{club:0});assert.equal(initial.protocol,1);assert.equal(initial.league.length,14);assert.equal(initial.squad.length,40);assert.equal(initial.meta.catalogue.length,30);assert.equal(initial.meta.catalogue.filter(c=>c.playable).length,30);
+ assert.equal(Object.keys(initial.squad[0].attributesV2).length,36);assert.ok(initial.squad[0].portraitIndex<32);
  assert.equal(initial.squad[0].portraitIndex,0,'Même index de portrait que CDEditorial pour les identifiants natifs');
  // new_career initializes the native staff cycle after the shared start().
  // Exercise the same initialization in the direct reference before comparing
  // the complete state, without the bridge, protocol or disk transactions.
- const direct=context({dataDir:path.join(root,'reference')});direct.run('start(0);CDStaffCareer.initialize(S)');
+ const direct=context({dataDir:path.join(root,'reference')});
+ direct.run(`const depth=(${professionalDepth.toString()})();const attributes=(${playerAttributes.toString()})();`);
+ const mutateDirect=(source,liveOnly=false,initial=false)=>direct.run(`{
+  const before=${initial?'null':`attributes.before(S,${liveOnly})`};
+  ${source};depth.fill(S);attributes.complete(S,before,${liveOnly});
+ }`);
+ mutateDirect('start(0);CDStaffCareer.initialize(S);CDNativeAcademyGroups.start(S);nativeSystems.domain("press").observeInvitation(null,true)',false,true);
  const assertRng=()=>assert.equal(JSON.parse(fs.readFileSync(path.join(initial.meta.dataDir,'donnees.json'),'utf8')).seed,direct.randomState().seed,'curseur RNG identique à la référence native directe');
  let document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'état initial identique au moteur direct');
  assertRng();
  const before=good(b,'export').meta.exportText;for(let i=0;i<6;i++)good(b,'snapshot');assert.equal(good(b,'export').meta.exportText,before,'snapshot/export ne consomment pas le RNG');
- good(b,'train',{mode:'normal'});direct.run('trainWeek();save()');assert.equal(good(b,'train').meta.trained,true);
+ good(b,'train',{mode:'normal'});mutateDirect('trainWeek()');assert.equal(good(b,'train').meta.trained,true);
  assertRng();
- good(b,'auto_lineup');direct.run('autoLineup()');
+ good(b,'auto_lineup');mutateDirect('autoLineup()');
  assertRng();
- const live=good(b,'begin_match').live;direct.run('beginMatch()');assert.equal(live.scene.players.length,30);assert.equal(live.teams.length,2);assert.equal(typeof live.teams[0].presentation.stadium,'string');assert.equal(live.statsRows[0].label,'Possession');
+ const live=good(b,'begin_match').live;mutateDirect('beginMatch()');assert.equal(live.scene.players.length,30);assert.equal(live.teams.length,2);assert.equal(typeof live.teams[0].presentation.stadium,'string');assert.equal(live.statsRows[0].label,'Possession');
  assertRng();
- for(let i=0;i<15;i++){good(b,'snapshot');good(b,'tick');direct.run('tick()');}
+ for(let i=0;i<15;i++){good(b,'snapshot');good(b,'tick');mutateDirect('tick()',true);}
  document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'ticks identiques au moteur direct malgré snapshots');
  assertRng();
  const scene=good(b,'snapshot').live.scene;direct.run(require('node:fs').readFileSync(path.resolve(__dirname,'../dist/match3d/scene-adapter.js'),'utf8'));assert.deepEqual(scene,JSON.parse(direct.run('JSON.stringify(CDMatch3DAdapter.normalize(matchScene(S.live)))')));
  good(b,'pause');assert.equal(good(b,'snapshot').live.paused,true);const minute=good(b,'snapshot').live.minute;good(b,'tick');assert.equal(good(b,'snapshot').live.minute,minute);good(b,'pause',{paused:false});
- good(b,'delegate');direct.run('while(!S.live.finished){if(S.live.paused)continueMatch();else tick()}');assert.equal(good(b,'snapshot').live.finished,true);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
+ good(b,'delegate');mutateDirect('while(!S.live.finished){if(S.live.paused)continueMatch();else tick()}',true);assert.equal(good(b,'snapshot').live.finished,true);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
  assertRng();
- good(b,'finish_round');direct.run('finishRound()');assert.equal(good(b,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
+ good(b,'finish_round');mutateDirect('const press=nativeSystems.domain("press"),previous=press.context(S);finishRound();press.observeInvitation(previous)');assert.equal(good(b,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
  assertRng();
  const saved=good(b,'save');assert.ok(fs.existsSync(path.join(saved.meta.dataDir,'donnees.json')));assert.ok(fs.existsSync(path.join(saved.meta.dataDir,'donnees-precedentes.json')));
  const exported=good(b,'export').meta.exportText;assert.equal(call(b,'import',{text:'{}'}).ok,false);assert.equal(good(b,'export').meta.exportText,exported);
@@ -234,7 +242,7 @@ func _model(model):
    stage = 1
    bridge.send("new_career", {"club": 0})
   1:
-   if model.squad.size() != 30:
+   if model.squad.size() != 40:
     _failed("Effectif")
     return
    stage = 2

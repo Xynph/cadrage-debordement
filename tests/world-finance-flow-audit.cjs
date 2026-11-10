@@ -12,9 +12,15 @@ function legacyWorkerAudit(t){
   if(file==='ai-roster-cycle.js')text+='\nconst fixtureBaseAiSetup=aiRosterSetup;aiRosterSetup=function(){const result=fixtureBaseAiSetup();if(S?.aiRoster){S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;}return result;};\n';
   fs.writeFileSync(target,text);
  }
+ const workerFile=require.resolve('../native/engine/worker.cjs'),historical=new Module(workerFile,module);
+ historical.filename=workerFile;historical.paths=Module._nodeModulePaths(path.dirname(workerFile));
+ // Freeze the pre-expansion conditions that produced the historical coverage events.
+ historical._compile(fs.readFileSync(workerFile,'utf8')
+  .replace('CDNativeAcademyGroups.start(S)','void 0')
+  .replaceAll('nativeProfessionalDepth.fill(S);',''),workerFile);
  const filename=path.join(__dirname,'../ci/world-finance-flow-audit.cjs'),m=new Module(filename,module);
  m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));const normal=m.require.bind(m);
- m.require=id=>id==='../native/engine/worker.cjs'?{...worker,createBridge:options=>worker.createBridge({...options,distDir:dist})}:normal(id);
+ m.require=id=>id==='../native/engine/worker.cjs'?{...historical.exports,createBridge:options=>historical.exports.createBridge({...options,distDir:dist})}:normal(id);
  m._compile(fs.readFileSync(filename,'utf8'),filename);return m.exports;
 }
 

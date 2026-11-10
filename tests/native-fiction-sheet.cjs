@@ -28,6 +28,10 @@ function inspectedWorker(options={}){
  const Module=require('node:module'),filename=require.resolve('../native/engine/worker.cjs'),m=new Module(filename,module);
  m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));
  let source=fs.readFileSync(filename,'utf8');
+ // Preserve the historical shortage fixtures on this instrumented worker only.
+ source=source.replaceAll('nativeProfessionalDepth.fill(S);','');
+ // The worldwide academy groups require the V2 roster that these fixtures bypass.
+ source=source.replace('CDNativeAcademyGroups.start(S)','void 0');
  if(options.kickoffTimeout)source=source.replace('const run=source=>vm.runInContext(source,ctx,{timeout:15000});',"const run=source=>vm.runInContext(source,ctx,{timeout:source.includes('const nativeCreate=createRugbyMatch;')?1000:15000});");
  m._compile(source.replace('return {handle,close};',"return {handle,close,matchFactory:()=>run('createRugbyMatch'),probe:run};"),filename);return m.exports.createBridge;
 }
@@ -59,7 +63,9 @@ try{
   assert.deepEqual(state(b),state(control));assert.equal(profile('seed-'+seed).seed,profile('continuation-'+seed).seed,'true J3 continuation retains the RNG');
  });
  check('minimal seed 5 new/begin/delegate/finish/begin needs no UI or human cover',()=>{
-  const b=bridge('minimal',5);good(b,'new_career',{club:0});good(b,'begin_match');good(b,'delegate');good(b,'finish_round');good(b,'begin_match');validateNative(b);
+  const b=createBridge({dataDir:path.join(root,'minimal'),seed:5,now:1700000000000});bridges.push(b);
+  good(b,'new_career',{club:0});assert.ok(state(b).clubs.every(c=>c.players.length>=40));
+  good(b,'begin_match');good(b,'delegate');good(b,'finish_round');good(b,'begin_match');validateNative(b);
  });
  for(const seed of [1,5])check('coverage seed '+seed+': deterministic, idempotent, no healing/cash/history changes',()=>{
   const h=harness(fixtures.get(seed)),before=h.state(),rng=h.seed(),payroll=h.run('aiRosterPayroll(S.clubs[12])');
