@@ -354,6 +354,8 @@ func _row(player:Dictionary,index:int) -> void:
 	var potential := D.text(row,729,24,G.potential_text(player),20,POTENTIAL_COLOR,600,60,HORIZONTAL_ALIGNMENT_CENTER)
 	level.name = "RosterLevel"
 	potential.name = "RosterPotential"
+	potential.mouse_filter = Control.MOUSE_FILTER_PASS
+	potential.tooltip_text = G.potential_tooltip(player)
 	var condition:float=player.get("condition",0)
 	if float(player.get("injury",0))>0:D.text(row,835,24,"Indisponible",19,C.ALERT,600,110,HORIZONTAL_ALIGNMENT_CENTER)
 	else:

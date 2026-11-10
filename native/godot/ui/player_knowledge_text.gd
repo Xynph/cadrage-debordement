@@ -43,6 +43,13 @@ static func rating_text(person: Dictionary, own_context: bool = false) -> String
 static func potential_text(person: Dictionary) -> String:
 	return text(person,"potential")
 
+static func potential_tooltip(person: Dictionary) -> String:
+	var result := "Potentiel évolutif : un plafond possible, sans garantie de l’atteindre. Réévaluation à l’intersaison selon le travail, les performances, la progression et la personnalité."
+	var review: Variant = person.get("potentialDevelopment")
+	if owned(person) and review is Dictionary and review.get("label") is String:
+		result += "\nBilan de la saison %s · %s" % [str(review.get("season","—")),str(review.label)]
+	return result
+
 static func sort_value(person: Dictionary, field: String, own_context: bool = false) -> Variant:
 	var value := bounds(person,field,own_context)
 	return value.min if not value.is_empty() else null
