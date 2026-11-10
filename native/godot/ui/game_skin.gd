@@ -328,3 +328,13 @@ static func cell(text: Variant, width: int, color: Color = INK, expand: bool = f
 	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	if expand: l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
+
+# Salary amounts always enter these helpers in engine weekly units.
+static func salary(weekly: Variant) -> String:
+	return preload("res://ui/salary_display.gd").format(weekly)
+
+static func salary_amount(weekly: Variant) -> String:
+	return preload("res://ui/salary_display.gd").amount(weekly)
+
+static func salary_period(short: bool = false) -> String:
+	return preload("res://ui/salary_display.gd").period_label(short)
