@@ -2,6 +2,7 @@ extends Control
 
 const G = preload("res://ui/game_skin.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
+const GABI_ENABLED_IN_EXPORT := false
 const COMMAND_WAIT_REVEAL_SECONDS := 0.25
 const COMMAND_WAIT_MESSAGES := {
 	"new_career": "Création de la carrière…",
@@ -171,7 +172,8 @@ func _ready() -> void:
 	decision_feedback = load("res://ui/decision_feedback.gd").new()
 	decision_feedback.setup(self)
 	_trace_startup("guide.setup.begin")
-	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
+	var guide_editor_enabled := OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") != "1"
+	if GABI_ENABLED_IN_EXPORT or guide_editor_enabled:
 		coach = load("res://ui/immersive08/coach_canvas.gd").new()
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
