@@ -93,10 +93,10 @@ static func dossier(app: Control) -> void:
 	if data.get("signals", []).is_empty(): list.add_child(G.wrap("Aucun signal robuste : au moins trois matchs documentés et dix phases de conquête sont nécessaires. Les résultats seuls ne permettent pas d'inventer une faiblesse.", 12))
 	d.popup_centered(Vector2i(900, 580))
 
-static func training(app: Control, parent: Container) -> void:
+static func training(app: Control, parent: Container, show_advice: bool) -> void:
 	var data: Dictionary = app.model.get("decisions", {})
 	var training: Dictionary = data.get("training", {})
-	parent.add_child(G.wrap(training.get("advice", ""), 13, G.GOLD))
+	if show_advice: parent.add_child(G.wrap(training.get("advice", ""), 13, G.GOLD))
 	var collective: Dictionary = training.get("collective", {})
 	parent.add_child(G.separator())
 	parent.add_child(G.label("PRÉPARATION SPÉCIFIQUE", 13, G.MUTED))

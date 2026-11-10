@@ -115,14 +115,16 @@ func _training(parent: Control) -> void:
 	training.add_child(G.section("Le travail de la semaine", "La séance collective agit sur la récupération et le développement."))
 	var choices := G.h(12)
 	training.add_child(choices)
+	var season_closed: bool = app.model.meta.get("phase") == "ended"
 	for pair in [["repos","RÉCUPÉRATION"],["normal","CHARGE NORMALE"],["intense","INTENSIVE"]]:
 		var button := G.button(pair[1], func(): app._command("train", {"mode":pair[0]}))
 		button.name = "PreparationTrain_" + pair[0]
 		G.fill(button)
-		button.disabled = app.model.meta.get("trained", false) or not app._live().is_empty()
+		button.disabled = season_closed or app.model.meta.get("trained", false) or not app._live().is_empty()
 		choices.add_child(button)
-	if app.model.meta.get("trained", false): training.add_child(G.label("Séance déjà effectuée cette semaine.", 14, G.GOOD))
-	Decisions.training(app, training)
+	if season_closed: training.add_child(G.wrap("Séance indisponible après la clôture de la saison.", 14, G.MUTED))
+	elif app.model.meta.get("trained", false): training.add_child(G.label("Séance déjà effectuée cette semaine.", 14, G.GOOD))
+	Decisions.training(app, training, not season_closed)
 	if MatchContext.match_available(app.model):
 		match_context.match_button = G.button("", match_context.open_match, true)
 		match_context.match_button.name = "PreparationMatch"

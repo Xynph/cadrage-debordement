@@ -126,9 +126,12 @@ static func _priorities(card: Panel, app: Control) -> void:
 	var contracts := P.contracts(app.model)
 	var tasks: Array = []
 	var trained: bool = app.model.meta.get("trained", false)
-	tasks.append(["Préparer l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","train",func():
-		if trained: app._navigate("Préparation")
-		else: app.Immersive.open_training(app),"OfficeTrainingAction"])
+	if app.model.meta.get("canAdvanceSeason", false):
+		tasks.append(["Consulter le classement final",Office.final_standings_detail(app.model),"trophy",Office.open_current_standings.bind(app),"OfficeFinalStandingsAction"])
+	else:
+		tasks.append(["Préparer l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","train",func():
+			if trained: app._navigate("Préparation")
+			else: app.Immersive.open_training(app),"OfficeTrainingAction"])
 	if not contracts.is_empty():
 		var player: Dictionary = contracts[0]
 		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"people",func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])

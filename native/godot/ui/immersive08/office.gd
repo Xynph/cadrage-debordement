@@ -281,8 +281,11 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
 		choices.append({"title":"%d contrats à préparer" % contracts.size(), "detail":str(first.get("name", "")) + " · " + str(first.get("contractLabel", "Échéance à examiner")), "action":func(): _open_player(app, str(first.id)), "id":"OfficeContractsAction"})
-	var training: Dictionary = app.model.get("decisions", {}).get("training", {})
-	choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
+	if app.model.meta.get("canAdvanceSeason", false):
+		choices.append({"title":"Consulter le classement final", "detail":final_standings_detail(app.model), "action":open_current_standings.bind(app), "id":"OfficeFinalStandingsAction"})
+	else:
+		var training: Dictionary = app.model.get("decisions", {}).get("training", {})
+		choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
 	var selection: Dictionary = app.model.get("selection", {})
 	var valid: bool = selection.get("valid", false)
 	choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":recruitment_availability(app.model.get("market", [])) if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
@@ -375,6 +378,22 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 	if rows.is_empty(): parent.add_child(C.wrap("Le classement sera disponible lorsque le championnat sera ouvert.", 20))
 	_link(parent, "OfficeStandingsAction", "Classement complet  →", app, "Classements")
 
+static func final_standings_detail(model: Dictionary) -> String:
+	var club_id: Variant = model.get("club", {}).get("id")
+	for row: Dictionary in P.standings(model):
+		if row.get("id") != club_id: continue
+		var rank: Variant = row.get("rank")
+		if not (rank is int or rank is float) or rank < 1: break
+		var detail := "1er" if rank == 1 else "%se" % G.n(rank)
+		var points: Variant = row.get("points")
+		if points is int or points is float: detail += " · %s pts" % G.n(points)
+		return detail
+	return "Résultats de la division."
+
+static func open_current_standings(app: Control) -> void:
+	app.table_division = str(app.model.meta.get("leagueId", app.table_division))
+	app._navigate("Classements")
+
 static func standing_action(app: Control, club: Dictionary) -> Button:
 	var action := Button.new()
 	action.name="OfficeStandingRow_"+G.n(club.get("id",""))
@@ -387,9 +406,7 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	focus.set_border_width_all(2)
 	action.add_theme_stylebox_override("focus",focus)
 	action.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.07),Color(C.MINT,.68),4,0))
-	action.pressed.connect(func():
-		app.table_division=str(app.model.meta.get("leagueId",app.table_division))
-		app._navigate("Classements"))
+	action.pressed.connect(open_current_standings.bind(app))
 	return action
 
 static func _journal(parent: VBoxContainer, app: Control) -> void:
