@@ -74,6 +74,8 @@ jobs:
             limit=180s
             # Ce parcours intégré a déjà dépassé 180 s sur un runner GitHub.
             if [[ "$test" == "tests/native-academy-integrated-long.cjs" ]]; then limit=240s; fi
+            # Les 11 comparaisons complètes rejouent deux moteurs avec les centres 30/30.
+            if [[ "$test" == "tests/native-delegate-transaction06.cjs" ]]; then limit=300s; fi
             if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"
               echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
