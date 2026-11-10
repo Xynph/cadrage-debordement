@@ -7,6 +7,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Decisions = preload("res://ui/decision_views.gd")
+const MatchContext = preload("res://ui/preparation_match_context.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
 const GOLD = Color("ffcd69")
@@ -17,6 +18,7 @@ var active_tab := 0
 var focus_ready := false
 var reports: Dictionary
 var fixture: Dictionary
+var match_context := MatchContext.new()
 
 static func build(application: Control, canvas: Control) -> void:
 	var page := new()
@@ -97,6 +99,8 @@ func _build() -> void:
 	_heading()
 	if active_tab == 0: _dossier()
 	else: _consignes()
+	add_child(match_context)
+	match_context.bind(app)
 	_observe(self)
 	if app.body_scroll != null:
 		app.body_scroll.get_v_scroll_bar().value_changed.connect(func(value: float):
@@ -139,21 +143,19 @@ func _heading() -> void:
 	for i in TABS.size():
 		var caption: String = ["Dossier adverse", "Consignes", "Entraînement"][i]
 		var button := _button(tabbar, Rect2(i * 274 + 2, 0, 263, 53), caption, func(): _choose(i), i == active_tab, "", "PreparationTab" + TABS[i])
+		if i == 1: match_context.focus_fallback = button
 		button.toggle_mode = true
 		button.set_pressed_no_signal(i == active_tab)
 		button.gui_input.connect(func(event: InputEvent):
 			if event is InputEventKey and event.pressed and event.keycode in [KEY_LEFT, KEY_RIGHT]:
 				button.accept_event()
 				_choose(posmod(i + (1 if event.keycode == KEY_RIGHT else -1), TABS.size())))
-	var live: Dictionary = app._live()
-	var show_match := not live.is_empty() or (not fixture.is_empty() and SeasonPreparation.data(app.model.meta).is_empty())
+	var show_match := MatchContext.match_available(app.model)
 	var match_space := 385 if show_match else 0
 	_button(tabbar, Rect2(1528 - match_space, 0, 337, 53), "Revoir la composition", func(): app._navigate("Composition"), false, "people", "PreparationComposition")
 	_button(tabbar, Rect2(1883 - match_space, 0, 365, 53), "Carnet de jeu", func(): app._navigate("Plan de jeu"), not show_match, "arrow", "PreparationOpenPlaybook")
 	if show_match:
-		var caption := "Aller au jour de match"
-		if not live.is_empty(): caption = "Voir le résultat" if live.get("finished", false) else "Reprendre le match"
-		_button(tabbar, Rect2(1883, 0, 365, 53), caption, func(): app._navigate("Match"), true, "arrow", "PreparationGoMatch")
+		match_context.match_button = _button(tabbar, Rect2(1883, 0, 365, 53), "", match_context.open_match, true, "arrow", "PreparationGoMatch")
 	D.line(self, Vector2(0, 241), Vector2(2248, 241), Color(C.LINE, .85))
 
 func _choose(index: int) -> void:
@@ -171,7 +173,7 @@ func _choose(index: int) -> void:
 		if next != null: next.grab_focus.call_deferred()
 
 func _observe(node: Node) -> void:
-	if node is BaseButton and node.focus_mode != Control.FOCUS_NONE:
+	if node is BaseButton and node.focus_mode != Control.FOCUS_NONE and node != match_context.pause_button:
 		node.focus_entered.connect(func():
 			if focus_ready: state.focus[active_tab] = str(node.name))
 	for child in node.get_children(): _observe(child)
@@ -296,15 +298,18 @@ func _threats(section: Control) -> void:
 
 func _consignes() -> void:
 	var section := _section("PreparationConsignes")
+	match_context.consignes = section
 	var tactics: Dictionary = app.model.get("tactics", {})
-	var live: Dictionary = app._live()
-	var disabled: bool = (not live.is_empty() and (not live.get("paused", false) or live.get("finished", false))) or app.model.meta.get("phase") == "ended"
 	for i in 2:
 		var pair: Array = [["attack", "attacks", "Avec le ballon", "Attack", "ball", GREEN], ["defense", "defenses", "Sans le ballon", "Defense", "shield", GOLD]][i]
 		var card := D.panel(section, Rect2(i * 1132, 0, 1116, 853), pair[2], pair[4], "", "Preparation" + str(pair[3]))
 		D.text(card, 22, 94, "Votre intention de jeu pour la rencontre", 26, C.IVORY, 500, 1065)
-		if disabled: D.text(card, 22, 131, "Les consignes sont disponibles avant le match ou pendant une pause.", 23, C.ALERT, 500, 1065)
-		else: D.text(card, 22, 131, "Le choix principal s’applique en l’absence d’une consigne par zone.", 23, C.MUTED, 500, 1065)
+		if i == 0:
+			match_context.status = D.text(card, 22, 131, "", 23, C.IVORY, 500, 745)
+			match_context.status.name = "PreparationMatchState"
+			match_context.pause_button = _button(card, Rect2(771, 100, 323, 45), "Mettre en pause", match_context.pause_match, true, "", "PreparationPauseMatch")
+		else:
+			D.text(card, 22, 131, MatchContext.PRE_MATCH_HINT, 23, C.MUTED, 500, 1065)
 		var scroll := ScrollContainer.new()
 		scroll.name = "Preparation" + str(pair[3]) + "Scroll"
 		scroll.follow_focus = true
@@ -321,12 +326,13 @@ func _consignes() -> void:
 			tile.custom_minimum_size.y = C.px(150)
 			var selected: bool = option.id == tactics.get(pair[0])
 			var select := _button(tile, Rect2(10, 10, 1040, 53), str(option.label).to_upper(), func():
+				if not match_context.can_edit_tactics(): return
 				var current: Dictionary = app.model.get("tactics", {})
 				var payload := {"attack":current.get("attack", "equilibre"), "defense":current.get("defense", "equilibre")}
 				payload[pair[0]] = option.id
 				app._command("set_tactics", payload), selected, "check" if selected else "", "Preparation" + str(pair[3]) + "_" + str(option.id))
 			select.set_meta("tactic_id", str(option.id))
-			select.disabled = disabled
+			match_context.tactics.append(select)
 			var lines := D.words(str(option.get("description", "")), 106, 2)
 			for line in lines.size(): D.text(tile, 23, 97 + line * 27, lines[line], 23, C.IVORY, 500, 1015)
 		if tactics.get(pair[1], []).is_empty(): options.add_child(C.wrap("Aucune consigne disponible.", 24, C.MUTED, true))
