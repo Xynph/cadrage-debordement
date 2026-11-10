@@ -59,9 +59,17 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
       assert.deepEqual(fs.readFileSync(file), before);
       const academy = model.decisions.development.academy;
       assert.ok(academy.length > 0);
-      for (const player of [...academy, ...model.market]) {
+      for (const player of academy) {
         assert.equal(player.attributesV2Estimated, undefined, player.id);
         assert.deepEqual(Object.keys(player.attributesV2).sort(), referenceKeys);
+      }
+      for (const player of model.market) {
+        assert.equal(player.attributesV2Estimated, undefined, player.id);
+        assert.equal(player.knowledge.owned, false, player.id);
+        assert.equal(player.knowledge.stage, 'unobserved', player.id);
+        assert.deepEqual(player.attributesV2, {}, player.id);
+        assert.equal(player.rating, null, player.id);
+        assert.equal(player.potential, null, player.id);
       }
 
       request('shutdown');

@@ -117,7 +117,7 @@ function factory(){
   const people=players(s),out=records(s),token='match:'+s.season+':'+week(s)+':'+s.phase+':'+l.pair.join('-');let changed=false;
   for(let side=0;side<2;side++)for(const pid of new Set(l.sheets?.[side]?.used||[])){
    const minutes=l.sheets[side].minutes?.[pid],p=people.get(pid);if(!number(minutes)||minutes<=0||!p||p.owned||out.get(pid)?.tokens.includes(token))continue;
-   
+
    out.set(pid,record(s,p,token,{season:s.season,week:week(s)},out.get(pid)));changed=true;
   }
   if(changed)store(s,out);return changed;
