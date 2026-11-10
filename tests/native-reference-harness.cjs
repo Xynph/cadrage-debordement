@@ -4,6 +4,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {CORE_FILES}=require('../native/engine/worker.cjs');
 const systems=require('../native/engine/native-systems.cjs');
+const playerKnowledge=require('../native/engine/player-knowledge.cjs');
 const common=require('../native/engine/common-rosters.cjs');
 const careerVariation=require('../native/engine/career-variation.cjs');
 const positionAptitudes=require('../native/engine/position-aptitudes.cjs');
@@ -19,6 +20,7 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  const ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
  const run=source=>vm.runInContext(source,ctx,{timeout:15000});
  run(`const nativeCareerVariation=(${careerVariation.toString()})();`);
+ ctx.nativeKnowledgeValidate=playerKnowledge.factory().validate;
  for(const name of CORE_FILES)run(fs.readFileSync(path.resolve(__dirname,'../dist',name),'utf8'));
  run(`const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();`);
  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();`);
@@ -26,6 +28,7 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...staffDatabaseIds]
   .map(id=>[id,staff.forDatabase(id).registry.clubs])));
  run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+ run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();const baseKnowledgeValidator=validateCareer;validateCareer=state=>{const result=baseKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
  return {ctx,store,run,randomState:()=>({seed,calls})};
 }
 module.exports={context};
