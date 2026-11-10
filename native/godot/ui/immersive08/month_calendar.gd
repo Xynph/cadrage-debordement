@@ -158,6 +158,9 @@ func _refresh() -> void:
 	if venues.neutral > 0: summary.append(_plural(venues.neutral, "match sur terrain neutre", "matchs sur terrain neutre"))
 	var description := "Aucune rencontre programmée ce mois-ci." if summary.is_empty() else "Ce mois-ci · " + " · ".join(summary)
 	_heading(month_name, description, current_fixtures.size(), current_sessions.size())
+	var availability := preload("res://ui/international_availability.gd")
+	if availability.data(app.model).get("clubManaged", false):
+		add_child(availability.calendar_summary(app))
 	var workspace := C.h(16)
 	C.fill(workspace, true)
 	add_child(workspace)
