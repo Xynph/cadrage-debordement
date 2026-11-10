@@ -209,9 +209,31 @@ function factory() {
   };
  }
 
+ function capBucket(id) {
+  let bucket = 0;
+  for (let i = 0; i < id.length; i++) bucket = (Math.imul(bucket, 31) + id.charCodeAt(i)) & 63;
+  return String(bucket);
+ }
+
+ function internationalStatus(career) {
+  const caps = new Map(), released = new Set();
+  for (const [nation, buckets] of Object.entries(career.archivedCaps ?? {})) {
+   for (const bucket of Object.values(buckets)) for (const [id, count] of Object.entries(bucket)) {
+    caps.set(id, { career: count, nation });
+   }
+  }
+  for (const row of career.appearances) for (const id of row.playedIds) {
+   caps.set(id, { career: (caps.get(id)?.career ?? 0) + 1, nation: row.nation });
+  }
+  for (const camp of career.callups) {
+   if (camp.from <= career.date && career.date <= camp.through) for (const id of camp.playerIds) released.add(id);
+  }
+  return { caps, released };
+ }
+
  return Object.freeze({
   selectCallups, selectInternationalSheet, selectInternationalChoices, nationalReservePool, releasePeriods, clubReleaseOn,
-  recordInternationalAppearances, validateInternationalAppearances, internationalCaps,
+  recordInternationalAppearances, validateInternationalAppearances, internationalCaps, capBucket, internationalStatus,
  });
 }
 
