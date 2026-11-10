@@ -124,9 +124,15 @@ func _heading() -> void:
 	D.place(shadow, Rect2(1013, 0, 635, 167))
 	hero.add_child(shadow)
 	C.veil(shadow)
-	D.text(hero, 28, 36, ("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper() if japan else "PRÉPARATION DE MATCH", 27, GOLD, 700, 680)
+	var overline := D.text(hero, 28, 36, ("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper() if japan else "PRÉPARATION DE MATCH", 27, GOLD, 700, 1065 if active_tab == 1 else 680)
+	if active_tab == 1:
+		overline.name = "PreparationLiveContext"
+		match_context.live_context = overline
 	var heading := ("Préparer la saison · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))) if not preparation.is_empty() else "Préparer la prochaine rencontre."
 	app.heading = D.text(hero, 26, 103, heading, 66, C.IVORY, 800, 1355)
+	if active_tab == 1:
+		app.heading.name = "PreparationContextHeading"
+		match_context.live_heading = app.heading
 	var context := _upcoming_preparation_note(app.model.meta) if fixture.is_empty() else ""
 	if context.is_empty(): context = "Aucune rencontre annoncée"
 	if not fixture.is_empty():

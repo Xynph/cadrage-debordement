@@ -1,5 +1,6 @@
 extends Node
 ## État des commandes propre aux deux vues de Préparation.
+const G = preload("res://ui/game_skin.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const PRE_MATCH_HINT = "Le choix principal s’applique en l’absence d’une consigne par zone."
 
@@ -8,6 +9,12 @@ enum Phase { BEFORE, RUNNING, PAUSED, HALFTIME, FINISHED, SEASON_ENDED }
 var consignes: Control
 var status: Label
 var status_row: Control
+var live_context: Label
+var live_context_row: Control
+var live_heading: Label
+var return_button: Button
+var before_context := ""
+var before_heading := ""
 var pause_button: Button
 var match_button: Button
 var focus_fallback: Button
@@ -27,6 +34,8 @@ static func match_available(model: Dictionary) -> bool:
 func bind(application: Control) -> void:
 	app = application
 	bridge = app.bridge
+	if live_context != null: before_context = live_context.text
+	if live_heading != null: before_heading = live_heading.text
 	_on_model_changed(app.model)
 	bridge.model_changed.connect(_on_model_changed)
 
@@ -66,16 +75,18 @@ func _tactics_available(model: Dictionary, phase: Phase) -> bool:
 
 func _on_model_changed(model: Dictionary) -> void:
 	var phase := _phase(model)
+	_update_live_context(model, phase)
 	var available := _tactics_available(model, phase)
 	if phase_applied and phase == current_phase and available == tactics_available: return
 	phase_applied = true
 	current_phase = phase
 	tactics_available = available
+	var caption := "Aller au jour de match"
+	if phase == Phase.FINISHED: caption = "Voir le résultat"
+	elif phase in [Phase.RUNNING, Phase.PAUSED, Phase.HALFTIME]: caption = "Retour au direct"
 	if match_button != null:
-		var caption := "Aller au jour de match"
-		if phase == Phase.FINISHED: caption = "Voir le résultat"
-		elif phase in [Phase.RUNNING, Phase.PAUSED, Phase.HALFTIME]: caption = "Reprendre le match"
 		match_button.text = caption.to_upper() + "  →" if status_row != null else caption
+	if return_button != null: return_button.text = caption
 	if status != null:
 		status.text = _status_text(phase, available)
 		status.tooltip_text = status.text
@@ -84,6 +95,33 @@ func _on_model_changed(model: Dictionary) -> void:
 		pause_button.visible = phase == Phase.RUNNING
 	set_process(consignes != null and (phase == Phase.RUNNING or available))
 	_sync_actions(true)
+
+func _update_live_context(model: Dictionary, phase: Phase) -> void:
+	if live_context == null: return
+	var live: Variant = model.get("live")
+	var active: bool = live is Dictionary and not live.is_empty()
+	var caption := _live_caption(live, phase) if active else before_context
+	if live_context.text != caption:
+		live_context.text = caption
+		live_context.tooltip_text = caption
+	if live_context_row != null: live_context_row.visible = active
+	if live_heading != null:
+		var title := "Consignes du match" if active else before_heading
+		if live_heading.text != title:
+			live_heading.text = title
+			live_heading.tooltip_text = title
+
+func _live_caption(live: Dictionary, phase: Phase) -> String:
+	var state := "En direct"
+	match phase:
+		Phase.PAUSED: state = "En pause"
+		Phase.HALFTIME: state = "Mi-temps"
+		Phase.FINISHED: state = "Résultat à valider"
+	var clock := "%s′ · %s" % [G.n(live.get("minute", 0)), state]
+	var teams: Array = live.get("teams", [])
+	var score: Array = live.get("score", [])
+	if teams.size() != 2 or score.size() != 2: return clock
+	return "%s %s – %s %s  ·  %s" % [G.club_abbr(teams[0]), G.n(score[0]), G.n(score[1]), G.club_abbr(teams[1]), clock]
 
 func _status_text(phase: Phase, available: bool) -> String:
 	var edit_hint := "Vous pouvez modifier vos consignes." if available else "Les consignes sont momentanément indisponibles."

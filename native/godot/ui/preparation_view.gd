@@ -69,6 +69,16 @@ func _consigne(parent: Control) -> void:
 	match_context.focus_fallback = tabs[1]
 	var info := G.panel(parent)
 	match_context.status_row = info.get_parent()
+	var live_line := G.h(12)
+	info.add_child(live_line)
+	match_context.live_context_row = live_line
+	match_context.live_context = G.label("", 44, G.INK, true)
+	match_context.live_context.name = "PreparationLiveContext"
+	G.fill(match_context.live_context)
+	live_line.add_child(match_context.live_context)
+	match_context.return_button = G.button("", match_context.open_match, true)
+	match_context.return_button.name = "PreparationConsignesReturn"
+	live_line.add_child(match_context.return_button)
 	var status_line := G.h(12)
 	info.add_child(status_line)
 	match_context.status = G.label("", 14)
