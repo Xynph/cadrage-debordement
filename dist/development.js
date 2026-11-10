@@ -121,10 +121,43 @@ function growPlayer(p,xp,allowFocus=true){
 }
 function developmentTraining(p,mode,ci=null){ensureDevelopment(p);if(p.injury||mode==='repos')return;autoDevelopmentFocus(p,ci);const amount=mode==='intense'?.10:.055;const focus=developmentFocusValue(p)!==DEVELOPMENT_BALANCED;growPlayer(p,amount*ageGrowth(p)*(p.condition<50?.5:1)*growthFitnessFactor(p)*(focus?developmentCollectiveFactor(p,ci):1))}
 function recordDevelopmentMatch(l){if(l.developmentRecorded)return;l.developmentRecorded=true;for(let side=0;side<2;side++){const s=l.sheets[side];for(let id of s.used){const p=matchPlayer(l,side,id);if(!p)continue;ensureDevelopment(p);const minutes=Math.max(0,(s.minutes[id]||0)-(l.devBaseline?.[side]?.[id]||0));if(!minutes)continue;p.dev.minutes+=minutes;p.dev.careerMinutes+=minutes;p.dev.appearances++;growPlayer(p,minutes/80*.12*ageGrowth(p)*Math.max(.5,p.condition/100)*growthFitnessFactor(p),l.developmentFocusVersion===1)}}}
-function academyPlayer(ci,slot,season,index,emergency=false){const id=`youth-${ci}-${season}-${index}`,h=seedHash(id);let p={appearanceBankVersion:2,id,name:FIRST[h%FIRST.length]+' '+LAST[Math.floor(h/31)%LAST.length],pos:POS[slot],fam:FAMILIES[slot],age:17+h%3,rating:emergency?55+h%8:52+h%15,condition:100,injury:0,salary:2000};ensureSkills(p);ensureDevelopment(p);p.dev.potential=Math.max(p.rating,emergency?68+h%10:76+h%19);p.academy=true;return p}
+function academyPotential(p){
+ // The interface shows the potential at the player's position, including the role profile.
+ // Draw that target first, then convert it to the general ceiling used for progression.
+ const draw=seedHash(p.id+':potential'),percentile=draw%100,variation=draw>>>8;
+ let target;
+ if(percentile<25)target=64+variation%9;
+ else if(percentile<79)target=73+variation%10;
+ else if(percentile<97)target=83+variation%7;
+ else target=91+variation%4;
+ return Math.min(99,p.rating+Math.max(4,target-roleNote(p)));
+}
+function normalizeAcademyPotential(s){
+ const development=s.development;
+ if(development.academyPotentialVersion===1)return false;
+ const academies=[development.academy,
+  ...(s.aiRoster?.academies??[]).map(center=>center.players),
+  ...(s.nativeAcademy?.centers??[]).flatMap(center=>center.players?[center.players]:[])];
+ for(const academy of academies)for(const player of academy){
+  if(!player.academy||!/^youth-\d+-\d+-\d+$/.test(player.id)||player.attributesV2!==undefined||
+   player.lnrRatingsVersion!==undefined||player.worldRatingsVersion!==undefined||player.rosterProfile!==undefined)continue;
+  const oldPotential=player.dev?.potential;
+  if(!Number.isInteger(oldPotential)||!Number.isInteger(player.skillBase))continue;
+  const oldBaseline=76+seedHash(player.id)%19;
+  if(oldPotential<oldBaseline)continue;
+  const earned=oldPotential-oldBaseline;
+  // Reconstruct the starting role without letting accumulated XP reduce its own ceiling.
+  const birth={...player,rating:player.skillBase,dev:null};
+  const floor=player.rating+(oldPotential>player.rating?1:0);
+  player.dev.potential=Math.min(oldPotential,Math.max(floor,academyPotential(birth)+earned));
+ }
+ development.academyPotentialVersion=1;
+ return true;
+}
+function academyPlayer(ci,slot,season,index,emergency=false){const id=`youth-${ci}-${season}-${index}`,h=seedHash(id);let p={appearanceBankVersion:2,id,name:FIRST[h%FIRST.length]+' '+LAST[Math.floor(h/31)%LAST.length],pos:POS[slot],fam:FAMILIES[slot],age:17+h%3,rating:emergency?55+h%8:52+h%15,condition:100,injury:0,salary:2000};ensureSkills(p);ensureDevelopment(p);p.dev.potential=emergency?68+h%10:academyPotential(p);p.academy=true;return p}
 function intakeYouth(){const d=S.development;if(d.intakeSeason===S.season)return;d.intakeSeason=S.season;for(let i=0;i<15;i++){const slot=(S.season*3+i)%15;d.academy.push(academyPlayer(S.club,slot,S.season,i))}/* Jusqu'a cinq promotions coexistent selon les ages et les promotions en pros. */d.academy=d.academy.slice(-75);news(`Quinze nouveaux Espoirs rejoignent le centre de formation, avec une couverture des quinze postes. Evaluez leur potentiel et preparez leur promotion.`)}
 function setupDevelopment(backup=false){if(!S)return;const fresh=!S.development;if(fresh&&backup){try{if(!gameStorage.getItem('bdt-backup-development'))gameStorage.setItem('bdt-backup-development',JSON.stringify(S))}catch(e){}}
-S.development=S.development||{version:1,academy:[],intakeSeason:0,rolledSeason:0,retired:[]};S.clubs.forEach(c=>c.players.forEach(ensureDevelopment));S.market.forEach(ensureDevelopment);S.economy.freeAgents.forEach(ensureDevelopment);if(fresh&&S.live)S.live.devBaseline=S.live.sheets.map(s=>({...s.minutes}));intakeYouth();if(fresh&&backup)news('Formation et carrières activées : niveaux, contrats et résultats conservés. Le suivi des minutes commence maintenant.')}
+S.development=S.development||{version:1,academyPotentialVersion:1,academy:[],intakeSeason:0,rolledSeason:0,retired:[]};normalizeAcademyPotential(S);S.clubs.forEach(c=>c.players.forEach(ensureDevelopment));S.market.forEach(ensureDevelopment);S.economy.freeAgents.forEach(ensureDevelopment);if(fresh&&S.live)S.live.devBaseline=S.live.sheets.map(s=>({...s.minutes}));intakeYouth();if(fresh&&backup)news('Formation et carrières activées : niveaux, contrats et résultats conservés. Le suivi des minutes commence maintenant.')}
 function promoteYouth(id){if(economyLocked())return false;const d=S.development,p=d.academy.find(p=>p.id===id);if(!p||professionalPlaces()<=0){toast('Promotion impossible : joueur indisponible ou effectif complet.');return false}d.academy=d.academy.filter(p=>p.id!==id);p.academy=false;p.joinedSeason=S.season;p.joinedRound=S.round;p.contractEnd=contractBase()+1;club().players.push(p);if(satisfactionActive())ensureSatisfaction(p);careerPromoteYouth(p);transferEvent(`${p.name} signe son premier contrat professionnel jusqu’à la fin de la saison ${p.contractEnd}, à ${money(p.salary)} par semaine.`);save();render();toast('Le jeune est disponible dans votre effectif.');return true}
 function retirementSeason(p){ensureDevelopment(p);return S.season+Math.max(0,p.dev.retireAge-p.age-1)}
 function ageDevelopmentPlayer(p,completedSeason=S.season){ensureDevelopment(p);if(p.dev.lastYear===completedSeason)return;
