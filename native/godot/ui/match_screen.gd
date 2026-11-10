@@ -407,6 +407,7 @@ func _confirm_reduced_bench(vacant: int) -> void:
 	dialog.name = "MatchConfirmReducedBench"
 	dialog.title = "Coup d’envoi à 22"
 	dialog.dialog_text = "%s Vous commencez avec 15 titulaires et 7 remplaçants." % MatchProjection.reduced_bench_vacancy(vacant)
+	dialog.dialog_text += "\n\nSi la première ligne ne peut plus être complétée, les mêlées deviennent non disputées."
 	app._prepare_dialog(dialog, 520)
 	dialog.get_ok_button().text = "Jouer à 22"
 	dialog.get_cancel_button().text = "Annuler"
@@ -418,7 +419,7 @@ func _confirm_reduced_bench(vacant: int) -> void:
 	dialog.confirmed.connect(func():
 		if app.route == "Match" and not app.waiting and MatchProjection.reduced_bench_number(app.model) == vacant and app.model.next == fixture:
 			app._command("begin_match",{"reducedBench":true}))
-	Dialogs.show_centered(dialog,Vector2i(520,170))
+	Dialogs.show_centered(dialog,Vector2i(520,188))
 	dialog.get_cancel_button().grab_focus.call_deferred()
 
 func _act() -> void:
