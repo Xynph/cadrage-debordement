@@ -51,6 +51,7 @@ func _render() -> void:
 	var entries: Array = data.get("entries", [])
 	_body.add_child(G.label("Retrouver une carrière, sans écraser à l'aveugle", 20, G.INK, true))
 	_body.add_child(G.wrap("Une copie durable est conservée avant un import, une nouvelle carrière ou une adaptation de reprise. Le fichier de la journée précédente reste distinct. Gardez aussi un export sur un autre support.", 13))
+	_body.add_child(G.wrap("Le profil brut d'origine est archivé à l'identique. La reprise utilise une carrière vérifiée et adaptée à cette version : un match en cours repart en pause.", 12))
 	var storage: String = "%d / %d copies · %.1f / %.0f Mio" % [entries.size(), int(data.get("maxEntries", 8)), float(data.get("usedBytes", 0)) / 1048576.0, float(data.get("maxBytes", 268435456)) / 1048576.0]
 	var quota := G.label(storage, 15, G.GOLD, true)
 	quota.name = "ProfileSafetyQuota"
