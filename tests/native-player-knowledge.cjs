@@ -92,3 +92,6 @@ test('historical academy plans and unknown playerId copies cannot leak a lone le
  const m={clubLife:{academyPathways:{plans:[{id:'old-youth',name:'Ancien joueur',target:'progression',startRating:73,season:1}],targets:[{id:'old-youth',name:'Ancien joueur',start:240,minutes:480}],promotions:[{playerId:'old-departed',rating:76,potential:88}]}},staff:{members:[{id:'staff-scout',name:'Recruteur',role:'scout',level:75}]}};
  k.project(m,{});assert.equal(m.clubLife.academyPathways.plans[0].startRating,null);assert.equal(m.clubLife.academyPathways.promotions[0].rating,null);assert.equal(m.clubLife.academyPathways.promotions[0].potential,null);assert.equal(m.clubLife.academyPathways.targets[0].start,240);assert.equal(m.staff.members[0].level,75);
 });
+test('normalized scene actors and selection references preserve their exact transport shape',()=>{
+ const visible=k.visibility(fixture()),scene={players:[{id:'own',side:0,slot:0,x:25,y:40,featured:false},{id:'foreign',side:1,slot:1,x:75,y:40,featured:true}]},slots=[{slot:0,playerId:'own',eligibleIds:['own']}],raw=clone({scene,slots});k.project(raw,visible);assert.deepEqual(raw,{scene,slots});
+});
