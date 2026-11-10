@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.CD_ROSTER_TEST_ROOT||require('node:os').tmpdir(),'cd-roster-'));
@@ -7,7 +8,7 @@ const call=(command,payload={})=>b.handle({id:++serial,command,payload});
 const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const state=()=>JSON.parse(good('export').meta.exportText).state;
 try{
- const model=good('new_career',{mode:'common',club:6});
+ const model=settleClubMeetings(good('new_career',{mode:'common',club:6}),(command,payload)=>good(command,payload));
  assert.equal(model.meta.rosterFoundation?.version,2,'new common careers expose roster foundation version');
  const data=require('../dist/rugby-roster-foundation.js'),base=require('../dist/rugby-common-rosters.js');
  const runtime=fs.readFileSync(path.join(__dirname,'../dist/rugby-roster-foundation.js'),'utf8');assert.ok(!runtime.includes('https://')&&!runtime.includes('Tuicuvu')&&!runtime.includes('Fourcade'),'anonymous runtime provenance');
@@ -25,14 +26,14 @@ try{
  good('import',{text:legacyText});assert.equal(state().rosterFoundation,undefined);assert.deepEqual(state().clubs,legacy.state.clubs);
  good('import',{text:initial});const model2=good('snapshot');assert.equal(model2.squad.find(p=>p.id==='lnr:657').rosterProfile.position.basis,'official');
  // A real renewal changes the mutable contract, preserving its initial official reference.
- good('new_career',{mode:'common',club:3});const beforeRenew=state().clubs[3].players.find(p=>p.id==='lnr:429'),offer=good('snapshot').squad.find(p=>p.id==='lnr:429');
+ settleClubMeetings(good('new_career',{mode:'common',club:3}),(command,payload)=>good(command,payload));const beforeRenew=state().clubs[3].players.find(p=>p.id==='lnr:429'),offer=good('snapshot').squad.find(p=>p.id==='lnr:429');
  const renewed=good('extend_contract',{playerId:offer.id,confirmed:true,salary:100000,years:offer.renewal.minYears});assert.equal(renewed.meta.negotiation.status,'signed');
  const afterRenew=state().clubs[3].players.find(p=>p.id===offer.id);assert.ok(afterRenew.contractEnd>beforeRenew.contractEnd);assert.deepEqual(afterRenew.rosterProfile,beforeRenew.rosterProfile);assert.equal(good('snapshot').squad.find(p=>p.id===offer.id).rosterProfile.contract.endYear,2028);
  // Failed real disk write restores both state and deterministic RNG before retry.
  const current=state(),disk=path.join(renewed.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(disk);fs.renameSync(disk,disk+'.held');fs.mkdirSync(disk);
  try{assert.equal(call('train',{mode:'intense'}).ok,false);assert.deepEqual(state(),current);}finally{fs.rmdirSync(disk);fs.renameSync(disk+'.held',disk);}assert.deepEqual(fs.readFileSync(disk),bytes);
  const controlDir=path.join(root,'control-'+process.pid,'PrototypeGodot');fs.mkdirSync(controlDir,{recursive:true});fs.writeFileSync(path.join(controlDir,'donnees.json'),bytes);const control=createBridge({dataDir:controlDir,seed:827381,now:1700000000000});
- try{good('train',{mode:'intense'});assert.equal(control.handle({id:2,command:'train',payload:{mode:'intense'}}).ok,true);assert.ok(JSON.stringify(state())===JSON.stringify(JSON.parse(control.handle({id:3,command:'export'}).model.meta.exportText).state),'disk retry restores RNG as well as state');}finally{control.close();fs.rmSync(path.join(root,'control-'+process.pid),{recursive:true,force:true});}
+ try{settleClubMeetings(good('train',{mode:'intense'}),(command,payload)=>good(command,payload));assert.equal(control.handle({id:2,command:'train',payload:{mode:'intense'}}).ok,true);assert.ok(JSON.stringify(state())===JSON.stringify(JSON.parse(control.handle({id:3,command:'export'}).model.meta.exportText).state),'disk retry restores RNG as well as state');}finally{control.close();fs.rmSync(path.join(root,'control-'+process.pid),{recursive:true,force:true});}
  // Full season, expiry/free agents, AI roster churn and next season keep initial references valid.
  const long=require('./france-harness.cjs').context();long.run('const CDCommonCareer=('+require('../native/engine/common-rosters.cjs').toString()+')();CDCommonCareer.start(18)');
  // The existing sale path moves the same profile by ID and retains the initial source.

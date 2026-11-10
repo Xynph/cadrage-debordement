@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 
@@ -18,7 +19,7 @@ try{
  good('shutdown');b=loaded.exports.createBridge({dataDir:root,now:1700000000000});assert.equal(good('export').meta.exportText,text,'Reprise exacte des namespaces presse.');
  good('import',{text});assert.equal(good('export').meta.exportText,text,'Import/export presse exact.');
  for(const alter of [s=>s.pressConference.version=999,s=>s.pressConference.history[0].week=35,s=>s.pressRelations.mediaTrust=-1,s=>s.pressRelations.history=[{}]]){const doc=JSON.parse(text);alter(doc.state);const r=bad('import',{text:JSON.stringify(doc)});assert.match(r.error,/presse|conférence/i);assert.equal(good('export').meta.exportText,text);}
- good('begin_match');bad('press_conference',payload);good('delegate');m=good('finish_round');const second=answers(m);
+ m=settleClubMeetings(good('snapshot'),good);good('begin_match');bad('press_conference',payload);good('delegate');m=good('finish_round');const second=answers(m);
  text=good('export').meta.exportText;const priorFile=fs.readFileSync(file);
  const refused=refuseSavePublication(file,()=>bad('press_conference',second));
  assert.match(refused.error,/sauvegarde impossible/);

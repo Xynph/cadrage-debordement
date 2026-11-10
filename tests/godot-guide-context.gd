@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Content = preload("res://guide/guide_content.gd")
 const Store = preload("res://guide/guide_profile.gd")
 const ROUTES := {"Accueil":"bienvenue", "Création":"club", "Bureau":"bureau", "Effectif":"effectif", "Composition":"composition", "Préparation":"entrainement", "Plan de jeu":"plan-jeu", "Vestiaire":"vestiaire", "Match":"premier-match", "Calendrier":"calendrier", "Classements":"classements", "Finances":"finances", "Recrutement":"recrutement", "Club":"territoire", "Packs":"packs", "Staff":"staff", "Formation":"formation", "Centre":"centre", "Presse":"presse", "Rivalités":"rivalites", "Travail du club":"travail-club", "Stratégie":"strategie", "Carrière":"carriere"}
@@ -91,6 +92,7 @@ func run() -> void:
 	check(guide.has_method("consider_context"), "API contextuelle disponible")
 	if not guide.has_method("consider_context"): await finish(); return
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("export")
 	var export_before: Dictionary = JSON.parse_string(app.model.meta.exportText).state
 	var disk_path: String = str(app.model.meta.dataDir).path_join("donnees.json")

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const domain=require('../native/engine/manager-career.cjs');
 assert.deepEqual(domain.files,[]);assert.ok(domain.commands.includes('manager_career_accept'));
@@ -14,7 +15,7 @@ const act=(b,c,p={})=>good(b,c,{context:data(b).context,...p});
 const state=b=>JSON.parse(good(b,'export').meta.exportText).state;
 const reject=(b,c,p={})=>{const before=good(b,'export').meta.exportText;assert.equal(call(b,c,p).ok,false);assert.equal(good(b,'export').meta.exportText,before)};
 try{
- let b=open('main');good(b,'new_career',{mode:'common',club:0});const old=good(b,'export').meta.exportText;assert.equal(data(b).active,false);good(b,'snapshot');assert.equal(good(b,'export').meta.exportText,old,'consultation ancienne carrière pure');
+ let b=open('main');settleClubMeetings(good(b,'new_career',{mode:'common',club:0}),(command,payload)=>good(b,command,payload));const old=good(b,'export').meta.exportText;assert.equal(data(b).active,false);good(b,'snapshot');assert.equal(good(b,'export').meta.exportText,old,'consultation ancienne carrière pure');
  const s0=state(b),candidate=good(b,'snapshot').market[0];act(b,'manager_recruitment_watch',{playerId:candidate.id});assert.ok(state(b).manager.watch.includes(candidate.id));assert.deepEqual(state(b).clubs,s0.clubs);
  assert.equal(data(b).plan.length,3);assert.equal(data(b).plan[0].payments,34);assert.equal(data(b).plan[0].payroll,s0.clubs[0].players.reduce((n,p)=>n+p.salary,0)*34);
  act(b,'manager_career_activate');reject(b,'manager_career_apply',{context:data(b).context,clubId:29});reject(b,'manager_career_activate',{context:data(b).context});
@@ -22,7 +23,7 @@ try{
  // Administrative decisions must stay attached to the former club during the move.
  const cs=good(b,'snapshot').clubLife.clubStrategy.context;
  good(b,'club_board_objective',{context:cs,type:'wins',target:2,deadline:10});good(b,'club_board_project',{context:cs,kind:'video',confirmed:true});good(b,'club_fans_price',{context:cs,key:'accessible'});
- for(let i=0;i<34;i++){if(good(b,'snapshot').next){good(b,'begin_match');good(b,'delegate');}good(b,'finish_round');}assert.equal(state(b).phase,'ended');assert.equal(data(b).window,true);assert.equal(data(b).context.week,34);
+ for(let i=0;i<34;i++){if(good(b,'snapshot').next){good(b,'begin_match');good(b,'delegate');}settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));}assert.equal(state(b).phase,'ended');assert.equal(data(b).window,true);assert.equal(data(b).context.week,34);
  const target=data(b).opportunities.find(x=>x.clubId>=14&&x.accepted);assert.ok(target,'Offre Accession disponible');act(b,'manager_career_apply',{clubId:target.clubId});const offer='job-1-'+target.clubId;
  reject(b,'manager_career_apply',{context:data(b).context,clubId:target.clubId});reject(b,'manager_career_accept',{context:data(b).context,offerId:offer});reject(b,'manager_career_accept',{context:{...data(b).context,week:33},offerId:offer,confirmed:true});
  const before=good(b,'export').meta.exportText;const file=path.join(good(b,'snapshot').meta.dataDir,'donnees.json');fs.renameSync(file,file+'.held');fs.mkdirSync(file);
@@ -31,8 +32,8 @@ try{
  const pending=good(b,'export').meta.exportText;good(b,'import',{text:pending});assert.equal(good(b,'export').meta.exportText,pending);good(b,'shutdown');b=open('main');assert.equal(good(b,'snapshot').meta.recoveryRequired,false);assert.equal(good(b,'export').meta.exportText,pending);
  const hostile=JSON.parse(pending);hostile.state.managerMobility.version=999;reject(b,'import',{text:JSON.stringify(hostile)});
  const hidden=JSON.parse(pending);hidden.state.managerMobility.surprise=true;reject(b,'import',{text:JSON.stringify(hidden)});
- const control=open('control');good(control,'import',{text:pending});act(control,'manager_career_cancel');good(control,'next_season',{confirmed:true});
- good(b,'next_season',{confirmed:true});const moved=state(b),stayed=state(control);assert.equal(moved.club,target.clubId);assert.equal(moved.season,2);assert.equal(moved.managerMobility.pending,null);assert.equal(moved.managerMobility.history.length,1);
+ const control=open('control');good(control,'import',{text:pending});act(control,'manager_career_cancel');settleClubMeetings(good(control,'next_season',{confirmed:true}),(command,payload)=>good(control,command,payload));
+ settleClubMeetings(good(b,'next_season',{confirmed:true}),(command,payload)=>good(b,command,payload));const moved=state(b),stayed=state(control);assert.equal(moved.club,target.clubId);assert.equal(moved.season,2);assert.equal(moved.managerMobility.pending,null);assert.equal(moved.managerMobility.history.length,1);
  assert.deepEqual(moved.clubs.map(c=>c.cash),stayed.clubs.map(c=>c.cash),'pas de transfert argent');assert.deepEqual(moved.clubs.map(c=>c.players.map(p=>p.id)),stayed.clubs.map(c=>c.players.map(p=>p.id)),'effectifs professionnels conservés');
  assert.deepEqual(moved.development.academy.map(p=>p.id),stayed.aiRoster.academies.find(a=>a.clubId===target.clubId).players.map(p=>p.id));assert.deepEqual(moved.aiRoster.academies.find(a=>a.clubId===0).players.map(p=>p.id),stayed.development.academy.map(p=>p.id));assert.equal(moved.nativeAcademy.club,target.clubId);assert.equal(moved.identityPack,stayed.identityPack);
  assert.ok(moved.managerMobility.archives.some(a=>a.clubId===0));if(moved.nativeBoardCalendar)assert.equal(moved.nativeBoardCalendar.clubId,'club-'+target.clubId);

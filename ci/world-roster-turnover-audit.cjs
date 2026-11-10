@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual native audit. Observations only: no state repair or financial changes.
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -54,15 +55,15 @@ function run(o){
  const go=(command,payload={})=>{assert(Date.now()-started<o.budgetMs,'audit budget exceeded');const r=bridge.handle({id:++serial,command,payload});report.commands++;assert(r.ok,command+': '+r.error);return model=r.model;};
  const state=()=>JSON.parse(go('export').meta.exportText).state;
  const capture=(label,s)=>{const row={label,season:s.season,week:s.round,phase:s.phase,results:s.history.length,counts:inventory(s).counts,...measurements(s)};report.observations.push(row);return row;};
- try{bridge=createBridge({dataDir:dir,seed:o.seed,now:1794178800000});go('new_career',{mode:o.mode,club:o.club});let initial=state();observe(initial);capture('initial',initial);
+ try{bridge=createBridge({dataDir:dir,seed:o.seed,now:1794178800000});settleClubMeetings(go('new_career',{mode:o.mode,club:o.club}),go);let initial=state();observe(initial);capture('initial',initial);
   for(let season=1;season<=o.seasons;season++){
    const opening=inventory(initial),eventStart=events.length;
    for(let week=model.meta.week;week<46;week++){
     if(model.next){if(!model.selection.valid)go('auto_lineup');if(!model.selection.valid){const reasons=model.selection.errors;go('promote_cover',{confirmed:true});report.promotions.push({season,week,reasons});}assert(model.selection.valid,'user sheet remains incomplete');go('begin_match');go('delegate');}
-    go('finish_round');assert.equal(model.meta.week,week+1);observe(state());
+    settleClubMeetings(go('finish_round'),go);assert.equal(model.meta.week,week+1);observe(state());
    }
    const end=state();assert.equal(end.phase,'ended');assert.equal(end.history.length,end.worldMode.fixtures.length,'all seasonal results required');capture('end-S'+season,end);report.periods.push({label:'season-'+season,...reconcile(opening,inventory(end),events.slice(eventStart))});report.completedSeasons++;
-   const before=inventory(end),transitionEvents=events.length;go('next_season',{confirmed:true});const next=state();observe(next);capture('after-transition-S'+season,next);report.periods.push({label:'transition-'+season,...reconcile(before,inventory(next),events.slice(transitionEvents))});
+   const before=inventory(end),transitionEvents=events.length;settleClubMeetings(go('next_season',{confirmed:true}),go);const next=state();observe(next);capture('after-transition-S'+season,next);report.periods.push({label:'transition-'+season,...reconcile(before,inventory(next),events.slice(transitionEvents))});
    assert.equal(next.season,season+1);assert.equal(next.worldMode.yearbook.length,season);initial=next;
    report.elapsedMs=Date.now()-started;console.log(JSON.stringify({season,results:end.history.length,elapsedMs:report.elapsedMs,transition:report.periods.at(-1).count,minProfessionals:report.observations.at(-1).professionalMin}));save();
   }

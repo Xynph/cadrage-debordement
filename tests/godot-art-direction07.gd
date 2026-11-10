@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 ## Catches unreadable light controls, clipped navigation and presentation writes.
 var app: Control
 var checks := 0
@@ -33,6 +34,7 @@ func run() -> void:
 	root.size=Vector2i(2560,1440);DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("export")
 	var before: String=app.model.meta.exportText
 	var disk := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
@@ -80,6 +82,7 @@ func run() -> void:
 	check(FileAccess.get_file_as_bytes(disk)==bytes,"Navigation et habillage conservent profil disque")
 	# A second real club exercises the coloured identity after the grey club.
 	await command("new_career",{"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	root.size=Vector2i(2560,1440);DisplayServer.window_set_size(root.size);await settle()
 	for page in ["Bureau","Effectif","Finances"]:
 		app._navigate(page);await settle();app.coach.close();await settle()
@@ -88,6 +91,7 @@ func run() -> void:
 		# Visual review of a trend from actual results, never invented chart data.
 		for week in 2:
 			for action in ["begin_match","delegate","finish_round"]:await command(action)
+			await ContextualFlow.settle_club_meetings(app, self, check)
 		app._navigate("Bureau");await settle();app.coach.close();await settle()
 		await capture("toulouse-bureau-deux-matchs-2560")
 	var report:Dictionary={"checks":checks,"failures":failures,"display":DisplayServer.get_name(),"proof":proof}

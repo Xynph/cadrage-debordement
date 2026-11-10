@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),preparation=require('../native/engine/epcr-preparation.cjs');
 function fixture(t,mode='world',club=0){
@@ -7,7 +8,7 @@ function fixture(t,mode='world',club=0){
  t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
  const send=(command,payload={})=>b.handle({id:++serial,command,payload});
  const good=(command,payload)=>{const r=send(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- good('new_career',{mode,club});
+ settleClubMeetings(good('new_career',{mode,club}),(command,payload)=>good(command,payload));
  return {dir,send,good,disk:()=>fs.readFileSync(path.join(dir,'PrototypeGodot','donnees.json')),restart:()=>{b.close();b=createBridge({dataDir:dir,seed:1,now:10});}};
 }
 test('Monde et Champ : préparation EPCR consultative, pas une inscription officielle',t=>{
@@ -39,7 +40,7 @@ test('Vrai worker : liste choisie, feuille et refus gardent disque, RNG, horloge
  for(const data of invalid){const r=f.send('epcr_preview',data);assert.equal(r.ok,false);assert.deepEqual(f.disk(),bytes);}
  assert.equal(f.good('export').meta.exportText,before);assert.deepEqual(f.disk(),bytes,'fichier contient aussi graine, horloge et store');
  assert.deepEqual(f.good('snapshot').epcrPreparation.registeredIds,m.epcrPreparation.registeredIds,'brouillon non stocké');
- const control=fixture(t);f.good('train',{mode:'normal'});control.good('train',{mode:'normal'});
+ const control=fixture(t);settleClubMeetings(f.good('train',{mode:'normal'}),(command,payload)=>f.good(command,payload));settleClubMeetings(control.good('train',{mode:'normal'}),(command,payload)=>control.good(command,payload));
  assert.deepEqual(JSON.parse(f.good('export').meta.exportText).state,JSON.parse(control.good('export').meta.exportText).state,'la prochaine commande aléatoire conserve la même trajectoire');
  assert.equal(JSON.parse(f.disk()).seed,JSON.parse(control.disk()).seed,'curseur RNG privé identique');
  assert.equal(JSON.parse(f.disk()).clock,JSON.parse(control.disk()).clock,'horloge privée identique');

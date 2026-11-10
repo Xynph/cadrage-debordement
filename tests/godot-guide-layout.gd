@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Content = preload("res://guide/guide_content.gd")
 var app: Control
 var guide: Control
@@ -68,6 +69,7 @@ func geometry(id: String) -> void:
 func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
 	app._command("new_career",{"club":0,"mode":"common"}); await wait_model()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	guide = load("res://guide/coach_guide.gd").new(); app.add_child(guide); guide.setup(app); guide.speech.set_muted(true)
 	if OS.get_environment("CD_GUIDE_LAYOUT_CASE") == "dock":
 		await dock_cases(); await finish(); return

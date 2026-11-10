@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -31,7 +32,7 @@ test('Deux bras réels commencent identiques et le renouvellement exerce un trai
  let a,b;
  try{
   a=worker(root,'minimal');b=worker(root,'attentive');
-  const initialA=a.good('new_career',{mode:'world',club:0}),initialB=b.good('new_career',{mode:'world',club:0});
+  const initialA=settleClubMeetings(a.good('new_career',{mode:'world',club:0}),(command,payload)=>a.good(command,payload)),initialB=settleClubMeetings(b.good('new_career',{mode:'world',club:0}),(command,payload)=>b.good(command,payload));
   assert.deepEqual(JSON.parse(a.good('export').meta.exportText).state,JSON.parse(b.good('export').meta.exportText).state,'paired initial states');
   const minimal=createPolicy('minimal'),attentive=createPolicy('attentive');
   const aModel=applyPhase(a,minimal,initialA,'before-week');
@@ -59,7 +60,7 @@ test('Deux bras réels commencent identiques et le renouvellement exerce un trai
 test('Le contrôleur est déterministe sur modèle visible, borné et prudent, sans accès à des traits cachés',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-policy-input-'));let w;
  try{
-  w=worker(root,'public');const model=w.good('new_career',{mode:'world',club:0});
+  w=worker(root,'public');const model=settleClubMeetings(w.good('new_career',{mode:'world',club:0}),(command,payload)=>w.good(command,payload));
   const first=createPolicy('attentive'),second=createPolicy('attentive'),before=JSON.stringify(model);
   for(const p of model.squad)Object.defineProperty(p,'hiddenTraitsV2',{get(){throw Error('Hidden trait access forbidden');}});
   const request=first.nextAction(freeze(model),'before-week');assert(request);
@@ -81,7 +82,7 @@ test('Le contrôleur est déterministe sur modèle visible, borné et prudent, s
 test('Une contre-proposition du vrai worker est observable et acceptée au plus une fois',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-policy-counter-'));let w;
  try{
-  w=worker(root,'counter');const actual=w.good('new_career',{mode:'world',club:0}),displayed=copy(actual);
+  w=worker(root,'counter');const actual=settleClubMeetings(w.good('new_career',{mode:'world',club:0}),(command,payload)=>w.good(command,payload)),displayed=copy(actual);
   // Fault fixture: a stale displayed asking price. No worker state is edited.
   // This forces the real negotiation controller to publish its counteroffer.
   const candidate=displayed.squad.find(p=>p.age<=30&&p.contractEnd<=displayed.meta.season&&p.renewal.available&&p.salary>1000);

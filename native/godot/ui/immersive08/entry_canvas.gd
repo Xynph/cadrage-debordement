@@ -375,7 +375,7 @@ static func _illustrate_preview(page: Control) -> void:
 	var credit := C.label("ILLUSTRATION D’AMBIANCE", 17, C.GOLD, true, 700)
 	credit.name = "EntryPreviewCredit"
 	credit.set_meta("immersive_style_applied", true)
-	credit.tooltip_text = "Illustration de fiction originale générée par IA"
+	credit.tooltip_text = "Aperçu du club"
 	content.add_child(credit)
 
 static func _fit_japan_clubs(page: Control) -> void:

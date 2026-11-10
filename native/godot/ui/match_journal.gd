@@ -51,7 +51,7 @@ func setup(owner_app: Control) -> void:
 	add_child(fields)
 	category = OptionButton.new()
 	category.name = "MatchJournalCategory"
-	category.tooltip_text = "Filtrer les faits structurés du moteur"
+	category.tooltip_text = "Filtrer les événements du match"
 	category.custom_minimum_size = Vector2(112, 34)
 	category.fit_to_longest_item = false
 	for state in ["normal", "hover", "pressed", "disabled"]:

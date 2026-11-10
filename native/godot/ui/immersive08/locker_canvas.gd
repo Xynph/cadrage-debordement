@@ -89,7 +89,7 @@ static func _event(card: Panel, app: Control, data: Dictionary) -> void:
 			D.place(portrait,Rect2(22,73,125,118))
 		D.text(card,166,110,event.get("title","Point de vestiaire"),36,C.IVORY,700,1134)
 		D.text(card,166,146,_name(app.model,event.get("playerId")),26,C.GOLD,600,1120)
-		D.text(card,166,177,"%s  ·  Leadership %s / 100" % [event.get("trait","Profil simulé"),G.n(event.get("leadership","—"))],23,C.MUTED,500,1120)
+		D.text(card,166,177,"%s  ·  Leadership %s / 100" % [event.get("trait","Personnalité"),G.n(event.get("leadership","—"))],23,C.MUTED,500,1120)
 		var lines := D.words(str(event.get("context","")),102,2)
 		for i in lines.size(): D.text(card,23,219+i*26,lines[i],24,C.IVORY,500,1278)
 		var choices: Array = event.get("choices",[])

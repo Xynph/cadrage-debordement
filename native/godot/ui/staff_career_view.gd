@@ -16,7 +16,7 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	var overview := G.v(8)
 	overview.name = "StaffCareerOverview"
 	parent.add_child(overview)
-	overview.add_child(G.wrap("Les contrats descriptifs restent gratuits. Les contrats rémunérés volontaires figurent dans le budget staff ; ils n’accordent aucun bonus de match." if app.model.get("clubLife", {}).get("staffEmployment", {}).get("enabled", false) else data.get("notice", ""), 13))
+	overview.add_child(G.wrap("Seuls les contrats rémunérés sont imputés au budget du staff." if app.model.get("clubLife", {}).get("staffEmployment", {}).get("enabled", false) else data.get("notice", ""), 13))
 	_mentoring(app, overview)
 	_employment(app, overview)
 	var teams: Array = app.model.get("staff", {}).get("teams", data.get("teams", []))
@@ -279,7 +279,7 @@ static func _employment(app: Control, parent: Container) -> void:
 	var data: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
 	if not data.get("available", false): return
 	if not data.get("enabled", false):
-		var activate := G.button("ACTIVER LES CONTRATS RÉMUNÉRÉS",func(): app.confirm("Rémunération nominative du staff", "Activation gratuite, sans adoption des contrats en poste. Les futurs recrutements de ce club seront rémunérés selon un barème fictif visible avant signature ; aucun bonus de match ajouté.",func():app._command("staff_employment_enable",{"confirmed":true,"context":data.context.duplicate(true)})))
+		var activate := G.button("ACTIVER LES CONTRATS RÉMUNÉRÉS",func(): app.confirm("Rémunération nominative du staff", "Activation gratuite, sans adoption des contrats en poste. Les futurs recrutements de ce club seront rémunérés selon le barème visible avant signature.",func():app._command("staff_employment_enable",{"confirmed":true,"context":data.context.duplicate(true)})))
 		activate.name = "StaffEmploymentEnable"; activate.disabled = not data.get("canEnable", false)
 		parent.add_child(activate)
 	else:

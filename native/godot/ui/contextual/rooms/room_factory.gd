@@ -13,6 +13,9 @@ static func build(kind: String, club: Dictionary) -> Node3D:
 		"office", "bureau": room = OfficeRoom.new()
 		"locker", "vestiaire": room = LockerRoom.new()
 		"training", "terrain": room = TrainingRoom.new()
+		"press": room = load("res://ui/contextual/rooms/press_room.gd").new()
+		"medical": room = load("res://ui/contextual/rooms/medical_room.gd").new()
+		"board": room = load("res://ui/contextual/rooms/board_room.gd").new()
 		_:
 			push_warning("Unknown contextual room: " + kind)
 			return null

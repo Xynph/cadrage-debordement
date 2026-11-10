@@ -155,7 +155,7 @@ static func apply(rect: TextureRect, person: Dictionary = {}) -> bool:
 	if image==null: return false
 	rect.texture = image
 	rect.material = material(person)
-	rect.tooltip_text = "Illustration fictive · éléments IA prégénérés et composition locale · ressemblance et unicité non garanties"
+	rect.tooltip_text = str(person.get("name", "Portrait"))
 	return true
 
 static func cache_info() -> Dictionary:

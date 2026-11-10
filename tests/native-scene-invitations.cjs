@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const target=path.join(__dirname,'../native/engine/scene-invitations.cjs');
 assert.ok(fs.existsSync(target),'Persisted native invitation domain must exist');
@@ -34,7 +35,7 @@ function rechecksum(doc){let hash=2166136261;for(const ch of JSON.stringify(doc.
 function bad(command,payload={}){const r=bridge.handle({id:++sequence,command,payload});assert.equal(r.ok,false,command+' must reject');return r;}
 try{
  bridge=createBridge({dataDir:root,seed:371,now:1700000000000});
- let m=good('new_career',{mode:'common',club:29}),inv=()=>m.clubLife.sceneInvitations;
+ let m=settleClubMeetings(good('new_career',{mode:'common',club:29}),(command,payload)=>good(command,payload)),inv=()=>m.clubLife.sceneInvitations;
  assert.ok(inv(),'The real worker registers sceneInvitations');assert.equal(inv().invitations.length,2);
  const file=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(file),initial=good('export').meta.exportText;
  for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,initial);assert.deepEqual(fs.readFileSync(file),disk,'Snapshots and export cannot publish invitations');
@@ -51,6 +52,6 @@ try{
  const hostile=JSON.parse(final);hostile.state.sceneInvitations.invitations[0].decision.choiceId='forged';assert.match(bad('import',{text:JSON.stringify(hostile)}).error,/invitation/i);assert.equal(good('export').meta.exportText,final);
  good('shutdown');bridge=createBridge({dataDir:root});m=good('snapshot');assert.equal(good('export').meta.exportText,final);assert.equal(inv().history.length,2);
  const old=JSON.parse(final);delete old.state.sceneInvitations;rechecksum(old);m=good('import',{text:JSON.stringify(old)});assert.equal(JSON.parse(good('export').meta.exportText).state.sceneInvitations,undefined);good('snapshot');assert.equal(JSON.parse(good('export').meta.exportText).state.sceneInvitations,undefined,'Old saves do not gain invented invitation history');
- m=good('new_career',{mode:'common',club:29});const departing=inv().invitations.find(x=>x.kind==='private_staff');m=good('staff_release',{context:m.clubLife.staffCareer.context,confirmed:true,staffId:departing.participantId});assert.equal(inv().invitations.find(x=>x.id===departing.id).status,'expired');bad('scene_invitation_open',{id:departing.id});const departed=good('export').meta.exportText;m=good('import',{text:departed});assert.equal(inv().invitations.find(x=>x.id===departing.id).status,'expired','Historical staff departure remains importable');
+ m=settleClubMeetings(good('new_career',{mode:'common',club:29}),(command,payload)=>good(command,payload));const departing=inv().invitations.find(x=>x.kind==='private_staff');m=good('staff_release',{context:m.clubLife.staffCareer.context,confirmed:true,staffId:departing.participantId});assert.equal(inv().invitations.find(x=>x.id===departing.id).status,'expired');bad('scene_invitation_open',{id:departing.id});const departed=good('export').meta.exportText;m=good('import',{text:departed});assert.equal(inv().invitations.find(x=>x.id===departing.id).status,'expired','Historical staff departure remains importable');
  console.log('Native invitations production worker: typed introduction, pure reads, command guard, real relationship quota, saved visit and receipts, disk rollback and replay refusal PASS.');
 }finally{bridge?.close();fs.rmSync(root,{recursive:true,force:true});}

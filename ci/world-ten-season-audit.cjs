@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual, deliberately outside tests/: genuine worker commands, no result injection.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -36,7 +37,7 @@ function run(options) {
   const report={schema:'world-ten-season-audit-v1',seed:options.seed,club:options.club,requestedSeasons:options.seasons,
     mode:'world',node:process.version,harnessSha256:currentHarnessSha,source:execFileSync('git',['rev-parse','HEAD'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     budgetMs:options.budgetMs,startedAt:new Date(started).toISOString(),status:'running',commands:0,annual:[],restarts:[],promotions:[],
-    policy:'No training, recruitment, investment or contract changes except auto_lineup/promote_cover needed to play; deterministic now; fictional money.'};
+    policy:'No training, recruitment, investment or contract changes; actual mandatory club meetings and auto_lineup/promote_cover needed to play; deterministic now; fictional money.'};
   let previousElapsed=0;
   try {
   if(options.priorReport) {
@@ -143,10 +144,11 @@ function run(options) {
       assert.deepEqual(JSON.parse(fs.readFileSync(file)),source,'resume exact private RNG/clock/profile');
       report.resumptions=(report.resumptions||[]).concat({season:sourceState.season,week:sourceState.round,stateIdentical:true,privateProfileIdentical:true,exportSha256:resumed.sha256});
     } else {
-      go('new_career',{mode:'world',club:options.club});
+      settleClubMeetings(go('new_career',{mode:'world',club:options.club}),go);
       report.initial=summary(exported(),'initial');
     }
-    persist(true);
+    // Exact resume assertions above precede the real mandatory decisions.
+    settleClubMeetings(model,go);persist(true);
     for(let season=model.meta.season;season<=options.seasons;season++) {
       assert.equal(model.meta.season,season);
       const seasonStarted=report.annual.at(-1)?.elapsedMs??report.initial.elapsedMs;
@@ -163,7 +165,7 @@ function run(options) {
           assert.equal(model.selection.valid,true,'qualified user sheet required');
           go('begin_match');go('delegate');
         }
-        go('finish_round');assert.equal(model.meta.week,week+1);persist(true);
+        settleClubMeetings(go('finish_round'),go);assert.equal(model.meta.week,week+1);persist(true);
       }
       const end=exported();assert.equal(end.state.phase,'ended');
       assert.equal(end.state.history.length,end.state.worldMode.fixtures.length,'all actual seasonal fixtures completed');
@@ -172,7 +174,7 @@ function run(options) {
       if(season===5||season===10)restart(end);
       console.log(JSON.stringify({season,elapsedMs:elapsed(),seasonElapsedMs:row.seasonElapsedMs,totalCash:row.totalCash,players:row.activePlayers,bytes:row.exportBytes}));persist(true);
       if(season<options.seasons) {
-        go('next_season',{confirmed:true});assert.equal(model.meta.season,season+1);
+        settleClubMeetings(go('next_season',{confirmed:true}),go);assert.equal(model.meta.season,season+1);
         const next=exported();assert.equal(next.state.history.length,0);
         assert.equal(next.state.worldMode.qualification.champions.length,24);
         assert.equal(next.state.worldMode.qualification.challenge.length,18);

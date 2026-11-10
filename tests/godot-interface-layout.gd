@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Real-window regression: removing the central resize handler must break the
 # native 720p reference, compact pitch visibility and focused bench exposure.
 var app: Control
@@ -96,6 +97,7 @@ func run() -> void:
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()
 	check(root.content_scale_size==root.size,"Référence physique correcte au démarrage")
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Composition");await settle();app.coach.close()
 	density_contract()
 	await capture("composition-native-"+str(root.size.x))

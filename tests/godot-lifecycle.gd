@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -45,6 +46,7 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await command("snapshot")
 	await command("new_career", {"mode":"common", "club":1})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("export")
 	var before: String = app.model.meta.exportText
 	var profile: String = str(app.model.meta.dataDir).path_join("donnees.json")
@@ -76,7 +78,7 @@ func run() -> void:
 	check(app.model.meta.exportText == before and FileAccess.get_file_as_bytes(profile) == bytes, "Navigation et portraits sans mutation état/RNG/disque")
 	var skin = load("res://ui/game_skin.gd")
 	var original: TextureRect = skin.portrait(0, 60, {"id":"staff-fixture","identity":{"portraitPath":ProjectSettings.globalize_path("res://art/regen-staff-atlas.png"),"portraitStatus":"official"}})
-	check(original.texture != null and original.material == null and original.tooltip_text.contains("officielle"), "Portrait officiel imbriqué prioritaire sur le générateur")
+	check(original.texture != null and original.material == null and original.tooltip_text == "Portrait", "Portrait officiel imbriqué prioritaire sur le générateur")
 	original.free()
 	var fallback: TextureRect = skin.portrait(0, 60, {"id":"regen-fixture","age":23,"portraitPath":"/missing/portrait.png"})
 	check(fallback.texture != null and fallback.material != null, "Image absente remplacée par un portrait composé")

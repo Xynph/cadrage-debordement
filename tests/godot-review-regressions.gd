@@ -218,6 +218,7 @@ func _bench() -> void:
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Finished match disables entrant without another selection")
 	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
+	await ContextualFlow.settle_club_meetings(app, self, _check)
 	var first_date: String = app.header_date.text
 	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the visible management header date")
 	await _command("auto_lineup")
@@ -226,6 +227,7 @@ func _bench() -> void:
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	await _command("delegate")
 	await _command("finish_round")
+	await ContextualFlow.settle_club_meetings(app, self, _check)
 	_check(app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again")
 	_check(app.model.live == null and not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Both round validations restore management after the immersive match")
 	await _command("auto_lineup")
@@ -344,6 +346,7 @@ func _run() -> void:
 	if mode == "disk":
 		_check(first_write.replace("\\", "/").simplify_path().to_lower().begins_with(profile.replace("\\", "/").simplify_path().to_lower() + "/") and not FileAccess.file_exists(first_write) and DirAccess.make_dir_absolute(first_write) == OK, "First-write blocker placed after opening the isolated profile")
 	if mode!="recovery":await _command("new_career",{"club":0})
+	await ContextualFlow.settle_club_meetings(app, self, _check)
 	if mode=="recovery":
 		var original:=FileAccess.get_file_as_bytes(profile.path_join("PrototypeGodot/donnees.json"))
 		_check(app.model.get("meta",{}).get("recoveryRequired",false),"Corrupt profile exposes explicit recovery")
@@ -420,6 +423,7 @@ func _run() -> void:
 				await ContextualFlow.skip_talk(app, self, "pre", _check)
 				await _command("delegate")
 				await _command("finish_round")
+				await ContextualFlow.settle_club_meetings(app, self, _check)
 				app._navigate("Match")
 		var actual: Dictionary = app.model
 		app.model = actual.duplicate(true)

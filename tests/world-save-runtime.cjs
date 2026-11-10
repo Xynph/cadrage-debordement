@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict');
 const {test}=require('node:test');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
@@ -62,7 +63,7 @@ if(require.main===module)test('Sauvegarde mondiale réelle : profil étranger et
  try{
   bridge=createBridge({dataDir:path.join(scratch,'prem'),seed:827381,now:1794178800000});
   const handle=(command,payload={})=>bridge.handle({id:++serial,command,payload});
-  let model=accepted(handle,'new_career',{mode:'world',club:30});
+  let model=settleClubMeetings(accepted(handle,'new_career',{mode:'world',club:30}),(command,payload)=>accepted(handle,command,payload));
   const original=exportText(handle),originalDoc=JSON.parse(original);
   accepted(handle,'import',{text:original});assert.equal(JSON.parse(exportText(handle)).checksum,originalDoc.checksum);
   const selected=originalDoc.state.clubs[30].players.find(p=>p.worldRatingsVersion===1&&p.worldProfile&&Object.keys(p.hiddenTraitsV2).length);
@@ -81,7 +82,7 @@ if(require.main===module)test('Sauvegarde mondiale réelle : profil étranger et
   await t.test('joueur sous contrat aussi agent libre',()=>rejectedImport(handle,original,s=>{
    const copy={...player(s),price:1000,contractEnd:null};s.economy.freeAgents.push(copy);
   },/déjà sous contrat|dupliqué/i));
-  for(let n=0;!model.next&&n<4;n++)model=accepted(handle,'finish_round');
+  for(let n=0;!model.next&&n<4;n++)model=settleClubMeetings(accepted(handle,'finish_round'),(command,payload)=>accepted(handle,command,payload));
   assert.ok(model.next,'Un match est au calendrier pour le club');
   accepted(handle,'begin_match');const live=exportText(handle);
   accepted(handle,'import',{text:live});assert.equal(JSON.parse(exportText(handle)).checksum,JSON.parse(live).checksum);

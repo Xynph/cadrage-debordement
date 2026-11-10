@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const G = preload("res://ui/carnet_skin.gd")
 var app: Control
 var checks := 0
@@ -103,6 +104,7 @@ func run() -> void:
 	root.add_child(app)
 	await worker()
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var annotated := _reference_player()
 	var annotated_id := str(annotated.id)
 	var annotation := "Repère de recette du dossier — uniquement pour ce joueur."

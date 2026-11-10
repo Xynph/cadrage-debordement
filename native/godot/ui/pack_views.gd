@@ -156,9 +156,9 @@ static func _picture(parent: Container, art: String, height: float) -> void:
 	parent.add_child(photo)
 
 static func _catalogue(app: Control, parent: Container, selected: String, compatible: bool, picture_height: float) -> void:
-	var content := _section(parent, "Réalité active" if selected == "base" else "", "Jeu de base", "maquette-reality-base", picture_height, true)
-	content.add_child(C.label("Identités fictives", 25, C.IVORY, false))
-	content.add_child(C.wrap("Une réalité construite pour Oval Legacy, avec des clubs, des joueurs et des compétitions anonymisés.", 21, C.IVORY))
+	var content := _section(parent, "Identités actives" if selected == "base" else "", "Jeu de base", "maquette-reality-base", picture_height, true)
+	content.add_child(C.label("Identités du jeu", 25, C.IVORY, false))
+	content.add_child(C.wrap("Retrouvez les clubs, les joueurs et les compétitions de votre carrière.", 21, C.IVORY))
 	content.add_child(C.rule())
 	var facts := C.h(18)
 	content.add_child(facts)
@@ -167,7 +167,7 @@ static func _catalogue(app: Control, parent: Container, selected: String, compat
 	Editorial.divider(facts)
 	_fact(facts, database.get("playerCount", 0), "Joueurs")
 	content.add_child(C.rule())
-	content.add_child(C.wrap("Les packs changent les identités et les visuels. Le calendrier et les règles restent ceux du monde commun.", 19))
+	content.add_child(C.wrap("Les packs changent les noms et les visuels. Le calendrier et les règles restent inchangés.", 19))
 	var space := Control.new()
 	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(space)
@@ -213,7 +213,7 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 
 static func _create_with_pack(app: Control, id: String) -> void:
 	if app.waiting:
-		app._refuse_action("Attendez la réponse du moteur avant de continuer.")
+		app._refuse_action("Attendez la fin du traitement avant de continuer.")
 		return
 	if id == app.pack_manager.selected_id("creation"):
 		app._navigate("Création")
@@ -233,13 +233,13 @@ static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
 		_fact(tiles, counts.competitions, "Compétitions")
 	else:
 		_fact(tiles, counts.get("logos", 0), "Blasons")
-	var media := [["Portraits", "%s photos de joueurs · %s portraits IA" % [G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]]]
+	var media := [["Portraits", "%s portraits de joueurs" % G.n(int(counts.get("official", 0)) + int(counts.get("synthetic", 0)))]]
 	var identities := "%s blasons de clubs" % G.n(counts.get("logos", 0))
 	if counts.has("competitionLogos"):
 		identities += " · %s logos de compétitions" % G.n(counts.competitionLogos)
 	media.append(["Identités", identities])
 	if counts.has("staff"):
-		media.append(["Staff", "%s identités · %s photos officielles · %s illustrations IA" % [G.n(counts.staff), G.n(counts.get("staffOfficial", 0)), G.n(counts.get("staffSynthetic", 0))]])
+		media.append(["Staff", "%s identités · %s portraits" % [G.n(counts.staff), G.n(int(counts.get("staffOfficial", 0)) + int(counts.get("staffSynthetic", 0)))]])
 	if counts.has("cityPhotos") or counts.has("stadiumPhotos"):
 		media.append(["Lieux", "%s villes en photo · %s stades en photo" % [G.n(counts.get("cityPhotos", 0)), G.n(counts.get("stadiumPhotos", 0))]])
 	for item: Array in media:

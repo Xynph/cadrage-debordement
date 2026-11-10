@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto');
 const compose=require('../native/engine/world-pacific-registry.cjs'),terms=require('../native/engine/world-initial-contracts.json'),delta=require('../native/engine/world-champ-extension.json');
 const aliases=Object.entries(terms.inactiveAliases),loadLegacy=()=>require('../native/engine/world-legacy-aliases.json');
@@ -12,14 +13,14 @@ test('Le catalogue actif retire réellement les six doublons, seul le lecteur de
 function fixture(t,club=112){
  const {createBridge}=require('../native/engine/worker.cjs'),root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-catalogue-dedup-')),opts={dataDir:root,seed:318,now:1788134400000};let b=createBridge(opts),serial=0;
  const raw=(command,payload={})=>b.handle({id:++serial,command,payload}),go=(command,payload={})=>{const r=raw(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};
- t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});go('new_career',{mode:'world-champ',club});
+ t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(go('new_career',{mode:'world-champ',club}),(command,payload)=>go(command,payload));
  return {root,go,raw,export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'PrototypeGodot/donnees.json')),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
 }
 function legacyDocument(text){const doc=JSON.parse(text);for(const[id,row]of Object.entries(loadLegacy().aliases))doc.state.clubs[row.clubId].players.push({...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)});const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
 test('Le vrai lecteur conserve les six fiches présentes dans un ancien export : état, RNG et reprise exacts',t=>{
  const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh);h.go('import',{text:old});a.equal(h.export(),old);a.equal(JSON.parse(old).state.clubs.reduce((n,c)=>n+c.players.length,0),5884);
  const disk=h.disk();h.go('snapshot');a.deepEqual(h.disk(),disk);h.restart();a.equal(h.export(),old);a.deepEqual(h.disk(),disk);
- h.go('new_career',{mode:'world-champ',club:112});a.equal(JSON.parse(h.export()).state.clubs.reduce((n,c)=>n+c.players.length,0),5878);
+ settleClubMeetings(h.go('new_career',{mode:'world-champ',club:112}),(command,payload)=>h.go(command,payload));a.equal(JSON.parse(h.export()).state.clubs.reduce((n,c)=>n+c.players.length,0),5878);
 });
 function archive(root,players,assets=[]){
  const media=require('../native/engine/media-packs.cjs'),manifest={schema:'cd-identity-pack-v1',id:'alias-compat-test',name:'Identités fictives de réception',version:'1',databaseId:delta.id,rightsStatus:'synthetic-test-only',clubs:[],players,assets:assets.map(([id,data])=>({id,path:id+'.png',sha256:crypto.createHash('sha256').update(data).digest('hex'),bytes:data.length}))},items=[['pack.json',Buffer.from(JSON.stringify(manifest))],...assets.map(([id,data])=>[id+'.png',data])];
@@ -35,7 +36,7 @@ test('Un pack historique complet à 5 884 IDs reste accepté, sans autoriser un 
 test('Ancien pack : ID historique accepté, photo reliée au canonique et aucune carrière modifiée',t=>{
  const h=fixture(t),before=JSON.parse(h.export()).state,[id,row]=aliases[0],png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');
  const file=archive(h.root,[{id,name:'Variante témoin',portrait:'photo',synthetic:true},{id:row.canonicalId,name:'Canonique témoin'}],[['photo',png]]),original=fs.readFileSync(file),preview=h.go('pack_inspect',{path:file,mode:'world-champ'}).packs.preview;
- h.go('pack_install',{path:file,digest:preview.digest,mode:'world-champ'});let model=h.go('pack_select',{scope:'career',id:preview.id});
+ h.go('pack_install',{path:file,digest:preview.digest,mode:'world-champ'});let model=settleClubMeetings(h.go('pack_select',{scope:'career',id:preview.id}),(command,payload)=>h.go(command,payload));
  const person=model.squad.find(p=>p.id===row.canonicalId);a(person);a.equal(person.name,'Canonique témoin');a(person.portraitPath);a.deepEqual(fs.readFileSync(person.portraitPath),png);a.equal(person.portraitStatus,'synthetic');
  const after=JSON.parse(h.export()).state;delete after.identityPack;a.deepEqual(after,before);a.deepEqual(fs.readFileSync(file),original);
  const saved=h.export();h.restart();a.equal(h.export(),saved);model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===row.canonicalId).name,'Canonique témoin');

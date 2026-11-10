@@ -1,5 +1,6 @@
 extends AcceptDialog
 ## Lecture du vivier et des observations publiques ; aucun talent secret déduit.
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
@@ -46,8 +47,8 @@ func _build() -> void:
 	scroll.follow_focus = true
 	add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
-	body.add_child(G.section("La relève disponible", "Agents libres majeurs · centres de formation et petits clubs simulés"))
-	body.add_child(G.wrap(str(_data().get("notice","Le vivier n’est pas disponible dans cette carrière.")),13))
+	body.add_child(G.section("La relève disponible", "Agents libres majeurs · centres de formation et petits clubs"))
+	body.add_child(G.wrap(Copy.notice("scouting", _data().get("notice","Le vivier n’est pas disponible dans cette carrière.")),13))
 	var filters := HFlowContainer.new(); filters.add_theme_constant_override("h_separation",8); body.add_child(filters)
 	var search := LineEdit.new(); search.name = "RegenScoutSearch"; search.placeholder_text = "Nom ou identifiant…"; search.custom_minimum_size = Vector2(220,36); search.text = str(state.query); filters.add_child(search)
 	search.text_changed.connect(func(value: String): state.query = value; state.page = 0; _redraw())
@@ -56,7 +57,7 @@ func _build() -> void:
 	family.select(int(state.family)+1); filters.add_child(family)
 	family.item_selected.connect(func(index: int): state.family = index-1; state.page = 0; _redraw())
 	var origin := OptionButton.new(); origin.name = "RegenScoutOrigin"
-	for label in ["Toutes les origines","Diplômés des centres","Petits clubs simulés"]: origin.add_item(label)
+	for label in ["Toutes les origines","Diplômés des centres","Petits clubs"]: origin.add_item(label)
 	origin.select(int(state.origin)); filters.add_child(origin)
 	origin.item_selected.connect(func(index: int): state.origin = index; state.page = 0; _redraw())
 	var ages := G.h(8); body.add_child(ages)
@@ -116,7 +117,7 @@ func _redraw() -> void:
 	state.page = clampi(int(state.page),0,maxi(0,ceili(float(people.size())/PAGE_SIZE)-1))
 	var start: int = int(state.page)*PAGE_SIZE
 	for person: Dictionary in people.slice(start,start+PAGE_SIZE): _person(person,data)
-	if people.is_empty(): list.add_child(G.wrap("Aucun profil dans cette sélection. Les profils sans provenance connue ne sont pas inventés.",14))
+	if people.is_empty(): list.add_child(G.wrap("Aucun profil dans cette sélection.",14))
 	counter.text = "%d profils · %d / %d suivis au total" % [people.size(),data.get("shortlist",[]).size(),int(data.get("shortlistLimit",30))]
 	if int(state.minAge)>int(state.maxAge): counter.text = "Âge minimum supérieur au maximum : ajustez les filtres."
 	previous.disabled = start == 0
@@ -130,7 +131,7 @@ func _person(person: Dictionary,data: Dictionary) -> void:
 	var info := G.v(4); G.fill(info); row.add_child(info)
 	info.add_child(G.wrap(str(person.get("name","Profil indisponible · "+str(person.id))),20,G.INK))
 	if person.has("age"):
-		info.add_child(G.wrap("%s · %d ans · %s" % [str(person.get("pos","")),int(person.age),str(person.get("origin",{}).get("label","Origine non précisée"))],13))
+		info.add_child(G.wrap("%s · %d ans · %s" % [str(person.get("pos","")),int(person.age),Copy.notice("scouting", person.get("origin",{}).get("label","Origine non précisée"))],13))
 		var origin: Dictionary = person.get("origin",{})
 		if origin.get("season") != null: info.add_child(G.wrap("Origine en saison %s · disponible depuis la saison %s" % [G.n(origin.season),G.n(origin.get("availableSince","—"))],12))
 		var evidence: Dictionary = person.get("evidence",{})

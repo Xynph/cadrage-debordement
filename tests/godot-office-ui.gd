@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Réception de présentation ; les cas « projection » sont des copies, jamais des sauvegardes importées.
 const Office = preload("res://ui/office_view.gd")
 var app: Control
@@ -252,6 +253,7 @@ func run() -> void:
 	await wait_model()
 	app.timer.stop()
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await render()
 	sections()
 	if failures.size() > 0:
@@ -281,6 +283,7 @@ func run() -> void:
 	await projections()
 	for setup in [[29, "common"], [0, "france"], [0, "fiction"]]:
 		await command("new_career", {"club":setup[0],"mode":setup[1]})
+		await ContextualFlow.settle_club_meetings(app, self, check)
 		await render()
 		check(int(app.model.club.id) == setup[0], "Vraie carrière : " + setup[1])
 		money_lines()
@@ -301,6 +304,7 @@ func run() -> void:
 		await capture("bureau-" + str(setup[1]) + "-" + str(setup[0]))
 		check(app.model.leagues.size() == (1 if setup[1] == "fiction" else 2), "Divisions natives : " + setup[1])
 	await command("new_career", {"club":29,"mode":"france"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("begin_match")
 	await command("pause", {"paused":true})
 	await render()
@@ -315,6 +319,7 @@ func run() -> void:
 	await render()
 	check(texts(named(app,"OfficeFixture")).contains("VALIDER LE RÉSULTAT"), "Match terminé : validation existante conservée")
 	await command("finish_round")
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await render()
 	check(not texts(named(app,"OfficeResults")).contains("Aucun match joué"), "Résultat issu du vrai match")
 	await capture("bureau-resultat-reel")

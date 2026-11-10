@@ -21,7 +21,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 	var page := G.v(10)
 	page.name = "Relations"
 	G.fill(page, true)
-	page.add_child(G.wrap("Relations personnelles du coach, conservées après mobilité. Traits et dialogues simulés.", 12))
+	page.add_child(G.wrap("Vos relations avec les journalistes vous suivent au fil de votre carrière.", 12))
 	var people: Array = model.get("people", [])
 	if people.is_empty():
 		page.add_child(G.wrap("Aucun journaliste disponible.", 16))
@@ -41,10 +41,10 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 		var header := G.h(12)
 		detail.add_child(header)
 		header.add_child(badge(person))
-		var identity := G.section(str(person.name), str(person.outlet) + " · " + str(person.identityLabel))
+		var identity := G.section(str(person.name), str(person.outlet))
 		G.fill(identity)
 		header.add_child(identity)
-		detail.add_child(G.wrap("Style d’entretien simulé : %s · %s" % [person.styleLabel, person.personality], 13, G.INK))
+		detail.add_child(G.wrap("Style d’entretien : %s · %s" % [person.styleLabel, person.personality], 13, G.INK))
 		var specialties: Array[String] = []
 		for topic: String in person.specialties:
 			if not specialties.has(topic.replace("_", " ")): specialties.append(topic.replace("_", " "))

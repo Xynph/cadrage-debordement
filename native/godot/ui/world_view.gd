@@ -39,7 +39,7 @@ static func build(app: Control) -> Control:
 		var advance := G.button("AVANCER DE %d SEMAINE(S)  →" % mini(weeks, 4), func(): app._command(action, {"fromWeek":int(meta.get("week", 0))}))
 		advance.name = str(nodes[prep_kind])
 		advance.disabled = app.waiting
-		advance.tooltip_text = "Les semaines sont simulées une par une. L’avance s’arrête au prochain match."
+		advance.tooltip_text = "La préparation avance semaine après semaine. L’avance s’arrête au prochain match."
 		block.add_child(advance)
 	var duels := G.scroll(left)
 	var slug := str(G.identity(app.model.club).get("slug", ""))
@@ -66,7 +66,7 @@ static func build(app: Control) -> Control:
 	var right := G.panel(page, 1.25)
 	G.chapter(right, "14", "Les échos des clubs", "Les résultats qui agitent les vestiaires.", app.accent)
 	var events := G.scroll(right)
-	if data.get("events", []).is_empty(): events.add_child(G.wrap("Aucun résultat suivi pour le moment. Aucun passé n’est inventé.", 17))
+	if data.get("events", []).is_empty(): events.add_child(G.wrap("Aucun résultat suivi pour le moment.", 17))
 	for e: Dictionary in data.get("events", []):
 		var card := G.card(events, G.accent_ink(app.accent))
 		var stage := ClubViews.phase_name(e.phase) if international else str({"league":"Championnat", "barrage":"Barrage", "semi":"Demi-finale", "final":"Finale", "access":"Accession"}.get(e.phase, e.phase))

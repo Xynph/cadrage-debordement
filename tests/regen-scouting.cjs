@@ -1,4 +1,6 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const file=path.resolve(__dirname,'../native/engine/regen-scouting.cjs');
 const domain=fs.existsSync(file)?require(file):{factory:()=>({})};
@@ -55,20 +57,20 @@ function workerFixture(t,mode){
  const system=path.join(engine,'native-systems.cjs');let source=fs.readFileSync(system,'utf8');source=source.replace('const domains={',"const domains={regenScouting:require('./regen-scouting.cjs'),");fs.writeFileSync(system,source);
  const {createBridge}=require(path.join(engine,'worker.cjs')),opts={dataDir:path.join(root,'profile'),distDir:path.resolve(__dirname,'../dist'),seed:827381,now:1794178800000};let b=createBridge(opts),n=0;
  const raw=(command,payload={})=>b.handle({id:++n,command,payload}),go=(command,payload={})=>{const r=raw(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};
- t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});go('new_career',{mode,club:0});
+ t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(go('new_career',{mode,club:0}),(command,payload)=>go(command,payload));
  return {raw,go,model:()=>go('snapshot').clubLife.regenScouting,state:()=>JSON.parse(go('export').meta.exportText).state,export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'profile/PrototypeGodot/donnees.json')),file:path.join(root,'profile/PrototypeGodot/donnees.json'),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
 }
 test('Vrai worker Monde : shortlist sans coût/RNG, rollback disque et réouverture exacte',t=>{
  const h=workerFixture(t,'world'),m=h.model(),p=m.candidates[0],before=h.export(),disk=h.disk(),state=h.state(),payload={playerId:p.id,watched:true,context:m.context};
  h.go('snapshot');a.equal(h.export(),before);a.deepEqual(h.disk(),disk);
- const backup=path.join(path.dirname(h.file),'donnees-precedentes.json');fs.mkdirSync(backup);a.equal(h.raw('regen_shortlist',payload).ok,false);a.equal(h.export(),before);a.deepEqual(h.disk(),disk);fs.rmdirSync(backup);
+ const refusal=refuseSavePublication(h.file,()=>h.raw('regen_shortlist',payload));a.equal(refusal.ok,false);a.match(refusal.error,/Écriture de sauvegarde impossible/);a.equal(h.export(),before);a.deepEqual(h.disk(),disk);
  h.go('regen_shortlist',payload);a(h.state().manager.watch.includes(p.id));a.equal(h.state().clubs[0].cash,state.clubs[0].cash);const saved=h.export();h.go('regen_shortlist',payload);a.equal(h.export(),saved);h.restart();a.equal(h.export(),saved);h.go('import',{text:saved});a.equal(h.export(),saved);
  const privateBefore=JSON.parse(disk),privateAfter=JSON.parse(h.disk());a.equal(privateAfter.seed,privateBefore.seed);a.equal(privateAfter.clock,privateBefore.clock);
 });
 test('Vrai worker commun : mission existante payée une fois, rapport après deux journées puis contrat réel',t=>{
  const h=workerFixture(t,'common'),initial=h.state(),p=h.model().candidates.find(p=>p.available);a(p);
  h.go('scout_mission',{family:p.family,maxAge:40,budget:10000000,maxWage:100000,confirmed:true});a.equal(initial.clubs[0].cash-h.state().clubs[0].cash,5000);a.equal(h.state().manager.missions.length,1);
- for(let i=0;i<2;i++){const m=h.go('snapshot');if(m.next){h.go('begin_match');h.go('delegate');}h.go('finish_round');}
+ for(let i=0;i<2;i++){const m=h.go('snapshot');if(m.next){h.go('begin_match');h.go('delegate');}settleClubMeetings(h.go('finish_round'),(command,payload)=>h.go(command,payload));}
  const m=h.model();a.equal(m.missions[0].status,'done');a(m.candidates.some(p=>p.evidence.seen));
  const candidate=m.candidates.find(p=>p.available),s=h.state();a(candidate);const result=h.go('recruit',{playerId:candidate.id,salary:candidate.salary,years:candidate.minYears,confirmed:true});a.equal(result.meta.negotiation.status,'signed');
  const end=h.state();a(end.clubs[0].players.some(q=>q.id===candidate.id));a.equal(s.clubs[0].cash-end.clubs[0].cash,candidate.fee);a(!end.economy.freeAgents.some(q=>q.id===candidate.id));a(!h.model().candidates.some(q=>q.id===candidate.id));

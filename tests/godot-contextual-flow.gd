@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Run against the staged native project and an empty CD_GODOT_DATA_DIR. Every
 # career/match transition below goes through main._command and the real worker.
 const G = preload("res://ui/game_skin.gd")
@@ -157,6 +158,7 @@ func run() -> void:
 	await settle()
 	check(root.size == Vector2i(1280,720), "Actual initial client area is exactly 1280x720")
 	await ask("new_career", {"mode":"common", "club":29})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	director = app.find_child("ContextualDirector", true, false)
 	check(director != null, "Production contextual director installed")
 	if director == null:

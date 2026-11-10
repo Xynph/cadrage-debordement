@@ -185,7 +185,7 @@ function loadProductionInputs(root=path.resolve(__dirname,'..')){
  const champ=compose.extendChampRegistry(nationale,read('world-champ-extension.json'));
  const editions=read('world-editions.cjs').createWorldEditions(base,pacific,japan,nationale,champ).entries;
  const staff=read('staff.cjs');
- return {editions,staffByDatabase:Object.fromEntries(editions.map(e=>[e.id,staff.forDatabase(e.id).registry])),foundation:require(path.join(root,'dist/rugby-roster-foundation.js')),opening:read('world-initial-contracts.json')};
+ return {editions,staffByDatabase:Object.fromEntries(editions.map(e=>{const selected=staff.forDatabase(e.id);return [e.id,selected.referenceRegistry||selected.registry];})),foundation:require(path.join(root,'dist/rugby-roster-foundation.js')),opening:read('world-initial-contracts.json')};
 }
 function auditAll(inputs){
  const editions=inputs.editions.map(edition=>auditEdition({edition,staffRegistry:inputs.staffByDatabase[edition.id],foundation:inputs.foundation,opening:inputs.opening}));

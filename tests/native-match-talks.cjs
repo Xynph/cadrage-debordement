@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 const domain=require('../native/engine/match-talks.cjs');
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -69,9 +70,9 @@ function workerTests(){
  const restart=()=>{b.close();b=createBridge({dataDir:root});good('snapshot');};
  const checksum=doc=>{let hash=2166136261;for(const ch of JSON.stringify(doc.state))hash=Math.imul(hash^ch.charCodeAt(0),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);};
  try{
-  good('new_career',{mode:'common',club:29});assert.ok(m.clubLife.matchTalks);assert.equal(scene(),null);
+  settleClubMeetings(good('new_career',{mode:'common',club:29}),(command,payload)=>good(command,payload));assert.ok(m.clubLife.matchTalks);assert.equal(scene(),null);
   let before=exported();good('snapshot');assert.equal(exported(),before,'fresh reads do not initialize the domain');
-  good('train');good('auto_lineup');good('begin_match');assert.equal(scene().phase,'pre');assert.equal(scene().participants.length,23);
+  settleClubMeetings(good('train'),(command,payload)=>good(command,payload));good('auto_lineup');good('begin_match');assert.equal(scene().phase,'pre');assert.equal(scene().participants.length,23);
   assert.equal(scene().options.length,6);before=exported();const profile=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(profile);
   good('snapshot');good('snapshot');assert.equal(exported(),before);assert.deepEqual(fs.readFileSync(profile),disk);
   bad('tick',{steps:120});bad('pause',{paused:false});bad('finish_round');bad('match_talk_decide',{...decision(scene()),tone:'warm'});
@@ -102,11 +103,11 @@ function workerTests(){
   }
   assert.equal(scene()?.phase,'post');bad('finish_round');const post=clone(scene()),postSave=exported();restart();assert.deepEqual(scene(),post);assert.equal(exported(),postSave);
   good('match_talk_decide',decision(scene()));continuation(scene());assert.equal(m.live,null);assert.equal(scene(),null);assert.equal(m.clubLife.matchTalks.receipts.length,3);
-  bad('match_talk_continue',{key:post.key,phase:'post',skip:true});
-  good('train');good('auto_lineup');good('begin_match');good('delegate');assert.equal(m.live.finished,true);assert.equal(scene(),null);assert.equal(m.clubLife.matchTalks.receipts.length,6);good('finish_round');
+  bad('match_talk_continue',{key:post.key,phase:'post',skip:true});settleClubMeetings(good('snapshot'),good);
+  settleClubMeetings(good('train'),(command,payload)=>good(command,payload));good('auto_lineup');good('begin_match');good('delegate');assert.equal(m.live.finished,true);assert.equal(scene(),null);assert.equal(m.clubLife.matchTalks.receipts.length,6);settleClubMeetings(good('finish_round'),(command,payload)=>good(command,payload));
   // Old saves with an already-live match remain on the existing live flow.
-  good('train');good('auto_lineup');good('begin_match');const old=JSON.parse(exported());delete old.state.contextualMatch;
-  good('import',{text:checksum(old)});assert.equal(scene(),null);const oldSave=exported();good('snapshot');assert.equal(exported(),oldSave);good('delegate');assert.equal(scene(),null);good('finish_round');
+  settleClubMeetings(good('train'),(command,payload)=>good(command,payload));good('auto_lineup');good('begin_match');const old=JSON.parse(exported());delete old.state.contextualMatch;
+  good('import',{text:checksum(old)});assert.equal(scene(),null);const oldSave=exported();good('snapshot');assert.equal(exported(),oldSave);good('delegate');assert.equal(scene(),null);settleClubMeetings(good('finish_round'),(command,payload)=>good(command,payload));
   console.log('Native match talks worker: live lifecycle, batch boundaries, save/restart, strict import, disk rollback, delegation and legacy live compatibility PASS.');
  }finally{b.close();fs.rmSync(root,{recursive:true,force:true});}
 }

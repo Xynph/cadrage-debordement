@@ -1,5 +1,6 @@
 extends AcceptDialog
 ## Atelier local, distinct des packs d'identités et des carrières.
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Atomic = preload("res://atomic_file.gd")
@@ -35,7 +36,7 @@ static func open(owner_app: Control) -> AcceptDialog:
 
 func _build() -> void:
 	name = "CompetitionEditorDialog"
-	title = "Atelier de calendrier fictif"
+	title = "Atelier de calendrier personnalisé"
 	get_ok_button().text = "FERMER L’ATELIER"
 	var width := mini(1040, app.get_window().size.x - 64)
 	var height := mini(880, app.get_window().size.y - 100)
@@ -48,10 +49,10 @@ func _build() -> void:
 	var body := G.v(10)
 	body.custom_minimum_size.x = width - 54
 	scroll.add_child(body)
-	body.add_child(G.wrap("Créez et échangez un calendrier. Les formats 14 clubs aller-retour permettent de lancer une carrière fictive ; les autres restent échangeables. Aucune compétition officielle n’est modifiée.", 17))
+	body.add_child(G.wrap("Créez et échangez un calendrier. Les formats 14 clubs aller-retour permettent de lancer une carrière ; les autres restent échangeables. Aucune compétition officielle n’est modifiée.", 17))
 	title_input = LineEdit.new()
 	title_input.name = "CompetitionEditorTitle"
-	title_input.text = "Ma ligue fictive"
+	title_input.text = "Ma ligue"
 	title_input.max_length = 80
 	body.add_child(title_input)
 	body.add_child(G.label("Clubs · un nom par ligne · 2 à 32 clubs", 14))
@@ -97,7 +98,7 @@ func _build() -> void:
 	play_club.name = "CustomCompetitionClub"
 	play_club.disabled = true
 	body.add_child(play_club)
-	launch_button = G.button("CRÉER UNE CARRIÈRE FICTIVE", _launch)
+	launch_button = G.button("CRÉER UNE CARRIÈRE", _launch)
 	launch_button.name = "CustomCompetitionLaunch"
 	launch_button.disabled = true
 	body.add_child(launch_button)
@@ -185,10 +186,10 @@ func _on_model(value: Dictionary) -> void:
 	editing = false
 	play_club.clear()
 	for club: Dictionary in preview.get("document", {}).get("clubs", []): play_club.add_item(str(club.get("name", "Club")))
-	launch_notice.text = str(preview.get("launch", {}).get("reason", "Format non jouable."))
+	launch_notice.text = Copy.notice("competition", preview.get("launch", {}).get("reason", "Format non jouable."))
 	_finish()
 	var summary: Dictionary = preview.get("summary", {})
-	message.text = "%d clubs · %d journées · %d rencontres · %d repos par club. %s" % [int(summary.get("clubs", 0)), int(summary.get("rounds", 0)), int(summary.get("matches", 0)), int(summary.get("byesPerClub", 0)), str(preview.get("notice", ""))]
+	message.text = "%d clubs · %d journées · %d rencontres · %d repos par club. %s" % [int(summary.get("clubs", 0)), int(summary.get("rounds", 0)), int(summary.get("matches", 0)), int(summary.get("byesPerClub", 0)), Copy.notice("competition", preview.get("notice", ""))]
 	round_choice.clear()
 	for index in range(int(summary.get("rounds", 0))): round_choice.add_item("Journée " + str(index + 1))
 	_show_round()
@@ -242,7 +243,7 @@ func _choose_export() -> void:
 	chooser.access = FileDialog.ACCESS_FILESYSTEM
 	chooser.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	chooser.filters = PackedStringArray(["*.json ; Calendrier JSON"])
-	chooser.current_file = "calendrier-fictif.json"
+	chooser.current_file = "calendrier-personnalise.json"
 	chooser.file_selected.connect(func(path: String):
 		_export_to(path)
 		chooser.queue_free())
@@ -267,12 +268,12 @@ func _export_to(path: String) -> void:
 		DirAccess.remove_absolute(temporary)
 		message.text = "Export refusé : " + failure + " Le brouillon est conservé."
 		return
-	message.text = "Calendrier fictif exporté : " + destination
+	message.text = "Calendrier exporté : " + destination
 
 func _copy() -> void:
 	if validated_text.is_empty() or pending: return
 	DisplayServer.clipboard_set(validated_text)
-	message.text = "Calendrier fictif copié. Il ne modifie aucune carrière."
+	message.text = "Calendrier copié. Il ne modifie aucune carrière."
 
 func _playable_template() -> void:
 	if pending: return
@@ -293,8 +294,8 @@ func _launch() -> void:
 		return
 	var confirmation := ConfirmationDialog.new()
 	confirmation.name = "CustomCompetitionConfirmation"
-	confirmation.title = "Nouvelle carrière fictive"
-	confirmation.dialog_text = "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exportez-la avant de poursuivre si vous souhaitez la conserver.\n14 clubs fictifs, 26 journées et phases finales historiques ; couleurs, budgets et niveaux des emplacements fictifs conservés." % play_club.get_item_text(play_club.selected)
+	confirmation.title = "Nouvelle carrière"
+	confirmation.dialog_text = "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exportez-la avant de poursuivre si vous souhaitez la conserver.\n14 clubs, 26 journées et les phases finales prévues ; les couleurs, budgets et niveaux des clubs sont conservés." % play_club.get_item_text(play_club.selected)
 	confirmation.get_ok_button().text = "CRÉER ET REMPLACER"
 	confirmation.get_cancel_button().text = "GARDER LE BROUILLON"
 	app._prepare_dialog(confirmation, mini(760, app.get_window().size.x - 96))

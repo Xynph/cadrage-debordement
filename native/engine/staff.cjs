@@ -2,6 +2,8 @@
 const fs=require('node:fs'),path=require('node:path');
 const registry=require('./staff-registry.json');
 const worldRegistry=require('./world-staff-registry.json');
+const completion=require('./staff-completion.cjs');
+const COMMON_ID='rugby-common-2026-10-31-v1';
 const WORLD_ID='rugby-world-2026-11-08-v1';
 const PACIFIC_ID='rugby-world-2026-11-09-pacific-v2';
 const JAPAN_ID='rugby-world-2026-11-09-japan-v3';
@@ -76,7 +78,7 @@ if(fs.existsSync(champExtension)){
  champIds=used;
 }
 const isWorld=id=>[WORLD_ID,PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id);
-function forDatabase(id){
+function referenceForDatabase(id){
  if(id===WORLD_ID)return {registry:worldRegistry,ids:worldIds};
  if(id===CHAMP_ID){
   if(!champRegistry)throw Error('Registre de staff Champ indisponible.');
@@ -96,12 +98,25 @@ function forDatabase(id){
  }
  return {registry,ids};
 }
+const completed=new Map();
+function forDatabase(id){
+ const key=isWorld(id)?id:COMMON_ID;
+ if(!completed.has(key)){
+  const selected=referenceForDatabase(key),fields=c=>({id:c.id,base:c.base,country:c.country});
+  let clubs=require('./world-registry.json').clubs.map(fields);
+  const additions=[[PACIFIC_ID,'world-pacific-extension.json'],[JAPAN_ID,'world-japan-extension.json'],[NATIONALE_ID,'world-nationale-extension.json'],[CHAMP_ID,'world-champ-extension.json']];
+  for(const [edition,file] of additions){if(!isWorld(key)||key===WORLD_ID)break;clubs=clubs.concat(require('./'+file).clubs.map(fields));if(edition===key)break;}
+  clubs=clubs.slice(0,selected.registry.clubs.length);
+  completed.set(key,{registry:completion.completeRegistry({databaseId:key,clubs,registry:selected.registry}),referenceRegistry:selected.registry,ids:selected.ids});
+ }
+ return completed.get(key);
+}
 function project(model){
- const mode=model.meta?.mode,id=model.meta?.database?.id,selected=mode==='world'?forDatabase(id??WORLD_ID).registry:mode==='common'?registry:null;
+ const mode=model.meta?.mode,id=model.meta?.database?.id,selected=mode==='world'?forDatabase(id??WORLD_ID).registry:mode==='common'?forDatabase(COMMON_ID).registry:null;
  const career=model.clubLife?.staffCareer;
  if(career?.active&&Array.isArray(career.teams))return {...model,staff:{version:career.version,observedAt:null,teams:career.teams.map(c=>({...c,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p,personState:'career',portraitStatus:p.portraitStatus??'anonymous',identityStatus:p.identityStatus??'base'}))})),notice:career.notice||'Encadrement de carrière : contrats et passages de saison suivis. Aucun bonus sportif ni salaire ajouté au budget.'}};
  const teams=selected?selected.clubs.map(c=>({id:c.id,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p}))})):[];
- return {...model,staff:{version:registry.version,observedAt:[PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id)?selected.observedAt:registry.observedAt,teams,notice:'Encadrement de référence documenté, indépendant de la saison de carrière. Les rôles et les portraits ne donnent aucun bonus de simulation. Les délégations restent vos choix.'}};
+ return {...model,staff:{version:registry.version,observedAt:[PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id)?selected.observedAt:registry.observedAt,teams,notice:'Retrouvez les membres du staff et leurs fonctions. Les anciens membres restent consultables dans les archives.'}};
 }
 function applyCareerPresentation(model){
  const career=model.clubLife?.staffCareer;if(!career?.active)return model;

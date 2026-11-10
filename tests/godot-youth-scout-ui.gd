@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -74,6 +75,7 @@ func run() -> void:
 	root.size=Vector2i(1280,800)
 	app=load("res://main.tscn").instantiate();root.add_child(app)
 	await command("snapshot");await command("new_career",{"mode":"common","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Formation");await settle()
 	check(button("OpenYouthDevelopment")!=null,"Entrée progression jeunes compacte")
 	app._navigate("Recrutement");await settle()

@@ -1,20 +1,21 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-medical-'));let b=createBridge({dataDir:root,seed:409,now:1700000000000}),n=0;
 const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;},bad=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,false,command);return r;};
 const exported=()=>JSON.parse(good('export').meta.exportText),encode=doc=>{let h=2166136261;for(const c of JSON.stringify(doc.state))h=Math.imul(h^c.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);};
 try{
- good('new_career',{mode:'common',club:29});const base=exported(),id=base.state.clubs[29].players[25].id;
+ settleClubMeetings(good('new_career',{mode:'common',club:29}),good);const base=exported(),id=base.state.clubs[29].players[25].id;
  for(const protocol of ['prudent','standard','accelere']){
   const doc=structuredClone(base),p=doc.state.clubs[29].players.find(p=>p.id===id);p.injury=2;p.condition=40;p.physicalLoad={version:1,fatigue:50,plan:'repos'};
   let m=good('import',{text:encode(doc)}),context=m.clubLife.clubSupport.context;bad('medical_protocol',{context,id:'inconnu',protocol});bad('medical_protocol',{context,id,protocol:'HIA'});
-  m=good('medical_protocol',{context,id,protocol});assert.equal(m.clubLife.clubSupport.medical.players.find(p=>p.id===id).protocol,protocol);
+  m=good('medical_protocol',{context,id,protocol});assert.equal(m.clubLife.clubSupport.medical.players.find(p=>p.id===id).protocol,protocol);m=settleClubMeetings(m,good);
   const before=good('export').meta.exportText;good('snapshot');assert.equal(good('export').meta.exportText,before);
-  good('train');const state=exported().state,after=state.clubs[29].players.find(p=>p.id===id);
+  settleClubMeetings(good('train'),good);const state=exported().state,after=state.clubs[29].players.find(p=>p.id===id);
   assert.equal(after.medicalV68.version,1);assert.equal(after.medicalV68.protocol,protocol);assert.ok(after.injury>=0&&after.injury<=2);
   if(protocol==='prudent'){assert.equal(after.injury,1);assert.equal(after.condition,60);assert.equal(after.physicalLoad.fatigue,20);}
   if(protocol==='standard'){assert.equal(after.injury,1);assert.equal(after.condition,55);assert.equal(after.physicalLoad.fatigue,26);}
-  const trained=good('export').meta.exportText;good('train');assert.equal(good('export').meta.exportText,trained,'Deuxième train ne réapplique pas le médical.');
+  const trained=good('export').meta.exportText;settleClubMeetings(good('train'),good);assert.equal(good('export').meta.exportText,trained,'Deuxième train ne réapplique pas le médical.');
   good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.equal(good('export').meta.exportText,trained,'Reprise médicale exacte.');
  }
  for(const choice of ['progressif','complet']){
@@ -27,6 +28,6 @@ try{
  m=good('import',{text:encode(structuredClone(base))});let count=0;
  for(const p of m.clubLife.clubSupport.agents.players){const q=p.quotes.find(q=>q.policy==='ferme'&&q.affordable);if(!q)continue;for(let attempt=0;attempt<3&&count<27;attempt++){m=good('agent_negotiate',{context,id:q.id,years:q.years,policy:q.policy});count++;}if(count>=27)break;}
  assert.equal(count,27);assert.equal(m.clubLife.clubSupport.agents.history.length,24);doc=exported();good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.deepEqual(good('snapshot').clubLife.clubSupport.agents.history,doc.state.v71AgentDesk.history);
- good('new_career',{mode:'fiction',club:0});m=good('snapshot');const quote=m.clubLife.clubSupport.agents.players.flatMap(p=>p.quotes)[0];assert.ok(quote);assert.equal(quote.paidWeeks,29);assert.equal(quote.totalCommitment,quote.wage*29*quote.years+quote.fee);
+ settleClubMeetings(good('new_career',{mode:'fiction',club:0}),good);m=good('snapshot');const quote=m.clubLife.clubSupport.agents.players.flatMap(p=>p.quotes)[0];assert.ok(quote);assert.equal(quote.paidWeeks,29);assert.equal(quote.totalCommitment,quote.wage*29*quote.years+quote.fee);
  console.log('Support médical : trois protocoles réels, séance unique, deux retours bornés, reprise, reçu non contournable, historique24 et devis historique29 PASS. '+root);
 }finally{b.close();}

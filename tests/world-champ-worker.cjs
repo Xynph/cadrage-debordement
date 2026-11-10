@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -39,7 +40,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
   assert.equal(CHAMP_IMPORT_LIMIT_BYTES,24*1024*1024);
   assert.equal(CHAMP_REQUEST_LIMIT_BYTES,50*1024*1024);
   assert.equal(raw('new_career',{mode:MODE,club:56}).ok,false);
-  let model=go('new_career',{mode:MODE,club:102});
+  let model=settleClubMeetings(go('new_career',{mode:MODE,club:102}),(command,payload)=>go(command,payload));
   assert.equal(model.meta.leagueId,'champ');
   assert.equal(model.meta.edition,MODE);
   assert.equal(model.staff.teams.length,116);
@@ -57,7 +58,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
   assert.deepEqual(checkpoint().doc.state,initial.doc.state);
   assert.equal(raw('advance_champ_preparation',{fromWeek:1}).ok,false);
   assert.deepEqual(checkpoint().doc.state,initial.doc.state);
-  model=go('advance_champ_preparation',{fromWeek:0});
+  model=settleClubMeetings(go('advance_champ_preparation',{fromWeek:0}),(command,payload)=>go(command,payload));
   assert.equal(model.meta.week,4);
   assert.equal(model.next.competitionId,'champ');
   assert.equal(raw('advance_champ_preparation',{fromWeek:4}).ok,false);
@@ -74,7 +75,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
     }
     go('begin_match');go('delegate');
    }
-   model=go('finish_round');assert.equal(model.meta.week,week+1);
+   model=settleClubMeetings(go('finish_round'),(command,payload)=>go(command,payload));assert.equal(model.meta.week,week+1);
    if([4,20,35,40,45].includes(week)){
     const p=checkpoint();console.log(JSON.stringify({week:week+1,bytes:p.bytes,results:p.doc.state.history.length}));
    }
@@ -94,7 +95,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
    assert.ok(state.history.length<1600);
    for(const league of ['champ','nationale','prem','jlo-d1','jlo-d2','srp'])assert.ok(Number.isInteger(state.worldMode.leagues[league].champion));
    go('import',{text:current.text});assert.deepEqual(checkpoint().doc.state,state);
-   model=go('next_season',{confirmed:true});assert.equal(model.meta.season,2);
+   model=settleClubMeetings(go('next_season',{confirmed:true}),(command,payload)=>go(command,payload));assert.equal(model.meta.season,2);
    const s2=checkpoint();
    const yearbook=s2.doc.state.worldMode.yearbook[0];
    assert.equal(yearbook.champions.champ,state.worldMode.leagues.champ.champion);

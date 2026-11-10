@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs'),db=require('../dist/rugby-common-rosters.js');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-decisions-'));let seq=0,b;
@@ -7,7 +8,7 @@ const bad=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});as
 const largest=db.clubs.slice().sort((a,b)=>b.players.length-a.players.length)[0];
 try{
  b=createBridge({dataDir:path.join(root,'common'),seed:213,now:1700000000000});
- let m=good('new_career',{mode:'common',club:largest.id});
+ let m=settleClubMeetings(good('new_career',{mode:'common',club:largest.id}),(command,payload)=>good(command,payload));
  assert.ok(m.decisions,'Le dossier de décisions doit être accessible dans Godot.');
  assert.equal(m.decisions.recruitment.capacity,Math.min(100,Math.max(42,largest.players.length+6)));
  assert.ok(m.squad.length>42);assert.ok(m.market.some(p=>p.available),'La base commune volumineuse doit pouvoir recruter.');
@@ -24,12 +25,12 @@ try{
  m=good('set_development_focus',{playerId:prospect.id,focus:prospect.development.options[1].id});assert.equal(m.decisions.development.academy.find(p=>p.id===prospect.id).development.focus,prospect.development.options[1].id);
  const wage=m.finance.wage;m=good('promote_academy',{playerId:prospect.id,confirmed:true});assert.ok(m.squad.some(p=>p.id===prospect.id));assert.equal(m.finance.wage,wage+prospect.salary);assert.ok(!m.decisions.development.academy.some(p=>p.id===prospect.id));
  const c=m.finance.cash;m=good('scout_mission',{family:0,maxAge:30,budget:1000000,maxWage:20000,confirmed:true});assert.equal(m.finance.cash,c-5000);assert.equal(m.decisions.recruitment.missions[0].remaining,2);bad('scout_mission',{family:9,maxAge:30,budget:1000000,maxWage:20000,confirmed:true});
- good('train',{mode:'normal'});bad('set_collective_focus',{focus:'defence'});bad('set_development_focus',{playerId:prospect.id,focus:'equilibre'});
+ settleClubMeetings(good('train',{mode:'normal'}),(command,payload)=>good(command,payload));bad('set_collective_focus',{focus:'defence'});bad('set_development_focus',{playerId:prospect.id,focus:'equilibre'});
  good('auto_lineup');m=good('begin_match');assert.ok(m.live);bad('set_delegation',{key:'training',enabled:true});bad('set_opponent_level',{level:'decouverte'});
  m=good('pause',{paused:true});assert.equal(m.decisions.liveAdvice.canAct,true);
  const liveBefore=good('export').meta.exportText;for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,liveBefore);
- m=good('delegate');assert.ok(m.decisions.report.notes.length);assert.ok(m.decisions.report.plans);good('finish_round');m=good('snapshot');assert.ok(m.decisions.report.notes.length,'Bilan consultable après validation.');
+ m=good('delegate');assert.ok(m.decisions.report.notes.length);assert.ok(m.decisions.report.plans);settleClubMeetings(good('finish_round'),(command,payload)=>good(command,payload));m=good('snapshot');assert.ok(m.decisions.report.notes.length,'Bilan consultable après validation.');
  const saved=good('export').meta.exportText;good('shutdown');b=createBridge({dataDir:path.join(root,'common')});assert.equal(good('export').meta.exportText,saved,'Reprise exacte des décisions persistées.');
- good('shutdown');b=createBridge({dataDir:path.join(root,'historical'),seed:213,now:1700000000000});m=good('new_career',{mode:'fiction',club:0});assert.equal(m.decisions.recruitment.capacity,42,'Ancienne politique conservée.');
+ good('shutdown');b=createBridge({dataDir:path.join(root,'historical'),seed:213,now:1700000000000});m=settleClubMeetings(good('new_career',{mode:'fiction',club:0}),(command,payload)=>good(command,payload));assert.equal(m.decisions.recruitment.capacity,42,'Ancienne politique conservée.');
  console.log('Décisions natives : dossiers purs, recrutement>42 commun, séances, formation, délégations, missions et bilan/reprise PASS.');
 }finally{b?.close();}

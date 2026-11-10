@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{context}=require('./native-reference-harness.cjs'),d=require('../native/engine/interclub-market.cjs');
 function fixture(start='start(0)'){const h=context();h.run(start+';var depthMarket=('+d.factory.toString()+')();');return {...h,project:()=>JSON.parse(h.run('JSON.stringify(depthMarket.project())'))};}
 test('fiction de départ30: marché réellement accessible sans affaiblir les piliers',()=>{const h=fixture(),m=h.project();a.equal(h.run('S.clubs.every(c=>c.players.length===30)'),true);a.equal(h.run('S.aiRosterVersion'),2);a.equal(m.releasePolicy.minimum,28);a(m.candidates.some(p=>p.available));a(m.candidates.some(p=>p.family===0));a(m.candidates.filter(p=>p.family===0).every(p=>!p.available));const p=m.candidates.find(p=>p.available);h.ctx.payload={playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:m.context,confirmed:true};h.run('depthMarket.execute("interclub_transfer",payload);validateCareer(S)');a.equal(h.run('S.clubs['+p.clubId+'].players.length'),29);a.equal(h.run('S.clubs[0].players.some(p=>p.id===payload.playerId)'),true);const second=h.project().candidates.find(q=>q.clubId===p.clubId&&q.available);a(second);h.ctx.payload={playerId:second.id,sellerId:second.clubId,fee:second.fee,salary:second.salary,sourceSalary:second.sourceSalary,contractEnd:second.contractEnd,context:m.context,confirmed:true};h.run('depthMarket.execute("interclub_transfer",payload);validateCareer(S)');a.equal(h.run('S.clubs['+p.clubId+'].players.length'),28);a(h.project().candidates.filter(q=>q.clubId===p.clubId).every(q=>!q.available));});
@@ -13,7 +14,7 @@ function worker(t){
 test('départs natifs fiction/custom et référence Monde: vrais achats sans injection de roster',t=>{
  const h=worker(t),document=require('../native/engine/competition-editor.cjs').generate({name:'Ma ligue',clubs:Array.from({length:14},(_,i)=>'Club '+i),doubleRound:true});
  for(const mode of ['fiction','custom','world']){
-  let model=h.go('new_career',{mode,club:0,...(mode==='custom'?{document,confirmed:true}:{})}),market=model.clubLife.interclubMarket;
+  let model=settleClubMeetings(h.go('new_career',{mode,club:0,...(mode==='custom'?{document,confirmed:true}:{})}),(command,payload)=>h.go(command,payload)),market=model.clubLife.interclubMarket;
   a.equal(market.releasePolicy.minimum,mode==='world'?37:28);
   const p=market.candidates.find(p=>p.available);a(p,mode+' a une vraie cible');
   if(mode!=='world')a.equal(JSON.parse(h.go('export').meta.exportText).state.clubs[p.clubId].players.length,30);

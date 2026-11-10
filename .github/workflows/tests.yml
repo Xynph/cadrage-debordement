@@ -46,7 +46,8 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4, 5]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Le précédent shard long a atteint 20 min ; mêmes cinq groupes complets.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
@@ -72,8 +73,17 @@ jobs:
             echo "::group::$test"
             start=$SECONDS
             limit=180s
-            # Ce parcours intégré a déjà dépassé 180 s sur un runner GitHub.
-            if [[ "$test" == "tests/native-academy-integrated-long.cjs" ]]; then limit=240s; fi
+            # Rendez-vous réels : décisions et clôtures gardent leurs transactions.
+            # PASS locaux complets du 10 novembre : monde 325 s, manager 173 s,
+            # académie 342 s ; staff + rendez-vous combinés : délégation 159 s,
+            # support saison 171 s. Marges ciblées pour GitHub Node 22.
+            case "$test" in
+              tests/world-worker-season.cjs) limit=420s ;;
+              tests/native-manager-career-worker.cjs) limit=240s ;;
+              tests/native-academy-integrated-long.cjs) limit=480s ;;
+              tests/native-delegate-transaction06.cjs) limit=240s ;;
+              tests/native-club-support-season.cjs) limit=240s ;;
+            esac
             if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"
               echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"

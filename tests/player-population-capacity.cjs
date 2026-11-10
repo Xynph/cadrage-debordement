@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -11,7 +12,7 @@ for(const population of ['generated','released-source'])for(const [mode,club,lim
  const b=createBridge({dataDir:root,seed:827381,now:1794178800000});let serial=0;
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});
  const ok=(command,payload={})=>{const r=b.handle({id:++serial,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- ok('new_career',{mode,club});const doc=JSON.parse(ok('export').meta.exportText),s=doc.state;
+ settleClubMeetings(ok('new_career',{mode,club}),(command,payload)=>ok(command,payload));const doc=JSON.parse(ok('export').meta.exportText),s=doc.state;
  const capacity=Math.min(1900,Math.max(180,s.clubs.length*20)),samples=s.economy.freeAgents;
  if(population==='generated'){
  s.economy.freeAgents=Array.from({length:capacity},(_,i)=>{

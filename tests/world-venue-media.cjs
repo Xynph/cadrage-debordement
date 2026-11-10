@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),zlib=require('node:zlib'),crypto=require('node:crypto');
 const media=require('../native/engine/media-packs.cjs'),{createBridge}=require('../native/engine/worker.cjs');
 const digest=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
@@ -41,7 +42,7 @@ test('photos de territoire : import, attribution, détachement et refus sans mod
  const datum=(asset,author)=>({asset,credit:author,source:'https://example.org/photo/'+asset,license:'https://creativecommons.org/licenses/by/4.0/'});
  const cityPhoto=datum('ville','Photographie urbaine · auteur témoin');
  const stadiumPhoto=datum('stade','Enceinte · auteur témoin');
- const m=ok('new_career',{mode,club:30}),state=exportState();
+ const m=settleClubMeetings(ok('new_career',{mode,club:30}),(command,payload)=>ok(command,payload)),state=exportState();
  const manifest={schema:'cd-identity-pack-v3',id:'atlas-temoin',name:'Atlas témoin',version:'1',databaseId:m.meta.champDatabase.id,rightsStatus:'test-local',clubs:[{id:30,photos:{city:cityPhoto,stadium:stadiumPhoto}}],players:[],staff:[],assets:[]};
  const pack=(doc,images=[['ville',city],['stade',stadium]])=>{
   doc={...doc,assets:images.map(([id,bytes])=>({id,path:'territoire/'+id+'.png',sha256:digest(bytes),bytes:bytes.length}))};
@@ -51,7 +52,7 @@ test('photos de territoire : import, attribution, détachement et refus sans mod
  const file=pack(manifest),preview=ok('pack_inspect',{mode,path:file}).packs.preview;
  assert.equal(preview.counts.cityPhotos,1);assert.equal(preview.counts.stadiumPhotos,1);
  ok('pack_install',{mode,path:file,digest:preview.digest});
- const selected=ok('pack_select',{mode,scope:'career',id:preview.id});
+ const selected=settleClubMeetings(ok('pack_select',{mode,scope:'career',id:preview.id}),(command,payload)=>ok(command,payload));
  const projection=selected.club.presentation.photos;
  assert.deepEqual(Object.keys(projection).sort(),['city','stadium']);
  const {asset,...attribution}=cityPhoto;
@@ -85,7 +86,7 @@ test('photos de territoire : import, attribution, détachement et refus sans mod
  fs.writeFileSync(projection.city.path,city);
  assert.equal(ok('snapshot').club.presentation.photos.city.credit,cityPhoto.credit);
  assert.equal(exportBytes(),beforeBytes);
- assert.equal(ok('pack_select',{mode,scope:'career',id:'base'}).club.presentation.photos,undefined);
+ assert.equal(settleClubMeetings(ok('pack_select',{mode,scope:'career',id:'base'}),(command,payload)=>ok(command,payload)).club.presentation.photos,undefined);
  assert.deepEqual(exportState(),state);
  const validV2=pack({...manifest,schema:'cd-identity-pack-v2',clubs:[{id:30,city:'Ville de repli'}]},[]);
  assert.equal(ok('pack_inspect',{mode,path:validV2}).packs.preview.counts.cityPhotos,undefined);
@@ -117,13 +118,13 @@ test('identités de compétition : dossier de création, affichage et retour à 
  const preview=ok('pack_inspect',{mode,path:write()}).packs.preview;
  assert.equal(preview.counts.competitions,1);assert.equal(preview.counts.competitionLogos,1);
  ok('pack_install',{mode,path:file,digest:preview.digest});
- const creation=ok('pack_select',{mode,scope:'creation',id:preview.id});
+ const creation=settleClubMeetings(ok('pack_select',{mode,scope:'creation',id:preview.id}),(command,payload)=>ok(command,payload));
  const identity=creation.meta.creationCompetitions[mode].prem;
  assert.equal(identity.name,'Championnat témoin');
  assert.equal(digest(fs.readFileSync(identity.logoPath)),digest(photo));
  assert.equal(creation.meta.champCatalogue.find(c=>c.id===30).photos.stadium.path,identity.logoPath);
  assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===0).history,toulouse.history);
- const career=ok('new_career',{mode,club:30});
+ const career=settleClubMeetings(ok('new_career',{mode,club:30}),(command,payload)=>ok(command,payload));
  assert.equal(career.leagues.find(l=>l.id==='prem').name,identity.name);
  assert.equal(career.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,identity.name);
  assert.equal(career.leagues.find(l=>l.id==='prem').logoPath,identity.logoPath);
@@ -158,7 +159,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
   }
  }
  assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===30).startingRoster,overview);
- const base=ok('pack_select',{mode,scope:'career',id:'base'});
+ const base=settleClubMeetings(ok('pack_select',{mode,scope:'career',id:'base'}),(command,payload)=>ok(command,payload));
  assert.equal(base.leagues.find(l=>l.id==='prem').name,'Élite anglaise');
  assert.equal(base.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,'Élite anglaise');
  assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);

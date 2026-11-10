@@ -1,4 +1,5 @@
 extends RefCounted
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -51,7 +52,7 @@ static func territory_art(club: Dictionary) -> VBoxContainer:
 		var title := C.label(info[1] + " · " + (place if not place.is_empty() else "—"), 20, C.IVORY, true, 700)
 		title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		content.add_child(title)
-		var caption := str({"pack":photo.get("credit", ""), "archive":"Photo d’archive"}.get(picture.get_meta("photo_kind"), "Illustration IA"))
+		var caption := str({"pack":photo.get("credit", ""), "archive":"Photo d’archive"}.get(picture.get_meta("photo_kind"), "Vue du club"))
 		var credit := C.label(caption, 17, C.MUTED)
 		credit.name = "OfficePhotoCredit"
 		credit.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -355,7 +356,7 @@ static func _journal(parent: VBoxContainer, app: Control) -> void:
 	if messages.is_empty(): parent.add_child(C.wrap("Les nouvelles de votre carrière apparaîtront ici.", 21))
 	for index in mini(3, messages.size()):
 		parent.add_child(C.label("CARRIÈRE  ·  ÉVÉNEMENT %02d" % (index+1), 18, [C.BLUE, C.ALERT, C.GOLD][index]))
-		var note := C.wrap(str(messages[index]).replace("l’onglet Contrats", "les fiches joueurs"), 19)
+		var note := C.wrap(Copy.news(str(messages[index])).replace("l’onglet Contrats", "les fiches joueurs"), 19)
 		note.max_lines_visible = 3
 		note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		parent.add_child(note)

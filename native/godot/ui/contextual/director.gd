@@ -28,6 +28,13 @@ func match_immersed() -> bool:
 	if app == null: return false
 	return not _talk().is_empty() or not _live().is_empty()
 
+func active_meeting() -> bool:
+	return not _meeting().is_empty()
+
+func _meeting() -> Dictionary:
+	var value: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
+	return value if value is Dictionary else {}
+
 func _talk() -> Dictionary:
 	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return value if value is Dictionary else {}
@@ -55,12 +62,19 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 		next = "conversation"
 		data = invitation
 		key = str(invitation.get("id", ""))
+	elif not _meeting().is_empty():
+		var meeting := _meeting()
+		next = str(meeting.get("kind", ""))
+		data = meeting.duplicate(true)
+		data["meetingId"] = meeting.get("id")
+		key = next + ":" + str(meeting.get("id", ""))
 	elif training_open and app.model.get("club") is Dictionary:
 		next = "training"
 		key = "training"
 	if next.is_empty():
 		_close()
 		return false
+	if next in ["press", "medical", "board", "conversation"]: training_open = false
 	if next in ["locker", "live"]:
 		training_open = false
 		app.route = "Match"
@@ -100,6 +114,9 @@ func _open(value: String, key: String, data: Dictionary) -> void:
 		"live": view = Live.new()
 		"conversation": view = Conversation.new()
 		"training": view = Training.new()
+		"press": view = load("res://ui/contextual/press_room_view.gd").new()
+		"medical": view = load("res://ui/contextual/medical_room_view.gd").new()
+		"board": view = load("res://ui/contextual/board_room_view.gd").new()
 	view.director = self
 	S.full(view)
 	overlay.add_child(view)
@@ -141,9 +158,19 @@ func open_invitation(id: String) -> void:
 	if not match_immersed(): command("scene_invitation_open", {"id":id})
 
 func open_training() -> void:
+	if active_meeting(): return
 	if match_immersed() or not app.model.get("club") is Dictionary or app.model.get("meta", {}).get("phase") == "ended": return
 	training_open = true
 	sync()
+
+func open_room(room_kind: String, _data: Dictionary = {}) -> void:
+	# Only the current persisted appointment may open a mandatory room.
+	if not app.waiting and str(_meeting().get("kind", "")) == room_kind: sync()
+
+func close_room() -> void:
+	var meeting := _meeting()
+	if app.waiting or not meeting.get("completed", false): return
+	command("club_meeting_continue", {"meetingId":meeting.get("id")})
 
 func close_training() -> void:
 	if app.waiting: return

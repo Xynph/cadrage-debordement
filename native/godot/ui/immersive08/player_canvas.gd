@@ -68,7 +68,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 		portrait = G.portrait(int(player.get("portraitIndex",0)),0,player)
 	else:
 		portrait = C.photo("player-hero",Vector2.ZERO,false)
-		portrait.tooltip_text = "Portrait décoratif fictif généré par IA"
+		portrait.tooltip_text = "Portrait du joueur"
 	hero.add_child(portrait)
 	# Le portrait occupe aussi la marge à gauche des onglets.
 	D.place(portrait,Rect2(1,1,469,429))

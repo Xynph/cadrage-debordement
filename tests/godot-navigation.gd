@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var nav: Node
 var failures: Array[String] = []
@@ -118,6 +119,7 @@ func run() -> void:
 	await key(KEY_ESCAPE)
 	check(not palette().visible and app.route == "Accueil", "Échap ferme la palette sans pause ni navigation")
 	await command("new_career", {"club":0, "mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	# Reproduce a first opening with the populated career, without a pre-sized palette.
 	palette().queue_free(); await settle()
 	nav.reset()
@@ -311,5 +313,6 @@ func run() -> void:
 	check(nav.history.size() <= 1 and nav.cursor <= 0, "Import réel réussi : aucun ancien parcours conservé")
 	await visit("Finances"); await visit("Club")
 	await command("new_career", {"club":1, "mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(nav.history.size() <= 1 and nav.cursor <= 0, "Nouvelle carrière réelle : ancien parcours effacé")
 	finish()

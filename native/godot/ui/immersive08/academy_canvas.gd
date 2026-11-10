@@ -1,5 +1,6 @@
 extends Control
 ## Données des Espoirs, décisions disponibles et historique reçu du moteur.
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -318,7 +319,7 @@ func _trend(parent: Node, p: Dictionary) -> void:
 
 func _pathways() -> void:
 	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Du centre au rugby professionnel", "school", "", "AcademyPathwayPane")
-	D.text(panel, 25, 107, pathway.get("description", "Choisissez un Espoir pour suivre sa progression."), 25, C.IVORY, 500, 1347)
+	D.text(panel, 25, 107, Copy.notice("academy", pathway.get("description", "Choisissez un Espoir pour suivre sa progression.")), 25, C.IVORY, 500, 1347)
 	var people := _prospects()
 	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS ESTIMÉS", 24, GOLD, 700, 1250)
 	for i in mini(6, people.size()):
@@ -342,7 +343,7 @@ func _prospects() -> Array:
 
 func _staff_page() -> void:
 	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Le centre de formation", "people", "", "AcademyStaffPane")
-	D.text(panel, 25, 106, pathway.get("description", "Aucune donnée d’encadrement disponible."), 25, C.IVORY, 500, 1345)
+	D.text(panel, 25, 106, Copy.notice("academy", pathway.get("description", "Aucune donnée d’encadrement disponible.")), 25, C.IVORY, 500, 1345)
 	var labels := [["Éducateurs", G.n(pathway.get("coaches", "—")), "people"], ["Installations", G.n(pathway.get("facilities", "—")), "home"], ["Cohésion", G.n(pathway.get("cohesion", "—")), "heart"]]
 	for i in labels.size():
 		var item: Array = labels[i]
@@ -632,15 +633,9 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, large: bool = fals
 		D.place(portrait, rectangle)
 		if large and portrait.material != null:
 			_veil(parent, Rect2(rectangle.end.x - 34, rectangle.position.y, 34, rectangle.size.y), [Color("11191a", .0), Color("11191a")], [0.0, 1.0])
-			var badge := D.rect(parent,Rect2(rectangle.position.x+10,rectangle.end.y-29,190,23),Color("101819df"),3)
-			badge.name = "AcademyPortraitIllustration"
-			D.text(badge,95,17,"PORTRAIT FICTIF COMPOSÉ",16,C.IVORY,700,184,HORIZONTAL_ALIGNMENT_CENTER)
 	elif large:
 		D.photo(parent, "academy-player", rectangle)
 		_veil(parent, Rect2(rectangle.end.x - 34, rectangle.position.y, 34, rectangle.size.y), [Color("11191a", .0), Color("11191a")], [0.0, 1.0])
-		var badge := D.rect(parent,Rect2(rectangle.position.x+10,rectangle.end.y-29,190,23),Color("101819df"),3)
-		badge.name = "AcademyPortraitIllustration"
-		D.text(badge,95,17,"PORTRAIT D’ILLUSTRATION",16,C.IVORY,700,184,HORIZONTAL_ALIGNMENT_CENTER)
 	elif not fallback.is_empty():
 		D.photo(parent, fallback, rectangle)
 	else:

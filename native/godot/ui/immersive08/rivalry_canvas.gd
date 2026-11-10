@@ -82,7 +82,7 @@ func _hero() -> void:
 		var section := "ChampPreparation" if champ else "JapanPreparation" if japan else "PacificPreparation"
 		var card := D.panel(hero,Rect2(1484,28,735,256),title,"calendar","",section)
 		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)
-		D.text(card,24,155,"Les semaines sont simulées jusqu’à la prochaine rencontre.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,24,155,"La préparation avance jusqu’à la prochaine rencontre.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		var weeks := mini(int(preparation.get("weeksUntil",0)),4)
 		var advance := D.button(card,Rect2(24,182,687,53),"AVANCER DE %d SEMAINE%s" % [weeks,"S" if weeks>1 else ""],app.primary_action,true,"arrow",false,app.accent,section+"Advance")
 		advance.disabled = app.waiting
@@ -129,7 +129,7 @@ func _pairs() -> void:
 	D.text(header, 23, 27, "FACE-À-FACE", 23, C.IVORY, 700, 320)
 	D.text(header, 767, 27, "MATCHS", 23, C.MUTED, 600, 101, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(header, 956, 27, "V / N / V", 23, C.MUTED, 600, 180, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(header, 1219, 27, "TENSION SIMULÉE", 23, C.MUTED, 600, 270, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(header, 1219, 27, "TENSION DU DUEL", 23, C.MUTED, 600, 270, HORIZONTAL_ALIGNMENT_CENTER)
 	var pair_selected: Dictionary = {}
 	for i in visible.size():
 		var pair: Dictionary = visible[i]
@@ -138,7 +138,7 @@ func _pairs() -> void:
 	if visible.is_empty():
 		var message := "Aucune confrontation du club enregistrée." if only_club else "Les premiers duels apparaîtront après les rencontres disputées."
 		D.text(panel, 26, 225, message, 28, C.MUTED, 500, LEFT - 49)
-	D.text(panel, 23, 804, "%d duel(s) · Intensité et réactions simulées" % pairs.size(), 22, C.MUTED, 500, 690)
+	D.text(panel, 23, 804, "%d duel(s) · Intensité et réactions des bancs" % pairs.size(), 22, C.MUTED, 500, 690)
 	_pager(panel, "page", pages, 957, 778)
 	_duel(pair_selected)
 
@@ -169,7 +169,7 @@ func _pair_row(parent: Panel, pair: Dictionary, index: int, selected: bool) -> v
 func _duel(pair: Dictionary) -> void:
 	var panel := D.panel(workspace, Rect2(LEFT + 16, 0, RIGHT, 828), "Le dossier du duel", "shield", "", "RivalryDuel")
 	var image := D.photo(panel, "club-forest", Rect2(15, 68, RIGHT - 30, 161))
-	image.tooltip_text = "Illustration fictive du territoire du club"
+	image.tooltip_text = "Le territoire du club"
 	if pair.is_empty():
 		D.text(panel, 23, 292, "Aucun duel à consulter", 35, C.IVORY, 800, RIGHT - 46)
 		_notice(panel, Rect2(23, 331, RIGHT - 46, 140), "La mémoire des confrontations s’étoffe à chaque journée de compétition.")
@@ -192,7 +192,7 @@ func _duel(pair: Dictionary) -> void:
 	D.text(panel, 23, 564, "%s rencontre(s) · Dernière saison %s" % [S.count_text(pair.get("games")), S.count_text(pair.get("lastSeason"))], 28, C.IVORY, 600, RIGHT - 45)
 	if pair.get("lastWinner") != null:
 		D.text(panel, 23, 604, "Dernier vainqueur · " + _club(pair.lastWinner), 28, C.MINT, 700, RIGHT - 45)
-	D.text(panel, 23, 648, "Intensité simulée · " + S.count_text(pair.get("tension")) + " / 100", 27, C.GOLD, 700, RIGHT - 45)
+	D.text(panel, 23, 648, "Intensité du duel · " + S.count_text(pair.get("tension")) + " / 100", 27, C.GOLD, 700, RIGHT - 45)
 	_notice(panel, Rect2(23, 682, RIGHT - 46, 120), str(data.get("notice", "")))
 
 func _echoes() -> void:
@@ -213,7 +213,7 @@ func _echoes() -> void:
 		if app.model.meta.get("mode") == "world" and event.has("leagueId"): timing += " · " + _division(event.leagueId)
 		D.text(card, 19, 28, timing + "  ·  " + str(PHASES.get(event.get("phase"), "Compétition")), 24, C.GOLD, 600, LEFT - 70)
 		D.text(card, 19, 66, "%s   %s – %s   %s" % [_club(event.get("a")), S.count_text(event.get("home")), S.count_text(event.get("away")), _club(event.get("b"))], 35, C.IVORY, 700, LEFT - 73)
-		var reaction := "Réaction simulée de " + _club(event.get("clubId")) + " · « " + str(event.get("reaction", "")) + " »"
+		var reaction := "Réaction de " + _club(event.get("clubId")) + " · « " + str(event.get("reaction", "")) + " »"
 		var excerpt := C.wrap(reaction, 21, C.MUTED)
 		excerpt.max_lines_visible = 2
 		excerpt.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -236,9 +236,9 @@ func _echo_detail(event: Dictionary) -> void:
 	if event.get("winner") != null and event.get("home") == event.get("away"):
 		list.add_child(C.wrap("Vainqueur après départage : " + _club(event.winner), 25, C.GOLD, true))
 	list.add_child(C.rule())
-	list.add_child(C.label("RÉACTION SIMULÉE · " + _club(event.get("clubId")).to_upper(), 25, C.GOLD, true, 700))
+	list.add_child(C.label("RÉACTION DU BANC · " + _club(event.get("clubId")).to_upper(), 25, C.GOLD, true, 700))
 	list.add_child(C.wrap("« " + str(event.get("reaction", "")) + " »", 23, C.IVORY))
-	list.add_child(C.wrap("Pression fictive %s / 100 · Tension du duel %s / 100" % [S.count_text(event.get("pressure")), S.count_text(event.get("tension"))], 22, C.MUTED, true))
+	list.add_child(C.wrap("Pression %s / 100 · Tension du duel %s / 100" % [S.count_text(event.get("pressure")), S.count_text(event.get("tension"))], 22, C.MUTED, true))
 	view[0].popup_centered(Vector2i(940, 520))
 
 func _archives() -> void:

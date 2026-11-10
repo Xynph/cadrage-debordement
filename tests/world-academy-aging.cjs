@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {context}=require('./france-harness.cjs');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -44,11 +45,11 @@ test('le vrai worker crée le marqueur Monde et le conserve à la réouverture',
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});
  const ok=(command,payload={})=>{const r=b.handle({id:++id,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
  const archive=()=>ok('export').meta.exportText;
- ok('new_career',{mode:'world-champ',club:102});
+ settleClubMeetings(ok('new_career',{mode:'world-champ',club:102}),(command,payload)=>ok(command,payload));
  const before=archive();
  assert.equal(JSON.parse(before).state.aiRoster.academyAgingVersion,1);
  b.close();b=createBridge({dataDir:root,seed:9911,now:1788134400000});
  assert.equal(archive(),before);
- ok('new_career',{mode:'common',club:0});
+ settleClubMeetings(ok('new_career',{mode:'common',club:0}),(command,payload)=>ok(command,payload));
  assert.equal(JSON.parse(archive()).state.aiRoster.academyAgingVersion,undefined);
 });
