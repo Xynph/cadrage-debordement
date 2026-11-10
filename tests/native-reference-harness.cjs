@@ -5,6 +5,8 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {CORE_FILES}=require('../native/engine/worker.cjs');
 const systems=require('../native/engine/native-systems.cjs');
 const common=require('../native/engine/common-rosters.cjs');
+const careerVariation=require('../native/engine/career-variation.cjs');
+const positionAptitudes=require('../native/engine/position-aptitudes.cjs');
 const staff=require('../native/engine/staff.cjs');
 const staffDatabaseIds=['world-registry','world-pacific-extension','world-japan-extension','world-nationale-extension','world-champ-extension']
  .map(name=>require('../native/engine/'+name+'.json').id);
@@ -16,7 +18,9 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  const element={innerHTML:'',textContent:'',style:{}};
  const ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
  const run=source=>vm.runInContext(source,ctx,{timeout:15000});
+ run(`const nativeCareerVariation=(${careerVariation.toString()})();`);
  for(const name of CORE_FILES)run(fs.readFileSync(path.resolve(__dirname,'../dist',name),'utf8'));
+ run(`const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();`);
  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();`);
  // Même copie des sources de référence que le vrai worker, avant les hooks.
  ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...staffDatabaseIds]
