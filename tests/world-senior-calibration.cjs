@@ -7,6 +7,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 const repo = path.resolve(__dirname, '..');
+const careerVariation = require('../native/engine/career-variation.cjs')();
+const calibrationVariation = careerVariation.settings(20261110, false);
 const { createBridge } = require(path.join(repo, 'native/engine/worker.cjs'));
 const rugby = fs.readFileSync(path.join(repo, 'dist/rugby.js'), 'utf8');
 const roleNote = vm.runInNewContext(rugby.slice(0, rugby.indexOf('function slotEligible')) + '\nroleNote', {
@@ -40,7 +42,7 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
     const livePath = path.join(root, 'nouvelle');
     const { model, created, preview } = withBridge(livePath, ask => {
       const preview = ask('snapshot').meta.champCatalogue;
-      const model = ask('new_career', { mode: 'world-champ', club: 0 });
+      const model = ask('new_career', { mode: 'world-champ', club: 0, varyCurrent: false });
       return { model, created: state(model), preview };
     });
     for (const id of [0, 39, 52, 61, 71]) {
@@ -59,7 +61,7 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
       .filter(league => topTen.some(player => league.members.includes(owner.get(player.id))));
     assert.equal(competitions.length, 5);
 
-    const baseline = withBridge(path.join(root, 'nationale'), ask => state(ask('new_career', { mode: 'world-nationale', club: 0 })));
+    const baseline = withBridge(path.join(root, 'nationale'), ask => state(ask('new_career', { mode: 'world-nationale', club: 0, varyCurrent: false })));
     const oldPlayers = new Map(players(baseline).map(player => [player.id, player]));
     const opener = model.squad.find(player => player.id === 'lnr:2436');
     const oldOpener = require('../dist/rugby-common-rosters.js').clubs[0].players.find(player => player.id === opener.id);
@@ -103,7 +105,7 @@ test('Les références seniors gardent le même barème dans toutes leurs éditi
     const modes = { common: 2, world: 7, 'world-pacific': 9, 'world-japan': 10, 'world-nationale': 10, 'world-champ': 10 };
     for (const [mode, above90] of Object.entries(modes)) {
       withBridge(path.join(root, mode), ask => {
-        const model = ask('new_career', { mode, club: 0 });
+        const model = ask('new_career', { mode, club: 0, varyCurrent: false });
         const created = state(model);
         const opener = model.squad.find(player => player.id === 'lnr:2436');
         assert.equal(opener.rating, 88, mode);
@@ -143,7 +145,7 @@ test('Les profils sportifs seniors suivent les postes officiels au démarrage', 
   const { projectSkills } = require('../scripts/build-world-registry.cjs');
   try {
     const starts = ['common', 'world-champ'].map(mode => withBridge(path.join(root, mode), ask => {
-      const model = ask('new_career', { mode, club: 0 });
+      const model = ask('new_career', { mode, club: 0, varyCurrent: false });
       const initial = state(model);
       const exported = ask('export').meta.exportText;
       assert.deepEqual(state(ask('import', { text: exported })), initial);
@@ -166,7 +168,7 @@ test('Les profils sportifs seniors suivent les postes officiels au démarrage', 
     const young = original.filter(player => player.age < 23 && foundation[player.id].position.basis === 'official' &&
       player.gameplayPosition !== foundation[player.id].position.primary);
     assert.ok(young.length > 0);
-    for (const source of young) for (const roster of starts) assert.deepEqual(numbers(roster.get(source.id)), numbers(source));
+    for (const source of young) for (const roster of starts) assert.deepEqual(numbers(roster.get(source.id)), numbers(careerVariation.player(source, calibrationVariation)));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
