@@ -33,15 +33,15 @@ boutons et les données de la page actuelle avec un module de sélection dédié
 
 ## Plan d'implémentation
 
-- [ ] Banc de réception sur la vraie application et scénarios de refus avant
+- [x] Banc de réception sur la vraie application et scénarios de refus avant
   l'implémentation ; vérifier les échecs attendus.
-- [ ] Module dédié : lecture stricte des notes/projections, contrôle des sources
+- [x] Module dédié : lecture stricte des notes/projections, contrôle des sources
   et cibles, classes de boutons glissables et aperçu de déplacement.
-- [ ] Raccord de la page existante : portraits, notes aux quinze postes,
+- [x] Raccord de la page existante : portraits, notes aux quinze postes,
   banc et Hors groupe simultanés à en-têtes fixes, Identité à droite.
-- [ ] Réception : même joueur à son poste puis au n°10, clic/clavier, affectation
+- [x] Réception : même joueur à son poste puis au n°10, clic/clavier, affectation
   réelle, échange, refus première ligne, annulation et absence de doublons.
-- [ ] Capture réelle 2560×1440 sur cache privé, preuves et passation GitHub.
+- [x] Capture réelle 2560×1440 sur cache privé, preuves et passation GitHub.
 
 ## Risques à vérifier
 
@@ -86,3 +86,19 @@ mais s'arrête avant Tactique sur les anciennes assertions Effectif demandant
 une pagination puis un accès `roster.page` absent (ligne1116). Il reste hors
 cible comme décidé dans la base reçue ; aucune attente de ce banc n'est modifiée
 dans ce lot. La réception dédiée ci-dessus exerce le parcours complet.
+
+## Raccord sportif et défense contextualisée
+
+Avec le moteur `2a1f767` reçu après `c45557e`, le banc complet passe
+**433 contrôles sans échec** en headless. Il déplace réellement un pilier du
+numéro1 au numéro10, vérifie la chute d'aptitude affichée, la source vide si
+l'échange inverse est interdit, le reçu `meta.lineupChange.vacatedSlot`,
+l'absence de doublons et la note principale inchangée.
+
+Le résumé DÉFENSE consomme désormais directement `decisions.lineupDefence`,
+entier de0à100 produit par le même dossier contextualisé que le moteur. La
+moyenne brute des qualités ne sert que pour une ancienne projection sans ce
+champ. Une projection présente mais invalide est affichée « — ». Aucun malus
+supplémentaire n'est calculé dans l'interface. Le banc vérifie que la défense
+et le dossier changent après le vrai déplacement et que le résumé affiche
+exactement la projection reçue.

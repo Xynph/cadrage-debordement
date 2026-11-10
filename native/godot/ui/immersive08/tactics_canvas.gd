@@ -163,7 +163,7 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 			D.text(card,23,y+29,"Analyse indisponible",18,C.MUTED,500,400)
 			continue
 		D.text(card,23,y+29,"XV sélectionné",18,C.MUTED,500,160)
-		D.text(card,525,y+29,G.n(found.get("own","—"))+" / 100",18,C.MUTED,500,85,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(card,525,y+29,G.n(found.get("own","—"))+" / 100",18,C.MUTED,500,85,HORIZONTAL_ALIGNMENT_RIGHT).name="TacticsDomainValue_"+str(keys[i])
 		D.bar(card,Rect2(154,y+14,252,7),float(found.get("own",0)))
 	var domain_values:Dictionary={}
 	for domain:Dictionary in domains:domain_values[str(domain.get("key",""))]=float(domain.get("own",0))
@@ -181,6 +181,12 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	if domain_values.has("scrum") and domain_values.has("lineout"):
 		conquest = G.n(roundi((domain_values.scrum+domain_values.lineout)/2.0))
 	var defense := G.n(roundi(defensive/selected_count)) if selected_count>0 else "—"
+	# Les anciennes projections seules utilisent la moyenne brute ci-dessus.
+	# La projection actuelle intègre l'aptitude au poste dans le même calcul que le moteur.
+	var decisions:Dictionary=app.model.get("decisions",{})
+	if decisions.has("lineupDefence"):
+		var projected:Variant=decisions.lineupDefence
+		defense=G.n(projected) if (projected is int or projected is float) and is_finite(float(projected)) and projected>=0 and projected<=100 else "—"
 	var backs := G.n(roundi(domain_values.backs)) if domain_values.has("backs") else "—"
 	var summaries:Array=[["CONQUÊTE",conquest,"Mêlée et touche du XV sélectionné.","trophy"],["DÉFENSE",defense,defense_description,"shield"],["ANIMATION OFFENSIVE",backs,attack_description,"tactic"]]
 	for i in summaries.size():
@@ -189,7 +195,7 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 		D.rect(card,Rect2(22,y,504,92),Color("14211e"),6,C.LINE)
 		var symbol:=C.icon(summary[3],23,C.IVORY);card.add_child(symbol);D.place(symbol,Rect2(487,y+13,23,23))
 		D.text(card,41,y+27,summary[0],21,C.IVORY,700,425)
-		D.text(card,38,y+75,G.n(summary[1]),42,C.MINT,700,80)
+		D.text(card,38,y+75,G.n(summary[1]),42,C.MINT,700,80).name="TacticsSummaryValue"+str(i)
 		var description := D.text(card,118,y+53,summary[2],17,C.MUTED,400,380,HORIZONTAL_ALIGNMENT_LEFT,true)
 		description.name = "TacticsSummaryText" + str(i)
 		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
