@@ -246,10 +246,10 @@ func _dossier() -> void:
 	var ours: Dictionary = app.model.club
 	_crest(comparison, ours, Rect2(26, 72, 70, 73))
 	_crest(comparison, opponent, Rect2(1245, 72, 70, 73))
-	D.text(comparison, 117, 108, G.club_name(ours), 37, C.IVORY, 700, 488)
-	D.text(comparison, 117, 138, "VOTRE XV SÉLECTIONNÉ", 19, GREEN, 700, 475)
-	D.text(comparison, 1226, 108, G.club_name(opponent), 37, C.IVORY, 700, 477, HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(comparison, 1226, 138, "XV ADVERSE PROJETÉ", 19, GOLD, 700, 469, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(comparison, 117, 108, G.club_name(ours), 28, C.IVORY, 700, 488)
+	D.text(comparison, 117, 138, "VOTRE XV SÉLECTIONNÉ", 17, GREEN, 700, 475)
+	D.text(comparison, 1226, 108, G.club_name(opponent), 28, C.IVORY, 700, 477, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(comparison, 1226, 138, "XV ADVERSE PROJETÉ", 17, GOLD, 700, 469, HORIZONTAL_ALIGNMENT_RIGHT)
 	D.text(comparison, 672, 117, "VS", 30, C.MUTED, 600, 70, HORIZONTAL_ALIGNMENT_CENTER)
 	D.line(comparison, Vector2(22, 163), Vector2(1322, 163))
 	var domains: Array = reports.get("domains", [])
@@ -260,14 +260,14 @@ func _dossier() -> void:
 		var domain: Dictionary = domains[i]
 		var y := 176.0 + row_height * i
 		D.rect(comparison, Rect2(20, y, 1304, row_height - 3), Color("14201f") if i % 2 else Color("10191a"), 3)
-		D.text(comparison, 81, y + 30, G.n(domain.get("own", "—")), 28, GREEN, 700, 60, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(comparison, 81, y + 30, G.n(domain.get("own", "—")), 21, GREEN, 700, 60, HORIZONTAL_ALIGNMENT_CENTER)
 		if domain.get("own") is float or domain.get("own") is int:
 			D.bar(comparison, Rect2(129, y + 19, 375, 12), float(domain.own), GREEN)
-		D.text(comparison, 674, y + 29, domain.get("label", "Secteur"), 24, C.IVORY, 600, 315, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(comparison, 674, y + 29, domain.get("label", "Secteur"), 19, C.IVORY, 600, 315, HORIZONTAL_ALIGNMENT_CENTER)
 		if domain.get("opponent") is float or domain.get("opponent") is int:
 			D.bar(comparison, Rect2(844, y + 19, 375, 12), float(domain.opponent), GOLD)
-		D.text(comparison, 1264, y + 30, G.n(domain.get("opponent", "—")), 28, GOLD, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(comparison, 23, 576, "Comparaison chiffrée indisponible" if domains.is_empty() else "Notes de simulation ajustées à la condition · sur 100", 24, C.MUTED, 500, 1297)
+		D.text(comparison, 1264, y + 30, G.n(domain.get("opponent", "—")), 21, GOLD, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(comparison, 23, 576, "Comparaison chiffrée indisponible" if domains.is_empty() else "Notes de simulation ajustées à la condition · sur 100", 17, C.MUTED, 500, 1297)
 	_recommended(section)
 	_recent(section)
 	_threats(section)
@@ -276,21 +276,43 @@ func _recommended(section: Control) -> void:
 	var panel := D.panel(section, Rect2(1361, 0, 887, 596), "Avant le coup d’envoi", "flag", "", "PreparationRecommendation")
 	var briefing := Briefing.project(app.model)
 	var checks: Array = briefing.checks
-	for index in mini(3, checks.size()):
+	var indicators := [["FEUILLE", "Valide" if app.model.get("selection", {}).get("valid", false) else "À vérifier", GREEN if app.model.get("selection", {}).get("valid", false) else GOLD], ["CONDITION DU XV", P.lineup_condition(app.model), GREEN], ["DOSSIER ADVERSE", "%d secteurs" % int(briefing.domains) if briefing.reportAvailable else "Non publié", GOLD]]
+	for index in indicators.size():
+		var x := 23 + index * 283
+		D.rect(panel, Rect2(x, 69, 272, 50), Color("172724"), 4)
+		D.text(panel, x+9, 87, indicators[index][0], 15, C.MUTED, 600, 253)
+		D.text(panel, x+9, 109, indicators[index][1], 21, indicators[index][2], 700, 253)
+	for index in mini(5, checks.size()):
 		var check: Dictionary = checks[index]
-		var y := 73 + index * 134
-		D.rect(panel, Rect2(18, y, 850, 126), Color(Briefing.color(check), .045), 5, Color(Briefing.color(check), .28))
-		var action := _button(panel, Rect2(29, y + 7, 827, 45), check.title + "  →", Briefing.open_action.bind(app, check.action, _choose.bind(1)), false, "", "PreparationBriefing_" + str(check.id))
-		action.add_theme_font_size_override("font_size", C.px(27))
+		var y := 129 + index * 61
+		D.rect(panel, Rect2(18, y, 850, 56), Color(Briefing.color(check), .045), 4, Color(Briefing.color(check), .25))
+		var icon := C.icon({"press":"mail","selection":"people","day":"calendar","international":"flag","injuries":"heart","tactics":"tactic","sheet":"check","calendar":"calendar","live":"ball","ended":"trophy"}.get(check.id,"flag"),21,Briefing.color(check))
+		panel.add_child(icon); D.place(icon,Rect2(28,y+9,21,21))
+		var action := _button(panel, Rect2(57, y + 3, 795, 25), check.title + "  →", Briefing.open_action.bind(app, check.action, _choose.bind(1)), false, "", "PreparationBriefing_" + str(check.id))
+		action.add_theme_font_size_override("font_size", C.px(20))
+		action.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,2))
+		_dense_button(action,20,27)
 		action.tooltip_text = check.detail + "\n" + check.caption
 		action.accessibility_name = check.title + " · " + check.detail
-		var lines := D.words(check.detail, 64, 2)
-		for line in lines.size(): D.text(panel, 39, y + 79 + line * 29, lines[line], 24, C.MUTED, 500, 800, HORIZONTAL_ALIGNMENT_LEFT, true)
-	var all := _button(panel, Rect2(22, 480, 411, 49), "Tous les repères (%d)" % checks.size(), Briefing.open_all.bind(app, _choose.bind(1)), false, "search", "PreparationBriefingAll")
-	all.add_theme_font_size_override("font_size", C.px(24))
-	_button(panel, Rect2(451, 480, 413, 49), "Conseils détaillés", _open_dossier, false, "arrow", "OpenOppositionDossier").disabled = reports.is_empty()
+		D.text(panel, 61, y + 46, check.detail, 17, C.MUTED, 500, 784, HORIZONTAL_ALIGNMENT_LEFT, true)
+	if checks.size() < 5:
+		var image_top := 129 + checks.size()*61
+		var club := _opponent()
+		if club.is_empty(): club = app.model.club
+		var picture := G.club_picture(club)
+		picture.custom_minimum_size = Vector2.ZERO
+		panel.add_child(picture)
+		D.place(picture,Rect2(20,image_top,847,432-image_top))
+		var caption := "Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Illustration IA · ambiance du club"
+		D.text(panel,30,424,caption,16,C.MUTED,500,827)
+	var tactics: Dictionary = app.model.get("tactics", {})
+	D.text(panel,23,455,"AVEC BALLON · " + _tactic_label(tactics.get("attacks", []), tactics.get("attack")),18,GREEN,600,414)
+	D.text(panel,451,455,"SANS BALLON · " + _tactic_label(tactics.get("defenses", []), tactics.get("defense")),18,GOLD,600,414)
+	var all := _button(panel, Rect2(22, 477, 411, 44), "Tous les repères (%d)" % checks.size(), Briefing.open_all.bind(app, _choose.bind(1)), false, "search", "PreparationBriefingAll")
+	all.add_theme_font_size_override("font_size", C.px(19))
+	_button(panel, Rect2(451, 477, 413, 44), "Conseils détaillés", _open_dossier, false, "arrow", "OpenOppositionDossier").disabled = reports.is_empty()
 	var advice: Dictionary = reports.get("advice", {})
-	var adopt := _button(panel, Rect2(22, 540, 842, 44), "Adopter le plan proposé par le staff", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}), true, "arrow", "PreparationAdoptPlan")
+	var adopt := _button(panel, Rect2(22, 536, 842, 44), "Adopter le plan proposé par le staff", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}), true, "arrow", "PreparationAdoptPlan")
 	adopt.disabled = advice.is_empty() or not app._live().is_empty() or app.model.meta.get("phase") == "ended"
 
 func _summary_line(panel: Panel, y: int, label: String, title: String, detail: String, tone: Color) -> void:
@@ -306,25 +328,75 @@ func _open_dossier() -> void:
 	dialog.set_meta("immersive_dialog_size", Vector2i(900, 580))
 
 func _recent(section: Control) -> void:
-	var panel := D.panel(section, Rect2(0, 614, 1344, 352), "Les faits récents", "calendar", "", "PreparationRecent")
+	var panel := D.panel(section, Rect2(0, 614, 900, 352), "Les faits récents", "calendar", "", "PreparationRecent")
 	var recent: Array = reports.get("recent", [])
 	var opponent := _opponent()
-	if recent.is_empty(): D.text(panel, 24, 109, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 26, C.MUTED, 500, 1266)
+	if recent.is_empty():
+		D.text(panel, 24, 93, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 19, C.MUTED, 500, 850)
+		var club := _opponent()
+		if not club.is_empty():
+			var picture := G.club_picture(club)
+			panel.add_child(picture); D.place(picture,Rect2(22,110,856,145))
+			D.text(panel,32,243,"Photo d’archive" if picture.get_meta("photo_kind") == "archive" else "Photo du pack" if picture.get_meta("photo_kind") == "pack" else "Illustration IA · ambiance du club",16,C.MUTED,500,820)
 	for i in mini(5, recent.size()):
 		var result: Dictionary = recent[i]
-		var y := 72 + i * 50
+		var y := 70 + i * 40
 		var score: Array = result.get("score", [])
 		var home: bool = int(result.get("side", 0)) == 0
 		var other := _club(result.get("opponentId"))
 		var round_label := "Journée " + G.n(int(result.get("round", 0)) + 1) if result.get("phase") == "league" else str(result.get("phase", ""))
-		D.rect(panel, Rect2(20, y, 1303, 42), Color("162321") if i % 2 == 0 else Color("111a1c"), 4)
-		D.text(panel, 33, y + 29, round_label, 22, C.MUTED, 500, 230)
-		D.text(panel, 290, y + 29, G.club_name(opponent if home else other), 24, C.IVORY, 600, 390)
-		D.text(panel, 717, y + 29, "%s – %s" % [G.n(score[0]), G.n(score[1])] if score.size() == 2 else "—", 26, GOLD, 700, 130, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(panel, 825, y + 29, G.club_name(other if home else opponent), 24, C.IVORY, 600, 474)
-	if recent.is_empty():
-		var summary := D.words(str(reports.get("notice", "")), 121, 3)
-		for i in summary.size(): D.text(panel, 24, 162 + i * 28, summary[i], 22, C.IVORY, 500, 1293)
+		D.rect(panel, Rect2(20, y, 860, 36), Color("162321") if i % 2 == 0 else Color("111a1c"), 3)
+		D.text(panel, 30, y + 25, round_label, 16, C.MUTED, 500, 120)
+		D.text(panel, 160, y + 25, G.club_name(opponent if home else other), 18, C.IVORY, 600, 280)
+		D.text(panel, 485, y + 25, "%s – %s" % [G.n(score[0]), G.n(score[1])] if score.size() == 2 else "—", 21, GOLD, 700, 80, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(panel, 550, y + 25, G.club_name(other if home else opponent), 18, C.IVORY, 600, 320)
+	D.line(panel,Vector2(23,277),Vector2(876,277),Color(C.LINE,.7))
+	var today := P.fixture_date({"date":app.model.get("meta",{}).get("calendarToday", "")})
+	var stages := [["1 · JOURNÉE",today if not today.is_empty() else "Date non publiée"],["2 · FEUILLE","Projetée valide" if app.model.get("selection",{}).get("valid",false) else "À compléter"],["3 · RENCONTRE",P.fixture_date(fixture) if not fixture.is_empty() else "Non annoncée"]]
+	for index in stages.size():
+		D.text(panel,25+index*288,302,stages[index][0],17,GOLD,700,270)
+		D.text(panel,25+index*288,329,stages[index][1],16,C.MUTED,500,270)
+	_sheet_map(section)
+
+func _sheet_map(section: Control) -> void:
+	var panel := D.panel(section,Rect2(917,614,427,352),"Votre XV projeté","people","","PreparationSheetMap")
+	D.rect(panel,Rect2(15,65,397,263),Color("153b2c"),3,Color("4b7f64"))
+	for y in [130,196,263]: D.line(panel,Vector2(18,y),Vector2(409,y),Color("6e9e81",.3))
+	D.line(panel,Vector2(213,68),Vector2(213,326),Color("6e9e81",.3))
+	var positions := [Vector2(.22,.06),Vector2(.5,.06),Vector2(.78,.06),Vector2(.36,.23),Vector2(.64,.23),Vector2(.18,.40),Vector2(.5,.40),Vector2(.82,.40),Vector2(.34,.56),Vector2(.66,.56),Vector2(.12,.74),Vector2(.38,.74),Vector2(.62,.74),Vector2(.88,.74),Vector2(.5,.91)]
+	var lineup: Array = app.model.get("lineup", [])
+	for index in 15:
+		var id: Variant = lineup[index] if index < lineup.size() else null
+		var player := P.player(app.model,str(id)) if id != null else {}
+		var point: Vector2 = Vector2(15,77)+positions[index]*Vector2(397,239)
+		var button := _button(panel,Rect2(point.x-15,point.y-14,30,28),str(index+1),_open_sheet_player.bind(str(id)),false,"","PreparationXIPlayer_"+str(index+1))
+		button.disabled = player.is_empty()
+		button.add_theme_font_size_override("font_size",C.px(17))
+		button.add_theme_stylebox_override("normal",C.box(Color("e7c46a") if not player.is_empty() else Color("4b5a50"),Color("eee5cd"),14,0))
+		button.add_theme_color_override("font_color",Color("11251c"))
+		_dense_button(button,17,28)
+		button.size.x = C.px(30)
+		button.tooltip_text = str(player.get("name","Poste non affecté")) + " · " + str(player.get("pos",""))
+		button.set_meta("player_id",id)
+		var surname := str(player.get("name","—")).get_slice(" ",str(player.get("name","")).get_slice_count(" ")-1)
+		D.text(panel,point.x,point.y+26,surname,13,C.IVORY,500,72,HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel,18,345,"Schéma indicatif · cliquer pour la fiche",14,C.MUTED,500,390)
+
+func _open_sheet_player(id: String) -> void:
+	app.selected_player = id
+	app._navigate("Effectif")
+
+func _dense_button(button: Button, font_size: int, height: int) -> void:
+	button.custom_minimum_size = Vector2.ZERO
+	button.add_theme_font_size_override("font_size",C.px(font_size))
+	for kind in ["normal","hover","pressed","disabled","focus"]:
+		var style := button.get_theme_stylebox(kind).duplicate() as StyleBox
+		style.content_margin_top = 0
+		style.content_margin_bottom = 0
+		style.content_margin_left = C.px(3)
+		style.content_margin_right = C.px(3)
+		button.add_theme_stylebox_override(kind,style)
+	button.size.y = C.px(height)
 
 func _threats(section: Control) -> void:
 	var panel := D.panel(section, Rect2(1361, 614, 887, 352), "Joueurs à surveiller", "people", "", "PreparationThreats")
@@ -337,9 +409,11 @@ func _threats(section: Control) -> void:
 			var portrait := G.portrait(0,0,p)
 			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			panel.add_child(portrait);D.place(portrait,Rect2(20,y+3,72,64))
-		else: D.photo(panel, "player-%02d" % posmod(str(p.get("name", "")).hash(), 16), Rect2(20, y + 3, 72, 64))
-		D.text(panel, 111, y + 29, p.get("name", "Joueur"), 28, C.IVORY, 700, 740)
-		D.text(panel, 111, y + 56, "%s  ·  %s" % [p.get("pos", ""), p.get("role", "")], 22, C.MUTED, 500, 740)
+		else:
+			var neutral := C.icon("people",48,C.MUTED)
+			panel.add_child(neutral); D.place(neutral,Rect2(31,y+12,48,48))
+		D.text(panel, 111, y + 29, p.get("name", "Joueur"), 22, C.IVORY, 700, 740)
+		D.text(panel, 111, y + 56, "%s  ·  %s" % [p.get("pos", ""), p.get("role", "")], 17, C.MUTED, 500, 740)
 		D.line(panel, Vector2(20, y + 73), Vector2(863, y + 73), Color(C.LINE, .67))
 	var signals: Array = reports.get("signals", [])
 	D.text(panel, 23, 331, "%d signal(aux) documenté(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles.", 24, GOLD, 500, 842)
