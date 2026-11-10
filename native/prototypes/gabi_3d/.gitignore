@@ -1,0 +1,7 @@
+.godot/
+*.tmp
+captures/
+
+*.import
+*.uid
+gabi_Gabi_Albedo.jpg
