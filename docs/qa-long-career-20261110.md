@@ -38,6 +38,13 @@ node scripts/qa-long-career.cjs --campaign international --through-year 2031 --s
 node --test tests/qa-long-career.cjs
 ```
 
+Pour recevoir un autre checkout sans y écrire ni y copier le pilote, définir
+`OVAL_QA_SOURCE_ROOT` vers sa racine absolue. Le moteur, ses données, son commit
+et son état propre/modifié sont alors lus dans cette racine ; le pilote conserve
+ses scripts dans son propre checkout et enregistre aussi sa propre empreinte.
+Les profils restent créés sous le répertoire temporaire système. Cette option
+sert à distinguer une réception de cumul de celle de la branche de départ.
+
 Le dossier de rapport est libre. Les profils de carrière sont toujours créés
 dans un dossier temporaire séparé hors de l'application ; aucun profil personnel
 n'est lu. Ils sont conservés après la recette pour permettre l'inspection, et

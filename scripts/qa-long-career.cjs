@@ -7,7 +7,9 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const {execFileSync} = require('node:child_process');
 const {write} = require('./qa-long-career-report.cjs');
-const ROOT = path.resolve(__dirname, '..');
+const PILOT_ROOT = path.resolve(__dirname, '..');
+const ROOT = process.env.OVAL_QA_SOURCE_ROOT ? path.resolve(process.env.OVAL_QA_SOURCE_ROOT) : PILOT_ROOT;
+const engine = file => require(path.join(ROOT, 'native/engine', file));
 const digest = value => crypto.createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
 function sourceDigest() {
  const hash = crypto.createHash('sha256');
@@ -63,7 +65,7 @@ function auditState(campaign, state, previous = null) {
 }
 
 async function clubCampaign(campaign, options, profiles) {
- const {createBridge} = require('../native/engine/worker.cjs');
+ const {createBridge} = engine('worker.cjs');
  const bridgeOptions = {dataDir:path.join(profiles, campaign.id), seed:options.seed, now:1794315600000, mandatoryPress:true};
  let bridge = createBridge(bridgeOptions), requestId = 0, model, previous = null, played = 0;
  const good = (command, payload = {}) => {
@@ -131,11 +133,11 @@ async function clubCampaign(campaign, options, profiles) {
 }
 
 function internationalCampaign(campaign, options) {
- const competitions = require('../native/engine/international-competitions.cjs');
- const callups = require('../native/engine/international-callups.cjs');
- const facts = require('../native/engine/player-real-facts.json');
- const registry = require('../native/engine/world-registry.json');
- const {createInternationalCareer} = require('../native/engine/international-career.cjs');
+ const competitions = engine('international-competitions.cjs');
+ const callups = engine('international-callups.cjs');
+ const facts = engine('player-real-facts.json');
+ const registry = engine('world-registry.json');
+ const {createInternationalCareer} = engine('international-career.cjs');
  const players = registry.clubs.flatMap(club => club.players);
  const own = registry.clubs[0].players.map(player => player.id);
  const career = createInternationalCareer(competitions, callups, facts);
@@ -215,7 +217,7 @@ async function run(options) {
  const start = Date.now(), profileRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-long-career-profiles-'));
  const output = options.output || fs.mkdtempSync(path.join(os.tmpdir(), 'oval-long-career-report-'));
  const git = args => execFileSync('git', args, {cwd:ROOT, encoding:'utf8'}).trim();
- const report = {format:'oval-long-career-audit', version:1, seed:options.seed, source:{commit:git(['rev-parse','HEAD']), engineSha256:sourceDigest(), dirty:Boolean(git(['status','--porcelain','--untracked-files=no'])), node:process.version, platform:process.platform}, startedAt:new Date(start).toISOString(), profileRoot, command:`node scripts/qa-long-career.cjs --seasons ${options.seasons} --through-year ${options.throughYear} --seed ${options.seed} --campaign ${options.campaign} --output ${output}`, status:'running', durationMs:0, campaigns:[], limits:[
+ const report = {format:'oval-long-career-audit', version:1, seed:options.seed, source:{root:ROOT,commit:git(['rev-parse','HEAD']),pilotSha256:digest(fs.readFileSync(__filename,'utf8')),engineSha256:sourceDigest(), dirty:Boolean(git(['status','--porcelain','--untracked-files=no'])), node:process.version, platform:process.platform}, startedAt:new Date(start).toISOString(), profileRoot, command:`${ROOT === PILOT_ROOT ? '' : `OVAL_QA_SOURCE_ROOT=${ROOT} `}node scripts/qa-long-career.cjs --seasons ${options.seasons} --through-year ${options.throughYear} --seed ${options.seed} --campaign ${options.campaign} --output ${output}`, status:'running', durationMs:0, campaigns:[], limits:[
   'Carrières de recette uniquement : aucun profil personnel lu ou modifié. Trésoreries du jeu fictives.',
   'Contrôles structurels et reprises : ni certification réglementaire, ni mesure de l’équilibrage ou de la performance GPU.',
   'Club : worker complet en cadence hebdomadaire avec conférences obligatoires. Les journées quotidiennes et autres championnats ne sont pas couverts par cette campagne.',
