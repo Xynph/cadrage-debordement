@@ -1,0 +1,218 @@
+{
+  "format": "oval-long-career-audit",
+  "version": 1,
+  "seed": 713492,
+  "source": {
+    "commit": "6dc85e977a4acffb2cd34c1b46e1965297f008ff",
+    "engineSha256": "ba3581f3eb8bf7c72464db538b3ca1731de005b0756b5c20de9ddbc6e48e9a7e",
+    "dirty": false,
+    "node": "v22.23.4",
+    "platform": "linux"
+  },
+  "startedAt": "2026-11-10T13:31:56.197Z",
+  "profileRoot": "/tmp/oval-long-career-profiles-92Xzdh",
+  "command": "node scripts/qa-long-career.cjs --seasons 3 --through-year 2031 --seed 713492 --campaign all --output /workspace/cadrage-debordement/work/simulation/work/three-seasons",
+  "status": "passed",
+  "durationMs": 667131,
+  "campaigns": [
+    {
+      "id": "club",
+      "name": "Club · Accession française",
+      "scope": "Worker complet · trois saisons par défaut · presse obligatoire · vrais exports/imports et redémarrages",
+      "status": "passed",
+      "checks": 734,
+      "checkpoints": [
+        {
+          "label": "Ouverture",
+          "sha256": "61b9666cfc427e9588cffdd1e74fe2bb4c3948466dcf27941debe19123069b4b",
+          "bytes": 4346906,
+          "season": 1,
+          "players": 1596,
+          "results": 0,
+          "date": null,
+          "cash": 2300000,
+          "played": 0
+        },
+        {
+          "label": "Saison 1 · mi-parcours",
+          "sha256": "752b2f12881492d911ad063283c68b8ea4d9ba604a7aadc9cac23d6e2e38079a",
+          "bytes": 4964013,
+          "season": 1,
+          "players": 1608,
+          "results": 241,
+          "date": null,
+          "cash": 6554850,
+          "played": 17
+        },
+        {
+          "label": "Saison 1 · clôture",
+          "sha256": "3acaad44d328b50c6adf642e81baefaef7dff72cd19c79e92ff3128d8b05d1c5",
+          "bytes": 5104481,
+          "season": 1,
+          "players": 1611,
+          "results": 433,
+          "date": null,
+          "cash": 5165200,
+          "played": 30
+        },
+        {
+          "label": "Saison 2 · ouverture",
+          "sha256": "4ff112e157c62af218b6b717491e41b2e56dab7c692b1157decce1f2008bdacf",
+          "bytes": 6000006,
+          "season": 2,
+          "players": 1435,
+          "results": 0,
+          "date": null,
+          "cash": 7665200,
+          "played": 30
+        },
+        {
+          "label": "Saison 2 · mi-parcours",
+          "sha256": "a23ca4333bd4addd4eeaf935351c87f94a882e16aeda5c9336d4416798189f65",
+          "bytes": 6214767,
+          "season": 2,
+          "players": 1450,
+          "results": 241,
+          "date": null,
+          "cash": 11850440,
+          "played": 47
+        },
+        {
+          "label": "Saison 2 · clôture",
+          "sha256": "71dbbcefe3cc2f912aca7f887a03db7ccb5b920f9a4c67f504f699a13a3d2f8e",
+          "bytes": 6350846,
+          "season": 2,
+          "players": 1455,
+          "results": 433,
+          "date": null,
+          "cash": 11359680,
+          "played": 60
+        },
+        {
+          "label": "Saison 3 · ouverture",
+          "sha256": "c3996a1dd32c894a20621384a77263affb4110792c1d8853b4441b4a8a179692",
+          "bytes": 6617766,
+          "season": 3,
+          "players": 1301,
+          "results": 0,
+          "date": null,
+          "cash": 13859680,
+          "played": 60
+        },
+        {
+          "label": "Saison 3 · mi-parcours",
+          "sha256": "52f6be575b8f1575b1f0a47a15bb9800aa84d17c79f24d67f209e24b10f27cee",
+          "bytes": 6817721,
+          "season": 3,
+          "players": 1334,
+          "results": 241,
+          "date": null,
+          "cash": 16049340,
+          "played": 77
+        },
+        {
+          "label": "Saison 3 · clôture",
+          "sha256": "36e9c1841d40f8e3a218fe85f401224b923ff41451024fb8ddfd1cc8cddccb83",
+          "bytes": 6956597,
+          "season": 3,
+          "players": 1343,
+          "results": 433,
+          "date": null,
+          "cash": 20545000,
+          "played": 90
+        }
+      ],
+      "failures": [],
+      "durationMs": 663386,
+      "note": "3 saisons de club via le worker réel, 90 matchs du club délégués ; calendrier hebdomadaire, presse obligatoire. Aucun achat ni injection financière."
+    },
+    {
+      "id": "international",
+      "name": "International · jusqu’au Mondial 2031",
+      "scope": "Module de carrière natif · fenêtres, convocations, résultats, annonces et archives",
+      "status": "passed",
+      "checks": 441,
+      "checkpoints": [
+        {
+          "label": "Ouverture · 2026",
+          "sha256": "3cee3d9c9aa1c8c162fc3ca24777beb7d29d10231b0014e06cfa9670127cb5f7",
+          "bytes": 1973,
+          "date": "2026-08-17",
+          "players": 3208,
+          "results": 0,
+          "mail": 0
+        },
+        {
+          "label": "Fin 2026",
+          "sha256": "d80bc99ac47b8a73a9aa08c107b4494efa2ad31b2286f5974593017ae40ec6c0",
+          "bytes": 34119,
+          "date": "2026-12-31",
+          "players": 3208,
+          "results": 42,
+          "mail": 12
+        },
+        {
+          "label": "Fin 2027",
+          "sha256": "41434fbd5e49d0d85a37bbca6c9053b6dfc234a77d9e94a3c70b7c146a7e6151",
+          "bytes": 142618,
+          "date": "2027-12-31",
+          "players": 3208,
+          "results": 121,
+          "mail": 44
+        },
+        {
+          "label": "Fin 2028",
+          "sha256": "3ec8661766ced2095aa68453589dcce2e846ffda821490ddbaa2fbb4294f26bf",
+          "bytes": 219246,
+          "date": "2028-12-31",
+          "players": 3208,
+          "results": 190,
+          "mail": 84
+        },
+        {
+          "label": "Fin 2029",
+          "sha256": "5aeb8d6d33df78894643de9480ab628e7e1f0c882978d90572baa234d8d1e6da",
+          "bytes": 167213,
+          "date": "2029-12-31",
+          "players": 3208,
+          "results": 217,
+          "mail": 104
+        },
+        {
+          "label": "Fin 2030",
+          "sha256": "aebd9c5289dedb825a3b584978cb432900f1da3154e2ad953f85bbb1baeb41ab",
+          "bytes": 154584,
+          "date": "2030-12-31",
+          "players": 3208,
+          "results": 274,
+          "mail": 138
+        },
+        {
+          "label": "Fin 2031",
+          "sha256": "6d10c47ff073a39f4fbd1f79e671f87626dcdfbbb58a76d9bd6f8865ea99df20",
+          "bytes": 224404,
+          "date": "2031-12-31",
+          "players": 3208,
+          "results": 353,
+          "mail": 168
+        }
+      ],
+      "failures": [],
+      "durationMs": 3642,
+      "note": "Module international de production, France gérée avec composition automatique native, registre mondial de 3208 joueurs, années 2026–2031. 353 résultats observés, 168 courriers. Reprise JSON du module uniquement ; ce scénario ne simule pas une carrière complète de club ni des clics UI.",
+      "mailKinds": {
+        "international_host": 28,
+        "international_release": 68,
+        "international_callup": 17,
+        "international_result": 55
+      }
+    }
+  ],
+  "limits": [
+    "Carrières de recette uniquement : aucun profil personnel lu ou modifié. Trésoreries du jeu fictives.",
+    "Contrôles structurels et reprises : ni certification réglementaire, ni mesure de l’équilibrage ou de la performance GPU.",
+    "Club : worker complet en cadence hebdomadaire avec conférences obligatoires. Les journées quotidiennes et autres championnats ne sont pas couverts par cette campagne.",
+    "International : module natif et catalogue livré, simulations automatiques ; pas une carrière complète de sélectionneur et pas de recette UI.",
+    "Une seule graine et un club ne démontrent pas la robustesse de toutes les trajectoires possibles. Un échec stoppe la campagne concernée et reste rouge."
+  ]
+}
