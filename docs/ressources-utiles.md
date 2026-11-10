@@ -31,6 +31,24 @@ chats. Un lien enregistré ne signifie pas que son contenu a été lu ou approuv
 | [Étude de sept outils GitHub — PR 425](https://github.com/Xynph/cadrage-debordement/pull/425) | Étude existante du projet ; titre et référence relevés le 10 novembre 2026. | Retrouver les recherches sur assets et animations avant de recommencer une étude. | Coût/licence propres à chaque outil à vérifier dans son dossier. | **À explorer** : consulter la PR et ses fichiers avant de retenir un outil. L’ouverture d’une PR ne prouve pas une intégration. |
 | [Essais parallèles des sept outils — PR 426](https://github.com/Xynph/cadrage-debordement/pull/426) | Réception existante du projet ; titre et référence relevés le 10 novembre 2026. | Retrouver les essais et leurs limites. | À vérifier par outil. | **À explorer** : rapprocher les résultats de la PR 425 et de l’état actuel du code. |
 
+## Sept dépôts transmis par Léo le 10 novembre 2026
+
+Les sept URL ont été relevées directement auprès de Léo. Description, existence
+et licence déclarée dans les métadonnées GitHub consultées le 10 novembre 2026.
+Ces dépôts restent **À explorer** : aucun code installé, aucun essai ni audit
+complet des dépendances, des modèles, des assets ou des tarifs effectué.
+La licence du dépôt ne garantit pas la gratuité des services qu’il utilise.
+
+| Ressource | Utilité possible pour Oval Legacy | Licence déclarée / coût à vérifier | Statut et prochaine vérification |
+| --- | --- | --- | --- |
+| [Moh4696/open-3d-skills](https://github.com/Moh4696/open-3d-skills) | Scènes Three.js, transitions, mouvements de caméra et contrôles visuels ; inspirations pour l’immersion. | **MIT** pour le code ; coût des éventuels modèles/services à vérifier. | **À explorer** : workflows orientés web ; étudier leur transposition à Godot avant adoption. |
+| [blendi-remade/prompt2rig](https://github.com/blendi-remade/prompt2rig) | Production et transfert de mouvements sur un personnage riggé ; piste pour joueurs et staff. | **Apache-2.0** pour le code ; modèles vidéo, dépendances et conditions Mixamo à vérifier. | **À explorer** : contrôler qualité des gestes de rugby, export et coût réel de génération. |
+| [scenario-labs/skills](https://github.com/scenario-labs/skills) | Workflows de création d’images, vidéo, audio et 3D ; cohérence visuelle des personnages et clubs. | **MIT** pour le code ; tarifs et conditions des services Scenario à vérifier. | **À explorer** : distinguer compétences gratuites et opérations de génération éventuellement facturées. |
+| [EL4CTEO/blender-skills](https://github.com/EL4CTEO/blender-skills) | Modélisation, UV, matériaux, rigging, animation et export Blender pour préparer les assets du jeu. | **MIT** pour le code ; dépendances et services éventuels à vérifier. | **À explorer** : vérifier versions Blender, exports Godot et réception des modèles. |
+| [elvarofficial/teardown](https://github.com/elvarofficial/teardown) | Principes de scènes 3D interactives et de simulation d’assemblages ; inspiration secondaire. | **MIT** pour le code ; dépendances et éventuels services à vérifier. | **À explorer** : établir une utilité concrète pour le jeu de rugby avant de retenir ce workflow de machines démontables. |
+| [0x0funky/agent-sprite-forge](https://github.com/0x0funky/agent-sprite-forge) | Sprites 2D, cartes, PNG transparents et animations pour interfaces, effets et prototypes. | **MIT** pour le code ; modèles de génération, tarifs et droits des sorties à vérifier. | **À explorer** : essayer un besoin précis et vérifier le coût avant toute génération. |
+| [Donchitos/Claude-Code-Game-Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) | Organisation du développement avec agents spécialisés et workflows de studio. | **MIT** pour le code ; coûts des outils et modèles utilisés indépendants de cette licence. | **À explorer** : comparer aux règles existantes du projet et éviter une orchestration disproportionnée. |
+
 ## Assets et licences
 
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et preuve |
