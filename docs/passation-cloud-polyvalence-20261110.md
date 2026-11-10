@@ -1,7 +1,7 @@
 # Reprise Cloud — 10 novembre 2026 : polyvalence, Tactique et information joueurs
 
-## Situation de l’environnement
-Le Cloud est devenu indisponible pendant les dernières réceptions. Le service indique offline ; wait_for_environment refuse car l’environnement n’est ni prêt ni starting utilisable. Ne pas annoncer le raccord sportif terminé. Préserver les worktrees et fichiers non committés avant toute opération Git ou reconstruction.
+## Situation de l’environnement — incident résolu
+Le Cloud est devenu indisponible pendant les dernières réceptions, puis est revenu avec les worktrees préservés. Les paragraphes de coupure ci-dessous sont historiques ; voir la mise à jour de réception en fin de document. Le service indique offline ; wait_for_environment refuse car l’environnement n’est ni prêt ni starting utilisable. Ne pas annoncer le raccord sportif terminé. Préserver les worktrees et fichiers non committés avant toute opération Git ou reconstruction.
 
 ## Dernières demandes de Léo
 - Cloud uniquement, 2560×1440 ; interface dense type FM, textes petits, aucun grand vide, portraits utiles.
@@ -74,3 +74,11 @@ Profils QA /tmp hors application, caches Godot séparés par worktree. Aucun SDK
 Avant nouveau rendu : stage, import et contrôle des erreurs de compilation avant les longues suites. Capture réelle 2560×1440 ; publier PNG puis lien raw GitHub (les images outils seules ne sont pas visibles chez Léo).
 Loi3 World Rugby consultée :3.10 postes de première ligne désignés ;3.11 un remplaçant de première ligne peut débuter ailleurs ;3.12 formation et expérience. Préserver les protections existantes.
 Revue indépendante déjà transmise : vérifier banc, remplacements, international, hooks Nationale/Japon et calculs collectifs selon slot actif sans muter pos/fam sources. Sauvegarde/état/RNG doivent rester déterministes.
+
+## Mise à jour après reprise — polyvalence reçue
+
+La passation distante a été fusionnée sans écraser les commits locaux. API c45557e et sport2a1f767 sont intégrés ; UI f2f49a8, bd003b5, ee05e55 et captures9e57394 également. Root reçoit cinq suites natives sans échec puis les deux bancs UI X11 cumulés (Tactique et Effectif). Rapports et captures dans docs/polyvalence-cumulative-20261110/. Le n°10 reprend effectivement une note très faible pour un pilier, la première ligne source est laissée à compléter, et les projections collectives et Défense suivent le nouveau poste.
+
+La demande connaissance/variation est maintenant explicitement approuvée par Léo : observation initiale9 valeurs de niveau/11 de potentiel ; approfondie5/5 ; club niveau exact/potentiel5. Variation PA toujours active, CA facultative cochée par défaut. Les agents travaillent dans des branches indépendantes après la base sportive803db66 ; ne pas confondre ces travaux en cours avec le lot polyvalence reçu.
+
+Main a avancé à283ecd0 (PR525, lieux/causeries). Le présent lot reste volontairement empilé sur520 ; le raccord au main courant et le gate officiel restent des opérations d’intégration distinctes.
