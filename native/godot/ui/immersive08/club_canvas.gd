@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
+const ClubViews = preload("res://ui/club_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -104,7 +105,8 @@ static func _venue_credit(control: Control, photo: Dictionary) -> void:
 
 static func _overview_city(card: Panel, club: Dictionary) -> void:
 	var identity := G.identity(club)
-	var picture := G.club_picture(club, "city", false)
+	var picture := ClubViews.territory_city_picture(club, false)
+	if picture == null: return
 	var preview := D.panel(card, Rect2(696,16,217,290), "", "", "", "ClubOverviewCity")
 	preview.clip_contents = true
 	preview.add_child(picture)
@@ -529,16 +531,23 @@ static func _territory(app: Control, canvas: Control) -> void:
 	canvas.add_child(page)
 	D.place(page, Rect2(0,214,2248,1030))
 	var identity := G.identity(app.model.club)
+	var city_picture := ClubViews.territory_city_picture(app.model.club, false)
+	var stadium_width := 1480 if city_picture == null else 1116
 	for i in 2:
 		var kind := "stadium" if i == 0 else "city"
-		var panel := D.panel(page, Rect2(i*1132,0,1116,821), "Le stade" if i == 0 else "Le territoire", "home")
-		var picture := G.club_picture(app.model.club, kind, false)
+		var x := 0 if i == 0 else stadium_width + 16
+		var width := stadium_width if i == 0 else 2248 - x
+		var panel := D.panel(page, Rect2(x,0,width,821), "Le stade" if i == 0 else "Le territoire", "home")
+		var picture := G.club_picture(app.model.club, kind, false) if i == 0 else city_picture
+		if picture == null:
+			D.text(panel, 24, 120, "Ville non renseignée", 43, C.IVORY, 700, width - 52)
+			continue
 		panel.add_child(picture)
-		D.place(picture, Rect2(16,68,1084,642))
+		D.place(picture, Rect2(16,68,width - 32,642))
 		var from_pack: bool = picture.get_meta("photo_kind") == "pack"
-		D.text(panel, 24, 760, identity.get("stadium",app.model.club.get("stadium","Le stade")) if i == 0 else identity.get("city","Le territoire"), 43, C.IVORY, 700, 1064)
+		D.text(panel, 24, 760, identity.get("stadium",app.model.club.get("stadium","Le stade")) if i == 0 else identity.get("city","Le territoire"), 43, C.IVORY, 700, width - 52)
 		var photo: Dictionary = identity.get("photos", {}).get(kind, {})
-		var credit := D.text(panel, 24, 798, "Photo · " + str(photo.get("credit", "")) if from_pack else _venue_caption(picture), 23, C.MUTED, 500, 1064)
+		var credit := D.text(panel, 24, 798, "Photo · " + str(photo.get("credit", "")) if from_pack else _venue_caption(picture), 23, C.MUTED, 500, width - 52)
 		if from_pack:
 			credit.name = "VenuePhotoCredit_" + kind
 			_venue_credit(credit, photo)

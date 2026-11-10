@@ -128,6 +128,14 @@ static func club(app: Control) -> Control:
 	tabs.tab_changed.connect(func(index: int): app.management_ui.club_tab = index)
 	return page
 
+static func territory_city_picture(club: Dictionary, dark: bool = true) -> Control:
+	var picture := G.club_picture(club, "city", dark)
+	var city: Variant = G.identity(club).get("city")
+	if picture.get_meta("photo_kind") == "generated" and (not city is String or city.strip_edges().is_empty()):
+		picture.free()
+		return null
+	return picture
+
 static func _territory(app: Control) -> Control:
 	var page := G.v(14)
 	page.name = "ClubTerritory"
@@ -138,7 +146,12 @@ static func _territory(app: Control) -> Control:
 	page.add_child(photos)
 	for kind in ["city", "stadium"]:
 		var photo: Dictionary = c.get("photos", {}).get(kind, {})
-		var picture := G.club_picture(app.model.club, kind)
+		var picture := territory_city_picture(app.model.club) if kind == "city" else G.club_picture(app.model.club, kind)
+		if picture == null:
+			var placeholder := G.panel(photos, 0.5)
+			placeholder.add_child(G.label("LE TERRITOIRE", 14, G.MUTED))
+			placeholder.add_child(G.wrap("Ville non renseignée", 22, G.INK))
+			continue
 		G.fill(picture, true, 1.2 if kind == "city" else 1.0)
 		photos.add_child(picture)
 		var content: VBoxContainer = picture.get_meta("content")
