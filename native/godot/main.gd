@@ -810,7 +810,7 @@ func primary_action() -> void:
 		else: _navigate("Match")
 		return
 	if CareerProgression.press_required(model):
-		_navigate("Réception")
+		_show_press_inbox()
 		return
 	if model.meta.get("canAdvanceSeason",false):
 		confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
