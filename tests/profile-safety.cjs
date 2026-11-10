@@ -80,3 +80,29 @@ test('refus disque avant publication : pas de copie incomplète rendue disponibl
   assert.deepEqual(fs.readdirSync(path.join(root, 'Copies-securite')), []);
   assert.ok(store.checkpoint(input()).id);
 });
+test('préparation interrompue : visible, comptée, jamais reprise et supprimable explicitement', t => {
+  const { root, store, input } = fixture(t);
+  const healthy = store.checkpoint(input());
+  const id = '.preparation-' + require('node:crypto').randomUUID();
+  const pending = path.join(root, 'Copies-securite', id);
+  fs.mkdirSync(pending); fs.writeFileSync(path.join(pending, 'profil.json'), 'partiel');
+  const state = store.project();
+  assert.equal(state.error, '');
+  const interrupted = state.entries.find(item => item.id === id);
+  assert.equal(interrupted.available, false);
+  assert.equal(interrupted.interrupted, true);
+  assert.equal(interrupted.bytes, 7);
+  assert.throws(() => store.load(id), /indisponible/);
+  assert.equal(store.load(healthy.id).seed, 3);
+  assert.ok(store.checkpoint(input(9)).id);
+  store.remove(id, true);
+  assert.equal(fs.existsSync(pending), false);
+});
+test('une tentative répétée à une autre heure ne consomme pas une nouvelle copie', t => {
+  const { store, input } = fixture(t);
+  const first = input(); first.text = JSON.stringify({ format: 'test', exportedAt: '2026-11-10T10:00:00.000Z', state: { value: 1 } });
+  const original = store.checkpoint(first);
+  const second = input(); second.text = JSON.stringify({ format: 'test', exportedAt: '2026-11-10T10:00:10.000Z', state: { value: 1 } });
+  assert.equal(store.checkpoint(second).id, original.id);
+  assert.equal(store.project().entries.length, 1);
+});

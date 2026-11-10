@@ -3,8 +3,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash, randomUUID } = require('node:crypto');
-const LIMITS = Object.freeze({ entries: 8, bytes: 256 * 1024 * 1024, profile: 64 * 1024 * 1024, save: 24 * 1024 * 1024, manifest: 4096 });
+const LIMITS = Object.freeze({ entries: 8, bytes: 256 * 1024 * 1024, profile: 64 * 1024 * 1024, save: 24 * 1024 * 1024 + 512, manifest: 4096 });
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const validId = value => typeof value === 'string' && (ID.test(value) || value.startsWith('.preparation-') && ID.test(value.slice(13)));
 const FILES = ['profil.json', 'carriere.json', 'copie.json'];
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const refusal = message => { throw Error('Copie de sécurité : ' + message); };
@@ -27,7 +28,7 @@ function createStore(dataDir) {
     return true;
   }
   function location(id) {
-    if (typeof id !== 'string' || !ID.test(id)) refusal('identifiant invalide.');
+    if (!validId(id)) refusal('identifiant invalide.');
     if (!ensure()) refusal('copie introuvable.');
     const target = path.join(root, id);
     directory(target);
@@ -49,7 +50,7 @@ function createStore(dataDir) {
     if (names.length > 32) refusal('trop de dossiers dans les copies de sécurité.');
     const entries = []; let usedBytes = 0;
     for (const id of names) {
-      if (!ID.test(id)) refusal('dossier inattendu ; vérifiez les copies avant de continuer.');
+      if (!validId(id)) refusal('dossier inattendu ; vérifiez les copies avant de continuer.');
       const target = location(id);
       const files = fs.readdirSync(target);
       if (files.some(name => !FILES.includes(name))) refusal('fichier inattendu dans une copie.');
@@ -60,6 +61,7 @@ function createStore(dataDir) {
         bytes += stat.size;
       }
       usedBytes += bytes;
+      if(id.startsWith('.preparation-')) { entries.push({id,bytes,available:false,interrupted:true,createdAt:new Date(fs.statSync(target).birthtimeMs).toISOString(),error:'Préparation interrompue : copie non publiée. Vous pouvez la supprimer explicitement.'}); continue; }
       try {
         const meta = JSON.parse(read(path.join(target, 'copie.json'), LIMITS.manifest));
         if (meta.version !== 1 || meta.id !== id || !Number.isFinite(Date.parse(meta.createdAt)) ||
@@ -87,23 +89,30 @@ function createStore(dataDir) {
     const save = read(path.join(target, 'carriere.json'), LIMITS.save);
     if (digest(profile) !== entry.profileHash || digest(save) !== entry.saveHash) refusal('empreinte différente : copie endommagée, profil actuel conservé.');
     const parsed = JSON.parse(profile);
-    if (parsed.protocol !== 1 || parsed.seed !== entry.seed || parsed.clock !== entry.clock) refusal('profil de copie incompatible.');
-    return { ...entry, text: save.toString('utf8') };
+    if (parsed.protocol !== 1 || !Number.isInteger(parsed.seed) || !Number.isFinite(parsed.clock)) refusal('profil de copie incompatible.');
+    const document=JSON.parse(save.toString('utf8'));
+    if(document.nativeReplay?.seed!==entry.seed||document.nativeReplay?.clock!==entry.clock)refusal('état de reprise incompatible.');
+    delete document.nativeReplay;
+    return { ...entry, text: JSON.stringify(document) };
   }
-  function checkpoint({ profile, text, reason, club, season, round }) {
+  function checkpoint({ profile, text, reason, club, season, round, replaySeed, replayClock }) {
     if (!Buffer.isBuffer(profile)) refusal('profil original requis.');
-    const save = Buffer.from(text, 'utf8');
-    if (profile.length > LIMITS.profile || save.length > LIMITS.save) refusal('la copie dépasserait sa taille maximale ; remplacement annulé.');
+    if (profile.length > LIMITS.profile || Buffer.byteLength(text,'utf8') > LIMITS.save-512) refusal('la copie dépasserait sa taille maximale ; remplacement annulé.');
     const parsed = JSON.parse(profile);
     if (parsed.protocol !== 1 || !Number.isInteger(parsed.seed) || !Number.isFinite(parsed.clock)) refusal('profil original incompatible.');
+    const seed=replaySeed??parsed.seed, clock=replayClock??parsed.clock;
+    if(!Number.isInteger(seed)||!Number.isFinite(clock))refusal('horloge ou aléatoire de reprise invalide.');
+    const document=JSON.parse(text);if(Object.hasOwn(document,'exportedAt'))document.exportedAt=new Date(clock).toISOString();document.nativeReplay={seed,clock};
+    const save=Buffer.from(JSON.stringify(document),'utf8');
+    if(save.length>LIMITS.save)refusal('état de reprise trop volumineux.');
     const profileHash = digest(profile), saveHash = digest(save);
     const state = scan();
     // A failed replacement can be retried without accumulating the same backup.
-    const existing = state.entries.find(entry => entry.available && entry.profileHash === profileHash && entry.reason === reason);
+    const existing = state.entries.find(entry => entry.available && entry.profileHash === profileHash && entry.saveHash === saveHash && entry.reason === reason);
     if (existing) { load(existing.id); return existing; }
     const id = randomUUID();
     const meta = { version: 1, id, createdAt: new Date().toISOString(), reason, club, season, round,
-      seed: parsed.seed, clock: parsed.clock, profileHash, saveHash };
+      seed, clock, profileHash, saveHash };
     const manifest = Buffer.from(JSON.stringify(meta), 'utf8');
     const bytes = profile.length + save.length + manifest.length;
     if (state.entries.length >= LIMITS.entries || state.usedBytes + bytes > LIMITS.bytes)
