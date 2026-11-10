@@ -84,7 +84,12 @@ static func build(app:Control,player:Dictionary) -> Control:
 	var heading:=ClubUI.italic(D.text(hero,668,123,str(player.name).to_upper(),88,C.IVORY,800,1030),800)
 	heading.name="ProfilePlayerName"
 	D.text(hero,671,180,str(player.pos).to_upper(),39,C.GOLD,700,1020)
-	D.text(hero,671,231,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31,C.IVORY,500,1020)
+	var facts: Dictionary = player.get("playerFacts", {})
+	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
+	if not facts.is_empty():
+		var identity := preload("res://ui/player_identity.gd").row(facts,22,C.IVORY)
+		hero.add_child(identity)
+		D.place(identity,Rect2(671,228,1010,30))
 	var injury := float(player.get("injury", 0))
 	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
 	var availability := "Disponible"

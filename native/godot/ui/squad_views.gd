@@ -313,6 +313,8 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	name.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	identity.add_child(name)
 	identity.add_child(G.wrap("%s · %s ans"%[p.pos,G.n(p.age)],12))
+	var facts: Dictionary = p.get("playerFacts", {})
+	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.INK))
 	list.add_child(G.separator())
 	var tabs:=TabContainer.new()
 	tabs.name="ProfileTabs"
