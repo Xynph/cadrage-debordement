@@ -326,7 +326,7 @@ static func _open_wages(app: Control, due_only: bool) -> void:
 static func _wage_value(player: Dictionary, key: String) -> Variant:
 	if key == "name" or key == "pos":
 		var value := str(player.get(key, "")).strip_edges()
-		return null if value.is_empty() else value.to_lower()
+		return null if value.is_empty() else preload("res://ui/management_state.gd").fold(value)
 	var value: Variant = player.get(key)
 	return value if (value is int or value is float) and is_finite(float(value)) else null
 
@@ -337,12 +337,17 @@ static func wage_rows(players: Array, key: String, descending: bool) -> Array:
 		var second: Variant = _wage_value(b,key)
 		if first == null or second == null:
 			if first != second: return second == null
-		elif first != second: return first > second if descending else first < second
+		elif first != second:
+			if first is String:
+				var comparison := str(first).naturalnocasecmp_to(str(second))
+				if comparison != 0: return comparison > 0 if descending else comparison < 0
+			else: return first > second if descending else first < second
 		return str(a.get("id","")) < str(b.get("id","")))
 	return result
 
 static func _wage_sort(app: Control, key: String) -> void:
-	var state: Dictionary = app.management_ui.get("finance_wage_sort",{})
+	var due_only: bool = app.management_ui.get(WAGES_SCOPE_KEY,false)
+	var state: Dictionary = app.management_ui.get("finance_wage_sort",{"key":"contractEnd" if due_only else "salary","descending":not due_only})
 	app.management_ui.finance_wage_sort = {"key":key,"descending":not bool(state.get("descending",false)) if state.get("key") == key else key == "salary"}
 	app.management_ui["finance_wage_scroll"] = 0
 	app._render()
