@@ -331,11 +331,13 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   if(legacy||!anchor&&!filtered.length)return create(pair,legacy,automated,preparation);
   const rosters=filtered.map(team=>[team,team.players]);
   try{
+   for(const [team,roster] of rosters)team.players=roster.filter(p=>!released.has(p.id));
+   // Cover for the technical anchor must not create AI tracking data for the
+   // career's club slot, which is still reserved by save validation.
+   for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id],{allowAnchor:anchor});
    // The usual match initializer treats S.club as user-managed even in an
    // automated fixture. Keep the anchor out of that branch for team selection.
    if(anchor)S.club=S.clubs.find(team=>!pair.includes(team.id)).id;
-   for(const [team,roster] of rosters)team.players=roster.filter(p=>!released.has(p.id));
-   for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);
    const match=create(pair,legacy,automated,preparation);
    for(const [side,sheet] of match.sheets.entries()){
     check(![...sheet.initial,...sheet.bench].some(id=>released.has(id)),'joueur convoqué sur une feuille de club.');
