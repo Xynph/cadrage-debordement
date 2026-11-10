@@ -243,6 +243,33 @@ func _select_tab(value: String) -> void:
 	presence_key = ""
 	_side()
 
+static func _decision_label(decision: Variant, teams: Array, fallback := "Rencontre terminée.") -> String:
+	if not decision is Dictionary:
+		return fallback
+	var label := str(decision.get("label", fallback))
+	var winner: Variant = decision.get("winner")
+	if winner == null:
+		return label
+	# Match the exact model wording so only the winner's name changes.
+	var suffix: String = {
+		"tries": " au nombre d’essais.",
+		"penalties": " au nombre de pénalités réussies.",
+		"drops": " au nombre de drops.",
+		"redCards": " au nombre d’exclusions.",
+		"shootout": " aux tirs au but.",
+	}.get(decision.get("kind"), "")
+	var prefix := "Qualification de " if not suffix.is_empty() else "Victoire de "
+	if suffix.is_empty():
+		suffix = "."
+	for team: Dictionary in teams:
+		if team.get("id") == winner:
+			var internal_name := str(team.get("name", ""))
+			if not internal_name.is_empty() and label == prefix + internal_name + suffix:
+				return prefix + G.club_name(team) + suffix
+			break
+	return label
+
+
 func _side() -> void:
 	if _styled_tab != tab:
 		_styled_tab = tab
@@ -295,7 +322,7 @@ func _side() -> void:
 		_:
 			side.add_child(G.section("AU BORD DU TERRAIN"))
 			if live.get("finished",false) and live.get("decision") is Dictionary:
-				side.add_child(G.wrap(str(live.decision.get("label","Rencontre terminée")),15,G.GOLD))
+				side.add_child(G.wrap(_decision_label(live.decision,live.get("teams",[]),"Rencontre terminée"),15,G.GOLD))
 			var tries:Array=live.get("tries",[0,0])
 			side.add_child(G.label("ESSAIS   %s — %s"%[G.n(tries[0]),G.n(tries[1])],14,G.GOLD))
 			if live.get("paused",false):side.add_child(G.wrap("Le jeu est en pause. Vos changements et vos consignes restent accessibles.",12,G.GOOD))
