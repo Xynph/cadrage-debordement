@@ -1,0 +1,56 @@
+{
+  "tested_head": "2dde5895b14a72d0a93e7c983e4fbb274fc2cf5a",
+  "target": [
+    2560,
+    1440
+  ],
+  "suites": [
+    {
+      "suite": "salary-display",
+      "checks": 43,
+      "failures": 0
+    },
+    {
+      "suite": "squad-sort",
+      "checks": 104,
+      "failures": 0
+    },
+    {
+      "suite": "fatigue-sort",
+      "checks": 569,
+      "failures": 0
+    },
+    {
+      "suite": "final-salary-preference-live",
+      "checks": 51,
+      "failures": 0
+    },
+    {
+      "suite": "final-recruitment-sorting",
+      "checks": 153,
+      "failures": 0
+    },
+    {
+      "suite": "final-contract-review",
+      "checks": 153,
+      "failures": 0
+    },
+    {
+      "suite": "received-player-table-order",
+      "checks": 119,
+      "failures": 0
+    },
+    {
+      "suite": "received-preferences",
+      "checks": 190,
+      "failures": 0
+    },
+    {
+      "suite": "received-navigation",
+      "checks": 133,
+      "failures": 0
+    }
+  ],
+  "tested_native_tree": "d64deafc22789665b429ec3829a38860a25e9b8d",
+  "excluded_legacy_suite": "godot-gestion-carnet : ancienne hiérarchie et pagination, conservé sans adaptation partielle ; voir tri-listes-joueurs-20261110.md"
+}

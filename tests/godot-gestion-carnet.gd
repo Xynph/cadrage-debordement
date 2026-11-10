@@ -130,21 +130,24 @@ func run() -> void:
 		var p:Dictionary=app.model.squad.filter(func(x):return str(x.id)==str(row.get_meta("player_id")))[0]
 		check(float(p.rating)<=previous,"Tri réel décroissant du niveau")
 		previous=float(p.rating)
+	await activate(named(app,"RosterPaginationNext"))
 	rows=app.body.find_children("SquadPlayer*","Button",true,false)
 	var last:Button=rows[-1]
 	var last_id:String=last.get_meta("player_id")
-	var scroll:ScrollContainer=named(app,"SquadScroll")
-	scroll.ensure_control_visible(last);await settle()
 	await activate(last)
+	var scroll:ScrollContainer=named(app,"SquadScroll")
 	var offset:=scroll.scroll_vertical
-	check(app.selected_player==last_id and offset>0,"Entrée ouvre le dernier dossier accessible par défilement interne")
+	var roster_page:int=app.management_ui.roster.page
+	check(app.selected_player==last_id and roster_page>0 and offset==0,"Entrée ouvre un dossier hors première page sans défilement")
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
-	check(app.selected_player==last_id and app.roster_sort=="Niveau" and named(app,"SquadScroll").scroll_vertical==offset,"Retour menu : ID, tri et défilement conservés")
+	check(app.selected_player==last_id and app.roster_sort=="Niveau" and app.management_ui.roster.page==roster_page and named(app,"SquadScroll").scroll_vertical==offset,"Retour menu : ID, tri, page et focus conservés")
+	# UI-only projection of a timer response which updates the model without rendering.
 	app.last_command="tick";app._receive_model(app.model.duplicate(true));await settle()
-	scroll=named(app,"SquadScroll");scroll.scroll_vertical=0
-	app.management_ui.roster.scroll=0
+	scroll=named(app,"SquadScroll")
+	await activate(named(app,"RosterPaginationPrevious"))
+	var after_tick_page:int=app.management_ui.roster.page
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
-	check(named(app,"SquadScroll").scroll_vertical==0 and app.selected_player==last_id,"Après un tick, le défilement volontaire ne change pas le dossier")
+	check(app.management_ui.roster.page==after_tick_page and named(app,"SquadScroll").scroll_vertical==0,"Page postérieure à un tick conservée au prochain menu")
 	await activate(named(app,"CompareSelected"))
 	rows=app.body.find_children("SquadPlayer*","Button",true,false)
 	await activate(rows[0])
@@ -224,7 +227,7 @@ func real_market_and_archives() -> void:
 	app._navigate("Recrutement");await settle()
 	var candidate:Dictionary=app.model.market.filter(func(p):return p.available)[0]
 	var before:Dictionary=await state()
-	for resolution in [Vector2i(2560,1440)]:
+	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		root.size=resolution
 		if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(resolution)
 		app._navigate("Recrutement");await settle()
