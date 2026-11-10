@@ -3,7 +3,7 @@
 // fictional sporting model, not a source of first-row training qualifications.
 module.exports=function positionAptitudes(){
  const baseSlot=slotEligible,baseBench=benchEligible,baseNote=roleNote;
- const cover=[2,1,3,4,6,9,10,11],adjacent=[[],[3],[3],[2],[5,6],[4,8,7],[7,8],[6,8,5],[6,5,7]];
+ const cover=[2,1,3,4,6,9,10,11],adjacent=[[],[],[3],[2],[5,6],[4,8,7],[7,8],[6,8,5],[6,5,7]];
  const critical=[['scrum','power'],['lineout','scrum'],['lineout','tackle'],['tackle','stamina'],['pass','mental'],['pass','kick'],['speed'],['pass','tackle'],['kick','speed']];
  const cache=new Map(),playerCache=new WeakMap(),keys=Object.keys(ATTR);
  const compareId=(a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0;

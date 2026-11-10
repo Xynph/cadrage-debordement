@@ -17,25 +17,25 @@ func pure() -> void:
 	var before := JSON.stringify(player)
 	check(Squad.secondary_numbers(player)==[11,14],"Numéros publiés normalisés sans changer leur source")
 	check(JSON.stringify(player)==before,"Aucune mutation de la liste fournie")
-	check(Squad.secondary_caption(player)=="11·14","Deux postes distincts restent explicites")
-	check(Squad.secondary_caption({"secondaryPositions":[11,14,15]})=="11·14·15","Aucun intervalle inventé entre des numéros disjoints")
-	check(Squad.secondary_caption({"secondaryPositions":[11,12,13,14,15]})=="11–15","Intervalle limité à une séquence complète exacte")
+	check(Squad.secondary_caption(player)=="AL","Les deux ailes forment un seul poste secondaire AL")
+	check(Squad.secondary_caption({"secondaryPositions":[11,14,15]})=="AL·AR","Ailier et arrière restent deux rôles distincts")
+	check(Squad.secondary_caption({"secondaryPositions":[11,12,13,14,15]})=="C·AL·AR","Les numéros sont regroupés par rôles sans doublon")
 	check(Squad.secondary_caption({})=="—" and Squad.secondary_caption({"secondaryPositions":[]})=="—","Valeur absente ou vide : tiret neutre")
 	for group: Array in [[4,5],[6,7],[11,14],[12,13],[1,3]]:
 		check(Squad.secondary_numbers({"primaryPositions":group,"secondaryPositions":group})==[],"Les numéros du poste principal ne sont jamais secondaires : "+str(group))
 	check(Squad.secondary_caption({"primaryPositions":[4,5],"secondaryPositions":[5,8]})=="8","Un deuxième ligne conserve sa vraie polyvalence en 8")
-	check(Squad.secondary_caption({"primaryPositions":[8],"secondaryPositions":[6,7]})=="6·7","Le numéro 8 reste distinct de la troisième ligne aile")
+	check(Squad.secondary_caption({"primaryPositions":[8],"secondaryPositions":[6,7]})=="3E L","Le numéro 8 reste distinct de la troisième ligne aile")
 	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1,3]})=="Pilier G/D","Les deux côtés du pilier appartiennent au principal")
 	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1]})=="Pilier gauche","Pas de polyvalence automatique pour un seul côté")
 	check(Squad.primary_caption({"pos":"Troisième ligne","primaryPositions":[6,7]})=="Troisième ligne aile","Les 6–7 sont explicitement des troisièmes lignes aile")
 	check(Squad.primary_caption({"pos":"Numéro 8","primaryPositions":[8]})=="Troisième ligne centre","Le 8 est explicitement un troisième ligne centre")
 	var labels := {"selection":{"slots":[{"slot":10,"label":"Ailier gauche"},{"slot":13,"label":"Ailier droit"}]}}
 	var tip := Squad.secondary_tooltip({"secondaryPositions":[11,14]},labels)
-	check(tip.contains("11 · Ailier gauche") and tip.contains("14 · Ailier droit"),"Noms repris des étiquettes de la feuille")
+	check(tip.contains("AL · Ailier (11 et 14)"),"Infobulle explicite les abréviations et les numéros")
 	check(not tip.to_lower().contains("estim"),"Aucune étiquette d’estimation dans les nouveaux textes")
 	var source := [{"id":"b","name":"b","pos":"Centre","secondaryPositions":[11]},{"id":"u","name":"u","pos":"Centre","secondaryPositions":[]},{"id":"a","name":"a","pos":"Centre","secondaryPositions":[11]},{"id":"c","name":"c","pos":"Centre","secondaryPositions":[2,14]}]
 	var state := U.defaults();state.sort="Autres postes"
-	check(Squad.ordered_players(source,state,1).map(func(p:Dictionary):return p.id)==["c","a","b","u"],"Tri numérique : 2 avant 11, égalités ID, vide en dernier")
+	check(Squad.ordered_players(source,state,1).map(func(p:Dictionary):return p.id)==["c","a","b","u"],"Tri par rôles rugby : T avant AL, égalités ID, vide en dernier")
 	state.descending=true
 	check(Squad.ordered_players(source,state,1).map(func(p:Dictionary):return p.id)==["a","b","c","u"],"Sens inverse et vide toujours dernier")
 func wait_engine() -> void:
@@ -111,7 +111,7 @@ func run() -> void:
 	app.model=controlled;app._navigate("Effectif");await settle()
 	var id0:=str(backs[0].id)
 	var sample:=page().rows.get_children().filter(func(node:Node):return str(node.get_meta("player_id",""))==id0)[0] as Control
-	check(sample.find_child("RosterSecondaryPositions",true,false).text=="11·14","Cas UI contrôlé distinct, sans formule locale")
+	check(sample.find_child("RosterSecondaryPositions",true,false).text=="AL","Cas UI contrôlé distinct, sans formule locale")
 	var marker:=PanelContainer.new()
 	marker.z_index=1000
 	marker.position=Vector2(790,9)

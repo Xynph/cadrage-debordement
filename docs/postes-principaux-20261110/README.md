@@ -9,3 +9,5 @@ Réception : test rouge puis vert sur les cinq groupes ; intégration compositio
 Saison simulée 2026–2027 ; correction de classement des postes de jeu, sans changement des règles d’éligibilité ni des protections de première ligne (référence World Rugby loi3 déjà lue).
 
 Libellés explicites dans les lignes, le tri, les infobulles et la fiche latérale : Troisième ligne aile (6–7), Troisième ligne centre (8). Réception graphique complémentaire : 237 contrôles verts.
+
+Affichage final demandé : PG, PD, T, 2E L, 3E L, 8, DM, DO, C, AL et AR dans Autres, avec infobulles et tri par rôle. Aucun talonneur ne gagne automatiquement la maîtrise des troisième ligne/8 grâce aux seuls attributs. Réception graphique : 237 contrôles verts.
