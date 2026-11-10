@@ -212,6 +212,11 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	else:D.text(card,23,884,"Indicateurs projetés · choix enregistrés immédiatement",18,C.GOLD,500,502)
 
 static func _bench(card:Panel,app:Control) -> int:
+	var vacancy := P.reduced_bench_number(app.model)
+	if vacancy != 0:
+		var action := D.button(card,Rect2(251,12,242,34),"Match · Feuille à 22",func():app._navigate("Match"),false,"arrow",true,app.accent,"LineupOpenMatchAt22")
+		action.tooltip_text=P.reduced_bench_vacancy(vacancy)
+		action.accessibility_name="Ouvrir le jour de match pour une feuille à 22"
 	for pair in [["N°",23],["JOUEUR",72],["POSTE",323]]:D.text(card,pair[1],87,pair[0],18,C.MUTED,500,100)
 	D.text(card,574,87,"COND.",18,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
 	var filled := 0

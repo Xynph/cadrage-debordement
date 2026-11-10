@@ -52,6 +52,23 @@ static func fixture_position(fixture: Dictionary, club_id: Variant) -> String:
 	if fixture.get("neutral",false): return "TERRAIN NEUTRE"
 	return "À DOMICILE" if fixture.get("home",{}).get("id")==club_id else "À L’EXTÉRIEUR"
 
+static func reduced_bench_number(model: Dictionary) -> int:
+	var selection: Variant = model.get("selection")
+	if model.get("live") is Dictionary and not model.live.is_empty(): return 0
+	if not model.get("next") is Dictionary or model.next.is_empty(): return 0
+	if not selection is Dictionary or selection.get("valid",false): return 0
+	var offer: Variant = selection.get("reducedBench")
+	if not offer is Dictionary or not is_nomination_at_22(offer.get("size")): return 0
+	var vacant: Variant = offer.get("vacantNumber")
+	if not (vacant is int or vacant is float): return 0
+	return int(vacant) if vacant == 17 or vacant == 18 else 0
+
+static func is_nomination_at_22(value: Variant) -> bool:
+	return (value is int or value is float) and value == 22
+
+static func reduced_bench_vacancy(vacant: int) -> String:
+	return "Pilier %s de remplacement manquant (n° %d)." % ["gauche" if vacant == 17 else "droit",vacant]
+
 static func group(model: Dictionary) -> Dictionary:
 	var squad: Array = model.get("squad", [])
 	var injured := 0

@@ -1,6 +1,7 @@
 extends VBoxContainer
 const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const MatchProjection = preload("res://ui/immersive08/projection.gd")
 var app: Control
 var stage: Node3D
 var clock: Label
@@ -212,10 +213,10 @@ func update_frame(value:Dictionary) -> void:
 	model=value
 	if not is_node_ready():return
 	var live:Dictionary=value.live if value.get("live") is Dictionary else {}
-	var vacant := _reduced_bench_slot(value)
+	var vacant := MatchProjection.reduced_bench_number(value)
 	_nomination_notice.text = ""
-	if vacant != 0: _nomination_notice.text = _vacancy_text(vacant)
-	elif _is_nomination_at_22(live.get("nominationSize")): _nomination_notice.text = "Feuille à 22 joueurs"
+	if vacant != 0: _nomination_notice.text = MatchProjection.reduced_bench_vacancy(vacant)
+	elif MatchProjection.is_nomination_at_22(live.get("nominationSize")): _nomination_notice.text = "Feuille à 22 joueurs"
 	_nomination_notice.visible = not _nomination_notice.text.is_empty()
 	if live.is_empty():
 		stage.apply_frame({})
@@ -284,7 +285,7 @@ func _side() -> void:
 		child.queue_free()
 	if live.is_empty():
 		side.add_child(G.section("L'AVANT-MATCH"))
-		var guidance := "Vérifiez votre feuille et vos consignes avant le coup d’envoi." if _reduced_bench_slot(model) != 0 else "Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi."
+		var guidance := "Vérifiez votre feuille et vos consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi."
 		side.add_child(G.wrap(guidance,14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
 		preload("res://ui/decision_views.gd").match_notes(app,side,model)
@@ -350,23 +351,6 @@ func _bench(live:Dictionary) -> void:
 		b.disabled=p.get("id") not in allowed or not live.get("paused",false) or live.get("finished",false)
 		side.add_child(b)
 
-func _reduced_bench_slot(value: Dictionary) -> int:
-	var selection: Variant = value.get("selection")
-	if value.get("live") is Dictionary and not value.live.is_empty(): return 0
-	if not value.get("next") is Dictionary or value.next.is_empty(): return 0
-	if not selection is Dictionary or selection.get("valid",false): return 0
-	var offer: Variant = selection.get("reducedBench")
-	if not offer is Dictionary or not _is_nomination_at_22(offer.get("size")): return 0
-	var vacant: Variant = offer.get("vacantNumber")
-	if not (vacant is int or vacant is float): return 0
-	return int(vacant) if vacant == 17 or vacant == 18 else 0
-
-func _is_nomination_at_22(value: Variant) -> bool:
-	return (value is int or value is float) and value == 22
-
-func _vacancy_text(vacant: int) -> String:
-	return "Pilier %s de remplacement manquant (n° %d)." % ["gauche" if vacant == 17 else "droit",vacant]
-
 func _confirm_reduced_bench(vacant: int) -> void:
 	if app.waiting: return
 	var fixture: Dictionary = model.next.duplicate(true)
@@ -374,7 +358,7 @@ func _confirm_reduced_bench(vacant: int) -> void:
 	var dialog := ConfirmationDialog.new()
 	dialog.name = "MatchConfirmReducedBench"
 	dialog.title = "Coup d’envoi à 22"
-	dialog.dialog_text = "%s Vous commencez avec 15 titulaires et 7 remplaçants." % _vacancy_text(vacant)
+	dialog.dialog_text = "%s Vous commencez avec 15 titulaires et 7 remplaçants." % MatchProjection.reduced_bench_vacancy(vacant)
 	app._prepare_dialog(dialog, 520)
 	dialog.get_ok_button().text = "Jouer à 22"
 	dialog.get_cancel_button().text = "Annuler"
@@ -384,7 +368,7 @@ func _confirm_reduced_bench(vacant: int) -> void:
 			if is_instance_valid(play) and play.is_visible_in_tree(): play.grab_focus.call_deferred()
 			dialog.queue_free())
 	dialog.confirmed.connect(func():
-		if app.route == "Match" and not app.waiting and _reduced_bench_slot(app.model) == vacant and app.model.next == fixture:
+		if app.route == "Match" and not app.waiting and MatchProjection.reduced_bench_number(app.model) == vacant and app.model.next == fixture:
 			app._command("begin_match",{"reducedBench":true}))
 	Dialogs.show_centered(dialog,Vector2i(520,170))
 	dialog.get_cancel_button().grab_focus.call_deferred()
@@ -392,7 +376,7 @@ func _confirm_reduced_bench(vacant: int) -> void:
 func _act() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
 	if live.is_empty():
-		var vacant := _reduced_bench_slot(model)
+		var vacant := MatchProjection.reduced_bench_number(model)
 		if vacant != 0: _confirm_reduced_bench(vacant)
 		else: app._command("begin_match")
 	else:

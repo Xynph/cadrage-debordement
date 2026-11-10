@@ -1,4 +1,5 @@
 extends RefCounted
+const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
@@ -549,6 +550,13 @@ static func lineup(app:Control) -> Control:
 	var errors:Array=selection.get("errors",[])
 	if errors.is_empty():side.add_child(G.label("FEUILLE VALIDE",12,G.GOOD))
 	else:side.add_child(G.wrap("\n".join(errors),12,G.ALERT))
+	var vacancy := P.reduced_bench_number(app.model)
+	if vacancy != 0:
+		var action := G.button("MATCH · FEUILLE À 22",func():app._navigate("Match"))
+		action.name="LineupOpenMatchAt22"
+		action.tooltip_text=P.reduced_bench_vacancy(vacancy)
+		action.accessibility_name="Ouvrir le jour de match pour une feuille à 22"
+		side.add_child(action)
 	var licences: Dictionary = selection.get("nationaleQualification", {})
 	if not licences.is_empty():
 		var bloc := G.wrap("FFR  ·  4 licences B/C dont 1 C maximum  ·  %d à vérifier" % int(licences.unverified), 11, G.MUTED)
