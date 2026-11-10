@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 class SpeechSpy extends "res://guide/guide_speech.gd":
 	var gains: Array[int] = []
 	var stops := 0
@@ -245,6 +246,7 @@ func dialog_cases() -> void:
 	check(rebuilt_volume.value == 39,"Dialogue reconstruit affiche le réglage rechargé")
 	rebuilt.hide(); rebuilt.queue_free(); await settle()
 	await command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", check)
 	app._navigate("Match"); await settle()
 	var stage: Node3D = app.match_view
 	check(is_instance_valid(stage) and stage._actors.size() == 30,"Vrai match natif avec trente joueurs")
@@ -291,7 +293,7 @@ func dialog_cases() -> void:
 	check(p.set_value("reduced_motion",false) and stage._camera_mode == "action" and stage._action_motion and not app.coach.portrait.reduced_motion,"Désactiver calme restaure caméra action et animation portrait")
 	var stage_id := stage.get_instance_id()
 	app._navigate("Bureau"); await settle(); app._navigate("Match"); await settle()
-	check(app.match_view.get_instance_id() != stage_id and app.match_view._camera_mode == "action" and app.match_view._quality == "economy","Écran match reconstruit conserve caméra et qualité")
+	check(app.route == "Match" and app.match_view.get_instance_id() == stage_id and app.match_view._camera_mode == "action" and app.match_view._quality == "economy" and not app.root_content.is_visible_in_tree(),"Navigation gestion refusée pendant le match conserve scène, caméra et qualité")
 	var rebuilt_stadium: Node3D = app.match_view.get_node_or_null("StadiumEvening")
 	check(rebuilt_stadium != null and rebuilt_stadium.visible,"Le retour dans Match conserve l’éclairage de soirée")
 	check(p.set_value("reduced_motion",true),"Mode calme enregistré avant redémarrage")

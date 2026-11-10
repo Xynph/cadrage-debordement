@@ -124,8 +124,8 @@ func update_frame(value: Dictionary) -> void:
 		home.text = S.G.club_name(teams[0])
 		away.text = S.G.club_name(teams[1])
 	var scores: Array = live.get("score", [0, 0])
-	score.text = "%s — %s" % [str(scores[0]), str(scores[1])]
-	clock.text = "%s min" % str(live.get("minute", 0))
+	score.text = "%d — %d" % [int(scores[0]), int(scores[1])]
+	clock.text = "%d min" % int(live.get("minute", 0))
 	if live.get("finished", false): clock.text = "TERMINÉ"
 	elif live.get("atBreak", false): clock.text = "MI-TEMPS"
 	play.text = "REPRENDRE" if live.get("paused", false) else "PAUSE"
@@ -190,7 +190,12 @@ func _toggle_drawer(title: String) -> void:
 func _update_drawer() -> void:
 	if drawer_tab.is_empty(): return
 	var live := _live()
-	var key := JSON.stringify([drawer_tab, selected_slot, live.get("paused"), live.get("finished"), live.get("lineup"), live.get("reserves"), live.get("substitutions"), live.get("statsRows") if drawer_tab == "Stats" else model.get("tactics", {})])
+	var presence: Array = [drawer_tab, selected_slot, live.get("paused"), live.get("finished")]
+	match drawer_tab:
+		"Banc": presence.append(_bench_presence(live))
+		"Stats": presence.append(live.get("statsRows", []))
+		"Tactique": presence.append(model.get("tactics", {}))
+	var key := JSON.stringify(presence)
 	if key == _drawer_key: return
 	_drawer_key = key
 	S.clear(drawer_body)
@@ -204,6 +209,21 @@ func _update_drawer() -> void:
 			if live.get("statsRows", []).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
 		"Tactique": _tactics(live)
 	director._refresh_controls()
+
+func _bench_presence(live: Dictionary) -> Array:
+	# Condition and spatial presentation change on every tick. Rebuild controls
+	# only when their identities, availability or substitution permissions change.
+	var presence: Array = []
+	for group in [live.get("lineup", []), live.get("reserves", [])]:
+		var players: Array = []
+		for player: Variant in group:
+			players.append([player.get("id"), player.get("name"), player.get("pos"), player.get("injury", 0)] if player is Dictionary else null)
+		presence.append(players)
+	var permissions: Array = []
+	for option: Dictionary in live.get("substitutions", []):
+		permissions.append([option.get("slot"), option.get("outId"), option.get("inIds", [])])
+	presence.append(permissions)
+	return presence
 
 func _tactics(live: Dictionary) -> void:
 	var allowed: bool = live.get("paused", false) and not live.get("finished", false)

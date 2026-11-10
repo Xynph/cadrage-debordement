@@ -30,12 +30,14 @@ test('Raccordements natifs06 : vrais boutons, son indépendant et réponse tick 
     let previous = skipMatchTalk(call('begin_match'), call);
     for (let tick = 0; tick < 240; tick++) {
       previous = skipMatchTalk(previous, call);
+      const previousProjection = previous;
       const before = call('export').meta.exportText;
       let current = call('tick', { steps: 1 });
       if (!current.live.finished) current = skipMatchTalk(current, call);
       if (current.live && !current.live.paused && !current.live.atBreak && !current.live.finished &&
           ['try', 'goal', 'miss'].includes(current.live.scene.kind) && previous.live.scene.key !== current.live.scene.key) {
         fs.writeFileSync(path.join(dir, 'fixture-before.json'), before);
+        fs.writeFileSync(path.join(dir, 'fixture-before-model.json'), JSON.stringify(previousProjection));
         fs.writeFileSync(path.join(dir, 'fixture-event.json'), JSON.stringify(current));
         found = true;
         break;

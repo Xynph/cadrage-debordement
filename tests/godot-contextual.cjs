@@ -12,6 +12,7 @@ for (const [name,script] of [
   ['rooms','godot-contextual-rooms.gd'],
   ['ui','godot-contextual-ui.gd'],
   ['match-club-branding','godot-match-club-branding.gd'],
+  ['shutdown','helpers/contextualqa-shutdown.gd'],
   ['flow','godot-contextual-flow.gd']
 ]) test('Native contextual '+name+': real Godot '+(name==='flow'?'career and match integration':'rendering contract'), {
   skip:!godot && 'SDK Godot requis (CD_GODOT_EXECUTABLE)',

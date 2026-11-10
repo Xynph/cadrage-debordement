@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var captures: Array = []
@@ -14,6 +15,7 @@ func settle() -> void:
 func wait_model() -> bool:
 	var deadline := Time.get_ticks_msec() + 60000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
+	app.timer.stop()
 	check(not app.waiting and not app.model.is_empty(), "Réponse moteur : " + app.last_error)
 	check(app.last_error.is_empty(), "Commande acceptée : " + app.last_error)
 	await settle()
@@ -118,39 +120,38 @@ func run() -> void:
 		for command in ["begin_match", "delegate", "finish_round"]:
 			app._command(command)
 			await wait_model()
+			if command == "begin_match": await ContextualFlow.skip_talk(app, self, "pre", check)
 	for route in ["Bureau", "Finances", "Presse", "Rivalités"]:
 		app._navigate(route)
 		await capture(route + "-apres-deux-matchs")
 	app._command("begin_match", {}, "Match")
 	await wait_model()
+	await ContextualFlow.skip_talk(app, self, "pre", check)
 	app._command("pause", {"paused":true})
 	await wait_model()
 	await capture("Match-direct")
-	var screen: Control = app.body.find_child("CarnetMatch",true,false)
+	var screen: Control = app.match_screen
 	for tab in ["Banc", "Stats"]:
-		screen.tab = tab
-		screen._side()
+		screen._toggle_drawer(tab)
 		await capture("Match-" + tab)
 	finish()
 func match_review() -> void:
 	app._command("begin_match", {}, "Match")
 	await wait_model()
+	await ContextualFlow.skip_talk(app, self, "pre", check)
 	app._command("delegate")
 	await wait_model()
 	for resolution in [Vector2i(1280,720), Vector2i(1920,1080)]:
 		root.size = resolution
 		app._navigate("Match")
 		await settle()
-		var screen: Control = app.body.find_child("CarnetMatch",true,false)
+		var screen: Control = app.match_screen
 		check(screen.get_global_rect().end.x <= app.size.x + 1, "Barre de commandes bornée à " + str(resolution))
-		screen.tab = "Stats"
-		screen._side()
+		screen._toggle_drawer("Stats")
 		await capture("Match-Stats-final")
-		var picker: OptionButton = screen.find_child("MatchQuality",true,false)
 		for index in 3:
-			picker.select(index)
-			picker.item_selected.emit(index)
-			check(screen.stage._quality == ["economy", "balanced", "detail"][index], "Qualité appliquée " + str(index))
+			var quality: String = ["economy", "balanced", "detail"][index]
+			check(app.user_preferences.set_value("quality", quality) and screen.stage._quality == quality, "Qualité appliquée au vrai match " + quality)
 		await capture("Match-qualite-detail")
 func finish() -> void:
 	var report := FileAccess.open(OS.get_environment("CD_ART_DIRECTION_DIR").path_join("report.json"),FileAccess.WRITE)
