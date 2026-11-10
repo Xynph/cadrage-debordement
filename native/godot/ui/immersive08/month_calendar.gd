@@ -204,6 +204,7 @@ func _refresh() -> void:
 	else: _grid(body)
 	_legend(body)
 	_context_panels(body)
+	if view_mode == "week": _week_sessions(body)
 	_detail(workspace)
 	_undated_panel()
 
@@ -619,6 +620,35 @@ func _context_panels(parent: Node) -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		column.add_child(label)
 	content.add_child(C.wrap("Comptage des créneaux, sans estimation de charge physique.",16,C.FAINT))
+
+func _week_sessions(parent: Node) -> void:
+	var padding := C.margin(10)
+	parent.add_child(padding)
+	var card := C.card()
+	card.name = "CalendarWeekSessionDetails"
+	padding.add_child(card)
+	var body := C.content(card)
+	body.add_child(C.label("CONTEXTE DE PRÉPARATION · SÉANCES DE LA SEMAINE",19,C.GOLD,true,700))
+	var header := C.h(12)
+	body.add_child(header)
+	for spec: Array in [["DATE",.6],["SÉANCE",1.4],["AVANTS",1.0],["TROIS-QUARTS",1.0]]:
+		header.add_child(C.fill(C.label(spec[0],16,C.MUTED,true,600),false,spec[1]))
+	var dates := Agenda.week(selected)
+	var week_sessions: Array = sessions.filter(func(session: Dictionary): return session.date in dates)
+	week_sessions.sort_custom(func(a: Dictionary,b: Dictionary): return a.date < b.date if a.date != b.date else str(a.get("id","")) < str(b.get("id","")))
+	if week_sessions.is_empty(): body.add_child(C.wrap("Aucune séance datée publiée pour cette semaine.",18,C.MUTED))
+	for session: Dictionary in week_sessions:
+		var line := C.h(12)
+		line.name = "CalendarWeekSession_"+str(session.get("id",session.date)).validate_node_name()
+		line.custom_minimum_size.y = C.px(34)
+		body.add_child(line)
+		var fields := [[str(session.date).right(2)+"/"+str(session.date).substr(5,2),.6],[str(session.get("label","Entraînement")),1.4],[str(session.get("forwards","—")),1.0],[str(session.get("backs","—")),1.0]]
+		for index in fields.size():
+			var label := C.label(fields[index][0],18,C.GOLD if index == 0 else C.IVORY)
+			label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			label.tooltip_text = str(fields[index][0])
+			line.add_child(C.fill(label,false,fields[index][1]))
+	body.add_child(C.wrap("Les tirets signalent des ateliers non précisés dans la séance publiée. Ce contexte reste visible quel que soit le filtre de la grille.",16,C.FAINT))
 
 func _detail(parent: Node) -> void:
 	var card := C.card("",Vector2(420,0))
