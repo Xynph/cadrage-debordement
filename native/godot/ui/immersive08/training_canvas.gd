@@ -100,7 +100,7 @@ func _build() -> void:
 		app._navigate("Préparation"), false, "", "TrainingBackToPreparation")
 	dossier.tooltip_text = "Revenir au dossier de préparation et aux consignes de jeu"
 	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, true, "arrow", "TrainingValidateWeek")
-	validate.tooltip_text = "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Vous pourrez choisir sa charge."
+	validate.tooltip_text = "Séance déjà effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Vous pourrez choisir sa charge."
 	validate.disabled = trained or locked
 	validate.add_theme_font_size_override("font_size", C.px(33))
 	D.line(self, Vector2(2, 234), Vector2(1741, 234))
@@ -181,7 +181,9 @@ func _week(fixture: Dictionary) -> void:
 			for j in lines.size(): D.text(hit, 60, 33 + j * 24, lines[j], 24, C.IVORY, 700, 146)
 			var details := D.words(captions[index], 18, 2)
 			for j in details.size(): D.text(hit, 13, 88 + j * 24, details[j], 24, C.IVORY, 500, 192)
-			D.text(hit, 13, 149, slot[2], 20, C.MUTED, 500, 191)
+			var caption: String = slot[2]
+			if index == 0 and (trained or locked): caption = "Charge appliquée" if trained else "Séance indisponible"
+			D.text(hit, 13, 149, caption, 20, C.MUTED, 500, 191)
 		if i == 0: D.line(column, Vector2(13, 310), Vector2(226, 310))
 	_chart()
 	_vigilance()
@@ -231,7 +233,11 @@ func _selection(index: int) -> void:
 	for i in lines.size(): D.text(holder, 150, 72 + i * 24, lines[i], 21, C.IVORY, 500, 322)
 	D.text(holder, 14, 154, "Préparation du groupe", 20, C.MUTED, 500, 445)
 	D.line(holder, Vector2(14, 166), Vector2(471, 166))
-	_action(holder, Rect2(17, 181, 453, 52), slot[4], func(): _open_slot(index), false, "arrow", "TrainingEditSelected")
+	var unavailable := index == 0 and (trained or locked)
+	var action_label: String = slot[4]
+	if unavailable: action_label = "Séance effectuée" if trained else "Séance indisponible"
+	var action := _action(holder, Rect2(17, 181, 453, 52), action_label, func(): _open_slot(index), false, "" if unavailable else "arrow", "TrainingEditSelected")
+	action.disabled = unavailable
 
 func _chart() -> void:
 	var tile := D.panel(self, Rect2(1760, 11, 488, 296), "Charge & récupération", "heart", "", "TrainingLoadChart")
