@@ -457,7 +457,7 @@ func _detail(parent: Node) -> void:
 	if selected != today and not today.is_empty() and selected > today and not next_fixture.is_empty() and selected < next_fixture.date:
 		var remaining := _days_before(selected,next_fixture.date)
 		if remaining <= 7:
-			body.add_child(C.label("J−%d avant le prochain match" % remaining,19,C.GOLD,true,600))
+			body.add_child(C.label("À cette date · J−%d" % remaining,19,C.GOLD,true,600))
 	var day_sessions: Array = sessions_by_day.get(selected, [])
 	var day_fixtures: Array = fixtures_by_day.get(selected, [])
 	for session: Dictionary in day_sessions: body.add_child(_session_chip(session, true))
@@ -467,8 +467,10 @@ func _detail(parent: Node) -> void:
 	if not next_fixture.is_empty() and selected != next_fixture.date:
 		body.add_child(C.rule())
 		var distance := _days_before(today,next_fixture.date) if not today.is_empty() else 0
-		var caption := "PROCHAIN MATCH · J−%d" % distance if distance > 0 else "PROCHAIN MATCH"
-		body.add_child(C.label(caption,20,C.GOLD,true,700))
+		var caption := "PROCHAIN MATCH"
+		if distance > 0:
+			caption += (" · J−%d" if selected == today else " · AUJOURD’HUI J−%d") % distance
+		body.add_child(C.wrap(caption,20,C.GOLD,true,700))
 		body.add_child(_fixture_detail(next_fixture))
 	if not next_fixture.is_empty():
 		_preparation(body)

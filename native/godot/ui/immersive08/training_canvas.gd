@@ -5,6 +5,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -421,7 +422,7 @@ func _mode_dialog(validate: bool) -> void:
 			button.accessibility_name = ("Effectuer la séance · " if validate else "Sélectionner · ") + str(MODES[id])
 			body.add_child(button)
 		if validate: body.add_child(C.wrap("Choisir une charge ici effectue la séance et enregistre ses effets.", 19, C.MUTED, true))
-	_popup(dialog, 760, 320)
+	Dialogs.show_centered(dialog, Vector2i(C.px(760), C.px(320)))
 
 func _choices_dialog(opponent: bool) -> void:
 	var decisions: Dictionary = app.model.get("decisions", {})
