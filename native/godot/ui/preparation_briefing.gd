@@ -36,6 +36,11 @@ static func project(model: Dictionary) -> Dictionary:
 		var injured: Array = model.get("squad", []).filter(func(player: Dictionary): return float(player.get("injury", 0)) > 0)
 		if not injured.is_empty():
 			result.append(_check("injuries", "%d joueur%s blessé%s" % [injured.size(), "s" if injured.size() > 1 else "", "s" if injured.size() > 1 else ""], "Consultez les indisponibilités et les solutions de remplacement dans votre effectif.", "squad", "Ouvrir l’effectif", "important"))
+		if not fixture.is_empty() and selection.get("valid", false):
+			result.append(_check("sheet", "Feuille projetée valide", "La validation vient du moteur. Vérifiez les titulaires, le banc et les choix individuels.", "selection", "Consulter la composition"))
+		if not fixture.is_empty():
+			var when := P.fixture_date(fixture, true)
+			result.append(_check("calendar", "Vérifier le rendez-vous", when if not when.is_empty() else "Date non publiée : consultez le calendrier de la carrière.", "calendar", "Ouvrir le calendrier"))
 		result.append(_check("tactics", "Vérifier les consignes", "Attaque et défense dans Consignes ; choix par zone dans le carnet de jeu.", "consignes", "Revoir les consignes"))
 	return {"checks":result,"reportAvailable":not report.is_empty(),"domains":report.get("domains", []).size(),"recent":report.get("recent", []).size(),"threats":report.get("threats", []).size()}
 
@@ -72,13 +77,15 @@ static func open_all(app: Control, consignes: Callable) -> void:
 		var card := C.card()
 		content.add_child(card)
 		var body := C.content(card)
-		body.add_child(C.wrap(check.title, 29, color(check), true, 700))
-		body.add_child(C.wrap(check.detail, 24, C.IVORY))
+		body.add_child(C.wrap(check.title, 23, color(check), true, 700))
+		body.add_child(C.wrap(check.detail, 18, C.IVORY))
 		var button := C.button(check.caption, func():
 			dialog.hide()
 			dialog.queue_free()
 			open_action(app, check.action, consignes))
 		button.name = "PreparationBriefingAll_" + str(check.id)
+		button.add_theme_font_size_override("font_size",C.px(18))
+		button.custom_minimum_size.y = C.px(34)
 		body.add_child(button)
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)

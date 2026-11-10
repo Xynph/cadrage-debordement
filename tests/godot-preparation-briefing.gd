@@ -86,7 +86,13 @@ func run() -> void:
 	await render(original)
 	check(app.find_child("PreparationBriefingAll",true,false) != null, "Briefing raccordé au dossier actuel")
 	check(app.find_child("PreparationAdoptPlan",true,false) != null and app.find_child("OpenOppositionDossier",true,false) != null, "Accès directs au dossier et au plan du staff conservés")
+	check(app.find_children("PreparationXIPlayer_*","Button",true,false).size() == 15, "Schéma XV raccordé aux quinze cases publiées")
 	await capture("preparation-briefing-reel-1440")
+	var first := app.find_child("PreparationXIPlayer_1",true,false) as Button
+	if first != null and not first.disabled:
+		var expected: Variant = first.get_meta("player_id")
+		await enter(first)
+		check(app.route == "Effectif" and app.selected_player == expected, "Entrée sur le XV ouvre la vraie fiche du titulaire")
 	var controlled := original.duplicate(true)
 	controlled.clubLife.press.conference.required = true
 	controlled.selection = {"valid":false,"errors":["Poste à compléter · recette UI"]}
