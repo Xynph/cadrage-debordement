@@ -1,4 +1,5 @@
 extends SceneTree
+const P = preload("res://ui/immersive08/projection.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
 var checks := 0
 var failures := 0
@@ -33,5 +34,11 @@ func _initialize() -> void:
 	check(K.range_delta({"ratingRange":{"min":70,"max":78}},{"ratingRange":{"min":72,"max":80}},"rating")=="-6 à +10","Écart calculé uniquement sur intervalles visibles")
 	check(K.range_delta(own,{"rating":84,"knowledge":{"owned":true}},"rating")=="+2","Écart exact uniquement entre niveaux propres exacts")
 	check(not K.potential_text(own).to_lower().contains("estim"),"Pas de badge d’estimation")
+	var cohort := {"squad":[{"rating":77},{"rating":79}]}
+	var before := JSON.stringify(cohort)
+	check(P.group(cohort).rating==78,"Moyenne uniquement entre niveaux propres exacts")
+	check(P.group({"squad":[own,{"rating":99,"knowledge":{"owned":false,"stage":"unobserved"}}]}).rating=="—","Pas de faux zéro ou moyenne partielle si niveau étranger inconnu")
+	check(P.group({"squad":[foreign]}).rating=="—","Une fourchette ne devient pas une moyenne exacte collective")
+	check(P.group({}).rating=="—" and JSON.stringify(cohort)==before,"Effectif vide inconnu et agrégat sans mutation")
 	print("CONNAISSANCE UI : %d contrôles ; %d échecs" % [checks,failures])
 	quit(0 if failures==0 else 1)

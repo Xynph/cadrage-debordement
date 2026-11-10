@@ -7,7 +7,7 @@
   "platform": "Linux/Godot 4.7.2/llvmpipe",
   "backend_source": "PR532 worker canonical, before final idempotence cleanup; final headless rerun uses380a0db",
   "helpers": {
-    "checks": 22,
+    "checks": 26,
     "failures": 0
   },
   "contracts": {

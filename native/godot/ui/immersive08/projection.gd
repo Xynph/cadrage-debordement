@@ -76,13 +76,17 @@ static func group(model: Dictionary) -> Dictionary:
 	var injured := 0
 	var condition := 0.0
 	var rating := 0.0
+	var rated := 0
 	var watched := 0
 	for player: Dictionary in squad:
 		if float(player.get("injury", 0)) > 0: injured += 1
 		condition += float(player.get("condition", 0))
-		rating += float(player.get("rating", 0))
+		var level := G.knowledge_bounds(player,"rating",true)
+		if not level.is_empty() and level.min == level.max:
+			rating += float(level.min)
+			rated += 1
 		if not U.watch_reason(player).is_empty(): watched += 1
-	return {"total":squad.size(), "available":squad.size()-injured, "injured":injured, "condition":roundi(condition/maxi(1,squad.size())), "rating":roundi(rating/maxi(1,squad.size())), "watched":watched}
+	return {"total":squad.size(), "available":squad.size()-injured, "injured":injured, "condition":roundi(condition/maxi(1,squad.size())), "rating":roundi(rating/squad.size()) if not squad.is_empty() and rated == squad.size() else "—", "watched":watched}
 
 static func contracts(model: Dictionary) -> Array:
 	var result: Array = []
