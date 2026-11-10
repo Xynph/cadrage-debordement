@@ -354,6 +354,7 @@ func _groups() -> void:
 func _individuals() -> void:
 	var tile := D.panel(self, Rect2(4, 260, 1740, 950), "Le travail individuel", "train", "", "TrainingIndividuals")
 	var scroll := ScrollContainer.new()
+	scroll.name = "TrainingIndividualsScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	tile.add_child(scroll)
@@ -361,21 +362,23 @@ func _individuals() -> void:
 	var list := C.v(3)
 	C.fill(list)
 	scroll.add_child(list)
-	for column in [["JOUEUR", 66], ["POSTE", 457], ["CONDITION", 815], ["CHARGE", 1010], ["PLAN INDIVIDUEL", 1192]]:
-		D.text(tile, column[1], 87, column[0], 21, C.MUTED, 700, 280)
-	for p: Dictionary in squad:
+	for column in [["JOUEUR", 60, 366, "name"], ["POSTE", 440, 330, "pos"], ["CONDITION", 800, 180, "condition"], ["CHARGE", 993, 170, "physicalLoad"], ["PLAN INDIVIDUEL", 1174, 420, "loadPlan"]]:
+		Fatigue.sort_header(app, tile, Rect2(column[1], 62, column[2], 31), column[0], column[3], state, "individual", "TrainingIndividualSort_" + str(column[3]))
+	var ordered := Fatigue.sorted_players(squad, str(state.get("individual_sort", "priority")), state.get("individual_descending", false))
+	for p: Dictionary in ordered:
 		var row := C.button("", func(): _player_dialog(p))
 		row.name = "TrainingIndividual_" + str(p.id).replace(":", "_")
 		row.accessibility_name = str(p.name) + " · plan individuel"
 		row.set_meta("player_id", p.id)
-		row.custom_minimum_size.y = C.px(55)
+		row.custom_minimum_size.y = C.px(32)
+		Fatigue.compact_button(row, 18)
 		list.add_child(row)
-		_portrait(row, p, Rect2(7, 4, 44, 46))
-		D.text(row, 63, 37, str(p.name), 26, C.IVORY, 700, 366)
-		D.text(row, 442, 37, str(p.pos), 24, C.MUTED, 500, 330)
-		D.text(row, 802, 37, G.n(p.get("condition", 0)) + " %", 24, GREEN, 600, 160)
-		D.text(row, 993, 37, G.n(p.get("physicalLoad", 0)) + " / 100", 24, PALE_GOLD if p in watched else C.IVORY, 600, 150)
-		D.text(row, 1174, 37, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 24, C.IVORY, 500, 420)
+		_portrait(row, p, Rect2(7, 2, 26, 28))
+		D.text(row, 63, 24, str(p.name), 20, C.IVORY, 700, 366)
+		D.text(row, 442, 24, str(p.pos), 18, C.MUTED, 500, 330)
+		D.text(row, 802, 24, Fatigue._number(p, "condition", " %"), 19, GREEN, 600, 160)
+		D.text(row, 993, 24, Fatigue._number(p, "physicalLoad", " / 100"), 19, PALE_GOLD if p in watched else C.IVORY, 600, 150)
+		D.text(row, 1174, 24, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 18, C.IVORY, 500, 420)
 	if squad.is_empty(): list.add_child(C.label("Aucun joueur dans l’effectif.", 24, C.MUTED))
 	_chart()
 	_vigilance()

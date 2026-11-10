@@ -7,6 +7,21 @@ et charge, état de blessure, sélection, suspension connue et plan individuel.
 Les lignes mesurent 29 px ; les données utilisent 18–20 px et les repères
 16–17 px. Le tableau défile pour le reste de l'effectif.
 
+Tous les en-têtes de données trient leur colonne : joueur, poste, condition,
+charge, minutes, blessure, sélection, suspension et plan. Un premier clic
+active l'ordre croissant **↑**, le suivant l'ordre décroissant **↓** ; **↕**
+signale une colonne inactive. Les colonnes chiffrées utilisent les nombres
+réels, les plans et statuts leur texte affiché. Les valeurs non renseignées
+restent en fin de liste dans les deux sens ; les égalités sont départagées
+par identifiant stable. Le filtre en cours et les actions attachées aux
+identifiants des joueurs sont conservés.
+
+Le tableau **Individuel** de l'Entraînement propose le même tri sur ses cinq
+colonnes, avec son état de tri indépendant. Ses lignes mesurent 32 px. Les deux
+listes contiennent tout l'effectif, sans pagination ni plafond : la molette
+fait défiler uniquement les lignes dans leur zone interne. Les en-têtes,
+filtres, distributions et panneaux restent fixes.
+
 Les résumés sont cliquables et les filtres isolent les joueurs à ménager,
 blessés, suspendus **connus**, en sélection ou tout l'effectif. Si un filtre ne
 retient personne, l'écran le signale et conserve l'effectif complet comme
@@ -62,6 +77,11 @@ inchangés, l'absence de séance implicite, les filtres et les bornes communes.
 Il contrôle aussi qu'au moins vingt lignes restent visibles à la définition de
 référence. Les profils sont toujours créés sous le répertoire temporaire
 système, hors du dépôt et sans lire de carrière personnelle.
+Le banc reçoit les deux sens de chaque colonne, les égalités, les inconnus,
+l'ordre réellement rendu et l'absence de commandes pendant tous ces tris.
+Il envoie également de vrais événements de molette, vérifie les positions
+fixes des en-têtes et panneaux et la présence de tous les identifiants sans
+pagination dans les deux listes.
 
 Pour recevoir les captures sur le cumul, avec un écran X11 2560×1440 :
 

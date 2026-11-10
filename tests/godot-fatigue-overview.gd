@@ -40,6 +40,34 @@ func capture(id: String) -> void:
 	check(image.save_png(file) == OK, "Capture : " + id)
 	captures.append(file)
 
+func scrolling_case(scroll_name: String, row_pattern: String, row_type: String, header_name: String) -> void:
+	var scroll := app.find_child(scroll_name, true, false) as ScrollContainer
+	var header := app.find_child(header_name, true, false) as Button
+	var rows := app.find_children(row_pattern, row_type, true, false)
+	check(rows.size() == app.model.squad.size(), "Effectif complet sans pagination : " + scroll_name)
+	var ids := {}
+	for row in rows: ids[str(row.get_meta("player_id"))] = true
+	check(ids.size() == app.model.squad.size(), "Tous les identifiants sans limite ni doublon : " + scroll_name)
+	var header_y := header.global_position.y
+	var first_y: float = rows[0].global_position.y
+	var panel_y: float = scroll.get_parent().global_position.y
+	var point := scroll.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = point; motion.global_position = point
+	root.push_input(motion, true)
+	for index in 4:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		event.position = point; event.global_position = point
+		event.pressed = true; event.factor = 3.0
+		root.push_input(event, true)
+		await process_frame
+	await settle()
+	check(scroll.scroll_vertical > 0 and rows[0].global_position.y < first_y, "La molette fait défiler les lignes : " + scroll_name)
+	check(header.global_position.y == header_y and scroll.get_parent().global_position.y == panel_y, "En-tête et panneau fixes pendant le défilement : " + scroll_name)
+	scroll.scroll_vertical = 0
+	await settle()
+
 func projection_cases() -> void:
 	var players: Array = [
 		{"id":"healthy", "condition":95, "physicalLoad":0, "injury":0},
@@ -63,6 +91,33 @@ func projection_cases() -> void:
 	check(not Watch.watch_reason({"physicalLoad":70,"condition":80}).is_empty(), "Charge 70 sous surveillance")
 	check(not Watch.watch_reason({"physicalLoad":0,"condition":79.9}).is_empty(), "Condition sous 80 sous surveillance")
 	check(JSON.stringify(fixture) == before, "Filtres et tri sans mutation de la projection")
+	sort_cases()
+
+func sort_cases() -> void:
+	var players := [
+		{"id":"b","name":"Zèbre","pos":"Pilier droit","condition":91,"physicalLoad":72,"minutes":200,"injury":2,"suspension":2,"loadPlan":"repos"},
+		{"id":"a2","name":"Alpha","pos":"Ailier","condition":65,"physicalLoad":10,"minutes":10,"injury":0,"suspension":0,"loadPlan":"collective"},
+		{"id":"a","name":"Alpha","pos":"Ailier","condition":65,"physicalLoad":10,"minutes":10,"injury":0,"suspension":0,"loadPlan":"collective"},
+		{"id":"0-unknown"},
+	]
+	var model := {"squad":players}
+	var before := JSON.stringify(model)
+	for key in Fatigue.SORT_KEYS:
+		if key == "selection": continue
+		var text_status: bool = key in ["injury", "suspension", "loadPlan"]
+		for descending in [false, true]:
+			var ids: Array = Fatigue.overview(model, "Tout l’effectif", key, descending).rows.map(func(row: Dictionary): return row.player.id)
+			var expected := ["b", "a", "a2", "0-unknown"] if (text_status and not descending) or (not text_status and descending) else ["a", "a2", "b", "0-unknown"]
+			check(ids == expected, "Deux sens, égalité stable et inconnu dernier : " + key + " / " + str(descending))
+	for descending in [false, true]:
+		var unknowns: Array = Fatigue.overview(model, "Tout l’effectif", "selection", descending).rows.map(func(row: Dictionary): return row.player.id)
+		check(unknowns == ["0-unknown", "a", "a2", "b"], "Sélections toutes inconnues : départage stable par ID")
+	model.international = {"availability":{"players":[{"id":"b","returnDate":"2027-03-21"}]}}
+	for descending in [false, true]:
+		var ids: Array = Fatigue.overview(model, "Tout l’effectif", "selection", descending).rows.map(func(row: Dictionary): return row.player.id)
+		check(ids == (["b", "0-unknown", "a", "a2"] if descending else ["0-unknown", "a", "a2", "b"]), "Sélection triée selon le texte visible dans les deux sens")
+	model.erase("international")
+	check(JSON.stringify(model) == before, "Trier ne modifie aucune valeur de l’effectif source")
 
 func run() -> void:
 	projection_cases()
@@ -91,6 +146,28 @@ func run() -> void:
 		if row.get_global_rect().intersection(scroll.get_global_rect()).size.y >= 28:
 			visible_rows += 1
 	check(visible_rows >= 20, "Au moins vingt joueurs visibles dans le tableau dense à 1440p")
+	await scrolling_case("FatigueScroll", "FatigueRow_*", "Control", "FatigueSort_name")
+	for key in Fatigue.SORT_KEYS:
+		for descending in [false, true]:
+			await press("FatigueSort_" + key)
+			var header := app.find_child("FatigueSort_" + key, true, false) as Button
+			check(header.text.ends_with("↓" if descending else "↑"), "Flèche du tri fatigue : " + key)
+			check(app.management_ui.immersive_training.fatigue_filter == "Tout l’effectif", "Filtre fatigue conservé pendant le tri")
+			var rows := app.find_children("FatigueRow_*", "Control", true, false)
+			var expected: Array = Fatigue.overview(app.model, "Tout l’effectif", key, descending).rows
+			check(rows[0].get_meta("player_id") == expected[0].player.id, "Ordre réellement rendu après tri fatigue")
+	await press("TrainingTab2")
+	await scrolling_case("TrainingIndividualsScroll", "TrainingIndividual_*", "Button", "TrainingIndividualSort_name")
+	for key in ["name", "pos", "condition", "physicalLoad", "loadPlan"]:
+		for descending in [false, true]:
+			await press("TrainingIndividualSort_" + key)
+			var header := app.find_child("TrainingIndividualSort_" + key, true, false) as Button
+			check(header.text.ends_with("↓" if descending else "↑"), "Flèche du tri individuel : " + key)
+			var rows := app.find_children("TrainingIndividual_*", "Button", true, false)
+			var expected := Fatigue.sorted_players(app.model.squad, key, descending)
+			check(rows[0].get_meta("player_id") == expected[0].id, "Ordre réellement rendu après tri individuel")
+	await press("TrainingTab4")
+	check(app.bridge._next_id == requests and FileAccess.get_sha256(filename) == unchanged, "Tous les tris des deux tableaux : aucune commande ni écriture sportive")
 	var row_id := "FatigueAdjust_" + Fatigue.identifier(str(player.id))
 	var adjust := app.find_child(row_id, true, false) as Button
 	check(adjust != null and adjust.get_meta("player_id") == player.id, "Action liée au bon identifiant réel")
