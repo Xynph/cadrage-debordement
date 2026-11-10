@@ -10,6 +10,7 @@ const Decisions = preload("res://ui/decision_views.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
 const GOLD = Color("ffcd69")
+const CHAMP_DOSSIER_PENDING = "Le dossier adverse sera disponible la semaine du match."
 
 var app: Control
 var state: Dictionary
@@ -35,8 +36,14 @@ static func compact(app: Control) -> Control:
 		if next is Dictionary and not next.is_empty():
 			context = _compact_fixture(app,next)
 		else:
-			var upcoming := _pacific_preparation_note(app.model.meta)
-			if not upcoming.is_empty(): context = C.wrap(upcoming,26,C.GOLD,true,700)
+			var upcoming := _upcoming_preparation_note(app.model.meta)
+			if not upcoming.is_empty():
+				context = C.wrap(upcoming,26,C.GOLD,true,700)
+				if SeasonPreparation.is_champ(app.model.meta):
+					var summary := C.v(4)
+					summary.add_child(context)
+					summary.add_child(C.wrap(CHAMP_DOSSIER_PENDING,20,C.MUTED))
+					context = summary
 		if context != null:
 			dossier.add_child(context)
 			dossier.move_child(context,0)
@@ -64,8 +71,8 @@ static func compact(app: Control) -> Control:
 	page.add_child(dossier)
 	return page
 
-static func _pacific_preparation_note(meta: Dictionary) -> String:
-	if meta.get("leagueId") != "srp": return ""
+static func _upcoming_preparation_note(meta: Dictionary) -> String:
+	if meta.get("leagueId") not in ["srp", "champ"]: return ""
 	var preparation := SeasonPreparation.data(meta)
 	return "" if preparation.is_empty() else World.preparation_note(preparation)
 
@@ -116,7 +123,7 @@ func _heading() -> void:
 	D.text(hero, 28, 36, ("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper() if japan else "PRÉPARATION DE MATCH", 27, GOLD, 700, 680)
 	var heading := ("Préparer la saison · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))) if not preparation.is_empty() else "Préparer la prochaine rencontre."
 	app.heading = D.text(hero, 26, 103, heading, 66, C.IVORY, 800, 1355)
-	var context := _pacific_preparation_note(app.model.meta) if fixture.is_empty() else ""
+	var context := _upcoming_preparation_note(app.model.meta) if fixture.is_empty() else ""
 	if context.is_empty(): context = "Aucune rencontre annoncée"
 	if not fixture.is_empty():
 		context = "%s – %s  ·  %s" % [G.club_name(fixture.get("home", {})), G.club_name(fixture.get("away", {})), fixture.get("label", "")]
@@ -199,8 +206,10 @@ func _dossier() -> void:
 	var section := _section("PreparationDossier")
 	if reports.is_empty():
 		var empty := D.panel(section, Rect2(0, 0, 2248, 435), "Dossier adverse", "search")
-		D.text(empty, 29, 124, "Aucun dossier disponible pour cette rencontre.", 31, C.IVORY, 600, 1350)
-		D.text(empty, 29, 174, "Consultez le calendrier ou reprenez le match en cours.", 25, C.MUTED, 500, 1350)
+		var champ_preparing := fixture.is_empty() and SeasonPreparation.is_champ(app.model.meta) and not SeasonPreparation.data(app.model.meta).is_empty()
+		D.text(empty, 29, 124, CHAMP_DOSSIER_PENDING if champ_preparing else "Aucun dossier disponible pour cette rencontre.", 31, C.IVORY, 600, 1350)
+		if not champ_preparing:
+			D.text(empty, 29, 174, "Consultez le calendrier ou reprenez le match en cours.", 25, C.MUTED, 500, 1350)
 		_button(empty, Rect2(28, 209, 520, 58), "Calendrier", func(): app._navigate("Calendrier"), false, "calendar", "PreparationOpenCalendar")
 		D.photo(section, "analysis-room", Rect2(0, 455, 2248, 444), .48)
 		return
