@@ -26,6 +26,15 @@ dossier de l'application, indépendamment du dossier des captures.
 | Voix et silence | #507 exact | 199 contrôles Godot réussis |
 | Gestes et priorités | #507 exact | 32 contrôles Godot réussis |
 | Nouveau banc du GLB réel, avec une carrière créée par le moteur | #507 + banc ajouté | 33 contrôles sans fenêtre ; 39 avec rendu X11 aux deux tailles, six captures |
+| Banc UI international rendu durable dans cette reprise | #507 + banc ajouté | 34 contrôles sans fenêtre |
+
+Preuves conservées : [Gabi au Bureau en 1440p](reprise-cloud-20261110/gabi-1440.png),
+[fiche d'accueil internationale en 1440p](reprise-cloud-20261110/accueil-international-1440.png),
+[rapport Gabi](reprise-cloud-20261110/gabi-rendu.json),
+[calendrier 1080p](reprise-cloud-20261110/calendrier-1080.json),
+[calendrier 1440p](reprise-cloud-20261110/calendrier-1440.json) et
+[journal de la suite générale rouge](reprise-cloud-20261110/guide-integration-rouge.log).
+Les [empreintes](reprise-cloud-20261110/sha256.json) identifient ces fichiers.
 
 Le banc réel charge le GLB de production, vérifie ses vingt os et la variation
 des poses dans chacun des six clips. Il vérifie F1, l'absence de lecteur audio,
