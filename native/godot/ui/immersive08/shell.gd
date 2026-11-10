@@ -413,7 +413,10 @@ static func _heading(parent: Node, app: Control) -> void:
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		D.photo(image,COMPACT_ART[app.route],Rect2(2,2,806,85),.16)
+		if app.route == "Finances":
+			FinanceCanvas.hospitality(image, Rect2(2,2,806,85))
+		else:
+			D.photo(image,COMPACT_ART[app.route],Rect2(2,2,806,85),.16)
 		if COMPACT_SCENARIO_ART.has(app.route):
 			D.scenario_photo(image, COMPACT_SCENARIO_ART[app.route], Rect2(613, 3, 190, 83))
 	var values := P.group(app.model)
