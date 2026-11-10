@@ -40,6 +40,14 @@ class Campaign {
 }
 
 function unique(values) { return new Set(values).size === values.length; }
+function checkpointToRemove(safety, reserveBytes) {
+ if (!safety) return null; // Compatible with the pre-safety engine.
+ if (safety.error) throw Error('Copies de sécurité QA illisibles : ' + safety.error);
+ if (safety.entries.length < safety.maxEntries && safety.usedBytes + reserveBytes <= safety.maxBytes) return null;
+ const oldest = safety.entries.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id))[0];
+ if (!oldest) throw Error('La copie de recette dépasse la capacité de stockage annoncée.');
+ return oldest;
+}
 function auditState(campaign, state, previous = null) {
  campaign.check(Number.isInteger(state.season) && state.season >= 1, 'Saison native valide');
  campaign.check(Array.isArray(state.clubs) && state.clubs.length > 0, 'Clubs présents');
@@ -76,6 +84,14 @@ async function clubCampaign(campaign, options, profiles) {
   const counts = auditState(campaign, state, previous);
   previous = {season:state.season, round:state.round};
   const beforeRng = fs.readFileSync(path.join(model.meta.dataDir, 'donnees.json'), 'utf8');
+  const reserveBytes = Buffer.byteLength(beforeRng) + Buffer.byteLength(text) + 4096;
+  let oldCopy;
+  while ((oldCopy = checkpointToRemove(model.meta.profileSafety, reserveBytes))) {
+   const relative = path.relative(fs.realpathSync(profiles), fs.realpathSync(model.meta.dataDir));
+   campaign.check(relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative), 'Nettoyage limité au profil QA créé par ce pilote');
+   good('remove_checkpoint', {id:oldCopy.id, confirmed:true});
+   (campaign.maintenance ??= []).push({action:'remove_checkpoint', id:oldCopy.id, checkpoint:label, reason:'Quota du profil QA ; suppression explicitement confirmée par le pilote'});
+  }
   good('import', {text});
   campaign.check(digest(JSON.parse(exported()).state) === digest(state), 'Import conserve exactement l’état sportif');
   // Reload the real on-disk document, not an in-memory copy of the campaign.
@@ -228,4 +244,4 @@ async function run(options) {
  return report;
 }
 if (require.main === module) run(parseArgs(process.argv.slice(2))).then(report => {process.exitCode = report.status === 'passed' ? 0 : 1;}).catch(error => {console.error(error.message); process.exitCode = 1;});
-module.exports = {Campaign, unique, auditState, parseArgs, run};
+module.exports = {Campaign, unique, auditState, checkpointToRemove, parseArgs, run};

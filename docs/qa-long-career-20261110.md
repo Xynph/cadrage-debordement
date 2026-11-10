@@ -56,6 +56,15 @@ un export/import/redémarrage vérifié et son empreinte, et ne fournit pas une
 commande de reprise automatique d'une campagne interrompue. Pour reproduire,
 relancer la même commande, même graine et mêmes sources depuis l'état initial.
 
+Le parcours de trois saisons effectue neuf imports. Avec la protection des
+copies de sécurité activée, le pilote respecte les quotas projetés par le
+moteur : avant un import, il peut supprimer explicitement la plus ancienne
+copie de **son propre profil QA**, via `remove_checkpoint` avec confirmation.
+Il contrôle que le profil est bien sous la racine temporaire créée par cette
+exécution et consigne chaque suppression dans `campaign.maintenance` du JSON.
+Aucun fichier de sécurité n'est supprimé directement et aucun quota n'est
+désactivé. Une projection illisible interrompt la campagne.
+
 ## Garanties et limites
 
 Les tests ciblés du pilote vérifient que les doublons, retours de journée et
