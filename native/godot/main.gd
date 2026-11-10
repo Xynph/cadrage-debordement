@@ -10,6 +10,8 @@ const COMMAND_WAIT_MESSAGES := {
 	"export": "Préparation de l’export…",
 	"save": "Sauvegarde de la carrière…",
 	"recover_profile": "Préservation et récupération du profil…",
+	"restore_checkpoint": "Reprise de la copie de sécurité…",
+	"remove_checkpoint": "Suppression de la copie de sécurité…",
 	"pack_inspect": "Analyse du pack d’identités…",
 	"pack_install": "Installation du pack d’identités…",
 	"pack_select": "Application du pack d’identités…",
@@ -241,8 +243,8 @@ func _receive_model(value: Dictionary) -> void:
 		user_preferences.load_profile(str(model.meta.dataDir))
 		if soundscape_ready: sound_profile_loaded = soundscape.load_profile(str(model.meta.dataDir))
 		_apply_user_preferences()
-	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
-	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile"]:
+	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile","restore_checkpoint"])
+	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile","restore_checkpoint"]:
 		if is_instance_valid(navigation_controller): navigation_controller.reset()
 		for key in ["press_draft_context", "press_draft_choices", "press_mail_origin"]:
 			if has_meta(key): remove_meta(key)
@@ -260,11 +262,11 @@ func _receive_model(value: Dictionary) -> void:
 	if response_ok:
 		if not pending_route.is_empty(): route = pending_route
 		pending_route = ""
-		if _has_career() and (received_command in ["new_career", "next_season", "finish_round"] or not reception_id.is_empty()):
+		if _has_career() and (received_command in ["new_career", "next_season", "finish_round", "restore_checkpoint"] or not reception_id.is_empty()):
 			_reset_reception(reception_id)
 			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 			route = "Réception"
-	if bridge.last_response_ok and last_command in ["new_career","next_season","import"] and _has_career():
+	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if last_command == "tick" and route not in ["Accueil", "Création"]:
 		_update_live_bar()
@@ -852,7 +854,7 @@ func primary_action() -> void:
 
 func create_career(id: int) -> void:
 	var action := func(): _command("new_career",{"club":id,"mode":"common"})
-	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
+	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement. Si cette copie ne peut pas être écrite, le remplacement sera refusé. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
 
 func confirm_decision(command: String, payload: Dictionary, title: String, text: String, callback: Callable) -> void:
@@ -890,13 +892,16 @@ func pause_menu() -> void:
 	_prepare_dialog(d, 820)
 	d.title = "Votre carrière"
 	ImmersiveDialogs.pause_content(d,self)
-	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Paramètres","settings"],["Quitter","quit"]]: d.add_button(pair[0],false,pair[1])
+	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Copies de sécurité","profile_safety"],["Paramètres","settings"],["Quitter","quit"]]:
+		var button := d.add_button(pair[0],false,pair[1])
+		if pair[1] == "profile_safety": button.name = "ProfileSafetyOpen"
 	d.custom_action.connect(func(action: String):
 		d.hide(); d.queue_free()
 		match action:
 			"home": _navigate("Accueil")
 			"export": open_file(false)
 			"import": open_file(true)
+			"profile_safety": open_profile_safety()
 			"settings": settings()
 			"quit": request_quit()
 	)
@@ -907,6 +912,9 @@ func pause_menu() -> void:
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
+
+func open_profile_safety() -> void:
+	preload("res://ui/profile_safety_view.gd").open(self)
 
 func open_file(importing: bool) -> void:
 	import_mode = importing
@@ -938,7 +946,7 @@ func _file_selected(path: String) -> void:
 		if not refusal.is_empty():
 			_refuse_action(refusal)
 			return
-		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): _command("import", {"text":text}, "Réception"), _has_career())
+		confirm("Reprendre cette carrière", "Le moteur vérifiera cette carrière avant de l'appliquer. La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement ; si cette copie ne peut pas être écrite, l'importation sera refusée.", func(): _command("import", {"text":text}, "Réception"), _has_career())
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
 		export_path = path
