@@ -174,6 +174,10 @@ func _tactics() -> void:
 	await _wait()
 	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == defense.id, "Fresh defense decision preserves the acknowledged attack")
 
+func _bench_message(panel: Node, name: String) -> String:
+	var label := panel.find_child(name, true, false) as Label
+	return label.text if label != null and label.is_visible_in_tree() else ""
+
 func _bench() -> void:
 	app._navigate("Match")
 	var panel: Node = app.match_screen
@@ -196,6 +200,7 @@ func _bench() -> void:
 	_check(not _named_button(panel.side, incoming.name).disabled, "Paused bench enables a permitted entrant")
 	await _command("pause", {"paused":false})
 	_check(_named_button(panel.side, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("pause"), "Running bench explains the pause requirement")
 	var stable_button := _named_button(panel.side, incoming.name)
 	await _command("tick", {"steps":1})
 	_check(_named_button(panel.side, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
@@ -206,12 +211,22 @@ func _bench() -> void:
 	var actual: Dictionary = app.model
 	var restricted: Dictionary = actual.duplicate(true)
 	restricted.live.substitutions = []
+	var outgoing_name: String = str(actual.live.lineup[int(option.slot)].name)
+	var outgoing_button := _named_button(panel.side, outgoing_name)
+	outgoing_button.grab_focus()
 	panel.update_frame(restricted)
+	await process_frame
+	await process_frame
 	_check(_named_button(panel.side, incoming.name).disabled, "Permission-only change immediately disables the entrant")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Blocked bench explains that no replacement is available")
+	_check(_bench_message(panel, "MatchBenchContext").contains(outgoing_name), "Blocked bench retains the selected outgoing player's context")
+	_check(root.gui_get_focus_owner() == _named_button(panel.side, outgoing_name), "Permission-only change retains the outgoing button's focus")
 	panel.update_frame(actual)
 	_check(not _named_button(panel.side, incoming.name).disabled, "Restored permission re-enables the entrant")
+	_check(not _bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Restored permission clears the blocked reason")
 	await _command("delegate")
 	_check(_named_button(panel.side, incoming.name).disabled, "Finished match disables entrant without another selection")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("Match terminé"), "Finished bench explains that the match is over")
 	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	var first_date: String = app.header_date.text

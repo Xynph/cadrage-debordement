@@ -15,6 +15,9 @@ var events: Label
 var stats: Label
 var journal: VBoxContainer
 var side: VBoxContainer
+var _bench_feedback: VBoxContainer
+var _bench_context: Label
+var _bench_status: Label
 var tab := "Direct"
 var selected_slot := -1
 var presence_key := ""
@@ -110,6 +113,15 @@ func _ready() -> void:
 		_tab_controls.append(b)
 		G.fill(b)
 		tabs.add_child(b)
+	_bench_feedback = G.v(2)
+	_bench_context = G.wrap("", 14, G.INK)
+	_bench_context.name = "MatchBenchContext"
+	_bench_status = G.wrap("", 12, G.INK)
+	_bench_status.name = "MatchBenchStatus"
+	_bench_feedback.add_child(_bench_context)
+	_bench_feedback.add_child(_bench_status)
+	_bench_feedback.hide()
+	panel.add_child(_bench_feedback)
 	side=G.scroll(panel)
 	journal=preload("res://ui/match_journal.gd").new()
 	journal.setup(app)
@@ -315,6 +327,8 @@ func _side() -> void:
 	if tab == "Journal":
 		journal.update_frame(live)
 		return
+	var bench_focus := ""
+	if tab != "Banc" or live.is_empty(): _bench_feedback.hide()
 	if tab=="Banc":
 		# Fatigue/clock changes do not affect these controls. Keep focus across ticks,
 		# but rebuild when player identity or a replacement permission changes.
@@ -328,6 +342,9 @@ func _side() -> void:
 		var key:=JSON.stringify([identities,selected_slot,live.get("paused",false),live.get("finished",false),live.get("substitutions",[])])
 		if key==presence_key:return
 		presence_key=key
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and side.is_ancestor_of(focused):
+			bench_focus = str(focused.get_meta("match_bench_focus", ""))
 	for child in side.get_children():
 		side.remove_child(child)
 		child.queue_free()
@@ -352,7 +369,9 @@ func _side() -> void:
 				if str(stat.home).ends_with("%") and percentage.is_valid_float():
 					G.gauge(side, "Domicile (%)", float(percentage), 100, G.GOLD)
 				side.add_child(G.separator())
-		"Banc":_bench(live)
+		"Banc":
+			_bench(live)
+			if not bench_focus.is_empty(): _restore_bench_focus(bench_focus)
 		_:
 			side.add_child(G.section("AU BORD DU TERRAIN"))
 			if live.get("finished",false) and live.get("decision") is Dictionary:
@@ -368,32 +387,80 @@ func _side() -> void:
 				side.add_child(G.separator())
 			preload("res://ui/decision_views.gd").match_notes(app,side,model)
 
+func _restore_bench_focus(previous_focus: String) -> void:
+	var target: Button
+	var fallback: Button
+	var selected_key := "sortant:%d" % selected_slot
+	for child in side.get_children():
+		if not child is Button or child.disabled: continue
+		var key := str(child.get_meta("match_bench_focus", ""))
+		if key == previous_focus:
+			target = child
+			break
+		if key == selected_key: fallback = child
+	if target == null: target = fallback
+	if target == null: return
+	# The rebuilt list and the fixed feedback must be laid out before scrolling.
+	await get_tree().process_frame
+	if not is_instance_valid(target) or not target.is_visible_in_tree(): return
+	target.grab_focus()
+	(side.get_parent() as ScrollContainer).ensure_control_visible(target)
+
+func _update_bench_feedback(live: Dictionary, selected: bool, out: Variant, choice: Dictionary, options: Array) -> void:
+	_bench_context.visible = selected
+	if selected:
+		var position := str(choice.get("label", ""))
+		var player_name := str(out.get("name", "Joueur")) if out is Dictionary else "Poste vacant"
+		var context := "%d · %s" % [selected_slot + 1, player_name]
+		if not position.is_empty(): context = "%d · %s · %s" % [selected_slot + 1, position, player_name]
+		_bench_context.text = context
+	if live.get("finished", false):
+		_bench_status.text = "Match terminé. Les remplacements sont fermés."
+	elif not live.get("paused", false):
+		_bench_status.text = "Mettez le match en pause pour effectuer un remplacement."
+	elif not selected:
+		_bench_status.text = "Sélectionnez le joueur à remplacer."
+	elif choice.get("inIds", []).is_empty():
+		var other_choice := options.any(func(option: Dictionary): return option.get("slot") != selected_slot and not option.get("inIds", []).is_empty())
+		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionnez un autre joueur." if other_choice else "Reprenez le match pour continuer.")
+	else:
+		_bench_status.text = "Choisissez un remplaçant dans « Faire entrer » sous le XV."
+	_bench_feedback.show()
+
 func _bench(live:Dictionary) -> void:
 	side.add_child(G.section("LES CHANGEMENTS"))
-	if not live.get("paused",false):side.add_child(G.wrap("Mettez la rencontre en pause pour préparer le changement.",12,G.GOLD))
-	var players:Array=live.get("lineup",[])
-	var reserves:Array=live.get("reserves",[])
+	var players: Array = live.get("lineup", [])
+	var reserves: Array = live.get("reserves", [])
+	var options: Array = live.get("substitutions", [])
+	var slot_to_replace := selected_slot
+	var selected := slot_to_replace >= 0 and slot_to_replace < players.size()
+	var out: Variant = players[slot_to_replace] if selected else null
+	var out_id: Variant = out.get("id") if out is Dictionary else null
+	var choice: Dictionary = {}
+	for option: Dictionary in options:
+		if option.get("slot") == slot_to_replace and option.get("outId") == out_id:
+			choice = option
+			break
+	_update_bench_feedback(live, selected, out, choice, options)
 	for slot in players.size():
 		var p:Variant=players[slot]
 		var b:=G.button(str(p.get("name","Joueur")) if p is Dictionary else "%d · Poste vacant"%(slot+1),func():selected_slot=slot;presence_key="";_side())
 		b.alignment=HORIZONTAL_ALIGNMENT_LEFT
 		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.tooltip_text=b.text
-		for option in live.get("substitutions",[]):
+		b.set_meta("match_bench_focus", "sortant:%d" % slot)
+		for option: Dictionary in options:
 			if option.get("slot")==slot:b.tooltip_text="%s\n%d · %s"%[b.text,slot+1,option.get("label","")]
 		if slot==selected_slot:b.add_theme_stylebox_override("normal",G.T.box(Color("ddd1bc"),3,G.GOLD))
 		side.add_child(b)
-	if selected_slot<0 or selected_slot>=players.size():return
-	var allowed:Array=[]
-	for option in live.get("substitutions",[]):
-		if option.get("slot")==selected_slot:allowed=option.get("inIds",[])
-	var out:Variant=players[selected_slot]
-	var out_id:Variant=out.get("id") if out is Dictionary else null
+	if not selected: return
+	var allowed: Array = choice.get("inIds", [])
 	side.add_child(G.separator())
 	side.add_child(G.label("FAIRE ENTRER",12,G.GOLD))
 	for p in reserves:
 		if not p is Dictionary:continue
-		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"slot":selected_slot,"outId":out_id,"inId":p.id}))
+		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"slot":slot_to_replace,"outId":out_id,"inId":p.id}))
+		b.set_meta("match_bench_focus", "entrant:%s" % str(p.get("id")))
 		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.tooltip_text=str(p.get("name","Joueur"))
 		b.disabled=p.get("id") not in allowed or not live.get("paused",false) or live.get("finished",false)
