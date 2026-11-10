@@ -35,11 +35,10 @@ static func build(app: Control) -> Control:
 		var block := G.card(left, G.accent_ink(app.accent))
 		block.add_child(G.section("Préparation · " + ClubViews.competition_name(prep_id, app.model)))
 		block.add_child(G.wrap("Prochain match le %s · %d semaine(s)." % [next_date, weeks], 15))
-		var action := "advance_" + prep_kind + "_preparation"
-		var advance := G.button("AVANCER DE %d SEMAINE(S)  →" % mini(weeks, 4), func(): app._command(action, {"fromWeek":int(meta.get("week", 0))}))
+		var advance := G.button(app.primary_text(), app.primary_action)
 		advance.name = str(nodes[prep_kind])
 		advance.disabled = app.waiting
-		advance.tooltip_text = "Les semaines sont simulées une par une. L’avance s’arrête au prochain match."
+		advance.tooltip_text = app.primary_text()
 		block.add_child(advance)
 	var duels := G.scroll(left)
 	var slug := str(G.identity(app.model.club).get("slug", ""))

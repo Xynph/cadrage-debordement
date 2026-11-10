@@ -2,6 +2,7 @@ extends VBoxContainer
 const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const MatchProjection = preload("res://ui/immersive08/projection.gd")
+const CareerProgression = preload("res://ui/career_progression.gd")
 var app: Control
 var stage: Node3D
 var clock: Label
@@ -157,7 +158,7 @@ func _ready() -> void:
 	var spacer:=Control.new()
 	G.fill(spacer)
 	bottom.add_child(spacer)
-	finish=G.button("VALIDER LA JOURNÉE  →",func():app._command("finish_round"))
+	finish=G.button("VALIDER LE RÉSULTAT  →",app.primary_action)
 	bottom.add_child(finish)
 	for control in bottom.get_children():
 		if control is Button:
@@ -251,12 +252,19 @@ func update_frame(value:Dictionary) -> void:
 		score.text="— / —"
 		clock.text="AVANT-MATCH"
 		play.text="Jouer à 22" if vacant != 0 else "COUP D'ENVOI"
-		play.disabled=next.is_empty()
+		var press_due := CareerProgression.press_required(value)
+		var kickoff_today := CareerProgression.kickoff_allowed(value.meta)
+		play.disabled=next.is_empty() or press_due or not kickoff_today
+		play.tooltip_text = "Ouvrez l’invitation dans la Réception." if press_due else "Le coup d’envoi s’ouvre le jour de la rencontre." if not kickoff_today else ""
 		var season_done:bool=value.meta.get("canAdvanceSeason",false) or (value.meta.get("mode") not in ["france30","common"] and value.meta.get("phase")=="ended")
 		finish.disabled=not next.is_empty() or season_done
 		if next.is_empty():
 			clock.text="SAISON TERMINÉE" if season_done else "SANS RENCONTRE"
-			finish.text="AVANCER LA SEMAINE  →"
+		finish.text=app.primary_text()
+		var daily := CareerProgression.daily(value.meta, value.get("next"), "Match")
+		if press_due or (not season_done and daily.has("command")): finish.disabled = false
+		elif daily.has("disabled"): finish.disabled = true
+		if value.meta.get("calendarCadence", {}).get("resultConfirmed", false): clock.text="RÉSULTAT VALIDÉ"
 	else:
 		var teams:Array=live.get("teams",[{},{}])
 		home.text=G.club_abbr(teams[0])
@@ -268,7 +276,8 @@ func update_frame(value:Dictionary) -> void:
 		elif live.get("atBreak",false):clock.text="MI-TEMPS"
 		play.text="REPRENDRE" if live.get("paused",false) else "PAUSE"
 		play.disabled=live.get("finished",false)
-		finish.text="VALIDER LA JOURNÉE  →"
+		play.tooltip_text = ""
+		finish.text="VALIDER LE RÉSULTAT  →"
 		finish.disabled=not live.get("finished",false)
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
@@ -492,6 +501,7 @@ func _confirm_reduced_bench(vacant: int) -> void:
 func _act() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
 	if live.is_empty():
+		if CareerProgression.press_required(model) or not CareerProgression.kickoff_allowed(model.meta): return
 		var vacant := MatchProjection.reduced_bench_number(model)
 		if vacant != 0: _confirm_reduced_bench(vacant)
 		else: app._command("begin_match")
