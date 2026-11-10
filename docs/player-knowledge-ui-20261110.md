@@ -48,6 +48,8 @@ développement, formation/centres, vivier, recrutement, archives, comparateur,
 recommandation Bureau, feuille nationale et convocations. Les historiques de
 progression et moyennes de l'effectif propre restent des données connues.
 Les moyennes collectives adverses ne sont pas des notes individuelles.
+La moyenne du groupe affiche `—` si un niveau est inconnu ou en intervalle ;
+aucune moyenne partielle ni conversion de `null` en zéro.
 
 `entry_screens.gd` (création) et les deux modules Tactique sont réservés aux autres
 chantiers. Tactique consomme uniquement des notes au poste de l'effectif propre.
@@ -60,7 +62,7 @@ s'affiche pas dans les labels du jeu.
 
 Godot 4.7.2 et Node 22. Recette graphique sur display privé, 2560 × 1440 uniquement.
 
-- Helpers : 22 contrôles, aucun échec.
+- Helpers et agrégat de groupe : 26 contrôles, aucun échec.
 - Réexécution headless sur le worker final `380a0db` : 199 contrôles, aucun échec.
 - Contrats : 154 contrôles, aucun échec.
 - Tris recrutement : 153 contrôles, aucun échec ; clavier, inconnus en dernier,
