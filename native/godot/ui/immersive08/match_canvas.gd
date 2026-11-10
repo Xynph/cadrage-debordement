@@ -154,11 +154,11 @@ func _add_pitch_overlays() -> void:
 	result_strip.add_theme_stylebox_override("panel",C.box(Color(C.BG,.91),Color(C.GOLD,.8),8,18))
 	result_strip.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	stack.add_child(result_strip)
-	result_strip.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	result_strip.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	result_strip.offset_left=C.px(20)
 	result_strip.offset_right=-C.px(20)
-	result_strip.offset_top=-C.px(150)
-	result_strip.offset_bottom=-C.px(20)
+	result_strip.offset_top=C.px(20)
+	result_strip.offset_bottom=C.px(150)
 	var content := C.content(result_strip)
 	content.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	content.add_child(C.label("LE SCORE FINAL",19,C.GOLD,true,700))
@@ -196,22 +196,11 @@ func update_frame(value: Dictionary) -> void:
 		return
 	if finished:
 		play.text="Terminé"
-		result_title.text=_verdict(live.get("decision"),teams)
+		result_title.text=_decision_label(live.get("decision"),teams)
 		result_context.text="%s   %s   %s  ·  Consultez le journal ou validez la journée." % [GameSkin.club_abbr(teams[0]),score.text,GameSkin.club_abbr(teams[1])]
 	else:
 		var state := "MI-TEMPS" if live.get("atBreak",false) else "EN PAUSE" if live.get("paused",false) else "EN DIRECT"
 		broadcast_text.text="%s   ·   %s′" % [state,GameSkin.n(live.get("minute",0))]
-
-func _verdict(decision: Variant, teams: Array) -> String:
-	if not decision is Dictionary: return "Rencontre terminée."
-	if decision.get("kind")=="draw": return "Match nul."
-	for team: Dictionary in teams:
-		if team.get("id")!=decision.get("winner"): continue
-		var reasons := {"tries":"au nombre d’essais", "penalties":"au nombre de pénalités", "drops":"au nombre de drops", "redCards":"au nombre d’exclusions", "shootout":"aux tirs au but"}
-		var reason: String = reasons.get(decision.get("kind"),"")
-		if reason.is_empty(): return "Victoire de %s." % GameSkin.club_name(team)
-		return "Qualification de %s %s." % [GameSkin.club_name(team),reason]
-	return str(decision.get("label","Rencontre terminée."))
 
 func _update_badges(teams: Array) -> void:
 	var ids := str(teams.map(func(team:Dictionary):return team.get("id")))
