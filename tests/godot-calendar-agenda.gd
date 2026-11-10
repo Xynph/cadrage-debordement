@@ -79,6 +79,10 @@ func run() -> void:
 	check(grid.get_child_count() == 7,"La semaine ne duplique aucun jour")
 	check(app.find_child("CalendarUpcomingContext",true,false) != null,"Contexte des prochains rendez-vous visible")
 	check(app.find_child("CalendarSessionChart",true,false) != null,"Histogramme des séances publiées visible")
+	var session_table: Control = app.find_child("CalendarWeekSessionDetails",true,false)
+	check(session_table != null,"Détail collectif publié disponible sous la semaine")
+	var source_week: Array = view().sessions.filter(func(session: Dictionary): return session.date in dates)
+	check(session_table.find_children("CalendarWeekSession_*","HBoxContainer",true,false).size() == source_week.size(),"Table de préparation fidèle aux séances de la semaine")
 	for date: String in dates:
 		var bar := app.find_child("CalendarSessionCount_"+date,true,false) as ProgressBar
 		check(bar != null and int(bar.value) == view().sessions_by_day.get(date,[]).size(),"Histogramme fidèle au nombre de créneaux : "+date)
