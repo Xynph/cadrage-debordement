@@ -209,68 +209,30 @@ func _coach_reception() -> void:
 	app.coach.speech.requested.connect(func(text: String): requests.append(text))
 	app.coach.speech.started.connect(func(_id: int): events.starts += 1)
 	app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
-	# Audio runs at volume zero only in this disposable reception profile.
-	app.coach.speech.volume = 0
-	app.coach.open_help()
+	var help := app.coach.find_child("GuideHelp", true, false) as Button
+	_check(help != null and not help.disabled, "Coach help is available from its usual button")
+	if help != null: help.pressed.emit()
 	await _settle()
 	_check(app.coach.expanded, "Coach opens from the actual app")
 	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.size.x <= 500, "Coach floats without reserving or intercepting the workspace")
 	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
 	await _capture("coach-developpe")
-	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
-	var recordings := 0
-	var pending := 0
-	var shortest_text := ""
-	var shortest_length := INF
-	for page: Dictionary in content.pages:
-		for fragment: Dictionary in page.fragments:
-			var text := str(fragment.text)
-			if fragment.get("audioStatus") == "pending":
-				pending += 1
-				_check(not app.coach.speech.has_recording(text), "Pending text never uses an old recording: " + str(fragment.id))
-				continue
-			_check(app.coach.speech.has_recording(text), "Exact exported recording exists: " + str(fragment.id))
-			if not app.coach.speech.has_recording(text): continue
-			var stream := ResourceLoader.load(str(app.coach.speech.clips[text])) as AudioStreamWAV
-			_check(stream != null and stream.get_length() > 0.5, "Imported PCK audio decodes: " + str(fragment.id))
-			if stream == null: continue
-			recordings += 1
-			if stream.get_length() < shortest_length:
-				shortest_length = stream.get_length(); shortest_text = text
-	_check(recordings == 74 and app.coach.speech.clips.size() == 74 and app.coach.speech.has_complete_recordings(), "All 74 final recordings received without relying on system TTS")
-	_check(pending == 0, "All final texts have an exact received recording")
-	var available: bool = recordings > 0 or not app.coach.speech.voice_id.is_empty()
-	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French speech required for this Windows reception")
-	if available:
-		# Receive actual playback of a shipped clip in addition to decoding all
-		# final recordings from the exported PCK above.
-		app.coach.bubble.text = shortest_text
-		app.coach.replay()
-		_check(not requests.is_empty() and requests.back() == app.coach.bubble.text, "Spoken text equals the actual bubble")
-		var deadline := Time.get_ticks_msec() + 8000
-		while events.starts == 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported speech starts")
-		_check(app.coach.speech.player.playing and app.coach.speech.player.stream is AudioStreamWAV, "Real local Gabi recording plays in the executable")
-		var frames := {}
-		deadline = Time.get_ticks_msec() + 650
-		while Time.get_ticks_msec() < deadline:
-			frames[str(app.coach.portrait.frame_texture.region)] = true
-			await get_tree().process_frame
-		_check(frames.size() >= 2, "Actual speaking portrait changes frames")
-		# Play an actual shipped fragment through its natural end callback.
-		app.coach.bubble.text = shortest_text
-		app.coach.replay()
-		var previous_end: int = events.ends
-		deadline = Time.get_ticks_msec() + int(shortest_length * 2000) + 3000
-		while events.ends == previous_end and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported recording finishes naturally")
-		_check(requests.back() == app.coach.bubble.text, "Replay uses the same bubble")
+	_check(app.coach.speech.player == null and app.coach.speech.voices.is_empty() and app.coach.speech.clips.is_empty(), "The visual coach initializes no audio player, clips or system voice")
+	var options := app.coach.find_child("GuideOptions", true, false) as Button
+	_check(options != null, "Visual guide settings are available")
+	if options != null: options.pressed.emit()
+	await _settle()
+	for key in ["GuideReplay", "GuideStop", "GuideVoice", "GuideSpeed", "GuideMute"]:
+		var audio_control := app.coach.find_child(key, true, false) as Control
+		_check(audio_control == null or not audio_control.is_visible_in_tree(), "Audio option is unavailable: " + key)
+	app.coach.speech.set_muted(false)
+	app.coach.replay()
+	await _settle()
+	_check(app.coach.speech.muted and not app.coach.speech.speaking and requests.is_empty() and events.starts == 0 and events.ends == 0, "No clip or system fallback starts when speech is requested")
 	app.coach.close()
-	app.coach.speech.volume = 75
-	_check(not app.coach.speech.speaking, "Closing the exported coach stops speech")
 	await _ask("export")
 	_check(app.model.meta.exportText == before and FileAccess.get_sha256(profile) == disk_before, "Coach leaves the actual career and its disk unchanged")
-	coach_reception = {"voice_available":available,"voice_status":"complete" if app.coach.speech.has_complete_recordings() else "provisional","recordings_pending":pending,"recordings_decoded":recordings,"recording_played_to_end":shortest_text,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
+	coach_reception = {"voice_available":false,"voice_status":"disabled","recordings_decoded":0,"starts":events.starts,"ends":events.ends,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
 	await _capture("coach-integre")
 
 func _run() -> void:
