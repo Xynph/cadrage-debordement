@@ -46,6 +46,13 @@ static func _action(parent: Node, label: String, name: String, enabled: bool, ca
 	parent.add_child(button)
 	return button
 
+static func _meeting_lock(app: Control, completed: bool) -> String:
+	if completed: return "Une réunion a déjà eu lieu cette semaine."
+	if not app._live().is_empty(): return "Rencontre en cours ou à valider."
+	if app.model.meta.get("trained", false): return "Entraînement déjà effectué cette semaine."
+	if app.model.meta.get("phase", "league") != "league": return "Les réunions sont réservées aux semaines de championnat."
+	return "Réunion indisponible cette semaine."
+
 static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Staff")
 	var d: Dictionary = data.diagnostic
@@ -56,15 +63,27 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	G.gauge(health, "Moral du groupe", float(d.morale))
 	G.gauge(health, "Confiance", float(d.trust), 100, G.GOLD)
 	list.add_child(G.wrap("Condition moyenne %d / 100 · %d joueurs sous 65 · moral %d · confiance %d" % [d.mean, d.fatigue, d.morale, d.trust], 16))
-	if data.meeting.receipt is Dictionary:
-		list.add_child(G.wrap(str(data.meeting.receipt.title) + " — " + str(data.meeting.receipt.body), 16, G.GOOD))
-	elif data.meeting.get("lastDecision") is Dictionary and not data.meeting.available:
-		list.add_child(G.wrap("Dernière réunion conservée : " + str(data.meeting.lastDecision.plan) + ". Une seule réunion est possible par semaine et par club.", 14, G.GOOD))
-	for option: Dictionary in data.meeting.options:
+	var meeting_data: Dictionary = data.meeting
+	var receipt: Variant = meeting_data.receipt
+	var last_decision: Variant = meeting_data.get("lastDecision")
+	var current_decision: bool = last_decision is Dictionary and last_decision.get("context") == data.context
+	var lock := _meeting_lock(app, receipt is Dictionary or current_decision)
+	for option: Dictionary in meeting_data.options:
 		var meeting := G.card(list, G.accent_ink(app.accent))
-		meeting.add_child(G.section(option.label, option.detail))
-		meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
-		_action(meeting, "RÉUNIR LE STAFF · " + str(option.label), "SupportMeeting_" + str(option.key), data.meeting.available, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
+		# Un reçu importé de l’ancienne version peut précéder le contexte natif.
+		var applied: bool = current_decision and last_decision.get("plan") == option.key
+		if receipt is Dictionary:
+			applied = receipt.get("title") == "Réunion de staff : " + str(option.label)
+		var detail := str(receipt.body) if applied and receipt is Dictionary else str(option.detail)
+		meeting.add_child(G.section(option.label, detail))
+		if meeting_data.available:
+			meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
+		elif applied:
+			meeting.add_child(G.wrap("Réunion tenue cette semaine · Moral actuel %d/100 · Confiance actuelle %d/100" % [d.morale, d.trust], 16, G.GOOD))
+		else:
+			meeting.add_child(G.wrap(lock, 14))
+		var action := "RÉUNION EFFECTUÉE" if applied else "RÉUNIR LE STAFF · " + str(option.label)
+		_action(meeting, action, "SupportMeeting_" + str(option.key), meeting_data.available, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
 	list.add_child(G.separator())
 	list.add_child(G.section("Répartir les charges", "Configurer un plan ne lance pas la séance. La prévision physique précède les effets collectifs et médicaux."))
 	var session: Dictionary = data.training.get("session", {})
