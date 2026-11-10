@@ -56,6 +56,25 @@ for (const [phase, facts, required, forbidden] of [
   const reversed = Object.fromEntries(Object.entries(facts).reverse());
   assert.deepEqual(ids(bank.select(phase, reversed, 'real-context')), ids(selected), 'Fact property order is irrelevant');
 }
+for (const [phase, facts] of [
+  ['pre_match', { home: true, away: false }],
+  ['pre_match', { away: true, home: false }],
+  ['pre_match', { away: true, bad_run: true }],
+  ['half_time', { losing: true }],
+  ['post_match', { result_win: true }]
+]) {
+  for (let key = 0; key < 12; key++) {
+    const selected = bank.select(phase, facts, 'blend:' + key);
+    const neutral = selected.filter(e => e.conditions.all.every(tag => tag === 'neutral') &&
+      !e.conditions.any.length && !e.conditions.none.length);
+    assert.equal(selected.length, 6);
+    assert.equal(neutral.length, 4, phase + ': four general coaching intentions, not six repetitions of context');
+    assert.ok(selected.slice(0, 2).every(e => !neutral.includes(e)), 'Two supported contextual choices still take priority');
+    assert.ok(new Set(selected.map(e => e.tone)).size >= 4, phase + ': blended emotional variety');
+    assert.ok(new Set(selected.map(e => e.intent)).size >= 4, phase + ': blended coaching intent variety');
+    assert.deepEqual(ids(bank.select(phase, facts, 'blend:' + key)), ids(selected));
+  }
+}
 assert.deepEqual(ids(bank.select('pre_match', { home: 'true', away: 1, favorite: null }, 'invalid')),
   ids(bank.select('pre_match', {}, 'invalid')), 'Only exact boolean facts authorize claims');
 assert.deepEqual(ids(bank.select('pre_match', { tone: 'warm', intent: 'support' }, 'intrinsic')),

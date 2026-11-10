@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { createBridge } = require('../native/engine/worker.cjs');
+const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;
 test('Raccordements natifs06 : vrais boutons, son indépendant et réponse tick avant la file', { skip: !godot && 'SDK Godot requis' }, () => {
   const dir = fs.mkdtempSync(path.join(process.env.CD_NATIVE06_TEMP || os.tmpdir(), 'cd-native06-integration-'));
@@ -26,10 +27,12 @@ test('Raccordements natifs06 : vrais boutons, son indépendant et réponse tick 
   };
   try {
     call('new_career', { club: 0, mode: 'fiction' });
-    let previous = call('begin_match');
+    let previous = skipMatchTalk(call('begin_match'), call);
     for (let tick = 0; tick < 240; tick++) {
+      previous = skipMatchTalk(previous, call);
       const before = call('export').meta.exportText;
-      const current = call('tick', { steps: 1 });
+      let current = call('tick', { steps: 1 });
+      if (!current.live.finished) current = skipMatchTalk(current, call);
       if (current.live && !current.live.paused && !current.live.atBreak && !current.live.finished &&
           ['try', 'goal', 'miss'].includes(current.live.scene.kind) && previous.live.scene.key !== current.live.scene.key) {
         fs.writeFileSync(path.join(dir, 'fixture-before.json'), before);

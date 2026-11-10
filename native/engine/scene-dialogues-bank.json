@@ -3,7 +3,7 @@
   "language": "fr-FR",
   "sport": "rugby_union",
   "scope": "adult_elite_xv",
-  "status": "prototype_data_only",
+  "status": "native_runtime",
   "originality": "Textes originaux ; aucun dialogue de Football Manager reproduit.",
   "enums": {
     "phase": [
@@ -2774,7 +2774,7 @@
         "any": [],
         "none": []
       },
-      "text": "Je reconnais les efforts de chacun aujourd’hui."
+      "text": "Je reconnais les efforts du groupe aujourd’hui."
     },
     {
       "id": "post_046",

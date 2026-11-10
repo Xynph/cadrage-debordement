@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { createBridge } = require('../native/engine/worker.cjs');
+const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 const { normalize } = require('../dist/match3d/scene-adapter.js');
 
 function frame(live) {
@@ -30,13 +31,14 @@ function capture() {
   try {
     bridge = createBridge(options);
     call('new_career', { club: 0 });
-    let live = call('begin_match').live;
+    let model = skipMatchTalk(call('begin_match'), call), live = model.live;
     const samples = [];
     const seen = new Set();
     for (let tick = 0; tick < 48 && seen.size < 2 && !live.finished; tick++) {
+      model = skipMatchTalk(model, call); live = model.live;
       if (live.paused) live = call('pause', { paused: false }).live;
       const before = frame(live);
-      live = call('tick').live;
+      model = call('tick'); live = model.live;
       const event = live.events.findLast(item =>
         JSON.stringify([item.min, item.text, item.scene?.kind, item.scene?.to]) === live.scene.key);
       const action = event?.scene;

@@ -1,7 +1,7 @@
 'use strict';
 // Closed production manifest. Each domain owns its rules and strict validator;
 // the worker remains the only disk transaction and save authority.
-const domains={playerMatchHistory:require('./player-match-history.cjs'),staffEmployment:require('./staff-employment.cjs'),customCompetition:require('./custom-competition.cjs'),interclubMarket:require('./interclub-market.cjs'),staffMentoring:require('./staff-mentoring.cjs'),performanceAnalysis:require('./performance-analysis.cjs'),press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs')};
+const domains={matchTalks:require('./match-talks.cjs'),sceneInvitations:require('./scene-invitations.cjs'),playerMatchHistory:require('./player-match-history.cjs'),staffEmployment:require('./staff-employment.cjs'),customCompetition:require('./custom-competition.cjs'),interclubMarket:require('./interclub-market.cjs'),staffMentoring:require('./staff-mentoring.cjs'),performanceAnalysis:require('./performance-analysis.cjs'),press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs')};
 const files=Object.freeze([...new Set(Object.values(domains).flatMap(d=>d.files))]);
 const commands=Object.freeze(Object.values(domains).flatMap(d=>d.commands));
 if(new Set(commands).size!==commands.length)throw Error('Commandes natives de domaine en double.');
@@ -21,7 +21,7 @@ function bootstrap(){
     if(state&&state===nativeStaffTransition?.state&&state.season===nativeStaffTransition.completed+1&&state.staffCareer?.lastAdvancedSeason===nativeStaffTransition.completed-1)domains.staffCareer.advance(state,nativeStaffTransition.completed);
     if(state)for(const d of Object.values(domains))d.validate(state);
    },
-   clearTransient(){nativeStaffTransition=null;},
+   clearTransient(){nativeStaffTransition=null;for(const d of Object.values(domains))if(d.clearTransient)d.clearTransient();},
    execute(command,payload){const owner=owners.get(command);if(!owner)throw Error('Commande de domaine inconnue.');return owner.execute(command,payload);},
    installHooks(){for(const d of Object.values(domains))d.installHooks();}
   };

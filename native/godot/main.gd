@@ -77,6 +77,7 @@ var sound_profile_loaded := false
 var navigation_controller: Node
 var user_preferences: RefCounted
 var decision_feedback: RefCounted
+var contextual_director: Node
 var preferences_loaded := false
 var coach_reserved_height := 0.0
 var workspace_inset: MarginContainer
@@ -166,6 +167,10 @@ func _ready() -> void:
 		get_window().size_changed.connect(_keep_filled_display, CONNECT_DEFERRED)
 		get_window().focus_entered.connect(_keep_filled_display, CONNECT_DEFERRED)
 		_keep_filled_display.call_deferred()
+	contextual_director = load("res://ui/contextual/director.gd").new()
+	contextual_director.name = "ContextualDirector"
+	add_child(contextual_director)
+	contextual_director.setup(self)
 	_trace_startup("render.begin")
 	_render()
 	_trace_startup("render.end")
@@ -224,7 +229,12 @@ func _receive_model(value: Dictionary) -> void:
 		pending_route = ""
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
-	if last_command == "tick" and route not in ["Accueil", "Création"]:
+	if response_ok and received_command == "match_talk_continue" and _live().is_empty():
+		route = "Réception"
+	var contextual_handled: bool = is_instance_valid(contextual_director) and contextual_director.sync(received_command, response_ok)
+	if contextual_handled:
+		pass
+	elif last_command == "tick" and route not in ["Accueil", "Création"]:
 		_update_live_bar()
 		if is_instance_valid(match_screen): match_screen.update_frame(model)
 	else:
@@ -279,7 +289,8 @@ func _refuse_action(message: String) -> void:
 	if is_instance_valid(status):
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
-	notice("Votre décision n'a pas été appliquée", message)
+	if not (is_instance_valid(contextual_director) and contextual_director.active()):
+		notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
 	if is_instance_valid(soundscape): soundscape.notify_error()
@@ -303,6 +314,9 @@ func _failed(message: String) -> void:
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
+	# The immersive scene owns its visible error panel; a second modal would
+	# survive a successful retry and obscure the resumed match.
+	if is_instance_valid(contextual_director) and contextual_director.active() and not connection_error: return
 	# Transport failures remain globally visible, but keep this local draft too.
 	if epcr_dialog != null or editor_dialog != null or market_dialog != null: return
 	# A failed annotation must leave its editor and unsaved draft alive. The
@@ -319,6 +333,9 @@ func _failed(message: String) -> void:
 	if route == "Accueil" or not _has_career(): _render()
 
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
+	if is_instance_valid(contextual_director) and contextual_director.match_immersed() and target != "Match":
+		contextual_director.render_if_needed()
+		return
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
@@ -374,7 +391,10 @@ func _render(remember_ui: bool = true) -> void:
 		if route in chapter.routes: chapter_routes[chapter.label] = route
 	if remember_ui: SquadViews.U.remember(self)
 	SquadViews.U.sync(self)
-	if Immersive.render(self): return
+	if is_instance_valid(contextual_director) and contextual_director.render_if_needed(): return
+	if Immersive.render(self):
+		if is_instance_valid(contextual_director): contextual_director.call_deferred("install_entrypoints")
+		return
 	if is_instance_valid(root_content):
 		remove_child(root_content)
 		root_content.queue_free()
@@ -532,6 +552,9 @@ func _reserve_coach_space(_height: float) -> void:
 	_layout_coach()
 
 func _refresh_coach() -> void:
+	if is_instance_valid(contextual_director) and contextual_director.active():
+		if is_instance_valid(coach): coach.hide()
+		return
 	if is_instance_valid(coach):
 		coach.refresh()
 		coach.consider_context(route, model, last_command, bridge.last_response_ok)

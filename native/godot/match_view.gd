@@ -5,7 +5,7 @@ extends Node3D
 
 const ATHLETE := "res://assets/match3d/quaternius-rugby-athlete.glb"
 const BLEND_SECONDS := 0.55
-const STADIUM_FONT := "res://fonts/BarlowCondensed-SemiBold.ttf"
+const ClubPresentation = preload("res://ui/game_skin.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
@@ -49,6 +49,24 @@ var _pass_elapsed := 0.0
 var _live_cadence := 1
 var _stadium_evening := false
 var _stadium_kit: Node3D
+var _club_identity_key := ""
+var _club_crest: Texture2D
+var _club_branding: MultiMeshInstance3D
+
+
+func set_club_identity(club: Dictionary) -> void:
+	var identity: Dictionary = ClubPresentation.identity(club)
+	var key := JSON.stringify([identity.get("logoPath", club.get("logoPath", "")), identity.get("slug", "")])
+	if key == _club_identity_key:
+		return
+	_club_identity_key = key
+	# Exactly the same active pack priority as the UI. Its initials fallback is
+	# deliberately left off the physical surfaces when no texture is available.
+	var crest_control: Control = ClubPresentation.crest(club, 256)
+	_club_crest = crest_control.texture if crest_control is TextureRect else null
+	crest_control.free()
+	if is_instance_valid(_club_branding):
+		_update_club_branding()
 
 
 func _ready() -> void:
@@ -753,7 +771,6 @@ func _build_stadium() -> void:
 			var x := -56.0 + board * 16.0
 			_venue_box(Vector3(15.5, 1.05, 0.22), Vector3(x, 0.58, side * 41.2), anthracite)
 			_venue_box(Vector3(15.5, 0.06, 0.24), Vector3(x, 1.13, side * 41.2), ivory)
-			_stadium_label("OVAL LEGACY 27" if board % 2 == 0 else "RUGBY MANAGER", Vector3(x, 0.65, side * 41.04), 0.017, PI if side > 0 else 0.0)
 		# Modest end terraces leave both in-goals unobstructed.
 		for row in 7:
 			var height := 0.65 + row * 0.72
@@ -790,23 +807,51 @@ func _build_stadium() -> void:
 	_instance_batch("VenueSeats", seat_mesh, seat, seat_transforms)
 	_build_spectators(spectator_positions, spectator_rotations, rng)
 	_venue_box(Vector3(43, 3.8, 0.24), Vector3(0, 10.6, -54.8), anthracite)
-	_stadium_label("OVAL LEGACY 27", Vector3(0, 11.35, -54.6), 0.052)
-	_stadium_label("LE RUGBY SE JOUE ENSEMBLE", Vector3(0, 9.4, -54.6), 0.018)
+	_build_club_branding()
 
 
-func _stadium_label(text: String, position_: Vector3, pixel_size: float, yaw: float = 0.0) -> void:
-	var label := Label3D.new()
-	label.text = text
-	label.font = load(STADIUM_FONT) as Font
-	label.font_size = 48
-	label.pixel_size = pixel_size
-	label.position = position_
-	label.rotation.y = yaw
-	label.modulate = Color("e5e3d5")
-	label.outline_size = 0
-	label.no_depth_test = false
-	label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(label)
+func _build_club_branding() -> void:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.mesh = quad
+	batch.instance_count = 49 # Three crests on each of sixteen boards, one fascia.
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	material.alpha_scissor_threshold = 0.1
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	_club_branding = MultiMeshInstance3D.new()
+	_club_branding.name = "ManagedClubCrests"
+	_club_branding.multimesh = batch
+	_club_branding.material_override = material
+	_club_branding.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_club_branding)
+	_update_club_branding()
+
+
+func _update_club_branding() -> void:
+	_club_branding.visible = _club_crest != null
+	var material := _club_branding.material_override as StandardMaterial3D
+	material.albedo_texture = _club_crest
+	if _club_crest == null:
+		return
+	var aspect := float(_club_crest.get_width()) / maxf(1.0, _club_crest.get_height())
+	var index := 0
+	for side in [-1.0, 1.0]:
+		for board in 8:
+			var center := -56.0 + board * 16.0
+			for offset in [-4.5, 0.0, 4.5]:
+				var height := minf(0.85, 3.5 / maxf(aspect, 0.01))
+				var basis := Basis(Vector3.UP, PI if side > 0 else 0.0).scaled(Vector3(height * aspect, height, 1.0))
+				var position_ := Vector3(center + offset, 0.65, side * 41.04)
+				_club_branding.multimesh.set_instance_transform(index, Transform3D(basis, position_))
+				index += 1
+	var height := minf(2.9, 12.0 / maxf(aspect, 0.01))
+	_club_branding.multimesh.set_instance_transform(index,
+		Transform3D(Basis.from_scale(Vector3(height * aspect, height, 1.0)), Vector3(0, 10.6, -54.6)))
 
 
 func _venue_box(size: Vector3, position_: Vector3, material: Material, basis: Basis = Basis.IDENTITY) -> void:

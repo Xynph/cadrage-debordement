@@ -1,7 +1,7 @@
 extends RefCounted
 ## Stable IDs are persisted separately from the career. Only UI navigation is offered.
 const TOUR := ["bienvenue", "club", "bureau", "effectif", "composition", "entrainement", "tactique", "premier-match", "resultat", "calendrier", "classements", "finances", "recrutement", "territoire", "packs"]
-const CONTEXT_PAGES := TOUR + ["staff", "formation", "plan-jeu", "vestiaire", "centre", "presse", "rivalites", "travail-club", "strategie", "carriere"]
+const CONTEXT_PAGES := ["bienvenue", "club", "bureau", "effectif", "composition", "entrainement", "tactique", "premier-match", "resultat", "calendrier", "classements", "finances", "recrutement", "territoire", "packs", "staff", "formation", "plan-jeu", "vestiaire", "centre", "presse", "rivalites", "travail-club", "strategie", "carriere"]
 const PAGES := {
 	"bienvenue": ["Accueil","Gaston, dit Gabi","J'étais menuisier, avant. Puis j'ai passé ma vie au bord des terrains. Les deux métiers se ressemblent : quand ça tient de travers, inutile de repeindre. J'ai passé la main, c'est toi le coach. Je te montre la maison, puis je te laisse faire. Si je remets les chaises droites, laisse : ça me démange."],
 	"club": ["Création","Un club à faire grandir","Choisir un club, c'est choisir les gens avec qui on va vivre la saison. Regarde la division et l'objectif avant de prendre les rênes. Choisis un club dont tu as envie de connaître les gens. Les trophées, ça viendra peut-être. Le bonjour au gardien, ça commence demain matin."],

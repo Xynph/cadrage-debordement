@@ -27,14 +27,24 @@
 
 ## Tasks
 
-- [ ] 1. Banque et sélection : produire `dist/native-scene-dialogues.js`, sélecteur pur six choix et tests ; pas de mutation.
-- [ ] 2. Domaine `match-talks.cjs` : phases persistantes, décision/skip/continue, délégation, reprise, rollback ; tests vrai worker après raccordement.
-- [ ] 3. Domaine `scene-invitations.cjs` : courrier typé, joueurs/staff/réunions, fenêtres et reçus ; commandes contextuelles et tests.
-- [ ] 4. Décors natifs sous `ui/contextual/rooms/` : charger identité réelle, supprimer les CLI/UI de démonstration, maintenir provenance.
-- [ ] 5. Interface native sous `ui/contextual/` : causeries plein écran six choix, portraits, destinataires, match vivant, bureau et entraînement ; réutiliser G.portrait et le vrai match_view.
-- [ ] 6. Raccordements parent : manifest/worker/main, points d'entrée courriers/entraînement, paquet natif et migration ; vérifications ciblées puis revue indépendante.
+- [x] 1. Banque et sélection : produire `dist/native-scene-dialogues.js`, sélecteur pur six choix et tests ; pas de mutation.
+- [x] 2. Domaine `match-talks.cjs` : phases persistantes, décision/skip/continue, délégation, reprise, rollback ; tests vrai worker après raccordement.
+- [x] 3. Domaine `scene-invitations.cjs` : courrier typé, joueurs/staff/réunions, fenêtres et reçus ; commandes contextuelles et tests.
+- [x] 4. Décors natifs sous `ui/contextual/rooms/` : charger identité réelle, supprimer les CLI/UI de démonstration, maintenir provenance.
+- [x] 5. Interface native sous `ui/contextual/` : causeries plein écran six choix, portraits, destinataires, match vivant, bureau et entraînement ; réutiliser G.portrait et le vrai match_view.
+- [x] 6. Raccordements parent : manifest/worker/main, points d'entrée courriers/entraînement, paquet natif et migration ; vérifications ciblées puis revue indépendante.
 - [ ] 7. Captures réelles depuis carrière temporaire, tests de reprise/refus, PR prête avec état CI et passation.
 
 ## Coordination et arbitrages
 
 Main vérifié `978803ba727e51c5af23f458868c6d56cc878966`. Nouveaux composants possédés par cette branche. Les anciens écrans de gestion restent disponibles ; les salles 3D ne reçoivent pas de route permanente. Les raccordements nouveaux à main/worker/manifest sont additifs et séparés des changements de Réception 516/520 et attente 498. Comparer leurs patches avant les écritures concernées ; ne pas réécrire leurs interfaces.
+
+## Vérification de l’intégration
+
+Banque native : 228 déclarations originales courtes, six choix collectifs, au plus deux propositions spécifiques au contexte et quatre intentions générales. Les entretiens individuels présentent trois réponses. Aucun sélecteur de ton.
+
+Les domaines sont vérifiés avec le vrai worker : frontières de mi-temps, décisions et reçus persistants, reprise, délégation, anciens exports, refus de rejeu et rollback disque. La revue indépendante a corrigé trois défauts : moral valide aux bornes/décimal, terrain neutre des phases finales fictives, maintien de l’intensité d’entraînement.
+
+Les scènes utilisent les résolveurs existants de portraits et de blasons du club actif. Le match conserve le rendu et les commandes sportifs de production ; les panneaux du stade utilisent aussi le blason. Une bibliothèque de meubles Kenney et le sportif Quaternius sont embarqués avec leurs notices CC0.
+
+La validation graphique utilise des profils temporaires sous Linux/Godot 4.6.3. Elle ne constitue pas une validation Windows. La CI de la PR et les captures finales restent à consigner avant clôture de la tâche 7.
