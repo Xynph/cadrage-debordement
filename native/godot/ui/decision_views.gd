@@ -285,7 +285,8 @@ static func match_notes(app: Control, parent: Container, model: Dictionary) -> v
 		parent.add_child(G.wrap(advice.defenceReason, 13))
 		var adopt := G.button("APPLIQUER CES CONSIGNES", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}))
 		adopt.name = "ApplyLiveAdvice"
-		adopt.disabled = not advice.get("canAct", false) or not advice.get("defenceAvailable", false)
+		var changed: bool = advice.get("attackChanged", false) or advice.get("defenceChanged", false)
+		adopt.disabled = not advice.get("canAct", false) or not advice.get("defenceAvailable", false) or not changed
 		parent.add_child(adopt)
 		parent.add_child(G.wrap("Conseil indicatif. Mise en pause requise ; les consignes locales gardent leur priorité.", 11))
 	var report: Variant = data.get("report")
