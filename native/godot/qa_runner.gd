@@ -89,6 +89,8 @@ func _wait() -> bool:
 	return not app.waiting and not app.model.is_empty()
 
 func _ask(command:String,payload:Dictionary={},allow_refusal:bool=false) -> bool:
+	if command in ["advance_day","begin_match","finish_round","next_season"] and not await _publish_press_invitation():
+		return false
 	app._command(command,payload)
 	await _wait()
 	var success:bool=app.bridge.last_response_ok
@@ -123,6 +125,26 @@ func _press_named(control_name: String, parent: Node = null) -> bool:
 	_check(available,"Visible action: " + control_name)
 	if available: button.pressed.emit()
 	return available
+
+func _publish_press_invitation(restore_route: bool = true) -> bool:
+	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if not conference.get("required", false): return true
+	var prior_route: String = app.route
+	app._show_press_inbox()
+	await _settle()
+	_check(app.root_content.find_child("InboxOpenPressInvitation", true, false) == null, "Conference action requires opening its mail")
+	if not _press_named("InboxPressInvitation"): return false
+	await _settle()
+	if not _press_named("InboxOpenPressInvitation"): return false
+	await _settle()
+	for question: Dictionary in conference.questions:
+		if not _press_named("PressAnswer_" + str(question.id) + "_r4"): return false
+	if not _press_named("PressSubmit"): return false
+	await _wait()
+	var success: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
+	_check(success, "Publishing the invitation releases progression")
+	if restore_route: app._navigate(prior_route)
+	return success
 
 func _keyboard_focus() -> void:
 	var buttons:Array=app.root_content.find_children("*","Button",true,false)
@@ -390,6 +412,7 @@ func _run() -> void:
 	if session != null: _press_named("PreparationTrain_normal", session)
 	await _wait()
 	_check(app.model.meta.trained,"Training performed via real control")
+	if not await _publish_press_invitation(): await _finish(); return
 	app._navigate("Match")
 	_press("COUP D'ENVOI")
 	await _wait()
@@ -417,6 +440,7 @@ func _run() -> void:
 	_check(app.match_page==same_page,"Match panel remains stable across week")
 	_check(int(app.model.meta.week)==1,"Both competitions advance once")
 	await _coverage()
+	if not await _publish_press_invitation(): await _finish(); return
 	_check(not app.pause_button.disabled,"Second kickoff reenabled")
 	_press("COUP D'ENVOI")
 	await _wait()
@@ -520,17 +544,14 @@ func _systems_reception() -> void:
 	var five_tones: bool = press.conference.available
 	_check(press.people.size() == 30, "Bundled press retains all thirty journalists")
 	if press.conference.available:
-		var answers: Array = []
 		for question: Dictionary in press.conference.questions:
 			five_tones = five_tones and question.answers.size() == 5 and question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour")
 			_check(question.answers.size() == 5, "Every executable conference question offers five tones")
 			_check(question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour"), "The fifth response is the actual Humour tone")
-			answers.append({"questionId":question.id,"answerId":"r4"})
-		await _ask("press_conference", {"context":press.context,"answers":answers})
+		await _publish_press_invitation(false)
 		_check(app.model.clubLife.press.lastOutcome != null, "Bundled conference persists its actual outcome")
 	else:
 		_check(false, "S2 reception has a real conference available")
-	app._navigate("Presse")
 	var press_tabs: TabContainer = app.root_content.find_child("PressTabs",true,false)
 	_check(press_tabs != null and press_tabs.get_tab_count() == 4, "Exported press exposes Journal, Conference, History and Relations")
 	if press_tabs != null: press_tabs.current_tab = 3

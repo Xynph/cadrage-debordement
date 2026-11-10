@@ -10,6 +10,10 @@ function factory(){
  const context=s=>s?{season:s.season,week:weekOf(s),club:s.club}:null;
  const invitationId=c=>'press-v1:'+c.season+':'+c.week+':'+c.club;
  const invitationLimit=24;
+ const invitationKinds=['arrival','weekly','knockout','season_review'];
+ const priorityThemes={arrival:['carriere','vestiaire','formation'],knockout:['phase_finale','avant_match'],season_review:['classement','carriere','supporters']};
+ const requiredReason='Ouvrez l’invitation dans Réception et publiez vos réponses avant de poursuivre.';
+ const mandatory=()=>typeof nativeMandatoryPress!=='undefined'&&nativeMandatoryPress;
  function recorded(s,c){
   const history=s.pressConference?.history;
   return Array.isArray(history)&&history.some(h=>h.season===c.season&&h.week===c.week&&(h.club===undefined||h.club===c.club));
@@ -17,20 +21,37 @@ function factory(){
  function invitationStatus(s,entry){
   if(entry.status!=='pending')return entry.status;
   if(recorded(s,entry.context))return 'published';
-  return s.phase!=='ended'&&entry.id===invitationId(context(s))?'pending':'expired';
+  return entry.id===invitationId(context(s))?'pending':'expired';
  }
- const pendingInvitation=s=>s.pressInvitations?.entries.find(i=>invitationStatus(s,i)==='pending');
- function observeInvitation(previous,created){
+ const pendingInvitation=s=>s?.pressInvitations?.entries.find(i=>invitationStatus(s,i)==='pending');
+ function invitationKind(s,previous,current,created){
+  if(created||previous&&previous.club!==current.club||current.week===0&&(current.season===1||
+   s.managerMobility?.history.some(move=>move.toClub===current.club&&move.arrivalSeason===current.season)))return 'arrival';
+  if(s.phase==='ended')return 'season_review';
+  const phase=world(s)?CDWorldCareer.userFixture(s)?.phase:
+   s.franceMode?.version===1?CDFranceCompetition.userFixture(s)?.phase:nextMatch()?s.phase:null;
+  return phase&&!['league','pool'].includes(phase)?'knockout':'weekly';
+ }
+ function observeInvitation(previous=null,created=false){
+  if(!mandatory()||!S||S.live)return;
   const current=context(S);
-  if(!current)return;
   const id=invitationId(current);
-  const openSeason=S.phase!=='ended';
-  if(!created&&previous&&invitationId(previous)===id&&openSeason)return;
   const entries=S.pressInvitations?.entries??[];
   for(const entry of entries)entry.status=invitationStatus(S,entry);
-  if(!openSeason||S.live||entries.some(i=>i.id===id)||!CDV60RichPress.prepare(S))return;
-  const kind=created||previous?.club!==current.club?'arrival':'weekly';
-  S.pressInvitations={version:1,entries:[{id,context:current,kind,status:'pending'},...entries].slice(0,invitationLimit)};
+  if(entries.some(i=>i.id===id))return;
+  const kind=invitationKind(S,previous,current,created);
+  const published=recorded(S,current);
+  if(!published&&(CDV60RichPress.prepare(S,priorityThemes[kind])?.length??0)<2)return;
+  S.pressInvitations={version:1,entries:[{id,context:current,kind,status:published?'published':'pending'},...entries].slice(0,invitationLimit)};
+ }
+ function canPublish(s,invitation){
+  return !!invitation&&!s.live&&(CDV60RichPress.prepare(s,priorityThemes[invitation.kind])?.length??0)>=2;
+ }
+ function requiresConference(){
+  return mandatory()&&canPublish(S,pendingInvitation(S));
+ }
+ function guardProgress(){
+  check(!requiresConference(),requiredReason);
  }
  const keys=(value,allowed)=>obj(value)&&Object.keys(value).every(k=>allowed.includes(k));
  const text=t=>typeof t==='string'&&t.length>0&&t.length<=600&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(t);
@@ -48,7 +69,7 @@ function factory(){
    for(const entry of agenda.entries){
     check(keys(entry,['id','context','kind','status'])&&keys(entry.context,['season','week','club']),'Invitation de presse invalide.');
     const c=entry.context, order=c.season*100+c.week;
-    check(date(c.season,c.week)&&int(c.club,0,s.clubs.length-1)&&entry.id===invitationId(c)&&!seen.has(entry.id)&&order<=prior&&['arrival','weekly'].includes(entry.kind)&&['pending','published','expired'].includes(entry.status),'Invitation de presse invalide.');
+    check(date(c.season,c.week)&&int(c.club,0,s.clubs.length-1)&&entry.id===invitationId(c)&&!seen.has(entry.id)&&order<=prior&&invitationKinds.includes(entry.kind)&&['pending','published','expired'].includes(entry.status),'Invitation de presse invalide.');
     // Un ancien moteur peut conserver le courrier brut en avançant ou en publiant.
     // Son statut est alors calculé à la lecture, puis réglé à la prochaine transition.
     if(entry.status==='pending')check(++pending===1,'Plusieurs invitations de presse en attente.');
@@ -89,8 +110,9 @@ function factory(){
  function measures(s){const p=s.pressRelations;return {morale:s.morale,trust:s.trust,mediaTrust:p?.mediaTrust??50,fanTrust:p?.fanTrust??50,boardPressure:p?.boardPressure??30};}
  // A callback is a quotation from this saved career, never a reconstruction
  // from a tone or the question bank. Its exact displayed text is archived below.
- function prepareConference(s){
-  const questions=CDV60RichPress.prepare(s);if(!questions)return null;
+ function prepareConference(s,invitation){
+  const questions=mandatory()&&!invitation?null:CDV60RichPress.prepare(s,priorityThemes[invitation?.kind]);
+  if(!questions||questions.length<2)return null;
   const history=s.pressConference?.history||[],prefix='Lors de notre échange de saison ';
   return questions.map(q=>{
    const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix));
@@ -120,25 +142,28 @@ function factory(){
    const receipt=invitations.find(entry=>entry.status==='published'&&entry.id===invitationId(lastOutcome.context));
    if(receipt)lastOutcome.invitationId=receipt.id;
   }
-  const questions=prepareConference(S),projected=questions?.map(q=>{
+  const questions=prepareConference(S,invitation),projected=questions?.map(q=>{
    const person=people.find(p=>p.id===q.journalist.id);
    return {...copy(q),journalist:{...copy(q.journalist),identityLabel:person.identityLabel,personality:person.personality,styleLabel:person.styleLabel},relation:{score:person.score,label:person.relationLabel,encounters:person.encounters},answers:q.answers.map(a=>{const effects=CDPressRelations.dialogueEffect(q.journalist,a.tone,q.theme,person.score),mod=['crise','direction'].includes(q.theme)?2:1;const applied={morale:effects.morale*mod,media:effects.media*mod,fans:effects.fans*mod,pressure:effects.pressure*mod,relation:Math.max(-100,Math.min(100,person.score+effects.relation))-person.score};const signed=n=>n>=0?'+'+n:String(n);return {...copy(a),toneLabel:CDPressRelations.dialogueTones[a.tone],effects:applied,consequence:'Moral '+signed(applied.morale)+' · médias '+signed(applied.media)+' · supporters '+signed(applied.fans)+' · pression '+signed(applied.pressure)+' · relation '+signed(applied.relation)};})};
   });
-  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,conference:{available:!!questions,invitationId:invitation?.id??null,reason:S.live?'Conférence indisponible pendant un match.':questions?'':'Conférence déjà réalisée cette semaine.',memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
+  const required=mandatory()&&!!questions;
+  const reason=S.live?'Conférence indisponible pendant un match.':required?requiredReason:
+   questions?'':mandatory()?'Aucune invitation de presse en attente.':'Conférence déjà réalisée cette semaine.';
+  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
  }
  function execute(command,payload){
   check(command==='press_conference','Commande de presse inconnue.');check(!!S,'Créez ou importez une carrière.');check(!S.live,'Conférence indisponible pendant un match.');validate(S);
   check(keys(payload,['context','answers','invitationId'])&&keys(payload.context,['season','week','club'])&&Object.keys(payload.context).length===3&&Array.isArray(payload.answers),'Paramètres de conférence de presse invalides.');
   check(JSON.stringify(context(S))===JSON.stringify({season:payload.context.season,week:payload.context.week,club:payload.context.club}),'Préparation de conférence périmée.');
   const invitation=pendingInvitation(S);
-  if(payload.invitationId!==undefined)check(!!invitation&&payload.invitationId===invitation.id,'Invitation de presse périmée ou inconnue.');
-  const questions=prepareConference(S);check(!!questions,'Conférence déjà réalisée cette semaine.');check(payload.answers.length===questions.length,'Réponses de conférence incomplètes.');
+  if(mandatory()||payload.invitationId!==undefined)check(!!invitation&&payload.invitationId===invitation.id,'Invitation de presse périmée ou inconnue.');
+  const questions=prepareConference(S,invitation);check(!!questions,'Conférence déjà réalisée cette semaine.');check(payload.answers.length===questions.length,'Réponses de conférence incomplètes.');
   questions.forEach((q,i)=>check(keys(payload.answers[i],['questionId','answerId'])&&payload.answers[i].questionId===q.id&&q.answers.some(a=>a.id===payload.answers[i].answerId),'Question ou réponse de conférence périmée.'));
   const scores=questions.map(q=>({journalistId:q.journalist.id,before:S.pressPeople?.contacts?.[q.journalist.id]?.score??0}));
-  const before=measures(S);check(CDV60RichPress.apply(S,payload.answers.map(a=>a.answerId))===true,'Conférence de presse refusée.');const after=measures(S),delta=Object.fromEntries(Object.keys(before).map(k=>[k,after[k]-before[k]]));
+  const before=measures(S);check(CDV60RichPress.apply(S,payload.answers.map(a=>a.answerId),priorityThemes[invitation?.kind])===true,'Conférence de presse refusée.');const after=measures(S),delta=Object.fromEntries(Object.keys(before).map(k=>[k,after[k]-before[k]]));
   for(const q of questions){const archived=S.pressConference.history.find(h=>h.id===q.id&&h.season===S.season&&h.week===weekOf(S)&&h.club===S.club);check(!!archived,'Déclaration de conférence non archivée.');archived.questionText=q.question;}
   if(invitation)invitation.status='published';
-  S.pressConference.lastOutcome={context:context(S),before,after,delta,exchanges:scores.map(e=>{const after=S.pressPeople.contacts[e.journalistId].score;return {...e,after,delta:after-e.before};})};validate(S);return {pressOutcome:copy(S.pressConference.lastOutcome)};
+  S.pressConference.lastOutcome={context:context(S),before,after,delta,exchanges:scores.map(e=>{const after=S.pressPeople.contacts[e.journalistId].score;return {...e,after,delta:after-e.before};})};validate(S);return {pressOutcome:{...copy(S.pressConference.lastOutcome),...(invitation?{invitationId:invitation.id}:{})}};
  }
  function installHooks(){
   if(typeof advanceSeason!=='function'||advanceSeason.__nativePressSeason)return true;
@@ -146,6 +171,6 @@ function factory(){
   const wrapped=function(...args){const result=previous(...args);if(S?.pressRelations)while(S.pressRelations.season<S.season)S.pressRelations=CDPressRelations.nextSeason(S.pressRelations);return result;};
   wrapped.__nativePressSeason=true;advanceSeason=wrapped;return true;
  }
- return {project,validate,execute,installHooks,context,observeInvitation};
+ return {project,validate,execute,installHooks,context,observeInvitation,guardProgress,requiresConference};
 }
 module.exports={files,commands,factory};

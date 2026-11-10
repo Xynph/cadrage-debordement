@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
+const {spawnSync}=require('node:child_process');
 const {test}=require('node:test');
 const {createBridge}=require('../native/engine/worker.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
@@ -12,7 +13,7 @@ function openProfile(t){
  const dir=path.join(folder,'PrototypeGodot');
  const current=path.join(dir,'donnees.json');
  const backup=path.join(dir,'donnees-precedentes.json');
- const open=()=>createBridge({dataDir:dir,seed:20261110,now:1700000000000});
+ const open=()=>createBridge({mandatoryPress:true,dataDir:dir,seed:20261110,now:1700000000000});
  let bridge=open(), sequence=0;
  const send=(command,payload={})=>bridge.handle({id:++sequence,command,payload});
  const good=(command,payload)=>{const result=send(command,payload);assert.equal(result.ok,true,result.error);return result.model;};
@@ -80,43 +81,101 @@ test('L’invitation presse persiste, refuse un mauvais ID et donne un reçu ato
  assert.deepEqual(transfer.good('import',{text:good('export').meta.exportText}).clubLife.press.invitations,[receipt]);
 });
 
-test('Une invitation ignorée ne bloque aucune semaine et les anciennes parties restent ouvertes',t=>{
+test('Une invitation bloque la progression jusqu’à publication et un direct importé peut finir',t=>{
  const profile=openProfile(t),{good,send,bytes}=profile;
  let model=good('new_career',{mode:'fiction',club:0});
  const [arrival]=model.clubLife.press.invitations;
+ assert.equal(model.clubLife.press.conference.required,true);
+ const previous=bytes();
+ for(const command of ['begin_match','finish_round']){
+  const rejected=send(command);
+  assert.equal(rejected.ok,false);
+  assert.match(rejected.error,/Réception/);
+ }
+ assert.equal(send('press_conference',payload(model)).ok,false,'Identifiant du courrier exigé');
+ assert.deepEqual(bytes(),previous);
+ good('press_conference',payload(model,arrival.id));
  good('begin_match');
+
+ const live=JSON.parse(good('export').meta.exportText);
+ delete live.state.pressInvitations;
+ delete live.state.pressConference;
+ delete live.state.pressRelations;
+ delete live.state.pressPeople;
+ model=good('import',{text:sign(live)});
+ assert.equal(model.clubLife.press.conference.required,false);
+ assert.equal(profile.reopen().clubLife.press.conference.required,false);
  good('delegate');
  model=good('finish_round');
- const [first,old]=model.clubLife.press.invitations;
- assert.equal(first.id,'press-v1:1:1:0');
- assert.equal(first.kind,'weekly');
- assert.deepEqual(old,{...arrival,status:'expired'});
- const previous=bytes();
- assert.equal(send('press_conference',payload(model,old.id)).ok,false);
- assert.deepEqual(bytes(),previous);
- model=good('press_conference',payload(model));
- assert.equal(model.clubLife.press.invitations[0].status,'published','La voie presse existante accuse aussi réception');
+ const [weekly]=model.clubLife.press.invitations;
+ assert.equal(weekly.id,'press-v1:1:1:0');
+ assert.equal(weekly.kind,'weekly');
+ assert.equal(model.clubLife.press.conference.required,true);
+ assert.equal(send('press_conference',payload(model,arrival.id)).ok,false);
+ good('press_conference',payload(model,weekly.id));
 
  const legacy=JSON.parse(good('export').meta.exportText);
  delete legacy.state.pressInvitations;
  model=good('import',{text:sign(legacy)});
- assert.deepEqual(model.clubLife.press.invitations,[]);
- assert.deepEqual(profile.reopen().clubLife.press.invitations,[]);
- assert.equal(JSON.parse(good('export').meta.exportText).state.pressInvitations,undefined);
- good('begin_match');good('delegate');
+ assert.equal(model.clubLife.press.conference.required,false,'Une conférence déjà publiée par un ancien moteur est reconnue');
+ assert.equal(model.clubLife.press.invitations[0].status,'published');
+ good('begin_match');
+ good('delegate');
  model=good('finish_round');
- assert.deepEqual(model.clubLife.press.invitations.map(i=>i.id),['press-v1:1:2:0']);
+ assert.equal(model.clubLife.press.invitations[0].id,'press-v1:1:2:0');
+ assert.equal(model.clubLife.press.conference.required,true);
 });
 
-test('L’avance Champ reste groupée et crée le courrier du créneau atteint',t=>{
- const {good}=openProfile(t);
+test('Une reprise de semaine sans agenda recrée une invitation stable',t=>{
+ const profile=openProfile(t),{good}=profile;
+ good('new_career',{mode:'fiction',club:0});
+ const legacy=JSON.parse(good('export').meta.exportText);
+ delete legacy.state.pressInvitations;
+ const file=JSON.parse(fs.readFileSync(profile.current,'utf8'));
+ file.store['bdt-v1']=JSON.stringify(legacy.state);
+ fs.writeFileSync(profile.current,JSON.stringify(file));
+ const saved=profile.bytes();
+ const model=profile.reopen();
+ assert.equal(model.clubLife.press.conference.required,true);
+ assert.equal(model.clubLife.press.invitations[0].kind,'arrival');
+ assert.deepEqual(profile.reopen().clubLife.press.invitations,model.clubLife.press.invitations);
+ assert.deepEqual(profile.bytes(),saved);
+});
+
+test('Une avance accélérée s’arrête au prochain courrier obligatoire',t=>{
+ const {good,send}=openProfile(t);
  const initial=good('new_career',{mode:'world-champ',club:102});
  assert.equal(initial.meta.week,0);
  assert.equal(initial.clubLife.press.invitations[0].kind,'arrival');
+ assert.equal(send('advance_champ_preparation',{fromWeek:0}).ok,false);
+ good('press_conference',payload(initial,initial.clubLife.press.conference.invitationId));
  const after=good('advance_champ_preparation',{fromWeek:0});
- assert.equal(after.meta.week,4);
+ assert.equal(after.meta.week,1);
+ assert.equal(after.clubLife.press.conference.required,true);
  assert.deepEqual(after.clubLife.press.invitations.map(i=>[i.id,i.status]),[
-  ['press-v1:1:4:102','pending'],
-  ['press-v1:1:0:102','expired'],
+  ['press-v1:1:1:102','pending'],
+  ['press-v1:1:0:102','published'],
  ]);
+});
+
+test('Le processus JSONL de Godot active l’obligation par défaut',t=>{
+ const folder=fs.mkdtempSync(path.join(os.tmpdir(),'cd-press-jsonl-'));
+ t.after(()=>fs.rmSync(folder,{recursive:true,force:true}));
+ const input=[
+  {id:1,command:'new_career',payload:{mode:'fiction',club:0}},
+  {id:2,command:'begin_match'},
+  {id:3,command:'shutdown'}
+ ].map(request=>JSON.stringify(request)).join('\n')+'\n';
+ const result=spawnSync(process.execPath,[require.resolve('../native/engine/worker.cjs'),'--data-dir',folder],{
+  input,encoding:'utf8',timeout:30_000,maxBuffer:16*1024*1024,windowsHide:true
+ });
+ if(result.error)throw result.error;
+ assert.equal(result.status,0,result.stderr);
+ const [creation,refusal,shutdown]=result.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));
+ assert.equal(creation.ok,true);
+ assert.equal(creation.model.clubLife.press.conference.required,true);
+ assert.equal(refusal.ok,false);
+ assert.match(refusal.error,/Réception/);
+ assert.equal(refusal.model.live,null);
+ assert.equal(shutdown.ok,true);
 });

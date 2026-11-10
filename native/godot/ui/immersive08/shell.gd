@@ -40,7 +40,7 @@ const GROUPS = [
 	["Recrutement", "Recrutement", ["Recrutement"]],
 	["Club", "Club", ["Club", "Staff", "Travail du club", "Stratégie"]],
 	["Finances", "Finances", ["Finances"]],
-	["Compétitions", "Classements", ["Classements", "Calendrier", "Presse", "Rivalités"]],
+	["Compétitions", "Classements", ["Classements", "Calendrier", "Rivalités"]],
 	["Formation", "Formation", ["Formation", "Centre"]],
 	["Carrière", "Carrière", ["Carrière"]]
 ]
@@ -262,7 +262,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
 		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
-		if i==8:selected=app.route in ["Classements","Calendrier","Presse","Rivalités"]
+		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités"]
 		if i==9:selected=app.route in ["Formation","Centre"]
 		var y:=394+i*57
 		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():

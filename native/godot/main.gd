@@ -52,7 +52,7 @@ const NAV_CHAPTERS = [
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
 	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
-	{"label":"Compétitions", "routes":["Calendrier","Classements","Presse","Rivalités"]},
+	{"label":"Compétitions", "routes":["Calendrier","Classements","Rivalités"]},
 	{"label":"Carrière", "routes":["Carrière"]}
 ]
 var model: Dictionary = {}
@@ -243,7 +243,7 @@ func _receive_model(value: Dictionary) -> void:
 	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
 	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile"]:
 		if is_instance_valid(navigation_controller): navigation_controller.reset()
-		for key in ["press_draft_context", "press_draft_choices"]:
+		for key in ["press_draft_context", "press_draft_choices", "press_mail_origin"]:
 			if has_meta(key): remove_meta(key)
 	if model.get("meta", {}).get("catalogue") is Array:
 		catalogue = model.meta.catalogue.duplicate(true)
@@ -368,7 +368,27 @@ func _failed(message: String) -> void:
 	d.confirmed.connect(d.queue_free)
 	if route == "Accueil" or not _has_career(): _render()
 
+func _show_press_inbox() -> void:
+	var inbox: Dictionary = management_ui.get("reception", {})
+	if not inbox.is_empty():
+		inbox.merge({"folder":0, "category":"Tous", "selected":"", "oldest_first":false, "scroll":0, "press_opened":""}, true)
+	_navigate("Réception", false)
+
+func _open_press_invitation(id: String) -> void:
+	var inbox: Dictionary = management_ui.get("reception", {})
+	if route != "Réception" or waiting or inbox.get("press_opened") != id: return
+	var press: Dictionary = model.get("clubLife", {}).get("press", {})
+	var conference: Dictionary = press.get("conference", {})
+	var outcome: Variant = press.get("lastOutcome")
+	var active: bool = conference.get("available", false) and conference.get("invitationId") == id
+	if not active and not (outcome is Dictionary and outcome.get("invitationId") == id): return
+	set_meta("press_mail_origin", id)
+	management_ui.press_tab = 1
+	_navigate("Presse", false)
+
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
+	if target == "Presse" and not has_meta("press_mail_origin"): return
+	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
@@ -418,6 +438,7 @@ func _build_subnavigation(parent: Container) -> void:
 		return
 
 func _render(remember_ui: bool = true) -> void:
+	if route == "Presse" and not has_meta("press_mail_origin"): route = "Réception"
 	call_deferred("_refresh_coach")
 	call_deferred("_observe_navigation")
 	for chapter: Dictionary in NAV_CHAPTERS:

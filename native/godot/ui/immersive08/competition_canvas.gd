@@ -133,10 +133,7 @@ func _header() -> void:
 		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tab.add_theme_font_size_override("font_size", maxi(12, C.px(31)))
 		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3], app.accent))
-	var links: Array = [["Presse", "mail"], ["Rivalités", "shield"]]
-	for i in links.size():
-		var route: String = links[i][0]
-		D.button(self, Rect2(1190 + i * 193, 203, 179, 45), route, func(): app._navigate(route), false, links[i][1], true, app.accent, "Section_" + route)
+	D.button(self, Rect2(1383, 203, 179, 45), "Rivalités", func(): app._navigate("Rivalités"), false, "shield", true, app.accent, "Section_Rivalités")
 	D.button(self, Rect2(1578, 203, 264, 45), "Archives des saisons", func(): Club.season_archives(app), false, "save", true, app.accent, "OpenArchives")
 	D.line(self, Vector2(0, 254), Vector2(WIDTH, 254), Color(WARM, .55))
 
