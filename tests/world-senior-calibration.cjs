@@ -62,7 +62,7 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
     const baseline = withBridge(path.join(root, 'nationale'), ask => state(ask('new_career', { mode: 'world-nationale', club: 0 })));
     const oldPlayers = new Map(players(baseline).map(player => [player.id, player]));
     const opener = model.squad.find(player => player.id === 'lnr:2436');
-    const oldOpener = oldPlayers.get(opener.id);
+    const oldOpener = require('../dist/rugby-common-rosters.js').clubs[0].players.find(player => player.id === opener.id);
     assert.equal(created.lineup[9], opener.id);
     assert.equal(opener.shirtNumber, 10);
     assert.ok(opener.rating >= 87 && opener.rating <= 89, `Globale de l’ouvreur : ${opener.rating}`);
@@ -71,16 +71,12 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
     assert.ok(opener.attributes.pass > oldOpener.skills.pass);
     assert.ok(opener.attributes.kick > oldOpener.skills.kick);
     assert.equal(created.seniorCalibrationVersion, 1);
-    assert.equal(baseline.seniorCalibrationVersion, undefined);
+    assert.equal(baseline.seniorCalibrationVersion, 1);
 
     for (const player of players(created)) {
       const old = oldPlayers.get(player.id);
       if (!old || !player.attributesV2) continue;
-      assert.equal(player.potential, old.potential, player.id);
-      if (player.id !== opener.id && player.rating > old.rating) {
-        assert.equal(player.dev.potential, Math.min(Math.max(97, old.dev.potential), old.dev.potential + player.rating - old.rating), player.id);
-      }
-      if (player.age < 23) assert.deepEqual(numbers(player), numbers(old), player.id);
+      assert.deepEqual(numbers(player), numbers(old), player.id);
       assert.equal(player.name, old.name, player.id);
       assert.equal(player.pos, old.pos, player.id);
       assert.equal(player.salary, old.salary, player.id);
@@ -96,6 +92,28 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
       const imported = ask('import', { text: exported });
       assert.deepEqual(state(imported).clubs.map(club => club.players.map(numbers)), created.clubs.map(club => club.players.map(numbers)));
     });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('Le barème du même ouvreur est partagé entre la Base commune et les cinq éditions Monde', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-senior-editions-'));
+  try {
+    const modes = { common: 2, world: 7, 'world-pacific': 9, 'world-japan': 10, 'world-nationale': 10, 'world-champ': 10 };
+    for (const [mode, above90] of Object.entries(modes)) {
+      withBridge(path.join(root, mode), ask => {
+        const model = ask('new_career', { mode, club: 0 });
+        const created = state(model);
+        const opener = model.squad.find(player => player.id === 'lnr:2436');
+        assert.equal(opener.rating, 88, mode);
+        assert.equal(opener.note, 91, mode);
+        assert.equal(opener.attributes.goal, 84.4, mode);
+        assert.equal(created.lineup[9], opener.id, mode);
+        assert.equal(created.seniorCalibrationVersion, 1, mode);
+        assert.equal(players(created).filter(player => player.rating > 90 && roleNote(player) > 90).length, above90, mode);
+      });
+    }
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

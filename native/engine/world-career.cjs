@@ -273,7 +273,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function previewRoster(id){
   const players=initialRoster(REG.clubs[id]);
   players.push(...nativeProfessionalDepth.additions(id,players,1));
-  if(CH&&seniorCalibration)seniorCalibration.apply(players,SOURCES);
+  if(seniorCalibration)seniorCalibration.apply(players,SOURCES);
   return players;
  }
  function start(id,dailyCalendar=false){
@@ -294,7 +294,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   if(typeof nativeProfessionalDepth!=='undefined')nativeProfessionalDepth.fill(S);
   S.aiRoster.academyAgingVersion=1;
   setupDevelopment();
-  if(CH&&seniorCalibration){
+  if(seniorCalibration){
    for(const club of S.clubs)seniorCalibration.apply(club.players,SOURCES);
    S.seniorCalibrationVersion=seniorCalibration.version;
   }
@@ -333,7 +333,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  }
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;
-  if(s.seniorCalibrationVersion!==undefined)check(CH&&s.seniorCalibrationVersion===seniorCalibration?.version,'barème senior inconnu.');
+  if(s.seniorCalibrationVersion!==undefined)check(s.seniorCalibrationVersion===seniorCalibration?.version,'barème senior inconnu.');
   check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access']),...(w.day===undefined?[]:['day']),...(w.resultConfirmed===undefined?[]:['resultConfirmed']),...(w.calendarPolicy===undefined?[]:['calendarPolicy'])]),'métadonnées de compétition non reconnues.');
   check(w.calendarPolicy===undefined||lnrOpening(s)&&s.season===1&&w.day!==undefined,'politique de calendrier inconnue.');
   if(CH)check(eq(w.champ,champBoundary()),'frontières du Champ modifiées.');

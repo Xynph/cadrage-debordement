@@ -120,9 +120,9 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     else player.dev.potential = Math.min(Math.max(97, player.dev.potential), player.dev.potential + growth);
   }
 
-  function apply(players, sources) {
+  function apply(players, sources = null) {
     for (const player of players) {
-      if (player.age >= 23 && player.attributesV2 && sources.has(player.id)) calibrate(player);
+      if (player.age >= 23 && player.attributesV2 && (!sources || sources.has(player.id))) calibrate(player);
     }
   }
 
