@@ -169,7 +169,7 @@ func _decisions() -> void:
 	_import_text(exported)
 	_check(app.route == "Match", "Accepted import waits for its own response before navigation")
 	await _wait()
-	_check(app.route == "Bureau", "Successful import applies its own target route")
+	_check(app.route == "Réception", "Successful import opens Reception")
 	app._navigate("Match")
 	await _command("pause", {"paused":false})
 	app.bridge.stop()
@@ -269,14 +269,16 @@ func _bench() -> void:
 	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	var first_date: String = app.header_date.text
-	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
+	var first_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.begins_with(first_day + " ") and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
 	app._navigate("Match")
 	await _command("begin_match")
 	await _command("delegate")
 	await _command("finish_round")
-	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
+	var second_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.begins_with(second_day + " ") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
 
 func _modal() -> void:
 	app._navigate("Recrutement")
