@@ -70,10 +70,11 @@ func _build() -> void:
 		app.management_ui.immersive_training = {}
 	state = app.management_ui.immersive_training
 	var week_key := str([app.model.get("club", {}).get("id"), meta.get("season"), meta.get("week")])
-	if state.get("week") != week_key or state.get("stored_mode") != meta.get("training"):
+	var training_mode := str(meta.get("training", "normal"))
+	if state.get("week") != week_key or state.get("stored_mode") != training_mode or trained:
 		state.week = week_key
-		state.stored_mode = meta.get("training")
-		state.mode = str(meta.get("training", "normal"))
+		state.stored_mode = training_mode
+		state.erase("mode")
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
 	D.text(self, 29, 34, "PRÉPARATION DU GROUPE", 28, PALE_GOLD, 700, 320)
 	D.line(self, Vector2(335, 24), Vector2(486, 24), app.accent.lightened(.36), 2)
@@ -117,7 +118,7 @@ func _risk(p: Dictionary) -> float:
 	return maxf(float(p.get("physicalLoad", 0)), 100.0 - float(p.get("condition", 100)))
 
 func _mode() -> String:
-	return str(MODES.get(state.get("mode", "normal"), MODES.normal))
+	return str(MODES.get(state.get("mode", state.get("stored_mode")), MODES.normal))
 
 func _staff_members() -> Array:
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
@@ -419,7 +420,12 @@ func _open_slot(index: int) -> void:
 
 func _validate() -> void:
 	if locked or trained: return
-	_mode_dialog(true)
+	var mode := str(state.get("mode", ""))
+	if not MODES.has(mode):
+		_mode_dialog(true)
+		return
+	app.confirm("Effectuer la séance", "Charge retenue · %s\nLa séance sera effectuée et ses effets enregistrés." % MODES[mode],
+		func(): app._command("train", {"mode":mode}), true)
 
 func _mode_dialog(validate: bool) -> void:
 	var window := _dialog("TrainingSessionDialog", "Effectuer la séance" if validate else "Modifier la séance")
@@ -429,6 +435,7 @@ func _mode_dialog(validate: bool) -> void:
 	if trained or locked:
 		body.add_child(C.wrap("Séance effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison.", 22, C.MUTED, true))
 	else:
+		var selected: String = state.get("mode", state.get("stored_mode"))
 		for id: String in MODES:
 			var button := C.button(str(MODES[id]), func():
 				dialog.hide()
@@ -436,7 +443,7 @@ func _mode_dialog(validate: bool) -> void:
 				if validate: app._command("train", {"mode":id})
 				else:
 					state.mode = id
-					app._render(), state.get("mode") == id, app.accent)
+					app._render(), selected == id, app.accent)
 			button.name = "PreparationTrain_" + id if validate else "TrainingMode_" + id
 			button.accessibility_name = ("Effectuer la séance · " if validate else "Sélectionner · ") + str(MODES[id])
 			body.add_child(button)
