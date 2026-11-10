@@ -416,7 +416,9 @@ static func _heading(parent: Node, app: Control) -> void:
 			D.scenario_photo(image, COMPACT_SCENARIO_ART[app.route], Rect2(613, 3, 190, 83))
 	var values := P.group(app.model)
 	var rank := G.n(app.model.club.get("rank", "—"))
-	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[str(values.injured)+" blessés","heart",C.ALERT],["3 priorités","calendar",C.AMBER]]
+	var injury_count: int = values.injured
+	var injury_caption := "%d blessé%s" % [injury_count, "s" if injury_count > 1 else ""]
+	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
 	if app.route=="Effectif": metrics=[[str(values.total)+" joueurs","people",C.GOLD],metrics[1],metrics[2],["Niveau moyen "+str(values.rating),"star",C.GOLD]]
 	elif app.route not in ["Bureau","Composition"]: metrics=[]
 	if app.route=="Composition":
@@ -432,8 +434,8 @@ static func _heading(parent: Node, app: Control) -> void:
 			if app.route=="Effectif":
 				D.chip(row,Rect2(1242+i*253,19,241,51),item[0],C.IVORY if i==0 else item[2])
 				continue
-			var x := 1236+i*255
-			D.rect(row,Rect2(x,13,243,63),Color("13201d"),7,Color(item[2],.7))
+			var x := 1512+i*250
+			D.rect(row,Rect2(x,15,236,58),Color("16201f"),7,Color("415451"))
 			var symbol := C.icon(item[1],25,item[2])
 			row.add_child(symbol)
 			D.place(symbol,Rect2(x+16,32,25,25))
@@ -473,8 +475,9 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
-	var shortcuts := D.text(row,782,36-FOOTER_RISE,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
-	shortcuts.name="ImmersiveShortcuts"
+	if app.route != "Bureau":
+		var shortcuts := D.text(row,782,36-FOOTER_RISE,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+		shortcuts.name = "ImmersiveShortcuts"
 	if app.decision_feedback != null:
 		var feedback: Button = app.decision_feedback.control()
 		feedback.add_theme_font_override("font",C.DISPLAY)
@@ -505,7 +508,7 @@ static func _position_footer(row: Control) -> void:
 	var right := (feedback.position.x if feedback!=null else dock.position.x)-gap
 	var shortcuts: Label = row.get_node_or_null("ImmersiveShortcuts")
 	var compact := C.px(24)*factor<14.0
-	var side_by_side := not compact and row.size.x*factor>=1650
+	var side_by_side := shortcuts != null and not compact and row.size.x*factor>=1650
 	var shortcuts_x := maxf(C.px(782),630.0/factor)
 	if side_by_side: right = minf(right,shortcuts_x-gap)
 	var pixels := maxi(C.px(17),ceili(14.0/factor))

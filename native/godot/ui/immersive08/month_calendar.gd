@@ -39,15 +39,6 @@ var month := ""
 var selected := ""
 var filter := "all"
 
-class CompletionLine extends Control:
-	func _ready() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		resized.connect(queue_redraw)
-		queue_redraw()
-
-	func _draw() -> void:
-		draw_line(Vector2(3, size.y-3), Vector2(size.x-3, 3), Color("ace5d0a3"), 1.25, true)
-
 static func build(owner_app: Control, table_callback: Callable = Callable()) -> Control:
 	var view: VBoxContainer = load("res://ui/immersive08/month_calendar.gd").new()
 	view._setup(owner_app, table_callback)
@@ -170,7 +161,7 @@ func _refresh() -> void:
 	workspace.add_child(left)
 	var body := C.content(left)
 	body.add_theme_constant_override("separation", 0)
-	_toolbar(body, month_name)
+	_toolbar(body)
 	_grid(body)
 	_legend(body)
 	_detail(workspace)
@@ -180,20 +171,24 @@ static func _plural(count: int, singular: String, plural: String) -> String:
 	return "%d %s" % [count, singular if count == 1 else plural]
 
 func _heading(title: String, description: String, match_count: int, session_count: int) -> void:
-	var panel := C.card("", Vector2(0,148))
-	panel.add_theme_stylebox_override("panel", C.box(Color("192f28"), Color("5c7366"), 10, 20))
+	var panel := C.card("", Vector2(0,146))
+	var ink := Color("182824").lerp(app.accent, .12)
+	var edge := C.box(ink, Color("50665e"), 10, 20)
+	edge.border_color = Color("50665e").lerp(app.accent, .35)
+	panel.add_theme_stylebox_override("panel", edge)
 	var photo := C.photo("stadium", Vector2.ZERO, true, .42)
 	panel.add_child(photo)
 	panel.move_child(photo, 0)
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	photo.modulate.a = .28
+	photo.modulate.a = .21
 	panel.clip_contents = true
 	add_child(panel)
 	var body := C.content(panel)
 	var season := G.n(app.model.get("meta", {}).get("season", ""))
 	var league := P.league_name(app.model)
-	body.add_child(C.label(("SAISON %s   /   %s" % [season, league]).to_upper(), 20, C.GOLD, true, 700))
-	body.add_child(C.label(title, 53, C.IVORY, true, 800))
+	body.add_child(C.label(("SAISON %s   /   %s" % [season, league]).to_upper(), 21, C.GOLD, true, 700))
+	var heading := title if month.is_empty() else title + " " + month.left(4)
+	body.add_child(C.label(heading, 53, C.IVORY, true, 800))
 	var line := C.h(12)
 	body.add_child(line)
 	var subtitle := C.label(description, 19, C.IVORY, false)
@@ -205,13 +200,14 @@ func _heading(title: String, description: String, match_count: int, session_coun
 	elif show_table.is_valid():
 		line.add_child(_action("Tableau des rencontres", show_table, "CalendarShowTable"))
 
-func _toolbar(parent: Node, month_name: String) -> void:
-	var padding := C.margin(10)
+func _toolbar(parent: Node) -> void:
+	var padding := C.margin(12)
 	parent.add_child(padding)
 	var bar := C.h(8)
 	padding.add_child(bar)
-	var caption := C.label(month_name + " " + month.left(4), 27, C.IVORY, true, 700)
+	var caption := C.label("Planning du club", 26, C.IVORY, true, 700)
 	caption.name = "MonthCalendarCaption"
+	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	bar.add_child(C.fill(caption))
 	if planning.get("simulatedDates", false):
 		bar.add_child(_pill("Dates simulées", Color("263432"), C.MUTED, 16))
@@ -246,8 +242,10 @@ func _grid(parent: Node) -> void:
 	grid.add_child(weekdays)
 	for index in 7:
 		var card := C.card()
-		card.add_theme_stylebox_override("panel", C.box(Color("1b2b28"), Color("3e514e"), 0, 8))
-		var caption := C.label(SHORT_DAYS[index] if C.density < .67 else WEEKDAYS[index], 19, C.MUTED)
+		var heading_style := C.box(Color("202c29") if index < 5 else Color("24332c"), Color.TRANSPARENT, 0, 8)
+		heading_style.set_corner_radius_all(0)
+		card.add_theme_stylebox_override("panel", heading_style)
+		var caption := C.label(SHORT_DAYS[index] if C.density < .67 else WEEKDAYS[index], 20, C.MUTED)
 		C.content(card).add_child(caption)
 		weekdays.add_child(C.fill(card))
 	var first := month + "-01"
@@ -274,27 +272,23 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	var outside := not date.begins_with(month)
 	var past := not today.is_empty() and date < today
 	var current := date == today
+	var selected_day := date == selected
 	var countdown: bool = not today.is_empty() and not next_fixture.is_empty() and date >= today and date < next_fixture.date
 	cell.set_meta("countdown", countdown)
-	var fill := Color("182724") if weekend else Color("132023")
-	var border := Color("384e4d")
-	if countdown:
-		fill = Color("30342a") if current else Color("282a20")
-		border = C.GOLD
-	elif outside:
-		fill = Color("101a1c")
-	elif past:
-		fill = Color("36474c")
-	if current and not countdown:
-		border = C.MINT
-	elif date == selected and not countdown:
-		border = C.BLUE
+	var remaining := _days_before(date, next_fixture.date) if countdown else 0
+	var fill := Color("1a2825") if weekend else Color("172326")
+	var border := Color("354542")
+	if outside or past: fill = Color("111a1d") if outside else Color("141e21")
+	if selected_day: fill = fill.lerp(app.accent, .20)
+	if current: fill = Color("22372f")
+	if current: border = C.MINT
+	elif selected_day: border = C.IVORY
 	for state in ["normal","hover","pressed"]:
 		var background := fill.lightened(.07) if state == "hover" else fill
 		var style := C.box(background, border, 0, 0)
 		style.set_corner_radius_all(0)
 		style.border_color = border
-		if countdown or current: style.set_border_width_all(2)
+		if selected_day or current: style.set_border_width_all(2)
 		cell.add_theme_stylebox_override(state, style)
 	var focus := C.box(Color.TRANSPARENT, C.IVORY, 0, 0)
 	focus.set_corner_radius_all(0)
@@ -303,6 +297,7 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	cell.pressed.connect(_select.bind(date))
 	cell.accessibility_name = _display_date(date)
 	if current: cell.accessibility_name += " · Aujourd’hui"
+	if selected_day: cell.accessibility_name += " · Jour sélectionné"
 	var margin := C.margin(6)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cell.add_child(margin)
@@ -313,13 +308,14 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	var head := C.h(4)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lines.add_child(head)
-	var date_label := C.label(date.right(2).to_int(), 25, C.FAINT if outside and not countdown else C.IVORY, true, 700)
+	var date_label := C.label(date.right(2).to_int(), 25, C.MUTED if outside or past else C.IVORY, true, 700)
 	head.add_child(C.fill(date_label))
 	if current:
 		head.add_child(_pill("AUJOURD’HUI", Color("bce8dc"), Color("173631"), 15))
-	elif countdown:
-		var remaining := _days_before(date, next_fixture.date)
-		head.add_child(_pill("J−%d" % remaining, Color("443720"), C.GOLD, 15))
+	elif selected_day:
+		head.add_child(_pill("SÉLECTION", C.IVORY, Color("202829"), 15))
+	if remaining > 0 and remaining <= 7 and not current and not selected_day:
+		head.add_child(C.label("J−%d" % remaining, 17, C.GOLD, true, 700))
 	if filter != "matches":
 		for session: Dictionary in sessions_by_day.get(date, []): lines.add_child(_session_chip(session))
 	if filter != "training":
@@ -375,7 +371,7 @@ func _match_chip(fixture: Dictionary) -> PanelContainer:
 
 func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContainer:
 	var done := not today.is_empty() and str(session.date) < today
-	var panel := _tile(Color("29423f") if done else Color("173734"), Color("649286") if done else Color("53998d"), 4)
+	var panel := _tile(Color("1b2929") if done else Color("1b3631"), Color("3c5450") if done else Color("579284"), 4)
 	panel.name = "MonthSession_" + str(session.get("id","")).validate_node_name()
 	panel.set_meta("completed", done)
 	panel.set_meta("date", session.date)
@@ -387,7 +383,7 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
 	var label := str(session.get("label","Entraînement"))
-	var caption := C.label(label, 18, Color("c1ddd3") if done else Color("c6eee1"), true, 700)
+	var caption := C.label(label, 19, C.MUTED if done else Color("d8eee7"), true, 700)
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text.add_child(caption)
 	var forwards := _caption(session.get("forwards"))
@@ -401,11 +397,9 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	if not forwards.is_empty(): panel.accessibility_name += " · Avants : " + forwards
 	if not backs.is_empty(): panel.accessibility_name += " · Trois-quarts : " + backs
 	if done:
-		var strike := CompletionLine.new()
-		panel.add_child(strike)
-		strike.top_level = false
-		strike.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		strike.z_index = 1
+		var check := C.icon("check", 17, Color("86b6a2"))
+		check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(check)
 	return panel
 
 static func _caption(value: Variant) -> String:
@@ -447,11 +441,7 @@ func _legend(parent: Node) -> void:
 		legend.add_child(C.label(PLACES[key], 17, C.MUTED))
 	legend.add_child(_session_icon("strength"))
 	legend.add_child(C.label("Entraînement", 17, C.MUTED))
-	var mark := _tile(Color("29423f"),Color("649286"),2)
-	mark.custom_minimum_size = Vector2(C.px(26), C.px(16))
-	var line := CompletionLine.new()
-	mark.add_child(line)
-	legend.add_child(mark)
+	legend.add_child(C.icon("check", 21, Color("86b6a2")))
 	legend.add_child(C.label("Séance effectuée",17,C.MUTED))
 
 func _detail(parent: Node) -> void:
@@ -460,9 +450,14 @@ func _detail(parent: Node) -> void:
 	card.add_theme_stylebox_override("panel", C.box(C.PANEL,Color("425751"),10,14))
 	parent.add_child(card)
 	var body := C.content(card)
-	body.add_child(C.label("PROGRAMME DU JOUR",20,C.GOLD,true,700))
+	var heading := "PROGRAMME DU JOUR" if selected == today else "JOUR SÉLECTIONNÉ"
+	body.add_child(C.label(heading,20,C.MINT if selected == today else C.IVORY,true,700))
 	var title := "Aujourd’hui · " + _display_date(selected) if selected == today else _display_date(selected)
 	body.add_child(C.wrap(title,27,C.IVORY,true,700))
+	if selected != today and not today.is_empty() and selected > today and not next_fixture.is_empty() and selected < next_fixture.date:
+		var remaining := _days_before(selected,next_fixture.date)
+		if remaining <= 7:
+			body.add_child(C.label("J−%d avant le prochain match" % remaining,19,C.GOLD,true,600))
 	var day_sessions: Array = sessions_by_day.get(selected, [])
 	var day_fixtures: Array = fixtures_by_day.get(selected, [])
 	for session: Dictionary in day_sessions: body.add_child(_session_chip(session, true))
@@ -524,6 +519,7 @@ func _templates(body: VBoxContainer) -> void:
 	var chooser := OptionButton.new()
 	chooser.name = "CalendarTemplate"
 	chooser.accessibility_name = "Modèle de semaine"
+	chooser.tooltip_text = "Choisissez une semaine type pour rendre le bouton Appliquer disponible."
 	chooser.add_theme_font_override("font", C.DISPLAY)
 	chooser.add_theme_font_size_override("font_size", maxi(12,C.px(19)))
 	chooser.custom_minimum_size.y = C.px(32)
@@ -533,10 +529,11 @@ func _templates(body: VBoxContainer) -> void:
 	for template: Dictionary in templates:
 		chooser.add_item(str(template.get("label","Semaine type")))
 		chooser.set_item_metadata(chooser.item_count-1, template.get("id"))
+	chooser.select(0)
 	var apply := _action("Appliquer au prochain match", func():
 		if chooser.selected > 0:
 			app._command("calendar_template", {"fixtureId":fixture_id,"template":chooser.get_item_metadata(chooser.selected)})
-	, "CalendarApplyTemplate")
+	, "CalendarApplyTemplate", "Choisissez un modèle de semaine avant de l’appliquer.")
 	apply.disabled = true
 	chooser.item_selected.connect(func(index: int): apply.disabled = index < 1)
 	body.add_child(apply)

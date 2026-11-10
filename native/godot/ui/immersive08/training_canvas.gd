@@ -72,8 +72,8 @@ func _build() -> void:
 		state.mode = str(meta.get("training", "normal"))
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
 	D.text(self, 29, 34, "PRÉPARATION DU GROUPE", 28, PALE_GOLD, 700, 320)
-	D.line(self, Vector2(335, 24), Vector2(486, 24), Color(PALE_GOLD, .72), 2)
-	app.heading = D.text(self, 27, 103, "La semaine se gagne ici.", 72, C.IVORY, 800, 800)
+	D.line(self, Vector2(335, 24), Vector2(486, 24), app.accent.lightened(.36), 2)
+	app.heading = D.text(self, 27, 103, "Plan d’entraînement", 72, C.IVORY, 800, 780)
 	var opponent: Dictionary = app.model.get("next") if app.model.get("next") is Dictionary else {}
 	var fixture := "Aucune rencontre annoncée"
 	if not opponent.is_empty():
@@ -98,7 +98,8 @@ func _build() -> void:
 		if app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 		app._navigate("Préparation"), false, "", "TrainingBackToPreparation")
 	dossier.tooltip_text = "Revenir au dossier de préparation et aux consignes de jeu"
-	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Valider la semaine", _validate, true, "arrow", "TrainingValidateWeek")
+	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, true, "arrow", "TrainingValidateWeek")
+	validate.tooltip_text = "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Vous pourrez choisir sa charge."
 	validate.disabled = trained or locked
 	validate.add_theme_font_size_override("font_size", C.px(33))
 	D.line(self, Vector2(2, 234), Vector2(1741, 234))
@@ -130,9 +131,9 @@ func _metrics(meta: Dictionary) -> void:
 	var metrics := D.panel(self, Rect2(815, 24, 928, 106), "", "", "", "TrainingMetrics")
 	var values := [
 		["heart", "Condition", G.n(group.condition) + " %", GREEN],
-		["people", "Moral", G.n(meta.get("morale", "—")), GREEN],
-		["train", "Charge moyenne", "%d / 100" % roundi(total_load / maxi(1, squad.size())), GREEN],
-		["warning", "À surveiller", "%d joueur(s)" % watched.size(), C.ALERT if not watched.is_empty() else GREEN],
+		["people", "Moral", G.n(meta.get("morale", "—")), C.IVORY],
+		["train", "Charge moyenne", "%d / 100" % roundi(total_load / maxi(1, squad.size())), C.IVORY],
+		["warning", "À surveiller", "%d joueur(s)" % watched.size(), C.ALERT if not watched.is_empty() else C.MUTED],
 	]
 	for i in values.size():
 		var value: Array = values[i]
@@ -159,10 +160,10 @@ func _week(fixture: Dictionary) -> void:
 	D.text(self, 6, 256, "PLAN DE SEMAINE  /  1 SÉANCE COLLECTIVE SIMULÉE", 17, C.MUTED, 600, 800)
 	for i in TOPICS.size():
 		var column := D.panel(self, Rect2(4 + i * 250, 270, 239, 545), "", "", "", "TrainingWeekColumn" + str(i))
-		var tone := PALE_GOLD if i == 5 and not fixture.is_empty() else GREEN
-		D.rect(column, Rect2(1, 1, 237, 82), Color("433510") if i == 5 and not fixture.is_empty() else Color("074a2e") if i == 0 else Color("15211e"), 8, Color(tone, .55) if i in [0, 5] else Color.TRANSPARENT)
-		D.text(column, 119, 29, "%02d  /  %s" % [i + 1, TOPICS[i]], 25, C.IVORY, 700, 224, HORIZONTAL_ALIGNMENT_CENTER)
-		D.chip(column, Rect2(37, 42, 165, 29), "SEMAINE EN COURS" if i == 0 else "REPÈRE DU PLAN", tone)
+		var match_column := i == 5 and not fixture.is_empty()
+		var tone := PALE_GOLD if match_column else C.MINT if i == 0 else C.MUTED
+		D.rect(column, Rect2(1, 1, 237, 82), Color("30291d") if match_column else Color("1d362d") if i == 0 else Color("182222"), 8)
+		D.text(column, 119, 51, TOPICS[i], 29, tone, 700, 224, HORIZONTAL_ALIGNMENT_CENTER)
 		for band in 2:
 			var index := i * 2 + band
 			var slot: Array = SLOTS[index]
@@ -179,9 +180,7 @@ func _week(fixture: Dictionary) -> void:
 			for j in lines.size(): D.text(hit, 60, 33 + j * 24, lines[j], 24, C.IVORY, 700, 146)
 			var details := D.words(captions[index], 18, 2)
 			for j in details.size(): D.text(hit, 13, 88 + j * 24, details[j], 24, C.IVORY, 500, 192)
-			D.text(hit, 13, 157, slot[2], 20, C.MUTED, 500, 191)
-			for j in 3:
-				D.rect(hit, Rect2(14 + j * 23, 122, 15, 15), tone if j <= (1 if index == selected else 0) else Color("394241"), 9)
+			D.text(hit, 13, 149, slot[2], 20, C.MUTED, 500, 191)
 		if i == 0: D.line(column, Vector2(13, 310), Vector2(226, 310))
 	_chart()
 	_vigilance()
@@ -195,9 +194,12 @@ func _week(fixture: Dictionary) -> void:
 	D.text(self, 2244, 1217, "Charges et condition issues de votre carrière", 17, C.MUTED, 500, 622, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _slot_style(hit: Button, selected: bool, match_slot: bool) -> void:
-	var style := C.box(Color("17352a") if selected else Color("473509") if match_slot else Color("10191a"), GREEN if selected else PALE_GOLD if match_slot else Color("263130"), 6, 0)
-	style.set_border_width_all(3 if selected else 1)
-	hit.add_theme_stylebox_override("normal", style)
+	var fill := Color("20382d") if selected else Color("32291d") if match_slot else Color("10191a")
+	var border := C.MINT if selected else PALE_GOLD if match_slot else Color("3d4946")
+	for state in ["normal", "hover", "pressed"]:
+		var style := C.box(fill.lightened(.06) if state == "hover" else fill, border, 6, 0)
+		style.set_border_width_all(2 if selected else 1)
+		hit.add_theme_stylebox_override(state, style)
 
 func _select(index: int) -> void:
 	state.slot = index
@@ -228,7 +230,7 @@ func _selection(index: int) -> void:
 	for i in lines.size(): D.text(holder, 150, 72 + i * 24, lines[i], 21, C.IVORY, 500, 322)
 	D.text(holder, 14, 154, "Préparation du groupe", 20, C.MUTED, 500, 445)
 	D.line(holder, Vector2(14, 166), Vector2(471, 166))
-	_action(holder, Rect2(17, 181, 453, 52), slot[4], func(): _open_slot(index), true, "arrow", "TrainingEditSelected")
+	_action(holder, Rect2(17, 181, 453, 52), slot[4], func(): _open_slot(index), false, "arrow", "TrainingEditSelected")
 
 func _chart() -> void:
 	var tile := D.panel(self, Rect2(1760, 11, 488, 296), "Charge & récupération", "heart", "", "TrainingLoadChart")
@@ -400,7 +402,7 @@ func _validate() -> void:
 	_mode_dialog(true)
 
 func _mode_dialog(validate: bool) -> void:
-	var window := _dialog("TrainingSessionDialog", "Valider la semaine" if validate else "Modifier la séance")
+	var window := _dialog("TrainingSessionDialog", "Effectuer la séance" if validate else "Modifier la séance")
 	var body: VBoxContainer = window[1]
 	var dialog: AcceptDialog = window[0]
 	body.add_child(C.wrap("Le moteur applique une séance collective par semaine. Ajustez d’abord la préparation spécifique et les charges individuelles.", 22, C.IVORY, true))

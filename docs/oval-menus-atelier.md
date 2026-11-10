@@ -11,5 +11,15 @@ lisibles. Les dates, résultats, terrains, modèles de semaine et filtres
 sont issus des données existantes.
 
 Les accents de club, le vert pour la préparation et l’or pour les rencontres
-relient les deux écrans. Les usages sont vérifiés à 1280 × 720,
-1920 × 1080 et 2560 × 1440 avec un profil de recette isolé.
+relient les écrans. Le pied du Bureau garde les informations de sauvegarde
+et les commandes de Gabi. Les raccourcis clavier y restent actifs.
+
+Le Plan d’entraînement distingue la séance simulée des outils de suivi.
+L’action « Effectuer la séance » ouvre le choix de charge existant. Une fois
+la séance effectuée, le bouton se désactive sans avancer le calendrier.
+
+Parcours de recette sous Godot Windows avec un profil isolé. Comparer le
+Bureau et le Calendrier à 1280 × 720, 1920 × 1080 et 2560 × 1440. Depuis
+le Bureau, ouvrir l’Entraînement, choisir une charge et vérifier que
+la journée reste la même. Dans le Calendrier, changer de mois,
+revenir à aujourd’hui, filtrer les matchs et appliquer une semaine type.

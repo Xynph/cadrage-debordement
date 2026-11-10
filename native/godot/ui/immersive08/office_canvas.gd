@@ -24,7 +24,7 @@ static func build(app: Control) -> Control:
 	page.custom_minimum_size = Vector2(2248,1124)*C.density
 	C.fill(page,true)
 	_fixture(_card(page,Rect2(280,220,1360,418),"","","OfficeFixture"),app)
-	_priorities(_card(page,Rect2(1656,220,872,418),"PRIORITÉS DE LA SEMAINE","calendar","OfficeDecisions"),app)
+	_priorities(_card(page,Rect2(1656,220,872,418),"GESTION DU CLUB","calendar","OfficeDecisions"),app)
 	_group(_card(page,Rect2(280,654,422,448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app)
 	_standings(_card(page,Rect2(718,654,684,448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app)
 	_journal(_card(page,Rect2(1418,654,548,448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app)
@@ -38,6 +38,8 @@ static func build(app: Control) -> Control:
 
 static func _fixture(card: Panel, app: Control) -> void:
 	card.clip_contents = true
+	var signature: Color = app.accent.lightened(.36)
+	card.add_theme_stylebox_override("panel", D.surface(1360,418,Color("192524").lerp(app.accent,.18),Color("0d1517"),signature))
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var territory := Office.territory_art(app.model.club)
 	if territory != null:
@@ -47,15 +49,22 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var ground := P.fixture_ground(app.model.meta,"office-hero")
 		D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
 		C.veil(card).set_offsets_preset(Control.PRESET_FULL_RECT,Control.PRESET_MODE_KEEP_SIZE,C.px(1))
+	D.rect(card,Rect2(1,22,4,374),signature,0)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
 		var preparation := SeasonPreparation.data(app.model.meta)
 		var upcoming := P.next_nationale_fixture(app.model)
+		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
 			D.chip(card,Rect2(24,22,281,29),"NATIONALE",C.GOLD)
 			D.text(card,27,121,"Pas de match cette semaine.",58,C.IVORY,800,920)
 			D.text(card,27,183,"Prochain match · " + P.fixture_date(upcoming),30,C.IVORY,600,720)
 			D.text(card,27,223,P.fixture_venue(upcoming),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+		elif preparation.is_empty() and not scheduled.is_empty():
+			D.text(card,27,45,"PROCHAINE RENCONTRE",22,C.GOLD,700,640)
+			D.text(card,27,115,Office.scheduled_opponent(app, scheduled),48,C.IVORY,800,645)
+			D.text(card,27,169,Office.scheduled_when(app, scheduled),27,C.IVORY,600,645)
+			D.text(card,27,210,P.fixture_venue(scheduled),22,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
@@ -74,36 +83,40 @@ static func _fixture(card: Panel, app: Control) -> void:
 		return
 	var match_label := str(next.get("label",P.league_name(app.model)))
 	var competition := Office.short_fixture_label(app.model,next) if japan else match_label
-	var chip := D.chip(card,Rect2(24,22,281,29),competition.to_upper(),C.MUTED)
+	D.text(card,27,45,"PROCHAIN MATCH",22,C.GOLD,700,205)
+	var chip := D.chip(card,Rect2(224,22,269,29),competition.to_upper(),C.MUTED)
 	if japan: Office.describe_fixture(chip,match_label)
 	var location := "NEUTRE" if next.get("neutral",false) else "À DOMICILE" if next.get("home",{}).get("id")==app.model.club.id else "EXTÉRIEUR"
-	D.chip(card,Rect2(323,22,147,29),location,C.GOLD)
-	_crest(card,next.get("home",{}),Rect2(32,70,91,98))
-	_crest(card,next.get("away",{}),Rect2(188,69,88,99))
-	D.text(card,154,130,"VS",24,C.GOLD,600,45,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(card,305,110,G.club_name(next.get("home",{})).to_upper(),37,C.IVORY,700,520)
-	D.text(card,305,150,G.club_name(next.get("away",{})).to_upper(),33,C.IVORY,600,520)
+	D.chip(card,Rect2(505,22,164,29),location,C.GOLD)
+	_crest(card,next.get("home",{}),Rect2(27,72,64,64))
+	_crest(card,next.get("away",{}),Rect2(27,151,64,64))
+	D.text(card,111,111,G.club_name(next.get("home",{})).to_upper(),39,C.IVORY,800,554)
+	D.line(card,Vector2(111,143),Vector2(669,143),Color(C.LINE,.60))
+	D.text(card,61,148,"VS",17,C.GOLD,700,44,HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(card,111,189,G.club_name(next.get("away",{})).to_upper(),39,C.IVORY,800,554)
+	for side in ["home","away"]:
+		var team: Dictionary = next.get(side,{})
+		if not team.has("rank") or not team.has("points"): continue
+		var rank := G.n(team.rank)
+		var standing := "%s%s · %s pts" % [rank,"er" if rank=="1" else "e",G.n(team.points)]
+		var tint := C.MINT if team.get("id")==app.model.club.id else C.MUTED
+		D.text(card,111,135 if side=="home" else 213,standing,20,tint,600,420)
 	var calendar := C.icon("calendar",25,C.GOLD)
 	card.add_child(calendar)
-	D.place(calendar,Rect2(29,194,25,25))
+	D.place(calendar,Rect2(29,227,25,25))
 	var date := P.fixture_date(next, true)
 	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
-	D.text(card,67,216,date+" · "+Office.fixture_competition(app.model,next),28,C.IVORY,600,680).name="OfficeFixtureDate"
+	D.text(card,67,250,date+" · "+Office.fixture_competition(app.model,next),27,C.IVORY,600,601).name="OfficeFixtureDate"
 	var venue_name := P.fixture_venue(next,false)
 	if not venue_name.is_empty():
 		var home := C.icon("home",23,C.MUTED)
 		card.add_child(home)
-		D.place(home,Rect2(29,235,23,23))
-		D.text(card,67,255,venue_name,21,C.MUTED,400,650,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
-	for i in 2:
-		var club: Dictionary = next.get("home",{}) if i==0 else next.get("away",{})
-		var rank := G.n(club.get("rank","—"))
-		D.text(card,29+i*180,300,rank+("er" if rank=="1" else "e")+" · "+G.n(club.get("points",0))+" points",22,C.MINT if i==0 else C.MUTED,600,170)
-	D.text(card,29,330,"Votre XV et votre plan de jeu pour la prochaine rencontre.",19,C.MUTED,400,660,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.button(card,Rect2(27,354,304,45),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
-	D.button(card,Rect2(345,354,226,45),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
-	var badge := Rect2(1118,371,218,26) if territory==null else Rect2(432,277,218,26)
-	D.chip(card,badge,"FEUILLE À PRÉPARER" if not app.model.get("selection",{}).get("valid",false) else "FEUILLE COMPLÈTE",C.GOLD)
+		D.place(home,Rect2(29,269,23,23))
+		D.text(card,67,288,venue_name,22,C.MUTED,400,596,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
+	var valid: bool = app.model.get("selection",{}).get("valid",false)
+	D.text(card,29,327,"Feuille complète" if valid else "Feuille à préparer",21,C.MINT if valid else C.AMBER,700,310)
+	D.button(card,Rect2(27,348,320,51),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
+	D.button(card,Rect2(362,348,190,51),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
 	if P.fixture_location_kind(next, app.model.club.id) == "away":
 		var bag := Rect2(1076, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
 		D.scenario_photo(card, "travel-bag", bag)
@@ -111,30 +124,30 @@ static func _fixture(card: Panel, app: Control) -> void:
 static func _priorities(card: Panel, app: Control) -> void:
 	var contracts := P.contracts(app.model)
 	var tasks: Array = []
-	if not contracts.is_empty():
-		var player: Dictionary = contracts[0]
-		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"SAISON "+G.n(player.get("contractEnd","—")),func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
-	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","EFFECTIF",func():app._navigate("Effectif"),"OfficeContractsAction"])
 	var trained: bool = app.model.meta.get("trained", false)
-	tasks.append(["Valider l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():
+	tasks.append(["Préparer l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","train",func():
 		if trained: app._navigate("Préparation")
 		else: app.Immersive.open_training(app),"OfficeTrainingAction"])
+	if not contracts.is_empty():
+		var player: Dictionary = contracts[0]
+		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"people",func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
+	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","people",func():app._navigate("Effectif"),"OfficeContractsAction"])
 	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
 	var need := str(needs[0].get("pos","Effectif")) if not needs.is_empty() else "Effectif"
-	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"CETTE SEMAINE",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
-	D.text(card,852,38,"%d DOSSIERS" % tasks.size(),18,C.MUTED,500,150,HORIZONTAL_ALIGNMENT_RIGHT)
+	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"search",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
 	for i in tasks.size():
-		var y := 71+i*108
-		D.rect(card,Rect2(19,y,833,91),Color("1b2722") if i==0 else C.PANEL,6)
-		D.rect(card,Rect2(35,y+18,36,36),Color("376448"),5)
-		D.text(card,53,y+46,str(i+1),27,C.MINT,700,30,HORIZONTAL_ALIGNMENT_CENTER)
-		var action := D.button(card,Rect2(89,y+7,530,35),tasks[i][0],tasks[i][3],false,"",false,app.accent,tasks[i][4])
-		action.add_theme_font_override("font",C.DISPLAY)
-		action.add_theme_font_size_override("font_size",C.px(27))
-		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
-		D.text(card,89,y+64,tasks[i][1],19,C.MUTED,400,530,HORIZONTAL_ALIGNMENT_LEFT,true)
-		D.chip(card,Rect2(645,y+25,188,34),tasks[i][2],C.AMBER)
-	D.button(card,Rect2(578,382,274,30),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
+		var y := 67+i*102
+		var item: Array = tasks[i]
+		var tint := C.MINT if i==0 and not trained else C.MUTED
+		var icon := C.icon(item[2],27,tint)
+		card.add_child(icon)
+		D.place(icon,Rect2(29,y+18,27,27))
+		var action := D.button(card,Rect2(62,y+4,789,46),item[0],item[3],false,"arrow",false,app.accent,item[4])
+		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,18))
+		action.tooltip_text = item[0] + "\n" + item[1]
+		D.text(card,80,y+74,item[1],20,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.line(card,Vector2(22,y+91),Vector2(851,y+91),Color(C.LINE,.5))
+	D.button(card,Rect2(564,374,287,31),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
 
 static func _group(card: Panel, app: Control) -> void:
 	var group := P.group(app.model)

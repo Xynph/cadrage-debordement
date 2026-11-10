@@ -28,6 +28,17 @@ static func _open_player(app: Control, id: String) -> void:
 static func open_notebook(app: Control) -> void:
 	preload("res://ui/coach_notes_view.gd").open(app, "career")
 
+static func scheduled_opponent(app: Control, fixture: Dictionary) -> String:
+	var home: Dictionary = fixture.get("home", {})
+	return G.club_name(fixture.get("away", {}) if home.get("id") == app.model.club.id else home)
+
+static func scheduled_when(app: Control, fixture: Dictionary) -> String:
+	var date := P.fixture_date(fixture, true)
+	if date.is_empty(): date = timeline_period(fixture)
+	var location := P.fixture_location_kind(fixture, app.model.club.id)
+	var place: String = {"home":"À domicile","away":"À l’extérieur","neutral":"Terrain neutre"}.get(location,"")
+	return date if place.is_empty() else date + " · " + place
+
 static func territory_art(club: Dictionary) -> VBoxContainer:
 	var identity := G.identity(club)
 	var photos: Dictionary = identity.get("photos", {})
@@ -69,7 +80,7 @@ static func build(app: Control) -> Control:
 	page.add_child(top)
 	var hero := _card(top, "OfficeFixture", "", 418, 1.56)
 	_fixture(hero, app)
-	var priorities := _card(top, "OfficeDecisions", "▦  Priorités de la semaine", 418)
+	var priorities := _card(top, "OfficeDecisions", "▦  Gestion du club", 418)
 	_priorities(C.content(priorities), app)
 	var middle := C.h(16)
 	page.add_child(middle)
@@ -183,11 +194,17 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if next.is_empty():
 		var upcoming := P.next_nationale_fixture(app.model)
+		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
 			left.add_child(C.label("NATIONALE", 21, C.GOLD))
 			left.add_child(C.wrap("Pas de match cette semaine.", 42, C.IVORY, true))
 			left.add_child(C.wrap("Prochain match · " + P.fixture_date(upcoming), 25, C.IVORY, true))
 			left.add_child(C.wrap(P.fixture_venue(upcoming), 18))
+		elif preparation.is_empty() and not scheduled.is_empty():
+			left.add_child(C.label("PROCHAINE RENCONTRE",22,C.GOLD,true,700))
+			left.add_child(C.wrap(scheduled_opponent(app,scheduled),39,C.IVORY,true,800))
+			left.add_child(C.wrap(scheduled_when(app,scheduled),25,C.IVORY,true))
+			left.add_child(C.wrap(P.fixture_venue(scheduled),20))
 		elif preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
@@ -204,6 +221,7 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	else:
 		var tags := C.h(12)
 		left.add_child(tags)
+		tags.add_child(C.label("PROCHAIN MATCH",21,C.GOLD,true,700))
 		var match_label := str(next.get("label", "Prochain match"))
 		var competition := C.chip(short_fixture_label(app.model,next) if japan else match_label,C.MINT)
 		if japan: describe_fixture(competition,match_label)
@@ -230,7 +248,8 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			var venue := C.wrap(venue_name,18)
 			venue.name="OfficeFixtureVenue"
 			left.add_child(venue)
-		left.add_child(C.wrap("Préparez votre XV et confirmez vos choix de jeu.", 19))
+		var valid: bool = app.model.get("selection",{}).get("valid",false)
+		left.add_child(C.label("Feuille complète" if valid else "Feuille à préparer",21,C.MINT if valid else C.AMBER,true,700))
 	var spacer := Control.new()
 	C.fill(spacer, true)
 	left.add_child(spacer)
@@ -259,11 +278,14 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 	for i in mini(3, choices.size()):
 		var choice: Dictionary = choices[i]
 		var tile := C.card()
-		tile.add_theme_stylebox_override("panel", C.box(C.RAISED if i == 0 else C.PANEL, Color.TRANSPARENT, 5, 10))
+		tile.add_theme_stylebox_override("panel", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 4))
 		parent.add_child(tile)
 		var line := C.h(12)
 		C.content(tile).add_child(line)
-		line.add_child(C.chip(str(i+1), C.MINT))
+		var icon: String = {"OfficeContractsAction":"people","OfficeTrainingAction":"train","OfficeRecruitmentAction":"search"}.get(choice.id,"shield")
+		var mark := C.icon(icon,24,C.MUTED)
+		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		line.add_child(mark)
 		var text := C.v(2)
 		C.fill(text)
 		line.add_child(text)
