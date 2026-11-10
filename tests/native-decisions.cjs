@@ -12,7 +12,7 @@ try{
  assert.equal(m.decisions.recruitment.capacity,Math.min(100,Math.max(42,largest.players.length+6)));
  assert.ok(m.squad.length>42);assert.ok(m.market.some(p=>p.available),'La base commune volumineuse doit pouvoir recruter.');
  assert.equal(m.decisions.recruitment.needs.length,15);assert.ok(m.decisions.preparation.opponent.id!==m.club.id);
- assert.equal(m.decisions.preparation.domains.length,6);assert.equal(m.decisions.development.academy.length,15);
+ assert.equal(m.decisions.preparation.domains.length,6);assert.equal(m.decisions.development.academy.length,60);
  const before=good('export').meta.exportText,file=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file);
  for(let i=0;i<5;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes,'La lecture de tous les dossiers ne modifie ni disque ni RNG.');
  const recruit=m.market.find(p=>p.available);const cash=m.finance.cash;
