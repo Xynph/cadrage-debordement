@@ -1,0 +1,389 @@
+'use strict';
+
+const {
+  SIX_NATIONS, WORLD_CUP, sources, teamNames,
+  sixNationsTeams, sixNationsVenues, sixNationsSchedule,
+  worldCupPools, worldCupVenues, worldCupPoolSchedule, worldCupKnockoutSchedule,
+  thirdPlacePermutations, defaultRankings,
+} = require('./international-2027.cjs');
+
+const COMPETITION_IDS = Object.freeze([SIX_NATIONS, WORLD_CUP]);
+const homeUnions = ['ENG', 'IRE', 'SCO', 'WAL'];
+const phasesWithTables = new Set(['league', 'pool']);
+const beforeKickoff = (a, b) => a.date.localeCompare(b.date);
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+
+function createEdition(competitionId, { rankings = defaultRankings } = {}) {
+  assert(COMPETITION_IDS.includes(competitionId), 'unknown international competition: ' + competitionId);
+  const sixNations = competitionId === SIX_NATIONS;
+  const groups = sixNations ? { league: sixNationsTeams } : worldCupPools;
+  const teamIds = Object.values(groups).flat();
+  assert(Array.isArray(rankings) && new Set(rankings).size === rankings.length &&
+    rankings.every(id => Object.hasOwn(teamNames, id)) &&
+    teamIds.every(id => rankings.includes(id)), 'rankings must list every participating team once');
+  const fixture = (key, day, kickoffLocal, round, phase, pool, homeId, awayId, venue) => ({
+    id: competitionId + '-' + key,
+    competitionId,
+    date: '2027-' + day,
+    kickoffLocal,
+    round,
+    phase,
+    pool,
+    homeId,
+    awayId,
+    neutralVenue: !sixNations,
+    venue,
+    result: null,
+  });
+
+  const fixtures = sixNations
+    ? sixNationsSchedule.flatMap((matches, r) => matches.map(([day, kickoff, home, away], i) =>
+      fixture('r' + (r + 1) + '-' + (i + 1), day, kickoff, r + 1, 'league', null, home, away, sixNationsVenues[home])))
+    : Object.entries(worldCupPoolSchedule).flatMap(([pool, matches]) => matches.map(([day, kickoff, venue, home, away], i) =>
+      fixture('pool-' + pool.toLowerCase() + '-' + (i + 1), '10-' + String(day).padStart(2, '0'), kickoff,
+        Math.floor(i / 2) + 1, 'pool', pool, home, away, worldCupVenues[venue]))).sort(beforeKickoff);
+  if (!sixNations) {
+    for (const [key, day, kickoff, venue, round, phase, homeSource, awaySource] of worldCupKnockoutSchedule) {
+      fixtures.push({
+        ...fixture(key, day, kickoff, round, phase, null, null, null, worldCupVenues[venue]),
+        homeSource,
+        awaySource,
+      });
+    }
+  }
+
+  return {
+    id: competitionId,
+    name: sixNations ? 'Tournoi des Six Nations 2027' : 'Coupe du monde de rugby 2027',
+    year: 2027,
+    teams: teamIds.map(id => ({ id, name: teamNames[id] })),
+    rankings: rankings.filter(id => teamIds.includes(id)),
+    fixtures,
+    provenance: sixNations ? {
+      calendar: sources.sixNationsCalendar,
+      rules: sources.sixNationsRules,
+    } : {
+      calendar: sources.worldCupCalendar,
+      draw: sources.worldCupDraw,
+      bestThirds: sources.worldCupThirds,
+      provisionalRules: sources.worldCupPreviousRules,
+      rankingFallback: 'in-game-order',
+    },
+  };
+}
+
+function fixturesForTable(edition, pool) {
+  return edition.fixtures.filter(f => f.pool === pool && phasesWithTables.has(f.phase));
+}
+
+function newRow(teamId) {
+  return {
+    teamId, rank: 0, played: 0, won: 0, drawn: 0, lost: 0, points: 0,
+    pointsFor: 0, pointsAgainst: 0, pointDifference: 0, triesFor: 0, triesAgainst: 0,
+    tryBonus: 0, losingBonus: 0, grandSlamBonus: 0,
+  };
+}
+
+function addMatch(row, scored, conceded, tries, concededTries) {
+  row.played++;
+  row.pointsFor += scored;
+  row.pointsAgainst += conceded;
+  row.pointDifference += scored - conceded;
+  row.triesFor += tries;
+  row.triesAgainst += concededTries;
+  const tryBonus = Number(tries >= 4);
+  const losingBonus = Number(scored < conceded && conceded - scored <= 7);
+  row.tryBonus += tryBonus;
+  row.losingBonus += losingBonus;
+  row.points += tryBonus + losingBonus;
+  if (scored > conceded) {
+    row.won++;
+    row.points += 4;
+  } else if (scored === conceded) {
+    row.drawn++;
+    row.points += 2;
+  } else {
+    row.lost++;
+  }
+}
+
+function sixNationsOrder(a, b) {
+  return b.points - a.points || b.pointDifference - a.pointDifference || b.triesFor - a.triesFor;
+}
+
+function poolOrder(rows, fixtures, rankings) {
+  const criteria = [
+    row => row.pointDifference,
+    row => row.triesFor - row.triesAgainst,
+    row => row.pointsFor,
+    row => row.triesFor,
+    row => -rankings.indexOf(row.teamId),
+  ];
+  const remaining = [...rows];
+  const ordered = [];
+  while (remaining.length) {
+    const bestPoints = Math.max(...remaining.map(row => row.points));
+    let tied = remaining.filter(row => row.points === bestPoints);
+    if (tied.length === 2) {
+      const teams = tied.map(row => row.teamId);
+      const headToHead = fixtures.find(f => teams.includes(f.homeId) && teams.includes(f.awayId));
+      if (headToHead?.result?.winnerId) tied = tied.filter(row => row.teamId === headToHead.result.winnerId);
+    }
+    for (const metric of criteria) {
+      if (tied.length === 1) break;
+      const best = Math.max(...tied.map(metric));
+      tied = tied.filter(row => metric(row) === best);
+    }
+    const [best] = tied;
+    ordered.push(best);
+    remaining.splice(remaining.indexOf(best), 1);
+  }
+  return ordered;
+}
+
+function standings(edition) {
+  const sixNations = edition.id === SIX_NATIONS;
+  const groups = sixNations ? [[null, sixNationsTeams]] : Object.entries(worldCupPools);
+  return groups.map(([pool, teamIds]) => {
+    const fixtures = fixturesForTable(edition, pool);
+    const rows = new Map(teamIds.map(id => [id, newRow(id)]));
+    for (const { homeId, awayId, result } of fixtures) {
+      if (!result) continue;
+      addMatch(rows.get(homeId), result.home, result.away, result.homeTries, result.awayTries);
+      addMatch(rows.get(awayId), result.away, result.home, result.awayTries, result.homeTries);
+    }
+    if (sixNations) {
+      for (const row of rows.values()) {
+        if (row.won !== 5) continue;
+        row.grandSlamBonus = 3;
+        row.points += row.grandSlamBonus;
+      }
+    }
+    const ordered = sixNations ? [...rows.values()].sort(sixNationsOrder) : poolOrder([...rows.values()], fixtures, edition.rankings);
+    ordered.forEach((row, i) => {
+      const previous = ordered[i - 1];
+      row.rank = sixNations && previous && sixNationsOrder(previous, row) === 0 ? previous.rank : i + 1;
+    });
+    return { pool, rows: ordered };
+  });
+}
+
+function poolStageComplete(edition) {
+  return edition.fixtures.filter(f => f.phase === 'pool').every(f => f.result);
+}
+
+function rankedThirds(tables, rankings) {
+  return tables.map(({ pool, rows }) => ({ ...rows[2], pool }))
+    .sort((a, b) => b.points - a.points || b.pointDifference - a.pointDifference ||
+      b.pointsFor - a.pointsFor || b.triesFor - a.triesFor ||
+      rankings.indexOf(a.teamId) - rankings.indexOf(b.teamId))
+    .map((row, i) => ({ ...row, rank: i + 1, qualified: i < 4 }));
+}
+
+function bestThirds(edition) {
+  if (edition.id !== WORLD_CUP || !poolStageComplete(edition)) return [];
+  return rankedThirds(standings(edition), edition.rankings);
+}
+
+function losingTeam(fixture) {
+  return fixture.result.winnerId === fixture.homeId ? fixture.awayId : fixture.homeId;
+}
+
+function resolveWorldCupBracket(edition) {
+  if (!poolStageComplete(edition)) return edition;
+  const firstKnockout = edition.fixtures.find(f => f.phase === 'round-of-16');
+  const seeds = new Map();
+  if (!firstKnockout.homeId) {
+    const tables = standings(edition);
+    const qualifiedPools = rankedThirds(tables, edition.rankings).filter(row => row.qualified).map(row => row.pool).sort().join('');
+    for (const { pool, rows } of tables) {
+      for (const row of rows) seeds.set(pool + row.rank, row.teamId);
+    }
+    const permutation = thirdPlacePermutations[qualifiedPools];
+    [...'ABCD'].forEach((pool, i) => seeds.set('T' + pool, seeds.get(permutation[i] + '3')));
+  }
+  const fixtures = new Map();
+  const resolveSource = source => {
+    if (seeds.has(source)) return seeds.get(source);
+    const previous = fixtures.get(edition.id + '-' + source.slice(1));
+    if (!previous?.result) return null;
+    return source.startsWith('W') ? previous.result.winnerId : losingTeam(previous);
+  };
+
+  return {
+    ...edition,
+    fixtures: edition.fixtures.map(f => {
+      const homeId = f.homeId ?? (f.homeSource ? resolveSource(f.homeSource) : null);
+      const awayId = f.awayId ?? (f.awaySource ? resolveSource(f.awaySource) : null);
+      const resolved = homeId === f.homeId && awayId === f.awayId ? f : { ...f, homeId, awayId };
+      fixtures.set(resolved.id, resolved);
+      return resolved;
+    }),
+  };
+}
+
+function validRugbyScore(points, tries) {
+  if (!Number.isSafeInteger(points) || points < 0 || !Number.isSafeInteger(tries) || tries < 0) return false;
+  const unconverted = points - 5 * tries;
+  if (unconverted < 0) return false;
+  // Conversions and penalty tries add two; penalty goals and drops add three.
+  const minConversions = (unconverted % 3) * 2 % 3;
+  return minConversions <= tries && 2 * minConversions <= unconverted;
+}
+
+function canonicalResult(fixture, result) {
+  assert(result && typeof result === 'object' &&
+    validRugbyScore(result.home, result.homeTries) &&
+    validRugbyScore(result.away, result.awayTries), 'invalid rugby score or try count');
+  const { home, away, homeTries, awayTries, decidedBy } = result;
+  const tied = home === away;
+  const knockout = !phasesWithTables.has(fixture.phase);
+  let winnerId = tied ? null : (home > away ? fixture.homeId : fixture.awayId);
+  if (tied && knockout) {
+    assert([fixture.homeId, fixture.awayId].includes(result.winnerId), 'knockout draw requires a winner from kicks');
+    winnerId = result.winnerId;
+  }
+  assert(result.winnerId === undefined || result.winnerId === winnerId, 'winner conflicts with score');
+  assert(decidedBy === undefined || (knockout && (tied ? decidedBy === 'kicking-competition' :
+    ['extra-time', 'sudden-death'].includes(decidedBy))), 'invalid knockout deciding method');
+  const canonical = { home, away, homeTries, awayTries, winnerId };
+  if (decidedBy) canonical.decidedBy = decidedBy;
+  else if (tied && knockout) canonical.decidedBy = 'kicking-competition';
+  return canonical;
+}
+
+function readyFixture(edition, fixtureId) {
+  const fixture = edition.fixtures.find(f => f.id === fixtureId);
+  assert(fixture, 'unknown fixture: ' + fixtureId);
+  assert(fixture.homeId && fixture.awayId, 'fixture participants unresolved: ' + fixtureId);
+  return fixture;
+}
+
+function recordResult(edition, fixtureId, result) {
+  const fixture = readyFixture(edition, fixtureId);
+  const score = canonicalResult(fixture, result);
+  if (fixture.result) {
+    assert(Object.keys(score).length === Object.keys(fixture.result).length &&
+      Object.entries(score).every(([key, value]) => fixture.result[key] === value), 'fixture result already recorded: ' + fixtureId);
+    return edition;
+  }
+  const updated = { ...edition, fixtures: edition.fixtures.map(f => f === fixture ? { ...f, result: score } : f) };
+  return edition.id === WORLD_CUP ? resolveWorldCupBracket(updated) : updated;
+}
+
+function restoreEdition(competitionId, results = {}, options = {}) {
+  let edition = createEdition(competitionId, options);
+  assert(results && [null, Object.prototype].includes(Object.getPrototypeOf(results)), 'fixture result map required');
+  const allowedIds = new Set(edition.fixtures.map(f => f.id));
+  for (const id of Object.keys(results)) assert(allowedIds.has(id), 'unknown fixture: ' + id);
+  for (const { id } of edition.fixtures) {
+    if (Object.hasOwn(results, id)) edition = recordResult(edition, id, results[id]);
+  }
+  return edition;
+}
+
+function editionOutcome(edition) {
+  const outcome = {
+    complete: edition.fixtures.every(f => f.result),
+    winnerIds: [], runnerUpIds: [], thirdPlaceIds: [],
+    grandSlamIds: [], tripleCrownIds: [],
+  };
+  if (edition.id === SIX_NATIONS) {
+    const [{ rows }] = standings(edition);
+    outcome.grandSlamIds = rows.filter(row => row.grandSlamBonus).map(row => row.teamId);
+    outcome.tripleCrownIds = homeUnions.filter(id => edition.fixtures.filter(f =>
+      f.result?.winnerId === id && homeUnions.includes(f.homeId) && homeUnions.includes(f.awayId)).length === 3);
+    if (outcome.complete) {
+      outcome.winnerIds = rows.filter(row => row.rank === 1).map(row => row.teamId);
+      outcome.runnerUpIds = rows.filter(row => row.rank === 2).map(row => row.teamId);
+      outcome.thirdPlaceIds = rows.filter(row => row.rank === 3).map(row => row.teamId);
+    }
+  } else {
+    const final = edition.fixtures.find(f => f.phase === 'final');
+    const bronze = edition.fixtures.find(f => f.phase === 'bronze-final');
+    if (final.result) {
+      outcome.winnerIds = [final.result.winnerId];
+      outcome.runnerUpIds = [losingTeam(final)];
+    }
+    if (bronze.result) outcome.thirdPlaceIds = [bronze.result.winnerId];
+  }
+  return outcome;
+}
+
+function fixtureRandom(seed, fixtureId) {
+  let state = 2166136261;
+  for (const character of String(seed) + ':' + fixtureId) {
+    state = Math.imul(state ^ character.codePointAt(0), 16777619);
+  }
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let mixed = Math.imul(state ^ (state >>> 15), state | 1);
+    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
+    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function poisson(rate, random) {
+  let attempts = 0, product = 1;
+  const limit = Math.exp(-rate);
+  do {
+    attempts++;
+    product *= random();
+  } while (product > limit);
+  return attempts - 1;
+}
+
+function scorePeriod(difference, duration, random) {
+  const tries = poisson(2.7 * Math.exp(difference / 38) * duration, random);
+  let points = 5 * tries + 3 * poisson(2.5 * duration, random);
+  for (let i = 0; i < tries; i++) if (random() < 0.74) points += 2;
+  return { points, tries };
+}
+
+function simulateResult(edition, fixtureId, { seed = 0, homeStrength, awayStrength } = {}) {
+  const fixture = readyFixture(edition, fixtureId);
+  const defaultStrength = teamId => 91 - 2.05 * defaultRankings.indexOf(teamId);
+  const rating = (value, teamId) => Number.isFinite(value) ? Math.max(30, Math.min(100, value)) : defaultStrength(teamId);
+  const homeAdvantage = fixture.neutralVenue ? 0 : 3;
+  const hostAdvantage = edition.id === WORLD_CUP
+    ? 3 * (Number(fixture.homeId === 'AUS') - Number(fixture.awayId === 'AUS'))
+    : 0;
+  const difference = rating(homeStrength, fixture.homeId) - rating(awayStrength, fixture.awayId) + homeAdvantage + hostAdvantage;
+  const random = fixtureRandom(seed, fixture.id);
+  const result = { home: 0, away: 0, homeTries: 0, awayTries: 0 };
+  function playPeriod(duration) {
+    const home = scorePeriod(difference, duration, random);
+    const away = scorePeriod(-difference, duration, random);
+    result.home += home.points;
+    result.away += away.points;
+    result.homeTries += home.tries;
+    result.awayTries += away.tries;
+  }
+  playPeriod(1);
+
+  if (!phasesWithTables.has(fixture.phase) && result.home === result.away) {
+    playPeriod(0.25);
+    if (result.home !== result.away) {
+      result.decidedBy = 'extra-time';
+    } else {
+      const home = scorePeriod(difference, 0.125, random);
+      const away = scorePeriod(-difference, 0.125, random);
+      const homeScoresFirst = random() < 1 / (1 + Math.exp(-difference / 23));
+      if (home.points || away.points) {
+        const homeScores = home.points && (!away.points || homeScoresFirst);
+        const firstScore = (homeScores ? home : away).tries ? 5 : 3;
+        result[homeScores ? 'home' : 'away'] += firstScore;
+        if (firstScore === 5) result[homeScores ? 'homeTries' : 'awayTries']++;
+        result.decidedBy = 'sudden-death';
+      } else {
+        result.winnerId = homeScoresFirst ? fixture.homeId : fixture.awayId;
+        result.decidedBy = 'kicking-competition';
+      }
+    }
+  }
+  return canonicalResult(fixture, result);
+}
+
+module.exports = {
+  COMPETITION_IDS, createEdition, restoreEdition, standings, bestThirds, editionOutcome, recordResult, simulateResult,
+};
