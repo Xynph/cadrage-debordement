@@ -4,6 +4,7 @@ const G = preload("res://ui/game_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Sheet = preload("res://ui/national_sheet.gd")
+const Availability = preload("res://ui/international_availability.gd")
 const FIXTURES_PER_PAGE := 10
 
 static func nation_only(model: Dictionary) -> bool:
@@ -147,6 +148,8 @@ static func build(app: Control) -> Control:
 	tabs.add_child(_editions(app, international, names))
 	tabs.add_child(_offers(app, international, role))
 	var sections := ["callups", "editions", "offers"]
+	sections.append("availability")
+	tabs.add_child(Availability.build(app))
 	var fixture := _editable_fixture(app.model)
 	var available := Sheet.slots(international)
 	if not fixture.is_empty() and not available.is_empty():
