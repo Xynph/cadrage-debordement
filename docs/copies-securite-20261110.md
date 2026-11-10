@@ -74,3 +74,24 @@ accroches du bouton dans `main.gd` appartiennent à l'intégrateur ; l'API est
 `meta.profileSafetyReceipt={command,id}`. Les commandes exigent
 `{id,confirmed:true}`. Le succès de `restore_checkpoint` reprend la route
 Réception et doit réinitialiser les caches de carrière comme un import.
+
+## Lecture en 1440p
+
+La réception courante cible exclusivement **2560 × 1440**. Le dialogue mesure
+1460 × 1080, avec textes de lecture réellement affichés à 20–24 px et titres à
+28–32 px. La surface papier, les cartes et les actions sont espacées. Les
+confirmations sont centrées dans l'écran, avec texte à 24 px et focus initial
+sur **Annuler** ; Entrée sur Annuler conserve la carrière. Le bouton Fermer et
+les boutons de confirmation gardent de grandes zones cliquables après
+l'habillage natif.
+
+La recette conserve le parcours clavier du vrai menu Carrière, la reprise vers
+Réception et les vérifications d'absence d'écriture à la consultation. **30
+contrôles sans fenêtre et 36 en rendu X11** ont réussi avec trois captures
+vérifiées à 2560 × 1440 : liste, confirmation de reprise et confirmation de
+suppression. Les garanties et commandes du moteur restent inchangées. Aucune
+nouvelle réception des autres définitions ou de Windows n'est revendiquée.
+
+Pour rejouer : définir `QA_RESOLUTION=2560x1440`, `CD_SAFETY_GRAPHICS=1`,
+`CD_GODOT_EXECUTABLE` et éventuellement `CD_SAFETY_OUTPUT`, puis lancer
+`node --test tests/godot-profile-safety.cjs` sur un écran X11 2560 × 1440.
