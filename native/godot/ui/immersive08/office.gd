@@ -235,9 +235,9 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		left.add_child(tags)
 		tags.add_child(C.label("PROCHAIN MATCH",21,C.GOLD,true,700))
 		var match_label := str(next.get("label", "Prochain match"))
-		var competition := C.chip(short_fixture_label(app.model,next) if japan else match_label,C.MINT)
-		if japan: describe_fixture(competition,match_label)
-		tags.add_child(competition)
+		var stage := C.chip(fixture_stage(app.model,next,match_label),C.MINT)
+		describe_fixture(stage,match_label)
+		tags.add_child(stage)
 		var location: String = "NEUTRE" if next.get("neutral", false) else "À DOMICILE" if next.get("home", {}).get("id") == app.model.club.id else "À L’EXTÉRIEUR"
 		tags.add_child(C.chip(location, C.GOLD))
 		var teams := C.h(16)
@@ -460,6 +460,9 @@ static func fixture_competition(model: Dictionary, fixture: Dictionary) -> Strin
 	for league: Dictionary in model.get("leagues",[]):
 		if league.get("id")==competition: return str(league.get("name","Championnat"))
 	return str(fixture.get("label","Championnat")).get_slice(" · ",0)
+
+static func fixture_stage(model: Dictionary, fixture: Dictionary, label: String) -> String:
+	return label.trim_prefix(fixture_competition(model,fixture) + " · ")
 
 static func short_fixture_label(model: Dictionary, fixture: Dictionary) -> String:
 	var label := str(fixture.get("label","Rencontre"))
