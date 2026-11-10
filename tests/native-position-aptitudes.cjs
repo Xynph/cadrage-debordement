@@ -13,6 +13,7 @@ for(const [position,family,numbers] of [[3,2,[4,5]],[5,3,[6,7]],[7,3,[8]],[10,6,
  assert.ok(projected.secondaryPositions.every(n=>!numbers.includes(n)),'same role is never listed as secondary');
 }
 assert.deepEqual(value('apt.project(prop).primaryPositions'),value('apt.project(prop).qualifiedFrontRowPositions').filter(n=>n===1||n===3),'both prop sides only when already qualified');
+assert.deepEqual(value('apt.project(fixture(POS[1],1,excellent)).secondaryPositions'),[],'strong hooker qualities do not automatically create back-row mastery');
 assert.equal(value('apt.project(prop).positionRatings[1]'),value('roleNote(prop)'));
 assert.ok(value('apt.project(prop).positionRatings[10]')<30,'prop emergency fly-half strongly penalised');
 assert.equal(value('apt.project(centre).positionRatings[1]'),0,'qualities never qualify a centre for front row');

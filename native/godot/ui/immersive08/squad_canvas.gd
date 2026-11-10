@@ -177,29 +177,24 @@ static func secondary_numbers(player: Dictionary) -> Array[int]:
 	return result
 
 static func secondary_caption(player: Dictionary) -> String:
-	var numbers := secondary_numbers(player)
-	if numbers.is_empty(): return "—"
-	var groups: Array[String] = []
-	var index := 0
-	while index < numbers.size():
-		var end := index
-		while end+1 < numbers.size() and numbers[end+1] == numbers[end]+1: end += 1
-		if end-index >= 2:
-			groups.append("%d–%d" % [numbers[index],numbers[end]])
-		else:
-			for offset in range(index,end+1): groups.append(str(numbers[offset]))
-		index = end+1
-	return "·".join(groups)
+	var roles := secondary_roles(player)
+	return "·".join(roles) if not roles.is_empty() else "—"
 
-static func secondary_tooltip(player: Dictionary, model: Dictionary) -> String:
-	var result: Array[String] = []
+static func secondary_roles(player: Dictionary) -> Array[String]:
+	var labels := {1:"PG",2:"T",3:"PD",4:"2E L",5:"2E L",6:"3E L",7:"3E L",8:"8",9:"DM",10:"DO",11:"AL",12:"C",13:"C",14:"AL",15:"AR"}
+	var found: Array[String] = []
 	for number: int in secondary_numbers(player):
-		var label := "Poste n°%d" % number
-		for slot: Dictionary in model.get("selection",{}).get("slots",[]):
-			if int(slot.get("slot",-1)) == number-1 and slot.get("label") is String and not str(slot.label).is_empty():
-				label = slot.label
-				break
-		result.append("%d · %s" % [number,label])
+		var role: String = labels[number]
+		if not role in found: found.append(role)
+	var result: Array[String] = []
+	for role: String in ["PG","PD","T","2E L","3E L","8","DM","DO","C","AL","AR"]:
+		if role in found: result.append(role)
+	return result
+
+static func secondary_tooltip(player: Dictionary, _model: Dictionary) -> String:
+	var result: Array[String] = []
+	var names := {"PG":"Pilier gauche", "PD":"Pilier droit", "T":"Talonneur", "2E L":"Deuxième ligne (4–5)", "3E L":"Troisième ligne aile (6–7)", "8":"Troisième ligne centre", "DM":"Demi de mêlée", "DO":"Demi d’ouverture", "C":"Centre (12–13)", "AL":"Ailier (11 et 14)", "AR":"Arrière"}
+	for role: String in secondary_roles(player): result.append(role+" · "+str(names[role]))
 	return "\n".join(result) if not result.is_empty() else "—"
 
 static func _compare_secondary(left: Array, right: Array) -> int:
@@ -211,8 +206,10 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 static func sort_value(player: Dictionary, key: String) -> Variant:
 	if key in ["Niveau","Potentiel"]: return G.knowledge_sort_value(player,"rating" if key == "Niveau" else "potential",true)
 	if key == "Autres postes":
-		var numbers := secondary_numbers(player)
-		return numbers if not numbers.is_empty() else null
+		var order: Array[int] = []
+		var roles: Array = ["PG","PD","T","2E L","3E L","8","DM","DO","C","AL","AR"]
+		for role: String in secondary_roles(player): order.append(roles.find(role))
+		return order if not order.is_empty() else null
 	if key == "Statut":
 		if _known_number(player.get("injury")) and float(player.injury) > 0: return U.fold("Blessé")
 		var status: Variant = player.get("status")
