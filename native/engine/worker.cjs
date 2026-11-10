@@ -225,6 +225,9 @@ function createBridge(options={}){
       if(run('!!S.live'))throw Error('Composition indisponible pendant un match.');run('autoLineup()');
      }else if(command==='begin_match'){
       if(run("!!S.live||S.phase==='ended'"))throw Error('Aucun nouveau match disponible.');
+      if(payload.reducedBench!==undefined&&typeof payload.reducedBench!=='boolean')throw Error('Confirmation de la feuille à 22 invalide.');
+      const reducedBench=payload.reducedBench===true;
+      if(reducedBench&&!run('CDNationaleReducedBench?.vacancy(S)'))throw Error('La feuille à 22 n’est pas disponible pour cette rencontre.');
       const hadFixture=run('!!nextMatch()');
       // The native live must pass strict save validation. Keep this cover out of
       // historical web/background simulations, and run it after normal training.
@@ -236,13 +239,13 @@ function createBridge(options={}){
          if(!legacy&&!automated&&pair.includes(S.club)&&typeof CDFranceCareer!=='undefined'&&typeof CDFranceCareer.ensureAISheet==='function'&&typeof aiRosterActive==='function'&&aiRosterActive()&&!(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);
          return nativeCreate(pair,legacy,automated,preparation);
         };
-        beginMatch();
+        beginMatch(nativePayload.reducedBench===true);
        }finally{createRugbyMatch=nativeCreate;}
       }`);}finally{
        // VM timeouts skip its inner finally; restore without executing more VM code.
        ctx.createRugbyMatch=nativeCreate;
       }
-      if(hadFixture&&!run('!!S.live'))throw Error('Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.');
+      if(hadFixture&&!run('!!S.live'))throw Error(reducedBench?'La feuille à 22 a changé après la préparation. Vérifiez la composition et l’entraînement.':'Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.');
      }else if(command==='tick'){
       if(!run('!!S.live'))throw Error('Aucun match en cours.');const steps=payload.steps??1;
       if(!Number.isInteger(steps)||steps<1||steps>120)throw Error('Nombre de pas invalide (1 à 120).');

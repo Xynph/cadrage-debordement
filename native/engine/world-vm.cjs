@@ -40,7 +40,7 @@ function bootstrap(){
   `const CDWorldKnockout=(${knockout.toString()})();`,
   `const CDWorldInitialContracts=${JSON.stringify(initialContracts)};`,
   `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts));`,
-  `CDWorldCareer.installHooks();if(CDWorldPacificRegistry)CDWorldSRPMatch.installHooks();if(CDWorldJapanRegistry){CDWorldJapanMatch.installHooks();CDWorldJapanQuota.installHooks();}if(CDWorldNationaleRegistry)(${nationaleSquad.toString()})();`,
+  `CDWorldCareer.installHooks();if(CDWorldPacificRegistry)CDWorldSRPMatch.installHooks();if(CDWorldJapanRegistry){CDWorldJapanMatch.installHooks();CDWorldJapanQuota.installHooks();}const CDNationaleReducedBench=CDWorldNationaleRegistry?(${nationaleSquad.toString()})():null;`,
  ].join('');
 }
 module.exports={bootstrap};
