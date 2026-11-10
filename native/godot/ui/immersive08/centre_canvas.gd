@@ -171,7 +171,7 @@ func _summary() -> void:
 		["ESPOIRS SUIVIS", G.n(data.get("players", []).size()), "people", GREEN],
 		["ENVELOPPE JUNIOR", G.euros(data.recruitBudget) if data.has("recruitBudget") else "—", "money", GOLD],
 		["COHÉSION DU CENTRE", G.n(data.get("cohesion", "—")), "heart", GREEN],
-		["RÉPUTATION SIMULÉE", G.n(data.get("reputation", "—")), "star", GOLD],
+		["RÉPUTATION", G.n(data.get("reputation", "—")), "star", GOLD],
 	]
 	for i in facts.size():
 		var entry: Array = facts[i]

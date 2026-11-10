@@ -308,8 +308,6 @@ static func japan_date_notes(fixture: Dictionary) -> Array[String]:
 	var source: String = {
 		"published": "Date publiée",
 		"simulation-earliest-option": "Date retenue parmi les options publiées",
-		"simulation-window": "Date simulée dans la fenêtre publiée",
-		"simulation-future-calendar": "Date générée pour cette saison",
 	}.get(fixture.get("dateSource", ""), "")
 	if not source.is_empty(): notes.append(source)
 	var window: Array = fixture.get("dateWindow", [])

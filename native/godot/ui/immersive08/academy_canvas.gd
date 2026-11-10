@@ -104,7 +104,7 @@ func _heading() -> void:
 	var coaches := G.n(pathway.get("coaches", "—"))
 	var metrics := [
 		[191, "people", G.n(roster.size()), "espoirs", GREEN],
-		[234, "star", G.n(high), "potentiels estimés ≥ 85", GOLD],
+		[234, "star", G.n(high), "potentiels ≥ 85", GOLD],
 		[246, "arrow", G.n(pro.size()) if pathway.get("active", false) else "—", "parcours professionnels", GREEN],
 		[240, "people", coaches + " / 3" if coaches != "—" else coaches, "niveau des éducateurs", C.IVORY],
 	]
@@ -305,7 +305,7 @@ func _dossier() -> void:
 	D.text(dossier, 387, 46, str(p.name).to_upper(), 45, C.IVORY, 800, 426)
 	D.text(dossier, 388, 74, "%s  ·  %s ANS" % [str(p.pos).to_upper(), G.n(p.age)], 23, C.IVORY, 600, 424)
 	_number_card(dossier, Rect2(337, 91, 210, 89), G.n(p.get("note", "—")), "Niveau au poste", GREEN)
-	_number_card(dossier, Rect2(571, 91, 245, 89), G.n(p.get("potential", "—")), "Potentiel estimé", GOLD)
+	_number_card(dossier, Rect2(571, 91, 245, 89), G.n(p.get("potential", "—")), "Potentiel", GOLD)
 	D.line(dossier, Vector2(307, 194), Vector2(817, 194))
 	_icon(dossier, "star", Rect2(309, 207, 26, 26), GREEN)
 	D.text(dossier, 345, 230, "Suivi de formation", 25, GREEN, 700, 244)
@@ -348,7 +348,7 @@ func _pathways() -> void:
 	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Du centre au rugby professionnel", "school", "", "AcademyPathwayPane")
 	D.text(panel, 25, 107, pathway.get("description", "Choisissez un Espoir pour suivre sa progression."), 25, C.IVORY, 500, 1347)
 	var people := _prospects()
-	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS ESTIMÉS", 24, GOLD, 700, 1250)
+	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS", 24, GOLD, 700, 1250)
 	for i in mini(6, people.size()):
 		var p: Dictionary = people[i]
 		var entry := _action(panel, Rect2(23 + (i % 2) * 681, 173 + floori(i / 2.0) * 85, 665, 75), "", func():
@@ -408,7 +408,7 @@ func _lower_pathways() -> void:
 		D.text(click, 81, 43, entry[0], 31, C.IVORY, 700, 294)
 		D.text(click, 81, 76, str(entry[1]), 24, C.IVORY, 500, 293)
 		if i < 2: _icon(tile, "arrow", Rect2(x + 387, 101, 23, 23), C.IVORY)
-		D.text(tile, x, 200, ["Potentiels estimés", "Joueurs en prêt", "Joueurs promus"][i], 22, C.IVORY, 600, 386)
+		D.text(tile, x, 200, ["Potentiels", "Joueurs en prêt", "Joueurs promus"][i], 22, C.IVORY, 600, 386)
 		var people: Array = entry[4]
 		if people.is_empty():
 			var caption := "Aucun dossier"
@@ -492,7 +492,7 @@ func _integration_dialog() -> void:
 	var dialog_parts := _dialog("AcademyIntegrationDialog", title + " · " + str(p.name))
 	var dialog: AcceptDialog = dialog_parts[0]
 	var body: VBoxContainer = dialog_parts[1]
-	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel estimé %s" % [p.pos, G.n(p.age), G.n(p.note), G.n(p.potential)], 26, C.IVORY, true))
+	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel %s" % [p.pos, G.n(p.age), G.n(p.note), G.n(p.potential)], 26, C.IVORY, true))
 	var preview: Dictionary = app.DevelopmentViews.contract_preview(app.model, p)
 	if not preview.restriction.is_empty(): body.add_child(C.wrap(preview.restriction, 22, C.AMBER, true))
 	if not preview.capacity.is_empty(): body.add_child(C.wrap(preview.capacity, 22, C.MUTED, true))

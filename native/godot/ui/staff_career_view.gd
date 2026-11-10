@@ -8,7 +8,7 @@ static func enable(app: Control, parent: Container, data: Dictionary) -> void:
 	if not data.get("canEnable", false): return
 	var button := G.button("ACTIVER LES CARRIÈRES DU STAFF", func():
 		var payload := {"confirmed":true,"context":data.context.duplicate(true)}
-		app.confirm("Activer les carrières du staff", "Cette sauvegarde utilisera désormais des âges de carrière, des contrats et des remplacements simulés. Les âges sans source sont estimés. Confirmer ?", func(): app._command("staff_career_enable", payload)))
+		app.confirm("Activer les carrières du staff", "Les membres du staff auront un contrat et pourront changer de poste ou prendre leur retraite. Confirmer ?", func(): app._command("staff_career_enable", payload)))
 	button.name = "EnableStaffCareer"
 	parent.add_child(button)
 
@@ -88,8 +88,7 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	G.fill(text); row.add_child(text)
 	text.add_child(G.wrap(person.name, 21, G.INK))
 	text.add_child(G.wrap(person.get("roleLabel", data.get("roles", {}).get(person.get("role", ""), person.get("role", "Staff"))), 14, G.GOLD))
-	var estimated := str(person.get("ageBasis", "")).contains("estimated") or str(person.get("ageBasis", "")).contains("simulated")
-	text.add_child(G.wrap("%s ans · %s" % [G.n(person.get("age", 0)), "âge de carrière estimé" if estimated else "âge de carrière"], 12))
+	text.add_child(G.wrap("%s ans" % G.n(person.get("age", 0)), 12))
 	if person.get("contractEnd") != null: text.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 12))
 	if person.get("sourcePlayerId") != null: text.add_child(G.wrap("Ancien joueur · reconversion dans l’encadrement", 12, G.GOOD))
 	var employment := _employment_person(app, str(person.id))

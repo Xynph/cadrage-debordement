@@ -21,7 +21,7 @@ function factory(){
  }
  function project(filters){
   const f=filtersOf(filters),s=typeof S==='undefined'?null:S;
-  const base={available:!!s?.manager,context:s?context(s):null,locked:!s||!!s.live||s.phase==='ended',candidates:[],shortlist:[],needs:[],missions:[],reportCount:0,shortlistLimit:30,missionCost:5000,missionCommand:'scout_mission',recruitCommand:'recruit',notice:'Agents libres majeurs issus des centres ou du bassin abstrait des petits clubs. Une shortlist ne réserve pas le joueur. Mission existante : 5 000 € fictifs, deux journées de travail, tous agents libres répondant aux critères. Les intervalles datés restent des estimations, pas une garantie de progression.'};
+  const base={available:!!s?.manager,context:s?context(s):null,locked:!s||!!s.live||s.phase==='ended',candidates:[],shortlist:[],needs:[],missions:[],reportCount:0,shortlistLimit:30,missionCost:5000,missionCommand:'scout_mission',recruitCommand:'recruit',notice:'Agents libres majeurs issus des centres de formation ou des petits clubs. Suivre un joueur ne le réserve pas. Une mission coûte 5 000 € et dure deux journées.'};
   if(!base.available)return base;
   const own=s.clubs[s.club],watched=new Set(s.manager.watch),pool=managerPool().filter(eligible);
   const needs=recruitmentNeeds(copy(own)).map(n=>({slot:n.slot,family:n.family,pos:n.pos,score:n.score,need:n.need,reasons:n.reasons.slice()}));

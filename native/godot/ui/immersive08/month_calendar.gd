@@ -215,8 +215,6 @@ func _toolbar(parent: Node) -> void:
 	caption.name = "MonthCalendarCaption"
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	bar.add_child(C.fill(caption))
-	if planning.get("simulatedDates", false):
-		bar.add_child(_pill("Dates simulées", Color("263432"), C.MUTED, 16))
 	bar.add_child(_action("‹", _shift_month.bind(-1), "MonthPrevious", "Mois précédent"))
 	if not today.is_empty():
 		bar.add_child(_action("Aujourd’hui", _jump_to_today, "MonthToday"))

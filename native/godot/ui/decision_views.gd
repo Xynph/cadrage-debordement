@@ -14,7 +14,7 @@ static func population(app: Control, parent: Container) -> void:
 		card.add_child(G.wrap("Votre ancienne partie peut adopter le renouvellement durable des effectifs et les carrières du staff. Les joueurs actuels sont conservés.", 13))
 		var activate := G.button("ACTIVER LE RENOUVELLEMENT", func():
 			var payload := {"confirmed":true,"context":{"season":int(app.model.meta.season),"week":int(app.model.meta.get("week", app.model.meta.get("round", 0))),"club":int(app.model.club.id)}}
-			app.confirm("Renouveler les effectifs", "Les prochains départs seront compensés par les centres de formation et le vivier de petits clubs. Les carrières du staff seront également activées, avec des âges estimés lorsque les sources manquent. Confirmer ?", func(): app._command("population_enable", payload)))
+			app.confirm("Renouveler les effectifs", "Les prochains départs seront compensés par les centres de formation et le vivier de petits clubs. Les membres du staff pourront aussi changer de poste et prendre leur retraite. Confirmer ?", func(): app._command("population_enable", payload)))
 		activate.name = "EnablePopulation"
 		card.add_child(activate)
 

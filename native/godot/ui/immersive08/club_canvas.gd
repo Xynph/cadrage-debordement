@@ -153,7 +153,7 @@ static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 	D.text(card, 23, 348, str(identity.get("stadium", "Le stade du club")), 41, C.IVORY, 700, 598)
 	U.icon(card, "people", Vector2(24,363), C.MUTED, 24)
 	var attendance := "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Affluence indisponible"
-	var capacity := " · " + G.n(fans.capacity) + " places simulées" if fans.has("capacity") else ""
+	var capacity := " · " + G.n(fans.capacity) + " places" if fans.has("capacity") else ""
 	D.text(card, 60, 385, attendance + capacity, 23, C.MUTED, 500, 535)
 	D.button(card, Rect2(697,337,216,48), "Voir le stade", func(): _tab(app, "territory"), false, "arrow", false, U.GREEN, "ClubSeeStadium")
 
@@ -327,7 +327,7 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	D.text(card, 78, 91, "Sentiment des supporters", 22, C.MUTED, 500, 310)
 	D.text(card, 78, 130, G.n(fans.sentiment)+" / 100" if fans.has("sentiment") else "—", 41, C.IVORY, 700, 315)
 	D.line(card, Vector2(397,73), Vector2(397,134))
-	D.text(card, 476, 91, "Abonnés simulés", 22, C.MUTED, 500, 291)
+	D.text(card, 476, 91, "Abonnés", 22, C.MUTED, 500, 291)
 	D.text(card, 476, 130, fans.get("subscribers","—"), 41, C.IVORY, 700, 290)
 	D.line(card, Vector2(19,151), Vector2(777,151), Color(C.LINE,.7))
 	U.icon(card, "money", Vector2(23,175), C.GOLD, 35)

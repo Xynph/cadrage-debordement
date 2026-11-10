@@ -303,22 +303,17 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi individuel",func():
 		Academy.open_professional_progress(app, player_id, "PlayerDevelopmentAction"),false,"school",true,app.accent,"PlayerDevelopmentAction")
 
-static func _sources(card:Panel,app:Control,player:Dictionary) -> void:
+static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
-		var heading := "Joueur généré pour compléter l’effectif" if str(player.id).begins_with("depth-") else "Repères du joueur dans votre carrière"
-		D.text(card,24,120,heading,31,C.IVORY,700,686)
-		D.text(card,24,179,"Aucun dossier de référence externe associé.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,686)
+		D.text(card,24,179,str(player.get("pos","—"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var pos:Dictionary=profile.get("position",{})
 	var contract:Dictionary=profile.get("contract",{})
 	var status:Dictionary=profile.get("status",{})
 	var qualifications: Array=pos.get("qualifications",[])
 	var details:Array=["Poste d’origine : "+str(pos.get("primary",player.pos)),"Qualifications de départ : "+(", ".join(qualifications) if not qualifications.is_empty() else "Non renseignées"),"Statut initial : "+str(status.get("value","—")),"Échéance de départ : "+G.n(contract.get("endYear","—"))]
-	if contract.has("basis"): details.append("Échéance officielle publiée" if contract.basis=="official" else "Durée initiale estimée pour le jeu")
-	for source_id in contract.get("sources",[]):
-		var source:Dictionary=app.model.get("meta",{}).get("rosterSources",{}).get(source_id,{})
-		details.append("Publication : "+str(source.get("published","date inconnue")))
 	var scroll := _scroll(card,Rect2(22,72,690,422))
 	for i in details.size(): scroll.add_child(C.wrap(details[i],23,C.IVORY if i==0 else C.MUTED,true,600 if i==0 else 500))
 

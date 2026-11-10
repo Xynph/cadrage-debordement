@@ -16,7 +16,7 @@ module.exports=function nativeDecisions(){
   if(known(r.note))observed.push('Niveau au poste relevé : '+r.note+' / 100 à cette date.');else limits.push('Niveau au poste non conservé.');
   if(known(r.price))observed.push('Prime relevée : '+r.price.toLocaleString('fr-FR')+' € à cette date.');else limits.push('Prime non conservée.');
   if(known(r.salary))observed.push('Salaire relevé : '+r.salary.toLocaleString('fr-FR')+' € / semaine à cette date.');else limits.push('Salaire non conservé.');
-  estimates.push(known(r.potential)?'Potentiel estimé par le recruteur : '+r.potential+' / 100 au poste ; ce n’est pas une progression garantie.':'Potentiel inconnu : estimation non conservée.');
+  estimates.push(known(r.potential)?'Potentiel au poste : '+r.potential+' / 100.':'Potentiel inconnu.');
   const opinion={A:'À cette date, le recruteur y voyait un renfort potentiel du premier choix.',B:'À cette date, le recruteur y voyait un profil proche du premier choix, pour la concurrence.',C:'À cette date, le recruteur y voyait un profil de complément.'}[r.grade];
   if(opinion)estimates.push(opinion+' Le contexte de comparaison d’alors n’est pas archivé.');
   else limits.push('Appréciation comparative non conservée.');

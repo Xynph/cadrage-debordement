@@ -33,7 +33,7 @@ static func build(app: Control) -> Control:
 		b.name = id
 		if mode == option[0]: G.selected(b, app.accent)
 		text.add_child(b)
-	text.add_child(G.wrap("Le potentiel est une estimation de simulation. La promotion ne garantit ni le temps de jeu ni la progression. Les courbes annuelles des profils communs et les gains graduels des joueurs générés sont distingués.", 13))
+	text.add_child(G.wrap("Après une promotion, la progression dépend du temps de jeu et de l’entraînement.", 13))
 	text.add_child(G.button("CONSULTER L'EFFECTIF →", func(): app._navigate("Effectif")))
 	var body := G.panel(page, 1.95)
 	G.chapter(body, "12", "Ouvrir des perspectives", "Poste, travail et minutes réellement disputées.", app.accent)
@@ -56,7 +56,7 @@ static func build(app: Control) -> Control:
 		identity.add_child(G.wrap(person.name, 25, G.INK))
 		identity.add_child(G.wrap("%s · %s ans · %s minutes · %s apparitions" % [person.pos, G.n(person.age), G.n(person.minutes), G.n(person.appearances)], 13))
 		row.add_child(G.metric(G.n(person.note), "note au poste"))
-		row.add_child(G.metric(G.n(person.potential), "potentiel estimé"))
+		row.add_child(G.metric(G.n(person.potential), "potentiel"))
 		var development: Dictionary = person.get("development", {})
 		var history: Array = development.get("history", [])
 		var levels: Array = []

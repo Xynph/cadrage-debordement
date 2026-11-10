@@ -375,29 +375,17 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 		var load_hint := G.wrap(load_reason,13)
 		load_hint.name = "PlayerLoadUnavailableReason"
 		contracts.add_child(load_hint)
-	references_tab.add_child(G.section("Repères de départ","Origine et degré de vérification des données initiales"))
-	if str(p.id).begins_with("depth-"):
-		references_tab.add_child(G.wrap("Joueur généré pour compléter l’effectif.",13,G.MUTED))
+	references_tab.add_child(G.section("Repères de départ","Situation du joueur au début de la carrière"))
 	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile")!=null else {}
 	if not roster.is_empty():
 		var position:Dictionary=roster.get("position",{})
 		var status:Dictionary=roster.get("status",{})
 		var initial:Dictionary=roster.get("contract",{})
-		var position_basis:String="poste officiel" if position.get("basis")=="official" else "poste estimé"
-		references_tab.add_child(G.wrap("Poste principal : %s · %s"%[position.get("primary",p.pos),position_basis],13,G.MUTED))
+		references_tab.add_child(G.wrap("Poste principal : %s"%position.get("primary",p.pos),13,G.MUTED))
 		references_tab.add_child(G.wrap("Qualification initiale de jeu : %s"%", ".join(position.get("qualifications",[])),13,G.MUTED))
-		var status_basis:String="type de contrat officiel" if status.get("basis")=="official" else "estimation de jeu au 01/07/2026"
-		references_tab.add_child(G.wrap("Statut initial : %s · %s"%[str(status.get("value","inconnu")).capitalize(),status_basis],13,G.MUTED))
+		references_tab.add_child(G.wrap("Statut initial : %s"%str(status.get("value","inconnu")).capitalize(),13,G.MUTED))
 		if status.get("professionalFromSeason")!=null: references_tab.add_child(G.wrap("Référence initiale : passage professionnel prévu en saison %s."%G.n(status.professionalFromSeason),12,G.MUTED))
-		var basis:String="échéance officielle publiée" if initial.get("basis")=="official" else "durée estimée de jeu"
-		var references:String=", ".join(initial.get("sources",[]))
-		references_tab.add_child(G.wrap("Référence initiale au 31/10/2026 : %s · %s (fin saison %s)."%[basis,G.n(initial.get("endYear",0)),G.n(initial.get("endSeason",0))],13,G.MUTED))
-		if not references.is_empty():
-			var source_dates:Array[String]=[]
-			for source_id in initial.get("sources",[]):
-				var source:Dictionary=app.model.get("meta",{}).get("rosterSources",{}).get(source_id,{})
-				source_dates.append(str(source.get("published","date inconnue")))
-			references_tab.add_child(G.wrap("Publication officielle : %s · les signatures en jeu restent indépendantes."%", ".join(source_dates),12,G.MUTED))
+		references_tab.add_child(G.wrap("Échéance initiale : %s (fin saison %s)."%[G.n(initial.get("endYear",0)),G.n(initial.get("endSeason",0))],13,G.MUTED))
 	references_tab.add_child(G.wrap(portrait.tooltip_text,12,G.MUTED))
 	var academy := preload("res://ui/immersive08/academy_canvas.gd")
 	var player_id := str(p.id)
@@ -480,7 +468,7 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 	_profile_fact(season,"ProfileRoleValue","Note au poste",G.n(p.get("note",0)))
 	var evaluation:=_profile_tile(right,"Evaluation","Évaluation")
 	_profile_fact(evaluation,"ProfileRatingValue","Note globale",G.n(p.get("rating","—")))
-	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel estimé",G.n(p.get("potential",0)))
+	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel",G.n(p.get("potential",0)))
 	var qualities := _profile_tile(left,"Attributes","Profil de jeu")
 	if has_details:
 		var detail_button := G.button("VOIR LES 36 ATTRIBUTS", func():

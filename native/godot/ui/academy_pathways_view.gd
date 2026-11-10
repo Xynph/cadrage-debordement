@@ -101,7 +101,7 @@ static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void
 	var pulse := G.h(24)
 	list.add_child(pulse)
 	G.gauge(pulse, "Cohésion du centre", float(data.cohesion))
-	G.gauge(pulse, "Réputation simulée", float(data.reputation), 100, G.GOLD)
+	G.gauge(pulse, "Réputation", float(data.reputation), 100, G.GOLD)
 	list.add_child(G.section("Préparer la prochaine génération", "Le calendrier junior suit ses propres périodes. Les semaines de repos seniors ne le bloquent pas."))
 	_action(list, app, data, "DÉTECTION ANNUELLE · 35 000 €", "academy_scout", {}, 35000, data.nextScouted)
 	list.add_child(G.wrap("Cette campagne augmente de 3 le potentiel, au maximum 99, des 15 nouveaux Espoirs de la prochaine saison. Une seule campagne par année.", 14))
@@ -201,7 +201,7 @@ static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> voi
 	for p: Dictionary in data.prospects:
 		list.add_child(G.separator())
 		list.add_child(G.section(p.name, "%s · %s · %d ans" % [p.clubName,p.pos,p.age]))
-		list.add_child(G.wrap("Observations %d/3 · essai %s · note estimée %s · potentiel %s" % [p.scouted,"réalisé" if p.trial else "à organiser",str(p.rating) if p.scouted > 0 else "?",str(p.potential) if p.scouted > 1 else "?"],14))
+		list.add_child(G.wrap("Observations %d/3 · essai %s · niveau %s · potentiel %s" % [p.scouted,"réalisé" if p.trial else "à organiser",str(p.rating) if p.scouted > 0 else "?",str(p.potential) if p.scouted > 1 else "?"],14))
 		_action(list, app, data, "OBSERVER · 500 €", "academy_watch", {"playerId":p.id}, 500, p.scouted >= 3)
 		_action(list, app, data, "ESSAI · 1 000 €", "academy_trial", {"playerId":p.id}, 1000, p.trial or p.scouted == 0)
 		if p.union != "FR": _action(list, app, data, "ENREGISTRER L’AUTORISATION SIMULÉE", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))

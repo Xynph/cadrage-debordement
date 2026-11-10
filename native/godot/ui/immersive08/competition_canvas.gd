@@ -666,10 +666,6 @@ func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 		"published-provisional": "Date provisoire publiée",
 		"rfu-card": "Date publiée par la RFU",
 		"club-announced-stage-date": "Date de phase annoncée par le club",
-		"simulation-in-published-window": "Jour choisi dans la fenêtre du championnat",
-		"simulation-adjusted-from-published": "Date adaptée au calendrier de la carrière",
-		"generated": "Date générée pour cette saison",
-		"generated-window": "Date retenue dans la fenêtre de cette saison",
 	}.get(fixture.get("dateSource", ""), "")
 	if not source.is_empty(): content.add_child(C.wrap(source, 20, C.MUTED))
 	var window: Array = fixture.get("dateWindow", [])
@@ -680,7 +676,6 @@ func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 		content.add_child(C.wrap("Heure locale · " + timezone,20,C.MUTED))
 		var kickoff_source: String = {
 			"published": "Horaire publié",
-			"simulated-not-official": "Horaire prévu par le jeu",
 			"rfu_fixture_card": "Horaire publié dans la fiche RFU",
 			"rfu_match_centre": "Horaire publié dans le centre de match RFU",
 		}.get(fixture.get("kickoffSource", ""), "")

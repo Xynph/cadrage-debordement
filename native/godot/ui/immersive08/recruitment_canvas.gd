@@ -365,7 +365,7 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 	D.text(panel, 479, 172, G.n(person.get("note" if tab == 3 else "rating", "—")), 75, C.IVORY, 800, 197, HORIZONTAL_ALIGNMENT_CENTER)
 	D.line(panel, Vector2(599, 111), Vector2(599, 186), C.LINE)
 	D.text(panel, 707, 149, G.n(report.get("potential", "—")), 53, C.IVORY, 800, 198, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 707, 177, "Potentiel estimé", 25, C.MUTED, 600, 198, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel, 707, 177, "Potentiel", 25, C.MUTED, 600, 198, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel, 375, 222, G.n(person.get("age", "—")) + " ans" + (" lors du rapport" if tab == 3 else ""), 28, C.IVORY, 600, 174)
 	var can_track: bool = not player.is_empty() and not app.waiting and app._live().is_empty() and app.model.meta.get("phase", "") != "ended"
 	var context: Variant = app.model.get("clubLife", {}).get("managerCareer", {}).get("context")
@@ -517,7 +517,7 @@ func _comparison_rows(parent: VBoxContainer, picks: Array[OptionButton], players
 	columns.add_theme_constant_override("h_separation", C.px(30))
 	columns.add_theme_constant_override("v_separation", C.px(9))
 	parent.add_child(columns)
-	for pair: Array in [["Joueur", "name"], ["Poste", "pos"], ["Âge", "age"], ["Niveau de jeu / 100", "rating"], ["Potentiel estimé / 100", "potential"], ["Source du potentiel", "source"], ["Prime", "fee"], ["Salaire / semaine", "salary"]]:
+	for pair: Array in [["Joueur", "name"], ["Poste", "pos"], ["Âge", "age"], ["Niveau de jeu / 100", "rating"], ["Potentiel / 100", "potential"], ["Prime", "fee"], ["Salaire / semaine", "salary"]]:
 		columns.add_child(C.label(pair[0], 22, C.MUTED))
 		for picker in picks:
 			var player: Dictionary = players[picker.selected - 1] if picker.selected > 0 else {}
@@ -525,7 +525,6 @@ func _comparison_rows(parent: VBoxContainer, picks: Array[OptionButton], players
 			var value: Variant = player.get(pair[1], "—")
 			match pair[1]:
 				"potential": value = report.get("potential", "—")
-				"source": value = report.get("assessment", {}).get("source", "—")
 				"fee", "salary": value = _money(player.get(pair[1]))
 			var label := C.wrap(value, 22, C.IVORY, true)
 			label.custom_minimum_size.x = C.px(240)

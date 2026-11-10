@@ -16,5 +16,16 @@ func _initialize() -> void:
 		printerr(str(unknown))
 		quit(1)
 		return
+	example.nationalitySource = "simulated"
+	example.dimensionsSource = "estimated"
+	var visible: Control = facts.row(example, 20, Color.WHITE)
+	var origin := visible.get_node("PlayerOriginFact") as Label
+	var dimensions := visible.get_node("PlayerDimensionsFact") as Label
+	var uniform := origin.text == "Australie" and origin.tooltip_text.is_empty() and dimensions.text == "189 cm · 108 kg" and dimensions.tooltip_text.is_empty()
+	visible.free()
+	if not uniform:
+		printerr("Les données affichées doivent avoir la même présentation quelle que soit leur origine.")
+		quit(1)
+		return
 	print("Fiche joueur · drapeaux distincts, mensurations et caps vérifiés")
 	quit()

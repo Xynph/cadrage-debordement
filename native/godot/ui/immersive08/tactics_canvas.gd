@@ -154,9 +154,6 @@ static func _nationale_qualification(parent: Panel, selection: Dictionary) -> vo
 	D.text(panel,17,32,notice.get("title",""),26,C.GOLD,700,698).name = "NationaleQualificationTitle"
 	D.text(panel,17,64,notice.get("summary",""),28,C.ALERT if alert else C.IVORY,700,698).name = "NationaleQualificationSummary"
 	D.text(panel,17,93,notice.get("detail",""),24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationDetail"
-	var estimates: Variant = notice.get("estimates")
-	if estimates is String and not estimates.is_empty():
-		D.text(panel,17,122,estimates,24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationEstimates"
 
 static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	for i in 3:
