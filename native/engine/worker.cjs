@@ -4,6 +4,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
 const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs'),systems=require('./native-systems.cjs');
 const playerAttributes=require('./player-attributes.cjs');
+const playerKnowledge=require('./player-knowledge.cjs'),knowledgeProjection=playerKnowledge.factory();
 const positionAptitudes=require('./position-aptitudes.cjs');
 const careerVariation=require('./career-variation.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
@@ -50,6 +51,7 @@ const SYSTEM_COMMANDS=new Set(systems.commands);
 const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024,EXTENDED_IMPORT_LIMIT_BYTES=20*1024*1024,EXTENDED_REQUEST_LIMIT_BYTES=42*1024*1024,CHAMP_IMPORT_LIMIT_BYTES=24*1024*1024,CHAMP_REQUEST_LIMIT_BYTES=50*1024*1024;
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
 const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+COMMANDS.add('observe_player');
 COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
@@ -153,6 +155,8 @@ function createBridge(options={}){
    const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
   run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+  run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();
+   const nativeKnowledgeValidator=validateCareer;validateCareer=state=>{const result=nativeKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
   run(`const nativeFranceCalendar=(${franceCalendar.toString()})(CDFranceCompetition.userFixture);
    const nativeValidateDaily=validateCareer;
    validateCareer=state=>{const result=nativeValidateDaily(state);nativeFranceCalendar.validate(state);return result;};
@@ -231,7 +235,8 @@ function createBridge(options={}){
     model.next=null;model.live=null;
    }
   }
-  const snapshot=operation=>{updatePressPolicy();const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return result;};
+  const projectKnowledge=model=>knowledgeProjection.project(model,JSON.parse(run('JSON.stringify(nativeKnowledge.visibility(S))')));
+  const snapshot=operation=>{updatePressPolicy();const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...JSON.parse(run('JSON.stringify(nativeKnowledge.reports(S))')));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return projectKnowledge(result);};
   const backup=path.join(dataDir,'donnees-precedentes.json');
   let committedFiles='';
   const profileFilesVersion=()=>{
@@ -278,14 +283,14 @@ function createBridge(options={}){
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
-    if(command==='competition_editor_preview'){const model=snapshot();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model};}
-    if(command==='epcr_preview'){const model=snapshot();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model};}
+    if(command==='competition_editor_preview'){const model=snapshot();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='epcr_preview'){const model=snapshot();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
     if(command==='pack_select'&&payload.scope==='creation'){const mode=payload.mode??'common',databaseId=edition(mode),key=creationKey(mode),selected=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!selected)throw Error('Pack non installé.');if(selected&&selected.meta.databaseId!==databaseId)throw Error('Pack incompatible avec cette édition.');const prior=store[key];try{store[key]=payload.id;persist();}catch(e){if(prior===undefined)delete store[key];else store[key]=prior;throw e;}return {id,ok:true,model:snapshot()};}
-    if(command==='export'){const model=snapshot();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model};}
-    if(command==='shutdown'){const model=snapshot();close();return {id,ok:true,model};}
-    if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshot();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model};}
+    if(command==='export'){const model=snapshot();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='shutdown'){const model=snapshot();close();return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshot();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='restore_checkpoint'){if(payload.confirmed!==true)throw Error('Confirmation explicite requise pour reprendre cette copie.');restoring=profileSafety.load(payload.id);command='import';payload={...payload,text:restoring.text};}
     const advancesCareer=PRESS_PROGRESSION.has(command);
     updatePressPolicy();
@@ -305,8 +310,9 @@ function createBridge(options={}){
       ctx.nativeCommand=command;
       const extra=command==='academy_groups_preview'?{academyGroups:run('CDNativeAcademyGroups.preview(S)')}:run('nativeSystems.execute(nativeCommand,nativePayload)');
       if(run('JSON.stringify(S)')!==JSON.stringify(JSON.parse(prior).state)||seed!==priorSeed||JSON.stringify(store)!==priorStore)throw Error('Une consultation ne peut pas modifier la carrière.');
-      const model=snapshot();Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));return {id,ok:true,model};
+      const model=snapshot();Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));return {id,ok:true,model:projectKnowledge(model)};
      }
+     ctx.nativeKnowledgeBefore=run('nativeKnowledge.before(S)');ctx.nativeKnowledgeCommand=command;
      if(!restoring&&options.now===undefined)clock=Date.now();
      const liveOnly=command==='tick'||command==='delegate';
      const previousAcademyClub=command==='next_season'?run('S.club'):null;
@@ -315,6 +321,8 @@ function createBridge(options={}){
      ctx.nativeAttributeBaseline=advancesWithinWeek||['new_career','import'].includes(command)?null:run('nativeAttributeStore.before(S,'+liveOnly+');');
      if(NATIONAL_COMMANDS.includes(command)){
       national.command(command,payload);
+     }else if(command==='observe_player'){
+      ctx.nativeKnowledgeReceipt=run(`nativeKnowledge.plan(S,nativePayload,{charge:amount=>ledgerEntry('Observation ciblée',-amount),message:(title,body)=>managerMessage(title,body,'recruitment','recruitment')})`);
      }else if(command==='population_enable'){
       if(payload.confirmed!==true||Object.keys(payload).some(k=>!['confirmed','context'].includes(k)))throw Error('Confirmez explicitement la nouvelle politique de population.');
       const context=JSON.parse(run('JSON.stringify({season:S.season,week:S.franceMode?.version===1?S.franceMode.week:S.round,club:S.club})'));
@@ -433,7 +441,7 @@ function createBridge(options={}){
       run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');normalizeAcademyPotential(S);");
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
-     let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
+     let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      if(command==='new_career'){
       run('CDNativeAcademyGroups.start(S)');
@@ -445,6 +453,7 @@ function createBridge(options={}){
      if(command==='new_career'||command==='import')national.initialize(seed,command==='new_career'?payload:null);
      updatePressPolicy();
      if(advancesCareer||command==='new_career'||command==='import')run('nativeSystems.domain("press").observeInvitation(nativePressPrevious,'+(command==='new_career')+');');
+     run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      if(advancesWithinWeek)run('save()');
      else run('nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
      const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
@@ -453,12 +462,12 @@ function createBridge(options={}){
      if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;
      else persist();
      model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
-     return {id,ok:true,model};
+     return {id,ok:true,model:projectKnowledge(model)};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
      throw error;
-    }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;}
+    }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
    }catch(error){return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
   return {handle,close};

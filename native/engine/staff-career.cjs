@@ -185,7 +185,7 @@ function factory(){
   return {active:true,enabled:true,canEnable:false,reason:'',version:1,context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,roles:copy(LABELS),
    teams:s.clubs.map(c=>({id:c.id,name:c.name,members:people(st).filter(p=>p.clubId===c.id).map(display)})),
    candidates,market:copy(candidates),history,retired,archives:copy(retired),
-   costs:{salary:0,signingFee:0},notice:'Les membres du staff peuvent se reconvertir. Les contrats descriptifs ne coûtent rien et ne donnent aucun bonus sportif.'};
+   costs:{salary:0,signingFee:0},notice:'Les membres du staff peuvent se reconvertir. Les contrats descriptifs ne coûtent rien. Un recruteur actif de niveau 70 ou plus réduit l’observation ciblée de deux semaines à une ; aucun bonus de match.'};
  }
  function execute(command,payload){
   check(typeof S!=='undefined'&&!!S,'carrière absente');
