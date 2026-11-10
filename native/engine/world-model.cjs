@@ -65,15 +65,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
  }
  function catalogue(R){
   if(!catalogues.has(R)){
-   const profiles=CDRosterFoundation.resolve(CDRosterFoundation.marker);
-   const rosters=R.clubs.map(({id,players})=>{
-    if(R.version===5)return rosterProfile(W.previewRoster(R.id,id));
-    const normalized=players.map(player=>{
-     const pos=profiles?.players[player.id]?.position.primary??player.pos;
-     return pos===player.pos?player:{...player,pos,fam:FAMILIES[POS.indexOf(pos)]};
-    });
-    return rosterProfile(normalized.concat(nativeProfessionalDepth.additions(id,normalized,1)));
-   }),divisions=new Map();
+   const rosters=R.clubs.map(({id})=>rosterProfile(W.previewRoster(R.id,id))),divisions=new Map();
    R.clubs.forEach((club,index)=>{
     if(!divisions.has(club.leagueId))divisions.set(club.leagueId,[]);
     divisions.get(club.leagueId).push(rosters[index]);
