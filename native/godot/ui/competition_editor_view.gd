@@ -294,15 +294,26 @@ func _launch() -> void:
 	var confirmation := ConfirmationDialog.new()
 	confirmation.name = "CustomCompetitionConfirmation"
 	confirmation.title = "Nouvelle carrière fictive"
-	confirmation.dialog_text = "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exportez-la avant de poursuivre si vous souhaitez la conserver.\n14 clubs fictifs, 26 journées et phases finales historiques ; couleurs, budgets et niveaux des emplacements fictifs conservés." % play_club.get_item_text(play_club.selected)
+	var explanation := "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exportez-la avant de poursuivre si vous souhaitez la conserver.\n14 clubs fictifs, 26 journées et phases finales historiques ; couleurs, budgets et niveaux des emplacements fictifs conservés." % play_club.get_item_text(play_club.selected)
 	confirmation.get_ok_button().text = "CRÉER ET REMPLACER"
 	confirmation.get_cancel_button().text = "GARDER LE BROUILLON"
 	app._prepare_dialog(confirmation, mini(760, app.get_window().size.x - 96))
+	var options := G.v(10)
+	confirmation.add_child(options)
+	options.add_child(G.wrap(explanation,17))
+	var vary_current := CheckBox.new()
+	vary_current.name = "CustomCreationVaryCurrent"
+	vary_current.text = "Faire légèrement varier le niveau actuel"
+	vary_current.button_pressed = true
+	vary_current.add_theme_font_size_override("font_size",17)
+	vary_current.tooltip_text = "Les qualités de départ varient légèrement, jusqu’à ±3. Le potentiel varie toujours, jusqu’à ±5."
+	options.add_child(vary_current)
+	options.add_child(G.wrap("Le potentiel varie à chaque nouvelle carrière (jusqu’à ±5), même lorsque cette case est décochée.",14,G.MUTED))
 	var chosen := play_club.selected
 	var document: Dictionary = preview.get("document", {}).duplicate(true)
 	confirmation.confirmed.connect(func():
-		app._command("new_career", {"mode":"custom", "club":chosen, "document":document, "confirmed":true})
+		app._command("new_career", {"mode":"custom", "club":chosen, "document":document, "confirmed":true, "varyCurrent":vary_current.button_pressed})
 		confirmation.queue_free())
 	confirmation.canceled.connect(confirmation.queue_free)
 	add_child(confirmation)
-	Dialogs.show_centered(confirmation, Vector2i(mini(760, app.get_window().size.x - 96), 300))
+	Dialogs.show_centered(confirmation, Vector2i(mini(760, app.get_window().size.x - 96), 420))
