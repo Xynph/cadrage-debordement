@@ -29,7 +29,7 @@ static func build(app: Control) -> Control:
 	_group(_card(page,Rect2(280,654,422,448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app)
 	_standings(_card(page,Rect2(718,654,684,448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app)
 	_journal(_card(page,Rect2(1418,654,548,448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app)
-	_recruitment(_card(page,Rect2(1982,654,546,448),"LE RAPPORT À SUIVRE","search","OfficeRecruitment"),app)
+	_recruitment(_card(page,Rect2(1982,654,546,448),"LE PROFIL À SUIVRE","search","OfficeRecruitment"),app)
 	var recent := Office.recent_results(app)
 	if recent != null:
 		page.add_child(recent)
@@ -226,26 +226,27 @@ static func _journal(card: Panel, app: Control) -> void:
 	if messages.is_empty(): D.text(card,37,120,"Le journal s’ouvrira avec votre carrière.",20,C.MUTED,400,480,HORIZONTAL_ALIGNMENT_LEFT,true)
 
 static func _recruitment(card: Panel, app: Control) -> void:
-	var market: Array = app.model.get("market",[]).duplicate()
-	market.sort_custom(func(a:Dictionary,b:Dictionary):return float(a.get("rating",0))>float(b.get("rating",0)))
-	var player: Dictionary = market[0] if not market.is_empty() else {}
-	if not str(player.get("id","")).is_empty():
+	var spotlight := Office.recruitment_spotlight(app.model)
+	var player: Dictionary = spotlight.player
+	if player.is_empty():
+		D.photo(card,"scouting",Rect2(23,74,500,116))
+		D.text(card,23,231,spotlight.empty,27,C.IVORY,700,500)
+	else:
 		var portrait := G.portrait(int(player.get("portraitIndex",0)),C.px(133),player)
 		card.add_child(portrait)
 		D.place(portrait,Rect2(22,74,133,117))
-	else: D.photo(card,"recruit-profile",Rect2(22,74,133,117))
-	D.text(card,174,104,str(player.get("name","Votre prochain renfort")).to_upper(),29,C.IVORY,700,350)
-	D.text(card,174,135,str(player.get("pos","Réseau de recrutement"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,500,350)
-	D.chip(card,Rect2(174,154,150,32),"NIV. "+G.n(player.get("rating","—")),C.MINT)
-	D.text(card,23,233,"Rapport d’observation",21,C.MUTED,500,350)
-	D.text(card,523,233,"À consulter",27,C.GOLD,600,155,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.bar(card,Rect2(23,253,500,7),0)
-	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
-	D.text(card,23,295,"Besoin du groupe : "+str(needs[0].get("pos","À déterminer")) if not needs.is_empty() else "Préparez les prochains mouvements du groupe.",18,C.IVORY,400,500,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.text(card,23,336,G.euros(player.get("fee",0)),32,C.IVORY,600,220)
-	D.text(card,253,336,G.euros(player.get("salary",0))+" / sem.",28,C.MUTED,500,270)
-	D.text(card,23,369,"Disponibilité et modalités dans le dossier.",18,C.MUTED,400,500,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.button(card,Rect2(23,391,500,39),"Lire le rapport complet",func():app._navigate("Recrutement"),false,"arrow",true,app.accent,"OfficeMarketAction")
+		D.text(card,174,104,str(player.name).to_upper(),29,C.IVORY,700,350)
+		D.text(card,174,135,str(player.pos)+" · "+G.n(player.age)+" ans",22,C.MUTED,500,350)
+		D.chip(card,Rect2(174,154,150,32),"NIV. "+G.n(player.rating),C.MINT)
+		var available: bool = player.get("available", false)
+		D.text(card,23,230,"Offre possible" if available else "Offre indisponible",24,C.MINT if available else C.ALERT,600,500)
+		var reason := str(player.get("reason", ""))
+		if not reason.is_empty(): D.text(card,23,260,reason,20,C.MUTED,500,500)
+		D.text(card,23,336,G.euros(player.fee),32,C.IVORY,600,220)
+		D.text(card,253,336,G.euros(player.salary)+" / sem.",28,C.MUTED,500,270)
+	if not str(spotlight.need).is_empty():
+		D.text(card,23,295,spotlight.need,20,C.IVORY,500,500,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.button(card,Rect2(23,391,500,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")
 
 static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void:
 	var fixtures := P.upcoming(app.model)

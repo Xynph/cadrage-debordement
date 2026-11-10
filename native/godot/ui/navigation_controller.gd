@@ -246,12 +246,8 @@ func _activate_selected() -> void:
 		app.roster_filter = "Tous"; app.roster_sort = "Poste"
 		app.selected_player = entry.id
 	elif entry.kind == "market":
-		var person := _person("market", entry.id)
-		if person.is_empty():
-			_refresh_results(_search.text); return
-		app.management_ui.market = U.defaults()
-		app.management_ui.market.navigation_id = entry.id
-		app.management_ui.market.search = str(person.get("name", ""))
+		if not open_market_player(entry.id): _refresh_results(_search.text)
+		return
 	elif entry.kind == "club":
 		if not _staff_club_exists(entry.id):
 			_refresh_results(_search.text); return
@@ -334,9 +330,7 @@ func _travel(direction: int) -> void:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
 	if entry.route == "Recrutement":
-		app.management_ui.market = U.defaults()
-		app.management_ui.market.navigation_id = entry.market
-		if not entry.market.is_empty(): app.management_ui.market.search = str(_person("market", entry.market).get("name", ""))
+		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)
 	_restoring = false
 	_refresh_controls()
@@ -360,3 +354,18 @@ func _refresh_controls() -> void:
 	if is_instance_valid(_back): _back.disabled = blocked or _destination(-1) < 0
 	if is_instance_valid(_forward): _forward.disabled = blocked or _destination(1) < 0
 	if is_instance_valid(_find): _find.disabled = blocked
+
+func open_market_player(id: String) -> bool:
+	var person := _person("market", id)
+	if not _allowed_route("Recrutement") or (not id.is_empty() and person.is_empty()): return false
+	_set_market_target(id, str(person.get("name", "")))
+	if id.is_empty(): app.management_ui.market_tab = 0
+	if is_instance_valid(_dialog): _dialog.hide()
+	app._navigate("Recrutement", false)
+	return true
+
+func _set_market_target(id: String, display_name: String) -> void:
+	app.management_ui.market = U.defaults()
+	app.management_ui.market.navigation_id = id
+	app.management_ui.market.search = display_name
+	if not id.is_empty(): app.management_ui.market_tab = 0
