@@ -245,7 +245,7 @@ func _receive_model(value: Dictionary) -> void:
 			var offer: Dictionary = model.meta.negotiation
 			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))
 		if last_command=="promote_cover" and model.meta.get("coverage") is Dictionary:
-			notice("Les renforts du centre",str(model.meta.coverage.get("message","La feuille a été complétée.")))
+			notice("Renforts signés",str(model.meta.coverage.get("message","La feuille a été complétée.")))
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
 	call_deferred("_refresh_coach")
@@ -742,7 +742,7 @@ func confirm_decision(command: String, payload: Dictionary, title: String, text:
 	if detail.is_empty(): confirm(title,text,callback)
 	else: preview.open(self,title,text,detail,callback)
 
-func confirm(title: String, text: String, callback: Callable) -> void:
+func confirm(title: String, text: String, callback: Callable, focus_cancel := false) -> void:
 	_clear_dialogs()
 	var d := ConfirmationDialog.new()
 	_prepare_dialog(d, 650)
@@ -754,6 +754,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 	d.confirmed.connect(func(): callback.call(); d.queue_free())
 	d.canceled.connect(d.queue_free)
 	d.popup_centered(Vector2i(650,180))
+	if focus_cancel: d.get_cancel_button().grab_focus()
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	# Configure wrapping before text/insertion can queue an oversized minimum.
