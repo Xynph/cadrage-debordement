@@ -10,6 +10,7 @@ const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recru
 const COLORS = {"Staff":C.MINT, "Médical":C.ALERT, "Direction":C.GOLD, "Recrutement":C.BLUE, "Formation":C.MINT, "Compétitions":C.GOLD, "Club":C.MUTED}
 const ROUTES = {"Staff":"Préparation", "Médical":"Effectif", "Direction":"Club", "Recrutement":"Recrutement", "Formation":"Formation", "Compétitions":"Calendrier", "Club":"Bureau"}
 const PORTRAITS = {"Médical":"mail-medical", "Direction":"mail-direction", "Recrutement":"mail-recruitment", "Formation":"academy-player", "Compétitions":"mail-trainer"}
+const SEASON_EXPIRY_MAIL := "%d contrat(s) expire(nt) à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs."
 
 static func _state(app: Control) -> Dictionary:
 	if not app.management_ui.has("reception"):
@@ -32,7 +33,9 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		var destination: String = ROUTES[category]
 		if category == "Direction" and "contrat" in folded: destination = "Effectif"
 		if category == "Direction" and ("tresorerie" in folded or "billetterie" in folded): destination = "Finances"
-		messages.push_front({"id":id, "text":clean, "category":category, "route":destination, "position":source.size()-index})
+		var item := {"id":id, "text":clean, "category":category, "route":destination, "position":source.size()-index}
+		if _is_season_expiry_mail(message): item.season_expiry = true
+		messages.push_front(item)
 	var notices: Array = app.model.get("calendarMail", [])
 	for index in notices.size():
 		var notice: Dictionary = notices[index]
@@ -52,6 +55,11 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"route":"Calendrier", "position":source.size()+index+1, "calendar_notice":notice
 		})
 	return messages
+
+static func _is_season_expiry_mail(message: String) -> bool:
+	# Les courriers historiques du moteur ne contiennent ni type ni identifiants de joueurs.
+	var count := message.get_slice(" ", 0).to_int()
+	return count > 0 and message.replace("’", "'") == (SEASON_EXPIRY_MAIL % count)
 
 static func _category(message: String) -> String:
 	if "blesse" in message or "indisponibilite" in message or "medical" in message: return "Médical"
@@ -261,7 +269,14 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 		recalibrate.disabled = app.waiting
 		keep.disabled = app.waiting
 	else:
-		D.button(card,Rect2(26,890,545,62),"Ouvrir · "+str(message.route),func():app._navigate(message.route),true,"arrow",false,app.accent,"InboxOpenMessageAction")
+		var caption := "Ouvrir · " + str(message.route)
+		var open := Callable(app, "_navigate").bind(message.route)
+		if message.get("season_expiry", false):
+			var current := _current_expiry_roster(app.model)
+			if not current.is_empty():
+				caption = "Voir les échéances actuelles (%d)" % current.count
+				open = _open_expiry_roster.bind(app, current.roster)
+		D.button(card,Rect2(26,890,545,62),caption,open,true,"arrow",false,app.accent,"InboxOpenMessageAction")
 		D.button(card,Rect2(589,890,549,62),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
 			mark.archived=not mark.get("archived",false)
 			mark.read=true
@@ -276,6 +291,31 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
+
+static func _current_expiry_roster(model: Dictionary) -> Dictionary:
+	var expiring: Variant = model.get("decisions", {}).get("recruitment", {}).get("expiring")
+	if not expiring is Array: return {}
+	var roster := U.defaults()
+	roster.contract = "Fin de saison"
+	roster.sort = "Échéance"
+	roster.immersive_tab = 2
+	var season := int(model.get("meta", {}).get("season", 1))
+	var displayed := U.players(model.get("squad", []), roster, season)
+	var displayed_ids := displayed.map(func(player: Dictionary): return str(player.id))
+	var expiring_ids: Array = expiring.map(func(player: Dictionary): return str(player.id))
+	displayed_ids.sort()
+	expiring_ids.sort()
+	# Le filtre inclut aussi les contrats antérieurs que certaines sauvegardes conservent.
+	if displayed_ids != expiring_ids: return {}
+	return {"roster":roster, "count":displayed_ids.size()}
+
+static func _open_expiry_roster(app: Control, roster: Dictionary) -> void:
+	app.management_ui.roster = roster
+	app.management_ui.profile_scroll = 0
+	app.roster_filter = roster.family
+	app.roster_sort = roster.sort
+	app.selected_player = ""
+	app._navigate("Effectif", false)
 
 static func _choose_calendar_preparation(app: Control, card: Panel, id: String, choice: String) -> void:
 	if app._command("calendar_mail_decide",{"id":id, "choice":choice}):
