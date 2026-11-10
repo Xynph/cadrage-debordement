@@ -66,10 +66,16 @@ static func _fixture(card: Panel, app: Control) -> void:
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			D.chip(card,Rect2(24,22,281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
-			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)
-			D.text(card,27,183,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),30,C.IVORY,600,720)
-			D.text(card,27,223,P.fixture_venue(fixture),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.chip(card,Rect2(24,22,210,29),"PRÉPARATION",C.GOLD)
+			if fixture.is_empty():
+				D.text(card,27,121,"Préparation · " + World.name_for(app.model,"champ"),58,C.IVORY,800,920)
+				D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
+			else:
+				D.text(card,27,121,Office.scheduled_opponent(app,fixture),51,C.IVORY,800,645).name = "UpcomingOpponent"
+				D.text(card,27,183,Office.scheduled_when(app,fixture),27,C.IVORY,600,645).name = "UpcomingWhen"
+				var venue := Office.scheduled_venue(app,fixture)
+				if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
+
 		else:
 			D.chip(card,Rect2(24,22,322 if japan else 281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
 			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)

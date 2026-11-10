@@ -277,9 +277,15 @@ func _next_match() -> void:
 		if not preparation.is_empty():
 			if SeasonPreparation.is_champ(app.model.meta):
 				var fixture := P.next_scheduled_fixture(app.model)
-				D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "champ"))),43,C.IVORY,800,810)
-				D.text(panel,37,179,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),29,C.IVORY,600,802)
-				D.text(panel,37,219,P.fixture_venue(fixture),24,C.MUTED,500,802)
+				if fixture.is_empty():
+					D.text(panel,36,130,"Préparation · " + World.name_for(app.model,"champ"),43,C.IVORY,800,810)
+					D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
+				else:
+					D.chip(panel,Rect2(36,67,210,29),"PRÉPARATION",C.GOLD)
+					D.text(panel,36,130,Office.scheduled_opponent(app,fixture),43,C.IVORY,800,810).name = "UpcomingOpponent"
+					D.text(panel,37,179,Office.scheduled_when(app,fixture),29,C.IVORY,600,802).name = "UpcomingWhen"
+					var venue := Office.scheduled_venue(app,fixture)
+					if not venue.is_empty(): D.text(panel,37,219,"Lieu · " + venue,24,C.MUTED,500,802)
 				D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionChampAdvance")
 				return
 			D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),43,C.IVORY,800,810)
