@@ -27,10 +27,18 @@ test('Les données manquantes gardent un zéro et une origine stable', () => {
   assert.equal(profile.capsSource, 'game-default');
   assert.equal(profile.nationalitySource, 'simulated');
   assert.ok(profile.nationality && profile.flagCode);
-  assert.equal(profile.heightCm, null);
+  assert.equal(profile.dimensionsSource, 'estimated');
+  assert.ok(profile.heightCm >= 165 && profile.weightKg >= 60);
   assert.deepEqual(facts.project('unknown'), profile);
   assert.deepEqual(facts.project('depth-4-1-12'), facts.project('depth-4-1-12'));
   assert.equal(facts.project('uncapped').capsSource, 'documented');
   assert.equal(facts.project('uncapped').seniorCaps, 0);
   assert.equal(facts.project('uncapped').seniorNation, null);
+});
+
+test('Les mensurations estimées restent cohérentes avec le poste et préservent les valeurs documentées', () => {
+  const prop = facts.project('unknown', null, {pos:'Pilier gauche',age:26});
+  const scrumHalf = facts.project('unknown', null, {pos:'Demi de mêlée',age:26});
+  assert.ok(prop.weightKg > scrumHalf.weightKg + 25);
+  assert.equal(facts.project('known', null, {pos:'Demi de mêlée',age:26}).weightKg, 108);
 });

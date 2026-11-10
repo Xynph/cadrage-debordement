@@ -53,6 +53,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  }
 
  function knownEligibility(id, nation) {
+  if (typeof playerFacts.eligible === 'function') return playerFacts.eligible(id, nation);
   const documented = Object.hasOwn(facts, id) ? facts[id] : null;
   return documented?.seniorNation ? documented.seniorNation === nation :
    documented?.eligibilityNations?.includes(nation) === true;

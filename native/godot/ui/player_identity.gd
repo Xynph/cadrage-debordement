@@ -44,5 +44,6 @@ static func row(facts: Dictionary, size: int, color: Color) -> HBoxContainer:
 		var label := C.label(part.text, size, color)
 		label.name = "Player" + str(part.key) + "Fact"
 		if part.key == "Origin" and facts.get("nationalitySource") == "simulated": label.tooltip_text = "Origine attribuée par le jeu"
+		if part.key == "Dimensions" and facts.get("dimensionsSource") == "estimated": label.tooltip_text = "Mensuration estimée par le jeu"
 		body.add_child(label)
 	return body

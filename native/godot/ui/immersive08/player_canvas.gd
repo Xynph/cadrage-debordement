@@ -97,6 +97,9 @@ static func build(app:Control,player:Dictionary) -> Control:
 	if injury > 0:
 		availability = "Indisponible"
 		availability_color = C.ALERT
+	elif facts.get("onInternationalDuty", false):
+		availability = "En sélection"
+		availability_color = C.GOLD
 	elif recovering:
 		availability = "En reprise"
 		availability_color = C.AMBER

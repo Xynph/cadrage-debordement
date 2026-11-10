@@ -794,7 +794,7 @@ func _update_live_bar() -> void:
 			if _press_required():
 				if primary_button.name == "ImmersiveContinue": primary_button.text = "Conf. de presse"
 			elif not Immersive.Selections.current_fixture(model).is_empty():
-				if primary_button.name == "ImmersiveContinue": primary_button.text = "Jouer la sélection"
+				if primary_button.name == "ImmersiveContinue": primary_button.text = "Courrier de match"
 			elif not model.meta.get("canAdvanceSeason", false):
 				var daily := _daily_progression()
 				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
@@ -818,7 +818,7 @@ func primary_text() -> String:
 		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
 		return "RETOUR AU DIRECT  →"
 	if _press_required(): return "OUVRIR LA RÉCEPTION  →"
-	if not Immersive.Selections.current_fixture(model).is_empty(): return "JOUER LE MATCH DE SÉLECTION  →"
+	if not Immersive.Selections.current_fixture(model).is_empty(): return "OUVRIR LE COURRIER DE MATCH  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
 	var daily := _daily_progression()
 	if not daily.is_empty(): return daily.label
@@ -835,8 +835,10 @@ func primary_action() -> void:
 	if _press_required():
 		_show_press_inbox()
 		return
-	if not Immersive.Selections.current_fixture(model).is_empty():
-		Immersive.Selections.play_current(self)
+	var international_fixture := Immersive.Selections.current_fixture(model)
+	if not international_fixture.is_empty():
+		_reset_reception("international:match-day/" + str(international_fixture.id))
+		_navigate("Réception", false)
 		return
 	if model.meta.get("canAdvanceSeason",false):
 		confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
