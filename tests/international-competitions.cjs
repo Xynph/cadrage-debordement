@@ -256,3 +256,62 @@ test('Nations Championship finals share a draw and count the grand final twice f
   assert.equal(editionOutcome(finished).hemisphereWinner, 'south');
   assert.deepEqual(editionOutcome(finished).winnerIds, [final.awayId]);
 });
+
+const TRC = 'rugby-championship-2027';
+
+test('Rugby Championship keeps the three confirmed fixtures in a full schedule with rest', () => {
+  const { COMPETITION_IDS, createEdition } = competition();
+  assert.ok(COMPETITION_IDS.includes(TRC));
+  const edition = createEdition(TRC);
+  assert.equal(edition.fixtures.length, 12);
+  assert.deepEqual(edition.fixtures.filter(f => f.dateStatus === 'official').map(f =>
+    [f.date, f.homeId, f.awayId, f.venue]), [
+    ['2027-07-10', 'AUS', 'ARG', 'Allianz Stadium'],
+    ['2027-07-17', 'AUS', 'ARG', 'Queensland Country Bank Stadium'],
+    ['2027-07-31', 'AUS', 'NZL', 'Melbourne Cricket Ground'],
+  ]);
+  assert.equal(edition.fixtures.filter(f => f.dateStatus === 'simulated').length, 9);
+  for (const { id } of edition.teams) {
+    const matches = edition.fixtures.filter(f => [f.homeId, f.awayId].includes(id));
+    assert.equal(matches.length, 6);
+    assert.equal(matches.filter(f => f.homeId === id).length, 3);
+    for (const { id: opponent } of edition.teams.filter(t => t.id !== id)) {
+      assert.equal(matches.filter(f => [f.homeId, f.awayId].includes(opponent)).length, 2);
+    }
+    for (let i = 1; i < matches.length; i++) {
+      assert.ok(Date.parse(matches[i].date) - Date.parse(matches[i - 1].date) >= 7 * 86400000);
+    }
+  }
+  assert.ok(edition.fixtures.at(-1).date <= '2027-08-26');
+});
+
+test('Rugby Championship bonus requires a three-try margin instead of four tries', () => {
+  const { createEdition, recordResult, standings } = competition();
+  let edition = createEdition(TRC);
+  const australianMatches = edition.fixtures.filter(f => f.homeId === 'AUS' && f.awayId === 'ARG');
+  edition = recordResult(edition, australianMatches[0].id, score(35, 28, 5, 4));
+  assert.deepEqual(standings(edition)[0].rows.find(row => row.teamId === 'AUS').tryBonus, 0);
+  edition = recordResult(edition, australianMatches[1].id, score(15, 18, 3, 0));
+  assert.deepEqual(standings(edition)[0].rows.filter(row => ['AUS', 'ARG'].includes(row.teamId))
+    .map(row => [row.teamId, row.points, row.tryBonus, row.losingBonus]), [
+    ['AUS', 6, 1, 1], ['ARG', 5, 0, 1],
+  ]);
+});
+
+test('Rugby Championship ranks head-to-head wins ahead of general point margin', () => {
+  const { createEdition, restoreEdition, standings, editionOutcome } = competition();
+  const edition = createEdition(TRC);
+  const matches = (home, away) => edition.fixtures.filter(f => f.homeId === home && f.awayId === away);
+  const [australiaArgentina, rematch] = matches('AUS', 'ARG');
+  const results = {
+    [australiaArgentina.id]: score(9, 0),
+    [rematch.id]: score(0, 0),
+    [matches('ARG', 'RSA')[0].id]: score(30, 0),
+    [matches('AUS', 'NZL')[0].id]: score(0, 30),
+  };
+  const restored = restoreEdition(TRC, results);
+  assert.deepEqual(standings(restored)[0].rows.filter(row => ['AUS', 'ARG'].includes(row.teamId))
+    .map(row => [row.teamId, row.points, row.pointDifference]), [['AUS', 6, -21], ['ARG', 6, 21]]);
+  const allDraws = Object.fromEntries(edition.fixtures.map(f => [f.id, score(0, 0)]));
+  assert.deepEqual(editionOutcome(restoreEdition(TRC, allDraws)).winnerIds.sort(), ['ARG', 'AUS', 'NZL', 'RSA']);
+});

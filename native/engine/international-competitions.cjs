@@ -7,23 +7,26 @@ const {
   thirdPlacePermutations, defaultRankings,
 } = require('./international-2027.cjs');
 const nations = require('./nations-championship-2026.cjs');
+const rugbyChampionship = require('./rugby-championship-2027.cjs');
 
-const COMPETITION_IDS = Object.freeze([SIX_NATIONS, WORLD_CUP, nations.id]);
+const COMPETITION_IDS = Object.freeze([SIX_NATIONS, WORLD_CUP, nations.id, rugbyChampionship.id]);
 const homeUnions = ['ENG', 'IRE', 'SCO', 'WAL'];
 const phasesWithTables = new Set(['league', 'pool']);
+const editionsWithSharedRanks = new Set([SIX_NATIONS, rugbyChampionship.id]);
 const beforeKickoff = (a, b) => a.date.localeCompare(b.date);
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
 function editionGroups(competitionId) {
   if (competitionId === WORLD_CUP) return Object.entries(worldCupPools);
   if (competitionId === nations.id) return Object.entries(nations.hemispheres);
-  return [[null, sixNationsTeams]];
+  return [[null, competitionId === rugbyChampionship.id ? rugbyChampionship.teams : sixNationsTeams]];
 }
 
 function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0 } = {}) {
   assert(COMPETITION_IDS.includes(competitionId), 'unknown international competition: ' + competitionId);
   const sixNations = competitionId === SIX_NATIONS;
   const nationsChampionship = competitionId === nations.id;
+  const trc = competitionId === rugbyChampionship.id;
   const year = nationsChampionship ? nations.year : 2027;
   const teamIds = editionGroups(competitionId).flatMap(([, ids]) => ids);
   assert(Array.isArray(rankings) && new Set(rankings).size === rankings.length &&
@@ -62,6 +65,11 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
         awaySource: 'south-' + placement,
       });
     }
+  } else if (trc) {
+    fixtures = rugbyChampionship.schedule.flatMap(([day, matches], r) => matches.map(([home, away, venue], i) => ({
+      ...fixture('r' + (r + 1) + '-' + (i + 1), day, null, r + 1, 'league', null, home, away, venue ?? null),
+      dateStatus: venue ? 'official' : 'simulated',
+    })));
   } else {
     fixtures = Object.entries(worldCupPoolSchedule).flatMap(([pool, matches]) => matches.map(([day, kickoff, venue, home, away], i) =>
       fixture('pool-' + pool.toLowerCase() + '-' + (i + 1), '10-' + String(day).padStart(2, '0'), kickoff,
@@ -77,7 +85,8 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
 
   return {
     id: competitionId,
-    name: nationsChampionship ? nations.name : sixNations ? 'Tournoi des Six Nations 2027' : 'Coupe du monde de rugby 2027',
+    name: sixNations ? 'Tournoi des Six Nations 2027' :
+      nationsChampionship ? nations.name : trc ? rugbyChampionship.name : 'Coupe du monde de rugby 2027',
     year,
     ...(nationsChampionship ? { drawSeed } : {}),
     teams: teamIds.map(id => ({ id, name: teamNames[id] })),
@@ -86,7 +95,7 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
     provenance: sixNations ? {
       calendar: sources.sixNationsCalendar,
       rules: sources.sixNationsRules,
-    } : nationsChampionship ? { ...nations.provenance } : {
+    } : nationsChampionship ? { ...nations.provenance } : trc ? { ...rugbyChampionship.provenance } : {
       calendar: sources.worldCupCalendar,
       draw: sources.worldCupDraw,
       bestThirds: sources.worldCupThirds,
@@ -108,14 +117,14 @@ function newRow(teamId) {
   };
 }
 
-function addMatch(row, scored, conceded, tries, concededTries) {
+function addMatch(row, scored, conceded, tries, concededTries, useTryMargin) {
   row.played++;
   row.pointsFor += scored;
   row.pointsAgainst += conceded;
   row.pointDifference += scored - conceded;
   row.triesFor += tries;
   row.triesAgainst += concededTries;
-  const tryBonus = Number(tries >= 4);
+  const tryBonus = Number(useTryMargin ? tries - concededTries >= 3 : tries >= 4);
   const losingBonus = Number(scored < conceded && conceded - scored <= 7);
   row.tryBonus += tryBonus;
   row.losingBonus += losingBonus;
@@ -177,15 +186,34 @@ function nationsOrder(rows, pool, drawSeed) {
     b.triesFor - a.triesFor || lots.indexOf(a.teamId) - lots.indexOf(b.teamId));
 }
 
+function rugbyChampionshipOrder(rows, fixtures) {
+  const direct = new Map(rows.map(row => [row.teamId, { won: 0, margin: 0, points: row.points }]));
+  for (const { homeId, awayId, result } of fixtures) {
+    if (!result) continue;
+    const home = direct.get(homeId), away = direct.get(awayId);
+    if (home.points !== away.points) continue;
+    home.won += Number(result.winnerId === homeId);
+    away.won += Number(result.winnerId === awayId);
+    home.margin += result.home - result.away;
+    away.margin += result.away - result.home;
+  }
+  return (a, b) => {
+    const aDirect = direct.get(a.teamId), bDirect = direct.get(b.teamId);
+    return b.points - a.points || b.won - a.won || bDirect.won - aDirect.won ||
+      b.pointDifference - a.pointDifference || bDirect.margin - aDirect.margin || b.triesFor - a.triesFor;
+  };
+}
+
 function standings(edition) {
   const sixNations = edition.id === SIX_NATIONS;
+  const trc = edition.id === rugbyChampionship.id;
   return editionGroups(edition.id).map(([pool, teamIds]) => {
     const fixtures = fixturesForTable(edition, pool);
     const rows = new Map(teamIds.map(id => [id, newRow(id)]));
     for (const { homeId, awayId, result } of fixtures) {
       if (!result) continue;
-      if (rows.has(homeId)) addMatch(rows.get(homeId), result.home, result.away, result.homeTries, result.awayTries);
-      if (rows.has(awayId)) addMatch(rows.get(awayId), result.away, result.home, result.awayTries, result.homeTries);
+      if (rows.has(homeId)) addMatch(rows.get(homeId), result.home, result.away, result.homeTries, result.awayTries, trc);
+      if (rows.has(awayId)) addMatch(rows.get(awayId), result.away, result.home, result.awayTries, result.homeTries, trc);
     }
     if (sixNations) {
       for (const row of rows.values()) {
@@ -195,13 +223,12 @@ function standings(edition) {
       }
     }
     const entries = [...rows.values()];
-    let ordered;
-    if (sixNations) ordered = entries.sort(sixNationsOrder);
-    else if (edition.id === nations.id) ordered = nationsOrder(entries, pool, edition.drawSeed);
-    else ordered = poolOrder(entries, fixtures, edition.rankings);
+    const leagueOrder = trc ? rugbyChampionshipOrder(entries, fixtures) : sixNations ? sixNationsOrder : null;
+    const ordered = leagueOrder ? entries.sort(leagueOrder) : edition.id === nations.id ?
+      nationsOrder(entries, pool, edition.drawSeed) : poolOrder(entries, fixtures, edition.rankings);
     ordered.forEach((row, i) => {
       const previous = ordered[i - 1];
-      row.rank = sixNations && previous && sixNationsOrder(previous, row) === 0 ? previous.rank : i + 1;
+      row.rank = leagueOrder && previous && leagueOrder(previous, row) === 0 ? previous.rank : i + 1;
     });
     return { pool, rows: ordered };
   });
@@ -345,11 +372,13 @@ function editionOutcome(edition) {
     winnerIds: [], runnerUpIds: [], thirdPlaceIds: [],
     grandSlamIds: [], tripleCrownIds: [],
   };
-  if (edition.id === SIX_NATIONS) {
+  if (editionsWithSharedRanks.has(edition.id)) {
     const [{ rows }] = standings(edition);
-    outcome.grandSlamIds = rows.filter(row => row.grandSlamBonus).map(row => row.teamId);
-    outcome.tripleCrownIds = homeUnions.filter(id => edition.fixtures.filter(f =>
-      f.result?.winnerId === id && homeUnions.includes(f.homeId) && homeUnions.includes(f.awayId)).length === 3);
+    if (edition.id === SIX_NATIONS) {
+      outcome.grandSlamIds = rows.filter(row => row.grandSlamBonus).map(row => row.teamId);
+      outcome.tripleCrownIds = homeUnions.filter(id => edition.fixtures.filter(f =>
+        f.result?.winnerId === id && homeUnions.includes(f.homeId) && homeUnions.includes(f.awayId)).length === 3);
+    }
     if (outcome.complete) {
       outcome.winnerIds = rows.filter(row => row.rank === 1).map(row => row.teamId);
       outcome.runnerUpIds = rows.filter(row => row.rank === 2).map(row => row.teamId);
