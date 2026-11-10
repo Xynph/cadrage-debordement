@@ -19,6 +19,7 @@ var portrait := false
 var dragging := false
 var caption: Label
 var feedback: Label
+var framing_feedback: Label
 var clip_buttons: Dictionary = {}
 var view_buttons: Dictionary = {}
 
@@ -71,9 +72,18 @@ func set_view(angle: float, close_up: bool) -> void:
 	azimuth = angle
 	portrait = close_up
 	_update_camera()
-	var active_view := &"profil" if portrait and is_equal_approx(absf(azimuth), 90.0) else (&"portrait" if portrait else &"ensemble")
+	var active_view := &""
+	if portrait and is_equal_approx(azimuth, -90.0):
+		active_view = &"profil"
+	elif portrait and is_equal_approx(azimuth, -10.0):
+		active_view = &"portrait"
+	elif not portrait and is_equal_approx(azimuth, -14.0):
+		active_view = &"ensemble"
 	for key: StringName in view_buttons:
 		view_buttons[key].set_pressed_no_signal(key == active_view)
+	framing_feedback.text = "Échelle 1,80 m · carnet dans la main gauche"
+	if active_view.is_empty():
+		framing_feedback.text = "Rotation libre · cadrage " + ("visage" if portrait else "en pied")
 
 
 func _update_camera() -> void:
@@ -91,8 +101,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		dragging = event.pressed
 	elif event is InputEventMouseMotion and dragging:
-		azimuth = wrapf(azimuth - event.relative.x * 0.38, -180.0, 180.0)
-		_update_camera()
+		set_view(wrapf(azimuth - event.relative.x * 0.38, -180.0, 180.0), portrait)
 
 
 func _input(event: InputEvent) -> void:
@@ -164,15 +173,15 @@ func _build_hud() -> void:
 	var views := HBoxContainer.new()
 	views.add_theme_constant_override("separation", 8)
 	content.add_child(views)
-	for item: Array in [[&"ensemble", "En pied", -14.0, false], [&"portrait", "Visage", -10.0, true], [&"profil", "Profil", -90.0, true]]:
+	for item: Array in [[&"ensemble", "R   En pied", -14.0, false], [&"portrait", "F   Visage", -10.0, true], [&"profil", "P   Profil", -90.0, true]]:
 		var button := _button(item[1])
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		views.add_child(button)
 		button.pressed.connect(set_view.bind(item[2], item[3]))
 		view_buttons[item[0]] = button
-	var disclaimer := _label("Personnage à l’échelle de 1,80 m · rig corporel", 14, MUTED)
-	disclaimer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(disclaimer)
+	framing_feedback = _label("", 14, MUTED)
+	framing_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(framing_feedback)
 
 
 func _label(text: String, font_size: int, color: Color) -> Label:

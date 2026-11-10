@@ -1,6 +1,7 @@
 """Build the isolated, animated Gabi prototype from the selected TRELLIS GLB."""
 
 import argparse
+import heapq
 import json
 import math
 import sys
@@ -115,6 +116,59 @@ def smoothstep(lower, upper, t):
     return t * t * (3 - 2 * t)
 
 
+def sleeve_zones(body, vertices):
+    """Isolate lower sleeve by mesh connectivity and feather into its shoulder."""
+    edges = [[] for _ in vertices]
+    for edge in body.data.edges:
+        a, b = edge.vertices
+        length = float(np.linalg.norm(vertices[a] - vertices[b]))
+        edges[a].append((b, length))
+        edges[b].append((a, length))
+
+    def component(start, eligible):
+        part = {start}
+        queue = [start]
+        while queue:
+            current = queue.pop()
+            for target, _ in edges[current]:
+                if eligible[target] and target not in part:
+                    part.add(target)
+                    queue.append(target)
+        return part
+
+    def geodesic(seeds):
+        dist = np.full(len(vertices), np.inf)
+        queue = []
+        for index in seeds:
+            dist[index] = 0.0
+            queue.append((0.0, index))
+        heapq.heapify(queue)
+        while queue:
+            distance, index = heapq.heappop(queue)
+            if distance > dist[index]:
+                continue
+            for target, weight in edges[index]:
+                candidate = distance + weight
+                if candidate < dist[target]:
+                    dist[target] = candidate
+                    heapq.heappush(queue, (candidate, target))
+        return dist
+
+    x, _, z = vertices.T
+    lower = (z > .68) & (z < 1.139)
+    arm_components = {
+        side: component(int(np.argmax(np.where(lower, sign * x, -1))), lower)
+        for side, sign in [("L", 1), ("R", -1)]
+    }
+    body_seeds = set(np.flatnonzero(lower)) - arm_components["L"] - arm_components["R"]
+    body_seeds.update(np.flatnonzero((np.abs(x) < .16) & (z >= 1.139)))
+    torso_distance = geodesic(body_seeds)
+    return {
+        side: 1 - smoothstep(-.057, .052, geodesic(sleeve) - torso_distance)
+        for side, sleeve in arm_components.items()
+    }
+
+
 def weight_character(body, rig, landmarks):
     # The arm must separate from the torso below the armpit. A nearest-bone
     # rule would drag the sweater flank with it. Use explicit blend zones.
@@ -122,6 +176,7 @@ def weight_character(body, rig, landmarks):
     x, _, z = vertices.T
     ax = np.abs(x)
     rows = {}
+    sleeves = sleeve_zones(body, vertices)
 
     neck = smoothstep(1.445, 1.537, z) * (1 - smoothstep(.096, .186, ax))
     head = smoothstep(1.51, 1.589, z) * (1 - smoothstep(.142, .20, ax))
@@ -142,7 +197,9 @@ def weight_character(body, rig, landmarks):
         spread = np.interp(z, [1.0, 1.16, 1.24, 1.34, 1.50],
                            [.016, .016, .028, .075, .082])
         arm = smoothstep(seam - spread, seam + spread, sx)
-        arm *= smoothstep(.60, .69, z) * (1 - smoothstep(1.487, 1.543, z))
+        transition = smoothstep(1.245, 1.414, z)
+        arm = transition * arm + (1 - transition) * sleeves[side]
+        arm *= smoothstep(.60, .71, z) * (1 - smoothstep(1.487, 1.543, z))
         arm_total += arm
         upper_axis = np.array(p["elbow"]) - p["shoulder"]
         upper_axis /= np.linalg.norm(upper_axis)

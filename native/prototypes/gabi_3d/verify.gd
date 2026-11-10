@@ -22,6 +22,13 @@ func _run() -> void:
 	root.add_child(lab)
 	await process_frame
 	var player: AnimationPlayer = lab.animations
+	var cover := lab.get_node("Gabi").find_child("Carnet_Couverture", true, false) as MeshInstance3D
+	var grip := cover.get_parent() as BoneAttachment3D if cover != null else null
+	_check(grip != null and grip.bone_name == &"Hand.L", "carnet attaché à la main gauche")
+	if grip == null:
+		_finish()
+		return
+	var original_grip := cover.transform
 	var skeleton := lab.get_node("Gabi").find_child("Skeleton3D", true, false) as Skeleton3D
 	_check(skeleton != null and skeleton.get_bone_count() == 20, "20 os importés")
 	var skinned := _find_skinned_mesh(lab.get_node("Gabi"))
@@ -37,8 +44,9 @@ func _run() -> void:
 			return
 	var head := skeleton.find_bone("Head")
 	var hand := skeleton.find_bone("Hand.R")
-	_check(head >= 0 and hand >= 0, "os du visage et de la main identifiables")
-	if head < 0 or hand < 0:
+	var left_hand := skeleton.find_bone("Hand.L")
+	_check(head >= 0 and hand >= 0 and left_hand >= 0, "os du visage et de la main identifiables")
+	if head < 0 or hand < 0 or left_hand < 0:
 		_finish()
 		return
 	_check(lab.current_clip == IDLE and player.get_animation(IDLE).loop_mode == Animation.LOOP_LINEAR,
@@ -59,6 +67,12 @@ func _run() -> void:
 		"geste réel de la main")
 	_check(skeleton.get_bone_global_pose(head).basis.get_rotation_quaternion().angle_to(
 		head_at_start.basis.get_rotation_quaternion()) > deg_to_rad(5), "hochement réel")
+	skeleton.force_update_all_bone_transforms()
+	await process_frame
+	await process_frame
+	_check(cover.transform.is_equal_approx(original_grip)
+		and grip.transform.origin.distance_to(skeleton.get_bone_global_pose(left_hand).origin) < .001,
+		"prise stable pendant l’approbation")
 	await _capture("02-approbation")
 	player.advance(2.5)
 	_check(lab.current_clip == IDLE, "retour au repos après l’approbation")
@@ -80,6 +94,12 @@ func _run() -> void:
 	player.seek(0.70, true)
 	_check(skeleton.get_bone_global_pose(hand).origin.distance_to(hand_at_start.origin) > 0.06,
 		"geste distinct pendant la parole")
+	skeleton.force_update_all_bone_transforms()
+	await process_frame
+	await process_frame
+	_check(cover.transform.is_equal_approx(original_grip)
+		and grip.transform.origin.distance_to(skeleton.get_bone_global_pose(left_hand).origin) < .001,
+		"prise stable pendant la parole")
 	await _capture("05-parole")
 	lab.clip_buttons[IDLE].pressed.emit()
 	_check(not lab.voice.playing and lab.caption.text.is_empty(), "interrompre la parole arrête voix et réplique")
@@ -92,6 +112,15 @@ func _run() -> void:
 	Input.parse_input_event(rotate_key)
 	await process_frame
 	_check(lab.azimuth == -4.0, "rotation clavier")
+	_check(not lab.view_buttons[&"ensemble"].button_pressed
+		and not lab.view_buttons[&"portrait"].button_pressed
+		and not lab.view_buttons[&"profil"].button_pressed
+		and "Rotation libre" in lab.framing_feedback.text, "état de cadrage libre")
+	rotate_key.keycode = KEY_R
+	Input.parse_input_event(rotate_key)
+	await process_frame
+	_check(lab.azimuth == -14.0 and lab.view_buttons[&"ensemble"].button_pressed,
+		"touche R rétablit la vue En pied")
 	_finish()
 
 
