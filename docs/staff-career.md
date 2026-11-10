@@ -4,7 +4,7 @@
 
 `native/engine/staff-career.cjs` est un domaine natif sérialisable, indépendant des registres d'origine. `S.staffCareer` version1, politique `staff-career-v1`, conserve une trajectoire propre à la carrière. L'annuaire initial n'est jamais édité. L'absence du marqueur garde l'ancien comportement ; une carrière existante demande une activation explicite. Le raccord worker initialise les nouvelles carrières prises en charge. Une nouvelle carrière fictive ou France sans catalogue de référence reçoit les fonctions minimales de la politique de complétion, explicitement fictives, sans inventer un annuaire officiel. Les anciens cycles sans cette politique conservent leurs cibles CORE historiques. Les anciennes carrières restent sans cycle tant qu'elles ne l'activent pas.
 
-La source readonly injectée dans la VM est `nativeStaffCareerSources[databaseId] = registry.clubs`, tableau de `{id,members}`. Le domaine ignore les références expressément historiques, reprend les autres profils et complète les rôles manquants par des personnages de jeu identifiés comme fictifs. Les rôles cibles de chaque club restent séparés de l'annuaire.
+La source readonly injectée dans la VM est `nativeStaffCareerSources[databaseId] = registry.clubs`, tableau de `{id,members}`. Le domaine ignore les références expressément historiques, reprend les autres profils et complète les rôles manquants par des personnages de jeu dont la provenance est conservée dans les métadonnées internes. Les rôles cibles de chaque club restent séparés de l'annuaire.
 
 ## Âges, contrats et retraites
 

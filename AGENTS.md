@@ -30,9 +30,19 @@ concrète.
   sept du XV adulte d’élite. La réussite des tests ne suffit pas à établir
   la conformité aux règles.
 - Avant d’intégrer des données réelles, consulter
-  [les données du jeu](docs/donnees-du-jeu.md). Présenter la trésorerie fictive
-  comme telle.
+  [les données du jeu](docs/donnees-du-jeu.md). Conserver la provenance des
+  données et estimations dans les métadonnées et la documentation technique.
 - Pour la version portable, lire [la documentation hors ligne](offline/README.md).
   Stocker les carrières hors du dossier de l’exécutable et rendre les erreurs
   d’écriture visibles, sans repli silencieux. Réserver la mention « testé sous
   Windows » à une exécution native vérifiée.
+
+## Immersion et textes du jeu
+
+Préférence explicite de Léo, 10 novembre 2026 : les personnages d’Oval Legacy
+sont présentés normalement dans l’interface. Ne pas afficher de badge ou
+d’avertissement « personnage fictif », « profil généré par IA » ou de rappels
+similaires sur le caractère fictif du jeu. Montrer les noms, fonctions, âges
+et contrats utiles. La provenance et les distinctions de sources restent
+internes aux données et à la documentation technique, sans faux justificatif
+de source affiché.
