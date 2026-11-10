@@ -67,3 +67,22 @@ déplacements et effets sportifs du second commit Simulation.
 
 Le mode `CD_TACTICS_DRAG_PREVIEW=1` arrête le banc après la consultation ;
 le banc complet garde les scénarios de vrais glissers, annulation et affectation.
+
+## Réception des parcours après reprise
+
+Le banc complet passe **397 contrôles sans échec** sur la vraie application :
+glisser souris terrain vers terrain, banc vers terrain et Hors groupe vers
+terrain, annulation réelle par Échap, refus des IDs périmés/inconnus/étrangers,
+partition après chaque affectation, clavier, liste complète et en-têtes fixes.
+Une vraie commande en attente verrouille le déplacement ; un vrai match lancé
+verrouille le glisser-déposer, la sélection du staff, les candidats et Libérer.
+
+Le dialogue de choix du poste conserve les Consignes individuelles du joueur
+actuel. Sa consultation et son annulation gardent le profil identique.
+[Rapport des actions](tactique-polyvalence-20261110/actions-report.json).
+
+Le banc historique `godot-immersive08.gd` a aussi été tenté en mode `office`,
+mais s'arrête avant Tactique sur les anciennes assertions Effectif demandant
+une pagination puis un accès `roster.page` absent (ligne1116). Il reste hors
+cible comme décidé dans la base reçue ; aucune attente de ce banc n'est modifiée
+dans ce lot. La réception dédiée ci-dessus exerce le parcours complet.

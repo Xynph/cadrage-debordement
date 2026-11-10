@@ -60,7 +60,7 @@ static func build(app:Control) -> Control:
 	var domains: Array = preparation.get("domains",[]) if preparation is Dictionary else []
 	var composition:=_card(page,Rect2(280,264,1070,906),"COMPOSITION · ÉQUIPE PREMIÈRE","tactic","TacticsPitch")
 	var auto:=D.button(composition,Rect2(738,14,306,30),"SÉLECTION DU STAFF",func():app._command("auto_lineup"),false,"people",true,app.accent,"LineupAutomatic")
-	auto.disabled=not app._live().is_empty()
+	auto.disabled=not Selection.editable(app)
 	auto.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
 	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160),.5)
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
@@ -374,9 +374,6 @@ static func _candidates(app:Control,slot:int) -> void:
 	dialog.tree_exiting.connect(func():
 		if is_instance_valid(viewport) and viewport.size_changed.is_connected(fit_list): viewport.size_changed.disconnect(fit_list),CONNECT_ONE_SHOT)
 	var list:=C.v(8);list.name="LineupCandidatesList";C.fill(list);scroll.add_child(list)
-	var eligible:Array=[]
-	for assignment:Dictionary in app.model.get("selection",{}).get("slots",[]):
-		if int(assignment.get("slot",-1))==slot:eligible=assignment.get("eligibleIds",[])
 	for player:Dictionary in app.model.get("squad",[]):
 		var action:=C.button(str(player.name)+" · "+Selection.positions(player)+" · Note "+Selection.rating_text(app.model,player,slot)+" · "+G.n(player.get("condition",0))+" %",func():dialog.queue_free();app._command("set_lineup",{"playerId":player.id,"slot":slot}))
 		action.name="LineupPlayer"+str(player.id).replace(":","_")
@@ -385,7 +382,12 @@ static func _candidates(app:Control,slot:int) -> void:
 		action.tooltip_text="Indisponible ou qualification incompatible avec ce poste." if action.disabled else "Affecter ce joueur au poste %02d" % (slot+1)
 		list.add_child(action)
 	var clear:=C.button("Libérer ce poste",func():dialog.queue_free();app._command("set_lineup",{"playerId":null,"slot":slot}))
-	clear.name="LineupRemove";clear.disabled=not app._live().is_empty();body.add_child(clear)
+	var actions:=C.h(8);body.add_child(actions)
+	clear.name="LineupRemove";clear.disabled=not Selection.editable(app);C.fill(clear);actions.add_child(clear)
+	var current:=_player(app,slot)
+	if not current.is_empty():
+		var individual:=C.button("Consignes du joueur",func():dialog.queue_free();_individual(app,current))
+		individual.name="TacticsIndividualInstructions";C.fill(individual);actions.add_child(individual)
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)

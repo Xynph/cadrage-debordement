@@ -84,7 +84,7 @@ func run() -> void:
 		check(portrait!=null and portrait.texture!=null,"Portrait chargé au poste "+str(i+1))
 		var person:Dictionary=Selection.player(app.model,str(assignment(i).get("playerId","")))
 		check(Selection.rating(app.model,person,i)!=null,"Projection moteur présente au poste "+str(i+1))
-		check(Selection.rating_text(app.model,person,i) in labels(named("TacticsPositionRating%02d" % (i+1))),"Note projetée au poste "+str(i+1))
+		check(str(int(person.get("positionRatings",{}).get(str(i+1),-1))) in labels(named("TacticsPositionRating%02d" % (i+1))),"Note projetée au poste "+str(i+1))
 		var card:=named("LineupSlot%02d" % (i+1))
 		for j in range(i+1,15):check(not card.get_global_rect().intersects(named("LineupSlot%02d" % (j+1)).get_global_rect()),"Surfaces distinctes %d/%d" % [i+1,j+1])
 	var pillar_id:=str(assignment(0).get("playerId"))
@@ -119,6 +119,10 @@ func run() -> void:
 	check(str(assignment(13).playerId)==source_id and str(assignment(10).playerId)==displaced,"Vrai dépôt : échange atomique des deux ailiers")
 	check(not Selection.can_drop(app,payload,13),"Source périmée refusée après déplacement")
 	partition()
+	var bench_id:=str(assignment(20).playerId);var field_id:=str(assignment(8).playerId)
+	await drag(named("LineupSlot21"),named("LineupSlot09"))
+	check(str(assignment(8).playerId)==bench_id and str(assignment(20).playerId)==field_id,"Banc21 vers terrain9 : échange réel sans doublon")
+	partition()
 	app.selected_slot=9;app._render();await settle()
 	var candidate:Control
 	for row in named("TacticsOutsideRows").get_children():
@@ -138,6 +142,61 @@ func run() -> void:
 	var last:Control=named("TacticsOutsideRows").get_children().back()
 	check(scroll.get_global_rect().encloses(last.get_global_rect()),"Dernier joueur Hors groupe accessible sans pagination")
 	await capture("tactique-affectation-horsgroupe-1440")
+	# Source hors feuille, déposée avec de vrais événements sur le terrain.
+	app.selected_slot=9;app._render();await settle()
+	var outside_source:Control
+	for row in named("TacticsOutsideRows").get_children():
+		if row is Button and Selection.eligible(app,str(row.get_meta("player_id","")),9):outside_source=row;break
+	if outside_source!=null:
+		var outside_id:=str(outside_source.get_meta("player_id"))
+		(named("TacticsOutsideScroll") as ScrollContainer).ensure_control_visible(outside_source);await settle()
+		await drag(outside_source,named("LineupSlot10"))
+		check(str(assignment(9).playerId)==outside_id,"Hors groupe vers terrain10 : vrai dépôt affecté")
+		partition()
+	var current_id:=str(assignment(9).playerId)
+	var valid_payload:Variant=Selection.payload(app,current_id,9)
+	app._command("save")
+	check(app.waiting and not Selection.can_drop(app,valid_payload,8) and Selection.payload(app,current_id,9)==null,"Commande réellement en attente verrouille le déplacement")
+	await worker()
+	var consultation_hash:=FileAccess.get_sha256(profile)
+	await enter(named("LineupSlot10"))
+	var candidates:=app.find_child("LineupCandidates",true,false) as AcceptDialog
+	check(candidates!=null,"Choix classique du joueur accessible au clavier")
+	if candidates!=null:
+		check(candidates.find_child("TacticsIndividualInstructions",true,false)!=null,"Consignes individuelles conservées dans le dialogue de poste")
+		for row:Button in candidates.find_child("LineupCandidatesList",true,false).get_children():
+			var id:=str(row.get_meta("player_id",""))
+			check(row.disabled==not Selection.eligible(app,id,9),"Choix classique respecte les eligibleIds "+id)
+		var instructions:=candidates.find_child("TacticsIndividualInstructions",true,false) as Button
+		if instructions!=null:
+			instructions.pressed.emit();await settle()
+			var individual:=app.find_child("IndividualInstructions",true,false) as AcceptDialog
+			check(individual!=null and individual.title.contains(str(Selection.player(app.model,current_id).name)),"Consignes ouvrent le vrai joueur du poste actif")
+			check(individual!=null and individual.find_child("IndividualLoad_repos",true,false)!=null,"Actions individuelles existantes conservées")
+			if individual!=null:individual.canceled.emit();await settle()
+		else:candidates.canceled.emit();await settle()
+	check(FileAccess.get_sha256(profile)==consultation_hash,"Annulation du choix classique ne modifie pas le profil")
+	# Le mode hebdomadaire fictif permet un vrai coup d'envoi sans avancer le calendrier commun.
+	app._command("new_career",{"mode":"fiction","club":0});await worker()
+	var press:Dictionary=app.model.get("clubLife",{}).get("press",{})
+	var conference:Dictionary=press.get("conference",{})
+	if conference.get("available",false):
+		var answers:Array=[]
+		for question:Dictionary in conference.get("questions",[]):answers.append({"questionId":question.id,"answerId":question.answers[0].id})
+		app._command("press_conference",{"context":press.get("context"),"invitationId":conference.get("invitationId"),"answers":answers});await worker()
+	app._command("begin_match");await worker()
+	app._navigate("Composition");await settle()
+	check(not app._live().is_empty(),"Vrai match lancé pour vérifier le verrouillage")
+	var live_id:=str(assignment(10).playerId)
+	check(Selection.payload(app,live_id,10)==null and not Selection.can_drop(app,{"kind":"tactics_player","player_id":live_id,"source_slot":10,"club_id":app.model.club.id},13),"Glisser-déposer indisponible pendant le match")
+	check(named("LineupAutomatic").disabled,"Sélection du staff indisponible pendant le match")
+	app.selected_slot=9;app._render();await settle()
+	await enter(named("LineupSlot10"))
+	var live_candidates:=app.find_child("LineupCandidates",true,false) as AcceptDialog
+	check(live_candidates!=null and live_candidates.find_child("LineupRemove",true,false).disabled,"Libérer est verrouillé dans la consultation pendant le match")
+	if live_candidates!=null:
+		check(live_candidates.find_child("LineupCandidatesList",true,false).get_children().all(func(row):return row.disabled),"Tous les choix de composition sont en lecture seule pendant le match")
+		live_candidates.canceled.emit();await settle()
 	finish()
 func finish() -> void:
 	var file := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
