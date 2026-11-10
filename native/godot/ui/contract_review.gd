@@ -156,7 +156,7 @@ func _build() -> void:
 		var wage: Variant = player.get("salary")
 		if wage is int or wage is float: known_wage += float(wage)
 		else: unknown_wage += 1
-	for metric in [["Échéances à la fin de saison %d ou avant" % current, "%d / %d joueurs" % [ending, squad.size()]], ["Prolongations accessibles", "%d joueurs" % renewals], ["Salaires actuels projetés · par semaine", G.euros(known_wage) + (" · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else "")]]:
+	for metric in [["Échéances à la fin de saison %d ou avant" % current, "%d / %d joueurs" % [ending, squad.size()]], ["Prolongations accessibles", "%d joueurs" % renewals], ["Salaires actuels projetés · " + G.salary_period(), G.salary_amount(known_wage) + (" · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else "")]]:
 		var card := _panel(top)
 		card.add_child(_label(metric[0], 16, C.MUTED))
 		var value := _label(metric[1], 22, C.IVORY)
@@ -209,7 +209,7 @@ func _build() -> void:
 	var inset := Control.new()
 	inset.custom_minimum_size.x = 8
 	header.add_child(inset)
-	for column in [["JOUEUR",300,"name"],["POSTE",160,"pos"],["NIVEAU",72,"rating"],["POTENTIEL",84,"potential"],["ÂGE",60,"age"],["ÉCHÉANCE",145,"contractEnd"],["SALAIRE / SEM.",145,"salary"],["MIN.",95,"minutes"],["STATUT",110,"status"],["PROLONGATION",190,"renewal"],["CONSULTER",276,""]]:
+	for column in [["JOUEUR",300,"name"],["POSTE",160,"pos"],["NIVEAU",72,"rating"],["POTENTIEL",84,"potential"],["ÂGE",60,"age"],["ÉCHÉANCE",145,"contractEnd"],["SALAIRE " + G.salary_period(true).to_upper(),145,"salary"],["MIN.",95,"minutes"],["STATUT",110,"status"],["PROLONGATION",190,"renewal"],["CONSULTER",276,""]]:
 		if str(column[2]).is_empty():
 			header.add_child(_cell(column[0], column[1], C.MUTED, 16))
 			continue
@@ -395,7 +395,9 @@ func _row(player: Dictionary) -> void:
 	line.add_child(_cell(G.n(player.age) if player.get("age") != null else "—", 60, C.MUTED))
 	line.add_child(_cell("Fin S%d" % ending if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED))
 	var salary: Variant = player.get("salary")
-	line.add_child(_cell(G.euros(salary) if salary is int or salary is float else "Non fourni", 145))
+	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 145)
+	salary_cell.name = action_id("ContractSalary",str(player.id))
+	line.add_child(salary_cell)
 	line.add_child(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 95, C.MUTED))
 	line.add_child(_cell(str(player.get("status", "—")), 110, C.MUTED, 16))
 	line.add_child(_cell(renewal_reason(player, not app._live().is_empty()), 190, C.MUTED, 16))

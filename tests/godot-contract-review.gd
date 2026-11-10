@@ -93,9 +93,19 @@ func run() -> void:
 	check(readable, "Textes denses à 16 px réels minimum")
 	var weekly := 0.0
 	for player: Dictionary in app.model.squad: weekly += float(player.salary)
-	check(app.find_child("ContractReviewWage", true, false).text == app.SquadViews.G.euros(weekly), "Total hebdomadaire égal aux seules valeurs projetées")
+	check(app.find_child("ContractReviewWage", true, false).text == app.SquadViews.G.salary_amount(weekly), "Total hebdomadaire égal aux seules valeurs projetées")
 	check(app.find_child("ContractReviewCount", true, false).text.contains("%d / %d" % [app.model.squad.size(),app.model.squad.size()]), "Tout l’effectif projeté est consultable")
 	await capture("contrats-effectif")
+	for period in ["monthly","annual","weekly"]:
+		check(app.user_preferences.set_value("salary_period",period),"Préférence salariale enregistrée : "+period)
+		app._render(false); await settle()
+		view = review()
+		check(app.find_child("ContractReviewWage",true,false).text == app.SquadViews.G.salary_amount(weekly),"Total salarial converti : "+period)
+		var person: Dictionary = app.model.squad[0]
+		check(app.find_child(Review.action_id("ContractSalary",str(person.id)),true,false).text == app.SquadViews.G.salary_amount(person.salary),"Salaire individuel converti : "+period)
+		check(app.find_child("ContractSort_salary",true,false).text.contains(app.SquadViews.G.salary_period(true).to_upper()),"En-tête unité active : "+period)
+		if period != "weekly": await capture("contrats-"+period)
+
 	var inner := view.find_child("ContractReviewScroll",true,false) as ScrollContainer
 	var headers: Button = app.find_child("ContractSort_name",true,false)
 	var fixed_header := headers.get_global_rect()
