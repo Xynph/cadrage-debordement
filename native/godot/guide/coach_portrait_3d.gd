@@ -1,6 +1,7 @@
 extends TextureRect
 
 const MODEL_PATH := "res://guide/assets/gabi.glb"
+const RENDER_SIZE := Vector2i(768, 768)
 const IDLE := &"Repos"
 const APPROVAL := &"Approbation"
 const GREETING := &"Salut"
@@ -10,7 +11,7 @@ const BLEND_TIME := 0.20
 const PORTRAIT_SIZE := 1.10
 const GREETING_SIZE := 1.30
 const GREETING_OFFSET := -0.125
-const MOUTH_BLEND_TIME := 0.055
+const MOUTH_SHAPES := [&"MouthOpen", &"MouthRound", &"MouthPress", &"MouthWide"]
 
 var model: PackedScene
 var reduced_motion := false
@@ -27,11 +28,8 @@ var _microgesture_wait := 0.0
 var _greeted := false
 var _speaking := false
 var _mouth: MeshInstance3D
-var _mouth_open := -1
-var _mouth_round := -1
-var _articulation := Vector2.ZERO
-var _mouth_weights := Vector2.ZERO
-var _mouth_tween: Tween
+var _mouth_shapes := PackedInt32Array()
+var _articulation := Vector4.ZERO
 
 func _ready() -> void:
 	set_process(false)
@@ -39,8 +37,9 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_viewport.name = "GabiPortraitViewport"
-	_viewport.size = Vector2i(320, 320)
+	_viewport.size = RENDER_SIZE
 	_viewport.own_world_3d = true
 	_viewport.transparent_bg = true
 	_viewport.msaa_3d = Viewport.MSAA_2X
@@ -58,11 +57,10 @@ func _ready() -> void:
 	_apply_vertex_colors(character)
 	for node in character.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
-		var mouth_open := mesh.find_blend_shape_by_name(&"MouthOpen")
-		if mouth_open < 0: continue
+		if mesh.find_blend_shape_by_name(MOUTH_SHAPES[0]) < 0: continue
 		_mouth = mesh
-		_mouth_open = mouth_open
-		_mouth_round = mesh.find_blend_shape_by_name(&"MouthRound")
+		for shape: StringName in MOUTH_SHAPES:
+			_mouth_shapes.append(mesh.find_blend_shape_by_name(shape))
 		break
 	_animations = character.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _animations == null or not _animations.has_animation(IDLE) or not _animations.has_animation(APPROVAL):
@@ -135,30 +133,19 @@ func set_reduced_motion(value: bool) -> void:
 
 func set_speaking(value: bool) -> void:
 	_speaking = value
-	if not value: _articulation = Vector2.ZERO
+	if not value: _articulation = Vector4.ZERO
 	_sync_mouth()
 
-func set_articulation(value: float, rounding: float = 0.0) -> void:
-	var opening := clampf(value, 0.0, 1.0)
-	var rounded := clampf(rounding, 0.0, 1.0) if _mouth_round >= 0 else 0.0
-	_articulation = opening * Vector2(1.0 - rounded, rounded)
+func set_articulation(value: float, rounding: float = 0.0, press: float = 0.0, wide: float = 0.0) -> void:
+	_articulation = Vector4(value, rounding, press, wide).clamp(Vector4.ZERO, Vector4.ONE)
 	_sync_mouth()
 
 func _sync_mouth() -> void:
 	if _mouth == null: return
-	if _mouth_tween != null: _mouth_tween.kill()
-	if not _can_animate():
-		_apply_mouth(Vector2.ZERO)
-		return
-	var target := _articulation if _speaking else Vector2.ZERO
-	if _mouth_weights.is_equal_approx(target): return
-	_mouth_tween = create_tween()
-	_mouth_tween.tween_method(_apply_mouth, _mouth_weights, target, MOUTH_BLEND_TIME)
-
-func _apply_mouth(weights: Vector2) -> void:
-	_mouth_weights = weights
-	_mouth.set_blend_shape_value(_mouth_open, weights.x)
-	if _mouth_round >= 0: _mouth.set_blend_shape_value(_mouth_round, weights.y)
+	var weights := _articulation if _speaking and _can_animate() else Vector4.ZERO
+	for index in _mouth_shapes.size():
+		if _mouth_shapes[index] >= 0:
+			_mouth.set_blend_shape_value(_mouth_shapes[index], weights[index])
 
 func request_gesture(opening: bool) -> void:
 	if not _can_animate() or _animations.current_animation in [APPROVAL, GREETING]: return

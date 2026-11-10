@@ -216,12 +216,23 @@ func _publish_press_invitation(restore_route: bool = true) -> bool:
 	await _settle()
 	if not _press_named("InboxOpenPressInvitation"): return false
 	await _settle()
-	for question: Dictionary in conference.questions:
-		if not _press_named("PressAnswer_" + str(question.id) + "_r4"): return false
-	if not _press_named("PressSubmit"): return false
+	var director: Node = app.contextual_director
+	var immersive: bool = director.active() and director.kind == "press"
+	var scope: Node = director.view if immersive else app.root_content
+	for index: int in conference.questions.size():
+		if immersive and index > 0:
+			if not _press_named("PressNext", scope): return false
+			await _settle()
+		var question: Dictionary = conference.questions[index]
+		if not _press_named("PressAnswer_" + str(question.id) + "_r4", scope): return false
+	if not _press_named("PressPublish" if immersive else "PressSubmit", scope): return false
 	await _wait()
 	var success: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
-	_check(success, "Publishing the invitation releases progression")
+	if success and immersive:
+		if not _press_named("PressReturn", scope): return false
+		await _wait()
+		success = app.bridge.last_response_ok
+	_check(success, "Publishing and leaving the conference releases the press appointment")
 	if restore_route: app._navigate(prior_route)
 	return success
 
