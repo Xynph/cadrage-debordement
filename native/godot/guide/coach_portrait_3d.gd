@@ -7,6 +7,9 @@ const GREETING := &"Salut"
 const EXPLANATION := &"Explication"
 const MICROGESTURES := [&"Ecoute", &"RegardCarnet"]
 const BLEND_TIME := 0.20
+const PORTRAIT_SIZE := 1.10
+const GREETING_SIZE := 1.30
+const GREETING_OFFSET := -0.125
 
 var model: PackedScene
 var reduced_motion := false
@@ -14,6 +17,8 @@ var _context := ""
 var _approval_pending := false
 var _viewport := SubViewport.new()
 var _animations: AnimationPlayer
+var _camera: Camera3D
+var _camera_tween: Tween
 var _gesture_random := RandomNumberGenerator.new()
 var _microgestures: Array[StringName] = []
 var _next_microgesture := 0
@@ -42,6 +47,7 @@ func _ready() -> void:
 		push_error("Le GLB du guide doit fournir une scène 3D.")
 		return
 	stage.add_child(character)
+	_apply_vertex_colors(character)
 	_animations = character.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _animations == null or not _animations.has_animation(IDLE) or not _animations.has_animation(APPROVAL):
 		push_error("Le GLB du guide doit fournir les animations Repos et Approbation.")
@@ -66,17 +72,31 @@ func _ready() -> void:
 	_light(stage, Vector3(-22, 43, 0), Color(0.71, 0.84, 1), 0.26)
 	_light(stage, Vector3(-30, 160, 0), Color(1, 0.92, 0.77), 0.32)
 
-	var camera := Camera3D.new()
-	camera.name = "GabiPortraitCamera"
-	stage.add_child(camera)
-	camera.set_orthogonal(1.10, 0.1, 12.0)
+	_camera = Camera3D.new()
+	_camera.name = "GabiPortraitCamera"
+	stage.add_child(_camera)
+	_camera.set_orthogonal(PORTRAIT_SIZE, 0.1, 12.0)
 	var target := Vector3(0, 1.39, 0)
-	camera.position = target + Vector3(-0.55, 0.04, 3.45)
-	camera.look_at(target)
-	camera.make_current()
+	_camera.position = target + Vector3(-0.55, 0.04, 3.45)
+	_camera.look_at(target)
+	_camera.make_current()
 
 	visibility_changed.connect(_sync_visibility)
 	_sync_visibility()
+
+func _apply_vertex_colors(character: Node3D) -> void:
+	# Some imported materials ignore COLOR_0. In particular this turns the eyelids white.
+	for node in character.find_children("*", "MeshInstance3D", true, false):
+		var instance := node as MeshInstance3D
+		var mesh := instance.mesh as ArrayMesh
+		if mesh == null: continue
+		for surface in mesh.get_surface_count():
+			if (mesh.surface_get_format(surface) & Mesh.ARRAY_FORMAT_COLOR) == 0: continue
+			var material := instance.get_active_material(surface) as StandardMaterial3D
+			if material == null or material.vertex_color_use_as_albedo: continue
+			var colored := material.duplicate() as StandardMaterial3D
+			colored.vertex_color_use_as_albedo = true
+			instance.set_surface_override_material(surface, colored)
 
 func _light(stage: Node3D, angle: Vector3, color: Color, energy: float) -> void:
 	var light := DirectionalLight3D.new()
@@ -121,10 +141,12 @@ func _sync_visibility() -> void:
 	if _animations == null: return
 	set_process(false)
 	if not is_visible_in_tree():
+		if _camera_tween != null: _camera_tween.kill()
 		_animations.pause()
 		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
 	if reduced_motion:
+		_frame_clip(IDLE, false)
 		_animations.play(IDLE, 0.0)
 		_animations.seek(0.0, true)
 		_animations.pause()
@@ -144,14 +166,29 @@ func _can_animate() -> bool:
 func _play_gesture(clip: StringName) -> bool:
 	if not _can_animate() or not _animations.has_animation(clip): return false
 	set_process(false)
+	_frame_clip(clip)
 	_animations.play(clip, BLEND_TIME)
 	return true
 
 func _play_idle() -> void:
+	_frame_clip(IDLE)
 	_animations.play(IDLE, BLEND_TIME)
 	if _microgestures.is_empty(): return
 	_microgesture_wait = _gesture_random.randf_range(7.0, 13.0)
 	set_process(true)
+
+func _frame_clip(clip: StringName, transition := true) -> void:
+	var target_size := GREETING_SIZE if clip == GREETING else PORTRAIT_SIZE
+	var target_offset := GREETING_OFFSET if clip == GREETING else 0.0
+	if _camera_tween != null: _camera_tween.kill()
+	if not transition:
+		_camera.size = target_size
+		_camera.h_offset = target_offset
+		return
+	if is_equal_approx(_camera.size, target_size) and is_equal_approx(_camera.h_offset, target_offset): return
+	_camera_tween = create_tween().set_parallel().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_camera_tween.tween_property(_camera, "size", target_size, BLEND_TIME)
+	_camera_tween.tween_property(_camera, "h_offset", target_offset, BLEND_TIME)
 
 func _animation_finished(_clip: StringName) -> void:
 	if _can_animate(): _play_idle()
