@@ -1,4 +1,5 @@
 extends RefCounted
+const G = preload("res://ui/game_skin.gd")
 ## Lecture seule : les urgences viennent des états publiés par le moteur.
 ## Aucun seuil nouveau ne modifie l'effectif, les contrats ou la trésorerie.
 
@@ -69,9 +70,9 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
 		var expiry := int(first.contractEnd)
-		var deadline := "Fin de cette saison" if expiry <= season else "Fin de saison %d" % expiry
+		var deadline := "Fin de cette saison" if expiry <= season else "Fin " + G.contract_year(expiry)
 		result.append(_item("OfficeContractsAction","Préparer %d échéance%s de contrat" % [contracts.size(),"s" if contracts.size() > 1 else ""],
-			str(first.get("name","Joueur")) + " · " + str(first.get("contractLabel",deadline)),deadline,
+			str(first.get("name","Joueur")) + " · Fin de contrat " + G.contract_year(expiry),deadline,
 			"people","contract","important" if expiry <= season else "normal",str(first.get("id",""))))
 	if not ended and live.is_empty() and not next.is_empty() and not match_today:
 		var when := str(next.get("date",""))

@@ -36,7 +36,7 @@ Produces: un HEAD cumulatif, une PR réservée versmain et un inventaire des PR 
 
 - [x] Publier le plan et la PR de réservation, indiquant explicitement les recouvrements.
 - [x] Recevoir Cloud, salles/staff et Gabi ; résoudre chaque conflit en conservant les deux contrats utiles.
-- [ ] Vérifier syntaxe des scripts modifiés, imports Godot et compilation déterministe des catalogues.
+- [x] Vérifier syntaxe des scripts modifiés, imports Godot et compilation déterministe des catalogues.
 - [x] Consigner les choix de résolution et committer la source cumulative.
 
 ## Task2 — Vérifier les raccords métier et les anciennes carrières
@@ -56,7 +56,7 @@ Consumes: même HEAD cumulatif ; produit: captures réelles1440 et revue des rac
 
 - [ ] Stage Godot et réception des parcours Bureau, Effectif/Contrats, Tactique, Recrutement, Calendrier, sauvegardes, scènes et Gabi.
 - [ ] Vérifier tris, listes complètes et défilement interne ; aucune qualité adverse exacte révélée.
-- [ ] Publier des captures réelles représentatives ; aucun export privé de carrière dans GitHub.
+- [x] Publier des captures réelles représentatives ; aucun export privé de carrière dans GitHub.
 - [x] Faire relire le diff d’intégration par un agent indépendant ; traiter les constats importants avec reproduction et tests.
 
 ## Task4 — Intégrer et transmettre

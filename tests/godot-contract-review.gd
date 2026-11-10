@@ -59,6 +59,19 @@ func pure_cases() -> void:
 	check(Review.renewal_reason(players[0], true).contains("Match"), "Verrou match lisible")
 	var withdrawn := {"renewal":{"available":false,"reason":"Les échanges sont clos pour cette journée","negotiation":{"status":"withdrawn"}}}
 	check(Review.renewal_reason(withdrawn, false) == withdrawn.renewal.reason, "Motif moteur conservé")
+	var roles: Array = [{"id":"a8","name":"Centre","pos":"Troisième ligne","primaryPositions":[8],"fam":3,"contractEnd":2}, {"id":"z6","name":"Aile","pos":"Troisième ligne","primaryPositions":[7,6],"fam":3,"contractEnd":1}]
+	var original_roles := JSON.stringify(roles)
+	check(Review.filtered(roles, {"position":"Troisième ligne aile"}).map(func(person): return person.id) == ["z6"], "Contrats : filtre 6–7 sur le poste principal publié")
+	check(Review.filtered(roles, {"position":"Troisième ligne centre"}).map(func(person): return person.id) == ["a8"], "Contrats : filtre 8 distinct des troisièmes lignes aile")
+	check(Review.filtered(roles, {"search":"3E L"}).map(func(person): return person.id) == ["z6"], "Contrats : recherche de l’abréviation 3E L")
+	check(Review.filtered(roles, {"search":"8"}).map(func(person): return person.id) == ["a8"], "Contrats : recherche du numéro 8")
+	check(Review.filtered(roles, {"sort":"pos"}).map(func(person): return person.id) == ["z6","a8"], "Contrats : tri des postes distingue aile et centre au lieu de départager les pos bruts par ID")
+	var role_groups: Array = Review.coverage(roles, 1)
+	check(role_groups.size() == 2, "Couverture contrats : deux groupes distincts pour les 6–7 et le 8")
+	if role_groups.size() == 2:
+		check(role_groups[0].position == "Troisième ligne aile" and role_groups[0].ending == 1 and role_groups[0].total == 1, "Couverture aile : échéance et total fidèles")
+		check(role_groups[1].position == "Troisième ligne centre" and role_groups[1].remaining == 1 and role_groups[1].total == 1, "Couverture centre : contrat futur et total fidèles")
+	check(JSON.stringify(roles) == original_roles, "Présentation des postes sans modifier les pos ni les numéros publiés")
 func review() -> Control: return app.find_child("ContractReview", true, false)
 func button(prefix: String, id: String) -> Button: return app.find_child(Review.action_id(prefix, id), true, false) as Button
 func capture(id: String) -> void:
@@ -75,7 +88,9 @@ func run() -> void:
 	var deadline := Time.get_ticks_msec() + 90000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
 	app.timer.stop()
-	app._command("new_career", {"mode":"common","club":0})
+	# Le club10 contient le n°8 lnr:1909 du registre reçu et des 6–7.
+	# Cette recette vérifie les deux rôles sans modifier les données du joueur.
+	app._command("new_career", {"mode":"common","club":10})
 	deadline = Time.get_ticks_msec() + 90000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	await settle()
@@ -100,6 +115,23 @@ func run() -> void:
 	for player: Dictionary in app.model.squad: weekly += float(player.salary)
 	check(app.find_child("ContractReviewWage", true, false).text == app.SquadViews.G.salary_amount(weekly), "Total hebdomadaire égal aux seules valeurs projetées")
 	check(app.find_child("ContractReviewCount", true, false).text.contains("%d / %d" % [app.model.squad.size(),app.model.squad.size()]), "Tout l’effectif projeté est consultable")
+	var position_options := view.find_child("ContractReviewPosition", true, false) as OptionButton
+	var captions: Array[String] = []
+	for index in position_options.item_count: captions.append(position_options.get_item_text(index))
+	var found_roles: Array[String] = []
+	for person: Dictionary in app.model.squad:
+		var numbers: Array = []
+		for number: Variant in person.get("primaryPositions", []): numbers.append(int(number))
+		numbers.sort()
+		var caption := "Troisième ligne aile" if numbers == [6,7] or numbers == [7,6] else "Troisième ligne centre" if numbers == [8] else ""
+		if caption.is_empty(): continue
+		if not caption in found_roles: found_roles.append(caption)
+		var row := view.find_child(Review.action_id("ContractRow", str(person.id)), true, false)
+		var position_label := row.get_child(0).get_child(1) as Label
+		check(position_label.text == ("3E L" if caption == "Troisième ligne aile" else "8") and position_label.tooltip_text.contains(caption), "Colonne POSTE réelle : rôle distinct et nom principal complet pour " + str(person.id))
+	for caption in ["Troisième ligne aile", "Troisième ligne centre"]:
+		check(caption in found_roles and caption in captions, "Filtre réel : poste principal complet disponible pour " + caption)
+		check(view.find_child("ContractReviewCoverage_" + str(caption).sha256_text().substr(0,16), true, false) != null, "Couverture réelle : groupe distinct pour " + caption)
 	await capture("contrats-effectif")
 	for period in ["monthly","annual","weekly"]:
 		check(app.user_preferences.set_value("salary_period",period),"Préférence salariale enregistrée : "+period)

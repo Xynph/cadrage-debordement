@@ -27,6 +27,18 @@ static func action_id(prefix: String, player_id: String) -> String:
 static func projected_mark(player: Dictionary, key: String) -> String:
 	return G.potential_text(player) if key == "potential" else G.rating_text(player,true)
 
+# SquadCanvas preloads this view: resolve its canonical presentation at runtime
+# to reuse the principal-role rules without a circular preload dependency.
+static func position_caption(player: Dictionary) -> String:
+	return load("res://ui/immersive08/squad_canvas.gd").primary_caption(player)
+
+static func position_text(player: Dictionary) -> String:
+	var caption := position_caption(player)
+	match caption:
+		"Troisième ligne aile": return "3E L"
+		"Troisième ligne centre": return "8"
+		_: return caption
+
 static func horizon(player: Dictionary) -> int:
 	var value: Variant = player.get("contractEnd")
 	return int(value) if (value is int or value is float) and float(value) == floorf(float(value)) and int(value) >= 0 else -1
@@ -45,9 +57,9 @@ static func filtered(players: Array, filters: Dictionary) -> Array:
 		if str(filters.get("status", "Tous")) == "Sans contrat renseigné" and ending >= 0: continue
 		if str(filters.get("precision", "Toutes")) == "Échéance connue" and ending < 0: continue
 		if str(filters.get("precision", "Toutes")) == "Non renseignée" and ending >= 0: continue
-		if str(filters.get("position", "Tous")) != "Tous" and str(player.get("pos", "")) != str(filters.position): continue
+		if str(filters.get("position", "Tous")) != "Tous" and position_caption(player) != str(filters.position): continue
 		var query := U.fold(str(filters.get("search", "")).strip_edges())
-		if not query.is_empty() and not U.fold(str(player.get("name", "")) + " " + str(player.get("pos", ""))).contains(query): continue
+		if not query.is_empty() and not U.fold(str(player.get("name", "")) + " " + position_caption(player) + " " + position_text(player) + " " + str(player.get("pos", ""))).contains(query): continue
 		result.append(player)
 	var sort_key := str(filters.get("sort", "contractEnd"))
 	if not sort_key in SORT_KEYS: sort_key = "contractEnd"
@@ -67,6 +79,7 @@ static func filtered(players: Array, filters: Dictionary) -> Array:
 
 static func sort_value(player: Dictionary, key: String, live: bool = false) -> Variant:
 	if key in ["rating","potential"]: return G.knowledge_sort_value(player,key,true)
+	if key == "pos": return load("res://ui/immersive08/squad_canvas.gd").sort_value(player, "Poste")
 	if key == "contractEnd": return horizon(player) if horizon(player) >= 0 else null
 	if key == "renewal": return renewal_reason(player, live) if player.get("renewal") is Dictionary and not player.renewal.is_empty() else null
 	var value: Variant = player.get(key)
@@ -77,7 +90,8 @@ static func sort_value(player: Dictionary, key: String, live: bool = false) -> V
 static func coverage(players: Array, season: int) -> Array:
 	var groups: Dictionary = {}
 	for player: Dictionary in players:
-		var position := str(player.get("pos", "Poste non renseigné"))
+		var position := position_caption(player)
+		if position.strip_edges().is_empty() or position == "—": position = "Poste non renseigné"
 		if not groups.has(position): groups[position] = {"position":position,"total":0,"ending":0,"remaining":0,"unknown":0}
 		groups[position].total += 1
 		var ending := horizon(player)
@@ -142,7 +156,7 @@ func _build() -> void:
 	if not state.has("sort"): state.sort = "contractEnd"
 	if not state.has("descending"): state.descending = false
 	add_child(_label("Les échéances de votre effectif", 26))
-	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Aucune date précise d’expiration n’est fournie.", 17, C.MUTED))
+	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Anticipez les fins de contrat et préparez les prolongations.", 17, C.MUTED))
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
 	add_child(top)
@@ -190,8 +204,15 @@ func _build() -> void:
 	_fill_choice(precision, ["Échéance connue", "Non renseignée"], str(state.precision))
 	_position = _choice(filters, "ContractReviewPosition", "Tous les postes", func(index): state.position = "Tous" if index == 0 else _position.get_item_text(index); state.scroll = 0; _refresh())
 	var positions: Array = []
+	var previous_matches: Array = []
 	for player: Dictionary in squad:
-		if not str(player.pos) in positions: positions.append(str(player.pos))
+		var caption := position_caption(player)
+		if caption.strip_edges().is_empty() or caption == "—": continue
+		if not caption in positions: positions.append(caption)
+		if str(player.get("pos", "")) == str(state.position) and not caption in previous_matches: previous_matches.append(caption)
+	# Preserve an unambiguous remembered legacy filter; never rewrite player.pos.
+	if str(state.position) != "Tous" and not str(state.position) in positions:
+		state.position = previous_matches[0] if previous_matches.size() == 1 else "Tous"
 	positions.sort()
 	_fill_choice(_position, positions, str(state.position))
 	filters.add_child(_button("Réinitialiser", "ContractReviewReset", _reset))
@@ -381,7 +402,10 @@ func _row(player: Dictionary) -> void:
 	identity.add_child(_cell(str(player.get("name", "Joueur")), 264, C.IVORY, 18))
 	var ending := horizon(player)
 	var year := int(app.model.get("meta", {}).get("season", 1))
-	line.add_child(_cell(str(player.get("pos", "—")), 160, C.MUTED))
+	var position := _cell(position_text(player), 160, C.MUTED)
+	position.name = action_id("ContractPosition", str(player.id))
+	position.tooltip_text = "Poste principal · " + position_caption(player)
+	line.add_child(position)
 	var level := _cell(G.rating_text(player,true), 72, C.MINT, 18)
 	level.name = action_id("ContractLevel", str(player.id))
 	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

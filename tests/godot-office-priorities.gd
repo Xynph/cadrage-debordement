@@ -35,12 +35,13 @@ func projections() -> void:
 	model.live.finished = true
 	check(Priorities.select(model)[0].title == "Consulter le résultat","Fin du match : action de consultation explicite")
 	model = base()
-	model.squad = [{"id":"b","name":"Second","contractEnd":4},{"id":"z","name":"Dernier","contractEnd":3},{"id":"a","name":"Premier","contractEnd":3}]
+	model.squad = [{"id":"b","name":"Second","contractEnd":4},{"id":"z","name":"Dernier","contractEnd":3},{"id":"a","name":"Premier","contractEnd":3,"contractLabel":"Fin saison 3 · À prolonger"}]
 	selected = Priorities.select(model)
 	check(selected[0].id == "OfficeContractsAction" and selected[0].player == "a","Échéance la plus proche puis ID stable")
 	check(selected[0].deadline == "Fin de cette saison","Pas de confusion entre échéance actuelle et saison suivante")
+	check(selected[0].detail.contains("Fin de contrat 2029") and not selected[0].detail.contains("Fin saison"),"Échéance affichée en année, sans ancien libellé de saison")
 	model.squad = [{"id":"a","name":"Joueur","contractEnd":4}]
-	check(Priorities.select(model)[0].deadline == "Fin de saison 4","Contrat suivant daté honnêtement")
+	check(Priorities.select(model)[0].deadline == "Fin 2030","Contrat suivant daté en année de fin")
 	model.squad = []
 	model.meta.canAdvanceSeason = true
 	check(ids(model)[0] == "OfficeFinalStandingsAction" and "OfficeTrainingAction" not in ids(model),"Clôture : bilan, sans entraînement ouvert")
