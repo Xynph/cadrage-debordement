@@ -1,0 +1,51 @@
+{
+  "sha": "76907de3f9a9838d9acf586b1cee134c78652377",
+  "environment": "Linux Node22.23.4 Godot4.7.2 headless",
+  "results": [
+    {
+      "suite": "godot-guide-integration",
+      "exit_code": 0,
+      "seconds": 96.13,
+      "log": "work/reception/godot-guide-integration.log",
+      "counts": [
+        "RACCORD COACH : 501 contrôles ; 0 échec(s)"
+      ]
+    },
+    {
+      "suite": "godot-navigation",
+      "exit_code": 0,
+      "seconds": 39.93,
+      "log": "work/reception/godot-navigation.log",
+      "counts": [
+        "NAVIGATION : 133 contrôles ; 0 échec(s)"
+      ]
+    },
+    {
+      "suite": "godot-guide-voice",
+      "exit_code": 0,
+      "seconds": 2.52,
+      "log": "work/reception/godot-guide-voice.log",
+      "counts": [
+        "COACH VOIX LOCALE : 199 contrôles ; 0 échec(s)"
+      ]
+    },
+    {
+      "suite": "godot-gabi-composition",
+      "exit_code": 0,
+      "seconds": 0.47,
+      "log": "work/reception/godot-gabi-composition.log",
+      "counts": [
+        "Réception du portrait de composition : 32 contrôles, 0 échecs"
+      ]
+    },
+    {
+      "suite": "godot-gabi-real-model",
+      "exit_code": 0,
+      "seconds": 11.23,
+      "log": "work/reception/godot-gabi-real-model.log",
+      "counts": [
+        "GABI MODÈLE RÉEL : 33 contrôles ; 0 échecs"
+      ]
+    }
+  ]
+}

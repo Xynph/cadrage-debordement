@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: consultation sans écriture, copie complète, déduplication et réouverture
+ok 1 - consultation sans écriture, copie complète, déduplication et réouverture
+  ---
+  duration_ms: 308.458616
+  type: 'test'
+  ...
+# Subtest: quota sans suppression silencieuse et libération explicitement confirmée
+ok 2 - quota sans suppression silencieuse et libération explicitement confirmée
+  ---
+  duration_ms: 2069.6772
+  type: 'test'
+  ...
+# Subtest: corruption de chaque fichier refuse la reprise sans toucher les autres copies
+ok 3 - corruption de chaque fichier refuse la reprise sans toucher les autres copies
+  ---
+  duration_ms: 203.349733
+  type: 'test'
+  ...
+# Subtest: chemins clients, symlinks et taille abusive ne sont jamais suivis
+ok 4 - chemins clients, symlinks et taille abusive ne sont jamais suivis
+  ---
+  duration_ms: 30.151417
+  type: 'test'
+  ...
+# Subtest: quota octets inclut les fichiers corrompus ; aucune copie disparue
+ok 5 - quota octets inclut les fichiers corrompus ; aucune copie disparue
+  ---
+  duration_ms: 1021.342923
+  type: 'test'
+  ...
+# Subtest: refus disque avant publication : pas de copie incomplète rendue disponible
+ok 6 - refus disque avant publication : pas de copie incomplète rendue disponible
+  ---
+  duration_ms: 223.284058
+  type: 'test'
+  ...
+# Subtest: préparation interrompue : visible, comptée, jamais reprise et supprimable explicitement
+ok 7 - préparation interrompue : visible, comptée, jamais reprise et supprimable explicitement
+  ---
+  duration_ms: 1485.142377
+  type: 'test'
+  ...
+# Subtest: une tentative répétée à une autre heure ne consomme pas une nouvelle copie
+ok 8 - une tentative répétée à une autre heure ne consomme pas une nouvelle copie
+  ---
+  duration_ms: 7.077903
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5919.087512
