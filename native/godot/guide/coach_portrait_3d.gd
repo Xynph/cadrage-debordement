@@ -10,7 +10,7 @@ const BLEND_TIME := 0.20
 const PORTRAIT_SIZE := 1.10
 const GREETING_SIZE := 1.30
 const GREETING_OFFSET := -0.125
-const MOUTH_BLEND_TIME := 0.055
+const MOUTH_BLEND_TIME := 0.035
 
 var model: PackedScene
 var reduced_motion := false

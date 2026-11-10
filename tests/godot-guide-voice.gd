@@ -35,6 +35,7 @@ func run() -> void:
 				check(speech.has_recording(str(fragment.text)), "Clip livré pour le texte exact " + str(fragment.id))
 				if first_recorded.is_empty(): first_recorded = str(fragment.text)
 	check(count_fragments == 74 and recorded == 74 and pending == 0 and speech.clips.size() == recorded, "Les 74 répliques finales ont chacune une prise locale exacte, sans attente masquée")
+	check(speech._lip_tracks.size() == recorded, "Chaque prise exacte a une piste de lèvres validée")
 	check(speech.has_method("has_complete_recordings"), "La disponibilité distingue une voix complète d'un lot partiel")
 	if speech.has_method("has_complete_recordings"):
 		check(speech.has_complete_recordings() == (pending == 0), "La voix complète exige réellement chaque texte courant")
@@ -43,7 +44,9 @@ func run() -> void:
 	check(speech.status_text.contains("Gabi") and not speech.status_text.contains("Mode texte"), "Disponibilité de la voix enregistrée annoncée correctement")
 	speech.volume = 0; speech.speak(first_recorded)
 	check(speech.player.playing and speech.player.stream.get_length() > 0.5, "Vrai clip Gabi livré effectivement lu")
+	check(not speech._lip_track.is_empty() and speech._envelope.is_empty(), "Le WAV exact utilise sa piste de lèvres")
 	speech.stop()
+	check(speech._lip_track.is_empty() and speech.articulation == 0.0 and speech._rounding == 0.0, "Arrêter le WAV remet les lèvres au repos")
 	var folder := OS.get_environment("CD_GUIDE_VOICE_TEST_DIR")
 	if folder.is_empty(): quit(2); return
 	DirAccess.make_dir_recursive_absolute(folder)
@@ -97,7 +100,8 @@ func run() -> void:
 			speech.stop()
 	var silent := SpeechSpy.new(); root.add_child(silent)
 	silent.setup("spy-fr", 1.25, false, false)
-	check(silent.muted and silent.player == null and silent.voices.is_empty() and silent.clips.is_empty(), "Gabi silencieux sans lecteur, manifeste ni TTS")
+	check(silent.muted and silent.player == null and silent.voices.is_empty() and silent.clips.is_empty()
+		and silent._lip_tracks.is_empty(), "Gabi silencieux sans lecteur, manifeste, pistes de lèvres ni TTS")
 	var silent_requests: Array[String] = []
 	silent.requested.connect(func(text: String): silent_requests.append(text))
 	silent.set_muted(false); silent.configure("spy-fr", 1.5); silent.set_global_volume(100)
