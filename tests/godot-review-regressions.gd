@@ -353,8 +353,8 @@ func _run() -> void:
 			app._navigate("Création")
 			var club_choice := app.find_child("CreationClub0", true, false) as Button
 			if club_choice != null: club_choice.pressed.emit()
-			for button in _buttons(app.root_content):
-				if button.text.begins_with("PRENDRE LES RÊNES"):button.pressed.emit();break
+			var start := app.root_content.find_child("CreationStart", true, false) as Button
+			if start != null: start.pressed.emit()
 			await _wait()
 			_check(app.model.club!=null,"Explicit new career works after recovery")
 			_check(FileAccess.get_file_as_bytes(backup)==original,"New career preserves recovery backup")
@@ -369,9 +369,7 @@ func _run() -> void:
 		app._navigate("Création")
 		var club_choice := app.find_child("CreationClub0", true, false) as Button
 		if club_choice != null: club_choice.pressed.emit()
-		var retry: Button = null
-		for button in _buttons(app.root_content):
-			if button.text.begins_with("PRENDRE LES RÊNES"): retry = button
+		var retry := app.root_content.find_child("CreationStart", true, false) as Button
 		_check(retry != null, "Explicit club creation retry available")
 		if retry != null:
 			retry.pressed.emit()
