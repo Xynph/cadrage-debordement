@@ -31,7 +31,7 @@ static func fold(text:Variant) -> String:
 		if code<0x0300 or code>0x036f:plain+=letter
 	return plain.replace("œ","oe").replace("æ","ae")
 
-static func players(source:Array,state:Dictionary,season:int,market:bool=false,followed:Array=[]) -> Array:
+static func players(source:Array,state:Dictionary,season:int,market:bool=false,followed:Array=[],sort_result:bool=true) -> Array:
 	var result:Array=[]
 	var query:=fold(state.search).strip_edges()
 	var target_id := str(state.get("navigation_id", "")) if market else ""
@@ -54,6 +54,7 @@ static func players(source:Array,state:Dictionary,season:int,market:bool=false,f
 			if state.contract=="Fin de saison" and (p.get("contractEnd")==null or int(p.contractEnd)>season):continue
 			if state.contract=="Sans contrat" and p.get("contractEnd")!=null:continue
 		result.append(p)
+	if not sort_result: return result
 	var key:String={"Poste":"pos","Nom":"name","Niveau":"rating","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd"}.get(state.sort,"pos")
 	result.sort_custom(func(a:Dictionary,b:Dictionary):
 		var av:Variant=a.get(key,0);var bv:Variant=b.get(key,0)

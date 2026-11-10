@@ -6,7 +6,8 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
-const CAPACITY := 10
+const Sort = preload("res://ui/recruitment_sort.gd")
+const ROW_HEIGHT := 38
 const WIDTH := 2248
 const LEFT := 1402
 const RIGHT := 830
@@ -16,8 +17,8 @@ const PRIMARY := Color("106d43")
 const TABS := ["Besoins du club", "Recherche", "Joueurs suivis", "Rapports"]
 const COLUMNS := [
 	["JOUEUR", 128, 193, "Nom"], ["POSTE", 325, 155, "Poste"], ["ÂGE", 486, 55, "Âge"],
-	["NIVEAU", 550, 74, "Niveau"], ["POTENTIEL", 636, 95, ""], ["PRIME", 741, 107, ""],
-	["SALAIRE", 864, 165, "Salaire"], ["RAPPORT", 1043, 124, ""], ["AVIS", 1180, 207, ""]
+	["NIVEAU", 550, 74, "Niveau"], ["POTENTIEL", 636, 95, "Potentiel"], ["PRIME", 741, 107, "Prime"],
+	["SALAIRE", 864, 165, "Salaire"], ["RAPPORT", 1043, 124, "Rapport"], ["AVIS", 1180, 207, "Avis"]
 ]
 
 var app: Control
@@ -29,11 +30,10 @@ var max_salary := 0.0
 var table_rows: Control
 var dossier: Control
 var count: Label
-var page_label: Label
-var prev: Button
-var next: Button
+var table_scroll: ScrollContainer
 var direction: Button
 var position_filter: OptionButton
+var sort_headers: Dictionary = {}
 
 static func build(owner_app: Control, canvas: Control) -> void:
 	var page: Control = load("res://ui/immersive08/recruitment_canvas.gd").new()
@@ -211,7 +211,7 @@ func _choice(parent: Node, area: Rect2, id: String, caption: String, values: Arr
 func _table() -> void:
 	var panel := D.panel(self, Rect2(0, 362, LEFT, 648), "", "", "", "ImmersiveMarketTable")
 	var header := D.rect(panel, Rect2(1, 1, LEFT - 2, 44), Color("1a2627"), 6)
-	var columns: Array = COLUMNS if tab != 3 else [["JOUEUR OBSERVÉ", 128, 370, ""], ["POSTE", 506, 252, ""], ["RAPPORT", 774, 333, ""], ["AVIS DATÉ", 1130, 245, ""]]
+	var columns: Array = COLUMNS if tab != 3 else [["JOUEUR OBSERVÉ", 128, 370, "Nom"], ["POSTE", 506, 252, "Poste"], ["RAPPORT", 774, 333, "Date du rapport"], ["AVIS DATÉ", 1130, 245, "Avis"]]
 	for col: Array in columns:
 		if col[3] == "":
 			D.text(header, col[1], 28, col[0], 22, C.IVORY, 600, col[2])
@@ -229,75 +229,96 @@ func _table() -> void:
 		sort.add_theme_stylebox_override("pressed", C.box(C.PANEL,C.MINT,4,0))
 		sort.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT,WARM,4,0))
 		sort.tooltip_text = "Trier par " + str(col[3]).to_lower()
+		sort.set_meta("sort_caption",str(col[0]))
+		sort_headers[str(col[3])] = sort
 		sort.pressed.connect(func():
-			state.descending = not state.descending if state.sort == col[3] else col[3] == "Niveau"
-			state.sort = col[3]
+			var same: bool = _sort_column() == col[3]
+			state["report_descending" if tab == 3 else "descending"] = not _sort_descending() if same else col[3] in ["Niveau","Potentiel","Date du rapport"]
+			state["report_sort" if tab == 3 else "sort"] = col[3]
 			_filter_changed())
 		header.add_child(sort)
 		D.place(sort, Rect2(col[1] - 4, 2, col[2], 40))
+	table_scroll = ScrollContainer.new()
+	table_scroll.name = "MarketScroll"
+	table_scroll.follow_focus = true
+	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(table_scroll)
+	D.place(table_scroll,Rect2(1,45,LEFT-2,550))
+	table_scroll.get_v_scroll_bar().value_changed.connect(func(value: float): state.scroll = int(value))
 	table_rows = Control.new()
 	table_rows.name = "ImmersiveMarketRows"
-	panel.add_child(table_rows)
-	D.place(table_rows, Rect2(1, 45, LEFT - 2, CAPACITY * 55))
+	table_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	table_scroll.add_child(table_rows)
 	D.line(panel, Vector2(16, 595), Vector2(LEFT - 16, 595))
 	count = D.text(panel, 17, 628, "", 21, C.MUTED, 500, 430)
 	count.name = "MarketCount"
 	direction = D.button(panel, Rect2(445, 603, 185, 36), "Tri", func():
-		state.descending = not state.descending
+		state["report_descending" if tab == 3 else "descending"] = not _sort_descending()
 		_filter_changed(), false, "", true, app.accent, "MarketDirection")
-	direction.visible = tab != 3
-	var pagination := Control.new()
-	pagination.name = "MarketPagination"
-	panel.add_child(pagination)
-	D.place(pagination, Rect2(879, 603, 505, 36))
-	prev = D.button(pagination, Rect2(0, 0, 160, 36), "← Précédent", func():
-		state.page = int(state.page) - 1
-		_refresh(), false, "", true, app.accent, "MarketPaginationPrevious")
-	page_label = D.text(pagination, 240, 25, "", 22, C.MUTED, 600, 146, HORIZONTAL_ALIGNMENT_CENTER)
-	page_label.name = "MarketPaginationInfo"
-	next = D.button(pagination, Rect2(327, 0, 178, 36), "Suivant →", func():
-		state.page = int(state.page) + 1
-		_refresh(), false, "", true, app.accent, "MarketPaginationNext")
+	D.text(panel,878,628,"Liste complète · défilement à la molette",18,C.MUTED,500,505).name = "MarketScrollHint"
 
 func _filter_changed() -> void:
 	state.page = 0
+	state.scroll = 0
+	if table_scroll != null: table_scroll.scroll_vertical = 0
 	_refresh()
 
 func _filtered() -> Array:
 	if tab == 3:
 		var archive: Array = data.get("reports", []).duplicate()
-		archive.reverse()
-		return archive
+		return Sort.sorted(archive,_sort_column(),_sort_descending(),report_by_player,true)
 	var query_state := state.duplicate()
 	query_state.search = ""
-	var players := U.players(app.model.get("market", []), query_state, int(app.model.meta.get("season", 1)), true, app.management_ui.shortlist)
+	var players := U.players(app.model.get("market", []), query_state, int(app.model.meta.get("season", 1)), true, app.management_ui.shortlist, false)
 	var terms: PackedStringArray = []
 	if str(state.get("navigation_id", "")).is_empty():
 		terms = U.fold(str(state.get("search", ""))).split(" ", false)
 	var fee := float({"≤ 100 k€": 100000, "≤ 400 k€": 400000, "≤ 1 M€": 1000000}.get(state.get("budget_filter"), INF))
 	var ages: Vector2 = {"≤ 22 ans": Vector2(0, 22), "23–28 ans": Vector2(23, 28), "≥ 29 ans": Vector2(29, INF)}.get(state.get("age_filter"), Vector2(0, INF))
-	return players.filter(func(p: Dictionary):
-		var age := float(p.get("age", -1))
+	var filtered := players.filter(func(p: Dictionary):
+		var raw_age: Variant = p.get("age")
+		var age_known: bool = (raw_age is int or raw_age is float) and is_finite(float(raw_age))
+		var raw_fee: Variant = p.get("fee")
+		var fee_known: bool = (raw_fee is int or raw_fee is float) and is_finite(float(raw_fee))
 		var searchable := U.fold(str(p.get("name", "")) + " " + str(p.get("pos", "")))
 		for term in terms:
 			if not searchable.contains(term): return false
 		if state.available == "Indisponibles" and p.get("available", false): return false
-		return age >= ages.x and age <= ages.y and float(p.get("fee", INF)) <= fee)
+		if state.get("age_filter","Tous") != "Tous" and (not age_known or float(raw_age) < ages.x or float(raw_age) > ages.y): return false
+		if state.get("budget_filter","Toutes") != "Toutes" and (not fee_known or float(raw_fee) > fee): return false
+		return true)
+	return Sort.sorted(filtered,_sort_column(),_sort_descending(),report_by_player)
+
+func _sort_column() -> String:
+	return str(state.get("report_sort","Date du rapport")) if tab == 3 else str(state.get("sort","Poste"))
+
+func _sort_descending() -> bool:
+	return bool(state.get("report_descending",true)) if tab == 3 else bool(state.get("descending",false))
+
+func _sort_arrows() -> void:
+	for column: String in sort_headers:
+		var button: Button = sort_headers[column]
+		var active := column == _sort_column()
+		button.text = str(button.get_meta("sort_caption")) + (" ↓" if _sort_descending() else " ↑") if active else str(button.get_meta("sort_caption")) + " ↕"
+		button.tooltip_text = "Trier par %s · %s · valeurs inconnues en dernier" % [column.to_lower(),"croissant au prochain clic" if active and _sort_descending() else "décroissant au prochain clic" if active else "activer le tri"]
+		button.accessibility_name = button.text + " · " + button.tooltip_text
+		var pixels := C.px(18)
+		while pixels > C.px(13) and C.DISPLAY.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x > button.size.x-C.px(4): pixels -= 1
+		button.add_theme_font_size_override("font_size",pixels)
 
 func _refresh() -> void:
+	var scroll := table_scroll.scroll_vertical
 	_clear(table_rows)
 	var results := _filtered()
-	var pages := maxi(1, ceili(float(results.size()) / CAPACITY))
-	state.page = clampi(int(state.get("page", 0)), 0, pages - 1)
-	var visible := results.slice(int(state.page) * CAPACITY, (int(state.page) + 1) * CAPACITY)
+	state.page = 0
+	var visible := results
+	table_rows.custom_minimum_size = Vector2(0,C.px(maxi(80,results.size()*ROW_HEIGHT)))
 	var current := str(state.get("report_id" if tab == 3 else "player_id", ""))
 	if not visible.is_empty() and not visible.any(func(p: Dictionary): return str(p.id) == current):
 		current = str(visible[0].id)
 	count.text = "%d rapports conservés" % results.size() if tab == 3 else "%d / %d pistes · %d suivies" % [results.size(), app.model.get("market", []).size(), app.management_ui.shortlist.size()]
-	direction.text = "↓ Décroissant" if state.get("descending", false) else "↑ Croissant"
-	page_label.text = "Page %d / %d" % [int(state.page) + 1, pages]
-	prev.disabled = int(state.page) == 0
-	next.disabled = int(state.page) >= pages - 1
+	direction.text = "↓ Décroissant" if _sort_descending() else "↑ Croissant"
+	_sort_arrows()
 	var selection: Dictionary = {}
 	for i in visible.size():
 		var item: Dictionary = visible[i]
@@ -310,6 +331,7 @@ func _refresh() -> void:
 		_profile(_market_player(str(selection.get("playerId", ""))), selection)
 	else:
 		_profile(selection, report_by_player.get(str(selection.get("id", "")), {}))
+	table_scroll.set_deferred("scroll_vertical",scroll)
 
 func _row(item: Dictionary, index: int, selected: bool) -> void:
 	var player := item if tab != 3 else _market_player(str(item.get("playerId", "")))
@@ -319,33 +341,33 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	row.name = "MarketReport_" + str(item.id) if tab == 3 else "MarketPlayer_" + player_id.replace(":", "_")
 	row.set_meta("player_id", player_id)
 	row.accessibility_name = "%s, %s" % [item.get("name", "Joueur inconnu"), item.get("pos", "Poste inconnu")]
-	row.add_theme_stylebox_override("normal", D.surface(LEFT - 2, 55, Color("155a39"), Color("10412d"), Color("258653"), 3, false) if selected else C.box(Color("121c1d") if index % 2 == 0 else Color("0d1517"), Color.TRANSPARENT, 0, 0))
+	row.add_theme_stylebox_override("normal", D.surface(LEFT - 2, ROW_HEIGHT, Color("155a39"), Color("10412d"), Color("258653"), 3, false) if selected else C.box(Color("121c1d") if index % 2 == 0 else Color("0d1517"), Color.TRANSPARENT, 0, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("244638"), C.MINT, 3, 0))
 	row.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
 	table_rows.add_child(row)
-	D.place(row, Rect2(0, index * 55, LEFT - 2, 55))
-	D.line(row, Vector2(0, 54), Vector2(LEFT - 2, 54), Color(C.LINE, .65))
-	D.text(row, 25, 36, str(int(state.page) * CAPACITY + index + 1), 27, C.IVORY, 700, 38, HORIZONTAL_ALIGNMENT_CENTER)
-	_portrait(row, Rect2(58, 4, 49, 47), player, player_id)
-	D.text(row, 128, 24, item.get("name", "—"), 24, C.IVORY, 700, 190 if tab != 3 else 359)
-	D.text(row, 128, 46, "★ Suivi" if player_id in app.management_ui.shortlist else "Marché des joueurs" if tab != 3 else "Dossier d’observation", 18, WARM if player_id in app.management_ui.shortlist else C.MUTED, 500, 190)
+	D.place(row, Rect2(0, index * ROW_HEIGHT, LEFT - 2, ROW_HEIGHT))
+	D.line(row, Vector2(0, ROW_HEIGHT-1), Vector2(LEFT - 2, ROW_HEIGHT-1), Color(C.LINE, .65))
+	D.text(row, 25, 25, str(index + 1), 17, C.IVORY, 700, 38, HORIZONTAL_ALIGNMENT_CENTER)
+	_portrait(row, Rect2(65, 2, 35, 34), player, player_id)
+	D.text(row, 128, 18, item.get("name", "—"), 18, C.IVORY, 700, 190 if tab != 3 else 359)
+	D.text(row, 128, 33, "★ Suivi" if player_id in app.management_ui.shortlist else "Marché des joueurs" if tab != 3 else "Dossier d’observation", 13, WARM if player_id in app.management_ui.shortlist else C.MUTED, 500, 190)
 	var assessment: Dictionary = report.get("assessment", {})
 	if tab == 3:
-		D.text(row, 506, 35, item.get("pos", "—"), 24, C.IVORY, 500, 250)
-		D.text(row, 774, 35, assessment.get("source", "Date non conservée"), 23, C.MUTED, 500, 345)
-		_badge(row, Rect2(1130, 11, 242, 34), _report_label(report), _report_color(report))
+		D.text(row, 506, 25, item.get("pos", "—"), 18, C.IVORY, 500, 250)
+		D.text(row, 774, 25, assessment.get("source", "Date non conservée"), 17, C.MUTED, 500, 345)
+		_badge(row, Rect2(1130, 5, 242, 27), _report_label(report), _report_color(report),17)
 	else:
-		D.text(row, 325, 35, item.get("pos", "—"), 22, C.IVORY, 500, 155)
-		D.text(row, 510, 36, G.n(item.get("age", "—")), 25, C.IVORY, 600, 52, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row, 582, 37, G.n(item.get("rating", "—")), 32, GREEN, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row, 675, 37, G.n(report.get("potential", "—")), 30, GREEN if report.has("potential") else C.FAINT, 700, 80, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row, 742, 36, _money(item.get("fee")), 24, C.IVORY, 600, 111)
-		D.text(row, 864, 29, G.salary(item.get("salary")), 23, C.IVORY, 500, 174)
+		D.text(row, 325, 25, item.get("pos", "—"), 17, C.IVORY, 500, 155)
+		D.text(row, 510, 25, G.n(item.get("age", "—")), 18, C.IVORY, 600, 52, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row, 582, 26, G.n(item.get("rating", "—")), 21, GREEN, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row, 675, 26, G.n(report.get("potential", "—")), 20, GREEN if report.has("potential") else C.FAINT, 700, 80, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row, 742, 25, _money(item.get("fee")), 17, C.IVORY, 600, 111)
+		D.text(row, 864, 22, G.salary(item.get("salary")), 17, C.IVORY, 500, 174)
 		if max_salary > 0 and (item.get("salary") is float or item.get("salary") is int):
-			D.bar(row, Rect2(864, 36, 163, 10), 100.0 * float(item.salary) / max_salary, GREEN)
-		D.text(row, 1043, 35, "Ancien" if assessment.get("stale", false) else "Daté" if not report.is_empty() else "—", 23, C.MUTED, 500, 112)
+			D.bar(row, Rect2(864, 28, 163, 5), 100.0 * float(item.salary) / max_salary, GREEN)
+		D.text(row, 1043, 25, "Ancien" if assessment.get("stale", false) else "Daté" if not report.is_empty() else "—", 17, C.MUTED, 500, 112)
 		var status := _report_label(report) if item.get("available", false) else "Offre indisponible"
-		_badge(row, Rect2(1179, 11, 205, 34), status, _report_color(report) if item.get("available", false) else C.ALERT)
+		_badge(row, Rect2(1179, 5, 205, 27), status, _report_color(report) if item.get("available", false) else C.ALERT,17)
 	row.pressed.connect(func():
 		state["report_id" if tab == 3 else "player_id"] = str(item.id)
 		var target := str(row.name)
@@ -517,10 +539,10 @@ static func _section(parent: Node, area: Rect2, title: String, icon_id: String) 
 	D.line(frame, Vector2(12, 42), Vector2(area.size.x - 12, 42), Color(C.LINE, .65))
 	return frame
 
-static func _badge(parent: Node, area: Rect2, caption: String, tint: Color) -> void:
+static func _badge(parent: Node, area: Rect2, caption: String, tint: Color, font_size: int = 22) -> void:
 	var filled := tint in [GREEN, C.ALERT]
 	var frame := D.rect(parent, area, tint if filled else tint.darkened(.76), 6, tint)
-	D.text(frame, area.size.x / 2, area.size.y / 2 + 7, caption, 22, Color("091a11") if filled else tint, 700, area.size.x - 10, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(frame, area.size.x / 2, area.size.y / 2 + font_size*.32, caption, font_size, Color("091a11") if filled else tint, 700, area.size.x - 10, HORIZONTAL_ALIGNMENT_CENTER)
 
 static func _portrait(parent: Node, area: Rect2, player: Dictionary, player_id: String, full: bool = false) -> void:
 	if str(player.get("id", "")).is_empty():
@@ -532,7 +554,7 @@ static func _portrait(parent: Node, area: Rect2, player: Dictionary, player_id: 
 	D.place(photo, area)
 
 static func _report_label(report: Dictionary) -> String:
-	return "Rapport ancien" if report.get("assessment", {}).get("stale", false) else "Avis " + str(report.grade) if report.has("grade") else "À observer"
+	return Sort.report_label(report)
 
 static func _report_color(report: Dictionary) -> Color:
 	if report.get("assessment", {}).get("stale", false): return WARM
