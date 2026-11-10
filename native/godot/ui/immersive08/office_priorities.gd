@@ -16,7 +16,7 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 	var meta: Dictionary = model.get("meta", {})
 	var season := int(meta.get("season",1))
 	var live: Dictionary = model.get("live") if model.get("live") is Dictionary else {}
-	var ended: bool = meta.get("canAdvanceSeason",false)
+	var ended: bool = meta.get("canAdvanceSeason",false) or meta.get("phase","") == "ended"
 	var next: Dictionary = model.get("next") if model.get("next") is Dictionary else {}
 	var today := str(meta.get("calendarToday",""))
 	if not live.is_empty():
@@ -43,6 +43,11 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 			result.append(_item("OfficeFinancePriorityAction","Examiner la trésorerie",
 				"La trésorerie de jeu est négative. Consultez les flux et les engagements avant de décider.",
 				"Avant un nouvel engagement","money","finance","urgent"))
+	var match_today := not today.is_empty() and str(next.get("date","")) == today
+	if not ended and live.is_empty() and match_today:
+		result.append(_item("OfficeMatchPriorityAction","Préparer le match du jour",
+			"La rencontre est prévue aujourd’hui. Consultez l’adversaire et vérifiez vos choix avant le coup d’envoi.",
+			"Aujourd’hui","trophy","preparation","important"))
 	var international: Dictionary = model.get("international") if model.get("international") is Dictionary else {}
 	var availability: Dictionary = international.get("availability") if international.get("availability") is Dictionary else {}
 	var absent := int(availability.get("absentCount",0))
@@ -68,7 +73,7 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 		result.append(_item("OfficeContractsAction","Préparer %d échéance%s de contrat" % [contracts.size(),"s" if contracts.size() > 1 else ""],
 			str(first.get("name","Joueur")) + " · " + str(first.get("contractLabel",deadline)),deadline,
 			"people","contract","important" if expiry <= season else "normal",str(first.get("id",""))))
-	if not ended and live.is_empty() and not next.is_empty():
+	if not ended and live.is_empty() and not next.is_empty() and not match_today:
 		var when := str(next.get("date",""))
 		result.append(_item("OfficeMatchPriorityAction","Préparer le prochain match",
 			"Consultez l’adversaire et les choix de préparation avant de composer l’équipe.",

@@ -473,7 +473,7 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 		text.add_child(detail)
 	var shortcuts := C.h(8)
 	parent.add_child(shortcuts)
-	if not choices.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false):
+	if not choices.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false) and app.model.meta.get("phase","") != "ended":
 		var training := C.button("Entraînement",func():app.Immersive.open_training(app),false,app.accent)
 		training.name = "OfficeTrainingAction"
 		shortcuts.add_child(C.fill(training))
