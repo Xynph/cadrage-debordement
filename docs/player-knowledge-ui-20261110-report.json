@@ -60,5 +60,23 @@
     "checks": 199,
     "failures": 0,
     "backend": "380a0db"
+  },
+  "observation_stage_revision": {
+    "helpers": 34,
+    "native_headless": 205,
+    "recruitment_sort": 153,
+    "failures": 0,
+    "export_failure_regression": {
+      "red": "45s ETIMEDOUT, absent exportText",
+      "green_ms": 12976,
+      "script_errors": 0
+    },
+    "diagnostic": {
+      "bytes": 9661054,
+      "direct_worker_ms": 1210,
+      "headless_transport_parse_ms": 1708,
+      "graphics_transport_parse_ms": 3056,
+      "historical_timeout_reproduced": false
+    }
   }
 }

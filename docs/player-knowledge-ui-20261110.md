@@ -30,7 +30,7 @@ L'appartenance explicite du moteur a priorité sur le contexte de la vue.
 ## Observation ciblée
 
 La fiche de recrutement, le comparateur et le parcours marché historique proposent
-`Observer` ou `Approfondir` seulement si l'API `person.scouting` est présente.
+`Observer`, `Approfondir` ou `Actualiser` seulement si l'API `person.scouting` est présente.
 La confirmation reprend le coût et le délai fournis (`workUnit: week`). Elle
 transmet `observe_player` avec le véritable `playerId`, y compris depuis un
 rapport dont l'ID désigne le rapport lui-même. Le délai dépend du recruteur et
@@ -110,3 +110,40 @@ Captures inspectées dans la copie de travail de réception :
 `work/knowledge-native-final-1440/`. Les fichiers `report.json`, `engine.log` et
 `godot.log` accompagnent les images. Le rapport de réception condensé est versionné
 à côté de cette note.
+
+## Réception finale : états et erreurs d'export
+
+La colonne **Observation** et le pavé de suivi affichent la connaissance courante :
+`À observer`, `Observé`, `Approfondie`. Ils ne construisent plus une appréciation
+historique à partir d'une lettre. Les identifiants de tri restent conservés ; le
+tri porte sur les statuts effectivement affichés, inconnus en dernier. L'action
+est `Observer`, puis `Approfondir`, puis `Actualiser` ; une mission déjà en cours
+reste prioritaire et désactivée.
+
+Diagnostic export avec le worker cumulatif : export de 9,66 Mo, réponse directe
+1,21 s ; transport/parse Godot headless 1,71 s ; graphique 3,20 s. Parcours graphique
+complet de diagnostic 51 s, sans modèles de rapports fournis. Le dépassement root
+n'a pas été reproduit ; aucune hausse de limite et aucun changement du transport.
+Les traces temporaires de frontière ne sont pas intégrées au produit.
+
+Le défaut certain était dans le banc : après une réponse manquante ou refusée, il
+continuait sur `exportText` absent et restait bloqué jusqu'au délai du lanceur.
+Le banc contrôle désormais la réussite de chaque commande, écrit les timings
+bornés (sans JSON joueur) et ferme proprement en cas d'échec. Un vrai worker dont
+la seule réponse export est refusée vérifie ce cas : ancien script rouge
+`ETIMEDOUT` à 45 s ; nouveau script vert en 13 s, sans erreur de script. La limite
+normale de réponse reste 45 s.
+
+Commande ciblée :
+
+```bash
+CD_GODOT_EXECUTABLE=/chemin/Godot   node --test tests/godot-player-knowledge-export-failure.cjs
+```
+
+Les bancs `squad-secondary` et `tactics-position-drag` ne nécessitent pas d'adaptation
+aux fourchettes : le premier ne compare pas les potentiels ; le second lit les
+`positionRatings` connus de l'effectif propre.
+
+Réception de ce correctif : 34 contrôles helper/statut, 205 contrôles natifs
+avec les vrais modèles initial/approfondi et 153 contrôles de tri, tous verts.
+Le test de refus d’export est également vert après vérification rouge/vert.

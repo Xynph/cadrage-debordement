@@ -18,7 +18,7 @@ const TABS := ["Besoins du club", "Recherche", "Joueurs suivis", "Rapports"]
 const COLUMNS := [
 	["JOUEUR", 128, 193, "Nom"], ["POSTE", 325, 155, "Poste"], ["ÂGE", 486, 55, "Âge"],
 	["NIVEAU", 550, 74, "Niveau"], ["POTENTIEL", 636, 95, "Potentiel"], ["PRIME", 741, 107, "Prime"],
-	["SALAIRE", 864, 165, "Salaire"], ["RAPPORT", 1043, 124, "Rapport"], ["AVIS", 1180, 207, "Avis"]
+	["SALAIRE", 864, 165, "Salaire"], ["RAPPORT", 1043, 124, "Rapport"], ["OBSERVATION", 1180, 207, "Avis"]
 ]
 
 var app: Control
@@ -211,7 +211,7 @@ func _choice(parent: Node, area: Rect2, id: String, caption: String, values: Arr
 func _table() -> void:
 	var panel := D.panel(self, Rect2(0, 362, LEFT, 648), "", "", "", "ImmersiveMarketTable")
 	var header := D.rect(panel, Rect2(1, 1, LEFT - 2, 44), Color("1a2627"), 6)
-	var columns: Array = COLUMNS if tab != 3 else [["JOUEUR OBSERVÉ", 128, 370, "Nom"], ["POSTE", 506, 252, "Poste"], ["RAPPORT", 774, 333, "Date du rapport"], ["AVIS DATÉ", 1130, 245, "Avis"]]
+	var columns: Array = COLUMNS if tab != 3 else [["JOUEUR OBSERVÉ", 128, 370, "Nom"], ["POSTE", 506, 252, "Poste"], ["RAPPORT", 774, 333, "Date du rapport"], ["OBSERVATION", 1130, 245, "Avis"]]
 	for col: Array in columns:
 		if col[3] == "":
 			D.text(header, col[1], 28, col[0], 22, C.IVORY, 600, col[2])
@@ -228,7 +228,7 @@ func _table() -> void:
 		sort.add_theme_stylebox_override("hover", C.box(C.RAISED,C.MINT,4,0))
 		sort.add_theme_stylebox_override("pressed", C.box(C.PANEL,C.MINT,4,0))
 		sort.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT,WARM,4,0))
-		sort.tooltip_text = "Trier par " + str(col[3]).to_lower()
+		sort.tooltip_text = "Trier par " + ("observation" if col[3]=="Avis" else str(col[3]).to_lower())
 		sort.set_meta("sort_caption",str(col[0]))
 		sort_headers[str(col[3])] = sort
 		sort.pressed.connect(func():
@@ -367,8 +367,8 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		if max_salary > 0 and (item.get("salary") is float or item.get("salary") is int):
 			D.bar(row, Rect2(864, 28, 163, 5), 100.0 * float(item.salary) / max_salary, GREEN)
 		D.text(row, 1043, 25, Sort.report_status(report), 17, C.MUTED, 500, 112)
-		var status := _report_label(report) if item.get("available", false) else "Offre indisponible"
-		_badge(row, Rect2(1179, 5, 205, 27), status, _report_color(report) if item.get("available", false) else C.ALERT,17)
+		var status := _report_label(item)
+		_badge(row, Rect2(1179, 5, 205, 27), status, _report_color(item),17)
 	row.pressed.connect(func():
 		state["report_id" if tab == 3 else "player_id"] = str(item.id)
 		var target := str(row.name)
@@ -445,8 +445,9 @@ func _observation(parent: Panel, player: Dictionary, report: Dictionary) -> void
 	var warning_lines := D.words(warning, 29, 3)
 	for i in warning_lines.size():
 		D.text(vigilance, 16, 65 + 25 * i, warning_lines[i], 22, C.IVORY, 500, 259)
-	var trust := _section(parent, Rect2(610, 305, 204, 137), "APPRÉCIATION", "star")
-	D.text(trust, 102, 107, str(report.get("grade")) if report.get("grade") != null else "—", 65, _report_color(report), 800, 179, HORIZONTAL_ALIGNMENT_CENTER)
+	var knowledge_record := report if tab == 3 else player
+	var trust := _section(parent, Rect2(610, 305, 204, 137), "OBSERVATION", "search")
+	D.text(trust, 102, 107, _report_label(knowledge_record), 25, _report_color(knowledge_record), 800, 179, HORIZONTAL_ALIGNMENT_CENTER)
 	var compare := _section(parent, Rect2(16, 452, 798, 162), "COMPARAISON AU MÊME POSTE", "people")
 	var role := str(player.get("pos", report.get("pos", "")))
 	var squad: Array = app.model.get("squad", []).filter(func(p: Dictionary): return str(p.get("pos", "")) == role)
@@ -573,8 +574,7 @@ static func _report_label(report: Dictionary) -> String:
 	return Sort.report_label(report)
 
 static func _report_color(report: Dictionary) -> Color:
-	if report.get("assessment", {}).get("stale", false): return WARM
-	return {"A": GREEN, "B": C.BLUE, "C": WARM}.get(report.get("grade", ""), C.BLUE)
+	return {"deep": GREEN, "observed": C.BLUE}.get(report.get("knowledge",{}).get("stage",""),C.FAINT)
 
 static func _money(value: Variant) -> String:
 	return G.euros(value) if value is int or value is float else "—"

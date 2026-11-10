@@ -9,7 +9,7 @@ static func player_id(person: Dictionary) -> String:
 static func caption(person: Dictionary) -> String:
 	var scouting: Dictionary = person.get("scouting",{})
 	if scouting.get("pending",false): return "Observation en cours"
-	return "Approfondir" if person.get("knowledge",{}).get("stage","") == "observed" else "Observer"
+	return {"observed":"Approfondir","deep":"Actualiser"}.get(person.get("knowledge",{}).get("stage",""),"Observer")
 
 static func delay(scouting: Dictionary) -> String:
 	return G.n(scouting.get("workCycles",0)) + (" semaines de travail du recruteur" if scouting.get("workUnit")=="week" else " cycles de travail du recruteur")

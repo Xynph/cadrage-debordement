@@ -6,6 +6,7 @@ const Comparison = preload("res://ui/immersive08/recruitment_comparison.gd")
 const U = preload("res://ui/management_state.gd")
 const A = preload("res://ui/player_attributes.gd")
 var app: Control
+var command_timings: Array[Dictionary] = []
 var checks := 0
 var failures: Array[String] = []
 var output := OS.get_environment("CD_KNOWLEDGE_OUTPUT")
@@ -15,13 +16,26 @@ func check(value: bool,message: String) -> void:
 	if not value:failures.append(message);printerr("FAIL: ",message)
 func settle() -> void:
 	for frame in 8:await process_frame
-func ready_engine() -> void:
-	var deadline:=Time.get_ticks_msec()+45000
+func ready_engine() -> bool:
+	var started:=Time.get_ticks_msec()
+	var deadline:=started+45000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline:await process_frame
-	check(not app.waiting and app.bridge.last_response_ok,"Vraie réponse moteur : "+app.last_error)
-	await settle()
-func ask(id: String,payload: Dictionary={}) -> void:
-	app._command(id,payload);await ready_engine()
+	var ok: bool=not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
+	var timing: Dictionary={"command":app.last_command,"elapsed_ms":Time.get_ticks_msec()-started,"waiting":app.waiting,"ok":ok,"error":app.last_error,"worker_running":app.bridge.child_pid>0 and OS.is_process_running(app.bridge.child_pid)}
+	command_timings.append(timing)
+	print("CONNAISSANCE COMMANDE ",JSON.stringify(timing))
+	check(ok,"Vraie réponse moteur : "+app.last_error)
+	if ok:await settle()
+	return ok
+func ask(id: String,payload: Dictionary={}) -> bool:
+	if not app._command(id,payload):
+		check(false,"Commande non envoyée : "+id+" · "+app.last_error)
+		return false
+	return await ready_engine()
+func stop_failed() -> void:
+	var report:=FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
+	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"failed_command":app.last_command,"command_timings":command_timings}));report.close()
+	await app._close(1)
 func capture(filename: String) -> void:
 	if DisplayServer.get_name()=="headless":return
 	await RenderingServer.frame_post_draw
@@ -39,8 +53,10 @@ func run() -> void:
 	if not worker.is_empty():ProjectSettings.set_setting("native_engine/worker_path",worker)
 	root.size=Vector2i(2560,1440)
 	if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(root.size)
-	app=load("res://main.tscn").instantiate();root.add_child(app);await ready_engine()
-	await ask("new_career",{"mode":"common","club":29});app.timer.stop()
+	app=load("res://main.tscn").instantiate();root.add_child(app)
+	if not await ready_engine():await stop_failed();return
+	if not await ask("new_career",{"mode":"common","club":29}):await stop_failed();return
+	app.timer.stop()
 	var original: Dictionary=app.model.duplicate(true)
 	var canonical: bool=original.squad[0].get("knowledge") is Dictionary
 	check(canonical,"Le banc exige la nouvelle vraie projection knowledge du worker")
@@ -98,7 +114,10 @@ func run() -> void:
 		if scenario=="pending":check(control.tooltip_text.contains("1 semaine"),"Délai restant fourni, pas calculé par l’UI")
 		control.queue_free();app.waiting=false;app.model=original.duplicate(true)
 	var export_file:=output.path_join("carriere-exportee.json")
-	app.export_path=export_file;await ask("export")
+	app.export_path=export_file
+	if not await ask("export"):await stop_failed();return
+	if not app.model.get("meta",{}).get("exportText") is String or not FileAccess.file_exists(export_file):
+		check(false,"Réponse export reçue sans texte ou fichier écrit");await stop_failed();return
 	check(FileAccess.get_file_as_string(export_file)==str(app.model.meta.exportText),"Export intégral conservé byte pour byte")
 	var doc: Variant=JSON.parse_string(FileAccess.get_file_as_string(export_file))
 	check(doc is Dictionary and doc.get("state") is Dictionary,"Export demeure un document restaurable")
@@ -113,6 +132,11 @@ func run() -> void:
 		app._navigate("Recrutement");await settle()
 		var report: Dictionary=app.model.decisions.recruitment.reports[0]
 		check(report.knowledge.stage==stage,"Rapport réellement obtenu par mission : "+stage)
+		var caption: String="Observé" if stage=="observed" else "Approfondie"
+		check(labels(app).any(func(label:Label):return label.text==caption),"Badge de connaissance réelle "+stage)
+		check(app.find_child("MarketSort_Avis",true,false).text.begins_with("OBSERVATION"),"Colonne Observation sans avis chiffré historique")
+		var action: Button=app.find_child("ObservePlayer_"+str(report.playerId).replace(":","_"),true,false)
+		check(action!=null and action.text==("Approfondir" if stage=="observed" else "Actualiser"),"Action adaptée au suivi réel "+stage)
 		check(report.ratingRange.max-report.ratingRange.min==(8 if stage=="observed" else 4),"Fourchette niveau réelle "+stage)
 		check(report.potentialRange.max-report.potentialRange.min==(10 if stage=="observed" else 4),"Fourchette potentiel réelle "+stage)
 		check(labels(app).any(func(label:Label):return label.text==G.potential_text(report)),"Rapport UI lit la fourchette réelle "+stage)
@@ -146,12 +170,12 @@ func run() -> void:
 		observe.pressed.emit();await settle()
 		for child in app.get_children():
 			if child is AcceptDialog and child.visible and child!=app.file_dialog:child.confirmed.emit();break
-		await ready_engine()
+		if not await ready_engine():await stop_failed();return
 		var after: Dictionary=app.model.market.filter(func(p:Dictionary):return p.id==target.id)[0]
 		check(after.scouting.pending and after.knowledge.stage=="unobserved","Confirmation réelle planifie sans révéler immédiatement le joueur")
 		check(int(app.model.finance.cash)==int(original.finance.cash)-int(target.scouting.cost),"Confirmation réelle débite exactement le coût fourni")
 		await capture("observation-programmee-modele-reel-1440")
 	var report_file:=FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
-	report_file.store_string(JSON.stringify({"checks":checks,"failures":failures,"profile_unchanged":unchanged,"canonical":canonical}));report_file.close()
+	report_file.store_string(JSON.stringify({"checks":checks,"failures":failures,"profile_unchanged":unchanged,"canonical":canonical,"command_timings":command_timings}));report_file.close()
 	print("CONNAISSANCE UI NATIVE : %d contrôles ; %d échecs" % [checks,failures.size()])
 	await app._close(0 if failures.is_empty() else 1)
