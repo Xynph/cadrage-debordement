@@ -144,6 +144,7 @@ func _choose(index: int) -> void:
 	state.tab = index
 	restoring = true
 	_show_tab()
+	app._observe_navigation()
 	# Tab selection keeps focus on the tab; Tab then enters its visible content.
 	_restore.call_deferred(false)
 
