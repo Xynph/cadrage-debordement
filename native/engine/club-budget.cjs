@@ -282,16 +282,22 @@ const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,divis
 const budgetSemaineNo=()=>S.franceMode?S.franceMode.week:S.worldMode.week;
 const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
 const budgetTypes=()=>budgetLisible(S.clubBudget)?S.clubBudget.clubs.map(c=>c.type):null;
-// Calculées une fois par saison et par composition des championnats : la question revient à chaque joueur étudié.
+// Demandées à chaque joueur étudié par un club géré : gardées tant que la carrière, la saison et la force des clubs ne changent pas.
 let budgetLimitesMemo=null;
 const budgetLimites=creation=>{
- const forces=budgetForces(),types=budgetTypes(),cle=S.season+'|'+(creation===true)+'|'+forces.map(f=>f.division+':'+f.base).join(',')+'|'+(types?types.join(','):'');
- if(!budgetLimitesMemo||budgetLimitesMemo.cle!==cle)budgetLimitesMemo={cle,valeur:nativeClubBudget.limites(forces,S.season,{creation:creation===true,types})};
+ let bases=0;for(const c of S.clubs)bases+=c.base;
+ const m=budgetLimitesMemo,premiere=creation===true;
+ if(m&&m.etat===S&&m.saison===S.season&&m.creation===premiere&&m.bases===bases&&m.club===S.club)return m.valeur;
+ budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(budgetForces(),S.season,{creation:premiere,types:budgetTypes()})};
  return budgetLimitesMemo.valeur;
 };
 const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
 // Classement, réceptions de saison régulière et réceptions restantes de chaque club, à l'instant présent.
+// Calculé une fois par semaine : le club joué puis les clubs gérés s'en servent à la suite.
+let budgetRepereMemo=null;
 function budgetRepere(){
+ const cle=S.season+'|'+budgetSemaineNo()+'|'+S.history.length,memo=budgetRepereMemo;
+ if(memo&&memo.etat===S&&memo.cle===cle)return memo.valeur;
  const classement={},receptions={},restantes={};
  if(budgetFrance()){
   for(const division of ['elite','accession']){
@@ -309,7 +315,8 @@ function budgetRepere(){
    receptions[f.homeId]=(receptions[f.homeId]||0)+1;if(f.week>=S.worldMode.week)restantes[f.homeId]=(restantes[f.homeId]||0)+1;
   }
  }
- return {classement,receptions,restantes};
+ budgetRepereMemo={etat:S,cle,valeur:{classement,receptions,restantes}};
+ return budgetRepereMemo.valeur;
 }
 function budgetPrevoir(forces,repere){
  const b=S.clubBudget,c=club(),semaines=wageForecastWeeks(),k=repere.classement[c.id]||b.clubs[c.id];
@@ -417,7 +424,8 @@ salaryDemandBreakdown=function(p,kind='renew',s=S){
  if(s!==S||!budgetActif()||!p||typeof p.id!=='string')return r;
  const juste=nativeStartingSalaries.demande(S,budgetForces(),S.club,p,nativeLeagueEconomy);
  if(kind==='renew'){const base=Math.max(p.salary,juste);return {...r,base,asked:Math.max(p.salary,Math.round(base*(1+(r.modifier||0))/10)*10)};}
- const a=nativeLeagueEconomy.attrait({origine:nativeLeagueEconomy.origine(p,id=>S.clubs[id]?budgetLigue(id):null),destination:budgetLigue(S.club),joueurId:p.id,age:p.age});
+ const parNom=nom=>{const c=S.clubs.find(x=>x.name===nom);return c?budgetLigue(c.id):null;};
+ const a=nativeLeagueEconomy.attrait({origine:nativeLeagueEconomy.origine(p,id=>S.clubs[id]?budgetLigue(id):null,parNom),destination:budgetLigue(S.club),joueurId:p.id,age:p.age,situation:nativeLeagueEconomy.situation(p,S.season,S.club,club().name)});
  return {...r,base:juste,asked:Math.max(10,Math.round(juste*a.multiplicateur/10)*10)};
 };
 // Plancher des offres de contrat : le moteur refuse tout salaire sous 1 000 € par semaine. Pour les

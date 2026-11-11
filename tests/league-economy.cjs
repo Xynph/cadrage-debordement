@@ -93,32 +93,57 @@ test('Demande salariale : selon le niveau et le championnat du club qui recrute'
  assert.equal(chez('elite'),chez('elite'));assert.ok(M.demande(state,forces,2,{...joueur,rating:60},E)<chez('elite')/3);
  assert.throws(()=>M.demande(state,forces,999,joueur,E),/club inconnu/);
 });
-const taux=(origine,destination,age=27,n=4000)=>moyenne(Array.from({length:n},(_,i)=>E.attrait({origine,destination,joueurId:'j'+i,age}).multiplicateur));
-test('Attrait : monter coûte moins cher au club, descendre coûte une prime, effet modéré',()=>{
- const monter=taux('champ','elite'),descendre=taux('elite','champ'),voisin=taux('prem','urc'),meme=taux('elite','elite');
- assert.ok(monter<0.97&&monter>0.9,'vers la référence : '+monter);assert.ok(descendre>1.1&&descendre<1.25,'vers un championnat bien moins réputé : '+descendre);
- assert.ok(Math.abs(meme-1)<0.005&&voisin>1&&voisin<1.08);
+const taux=(origine,destination,age=27,situation=null,n=4000)=>moyenne(Array.from({length:n},(_,i)=>E.attrait({origine,destination,joueurId:'j'+i,age,situation}).multiplicateur));
+// Part des joueurs qui acceptent une offre donnée en part du salaire juste : seuil du jeu, 86 à 93 % de la demande selon le joueur.
+const empreinte=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
+const acceptent=(origine,destination,offre,age=27,situation=null,n=4000)=>Array.from({length:n},(_,i)=>offre>=E.attrait({origine,destination,joueurId:'j'+i,age,situation}).multiplicateur*(0.86+empreinte('j'+i)%8/100)).filter(Boolean).length/n;
+test('Attrait : monter coûte moins cher au club, descendre coûte une prime lisible',()=>{
+ assert.ok(taux('champ','elite')<0.95&&taux('champ','elite')>0.88);assert.ok(Math.abs(taux('elite','elite')-1)<0.005);
  assert.ok(taux('accession','elite')<taux('accession','prem')&&taux('accession','prem')<taux('accession','nationale'),'plus le championnat est réputé, moins le joueur demande');
- for(const o of [...noms,null])for(const d of noms)for(let i=0;i<40;i++){const a=E.attrait({origine:o,destination:d,joueurId:'x'+i,age:20+i%18});assert.ok(a.multiplicateur>=0.85&&a.multiplicateur<=1.3);}
+ // Première → deuxième division française : une minorité au salaire juste, la moitié vers +15 à +20 %, presque tous à +30 %.
+ const juste=acceptent('elite','accession',1),moitie=acceptent('elite','accession',1.175),large=acceptent('elite','accession',1.3);
+ assert.ok(juste>=0.1&&juste<=0.2,'au salaire juste : '+juste);assert.ok(moitie>=0.4&&moitie<=0.65,'à +17,5 % : '+moitie);assert.ok(large>=0.9,'à +30 % : '+large);
+ // Championnats proches : écart faible.
+ assert.ok(acceptent('elite','prem',1)>0.8&&acceptent('elite','urc',1)>0.75&&acceptent('elite','prem',1.1)>0.98);assert.ok(taux('elite','prem')<1.06&&taux('elite','urc')<1.08);
+ assert.ok(E.primeDescente(8)<0.05&&Math.abs(E.primeDescente(30)-0.3)<1e-9&&E.primeDescente(80)===0.55&&E.rabaisMontee(60)===0.1);
+ for(const o of [...noms,null])for(const d of noms)for(let i=0;i<40;i++){const a=E.attrait({origine:o,destination:d,joueurId:'x'+i,age:20+i%18,situation:{sansClub:i%3,peuUtilise:i%2===0,ancienClub:i%5===0}});assert.ok(a.multiplicateur>=0.82&&a.multiplicateur<=1.6);}
  assert.throws(()=>E.attrait({origine:'elite',destination:'inconnu',joueurId:'a',age:25}),/inconnu/);
 });
-test('Attrait : pas de règle uniforme — casaniers, voyageurs, fins de carrière au Japon',()=>{
- const tous=Array.from({length:3000},(_,i)=>E.attrait({origine:'accession',destination:'prem',joueurId:'j'+i,age:26}));
- const par=p=>moyenne(tous.filter(a=>a.profil===p).map(a=>a.multiplicateur));
- assert.ok(['casanier','voyageur','ambitieux','neutre'].every(p=>tous.filter(a=>a.profil===p).length>250));
- assert.ok(par('casanier')>par('neutre')+0.05&&par('voyageur')<par('neutre')-0.02&&par('ambitieux')<par('neutre'),'tempéraments : '+['casanier','voyageur','ambitieux','neutre'].map(par));
- assert.ok(tous.some(a=>a.multiplicateur>1)&&tous.some(a=>a.multiplicateur<0.95),'pour une même montée, certains demandent plus, d’autres moins');
- assert.ok(taux('elite','jlo-d1',33)<taux('elite','jlo-d1',26)-0.1,'le Japon attire les joueurs de 31 ans et plus');assert.ok(taux('elite','jlo-d1',33)<1&&taux('elite','jlo-d1',26)>1.05);
+test('Attrait : pas de règle uniforme — casaniers, voyageurs, ambitieux, pragmatiques',()=>{
+ const profils=['casanier','voyageur','ambitieux','pragmatique','neutre'];
+ const monte=Array.from({length:4000},(_,i)=>E.attrait({origine:'accession',destination:'prem',joueurId:'j'+i,age:26})),par=(l,p)=>moyenne(l.filter(a=>a.profil===p).map(a=>a.multiplicateur));
+ assert.ok(profils.every(p=>monte.filter(a=>a.profil===p).length>400));
+ assert.ok(par(monte,'casanier')>par(monte,'neutre')+0.05&&par(monte,'voyageur')<par(monte,'neutre')-0.02&&par(monte,'ambitieux')<par(monte,'neutre')&&par(monte,'pragmatique')>par(monte,'neutre'),'montée : '+profils.map(p=>par(monte,p).toFixed(3)));
+ const descend=Array.from({length:4000},(_,i)=>E.attrait({origine:'elite',destination:'accession',joueurId:'j'+i,age:26}));
+ assert.ok(par(descend,'ambitieux')>par(descend,'neutre')+0.07&&par(descend,'pragmatique')<par(descend,'neutre')-0.15,'descente : '+profils.map(p=>par(descend,p).toFixed(3)));
+ assert.ok(descend.some(a=>a.multiplicateur<1.08)&&descend.some(a=>a.multiplicateur>1.42),'pour une même descente, de presque rien à plus de 40 %');
  assert.equal(E.temperament('abc'),E.temperament('abc'));
+});
+test('Attrait : le Japon, prime nette avant 30 ans, attrait fort après 31 ans',()=>{
+ assert.ok(taux('elite','jlo-d1',27)>1.18,'en pleine carrière : '+taux('elite','jlo-d1',27));assert.ok(acceptent('elite','jlo-d1',1,27)<0.2&&acceptent('elite','jlo-d1',1.2,27)>0.8);
+ for(const age of [31,32,33,35]){assert.ok(taux('elite','jlo-d1',age)<0.95,'à '+age+' ans : '+taux('elite','jlo-d1',age));assert.ok(acceptent('elite','jlo-d1',1,age)>0.98);}
+ assert.ok(taux('elite','jlo-d1',33)<taux('elite','jlo-d1',31));assert.ok(taux('elite','jlo-d1',30)<taux('elite','jlo-d1',29),'à 30 ans, la prime d’éloignement disparaît');
+ assert.ok(Math.abs(taux('jlo-d2','jlo-d1',33)-taux('jlo-d2','jlo-d1',26))<1e-9,'un joueur déjà au Japon n’est pas concerné');
+});
+test('Attrait : d’autres leviers que le salaire — peu utilisé, sans club, retour dans un club connu',()=>{
+ const base=acceptent('elite','accession',1.1);
+ assert.ok(acceptent('elite','accession',1.1,27,{peuUtilise:true})>base+0.3,'un joueur qui a peu joué descend plus volontiers');
+ assert.ok(acceptent('elite','accession',1.1,27,{sansClub:1})>base+0.1&&acceptent('elite','accession',1.1,27,{sansClub:2})>acceptent('elite','accession',1.1,27,{sansClub:1}));
+ assert.ok(acceptent('elite','accession',1.1,27,{ancienClub:true})>base+0.1);assert.ok(Math.abs(taux('accession','elite',27,{peuUtilise:true})-taux('accession','elite'))<1e-9,'le temps de jeu ne joue que pour descendre');
+ assert.deepEqual(E.situation({id:'youth-29-1-3',population:{origin:'released',availableSince:1,clubId:4},dev:{history:[{minutes:120}]}},2,29),{sansClub:1,peuUtilise:true,ancienClub:true});
+ assert.deepEqual(E.situation({id:'world:urc:x',population:{origin:'released',availableSince:2,clubId:7},dev:{history:[{minutes:1400}]}},2,7),{sansClub:0,peuUtilise:false,ancienClub:true});
+ assert.deepEqual(E.situation({id:'small-1-0-0',population:{origin:'small-club',availableSince:1,clubId:null}},3,29),{sansClub:0,peuUtilise:false,ancienClub:false});assert.deepEqual(E.situation(null,1,0),{sansClub:0,peuUtilise:false,ancienClub:false});
 });
 test('Attrait : rien ne dépend du niveau du joueur',()=>{
  assert.equal(E.attrait.length,1);assert.deepEqual(E.attrait({origine:'urc',destination:'elite',joueurId:'p1',age:25,rating:99,potential:99}),E.attrait({origine:'urc',destination:'elite',joueurId:'p1',age:25,rating:40,potential:40}));
- assert.ok(!/rating|potential|niveau du joueur =/.test(E.attrait.toString().replace(/\/\/.*$/gm,'')));
+ assert.ok(!/rating|potential|skill|note/i.test((E.attrait.toString()+E.situation.toString()).replace(/\/\/.*$/gm,'')),'ni l’attrait ni la situation ne lisent le niveau');
 });
 test('Origine d’un joueur du marché : dernier club connu, sinon identifiant de la base, sinon inconnue',()=>{
  const ligue=id=>id===3?'urc':null;
  assert.equal(E.origine({id:'x',population:{clubId:3}},ligue),'urc');assert.equal(E.origine({id:'world:srp:p-12'},ligue),'srp');assert.equal(E.origine({id:'world:jlo:ab'},ligue),'jlo-d1');
- assert.equal(E.origine({id:'small-1-0-0',population:{clubId:null}},ligue),null);assert.equal(E.origine({id:'world:zzz:1'},ligue),null);assert.equal(E.origine(null,ligue),null);
+ assert.equal(E.origine({id:'small-1-0-0',population:{clubId:null}},ligue),null);
+ const parNom=n=>n==='Grand Club'?'elite':null;assert.equal(E.origine({id:'libre-1',formerClub:'Grand Club',population:{clubId:null}},ligue,parNom),'elite','joueur libéré : championnat de son dernier club');
+ assert.equal(E.origine({id:'jeune-1',formerClub:'Grand Club · centre de formation'},ligue,parNom),'elite');assert.equal(E.origine({id:'small-1-0-1',formerClub:'Bassin des petits clubs (simulation abstraite)'},ligue,parNom),null);assert.equal(E.origine({id:'world:zzz:1'},ligue),null);assert.equal(E.origine(null,ligue),null);
 });
 test('Budget : chaque championnat a ses recettes, son plafond s’il existe, et la règle des 52 % seulement en France',()=>{
  const forces=noms.flatMap((division,d)=>Array.from({length:4},(_,i)=>({id:d*4+i,division,base:66+i*3}))),R=B.recettes(forces);
