@@ -161,6 +161,7 @@ func handle_shortcut(event: InputEvent) -> bool:
 
 func open_palette() -> void:
 	if app == null or _blocked(): return
+	capture_current()
 	var previous := app.get_viewport().gui_get_focus_owner()
 	_palette_return_focus = weakref(previous) if previous != null else null
 	if not is_instance_valid(_dialog) or _dialog.is_queued_for_deletion(): _build_palette()
@@ -304,6 +305,10 @@ func _activate_selected() -> void:
 		return
 	# The palette is a reading-only popup. Its exact origin is retained on cancel.
 	_dialog.hide()
+	var previous := _palette_return_focus.get_ref() as Control if _palette_return_focus != null else null
+	_palette_return_focus = null
+	if is_instance_valid(previous) and previous.is_inside_tree() and previous.is_visible_in_tree() and previous.focus_mode != Control.FOCUS_NONE:
+		previous.grab_focus()
 	if not open_entity(entry): _refresh_results(_search.text)
 
 func open_watched_roster() -> void:
