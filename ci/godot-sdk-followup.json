@@ -2,8 +2,66 @@
   "suites": [
     "tests/godot-academy-portraits.cjs",
     "tests/godot-portrait-continuity.cjs",
-    "tests/godot-contract-negotiation.cjs"
+    "tests/godot-contract-negotiation.cjs",
+    "tests/deepen-staff-real-ui.cjs",
+    "tests/native-press-ui.cjs",
+    "tests/godot-office-ui.cjs",
+    "tests/deepen-staff-hire-ui.cjs",
+    "tests/godot-guide-layout.cjs",
+    "tests/godot-lineup-layout.cjs"
   ],
-  "suiteEnvironment": {},
-  "suiteCases": {}
+  "suiteEnvironment": {
+    "tests/godot-guide-layout.cjs": {
+      "CD_GUIDE_GRAPHICS": "1"
+    }
+  },
+  "suiteCases": {
+    "tests/godot-guide-layout.cjs": [
+      {
+        "id": "layout-native",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "layout",
+          "CD_GUIDE_LAYOUT_MODE": "native"
+        }
+      },
+      {
+        "id": "layout-stretch",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "layout",
+          "CD_GUIDE_LAYOUT_MODE": "stretch"
+        }
+      },
+      {
+        "id": "dock-native",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "dock",
+          "CD_GUIDE_LAYOUT_MODE": "native"
+        }
+      },
+      {
+        "id": "dock-stretch",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "dock",
+          "CD_GUIDE_LAYOUT_MODE": "stretch"
+        }
+      }
+    ]
+  },
+  "groups": {
+    "portraits-staff": [
+      "tests/godot-academy-portraits.cjs",
+      "tests/godot-portrait-continuity.cjs",
+      "tests/godot-contract-negotiation.cjs",
+      "tests/deepen-staff-real-ui.cjs",
+      "tests/deepen-staff-hire-ui.cjs"
+    ],
+    "parcours": [
+      "tests/native-press-ui.cjs",
+      "tests/godot-office-ui.cjs"
+    ],
+    "layouts": [
+      "tests/godot-guide-layout.cjs",
+      "tests/godot-lineup-layout.cjs"
+    ]
+  }
 }

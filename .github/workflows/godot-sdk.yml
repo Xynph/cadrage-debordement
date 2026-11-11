@@ -24,10 +24,16 @@ concurrency:
 
 jobs:
   sdk:
+    name: ${{ matrix.family == 'full' && 'sdk' || format('sdk-{0}', matrix.family) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","parcours","layouts"]' || '["full","portraits-staff","parcours","layouts"]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      CD_GODOT_SDK_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'full' }}
+      CD_GODOT_SDK_SCOPE: ${{ matrix.family == 'full' && 'full' || 'followup' }}
+      CD_GODOT_SDK_FAMILY: ${{ matrix.family }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -76,6 +82,24 @@ jobs:
           if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP/godot-import.log"; then
             exit 1
           fi
+      - name: Sélectionner le groupe de nouveaux cas SDK
+        if: ${{ matrix.family != 'full' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          import json, os, pathlib
+          path = pathlib.Path('ci/godot-sdk-followup.json')
+          config = json.loads(path.read_text())
+          groups = config['groups']
+          selected = groups[os.environ['CD_GODOT_SDK_FAMILY']]
+          union = [suite for suites in groups.values() for suite in suites]
+          assert selected and len(union) == len(set(union)), 'Empty or duplicated SDK group'
+          assert set(union) == set(config['suites']), 'SDK groups must cover the complete followup manifest'
+          config['suites'] = selected
+          path.write_text(json.dumps(config))
+          print('SDK group:', os.environ['CD_GODOT_SDK_FAMILY'], 'suites:', len(selected))
+          PYCODE
       - name: Exécuter les suites qualifiées sans repli SKIP
         shell: bash
         env:
@@ -83,7 +107,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: xvfb-run -a -s '-screen 0 2560x1440x24' node ci/run-godot-sdk.cjs
       - name: Mesurer les petites fenêtres avec le vrai rendu X11
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope != 'followup' }}
+        if: ${{ matrix.family == 'full' }}
         shell: bash
         env:
           SDL_AUDIODRIVER: dummy
