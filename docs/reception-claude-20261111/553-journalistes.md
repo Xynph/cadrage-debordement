@@ -1,5 +1,17 @@
 # Réception PR553 — à corriger
 
+## Reprise du candidat e8bbc5e — 15:12UTC
+
+Head `e8bbc5ef6924f4c1382c2989b26745388bfa2f4e` : fusion de la branche précédente avec main96. Description et commentaires relus. La comparaison contre main96 et notre copie main96+patchfeee déjà reçue confirme les neuf fichiers produit/tests de la PR identiques par blob : banque93f7af7, saves64af0bc, media-packs7abefb2, press-identities1eb8e4a, pressce38c4f, worker7678f06, pack_views337d004, test du packcd831ef et test de banque90d6e9b. Le grand diff apparent par rapport àfeee vient du rattachement àmain, pas d’un correctif de projection des citations.
+
+La sonde durable [question et réponse](../qa/pr553-archive-quotes-repro.patch.md) a été rejouée sur ce code exact avec Node22 : **rc1**, même assertion `mot pour mot question et réponse archivées sous pack`. Les deux champs sont transformés : nom de journaliste de base→`Journaliste Test Zéro`, rédaction de base→`Rédaction Test 1`. Aucun ancien nom/ID privé n’est employé par la sonde. SHA256 du patch documentaire : `9e9d6c1d765755503d08245e4ba00ed64126957e3ec42ec21e43e04b28e09e12`.
+
+Tests officiels ciblés rejoués : `v60-question-bank` et `native-press-followups06` **PASS**. Le PASS antérieur du test officiel `press-identity-pack` porte sur les mêmes blobs produit/test exactement ; il n’a pas été rejoué une nouvelle fois. Aucun nouveau gros lot ni SDK/Godot.
+
+**Verdict actuel : à corriger sur e8bbc5e.** La fusion de main n’a pas résolu le défaut ; la description affirme toujours que les déclarations sont citées mot pour mot, ce que la sonde contredit. La migration n’est pas refusée par principe.
+
+## Historique de la première réception
+
 Réception indépendante du 11 novembre 2026, base `96f537040bf9f2e37bf10b0a9b09518b732244a2`, candidat `feee1891f3ffbea2b32afa65dc289251724b0b65` (deux commits `1e77b8e` puis `feee189`). Description et commentaires lus : aucun commentaire ; description obsolète, car le second commit fournit déjà la rubrique presse des packs et le test de migration annoncés comme non faits. La base de PR est `integration/oval-cloud-complet-20261110`, pas main ; seul le patch des deux commits a été appliqué dans une copie jetable de main96, sans conflit. Aucun fichier produit modifié dans la branche de réception.
 
 ## Bloquant : citations historiques réécrites à l’affichage

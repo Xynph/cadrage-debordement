@@ -1,7 +1,15 @@
-# Réception PR555 — candidatd93 reçu sur périmètre logique
+# Réception PR555 — candidateb426d8 reçu sur périmètre logique
 
 
-## Candidat courant d93 — 11 novembre, reprise14:49UTC
+## Reprise du candidat eb426d8 — 15:12UTC
+
+Head `eb426d83df0347000d7f4bd00040ca113d404fde`. Delta contre d93 limité à `docs/touche-cote-alignement-20261111.md` :11 lignes de documentation sur la coupe de réalisation dans la couche554. Aucun fichier produit/test changé. Commentaires relus, dont le reçu root sur d93.
+
+La preuve80/80 d93 est donc réutilisée explicitement, sans nouveau lot : blob `dist/match2d.js` identique `20859e027a760ed71d508e6c918f74f147e0c378`, test d’approche identique `7789928cbaf03b796a2c1a44604f2e2fd89dd9e6`, tous les autres fichiers code/tests identiques par absence de delta. Les résultats d93 restent15 140 ticks/2 690 scènes permises et état carrière/RNG inchangés.
+
+**Verdict courant : reçu logique/spatial sur eb426d8**, mêmes réserves graphiques et cumul554. Les changements éditoriaux sur le découpage caméra ne constituent pas une nouvelle preuve graphique de cette réception. Aucun SDK/Godot ni nouveau rejeu80 exécuté pour ce seul delta documentaire.
+
+## Réception d93 — 11 novembre, reprise14:49UTC
 
 SHA `d93c68b2a171f520e2053302430ea104732032b1`, comparé au reçu précédent `2f5d9ba57b3b98f4e99ca340393ad62aa91f0e62`. Description et commentaire de réception antérieure relus ; la description de PR n’a pas encore suivi tous les nouveaux changements, tandis que la documentation du candidat les décrit. Le nouveau patch de production est réel : ballon de touche sury0, extraction de `lineoutSpot`, anticipation des avants dans les scènes `touch`/`advantage` en lisant au plus les deux événements suivants. Le test partagé `match-actions` change son attente de ballony4 ày0 ; un nouveau test `lineout-approach` est ajouté. Aucune preuve80 antérieure transférée automatiquement.
 
