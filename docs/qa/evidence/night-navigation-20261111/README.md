@@ -13,6 +13,7 @@ dans les dossiers de travail et dans le bilan historique.
 | Catalogues et brouillons de prospects | 70 / 0 | `37ede657c3085e67e3727817d8eb0e28ca70b3ae` |
 | Staff après correction visuelle | 54 / 0 | `fbc642e1d3069895d5614caca433ab8f4c83bcf8` |
 | Vrai devis interclubs non vide | 66 / 0 | `dbe6a7e2b7bb22b0cb9d7d5f924e396f9cdd8e3f` |
+| Rapport réel archivé | 47 / 0 | `d896d631bd2ea141283c0e09609695a547a6b200` |
 
 Chaque sous-dossier contient `report.json`, `provenance.json`, les sorties TAP,
 le journal Godot et le journal moteur. Les reçus consignent les identifiants
@@ -23,7 +24,7 @@ un seul processus Godot lourd sous verrou partagé.
 
 ## Images sélectionnées
 
-Les huit PNG sont les originaux du rendu de l’application stock, sans retouche,
+Les dix PNG sont les originaux du rendu de l’application stock, sans retouche,
 recadrage ni recomposition. Aucun modèle, export Mixamo, profil sportif complet
 ou fixture complète n’est inclus.
 
@@ -43,6 +44,16 @@ staff incorrecte ; cette image est volontairement exclue du présent dossier.
 La réception visuelle du staff provient uniquement du groupe `staff` corrigé.
 La rencontre historique montre le résultat conservé : la projection de cette
 carrière ne conservait pas ses statistiques détaillées, qui ne sont pas inventées.
+
+Le cas `report` inclut les journaux de préparation : 37 commandes publiques
+acceptées créent la mission et font progresser deux semaines avant la baseline.
+La consultation suivante ne lance ni observation ni recrutement : zéro commande,
+profil/état sportif/seed/horloge inchangés. Le retour conserve la même instance
+du lecteur et son onglet de limites. Ces commandes de préparation sont distinctes
+des commandes de consultation.
+
+- [Rapport réel archivé, 2560×1440](images/rapport-observation-reel-2560.png).
+- [Limites du même rapport, 2560×1440](images/rapport-observation-limites-2560.png).
 
 ## Vérification
 

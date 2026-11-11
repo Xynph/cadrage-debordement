@@ -205,3 +205,33 @@ confirmé. Les compteurs de parole restent à zéro.
 
 Preuves : `/workspace/work/night-phase6-quote`, avec payload public exact,
 empreintes de profil avant/après, `report.json` et `provenance.json`.
+
+
+## Rapport réel archivé et retour au lecteur
+
+Le groupe graphique `report` a reçu **47 contrôles, zéro échec** sur
+`d896d631bd2ea141283c0e09609695a547a6b200`, en 60,417 secondes,
+préparation comprise et sans relever le plafond global de 180 secondes.
+La préparation distincte utilise 37 commandes publiques acceptées du vrai
+worker : nouvelle carrière `common`, mission sur une famille publiée, progression
+normale de deux semaines et rendez-vous réels. Elle conserve trois rapports
+`report-11`, `report-10`, `report-9`, sans injection de profil ou de modèle.
+
+Depuis le véritable onglet Rapports, Enter sur `MarketEntity_report-11` ouvre
+le lecteur exact de Gabin Garcia, tandis que le panneau d’Alexandre reste derrière.
+Les faits, estimations, limites et source datée affichés sont comparés aux chaînes
+archivées exactes ; aucune donnée masquée supplémentaire n’est révélée. Le lien
+vers le dossier actuel revient par Alt-gauche à la même instance du lecteur,
+avec l’onglet « À vérifier » conservé. Les deux PNG natifs 2560×1440 sont inspectés :
+identité, date et limites lisibles.
+
+Après la baseline, aucune commande d’observation ou de recrutement n’est envoyée.
+L’état sportif, le SHA-256 du profil, la seed et l’horloge persistées restent
+identiques ; compteurs de parole à zéro. Empreinte du profil avant/après :
+`016760df473facd2b7e389fb8454d8e2276489f1c0bbd4dc1d1ac7d4b27fffaa`.
+
+Preuves originales : `/workspace/work/night-phase7-report`. Copies vérifiées,
+préparation séparée, provenance exacte et PNG sans retouche :
+[evidence/night-navigation-20261111](evidence/night-navigation-20261111/README.md).
+Ces sept reçus ciblés portent sur leurs SHA respectifs et ne remplacent pas
+une campagne SDK complète sur un même candidat.
