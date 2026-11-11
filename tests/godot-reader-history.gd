@@ -152,6 +152,10 @@ func run() -> void:
 	await command("export")
 	check(before == JSON.parse_string(app.model.meta.exportText).state, "État sportif et RNG exportés strictement inchangés")
 	check(nav._readers.is_empty() and not is_instance_valid(club) and not is_instance_valid(detail), "Nouvelle réponse worker invalide et libère toute la chaîne de lecteurs")
+	var contexts := 0
+	for child: Node in app.get_children():
+		if child.has_meta("reading_dialog"): contexts += 1
+	check(contexts == 0 and app.find_children("_NavigationReader_*", "Window", true, false).is_empty(), "Aucun contexte de consultation ni fenêtre suspendue ne fuit après invalidation")
 	nav._travel(-1)
 	await settle()
 	check(visible_readers() == 0, "L’historique ne ressuscite aucun lecteur d’une ancienne projection")
