@@ -10,6 +10,7 @@ var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 var engine_pid := -1
 var events := {"starts":0,"ends":0}
 var report := {"mode":"resume","before":{},"first_mutations":[],"mandatory_meetings":[],"graphics":{"passed":false,"window":[],"captures":[]}}
+var graphics_trace: Array[Dictionary] = []
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -20,12 +21,31 @@ func check(ok: bool, message: String) -> void:
 		failures.append(message)
 		printerr("FAIL: ", message)
 
+func trace_graphics(stage: String, details: Dictionary = {}) -> void:
+	var event := {"stage":stage,"engine_ms":Time.get_ticks_msec(),"process_frames":Engine.get_process_frames(),"frames_drawn":Engine.get_frames_drawn(),"window_mode":root.mode,"window":[root.size.x,root.size.y]}
+	event.merge(details)
+	graphics_trace.append(event)
+	report.graphics_trace = graphics_trace
+	print("CD_WINDOWS_GRAPHICS ",JSON.stringify(event))
+	# This separate diagnostic survives a blocked first frame or worker wait;
+	# it is never a replacement for the final graphical report and PNG checks.
+	if output.is_absolute_path():
+		DirAccess.make_dir_recursive_absolute(output)
+		var handle := FileAccess.open(output.path_join("graphics-progress.json"),FileAccess.WRITE)
+		if handle != null: handle.store_string(JSON.stringify(graphics_trace)); handle.close()
+
 func wait_ready() -> bool:
 	var deadline := Time.get_ticks_msec() + 90000
+	var next_trace := Time.get_ticks_msec() + 5000
+	trace_graphics("worker.wait.begin", {"child_pid":app.bridge.child_pid})
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline:
 		await process_frame
+		if Time.get_ticks_msec() >= next_trace:
+			trace_graphics("worker.wait.pending", {"child_pid":app.bridge.child_pid,"waiting":app.waiting,"model_empty":app.model.is_empty(),"last_error":app.last_error})
+			next_trace = Time.get_ticks_msec() + 5000
 	app.timer.stop()
 	var ok: bool = not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
+	trace_graphics("worker.wait.end", {"ready":ok,"child_pid":app.bridge.child_pid,"last_error":app.last_error})
 	check(ok, "Actual packaged worker responds: " + app.last_error)
 	return ok
 

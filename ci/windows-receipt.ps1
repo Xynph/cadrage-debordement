@@ -189,7 +189,7 @@ try {
             $output = Join-Path $EvidenceRoot $variant
             $driver = if ($variant -eq 'angle-clean') { 'opengl3_angle' } else { 'opengl3' }
             try {
-                $processReceipt = Run-Game 'graphics' @('--verbose','--audio-driver','Dummy','--rendering-method','gl_compatibility','--rendering-driver',$driver,'--windowed','--resolution','2560x1440','--max-fps','60','--script',(Join-Path $PSScriptRoot 'windows-graphics-smoke.gd')) (Join-Path $EvidenceRoot "profiles/$variant/PrototypeGodot") $output $exe $nodeExe 90
+                $processReceipt = Run-Game 'graphics' @('--verbose','--audio-driver','Dummy','--rendering-method','gl_compatibility','--rendering-driver',$driver,'--windowed','--resolution','2560x1440','--disable-vsync','--max-fps','60','--script',(Join-Path $PSScriptRoot 'windows-graphics-smoke.gd')) (Join-Path $EvidenceRoot "profiles/$variant/PrototypeGodot") $output $exe $nodeExe 90
                 Python-Check @('graphics','--report',(Join-Path $output 'report.json'),'--process',(Join-Path $output 'process.json'),'--manifest',$manifestPath,'--executable',$exe,'--driver',$driver)
                 $Report.attempts += @{variant=$variant;passed=$true;report=(Read-Json (Join-Path $output 'report.json'));process=$processReceipt}
                 $Report.passed = $true
