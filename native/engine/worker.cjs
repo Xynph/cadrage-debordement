@@ -460,7 +460,7 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
-      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1'){ctx.nativeStartingSalaries=require('./starting-salaries.cjs');run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})),34);");delete ctx.nativeStartingSalaries;}
+      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1'){ctx.nativeStartingSalaries=require('./starting-salaries.cjs');run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})));");delete ctx.nativeStartingSalaries;}
       run('autoLineup();');
       delete ctx.nativeCreationVariation;
      }
