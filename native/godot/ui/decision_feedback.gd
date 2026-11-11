@@ -33,6 +33,7 @@ func begin(command: String, payload: Dictionary, model: Dictionary) -> void:
 		_pending = {"command":command}
 	elif TITLES.has(command):
 		_pending = {"command":command,"payload":payload.duplicate(true),"before":_metrics(model),"evidence":_evidence(command,payload,model),"detail":_detail(command,payload,model),"targets":_targets(command,payload,model)}
+		if command == "train": _pending.training = _training_snapshot(model)
 
 func complete(command: String, ok: bool, model: Dictionary) -> void:
 	if command in ["new_career","import","recover_profile","restore_checkpoint"] and ok:
@@ -66,6 +67,11 @@ func complete(command: String, ok: bool, model: Dictionary) -> void:
 	for metric in ["cash","wage","morale"]:
 		if pending.before.get(metric) == null or after.get(metric) == null: continue
 		lines.append(_metric_line(metric,pending.before[metric],after[metric]))
+	var targets: Array = pending.get("targets",[])
+	if command == "train":
+		var observed := _training_changes(pending.get("training",{}),model)
+		for line: String in observed.lines: lines.append(line)
+		for target: Dictionary in observed.targets: targets.append(target)
 	var summary := title
 	if not detail.is_empty(): summary += " · " + detail
 	# Le pied de page reste bref ; le reçu complet est consultable volontairement.
@@ -73,12 +79,81 @@ func complete(command: String, ok: bool, model: Dictionary) -> void:
 		if pending.before.get(metric) != null and after.get(metric) != null and pending.before[metric] != after[metric]:
 			summary = title + " · " + _metric_line(metric,pending.before[metric],after[metric])
 			break
-	_receipts.append({"command":command,"title":title,"text":"\n".join(lines),"summary":summary,"before":pending.before,"after":after,"targets":pending.get("targets",[])})
+	_receipts.append({"command":command,"title":title,"text":"\n".join(lines),"summary":summary,"before":pending.before,"after":after,"targets":targets})
 	if _receipts.size() > LIMIT: _receipts.pop_front()
 
 func _metrics(model: Dictionary) -> Dictionary:
 	var finance: Dictionary = model.get("finance",{})
 	return {"cash":finance.get("cash"),"wage":finance.get("wage"),"morale":model.get("meta",{}).get("morale")}
+
+func _training_snapshot(model: Dictionary) -> Dictionary:
+	var club: Variant = model.get("club")
+	var meta: Variant = model.get("meta")
+	var squad: Variant = model.get("squad")
+	if not club is Dictionary or not meta is Dictionary or not squad is Array: return {}
+	if club.get("id") == null or not meta.get("mode") is String or str(meta.mode).is_empty() or meta.get("season") == null or meta.get("week") == null: return {}
+	if not (club.id is int or club.id is float or club.id is String): return {}
+	if club.id is String and str(club.id).is_empty(): return {}
+	if (club.id is int or club.id is float) and not is_finite(float(club.id)): return {}
+	for value: Variant in [meta.season,meta.week]:
+		if not (value is int or value is float) or not is_finite(float(value)): return {}
+	if float(meta.season)<1 or float(meta.week)<0: return {}
+	var context := {"club":club.id,"mode":meta.mode,"season":meta.season,"week":meta.week}
+	var counts: Dictionary = {}
+	for person: Variant in squad:
+		if person is Dictionary and person.get("id") is String and not str(person.id).is_empty(): counts[person.id]=int(counts.get(person.id,0))+1
+	var people: Dictionary = {}
+	for person: Variant in squad:
+		if not person is Dictionary or not person.get("id") is String or counts.get(person.id,0)!=1: continue
+		var knowledge: Variant = person.get("knowledge")
+		if not knowledge is Dictionary or not knowledge.get("owned") is bool or knowledge.owned!=true: continue
+		var known := {"name":person.name if person.get("name") is String else "Joueur"}
+		# Only current public values of the owned squad. No potential, attributes,
+		# market rows, academy rows or forecast is copied into this UI receipt.
+		for field in ["condition","physicalLoad","rating"]:
+			var value: Variant = person.get(field)
+			if (value is int or value is float) and is_finite(float(value)) and float(value)>=0 and float(value)<=100: known[field]=float(value)
+		people[person.id]=known
+	return {"context":context,"people":people}
+
+func _observed_number(value: float) -> String:
+	var rounded := roundf(value*10.0)/10.0
+	return ("%.1f" % rounded).trim_suffix(".0").replace(".",",")
+
+func _training_changes(before: Dictionary, model: Dictionary) -> Dictionary:
+	var result := {"lines":[],"targets":[]}
+	var after := _training_snapshot(model)
+	if before.is_empty() or after.is_empty() or before.get("context")!=after.get("context"): return result
+	var previous: Dictionary = before.get("people",{})
+	var current: Dictionary = after.people
+	var impact: Dictionary = {}
+	for metric in [["condition","Condition moyenne"," %"],["physicalLoad","Charge moyenne"," / 100"],["rating","Niveau moyen"," / 100"]]:
+		var field: String = metric[0]
+		var count := 0
+		var old_total := 0.0
+		var new_total := 0.0
+		var changes: Dictionary = {}
+		for id: String in previous:
+			if not current.has(id) or not previous[id].has(field) or not current[id].has(field): continue
+			count+=1
+			old_total+=float(previous[id][field])
+			new_total+=float(current[id][field])
+			changes[id]=absf(float(current[id][field])-float(previous[id][field]))
+		if count==0: continue
+		var old_text := _observed_number(old_total/count)
+		var new_text := _observed_number(new_total/count)
+		# A numerical difference that rounds to the same visible value must not
+		# become a 0→0 observation or create a new link to noise.
+		if old_text==new_text: continue
+		result.lines.append("%s de %d joueur%s présent%s avant et après : %s → %s%s." % [metric[1],count,"s" if count>1 else "","s" if count>1 else "",old_text,new_text,metric[2]])
+		for id: String in changes:
+			if float(changes[id])>0: impact[id]=float(impact.get(id,0))+float(changes[id])
+	var ids: Array = impact.keys()
+	ids.sort_custom(func(a: String,b: String): return float(impact[a])>float(impact[b]) if impact[a]!=impact[b] else a<b)
+	for id: String in ids.slice(0,2):
+		result.targets.append({"target":{"kind":"player","id":id},"label":str(current[id].get("name","Joueur"))})
+	return result
+
 func _person(model: Dictionary, player_id: String) -> Dictionary:
 	for group in [model.get("squad",[]),model.get("decisions",{}).get("development",{}).get("academy",[]),model.get("market",[])]:
 		for p: Dictionary in group:
