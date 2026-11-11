@@ -8,8 +8,9 @@
 //  - vis-à-vis du lanceur à 2 m de la marque (côté de son équipe) et à 2 m de la ligne des 5 m ;
 //  - un receveur (demi de mêlée) par équipe à 2 m de sa rangée, entre 5 et 15 m ;
 //  - non-participants à 10 m au moins de la ligne de remise en jeu, ou sur leur ligne de but si elle est plus proche.
-// Abstractions de la scène, non figées ici : position du ballon (y = 4, marque du moteur),
-// ordre des joueurs dans la rangée, espacement régulier, choix du talonneur comme lanceur.
+//  - ballon dans les mains du lanceur (scène : y = 0 sur la marque ; le moteur garde y = 4 dans son fait).
+// Abstractions de la scène, non figées ici : ordre des joueurs dans la rangée, espacement régulier,
+// choix du talonneur comme lanceur.
 // Repère : x de 0 (ligne de but de l'équipe 0) à 100, y de 0 (ligne de touche de la touche) à 70.
 const assert = require('node:assert/strict');
 const { context } = require('./harness.cjs');
@@ -31,6 +32,9 @@ function verify(raw, expectedMark) {
   assert.ok([0, 1].includes(team), label);
   const mark = ball.x;
   if (expectedMark !== undefined) assert.equal(mark, expectedMark, `${label} : marque de la scène`);
+  assert.equal(ball.y, 0, `${label} : ballon sur la ligne de touche, dans les mains du lanceur`);
+  const thrower = raw.players.find(p => p.side === team && p.slot === 1);
+  if (thrower) assert.ok(thrower.x === ball.x && thrower.y === ball.y, `${label} : ballon à la place du lanceur`);
   assert.ok(mark >= 5 && mark <= 95, `${label} : jamais à moins de 5 m d'une ligne de but`);
   const P = raw.players;
   const rows = [0, 1].map(side => P.filter(p => p.side === side && p.slot < 8 && p.slot !== 1));
@@ -128,6 +132,7 @@ for (const team of [0, 1]) {
       // La marque ramenée à 5 m ne touche pas l'action sportive enregistrée.
       assert.equal(run('S.live.territory'), territory);
       assert.equal(run('S.live.events.at(-1).scene.to.x'), x);
+      assert.equal(run('S.live.events.at(-1).scene.to.y'), 4);
     }
   }
 }
