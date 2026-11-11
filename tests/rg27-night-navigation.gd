@@ -194,11 +194,17 @@ func reading_cases() -> void:
 	var market: Array = app.model.get("market", [])
 	check(not market.is_empty(), "Cible hors club réellement projetée")
 	if not market.is_empty():
-		var outsider: Dictionary = market[0]
+		var limited: Array = market.filter(func(person: Dictionary): return not person.get("knowledge", {}).get("owned", false) and person.get("knowledge", {}).get("stage") == "unobserved")
+		check(not limited.is_empty(), "Vraie cible hors club non observée disponible pour la recette")
+		var outsider: Dictionary = limited[0] if not limited.is_empty() else market[0]
 		var outsider_before := JSON.stringify(outsider)
 		check(await open_entity("market", str(outsider.id)), "Cible hors club : dossier de recrutement par ID")
 		check(app.route == "Recrutement" and str(app.management_ui.market.get("navigation_id", "")) == str(outsider.id), "Bonne piste ouverte sans homonyme")
-		check(JSON.stringify(app.model.market[0]) == outsider_before, "Aucune information supplémentaire injectée dans la projection hors club")
+		var after: Array = app.model.market.filter(func(person: Dictionary): return str(person.id) == str(outsider.id))
+		check(after.size() == 1 and JSON.stringify(after[0]) == outsider_before, "Aucune information supplémentaire injectée dans la projection hors club")
+		if not limited.is_empty():
+			check(outsider.get("rating") == null and outsider.get("potential") == null and outsider.get("ratingRange") == null and outsider.get("potentialRange") == null, "Cible non observée : aucun niveau ou potentiel exact ni intervalle révélé")
+			check(text(named("RecruitmentProfilePanel")).contains("—"), "Dossier hors club non observé : les valeurs inconnues restent absentes à l’écran")
 		await capture("recrutement-cible-2560")
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	if not teams.is_empty() and not teams[0].get("members", []).is_empty():
