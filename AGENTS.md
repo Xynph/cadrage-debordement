@@ -16,6 +16,12 @@ Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre
 [gate officiel déployé](docs/chat-release-gate.md), avec toute autorisation
 qu’il exige. Aucun push direct sur `main`.
 
+Le 11 novembre 2026, Léo a confirmé son autorisation permanente de fusionner
+dans le périmètre demandé. Ne pas redemander cet accord déjà fourni : appliquer
+le gate officiel, les protections serveur et la coordination des responsabilités.
+Une réservation non résolue ou un contrôle rouge reste un blocage à traiter,
+sans contourner les contrôles ni élargir le périmètre autorisé.
+
 Expliquer brièvement chaque phase à Léo en français, puis avancer dans le
 périmètre autorisé. Rendre le résultat, le lien de la PR et la prochaine étape
 concrète.
