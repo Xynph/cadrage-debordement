@@ -127,3 +127,12 @@ la navigation depuis cette fenêtre est refusée.
 
 Tous les Godot lourds passent par `/workspace/work/rg27-godot.lock`, audio Dummy.
 Aucun reçu Windows, faux aperçu ou lancement TTS n’est revendiqué ici.
+
+## Réception du scroll du vestiaire
+
+Le scénario graphique gestion sur `d40311c053aba931756df212c2690adb04a76994`
+reçoit 61 contrôles / 0 échec, 0 demande / 0 démarrage de parole et deux PNG
+réels 2560×1440. Les noms stables des deux listes du vestiaire permettent
+le retour exact à la position 90 sans relâcher le résolveur commun.
+Le [diagnostic rouge et la réception par SHA](night-management-scroll-20261111.md)
+distinguent la préparation du bon onglet du défaut produit de défilement.
