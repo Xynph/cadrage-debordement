@@ -126,3 +126,36 @@ n’est ajoutée pour satisfaire artificiellement une assertion de test.
 Les dossiers de cette reprise sont `night-final-qa-v2/{reading,guards}` et
 `night-final-qa-v3/reading` pour l’amorce rejetée. Ils conservent leurs
 `provenance.json` et journaux au lieu d’être écrasés par la prochaine réception.
+
+## Réception des liens et brouillons sur `37ede657`
+
+SHA complet : `37ede657c3085e67e3727817d8eb0e28ca70b3ae`.
+
+| Groupe | Reçu réel | Périmètre |
+| --- | --- | --- |
+| `reading` | 133 contrôles, 0 échec, 10 PNG | Vrai clic sur nom d’effectif, drapeau au clavier, joueur non observé, staff par ID, club adverse et titre public, retour recherche/tri/scroll, vrai glisser annulé, graphique de charge puis retour sur son filtre et défilement non nul. Fiche aux cinq tailles demandées. |
+| `prospects` | 70 contrôles, 0 échec, 2 PNG | Vrais catalogues de relève et interclubs, dossier enfant du bon ID/source, retour à la même fenêtre et au même focus, brouillon indemnité/salaire/joueur/devis conservé, double ouverture et confirmation de test refusées. |
+
+Les deux groupes ont zéro commande déclenchée par leurs consultations, zéro
+demande/début de parole, le même profil octet pour octet, les mêmes seed/horloge
+persistés et le même état sportif exporté. Les journaux et PNG se trouvent dans
+`/workspace/work/night-final-qa-v4/{reading,prospects}`. Les deux images de
+prospects et celle du club adverse ont été effectivement inspectées.
+
+La carrière `common`, club 0, a réellement projeté neuf candidats de relève et
+1 422 candidats interclubs disponibles dans ce profil. Le test a donc activé le
+vrai bouton `InterclubOffer`, puis modifié uniquement les champs du brouillon,
+avant la consultation. Le repli par création publique d’une carrière `fiction`,
+club 13, n’a pas été utilisé. Aucune disponibilité, économie ou identité n’a été
+injectée dans le modèle.
+
+La confirmation de refus des inspections est une fixture UI explicitement
+isolée : un vrai composant `ConfirmationDialog` sans commande attachée. Elle ne
+constitue pas une transaction ni un devis de négociation reçu du moteur.
+
+**Réserve visuelle trouvée par inspection réelle :** la nouvelle fiche staff
+sur ce SHA affichait le nom, la fonction et l’âge en colonne d’une lettre. Les
+assertions d’identité et de lecture pure passaient, mais ce visuel n’est pas
+qualifié. Le propriétaire a préparé le correctif `885071b2` (`G.fill(words)`).
+Un groupe `staff` ciblé et une assertion de largeur/nombre de lignes ont été
+ajoutés pour recevoir ce correctif sans répéter les parcours déjà reçus.
