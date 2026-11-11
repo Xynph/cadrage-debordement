@@ -127,9 +127,10 @@ Choix tranchés (Léo absent) :
 Le trajet total d'un avant (scène précédente → touche) est inchangé (médiane 42,1 m,
 max 59,2 m) : la scène ne fait que le couper en deux. **La vue par défaut affiche
 toujours chaque transition en 0,55 s** : la moitié de 58,7 m reste une course
-absurde (voir « Ce qui change à l'écran »). La durée de mise en place relève de la
-présentation : elle est traitée dans la couche de gestes de la PR #554, qui
-contient cette branche.
+absurde (voir « Ce qui change à l'écran »). La mise en place relève de la
+présentation : dans la couche de gestes de la PR #554 (qui contient cette branche),
+le temps mort n'est plus animé (consigne de Léo, façon Football Manager) : plan de
+fin d'action quand le ballon sort, puis coupe sur l'alignement déjà formé.
 
 Mesures avant ce lot, conservées pour mémoire : vue Godot par défaut, touche réelle
 (graine 1, club 0, 10ᵉ minute, marque 64), plus long trajet 28,0 → 41,7 m et pointe
@@ -139,8 +140,8 @@ Mesures avant ce lot, conservées pour mémoire : vue Godot par défaut, touche 
 
 La PR #554 fusionne cette branche (fusion ordinaire) et l'accorde : fixture
 régénérée, détection de la touche par le type de scène (plus par `origin.y == 4`),
-places d'alignement lues dans la scène, durée de mise en place proportionnelle au
-plus long trajet. Voir `docs/match-gestes-20261111.md` sur cette branche.
+places d'alignement lues dans la scène, coupe de réalisation sur la touche formée
+(course à allure crédible seulement pour une mise en place de moins de 11 m). Voir `docs/match-gestes-20261111.md` sur cette branche.
 
 ## Ce qui change à l'écran (vue par défaut, sans `CD_MATCH_GESTES`)
 
