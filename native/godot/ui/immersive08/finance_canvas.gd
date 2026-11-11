@@ -7,6 +7,7 @@ const Link = preload("res://ui/entity_link.gd")
 const G = preload("res://ui/game_skin.gd")
 const KEY = "immersive08_finance_tab"
 const PAGE_KEY_PREFIX = "immersive08_finance_page_"
+const LEDGER_SELECTION_KEY := "immersive08_finance_ledger_selection"
 const WAGES_SCOPE_KEY = "immersive08_finance_wages_due"
 const TABS = [["summary","Synthèse"],["cash","Trésorerie"],["wages","Salaires"],["transfers","Transferts"],["budget","Budget"]]
 const CHART_GREEN = Color("53cd75")
@@ -56,13 +57,42 @@ class LedgerPlot extends Control:
 			draw_circle(point, C.px(7), C.BG)
 			draw_circle(point, C.px(5), C.IVORY)
 
-static func target_available(_app: Control, id: Variant) -> bool:
-	return TABS.any(func(tab: Array): return tab[0] == str(id))
+# Ledger receipts have no persisted accounting identifier. Their read-only
+# locator binds an occurrence to the entire ordered projection: a new receipt,
+# correction or reordering invalidates it instead of opening another operation.
+static func _ledger_projection(app: Control) -> Array:
+	var finance: Variant = app.model.get("finance")
+	var entries: Variant = finance.get("ledger", app.model.get("ledger", [])) if finance is Dictionary else app.model.get("ledger", [])
+	return entries if entries is Array else []
+
+static func ledger_locator(entries: Array, index: int) -> String:
+	if index < 0 or index >= entries.size() or not entries[index] is Dictionary: return ""
+	var entry: Dictionary = entries[index]
+	var amount: Variant = entry.get("amount")
+	if not entry.get("title") is String or not (amount is int or amount is float) or not is_finite(float(amount)): return ""
+	return "ledger:%s:%d" % [JSON.stringify(entries).sha256_text(), index]
+
+static func ledger_index(app: Control, locator: Variant) -> int:
+	if not locator is String: return -1
+	var parts: PackedStringArray = locator.split(":")
+	if parts.size() != 3 or parts[0] != "ledger" or not parts[2].is_valid_int(): return -1
+	var index := parts[2].to_int()
+	return index if ledger_locator(_ledger_projection(app),index) == locator else -1
+
+static func target_available(app: Control, id: Variant) -> bool:
+	return ledger_index(app,id) >= 0 or TABS.any(func(tab: Array): return tab[0] == str(id))
 
 static func open_target(app: Control, id: Variant) -> bool:
 	if not target_available(app, id): return false
-	app.management_ui[KEY] = str(id)
+	var index := ledger_index(app,id)
+	app.management_ui[KEY] = "cash" if index >= 0 else str(id)
+	if index >= 0:
+		app.management_ui[LEDGER_SELECTION_KEY] = str(id)
+		app.management_ui[PAGE_KEY_PREFIX + "cash"] = floori(float(index) / 8.0)
 	app._navigate("Finances", false)
+	if index >= 0:
+		var target := app.find_child("FinanceLedgerTarget",true,false) as Control
+		if target != null: target.call_deferred("grab_focus")
 	return true
 
 static func build(app: Control, canvas: Control) -> void:
@@ -142,13 +172,13 @@ static func _metrics(app: Control, canvas: Control, accounts: Dictionary, financ
 		D.place(open,Rect2(0,0,550,135))
 
 static func _summary(app: Control, canvas: Control, finance: Dictionary, ledger: Array) -> void:
-	_chart(D.panel(canvas, Rect2(0,346,1398,375), "Flux de trésorerie", "money", "", "FinanceChart"), ledger)
+	_chart(app, D.panel(canvas, Rect2(0,346,1398,375), "Flux de trésorerie", "money", "", "FinanceChart"), ledger)
 	_allocation(D.panel(canvas, Rect2(1414,346,834,375), "Répartition des charges connues", "money", "", "FinanceAllocation"), finance)
 	_ledger(D.panel(canvas, Rect2(0,737,1398,392), "Flux récents", "calendar", "", "FinanceLedger"), app, ledger, 8, "summary")
 	_watch(D.panel(canvas, Rect2(1414,737,834,185), "Vigilances", "warning", "", "FinanceWatch"), app, finance)
 	_due(D.panel(canvas, Rect2(1414,938,834,191), "Prochaines échéances", "calendar", "", "FinanceDue"), app, finance)
 
-static func _chart(card: Panel, ledger: Array) -> void:
+static func _chart(app: Control, card: Panel, ledger: Array) -> void:
 	var recent := ledger.slice(0,12)
 	var graph := LedgerPlot.new()
 	graph.name = "FinanceLedgerPlot"
@@ -164,6 +194,19 @@ static func _chart(card: Panel, ledger: Array) -> void:
 		var stride := 1239.0/12.0
 		var x := 1373.0 - stride*(i+.5)
 		D.text(card, x, 330, "n° %d" % (i+1), 20, C.MUTED, 500, 96, HORIZONTAL_ALIGNMENT_CENTER)
+		var locator := ledger_locator(ledger,i)
+		if not locator.is_empty():
+			var link := Button.new()
+			link.name = "FinanceChartOperation_" + str(i)
+			link.flat = true
+			link.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+			link.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.06),Color(C.MINT,.55),3,0))
+			link.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,3,0))
+			link.set_meta("ledger_index",i)
+			var caption := "Écriture n° %d · %s · %s" % [i+1,str(recent[i].title),G.euros(recent[i].amount)]
+			Link.bind(link,app,{"kind":"finance","id":locator},caption)
+			card.add_child(link)
+			D.place(link,Rect2(x-stride*.5,96,stride,208))
 	var labels := [["Cumul net affiché",C.IVORY,800],["Entrées",CHART_GREEN,1044],["Sorties",CHART_RED,1182]]
 	for entry: Array in labels:
 		D.rect(card, Rect2(entry[2],25,19,12), entry[1], 2)
@@ -244,16 +287,25 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 	if ledger.is_empty():
 		D.text(card, 23, 161, "Aucune opération enregistrée dans ce journal.", 31, C.IVORY, 700, 1350)
 		D.text(card, 23, 196, "Les écritures seront consultables ici au fil de la carrière.", 23, C.MUTED, 500, 1350)
+	var selected_index := ledger_index(app,app.management_ui.get(LEDGER_SELECTION_KEY,"")) if key == "cash" else -1
 	for i in mini(limit,ledger.size()-first):
 		var entry: Dictionary = ledger[first+i]
 		var title := str(entry.get("title","Opération"))
 		var category := _category(title)
 		var amount := float(entry.get("amount",0))
 		var y := 103+i*33
-		if i%2 == 0: D.rect(card, Rect2(12,y,1374,32), Color("131e20"))
+		var selected := selected_index == first+i
+		if selected: D.rect(card,Rect2(12,y,1374,32),Color("234538"),3,C.GOLD).name = "FinanceLedgerSelection"
+		elif i%2 == 0: D.rect(card, Rect2(12,y,1374,32), Color("131e20"))
 		D.text(card, 24, y+24, "%02d" % (first+i+1), 21, C.MUTED, 500, 47)
 		U.icon(card, category[1], Vector2(77,y+6), category[2], 21)
-		D.text(card, 113, y+24, title, 23, C.IVORY, 500, 610)
+		var title_label := D.text(card, 113, y+24, title, 23, C.IVORY, 500, 610)
+		if selected:
+			title_label.name = "FinanceLedgerTarget"
+			title_label.focus_mode = Control.FOCUS_ALL
+			title_label.set_meta("ledger_index",selected_index)
+			title_label.set_meta("ledger_entry",entry.duplicate(true))
+			title_label.accessibility_name = "Écriture n° %d · %s · %s" % [selected_index+1,title,G.euros(amount)]
 		D.chip(card, Rect2(749,y+3,163,27), category[0], category[2])
 		D.text(card, 1112, y+24, "+"+G.euros(amount) if amount > 0 else G.euros(amount) if amount == 0 else "—", 22, C.MINT if amount > 0 else C.MUTED, 600, 183, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(card, 1367, y+24, G.euros(amount) if amount < 0 else "—", 22, C.ALERT if amount < 0 else C.MUTED, 600, 203, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -317,7 +369,7 @@ static func _strategy(app: Control) -> void:
 	app._navigate("Stratégie")
 
 static func _cash(app: Control, canvas: Control, ledger: Array) -> void:
-	_chart(D.panel(canvas, Rect2(0,346,1398,375), "Flux de trésorerie", "money", "", "FinanceChart"), ledger)
+	_chart(app, D.panel(canvas, Rect2(0,346,1398,375), "Flux de trésorerie", "money", "", "FinanceChart"), ledger)
 	_ledger(D.panel(canvas, Rect2(0,737,1398,392), "Journal des flux", "calendar", "", "FinanceLedger"), app, ledger, 8, "cash")
 	var totals := D.panel(canvas, Rect2(1414,346,834,783), "Écritures du journal", "money", "", "FinanceJournalTotals")
 	var incoming := 0.0
