@@ -1,5 +1,6 @@
 extends SceneTree
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
+const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
 const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 class ReadingApp extends Control:
 	var model: Dictionary
@@ -53,6 +54,15 @@ func _initialize() -> void:
 	context._context(true)
 	check(context.own.is_empty() and app.management_ui.competition.club_league=="other" and app.management_ui.competition.tab=="stats" and app.table_division=="other","Contexte sans club conserve division et onglet de lecture")
 	context.free()
+	app.model.decisions = {"recruitment":{"reports":[{"id":"report-1","playerId":"former-market","name":"Nom archivé","assessment":{"observed":["Fait conservé"]}}]}}
+	app.model.market = []
+	var report_model := JSON.stringify(app.model)
+	check(Recruitment.target_available(app,"report-1"),"Rapport archivé accessible même après sortie du marché")
+	check(not Recruitment.target_available(app,"missing") and not Recruitment.target_available(app,""),"Rapport absent ou sans ID refusé")
+	app.model.decisions.recruitment.reports.append({"id":"report-1","playerId":"other"})
+	check(not Recruitment.target_available(app,"report-1"),"ID de rapport ambigu refusé")
+	app.model.decisions.recruitment.reports.pop_back()
+	check(JSON.stringify(app.model)==report_model and app.commands==0,"Résolution des rapports conserve modèle et commandes")
 	app.free()
 	print("WORLD ENTITY TARGETS : ",checks," contrôles ; ",failures.size()," échec(s)")
 	quit(0 if failures.is_empty() else 1)

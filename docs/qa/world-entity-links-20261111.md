@@ -50,3 +50,26 @@ Aucun moteur de calendrier/économie, fichier d’animation, ZIP ou Windows modi
 ne constituent pas une recette d’une rencontre historique réelle ; celle-ci est
 réservée au harness fonctionnel commun. Les nouvelles captures et l’état de la
 CI doivent être cités avec le SHA effectivement validé dans la PR commune.
+
+## Rapports et dossiers de recrutement
+
+`Recruitment.target_available/open_target(app, report_id)` ouvre uniquement le
+rapport conservé correspondant à `decisions.recruitment.reports[].id`, y compris
+après le départ du joueur du marché. Les identifiants absents ou dupliqués sont
+refusés. Le rapport garde ses faits et avis datés ; aucune évaluation actuelle
+n’est substituée à son contenu. Un accès au dossier actuel n’apparaît que si
+le `playerId` est toujours publié une fois dans le marché courant.
+
+Les noms/portraits du marché ouvrent le dossier de recrutement ; ceux de
+l’archive ouvrent le rapport complet exact. Le statut de rapport de la ligne
+et sa source datée ouvrent également le rapport. La sélection locale de ligne,
+le tri, le suivi, l’observation et les offres restent des gestes distincts.
+Les candidats des fenêtres Relève et Marché entre clubs ne reçoivent aucun
+lien vers un joueur absent de la projection marché. Le tableau actuel ne
+présente pas de club employeur pour ses agents libres ; aucun club n’est inféré.
+
+Contrôles stables : `MarketEntity_ID`, `MarketReportLink_ID`,
+`RecruitmentPortraitLink`, `RecruitmentNameLink`, `RecruitmentSourceReport`,
+`OpenScoutReport`. Dialogue `RecruitmentReport` avec `entity_kind=report` et
+`entity_id=report.id`. Le lien optionnel vers le marché s’appelle
+`ReportCurrentPlayer`.
