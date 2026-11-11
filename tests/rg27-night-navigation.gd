@@ -449,6 +449,7 @@ func quote_cases() -> void:
 	salary.value = minf(salary.max_value, salary.value + salary.step)
 	await settle()
 	var request: Dictionary = market._payload().duplicate(true)
+	var before_quote := await snapshot()
 	var command_before: int = app.bridge._next_id
 	await activate(market.find_child("InterclubNegotiate", true, false))
 	var deadline := Time.get_ticks_msec() + 30000
@@ -466,6 +467,9 @@ func quote_cases() -> void:
 	if scroll != null and message != null: scroll.ensure_control_visible(message); await settle()
 	await capture("devis-interclub-recu-2560")
 	var before := await snapshot()
+	check(before.state == before_quote.state and before.sha256 == before_quote.sha256, "Préparation du devis réel : état sportif et profil inchangés")
+	check(before.seed == before_quote.seed and before.clock == before_quote.clock, "Préparation du devis réel : seed et horloge persistés inchangés")
+	visits.append({"preparation":"contrôle avant/après devis réel", "profile_sha256_before":before_quote.sha256,"profile_sha256_after":before.sha256,"saved_seed_before":before_quote.seed,"saved_seed_after":before.seed,"saved_clock_before":before_quote.clock,"saved_clock_after":before.clock,"state_unchanged":before.state == before_quote.state})
 	check(market.negotiation == quote, "L’export de baseline conserve le vrai devis préparé")
 	var link := market.find_child("InterclubProfile_" + str(person.id).validate_node_name(), true, false) as Control
 	if scroll != null and link != null:
