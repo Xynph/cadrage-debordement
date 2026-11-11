@@ -56,7 +56,7 @@ module.exports=function nativeModel(){
   const slots=vacantMatchSlots(sheet.lineup,sheet.bench);
   if(slots.length){
    const places=professionalPlaces(own);
-   const quote={slots,places,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary:slots.length*COVER_WEEKLY_SALARY};
+   const coverSalary=typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():COVER_WEEKLY_SALARY,quote={slots,places,weeklySalary:coverSalary,totalWeeklySalary:slots.length*coverSalary};
    if(!S.trained&&team.players.some(p=>p.injury===1)){
     const recovered={...team,players:team.players.map(p=>p.injury===1?{...p,injury:0}:p)};
     const after=buildSheet(recovered,S.lineup,S.reserves);

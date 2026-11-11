@@ -52,8 +52,8 @@ module.exports=function nativeGestion(command,p){
   requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
   promoteCover();
   requireThat(sheetErrors().length===0,'La promotion ne permet pas de compléter une feuille qualifiée.');
-  const totalWeeklySalary=count*COVER_WEEKLY_SALARY;
-  return {coverage:{count,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
+  const coverSalary=typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():COVER_WEEKLY_SALARY,totalWeeklySalary=count*coverSalary;
+  return {coverage:{count,weeklySalary:coverSalary,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
   requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');

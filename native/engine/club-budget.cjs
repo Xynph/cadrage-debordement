@@ -447,6 +447,14 @@ aiRosterWageLimit=function(c){
 const budgetValeur=p=>{if(budgetActif()&&p&&typeof p.id==='string'&&Number.isFinite(p.rating)){p.salary=nativeStartingSalaries.marche(p);p.price=Math.max(0,Math.round(p.salary*2/1000)*1000);}return p;};
 aiRosterSmallClubPlayer=function(slot,index){return budgetValeur(aiRosterSmallClubPlayerV1(slot,index));};
 aiRosterPoolEntry=function(p,origin,clubId=null){if(budgetActif()&&origin!=='released')budgetValeur(p);return aiRosterPoolEntryV1(p,origin,clubId);};
+// Renforts promus pour compléter la feuille de match : un espoir au plancher de la règle, plus 2 500 € par semaine.
+const promoteCoverV1=promoteCover;
+promoteCover=function(){
+ if(!budgetActif())return promoteCoverV1();
+ const avant=new Set(club().players.map(p=>p.id)),resultat=promoteCoverV1(),salaire=budgetPlancherHebdo();
+ for(const p of club().players)if(!avant.has(p.id))p.salary=salaire;
+ return resultat;
+};
 // Ce que l'écran Finances lit : mêmes champs qu'avant, remplis par le budget de la saison.
 function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  const b=S.clubBudget;

@@ -228,3 +228,9 @@ test('Moteur, carrière marquée : montée du club joué, les clauses jouent et 
  assert.ok(S.news.some(n=>/^Montée : \d+ contrats prévoyaient une prime d’accession/.test(n)));assert.equal(S.clubBudget.clubs[29].division,'elite');assert.equal(S.clubBudget.clubs[13].division,'accession');
  assert.ok(S.startingSalaries.calage.elite>0.5&&S.startingSalaries.calage.accession>0.5,'échelle des deux divisions recalculée');
 });
+test('Moteur : renfort promu pour compléter la feuille, 2 500 € par semaine sans la marque, plancher de la règle avec',()=>{
+ for(const [marque,attendu] of [[false,2500],[true,270]]){
+  const h=moteur(marque);h.run("club().players=club().players.slice(0,20);");const avant=h.lire('club().players.map(p=>p.id)');h.run('promoteCover()');
+  const neufs=h.lire('club().players').filter(p=>!avant.includes(p.id));assert.ok(neufs.length>=1,'au moins un renfort');assert.ok(neufs.every(p=>p.salary===attendu),JSON.stringify(neufs.map(p=>p.salary)));
+ }
+});
