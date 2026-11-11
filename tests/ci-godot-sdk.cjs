@@ -4,11 +4,11 @@ const fs = require('node:fs'), vm = require('node:vm');
 const path = require('node:path'), assert = require('node:assert/strict');
 const source = fs.readFileSync(path.join(__dirname, '../ci/run-godot-sdk.cjs'), 'utf8');
 function run({missing = false, version = '4.7.2.stable.official.ed1daf0bf',
-  output = 'PASS fixture\n', status = 0, error = null, variants} = {}) {
+  output = 'PASS fixture\n', status = 0, error = null, variants, scope = 'full'} = {}) {
   const config = {version: '4.7.2-stable', suites: ['tests/probe.cjs']};
   if (variants) config.suiteCases = {'tests/probe.cjs': variants};
   let calls = 0, thrown = null;
-  const processStub = {env: missing ? {} : {CD_GODOT_EXECUTABLE: '/qa/godot'},
+  const processStub = {env: missing ? {} : {CD_GODOT_EXECUTABLE: '/qa/godot', CD_GODOT_SDK_SCOPE: scope},
     execPath: process.execPath, stdout: {write() {}}};
   try {
     vm.runInNewContext(source, {
@@ -17,6 +17,7 @@ function run({missing = false, version = '4.7.2.stable.official.ed1daf0bf',
         if (id === 'node:fs') return {statSync: () => ({isFile: () => true}), existsSync: () => true};
         if (id === 'node:path') return path;
         if (id === './godot-sdk.json') return config;
+        if (id === './godot-sdk-followup.json') return {suites: ['tests/new-a.cjs', 'tests/new-b.cjs'], suiteCases: {}, suiteEnvironment: {}};
         if (id === 'node:child_process') return {spawnSync(_executable, args) {
           if (args[0] === '--version') return {status: 0, stdout: version};
           calls++;
@@ -29,7 +30,7 @@ function run({missing = false, version = '4.7.2.stable.official.ed1daf0bf',
   return {failed: !!thrown || processStub.exitCode === 1, calls};
 }
 const rejected = [
-  {missing: true}, {version: '4.6.stable'}, {output: 'SKIP SDK absent'},
+  {scope: 'invalid'}, {missing: true}, {version: '4.6.stable'}, {output: 'SKIP SDK absent'},
   {output: 'ok 1 # SKIP absent'}, {output: '\x1b[33mSKIP SDK absent\x1b[0m'},
   {output: 'SCRIPT ERROR: invalid'}, {output: 'Parse Error: invalid'},
   {output: '\x1b[31mERROR: resource missing\x1b[0m'},
@@ -42,5 +43,6 @@ assert.deepEqual(run({variants: [
   {id: 'layout', env: {CD_GUIDE_LAYOUT_CASE: 'layout'}},
   {id: 'dock', env: {CD_GUIDE_LAYOUT_CASE: 'dock'}},
 ]}), {failed: false, calls: 2}, 'Every explicit case must be executed');
-console.log(JSON.stringify({controllerUnit: true, cases: rejected.length + 2,
+assert.deepEqual(run({scope: 'followup'}), {failed: false, calls: 2}, 'Followup executes its manifest without default suites');
+console.log(JSON.stringify({controllerUnit: true, cases: rejected.length + 3,
   passed: true, realGodotExecuted: false}));

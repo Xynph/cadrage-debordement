@@ -1,0 +1,9 @@
+{
+  "suites": [
+    "tests/godot-academy-portraits.cjs",
+    "tests/godot-portrait-continuity.cjs",
+    "tests/godot-contract-negotiation.cjs"
+  ],
+  "suiteEnvironment": {},
+  "suiteCases": {}
+}

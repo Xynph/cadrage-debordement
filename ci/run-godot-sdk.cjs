@@ -4,7 +4,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
 const root = path.resolve(__dirname, '..');
-const config = require('./godot-sdk.json');
+const scope = process.env.CD_GODOT_SDK_SCOPE || 'full';
+if (!['full', 'followup'].includes(scope)) throw Error('Invalid SDK scope: ' + scope);
+const config = {...require('./godot-sdk.json'),
+  ...(scope === 'followup' ? require('./godot-sdk-followup.json') : {})};
 const executable = process.env.CD_GODOT_EXECUTABLE;
 if (!executable || !fs.statSync(executable, {throwIfNoEntry: false})?.isFile()) {
   throw Error('This qualification requires the real Godot SDK; skipping is forbidden.');
@@ -54,7 +57,7 @@ for (const {suite, variant, env} of entries) {
   console.log('::endgroup::');
 }
 if (process.env.GITHUB_STEP_SUMMARY) {
-  const lines = ['## Godot SDK réel ' + config.version, '',
+  const lines = ['## Godot SDK réel ' + config.version + ' / ' + scope, '',
     'Ces suites ont reçu un SDK réel ; tout SKIP est un échec. Audio muet et profils de test jetables.', '',
     '| Suite | Verdict | Durée |', '| --- | --- | --- |',
     ...results.map(r => `| ${r.suite} / ${r.variant} | ${r.passed ? 'PASS' : 'ÉCHEC'} | ${(r.milliseconds / 1000).toFixed(1)} s |`), ''];

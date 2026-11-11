@@ -7,6 +7,13 @@ on:
     branches: [main]
     paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'full = recette complète ; followup = nouveaux cas SDK sans P1 inchangé'
+        type: choice
+        required: true
+        default: full
+        options: [full, followup]
 
 permissions:
   contents: read
@@ -19,6 +26,8 @@ jobs:
   sdk:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      CD_GODOT_SDK_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'full' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -74,6 +83,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: xvfb-run -a -s '-screen 0 2560x1440x24' node ci/run-godot-sdk.cjs
       - name: Mesurer les petites fenêtres avec le vrai rendu X11
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.scope != 'followup' }}
         shell: bash
         env:
           SDL_AUDIODRIVER: dummy
