@@ -15,14 +15,14 @@ func run() -> void:
 				check(is_equal_approx(float(actual[field]),float(row.expected[field])),"Profil partagé Node/Godot : "+str(field))
 			else: check(actual[field]==row.expected[field],"Profil partagé Node/Godot : "+str(field))
 	Portrait.clear_cache()
-	var player := {"id":"regen:player:7","age":23}
+	var player := {"id":"regen:player:7","name":"Joueur de réception","age":23}
 	var staff := {"id":"staff:converted:7","sourcePlayerId":"regen:player:7","age":48,"appearanceAge":23,"portraitRole":"staff"}
 	check(Portrait.texture(player)==Portrait.texture(staff),"Un joueur devenu staff garde exactement sa base de visage")
 	var r := TextureRect.new();root.add_child(r)
 	check(Portrait.apply(r,player),"Le portrait de joueur est réellement raccordé")
 	check(r.texture is ImageTexture and r.texture.get_size()==Vector2(256,256),"Le visage est un crop local, sans UV d’une autre cellule")
 	check(r.material is ShaderMaterial and not r.material.shader.code.is_empty(),"Composition locale et shader présents")
-	check(r.tooltip_text.contains("composition locale") and r.tooltip_text.contains("non garanties"),"Origine et limites affichées honnêtement")
+	check(r.tooltip_text == player.name,"Le portrait affiche le nom du joueur sans avertissement d’origine")
 	var original_texture := r.texture
 	var original_material := r.material
 	check(Portrait.apply(r,player) and r.texture==original_texture and r.material==original_material,"Même identité réutilise texture et matériau")
