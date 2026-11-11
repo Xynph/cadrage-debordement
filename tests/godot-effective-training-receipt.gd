@@ -57,6 +57,10 @@ func run() -> void:
 		check(feedback._training_result(request,stale).applied.is_empty(),"Contexte de carrière changé : "+field)
 	stale=after.duplicate(true);stale.meta.mode="common"
 	check(feedback._training_result(request,stale).applied.is_empty(),"Autre univers de carrière, aucun mode appliqué raccordé")
+	stale=after.duplicate(true);stale.clubLife.clubSupport.context.club="13"
+	check(feedback._training_result(request,stale).applied.is_empty(),"Identifiant de contexte d’un autre type sans coercition ni erreur")
+	stale=after.duplicate(true);stale.clubLife.clubSupport.training.session.status=true
+	check(feedback._training_result(request,stale).applied.is_empty(),"Statut non textuel sans comparaison de types invalide")
 	stale=after.duplicate(true);stale.meta.trained=false
 	check(feedback._training_result(request,stale).applied.is_empty(),"Statut applied sans confirmation trained rejeté")
 	stale=before.duplicate(true);stale.meta.trained="false"

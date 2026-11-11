@@ -108,7 +108,15 @@ func _training_context(model: Dictionary) -> Dictionary:
 	return {"club":club.id,"mode":meta.mode,"season":meta.season,"week":meta.week}
 
 func _same_training_context(context: Dictionary, published: Variant) -> bool:
-	return not context.is_empty() and published is Dictionary and published.get("club")==context.club and published.get("season")==context.season and published.get("week")==context.week
+	if context.is_empty() or not published is Dictionary: return false
+	for field in ["club","season","week"]:
+		var actual: Variant = published.get(field)
+		var expected: Variant = context.get(field)
+		if (actual is int or actual is float) and (expected is int or expected is float):
+			if float(actual)!=float(expected): return false
+		elif typeof(actual)!=typeof(expected): return false
+		elif actual!=expected: return false
+	return true
 
 func _requested_training_mode(payload: Dictionary, model: Dictionary) -> String:
 	var mode: Variant = payload.get("mode",model.get("meta",{}).get("training"))
@@ -124,7 +132,7 @@ func _training_request(payload: Dictionary, model: Dictionary) -> Dictionary:
 	var session: Variant = training.get("session") if training is Dictionary else null
 	var trained: Variant = model.get("meta",{}).get("trained")
 	return {"requested":_requested_training_mode(payload,model),"context":context,
-		"eligible":trained is bool and trained==false and _same_training_context(context,support.get("context")) and session is Dictionary and session.get("status")=="pending"}
+		"eligible":trained is bool and trained==false and _same_training_context(context,support.get("context")) and session is Dictionary and session.get("status") is String and session.status=="pending"}
 
 func _training_result(request: Dictionary, model: Dictionary) -> Dictionary:
 	# The session publishes status/reason, not a mode or its own timestamp. The
@@ -140,7 +148,7 @@ func _training_result(request: Dictionary, model: Dictionary) -> Dictionary:
 	var training: Variant = support.get("training")
 	var session: Variant = training.get("session") if training is Dictionary else null
 	var mode: Variant = model.get("meta",{}).get("training")
-	if not session is Dictionary or session.get("status")!="applied" or not mode is String or not TRAINING_LABELS.has(mode): return result
+	if not session is Dictionary or not session.get("status") is String or session.status!="applied" or not mode is String or not TRAINING_LABELS.has(mode): return result
 	result.applied=mode
 	result.detail="Mode collectif appliqué : %s." % TRAINING_LABELS[mode]
 	if TRAINING_LABELS.has(requested) and requested!=mode: result.detail="Mode collectif appliqué : %s · choix demandé : %s." % [TRAINING_LABELS[mode],TRAINING_LABELS[requested]]
