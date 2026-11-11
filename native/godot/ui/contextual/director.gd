@@ -250,6 +250,9 @@ func _add_training_entry(parent: Node) -> void:
 
 func _contain_entry_content(parent: Node, entry: Control) -> void:
 	if parent != app.body: return
+	for inner: ScrollContainer in parent.find_children("*", "ScrollContainer", true, false):
+		inner.mouse_force_pass_scroll_events = false
+		inner.mouse_filter = Control.MOUSE_FILTER_STOP
 	# Full-height career pages were sized before these entrypoints were added.
 	# Give the page the remaining space while keeping the new actions visible.
 	var scroll := ScrollContainer.new()

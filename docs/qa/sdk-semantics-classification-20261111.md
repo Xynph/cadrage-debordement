@@ -1,5 +1,7 @@
 # Classification des 26 suites SDK — 11 novembre 2026
 
+> Archive de la référence96 : les états intermédiaires ci-dessous ne sont pas le verdict des sources corrigées. Le suivi actuel des **35 suites auditées** et leurs reçus sont dans la [PR572](https://github.com/Xynph/cadrage-debordement/pull/572), avec les preuves finales archivées dans la [PR556](https://github.com/Xynph/cadrage-debordement/pull/556). Les preuves et blobs de cette baseline historique restent conservés.
+
 Produit de référence : `96f537040bf9f2e37bf10b0a9b09518b732244a2`. Périmètre : les20 suites de l’audit fe79 et les six blocages. Ce reçu fige les preuves disponibles ; aucune modification WIP ne constitue un PASS. Les neuf suites de sdk_preloads ont leur propre rapport.
 
 Les durées Node excluent l’attente du verrou. Borne globale180s, VM et budgets des tests conservés. Les trois premiers anciens reçus mesurent séparément une durée TAP et un temps mural incluant le verrou : leur temps mural ne qualifie pas la CI. `diagnostic_stop=true` indique un arrêt terminal ou à la première assertion rouge : les assertions suivantes n’ont pas été exécutées.
