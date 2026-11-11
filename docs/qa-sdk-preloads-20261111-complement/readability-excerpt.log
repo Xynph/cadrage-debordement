@@ -1,0 +1,29 @@
+DIAGNOSTIC STOP: Node wrapper exceeded CI budget 180s
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+FAIL: Tuile entière dans le Bureau OfficeGroup (1280, 720)
+FAIL: Tuile entière dans le Bureau OfficeStandings (1280, 720)
+FAIL: Tuile entière dans le Bureau OfficeJournal (1280, 720)
+FAIL: Tuile entière dans le Bureau OfficeRecruitment (1280, 720)
+FAIL: Accès métier visible depuis le Bureau OfficeCalendarAction (1280, 720)
+FAIL: Pagination et recherche de l’effectif présentes
+FAIL: Pagination de l’effectif compact visible
+FAIL: Fait projeté exactement · ProfileContractValue = Fin saison 2
+FAIL: Fait projeté exactement · ProfileSalaryValue = 8 780 €
+FAIL: 24 lignes entières de l’Effectif immersif (1600, 900) · reçu 0/61
+FAIL: Colonne ou commande visible RosterColumn_CONTRAT (1600, 900)
+FAIL: Colonne ou commande visible RosterPaginationInfo (1600, 900)
+FAIL: Salaire et échéance exacts dans Contrat
+FAIL: 24 lignes entières de l’Effectif immersif (1920, 1080) · reçu 0/61
+FAIL: Colonne ou commande visible RosterColumn_CONTRAT (1920, 1080)
+FAIL: Colonne ou commande visible RosterPaginationInfo (1920, 1080)
+FAIL: 24 lignes entières de l’Effectif immersif (2560, 1440) · reçu 0/61
+FAIL: Colonne ou commande visible RosterColumn_CONTRAT (2560, 1440)
+FAIL: Colonne ou commande visible RosterPaginationInfo (2560, 1440)
+FAIL: Pagination suivante disponible · compact 720p
+FAIL: Contexte du dossier compact adapté à la hauteur (2560, 1440)
+FAIL: Jusqu’à cinq coéquipiers du même poste à 1440p
+FAIL: Contexte du dossier compact adapté à la hauteur (1920, 1080)
+FAIL: Deux contextes desktop distincts des six faits
+FAIL: Moyenne publique exacte salary
+FAIL: Jusqu’à trois coéquipiers du même poste à 1080p

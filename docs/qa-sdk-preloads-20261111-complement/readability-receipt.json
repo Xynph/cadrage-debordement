@@ -1,0 +1,53 @@
+{
+  "suite": "godot-readability06",
+  "case": "",
+  "mode": "",
+  "code": -15,
+  "nodeSeconds": 180.252,
+  "lockWaitSeconds": 0.0,
+  "stopped": "Node wrapper exceeded CI budget 180s",
+  "ci180Qualified": false,
+  "log": "/workspace/qa/sdk-preloads-96/final/godot-readability06.log",
+  "runtimeLogs": [
+    "/workspace/qa/sdk-preloads-96/fixtures/cd-readability06-sDF6NP/runtime.log"
+  ],
+  "productionBase": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "afterCommonFreeze": true,
+  "gdSha256": "df8e98a22d8e0edb6613990ea5fa343e02e446723e7121ecba4655469c50b9b4",
+  "cjsSha256": "722648e04908cb996abe95408194b31130f5875f1a19d4cec37137e3760d8e19",
+  "helperSha256": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d",
+  "env": {
+    "CD_GODOT_EXECUTABLE": "/workspace/.cloud-setup/tools/godot472/Godot_v4.7.2-stable_linux.x86_64",
+    "DISPLAY": ":102"
+  },
+  "observedFailures": [
+    "FAIL: Tuile entière dans le Bureau OfficeGroup (1280, 720)",
+    "FAIL: Tuile entière dans le Bureau OfficeStandings (1280, 720)",
+    "FAIL: Tuile entière dans le Bureau OfficeJournal (1280, 720)",
+    "FAIL: Tuile entière dans le Bureau OfficeRecruitment (1280, 720)",
+    "FAIL: Accès métier visible depuis le Bureau OfficeCalendarAction (1280, 720)",
+    "FAIL: Pagination et recherche de l’effectif présentes",
+    "FAIL: Pagination de l’effectif compact visible",
+    "FAIL: Fait projeté exactement · ProfileContractValue = Fin saison 2",
+    "FAIL: Fait projeté exactement · ProfileSalaryValue = 8 780 €",
+    "FAIL: 24 lignes entières de l’Effectif immersif (1600, 900) · reçu 0/61",
+    "FAIL: Colonne ou commande visible RosterColumn_CONTRAT (1600, 900)",
+    "FAIL: Colonne ou commande visible RosterPaginationInfo (1600, 900)",
+    "FAIL: Salaire et échéance exacts dans Contrat",
+    "FAIL: 24 lignes entières de l’Effectif immersif (1920, 1080) · reçu 0/61",
+    "FAIL: Colonne ou commande visible RosterColumn_CONTRAT (1920, 1080)",
+    "FAIL: Colonne ou commande visible RosterPaginationInfo (1920, 1080)",
+    "FAIL: 24 lignes entières de l’Effectif immersif (2560, 1440) · reçu 0/61",
+    "FAIL: Colonne ou commande visible RosterColumn_CONTRAT (2560, 1440)",
+    "FAIL: Colonne ou commande visible RosterPaginationInfo (2560, 1440)",
+    "FAIL: Pagination suivante disponible · compact 720p",
+    "FAIL: Contexte du dossier compact adapté à la hauteur (2560, 1440)",
+    "FAIL: Jusqu’à cinq coéquipiers du même poste à 1440p",
+    "FAIL: Contexte du dossier compact adapté à la hauteur (1920, 1080)",
+    "FAIL: Deux contextes desktop distincts des six faits",
+    "FAIL: Moyenne publique exacte salary",
+    "FAIL: Jusqu’à trois coéquipiers du même poste à 1080p"
+  ],
+  "checks": null,
+  "assertionsCompleted": false
+}
