@@ -723,7 +723,7 @@ qu'aujourd'hui, sans modification ici. Quand les gestes sont actifs (`CD_MATCH_G
 la régie ne fait plus sa propre coupe franche et laisse celle de la vue. **Non vérifié** :
 les deux variables ensemble n'ont pas été essayées, la branche 554 n'étant pas fusionnée.
 
-### 9.6 Incohérence « essai sur ballon porté » (décrite, non corrigée)
+### 9.6 Incohérence « essai sur ballon porté » (corrigée le 11 novembre au soir, § 11.1)
 
 - **Constat [mesuré]** : sur les 24 matchs, 18 essais sur 100 portent `origin:'maul'` et le
   texte « sur ballon porté », et **aucun** n'a été précédé d'une touche jouée avec la
@@ -1058,6 +1058,76 @@ Voir la capture du match entier sur le PC de Léo (graine 7, club 0 : d'après l
 score attendu 31 – 15) ; trancher l'incohérence « essai sur ballon porté » (§ 9.6) ;
 l'écran intermédiaire repris par la graphiste ; les arrêts sur choix réservé (pénalité :
 me demander) ; le mode « mouvements réduits ».
+
+## 11. Essai visible, gestes adaptés, défauts de la capture Windows (11 novembre 2026, nuit)
+
+Branche `claude/match-nuit-20261111` : PR 560 (temps forts, avec 554 et 555) + PR 571
+(animations adaptées), puis ce qui suit.
+
+### 11.1 « On ne dit essai que si on voit l'essai »
+
+Décision de Léo. Constat avant correction, sur le moteur natif (graines 7, 11, 1000) :
+chaque essai du score faisait déjà partie d'un temps fort montré (l'essai est « forcé »
+à tous les niveaux sauf « commentaire seul »), **mais la scène 3D ne montrait pas toujours
+le fait** :
+
+1. **Essai « sur ballon porté » sans ballon porté (§ 9.6)** — origine **moteur**. Tranché :
+   un essai marqué dans le même pas qu'une touche gagnée près de la ligne (origine `maul`)
+   **est** un ballon porté, quelle que soit la combinaison de lancer. Le moteur l'écrit sur
+   la conquête du même pas : fait structuré `porte: true` (`contestSetPiece`,
+   `dist/rugby.js`), posé après le tirage de l'essai, sans tirage supplémentaire (même
+   match, même score, même journal hors ce champ : contrôlé par un témoin). La sélection
+   (`match-highlights.cjs`), la scène (`match2d.js`, formation du ballon porté), la
+   validation des sauvegardes (`saves.js`) et la vue (`match_gestes.gd`) le lisent : la
+   touche « équilibrée » suivie de l'essai montre maintenant le ballon porté puis le
+   marqueur qui s'en détache. Option (a) du § 9.6 écartée : elle aurait gardé un essai de
+   touche sans geste lisible et changé le texte du commentaire.
+2. **Ballon qui saute du porteur au marqueur** — origine **mise en scène**. Le moteur
+   désigne un marqueur qui n'est pas toujours le porteur de l'action montrée juste avant ;
+   la vue faisait voler le ballon jusqu'à lui en 0,3 s, à travers le terrain. Désormais le
+   porteur avance, le marqueur arrive en soutien déjà lancé et reçoit une **passe en
+   retrait** (jamais vers l'avant), puis court et aplatit.
+3. **Aplati sur la ligne, course surhumaine** — mise en scène. Le ballon est aplati **dans
+   l'en-but, 2 m derrière la ligne**, dans l'axe du point d'essai du moteur ; une longue
+   échappée dure ce qu'elle dure (8 m/s de pointe au plus, 10 s au plus, sous l'échéance
+   de 12 s de la régie) au lieu de tenir en 3 s.
+
+Exception assumée : au niveau « Commentaire seul », aucun temps fort n'est joué (choix
+explicite du joueur). « Confier la fin à l'adjoint » et un match repris d'une sauvegarde
+ne rejouent pas ce que le moteur a déjà joué (§ 10.2).
+
+Tests : `tests/match-essai-visible.cjs` (5 matchs du harnais × 5 niveaux montrés ; plan
+d'essai avec le marqueur du commentaire ; essai sur ballon porté précédé de sa conquête
+`porte` dans le même temps fort ; témoin sans le champ ; validation des sauvegardes ;
+moteur natif minute par minute sur les graines 7 et 1000 : un plan d'essai par essai du
+score), `tests/godot-match-essai.cjs` (passe en retrait, ballon jamais téléporté, allures
+humaines, aplati dans l'en-but, ballon porté formé sur le seul fait `porte`).
+
+### 11.2 Gestes adaptés en match
+
+Voir `docs/match-animations-adaptees-20261111.md`, section « Gestes joués avec la
+bibliothèque ». Sans `CD_MATCH_ANIMATIONS`, rien ne change.
+
+### 11.3 Défauts de la capture Windows d'un match complet
+
+- **Images sombres et vides vers la 75e minute** : reproduit sous Linux (capture du § 9.9,
+  graine 7, même match 31 – 15). Le temps fort de la 75e minute est une pénalité (plaquage
+  dangereux) puis un carton jaune. Pendant le coup de sifflet, la caméra rapprochée des
+  temps forts (`match_cadrage.gd`) ne gardait que les joueurs à moins de 9 m du ballon ;
+  sur un ballon mort personne ne l'est : elle serrait l'herbe autour du ballon (0 joueur à
+  l'image, image sombre). Ce n'était ni le voile de transition ni une caméra perdue.
+  Correctif : un plan cadre au moins les six joueurs les plus proches (30 m au plus) et les
+  arrêts de jeu (`penalty`, `card`, `advantage`, `ingoal`, `hand-fault`) sont cadrés en plan
+  large. Test `godot-match-cadrage-arret` sur ce temps fort exact (fixture extraite du
+  moteur) : 0 joueur à l'image avant, 8 (caméra TV) et 3 (caméra contact) au moins après.
+- **Deux boutons « TACTIQUE »** dans la barre du match : le tiroir des consignes garde
+  « TACTIQUE », la caméra vue de dessus s'appelle « VUE DE DESSUS » (même nom dans les
+  réglages). Aucun choix de style.
+- **`tests/godot-match-action-review.cjs`** (échouait déjà sur `main`) : le journal du
+  direct s'ouvre dans le tiroir de la vue contextuelle (`_toggle_drawer("Journal")`) ; le
+  contrôle « la navigation abandonne la relecture » devient « pendant le direct, la
+  navigation est refusée (immersion) et la relecture reste celle du match, jusqu'à sa
+  fermeture ». 46 contrôles, 0 échec.
 
 ## 8. Sources
 
