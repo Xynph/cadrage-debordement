@@ -1,0 +1,8 @@
+{
+  "checks": 186,
+  "display": "X11",
+  "failures": [],
+  "model_players_with_secondary": 33,
+  "profile_unchanged": true,
+  "worker": "/workspace/cadrage-debordement/work/squad-secondary/work/engine-secondary/worker.cjs"
+}

@@ -19,17 +19,17 @@ if((s.trust??50)<40)t.unshift('direction','crise');
 if((s.morale??50)<45)t.unshift('vestiaire','rotation','blessures');
 if((s.round??0)>19)t.unshift('classement','phase_finale');
 return [...new Set(t)];}
-function prepare(s){
+function prepare(s,priorityThemes=[]){
 if(!s||s.live)return null;
 validate(s);
 const old=snapshot(s),season=s.season,week=weekOf(s);
 if(s.pressRelations?.clubId==='club-'+s.club&&s.pressRelations.used?.some(id=>id.startsWith(season+':'+week+':')))return null;
 if(old.history.some(h=>h.season===season&&h.week===week&&(h.club===undefined||h.club===s.club)))return null;
-return bank.pick({season,week,history:old.history,context:{themes:chooseThemes(s)},count:2+((week+season)%3),seed:s.club,seasonWeeks:s.franceMode?.version===1?34:29});
+return bank.pick({season,week,history:old.history,context:{themes:[...new Set([...priorityThemes,...chooseThemes(s)])]},count:2+((week+season)%3),seed:s.club,seasonWeeks:s.franceMode?.version===1?34:29});
 }
-function apply(s,selected){
+function apply(s,selected,priorityThemes=[]){
 if(!s||s.live||!Array.isArray(selected)||selected.length<2||selected.length>4)throw Error('Conférence invalide');
-validate(s);const original=JSON.stringify(s),questions=prepare(s);
+validate(s);const original=JSON.stringify(s),questions=prepare(s,priorityThemes);
 if(!questions||questions.length!==selected.length)throw Error('Conférence déjà réalisée');
 for(let i=0;i<questions.length;i++)if(!questions[i].answers.some(a=>a.id===selected[i]))throw Error('Réponse invalide');
 try {

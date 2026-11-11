@@ -54,11 +54,12 @@ function calendarContext(model) {
   const simulated = fixtures.map(fixture => {
     if (dated(fixture.date) || weekIndex(fixture) === null) return fixture;
     const key = [season,fixture.week,fixture.phase,fixture.home?.id,fixture.away?.id].join(':');
-    return {...fixture,id:'weekly:'+key,date:shift(firstSaturday,7*fixture.week),dateSimulated:true};
+    return {...fixture,id:'weekly:'+key,date:shift(firstSaturday,7*fixture.week),dateSimulated:true,
+      ...(dated(meta.calendarToday) ? {kickoffLocal:'15:00',kickoffSource:'simulated-not-official',timezone:'Europe/Paris'} : {})};
   });
   return {
     fixtures:simulated,
-    today:shift(start,week*7+(model.live ? 5 : 0)),
+    today:dated(meta.calendarToday)?meta.calendarToday:shift(start,week*7+(model.live ? 5 : 0)),
     simulatedDates:true
   };
 }

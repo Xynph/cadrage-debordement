@@ -1,0 +1,172 @@
+{
+  "runId": 42909005768,
+  "head": "464021baadc00be0dea4c8807f822bd2fe651521",
+  "globalConclusion": "failure",
+  "method": "Successful individual suites with wall >=60s and ceil(wall*1.15) above the existing planning weight, except documented excludedOverrides; stop budgets are separate.",
+  "measurements": [
+    {
+      "suite": "tests/deepen-analytics.cjs",
+      "wallSeconds": 70.62,
+      "weightSeconds": 82
+    },
+    {
+      "suite": "tests/deepen-staff-native.cjs",
+      "wallSeconds": 542.47,
+      "weightSeconds": 624
+    },
+    {
+      "suite": "tests/deepen-youth-worker.cjs",
+      "wallSeconds": 73.18,
+      "weightSeconds": 85
+    },
+    {
+      "suite": "tests/epcr-preparation-worker.cjs",
+      "wallSeconds": 89.5,
+      "weightSeconds": 103
+    },
+    {
+      "suite": "tests/france-career.cjs",
+      "wallSeconds": 179.8,
+      "weightSeconds": 207
+    },
+    {
+      "suite": "tests/france-saves.cjs",
+      "wallSeconds": 83.91,
+      "weightSeconds": 97
+    },
+    {
+      "suite": "tests/godot-common-rosters.cjs",
+      "wallSeconds": 69.31,
+      "weightSeconds": 80
+    },
+    {
+      "suite": "tests/godot-engine.cjs",
+      "wallSeconds": 78.77,
+      "weightSeconds": 91
+    },
+    {
+      "suite": "tests/lifecycle-native.cjs",
+      "wallSeconds": 93.98,
+      "weightSeconds": 109
+    },
+    {
+      "suite": "tests/native-academy-appearance-bank.cjs",
+      "wallSeconds": 86.71,
+      "weightSeconds": 100
+    },
+    {
+      "suite": "tests/native-academy-integrated-long.cjs",
+      "wallSeconds": 1098.09,
+      "weightSeconds": 1263
+    },
+    {
+      "suite": "tests/native-academy-network-validation.cjs",
+      "wallSeconds": 68.89,
+      "weightSeconds": 80
+    },
+    {
+      "suite": "tests/native-club-support-medical.cjs",
+      "wallSeconds": 103.16,
+      "weightSeconds": 119
+    },
+    {
+      "suite": "tests/native-fiction-sheet.cjs",
+      "wallSeconds": 86.21,
+      "weightSeconds": 100
+    },
+    {
+      "suite": "tests/native-manager-career-reverse.cjs",
+      "wallSeconds": 447.76,
+      "weightSeconds": 515
+    },
+    {
+      "suite": "tests/native-manager-career-worker.cjs",
+      "wallSeconds": 416.79,
+      "weightSeconds": 480
+    },
+    {
+      "suite": "tests/native-press-personalities-worker.cjs",
+      "wallSeconds": 448.3,
+      "weightSeconds": 516
+    },
+    {
+      "suite": "tests/native-staff-completion.cjs",
+      "wallSeconds": 66.63,
+      "weightSeconds": 77
+    },
+    {
+      "suite": "tests/player-population-capacity.cjs",
+      "wallSeconds": 123.17,
+      "weightSeconds": 142
+    },
+    {
+      "suite": "tests/regen-scouting.cjs",
+      "wallSeconds": 84.5,
+      "weightSeconds": 98
+    },
+    {
+      "suite": "tests/rugby-real-long-career-qa.cjs",
+      "wallSeconds": 87.04,
+      "weightSeconds": 101
+    },
+    {
+      "suite": "tests/world-champ-worker.cjs",
+      "wallSeconds": 108.27,
+      "weightSeconds": 125
+    },
+    {
+      "suite": "tests/world-save-runtime.cjs",
+      "wallSeconds": 79.51,
+      "weightSeconds": 92
+    },
+    {
+      "suite": "tests/world-worker-season.cjs",
+      "wallSeconds": 762.67,
+      "weightSeconds": 878
+    },
+    {
+      "suite": "tests/world-worker.cjs",
+      "wallSeconds": 159.68,
+      "weightSeconds": 184
+    }
+  ],
+  "localMeasurements": [
+    {
+      "suite": "tests/world-catalogue-dedup.cjs",
+      "wallSeconds": 141.902,
+      "weightSeconds": 164,
+      "node": "22.23.4",
+      "parallelSuitesAtMost": 2,
+      "result": "success"
+    },
+    {
+      "suite": "tests/world-venue-media.cjs",
+      "weightSeconds": 145,
+      "node": "22.23.4",
+      "parallelSuitesAtMost": 2,
+      "result": "success",
+      "sumCaseSeconds": 125.91135889,
+      "method": "ceil(sumCaseSeconds*1.15); file wall not separately measured in the combined finance/venue run.",
+      "combinedRunResult": "failure in finance cases; both venue cases passed"
+    },
+    {
+      "suite": "tests/youth-scout-native.cjs",
+      "wallSeconds": 236.649,
+      "weightSeconds": 300,
+      "method": "Conservative planning reserve, not ceil(wall*1.15).",
+      "node": "22.23.4",
+      "parallelSuitesAtMost": 2,
+      "result": "success"
+    }
+  ],
+  "excludedOverrides": [
+    {
+      "suite": "tests/v63-1-long-career.cjs",
+      "wallSeconds": 79.57,
+      "weightSeconds": 92,
+      "proposedWeightSeconds": 92,
+      "retainedWeightSeconds": 91,
+      "reason": "Retain the historical reserve: weight92 changes three historical replay peaks from151/156/165 ->148/156/161 to149/157/170 ->148/160/171. Stop budget unchanged."
+    }
+  ]
+}

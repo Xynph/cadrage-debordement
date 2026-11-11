@@ -17,7 +17,9 @@ static func build(app: Control) -> Control:
 	text.add_child(G.metric(G.n(data.get("academy", []).size()), "espoirs au centre"))
 	var pathways: Dictionary = app.model.get("clubLife", {}).get("academyPathways", {})
 	var follow_up := "Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre." if pathways.get("available", false) else "Le suivi individuel des Espoirs reste disponible ici."
-	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. " + follow_up, 14))
+	var group_policy := int(app.model.get("meta", {}).get("academyGroupPolicy", 0))
+	var intake := "À l’intersaison, les clubs complètent les groupes U18 et U21. " if group_policy >= 2 else "Le centre accueille de nouveaux Espoirs à l’intersaison. "
+	text.add_child(G.wrap(intake + follow_up, 14))
 	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
 	text.add_child(G.wrap("Objectifs des jeunes : suivre les changements observés, sans gain immédiat ajouté.",13))
 	preload("res://ui/youth_development_view.gd").entry(app,text)
@@ -31,7 +33,7 @@ static func build(app: Control) -> Control:
 		b.name = id
 		if mode == option[0]: G.selected(b, app.accent)
 		text.add_child(b)
-	text.add_child(G.wrap("Le potentiel reste une estimation. La promotion ne garantit ni le temps de jeu ni la progression. Le rythme d’évolution dépend du parcours de chaque joueur.", 13))
+	text.add_child(G.wrap("Le potentiel reste une estimation. La promotion ne garantit ni le temps de jeu ni la progression. Après une promotion, le rythme d’évolution dépend du temps de jeu, de l’entraînement et du parcours de chaque joueur.", 13))
 	text.add_child(G.button("CONSULTER L'EFFECTIF →", func(): app._navigate("Effectif")))
 	var body := G.panel(page, 1.95)
 	G.chapter(body, "12", "Ouvrir des perspectives", "Poste, travail et minutes réellement disputées.", app.accent)
@@ -53,8 +55,8 @@ static func build(app: Control) -> Control:
 		row.add_child(identity)
 		identity.add_child(G.wrap(person.name, 25, G.INK))
 		identity.add_child(G.wrap("%s · %s ans · %s minutes · %s apparitions" % [person.pos, G.n(person.age), G.n(person.minutes), G.n(person.appearances)], 13))
-		row.add_child(G.metric(G.n(person.note), "note au poste"))
-		row.add_child(G.metric(G.n(person.potential), "potentiel estimé"))
+		row.add_child(G.metric(G.rating_text(person,true), "niveau"))
+		row.add_child(G.metric(G.potential_text(person), "potentiel",G.POTENTIAL_COLOR))
 		var development: Dictionary = person.get("development", {})
 		var history: Array = development.get("history", [])
 		var levels: Array = []
@@ -78,7 +80,14 @@ static func build(app: Control) -> Control:
 		focus.item_selected.connect(func(index: int): app._command("set_development_focus", {"playerId":person.id, "focus":focus.get_item_metadata(index)}))
 		controls.add_child(focus)
 		if mode == "academy":
-			_promotion(controls,app,data,person)
+			if data.get("promotionAvailable", false):
+				_promotion(controls,app,data,person)
+			else:
+				var review := G.button("EXAMINER LE PREMIER CONTRAT", func(): open_player(app, str(person.id)))
+				review.name = "ReviewAcademy" + str(person.id).replace(":", "_")
+				review.set_meta("promote_id", person.id)
+				review.disabled = app.waiting
+				controls.add_child(review)
 		else:
 			controls.add_child(G.button("OUVRIR LA FICHE", func(): app.selected_player = str(person.id); app._navigate("Effectif")))
 		if not str(development.get("reason", "")).is_empty(): card.add_child(G.wrap(development.reason, 12))
@@ -87,12 +96,44 @@ static func build(app: Control) -> Control:
 
 # Same action as the Formation cards, narrowed to the reviewed player.
 static func _promotion(parent: Node, app: Control, data: Dictionary, person: Dictionary) -> Button:
-	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire par semaine de jeu. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.euros(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
+	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.salary(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
 	promote.name = "PromoteAcademy" + str(person.id).replace(":","_")
 	promote.set_meta("promote_id",person.id)
 	promote.disabled = app.waiting or not data.get("promotionAvailable",false)
 	parent.add_child(promote)
 	return promote
+
+static func contract_preview(model: Dictionary, person: Dictionary) -> Dictionary:
+	var decisions: Dictionary = model.get("decisions", {})
+	var roster: Dictionary = decisions.get("recruitment", {})
+	var available: bool = decisions.get("development", {}).get("promotionAvailable", false)
+	var season: int = int(model.get("meta", {}).get("season", 1))
+	var terms: Array[String] = []
+	var salary: Variant = person.get("salary")
+	if salary is int or salary is float:
+		terms.append("Salaire proposé · %s" % G.salary(salary))
+	if available:
+		terms.append("Fin du contrat si signature · saison %s" % G.n(season + 1))
+	var capacity := ""
+	if roster.has("places") and roster.has("occupied") and roster.has("capacity"):
+		var places := "%s places libres" % G.n(roster.places) if int(roster.places) > 1 else "%s place libre" % G.n(roster.places)
+		capacity = "Effectif actuel · %s places comptabilisées · plafond %s · %s" % [
+			G.n(roster.occupied), G.n(roster.capacity), places]
+		var reserved := int(roster.get("reserved", 0))
+		if reserved > 0:
+			var reservation := "%s places réservées" % G.n(reserved) if reserved > 1 else "1 place réservée"
+			capacity += "\nDont %s aux retours de prêt." % reservation
+	var restriction := ""
+	if not available:
+		if model.get("live") is Dictionary:
+			restriction = "Signature indisponible pendant un match."
+		elif model.get("meta", {}).get("phase") == "ended":
+			restriction = "Signature indisponible à la clôture de la saison."
+		elif roster.get("places", -1) == 0:
+			restriction = "Aucune place professionnelle disponible."
+		else:
+			restriction = "Signature indisponible dans le contexte actuel."
+	return {"terms":"\n".join(terms), "capacity":capacity, "restriction":restriction}
 
 static func open_player(app: Control, player_id: String) -> AcceptDialog:
 	app._clear_dialogs()
@@ -109,9 +150,12 @@ static func open_player(app: Control, player_id: String) -> AcceptDialog:
 	else:
 		var person: Dictionary = matches[0]
 		body.add_child(G.section(str(person.name),str(person.pos)+" · "+G.n(person.age)+" ans"))
-		body.add_child(G.wrap("Salaire proposé : %s par semaine. La promotion utilise la décision existante du centre et ses contrôles de capacité ; elle ne garantit aucune minute ni progression." % G.euros(person.salary),15))
+		var preview := contract_preview(app.model, person)
+		if not preview.restriction.is_empty(): body.add_child(G.wrap(preview.restriction, 14, G.ALERT))
+		if not preview.capacity.is_empty(): body.add_child(G.wrap(preview.capacity, 15))
+		if not preview.terms.is_empty(): body.add_child(G.wrap(preview.terms, 15))
+		body.add_child(G.wrap("La promotion ne garantit aucune minute ni progression.", 14))
 		_promotion(body,app,data,person).name = "YouthPathwayPromote"
-		if not data.get("promotionAvailable",false): body.add_child(G.wrap("Premier contrat indisponible dans le contexte actuel. Vérifiez la capacité et la période avant de réessayer.",14,G.ALERT))
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)

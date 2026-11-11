@@ -17,9 +17,15 @@ test('départs natifs fiction/custom et référence Monde: vrais achats sans inj
   let model=settleClubMeetings(h.go('new_career',{mode,club:0,...(mode==='custom'?{document,confirmed:true}:{})}),(command,payload)=>h.go(command,payload)),market=model.clubLife.interclubMarket;
   a.equal(market.releasePolicy.minimum,mode==='world'?37:28);
   const p=market.candidates.find(p=>p.available);a(p,mode+' a une vraie cible');
-  if(mode!=='world')a.equal(JSON.parse(h.go('export').meta.exportText).state.clubs[p.clubId].players.length,30);
+  const before=JSON.parse(h.go('export').meta.exportText).state;
+  a(before.clubs.every(club=>club.players.length>=40),mode+' compte au moins 40 professionnels par club');
+  if(mode!=='world')a.equal(before.clubs[p.clubId].players.length,40);
   const bid={playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:market.context},q=h.go('interclub_negotiate',bid).meta.interclubNegotiation;a(q.winner);
   model=h.go('interclub_auction',{...bid,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true});
-  const state=JSON.parse(h.go('export').meta.exportText).state;a.equal(state.clubs[p.clubId].players.length>=market.releasePolicy.minimum,true);a.equal(state.clubs[q.winner.clubId].players.filter(x=>x.id===p.id).length,1);
+  const state=JSON.parse(h.go('export').meta.exportText).state;
+  const seller=state.clubs[p.clubId].players;
+  a.equal(seller.some(player=>player.id===p.id),false);
+  a.equal(seller.length,Math.max(40,before.clubs[p.clubId].players.length-1));
+  a.equal(state.clubs[q.winner.clubId].players.filter(x=>x.id===p.id).length,1);
  }
 });

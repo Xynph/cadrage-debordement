@@ -8,6 +8,9 @@ const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/coach_notes_view.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+const Academy = preload("res://ui/immersive08/academy_canvas.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
+const Roster = preload("res://ui/immersive08/squad_canvas.gd")
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -24,7 +27,8 @@ class PositionPitch extends Control:
 	const MARKS = [Vector2(.25,.14), Vector2(.5,.14), Vector2(.75,.14), Vector2(.38,.27), Vector2(.62,.27),
 		Vector2(.25,.40), Vector2(.75,.40), Vector2(.5,.40), Vector2(.4,.53), Vector2(.6,.62),
 		Vector2(.12,.75), Vector2(.36,.75), Vector2(.64,.75), Vector2(.88,.75), Vector2(.5,.88)]
-	var primary_slot := 0
+	var primary_numbers: Array[int] = []
+	var secondary_numbers: Array[int] = []
 
 	func _point(x: float, y: float) -> Vector2:
 		var margin := lerpf(.12,.025,y)
@@ -49,11 +53,12 @@ class PositionPitch extends Control:
 		for index in MARKS.size():
 			var mark: Vector2 = MARKS[index]
 			var center := _point(mark.x,mark.y)
-			if index!=primary_slot:
+			if index+1 not in primary_numbers and index+1 not in secondary_numbers:
 				draw_circle(center,8*factor,C.IVORY,true,-1,true)
 				continue
-			for radius in [46,34,23]: draw_circle(center,radius*factor,Color(C.MINT,.10),true,-1,true)
-			draw_circle(center,15*factor,C.MINT,true,-1,true)
+			var ink: Color = C.MINT if index+1 in primary_numbers else C.GOLD
+			for radius in [46,34,23]: draw_circle(center,radius*factor,Color(ink,.10),true,-1,true)
+			draw_circle(center,15*factor,ink,true,-1,true)
 			var number := str(index+1)
 			var font := C.font(700)
 			var font_size := maxi(10,roundi(20*factor))
@@ -81,8 +86,13 @@ static func build(app:Control,player:Dictionary) -> Control:
 	ClubUI.italic(D.text(shirt,70,82,number,82,C.IVORY,800,110,HORIZONTAL_ALIGNMENT_CENTER),800).name="FullPlayerNumber"
 	var heading:=ClubUI.italic(D.text(hero,668,123,str(player.name).to_upper(),88,C.IVORY,800,1030),800)
 	heading.name="ProfilePlayerName"
-	D.text(hero,671,180,str(player.pos).to_upper(),39,C.GOLD,700,1020)
-	D.text(hero,671,231,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31,C.IVORY,500,1020)
+	D.text(hero,671,180,Roster.primary_caption(player).to_upper(),39,C.GOLD,700,1020)
+	var facts: Dictionary = player.get("playerFacts", {})
+	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
+	if not facts.is_empty():
+		var identity := preload("res://ui/player_identity.gd").row(facts,22,C.IVORY)
+		hero.add_child(identity)
+		D.place(identity,Rect2(671,228,1010,30))
 	var injury := float(player.get("injury", 0))
 	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
 	var availability := "Disponible"
@@ -90,6 +100,9 @@ static func build(app:Control,player:Dictionary) -> Control:
 	if injury > 0:
 		availability = "Indisponible"
 		availability_color = C.ALERT
+	elif facts.get("onInternationalDuty", false):
+		availability = "En sélection"
+		availability_color = C.GOLD
 	elif recovering:
 		availability = "En reprise"
 		availability_color = C.AMBER
@@ -99,8 +112,11 @@ static func build(app:Control,player:Dictionary) -> Control:
 	D.chip(hero, Rect2(670,263,210,46), availability, availability_color).name = "PlayerHeroAvailability"
 	D.chip(hero, Rect2(894,263,220,46), selection, C.AMBER).name = "PlayerHeroSelection"
 	var rating := _slanted_badge(hero,Rect2(1710,43,236,160),Color("0a5735"),Color(C.MINT,.7))
-	ClubUI.italic(D.text(rating,118,129,G.n(player.get("rating","—")),132,C.IVORY,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
-	ClubUI.italic(D.text(hero,2084,151,G.n(player.get("potential","—")),98,C.IVORY,800,235,HORIZONTAL_ALIGNMENT_CENTER),800)
+	ClubUI.italic(D.text(rating,118,129,G.rating_text(player,true),64,C.MINT,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
+	var potential := D.text(hero,2084,151,G.potential_text(player),64,G.POTENTIAL_COLOR,800,235,HORIZONTAL_ALIGNMENT_CENTER)
+	ClubUI.italic(potential,800)
+	potential.mouse_filter = Control.MOUSE_FILTER_PASS
+	potential.tooltip_text = G.potential_tooltip(player)
 	D.text(hero,1828,234,"NIVEAU",23,C.MUTED,600,220,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(hero,2084,234,"POTENTIEL",23,C.GOLD,600,235,HORIZONTAL_ALIGNMENT_CENTER)
 	D.button(hero,Rect2(1710,264,236,46),"Comparer",func():
@@ -108,6 +124,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 		app.SquadViews.comparison(app),false,"people",true,app.accent,"FullPlayerCompare")
 	D.button(hero,Rect2(1962,264,260,46),"Ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerCoachNote")
 	var active:=clampi(int(app.management_ui.get("immersive_player_tab",0)),0,5)
+	var detailed := PlayerAttributes.detail(player,true)
 	for i in 6:
 		var id := "FullPlayerTab"+str(i)
 		var caption: String = ["Vue d’ensemble","Attributs","Performances","Contrat","Développement","Repères"][i]
@@ -122,14 +139,17 @@ static func build(app:Control,player:Dictionary) -> Control:
 	match active:
 		0:
 			_position(D.panel(page,Rect2(0,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-			_attributes(D.panel(page,Rect2(496,430,1174,520),"PROFIL DE PERFORMANCE","star"),app,player)
+			_evaluation(D.panel(page,Rect2(496,430,1174,520),"ÉVALUATION DU JOUEUR","star"),app,player,not detailed.is_empty())
 			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 			_usage(D.panel(page,Rect2(0,966,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_contract(D.panel(page,Rect2(1686,966,562,270),"CONTRAT","money"),app,player)
 		1:
-			_attributes(D.panel(page,Rect2(0,430,1174,520),"LES APTITUDES DU JOUEUR","star"),app,player)
-			_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			if detailed.is_empty():
+				_evaluation(D.panel(page,Rect2(0,430,1174,520),"ÉVALUATION DU JOUEUR","star"),app,player,false)
+				_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
+				_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			else:
+				_detailed_attributes(D.panel(page,Rect2(0,430,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),detailed)
 		2:
 			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_development(D.panel(page,Rect2(0,716,1670,420),"BILANS DU JOUEUR","calendar"),app,player)
@@ -163,47 +183,46 @@ static func _slanted_badge(parent: Control, area: Rect2, fill: Color, border: Co
 	return badge
 
 static func _position(card:Panel,app:Control,player:Dictionary) -> void:
-	var slots:Array=app.model.get("selection",{}).get("slots",[])
-	var preferred:=clampi(int(player.get("fam",0)),0,8)
-	var primary_slot:int=[0,1,3,7,8,9,10,11,14][preferred]
-	if preferred==0 and str(player.get("pos","")).contains("droit"):primary_slot=2
 	var field := PositionPitch.new()
 	field.name = "PlayerRolePitch"
-	field.primary_slot = primary_slot
+	field.primary_numbers = Roster.primary_numbers(player)
+	field.secondary_numbers = Roster.secondary_numbers(player)
 	field.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(field)
 	D.place(field,Rect2(24,78,432,350))
-	var compatible:Array[String]=[]
-	for slot:Dictionary in slots:
-		if int(slot.get("slot",99))<15 and str(player.id) in slot.get("eligibleIds",[]) and str(slot.get("label","")) not in compatible:compatible.append(str(slot.label))
-	D.text(card,24,464,str(player.pos),26,C.GOLD,700,428)
-	D.text(card,24,496," · ".join(compatible) if not compatible.is_empty() else "Poste de référence du dossier",18,C.MUTED,500,428)
+	D.text(card,24,464,Roster.primary_caption(player),26,C.GOLD,700,428)
+	var other := D.text(card,24,496,"Autres : "+Roster.secondary_caption(player),18,C.MUTED,500,428)
+	other.name = "PlayerOtherRoles"; other.mouse_filter = Control.MOUSE_FILTER_PASS
+	other.tooltip_text = "Vert : poste principal · Or : autres postes maîtrisés\n"+Roster.secondary_tooltip(player,app.model)
 
-static func _attributes(card:Panel,app:Control,player:Dictionary) -> void:
-	var radar:=G.W.new();app.SquadViews.radar_setup(radar,player,C.MINT);radar.grid_color=C.LINE;radar.data_color=C.MINT;card.add_child(radar);D.place(radar,Rect2(49,117,362,338))
-	var attributes:Dictionary=player.get("attributes",{})
-	var axes := [["power","Puissance",230,101],["speed","Vitesse",393,205],["pass","Passe",393,348],
-		["tackle","Plaquage",230,447],["stamina","Endurance",69,348],["mental","Mental",69,205]]
-	for axis: Array in axes:
-		var value: Variant = attributes.get(axis[0])
-		D.text(card,axis[2],axis[3],axis[1],21,C.IVORY,600,110,HORIZONTAL_ALIGNMENT_CENTER)
-		var label := D.text(card,axis[2],axis[3]+25,G.n(value) if value!=null else "—",27,
-			C.MINT if value!=null and float(value)>=85 else C.GOLD,700,110,HORIZONTAL_ALIGNMENT_CENTER)
-		label.name="PlayerRadar_"+axis[0]
-	var groups:Array=[["TECHNIQUE",[["pass","Passe"],["kick","Jeu au pied"],["goal","But"],["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"]]],["MENTAL",[["mental","Mental"],["discipline","Discipline"]]],["PHYSIQUE",[["speed","Vitesse"],["stamina","Endurance"],["power","Puissance"]]]]
-	for i in groups.size():
-		var x:=452+i*234
-		D.rect(card,Rect2(x,81,224,390),Color("121c1c"),5,C.LINE)
-		D.rect(card,Rect2(x,81,224,46),Color("123629"),4)
-		D.text(card,x+12,113,groups[i][0],26,C.IVORY,700,200)
-		for j in groups[i][1].size():
-			var pair:Array=groups[i][1][j]
-			var y:int=164+j*49
-			var value:Variant=attributes.get(pair[0])
-			D.text(card,x+12,y,pair[1],23,C.IVORY,500,147)
-			var number:=D.text(card,x+210,y,G.n(value) if value!=null else "—",29,C.MINT if value!=null and float(value)>=85 else C.GOLD,700,54,HORIZONTAL_ALIGNMENT_RIGHT)
-			number.name="PlayerAttribute_"+str(pair[0])
-			D.line(card,Vector2(x+10,y+13),Vector2(x+213,y+13),Color(C.LINE,.45))
+static func _evaluation(card: Panel, app: Control, player: Dictionary, has_details: bool) -> void:
+	D.text(card,30,121,"NIVEAU / 100",26,C.MUTED,700,500)
+	D.text(card,30,225,G.rating_text(player,true),88,C.MINT,800,360).name = "PlayerGlobalRating"
+	D.text(card,30,285,"Niveau actuel du joueur.",26,C.IVORY,500,900)
+	if has_details:
+		D.button(card,Rect2(30,332,465,60),"Voir les 36 attributs",func():
+			app.management_ui.immersive_player_tab = 1
+			app._render()
+			ClubUI.focus(app,"FullPlayerTab1"),true,"arrow",true,app.accent,"OpenDetailedPlayerAttributes")
+	else:
+		D.text(card,30,344,"Le détail à 36 attributs est indisponible pour ce profil.",25,C.MUTED,500,1080)
+
+static func _detailed_attributes(card: Panel, values: Dictionary) -> void:
+	D.text(card,24,88,PlayerAttributes.SUBTITLE,23,C.MUTED,500,600)
+	for i in PlayerAttributes.GROUPS.size():
+		var group: Array = PlayerAttributes.GROUPS[i]
+		var x := 24 + i * 554
+		D.rect(card,Rect2(x,108,538,448),Color("121c1c"),5,C.LINE)
+		D.rect(card,Rect2(x,108,538,46),Color("123629"),4)
+		D.text(card,x+16,141,group[0],25,C.IVORY,700,506)
+		var entries: Array = group[1]
+		for j in entries.size():
+			var pair: Array = entries[j]
+			var y := 192 + j * 41
+			D.text(card,x+16,y,pair[1],24,C.IVORY,500,425)
+			var number := D.text(card,x+522,y,PlayerAttributes.caption(values.get(pair[0])),26,C.GOLD,700,80,HORIZONTAL_ALIGNMENT_RIGHT)
+			number.name = "PlayerDetailedAttribute_" + str(pair[0])
+			D.line(card,Vector2(x+14,y+10),Vector2(x+524,y+10),Color(C.LINE,.45))
 
 static func _health(card:Panel,app:Control,player:Dictionary,injury:float,recovering:bool) -> void:
 	var condition := clampf(float(player.get("condition", 0)), 0, 100)
@@ -247,10 +266,10 @@ static func _health_fact(card: Panel, y: int, width: int, caption: String, value
 	D.text(fact,14,61,value,28,C.IVORY,600,width-28).name = id
 
 static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
-	var stats:Array=[[G.n(player.get("appearances",0)),"APPARITIONS"],[G.n(player.get("minutes",0)),"MINUTES"],[G.n(player.get("note","—")),"NOTE AU POSTE"]]
+	var stats:Array=[[G.n(player.get("appearances",0)),"APPARITIONS"],[G.n(player.get("minutes",0)),"MINUTES"]]
 	for i in stats.size():
-		var x:=24+i*300
-		D.text(card,x,145,stats[i][0],64,C.MINT if i==2 else C.IVORY,700,260)
+		var x:=24+i*440
+		D.text(card,x,145,stats[i][0],64,C.IVORY,700,400)
 		D.text(card,x,182,stats[i][1],22,C.MUTED,600,260)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
@@ -260,39 +279,44 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
 
 static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
-	D.text(card,24,113,G.euros(player.get("salary",0))+" / semaine",40,C.IVORY,700,515)
-	D.text(card,24,151,str(player.get("contractLabel","—")),27,C.MUTED,500,515)
-	D.text(card,24,183,"Montants de jeu",19,C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var renewal: Dictionary = player.get("renewal", {})
+	var reason := str(renewal.get("reason", ""))
+	D.text(card,24,113,G.salary(player.get("salary",0)),40,C.IVORY,700,515)
+	D.text(card,24,151,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),27,C.MUTED,500,515)
+	D.text(card,24,183,"Montants de jeu" if reason.is_empty() else reason,19,C.MUTED if reason.is_empty() else C.ALERT,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
-	offer.disabled=not player.get("renewal",{}).get("available",false) or not app._live().is_empty()
+	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
+	if not reason.is_empty(): offer.tooltip_text = reason
 
 static func _development(card:Panel,app:Control,player:Dictionary) -> void:
-	var records:Array=app.model.get("decisions",{}).get("development",{}).get("professionals",[]).filter(func(record:Dictionary):return str(record.get("id",""))==str(player.id))
-	var development:Dictionary=records[0].get("development",{}) if not records.is_empty() else {}
-	D.text(card,24,108,"NIVEAU ACTUEL  "+G.n(player.get("rating","—"))+"     ·     POTENTIEL  "+G.n(player.get("potential","—")),31,C.MINT,700,1550)
-	D.text(card,24,163,"Bilan et objectifs individuels dans le suivi de formation.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var player_id := str(player.id)
+	var record := Academy.professional_progress(app, player_id)
+	var development: Dictionary = record.get("development", {})
+	D.text(card,820,108,"POTENTIEL  "+G.potential_text(player),26,G.POTENTIAL_COLOR,700,700)
+	D.text(card,24,108,"NIVEAU ACTUEL  "+G.rating_text(player,true),26,C.MINT,700,700)
+	if record.is_empty():
+		D.text(card,24,163,"Suivi individuel indisponible pour ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
+		return
+	D.text(card,24,163,"Bilan et objectifs de ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var history:Array=development.get("history",[])
 	if history.is_empty():D.text(card,24,223,"Premier bilan annuel à venir.",25,C.MUTED,500,1550)
 	for i in mini(4,history.size()):
 		var year:Dictionary=history[history.size()-1-i]
 		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.n(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
-	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi de formation",func():app._navigate("Formation"),false,"school",true,app.accent,"PlayerDevelopmentAction")
+	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi individuel",func():
+		Academy.open_professional_progress(app, player_id, "PlayerDevelopmentAction"),false,"school",true,app.accent,"PlayerDevelopmentAction")
 
-static func _sources(card:Panel,app:Control,player:Dictionary) -> void:
+static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
 		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,686)
-		D.text(card,24,179,"Aucun dossier de référence externe associé.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,24,179,str(player.get("pos","—"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var pos:Dictionary=profile.get("position",{})
 	var contract:Dictionary=profile.get("contract",{})
 	var status:Dictionary=profile.get("status",{})
 	var qualifications: Array=pos.get("qualifications",[])
 	var details:Array=["Poste d’origine : "+str(pos.get("primary",player.pos)),"Qualifications de départ : "+(", ".join(qualifications) if not qualifications.is_empty() else "Non renseignées"),"Statut initial : "+str(status.get("value","—")),"Échéance de départ : "+G.n(contract.get("endYear","—"))]
-	if contract.has("basis"): details.append("Échéance officielle publiée" if contract.basis=="official" else "Durée initiale estimée pour le jeu")
-	for source_id in contract.get("sources",[]):
-		var source:Dictionary=app.model.get("meta",{}).get("rosterSources",{}).get(source_id,{})
-		details.append("Publication : "+str(source.get("published","date inconnue")))
 	var scroll := _scroll(card,Rect2(22,72,690,422))
 	for i in details.size(): scroll.add_child(C.wrap(details[i],23,C.IVORY if i==0 else C.MUTED,true,600 if i==0 else 500))
 

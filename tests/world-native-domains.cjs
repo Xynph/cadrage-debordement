@@ -1,13 +1,34 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./france-harness.cjs'),systems=require('../native/engine/native-systems.cjs');
-function world(){
- const h=context();h.ctx.nativeWorldRegistryText=JSON.stringify(require('../native/engine/world-registry.json'));
+function world(mode='world'){
+ const h=context(),base=require('../native/engine/world-registry.json');
+ h.ctx.nativeWorldRegistryText=JSON.stringify(base);
+ if(mode==='world-pacific'){
+  const {extendWorldRegistry}=require('../native/engine/world-pacific-registry.cjs');
+  h.ctx.nativeWorldPacificRegistryText=JSON.stringify(extendWorldRegistry(base,require('../native/engine/world-pacific-extension.json')));
+ }
  h.run(require('../native/engine/world-vm.cjs').bootstrap());
  h.run(systems.bootstrap());
- h.run('CDWorldCareer.start(30);');
+ h.run(mode==='world-pacific'?"CDWorldCareer.start(58,'world-pacific');":'CDWorldCareer.start(30);');
  return h;
 }
+test('Sauvegarde mondiale : les seuls face-à-face bénéficient de la borne de leur édition',()=>{
+ const h=world('world-pacific');
+ h.run(`S.interclubWorld=CDInterclubWorld.state(S);
+ for(const a of S.clubs)for(const b of S.clubs){
+  if(a.id>=b.id)continue;
+  S.interclubWorld.pairs[a.id+':'+b.id]={a:a.id,b:b.id,games:1,winsA:1,winsB:0,draws:0,tension:20,years:[1],lastWinner:a.id,lastSeason:1};
+ }`);
+ assert.equal(h.run('Object.keys(S.interclubWorld.pairs).length'),2278);
+ assert.doesNotThrow(()=>h.run('validateCareer(S)'));
+ assert.throws(()=>h.run('S.otherCollection={...S.interclubWorld.pairs};safeTree(S)'),/incohérentes/);
+ assert.throws(()=>h.run('S.otherCollection=Array(2001).fill(null);safeTree(S)'),/incohérentes/);
+ h.run('delete S.otherCollection');
+ assert.throws(()=>h.run("S.interclubWorld.pairs['0:68']=null;safeTree(S)"),/incohérentes/);
+ h.run("delete S.interclubWorld.pairs['0:68']");
+ assert.throws(()=>h.run("S.interclubWorld.pairs['0:1'].games++;validateCareer(S)"),/face-à-face/);
+});
 test('Domaines monde : note et conférence semaine35, quatre classements distincts',()=>{
  const h=world();h.run('S.round=35;S.worldMode.week=35');
  // Contrôle des domaines sur une horloge de fixture. Aucune saison jouée n'est revendiquée.

@@ -2,6 +2,7 @@ extends VBoxContainer
 # Reading state belongs to the application UI, never the career or its RNG.
 const G = preload("res://ui/carnet_skin.gd")
 const Decisions = preload("res://ui/decision_views.gd")
+const MatchContext = preload("res://ui/preparation_match_context.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 var app: Control
 var state: Dictionary
@@ -10,6 +11,7 @@ var tabs: Array[Button] = []
 var tab_style: StyleBox
 var tab_pressed_style: StyleBox
 var restoring := true
+var match_context := MatchContext.new()
 
 static func build(application: Control) -> Control:
 	var page := new()
@@ -53,6 +55,8 @@ func _build() -> void:
 	Decisions.dossier_summary(app, sections[0])
 	_consigne(sections[1])
 	_training(sections[2])
+	add_child(match_context)
+	match_context.bind(app)
 	_observe(self)
 	# The shell owns the outer viewport; each section remembers its own position.
 	app.body_scroll.get_v_scroll_bar().value_changed.connect(func(value: float):
@@ -61,6 +65,29 @@ func _build() -> void:
 	_restore.call_deferred()
 
 func _consigne(parent: Control) -> void:
+	match_context.consignes = parent
+	match_context.focus_fallback = tabs[1]
+	var info := G.panel(parent)
+	match_context.status_row = info.get_parent()
+	var live_line := G.h(12)
+	info.add_child(live_line)
+	match_context.live_context_row = live_line
+	match_context.live_context = G.label("", 44, G.INK, true)
+	match_context.live_context.name = "PreparationLiveContext"
+	G.fill(match_context.live_context)
+	live_line.add_child(match_context.live_context)
+	match_context.return_button = G.button("", match_context.open_match, true)
+	match_context.return_button.name = "PreparationConsignesReturn"
+	live_line.add_child(match_context.return_button)
+	var status_line := G.h(12)
+	info.add_child(status_line)
+	match_context.status = G.label("", 14)
+	match_context.status.name = "PreparationMatchState"
+	G.fill(match_context.status)
+	status_line.add_child(match_context.status)
+	match_context.pause_button = G.button("Mettre le match en pause", match_context.pause_match, true)
+	match_context.pause_button.name = "PreparationPauseMatch"
+	status_line.add_child(match_context.pause_button)
 	var tactics: Dictionary = app.model.get("tactics", {})
 	var row := G.h(14)
 	G.fill(row, true)
@@ -77,6 +104,7 @@ func _consigne(parent: Control) -> void:
 			if not restoring: state[pair[0]] = int(value))
 		for option in tactics.get(pair[1], []):
 			var button := G.button(str(option.label).to_upper(), func():
+				if not match_context.can_edit_tactics(): return
 				var current: Dictionary = app.model.get("tactics", {})
 				var data: Dictionary = {"attack":current.get("attack","equilibre"),"defense":current.get("defense","equilibre")}
 				data[pair[0]] = option.id
@@ -85,7 +113,7 @@ func _consigne(parent: Control) -> void:
 			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			button.set_meta("tactic_id", str(option.id))
 			if tactics.get(pair[0]) == option.id: G.selected(button, app.accent)
-			button.disabled = not app._live().is_empty() and not app._live().get("paused", false)
+			match_context.tactics.append(button)
 			list.add_child(button)
 			list.add_child(G.wrap(option.get("description", ""), 14))
 			list.add_child(G.separator())
@@ -97,20 +125,23 @@ func _training(parent: Control) -> void:
 	training.add_child(G.section("Le travail de la semaine", "La séance collective agit sur la récupération et le développement."))
 	var choices := G.h(12)
 	training.add_child(choices)
+	var season_closed: bool = app.model.meta.get("phase") == "ended"
 	for pair in [["repos","RÉCUPÉRATION"],["normal","CHARGE NORMALE"],["intense","INTENSIVE"]]:
 		var button := G.button(pair[1], func(): app._command("train", {"mode":pair[0]}))
 		button.name = "PreparationTrain_" + pair[0]
 		G.fill(button)
-		button.disabled = app.model.meta.get("trained", false) or not app._live().is_empty()
+		button.disabled = season_closed or app.model.meta.get("trained", false) or not app._live().is_empty()
 		choices.add_child(button)
-	if app.model.meta.get("trained", false): training.add_child(G.label("Séance déjà effectuée cette semaine.", 14, G.GOOD))
-	Decisions.training(app, training)
-	var match_button := G.button("ALLER AU JOUR DE MATCH  →", func(): app._navigate("Match"), true)
-	match_button.name = "PreparationMatch"
-	training.add_child(match_button)
+	if season_closed: training.add_child(G.wrap("Séance indisponible après la clôture de la saison.", 14, G.MUTED))
+	elif app.model.meta.get("trained", false): training.add_child(G.label("Séance déjà effectuée cette semaine.", 14, G.GOOD))
+	Decisions.training(app, training, not season_closed)
+	if MatchContext.match_available(app.model):
+		match_context.match_button = G.button("", match_context.open_match, true)
+		match_context.match_button.name = "PreparationMatch"
+		training.add_child(match_context.match_button)
 
 func _observe(node: Node) -> void:
-	if node is BaseButton and node.focus_mode != Control.FOCUS_NONE:
+	if node is BaseButton and node.focus_mode != Control.FOCUS_NONE and node != match_context.pause_button:
 		node.focus_entered.connect(func():
 			if not restoring:
 				var index := tabs.find(node) if node in tabs else int(state.tab)
@@ -125,6 +156,7 @@ func _choose(index: int) -> void:
 	state.tab = index
 	restoring = true
 	_show_tab()
+	app._observe_navigation()
 	# Tab selection keeps focus on the tab; Tab then enters its visible content.
 	_restore.call_deferred(false)
 

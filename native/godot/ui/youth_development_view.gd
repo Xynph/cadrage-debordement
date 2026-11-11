@@ -36,7 +36,7 @@ func _build() -> void:
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
 	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
-	body.add_child(G.wrap("Les plans orientent le travail à venir, sans gain immédiat. Pour les profils à progression annuelle, ils servent uniquement d’objectifs de suivi : ils ne changent ni leur courbe, ni leur exposition. Blessures, fatigue et minutes réellement jouées restent déterminantes.",14))
+	body.add_child(G.wrap("Les entraînements et les matchs font progresser les attributs et le niveau pendant la saison. Les plans orientent le travail à venir, sans gain immédiat ; le mentorat partage le même apprentissage. Pour les profils à progression annuelle, ces plans servent uniquement d’objectifs de suivi. Âge, personnalité, blessures, fatigue et temps de jeu influencent les progrès. Le potentiel peut évoluer au bilan de saison et ne garantit jamais le niveau atteint.",14))
 	var data := _data()
 	if not str(data.get("reason","")).is_empty(): body.add_child(G.wrap(str(data.reason),13))
 	if data.get("canEnable",false):
@@ -59,7 +59,7 @@ func _build() -> void:
 	confirmed.connect(queue_free); canceled.connect(queue_free); app.add_child(self)
 	app.bridge.model_changed.connect(func(_model: Dictionary):
 		if not app.bridge.last_response_ok: return
-		if app.last_command in ["new_career","import","recover_profile"]: queue_free()
+		if app.last_command in ["new_career","import","recover_profile","restore_checkpoint"]: queue_free()
 		else: _redraw())
 	app.get_window().size_changed.connect(_fit)
 	_redraw(); _fit()
@@ -119,7 +119,7 @@ func _person(person: Dictionary) -> void:
 	info.add_child(G.wrap("%s · %s · %s ans" % [str(person.name),str(person.pos),G.n(person.age)],20,G.INK))
 	var annual: bool = str(person.get("model",""))=="annual-v11"
 	info.add_child(G.wrap("Progression annuelle : les qualités évoluent au bilan annuel selon l’exposition réelle. La spécialisation n’est pas disponible pour ce profil." if annual else "Progression par le travail : le plan répartit les efforts à venir, sans gain supplémentaire.",13))
-	info.add_child(G.wrap("Niveau général %s · potentiel estimé au poste %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.n(person.get("rating",0)),G.n(person.get("potential",0)),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
+	info.add_child(G.wrap("Niveau général %s · potentiel estimé au poste %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.rating_text(person,true),G.potential_text(person),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
 	var current: Dictionary = person.get("current",{})
 	var minutes := "Minutes de carrière : %s" % G.n(person.get("careerMinutes",current.get("careerMinutes",0)))
 	if not annual: minutes += " · progression générale %s · progression ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))]

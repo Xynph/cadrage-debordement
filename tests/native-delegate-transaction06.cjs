@@ -37,9 +37,28 @@ function sameFile(a,b){
  try{assert.equal(fs.fstatSync(aa).size,fs.fstatSync(bb).size);for(;;){const n=fs.readSync(aa,ba,0,ba.length,null),m=fs.readSync(bb,bc,0,bc.length,null);assert.equal(n,m);if(!n)break;assert.equal(ba.subarray(0,n).equals(bc.subarray(0,m)),true,'Complete JSON/file bytes must match');}}
  finally{fs.closeSync(aa);fs.closeSync(bb);}
 }
+function sameCheckpoints(a,b){
+ assert.equal(fs.existsSync(a),fs.existsSync(b),'Checkpoint directory availability must match');
+ if(!fs.existsSync(a))return;
+ const names=fs.readdirSync(a).sort();assert.deepEqual(fs.readdirSync(b).sort(),names,'Every checkpoint path must match');
+ for(const name of names){const left=path.join(a,name),right=path.join(b,name),stat=fs.lstatSync(left);assert.equal(fs.lstatSync(right).isDirectory(),stat.isDirectory());if(stat.isDirectory())sameCheckpoints(left,right);else sameFile(left,right);}
+}
 test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts',()=>{
  const scratch=fs.mkdtempSync(path.join(os.tmpdir(),'cd-delegate-transaction-')),app=path.join(scratch,'app'),engine=path.join(app,'native/engine');
  fs.mkdirSync(path.dirname(engine),{recursive:true});fs.cpSync(path.dirname(WORKER),engine,{recursive:true});
+ // The two variants exercise identical checkpoint code, but UUIDs and the real
+ // wall-clock creation date are deliberately fresh in production. Give only
+ // this disposable copied module a repeatable entropy source. Never remove
+ // checkpoint fields from replies or relax complete byte comparisons.
+ const safetyFile=path.join(engine,'profile-safety.cjs'),safetySource=fs.readFileSync(safetyFile,'utf8');
+ const safetyFactory='function createStore(dataDir) {',safetyDate='createdAt: new Date().toISOString()';
+ assert.equal(safetySource.split(safetyFactory).length,2,'Unique checkpoint factory required');
+ assert.equal(safetySource.split(safetyDate).length,2,'Unique checkpoint wall-clock date required');
+ const fixtureSafety=safetySource.replace(safetyFactory,safetyFactory+`
+  let checkpointSequence=0;
+  const randomUUID=()=>{let id;do{id='00000000-0000-4000-8000-'+(++checkpointSequence).toString(16).padStart(12,'0');}while(fs.existsSync(path.join(dataDir,'Copies-securite',id)));return id;};
+ `).replace(safetyDate,'createdAt: new Date(1700000000000+checkpointSequence).toISOString()');
+ fs.writeFileSync(safetyFile,fixtureSafety);
  const fixtureWorker=path.join(engine,'worker.cjs'),dist=path.join(ROOT,'dist');
  fs.symlinkSync(dist,path.join(app,'dist'),process.platform==='win32'?'junction':'dir');
  const own=file=>{const resolved=path.resolve(file);assert.ok(resolved.startsWith(path.resolve(scratch)+path.sep));return resolved;};
@@ -124,6 +143,7 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
   const moved=own(path.join(caseRoot,'historical-profile'));assert.equal(fs.existsSync(moved),false);fs.renameSync(own(profile),moved);
   const after=scenario('current',name,profile,path.join(caseRoot,'current'));
   for(const file of ['responses.jsonl','export.json','donnees.json'])sameFile(path.join(caseRoot,'historical',file),path.join(caseRoot,'current',file));
+  sameCheckpoints(path.join(moved,'PrototypeGodot','Copies-securite'),path.join(profile,'PrototypeGodot','Copies-securite'));
   assert.deepEqual(after,before);rows.push({name,...after});console.log('Delegate contract received: '+name);
  }
  // Real stdio parser: no request can contain functions or getters. Unknown code
@@ -131,19 +151,26 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
  const cliRoot=path.join(scratch,'stdio'),profile=path.join(cliRoot,'profile');fs.mkdirSync(cliRoot);
  const clockFixture=path.join(cliRoot,'clock.cjs');fs.writeFileSync(clockFixture,"'use strict';Date.now=()=>1700000000000;\n");
  const lines=[JSON.stringify({id:1,command:'new_career',payload:{mode:'common',club:29}}),JSON.stringify({id:2,command:'snapshot',payload:JSON.parse('{"toJSON":"texte","__proto__":{"polluted":true}}')}),JSON.stringify({id:3,command:'delegate; process.exit(7)',payload:{}}),'{invalid}',JSON.stringify({id:4,command:'shutdown'})].join('\n')+'\n';
- // Four replies carry the full creation catalogues, including club history and roster reports.
- const stdioMaxBuffer=16*1024*1024;
- let first,firstProfile;
+ // Keep complete catalogue replies on disk, outside spawnSync's bounded pipes.
+ const stdioBytes=[];
+ let firstOutput,firstProfile;
  for(const variant of ['historical','current']){
   fs.writeFileSync(fixtureWorker,variant==='historical'?historical:source);
-  const result=spawnSync(process.execPath,['--require',clockFixture,fixtureWorker,'--data-dir',profile],{input:lines,env:{...process.env,CD_GODOT_SEED:'411'},encoding:'utf8',windowsHide:true,timeout:30000,maxBuffer:stdioMaxBuffer});
-  assert.equal(result.error,undefined);assert.equal(result.status,0,result.stderr);assert.equal(result.stderr,'');
-  const parsed=result.stdout.trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(parsed.map(item=>item.ok),[true,true,false,false,true]);
+  const stdoutFile=path.join(cliRoot,variant+'-stdout.jsonl'),stderrFile=path.join(cliRoot,variant+'-stderr.log');
+  const stdoutFd=fs.openSync(stdoutFile,'wx'),stderrFd=fs.openSync(stderrFile,'wx');
+  let result;
+  try{
+   result=spawnSync(process.execPath,['--require',clockFixture,fixtureWorker,'--data-dir',profile],{input:lines,env:{...process.env,CD_GODOT_SEED:'411'},windowsHide:true,timeout:30000,stdio:['pipe',stdoutFd,stderrFd]});
+  }finally{fs.closeSync(stdoutFd);fs.closeSync(stderrFd);}
+  const stderr=fs.readFileSync(stderrFile,'utf8');
+  stdioBytes.push({variant,stdout:fs.statSync(stdoutFile).size,stderr:fs.statSync(stderrFile).size});
+  assert.equal(result.error,undefined);assert.equal(result.status,0,stderr);assert.equal(stderr,'');
+  const parsed=fs.readFileSync(stdoutFile,'utf8').trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(parsed.map(item=>item.ok),[true,true,false,false,true]);
   assert.equal(parsed[2].error,'Commande inconnue ou interdite.');assert.equal(parsed[3].model,null);
   const profileBytes=fs.readFileSync(path.join(profile,'PrototypeGodot/donnees.json'));
-  if(first){assert.equal(result.stdout,first,'Complete real stdio responses');assert.deepEqual(profileBytes,firstProfile,'Complete stdio profile');}else{first=result.stdout;firstProfile=profileBytes;}
+  if(firstOutput){sameFile(stdoutFile,firstOutput);assert.deepEqual(profileBytes,firstProfile,'Complete stdio profile');}else{firstOutput=stdoutFile;firstProfile=profileBytes;}
   const moved=own(path.join(cliRoot,variant+'-profile'));assert.equal(fs.existsSync(moved),false);fs.renameSync(own(profile),moved);
  }
- fs.writeFileSync(path.join(scratch,'report.json'),JSON.stringify({cases:rows,stdio:true,checkpoint:{minute:checkpointModel.live.minute,period:checkpointModel.live.period,setupCommands},historicalOrigin:'f88e16fdbbffec38c1259f21a156ac6217374b12',historicalBranchSha256:LEGACY_SHA256,currentWorkerSha256:sha(source),currentDelegateSha256:sha(current)},null,2));
+ fs.writeFileSync(path.join(scratch,'report.json'),JSON.stringify({cases:rows,stdio:true,stdioCapture:'file',stdioBytes,checkpointCopiesBytewise:true,fixtureCheckpointEntropy:true,checkpointModuleSha256:sha(safetySource),fixtureCheckpointModuleSha256:sha(fixtureSafety),checkpoint:{minute:checkpointModel.live.minute,period:checkpointModel.live.period,setupCommands},historicalOrigin:'f88e16fdbbffec38c1259f21a156ac6217374b12',historicalBranchSha256:LEGACY_SHA256,currentWorkerSha256:sha(source),currentDelegateSha256:sha(current)},null,2));
  console.log('Delegate transaction : '+rows.length+' cas appariés complets + stdio, checkpoint réel '+checkpointModel.live.minute+'min, aucune normalisation des réponses/exports/profils ; '+scratch);
 });

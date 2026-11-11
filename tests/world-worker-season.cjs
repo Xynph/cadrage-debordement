@@ -13,7 +13,7 @@ function checkpoint(label){const text=go('export').meta.exportText;return {label
 try{
  b=open();let model=settleClubMeetings(go('new_career',{mode:'world',club:0}),(command,payload)=>go(command,payload));const measures=[],played=new Set();
  for(let week=0;week<46;week++){
-  if(model.next){played.add(model.next.competitionId);if(reception&&!euroExported&&model.next.competitionId==='champions'){fs.writeFileSync(path.join(reception,'avant-europe.json'),checkpoint('before Europe').text,{flag:'wx'});euroExported=true;}if(!model.selection.valid){go('auto_lineup');if(!go('snapshot').selection.valid)go('promote_cover');}go('begin_match');go('delegate');}
+  if(model.next){played.add(model.next.competitionId);if(reception&&!euroExported&&model.next.competitionId==='champions'){fs.writeFileSync(path.join(reception,'avant-europe.json'),checkpoint('before Europe').text,{flag:'wx'});euroExported=true;}if(!model.selection.valid){go('auto_lineup');if(!go('snapshot').selection.valid)go('promote_cover',{confirmed:true});}go('begin_match');go('delegate');}
   model=settleClubMeetings(go('finish_round'),(command,payload)=>go(command,payload));assert.equal(model.meta.week,week+1);
   if([7,20,33,45].includes(week)){const p=checkpoint('S1W'+(week+1));measures.push([p.label,p.bytes]);console.log(JSON.stringify({checkpoint:p.label,bytes:p.bytes,results:p.state.history.length,elapsedMs:Date.now()-started}));}
   if(week===20){const p=checkpoint('restart');go('shutdown');b=open();assert.deepEqual(checkpoint('reopened').state,p.state);model=go('snapshot');}

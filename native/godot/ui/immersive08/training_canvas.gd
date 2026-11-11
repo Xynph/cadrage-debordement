@@ -5,7 +5,10 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
-const TABS = ["Semaine", "Groupes", "Individuel", "Staff"]
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
+const Watch = preload("res://ui/management_state.gd")
+const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const TOPICS = ["COLLECTIF", "GROUPES", "INDIVIDUEL", "VIGILANCE", "CONSIGNES", "MATCH", "ENCADREMENT"]
@@ -57,7 +60,8 @@ func _build() -> void:
 	training = decisions.get("training", {})
 	support = app.model.get("clubLife", {}).get("clubSupport", {})
 	squad = app.model.get("squad", [])
-	watched = squad.filter(func(p: Dictionary): return float(p.get("physicalLoad", 0)) >= 55 or float(p.get("condition", 100)) < 70)
+	watched = squad.filter(func(p: Dictionary):
+		return not Watch.watch_reason(p).is_empty())
 	watched.sort_custom(func(a: Dictionary, b: Dictionary): return _risk(a) > _risk(b))
 	staff = _staff_members()
 	trained = meta.get("trained", false)
@@ -66,14 +70,15 @@ func _build() -> void:
 		app.management_ui.immersive_training = {}
 	state = app.management_ui.immersive_training
 	var week_key := str([app.model.get("club", {}).get("id"), meta.get("season"), meta.get("week")])
-	if state.get("week") != week_key or state.get("stored_mode") != meta.get("training"):
+	var training_mode := str(meta.get("training", "normal"))
+	if state.get("week") != week_key or state.get("stored_mode") != training_mode or trained:
 		state.week = week_key
-		state.stored_mode = meta.get("training")
-		state.mode = str(meta.get("training", "normal"))
+		state.stored_mode = training_mode
+		state.erase("mode")
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
 	D.text(self, 29, 34, "PRÉPARATION DU GROUPE", 28, PALE_GOLD, 700, 320)
-	D.line(self, Vector2(335, 24), Vector2(486, 24), Color(PALE_GOLD, .72), 2)
-	app.heading = D.text(self, 27, 103, "La semaine se gagne ici.", 72, C.IVORY, 800, 800)
+	D.line(self, Vector2(335, 24), Vector2(486, 24), app.accent.lightened(.36), 2)
+	app.heading = D.text(self, 27, 103, "Plan d’entraînement", 72, C.IVORY, 800, 780)
 	var opponent: Dictionary = app.model.get("next") if app.model.get("next") is Dictionary else {}
 	var fixture := "Aucune rencontre annoncée"
 	if not opponent.is_empty():
@@ -84,7 +89,7 @@ func _build() -> void:
 	D.text(self, 30, 142, "Semaine %s  ·  %s" % [G.n(int(meta.get("week", 0)) + 1), fixture], 27, C.IVORY, 500, 785)
 	_metrics(meta)
 	for i in TABS.size():
-		var tab := ClubUI.tab(self, Rect2(4 + i * 249, 169, 238, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
+		var tab := ClubUI.tab(self, Rect2(4 + i * 199, 169, 188, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
 		tab.add_theme_font_size_override("font_size", C.px(30))
 		var shape := tab.get_theme_stylebox("normal")
 		tab.add_theme_stylebox_override("pressed", shape)
@@ -98,7 +103,8 @@ func _build() -> void:
 		if app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 		app._navigate("Préparation"), false, "", "TrainingBackToPreparation")
 	dossier.tooltip_text = "Revenir au dossier de préparation et aux consignes de jeu"
-	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Valider la semaine", _validate, true, "arrow", "TrainingValidateWeek")
+	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, true, "arrow", "TrainingValidateWeek")
+	validate.tooltip_text = "Séance déjà effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Vous pourrez choisir sa charge."
 	validate.disabled = trained or locked
 	validate.add_theme_font_size_override("font_size", C.px(33))
 	D.line(self, Vector2(2, 234), Vector2(1741, 234))
@@ -107,12 +113,13 @@ func _build() -> void:
 		1: _groups()
 		2: _individuals()
 		3: _staff_tab()
+		4: Fatigue.build(app, self, state)
 
 func _risk(p: Dictionary) -> float:
 	return maxf(float(p.get("physicalLoad", 0)), 100.0 - float(p.get("condition", 100)))
 
 func _mode() -> String:
-	return str(MODES.get(state.get("mode", "normal"), MODES.normal))
+	return str(MODES.get(state.get("mode", state.get("stored_mode")), MODES.normal))
 
 func _staff_members() -> Array:
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
@@ -130,9 +137,9 @@ func _metrics(meta: Dictionary) -> void:
 	var metrics := D.panel(self, Rect2(815, 24, 928, 106), "", "", "", "TrainingMetrics")
 	var values := [
 		["heart", "Condition", G.n(group.condition) + " %", GREEN],
-		["people", "Moral", G.n(meta.get("morale", "—")), GREEN],
-		["train", "Charge moyenne", "%d / 100" % roundi(total_load / maxi(1, squad.size())), GREEN],
-		["warning", "À surveiller", "%d joueur(s)" % watched.size(), C.ALERT if not watched.is_empty() else GREEN],
+		["people", "Moral", G.n(meta.get("morale", "—")), C.IVORY],
+		["train", "Charge moyenne", "%d / 100" % roundi(total_load / maxi(1, squad.size())), C.IVORY],
+		["warning", "À surveiller", "%d joueur(s)" % watched.size(), C.ALERT if not watched.is_empty() else C.MUTED],
 	]
 	for i in values.size():
 		var value: Array = values[i]
@@ -159,10 +166,10 @@ func _week(fixture: Dictionary) -> void:
 	D.text(self, 6, 256, "PLAN DE SEMAINE  /  1 SÉANCE COLLECTIVE", 17, C.MUTED, 600, 800)
 	for i in TOPICS.size():
 		var column := D.panel(self, Rect2(4 + i * 250, 270, 239, 545), "", "", "", "TrainingWeekColumn" + str(i))
-		var tone := PALE_GOLD if i == 5 and not fixture.is_empty() else GREEN
-		D.rect(column, Rect2(1, 1, 237, 82), Color("433510") if i == 5 and not fixture.is_empty() else Color("074a2e") if i == 0 else Color("15211e"), 8, Color(tone, .55) if i in [0, 5] else Color.TRANSPARENT)
-		D.text(column, 119, 29, "%02d  /  %s" % [i + 1, TOPICS[i]], 25, C.IVORY, 700, 224, HORIZONTAL_ALIGNMENT_CENTER)
-		D.chip(column, Rect2(37, 42, 165, 29), "SEMAINE EN COURS" if i == 0 else "REPÈRE DU PLAN", tone)
+		var match_column := i == 5 and not fixture.is_empty()
+		var tone := PALE_GOLD if match_column else C.MINT if i == 0 else C.MUTED
+		D.rect(column, Rect2(1, 1, 237, 82), Color("30291d") if match_column else Color("1d362d") if i == 0 else Color("182222"), 8)
+		D.text(column, 119, 51, TOPICS[i], 29, tone, 700, 224, HORIZONTAL_ALIGNMENT_CENTER)
 		for band in 2:
 			var index := i * 2 + band
 			var slot: Array = SLOTS[index]
@@ -179,9 +186,9 @@ func _week(fixture: Dictionary) -> void:
 			for j in lines.size(): D.text(hit, 60, 33 + j * 24, lines[j], 24, C.IVORY, 700, 146)
 			var details := D.words(captions[index], 18, 2)
 			for j in details.size(): D.text(hit, 13, 88 + j * 24, details[j], 24, C.IVORY, 500, 192)
-			D.text(hit, 13, 157, slot[2], 20, C.MUTED, 500, 191)
-			for j in 3:
-				D.rect(hit, Rect2(14 + j * 23, 122, 15, 15), tone if j <= (1 if index == selected else 0) else Color("394241"), 9)
+			var caption: String = slot[2]
+			if index == 0 and (trained or locked): caption = "Charge appliquée" if trained else "Séance indisponible"
+			D.text(hit, 13, 149, caption, 20, C.MUTED, 500, 191)
 		if i == 0: D.line(column, Vector2(13, 310), Vector2(226, 310))
 	_chart()
 	_vigilance()
@@ -195,9 +202,12 @@ func _week(fixture: Dictionary) -> void:
 	D.text(self, 2244, 1217, "Charges et condition issues de votre carrière", 17, C.MUTED, 500, 622, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _slot_style(hit: Button, selected: bool, match_slot: bool) -> void:
-	var style := C.box(Color("17352a") if selected else Color("473509") if match_slot else Color("10191a"), GREEN if selected else PALE_GOLD if match_slot else Color("263130"), 6, 0)
-	style.set_border_width_all(3 if selected else 1)
-	hit.add_theme_stylebox_override("normal", style)
+	var fill := Color("20382d") if selected else Color("32291d") if match_slot else Color("10191a")
+	var border := C.MINT if selected else PALE_GOLD if match_slot else Color("3d4946")
+	for state in ["normal", "hover", "pressed"]:
+		var style := C.box(fill.lightened(.06) if state == "hover" else fill, border, 6, 0)
+		style.set_border_width_all(2 if selected else 1)
+		hit.add_theme_stylebox_override(state, style)
 
 func _select(index: int) -> void:
 	state.slot = index
@@ -228,7 +238,11 @@ func _selection(index: int) -> void:
 	for i in lines.size(): D.text(holder, 150, 72 + i * 24, lines[i], 21, C.IVORY, 500, 322)
 	D.text(holder, 14, 154, "Préparation du groupe", 20, C.MUTED, 500, 445)
 	D.line(holder, Vector2(14, 166), Vector2(471, 166))
-	_action(holder, Rect2(17, 181, 453, 52), slot[4], func(): _open_slot(index), true, "arrow", "TrainingEditSelected")
+	var unavailable := index == 0 and (trained or locked)
+	var action_label: String = slot[4]
+	if unavailable: action_label = "Séance effectuée" if trained else "Séance indisponible"
+	var action := _action(holder, Rect2(17, 181, 453, 52), action_label, func(): _open_slot(index), false, "" if unavailable else "arrow", "TrainingEditSelected")
+	action.disabled = unavailable
 
 func _chart() -> void:
 	var tile := D.panel(self, Rect2(1760, 11, 488, 296), "Charge & récupération", "heart", "", "TrainingLoadChart")
@@ -262,22 +276,28 @@ func _chart() -> void:
 func _vigilance() -> void:
 	var tile := D.panel(self, Rect2(1760, 318, 488, 178), "", "", "", "TrainingRisk")
 	_icon(tile, "warning", Rect2(18, 13, 25, 25), PALE_GOLD)
-	D.text(tile, 54, 35, "RISQUE DE FATIGUE  (%d)" % watched.size(), 25, C.IVORY, 700, 410)
+	D.text(tile, 54, 35, "VIGILANCE PHYSIQUE  (%d)" % watched.size(), 25, C.IVORY, 700, 410)
 	D.line(tile, Vector2(17, 47), Vector2(469, 47))
 	if watched.is_empty():
 		D.text(tile, 22, 92, "Aucune alerte physique", 24, GREEN, 600, 420)
-		D.text(tile, 22, 127, "Charge ≥ 55 ou condition < 70 %", 20, C.MUTED, 500, 420)
+		D.text(tile, 22, 127, "Mêmes repères que l’Effectif", 24, C.MUTED, 500, 420)
 		return
 	for i in mini(3, watched.size()):
 		var p: Dictionary = watched[i]
 		var y := 51 + i * 40
 		var button := _action(tile, Rect2(12, y, 464, 38), "", func(): _player_dialog(p), false, "", "TrainingRisk_" + str(i))
-		button.accessibility_name = str(p.name)
+		var reasons := Watch.watch_reason(p).split(" · ")
+		var description := "%s · %s · %s" % [p.name, p.pos, " · ".join(reasons)]
+		button.accessibility_name = description
+		button.tooltip_text = description
 		button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
 		_icon(button, "people", Rect2(13, 9, 23, 23), C.IVORY)
-		D.text(button, 53, 27, str(p.name), 22, C.IVORY, 700, 231)
-		D.text(button, 298, 26, str(p.pos), 18, C.MUTED, 500, 93)
-		D.text(button, 452, 28, G.n(p.get("physicalLoad", 0)) + " / 100", 21, PALE_GOLD, 700, 67, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(button, 53, 17, str(p.name), 22, C.IVORY, 700, 205)
+		D.text(button, 53, 34, str(p.pos), 16, C.MUTED, 500, 205)
+		for line in reasons.size():
+			var baseline := 26 if reasons.size() == 1 else 17 + line * 17
+			var reason := D.text(button, 452, baseline, reasons[line], 19, PALE_GOLD, 700, 183, HORIZONTAL_ALIGNMENT_RIGHT)
+			reason.name = "TrainingRiskReason%d" % line
 
 func _axes(tile: Panel) -> void:
 	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
@@ -334,6 +354,7 @@ func _groups() -> void:
 func _individuals() -> void:
 	var tile := D.panel(self, Rect2(4, 260, 1740, 950), "Le travail individuel", "train", "", "TrainingIndividuals")
 	var scroll := ScrollContainer.new()
+	scroll.name = "TrainingIndividualsScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	tile.add_child(scroll)
@@ -341,21 +362,23 @@ func _individuals() -> void:
 	var list := C.v(3)
 	C.fill(list)
 	scroll.add_child(list)
-	for column in [["JOUEUR", 66], ["POSTE", 457], ["CONDITION", 815], ["CHARGE", 1010], ["PLAN INDIVIDUEL", 1192]]:
-		D.text(tile, column[1], 87, column[0], 21, C.MUTED, 700, 280)
-	for p: Dictionary in squad:
+	for column in [["JOUEUR", 60, 366, "name"], ["POSTE", 440, 330, "pos"], ["CONDITION", 800, 180, "condition"], ["CHARGE", 993, 170, "physicalLoad"], ["PLAN INDIVIDUEL", 1174, 420, "loadPlan"]]:
+		Fatigue.sort_header(app, tile, Rect2(column[1], 62, column[2], 31), column[0], column[3], state, "individual", "TrainingIndividualSort_" + str(column[3]))
+	var ordered := Fatigue.sorted_players(squad, str(state.get("individual_sort", "priority")), state.get("individual_descending", false))
+	for p: Dictionary in ordered:
 		var row := C.button("", func(): _player_dialog(p))
 		row.name = "TrainingIndividual_" + str(p.id).replace(":", "_")
 		row.accessibility_name = str(p.name) + " · plan individuel"
 		row.set_meta("player_id", p.id)
-		row.custom_minimum_size.y = C.px(55)
+		row.custom_minimum_size.y = C.px(32)
+		Fatigue.compact_button(row, 18)
 		list.add_child(row)
-		_portrait(row, p, Rect2(7, 4, 44, 46))
-		D.text(row, 63, 37, str(p.name), 26, C.IVORY, 700, 366)
-		D.text(row, 442, 37, str(p.pos), 24, C.MUTED, 500, 330)
-		D.text(row, 802, 37, G.n(p.get("condition", 0)) + " %", 24, GREEN, 600, 160)
-		D.text(row, 993, 37, G.n(p.get("physicalLoad", 0)) + " / 100", 24, PALE_GOLD if p in watched else C.IVORY, 600, 150)
-		D.text(row, 1174, 37, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 24, C.IVORY, 500, 420)
+		_portrait(row, p, Rect2(7, 2, 26, 28))
+		D.text(row, 63, 24, str(p.name), 20, C.IVORY, 700, 366)
+		D.text(row, 442, 24, str(p.pos), 18, C.MUTED, 500, 330)
+		D.text(row, 802, 24, Fatigue._number(p, "condition", " %"), 19, GREEN, 600, 160)
+		D.text(row, 993, 24, Fatigue._number(p, "physicalLoad", " / 100"), 19, PALE_GOLD if p in watched else C.IVORY, 600, 150)
+		D.text(row, 1174, 24, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 18, C.IVORY, 500, 420)
 	if squad.is_empty(): list.add_child(C.label("Aucun joueur dans l’effectif.", 24, C.MUTED))
 	_chart()
 	_vigilance()
@@ -387,7 +410,8 @@ func _open_slot(index: int) -> void:
 		0: _mode_dialog(false)
 		1: _choices_dialog(false)
 		2, 3: _open_tab(1)
-		4, 5, 6: _open_tab(2)
+		4, 5: _open_tab(2)
+		6: _open_tab(4)
 		7: app._navigate("Travail du club")
 		8: app._navigate("Plan de jeu")
 		9: _choices_dialog(true)
@@ -397,16 +421,22 @@ func _open_slot(index: int) -> void:
 
 func _validate() -> void:
 	if locked or trained: return
-	_mode_dialog(true)
+	var mode := str(state.get("mode", ""))
+	if not MODES.has(mode):
+		_mode_dialog(true)
+		return
+	app.confirm("Effectuer la séance", "Charge retenue · %s\nLa séance sera effectuée et ses effets enregistrés." % MODES[mode],
+		func(): app._command("train", {"mode":mode}), true)
 
 func _mode_dialog(validate: bool) -> void:
-	var window := _dialog("TrainingSessionDialog", "Valider la semaine" if validate else "Modifier la séance")
+	var window := _dialog("TrainingSessionDialog", "Effectuer la séance" if validate else "Modifier la séance")
 	var body: VBoxContainer = window[1]
 	var dialog: AcceptDialog = window[0]
 	body.add_child(C.wrap("Une séance collective peut être effectuée chaque semaine. Ajustez d’abord la préparation spécifique et les charges individuelles.", 22, C.IVORY, true))
 	if trained or locked:
 		body.add_child(C.wrap("Séance effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison.", 22, C.MUTED, true))
 	else:
+		var selected: String = state.get("mode", state.get("stored_mode"))
 		for id: String in MODES:
 			var button := C.button(str(MODES[id]), func():
 				dialog.hide()
@@ -414,12 +444,12 @@ func _mode_dialog(validate: bool) -> void:
 				if validate: app._command("train", {"mode":id})
 				else:
 					state.mode = id
-					app._render(), state.get("mode") == id, app.accent)
+					app._render(), selected == id, app.accent)
 			button.name = "PreparationTrain_" + id if validate else "TrainingMode_" + id
 			button.accessibility_name = ("Effectuer la séance · " if validate else "Sélectionner · ") + str(MODES[id])
 			body.add_child(button)
 		if validate: body.add_child(C.wrap("Choisir une charge ici effectue la séance et enregistre ses effets.", 19, C.MUTED, true))
-	_popup(dialog, 760, 320)
+	Dialogs.show_centered(dialog, Vector2i(C.px(760), C.px(320)))
 
 func _choices_dialog(opponent: bool) -> void:
 	var decisions: Dictionary = app.model.get("decisions", {})

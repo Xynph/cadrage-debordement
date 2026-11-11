@@ -19,10 +19,36 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.waiting and app.bridge.last_response_ok, "Worker réel " + id + " : " + app.last_error)
 	await settle()
+func match_surface() -> Control:
+	if app.contextual_director.active() and app.contextual_director.kind == "live":
+		return app.contextual_director.view
+	return app.match_screen if is_instance_valid(app.match_screen) else null
 func button_text(text: String) -> Button:
-	for b: Button in app.body.find_children("*", "Button", true, false):
-		if b.text == text: return b
+	var surface := match_surface()
+	if surface == null: return null
+	for b: Button in surface.find_children("*", "Button", true, false):
+		if b.text == text and b.is_visible_in_tree(): return b
 	return null
+func journal_selected() -> bool:
+	var surface := match_surface()
+	if surface == null: return false
+	if surface.has_method("_toggle_drawer"):
+		return surface.drawer_tab == "Journal" and surface.drawer.is_visible_in_tree()
+	return surface.tab == "Journal"
+func bind_journal() -> bool:
+	var surface := match_surface()
+	journal = surface.find_child("MatchJournal", true, false) if surface != null else null
+	var visible := journal != null and journal.is_visible_in_tree()
+	check(visible, "Le journal appartient à la vraie surface de match visible")
+	return visible
+func open_journal() -> bool:
+	# The contextual button toggles its drawer; selecting an already-open journal
+	# must keep it open rather than operate on the hidden management screen.
+	if not journal_selected(): await keyboard(button_text("JOURNAL"))
+	await settle()
+	return bind_journal()
+func tactics_button() -> Button:
+	return button_text("TACTIQUE" if match_surface().has_method("_toggle_drawer") else "CONSIGNES")
 func key(code: Key) -> void:
 	for down in [true, false]:
 		var event := InputEventKey.new()
@@ -45,6 +71,8 @@ func type_text(value: String) -> void:
 	await settle()
 	check(journal.search.text == value and journal.search.caret_column == value.length(), "Saisie clavier réelle de la recherche")
 func keyboard(control: Control) -> void:
+	check(control != null and control.is_visible_in_tree() and not control.disabled, "Action clavier visible et autorisée par le directeur")
+	if control == null or not control.is_visible_in_tree() or control.disabled: return
 	control.grab_focus()
 	await settle()
 	check(control.has_focus(), "Focus clavier : " + str(control.name))
@@ -63,7 +91,18 @@ func choose(index: int) -> void:
 	await key(KEY_ENTER)
 	await settle()
 	check(journal.category.selected == index, "Catégorie choisie au clavier " + str(index))
+func resolutions() -> Array[Vector2i]:
+	var requested := OS.get_environment("QA_RESOLUTION")
+	if not requested.is_empty():
+		var dimensions := requested.to_lower().replace("×", "x").split("x")
+		if dimensions.size() == 2 and dimensions[0].is_valid_int() and dimensions[1].is_valid_int() and int(dimensions[0]) > 0 and int(dimensions[1]) > 0:
+			return [Vector2i(int(dimensions[0]), int(dimensions[1]))]
+		check(false, "QA_RESOLUTION doit indiquer largeurxhauteur")
+	return [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]
 func run() -> void:
+	if not OS.get_environment("QA_RESOLUTION").is_empty():
+		root.size = resolutions()[0]
+		DisplayServer.window_set_size(root.size)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 30000
@@ -76,10 +115,7 @@ func run() -> void:
 	var tab := button_text("JOURNAL")
 	check(tab != null, "Le match expose un onglet Journal complet")
 	if tab != null:
-		await keyboard(tab)
-		journal = app.body.find_child("MatchJournal", true, false)
-		check(journal != null and journal.visible, "Le journal est raccordé au vrai écran")
-		if journal != null:
+		if await open_journal():
 			await cases()
 			await round_one()
 	var report := FileAccess.open(proof.path_join("report.json"), FileAccess.WRITE)
@@ -101,7 +137,15 @@ func cases() -> void:
 	var disk_before := FileAccess.get_file_as_bytes(disk_path)
 	check(not disk_before.is_empty(), "Profil réel présent pour comparer octets et RNG")
 	var source_before := JSON.stringify(app.model.live)
-	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
+	await keyboard(journal.review)
+	var review := journal.find_child("MatchActionReview", true, false) as AcceptDialog
+	check(review != null and review.visible, "La relecture des actions s’ouvre au clavier depuis le vrai Journal")
+	if review != null:
+		check(review.events == live.events, "La relecture conserve l’instantané exact des faits filtrés")
+		await keyboard(review.get_ok_button())
+		await settle()
+		check(not is_instance_valid(review), "La relecture se ferme au clavier sans quitter le match")
+	for resolution in resolutions():
 		root.size = resolution
 		DisplayServer.window_set_size(resolution)
 		await settle()
@@ -110,7 +154,7 @@ func cases() -> void:
 			check((Color("faf6ed").srgb_to_linear().get_luminance() + 0.05) / (ink.srgb_to_linear().get_luminance() + 0.05) >= 4.5, "Recherche : contraste du texte supérieur à 4,5:1")
 		check(journal.search.get_global_rect().end.x <= app.size.x and journal.search.get_global_rect().position.x >= 0 and journal.scroll.size.y > 80 and journal.scroll.get_global_rect().end.y <= app.size.y, "Journal et recherche visibles à " + str(resolution))
 		check(button_text("PAUSE") != null or button_text("REPRENDRE") != null, "Pause toujours accessible")
-		check(button_text("CONSIGNES") != null and button_text("BANC") != null, "Consignes et banc accessibles")
+		check(tactics_button() != null and button_text("BANC") != null, "Consignes et banc accessibles")
 		await choose(1)
 		check(journal.visible_events.all(func(e): return e is Dictionary and e.get("scene",{}).get("kind","") in ["try","goal"]), "Scores issus des métadonnées")
 		await choose(0)
@@ -166,22 +210,24 @@ func cases() -> void:
 	journal.search.text_changed.emit("emile")
 	await choose(2)
 	await keyboard(button_text("BANC"))
-	await keyboard(button_text("JOURNAL"))
+	await open_journal()
 	check(journal.category.selected == 2 and journal.search.text == "emile", "Aller-retour Banc conserve les filtres")
+	var journal_id := journal.get_instance_id()
 	app._navigate("Préparation")
 	await settle()
+	check(app.route == "Match" and app.contextual_director.kind == "live", "Le directeur garde le match visible pendant une tentative de sortie")
 	app._navigate("Match")
 	await settle()
-	check(app.match_screen.tab == "Journal", "Retour au match conserve l’onglet Journal")
-	journal = app.body.find_child("MatchJournal",true,false)
-	check(journal.category.selected == 2 and journal.search.text == "emile", "Recréation écran restaure l’état local")
+	check(journal_selected(), "La navigation verrouillée conserve le Journal ouvert")
+	bind_journal()
+	check(journal.get_instance_id() == journal_id and journal.category.selected == 2 and journal.search.text == "emile", "Le verrou du match conserve le widget, les filtres et la recherche")
 	check(JSON.stringify(app.model.live) == source_before, "Consultation et projections ne mutent pas le modèle moteur")
 	check(FileAccess.get_file_as_bytes(disk_path) == disk_before, "Consultation : octets profil/RNG inchangés")
 	await command("export")
 	check(app.model.meta.exportText == before, "Consultation : export de sauvegarde identique")
 
 	# Actual worker ticks are allowed only after the read-only invariant checks.
-	await keyboard(button_text("JOURNAL"))
+	await open_journal()
 	await choose(0)
 	journal.search.text = "SDB"
 	journal.search.text_changed.emit("SDB")
@@ -229,7 +275,7 @@ func round_one() -> void:
 		await choose(2)
 		await command("import", {"text":FileAccess.get_file_as_string(proof.path_join(fixture + ".json"))})
 		check(app.route == "Match", "Import depuis Match conserve la route")
-		journal = app.body.find_child("MatchJournal", true, false)
+		await open_journal()
 		check(not journal.new_events.visible and journal._unread == 0, "Import " + fixture + " : aucun faux événement live")
 		check(journal.search.text.is_empty() and journal.category.selected == 0, "Import " + fixture + " : anciens filtres réinitialisés")
 		check(journal.visible_events.size() == app.model.live.events.size(), "Import " + fixture + " : seul le nouvel historique est lu")
@@ -246,23 +292,23 @@ func round_one() -> void:
 		check(not app.management_ui.has("match_journal_search") or str(app.management_ui.match_journal_search).is_empty(), "Nouvelle carrière club " + str(club) + " : sortie ancienne UI ne repollue pas les filtres")
 		app._navigate("Match")
 		await settle()
-		await keyboard(button_text("JOURNAL"))
-		journal = app.body.find_child("MatchJournal", true, false)
+		await open_journal()
+		bind_journal()
 		check(journal.search.text.is_empty() and journal.category.selected == 0 and not journal.new_events.visible, "Nouveau contexte sans filtres ni compteur hérités")
-	# Route-changing import exercises the same exit hook with a saved live history.
+	# A live import resets the old reading store while the director owns its route.
 	journal.search.text = "autre ancien filtre"
 	journal.search.text_changed.emit(journal.search.text)
 	app._command("import", {"text":FileAccess.get_file_as_string(proof.path_join("live.json"))}, "Bureau")
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	await settle()
-	check(app.route == "Bureau" and app.bridge.last_response_ok, "Import réel avec changement de route")
+	check(app.route == "Match" and app.contextual_director.kind == "live" and app.bridge.last_response_ok, "L’import live ouvre le vrai direct malgré la cible Bureau")
 	check(not app.management_ui.has("match_journal_search") or str(app.management_ui.match_journal_search).is_empty(), "Import avec changement de route : ancien store ignoré")
 	app._navigate("Match")
 	await settle()
-	await keyboard(button_text("JOURNAL"))
-	journal = app.body.find_child("MatchJournal", true, false)
-	# Normal navigation remains local and preserves the exact reading position.
+	await open_journal()
+	bind_journal()
+	# Live navigation stays locked; local journal reading must survive the attempt.
 	journal.scroll.scroll_vertical = 120
 	await settle()
 	var position: int = journal.scroll.scroll_vertical
@@ -272,12 +318,12 @@ func round_one() -> void:
 	await settle()
 	app._navigate("Match")
 	await settle()
-	journal = app.body.find_child("MatchJournal", true, false)
-	check(app.match_screen.tab == "Journal" and journal.scroll.scroll_vertical == position, "Navigation ordinaire : onglet et position de relecture conservés")
+	bind_journal()
+	check(app.route == "Match" and app.contextual_director.kind == "live" and journal_selected() and journal.scroll.scroll_vertical == position, "Navigation verrouillée : Journal et position de relecture conservés")
 	# Private runtime layout variant; never changes production project settings.
 	var preferences_before: Dictionary = app.user_preferences.data.duplicate(true)
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
-	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
+	for resolution in resolutions():
 		root.size = resolution
 		DisplayServer.window_set_size(resolution)
 		await settle()
@@ -288,21 +334,24 @@ func round_one() -> void:
 			if str(entry.name).begins_with("JournalEvent") and journal.scroll.get_global_rect().encloses(entry.get_global_rect()): complete += 1
 		check(complete >= 3, "Journal 1:1 " + str(resolution) + " : au moins trois faits complets réellement visibles, obtenu " + str(complete))
 		check(journal.scroll.size.y >= 200, "Journal 1:1 : vraie hauteur de lecture >=200, obtenu " + str(journal.scroll.size.y))
-		for text in ["REPRENDRE", "CONSIGNES", "BANC", "CAMÉRA TV", "VUE TACTIQUE", "AU CONTACT"]:
-			var control := button_text(text)
-			check(control != null and Rect2(Vector2.ZERO, app.size).encloses(control.get_global_rect()), "Commande dans le canvas 1:1 : " + text)
+		var controls: Array = [button_text("REPRENDRE"), tactics_button(), button_text("BANC")]
+		controls.append_array(match_surface()._camera_controls)
+		check(match_surface()._camera_controls.size() == 3, "Les trois caméras du vrai direct restent accessibles")
+		for control: Button in controls:
+			check(control != null and control.is_visible_in_tree() and Rect2(Vector2.ZERO, app.size).encloses(control.get_global_rect()), "Commande dans le canvas 1:1 : " + (control.text if control != null else "absente"))
 		if OS.get_environment("CD_MATCH_JOURNAL_GRAPHICS") == "1":
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png(proof.path_join("journal-native-%dx%d.png" % [resolution.x,resolution.y]))
-		check(app.user_preferences.data == preferences_before and app.match_screen.stage._camera_mode == app.user_preferences.effective_camera() and app.match_screen.stage._quality == app.user_preferences.data.quality, "Redimensionnement : préférences caméra/qualité et effets conservés")
+		check(app.user_preferences.data == preferences_before and match_surface().stage._camera_mode == app.user_preferences.effective_camera() and match_surface().stage._quality == app.user_preferences.data.quality, "Redimensionnement : préférences caméra/qualité et effets conservés")
 		print("JOURNAL_NATIVE_GEOMETRY ", JSON.stringify({"window":root.size,"canvas":app.size,"reading":journal.scroll.size,"completeEvents":complete}))
 
-	root.size = Vector2i(1280,720)
+	root.size = resolutions()[0]
 	DisplayServer.window_set_size(root.size)
 	check(app.user_preferences.set_value("reduced_motion", true), "Mode calme enregistré dans le profil temporaire")
 	await settle()
-	check(app.match_screen.stage._camera_mode == "tactical" and app.match_screen.stage._quality == preferences_before.quality, "Géométrie courte : mode calme tactique et qualité conservés")
-	check(app.match_screen._camera_controls.all(func(b): return b.disabled), "Géométrie courte : contrôles caméra désactivés conformément au calme")
+	check(match_surface().stage._camera_mode == "tactical" and match_surface().stage._quality == preferences_before.quality, "Géométrie reçue : mode calme tactique et qualité conservés")
+	check(match_surface()._camera_controls.all(func(b): return b.disabled), "Géométrie reçue : contrôles caméra désactivés conformément au calme")
 	check(app.user_preferences.set_value("reduced_motion", preferences_before.reduced_motion), "Préférence calme initiale restaurée")
 	await settle()
-	check(app.user_preferences.data == preferences_before and app.match_screen.stage._camera_mode == app.user_preferences.effective_camera(), "Géométrie courte : caméra préférée restaurée après calme")
+	check(app.user_preferences.data == preferences_before and match_surface().stage._camera_mode == app.user_preferences.effective_camera(), "Géométrie reçue : caméra préférée restaurée après calme")
+	check(match_surface()._camera_controls.all(func(b): return b.disabled == (app.waiting or bool(preferences_before.reduced_motion))), "Caméras réactivées après restauration du calme, sous réserve du verrou de commande")

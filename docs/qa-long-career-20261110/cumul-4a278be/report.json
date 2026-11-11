@@ -1,0 +1,73 @@
+{
+  "format": "oval-long-career-audit",
+  "version": 1,
+  "seed": 713492,
+  "source": {
+    "root": "/workspace/cadrage-debordement/work/simulation/work/cumulative-source",
+    "commit": "4a278beaef5773dfdb4df097c695b850961606d9",
+    "pilotSha256": "3d7e912ade7980130957824bbc6393ab51a4d45aa697c987efadfa44d0f28e1f",
+    "engineSha256": "bea6eb777f8ba00913b4fe5751b32b93c5b31da51f670dff08b5b663918ae38c",
+    "dirty": false,
+    "node": "v22.23.4",
+    "platform": "linux"
+  },
+  "startedAt": "2026-11-10T13:46:19.329Z",
+  "profileRoot": "/tmp/oval-long-career-profiles-3Y0cVw",
+  "command": "OVAL_QA_SOURCE_ROOT=/workspace/cadrage-debordement/work/simulation/work/cumulative-source node scripts/qa-long-career.cjs --seasons 1 --through-year 2031 --seed 713492 --campaign club --output /workspace/cadrage-debordement/work/simulation/work/cumulative-one-season",
+  "status": "passed",
+  "durationMs": 115073,
+  "campaigns": [
+    {
+      "id": "club",
+      "name": "Club · Accession française",
+      "scope": "Worker complet · trois saisons par défaut · presse obligatoire · vrais exports/imports et redémarrages",
+      "status": "passed",
+      "checks": 242,
+      "checkpoints": [
+        {
+          "label": "Ouverture",
+          "sha256": "61b9666cfc427e9588cffdd1e74fe2bb4c3948466dcf27941debe19123069b4b",
+          "bytes": 4346906,
+          "season": 1,
+          "players": 1596,
+          "results": 0,
+          "date": null,
+          "cash": 2300000,
+          "played": 0
+        },
+        {
+          "label": "Saison 1 · mi-parcours",
+          "sha256": "752b2f12881492d911ad063283c68b8ea4d9ba604a7aadc9cac23d6e2e38079a",
+          "bytes": 4964013,
+          "season": 1,
+          "players": 1608,
+          "results": 241,
+          "date": null,
+          "cash": 6554850,
+          "played": 17
+        },
+        {
+          "label": "Saison 1 · clôture",
+          "sha256": "3acaad44d328b50c6adf642e81baefaef7dff72cd19c79e92ff3128d8b05d1c5",
+          "bytes": 5104481,
+          "season": 1,
+          "players": 1611,
+          "results": 433,
+          "date": null,
+          "cash": 5165200,
+          "played": 30
+        }
+      ],
+      "failures": [],
+      "durationMs": 114929,
+      "note": "1 saisons de club via le worker réel, 30 matchs du club délégués ; calendrier hebdomadaire, presse obligatoire. Aucun achat ni injection financière."
+    }
+  ],
+  "limits": [
+    "Carrières de recette uniquement : aucun profil personnel lu ou modifié. Trésoreries du jeu fictives.",
+    "Contrôles structurels et reprises : ni certification réglementaire, ni mesure de l’équilibrage ou de la performance GPU.",
+    "Club : worker complet en cadence hebdomadaire avec conférences obligatoires. Les journées quotidiennes et autres championnats ne sont pas couverts par cette campagne.",
+    "International : module natif et catalogue livré, simulations automatiques ; pas une carrière complète de sélectionneur et pas de recette UI.",
+    "Une seule graine et un club ne démontrent pas la robustesse de toutes les trajectoires possibles. Un échec stoppe la campagne concernée et reste rouge."
+  ]
+}

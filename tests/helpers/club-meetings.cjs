@@ -18,7 +18,7 @@ function settleClubMeetings(model,sendModel){
      const answer=[...question.answers].sort((a,b)=>impact(a)-impact(b)||(a.id<b.id?-1:a.id>b.id?1:0))[0];
      return {questionId:question.id,answerId:answer.id};
     });
-    model=sendModel('press_conference',{context:press.context,answers});
+    model=sendModel('press_conference',{context:press.context,answers,...(typeof press.conference.invitationId==='string'?{invitationId:press.conference.invitationId}:{})});
    }else if(scene.ackAllowed){
     model=sendModel('club_meeting_ack',{meetingId:scene.id});
    }else{

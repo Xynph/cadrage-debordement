@@ -13,11 +13,17 @@ module.exports={
   const check=(ok,message)=>{if(!ok)throw Error('Rendez-vous du club : '+message+'.');};
   const same=(a,b)=>!!a&&!!b&&a.season===b.season&&a.week===b.week&&a.club===b.club;
   const context=(s=S)=>({season:s.season,week:s.franceMode?.version===1?s.franceMode.week:s.round,club:s.club});
+  const hasClub=(s=S)=>s?.national?.role?.club!==false;
   const roster=(s=S)=>s.clubs[s.club].players;
   const reasons={press:'Une conférence de presse est disponible pour cette semaine.',injury:'Une blessure enregistrée appelle un point médical.',reprise:'Une reprise est enregistrée pour ce joueur.',intro:'Prendre connaissance des priorités et du bilan actuels du club.',periodic:'Faire le bilan des quatre dernières semaines simulées.',objective:'Un objectif enregistré a changé de statut de bilan.',finance:'La projection financière du club présente un montant négatif.'};
   const rank={press:0,medical:1,board:2};
   let installed=false,advanceFrom=null;
   const readCommands=['snapshot','export','save','load','import','shutdown','list_profiles','profile_list'];
+  // Réglages de présentation des packs d'identités : ni temps, ni effectif, ni finances, ni décision de club.
+  // Ils restent possibles pendant un rendez-vous ; le pack n'est appliqué qu'à l'affichage (voir docs/packs-pendant-un-rendez-vous.md).
+  const presentationCommands=['pack_inspect','pack_install','pack_select'];
+  const passive=command=>readCommands.includes(command)||presentationCommands.includes(command);
+  const pending='terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre';
   const stage=p=>p.medicalV68?.stage||null;
   const medicalAvailable=s=>!s.live&&!s.trained&&s.phase==='league';
   const priority=s=>s.v105to110?.priority||'stabilite';
@@ -40,9 +46,9 @@ module.exports={
   function state(){return S.clubMeetings||(S.clubMeetings={version:1,serial:0,current:null,queue:[],receipts:[],seen:[],observed:null});}
   function validate(s){
    if(!s||s.clubMeetings===undefined)return true;
-   const st=s.clubMeetings;
+   const st=s.clubMeetings,active=hasClub(s);
    check(shape(st,['version','serial','current','queue','receipts','seen','observed'])&&st.version===1&&integer(st.serial)&&Array.isArray(st.queue)&&st.queue.length<=80&&Array.isArray(st.receipts)&&st.receipts.length<=96&&Array.isArray(st.seen)&&st.seen.length<=256&&st.seen.every(x=>text(x))&&new Set(st.seen).size===st.seen.length,'version, bornes ou champs inconnus');
-   check(st.queue.length===0||!s.live&&(st.current!==null||!!s.sceneInvitations?.activeId),'file sans rendez-vous actif ou en conflit avec un match');
+   check(!active||st.queue.length===0||!s.live&&(st.current!==null||!!s.sceneInvitations?.activeId),'file sans rendez-vous actif ou en conflit avec un match');
    const maxWeek=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)?CDWorldCareer.sizing(s).maxRound:s.franceMode?.version===1?34:26;
    const date=c=>shape(c,['season','week','club'])&&integer(c.season,1,s.season)&&integer(c.week,0,maxWeek)&&integer(c.club,0,s.clubs.length-1)&&(c.season<s.season||c.week<=context(s).week);
    const ids=new Set(),sources=new Set();
@@ -75,13 +81,13 @@ module.exports={
     const match=/^club-meeting:(\d+):(\d+):(\d+):(\d+)$/.exec(e.id);
     check(match&&e.id==='club-meeting:'+e.context.season+':'+e.context.week+':'+e.context.club+':'+Number(match[4])&&+match[1]===e.context.season&&+match[2]===e.context.week&&+match[3]===e.context.club&&integer(+match[4],1,st.serial)&&!ids.has(e.id)&&!sources.has(e.sourceKey),'identifiant ou doublon');ids.add(e.id);sources.add(e.sourceKey);
     check((e.kind==='medical'?playerId(e.playerId):e.playerId===undefined)&&sourceValid(e),'source de réunion invalide');
-    if(e.kind==='press'&&!e.completed)check(pressAvailableState(s),'conférence déjà réalisée ou indisponible');
+    if(active&&e.kind==='press'&&!e.completed)check(pressAvailableState(s),'conférence déjà réalisée ou indisponible');
     if(live){check(same(e.context,context(s))&&!s.live&&!s.sceneInvitations?.activeId,'contexte de réunion périmé');if(e.kind==='medical'){const p=roster(s).find(p=>p.id===e.playerId);check(p,'joueur médical absent');if(!e.completed)check(p.injury>0||stage(p)==='reprise','suivi médical sans blessure ni reprise');}}
     if(receipt)check(e.completed,'reçu incomplet');
     if(e.decision)decision(e,live);
    }
-   if(st.current!==null)entry(st.current,true);
-   for(let i=0;i<st.queue.length;i++){const e=st.queue[i];entry(e,false);check(same(e.context,context(s))&&!e.completed&&(i===0||rank[e.kind]>=rank[st.queue[i-1].kind]),'file périmée, désordonnée ou déjà traitée');if(e.kind==='medical')check(roster(s).some(p=>p.id===e.playerId&&(p.injury>0||stage(p)==='reprise')),'joueur absent ou suivi médical indisponible dans la file');}
+   if(st.current!==null)entry(st.current,active);
+   for(let i=0;i<st.queue.length;i++){const e=st.queue[i];entry(e,false);check((!active||same(e.context,context(s)))&&!e.completed&&(i===0||rank[e.kind]>=rank[st.queue[i-1].kind]),'file périmée, désordonnée ou déjà traitée');if(active&&e.kind==='medical')check(roster(s).some(p=>p.id===e.playerId&&(p.injury>0||stage(p)==='reprise')),'joueur absent ou suivi médical indisponible dans la file');}
    for(const e of st.receipts)entry(e,false,true);
    const observed=st.observed;
    if(observed!==null){
@@ -93,9 +99,9 @@ module.exports={
    return true;
   }
   function project(){
-   const st=S?.clubMeetings;
+   const st=S?.clubMeetings,active=hasClub();
    const display=e=>({...copy(e),ackAllowed:ackAllowed(e)});
-   return {scene:st?.current?display(st.current):null,queue:(st?.queue||[]).map(display),receipts:copy(st?.receipts||[]),notice:'Rendez-vous de carrière obligatoires. Les décisions sont appliquées par les systèmes existants ; lire un bilan n’accorde aucun effet sportif.'};
+   return {scene:active&&st?.current?display(st.current):null,queue:(active?st?.queue||[]:[]).map(display),receipts:copy(st?.receipts||[]),notice:active?'Rendez-vous de carrière obligatoires. Les décisions sont appliquées par les systèmes existants ; lire un bilan n’accorde aucun effet sportif.':'Vous vous consacrez à votre sélection. Les reçus des rendez-vous du club restent consultables.'};
   }
   function add(st,kind,reason,sourceKey,playerId){
    if(st.seen.includes(sourceKey)||st.queue.length>=80)return;
@@ -109,9 +115,12 @@ module.exports={
   }
   function observe(command,payload={}){
    // Called by the worker after an accepted command, inside its atomic save.
-   if(!S||typeof command!=='string'||readCommands.includes(command))return;
+   if(!S||typeof command!=='string'||passive(command))return;
    const transition=advanceFrom;advanceFrom=null;
    let st=S.clubMeetings;
+   // Leaving the club expires its pending work, never its decision history.
+   // Reads of old saves stay pure; the next accepted mutation does the cleanup.
+   if(!hasClub()){if(st){st.current=null;st.queue=[];}return;}
    if(!st&&command.startsWith('club_meeting_'))return;
    if(st){
     const e=st.current;
@@ -162,11 +171,14 @@ module.exports={
   }
   function guard(command,payload={}){
    const st=S?.clubMeetings,e=st?.current||st?.queue?.[0];
-   if(!e||readCommands.includes(command)||command==='new_career')return true;
+   if(!hasClub()||!e||passive(command)||command==='new_career')return true;
+   // The mandate controller validates the actual offer and confirmation before
+   // observe() expires club obligations after an accepted departure.
+   if(command==='national_take_job'&&payload.role==='nation'&&payload.confirmed===true)return true;
    // A pre-existing private conversation gets to finish before queued rooms.
    if(!st.current&&S.sceneInvitations?.activeId&&['scene_invitation_reply','scene_invitation_close'].includes(command)&&payload.id===S.sceneInvitations.activeId)return true;
    if(['club_meeting_ack','club_meeting_continue'].includes(command))return true;
-   if(!st.current||e.completed)check(false,'terminez le rendez-vous du club avant de poursuivre');
+   if(!st.current||e.completed)check(false,pending);
    check(!S.live&&same(e.context,context()),'contexte périmé');
    if(e.kind==='press'&&command==='press_conference'){check(same(payload.context,e.context),'contexte de presse périmé');return true;}
    if(e.kind==='medical'&&['medical_protocol','medical_return'].includes(command)){
@@ -179,10 +191,10 @@ module.exports={
     check(payload.playerId===e.playerId&&p&&p.injury<=0&&stage(p)==='reprise'&&!S.trained&&S.phase!=='ended'&&['collective','repos','normal','intense'].includes(payload.mode),'charge de reprise indisponible pour ce joueur');return true;
    }
    if(e.kind==='board'&&['club_board_priority','club_board_project','club_board_objective'].includes(command)){check(same(payload.context,e.context),'contexte de direction périmé');return true;}
-   check(false,'terminez le rendez-vous du club avant de poursuivre');
+   check(false,pending);
   }
   function execute(command,payload){
-   check(!!S,'carrière absente');validate(S);
+   check(!!S,'carrière absente');check(hasClub(),'mandat en club absent');validate(S);
    check(['club_meeting_ack','club_meeting_continue'].includes(command)&&shape(payload,['meetingId'])&&text(payload.meetingId,180),'commande ou paramètres invalides');
    const st=S.clubMeetings,e=st?.current;
    check(e&&e.id===payload.meetingId&&same(e.context,context())&&!S.live,'rendez-vous absent ou périmé');

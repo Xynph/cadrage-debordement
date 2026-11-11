@@ -1,6 +1,33 @@
 extends Control
 
 const G = preload("res://ui/game_skin.gd")
+const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
+const CareerProgression = preload("res://ui/career_progression.gd")
+const COMMAND_WAIT_REVEAL_SECONDS := 0.25
+const COMMAND_WAIT_MESSAGES := {
+	"new_career": "Création de la carrière…",
+	"import": "Importation de la carrière…",
+	"export": "Préparation de l’export…",
+	"save": "Sauvegarde de la carrière…",
+	"recover_profile": "Préservation et récupération du profil…",
+	"restore_checkpoint": "Reprise de la copie de sécurité…",
+	"remove_checkpoint": "Suppression de la copie de sécurité…",
+	"pack_inspect": "Analyse du pack d’identités…",
+	"pack_install": "Installation du pack d’identités…",
+	"pack_select": "Application du pack d’identités…",
+	"begin_match": "Préparation du coup d’envoi…",
+	"delegate": "Simulation de la rencontre…",
+	"finish_round": "Mise à jour de la journée…",
+	"advance_day": "Passage au jour suivant…",
+	"train": "Application de la séance…",
+	"next_season": "Préparation de la nouvelle saison…",
+	"advance_pacific_preparation": "Avance de la préparation…",
+	"advance_japan_preparation": "Avance de la préparation…",
+	"advance_champ_preparation": "Avance de la préparation…",
+	"population_enable": "Mise à jour de la base de joueurs…",
+	"academy_groups_enable": "Mise à jour des centres de formation…",
+	"promote_cover": "Enregistrement des renforts…"
+}
 const Immersive = preload("res://ui/immersive08/shell.gd")
 const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
 const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -22,11 +49,11 @@ const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
 const NAV_CHAPTERS = [
-	{"label":"Bureau", "routes":["Bureau","Réception"]},
+	{"label":"Bureau", "routes":["Réception","Bureau"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
 	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
-	{"label":"Compétitions", "routes":["Calendrier","Classements","Presse","Rivalités"]},
+	{"label":"Compétitions", "routes":["Calendrier","Classements","Rivalités"]},
 	{"label":"Carrière", "routes":["Carrière"]}
 ]
 var model: Dictionary = {}
@@ -44,6 +71,7 @@ var roster_sort := "Poste"
 var management_ui: Dictionary = {}
 var accent := Color("d43e47")
 var bridge: Node
+var command_wait_overlay: CommandWaitOverlay
 var timer: Timer
 var body: VBoxContainer
 var heading: Label
@@ -149,11 +177,11 @@ func _ready() -> void:
 	decision_feedback = load("res://ui/decision_feedback.gd").new()
 	decision_feedback.setup(self)
 	_trace_startup("guide.setup.begin")
-	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
+	if OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") != "1":
 		coach = load("res://ui/immersive08/coach_canvas.gd").new()
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
-		coach.setup(self)
+		coach.setup(self, false)
 	_trace_startup("guide.setup.end")
 	soundscape = preload("res://audio/soundscape.gd").new()
 	add_child(soundscape)
@@ -171,6 +199,10 @@ func _ready() -> void:
 	contextual_director.name = "ContextualDirector"
 	add_child(contextual_director)
 	contextual_director.setup(self)
+	command_wait_overlay = CommandWaitOverlay.new()
+	command_wait_overlay.name = "CommandWaitOverlay"
+	add_child(command_wait_overlay)
+	waiting = true
 	_trace_startup("render.begin")
 	_render()
 	_trace_startup("render.end")
@@ -202,6 +234,12 @@ func _receive_model(value: Dictionary) -> void:
 	# A queued action can replace last_command below; keep this response's identity.
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
+	var reception_id := ""
+	if response_ok and (received_command in ["advance_day", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
+		reception_id = Immersive.Reception.new_priority(model, value)
+	# Keep one uninterrupted wait when the player's action follows an automatic tick.
+	if not response_ok or received_command != "tick" or queued_action.is_empty():
+		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
 	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
@@ -210,24 +248,30 @@ func _receive_model(value: Dictionary) -> void:
 		user_preferences.load_profile(str(model.meta.dataDir))
 		if soundscape_ready: sound_profile_loaded = soundscape.load_profile(str(model.meta.dataDir))
 		_apply_user_preferences()
-	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
-	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile"]:
+	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile","restore_checkpoint"])
+	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile","restore_checkpoint"]:
 		if is_instance_valid(navigation_controller): navigation_controller.reset()
-		for key in ["press_draft_context", "press_draft_choices"]:
+		for key in ["press_draft_context", "press_draft_choices", "press_mail_origin"]:
 			if has_meta(key): remove_meta(key)
 	if model.get("meta", {}).get("catalogue") is Array:
 		catalogue = model.meta.catalogue.duplicate(true)
 	waiting = false
+	if SeasonPreparation.is_advance(received_command): SeasonPreparation.show_pending(self, false)
 	connection_error = false
-	if _has_career(): accent = Color(G.identity(model.club).get("color", "#d43e47"))
+	if _has_career():
+		accent = Color("106d43") if Immersive.Selections.nation_only(model) else Color(G.identity(model.club).get("color", "#d43e47"))
 	if not export_path.is_empty() and not _write_export():
 		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 		return
 	if bridge.last_response_ok and received_command not in ["epcr_preview", "competition_editor_preview"]: last_error = ""
-	if bridge.last_response_ok and not pending_route.is_empty():
-		route = pending_route
+	if response_ok:
+		if not pending_route.is_empty(): route = pending_route
 		pending_route = ""
-	if bridge.last_response_ok and last_command in ["new_career","next_season","import"] and _has_career():
+		if _has_career() and (received_command in ["new_career", "next_season", "finish_round", "restore_checkpoint"] or not reception_id.is_empty()):
+			_reset_reception(reception_id)
+			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
+			route = "Réception"
+	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if response_ok and received_command == "match_talk_continue" and _live().is_empty():
 		route = "Réception"
@@ -236,6 +280,7 @@ func _receive_model(value: Dictionary) -> void:
 		pass
 	elif last_command == "tick" and route not in ["Accueil", "Création"]:
 		_update_live_bar()
+		if route == "Bureau": Immersive.Office.update_live_card(self)
 		if is_instance_valid(match_screen): match_screen.update_frame(model)
 	else:
 		if route == "Match" and is_instance_valid(match_screen):
@@ -254,7 +299,7 @@ func _receive_model(value: Dictionary) -> void:
 			var offer: Dictionary = model.meta.negotiation
 			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))
 		if last_command=="promote_cover" and model.meta.get("coverage") is Dictionary:
-			notice("Les renforts du centre",str(model.meta.coverage.get("message","La feuille a été complétée.")))
+			notice("Renforts signés",str(model.meta.coverage.get("message","La feuille a été complétée.")))
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
 	call_deferred("_refresh_coach")
@@ -271,16 +316,27 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 		if last_command == "tick" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			if is_instance_valid(status): status.text = "Votre décision est en attente de traitement…"
+			_present_command_wait(command)
 			return true
-		_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
+		if last_command == "snapshot": return false
+		var active_command := str(queued_action.get("command", last_command))
+		if not command_wait_overlay.visible or command != active_command:
+			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
 	waiting = true
 	last_command = command
 	pending_route = target_route
 	if is_instance_valid(status): status.text = "Traitement de votre décision…"
+	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
 	if decision_feedback != null: decision_feedback.begin(command, payload, model)
+	_present_command_wait(command)
 	bridge.send(command, payload)
 	return waiting
+
+func _present_command_wait(command: String) -> void:
+	var message: String = COMMAND_WAIT_MESSAGES.get(command, "")
+	if not message.is_empty():
+		command_wait_overlay.present(message, not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
@@ -293,9 +349,11 @@ func _refuse_action(message: String) -> void:
 		notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
+	command_wait_overlay.dismiss()
 	if is_instance_valid(soundscape): soundscape.notify_error()
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
+	if SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, false)
 	queued_action.clear()
 	pending_route = ""
 	connection_error = bridge.child_pid <= 0 or bridge._stopping
@@ -332,6 +390,26 @@ func _failed(message: String) -> void:
 	d.confirmed.connect(d.queue_free)
 	if route == "Accueil" or not _has_career(): _render()
 
+func _reset_reception(selected: String = "") -> void:
+	var inbox: Dictionary = Immersive.Reception._state(self)
+	inbox.merge({"folder":0, "category":"Tous", "selected":selected, "oldest_first":false, "scroll":0, "press_opened":"", "activity_filter":"all", "expanded_threads":{}, "return_focus":false}, true)
+
+func _show_press_inbox() -> void:
+	_reset_reception()
+	_navigate("Réception", false)
+
+func _open_press_invitation(id: String) -> void:
+	var inbox: Dictionary = management_ui.get("reception", {})
+	if route != "Réception" or waiting or inbox.get("press_opened") != id: return
+	var press: Dictionary = model.get("clubLife", {}).get("press", {})
+	var conference: Dictionary = press.get("conference", {})
+	var outcome: Variant = press.get("lastOutcome")
+	var active: bool = conference.get("available", false) and conference.get("invitationId") == id
+	if not active and not (outcome is Dictionary and outcome.get("invitationId") == id): return
+	set_meta("press_mail_origin", id)
+	management_ui.press_tab = 1
+	_navigate("Presse", false)
+
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
 	if is_instance_valid(contextual_director) and contextual_director.active_meeting():
 		contextual_director.render_if_needed()
@@ -339,6 +417,10 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 	if is_instance_valid(contextual_director) and contextual_director.match_immersed() and target != "Match":
 		contextual_director.render_if_needed()
 		return
+	if target == "Presse" and not has_meta("press_mail_origin"): return
+	if target == "Sélections" and not model.get("international") is Dictionary: return
+	if not Immersive.Selections.navigation_allowed(model, target): return
+	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
 		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
@@ -388,6 +470,8 @@ func _build_subnavigation(parent: Container) -> void:
 		return
 
 func _render(remember_ui: bool = true) -> void:
+	if route == "Presse" and not has_meta("press_mail_origin"): route = "Réception"
+	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
 	call_deferred("_refresh_coach")
 	call_deferred("_observe_navigation")
 	for chapter: Dictionary in NAV_CHAPTERS:
@@ -613,7 +697,9 @@ func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
 	var meta: Dictionary = model.get("meta", {})
 	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
-	var date := str(meta.get("date",""))
+	var planning: Dictionary = model.get("calendarPlanning", {})
+	var today: Variant = planning.get("today", meta.get("date", ""))
+	var date: String = today if today is String else ""
 	var parts := date.split("-")
 	if parts.size()==3 and parts[1].is_valid_int() and int(parts[1]) in range(1,13):
 		var months := ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."]
@@ -624,6 +710,12 @@ func _update_header_date() -> void:
 		if round_label == "Saison terminée": short_round = "Terminée"
 		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),short_round]).to_upper()
 		header_date.tooltip_text = round_label if short_round!=round_label else ""
+	var calendar := header_date.get_parent() as Button
+	if calendar != null:
+		calendar.accessibility_description = header_date.text
+		if not header_date.tooltip_text.is_empty():
+			calendar.accessibility_description += " · " + header_date.tooltip_text
+		calendar.tooltip_text = "Ouvrir le calendrier · " + calendar.accessibility_description
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
@@ -723,30 +815,72 @@ func _update_live_bar() -> void:
 	if is_instance_valid(primary_button):
 		var action := primary_text()
 		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else action
+		primary_button.disabled = false
+		if live.is_empty():
+			if _press_required():
+				if primary_button.name == "ImmersiveContinue": primary_button.text = "Conf. de presse"
+			elif not Immersive.Selections.current_fixture(model).is_empty():
+				if primary_button.name == "ImmersiveContinue": primary_button.text = "Courrier match"
+			elif not model.meta.get("canAdvanceSeason", false):
+				var daily := _daily_progression()
+				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
+				primary_button.disabled = bool(daily.get("disabled", false))
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		primary_button.tooltip_text = action
+	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
+
+func _press_required() -> bool:
+	return not Immersive.Selections.nation_only(model) and CareerProgression.press_required(model)
+
+func _daily_progression() -> Dictionary:
+	var fixture: Variant = null if Immersive.Selections.nation_only(model) else model.get("next")
+	return CareerProgression.daily(model.get("meta", {}), fixture, route)
 
 func primary_text() -> String:
 	var live := _live()
-	if not live.is_empty(): return "VALIDER LE RÉSULTAT  →" if live.get("finished",false) else "RETOUR AU DIRECT  →"
+	if not live.is_empty():
+		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
+		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
+		return "RETOUR AU DIRECT  →"
+	if _press_required(): return "OUVRIR LA RÉCEPTION  →"
+	if not Immersive.Selections.current_fixture(model).is_empty(): return "OUVRIR LE COURRIER DE MATCH  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
+	var daily := _daily_progression()
+	if not daily.is_empty(): return daily.label
 	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
-	return "PRÉPARER LE MATCH  →" if model.get("next") != null else "AVANCER LA SEMAINE  →"
+	if model.get("next") == null: return "AVANCER LA SEMAINE  →"
+	return "ALLER AU JOUR DE MATCH  →" if route == "Préparation" else "PRÉPARER LE MATCH  →"
 
 func primary_action() -> void:
 	if waiting and (last_command != "tick" or not queued_action.is_empty()): return
 	if not _live().is_empty():
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
-	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
-	elif not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
+		return
+	if _press_required():
+		_show_press_inbox()
+		return
+	var international_fixture := Immersive.Selections.current_fixture(model)
+	if not international_fixture.is_empty():
+		_reset_reception("international:match-day/" + str(international_fixture.id))
+		_navigate("Réception", false)
+		return
+	if model.meta.get("canAdvanceSeason",false):
+		confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
+		return
+	var daily := _daily_progression()
+	if not daily.is_empty():
+		if daily.has("route"): _navigate(daily.route)
+		elif daily.has("command"): _command(daily.command, daily.payload)
+		return
+	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
-	else: _navigate("Préparation")
+	else: _navigate("Match" if route == "Préparation" else "Préparation")
 
 func create_career(id: int) -> void:
-	var action := func(): _command("new_career",{"club":id,"mode":"common"},"Bureau")
-	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
+	var action := func(): _command("new_career",{"club":id,"mode":"common"})
+	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement. Si cette copie ne peut pas être écrite, le remplacement sera refusé. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
 
 func confirm_decision(command: String, payload: Dictionary, title: String, text: String, callback: Callable) -> void:
@@ -755,7 +889,7 @@ func confirm_decision(command: String, payload: Dictionary, title: String, text:
 	if detail.is_empty(): confirm(title,text,callback)
 	else: preview.open(self,title,text,detail,callback)
 
-func confirm(title: String, text: String, callback: Callable) -> void:
+func confirm(title: String, text: String, callback: Callable, focus_cancel := false) -> void:
 	_clear_dialogs()
 	var d := ConfirmationDialog.new()
 	_prepare_dialog(d, 650)
@@ -767,6 +901,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 	d.confirmed.connect(func(): callback.call(); d.queue_free())
 	d.canceled.connect(d.queue_free)
 	d.popup_centered(Vector2i(650,180))
+	if focus_cancel: d.get_cancel_button().grab_focus()
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	# Configure wrapping before text/insertion can queue an oversized minimum.
@@ -783,13 +918,16 @@ func pause_menu() -> void:
 	_prepare_dialog(d, 820)
 	d.title = "Votre carrière"
 	ImmersiveDialogs.pause_content(d,self)
-	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Paramètres","settings"],["Quitter","quit"]]: d.add_button(pair[0],false,pair[1])
+	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Copies de sécurité","profile_safety"],["Paramètres","settings"],["Quitter","quit"]]:
+		var button := d.add_button(pair[0],false,pair[1])
+		if pair[1] == "profile_safety": button.name = "ProfileSafetyOpen"
 	d.custom_action.connect(func(action: String):
 		d.hide(); d.queue_free()
 		match action:
 			"home": _navigate("Accueil")
 			"export": open_file(false)
 			"import": open_file(true)
+			"profile_safety": open_profile_safety()
 			"settings": settings()
 			"quit": request_quit()
 	)
@@ -800,6 +938,9 @@ func pause_menu() -> void:
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
+
+func open_profile_safety() -> void:
+	preload("res://ui/profile_safety_view.gd").open(self)
 
 func open_file(importing: bool) -> void:
 	import_mode = importing
@@ -831,7 +972,7 @@ func _file_selected(path: String) -> void:
 		if not refusal.is_empty():
 			_refuse_action(refusal)
 			return
-		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Ses données seront vérifiées avant la reprise.",func(): _command("import",{"text":text},"Bureau"))
+		confirm("Reprendre cette carrière", "Cette carrière sera vérifiée avant sa reprise. La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement ; si cette copie ne peut pas être écrite, l'importation sera refusée.", func(): _command("import", {"text":text}, "Réception"), _has_career())
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
 		export_path = path
@@ -876,8 +1017,10 @@ func recover_profile() -> void:
 	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Vous pourrez ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
 
 func reconnect() -> void:
-	if bridge.child_pid > 0: return
+	if waiting or bridge.child_pid > 0: return
 	connection_error = false
+	waiting = true
+	last_command = "snapshot"
 	bridge.start(_profile_path())
 
 func _live_tick() -> void:
@@ -907,6 +1050,7 @@ func request_quit() -> void:
 func _close(exit_code: int = 0) -> void:
 	if closing: return
 	closing = true
+	command_wait_overlay.dismiss()
 	if is_instance_valid(soundscape): soundscape.dispose()
 	if is_instance_valid(coach): coach.destroy()
 	timer.stop()
@@ -914,6 +1058,11 @@ func _close(exit_code: int = 0) -> void:
 	var deadline := Time.get_ticks_msec()+2300
 	while bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
 	get_tree().quit(exit_code)
+
+func _input(event: InputEvent) -> void:
+	# Prevent the focused control and shortcuts from bypassing the pointer veil.
+	if is_instance_valid(command_wait_overlay) and command_wait_overlay.visible and (event is InputEventKey or event is InputEventJoypadButton):
+		get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):

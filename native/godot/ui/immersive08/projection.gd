@@ -2,6 +2,7 @@ extends RefCounted
 ## Présentation calculée depuis le modèle reçu ; aucune commande ou état global.
 const Club = preload("res://ui/club_views.gd")
 const G = preload("res://ui/game_skin.gd")
+const U = preload("res://ui/management_state.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 
 static func fixture_date(fixture: Dictionary, show_timezone: bool = false) -> String:
@@ -28,11 +29,12 @@ static func next_scheduled_fixture(model: Dictionary) -> Dictionary:
 		if not fixture.get("played", false) and int(fixture.get("week", 0)) > week: return fixture
 	return {}
 
-static func fixture_venue(fixture: Dictionary, neutral_fallback: bool = true) -> String:
+static func fixture_venue(fixture: Dictionary, neutral_fallback: bool = true, home_fallback: bool = true) -> String:
 	var venue: Variant = fixture.get("venue")
 	if venue is Dictionary: venue = venue.get("name")
 	if venue is String and not venue.is_empty() and venue.to_lower() not in ["home","away","neutral"]: return venue
 	if fixture.get("neutral",false): return "Terrain neutre" if neutral_fallback else ""
+	if not home_fallback: return ""
 	var home: Dictionary = fixture.get("home",{})
 	var stadium: Variant = G.identity(home).get("stadium",home.get("stadium"))
 	return stadium if stadium is String else ""
@@ -52,18 +54,39 @@ static func fixture_position(fixture: Dictionary, club_id: Variant) -> String:
 	if fixture.get("neutral",false): return "TERRAIN NEUTRE"
 	return "À DOMICILE" if fixture.get("home",{}).get("id")==club_id else "À L’EXTÉRIEUR"
 
+static func reduced_bench_number(model: Dictionary) -> int:
+	var selection: Variant = model.get("selection")
+	if model.get("live") is Dictionary and not model.live.is_empty(): return 0
+	if not model.get("next") is Dictionary or model.next.is_empty(): return 0
+	if not selection is Dictionary or selection.get("valid",false): return 0
+	var offer: Variant = selection.get("reducedBench")
+	if not offer is Dictionary or not is_nomination_at_22(offer.get("size")): return 0
+	var vacant: Variant = offer.get("vacantNumber")
+	if not (vacant is int or vacant is float): return 0
+	return int(vacant) if vacant == 17 or vacant == 18 else 0
+
+static func is_nomination_at_22(value: Variant) -> bool:
+	return (value is int or value is float) and value == 22
+
+static func reduced_bench_vacancy(vacant: int) -> String:
+	return "Pilier %s de remplacement manquant (n° %d)." % ["gauche" if vacant == 17 else "droit",vacant]
+
 static func group(model: Dictionary) -> Dictionary:
 	var squad: Array = model.get("squad", [])
 	var injured := 0
 	var condition := 0.0
 	var rating := 0.0
+	var rated := 0
 	var watched := 0
 	for player: Dictionary in squad:
 		if float(player.get("injury", 0)) > 0: injured += 1
 		condition += float(player.get("condition", 0))
-		rating += float(player.get("rating", 0))
-		if float(player.get("physicalLoad", 0)) >= 70 or float(player.get("condition", 100)) < 80: watched += 1
-	return {"total":squad.size(), "available":squad.size()-injured, "injured":injured, "condition":roundi(condition/maxi(1,squad.size())), "rating":roundi(rating/maxi(1,squad.size())), "watched":watched}
+		var level := G.knowledge_bounds(player,"rating",true)
+		if not level.is_empty() and level.min == level.max:
+			rating += float(level.min)
+			rated += 1
+		if not U.watch_reason(player).is_empty(): watched += 1
+	return {"total":squad.size(), "available":squad.size()-injured, "injured":injured, "condition":roundi(condition/maxi(1,squad.size())), "rating":roundi(rating/squad.size()) if not squad.is_empty() and rated == squad.size() else "—", "watched":watched}
 
 static func contracts(model: Dictionary) -> Array:
 	var result: Array = []
@@ -96,6 +119,22 @@ static func player(model: Dictionary, id: String) -> Dictionary:
 	for person: Dictionary in model.get("squad", []):
 		if str(person.get("id", "")) == id: return person
 	return {}
+
+static func lineup_condition(model: Dictionary) -> String:
+	var total := 0.0
+	var starters := 0
+	for assignment: Dictionary in model.get("selection", {}).get("slots", []):
+		var slot := int(assignment.get("slot", -1))
+		if slot < 0 or slot >= 15: continue
+		var person := player(model, str(assignment.get("playerId", "")))
+		var condition: Variant = person.get("condition")
+		if condition is not float and condition is not int: continue
+		total += float(condition)
+		starters += 1
+	if starters == 0: return "—"
+	var caption := "%d %%" % roundi(total / starters)
+	if starters < 15: caption += " (%d/15)" % starters
+	return caption
 
 static func player_in_recovery(model: Dictionary, id: String) -> bool:
 	var medical: Array = model.get("clubLife", {}).get("clubSupport", {}).get("medical", {}).get("players", [])

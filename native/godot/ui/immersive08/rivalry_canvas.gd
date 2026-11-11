@@ -82,9 +82,10 @@ func _hero() -> void:
 		var section := "ChampPreparation" if champ else "JapanPreparation" if japan else "PacificPreparation"
 		var card := D.panel(hero,Rect2(1484,28,735,256),title,"calendar","",section)
 		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)
-		D.text(card,24,155,"La préparation avance jusqu’à la prochaine rencontre.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
-		var weeks := mini(int(preparation.get("weeksUntil",0)),4)
-		var advance := D.button(card,Rect2(24,182,687,53),"AVANCER DE %d SEMAINE%s" % [weeks,"S" if weeks>1 else ""],app.primary_action,true,"arrow",false,app.accent,section+"Advance")
+		var daily: bool = app.model.meta.has("calendarCadence")
+		var description := "Le calendrier avance jour par jour jusqu’à la rencontre." if daily else "La préparation avance jusqu’à la prochaine rencontre."
+		D.text(card,24,155,description,22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
+		var advance := D.button(card,Rect2(24,182,687,53),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,section+"Advance")
 		advance.disabled = app.waiting
 
 func _navigation() -> void:
@@ -94,7 +95,7 @@ func _navigation() -> void:
 			state.tab = i
 			_display(), i == active, TAB_ICONS[i], false, PRIMARY, "RivalryTab" + str(i))
 		tabs.append(control)
-	for entry: Array in [[1281, "Classements", "trophy"], [1486, "Calendrier", "calendar"], [1691, "Presse", "mail"], [1896, "Parcours du manager", "flag"]]:
+	for entry: Array in [[1486, "Classements", "trophy"], [1691, "Calendrier", "calendar"], [1896, "Parcours du manager", "flag"]]:
 		var destination: String = "Carrière" if entry[1] == "Parcours du manager" else entry[1]
 		D.button(self, Rect2(entry[0], 333, 352 if destination == "Carrière" else 192, 43), entry[1], func(): app._navigate(destination), false, entry[2], true, PRIMARY, "Section_" + destination)
 

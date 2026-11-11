@@ -11,17 +11,60 @@ module.exports=function nativeModel(){
  const sorted=ranked(),divisionRankings=france?Object.fromEntries(['elite','accession'].map(id=>[id,CDFranceCompetition.ranked(S,id)])):null;
  const summary=c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points,rank:rankedFor(c).findIndex(x=>x.id===c.id)+1,presentation:presentation(S.customCompetition?c:CDFranceClubs.forCareer(S,c.id))});
  const own=club();
+ const withdrawnReason='Négociation close jusqu’à la prochaine journée.';
+ const currentNegotiation=(id,kind)=>{
+  const talk=S.economy?.talks?.[talkKey(id,kind)];
+  if(talk?.status==='counter')return {status:talk.status,salary:talk.acceptedSalary,years:talk.years,attempts:talk.attempts};
+  if(talk?.status==='withdrawn')return {status:talk.status};
+  return null;
+ };
  // Read-only ID projection; final order is stored, historical points are not.
  const archives={limit:15,seasons:(france?S.franceMode.yearbook:[]).slice(-15).map(y=>({season:y.season,champions:['elite','accession'].map((leagueId,i)=>({leagueId,clubId:y.champions[i]})),standings:Object.fromEntries(['elite','accession'].map(id=>[id,y.standings[id].slice()])),movement:{promoted:y.movement.promoted.slice(),relegated:y.movement.relegated.slice()}}))};
  const rankedFor=c=>france?divisionRankings[CDFranceCompetition.leagueId(S,c.id)]:sorted;
  const squad=own.players.map(source=>{
   const p=JSON.parse(JSON.stringify(source)),index=S.lineup.indexOf(p.id),bench=S.reserves.indexOf(p.id);
   let hash=2166136261;for(const ch of p.id){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}const nativeId=/^p\d+-(\d+)-\d+$/.exec(p.id);
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),rosterProfile:p.rosterProfile??null,id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,renewal:{available:!S.live&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),salary:askingWage(p,'renew'),fee:contractFee(p,'renew'),minYears:Math.max(1,p.contractEnd-contractBase()+2),maxYears:Math.min(3,careerContractYears(p))},contractLabel:p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
+  const negotiation=currentNegotiation(p.id,'renew'),withdrawn=negotiation?.status==='withdrawn';
+  const renewal={available:!S.live&&!withdrawn&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),
+   salary:askingWage(p,'renew'),fee:contractFee(p,'renew'),minYears:Math.max(1,p.contractEnd-contractBase()+2),maxYears:Math.min(3,careerContractYears(p)),
+   ...(negotiation?{negotiation}:{}),...(withdrawn?{reason:withdrawnReason}:{})};
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),rosterProfile:p.rosterProfile??null,id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,renewal,contractLabel:p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
+ });
+ const places=professionalPlaces(own),cash=own.cash;
+ const market=S.market.map(source=>{
+  const p=JSON.parse(JSON.stringify(source));
+  const negotiation=currentNegotiation(p.id,'recruit'),maxYears=Math.min(3,careerContractYears(p));
+  const withdrawn=negotiation?.status==='withdrawn';
+  const reason=S.live?'Match en cours':places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
+  const available=!S.live&&places>0&&cash>=p.price&&maxYears>=1&&!withdrawn;
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
+   salary:askingWage(p,'recruit'),fee:contractFee(p,'recruit'),minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{})};
  });
  const pair=nextMatch(),l=S.live;
  const fixture=france?CDFranceCompetition.userFixture(S):null;
  const errors=sheetErrors(),all=[...S.lineup,...S.reserves];
+ const selection={valid:errors.length===0,errors,slots:all.map((playerId,slot)=>({
+  slot,
+  ...(typeof nativePositionAptitudes==='undefined'?{}:{positionNumber:nativePositionAptitudes.positionNumber(slot)}),
+  label:slot<15?POS[slot]:BENCH_LABELS[slot-15],
+  playerId,
+  eligibleIds:own.players.filter(p=>!p.injury&&(slot<15?slotEligible(p,slot):benchEligible(p,slot-15))).map(p=>p.id)
+ }))};
+ if(errors.length&&!l&&S.phase!=='ended'){
+  const team={...own,players:own.players.map(p=>({...p}))};
+  const sheet=buildSheet(team,S.lineup,S.reserves);
+  const slots=vacantMatchSlots(sheet.lineup,sheet.bench);
+  if(slots.length){
+   const places=professionalPlaces(own);
+   const quote={slots,places,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary:slots.length*COVER_WEEKLY_SALARY};
+   if(!S.trained&&team.players.some(p=>p.injury===1)){
+    const recovered={...team,players:team.players.map(p=>p.injury===1?{...p,injury:0}:p)};
+    const after=buildSheet(recovered,S.lineup,S.reserves);
+    if(vacantMatchSlots(after.lineup,after.bench).length<slots.length)quote.reviewAfterTraining=true;
+   }
+   selection.coverage=quote;
+  }
+ }
  const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description}))};
  const row=c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form});
  const leagues=france?['elite','accession'].map(id=>({id,name:id==='elite'?'Élite — 14 clubs':'Accession — 16 clubs',phase:S.franceMode.leagues[id].phase,champion:S.franceMode.leagues[id].champion===null?null:summary(S.clubs[S.franceMode.leagues[id].champion]),finalist:S.franceMode.leagues[id].finalist===null?null:summary(S.clubs[S.franceMode.leagues[id].finalist]),rows:divisionRankings[id].map(row)})):[{id:'elite',name:'Ligue Première',rows:sorted.map(row)}];
@@ -36,12 +79,13 @@ module.exports=function nativeModel(){
   ['Possession',total?Math.round(a.possession/total*100)+'%':'—',total?Math.round(b.possession/total*100)+'%':'—'],
   ['Territoire',total?Math.round(a.territory/total)+'%':'—',total?Math.round(b.territory/total)+'%':'—'],
   ['Mêlées conservées',a.scrumsWon+' / '+a.scrums,b.scrumsWon+' / '+b.scrums],
+  ...(l.uncontestedScrums?.some(count=>count>0)?[['Dont non disputées',...l.uncontestedScrums]]:[]),
   ['Touches conservées',a.lineoutsWon+' / '+a.lineouts,b.lineoutsWon+' / '+b.lineouts],
   ['Pénalités concédées',a.penalties,b.penalties],['Cartons jaunes',a.yellows,b.yellows],
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
   ['Transformations',a.conversions+' / '+a.conversionAttempts,b.conversions+' / '+b.conversionAttempts]
  ].map(([label,home,away])=>({label,home,away}));}
- return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:chooseScorer(own,S.lineup)?.id||null,selection:{valid:errors.length===0,errors,slots:all.map((playerId,slot)=>({slot,label:slot<15?POS[slot]:BENCH_LABELS[slot-15],playerId,eligibleIds:own.players.filter(p=>!p.injury&&(slot<15?slotEligible(p,slot):benchEligible(p,slot-15))).map(p=>p.id)}))},tactics,calendar,leagues,market:S.market.map(source=>{const p=JSON.parse(JSON.stringify(source));return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,salary:askingWage(p,'recruit'),fee:contractFee(p,'recruit'),minYears:1,maxYears:Math.min(3,careerContractYears(p)),available:!S.live&&professionalPlaces(own)>0&&club().cash>=p.price&&careerContractYears(p)>=1,reason:S.live?'Match en cours':professionalPlaces(own)<=0?'Effectif complet':club().cash<p.price?'Trésorerie insuffisante':careerContractYears(p)<1?'Retraite prévue':''};}),finance:{cash:own.cash,wage:own.players.reduce((n,p)=>n+p.salary,0),ledger:S.ledger,notice:'Montants fictifs. '+(france?'34 semaines payées par saison. Monde fermé sans Nationale.':'29 semaines payées par saison.')},club:summary(own),league:sorted.map(c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form})),squad,
+ return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:chooseScorer(own,S.lineup)?.id||null,selection,tactics,calendar,leagues,market,finance:{cash:own.cash,wage:own.players.reduce((n,p)=>n+p.salary,0),ledger:S.ledger,notice:'Montants fictifs. '+(france?'34 semaines payées par saison. Monde fermé sans Nationale.':'29 semaines payées par saison.')},club:summary(own),league:sorted.map(c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form})),squad,
   next:pair?{pair,home:summary(S.clubs[pair[0]]),away:summary(S.clubs[pair[1]]),label:label(),round:S.round,week:meta.week,neutral:fixture?.neutral??['semi','final'].includes(S.phase),phase:fixture?.phase??S.phase}:null,
   archives,history:S.history,messages:S.news,ledger:S.ledger,
   live:l?{lineup:l.sheets[l.userSide].on.map(livePlayer),reserves:l.sheets[l.userSide].bench.map(livePlayer),substitutions:l.sheets[l.userSide].on.map((outId,i)=>({slot:i,label:POS[i],outId,inIds:l.paused&&!l.finished&&!presentationPending(l)?eligibleChanges(l,l.userSide,i).map(p=>p.id):[]})),tactics:{attack:l.tactics[l.userSide],defense:l.defences?.[l.userSide]||'equilibre'},decision:resultDecision,neutral:fixture?.neutral??false,minute:l.minute,period:l.flow?.period??(l.minute>40?2:1),score:l.score,tries:l.tries,paused:l.paused,finished:l.finished,halftime:l.halftime,atBreak:atHalftime(l),weather:l.weather,pair:l.pair,teams:l.pair.map(id=>summary(S.clubs[id])),events:l.events,stats:l.stats,statsRows,scene:CDMatch3DAdapter.normalize(matchScene(l))}:null,meta};

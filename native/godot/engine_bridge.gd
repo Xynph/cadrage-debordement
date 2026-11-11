@@ -12,6 +12,8 @@ const WORLD_REQUEST_LIMIT_BYTES := 34 * 1024 * 1024
 const NATIONALE_IMPORT_LIMIT_BYTES := 20 * 1024 * 1024
 const EXTENDED_IMPORT_LIMIT_BYTES := 24 * 1024 * 1024
 const EXTENDED_REQUEST_LIMIT_BYTES := 50 * 1024 * 1024
+const RESPONSE_BLOCK_BYTES := 64 * 1024
+const LINE_FEED := 10
 var model: Dictionary = {}
 var last_response_ok := false
 var child_pid: int = -1
@@ -121,6 +123,7 @@ func stop() -> void:
 	_stop_deadline_ms = Time.get_ticks_msec() + 2000
 
 func _io_loop() -> void:
+	var pending := PackedByteArray()
 	while true:
 		_wake.wait()
 		_mutex.lock()
@@ -133,8 +136,21 @@ func _io_loop() -> void:
 		if _stdio.get_error() != OK:
 			call_deferred("_transport_error", "Écriture impossible vers le moteur local.")
 			return
-		# get_line and large writes may block this worker thread, never the UI.
-		var line := _stdio.get_line()
+		# Keep bytes across reads and decode only a complete JSON line.
+		var end := pending.find(LINE_FEED)
+		while end < 0:
+			var block := _stdio.get_buffer(RESPONSE_BLOCK_BYTES)
+			# Godot can flag a short pipe read as an error even when it returned bytes.
+			if block.is_empty():
+				call_deferred("_transport_error", "Réponse du moteur local illisible ou processus arrêté.")
+				return
+			var start := pending.size()
+			pending.append_array(block)
+			end = pending.find(LINE_FEED, start)
+		var remainder := pending.slice(end + 1)
+		pending.resize(end)
+		var line := pending.get_string_from_utf8()
+		pending = remainder
 		var parser := JSON.new()
 		if line.is_empty() or parser.parse(line) != OK:
 			call_deferred("_transport_error", "Réponse du moteur local illisible ou processus arrêté.")

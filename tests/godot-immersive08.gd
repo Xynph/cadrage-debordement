@@ -806,9 +806,10 @@ func navigation_flow() -> void:
 	await click(app.find_child("OfficeTrainingAction",true,false))
 	await settle()
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Le dossier d’entraînement du Bureau ouvre sa vraie page")
+	var command_id: int = app.bridge._next_id
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
-	check(app.find_child("ImmersivePreparation",true,false)!=null and app.management_ui.preparation.tab==0,"Continuer ouvre le dossier de match après l’entraînement")
+	check(app.route=="Match" and app._live().is_empty() and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match sans lancer la rencontre et mémorise l’entraînement")
 	var back: Button = app.find_child("NavigationBack",true,false)
 	var forward: Button = app.find_child("NavigationForward",true,false)
 	check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
@@ -816,7 +817,30 @@ func navigation_flow() -> void:
 	else: await key(KEY_LEFT,false,true)
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Retour restaure l’entraînement plutôt que le dossier adverse")
 	await key(KEY_RIGHT,false,true)
-	check(app.find_child("ImmersivePreparation",true,false)!=null,"Alt droite rétablit le dossier de match")
+	check(app.route=="Match" and app._live().is_empty(),"Alt droite rétablit l’avant-match")
+	var original_size := root.size
+	root.size = Vector2i(1280, 720)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	app._navigate("Bureau")
+	await settle()
+	await click(app.find_child("ImmersiveContinue",true,false))
+	await settle()
+	await click(app.find_child("PreparationTabEntrainement",true,false))
+	await settle()
+	check(app.route=="Préparation" and app.management_ui.preparation.tab==2,"Entraînement est sélectionné dans Préparation compacte")
+	command_id = app.bridge._next_id
+	await click(app.find_child("ImmersiveContinue",true,false))
+	await settle()
+	check(app.route=="Match" and app._live().is_empty() and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match compact sans commande")
+	await key(KEY_LEFT,false,true)
+	check(app.route=="Préparation" and app.management_ui.preparation.tab==2,"Alt gauche retrouve l’onglet Entraînement sélectionné sur place")
+	await click(app.find_child("PreparationMatch",true,false))
+	await settle()
+	await key(KEY_LEFT,false,true)
+	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Le lien local conserve aussi l’onglet et la navigation reste sans commande")
+	root.size = original_size
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
@@ -1135,14 +1159,20 @@ func run() -> void:
 				check(shirt!=null and shirt.text==expected_number and shirt.get_theme_font_size("font_size")==82,"Le cartouche reprend le vrai numéro à la taille du visuel")
 				var role_pitch: Control = full.find_child("PlayerRolePitch",true,false)
 				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(432,350),"Le terrain du poste est redessiné en perspective à la taille de la fiche")
-				for axis: String in ["power","speed","pass","tackle","stamina","mental"]:
-					var caption: Label = full.find_child("PlayerRadar_"+axis,true,false)
-					check(caption!=null and caption.text.to_int()==int(target.attributes[axis]),"Axe du radar annoté par sa vraie note · "+axis)
+				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Label
+				check(global_rating != null and global_rating.text.to_int() == int(target.rating), "Note globale exacte dans la fiche complète")
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
-				for attribute in target.get("attributes",{}):
-					check(app.find_child("PlayerAttribute_"+attribute,true,false)!=null,"Aptitude réelle dans la fiche : "+attribute)
 				check(app.find_child("OpenPlayerCoachNote",true,false)!=null,"Carnet personnel conservé sur la fiche")
 				await capture("04-fiche-joueur-2560x1440")
+				app.find_child("FullPlayerTab1",true,false).pressed.emit()
+				await settle()
+				var attributes: Dictionary = target.get("attributesV2", {})
+				var detailed := app.find_child("PlayerDetailedAttributes",true,false) as Panel
+				check(detailed != null and attributes.size() == 36 and detailed.find_children("PlayerDetailedAttribute_*", "Label", true, false).size() == 36, "Les 36 attributs du joueur sont affichés")
+				check(app.find_children("PlayerAttribute_*", "Label", true, false).is_empty(), "Aucune grille des 11 qualités internes")
+				for key: String in attributes:
+					var value := app.find_child("PlayerDetailedAttribute_" + key,true,false) as Label
+					check(value != null and value.text.replace(",", ".").to_float() == float(attributes[key]), "Attribut affiché à sa valeur exacte : " + key)
 				app.find_child("FullPlayerTab5",true,false).pressed.emit()
 				await settle()
 				for id in ["ProfileContextCompetition","ProfileContextDevelopment","ProfileContextForm","ProfileContextStaff","ProfileMean_rating"]:

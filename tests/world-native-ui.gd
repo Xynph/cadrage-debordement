@@ -118,6 +118,13 @@ func creation_dossier_fits(expected: int, context: String) -> void:
 	check(content_fits and honours.get_child_count() == expected and honours.get_global_rect().end.y <= action.get_global_rect().position.y and dossier.find_children("*", "ScrollContainer", true, false).is_empty() and scroll_fits("EntryWorkspace"),
 		"Dossier complet sans défilement · %s · dossier %s, palmarès %s, action %s, fenêtre %s" % [context, dossier.get_global_rect(), honours.get_global_rect(), action.get_global_rect(), viewport])
 
+func competition_tab_fits(tab: Button) -> bool:
+	if tab == null or tab.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING:
+		return false
+	var text_width := tab.get_theme_font("font").get_string_size(tab.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tab.get_theme_font_size("font_size")).x
+	var margin := tab.get_theme_stylebox("normal").get_minimum_size().x
+	return tab.size.x + 1 >= text_width + margin and root.get_visible_rect().grow(1).encloses(tab.get_global_rect())
+
 func check_creation_geometry() -> void:
 	var groups := {"FR":["elite", "accession", "nationale"], "GB":["prem", "champ"], "JP":["jlo-d1", "jlo-d2"], "international":["urc", "srp"]}
 	var catalogue: Array = app.pack_manager.creation_catalogue()
@@ -139,6 +146,7 @@ func check_creation_geometry() -> void:
 			await press(named("CreationCountry_" + country))
 			for division: String in groups[country]:
 				await press(named("CreationDivision_" + division))
+				check(competition_tab_fits(named("CreationDivision_" + division)), "Nom de championnat entier · %s · %s" % [division, resolution])
 				var clubs := catalogue.filter(func(club: Dictionary): return club.playable and club.division == division)
 				creation_grid_fits(clubs.size(), "%s · %s" % [division, resolution])
 				if division == "prem":
@@ -274,7 +282,8 @@ func _run() -> void:
 	var roster_summary := named("CreationRosterSummary")
 	check(roster_summary != null and text_present(roster_summary, "Note moyenne") and not text_present(roster_summary, "Avants") and not text_present(roster_summary, "Trois-quarts"), "La note moyenne reste dans la fiche sans les compteurs par ligne")
 	check(text_present(app, "Atout actuel") and text_present(app, "Marge de progression") and text_present(app, "Titulaires") and text_present(app, "Remplaçants") and text_present(app, "/ 14 clubs"), "La fiche sépare les rangs à ce poste dans le championnat")
-	check("Note moyenne" in named("CreationClub0").tooltip_text, "La grille permet de comparer les notes moyennes avant de choisir un club")
+	var club_card := named("CreationClub0") as Button
+	check(club_card.tooltip_text.is_empty() and not club_card.accessibility_name.is_empty() and "Note moyenne" in club_card.accessibility_description, "La carte du club expose sa note au lecteur d’écran sans infobulle au survol")
 	check(app.pack_manager.mode("creation") == "world-champ" and app.model.meta.champCatalogue.size() == 116, "La création ouvre directement le Monde complet")
 	check(named("CreationEditionRow") == null and named("CreationMode_common") == null, "Les éditions intermédiaires sont absentes du parcours normal")
 	check(app.model.meta.champDatabase.playerCount == 5878 and app.model.meta.champCatalogue.filter(func(c: Dictionary): return c.playable).size() == 114, "5 878 joueurs et 114 clubs jouables")
@@ -318,6 +327,15 @@ func _run() -> void:
 	await activate_inspected_pack()
 	await press(button("← Retour"))
 	check(named("CreationClubTitle").text == "Club Monde complet témoin", "Le pack activé apparaît dans le catalogue commun")
+	for league in [["elite", "Élite témoin"], ["accession", "Accession témoin"], ["nationale", "Nationale témoin"]]:
+		var league_tab := named("CreationDivision_" + league[0]) as Button
+		check(league_tab != null and league[1] in league_tab.text and league_tab.icon != null, "Nom court et logo du pack dans l’onglet · " + league[0])
+		await press(league_tab)
+		check("Championnat " + league[1] in named("CreationDivisionHeading").text, "Le titre affiche le nom complet du pack · " + league[0])
+	await press(named("CreationBaseIdentity"))
+	await response()
+	var base_tab := named("CreationDivision_elite") as Button
+	check(base_tab != null and "témoin" not in base_tab.text and base_tab.icon == null, "Le jeu de base retrouve son identité après désactivation du pack")
 	app.pack_manager.creation_mode = "world"
 	app._render()
 	await settle()

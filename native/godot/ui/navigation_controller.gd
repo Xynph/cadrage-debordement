@@ -17,6 +17,7 @@ var _back: Button
 var _forward: Button
 var _find: Button
 var _restoring := false
+var _palette_return_focus: WeakRef
 
 func setup(owner_app: Control) -> void:
 	app = owner_app
@@ -90,6 +91,7 @@ func handle_shortcut(event: InputEvent) -> bool:
 	if is_instance_valid(_dialog) and _dialog.visible:
 		if code == KEY_ESCAPE:
 			_dialog.hide()
+			_restore_palette_focus()
 			return true
 		if code in [KEY_UP, KEY_DOWN] and not event.alt_pressed:
 			if _results.item_count > 0:
@@ -124,12 +126,28 @@ func handle_shortcut(event: InputEvent) -> bool:
 
 func open_palette() -> void:
 	if app == null or _blocked(): return
+	var previous := app.get_viewport().gui_get_focus_owner()
+	_palette_return_focus = weakref(previous) if previous != null else null
 	if not is_instance_valid(_dialog) or _dialog.is_queued_for_deletion(): _build_palette()
 	_search.clear()
 	_refresh_results("")
 	_dialog.popup_centered(_palette_size())
 	call_deferred("_fit_palette")
 	_search.grab_focus()
+
+func _restore_palette_focus() -> void:
+	var previous := _palette_return_focus.get_ref() as Control if _palette_return_focus != null else null
+	_palette_return_focus = null
+	if not is_instance_valid(previous): return
+	# Closing the palette is a reading action. Restore the exact field/button,
+	# without reviving a control removed by a render or a command in progress.
+	call_deferred("_focus_after_palette", previous)
+
+func _focus_after_palette(previous: Control) -> void:
+	if not is_instance_valid(previous) or _blocked() or not previous.is_inside_tree() or not previous.is_visible_in_tree(): return
+	if previous.focus_mode == Control.FOCUS_NONE: return
+	if previous is BaseButton and previous.disabled: return
+	previous.grab_focus()
 
 func _fit_palette() -> void:
 	if not is_instance_valid(_dialog) or not _dialog.visible: return
@@ -187,6 +205,7 @@ func _build_palette() -> void:
 		if handle_shortcut(event): _results.accept_event())
 	_results.item_activated.connect(func(_index: int): _activate_selected())
 	_dialog.confirmed.connect(_activate_selected)
+	_dialog.canceled.connect(_restore_palette_focus)
 	_dialog.visibility_changed.connect(_refresh_controls)
 
 func _refresh_results(query: String) -> void:
@@ -199,6 +218,8 @@ func _refresh_results(query: String) -> void:
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for route: String in chapter.routes:
 				candidates.append({"kind":"menu", "route":route, "label":"Menu · " + route + " · " + str(chapter.label)})
+		if app.model.get("international") is Dictionary:
+			candidates.append({"kind":"menu", "route":"Sélections", "label":"Menu · Sélections internationales"})
 		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
 		for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 			candidates.append({"kind":"club", "id":int(team.id), "route":"Staff", "label":"Club · %s · Annuaire du staff" % G.club_name(team)})
@@ -216,6 +237,7 @@ func _refresh_results(query: String) -> void:
 				candidates.append({"kind":source, "id":id, "route":"Effectif" if source == "squad" else "Recrutement", "label":label})
 	var total := 0
 	for candidate: Dictionary in candidates:
+		if not _allowed_route(candidate.route): continue
 		if not needle.is_empty() and not U.fold(candidate.label).contains(needle): continue
 		total += 1
 		if _matches.size() >= RESULT_LIMIT: continue
@@ -246,12 +268,8 @@ func _activate_selected() -> void:
 		app.roster_filter = "Tous"; app.roster_sort = "Poste"
 		app.selected_player = entry.id
 	elif entry.kind == "market":
-		var person := _person("market", entry.id)
-		if person.is_empty():
-			_refresh_results(_search.text); return
-		app.management_ui.market = U.defaults()
-		app.management_ui.market.navigation_id = entry.id
-		app.management_ui.market.search = str(person.get("name", ""))
+		if not open_market_player(entry.id): _refresh_results(_search.text)
+		return
 	elif entry.kind == "club":
 		if not _staff_club_exists(entry.id):
 			_refresh_results(_search.text); return
@@ -259,6 +277,28 @@ func _activate_selected() -> void:
 	_dialog.hide()
 	app._navigate(entry.route, not roster_lookup)
 	observe(app.route, app.selected_player, app.selected_staff_club, roster_lookup)
+
+func open_watched_roster() -> void:
+	_open_roster_preset(U.WATCH_FILTER)
+
+func open_roster_group() -> void:
+	if app.roster_filter == U.WATCH_FILTER:
+		_open_roster_preset("Tous")
+	else:
+		app._navigate("Effectif")
+
+func _open_roster_preset(family: String) -> void:
+	U.remember(app)
+	if cursor >= 0: _store_roster_reading(history[cursor])
+	var state := U.defaults()
+	state.family = family
+	app.management_ui.roster = state
+	app.management_ui.profile_scroll = 0
+	app.roster_filter = family
+	app.roster_sort = state.sort
+	app.selected_player = ""
+	app._navigate("Effectif", false)
+	observe(app.route, app.selected_player, app.selected_staff_club, true)
 
 func _person(source: String, id: String) -> Dictionary:
 	var people: Variant = app.model.get(source, [])
@@ -270,6 +310,8 @@ func _person(source: String, id: String) -> Dictionary:
 func _allowed_route(route: String) -> bool:
 	if route == "Accueil": return true
 	if not app._has_career(): return false
+	if not app.Immersive.Selections.navigation_allowed(app.model, route): return false
+	if route == "Sélections": return app.model.get("international") is Dictionary
 	for chapter: Dictionary in app.NAV_CHAPTERS:
 		if route in chapter.routes: return true
 	return false
@@ -312,9 +354,7 @@ func _travel(direction: int) -> void:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
 	if entry.route == "Recrutement":
-		app.management_ui.market = U.defaults()
-		app.management_ui.market.navigation_id = entry.market
-		if not entry.market.is_empty(): app.management_ui.market.search = str(_person("market", entry.market).get("name", ""))
+		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)
 	_restoring = false
 	_refresh_controls()
@@ -338,3 +378,18 @@ func _refresh_controls() -> void:
 	if is_instance_valid(_back): _back.disabled = blocked or _destination(-1) < 0
 	if is_instance_valid(_forward): _forward.disabled = blocked or _destination(1) < 0
 	if is_instance_valid(_find): _find.disabled = blocked
+
+func open_market_player(id: String) -> bool:
+	var person := _person("market", id)
+	if not _allowed_route("Recrutement") or (not id.is_empty() and person.is_empty()): return false
+	_set_market_target(id, str(person.get("name", "")))
+	if id.is_empty(): app.management_ui.market_tab = 0
+	if is_instance_valid(_dialog): _dialog.hide()
+	app._navigate("Recrutement", false)
+	return true
+
+func _set_market_target(id: String, display_name: String) -> void:
+	app.management_ui.market = U.defaults()
+	app.management_ui.market.navigation_id = id
+	app.management_ui.market.search = display_name
+	if not id.is_empty(): app.management_ui.market_tab = 0

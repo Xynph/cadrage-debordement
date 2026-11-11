@@ -8,8 +8,9 @@ const CDFranceCareer=(()=>{
   CDFranceCompetition.beginSeason(S,true);setupOpposition();setupEconomy();setupDevelopment();club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();refreshMarket();setupManager();careerSetup();worldSetup();if(!initial)aiRosterYouthIntake();save();view='dashboard';entryScreen='game';
  }
  function context(pair){return CDFranceCompetition.currentFixtures(S).find(f=>f.pair[0]===pair[0]&&f.pair[1]===pair[1])||null;}
- function ensureAISheet(c){
-  if(c.id===S.club)return;
+ function ensureAISheet(c,{allowAnchor=false}={}){
+  const anchor=c.id===S.club;
+  if(anchor&&!allowAnchor)return;
   let sh=buildSheet(c);
   while(true){
    // Une recrue peut entrer dans le XV et déplacer un autre joueur sur le banc.
@@ -20,12 +21,13 @@ const CDFranceCareer=(()=>{
    if(professionalLoanReservations(c).length&&professionalPlaces(c)<=0)throw Error('Effectif IA '+c.abbr+' : places réservées aux retours de prêt, renfort indisponible.');
    const before=c.players.length;
    const target=slot<15?slot:[1,0,2,3,5,8,9,10][slot-15];
-   if(!aiRosterPromote(c,target,true)){
+   if(anchor||!aiRosterPromote(c,target,true)){
     const ids=new Set([...S.clubs.flatMap(x=>x.players),...S.aiRoster.academies.flatMap(a=>a.players),...S.development.academy,...S.market,...S.economy.freeAgents].map(p=>p.id));let serial=500;
     while(ids.has('youth-'+c.id+'-'+S.season+'-'+serial))serial++;
     const p=academyPlayer(c.id,target,S.season,serial,true);
     p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);
-    p.contractEnd=S.season+2;p.academy=false;c.players.push(p);aiRosterEvent(c.id,'emergency',p);
+    p.contractEnd=S.season+2;p.academy=false;c.players.push(p);
+    if(!anchor)aiRosterEvent(c.id,'emergency',p);
    }
    if(c.players.length<=before)throw Error('Effectif IA '+c.abbr+' : aucun renfort qualifié disponible pour compléter les 23.');
    sh=buildSheet(c);

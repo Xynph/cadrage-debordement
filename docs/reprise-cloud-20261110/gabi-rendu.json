@@ -1,0 +1,13 @@
+{
+  "captures": [
+    "/workspace/cadrage-debordement/work/gabi-received/gabi-1920-Repos.png",
+    "/workspace/cadrage-debordement/work/gabi-received/gabi-1920-Salut.png",
+    "/workspace/cadrage-debordement/work/gabi-received/gabi-1920-RegardCarnet.png",
+    "/workspace/cadrage-debordement/work/gabi-received/gabi-2560-Repos.png",
+    "/workspace/cadrage-debordement/work/gabi-received/gabi-2560-Salut.png",
+    "/workspace/cadrage-debordement/work/gabi-received/gabi-2560-RegardCarnet.png"
+  ],
+  "checks": 39,
+  "display": "X11",
+  "failures": []
+}

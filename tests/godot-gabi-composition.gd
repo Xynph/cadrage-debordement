@@ -1,6 +1,7 @@
 extends SceneTree
 
 const Portrait = preload("res://guide/coach_portrait.gd")
+const Portrait3D = preload("res://guide/coach_portrait_3d.gd")
 
 var failures := 0
 var checks := 0
@@ -79,5 +80,77 @@ func _run() -> void:
 	portrait._process(0.01)
 	_check(portrait.scale == Vector2.ONE, "Un portrait masqué ne reprend pas à mi-geste")
 
+	_check_gestures()
 	print("Réception du portrait de composition : %d contrôles, %d échecs" % [checks, failures])
 	quit(1 if failures else 0)
+
+func _test_model(clip_names: Array[StringName]) -> PackedScene:
+	var scene := Node3D.new()
+	var player := AnimationPlayer.new()
+	player.name = "AnimationPlayer"
+	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	scene.add_child(player)
+	player.owner = scene
+	var library := AnimationLibrary.new()
+	for clip_name in clip_names:
+		var clip := Animation.new()
+		clip.length = 1.0
+		library.add_animation(clip_name, clip)
+	player.add_animation_library(&"", library)
+	var packed := PackedScene.new()
+	packed.pack(scene)
+	scene.free()
+	return packed
+
+func _check_gestures() -> void:
+	var portrait := Portrait3D.new()
+	portrait.model = _test_model([&"Repos", &"Approbation", &"Salut", &"Explication", &"Ecoute", &"RegardCarnet"])
+	root.add_child(portrait)
+	var player := portrait.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	_check(player.current_animation == "Repos" and player.get_animation("Repos").loop_mode == Animation.LOOP_LINEAR,
+		"Le portrait 3D se repose en boucle")
+	portrait.request_gesture(true)
+	_check(player.current_animation == "Salut", "La première ouverture explicite salue")
+	portrait.request_gesture(false)
+	_check(player.current_animation == "Salut", "Une demande rapprochée respecte le salut en cours")
+	player.advance(1.2)
+	_check(player.current_animation == "Repos" and portrait.is_processing(), "Le salut rend la main au repos et au minuteur")
+	var delay := portrait._microgesture_wait
+	_check(delay >= 7.0 and delay <= 13.0, "Le premier microgeste attend entre sept et treize secondes")
+	portrait._process(delay - 0.01)
+	_check(player.current_animation == "Repos", "Le repos se poursuit jusqu’au délai tiré")
+	portrait._process(0.02)
+	var first := player.current_animation
+	_check(first in ["Ecoute", "RegardCarnet"] and not portrait.is_processing(), "Le minuteur déclenche un seul microgeste")
+	player.advance(1.2)
+	_check(player.current_animation == "Repos" and portrait._microgesture_wait >= 7.0,
+		"Un microgeste revient au repos avant le délai suivant")
+	portrait._process(13.1)
+	_check(player.current_animation in ["Ecoute", "RegardCarnet"] and player.current_animation != first,
+		"Les deux microgestes alternent")
+	portrait.hide()
+	portrait.request_gesture(true)
+	_check(not player.is_playing() and not portrait.is_processing(), "Guide masqué : geste et minuteur suspendus")
+	portrait.show()
+	_check(player.current_animation == "Repos", "Réouverture au repos sans reprendre le geste interrompu")
+	portrait.request_gesture(true)
+	_check(player.current_animation == "Explication", "La réouverture explique sans répéter le salut")
+	portrait.set_context("composition")
+	portrait.request_gesture(false)
+	_check(player.current_animation == "Approbation", "La composition donne priorité à l’approbation")
+	portrait.set_reduced_motion(true)
+	portrait.set_context("resultat")
+	portrait.request_gesture(true)
+	_check(not player.is_playing() and not portrait.is_processing(), "Le réglage réduit bloque animation et minuteur")
+	portrait.set_reduced_motion(false)
+	_check(player.current_animation == "Repos", "La reprise du mouvement ne joue pas un geste passé")
+	portrait.free()
+
+	var fallback := Portrait3D.new()
+	fallback.model = _test_model([&"Repos", &"Approbation"])
+	root.add_child(fallback)
+	var fallback_player := fallback.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	fallback.request_gesture(true)
+	_check(fallback_player.current_animation == "Repos" and not fallback.is_processing(),
+		"Un ancien modèle sans clips optionnels garde le repos")
+	fallback.free()

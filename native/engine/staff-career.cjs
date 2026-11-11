@@ -217,7 +217,7 @@ function factory(){
   return {active:true,enabled:true,canEnable:false,reason:'',version:1,context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,roles:copy(LABELS),
    teams:s.clubs.map(c=>({id:c.id,name:c.name,members:people(st).filter(p=>p.clubId===c.id).map(display)})),
    candidates,market:copy(candidates),history,retired,archives:copy(retired),
-   costs:{salary:0,signingFee:0},notice:'Suivez les contrats, les candidatures et les départs du staff.'};
+   costs:{salary:0,signingFee:0},notice:'Suivez les contrats, les candidatures et les départs du staff. Un recruteur actif de niveau 70 ou plus réduit l’observation ciblée de deux semaines à une.'};
  }
  function execute(command,payload){
   check(typeof S!=='undefined'&&!!S,'carrière absente');

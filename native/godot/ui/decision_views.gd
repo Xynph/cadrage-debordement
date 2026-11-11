@@ -14,7 +14,7 @@ static func population(app: Control, parent: Container) -> void:
 		card.add_child(G.wrap("Votre ancienne partie peut adopter le renouvellement durable des effectifs et les carrières du staff. Les joueurs actuels sont conservés.", 13))
 		var activate := G.button("ACTIVER LE RENOUVELLEMENT", func():
 			var payload := {"confirmed":true,"context":{"season":int(app.model.meta.season),"week":int(app.model.meta.get("week", app.model.meta.get("round", 0))),"club":int(app.model.club.id)}}
-			app.confirm("Renouveler les effectifs", "Les prochains départs seront compensés par les centres de formation et le vivier de petits clubs. Les carrières du staff seront également activées, avec des âges estimés lorsque les sources manquent. Confirmer ?", func(): app._command("population_enable", payload)))
+			app.confirm("Renouveler les effectifs", "Les prochains départs seront compensés par les centres de formation et le vivier de petits clubs. Les membres du staff pourront aussi changer de poste et prendre leur retraite. Confirmer ?", func(): app._command("population_enable", payload)))
 		activate.name = "EnablePopulation"
 		card.add_child(activate)
 
@@ -93,10 +93,10 @@ static func dossier(app: Control) -> void:
 	if data.get("signals", []).is_empty(): list.add_child(G.wrap("Aucun signal robuste : au moins trois matchs documentés et dix phases de conquête sont nécessaires. Les résultats seuls ne permettent pas d'inventer une faiblesse.", 12))
 	d.popup_centered(Vector2i(900, 580))
 
-static func training(app: Control, parent: Container) -> void:
+static func training(app: Control, parent: Container, show_advice: bool) -> void:
 	var data: Dictionary = app.model.get("decisions", {})
 	var training: Dictionary = data.get("training", {})
-	parent.add_child(G.wrap(training.get("advice", ""), 13, G.GOLD))
+	if show_advice: parent.add_child(G.wrap(training.get("advice", ""), 13, G.GOLD))
 	var collective: Dictionary = training.get("collective", {})
 	parent.add_child(G.separator())
 	parent.add_child(G.label("PRÉPARATION SPÉCIFIQUE", 13, G.MUTED))
@@ -137,6 +137,25 @@ static func recruitment_summary(app: Control, parent: Container) -> void:
 	var button := G.button("BESOINS & MISSIONS", func(): recruitment(app))
 	button.name = "OpenRecruitmentNeeds"
 	row.add_child(button)
+
+static func market_watch(app: Control) -> Dictionary:
+	var needs: Array = app.model.get("decisions", {}).get("recruitment", {}).get("needs", [])
+	if needs.is_empty(): return {}
+	var position: Variant = needs[0].get("pos")
+	if not position is String or position.strip_edges().is_empty(): return {}
+	var stock: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == position).size()
+	var caption := "Aucune piste sur le marché"
+	if stock > 0:
+		caption = "%d piste%s sur le marché" % [stock, "s" if stock > 1 else ""]
+	return {
+		"position": position,
+		"heading": "Priorité de recrutement" if needs[0].get("need", false) else "Poste à surveiller",
+		"caption": caption,
+	}
+
+static func select_market_position(picker: OptionButton, index: int) -> void:
+	picker.select(index)
+	picker.item_selected.emit(index)
 
 static func open_market_position(app: Control, position: String) -> void:
 	var filters: Dictionary = app.management_ui.market
@@ -204,9 +223,10 @@ static func recruitment(app: Control) -> void:
 	fields.add_child(position)
 	var age := spin(fields, "Âge max.", 18, 40, 28, 1)
 	var fee := spin(fields, "Prime max.", 0, 10000000, 700000, 50000)
-	var wage := spin(fields, "Salaire / sem.", 1000, 100000, 12000, 500)
+	var wage := spin(fields, "Salaire "+G.salary_period(), 1000, 100000, 12000, 500)
+	preload("res://ui/salary_display.gd").bind_input(wage,12000,1000,100000,500)
 	var mission := G.button("CONFIER LA MISSION · 5 000 €", func():
-		var payload := {"family":position.selected, "maxAge":int(age.value), "budget":int(fee.value), "maxWage":int(wage.value), "confirmed":true}
+		var payload := {"family":position.selected, "maxAge":int(age.value), "budget":int(fee.value), "maxWage":preload("res://ui/salary_display.gd").input_weekly(wage), "confirmed":true}
 		d.queue_free()
 		app.confirm("Lancer une mission", "5 000 € seront payés immédiatement. Le rapport porte sur les agents libres disponibles et arrive après deux journées de travail. Confirmer ?", func(): app._command("scout_mission", payload)))
 	mission.name = "CreateScoutMission"
@@ -275,6 +295,20 @@ static func spin(parent: Container, title: String, minimum: float, maximum: floa
 	box.add_child(control)
 	return control
 
+static func _last_match_context(report: Dictionary) -> String:
+	var teams: Variant = report.get("teams")
+	var score: Variant = report.get("score")
+	if not teams is Array or teams.size() != 2 or not score is Array or score.size() != 2: return ""
+	var names: Array[String] = []
+	for team in teams:
+		if not team is Dictionary: return ""
+		var name := G.club_name(team).strip_edges()
+		if name.is_empty() or name == "—": return ""
+		names.append(name)
+	for points in score:
+		if not (points is int or points is float) or points < 0: return ""
+	return "%s %s — %s %s" % [names[0], G.n(score[0]), G.n(score[1]), names[1]]
+
 static func match_notes(app: Control, parent: Container, model: Dictionary) -> void:
 	var data: Dictionary = model.get("decisions", {})
 	var live: Dictionary = model.live if model.get("live") is Dictionary else {}
@@ -285,12 +319,19 @@ static func match_notes(app: Control, parent: Container, model: Dictionary) -> v
 		parent.add_child(G.wrap(advice.defenceReason, 13))
 		var adopt := G.button("APPLIQUER CES CONSIGNES", func(): app._command("set_tactics", {"attack":advice.attack, "defense":advice.defence}))
 		adopt.name = "ApplyLiveAdvice"
-		adopt.disabled = not advice.get("canAct", false) or not advice.get("defenceAvailable", false)
+		var changed: bool = advice.get("attackChanged", false) or advice.get("defenceChanged", false)
+		adopt.disabled = not advice.get("canAct", false) or not advice.get("defenceAvailable", false) or not changed
 		parent.add_child(adopt)
 		parent.add_child(G.wrap("Conseil indicatif. Mise en pause requise ; les consignes locales gardent leur priorité.", 11))
 	var report: Variant = data.get("report")
 	if (live.is_empty() or live.get("finished", false)) and report is Dictionary:
 		parent.add_child(G.section("Dernière rencontre · vos choix, les faits" if live.is_empty() else "Vos choix, les faits"))
+		if live.is_empty():
+			var context := _last_match_context(report)
+			if not context.is_empty():
+				var cue := G.wrap(context, 14, G.INK)
+				cue.name = "LastMatchResultContext"
+				parent.add_child(cue)
 		for note in report.get("notes", []): parent.add_child(G.wrap(note, 13))
 		var plans: Variant = report.get("plans")
 		if plans is Dictionary:
