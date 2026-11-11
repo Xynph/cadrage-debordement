@@ -3,7 +3,7 @@
 > For agentic workers: use superpowers:executing-plans or subagent-driven-development task-by-task, with an independent final review.
 
 **Goal:** Livrer un ZIP Windows reçu sur son véritable EXE, rattaché au commit final et accompagné de preuves téléchargeables, pour un budget externe de 0 €.
-**Architecture:** Un outillage CI indépendant prépare le SDK et appelle le constructeur existant. Le pilote embarqué couvre le cycle long ; une reprise externe GD couvre le profil existant et les captures. La recette ciblée543 précède la CI globale unique539 ; la livraison finale main est reconstruite/reçue puis jointe à un brouillon de Release.
+**Architecture:** Un outillage CI indépendant prépare le SDK et appelle le constructeur existant. Le pilote intégré couvre le cycle long ; des classes SceneTree de recette embarquées couvrent le démarrage graphique et la reprise. Un override.cfg déclaré dans la seule copie QA sélectionne ces classes et une scène vide ; le paquet normal garde main.tscn. La livraison finale main est reconstruite/reçue puis jointe à un brouillon de Release.
 **Tech Stack:** Python standard, PowerShell7, Node22.23.4, Godot4.7.2, Windows2022 standard, API GitHub Releases.
 **Spec:** docs/superpowers/specs/2026-11-11-windows-delivery-design.md et demande utilisateur détaillée du11novembre.
 
@@ -55,4 +55,14 @@ Interfaces: workflow PR interne étiquetée windows-receipt pour qualification s
 - [ ] Vérifier le reçu main et ses sept jobs complets ; construire/recevoir le nouveau paquet main sur Windows.
 - [ ] Inspecter les captures et les reçus téléchargés, contrôler le contenu public, puis publier le brouillon reçu.
 - [ ] Mettre à jour539/543, fermer les seules PR reprises en conservant leurs branches ; bilan utilisateur avec commit/CI/ZIP/rapport/images/limites/procédure.
+
+## Task4 — Entrée de recette compatible avec les templates release
+Files: scripts/build-godot-prototype.py ; ci/windows-resume.gd ; ci/windows-graphics-smoke.gd ; ci/windows-receipt.ps1 ; ci/windows-package.py ; tests/windows-controller.ps1 ; tests/windows-package.cjs ; tests/test_windows_qa_bootstrap.py.
+Interfaces: stage_windows_qa(project) copie les deux classes avant import/export et crée windows_qa/entry.tscn. Set-QA-Mode écrit uniquement override.cfg dans la copie QA et actualise qaExtras. driver-ack.json lie mode, chaîne de scripts embarqués, scène d'entrée, PID, EXE et profil ; Run-Game le vérifie sous 15 secondes pour graphics/resume, jamais pour fresh.
+- [ ] Reproduire en tests le pilote absent/incorrect et un override livré pourtant manifesté ; les refuser.
+- [ ] Embarquer les classes et la scène vide sans modifier main.gd, project.godot, le template officiel ou les défauts produit.
+- [ ] Émettre l'ACK avant toute instanciation de main.tscn ; conserver les comparaisons pures du profil avant cette instanciation.
+- [ ] Supprimer --script ; sélectionner la classe par override.cfg QA hashé et restaurer le démarrage normal pour fresh.
+- [ ] Vérifier staging/cache/dispatch sous Godot Linux disponible, parse/contrôleur/validateur ; signaler qu'il ne s'agit pas d'un reçu Windows.
+- [ ] Faire recevoir d'abord le smoke Windows court par l'intégrateur ; employer ensuite le renderer effectivement reçu pour la reprise complète.
 

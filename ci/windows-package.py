@@ -66,6 +66,7 @@ def manifest_files(manifest):
     for name, row in files.items():
         key = safe_name(name)
         require(key not in keys and key != "manifest-build.json", "Duplicate or self-referential manifest")
+        require(key.rsplit("/", 1)[-1] != "override.cfg", "QA override.cfg must never be shipped in the official archive")
         keys.add(key)
         require(isinstance(row, dict) and SHA.fullmatch(str(row.get("sha256", ""))) and
                 type(row.get("bytes")) is int and row["bytes"] >= 0, "Invalid manifest SHA or size")
@@ -191,6 +192,19 @@ def same_windows_path(left, right):
     return bool(left and right) and ntpath.normcase(ntpath.normpath(str(left))) == ntpath.normcase(ntpath.normpath(str(right)))
 
 
+def validate_driver_ack(ack, expected_executable, mode, pid, data_dir):
+    require(mode in ("resume", "graphics-smoke") and isinstance(ack, dict), "Embedded driver ACK required")
+    chain = ["res://windows_qa/windows-resume.gd"]
+    if mode == "graphics-smoke":
+        chain.insert(0, "res://windows_qa/windows-graphics-smoke.gd")
+    require(ack.get("schema") == "oval-windows-driver-v1" and ack.get("mode") == mode and
+            ack.get("script_chain") == chain and ack.get("entry_scene") == "res://windows_qa/entry.tscn" and
+            ack.get("exported") is True and type(ack.get("pid")) is int and ack["pid"] == pid and
+            same_windows_path(ack.get("executable"), expected_executable) and
+            same_windows_path(ack.get("data_dir"), data_dir), "Embedded driver ACK mode/script/process/profile mismatch")
+    return ack
+
+
 def validate_qa_report(report, expected_executable, expected_mode):
     require(expected_mode in ("fresh", "resume") and report.get("mode") == expected_mode, "Wrong QA mode")
     require(report.get("passed") is True and report.get("failures") == [] and type(report.get("checks")) is int and report["checks"] > 0, "QA failed or omitted checks")
@@ -218,6 +232,7 @@ def validate_qa_report(report, expected_executable, expected_mode):
     else:
         graphics = report.get("graphics", {})
         require(report.get("native_display") == "Windows" and graphics.get("passed") is True and graphics.get("window") == [2560, 1440], "Real Windows graphics receipt required")
+        validate_driver_ack(report.get("driver_ack"), expected_executable, "resume", report["pid"], report["data_dir"])
         require(report.get("platform") == "Windows" and report.get("audio_driver") == "Dummy", "Windows/Dummy runtime required")
         before = report.get("before", {})
         require(all(before.get(k) is True for k in ("state_matches", "citations_match", "rng_file_unchanged", "profile_bytes_match", "press_literals_match")), "Pure initial resume proof missing")
@@ -305,6 +320,8 @@ def validate_windows_report(report, expected_commit, expected_executable, requir
         validate_process(process, expected_executable, node, node_sha)
         require(process.get("exeSha256") == receipt["manifest"]["files"]["OvalLegacy27.exe"]["sha256"], "Wrong EXE SHA in process receipt")
         require(qa["pid"] == process["pid"] and qa["engine_pid"] == process["nodePid"], "QA/process PID mismatch")
+        if mode == "resume":
+            require(qa["driver_ack"] == process.get("driverAck"), "Resume report/process driver ACK mismatch")
     require(same_windows_path(report["fresh"]["data_dir"], report["resume"]["data_dir"]), "Resume must use the same persisted profile")
     version = report["resume"]["runtime_info"].get("engine", {})
     require([version.get(key) for key in ("major", "minor", "patch")] == [4, 7, 2], "Wrong observed Godot runtime version")
@@ -331,6 +348,8 @@ def validate_graphics_probe(report, process, manifest, expected_executable, driv
     require(report.get("passed") is True and report.get("failures") == [] and report.get("checks", 0) > 0 and report.get("exported") is True, "Exported EXE graphics probe failed")
     require(report.get("platform") == "Windows" and report.get("native_display") == "Windows" and report.get("audio_driver") == "Dummy", "Actual Windows graphics and Dummy audio required")
     require(same_windows_path(report.get("executable"), expected_executable), "Wrong graphics EXE")
+    validate_driver_ack(report.get("driver_ack"), expected_executable, "graphics-smoke", report.get("pid"), report.get("data_dir"))
+    require(report["driver_ack"] == process.get("driverAck"), "Graphics report/process driver ACK mismatch")
     node = str(Path(expected_executable).parent / "runtime/node.exe")
     validate_process(process, expected_executable, node, manifest_files(manifest)["runtime/node.exe"]["sha256"])
     require(process.get("exeSha256") == manifest["files"]["OvalLegacy27.exe"]["sha256"] and report.get("pid") == process.get("pid") and report.get("engine_pid") == process.get("nodePid"), "Graphics executable/process identity mismatch")

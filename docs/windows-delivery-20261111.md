@@ -200,3 +200,13 @@ ne peut pas être publiée comme une recette Windows complète.
 Godot 4.7.2 lie normalement ANGLE statiquement ; aucune DLL ANGLE supplémentaire
 n’est téléchargée. Le backend D3D11 demande l’adaptateur exposé par Windows : le
 fonctionnement WARP n’est pas supposé avant observation du rendu effectif.
+
+## Entrée de recette des templates release
+
+Le smoke [42997490533](https://github.com/Xynph/cadrage-debordement/actions/runs/42997490533), source `af2dd2a79d1c83790a104bb151fa0453efc982d5`, a encore atteint `bridge.start.end` en 5,279 secondes et observé le Node embarqué, sans erreur ANGLE. Aucun ACK ni fichier de progression du pilote externe n'existe. Les sources officielles Godot 4.7.2 expliquent ce résultat : SConstruct active par défaut `disable_path_overrides`, et main.cpp efface alors `--script`. Le délai de 90 secondes de ces deux smokes ne prouve donc pas un blocage de première image : la sonde demandée n'avait pas démarré.
+
+Le constructeur embarque désormais les classes `WindowsReceiptResume` et `WindowsGraphicsSmoke`, avec une scène Node vide, avant import/export. Le lancement normal du paquet garde `res://main.tscn`. Dans la seule copie QA, un `override.cfg` hashé sélectionne la classe de recette ; le validateur interdit ce fichier même s'il est honnêtement ajouté au manifeste du ZIP. L'override de reprise reste identique pendant fresh et resume : SELF_TEST=1 délègue à main.tscn et son unique qa_runner intégré ; SELF_TEST=0 compare d'abord le profil puis instancie le jeu.
+
+Avant de charger main.tscn, les pilotes graphiques écrivent atomiquement `driver-ack.json` : mode, scripts embarqués et héritage, scène d'entrée, PID, EXE et profil. Le contrôleur exige cet ACK sous 15 secondes, vérifie ces identités, puis le lie au rapport et au reçu processus. Le mode fresh historique n'est pas soumis à cet ACK. Un ACK absent ou incorrect échoue rapidement. Les captures, le Node observé, Dummy, le silence de Gabi, les comparaisons pures et les contrôles ZIP/arbre restent obligatoires.
+
+Les tests locaux de dispatch/cache Godot Linux ne sont pas une preuve d'export Windows. La prochaine étape reste une courte préqualification native, ANGLE sur copie propre sans DLL Mesa d'abord ; le renderer de la recette complète sera choisi d'après son résultat réellement observé.

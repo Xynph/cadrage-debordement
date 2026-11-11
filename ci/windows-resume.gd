@@ -1,5 +1,6 @@
+class_name WindowsReceiptResume
 extends SceneTree
-# External QA main loop loaded by the actual exported EXE, never by an editor.
+# Embedded QA main loop selected by override.cfg in the disposable QA copy.
 # Initial export is pure. The save probe and mandatory meetings are declared
 # separately before real navigation and native viewport captures.
 var app: Control
@@ -13,7 +14,48 @@ var report := {"mode":"resume","before":{},"first_mutations":[],"mandatory_meeti
 var graphics_trace: Array[Dictionary] = []
 
 func _initialize() -> void:
+	# The same QA override stays byte-identical across fresh and resume. Fresh
+	# delegates to the unchanged in-app qa_runner; only SELF_TEST selects it.
+	if OS.get_environment("CD_GODOT_SELF_TEST") == "1":
+		check(driver_mode() == "resume" and current_scene != null and current_scene.scene_file_path == "res://windows_qa/entry.tscn", "Fresh integrated QA starts from the empty embedded entry")
+		if not failures.is_empty(): call_deferred("finish"); return
+		current_scene.free()
+		call_deferred("run_fresh")
+		return
+	var chain: Array[String] = []
+	var script: Script = get_script()
+	while script != null:
+		chain.append(script.resource_path)
+		script = script.get_base_script()
+	var entry := current_scene.scene_file_path if current_scene != null else ""
+	var ack := {"schema":"oval-windows-driver-v1","mode":driver_mode(),"script_chain":chain,"entry_scene":entry,"pid":OS.get_process_id(),"executable":OS.get_executable_path(),"data_dir":profile,"exported":not OS.has_feature("editor")}
+	report.mode = driver_mode()
+	report.driver_ack = ack
+	if output.is_absolute_path():
+		DirAccess.make_dir_recursive_absolute(output)
+		var path := output.path_join("driver-ack.json")
+		var handle := FileAccess.open(path + ".tmp",FileAccess.WRITE)
+		if handle != null:
+			handle.store_string(JSON.stringify(ack))
+			handle.close()
+			check(DirAccess.rename_absolute(path + ".tmp",path) == OK, "Driver ACK is written atomically")
+		else: check(false, "Driver ACK can be written")
+	else: check(false, "Explicit absolute driver output required")
+	print("CD_WINDOWS_DRIVER_ACK ",JSON.stringify(ack))
+	check(entry == "res://windows_qa/entry.tscn", "Empty embedded QA entry precedes product scene")
+	if not failures.is_empty(): call_deferred("finish"); return
+	current_scene.free()
 	call_deferred("run")
+
+func driver_mode() -> String:
+	return "resume"
+
+func run_fresh() -> void:
+	# main.gd owns qa_runner construction, observation and shutdown exactly as
+	# in a normal CD_GODOT_SELF_TEST=1 launch; this loop adds no second runner.
+	app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	current_scene = app
 
 func check(ok: bool, message: String) -> void:
 	checks += 1
@@ -106,7 +148,7 @@ func capture(name_: String) -> void:
 	report.graphics.captures.append({"path":path,"sha256":FileAccess.get_sha256(path),"width":image.get_width(),"height":image.get_height(),"variance":variance})
 
 func runtime_information() -> void:
-	var details := {"platform":OS.get_name(),"executable":OS.get_executable_path(),"engine":Engine.get_version_info(),"display":DisplayServer.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"audio_driver":AudioServer.get_driver_name(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile}
+	var details := {"platform":OS.get_name(),"executable":OS.get_executable_path(),"engine":Engine.get_version_info(),"display":DisplayServer.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"api_version":RenderingServer.get_video_adapter_api_version(),"argv":OS.get_cmdline_args(),"audio_driver":AudioServer.get_driver_name(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile}
 	report.runtime_info = details
 	var dialog := AcceptDialog.new()
 	dialog.title = "Runtime info · Windows package QA"

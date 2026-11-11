@@ -24,6 +24,17 @@ function Get-CimInstance {
     return @()
 }
 try {
+    $qaGame = Join-Path $EvidenceRoot 'Relocated QA with spaces'
+    New-Item -ItemType Directory -Path $qaGame | Out-Null
+    $qaExtras = @{}
+    Set-QA-Mode $qaGame 'resume' $qaExtras
+    $overrideHash = Hash (Join-Path $qaGame 'override.cfg')
+    Set-QA-Mode $qaGame 'resume' $qaExtras
+    if ((Hash (Join-Path $qaGame 'override.cfg')) -cne $overrideHash -or $qaExtras['override.cfg'].sha256 -cne $overrideHash) { throw 'Stable QA override/hash changed.' }
+    $config = Get-Content -LiteralPath (Join-Path $qaGame 'override.cfg') -Raw
+    if ($config -notmatch 'run/main_loop_type="WindowsReceiptResume"' -or $config -notmatch 'run/main_scene="res://windows_qa/entry.tscn"') { throw 'QA override did not select the embedded entry.' }
+    Add-Content -LiteralPath (Join-Path $qaGame 'override.cfg') -Value 'unexpected-change'
+    try { Set-QA-Mode $qaGame 'graphics' $qaExtras; throw 'A modified override was accepted.' } catch { if ($_.Exception.Message -notlike '*undeclared or modified*') { throw } }
     $script:mockWorker = $true
     $output = Join-Path $EvidenceRoot 'shape'
     $body = '[Console]::WriteLine([Environment]::GetEnvironmentVariable("GITHUB_TOKEN")); [Console]::WriteLine("UNIT_CAPTURE_MARKER"); Start-Sleep -Milliseconds 1500'
@@ -33,6 +44,40 @@ try {
     $captured = Get-Content -LiteralPath (Join-Path $output 'stdout.log') -Raw
     if ($captured -notmatch 'UNIT_CAPTURE_MARKER' -or $captured -match 'UNIT_SENTINEL') { throw 'Captured output is incomplete or the child inherited a forbidden token.' }
     Write-Output 'Controller unit: one receipt dictionary, complete bytes, no token inheritance.'
+
+    $ackBody = @'
+$ack = @{schema='oval-windows-driver-v1';mode='graphics-smoke';pid=$PID;executable=(Get-Process -Id $PID).Path;data_dir=$env:CD_GODOT_DATA_DIR;exported=$true;entry_scene='res://windows_qa/entry.tscn';script_chain=@('res://windows_qa/windows-graphics-smoke.gd','res://windows_qa/windows-resume.gd')}
+$ack | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $env:CD_GODOT_RESUME_OUTPUT 'driver-ack.json.tmp')
+Move-Item (Join-Path $env:CD_GODOT_RESUME_OUTPUT 'driver-ack.json.tmp') (Join-Path $env:CD_GODOT_RESUME_OUTPUT 'driver-ack.json')
+Start-Sleep -Milliseconds 1500
+'@
+    foreach ($case in @('mode','pid','executable','script','profile','editor')) {
+        $body = switch ($case) {
+            'mode' { $ackBody.Replace("mode='graphics-smoke'", "mode='resume'") }
+            'pid' { $ackBody.Replace('pid=$PID', 'pid=99999998') }
+            'executable' { $ackBody.Replace('executable=(Get-Process -Id $PID).Path', "executable='C:/host/editor.exe'") }
+            'script' { $ackBody.Replace('res://windows_qa/windows-graphics-smoke.gd', 'C:/external-driver.gd') }
+            'profile' { $ackBody.Replace('data_dir=$env:CD_GODOT_DATA_DIR', "data_dir='C:/wrong-profile'") }
+            'editor' { $ackBody.Replace('exported=$true', 'exported=$false') }
+        }
+        try {
+            $null = Run-Game 'graphics' @('-NoLogo','-NoProfile','-NonInteractive','-Command',$body) (Join-Path $EvidenceRoot 'profile') (Join-Path $EvidenceRoot "ack-$case") $childExe $childExe 6
+            throw 'An invalid driver ACK was accepted.'
+        } catch {
+            if ($_.Exception.Message -notlike '*driver ACK*' -or $_.Exception.Message -like '*was accepted*') { throw }
+        }
+    }
+    $record = Run-Game 'graphics' @('-NoLogo','-NoProfile','-NonInteractive','-Command',$ackBody) (Join-Path $EvidenceRoot 'profile') (Join-Path $EvidenceRoot 'ack-valid') $childExe $childExe 6
+    if ($record.driverAck.mode -ne 'graphics-smoke' -or $record.driverAck.pid -ne $record.pid) { throw 'Verified driver ACK absent from process receipt.' }
+    $started = [DateTime]::UtcNow
+    try {
+        $null = Run-Game 'graphics' @('-NoLogo','-NoProfile','-NonInteractive','-Command','Start-Sleep -Seconds 30') (Join-Path $EvidenceRoot 'profile') (Join-Path $EvidenceRoot 'ack-absent') $childExe $childExe 6 -AckTimeoutSeconds 1
+        throw 'A missing driver ACK was accepted.'
+    } catch {
+        if ($_.Exception.Message -notlike '*driver ACK*' -or $_.Exception.Message -like '*was accepted*') { throw }
+    }
+    if (([DateTime]::UtcNow-$started).TotalSeconds -gt 5) { throw 'Absent driver did not fail promptly.' }
+    Write-Output 'Controller unit: absent/mismatched ACK refused; exact embedded driver identity retained.'
 
     $script:mockWorker = $false
     foreach ($case in @('exit-zero-error','error-before-stall')) {

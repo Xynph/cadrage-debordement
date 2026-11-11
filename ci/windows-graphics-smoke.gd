@@ -1,6 +1,10 @@
+class_name WindowsGraphicsSmoke
 extends "windows-resume.gd"
 # A short startup/graphics probe of the real exported EXE. No career is created.
 # Inherits actual window capture, runtime observation and silent shutdown helpers.
+func driver_mode() -> String:
+	return "graphics-smoke"
+
 func run() -> void:
 	report.mode = "graphics-smoke"
 	report.scope = "graphics-smoke-only"
