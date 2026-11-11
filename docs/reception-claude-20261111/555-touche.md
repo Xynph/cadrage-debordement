@@ -1,4 +1,31 @@
-# Réception PR555 — reçu
+# Réception PR555 — candidat2f5d9ba reçu sur périmètre logique
+
+Candidat géométrique `66f391fccaef008ba7adfd0d60972686ee9478a5`, base main `96f537040bf9f2e37bf10b0a9b09518b732244a2`. La réception antérieure de `d05b5f752db3cebfb098c01b4b0d7dcf1743bf8f` reste une preuve historique limitée à ce SHA. Le nouveau head contient le commit produit `35b8751d` et un commit documentaire66f : il ne faut donc pas transférer automatiquement les 80 matchs précédents au nouveau code. Description actualisée et commentaires relus (aucun commentaire).
+
+Le nouveau head `2f5d9ba57b3b98f4e99ca340393ad62aa91f0e62` fusionne66f et main96. Son diff final contre main96 porte uniquement sur les quatre fichiers touche ; les trois fichiers code/tests ont exactement les blobs testés dans notre copie main96+patch66f. La preuve sur cette copie vaut donc pour le code de2f, sans rejouer à cause du seul rattachement à main.
+
+## Delta production et réception ciblée
+
+`dist/match2d.js:11` borne la marque de touche à5–95 dans la projection ; `:19`–`:25` place les rangées à0,5m de leur côté, le lanceur sur la marque et la touche, son vis-à-vis à2m de la marque/y3, le receveur2m derrière la rangée, les autres joueurs à distance ou sur leur ligne de but ; `:35` exempte cette scène des bornes générales afin de permettre ces positions. Aucune écriture sportive/RNG ajoutée. Les dimensions et l’attribution systématique des rôles par slot restent des abstractions, notamment équipes réduites non rééquilibrées.
+
+Le delta code/tests a été appliqué sans conflit dans la copie jetable de main96 déjà munie de d05. Blob testé `dist/match2d.js` : `bfe7aac751448c35608be8c0a1b717e451fd0e04`, exactement identique à66f ; blob `tests/lineout-geometry.cjs` : `9ec7f9df9f3993580fe1d4174c9df13172975b69`, également identique.
+
+- `tests/lineout-side.cjs` : rc0.
+- `tests/lineout-geometry.cjs` : rc0,310 scènes dont274 réelles,31 réelles près des en-buts et36 construites ;631 non-participants sur leur ligne de but. Contrôles d’état/RNG sans mutation et conservation par l’adaptateur inclus.
+- `tests/match2d.cjs`, `match-actions.cjs`, `match3d-adapter.cjs` : rc0.
+- Nouvelle sonde80 matchs **main96 → main96+55566f : PASS80/80**,15 140 ticks de scènes,1 332 scènes modifiées. Les seuls écarts permis sont les coordonnées de joueurs et les x du ballon/de l’origine dans les scènes `lineout`. Métadonnées complètes, scènes hors touche, état carrière complet et RNG suivant sont comparés ; ce passage remplace le report automatique de la preuve d05.
+
+## Verdict courant
+
+**Reçu sur le périmètre logique/géométrique** pour2f5d9ba : nouveaux tests ciblés verts et80 matchs rejoués avec état carrière/RNG identiques. **Réception graphique et cumul554 non acquis**, pour les réserves ci-dessous. Les anciennes suites physique/salaires/réseau ci-dessous ont été exécutées surd05 ; elles ne sont pas revendiquées comme réexécutées sur66f/2f. Le nouveau rejeu compare toutefois l’état carrière complet de66f/2f àmain96.
+
+## Réserve de présentation et cumul554
+
+La description actuelle reconnaît une vitesse de mise en place aggravée (pointe déclarée75,8m/s, contre50,9 auparavant), non corrigée. Ce chiffre provient du producteur ; il n’a pas été remesuré ici. La géométrie statique et la conservation du moteur n’établissent donc pas la qualité de la transition visuelle. Ballon ày4 plutôt qu’aux mains du lanceur, équipes réduites et touche rapide restent des limites explicites. Ce lot n’est pas une réception graphique d’un match complet.
+
+Le nouveau document du producteur décrit des divergences avec554 : marque bornée6–94 au lieu de5–95, couloir1,2m au lieu de1m, vis-à-visy2,6 au lieu de3, receveur2,8m au lieu de2. La lecture ciblée précédente de `_align` confirme qu’il recalcule sa géométrie depuis la marque : pas de double inversion arithmétique, mais ses positions ne deviennent pas celles de66f par simple combinaison. La fixture du cumul doit être régénérée et le cumul reçu séparément. Aucun Godot/cumul554+555 ni Windows exécuté par ce récepteur.
+
+## Réception historique d05
 
 Candidat exact `d05b5f752db3cebfb098c01b4b0d7dcf1743bf8f`, base de réception main `96f537040bf9f2e37bf10b0a9b09518b732244a2`. Description, documentation et commentaires lus (aucun commentaire). La base de PR est `integration/oval-cloud-complet-20261110` : son cumul n’est pas pris pour du main. Le patch du seul commit candidat s’applique sans conflit dans une copie jetable de main96. Aucune modification produit effectuée dans la branche de réception.
 
@@ -23,9 +50,10 @@ PR554 head `b25c0aabc34dd519432c78ddec813bcec8a664c0`, `native/godot/match_geste
 
 Aucun SDK, rendu Godot, navigateur ou Windows exécuté par cette réception. Aucun changement CI : le nouveau test n’est pas associé à `dist/match2d.js` par le sélecteur ciblé actuel ; l’intégrateur doit décider d’ajouter cette sélection avant intégration. Aucun fichier de moteur ou test partagé modifié par le récepteur.
 
-## Sonde reproductible
 
-Enregistrer le bloc ci-dessous hors dépôt, puis lancer avec Node22 en arguments les copies de main96 avant et après application du patch555. Les tests utilisent `tests/harness.cjs` réel, sans SDK.
+## Sonde reproductible du candidat66f
+
+Enregistrer ce bloc hors dépôt et le lancer avec Node22, en arguments les copies de main96 avant et après patch55566f. Le test utilise le vrai harness sans SDK.
 
 ```js
 'use strict';
@@ -38,8 +66,8 @@ for(let tick=0;tick<4000&&!a.run('S.live.finished');tick++){
 for(const h of [a,b])h.run('if(S.live.paused)continueMatch();presentationTick(S.live);');
 const x=JSON.parse(a.run('JSON.stringify(matchScene(S.live))')),y=JSON.parse(b.run('JSON.stringify(matchScene(S.live))'));scenes++;
 if(JSON.stringify(x)!==JSON.stringify(y)){
-assert.equal(x.kind,'lineout');assert.equal(x.team,1);changed++;
-for(let i=0;i<x.players.length;i++){const p=x.players[i],q=y.players[i];if(p.slot<8){assert.equal(q.x,Math.max(2,Math.min(98,x.ball.x+(p.side===0?-2:2))));p.x=q.x;}}
+assert.equal(x.kind,'lineout');changed++;x.ball.x=y.ball.x;x.origin.x=y.origin.x;
+for(let i=0;i<x.players.length;i++){const p=x.players[i],q=y.players[i];p.x=q.x;p.y=q.y;}
 assert.deepEqual(x,y);
 }
 }
@@ -48,5 +76,5 @@ assert.equal(a.run('S.live.finished'),true);assert.equal(b.run('S.live.finished'
 const sa=a.run('JSON.stringify(S,(k,v)=>k==="visualSource"?undefined:v)'),sb=b.run('JSON.stringify(S,(k,v)=>k==="visualSource"?undefined:v)');assert.equal(hash(sa),hash(sb));assert.equal(a.run('Math.random()'),b.run('Math.random()'));matches++;
 if(matches%20===0)console.log(JSON.stringify({matches,scenes,changed}));
 }
-console.log(JSON.stringify({passed:true,matches,scenes,changed,assertions:'full career state SHA256 and next RNG equal; scene changes restricted to lineout team1 x slots0-7'}));
+console.log(JSON.stringify({passed:true,matches,scenes,changed,assertions:'full career state SHA256 and next RNG equal; scene changes restricted to lineout ball/origin x and player x/y; all metadata preserved'}));
 ```

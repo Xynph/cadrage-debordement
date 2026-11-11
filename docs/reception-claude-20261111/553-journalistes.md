@@ -22,3 +22,19 @@ Correction attendue chez le producteur : projeter les identités structurées pa
 ## Limites et verdict
 
 **À corriger**, pour la réécriture des citations au rendu. Réception de migration positive sous les cas testés ; pas de refus général de migration. Tests purs Node `v22.23.4`, pas de SDK/Godot ni de Windows exécutés. Noms commerciaux des médias inventés non recherchés, pack privé réel non ouvert ni publié, tests navigateur non exécutés. L’immersion de la vue de presse existante et les collisions entre noms de pack restent hors de cette preuve ciblée.
+
+## Reproduction durable, isolée
+
+Le [patch de sonde](../qa/pr553-archive-quotes-repro.patch) ajoute un seul scénario au test officiel du candidat : importer une archive dont la question cite un journaliste de base et la réponse cite sa rédaction, puis vérifier les deux textes sous pack. Les noms proviennent de la banque courante du candidat, aucun ancien ID/nom privé n’est inscrit dans la preuve. Appliquer uniquement à une copie jetable :
+
+```bash
+repro_root=$(mktemp -d /tmp/rg27-pr553-quotes.XXXXXX)
+repro_patch="$(pwd)/docs/qa/pr553-archive-quotes-repro.patch"
+git archive feee1891f3ffbea2b32afa65dc289251724b0b65 | tar -x -C "$repro_root"
+(cd "$repro_root" && git apply "$repro_patch")
+(cd "$repro_root" && /workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node tests/press-identity-pack.cjs)
+```
+
+Résultat attendu pour reproduire le défaut : rc1 à l’assertion `mot pour mot question et réponse archivées sous pack`. Le patch ne modifie pas la production du candidat.
+
+Relance de la sonde combinée le11novembre à13:58UTC : rc1 confirmé. La différence d’assertion porte sur **les deux champs** : question avec nom de journaliste de base transformé en `Journaliste Test Zéro`, réponse avec nom de rédaction de base transformé en `Rédaction Test 1`. Le test officiel sans sonde était vert ; ce scénario isole donc la lacune de couverture.
