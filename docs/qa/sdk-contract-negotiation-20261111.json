@@ -1,0 +1,66 @@
+{
+  "base_commit": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "sdk": "Godot4.7.2 official Linux",
+  "node": "22.23.4",
+  "audio": "Dummy",
+  "sources_sha256": {
+    "tests/godot-contract-negotiation.gd": "6bc21d1824f3bc3ca079bdb3f16ffd48498e0bfce41d379886df25b17ce36b42",
+    "tests/helpers/contextual_flow.gd": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d"
+  },
+  "baseline": {
+    "code": 1,
+    "node_seconds": 20.712,
+    "diagnostic_stop": true,
+    "cause": "Worker rejects contract confirmation until mandatory club meeting is completed, followed by absent negotiation data."
+  },
+  "correction": "Settle initial actual club meetings via the unchanged helper96; assert command acceptance. Check rounded visible salary with Salary.amount, exact authorized weekly source with Salary.input_weekly, and unchanged finance debit and signed conditions.",
+  "qualified_receipt": {
+    "suite": "godot-contract-negotiation",
+    "source_sha": "96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates",
+    "code": "0",
+    "execution_seconds": "40.192",
+    "lock_wait_seconds": "174.343",
+    "diagnostic_stop": "False",
+    "limit_seconds": "180",
+    "log": "/workspace/qa/sdk-semantics-updated/logs/updated-negotiation-godot-contract-negotiation.log"
+  },
+  "report": {
+    "checks": 69,
+    "display": "headless",
+    "failures": [],
+    "resolution": [
+      2560,
+      1440
+    ]
+  },
+  "limit": "Headless logical and real-worker receipt; graphical screenshots are not exercised. Existing child180s and totalNode180s unchanged.",
+  "logs": [
+    {
+      "path": "/workspace/qa/sdk-semantics-96/logs/baseline-godot-contract-negotiation.log",
+      "sha256": "9e246d6e3c7cb0bf4288aba52015dfc74020bf5963f546519d924ddb9fe40654",
+      "excerpt": [
+        "FAIL: Réponse réelle du moteur : Rendez-vous du club : terminez le rendez-vous du club avant de poursuivre.",
+        "SCRIPT ERROR: Invalid access to property or key 'negotiation' on a base object of type 'Dictionary'.",
+        "SDK_DIAGNOSTIC_STOP: baseline assertion failure; remaining assertions were not executed.",
+        "    FAIL: Réponse réelle du moteur : Rendez-vous du club : terminez le rendez-vous du club avant de poursuivre.",
+        "    SCRIPT ERROR: Invalid access to property or key 'negotiation' on a base object of type 'Dictionary'.",
+        "    SDK_DIAGNOSTIC_STOP: baseline assertion failure; remaining assertions were not executed.",
+        "# pass 0",
+        "# fail 1",
+        "# duration_ms 20565.021635"
+      ]
+    },
+    {
+      "path": "/workspace/qa/sdk-semantics-updated/logs/updated-negotiation-godot-contract-negotiation.log",
+      "sha256": "3a95d5fdbbf4a50bbbfbd2d6cb9f996271648bf65cb2940b56702fdcf7069b1a",
+      "excerpt": [
+        "SDK_COMMAND 7819 godot-contract-negotiation new_career",
+        "SDK_COMMAND 19675 godot-contract-negotiation snapshot",
+        "NÉGOCIATIONS CONTRACTUELLES1440 : 69 contrôles ; 0 échecs",
+        "# pass 1",
+        "# fail 0",
+        "# duration_ms 40093.160629"
+      ]
+    }
+  ]
+}
