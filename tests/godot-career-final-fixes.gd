@@ -25,6 +25,7 @@ func _wait() -> void:
 	_check(not app.waiting, "Native command completes")
 
 func _command(command: String, payload: Dictionary = {}) -> void:
+	print("SDK_COMMAND godot-career-final-fixes ",command)
 	app._command(command, payload)
 	await _wait()
 	_check(app.last_error.is_empty(), "Native command accepted: " + command)
@@ -47,54 +48,59 @@ func _labels(node: Node) -> Array[Label]:
 	return result
 
 func _pick_slot(slot: int) -> bool:
-	var buttons := _buttons(app.match_screen.side)
-	_check(buttons.size() >= 15, "All fifteen native positions remain selectable, including vacancies")
-	if buttons.size() < 15: return false
-	buttons[slot].pressed.emit()
-	return true
+	var surface: Control = app.match_screen
+	if surface.drawer_tab != "Banc" or not surface.drawer.visible: surface._toggle_drawer("Banc")
+	var buttons := _buttons(surface.drawer_body).filter(func(button: Button): return str(button.get_meta("match_bench_focus", "")).begins_with("sortant:"))
+	_check(buttons.size() == 15, "Les quinze postes réels restent sélectionnables, y compris les postes vacants")
+	for button: Button in buttons:
+		if button.get_meta("match_bench_focus") == "sortant:%d" % slot:
+			button.pressed.emit()
+			return true
+	return false
 
 func _incoming_permissions(slot: int) -> void:
 	var live: Dictionary = app.model.live
 	var allowed: Array = live.substitutions[slot].inIds
 	for player in live.reserves:
 		if not player is Dictionary: continue
-		var button := _button(app.match_screen.side, player.name)
+		var button := _button(app.match_screen.drawer_body, player.name)
 		_check(button != null and button.disabled == (player.id not in allowed), "Entrant permission follows native slot: " + player.name)
 
 func _bench() -> void:
 	await _command("import", {"text":fixtures.before20.text})
 	app._navigate("Match")
 	var panel: Node = app.match_screen
-	panel.tab = "Banc"
-	panel.presence_key = ""
-	app._update_match()
+	_check(panel.has_method("_toggle_drawer"), "Le banc appartient au direct contextuel actuel")
+	panel._toggle_drawer("Banc")
 	if _pick_slot(8): _incoming_permissions(8)
 	await _command("import", {"text":fixtures.after20.text})
+	panel = app.match_screen
 	if _pick_slot(8):
 		_incoming_permissions(8)
 		var incoming: String = app.model.live.substitutions[8].inIds[0]
 		var name: String = ""
 		for player in app.model.live.reserves:
 			if player is Dictionary and player.id == incoming: name = player.name
-		var button := _button(panel.side, name)
+		var button := _button(panel.drawer_body, name)
 		button.grab_focus()
 		await _command("snapshot")
-		_check(_button(panel.side, name) == button and button.has_focus(), "Unchanged bench keeps actual controls and focus")
+		_check(_button(panel.drawer_body, name) == button and button.has_focus(), "Unchanged bench keeps actual controls and focus")
 		await _command("pause", {"paused":false})
-		_check(_button(panel.side, name).disabled, "Running match disables selected vacant entrant")
+		_check(_button(panel.drawer_body, name).disabled, "Running match disables selected vacant entrant")
 		await _command("pause", {"paused":true})
-		_check(not _button(panel.side, name).disabled and panel.tab == "Banc", "Pause restores selected vacant slot permission and tab")
-		_button(panel.side, name).pressed.emit()
+		_check(not _button(panel.drawer_body, name).disabled and panel.drawer_tab == "Banc", "Pause restores selected vacant slot permission and tab")
+		_button(panel.drawer_body, name).pressed.emit()
 		await _wait()
 		_check(app.last_error.is_empty() and app.model.live.lineup[8] is Dictionary and app.model.live.lineup[8].id == incoming, "Vacant bench button sends a successful real native change")
 	await _command("import", {"text":fixtures.twoVacancies.text})
+	panel = app.match_screen
 	if _pick_slot(6):
 		_incoming_permissions(6)
 		var incoming: String = app.model.live.substitutions[6].inIds[0]
 		var name: String = ""
 		for player in app.model.live.reserves:
 			if player is Dictionary and player.id == incoming: name = player.name
-		_button(panel.side, name).pressed.emit()
+		_button(panel.drawer_body, name).pressed.emit()
 		await _wait()
 		_check(app.last_error.is_empty() and app.model.live.lineup[5] == null and app.model.live.lineup[6] is Dictionary and app.model.live.lineup[6].id == incoming, "Second vacancy is filled through the UI without changing the first")
 
