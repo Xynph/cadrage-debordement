@@ -255,7 +255,10 @@ func _publish() -> void:
 	for question: Dictionary in _questions():
 		answers.append({"questionId":question.id, "answerId":choices[str(question.id)]})
 	_request_in_flight = true
-	director.command("press_conference", {"context":data.get("context", {}).duplicate(true), "answers":answers})
+	var payload := {"context":data.get("context", {}).duplicate(true), "answers":answers}
+	var invitation: Variant = data.get("conference", {}).get("invitationId")
+	if invitation is String and not invitation.is_empty(): payload.invitationId = invitation
+	director.command("press_conference", payload)
 	_refresh_buttons()
 
 func _refresh_buttons() -> void:

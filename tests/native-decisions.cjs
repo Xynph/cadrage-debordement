@@ -13,11 +13,36 @@ try{
  assert.equal(m.decisions.recruitment.capacity,Math.min(100,Math.max(42,largest.players.length+6)));
  assert.ok(m.squad.length>42);assert.ok(m.market.some(p=>p.available),'La base commune volumineuse doit pouvoir recruter.');
  assert.equal(m.decisions.recruitment.needs.length,15);assert.ok(m.decisions.preparation.opponent.id!==m.club.id);
- assert.equal(m.decisions.preparation.domains.length,6);assert.equal(m.decisions.development.academy.length,15);
+ assert.equal(m.decisions.preparation.domains.length,6);assert.equal(m.decisions.development.academy.length,60);
  const before=good('export').meta.exportText,file=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file);
  for(let i=0;i<5;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes,'La lecture de tous les dossiers ne modifie ni disque ni RNG.');
  const recruit=m.market.find(p=>p.available);const cash=m.finance.cash;
+ const recruitTerms={playerId:recruit.id,years:1,confirmed:true};
+ m=good('recruit',{...recruitTerms,salary:1000});assert.equal(m.meta.negotiation.status,'counter');
+ const recruitCounter=m.meta.negotiation;
+ m=good('snapshot');assert.equal(m.meta.negotiation,undefined);
+ assert.deepEqual(m.market.find(p=>p.id===recruit.id).negotiation,{status:'counter',salary:recruitCounter.salary,years:1,attempts:1});
+ assert.equal(m.finance.cash,cash);
+ good('shutdown');b=createBridge({dataDir:path.join(root,'common')});m=good('snapshot');
+ assert.deepEqual(m.market.find(p=>p.id===recruit.id).negotiation,{status:'counter',salary:recruitCounter.salary,years:1,attempts:1});
  m=good('recruit',{playerId:recruit.id,salary:100000,years:1,confirmed:true});assert.equal(m.meta.negotiation.status,'signed');assert.equal(m.squad.length,largest.players.length+1);assert.equal(m.finance.cash,cash-recruit.fee);
+ const renewal=m.squad.find(p=>p.renewal.available&&p.salary>2000);
+ assert.ok(renewal,'Le club offre un contrat renouvelable avec un salaire supérieur au plancher.');
+ const renewalTerms={playerId:renewal.id,years:renewal.renewal.minYears,confirmed:true};
+ const renewalCash=m.finance.cash,renewalWage=m.finance.wage;
+ for(let i=1;i<=3;i++){
+  m=good('extend_contract',{...renewalTerms,salary:1000});
+  const response=m.meta.negotiation;
+  assert.equal(response.status,i<3?'counter':'withdrawn');
+  const quote=good('snapshot').squad.find(p=>p.id===renewal.id).renewal;
+  if(i<3)assert.deepEqual(quote.negotiation,{status:'counter',salary:response.salary,years:renewalTerms.years,attempts:i});
+  else{assert.deepEqual(quote.negotiation,{status:'withdrawn'});assert.match(quote.reason,/prochaine journée/);}
+  assert.equal(quote.available,i<3);
+  assert.equal(m.finance.cash,renewalCash);assert.equal(m.finance.wage,renewalWage);
+ }
+ const locked=fs.readFileSync(file);
+ bad('extend_contract',{...renewalTerms,salary:100000});
+ assert.deepEqual(fs.readFileSync(file),locked,'Un quatrième essai refusé conserve le profil.');
  m=good('set_delegation',{key:'lineup',enabled:true});assert.equal(m.decisions.delegation.lineup,true);good('set_delegation',{key:'lineup',enabled:false});bad('set_delegation',{key:'contracts',enabled:true});bad('set_delegation',{key:'training',enabled:'yes'});
  m=good('set_collective_focus',{focus:'conquete'});assert.equal(m.decisions.training.collective.selected,'conquete');bad('set_collective_focus',{focus:'magic'});
  m=good('set_opponent_level',{level:'expert'});assert.equal(m.decisions.difficulty.selected,'expert');bad('set_opponent_level',{level:'cheat'});
@@ -30,6 +55,8 @@ try{
  m=good('pause',{paused:true});assert.equal(m.decisions.liveAdvice.canAct,true);
  const liveBefore=good('export').meta.exportText;for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,liveBefore);
  m=good('delegate');assert.ok(m.decisions.report.notes.length);assert.ok(m.decisions.report.plans);settleClubMeetings(good('finish_round'),(command,payload)=>good(command,payload));m=good('snapshot');assert.ok(m.decisions.report.notes.length,'Bilan consultable après validation.');
+ const renewedQuote=m.squad.find(p=>p.id===renewal.id).renewal;
+ assert.equal(renewedQuote.available,true);assert.equal(renewedQuote.negotiation,undefined);
  const saved=good('export').meta.exportText;good('shutdown');b=createBridge({dataDir:path.join(root,'common')});assert.equal(good('export').meta.exportText,saved,'Reprise exacte des décisions persistées.');
  good('shutdown');b=createBridge({dataDir:path.join(root,'historical'),seed:213,now:1700000000000});m=settleClubMeetings(good('new_career',{mode:'fiction',club:0}),(command,payload)=>good(command,payload));assert.equal(m.decisions.recruitment.capacity,42,'Ancienne politique conservée.');
  console.log('Décisions natives : dossiers purs, recrutement>42 commun, séances, formation, délégations, missions et bilan/reprise PASS.');

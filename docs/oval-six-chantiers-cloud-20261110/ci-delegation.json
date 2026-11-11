@@ -1,0 +1,84 @@
+{
+  "cases": [
+    {
+      "name": "ordinary",
+      "responses": 10,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "read_after_tick",
+      "responses": 10,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "save_mutate_read",
+      "responses": 10,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "caught_read",
+      "responses": 10,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "read_other_key",
+      "responses": 10,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "persist_fault",
+      "responses": 12,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "persist_fault_read",
+      "responses": 12,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "invalid_import",
+      "responses": 15,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "tojson_text",
+      "responses": 12,
+      "seed": 3968224060,
+      "clock": 1700000000000
+    },
+    {
+      "name": "dynamic_clock",
+      "responses": 10,
+      "seed": 3968224060,
+      "clock": 1700000005000
+    },
+    {
+      "name": "vm_timeout",
+      "responses": 10,
+      "seed": 1229541951,
+      "clock": 1700000000000
+    }
+  ],
+  "stdio": true,
+  "checkpointCopiesBytewise": true,
+  "fixtureCheckpointEntropy": true,
+  "checkpointModuleSha256": "acbaad0e73fdf59af0db1800bace214963d3869025facc64f34d7984e0f46791",
+  "fixtureCheckpointModuleSha256": "340ff0e8dc858e61b01bb5707d83c4ea5074422ab240a614d9fd27ec5301858c",
+  "checkpoint": {
+    "minute": 72,
+    "period": 2,
+    "setupCommands": 28
+  },
+  "historicalOrigin": "f88e16fdbbffec38c1259f21a156ac6217374b12",
+  "historicalBranchSha256": "a2dade2a6565cdb471249d0f7d9d5ea5c65f9aab89712b80a2df479036f84e4b",
+  "currentWorkerSha256": "40bde25123f90263039b32498e55d60036f609c8faf6684cffe2153af45ff31c",
+  "currentDelegateSha256": "9e805e37ffb8d316e7f8275c83bb501fb6f027322a6f0f2de4bad2bea93e8c65"
+}

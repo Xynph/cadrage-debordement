@@ -1,6 +1,7 @@
 extends RefCounted
 # Surfaces de lecture du carnet. Le shell et les photographies gardent leur encre claire.
 const Base = preload("res://ui/game_skin.gd")
+const POTENTIAL_COLOR = Base.POTENTIAL_COLOR
 const T = preload("res://theme.gd")
 const W = preload("res://visual_widgets.gd")
 const BG = Color("151b1f")
@@ -259,3 +260,16 @@ static func cell(text: Variant, width: int, color: Color = INK, expand: bool = f
 	l.mouse_filter = Control.MOUSE_FILTER_PASS
 	if expand: fill(l)
 	return l
+
+static func salary(weekly: Variant) -> String: return Base.salary(weekly)
+static func salary_amount(weekly: Variant) -> String: return Base.salary_amount(weekly)
+static func salary_period(short: bool = false) -> String: return Base.salary_period(short)
+static func contract_year(end_season: Variant) -> String: return Base.contract_year(end_season)
+
+static func rating_text(person: Dictionary, own_context: bool = false) -> String: return Base.rating_text(person,own_context)
+static func potential_text(person: Dictionary) -> String: return Base.potential_text(person)
+static func potential_tooltip(person: Dictionary) -> String: return Base.potential_tooltip(person)
+static func knowledge_sort_value(person: Dictionary, field: String, own_context: bool = false) -> Variant: return Base.knowledge_sort_value(person,field,own_context)
+static func knowledge_bounds(person: Dictionary, field: String, own_context: bool = false) -> Dictionary: return Base.knowledge_bounds(person,field,own_context)
+static func attributes_known(person: Dictionary, own_context: bool = false) -> bool: return Base.attributes_known(person,own_context)
+static func knowledge_delta(left: Dictionary, right: Dictionary, field: String, own_context: bool = false) -> String: return Base.knowledge_delta(left,right,field,own_context)

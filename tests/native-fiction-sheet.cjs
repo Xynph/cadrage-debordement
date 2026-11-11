@@ -1,13 +1,17 @@
 'use strict';
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
-// A real J1 injury must not leave the next native AI sheet at 22 players.
+// A genuine unavailable front-row specialist must not leave the native AI sheet at 22 players.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge,CORE_FILES}=require('../native/engine/worker.cjs'),{context}=require('./france-harness.cjs');
+const careerVariation=require('../native/engine/career-variation.cjs');
+const potentialEvolution=require('../native/engine/potential-evolution.cjs')();
+const positionAptitudes=require('../native/engine/position-aptitudes.cjs');
 const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 const root=fs.mkdtempSync(path.join(process.env.CD_NATIVE_SHEET_TEST_ROOT||os.tmpdir(),'cd-native-sheet-'));
 const bridges=[],checks=[],fixtures=new Map();let serial=0;
 const clone=x=>JSON.parse(JSON.stringify(x));
-// These exact injury/RNG fixtures exercise the frozen v1 roster policy.
+// These shortage/RNG fixtures exercise the frozen v1 roster policy. Penalties
+// for emergency non-front-row placements no longer imply an illegal sheet.
 function bridge(name,seed){const b=inspectedWorker()({dataDir:path.join(root,name),seed,now:1700000000000});b.probe('var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result}');bridges.push(b);return b;}
 function call(b,command,payload={}){return b.handle({id:++serial,command,payload});}
 function good(b,command,payload={}){const r=call(b,command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;}
@@ -15,10 +19,18 @@ function state(b){return JSON.parse(good(b,'export').meta.exportText).state;}
 function file(name){return path.join(root,name,'PrototypeGodot','donnees.json');}
 function profile(name){return JSON.parse(fs.readFileSync(file(name),'utf8'));}
 function copied(name,persisted,seed=0){fs.mkdirSync(path.dirname(file(name)),{recursive:true});fs.writeFileSync(file(name),JSON.stringify(persisted));return bridge(name,seed);}
-function harness(persisted,options={}){const h=context(persisted.seed,options);h.ctx.fixture=JSON.parse(persisted.store['bdt-v1']);h.run('S=fixture;save=()=>{};validateCareer(S)');return h;}
+function validationContext(seed,options={}){
+ const h=context(seed,options);
+ // Native exports keep their variation/evidence manifests and legal emergency
+ // placements. Validate them with the same real contracts as the native worker.
+ h.ctx.nativePotentialEvolutionValidate=potentialEvolution.validate;
+ h.run(`const nativeCareerVariation=(${careerVariation.toString()})();const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();`);
+ return h;
+}
+function harness(persisted,options={}){const h=validationContext(persisted.seed,options);h.ctx.fixture=JSON.parse(persisted.store['bdt-v1']);h.run('S=fixture;save=()=>{};validateCareer(S)');return h;}
 function allPlayers(s){return [...s.clubs.flatMap(c=>c.players),...s.aiRoster.academies.flatMap(a=>a.players),...s.development.academy,...s.market,...s.economy.freeAgents];}
 function qualified(s){for(let side=0;side<2;side++){const sh=s.live.sheets[side],players=s.clubs[s.live.pair[side]].players,ids=[...sh.on,...sh.bench];assert.equal(ids.length,23);assert.equal(new Set(ids).size,23);assert.equal(sh.nominated.length,23);assert.ok(ids.every(id=>typeof id==='string'&&players.some(p=>p.id===id&&!p.injury)));}}
-function validateNative(b){const h=context();h.ctx.checked=state(b);h.run('validateCareer(checked)');qualified(state(b));}
+function validateNative(b){const h=validationContext();h.ctx.checked=state(b);h.run('validateCareer(checked)');qualified(state(b));}
 function check(label,fn){
  // Each scenario owns its workers. Keep persisted fixture data, not the VMs
  // (which retain a separate copy of every supported world registry).
@@ -30,28 +42,40 @@ function inspectedWorker(options={}){
  const Module=require('node:module'),filename=require.resolve('../native/engine/worker.cjs'),m=new Module(filename,module);
  m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));
  let source=fs.readFileSync(filename,'utf8');
+ // Preserve the historical shortage fixtures on this instrumented worker only.
+ source=source.replaceAll('nativeProfessionalDepth.fill(S);','');
+ // The worldwide academy groups require the V2 roster that these fixtures bypass.
+ source=source.replace('CDNativeAcademyGroups.start(S)','void 0');
  if(options.kickoffTimeout)source=source.replace('const run=source=>vm.runInContext(source,ctx,{timeout:15000});',"const run=source=>vm.runInContext(source,ctx,{timeout:source.includes('const nativeCreate=createRugbyMatch;')?1000:15000});");
  m._compile(source.replace('return {handle,close};',"return {handle,close,matchFactory:()=>run('createRugbyMatch'),probe:run};"),filename);return m.exports.createBridge;
 }
 function inspected(name,persisted,options={}){fs.mkdirSync(path.dirname(file(name)),{recursive:true});fs.writeFileSync(file(name),JSON.stringify(persisted));const b=inspectedWorker(options)({dataDir:path.join(root,name),seed:0,now:1700000000000});bridges.push(b);return b;}
 function prepare(b,seed){
- settleClubMeetings(good(b,'new_career',{club:0}),(command,payload)=>good(b,command,payload));skipMatchTalk(good(b,'begin_match'),(command,payload)=>good(b,command,payload));
+ settleClubMeetings(good(b,'new_career',{club:0,varyCurrent:false}),(command,payload)=>good(b,command,payload));skipMatchTalk(good(b,'begin_match'),(command,payload)=>good(b,command,payload));
  good(b,'pause',{paused:true});good(b,'pause',{paused:false});good(b,'tick',{steps:1});good(b,'pause',{paused:true});
  good(b,'delegate');settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));good(b,'auto_lineup');
- if(seed===1)good(b,'promote_cover',{confirmed:true});
+ if(!good(b,'snapshot').selection.valid)good(b,'promote_cover',{confirmed:true});
  assert.equal(good(b,'snapshot').selection.valid,true);
+ // Prepare the shortage explicitly after J1: current positional allocation and
+ // career variation legitimately change which player a seeded match injures.
+ // Keep the two existing side-qualified props, with one unavailable at J2;
+ // no qualification is added and all other opponent players remain healthy.
+ const slot=seed===1?0:2,injury=seed===1?3:4;
+ b.probe(`var specialists=S.clubs[12].players.filter(p=>slotEligible(p,${slot}));if(specialists.length!==2)throw Error('Expected two existing qualified props');for(var p of S.clubs[12].players)p.injury=0;specialists.find(p=>p.id==='p12-${slot}-1700000000000').injury=${injury};validateCareer(S)`);
+ good(b,'save');
 }
 try{
- for(const seed of [1,5])check('native seed '+seed+': healthy J1 profile, J2, export/import/restart and J3 RNG',()=>{
+ for(const seed of [1,5])check('native seed '+seed+': explicit prop shortage after J1, J2, export/import/restart and J3 RNG',()=>{
   let b=bridge('seed-'+seed,seed);prepare(b,seed);const before=profile('seed-'+seed);fixtures.set(seed,before);
-  const beforeState=state(b),injured='p12-'+(seed===1?23:2)+'-1700000000000';
+  const beforeState=state(b),injured='p12-'+(seed===1?0:2)+'-1700000000000';
   assert.equal(beforeState.round,1);assert.equal(beforeState.live,null);assert.equal(beforeState.clubs[12].players.find(p=>p.id===injured).injury,seed===1?3:4);
   const reopened=copied('reopened-'+seed,before);assert.equal(good(reopened,'snapshot').meta.profileError,'');assert.deepEqual(state(reopened),beforeState);
   good(b,'begin_match');good(reopened,'begin_match');validateNative(b);
   assert.deepEqual(state(b),state(reopened),'same saved S and RNG give the same actual J2');
   assert.equal(profile('seed-'+seed).seed,profile('reopened-'+seed).seed);
   const after=state(b),added=after.clubs[12].players.filter(p=>!beforeState.clubs[12].players.some(q=>q.id===p.id));
-  assert.equal(added.length,1);assert.equal(added[0].pos,seed===1?'Demi de mêlée':'Pilier droit');assert.equal(after.clubs[12].players.find(p=>p.id===injured).injury,seed===1?2:3);
+  assert.equal(added.length,1);assert.equal(added[0].pos,seed===1?'Pilier gauche':'Pilier droit');assert.equal(after.clubs[12].players.find(p=>p.id===injured).injury,seed===1?2:3);
+  assert.ok(after.aiRoster.events.some(event=>event.kind==='emergency'&&event.clubId===12&&event.playerId===added[0].id&&event.fee===0),'the public export records the actual emergency reinforcement');
   good(b,'pause',{paused:true});const text=good(b,'export').meta.exportText,rng=profile('seed-'+seed).seed;
   good(b,'import',{text});assert.equal(good(b,'export').meta.exportText,text);assert.equal(profile('seed-'+seed).seed,rng);
   const saved=state(b),disk=fs.readFileSync(file('seed-'+seed));b.close();b=bridge('seed-'+seed,12345);
@@ -61,7 +85,9 @@ try{
   assert.deepEqual(state(b),state(control));assert.equal(profile('seed-'+seed).seed,profile('continuation-'+seed).seed,'true J3 continuation retains the RNG');
  });
  check('minimal seed 5 new/begin/delegate/finish/begin needs no UI or human cover',()=>{
-  const b=bridge('minimal',5);settleClubMeetings(good(b,'new_career',{club:0}),(command,payload)=>good(b,command,payload));good(b,'begin_match');good(b,'delegate');settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));good(b,'begin_match');validateNative(b);
+  const b=createBridge({dataDir:path.join(root,'minimal'),seed:5,now:1700000000000});bridges.push(b);
+  settleClubMeetings(good(b,'new_career',{club:0}),(command,payload)=>good(b,command,payload));assert.ok(state(b).clubs.every(c=>c.players.length>=40));
+  good(b,'begin_match');good(b,'delegate');settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));good(b,'begin_match');validateNative(b);
  });
  for(const seed of [1,5])check('coverage seed '+seed+': deterministic, idempotent, no healing/cash/history changes',()=>{
   const h=harness(fixtures.get(seed)),before=h.state(),rng=h.seed(),payroll=h.run('aiRosterPayroll(S.clubs[12])');
@@ -132,7 +158,7 @@ try{
  check('forged null/22 sheet remains rejected without state, disk or RNG mutation',()=>{
   const b=copied('strict',fixtures.get(5));good(b,'begin_match');const before=state(b),bytes=fs.readFileSync(file('strict')),rng=profile('strict').seed,doc=JSON.parse(good(b,'export').meta.exportText);
   doc.state.live.sheets[1].bench[2]=null;doc.state.live.sheets[1].nominated.pop();
-  const h=context();h.ctx.forged=doc.state;assert.throws(()=>h.run('validateCareer(forged)'),/données de carrière incohérentes/);doc.checksum=h.run('saveChecksum(forged)');
+  const h=validationContext();h.ctx.forged=doc.state;assert.throws(()=>h.run('validateCareer(forged)'),/données de carrière incohérentes/);doc.checksum=h.run('saveChecksum(forged)');
   const rejected=call(b,'import',{text:JSON.stringify(doc)});assert.equal(rejected.ok,false);assert.match(rejected.error,/données de carrière incohérentes/);assert.deepEqual(state(b),before);assert.deepEqual(fs.readFileSync(file('strict')),bytes);assert.equal(profile('strict').seed,rng);
  });
  check('real failed disk write rolls back cover, training and RNG; retry matches the control',()=>{

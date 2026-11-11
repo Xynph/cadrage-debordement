@@ -47,6 +47,13 @@ static func _action(parent: Node, label: String, name: String, enabled: bool, ca
 	parent.add_child(button)
 	return button
 
+static func _meeting_lock(app: Control, completed: bool) -> String:
+	if completed: return "Une réunion a déjà eu lieu cette semaine."
+	if not app._live().is_empty(): return "Rencontre en cours ou à valider."
+	if app.model.meta.get("trained", false): return "Entraînement déjà effectué cette semaine."
+	if app.model.meta.get("phase", "league") != "league": return "Les réunions sont réservées aux semaines de championnat."
+	return "Réunion indisponible cette semaine."
+
 static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Staff")
 	var d: Dictionary = data.diagnostic
@@ -57,15 +64,26 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	G.gauge(health, "Moral du groupe", float(d.morale))
 	G.gauge(health, "Confiance", float(d.trust), 100, G.GOLD)
 	list.add_child(G.wrap("Condition moyenne %d / 100 · %d joueurs sous 65 · moral %d · confiance %d" % [d.mean, d.fatigue, d.morale, d.trust], 16))
-	if data.meeting.receipt is Dictionary:
-		list.add_child(G.wrap(str(data.meeting.receipt.title) + " — " + str(data.meeting.receipt.body), 16, G.GOOD))
-	elif data.meeting.get("lastDecision") is Dictionary and not data.meeting.available:
-		list.add_child(G.wrap("Dernière réunion conservée : " + str(data.meeting.lastDecision.plan) + ". Une seule réunion est possible par semaine et par club.", 14, G.GOOD))
-	for option: Dictionary in data.meeting.options:
+	var meeting_data: Dictionary = data.meeting
+	var receipt: Variant = meeting_data.receipt
+	var last_decision: Variant = meeting_data.get("lastDecision")
+	var current_decision: bool = last_decision is Dictionary and last_decision.get("context") == data.context
+	var lock := _meeting_lock(app, receipt is Dictionary or current_decision)
+	for option: Dictionary in meeting_data.options:
 		var meeting := G.card(list, G.accent_ink(app.accent))
-		meeting.add_child(G.section(option.label, option.detail))
-		meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
-		_action(meeting, "RÉUNIR LE STAFF · " + str(option.label), "SupportMeeting_" + str(option.key), data.meeting.available, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
+		# Un reçu importé de l’ancienne version peut précéder le contexte natif.
+		var matching_receipt: bool = receipt is Dictionary and receipt.get("title") == "Réunion de staff : " + str(option.label)
+		var applied: bool = last_decision.get("plan") == option.key if current_decision else matching_receipt
+		var detail := str(receipt.body) if applied and matching_receipt else str(option.detail)
+		meeting.add_child(G.section(option.label, detail))
+		if meeting_data.available:
+			meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
+		elif applied:
+			meeting.add_child(G.wrap("Réunion tenue cette semaine · Moral actuel %d/100 · Confiance actuelle %d/100" % [d.morale, d.trust], 16, G.GOOD))
+		else:
+			meeting.add_child(G.wrap(lock, 14))
+		var action := "RÉUNION EFFECTUÉE" if applied else "RÉUNIR LE STAFF · " + str(option.label)
+		_action(meeting, action, "SupportMeeting_" + str(option.key), meeting_data.available, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
 	list.add_child(G.separator())
 	list.add_child(G.section("Répartir les charges", "Configurer un plan ne lance pas la séance. La prévision physique précède les effets collectifs et médicaux."))
 	var session: Dictionary = data.training.get("session", {})
@@ -139,7 +157,7 @@ static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 				quote.add_child(G.section(str(policy.label) + " · " + str(int(q.years)) + " saison(s)", policy.detail))
 				var amounts := G.h(16)
 				quote.add_child(amounts)
-				amounts.add_child(G.metric(G.euros(q.wage), "par semaine"))
+				amounts.add_child(G.metric(G.salary_amount(q.wage), G.salary_period()))
 				amounts.add_child(G.metric(G.euros(q.fee), "prime à la signature"))
 				quote.add_child(G.wrap("Engagement théorique %s sur %d semaines × %d saison(s)" % [G.euros(q.totalCommitment), q.paidWeeks, q.years], 15))
 				quote.add_child(G.wrap(str(q.likely) + " · " + str(int(q.attempts)) + "/3 tentative(s)", 13))
@@ -157,7 +175,7 @@ static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	list.add_child(G.section("Les derniers mandats", "Historique persistant limité à 24 entrées."))
 	for h: Dictionary in data.agents.history:
 		var status: String = {"ready":"accord de principe", "counter":"contre-offre", "withdrawn":"retrait", "signed":"signé"}.get(str(h.status), str(h.status))
-		list.add_child(G.wrap("S%d · semaine %d · %s · %s / sem. · %s" % [h.season, int(h.week) + 1, _name(app, h.id), G.euros(h.wage), status], 14))
+		list.add_child(G.wrap("S%d · semaine %d · %s · %s · %s" % [h.season, int(h.week) + 1, _name(app, h.id), G.salary(h.wage), status], 14))
 
 static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
 	var dialog := ConfirmationDialog.new()
@@ -168,7 +186,7 @@ static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
 	var paid_weeks: int = 34 if int(app.model.meta.get("clubCount", 0)) == 30 else 29
 	for p: Dictionary in data.agents.players:
 		if p.id == talk.id and not p.quotes.is_empty(): paid_weeks = int(p.quotes[0].paidWeeks)
-	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s / semaine · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison)." % [_name(app, talk.id), G.euros(talk.fee), G.euros(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
+	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison)." % [_name(app, talk.id), G.euros(talk.fee), G.salary(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
 	dialog.confirmed.connect(func(): app._command("agent_confirm", {"context":data.context,"key":talk.key,"confirmed":true,"wage":talk.acceptedSalary,"years":talk.years,"fee":talk.fee}); dialog.queue_free())
 	dialog.canceled.connect(func(): dialog.queue_free())
 	app.add_child(dialog)

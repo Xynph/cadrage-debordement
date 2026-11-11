@@ -32,6 +32,8 @@ static func build(app: Control) -> Control:
 	tabs.add_child(_conference(app, data))
 	tabs.add_child(_history(app, data))
 	tabs.add_child(People.build(app, data))
+	tabs.current_tab = clampi(int(app.management_ui.get("press_tab", 0)), 0, 3)
+	tabs.tab_changed.connect(func(index: int): app.management_ui.press_tab = index)
 	return page
 
 static func _club(app: Control, id: Variant) -> String:
@@ -105,7 +107,15 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 	var tab := G.v(12)
 	tab.name = "Conférence"
 	var list := G.scroll(tab)
+	var conference: Dictionary = data.conference
 	var outcome: Variant = data.get("lastOutcome")
+	var origin := str(app.get_meta("press_mail_origin", ""))
+	if not origin.is_empty() and (origin == conference.get("invitationId") or (outcome is Dictionary and origin == outcome.get("invitationId"))):
+		var back := G.button("REVENIR AU COURRIER", func():
+			app.remove_meta("press_mail_origin")
+			app._navigate("Réception", false))
+		back.name = "PressBackToInvitation"
+		list.add_child(back)
 	if outcome is Dictionary:
 		list.add_child(G.section("Retour de la dernière conférence"))
 		var delta: Dictionary = outcome.delta
@@ -122,9 +132,9 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 					if person.id == exchange.journalistId: identity = person.name; break
 				feedback.add_child(G.wrap("%s · relation %+.0f → %+.0f (%+.0f)" % [identity, exchange.before, exchange.after, exchange.delta], 12, G.GOOD if float(exchange.delta) >= 0 else G.ALERT))
 		list.add_child(G.separator())
-	var conference: Dictionary = data.conference
-	if not conference.available:
-		list.add_child(G.wrap(conference.reason, 13, G.INK))
+	if not conference.available or origin != conference.get("invitationId"):
+		var explanation := "Ouvrez l’invitation dans Réception." if conference.available else str(conference.reason)
+		list.add_child(G.wrap(explanation, 13, G.INK))
 		return tab
 	list.add_child(G.wrap("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes vos réponses.", 12, G.INK))
 	var memory_notice := G.wrap("Les relances reprennent vos échanges précédents avec ce journaliste, dans ce club et cette saison.", 12)
@@ -134,7 +144,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 	var submit := G.button("PUBLIER MES RÉPONSES", func():
 		var answers: Array = []
 		for question: Dictionary in conference.questions: answers.append({"questionId":question.id, "answerId":choices[question.id]})
-		app._command("press_conference", {"context":data.context, "answers":answers}), true)
+		app._command("press_conference", {"context":data.context, "answers":answers, "invitationId":origin}), true)
 	submit.name = "PressSubmit"
 	submit.disabled = choices.size() != conference.questions.size()
 	for question: Dictionary in conference.questions:
@@ -180,6 +190,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 
 static func _conference_draft(app: Control, data: Dictionary) -> Dictionary:
 	var draft_key := "%d:%d:%d" % [data.context.season, data.context.week, data.context.club]
+	if data.conference.get("invitationId") is String: draft_key = data.conference.invitationId
 	if app.get_meta("press_draft_context", "") != draft_key:
 		app.set_meta("press_draft_context", draft_key)
 		app.set_meta("press_draft_choices", {})

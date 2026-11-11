@@ -6,6 +6,16 @@ const {createBridge}=require('../native/engine/worker.cjs');
 const {profiles,createPolicy,commands,sourceHash}=require('../ci/progression-policies.cjs');
 const copy=x=>JSON.parse(JSON.stringify(x));
 const freeze=x=>{if(x&&typeof x==='object'){for(const v of Object.values(x))freeze(v);Object.freeze(x);}return x;};
+test('Le renouvellement utilise les niveaux et fourchettes visibles sans lire le potentiel exact',()=>{
+ const candidate=(id,min)=>({id,age:24,rating:80,potentialRange:{min,max:min+4},knowledge:{owned:true},salary:2000,contractEnd:1,
+  renewal:{available:true,salary:2200,fee:5000,minYears:1,maxYears:3}});
+ const squad=[candidate('a',82),candidate('b',84)];
+ for(const p of squad)for(const field of ['potential','note','hiddenTraitsV2'])Object.defineProperty(p,field,{get(){throw Error('Non-displayed quality read: '+field);}});
+ const model=freeze({meta:{hasCareer:true,season:1,week:0},club:{cash:5000000},finance:{wage:4000},squad,live:null});
+ const request=createPolicy('attentive').nextAction(model,'before-week');
+ assert.equal(request?.payload.playerId,'b','equal levels use the conservative visible potential bound');
+ assert.equal(request.evidence.rating,80);assert.deepEqual(request.evidence.potentialRange,{min:84,max:88});
+});
 function worker(root,name){
  const bridge=createBridge({dataDir:path.join(root,name),seed:827381,now:1794178800000});let serial=0;
  const raw=(command,payload={})=>bridge.handle({id:++serial,command,payload});

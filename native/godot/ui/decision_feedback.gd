@@ -27,13 +27,13 @@ func status_text() -> String:
 
 func begin(command: String, payload: Dictionary, model: Dictionary) -> void:
 	# À appeler à l'envoi réel, après la file d'attente et les refus locaux.
-	if command in ["new_career","import","recover_profile"]:
+	if command in ["new_career","import","recover_profile","restore_checkpoint"]:
 		_pending = {"command":command}
 	elif TITLES.has(command):
 		_pending = {"command":command,"payload":payload.duplicate(true),"before":_metrics(model),"evidence":_evidence(command,payload,model),"detail":_detail(command,payload,model)}
 
 func complete(command: String, ok: bool, model: Dictionary) -> void:
-	if command in ["new_career","import","recover_profile"] and ok:
+	if command in ["new_career","import","recover_profile","restore_checkpoint"] and ok:
 		reset()
 		return
 	if _pending.get("command","") != command: return
@@ -165,9 +165,9 @@ func _amount(value: Variant) -> String:
 		result += raw[index]
 	return result + " €"
 func _metric_line(metric: String, before: Variant, after: Variant) -> String:
-	var label: String = {"cash":"Trésorerie","wage":"Salaires / semaine","morale":"Moral collectif"}[metric]
+	var label: String = {"cash":"Trésorerie","wage":"Salaires "+preload("res://ui/salary_display.gd").period_label(),"morale":"Moral collectif"}[metric]
 	if metric == "morale": return "%s : %s → %s / 100%s" % [label,str(before),str(after)," (stable)" if before == after else ""]
-	return "%s : %s → %s%s" % [label,_amount(before),_amount(after)," (stable)" if before == after else ""]
+	return "%s : %s → %s%s" % [label,preload("res://ui/salary_display.gd").amount(before) if metric == "wage" else _amount(before),preload("res://ui/salary_display.gd").amount(after) if metric == "wage" else _amount(after)," (stable)" if before == after else ""]
 
 func control() -> Button:
 	var button := Button.new()

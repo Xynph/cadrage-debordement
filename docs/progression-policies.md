@@ -4,14 +4,14 @@
 
 `ci/progression-policies.cjs` fournit deux contrôleurs déterministes pour un banc de carrières appariées : `minimal` (« Gestion minimale jouable ») et `attentive` (« Renouvellement sélectif avec réserve »). Ce second identifiant n'est ni une preuve de bonne gestion, ni une stratégie optimale, ni un substitut validé à un joueur humain.
 
-Version : `progression-policies-v1`. Les paramètres suivants ont été fixés avant les résultats comparatifs ; ils ne sont pas ajustés en fonction des gains mesurés. Le SHA-256 de la source est exporté en `sourceHash` pour figer la méthode de chaque exécution.
+Version : `progression-policies-v2`. Cette adaptation utilise le niveau global et la borne basse du potentiel visible ; aucun potentiel exact ni note contextuelle hors écran tactique n’est utilisé. Les résultats archivés sous v1 restent ceux de leur méthode : ils ne sont pas réattribués à v2. Les seuils financiers et le nombre de candidats sont conservés, sans ajustement en fonction des gains mesurés. Le SHA-256 de la source est exporté en `sourceHash` pour figer la méthode de chaque exécution.
 
 Les deux bras utilisent les mêmes actions nécessaires pour jouer : avant chaque match, `auto_lineup` via le sélecteur public, puis `promote_cover` avec confirmation si la sélection reste invalide. Une erreur de couverture n'est jamais transformée en succès. Le runner exécute lui-même `begin_match`, `delegate`, `finish_round` et `next_season`. L'entraînement normal implicite du moteur reste commun aux deux bras ; il n'est pas présenté comme un traitement supplémentaire.
 
 Le bras minimal n'effectue aucun renouvellement volontaire ; il conserve les opérations de couverture et les automatismes existants. Il n'est pas saboté par un mauvais XI/XV imposé, une suppression de joueur ou un refus artificiel de promotion. Le bras de renouvellement sélectif peut considérer au plus **six candidats par saison** :
 
 - contrat expirant cette saison ou déjà expiré, renouvellement disponible dans le modèle visible, âge au plus30ans ;
-- tri déterministe par note visible décroissante, potentiel visible décroissant, âge croissant puis identifiant opaque croissant ; les notes et potentiels restent les estimations affichées du jeu ;
+- tri déterministe par niveau global visible décroissant, borne basse de la fourchette de potentiel décroissante, âge croissant puis identifiant opaque croissant ; une fourchette absente ou invalide ne permet pas de sélectionner ce profil ;
 - durée cible de deux saisons, bornée par `renewal.minYears` / `renewal.maxYears`, jamais hors1–3 ;
 - salaire offert `renewal.salary`, frais exacts `renewal.fee` du modèle public ; aucune demande cachée recalculée ;
 - après paiement des frais, réserve d'au moins **max(500000€, huit semaines de nouvelle masse salariale)** ; ce seuil est une heuristique expérimentale, pas un coût du moteur ou un objectif d'équilibrage ;
@@ -21,7 +21,7 @@ Les candidats déjà considérés ne sont pas proposés à nouveau cette saison.
 
 ## Données et commandes autorisées
 
-La politique reçoit uniquement la projection JSON visible du worker : saison/semaine, trésorerie, payroll, sélection et profils de l'effectif (`note`, `potential`, `age`, salaire, échéance, `renewal`). Elle ne reçoit pas l'état exporté, le fichier de profil, le curseur RNG ou les traits cachés. Les exports peuvent servir à mesurer et vérifier les bras dans le runner, jamais à décider des actions.
+La politique reçoit uniquement la projection JSON visible du worker : saison/semaine, trésorerie, payroll, sélection et profils de l'effectif (`rating`, `potentialRange`, `age`, salaire, échéance, `renewal`). Elle ne lit pas les anciens scalaires `potential`/`note`, l'état exporté, le fichier de profil, le curseur RNG ou les traits cachés. Les exports peuvent servir à mesurer et vérifier les bras dans le runner, jamais à décider des actions.
 
 Commandes produites :
 

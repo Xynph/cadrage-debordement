@@ -7,7 +7,7 @@ const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS = ["Effectif U21", "Effectif U18", "Progression", "Passerelles", "Encadrement"]
-const PAGE_SIZE = 12
+const Order = preload("res://ui/player_table_order.gd")
 const GREEN = Color("63ef96")
 const GOLD = Color("ffcf67")
 const RED = Color("f69a91")
@@ -80,7 +80,7 @@ func _build() -> void:
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
 	var default_group: String = ["u21", "u18", "academy", "academy", "academy"][active_tab]
 	var group := str(state.get("group", default_group))
-	var visible := _filtered(group)
+	var visible := Order.ordered(_filtered(group),str(state.get("table_sort","source")),bool(state.get("table_descending",false)),_sort_value)
 	_select_visible(visible)
 	_heading()
 	match active_tab:
@@ -100,12 +100,12 @@ func _heading() -> void:
 	D.text(hero, 29, 36, "LA RELÈVE SE CONSTRUIT", 28, GOLD, 700, 615)
 	app.heading = D.text(hero, 26, 102, "Le futur porte nos couleurs.", 69, C.IVORY, 800, 1010)
 	D.text(hero, 30, 140, "Académie · " + G.club_name(app.model.club) + "  ·  U18 / U21", 26, C.IVORY, 500, 1000)
-	var high := roster.filter(func(p: Dictionary): return float(p.get("potential", 0)) >= 85).size()
+	var high := roster.filter(func(p: Dictionary): return G.knowledge_sort_value(p,"potential") != null and G.knowledge_sort_value(p,"potential") >= 85).size()
 	var pro: Array = pathway.get("players", []).filter(func(p: Dictionary): return p.get("path") == "professionnel")
 	var coaches := G.n(pathway.get("coaches", "—"))
 	var metrics := [
 		[191, "people", G.n(roster.size()), "espoirs", GREEN],
-		[234, "star", G.n(high), "potentiels estimés ≥ 85", GOLD],
+		[234, "star", G.n(high), "potentiels ≥ 85", GOLD],
 		[246, "arrow", G.n(pro.size()) if pathway.get("active", false) else "—", "parcours professionnels", GREEN],
 		[240, "people", coaches + " / 3" if coaches != "—" else coaches, "niveau des éducateurs", C.IVORY],
 	]
@@ -129,7 +129,34 @@ func _heading() -> void:
 		tab.set_pressed_no_signal(i == active_tab)
 		tab.add_theme_stylebox_override("pressed", tab.get_theme_stylebox("normal"))
 		if i < 2: tab.tooltip_text = "Espoirs de 19 à 21 ans" if i == 0 else "Espoirs jusqu’à 18 ans"
+	_group_upgrade()
 	D.line(self, Vector2(1, 304), Vector2(2248, 304), Color(C.LINE, .90))
+
+func _group_upgrade() -> void:
+	var meta: Dictionary = app.model.get("meta", {})
+	if int(meta.get("academyGroupPolicy", 0)) >= 2: return
+	var preview: Dictionary = meta.get("academyGroups", {})
+	var rectangle := Rect2(1415, 247, 813, 56)
+	if preview.is_empty():
+		_action(self, rectangle, "Vérifier le passage à 30 U18 et 30 U21", func(): app._command("academy_groups_preview"), false, "people", "AcademyGroupsPreview")
+		return
+	if not preview.get("available", false):
+		_action(self, rectangle, "Pourquoi la mise à jour attend", func(): _group_upgrade_reason(preview), false, "people", "AcademyGroupsBlocked")
+		return
+	var text := "Compléter les U18 et U21 des %d clubs ? %d jeunes rejoindront les centres. Les joueurs en place garderont leur fiche et leurs acquis." % [int(preview.centers), int(preview.additions)]
+	_action(self, rectangle, "Compléter les centres de formation", func():
+		app.confirm("30 U18 et 30 U21 par club", text, func():
+			app._command("academy_groups_enable", {"confirmed": true, "context": preview.context}), true), true, "people", "AcademyGroupsEnable")
+
+func _group_upgrade_reason(preview: Dictionary) -> void:
+	var dialog := AcceptDialog.new()
+	app._prepare_dialog(dialog, 620)
+	dialog.title = "Mise à jour des centres de formation"
+	dialog.dialog_text = str(preview.get("reason", "Réessayez après la prochaine intersaison."))
+	app.add_child(dialog)
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.popup_centered(Vector2i(620, 190))
 
 func _open_tab(index: int) -> void:
 	state.tab = index
@@ -144,7 +171,7 @@ func _filtered(group: String) -> Array:
 		if group == "u18" and age > 18: return false
 		if group == "u21" and (age <= 18 or age > 21): return false
 		if not str(state.get("position", "")).is_empty() and p.get("pos") != state.position: return false
-		if int(state.get("potential", 0)) > 0 and float(p.get("potential", 0)) < int(state.potential): return false
+		if int(state.get("potential", 0)) > 0 and (G.knowledge_sort_value(p,"potential") == null or G.knowledge_sort_value(p,"potential") < int(state.potential)): return false
 		var preparation := str(state.get("preparation", ""))
 		if preparation == "fit" and float(p.get("injury", 0)) > 0: return false
 		if preparation == "planned" and _path(p).get("path") != "professionnel": return false
@@ -154,17 +181,14 @@ func _filtered(group: String) -> Array:
 func _select_visible(people: Array) -> void:
 	selected = {}
 	if people.is_empty(): return
-	var maximum := maxi(0, ceili(float(people.size()) / PAGE_SIZE) - 1)
-	var index := clampi(int(state.get("page", 0)), 0, maximum)
-	state.page = index
-	var shown := people.slice(index * PAGE_SIZE, (index + 1) * PAGE_SIZE)
+	var shown := people
 	for person: Dictionary in shown:
 		if person.id == state.get("player"):
 			selected = person
 			return
 	selected = shown[0]
 	for person: Dictionary in shown:
-		if float(person.get("potential", 0)) > float(selected.get("potential", 0)): selected = person
+		if _potential_before(person,selected): selected = person
 	state.player = selected.id
 
 func _table(group: String, people: Array) -> void:
@@ -181,22 +205,57 @@ func _table(group: String, people: Array) -> void:
 	_picker(table, Rect2(663, 12, 255, 43), "AcademyImmersivePotential", "Potentiel", {0:"Tous", 80:"80 et +", 85:"85 et +", 90:"90 et +"}, state.get("potential", 0), func(value): _set_filter("potential", value))
 	_picker(table, Rect2(938, 12, 308, 43), "AcademyImmersivePreparation", "Préparation", {"":"Tous", "fit":"Disponibles", "watched":"Condition < 70 %", "planned":"Parcours pro"}, state.get("preparation", ""), func(value): _set_filter("preparation", value))
 	var header := D.rect(table, Rect2(13, 69, 1367, 36), Color("1b2828"), 5)
-	for column: Array in [["#", 22, 40], ["JOUEUR", 127, 247], ["ÂGE", 365, 70], ["POSTE", 462, 194], ["NIVEAU", 657, 90], ["POTENTIEL", 745, 105], ["PROGRESSION", 850, 144], ["TEMPS DE JEU", 997, 143], ["STATUT", 1148, 197]]:
-		D.text(header, column[1], 25, column[0], 18, C.MUTED, 700, column[2])
+	var columns := [["#",22,40,"source"],["JOUEUR",127,247,"name"],["ÂGE",365,70,"age"],["POSTE",462,194,"pos"],["NIVEAU",657,90,"note"],["POTENTIEL",745,105,"potential"],["PROGRESSION",850,144,"change"],["TEMPS DE JEU",997,143,"minutes"],["STATUT",1148,197,"status"]]
+	for column: Array in columns:
+		var key: String = column[3]
+		var caption := str(column[0]) + ((" ↓" if state.get("table_descending",false) else " ↑") if state.get("table_sort","source")==key else "")
+		var action := _action(header,Rect2(column[1],0,column[2],34),caption,_sort_by.bind(key),false,"","AcademySort_"+key)
+		action.add_theme_font_size_override("font_size",C.px(16))
+		action.tooltip_text = "Trier " + str(column[0]) + " · valeurs inconnues en dernier"
+		for mode in ["normal","hover","pressed","disabled","focus"]:
+			var style := action.get_theme_stylebox(mode).duplicate() as StyleBox
+			style.content_margin_left=0; style.content_margin_right=0; style.content_margin_top=0; style.content_margin_bottom=0
+			action.add_theme_stylebox_override(mode,style)
+	var scroll := ScrollContainer.new()
+	scroll.name = "AcademyPlayerScroll"
+	scroll.mouse_force_pass_scroll_events = false
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	table.add_child(scroll); D.place(scroll,Rect2(13,106,1380,434))
 	rows = Control.new()
 	rows.name = "AcademyImmersiveRows"
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	table.add_child(rows)
-	D.place(rows, Rect2(13, 106, 1367, 434))
+	rows.custom_minimum_size = Vector2(C.px(1367),C.px(36*people.size()))
+	scroll.add_child(rows)
 	_draw_rows(people)
-	var previous_page := _action(table, Rect2(973, 546, 104, 27), "Préc.", func(): _change_page(-1), false, "", "AcademyImmersivePrevious")
-	previous_page.add_theme_font_size_override("font_size", C.px(18))
-	var next_page := _action(table, Rect2(1260, 546, 115, 27), "Suiv.", func(): _change_page(1), false, "", "AcademyImmersiveNext")
-	next_page.add_theme_font_size_override("font_size", C.px(18))
-	previous_page.disabled = int(state.get("page", 0)) <= 0
-	next_page.disabled = (int(state.get("page", 0)) + 1) * PAGE_SIZE >= people.size()
-	D.text(table, 1170, 568, "%s / %s" % [int(state.get("page", 0)) + 1, maxi(1, ceili(float(people.size()) / PAGE_SIZE))], 19, C.MUTED, 500, 172, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(table, 20, 568, "%d joueur(s) · minutes juniors si parcours actifs" % people.size(), 19, C.MUTED, 500, 874)
+	scroll.get_v_scroll_bar().value_changed.connect(func(value): state.table_scroll=value)
+	scroll.set_deferred("scroll_vertical",int(state.get("table_scroll",0)))
+	D.text(table,20,568,"%d joueur(s) · défilement dans la liste · minutes juniors si parcours actifs" % people.size(),19,C.MUTED,500,1300)
+
+func _source_index(person: Dictionary) -> int:
+	var source: Array = professionals if _professional(person) else roster
+	for index in source.size():
+		if source[index].id == person.id: return index
+	return -1
+
+func _sort_value(person: Dictionary, key: String) -> Variant:
+	if key in ["note","rating","potential"]: return G.knowledge_sort_value(person,"rating" if key == "note" else key,true)
+	if key == "source": return _source_index(person)
+	if key == "status": return _status(person)[0]
+	if key == "minutes":
+		if pathway.get("active",false) and not _professional(person): return _path(person).get("minutes",person.get("minutes"))
+		return person.get("minutes")
+	if key == "change":
+		var start: Variant = person.get("development",{}).get("seasonStart")
+		if not (start is int or start is float) or not (person.get("rating") is int or person.get("rating") is float): return null
+		return roundi(float(person.rating)-float(start))
+	return person.get(key)
+
+func _sort_by(key: String) -> void:
+	state.table_descending = not state.get("table_descending",false) if state.get("table_sort","source")==key else false
+	state.table_sort=key; state.table_scroll=0
+	app._render()
+	U.focus(app,"AcademySort_"+key)
 
 func _set_filter(key: String, value: Variant) -> void:
 	state[key] = value
@@ -211,8 +270,8 @@ func _change_page(offset: int) -> void:
 	app._render()
 
 func _draw_rows(people: Array) -> void:
-	var start := int(state.get("page", 0)) * PAGE_SIZE
-	var shown := people.slice(start, start + PAGE_SIZE)
+	var start := 0
+	var shown := people
 	if shown.is_empty():
 		D.text(rows, 24, 65, "Aucun joueur dans cette sélection.", 29, C.IVORY, 600, 1301)
 		D.text(rows, 24, 109, "Changez le groupe d’âge ou les filtres pour retrouver les Espoirs de votre carrière.", 23, C.MUTED, 500, 1301)
@@ -224,13 +283,13 @@ func _draw_rows(people: Array) -> void:
 		hit.accessibility_name = str(p.name) + " · " + str(status[0])
 		hit.tooltip_text = "%s · %s" % [p.name, p.pos]
 		_row_style(hit, p.id == selected.get("id"), i)
-		D.text(hit, 33, 27, G.n(start + i + 1), 25, C.IVORY, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 33, 27, G.n(_source_index(p) + 1), 25, C.IVORY, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
 		_portrait(hit, p, Rect2(78, 0, 44, 35))
 		D.text(hit, 130, 27, str(p.name), 26, C.IVORY, 700, 222)
 		D.text(hit, 365, 26, G.n(p.age) + " ans", 21, C.IVORY, 500, 87)
 		D.text(hit, 462, 26, str(p.pos), 22, C.IVORY, 500, 190)
-		D.text(hit, 700, 27, G.n(p.get("note", "—")), 26, C.IVORY, 700, 82, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(hit, 796, 27, G.n(p.get("potential", "—")), 26, GOLD, 700, 88, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 700, 27, G.rating_text(p,true), 26, C.IVORY, 700, 82, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 796, 27, G.potential_text(p), 20, G.POTENTIAL_COLOR, 700, 88, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(hit, 907, 27, _change(p), 24, GREEN, 700, 117, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(hit, 1054, 26, G.n(_minutes(p)) + " min", 22, C.IVORY, 500, 123, HORIZONTAL_ALIGNMENT_CENTER)
 		if status[1] == C.IVORY:
@@ -253,8 +312,9 @@ func _select(p: Dictionary) -> void:
 	_dossier()
 
 func _update_integration() -> void:
-	integration.disabled = selected.is_empty() or _professional(selected) or not development.get("promotionAvailable", false)
-	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionnez un Espoir et vérifiez les places disponibles."
+	integration.disabled = app.waiting or selected.is_empty() or _professional(selected)
+	integration.text = "Préparer une intégration" if development.get("promotionAvailable", false) else "Consulter le premier contrat"
+	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionnez un Espoir."
 
 func _dossier() -> void:
 	if is_instance_valid(dossier):
@@ -277,8 +337,8 @@ func _dossier() -> void:
 	D.text(badge, 38, 44, G.n(slot + 1) if slot >= 0 else "—", 40, C.IVORY, 800, 65, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(dossier, 387, 46, str(p.name).to_upper(), 45, C.IVORY, 800, 426)
 	D.text(dossier, 388, 74, "%s  ·  %s ANS" % [str(p.pos).to_upper(), G.n(p.age)], 23, C.IVORY, 600, 424)
-	_number_card(dossier, Rect2(337, 91, 210, 89), G.n(p.get("note", "—")), "Niveau au poste", GREEN)
-	_number_card(dossier, Rect2(571, 91, 245, 89), G.n(p.get("potential", "—")), "Potentiel estimé", GOLD)
+	_number_card(dossier, Rect2(337, 91, 210, 89), G.rating_text(p,true), "Niveau", GREEN)
+	_number_card(dossier, Rect2(571, 91, 245, 89), G.potential_text(p), "Potentiel", G.POTENTIAL_COLOR)
 	D.line(dossier, Vector2(307, 194), Vector2(817, 194))
 	_icon(dossier, "star", Rect2(309, 207, 26, 26), GREEN)
 	D.text(dossier, 345, 230, "Suivi de formation", 25, GREEN, 700, 244)
@@ -307,7 +367,7 @@ func _trend(parent: Node, p: Dictionary) -> void:
 		chart.minimum = maxf(0, floorf((float(chart.levels.min()) - 2) / 5.0) * 5.0)
 		chart.maximum = minf(100, ceilf((float(chart.levels.max()) + 2) / 5.0) * 5.0)
 	D.text(parent, 26, 371, "Progression", 28, C.IVORY, 700, 147)
-	D.text(parent, 174, 371, "Niveau général · %s aujourd’hui" % G.n(p.get("rating","—")), 21, C.MUTED, 500, 510).name = "AcademyGeneralRating"
+	D.text(parent, 174, 371, "Niveau général · %s aujourd’hui" % G.rating_text(p,true), 21, C.MUTED, 500, 510).name = "AcademyGeneralRating"
 	parent.add_child(chart)
 	D.place(chart, Rect2(76, 389, 610, 101))
 	for i in 4:
@@ -321,7 +381,7 @@ func _pathways() -> void:
 	var panel := D.panel(self, Rect2(1, 317, 1393, 581), "Du centre au rugby professionnel", "school", "", "AcademyPathwayPane")
 	D.text(panel, 25, 107, Copy.notice("academy", pathway.get("description", "Choisissez un Espoir pour suivre sa progression.")), 25, C.IVORY, 500, 1347)
 	var people := _prospects()
-	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS ESTIMÉS", 24, GOLD, 700, 1250)
+	D.text(panel, 25, 150, "LES MEILLEURS POTENTIELS", 24, GOLD, 700, 1250)
 	for i in mini(6, people.size()):
 		var p: Dictionary = people[i]
 		var entry := _action(panel, Rect2(23 + (i % 2) * 681, 173 + floori(i / 2.0) * 85, 665, 75), "", func():
@@ -333,12 +393,12 @@ func _pathways() -> void:
 		_portrait(entry, p, Rect2(10, 5, 75, 63))
 		D.text(entry, 106, 32, str(p.name), 28, C.IVORY, 700, 464)
 		D.text(entry, 106, 59, "%s  ·  %s ans" % [p.pos, G.n(p.age)], 22, C.MUTED, 500, 466)
-		D.text(entry, 646, 51, G.n(p.potential), 42, GOLD, 700, 75, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(entry, 646, 51, G.potential_text(p), 22, G.POTENTIAL_COLOR, 700, 75, HORIZONTAL_ALIGNMENT_RIGHT)
 	_action(panel, Rect2(22, 461, 1349, 66), "Ouvrir les parcours du centre  ·  mentorats, prêts et détection", func(): app._navigate("Centre"), true, "arrow", "AcademyOpenCentre")
 
 func _prospects() -> Array:
 	var prospects := roster.duplicate()
-	prospects.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("potential", 0)) > float(b.get("potential", 0)))
+	prospects.sort_custom(_potential_before)
 	return prospects
 
 func _staff_page() -> void:
@@ -381,7 +441,7 @@ func _lower_pathways() -> void:
 		D.text(click, 81, 43, entry[0], 31, C.IVORY, 700, 294)
 		D.text(click, 81, 76, str(entry[1]), 24, C.IVORY, 500, 293)
 		if i < 2: _icon(tile, "arrow", Rect2(x + 387, 101, 23, 23), C.IVORY)
-		D.text(tile, x, 200, ["Potentiels estimés", "Joueurs en prêt", "Joueurs promus"][i], 22, C.IVORY, 600, 386)
+		D.text(tile, x, 200, ["Potentiels", "Joueurs en prêt", "Joueurs promus"][i], 22, C.IVORY, 600, 386)
 		var people: Array = entry[4]
 		if people.is_empty():
 			var caption := "Aucun dossier"
@@ -458,17 +518,21 @@ func _club(club_id: Variant) -> Dictionary:
 	return {"name":"Centre", "abbr":"Centre", "color":"#436859"}
 
 func _integration_dialog() -> void:
-	if selected.is_empty() or _professional(selected): return
+	if app.waiting or selected.is_empty() or _professional(selected): return
 	var p := selected
 	var info := _path(p)
-	var dialog_parts := _dialog("AcademyIntegrationDialog", "Préparer l’intégration · " + str(p.name))
+	var title := "Préparer l’intégration" if development.get("promotionAvailable", false) else "Consulter le premier contrat"
+	var dialog_parts := _dialog("AcademyIntegrationDialog", title + " · " + str(p.name))
 	var dialog: AcceptDialog = dialog_parts[0]
 	var body: VBoxContainer = dialog_parts[1]
-	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel estimé %s" % [p.pos, G.n(p.age), G.n(p.note), G.n(p.potential)], 26, C.IVORY, true))
-	body.add_child(C.wrap("Le joueur rejoint l’effectif professionnel si l’offre est confirmée et autorisée par la carrière.", 22, C.MUTED, true))
-	var standard := C.button("Premier contrat pro  ·  %s / semaine" % G.euros(p.salary), func():
+	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel %s" % [p.pos, G.n(p.age), G.rating_text(p,true), G.potential_text(p)], 26, C.IVORY, true))
+	var preview: Dictionary = app.DevelopmentViews.contract_preview(app.model, p)
+	if not preview.restriction.is_empty(): body.add_child(C.wrap(preview.restriction, 22, C.AMBER, true))
+	if not preview.capacity.is_empty(): body.add_child(C.wrap(preview.capacity, 22, C.MUTED, true))
+	if not preview.terms.is_empty(): body.add_child(C.wrap(preview.terms, 22, C.IVORY, true))
+	var standard := C.button("Premier contrat pro", func():
 		var end_season := int(app.model.meta.get("season", 0)) + (2 if app.model.meta.get("phase") == "ended" else 1)
-		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire par semaine. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.euros(p.salary), G.n(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
+		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.salary(p.salary), G.n(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
 	standard.name = "AcademyPromoteSelected"
 	standard.set_meta("promote_id", p.id)
 	standard.disabled = not development.get("promotionAvailable", false)
@@ -478,22 +542,45 @@ func _integration_dialog() -> void:
 		var salaries: Array = info.get("promotionSalary", [])
 		for i in salaries.size():
 			var years := i + 1
-			var wage := G.euros(salaries[i])
-			var offer := C.button("%d saison(s)  ·  %s / semaine" % [years, wage], func():
+			var wage := G.salary(salaries[i])
+			var offer := C.button("%d saison(s)  ·  %s" % [years, wage], func():
 				var args: Dictionary = pathway.context.duplicate()
 				args.merge({"playerId":p.id, "years":years, "confirmed":true})
-				app.confirm("Premier contrat professionnel", "%s quittera le centre et ajoutera %s par semaine à la masse salariale pour %d saison(s). Confirmer ?" % [p.name, wage, years], func(): app._command("academy_promote", args)))
+				app.confirm("Premier contrat professionnel", "%s quittera le centre et ajoutera %s à la masse salariale pour %d saison(s). Confirmer ?" % [p.name, wage, years], func(): app._command("academy_promote", args)))
 			offer.name = "AcademyOfferYears" + str(years)
-			offer.disabled = pathway.get("locked", false) or not pathway.get("promotionAvailable", false)
+			offer.disabled = standard.disabled or pathway.get("locked", false) or not pathway.get("promotionAvailable", false)
 			body.add_child(offer)
-	_popup(dialog, 770, 420)
+	preload("res://ui/immersive08/dialogs.gd").show_centered(dialog, Vector2i(C.px(770), C.px(420)))
+
+static func professional_progress(app: Control, player_id: String) -> Dictionary:
+	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
+	for person: Dictionary in people:
+		if str(person.id) == player_id: return person
+	return {}
+
+static func open_professional_progress(app: Control, player_id: String, source_id: String) -> void:
+	var person := professional_progress(app, player_id)
+	if person.is_empty(): return
+	var dialog := _show_progress(app, person, person.get("minutes", 0))
+	dialog.tree_exited.connect(func(): U.focus(app, source_id))
 
 func _focus_dialog(p: Dictionary) -> void:
-	var dialog_parts := _dialog("AcademyFocusDialog", "Progression · " + str(p.name))
+	var professional := _professional(p)
+	var caption := "Ouvrir la fiche du joueur" if professional else "Ouvrir les parcours du centre"
+	_show_progress(app, p, _minutes(p), caption, func():
+		if professional:
+			app.selected_player = str(p.id)
+			app._navigate("Effectif")
+		else:
+			app._navigate("Centre"))
+
+static func _show_progress(app: Control, p: Dictionary, minutes: Variant, caption: String = "", open_context: Callable = Callable()) -> AcceptDialog:
+	var dialog_parts := _create_dialog(app, "AcademyFocusDialog", "Progression · " + str(p.name))
 	var dialog: AcceptDialog = dialog_parts[0]
 	var body: VBoxContainer = dialog_parts[1]
+	dialog.set_meta("development_player_id", p.id)
 	var detail: Dictionary = p.get("development", {})
-	body.add_child(C.wrap("%s minutes · %s apparition(s) · %s de progression cette saison" % [G.n(_minutes(p)), G.n(p.get("appearances", 0)), _change(p)], 24, C.IVORY, true))
+	body.add_child(C.wrap("%s minutes · %s apparition(s) · %s de progression cette saison" % [G.n(minutes), G.n(p.get("appearances", 0)), _change(p)], 24, C.IVORY, true))
 	for year: Dictionary in detail.get("history", []):
 		body.add_child(C.label("S%s · %s → %s · %s min" % [G.n(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0))], 21))
 	if detail.get("history", []).is_empty(): body.add_child(C.wrap("Historique annuel disponible après l’intersaison.", 19, C.MUTED, true))
@@ -507,20 +594,15 @@ func _focus_dialog(p: Dictionary) -> void:
 		control.disabled = not detail.get("available", false)
 		body.add_child(control)
 		body.add_child(C.wrap(str(detail.get("reason", "")) if control.disabled else "Changer d’axe remet à zéro l’expérience partielle non dépensée. Les qualités déjà acquises sont conservées.", 19, C.MUTED, true))
-	if _professional(p):
-		body.add_child(C.button("Ouvrir la fiche du joueur", func():
+	if open_context.is_valid():
+		body.add_child(C.button(caption, func():
 			dialog.hide()
 			dialog.queue_free()
-			app.selected_player = str(p.id)
-			app._navigate("Effectif")))
-	else:
-		body.add_child(C.button("Ouvrir les parcours du centre", func():
-			dialog.hide()
-			dialog.queue_free()
-			app._navigate("Centre")))
-	_popup(dialog, 790, 450)
+			open_context.call()))
+	app.ImmersiveDialogs.show_centered(dialog, Vector2i(C.px(790), C.px(450)))
+	return dialog
 
-func _option(id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> OptionButton:
+static func _option(id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> OptionButton:
 	var control := OptionButton.new()
 	control.name = id
 	control.accessibility_name = caption
@@ -552,6 +634,9 @@ func _picker(parent: Node, rectangle: Rect2, id: String, caption: String, choice
 	D.place(control, rectangle)
 
 func _dialog(id: String, title: String) -> Array:
+	return _create_dialog(app, id, title)
+
+static func _create_dialog(app: Control, id: String, title: String) -> Array:
 	app._clear_dialogs()
 	var dialog := AcceptDialog.new()
 	dialog.name = id
@@ -568,7 +653,7 @@ func _dialog(id: String, title: String) -> Array:
 func _popup(dialog: AcceptDialog, width: int, height: int) -> void:
 	dialog.popup_centered(Vector2i(C.px(width), C.px(height)))
 
-func _change(p: Dictionary) -> String:
+static func _change(p: Dictionary) -> String:
 	var baseline: Variant = p.get("development", {}).get("seasonStart")
 	if not (baseline is int or baseline is float) or not (p.get("rating") is int or p.get("rating") is float): return "—"
 	var delta := roundi(float(p.rating) - float(baseline))
@@ -599,9 +684,9 @@ func _focus_name(source: Dictionary) -> String:
 	return "Équilibré"
 
 func _number_card(parent: Node, rectangle: Rect2, value: String, caption: String, tone: Color) -> void:
-	var background := Color("413010") if tone == GOLD else Color("09432b")
+	var background := Color("413010") if tone in [GOLD,G.POTENTIAL_COLOR] else Color("09432b")
 	var tile := D.rect(parent, rectangle, background, 9, tone)
-	D.text(tile, rectangle.size.x * .5, rectangle.size.y * .59, value, 50 if rectangle.size.x > 140 else 37, tone if tone == GOLD else C.IVORY, 800, rectangle.size.x - 15, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(tile, rectangle.size.x * .5, rectangle.size.y * .59, value, 32 if value.contains("–") else 50 if rectangle.size.x > 140 else 37, tone if tone in [GOLD,G.POTENTIAL_COLOR] else C.IVORY, 800, rectangle.size.x - 15, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(tile, rectangle.size.x * .5, rectangle.size.y - 13, caption, 22 if rectangle.size.x > 140 else 17, C.IVORY, 500, rectangle.size.x - 11, HORIZONTAL_ALIGNMENT_CENTER)
 
 func _veil(parent: Node, rectangle: Rect2, colors: Array[Color], stops: Array[float]) -> void:
@@ -646,3 +731,11 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, large: bool = fals
 
 func _action(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool, icon: String, id: String) -> Button:
 	return D.button(parent, rectangle, caption, callback, primary, icon, false, Color("09673e"), id)
+
+static func _potential_before(a: Dictionary,b: Dictionary) -> bool:
+	var av: Variant = G.knowledge_sort_value(a,"potential")
+	var bv: Variant = G.knowledge_sort_value(b,"potential")
+	if av == null or bv == null:
+		if av != bv: return av != null
+	elif av != bv: return av > bv
+	return str(a.get("id","")) < str(b.get("id",""))

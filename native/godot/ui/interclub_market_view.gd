@@ -69,15 +69,26 @@ func _redraw() -> void:
 		child.queue_free()
 	var data := _data()
 	var filtered: Array = []
+	var available := 0
+	var term := query.to_lower()
 	for person: Dictionary in data.get("candidates",[]):
-		if query.is_empty() or (str(person.name)+" "+str(person.club)+" "+str(person.pos)).to_lower().contains(query.to_lower()): filtered.append(person)
+		if term.is_empty() or (str(person.name)+" "+str(person.club)+" "+str(person.pos)).to_lower().contains(term):
+			filtered.append(person)
+			if person.get("available", false): available += 1
 	page = clampi(page,0,maxi(0,ceili(float(filtered.size())/PAGE_SIZE)-1))
+	var buyer_status := G.wrap("Votre effectif professionnel est complet. Le catalogue reste consultable.", 13, G.ALERT)
+	buyer_status.name = "InterclubBuyerStatus"
+	buyer_status.visible = available == 0 and app.model.get("decisions", {}).get("recruitment", {}).get("places", -1) == 0
+	rows.add_child(buyer_status)
 	var navigation := G.h(10)
 	rows.add_child(navigation)
 	var previous := G.button("←",func(): page -= 1; _redraw())
 	previous.disabled = page == 0
 	navigation.add_child(previous)
-	navigation.add_child(G.label("%d profils · page %d" % [filtered.size(),page+1],13))
+	var proposals := "%d propositions possibles" % available if available > 1 else "%d proposition possible" % available
+	var summary := G.label("%d profils · %s · page %d" % [filtered.size(), proposals, page+1], 13)
+	summary.name = "InterclubOfferSummary"
+	navigation.add_child(summary)
 	var next := G.button("→",func(): page += 1; _redraw())
 	next.disabled = (page+1)*PAGE_SIZE >= filtered.size()
 	navigation.add_child(next)
@@ -85,7 +96,7 @@ func _redraw() -> void:
 		var person: Dictionary = filtered[i]
 		var card := G.card(rows)
 		card.add_child(G.section(str(person.name),"%s · %s · %d ans" % [str(person.club),str(person.pos),int(person.age)]))
-		card.add_child(G.wrap("Indemnité %s · salaire proposé %s / semaine · échéance S%d conservée" % [G.euros(person.fee),G.euros(person.salary),int(person.contractEnd)],13))
+		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance S%d conservée" % [G.euros(person.fee),G.salary(person.salary),int(person.contractEnd)],13))
 		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),12,G.ALERT))
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
 		offer.name = "InterclubOffer"
@@ -111,7 +122,7 @@ func _draw_negotiation() -> void:
 	rows.add_child(G.wrap("La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; vous verrez le gagnant pressenti avant de confirmer.",13))
 	var fields := G.h(12)
 	rows.add_child(fields)
-	for item in [["Indemnité (€)","fee",offer_fee,1000000000,1000],["Salaire / semaine (€)","salary",offer_salary,100000,100]]:
+	for item in [["Indemnité (€)","fee",offer_fee,1000000000,1000],["Salaire "+G.salary_period(),"salary",offer_salary,100000,100]]:
 		var column := G.v(4)
 		fields.add_child(column)
 		column.add_child(G.label(str(item[0]),13))
@@ -127,7 +138,8 @@ func _draw_negotiation() -> void:
 			input.value_changed.connect(func(value: float): offer_fee=int(value); _invalidate_quote())
 		else:
 			salary_input = input
-			input.value_changed.connect(func(value: float): offer_salary=int(value); _invalidate_quote())
+			preload("res://ui/salary_display.gd").bind_input(input,offer_salary,1000,100000)
+			input.value_changed.connect(func(_value: float): offer_salary=preload("res://ui/salary_display.gd").input_weekly(input); _invalidate_quote())
 	local_message = G.wrap("Proposez vos conditions pour recevoir les réponses et découvrir les offres concurrentes.",13)
 	local_message.name = "InterclubNegotiationMessage"
 	rows.add_child(local_message)
@@ -171,7 +183,7 @@ func _on_model(value: Dictionary) -> void:
 		lines.append(Copy.notice("interclub", negotiation.get("player",{}).get("reason","")))
 		lines.append(str(negotiation.get("humanReason","")))
 		for offer: Dictionary in negotiation.get("offers",[]):
-			lines.append("%s : %s d’indemnité, %s / semaine · besoin annoncé %d" % [str(offer.club),G.euros(offer.fee),G.euros(offer.salary),int(offer.need)])
+			lines.append("%s : %s d’indemnité, %s · besoin annoncé %d" % [str(offer.club),G.euros(offer.fee),G.salary(offer.salary),int(offer.need)])
 		var winner: Variant = negotiation.get("winner")
 		if winner is Dictionary:
 			lines.append("Gagnant pressenti : " + str(winner.club) + ". Vérification finale à la clôture.")
@@ -204,7 +216,7 @@ func _confirm_auction() -> void:
 	var confirm := ConfirmationDialog.new()
 	confirm.name = "InterclubAuctionConfirmation"
 	confirm.title = "Clôturer la négociation"
-	confirm.dialog_text = "%s remportera le joueur au devis actuel : %s d’indemnité, %s / semaine. Confirmer cette transaction définitive ?" % [str(winner.club),G.euros(winner.fee),G.euros(winner.salary)]
+	confirm.dialog_text = "%s remportera le joueur au devis actuel : %s d’indemnité, %s. Confirmer cette transaction définitive ?" % [str(winner.club),G.euros(winner.fee),G.salary(winner.salary)]
 	add_child(confirm)
 	confirm.confirmed.connect(func():
 		pending=true; close_button.disabled=true; fee_input.editable=false; salary_input.editable=false

@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: le pas journalier conserve le calendrier, la semaine et le RNG entre deux jours
+ok 1 - le pas journalier conserve le calendrier, la semaine et le RNG entre deux jours
+  ---
+  duration_ms: 26618.568048
+  type: 'test'
+  ...
+# Subtest: le jour du match bloque le calendrier et le résultat confirmé reste disponible le lendemain
+ok 2 - le jour du match bloque le calendrier et le résultat confirmé reste disponible le lendemain
+  ---
+  duration_ms: 40831.705186
+  type: 'test'
+  ...
+# Subtest: la reprise d’une ancienne sauvegarde garde son calendrier et sa date de match
+ok 3 - la reprise d’une ancienne sauvegarde garde son calendrier et sa date de match
+  ---
+  duration_ms: 30834.360967
+  type: 'test'
+  ...
+# Subtest: les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans collision
+    # Subtest: world
+    ok 1 - world
+      ---
+      duration_ms: 12025.766735
+      type: 'test'
+      ...
+    # Subtest: world-pacific
+    ok 2 - world-pacific
+      ---
+      duration_ms: 12231.297255
+      type: 'test'
+      ...
+    # Subtest: world-japan
+    ok 3 - world-japan
+      ---
+      duration_ms: 17900.485888
+      type: 'test'
+      ...
+    # Subtest: world-nationale
+    ok 4 - world-nationale
+      ---
+      duration_ms: 18787.879976
+      type: 'test'
+      ...
+    # Subtest: world-champ
+    ok 5 - world-champ
+      ---
+      duration_ms: 19581.324803
+      type: 'test'
+      ...
+    1..5
+ok 4 - les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans collision
+  ---
+  duration_ms: 80528.514762
+  type: 'test'
+  ...
+# Subtest: les heures publiées du Pacifique restent locales et les autres créneaux sont signalés
+ok 5 - les heures publiées du Pacifique restent locales et les autres créneaux sont signalés
+  ---
+  duration_ms: 8198.466875
+  type: 'test'
+  ...
+1..5
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 188968.261174

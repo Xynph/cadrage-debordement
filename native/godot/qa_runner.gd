@@ -8,11 +8,17 @@ var checks:=0
 var captures:=""
 var engine_pid:=-1
 var coach_reception: Dictionary = {}
+var coach_voice_events := {"starts":0,"ends":0}
+var coach_voice_observing := false
+var coach_speech_instance := 0
 var layout_reception: Array[Dictionary] = []
 var systems_reception: Dictionary = {}
 var file_reception: Dictionary = {}
 var native06_reception: Dictionary = {}
 var world_reception: Dictionary = {}
+var press_choices: Array[Dictionary] = []
+var press_literals: Array[Dictionary] = []
+var journey := {"day_advances":0,"matches_started":0,"matches_finished":0,"weeks_closed":0,"meeting_commands":0,"interseason_reached":false,"season_two_reached":false}
 
 # Explicit test setup only: this never runs from the production bridge. The
 # portable QA and external GD suites share the same public-command sequence.
@@ -42,6 +48,7 @@ static func settle_club_meetings(application: Control, tree: SceneTree, verify: 
 					answers.append({"questionId":question.id,"answerId":offered[0].id})
 				command = "press_conference"
 				payload = {"context":press.context,"answers":answers}
+				if press.conference.get("invitationId") is String: payload.invitationId = press.conference.invitationId
 			elif scene.get("ackAllowed", false):
 				command = "club_meeting_ack"
 				payload = {"meetingId":scene.id}
@@ -92,16 +99,35 @@ static func _club_meeting_command(application: Control, tree: SceneTree, verify:
 	verify.call(ok, "Réponse réelle du rendez-vous : " + command + " · " + str(application.last_error))
 	return ok
 
-func _ready() -> void:call_deferred("_run")
+func _ready() -> void:
+	_observe_coach_voice()
+	call_deferred("_run")
+
+func _observe_coach_voice() -> void:
+	if coach_voice_observing or not is_instance_valid(app) or not is_instance_valid(app.coach) or not is_instance_valid(app.coach.speech): return
+	coach_voice_observing = true
+	coach_speech_instance = app.coach.speech.get_instance_id()
+	app.coach.speech.started.connect(func(_id: int): coach_voice_events.starts += 1)
+	app.coach.speech.ended.connect(func(_id: int): coach_voice_events.ends += 1)
 
 func _check(value:bool,message:String) -> void:
 	checks+=1
+	if value and message.begins_with("Préparation explicite du rendez-vous : "): journey.meeting_commands += 1
 	if not value:
 		failures.append(message)
 		printerr("FAIL: ",message)
 
 func _settle() -> void:
 	for i in 5:await get_tree().process_frame
+
+func _resolutions(historical: Array) -> Array:
+	var requested := OS.get_environment("QA_RESOLUTION")
+	if requested.is_empty(): return historical
+	var dimensions := requested.to_lower().replace("×", "x").split("x")
+	if dimensions.size() == 2 and dimensions[0].is_valid_int() and dimensions[1].is_valid_int() and int(dimensions[0]) > 0 and int(dimensions[1]) > 0:
+		return [Vector2i(int(dimensions[0]), int(dimensions[1]))]
+	_check(false, "QA_RESOLUTION must specify positive widthxheight")
+	return historical
 
 func _resize_window(resolution: Vector2i) -> void:
 	var window := get_tree().root
@@ -167,9 +193,13 @@ func _wait() -> bool:
 	return not app.waiting and not app.model.is_empty()
 
 func _ask(command:String,payload:Dictionary={},allow_refusal:bool=false) -> bool:
+	if command in ["advance_day","begin_match","finish_round","next_season"] and not await _publish_press_invitation():
+		return false
 	app._command(command,payload)
 	await _wait()
 	var success:bool=app.bridge.last_response_ok
+	if success and command == "begin_match" and app.model.get("live") is Dictionary: journey.matches_started += 1
+	if success and command == "delegate" and app.model.get("live") is Dictionary and app.model.live.get("finished", false): journey.matches_finished += 1
 	if not allow_refusal:_check(success,command+" succeeds: "+app.last_error)
 	return success
 
@@ -187,7 +217,9 @@ func _confirm() -> void:
 	_check(false,"Expected confirmation is visible")
 
 func _press(text:String) -> void:
-	for item in app.root_content.find_children("*","Button",true,false):
+	var director: Node = app.contextual_director
+	var scope: Node = director.view if director.active() else app.root_content
+	for item in scope.find_children("*","Button",true,false):
 		if item is Button and item.text==text and item.is_visible_in_tree():
 			_check(not item.disabled,"Control enabled: "+text)
 			if not item.disabled:item.pressed.emit()
@@ -201,6 +233,110 @@ func _press_named(control_name: String, parent: Node = null) -> bool:
 	_check(available,"Visible action: " + control_name)
 	if available: button.pressed.emit()
 	return available
+
+func _open_press_mail(id: String) -> bool:
+	app._show_press_inbox()
+	await _settle()
+	_check(app.root_content.find_child("InboxOpenPressInvitation", true, false) == null, "Conference action requires opening its mail")
+	var mail: Button
+	for button: Button in app.root_content.find_children("*", "Button", true, false):
+		if button.get_meta("message_id", "") == id:
+			mail = button
+			break
+	_check(mail != null and mail.is_visible_in_tree() and not mail.disabled, "Visible persisted press mail: " + id)
+	if mail == null or not mail.is_visible_in_tree() or mail.disabled: return false
+	mail.pressed.emit()
+	await _settle()
+	if not _press_named("InboxOpenPressInvitation"): return false
+	await _settle()
+	return true
+
+func _publish_press_invitation(restore_route: bool = true, minimize_impact: bool = false) -> bool:
+	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if not conference.get("required", false): return true
+	var prior_route: String = app.route
+	if not await _open_press_mail(str(conference.invitationId)): return false
+	var director: Node = app.contextual_director
+	var immersive: bool = director.active() and director.kind == "press"
+	var scope: Node = director.view if immersive else app.root_content
+	var expected: Array[Dictionary] = []
+	var context: Dictionary = app.model.clubLife.press.context.duplicate(true)
+	for index: int in conference.questions.size():
+		if immersive and index > 0:
+			if not _press_named("PressNext", scope): return false
+			await _settle()
+		var question: Dictionary = conference.questions[index]
+		var chosen: Dictionary = {}
+		if minimize_impact:
+			var offered: Array = question.answers.duplicate()
+			offered.sort_custom(func(a: Dictionary, b: Dictionary):
+				var left := _club_answer_impact(a)
+				var right := _club_answer_impact(b)
+				return str(a.id) < str(b.id) if left == right else left < right)
+			if not offered.is_empty(): chosen = offered[0]
+		else:
+			for answer: Dictionary in question.answers:
+				if answer.id == "r4": chosen = answer
+		_check(not chosen.is_empty(), "The exact offered response is present before selection")
+		if chosen.is_empty(): return false
+		var journalist: Dictionary = question.journalist
+		expected.append({"id":question.id,"season":context.season,"week":context.week,"club":context.club,"answerId":chosen.id,"questionText":question.question,"answerText":chosen.text,"journalist":{"id":journalist.id,"name":journalist.name,"outlet":journalist.outlet}})
+		if not _press_named("PressAnswer_" + str(question.id) + "_" + str(chosen.id), scope): return false
+	if not _press_named("PressPublish" if immersive else "PressSubmit", scope): return false
+	await _wait()
+	var success: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
+	if success:
+		for selected: Dictionary in expected:
+			var archived := _find_literal(app.model.clubLife.press.history, selected)
+			_check(archived == selected, "Published question, response and journalist are archived verbatim")
+			press_choices.append(selected)
+	if success and immersive:
+		if not _press_named("PressReturn", scope): return false
+		await _wait()
+		success = app.bridge.last_response_ok
+	_check(success, "Publishing and leaving the conference releases the press appointment")
+	if restore_route: app._navigate(prior_route)
+	return success
+
+static func _literal(row: Dictionary) -> Dictionary:
+	var projected := {}
+	for key: String in ["id","season","week","club","answerId","questionText","answerText","journalist"]:
+		projected[key] = row.get(key)
+	return projected
+
+static func _find_literal(history: Array, selected: Dictionary) -> Dictionary:
+	for row: Dictionary in history:
+		if row.get("id") == selected.id and row.get("season") == selected.season and row.get("week") == selected.week and row.get("club") == selected.club: return _literal(row)
+	return {}
+
+func _settle_required_meetings() -> bool:
+	# The integrated EXE receipt enters each mandatory press meeting through its
+	# real reception mail. The shared static fixture helper remains unchanged.
+	for count in 85:
+		if not await settle_club_meetings(app, get_tree(), _check, "press"): return false
+		var value: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
+		if not value is Dictionary: return true
+		if value.get("completed", false):
+			if not await _club_meeting_command(app, get_tree(), _check, "club_meeting_continue", {"meetingId":value.id}): return false
+		elif not await _publish_press_invitation(true, true): return false
+	_check(false, "Integrated mandatory press meetings finish within the bounded queue")
+	return false
+
+func _durable_press_literals() -> void:
+	var profile := str(app.model.get("meta",{}).get("dataDir","")).path_join("donnees.json")
+	var stored: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile))
+	if not stored is Dictionary: _check(false, "Durable press profile exists"); return
+	var state: Variant = JSON.parse_string(stored.get("store",{}).get("bdt-v1",""))
+	if not state is Dictionary: _check(false, "Durable press career exists"); return
+	var history: Array = state.get("pressConference",{}).get("history",[])
+	for selected: Dictionary in press_choices:
+		var archived := _find_literal(history, selected)
+		# Older branches imported during QA can legitimately drop later exchanges.
+		# Every surviving exchange must retain the exact offered words.
+		if not archived.is_empty():
+			_check(archived == selected, "Durable selected press statement remains literal")
+			press_literals.append({"expected":selected,"archived":archived})
+	_check(press_literals.size() >= 2, "At least two selected literal statements survive in the final saved career")
 
 func _keyboard_focus() -> void:
 	var buttons:Array=app.root_content.find_children("*","Button",true,false)
@@ -245,10 +381,12 @@ func _capture(name:String) -> void:
 	_check(image.save_png(captures.path_join(name+".png"))==OK,"Capture saved "+name)
 
 func _coverage() -> void:
+	if not await _settle_required_meetings(): return
 	await _ask("auto_lineup")
 	if app.model.get("selection",{}).get("valid",true):return
 	# This real paid action repairs injuries and qualified bench shortages.
 	await _ask("promote_cover",{"confirmed":true})
+	if not await _settle_required_meetings(): return
 	_dismiss()
 	_check(app.model.get("selection",{}).get("valid",false),"Native promotions restore legal selection")
 
@@ -261,72 +399,41 @@ func _coach_reception() -> void:
 	var profile: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var disk_before := FileAccess.get_sha256(profile)
 	var requests: Array[String] = []
-	var events := {"starts":0, "ends":0}
+	_observe_coach_voice()
+	var events := coach_voice_events
 	app.coach.speech.requested.connect(func(text: String): requests.append(text))
-	app.coach.speech.started.connect(func(_id: int): events.starts += 1)
-	app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
-	# Audio runs at volume zero only in this disposable reception profile.
-	app.coach.speech.volume = 0
-	app.coach.open_help()
+	var help := app.coach.find_child("GuideHelp", true, false) as Button
+	_check(help != null and not help.disabled, "Coach help is available from its usual button")
+	if help != null: help.pressed.emit()
 	await _settle()
 	_check(app.coach.expanded, "Coach opens from the actual app")
-	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.size.x <= 500, "Coach floats without reserving or intercepting the workspace")
-	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
+	var portrait: TextureRect = app.coach.portrait
+	var uses_3d := ResourceLoader.exists("res://guide/assets/gabi.glb", "PackedScene")
+	var guide_width_limit := 700.0 if uses_3d else 500.0
+	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and app.coach.size.x <= guide_width_limit, "Coach floats without reserving or intercepting the workspace")
+	if uses_3d:
+		_check(portrait.texture is ViewportTexture and portrait.find_child("AnimationPlayer", true, false) != null,
+			"Exported GLB is rendered and animated in the guide")
+	else:
+		_check(portrait.texture is AtlasTexture and portrait.texture.atlas != null, "Guide portrait is loaded")
 	await _capture("coach-developpe")
-	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
-	var recordings := 0
-	var pending := 0
-	var shortest_text := ""
-	var shortest_length := INF
-	for page: Dictionary in content.pages:
-		for fragment: Dictionary in page.fragments:
-			var text := str(fragment.text)
-			if fragment.get("audioStatus") == "pending":
-				pending += 1
-				_check(not app.coach.speech.has_recording(text), "Pending text never uses an old recording: " + str(fragment.id))
-				continue
-			_check(app.coach.speech.has_recording(text), "Exact exported recording exists: " + str(fragment.id))
-			if not app.coach.speech.has_recording(text): continue
-			var stream := ResourceLoader.load(str(app.coach.speech.clips[text])) as AudioStreamWAV
-			_check(stream != null and stream.get_length() > 0.5, "Imported PCK audio decodes: " + str(fragment.id))
-			if stream == null: continue
-			recordings += 1
-			if stream.get_length() < shortest_length:
-				shortest_length = stream.get_length(); shortest_text = text
-	_check(recordings == 74 and app.coach.speech.clips.size() == 74 and app.coach.speech.has_complete_recordings(), "All 74 final recordings received without relying on system TTS")
-	_check(pending == 0, "All final texts have an exact received recording")
-	var available: bool = recordings > 0 or not app.coach.speech.voice_id.is_empty()
-	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French speech required for this Windows reception")
-	if available:
-		# Receive actual playback of a shipped clip in addition to decoding all
-		# final recordings from the exported PCK above.
-		app.coach.bubble.text = shortest_text
-		app.coach.replay()
-		_check(not requests.is_empty() and requests.back() == app.coach.bubble.text, "Spoken text equals the actual bubble")
-		var deadline := Time.get_ticks_msec() + 8000
-		while events.starts == 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported speech starts")
-		_check(app.coach.speech.player.playing and app.coach.speech.player.stream is AudioStreamWAV, "Real local Gabi recording plays in the executable")
-		var frames := {}
-		deadline = Time.get_ticks_msec() + 650
-		while Time.get_ticks_msec() < deadline:
-			frames[str(app.coach.portrait.frame_texture.region)] = true
-			await get_tree().process_frame
-		_check(frames.size() >= 2, "Actual speaking portrait changes frames")
-		# Play an actual shipped fragment through its natural end callback.
-		app.coach.bubble.text = shortest_text
-		app.coach.replay()
-		var previous_end: int = events.ends
-		deadline = Time.get_ticks_msec() + int(shortest_length * 2000) + 3000
-		while events.ends == previous_end and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported recording finishes naturally")
-		_check(requests.back() == app.coach.bubble.text, "Replay uses the same bubble")
+	_check(app.coach.speech.player == null and app.coach.speech.voices.is_empty() and app.coach.speech.clips.is_empty(), "The visual coach initializes no audio player, clips or system voice")
+	var options := app.coach.find_child("GuideOptions", true, false) as Button
+	_check(options != null, "Visual guide settings are available")
+	if options != null: options.pressed.emit()
+	await _settle()
+	for key in ["GuideReplay", "GuideStop", "GuideVoice", "GuideSpeed", "GuideMute"]:
+		var audio_control := app.coach.find_child(key, true, false) as Control
+		_check(audio_control == null or not audio_control.is_visible_in_tree(), "Audio option is unavailable: " + key)
+	app.coach.speech.set_muted(false)
+	app.coach.replay()
+	await _settle()
+	_check(app.coach.speech.muted and not app.coach.speech.speaking and requests.is_empty() and events.starts == 0 and events.ends == 0, "No clip or system fallback starts when speech is requested")
 	app.coach.close()
-	app.coach.speech.volume = 75
-	_check(not app.coach.speech.speaking, "Closing the exported coach stops speech")
 	await _ask("export")
 	_check(app.model.meta.exportText == before and FileAccess.get_sha256(profile) == disk_before, "Coach leaves the actual career and its disk unchanged")
-	coach_reception = {"voice_available":available,"voice_status":"complete" if app.coach.speech.has_complete_recordings() else "provisional","recordings_pending":pending,"recordings_decoded":recordings,"recording_played_to_end":shortest_text,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
+	coach_reception = {"voice_available":false,"voice_status":"disabled","recordings_decoded":0,"starts":events.starts,"ends":events.ends,"player_present":is_instance_valid(app.coach.speech.player),"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
 	await _capture("coach-integre")
 
 func _run() -> void:
@@ -370,7 +477,7 @@ func _run() -> void:
 		await _world_reception()
 		await _finish()
 		return
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]):
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
@@ -386,11 +493,11 @@ func _run() -> void:
 	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
 	_check(app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Shipped registry initializes new careers in v2")
 	if not app._has_career():await _finish();return
-	await settle_club_meetings(app, get_tree(), _check)
+	await _settle_required_meetings()
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
 	await _coach_reception()
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]):
 		await _resize_window(resolution)
 		var pages: Array[String] = []
 		app._navigate("Bureau")
@@ -409,7 +516,7 @@ func _run() -> void:
 			palette.hide()
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for page: String in chapter.routes: pages.append(page)
-		_check(pages.size() == 21 and pages.has("Réception"), "Every native career route, including the inbox, is included in the executable reception")
+		_check(pages.size() == 20 and pages.has("Réception") and not pages.has("Presse"), "Every native career route is included, with press entered through its inbox mail")
 		for page in pages:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
@@ -447,7 +554,7 @@ func _run() -> void:
 	await _ask("auto_lineup")
 	if not app.model.get("selection",{}).get("valid",true):
 		app._navigate("Composition")
-		_press("COMPLÉTER AVEC LE CENTRE DE FORMATION")
+		_press_named("LineupCover")
 		await _capture("renforts-confirmation")
 		_confirm()
 		await _wait()
@@ -469,17 +576,24 @@ func _run() -> void:
 	if session != null: _press_named("PreparationTrain_normal", session)
 	await _wait()
 	_check(app.model.meta.trained,"Training performed via real control")
+	if not await _publish_press_invitation(): await _finish(); return
+	if not await _reach_world_match_day(): await _finish(); return
 	app._navigate("Match")
 	_press("COUP D'ENVOI")
 	await _wait()
 	_check(app.model.live!=null,"Actual fixture begins")
 	if app.model.live==null:await _finish();return
+	journey.matches_started += 1
 	await continue_match_phase(app, get_tree(), _check, "pre")
 	await _ask("tick",{"steps":12})
 	await _ask("pause",{"paused":true})
 	_check(app.model.live.paused,"Real pause")
 	await _capture("match-live")
-	app.match_view.set_camera("tactical")
+	var live_view: Control = app.contextual_director.view
+	var tactical: Button = live_view._camera_controls[1]
+	_check(tactical.is_visible_in_tree() and not tactical.disabled, "Actual immersive tactical camera control is enabled")
+	if not tactical.disabled: tactical.pressed.emit()
+	_check(app.user_preferences.effective_camera() == "tactical" and live_view.stage._camera_mode == "tactical", "Actual immersive camera control applies and preserves the tactical view")
 	await _capture("match-tactical")
 	var changes:Array=app.model.live.get("substitutions",[])
 	for change in changes:
@@ -491,25 +605,36 @@ func _run() -> void:
 	await _ask("delegate")
 	_check(app.model.live.finished,"Actual match finishes")
 	await _capture("resultat")
-	var same_page:Node=app.match_page
 	_press("VALIDER LA JOURNÉE  →")
 	await _wait()
-	_check(app.match_page==same_page,"Match panel remains stable across week")
+	_check(app.route=="Réception","Validating the result returns to the reception")
+	if not await _close_world_match_week(): await _finish(); return
 	_check(int(app.model.meta.week)==1,"Both competitions advance once")
-	await settle_club_meetings(app, get_tree(), _check)
+	await _settle_required_meetings()
+	if not await _reach_world_match_day(): await _finish(); return
 	await _coverage()
+	if not await _publish_press_invitation(): await _finish(); return
+	app._navigate("Match")
+	await _settle()
 	_check(not app.pause_button.disabled,"Second kickoff reenabled")
 	_press("COUP D'ENVOI")
 	await _wait()
-	_check(app.model.live!=null,"Second actual match starts without navigating away: "+app.last_error)
+	_check(app.model.live!=null,"Second actual match starts after reopening Match: "+app.last_error)
+	if app.model.live != null: journey.matches_started += 1
 	if app.model.live==null:await _finish();return
 	await continue_match_phase(app, get_tree(), _check, "pre")
 	await _ask("delegate")
 	await _ask("finish_round")
-	await settle_club_meetings(app, get_tree(), _check)
+	if not await _close_world_match_week(): await _finish(); return
+	await _settle_required_meetings()
 	app._navigate("Bureau")
 	var rounds:=0
 	while not app.model.meta.get("canAdvanceSeason",false) and rounds<40:
+		if not await _settle_required_meetings(): break
+		if app.model.get("next") == null:
+			if not await _advance_world_day(): break
+			continue
+		if not await _reach_world_match_day(): break
 		if not app.model.meta.get("trained",false):await _ask("train",{"mode":"repos"})
 		if app.model.get("next")!=null:
 			await _coverage()
@@ -517,21 +642,24 @@ func _run() -> void:
 			await continue_match_phase(app, get_tree(), _check, "pre")
 			await _ask("delegate")
 		await _ask("finish_round")
-		await settle_club_meetings(app, get_tree(), _check)
+		if not await _close_world_match_week(): break
+		await _settle_required_meetings()
 		rounds+=1
 	_check(app.model.meta.get("canAdvanceSeason",false),"Complete season reaches interseason")
+	journey.interseason_reached = app.model.meta.get("canAdvanceSeason",false)
 	if not app.model.meta.get("canAdvanceSeason",false):await _finish();return
 	await _capture("fin-saison")
 	if app.model.meta.get("canAdvanceSeason",false):
 		await _ask("next_season",{"confirmed":true})
 		_check(int(app.model.meta.season)==2,"Native interseason changes season")
+		journey.season_two_reached = int(app.model.meta.season) == 2
 	var exported:=data_dir.path_join("reception-export.json")
 	app.import_mode=false
 	app._file_selected(exported)
 	await _wait()
 	_check(FileAccess.file_exists(exported),"Native UI export written")
 	await _ask("new_career",{"club":0,"mode":"france"})
-	await settle_club_meetings(app, get_tree(), _check)
+	await _settle_required_meetings()
 	app._navigate("Bureau")
 	await _capture("bureau-toulouse")
 	app.import_mode=true
@@ -596,17 +724,15 @@ func _systems_reception() -> void:
 	var five_tones: bool = press.conference.available
 	_check(press.people.size() == 30, "Bundled press retains all thirty journalists")
 	if press.conference.available:
-		var answers: Array = []
 		for question: Dictionary in press.conference.questions:
 			five_tones = five_tones and question.answers.size() == 5 and question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour")
 			_check(question.answers.size() == 5, "Every executable conference question offers five tones")
 			_check(question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour"), "The fifth response is the actual Humour tone")
-			answers.append({"questionId":question.id,"answerId":"r4"})
-		await _ask("press_conference", {"context":press.context,"answers":answers})
+		await _publish_press_invitation(false)
 		_check(app.model.clubLife.press.lastOutcome != null, "Bundled conference persists its actual outcome")
 	else:
 		_check(false, "S2 reception has a real conference available")
-	await settle_club_meetings(app, get_tree(), _check)
+	await _settle_required_meetings()
 	await _native06_reception()
 	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
 	app._navigate("Centre")
@@ -617,7 +743,7 @@ func _systems_reception() -> void:
 	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
 	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
 	await _capture("centre-parcours-s2")
-	app._navigate("Presse")
+	if not await _open_press_mail(str(app.model.clubLife.press.lastOutcome.invitationId)): return
 	var press_tabs: TabContainer = app.root_content.find_child("PressTabs",true,false)
 	_check(press_tabs != null and press_tabs.get_tab_count() == 4, "Exported press exposes Journal, Conference, History and Relations")
 	if press_tabs != null: press_tabs.current_tab = 3
@@ -663,11 +789,51 @@ func _systems_reception() -> void:
 	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
 	systems_reception = {"passed":failures.size() == initial_failures,"domains":domains,"academy_active":app.model.clubLife.academyPathways.active,"press_five_tones":five_tones,"staff_decision":app.model.clubLife.clubSupport.meeting.lastDecision != null,"board_priority":app.model.clubLife.clubStrategy.board.priority,"atomic_preferences":app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40,"exact_import":exact_import,"rng_preserved":private_after.seed == private_before.seed}
 
+func _advance_world_day() -> bool:
+	var today: String = app.model.meta.get("calendarToday", "")
+	var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
+	var previous_week: int = app.model.meta.week
+	if today.is_empty() or not cadence.get("canAdvance", false):
+		_check(false, "Calendar can advance from " + today)
+		return false
+	if not await _ask("advance_day", {"fromDate":today}): return false
+	var next_day := Time.get_date_string_from_unix_time(int(Time.get_unix_time_from_datetime_string(today)) + 86400)
+	var week_step := 1 if int(cadence.day) == 6 else 0
+	var advanced: bool = app.model.meta.calendarToday == next_day and int(app.model.meta.week) == previous_week + week_step
+	_check(advanced, "Calendar advances exactly one day from " + today)
+	if advanced: journey.day_advances += 1
+	return advanced
+
+func _reach_world_match_day() -> bool:
+	# The longest preparation includes the 23 weeks before the Pacific opener.
+	for day in range(197):
+		if not await _settle_required_meetings(): return false
+		if app.model.meta.get("calendarCadence", {}).get("matchReady", false):
+			var fixture: Variant = app.model.get("next")
+			var ready: bool = fixture is Dictionary and fixture.get("date", app.model.meta.calendarToday) == app.model.meta.calendarToday
+			_check(ready, "Kickoff is available on the fixture date")
+			return ready
+		if not await _advance_world_day(): return false
+	_check(false, "The calendar reaches a match within the preparation limit")
+	return false
+
+func _close_world_match_week() -> bool:
+	var week: int = app.model.meta.week
+	var confirmed: bool = app.model.meta.get("calendarCadence", {}).get("resultConfirmed", false) and app.model.get("live") == null
+	_check(confirmed, "The confirmed result releases the remaining days of the week")
+	if not confirmed: return false
+	for day in 7:
+		if not await _settle_required_meetings(): return false
+		if not await _advance_world_day(): return false
+		if int(app.model.meta.week) == week + 1:
+			journey.weeks_closed += 1
+			return true
+	_check(false, "The match week closes after the final calendar day")
+	return false
+
 func _world_match(expected_competition: String) -> bool:
-	for week in 12:
-		if app.model.get("next") is Dictionary: break
-		if not await _ask("finish_round"): return false
-		await settle_club_meetings(app, get_tree(), _check)
+	if not await _reach_world_match_day(): return false
+	await _settle_required_meetings()
 	var next: Variant = app.model.get("next")
 	_check(next is Dictionary and next.get("competitionId") == expected_competition,"Actual fixture: " + expected_competition)
 	if not next is Dictionary or next.get("competitionId") != expected_competition: return false
@@ -682,7 +848,8 @@ func _world_match(expected_competition: String) -> bool:
 	if not await _ask("delegate"): return false
 	_check(app.model.live is Dictionary and app.model.live.finished,"Native rugby match finishes: " + expected_competition)
 	if not await _ask("finish_round"): return false
-	await settle_club_meetings(app, get_tree(), _check)
+	if not await _close_world_match_week(): return false
+	await _settle_required_meetings()
 	var recorded: bool = app.model.history.any(func(r): return r.get("competitionId") == expected_competition and r.get("pair", []).has(app.model.club.id) and r.get("stats") is Array)
 	_check(recorded,"Competition-specific result and match statistics recorded")
 	return recorded
@@ -704,7 +871,7 @@ func _world_creation(club_id: int, league: String, edition: String = "world") ->
 	await _wait()
 	var created: bool = app.model.get("club") is Dictionary and int(app.model.club.id) == club_id and app.model.meta.mode == "world" and app.model.meta.get("edition","world") == edition
 	_check(created,"World career created through actual club picker")
-	if created: await settle_club_meetings(app, get_tree(), _check)
+	if created: await _settle_required_meetings()
 	return created
 
 func _world_reception() -> void:
@@ -720,7 +887,7 @@ func _world_reception() -> void:
 	_check(app.model.packs.career == preview.id and FileAccess.file_exists(app.model.club.get("logoPath","")),"Installed real club logo selected by default in the test career")
 	_check(app.model.staff.teams.size() == 58 and app.model.leagues.size() == 6,"World staff and all competitions exposed")
 	_check(app.model.squad.any(func(p): return FileAccess.file_exists(p.get("portraitPath",""))),"Actual squad portrait assets resolve on disk")
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]):
 		await _resize_window(resolution)
 		for route_name in ["Création","Bureau","Effectif","Calendrier","Classements","Staff"]:
 			app._navigate(route_name)
@@ -749,7 +916,7 @@ func _world_reception() -> void:
 	_check(app.bridge.last_response_ok and app.model.meta.canAdvanceSeason,"File picker restores a finished world season")
 	if not app.model.meta.canAdvanceSeason: return
 	if not await _ask("next_season",{"confirmed":true}): return
-	await settle_club_meetings(app, get_tree(), _check)
+	await _settle_required_meetings()
 	_check(int(app.model.meta.season)==2 and app.model.archives.seasons.size()==1,"Interseason, promotions and European qualification run in the exported app")
 	app._navigate("Classements")
 	await _capture("monde-intersaison-2560")
@@ -788,7 +955,7 @@ func _pacific_reception() -> void:
 	_check(app.model.meta.worldCatalogue.size() == 58 and app.model.meta.pacificCatalogue.size() == 68 and app.model.leagues.size() == 7, "Both editions and five domestic leagues stay distinct")
 	_check(app.model.packs.career == preview.id and FileAccess.file_exists(app.model.club.get("logoPath","")) and app.model.staff.teams.size() == 68, "Real club identity and staff are attached to the career")
 	_check(app.model.squad.any(func(p): return FileAccess.file_exists(p.get("portraitPath",""))), "Squad has decoded pack portraits")
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]):
 		await _resize_window(resolution)
 		for route_name in ["Création","Bureau","Effectif","Calendrier","Classements","Rivalités","Staff"]:
 			app._navigate(route_name)
@@ -799,12 +966,7 @@ func _pacific_reception() -> void:
 				_check(last != null and list != null and list.get_global_rect().encloses(last.get_global_rect()), "All ten Pacific clubs are visible without changing page at " + str(resolution.x))
 	app._navigate("Rivalités")
 	await _settle()
-	for i in 6:
-		if app.model.get("next") is Dictionary: break
-		if not _press_named("PacificPreparationAdvance"): return
-		if not await _wait() or not app.bridge.last_response_ok:
-			_check(false, "Pacific preparation progresses from the real button")
-			return
+	if not await _reach_world_match_day(): return
 	_check(int(app.model.meta.week) == 23 and app.model.next is Dictionary and app.model.next.date == "2027-02-13", "Preparation stops before the first official match of the selected Pacific club")
 	if not await _world_match("srp"): return
 	var file := FileAccess.open(final_doc,FileAccess.READ)
@@ -823,7 +985,7 @@ func _pacific_reception() -> void:
 	_check(app.bridge.last_response_ok and app.model.meta.canAdvanceSeason and app.model.meta.edition == "world-pacific", "Native file picker loads the completed Pacific season")
 	if not app.model.meta.canAdvanceSeason: return
 	if not await _ask("next_season",{"confirmed":true}): return
-	await settle_club_meetings(app, get_tree(), _check)
+	await _settle_required_meetings()
 	_check(int(app.model.meta.season) == 2 and app.model.archives.seasons.size() == 1 and app.model.leagues.size() == 7, "Pacific season two and annual European qualification are live")
 	if not await _ask("export"): return
 	var before: Dictionary = JSON.parse_string(app.model.meta.exportText).state
@@ -839,20 +1001,34 @@ func _pacific_reception() -> void:
 	world_reception = {"passed":failures.is_empty(),"edition":"world-pacific","pack":counts,"pack_complete_requested":complete,"competitions_played":["srp"],"season_export_bytes":final_size,"second_season":int(app.model.meta.season)}
 
 func _finish() -> void:
+	if not press_choices.is_empty(): _durable_press_literals()
 	app.closing = true
 	app.timer.stop()
+	var voice_player_present := false
+	if coach_voice_observing:
+		var same_speech: bool = is_instance_valid(app.coach) and is_instance_valid(app.coach.speech) and app.coach.speech.get_instance_id() == coach_speech_instance
+		_check(same_speech, "The same Gabi speech instance was observed throughout the executable receipt")
+		if same_speech:
+			voice_player_present = is_instance_valid(app.coach.speech.player)
+			_check(not voice_player_present and not app.coach.speech.speaking and coach_voice_events.starts == 0 and coach_voice_events.ends == 0, "Gabi remained silent throughout the complete receipt before shutdown")
 	if is_instance_valid(app.coach): app.coach.destroy()
+	await get_tree().process_frame
+	if coach_voice_observing:
+		coach_reception.merge({"starts":coach_voice_events.starts,"ends":coach_voice_events.ends,"player_present":voice_player_present,"observation":"From QA startup through coach destruction"},true)
+		_check(coach_voice_events.starts == 0 and coach_voice_events.ends == 0, "No Gabi speech event occurred during shutdown")
 	if is_instance_valid(app.soundscape): app.soundscape.dispose()
 	app.bridge.stop()
 	var deadline:=Time.get_ticks_msec()+2500
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(app.bridge.child_pid<=0,"Owned worker stopped")
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}
-	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception,"layout":layout_reception}
+	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"mode":"fresh","data_dir":str(app.model.get("meta",{}).get("dataDir","")),"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception,"layout":layout_reception}
 	result.systems = systems_reception
 	result.files = file_reception
 	result.native06 = native06_reception
 	result.world = world_reception
+	result.journey = journey
+	result.press_literals = press_literals
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()
@@ -936,7 +1112,7 @@ func _native06_reception() -> void:
 	var interface_before := FileAccess.get_file_as_bytes(directory.path_join("interface.json")) if FileAccess.file_exists(directory.path_join("interface.json")) else PackedByteArray()
 	var master_gain := AudioServer.get_bus_volume_linear(0)
 	var master_mute := AudioServer.is_bus_mute(0)
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]):
 		await _resize_window(resolution)
 		app.settings(); await _settle()
 		var dialog: AcceptDialog = app.get_node("PreferencesDialog")

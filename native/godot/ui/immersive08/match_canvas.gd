@@ -13,6 +13,7 @@ var opening_title: Label
 var opening_context: Label
 var opening_position: Label
 var opening_status: Label
+var opening_sheet: Button
 var result_strip: PanelContainer
 var result_title: Label
 var result_context: Label
@@ -84,7 +85,7 @@ func _add_badges() -> void:
 		mount.custom_minimum_size=Vector2(C.px(63),C.px(63))
 		mount.size_flags_vertical=Control.SIZE_SHRINK_CENTER
 		row.add_child(mount)
-		row.move_child(mount,home.get_index()+1 if index==0 else score.get_index()+1)
+		row.move_child(mount,_kit_swatches[0].get_index()+1 if index==0 else score.get_index()+1)
 		badges.append(mount)
 
 func _add_pitch_overlays() -> void:
@@ -132,9 +133,9 @@ func _add_pitch_overlays() -> void:
 	var actions := C.h(12)
 	actions.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	lines.add_child(actions)
-	var sheet := C.button("Vérifier la feuille à 23",func():app._navigate("Composition"),false,app.accent)
-	sheet.name="MatchOpenSheet"
-	actions.add_child(sheet)
+	opening_sheet=C.button("Vérifier la feuille à 23",func():app._navigate("Composition"),false,app.accent)
+	opening_sheet.name="MatchOpenSheet"
+	actions.add_child(opening_sheet)
 	var prep := C.button("Dossier adverse",func():
 		if app.management_ui.get("preparation") is Dictionary:app.management_ui.preparation.tab=0
 		app._navigate("Préparation"),false,app.accent)
@@ -154,11 +155,11 @@ func _add_pitch_overlays() -> void:
 	result_strip.add_theme_stylebox_override("panel",C.box(Color(C.BG,.91),Color(C.GOLD,.8),8,18))
 	result_strip.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	stack.add_child(result_strip)
-	result_strip.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	result_strip.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	result_strip.offset_left=C.px(20)
 	result_strip.offset_right=-C.px(20)
-	result_strip.offset_top=-C.px(150)
-	result_strip.offset_bottom=-C.px(20)
+	result_strip.offset_top=C.px(20)
+	result_strip.offset_bottom=C.px(150)
 	var content := C.content(result_strip)
 	content.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	content.add_child(C.label("LE SCORE FINAL",19,C.GOLD,true,700))
@@ -190,28 +191,20 @@ func update_frame(value: Dictionary) -> void:
 		opening_position.visible=not fixture.is_empty()
 		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
 		var ready: bool = value.get("selection",{}).get("valid",false)
+		var reduced := Present.reduced_bench_number(value) != 0
 		opening_status.text="FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
+		if reduced: opening_status.text="FEUILLE À 22 DISPONIBLE"
+		opening_sheet.text="Vérifier la feuille" if reduced else "Vérifier la feuille à 23"
 		opening_status.visible=not fixture.is_empty()
 		opening_status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
 		return
 	if finished:
 		play.text="Terminé"
-		result_title.text=_verdict(live.get("decision"),teams)
+		result_title.text=_decision_label(live.get("decision"),teams)
 		result_context.text="%s   %s   %s  ·  Consultez le journal ou validez la journée." % [GameSkin.club_abbr(teams[0]),score.text,GameSkin.club_abbr(teams[1])]
 	else:
 		var state := "MI-TEMPS" if live.get("atBreak",false) else "EN PAUSE" if live.get("paused",false) else "EN DIRECT"
 		broadcast_text.text="%s   ·   %s′" % [state,GameSkin.n(live.get("minute",0))]
-
-func _verdict(decision: Variant, teams: Array) -> String:
-	if not decision is Dictionary: return "Rencontre terminée."
-	if decision.get("kind")=="draw": return "Match nul."
-	for team: Dictionary in teams:
-		if team.get("id")!=decision.get("winner"): continue
-		var reasons := {"tries":"au nombre d’essais", "penalties":"au nombre de pénalités", "drops":"au nombre de drops", "redCards":"au nombre d’exclusions", "shootout":"aux tirs au but"}
-		var reason: String = reasons.get(decision.get("kind"),"")
-		if reason.is_empty(): return "Victoire de %s." % GameSkin.club_name(team)
-		return "Qualification de %s %s." % [GameSkin.club_name(team),reason]
-	return str(decision.get("label","Rencontre terminée."))
 
 func _update_badges(teams: Array) -> void:
 	var ids := str(teams.map(func(team:Dictionary):return team.get("id")))
@@ -244,7 +237,7 @@ func _prematch_notes() -> void:
 	var selection: Dictionary = model.get("selection",{})
 	var slots: Array = selection.get("slots",[])
 	var filled := slots.filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
-	var band := C.card("LES 23 RETENUS")
+	var band := C.card("SÉLECTION ACTUELLE" if Present.reduced_bench_number(model) != 0 else "LES 23 RETENUS")
 	band.set_meta("immersive_style_applied",true)
 	side.add_child(band)
 	var content := C.content(band)

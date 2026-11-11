@@ -28,6 +28,10 @@ try{
  m=good('import',{text:encode(structuredClone(base))});let count=0;
  for(const p of m.clubLife.clubSupport.agents.players){const q=p.quotes.find(q=>q.policy==='ferme'&&q.affordable);if(!q)continue;for(let attempt=0;attempt<3&&count<27;attempt++){m=good('agent_negotiate',{context,id:q.id,years:q.years,policy:q.policy});count++;}if(count>=27)break;}
  assert.equal(count,27);assert.equal(m.clubLife.clubSupport.agents.history.length,24);doc=exported();good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.deepEqual(good('snapshot').clubLife.clubSupport.agents.history,doc.state.v71AgentDesk.history);
+ // This bench deliberately reuses its own temporary profile across many imports.
+ // Release one QA checkpoint through the confirmed API; never bypass the player quota.
+ const safety=good('snapshot').meta.profileSafety;
+ if(safety.entries.length>=safety.maxEntries)good('remove_checkpoint',{id:safety.entries.at(-1).id,confirmed:true});
  settleClubMeetings(good('new_career',{mode:'fiction',club:0}),good);m=good('snapshot');const quote=m.clubLife.clubSupport.agents.players.flatMap(p=>p.quotes)[0];assert.ok(quote);assert.equal(quote.paidWeeks,29);assert.equal(quote.totalCommitment,quote.wage*29*quote.years+quote.fee);
  console.log('Support médical : trois protocoles réels, séance unique, deux retours bornés, reprise, reçu non contournable, historique24 et devis historique29 PASS. '+root);
 }finally{b.close();}

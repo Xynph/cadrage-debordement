@@ -13,9 +13,15 @@ var finish: Button
 var events: Label
 var drawer: PanelContainer
 var drawer_body: VBoxContainer
+var journal: VBoxContainer
+var _journal_shell: PanelContainer
+var _bench_feedback: VBoxContainer
+var _bench_context: Label
+var _bench_status: Label
 var drawer_tab := ""
 var selected_slot := -1
 var _drawer_key := ""
+var _bench_focus_key := ""
 var _camera_controls: Array[Button] = []
 var _applied_camera := ""
 var _applied_quality := ""
@@ -74,7 +80,7 @@ func _ready() -> void:
 	var controls := S.panel(frame, 8)
 	var bar := S.G.h(7)
 	controls.add_child(bar)
-	for title in ["Tactique", "Banc", "Stats"]:
+	for title in ["Tactique", "Banc", "Stats", "Journal"]:
 		bar.add_child(S.button(title.to_upper(), func(): _toggle_drawer(title)))
 	for pair in [["tv", "TV"], ["tactical", "TACTIQUE"], ["action", "CONTACT"]]:
 		var button := S.button(pair[1], func(): _choose_camera(pair[0]))
@@ -106,8 +112,27 @@ func _ready() -> void:
 	var drawer_column := S.G.v(8)
 	drawer_margin.add_child(drawer_column)
 	drawer_column.add_child(S.button("FERMER  ×", func(): drawer_tab = ""; drawer.hide()))
+	_bench_feedback = S.G.v(2)
+	_bench_context = S.wrap("", 14, S.TEXT)
+	_bench_context.name = "MatchBenchContext"
+	_bench_status = S.wrap("", 13, S.GOLD)
+	_bench_status.name = "MatchBenchStatus"
+	_bench_feedback.add_child(_bench_context)
+	_bench_feedback.add_child(_bench_status)
+	_bench_feedback.hide()
+	drawer_column.add_child(_bench_feedback)
 	drawer_body = S.G.scroll(drawer_column)
 	S.G.fill(drawer_body.get_parent(), true)
+	_journal_shell = PanelContainer.new()
+	_journal_shell.add_theme_stylebox_override("panel", S.G.T.box(Color("e8dfce"), 3, S.G.LINE))
+	S.G.fill(_journal_shell, true)
+	drawer_column.add_child(_journal_shell)
+	var journal_margin := S.G.margin(8)
+	_journal_shell.add_child(journal_margin)
+	journal = preload("res://ui/match_journal.gd").new()
+	journal.setup(app)
+	journal_margin.add_child(journal)
+	_journal_shell.hide()
 	drawer.hide()
 	app.match_view = stage
 	app.pause_button = play
@@ -175,9 +200,15 @@ func apply_preferences() -> void:
 		stage.set_quality(quality)
 	for button: Button in _camera_controls:
 		button.set_meta("contextual_enabled", not bool(preferences.data.reduced_motion))
+		# Preferences can change without a worker/waiting transition.
+		button.disabled = bool(app.waiting) or bool(preferences.data.reduced_motion)
 		button.tooltip_text = "Mode calme : caméra tactique fixe." if preferences.data.reduced_motion else "Caméra conservée pour les prochains matchs."
 
 func _toggle_drawer(title: String) -> void:
+	if drawer_tab == "Banc":
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and drawer_body.is_ancestor_of(focused):
+			_bench_focus_key = str(focused.get_meta("match_bench_focus", ""))
 	if title == drawer_tab and drawer.visible:
 		drawer_tab = ""
 		drawer.hide()
@@ -188,20 +219,37 @@ func _toggle_drawer(title: String) -> void:
 	_update_drawer()
 
 func _update_drawer() -> void:
+	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible
+	_journal_shell.visible = drawer_tab == "Journal"
+	drawer_body.get_parent().visible = drawer_tab != "Journal"
 	if drawer_tab.is_empty(): return
 	var live := _live()
+	if drawer_tab == "Journal":
+		journal.update_frame(live)
+		return
 	var presence: Array = [drawer_tab, selected_slot, live.get("paused"), live.get("finished")]
 	match drawer_tab:
 		"Banc": presence.append(_bench_presence(live))
 		"Stats": presence.append(live.get("statsRows", []))
-		"Tactique": presence.append(model.get("tactics", {}))
+		"Tactique":
+			presence.append(model.get("tactics", {}))
+			presence.append(model.get("decisions", {}).get("liveAdvice"))
+			presence.append(model.get("decisions", {}).get("report"))
 	var key := JSON.stringify(presence)
 	if key == _drawer_key: return
 	_drawer_key = key
+	var bench_focus := _bench_focus_key
+	if drawer_tab == "Banc":
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and drawer_body.is_ancestor_of(focused):
+			bench_focus = str(focused.get_meta("match_bench_focus", ""))
+			_bench_focus_key = bench_focus
 	S.clear(drawer_body)
 	drawer_body.add_child(S.label(drawer_tab, 23, S.GOLD))
 	match drawer_tab:
-		"Banc": _bench(live)
+		"Banc":
+			_bench(live)
+			if not bench_focus.is_empty(): _restore_bench_focus(bench_focus)
 		"Stats":
 			for stat: Dictionary in live.get("statsRows", []):
 				drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
@@ -221,7 +269,7 @@ func _bench_presence(live: Dictionary) -> Array:
 		presence.append(players)
 	var permissions: Array = []
 	for option: Dictionary in live.get("substitutions", []):
-		permissions.append([option.get("slot"), option.get("outId"), option.get("inIds", [])])
+		permissions.append([option.get("slot"), option.get("outId"), option.get("label", ""), option.get("inIds", [])])
 	presence.append(permissions)
 	return presence
 
@@ -240,24 +288,79 @@ func _tactics(live: Dictionary) -> void:
 			if tactics.get(pair[0]) == option.get("id"): S.selected(button, S.GOLD)
 			drawer_body.add_child(button)
 			drawer_body.add_child(S.wrap(str(option.get("description", "")), 13))
+	var notes := S.G.panel(drawer_body)
+	preload("res://ui/decision_views.gd").match_notes(app, notes, model)
+
+func _restore_bench_focus(previous_focus: String) -> void:
+	var target: Button
+	var fallback: Button
+	var selected_key := "sortant:%d" % selected_slot
+	for child in drawer_body.get_children():
+		if not child is Button or child.disabled: continue
+		var key := str(child.get_meta("match_bench_focus", ""))
+		if key == previous_focus:
+			target = child
+			break
+		if key == selected_key: fallback = child
+	if target == null: target = fallback
+	if target == null: return
+	await get_tree().process_frame
+	if not is_instance_valid(target) or not target.is_visible_in_tree(): return
+	target.grab_focus()
+	_bench_focus_key = str(target.get_meta("match_bench_focus", ""))
+	(drawer_body.get_parent() as ScrollContainer).ensure_control_visible(target)
+
+func _update_bench_feedback(live: Dictionary, selected: bool, out: Variant, choice: Dictionary, options: Array) -> void:
+	_bench_context.visible = selected
+	if selected:
+		var position := str(choice.get("label", ""))
+		var player_name := str(out.get("name", "Joueur")) if out is Dictionary else "Poste vacant"
+		_bench_context.text = "%d · %s" % [selected_slot + 1, player_name]
+		if not position.is_empty(): _bench_context.text = "%d · %s · %s" % [selected_slot + 1, position, player_name]
+	if live.get("finished", false):
+		_bench_status.text = "Match terminé. Les remplacements sont fermés."
+	elif not live.get("paused", false):
+		_bench_status.text = "Mettez le match en pause pour effectuer un remplacement."
+	elif not selected:
+		_bench_status.text = "Sélectionnez le joueur à remplacer."
+	elif choice.get("inIds", []).is_empty():
+		var other_choice := options.any(func(option: Dictionary): return option.get("slot") != selected_slot and not option.get("inIds", []).is_empty())
+		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionnez un autre joueur." if other_choice else "Reprenez le match pour continuer.")
+	else:
+		_bench_status.text = "Choisissez un remplaçant dans « Faire entrer » sous le XV."
+	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible
 
 func _bench(live: Dictionary) -> void:
-	if not live.get("paused", false): drawer_body.add_child(S.wrap("Mettez le match en pause pour effectuer un changement.", 14, S.GOLD))
 	var players: Array = live.get("lineup", [])
+	var options: Array = live.get("substitutions", [])
+	var slot_to_replace := selected_slot
+	var selected := slot_to_replace >= 0 and slot_to_replace < players.size()
+	var out: Variant = players[slot_to_replace] if selected else null
+	var out_id: Variant = out.get("id") if out is Dictionary else null
+	var choice: Dictionary = {}
+	for option: Dictionary in options:
+		if option.get("slot") == slot_to_replace and option.get("outId") == out_id:
+			choice = option
+			break
+	_update_bench_feedback(live, selected, out, choice, options)
 	for slot in players.size():
 		var player: Variant = players[slot]
 		var title := str(player.get("name", "Joueur")) if player is Dictionary else "Poste vacant"
 		var button := S.button("%d · %s" % [slot + 1, title], func(): selected_slot = slot; _drawer_key = ""; _update_drawer())
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.tooltip_text = button.text
+		button.set_meta("match_bench_focus", "sortant:%d" % slot)
+		for option: Dictionary in options:
+			if option.get("slot") == slot: button.tooltip_text = "%s\n%d · %s" % [title, slot + 1, option.get("label", "")]
 		if selected_slot == slot: S.selected(button, S.GOLD)
 		drawer_body.add_child(button)
-	if selected_slot < 0 or selected_slot >= players.size(): return
-	var allowed: Array = []
-	for option: Dictionary in live.get("substitutions", []):
-		if option.get("slot") == selected_slot: allowed = option.get("inIds", [])
-	var out: Variant = players[selected_slot]
-	var out_id: Variant = out.get("id") if out is Dictionary else null
+	if not selected: return
+	var allowed: Array = choice.get("inIds", [])
 	drawer_body.add_child(S.label("Faire entrer", 18, S.GOLD))
 	for player: Dictionary in live.get("reserves", []):
-		var button := S.button(str(player.get("name", "Joueur")), func(): director.command("substitute", {"slot":selected_slot, "outId":out_id, "inId":player.get("id")}), player.get("id") in allowed and live.get("paused", false) and not live.get("finished", false))
+		var button := S.button(str(player.get("name", "Joueur")), func(): director.command("substitute", {"slot":slot_to_replace, "outId":out_id, "inId":player.get("id")}), player.get("id") in allowed and live.get("paused", false) and not live.get("finished", false))
+		button.set_meta("match_bench_focus", "entrant:%s" % str(player.get("id")))
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.tooltip_text = str(player.get("name", "Joueur"))
 		drawer_body.add_child(button)

@@ -10,7 +10,7 @@ function factory(){
  const state=()=>typeof S==='undefined'?null:S,week=s=>s.worldMode?.week??s.franceMode?.week??s.round,context=s=>({season:s.season,week:week(s),club:s.club});
  const active=s=>s?.staffMentoring?.version===1,staff=s=>(s?.staffCareer?.people||[]).flat();
  const players=s=>[...(s?.clubs?.[s.club]?.players||[]),...(s?.development?.academy||[])];
- const annual=p=>p.lnrRatingsVersion===1||p.worldRatingsVersion===1;
+ const annual=p=>typeof nativeInSeasonDevelopment==='undefined'&&(p.lnrRatingsVersion===1||p.worldRatingsVersion===1);
  const options=p=>typeof developmentFocusOptions==='function'?developmentFocusOptions(p).filter(k=>k!=='equilibre'):[];
  const eligible=p=>int(p?.age,15,24)&&!annual(p);
  const available=(s,m)=>m&&m.clubId===s.club&&m.contractEnd>=s.season&&ROLES.includes(m.role);

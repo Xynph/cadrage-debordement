@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const GameSkin = preload("res://ui/game_skin.gd")
 const Packs = preload("res://ui/pack_views.gd")
 const Club = preload("res://ui/club_views.gd")
 const C = preload("res://ui/immersive08/components.gd")
@@ -93,18 +94,20 @@ static func home(app: Control) -> Control:
 	choices.add_child(G.section("Ouvrir le carnet","Votre prochain chapitre commence ici."))
 	choices.add_child(G.separator())
 	if not club.is_empty():
+		var national: bool = app.Immersive.Selections.nation_only(app.model)
+		var team: Dictionary = app.Immersive.Selections.managed_team(app.model)
 		var identity := G.h(12)
 		choices.add_child(identity)
-		identity.add_child(G.crest(club, 44))
+		identity.add_child(app.Immersive.Selections.nation_badge(team, 44) if national else G.crest(club, 44))
 		var current := G.v(1)
 		G.fill(current)
 		identity.add_child(current)
 		current.add_child(G.label("CARNET EN COURS", 11, G.GOLD))
-		current.add_child(G.wrap(str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
+		current.add_child(G.wrap("Sélection nationale" if national else str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
 		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
-		choices.add_child(G.wrap(G.club_name(club), 26, G.INK))
+		choices.add_child(G.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club), 26, G.INK))
 		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
-		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Bureau"), true))
+		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Réception"), true))
 	var locked:bool=app.model.is_empty() or app.model.get("meta",{}).get("recoveryRequired",false)
 	var new_career:=G.button("NOUVELLE CARRIÈRE", func(): begin_creation(app), club.is_empty())
 	new_career.disabled=locked
@@ -159,6 +162,9 @@ const CREATION_FORMATS := {
 
 static func begin_creation(app: Control) -> void:
 	app.management_ui.erase(CREATION_SELECTION)
+	app.management_ui.erase("creation_role")
+	app.management_ui.erase("creation_nation")
+	app.management_ui.erase("creation_vary_current")
 	app._navigate("Création")
 
 static func _creation_country(club: Dictionary) -> String:
@@ -541,12 +547,69 @@ static func _connected_country(tabs: HBoxContainer, button: Button, active: bool
 		separator.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tabs.add_child(separator)
 
+static func _show_creation_waiting(app: Control, workspace: Control) -> void:
+	var start := workspace.find_child("CreationStart", true, false) as Button
+	if start == null: return
+	start.accessibility_live = AccessibilityServer.LIVE_POLITE
+	start.text = "Création en cours…"
+	for button: BaseButton in workspace.find_children("*", "BaseButton", true, false):
+		button.disabled = true
+	# A failed reply with a model already rebuilds the page. A transport error
+	# without a model can leave this button in place when replacing a career.
+	var restore := func(_message: String):
+		if app.route == "Création" and not app.waiting: app._render(false)
+	app.bridge.command_failed.connect(restore)
+	start.tree_exiting.connect(func():
+		if is_instance_valid(app.bridge): app.bridge.command_failed.disconnect(restore), CONNECT_ONE_SHOT)
+
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
-	var action := func(): app._command("new_career", {"club":int(selected.id),"mode":mode}, "Bureau")
+	var role: String = app.management_ui.get("creation_role", "club") if mode == "world-champ" else "club"
+	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
+	if role != "nation": payload.club = int(selected.id)
+	if role in ["dual", "nation"]:
+		payload.nationalRole = role
+		payload.nation = app.management_ui.get("creation_nation", "")
+	var action := func():
+		if app._command("new_career", payload) and is_instance_valid(app.entry_scroll):
+			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
-		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % G.club_name(selected), action)
+		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Vous pouvez l’exporter depuis le menu pour la conserver.", action, true)
 	else:
 		action.call()
+
+static func _choose_role(app: Control, teams: Array) -> void:
+	var roles := ["club", "dual", "nation"]
+	var dialog := ConfirmationDialog.new()
+	dialog.name = "CreationRoleDialog"
+	dialog.title = "Votre rôle"
+	app._prepare_dialog(dialog, 630)
+	dialog.get_ok_button().text = "Confirmer"
+	dialog.get_cancel_button().text = "Annuler"
+	var fields := G.v()
+	dialog.add_child(fields)
+	fields.add_child(G.wrap("Choisissez la responsabilité avec laquelle vous commencez."))
+	var roles_list := OptionButton.new()
+	roles_list.name = "CreationCareerRole"
+	for title: String in ["Club", "Club et sélection", "Sélection seule"]: roles_list.add_item(title)
+	roles_list.select(maxi(0, roles.find(app.management_ui.get("creation_role", "club"))))
+	fields.add_child(roles_list)
+	var nations := OptionButton.new()
+	nations.name = "CreationCareerNation"
+	for index in teams.size():
+		nations.add_item(str(teams[index].name))
+		if teams[index].id == app.management_ui.get("creation_nation", ""): nations.select(index)
+	if nations.selected < 0: nations.select(0)
+	nations.disabled = roles_list.selected == 0
+	fields.add_child(nations)
+	roles_list.item_selected.connect(func(index: int): nations.disabled = index == 0)
+	dialog.confirmed.connect(func():
+		app.management_ui.creation_role = roles[roles_list.selected]
+		app.management_ui.creation_nation = str(teams[nations.selected].id)
+		dialog.queue_free()
+		app._render(false))
+	dialog.canceled.connect(dialog.queue_free)
+	app.add_child(dialog)
+	dialog.popup_centered(Vector2i(630, 245))
 
 static func creation(app: Control) -> Control:
 	var screen := app.get_window().size
@@ -574,7 +637,24 @@ static func creation(app: Control) -> Control:
 	if modern:
 		Editorial.action(back, false, false, 34)
 		Editorial.action(manage, false, false, 34)
+	var teams: Array = app.model.get("international", {}).get("teams", []) if champ else []
+	var role: String = app.management_ui.get("creation_role", "club") if not teams.is_empty() else "club"
+	var nation := {}
+	for team: Dictionary in teams:
+		if team.id == app.management_ui.get("creation_nation", ""):
+			nation = team
+			break
+	if not teams.is_empty():
+		var caption: String = {"club":"Rôle · Club", "dual":"Rôle · Club et sélection", "nation":"Rôle · Sélection seule"}.get(role, "Rôle · Club")
+		var choose := G.button(caption, _choose_role.bind(app, teams))
+		choose.name = "CreationChooseRole"
+		top.add_child(choose)
+		top.move_child(choose, manage.get_index())
+		if modern: Editorial.action(choose, false, false, 34)
 	Packs.missing_warning(app, page, "creation")
+	if role == "nation":
+		_nation_creation(app, page, mode, preferred, nation, modern)
+		return page
 	var candidates: Array = app.pack_manager.creation_catalogue()
 	var playable: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
 	if playable.is_empty():
@@ -713,7 +793,9 @@ static func creation(app: Control) -> Control:
 			else:
 				if country == group: G.selected(tab, app.accent)
 				tabs.add_child(tab)
-	var divisions := G.h(8)
+	var divisions := HFlowContainer.new()
+	divisions.add_theme_constant_override("h_separation", C.px(12))
+	divisions.add_theme_constant_override("v_separation", C.px(6))
 	if modern:
 		var scope := PanelContainer.new()
 		Editorial.surface(scope, Color("152020"), Editorial.BRASS, 9)
@@ -736,31 +818,37 @@ static func creation(app: Control) -> Control:
 		country_heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		competition_row.add_child(country_heading)
 		Editorial.divider(competition_row)
-		competition_row.add_child(divisions)
+		competition_row.add_child(G.fill(divisions))
 	else:
 		filters.add_child(divisions)
 	for item: Array in divisions_data:
 		var members: Array = clubs.filter(func(club: Dictionary): return club.division == item[0])
 		if members.is_empty(): continue
+		var identity := _competition_identity(app, item[0])
 		var name: String = item[1]
-		if modern:
-			var identity := _competition_identity(app, item[0])
+		if modern or preferred != "base":
 			name = str(identity.get("shortName", identity.get("name", name)))
 		var caption := "%s · %d" % [name, members.size()] if international else "%s  /  %d CLUBS" % [name, members.size()]
 		var b := G.button(caption, func(): _division(app, item[0], members, mode))
 		b.name = "CreationDivision_" + item[0]
-		if modern:
-			b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			b.tooltip_text = caption
+		b.icon = GameSkin._pack_texture(str(identity.get("logoPath", "")))
+		if b.icon != null:
+			var icon_width := minf(58, 32.0 * b.icon.get_width() / b.icon.get_height())
+			b.add_theme_constant_override("icon_max_width", maxi(1, C.px(icon_width)))
+			b.add_theme_constant_override("h_separation", C.px(10))
+			for state in ["normal", "hover", "pressed", "focus"]:
+				b.add_theme_color_override("icon_" + state + "_color", Color.WHITE)
 		b.disabled = app.waiting
 		if modern:
-			if divisions.get_child_count() > 0: Editorial.divider(divisions)
 			b.custom_minimum_size.x = C.px(235)
 			Editorial.route_tab(b, app.club_division == item[0], false)
 		else:
-			G.fill(b)
 			if app.club_division == item[0]: G.selected(b, app.accent)
 		divisions.add_child(b)
+		var max_tab_width := floorf(screen.x * .65)
+		if b.get_combined_minimum_size().x > max_tab_width:
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			b.custom_minimum_size.x = max_tab_width
 	if modern:
 		page.add_child(row)
 		list.add_child(C.rule())
@@ -819,7 +907,8 @@ static func creation(app: Control) -> Control:
 		var b := G.button("", func(): _select_club(app, int(club.id), modern))
 		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else (44.0 if is_japan or is_nationale or is_champ else 52.0)
 		b.name="CreationClub"+str(int(club.id))
-		b.tooltip_text=G.club_name(club)+" · "+_territory(club)
+		b.accessibility_name = G.club_name(club)
+		b.accessibility_description = _territory(club)
 		G.fill(b)
 		if modern:
 			Editorial.action(b, false, club.get("id") == selected.get("id"), C.px(106), true)
@@ -837,7 +926,9 @@ static func creation(app: Control) -> Control:
 		var line := C.h(14) if modern else G.h(16)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		inset.add_child(line)
-		line.add_child(_creation_crest(club, clampi(C.px(84), 30, 84) if modern else 32, modern and preferred == "base"))
+		var crest := _creation_crest(club, clampi(C.px(84), 30, 84) if modern else 32, modern and preferred == "base")
+		crest.tooltip_text = ""
+		line.add_child(crest)
 		var names := G.v(0)
 		G.fill(names)
 		line.add_child(names)
@@ -853,7 +944,7 @@ static func creation(app: Control) -> Control:
 			names.add_child(subtitle)
 			if not roster.is_empty():
 				var roster_count := int(roster.get("forwards", 0)) + int(roster.get("backs", 0))
-				b.tooltip_text += " · Note moyenne %s · %d joueurs" % [_rating(roster), roster_count]
+				b.accessibility_description += " · Note moyenne %s · %d joueurs" % [_rating(roster), roster_count]
 				Editorial.divider(line)
 				var figures := C.v(0)
 				figures.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -867,14 +958,16 @@ static func creation(app: Control) -> Control:
 		grid.add_child(b)
 	if modern: list_scroll.resized.connect(_fit_creation_grid.bind(list_scroll, grid, grid_rows))
 	var database: Dictionary = app.pack_manager.database("creation")
-	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("playerCount", 0)), playable.size()]
+	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("startingPlayerCount", database.get("playerCount", 0))), playable.size()]
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
+	_career_variation_controls(app,dossier if modern else list,modern)
+	var can_start := not selected.is_empty() and (role == "club" or not nation.is_empty())
 	var start := G.button(caption, func():
-		if not selected.is_empty(): _create(app, selected, mode), true)
+		if can_start: _create(app, selected, mode), true)
 	start.name="CreationStart"
-	start.disabled = app.waiting or unavailable or selected.is_empty()
+	start.disabled = app.waiting or unavailable or not can_start
 	if modern:
 		Editorial.action(start, true, false, maxi(40, C.px(72)))
 		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
@@ -891,4 +984,44 @@ static func creation(app: Control) -> Control:
 		actions.add_child(safe_space)
 	else:
 		list.add_child(start)
+	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
 	return page
+
+static func _nation_creation(app: Control, page: Control, mode: String, preferred: String, nation: Dictionary, modern: bool) -> void:
+	var panel := G.panel(page)
+	panel.name = "CreationNationalDossier"
+	var identity := C.h(20)
+	panel.add_child(identity)
+	identity.add_child(app.Immersive.Selections.nation_badge(nation, C.px(82)))
+	var details := G.v()
+	identity.add_child(details)
+	var nation_name := str(nation.get("name", "Votre sélection"))
+	details.add_child(C.label("MANDAT INTERNATIONAL", 24, C.GOLD, true, 700))
+	details.add_child(C.label(nation_name, 48, C.IVORY, true, 700))
+	panel.add_child(C.wrap("Vous dirigez cette sélection. Retrouvez vos convocations, votre calendrier et vos résultats dans la Réception et l’espace Sélections.", 26, C.IVORY))
+	var installed: Array = app.pack_manager.installed("creation")
+	var missing := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
+	_career_variation_controls(app,panel,modern)
+	var start := G.button("Diriger " + nation_name + "  →", _create.bind(app, {}, mode), true)
+	start.name = "CreationStart"
+	start.disabled = app.waiting or missing or nation.is_empty()
+	if modern:
+		Editorial.surface(panel.get_parent(), Color("142020"), Editorial.LINE, 14)
+		Editorial.action(start, true, false, maxi(40, C.px(72)))
+		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
+	panel.add_child(start)
+	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
+
+static func _career_variation_controls(app: Control, parent: Node, modern: bool) -> void:
+	var group := C.v(4)
+	group.name = "CreationCareerVariation"
+	parent.add_child(group)
+	var option := CheckBox.new()
+	option.name = "CreationVaryCurrent"
+	option.text = "Faire légèrement varier le niveau actuel"
+	option.button_pressed = bool(app.management_ui.get("creation_vary_current",true))
+	option.add_theme_font_size_override("font_size",C.px(20) if modern else 16)
+	option.tooltip_text = "Les qualités de départ varient légèrement, jusqu’à ±3. Le potentiel varie toujours, jusqu’à ±5."
+	option.toggled.connect(func(value: bool): app.management_ui.creation_vary_current = value)
+	group.add_child(option)
+	group.add_child(C.wrap("Le potentiel varie à chaque nouvelle carrière (jusqu’à ±5), même lorsque cette case est décochée.",17,C.MUTED))

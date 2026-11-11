@@ -1,4 +1,5 @@
 'use strict';
+const { assertLegacyProfessionals } = require('./helpers/assert-legacy-professionals.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),{make}=require('./native-academy.cjs');
 const folder=fs.mkdtempSync(path.join(os.tmpdir(),'cd-academy-network-')),accepted=[];let seq=0,refusals=0;
@@ -86,7 +87,7 @@ for(const mode of ['V1','V2']){
   // Omitted report and clearance are original shapes. Explicit false clearance is a valid boolean.
   r('delete S.v95to100.network.players[0].lastReport;S.v95to100.network.players[0].clearanceRecorded=false');
   good(b,'import',{text:r('JSON.stringify(createSaveDocument())')});
-  assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(r('JSON.stringify(S)')));
+  assertLegacyProfessionals(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(r('JSON.stringify(S)')));
   if(mode==='V2'){
    const context=good(b,'snapshot').clubLife.academyPathways.context;
    good(b,'academy_watch',{...context,playerId:'feeder-youth-0-0',confirmed:true});

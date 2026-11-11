@@ -1,0 +1,141 @@
+name: Windows — constructeur officiel et recette EXE
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: SHA complet du main exact à construire et recevoir
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-receipt-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  qualify-graphics:
+    name: Préqualification graphique courte du véritable EXE
+    if: >-
+      github.event_name == 'pull_request' && github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke')
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Construire puis comparer les rendus courts sans créer de carrière
+        shell: pwsh
+        run: ./ci/run-windows-build.ps1 -SourceCommit $env:SOURCE_COMMIT -GraphicsSmoke
+      - name: Conserver les diagnostics graphiques dans le journal gratuit
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'oval-windows-delivery'
+          foreach ($relative in @('controller-unit.log','prepare.log','build.log','official-build/build/import.log','official-build/build/export.log','evidence/windows-report.json','evidence/angle-clean/loaded-modules.json','evidence/angle-clean/stdout.log','evidence/angle-clean/stderr.log','evidence/mesa-native/loaded-modules.json','evidence/mesa-native/stdout.log','evidence/mesa-native/stderr.log','evidence/mesa-local/loaded-modules.json','evidence/mesa-local/stdout.log','evidence/mesa-local/stderr.log')) {
+            $file = Join-Path $root $relative
+            if (Test-Path -LiteralPath $file) { Write-Host "::group::$relative"; Get-Content -LiteralPath $file -Tail 100; Write-Host '::endgroup::' }
+          }
+          'Préqualification graphique seulement : aucune saison complète ni publication de ZIP revendiquée par ce job.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+  qualify-pr:
+    name: Qualification ciblée du véritable EXE
+    if: >-
+      github.event_name == 'pull_request' && github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'windows-receipt')
+    runs-on: windows-2022
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Conserver les octets des sources
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Construire et recevoir le ZIP exact
+        id: receipt
+        shell: pwsh
+        run: ./ci/run-windows-build.ps1 -SourceCommit $env:SOURCE_COMMIT
+      - name: Journaux et verdict ciblé sans stockage Actions
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'oval-windows-delivery'
+          foreach ($relative in @('controller-unit.log','prepare.log','build.log','official-build/build/import.log','official-build/build/export.log','evidence/windows-report.json','evidence/fresh/stdout.log','evidence/fresh/stderr.log','evidence/resume/stdout.log','evidence/resume/stderr.log')) {
+            $file = Join-Path $root $relative
+            if (Test-Path -LiteralPath $file) { Write-Host "::group::$relative"; Get-Content -LiteralPath $file -Tail 100; Write-Host '::endgroup::' }
+          }
+          "Recette ciblée de ``$env:SOURCE_COMMIT``. Aucun artefact/cache Actions, aucun paquet publié par ce job PR." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+  receive-main:
+    name: Paquet main et preuves Windows en brouillon
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
+      github.event.repository.private == false
+    runs-on: windows-2022
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      SOURCE_COMMIT: ${{ inputs.source_sha }}
+      WORKFLOW_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Verrouiller le commit main
+        shell: pwsh
+        run: |
+          if ($env:SOURCE_COMMIT -cnotmatch '^[0-9a-f]{40}$' -or $env:SOURCE_COMMIT -cne $env:WORKFLOW_COMMIT) { throw 'Le SHA fourni doit être le main exact de cette exécution.' }
+          git config --global core.autocrlf false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Construire et recevoir le ZIP exact
+        id: receipt
+        shell: pwsh
+        run: ./ci/run-windows-build.ps1 -SourceCommit $env:SOURCE_COMMIT
+      - name: Conserver les preuves en assets de Release brouillon
+        if: always() && steps.receipt.outcome != 'skipped' && steps.receipt.outcome != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          RECEIPT_OUTCOME: ${{ steps.receipt.outcome }}
+        run: |
+          $arguments = @('--root',(Join-Path $env:RUNNER_TEMP 'oval-windows-delivery'),'--source-commit',$env:SOURCE_COMMIT,'--repo',$env:REPO,'--run-id',$env:RUN_ID,'--attempt',$env:RUN_ATTEMPT)
+          if ($env:RECEIPT_OUTCOME -ne 'success') { $arguments += '--diagnostic' }
+          python ci/publish-windows-release.py @arguments
+          if ($LASTEXITCODE -ne 0) { throw 'La conservation des preuves a échoué.' }
+      - name: Rappeler la validation finale requise
+        if: always()
+        shell: pwsh
+        run: |
+          'Brouillon seulement : publication finale après contrôle du gate, de la CI du main exact et des reçus Windows téléchargés. Aucun cache ni upload-artifact Actions utilisé.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8

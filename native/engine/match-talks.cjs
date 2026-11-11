@@ -42,11 +42,14 @@ module.exports={
   }
   const pending=r=>r?.phases.find(p=>!p.closed)||null;
   function roster(s,r){return s.clubs[r.context.club].players;}
+  // A missing nominated prop keeps his original shirt vacant; the other
+  // bench players retain the numbers of the selected match-day group.
+  const participantNumber=(s,l,id,index)=>l.nationaleReducedBench?[...s.lineup,...s.reserves].indexOf(id)+1:index+1;
   function initialParticipants(s,l){
    const people=new Map(s.clubs[s.club].players.map(p=>[p.id,p]));
    return [...l.sheets[l.userSide].initial,...l.sheets[l.userSide].bench].map((id,i)=>{
     const p=people.get(id);check(p&&integer(p.fam,0,8),'joueur de la feuille');
-    return {id,number:i+1,group:p.fam<=3?'forwards':'backs'};
+    return {id,number:participantNumber(s,l,id,i),group:p.fam<=3?'forwards':'backs'};
    });
   }
   function audienceIds(r,audience,ids){
@@ -94,16 +97,16 @@ module.exports={
     else check(rec.choiceId===null&&rec.audience===null&&rec.playerIds.length===0&&rec.moraleDelta===0,'reçu sans parole');
    }
    const r=st.current;if(!r)return true;
-   check(keys(r,['key','context','participants','phases'])&&Array.isArray(r.participants)&&r.participants.length===23&&Array.isArray(r.phases)&&r.phases.length>=1&&r.phases.length<=3,'rencontre active');
+   check(keys(r,['key','context','participants','phases'])&&Array.isArray(r.participants)&&r.participants.length===(s.live?.nationaleReducedBench?22:23)&&Array.isArray(r.phases)&&r.phases.length>=1&&r.phases.length<=3,'rencontre active');
    validateContext(s,r.context);check(r.key===matchKey(r.context)&&r.context.club===s.club&&matches(s,r),'référence de rencontre active');
    const people=new Map(roster(s,r).map(p=>[p.id,p])),seen=new Set();
    for(let i=0;i<r.participants.length;i++){
     const p=r.participants[i],player=people.get(p.id);
-    check(keys(p,['id','number','group'])&&text(p.id)&&player&&!seen.has(p.id)&&p.number===i+1&&p.group===(player.fam<=3?'forwards':'backs'),'participant');seen.add(p.id);
+    check(keys(p,['id','number','group'])&&text(p.id)&&player&&!seen.has(p.id)&&p.number===participantNumber(s,s.live,p.id,i)&&integer(p.number,1,23)&&p.group===(player.fam<=3?'forwards':'backs'),'participant');seen.add(p.id);
    }
    const sh=s.live.sheets[s.live.userSide];
    check(equal(r.participants.slice(0,15).map(p=>p.id),sh.initial)&&r.participants.every(p=>[...sh.initial,...sh.bench,...sh.used||[]].includes(p.id)),'feuille initiale');
-   if(sh.nominated)check(equal(r.participants.map(p=>p.id),sh.nominated),'vingt-trois nominés');
+   if(sh.nominated)check(equal(r.participants.map(p=>p.id),sh.nominated),'joueurs nominés');
    let open=false;
    for(let i=0;i<r.phases.length;i++){
     const p=r.phases[i];
@@ -184,7 +187,12 @@ module.exports={
    }else{
     check(payload.skip===undefined||typeof payload.skip==='boolean','passage invalide');check(p.decision||payload.skip===true,'confirmez une déclaration ou passez explicitement');
     close(r,p,'skipped');
-    if(p.phase==='post'){check(S.live.finished,'match non terminé');finishRound();check(!S.live,'validation de journée refusée');S.contextualMatch.current=null;}
+    if(p.phase==='post'){
+     check(S.live.finished,'match non terminé');
+     if(typeof nativeConfirmMatchResult==='function')check(nativeConfirmMatchResult(),'confirmation du résultat refusée');
+     else{finishRound();check(!S.live,'validation de journée refusée');}
+     S.contextualMatch.current=null;
+    }
     else{if(p.phase==='half')check(atHalftime(S.live),'mi-temps périmée');continueMatch();}
    }
    validate(S);return {matchTalkDecision:{key:r.key,phase:p.phase,command}};

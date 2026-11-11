@@ -1,0 +1,34 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {createBridge}=require('../native/engine/worker.cjs');
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const root=fs.mkdtempSync('/tmp/cd-position-integration-'),start=performance.now();
+let bridge=createBridge({dataDir:root,seed:213,now:1700000000000}),id=0;
+const request=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
+try{
+ let model=settleClubMeetings(request('new_career',{mode:'common',club:0}),request);assert.equal(model.selection.valid,true);
+ assert.deepEqual(model.selection.slots.map(s=>s.positionNumber),[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,2,1,3,4,6,9,10,11]);
+ const original=model.squad.map(p=>[p.id,p.rating,p.note,p.pos,p.fam]);
+ const prop=model.squad.find(p=>p.id===model.lineup[0]),back=model.squad.find(p=>p.id===model.lineup[14]);
+ assert.ok(prop.positionRatings['10']<prop.note*.4);
+ assert.ok(model.selection.slots[9].eligibleIds.includes(prop.id));assert.ok(!model.selection.slots[0].eligibleIds.includes(back.id));
+ assert.ok(Number.isInteger(model.decisions.lineupDefence));const originalDefence=model.decisions.lineupDefence;
+ const untouched=[...model.lineup,...model.reserves];
+ const denied=bridge.handle({id:++id,command:'set_lineup',payload:{slot:0,playerId:back.id}});assert.equal(denied.ok,false);
+ model=request('snapshot');assert.deepEqual([...model.lineup,...model.reserves],untouched,'refusal atomic');
+ model=request('set_lineup',{slot:9,playerId:prop.id});assert.equal(model.lineup[9],prop.id);assert.equal(model.lineup[0],null);
+ assert.ok(model.decisions.lineupDefence<originalDefence,'defensive indicator follows actual depleted XV');
+ assert.equal(model.meta.lineupChange.vacatedSlot,0);assert.equal(new Set([...model.lineup,...model.reserves].filter(Boolean)).size,22);
+ const altered=[...model.lineup,...model.reserves],text=request('export').meta.exportText;
+ model=request('import',{text});assert.deepEqual([...model.lineup,...model.reserves],altered,'import must not silently repair manual emergency placement');
+ assert.deepEqual(model.squad.map(p=>[p.id,p.rating,p.note,p.pos,p.fam]),original,'primary identity and global level unchanged');
+ bridge.close();bridge=createBridge({dataDir:root,seed:999,now:1700000000000});model=request('snapshot');
+ assert.deepEqual([...model.lineup,...model.reserves],altered,'restart preserves exact manual positions');
+ model=request('auto_lineup');assert.equal(model.selection.valid,true,'auto lineup reserves six trained front-row covers');
+ const lock=model.squad.find(p=>p.id===model.lineup[3]);
+ model=request('set_lineup',{slot:7,playerId:lock.id});assert.equal(model.lineup[7],lock.id);assert.equal(model.meta.lineupChange.swapped,true);
+ assert.equal(model.selection.valid,true,'lock and number eight valid atomic swap');
+ const file=path.join(model.meta.dataDir,'donnees.json'),before=fs.readFileSync(file);
+ request('snapshot');request('snapshot');assert.deepEqual(fs.readFileSync(file),before,'repeated projection writes neither profile nor RNG');
+ console.log(JSON.stringify({scenario:'common placements and persistence',ms:Math.round(performance.now()-start),profile:root,prop:{id:prop.id,main:prop.note,flyhalf:prop.positionRatings['10']}}));
+}finally{bridge.close();fs.rmSync(root,{recursive:true,force:true});}

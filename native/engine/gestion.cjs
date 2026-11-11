@@ -7,7 +7,7 @@ module.exports=function nativeGestion(command,p){
  if(command==='set_delegation'){requireThat(!S.live&&S.phase!=='ended'&&['lineup','training'].includes(p.key)&&typeof p.enabled==='boolean','Délégation indisponible ou invalide.');setDelegation(p.key,p.enabled);return;}
  if(command==='set_development_focus'){
   const target=club().players.find(x=>x.id===p.playerId)||S.development.academy.find(x=>x.id===p.playerId);
-  requireThat(target&&target.lnrRatingsVersion!==1,'Spécialisation indisponible sur ce profil à évolution annuelle.');
+  requireThat(target&&(target.lnrRatingsVersion!==1||typeof nativeInSeasonDevelopment!=='undefined'),'Spécialisation indisponible sur ce profil à évolution annuelle.');
   requireThat(setDevelopmentFocus(p.playerId,p.focus),'Objectif indisponible : séance appliquée, match en cours ou qualité inconnue.');return;
  }
  if(command==='promote_academy'){
@@ -29,7 +29,9 @@ module.exports=function nativeGestion(command,p){
   if(previous>=0&&previous!==p.slot){const old=player(out);all[previous]=old&&!old.injury&&eligible(old,previous)?out:null;}
   all[p.slot]=p.playerId;
   if(typeof CDWorldJapanQuota!=='undefined')requireThat(CDWorldJapanQuota.nominations(S,club(),all.slice(0,15),all.slice(15),{partial:true}),'League One : inscription ou quota de composition dépassé.');
-  S.lineup=all.slice(0,15);S.reserves=all.slice(15);return;
+  requireThat(new Set(all.filter(Boolean)).size===all.filter(Boolean).length,'Un joueur ne peut occuper deux postes.');
+  S.lineup=all.slice(0,15);S.reserves=all.slice(15);
+  return {lineupChange:{slot:p.slot,playerId:p.playerId,fromSlot:previous>=0?previous:null,swapped:previous>=0&&previous!==p.slot&&!!all[previous],vacatedSlot:previous>=0&&previous!==p.slot&&!all[previous]?previous:null,displacedPlayerId:out??null}};
  }
  if(command==='set_tactics'){
   requireThat(Object.hasOwn(TACTICS,p.attack)&&Object.hasOwn(DEFENCES,p.defense),'Consigne inconnue.');
@@ -38,11 +40,20 @@ module.exports=function nativeGestion(command,p){
  }
  if(command==='set_player_load'){requireThat(setPhysicalTraining(p.playerId,p.mode),'Charge indisponible : séance appliquée, joueur absent ou match en cours.');return;}
  if(command==='promote_cover'){
-  requireThat(p.confirmed===true,'Confirmez la promotion à 2 500 € par semaine et par joueur.');requireThat(!S.live&&S.phase!=='ended','Promotion indisponible pendant le match ou après la saison.');
-  repairSheet();const count=[...S.lineup,...S.reserves].filter(id=>!id).length;
-  requireThat(count>0,'La feuille de match est déjà complète.');requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
-  promoteCover();requireThat(sheetErrors().length===0,'La promotion ne permet pas de compléter une feuille qualifiée.');
-  return {coverage:{count,weeklySalary:2500,totalWeeklySalary:count*2500,message:`${count} espoir(s) promu(s) : ${count*2500} € de salaire hebdomadaire supplémentaire. Feuille à 23 complète.`}};
+  requireThat(p.confirmed===true,'Confirmez le salaire hebdomadaire de chaque renfort.');
+  requireThat(!S.live&&S.phase!=='ended','Promotion indisponible pendant le match ou après la saison.');
+  repairSheet();
+  const slots=vacantMatchSlots(S.lineup,S.reserves),count=slots.length;
+  if(Object.hasOwn(p,'expectedSlots')){
+   requireThat(Array.isArray(p.expectedSlots)&&p.expectedSlots.length===count&&slots.every((slot,i)=>slot===p.expectedSlots[i]),
+    'La feuille a changé. Consultez le nouveau devis de renfort.');
+  }
+  requireThat(count>0,'La feuille de match est déjà complète.');
+  requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
+  promoteCover();
+  requireThat(sheetErrors().length===0,'La promotion ne permet pas de compléter une feuille qualifiée.');
+  const totalWeeklySalary=count*COVER_WEEKLY_SALARY;
+  return {coverage:{count,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
   requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=1000&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');

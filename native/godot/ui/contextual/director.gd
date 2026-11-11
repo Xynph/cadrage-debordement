@@ -32,8 +32,18 @@ func active_meeting() -> bool:
 	return not _meeting().is_empty()
 
 func _meeting() -> Dictionary:
-	var value: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
-	return value if value is Dictionary else {}
+	var club_life: Dictionary = app.model.get("clubLife", {})
+	var value: Variant = club_life.get("clubMeetings", {}).get("scene")
+	if not value is Dictionary: return {}
+	if value.get("kind") != "press": return value
+	# The appointment remains mandatory in the worker. Only its mail opens the room.
+	var origin := str(app.get_meta("press_mail_origin", ""))
+	if origin.is_empty(): return {}
+	var press: Dictionary = club_life.get("press", {})
+	if value.get("completed", false):
+		var outcome: Variant = press.get("lastOutcome")
+		return value if outcome is Dictionary and outcome.get("invitationId") == origin and outcome.get("context") == value.get("context") else {}
+	return value if press.get("context") == value.get("context") and press.get("conference", {}).get("invitationId") == origin else {}
 
 func _talk() -> Dictionary:
 	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")

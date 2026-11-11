@@ -145,7 +145,13 @@ function dossierMetrics(c,ids){
  const out=Object.fromEntries(DOSSIER_DOMAINS.map(d=>[d.key,mean(players.filter(p=>d.families.includes(p.fam)).map(p=>mean(d.skills.map(k=>skill(p,k,true)))))]));
  return {...out,fitness:mean(players.map(p=>p.condition)),tackle:mean(players.map(p=>skill(p,'tackle',true))),speed:mean(players.map(p=>skill(p,'speed',true)))};
 }
-function dossierRecent(ci){return S.history.filter(r=>r.pair.includes(ci)).slice(-5).reverse().map(r=>{const side=r.pair.indexOf(ci);return {round:r.round,phase:r.phase,pair:r.pair,score:r.score,side,opponent:r.pair[1-side],result:r.score[side]>r.score[1-side]?'V':r.score[side]===r.score[1-side]?'N':'D',stats:r.stats?.[side]||null}})}
+function dossierRecent(ci){
+ return S.history.filter(r=>r.pair.includes(ci)).slice(-5).reverse().map(r=>{
+  const side=r.pair.indexOf(ci);
+  const round=Number.isInteger(r.competitionRound)&&r.competitionRound>=0?r.competitionRound:r.round;
+  return {round,phase:r.phase,pair:r.pair,score:r.score,side,opponent:r.pair[1-side],result:r.score[side]>r.score[1-side]?'V':r.score[side]===r.score[1-side]?'N':'D',stats:r.stats?.[side]||null};
+ });
+}
 function dossierAdvice(own,opponent){
  const packEdge=own.power-opponent.power,backEdge=own.backs-opponent.backs;
  let attack='equilibre',attackReason='Aucun avantage net ne ressort : conserver plusieurs solutions limite la dépendance à un seul secteur.';

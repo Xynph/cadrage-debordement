@@ -1,0 +1,48 @@
+{
+  "contract-negotiation": {
+    "checks": 66,
+    "display": "X11",
+    "failures": [],
+    "resolution": [
+      2560,
+      1440
+    ]
+  },
+  "fatigue-overview": {
+    "captures": [
+      "/tmp/oval-lot2-cumulative/fatigue-overview/fatigue-confirmation-individuelle-1440.png",
+      "/tmp/oval-lot2-cumulative/fatigue-overview/fatigue-carriere-reelle-1440.png",
+      "/tmp/oval-lot2-cumulative/fatigue-overview/fatigue-projection-de-recette-1440.png"
+    ],
+    "checks": 450,
+    "display": "X11",
+    "failures": [],
+    "note": "La capture fatigue-projection-de-recette-1440 injecte uniquement la projection UI ; le profil moteur reste intact."
+  },
+  "preparation-briefing": {
+    "checks": 37,
+    "display": "X11",
+    "failures": [],
+    "fixtures": "real career then explicit UI projections"
+  },
+  "reception-decisions": {
+    "checks": 47,
+    "display": "X11",
+    "failures": [],
+    "resolution": [
+      2560,
+      1440
+    ]
+  },
+  "contract-review": {
+    "checks": 34,
+    "display": "X11",
+    "failures": []
+  },
+  "calendar-agenda": {
+    "checks": 60,
+    "display": "X11",
+    "failures": [],
+    "profile_unchanged": true
+  }
+}

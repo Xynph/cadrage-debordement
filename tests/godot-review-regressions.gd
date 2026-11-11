@@ -31,9 +31,32 @@ func _wait() -> void:
 	_check(not app.waiting, "Command completes without indefinite waiting")
 
 func _command(command: String, payload: Dictionary = {}) -> void:
+	if command == "begin_match" and not await _publish_press(): return
 	app._command(command, payload)
 	await _wait()
 	if not app.bridge.last_response_ok: print("COMMANDE REFUSÉE : ", command, " · ", app.last_error)
+
+func _publish_press() -> bool:
+	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if not conference.get("required", false): return true
+	var previous_route: String = app.route
+	app._show_press_inbox()
+	var controls := ["InboxPressInvitation", "InboxOpenPressInvitation"]
+	for question: Dictionary in conference.questions:
+		controls.append("PressAnswer_" + str(question.id) + "_r4")
+	controls.append("PressSubmit")
+	for name: String in controls:
+		await process_frame
+		var button := app.root_content.find_child(name, true, false) as Button
+		var available := button != null and button.is_visible_in_tree() and not button.disabled
+		_check(available, "Action de la conférence disponible : " + name)
+		if not available: return false
+		button.pressed.emit()
+	await _wait()
+	var published: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
+	_check(published, "Le courrier de presse a été publié")
+	if published: app._navigate(previous_route)
+	return published
 
 func _dismiss_errors() -> void:
 	for child in app.get_children():
@@ -95,6 +118,9 @@ func _decisions() -> void:
 	app._navigate("Match")
 	await _command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the decision regression")
+		return
 	app._command("save")
 	app.pause_menu()
 	var dialogs := _dialogs()
@@ -154,8 +180,36 @@ func _decisions() -> void:
 	dialogs = _dialogs()
 	_check(not app.waiting and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée" and app.last_error.contains("fermé"), "Synchronous closed-transport refusal also prevents a second career modal")
 
+func _press_key(code: Key, shift: bool = false) -> void:
+	for pressed in [true, false]:
+		var event := InputEventKey.new()
+		event.keycode = code
+		event.pressed = pressed
+		event.shift_pressed = shift
+		Input.parse_input_event(event)
+		await process_frame
+	for i in 5: await process_frame
+
+func _activate_focus(button: Button, context: String) -> void:
+	var available := button != null and button.is_visible_in_tree() and not button.disabled
+	_check(available, context + " exposes a visible enabled keyboard action")
+	if not available: return
+	_check(root.get_visible_rect().grow(1).encloses(button.get_global_rect()), context + " keeps the real keyboard action inside the visible window")
+	button.grab_focus()
+	for i in 5: await process_frame
+	_check(button.has_focus(), context + " accepts keyboard focus")
+	await _press_key(KEY_ENTER)
+
+func _preparation_axis(axis: String, option: Dictionary) -> Button:
+	var button := app.body.find_child("Preparation" + axis + "_" + str(option.id), true, false) as Button
+	return button if button != null else _named_button(app.body, str(option.label).to_upper())
+
 func _tactics() -> void:
 	app._navigate("Préparation")
+	var tab := app.body.find_child("PreparationTabConsignes", true, false) as Button
+	if tab != null:
+		await _activate_focus(tab, "Preparation instructions tab")
+		_check(int(app.management_ui.preparation.tab) == 1, "Preparation opens its actual instructions view")
 	var tactics: Dictionary = app.model.tactics
 	var attack: Dictionary = {}
 	var defense: Dictionary = {}
@@ -163,24 +217,38 @@ func _tactics() -> void:
 		if option.id != tactics.attack: attack = option; break
 	for option in tactics.defenses:
 		if option.id != tactics.defense: defense = option; break
-	var attack_button := _named_button(app.body, str(attack.label).to_upper())
-	var defense_button := _named_button(app.body, str(defense.label).to_upper())
-	_check(attack_button != null and defense_button != null, "Both tactical axes expose a real alternative")
+	var attack_button := _preparation_axis("Attack", attack)
+	var defense_button := _preparation_axis("Defense", defense)
+	var alternatives := attack_button != null and defense_button != null and attack_button.is_visible_in_tree() and defense_button.is_visible_in_tree() and not attack_button.disabled and not defense_button.disabled
+	_check(alternatives, "Both tactical axes expose a real visible alternative")
+	if not alternatives: return
 	attack_button.pressed.emit()
 	defense_button.pressed.emit()
+	_check(app.waiting and app.queued_action.is_empty() and app.last_error.is_empty(), "Preparation absorbs a second tactic while the first is pending")
+	# Bypass the view guard to exercise the separate command-level refusal.
+	app._command("set_tactics", {"attack": tactics.attack, "defense": defense.id})
 	_check(app.waiting and app.queued_action.is_empty() and not app.last_error.is_empty(), "Rapid second tactical axis is explicitly refused until the first acknowledgement")
 	await _wait()
 	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == tactics.defense, "Refused old tactical payload cannot overwrite either axis")
 	_dismiss_errors()
-	defense_button = _named_button(app.body, str(defense.label).to_upper())
+	defense_button = _preparation_axis("Defense", defense)
+	_check(defense_button != null and defense_button.is_visible_in_tree() and not defense_button.disabled, "Fresh defense choice is visible after the attack acknowledgement")
+	if defense_button == null: return
 	defense_button.pressed.emit()
 	await _wait()
 	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == defense.id, "Fresh defense decision preserves the acknowledged attack")
+
+func _bench_message(panel: Node, name: String) -> String:
+	var label := panel.find_child(name, true, false) as Label
+	return label.text if label != null and label.is_visible_in_tree() else ""
 
 func _bench() -> void:
 	app._navigate("Match")
 	var initial_date: String = app.header_date.text
 	await _command("begin_match")
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the bench regression")
+		return
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	var panel: Node = app.match_screen
 	var viewport_id: int = app.match_view.get_parent().get_instance_id()
@@ -198,8 +266,17 @@ func _bench() -> void:
 	panel._drawer_key = ""
 	app._update_match()
 	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Paused bench enables a permitted entrant")
+	_named_button(panel, "JOURNAL").pressed.emit()
+	_check(panel.drawer_tab == "Journal" and panel.drawer.is_visible_in_tree() and _bench_message(panel, "MatchBenchStatus").is_empty(), "Journal hides the bench feedback")
+	_named_button(panel, "BANC").pressed.emit()
+	_check(panel.selected_slot == int(option.slot) and not _bench_message(panel, "MatchBenchContext").is_empty(), "Returning from the journal restores the selected bench context")
+	_named_button(panel, "STATS").pressed.emit()
+	_check(panel.drawer_tab == "Stats" and _bench_message(panel, "MatchBenchStatus").is_empty(), "Stats hides the bench feedback")
+	_named_button(panel, "BANC").pressed.emit()
+	_check(panel.selected_slot == int(option.slot) and not _bench_message(panel, "MatchBenchContext").is_empty(), "Returning from stats restores the selected bench context")
 	await _command("pause", {"paused":false})
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("pause"), "Running bench explains the pause requirement")
 	var stable_button := _named_button(panel.drawer_body, incoming.name)
 	await _command("tick", {"steps":1})
 	_check(_named_button(panel.drawer_body, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
@@ -210,25 +287,38 @@ func _bench() -> void:
 	var actual: Dictionary = app.model
 	var restricted: Dictionary = actual.duplicate(true)
 	restricted.live.substitutions = []
+	var outgoing_name: String = str(actual.live.lineup[int(option.slot)].name)
+	var outgoing_button := _named_button(panel.drawer_body, "%d · %s" % [int(option.slot) + 1, outgoing_name])
+	outgoing_button.grab_focus()
 	panel.update_frame(restricted)
+	await process_frame
+	await process_frame
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Permission-only change immediately disables the entrant")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Blocked bench explains that no replacement is available")
+	_check(_bench_message(panel, "MatchBenchContext").contains(outgoing_name), "Blocked bench retains the selected outgoing player's context")
+	_check(root.gui_get_focus_owner() == _named_button(panel.drawer_body, "%d · %s" % [int(option.slot) + 1, outgoing_name]), "Permission-only change retains the outgoing button's focus")
 	panel.update_frame(actual)
 	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Restored permission re-enables the entrant")
+	_check(not _bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Restored permission clears the blocked reason")
 	await _command("delegate")
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Finished match disables entrant without another selection")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("Match terminé"), "Finished bench explains that the match is over")
 	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	await ContextualFlow.settle_club_meetings(app, self, _check)
 	var first_date: String = app.header_date.text
-	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the visible management header date")
+	var first_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.begins_with(first_day + " ") and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
+	app._navigate("Match")
 	await _command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	await _command("delegate")
 	await _command("finish_round")
 	await ContextualFlow.settle_club_meetings(app, self, _check)
-	_check(app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again")
+	var second_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.begins_with(second_day + " ") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
 	_check(app.model.live == null and not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Both round validations restore management after the immersive match")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
@@ -238,7 +328,9 @@ func _bench() -> void:
 
 func _modal() -> void:
 	app._navigate("Recrutement")
-	for dimensions in [Vector2i(1440,900),Vector2i(1920,1080)]:
+	var formats := [Vector2i(1440,900),Vector2i(1920,1080)]
+	if OS.get_environment("QA_RESOLUTION") == "2560x1440": formats = [Vector2i(2560,1440)]
+	for dimensions in formats:
 		root.size = dimensions
 		for i in 5: await process_frame
 		app.SquadViews.contract(app, app.model.market[0], true)
@@ -282,35 +374,88 @@ func _dialog_bounds(context: String) -> void:
 				if button.is_visible_in_tree():
 					_check(client.encloses(Rect2(Vector2(child.position) + button.get_global_rect().position,button.size)), context + " action button fits the client")
 
-func _scroll_focus(scroll: ScrollContainer, context: String) -> void:
+func _scroll_focus(scroll: ScrollContainer, context: String) -> Button:
 	scroll.scroll_vertical = 0
 	for i in 5: await process_frame
 	var target: Button = null
 	for button in _buttons(scroll):
-		if not button.disabled: target = button
+		if not button.disabled and button.is_visible_in_tree(): target = button
 	_check(target != null, context + " has an accessible focus target")
-	if target == null: return
+	if target == null: return null
+	var before_rect := target.get_global_rect()
+	var viewport := scroll.get_global_rect()
+	var required_scroll := before_rect.position.y < viewport.position.y - 1 or before_rect.end.y > viewport.end.y + 1
 	target.grab_focus()
 	for i in 5: await process_frame
-	_check(target.has_focus() and scroll.get_global_rect().encloses(target.get_global_rect()), context + " scrolls its offscreen focused action into view")
+	var rectangle := target.get_global_rect()
+	var vertical_visible := rectangle.position.y >= viewport.position.y - 1 and rectangle.end.y <= viewport.end.y + 1
+	_check(target.has_focus() and vertical_visible, context + " keeps the focused action completely visible vertically")
+	_check(scroll.scroll_vertical > 0 if required_scroll else vertical_visible, context + " scrolls an initially offscreen action or keeps fitting content visible")
+	# A full-width roster row can extend under a horizontal scrollbar. Its real
+	# identity text must fit the viewport even when the whole button cannot.
+	var identity: Control = target
+	var text := target.text
+	var player_id := str(target.get_meta("player_id", ""))
+	if not player_id.is_empty():
+		var matches: Array = app.model.squad.filter(func(player: Dictionary): return str(player.id) == player_id)
+		_check(matches.size() == 1, context + " focused row identifies one actual squad player")
+		identity = null
+		if matches.size() == 1:
+			text = str(matches[0].name)
+			for label: Label in target.find_children("*", "Label", true, false):
+				if label.text == text: identity = label; break
+	_check(not text.strip_edges().is_empty() and identity != null and identity.is_visible_in_tree() and viewport.grow(1).encloses(identity.get_global_rect()), context + " exposes its exact player identity or action text inside the viewport")
+	print("FOCUS_GEOMETRY ", JSON.stringify({"context":context,"scroll":viewport,"target":rectangle,"before":before_rect,"vertical":scroll.scroll_vertical,"horizontal":scroll.scroll_horizontal,"targetName":target.name,"targetText":text,"playerId":player_id,"identity":identity.get_global_rect() if identity != null else null,"requiredScroll":required_scroll}))
 	var previous := target.find_prev_valid_focus()
 	_check(previous != null, context + " has a keyboard traversal predecessor")
 	if previous != null:
-		previous.grab_focus()
-		for i in 5: await process_frame
-		_check(previous.has_focus(), context + " keyboard traversal changes focus")
+		await _press_key(KEY_TAB, true)
+		_check(previous.has_focus() and previous.is_visible_in_tree(), context + " real Shift+Tab changes focus to its visible predecessor")
+	return target
 
 func _focus() -> void:
 	app._navigate("Effectif")
 	for i in 5: await process_frame
 	var list := app.body.find_child("SquadScroll", true, false) as ScrollContainer
 	var profile := app.body.find_child("ProfileScroll", true, false) as ScrollContainer
-	_check(list != null and profile != null and list != profile and list.is_visible_in_tree() and profile.is_visible_in_tree(), "Squad list and player profile each have their own scroll viewport")
-	for scroll in [list, profile]:
-		if scroll != null: await _scroll_focus(scroll, "Squad/profile")
+	var card := app.body.find_child("SelectedPlayerCard", true, false) as Control
+	var open_full := app.body.find_child("OpenPlayerFull", true, false) as Button
+	print("FOCUS_SURFACE ", JSON.stringify({"list":list != null,"profile":profile != null,"selectedCard":card != null,"fullAction":open_full != null}))
+	_check(list != null and list.is_visible_in_tree(), "The actual squad list has its own visible scroll viewport")
+	var row: Button
+	if list != null: row = await _scroll_focus(list, "Squad")
+	if profile != null:
+		_check(profile != list and profile.is_visible_in_tree(), "The historical player profile has its own visible scroll viewport")
+		await _scroll_focus(profile, "Profile")
+	else:
+		_check(card != null and card.is_visible_in_tree() and open_full != null, "The current squad exposes its selected-player card and full-profile action")
+		if row == null or card == null or open_full == null: return
+		var player_id := str(row.get_meta("player_id", ""))
+		await _activate_focus(row, "Actual squad row")
+		var matches: Array = app.model.squad.filter(func(player: Dictionary): return str(player.id) == player_id)
+		_check(app.selected_player == player_id and matches.size() == 1, "Keyboard activation selects the focused player's exact identity")
+		if matches.size() != 1: return
+		var player_name := str(matches[0].name)
+		open_full = app.body.find_child("OpenPlayerFull", true, false) as Button
+		await _activate_focus(open_full, "Open selected player's full profile")
+		var full := app.body.find_child("ImmersivePlayerFull", true, false) as Control
+		var heading := app.body.find_child("ProfilePlayerName", true, false) as Label
+		_check(full != null and full.is_visible_in_tree() and heading != null and heading.text == player_name.to_upper() and heading.is_visible_in_tree(), "The visible full profile retains the selected player's exact name")
+		var attributes := app.body.find_child("FullPlayerTab1", true, false) as Button
+		await _activate_focus(attributes, "Full-profile attributes tab")
+		_check(int(app.management_ui.immersive_player_tab) == 1 and app.selected_player == player_id, "Keyboard navigation reaches the real attributes view without changing player")
+		var back := app.body.find_child("PlayerBackToSquad", true, false) as Button
+		await _activate_focus(back, "Return from the full profile")
+		card = app.body.find_child("SelectedPlayerCard", true, false) as Control
+		list = app.body.find_child("SquadScroll", true, false) as ScrollContainer
+		_check(card != null and card.is_visible_in_tree() and app.selected_player == player_id and app.body.find_child("ImmersivePlayerFull", true, false) == null, "Returning restores the squad card for the same player")
+		_check(list != null and list.is_visible_in_tree() and list.scroll_vertical > 0, "Returning from the full profile restores the inspected squad scroll position")
 	app._navigate("Match")
 	await _command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the focus regression")
+		return
 	await _command("pause", {"paused":true})
 	var panel: Node = app.match_screen
 	panel._toggle_drawer("Banc")
@@ -325,7 +470,7 @@ func _run() -> void:
 	var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 	if DisplayServer.get_name() == "headless":
 		root.mode = Window.MODE_WINDOWED
-		root.size = Vector2i(1280, 720)
+		root.size = Vector2i(2560,1440) if OS.get_environment("QA_RESOLUTION") == "2560x1440" else Vector2i(1280,720)
 	if mode == "disk":
 		profile = profile.path_join("profil-au-chemin-explicite-et-suffisamment-long-pour-verifier-la-lisibilite-de-lerreur")
 		OS.set_environment("CD_GODOT_DATA_DIR", profile)
@@ -367,8 +512,8 @@ func _run() -> void:
 			app._navigate("Création")
 			var club_choice := app.find_child("CreationClub0", true, false) as Button
 			if club_choice != null: club_choice.pressed.emit()
-			for button in _buttons(app.root_content):
-				if button.name == "CreationStart":button.pressed.emit();break
+			var start := app.root_content.find_child("CreationStart", true, false) as Button
+			if start != null: start.pressed.emit()
 			await _wait()
 			_check(app.model.club!=null,"Explicit new career works after recovery")
 			_check(FileAccess.get_file_as_bytes(backup)==original,"New career preserves recovery backup")
@@ -383,9 +528,7 @@ func _run() -> void:
 		app._navigate("Création")
 		var club_choice := app.find_child("CreationClub0", true, false) as Button
 		if club_choice != null: club_choice.pressed.emit()
-		var retry: Button = null
-		for button in _buttons(app.root_content):
-			if button.name == "CreationStart": retry = button
+		var retry := app.root_content.find_child("CreationStart", true, false) as Button
 		_check(retry != null, "Explicit club creation retry available")
 		if retry != null:
 			retry.pressed.emit()
@@ -405,15 +548,21 @@ func _run() -> void:
 		await _command("begin_match")
 		await ContextualFlow.skip_talk(app, self, "pre", _check)
 		await _command("delegate")
+		if not app.model.live is Dictionary: await app._close(1); return
 		_check(app.pause_button.disabled, "Finished match disables pause")
 		app.match_finish.pressed.emit()
 		await _wait()
-		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition exits immersion and restores management")
+		_check(app.route == "Réception", "Round validation returns to Reception")
+		if not await ContextualFlow.settle_club_meetings(app, self, _check): await app._close(1); return
+		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition and its actual meetings restore management")
 		app._navigate("Match")
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
 		# Repair the actual 23 after match injuries before testing the next kickoff.
 		await _command("auto_lineup")
 		var legal:bool=app.model.get("selection",{}).get("valid",false)
+		if not await _publish_press(): await app._close(1); return
+		app._navigate("Match")
+		_check(not app.pause_button.disabled, "Next kickoff enabled after opening Match")
 		if not app.pause_button.disabled:
 			app.pause_button.pressed.emit()
 			await _wait()

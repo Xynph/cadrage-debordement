@@ -1,4 +1,23 @@
 extends RefCounted
+const Knowledge = preload("res://ui/player_knowledge_text.gd")
+
+const WATCH_FILTER := "Sous surveillance"
+
+static func watch_reason(player: Dictionary) -> String:
+	var reasons := PackedStringArray()
+	var charge := float(player.get("physicalLoad", 0))
+	var condition := float(player.get("condition", 100))
+	if charge >= 70:
+		reasons.append("Charge %d %%" % floori(charge))
+	if condition < 80:
+		var displayed := floorf(condition * 10) / 10
+		var value := str(displayed).trim_suffix(".0").replace(".", ",")
+		reasons.append("Condition " + value + " %")
+	return " · ".join(reasons)
+
+static func watch_caption(count: int) -> String:
+	return "Voir %d joueur%s sous surveillance" % [count, "s" if count > 1 else ""]
+
 # Reading state remains local. The shortlist mirrors the engine's saved watchlist.
 static func defaults() -> Dictionary:
 	return {"search":"","family":"Tous","position":"Tous","available":"Tous","contract":"Tous","sort":"Poste","descending":false,"scroll":0,"focus":"","caret":0,"selection_from":-1,"selection_to":-1,"followed":false,"navigation_id":""}
@@ -13,7 +32,7 @@ static func fold(text:Variant) -> String:
 		if code<0x0300 or code>0x036f:plain+=letter
 	return plain.replace("œ","oe").replace("æ","ae")
 
-static func players(source:Array,state:Dictionary,season:int,market:bool=false,followed:Array=[]) -> Array:
+static func players(source:Array,state:Dictionary,season:int,market:bool=false,followed:Array=[],sort_result:bool=true) -> Array:
 	var result:Array=[]
 	var query:=fold(state.search).strip_edges()
 	var target_id := str(state.get("navigation_id", "")) if market else ""
@@ -29,17 +48,20 @@ static func players(source:Array,state:Dictionary,season:int,market:bool=false,f
 			if state.family=="Avants" and float(p.get("fam",0))>3:continue
 			if state.family=="Arrières" and float(p.get("fam",0))<=3:continue
 			if state.family=="Blessés" and float(p.get("injury",0))<=0:continue
+			if state.family==WATCH_FILTER and watch_reason(p).is_empty():continue
 			if state.family=="Hors groupe" and p.get("shirtNumber")!=null:continue
 			if state.available=="Disponibles" and float(p.get("injury",0))>0:continue
 			if state.available=="Blessés" and float(p.get("injury",0))<=0:continue
 			if state.contract=="Fin de saison" and (p.get("contractEnd")==null or int(p.contractEnd)>season):continue
 			if state.contract=="Sans contrat" and p.get("contractEnd")!=null:continue
 		result.append(p)
+	if not sort_result: return result
 	var key:String={"Poste":"pos","Nom":"name","Niveau":"rating","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd"}.get(state.sort,"pos")
 	result.sort_custom(func(a:Dictionary,b:Dictionary):
-		var av:Variant=a.get(key,0);var bv:Variant=b.get(key,0)
-		if av==null:av=0
-		if bv==null:bv=0
+		var av:Variant=Knowledge.sort_value(a,key,not market) if key in ["rating","potential"] else a.get(key,0);var bv:Variant=Knowledge.sort_value(b,key,not market) if key in ["rating","potential"] else b.get(key,0)
+		if av==null and bv==null:return str(a.id)<str(b.id)
+		if av==null:return false
+		if bv==null:return true
 		if key in ["name","pos"]:av=fold(av);bv=fold(bv)
 		if av==bv:return str(a.id)<str(b.id)
 		return av>bv if state.descending else av<bv)

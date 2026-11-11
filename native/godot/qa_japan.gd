@@ -54,6 +54,7 @@ func _pick(id: String) -> bool:
 	return true
 
 func _ask(command: String, body: Dictionary = {}, route: String = "") -> bool:
+	if command in ["begin_match","next_season"] and not await qa._publish_press_invitation(): return false
 	app._command(command,body,route)
 	if not await _wait(): return false
 	return _check(app.bridge.last_response_ok, "commande : "+command)
@@ -125,15 +126,13 @@ func _reception() -> void:
 		await _capture("japon-"+route.to_lower()+"-2560")
 	app._navigate("Rivalités")
 	await _settle()
-	for i in 5:
-		if app.model.get("next") is Dictionary: break
-		if not _press("JapanPreparationAdvance"): return
-		if not await _wait() or not _check(app.bridge.last_response_ok,"avance de préparation de League One"): return
+	if not await qa._reach_world_match_day(): return
 	if not _check(app.model.get("next") is Dictionary and str(app.model.next.date)=="2026-12-13","arrêt au premier match publié"): return
 	if not await _ask("begin_match",{},"Match"): return
 	await _capture("japon-match-2560")
 	if not await _ask("delegate"): return
 	if not await _ask("finish_round",{},"Bureau"): return
+	if not await qa._close_world_match_week(): return
 	_check(app.model.history.any(func(r):return r.competitionId=="jlo-d1" and r.pair.any(func(id):return int(id)==72)),"résultat japonais enregistré")
 	if final_doc.is_empty(): return
 	if not _check(FileAccess.file_exists(final_doc),"témoin de saison complète fourni"): return

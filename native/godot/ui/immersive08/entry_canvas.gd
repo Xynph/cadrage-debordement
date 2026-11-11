@@ -62,8 +62,9 @@ static func home(app: Control) -> Control:
 		var count := catalogue.filter(func(item: Dictionary): return item.get("playable", true)).size()
 		D.chip(content,Rect2(next_chip,895,270,52),"Monde · %d clubs jouables" % count,C.BLUE).name="EntryWorldCount"
 		next_chip += 284
-	if int(database.get("playerCount",0))>0:
-		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs au départ",C.MINT)
+	var starting_player_count := int(database.get("startingPlayerCount", database.get("playerCount", 0)))
+	if starting_player_count > 0:
+		D.chip(content,Rect2(next_chip,895,305,52),G.n(starting_player_count)+" joueurs au départ",C.MINT)
 	var club: Dictionary = app.model.get("club") if app.model.get("club") is Dictionary else {}
 	var accent: Color = GREEN if club.is_empty() else app.accent
 	_choices(D.panel(content,Rect2(1642,248,827,1008),"","","","EntryCareerCard"),app,club,meta,accent)
@@ -93,18 +94,20 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 	C.fill(choices)
 	scroll.add_child(choices)
 	if not club.is_empty():
+		var national: bool = app.Immersive.Selections.nation_only(app.model)
+		var team: Dictionary = app.Immersive.Selections.managed_team(app.model)
 		var identity := C.card("",Vector2(0,137))
 		choices.add_child(identity)
 		var row := C.h(24)
 		C.content(identity).add_child(row)
-		row.add_child(G.crest(club,C.px(82)))
+		row.add_child(app.Immersive.Selections.nation_badge(team, C.px(82)) if national else G.crest(club,C.px(82)))
 		var name := C.v(4)
 		C.fill(name)
 		row.add_child(name)
 		name.add_child(C.label("CARRIÈRE EN COURS",21,C.GOLD,true,700))
-		name.add_child(C.wrap(G.club_name(club),34,C.IVORY,true,700))
+		name.add_child(C.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club),34,C.IVORY,true,700))
 		name.add_child(C.wrap("Saison %s · %s" % [G.n(meta.get("season",1)),str(meta.get("roundLabel","Début de saison"))],20,C.MUTED))
-		_action(choices,"Reprendre la carrière",func():app._navigate("Bureau"),"EntryResume",accent,true)
+		_action(choices,"Reprendre la carrière",func():app._navigate("Réception"),"EntryResume",accent,true)
 	var locked: bool = app.model.is_empty() or meta.get("recoveryRequired",false)
 	var create := _action(choices,"Nouvelle carrière",func():Entry.begin_creation(app),"EntryNewCareer",accent,club.is_empty())
 	create.disabled = locked or app.catalogue.is_empty()
@@ -215,7 +218,8 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	rail.add_child(inset)
 	inset.add_child(C.photo("maquette-onglets-wordmark" if creation else "maquette-reality-wordmark", Vector2(354 if creation else 280, 48), false))
 	Editorial.divider(rail)
-	var step_names := ["01  Réalité", "02  Club", "03  Carrière"]
+	var nation_creation := creation and page.find_child("CreationNationalDossier", true, false) != null
+	var step_names := ["01  Réalité", "02  Sélection" if nation_creation else "02  Club", "03  Carrière"]
 	for index in step_names.size():
 		var active := index == (1 if creation else 0)
 		var step := C.v(5)
@@ -261,7 +265,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	C.fill(heading)
 	header.add_child(heading)
 	if creation:
-		heading.add_child(C.label("Choisir son club", 74, C.IVORY, true, 700))
+		heading.add_child(C.label("Choisir sa sélection" if nation_creation else "Choisir son club", 74, C.IVORY, true, 700))
 		var underline := ColorRect.new()
 		underline.color = Editorial.RAIL_GOLD
 		underline.custom_minimum_size = Vector2(C.px(100), C.px(5))

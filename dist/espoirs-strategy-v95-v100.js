@@ -166,8 +166,9 @@
  }
  function recruitFeeder(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id),academy=youth(s);
+  const capacity=[1,2].includes(s.academyGroupPolicy)?75:35;
   if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<2||!p.trial||
-     academy.length>=35||st.recruits.length>=5||!cost(s,8000)||academy.some(x=>x.id===id))return false;
+     academy.length>=capacity||st.recruits.length>=5||!cost(s,8000)||academy.some(x=>x.id===id))return false;
   // Underage international recruitment is not simulated as an ordinary domestic transfer.
   if(p.union!=='FR'&&(p.age<18||p.clearanceRecorded!==true))return false;
   const template=fam(s,p);

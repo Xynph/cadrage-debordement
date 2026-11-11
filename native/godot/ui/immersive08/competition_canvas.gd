@@ -6,6 +6,7 @@ const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Club = preload("res://ui/club_views.gd")
+const Office = preload("res://ui/immersive08/office.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -132,10 +133,7 @@ func _header() -> void:
 		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tab.add_theme_font_size_override("font_size", maxi(12, C.px(31)))
 		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3], app.accent))
-	var links: Array = [["Presse", "mail"], ["Rivalités", "shield"]]
-	for i in links.size():
-		var route: String = links[i][0]
-		D.button(self, Rect2(1190 + i * 193, 203, 179, 45), route, func(): app._navigate(route), false, links[i][1], true, app.accent, "Section_" + route)
+	D.button(self, Rect2(1383, 203, 179, 45), "Rivalités", func(): app._navigate("Rivalités"), false, "shield", true, app.accent, "Section_Rivalités")
 	D.button(self, Rect2(1578, 203, 264, 45), "Archives des saisons", func(): Club.season_archives(app), false, "save", true, app.accent, "OpenArchives")
 	D.line(self, Vector2(0, 254), Vector2(WIDTH, 254), Color(WARM, .55))
 
@@ -265,18 +263,26 @@ func _next_match() -> void:
 	if next_fixture.is_empty():
 		var upcoming := P.next_nationale_fixture(app.model)
 		if not upcoming.is_empty():
-			D.text(panel,36,130,"Pas de match cette semaine.",43,C.IVORY,800,810)
-			D.text(panel,37,179,"Prochain match · " + P.fixture_date(upcoming),29,C.IVORY,600,802)
-			D.text(panel,37,219,P.fixture_venue(upcoming),24,C.MUTED,500,802)
+			D.chip(panel,Rect2(36,67,250,29),"SEMAINE EXEMPTE",C.GOLD)
+			D.text(panel,36,130,Office.scheduled_opponent(app,upcoming),43,C.IVORY,800,810).name = "UpcomingOpponent"
+			D.text(panel,37,179,Office.scheduled_when(app,upcoming),29,C.IVORY,600,802).name = "UpcomingWhen"
+			var venue := Office.scheduled_venue(app,upcoming)
+			if not venue.is_empty(): D.text(panel,37,219,"Lieu · " + venue,24,C.MUTED,500,802)
 			D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionAdvanceWeek")
 			return
 		var preparation := SeasonPreparation.data(app.model.meta)
 		if not preparation.is_empty():
 			if SeasonPreparation.is_champ(app.model.meta):
 				var fixture := P.next_scheduled_fixture(app.model)
-				D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "champ"))),43,C.IVORY,800,810)
-				D.text(panel,37,179,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),29,C.IVORY,600,802)
-				D.text(panel,37,219,P.fixture_venue(fixture),24,C.MUTED,500,802)
+				if fixture.is_empty():
+					D.text(panel,36,130,"Préparation · " + World.name_for(app.model,"champ"),43,C.IVORY,800,810)
+					D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
+				else:
+					D.chip(panel,Rect2(36,67,210,29),"PRÉPARATION",C.GOLD)
+					D.text(panel,36,130,Office.scheduled_opponent(app,fixture),43,C.IVORY,800,810).name = "UpcomingOpponent"
+					D.text(panel,37,179,Office.scheduled_when(app,fixture),29,C.IVORY,600,802).name = "UpcomingWhen"
+					var venue := Office.scheduled_venue(app,fixture)
+					if not venue.is_empty(): D.text(panel,37,219,"Lieu · " + venue,24,C.MUTED,500,802)
 				D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionChampAdvance")
 				return
 			D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),43,C.IVORY,800,810)
@@ -657,10 +663,9 @@ func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 		"published": "Date publiée",
 		"published-phase-day": "Jour de phase publié",
 		"published-window": "Date retenue dans la fenêtre publiée",
+		"published-provisional": "Date provisoire publiée",
 		"rfu-card": "Date publiée par la RFU",
 		"club-announced-stage-date": "Date de phase annoncée par le club",
-		"generated": "Date générée pour cette saison",
-		"generated-window": "Date retenue dans la fenêtre de cette saison",
 	}.get(fixture.get("dateSource", ""), "")
 	if not source.is_empty(): content.add_child(C.wrap(source, 20, C.MUTED))
 	var window: Array = fixture.get("dateWindow", [])
@@ -670,6 +675,7 @@ func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 	if fixture.get("kickoffLocal") is String and timezone is String and not timezone.is_empty():
 		content.add_child(C.wrap("Heure locale · " + timezone,20,C.MUTED))
 		var kickoff_source: String = {
+			"published": "Horaire publié",
 			"rfu_fixture_card": "Horaire publié dans la fiche RFU",
 			"rfu_match_centre": "Horaire publié dans le centre de match RFU",
 		}.get(fixture.get("kickoffSource", ""), "")

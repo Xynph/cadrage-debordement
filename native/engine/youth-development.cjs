@@ -16,7 +16,8 @@ function factory(){
  const state=()=>typeof S==='undefined'?null:S,week=s=>s.franceMode?.week??s.round,context=s=>({season:s.season,week:week(s),club:s.club});
  const active=s=>s?.youthDevelopment?.version===1,young=p=>int(p.age,15,24);
  const owned=s=>[...(s.clubs?.[s.club]?.players||[]).map(p=>({p,stage:'professional'})),...(s.development?.academy||[]).map(p=>({p,stage:'academy'}))];
- const annual=(s,p)=>p.lnrRatingsVersion===1||p.worldRatingsVersion===1&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)&&!!CDWorldCareer.sourcePlayer(s,p.id);
+ const annualProfile=(s,p)=>p.lnrRatingsVersion===1||p.worldRatingsVersion===1&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)&&!!CDWorldCareer.sourcePlayer(s,p.id);
+ const annual=(s,p)=>typeof nativeInSeasonDevelopment==='undefined'&&annualProfile(s,p);
  const focusOptions=p=>typeof developmentFocusOptions==='function'?developmentFocusOptions(p).filter(k=>KEYS.includes(k)):[];
  const actualFocus=p=>p.dev?.specialization?.focus||'equilibre';
  function defaultFocus(p){const allowed=focusOptions(p),value=typeof developmentFocusRecommendation==='function'?developmentFocusRecommendation(p):null;return allowed.includes(value)?value:allowed[0]||null;}
@@ -91,13 +92,17 @@ function factory(){
   for(const row of st.rows){
    check(shape(row,['id','plan','focus','planClubId','planSeason','planWeek','baseline','latest','observations'])&&id(row.id)&&metric(row.baseline)&&metric(row.latest),'baseline numérique invalide');
    check(row.latest.season>row.baseline.season||row.latest.season===row.baseline.season&&row.latest.week>=row.baseline.week,'suivi antérieur à la baseline');
-   check(row.latest.age>=row.baseline.age&&row.latest.model===row.baseline.model,'identité de progression incohérente');
    const current=owned(s).find(x=>x.p.id===row.id);
-   if(current){check(row.latest.model===(annual(s,current.p)?'annual-v11':'xp'),'modèle de progression incohérent');if(row.focus!==null)check(focusOptions(current.p).includes(row.focus),'qualité du plan hors du poste');}
+   // Keep old annual baselines intact; the next real observation may use the
+   // new XP model. Loading or viewing never rewrites historical observations.
+   const transition=typeof nativeInSeasonDevelopment!=='undefined'&&row.baseline.model==='annual-v11'&&(current?annualProfile(s,current.p):/^(lnr|world):/.test(row.id));
+   check(row.latest.age>=row.baseline.age&&(row.latest.model===row.baseline.model||transition&&row.latest.model==='xp'),'identité de progression incohérente');
+   if(current){check(row.latest.model===(annual(s,current.p)?'annual-v11':'xp')||transition&&row.latest.model==='annual-v11','modèle de progression incohérent');if(row.focus!==null)check(focusOptions(current.p).includes(row.focus),'qualité du plan hors du poste');}
    if(row.plan===null)check(row.focus===null&&row.planClubId===null&&row.planSeason===null&&row.planWeek===null,'plan absent incohérent');
    else{
     check(PLANS.some(p=>p.key===row.plan)&&int(row.planClubId,0,s.clubs.length-1)&&timestamp(row.planSeason,row.planWeek),'plan invalide');
-    check(row.baseline.model==='annual-v11'?row.plan!=='specialist'&&row.focus===null:row.plan==='general'?row.focus===null:KEYS.includes(row.focus),'ciblage incompatible');
+    const legacyPlan=row.baseline.model==='annual-v11'&&(!transition||row.focus===null);
+    check(legacyPlan?row.plan!=='specialist'&&row.focus===null:row.plan==='general'?row.focus===null:KEYS.includes(row.focus),'ciblage incompatible');
    }
    check(Array.isArray(row.observations)&&row.observations.length<=MAX_OBSERVATIONS,'trop d’observations');
    let prior=row.baseline;

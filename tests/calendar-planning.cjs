@@ -11,6 +11,7 @@ const original = {
 const today = '2026-09-17';
 const projected = planning.project(original, undefined, today);
 assert.equal(projected.today,today);
+assert.deepEqual(projected.appliedTemplates,{});
 assert.ok(projected.sessions.some(s=>s.kind==='team' && s.forwards.includes('Mêlée') && s.backs.includes('Lancements')));
 assert.ok(projected.sessions.some(s=>s.fixtureId==='m1' && s.label==='Activation' && s.date==='2026-09-19'));
 assert.ok(projected.sessions.every(s=>s.completed===(s.date<today)));
@@ -40,6 +41,12 @@ assert.deepEqual(planning.project(revised,pendingTemplate,today).sessions.filter
 
 const chosen = planning.applyTemplate(original,undefined,{fixtureId:'m1',template:'congested'},today);
 assert.equal(chosen.fixtures.m1.template,'congested');
+const withArchived = {...chosen,fixtures:{...chosen.fixtures,archived:{date:'2026-09-20',template:'away'}}};
+const storedBeforeProjection = JSON.stringify(withArchived);
+assert.deepEqual(planning.project(original,withArchived,today).appliedTemplates,{m1:'congested'});
+assert.equal(JSON.stringify(withArchived),storedBeforeProjection);
+const withPlayed = {...original,calendar:[{...original.calendar[0],played:true},...original.calendar.slice(1)]};
+assert.deepEqual(planning.project(withPlayed,chosen,today).appliedTemplates,{});
 assert.deepEqual(planning.project(original,chosen,today).sessions.filter(s=>s.fixtureId==='m1' && s.completed),oldPast);
 assert.deepEqual(planning.project({...original,meta:{season:2}},chosen,today),projected);
 assert.throws(()=>planning.applyTemplate(original,undefined,{fixtureId:'m1',template:'inconnu'},today),/programme/i);

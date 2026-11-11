@@ -19,6 +19,19 @@ PROJECT = ROOT / "native/godot"
 BUILD_VERSION = "0.7.8"
 
 
+def source_provenance(expected_commit, root=ROOT):
+    if not isinstance(expected_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", expected_commit):
+        raise ValueError("--source-commit exige un SHA Git complet de 40 caractères")
+    def git(*arguments):
+        return subprocess.check_output(["git", *arguments], cwd=root, encoding="utf-8", timeout=10).strip()
+    commit, tree = git("rev-parse", "--verify", "HEAD"), git("rev-parse", "--verify", "HEAD^{tree}")
+    dirty = git("status", "--porcelain", "--untracked-files=no")
+    extra_inputs = git("ls-files", "--others", "--exclude-standard", "--", "native/godot", "native/engine", "dist")
+    if commit != expected_commit or not re.fullmatch(r"[0-9a-f]{40}", tree) or dirty or extra_inputs:
+        raise ValueError("Provenance refusée : SHA différent, arbre suivi modifié ou ressource distribuée non suivie")
+    return {"sourceCommit": commit, "sourceTree": tree}
+
+
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -82,14 +95,12 @@ def validate_voice_assets(project):
 
 
 def voice_notice(coverage):
-    plural = "s" if coverage["recorded"] != 1 else ""
-    notice = f"Voix de Gabi : {coverage['recorded']} réplique{plural} enregistrée{plural} et lue{plural} localement.\n"
+    notice = ("Gabi reste silencieux dans cet export : aucune lecture WAV ni synthèse TTS active.\n"
+              f"Ses {coverage['recorded']} enregistrements sont conservés comme ressources.\n")
     if coverage["pending"]:
         plural = "s" if coverage["pending"] != 1 else ""
         notice += f"{coverage['pending']} réplique{plural} en attente d'enregistrement.\n"
-    return (notice + "En cas d'enregistrement absent ou illisible, une voix système peut le remplacer\n"
-            "si elle est disponible. Le texte reste toujours affiché.\n"
-            "Crédits et licences des voix : Licences/voix-coach.\n")
+    return notice + "Crédits et licences des voix : Licences/voix-coach.\n"
 
 
 def stage(node):
@@ -123,6 +134,7 @@ def stage(node):
 
 
 def build(args):
+    provenance = source_provenance(args.source_commit)
     target = args.output.resolve()
     if target.exists():
         raise ValueError("Choisir un nouveau dossier de sortie : aucun écrasement autorisé")
@@ -204,7 +216,8 @@ def build(args):
         f"OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA {BUILD_VERSION}\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
-        "Nouvelle carrière : un Monde de 116 clubs, dont 114 jouables, et 5 878 joueurs au départ.\n"
+        "Monde + Champ : 116 clubs, dont 114 jouables. Chaque club démarre avec au moins 40 pros, 30 U18 et 30 U21.\n"
+        "Pour compléter les centres d’une ancienne carrière, ouvrez Formation puis vérifiez le passage aux nouveaux effectifs.\n"
         "Le jeu de base et les réalités importées partagent le même catalogue et les mêmes règles.\n"
         "Choisissez un pays ou International, puis une division et un club.\n"
         "À la création, « Importer une autre réalité » ouvre le sélecteur de fichiers ZIP.\n"
@@ -212,7 +225,7 @@ def build(args):
         "Les packs changent les noms/images, pas les statistiques/progrès.\n"
         "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
         "Staffs par club, centre de formation, dossier adverse et besoins de recrutement.\n"
-        "Presse : 500 questions, cinq réponses dont Humour et relations avec les journalistes.\n"
+        "Presse : ouvrez l’invitation dans la Réception et publiez vos réponses pour reprendre la progression.\n"
         "Vestiaire, rivalités, sponsors, projets, supporters et mobilité du manager.\n"
         "Formation de base dans le monde ; réseau Espoirs avancé dans l’édition France.\n"
         "Six rubriques et sous-menus ; Ctrl+K pour chercher, Alt+flèches pour revenir.\n"
@@ -221,7 +234,7 @@ def build(args):
         "Match → Journal permet de relire et filtrer les faits du match.\n"
         "Paramètres : Confort / Son / Affichage ; volumes interface et stade séparés.\n"
         "Plein écran au lancement ; mode fenêtré disponible dans Affichage.\n"
-        "Gabi : aide vocale locale, petites bulles et16poses illustrées.\n"
+        "Gabi est en pause dans cet export. Ses enregistrements et illustrations restent inclus.\n"
         f"{voice_notice(voice_coverage)}"
         "Match3D, phases finales, montées/descentes françaises et saisons suivantes.\n"
         "Monde + Pacifique : 68 clubs, 66 jouables, cinq championnats et deux coupes d’Europe.\n"
@@ -235,7 +248,8 @@ def build(args):
         "Les anciennes carrières 14/30 restent importables et jouables.\n\n"
         "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"
         "Pause pour les changements ; Adjoint pour déléguer la fin du match.\n"
-        "Valider la journée après le résultat. Menu & sauvegardes pour exporter.\n"
+        "Cliquez sur la date pour ouvrir le calendrier. Jour suivant fait avancer la carrière d’un jour.\n"
+        "Validez le résultat après le match. Menu & sauvegardes permet d’exporter la carrière.\n"
         "Les promotions du centre peuvent compléter une feuille incomplète ;\n"
         "leur coût salarial est annoncé avant confirmation.\n\n"
         "Capacités et finances de jeu, non officielles. Crédits atlas dans Licences.\n"
@@ -352,15 +366,23 @@ def build(args):
         "engine/world-champ-extension.json et world-champ-staff-extension.json.\n"
         "Les images personnalisées sont fournies séparément dans les packs importés.\n",
         encoding="utf-8")
-    files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
-             for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": BUILD_VERSION, "name": "Oval Legacy 27", "edition": 27, "mode": "world-champ", "database": champ["id"], "clubs": 116, "players": champ_count, "compatibleEditions": [world["id"], pacific["id"], japan["id"], nationale["id"]], "files": files}, indent=2), encoding="utf-8")
+    if source_provenance(args.source_commit) != provenance:
+        raise ValueError("La provenance Git a changé pendant la construction")
+    write_build_manifest(app, provenance, champ["id"], champ_count, [world["id"], pacific["id"], japan["id"], nationale["id"]])
     archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):
             if path.is_file():
                 out.write(path, path.relative_to(target))
     print(json.dumps({"exe": str(executable), "zip": str(archive), "sha256": digest(archive)}, ensure_ascii=False), flush=True)
+
+
+def write_build_manifest(app, provenance, database, player_count, compatible_editions):
+    files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
+             for p in sorted(app.rglob("*")) if p.is_file() and p != app / "manifest-build.json"}
+    manifest = {**provenance, "prototype": True, "version": BUILD_VERSION, "name": "Oval Legacy 27", "edition": 27, "mode": "world-champ", "database": database, "clubs": 116, "players": player_count, "compatibleEditions": compatible_editions, "files": files}
+    (app / "manifest-build.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return manifest
 
 
 if __name__ == "__main__":
@@ -370,12 +392,13 @@ if __name__ == "__main__":
     p.add_argument("--stage-only", action="store_true")
     p.add_argument("--sdk", type=Path)
     p.add_argument("--output", type=Path)
+    p.add_argument("--source-commit", help="SHA complet du checkout propre à exporter (sans effet sur --stage-only)")
     options = p.parse_args()
     if not options.node.is_file():
         p.error("Runtime Node explicite introuvable")
     if options.stage_only:
         stage(options.node)
     else:
-        if not options.sdk or not options.output:
-            p.error("--sdk et --output sont requis pour exporter")
+        if not options.sdk or not options.output or not options.source_commit:
+            p.error("--sdk, --output et --source-commit sont requis pour exporter")
         build(options)

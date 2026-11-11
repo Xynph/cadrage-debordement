@@ -1,0 +1,161 @@
+'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+
+const assert = require('node:assert/strict');
+const { test } = require('node:test');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const vm = require('node:vm');
+const academyGroups = require('../native/engine/academy-groups.cjs');
+const { createBridge } = require('../native/engine/worker.cjs');
+
+const depth = {
+  'Pilier gauche': 2, 'Talonneur': 2, 'Pilier droit': 2,
+  'Deuxième ligne': 4, 'Troisième ligne': 4, 'Numéro 8': 2,
+  'Demi de mêlée': 2, 'Demi d’ouverture': 2, 'Ailier': 4, 'Centre': 4, 'Arrière': 2,
+};
+
+test('Les deux effectifs atteignent leur minimum avant les postes supplémentaires', () => {
+  const slots = Object.entries(depth).flatMap(([position, count]) => Array(count / 2).fill(position));
+  const full = [...slots, ...slots].sort();
+  const u18 = full.filter(p => p !== 'Arrière');
+  const u21 = full.filter(p => p !== 'Demi d’ouverture').concat(Array(17).fill('Pilier gauche'));
+  const players = [...u18.map(pos => ({ pos, age: 18 })), ...u21.map(pos => ({ pos, age: 20 }))];
+  players.forEach((p, i) => { p.id = `existant-${i}`; });
+  assert.equal(players.length, 73);
+  const S = {
+    academyGroupPolicy: 2, club: 0, season: 2,
+    clubs: [{ id: 0, players: [] }], aiRoster: { academies: [] },
+    market: [], economy: { freeAgents: [] }, development: { academy: players, retired: [] },
+  };
+  const notes = [];
+  vm.runInNewContext(`(${academyGroups.toString()})().afterSeason(S, 0)`, {
+    POS: slots, S, news: text => notes.push(text),
+    academyPlayer: (club, slot, season, index) => ({ id: `youth-${club}-${season}-${index}`, pos: slots[slot] }),
+  });
+  assert.equal(players.filter(p => p.age <= 18).length, 30);
+  assert.equal(players.filter(p => p.age >= 19).length, 45);
+  assert.match(notes.at(-1), /plafond de 75/);
+});
+
+function seal(document) {
+  const raw = JSON.stringify(document.state);
+  let h = 2166136261;
+  for (let i = 0; i < raw.length; i++) h = Math.imul(h ^ raw.charCodeAt(i), 16777619);
+  return JSON.stringify({ ...document, checksum: (h >>> 0).toString(16).padStart(8, '0') });
+}
+
+for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
+  test(`Effectifs disjoints de tous les centres · ${mode}`, t => {
+    const tmp = path.resolve(os.tmpdir());
+    const dataDir = fs.mkdtempSync(path.join(tmp, 'oval-academy-groups-'));
+    const options = { dataDir, seed: 827381, now: 1794178800000 };
+    let bridge = createBridge(options);
+    let id = 0;
+    const ask = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
+    const ok = (command, payload) => {
+      const result = ask(command, payload);
+      assert.equal(result.ok, true, `${command}: ${result.error}`);
+      return result.model;
+    };
+    const archive = () => ok('export').meta.exportText;
+    t.after(() => {
+      bridge.close();
+      assert.equal(path.dirname(dataDir), tmp);
+      fs.rmSync(dataDir, { recursive: true, force: true });
+    });
+
+    const model = settleClubMeetings(ok('new_career', { mode, club }), ok);
+    const saved = archive();
+    const document = JSON.parse(saved);
+    const academy = document.state.development.academy;
+    assert.equal(document.state.academyGroupPolicy, 2);
+    const groups = [academy.filter(p => p.age <= 18), academy.filter(p => p.age >= 19 && p.age <= 21)];
+    const centers = [{ clubId: club, players: academy }, ...document.state.aiRoster.academies];
+    assert.deepEqual(centers.map(center => center.clubId).sort((a, b) => a - b), document.state.clubs.map(c => c.id));
+    const ids = new Set([...document.state.clubs.flatMap(c => c.players), ...document.state.economy.freeAgents].map(p => p.id));
+    for (const { clubId, players } of centers) {
+      assert.equal(players.length, 60, `centre ${clubId}`);
+      for (const group of [players.filter(p => p.age <= 18), players.filter(p => p.age >= 19 && p.age <= 21)]) {
+        assert.equal(group.length, 30);
+        for (const [position, slots] of Object.entries(depth)) {
+          assert.equal(group.filter(p => p.pos === position).length, slots, `${clubId} ${position}`);
+        }
+      }
+      assert.ok(players.every(p => p.appearanceBankVersion === 2 && p.academy && p.contractEnd == null));
+      for (const player of players) {
+        assert.ok(!ids.has(player.id), player.id);
+        ids.add(player.id);
+      }
+    }
+    assert.ok(Array.from({length: 15}, (_, serial) => `youth-${club}-1-${serial}`).every(id => academy.some(p => p.id === id)));
+    assert.ok(model.decisions.development.academy.every(p => Object.keys(p.attributesV2).length === 36));
+    assert.ok(academy.every(p => !document.state.market.some(q => q.id === p.id)));
+    assert.deepEqual(ok('snapshot').decisions.development.academy.map(p => p.id), model.decisions.development.academy.map(p => p.id));
+    assert.equal(archive(), saved);
+    bridge.close();
+    bridge = createBridge(options);
+    assert.equal(archive(), saved);
+
+    const idToPromote = groups[1][0].id;
+    const promoted = ok('promote_academy', { playerId: idToPromote, confirmed: true });
+    assert.equal(promoted.decisions.development.academy.filter(p => p.age >= 19).length, 29, 'la prochaine arrivée est annuelle');
+    assert.ok(promoted.squad.some(p => p.id === idToPromote));
+
+    document.state.academyGroupPolicy = 1;
+    for (const center of document.state.aiRoster.academies) center.players = [];
+    const formerPolicy = ok('import', { text: seal(document) });
+    assert.equal(formerPolicy.decisions.development.academy.length, 60);
+    assert.equal(JSON.parse(archive()).state.academyGroupPolicy, 1);
+    delete document.state.academyGroupPolicy;
+    document.state.development.academy = academy.filter(p => /-1-\d{1,2}$/.test(p.id));
+    assert.equal(document.state.development.academy.length, 15);
+    const legacy = ok('import', { text: seal(document) });
+    assert.equal(legacy.decisions.development.academy.length, 15);
+    const old = archive();
+    assert.equal(JSON.parse(old).state.academyGroupPolicy, undefined);
+    bridge.close();
+    bridge = createBridge(options);
+    assert.equal(archive(), old);
+
+    if (mode === 'common') {
+      const pathToSave = path.join(dataDir, 'PrototypeGodot', 'donnees.json');
+      const mtime = fs.statSync(pathToSave).mtimeMs;
+      const preview = ok('academy_groups_preview').meta.academyGroups;
+      assert.equal(preview.available, true);
+      assert.equal(preview.centers, 30);
+      assert.equal(preview.additions, 1785);
+      assert.equal(archive(), old);
+      assert.equal(fs.statSync(pathToSave).mtimeMs, mtime);
+      assert.equal(ask('academy_groups_enable', { context: preview.context }).ok, false);
+      assert.equal(ask('academy_groups_enable', { confirmed: true, context: { ...preview.context, week: 1 } }).ok, false);
+      assert.equal(archive(), old);
+
+      ok('academy_groups_enable', { confirmed: true, context: preview.context });
+      const converted = archive();
+      const final = JSON.parse(converted).state;
+      assert.equal(final.academyGroupPolicy, 2);
+      assert.equal(final.development.academy.length, 60);
+      for (const prior of document.state.development.academy) {
+        assert.deepEqual(final.development.academy.find(p => p.id === prior.id), prior);
+      }
+      assert.ok(final.aiRoster.academies.every(center => center.players.length === 60));
+      assert.equal(ask('academy_groups_enable', { confirmed: true, context: preview.context }).ok, false);
+      assert.equal(archive(), converted);
+
+      const younger = new Set(groups[0].slice(0, 16).map(p => p.id));
+      document.state.development.academy = academy.map(p => younger.has(p.id) ? { ...p, age: 19 } : p);
+      ok('import', { text: seal(document) });
+      const blocked = archive();
+      const blockedPreview = ok('academy_groups_preview').meta.academyGroups;
+      assert.equal(blockedPreview.available, false);
+      assert.equal(blockedPreview.blocked[0].clubId, club);
+      assert.ok(blockedPreview.blocked[0].required > 75);
+      const refused = ask('academy_groups_enable', { confirmed: true, context: blockedPreview.context });
+      assert.equal(refused.ok, false);
+      assert.match(refused.error, /75/);
+      assert.equal(archive(), blocked);
+    }
+  });
+}

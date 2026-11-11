@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "Deux campagnes distinctes présentes",
+    "Seize checkpoints présents",
+    "Deux réceptions terminales vertes",
+    "Téléchargement JSON fonctionnel",
+    "Sans débordement horizontal à 1440px",
+    "Sans débordement horizontal à 390px"
+  ],
+  "errors": [],
+  "browser": "Chromium Linux, Playwright, rendu HTML local"
+}
