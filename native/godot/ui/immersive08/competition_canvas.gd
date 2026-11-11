@@ -54,7 +54,8 @@ static func target_available(owner_app: Control, kind: String, id: Variant) -> b
 
 static func _target_club(owner_app: Control, id: String) -> Dictionary:
 	if id.is_empty(): return {}
-	var own_club: Dictionary = owner_app.model.get("club", {})
+	var own_value: Variant = owner_app.model.get("club")
+	var own_club: Dictionary = own_value if own_value is Dictionary else {}
 	for division: Dictionary in owner_app.model.get("leagues", []):
 		for club: Dictionary in division.get("rows", []):
 			if str(club.get("id", "")) == id: return club
@@ -135,7 +136,8 @@ static func build(owner_app: Control, canvas: Control) -> void:
 	page._build()
 
 func _context(reading_only: bool = false) -> void:
-	own = app.model.get("club", {})
+	var own_value: Variant = app.model.get("club")
+	own = own_value if own_value is Dictionary else {}
 	international = app.model.meta.get("mode") == "world"
 	if not app.management_ui.get("competition") is Dictionary: app.management_ui.competition = {}
 	state = app.management_ui.competition
@@ -152,7 +154,7 @@ func _context(reading_only: bool = false) -> void:
 		for club: Dictionary in division.get("rows", []): identities[club.id] = club
 	for club: Dictionary in app.catalogue:
 		if not identities.has(club.id): identities[club.id] = club
-	identities[own.id] = own
+	if own.has("id"): identities[own.id] = own
 	var next_value: Variant = app.model.get("next")
 	next_fixture = next_value if next_value is Dictionary else {}
 	fixtures = app.model.get("calendar", []).duplicate()
@@ -833,7 +835,7 @@ func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 func _fixture_outcome(fixture: Dictionary) -> String:
 	if not fixture.get("played", false): return "—"
 	var score: Variant = fixture.get("score")
-	var index := _side(fixture, own.id)
+	var index := _side(fixture, own.get("id"))
 	if index < 0: return "—"
 	var decisive := _knockout(fixture) and _competition_id(fixture) != "jlo-d1-d2"
 	if decisive:
@@ -873,7 +875,7 @@ func _location(fixture: Dictionary, compact: bool = false) -> String:
 	return "—"
 
 func _location_kind(fixture: Dictionary) -> String:
-	return P.fixture_location_kind(fixture, own.id)
+	return P.fixture_location_kind(fixture, own.get("id"))
 
 static func _venue_name(fixture: Dictionary) -> String:
 	var venue: Variant = fixture.get("venue")

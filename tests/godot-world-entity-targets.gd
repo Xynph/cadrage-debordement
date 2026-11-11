@@ -44,6 +44,15 @@ func _initialize() -> void:
 		check(Finance.open_target(app,tab) and app.route=="Finances" and app.management_ui[Finance.KEY]==tab,"Onglet financier réel : "+tab)
 	check(not Finance.open_target(app,"unknown") and app.management_ui[Finance.KEY]=="budget","Onglet absent refusé sans écraser la sélection")
 	check(app.commands==0 and JSON.stringify(app.model)==original,"Lecture laisse modèle sportif inchangé et n’émet aucune commande")
+	app.model.club = null
+	check(not Competition.target_available(app,"club","999") and Competition.target_available(app,"club","2"),"Nation sans club : lookup public résolu sans repli sur un club géré")
+	var context: Control = Competition.new()
+	context.app = app
+	app.management_ui.competition = {"club_league":"other","tab":"stats"}
+	app.table_division = "other"
+	context._context(true)
+	check(context.own.is_empty() and app.management_ui.competition.club_league=="other" and app.management_ui.competition.tab=="stats" and app.table_division=="other","Contexte sans club conserve division et onglet de lecture")
+	context.free()
 	app.free()
 	print("WORLD ENTITY TARGETS : ",checks," contrôles ; ",failures.size()," échec(s)")
 	quit(0 if failures.is_empty() else 1)
