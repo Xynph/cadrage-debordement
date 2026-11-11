@@ -499,8 +499,13 @@ func report_cases() -> void:
 	if reports.is_empty(): return
 	var report: Dictionary = reports[0]
 	var before := await snapshot()
+	app._navigate("Recrutement"); await settle()
+	await activate(named("MarketTab3"))
+	check(int(app.management_ui.get("market_tab", -1)) == 3, "Vrai onglet des rapports conservés ouvert")
 	check(not await open_entity("report", "__rapport_absent__"), "Rapport inexistant refusé sans ouvrir une autre archive")
-	check(await open_entity("report", str(report.id)), "Rapport réel ouvert par son identifiant d’archive exact")
+	var report_link := named("MarketEntity_" + str(report.id).validate_node_name()) as Control
+	check(report_link != null and str(report_link.get_meta("entity_id", "")) == str(report.id), "Vrai nom d’archive lié au rapport produit par la mission")
+	await activate(report_link)
 	var detail := named("RecruitmentReport") as Window
 	check(detail != null and str(detail.get_meta("entity_id", "")) == str(report.id), "Fenêtre du vrai rapport reçu de la mission")
 	check(named("ScoutReport_" + str(report.id)) != null, "Dossier d’archive daté rendu, pas une fiche actuelle substituée")
@@ -508,14 +513,36 @@ func report_cases() -> void:
 	check(source != null and source.text == str(report.get("assessment", {}).get("source", "Date du rapport non conservée")), "Date et source du rapport conservées exactement")
 	check(not await open_entity("report", str(report.id)), "Deuxième fenêtre du même rapport refusée")
 	await capture("rapport-observation-reel-2560")
+	var tabs := named("ScoutEvidenceTabs") as TabContainer
+	check(tabs != null and tabs.get_tab_count() == 3, "Faits, appréciations et limites du rapport réel disponibles")
+	if tabs != null:
+		var sections := [["ScoutObserved", "observed"], ["ScoutEstimates", "estimates"], ["ScoutLimits", "limits"]]
+		for index in sections.size():
+			tabs.current_tab = index; await settle()
+			var block := named(str(sections[index][0])) as Control
+			check(block != null and block.is_visible_in_tree(), "Section du rapport réellement consultable : " + str(sections[index][1]))
+			if block != null:
+				var expected: Array = report.get("assessment", {}).get(sections[index][1], [])
+				if expected.is_empty(): expected = ["Information non conservée."]
+				var rendered: Array = block.find_children("*", "Label", true, false).map(func(label: Label): return label.text)
+				check(rendered == expected, "Texte archivé rendu mot pour mot et dans son ordre : " + str(sections[index][1]))
+		await capture("rapport-observation-limites-2560")
+	var projected: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", []).filter(func(item: Dictionary): return str(item.id) == str(report.id))
+	check(projected.size() == 1 and projected[0] == report, "Consultation du rapport : même projection, aucune information supplémentaire injectée")
 	var current := named("ReportCurrentPlayer") as Control
 	if current != null:
+		var original_window: int = detail.get_instance_id()
 		await activate(current)
 		check(app.route == "Recrutement" and str(app.management_ui.market.get("navigation_id", "")) == str(report.get("playerId", "")), "Lien depuis le vrai rapport vers la seule piste actuellement projetée")
-		check(named("RecruitmentReport") == null, "Le rapport source est fermé sans fenêtre dupliquée au changement de dossier")
+		check(not detail.visible, "Le rapport source est suspendu sans fenêtre visible dupliquée au changement de dossier")
+		await back()
+		var restored := named("RecruitmentReport") as Window
+		check(restored != null and restored.visible and restored.get_instance_id() == original_window and str(restored.get_meta("entity_id", "")) == str(report.id), "Retour de la piste : même fenêtre et même archive datée restituées")
+		check(tabs != null and tabs.current_tab == 2, "Retour de la piste : onglet des limites du rapport conservé")
 	else:
 		check(detail != null and detail.visible, "Archive seule conservée si le joueur n’est plus dans le marché projeté")
 	app._clear_dialogs(); await settle()
+	check(int(app.management_ui.get("market_tab", -1)) == 3, "Fermeture du rapport : retour à l’onglet d’archives d’origine")
 	await unchanged(before, "Lecture du vrai rapport d’observation")
 func guard_cases() -> void:
 	# A press appointment is intentionally absent until its exact persisted mail
