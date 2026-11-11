@@ -23,6 +23,7 @@ func button(node: Node, text: String) -> Button:
 		if result != null: return result
 	return null
 func page_for(route: String) -> Control:
+	if route == "Match" and app.contextual_director.active() and app.contextual_director.kind == "live": return app.match_screen
 	var page := named(app,ROUTES[route]) as Control
 	if page!=null:return page
 	var alternatives := {
@@ -38,6 +39,7 @@ func wait_model() -> void:
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
 	check(not app.waiting and not app.model.is_empty(), "Réponse native bornée")
 func command(id: String, payload: Dictionary = {}) -> void:
+	print("SDK_COMMAND godot-carnet-ui ",id)
 	app._command(id, payload)
 	await wait_model()
 	check(app.bridge.last_response_ok, "Commande réelle " + id + " / " + app.last_error)
@@ -324,19 +326,19 @@ func decisions() -> void:
 		app._clear_dialogs()
 		await settle()
 	await command("auto_lineup")
+	if not await ContextualFlow.prepare_match_day(app,self,check): return
 	await render("Match")
-	await press("COUP D'ENVOI")
-	await wait_model()
-	check(not app._live().is_empty(),"Coup d’envoi réel")
+	var previous_week: int=app.model.meta.week
+	await press("COUP D'ENVOI");await wait_model()
+	await ContextualFlow.skip_talk(app,self,"pre",check)
+	check(not app._live().is_empty() and app.contextual_director.kind=="live","Coup d’envoi et vraie entrée dans le direct")
 	await command("pause",{"paused":true})
-	await render("Effectif")
-	check(named(app,"PlayerLoad").disabled,"Charge verrouillée pendant le direct")
-	check(button(app,"PROPOSER UNE PROLONGATION").disabled,"Prolongation verrouillée pendant le direct")
-	await render("Composition")
-	check(button(app,"SÉLECTION AUTOMATIQUE DU STAFF").disabled,"Sélection verrouillée pendant le direct")
-	await render("Préparation")
-	await press("ENTRAÎNEMENT")
-	check(button(app,"CHARGE NORMALE").disabled,"Séance verrouillée pendant le direct")
+	var live_before:=await state()
+	var live_bytes:=FileAccess.get_file_as_bytes(str(app.model.meta.dataDir).path_join("donnees.json"))
+	for route in ["Effectif","Composition","Préparation","Recrutement"]:
+		await render(route)
+		check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"Le direct verrouille la gestion : "+route)
+	check(await state()==live_before and FileAccess.get_file_as_bytes(str(app.model.meta.dataDir).path_join("donnees.json"))==live_bytes,"Tenter une navigation du direct ne modifie ni état ni disque")
 	await render("Match")
 	await capture("match-pause-1440")
 	var actual: Dictionary=app.model
@@ -361,23 +363,21 @@ func decisions() -> void:
 		if not sub.get("inIds",[]).is_empty(): incoming=sub;break
 	if not incoming.is_empty():
 		screen.selected_slot=int(incoming.slot)
-		screen.presence_key=""
-		screen._side()
+		screen._drawer_key=""
+		screen._update_drawer()
 		var reserve: Dictionary=app.model.live.reserves.filter(func(p):return p is Dictionary and p.id==incoming.inIds[0])[0]
 		await press(str(reserve.name))
 		await wait_model()
 		check(app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
 	await command("delegate")
 	await render("Effectif")
-	var finished_load := named(app,"PlayerLoad") as OptionButton
-	var finished_reason := named(app,"PlayerLoadUnavailableReason") as Label
-	check(finished_load != null and finished_load.disabled,"Charge verrouillée avant validation du résultat")
-	check(finished_reason != null and "validation" in finished_reason.text,"Motif de charge adapté après le sifflet final")
+	check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"La gestion reste verrouillée avant validation du résultat")
 	await render("Match")
 	await capture("match-resultat-1440")
 	await press("VALIDER LA JOURNÉE  →")
 	await wait_model()
-	check(int(app.model.meta.week)==1,"Résultat validé une fois")
+	await ContextualFlow.finish_match_week(app,self,check,previous_week)
+	check(int(app.model.meta.week)==previous_week+1,"Résultat validé une fois")
 	app.selected_player = player_id
 	await render("Effectif")
 	(named(app,"ProfileTabs") as TabContainer).current_tab = 2

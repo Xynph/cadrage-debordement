@@ -31,32 +31,16 @@ func _wait() -> void:
 	_check(not app.waiting, "Command completes without indefinite waiting")
 
 func _command(command: String, payload: Dictionary = {}) -> void:
-	if command == "begin_match" and not await _publish_press(): return
+	print("SDK_COMMAND godot-review-regressions ",command)
+	if command == "begin_match" and not await ContextualFlow.prepare_match_day(app,self,_check): return
+	var previous_week: int=app.model.get("meta",{}).get("week",-1)
 	app._command(command, payload)
 	await _wait()
+	if command=="finish_round" and app.bridge.last_response_ok: await ContextualFlow.finish_match_week(app,self,_check,previous_week)
 	if not app.bridge.last_response_ok: print("COMMANDE REFUSÉE : ", command, " · ", app.last_error)
 
 func _publish_press() -> bool:
-	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
-	if not conference.get("required", false): return true
-	var previous_route: String = app.route
-	app._show_press_inbox()
-	var controls := ["InboxPressInvitation", "InboxOpenPressInvitation"]
-	for question: Dictionary in conference.questions:
-		controls.append("PressAnswer_" + str(question.id) + "_r4")
-	controls.append("PressSubmit")
-	for name: String in controls:
-		await process_frame
-		var button := app.root_content.find_child(name, true, false) as Button
-		var available := button != null and button.is_visible_in_tree() and not button.disabled
-		_check(available, "Action de la conférence disponible : " + name)
-		if not available: return false
-		button.pressed.emit()
-	await _wait()
-	var published: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
-	_check(published, "Le courrier de presse a été publié")
-	if published: app._navigate(previous_route)
-	return published
+	return await ContextualFlow.settle_club_meetings(app,self,_check)
 
 func _dismiss_errors() -> void:
 	for child in app.get_children():
@@ -550,11 +534,13 @@ func _run() -> void:
 		await _command("delegate")
 		if not app.model.live is Dictionary: await app._close(1); return
 		_check(app.pause_button.disabled, "Finished match disables pause")
+		var validated_week: int = app.model.meta.week
 		app.match_finish.pressed.emit()
 		await _wait()
 		_check(app.route == "Réception", "Round validation returns to Reception")
-		if not await ContextualFlow.settle_club_meetings(app, self, _check): await app._close(1); return
+		if not await ContextualFlow.finish_match_week(app,self,_check,validated_week): await app._close(1); return
 		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition and its actual meetings restore management")
+		if not await ContextualFlow.prepare_match_day(app,self,_check): await app._close(1); return
 		app._navigate("Match")
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
 		# Repair the actual 23 after match injuries before testing the next kickoff.

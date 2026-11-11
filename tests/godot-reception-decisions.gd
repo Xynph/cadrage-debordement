@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Reading = preload("res://ui/immersive08/reception_reading.gd")
 var app: Control
 var checks := 0
@@ -82,12 +83,7 @@ func run() -> void:
 	var selected := str(state.selected)
 	check(not selected.is_empty(), "Invitation sélectionnée explicitement")
 	await capture("02-decision-presse")
-	await activate("InboxOpenPressInvitation")
-	check(app.route == "Presse", "La décision ouvre la conférence existante")
-	await activate("PressBackToInvitation")
-	check(app.route == "Réception" and state.selected == selected and state.activity_filter == "todo", "Retour à la même invitation et au même filtre")
-	var focus := root.gui_get_focus_owner()
-	check(focus != null and focus.get_meta("message_id", "") == selected, "Focus restitué au courrier d'origine")
+	check(not app.contextual_director.active(), "Lire l’invitation ne déclenche pas encore le rendez-vous")
 	await activate("InboxActivity_info")
 	var rows := app.find_child("InboxMessageRows",true,false)
 	var buttons: Array = rows.get_children().filter(func(node): return node is Button and node.has_meta("message_id"))
@@ -136,6 +132,28 @@ func run() -> void:
 	check(state.activity_filter == "all" and state.expanded_threads.is_empty() and not state.return_focus, "Nouvelle réception : aucun filtre ou groupe hérité de la carrière précédente")
 	check(FileAccess.get_sha256(file) == before, "Lecture, filtres, ouverture et retour : profil sportif inchangé")
 	check(app.bridge._next_id == sequence, "Parcours de lecture sans commande moteur supplémentaire")
+	# Opening the mandatory appointment locks navigation until the real answers
+	# are published and its persisted continuation is acknowledged.
+	await activate("InboxActivity_todo")
+	await activate("InboxPressInvitation")
+	var press_selected := str(state.selected)
+	await activate("InboxOpenPressInvitation")
+	check(app.contextual_director.active() and app.contextual_director.kind == "press", "La décision ouvre la conférence 3D existante")
+	check(FileAccess.get_sha256(file) == before and app.bridge._next_id == sequence, "Entrer dans la salle ne commande et ne sauvegarde rien")
+	await key(KEY_ESCAPE)
+	app._navigate("Bureau"); await settle()
+	check(app.contextual_director.active() and app.contextual_director.kind == "press", "Le rendez-vous requis reste ouvert après Échap et navigation")
+	var questions: Array = app.model.clubLife.press.conference.questions
+	for index in questions.size():
+		await activate("PressAnswer_"+str(questions[index].id)+"_r4")
+		if index < questions.size()-1: await activate("PressNext")
+	await activate("PressPublish"); await wait_worker()
+	check(app.model.clubLife.clubMeetings.scene.completed, "Publication réelle termine la décision avant de continuer")
+	await activate("PressReturn"); await wait_worker()
+	check(not app.contextual_director.active() or app.contextual_director.kind!="press", "Continuer acquitte et ferme la salle de presse")
+	check(state.selected == press_selected and state.activity_filter == "todo", "Sélection et filtre conservés après le rendez-vous")
+	await ContextualFlow.settle_club_meetings(app,self,check)
+	check(not app.contextual_director.active() and app.route=="Réception", "La Réception revient après les rendez-vous restants du club")
 	var report := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
 	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name(),"resolution":[root.size.x,root.size.y]},"  ")); report.close()
 	print("RÉCEPTION DÉCISIONS : %d contrôles ; %d échecs" % [checks,failures.size()])

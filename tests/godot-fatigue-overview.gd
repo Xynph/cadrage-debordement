@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
 const Watch = preload("res://ui/management_state.gd")
 var app: Control
@@ -128,6 +129,7 @@ func run() -> void:
 	if app.model.is_empty(): quit(1); return
 	app.timer.stop()
 	await command("new_career", {"mode":"common", "club":29})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app.coach.close()
 	var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var unchanged := FileAccess.get_sha256(filename)
