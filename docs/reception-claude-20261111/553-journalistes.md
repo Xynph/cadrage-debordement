@@ -25,11 +25,11 @@ Correction attendue chez le producteur : projeter les identités structurées pa
 
 ## Reproduction durable, isolée
 
-Le [patch de sonde](../qa/pr553-archive-quotes-repro.patch) ajoute un seul scénario au test officiel du candidat : importer une archive dont la question cite un journaliste de base et la réponse cite sa rédaction, puis vérifier les deux textes sous pack. Les noms proviennent de la banque courante du candidat, aucun ancien ID/nom privé n’est inscrit dans la preuve. Appliquer uniquement à une copie jetable :
+Le [patch de sonde](../qa/pr553-archive-quotes-repro.patch.md) ajoute un seul scénario au test officiel du candidat : importer une archive dont la question cite un journaliste de base et la réponse cite sa rédaction, puis vérifier les deux textes sous pack. Les noms proviennent de la banque courante du candidat, aucun ancien ID/nom privé n’est inscrit dans la preuve. Appliquer uniquement à une copie jetable :
 
 ```bash
 repro_root=$(mktemp -d /tmp/rg27-pr553-quotes.XXXXXX)
-repro_patch="$(pwd)/docs/qa/pr553-archive-quotes-repro.patch"
+repro_patch="$(pwd)/docs/qa/pr553-archive-quotes-repro.patch.md"
 git archive feee1891f3ffbea2b32afa65dc289251724b0b65 | tar -x -C "$repro_root"
 (cd "$repro_root" && git apply "$repro_patch")
 (cd "$repro_root" && /workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node tests/press-identity-pack.cjs)
