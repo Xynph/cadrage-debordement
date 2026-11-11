@@ -63,6 +63,8 @@ test('Issue du moteur : le marqueur désigné aplatit au point d’essai, dans l
     const n = c.ballon.x.length - 1;
     assert.ok(Math.abs(c.ballon.x[n] - c.essai.x) < 0.01 && Math.abs(c.ballon.y[n] - c.essai.y) < 0.01, `${source} : ballon au point d’essai`);
     assert.ok(c.ballon.h[n] <= 0.15, `${source} : ballon au sol`);
+    const marqueur = c.joueurs.find(j => j.id === c.marqueur);
+    assert.ok(Math.hypot(marqueur.x[n] - c.essai.x, marqueur.y[n] - c.essai.y) < 1, `${source} : le marqueur reste sur son ballon`);
     // Aucun ballon perdu ni aplati par un autre : les seuls changements de porteur sont des passes,
     // un ramassage au ruck ou un ballon posé au sol par le plaqué.
     const types = new Set(c.evenements.map(e => e.type));

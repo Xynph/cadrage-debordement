@@ -484,7 +484,11 @@ func _lire(delta: float, reel: float) -> void:
 	if index < tf.plans.size():
 		_commencer_plan()
 		return
-	suivi[-1]["duree_reelle"] = (Time.get_ticks_msec() - _debut_ms) / 1000.0
+	# Durée du temps fort : sur son entrée (les pistes du chorégraphe ont la leur, à la suite).
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) == "temps_fort":
+			suivi[i]["duree_reelle"] = (Time.get_ticks_msec() - _debut_ms) / 1000.0
+			break
 	index = -1
 	if _live.get("paused", false) or _live.get("finished", false) or not _arret_attendu.is_empty():
 		_vers_inter()

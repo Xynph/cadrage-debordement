@@ -20,6 +20,7 @@ const EN_BUT=2;             // le ballon est aplati 2 m derrière la ligne (mêm
 const ECART=0.7;            // distance visée entre deux joueurs hors contact (garantie : 0,6 m), en mètres
 const EVITEMENT=1.7;        // rayon d'évitement (direction voulue), en mètres
 const CHUTE=9;              // décélération d'une chute ou d'un plongeon, en m/s²
+const APLATI=12;            // décélération du plongeon d'aplati (glissade courte), en m/s²
 const CONTACT=1.0;          // distance du plaquage
 const RATE=1.35;            // distance où un défenseur tente (et rate) le plaquage du marqueur
 const ETATS=Object.freeze(['course','passe','reception','plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','ramassage','aplati','joie','deception']);
@@ -303,7 +304,7 @@ function lancerPercee(){
   }
   wx+=ex;wy+=ey;
   const w=Math.hypot(wx,wy);if(w>plafond){wx*=plafond/w;wy*=plafond/w}
-  const amax=chute?CHUTE:j.amax;
+  const amax=j.etat==='aplati'?APLATI:chute?CHUTE:j.amax;
   // Limites du terrain (en-buts compris) : on freine à temps, sans arrêt brutal contre la limite.
   const arret=v=>v*v/(2*amax*0.85);
   if(j.vx>0&&j.x+arret(j.vx)>=104.6)wx=Math.min(wx,0);
@@ -375,7 +376,7 @@ function lancerPercee(){
    if(j.etat==='au_sol'&&j.releve!=null&&t>=j.releve){etat(j,'se_relever');j.releve=null}
    if(j.etat==='se_relever'&&age>=1.0)etat(j,'course');
    if(j.etat==='ruck'&&d.phase!=='ruck'&&age>0.3)etat(j,'course');
-   if(j.plonge){const v=Math.hypot(j.vx,j.vy);j.plonge={x:j.vx*Math.max(0,v-CHUTE*PAS)/Math.max(v,1e-6),y:j.vy*Math.max(0,v-CHUTE*PAS)/Math.max(v,1e-6)}}
+   if(j.plonge){const v=Math.hypot(j.vx,j.vy),f=j.etat==='aplati'?APLATI:CHUTE;j.plonge={x:j.vx*Math.max(0,v-f*PAS)/Math.max(v,1e-6),y:j.vy*Math.max(0,v-f*PAS)/Math.max(v,1e-6)}}
   }
   if(d.phase==='porte'){
    const p=d.porteur;
@@ -471,7 +472,9 @@ function lancerPercee(){
    }
    const ecart=d.ecart&&t<d.ecart.jusque?d.ecart.cote*2.5:0;
    vers(S,G.x+sens*1.0,G.y+ecart,S.vmax*0.97,false);
-   if(dist(S,G)<2.1&&(S.x-ligne)*sens>-2.2){
+   // Plongeon d'aplati déclenché pour que le corps s'arrête juste après le ballon posé.
+   const vS=Math.hypot(S.vx,S.vy);
+   if(dist(S,G)<Math.max(2.1,vS*vS/(2*APLATI)+0.4)&&(S.x-ligne)*sens>-4.5){
     etat(S,'aplati');S.plonge={x:S.vx,y:S.vy};d.phase='aplati';d.aplati=t;
     evenements.push({t:r1(t),type:'aplati',joueur:S.id,x:r2(G.x),y:r2(G.y)});
    }
