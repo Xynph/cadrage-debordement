@@ -59,6 +59,11 @@ function factory(){
  const validAnswer=(id,answerId)=>CDPressQuestionBank.questions.some(q=>q.id===id&&q.answers.some(a=>a.id===answerId));
  function validate(s){
   if(!s)return true;
+  // Anciennes carrières : les identifiants de dix journalistes ont changé. On les renomme sans toucher aux textes archivés.
+  {const anciens=CDPressQuestionBank.legacyJournalistIds||{},cle=t=>{let h=2166136261;for(const o of unescape(encodeURIComponent(String(t)))){h^=o.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,'0');},neuf=id=>reporter(id)?id:anciens[cle(id)]||id;
+   for(const h of s.pressConference?.history||[])if(h.journalist?.id!==undefined)h.journalist.id=neuf(h.journalist.id);
+   for(const e of s.pressConference?.lastOutcome?.exchanges||[])if(e.journalistId!==undefined)e.journalistId=neuf(e.journalistId);
+   const c=s.pressPeople?.contacts;if(c)for(const id of Object.keys(c)){const n=neuf(id);if(n!==id&&c[n]===undefined){c[n]=c[id];delete c[id];}}}
   const date=(season,week)=>int(season,1,s.season)&&int(week,0,maxWeek(s))&&(season<s.season||week<=weekOf(s));
   const clubId=id=>typeof id==='string'&&/^club-\d+$/.test(id)&&int(Number(id.slice(5)),0,s.clubs.length-1);
   if(s.pressInvitations!==undefined){
