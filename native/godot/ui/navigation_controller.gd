@@ -509,10 +509,13 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		"menu": destination = str(target.route)
 		"player", "squad":
 			destination = "Effectif"
-			app.management_ui.roster = U.defaults()
-			app.management_ui.profile_scroll = 0
-			app.roster_filter = "Tous"
-			app.roster_sort = "Poste"
+			# A full profile resolves its ID directly in the projected squad.
+			# Only an explicit table lookup clears filters to reveal its row.
+			if target.get("section", "") == "roster":
+				app.management_ui.roster = U.defaults()
+				app.management_ui.profile_scroll = 0
+				app.roster_filter = "Tous"
+				app.roster_sort = "Poste"
 			app.selected_player = id
 			app.set_meta("immersive08_full_player", target.get("section", "") != "roster")
 			app.management_ui.player_section = str(target.get("section", ""))
