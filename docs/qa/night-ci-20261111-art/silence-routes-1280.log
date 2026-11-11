@@ -1,0 +1,60 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+SDK_COMMAND 6837 art-direction new_career
+SDK_CAPTURE 12127 Presse
+SDK_COMMAND 17549 art-direction academy_activate
+SDK_CAPTURE 18876 Accueil
+SDK_CAPTURE 19539 Création
+SDK_CAPTURE 20306 Bureau
+SDK_CAPTURE 21104 Effectif
+SDK_CAPTURE 21414 Effectif-Attributs
+SDK_CAPTURE 21705 Effectif-Contrat
+SDK_CAPTURE 21957 Effectif-Repères
+SDK_CAPTURE 22927 Composition
+SDK_CAPTURE 23560 Préparation
+SDK_CAPTURE 24175 Plan de jeu
+SDK_CAPTURE 24460 Plan de jeu-Phases arrêtées
+SDK_CAPTURE 24727 Plan de jeu-Lecture du match
+SDK_CAPTURE 25353 Recrutement
+SDK_CAPTURE 25614 Recrutement-Travail du staff
+SDK_CAPTURE 26508 Formation
+SDK_CAPTURE 27171 Formation-professionnels
+SDK_CAPTURE 28222 Centre
+SDK_CAPTURE 29954 Centre-Parcours
+SDK_CAPTURE 30434 Centre-Parcours-detail
+SDK_CAPTURE 30807 Centre-Centres
+SDK_CAPTURE 31160 Centre-Filières
+SDK_CAPTURE 31522 Centre-Passerelle pro
+SDK_CAPTURE 31783 Centre-Générations
+SDK_CAPTURE 33027 Staff
+SDK_CAPTURE 33716 Travail du club
+SDK_CAPTURE 34005 Travail du club-Médical
+SDK_CAPTURE 34266 Travail du club-Agents
+SDK_CAPTURE 34925 Vestiaire
+SDK_CAPTURE 35594 Finances
+SDK_CAPTURE 36513 Stratégie
+SDK_CAPTURE 36870 Stratégie-Projet sportif
+SDK_CAPTURE 37189 Stratégie-Supporters
+SDK_CAPTURE 37891 Club
+SDK_CAPTURE 38322 Club-Histoire
+SDK_CAPTURE 38926 Carrière
+SDK_CAPTURE 39556 Calendrier
+SDK_CAPTURE 40385 Classements
+SDK_CAPTURE 40799 Classements-accession
+SDK_CAPTURE 41598 Rivalités
+SDK_CAPTURE 42909 Match
+SDK_CAPTURE 43522 Packs
+SDK_CAPTURE 44689 Comparaison
+SDK_CAPTURE 45165 Contrat
+SDK_CAPTURE 45640 Archives
+SDK_CAPTURE 46004 Menu-sauvegardes
+SDK_CAPTURE 46405 Crédits
+SDK_CAPTURE 47013 Dossier-adverse
+SDK_CAPTURE 47437 Paramètres
+ART DIRECTION : 224 contrôles ; 49 captures ; 0 échecs
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+
+Réception artistique : /tmp/cd-art-direction-1RShdk

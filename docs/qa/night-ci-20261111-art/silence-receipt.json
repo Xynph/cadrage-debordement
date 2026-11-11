@@ -1,0 +1,960 @@
+{
+  "source_commit": "7b93a466d200c324f9f53b40c855e96374e7cc11",
+  "script_sha256": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f",
+  "scope": "Local targeted execution of all four Art cases. No full new SDK campaign; no Windows or animation/frame-rate qualification.",
+  "checks": 820,
+  "failures": 0,
+  "captures": 146,
+  "audio_driver": "Dummy",
+  "child_timeout_seconds": 150,
+  "controller_timeout_seconds_unchanged_not_reexercised": 180,
+  "vm_timeout_seconds_unchanged": 15,
+  "wall_seconds_including_shared_lock_wait": [
+    75,
+    136,
+    342,
+    103
+  ],
+  "cases": [
+    {
+      "case": "routes-1280",
+      "checks": 224,
+      "failures": 0,
+      "capture_count": 49,
+      "speech": {
+        "observed": true,
+        "requests": 0,
+        "starts": 0
+      },
+      "artifacts": "/tmp/cd-art-direction-1RShdk",
+      "captures": [
+        {
+          "file": "1280-Presse.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "d54d03693667ce4656f56ed21ee3e3f142724958fcaa0671b6617c71769183f5"
+        },
+        {
+          "file": "1280-Accueil.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "258da894a6026b9ee61cf5548ad671d4bb9eb220a198800a9a41ed6b9f7c1767"
+        },
+        {
+          "file": "1280-Création.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "f86f1ce4014479b89153a4623a0523c0b007c7cbcf818e286067993ad40ee321"
+        },
+        {
+          "file": "1280-Bureau.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "5d215d04d9cbbd05c707498806df544618152f8ea789a27ee95fe41943749d87"
+        },
+        {
+          "file": "1280-Effectif.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "5b22f78dedea6f7aee271d76d343a9318ac0919fab527e27125a0b0038c5196d"
+        },
+        {
+          "file": "1280-Effectif-Attributs.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "8400670d9768ebf285f34b26011be183bba4484b80ebf8603573aa8c90792c4f"
+        },
+        {
+          "file": "1280-Effectif-Contrat.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "f848069babe42c02643496eb649ebffca32e53e996cf5ddc0e59eda88614eb87"
+        },
+        {
+          "file": "1280-Effectif-Repères.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "4cf6dc0fcc171d02a337c73974f51a01922a725733fb15ddbcc00ef933c47f99"
+        },
+        {
+          "file": "1280-Composition.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "307758248849f3f842a9a993308c48efac398406813d540c35cbdd9a119bd95a"
+        },
+        {
+          "file": "1280-Préparation.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "0518422618c998e848f109293074ba89045df7c2859449236f7a67547d26e898"
+        },
+        {
+          "file": "1280-Plan de jeu.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "7c46f26c0a80fce9e429aa6a9fe294c853224fe745bd7617a6fe5c5e9a3dfea9"
+        },
+        {
+          "file": "1280-Plan de jeu-Phases arrêtées.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "7e9e966c2904ec1a14d766d6cf3134fe9570121ec493cf3467a9ad9349d7fb2b"
+        },
+        {
+          "file": "1280-Plan de jeu-Lecture du match.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "0d6dd1f82dd1ac42be40d3a322155e6c2d06c3e627715bf2dee86f8ab1a57c4e"
+        },
+        {
+          "file": "1280-Recrutement.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "bd97be9961790d89b0d9849d4462679a08882bb6b221ba84c9015b51c178ccc7"
+        },
+        {
+          "file": "1280-Recrutement-Travail du staff.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "d01383be20501f25f876219f3d7e92da1e61e56c508012b98d07627ddc7d53f4"
+        },
+        {
+          "file": "1280-Formation.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "6480966508d0fa903734002e0f87ee587b1ec5b9b219e4554b99ce5e9f357cf2"
+        },
+        {
+          "file": "1280-Formation-professionnels.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "9bca335c104992996a59560381fcbfe3ae7f7aef37903e6272e80d790dbaa6de"
+        },
+        {
+          "file": "1280-Centre.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "f079845bb8f0421d0a0c1455f1f83cdea1a4c299fa91d05076e54079584f2ec7"
+        },
+        {
+          "file": "1280-Centre-Parcours.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "b671ba56a16bd8c2edf8523e4ec8f8b9da792fd30c40cc4d6fcdaa8622b8a246"
+        },
+        {
+          "file": "1280-Centre-Parcours-detail.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "ff39fe2fe46e8e413f39ffebbee79db8256c1ba77c85cd57d76e130f9a90ba1b"
+        },
+        {
+          "file": "1280-Centre-Centres.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "4006d0e62ff92a44e788d4f285eb3c6426f9bb6df78426f2acd929c1d6fb7c3a"
+        },
+        {
+          "file": "1280-Centre-Filières.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "23da4f96fe6051b89469a29c012fadd7611e7200e4e2292a07965fb800c09acb"
+        },
+        {
+          "file": "1280-Centre-Passerelle pro.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "8e7d888260531fd68a7a4e7a6fb53ec10097c573bf8388e846063a8631ea5051"
+        },
+        {
+          "file": "1280-Centre-Générations.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "a7d67dffbbfb4afb2a405db298a4adc2c393e58129c6bffb38be6eabb015563b"
+        },
+        {
+          "file": "1280-Staff.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "e9bd68096277722c5b2103351db1c12c9e87401d831106da430130d218804413"
+        },
+        {
+          "file": "1280-Travail du club.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "6d3aba8929c91bcd574eab1c2c63928fa6afc23746b81eabbf31dcc86225fd07"
+        },
+        {
+          "file": "1280-Travail du club-Médical.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "a3e4d75ce9a7715095ac9ba43fed7b92c155137b74af8edc1d817fef58c13737"
+        },
+        {
+          "file": "1280-Travail du club-Agents.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "d76f6aced5fc9ca5e82974cdd2b82f02c544f0a1addba2b2e8166fe584363d7c"
+        },
+        {
+          "file": "1280-Vestiaire.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "8b973407d5f595b51159b1f018fc2033623d293b4abf268123253b4a79132a49"
+        },
+        {
+          "file": "1280-Finances.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "ab403d7bdd430677dbde6b14d02095d21141ce21e6a28fe85a3408fb12395089"
+        },
+        {
+          "file": "1280-Stratégie.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "5c74a658d10f264012ec4c94bcb99a693127a99596f3900a1c127b7f5bb37012"
+        },
+        {
+          "file": "1280-Stratégie-Projet sportif.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "30f793460c5ce93f384a617d1c3fea23de19151e9ae90b95f1449604bc7c137b"
+        },
+        {
+          "file": "1280-Stratégie-Supporters.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "135481e6df3d63372cf6a1a28091cafd2f195c44cf28f99bca40390dc6b48d69"
+        },
+        {
+          "file": "1280-Club.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "8c3058ae3e2561d25315c60963abf3187b09563f6f1585af4486cc133cbe2685"
+        },
+        {
+          "file": "1280-Club-Histoire.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "a7a8e63e5f9bc48936a08c4e5ea7581042a3921b3f283627dc50902edcf80f0f"
+        },
+        {
+          "file": "1280-Carrière.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "883d471b85a1d1c26b01fd2acbb7ac0cc45d0bf0939aab4eb2661d138dff4048"
+        },
+        {
+          "file": "1280-Calendrier.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "131e5a19aacb70c73ee737831225d75450cd9a29fbfdcec801545f9f4957f6de"
+        },
+        {
+          "file": "1280-Classements.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "f4ccc4df93bc07e892e1e9cce0de04e35eee4b4c4ed1b558646bd286530b270f"
+        },
+        {
+          "file": "1280-Classements-accession.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "4bd6b8f4f3e975b5fae885ef1d1c96ee48c45e323f3929f062c50f83fea435ed"
+        },
+        {
+          "file": "1280-Rivalités.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "7d02cbbf29d831baf14c303fad8f21ef5615f4c8f8d17a3469d036a5ca7defdb"
+        },
+        {
+          "file": "1280-Match.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "c1831a0045153608d50abe1bf9cebdb64440ccf98f6bd1f6df0d931d5f1c22c4"
+        },
+        {
+          "file": "1280-Packs.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "6cb0d7c518aed38325e549ba06ffab1c379c5219532815608624947b3aa92bdc"
+        },
+        {
+          "file": "1280-Comparaison.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "6aa7b886a7fafb6e87a845767a8caf0e1bcf1891813533e4ad1f7194e5b8fb3f"
+        },
+        {
+          "file": "1280-Contrat.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "37edb26f41237dfd362c362a5a0083320565cec6a6c09ceabcca0e66354fb89a"
+        },
+        {
+          "file": "1280-Archives.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "0e52775f97e1de435cad83f6041ada63cff4e10f899079f9a27588204fa24f16"
+        },
+        {
+          "file": "1280-Menu-sauvegardes.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "b36d9037292847a1cc9f1e6d29975f7298fd00852356a5116c8afe45edca8b8e"
+        },
+        {
+          "file": "1280-Crédits.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "00856119ff43717d43ac4da0a7de25bfb5351a296a70169687dace7380c2f43e"
+        },
+        {
+          "file": "1280-Dossier-adverse.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "0a6b5e7049d224ac09a27d83ebc2aaf4879877440a3bed87f2d7daa5daf2f2f0"
+        },
+        {
+          "file": "1280-Paramètres.png",
+          "width": 1280,
+          "height": 720,
+          "sha256": "eb06ae8fa1328de64e334d49fa2c4e5582e5eff4df0b17599220ad6880db9ad5"
+        }
+      ],
+      "report_sha256": "65c8b8c90971cba37595e924f8d04ec77e0b1ddea391bfa71bf247e84494f19c",
+      "log_sha256": "4d22dc13af72843bc723aa47980319a5bcb3351f3be6a071d7096140a820cf17"
+    },
+    {
+      "case": "routes-1600",
+      "checks": 217,
+      "failures": 0,
+      "capture_count": 46,
+      "speech": {
+        "observed": true,
+        "requests": 0,
+        "starts": 0
+      },
+      "artifacts": "/tmp/cd-art-direction-iQdZBn",
+      "captures": [
+        {
+          "file": "1600-Presse.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "3434ea518454fbc75f207fdc12a4d7bd5ef3079309c46b6192207bf5a85500d6"
+        },
+        {
+          "file": "1600-Accueil.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "652e2e717e8fa863917e2babe866dfdf70f8f36de1815ef597bd5b11ed3b74bd"
+        },
+        {
+          "file": "1600-Création.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "7888a53c608a01a657788f3a733d012e4009ff42cae3e976d9bc00baa2c39402"
+        },
+        {
+          "file": "1600-Bureau.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "a3bb103f7f87d799c8cbae5193c49b4b3b88b58b1c19df3dd05ac447f144e7e9"
+        },
+        {
+          "file": "1600-Effectif.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "de759a468599679b786898c5d2a92ae1a08435a7fedd40fd75a486e5f4bdb6e5"
+        },
+        {
+          "file": "1600-Composition.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "1469c4673535361ebe63c2411f8e6c5b41fb3ef0fa17635f834d6f0b6e0a1f7e"
+        },
+        {
+          "file": "1600-Préparation.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "c9042e2620c6683c426aee3af7493b6bc8883651856328459cfe11c1d2c06070"
+        },
+        {
+          "file": "1600-Plan de jeu.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "3ba8e348000d4e2b8857b6c10088d5a7c8ba2f00261f2bffb10163d8b62eec78"
+        },
+        {
+          "file": "1600-Plan de jeu-Phases arrêtées.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "a2c0ab71eccc4d948a5b58f860bf630bb791bac87246ad13bcc06b8c35892b89"
+        },
+        {
+          "file": "1600-Plan de jeu-Lecture du match.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "039bb37f0d25ea310b402a4a4a66d174cf8e108aa927cf3edeb25960f05e0cec"
+        },
+        {
+          "file": "1600-Recrutement.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "e91e15f80efc76930f00b557c743d0b0e9b48f28de72252dff9c33078a679548"
+        },
+        {
+          "file": "1600-Recrutement-Travail du staff.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "016b33685f7bfa04cec1e596dbf081921bbdf3ec0409a5298156aee3db6333da"
+        },
+        {
+          "file": "1600-Formation.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "4ca92ca52513fb64fd66f60d132073a7a9b43e841664f93f2d8fd144368d6021"
+        },
+        {
+          "file": "1600-Formation-professionnels.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "327481b9c5c247a6f2e82732d71e28aeb8ab46cf1a2266143cdabfefafb0525a"
+        },
+        {
+          "file": "1600-Centre.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "aec92502cfbc046a27567de911126e9e89868319e17482e7217b3fbd4d838de8"
+        },
+        {
+          "file": "1600-Centre-Parcours.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "747c481d4b16511f29e5cc3e5dd6df1b91efed58d2f71c4034f9b98ba6d399a3"
+        },
+        {
+          "file": "1600-Centre-Parcours-detail.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "51ad4abf2c55fbca46fe912ccee7ddef6f6ab2fa231cb89f7b80af9006fc8a2f"
+        },
+        {
+          "file": "1600-Centre-Centres.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "4573db617783922424f140b4acee5a706252a6306b78faf58e589419622b4838"
+        },
+        {
+          "file": "1600-Centre-Filières.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "a587bede08600077993ad12ca4b430ba78f61fcff92146f210d0c6a0211799a5"
+        },
+        {
+          "file": "1600-Centre-Passerelle pro.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "29506a100d90191f84a50001daf81e8b7a296dd623607f672187616e4c2da609"
+        },
+        {
+          "file": "1600-Centre-Générations.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "f2d4272f3606c638da59b2f21022ae3b4f8f986c6582d79b6be00fff995c5759"
+        },
+        {
+          "file": "1600-Staff.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "be07677a744297072196096fdc411309841f0d5ca51a5bf3920df8cc3ef3ab9f"
+        },
+        {
+          "file": "1600-Travail du club.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "a8dc4a65ccb5accd91951946d3d326d2b028c1c4eca8dfcce392af42edc89137"
+        },
+        {
+          "file": "1600-Travail du club-Médical.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "e6e7743c689f9d5d9b57550764b9df6b52cb5d644951360b4916492e7b12f2f7"
+        },
+        {
+          "file": "1600-Travail du club-Agents.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "55ac35f28f3d21b9f03e201ee4f8b58fd211de64cb28b152fc22afd371a0de29"
+        },
+        {
+          "file": "1600-Vestiaire.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "7de1737beb1988c9d28594d5a3c14729fe5fd34ad18f218e28e2c65c73a42f13"
+        },
+        {
+          "file": "1600-Finances.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "3a16f5518000b3ed694084c1478035178c0018ec87133538ba3f132e7b38d82d"
+        },
+        {
+          "file": "1600-Stratégie.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "7def80cc3af982db4874766ea5383f53f308a9d59f3e2c4a4f63b3922491086d"
+        },
+        {
+          "file": "1600-Stratégie-Projet sportif.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "8fdea6cd39b34dfa2a29ce5c8653d662589eac44f27c9b4bb29c6c623f5d3ef3"
+        },
+        {
+          "file": "1600-Stratégie-Supporters.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "e6d8ca47e73a11276bcc8305f6fce0fbe3b8b0059a02c9ecc24004726336fedc"
+        },
+        {
+          "file": "1600-Club.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "d488f26de383345b485b9444e317afc1be89bc961a3db63a77dcf4e1072ce8ff"
+        },
+        {
+          "file": "1600-Club-Histoire.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "03d98806aaebfb70a77e7e607ac0a06429187b7ed7b279cf35f013490b5e723b"
+        },
+        {
+          "file": "1600-Carrière.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "e4b500fcaee43af69ff2ec23bc8b2b83fcf258d77db1c9dce3edbea85eccc400"
+        },
+        {
+          "file": "1600-Calendrier.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "4650e8e50474f65fc3790ac511d0e30922ec58d4b5afb821ea28767a14d9a7bb"
+        },
+        {
+          "file": "1600-Classements.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "989e938866ca062e7ad580046a38953e01fff867d8d9421107a8c29a116bf8e0"
+        },
+        {
+          "file": "1600-Classements-accession.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "722525970bc4a5f6a34b94c5b1ce832ed943064a56ef9ed2c342cba2b8d30243"
+        },
+        {
+          "file": "1600-Rivalités.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "49ba196c55bd45586aaf537256472bc65d9437d9fc648bababaf678d0a148fbb"
+        },
+        {
+          "file": "1600-Match.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "0aabb6f77a42c57c927d62087d5fd6db39e162f378db23dfb67825b9e4688ada"
+        },
+        {
+          "file": "1600-Packs.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "7880505b0784e33a77607c64831d7905c7490f0e026de4e3e509f83b62c47399"
+        },
+        {
+          "file": "1600-Comparaison.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "3e3d1439c0dbbc833587962aa1b04212f16f6b69ca8baa96059ee8ef28bdfa4a"
+        },
+        {
+          "file": "1600-Contrat.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "0cc82183b20c4e9157c675d9c57bb4bda5dc275d1b5a1fea996dbd6a89c9a9db"
+        },
+        {
+          "file": "1600-Archives.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "4105eaa580b1c6158fd4c354d8aad55649666ca180938da1542820714dae1bd7"
+        },
+        {
+          "file": "1600-Menu-sauvegardes.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "8e690e6dbc5c79e2c927b3c158553f593808a87b8c95cb1c64e66fe9e2af1b1a"
+        },
+        {
+          "file": "1600-Crédits.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "4049c2bcb6e1f3cfb2c099a14c66ba7f110917337b7ff4bcafeaaa4f4ad2f6da"
+        },
+        {
+          "file": "1600-Dossier-adverse.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "a0c7dd1de9f5b5ca1601c0fc26a59f08c5a660570e1422670e580a9a1c7cae58"
+        },
+        {
+          "file": "1600-Paramètres.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "caa7acfbd8f9192fedc496a7ce5214207d747d066cc4c62e26213ac0a4f5a134"
+        }
+      ],
+      "report_sha256": "3b6b124fd7055ba499c1c1c846726228c51d7a7bf582322324c4ece4330a9f85",
+      "log_sha256": "4909fb5846dab10bb81a665999cc85b7ec954819d19e57783c7716f690d5b74f"
+    },
+    {
+      "case": "routes-1920",
+      "checks": 211,
+      "failures": 0,
+      "capture_count": 44,
+      "speech": {
+        "observed": true,
+        "requests": 0,
+        "starts": 0
+      },
+      "artifacts": "/tmp/cd-art-direction-2rEZeK",
+      "captures": [
+        {
+          "file": "1920-Presse.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "d5af7ffab9d37eeb49b0f115fb80343130c45c19d7edba85fcad317f327562f1"
+        },
+        {
+          "file": "1920-Accueil.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "1e52b25c30296b02f1676555fb367fc847a18be003590d9507224a598300a46f"
+        },
+        {
+          "file": "1920-Création.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "c3335eeca0ebb0b4e96e5c710d05baff2d8fc9b219d797d3e9532d54b4fa8788"
+        },
+        {
+          "file": "1920-Bureau.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "d6dabbfbe84854483b4ce2c69bf88577c70f5d5d1bd22cefd670593fc8ce450d"
+        },
+        {
+          "file": "1920-Effectif.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "a089c9659d75fcfaa7173b64f0c34de57b724a02e28e9e8c7c3050e8bdd2ded4"
+        },
+        {
+          "file": "1920-Composition.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "84654516e0602e1a36988b1f76a4643cc1fe7180b55b927be7676a9fb6ab5120"
+        },
+        {
+          "file": "1920-Préparation.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "1906e061570415b3d6719b101df1f7ba3e06867dd0240e06168aaddfe34cb7ea"
+        },
+        {
+          "file": "1920-Plan de jeu.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "9d379541aa3e7ac86bfce6f94add5918430c29e8d64b2a7a44d091315678317c"
+        },
+        {
+          "file": "1920-Plan de jeu-Phases arrêtées.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "d4265ec36e44362a1bab6aba5b851b55b932db9ec5ab1f64281a94cd18b9230f"
+        },
+        {
+          "file": "1920-Plan de jeu-Lecture du match.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "99d9f221cb264c085162d130f1d6448564b136c8225aa89bbd15f96454da3491"
+        },
+        {
+          "file": "1920-Recrutement.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "d55077d2d720ffe9b4b3b10df766048082bf748c88081d2e0b386a8ff6c15c20"
+        },
+        {
+          "file": "1920-Formation.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "05d1c36e65fc4fd5c1edb8fba4b79b49c6c5bd2ad3363e9c7ccd27b24b7b8b3e"
+        },
+        {
+          "file": "1920-Formation-professionnels.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "417a9223ec8a528f5c0c06513810dfc26ffa7535c3daac99cb9f3251fa4e0ffa"
+        },
+        {
+          "file": "1920-Centre.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "fb99547819b2f768a31fb748df96cb237e64bb018860d10dd0619e396ea9b24a"
+        },
+        {
+          "file": "1920-Centre-Parcours.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "98bd53ddfcf0c41f26d21e4634306817538c6740379c22b370bdc864ef40543c"
+        },
+        {
+          "file": "1920-Centre-Parcours-detail.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "42793609781d5f6375e257ea77c98972da50d27ce09fac34cae0ee7ff432e7f2"
+        },
+        {
+          "file": "1920-Centre-Centres.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "c77f0ea17a1ede9ce2a7733b6e941cd364bd2ffe8d6aa02febfc99f82c3a0eb4"
+        },
+        {
+          "file": "1920-Centre-Filières.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "530eeea9bc3e15cfa7422744848507196604ba71a575aace662dd7323a7350df"
+        },
+        {
+          "file": "1920-Centre-Passerelle pro.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "666cd03b76b44fd1938e0aa11705db48ba65f2ee3a341d5bc16bb2a1f6534dba"
+        },
+        {
+          "file": "1920-Centre-Générations.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "e8e055b8dcec4828d58346ab8b9c241a997bef3366c0cea911832f5a651b86c8"
+        },
+        {
+          "file": "1920-Staff.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "da201120178de63f11afa7c3710fab2702e4f4d729a9a5a37345d74323ad875e"
+        },
+        {
+          "file": "1920-Travail du club.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "8be167ab3494c3f82ab487b45932cff639e4b6d5da911380cc2b0b180df05a9d"
+        },
+        {
+          "file": "1920-Travail du club-Médical.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "35b43813e68e8ef3d99f3d4f5683910e2b3e493163edfc57794ac838466360e8"
+        },
+        {
+          "file": "1920-Travail du club-Agents.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "7a6c060cdaa37c416150cad546dd0f92d8ac89b7bde4453f974ac786cc7801eb"
+        },
+        {
+          "file": "1920-Vestiaire.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "4723473af18d35659f6a2a15885406735c03283c05f6a9578bab1c8a131a02b6"
+        },
+        {
+          "file": "1920-Finances.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "29a8f3f9062a5aba6bc0eb7bf9bb9a17191a8a061d9b3d1de31be58a9b649b8d"
+        },
+        {
+          "file": "1920-Stratégie.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "fc38668654de6aab7f624bc64a6aba63eaf3d8ecc4d1d9f771de73645c7a47ab"
+        },
+        {
+          "file": "1920-Stratégie-Projet sportif.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "9683df048afef2ffd3f41271b35b96f00ee793db9812e47604ad0a9bafe404e7"
+        },
+        {
+          "file": "1920-Stratégie-Supporters.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "1705cddfb3a68e89d8487ce77af1064600f93cb1ee63f7a46133adb40a193a2b"
+        },
+        {
+          "file": "1920-Club.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "f5008b0244995fd92661329feb199e9a8e0ff4d1030e000d4f0bc02d6d9fb5a2"
+        },
+        {
+          "file": "1920-Carrière.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "419be37681ac7d043aa1b148faeba391f93ee21cbf179292240825cd53db90c1"
+        },
+        {
+          "file": "1920-Calendrier.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "3fcd2d43469cd44304b32975a01f3f043adf61071ae8ac9201e240e3ed22da4f"
+        },
+        {
+          "file": "1920-Classements.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "628608f139d12375e2fa7fb893fb1cd740a38241682848560b9d6905333c0e85"
+        },
+        {
+          "file": "1920-Classements-accession.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "e70779e6a91ddb8c2f8d86a4403d65e15b1f841609d3a7c5152e8ebddadfc717"
+        },
+        {
+          "file": "1920-Rivalités.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "3f1673ade34055418499448f9c515d1b240034228ebbfcd697cd1bf216eed423"
+        },
+        {
+          "file": "1920-Match.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "acc947637097088a24ad6dddc68b1aed9c1772e4aae08ec41b0c80d7be1ae367"
+        },
+        {
+          "file": "1920-Packs.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "28f8d747b1dd9659e2d820f19d52b593bb3585260a7c59b2836469bd8fa0b49c"
+        },
+        {
+          "file": "1920-Comparaison.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "ee8c4218125f14330dfdf569f02c0a4599905c5d038f2eca07957e9d9cfe022b"
+        },
+        {
+          "file": "1920-Contrat.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "007feafa633a201603e19f215508ef7c59a406199f893b8acd7a22917346f495"
+        },
+        {
+          "file": "1920-Archives.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "baedd19687e5afa0673787e0d7e9e17a2a686430c860ee8cf77706cdc96a7fec"
+        },
+        {
+          "file": "1920-Menu-sauvegardes.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "729c6863ce22728106b2315e90c2dc9bc1ecf667e88a147d1c1388662d43ff2a"
+        },
+        {
+          "file": "1920-Crédits.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "2b2abea8a76c438afce98512422096c113083ee980bd4b83d745d328e6b88939"
+        },
+        {
+          "file": "1920-Dossier-adverse.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "713a9114d286896fd8a98924f73d045b76987b2db75bdd6e1c4fe3bd14376765"
+        },
+        {
+          "file": "1920-Paramètres.png",
+          "width": 1920,
+          "height": 1080,
+          "sha256": "6b43707455327222e140dfa247d89f5b44061a21dca2cbb691af261387baeb72"
+        }
+      ],
+      "report_sha256": "8c4441d9ae268bf4906ae7f14813244c1095e772fc715b56f6c5062827e73a56",
+      "log_sha256": "cdd25cb6092db00b282f3200d75b3511430ad4ad9d50801955147df5cfc8f0ae"
+    },
+    {
+      "case": "progression",
+      "checks": 168,
+      "failures": 0,
+      "capture_count": 7,
+      "speech": {
+        "observed": true,
+        "requests": 0,
+        "starts": 0
+      },
+      "artifacts": "/tmp/cd-art-direction-WC0QTW",
+      "captures": [
+        {
+          "file": "1600-Bureau-apres-deux-matchs.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "b0616ac2d485ba5d323f327205708f6dcdc88ce7211953b9835970b213176b82"
+        },
+        {
+          "file": "1600-Finances-apres-deux-matchs.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "49fcd117ed9268426a34d72182224499722b282e19ea494f82c5cad2b64fb120"
+        },
+        {
+          "file": "1600-Presse-apres-deux-matchs.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "d73ae084b03d9da8bc275641fd00db71b2a20890ac37d6ae55244700a7de33c6"
+        },
+        {
+          "file": "1600-Rivalités-apres-deux-matchs.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "d2a11acad4d037a848a857d46616fca4837019d77f68b72d9096aa6807346002"
+        },
+        {
+          "file": "1600-Match-direct.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "ea7d3e5defc49820aa33919b52b027d71e2dc87c02bac09cc3dd33d6781b9eb0"
+        },
+        {
+          "file": "1600-Match-Banc.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "9e2e0cd05c94a969448faeea51646698557e0a36d884fa7aa09bc3c5155cf86a"
+        },
+        {
+          "file": "1600-Match-Stats.png",
+          "width": 1600,
+          "height": 900,
+          "sha256": "fd9167d9dfc6fb4bf4e73da02e66ec11397284b6dae0235e8333302b944a374d"
+        }
+      ],
+      "report_sha256": "e53da1990acba4a1580934c65018298e52d1e0121052cd501be6136d4f3f2a2a",
+      "log_sha256": "c0f28298d37b52ea67f75709bed7f9d011017b72571c5e277797844ce792ff28"
+    }
+  ]
+}

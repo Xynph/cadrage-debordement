@@ -1,0 +1,11 @@
+{
+  "source_commit": "7b93a466d200c324f9f53b40c855e96374e7cc11",
+  "source_tree": "8e9adda224e8e61dd0779e426ca39f8a4084c91b",
+  "native_dist_tracked_count": 908,
+  "native_dist_match_git": true,
+  "script_sha256": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f",
+  "godot_sha256": "8d106cbe6144c2dc7e881d61d2429c1a8a76e6b22ef48bd5e48dcf934953f71e",
+  "node_sha256": "94efd062ed066c1a0b332e18249859c905e920eeada5df55d24c99b919629a90",
+  "runtime": "Godot4.7.2 official pin; Node22.23.4 official Linux x64; XvfbDebian21.1.16 on :91 2560x1440; llvmpipe; Dummy audio",
+  "excluded": "Nine Gabi PNG textures extracted automatically from tracked GLB by Godot import remain untracked; never staged or published."
+}
