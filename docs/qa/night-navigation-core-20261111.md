@@ -34,6 +34,13 @@ libre uniquement pour `menu`, parmi les routes déjà permises ; Presse reste
 exclue. Les autres types choisissent leur destination, indépendamment d’une
 route fournie par l’appelant.
 
+Une fiche joueur complète, y compris `section: contract`, conserve l’état entier
+de lecture de l’effectif : recherche, groupe, tri, scroll, focus, onglet et
+horizon de contrats. Son ID est résolu directement dans l’effectif projeté,
+même si ce joueur est exclu des filtres. Le bouton natif « Retour à l’effectif »
+réutilise cet état. Seule `section: roster`, utilisée par la palette pour montrer
+une ligne précise, remet les filtres à zéro ; l’historique conserve son origine.
+
 Les adaptateurs Nation et Staff préparent seulement leur état local ; le
 contrôleur navigue ensuite. Competition et Finance réutilisent leurs propres
 points d’entrée d’écran ou de fenêtre. Aucun appel n’interroge le worker pour
