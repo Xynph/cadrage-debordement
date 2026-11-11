@@ -26,6 +26,13 @@ La couverture dépend de l’historique accessible à chaque reprise.
 
 ## Inspirations et recherches
 
+Références de gestion transmises à la reprise du 11 novembre 2026 :
+
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [Football Manager — transferts, construction d’effectif et finances](https://www.footballmanager.com/features/smarter-transfers-squad-building-and-finance) | Léo indique l’avoir déjà consultée dans sa consigne de nuit du 11 novembre 2026 ; aucune nouvelle lecture en ligne revendiquée ici. | Référence pour comparer plusieurs stratégies de recrutement et rendre les contraintes compréhensibles. | Consultation annoncée par Léo ; conditions et droits de réutilisation à vérifier. | **À explorer**. Utiliser comme piste, puis éprouver les arbitrages sur un même checkpoint du jeu sans copier de contenu. |
+| [RimWorld — page Steam](https://store.steampowered.com/app/294100/RimWorld/) | Léo indique l’avoir déjà consultée dans sa consigne de nuit du 11 novembre 2026 ; aucune nouvelle lecture en ligne revendiquée ici. | Référence pour la mémoire des personnages, les relations et les conséquences persistantes. | Prix et droits de réutilisation non vérifiés ; aucune dépense autorisée. | **À explorer**. Confronter les principes aux personnalités, promesses et historiques existants avant toute proposition. |
+
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
 | [Publication X de nikosolenne](https://x.com/nikosolenne/status/2119937933264212212) | Lien fourni par Léo. Lecture bloquée par X dans le lecteur web le 10 novembre 2026. | Piste d’inspiration pour transitions, animations et immersion. | Contenu, disponibilité et droits à vérifier. | **À explorer**. Relire la publication pour identifier la technique ou l’outil éventuellement présenté. |
