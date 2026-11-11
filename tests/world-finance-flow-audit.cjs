@@ -93,3 +93,46 @@ test('V2 coverage changes remain unknown to the deliberately v1-only source-orde
  assert.ok(changed.every(row=>row.sourceOrderVerified===false&&row.status==='unknown'));
  assert.equal(r.weeks[0].ai.explainedSourceOrder,0,'no v2 source-order claim without a separate receipt');
 });
+
+// PC 0dad8da: force actual unavailability through the public save protocol.
+// This additional case uses the current worker and dist without historical stubs.
+const COVERAGE_CLUB=14;
+function withCurrentCoverageFixture(bridge){
+ const handle=bridge.handle.bind(bridge);
+ bridge.handle=request=>{
+  const response=handle(request);
+  if(request.command!=='new_career'||!response.ok)return response;
+  const exported=handle({id:'finance-coverage-export',command:'export',payload:{}});
+  assert.equal(exported.ok,true,exported.error);
+  const document=JSON.parse(exported.model.meta.exportText);
+  const club=document.state.clubs.find(c=>c.id===COVERAGE_CLUB);
+  assert.ok(club&&club.id!==document.state.club&&club.players.length>0);
+  for(const player of club.players)player.injury=2;
+  const state=JSON.stringify(document.state);
+  let checksum=2166136261;
+  for(let i=0;i<state.length;i++)checksum=Math.imul(checksum^state.charCodeAt(i),16777619);
+  document.checksum=(checksum>>>0).toString(16).padStart(8,'0');
+  const imported=handle({id:'finance-coverage-import',command:'import',payload:{text:JSON.stringify(document)}});
+  assert.equal(imported.ok,true,'Availability fixture: '+imported.error);
+  return {...imported,id:request.id};
+ };
+ return bridge;
+}
+function currentCoverageWorkerAudit(){
+ const fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
+ const worker=require('../native/engine/worker.cjs'),filename=path.join(__dirname,'../ci/world-finance-flow-audit.cjs'),m=new Module(filename,module);
+ m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));const normal=m.require.bind(m);
+ m.require=id=>id==='../native/engine/worker.cjs'?{...worker,createBridge:options=>withCurrentCoverageFixture(worker.createBridge(options))}:normal(id);
+ m._compile(fs.readFileSync(filename,'utf8'),filename);return m.exports;
+}
+test('Current V2 coverage from publicly imported unavailability remains unknown to the historical v1 receipt',()=>{
+ const r=currentCoverageWorkerAudit().run({seed:827381,weeks:1,club:0});assert.equal(r.passed,true);
+ const changed=r.weeks[0].rows.filter(row=>row.kind==='ai'&&!row.payrollStable);
+ assert.ok(changed.length>0,'The unchanged current worker must actually add coverage');
+ assert.deepEqual(changed.map(row=>row.clubId),[COVERAGE_CLUB]);
+ assert.ok(changed[0].addedPlayers.length>0&&changed[0].payrollDelta>0);
+ assert.ok(changed.every(row=>row.sourceOrderVerified===false&&row.status==='unknown'));
+ assert.equal(r.weeks[0].ai.explainedSourceOrder,0,'No current v2 source-order claim without a separate receipt');
+ assert.equal(r.counterfactual.cashDeltaDifference,-1000);assert.ok(r.counterfactual.duplicateWeekRefused);
+ assert.ok(r.counterfactual.rngUnchanged&&r.counterfactual.sportsUnchanged&&r.counterfactual.otherStateIdentical);
+});

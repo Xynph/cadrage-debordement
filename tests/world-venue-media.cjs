@@ -134,6 +134,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.ok(career.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith(identity.name)));
  const raw=ok('export').meta.exportText;assert.ok(!raw.includes(identity.logoPath));
  const state=JSON.parse(raw).state,players=state.clubs[30].players;
+ assert.equal(state.careerVariation.varyCurrent,false);
  assert.equal(overview.forwards+overview.backs,players.length);
  assert.equal(overview.average,Math.round(players.reduce((n,p)=>n+p.rating,0)/players.length*10)/10);
  const positions={

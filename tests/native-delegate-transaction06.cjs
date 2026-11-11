@@ -151,20 +151,26 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
  const cliRoot=path.join(scratch,'stdio'),profile=path.join(cliRoot,'profile');fs.mkdirSync(cliRoot);
  const clockFixture=path.join(cliRoot,'clock.cjs');fs.writeFileSync(clockFixture,"'use strict';Date.now=()=>1700000000000;\n");
  const lines=[JSON.stringify({id:1,command:'new_career',payload:{mode:'common',club:29}}),JSON.stringify({id:2,command:'snapshot',payload:JSON.parse('{"toJSON":"texte","__proto__":{"polluted":true}}')}),JSON.stringify({id:3,command:'delegate; process.exit(7)',payload:{}}),'{invalid}',JSON.stringify({id:4,command:'shutdown'})].join('\n')+'\n';
- // Four replies carry the full creation catalogues, including club history and roster reports.
- const stdioMaxBuffer=32*1024*1024,stdioBytes=[];
- let first,firstProfile;
+ // Keep complete catalogue replies on disk, outside spawnSync's bounded pipes.
+ const stdioBytes=[];
+ let firstOutput,firstProfile;
  for(const variant of ['historical','current']){
   fs.writeFileSync(fixtureWorker,variant==='historical'?historical:source);
-  const result=spawnSync(process.execPath,['--require',clockFixture,fixtureWorker,'--data-dir',profile],{input:lines,env:{...process.env,CD_GODOT_SEED:'411'},encoding:'utf8',windowsHide:true,timeout:30000,maxBuffer:stdioMaxBuffer});
-  assert.equal(result.error,undefined);assert.equal(result.status,0,result.stderr);assert.equal(result.stderr,'');
-  stdioBytes.push({variant,stdout:Buffer.byteLength(result.stdout),stderr:Buffer.byteLength(result.stderr)});
-  const parsed=result.stdout.trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(parsed.map(item=>item.ok),[true,true,false,false,true]);
+  const stdoutFile=path.join(cliRoot,variant+'-stdout.jsonl'),stderrFile=path.join(cliRoot,variant+'-stderr.log');
+  const stdoutFd=fs.openSync(stdoutFile,'wx'),stderrFd=fs.openSync(stderrFile,'wx');
+  let result;
+  try{
+   result=spawnSync(process.execPath,['--require',clockFixture,fixtureWorker,'--data-dir',profile],{input:lines,env:{...process.env,CD_GODOT_SEED:'411'},windowsHide:true,timeout:30000,stdio:['pipe',stdoutFd,stderrFd]});
+  }finally{fs.closeSync(stdoutFd);fs.closeSync(stderrFd);}
+  const stderr=fs.readFileSync(stderrFile,'utf8');
+  stdioBytes.push({variant,stdout:fs.statSync(stdoutFile).size,stderr:fs.statSync(stderrFile).size});
+  assert.equal(result.error,undefined);assert.equal(result.status,0,stderr);assert.equal(stderr,'');
+  const parsed=fs.readFileSync(stdoutFile,'utf8').trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(parsed.map(item=>item.ok),[true,true,false,false,true]);
   assert.equal(parsed[2].error,'Commande inconnue ou interdite.');assert.equal(parsed[3].model,null);
   const profileBytes=fs.readFileSync(path.join(profile,'PrototypeGodot/donnees.json'));
-  if(first){assert.equal(result.stdout,first,'Complete real stdio responses');assert.deepEqual(profileBytes,firstProfile,'Complete stdio profile');}else{first=result.stdout;firstProfile=profileBytes;}
+  if(firstOutput){sameFile(stdoutFile,firstOutput);assert.deepEqual(profileBytes,firstProfile,'Complete stdio profile');}else{firstOutput=stdoutFile;firstProfile=profileBytes;}
   const moved=own(path.join(cliRoot,variant+'-profile'));assert.equal(fs.existsSync(moved),false);fs.renameSync(own(profile),moved);
  }
- fs.writeFileSync(path.join(scratch,'report.json'),JSON.stringify({cases:rows,stdio:true,stdioMaxBuffer,stdioBytes,checkpointCopiesBytewise:true,fixtureCheckpointEntropy:true,checkpointModuleSha256:sha(safetySource),fixtureCheckpointModuleSha256:sha(fixtureSafety),checkpoint:{minute:checkpointModel.live.minute,period:checkpointModel.live.period,setupCommands},historicalOrigin:'f88e16fdbbffec38c1259f21a156ac6217374b12',historicalBranchSha256:LEGACY_SHA256,currentWorkerSha256:sha(source),currentDelegateSha256:sha(current)},null,2));
+ fs.writeFileSync(path.join(scratch,'report.json'),JSON.stringify({cases:rows,stdio:true,stdioCapture:'file',stdioBytes,checkpointCopiesBytewise:true,fixtureCheckpointEntropy:true,checkpointModuleSha256:sha(safetySource),fixtureCheckpointModuleSha256:sha(fixtureSafety),checkpoint:{minute:checkpointModel.live.minute,period:checkpointModel.live.period,setupCommands},historicalOrigin:'f88e16fdbbffec38c1259f21a156ac6217374b12',historicalBranchSha256:LEGACY_SHA256,currentWorkerSha256:sha(source),currentDelegateSha256:sha(current)},null,2));
  console.log('Delegate transaction : '+rows.length+' cas appariés complets + stdio, checkpoint réel '+checkpointModel.live.minute+'min, aucune normalisation des réponses/exports/profils ; '+scratch);
 });

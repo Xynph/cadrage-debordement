@@ -69,6 +69,11 @@ test('An integration plan uses the same live domain for the real XP split and re
 test('Stale, foreign, unconfirmed and invalid youth decisions preserve public and private state',t=>{
  const f=fixture(t),data=activated(f),p=data.players.find(p=>p.stage==='academy'&&p.defaultFocus);a.ok(p);const payload={...confirmed(data),playerId:p.id,plan:'integration',focus:p.defaultFocus};
  for(const bad of [{...payload,confirmed:false},{...payload,context:{...data.context,week:99}},{...payload,playerId:f.state().clubs[1].players[0].id},{...payload,focus:'money'},{...payload,hidden:1}])unchangedRefusal(f,'youth_development_plan',bad);
+ const roster=f.state().clubs[data.context.club].players;
+ const professional=data.players.find(p=>p.stage==='professional'&&roster.some(source=>source.id===p.id&&(source.lnrRatingsVersion===1||source.worldRatingsVersion===1)));
+ a.ok(professional,'A source-rated young professional must exercise the native growth model');
+ a.equal(professional.model,'xp','The native worker installs in-season progression for source-rated professionals');
+ unchangedRefusal(f,'youth_development_plan',{...confirmed(data),playerId:professional.id,plan:'unknown-plan',focus:null});
  const legacy=f.legacyAnnual(),imported=f.go('import',{text:legacy.text}),annual=imported.clubLife.youthDevelopment.players.find(p=>p.id===legacy.playerId);a.ok(annual);
  const row=f.state().youthDevelopment.rows.find(row=>row.id===legacy.playerId);a.equal(JSON.stringify(row.baseline),legacy.baseline,'import preserves the actual annual reference');a.equal(row.latest.model,'annual-v11','loading does not rewrite historical observations');a.equal(annual.model,'xp','current sourced players use the weekly engine after a legacy import');a.ok(annual.availablePlans.includes('specialist'));
  const accepted=f.export(),invalid=documentWith(accepted,s=>{const row=s.youthDevelopment.rows.find(row=>row.id===legacy.playerId);row.plan='specialist';row.focus=null;});
