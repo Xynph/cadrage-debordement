@@ -1,0 +1,245 @@
+{
+  "pr": "https://github.com/Xynph/cadrage-debordement/pull/566",
+  "head": "d83a81747416080abd7be49ef4472c060cacd879",
+  "main_reference": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "sdk_run": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364671",
+  "sdk_job": 130625627692,
+  "conclusion": "success",
+  "sdk_results": [
+    {
+      "suite": "tests/godot-match-journal.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 35770,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-immersion-copy.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 1509,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-regen-portraits.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 1788,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-club-memory.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 17845,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-squad-column-sort.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 16125,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-epcr-preparation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 39973,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-immersive-reception.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 63142,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-native06-integration.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 43727,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction07.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 106618,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-competition-editor.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 70168,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "layout-native",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 39549,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-contextual.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 59298,
+      "error": null
+    }
+  ],
+  "p1_ci": [
+    {
+      "timestamp": "2026-11-11T15:57:05.3106396Z",
+      "checks": 4337,
+      "failures": 0,
+      "output": "/home/runner/work/_temp/geometry-main"
+    },
+    {
+      "timestamp": "2026-11-11T16:04:25.9992376Z",
+      "checks": 1660,
+      "failures": 0,
+      "output": "/home/runner/work/_temp/geometry-extra"
+    }
+  ],
+  "contracts_tap": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+  },
+  "local_comparison": {
+    "main_checks": 4330,
+    "extra_checks": 1648,
+    "note": "Reçus locaux sur profil déjà préparé, distincts de la CI sur profil frais. Ne pas remplacer les compteurs CI par les compteurs locaux."
+  },
+  "decoded_job_log_sha256": "fa2e3c606054699ce11a3eee8cef2022eaa52c4c59a7fceee3ef573fb72d5974",
+  "decoded_job_log_local_path": "/tmp/rg27-common-sdk-d83-job.log",
+  "log_retrieval": "GitHub connector fetch_workflow_job_logs; CLI redirects denied by environment allowlist. Connector completed successfully.",
+  "api_receipt": {
+    "conclusion": "success",
+    "createdAt": "2026-11-11T15:38:23Z",
+    "databaseId": 43050364671,
+    "headSha": "d83a81747416080abd7be49ef4472c060cacd879",
+    "jobs": [
+      {
+        "completedAt": "2026-11-11T16:05:44Z",
+        "conclusion": "success",
+        "databaseId": 130625627692,
+        "name": "sdk",
+        "startedAt": "2026-11-11T15:39:40Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Préparer le rendu logiciel gratuit sous X11",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Installer le SDK officiel épinglé et vérifier son archive",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Préparer et importer le vrai projet",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Exécuter les suites qualifiées sans repli SKIP",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Mesurer les petites fenêtres avec le vrai rendu X11",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 19,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364671/job/130625627692"
+      }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-11-11T16:05:45Z"
+  },
+  "contract_tap_lines": [
+    "2026-11-11T15:51:16.2350538Z # fail 0",
+    "2026-11-11T15:51:16.2351304Z # skipped 0",
+    "2026-11-11T15:52:15.5341020Z # fail 0",
+    "2026-11-11T15:52:15.5341592Z # skipped 0",
+    "2026-11-11T16:05:41.7131039Z # tests 3",
+    "2026-11-11T16:05:41.7131402Z # pass 3",
+    "2026-11-11T16:05:41.7131578Z # fail 0",
+    "2026-11-11T16:05:41.7131963Z # skipped 0"
+  ],
+  "js_run": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420",
+  "js_state_at_receipt": "in_progress; verdict not claimed"
+}
