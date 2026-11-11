@@ -1,6 +1,8 @@
 extends TextureRect
 
 const PrivateFiles = preload("res://donnees_privees.gd")
+const Moments = preload("res://guide/gabi_moments.gd")
+const Visage = preload("res://guide/gabi_visage.gd")
 const MODEL_PATH := "res://guide/assets/gabi.glb"
 ## Gabi rigué par Mixamo, avec des gestes plus nombreux : fichier privé, hors dépôt public (licence
 ## Mixamo). CD_GABI_MIXAMO = chemin absolu de la scène .scn préparée par
@@ -19,30 +21,46 @@ const PORTRAIT_SIZE := 1.10
 const GREETING_SIZE := 1.30
 const GREETING_OFFSET := -0.125
 const MOUTH_SHAPES := [&"MouthOpen", &"MouthRound", &"MouthPress", &"MouthWide"]
-## Rôle de chaque clip. Le Gabi Mixamo se reconnaît à son clip « repos ». Correspondances :
-## Repos → repos, Approbation → approuve, Salut → salut, Explication → explique,
-## Ecoute → reflechit, RegardCarnet → regarde_bas ; les autres clips ajoutent de la variété.
-## Les microgestes se jouent dans l'ordre de la liste, à partir d'un point tiré au hasard :
-## le bâillement n'y figure qu'une fois sur huit.
+## Le Gabi Mixamo se reconnaît à son clip « repos ». Les gestes de chaque moment (accueil,
+## consigne, bonne ou mauvaise nouvelle, question…) viennent de gabi_moments.gd : un geste correspond
+## toujours au contexte ; le hasard ne choisit qu'entre gestes équivalents d'une même catégorie.
 const CLIPS_ORIGINE := {
-	"idle": [IDLE], "approval": [APPROVAL], "greeting": [GREETING],
-	"explanation": [EXPLANATION], "microgestures": MICROGESTURES, "talk": [],
+	"profile": "origine", "idle": [IDLE], "greeting": [GREETING], "talk": [],
+	"microgestures": MICROGESTURES, "rare": [], "negative": MICROGESTURES,
 	"delay": Vector2(7.0, 13.0),
 }
 const CLIPS_MIXAMO := {
-	"idle": [&"repos"], "approval": [&"approuve", &"approuve_fort"], "greeting": [&"salut"],
-	"explanation": [&"explique", &"montre", &"insiste"],
-	"microgestures": [&"regarde_bas", &"appui", &"reflechit", &"repos_respire",
-		&"regarde_bas", &"appui", &"reflechit", &"baille"],
-	"talk": [&"parle", &"parle_2", &"parle_3", &"parle_4"],
+	"profile": "mixamo", "idle": [&"repos"], "greeting": [&"salut"],
+	"talk": [&"parle", &"parle_2", &"parle_3", &"parle_4", &"parle_5", &"parle_7", &"parle_8"],
+	"microgestures": Moments.ATTENTE.mixamo, "rare": Moments.ATTENTE.mixamo_rares,
+	"negative": Moments.ATTENTE.mixamo_negatif,
 	# Demande de Léo : Gabi toujours en mouvement, d'où des pauses plus courtes entre les gestes.
 	"delay": Vector2(3.0, 6.0),
 }
+## Un geste rare (tablette, bâillement) au plus une fois sur RARE_EVERY petits gestes d'attente.
+const RARE_EVERY := 6
+## Studio du portrait (demande de Léo : Gabi paraissait trop sombre et trop rouge). Ambiance et
+## remplissage moins froids (blanc chaud au lieu de bleuté), lumière principale plus forte, et
+## courbe de rendu AgX : sans elle, en éclaircissant, le canal rouge de la peau sature et le visage
+## vire à l'orange. Les couleurs (textures, matériaux) du personnage ne changent pas.
+## Avant : ambiance (0,83 ; 0,87 ; 0,89) × 0,81, principale (1 ; 0,95 ; 0,91) × 0,43, remplissage
+## (0,71 ; 0,84 ; 1) × 0,26, contre-jour (1 ; 0,92 ; 0,77) × 0,32, rendu linéaire.
+const AMBIENT := {"color": Color(0.95, 0.93, 0.90), "energy": 1.0}
+const TONEMAP := {"mode": Environment.TONE_MAPPER_AGX, "exposure": 1.25}
+const LIGHTS := [
+	{"angle": Vector3(-34, -33, 0), "color": Color(1.0, 0.95, 0.88), "energy": 0.8},  # principale
+	{"angle": Vector3(-22, 43, 0), "color": Color(0.94, 0.95, 1.0), "energy": 0.34},   # remplissage
+	{"angle": Vector3(-30, 160, 0), "color": Color(1.0, 0.93, 0.80), "energy": 0.36},  # contre-jour
+]
 
 var model: PackedScene
 var reduced_motion := false
 var _context := ""
-var _approval_pending := false
+var _profile := "origine"
+var _moment := {"id": "", "categorie": "consigne", "ton": Moments.NEUTRE}
+var _moment_pending := false
+var _moment_clips: Array[StringName] = []
+var visage: Node
 var _viewport := SubViewport.new()
 var _animations: AnimationPlayer
 var _camera: Camera3D
@@ -50,13 +68,14 @@ var _camera_tween: Tween
 var _gesture_random := RandomNumberGenerator.new()
 var _microgestures: Array[StringName] = []
 var _idle := IDLE
-var _approvals: Array[StringName] = []
 var _greetings: Array[StringName] = []
-var _explanations: Array[StringName] = []
 var _talks: Array[StringName] = []
+var _rare: Array[StringName] = []
+var _negative_waits: Array[StringName] = []
+var _since_rare := 0
 var _microgesture_delay := Vector2(7.0, 13.0)
 var _last_pick := {}
-var _next_microgesture := 0
+var _last_played := &""
 var _microgesture_wait := 0.0
 var _greeted := false
 var _speaking := false
@@ -107,7 +126,6 @@ func _ready() -> void:
 		push_error("Le GLB du guide doit fournir une scène 3D.")
 		return
 	stage.add_child(character)
-	_apply_vertex_colors(character)
 	for node in character.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
 		if mesh.find_blend_shape_by_name(MOUTH_SHAPES[0]) < 0: continue
@@ -115,36 +133,44 @@ func _ready() -> void:
 		for shape: StringName in MOUTH_SHAPES:
 			_mouth_shapes.append(mesh.find_blend_shape_by_name(shape))
 		break
+	# Regard, clignements et sourire : avant les matériaux (les yeux peuvent changer de maillage).
+	visage = Visage.new()
+	add_child(visage)
+	visage.setup(character, _mouth)
+	_apply_vertex_colors(character)
 	_animations = character.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	var clips: Dictionary = CLIPS_MIXAMO if _animations != null and _animations.has_animation(CLIPS_MIXAMO.idle[0]) else CLIPS_ORIGINE
 	_idle = clips.idle[0]
-	_approvals = _available(clips.approval)
-	if _animations == null or not _animations.has_animation(_idle) or _approvals.is_empty():
+	_profile = clips.profile
+	if _animations == null or not _animations.has_animation(_idle) or not _animations.has_animation(Moments.gestures("approbation", _profile)[0]):
 		push_error("Le GLB du guide doit fournir les animations Repos et Approbation.")
 		_animations = null
 		return
 	_greetings = _available(clips.greeting)
-	_explanations = _available(clips.explanation)
 	_microgestures = _available(clips.microgestures)
+	_rare = _available(clips.rare)
+	_negative_waits = _available(clips.negative)
 	_talks = _available(clips.talk)
 	_microgesture_delay = clips.delay
+	for category: String in Moments.CATEGORIES:
+		for clip: StringName in _available(Moments.gestures(category, _profile)):
+			if clip not in _moment_clips: _moment_clips.append(clip)
 	_animations.get_animation(_idle).loop_mode = Animation.LOOP_LINEAR
-	for clip: StringName in _approvals + _greetings + _explanations + _microgestures + _talks:
+	for clip: StringName in _moment_clips + _greetings + _microgestures + _rare + _talks:
 		_animations.get_animation(clip).loop_mode = Animation.LOOP_NONE
 	_gesture_random.randomize()
-	if not _microgestures.is_empty():
-		_next_microgesture = _gesture_random.randi_range(0, _microgestures.size() - 1)
 	_animations.animation_finished.connect(_animation_finished)
 
 	var studio := WorldEnvironment.new()
 	studio.environment = Environment.new()
 	studio.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	studio.environment.ambient_light_color = Color(0.83, 0.87, 0.89)
-	studio.environment.ambient_light_energy = 0.81
+	studio.environment.ambient_light_color = AMBIENT.color
+	studio.environment.ambient_light_energy = AMBIENT.energy
+	studio.environment.tonemap_mode = TONEMAP.mode
+	studio.environment.tonemap_exposure = TONEMAP.exposure
 	stage.add_child(studio)
-	_light(stage, Vector3(-34, -33, 0), Color(1, 0.95, 0.91), 0.43)
-	_light(stage, Vector3(-22, 43, 0), Color(0.71, 0.84, 1), 0.26)
-	_light(stage, Vector3(-30, 160, 0), Color(1, 0.92, 0.77), 0.32)
+	for light: Dictionary in LIGHTS:
+		_light(stage, light.angle, light.color, light.energy)
 
 	_camera = Camera3D.new()
 	_camera.name = "GabiPortraitCamera"
@@ -164,11 +190,13 @@ func _available(names: Array) -> Array[StringName]:
 		if _animations.has_animation(clip): found.append(clip)
 	return found
 
-## Tirage au hasard dans un groupe de clips, sans rejouer le précédent du même groupe.
+## Tirage au hasard dans un groupe de gestes équivalents, sans rejouer le précédent du même groupe
+## ni le dernier geste joué.
 func _pick(pool: Array[StringName]) -> StringName:
 	if pool.is_empty(): return &""
 	var key := pool[0]
-	var choices := pool.filter(func(clip: StringName) -> bool: return clip != _last_pick.get(key, &""))
+	var choices := pool.filter(func(clip: StringName) -> bool: return clip != _last_pick.get(key, &"") and clip != _last_played)
+	if choices.is_empty(): choices = pool.filter(func(clip: StringName) -> bool: return clip != _last_played)
 	if choices.is_empty(): choices = pool
 	var clip: StringName = choices[_gesture_random.randi_range(0, choices.size() - 1)]
 	_last_pick[key] = clip
@@ -195,31 +223,46 @@ func _light(stage: Node3D, angle: Vector3, color: Color, energy: float) -> void:
 	light.light_energy = energy
 	stage.add_child(light)
 
+## Ancien appel (écran seul) : moment par défaut de la page.
 func set_context(id: String) -> void:
 	if id == _context: return
 	_context = id
-	_approval_pending = not reduced_motion and id in ["composition", "resultat"]
+	set_moment(Moments.moment(id, ""))
+
+## Moment de la bulle affichée ({id, categorie, ton}, voir gabi_moments.gd). Une nouvelle bulle
+## joue aussitôt un geste de sa catégorie (ou dès que Gabi redevient visible).
+func set_moment(moment: Dictionary) -> void:
+	var tone: String = moment.get("ton", Moments.NEUTRE)
+	if is_instance_valid(visage):
+		visage.set_tone(tone)
+		visage.attentive = moment.get("categorie", "") == "question"
+	if moment.get("id", "") == _moment.id:
+		_moment.ton = tone
+		return
+	_moment = {"id": moment.get("id", ""), "categorie": moment.get("categorie", "consigne"), "ton": tone}
+	_moment_pending = not reduced_motion
 	if is_visible_in_tree(): _sync_visibility()
 
 func set_reduced_motion(value: bool) -> void:
 	if value == reduced_motion: return
 	reduced_motion = value
-	if value: _approval_pending = false
+	if value: _moment_pending = false
 	_sync_visibility()
 
 func set_speaking(value: bool) -> void:
 	var changed := value != _speaking
 	_speaking = value
 	if not value: _articulation = Vector4.ZERO
+	if is_instance_valid(visage): visage.set_speaking(value)
 	_sync_mouth()
 	if changed: _sync_talk()
 
 ## Gabi Mixamo : pendant qu'il parle, des gestes de parole tirés au hasard s'enchaînent ; un geste
-## en cours (salut, approbation, explication) se termine d'abord.
+## en cours (salut, geste du moment) se termine d'abord.
 func _sync_talk() -> void:
 	if _talks.is_empty() or not _can_animate(): return
 	var current := StringName(_animations.current_animation)
-	if _speaking and (current == _idle or current in _microgestures):
+	if _speaking and (current == _idle or current in _microgestures or current in _rare):
 		_play_gesture(_pick(_talks))
 	elif not _speaking and current in _talks:
 		_play_idle()
@@ -231,48 +274,81 @@ func set_articulation(value: float, rounding: float = 0.0, press: float = 0.0, w
 func _sync_mouth() -> void:
 	if _mouth == null: return
 	var weights := _articulation if _speaking and _can_animate() else Vector4.ZERO
+	# Hors parole, le visage peut garder un léger sourire (MouthPress, MouthWide).
+	if not _speaking and is_instance_valid(visage) and _can_animate():
+		var rest: Vector2 = visage.mouth_rest()
+		weights = Vector4(0.0, 0.0, rest.x, rest.y)
 	for index in _mouth_shapes.size():
 		if _mouth_shapes[index] >= 0:
 			_mouth.set_blend_shape_value(_mouth_shapes[index], weights[index])
 
+## Ouverture du guide ou nouvelle bulle demandée par le joueur. Première ouverture : salut (accueil).
+## Sinon, un geste du moment affiché, sauf si un geste du moment est déjà en cours.
 func request_gesture(opening: bool) -> void:
 	if not _can_animate(): return
 	var current := StringName(_animations.current_animation)
-	if current in _approvals or current in _greetings: return
+	if current in _greetings: return
 	if opening and not _greeted and _play_gesture(_pick(_greetings)):
 		_greeted = true
+		_moment_pending = false
 		return
-	_play_gesture(_pick(_explanations))
+	if current in _moment_clips and current != _idle: return
+	_play_moment()
+
+func _play_moment() -> bool:
+	_moment_pending = false
+	var category: String = _moment.categorie
+	if category == "accueil" and _greeted:
+		category = "consigne"
+	var clip := _pick(_available(Moments.gestures(category, _profile)))
+	if clip.is_empty(): clip = _pick(_available(Moments.gestures("consigne", _profile)))
+	if not _play_gesture(clip): return false
+	if category == "accueil": _greeted = true
+	if is_instance_valid(visage) and category in ["bonne_nouvelle", "approbation", "accueil"]:
+		visage.smile_now(1.0 if category == "bonne_nouvelle" else 0.7)
+	return true
+
+## Petit geste d'attente suivant, selon le ton : jamais tablette ni bâillement pendant une mauvaise
+## nouvelle, et au plus un geste rare sur RARE_EVERY.
+func _next_wait() -> StringName:
+	var negative: bool = _moment.ton == Moments.NEGATIF
+	if not negative and not _rare.is_empty() and _since_rare >= RARE_EVERY - 1 and _gesture_random.randf() < 0.5:
+		_since_rare = 0
+		return _pick(_rare)
+	_since_rare += 1
+	return _pick(_negative_waits if negative else _microgestures)
 
 func _process(delta: float) -> void:
 	_microgesture_wait -= delta
 	if _microgesture_wait > 0.0: return
-	var clip := _microgestures[_next_microgesture]
-	_next_microgesture = (_next_microgesture + 1) % _microgestures.size()
-	_play_gesture(clip)
+	_play_gesture(_next_wait())
 
 func _sync_visibility() -> void:
 	if _animations == null: return
-	_sync_mouth()
 	set_process(false)
 	if not is_visible_in_tree():
 		if _camera_tween != null: _camera_tween.kill()
 		_animations.pause()
+		if is_instance_valid(visage): visage.set_static(true)
+		_sync_mouth()
 		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
 	if reduced_motion:
+		if is_instance_valid(visage): visage.set_static(true)
+		_sync_mouth()
 		_frame_clip(_idle, false)
 		_animations.play(_idle, 0.0)
 		_animations.seek(0.0, true)
 		_animations.pause()
 		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		return
+	if is_instance_valid(visage): visage.set_static(false)
+	_sync_mouth()
 	_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
-	var approval := _approval_pending
-	_approval_pending = false
-	if approval:
-		_play_gesture(_pick(_approvals))
-	elif _speaking and not _talks.is_empty():
+	if _moment_pending and _play_moment():
+		return
+	_moment_pending = false
+	if _speaking and not _talks.is_empty():
 		_play_gesture(_pick(_talks))
 	else:
 		_play_idle()
@@ -285,11 +361,14 @@ func _play_gesture(clip: StringName) -> bool:
 	set_process(false)
 	_frame_clip(clip)
 	_animations.play(clip, BLEND_TIME)
+	_last_played = clip
+	if is_instance_valid(visage): visage.follow_gesture(clip, Moments.REGARD_CARNET, Moments.REGARD_PENSIF)
 	return true
 
 func _play_idle() -> void:
 	_frame_clip(_idle)
 	_animations.play(_idle, BLEND_TIME)
+	if is_instance_valid(visage): visage.follow_gesture(_idle, Moments.REGARD_CARNET, Moments.REGARD_PENSIF)
 	if _microgestures.is_empty(): return
 	_microgesture_wait = _gesture_random.randf_range(_microgesture_delay.x, _microgesture_delay.y)
 	set_process(true)

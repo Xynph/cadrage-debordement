@@ -10,23 +10,7 @@ Léo a fait riguer Gabi par Mixamo (squelette Mixamo de 33 os, textures et forme
 
 ## Correspondance des clips (`coach_portrait_3d.gd`)
 
-La logique de choix et de fondu est celle du Gabi d'origine (fondu 0,2 s, salut à la première ouverture, approbation sur la composition et le résultat, microgestes au minuteur, mouvement réduit, guide masqué). Le Gabi Mixamo est reconnu à son clip `repos`.
-
-| Rôle | Gabi d'origine | Gabi Mixamo |
-| --- | --- | --- |
-| Repos (boucle) | Repos | repos |
-| Salut | Salut | salut |
-| Explication | Explication | explique, montre, insiste (au hasard, sans répétition immédiate) |
-| Approbation | Approbation | approuve, approuve_fort (au hasard) |
-| Microgestes | Ecoute, RegardCarnet | regarde_bas (≈ RegardCarnet), appui, reflechit (≈ Ecoute), repos_respire, puis la même série avec baille à la place de repos_respire |
-| Pendant la parole | — (bouche seule) | parle, parle_2, parle_3, parle_4 enchaînés au hasard, sans répétition immédiate |
-| Délai entre microgestes | 7 à 13 s | 3 à 6 s |
-
-Demande de Léo : Gabi toujours en mouvement. D'où des pauses plus courtes et les gestes de parole. Un geste en cours (salut, approbation, explication) se termine avant le geste de parole. La bouche reste pilotée par le jeu (formes MouthOpen, MouthRound, MouthPress, MouthWide).
-
-Avis : le bâillement est un geste fort pour un adjoint qui guide le manager. Il est gardé, comme demandé, mais une seule fois sur huit microgestes (environ une fois par minute et demie, guide ouvert et silencieux). À retirer de la liste si l'effet est mauvais à l'usage.
-
-Clips présents mais pas encore joués : argumente, refuse, hausse, sceptique, remercie, decu, rit, surpris, content, tablette, applaudit. Ils pourront servir quand le guide connaîtra le ton de sa réplique (bonne ou mauvaise nouvelle).
+Remplacée le 12 novembre par la table de cohérence (section « Gestes cohérents avec le moment » plus bas) : chaque geste dépend désormais de la bulle affichée, plus d'un tirage dans une liste fixe. Restent valables : fondu 0,2 s, salut à la première ouverture, mouvement réduit, guide masqué, gestes de parole enchaînés pendant la parole (un geste en cours se termine d'abord), petits gestes d'attente toutes les 3 à 6 s (Gabi Mixamo) ou 7 à 13 s (Gabi d'origine).
 
 ## Fichiers privés et construction
 
@@ -90,3 +74,47 @@ python3 scripts/animations/corriger-yeux-gabi-blend.py -- /hors-depot/gabi.blend
 python3 scripts/animations/bras-croises-gabi.py -- /hors-depot/gabi.blend
 python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2>
 ```
+
+
+## Gestes cohérents avec le moment, regard, sourire, lumière (nuit du 11 au 12 novembre)
+
+Demandes de Léo : « une cohérence entre ses gestes et ce qu'il se passe », « toujours en mouvement », « parfois un petit sourire », des yeux plus vivants, une lumière plus chaude et plus claire.
+
+### Ce que le jeu sait du moment
+
+Gabi n'apparaît que dans le guide (bulle + portrait, sur tous les écrans). Le contexte disponible : la page (écran), la bulle affichée (identifiant stable de `dialogues.json`, 74 bulles), les décisions signalées par le guide (`decision-contrat` = signature, `decision-tresorerie` = caisse dans le rouge, `decision-saison`) et, sur la page Résultat, le score du match terminé (`live.score`, `live.pair`, club du coach). Les rendez-vous, la conférence de presse, la causerie (vestiaire) ou la préparation (plan de jeu) ne font pas apparaître Gabi en personne : il y parle par les bulles de leur page (`presse`, `vestiaire`, `plan-jeu`…), qui ont donc leur catégorie.
+
+`guide/gabi_moments.gd` range chaque bulle dans une catégorie (table `BULLES`, écrite à la main d'après le texte de la bulle) ; `coach_guide.gd` transmet au portrait le moment de la bulle affichée (`set_moment`). Une nouvelle bulle joue aussitôt un geste de sa catégorie ; la même bulle rafraîchie ne rejoue rien ; la première ouverture du guide reste un salut. Le hasard ne choisit qu'entre gestes équivalents d'une même catégorie, jamais deux fois de suite le même geste.
+
+### Table de cohérence
+
+| Catégorie | Exemples de bulles | Gabi Mixamo | Gabi d'origine | Ton |
+| --- | --- | --- | --- | --- |
+| accueil | première ouverture, « Adiu… Entre donc » | salut | Salut | positif |
+| consigne (explication, conseil, tactique) | « Un plan, il faut pouvoir l'expliquer simplement… » | explique, montre, insiste, argumente | Explication | neutre |
+| mise en garde | « Un banc, ce n'est pas une salle d'attente », presse | insiste, refuse, argumente | Explication | neutre |
+| question au coach / choix | « Une piste te plaît ? », « Récupération, normal ou intensif » | sceptique, hausse | Ecoute | neutre |
+| approbation / encouragement | composition, « Bon match, coach », « Continue à construire » | approuve, approuve_fort, pouce | Approbation | positif |
+| bonne nouvelle | signature (`decision-contrat`), victoire | content, approuve_fort, pouce, applaudit | Approbation | positif |
+| mauvaise nouvelle | caisse dans le rouge, défaite | decu, reflechit, regarde_bas | RegardCarnet | négatif |
+| souvenir | l'atelier, le premier club, match nul | reflechit, hausse | Ecoute | neutre |
+| regret | la demi-finale, le jeune laissé sur le banc | reflechit, regarde_bas | RegardCarnet | négatif |
+| attente (le coach lit ou choisit) | entre deux gestes | repos_respire, appui, regarde_bas, reflechit ; rarement tablette ou baille (au plus un sur six, jamais au ton négatif) | Ecoute, RegardCarnet | — |
+| parole | voix en cours | parle, parle_2, parle_3, parle_4, parle_5, parle_7, parle_8 | (bouche seule) | — |
+
+Page Résultat : victoire → bonne nouvelle, défaite → mauvaise nouvelle (et ton grave pour toute la page), nul → souvenir (il réfléchit), score illisible → consigne. Auparavant, Gabi approuvait sur cette page même après une défaite.
+
+Jamais joués : `bras_croises` (jugé raté par Léo), `assis_*`, `debout_assis`, `assis_debout` (le portrait n'a pas de chaise : il serait assis dans le vide), `marche`, `tourne_g`, `tourne_d`, `telephone`, `telephone_marche` (il sortirait du cadre ou téléphonerait en parlant au coach), `rit` (le personnage « sourit plutôt que de rire », `gabi_personality.json`), `surpris`, `remercie` (aucun moment du jeu ne les appelle encore). Ils restent dans le fichier privé.
+
+Avis : la table est figée sur les 74 bulles actuelles. Une nouvelle bulle sans entrée prend la catégorie de sa page, sinon « consigne » ; un test vérifie que chaque bulle de `dialogues.json` a sa catégorie.
+
+### Toujours en mouvement, regard, clignements, sourire (`guide/gabi_visage.gd`)
+
+- **Regard** : les yeux sont des maillages séparés (`Gabi_Oeil_D`, `Gabi_Oeil_G`) dans les deux modèles. Au chargement, le portrait leur construit quatre formes (RegardGauche, RegardDroite : 14° ; RegardHaut : 9° ; RegardBas : 12°) en tournant le globe autour de son centre : aucun fichier modifié, donc aussi pour le Gabi d'origine. Petites saccades (≈ 0,1 s) autour du visage du joueur toutes les 0,7 à 2,6 s (plus espacées quand il parle, un peu plus bas au ton négatif) ; regard vers le carnet pendant regarde_bas, tablette, decu (RegardCarnet chez le Gabi d'origine) ; regard de côté pendant reflechit, sceptique (Ecoute).
+- **Clignements** : les paupières n'ont ni os ni forme dans les modèles actuels. Un autre agent ajoute cette nuit la forme « Clignement » (sur Mesh_0 et les paupières) aux deux modèles, avec « SourireYeux » et « SourcilsDoux » ; je n'ai donc pas touché aux modèles pour éviter deux versions concurrentes. Le portrait pilote ces formes dès qu'elles existent (recherche par nom, absentes = rien) : clignement toutes les 3 à 6 s (5 à 9 s pendant une question au coach, écoute attentive), doublé une fois sur sept environ, souvent avec un grand déplacement du regard.
+- **Sourire** : MouthPress 0,30 et MouthWide 0,75 à pleine intensité (calibré en rendu : au-delà, la bouche s'ouvre), en général 40 à 100 % de cela. De temps en temps au repos (toutes les 6 à 13 s au ton neutre, 3 à 8 s au ton positif), franc juste après une bonne nouvelle ou une approbation ; jamais au ton négatif ; jamais pendant la parole (la synchronisation labiale garde la bouche, le sourire repart de zéro à la fin de la phrase). Regard chaleureux : SourireYeux 0,3 au repos (+0,35 avec le sourire, 0 au ton négatif), SourcilsDoux 0,4.
+- Mouvement réduit ou guide masqué : regard droit, yeux ouverts, sans sourire, rien n'est animé.
+
+### Lumière du portrait
+
+Gabi est rendu dans son propre studio (SubViewport du portrait) : la lumière du bureau ne l'éclaire pas. Avant : ambiance bleutée (0,83 ; 0,87 ; 0,89) × 0,81, principale (1 ; 0,95 ; 0,91) × 0,43, remplissage bleu (0,71 ; 0,84 ; 1) × 0,26, contre-jour (1 ; 0,92 ; 0,77) × 0,32, rendu linéaire. Après : ambiance blanc chaud (0,95 ; 0,93 ; 0,90) × 1,0, principale (1 ; 0,95 ; 0,88) × 0,8, remplissage presque neutre (0,94 ; 0,95 ; 1) × 0,34, contre-jour (1 ; 0,93 ; 0,80) × 0,36, courbe AgX, exposition 1,25. Essai sans courbe AgX écarté : en éclaircissant, le canal rouge de la peau sature et le visage vire à l'orange (plus rouge qu'avant). Textures et matériaux inchangés ; captures avant/après dans la PR.
