@@ -57,6 +57,13 @@ commande refusée, une erreur de sauvegarde ou une séance déjà appliquée ne 
 pas de nouveau reçu. Aucun potentiel, attribut caché, joueur adverse, académie
 ou prévision d’entraînement n’entre dans cette capture.
 
+Limite préexistante conservée : le détail du reçu nomme le mode demandé dans le
+payload ; la délégation peut appliquer un autre mode, comme le vérifie déjà
+`native-club-support-training-forecast.cjs`. Les nouvelles observations ne
+prétendent donc pas expliquer à elles seules le mode effectivement exécuté.
+Une clarification de ce libellé doit exploiter séparément le reçu public de
+`clubSupport.training.session`, sans réécrire silencieusement les anciens textes.
+
 ## Scénarios publics réellement exécutés
 
 Node `v22.23.4`, source `6d120934b8edada837c388a08391d16e98842081`.
