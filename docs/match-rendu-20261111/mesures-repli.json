@@ -1,0 +1,139 @@
+{
+  "adapter": "llvmpipe (LLVM 20.1.2, 256 bits)",
+  "captures": [
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "jour-tv-economy.png",
+      "frame_ms": 195.8,
+      "mean_luma": 0.241
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "jour-tactical-economy.png",
+      "frame_ms": 242.0,
+      "mean_luma": 0.274
+    },
+    {
+      "clipped_pct": 0.1,
+      "crushed_pct": 0.0,
+      "file": "jour-action-economy.png",
+      "frame_ms": 186.3,
+      "mean_luma": 0.238
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-tv-economy.png",
+      "frame_ms": 255.8,
+      "mean_luma": 0.131
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-tactical-economy.png",
+      "frame_ms": 282.0,
+      "mean_luma": 0.147
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-action-economy.png",
+      "frame_ms": 219.4,
+      "mean_luma": 0.128
+    },
+    {
+      "clipped_pct": 0.9,
+      "crushed_pct": 0.0,
+      "file": "jour-tv-balanced.png",
+      "frame_ms": 479.5,
+      "mean_luma": 0.318
+    },
+    {
+      "clipped_pct": 1.4,
+      "crushed_pct": 0.0,
+      "file": "jour-tactical-balanced.png",
+      "frame_ms": 383.7,
+      "mean_luma": 0.349
+    },
+    {
+      "clipped_pct": 0.7,
+      "crushed_pct": 0.0,
+      "file": "jour-action-balanced.png",
+      "frame_ms": 322.9,
+      "mean_luma": 0.314
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-tv-balanced.png",
+      "frame_ms": 356.4,
+      "mean_luma": 0.154
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-tactical-balanced.png",
+      "frame_ms": 498.7,
+      "mean_luma": 0.176
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-action-balanced.png",
+      "frame_ms": 470.7,
+      "mean_luma": 0.151
+    },
+    {
+      "clipped_pct": 0.9,
+      "crushed_pct": 0.0,
+      "file": "jour-tv-detail.png",
+      "frame_ms": 396.4,
+      "mean_luma": 0.318
+    },
+    {
+      "clipped_pct": 1.4,
+      "crushed_pct": 0.0,
+      "file": "jour-tactical-detail.png",
+      "frame_ms": 441.9,
+      "mean_luma": 0.349
+    },
+    {
+      "clipped_pct": 0.7,
+      "crushed_pct": 0.0,
+      "file": "jour-action-detail.png",
+      "frame_ms": 471.0,
+      "mean_luma": 0.314
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-tv-detail.png",
+      "frame_ms": 513.0,
+      "mean_luma": 0.154
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-tactical-detail.png",
+      "frame_ms": 588.7,
+      "mean_luma": 0.176
+    },
+    {
+      "clipped_pct": 0.0,
+      "crushed_pct": 0.0,
+      "file": "soiree-action-detail.png",
+      "frame_ms": 477.3,
+      "mean_luma": 0.151
+    }
+  ],
+  "driver": "opengl3",
+  "method": "gl_compatibility",
+  "renderer": "forward_plus",
+  "size": [
+    1920,
+    1080
+  ],
+  "total_ms": 76092
+}

@@ -504,11 +504,18 @@ func set_quality(profile: String) -> void:
 static func apply_environment_quality(settings: Environment, profile: String) -> void:
 	if settings == null:
 		return
-	var economy := profile == "economy"
-	settings.glow_enabled = not economy
-	settings.fog_enabled = not economy
-	settings.ssao_enabled = not economy
-	settings.ssil_enabled = profile == "detail"
+	# Les effets d'image n'existent qu'en Forward+ ; le repli OpenGL garde
+	# l'ancien rendu à tous les niveaux.
+	var effects := cinematic_rendering() and profile != "economy"
+	settings.glow_enabled = effects
+	settings.fog_enabled = effects
+	settings.ssao_enabled = effects
+	settings.ssil_enabled = cinematic_rendering() and profile == "detail"
+
+
+## Vrai quand le jeu tourne avec le moteur de rendu Forward+ (Vulkan ou D3D12).
+static func cinematic_rendering() -> bool:
+	return RenderingServer.get_current_rendering_method() == "forward_plus"
 
 
 func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
@@ -530,12 +537,12 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			_camera.fov = 40.0
 			_camera.position = _camera_focus + Vector3(5.0, 12.0, 18.0)
 		else:
-			# Caméra de retransmission sur la passerelle, devant l'auvent
-			# (z 54,8) : elle suit le ballon en x et zoome selon la distance
-			# pour garder ≈ 42 m de champ utile, comme l'ancienne vue.
-			_camera.position = Vector3(_camera_focus.x * 0.85, 26.0, 52.0)
-			var distance := _camera.position.distance_to(_camera_focus)
-			_camera.fov = clampf(rad_to_deg(2.0 * atan(21.0 / maxf(distance, 1.0))), 20.0, 55.0)
+			# Caméra de retransmission montée sur rail : elle accompagne le
+			# ballon sans pivoter, pour que les lignes du terrain gardent la
+			# même orientation à l'écran (lecture tactique, comme l'ancienne
+			# vue). ≈ 34 m de champ utile autour du ballon, 36° de plongée.
+			_camera.fov = 33.0
+			_camera.position = _camera_focus + Vector3(0.0, 34.0, 46.0)
 		_camera.look_at(_camera_focus)
 		return
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -670,34 +677,41 @@ func _build_environment() -> void:
 	sky_material.ground_horizon_color = Color("c5cfca")
 	sky.sky_material = sky_material
 	settings.sky = sky
-	# Lumière ambiante en partie issue du ciel : les volumes gardent un modelé
-	# au lieu de l'aplat uniforme de l'ancienne couleur fixe.
-	settings.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	settings.ambient_light_sky_contribution = 0.55
-	settings.ambient_light_color = Color("c6cfd1")
-	settings.ambient_light_energy = 0.5
-	settings.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	# Tonemapping filmique : hautes lumières douces, projecteurs sans brûlure.
-	settings.tonemap_mode = Environment.TONE_MAPPER_AGX
-	settings.tonemap_exposure = 1.12
-	settings.adjustment_enabled = true
-	settings.adjustment_contrast = 1.06
-	settings.adjustment_saturation = 1.05
-	# Profondeur atmosphérique légère sur les tribunes lointaines.
-	settings.fog_light_color = Color("c9d3d6")
-	settings.fog_density = 0.0012
-	settings.fog_aerial_perspective = 0.35
-	settings.fog_sky_affect = 0.25
-	# Halo discret réservé aux sources réellement lumineuses.
-	settings.glow_intensity = 0.35
-	settings.glow_bloom = 0.03
-	settings.glow_hdr_threshold = 1.1
-	settings.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
-	# Occlusion de contact : joueurs posés au sol, abris et tribunes ancrés.
-	settings.ssao_radius = 1.2
-	settings.ssao_intensity = 1.6
-	settings.ssil_radius = 4.0
-	settings.ssil_intensity = 0.6
+	if cinematic_rendering():
+		# Lumière ambiante en partie issue du ciel : les volumes gardent un modelé
+		# au lieu de l'aplat uniforme de l'ancienne couleur fixe.
+		settings.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+		settings.ambient_light_sky_contribution = 0.35
+		settings.ambient_light_color = Color("c6cfd1")
+		settings.ambient_light_energy = 0.34
+		settings.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+		# Tonemapping filmique : hautes lumières douces, projecteurs sans brûlure.
+		settings.tonemap_mode = Environment.TONE_MAPPER_AGX
+		settings.tonemap_exposure = 0.8
+		settings.adjustment_enabled = true
+		settings.adjustment_contrast = 1.14
+		settings.adjustment_saturation = 1.28
+		# Profondeur atmosphérique légère sur les tribunes lointaines.
+		settings.fog_light_color = Color("c9d3d6")
+		settings.fog_density = 0.0005
+		settings.fog_aerial_perspective = 0.12
+		settings.fog_sky_affect = 0.25
+		# Halo discret réservé aux sources réellement lumineuses.
+		settings.glow_intensity = 0.35
+		settings.glow_bloom = 0.03
+		settings.glow_hdr_threshold = 1.1
+		settings.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+		# Occlusion de contact : joueurs posés au sol, abris et tribunes ancrés.
+		settings.ssao_radius = 1.2
+		settings.ssao_intensity = 1.6
+		settings.ssil_radius = 4.0
+		settings.ssil_intensity = 0.6
+	else:
+		# Repli OpenGL (Compatibility) : réglages d'origine, sans effets d'image.
+		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		settings.ambient_light_color = Color("c6cfd1")
+		settings.ambient_light_energy = 0.43
+		settings.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	environment.environment = settings
 	add_child(environment)
 	var sun := DirectionalLight3D.new()

@@ -22,13 +22,20 @@ func attach(view: NativeMatchView) -> void:
 	_evening.background_mode = Environment.BG_COLOR
 	_evening.background_color = Color("101a32")
 	_evening.ambient_light_color = Color("a9bddf")
-	_evening.ambient_light_energy = 0.38
+	_evening.ambient_light_energy = 0.24 if NativeMatchView.cinematic_rendering() else 0.38
 	_evening.ambient_light_sky_contribution = 0.0
 	# Air nocturne visible dans les faisceaux des projecteurs.
-	_evening.volumetric_fog_density = 0.012
+	_evening.volumetric_fog_density = 0.0022
 	_evening.volumetric_fog_albedo = Color("c8d6ea")
 	_evening.volumetric_fog_length = 120.0
 	_evening.fog_light_color = Color("1d2a44")
+	# Le soir est exposé plus haut que le jour : la pelouse sous les projecteurs
+	# doit rester le sujet, les tribunes tombent dans l'ombre.
+	if NativeMatchView.cinematic_rendering():
+		_evening.tonemap_exposure = 1.0
+		_evening.adjustment_contrast = 1.24
+		_evening.adjustment_saturation = 1.5
+		_evening.fog_density = 0.0002
 	_evening.glow_intensity = 0.6
 	_evening.glow_bloom = 0.06
 	_build_modules()
@@ -46,12 +53,12 @@ func apply_quality(profile: String) -> void:
 	# Le jour peut être hors scène pendant le soir : il reçoit aussi le réglage.
 	NativeMatchView.apply_environment_quality(_day, profile)
 	NativeMatchView.apply_environment_quality(_evening, profile)
-	_evening.volumetric_fog_enabled = profile == "detail"
+	_evening.volumetric_fog_enabled = profile == "detail" and NativeMatchView.cinematic_rendering()
 	var floodlights := get_node_or_null("Floodlights")
 	if floodlights:
 		for light: Node in floodlights.get_children():
 			if light is SpotLight3D:
-				(light as SpotLight3D).shadow_enabled = profile == "detail"
+				(light as SpotLight3D).shadow_enabled = profile == "detail" and NativeMatchView.cinematic_rendering()
 
 
 func set_evening(enabled: bool) -> void:
@@ -78,8 +85,9 @@ func _build_modules() -> void:
 			var origin := Vector3(x, 18.0, z - side * 0.3)
 			var aim := Vector3(x * 0.18, 0.0, z * 0.12)
 			light.transform = Transform3D(Basis.looking_at(aim - origin), origin)
-			light.light_color = Color("dceaff")
-			light.light_energy = 2.25
+			var cinematic := NativeMatchView.cinematic_rendering()
+			light.light_color = Color("f1f0e6") if cinematic else Color("dceaff")
+			light.light_energy = 4.4 if cinematic else 2.25
 			light.spot_range = 142.0
 			light.spot_angle = 62.0
 			light.spot_attenuation = 0.70
