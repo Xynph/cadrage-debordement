@@ -78,6 +78,7 @@ static func build(app: Control) -> Control:
 	var left := G.panel(page, 1.0)
 	G.chapter(left, "11", "Le vestiaire", "Des décisions et leurs suites, semaine après semaine.", app.accent)
 	var follow := G.scroll(left)
+	follow.get_parent().name = "RelationshipFollowScroll"
 	if not data.get("active", false):
 		follow.add_child(G.wrap("Ancienne carrière : activer volontairement les entretiens et le suivi des promesses.", 15))
 		var activate := G.button("ACTIVER LE SUIVI DU VESTIAIRE", func(): app._command("relationship_activate", {"context":context}))
@@ -114,6 +115,7 @@ static func build(app: Control) -> Control:
 	var right := G.panel(page, 1.3)
 	G.chapter(right, "12", "Les personnes et les liens", "Un entretien par personne ; une intervention de groupe par semaine.", app.accent)
 	var list := G.scroll(right)
+	list.get_parent().name = "RelationshipPeopleScroll"
 	var players: Array = data.get("players", [])
 	if players.is_empty():
 		list.add_child(G.wrap("Aucun joueur suivi dans cette carrière.", 16))

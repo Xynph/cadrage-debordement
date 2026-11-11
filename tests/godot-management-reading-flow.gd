@@ -120,7 +120,9 @@ func run() -> void:
 	var surfaces:=page.find_children("*","ScrollContainer",true,false)
 	check(surfaces.size()>=2,"Deux listes de vestiaire contenues")
 	if surfaces.size()<2:await finish();return
-	var right:=surfaces[1] as ScrollContainer
+	check(surfaces[0].name=="RelationshipFollowScroll" and surfaces[1].name=="RelationshipPeopleScroll","Les deux colonnes de lecture ont des identifiants stables distincts")
+	var right:=page.find_child("RelationshipPeopleScroll",true,false) as ScrollContainer
+	if right==null:await finish();return
 	right.scroll_vertical=mini(90,int(right.get_v_scroll_bar().max_value-right.get_v_scroll_bar().page));await settle()
 	var expected_scroll:=right.scroll_vertical
 	trace_relations_scroll("after-setting-right-scroll")
@@ -136,7 +138,8 @@ func run() -> void:
 	page=app.find_child("CarnetRelations",true,false) as Control
 	if page!=null:
 		surfaces=page.find_children("*","ScrollContainer",true,false)
-		check(surfaces.size()>=2 and abs((surfaces[1] as ScrollContainer).scroll_vertical-expected_scroll)<=1,"Retour conserve le scroll de l’autre liste")
+		var returned_right:=page.find_child("RelationshipPeopleScroll",true,false) as ScrollContainer
+		check(returned_right!=null and abs(returned_right.scroll_vertical-expected_scroll)<=1,"Retour conserve le scroll de l’autre liste")
 	check(app.management_ui.preparation==draft,"Brouillon de préparation conservé par la consultation")
 	await capture("vestiaire-retour-fiche-2560")
 	await activate(app.find_child("DecisionFeedbackButton",true,false) as Button)

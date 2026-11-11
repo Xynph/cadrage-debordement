@@ -123,7 +123,8 @@ static func restore(app:Control,page:Control,kind:String) -> void:
 	if not profiles.is_empty():profiles[0].scroll_vertical=int(app.management_ui.profile_scroll)
 
 # Session history may preserve reading choices and drafts, never the worker model.
-# Structural paths also cover unnamed nested scroll surfaces in the legacy pages.
+# Reconstructed nested surfaces require stable names. Structural addresses
+# verify the same control before falling back to a unique explicit name.
 static func reading_snapshot(app: Control) -> Dictionary:
 	var result := {"ui":app.management_ui.duplicate(true), "table_division":app.table_division, "roster_filter":app.roster_filter, "roster_sort":app.roster_sort, "selected_player":app.selected_player, "selected_staff_club":app.selected_staff_club, "full_player":app.get_meta("immersive08_full_player", false), "calendar_table":app.get_meta("calendar_table", false), "scrolls":[], "focus":{}}
 	if not is_instance_valid(app.root_content): return result
