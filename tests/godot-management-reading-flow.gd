@@ -73,6 +73,13 @@ func run() -> void:
 	trace_location("before-navigate-vestiaire")
 	app._navigate("Vestiaire");await settle()
 	trace_location("after-navigate-vestiaire")
+	var locker:=app.find_child("ImmersiveLockerRoom",true,false) as Control
+	check(app.route=="Vestiaire" and locker!=null,"La route Vestiaire affiche sa composition immersive réelle")
+	check(app.management_ui.get("immersive08_locker_tab","week")=="week" and app.find_child("CarnetRelations",true,false)==null,"Ouverture réelle sur Cette semaine, avant la sélection du détail")
+	var people_tab:=locker.find_child("LockerTab_people",true,false) as Button if locker!=null else null
+	await activate(people_tab)
+	trace_location("after-activate-locker-people")
+	check(app.route=="Vestiaire" and app.management_ui.get("immersive08_locker_tab","")=="people" and app.find_child("CarnetRelations",true,false)!=null,"Entrée clavier sur Entretiens et duos ouvre le détail sans changer de route")
 	await command("export")
 	trace_location("after-export-on-vestiaire")
 	var before: Dictionary=JSON.parse_string(app.model.meta.exportText).state
@@ -85,7 +92,7 @@ func run() -> void:
 	var draft: Dictionary=app.management_ui.preparation.duplicate(true)
 	var receipt_before: Array=app.decision_feedback.receipts()
 	var page:=app.find_child("CarnetRelations",true,false) as Control
-	check(page!=null,"Le vrai vestiaire est affiché")
+	check(page!=null,"Le détail réel du vestiaire reste affiché après export")
 	if page==null:
 		await capture("vestiaire-page-manquante-2560")
 		await finish();return
