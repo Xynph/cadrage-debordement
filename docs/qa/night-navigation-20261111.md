@@ -48,3 +48,31 @@ d’affichage disponible. Un lancement headless ne constitue pas une capture.
 - Les identités sont recherchées par identifiant, jamais par homonyme.
 - Une projection limitée n’autorise pas à retrouver un joueur caché dans les données internes.
 - Les sujets moteurs, économie, calendriers et 3D réservés à Claude ne sont pas corrigés ici.
+
+## Inventaire ciblé complémentaire : recrutement et promesses
+
+Constat source sur la base de préparation, avant les nouveaux liens communs.
+Cet inventaire ne prétend pas avoir reçu graphiquement ces fenêtres.
+
+| Information | Destination déjà présente | Limite ou lien manquant |
+| --- | --- | --- |
+| Piste du marché | Ligne `MarketPlayer_ID` → `_profile` dans `recruitment_canvas.gd` | La fiche existe ; le nom ou portrait d’une alerte doit cibler son ID. |
+| Rapport conservé | `OpenScoutReport` → `RecruitmentReport` → `Decisions.scout_report` | Le rapport possède son propre ID. Le contrôleur commun ne propose pas encore de cible `report` ; ouvrir le joueur ne remplace pas l’archive datée. |
+| Rapport d’un joueur parti | Même détail du rapport conservé, affichage `assessment` | `_market_player` peut être vide ; ne pas inventer une disponibilité actuelle ou un dossier joueur caché. |
+| Besoin d’un poste | `RecruitmentNeeds` → « Voir les pistes » → filtre de poste | Navigation déjà réelle, sans démarrer de mission. |
+| Relève, candidat projeté | Carte de `RegenScouting`, filtrable et paginée | Nom et portrait statiques ; aucune fiche distincte existante. Un candidat absent de `model.market` n’est pas une cible `market` valide. |
+| Relève, archive de suivi absente | Placeholder et raison de `clubLife.regenScouting.shortlist` | ID seul : garder l’absence explicite, ne pas reconstruire une identité. |
+| Joueur sous contrat d’un autre club | Carte projetée `InterclubMarket` | `_offer` prépare une négociation ; ce n’est pas une destination de consultation. Un détail limité peut être extrait de la carte projetée, sans charger le joueur interne. |
+| Club vendeur | Détail club de `CompetitionCanvas` | Lier seulement le `clubId` projeté et connu du détail existant. |
+| Promesse ou engagement | `Relations` → `management_ui.relationships.playerId` → `_player` | Les noms d’engagements, événements et historiques sont statiques ; la fiche d’un joueur toujours dans `squad` est une destination sûre. |
+| Promesse archivée d’un joueur parti | Texte conservé dans `relationships` | `_name` indique « Joueur parti du club » ; aucune identité manquante ne doit être retrouvée par homonymie. |
+
+Les actions « Observer », « Suivre », « Approcher », « Confier la mission » et
+« Promettre » restent des décisions explicites. Elles ne constituent jamais
+la destination d’un simple nom, portrait ou rapport.
+
+Les drapeaux ne sont des liens que si leur pays possède une équipe projetée
+dans `international.teams`. Dans une carrière `common` sans cette projection,
+le drapeau visuel reste conservé sans destination inventée. La recette des
+drapeaux utilise donc une vraie carrière de club `world-champ` ; France depuis
+un autre mandat utilise une vraie carrière nationale anglaise.
