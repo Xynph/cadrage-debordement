@@ -6,6 +6,7 @@
 // la zone de jeu, quelques chiffres. Rien n'est écrit dans la carrière, aucun tirage
 // n'est consommé : avec ou sans cette projection, le match simulé est le même.
 const selection=require('./match-highlights.cjs');
+const choregraphe=require('./match-choregraphe.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
@@ -37,6 +38,15 @@ function lecteur(){
    const players=scene.players.map(p=>p.id===String(buteur)&&p.side===side?{...p,...depart,featured:true}:{...p,featured:false});
    return {...scene,key:scene.key+':transformation',kind:reussie?'goal':'miss',players,origin:depart,ball:{x:but,y:reussie?35:y>=35?43:27},possession:side};
   },
+  // Profils physiques (chorégraphe) : compétence « Vitesse », forme comprise, sans rien écrire.
+  profils(ids){
+   const l=S.live,out={};if(!l)return out;
+   for(const id of ids)for(let side=0;side<2;side++){
+    const p=matchPlayer(l,side,id);
+    if(p&&p.skills)out[id]={side,vitesse:skill(p,'speed',true)};
+   }
+   return out;
+  },
   etat(){
    const l=S.live;if(!l)return null;
    const cartons=l.userSide>=0?l.sheets[l.userSide].cards.map(c=>({id:c.id,nom:matchPlayer(l,l.userSide,c.id)?.name||'',retour:c.until})):[];
@@ -58,8 +68,33 @@ const ANNONCES=Object.freeze({goal:'Tir au but.',miss:'Tir au but.',transformati
 const horloge=l=>{const limite=l.periode===1?40:80;return l.minute>limite?limite+'+'+(l.minute-limite)+'′':l.minute+'′'};
 const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)?{x:Math.max(0,Math.min(100,p.x)),y:Math.max(0,Math.min(70,p.y))}:null;
 
-// `lire` : accès en lecture au moteur ({scenes, transformation, etat}).
-function project(model,niveau,lire){
+// Mises en scène déjà calculées (le temps fort reste le même pendant plusieurs pas).
+const CHOREGRAPHIES=new Map();
+// Chorégraphie d'un temps fort contenant un essai en jeu courant (CD_MATCH_CHOREGRAPHE=1).
+// Présentation seule : en cas d'échec, le temps fort part sans elle (repli de la vue).
+function choregraphier(tf,plans,events,lire){
+ const n=plans.findIndex(p=>p.kind==='try');
+ if(n<0)return null;
+ let avant=null;
+ if(n===0&&!tf.depart){
+  const idx=plans[0].index;
+  for(let i=idx-1;i>=0&&avant===null;i--){const e=events[i];if(e?.scene&&!['advantage','card','break','end'].includes(e.scene.kind))avant=lire.scenes([i])[0]}
+ }
+ const cle=tf.cle+'|'+plans[n].index;
+ if(CHOREGRAPHIES.has(cle))return CHOREGRAPHIES.get(cle);
+ const base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle});
+ if(!base)return null;
+ const ids=base.joueurs.map(p=>p.id),bruts=typeof lire.profils==='function'?lire.profils(ids):{},profils={};
+ for(const p of base.joueurs)profils[p.id]=choregraphe.profil(p.slot,bruts[p.id]?.vitesse);
+ const c={...choregraphe.composer({...base,profils}),plan:n};
+ CHOREGRAPHIES.set(cle,c);
+ while(CHOREGRAPHIES.size>8)CHOREGRAPHIES.delete(CHOREGRAPHIES.keys().next().value);
+ return c;
+}
+
+// `lire` : accès en lecture au moteur ({scenes, transformation, etat, profils}).
+// `options.choregraphe` : joindre au temps fort la mise en scène continue de son essai en jeu courant.
+function project(model,niveau,lire,options={}){
  const live=model.live,events=live.events;
  if(!NIVEAUX.includes(niveau))throw new RangeError('Niveau de temps forts inconnu : '+niveau);
  const phase=model.next?.phase,eliminatoire=typeof phase==='string'&&phase!=='league';
@@ -106,6 +141,10 @@ function project(model,niveau,lire){
   if(plans.length)direct.tempsFort={cle:tf.cle,suite:tf.suite,type:tf.type,titre:TYPES[tf.type]||'Temps fort',types:tf.types,score:tf.score,force:tf.force,
    duree:tf.duree,debut:tf.debut,fin:tf.fin,scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
    bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:String(events[i].text||'')}))};
+  if(plans.length&&options.choregraphe===true){
+   try{const c=choregraphier(direct.tempsFort,plans,events,lire);if(c)direct.tempsFort.choregraphie=c}
+   catch(error){direct.tempsFort.choregraphieErreur=String(error?.message||error)}
+  }
  }
  // Arrêt-décision : un carton contre mon équipe, ou un rouge adverse, dans la dernière rafale.
  const rafale=bilan.decisions.at(-1)?.rafale;
