@@ -5,6 +5,9 @@ var failures: Array[String] = []
 var captures: Array = []
 var unavailable_routes: Array = []
 var checks := 0
+var cached_3d_sizes: Dictionary = {}
+var rendered_3d: Array = []
+var pending_3d_checks := 0
 var focused := OS.get_environment("CD_ART_DIRECTION_FOCUS") == "1"
 var dialogs_only := OS.get_environment("CD_ART_DIRECTION_DIALOGS_ONLY") == "1"
 var scenario := OS.get_environment("CD_ART_DIRECTION_CASE")
@@ -15,6 +18,41 @@ func check(value: bool, message: String) -> void:
 	if not value: failures.append(message); printerr(message)
 func settle() -> void:
 	for i in 8: await process_frame
+# This recipe qualifies layout, input and real captured frames, not animation
+# or frame rate. Keep the root 2D viewport active and cache only camera-backed
+# SubViewports between creation/resize redraws and mandatory fresh captures.
+func cache_3d_frames() -> void:
+	if not is_instance_valid(app): return
+	for viewport: SubViewport in app.find_children("*","SubViewport",true,false):
+		if viewport.get_camera_3d() == null: continue
+		var id := viewport.get_instance_id()
+		if cached_3d_sizes.get(id) != viewport.size:
+			cached_3d_sizes[id] = viewport.size
+			pending_3d_checks += 1
+			verify_created_3d.call_deferred(weakref(viewport))
+		if viewport.render_target_update_mode not in [SubViewport.UPDATE_DISABLED,SubViewport.UPDATE_ONCE]:
+			viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+func verify_created_3d(reference: WeakRef) -> void:
+	# Container sizing and deferred scene setup each get a real layout frame.
+	await process_frame
+	await process_frame
+	var viewport := reference.get_ref() as SubViewport
+	if is_instance_valid(viewport): await redraw_3d([viewport],"creation/resize")
+	pending_3d_checks -= 1
+func redraw_3d(viewports: Array, reason: String) -> void:
+	for viewport: SubViewport in viewports:
+		if is_instance_valid(viewport): viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await RenderingServer.frame_post_draw
+	for viewport: SubViewport in viewports:
+		if not is_instance_valid(viewport): continue
+		var pixels := viewport.get_texture().get_image()
+		check(pixels != null and not pixels.is_empty() and pixels.get_size() == viewport.size,"Vraie texture 3D rendue et dimensionnée : "+reason+" / "+str(viewport.size))
+		rendered_3d.append({"reason":reason,"size":str(viewport.size),"path":str(viewport.get_path())})
+func fresh_3d_capture(label: String) -> void:
+	var viewports: Array = []
+	for viewport: SubViewport in app.find_children("*","SubViewport",true,false):
+		if viewport.get_camera_3d() != null: viewports.append(viewport)
+	await redraw_3d(viewports,"capture "+label)
 func wait_model() -> bool:
 	var deadline := Time.get_ticks_msec() + 60000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
@@ -69,7 +107,9 @@ func select_development(group: String) -> void:
 		if action != null and not action.disabled: action.pressed.emit();await settle()
 		check(app.management_ui.get("development",{}).get("mode") == group,"Groupe réel sélectionné dans la Formation compacte : "+group)
 func capture(label: String) -> void:
+	print("SDK_CAPTURE ",Time.get_ticks_msec()," ",label)
 	await settle()
+	await fresh_3d_capture(label)
 	await RenderingServer.frame_post_draw
 	var filename := "%d-%s.png" % [root.size.x, label.validate_filename()]
 	var rendered:=root.get_texture().get_image()
@@ -78,6 +118,7 @@ func capture(label: String) -> void:
 	captures.append(filename)
 func run() -> void:
 	AudioServer.set_bus_mute(0,true)
+	process_frame.connect(cache_3d_frames)
 	if not scenario.is_empty():
 		if scenario == "progression": resolutions = []
 		else:
@@ -219,8 +260,9 @@ func match_review() -> void:
 			check(app.user_preferences.set_value("quality", quality) and screen.stage._quality == quality, "Qualité appliquée au vrai match " + quality)
 		await capture("Match-qualite-detail")
 func finish() -> void:
+	check(pending_3d_checks == 0,"Toutes les nouvelles scènes 3D ont terminé leur vrai redraw")
 	var report := FileAccess.open(OS.get_environment("CD_ART_DIRECTION_DIR").path_join("report.json"),FileAccess.WRITE)
-	report.store_string(JSON.stringify({"case":scenario,"checks":checks,"failures":failures,"captures":captures,"unavailable_routes":unavailable_routes},"  "))
+	report.store_string(JSON.stringify({"case":scenario,"checks":checks,"failures":failures,"captures":captures,"unavailable_routes":unavailable_routes,"rendered_3d":rendered_3d,"render_scope":"Layout/input recipe; default quality unchanged. Only camera-backed 3D SubViewports are cached between real creation/resize/capture redraws. No animation or frame-rate qualification."},"  "))
 	report.close()
 	if is_instance_valid(app):
 		app.closing = true
