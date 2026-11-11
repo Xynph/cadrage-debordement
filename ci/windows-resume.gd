@@ -153,7 +153,7 @@ func capture(name_: String) -> void:
 	report.graphics.captures.append({"path":path,"sha256":FileAccess.get_sha256(path),"width":image.get_width(),"height":image.get_height(),"variance":variance})
 
 func runtime_information() -> void:
-	var details := {"platform":OS.get_name(),"executable":OS.get_executable_path(),"engine":Engine.get_version_info(),"display":DisplayServer.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"api_version":RenderingServer.get_video_adapter_api_version(),"argv":OS.get_cmdline_args(),"audio_driver":AudioServer.get_driver_name(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile}
+	var details := {"platform":OS.get_name(),"executable":OS.get_executable_path(),"engine":Engine.get_version_info(),"display":DisplayServer.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"api_version":RenderingServer.get_video_adapter_api_version(),"argv":OS.get_cmdline_args(),"max_fps":Engine.max_fps,"vsync_mode":DisplayServer.window_get_vsync_mode(),"audio_driver":AudioServer.get_driver_name(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile}
 	report.runtime_info = details
 	var dialog := AcceptDialog.new()
 	dialog.title = "Runtime info · Windows package QA"

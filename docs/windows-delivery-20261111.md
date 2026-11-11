@@ -36,10 +36,12 @@ Release brouillon. La campagne globale JavaScript reste pilotée uniquement par
    Une première commande `save`, explicitement déclarée, contrôle ensuite le
    curseur RNG restauré ; son horloge est consignée séparément. Les rendez-vous
    suivants sont traités par les commandes publiques.
-6. Cette reprise emploie le rendu Windows OpenGL avec Mesa logiciel dans la seule
-   copie QA. Elle produit des PNG réels en 2560 × 1440, dont les pixels, dimensions
+6. La reprise est configurée avec ANGLE statique sur copie propre, VSync désactivée
+   et 10 images/s, d'après le smoke Windows reçu sur `9e6042c`. Son reçu complet
+   reste à obtenir. Elle produit des PNG réels en 2560 × 1440, dont les pixels, dimensions
    et empreintes sont vérifiés. L'absence d'image ou un repli headless est un échec.
-   Les DLL ajoutées sont hachées et ne remplacent aucun fichier du manifeste.
+   Aucune DLL Mesa n'est ajoutée à ce chemin complet. Les variantes comparatives
+   Mesa du smoke conservent leurs empreintes séparées et n'écrasent aucun fichier.
 7. Les conférences obligatoires passent par leur courrier réel tout en conservant
    la sélection de réponses à impact minimal du précédent pilote. Les textes
    offerts sont comparés aux archives durables, puis à nouveau après relance.
@@ -209,4 +211,19 @@ Le constructeur embarque désormais les classes `WindowsReceiptResume` et `Windo
 
 Avant de charger main.tscn, les pilotes graphiques écrivent atomiquement `driver-ack.json` : mode, scripts embarqués et héritage, scène d'entrée, PID, EXE et profil. Le contrôleur exige cet ACK sous 15 secondes, vérifie ces identités, puis le lie au rapport et au reçu processus. Le mode fresh historique n'est pas soumis à cet ACK. Un ACK absent ou incorrect échoue rapidement. Les captures, le Node observé, Dummy, le silence de Gabi, les comparaisons pures et les contrôles ZIP/arbre restent obligatoires.
 
-Les tests locaux de dispatch/cache Godot Linux ne sont pas une preuve d'export Windows. La prochaine étape reste une courte préqualification native, ANGLE sur copie propre sans DLL Mesa d'abord ; le renderer de la recette complète sera choisi d'après son résultat réellement observé.
+Les tests locaux de dispatch/cache Godot Linux ne sont pas une preuve d'export Windows. La préqualification native suivante a reçu le chemin ANGLE propre décrit ci-dessous.
+
+## Smoke graphique Windows reçu, reprise complète encore attendue
+
+Le run [43003649410](https://github.com/Xynph/cadrage-debordement/actions/runs/43003649410), source `9e6042c6bb01be46951972993d113f3237a45d04`, termine avec **18 contrôles, zéro échec** sur l'EXE exporté, sans carrière créée. L'ACK confirme les deux scripts embarqués. CIM observe son Node exact, PID 2384, enfant du PID 5976 ; l'EXE quitte avec zéro et le worker s'arrête. Dummy et Gabi silencieux, sans lecteur et avec compteurs zéro/zéro, sont reçus jusqu'à destruction.
+
+Le renderer observé est `gl_compatibility`, ANGLE avec Microsoft Basic Render Driver via D3D11, API OpenGL ES 3.0 / ANGLE 2.1.1. Les modules chargés sont les `d3d11.dll`, `dxgi.dll` et `d3d10warp.dll` de Windows System32, avec empreintes conservées ; aucune DLL Mesa n'est copiée ni observée. Le premier modèle arrive à 12,008 s et 61 frames sont rendues entre 5,933 et 12,100 s, soit environ 10 images/s. Le même produit à environ 50 images/s avait précédemment échoué sur un timeout VM ; la réduction de charge est compatible avec ce résultat, sans mesure de pourcentage CPU ni preuve quantitative de saturation.
+
+Deux PNG 2560 × 1440 ont été produits et contrôlés par le runner (pixels, dimensions et SHA256) :
+
+- `01-exported-exe-1440p.png` : `61715fae613c20553588212c00eef32cb47b9bf5b2c4b02fb5330b04df219797`.
+- `05-runtime-info-2560.png` : `d764c7e499504fe4c7187c4a1a9af93e95a03c6ae664ac13701d3a82c6749a76`.
+
+Ce job PR ne conserve pas les binaires PNG en assets : leurs fichiers n'ont pas été téléchargés ou inspectés visuellement par Cloud. Le journal conserve leurs métadonnées et le reçu ; la livraison finale devra conserver les nouvelles captures dans la Release brouillon pour téléchargement et inspection. Le smoke ne remplace ni la saison fraîche ni la reprise du profil S2.
+
+Le chemin complet reprend donc ce renderer à 10 images/s avec VSync désactivée, sans préflight supplémentaire et sans modifier le fresh headless à 120 images/s. `selectedGraphicsDriver`, les options du contrôleur, l'API et le renderer réels, les caps Godot effectifs et les modules système hashés doivent concorder. `argv` dans `runtime_info` reste la valeur native Godot, qui peut être vide après consommation des options moteur ; `process.argv` conserve les options de lancement. Toute installation/charge Mesa dans ce chemin ANGLE propre est refusée. L'override reste identique avant/après les deux phases ; profil, RNG, citations et les quatre captures de menus plus runtime restent obligatoires.

@@ -240,7 +240,8 @@ def validate_qa_report(report, expected_executable, expected_mode):
         mutations = report.get("first_mutations", [])
         require(probe.get("state_matches") is True and probe.get("rng_matches_loaded") is True and
                 probe.get("seed_saved") == before.get("seed_loaded") and mutations and mutations[0].get("command") == "save", "Declared runtime RNG save probe missing or changed")
-        require(report.get("runtime_info") and len(graphics.get("captures", [])) >= 4, "Runtime information and real captures required")
+        names = {ntpath.basename(str(row.get("path", ""))) for row in graphics.get("captures", [])}
+        require(report.get("runtime_info") and {"01-reception-2560.png", "02-effectif-2560.png", "03-calendrier-2560.png", "04-finances-2560.png", "05-runtime-info-2560.png"} <= names, "All four menu captures and runtime information capture required")
     return report
 
 
@@ -296,6 +297,50 @@ def png_proof(path):
     return {"path": str(Path(path).resolve()), "sha256": digest(path), "width": width, "height": height, "variance": variance}
 
 
+def validate_graphics_installation(report, pins):
+    driver = report.get("selectedGraphicsDriver")
+    require(driver in ("opengl3", "opengl3_angle"), "Explicit selected graphics driver required")
+    if driver == "opengl3_angle":
+        require(not report.get("mesa") and set(report.get("qaExtras", {})) == {"override.cfg"}, "Clean ANGLE must not install Mesa or extra DLLs")
+    else:
+        pinned = pins.get("mesa-archive", {}).get("sha256")
+        require(SHA.fullmatch(str(pinned)) and report.get("mesa", {}).get("receipt", {}).get("source", {}).get("sha256") == pinned, "Mesa differs from prepared archive pin")
+    return driver
+
+
+def validate_graphics_runtime(report, process, expected_executable, driver, verify_files=True):
+    require(driver in ("opengl3", "opengl3_angle"), "Unsupported Windows graphics driver")
+    require(report.get("platform") == "Windows" and report.get("native_display") == "Windows", "Native Windows graphics runtime required")
+    argv = process.get("argv", [])
+    require(isinstance(argv, list) and all(isinstance(arg, str) for arg in argv), "Observed process arguments required")
+    for pair in (["--rendering-driver", driver], ["--rendering-method", "gl_compatibility"], ["--max-fps", "10"]):
+        require(any(argv[i:i+2] == pair for i in range(len(argv))), "Observed graphics driver/method/load-cap argument missing")
+    require("--disable-vsync" in argv and "--headless" not in argv, "Native graphics with disabled VSync required")
+    info = report.get("runtime_info", {})
+    require(info.get("renderer") == "gl_compatibility" and info.get("adapter") and info.get("vendor") and info.get("api_version") and isinstance(info.get("argv"), list), "Initialized renderer/adapter/API evidence missing")
+    require(info.get("max_fps") == 10 and info.get("vsync_mode") == 0, "Observed graphics load cap or VSync differs")
+    observed_angle = bool(re.search(r"\bANGLE\b", " ".join(str(info.get(k, "")) for k in ("adapter", "vendor", "api_version")), re.I))
+    require(observed_angle == (driver == "opengl3_angle"), "Requested graphics backend differs from the observed ANGLE/native renderer")
+    modules = {}
+    for row in process.get("loadedModules", []):
+        name = str(row.get("name", "")).casefold()
+        require(name and name not in modules and ntpath.isabs(str(row.get("path", ""))) and ntpath.basename(row["path"]).casefold() == name and SHA.fullmatch(str(row.get("sha256", ""))), "Actually loaded graphics module paths/hashes missing or invalid")
+        if verify_files:
+            require(digest(row["path"]) == row["sha256"], "Loaded graphics module hash differs from actual file bytes")
+        modules[name] = row
+    if driver == "opengl3_angle":
+        require({"d3d11.dll", "dxgi.dll"} <= modules.keys(), "ANGLE D3D11/DXGI module evidence missing")
+        require(not any(re.match(r"^(opengl32|libgallium_wgl|libegl.*|libgles.*)\.dll$", name) for name in modules), "Mesa/native OpenGL module mixed into clean ANGLE")
+        system_root = process.get("systemRoot", "")
+        require(ntpath.isabs(str(system_root)), "Observed Windows SystemRoot required")
+        for name in ("d3d11.dll", "dxgi.dll", "d3d10warp.dll"):
+            if name in modules:
+                require(same_windows_path(modules[name]["path"], ntpath.join(system_root, "System32", name)), "ANGLE must load the observed Windows system graphics modules")
+    else:
+        for name in ("opengl32.dll", "libgallium_wgl.dll"):
+            require(name in modules and same_windows_path(modules[name]["path"], ntpath.join(ntpath.dirname(str(expected_executable)), name)), "Native Mesa modules must load from the declared QA game copy")
+
+
 def validate_windows_report(report, expected_commit, expected_executable, require_native=True):
     require(report.get("scope") != "graphics-smoke-only", "A graphics smoke test is not a full Windows receipt")
     if require_native:
@@ -312,7 +357,7 @@ def validate_windows_report(report, expected_commit, expected_executable, requir
     node = root / "runtime/node.exe"; node_sha = receipt["manifest"]["files"]["runtime/node.exe"]["sha256"]
     pins = report.get("tools", {}).get("receipt", {}).get("pins", {})
     require(pins.get("node-runtime", {}).get("sha256") == node_sha, "Node differs from prepared runtime pin")
-    require(report.get("mesa", {}).get("receipt", {}).get("source", {}).get("sha256") == pins.get("mesa-archive", {}).get("sha256"), "Mesa differs from prepared archive pin")
+    driver = validate_graphics_installation(report, pins)
     for mode in ("fresh", "resume"):
         qa = report[mode]
         validate_qa_report(qa, expected_executable, mode)
@@ -322,6 +367,11 @@ def validate_windows_report(report, expected_commit, expected_executable, requir
         require(qa["pid"] == process["pid"] and qa["engine_pid"] == process["nodePid"], "QA/process PID mismatch")
         if mode == "resume":
             require(qa["driver_ack"] == process.get("driverAck"), "Resume report/process driver ACK mismatch")
+            validate_graphics_runtime(qa, process, expected_executable, driver, verify_files=require_native)
+            if driver == "opengl3":
+                observed = {row["name"].casefold(): row["sha256"] for row in process["loadedModules"]}
+                for name in ("opengl32.dll", "libgallium_wgl.dll"):
+                    require(observed[name] == report.get("qaExtras", {}).get(name, {}).get("sha256"), "Loaded Mesa module differs from its declared QA extra")
     require(same_windows_path(report["fresh"]["data_dir"], report["resume"]["data_dir"]), "Resume must use the same persisted profile")
     version = report["resume"]["runtime_info"].get("engine", {})
     require([version.get(key) for key in ("major", "minor", "patch")] == [4, 7, 2], "Wrong observed Godot runtime version")
@@ -353,13 +403,7 @@ def validate_graphics_probe(report, process, manifest, expected_executable, driv
     node = str(Path(expected_executable).parent / "runtime/node.exe")
     validate_process(process, expected_executable, node, manifest_files(manifest)["runtime/node.exe"]["sha256"])
     require(process.get("exeSha256") == manifest["files"]["OvalLegacy27.exe"]["sha256"] and report.get("pid") == process.get("pid") and report.get("engine_pid") == process.get("nodePid"), "Graphics executable/process identity mismatch")
-    argv = process.get("argv", [])
-    require(any(argv[i:i+2] == ["--rendering-driver", driver] for i in range(len(argv))), "Observed process driver argument missing")
-    info = report.get("runtime_info", {})
-    require(info.get("renderer") == "gl_compatibility" and info.get("adapter") and info.get("api_version"), "Initialized renderer/adapter/API evidence missing")
-    observed_angle = bool(re.search(r"\bANGLE\b", " ".join(str(info.get(k, "")) for k in ("adapter", "vendor", "api_version")), re.I))
-    require(observed_angle == (driver == "opengl3_angle"), "Requested graphics backend differs from the observed ANGLE/native renderer")
-    require(any(row.get("name", "").lower() in ("opengl32.dll", "d3d11.dll") and ntpath.isabs(str(row.get("path", ""))) and SHA.fullmatch(str(row.get("sha256", ""))) for row in process.get("loadedModules", [])), "Actually loaded graphics module paths/hashes missing")
+    validate_graphics_runtime(report, process, expected_executable, driver, verify_files=require_native)
     coach = report.get("coach", {})
     require(coach.get("starts") == coach.get("ends") == 0 and coach.get("player_present") is False, "Gabi audio activity invalidates graphics probe")
     graphics = report.get("graphics", {})
