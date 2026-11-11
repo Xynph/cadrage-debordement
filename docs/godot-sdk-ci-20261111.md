@@ -57,9 +57,26 @@ de chaque cas explicite. Une erreur ANSI était initialement manquée ; la sonde
 rouge puis verte couvre sa normalisation sans modifier le journal brut.
 
 Après les douze suites SDK, le même job exécute séquentiellement les nouvelles
-matrices P1 sous un écran X11 de2560×1440 : principale360s, dialogues
+matrices P1 sous un écran X11 de2560×1440 : principale480s en profil frais, dialogues
 complémentaires720s, puis trois processus de contrats limités chacun à90s.
 Ces budgets appartiennent aux nouveaux harnais et n'augmentent ni le plafond180s
 des suites SDK existantes ni les délais de la VM Node. Le job global reste borné
 à45minutes. Les cas guide restants et les trois suites de mise en page non reçues
 ne sont pas exécutés par ce manifeste.
+
+Ajustement du seul nouveau budget P1 avant réception CI : le lot local principal
+utilisait un profil de recette déjà préparé. Les timestamps locaux conservés
+donnent14:38:44.364 (manifest),14:43:56.073 (rapport),14:43:59.025 (fin
+lanceur), soit311,709s jusqu'au rapport et314,661s jusqu'à la sortie. Ces
+valeurs ont été revérifiées sur les fichiers du reçu. Le producteur estime
+le premier setup à environ100s contre20s pour la reprise ; cette différence
+est une estimation rapportée, distincte du chronométrage reconstitué. Le job
+CI crée un profil neuf et reçoit donc un plafond explicite480s pour cette
+seule matrice ; le lanceur local garde son défaut360s, extra720s et contrats90s.
+Aucun plafond ancien180s SDK ou15s VM n'est modifié.
+
+Ce risque a été identifié après l'ouverture de la PR commune. Au contrôle
+avant correction, le premier SDK avait seulement terminé checkout/setup et
+préparait X11 ; téléchargement/import/suites/matrices étaient encore en attente.
+La première classification JS était en file. Le push minimal remplace ces deux
+runs par auto-annulation ; seule la nouvelle tête sera suivie pour le verdict.

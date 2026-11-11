@@ -84,7 +84,7 @@ jobs:
           # Nouvelles matrices dédiées : leurs budgets ne changent pas ceux
           # des anciennes suites SDK (180 s) ni ceux de la VM Node (15 s).
           xvfb-run -a -s '-screen 0 2560x1440x24' bash -euo pipefail <<'SH'
-          CD_GEOMETRY_TIMEOUT=360 CD_GEOMETRY_OUTPUT="$RUNNER_TEMP/geometry-main" node tests/small-window-geometry.cjs
+          CD_GEOMETRY_TIMEOUT=480 CD_GEOMETRY_OUTPUT="$RUNNER_TEMP/geometry-main" node tests/small-window-geometry.cjs
           CD_GEOMETRY_ROUTES=Bureau CD_GEOMETRY_TIMEOUT=720 CD_GEOMETRY_SCRIPT=small-window-geometry-extra-dialogs.gd CD_GEOMETRY_OUTPUT="$RUNNER_TEMP/geometry-extra" node tests/small-window-geometry.cjs
           CD_SMALL_CONTRACT_OUTPUT="$RUNNER_TEMP/geometry-contracts" node tests/small-window-contracts.cjs
           SH
