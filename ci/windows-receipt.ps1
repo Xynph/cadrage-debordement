@@ -18,7 +18,6 @@ $PackageZip = (Resolve-Path -LiteralPath $PackageZip).Path
 $MesaRoot = (Resolve-Path -LiteralPath $MesaRoot).Path
 $Python = (Get-Command python -ErrorAction Stop).Source
 $Verifier = Join-Path $PSScriptRoot 'windows-package.py'
-$ResumeScript = Join-Path $PSScriptRoot 'windows-resume.gd'
 $ReportPath = Join-Path $EvidenceRoot 'windows-report.json'
 $Report = [ordered]@{schema='oval-windows-receipt-v1';passed=$false;proof='native-windows';platform='Windows';sourceCommit=$SourceCommit;sourceTree='';process=@{};limits=@();failure=$null}
 $game = $null; $archive = $null; $extrasPath = $null; $manifestPath = $null
@@ -26,6 +25,32 @@ $game = $null; $archive = $null; $extrasPath = $null; $manifestPath = $null
 function Read-Json([string]$Path) { return Get-Content -LiteralPath $Path -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable }
 function Write-Json($Value,[string]$Path) { $Value | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM }
 function Hash([string]$Path) { return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+function Set-QA-Mode([string]$Game,[ValidateSet('graphics','resume')][string]$Mode,[hashtable]$Extras) {
+    $path = Join-Path $Game 'override.cfg'
+    if (Test-Path -LiteralPath $path) {
+        if (-not $Extras.ContainsKey('override.cfg') -or (Hash $path) -cne $Extras['override.cfg'].sha256) { throw 'Refuse an undeclared or modified QA override.cfg.' }
+    }
+    $class = if ($Mode -eq 'graphics') { 'WindowsGraphicsSmoke' } else { 'WindowsReceiptResume' }
+    $config = "[application]`nrun/main_loop_type=`"$class`"`nrun/main_scene=`"res://windows_qa/entry.tscn`"`n"
+    [IO.File]::WriteAllText($path,$config,[Text.UTF8Encoding]::new($false))
+    $Extras['override.cfg'] = @{sha256=(Hash $path);bytes=(Get-Item -LiteralPath $path).Length;source='Explicit QA-only embedded main loop selection'}
+}
+function Read-Driver-Ack([string]$Path,[string]$Mode,[int]$ExpectedPid,[string]$Exe,[string]$CareerProfile) {
+    $ack = Read-Json $Path
+    $expectedMode = if ($Mode -eq 'graphics') { 'graphics-smoke' } else { 'resume' }
+    $chain = @('res://windows_qa/windows-resume.gd')
+    if ($Mode -eq 'graphics') { $chain = @('res://windows_qa/windows-graphics-smoke.gd') + $chain }
+    foreach ($key in @('schema','mode','pid','executable','data_dir','exported','entry_scene','script_chain')) {
+        if (-not $ack.ContainsKey($key)) { throw "Embedded driver ACK omitted $key." }
+    }
+    $identity = $ack.schema -ceq 'oval-windows-driver-v1' -and $ack.mode -ceq $expectedMode -and $ack.pid -eq $ExpectedPid -and
+        $ack.exported -is [bool] -and $ack.exported -and $ack.entry_scene -ceq 'res://windows_qa/entry.tscn' -and
+        ($ack.script_chain -join "`n") -ceq ($chain -join "`n") -and
+        [string]::Equals([IO.Path]::GetFullPath($ack.executable),[IO.Path]::GetFullPath($Exe),[StringComparison]::OrdinalIgnoreCase) -and
+        [string]::Equals([IO.Path]::GetFullPath($ack.data_dir),[IO.Path]::GetFullPath($CareerProfile),[StringComparison]::OrdinalIgnoreCase)
+    if (-not $identity) { throw 'Embedded driver ACK has an unexpected mode, script, entry, export or process/profile identity.' }
+    return $ack
+}
 function Read-Game-Log([string]$Path) {
     $stream = [IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
     $reader = [IO.StreamReader]::new($stream)
@@ -53,7 +78,7 @@ function Game-Environment([string]$Mode,[string]$CareerProfile,[string]$Output) 
         GALLIUM_DRIVER='llvmpipe'
     }
 }
-function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe,[int]$TimeoutSeconds=7200) {
+function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe,[int]$TimeoutSeconds=7200,[int]$AckTimeoutSeconds=15) {
     New-Item -ItemType Directory -Path $Output | Out-Null
     $info = [Diagnostics.ProcessStartInfo]::new()
     $info.FileName = $Exe; $info.WorkingDirectory = Split-Path $Exe
@@ -70,6 +95,8 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
     $lastLogCheck = $started; $lastHeartbeat = $started
     $runtimeError = '(?m)^(?:\x1b\[[0-9;]*m)*(?:SCRIPT ERROR:|ERROR:)|Parse Error:'
     $loadedModules = @{}; $moduleError = $null
+    $needsAck = $Mode -in @('graphics','resume'); $driverAck = $null
+    $ackPath = Join-Path $Output 'driver-ack.json'
     try {
         # Stream the complete bytes to disk while the EXE runs. A script error
         # must not leave a silent two-hour loop or disappear behind passed=true.
@@ -80,6 +107,10 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
         $stdout = $process.StandardOutput.BaseStream.CopyToAsync($stdoutFile); $stderr = $process.StandardError.BaseStream.CopyToAsync($stderrFile)
         Write-Host "::notice title=Windows process ${Mode}::Started $([IO.Path]::GetFileName($Exe)), PID $($process.Id); complete logs are streaming to disk."
         while (-not $process.HasExited) {
+            if ($needsAck -and $null -eq $driverAck) {
+                if (Test-Path -LiteralPath $ackPath) { $driverAck = Read-Driver-Ack $ackPath $Mode $process.Id $Exe $CareerProfile }
+                elseif (([DateTime]::UtcNow-$started).TotalSeconds -gt $AckTimeoutSeconds) { throw "Embedded driver ACK absent after ${AckTimeoutSeconds}s; the requested QA main loop did not acknowledge startup." }
+            }
             if ($IsWindows) {
                 try {
                     foreach ($module in @($process.Modules)) {
@@ -117,11 +148,15 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
         foreach ($log in @($stdoutPath,$stderrPath)) {
             if ((Read-Game-Log $log) -match $runtimeError) { throw "Godot runtime/script error in native $Mode output." }
         }
+        if ($needsAck -and $null -eq $driverAck) {
+            if (-not (Test-Path -LiteralPath $ackPath)) { throw 'Embedded driver ACK absent when the EXE exited.' }
+            $driverAck = Read-Driver-Ack $ackPath $Mode $process.Id $Exe $CareerProfile
+        }
         if ($null -eq $node) { throw 'No CIM observation of the owned packaged worker.' }
         $deadline = [DateTime]::UtcNow.AddSeconds(5)
         while ((Get-Process -Id $node.pid -ErrorAction SilentlyContinue) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 100 }
         $shutdown = -not [bool](Get-Process -Id $node.pid -ErrorAction SilentlyContinue)
-        $receipt = @{executable=$Exe;exeSha256=(Hash $Exe);pid=$process.Id;nodeExecutable=$node.executable;nodePid=$node.pid;nodeParentPid=$node.parentPid;nodeSha256=(Hash $NodeExe);exitCode=$process.ExitCode;shutdown=$shutdown;argv=$Arguments;environmentNames=@($environment.Keys|Sort-Object);cim=@($observations.ToArray());durationSeconds=([DateTime]::UtcNow-$started).TotalSeconds;startedUtc=$started.ToString('o');loadedModules=@($loadedModules.Values);moduleError=$moduleError}
+        $receipt = @{executable=$Exe;exeSha256=(Hash $Exe);pid=$process.Id;nodeExecutable=$node.executable;nodePid=$node.pid;nodeParentPid=$node.parentPid;nodeSha256=(Hash $NodeExe);exitCode=$process.ExitCode;shutdown=$shutdown;argv=$Arguments;environmentNames=@($environment.Keys|Sort-Object);cim=@($observations.ToArray());durationSeconds=([DateTime]::UtcNow-$started).TotalSeconds;startedUtc=$started.ToString('o');loadedModules=@($loadedModules.Values);moduleError=$moduleError;driverAck=$driverAck}
         Write-Json $receipt (Join-Path $Output 'process.json')
         if ($process.ExitCode -ne 0 -or -not $shutdown) { throw "Native $Mode failed or its owned worker survived shutdown." }
         return $receipt
@@ -132,7 +167,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
                 if ($null -ne $stdout) { [void]$stdout.GetAwaiter().GetResult() }
                 if ($null -ne $stderr) { [void]$stderr.GetAwaiter().GetResult() }
                 if (-not (Test-Path -LiteralPath (Join-Path $Output 'process.json'))) {
-                    Write-Json @{executable=$Exe;pid=$process.Id;argv=$Arguments;exitCode=$process.ExitCode;shutdown=$shutdown;cim=@($observations.ToArray());environmentNames=@($environment.Keys|Sort-Object);incomplete=$true} (Join-Path $Output 'process.json')
+                    Write-Json @{executable=$Exe;pid=$process.Id;argv=$Arguments;exitCode=$process.ExitCode;shutdown=$shutdown;cim=@($observations.ToArray());environmentNames=@($environment.Keys|Sort-Object);driverAck=$driverAck;incomplete=$true} (Join-Path $Output 'process.json')
                 }
             }
         } finally {
@@ -170,6 +205,7 @@ try {
         $Report.scope = 'graphics-smoke-only'
         $Report.attempts = @()
         $Report.qaExtras = @{}
+        Set-QA-Mode $game 'graphics' $Report.qaExtras
         $extrasPath = Join-Path $EvidenceRoot 'qa-extras.json'
         Write-Json $Report.qaExtras $extrasPath
         foreach ($variant in @('angle-clean','mesa-native','mesa-local')) {
@@ -177,7 +213,7 @@ try {
                 $mesaPath = Join-Path $EvidenceRoot 'mesa-qa.json'
                 Python-Check @('mesa','--mesa-root',$MesaRoot,'--game-root',$game,'--manifest',$manifestPath,'--output',$mesaPath)
                 $Report.mesa = Read-Json $mesaPath
-                $Report.qaExtras = $Report.mesa.extras
+                foreach ($extra in $Report.mesa.extras.GetEnumerator()) { $Report.qaExtras[$extra.Key] = $extra.Value }
             }
             if ($variant -eq 'mesa-local') {
                 $marker = Join-Path $game 'OvalLegacy27.exe.local'
@@ -189,7 +225,7 @@ try {
             $output = Join-Path $EvidenceRoot $variant
             $driver = if ($variant -eq 'angle-clean') { 'opengl3_angle' } else { 'opengl3' }
             try {
-                $processReceipt = Run-Game 'graphics' @('--verbose','--audio-driver','Dummy','--rendering-method','gl_compatibility','--rendering-driver',$driver,'--windowed','--resolution','2560x1440','--disable-vsync','--max-fps','60','--script',(Join-Path $PSScriptRoot 'windows-graphics-smoke.gd')) (Join-Path $EvidenceRoot "profiles/$variant/PrototypeGodot") $output $exe $nodeExe 90
+                $processReceipt = Run-Game 'graphics' @('--verbose','--audio-driver','Dummy','--rendering-method','gl_compatibility','--rendering-driver',$driver,'--windowed','--resolution','2560x1440','--disable-vsync','--max-fps','60') (Join-Path $EvidenceRoot "profiles/$variant/PrototypeGodot") $output $exe $nodeExe 90
                 Python-Check @('graphics','--report',(Join-Path $output 'report.json'),'--process',(Join-Path $output 'process.json'),'--manifest',$manifestPath,'--executable',$exe,'--driver',$driver)
                 $Report.attempts += @{variant=$variant;passed=$true;report=(Read-Json (Join-Path $output 'report.json'));process=$processReceipt}
                 $Report.passed = $true
@@ -214,7 +250,8 @@ try {
     Python-Check @('mesa','--mesa-root',$MesaRoot,'--game-root',$game,'--manifest',$manifestPath,'--output',$mesaPath)
     $mesa = Read-Json $mesaPath
     $Report.mesa = $mesa; $Report.qaExtras = $mesa.extras
-    $extrasPath = Join-Path $EvidenceRoot 'qa-extras.json'; Write-Json $mesa.extras $extrasPath
+    Set-QA-Mode $game 'resume' $Report.qaExtras
+    $extrasPath = Join-Path $EvidenceRoot 'qa-extras.json'; Write-Json $Report.qaExtras $extrasPath
     $beforePath = Join-Path $EvidenceRoot 'manifest-before.json'
     Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$beforePath)
     $Report.manifestBefore = Read-Json $beforePath
@@ -224,7 +261,7 @@ try {
     $Report.process.fresh = Run-Game 'fresh' @('--headless','--audio-driver','Dummy','--max-fps','120') $CareerProfile $fresh $exe $nodeExe
     $Report.fresh = Read-Json (Join-Path $fresh 'report.json')
     $resume = Join-Path $EvidenceRoot 'resume'
-    $Report.process.resume = Run-Game 'resume' @('--audio-driver','Dummy','--rendering-method','gl_compatibility','--windowed','--resolution','2560x1440','--max-fps','60','--script',$ResumeScript) $CareerProfile $resume $exe $nodeExe
+    $Report.process.resume = Run-Game 'resume' @('--audio-driver','Dummy','--rendering-method','gl_compatibility','--windowed','--resolution','2560x1440','--max-fps','60') $CareerProfile $resume $exe $nodeExe
     $Report.resume = Read-Json (Join-Path $resume 'report.json')
     $afterPath = Join-Path $EvidenceRoot 'manifest-after.json'
     Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$afterPath)

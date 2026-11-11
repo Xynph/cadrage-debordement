@@ -11,7 +11,9 @@ Demande de Léo : poursuivre en autonomie jusqu'à une livraison comprenant int�
 - Les profils QA sont jetables, extérieurs au jeu et aux profils du compte. Les comptes GitHub et jetons ne sont pas transmis au jeu.
 
 ## Périmètre des reçus
-La recette fraîche embarquée doit atteindre une saison complète et S2 avec les vrais matchs, jours, rendez-vous et citations. Un script de reprise lancé par le véritable EXE exporté charge ensuite le profil existant, vérifie l'état et les citations avant toute nouvelle décision, puis capture les écrans réels en2560×1440.
+La recette fraîche embarquée doit atteindre une saison complète et S2 avec les vrais matchs, jours, rendez-vous et citations. Un pilote SceneTree embarqué dans le véritable EXE exporté charge ensuite le profil existant, vérifie l'état et les citations avant toute nouvelle décision, puis capture les écrans réels en2560×1440.
+
+Les templates officiels Godot 4.7.2 ignorent `--script`. Les classes de recette et leur scène d'entrée vide sont donc copiées avant import/export. Un `override.cfg` ajouté seulement à la copie QA sélectionne ces classes ; il est hashé dans `qaExtras`, interdit dans le ZIP et stable entre fresh et resume. SELF_TEST=1 délègue à l'unique qa_runner intégré ; SELF_TEST=0 conserve la comparaison pure du profil avant de créer main.tscn. Les modes graphics/resume doivent émettre sous 15 secondes un ACK liant mode, scripts embarqués, scène d'entrée, PID, EXE et profil, contrôlé avant l'attente longue. Un accusé absent ou divergent est un échec, jamais une preuve graphique.
 
 Le ZIP original et tous les fichiers de son manifeste sont contrôlés avant/après les essais. Une éventuelle DLL Mesa dans la copie QA est identifiée, hachée et déclarée séparément ; aucun fichier du jeu n'est remplacé.
 
