@@ -103,3 +103,4 @@ Leurs SHA de harness sont comparés au même gel de source `ccf7090`.
 | Scénario | Contrôles / échecs | Node hors verrou | Preuves |
 | --- | --- | --- | --- |
 | `responsive` | 124 / 0 | 62,978 s | [reçu](qa-sdk-preloads-20261111-layout-final/readability-responsive-receipt.json), [rapport](qa-sdk-preloads-20261111-layout-final/readability-responsive-report.json), [sources](qa-sdk-preloads-20261111-layout-final/readability-responsive-source-manifest.json), [log](qa-sdk-preloads-20261111-layout-final/readability-responsive.log) |
+| `reading900` | 260 / 0 | 63,336 s | [reçu](qa-sdk-preloads-20261111-layout-final/readability-reading900-receipt.json), [rapport](qa-sdk-preloads-20261111-layout-final/readability-reading900-report.json), [sources](qa-sdk-preloads-20261111-layout-final/readability-reading900-source-manifest.json), [log](qa-sdk-preloads-20261111-layout-final/readability-reading900.log) |
