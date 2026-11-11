@@ -2,7 +2,7 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const Analysis = preload("res://ui/performance_analysis_view.gd")
 const Club = preload("res://ui/immersive08/club_canvas.gd")
-const Skin = preload("res://ui/game_skin.gd")
+const GameSkin = preload("res://ui/game_skin.gd")
 var app: Control
 var nav: Node
 var failures: Array[String] = []
@@ -141,7 +141,7 @@ func run() -> void:
 	await activate(opponent,true)
 	var club:=found("CompetitionClubDetails") as Window
 	check(club!=null and club.visible and str(club.get_meta("entity_id",""))==str(result.opponent),"Adversaire ouvre le club du résultat exact")
-	check(club!=null and club.title==Skin.club_name(app.Immersive.Competition._target_club(app,str(result.opponent))),"Titre du club conforme à son identité publique")
+	check(club!=null and club.title==GameSkin.club_name(app.Immersive.Competition._target_club(app,str(result.opponent))),"Titre du club conforme à son identité publique")
 	await key(KEY_LEFT,true)
 	check(is_instance_valid(opponent) and opponent.has_focus(),"Retour exact au lien adversaire")
 	var choice:=found("PerformancePlayerChoice") as OptionButton
