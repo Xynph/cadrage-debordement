@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: Moteur : renfort promu pour compléter la feuille, 2 500 € par semaine sans la marque, plancher de la règle avec
+ok 1 - Moteur : renfort promu pour compléter la feuille, 2 500 € par semaine sans la marque, plancher de la règle avec
+  ---
+  duration_ms: 1024.77213
+  type: 'test'
+  ...
+# Subtest: Moteur : joueurs ajoutés pour garder 40 professionnels, ancien salaire sans la marque, salaire de la règle avec
+ok 2 - Moteur : joueurs ajoutés pour garder 40 professionnels, ancien salaire sans la marque, salaire de la règle avec
+  ---
+  duration_ms: 603.700711
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2902.162493
