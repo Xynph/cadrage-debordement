@@ -1,106 +1,111 @@
-# Réceptions complémentaires interface, guide et lisibilité
+# Réception finale des familles guide, interface et lisibilité
 
-La branche de suivi conserve la base `96f5370` et projette dans une copie privée
-les six fichiers UI exacts de `d83a817` (PR 566). Le reçu porte leurs SHA256.
-Aucun fichier de production n’est modifié ici. Les profils sont jetables ;
-Godot Linux 4.7.2, Node 22.23.4, X11 `:102`, audio Dummy, une acquisition du
-verrou par scénario et limite de 180 secondes pour Node hors attente.
+Les trois familles disposent de reçus complets pour tous leurs scénarios.
+Onze des treize cas de la recette GitHub initiale sont verts ; les deux rouges,
+`reading720` et `reading1080`, ont ensuite été corrigés et reçus localement.
+Le [registre des cas et provenances](qa-sdk-preloads-20261111-layout-final/qualified-cases-with-provenance.json)
+conserve cette distinction. **Le premier run GitHub reste à 11/13 ; aucun run
+GitHub unique n’a encore qualifié le patch final.** Aucune preuve ancienne ne
+reçoit le SHA d’un fichier modifié après son exécution.
 
-| Scénario | Qualification reçue | Temps Node hors verrou | Preuve |
+La production de référence est `d83a817` (PR 566). Les replays locaux projettent
+ses six fichiers UI exacts sur la copie privée issue de `96f5370`, avec leurs
+SHA dans les reçus. Aucun fichier de production n’est modifié par ce travail.
+Godot Linux 4.7.2, Node 22.23.4, X11 et audio Dummy sont utilisés avec profils
+jetables et une acquisition du verrou par scénario. Chaque durée Node complète
+ci-dessous reste sous 180s ; aucun plafond Node ni budget de VM n’est augmenté.
+Aucune exécution native Windows ni test de DPI matériel n’est revendiqué.
+
+## Résultats
+
+Les résultats GitHub viennent du job `130723697599`, tête `561f898`, avec le
+helper final `2f1c4d11…`. Le [summary original](qa-sdk-preloads-20261111-layout-final/github-561-layouts-results.json)
+est conservé sans réécriture, accompagné des [lignes de résultat](qa-sdk-preloads-20261111-layout-final/github-561-layouts-excerpt.log)
+et des [SHA des sources de cette tête](qa-sdk-preloads-20261111-layout-final/github-561-layouts-source-hashes.json).
+
+| Famille / scénario | Contrôles / échecs | Node hors attente | Provenance du reçu vert |
 | --- | --- | --- | --- |
-| Guide layout/stretch | 256 contrôles, 0 échec | 44,283 s | [reçu](qa-sdk-preloads-20261111-layout-final/guide-layout-stretch-receipt.json), [log complet](qa-sdk-preloads-20261111-layout-final/guide-layout-stretch.log), [sources figées](qa-sdk-preloads-20261111-layout-final/guide-layout-stretch-source-manifest.json) |
-| Guide dock/stretch | 160 contrôles, 0 échec | 49,244 s | [reçu](qa-sdk-preloads-20261111-layout-final/guide-dock-stretch-receipt.json), [log complet](qa-sdk-preloads-20261111-layout-final/guide-dock-stretch.log), [sources figées](qa-sdk-preloads-20261111-layout-final/guide-dock-stretch-source-manifest.json) |
+| Guide layout/native | 260 / 0 | 46,737s | GitHub 561 |
+| Guide layout/stretch | 256 / 0 | 38,489s | GitHub 561 |
+| Guide dock/native | 160 / 0 | 48,082s | GitHub 561 |
+| Guide dock/stretch | 160 / 0 | 48,263s | GitHub 561 |
+| Interface management | 857 / 0 | 111,891s | GitHub 561 |
+| Interface journal | 33 / 0 | 106,704s | GitHub 561 |
+| Lisibilité reading720 | 254 / 0 | 126,095s | [Local, patch final](qa-sdk-preloads-20261111-layout-final/readability-reading720-receipt.json) |
+| Lisibilité reading900 | 260 / 0 | 54,734s | GitHub 561 |
+| Lisibilité reading1080 | 275 / 0 | 87,915s | [Local, patch final](qa-sdk-preloads-20261111-layout-final/readability-reading1080-receipt.json) |
+| Lisibilité reading1440 | 259 / 0 | 70,621s | GitHub 561 |
+| Lisibilité responsive | 124 / 0 | 46,243s | GitHub 561 |
+| Lisibilité drafts | 101 / 0 | 53,213s | GitHub 561 |
 
-Le GD et le wrapper guide restent ceux de `bfc4a99` : `setup(app,false)`, zéro
-signal vocal `requested`, muted et aucun lecteur. Aucun TTS réel n’est appelé.
-Les deux scénarios natifs précédemment qualifiés restent documentés dans le
-[gel](qa-sdk-preloads-20261111.md) et le
-[complément](qa-sdk-preloads-20261111-complement.md), sur la base de production
-`96f5370`. Ils ne sont pas présentés comme de nouveaux replays sur `d83a817`.
-Le wrapper guide sans filtre n’est pas qualifié sous 180 secondes : la CI doit
-sélectionner chaque couple `CD_GUIDE_LAYOUT_CASE` / `CD_GUIDE_LAYOUT_MODE`.
+Le treizième cas distant, lineup, est également vert :867 contrôles en 40,146 s.
+Il confirme sa réception antérieure ; aucun nouveau replay local inutile n’a
+été ajouté pour cette famille.
 
-Un premier essai privé layout/stretch a été invalidé : la copie omettait
-`dist/` au lancement du worker. Le worker a ensuite été vérifié réellement
-avec snapshot et shutdown, sans stderr. Cette erreur de préparation ne prouve
-aucun résultat sur le produit. Aucun replay rouge ni compteur incomplet
-n’est classé vert par ce document.
+## Deux corrections finales de contrat
 
-Les quatre couples guide ont chacun un reçu complet vert, avec le même GD et
-wrapper silencieux : [manifeste des quatre cas](qa-sdk-preloads-20261111-layout-final/guide-four-cases.json).
-Les temps natifs antérieurs restent 71,805 s pour layout (260 contrôles) et
-117,572 s pour dock (160 contrôles). La provenance de production distingue les
-deux reçus natifs anciens des deux nouveaux reçus stretch.
+À 1280×720, les quatre cartes secondaires du Bureau mesurent263,81 px de haut
+dans un viewport de258,93 px. Leur rectangle entier ne peut pas y entrer.
+Le test conserve l’assertion de lecture de chaque carte : largeur bornée et
+chaque Label ou commande entièrement révélé par ses vrais parents
+ScrollContainer. Les cartes qui tiennent gardent le contrôle du rectangle
+entier. Les quatre cartes surdimensionnées ont 11, 43, 7 et 8 faits/commandes
+vérifiés, soit 69. Les cinq accès métier conservent focus et visibilité, dont
+le calendrier. Aucune tolérance géométrique n’est augmentée. [Rapport720](qa-sdk-preloads-20261111-layout-final/readability-reading720-report.json),
+[log et mesures](qa-sdk-preloads-20261111-layout-final/readability-reading720.log),
+[sources exécutées](qa-sdk-preloads-20261111-layout-final/readability-reading720-source-manifest.json).
 
-## Scénarios de diagnostic pour la recette distante
+À 1920×1080, le bandeau de famille consomme une ligne au début de la table.
+Le vrai défilement révèle le 24ejoueur ; les 24 mêmes premières lignes de faits
+sont ensuite toutes exigées entières simultanément. Le rapport mesure bien
+24 lignes dans677,75 px, sans remplacer24 par 23. Les identifiants et toutes les
+données de la liste continue restent contrôlés. [Rapport1080](qa-sdk-preloads-20261111-layout-final/readability-reading1080-report.json),
+[log](qa-sdk-preloads-20261111-layout-final/readability-reading1080.log),
+[sources exécutées](qa-sdk-preloads-20261111-layout-final/readability-reading1080-source-manifest.json).
 
-Les sources interface et lisibilité suivantes ont réellement compilé ensemble
-avec Godot 4.7.2 (sortie `LAYOUT_SOURCE_COMPILE PASS`, code 0, 0,63 s).
-**Elles ne sont pas encore qualifiées par un replay complet.** Ce dépôt fournit
-les sélecteurs pour lancer leur diagnostic GitHub sans présenter la compilation
-comme un résultat de test. Le [gel des sources locales](qa-sdk-preloads-20261111-layout-final/layout-source-freeze.json)
-porte les SHA effectivement préparés, dont le helper original `d9c2c579…`.
+Le GD final de ces deux replays porte le SHA256
+`894365e4ce171c3e013670e7bb1729bae81941d3d53dce9dc72ebd66cfc85f71`.
+Il a réellement compilé avant replay. Le [gel final](qa-sdk-preloads-20261111-layout-final/layout-source-freeze.json)
+et le [gel initial](qa-sdk-preloads-20261111-layout-final/layout-source-freeze-initial.json)
+restent distincts. Le helper local réellement exécuté est l’original
+`d9c2c579…` ; le helper distant final `2f1c4d11…` ajoute des procédures sans
+changer celles utilisées ici. Les autres scénarios de lisibilité gardent leurs
+assertions et comportements précédents : le patch ne vise que 720 et 1080.
 
-| Wrapper | Variable | Scénarios indépendants |
+## Couverture et reproduction
+
+| Wrapper | Variables de sélection | Cas indépendants |
 | --- | --- | --- |
+| `godot-guide-layout.cjs` | `CD_GUIDE_LAYOUT_CASE`, `CD_GUIDE_LAYOUT_MODE` | produit de `layout`/`dock` et `native`/`stretch` |
 | `godot-interface-layout.cjs` | `CD_LAYOUT_CASE` | `management`, `journal` |
 | `godot-readability06.cjs` | `CD_READABILITY06_CASE` | `reading720`, `reading900`, `reading1080`, `reading1440`, `responsive`, `drafts` |
 
-L’interface conserve les contrôles de composition, de candidats autorisés, de
-clavier, de focus, de brouillons, de Presse via son courrier et de reçus N10
-dans `management`. Le cas `journal` importe séparément la fixture live et
-conserve recherche réellement saisie, scroll, même caméra et mêmes instances
-au redimensionnement. Les deux cas conservent les comparaisons disque et
-export/RNG pertinentes. Le parcours cumulé précédent a été arrêté à 180,298 s,
-sans assertion rouge ni compteur terminé : il reste non qualifié. Aucun plafond
-n’est augmenté et aucun contrôle n’est supprimé pour tenir dans le budget.
+La CI doit choisir un seul scénario par invocation. Les wrappers sans filtre
+conservent la couverture cumulée ; leur durée totale sous 180s n’est pas
+revendiquée. La [tentative interface cumulée](qa-sdk-preloads-20261111-layout-final/interface-cumulative-budget-receipt.json)
+reste non qualifiée : 180,298 s, compteur final absent. Les cas isolés conservent
+composition, candidats autorisés, vrai clavier et focus, brouillons, accès
+Presse via son courrier, reçus N10, Journal de la vraie surface contextuelle,
+recherche réellement saisie, même caméra et mêmes instances au resize.
 
-La lisibilité sépare les quatre formats de lecture des scénarios de resize et
-de brouillons. Chaque cas crée une vraie carrière, persiste la note par le
-worker, puis compare export/RNG et octets du profil avant et après consultation.
-Les attentes de pagination de l’effectif sont remplacées par la liste continue
-complète, sans doublon d’identifiant, et de vraies ouvertures clavier aux deux
-bords. Début, Fin et Page↓ sont contrôlés dans la table immersive. Les 24 lignes
-de faits entières et chaque Label métier restent exigés ; seule la marge vide
-du bouton sous la scrollbar n’est plus confondue avec une donnée coupée.
-Salaires et échéances suivent leurs formats publiés (centaine, unité choisie,
-année civile) à partir des données du worker. Le contexte compact est vérifié
-après sélection explicite de son onglet Aperçu.
+La lisibilité vérifie les quatre formats, les 36 attributs du worker, les données
+de contrat publiées, tous les identifiants de la liste continue sans doublon,
+Début/Fin/Page↓, notes ciblées, comparateur et brouillons Unicode. Chaque cas
+crée une vraie carrière et persiste sa note avant de prendre ses références.
+Les consultations, saisies non validées et redimensionnements conservent les
+octets du profil et l’export complet, y compris le RNG.
 
-Sans filtre, les wrappers conservent tous leurs scénarios ; aucune durée
-cumulée sous 180 s n’est revendiquée. La recette distante doit fournir un seul
-sélecteur par invocation et conserver le plafond Node de 180 s.
+Le guide reste configuré par `setup(app,false)` : zéro signal vocal `requested`,
+muted et aucun lecteur audio. Aucun TTS réel n’est appelé, aucun ERROR n’est
+filtré. Les [quatre reçus locaux antérieurs](qa-sdk-preloads-20261111-layout-final/guide-four-cases.json)
+conservent leur provenance exacte ; le nouveau run GitHub reçoit désormais les
+quatre couples directement sur d83 avec le helper final. Le premier essai privé
+stretch invalidé par l’omission de `dist/` ne constitue aucune qualification.
 
-## Réception locale interface management
-
-Le premier scénario isolé est désormais qualifié : `CD_LAYOUT_CASE=management`,
-**857 contrôles, aucun échec**, Node complet **125,846 s**, attente du verrou
-0 s. Le [reçu](qa-sdk-preloads-20261111-layout-final/interface-management-receipt.json),
-le [rapport](qa-sdk-preloads-20261111-layout-final/interface-management-report.json),
-les [sources figées](qa-sdk-preloads-20261111-layout-final/interface-management-source-manifest.json)
-et le [log complet](qa-sdk-preloads-20261111-layout-final/interface-management.log)
-sont archivés. Le SHA du GD effectivement exécuté correspond au gel diagnostic.
-Le cas Journal reste séparément à recevoir ; ce résultat ne le qualifie pas.
-
-## Réception locale interface Journal
-
-Le second scénario isolé est qualifié : `CD_LAYOUT_CASE=journal`,
-**33 contrôles, aucun échec**, Node complet **119,380 s**, attente du verrou
-0 s. Son [reçu](qa-sdk-preloads-20261111-layout-final/interface-journal-receipt.json),
-[rapport](qa-sdk-preloads-20261111-layout-final/interface-journal-report.json),
-[sources figées](qa-sdk-preloads-20261111-layout-final/interface-journal-source-manifest.json)
-et [log](qa-sdk-preloads-20261111-layout-final/interface-journal.log) portent
-le même SHA de harness que management. Les deux sélecteurs couvrent désormais
-tous les contrôles de la famille interface. La [tentative cumulée antérieure](qa-sdk-preloads-20261111-layout-final/interface-cumulative-budget-receipt.json)
-reste distincte et non qualifiée (180,298 s, compteur final absent).
-
-## Réceptions locales de lisibilité
-
-Les scénarios déjà reçus ci-dessous sont qualifiés individuellement. Ceux qui
-ne sont pas cités restent au stade diagnostic compilé, sans résultat inventé.
-Leurs SHA de harness sont comparés au même gel de source `ccf7090`.
-
-| Scénario | Contrôles / échecs | Node hors verrou | Preuves |
-| --- | --- | --- | --- |
-| `responsive` | 124 / 0 | 62,978 s | [reçu](qa-sdk-preloads-20261111-layout-final/readability-responsive-receipt.json), [rapport](qa-sdk-preloads-20261111-layout-final/readability-responsive-report.json), [sources](qa-sdk-preloads-20261111-layout-final/readability-responsive-source-manifest.json), [log](qa-sdk-preloads-20261111-layout-final/readability-responsive.log) |
-| `reading900` | 260 / 0 | 63,336 s | [reçu](qa-sdk-preloads-20261111-layout-final/readability-reading900-receipt.json), [rapport](qa-sdk-preloads-20261111-layout-final/readability-reading900-report.json), [sources](qa-sdk-preloads-20261111-layout-final/readability-reading900-source-manifest.json), [log](qa-sdk-preloads-20261111-layout-final/readability-reading900.log) |
+Les [reçus interface locaux](qa-sdk-preloads-20261111-layout-final/interface-management-receipt.json)
+et [Journal](qa-sdk-preloads-20261111-layout-final/interface-journal-receipt.json)
+restent archivés, ainsi que les premiers reçus lisibilité
+[responsive](qa-sdk-preloads-20261111-layout-final/readability-responsive-receipt.json)
+et [900](qa-sdk-preloads-20261111-layout-final/readability-reading900-receipt.json).
+Le [gel des neuf fixtures](qa-sdk-preloads-20261111.md) et son
+[complément](qa-sdk-preloads-20261111-complement.md) restent inchangés.

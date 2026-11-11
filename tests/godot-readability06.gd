@@ -177,22 +177,63 @@ func keyboard(button: BaseButton, description: String) -> void:
 	check(button.has_focus(), "Focus clavier · " + description)
 	await key(KEY_ENTER)
 
+func expose_office(control: Control) -> void:
+	if control == null: return
+	var parent := control.get_parent()
+	while parent != null:
+		if parent is ScrollContainer:
+			parent.ensure_control_visible(control)
+			await settle()
+		parent = parent.get_parent()
+
+func office_contained(control: Control) -> bool:
+	if not inside(control, app.body_scroll): return false
+	var parent := control.get_parent()
+	while parent != null:
+		if parent is ScrollContainer and not inside(control,parent): return false
+		parent = parent.get_parent()
+	return true
+
+func office_card_readable(card: Control) -> bool:
+	if card == null: return false
+	await expose_office(card)
+	if office_contained(card): return true
+	var viewport := named("OfficeReadingScroll") as ScrollContainer
+	if viewport == null or not inside(viewport,app.body_scroll): return false
+	var bounds := rect(card)
+	var visible := rect(viewport).grow(1)
+	if bounds.position.x < visible.position.x or bounds.end.x > visible.end.x: return false
+	var facts := 0
+	for control: Control in card.find_children("*","Control",true,false):
+		if not control.is_visible_in_tree() or not (control is Label or control is BaseButton): continue
+		facts += 1
+		await expose_office(control)
+		if not office_contained(control): return false
+	print("OFFICE_BOUNDED_CARD ",JSON.stringify({"card":str(card.name),"bounds":str(bounds),"viewport":str(rect(viewport)),"readable_facts":facts}))
+	return facts > 0
+
 func office_reading(resolution: Vector2i) -> void:
 	await navigate("Bureau")
 	var tiles := ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]
 	for id: String in tiles:
 		var tile := named(id)
-		if id == "OfficeTimeline" and resolution.x == 1280 and tile != null:
-			app.body_scroll.ensure_control_visible(tile)
-			await settle()
-		check(inside(tile, app.body_scroll), "Tuile entière dans le Bureau %s %s" % [id,resolution])
-		if id == "OfficeTimeline" and resolution.x == 1280:
-			app.body_scroll.scroll_vertical = 0
-			await settle()
+		var readable := inside(tile,app.body_scroll)
+		if resolution.x == 1280: readable = await office_card_readable(tile)
+		check(readable, "Tuile entière dans le Bureau %s %s" % [id,resolution])
 	var decisions := named("OfficeDecisions")
 	check(decisions != null and rect(decisions).size.x >= 280, "Espace utile pour les décisions " + str(resolution))
 	for id in ["OfficePreparationAction", "OfficeSelectionAction", "OfficeSquadAction", "OfficeStandingsAction", "OfficeCalendarAction"]:
-		check(inside(named(id), app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
+		var action := named(id) as Button
+		if resolution.x == 1280 and action != null:
+			action.grab_focus()
+			await expose_office(action)
+			check(action.has_focus(), "Accès métier garde son focus dans le vrai défilement " + id)
+		check(office_contained(action) if resolution.x == 1280 else inside(action,app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
+	if resolution.x == 1280:
+		var reading := named("OfficeReadingScroll") as ScrollContainer
+		if reading != null: reading.scroll_vertical = 0
+		app.body_scroll.scroll_vertical = 0
+		await settle()
 	await capture("bureau-" + str(resolution.x))
 
 func roster_rows(roster: Control) -> Array[Node]:
@@ -262,6 +303,15 @@ func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String
 	var rows := roster_rows(roster)
 	var complete := rows.filter(func(row: Control): return roster_row_readable(row, roster))
 	var immersive := named("ImmersiveRosterTable") != null
+	if immersive and resolution == Vector2i(1920,1080) and rows.size() >= 24:
+		# The family banner consumes a row at the initial offset. Expose the
+		# same first 24 players through the real continuous list, without
+		# lowering the required count or changing any control dimensions.
+		(roster as ScrollContainer).ensure_control_visible(rows[23])
+		await settle()
+		complete = rows.filter(func(row: Control): return roster_row_readable(row, roster))
+		for row: Control in rows.slice(0,24):
+			check(roster_row_readable(row,roster), "Les mêmes24 premières lignes de faits sont entières après défilement " + str(row.get_meta("player_id")))
 	check(immersive == (resolution.x >= 1600), "Gabarit attendu de l’Effectif " + str(resolution))
 	check(roster != null and not rows.is_empty(), "Table d’effectif natif renseignée " + str(resolution))
 	if immersive:

@@ -4,7 +4,7 @@
   "files": {
     "tests/godot-interface-layout.gd": "55a0f0e21d80fefc07997a844bb89af78ae303ac5fcf3819c8834fb5f298102d",
     "tests/godot-interface-layout.cjs": "0813dbe6476a05eed70205c5e7354c17ca6ff7761bd7a83d450cbebd30f54b68",
-    "tests/godot-readability06.gd": "14b185b0a989172ada5e4deec50cf40760a401235a5b610637fb007244096ea8",
+    "tests/godot-readability06.gd": "894365e4ce171c3e013670e7bb1729bae81941d3d53dce9dc72ebd66cfc85f71",
     "tests/godot-readability06.cjs": "9c455891a658ef1b33c7e32fdd076ac594174bf0d4c2736965aa0c0f9ece8ba5",
     "tests/godot-guide-layout.gd": "54333cdb925ee43aa6778c6feaf76e52ec899705a7a67fc79cafaa1150caf948",
     "tests/godot-guide-layout.cjs": "c0254d0242734054186f6035545d2ebd2ff2fa547a5a4e2a2020e7bbdb380b4f",
@@ -15,5 +15,6 @@
     "native/godot/ui/immersive08/month_calendar.gd": "dd56d22c28a067c2131fed78f9652ae46486a7a7c919025c95ceeebdcc9d2ce9",
     "native/godot/ui/immersive08/office.gd": "c0e0d9820623472108c3a398444b3f6755e5804a724df3b3a1b19dabfb81d88f",
     "native/godot/ui/profile_safety_view.gd": "ecda9155be9105c8106b7b55e9a7b2e41f29981cf8b3ad3ef1870f40de95f232"
-  }
+  },
+  "scope": "Final patch only reading720 bounded card facts and reading1080 first24-row reveal; other cases unchanged"
 }
