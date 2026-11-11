@@ -10,6 +10,7 @@ extends Node
 ## de la vue s'y greffent sans rien changer ici.
 const S = preload("res://ui/contextual/skin.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
+const Cadrage = preload("res://match_cadrage.gd")
 
 enum { INTER, JEU, ATTENTE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
@@ -23,6 +24,13 @@ const PAS := 0.2
 ## Délai entre la frappe d'un tir au but et l'affichage de son résultat.
 const RESULTAT := 1.0
 const FONDU := 0.5
+## Aucune attente sans échéance : un geste de la vue 3D tient l'image au plus
+## ECHEANCE_GESTE secondes par plan ; une minute demandée sans réponse ni requête en
+## cours est redemandée après ECHEANCE_DEMANDE ; après une erreur du moteur, nouvel essai
+## toutes les ECHEANCE_ERREUR secondes.
+const ECHEANCE_GESTE := 12.0
+const ECHEANCE_DEMANDE := 3.0
+const ECHEANCE_ERREUR := 5.0
 
 var view: Control
 var app: Control
@@ -30,6 +38,7 @@ var stage: Node3D
 var viewport: SubViewport
 var between: Control
 var voile: ColorRect
+var cadrage: RefCounted
 var etat := INTER
 var niveau := "dynamique"
 var horloge := "normale"
@@ -56,12 +65,18 @@ var _pause_au_depart := false
 var _demande := false
 var _fondu: Tween
 var _debut_ms := 0
+var _tenu := 0.0
+var _sans_reponse := 0.0
+var _apres_erreur := 0.0
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") == "1"
 
 func setup(owner_view: Control, container: Control, target: SubViewport, space: Control) -> void:
 	name = "MatchTempsForts"
+	# Avant la vue 3D dans la même image : un plan posé par la régie est cadré tout de suite,
+	# sans une image où le ballon a déjà changé de place et pas encore la caméra.
+	process_priority = -10
 	view = owner_view
 	app = view.app
 	stage = view.stage
@@ -72,6 +87,9 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	horloge = cadence if HORLOGES.has(cadence) else "normale"
 	var allure := OS.get_environment("CD_MATCH_TEMPS_FORTS_VITESSE")
 	vitesse = clampf(float(allure), 0.5, 4.0) if allure.is_valid_float() else 1.0
+	if stage.has_method("set_cadrage"):
+		cadrage = Cadrage.new(stage)
+		stage.set_cadrage(cadrage)
 	voile = ColorRect.new()
 	voile.name = "MatchBetweenVeil"
 	voile.color = Color(S.PANEL, 1.0)
@@ -130,6 +148,9 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		# Un match déjà en pause (reprise d'une sauvegarde) joue tout de même son temps fort.
 		_pause_au_depart = live.get("paused", false)
 		_demarrer(candidat)
+		# Le modèle arrive après la mise à jour de la vue 3D : on la rejoue sans faire avancer
+		# le temps, pour que la première image du temps fort soit déjà placée et cadrée.
+		stage._process(0.0)
 	elif etat == JEU:
 		# Même temps fort, nouveau modèle : seule une pause demandée par le manager le fige.
 		var fige: bool = live.get("paused", false) and not _pause_au_depart and not live.get("atBreak", false) and not live.get("finished", false)
@@ -146,9 +167,22 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
 	if etat == JEU:
-		_lire(delta * vitesse)
+		_lire(delta * vitesse, delta)
 		return
-	if _live.is_empty() or app.waiting or _demande or not str(app.last_error).is_empty(): return
+	if _live.is_empty() or app.waiting:
+		_sans_reponse = 0.0
+		return
+	if _demande:
+		# La requête est partie mais plus rien n'est en cours : on ne reste pas suspendu à elle.
+		_sans_reponse += delta
+		if _sans_reponse < ECHEANCE_DEMANDE: return
+		_demande = false
+		suivi.append({"evenement": "echeance", "cause": "demande", "debut_ms": Time.get_ticks_msec()})
+	_sans_reponse = 0.0
+	if not str(app.last_error).is_empty():
+		_apres_erreur += delta
+		if _apres_erreur < ECHEANCE_ERREUR: return
+	_apres_erreur = 0.0
 	if _live.get("paused", false) or _live.get("finished", false) or not arret.is_empty(): return
 	attente += delta
 	if etat == ATTENTE or attente >= float(HORLOGES[horloge]):
@@ -200,6 +234,8 @@ func _demarrer(candidat: Dictionary) -> void:
 	_score = tf.get("scoreAvant", _live.get("score", [0, 0]))
 	_montrer_jeu(true)
 	stage.set_live_cadence(1)
+	# Entrée dans un temps fort : le cadrage rapproché est posé d'emblée (la 3D sort du fondu).
+	if cadrage != null and not tf.get("suite", false): cadrage.couper()
 	var depart: Variant = tf.get("depart")
 	if not tf.get("suite", false) and depart is Dictionary:
 		# Coupe d'entrée : l'action reprend d'où elle se trouvait une minute plus tôt.
@@ -215,7 +251,15 @@ func _commencer_plan() -> void:
 	var scene: Dictionary = plan.scene
 	temps = 0.0
 	sous_image = 0.0
+	_tenu = 0.0
 	phase = "jeu"
+	if cadrage != null:
+		cadrage.regler(true, str(plan.get("kind", "")), float(plan.get("mouvement", 0.0)) >= 2.5)
+		# Bandeau du score en haut, légende et commandes en bas : l'action est cadrée entre les deux.
+		var hauteur := maxf(1.0, view.size.y)
+		var legende: Control = view.events.get_parent().get_parent().get_parent()
+		cadrage.couvrir(view.clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
+		if plan.get("coupe", false): cadrage.couper()
 	if plan.get("coupe", false) and not _gestes_actifs():
 		# Coupe franche : la phase est montrée déjà en place.
 		var pret := scene.duplicate()
@@ -242,10 +286,13 @@ func _jouer(plan: Dictionary) -> void:
 	_derniers = _positions(scene)
 	_habiller()
 
-func _lire(delta: float) -> void:
+func _lire(delta: float, reel: float) -> void:
 	if gel or index < 0 or index >= tf.plans.size(): return
-	# Une passe longue ou un geste de la vue tient l'image : la lecture l'attend.
-	if stage.is_presenting_extended_pass(): return
+	# Une passe longue ou un geste de la vue tient l'image : la lecture l'attend, avec une échéance.
+	if stage.is_presenting_extended_pass() and _tenu < ECHEANCE_GESTE:
+		_tenu += reel
+		if _tenu >= ECHEANCE_GESTE: suivi.append({"evenement": "echeance", "cause": "geste", "plan": str(tf.plans[index].get("kind", "")), "debut_ms": Time.get_ticks_msec()})
+		return
 	var plan: Dictionary = tf.plans[index]
 	temps += delta
 	if phase == "pret":
@@ -278,6 +325,7 @@ func _lire(delta: float) -> void:
 func _vers_inter() -> void:
 	etat = INTER
 	attente = 0.0
+	if cadrage != null: cadrage.regler(false)
 	_montrer_jeu(false)
 	suivi.append({"evenement": "intermediaire", "horloge": str(_live.get("direct", {}).get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
 
@@ -296,7 +344,6 @@ func _apres_lecture() -> void:
 func _montrer_jeu(visible_3d: bool) -> void:
 	if _fondu != null and _fondu.is_valid(): _fondu.kill()
 	if visible_3d:
-		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		between.hide()
 		if not voile.visible: return
 		_fondu = create_tween()
@@ -309,8 +356,8 @@ func _montrer_jeu(visible_3d: bool) -> void:
 		_fondu = create_tween().set_parallel(true)
 		_fondu.tween_property(voile, "modulate:a", 1.0, FONDU)
 		_fondu.tween_property(between, "modulate:a", 1.0, FONDU)
-		# Sous le voile, la 3D n'est plus rendue.
-		_fondu.chain().tween_callback(func(): if etat == INTER: viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED)
+		# La 3D continue d'être rendue sous le voile : arrêter puis relancer la sous-vue
+		# n'apportait qu'une économie et ajoutait un état de plus au moment des coupes.
 
 func _habiller() -> void:
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.

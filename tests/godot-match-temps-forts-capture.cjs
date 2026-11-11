@@ -10,6 +10,8 @@
 //   CD_MATCH_TEMPS_FORTS_SIZE     "1280x720" par défaut
 //   CD_MATCH_TEMPS_FORTS_EVERY    une image enregistrée toutes les N images affichées à 30 images/s (défaut 5, soit 6 par seconde)
 //   CD_MATCH_TEMPS_FORTS_MAX      nombre maximal d'images (défaut 2400)
+//   CD_MATCH_TEMPS_FORTS_QUALITE  qualité JPEG de 30 à 95 (défaut 72)
+//   CD_MATCH_TEMPS_FORTS_GEL      secondes sans progrès avant d'arrêter avec un diagnostic « fige » dans report.json (défaut 120)
 //   CD_MATCH_TEMPS_FORTS_MINUTES  arrêt après cette minute de match (défaut 0 : match entier)
 //   CD_MATCH_TEMPS_FORTS_CLUB     club dirigé dans le harnais (défaut 0)
 //   CD_MATCH_TEMPS_FORTS_SEED     graine du moteur, entier (défaut 7) : même graine, même match
@@ -43,6 +45,11 @@ const output=(result.stdout||'')+(result.stderr||'');
 fs.writeFileSync(path.join(proof,'godot.log'),output);
 fs.rmSync(work,{recursive:true,force:true});
 if(result.error){console.error(output);throw result.error;}
-if(result.status!==0){console.error(output);console.error('Capture interrompue (code '+result.status+'). Journal : '+path.join(proof,'godot.log'));process.exit(result.status||1);}
-const report=JSON.parse(fs.readFileSync(path.join(proof,'report.json'),'utf8'));
-console.log(`Capture terminée en ${Math.round((Date.now()-started)/1000)} s : ${report.images.length} images, ${report.temps_forts} temps forts, score ${report.score.join(' – ')}, dossier ${proof}`);
+const reportPath=path.join(proof,'report.json');
+if(result.status!==0){
+ console.error(output);
+ if(result.status===3&&fs.existsSync(reportPath))console.error('Direct figé : '+JSON.stringify(JSON.parse(fs.readFileSync(reportPath,'utf8')).fige));
+ console.error('Capture interrompue (code '+result.status+'). Journal : '+path.join(proof,'godot.log'));process.exit(result.status||1);
+}
+const report=JSON.parse(fs.readFileSync(reportPath,'utf8'));
+console.log(`Capture terminée en ${Math.round((Date.now()-started)/1000)} s : ${report.images.length} images de ${report.image_size.join('×')} (${Math.round(report.octets_par_image/1024)} Ko en moyenne, ${Math.round(report.octets_image_la_plus_lourde/1024)} Ko au plus${report.resized?', redimensionnées':''}), ${report.temps_forts} temps forts, ${report.echeances} échéance(s), score ${report.score.join(' – ')}, dossier ${proof}`);

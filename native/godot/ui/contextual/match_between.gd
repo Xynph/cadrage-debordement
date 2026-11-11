@@ -21,6 +21,9 @@ var arret_titre: Label
 var arret_texte: Label
 var _niveaux: Array = []
 var _cle := ""
+var _densite := 0.5
+var _arret: Dictionary = {}
+var _dernier: Array = []
 
 ## Terrain vu de dessus : 100 m de champ de jeu et deux en-buts de 8 m.
 class Terrain extends Control:
@@ -29,12 +32,17 @@ class Terrain extends Control:
 	var direct: Dictionary = {}
 	var equipes: Array = []
 	var couleurs: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
+	## Échelle de l'interface (1 en 2560×1440, 0,5 en 1280×720).
+	var densite := 0.5
+
+	func px(valeur: float) -> float:
+		return valeur * densite
 
 	func champ() -> Rect2:
-		var libre := size - Vector2(16, 34)
+		var libre := size - Vector2(px(32), px(68))
 		var echelle := minf(libre.x / (100.0 + 2.0 * EN_BUT), libre.y / 70.0)
 		var taille := Vector2((100.0 + 2.0 * EN_BUT) * echelle, 70.0 * echelle)
-		return Rect2((size - taille) * 0.5 + Vector2(0, 8), taille)
+		return Rect2((size - taille) * 0.5 + Vector2(0, px(16)), taille)
 
 	func point(x: float, y: float) -> Vector2:
 		var c := champ()
@@ -55,14 +63,14 @@ class Terrain extends Control:
 			if not nom.is_empty():
 				var centre := en_but.get_center()
 				draw_set_transform(centre, -PI / 2.0 if cote == 0 else PI / 2.0)
-				draw_string(police, Vector2(-c.size.y * 0.5, 5), nom, HORIZONTAL_ALIGNMENT_CENTER, c.size.y, 14, S.TEXT)
+				draw_string(police, Vector2(-c.size.y * 0.5, px(10)), nom, HORIZONTAL_ALIGNMENT_CENTER, c.size.y, roundi(px(28)), S.TEXT)
 				draw_set_transform(Vector2.ZERO, 0.0)
 		# Zone de jeu : la bande de dix mètres où se trouve le ballon.
 		var zone: Dictionary = direct.get("zone", {})
 		var x := clampf(float(zone.get("x", 50.0)), 0.0, 100.0)
 		var debut := clampf(floorf(x / 10.0) * 10.0, 0.0, 90.0)
 		draw_rect(Rect2(point(debut, 0), Vector2(10.0 * echelle, c.size.y)), Color(S.GOLD, 0.20))
-		draw_rect(Rect2(point(debut, 0), Vector2(10.0 * echelle, c.size.y)), Color(S.GOLD, 0.85), false, 2.0)
+		draw_rect(Rect2(point(debut, 0), Vector2(10.0 * echelle, c.size.y)), Color(S.GOLD, 0.85), false, maxf(2.0, px(4)))
 		for metre in [0.0, 22.0, 50.0, 78.0, 100.0]:
 			draw_line(point(metre, 0), point(metre, 70), ligne, 2.0 if metre in [0.0, 50.0, 100.0] else 1.5)
 		for metre in [5.0, 40.0, 60.0, 95.0]:
@@ -71,7 +79,7 @@ class Terrain extends Control:
 			draw_dashed_line(point(0, largeur), point(100, largeur), Color(ligne, 0.35), 1.0, 6.0)
 		draw_rect(c, ligne, false, 2.0)
 		for repere in [[22.0, "22"], [50.0, "50"], [78.0, "22"]]:
-			draw_string(police, point(repere[0], 0) + Vector2(-20, -5), repere[1], HORIZONTAL_ALIGNMENT_CENTER, 40, 12, S.MUTED)
+			draw_string(police, point(repere[0], 0) + Vector2(-px(40), -px(10)), repere[1], HORIZONTAL_ALIGNMENT_CENTER, px(80), roundi(px(24)), S.MUTED)
 		# Les trois dernières actions, de la plus ancienne à la plus récente.
 		var traces: Array = direct.get("traces", [])
 		for index in traces.size():
@@ -82,9 +90,9 @@ class Terrain extends Control:
 			var b := point(float(vers.get("x", x)), float(vers.get("y", 35.0)))
 			if a.distance_to(b) < 3.0: continue
 			var force := 0.35 + 0.3 * float(index + 1) / float(traces.size())
-			draw_line(a, b, Color(S.TEXT, force), 2.0, true)
+			draw_line(a, b, Color(S.TEXT, force), maxf(2.0, px(4)), true)
 			var sens := (b - a).normalized()
-			draw_colored_polygon(PackedVector2Array([b, b - sens * 9.0 + sens.orthogonal() * 4.5, b - sens * 9.0 - sens.orthogonal() * 4.5]), Color(S.TEXT, force))
+			draw_colored_polygon(PackedVector2Array([b, b - sens * px(18) + sens.orthogonal() * px(9), b - sens * px(18) - sens.orthogonal() * px(9)]), Color(S.TEXT, force))
 		# Essais, pénalités et cartons déjà joués.
 		for repere: Dictionary in direct.get("reperes", []):
 			var equipe := int(repere.get("equipe", 0))
@@ -93,12 +101,12 @@ class Terrain extends Control:
 			var teinte := couleurs[clampi(equipe, 0, 1)]
 			if kind == "card":
 				teinte = Color("d43e47") if repere.get("rouge", false) else S.GOLD
-				draw_rect(Rect2(ou - Vector2(4, 6), Vector2(8, 12)), teinte)
+				draw_rect(Rect2(ou - Vector2(px(8), px(12)), Vector2(px(16), px(24))), teinte)
 			else:
-				draw_circle(ou, 8.0, teinte)
-				draw_arc(ou, 8.0, 0.0, TAU, 20, S.TEXT, 1.5, true)
-				draw_string(police, ou + Vector2(-8, 4), "E" if kind == "try" else "P", HORIZONTAL_ALIGNMENT_CENTER, 16, 11, S.TEXT)
-			draw_string(police, ou + Vector2(-20, 22), str(repere.get("horloge", "")), HORIZONTAL_ALIGNMENT_CENTER, 40, 11, S.MUTED)
+				draw_circle(ou, px(16), teinte)
+				draw_arc(ou, px(16), 0.0, TAU, 20, S.TEXT, maxf(1.5, px(3)), true)
+				draw_string(police, ou + Vector2(-px(16), px(8)), "E" if kind == "try" else "P", HORIZONTAL_ALIGNMENT_CENTER, px(32), roundi(px(22)), S.TEXT)
+			draw_string(police, ou + Vector2(-px(40), px(44)), str(repere.get("horloge", "")), HORIZONTAL_ALIGNMENT_CENTER, px(80), roundi(px(22)), S.MUTED)
 		# Ballon et sens du jeu de l'équipe en possession.
 		var dernier: Dictionary = traces[-1].get("vers", {}) if not traces.is_empty() else {}
 		var ballon := point(x, float(dernier.get("y", 35.0)))
@@ -106,62 +114,103 @@ class Terrain extends Control:
 		if possession is float or possession is int:
 			var cote := clampi(int(possession), 0, 1)
 			var sens := Vector2(1 if cote == 0 else -1, 0)
-			var pointe := ballon + sens * 34.0
-			draw_line(ballon + sens * 12.0, pointe, couleurs[cote], 5.0, true)
-			draw_colored_polygon(PackedVector2Array([pointe + sens * 10.0, pointe + sens.orthogonal() * 8.0, pointe - sens.orthogonal() * 8.0]), couleurs[cote])
-		draw_circle(ballon, 7.0, S.TEXT)
-		draw_arc(ballon, 11.0, 0.0, TAU, 24, S.GOLD, 2.0, true)
+			var pointe := ballon + sens * px(68)
+			draw_line(ballon + sens * px(24), pointe, couleurs[cote], maxf(4.0, px(10)), true)
+			draw_colored_polygon(PackedVector2Array([pointe + sens * px(20), pointe + sens.orthogonal() * px(16), pointe - sens.orthogonal() * px(16)]), couleurs[cote])
+		draw_circle(ballon, px(14), S.TEXT)
+		draw_arc(ballon, px(22), 0.0, TAU, 24, S.GOLD, maxf(2.0, px(4)), true)
+
+## Échelle de l'interface, comme les autres écrans du jeu (immersive08/components.gd) :
+## les tailles sont écrites pour 2560×1440 et réduites jusqu'à la moitié en 1280×720.
+static func densite_pour(taille: Vector2) -> float:
+	return clampf(minf(taille.y / 1440.0, taille.x / 2560.0), 0.5, 1.0)
+
+func px(valeur: float) -> int:
+	return roundi(valeur * _densite)
+
+func _texte(texte: String, taille: float, couleur: Color, retour: bool = false) -> Label:
+	var etiquette := S.wrap(texte, px(taille), couleur) if retour else S.label(texte, px(taille), couleur)
+	etiquette.add_theme_font_size_override("font_size", px(taille))
+	return etiquette
+
+func _bouton(texte: String, action: Callable, actif: bool = true, principal: bool = false) -> Button:
+	var bouton := S.button(texte, action, actif, principal)
+	bouton.custom_minimum_size.y = px(76)
+	bouton.add_theme_font_size_override("font_size", px(26))
+	return bouton
 
 func _ready() -> void:
 	name = "MatchBetween"
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	S.full(self)
-	var page := S.G.v(8)
+	_densite = densite_pour(get_viewport_rect().size)
+	_construire()
+	resized.connect(_a_l_echelle)
+
+## La fenêtre a changé de taille : tout l'écran est reconstruit à la nouvelle échelle.
+func _a_l_echelle() -> void:
+	var densite := densite_pour(get_viewport_rect().size)
+	if is_equal_approx(densite, _densite): return
+	_densite = densite
+	_construire()
+	if not _dernier.is_empty(): update_frame.callv(_dernier)
+
+func _construire() -> void:
+	for enfant in get_children():
+		remove_child(enfant)
+		enfant.queue_free()
+	_cle = ""
+	var page := S.G.v(px(16))
 	S.full(page)
 	add_child(page)
-	var entete := S.G.h(10)
+	var entete := S.G.h(px(20))
 	page.add_child(entete)
-	etat = S.label("", 17, S.GOLD)
+	etat = _texte("", 34, S.GOLD)
 	etat.name = "MatchBetweenState"
 	etat.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	etat.clip_text = true
 	S.G.fill(etat)
 	entete.add_child(etat)
-	entete.add_child(S.label("Temps forts", 13, S.MUTED))
+	entete.add_child(_texte("Temps forts", 26, S.MUTED))
 	niveau = OptionButton.new()
 	niveau.name = "MatchHighlightLevel"
-	niveau.custom_minimum_size = Vector2(190, 34)
+	niveau.custom_minimum_size = Vector2(px(400), px(68))
+	niveau.add_theme_font_size_override("font_size", px(26))
+	niveau.get_popup().add_theme_font_size_override("font_size", px(26))
 	niveau.set_meta("contextual_enabled", true)
 	niveau.item_selected.connect(func(index: int): if index >= 0 and index < _niveaux.size(): niveau_choisi.emit(str(_niveaux[index].get("id", ""))))
 	entete.add_child(niveau)
-	var corps := S.G.h(10)
+	var corps := S.G.h(px(20))
 	S.G.fill(corps, true)
 	page.add_child(corps)
-	var gauche := S.panel(corps, 8)
-	S.G.fill(gauche.get_parent().get_parent(), false, 1.75)
+	var gauche := S.panel(corps, px(16))
+	S.G.fill(gauche.get_parent().get_parent(), false, 1.6)
 	terrain = Terrain.new()
 	terrain.name = "MatchBetweenPitch"
+	terrain.densite = _densite
 	terrain.custom_minimum_size = Vector2(320, 180)
 	S.G.fill(terrain, true)
 	gauche.add_child(terrain)
-	var droite := S.G.v(8)
-	droite.custom_minimum_size.x = 330
+	var droite := S.G.v(px(16))
+	droite.custom_minimum_size.x = px(660)
 	S.G.fill(droite)
 	corps.add_child(droite)
-	var journal := S.panel(droite, 10)
-	S.G.fill(journal.get_parent().get_parent(), true, 1.2)
-	journal.add_child(S.label("LE FIL", 12, S.GOLD))
-	fil = S.G.v(3)
+	# Le fil prend la hauteur disponible : plus l'écran est grand, plus il remonte loin.
+	var journal := S.panel(droite, px(20))
+	S.G.fill(journal.get_parent().get_parent(), true, 1.0)
+	journal.add_child(_texte("LE FIL", 24, S.GOLD))
+	# Défilant : les lignes plus anciennes restent atteignables sans rien pousser hors de l'écran.
+	fil = S.G.scroll(journal)
 	fil.name = "MatchBetweenFeed"
-	fil.clip_contents = true
-	S.G.fill(fil, true)
-	journal.add_child(fil)
-	var tableau := S.panel(droite, 10)
-	tableau.add_child(S.label("LE MATCH EN CHIFFRES", 12, S.GOLD))
-	chiffres = S.G.v(1)
+	fil.add_theme_constant_override("separation", px(8))
+	(fil.get_parent() as ScrollContainer).horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	S.G.fill(fil.get_parent(), true)
+	var tableau := S.panel(droite, px(20))
+	tableau.add_child(_texte("LE MATCH EN CHIFFRES", 24, S.GOLD))
+	chiffres = S.G.v(px(4))
 	chiffres.name = "MatchBetweenFigures"
 	tableau.add_child(chiffres)
-	adjoint = S.panel(droite, 10)
+	adjoint = S.panel(droite, px(20))
 	adjoint.name = "MatchBetweenAdvice"
 	adjoint_cadre = adjoint.get_parent().get_parent()
 	adjoint_cadre.hide()
@@ -170,26 +219,27 @@ func _ready() -> void:
 	arret.name = "MatchBetweenStop"
 	arret.add_theme_stylebox_override("panel", S.G.T.box(S.PANEL, 5, S.GOLD))
 	arret.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	arret.custom_minimum_size = Vector2(460, 0)
+	arret.custom_minimum_size = Vector2(px(920), 0)
 	arret.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	arret.grow_vertical = Control.GROW_DIRECTION_BOTH
 	add_child(arret)
-	var marge := S.G.margin(16)
+	var marge := S.G.margin(px(32))
 	arret.add_child(marge)
-	var colonne := S.G.v(10)
+	var colonne := S.G.v(px(20))
 	marge.add_child(colonne)
-	arret_titre = S.label("", 22, S.GOLD)
+	arret_titre = _texte("", 44, S.GOLD)
 	colonne.add_child(arret_titre)
-	arret_texte = S.wrap("", 15, S.TEXT)
-	arret_texte.custom_minimum_size.x = 420
+	arret_texte = _texte("", 30, S.TEXT, true)
+	arret_texte.custom_minimum_size.x = px(840)
 	colonne.add_child(arret_texte)
-	var choix := S.G.h(8)
+	var choix := S.G.h(px(16))
 	colonne.add_child(choix)
-	choix.add_child(S.button("BANC", func(): tiroir_demande.emit("Banc")))
-	choix.add_child(S.button("TACTIQUE", func(): tiroir_demande.emit("Tactique")))
+	choix.add_child(_bouton("BANC", func(): tiroir_demande.emit("Banc")))
+	choix.add_child(_bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique")))
 	choix.add_child(S.G.spacer())
-	choix.add_child(S.button("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true))
+	choix.add_child(_bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true))
 	arret.hide()
+	if not _arret.is_empty(): montrer_arret(_arret)
 
 static func _zone(x: float, possession: int) -> String:
 	# Vu de l'équipe en possession : distance jusqu'à la ligne d'essai adverse.
@@ -201,6 +251,11 @@ static func _zone(x: float, possession: int) -> String:
 
 func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	if not is_node_ready(): return
+	_dernier = [model, live, direct, appliquer]
+	var densite := densite_pour(get_viewport_rect().size)
+	if not is_equal_approx(densite, _densite):
+		_densite = densite
+		_construire()
 	var equipes: Array = live.get("teams", [])
 	terrain.direct = direct
 	terrain.equipes = equipes
@@ -227,20 +282,20 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	if cle == _cle: return
 	_cle = cle
 	S.clear(fil)
-	for index in range(lignes.size() - 1, maxi(-1, lignes.size() - 6), -1):
+	for index in range(lignes.size() - 1, -1, -1):
 		var entree: Dictionary = lignes[index]
-		var texte := S.wrap("%s  %s" % [str(entree.get("horloge", "")), str(entree.get("texte", ""))], 14 if index == lignes.size() - 1 else 13, S.TEXT if index == lignes.size() - 1 else S.MUTED)
+		var texte := _texte("%s  %s" % [str(entree.get("horloge", "")), str(entree.get("texte", ""))], 28 if index == lignes.size() - 1 else 26, S.TEXT if index == lignes.size() - 1 else S.MUTED, true)
 		texte.max_lines_visible = 2
 		texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		fil.add_child(texte)
 	S.clear(chiffres)
 	for rang: Dictionary in direct.get("chiffres", []):
-		var ligne := S.G.h(8)
-		var titre := S.label(str(rang.get("label", "")), 13, S.MUTED)
+		var ligne := S.G.h(px(16))
+		var titre := _texte(str(rang.get("label", "")), 26, S.MUTED)
 		titre.clip_text = true
 		S.G.fill(titre)
 		ligne.add_child(titre)
-		var valeurs := S.label("%s  —  %s" % [str(rang.get("home", "")), str(rang.get("away", ""))], 14, S.TEXT)
+		var valeurs := _texte("%s  —  %s" % [str(rang.get("home", "")), str(rang.get("away", ""))], 28, S.TEXT)
 		valeurs.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		ligne.add_child(valeurs)
 		chiffres.add_child(ligne)
@@ -249,21 +304,27 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var conseil: Variant = model.get("decisions", {}).get("liveAdvice")
 	adjoint_cadre.visible = conseil is Dictionary and not live.get("finished", false)
 	if conseil is Dictionary:
-		adjoint.add_child(S.label("LE REGARD DE L’ADJOINT", 12, S.GOLD))
+		adjoint.add_child(_texte("LE REGARD DE L’ADJOINT", 24, S.GOLD))
 		for raison in [conseil.get("attackReason", ""), conseil.get("defenceReason", "")]:
 			if str(raison).is_empty(): continue
-			var texte := S.wrap(str(raison), 13, S.TEXT)
-			texte.max_lines_visible = 2
+			var texte := _texte(str(raison), 26, S.TEXT, true)
+			# Petit écran : une ligne par raison, le fil garde la hauteur ; le texte entier reste en infobulle.
+			texte.max_lines_visible = 1 if _densite < 0.7 else 2
+			texte.tooltip_text = str(raison)
+			texte.mouse_filter = Control.MOUSE_FILTER_PASS
 			texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			adjoint.add_child(texte)
+		# Le bouton n'apparaît que si l'adjoint propose autre chose que les consignes en place.
 		var change: bool = conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)
-		var possible: bool = change and conseil.get("canAct", false) and conseil.get("defenceAvailable", false)
-		var bouton := S.button("APPLIQUER CES CONSIGNES", func(): appliquer.call(conseil), possible)
-		bouton.name = "MatchBetweenApplyAdvice"
-		bouton.tooltip_text = "" if possible else ("Consignes déjà suivies." if not change else "Mettez le match en pause pour modifier vos consignes.")
-		adjoint.add_child(bouton)
+		if change:
+			var possible: bool = conseil.get("canAct", false) and conseil.get("defenceAvailable", false)
+			var bouton := _bouton("APPLIQUER CES CONSIGNES", func(): appliquer.call(conseil), possible)
+			bouton.name = "MatchBetweenApplyAdvice"
+			bouton.tooltip_text = "" if possible else "Mettez le match en pause pour modifier vos consignes."
+			adjoint.add_child(bouton)
 
 func montrer_arret(valeur: Dictionary) -> void:
+	_arret = valeur
 	if valeur.is_empty():
 		arret.hide()
 		return

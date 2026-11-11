@@ -68,7 +68,7 @@ function project(model,niveau,lire){
  const derniere=[...lignes].reverse().find(jouable)||null;
  // Fil : sans les messages d'avantage, les retours de carton ni les mises en place.
  const bruit=l=>l.kind==='advantage'||l.kind==='card'&&!l.incident||l.type==='setup'||l.kind==='miss'&&l.type!=='miss';
- const fil=lignes.filter(l=>!bruit(l)).slice(-6).map(l=>({horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
+ const fil=lignes.filter(l=>!bruit(l)).slice(-10).map(l=>({horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
  const traces=lignes.filter(l=>jouable(l)&&events[l.i].scene).slice(-3).map(l=>({depuis:point(events[l.i].scene.from),vers:point(events[l.i].scene.to),equipe:l.equipe,kind:l.kind})).filter(t=>t.depuis&&t.vers);
  const reperes=lignes.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>({kind:l.kind,equipe:l.equipe,horloge:horloge(l),x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red'}));
  // Chiffres : ceux que le moteur tient déjà.

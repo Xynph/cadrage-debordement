@@ -58,6 +58,7 @@ var _club_crest: Texture2D
 var _club_branding: MultiMeshInstance3D
 ## Gestes de rugby (touche, ballon porté, essai) : absents sans CD_MATCH_GESTES=1.
 var _gestes: RefCounted
+var _cadrage: RefCounted
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -115,6 +116,11 @@ func set_stadium_evening(enabled: bool) -> void:
 		_stadium_kit.attach(self)
 	if is_instance_valid(_stadium_kit):
 		_stadium_kit.set_evening(enabled)
+
+
+## Cadrage des temps forts (CD_MATCH_TEMPS_FORTS=1) : posé par la régie du direct, absent sinon.
+func set_cadrage(value: RefCounted) -> void:
+	_cadrage = value
 
 
 func set_gestes(enabled: bool) -> void:
@@ -542,13 +548,28 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		var offset := Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
 		var look := _camera_focus
 		var size := 16.0 if _camera_mode == "action" else 42.0
+		var wide := size
+		var screen := get_viewport().get_visible_rect().size
+		if _cadrage:
+			# Pendant un temps fort : l'action est cadrée de près, le ballon toujours dans le champ.
+			var close: Array = _cadrage.frame_camera(look, size, offset, screen.x / maxf(screen.y, 1.0), _camera_mode, delta, cut)
+			look = close[0]
+			size = close[1]
+			offset = close[2]
 		if _gestes:
 			# Pendant un geste : rapprochement amorti (et léger pivot lent en TV), puis retour.
-			var screen := get_viewport().get_visible_rect().size
 			var framed: Array = _gestes.frame_camera(look, size, offset, screen.x / maxf(screen.y, 1.0), _camera_mode, delta)
 			look = framed[0]
 			size = framed[1]
 			offset = framed[2]
+			if _cadrage:
+				# Temps fort : le cadrage du geste garde lui aussi le ballon dans le champ.
+				look = _cadrage.garder_ballon(look, size, offset, screen.x / maxf(screen.y, 1.0))
+		# Jamais de champ dégénéré, quel que soit le recadrage.
+		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
+			look = _camera_focus
+			size = wide
+			offset = Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
 		_camera.position = look + offset
 		_camera.look_at(look)
 		_camera.size = size
