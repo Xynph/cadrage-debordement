@@ -14,7 +14,7 @@ function matchScene(l){
   let x=formation.x+(attack?-dir:dir)*(slot<8?5+slot%3*3:13+(slot-8)*2.8),y=slot<8?ball.y+(Math.floor(slot/3)-1)*4+(slot%3-1)*3:7+(slot-8)*9.3;
   if(kind==='carry'&&record?.style==='conquete'&&slot<8){x=ball.x+(attack?-dir:dir)*(3+slot%3*1.5);y=ball.y+(Math.floor(slot/3)-1)*3}
   if(kind==='scrum'&&slot<8){x=ball.x+(side===0?-1:1)*(1.5+slot%3*2.1);y=ball.y+(Math.floor(slot/3)-1)*2.7}
-  if(kind==='lineout'&&slot<8){x=ball.x+(side===team?-2:2);y=slot===1?2:9+slot*3.3}
+  if(kind==='lineout'&&slot<8){x=ball.x+(side===0?-2:2);y=slot===1?2:9+slot*3.3}
   if(['kickoff','drop22','goalLine'].includes(kind)){x=ball.x+(side===team?(team===0?-1:1)*8:(team===0?1:-1)*20);y=5+slot*4.2}
   if(record?.plans&&!['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)){
    const attackPlan=record.plans.attack[side],defencePlan=record.plans.defence[side];
