@@ -23,7 +23,21 @@
     "tests/godot-guide-layout.cjs",
     "tests/godot-lineup-layout.cjs",
     "tests/godot-interface-layout.cjs",
-    "tests/godot-readability06.cjs"
+    "tests/godot-readability06.cjs",
+    "tests/godot-entity-projections.cjs",
+    "tests/godot-prospect-profile.cjs",
+    "tests/godot-staff-fictional-labels.cjs",
+    "tests/rg27-night-navigation.cjs",
+    "tests/godot-world-entity-targets.cjs",
+    "tests/godot-entity-navigation.cjs",
+    "tests/godot-management-reading-flow.cjs",
+    "tests/godot-gestion-carnet.cjs",
+    "tests/godot-finance-ledger-links.cjs",
+    "tests/godot-reader-history.cjs",
+    "tests/godot-training-identity-links.cjs",
+    "tests/godot-navigation.cjs",
+    "tests/godot-relationships-memory.cjs",
+    "tests/godot-management-reading-links.cjs"
   ],
   "groups": {
     "portraits-staff": [
@@ -34,7 +48,12 @@
       "tests/deepen-staff-hire-ui.cjs",
       "tests/deepen-match.cjs",
       "tests/godot-career-final-fixes.cjs",
-      "tests/godot-playbook-watch-ui.cjs"
+      "tests/godot-playbook-watch-ui.cjs",
+      "tests/godot-entity-projections.cjs",
+      "tests/godot-prospect-profile.cjs",
+      "tests/godot-staff-fictional-labels.cjs",
+      "tests/rg27-night-navigation.cjs",
+      "tests/godot-world-entity-targets.cjs"
     ],
     "parcours": [
       "tests/native-press-ui.cjs",
@@ -48,13 +67,22 @@
       "tests/godot-carnet-ui.cjs",
       "tests/godot-review-regressions.cjs",
       "tests/godot-guide-integration.cjs",
-      "tests/godot-art-direction.cjs"
+      "tests/godot-art-direction.cjs",
+      "tests/godot-entity-navigation.cjs",
+      "tests/godot-management-reading-flow.cjs",
+      "tests/godot-gestion-carnet.cjs"
     ],
     "layouts": [
       "tests/godot-guide-layout.cjs",
       "tests/godot-lineup-layout.cjs",
       "tests/godot-interface-layout.cjs",
-      "tests/godot-readability06.cjs"
+      "tests/godot-readability06.cjs",
+      "tests/godot-finance-ledger-links.cjs",
+      "tests/godot-reader-history.cjs",
+      "tests/godot-training-identity-links.cjs",
+      "tests/godot-navigation.cjs",
+      "tests/godot-relationships-memory.cjs",
+      "tests/godot-management-reading-links.cjs"
     ]
   },
   "suiteEnvironment": {
@@ -69,6 +97,9 @@
     },
     "tests/native-press-ui.cjs": {
       "CD_PRESS_GRAPHICS": "1"
+    },
+    "tests/rg27-night-navigation.cjs": {
+      "CD_NIGHT_NAV_GRAPHICS": "1"
     }
   },
   "suiteCases": {
@@ -177,6 +208,50 @@
         "id": "progression",
         "env": {
           "CD_ART_DIRECTION_CASE": "progression"
+        }
+      }
+    ],
+    "tests/rg27-night-navigation.cjs": [
+      {
+        "id": "reading",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "reading"
+        }
+      },
+      {
+        "id": "nation",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "nation"
+        }
+      },
+      {
+        "id": "guards",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "guards"
+        }
+      },
+      {
+        "id": "prospects",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "prospects"
+        }
+      },
+      {
+        "id": "staff",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "staff"
+        }
+      },
+      {
+        "id": "quote",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "quote"
+        }
+      },
+      {
+        "id": "report",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "report"
         }
       }
     ]
