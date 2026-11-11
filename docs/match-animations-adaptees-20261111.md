@@ -50,7 +50,7 @@ Méthode : les deux squelettes sont en pose T au repos. Pour chaque os, on prend
 
 - `godot-match-animations` : vert.
 - Capture avant/après sur la séquence de gestes (touche, ballon porté, essai), rendu actuel (gl_compatibility) : 246 images de chaque côté, sans erreur.
-- **Forward+ (rendu moderne) : plantage immédiat avec la bibliothèque `.glb`** (code Windows 0xC0000374, corruption du tas, aucun message de Godot). Sans bibliothèque, Forward+ fonctionne. Cause supposée, non démontrée : la reconstruction d'une scène glTF pendant l'exécution. Le chargement d'une ressource `.res` préparée hors jeu l'évite ; à confirmer sous Forward+.
+- **Forward+ (rendu moderne) : plantage immédiat avec la bibliothèque `.glb`** (code Windows 0xC0000374, corruption du tas, aucun message de Godot). Sans bibliothèque, Forward+ fonctionne. Cause supposée, non démontrée : la reconstruction d'une scène glTF pendant l'exécution. Avec la ressource `.res` préparée hors jeu, Forward+ passe (lot « animations-res » : 246 images en gl_compatibility et 246 en Forward+ élevé, aucune erreur). Le `.glb` reste accepté mais n'est plus conseillé.
 - Constat visuel : sur ces images, les joueurs liés au ballon porté sont posés par `match_gestes.gd` ; le reste se tient différemment (repos plus droit). La séquence ne contient presque pas de course : elle ne permet pas de juger les paliers de déplacement.
 
 ## Non vérifié / limites
