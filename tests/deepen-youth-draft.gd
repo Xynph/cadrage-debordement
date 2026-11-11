@@ -20,6 +20,7 @@ func run() -> void:
 	root.add_child(app)
 	await response("startup")
 	await command("new_career",{"mode":"common","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var view := await open_youth()
 	await press(button("YouthDevelopmentEnable"))
 	await confirm_action()
@@ -74,9 +75,13 @@ func run() -> void:
 	await search(view,"YouthDevelopmentSearch",person.name)
 	await select_key(view.find_child("YouthPlan",true,false),"integration")
 	app._clear_dialogs()
+	if not await ContextualFlow.prepare_match_day(app,self,check): await finish(); return
+	var previous_week: int=app.model.meta.week
 	await command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", check)
 	await command("delegate")
 	await command("finish_round")
+	await ContextualFlow.finish_match_week(app,self,check,previous_week)
 	view = await open_youth()
 	await search(view,"YouthDevelopmentSearch",person.name)
 	check(current_choice(view).plan=="specialist","Nouvelle semaine invalide le brouillon non confirmé")
