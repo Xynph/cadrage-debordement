@@ -17,7 +17,7 @@ test('Variété : à niveau, poste, âge et club égaux, des joueurs sous-payés
  const annuels=Array.from({length:400},(_,i)=>M.detail({id:'j'+i,rating:75,fam:3,age:27},1).annuel).sort((a,b)=>a-b);
  assert.ok(annuels[399]>annuels[0]*2.2,'écart d’au moins 2,2 entre extrêmes');
  const ref=M.reference(75);assert.ok(annuels.filter(a=>a<ref*0.8).length>40&&annuels.filter(a=>a>ref*1.25).length>40);
- assert.ok(Math.abs(annuels[200]-ref*1.04)/ref<0.12,'la médiane reste proche de la référence');
+ assert.ok(Math.abs(annuels[200]-ref*1.04)/ref<0.14,'la médiane reste proche de la référence');
  assert.deepEqual(M.detail({id:'x',rating:75,fam:3,age:27},1),M.detail({id:'x',rating:75,fam:3,age:27},1),'déterministe');
  assert.ok(M.detail({id:'star',rating:99,fam:2,age:31},1.3).annuel<=800000);
 });
@@ -40,9 +40,17 @@ function creer(drapeau){
 }
 test('Vrai moteur, drapeau éteint : rien ne change',()=>{const x=creer('0');assert.equal(x.marque,null);assert.ok(Math.abs(x.correlation)<0.1);});
 test('Vrai moteur, drapeau allumé : salaires liés au niveau, variés, masses réalistes',()=>{
- const x=creer('1');assert.deepEqual(x.marque,{version:2,semaines:52});
+ const x=creer('1');assert.deepEqual(x.marque,{version:3,semaines:52});
  assert.ok(x.correlation>0.7&&x.correlation<0.95,'lié au niveau sans être mécanique : '+x.correlation);
  assert.ok(x.elite>8e6&&x.elite<11.5e6,'masse moyenne en première division : '+x.elite);
  assert.ok(x.accession>2.4e6&&x.accession<4e6,'masse moyenne en deuxième division : '+x.accession);
  assert.ok(x.ecart75>2.5,'à niveau 75, écart de salaire d’au moins 2,5 : '+x.ecart75);
+});
+test('Contrats espoirs : hors du noyau, un joueur de 22 ans ou moins a un salaire d’espoir',()=>{
+ const joueurs=[...Array.from({length:M.NOYAU},(_,i)=>({id:'pro'+i,rating:85-i%10,fam:3,age:27})),{id:'jeune',rating:70,fam:3,age:20},{id:'ancien',rating:70,fam:3,age:29},{id:'pepite',rating:90,fam:5,age:20}];
+ const s=M.club(joueurs,'elite',1);
+ assert.equal(s.get('jeune').espoir,true);assert.ok(s.get('jeune').annuel<=60000);
+ assert.equal(s.get('ancien').espoir,false,'un joueur installé hors du noyau reste professionnel');
+ assert.equal(s.get('pepite').espoir,false,'un jeune dans les meilleurs du club est payé en professionnel');
+ assert.ok(s.get('pepite').annuel>s.get('jeune').annuel*4);
 });

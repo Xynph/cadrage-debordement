@@ -53,6 +53,26 @@ Référence : 26 000 € à 60 de niveau, 78 000 € à 70, 155 000 € à 75,
 | Moins de 60 000 € en première division | — | 19 % ; réel 27 % |
 | Plus de 480 000 € en première division | — | 3,6 % ; réel 4 % |
 
+### Version 3 : les contrats espoirs
+
+La version 2 donnait 155 000 € de salaire moyen en première division contre
+259 000 € dans la réalité. Cause : chaque club de première division compte
+dans le jeu une vingtaine de joueurs de 21 ans ou moins, notés 70 en
+moyenne, payés comme des professionnels installés. Le chiffre réel porte sur
+520 professionnels, soit 37 par club.
+
+Correction : dans chaque club, hors des 34 meilleurs, un joueur de 22 ans ou
+moins a un contrat espoir (18 000 à 46 000 € en première division, 14 000 à
+30 000 € en deuxième). La référence des professionnels est relevée de 20 %.
+
+| Mesure, graine 27 | Version 3 | Réel |
+| --- | --- | --- |
+| Première division, masse moyenne | 10,0 M€ (8,2 à 13,3) | 9,9 M€ |
+| Première division, moyenne des 37 mieux payés par club | 242 000 € | 259 000 € |
+| Première division, les autres (21 par club) | 52 000 € | — |
+| Deuxième division, masse moyenne | 3,5 M€ (2,6 à 5,2) | 3,2 M€ |
+| Deuxième division, moyenne des 34 mieux payés par club | 90 000 € | — |
+
 Le moteur compte encore les salaires à la semaine et n'en paie que 34 par
 saison : le module écrit l'année divisée par 52. **Le paiement sur 52
 semaines reste à faire dans le moteur**, avec le budget.
@@ -73,5 +93,6 @@ offres d'un club pour attirer un joueur.
 
 ## Tests
 
-`node --test tests/starting-salaries.cjs` : 6 sur 6 (référence, politique
-des clubs, variété, application unique, vrai moteur drapeau éteint puis allumé).
+`node --test tests/starting-salaries.cjs` : 7 sur 7 (référence, politique
+des clubs, variété, contrats espoirs, application unique, vrai moteur drapeau
+éteint puis allumé).

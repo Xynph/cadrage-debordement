@@ -16,11 +16,17 @@
 // an en moyenne en première division, environ 48 000 € en deuxième ; masse
 // salariale joueurs de 9,9 M€ et 3,2 M€ par club ; 190 000 à 280 000 € selon
 // le poste ; une douzaine de joueurs vers 600 000 €.
-const VERSION = 2;
-const REFERENCE = Object.freeze([[45, 15000], [60, 26000], [66, 44000], [70, 78000], [75, 155000], [80, 255000], [85, 375000], [90, 520000], [95, 650000], [99, 720000]]);
+const VERSION = 3;
+const REFERENCE = Object.freeze([[45, 16000], [60, 30000], [66, 52000], [70, 94000], [75, 186000], [80, 300000], [85, 430000], [90, 570000], [95, 680000], [99, 740000]]);
 const POSTE = Object.freeze([0.93, 0.84, 1.14, 1.0, 0.97, 1.1, 0.84, 1.1, 0.97]); // familles 0 à 8
 const PLANCHER_ANNUEL = 14000;
 const PLAFOND_ANNUEL = 800000;
+// Les effectifs du jeu comptent les espoirs sous contrat (une vingtaine par club de
+// première division). Hors des meilleurs du club, un joueur de 22 ans ou moins a un
+// contrat espoir, pas un salaire de professionnel installé.
+const NOYAU = 34;
+const AGE_ESPOIR = 22;
+const ESPOIR = Object.freeze({ elite: [18000, 46000], accession: [14000, 30000] });
 
 function empreinte(texte) {
   let h = 2166136261;
@@ -72,18 +78,37 @@ function detail(joueur, politique) {
   return { reference: Math.round(base), poste, politique, age, histoire, annuel };
 }
 
+function espoir(joueur, division, politique) {
+  const [bas, haut] = ESPOIR[division] ?? ESPOIR.accession;
+  const niveau = Math.max(0, Math.min(1, ((Number.isFinite(joueur.rating) ? joueur.rating : 55) - 55) / 22));
+  const annuel = (bas + (haut - bas) * niveau) * (0.85 + 0.3 * unite('espoir|' + joueur.id)) * Math.sqrt(politique);
+  return Math.max(PLANCHER_ANNUEL, Math.round(annuel / 1000) * 1000);
+}
+
+// Renvoie, pour un club, le salaire annuel de chaque joueur : identifiant -> {annuel, espoir}.
+function club(joueurs, division, politique) {
+  const classes = [...joueurs].sort((a, b) => (b.rating - a.rating) || (String(a.id) < String(b.id) ? -1 : 1));
+  const resultat = new Map();
+  classes.forEach((joueur, rang) => {
+    const contratEspoir = rang >= NOYAU && Number.isFinite(joueur.age) && joueur.age <= AGE_ESPOIR;
+    resultat.set(joueur.id, { espoir: contratEspoir, annuel: contratEspoir ? espoir(joueur, division, politique) : detail(joueur, politique).annuel });
+  });
+  return resultat;
+}
+
 function apply(state, forces) {
   if (!state || state.startingSalaries !== undefined) return state;
   if (!(state.season === 1 && state.round === 0 && !state.live)) throw Error('Salaires de départ : réservé à la création.');
-  const politique = politiques(forces);
-  for (const club of state.clubs) {
-    const p = politique.get(club.id);
+  const politique = politiques(forces), division = new Map(forces.map(force => [force.id, force.division]));
+  for (const equipe of state.clubs) {
+    const p = politique.get(equipe.id);
     if (!p) continue;
+    const salaires = club(equipe.players ?? [], division.get(equipe.id), p);
     // Le moteur compte les salaires à la semaine : l'année est répartie sur 52 semaines.
-    for (const joueur of club.players ?? []) joueur.salary = Math.max(10, Math.round(detail(joueur, p).annuel / 52 / 10) * 10);
+    for (const joueur of equipe.players ?? []) joueur.salary = Math.max(10, Math.round(salaires.get(joueur.id).annuel / 52 / 10) * 10);
   }
   state.startingSalaries = { version: VERSION, semaines: 52 };
   return state;
 }
 
-module.exports = Object.freeze({ VERSION, REFERENCE, POSTE, reference, facteurAge, politiques, detail, apply });
+module.exports = Object.freeze({ VERSION, REFERENCE, POSTE, NOYAU, AGE_ESPOIR, reference, facteurAge, politiques, detail, espoir, club, apply });
