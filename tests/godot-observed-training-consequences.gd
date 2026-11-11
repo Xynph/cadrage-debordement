@@ -8,7 +8,7 @@ func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message);printerr("FAIL: ",message)
 func person(id: String, name: String, condition: float, charge: float, level: float, owned: Variant = true) -> Dictionary:
 	var row := {"id":id,"name":name,"condition":condition,"physicalLoad":charge,"rating":level,"potential":99,"potentialRange":{"min":95,"max":99}}
-	if owned!=null: row.knowledge={"owned":owned,"stage":"club" if owned==true else "deep"}
+	if owned!=null: row.knowledge={"owned":owned,"stage":"club" if owned is bool and owned else "deep"}
 	return row
 func model(rows: Array, trained: bool = false) -> Dictionary:
 	return {"club":{"id":13},"meta":{"mode":"fictional14","season":1,"week":2,"trained":trained,"morale":65},"finance":{"cash":1000,"wage":100},"squad":rows}
