@@ -17,7 +17,8 @@ extends Node
 const EYES := [&"Gabi_Oeil_D", &"Gabi_Oeil_G"]
 const GAZE_SHAPES := [&"RegardGauche", &"RegardDroite", &"RegardHaut", &"RegardBas"]
 ## Amplitude des formes de regard construites (degrés) : gauche/droite, haut, bas.
-const GAZE_ANGLES := Vector3(14.0, 9.0, 12.0)
+## Haut et bas limités à 5° : au-delà, la cornée (globe ellipsoïdal) traverse la paupière.
+const GAZE_ANGLES := Vector3(14.0, 5.0, 5.0)
 const BLINK := &"Clignement"
 const EYE_SMILE := &"SourireYeux"
 const SOFT_BROWS := &"SourcilsDoux"
