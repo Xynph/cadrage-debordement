@@ -1,7 +1,8 @@
 # Recette des liens du carnet — nuit du 11 au 12 novembre 2026
 
 Base de préparation : `6648cd6338e1eb62cc4a8c014b23dd3ec20ba174`.
-Les résultats ci-dessous seront renseignés après exécution sur le candidat commun.
+Les reçus ciblés ci-dessous ont été exécutés sur le candidat commun ; leurs SHA
+exacts et leurs limites sont détaillés dans les sections suivantes.
 Ce document ne revendique ni recette Windows, ni campagne SDK globale verte.
 
 ## Contrat et périmètre
@@ -13,17 +14,17 @@ pour fabriquer une rencontre historique ou une nation gérée.
 
 | Cas | Preuve attendue | État |
 | --- | --- | --- |
-| France depuis une carrière gérant une autre nation | France affichée, mandat inchangé, aucun appel métier | À exécuter |
-| Joueur du club | Même ID depuis clic et clavier, fiche complète | À exécuter |
-| Joueur hors club | Dossier existant, informations limitées fidèles à la projection | À exécuter |
-| Club adverse | Détail du bon club réutilisé | À exécuter |
-| Rencontre historique | Vrai résultat du moteur et statistiques de son ID | À exécuter |
-| Aller-retour | Recherche, filtres, tri, défilement, sélection et brouillons restaurés | À exécuter |
-| Tri et glisser-déposer | Aucune ouverture accidentelle d’une fiche | À exécuter |
-| Scène obligatoire | Refus propre sans changement de scène, commande ou sauvegarde | À exécuter |
-| Consultation | Compteur de commandes, export sportif/RNG et octets de sauvegarde inchangés | À exécuter |
-| Silence de Gabi | Audio Dummy, zéro demande et début de parole | À exécuter |
-| Affichage | Captures natives 2560×1440 et contrôles aux tailles déjà prises en charge | À exécuter |
+| France depuis une carrière gérant une autre nation | France affichée, mandat inchangé, aucun appel métier | Reçu `nation` 23/0 sur `8ad4b023` |
+| Joueur du club | Même ID depuis clic et clavier, fiche complète | Reçu `reading` 133/0 sur `37ede657` |
+| Joueur hors club | Dossier existant, informations limitées fidèles à la projection | Reçu `reading` 133/0 sur `37ede657` |
+| Club adverse | Détail du bon club réutilisé | Reçu `reading` 133/0 sur `37ede657` |
+| Rencontre historique | Vrai résultat du moteur et statistiques de son ID | Résultat reçu `guards` 103/0 sur `0d19ddfa` ; statistiques absentes de cette projection, non inventées |
+| Aller-retour | Recherche, filtres, tri, défilement, sélection et brouillons restaurés | Reçus `reading`, `staff` 54/0 et `quote` 66/0 |
+| Tri et glisser-déposer | Aucune ouverture accidentelle d’une fiche | Reçu `reading` 133/0 |
+| Scène obligatoire | Refus propre sans changement de scène, commande ou sauvegarde | Reçu `guards` 103/0 |
+| Consultation | Compteur de commandes, export sportif/RNG et octets de sauvegarde inchangés | Reçus sans mutation dans chaque groupe qualifié |
+| Silence de Gabi | Audio Dummy, zéro demande et début de parole | 0/0 dans chaque groupe qualifié |
+| Affichage | Captures natives 2560×1440 et contrôles aux tailles déjà prises en charge | Joueurs : cinq tailles ; staff : trois tailles, défaut visuel corrigé puis reçu |
 
 ## Exécution ciblée
 
@@ -181,3 +182,26 @@ moteur. Un groupe `quote` séparé est préparé pour soumettre le vrai bouton
 `InterclubNegotiate` avant sa baseline de consultation, conserver sa réponse
 exacte et inspecter le dossier sans aucune clôture de transfert. Son résultat
 reste à renseigner après exécution.
+
+## Conservation d’un vrai devis non vide
+
+Le groupe `quote` a reçu **66 contrôles, zéro échec** sur
+`dbe6a7e2b7bb22b0cb9d7d5f924e396f9cdd8e3f` : trois PNG natifs 2560×1440,
+dont le devis avant inspection, le dossier du joueur et le devis au retour.
+Les deux images de devis ont été inspectées visuellement.
+
+La préparation utilise le vrai bouton `InterclubNegotiate` pour `lnr:9642` :
+142 000 € d’indemnité, 8 700 €/semaine, réponse non vide et une offre recevable.
+Le devis reçu porte l’empreinte
+`43c2e4f063927421fc4c56396792c1f13e628223521ad5e4091cbc71fe8bdba1`.
+Il ne s’agit pas d’une preuve de concurrence à plusieurs enchérisseurs.
+
+Le profil sportif, l’état exporté, la seed et l’horloge sont strictement
+identiques avant et après cette préparation réelle. La consultation du dossier
+ne déclenche ensuite aucune commande, conserve exactement le devis non vide,
+les montants, le joueur sélectionné, les champs, la recherche, la page, le
+défilement, le focus et l’état du bouton de clôture. Aucun transfert n’est
+confirmé. Les compteurs de parole restent à zéro.
+
+Preuves : `/workspace/work/night-phase6-quote`, avec payload public exact,
+empreintes de profil avant/après, `report.json` et `provenance.json`.
