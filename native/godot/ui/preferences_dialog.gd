@@ -53,7 +53,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
 	var interface_volume := _volume(sound,"Sons d’interface","PreferencesInterfaceVolume")
 	var stadium_volume := _volume(sound,"Ambiance du stade","PreferencesStadiumVolume")
-	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global et la voix de Gabi gardent leurs réglages.",17,C.MUTED))
+	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global garde son réglage.",17,C.MUTED))
 	display.add_child(C.label("AFFICHAGE ET UNITÉS",20,C.GOLD,true,700))
 	var screen_count := 0 if DisplayServer.get_name() == "headless" else DisplayServer.get_screen_count()
 	var screen_labels := ["Automatique"]

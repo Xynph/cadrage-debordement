@@ -149,6 +149,15 @@ func reach(phase: String) -> void:
 			return
 	check(false, "Real match did not reach " + phase)
 
+func resolutions(historical: Array) -> Array:
+	var requested := OS.get_environment("QA_RESOLUTION")
+	if requested.is_empty(): return historical
+	var dimensions := requested.to_lower().replace("×", "x").split("x")
+	if dimensions.size() == 2 and dimensions[0].is_valid_int() and dimensions[1].is_valid_int() and int(dimensions[0]) > 0 and int(dimensions[1]) > 0:
+		return [Vector2i(int(dimensions[0]), int(dimensions[1]))]
+	check(false, "QA_RESOLUTION must specify widthxheight")
+	return historical
+
 func run() -> void:
 	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
 		printerr("Contextual QA requires an explicit disposable CD_GODOT_DATA_DIR")
@@ -156,7 +165,8 @@ func run() -> void:
 		return
 	AudioServer.set_bus_mute(0, true)
 	if not directory.is_empty(): DirAccess.make_dir_recursive_absolute(directory)
-	root.size = Vector2i(1280,720)
+	var initial_resolution: Vector2i = resolutions([Vector2i(1280,720)])[0]
+	root.size = initial_resolution
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 30000
@@ -170,9 +180,9 @@ func run() -> void:
 	if root.size_changed.is_connected(maximize): root.size_changed.disconnect(maximize)
 	if root.focus_entered.is_connected(maximize): root.focus_entered.disconnect(maximize)
 	root.mode = Window.MODE_WINDOWED
-	root.size = Vector2i(1280,720)
+	root.size = initial_resolution
 	await settle()
-	check(root.size == Vector2i(1280,720), "Actual initial client area is exactly 1280x720")
+	check(root.size == initial_resolution, "Actual initial client area is exactly " + str(initial_resolution))
 	await ask("new_career", {"mode":"common", "club":29})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	director = app.find_child("ContextualDirector", true, false)
@@ -199,7 +209,7 @@ func run() -> void:
 	# Visiting training is pure: it uses actual condition/load and does not train.
 	await ask("export")
 	var prior: String = app.model.meta.exportText
-	for resolution in [Vector2i(1280,720), Vector2i(1920,1080)]:
+	for resolution in resolutions([Vector2i(1280,720), Vector2i(1920,1080)]):
 		root.size = resolution
 		app.Immersive.open_training(app)
 		await settle()
@@ -212,7 +222,7 @@ func run() -> void:
 		immersive_check("training")
 		await capture("training-before-session-" + str(resolution.x))
 		director.close_training()
-	root.size = Vector2i(1280,720)
+	root.size = initial_resolution
 	await ask("export")
 	check(app.model.meta.exportText == prior, "Observing preparation gives no training or morale gain")
 	if not await prepare_match_day(): await finish(); return
@@ -220,13 +230,13 @@ func run() -> void:
 	if not await ContextualFlow.settle_club_meetings(app, self, check): await finish(); return
 	await ask("auto_lineup")
 	await ask("begin_match")
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900)]:
+	for resolution in resolutions([Vector2i(1280,720),Vector2i(1600,900)]):
 		root.size = resolution
 		await settle()
 		check(root.size == resolution, "Actual locker client area matches requested " + str(resolution))
 		locker_check("pre")
 		await capture("pre-" + str(resolution.x))
-	root.size = Vector2i(1280,720)
+	root.size = initial_resolution
 	await settle()
 	# A rejected public command remains visible inside the immersive surface.
 	await ask("pause", {"paused":false}, true)
