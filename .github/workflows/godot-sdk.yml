@@ -13,7 +13,17 @@ on:
         type: choice
         required: true
         default: full
-        options: [full, followup]
+        options: [full, followup, targeted]
+      suite:
+        description: 'Ciblé seulement : chemin exact du wrapper dans le manifeste de suivi'
+        type: string
+        required: false
+        default: ''
+      case:
+        description: 'Ciblé seulement : identifiant exact du cas, default pour une suite simple'
+        type: string
+        required: false
+        default: default
 
 permissions:
   contents: read
@@ -28,12 +38,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","parcours","layouts"]' || '["full","portraits-staff","parcours","layouts"]') }}
+        family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'targeted' && '["targeted"]' || github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","parcours","layouts"]' || '["full","portraits-staff","parcours","layouts"]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       CD_GODOT_SDK_SCOPE: ${{ matrix.family == 'full' && 'full' || 'followup' }}
       CD_GODOT_SDK_FAMILY: ${{ matrix.family }}
+      CD_GODOT_SDK_REQUEST: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'full' }}
+      CD_GODOT_SDK_TARGET_SUITE: ${{ inputs.suite }}
+      CD_GODOT_SDK_TARGET_CASE: ${{ inputs.case }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -44,6 +57,48 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.13'
+      - name: Valider le scope et sélectionner les cas SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          import json, os, pathlib
+          request = os.environ['CD_GODOT_SDK_REQUEST']
+          family = os.environ['CD_GODOT_SDK_FAMILY']
+          assert request in ['full', 'followup', 'targeted'], 'Unknown SDK request'
+          path = pathlib.Path('ci/godot-sdk-followup.json')
+          config = json.loads(path.read_text())
+          groups = config['groups']
+          union = [suite for suites in groups.values() for suite in suites]
+          assert len(union) == len(set(union)), 'Duplicated SDK group'
+          assert set(union) == set(config['suites']), 'SDK groups must cover the complete followup manifest'
+          if family == 'full':
+              assert request == 'full', 'Full SDK group requires full scope'
+              print('SDK full: historical manifest and P1 retained')
+          else:
+              if family == 'targeted':
+                  assert request == 'targeted', 'Targeted SDK requires explicit scope'
+                  suite = os.environ['CD_GODOT_SDK_TARGET_SUITE']
+                  case = os.environ['CD_GODOT_SDK_TARGET_CASE']
+                  assert suite in config['suites'], 'Unknown targeted SDK suite'
+                  variants = config.get('suiteCases', {}).get(suite, [{'id': 'default', 'env': {}}])
+                  chosen = [entry for entry in variants if entry['id'] == case]
+                  assert len(chosen) == 1, 'Unknown or duplicated targeted SDK case'
+                  config['suites'] = [suite]
+                  config['suiteCases'] = {suite: chosen}
+                  print('SDK TARGETED ONLY:', suite, '/', case)
+                  summary = os.environ.get('GITHUB_STEP_SUMMARY')
+                  if summary:
+                      with open(summary, 'a') as out:
+                          out.write('## Recette ciblée uniquement : ' + suite + ' / ' + case + '\n\nCe job ne qualifie aucune autre suite ni une campagne globale.\n\n')
+              else:
+                  assert request in ['full', 'followup'], 'Invalid grouped SDK request'
+                  selected = groups[family]
+                  assert selected, 'Empty SDK group'
+                  config['suites'] = selected
+                  print('SDK group:', family, 'suites:', len(selected))
+              path.write_text(json.dumps(config))
+          PYCODE
       - name: Préparer le rendu logiciel gratuit sous X11
         shell: bash
         run: |
@@ -82,24 +137,6 @@ jobs:
           if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP/godot-import.log"; then
             exit 1
           fi
-      - name: Sélectionner le groupe de nouveaux cas SDK
-        if: ${{ matrix.family != 'full' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PYCODE'
-          import json, os, pathlib
-          path = pathlib.Path('ci/godot-sdk-followup.json')
-          config = json.loads(path.read_text())
-          groups = config['groups']
-          selected = groups[os.environ['CD_GODOT_SDK_FAMILY']]
-          union = [suite for suites in groups.values() for suite in suites]
-          assert selected and len(union) == len(set(union)), 'Empty or duplicated SDK group'
-          assert set(union) == set(config['suites']), 'SDK groups must cover the complete followup manifest'
-          config['suites'] = selected
-          path.write_text(json.dumps(config))
-          print('SDK group:', os.environ['CD_GODOT_SDK_FAMILY'], 'suites:', len(selected))
-          PYCODE
       - name: Exécuter les suites qualifiées sans repli SKIP
         shell: bash
         env:
