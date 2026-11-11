@@ -40,7 +40,8 @@
     "tests/godot-management-reading-links.cjs",
     "tests/godot-national-reading-links.cjs",
     "tests/godot-profile-reading.cjs",
-    "tests/godot-observed-training-consequences.cjs"
+    "tests/godot-observed-training-consequences.cjs",
+    "tests/godot-effective-training-receipt.cjs"
   ],
   "groups": {
     "portraits-staff": [
@@ -74,7 +75,8 @@
       "tests/godot-entity-navigation.cjs",
       "tests/godot-management-reading-flow.cjs",
       "tests/godot-gestion-carnet.cjs",
-      "tests/godot-observed-training-consequences.cjs"
+      "tests/godot-observed-training-consequences.cjs",
+      "tests/godot-effective-training-receipt.cjs"
     ],
     "layouts": [
       "tests/godot-guide-layout.cjs",
@@ -106,6 +108,9 @@
     },
     "tests/rg27-night-navigation.cjs": {
       "CD_NIGHT_NAV_GRAPHICS": "1"
+    },
+    "tests/godot-effective-training-receipt.cjs": {
+      "CD_EFFECTIVE_TRAINING_REUSE_CASES": ""
     }
   },
   "suiteCases": {

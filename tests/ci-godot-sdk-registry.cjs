@@ -14,6 +14,7 @@ const required = [
   'godot-navigation', 'godot-gestion-carnet', 'godot-staff-fictional-labels',
   'rg27-night-navigation', 'godot-world-entity-targets',
   'godot-national-reading-links', 'godot-profile-reading', 'godot-observed-training-consequences',
+  'godot-effective-training-receipt',
 ].map(name => 'tests/' + name + '.cjs');
 
 test('SDK registry groups cover every declared wrapper exactly once', () => {
@@ -56,4 +57,12 @@ test('The report checkpoint preparer is a helper, never an automatic suite', () 
   assert.ok(!fs.existsSync(path.join(root, 'tests/rg27-night-report-prepare.cjs')));
   assert.ok(!config.suites.some(suite => /report-prepare|night-helpers/.test(suite)));
   assert.ok(!allTests.some(suite => /report-prepare|night-helpers/.test(suite)));
+});
+
+test('Effective training cases are collected through public commands in SDK qualification', () => {
+  const suite = 'tests/godot-effective-training-receipt.cjs';
+  const reuse = 'CD_EFFECTIVE_TRAINING_REUSE_CASES';
+  assert.ok(config.groups.parcours.includes(suite));
+  assert.equal(config.suiteEnvironment[suite][reuse], '');
+  for (const variant of config.suiteCases[suite] || []) assert.ok(!variant.env[reuse]);
 });
