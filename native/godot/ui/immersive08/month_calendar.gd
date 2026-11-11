@@ -200,13 +200,28 @@ func _refresh() -> void:
 	var body := C.content(left)
 	body.add_theme_constant_override("separation", 0)
 	_toolbar(body)
-	if view_mode == "week": _week_grid(body)
-	else: _grid(body)
-	_legend(body)
-	_context_panels(body)
-	if view_mode == "week": _week_sessions(body)
+	# The program may grow with published sessions. Keep its toolbar fixed and
+	# scroll the program, rather than extending the whole career workspace.
+	var program := _reading_scroll(body, "CalendarProgramScroll", 0)
+	if view_mode == "week": _week_grid(program)
+	else: _grid(program)
+	_legend(program)
+	_context_panels(program)
+	if view_mode == "week": _week_sessions(program)
 	_detail(workspace)
 	_undated_panel()
+
+func _reading_scroll(parent: Node, id: String, separation: int = 8) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = id
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	C.fill(scroll, true)
+	parent.add_child(scroll)
+	var body := C.v(separation)
+	C.fill(body)
+	scroll.add_child(body)
+	return body
 
 static func _plural(count: int, singular: String, plural: String) -> String:
 	return "%d %s" % [count, singular if count == 1 else plural]
@@ -660,6 +675,7 @@ func _detail(parent: Node) -> void:
 	body.add_child(C.label(heading,20,C.MINT if selected == today else C.IVORY,true,700))
 	var title := "Aujourd’hui · " + _display_date(selected) if selected == today else _display_date(selected)
 	body.add_child(C.wrap(title,24,C.IVORY,true,700))
+	body = _reading_scroll(body, "CalendarDayDetailScroll")
 	if selected != today and not today.is_empty() and selected > today and not next_fixture.is_empty() and selected < next_fixture.date:
 		var remaining := _days_before(selected,next_fixture.date)
 		if remaining <= 7:
