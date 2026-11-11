@@ -13,6 +13,15 @@
 //     40 % des salaires ; le reste (staff, administratifs, achats, services,
 //     amortissements) fait un peu moins de 60 % des recettes.
 // Les salaires sont dus sur 52 semaines : chaque semaine de compétition en paie 52 / n.
+//
+// Ce qui fait vivre le club au-delà de ce socle :
+//   - un quart du versement de la ligue dépend du classement final (prime de fin de saison) ;
+//   - 40 % de la billetterie vient des abonnements, versés chaque semaine ; le reste
+//     se gagne au guichet, selon les résultats récents ; les phases finales rapportent plus ;
+//   - le propriétaire (mécène, entreprise, association) annonce en début de saison ce
+//     qu'il comblera, et le comble en fin de saison ;
+//   - la ligue plafonne les salaires des joueurs : 10,7 M€ en première division, et
+//     52 % des recettes dans les deux divisions.
 const DIVISIONS = Object.freeze({
   elite: Object.freeze({ moyenne: 33e6, bas: 0.7, haut: 1.5, partenaires: 0.45, ligue: 0.19, billetterie: 0.16, boutique: 0.08, divers: 0.12 }),
   accession: Object.freeze({ moyenne: 10.7e6, bas: 0.62, haut: 1.55, partenaires: 0.48, ligue: 0.22, billetterie: 0.08, boutique: 0.04, divers: 0.18 }),
@@ -34,26 +43,292 @@ function recettes(forces) {
   return resultat;
 }
 
-// Écritures d'une semaine de compétition. alea est dans [0;1].
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle }) {
+const PART_PRIME = 0.25;          // part du versement de la ligue liée au classement
+const PART_ABONNEMENTS = 0.4;     // part de la billetterie vendue à l'année
+const GUICHET_PHASE_FINALE = 1.5; // une phase finale à domicile remplit et se vend plus cher
+const PART_TERRAIN_NEUTRE = 0.8;  // part de recette d'un match sur terrain neutre, en recette type de la division
+const PLAFOND_SALARIAL = Object.freeze({ elite: 10.7e6 });
+const RATIO_SALAIRES = 0.52;
+const TAUX_AMENDE = 0.5, AMENDE_MAX = 2e6;
+const PROPRIETAIRES = Object.freeze({
+  mecene: Object.freeze({ libelle: 'Mécène', part: 0.12 }),
+  entreprise: Object.freeze({ libelle: 'Entreprise actionnaire', part: 0.06 }),
+  association: Object.freeze({ libelle: 'Association', part: 0 }),
+});
+const TOLERANCE_DEFICIT = 0.02;   // en part des recettes : en dessous, personne ne s'en émeut
+
+const rond = montant => Math.round(montant / 100) * 100;
+// Tirage stable dans [0;1[ à partir d'un texte : le même club a toujours le même propriétaire.
+function unite(texte) {
+  let h = 2166136261;
+  for (let i = 0; i < texte.length; i++) { h ^= texte.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+function euros(montant) {
+  const m = Math.abs(montant);
+  if (m >= 1e6) return (Math.round(m / 1e4) / 100).toString().replace('.', ',') + ' M€';
+  return String(Math.round(m)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+}
+function regleDe(forces, clubId) {
   const force = forces.find(club => club.id === clubId), regle = force && DIVISIONS[force.division];
   if (!regle) throw Error('Budget de club : division inconnue.');
+  return { force, regle, annuel: recettes(forces).get(clubId) };
+}
+
+// Le propriétaire d'un club et ce qu'il promet de combler cette saison.
+function proprietaire(forces, clubId) {
+  // Un grand club attire un mécène ou un groupe ; l'association se rencontre chez les plus modestes.
+  const { force, annuel } = regleDe(forces, clubId), tirage = unite('proprietaire|' + clubId);
+  const poids = Math.max(0, Math.min(1, (force.base - 64) / 22));
+  const type = tirage < 0.3 + 0.15 * poids ? 'mecene' : tirage < 0.6 + 0.4 * poids ? 'entreprise' : 'association';
+  const enveloppe = Math.round(annuel * PROPRIETAIRES[type].part * (0.8 + 0.4 * unite('enveloppe|' + clubId)) / 50000) * 50000;
+  return { type, libelle: PROPRIETAIRES[type].libelle, enveloppe };
+}
+
+// Résultats récents ('V', 'N', 'D') -> forme dans [0;1] ; 0,5 sans match joué.
+function forme(resultats) {
+  const recents = (resultats ?? []).slice(-5);
+  if (!recents.length) return 0.5;
+  return recents.reduce((somme, r) => somme + (r === 'V' ? 1 : r === 'N' ? 0.5 : 0), 0) / recents.length;
+}
+// Affluence d'un match à domicile : 0,78 après cinq défaites, 1,22 après cinq victoires.
+const affluence = (formeClub, alea) => 0.78 + 0.36 * formeClub + 0.08 * alea;
+
+// Ce qu'un club géré par le jeu ajuste dans son fonctionnement, sur l'année : il réduit
+// ses dépenses quand son déficit dépasse ce que le propriétaire comble, et il réinvestit
+// l'essentiel de ses excédents. Positif = dépense en plus.
+function ajustement(annuel, masseAnnuelle, enveloppe) {
+  const resultat = annuel * (1 - FONCTIONNEMENT) - masseAnnuelle * (1 + COTISATIONS);
+  if (resultat > 0) return 0.7 * resultat;
+  const economies = Math.min(0.15 * annuel, 0.7 * Math.max(0, -resultat - enveloppe));
+  return economies > 0 ? -economies : 0;
+}
+
+// Écritures d'une semaine de compétition.
+//   domicile : le club reçoit ; neutre : match sur terrain neutre ; phase : 'league' ou une phase finale ;
+//   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
+//   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '' }) {
+  const { regle, annuel } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
-  const annuel = recettes(forces).get(clubId), rond = montant => Math.round(montant / 100) * 100;
-  const salaires = rond(masseHebdo * 52 / semaines), receptions = Math.max(1, Math.round(semaines / 2));
+  const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
+  const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard);
+  const billetterie = annuel * regle.billetterie, finale = phase !== 'league';
   const ecritures = [
     { title: libelle + ' · Partenaires', amount: rond(annuel * regle.partenaires / semaines) },
-    { title: libelle + ' · Versement de la ligue', amount: rond(annuel * regle.ligue / semaines) },
+    { title: libelle + ' · Versement de la ligue', amount: rond(annuel * regle.ligue * (1 - PART_PRIME) / semaines) },
     { title: libelle + ' · Subventions et divers', amount: rond(annuel * regle.divers / semaines) },
+    { title: libelle + ' · Abonnements', amount: rond(billetterie * PART_ABONNEMENTS / semaines) },
   ];
-  if (domicile) {
-    ecritures.push({ title: libelle + ' · Billetterie', amount: rond(annuel * regle.billetterie / receptions * (0.85 + 0.3 * alea)) });
-    ecritures.push({ title: libelle + ' · Boutique et buvettes', amount: rond(annuel * regle.boutique / receptions * (0.9 + 0.2 * alea)) });
+  if (domicile && !neutre) {
+    ecritures.push(finale
+      ? { title: libelle + ' · Billetterie de phase finale', amount: rond(billetterie / matchs * GUICHET_PHASE_FINALE * public_) }
+      : { title: libelle + ' · Billetterie', amount: rond(billetterie * (1 - PART_ABONNEMENTS) / matchs * public_) });
+    ecritures.push({ title: libelle + ' · Boutique et buvettes', amount: rond(annuel * regle.boutique / matchs * (finale ? GUICHET_PHASE_FINALE : 1) * (0.9 + 0.2 * hasard)) });
+  } else if (neutre) {
+    ecritures.push({ title: libelle + ' · Part de recette de phase finale', amount: rond(regle.moyenne * regle.billetterie / matchs * PART_TERRAIN_NEUTRE) });
   }
+  const fonctionnement = annuel * FONCTIONNEMENT + (gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe) : 0);
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   ecritures.push({ title: libelle + ' · Cotisations', amount: -rond(salaires * COTISATIONS) });
-  ecritures.push({ title: libelle + ' · Staff et fonctionnement', amount: -rond(annuel * FONCTIONNEMENT / semaines) });
+  ecritures.push({ title: libelle + ' · Staff et fonctionnement', amount: -rond(fonctionnement / semaines) });
   return ecritures;
 }
 
-module.exports = Object.freeze({ DIVISIONS, COTISATIONS, FONCTIONNEMENT, recettes, semaine });
+// Prime de classement versée par la ligue en fin de saison : le premier touche 1,8 part, le dernier 0,2.
+function primeClassement(division, rang, taille) {
+  const regle = DIVISIONS[division];
+  if (!regle || !Number.isInteger(rang) || !Number.isInteger(taille) || taille < 2 || rang < 1 || rang > taille) throw Error('Prime de classement : rang invalide.');
+  return rond(regle.moyenne * regle.ligue * PART_PRIME * (1.8 - 1.6 * (rang - 1) / (taille - 1)));
+}
+
+// Les deux règles de la ligue, pour une masse salariale annuelle et des recettes données.
+function regles({ division, masseAnnuelle, recettes: recettesClub }) {
+  if (!DIVISIONS[division]) throw Error('Règles de la ligue : division inconnue.');
+  const plafond = PLAFOND_SALARIAL[division] ?? null, limiteRecettes = rond(recettesClub * RATIO_SALAIRES);
+  const depassementPlafond = plafond === null ? 0 : Math.max(0, masseAnnuelle - plafond), depassementRecettes = Math.max(0, masseAnnuelle - limiteRecettes);
+  const depassement = Math.max(depassementPlafond, depassementRecettes);
+  return { plafond, limiteRecettes, margePlafond: plafond === null ? null : rond(plafond - masseAnnuelle), margeRecettes: rond(limiteRecettes - masseAnnuelle),
+    depassementPlafond: rond(depassementPlafond), depassementRecettes: rond(depassementRecettes), amende: rond(Math.min(AMENDE_MAX, depassement * TAUX_AMENDE)) };
+}
+
+// Comptes d'une nouvelle saison : un compteur par club. clubs : [{id, cash, masse}].
+function ouverture({ forces, saison, clubs }) {
+  return { version: 1, saison, semaines: 0, alertes: {}, clubs: clubs.map(club => {
+    const p = proprietaire(forces, club.id);
+    return { type: p.type, enveloppe: p.enveloppe, depart: club.cash, recettes: 0, charges: 0, salaires: 0, masse: Math.round(club.masse) };
+  }) };
+}
+// Ajoute les écritures d'une semaine au compteur d'un club.
+function compter(compte, ecritures, masseAnnuelle) {
+  for (const e of ecritures) {
+    if (e.amount > 0) compte.recettes += e.amount; else compte.charges -= e.amount;
+    if (e.title.endsWith('Salaires des joueurs')) compte.salaires -= e.amount;
+  }
+  compte.masse = Math.round(masseAnnuelle);
+  return compte;
+}
+
+const ANNONCES = Object.freeze({
+  mecene: e => `Le président finance le club sur sa fortune. Il vous l’a dit en face : cette saison, il comblera jusqu’à ${euros(e)} de pertes. Au-delà, il vous demandera des comptes.`,
+  entreprise: e => `Le groupe actionnaire a voté son budget : il comblera jusqu’à ${euros(e)} de déficit cette saison, pas un euro de plus.`,
+  association: () => 'Le club appartient à ses adhérents : personne ne comblera un déficit. Chaque euro dépensé cette saison devra être gagné.',
+});
+const annonce = compte => ANNONCES[compte.type](compte.enveloppe);
+
+// Prévision de la saison du club joué, mise à jour chaque semaine.
+//   compte : compteur du club ; tresorerie : caisse actuelle ; reste : semaines restantes ;
+//   receptionsRestantes : matchs de saison régulière à domicile encore à jouer ; rang, taille : classement actuel.
+function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, reste, receptions, receptionsRestantes, rang, taille }) {
+  const { force, regle, annuel } = regleDe(forces, clubId), division = force.division, masseAnnuelle = Math.round(masseHebdo * 52);
+  const prime = primeClassement(division, rang, taille);
+  const fixes = annuel * (regle.partenaires + regle.ligue * (1 - PART_PRIME) + regle.divers + regle.billetterie * PART_ABONNEMENTS) / semaines;
+  const guichet = annuel * (regle.billetterie * (1 - PART_ABONNEMENTS) + regle.boutique) / Math.max(1, receptions);
+  const recettesPrevues = rond(compte.recettes + fixes * reste + guichet * receptionsRestantes + prime);
+  const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + annuel * FONCTIONNEMENT / semaines) * reste);
+  // Transferts, primes de signature, travaux : tout ce qui a bougé la caisse hors du budget courant.
+  const horsBudget = rond(tresorerie - compte.depart - (compte.recettes - compte.charges));
+  const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
+  const resultatPrevu = rond(recettesPrevues - chargesPrevues + horsBudget - ligue.amende);
+  const apportPrevu = Math.min(compte.enveloppe, Math.max(0, -resultatPrevu));
+  const alertes = [];
+  if (ligue.depassementPlafond > 0) alertes.push({ cle: 'plafond', message: `La ligue vous a écrit : la masse salariale (${euros(masseAnnuelle)} par an) dépasse le plafond de ${euros(ligue.plafond)}. Sans départs avant la dernière journée, le club paiera une amende.` });
+  if (ligue.depassementRecettes > 0) alertes.push({ cle: 'recettes', message: `Le contrôleur de gestion de la ligue vous alerte : les salaires des joueurs (${euros(masseAnnuelle)} par an) dépassent 52 % des recettes attendues (${euros(ligue.limiteRecettes)}). Sans correction avant la dernière journée, le club sera sanctionné.` });
+  if (-resultatPrevu - compte.enveloppe > annuel * TOLERANCE_DEFICIT) alertes.push({ cle: 'deficit', message: compte.enveloppe > 0
+    ? `Le directeur financier tire la sonnette d’alarme : à ce rythme, la saison se terminera sur une perte de ${euros(resultatPrevu)}, bien plus que les ${euros(compte.enveloppe)} promis par le propriétaire.`
+    : `Le trésorier tire la sonnette d’alarme : à ce rythme, la saison se terminera sur une perte de ${euros(resultatPrevu)}, et personne ne la comblera.` });
+  return { alertes, prevision: {
+    recettesPrevues, chargesPrevues, horsBudget, resultatPrevu,
+    recettesEncaissees: rond(compte.recettes), chargesPayees: rond(compte.charges),
+    primeClassementPrevue: prime, rang,
+    proprietaire: { type: compte.type, libelle: PROPRIETAIRES[compte.type].libelle, enveloppe: compte.enveloppe }, apportPrevu: rond(apportPrevu),
+    masseSalariale: masseAnnuelle, plafondSalarial: ligue.plafond, limiteRecettes: ligue.limiteRecettes, margePlafond: ligue.margePlafond, margeRecettes: ligue.margeRecettes, amendePrevue: ligue.amende,
+    tresorerie: rond(tresorerie), tresoreriePrevue: rond(compte.depart + resultatPrevu + apportPrevu),
+  } };
+}
+
+// Clôture de la saison d'un club : prime de classement, sanction de la ligue, apport du propriétaire.
+//   tresorerie : caisse avant clôture ; joue : club du manager (messages et confiance).
+function cloture({ division, compte, tresorerie, rang, taille, joue = false }) {
+  const prime = primeClassement(division, rang, taille), recettesSaison = compte.recettes + prime;
+  const ligue = regles({ division, masseAnnuelle: compte.masse, recettes: recettesSaison });
+  const ecritures = [{ title: `Prime de classement de la ligue (${rang}${rang === 1 ? 'er' : 'e'} sur ${taille})`, amount: prime }], messages = [];
+  let confiance = 0;
+  if (joue) messages.push(`La ligue verse ${euros(prime)} au club pour sa ${rang}${rang === 1 ? 're' : 'e'} place.`);
+  if (ligue.amende > 0) {
+    const motif = ligue.depassementPlafond >= ligue.depassementRecettes ? 'dépassement du plafond salarial' : 'salaires des joueurs au-dessus de 52 % des recettes';
+    ecritures.push({ title: 'Amende de la ligue (' + motif + ')', amount: -ligue.amende });
+    if (joue) { confiance -= 6; messages.push(`La ligue sanctionne le club : ${euros(ligue.amende)} d’amende pour ${motif}. Vos dirigeants n’apprécient pas de voir le club épinglé.`); }
+  }
+  const resultat = rond(tresorerie + prime - ligue.amende - compte.depart), deficit = Math.max(0, -resultat);
+  const apport = Math.min(compte.enveloppe, deficit), decouvert = deficit - apport;
+  if (apport > 0) ecritures.push({ title: 'Apport du propriétaire', amount: apport });
+  if (joue) {
+    const grave = decouvert > recettesSaison * TOLERANCE_DEFICIT;
+    if (apport > 0 && !grave) messages.push(compte.type === 'mecene' ? `Le président a signé le chèque : ${euros(apport)} pour combler les pertes de la saison, comme promis.` : `Le groupe actionnaire a comblé les pertes de la saison : ${euros(apport)}, dans la limite annoncée.`);
+    if (grave) {
+      confiance -= Math.min(15, 5 + Math.round(decouvert / recettesSaison * 100));
+      messages.push(compte.type === 'association'
+        ? `Le club termine la saison avec ${euros(deficit)} de pertes et personne pour les combler. Le bureau de l’association vous en tient pour responsable.`
+        : `Les pertes de la saison (${euros(deficit)}) dépassent de ${euros(decouvert)} ce que le propriétaire avait promis. Il a versé ${euros(apport)} et vous l’a fait savoir : sa confiance en a pris un coup.`);
+    } else if (deficit === 0) messages.push(`Le club termine la saison dans le vert : ${euros(resultat)} de mieux en caisse qu’au départ. Le propriétaire n’a rien eu à verser.`);
+  }
+  return { ecritures, messages, confiance, prime, amende: ligue.amende, resultat, apport, decouvert: rond(decouvert) };
+}
+
+// Code exécuté dans le moteur du jeu : il branche ce budget sur les carrières marquées
+// (state.startingSalaries) et laisse les autres strictement intactes.
+const BRANCHEMENT = `
+const financeWeekV1=financeWeek,worldWeeklyEconomyV1=worldWeeklyEconomy,ledgerEntryV1=ledgerEntry,worldNewSeasonV1=worldNewSeason;
+const budgetActif=()=>!!S&&S.startingSalaries!==undefined&&!!S.franceMode&&typeof CDFranceClubs!=='undefined';
+const budgetCopie=x=>JSON.parse(JSON.stringify(x));
+const budgetForces=()=>CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base}));
+const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
+function budgetPrevoir(forces){
+ const b=S.clubBudget,c=club(),id=CDFranceCompetition.leagueId(S),l=S.franceMode.leagues[id],classement=CDFranceCompetition.ranked(S,id),semaines=wageForecastWeeks();
+ const r=budgetCopie(nativeClubBudget.prevision({forces,clubId:c.id,compte:b.clubs[c.id],tresorerie:c.cash,masseHebdo:budgetMasse(c),semaines,reste:Math.max(0,semaines-b.semaines),
+  receptions:CDFranceCompetition.regularRounds(S,id)/2,receptionsRestantes:l.schedule.slice(l.round).filter(j=>j.some(p=>p[0]===c.id)).length,rang:c.played?classement.findIndex(x=>x.id===c.id)+1:Math.ceil(classement.length/2),taille:classement.length}));
+ b.prevision=r.prevision;
+ for(const a of r.alertes){const derniere=b.alertes[a.cle];if(derniere===undefined||b.semaines-derniere>=10){b.alertes[a.cle]=b.semaines;news(a.message);}}
+}
+function budgetOuvrir(annoncer){
+ const forces=budgetForces();
+ S.clubBudget=budgetCopie(nativeClubBudget.ouverture({forces,saison:S.season,clubs:S.clubs.map(c=>({id:c.id,cash:c.cash,masse:budgetMasse(c)*52}))}));
+ if(annoncer)news(nativeClubBudget.annonce(S.clubBudget.clubs[S.club]));
+ budgetPrevoir(forces);
+}
+// Une sauvegarde retouchée ne doit pas faire tomber la semaine : des comptes illisibles sont rouverts.
+const budgetLisible=b=>!!b&&b.version===1&&Number.isInteger(b.saison)&&Number.isInteger(b.semaines)&&b.semaines>=0&&!!b.alertes&&typeof b.alertes==='object'&&!Array.isArray(b.alertes)&&Array.isArray(b.clubs)&&b.clubs.length===S.clubs.length&&
+ b.clubs.every(c=>!!c&&Object.hasOwn(nativeClubBudget.PROPRIETAIRES,c.type)&&[c.enveloppe,c.depart,c.recettes,c.charges,c.salaires,c.masse].every(Number.isFinite)&&c.enveloppe>=0);
+function budgetEtat(){if(!budgetLisible(S.clubBudget)||S.clubBudget.saison!==S.season)budgetOuvrir(false);return S.clubBudget;}
+function budgetSemaine(forces,c,rencontre,libelle){
+ const b=budgetEtat(),id=CDFranceCompetition.leagueId(S,c.id),masse=budgetMasse(c);
+ const ecritures=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines:wageForecastWeeks(),receptions:CDFranceCompetition.regularRounds(S,id)/2,
+  domicile:!!rencontre&&rencontre.pair[0]===c.id,neutre:!!rencontre&&rencontre.neutral===true,phase:rencontre?rencontre.phase:'league',resultats:c.form.slice(-5),
+  repere:S.season+'|'+S.franceMode.week,gere:c.id!==S.club,libelle}));
+ nativeClubBudget.compter(b.clubs[c.id],ecritures,masse*52);
+ return ecritures;
+}
+financeWeek=function(m,won){
+ if(!budgetActif())return financeWeekV1(m,won);
+ const forces=budgetForces(),ecritures=budgetSemaine(forces,club(),CDFranceCompetition.userFixture(S),label());
+ ecritures.forEach(e=>club().cash+=e.amount);S.ledger.unshift(...ecritures);S.ledger=S.ledger.slice(0,100);careerSponsorWeek(won);
+ S.clubBudget.semaines++;budgetPrevoir(forces);
+ if(club().cash<0){S.trust=clamp(S.trust-5,0,100);news('La trésorerie est négative. Le président demande de réduire les dépenses.')}
+};
+worldWeeklyEconomy=function(results){
+ if(!budgetActif())return worldWeeklyEconomyV1(results);
+ const avant=S.clubs.map(c=>c.cash);
+ if(!worldWeeklyEconomyV1(results))return false;
+ const forces=budgetForces();
+ for(const c of S.clubs){
+  if(c.id===S.club)continue;
+  const rencontre=results.find(r=>r.pair.includes(c.id))||null;
+  c.cash=avant[c.id]-worldUpkeep(worldClub(c.id).facilities)+budgetSemaine(forces,c,rencontre,'').reduce((s,e)=>s+e.amount,0);
+ }
+ return true;
+};
+// Fin de saison : la prime de classement, la sanction éventuelle et l'apport du
+// propriétaire remplacent le versement identique pour tous.
+function budgetCloturer(){
+ const b=S.clubBudget,archive=S.franceMode.yearbook.at(-1);
+ if(!budgetLisible(b)||b.saison!==S.season-1||!archive||archive.season!==S.season-1)return;
+ for(const division of ['elite','accession']){
+  const ordre=archive.standings[division];
+  ordre.forEach((id,i)=>{
+   const c=S.clubs[id],joue=id===S.club,r=budgetCopie(nativeClubBudget.cloture({division,compte:b.clubs[id],tresorerie:c.cash,rang:i+1,taille:ordre.length,joue}));
+   if(joue){r.ecritures.forEach(e=>ledgerEntryV1(e.title,e.amount));if(r.confiance)S.trust=clamp(S.trust+r.confiance,0,100);r.messages.forEach(m=>news(m));}
+   else c.cash+=r.ecritures.reduce((s,e)=>s+e.amount,0);
+  });
+ }
+}
+ledgerEntry=function(title,amount){
+ if(budgetActif()&&title==='Financement de début de saison'&&amount===2500000)return budgetCloturer();
+ return ledgerEntryV1(title,amount);
+};
+worldNewSeason=function(fundingAlreadyPaid){
+ if(!budgetActif())return worldNewSeasonV1(fundingAlreadyPaid);
+ const actif=worldActive();
+ if(actif){
+  const w=S.worldManagement;w.champion=null;w.lastFinance=null;
+  for(const c of S.clubs){
+   if(c.id===S.club)continue;
+   const info=worldClub(c.id);
+   if(c.cash<0){info.debt+=-c.cash;c.cash=0}
+   const outcome=CDFinancialRecovery.annual({cash:c.cash,debt:info.debt,wageRoom:100000},{revenue:0,baseCosts:0,repayment:Math.min(250000,info.debt)});
+   c.cash=outcome.cash;info.debt=outcome.debt;
+   if(info.facilities<7&&info.debt===0&&c.cash>4500000&&w.yearbook.at(-1)?.standings.find(x=>x.id===c.id)?.position<=7){
+    const quote=worldFacilityQuote(c.id);
+    if(quote?.affordable){c.cash-=quote.cost;info.facilities++;w.upgrades.push({season:S.season,id:c.id,level:info.facilities,cost:quote.cost});}
+   }
+  }
+  w.upgrades=w.upgrades.slice(-30);
+ }
+ budgetOuvrir(true);
+ return actif;
+};
+`;
+
+module.exports = Object.freeze({ DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT,
+  recettes, semaine, proprietaire, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, euros });

@@ -2,7 +2,7 @@
 
 Relevé du 11 novembre 2026 sur `fe79c365` (#539). Suite du constat P1 de
 `docs/audit-priorites-cloud-20261111.md` (#549). **Éteint par défaut** : ce
-chantier n'est pas prêt à être activé, voir « Ce qui bloque ».
+chantier n'est pas prêt à être activé, voir « Limites et points non vérifiés ».
 
 ## Le défaut
 
@@ -94,53 +94,164 @@ carrières gardent l'ancien calcul.
 Un club moyen qui paie la masse moyenne de sa division finit la saison près
 de l'équilibre (test : à moins de 8 % des recettes).
 
-### Une saison jouée, Valence (deuxième division), graine 27
+### Ce qui a été ajouté le 11 novembre (suite)
 
-| Trésorerie | Ancienne économie | Nouvelle économie |
-| --- | --- | --- |
-| Départ | 2,30 M€ | 2,30 M€ |
-| Après 17 matchs | 7,00 M€ | 2,77 M€ |
-| Après 31 matchs | 6,63 M€ | 2,37 M€ |
+Tout ce qui suit ne vaut que pour les carrières créées avec
+`CD_SALAIRES_PAR_NIVEAU=1`. Sans la variable, rien ne change : les tests le
+vérifient club par club (voir « Tests »).
 
-Le versement de 2,5 M€ de fin de saison, identique pour tous les clubs,
-n'est pas compté ici : la simulation s'arrête avant l'intersaison.
+| Sujet | Règle |
+| --- | --- |
+| Clubs gérés par le jeu | Même budget que le club joué : recettes de leur division, salaires dus sur 52 semaines, cotisations, fonctionnement |
+| Gestion des clubs gérés | Ils réinvestissent 70 % d'un excédent prévu ; ils économisent jusqu'à 15 % de leurs recettes quand le déficit prévu dépasse ce que leur propriétaire comble |
+| Propriétaire | Mécène (comble jusqu'à 12 % des recettes environ), entreprise (6 %), association (rien). Tiré une fois pour toutes selon le club ; un grand club n'est jamais une association |
+| Annonce | En début de saison, message du propriétaire avec le montant qu'il comblera |
+| Fin de saison | À la place des 2,5 M€ versés à tous : prime de classement, amende éventuelle, puis « Apport du propriétaire » au journal, à hauteur des pertes de la saison et dans la limite annoncée |
+| Pertes au-delà de l'enveloppe | Baisse de confiance de 5 à 15 points et message. En dessous de 2 % des recettes, personne ne s'en émeut |
+| Prime de classement | Un quart du versement de la ligue dépend du rang final : 2,82 M€ au premier de première division, 0,31 M€ au dernier ; 1,06 M€ et 0,12 M€ en deuxième |
+| Billetterie | 40 % en abonnements, versés chaque semaine ; le reste au guichet, de 0,78 à 1,22 fois la recette type selon les cinq derniers résultats |
+| Phases finales | Un match éliminatoire à domicile rapporte 1,5 fois une recette complète ; sur terrain neutre, chaque club touche une part de recette |
+| Plafond salarial | 10,7 M€ par an en première division |
+| Salaires et recettes | Masse des joueurs au plus égale à 52 % des recettes, dans les deux divisions |
+| Avertissement | Message de la ligue dès que la masse dépasse une des deux limites, répété toutes les dix semaines |
+| Sanction | Constatée sur la masse de la dernière semaine de la saison : amende de la moitié du dépassement (2 M€ au plus) et 6 points de confiance en moins. Les clubs gérés paient la même amende |
+| Prévision | `S.clubBudget.prevision`, recalculée chaque semaine (voir plus bas) |
 
-### Trois problèmes ouverts
+### Les deux défauts trouvés
 
-1. **Les clubs gérés par le jeu s'enrichissent** avec la nouvelle économie :
-   Toulouse finit à 10,7 M€ en caisse contre 5,1 M€, Montauban à 12,5 M€
-   contre 4,7 M€. Leur trésorerie suit un autre calcul, que je n'ai pas
-   identifié. À régler avant toute activation.
-2. **Plus de billetterie en seconde moitié de saison**, dans les deux
-   économies : après le 17e match, la trésorerie ne monte plus les semaines
-   de réception. Soit un défaut du jeu, soit un artefact de ma sonde. À
-   confirmer.
-3. La prévision « salaires de la saison » de l'écran Finances multiplie
-   encore par 34 semaines.
+**1. Les clubs gérés par le jeu s'enrichissaient.** Cause :
+`dist/world-career.js`, ligne 87, dans `worldWeeklyEconomy` :
+`c.cash+=160000-wage+(home?360000:0)+(won?80000:0)-upkeep`. Chaque club géré
+touche 160 000 € par semaine, 360 000 € par réception et 80 000 € par
+victoire, quels que soient sa division et ses salaires. Ces montants étaient
+réglés sur des masses de 8 à 14 M€ payées en 34 semaines. Avec des salaires
+réalistes (un club de deuxième division paie 60 000 € par semaine au lieu de
+300 000 €), il reste 5 à 10 M€ par saison. S'y ajoutent 2,5 M€ à chaque
+intersaison (`dist/world-career.js`, ligne 166). Correction : pour les
+carrières marquées, ces deux calculs sont remplacés par le budget du club
+joué. L'ancien code n'est pas modifié.
 
-### Comment les vrais clubs vivent, et ce qu'il faut au jeu
+**2. Plus de billetterie après le 17e match : c'est le calendrier, pas la
+billetterie.** Cause : `dist/france-competition.js`, ligne 10, fonction
+`schedule`. Le tirage fait alterner domicile et extérieur selon la somme du
+numéro de journée et de la place du club dans la rotation, or ces deux
+nombres avancent ensemble : la parité ne change pas. Valence (club 29) joue
+sa 1re journée à l'extérieur, les journées 2 à 16 à domicile, puis les
+journées 17 à 30 à l'extérieur. Sur les 16 clubs de deuxième division, un
+seul alterne ; la pire série fait 15 matchs. En première division, la pire
+série fait 13 matchs. Chaque club reçoit bien la moitié de ses matchs sur la
+saison, donc le total de billetterie est juste ; c'est sa répartition dans le
+temps qui est fausse, et le manager enchaîne 14 déplacements.
 
-En 2024-2025, 9 clubs de première division sur 14 et 14 de deuxième sur 16
-sont en déficit d'exploitation (63 M€ au total). Les actionnaires couvrent :
-prêts abandonnés, augmentations de capital. Seuls 7 clubs sur 30
-s'autofinancent. Un jeu où tous les clubs perdent de l'argent serait pénible
-(remarque de Léo). Propositions, non codées :
+Ce défaut existe sans la variable. Il n'est **pas corrigé** : la sauvegarde
+vérifie que le calendrier est exactement celui de `schedule`
+(`dist/france-save-validation.js`, ligne 31), le changer casserait les
+carrières existantes. Dans le nouveau budget seulement : les abonnements
+(40 % de la billetterie) rentrent chaque semaine, et la recette par match est
+divisée par le vrai nombre de réceptions (13 ou 15) au lieu de 17. Ce second
+point corrigeait une perte : le premier budget n'encaissait que 76 % de la
+billetterie visée en première division et 88 % en deuxième.
 
-1. un club moyen à l'équilibre par défaut (fait) ;
-2. un soutien du propriétaire annoncé en début de saison, variable selon le
-   club (mécène, entreprise, association), à la place du versement uniforme
-   de 2,5 M€ ; au-delà de l'enveloppe : pression, vente forcée, renvoi ;
-3. des recettes liées au terrain : prime de classement, phases finales,
-   affluence selon les résultats ;
-4. les leviers du manager (ventes, partenaires, infrastructures) ;
-5. les deux règles de la ligue comme contraintes : plafond salarial et 52 %
-   des recettes au plus pour les joueurs.
+### Deux saisons mesurées, graine 27
 
-Non mesuré : l'intersaison, les prolongations, les offres d'un club pour
-attirer un joueur, la première division jouée par le manager.
+Trésorerie en millions d'euros. « Avant » : nouvelle économie telle qu'elle
+était au commit `b2759a6e`. Une saison complète jouée par l'API publique
+(matchs délégués), puis `next_season`.
+
+Manager à Valence (deuxième division, propriétaire entreprise, enveloppe
+0,5 M€) :
+
+| Instant | Valence | Première division, autres clubs (min / médiane / max) | Deuxième division, autres clubs | Avant : Valence | Avant : médianes 1re / 2e |
+| --- | --- | --- | --- | --- | --- |
+| Départ | 2,30 | 2,50 / 4,80 / 7,50 | 2,00 / 2,70 / 3,60 | 2,30 | 4,80 / 2,70 |
+| Mi-saison (semaine 17) | 2,46 | 0,20 / 4,26 / 8,43 | 1,01 / 1,98 / 3,97 | 2,71 | 7,66 / 7,74 |
+| Fin (semaine 34) | 1,83 | 0,28 / 3,07 / 6,13 | 0,34 / 1,87 / 3,42 | 2,19 | 9,64 / 12,46 |
+| Après l'intersaison | 2,30 | 1,79 / 4,88 / 6,75 | 1,61 / 2,70 / 6,40 | 4,69 | 11,94 / 14,49 |
+
+Valence finit 11e : 8,34 M€ de recettes, 8,80 M€ de charges, prime de
+classement 431 600 €, apport du propriétaire 35 100 €. Confiance 100.
+
+Manager à Toulouse (première division, propriétaire entreprise, enveloppe
+2,7 M€, masse de 12,97 M€ au-dessus du plafond dès le départ) :
+
+| Instant | Toulouse | Première division, autres clubs (min / médiane / max) | Deuxième division, clubs |
+| --- | --- | --- | --- |
+| Départ | 7,50 | 2,50 / 4,60 / 6,40 | 2,00 / 2,70 / 3,60 |
+| Mi-saison | 8,11 | 0,11 / 4,03 / 7,93 | 1,01 / 2,47 / 4,03 |
+| Fin | 8,01 | −0,76 / 3,62 / 5,44 | 0,25 / 1,88 / 3,25 |
+| Après l'intersaison | 9,31 | 1,64 / 3,85 / 7,22 | 1,88 / 2,80 / 5,80 |
+
+Toulouse finit 3e : 45,3 M€ de recettes, 44,8 M€ de charges, dont une
+billetterie de phase finale de 878 300 €. Prime de classement 2,44 M€, amende
+de 1,13 M€ pour dépassement du plafond (avertissements reçus à la création et
+à la semaine 30), aucun apport. Confiance 96 après la sanction.
+
+Dans les deux saisons : aucun club endetté après l'intersaison, un seul club
+géré passe sous zéro en fin de saison (−0,76 M€) avant la prime et l'apport.
+Export puis réimport après l'intersaison : accepté, texte identique.
+
+Les trésoreries baissent entre le départ et la fin de saison puis remontent :
+le quart du versement de la ligue et l'apport du propriétaire n'arrivent qu'à
+la clôture.
+
+### Ce que le futur écran peut lire : `S.clubBudget.prevision`
+
+| Champ | Sens |
+| --- | --- |
+| `recettesPrevues`, `chargesPrevues`, `resultatPrevu` | Saison entière : déjà réalisé plus le reste au rythme actuel, prime de classement au rang du moment, amende prévue déduite |
+| `recettesEncaissees`, `chargesPayees` | Réalisé depuis le début de saison |
+| `horsBudget` | Ce qui a bougé la caisse hors du budget courant : ventes et achats de joueurs, primes de signature, travaux |
+| `proprietaire` | `type`, `libelle`, `enveloppe` |
+| `apportPrevu` | Ce que le propriétaire verserait à ce rythme |
+| `masseSalariale`, `plafondSalarial`, `limiteRecettes` | Masse annuelle des joueurs et ses deux limites (`plafondSalarial` vaut `null` en deuxième division) |
+| `margePlafond`, `margeRecettes`, `amendePrevue` | Marge sous chaque limite (négative en cas de dépassement) et amende encourue |
+| `primeClassementPrevue`, `rang` | Prime au rang actuel |
+| `tresorerie`, `tresoreriePrevue` | Caisse actuelle et caisse attendue après la clôture |
+
+`S.clubBudget.clubs` tient un compteur par club (propriétaire, enveloppe,
+caisse de départ, recettes, charges, salaires, masse). La sauvegarde accepte
+ce champ tel quel ; des comptes illisibles dans une sauvegarde retouchée sont
+rouverts au lieu d'arrêter le jeu.
+
+La vente d'un joueur crédite bien la caisse (`acceptSale`,
+`dist/economy.js`, ligne 456 : le club acheteur est débité, écriture
+« Vente : … » au journal) et entre dans `horsBudget` la semaine suivante.
+Vérifié dans le moteur chargé par le test, pas par une commande publique :
+le moteur natif n'expose aucune commande de vente à un autre club.
+
+### Limites et points non vérifiés
+
+- Une seule graine (27), deux clubs, une saison et une intersaison chacun. La
+  dérive sur cinq ou dix saisons n'est pas mesurée.
+- Les clubs gérés ne réagissent pas au plafond salarial : ils paient
+  l'amende. Dans cette graine, un seul club dépasse 10,7 M€ à la création
+  (Toulouse, 12,97 M€) ; non vérifié sur d'autres graines.
+- Un manager peut dépenser l'enveloppe du propriétaire en transferts : les
+  pertes comblées comprennent tout ce qui a bougé la caisse.
+- Si le manager change de club à l'intersaison, l'annonce lue est celle de
+  l'ancien club ; la prévision se corrige à la première semaine.
+- L'écran Finances actuel n'affiche rien de tout cela et ses prévisions
+  comptent encore 34 semaines de salaires, 160 000 € de partenaires et
+  2,5 M€ d'intersaison (`dist/economy.js`, lignes 472 à 597).
+- Phases finales : mesurées une fois (Toulouse). Le barrage d'accession et
+  une finale sur terrain neutre ne sont couverts que par les tests du module.
+- Non mesuré : prolongations, offres d'un club pour attirer un joueur,
+  carrières internationales (le budget ne s'applique qu'au mode France).
 
 ## Tests
 
-`node --test tests/starting-salaries.cjs` : 11 sur 11 avec `tests/club-budget.cjs` (référence, politique
-des clubs, variété, contrats espoirs, application unique, vrai moteur drapeau
-éteint puis allumé).
+`node --test tests/starting-salaries.cjs tests/club-budget.cjs` : 27 sur 27.
+
+- `tests/club-budget.cjs` (18 tests, 3 secondes) : recettes, propriétaire,
+  prime de classement, affluence, phases finales, règles de la ligue,
+  clôture, prévision ; puis dans le moteur du jeu : carrière non marquée
+  (ancien calcul vérifié club par club, 2,5 M€ conservés), carrière marquée
+  (annonce, une semaine, vente d'un joueur, fin de saison, comptes
+  illisibles).
+- `tests/starting-salaries.cjs` (9 tests, environ 2 minutes) : le vrai
+  moteur par l'API publique, drapeau éteint puis allumé, une semaine jouée,
+  export, réimport, reprise depuis le disque, deuxième semaine après reprise.
+
+Suites existantes relancées sans la variable : `world-finance-flow-audit`
+4 sur 4, `interclub-market` 8 sur 8, `france-cover` 1 sur 1,
+`management-france-day-worker` 1 sur 1.

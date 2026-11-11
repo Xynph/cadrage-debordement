@@ -318,6 +318,8 @@ function createBridge(options={}){
       if(payload.varyCurrent!==undefined&&typeof payload.varyCurrent!=='boolean')throw Error('Option de variation du niveau actuel invalide.');
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
      }
+     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande, y compris la première après une reprise.
+     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativeCommand=command;
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
@@ -456,12 +458,11 @@ function createBridge(options={}){
      }
      let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
-     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');run("const financeWeekV1=financeWeek;financeWeek=function(m,won){if(!S||S.startingSalaries===undefined||typeof CDFranceClubs==='undefined'||!S.franceMode)return financeWeekV1(m,won);const entries=JSON.parse(JSON.stringify(nativeClubBudget.semaine({forces:CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})),clubId:S.club,masseHebdo:club().players.reduce((s,p)=>s+p.salary,0),semaines:wageForecastWeeks(),domicile:m?.[0]===S.club,alea:rand(0,1000)/1000,libelle:label()})));entries.forEach(e=>club().cash+=e.amount);S.ledger.unshift(...entries);S.ledger=S.ledger.slice(0,100);careerSponsorWeek(won);if(club().cash<0){S.trust=clamp(S.trust-5,0,100);news('La trésorerie est négative. Le président demande de réduire les dépenses.')}};");}
      if(command==='new_career'){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
-      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1'){ctx.nativeStartingSalaries=require('./starting-salaries.cjs');run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})));");delete ctx.nativeStartingSalaries;}
+      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1'){ctx.nativeStartingSalaries=require('./starting-salaries.cjs');run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})));");delete ctx.nativeStartingSalaries;run("if(budgetActif())budgetOuvrir(true);");}
       run('autoLineup();');
       delete ctx.nativeCreationVariation;
      }
