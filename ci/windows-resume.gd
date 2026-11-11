@@ -1,5 +1,6 @@
+class_name WindowsReceiptResume
 extends SceneTree
-# External QA main loop loaded by the actual exported EXE, never by an editor.
+# Embedded QA main loop selected by override.cfg in the disposable QA copy.
 # Initial export is pure. The save probe and mandatory meetings are declared
 # separately before real navigation and native viewport captures.
 var app: Control
@@ -10,9 +11,51 @@ var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 var engine_pid := -1
 var events := {"starts":0,"ends":0}
 var report := {"mode":"resume","before":{},"first_mutations":[],"mandatory_meetings":[],"graphics":{"passed":false,"window":[],"captures":[]}}
+var graphics_trace: Array[Dictionary] = []
 
 func _initialize() -> void:
+	# The same QA override stays byte-identical across fresh and resume. Fresh
+	# delegates to the unchanged in-app qa_runner; only SELF_TEST selects it.
+	if OS.get_environment("CD_GODOT_SELF_TEST") == "1":
+		check(driver_mode() == "resume" and current_scene != null and current_scene.scene_file_path == "res://windows_qa/entry.tscn", "Fresh integrated QA starts from the empty embedded entry")
+		if not failures.is_empty(): call_deferred("finish"); return
+		current_scene.free()
+		call_deferred("run_fresh")
+		return
+	var chain: Array[String] = []
+	var script: Script = get_script()
+	while script != null:
+		chain.append(script.resource_path)
+		script = script.get_base_script()
+	var entry := current_scene.scene_file_path if current_scene != null else ""
+	var ack := {"schema":"oval-windows-driver-v1","mode":driver_mode(),"script_chain":chain,"entry_scene":entry,"pid":OS.get_process_id(),"executable":OS.get_executable_path(),"data_dir":profile,"exported":not OS.has_feature("editor")}
+	report.mode = driver_mode()
+	report.driver_ack = ack
+	if output.is_absolute_path():
+		DirAccess.make_dir_recursive_absolute(output)
+		var path := output.path_join("driver-ack.json")
+		var handle := FileAccess.open(path + ".tmp",FileAccess.WRITE)
+		if handle != null:
+			handle.store_string(JSON.stringify(ack))
+			handle.close()
+			check(DirAccess.rename_absolute(path + ".tmp",path) == OK, "Driver ACK is written atomically")
+		else: check(false, "Driver ACK can be written")
+	else: check(false, "Explicit absolute driver output required")
+	print("CD_WINDOWS_DRIVER_ACK ",JSON.stringify(ack))
+	check(entry == "res://windows_qa/entry.tscn", "Empty embedded QA entry precedes product scene")
+	if not failures.is_empty(): call_deferred("finish"); return
+	current_scene.free()
 	call_deferred("run")
+
+func driver_mode() -> String:
+	return "resume"
+
+func run_fresh() -> void:
+	# main.gd owns qa_runner construction, observation and shutdown exactly as
+	# in a normal CD_GODOT_SELF_TEST=1 launch; this loop adds no second runner.
+	app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	current_scene = app
 
 func check(ok: bool, message: String) -> void:
 	checks += 1
@@ -20,12 +63,36 @@ func check(ok: bool, message: String) -> void:
 		failures.append(message)
 		printerr("FAIL: ", message)
 
+func trace_graphics(stage: String, details: Dictionary = {}) -> void:
+	var event := {"stage":stage,"engine_ms":Time.get_ticks_msec(),"process_frames":Engine.get_process_frames(),"frames_drawn":Engine.get_frames_drawn(),"window_mode":root.mode,"window":[root.size.x,root.size.y]}
+	event.merge(details)
+	graphics_trace.append(event)
+	report.graphics_trace = graphics_trace
+	print("CD_WINDOWS_GRAPHICS ",JSON.stringify(event))
+	# This separate diagnostic survives a blocked first frame or worker wait;
+	# it is never a replacement for the final graphical report and PNG checks.
+	if output.is_absolute_path():
+		DirAccess.make_dir_recursive_absolute(output)
+		var handle := FileAccess.open(output.path_join("graphics-progress.json"),FileAccess.WRITE)
+		if handle != null: handle.store_string(JSON.stringify(graphics_trace)); handle.close()
+
 func wait_ready() -> bool:
 	var deadline := Time.get_ticks_msec() + 90000
+	var next_trace := Time.get_ticks_msec() + 5000
+	if engine_pid <= 0 and app.bridge.child_pid > 0: engine_pid = app.bridge.child_pid
+	trace_graphics("worker.wait.begin", {"child_pid":app.bridge.child_pid})
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline:
+		# last_response_ok is false during normal startup. Only a stopped/lost
+		# transport or a completed refusal with its actual error ends the wait.
+		if app.bridge.child_pid <= 0 or app.bridge._stopping or (not app.waiting and not app.bridge.last_response_ok and not app.last_error.is_empty()):
+			break
 		await process_frame
+		if Time.get_ticks_msec() >= next_trace:
+			trace_graphics("worker.wait.pending", {"child_pid":app.bridge.child_pid,"waiting":app.waiting,"model_empty":app.model.is_empty(),"last_error":app.last_error})
+			next_trace = Time.get_ticks_msec() + 5000
 	app.timer.stop()
-	var ok: bool = not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
+	var ok: bool = app.bridge.child_pid > 0 and not app.bridge._stopping and not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
+	trace_graphics("worker.wait.end", {"ready":ok,"child_pid":app.bridge.child_pid,"last_error":app.last_error})
 	check(ok, "Actual packaged worker responds: " + app.last_error)
 	return ok
 
@@ -86,7 +153,7 @@ func capture(name_: String) -> void:
 	report.graphics.captures.append({"path":path,"sha256":FileAccess.get_sha256(path),"width":image.get_width(),"height":image.get_height(),"variance":variance})
 
 func runtime_information() -> void:
-	var details := {"platform":OS.get_name(),"executable":OS.get_executable_path(),"engine":Engine.get_version_info(),"display":DisplayServer.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"audio_driver":AudioServer.get_driver_name(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile}
+	var details := {"platform":OS.get_name(),"executable":OS.get_executable_path(),"engine":Engine.get_version_info(),"display":DisplayServer.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"api_version":RenderingServer.get_video_adapter_api_version(),"argv":OS.get_cmdline_args(),"max_fps":Engine.max_fps,"vsync_mode":DisplayServer.window_get_vsync_mode(),"audio_driver":AudioServer.get_driver_name(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile}
 	report.runtime_info = details
 	var dialog := AcceptDialog.new()
 	dialog.title = "Runtime info · Windows package QA"
