@@ -91,3 +91,46 @@ neuf captures, sans JSON final : ces essais ne sont pas comptés comme réceptio
 Les attentes sont ensuite passées à huit frames, la fonction de fit attendant
 deux frames. La RED complète et les réceptions corrigées utilisent cette même
 attente, avec la borne de 90 secondes conservée.
+
+## Complément : négociation maintenue ouverte pendant la saisie
+
+Le cas `Open contract preserves typed terms and keyboard access through live
+resizing` ouvre une seule négociation à 2560 × 1440, puis garde sa fenêtre et
+ses champs pendant 2560 → 1280 → 2560. Il conserve la densité des contrôles
+déjà construits et compare leurs identifiants d’instance : le dialogue n’est
+pas recréé à chaque taille.
+
+Le salaire est réellement saisi par événements clavier : un brouillon non
+validé remplace 18700 par `18900`, puis doit survivre à la réduction de fenêtre.
+Tab valide ce montant ; Shift+Tab revient au salaire. Un cycle Tab vérifie
+l’accès au salaire, à la durée, à la reprise de contre-offre, à l’autorisation
+et à l’annulation. Un nouveau brouillon `19100` doit ensuite survivre au retour
+au grand format, avec la durée de trois saisons et le focus conservés.
+
+Les sept contrôles essentiels sont mesurés après défilement aux trois étapes.
+Ce complément n’écrit aucun PNG : la sélection comparative existante reste de
+deux captures pour son intégration à l’union finale limitée à huit PNG.
+Il reste une réception du fixture de présentation, sans moteur de carrière.
+
+```sh
+DISPLAY=:101 \
+CD_GODOT_EXECUTABLE=/workspace/.cloud-setup/tools/godot472/Godot_v4.7.2-stable_linux.x86_64 \
+CD_SMALL_CONTRACT_GRAPHICS=1 \
+CD_SMALL_CONTRACT_OUTPUT=/tmp/rg27-small-contract-live-resize \
+/workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node \
+  --test --test-name-pattern='Open contract' tests/small-window-contracts.cjs
+```
+
+Les hashes de scripts de la première réception JSON désignent la version
+reçue dans `6be4134`. Le complément conserve son propre relevé de gel des
+sources et son résultat ciblé, séparément de cette réception initiale.
+
+Réception ciblée : **un test passé, zéro échec**, même dialogue et mêmes champs
+aux trois étapes, **21 contrôles sans débordement**. Le cycle clavier observé
+est salaire → durée → reprise → annuler → autoriser → salaire. Les hashes
+gelés ont été revérifiés après le processus ; aucun fichier production n’a
+été modifié.
+
+[Données du complément](small-window-contract-resize-evidence.json) ·
+preuves locales complètes :
+`/workspace/qa/rg27-small-contracts-20261111/live-resize/`.
