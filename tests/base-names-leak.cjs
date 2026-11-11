@@ -37,6 +37,14 @@ for(const person of people){
  assert.ok(!realSurnames.has(surname(person.name)),person.id+' : patronyme d’une personne réelle de la base');
  if(real.has(person.id))assert.notEqual(fold(person.name),real.get(person.id),person.id+' : vrai nom');
 }
+// Names drawn by seed: the generic pool (academy youths, generated players) and the pool of the training
+// clubs of the Espoirs strategy. No pair of the pools, drawn or not yet drawn, is the name of a real person.
+const pool=(file,name)=>{const m=fs.readFileSync(path.join(root,'dist',file),'utf8').match(new RegExp('const '+name+'=(\\[[^\\]]*\\])'));assert.ok(m,file+' : vivier '+name);return JSON.parse(m[1].replace(/'/g,'"'));};
+for(const [file,firsts,lasts,size] of [['world-data.js','FIRST','LAST',832],['espoirs-strategy-v95-v100.js','firstnames','surnames',144]]){
+ const given=pool(file,firsts),family=pool(file,lasts),pairs=given.flatMap(g=>family.map(f=>fold(g+' '+f)));
+ assert.equal(pairs.length,size,file+' : taille du vivier');
+ assert.deepEqual(pairs.filter(pair=>realNames.has(pair)).length,0,file+' : combinaison tirée au sort égale au nom d’une personne réelle');
+}
 // Every displayed name of the registries comes from the tables of base names.
 const tables=new Set([...baseNames.players().values(),...baseNames.staff().values()]);
 for(const person of people)assert.ok(tables.has(person.name),person.id+' : nom hors des tables de base');
