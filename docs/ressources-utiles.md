@@ -119,3 +119,8 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
 | Ressource | Provenance / relevé | Utilité | Coût / licence | Statut et preuve |
 | --- | --- | --- | --- | --- |
 | [Godot4.7.2 Linux officiel](https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable) | API officielle `releases/372477026` relue le11novembre ; archive Linux77860424octets, SHA256 `cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4`. | Exécuter réellement les suites Godot de CI, sans assimiler SKIP à une validation du rendu. | Gratuit, MIT et notices tierces Godot ; SDK utilisé en QA, sans ajout au ZIP du jeu. | **Retenu** : pins `ci/godot-sdk.json`, archive comparée au digest officiel. Le workflow proposé prépare les assets puis importe le vrai projet. La validation Linux ne prouve pas le fonctionnement d’un EXE Windows. |
+## Recette graphique Linux
+
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [Xvfb21.1.16 Debian13](https://deb.debian.org/debian/pool/main/x/xorg-server/xvfb_21.1.16-1.3+deb13u4_amd64.deb) | Téléchargé et extrait localement le11 novembre2026 ; SHA256 `893d87bf159b6de077a929fc796a73c39f837d45310b2076e3eeebebb80552b6`. Avis X.Org du paquet lu. | Vrai rendu X11/Mesa pour les mesures1280–2560, profils jetables, sans installation globale. | Gratuit ; copyright X.Org, variante de la licence MIT. Aucun binaire ajouté au jeu. | **Retenu** pour la [réception petites fenêtres](qa/small-window-geometry-20261111.md). Serveur temporaire partagé, aucune configuration produit modifiée. |
