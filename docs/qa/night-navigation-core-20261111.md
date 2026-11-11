@@ -27,7 +27,9 @@ avant le 12 novembre à 09 h, Paris ; Windows et ZIP restent à Claude.
 uniquement la projection courante. `open_entity(target, source_window = null)`
 applique aussi les gardes puis ouvre la cible. Types pris en charge : `menu`,
 `player` (alias `squad`), `market`, `nation`, `staff`, `club`, `fixture`,
-`competition`, `date`, `finance`, `training`, `report`. Le champ `route` est une entrée
+`competition`, `date`, `finance`, `training`, `report`. Le type `prospect` est
+validable via `entity_available` mais son ouverture requiert `inspect_entity`
+et une fenêtre métier propriétaire qualifiée. Le champ `route` est une entrée
 libre uniquement pour `menu`, parmi les routes déjà permises ; Presse reste
 exclue. Les autres types choisissent leur destination, indépendamment d’une
 route fournie par l’appelant.
@@ -48,6 +50,26 @@ porte explicitement `navigation_read_only=true`, et qu’aucune autre fenêtre o
 scène obligatoire ne bloque. Elle n’est fermée qu’après succès. Ne jamais
 attribuer ce marqueur à une négociation, une décision ou une fenêtre contenant
 un brouillon métier.
+
+## Consultation d’un prospect depuis une fenêtre métier
+
+`inspect_entity({kind: prospect, source, id}, owner_window)` est distincte de
+`open_entity`, qui refuse ce type. Sources admises : `regen-candidates`,
+`regen-shortlist`, `interclub` ; l’adaptateur ne mélange pas ces listes et
+n’interroge jamais le worker. L’ID est recherché dans la projection courante.
+
+Seules les fenêtres existantes `RegenScouting` / `InterclubMarket`, appartenant
+à l’app, visibles, portant leur rôle exact `navigation_inspection_source` et
+répondant positivement à `inspection_allowed(target)`, peuvent ouvrir ce lecteur.
+Une commande en attente, une confirmation, une autre fenêtre visible, un
+rendez-vous, une causerie ou un match immersif refusent l’ouverture. Le marqueur
+`navigation_read_only` n’est jamais donné à ces fenêtres métier.
+
+Le détail est un enfant de la fenêtre propriétaire. Il ne navigue pas, ne ferme
+pas la fenêtre métier, n’ajoute pas de parcours historique et ne rejoue aucun
+callback de brouillon. Fermer le lecteur restitue le focus si son contrôle
+source existe encore. Cette tranche est à recevoir avec un test réel qui
+compare brouillon, filtres, pagination, scroll, état sportif et RNG avant/après.
 
 ## Lecture, historique et limites
 

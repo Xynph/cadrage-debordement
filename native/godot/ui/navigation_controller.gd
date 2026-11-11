@@ -446,6 +446,9 @@ func entity_available(target: Dictionary) -> bool:
 			return not id.is_empty() and ((_allowed_route("Effectif") and not _person("squad", id).is_empty()) or (_allowed_route("Recrutement") and not _person("market", id).is_empty()))
 		"market":
 			return not id.is_empty() and _allowed_route("Recrutement") and not _person("market", id).is_empty()
+		"prospect":
+			var adapter := _prospect_adapter()
+			return _allowed_route("Recrutement") and adapter != null and adapter.target_available(app, str(target.get("source", "")), id)
 		"report":
 			return _allowed_route("Recrutement") and app.Immersive.Recruitment.has_method("target_available") and app.Immersive.Recruitment.target_available(app, target.get("id"))
 		"nation":
@@ -466,7 +469,7 @@ func _reading_source(source: Window) -> bool:
 
 func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	var source: Window = source_window if _reading_source(source_window) else null
-	if _blocked(source) or not entity_available(target): return false
+	if str(target.get("kind", "")) == "prospect" or _blocked(source) or not entity_available(target): return false
 	capture_current()
 	_reading_revision += 1
 	_dispatching = true
@@ -526,3 +529,26 @@ func _restore_reading_controls(reading: Dictionary, revision: int) -> void:
 	await get_tree().process_frame
 	if revision != _reading_revision or not is_instance_valid(page) or page != app.root_content: return
 	U.restore_reading_controls(app, page, reading)
+
+# Prospect dossiers may originate inside a business window with a draft. They
+# open a child reader only: never dismiss the owner or route through _navigate.
+func _prospect_adapter() -> Script:
+	var path := "res://ui/prospect_profile.gd"
+	if not ResourceLoader.exists(path): return null
+	var adapter := load(path) as Script
+	return adapter if adapter != null and adapter.has_method("target_available") and adapter.has_method("open_target") else null
+
+func inspect_entity(target: Dictionary, owner_window: Window) -> bool:
+	if str(target.get("kind", "")) != "prospect": return false
+	if not is_instance_valid(owner_window) or owner_window.is_queued_for_deletion() or not owner_window.visible: return false
+	if app == null or not app.is_ancestor_of(owner_window): return false
+	var source := str(target.get("source", ""))
+	var expected := "RegenScouting" if source in ["regen-candidates", "regen-shortlist"] else "InterclubMarket" if source == "interclub" else ""
+	if expected.is_empty() or str(owner_window.name) != expected: return false
+	var source_role := "regen" if source.begins_with("regen-") else "interclub"
+	if owner_window.get_meta("navigation_inspection_source", "") != source_role: return false
+	if owner_window.get("app") != app or not owner_window.has_method("inspection_allowed"): return false
+	if _blocked(owner_window) or not owner_window.inspection_allowed(target): return false
+	if not entity_available(target): return false
+	var adapter := _prospect_adapter()
+	return adapter != null and adapter.open_target(app, source, str(target.get("id", "")), owner_window)
