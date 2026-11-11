@@ -1,5 +1,6 @@
 extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
+const Skin = preload("res://ui/game_skin.gd")
 var app: Control
 var nav: Node
 var checks := 0
@@ -75,6 +76,7 @@ func unchanged(before: Dictionary, context: String) -> void:
 func text(node: Node) -> String:
 	if node == null: return ""
 	var value := str(node.text) + "\n" if node is Label or node is BaseButton else ""
+	if node is Window: value += node.title + "\n"
 	for child in node.get_children(): value += text(child)
 	return value
 func back() -> void:
@@ -272,7 +274,7 @@ func reading_cases() -> void:
 		check(await open_entity("club", opponent.id), "Club adverse ouvert dans son détail existant")
 		var club_detail := named("CompetitionClubDetails")
 		check(club_detail != null and str(club_detail.get_meta("entity_id", "")) == str(opponent.id), "Détail du bon ID de club adverse effectivement rendu")
-		check(text(club_detail).contains(str(opponent.name)), "Nom du bon club adverse effectivement rendu")
+		check(club_detail != null and club_detail.title == Skin.club_name(opponent), "Nom publié du bon club adverse effectivement rendu dans le titre")
 		await capture("club-adverse-2560")
 		app._clear_dialogs(); await settle()
 	await cancel_real_drag()
