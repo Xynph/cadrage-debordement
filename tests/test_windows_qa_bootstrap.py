@@ -34,6 +34,66 @@ class WindowsQaBootstrap(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'override'):
             builder.stage_windows_qa(self.project)
 
+    @unittest.skipUnless(os.environ.get('CD_GODOT_EXE'), 'Explicit Godot SDK required for the real wait-loop characterization')
+    def test_worker_wait_retains_fatal_errors_without_waiting_for_deadline(self):
+        builder.stage_windows_qa(self.project)
+        probe = self.project / 'wait-probe.gd'
+        probe.write_text('''extends "res://windows_qa/windows-resume.gd"
+class FakeBridge:
+	extends RefCounted
+	var child_pid := 777
+	var _stopping := false
+	var last_response_ok := false
+class FakeApp:
+	extends Control
+	var bridge := FakeBridge.new()
+	var waiting := true
+	var model := {}
+	var last_error := ""
+	var timer := Timer.new()
+	func _ready() -> void: add_child(timer)
+func _initialize() -> void: call_deferred("run")
+func run() -> void:
+	var case := OS.get_environment("QA_WAIT_CASE")
+	app = FakeApp.new()
+	root.add_child(app)
+	var error := "Synthetic terminal worker VM error"
+	if case == "after-model":
+		app.model = {"meta":{}}
+		app.waiting = false
+		app.bridge.last_response_ok = true
+		app.bridge.child_pid = -1
+		app.bridge._stopping = true
+		app.last_error = error
+	else:
+		create_timer(0.05).timeout.connect(func():
+			app.waiting = false
+			if case == "normal-pending":
+				app.model = {"meta":{}}
+				app.bridge.last_response_ok = true
+			else:
+				app.last_error = error
+				if case == "transport":
+					app.bridge.child_pid = -1
+					app.bridge._stopping = true)
+	create_timer(2.0).timeout.connect(func(): printerr("FAILED_TO_LEAVE_TERMINAL_WAIT"); quit(6))
+	var started := Time.get_ticks_msec()
+	var accepted := await wait_ready()
+	if case == "normal-pending":
+		assert(accepted and failures.is_empty())
+	else:
+		assert(not accepted)
+		assert(failures == ["Actual packaged worker responds: " + error])
+	assert(Time.get_ticks_msec() - started < 1500)
+	print("WAIT_CASE_PASSED ",case)
+	quit(0)
+''')
+        for case in ('after-model', 'transport', 'negative-response', 'normal-pending'):
+            with self.subTest(case=case):
+                run = subprocess.run([os.environ['CD_GODOT_EXE'], '--headless', '--path', str(self.project), '--script', str(probe)], env={**os.environ, 'QA_WAIT_CASE':case}, capture_output=True, text=True, timeout=5)
+                self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+                self.assertIn('WAIT_CASE_PASSED ' + case, run.stdout)
+
     @unittest.skipUnless(os.environ.get('CD_GODOT_EXE'), 'Explicit Godot SDK required for the real dispatch characterization')
     def test_global_class_dispatch_acknowledges_before_loading_product_scene(self):
         builder.stage_windows_qa(self.project)

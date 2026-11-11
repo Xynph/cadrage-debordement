@@ -79,14 +79,19 @@ func trace_graphics(stage: String, details: Dictionary = {}) -> void:
 func wait_ready() -> bool:
 	var deadline := Time.get_ticks_msec() + 90000
 	var next_trace := Time.get_ticks_msec() + 5000
+	if engine_pid <= 0 and app.bridge.child_pid > 0: engine_pid = app.bridge.child_pid
 	trace_graphics("worker.wait.begin", {"child_pid":app.bridge.child_pid})
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline:
+		# last_response_ok is false during normal startup. Only a stopped/lost
+		# transport or a completed refusal with its actual error ends the wait.
+		if app.bridge.child_pid <= 0 or app.bridge._stopping or (not app.waiting and not app.bridge.last_response_ok and not app.last_error.is_empty()):
+			break
 		await process_frame
 		if Time.get_ticks_msec() >= next_trace:
 			trace_graphics("worker.wait.pending", {"child_pid":app.bridge.child_pid,"waiting":app.waiting,"model_empty":app.model.is_empty(),"last_error":app.last_error})
 			next_trace = Time.get_ticks_msec() + 5000
 	app.timer.stop()
-	var ok: bool = not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
+	var ok: bool = app.bridge.child_pid > 0 and not app.bridge._stopping and not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok
 	trace_graphics("worker.wait.end", {"ready":ok,"child_pid":app.bridge.child_pid,"last_error":app.last_error})
 	check(ok, "Actual packaged worker responds: " + app.last_error)
 	return ok
