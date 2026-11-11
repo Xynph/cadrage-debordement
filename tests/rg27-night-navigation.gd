@@ -165,6 +165,11 @@ func fatigue_chart_return() -> void:
 	check(named("TrainingIndividualDialog") != null, "Activation de la ligne métier garde son dialogue de réglage distinct")
 	app._clear_dialogs(); await settle()
 func setup_career() -> bool:
+	if group == "report":
+		var reports: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", [])
+		check(not reports.is_empty() and app.model.get("live") == null, "Checkpoint réel préparé : rapports présents et aucun match en cours")
+		visits.append({"preparation":"checkpoint de vraie mission chargé sans nouvelle carrière", "report_ids":reports.map(func(report: Dictionary): return str(report.get("id", ""))), "week":app.model.meta.get("week")})
+		return not reports.is_empty()
 	var payload := {"mode":"world-champ", "nationalRole":"nation", "nation":"ENG"} if group == "nation" else {"mode":"world-champ", "club":29} if group == "reading" else {"mode":"common", "club":0}
 	if not await command("new_career", payload): return false
 	if group != "guards" and group != "nation":
@@ -488,6 +493,30 @@ func quote_cases() -> void:
 	await capture("devis-interclub-retour-2560")
 	app._clear_dialogs(); await settle()
 	await unchanged(before, "Inspection d’un vrai devis interclubs non vide")
+func report_cases() -> void:
+	var reports: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", [])
+	check(not reports.is_empty(), "Mission réelle : rapport disponible dans la projection du worker")
+	if reports.is_empty(): return
+	var report: Dictionary = reports[0]
+	var before := await snapshot()
+	check(not await open_entity("report", "__rapport_absent__"), "Rapport inexistant refusé sans ouvrir une autre archive")
+	check(await open_entity("report", str(report.id)), "Rapport réel ouvert par son identifiant d’archive exact")
+	var detail := named("RecruitmentReport") as Window
+	check(detail != null and str(detail.get_meta("entity_id", "")) == str(report.id), "Fenêtre du vrai rapport reçu de la mission")
+	check(named("ScoutReport_" + str(report.id)) != null, "Dossier d’archive daté rendu, pas une fiche actuelle substituée")
+	var source := named("ScoutSource") as Label
+	check(source != null and source.text == str(report.get("assessment", {}).get("source", "Date du rapport non conservée")), "Date et source du rapport conservées exactement")
+	check(not await open_entity("report", str(report.id)), "Deuxième fenêtre du même rapport refusée")
+	await capture("rapport-observation-reel-2560")
+	var current := named("ReportCurrentPlayer") as Control
+	if current != null:
+		await activate(current)
+		check(app.route == "Recrutement" and str(app.management_ui.market.get("navigation_id", "")) == str(report.get("playerId", "")), "Lien depuis le vrai rapport vers la seule piste actuellement projetée")
+		check(named("RecruitmentReport") == null, "Le rapport source est fermé sans fenêtre dupliquée au changement de dossier")
+	else:
+		check(detail != null and detail.visible, "Archive seule conservée si le joueur n’est plus dans le marché projeté")
+	app._clear_dialogs(); await settle()
+	await unchanged(before, "Lecture du vrai rapport d’observation")
 func guard_cases() -> void:
 	# A press appointment is intentionally absent until its exact persisted mail
 	# is opened. Exercise that entrypoint instead of manufacturing scene metadata.
@@ -562,5 +591,6 @@ func run() -> void:
 		"prospects": await prospects_cases()
 		"staff": await staff_cases()
 		"quote": await quote_cases()
+		"report": await report_cases()
 		_: await reading_cases()
 	await finish()

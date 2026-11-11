@@ -16,7 +16,7 @@ test('Liens du carnet : vraie consultation par ID, historique et absence de muta
   const project = path.resolve(__dirname, '../native/godot');
   const graphics = process.env.CD_NIGHT_NAV_GRAPHICS === '1';
   const group = process.env.CD_NIGHT_NAV_CASE || 'reading';
-  assert.ok(['reading', 'nation', 'guards', 'prospects', 'staff', 'quote'].includes(group), 'Groupe explicite connu');
+  assert.ok(['reading', 'nation', 'guards', 'prospects', 'staff', 'quote', 'report'].includes(group), 'Groupe explicite connu');
   const files = [
     'ui/navigation_controller.gd', 'ui/management_state.gd', 'main.gd',
     'ui/international_view.gd', 'ui/staff_view.gd',
@@ -27,12 +27,24 @@ test('Liens du carnet : vraie consultation par ID, historique et absence de muta
     crypto.createHash('sha256').update(fs.readFileSync(path.join(project, file))).digest('hex')]));
   const commit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: path.resolve(__dirname, '..'), encoding: 'utf8' }).stdout.trim();
   fs.writeFileSync(path.join(directory, 'provenance.json'), JSON.stringify({ commit, sources, group, graphics, profile }, null, 2));
+  const started = Date.now();
+  if (group === 'report') {
+    const preparation = spawnSync(process.execPath, [path.resolve(__dirname, 'rg27-night-report-prepare.cjs'), profile, directory], {
+      cwd: path.resolve(__dirname, '..'), encoding: 'utf8', timeout: 110000, env: process.env,
+    });
+    const preparationLog = (preparation.stdout || '') + (preparation.stderr || '');
+    fs.writeFileSync(path.join(directory, 'report-preparation.log'), preparationLog);
+    if (preparation.error) throw preparation.error;
+    assert.equal(preparation.status, 0, preparationLog);
+  }
+  const remaining = 180000 - (Date.now() - started);
+  assert.ok(remaining > 0, 'La préparation garde le budget global de 180 secondes');
   const result = spawnSync(process.env.CD_GODOT_EXECUTABLE, [
     ...(graphics ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '2560x1440'] : ['--headless']),
     '--audio-driver', 'Dummy', '--max-fps', '60', '--path', project,
     '--log-file', path.join(directory, 'engine.log'), '--script', path.resolve(__dirname, 'rg27-night-navigation.gd'),
   ], {
-    cwd: path.resolve(__dirname, '..'), encoding: 'utf8', timeout: 180000,
+    cwd: path.resolve(__dirname, '..'), encoding: 'utf8', timeout: remaining,
     env: { ...process.env, CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_SELF_TEST: '0',
       CD_GODOT_DATA_DIR: profile, CD_NIGHT_NAV_OUTPUT: directory, CD_NIGHT_NAV_CASE: group },
   });
