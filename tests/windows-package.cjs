@@ -28,9 +28,23 @@ qa={'passed':True,'mode':'fresh','checks':50,'failures':[],'native_display':'hea
 literal={'id':'unit-question','season':1,'week':1,'club':29,'answerId':'r4','questionText':'Exact unit question?','answerText':'Exact selected unit reply.','journalist':{'id':'unit-journalist','name':'Unit Reporter','outlet':'Unit Paper'}}
 qa['coach']['observation']='From QA startup through coach destruction'
 qa.update(journey={'day_advances':210,'matches_started':30,'matches_finished':30,'weeks_closed':30,'meeting_commands':20,'interseason_reached':True,'season_two_reached':True},systems={'passed':True},native06={'passed':True},press_literals=[{'expected':copy.deepcopy(literal),'archived':copy.deepcopy(literal)} for _ in range(2)])
+def driver_ack(mode):
+ chain=['res://windows_qa/windows-resume.gd']
+ if mode=='graphics-smoke':chain.insert(0,'res://windows_qa/windows-graphics-smoke.gd')
+ return {'schema':'oval-windows-driver-v1','mode':mode,'script_chain':chain,'entry_scene':'res://windows_qa/entry.tscn','pid':10,'executable':exe,'data_dir':qa['data_dir'],'exported':True}
+capture_names=['01-reception-2560.png','02-effectif-2560.png','03-calendrier-2560.png','04-finances-2560.png','05-runtime-info-2560.png']
+def graphics_runtime():
+ return {'renderer':'gl_compatibility','adapter':'ANGLE unit adapter','vendor':'Unit vendor','api_version':'OpenGL ES 3.0 ANGLE unit','argv':[],'max_fps':10,'vsync_mode':0}
+def graphics_process():
+ return {'systemRoot':'C:/Windows','argv':['--rendering-method','gl_compatibility','--rendering-driver','opengl3_angle','--disable-vsync','--max-fps','10'],'loadedModules':[{'name':name,'path':'C:/Windows/System32/'+name,'sha256':'f'*64} for name in ('d3d11.dll','dxgi.dll')]}
+def resume_report():
+ r=copy.deepcopy(qa)
+ r.update(mode='resume',driver_ack=driver_ack('resume'),native_display='Windows',platform='Windows',audio_driver='Dummy',runtime_info=graphics_runtime(),graphics={'passed':True,'window':[2560,1440],'captures':[{'path':'C:/QA Evidence/resume/'+name,'sha256':'e'*64} for name in capture_names]},before={'state_matches':True,'citations_match':True,'profile_bytes_match':True,'rng_file_unchanged':True,'press_literals_match':True,'seed_loaded':123},save_probe={'state_matches':True,'rng_matches_loaded':True,'seed_saved':123},first_mutations=[{'command':'save'}])
+ return r
 `;
 function check(name,body){test(name,()=>{const r=spawnSync(python,['-c',prelude+'\n'+body],{encoding:'utf8',timeout:15000});assert.equal(r.status,0,(r.stdout||'')+(r.stderr||''));});}
 check('official manifest maps every archived file and source commit',`r=m.verify_archive(archive(),commit);assert r['manifest']['sourceTree']==tree;assert r['files']==len(files)`);
+check('archive refuses QA override even when listed honestly in the manifest',`data=b'[application]\\nrun/main_loop_type="WindowsGraphicsSmoke"\\n';files['override.cfg']=data;manifest['files']['override.cfg']={'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)};refused(lambda:m.verify_archive(archive(),commit),'override')`);
 for(const bad of ['../escape','/absolute','C:/drive','runtime/../escape','runtime\\node.exe','runtime/NUL.txt','runtime/node.exe.','runtime/node.exe:ads']){
  check('archive refuses Windows path '+bad,`refused(lambda:m.verify_archive(archive([(prefix+'/good',b'x'),(${JSON.stringify(bad)},b'x')]),commit))`);
 }
@@ -85,26 +99,77 @@ with zipfile.ZipFile(z,'w') as out:
  raw='{"sourceCommit":"'+'c'*40+'","sourceCommit":"'+commit+'","sourceTree":"'+tree+'","files":'+json.dumps(manifest['files'])+'}'
  out.writestr(prefix+'/manifest-build.json',raw)
 refused(lambda:m.verify_archive(z,commit),'duplicate')`);
-check('resume distinguishes pure loading from the explicitly declared RNG save probe',`r=copy.deepcopy(qa);r.update(mode='resume',native_display='Windows',platform='Windows',audio_driver='Dummy',runtime_info={'adapter':'unit-fixture'},graphics={'passed':True,'window':[2560,1440],'captures':[{'path':'diagnostic-only'}]*4},before={'state_matches':True,'citations_match':True,'profile_bytes_match':True,'rng_file_unchanged':True,'press_literals_match':True,'seed_loaded':123},save_probe={'state_matches':True,'rng_matches_loaded':True,'seed_saved':123},first_mutations=[{'command':'save'}]);m.validate_qa_report(r,exe,'resume')
-for change in ['seed','undeclared','initial']:
+check('resume distinguishes pure loading from the explicitly declared RNG save probe',`r=resume_report();m.validate_qa_report(r,exe,'resume')
+for change in ['seed','undeclared','initial','missing-screen','repeated-screen']:
  bad=copy.deepcopy(r)
  if change=='seed':bad['save_probe']['seed_saved']=124
  if change=='undeclared':bad['first_mutations']=[]
  if change=='initial':bad['before']['profile_bytes_match']=False
+ if change=='missing-screen':bad['graphics']['captures'].pop()
+ if change=='repeated-screen':bad['graphics']['captures'][-1]=copy.deepcopy(bad['graphics']['captures'][0])
  refused(lambda:m.validate_qa_report(bad,exe,'resume'))`);
 check('short graphics cannot masquerade as full Windows receipt',`refused(lambda:m.validate_windows_report({'passed':True,'scope':'graphics-smoke-only'},commit,exe),'not a full')`);
+check('embedded driver ACK binds mode, script inheritance and exact process before acceptance',`ack=driver_ack('resume');m.validate_driver_ack(ack,exe,'resume',10,qa['data_dir'])
+for key,value in [('schema','other'),('mode','graphics-smoke'),('script_chain',['C:/external.gd']),('entry_scene','res://main.tscn'),('pid',12),('executable','C:/editor.exe'),('data_dir','C:/wrong'),('exported',False)]:
+ bad=copy.deepcopy(ack);bad[key]=value;refused(lambda:m.validate_driver_ack(bad,exe,'resume',10,qa['data_dir']),'ACK')
+refused(lambda:m.validate_driver_ack({},exe,'resume',10,qa['data_dir']),'ACK')`);
+check('graphical runtime binds selected driver to actual API, load cap and system modules',`r={'platform':'Windows','native_display':'Windows','runtime_info':graphics_runtime()};p=graphics_process();m.validate_graphics_runtime(r,p,exe,'opengl3_angle',verify_files=False)
+for change in ['requested','observed','fps','vsync','argv','missing-dxgi','hash','module-path','mesa-loaded','headless']:
+ bad=copy.deepcopy(r);proc=copy.deepcopy(p);driver='opengl3_angle'
+ if change=='requested':driver='opengl3'
+ if change=='observed':bad['runtime_info'].update(adapter='Native unit renderer',api_version='OpenGL 4.6 unit')
+ if change=='fps':bad['runtime_info']['max_fps']=60
+ if change=='vsync':bad['runtime_info']['vsync_mode']=1
+ if change=='argv':proc['argv']=[]
+ if change=='missing-dxgi':proc['loadedModules'].pop()
+ if change=='hash':proc['loadedModules'][0]['sha256']='wrong'
+ if change=='module-path':proc['loadedModules'][0]['path']='C:/QA Relocated/game/d3d11.dll'
+ if change=='mesa-loaded':proc['loadedModules'].append({'name':'libgallium_wgl.dll','path':'C:/QA Relocated/game/libgallium_wgl.dll','sha256':'f'*64})
+ if change=='headless':bad['native_display']='headless'
+ refused(lambda:m.validate_graphics_runtime(bad,proc,exe,driver,verify_files=False))
+native=copy.deepcopy(r);native['runtime_info'].update(adapter='llvmpipe unit',vendor='Mesa',api_version='OpenGL 4.6 Mesa unit');proc=graphics_process();proc['argv'][3]='opengl3';proc['loadedModules']=[{'name':name,'path':'C:/QA Relocated/game/'+name,'sha256':'f'*64} for name in ('opengl32.dll','libgallium_wgl.dll')];m.validate_graphics_runtime(native,proc,exe,'opengl3',verify_files=False)
+proc['loadedModules'][0]['path']='C:/Windows/System32/opengl32.dll';refused(lambda:m.validate_graphics_runtime(native,proc,exe,'opengl3',verify_files=False))`);
+check('clean ANGLE installation refuses Mesa records and all extra DLLs',`clean={'selectedGraphicsDriver':'opengl3_angle','qaExtras':{'override.cfg':{'sha256':'e'*64,'bytes':100}}};assert m.validate_graphics_installation(clean,{})=='opengl3_angle'
+for change in ['mesa-record','mesa-dll','unrelated-dll','missing-driver']:
+ bad=copy.deepcopy(clean)
+ if change=='mesa-record':bad['mesa']={'receipt':{'source':{'sha256':'a'*64}}}
+ if change=='mesa-dll':bad['qaExtras']['opengl32.dll']={'sha256':'f'*64,'bytes':1,'source':'x64/opengl32.dll'}
+ if change=='unrelated-dll':bad['qaExtras']['d3d11.dll']={'sha256':'f'*64,'bytes':1,'source':'other'}
+ if change=='missing-driver':bad.pop('selectedGraphicsDriver')
+ refused(lambda:m.validate_graphics_installation(bad,{}))`);
+check('native module evidence rehashes real bytes instead of accepting any hex digest',`r={'platform':'Windows','native_display':'Windows','runtime_info':graphics_runtime()};p=graphics_process();system=tmp/'Windows';(system/'System32').mkdir(parents=True);p['systemRoot']=str(system)
+for row in p['loadedModules']:
+ file=system/'System32'/row['name'];file.write_bytes(b'Diagnostic DLL fixture, never executed');row.update(path=str(file),sha256=m.digest(file))
+m.validate_graphics_runtime(r,p,exe,'opengl3_angle');p['loadedModules'][0]['sha256']='0'*64;refused(lambda:m.validate_graphics_runtime(r,p,exe,'opengl3_angle'),'hash')`);
+check('full diagnostic receipt applies ANGLE and module guards while retaining pure profile checks',`from unittest.mock import patch
+receipt=m.verify_archive(archive(),commit);root=m.extract_archive(tmp/'fixture.zip',tmp/'full-game',commit);exe=str(root/'OvalLegacy27.exe');node=str(root/'runtime/node.exe');node_sha=manifest['files']['runtime/node.exe']['sha256']
+override=root/'override.cfg';override.write_text('[application]\\nrun/main_loop_type="WindowsReceiptResume"\\n');extras={'override.cfg':{'sha256':m.digest(override),'bytes':override.stat().st_size}}
+tree_receipt=m.verify_tree(root,manifest,extras);fresh=copy.deepcopy(qa);fresh['executable']=exe;resume=resume_report();resume['executable']=exe;resume['runtime_info']['engine']={'major':4,'minor':7,'patch':2}
+identity={'executable':exe,'exeSha256':manifest['files']['OvalLegacy27.exe']['sha256'],'pid':10,'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':node_sha,'exitCode':0,'shutdown':True}
+graphical={**identity,**graphics_process(),'driverAck':driver_ack('resume')}
+full={'platform':'Windows','sourceCommit':commit,'sourceTree':tree,'selectedGraphicsDriver':'opengl3_angle','package':{'path':str(tmp/'fixture.zip'),'shaBefore':receipt['zipSha256'],'shaAfter':receipt['zipSha256'],'manifestSha256':receipt['manifestSha256']},'qaExtras':extras,'manifestBefore':tree_receipt,'manifestAfter':tree_receipt,'tools':{'receipt':{'pins':{'node-runtime':{'sha256':node_sha},'mesa-archive':{'sha256':'a'*64}}}},'fresh':fresh,'resume':resume,'process':{'fresh':identity,'resume':graphical}}
+with patch.object(m,'png_proof',side_effect=lambda path:{'path':path,'sha256':'e'*64,'width':2560,'height':1440,'variance':10}):
+ result=m.validate_windows_report(copy.deepcopy(full),commit,exe,require_native=False);assert result['proof']=='diagnostic' and result['passed'] is False
+ for change in ['selected-driver','modules','mesa-record','profile']:
+  bad=copy.deepcopy(full)
+  if change=='selected-driver':bad['selectedGraphicsDriver']='opengl3'
+  if change=='modules':bad['process']['resume']['loadedModules']=[]
+  if change=='mesa-record':bad['mesa']={'receipt':{'source':{'sha256':'a'*64}}}
+  if change=='profile':bad['resume']['before']['profile_bytes_match']=False
+  refused(lambda:m.validate_windows_report(bad,commit,exe,require_native=False))`);
 check('graphics scope requires actual driver, modules and PNG proof without promoting unit fixtures',`from unittest.mock import patch
 node='C:/QA Relocated/game/runtime/node.exe';sha=manifest['files']['runtime/node.exe']['sha256'];image={'path':'unit-image','sha256':'e'*64}
-r={'mode':'graphics-smoke','scope':'graphics-smoke-only','passed':True,'exported':True,'checks':10,'failures':[],'platform':'Windows','native_display':'Windows','audio_driver':'Dummy','executable':exe,'pid':10,'engine_pid':11,'coach':{'starts':0,'ends':0,'player_present':False},'runtime_info':{'renderer':'gl_compatibility','adapter':'ANGLE unit adapter','api_version':'OpenGL ES ANGLE unit'},'graphics':{'passed':True,'window':[2560,1440],'captures':[image,image]}}
-p={'executable':exe,'pid':10,'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':sha,'exeSha256':manifest['files']['OvalLegacy27.exe']['sha256'],'exitCode':0,'shutdown':True,'argv':['--rendering-driver','opengl3_angle'],'loadedModules':[{'name':'d3d11.dll','path':'C:/Windows/System32/d3d11.dll','sha256':'f'*64}]}
+r={'mode':'graphics-smoke','scope':'graphics-smoke-only','driver_ack':driver_ack('graphics-smoke'),'data_dir':qa['data_dir'],'passed':True,'exported':True,'checks':10,'failures':[],'platform':'Windows','native_display':'Windows','audio_driver':'Dummy','executable':exe,'pid':10,'engine_pid':11,'coach':{'starts':0,'ends':0,'player_present':False},'runtime_info':graphics_runtime(),'graphics':{'passed':True,'window':[2560,1440],'captures':[image,image]}}
+p={**graphics_process(),'executable':exe,'pid':10,'driverAck':driver_ack('graphics-smoke'),'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':sha,'exeSha256':manifest['files']['OvalLegacy27.exe']['sha256'],'exitCode':0,'shutdown':True}
 with patch.object(m,'png_proof',return_value=image):
  result=m.validate_graphics_probe(copy.deepcopy(r),p,manifest,exe,'opengl3_angle',require_native=False);assert result['proof']=='diagnostic' and result['passed'] is False
- for change in ['headless','driver','modules','pixels','unexpected-angle-fallback']:
+ for change in ['headless','driver','modules','pixels','unexpected-angle-fallback','ack']:
   bad=copy.deepcopy(r);proc=copy.deepcopy(p)
   if change=='headless':bad['native_display']='headless'
   if change=='driver':proc['argv']=[]
   if change=='modules':proc['loadedModules']=[]
   if change=='pixels':bad['graphics']['captures'][0]={'path':'changed','sha256':'0'*64}
   if change=='unexpected-angle-fallback':proc['argv']=['--rendering-driver','opengl3']
+  if change=='ack':proc['driverAck']['pid']=15
   requested='opengl3' if change=='unexpected-angle-fallback' else 'opengl3_angle'
   refused(lambda:m.validate_graphics_probe(bad,proc,manifest,exe,requested,require_native=False))`);
