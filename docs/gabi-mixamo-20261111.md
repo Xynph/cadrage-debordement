@@ -118,3 +118,9 @@ Avis : la table est figée sur les 74 bulles actuelles. Une nouvelle bulle sans 
 ### Lumière du portrait
 
 Gabi est rendu dans son propre studio (SubViewport du portrait) : la lumière du bureau ne l'éclaire pas. Avant : ambiance bleutée (0,83 ; 0,87 ; 0,89) × 0,81, principale (1 ; 0,95 ; 0,91) × 0,43, remplissage bleu (0,71 ; 0,84 ; 1) × 0,26, contre-jour (1 ; 0,92 ; 0,77) × 0,32, rendu linéaire. Après : ambiance blanc chaud (0,95 ; 0,93 ; 0,90) × 1,0, principale (1 ; 0,95 ; 0,88) × 0,8, remplissage presque neutre (0,94 ; 0,95 ; 1) × 0,34, contre-jour (1 ; 0,93 ; 0,80) × 0,36, courbe AgX, exposition 1,25. Essai sans courbe AgX écarté : en éclaircissant, le canal rouge de la peau sature et le visage vire à l'orange (plus rouge qu'avant). Textures et matériaux inchangés ; captures avant/après dans la PR.
+
+### Vérifié et limites (nuit du 11 au 12 novembre)
+
+- `tests/godot-gabi-mixamo.cjs` : 131 contrôles (table complète, gestes par moment, attente selon le ton, sourire, clignement, regard, mouvement réduit). Jeu réel sous Xvfb (gl_compatibility) : captures avant/après des deux Gabi au Bureau et vidéo de six moments.
+- Paupière fermée trop sombre : `_apply_vertex_colors` multiplie la couleur peau des paupières par leurs couleurs de sommets (rouge sombre) ; pendant un clignement, l'œil fermé paraît rouge foncé (sans couleurs de sommets, il est trop pâle). À corriger dans le modèle (couleurs de sommets ou matériau des paupières).
+- Rien d'exécuté sous Windows ; courbe AgX vue seulement en rendu logiciel.
