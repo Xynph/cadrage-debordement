@@ -34,6 +34,11 @@ Hors de cette recherche, constaté par lecture :
   étrangers sous des alias obtenus en changeant une à trois lettres.
 - `dist/rugby-common-rosters.js`, la base du jeu : 1 528 noms sur 1 592 à
   trois lettres au plus du nom réel, mêmes identifiants, âges et postes.
+- `dist/press-question-bank.js:10` : dix journalistes réels, avec leur média
+  et l'adresse de leur page d'auteur, auxquels le jeu prête une personnalité
+  et des questions inventées (constat P2 de
+  `docs/audit-priorites-cloud-20261111.md`). À traiter comme les joueurs :
+  journalistes et médias inventés dans la base, noms réels dans le pack.
 
 Total à déplacer : environ 9 Mo.
 
@@ -101,12 +106,15 @@ Codex Cloud stabilise en ce moment la version commune (#539) et sa CI. Les
 commencent **après la fusion de la version commune**. L'étape 1 peut se faire
 tout de suite, elle ne modifie pas le dépôt public.
 
-## Décisions attendues de Léo
+## Décisions de Léo (11 novembre 2026)
 
-1. Dépôt privé de données, ou stockage sur le PC seulement ?
-2. Accord pour la base réellement fictive (étape 3), qui change les noms
-   affichés sans pack dans les nouvelles carrières ?
-3. Réécriture de l'historique (étape 4) : plus tard, ou jamais ?
+1. **Dépôt privé de données** : fait. `Xynph/rugby-reel-donnees`, privé, sans
+   CI, contient les 122 fichiers et leur manifeste. Rien n'est encore retiré
+   du dépôt public.
+2. **Base du jeu à noms inventés, vrais noms par le pack importable** :
+   accepté. Sans pack, une nouvelle carrière affiche des inconnus ; avec le
+   pack Rugby Réel, les vrais noms, comme aujourd'hui.
+3. **Réécriture de l'historique** : plus tard.
 
 Je ne suis pas juriste. Ce plan réduit l'exposition ; il ne remplace pas un
 avis sur le droit des données personnelles et le droit à l'image.
