@@ -209,7 +209,8 @@ func reading_cases() -> void:
 	check(sort != null, "Tri disponible dans le vrai dialogue de filtres")
 	if sort != null and sort.item_count > 1:
 		var selected_before: String = app.selected_player
-		sort.grab_focus(); sort.select(1); sort.item_selected.emit(1); await settle()
+		var changed_sort := (sort.selected + 1) % sort.item_count
+		sort.grab_focus(); sort.select(changed_sort); sort.item_selected.emit(changed_sort); await settle()
 		check(app.route == "Effectif" and app.selected_player == selected_before and not app.get_meta("immersive08_full_player", false), "Tri de colonne/liste distinct d’une ouverture d’entité")
 	var advanced := named("RosterAdvancedFilters") as AcceptDialog
 	if advanced != null: await activate(advanced.get_ok_button())
