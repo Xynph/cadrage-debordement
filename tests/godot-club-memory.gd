@@ -134,7 +134,7 @@ func run() -> void:
 	app.model = {"club":{"id":29,"name":"Club sans archive"},"meta":{"engine":"native-rugby"}}
 	app._render()
 	await settle()
-	check(all_text(app.view).contains("Aucune saison") and all_text(app.view).contains("Aucun passé"), "Archives absentes : état vide sans invention")
+	check(all_text(app.view).contains("Aucune saison") and app.view.find_child("ClubMemoryComparison",true,false) == null, "Archives absentes : état vide sans comparaison inventée")
 	app.model = {"club":{"id":0},"meta":{"engine":"historical"}}
 	app._render()
 	await settle()
