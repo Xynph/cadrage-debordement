@@ -16,7 +16,7 @@ test('Liens du carnet : vraie consultation par ID, historique et absence de muta
   const project = path.resolve(__dirname, '../native/godot');
   const graphics = process.env.CD_NIGHT_NAV_GRAPHICS === '1';
   const group = process.env.CD_NIGHT_NAV_CASE || 'reading';
-  assert.ok(['reading', 'nation', 'guards', 'prospects', 'staff'].includes(group), 'Groupe explicite connu');
+  assert.ok(['reading', 'nation', 'guards', 'prospects', 'staff', 'quote'].includes(group), 'Groupe explicite connu');
   const files = [
     'ui/navigation_controller.gd', 'ui/management_state.gd', 'main.gd',
     'ui/international_view.gd', 'ui/staff_view.gd',

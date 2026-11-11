@@ -169,7 +169,7 @@ func setup_career() -> bool:
 	if not await command("new_career", payload): return false
 	if group != "guards" and group != "nation":
 		if not await Flow.settle_club_meetings(app, self, check): return false
-	if group == "prospects":
+	if group in ["prospects", "quote"]:
 		var regen: Array = app.model.get("clubLife", {}).get("regenScouting", {}).get("candidates", [])
 		var available: Array = app.model.get("clubLife", {}).get("interclubMarket", {}).get("candidates", []).filter(func(person: Dictionary): return person.get("available", false))
 		visits.append({"preparation":"catalogues réels de common0", "regen_candidates":regen.size(), "available_interclub":available.size()})
@@ -427,6 +427,63 @@ func staff_cases() -> void:
 		search = named("StaffSearch") as LineEdit
 		check(search != null and search.text == str(person.name), "Retour du vrai lien du staff : annuaire toujours filtré")
 	await unchanged(before, "Profil et annuaire du staff")
+func quote_cases() -> void:
+	app._navigate("Recrutement"); await settle()
+	await activate(named("OpenInterclubMarket"))
+	var market := named("InterclubMarket") as Window
+	var candidates: Array = app.model.get("clubLife", {}).get("interclubMarket", {}).get("candidates", []).filter(func(person: Dictionary): return person.get("available", false))
+	check(market != null and not candidates.is_empty(), "Catalogue réel avec candidat interclubs disponible pour un devis")
+	if market == null or candidates.is_empty(): return
+	var person: Dictionary = candidates[0]
+	var search := market.find_child("InterclubSearch", true, false) as LineEdit
+	search.text = str(person.name); search.text_changed.emit(search.text); await settle()
+	var offer: Control
+	for button: Button in market.find_children("InterclubOffer", "Button", true, false):
+		if str(button.get_meta("player_id", "")) == str(person.id): offer = button; break
+	await activate(offer)
+	var fee := market.find_child("InterclubFee", true, false) as SpinBox
+	var salary := market.find_child("InterclubSalary", true, false) as SpinBox
+	check(fee != null and salary != null, "Vrais champs du devis avant soumission")
+	if fee == null or salary == null: return
+	fee.value = minf(fee.max_value, fee.value + fee.step * 2)
+	salary.value = minf(salary.max_value, salary.value + salary.step)
+	await settle()
+	var request: Dictionary = market._payload().duplicate(true)
+	var command_before: int = app.bridge._next_id
+	await activate(market.find_child("InterclubNegotiate", true, false))
+	var deadline := Time.get_ticks_msec() + 30000
+	while (app.waiting or market.pending) and Time.get_ticks_msec() < deadline: await process_frame
+	app.timer.stop(); await settle()
+	check(not app.waiting and not market.pending and app.bridge.last_response_ok and app.last_command == "interclub_negotiate", "Devis reçu de la vraie commande publique interclub_negotiate")
+	check(app.bridge._next_id == command_before + 1, "Une seule commande réelle de préparation du devis")
+	check(not market.negotiation.is_empty() and str(market.negotiation.get("playerId", "")) == str(person.id), "Devis non vide correspondant au joueur proposé")
+	var message := market.find_child("InterclubNegotiationMessage", true, false) as Label
+	check(message != null and not message.text.is_empty() and message.text != "Réponses des clubs et du joueur…", "Réponse et conditions du devis réellement rendues")
+	var quote: Dictionary = market.negotiation.duplicate(true)
+	visits.append({"preparation":"interclub_negotiate reçu avant baseline de consultation","payload":request,"request_number":command_before,"quote_sha256":JSON.stringify(quote).sha256_text(),"offer_count":quote.get("offers", []).size()})
+	var scrolls: Array = market.find_children("*", "ScrollContainer", true, false)
+	var scroll := scrolls[0] as ScrollContainer if not scrolls.is_empty() else null
+	if scroll != null and message != null: scroll.ensure_control_visible(message); await settle()
+	await capture("devis-interclub-recu-2560")
+	var before := await snapshot()
+	check(market.negotiation == quote, "L’export de baseline conserve le vrai devis préparé")
+	var link := market.find_child("InterclubProfile_" + str(person.id).validate_node_name(), true, false) as Control
+	if scroll != null and link != null:
+		scroll.ensure_control_visible(link); await settle()
+		var content_top := link.get_global_rect().position.y - scroll.get_global_rect().position.y + scroll.scroll_vertical
+		scroll.scroll_vertical = clampi(int(content_top) - 20, 0, int(scroll.get_v_scroll_bar().max_value - scroll.get_v_scroll_bar().page)); await settle()
+	if link != null: link.grab_focus(); await settle()
+	var offset: int = scroll.scroll_vertical if scroll != null else 0
+	var draft := {"fee":market.offer_fee,"salary":market.offer_salary,"person":market.selected_person.duplicate(true),"query":market.query,"page":market.page,"fee_input":fee.value,"salary_input":salary.value,"can_close":not market.close_button.disabled,"message":message.text if message != null else ""}
+	await inspect_and_return(market, link, {"kind":"prospect","source":"interclub","id":str(person.id)}, "Devis non vide")
+	check(market.negotiation == quote and not market.negotiation.is_empty(), "Retour du dossier : devis moteur non vide strictement identique")
+	check(market.offer_fee == draft.fee and market.offer_salary == draft.salary and market.selected_person == draft.person and fee.value == draft.fee_input and salary.value == draft.salary_input, "Retour du devis : indemnité, salaire, joueur et champs conservés")
+	check(market.query == draft.query and market.page == draft.page and (scroll == null or scroll.scroll_vertical == offset), "Retour du devis : recherche, page et défilement exacts conservés")
+	check((not market.close_button.disabled) == draft.can_close and message.text == draft.message, "Retour du devis : réponse et état de validation inchangés sans clôturer")
+	if scroll != null and message != null: scroll.ensure_control_visible(message); await settle()
+	await capture("devis-interclub-retour-2560")
+	app._clear_dialogs(); await settle()
+	await unchanged(before, "Inspection d’un vrai devis interclubs non vide")
 func guard_cases() -> void:
 	# A press appointment is intentionally absent until its exact persisted mail
 	# is opened. Exercise that entrypoint instead of manufacturing scene metadata.
@@ -500,5 +557,6 @@ func run() -> void:
 		"guards": await guard_cases()
 		"prospects": await prospects_cases()
 		"staff": await staff_cases()
+		"quote": await quote_cases()
 		_: await reading_cases()
 	await finish()
