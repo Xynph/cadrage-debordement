@@ -16,6 +16,7 @@ const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
 const Pass = preload("res://match_pass.gd")
 const Gestes = preload("res://match_gestes.gd")
+const Rendu = preload("res://match_rendu.gd")
 const CUT_SECONDS := 0.30
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
@@ -58,6 +59,9 @@ var _club_crest: Texture2D
 var _club_branding: MultiMeshInstance3D
 ## Gestes de rugby (touche, ballon porté, essai) : absents sans CD_MATCH_GESTES=1.
 var _gestes: RefCounted
+# Rendu moderne (Forward+ seulement, voir match_rendu.gd) ; null sous gl_compatibility.
+var _rendu: RefCounted
+var _ground_meshes: Array[MeshInstance3D] = []
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -97,6 +101,8 @@ func _ready() -> void:
 	_camera.far = 500.0
 	add_child(_camera)
 	_camera.current = true
+	if Rendu.actif():
+		_rendu = Rendu.new(self)
 	set_camera(_camera_mode)
 	set_quality(_quality)
 	set_stadium_evening(_stadium_evening)
@@ -115,6 +121,8 @@ func set_stadium_evening(enabled: bool) -> void:
 		_stadium_kit.attach(self)
 	if is_instance_valid(_stadium_kit):
 		_stadium_kit.set_evening(enabled)
+	if _rendu:
+		_rendu.appliquer()
 
 
 func set_gestes(enabled: bool) -> void:
@@ -287,6 +295,8 @@ func set_camera(mode: String) -> void:
 	_camera_mode = selected
 	if is_instance_valid(_camera) and (changed or not _camera_framed):
 		_fit_camera(0.0, true)
+	if _rendu:
+		_rendu.appliquer()
 
 
 func _process(delta: float) -> void:
@@ -523,6 +533,8 @@ func set_quality(profile: String) -> void:
 		_sun.shadow_enabled = _quality != "economy"
 	if _grass:
 		_grass.set_shader_parameter("micro_detail", {"economy": 0.0, "balanced": 0.1, "detail": 0.16}[_quality])
+	if _rendu:
+		_rendu.appliquer()
 
 
 func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
@@ -623,6 +635,8 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 		model.position.y = -bounds.position.y * calibration
 	Athlete.prepare(model)
 	_recolor(model, side)
+	if _rendu:
+		_rendu.equiper_joueur(actor)
 	var animation := _find_animation(model)
 	var idle := StringName()
 	var run := StringName()
@@ -753,6 +767,7 @@ func _box(size: Vector3, position_: Vector3, material: Material, parent: Node3D 
 
 
 func _build_ground() -> void:
+	var first_child := get_child_count()
 	var dark := _material(Color("202b2c"))
 	_box(Vector3(220, 0.4, 180), Vector3(0, -0.45, 0), dark).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_box(Vector3(135, 0.2, 96), Vector3(0, -0.2, 0), _material(Color("464c49"))).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -782,6 +797,10 @@ func _build_ground() -> void:
 		for z in [-35.0, 35.0]:
 			_box(Vector3(0.07, 1.4, 0.07), Vector3(x, 0.7, z), paint)
 			_box(Vector3(0.48, 0.3, 0.025), Vector3(x + 0.2, 1.3, z), _material(Color("e1ba66")))
+	# Le rendu moderne projette les ombres de contact sur ces seuls éléments.
+	for index in range(first_child, get_child_count()):
+		if get_child(index) is MeshInstance3D:
+			_ground_meshes.append(get_child(index))
 
 
 func _build_stadium() -> void:
