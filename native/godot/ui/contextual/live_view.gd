@@ -89,7 +89,7 @@ func _ready() -> void:
 	controls.add_child(bar)
 	for title in ["Tactique", "Banc", "Stats", "Journal"]:
 		bar.add_child(S.button(title.to_upper(), func(): _toggle_drawer(title)))
-	for pair in [["tv", "TV"], ["tactical", "TACTIQUE"], ["action", "CONTACT"]]:
+	for pair in [["tv", "TV"], ["tactical", "VUE DE DESSUS"], ["action", "CONTACT"]]:
 		var button := S.button(pair[1], func(): _choose_camera(pair[0]))
 		_camera_controls.append(button)
 		bar.add_child(button)
