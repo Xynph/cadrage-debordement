@@ -1,12 +1,13 @@
 extends "res://guide/coach_guide.gd"
-## Le guide de carrière utilise le portrait 3D quand son GLB est installé.
+## Le guide de carrière utilise le portrait 3D quand son GLB est installé (ou le Gabi Mixamo privé,
+## voir coach_portrait_3d.gd).
 const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GabiPortrait = preload("res://guide/coach_portrait_3d.gd")
 const ACCENT = Color("176e49")
 
 func _make_portrait() -> TextureRect:
-	var model := load(GabiPortrait.MODEL_PATH) as PackedScene if ResourceLoader.exists(GabiPortrait.MODEL_PATH, "PackedScene") else null
+	var model := GabiPortrait.load_model()
 	if model == null: return super._make_portrait()
 	var display := GabiPortrait.new()
 	display.model = model

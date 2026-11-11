@@ -5,6 +5,7 @@
 Le joueur du match 3D (`assets/match3d/quaternius-rugby-athlete.glb`, 31 os) n'avait que trois clips utiles : repos, marche, course. Cette branche permet de lui brancher une bibliothèque d'animations venues d'un autre squelette (Mixamo, 65 os), converties hors jeu.
 
 - **Éteint par défaut.** Sans la variable `CD_MATCH_ANIMATIONS`, rien n'est chargé et le match est identique.
+- Sans variable, le jeu cherche aussi `animations/mixamo-match.res` à côté de son exécutable (voir `docs/gabi-mixamo-20261111.md`).
 - `CD_MATCH_ANIMATIONS=<chemin absolu d'un .glb>` : la bibliothèque est lue au lancement du match et ajoutée au lecteur d'animation de chaque joueur (bibliothèque `mx`).
 - **Première étape : les déplacements seulement.** Repos, puis quatre paliers selon la vitesse au sol (marche, trot, course, sprint) au lieu de deux, avec hystérésis. L'animation avance toujours à la distance parcourue.
 - Les gestes (touche, passe, plaquage, essai) restent ceux de `match_gestes.gd`. Les autres clips de la bibliothèque (lancer, réception, plaqué, relevé, coup de pied, joie…) sont chargés mais pas encore joués : c'est l'étape suivante.

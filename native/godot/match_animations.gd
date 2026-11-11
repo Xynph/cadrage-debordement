@@ -1,8 +1,9 @@
 extends RefCounted
 ## Animations de déplacement adaptées au squelette du joueur (11 novembre 2026).
 ##
-## Absent sans CD_MATCH_ANIMATIONS : le match garde alors ses trois clips
-## d'origine (repos, marche, course) et rien ne change.
+## Absent sans CD_MATCH_ANIMATIONS ni animations/mixamo-match.res à côté de
+## l'exécutable : le match garde alors ses trois clips d'origine (repos, marche,
+## course) et rien ne change.
 ##
 ## CD_MATCH_ANIMATIONS = chemin absolu de la bibliothèque : de préférence une
 ## ressource .res (AnimationLibrary) produite par
@@ -17,6 +18,8 @@ extends RefCounted
 ## match_gestes.gd ; les autres clips de la bibliothèque sont chargés mais pas
 ## encore joués.
 
+const DonneesPrivees = preload("res://donnees_privees.gd")
+const FICHIER := "mixamo-match.res"
 const PREFIXE := &"mx"
 ## Paliers de déplacement : clip, vitesse au sol du clip (m/s, joueur de 1,90 m)
 ## et vitesse à partir de laquelle on monte au palier suivant.
@@ -34,8 +37,9 @@ var _bibliotheque: AnimationLibrary
 var _chemin_squelette := ""
 
 
+## Sans variable : animations/mixamo-match.res à côté de l'exécutable, s'il y est (donnees_privees.gd).
 static func chemin() -> String:
-	return OS.get_environment("CD_MATCH_ANIMATIONS").strip_edges()
+	return DonneesPrivees.chemin("CD_MATCH_ANIMATIONS", FICHIER)
 
 
 static func demande() -> bool:

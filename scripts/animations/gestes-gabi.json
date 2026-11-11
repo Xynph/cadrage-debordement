@@ -1,0 +1,137 @@
+[
+  {
+    "nom": "repos",
+    "fbx": "mixamo-in2/Standing Idle.fbx",
+    "fin": null
+  },
+  {
+    "nom": "repos_respire",
+    "fbx": "mixamo-in/Breathing Idle.fbx",
+    "fin": null
+  },
+  {
+    "nom": "appui",
+    "fbx": "mixamo-in/pack-Gestures Pack Basic/weight shift.fbx",
+    "fin": null
+  },
+  {
+    "nom": "parle",
+    "fbx": "mixamo-in/Talking (2).fbx",
+    "fin": null
+  },
+  {
+    "nom": "parle_2",
+    "fbx": "mixamo-in/Talking (1).fbx",
+    "fin": null
+  },
+  {
+    "nom": "parle_3",
+    "fbx": "mixamo-in/Talking (3).fbx",
+    "fin": null
+  },
+  {
+    "nom": "parle_4",
+    "fbx": "mixamo-in/Talking (4).fbx",
+    "fin": null
+  },
+  {
+    "nom": "explique",
+    "fbx": "mixamo-in2/Hands Forward Gesture.fbx",
+    "fin": null
+  },
+  {
+    "nom": "insiste",
+    "fbx": "mixamo-in2/Arm Gesture.fbx",
+    "fin": null
+  },
+  {
+    "nom": "argumente",
+    "fbx": "mixamo-in/Standing Arguing.fbx",
+    "fin": 12
+  },
+  {
+    "nom": "reflechit",
+    "fbx": "mixamo-in/Thinking.fbx",
+    "fin": null
+  },
+  {
+    "nom": "approuve",
+    "fbx": "mixamo-in/pack-Gestures Pack Basic/head nod yes.fbx",
+    "fin": null
+  },
+  {
+    "nom": "approuve_fort",
+    "fbx": "mixamo-in2/Agreeing.fbx",
+    "fin": null
+  },
+  {
+    "nom": "refuse",
+    "fbx": "mixamo-in/pack-Gestures Pack Basic/shaking head no.fbx",
+    "fin": null
+  },
+  {
+    "nom": "hausse",
+    "fbx": "mixamo-in2/Shrugging.fbx",
+    "fin": null
+  },
+  {
+    "nom": "sceptique",
+    "fbx": "mixamo-in2/Whatever Gesture.fbx",
+    "fin": null
+  },
+  {
+    "nom": "montre",
+    "fbx": "mixamo-in/Pointing Forward.fbx",
+    "fin": null
+  },
+  {
+    "nom": "salut",
+    "fbx": "mixamo-in/Waving.fbx",
+    "fin": null
+  },
+  {
+    "nom": "remercie",
+    "fbx": "mixamo-in/Thankful.fbx",
+    "fin": null
+  },
+  {
+    "nom": "decu",
+    "fbx": "mixamo-in/Disappointed.fbx",
+    "fin": null
+  },
+  {
+    "nom": "rit",
+    "fbx": "mixamo-in2/Laughing.fbx",
+    "fin": null
+  },
+  {
+    "nom": "surpris",
+    "fbx": "mixamo-in2/Surprised.fbx",
+    "fin": null
+  },
+  {
+    "nom": "content",
+    "fbx": "mixamo-in2/Happy Idle.fbx",
+    "fin": null
+  },
+  {
+    "nom": "tablette",
+    "fbx": "mixamo-in2/Standing Using Touchscreen Tablet.fbx",
+    "fin": 20
+  },
+  {
+    "nom": "regarde_bas",
+    "fbx": "mixamo-in2/Looking Down.fbx",
+    "fin": null
+  },
+  {
+    "nom": "baille",
+    "fbx": "mixamo-in2/Yawn.fbx",
+    "fin": null
+  },
+  {
+    "nom": "applaudit",
+    "fbx": "mixamo-in/Clapping.fbx",
+    "fin": null
+  }
+]
