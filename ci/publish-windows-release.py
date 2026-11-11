@@ -52,9 +52,9 @@ def evidence_files(root):
             name = row["path"]
             verifier().safe_name(name)
             add(root / "tools/mesa" / name, "tools/mesa-notices/" + name)
-    for mode in ("fresh", "resume"):
+    for mode in ("fresh", "resume", "angle-clean", "mesa-native", "mesa-local"):
         directory = root / "evidence" / mode
-        for name in ("report.json", "process.json", "stdout.log", "stderr.log"):
+        for name in ("report.json", "process.json", "loaded-modules.json", "stdout.log", "stderr.log"):
             add(directory / name, mode + "/" + name)
         if directory.is_dir():
             for image in sorted(directory.glob("*.png")):
@@ -62,9 +62,45 @@ def evidence_files(root):
     return files
 
 
+def require_received_evidence(files):
+    """A received delivery must preserve the complete proof, not only its verdict."""
+    required = {"controller-unit.log", "prepare.log", "build.log", "build/import.log", "build/export.log",
+                "windows-report.json", "archive.json", "mesa-qa.json", "qa-extras.json",
+                "manifest-before.json", "manifest-after.json", "manifest-build.json",
+                "tools/toolchain-receipt.json", "tools/mesa-receipt.json"}
+    for mode in ("fresh", "resume"):
+        required.update(mode + "/" + name for name in
+                        ("report.json", "process.json", "loaded-modules.json", "stdout.log", "stderr.log"))
+    require(required <= files.keys(), "Missing received evidence: " + ", ".join(sorted(required - files.keys())))
+    module = verifier()
+    report = module.json_document(files["windows-report.json"].read_text(encoding="utf-8-sig"))
+    require(report.get("passed") is True and report.get("scope") != "graphics-smoke-only",
+            "A received proof bundle requires a passed full Windows receipt")
+    for mode in ("fresh", "resume"):
+        for name, expected in (("report.json", report.get(mode)),
+                               ("process.json", report.get("process", {}).get(mode))):
+            actual = module.json_document(files[mode + "/" + name].read_text(encoding="utf-8-sig"))
+            require(isinstance(expected, dict) and actual == expected,
+                    mode + "/" + name + " differs from receipt")
+    captures = report["resume"].get("graphics", {}).get("captures", [])
+    require(isinstance(captures, list) and captures, "Missing received capture evidence")
+    directory = files["resume/report.json"].parent.resolve()
+    for row in captures:
+        path = Path(row.get("path", "")).resolve()
+        selected = files.get("resume/captures/" + path.name)
+        require(path.parent == directory and selected is not None and selected.resolve() == path,
+                "Missing received capture in resume evidence: " + str(path))
+    mesa = module.json_document(files["tools/mesa-receipt.json"].read_text(encoding="utf-8-sig"))
+    for row in mesa.get("licenses", []):
+        name = "tools/mesa-notices/" + row["path"]
+        require(name in files, "Missing received evidence: " + name)
+
+
 def create_bundle(root, destination, metadata):
     files = evidence_files(root)
     require(files, "No actual diagnostic or QA evidence to publish")
+    if metadata.get("passed") is True:
+        require_received_evidence(files)
     require(not Path(destination).exists(), "Refuse an existing proof bundle")
     with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         archive.writestr("delivery.json", json.dumps(metadata, indent=2, ensure_ascii=False))

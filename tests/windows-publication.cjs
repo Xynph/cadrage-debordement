@@ -14,6 +14,29 @@ class Publication(unittest.TestCase):
   self.source='a'*40
  def put(self,name,data):
   dest=self.root/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(data);return dest
+ def complete_evidence(self):
+  # Small transport fixtures only; the native verifier is exercised separately.
+  capture=self.root/'evidence/resume/01-reception.png'
+  fresh={'passed':True,'mode':'fresh'}
+  resume={'passed':True,'mode':'resume','graphics':{'captures':[{'path':str(capture)}]}}
+  process={'fresh':{'pid':10},'resume':{'pid':20}}
+  report={'passed':True,'fresh':fresh,'resume':resume,'process':process}
+  required=('controller-unit.log','prepare.log','build.log','official-build/build/import.log',
+   'official-build/build/export.log','evidence/archive.json','evidence/mesa-qa.json',
+   'evidence/qa-extras.json','evidence/manifest-before.json','evidence/manifest-after.json',
+   'official-build/OvalLegacy27-PrototypeGodot/manifest-build.json','tools/toolchain-receipt.json',
+   'tools/mesa/mesa-receipt.json','tools/mesa/notices/Mesa.txt')
+  for name in required:self.put(name,'{}')
+  self.put('tools/mesa/mesa-receipt.json',json.dumps({'licenses':[{'path':'notices/Mesa.txt'}]}))
+  self.put('evidence/windows-report.json',json.dumps(report))
+  for mode,qa in [('fresh',fresh),('resume',resume)]:
+   self.put('evidence/'+mode+'/report.json',json.dumps(qa))
+   self.put('evidence/'+mode+'/process.json',json.dumps(process[mode]))
+   self.put('evidence/'+mode+'/loaded-modules.json','{"modules":[],"error":null}')
+   self.put('evidence/'+mode+'/stdout.log','actual captured output')
+   self.put('evidence/'+mode+'/stderr.log','')
+  self.put('evidence/resume/01-reception.png','unit capture bytes, not native Windows proof')
+  return report
  def test_actual_bundle_keeps_logs_and_excludes_profiles_runtime_and_tokens(self):
   self.put('prepare.log','preparation failed explicitly')
   self.put('evidence/resume/report.json','{"passed":false}')
@@ -67,6 +90,75 @@ class Publication(unittest.TestCase):
   with patch.object(p.subprocess,'check_output',return_value='b'*40),patch.object(p,'gh') as github:
    with self.assertRaises(ValueError):p.publish(self.root,self.source,'unit/test','123','1',True)
    github.assert_not_called()
+ def test_bundle_preserves_each_explicit_graphics_mode_without_private_files(self):
+  expected={'delivery.json'}
+  for mode in ('fresh','resume','angle-clean','mesa-native','mesa-local'):
+   for name in ('report.json','process.json','loaded-modules.json','stdout.log','stderr.log'):
+    self.put('evidence/'+mode+'/'+name,'{}');expected.add(mode+'/'+name)
+   self.put('evidence/'+mode+'/capture.png','rendered bytes');expected.add(mode+'/captures/capture.png')
+   for name in ('private-profiles/donnees.json','runtime/node.exe','sdk/tool.exe','secret','nested/private.png'):
+    self.put('evidence/'+mode+'/'+name,'PRIVATE')
+  self.put('evidence/unapproved/report.json','PRIVATE')
+  bundle=self.root/'proofs.zip';p.create_bundle(self.root,bundle,{'passed':False})
+  with zipfile.ZipFile(bundle) as archive:
+   self.assertEqual(set(archive.namelist()),expected)
+   self.assertNotIn(b'PRIVATE',b''.join(archive.read(n) for n in archive.namelist()))
+ def test_received_bundle_refuses_each_missing_critical_report_log_or_notice(self):
+  self.complete_evidence()
+  missing=('controller-unit.log','prepare.log','build.log','official-build/build/import.log',
+   'official-build/build/export.log','evidence/windows-report.json','evidence/archive.json',
+   'evidence/mesa-qa.json','evidence/qa-extras.json','evidence/manifest-before.json',
+   'evidence/manifest-after.json','official-build/OvalLegacy27-PrototypeGodot/manifest-build.json',
+   'tools/toolchain-receipt.json','tools/mesa/mesa-receipt.json','tools/mesa/notices/Mesa.txt',
+   'evidence/fresh/report.json','evidence/fresh/process.json','evidence/fresh/loaded-modules.json',
+   'evidence/fresh/stdout.log','evidence/fresh/stderr.log','evidence/resume/report.json',
+   'evidence/resume/process.json','evidence/resume/loaded-modules.json','evidence/resume/stdout.log',
+   'evidence/resume/stderr.log')
+  for index,name in enumerate(missing):
+   with self.subTest(missing=name):
+    file=self.root/name;content=file.read_bytes();file.unlink()
+    try:
+     with self.assertRaisesRegex(ValueError,'Missing received evidence'):
+      p.create_bundle(self.root,self.root/('missing-'+str(index)+'.zip'),{'passed':True})
+    finally:file.write_bytes(content)
+ def test_received_bundle_requires_the_declared_capture_in_its_mode_directory(self):
+  report=self.complete_evidence();capture=self.root/'evidence/resume/01-reception.png'
+  capture.unlink()
+  self.put('evidence/resume/unrelated.png','other rendered bytes')
+  with self.subTest(capture='missing'):
+   with self.assertRaisesRegex(ValueError,'capture'):
+    p.create_bundle(self.root,self.root/'missing-capture.zip',{'passed':True})
+  outside=self.put('evidence/private-profiles/01-reception.png','PRIVATE')
+  report['resume']['graphics']['captures'][0]['path']=str(outside)
+  self.put('evidence/windows-report.json',json.dumps(report))
+  self.put('evidence/resume/report.json',json.dumps(report['resume']))
+  with self.subTest(capture='private profile'):
+   with self.assertRaisesRegex(ValueError,'capture'):
+    p.create_bundle(self.root,self.root/'private-capture.zip',{'passed':True})
+ def test_received_bundle_keeps_complete_evidence_and_empty_stderr(self):
+  self.complete_evidence();bundle=self.root/'received.zip'
+  p.create_bundle(self.root,bundle,{'passed':True})
+  with zipfile.ZipFile(bundle) as archive:
+   self.assertEqual(archive.read('resume/stderr.log'),b'')
+   self.assertEqual(archive.read('resume/captures/01-reception.png'),b'unit capture bytes, not native Windows proof')
+   self.assertIn('tools/mesa-notices/notices/Mesa.txt',archive.namelist())
+ def test_received_bundle_refuses_detached_or_changed_mode_proofs(self):
+  self.complete_evidence()
+  for index,name in enumerate(('evidence/fresh/report.json','evidence/resume/report.json',
+   'evidence/fresh/process.json','evidence/resume/process.json')):
+   with self.subTest(changed=name):
+    file=self.root/name;content=file.read_bytes();file.write_text('{"different":true}')
+    try:
+     with self.assertRaisesRegex(ValueError,'differs from receipt'):
+      p.create_bundle(self.root,self.root/('changed-'+str(index)+'.zip'),{'passed':True})
+    finally:file.write_bytes(content)
+ def test_graphics_smoke_or_failed_report_cannot_create_a_received_bundle(self):
+  report=self.complete_evidence()
+  for index,change in enumerate(({'scope':'graphics-smoke-only'},{'passed':False})):
+   with self.subTest(report=change):
+    candidate={**report,**change};self.put('evidence/windows-report.json',json.dumps(candidate))
+    with self.assertRaisesRegex(ValueError,'full Windows receipt'):
+     p.create_bundle(self.root,self.root/('scope-'+str(index)+'.zip'),{'passed':True})
 unittest.main()
 `;
  const r=spawnSync(process.env.PYTHON||(process.platform==='win32'?'python':'python3'),['-c',script],{cwd:path.resolve(__dirname,'..'),encoding:'utf8',timeout:30000});
