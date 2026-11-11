@@ -1,6 +1,7 @@
 extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const EntityLink = preload("res://ui/entity_link.gd")
 
 static func _number(value: Variant) -> String:
 	return str(int(value)) if value is float or value is int else "—"
@@ -9,6 +10,56 @@ static func _name(app: Control, id: Variant) -> String:
 	for p: Dictionary in app.model.get("squad", []):
 		if p.id == id: return str(p.name)
 	return "Joueur parti du club" if id != null else "Aucun relais disponible"
+
+static func _player_target(app: Control, id: Variant) -> Dictionary:
+	# The history is not a name index. A departed player never resolves to a
+	# namesake, nor to an unprojected biography outside the current squad.
+	if not id is String or id.is_empty(): return {}
+	var present := false
+	for person: Dictionary in app.model.get("squad", []):
+		if person.get("id") == id: present = true; break
+	if not present: return {}
+	for field: Dictionary in app.get_property_list():
+		if field.name != "navigation_controller": continue
+		var navigation: Variant = app.get("navigation_controller")
+		var target := {"kind":"player", "id":id}
+		if is_instance_valid(navigation) and navigation.has_method("entity_available") and navigation.entity_available(target): return target
+	return {}
+
+static func _person_link(app: Control, parent: Node, id: Variant, name: String) -> void:
+	var target := _player_target(app, id)
+	if target.is_empty():
+		parent.add_child(G.wrap(_name(app, id), 14))
+		return
+	var button := G.button(_name(app, id), func(): pass)
+	button.name = name
+	button.custom_minimum_size.y = 40
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	EntityLink.bind(button, app, target, _name(app, id))
+	parent.add_child(button)
+
+static func _identity(app: Control, parent: Node, identity: Dictionary, id: String, detail: String) -> void:
+	var target := _player_target(app, id)
+	if target.is_empty():
+		G.person(parent, identity, _name(app, id), detail)
+		return
+	var row := G.h(12)
+	parent.add_child(row)
+	var picture := G.button("", func(): pass)
+	picture.name = "RelationshipPortraitLink"
+	picture.custom_minimum_size = Vector2(66,66)
+	EntityLink.bind(picture, app, target, _name(app, id))
+	row.add_child(picture)
+	var portrait := G.portrait(int(identity.get("portraitIndex", posmod(id.hash(),32))),58,identity)
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	picture.add_child(portrait)
+	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	portrait.offset_left=4; portrait.offset_top=4; portrait.offset_right=-4; portrait.offset_bottom=-4
+	var text := G.v(3)
+	G.fill(text)
+	row.add_child(text)
+	_person_link(app,text,id,"RelationshipPlayerLink")
+	text.add_child(G.wrap(detail,13))
 
 static func build(app: Control) -> Control:
 	var page := G.h(18)
@@ -31,7 +82,8 @@ static func build(app: Control) -> Control:
 		if item[1] != null: G.gauge(follow, item[0], float(item[1]))
 	var event: Variant = data.get("event")
 	if event is Dictionary:
-		follow.add_child(G.section(str(event.title), _name(app, event.playerId)))
+		follow.add_child(G.section(str(event.title)))
+		_person_link(app,follow,event.playerId,"RelationshipEventPlayerLink")
 		follow.add_child(G.wrap(event.context, 15))
 		follow.add_child(G.wrap("Personnalité : %s · leadership %s / 100" % [event.trait, int(event.leadership)], 13))
 		for choice: Dictionary in event.get("choices", []):
@@ -48,8 +100,10 @@ static func build(app: Control) -> Control:
 	if commitments.is_empty(): follow.add_child(G.wrap("Aucun engagement de vestiaire en cours.", 14))
 	for c: Dictionary in commitments.slice(-8):
 		var status: String = str({"open":"À suivre", "honored":"Honoré", "broken":"Non tenu", "expired":"Clos sans pénalité"}.get(c.status, c.status))
+		_person_link(app,follow,c.playerId,"RelationshipCommitmentPlayerLink")
 		follow.add_child(G.wrap("%s · %s\nObjectif %s minutes · échéance semaine de carrière %s" % [_name(app, c.playerId), status, int(c.target), int(c.dueWeek) + 1], 14))
 	for e: Dictionary in data.get("history", []).slice(0, 6):
+		_person_link(app,follow,e.playerId,"RelationshipHistoryPlayerLink")
 		follow.add_child(G.wrap("S%s · semaine %s — %s\n%s · %s" % [int(e.season), int(e.week) + 1, _name(app, e.playerId), e.title, {"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}.get(e.choice, e.choice)], 13))
 	var right := G.panel(page, 1.3)
 	G.chapter(right, "12", "Les personnes et les liens", "Un entretien par personne ; une intervention de groupe par semaine.", app.accent)
@@ -59,6 +113,7 @@ static func build(app: Control) -> Control:
 		list.add_child(G.wrap("Aucun joueur suivi dans cette carrière.", 16))
 		return page
 	list.add_child(G.label("Relais pressenti : " + _name(app, data.get("leaderId")), 17))
+	if not _player_target(app,data.get("leaderId")).is_empty(): _person_link(app,list,data.leaderId,"RelationshipLeaderPlayerLink")
 	var chooser := OptionButton.new()
 	chooser.name = "RelationshipPlayer"
 	chooser.custom_minimum_size.y = 44
@@ -98,6 +153,10 @@ static func build(app: Control) -> Control:
 		list.add_child(button); list.add_child(G.wrap(action.detail, 13))
 	for pair: Dictionary in data.get("pairs", []):
 		list.add_child(G.wrap("%s / %s · lien %s" % [_name(app, pair.a), _name(app, pair.b), int(pair.score)], 14))
+		var people := G.h(6)
+		list.add_child(people)
+		_person_link(app,people,pair.a,"RelationshipDuoPlayerALink")
+		_person_link(app,people,pair.b,"RelationshipDuoPlayerBLink")
 	list.add_child(G.wrap(Copy.notice("relationships", data.get("notice", "")), 12))
 	return page
 
@@ -105,7 +164,7 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	var identity: Dictionary = p
 	for candidate: Dictionary in app.model.get("squad", []):
 		if candidate.id == p.id: identity = candidate; break
-	G.person(parent, identity, _name(app, p.id), "Entretien individuel · " + str(p.get("pos", "")))
+	_identity(app, parent, identity, str(p.id), "Entretien individuel · " + str(p.get("pos", "")))
 	var personality: Variant = p.get("personality")
 	if personality is Dictionary and not str(personality.get("trait", "")).is_empty():
 		var character := G.wrap("Personnalité : %s · leadership %s / 100" % [personality.trait, _number(personality.get("leadership"))], 13)
