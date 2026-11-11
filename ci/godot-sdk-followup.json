@@ -42,7 +42,8 @@
     "tests/godot-profile-reading.cjs",
     "tests/godot-observed-training-consequences.cjs",
     "tests/godot-effective-training-receipt.cjs",
-    "tests/godot-analysis-club-links.cjs"
+    "tests/godot-analysis-club-links.cjs",
+    "tests/godot-analysis-club-graphics.cjs"
   ],
   "groups": {
     "portraits-staff": [
@@ -58,7 +59,8 @@
       "tests/godot-prospect-profile.cjs",
       "tests/godot-staff-fictional-labels.cjs",
       "tests/rg27-night-navigation.cjs",
-      "tests/godot-world-entity-targets.cjs"
+      "tests/godot-world-entity-targets.cjs",
+      "tests/godot-analysis-club-graphics.cjs"
     ],
     "parcours": [
       "tests/native-press-ui.cjs",
@@ -113,6 +115,10 @@
     },
     "tests/godot-effective-training-receipt.cjs": {
       "CD_EFFECTIVE_TRAINING_REUSE_CASES": ""
+    },
+    "tests/godot-analysis-club-graphics.cjs": {
+      "CD_ANALYSIS_CLUB_GRAPHICS": "1",
+      "CD_ANALYSIS_CLUB_GRAPHICS_SOURCE": ""
     }
   },
   "suiteCases": {

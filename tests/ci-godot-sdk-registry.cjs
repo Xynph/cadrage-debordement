@@ -16,6 +16,7 @@ const required = [
   'godot-national-reading-links', 'godot-profile-reading', 'godot-observed-training-consequences',
   'godot-effective-training-receipt',
   'godot-analysis-club-links',
+  'godot-analysis-club-graphics',
 ].map(name => 'tests/' + name + '.cjs');
 
 test('SDK registry groups cover every declared wrapper exactly once', () => {
@@ -66,4 +67,14 @@ test('Effective training cases are collected through public commands in SDK qual
   assert.ok(config.groups.parcours.includes(suite));
   assert.equal(config.suiteEnvironment[suite][reuse], '');
   for (const variant of config.suiteCases[suite] || []) assert.ok(!variant.env[reuse]);
+});
+
+test('Analysis graphics qualification uses a public career and explicit graphics opt-in', () => {
+  const suite = 'tests/godot-analysis-club-graphics.cjs';
+  assert.ok(config.groups['portraits-staff'].includes(suite));
+  assert.equal(config.suiteEnvironment[suite].CD_ANALYSIS_CLUB_GRAPHICS, '1');
+  assert.equal(config.suiteEnvironment[suite].CD_ANALYSIS_CLUB_GRAPHICS_SOURCE, '');
+  for (const variant of config.suiteCases[suite] || []) {
+    assert.ok(!variant.env.CD_ANALYSIS_CLUB_GRAPHICS_SOURCE);
+  }
 });
