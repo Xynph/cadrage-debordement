@@ -132,6 +132,10 @@ func projection_cases() -> void:
 	check(not Watch.watch_reason({"physicalLoad":70,"condition":80}).is_empty(), "Charge 70 sous surveillance")
 	check(not Watch.watch_reason({"physicalLoad":0,"condition":79.9}).is_empty(), "Condition sous 80 sous surveillance")
 	check(JSON.stringify(fixture) == before, "Filtres et tri sans mutation de la projection")
+	for pair in [[0, 0], [19.99, 0], [20, 1], [39.99, 1], [40, 2], [60, 3], [80, 4], [100, 4]]:
+		check(Fatigue.load_bucket({"physicalLoad":pair[0]}) == pair[1], "Tranche de charge exacte : " + str(pair[0]))
+	for unknown in [{}, {"physicalLoad":null}, {"physicalLoad":"inconnue"}, {"physicalLoad":NAN}]:
+		check(Fatigue.load_bucket(unknown) == -1, "Une charge inconnue ne devient pas un joueur à charge nulle")
 	sort_cases()
 
 func sort_cases() -> void:
@@ -189,6 +193,19 @@ func run() -> void:
 			visible_rows += 1
 	check(visible_rows >= 20, "Au moins vingt joueurs visibles dans le tableau dense à 1440p")
 	await scrolling_case("FatigueScroll", "FatigueRow_*", "Control", "FatigueSort_name")
+	for bucket in 5:
+		await press("FatigueLoadBucket" + str(bucket))
+		var filtered := app.find_children("FatigueRow_*", "Control", true, false)
+		var expected: Array = app.model.squad.filter(func(person: Dictionary): return Fatigue.load_bucket(person) == bucket)
+		check(filtered.size() == expected.size(), "Barre du graphique ouvre exactement sa tranche, même vide : " + str(bucket))
+		var expected_ids := expected.map(func(person: Dictionary): return str(person.id))
+		for row: Control in filtered:
+			check(str(row.get_meta("player_id")) in expected_ids, "La liste filtrée ne remplace pas la tranche par l’effectif complet")
+		await press("FatigueSort_pos")
+		check(app.management_ui.immersive_training.fatigue_load_bin == bucket, "Le tri conserve la tranche du graphique")
+	check(app.bridge._next_id == requests and FileAccess.get_sha256(filename) == unchanged, "Consultation graphique : aucune commande ni écriture sportive")
+	await press("FatigueFilter4")
+	check(not app.management_ui.immersive_training.has("fatigue_load_bin"), "Tout l’effectif retire explicitement le filtre du graphique")
 	for key in Fatigue.SORT_KEYS:
 		for descending in [false, true]:
 			await press("FatigueSort_" + key)

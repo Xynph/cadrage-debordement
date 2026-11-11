@@ -9,6 +9,11 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const FILTERS := ["À ménager", "Blessés", "Suspendus", "En sélection", "Tout l’effectif"]
 const PLANS := {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const SORT_KEYS := ["name", "pos", "condition", "physicalLoad", "minutes", "injury", "selection", "suspension", "loadPlan"]
+const LOAD_LABELS := ["0–19", "20–39", "40–59", "60–79", "80–100"]
+
+static func load_bucket(player: Dictionary) -> int:
+	var value: Variant = numeric(player, "physicalLoad")
+	return -1 if value == null else clampi(int(floorf(float(value) / 20.0)), 0, 4)
 
 static func identifier(id: String) -> String:
 	return id.replace(":", "_")
@@ -128,6 +133,9 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	var key := str(state.get("fatigue_sort", "priority"))
 	var descending: bool = state.get("fatigue_descending", false)
 	var data := overview(app.model, selected, key, descending)
+	var selected_bin := int(state.get("fatigue_load_bin", -1))
+	if selected_bin >= 0 and selected_bin < LOAD_LABELS.size():
+		data.rows = data.rows.filter(func(row: Dictionary): return load_bucket(row.player) == selected_bin)
 	var stats: Dictionary = data.counts
 	var captions := ["À ménager", "Blessés", "Suspendus connus", "En sélection"]
 	var values := [stats.watched, stats.injured, stats.suspended, stats.called]
@@ -141,7 +149,7 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 		D.text(hit, 9, 22, captions[i], 17, C.MUTED, 600, 210)
 		D.text(hit, 9, 49, G.n(values[i]), 26, C.GOLD if values[i] > 0 else C.MINT, 700, 80)
 		if i == 2: D.text(hit, 59, 47, "%d non renseignés" % stats.suspension_unknown, 16, C.MUTED, 500, 175)
-	_distribution(app.model, parent)
+	_distribution(app, parent, state)
 	for i in FILTERS.size():
 		var button := ClubUI.tab(parent, Rect2(4 + i * 307, 334, 294, 42), FILTERS[i], selected == FILTERS[i], func(): _filter(app, state, FILTERS[i]), "FatigueFilter" + str(i))
 		button.add_theme_font_size_override("font_size", C.px(20))
@@ -149,7 +157,9 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	var panel := D.panel(parent, Rect2(4, 391, 2240, 814), "Rotation et charge individuelle", "heart", "", "FatigueTable")
 	var display_rows: Array = data.rows
 	var note := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical."
-	if display_rows.is_empty():
+	if selected_bin >= 0 and selected_bin < LOAD_LABELS.size():
+		note = "Charge %s / 100 · %d joueur%s · Tout l’effectif pour retirer ce filtre." % [LOAD_LABELS[selected_bin], display_rows.size(), "s" if display_rows.size() > 1 else ""]
+	elif display_rows.is_empty():
 		display_rows = overview(app.model, FILTERS[4], key, descending).rows
 		note = "Aucun profil « %s » : effectif complet ci-dessous pour comparer les plans et préparer la rotation." % selected
 	D.text(panel, 18, 87, note, 17, C.MUTED, 500, 2180).name = "FatigueEmpty" if data.rows.is_empty() else "FatigueReadingGuide"
@@ -170,24 +180,33 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	var footer := blocker if not blocker.is_empty() else "Régler prépare le plan ; seule la séance applique ses effets. Chaque modification est confirmée."
 	D.text(panel, 18, 796, footer, 17, C.GOLD if not blocker.is_empty() else C.MUTED, 500, 2178).name = "FatigueLoadPolicy"
 
-static func _distribution(model: Dictionary, parent: Control) -> void:
+static func _distribution(app: Control, parent: Control, state: Dictionary) -> void:
 	var chart := D.panel(parent, Rect2(1027, 252, 670, 68), "", "", "", "FatigueDistribution")
 	D.text(chart, 12, 22, "CHARGE ACTUELLE / 100", 16, C.MUTED, 600, 230)
 	var bins := [0, 0, 0, 0, 0]
 	var families := [0, 0, 0]
-	for player: Dictionary in model.get("squad", []):
-		if player.has("physicalLoad"):
-			var index := clampi(int(float(player.physicalLoad) / 20), 0, 4)
-			bins[index] += 1
+	for player: Dictionary in app.model.get("squad", []):
+		var index := load_bucket(player)
+		if index >= 0: bins[index] += 1
 		if not player.has("fam"): families[2] += 1
 		elif float(player.fam) <= 3: families[0] += 1
 		else: families[1] += 1
 	var maximum := maxi(1, bins.max())
 	for i in 5:
 		var x := 240 + i * 83
-		D.rect(chart, Rect2(x, 33 - 25.0 * bins[i] / maximum, 34, 25.0 * bins[i] / maximum), C.GOLD if i >= 3 else C.MINT, 2)
-		D.text(chart, x + 40, 27, G.n(bins[i]), 17, C.IVORY, 600, 40)
-		D.text(chart, x, 57, ["0–19", "20–39", "40–59", "60–79", "80–100"][i], 16, C.MUTED, 500, 80)
+		var hit := D.button(chart, Rect2(x - 3, 2, 82, 63), "", func():
+			state.fatigue_filter = FILTERS[4]
+			state.fatigue_load_bin = i
+			app._render()
+			ClubUI.focus(app, "FatigueLoadBucket" + str(i)), false, "", false, app.accent, "FatigueLoadBucket" + str(i))
+		hit.accessibility_name = "Voir les joueurs : charge " + LOAD_LABELS[i] + " sur 100 · " + G.n(bins[i])
+		hit.tooltip_text = hit.accessibility_name
+		hit.set_meta("load_bucket", i)
+		hit.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, C.GOLD if int(state.get("fatigue_load_bin", -1)) == i else Color.TRANSPARENT, 3, 0))
+		hit.add_theme_stylebox_override("hover", C.box(Color(1, 1, 1, .04), C.GOLD, 3, 0))
+		D.rect(hit, Rect2(3, 31 - 25.0 * bins[i] / maximum, 34, 25.0 * bins[i] / maximum), C.GOLD if i >= 3 else C.MINT, 2)
+		D.text(hit, 43, 25, G.n(bins[i]), 17, C.IVORY, 600, 36)
+		D.text(hit, 3, 55, LOAD_LABELS[i], 16, C.MUTED, 500, 78)
 	var positions := D.panel(parent, Rect2(1710, 252, 534, 68), "", "", "", "FatiguePositionDistribution")
 	D.text(positions, 12, 23, "EFFECTIF PAR LIGNE", 16, C.MUTED, 600, 440)
 	D.text(positions, 12, 52, "%d avants   /   %d arrières   /   %d non renseignés" % families, 19, C.IVORY, 600, 510)
@@ -236,6 +255,7 @@ static func _number(player: Dictionary, key: String, suffix: String) -> String:
 
 static func _filter(app: Control, state: Dictionary, value: String) -> void:
 	state.fatigue_filter = value
+	state.erase("fatigue_load_bin")
 	app._render()
 	ClubUI.focus(app, "FatigueFilter" + str(FILTERS.find(value)))
 
