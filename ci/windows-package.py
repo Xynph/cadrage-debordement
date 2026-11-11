@@ -282,6 +282,7 @@ def png_proof(path):
 
 
 def validate_windows_report(report, expected_commit, expected_executable, require_native=True):
+    require(report.get("scope") != "graphics-smoke-only", "A graphics smoke test is not a full Windows receipt")
     if require_native:
         require(platform.system() == "Windows" and report.get("platform") == "Windows" and report.get("proof") == "native-windows", "A diagnostic or non-Windows host is not native Windows proof")
     require(report.get("sourceCommit") == expected_commit and COMMIT.fullmatch(str(report.get("sourceTree", ""))), "Wrong report source provenance")
@@ -322,6 +323,36 @@ def validate_windows_report(report, expected_commit, expected_executable, requir
     return report
 
 
+def validate_graphics_probe(report, process, manifest, expected_executable, driver, require_native=True):
+    if require_native:
+        require(platform.system() == "Windows", "Native Windows host required for graphics proof")
+    require(driver in ("opengl3", "opengl3_angle"), "Unsupported Windows graphics driver")
+    require(report.get("mode") == "graphics-smoke" and report.get("scope") == "graphics-smoke-only", "Explicit short graphics scope required")
+    require(report.get("passed") is True and report.get("failures") == [] and report.get("checks", 0) > 0 and report.get("exported") is True, "Exported EXE graphics probe failed")
+    require(report.get("platform") == "Windows" and report.get("native_display") == "Windows" and report.get("audio_driver") == "Dummy", "Actual Windows graphics and Dummy audio required")
+    require(same_windows_path(report.get("executable"), expected_executable), "Wrong graphics EXE")
+    node = str(Path(expected_executable).parent / "runtime/node.exe")
+    validate_process(process, expected_executable, node, manifest_files(manifest)["runtime/node.exe"]["sha256"])
+    require(process.get("exeSha256") == manifest["files"]["OvalLegacy27.exe"]["sha256"] and report.get("pid") == process.get("pid") and report.get("engine_pid") == process.get("nodePid"), "Graphics executable/process identity mismatch")
+    argv = process.get("argv", [])
+    require(any(argv[i:i+2] == ["--rendering-driver", driver] for i in range(len(argv))), "Observed process driver argument missing")
+    info = report.get("runtime_info", {})
+    require(info.get("renderer") == "gl_compatibility" and info.get("adapter") and info.get("api_version"), "Initialized renderer/adapter/API evidence missing")
+    observed_angle = bool(re.search(r"\bANGLE\b", " ".join(str(info.get(k, "")) for k in ("adapter", "vendor", "api_version")), re.I))
+    require(observed_angle == (driver == "opengl3_angle"), "Requested graphics backend differs from the observed ANGLE/native renderer")
+    require(any(row.get("name", "").lower() in ("opengl32.dll", "d3d11.dll") and ntpath.isabs(str(row.get("path", ""))) and SHA.fullmatch(str(row.get("sha256", ""))) for row in process.get("loadedModules", [])), "Actually loaded graphics module paths/hashes missing")
+    coach = report.get("coach", {})
+    require(coach.get("starts") == coach.get("ends") == 0 and coach.get("player_present") is False, "Gabi audio activity invalidates graphics probe")
+    graphics = report.get("graphics", {})
+    require(graphics.get("passed") is True and graphics.get("window") == [2560,1440] and len(graphics.get("captures", [])) >= 2, "Real 1440p startup and runtime captures required")
+    for row in graphics["captures"]:
+        require(png_proof(row["path"])["sha256"] == row["sha256"], "Graphics probe PNG changed")
+    if not require_native:
+        report["proof"] = "diagnostic"
+        report["passed"] = False
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -329,6 +360,7 @@ def main():
     tree = sub.add_parser("tree"); tree.add_argument("--root", required=True); tree.add_argument("--manifest", required=True); tree.add_argument("--extras", required=True); tree.add_argument("--output", required=True)
     mesa = sub.add_parser("mesa"); mesa.add_argument("--mesa-root", required=True); mesa.add_argument("--game-root", required=True); mesa.add_argument("--manifest", required=True); mesa.add_argument("--output", required=True)
     finish = sub.add_parser("finalize"); finish.add_argument("--report", required=True); finish.add_argument("--source-commit", required=True); finish.add_argument("--executable", required=True)
+    graphics = sub.add_parser("graphics"); graphics.add_argument("--report", required=True); graphics.add_argument("--process", required=True); graphics.add_argument("--manifest", required=True); graphics.add_argument("--executable", required=True); graphics.add_argument("--driver", required=True, choices=("opengl3", "opengl3_angle"))
     args = parser.parse_args()
     if args.command == "extract":
         result = verify_archive(args.zip, args.source_commit)
@@ -341,6 +373,8 @@ def main():
     elif args.command == "mesa":
         result = install_mesa(args.mesa_root, args.game_root, json_document(Path(args.manifest).read_text(encoding="utf-8-sig")))
         Path(args.output).write_text(json.dumps(result, indent=2), encoding="utf-8")
+    elif args.command == "graphics":
+        validate_graphics_probe(json_document(Path(args.report).read_text(encoding="utf-8-sig")), json_document(Path(args.process).read_text(encoding="utf-8-sig")), json_document(Path(args.manifest).read_text(encoding="utf-8-sig")), args.executable, args.driver)
     else:
         report = json_document(Path(args.report).read_text(encoding="utf-8-sig"))
         validate_windows_report(report, args.source_commit, args.executable)

@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory=$true)][string]$PackageZip,
     [Parameter(Mandatory=$true)][ValidatePattern('^[0-9a-f]{40}$')][string]$SourceCommit,
     [Parameter(Mandatory=$true)][string]$EvidenceRoot,
-    [Parameter(Mandatory=$true)][string]$MesaRoot
+    [Parameter(Mandatory=$true)][string]$MesaRoot,
+    [switch]$GraphicsSmoke
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -52,7 +53,7 @@ function Game-Environment([string]$Mode,[string]$CareerProfile,[string]$Output) 
         GALLIUM_DRIVER='llvmpipe'
     }
 }
-function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe) {
+function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe,[int]$TimeoutSeconds=7200) {
     New-Item -ItemType Directory -Path $Output | Out-Null
     $info = [Diagnostics.ProcessStartInfo]::new()
     $info.FileName = $Exe; $info.WorkingDirectory = Split-Path $Exe
@@ -68,6 +69,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
     $stdoutFile = $null; $stderrFile = $null; $stdout = $null; $stderr = $null
     $lastLogCheck = $started; $lastHeartbeat = $started
     $runtimeError = '(?m)^(?:\x1b\[[0-9;]*m)*(?:SCRIPT ERROR:|ERROR:)|Parse Error:'
+    $loadedModules = @{}; $moduleError = $null
     try {
         # Stream the complete bytes to disk while the EXE runs. A script error
         # must not leave a silent two-hour loop or disappear behind passed=true.
@@ -76,8 +78,18 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
         if (-not $process.Start()) { throw 'Exported EXE did not start.' }
         $launched = $true
         $stdout = $process.StandardOutput.BaseStream.CopyToAsync($stdoutFile); $stderr = $process.StandardError.BaseStream.CopyToAsync($stderrFile)
-        Write-Host "::notice title=Windows EXE ${Mode}::Started exact packaged EXE, PID $($process.Id); complete logs are streaming to disk."
+        Write-Host "::notice title=Windows process ${Mode}::Started $([IO.Path]::GetFileName($Exe)), PID $($process.Id); complete logs are streaming to disk."
         while (-not $process.HasExited) {
+            if ($IsWindows) {
+                try {
+                    foreach ($module in @($process.Modules)) {
+                        if ($module.ModuleName -match '^(opengl32|libgallium_wgl|libEGL.*|libGLES.*|d3d11|dxgi|d3d10warp)\.dll$' -and -not $loadedModules.ContainsKey($module.ModuleName)) {
+                            $loadedModules[$module.ModuleName] = @{name=$module.ModuleName;path=$module.FileName;sha256=(Hash $module.FileName)}
+                            Write-Json @{modules=@($loadedModules.Values);error=$moduleError} (Join-Path $Output 'loaded-modules.json')
+                        }
+                    }
+                } catch { $moduleError = $_.Exception.Message }
+            }
             foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($process.Id)")) {
                 if ($child.Name -ieq 'node.exe' -and $child.CommandLine -like '*worker.cjs*') {
                     $sample = @{pid=[int]$child.ProcessId;parentPid=[int]$child.ParentProcessId;executable=[string]$child.ExecutablePath;commandLine=[string]$child.CommandLine}
@@ -92,10 +104,10 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
                 $lastLogCheck = [DateTime]::UtcNow
             }
             if (([DateTime]::UtcNow-$lastHeartbeat).TotalSeconds -ge 300) {
-                Write-Host "::notice title=Windows EXE ${Mode}::Still running; elapsed $([int]([DateTime]::UtcNow-$started).TotalSeconds)s; packaged worker observed=$($null -ne $node)."
+                Write-Host "::notice title=Windows process ${Mode}::Still running; elapsed $([int]([DateTime]::UtcNow-$started).TotalSeconds)s; worker identity observed=$($null -ne $node)."
                 $lastHeartbeat = [DateTime]::UtcNow
             }
-            if (([DateTime]::UtcNow-$started).TotalSeconds -gt 7200) { throw "Native $Mode reception exceeded two hours." }
+            if (([DateTime]::UtcNow-$started).TotalSeconds -gt $TimeoutSeconds) { throw "Native $Mode exceeded its bounded ${TimeoutSeconds}s deadline." }
             Start-Sleep -Milliseconds 250
             $process.Refresh()
         }
@@ -109,7 +121,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
         $deadline = [DateTime]::UtcNow.AddSeconds(5)
         while ((Get-Process -Id $node.pid -ErrorAction SilentlyContinue) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 100 }
         $shutdown = -not [bool](Get-Process -Id $node.pid -ErrorAction SilentlyContinue)
-        $receipt = @{executable=$Exe;exeSha256=(Hash $Exe);pid=$process.Id;nodeExecutable=$node.executable;nodePid=$node.pid;nodeParentPid=$node.parentPid;nodeSha256=(Hash $NodeExe);exitCode=$process.ExitCode;shutdown=$shutdown;argv=$Arguments;environmentNames=@($environment.Keys|Sort-Object);cim=@($observations.ToArray());durationSeconds=([DateTime]::UtcNow-$started).TotalSeconds;startedUtc=$started.ToString('o')}
+        $receipt = @{executable=$Exe;exeSha256=(Hash $Exe);pid=$process.Id;nodeExecutable=$node.executable;nodePid=$node.pid;nodeParentPid=$node.parentPid;nodeSha256=(Hash $NodeExe);exitCode=$process.ExitCode;shutdown=$shutdown;argv=$Arguments;environmentNames=@($environment.Keys|Sort-Object);cim=@($observations.ToArray());durationSeconds=([DateTime]::UtcNow-$started).TotalSeconds;startedUtc=$started.ToString('o');loadedModules=@($loadedModules.Values);moduleError=$moduleError}
         Write-Json $receipt (Join-Path $Output 'process.json')
         if ($process.ExitCode -ne 0 -or -not $shutdown) { throw "Native $Mode failed or its owned worker survived shutdown." }
         return $receipt
@@ -124,6 +136,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
                 }
             }
         } finally {
+            try { Write-Json @{modules=@($loadedModules.Values);error=$moduleError} (Join-Path $Output 'loaded-modules.json') } catch { $moduleError = $_.Exception.Message }
             if ($null -ne $stdoutFile) { $stdoutFile.Dispose() }
             if ($null -ne $stderrFile) { $stderrFile.Dispose() }
             if ($null -ne $node -and -not $shutdown) {
@@ -153,6 +166,50 @@ try {
     if ((Hash $tools.nodeExe) -cne $nodePin -or $archive.manifest.files['runtime/node.exe'].sha256 -cne $nodePin) { throw 'Packaged Node does not match the prepared official runtime pin.' }
     $Report.package = @{path=$PackageZip;shaBefore=$archive.zipSha256;shaAfter=$null;manifestSha256=$archive.manifestSha256;files=$archive.files}
     $manifestPath = Join-Path $game 'manifest-build.json'
+    if ($GraphicsSmoke) {
+        $Report.scope = 'graphics-smoke-only'
+        $Report.attempts = @()
+        $Report.qaExtras = @{}
+        $extrasPath = Join-Path $EvidenceRoot 'qa-extras.json'
+        Write-Json $Report.qaExtras $extrasPath
+        foreach ($variant in @('angle-clean','mesa-native','mesa-local')) {
+            if ($variant -eq 'mesa-native') {
+                $mesaPath = Join-Path $EvidenceRoot 'mesa-qa.json'
+                Python-Check @('mesa','--mesa-root',$MesaRoot,'--game-root',$game,'--manifest',$manifestPath,'--output',$mesaPath)
+                $Report.mesa = Read-Json $mesaPath
+                $Report.qaExtras = $Report.mesa.extras
+            }
+            if ($variant -eq 'mesa-local') {
+                $marker = Join-Path $game 'OvalLegacy27.exe.local'
+                if (Test-Path -LiteralPath $marker) { throw 'QA marker cannot overwrite a game file.' }
+                [IO.File]::WriteAllBytes($marker,[Text.Encoding]::ASCII.GetBytes("dummy`r`n"))
+                $Report.qaExtras['OvalLegacy27.exe.local'] = @{sha256=(Hash $marker);bytes=(Get-Item $marker).Length;source='Documented Mesa per-app QA marker'}
+            }
+            Write-Json $Report.qaExtras $extrasPath
+            $output = Join-Path $EvidenceRoot $variant
+            $driver = if ($variant -eq 'angle-clean') { 'opengl3_angle' } else { 'opengl3' }
+            try {
+                $processReceipt = Run-Game 'graphics' @('--verbose','--audio-driver','Dummy','--rendering-method','gl_compatibility','--rendering-driver',$driver,'--windowed','--resolution','2560x1440','--max-fps','60','--script',(Join-Path $PSScriptRoot 'windows-graphics-smoke.gd')) (Join-Path $EvidenceRoot "profiles/$variant/PrototypeGodot") $output $exe $nodeExe 90
+                Python-Check @('graphics','--report',(Join-Path $output 'report.json'),'--process',(Join-Path $output 'process.json'),'--manifest',$manifestPath,'--executable',$exe,'--driver',$driver)
+                $Report.attempts += @{variant=$variant;passed=$true;report=(Read-Json (Join-Path $output 'report.json'));process=$processReceipt}
+                $Report.passed = $true
+                $Report.selectedGraphicsDriver = $driver
+                break
+            } catch {
+                $Report.attempts += @{variant=$variant;passed=$false;failure=$_.Exception.ToString()}
+                Write-Host "::warning title=Graphics smoke ${variant}::$($_.Exception.Message)"
+            }
+        }
+        $afterPath = Join-Path $EvidenceRoot 'manifest-after.json'
+        Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$afterPath)
+        $Report.manifestAfter = Read-Json $afterPath
+        $Report.package.shaAfter = Hash $PackageZip
+        if ($Report.package.shaAfter -cne $Report.package.shaBefore) { throw 'The original game ZIP changed.' }
+        Write-Json $Report $ReportPath
+        if (-not $Report.passed) { throw 'All bounded native graphics preflights failed; no graphical receipt.' }
+        Write-Host '::notice title=Windows graphics smoke::Actual exported EXE, observed renderer, packaged Node and nonblank native 1440p PNG received. This is not a full-season receipt.'
+        return
+    }
     $mesaPath = Join-Path $EvidenceRoot 'mesa-qa.json'
     Python-Check @('mesa','--mesa-root',$MesaRoot,'--game-root',$game,'--manifest',$manifestPath,'--output',$mesaPath)
     $mesa = Read-Json $mesaPath

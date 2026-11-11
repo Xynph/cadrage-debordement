@@ -17,6 +17,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  qualify-graphics:
+    name: Préqualification graphique courte du véritable EXE
+    if: >-
+      github.event_name == 'pull_request' && github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke')
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Construire puis comparer les rendus courts sans créer de carrière
+        shell: pwsh
+        run: ./ci/run-windows-build.ps1 -SourceCommit $env:SOURCE_COMMIT -GraphicsSmoke
+      - name: Conserver les diagnostics graphiques dans le journal gratuit
+        if: always()
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'oval-windows-delivery'
+          foreach ($relative in @('controller-unit.log','prepare.log','build.log','official-build/build/import.log','official-build/build/export.log','evidence/windows-report.json','evidence/angle-clean/loaded-modules.json','evidence/angle-clean/stdout.log','evidence/angle-clean/stderr.log','evidence/mesa-native/loaded-modules.json','evidence/mesa-native/stdout.log','evidence/mesa-native/stderr.log','evidence/mesa-local/loaded-modules.json','evidence/mesa-local/stdout.log','evidence/mesa-local/stderr.log')) {
+            $file = Join-Path $root $relative
+            if (Test-Path -LiteralPath $file) { Write-Host "::group::$relative"; Get-Content -LiteralPath $file -Tail 100; Write-Host '::endgroup::' }
+          }
+          'Préqualification graphique seulement : aucune saison complète ni publication de ZIP revendiquée par ce job.' | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
   qualify-pr:
     name: Qualification ciblée du véritable EXE
     if: >-

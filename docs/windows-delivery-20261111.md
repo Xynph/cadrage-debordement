@@ -172,3 +172,31 @@ jeu Windows et ne remplace pas la vraie recette suivante. Les diagnostics locaux
 sous PowerShell 7 strict sont verts. La régression des objets `VoidTaskResult`
 retournés accidentellement a été reproduite puis corrigée : le chemin réussi doit
 retourner un seul dictionnaire, sans objet de tâche asynchrone supplémentaire.
+
+## Exécution native reçue et blocage graphique isolé
+
+Le run [42983128595](https://github.com/Xynph/cadrage-debordement/actions/runs/42983128595),
+source `8a74ad40e9981d74787be36adf61ca122f2d50f0`, a effectivement construit le ZIP et
+lancé son EXE exporté avec le Node embarqué. Le rapport frais conservé dans le
+journal termine avec **2 539 contrôles, zéro échec, saison 2**, 238 avancées
+quotidiennes, 30 matchs commencés/terminés, 30 semaines closes et 116 commandes de
+rendez-vous. Les contrôles systèmes, import exact, RNG et archives littérales sont
+verts. Ce reçu est headless et son observation de Gabi précède le renforcement
+sur toute la durée décrit plus haut ; il ne constitue pas un reçu final du paquet.
+
+La reprise graphique échouait avant le script sur `Failed to create native OpenGL
+window` (Godot `display_server_windows.cpp:7530`), puis conservait une alerte native
+ouverte. Le run a été arrêté volontairement pour récupérer ses journaux. Aucune
+capture Windows ni intégrité finale après reprise n’est revendiquée pour ce run.
+
+La suite emploie une préqualification de démarrage bornée à 90 secondes par essai,
+sans créer de carrière : ANGLE statique sur copie propre d’abord, puis Mesa OpenGL
+et le marqueur `.exe.local` documenté par son distributeur si nécessaire. Aucun
+registre ou redémarrage n’est modifié. Les modules effectivement chargés, chemins,
+SHA256, adaptateur, version d’API et PNG natifs 2560 × 1440 sont contrôlés. Un repli
+ANGLE ne peut être enregistré comme un succès OpenGL natif. Cette préqualification
+ne peut pas être publiée comme une recette Windows complète.
+
+Godot 4.7.2 lie normalement ANGLE statiquement ; aucune DLL ANGLE supplémentaire
+n’est téléchargée. Le backend D3D11 demande l’adaptateur exposé par Windows : le
+fonctionnement WARP n’est pas supposé avant observation du rendu effectif.

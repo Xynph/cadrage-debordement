@@ -92,3 +92,19 @@ for change in ['seed','undeclared','initial']:
  if change=='undeclared':bad['first_mutations']=[]
  if change=='initial':bad['before']['profile_bytes_match']=False
  refused(lambda:m.validate_qa_report(bad,exe,'resume'))`);
+check('short graphics cannot masquerade as full Windows receipt',`refused(lambda:m.validate_windows_report({'passed':True,'scope':'graphics-smoke-only'},commit,exe),'not a full')`);
+check('graphics scope requires actual driver, modules and PNG proof without promoting unit fixtures',`from unittest.mock import patch
+node='C:/QA Relocated/game/runtime/node.exe';sha=manifest['files']['runtime/node.exe']['sha256'];image={'path':'unit-image','sha256':'e'*64}
+r={'mode':'graphics-smoke','scope':'graphics-smoke-only','passed':True,'exported':True,'checks':10,'failures':[],'platform':'Windows','native_display':'Windows','audio_driver':'Dummy','executable':exe,'pid':10,'engine_pid':11,'coach':{'starts':0,'ends':0,'player_present':False},'runtime_info':{'renderer':'gl_compatibility','adapter':'ANGLE unit adapter','api_version':'OpenGL ES ANGLE unit'},'graphics':{'passed':True,'window':[2560,1440],'captures':[image,image]}}
+p={'executable':exe,'pid':10,'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':sha,'exeSha256':manifest['files']['OvalLegacy27.exe']['sha256'],'exitCode':0,'shutdown':True,'argv':['--rendering-driver','opengl3_angle'],'loadedModules':[{'name':'d3d11.dll','path':'C:/Windows/System32/d3d11.dll','sha256':'f'*64}]}
+with patch.object(m,'png_proof',return_value=image):
+ result=m.validate_graphics_probe(copy.deepcopy(r),p,manifest,exe,'opengl3_angle',require_native=False);assert result['proof']=='diagnostic' and result['passed'] is False
+ for change in ['headless','driver','modules','pixels','unexpected-angle-fallback']:
+  bad=copy.deepcopy(r);proc=copy.deepcopy(p)
+  if change=='headless':bad['native_display']='headless'
+  if change=='driver':proc['argv']=[]
+  if change=='modules':proc['loadedModules']=[]
+  if change=='pixels':bad['graphics']['captures'][0]={'path':'changed','sha256':'0'*64}
+  if change=='unexpected-angle-fallback':proc['argv']=['--rendering-driver','opengl3']
+  requested='opengl3' if change=='unexpected-angle-fallback' else 'opengl3_angle'
+  refused(lambda:m.validate_graphics_probe(bad,proc,manifest,exe,requested,require_native=False))`);
