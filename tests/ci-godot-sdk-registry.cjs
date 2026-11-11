@@ -15,6 +15,7 @@ const required = [
   'rg27-night-navigation', 'godot-world-entity-targets',
   'godot-national-reading-links', 'godot-profile-reading', 'godot-observed-training-consequences',
   'godot-effective-training-receipt',
+  'godot-analysis-club-links',
 ].map(name => 'tests/' + name + '.cjs');
 
 test('SDK registry groups cover every declared wrapper exactly once', () => {

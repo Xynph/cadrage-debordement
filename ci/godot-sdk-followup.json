@@ -41,7 +41,8 @@
     "tests/godot-national-reading-links.cjs",
     "tests/godot-profile-reading.cjs",
     "tests/godot-observed-training-consequences.cjs",
-    "tests/godot-effective-training-receipt.cjs"
+    "tests/godot-effective-training-receipt.cjs",
+    "tests/godot-analysis-club-links.cjs"
   ],
   "groups": {
     "portraits-staff": [
@@ -90,7 +91,8 @@
       "tests/godot-relationships-memory.cjs",
       "tests/godot-management-reading-links.cjs",
       "tests/godot-national-reading-links.cjs",
-      "tests/godot-profile-reading.cjs"
+      "tests/godot-profile-reading.cjs",
+      "tests/godot-analysis-club-links.cjs"
     ]
   },
   "suiteEnvironment": {
