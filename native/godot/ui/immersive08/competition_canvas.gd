@@ -476,7 +476,11 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	row.add_theme_stylebox_override("normal", C.box(Color("202519") if current else Color("101a1b"), Color.TRANSPARENT, 3, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("254035"), C.MINT, 3, 0))
 	row.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
-	Link.bind(row, app, {"kind":"fixture", "id":str(fixture.get("id", ""))}, "Ouvrir la rencontre · " + row.accessibility_name)
+	if target_available(app, "fixture", fixture.get("id", "")):
+		Link.bind(row, app, {"kind":"fixture", "id":str(fixture.get("id", ""))}, "Ouvrir la rencontre · " + row.accessibility_name)
+	else:
+		row.focus_mode = Control.FOCUS_NONE
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(row)
 	D.place(row, Rect2(2, y, width - 4, line_height))
 	D.line(row, Vector2(9, line_height - 1), Vector2(width - 15, line_height - 1), Color(C.LINE, .75))
@@ -774,7 +778,10 @@ func _fixture_detail(fixture: Dictionary) -> void:
 	if not venue.is_empty(): place += "  ·  " + venue
 	var date := P.fixture_date(fixture, true)
 	if not date.is_empty():
-		content.add_child(Link.button(app, date, {"kind":"date", "id":str(fixture.get("date", ""))}, "FixtureCalendarDate", view[0]))
+		var raw_date: Variant = fixture.get("date")
+		if target_available(app, "date", raw_date):
+			content.add_child(Link.button(app, date, {"kind":"date", "id":raw_date}, "FixtureCalendarDate", view[0]))
+		else: content.add_child(C.label(date,25,WARM))
 	var division_id := _competition_id(fixture)
 	if target_available(app, "competition", division_id):
 		content.add_child(Link.button(app, _competition_name(fixture), {"kind":"competition", "id":division_id}, "FixtureCompetition", view[0]))

@@ -61,7 +61,7 @@ static func open_target(owner_app: Control, id: Variant) -> bool:
 	# current market. Link to a current dossier only if that projection exists.
 	var player_id := str(report.get("playerId", ""))
 	var current: Array = owner_app.model.get("market", []).filter(func(player: Dictionary): return str(player.get("id", "")) == player_id)
-	if current.size() == 1:
+	if not player_id.is_empty() and current.size() == 1:
 		var link := Link.button(owner_app, "Dossier actuel · " + str(current[0].get("name", "")), {"kind":"market", "id":player_id}, "ReportCurrentPlayer", view[0])
 		link.clip_text = true
 		view[1].add_child(link)

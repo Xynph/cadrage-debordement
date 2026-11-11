@@ -95,3 +95,15 @@ Contrôles stables : `MarketEntity_ID`, `MarketReportLink_ID`,
 `OpenScoutReport`. Dialogue `RecruitmentReport` avec `entity_kind=report` et
 `entity_id=report.id`. Le lien optionnel vers le marché s’appelle
 `ReportCurrentPlayer`.
+
+## Revue des destinations absentes
+
+La date lisible d’une fiche de rencontre reste un libellé lorsque sa valeur
+brute ne passe pas la validation calendaire. Le bouton `FixtureCalendarDate`
+n’existe que pour une vraie date ciblable. Une ligne tabulaire de rencontre
+sans identifiant résoluble garde ses informations et ses liens internes valides,
+mais n’expose plus d’action de ligne vers un détail absent/ambigu. Les autres
+boutons de fiche (club, résultat archivé, compétition, calendrier journalier)
+étaient déjà conditionnés par la disponibilité de leur destination. Le lien
+optionnel d’un rapport vers le marché exige aussi explicitement un ID joueur
+non vide. Aucune UI supplémentaire lancée pour cette revue ciblée.
