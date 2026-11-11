@@ -17,12 +17,15 @@ const Cut = preload("res://match_cut.gd")
 const Pass = preload("res://match_pass.gd")
 const Gestes = preload("res://match_gestes.gd")
 const Rendu = preload("res://match_rendu.gd")
+const Animations = preload("res://match_animations.gd")
 const CUT_SECONDS := 0.30
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
 var _ball: Node3D
 var _camera: Camera3D
 var _athlete_scene: PackedScene
+## Animations de déplacement adaptées : absentes sans CD_MATCH_ANIMATIONS.
+var _animations_adaptees: RefCounted
 var _actors: Dictionary = {}
 var _team_colors: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
 var _kits: Array[Dictionary] = []
@@ -82,6 +85,10 @@ func set_club_identity(club: Dictionary) -> void:
 func _ready() -> void:
 	name = "NativeMatchView"
 	_athlete_scene = load(ATHLETE) as PackedScene
+	if Animations.demande():
+		var adaptees := Animations.new()
+		if adaptees.charger():
+			_animations_adaptees = adaptees
 	if OS.get_environment("CD_MATCH_GESTES") == "1":
 		set_gestes(true)
 	_refresh_kits()
@@ -342,18 +349,30 @@ func _process(delta: float) -> void:
 			actor.rotation.y += clampf(change, -7.2 * delta, 7.2 * delta)
 		var animation: AnimationPlayer = entry.animation
 		if animation:
-			# Hysteresis avoids changing support on every small speed fluctuation.
-			if moving or not live_cut:
-				entry.running = speed > (2.5 if entry.running else 3.3) if moving else false
 			var pose_moving := moving or live_cut
-			var clip: StringName = (entry.run if entry.running else entry.walk) if pose_moving else entry.idle
+			var clip: StringName
+			var stride := 4.0
+			if entry.adapted:
+				# Quatre paliers (marche, trot, course, sprint) au lieu de deux.
+				if moving or not live_cut:
+					entry.pace = _animations_adaptees.palier(speed, entry.pace) if moving else -1
+				var tier := maxi(int(entry.pace), 0)
+				entry.running = tier >= 2 and moving
+				clip = _animations_adaptees.clip(tier) if pose_moving else entry.idle
+				stride = _animations_adaptees.allure(tier)
+			else:
+				# Hysteresis avoids changing support on every small speed fluctuation.
+				if moving or not live_cut:
+					entry.running = speed > (2.5 if entry.running else 3.3) if moving else false
+				clip = (entry.run if entry.running else entry.walk) if pose_moving else entry.idle
+				stride = 1.6 if clip == entry.walk else 4.0
 			if not clip.is_empty() and animation.current_animation != clip:
 				animation.play(clip, 0.18)
 			# Frame-owned animation prevents an AnimationPlayer update from overwriting
 			# the hand contact after the pose solver has run.
 			animation.speed_scale = 1.0
 			# Advance by travelled distance; no minimum cadence while the root creeps.
-			var pose_delta := movement.length() / (1.6 if clip == entry.walk else 4.0) if pose_moving else delta
+			var pose_delta := movement.length() / stride if pose_moving else delta
 			animation.advance(0.0 if _paused else pose_delta)
 		if entry.rig and not _paused:
 			if staged:
@@ -641,6 +660,7 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	var idle := StringName()
 	var run := StringName()
 	var walk := StringName()
+	var adapted := false
 	if animation:
 		animation.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 		for clip: StringName in animation.get_animation_list():
@@ -653,13 +673,16 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 			if str(clip).ends_with("Man_Walk"):
 				walk = clip
 				animation.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+		if _animations_adaptees and _animations_adaptees.equiper(animation):
+			adapted = true
+			idle = _animations_adaptees.repos()
 		if not idle.is_empty():
 			animation.play(idle)
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
 		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_beat": -1.0, "cut_normal_speed": false, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
-		"animation": animation, "idle": idle, "run": run, "walk": walk, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
+		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
 
 
 func _model_bounds(node: Node3D, origin: Node3D) -> AABB:
