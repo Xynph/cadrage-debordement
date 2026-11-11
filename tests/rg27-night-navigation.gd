@@ -5,6 +5,8 @@ var nav: Node
 var checks := 0
 var failures: Array[String] = []
 var captures: Array[Dictionary] = []
+var visits: Array[Dictionary] = []
+var receipts: Array[Dictionary] = []
 var speech_requests := 0
 var speech_starts := 0
 var output := OS.get_environment("CD_NIGHT_NAV_OUTPUT")
@@ -38,12 +40,14 @@ func activate(control: Control) -> void:
 	check(control.focus_mode != Control.FOCUS_NONE and not (control is BaseButton and control.disabled), "Lien accessible au clavier : " + str(control.name))
 	control.grab_focus(); await settle()
 	check(control.has_focus(), "Focus visible prêt : " + str(control.name))
+	visits.append({"control":str(control.name), "kind":control.get_meta("entity_kind", ""), "id":control.get_meta("entity_id", ""), "activation":"Enter", "route_before":app.route})
 	await key(KEY_ENTER)
 func open_entity(kind: String, id: Variant, section: String = "") -> bool:
 	var target := {"kind":kind, "id":id}
 	if not section.is_empty(): target.section = section
 	var accepted: bool = nav.open_entity(target)
 	await settle()
+	visits.append({"target":target, "accepted":accepted, "route_after":app.route, "selected_player":app.selected_player})
 	return accepted
 func capture(id: String) -> void:
 	if DisplayServer.get_name() == "headless": return
@@ -56,13 +60,18 @@ func capture(id: String) -> void:
 func snapshot() -> Dictionary:
 	await command("export")
 	var file := str(app.model.meta.dataDir).path_join("donnees.json")
-	return {"file":file, "sha256":FileAccess.get_sha256(file), "state":JSON.parse_string(app.model.meta.exportText).state, "commands":app.bridge._next_id, "model":app.model.duplicate(true)}
+	var profile: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(file))
+	return {"file":file, "sha256":FileAccess.get_sha256(file), "state":JSON.parse_string(app.model.meta.exportText).state, "commands":app.bridge._next_id, "model":app.model.duplicate(true), "seed":profile.get("seed"), "clock":profile.get("clock")}
 func unchanged(before: Dictionary, context: String) -> void:
+	var requests: int = app.bridge._next_id - int(before.commands)
 	check(app.bridge._next_id == before.commands, context + " : aucune commande métier ou lecture worker déclenchée par les liens")
 	check(FileAccess.get_sha256(before.file) == before.sha256, context + " : mêmes octets de sauvegarde, seed et horloge persistés")
 	await command("export")
-	check(JSON.parse_string(app.model.meta.exportText).state == before.state, context + " : état sportif du vrai worker identique")
+	var after_state: Dictionary = JSON.parse_string(app.model.meta.exportText).state
+	check(after_state == before.state, context + " : état sportif du vrai worker identique")
 	check(FileAccess.get_sha256(before.file) == before.sha256, context + " : export de contrôle sans écriture")
+	var after_profile: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(before.file))
+	receipts.append({"context":context,"link_commands":requests,"profile_sha256_before":before.sha256,"profile_sha256_after":FileAccess.get_sha256(before.file),"state_unchanged":after_state == before.state,"saved_seed_before":before.seed,"saved_seed_after":after_profile.get("seed"),"saved_clock_before":before.clock,"saved_clock_after":after_profile.get("clock")})
 func text(node: Node) -> String:
 	if node == null: return ""
 	var value := str(node.text) + "\n" if node is Label or node is BaseButton else ""
@@ -278,7 +287,7 @@ func finish() -> void:
 		check(app.coach.speech.muted and not app.coach.speech.speaking and app.coach.speech.player == null, "Gabi silencieux, aucun lecteur audio")
 	check(speech_requests == 0 and speech_starts == 0, "Compteurs de parole : zéro demande et zéro début")
 	var report := FileAccess.open(output.path_join("report.json"), FileAccess.WRITE)
-	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"case":group,"display":DisplayServer.get_name(),"engine":Engine.get_version_info(),"captures":captures,"speech_requests":speech_requests,"speech_starts":speech_starts}, "  ")); report.close()
+	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"case":group,"display":DisplayServer.get_name(),"engine":Engine.get_version_info(),"captures":captures,"visits":visits,"receipts":receipts,"speech_requests":speech_requests,"speech_starts":speech_starts}, "  ")); report.close()
 	print("NAVIGATION NOCTURNE ", group, " : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	await app._close(0 if failures.is_empty() else 1)
 func run() -> void:
