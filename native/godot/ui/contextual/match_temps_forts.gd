@@ -600,7 +600,7 @@ func _habiller() -> void:
 	var attend_resultat: bool = plan.has("annonce") and (phase == "pret" or temps < RESULTAT)
 	view.events.text = str(plan.get("annonce" if attend_resultat else "texte", ""))
 	# Pistes du chorégraphe : jamais l'essai annoncé avant d'être aplati à l'écran.
-	if phase == "choregraphie" and not _aplati_montre: view.events.text = 
+	if phase == "choregraphie" and not _aplati_montre: view.events.text = ""
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
 
