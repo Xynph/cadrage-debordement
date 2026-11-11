@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "godot": {
+    "version": "4.7.2-stable",
+    "releaseApi": "https://api.github.com/repos/godotengine/godot-builds/releases/372477026",
+    "editor": {
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip",
+      "bytes": 86013866,
+      "sha256": "731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953",
+      "githubAssetId": 519678169,
+      "sha512": "83decd58fdf67b9d657958a1ae6bf1929c20785315a81effe245874cdc57acb709bf868e00778a96984338c1b29dafdb453c6847747694621c6ecf5da2259993"
+    },
+    "templates": {
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz",
+      "bytes": 1281349702,
+      "sha256": "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011",
+      "githubAssetId": 519674520,
+      "sha512": "ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079"
+    },
+    "checksumManifest": {
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/SHA512-SUMS.txt",
+      "sha256": "b8bdff6704f833e7a021df16ec08e1478edd5a285c1f894929b91a7f74a5c7c0",
+      "bytes": 5682,
+      "destination": "licenses/Godot-4.7.2-SHA512-SUMS.txt"
+    },
+    "notices": [
+      {
+        "url": "https://raw.githubusercontent.com/godotengine/godot/4.7.2-stable/LICENSE.txt",
+        "sha256": "b0435e3b3e4e55238f05f4b306f30524a1b2e20147810d436eaa554fa6855c80",
+        "bytes": 1149,
+        "destination": "licenses/Godot-4.7.2-LICENSE.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/godotengine/godot/4.7.2-stable/COPYRIGHT.txt",
+        "sha256": "cb1980c88089573bcacd7221d777c689bb8bbd778799f24c27fca0fe5f774d6d",
+        "bytes": 100108,
+        "destination": "licenses/Godot-4.7.2-COPYRIGHT.txt"
+      }
+    ]
+  },
+  "node": {
+    "version": "22.23.4",
+    "runtime": {
+      "url": "https://nodejs.org/dist/v22.23.4/win-x64/node.exe",
+      "bytes": 87034184,
+      "sha256": "dccc52de28d8df2ee22d2062424f8c563070d95d8ad70c54c4bf01d590dec14f"
+    },
+    "notices": [
+      {
+        "url": "https://nodejs.org/dist/v22.23.4/SHASUMS256.txt",
+        "sha256": "c90c3f1478fda8308b22cc1a1b0dc536169196444e67ee8b5c582fd351d02bce",
+        "bytes": 3981,
+        "destination": "licenses/Node-v22.23.4-SHASUMS256.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/nodejs/node/v22.23.4/LICENSE",
+        "sha256": "c738ae413cf561f174e34f6961f8ca458aae2369a73640dda6234c629b98bcc4",
+        "bytes": 145485,
+        "destination": "licenses/Node-v22.23.4-LICENSE.txt"
+      }
+    ]
+  },
+  "mesaQaOnly": {
+    "redistributeWithGame": false,
+    "version": "26.2.6",
+    "releaseApi": "https://api.github.com/repos/pal1000/mesa-dist-win/releases/432227053",
+    "sourceCommit": "5ef9c0333f0576cc88da648f23fbec78c2ad6388",
+    "archive": {
+      "url": "https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-msvc.7z",
+      "bytes": 55964101,
+      "sha256": "b2e00615feaba45942343c265cc8c5f576142ca682c1ac6661922d4b72492877",
+      "githubAssetId": 704037727
+    },
+    "architecture": "x64",
+    "environment": {
+      "GALLIUM_DRIVER": "llvmpipe"
+    },
+    "documentedDlls": [
+      "opengl32.dll",
+      "libgallium_wgl.dll"
+    ],
+    "notices": [
+      {
+        "url": "https://raw.githubusercontent.com/pal1000/mesa-dist-win/5ef9c0333f0576cc88da648f23fbec78c2ad6388/LICENSE",
+        "sha256": "9cd0121dc070f0ac65c1fc266bee74bdbbc22cea4210ae72ae0c1f076448d4cc",
+        "bytes": 1090,
+        "destination": "qa-notices/mesa-dist-win-LICENSE.txt"
+      }
+    ],
+    "documentation": {
+      "url": "https://raw.githubusercontent.com/pal1000/mesa-dist-win/5ef9c0333f0576cc88da648f23fbec78c2ad6388/readme.md",
+      "sha256": "b1958ec349e18a05ea3fb371ba5380a3b0b8c221805fb7f90c5769bcf0df38b2",
+      "bytes": 31837,
+      "destination": "qa-notices/mesa-dist-win-readme.md"
+    },
+    "qaOnly": true,
+    "componentNoticesRequired": [
+      "Mesa",
+      "LLVM"
+    ]
+  }
+}
