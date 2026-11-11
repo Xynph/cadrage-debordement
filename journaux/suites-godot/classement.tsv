@@ -1,0 +1,49 @@
+AIDE_NON_INSTALLEE	godot-art-direction07	0s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-competition-editor	64s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-epcr-preparation	0s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-guide-layout	1s	SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-stretch-JrpqRK/helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-immersive-reception	63s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-interface-layout	1s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-lineup-layout	0s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-native06-integration	15s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+AIDE_NON_INSTALLEE	godot-readability06	3s	SCRIPT ERROR: Parse Error: Preload file "res://helpers/contextual_flow.gd" does not exist.
+ASSERTION	deepen-youth-draft	27s	FAIL: Vrai worker : confirmation
+ASSERTION	deepen-youth-ui	51s	FAIL: Vrai worker : confirmation
+ASSERTION	godot-academy-portraits	17s	FAIL: Visage du vrai académicien dans Formation 1920
+ASSERTION	godot-club-memory	12s	FAIL: Archives absentes : état vide sans invention
+ASSERTION	godot-fatigue-overview	23s	FAIL: En-tête et panneau fixes pendant le défilement : FatigueScroll
+ASSERTION	godot-guide-integration	136s	FAIL: Commande réelle advance_day
+ASSERTION	godot-office-ui	14s	FAIL: Section carnet disponible : OfficeCarnet
+ASSERTION	godot-pack-ui	45s	FAIL: Reprise : repli annoncé au Bureau
+ASSERTION	godot-reception-decisions	11s	FAIL: La décision ouvre la conférence existante
+ASSERTION	godot-regen-portraits	3s	FAIL: Origine et limites affichées honnêtement
+ASSERTION	godot-review-regressions	153s	FAIL: Contract dialog fits client at (1440, 900)
+ASSERTION	godot-squad-column-sort	17s	FAIL: Numérique croissant, zéro connu, nul dernier et égalités ID : Potentiel
+ASSERTION	godot-youth-scout-ui	48s	FAIL: Vrai vivier adulte projeté, pagination exerçable
+ASSERTION	native-press-ui	12s	
+DELAI_MACHINE	deepen-analytics-real-ui	180s	
+DELAI_MACHINE	deepen-market-ui	156s	FAIL: contre-propositions affichées
+DELAI_MACHINE	deepen-match	180s	
+DELAI_MACHINE	deepen-staff-hire-ui	180s	
+DELAI_MACHINE	deepen-staff-real-ui	180s	
+DELAI_MACHINE	godot-art-direction	180s	
+DELAI_MACHINE	godot-contract-negotiation	180s	
+DELAI_MACHINE	godot-decision-feedback	114s	
+DELAI_MACHINE	godot-gestion-carnet	180s	
+DELAI_MACHINE	godot-guide	135s	FAIL: Commande native begin_match
+DELAI_MACHINE	godot-immersive08	180s	
+DELAI_MACHINE	godot-match-action-review	180s	
+DELAI_MACHINE	godot-recruitment-comparison	120s	SCRIPT ERROR: Invalid access to property or key 'state' on a base object of type 'HBoxContainer'.
+DELAI_MACHINE	godot-salary-preference-live	180s	
+DELAI_MACHINE	godot-staff-decisions	180s	
+DELAI_MACHINE	godot-three-rooms	180s	
+DELAI_MACHINE	native-academy-ui	180s	
+DELAI_MACHINE	native-club-support-ui	129s	SCRIPT ERROR: Invalid access to property or key 'pressed' on a base object of type 'null instance'.
+DELAI_MACHINE	native-relationships-ui	180s	
+ERREUR_SCRIPT	godot-career-final-fixes	48s	SCRIPT ERROR: Invalid assignment of property or key 'tab' with value of type 'String' on a base object of type 'Control (live_view.gd)'.
+ERREUR_SCRIPT	godot-carnet-ui	63s	FAIL: Vue dans la fenêtre Calendrier [P: (140.0, 83.0), S: (1116.0, 834.0)]
+ERREUR_SCRIPT	godot-immersion-copy	0s	not ok 1 - Historical messages preserve identities and saved text during immersive presentation
+ERREUR_SCRIPT	godot-match-journal	7s	SCRIPT ERROR: Invalid call. Nonexistent function 'find_children' in base 'Nil'.
+ERREUR_SCRIPT	godot-playbook-watch-ui	27s	SCRIPT ERROR: Invalid call. Nonexistent function 'find_child' in base 'Nil'.
+ERREUR_SCRIPT	godot-portrait-continuity	30s	SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.
+PLATEFORME_LINUX	godot-engine	59s	AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /SCRIPT ERROR|Parse Error|ERROR:/. Input:

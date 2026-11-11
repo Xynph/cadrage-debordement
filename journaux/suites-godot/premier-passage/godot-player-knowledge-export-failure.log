@@ -1,0 +1,23 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+CONNAISSANCE COMMANDE {"command":"snapshot","elapsed_ms":2739,"error":"","ok":true,"waiting":false,"worker_running":true}
+CONNAISSANCE COMMANDE {"command":"new_career","elapsed_ms":1751,"error":"","ok":true,"waiting":false,"worker_running":true}
+CONNAISSANCE COMMANDE {"command":"export","elapsed_ms":18,"error":"QA_EXPORT_REFUSED","ok":false,"waiting":false,"worker_running":true}
+FAIL: Vraie réponse moteur : QA_EXPORT_REFUSED
+Preuve refus export : /tmp/oval-knowledge-export-refusal-Y0ga7u · 14640 ms
+TAP version 13
+# Subtest: Un refus d’export termine le banc proprement sans accéder à un export absent
+ok 1 - Un refus d’export termine le banc proprement sans accéder à un export absent
+  ---
+  duration_ms: 14641.929555
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14648.412199

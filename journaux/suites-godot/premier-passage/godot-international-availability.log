@@ -1,0 +1,20 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+DISPONIBILITÉS INTERNATIONALES : 13 contrôles ; 0 échecs
+Preuves : /tmp/oval-international-availability-3cSzg8
+TAP version 13
+# Subtest: international availability: real routes, player identity, coverage and no career writes
+ok 1 - international availability: real routes, player identity, coverage and no career writes
+  ---
+  duration_ms: 14159.383941
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14165.582907

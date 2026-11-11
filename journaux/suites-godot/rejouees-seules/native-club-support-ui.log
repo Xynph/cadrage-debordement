@@ -1,0 +1,49 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Réunion réelle disponible
+Réunion verrouillée
+Commande réelle acceptée
+Commande réelle acceptée
+Briefing réel enregistré
+Commande réelle acceptée
+SCRIPT ERROR: Invalid access to property or key 'pressed' on a base object of type 'null instance'.
+          at: run (/tmp/cd-support-ui-LKYGsE/support-reception.gd:77)
+          GDScript backtrace (most recent call first):
+              [0] run (/tmp/cd-support-ui-LKYGsE/support-reception.gd:77)
+              [1] open_tab (/tmp/cd-support-ui-LKYGsE/support-reception.gd:30)
+              [2] settle (/tmp/cd-support-ui-LKYGsE/support-reception.gd:10)
+
+Preuves support /tmp/cd-support-ui-LKYGsE
+/home/claude/wt-543/tests/native-club-support-ui.cjs:99
+const r=spawnSync(godot,[...(process.env.CD_SUPPORT_GRAPHICS==='1'?[]:['--headless']),'--log-file',path.join(root,'godot-live.log'),'--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',script],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(root,'PrototypeGodot'),CD_SUPPORT_CAPTURES:root}});const log=(r.stdout||'')+(r.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);console.log(log);console.log('Preuves support '+root);if(r.error)throw r.error;assert.equal(r.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ^
+
+Error: spawnSync /home/claude/outils/Godot_v4.7.2-stable_linux.x86_64 ETIMEDOUT
+    at Object.spawnSync (node:internal/child_process:1120:20)
+    at spawnSync (node:child_process:902:24)
+    at Object.<anonymous> (/home/claude/wt-543/tests/native-club-support-ui.cjs:99:9)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  errno: -110,
+  code: 'ETIMEDOUT',
+  syscall: 'spawnSync /home/claude/outils/Godot_v4.7.2-stable_linux.x86_64',
+  path: '/home/claude/outils/Godot_v4.7.2-stable_linux.x86_64',
+  spawnargs: [
+    '--headless',
+    '--log-file',
+    '/tmp/cd-support-ui-LKYGsE/godot-live.log',
+    '--max-fps',
+    '120',
+    '--path',
+    '/home/claude/wt-543/native/godot',
+    '--script',
+    '/tmp/cd-support-ui-LKYGsE/support-reception.gd'
+  ]
+}
+
+Node.js v22.23.4

@@ -1,0 +1,28 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MATCH_CUT_CHECKS {"failures":[],"negative_lean":-0.194536164402962,"positive_lean":0.194895312190056,"slip_m":0.0000000300342506420748}
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MATCH_CUT_INTEGRATION {"directions":[1,-1],"failures":[]}
+TAP version 13
+# Subtest: Native match: mirrored cut preserves the root, ball anchor and grounded support
+ok 1 - Native match: mirrored cut preserves the root, ball anchor and grounded support
+  ---
+  duration_ms: 192.884453
+  type: 'test'
+  ...
+# Subtest: Native match: a carrying turn reaches the live view and clears on pause
+ok 2 - Native match: a carrying turn reaches the live view and clears on pause
+  ---
+  duration_ms: 454.59088
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 653.194608

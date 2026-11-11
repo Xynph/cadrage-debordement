@@ -1,0 +1,26 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+review.snapshot
+review.career
+review.open
+review.enabled
+review.prepared
+Bilan jeunes : 66 contrôles, 0 échecs
+
+Preuves : /tmp/cd-youth-review-a0Bpcg
+TAP version 13
+# Subtest: bilans et réorientation dans le vrai dialogue Godot
+ok 1 - bilans et réorientation dans le vrai dialogue Godot
+  ---
+  duration_ms: 19505.514297
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19515.987085

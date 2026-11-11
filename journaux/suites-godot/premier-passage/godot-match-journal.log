@@ -1,0 +1,47 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Journal : 2 contrôles ; 1 échec(s)
+SCRIPT ERROR: Invalid call. Nonexistent function 'find_children' in base 'Nil'.
+          at: button_text (/home/claude/wt-543/tests/godot-match-journal.gd:23)
+          GDScript backtrace (most recent call first):
+              [0] button_text (/home/claude/wt-543/tests/godot-match-journal.gd:23)
+              [1] run (/home/claude/wt-543/tests/godot-match-journal.gd:76)
+              [2] settle (/home/claude/wt-543/tests/godot-match-journal.gd:15)
+FAIL: Le match expose un onglet Journal complet
+
+Preuves journal : /tmp/cd-match-journal-iKgIq1
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Journal : 2 contrôles ; 1 échec(s)
+SCRIPT ERROR: Invalid call. Nonexistent function 'find_children' in base 'Nil'.
+          at: button_text (/home/claude/wt-543/tests/godot-match-journal.gd:23)
+          GDScript backtrace (most recent call first):
+              [0] button_text (/home/claude/wt-543/tests/godot-match-journal.gd:23)
+              [1] run (/home/claude/wt-543/tests/godot-match-journal.gd:76)
+              [2] settle (/home/claude/wt-543/tests/godot-match-journal.gd:15)
+FAIL: Le match expose un onglet Journal complet
+
+
+1 !== 0
+
+    at Object.<anonymous> (/home/claude/wt-543/tests/godot-match-journal.cjs:14:43)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

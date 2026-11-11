@@ -1,0 +1,71 @@
+MODE disk exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+COMMANDE REFUSÉE : new_career · Écriture de sauvegarde impossible : Fichier de sauvegarde ou de secours non ordinaire.
+{"checks":15,"error_messages":["Écriture de sauvegarde impossible : Fichier de sauvegarde ou de secours non ordinaire."],"errors":1,"failures":[],"mode":"disk","passed":true}
+MODE ui exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":63,"error_messages":[],"errors":0,"failures":[],"mode":"ui","passed":true}
+MODE limits exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":37,"error_messages":["Le fichier JSON est incomplet ou illisible.","Le fichier JSON est incomplet ou illisible.","Le fichier JSON est incomplet ou illisible."],"errors":3,"failures":[],"mode":"limits","passed":true}
+MODE null-response exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":18,"error_messages":["Message trop volumineux.","Le moteur est fermé."],"errors":2,"failures":[],"mode":"null-response","passed":true}
+MODE recovery exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":13,"error_messages":[],"errors":0,"failures":[],"mode":"recovery","passed":true}
+MODE decisions exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":52,"error_messages":["Ce fichier n’est pas un export Cadrage Débordement.","Le moteur est fermé."],"errors":2,"failures":[],"mode":"decisions","passed":true}
+MODE tactics exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":22,"error_messages":[],"errors":0,"failures":[],"mode":"tactics","passed":true}
+MODE bench exit=0
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":82,"error_messages":[],"errors":0,"failures":[],"mode":"bench","passed":true}
+MODE modal exit=1
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":85,"error_messages":[],"errors":0,"failures":["Contract dialog fits client at (1440, 900)"],"mode":"modal","passed":false}
+FAIL: Contract dialog fits client at (1440, 900)
+Profil de régression conservé : /tmp/cd-godot-review-modal-r4vYOQ
+MODE focus exit=1
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":34,"error_messages":[],"errors":0,"failures":["Squad/profile scrolls its offscreen focused action into view"],"mode":"focus","passed":false}
+FAIL: Squad/profile scrolls its offscreen focused action into view
+Profil de régression conservé : /tmp/cd-godot-review-focus-NQCw4N
+TAP version 13
+# Subtest: Régressions natives Godot : disque, UI, limites et transport
+not ok 1 - Régressions natives Godot : disque, UI, limites et transport
+  ---
+  duration_ms: 141716.328008
+  type: 'test'
+  location: '/home/claude/wt-543/tests/godot-review-regressions.cjs:5:1'
+  failureType: 'testCodeFailure'
+  error: 'Régression native Godot échouée'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/godot-review-regressions.cjs:21:17)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 141721.251833

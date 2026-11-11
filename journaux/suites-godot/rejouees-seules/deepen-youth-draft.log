@@ -1,0 +1,74 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Brouillon jeunes : 75 contrôles, 16 échecs
+FAIL: Vrai worker : confirmation
+FAIL: Commande clavier présente
+FAIL: Confirmation explicite du brouillon
+FAIL: Mise à l’écart réversible de la sauvegarde précédente
+FAIL: Commande clavier présente
+FAIL: Refus disque du vrai worker visible
+FAIL: Sauvegarde précédente restaurée
+FAIL: Commande clavier présente
+FAIL: Confirmation publique réellement ouverte
+FAIL: Nouvelle confirmation applique enfin le même brouillon
+FAIL: Vrai worker : begin_match
+FAIL: Vrai worker : delegate
+FAIL: Vrai worker : finish_round
+FAIL: Nouvelle semaine invalide le brouillon non confirmé
+FAIL: Changement de contexte expliqué au manager
+FAIL: Import même carrière/contexte efface le brouillon local
+
+Preuves brouillon jeunes : /tmp/cd-youth-draft-8qbSCR
+TAP version 13
+# Subtest: Brouillon jeunes : annulation, refus disque et validation réelle
+not ok 1 - Brouillon jeunes : annulation, refus disque et validation réelle
+  ---
+  duration_ms: 26846.615844
+  type: 'test'
+  location: '/home/claude/wt-543/tests/deepen-youth-draft.cjs:3:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    Brouillon jeunes : 75 contrôles, 16 échecs
+    FAIL: Vrai worker : confirmation
+    FAIL: Commande clavier présente
+    FAIL: Confirmation explicite du brouillon
+    FAIL: Mise à l’écart réversible de la sauvegarde précédente
+    FAIL: Commande clavier présente
+    FAIL: Refus disque du vrai worker visible
+    FAIL: Sauvegarde précédente restaurée
+    FAIL: Commande clavier présente
+    FAIL: Confirmation publique réellement ouverte
+    FAIL: Nouvelle confirmation applique enfin le même brouillon
+    FAIL: Vrai worker : begin_match
+    FAIL: Vrai worker : delegate
+    FAIL: Vrai worker : finish_round
+    FAIL: Nouvelle semaine invalide le brouillon non confirmé
+    FAIL: Changement de contexte expliqué au manager
+    FAIL: Import même carrière/contexte efface le brouillon local
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/deepen-youth-draft.cjs:6:187)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 26853.608285

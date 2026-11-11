@@ -1,0 +1,21 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Carnet06 headless : 27 contrôles ; 0 échec(s)
+
+Preuves carnet headless : /tmp/cd-coach-notes06-ui-PGFmK8
+TAP version 13
+# Subtest: Carnet du coach : notes natives et refus d’écriture
+ok 1 - Carnet du coach : notes natives et refus d’écriture
+  ---
+  duration_ms: 6835.838357
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6844.154536

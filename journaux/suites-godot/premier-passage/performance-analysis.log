@@ -1,0 +1,6 @@
+Analyses : fenêtre, orientation, couverture, pondération, départage, saison et immuabilité PASS.
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Analyses Godot : 24 contrôles, 0 échecs.
+
+Analyses : cinq rencontres vrai worker, scores/stats, reprise JSON et état/RNG/disque inchangés PASS.

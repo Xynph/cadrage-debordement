@@ -1,0 +1,4 @@
+Crochet en match : deux portages réels, scènes stables au rechargement, huit exclusions.
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+LIVE_CUT_GODOT {"failures":[],"measurements":[{"ball_gap_m":0.0,"lateral_lean":-0.264254629611969,"max_height_m":0.0450000315904617,"max_slip_m":0.0000000298023223876953,"minute":3.0,"planted_frames_120hz":9,"side":-1.0,"torso_angle_rad":0.276643544435501},{"ball_gap_m":0.0,"lateral_lean":0.266573190689087,"max_height_m":0.0450000315904617,"max_slip_m":0.00000095413986400672,"minute":4.0,"planted_frames_120hz":9,"side":1.0,"torso_angle_rad":0.276643544435501}]}

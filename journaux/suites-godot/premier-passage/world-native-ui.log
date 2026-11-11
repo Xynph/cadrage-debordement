@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Godot natif : création mondiale, packs par édition, calendrier, poules et retour France 30
+ok 1 - Godot natif : création mondiale, packs par édition, calendrier, poules et retour France 30 # SKIP SDK, projet et dossier de preuve isolés requis
+  ---
+  duration_ms: 0.569847
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 5.546398

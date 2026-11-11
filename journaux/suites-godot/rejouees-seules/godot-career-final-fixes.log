@@ -1,0 +1,107 @@
+Native fixture receipts: {"root":"/tmp/cd-godot-final-fixes-lr6R0A","halftime":42,"resumed":67,"extraStart":82,"extraSecond":93}
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{"checks":78,"failures":[],"passed":true}
+SCRIPT ERROR: Invalid assignment of property or key 'tab' with value of type 'String' on a base object of type 'Control (live_view.gd)'.
+          at: _bench (/home/claude/wt-543/tests/godot-career-final-fixes.gd:68)
+          GDScript backtrace (most recent call first):
+              [0] _bench (/home/claude/wt-543/tests/godot-career-final-fixes.gd:68)
+              [1] _command (/home/claude/wt-543/tests/godot-career-final-fixes.gd:30)
+              [2] _wait (/home/claude/wt-543/tests/godot-career-final-fixes.gd:25)
+TAP version 13
+# Subtest: Clearing two compatible selection slots removes both players and preserves all other assignments/export
+ok 1 - Clearing two compatible selection slots removes both players and preserves all other assignments/export
+  ---
+  duration_ms: 5668.264362
+  type: 'test'
+  ...
+# Subtest: A real eligible player still swaps into the previous compatible slot
+ok 2 - A real eligible player still swaps into the previous compatible slot
+  ---
+  duration_ms: 4503.878407
+  type: 'test'
+  ...
+# Subtest: Every substitution option carries its exact slot and native position, including vacancies
+ok 3 - Every substitution option carries its exact slot and native position, including vacancies
+  ---
+  duration_ms: 0.251776
+  type: 'test'
+  ...
+# Subtest: Vacant changes revalidate delay, slot bounds, identity, running/finished states and roll back refusals
+ok 4 - Vacant changes revalidate delay, slot bounds, identity, running/finished states and roll back refusals
+  ---
+  duration_ms: 11054.161238
+  type: 'test'
+  ...
+# Subtest: Post-red20 change targets the chosen vacancy; old non-null outId payload remains usable
+ok 5 - Post-red20 change targets the chosen vacancy; old non-null outId payload remains usable
+  ---
+  duration_ms: 4076.957307
+  type: 'test'
+  ...
+# Subtest: Disk refusal of a legal vacant change restores the match before retry
+ok 6 - Disk refusal of a legal vacant change restores the match before retry
+  ---
+  duration_ms: 2720.034723
+  type: 'test'
+  ...
+# Subtest: Projection distinguishes real halftime from historical marker, tactical pause and real extra-time transitions
+ok 7 - Projection distinguishes real halftime from historical marker, tactical pause and real extra-time transitions
+  ---
+  duration_ms: 52.249631
+  type: 'test'
+  ...
+# Subtest: Actual Godot bench, clock and venue views consume native fixture projections
+not ok 8 - Actual Godot bench, clock and venue views consume native fixture projections
+  ---
+  duration_ms: 8016.541109
+  type: 'test'
+  location: '/home/claude/wt-543/tests/godot-career-final-fixes.cjs:82:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /SCRIPT ERROR|Parse Error|ERROR:/. Input:
+    
+    'Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      '{"checks":78,"failures":[],"passed":true}\n' +
+      "SCRIPT ERROR: Invalid assignment of property or key 'tab' with value of type 'String' on a base object of type 'Control (live_view.gd)'.\n" +
+      '          at: _bench (/home/claude/wt-543/tests/godot-career-final-fixes.gd:68)\n' +
+      '          GDScript backtrace (most recent call first):\n' +
+      '              [0] _bench (/home/claude/wt-543/tests/godot-career-final-fixes.gd:68)\n' +
+      '              [1] _command (/home/claude/wt-543/tests/godot-career-final-fixes.gd:30)\n' +
+      '              [2] _wait (/home/claude/wt-543/tests/godot-career-final-fixes.gd:25)\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    {"checks":78,"failures":[],"passed":true}
+    SCRIPT ERROR: Invalid assignment of property or key 'tab' with value of type 'String' on a base object of type 'Control (live_view.gd)'.
+              at: _bench (/home/claude/wt-543/tests/godot-career-final-fixes.gd:68)
+              GDScript backtrace (most recent call first):
+                  [0] _bench (/home/claude/wt-543/tests/godot-career-final-fixes.gd:68)
+                  [1] _command (/home/claude/wt-543/tests/godot-career-final-fixes.gd:30)
+                  [2] _wait (/home/claude/wt-543/tests/godot-career-final-fixes.gd:25)
+    
+  operator: 'doesNotMatch'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/godot-career-final-fixes.cjs:84:202)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36102.094432

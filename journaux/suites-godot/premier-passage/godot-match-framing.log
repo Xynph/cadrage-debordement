@@ -1,0 +1,24 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+VIEWPORT (1280, 720) [P: (0.0, 0.0), S: (1280.0, 720.0)]
+VIEWPORT (1600, 900) [P: (0.0, 0.0), S: (1600.0, 900.0)]
+VIEWPORT (1920, 1080) [P: (0.0, 0.0), S: (1920.0, 1080.0)]
+MATCH_FRAMING_CHECKS {"failures":[],"projections":[{"body_height_px":{"action":89.5122985839844,"tactical":4.5799560546875,"tv":31.3345642089844},"viewport":"(1280, 720)"},{"body_height_px":{"action":111.890411376953,"tactical":5.72491455078125,"tv":39.1682434082031},"viewport":"(1600, 900)"},{"body_height_px":{"action":134.268463134766,"tactical":6.86993408203125,"tv":47.0018920898438},"viewport":"(1920, 1080)"}]}
+
+Proof: /tmp/cd-match-framing-2IYNhy
+TAP version 13
+# Subtest: Native match: follow framing, full tactical view and original contrasting kits
+ok 1 - Native match: follow framing, full tactical view and original contrasting kits
+  ---
+  duration_ms: 1943.234683
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1949.81027

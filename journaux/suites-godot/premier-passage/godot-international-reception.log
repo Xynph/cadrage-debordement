@@ -1,0 +1,20 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+RECETTE VISUELLE : 34 contrôles ; 0 échecs
+Preuves Réception internationale : /tmp/oval-international-ui-BRrJBo
+TAP version 13
+# Subtest: Sélections et Réception : filtres, pagination et courrier vers la bonne fiche hôte
+ok 1 - Sélections et Réception : filtres, pagination et courrier vers la bonne fiche hôte
+  ---
+  duration_ms: 16505.834406
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16512.061604

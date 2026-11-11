@@ -1,0 +1,31 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SEMANTIC_DATA_CHECKS {"checks":79643,"display":"headless","failures":[],"metrics":[{"grid_minimum":260.0,"grid_width":324.0,"office_width":324.0,"semantic_badges":150,"size":"(1280, 720)"},{"grid_minimum":260.0,"grid_width":324.0,"office_width":324.0,"semantic_badges":168,"size":"(1600, 900)"},{"grid_minimum":260.0,"grid_width":324.0,"office_width":324.0,"semantic_badges":168,"size":"(1920, 1080)"},{"grid_minimum":260.0,"grid_width":324.0,"office_width":324.0,"semantic_badges":168,"size":"(2560, 1440)"}]}
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SEMANTIC_APP_CHECKS {"checks":880,"display":"headless","failures":[],"metrics":[{"canvas":"(1280, 720)","club_id":0.0,"data_rows":14,"size":"(1280, 720)"},{"canvas":"(2560, 1440)","club_id":0.0,"data_rows":14,"size":"(2560, 1440)"}],"profile_files":{"donnees-precedentes.json":"1913848e1b97b006a6f9c2a90faeb8b08d26345797277d27ef7267b0b2e38c77","donnees.json":"0f96a27ee2e098eb529aa4926c74609eb99b0f1efc0e209b3d31e508e8f409df","guide.json":"908a274faec7983c2c587e37e65c379209138a3e36e2d25e5b72c1601839f02a"}}
+
+Preuves vraies pages : /tmp/cd-semantic-app-w7Ms4s
+TAP version 13
+# Subtest: Native UI: semantic standings retain public values, missing data and contrast
+ok 1 - Native UI: semantic standings retain public values, missing data and contrast
+  ---
+  duration_ms: 1518.590165
+  type: 'test'
+  ...
+# Subtest: Native UI: real Bureau and standings preserve career, RNG and disk at 720p/1440p
+ok 2 - Native UI: real Bureau and standings preserve career, RNG and disk at 720p/1440p
+  ---
+  duration_ms: 19764.127577
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21289.975975

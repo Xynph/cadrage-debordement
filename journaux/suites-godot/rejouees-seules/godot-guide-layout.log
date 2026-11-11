@@ -1,0 +1,164 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-stretch-JrpqRK/helpers/contextual_flow.gd" does not exist.
+          at: GDScript::reload (/tmp/cd-guide-layout-stretch-JrpqRK/harness.gd:2)
+ERROR: Failed to load script "/tmp/cd-guide-layout-stretch-JrpqRK/harness.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+Preuves layout : /tmp/cd-guide-layout-stretch-JrpqRK
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-native-RiH6wC/helpers/contextual_flow.gd" does not exist.
+          at: GDScript::reload (/tmp/cd-guide-layout-native-RiH6wC/harness.gd:2)
+ERROR: Failed to load script "/tmp/cd-guide-layout-native-RiH6wC/harness.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+Preuves layout : /tmp/cd-guide-layout-native-RiH6wC
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-stretch-JeOE8B/helpers/contextual_flow.gd" does not exist.
+          at: GDScript::reload (/tmp/cd-guide-layout-stretch-JeOE8B/harness.gd:2)
+ERROR: Failed to load script "/tmp/cd-guide-layout-stretch-JeOE8B/harness.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+Preuves layout : /tmp/cd-guide-layout-stretch-JeOE8B
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-native-UZQSUZ/helpers/contextual_flow.gd" does not exist.
+          at: GDScript::reload (/tmp/cd-guide-layout-native-UZQSUZ/harness.gd:2)
+ERROR: Failed to load script "/tmp/cd-guide-layout-native-UZQSUZ/harness.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+Preuves layout : /tmp/cd-guide-layout-native-UZQSUZ
+TAP version 13
+# Subtest: Gabi compact : layout / stretch
+not ok 1 - Gabi compact : layout / stretch
+  ---
+  duration_ms: 190.783786
+  type: 'test'
+  location: '/home/claude/wt-543/tests/godot-guide-layout.cjs:5:108'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-stretch-JrpqRK/helpers/contextual_flow.gd" does not exist.
+              at: GDScript::reload (/tmp/cd-guide-layout-stretch-JrpqRK/harness.gd:2)
+    ERROR: Failed to load script "/tmp/cd-guide-layout-stretch-JrpqRK/harness.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/godot-guide-layout.cjs:30:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Gabi compact : layout / native
+not ok 2 - Gabi compact : layout / native
+  ---
+  duration_ms: 186.144546
+  type: 'test'
+  location: '/home/claude/wt-543/tests/godot-guide-layout.cjs:5:108'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-native-RiH6wC/helpers/contextual_flow.gd" does not exist.
+              at: GDScript::reload (/tmp/cd-guide-layout-native-RiH6wC/harness.gd:2)
+    ERROR: Failed to load script "/tmp/cd-guide-layout-native-RiH6wC/harness.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/godot-guide-layout.cjs:30:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Gabi compact : dock / stretch
+not ok 3 - Gabi compact : dock / stretch
+  ---
+  duration_ms: 188.993537
+  type: 'test'
+  location: '/home/claude/wt-543/tests/godot-guide-layout.cjs:5:108'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-stretch-JeOE8B/helpers/contextual_flow.gd" does not exist.
+              at: GDScript::reload (/tmp/cd-guide-layout-stretch-JeOE8B/harness.gd:2)
+    ERROR: Failed to load script "/tmp/cd-guide-layout-stretch-JeOE8B/harness.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/godot-guide-layout.cjs:30:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Gabi compact : dock / native
+not ok 4 - Gabi compact : dock / native
+  ---
+  duration_ms: 184.771122
+  type: 'test'
+  location: '/home/claude/wt-543/tests/godot-guide-layout.cjs:5:108'
+  failureType: 'testCodeFailure'
+  error: |-
+    Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+    
+    SCRIPT ERROR: Parse Error: Preload file "/tmp/cd-guide-layout-native-UZQSUZ/helpers/contextual_flow.gd" does not exist.
+              at: GDScript::reload (/tmp/cd-guide-layout-native-UZQSUZ/harness.gd:2)
+    ERROR: Failed to load script "/tmp/cd-guide-layout-native-UZQSUZ/harness.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/claude/wt-543/tests/godot-guide-layout.cjs:30:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 757.712511

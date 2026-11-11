@@ -46,3 +46,15 @@ donne les mêmes pixels ; l'empreinte du fichier PNG peut différer, celle des
 pixels non.
 
 Les captures montrent la base du jeu (mode « common »), sans pack importé.
+
+## Suites Godot rejouées (ajout)
+
+`journaux/suites-godot/` : les 105 suites qui lisent `CD_GODOT_EXECUTABLE`,
+lancées une par une sur le même commit avec les budgets de la CI
+(`run-all-tests.sh`), puis les 49 qui ne passaient pas rejouées seules.
+`classement.tsv` donne la classe, la durée et le premier message de chacune ;
+`classer.sh` est la règle de classement. Colonnes de `resultats.tsv` :
+résultat, suite, secondes, code de sortie.
+
+Le premier passage a tourné pendant d'autres travaux sur la même machine ; le
+second, machine au repos, donne le même résultat pour les 49 suites.

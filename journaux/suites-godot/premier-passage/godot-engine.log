@@ -1,0 +1,25 @@
+{"passed":true,"checks":["bounded protocol","real native state/export/action parity","snapshot RNG invariance","normalized scene parity","delegated match parity","atomic persistence/restart","import rollback","real disk write refusal","profile lock","live paused import","closed commands"]}
+JSON-lines process: PASS
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+GODOT_TRANSPORT_PASS unterminated
+AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /SCRIPT ERROR|Parse Error|ERROR:/. Input:
+
+'ERROR: The process 6875 does not exist or is not a child of the calling process.\n' +
+  '   at: _check_pid_is_running (drivers/unix/os_unix.cpp:863)\n' +
+  '   GDScript backtrace (most recent call first):\n' +
+  '       [0] _process (res://test.gd:39)\n'
+
+    at godotTransportTest (/home/claude/wt-543/tests/godot-engine.cjs:211:110)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /home/claude/wt-543/tests/godot-engine.cjs:88:3 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'ERROR: The process 6875 does not exist or is not a child of the calling process.\n' +
+    '   at: _check_pid_is_running (drivers/unix/os_unix.cpp:863)\n' +
+    '   GDScript backtrace (most recent call first):\n' +
+    '       [0] _process (res://test.gd:39)\n',
+  expected: /SCRIPT ERROR|Parse Error|ERROR:/,
+  operator: 'doesNotMatch',
+  diff: 'simple'
+}

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: base réelle : suites exécutées, phases Godot absentes explicitement not_run
+ok 1 - base réelle : suites exécutées, phases Godot absentes explicitement not_run
+  ---
+  duration_ms: 2673.604434
+  type: 'test'
+  ...
+# Subtest: échec réel source et outil manquant : résultat global en échec sans faux reçu
+ok 2 - échec réel source et outil manquant : résultat global en échec sans faux reçu
+  ---
+  duration_ms: 1097.271608
+  type: 'test'
+  ...
+# Subtest: préflight : sortie existante, disque invalide, sous-dossier source et Godot implicite refusés
+ok 3 - préflight : sortie existante, disque invalide, sous-dossier source et Godot implicite refusés
+  ---
+  duration_ms: 260.133957
+  type: 'test'
+  ...
+# Subtest: candidat réellement altéré : inventaire valide, poses refusées, fichiers sources préservés
+ok 4 - candidat réellement altéré : inventaire valide, poses refusées, fichiers sources préservés
+  ---
+  duration_ms: 10933.62664
+  type: 'test'
+  ...
+# Subtest: reçu lecteur favorable : refuser un autre asset ou une empreinte absente
+ok 5 - reçu lecteur favorable : refuser un autre asset ou une empreinte absente
+  ---
+  duration_ms: 34.972791
+  type: 'test'
+  ...
+# Subtest: skin favorable partiel : couverture de clips et vertices obligatoire
+ok 6 - skin favorable partiel : couverture de clips et vertices obligatoire
+  ---
+  duration_ms: 36.091201
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15044.678394

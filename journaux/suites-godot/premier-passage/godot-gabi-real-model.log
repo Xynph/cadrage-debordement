@@ -1,0 +1,20 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+GABI MODÈLE RÉEL : 44 contrôles ; 0 échecs
+Preuves Gabi réel : /tmp/oval-gabi-real-0ONL3v
+TAP version 13
+# Subtest: Gabi livré : rig réel, six clips, F1, silence et mouvements réduits
+ok 1 - Gabi livré : rig réel, six clips, F1, silence et mouvements réduits
+  ---
+  duration_ms: 14566.56626
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14574.342928

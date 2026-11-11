@@ -1,0 +1,86 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Historique individuel Godot : 28 contrôles, 0 échecs.
+
+TAP version 13
+# Subtest: le registre individuel doit être disponible
+ok 1 - le registre individuel doit être disponible
+  ---
+  duration_ms: 0.808111
+  type: 'test'
+  ...
+# Subtest: ancienne carrière pure puis activation explicite verrouillée et stricte
+ok 2 - ancienne carrière pure puis activation explicite verrouillée et stricte
+  ---
+  duration_ms: 277.648757
+  type: 'test'
+  ...
+# Subtest: vrai match : minutes, acteurs et bilan sont mesurés, sans double capture
+ok 3 - vrai match : minutes, acteurs et bilan sont mesurés, sans double capture
+  ---
+  duration_ms: 254.770636
+  type: 'test'
+  ...
+# Subtest: minute absente, événement sans acteur et total incomplet restent inconnus
+ok 4 - minute absente, événement sans acteur et total incomplet restent inconnus
+  ---
+  duration_ms: 284.806798
+  type: 'test'
+  ...
+# Subtest: acteurs structurés et ratios utilisent les minutes connues, jamais le texte
+ok 5 - acteurs structurés et ratios utilisent les minutes connues, jamais le texte
+  ---
+  duration_ms: 278.482494
+  type: 'test'
+  ...
+# Subtest: cinq matchs, bornes, saisons et clubs restent distincts
+ok 6 - cinq matchs, bornes, saisons et clubs restent distincts
+  ---
+  duration_ms: 2440.930364
+  type: 'test'
+  ...
+# Subtest: import strict : temps, doublons, acteurs, minutes et champs inconnus refusés
+ok 7 - import strict : temps, doublons, acteurs, minutes et champs inconnus refusés
+  ---
+  duration_ms: 337.107113
+  type: 'test'
+  ...
+# Subtest: rétention bornée sur une fixture de feuille finale et zéro minute sans ratio
+ok 8 - rétention bornée sur une fixture de feuille finale et zéro minute sans ratio
+  ---
+  duration_ms: 278.412436
+  type: 'test'
+  ...
+# Subtest: activation consultative ne change ni jeu, croissance, économie ni hasard
+ok 9 - activation consultative ne change ni jeu, croissance, économie ni hasard
+  ---
+  duration_ms: 1510.848728
+  type: 'test'
+  ...
+# Subtest: import borné à 23 joueurs par équipe même si le total reste inférieur à 46
+ok 10 - import borné à 23 joueurs par équipe même si le total reste inférieur à 46
+  ---
+  duration_ms: 296.172862
+  type: 'test'
+  ...
+# Subtest: vrai worker : activation atomique, collecte, export/import et reprise disque
+ok 11 - vrai worker : activation atomique, collecte, export/import et reprise disque
+  ---
+  duration_ms: 25607.128562
+  type: 'test'
+  ...
+# Subtest: Monde : une vraie rencontre avec calendrier qualifié est capturée et reprise
+ok 12 - Monde : une vraie rencontre avec calendrier qualifié est capturée et reprise
+  ---
+  duration_ms: 29976.104689
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61870.151085
