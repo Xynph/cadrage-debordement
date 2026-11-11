@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import zipfile
 
@@ -133,6 +134,32 @@ def received_report(root, source_commit):
     return report, expected_zip
 
 
+def direct_receipt_assets(root, report):
+    """Expose the original full report and only its verified resume captures."""
+    root = Path(root).resolve()
+    files = evidence_files(root)
+    require_received_evidence(files)
+    module = verifier()
+    sources = [("windows-report.json", files["windows-report.json"], module.digest(files["windows-report.json"]))]
+    for index, row in enumerate(report["resume"]["graphics"]["captures"], 1):
+        path = Path(row["path"]).resolve()
+        selected = files.get("resume/captures/" + path.name)
+        require(selected is not None and selected.resolve() == path and module.digest(selected) == row["sha256"],
+                "Unselected, outside or changed received capture: " + str(path))
+        stem = re.sub(r"[^A-Za-z0-9._-]+", "-", path.stem).strip(".-_")[:80] or "capture"
+        sources.append((f"windows-resume-{index:02d}-{stem}.png", selected, row["sha256"]))
+    destination = root / "public-assets"
+    require(not destination.exists(), "Refuse existing direct receipt assets")
+    destination.mkdir()
+    assets = []
+    for name, source, expected_sha in sources:
+        target = destination / name
+        shutil.copyfile(source, target)
+        require(module.digest(target) == expected_sha, "Direct receipt asset bytes changed: " + name)
+        assets.append(target)
+    return assets
+
+
 def gh(*args):
     result = subprocess.run(["gh", *args], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8", timeout=600)
     return result.stdout.strip()
@@ -159,12 +186,16 @@ def publish(root, source_commit, repo, run_id, attempt, diagnostic=False):
     module = verifier()
     if package:
         metadata["package"] = {"name": package.name, "sha256": module.digest(package), "bytes": package.stat().st_size}
+    direct_assets = direct_receipt_assets(root, report) if report else []
+    if direct_assets:
+        metadata["receiptAssets"] = [{"name": path.name, "sha256": module.digest(path), "bytes": path.stat().st_size}
+                                    for path in direct_assets]
     bundle = root / f"{tag}-proofs.zip"
     files = create_bundle(root, bundle, metadata)
     metadata["proofBundle"] = {"name": bundle.name, "sha256": module.digest(bundle), "bytes": bundle.stat().st_size, "files": len(files)}
     metadata_path = root / "delivery.json"
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    assets = ([package] if package else []) + [bundle, metadata_path]
+    assets = ([package] if package else []) + [bundle, metadata_path] + direct_assets
     sums = root / "SHA256SUMS.txt"
     sums.write_text("".join(f"{module.digest(path)}  {path.name}\n" for path in assets), encoding="ascii")
     assets.append(sums)

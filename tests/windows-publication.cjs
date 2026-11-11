@@ -211,6 +211,58 @@ class Publication(unittest.TestCase):
   bundle=self.root/'matching-ack.zip';p.create_bundle(self.root,bundle,{'passed':True})
   with zipfile.ZipFile(bundle) as archive:
    self.assertEqual(json.loads(archive.read('resume/driver-ack.json')),ack)
+ def test_received_publication_uploads_original_report_and_verified_png_bytes_with_sums(self):
+  report=self.complete_evidence();module=p.verifier()
+  package=self.put('official-build/OvalLegacy27-PrototypeGodot-Windows-x64.zip','unit game ZIP')
+  report.update({'sourceTree':'b'*40,'package':{'path':str(package)}})
+  captures=[];originals={}
+  for index,name in enumerate(('01 Reception.png','01-Reception.png')):
+   capture=self.put('evidence/resume/'+name,'unit PNG bytes '+str(index))
+   captures.append({'path':str(capture),'sha256':module.digest(capture)})
+   originals['windows-resume-'+str(index+1).zfill(2)+'-01-Reception.png']=capture.read_bytes()
+  report['resume']['graphics']['captures']=captures
+  source_report=self.put('evidence/windows-report.json',json.dumps(report))
+  self.put('evidence/resume/report.json',json.dumps(report['resume']))
+  originals['windows-report.json']=source_report.read_bytes();uploaded={}
+  def github(*args):
+   if args[:2]==('release','upload'):
+    for argument in args[3:args.index('--repo')]:
+     asset=pathlib.Path(argument);uploaded[asset.name]=asset.read_bytes()
+   if args[:2]==('release','view'):
+    return json.dumps({'url':'https://github.com/unit/test/releases/draft','isDraft':True,'assets':[{'name':n} for n in uploaded]})
+   return ''
+  with patch.object(p.subprocess,'check_output',return_value=self.source),patch.object(p,'gh',side_effect=github),patch.object(module,'validate_windows_report'),patch.object(p,'verifier',return_value=module):
+   result=p.publish(self.root,self.source,'unit/test','456','1')
+  expected={'OvalLegacy27-PrototypeGodot-Windows-x64.zip','windows-received-aaaaaaaaaaaa-456-1-proofs.zip',
+   'delivery.json','SHA256SUMS.txt','windows-report.json','windows-resume-01-01-Reception.png','windows-resume-02-01-Reception.png'}
+  self.assertEqual(set(result['assets']),expected);self.assertEqual(set(uploaded),expected)
+  for name,content in originals.items():self.assertEqual(uploaded[name],content)
+  sums=dict(line.split('  ',1)[::-1] for line in uploaded['SHA256SUMS.txt'].decode('ascii').splitlines())
+  self.assertEqual(set(sums),expected-{'SHA256SUMS.txt'})
+  import hashlib
+  for name,sha in sums.items():self.assertEqual(hashlib.sha256(uploaded[name]).hexdigest(),sha)
+  direct={row['name']:row for row in json.loads(uploaded['delivery.json'])['receiptAssets']}
+  self.assertEqual(set(direct),set(originals))
+  for name,content in originals.items():
+   self.assertEqual(direct[name]['sha256'],hashlib.sha256(content).hexdigest())
+   self.assertEqual(direct[name]['bytes'],len(content))
+ def test_direct_assets_refuse_unselected_outside_or_changed_captures(self):
+  report=self.complete_evidence();module=p.verifier()
+  source=self.root/'evidence/resume/01-reception.png'
+  report['resume']['graphics']['captures'][0]['sha256']=module.digest(source)
+  outside=self.put('evidence/private-profiles/hidden.png','PRIVATE')
+  external_tmp=tempfile.TemporaryDirectory();self.addCleanup(external_tmp.cleanup)
+  external=pathlib.Path(external_tmp.name)/'hidden.png';external.write_bytes(b'PRIVATE EXTERNAL')
+  for name,path,sha in (('private profile',outside,module.digest(outside)),
+   ('outside root',external,module.digest(external)),
+   ('changed',source,'0'*64)):
+   with self.subTest(capture=name):
+    report['resume']['graphics']['captures']=[{'path':str(path),'sha256':sha}]
+    self.put('evidence/windows-report.json',json.dumps(report))
+    self.put('evidence/resume/report.json',json.dumps(report['resume']))
+    with self.assertRaisesRegex(ValueError,'capture'):
+     p.direct_receipt_assets(self.root,report)
+  self.assertFalse((self.root/'public-assets').exists())
 unittest.main()
 `;
  const r=spawnSync(process.env.PYTHON||(process.platform==='win32'?'python':'python3'),['-c',script],{cwd:path.resolve(__dirname,'..'),encoding:'utf8',timeout:30000});
