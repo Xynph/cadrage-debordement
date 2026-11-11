@@ -125,3 +125,13 @@ SPDX de Mesa au commit miroir `8e87a503ebd91408c88596d1b9eeb5f4c0b2088d`
 épinglé du distributeur confirme LLVM 23.1.4. Chaque origine, taille et empreinte
 est conservée ; ces textes ne sont pas présentés comme inclus dans l’archive.
 Le contrôle négatif de notices demeure actif. Ce premier run n’a pas testé le jeu.
+
+Le second essai [42982561270](https://github.com/Xynph/cadrage-debordement/actions/runs/42982561270)
+sur `a1444274aa793230ec4b32dbe60d5872f12cf5b1` a reçu ces notices, puis a correctement
+refusé la distribution MSVC sans `opengl32.dll`. L’avertissement du distributeur
+annonçait ce défaut. La préparation emploie désormais l’archive **MinGW x64**
+26.2.6, SHA256 `da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`.
+Son inventaire réel confirme `x64/opengl32.dll`, `x64/libgallium_wgl.dll` et le
+format PE x64 des DLL de ce dossier. Son propre buildinfo MinGW confirme encore
+LLVM 23.1.4. Le contrôle des DLL reste actif. Les deux premiers essais étaient des
+échecs de préparation, sans lancement du jeu et sans campagne globale JavaScript.

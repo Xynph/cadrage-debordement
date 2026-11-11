@@ -66,10 +66,10 @@
     "releaseApi": "https://api.github.com/repos/pal1000/mesa-dist-win/releases/432227053",
     "sourceCommit": "5ef9c0333f0576cc88da648f23fbec78c2ad6388",
     "archive": {
-      "url": "https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-msvc.7z",
-      "bytes": 55964101,
-      "sha256": "b2e00615feaba45942343c265cc8c5f576142ca682c1ac6661922d4b72492877",
-      "githubAssetId": 704037727
+      "url": "https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z",
+      "bytes": 55815794,
+      "sha256": "da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388",
+      "githubAssetId": 704037362
     },
     "architecture": "x64",
     "environment": {
@@ -160,9 +160,9 @@
         "sourceCommit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5"
       },
       {
-        "url": "https://raw.githubusercontent.com/pal1000/mesa-dist-win/5ef9c0333f0576cc88da648f23fbec78c2ad6388/buildinfo/msvc.txt",
-        "sha256": "29d4025954edebb28a56a26b2d41b32e98985bec86ae6f3951268f7a12dbdec1",
-        "bytes": 2349,
+        "url": "https://raw.githubusercontent.com/pal1000/mesa-dist-win/5ef9c0333f0576cc88da648f23fbec78c2ad6388/buildinfo/mingw.txt",
+        "sha256": "72fbc139a69b33d69be450aed138f14745ab5434ecc5db01e16a0d500eacd322",
+        "bytes": 7729,
         "destination": "qa-notices/mesa-dist-win-buildinfo.txt"
       }
     ],
@@ -177,6 +177,7 @@
       "Mesa",
       "LLVM"
     ],
-    "noticeOrigin": "Binary archive inspected: readme only. Mesa 26.2.6 notices from its immutable mirrored upstream tag, LLVM23.1.4 from official upstream tag; LLVM version declared by pinned MSVC build information."
+    "noticeOrigin": "Binary archive inspected: readme only. Mesa 26.2.6 notices from its immutable mirrored upstream tag, LLVM23.1.4 from official upstream tag; LLVM version declared by pinned MinGW x64 build information.",
+    "distribution": "MinGW x64; MSVC26.2.6 lacks the required OpenGL DLLs (upstream documented regression)"
   }
 }
