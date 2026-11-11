@@ -13,6 +13,7 @@ const required = [
   'godot-reader-history', 'godot-relationships-memory', 'godot-training-identity-links',
   'godot-navigation', 'godot-gestion-carnet', 'godot-staff-fictional-labels',
   'rg27-night-navigation', 'godot-world-entity-targets',
+  'godot-national-reading-links', 'godot-profile-reading', 'godot-observed-training-consequences',
 ].map(name => 'tests/' + name + '.cjs');
 
 test('SDK registry groups cover every declared wrapper exactly once', () => {
