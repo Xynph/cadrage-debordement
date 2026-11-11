@@ -1,0 +1,7 @@
+{
+  "files": {
+    "node-run.log": "63ae8d0ad4840f2ad049289c17888fad88d03590ae4de0b46296a67b5419fa38",
+    "public-worker-observations.json": "46a4e2dae2dc5ebcf79b4c1e25fe42b6d00be1c56f0c2a8730454964726f694e"
+  },
+  "scope": "Public owned-squad numeric observations, exact profile/seed/clock and command provenance. No full saved profile, raw game export, opponent ability or potential included."
+}
