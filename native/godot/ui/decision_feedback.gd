@@ -2,6 +2,7 @@ extends RefCounted
 ## UI de session : ni sauvegarde, ni calcul d'effet métier, ni copie du monde.
 const G = preload("res://ui/carnet_skin.gd")
 const EntityLink = preload("res://ui/entity_link.gd")
+const TRAINING_LABELS := {"repos":"Repos","normal":"Travail normal","intense":"Travail intense"}
 const LIMIT := 10
 const TITLES := {
 	"train":"Séance effectuée", "training_plan":"Plan de travail appliqué",
@@ -33,7 +34,9 @@ func begin(command: String, payload: Dictionary, model: Dictionary) -> void:
 		_pending = {"command":command}
 	elif TITLES.has(command):
 		_pending = {"command":command,"payload":payload.duplicate(true),"before":_metrics(model),"evidence":_evidence(command,payload,model),"detail":_detail(command,payload,model),"targets":_targets(command,payload,model)}
-		if command == "train": _pending.training = _training_snapshot(model)
+		if command == "train":
+			_pending.training = _training_snapshot(model)
+			_pending.training_request = _training_request(payload,model)
 
 func complete(command: String, ok: bool, model: Dictionary) -> void:
 	if command in ["new_career","import","recover_profile","restore_checkpoint"] and ok:
@@ -62,6 +65,10 @@ func complete(command: String, ok: bool, model: Dictionary) -> void:
 	else:
 		var evidence: Variant = _evidence(command,payload,model)
 		if evidence == null or evidence == pending.evidence: return
+	var training_result: Dictionary = {}
+	if command == "train":
+		training_result = _training_result(pending.get("training_request",{}),model)
+		detail = training_result.detail
 	var lines: Array[String] = []
 	if not detail.is_empty(): lines.append(detail)
 	for metric in ["cash","wage","morale"]:
@@ -69,6 +76,7 @@ func complete(command: String, ok: bool, model: Dictionary) -> void:
 		lines.append(_metric_line(metric,pending.before[metric],after[metric]))
 	var targets: Array = pending.get("targets",[])
 	if command == "train":
+		if not str(training_result.get("reason","")).is_empty(): lines.append("Compte rendu de la séance : " + training_result.reason)
 		var observed := _training_changes(pending.get("training",{}),model)
 		for line: String in observed.lines: lines.append(line)
 		for target: Dictionary in observed.targets: targets.append(target)
@@ -86,11 +94,10 @@ func _metrics(model: Dictionary) -> Dictionary:
 	var finance: Dictionary = model.get("finance",{})
 	return {"cash":finance.get("cash"),"wage":finance.get("wage"),"morale":model.get("meta",{}).get("morale")}
 
-func _training_snapshot(model: Dictionary) -> Dictionary:
+func _training_context(model: Dictionary) -> Dictionary:
 	var club: Variant = model.get("club")
 	var meta: Variant = model.get("meta")
-	var squad: Variant = model.get("squad")
-	if not club is Dictionary or not meta is Dictionary or not squad is Array: return {}
+	if not club is Dictionary or not meta is Dictionary: return {}
 	if club.get("id") == null or not meta.get("mode") is String or str(meta.mode).is_empty() or meta.get("season") == null or meta.get("week") == null: return {}
 	if not (club.id is int or club.id is float or club.id is String): return {}
 	if club.id is String and str(club.id).is_empty(): return {}
@@ -98,7 +105,55 @@ func _training_snapshot(model: Dictionary) -> Dictionary:
 	for value: Variant in [meta.season,meta.week]:
 		if not (value is int or value is float) or not is_finite(float(value)): return {}
 	if float(meta.season)<1 or float(meta.week)<0: return {}
-	var context := {"club":club.id,"mode":meta.mode,"season":meta.season,"week":meta.week}
+	return {"club":club.id,"mode":meta.mode,"season":meta.season,"week":meta.week}
+
+func _same_training_context(context: Dictionary, published: Variant) -> bool:
+	return not context.is_empty() and published is Dictionary and published.get("club")==context.club and published.get("season")==context.season and published.get("week")==context.week
+
+func _requested_training_mode(payload: Dictionary, model: Dictionary) -> String:
+	var mode: Variant = payload.get("mode",model.get("meta",{}).get("training"))
+	return str(mode) if mode is String and TRAINING_LABELS.has(mode) else ""
+
+func _training_requested_detail(mode: String) -> String:
+	return "Choix demandé : %s." % TRAINING_LABELS[mode] if TRAINING_LABELS.has(mode) else "Choix d’entraînement transmis."
+
+func _training_request(payload: Dictionary, model: Dictionary) -> Dictionary:
+	var context := _training_context(model)
+	var support := _support(model)
+	var training: Variant = support.get("training")
+	var session: Variant = training.get("session") if training is Dictionary else null
+	var trained: Variant = model.get("meta",{}).get("trained")
+	return {"requested":_requested_training_mode(payload,model),"context":context,
+		"eligible":trained is bool and trained==false and _same_training_context(context,support.get("context")) and session is Dictionary and session.get("status")=="pending"}
+
+func _training_result(request: Dictionary, model: Dictionary) -> Dictionary:
+	# The session publishes status/reason, not a mode or its own timestamp. The
+	# applied collective mode is the current meta.training, accepted only while
+	# the real pending→applied transition belongs to the exact captured context.
+	var requested := str(request.get("requested",""))
+	var result := {"detail":_training_requested_detail(requested),"reason":"","applied":""}
+	if not request.get("eligible",false): return result
+	var context := _training_context(model)
+	var support := _support(model)
+	var trained: Variant = model.get("meta",{}).get("trained")
+	if context.is_empty() or context!=request.get("context") or not trained is bool or trained!=true or not _same_training_context(context,support.get("context")): return result
+	var training: Variant = support.get("training")
+	var session: Variant = training.get("session") if training is Dictionary else null
+	var mode: Variant = model.get("meta",{}).get("training")
+	if not session is Dictionary or session.get("status")!="applied" or not mode is String or not TRAINING_LABELS.has(mode): return result
+	result.applied=mode
+	result.detail="Mode collectif appliqué : %s." % TRAINING_LABELS[mode]
+	if TRAINING_LABELS.has(requested) and requested!=mode: result.detail="Mode collectif appliqué : %s · choix demandé : %s." % [TRAINING_LABELS[mode],TRAINING_LABELS[requested]]
+	# This is a published quotation. Never parse it to infer a mode/threshold,
+	# rewrite it, or fabricate a reason from the players' condition.
+	var reason: Variant = session.get("reason")
+	if reason is String and not str(reason).strip_edges().is_empty(): result.reason=reason
+	return result
+
+func _training_snapshot(model: Dictionary) -> Dictionary:
+	var context := _training_context(model)
+	var squad: Variant = model.get("squad")
+	if context.is_empty() or not squad is Array: return {}
 	var counts: Dictionary = {}
 	for person: Variant in squad:
 		if person is Dictionary and person.get("id") is String and not str(person.id).is_empty(): counts[person.id]=int(counts.get(person.id,0))+1
@@ -255,7 +310,7 @@ func _label(options: Array, key: Variant) -> String:
 func _detail(command: String, payload: Dictionary, model: Dictionary) -> String:
 	var support := _support(model)
 	match command:
-		"train": return {"repos":"Repos","normal":"Travail normal","intense":"Travail intense"}.get(str(payload.get("mode","")),"")
+		"train": return _training_requested_detail(_requested_training_mode(payload,model))
 		"set_tactics": return _label(model.get("tactics",{}).get("attacks",[]),payload.get("attack")) + " / " + _label(model.get("tactics",{}).get("defenses",[]),payload.get("defense"))
 		"staff_meeting": return _label(support.get("meeting",{}).get("options",[]),payload.get("plan"))
 		"training_plan": return _label(support.get("training",{}).get("plans",[]),payload.get("plan"))
