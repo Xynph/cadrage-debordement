@@ -347,6 +347,8 @@ func prospects_cases() -> void:
 	check(not contracted.is_empty(), "Vrai joueur sous contrat disponible pour préparer un brouillon")
 	if market != null and not contracted.is_empty():
 		var candidate: Dictionary = contracted[0]
+		var interclub_search := market.find_child("InterclubSearch", true, false) as LineEdit
+		interclub_search.text = str(candidate.name); interclub_search.text_changed.emit(interclub_search.text); await settle()
 		var offer: Control
 		for button: Button in market.find_children("InterclubOffer", "Button", true, false):
 			if str(button.get_meta("player_id", "")) == str(candidate.id): offer = button; break
@@ -365,9 +367,17 @@ func prospects_cases() -> void:
 				await inspect_and_return(market, link, {"kind":"prospect", "source":"interclub", "id":str(candidate.id)}, "Marché entre clubs")
 				check(market.offer_fee == draft.fee and market.offer_salary == draft.salary and market.selected_person == draft.person and market.negotiation == draft.negotiation, "Retour interclubs : indemnité, salaire, joueur sélectionné et devis strictement conservés")
 				check(market.query == draft.query and market.page == draft.page and fee.value == draft.fee_input and salary.value == draft.salary_input, "Retour interclubs : recherche, page et champs exacts du brouillon conservés")
-				app.confirm("Confirmation de recette", "La consultation doit respecter cette confirmation visible.", func(): pass)
+				# Isolated UI guard: a real ConfirmationDialog component, with no
+				# command or transaction attached. app.confirm intentionally closes
+				# the parent catalogue and therefore is not this guard fixture.
+				var confirmation := ConfirmationDialog.new()
+				confirmation.name = "ProspectInspectionGuardConfirmation"
+				confirmation.title = "Confirmation de recette"
+				app._prepare_dialog(confirmation, 650)
+				market.add_child(confirmation); confirmation.popup_centered(Vector2i(650, 180))
 				await settle()
 				check(not nav.inspect_entity({"kind":"prospect","source":"interclub","id":str(candidate.id)}, market) and market.find_child("ProspectProfile", true, false) == null, "Confirmation de test visible : inspection refusée sans superposition")
+				confirmation.queue_free(); await settle()
 	app._clear_dialogs(); await settle()
 	await unchanged(before, "Consultation des prospects depuis leurs catalogues")
 func guard_cases() -> void:
