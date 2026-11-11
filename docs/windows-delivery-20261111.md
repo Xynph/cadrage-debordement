@@ -16,7 +16,10 @@ Release brouillon. La campagne globale JavaScript reste pilotée uniquement par
 1. `prepare-windows-toolchain.py` vérifie les tailles, SHA256, sommes officielles
    Godot/Node et notices des versions épinglées dans `windows-toolchain.json`.
    Aucun installateur ou cache partagé n'est employé. Mesa est réservé à la copie
-   de recette ; ses notices Mesa et LLVM doivent être réellement présentes.
+   de recette ; ses notices Mesa et LLVM doivent être réellement présentes. Le premier runner
+   Windows a confirmé que l’archive binaire ne les fournit pas : elles sont donc
+   téléchargées séparément, hachées et attribuées aux sources immuables Mesa 26.2.6
+   et LLVM 23.1.4 (version confirmée par les informations MSVC du distributeur).
 2. `build-godot-prototype.py` exporte avec le SDK officiel Godot 4.7.2 et Node
    22.23.4. Il refuse un checkout modifié ou un SHA différent. Le manifeste garde
    l'empreinte et la taille de chaque fichier, plus `sourceCommit` et `sourceTree`.
@@ -106,3 +109,19 @@ Le renommage #546 et le rendu Forward+ #545 restent séparés selon l'ordre conv
 Le retrait des identités réelles sera une autre PR après fusion : le jeu n'est pas
 déclaré déjà entièrement fictif. Le pack Rugby Réel du dépôt privé reste extérieur
 à cette livraison ; aucun fichier de ce pack n'est ajouté aux assets publics.
+
+## Premier essai Windows et reprise de la préparation
+
+Le run ciblé [42981272829](https://github.com/Xynph/cadrage-debordement/actions/runs/42981272829)
+sur `69de0f11cb134127006e59f41825cfaae9b85210` a reçu les distributions et leurs
+sommes, puis s’est arrêté avant construction sur les notices Mesa/LLVM absentes.
+L’inspection indépendante de l’archive officielle, dont le SHA256 est inchangé,
+a confirmé 31 entrées et un unique readme de 93 octets, sans licence de composant.
+
+La préparation reçoit maintenant séparément la page de licence et les six textes
+SPDX de Mesa au commit miroir `8e87a503ebd91408c88596d1b9eeb5f4c0b2088d`
+(tag upstream `mesa-26.2.6`), ainsi que la notice officielle LLVM du commit
+`7a941dfb2877a0b8cf30323fefa85ad019e0b0f5` (`llvmorg-23.1.4`). Le buildinfo MSVC
+épinglé du distributeur confirme LLVM 23.1.4. Chaque origine, taille et empreinte
+est conservée ; ces textes ne sont pas présentés comme inclus dans l’archive.
+Le contrôle négatif de notices demeure actif. Ce premier run n’a pas testé le jeu.

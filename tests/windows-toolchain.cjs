@@ -98,11 +98,12 @@ class Toolchain(unittest.TestCase):
   runtime=pin('node.exe',b'unit runtime fixture')
   def notice(label,data,destination):return {**pin(label,data),'destination':destination}
   config={'schemaVersion':1,'godot':{'version':'4.7.2-stable','editor':editor,'templates':templates,'checksumManifest':notice('sums.txt',official,'licenses/Godot-SUMS.txt'),'notices':[notice('godot-license',b'unit MIT notice','licenses/Godot-LICENSE.txt')]},'node':{'version':'22.23.4','runtime':runtime,'notices':[notice('node-license',b'unit Node notice','licenses/Node-v22.23.4-LICENSE.txt'),notice('node-sums',(runtime['sha256']+'  win-x64/node.exe\n').encode(),'licenses/Node-v22.23.4-SHASUMS256.txt')]},'mesaQaOnly':{'version':'26.2.6','archive':pin('mesa.7z',b'unit sevenzip transport fixture'),'notices':[],'documentation':notice('mesa-readme',b'unit readme','qa-notices/readme.md')}}
+  config['mesaQaOnly']['notices']=[notice('mesa-upstream-license',('Mesa Permission is hereby granted '+('license '*30)).encode(),'qa-notices/Mesa-LICENSE.txt'),notice('llvm-upstream-license',('LLVM Apache License with LLVM Exceptions '+('license '*30)).encode(),'qa-notices/LLVM-LICENSE.txt')]
   config_path=self.root/'config.json';config_path.write_text(json.dumps(config));tools=self.root/'tools'
   def extraction(archive,destination,executable):
    (destination/'x64').mkdir(parents=True)
    for name in ['opengl32.dll','libgallium_wgl.dll']:(destination/'x64'/name).write_bytes(b'unit DLL fixture')
-   (destination/'Mesa-COPYING.txt').write_text('Mesa Permission is hereby granted '+('license '*30));(destination/'LLVM-LICENSE.txt').write_text('LLVM Apache License with LLVM Exceptions '+('license '*30))
+   (destination/'readme.txt').write_text('Binary archive contains no component notices; fetch pinned upstream texts separately')
   with patch.object(p,'find_sevenzip',return_value=pathlib.Path(sys.executable)),patch.object(p,'extract_sevenzip',side_effect=extraction):
    report=p.prepare(tools,config_path,opener=lambda request,**kwargs:io.BytesIO(payloads[request.full_url]))
   self.assertEqual(report['sdkRoot'],str(tools/'sdk'));self.assertEqual(report['nodeExe'],str(tools/'runtime/node.exe'));self.assertEqual(report['nodeNotices'],str(tools/'sdk/licenses'));self.assertEqual(report['mesaRoot'],str(tools/'mesa'))

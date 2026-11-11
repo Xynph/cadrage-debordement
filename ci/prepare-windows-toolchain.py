@@ -203,16 +203,20 @@ def inspect_mesa_notices(root):
             if text.strip():
                 records.append(file_record(path, root))
                 texts.append(text.lower())
-    # A packager MIT alone does not cover Mesa/LLVM. Preserve the actual bundled
-    # component notices; never silently claim their inspection from filenames.
-    mesa = any("mesa" in text and "permission" in text and len(text) > 150 for text in texts)
+    # The pinned binary archive has only a readme. Genuine component texts are
+    # fetched separately from the corresponding immutable upstream snapshots.
+    # The packager MIT alone remains insufficient. Mesa's current licensing page
+    # points at its SPDX license directory instead of inlining the MIT text.
+    mesa = any("mesa" in text and "permission" in text and len(text) > 150 for text in texts) or (
+        any("core mesa library is licensed" in text and "mit" in text for text in texts) and
+        any("valid-license-identifier: mit" in text and "permission is hereby granted" in text for text in texts))
     llvm = any("llvm" in text and any(term in text for term in ("apache", "ncsa", "permission")) and len(text) > 150 for text in texts)
     if not mesa or not llvm:
-        raise ValueError("Mesa archive must include inspectable Mesa and LLVM component notices, not only the packager MIT")
+        raise ValueError("Mesa QA tools require inspectable Mesa and LLVM component notices, not only the packager MIT")
     return records
 
 
-def write_mesa_receipt(root, version, archive_pin):
+def write_mesa_receipt(root, version, archive_pin, notice_sources=None):
     root = Path(root)
     required = ["x64/opengl32.dll", "x64/libgallium_wgl.dll"]
     for relative in required:
@@ -227,6 +231,7 @@ def write_mesa_receipt(root, version, archive_pin):
     receipt = {"schemaVersion": 1, "version": version, "source": archive_pin,
                "qaOnly": True, "environment": {"GALLIUM_DRIVER": "llvmpipe"},
                "requiredDlls": required, "files": files, "licenses": licenses}
+    receipt["componentNoticeSources"] = notice_sources or []
     (root / "mesa-receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
     return receipt
 
@@ -291,7 +296,6 @@ def prepare(root, config_path, opener=urlopen):
     sevenzip = find_sevenzip()
     mesa_root = root / "mesa"
     extract_sevenzip(acquire("mesa-archive", mesa["archive"]), mesa_root, sevenzip)
-    inspect_mesa_notices(mesa_root)
     for index, spec in enumerate(mesa["notices"] + [mesa["documentation"]]):
         destination = relative_name(spec["destination"])
         if not destination.startswith("qa-notices/"):
@@ -301,7 +305,8 @@ def prepare(root, config_path, opener=urlopen):
         if target.exists():
             raise ValueError("Mesa notice destination already exists")
         shutil.copyfile(acquire("mesa-notice-" + str(index), spec), target)
-    mesa_receipt = write_mesa_receipt(mesa_root, mesa["version"], pins["mesa-archive"])
+    mesa_receipt = write_mesa_receipt(mesa_root, mesa["version"], pins["mesa-archive"],
+                                     [spec for spec in mesa["notices"] if spec.get("component")])
     receipt = {"schemaVersion": 1, "sdkRoot": str(sdk), "nodeExe": str(node_path), "nodeNotices": str(sdk / "licenses"), "mesaRoot": str(mesa_root),
                "configSha256": hashlib.sha256(config_bytes).hexdigest(), "pins": pins,
                "notices": [file_record(path, root) for directory in [sdk / "licenses", mesa_root / "qa-notices"] for path in sorted(directory.rglob("*")) if path.is_file()],

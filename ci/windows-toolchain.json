@@ -85,6 +85,85 @@
         "sha256": "9cd0121dc070f0ac65c1fc266bee74bdbbc22cea4210ae72ae0c1f076448d4cc",
         "bytes": 1090,
         "destination": "qa-notices/mesa-dist-win-LICENSE.txt"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/docs/license.rst",
+        "sha256": "0d1a0472ecc81830e75c20d59b0ea02841e3db21255e0ebad97ab682c54d6615",
+        "bytes": 1816,
+        "destination": "qa-notices/Mesa-LICENSE-PAGE.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d",
+        "upstream": "https://gitlab.freedesktop.org/mesa/mesa"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/licenses/Apache-2.0",
+        "sha256": "7e4d3fba250d15e9e0afa380d4b611828fa2560cc8fdebe95bcf2f01a487de12",
+        "bytes": 10045,
+        "destination": "qa-notices/Mesa-LICENSE-Apache-2.0.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/licenses/BSL-1.0",
+        "sha256": "9b9fea7520a816107fcac2598b7c0155222f16bc430e989706b22f4367f1df7d",
+        "bytes": 1649,
+        "destination": "qa-notices/Mesa-LICENSE-BSL-1.0.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/licenses/GPL-1.0-or-later",
+        "sha256": "8ff76f1528e6e4e9400c0f6b1f2d19d4979aaac3bcc44bb707a55389132825c4",
+        "bytes": 13047,
+        "destination": "qa-notices/Mesa-LICENSE-GPL-1.0-or-later.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/licenses/GPL-2.0-only",
+        "sha256": "6667ad4063569cd53b13500550d93fcd3dc11bcf82c5514296af013a0b720ba5",
+        "bytes": 18424,
+        "destination": "qa-notices/Mesa-LICENSE-GPL-2.0-only.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/licenses/MIT",
+        "sha256": "323c587d0ccf10e376f8bf9a7f31fb4ca6078105194b42e0b1e0ee2bc9bde71f",
+        "bytes": 1372,
+        "destination": "qa-notices/Mesa-LICENSE-MIT.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaotic-cx/mesa-mirror/8e87a503ebd91408c88596d1b9eeb5f4c0b2088d/licenses/SGI-B-2.0",
+        "sha256": "686bf035a1fd22076416fd3b90370ac67771e884bf57f55693d51f8ce7c710a7",
+        "bytes": 1822,
+        "destination": "qa-notices/Mesa-LICENSE-SGI-B-2.0.txt",
+        "component": "Mesa",
+        "version": "26.2.6",
+        "sourceCommit": "8e87a503ebd91408c88596d1b9eeb5f4c0b2088d"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/llvm/llvm-project/7a941dfb2877a0b8cf30323fefa85ad019e0b0f5/LICENSE.TXT",
+        "sha256": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "bytes": 15141,
+        "destination": "qa-notices/LLVM-LICENSE-23.1.4.txt",
+        "component": "LLVM",
+        "version": "23.1.4",
+        "sourceCommit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/pal1000/mesa-dist-win/5ef9c0333f0576cc88da648f23fbec78c2ad6388/buildinfo/msvc.txt",
+        "sha256": "29d4025954edebb28a56a26b2d41b32e98985bec86ae6f3951268f7a12dbdec1",
+        "bytes": 2349,
+        "destination": "qa-notices/mesa-dist-win-buildinfo.txt"
       }
     ],
     "documentation": {
@@ -97,6 +176,7 @@
     "componentNoticesRequired": [
       "Mesa",
       "LLVM"
-    ]
+    ],
+    "noticeOrigin": "Binary archive inspected: readme only. Mesa 26.2.6 notices from its immutable mirrored upstream tag, LLVM23.1.4 from official upstream tag; LLVM version declared by pinned MSVC build information."
   }
 }
