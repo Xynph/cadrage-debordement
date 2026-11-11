@@ -19,6 +19,19 @@ PROJECT = ROOT / "native/godot"
 BUILD_VERSION = "0.7.8"
 
 
+def source_provenance(expected_commit, root=ROOT):
+    if not isinstance(expected_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", expected_commit):
+        raise ValueError("--source-commit exige un SHA Git complet de 40 caractères")
+    def git(*arguments):
+        return subprocess.check_output(["git", *arguments], cwd=root, encoding="utf-8", timeout=10).strip()
+    commit, tree = git("rev-parse", "--verify", "HEAD"), git("rev-parse", "--verify", "HEAD^{tree}")
+    dirty = git("status", "--porcelain", "--untracked-files=no")
+    extra_inputs = git("ls-files", "--others", "--exclude-standard", "--", "native/godot", "native/engine", "dist")
+    if commit != expected_commit or not re.fullmatch(r"[0-9a-f]{40}", tree) or dirty or extra_inputs:
+        raise ValueError("Provenance refusée : SHA différent, arbre suivi modifié ou ressource distribuée non suivie")
+    return {"sourceCommit": commit, "sourceTree": tree}
+
+
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -82,14 +95,12 @@ def validate_voice_assets(project):
 
 
 def voice_notice(coverage):
-    plural = "s" if coverage["recorded"] != 1 else ""
-    notice = f"Voix de Gabi : {coverage['recorded']} réplique{plural} enregistrée{plural} et lue{plural} localement.\n"
+    notice = ("Gabi reste silencieux dans cet export : aucune lecture WAV ni synthèse TTS active.\n"
+              f"Ses {coverage['recorded']} enregistrements sont conservés comme ressources.\n")
     if coverage["pending"]:
         plural = "s" if coverage["pending"] != 1 else ""
         notice += f"{coverage['pending']} réplique{plural} en attente d'enregistrement.\n"
-    return (notice + "En cas d'enregistrement absent ou illisible, une voix système peut le remplacer\n"
-            "si elle est disponible. Le texte reste toujours affiché.\n"
-            "Crédits et licences des voix : Licences/voix-coach.\n")
+    return notice + "Crédits et licences des voix : Licences/voix-coach.\n"
 
 
 def stage(node):
@@ -122,7 +133,20 @@ def stage(node):
     print(f"Staging vérifié : registres anonymisés, {voice_coverage['recorded']}/{voice_coverage['total']} bulles enregistrées, {voice_coverage['pending']} en attente explicite ; 60 photos, 30 territoires, portraits et modèle CC0.", flush=True)
 
 
+def stage_windows_qa(project):
+    # The official release template ignores --script. Ship named QA main loops,
+    # dormant until an override.cfg is added to a verified, disposable QA copy.
+    if any(path.name.casefold() == "override.cfg" for path in project.rglob("*")):
+        raise ValueError("Un override.cfg de recette ne doit jamais être livré")
+    qa = project / "windows_qa"
+    qa.mkdir()
+    for name in ("windows-resume.gd", "windows-graphics-smoke.gd"):
+        shutil.copy2(ROOT / "ci" / name, qa / name)
+    (qa / "entry.tscn").write_text('[gd_scene format=3]\n[node name="WindowsReceiptEntry" type="Node"]\n', encoding="utf-8")
+
+
 def build(args):
+    provenance = source_provenance(args.source_commit)
     target = args.output.resolve()
     if target.exists():
         raise ValueError("Choisir un nouveau dossier de sortie : aucun écrasement autorisé")
@@ -137,6 +161,7 @@ def build(args):
     work = target / "build"
     source = work / "project"
     shutil.copytree(PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
+    stage_windows_qa(source)
     project_file = source / "project.godot"
     config, replacements = re.subn(r'^config/version="[^"]+"$', f'config/version="{BUILD_VERSION}"', project_file.read_text(encoding="utf-8"), flags=re.MULTILINE)
     assert replacements == 1, "Version du projet absente ou ambiguë"
@@ -354,15 +379,23 @@ def build(args):
         "engine/world-champ-extension.json et world-champ-staff-extension.json.\n"
         "Les images personnalisées sont fournies séparément dans les packs importés.\n",
         encoding="utf-8")
-    files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
-             for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": BUILD_VERSION, "name": "Oval Legacy 27", "edition": 27, "mode": "world-champ", "database": champ["id"], "clubs": 116, "players": champ_count, "compatibleEditions": [world["id"], pacific["id"], japan["id"], nationale["id"]], "files": files}, indent=2), encoding="utf-8")
+    if source_provenance(args.source_commit) != provenance:
+        raise ValueError("La provenance Git a changé pendant la construction")
+    write_build_manifest(app, provenance, champ["id"], champ_count, [world["id"], pacific["id"], japan["id"], nationale["id"]])
     archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):
             if path.is_file():
                 out.write(path, path.relative_to(target))
     print(json.dumps({"exe": str(executable), "zip": str(archive), "sha256": digest(archive)}, ensure_ascii=False), flush=True)
+
+
+def write_build_manifest(app, provenance, database, player_count, compatible_editions):
+    files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
+             for p in sorted(app.rglob("*")) if p.is_file() and p != app / "manifest-build.json"}
+    manifest = {**provenance, "prototype": True, "version": BUILD_VERSION, "name": "Oval Legacy 27", "edition": 27, "mode": "world-champ", "database": database, "clubs": 116, "players": player_count, "compatibleEditions": compatible_editions, "files": files}
+    (app / "manifest-build.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return manifest
 
 
 if __name__ == "__main__":
@@ -372,12 +405,13 @@ if __name__ == "__main__":
     p.add_argument("--stage-only", action="store_true")
     p.add_argument("--sdk", type=Path)
     p.add_argument("--output", type=Path)
+    p.add_argument("--source-commit", help="SHA complet du checkout propre à exporter (sans effet sur --stage-only)")
     options = p.parse_args()
     if not options.node.is_file():
         p.error("Runtime Node explicite introuvable")
     if options.stage_only:
         stage(options.node)
     else:
-        if not options.sdk or not options.output:
-            p.error("--sdk et --output sont requis pour exporter")
+        if not options.sdk or not options.output or not options.source_commit:
+            p.error("--sdk, --output et --source-commit sont requis pour exporter")
         build(options)

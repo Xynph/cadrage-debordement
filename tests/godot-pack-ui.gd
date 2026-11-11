@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 
 var app: Control
 var failures: Array[String] = []
@@ -53,6 +54,24 @@ func capture(label: String) -> void:
 	check(image.save_png(folder.path_join(label+".png")) == OK, "Capture graphique : " + label)
 	capture_index += 1
 
+func configure_resolution() -> void:
+	var requested := OS.get_environment("QA_RESOLUTION")
+	if requested.is_empty(): return
+	var dimensions := requested.to_lower().replace("×", "x").split("x")
+	var valid := dimensions.size() == 2 and dimensions[0].is_valid_int() and dimensions[1].is_valid_int() and int(dimensions[0]) > 0 and int(dimensions[1]) > 0
+	check(valid, "QA_RESOLUTION indique largeurxhauteur")
+	if not valid: return
+	var target := Vector2i(int(dimensions[0]), int(dimensions[1]))
+	# Keep the requested client area through each real application restart.
+	var maximize := Callable(app, "_keep_filled_display")
+	if root.size_changed.is_connected(maximize): root.size_changed.disconnect(maximize)
+	if root.focus_entered.is_connected(maximize): root.focus_entered.disconnect(maximize)
+	root.mode = Window.MODE_WINDOWED
+	root.size = target
+	await process_frame
+	check(root.size == target and app.size == Vector2(target), "Packs : vraie fenêtre et interface à " + str(target))
+	print("PACK_NATIVE_GEOMETRY ", JSON.stringify({"window":str(root.size), "canvas":str(app.size)}))
+
 func sports(state: Dictionary) -> String:
 	var copy := state.duplicate(true)
 	copy.erase("identityPack")
@@ -97,6 +116,7 @@ func integration() -> void:
 	await wait_response()
 	check(app.model.meta.database.active and int(app.model.club.id) == 23, "Vraie carrière commune créée depuis le bouton")
 	if not app._has_career(): return
+	if not await ContextualFlow.settle_club_meetings(app, self, check): return
 	check("30 CLUBS" in app.minibar.text and not "14 CLUBS" in app.minibar.text, "En-tête de carrière : trente clubs annoncés")
 	check(app.model.packs.career == pack_id, "Carrière hérite du pack choisi")
 	app._navigate("Effectif")
@@ -173,6 +193,7 @@ func start_app(profile: String) -> void:
 	OS.set_environment("CD_GODOT_DATA_DIR", profile)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	await configure_resolution()
 	app.pack_manager.creation_mode = "common"
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
@@ -211,6 +232,10 @@ func pack_edge_cases() -> void:
 	check(app.route == "Création" and not app.waiting, "Le pack déjà actif ouvre directement la création")
 	press("PRENDRE LES RÊNES DE REC  →")
 	await wait_response()
+	# Finish the actual mandatory opening appointments before freezing S/RNG.
+	# Reopening/importing this fixture must test pack fallback, with no pending
+	# club appointment legitimately locking navigation or pack selection.
+	if not await ContextualFlow.settle_club_meetings(app, self, check): return
 	app._command("export")
 	await wait_response()
 	var exported: String = app.model.meta.exportText
@@ -227,7 +252,8 @@ func pack_edge_cases() -> void:
 	check(button(app, "Nouvelle carrière") == null, "L’atelier de la carrière ouverte conserve ses propres actions")
 	press("← Retour")
 	press_entry("EntryResume")
-	check(app.route == "Bureau" and text_visible(app, "pack de carrière absent"), "Reprise : repli annoncé au Bureau")
+	check(app.route == "Réception", "Reprise : la vraie réception s’ouvre depuis l’accueil")
+	check(text_visible(app, "pack de carrière absent"), "Reprise : repli annoncé dans la réception")
 	check(app.model.packs.career == pack_id and app.model.packs.creation == pack_id, "Reprise : liaison et préférence absentes conservées")
 	for attempt in range(2):
 		app._command("snapshot")
@@ -265,7 +291,8 @@ func pack_edge_cases() -> void:
 	app.file_dialog.file_selected.emit(save_path)
 	press("CONFIRMER")
 	await wait_response()
-	check(app.route == "Bureau" and text_visible(app, "pack de carrière absent"), "Import sans pack : repli annoncé à réception")
+	check(app.route == "Réception", "Import sans pack : la vraie réception s’ouvre après confirmation")
+	check(text_visible(app, "pack de carrière absent"), "Import sans pack : repli annoncé dans la réception")
 	check(app.model.packs.career == pack_id, "Import sans pack : liaison conservée")
 	await capture("pack-manquant-import")
 	app._command("export")
@@ -295,6 +322,7 @@ func _run() -> void:
 		var width := int(OS.get_environment("CD_GODOT_PACK_QA_WIDTH"))
 		root.size = Vector2i(1920, 1080) if width == 1920 else Vector2i(1440, 900)
 	root.add_child(app)
+	await configure_resolution()
 	app.pack_manager.creation_mode = "common"
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
