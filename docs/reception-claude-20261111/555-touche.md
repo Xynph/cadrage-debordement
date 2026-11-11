@@ -1,4 +1,19 @@
-# Réception PR555 — candidat2f5d9ba reçu sur périmètre logique
+# Réception PR555 — candidatd93 reçu sur périmètre logique
+
+
+## Candidat courant d93 — 11 novembre, reprise14:49UTC
+
+SHA `d93c68b2a171f520e2053302430ea104732032b1`, comparé au reçu précédent `2f5d9ba57b3b98f4e99ca340393ad62aa91f0e62`. Description et commentaire de réception antérieure relus ; la description de PR n’a pas encore suivi tous les nouveaux changements, tandis que la documentation du candidat les décrit. Le nouveau patch de production est réel : ballon de touche sury0, extraction de `lineoutSpot`, anticipation des avants dans les scènes `touch`/`advantage` en lisant au plus les deux événements suivants. Le test partagé `match-actions` change son attente de ballony4 ày0 ; un nouveau test `lineout-approach` est ajouté. Aucune preuve80 antérieure transférée automatiquement.
+
+La copie jetable de main96 + patch555 courant porte le blob produit `20859e027a760ed71d508e6c918f74f147e0c378`, identique au candidat. Nouvelle sonde indépendante : **80/80 matchs PASS**,15 140 ticks,2 690 scènes modifiées :1 332`touch`,1 332`lineout`,26`advantage`. Les seuls écarts admis sont les coordonnées de touche et les x/y des avants lors de l’approche ; les arrières des scènes d’approche, toutes les métadonnées et les autres scènes restent identiques. État carrière complet en SHA256 et prochain tirage RNG identiques, y compris effectifs/charges physiques/salaires/finances/journal.
+
+Suites courantes sur ce code : `lineout-side` PASS186 scènes ; `lineout-geometry` PASS310 scènes dont274 réelles/31 près des en-buts ; `lineout-approach` PASS187 scènes d’approche,5 via avantage,336 sans touche à suivre,2 969 avants vérifiés,29,3m de trajet maximal restant ; `match-actions`, `match2d`, `match3d-adapter` rc0. Aucun SDK/Godot lancé.
+
+Le nouveau test d’approche confirme la subdivision spatiale, pas une vitesse physique : les transitions par défaut restent0,55s et le candidat reconnaît encore des courses trop rapides. Les coordonnées2D du ballon ne prouvent pas sa prise en main3D. Le reçu graphique/cumul554 doit donc rester distinct. Le mapping CI side+geometry proposé précédemment doit désormais envisager `lineout-approach` pour les futurs changements de `dist/match2d.js`.
+
+**Verdict courant : reçu sur le périmètre logique et spatial uniquement ; réception graphique/cumul554 non acquise.** Head d93 confirmé inchangé à14:58UTC.
+
+## Historique des réceptions précédentes
 
 Candidat géométrique `66f391fccaef008ba7adfd0d60972686ee9478a5`, base main `96f537040bf9f2e37bf10b0a9b09518b732244a2`. La réception antérieure de `d05b5f752db3cebfb098c01b4b0d7dcf1743bf8f` reste une preuve historique limitée à ce SHA. Le nouveau head contient le commit produit `35b8751d` et un commit documentaire66f : il ne faut donc pas transférer automatiquement les 80 matchs précédents au nouveau code. Description actualisée et commentaires relus (aucun commentaire).
 
@@ -77,4 +92,30 @@ const sa=a.run('JSON.stringify(S,(k,v)=>k==="visualSource"?undefined:v)'),sb=b.r
 if(matches%20===0)console.log(JSON.stringify({matches,scenes,changed}));
 }
 console.log(JSON.stringify({passed:true,matches,scenes,changed,assertions:'full career state SHA256 and next RNG equal; scene changes restricted to lineout ball/origin x and player x/y; all metadata preserved'}));
+```
+
+## Sonde reproductible du candidat d93
+
+```js
+'use strict';
+const assert=require('node:assert/strict'),crypto=require('node:crypto');
+const [before,after]=process.argv.slice(2);const A=require(before+'/tests/harness.cjs'),B=require(after+'/tests/harness.cjs');
+const hash=x=>crypto.createHash('sha256').update(x).digest('hex');let scenes=0,changed=0,matches=0;const changedKinds={};
+for(let seed=1;seed<=20;seed++)for(const club of [0,3,7,11]){
+const a=A.context(),b=B.context();for(const h of [a,b])h.run(`(function(){let s=${seed}*7919+13;Math.random=()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296}})();start(${club});S.tactic='conquete';beginMatch();continueMatch();`);
+for(let tick=0;tick<4000&&!a.run('S.live.finished');tick++){
+for(const h of [a,b])h.run('if(S.live.paused)continueMatch();presentationTick(S.live);');
+const x=JSON.parse(a.run('JSON.stringify(matchScene(S.live))')),y=JSON.parse(b.run('JSON.stringify(matchScene(S.live))'));scenes++;
+if(JSON.stringify(x)!==JSON.stringify(y)){
+assert.ok(['lineout','touch','advantage'].includes(x.kind));changed++;changedKinds[x.kind]=(changedKinds[x.kind]||0)+1;if(x.kind==='lineout'){x.ball.x=y.ball.x;x.ball.y=y.ball.y;x.origin.x=y.origin.x;}
+for(let i=0;i<x.players.length;i++){const p=x.players[i],q=y.players[i];if(x.kind==='lineout'||p.slot<8){p.x=q.x;p.y=q.y;}}
+assert.deepEqual(x,y);
+}
+}
+assert.equal(a.run('S.live.finished'),true);assert.equal(b.run('S.live.finished'),true);
+// Full career state includes the roster, salaries, physical loads, finances and match log.
+const sa=a.run('JSON.stringify(S,(k,v)=>k==="visualSource"?undefined:v)'),sb=b.run('JSON.stringify(S,(k,v)=>k==="visualSource"?undefined:v)');assert.equal(hash(sa),hash(sb));assert.equal(a.run('Math.random()'),b.run('Math.random()'));matches++;
+if(matches%20===0)console.log(JSON.stringify({matches,scenes,changed}));
+}
+console.log(JSON.stringify({passed:true,matches,scenes,changed,changedKinds,assertions:'full career state SHA256 and next RNG equal; scene changes restricted to lineout coordinates and touch/advantage forwards x/y; all metadata preserved'}));
 ```

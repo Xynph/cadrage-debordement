@@ -5,3 +5,7 @@ Ordre de réception demandé : PR555 touche, branche `claude/packs-hors-rendez-v
 Contrôles GitHub à 13:42 puis 13:45, 13:48 puis 13:50 et 13:58 UTC : aucune PR ouverte sur les deux branches attendues. `git ls-remote --heads` à 13:45 UTC ne renvoie aucune des deux branches. **En attente**, aucun verdict technique anticipé. Les réceptions555 et553 sont disponibles séparément ; cette absence de candidat ne constitue ni refus ni réception.
 
 Calendrier : le changement de dates/migration de sauvegarde est accepté explicitement par Léo. À réception, contrôler l’idempotence, la conservation des parties et sauvegardes, les copies de sécurité et les dates effectivement générées ; ne pas opposer un refus de principe à la migration. Les sujets demeurent réservés au producteur : lecture/tests isolés, pas de correction produit par le récepteur.
+
+## Mise à jour14:58UTC
+
+La branche packs a maintenant une PR :558, candidat `dd094c17c0b36480742b8f15b26f463fbb45e456`, reçue séparément dans `558-packs-rendez-vous.md`. Le head555 est devenu `d93c68b2a171f520e2053302430ea104732032b1`, nouveau rejeu80 indépendant et suites d’approche dans `555-touche.md`. La branche calendrier demeure sans candidat reçu ; root reprend sa surveillance après cette passation.
