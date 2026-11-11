@@ -96,19 +96,66 @@ function club(joueurs, division, politique) {
   return resultat;
 }
 
-function apply(state, forces) {
-  if (!state || state.startingSalaries !== undefined) return state;
-  if (!(state.season === 1 && state.round === 0 && !state.live)) throw Error('Salaires de départ : réservé à la création.');
-  const politique = politiques(forces), division = new Map(forces.map(force => [force.id, force.division]));
+// Les championnats hors des deux de référence gardent la même règle (courbe, poste, politique,
+// âge, histoire, espoirs), puis leurs salaires sont mis à l'échelle pour que la masse moyenne
+// de leurs clubs rejoigne celle du championnat (economie = native/engine/league-economy.cjs).
+const PLANCHER_MONDE = 8000;
+const categorie = (division, economie) => economie?.CHAMPIONNATS?.[division]?.espoir ?? division;
+const hebdo = (annuel, facteur) => Math.max(10, Math.round(Math.max(facteur === 1 ? 0 : PLANCHER_MONDE, annuel * facteur) / 52 / 10) * 10);
+
+function brut(state, forces, economie) {
+  const politique = politiques(forces), division = new Map(forces.map(force => [force.id, force.division])), parClub = new Map();
   for (const equipe of state.clubs) {
     const p = politique.get(equipe.id);
-    if (!p) continue;
-    const salaires = club(equipe.players ?? [], division.get(equipe.id), p);
-    // Le moteur compte les salaires à la semaine : l'année est répartie sur 52 semaines.
-    for (const joueur of equipe.players ?? []) joueur.salary = Math.max(10, Math.round(salaires.get(joueur.id).annuel / 52 / 10) * 10);
+    if (p) parClub.set(equipe.id, club(equipe.players ?? [], categorie(division.get(equipe.id), economie), p));
   }
-  state.startingSalaries = { version: VERSION, semaines: 52 };
+  return { parClub, division };
+}
+
+function apply(state, forces, economie = null) {
+  if (!state || state.startingSalaries !== undefined) return state;
+  if (!(state.season === 1 && state.round === 0 && !state.live)) throw Error('Salaires de départ : réservé à la création.');
+  const { parClub, division } = brut(state, forces, economie), calage = {};
+  if (economie) {
+    for (const [nom, regle] of Object.entries(economie.CHAMPIONNATS)) {
+      if (economie.REFERENCES.includes(nom)) continue;
+      const masses = [...parClub].filter(([id]) => division.get(id) === nom).map(([, salaires]) => [...salaires.values()].reduce((somme, x) => somme + x.annuel, 0));
+      if (masses.length) calage[nom] = Math.round(regle.masse / (masses.reduce((somme, x) => somme + x, 0) / masses.length) * 1000) / 1000;
+    }
+  }
+  for (const equipe of state.clubs) {
+    const salaires = parClub.get(equipe.id);
+    if (!salaires) continue;
+    const facteur = calage[division.get(equipe.id)] ?? 1;
+    // Le moteur compte les salaires à la semaine : l'année est répartie sur 52 semaines.
+    for (const joueur of equipe.players ?? []) joueur.salary = hebdo(salaires.get(joueur.id).annuel, facteur);
+  }
+  state.startingSalaries = { version: VERSION, semaines: 52, ...(Object.keys(calage).length ? { calage } : {}) };
   return state;
 }
 
-module.exports = Object.freeze({ VERSION, REFERENCE, POSTE, NOYAU, AGE_ESPOIR, reference, facteurAge, politiques, detail, espoir, club, apply });
+const facteurDe = (state, division) => { const f = state.startingSalaries?.calage?.[division]; return Number.isFinite(f) && f > 0 && f < 20 ? f : 1; };
+
+// Intersaison : les clubs gérés par le jeu remettent leurs contrats au niveau du marché.
+// Sans cela, leurs prolongations et leurs recrues reviennent à l'ancien barème, cinq à dix fois plus cher.
+function recaler(state, forces, economie = null, saufClub = null) {
+  if (!state || state.startingSalaries === undefined) return state;
+  const { parClub, division } = brut(state, forces, economie);
+  for (const equipe of state.clubs) {
+    const salaires = parClub.get(equipe.id);
+    if (!salaires || equipe.id === saufClub) continue;
+    const facteur = facteurDe(state, division.get(equipe.id));
+    for (const joueur of equipe.players ?? []) joueur.salary = hebdo(salaires.get(joueur.id).annuel, facteur);
+  }
+  return state;
+}
+
+// Salaire hebdomadaire qu'un joueur demande au club donné, selon la même règle que les salaires de départ.
+function demande(state, forces, clubId, joueur, economie = null) {
+  const equipe = state.clubs.find(c => c.id === clubId), force = forces.find(f => f.id === clubId), politique = politiques(forces).get(clubId);
+  if (!equipe || !force || !politique) throw Error('Demande salariale : club inconnu.');
+  const autres = (equipe.players ?? []).filter(x => x.id !== joueur.id);
+  return hebdo(club([...autres, joueur], categorie(force.division, economie), politique).get(joueur.id).annuel, facteurDe(state, force.division));
+}
+
+module.exports = Object.freeze({ VERSION, REFERENCE, POSTE, NOYAU, AGE_ESPOIR, reference, facteurAge, politiques, detail, espoir, club, apply, recaler, demande });

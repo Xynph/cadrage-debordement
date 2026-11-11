@@ -319,7 +319,7 @@ function createBridge(options={}){
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
      }
      // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande, y compris la première après une reprise.
-     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
+     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativeCommand=command;
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
@@ -462,7 +462,7 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
-      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1'){ctx.nativeStartingSalaries=require('./starting-salaries.cjs');run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})));");delete ctx.nativeStartingSalaries;run("if(budgetActif())budgetOuvrir(true);");}
+      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})),nativeLeagueEconomy);else if(budgetMonde())nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy);if(budgetActif())budgetOuvrir(true);");
       run('autoLineup();');
       delete ctx.nativeCreationVariation;
      }

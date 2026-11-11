@@ -83,3 +83,32 @@ test('Vrai moteur, drapeau allumé : budget réaliste pour tous les clubs, sauve
  assert.ok(Math.abs(elite.reduce((s,d)=>s+d,0)/14)<150000,'élite, variation moyenne sur une semaine : '+elite.reduce((s,d)=>s+d,0)/14);
  assert.ok(Math.abs(accession.reduce((s,d)=>s+d,0)/15)<60000,'accession, variation moyenne sur une semaine : '+accession.reduce((s,d)=>s+d,0)/15);
 });
+// Carrière mondiale la plus large : tous les championnats de la base.
+const sondeMonde=`const {createBridge}=require('./native/engine/worker.cjs');const {settleClubMeetings}=require('./tests/helpers/club-meetings.cjs');const fs=require('fs'),os=require('os'),path=require('path');
+const b=createBridge({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'rl27-monde-')),seed:27,now:1794178800000});let n=0;
+const good=(c,p={})=>{const r=b.handle({id:++n,command:c,payload:p});if(!r.ok)throw Error(c+' : '+r.error);return r.model;},etat=()=>JSON.parse(good('export').meta.exportText).state;
+let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:30}),good);const S=etat();
+const de=new Map();for(const [l,v] of Object.entries(S.worldMode.leagues))for(const id of v.members)de.set(id,l);
+const masses={};for(const c of S.clubs){const l=de.get(c.id)||'guest';(masses[l]=masses[l]||[]).push(c.players.reduce((s,p)=>s+p.salary,0)*52);}
+settleClubMeetings(good('finish_round'),good);const S1=etat(),texte=good('export').meta.exportText;good('import',{text:texte});const reimport=good('export').meta.exportText===texte;b.close();
+console.log(JSON.stringify({marque:S.startingSalaries??null,masses:Object.fromEntries(Object.entries(masses).map(([l,v])=>[l,v.reduce((s,x)=>s+x,0)/v.length])),budget:S.clubBudget?{version:S.clubBudget.version,clubs:S.clubBudget.clubs.length,divisions:[...new Set(S.clubBudget.clubs.map(c=>c.division))].sort(),prevision:S.clubBudget.prevision}:null,
+ annonce:S.news.some(x=>/comblera|adhérents/.test(x)),titres:[...new Set(S1.ledger.filter(l=>l.title.includes(' · ')).map(l=>l.title.split(' · ').pop()))].sort(),reimport,deltas:S1.clubs.map((k,i)=>k.cash-S.clubs[i].cash),ligues:S.clubs.map(c=>de.get(c.id)||'guest')}));`;
+function creerMonde(drapeau){
+ const r=spawnSync(process.execPath,['-e',sondeMonde],{cwd:path.resolve(__dirname,'..'),encoding:'utf8',timeout:600000,env:{...process.env,CD_SALAIRES_PAR_NIVEAU:drapeau}});
+ assert.equal(r.status,0,r.stderr.slice(-800));return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+test('Vrai moteur, carrière mondiale, drapeau éteint : ni marque ni budget, ancien calcul',()=>{
+ const x=creerMonde('0');assert.equal(x.marque,null);assert.equal(x.budget,null);assert.equal(x.annonce,false);assert.ok(x.reimport);
+ assert.ok(x.titres.includes('Salaires')&&!x.titres.includes('Cotisations'));assert.ok(x.masses.champ>5e6,'masses de l’ancien barème');
+});
+test('Vrai moteur, carrière mondiale, drapeau allumé : chaque championnat à son niveau, budget pour les 116 clubs',()=>{
+ const x=creerMonde('1'),E=require('../native/engine/league-economy.cjs').CHAMPIONNATS;
+ assert.equal(x.marque.version,3);assert.deepEqual(Object.keys(x.marque.calage).sort(),['champ','guest','jlo-d1','jlo-d2','nationale','prem','srp','urc']);
+ for(const [nom,c] of Object.entries(E))assert.ok(Math.abs(x.masses[nom]-c.masse)/c.masse<0.1,nom+' : masse moyenne '+Math.round(x.masses[nom])+' pour '+c.masse);
+ assert.ok(x.masses.elite>x.masses.prem&&x.masses.prem>x.masses.urc&&x.masses.nationale>x.masses.champ);
+ assert.equal(x.budget.clubs,116);assert.deepEqual(x.budget.divisions,Object.keys(E).sort());assert.equal(x.annonce,true);
+ assert.equal(x.budget.prevision.plafondSalarial,7.5e6,'le plafond du championnat anglais s’applique à un club anglais');assert.equal(x.budget.prevision.limiteRecettes,null,'la règle des 52 % ne vaut qu’en France');
+ for(const t of ['Abonnements','Cotisations','Staff et fonctionnement'])assert.ok(x.titres.includes(t),t);assert.ok(x.reimport,'export puis import : texte identique');
+ // Une semaine : aucun club ne gagne ou ne perd plus de 4 % des recettes moyennes de son championnat.
+ x.deltas.forEach((d,i)=>assert.ok(Math.abs(d)<E[x.ligues[i]].recettes*0.04,'club '+i+' ('+x.ligues[i]+') : '+d));
+});

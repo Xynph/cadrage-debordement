@@ -235,23 +235,216 @@ le moteur natif n'expose aucune commande de vente à un autre club.
   2,5 M€ d'intersaison (`dist/economy.js`, lignes 472 à 597).
 - Phases finales : mesurées une fois (Toulouse). Le barrage d'accession et
   une finale sur terrain neutre ne sont couverts que par les tests du module.
-- Non mesuré : prolongations, offres d'un club pour attirer un joueur,
-  carrières internationales (le budget ne s'applique qu'au mode France).
+- Les carrières mondiales sont traitées plus bas (« Tous les championnats
+  de la base »).
+
+## Tous les championnats de la base
+
+Demande de Léo du 11 novembre : étendre salaires et budget à toute la base,
+avec une réputation par championnat. Même drapeau, éteint par défaut.
+
+### Inventaire et chemins de code
+
+La carrière mondiale la plus large (`world-champ`) compte 116 clubs : 14 en
+première division française, 16 en deuxième, 14 en troisième, 10 en première
+division anglaise, 14 en deuxième, 16 dans le championnat celte, italien et
+sud-africain, 10 dans le championnat du Pacifique, 12 et 8 dans les deux
+divisions japonaises, 2 clubs invités.
+
+| Sujet | Chemin aujourd'hui, sans la variable |
+| --- | --- |
+| Salaires de départ | Écrits dans les registres (`native/engine/world-*.json`), sans lien avec le championnat : 8,9 M€ de masse moyenne en deuxième division anglaise, 4,6 M€ en troisième division française |
+| Finances du club joué | `financeWeek` (`dist/game.js`), appelé par `native/engine/world-career.cjs`, ligne 369 : même calcul qu'en France |
+| Finances des autres clubs | `worldWeeklyEconomy` (`dist/world-career.js`, ligne 87) : 160 000 € par semaine pour tous |
+| Intersaison | 2,5 M€ aux clubs gérés avant les prolongations (`dist/world-career.js`, ligne 150), 2,5 M€ au club joué (`native/engine/world-career.cjs`, ligne 385) |
+
+### Repères réels
+
+| Championnat | Repère trouvé | Source |
+| --- | --- | --- |
+| Première division française | Plafond 10,7 M€ ; masse moyenne 9,9 M€, recettes 33 M€ ; budgets de 17 à 46 M€ | Rapport 2026 sur l'économie des clubs ; [RugbyPass, 26 décembre 2024](https://rugbypass.com/news/every-country-in-the-world-where-you-can-be-paid-to-play-rugby-2) |
+| Deuxième division française | Masse moyenne 3,2 M€, recettes 10,7 M€ ; salaire moyen de 75 000 à 85 000 € ; quatre budgets au-dessus de 13 M€ | Rapport 2026 ; RugbyPass, même article |
+| Troisième division française | 2 000 à 10 000 € par mois pour un joueur médian. Ni masse ni budget moyen trouvés | RugbyPass, même article |
+| Première division anglaise | Plafond 6,4 M£, soit un peu moins de 7,5 M€ ; perte moyenne de 3,4 M£ par club en 2023-2024 ; chiffre d'affaires « type » de 20 M£ | [The42, 17 avril 2025](https://www.the42.ie/urc-salary-cap-6681136-Apr2025/) ; [Planet Rugby, 31 mai 2024](https://www.planetrugby.com/news/how-premiership-clubs-compare-to-south-africas-joke-spending-power) ; [Leonard Curtis, 12 novembre 2025](https://www.leonardcurtis.co.uk/news/leonard-curtis-shines-fresh-light-on-prem-rugby-club-finances-in-new-report) |
+| Deuxième division anglaise | Salaire moyen 25 000 £, jusqu'à 70 000 £ ; 133 000 £ de la fédération par club. Aucun budget de club trouvé | RugbyPass, même article ; [RugbyPass, 20 septembre 2024](https://rugbypass.com/news/english-rugby-a-million-miles-away-from-fixing-championship-crisis-paul-turner) |
+| Championnat celte, italien et sud-africain | Pas de plafond ; budget de 20 M€ pour la première province irlandaise (2022) ; budgets joueurs gallois de 5 M€ ; plafond sud-africain de 85 M de rands, soit 3,5 M£ | The42 ; RugbyPass ; Planet Rugby |
+| Championnat du Pacifique | Plafond néo-zélandais de 4,7 M de dollars par club (environ 2,6 M€) ; salaire de base moyen 195 000 dollars (environ 107 000 €) ; recettes des franchises non publiées | [SA Rugby magazine, 13 août 2026](https://www.sarugbymag.co.za/kiwi-super-rugby-clubs-bleed-cash/) |
+| Japon | Un salaire de vedette proche de 1 M€. **Aucun chiffre de masse, de budget ou de salaire moyen trouvé** | RugbyPass, même article |
+
+### La table : `native/engine/league-economy.cjs`
+
+| Championnat | Réputation | Masse moyenne | Recettes moyennes | Plafond | Nature du chiffre |
+| --- | --- | --- | --- | --- | --- |
+| Première division française | 100 | 9,9 M€ | 33 M€ | 10,7 M€ | Relevé |
+| Première division anglaise | 88 | 6,9 M€ | 23 M€ | 7,5 M€ | Plafond relevé ; masse et recettes estimées |
+| Celte, italien et sud-africain | 84 | 5,4 M€ | 18 M€ | aucun | Estimation à partir de trois repères |
+| Pacifique | 82 | 2,3 M€ | 7,6 M€ | 2,6 M€ | Plafond et salaire moyen relevés ; recettes estimées |
+| Première division japonaise | 76 | 6,0 M€ | 20 M€ | aucun | **Estimation** |
+| Deuxième division française | 70 | 3,2 M€ | 10,7 M€ | aucun | Relevé |
+| Clubs invités | 70 | 4,0 M€ | 13 M€ | aucun | **Estimation** |
+| Deuxième division japonaise | 52 | 2,0 M€ | 6,6 M€ | aucun | **Estimation** |
+| Troisième division française | 50 | 1,4 M€ | 4,6 M€ | aucun | Estimation à partir de la fourchette de salaires |
+| Deuxième division anglaise | 48 | 1,1 M€ | 3,6 M€ | aucun | Salaire moyen relevé ; recettes estimées |
+
+La réputation est un choix de jeu : la première division française est la
+référence. Les recettes estimées sont posées à 3,3 fois la masse, comme en
+France, pour qu'un club moyen reste près de l'équilibre. La répartition des
+recettes de chaque championnat (partenaires, ligue ou fédération,
+billetterie) est estimée hors de France. La règle des 52 % ne s'applique
+qu'aux trois divisions françaises.
+
+### Salaires
+
+La règle de la version 3 s'applique partout (courbe, poste, politique du
+club, âge, histoire, espoirs). Hors des deux premières divisions françaises,
+les salaires sont ensuite multipliés par un facteur propre au championnat,
+calculé à la création pour que la masse moyenne rejoigne la table. Le facteur
+est gardé dans la marque (`S.startingSalaries.calage`).
+
+Mesure, carrière `world-champ`, graine 27, par l'API publique :
+
+| Championnat | Avant : masse moyenne | Après : min / moyenne / max | Cible | Salaire moyen des 34 mieux payés du club | Facteur |
+| --- | --- | --- | --- | --- | --- |
+| Première division française | 18,4 M€ | 7,95 / 9,74 / 12,97 | 9,9 | 248 000 € | 1 |
+| Première division anglaise | 16,2 M€ | 4,86 / 6,90 / 8,97 | 6,9 | 150 000 € | 1,077 |
+| Celte, italien et sud-africain | 16,6 M€ | 3,28 / 5,40 / 7,31 | 5,4 | 128 000 € | 0,957 |
+| Pacifique | 11,7 M€ | 1,51 / 2,30 / 3,46 | 2,3 | 65 000 € | 0,524 |
+| Première division japonaise | 12,2 M€ | 3,72 / 6,00 / 9,04 | 6,0 | 149 000 € | 0,894 |
+| Deuxième division française | 16,1 M€ | 2,63 / 3,42 / 5,15 | 3,2 | 89 000 € | 1 |
+| Clubs invités | 13,6 M€ | 2,66 / 4,00 / 5,33 | 4,0 | 105 000 € | 0,899 |
+| Deuxième division japonaise | 7,1 M€ | 1,49 / 2,00 / 3,05 | 2,0 | 48 000 € | 0,675 |
+| Troisième division française | 4,6 M€ | 0,91 / 1,40 / 1,98 | 1,4 | 37 000 € | 0,678 |
+| Deuxième division anglaise | 8,9 M€ | 0,80 / 1,11 / 1,51 | 1,1 | 28 000 € | 0,382 |
+
+Face aux repères : 28 000 € en deuxième division anglaise pour 25 000 £
+relevés (29 000 €) ; 65 000 € dans le Pacifique pour un salaire de base moyen
+de 107 000 € (le jeu compte 40 joueurs par franchise, le chiffre réel en
+compte moins et la fédération paie en plus) ; 37 000 € en troisième division
+française pour une fourchette de 24 000 à 120 000 € par an.
+
+### Budget
+
+Le budget de club (recettes, charges, propriétaire, prime de classement,
+clôture) s'applique aux 116 clubs avec les chiffres de leur championnat. Une
+saison mondiale dure 46 semaines : chaque semaine paie 52/46 de salaire. Un
+match de poule européenne à domicile rapporte une recette ordinaire en plus ;
+un match éliminatoire, 1,5 fois une recette complète.
+
+Une saison mondiale complète puis `next_season`, manager dans un club de
+première division anglaise (club 30, propriétaire entreprise, enveloppe
+1,55 M€), graine 27. Trésorerie des autres clubs en M€, min / médiane / max :
+
+| Championnat | Départ | Mi-saison (semaine 23) | Fin (semaine 46) | Après l'intersaison |
+| --- | --- | --- | --- | --- |
+| Première division française | 2,50 / 4,80 / 7,50 | 0,83 / 5,22 / 8,71 | 1,66 / 5,09 / 9,02 | 3,62 / 6,07 / 9,09 |
+| Deuxième division française | 2,00 / 2,70 / 3,60 | 1,09 / 2,48 / 3,95 | 0,37 / 1,95 / 3,18 | 1,67 / 2,67 / 5,67 |
+| Troisième division française | 2,60 partout | 2,42 / 2,61 / 2,66 | 2,09 / 2,52 / 2,61 | 2,30 / 2,60 / 3,35 |
+| Première division anglaise | 4,00 partout | 4,16 / 4,54 / 5,66 | 2,52 / 3,82 / 7,96 | 3,88 / 4,15 / 9,07 |
+| Deuxième division anglaise | 3,60 partout | 3,42 / 3,60 / 3,69 | 3,12 / 3,49 / 3,68 | 3,43 / 3,59 / 3,75 |
+| Celte, italien et sud-africain | 4,00 partout | 2,92 / 3,76 / 4,31 | 1,27 / 3,01 / 5,64 | 2,67 / 4,55 / 7,34 |
+| Pacifique | 4,00 partout | 2,51 / 3,12 / 3,31 | 2,81 / 3,44 / 3,73 | 3,13 / 4,04 / 4,39 |
+| Première division japonaise | 4,20 partout | 2,32 / 3,64 / 3,93 | 2,31 / 3,99 / 4,74 | 3,66 / 4,21 / 4,53 |
+| Deuxième division japonaise | 3,40 partout | 3,04 / 3,25 / 3,38 | 2,80 / 3,34 / 3,71 | 3,24 / 3,38 / 4,25 |
+| Clubs invités | 4,00 partout | 2,02 / 3,16 | −0,36 / 1,99 | 2,77 / 3,43 |
+
+Club joué : 4,00 M€ au départ, 5,15 à mi-saison, 4,71 à la fin, 5,72 après
+l'intersaison (7e sur 10, prime de 1,01 M€, saison dans le vert de 1,73 M€,
+aucun apport). Aucun club endetté ; un club invité finit sous zéro avant la
+clôture. Export puis réimport après l'intersaison : accepté, texte identique.
+
+Masses après l'intersaison (clubs gérés remis au niveau de la règle) : de
+−5 % (première division japonaise) à +28 % (deuxième division anglaise,
+1,41 M€ pour 1,1) par rapport à la cible ; +21 % dans le Pacifique. Cause
+probable, non vérifiée : les joueurs ajoutés à l'intersaison et la
+progression des notes. Un club relégué garde ses salaires de première
+division (10,2 M€ en deuxième division française).
+
+### Réputation dans les choix des joueurs
+
+Le jeu décide qu'un joueur signe quand le salaire offert atteint son seuil :
+`reservationWage` (`dist/economy.js`, ligne 424), soit 86 à 93 % du salaire
+demandé (`askingWage`, ligne 388). Pour les carrières marquées, le salaire
+demandé au club joué est recalculé :
+
+- prolongation : la base n'est plus l'ancien barème (`dist/economy.js`,
+  ligne 346, environ 383 000 € par an pour un joueur noté 75) mais le salaire
+  de la version 3 pour ce joueur dans ce club ;
+- recrue : même salaire de la version 3, multiplié par l'attrait du
+  championnat.
+
+| Cas | Effet sur le salaire demandé |
+| --- | --- |
+| Vers un championnat plus réputé | Jusqu'à −8 % |
+| Vers un championnat moins réputé | Jusqu'à +18 % |
+| Joueur « casanier » (un sur quatre) qui change de pays | +8 % |
+| Joueur « voyageur » (15 %) qui change de pays | −4 % |
+| Joueur « ambitieux » (15 %) | Effet de la réputation multiplié par 1,5 |
+| 31 ans et plus, vers le Japon | Plus de prime pour descendre, et −6 % |
+| Chaque joueur | ±3 % selon son humeur |
+
+L'effet est borné entre −15 % et +30 %. Il ne dépend que de l'identité du
+joueur, de son âge et des deux championnats : rien ne révèle son niveau.
+L'origine d'un joueur du marché vient de son dernier club connu, sinon de son
+identifiant dans la base ; inconnue (jeunes des petits clubs), la réputation
+ne joue pas.
+
+Taux d'acceptation d'une même offre, 5 000 joueurs tirés, contrat de deux
+ans (calcul sur la formule du jeu, `/home/claude/audit/acceptation.cjs`) :
+
+| Origine → destination | Demande moyenne | Offre au salaire juste | Offre à 95 % | Offre à 90 % | Offre à 95 %, joueur de 33 ans |
+| --- | --- | --- | --- | --- | --- |
+| 2e division anglaise → 1re française | −7 % | 100 % | 99 % | 90 % | 99 % |
+| 2e française → 1re française | −9 % | 100 % | 100 % | 100 % | 100 % |
+| 1re anglaise → 1re française | −3 % | 100 % | 93 % | 74 % | 93 % |
+| Même championnat | 0 | 100 % | 98 % | 57 % | 98 % |
+| 1re française → 1re anglaise | +9 % | 70 % | 31 % | 4 % | 31 % |
+| 1re française → celte | +12 % | 52 % | 16 % | 1 % | 16 % |
+| 1re française → 2e française | +19 % | 2 % | 0 % | 0 % | 0 % |
+| 1re française → 1re japonaise | +17 % | 20 % | 2 % | 0 % | 100 % |
+| Pacifique → 1re japonaise | +5 % | 88 % | 61 % | 19 % | 100 % |
+
+### Ce que cette extension a révélé
+
+- **Les prolongations et les recrues revenaient à l'ancien barème.** Le club
+  joué : corrigé par le salaire demandé ci-dessus. Les clubs gérés
+  (`dist/ai-roster-cycle.js`, lignes 73 et 370 : plancher de 1 000 puis
+  2 000 € par semaine) : à chaque intersaison, leurs contrats sont remis au
+  niveau de la règle (`recaler`). Conséquence assumée : chez eux, un joueur
+  qui progresse est augmenté dès l'été suivant.
+- **Le moteur refuse toute offre sous 1 000 € par semaine** (52 000 € par
+  an) : `dist/economy.js`, fonction `negotiateContract`, et
+  `native/engine/gestion.cjs`, ligne 59. Non corrigé. Dans une carrière
+  marquée, le manager ne peut donc pas signer un espoir à 20 000 € par an :
+  il paie au moins 52 000 €.
+- Le marché entre clubs (`native/engine/interclub-market.cjs`) a le même
+  plancher et n'est pas branché dans le moteur livré ; il n'a pas été touché.
 
 ## Tests
 
-`node --test tests/starting-salaries.cjs tests/club-budget.cjs` : 27 sur 27.
+`node --test tests/starting-salaries.cjs tests/club-budget.cjs tests/league-economy.cjs` :
+41 sur 41.
 
-- `tests/club-budget.cjs` (18 tests, 3 secondes) : recettes, propriétaire,
+- `tests/club-budget.cjs` (20 tests, 3 secondes) : recettes, propriétaire,
   prime de classement, affluence, phases finales, règles de la ligue,
   clôture, prévision ; puis dans le moteur du jeu : carrière non marquée
   (ancien calcul vérifié club par club, 2,5 M€ conservés), carrière marquée
-  (annonce, une semaine, vente d'un joueur, fin de saison, comptes
-  illisibles).
-- `tests/starting-salaries.cjs` (9 tests, environ 2 minutes) : le vrai
-  moteur par l'API publique, drapeau éteint puis allumé, une semaine jouée,
-  export, réimport, reprise depuis le disque, deuxième semaine après reprise.
+  (annonce, une semaine, vente d'un joueur, fin de saison, clôture non
+  rejouable, salaire demandé, comptes illisibles).
+- `tests/league-economy.cjs` (10 tests, moins d'une seconde) : table,
+  salaires calés par championnat, deux divisions de référence inchangées,
+  intersaison, demande salariale, attrait (sens, bornes, tempéraments,
+  Japon, indépendance du niveau), origine d'un joueur, budget par
+  championnat.
+- `tests/starting-salaries.cjs` (11 tests, environ 4 minutes) : le vrai
+  moteur par l'API publique, France et carrière mondiale, drapeau éteint
+  puis allumé, semaine jouée, export, réimport, reprise depuis le disque.
 
-Suites existantes relancées sans la variable : `world-finance-flow-audit`
-4 sur 4, `interclub-market` 8 sur 8, `france-cover` 1 sur 1,
-`management-france-day-worker` 1 sur 1.
+Suites existantes relancées sans la variable après l'extension :
+`world-finance-flow-audit` 4 sur 4, `interclub-market` 8 sur 8,
+`france-cover` 1 sur 1, `management-france-day-worker` 1 sur 1.
+
+Non vérifié pour l'extension mondiale : une seule graine, un seul club joué
+(première division anglaise), une seule saison ; les autres éditions
+mondiales (58, 68, 88 et 102 clubs) ; le taux d'acceptation par des offres
+réelles dans une carrière mondiale (il est calculé sur la formule) ;
+l'effet sur les montées et descentes entre championnats.

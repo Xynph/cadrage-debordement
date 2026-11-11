@@ -120,7 +120,8 @@ test('Prévision de la saison : champs lisibles, alertes de la ligue et du propr
 const {context}=require('./native-reference-harness.cjs');
 function moteur(marque){
  const h=context();h.run('CDCommonCareer.start(29);');
- if(marque){h.ctx.nativeStartingSalaries=require('../native/engine/starting-salaries.cjs');h.run("nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})));");}
+ h.ctx.nativeStartingSalaries=require('../native/engine/starting-salaries.cjs');h.ctx.nativeLeagueEconomy=require('../native/engine/league-economy.cjs');
+ if(marque)h.run("nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})),nativeLeagueEconomy);");
  h.ctx.nativeClubBudget=B;h.run(B.BRANCHEMENT);if(marque)h.run('budgetOuvrir(true)');
  const lire=source=>JSON.parse(h.run('JSON.stringify('+source+')'));
  return {...h,lire,semaine:()=>h.run("financeWeek(null,false);worldWeeklyEconomy(CDFranceCompetition.currentFixtures(S).map(f=>({...f,score:[20,10],tries:[2,1]})));")};
@@ -154,8 +155,8 @@ test('Moteur, carrière marquée : la vente d’un joueur crédite la caisse et 
 });
 test('Moteur, carrière marquée : la fin de saison remplace les 2,5 M€ par prime, sanction et apport',()=>{
  const h=moteur(true);h.semaine();
- // Fin de saison simulée : classement archivé, le club joué finit 9e avec 800 000 € de pertes.
- h.run("S.franceMode.yearbook.push({season:1,standings:{elite:S.franceMode.leagues.elite.members.slice(),accession:[14,15,16,17,18,19,20,21,29,22,23,24,25,26,27,28]}});S.season=2;club().cash=S.clubBudget.clubs[29].depart-800000;S.clubs[14].cash=S.clubBudget.clubs[14].depart-9000000;S.trust=70;S.clubBudget.clubs.forEach((c,i)=>{c.recettes=i<14?40e6:12e6;});");
+ // Fin de saison simulée : le club joué finit 9e avec 800 000 € de pertes.
+ h.run("S.clubBudget.clubs[29].rang=9;S.clubBudget.clubs[14].rang=1;S.season=2;club().cash=S.clubBudget.clubs[29].depart-800000;S.clubs[14].cash=S.clubBudget.clubs[14].depart-9000000;S.trust=70;S.clubBudget.clubs.forEach((c,i)=>{c.recettes=i<14?40e6:12e6;});");
  const avant=h.lire('({comptes:S.clubBudget.clubs,cash:S.clubs.map(c=>c.cash)})'),prime=B.primeClassement('accession',9,16);
  h.run("ledgerEntry('Financement de début de saison',2500000)");let S=h.lire('S');
  assert.ok(!S.ledger.some(e=>e.amount===2500000),'plus de versement identique pour tous');
@@ -169,6 +170,23 @@ test('Moteur, carrière marquée : la fin de saison remplace les 2,5 M€ par pr
  assert.equal(S.clubBudget.saison,2);assert.equal(S.clubBudget.semaines,0);assert.equal(S.clubs[14].cash,0,'le découvert d’un club géré devient une dette');assert.ok(S.worldManagement.clubInfo[14].debt>0);
  assert.ok(S.news.filter(n=>/comblera|adhérents/.test(n)).length>=2,'nouvelle annonce du propriétaire pour la saison 2');
  assert.equal(S.clubBudget.clubs[29].depart,S.clubs[29].cash);
+ assert.deepEqual(S.clubBudget.clubs.map(c=>c.type),avant.comptes.map(c=>c.type),'le propriétaire d’un club ne change pas d’une saison à l’autre');
+});
+test('Moteur, carrière marquée : une clôture ne se rejoue pas',()=>{
+ const h=moteur(true);h.semaine();h.run("S.season=2;ledgerEntry('Financement de début de saison',2500000)");const une=h.lire('S.clubs.map(c=>c.cash)');
+ h.run("ledgerEntry('Financement de début de saison',2500000)");assert.deepEqual(h.lire('S.clubs.map(c=>c.cash)'),une);assert.ok(!h.lire('S.ledger').some(e=>e.amount===2500000));
+});
+test('Moteur, carrière marquée : salaire demandé selon le niveau, prolongation hors de l’ancien barème',()=>{
+ const h=moteur(true),sans=moteur(false);
+ const lire=x=>x.lire("club().players.slice(0,12).map(p=>({id:p.id,salaire:p.salary,demande:askingWage(p,'renew')}))");
+ const neuf=lire(h),ancien=lire(sans);
+ assert.ok(ancien.every(j=>j.demande>=2000),'ancien barème : au moins 2 000 € par semaine demandés à la prolongation');
+ assert.ok(neuf.every(j=>j.demande>=j.salaire&&j.demande<=Math.max(j.salaire,400)*2.2),'carrière marquée : la demande reste proche du contrat en cours');
+ assert.ok(neuf.reduce((s,j)=>s+j.demande,0)<ancien.reduce((s,j)=>s+j.demande,0)/2);
+ const libre=h.lire("(()=>{const p=managerPool()[0];return {demande:askingWage(p,'recruit'),ancien:p.salary,plancher:reservationWage(p,'recruit',2)}})()");
+ assert.ok(libre.demande>=10&&libre.demande<libre.ancien,'un joueur libre demande un salaire de son niveau, pas l’ancien barème : '+JSON.stringify(libre));
+ assert.ok(libre.plancher<=Math.ceil(libre.demande*1.2/100)*100);
+ assert.equal(sans.lire("(()=>{const p=managerPool()[0];return askingWage(p,'recruit')===p.salary})()"),true,'sans la marque, la demande d’un joueur libre reste son salaire affiché');
 });
 test('Moteur, carrière marquée : des comptes illisibles dans une sauvegarde sont rouverts, sans arrêt du jeu',()=>{
  for(const casse of ["S.clubBudget.clubs.pop()","S.clubBudget.clubs[3].type='inconnu'","S.clubBudget.clubs[29].recettes=null","delete S.clubBudget","S.clubBudget.alertes=7"]){
