@@ -1,0 +1,14 @@
+{
+  "sourceDataSha": "297f016584d24810a5f762d20396fcd7c91b0293",
+  "scope": "Public pending/applied session, meta.training, exact published reason and own-XV fixture condition. No edited save, threshold or game engine, no inferred effective mode from condition. Godot receipt validation is pending.",
+  "files": {
+    "public-worker-cases.json": "54ebec4fdfbc9d9a5aa2af88f45b3d425eaf74335dc7d17d8125da23e7734784",
+    "node-run.log": "ef582f4502f51364c6a529d03f172f46dfb3291f7357bc3e7f9a69e9cc7e21ae"
+  },
+  "sourceFilesSha256": {
+    "native/godot/ui/decision_feedback.gd": "65f6fff4efa36ecf6830b78b4f3e26f8da310745e4c0a0b4d23a9242eb10873a",
+    "tools/qa/effective-training-receipt.cjs": "3858395ab9c382d56e18952e8ee3e8672ec58adfd351cff1d9271d5d758f9b0c",
+    "tests/godot-effective-training-receipt.gd": "d36346c359b09b059ab915e0a1545640b88beaac724d62c00b82105a3a66e7d8",
+    "tests/godot-effective-training-receipt.cjs": "754637c63553f100575c1b79c31c844364c5e8ae212255f5176253d0a5624832"
+  }
+}
