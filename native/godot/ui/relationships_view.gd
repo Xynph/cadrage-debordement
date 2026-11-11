@@ -35,7 +35,9 @@ static func _person_link(app: Control, parent: Node, id: Variant, name: String) 
 	var button := G.button(_name(app, id), func(): pass)
 	button.name = name
 	button.custom_minimum_size.y = 40
+	button.clip_text = true
 	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	G.fill(button)
 	EntityLink.bind(button, app, target, _name(app, id))
 	parent.add_child(button)
 	return button

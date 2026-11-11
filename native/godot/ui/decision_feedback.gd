@@ -125,6 +125,7 @@ func _receipt_links(app: Control, receipt: Dictionary, dialog: Window) -> Array[
 		var button := G.button("Voir la fiche · " + str(item.get("label","Joueur")),func(): pass)
 		button.name = "DecisionReceiptPlayerLink"
 		button.custom_minimum_size.y = 40
+		button.clip_text = true
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		EntityLink.bind(button,app,target,str(item.get("label","Joueur")),dialog)
 		links.append(button)
