@@ -504,7 +504,9 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		var location := target.duplicate(true)
 		location.route = destination
 		app.management_ui.navigation_target = location
-		if kind not in ["competition", "date", "finance", "training"]:
+		if kind == "menu":
+			app._navigate(destination, false)
+		elif kind not in ["competition", "date", "finance", "training"]:
 			app._navigate(destination, false, true)
 		observe(app.route, app.selected_player, app.selected_staff_club, kind in ["player", "squad"])
 	_dispatching = false

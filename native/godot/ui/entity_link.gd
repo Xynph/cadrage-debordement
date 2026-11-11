@@ -13,7 +13,7 @@ static func bind(link: BaseButton, app: Control, target: Dictionary, label: Stri
 	link.set_meta("entity_kind", str(destination.get("kind", "")))
 	link.set_meta("entity_id", str(destination.get("id", "")))
 	link.focus_mode = Control.FOCUS_ALL
-	var caption := label if not label.is_empty() else (link.text if link is Button else "")
+	var caption: String = label if not label.is_empty() else (str(link.get("text")) if link is Button else "")
 	if not caption.is_empty():
 		link.tooltip_text = "Ouvrir · " + caption
 		link.accessibility_name = "Ouvrir · " + caption
