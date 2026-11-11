@@ -102,7 +102,7 @@ func cancel_real_drag() -> void:
 	check(not root.gui_is_dragging() and app.route == "Composition" and app.selected_player == player_before and app.get_meta("immersive08_full_player", false) == full_before, "Annulation du glisser distincte d’un clic de consultation")
 	check(app.bridge._next_id == before_commands, "Glisser annulé : aucune commande de composition ou consultation")
 func setup_career() -> bool:
-	var payload := {"mode":"world-champ", "nationalRole":"nation", "nation":"ENG"} if group == "nation" else {"mode":"common", "club":0}
+	var payload := {"mode":"world-champ", "nationalRole":"nation", "nation":"ENG"} if group == "nation" else {"mode":"world-champ", "club":29} if group == "reading" else {"mode":"common", "club":0}
 	if not await command("new_career", payload): return false
 	if group != "guards" and group != "nation":
 		if not await Flow.settle_club_meetings(app, self, check): return false
