@@ -91,6 +91,12 @@ func motion(point: Vector2, relative: Vector2 = Vector2.ZERO, held: bool = false
 	var event := InputEventMouseMotion.new(); event.position = point; event.global_position = point; event.relative = relative
 	if held: event.button_mask = MOUSE_BUTTON_MASK_LEFT
 	root.push_input(event, true); await process_frame
+func click_link(control: Control) -> void:
+	check(control != null and control.is_visible_in_tree(), "Lien de souris réellement rendu")
+	if control == null: return
+	var point := control.get_global_rect().get_center()
+	visits.append({"control":str(control.name),"kind":control.get_meta("entity_kind", ""),"id":control.get_meta("entity_id", ""),"activation":"mouse","route_before":app.route})
+	await motion(point); await mouse(point, true); await mouse(point, false); await settle()
 func cancel_real_drag() -> void:
 	app._navigate("Composition"); await settle()
 	var source := named("LineupSlot11") as Control
@@ -190,6 +196,14 @@ func reading_cases() -> void:
 		check(await open_entity("player", id), "Deuxième consultation depuis une liste défilée")
 		await back()
 		check(named("SquadScroll") != null and named("SquadScroll").scroll_vertical == offset, "Retour : défilement exact de la liste conservé")
+	var player_link := named("SquadOpenPlayer_" + id.validate_node_name()) as Control
+	check(player_link != null, "Nom/portrait du joueur lié dans la vraie ligne d’effectif")
+	if player_link != null:
+		var roster_scroll := named("SquadScroll") as ScrollContainer
+		if roster_scroll != null: roster_scroll.ensure_control_visible(player_link); await settle()
+		await click_link(player_link)
+		check(app.selected_player == id and app.get_meta("immersive08_full_player", false), "Vrai clic distinct du tri : bonne fiche complète ouverte")
+		await back()
 	check(await open_entity("player", id), "Fiche source des drapeaux réellement ouverte")
 	var flag: Control = named("PlayerOriginNationLink")
 	if flag == null: flag = named("PlayerCapsNationLink")
