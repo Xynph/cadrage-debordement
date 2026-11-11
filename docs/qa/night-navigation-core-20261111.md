@@ -68,8 +68,12 @@ la navigation depuis cette fenêtre est refusée.
 ## Vérifications
 
 - Import réel SDK Godot 4.7.2 sur cette copie : aucune erreur de parsing observée.
-- `tests/godot-navigation.cjs` : exécution demandée sous le verrou partagé ;
-  résultat à consigner par l’intégrateur sur le SHA assemblé.
+- `tests/godot-navigation.cjs` : premier lancement de cette copie interrompu,
+  non qualifiant. Le staging des données catalogue manquait : erreur JSON dans
+  `main.gd:148`, puis absence du timer. Défaut de préparation de la copie ;
+  aucun verdict produit tiré de ce lancement. La nouvelle suite ciblée en file
+  a été annulée avant lancement. Validation à réaliser dans la copie commune
+  déjà préparée, avec Node 22 épinglé, sur le SHA assemblé.
 - Nouvelle suite `tests/godot-entity-navigation.cjs` : ouverture ID effectif et
   marché, section contrat, refus sans mutation, état lecture et brouillon,
   fenêtres source, clavier accessible, sauvegarde octet pour octet et état/RNG.
