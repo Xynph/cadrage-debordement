@@ -77,22 +77,70 @@ Le moteur compte encore les salaires à la semaine et n'en paie que 34 par
 saison : le module écrit l'année divisée par 52. **Le paiement sur 52
 semaines reste à faire dans le moteur**, avec le budget.
 
-## Ce qui bloque : les recettes et les charges
+## Budget du club : `native/engine/club-budget.cjs`
 
-Mesuré avec la première version du module : un club de deuxième division
-gagne déjà environ 200 000 € par semaine, salaires payés, et davantage avec
-des salaires réalistes. Le jeu ne compte que les joueurs comme charge.
+Pour les carrières créées avec ces salaires (marque `startingSalaries`), le
+calcul hebdomadaire des finances suit les comptes réels 2024-2025. Les autres
+carrières gardent l'ancien calcul.
 
-Budget d'un vrai club, 2024-2025 : les joueurs pèsent 27 % des charges en
-première division et 28 % en deuxième ; s'y ajoutent staff, administratifs,
-cotisations (15 à 18 %), achats et services. Recettes moyennes : 33 M€ et
-10,7 M€. C'est ce modèle qu'il faut reproduire avant d'activer le module.
+| | Première division | Deuxième division |
+| --- | --- | --- |
+| Recettes annuelles visées, moyenne | 33 M€ | 10,7 M€ |
+| Partenaires / ligue / billetterie / boutique / divers | 45 / 19 / 16 / 8 / 12 % | 48 / 22 / 8 / 4 / 18 % |
+| Salaires des joueurs | dus sur 52 semaines, payés sur les semaines de compétition | idem |
+| Cotisations | 40 % des salaires | idem |
+| Staff et fonctionnement | 58 % des recettes | idem |
 
-Non mesuré : une saison entière, l'intersaison, les prolongations, les
-offres d'un club pour attirer un joueur.
+Un club moyen qui paie la masse moyenne de sa division finit la saison près
+de l'équilibre (test : à moins de 8 % des recettes).
+
+### Une saison jouée, Valence (deuxième division), graine 27
+
+| Trésorerie | Ancienne économie | Nouvelle économie |
+| --- | --- | --- |
+| Départ | 2,30 M€ | 2,30 M€ |
+| Après 17 matchs | 7,00 M€ | 2,77 M€ |
+| Après 31 matchs | 6,63 M€ | 2,37 M€ |
+
+Le versement de 2,5 M€ de fin de saison, identique pour tous les clubs,
+n'est pas compté ici : la simulation s'arrête avant l'intersaison.
+
+### Trois problèmes ouverts
+
+1. **Les clubs gérés par le jeu s'enrichissent** avec la nouvelle économie :
+   Toulouse finit à 10,7 M€ en caisse contre 5,1 M€, Montauban à 12,5 M€
+   contre 4,7 M€. Leur trésorerie suit un autre calcul, que je n'ai pas
+   identifié. À régler avant toute activation.
+2. **Plus de billetterie en seconde moitié de saison**, dans les deux
+   économies : après le 17e match, la trésorerie ne monte plus les semaines
+   de réception. Soit un défaut du jeu, soit un artefact de ma sonde. À
+   confirmer.
+3. La prévision « salaires de la saison » de l'écran Finances multiplie
+   encore par 34 semaines.
+
+### Comment les vrais clubs vivent, et ce qu'il faut au jeu
+
+En 2024-2025, 9 clubs de première division sur 14 et 14 de deuxième sur 16
+sont en déficit d'exploitation (63 M€ au total). Les actionnaires couvrent :
+prêts abandonnés, augmentations de capital. Seuls 7 clubs sur 30
+s'autofinancent. Un jeu où tous les clubs perdent de l'argent serait pénible
+(remarque de Léo). Propositions, non codées :
+
+1. un club moyen à l'équilibre par défaut (fait) ;
+2. un soutien du propriétaire annoncé en début de saison, variable selon le
+   club (mécène, entreprise, association), à la place du versement uniforme
+   de 2,5 M€ ; au-delà de l'enveloppe : pression, vente forcée, renvoi ;
+3. des recettes liées au terrain : prime de classement, phases finales,
+   affluence selon les résultats ;
+4. les leviers du manager (ventes, partenaires, infrastructures) ;
+5. les deux règles de la ligue comme contraintes : plafond salarial et 52 %
+   des recettes au plus pour les joueurs.
+
+Non mesuré : l'intersaison, les prolongations, les offres d'un club pour
+attirer un joueur, la première division jouée par le manager.
 
 ## Tests
 
-`node --test tests/starting-salaries.cjs` : 7 sur 7 (référence, politique
+`node --test tests/starting-salaries.cjs` : 11 sur 11 avec `tests/club-budget.cjs` (référence, politique
 des clubs, variété, contrats espoirs, application unique, vrai moteur drapeau
 éteint puis allumé).
