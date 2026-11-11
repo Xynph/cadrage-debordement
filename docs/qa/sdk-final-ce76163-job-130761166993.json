@@ -1,0 +1,22 @@
+{
+  "job_id": 130761166993,
+  "run_id": 43089109020,
+  "commit": "ce76163160649f55228e59c647863017c4ed41e7",
+  "conclusion": "success",
+  "scope": "targeted",
+  "log_characters_read": 180716,
+  "log_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43089109020/job/130761166993",
+  "results": [
+    {
+      "suite": "tests/godot-carnet-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 79307,
+      "error": null
+    }
+  ],
+  "checks_line": [
+    "2026-11-11T19:41:14.7182515Z CARNET : 3773 contrôles ; 0 échec(s)"
+  ]
+}

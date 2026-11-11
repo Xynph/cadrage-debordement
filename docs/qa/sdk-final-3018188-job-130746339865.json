@@ -1,0 +1,106 @@
+{
+  "job_id": 130746339865,
+  "run_id": 43084818218,
+  "commit": "30181880e0ace3dfe2cb9b4a29d855bd6d6e832b",
+  "conclusion": "success",
+  "log_characters_read": 208454,
+  "log_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43084818218/job/130746339865",
+  "results": [
+    {
+      "suite": "tests/godot-match-journal.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 34872,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-immersion-copy.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 1434,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-regen-portraits.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 1796,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-club-memory.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 17832,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-squad-column-sort.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 15778,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-epcr-preparation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 40501,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-immersive-reception.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 61900,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-native06-integration.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 43024,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction07.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 103551,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-competition-editor.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 67194,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "layout-native",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 37034,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-contextual.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 57766,
+      "error": null
+    }
+  ]
+}

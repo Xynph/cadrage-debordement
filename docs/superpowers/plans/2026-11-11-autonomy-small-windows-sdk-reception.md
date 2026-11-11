@@ -2,6 +2,11 @@
 
 Base figée : `96f537040bf9f2e37bf10b0a9b09518b732244a2`. Arrêt au plus tard le 11 novembre à 18:00 UTC (19:00 Paris), ou lorsque les trois livrables sont atteints. Aucune fusion, aucune question, aucun service payant ni changement des paramètres GitHub. Les décisions sont prudentes, réversibles et documentées. Les anciennes autorisations de fusion ne valent pas pour cette tranche.
 
+Reprise après cette première échéance : Léo a demandé « finis tout ça vite ».
+La qualification des suites restantes continue donc jusqu'au verdict, avec les
+mêmes restrictions de fusion et de périmètre. Les classifications initiales sur
+96 restent des archives ; elles ne remplacent pas les nouveaux reçus exécutés.
+
 ## Exécution et responsabilités
 
 1. Fenêtres : reproduire puis corriger uniquement la géométrie. Un producteur possède le dialogue contrat et le redimensionnement partagé ; un autre possède calendrier, entrées contextuelles et balayage. Mesurer rectangles, contrôles accessibles et défilements aux quatre tailles demandées, avec un témoin 2560×1440. Les écrans réservés à Claude sont mesurés mais ne sont pas modifiés. Une PR brouillon commune et une liste explicite des dialogues non ouverts.

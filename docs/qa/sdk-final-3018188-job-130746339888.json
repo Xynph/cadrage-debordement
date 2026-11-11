@@ -1,0 +1,76 @@
+{
+  "job_id": 130746339888,
+  "run_id": 43084818218,
+  "commit": "30181880e0ace3dfe2cb9b4a29d855bd6d6e832b",
+  "conclusion": "success",
+  "log_characters_read": 191034,
+  "results": [
+    {
+      "suite": "tests/godot-academy-portraits.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 16392,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-portrait-continuity.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 24398,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-contract-negotiation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 24108,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-staff-real-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 34900,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-staff-hire-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 23179,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-match.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 13540,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-career-final-fixes.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 52228,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-playbook-watch-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 23469,
+      "error": null
+    }
+  ],
+  "full_log_sha256": "00796ee12a65fd31b4e78240a6d9daac3ab5a0ff22fda081ae729f11a00de06d",
+  "full_log_bytes": 191094,
+  "log_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43084818218/job/130746339888"
+}

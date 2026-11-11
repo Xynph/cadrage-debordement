@@ -1,0 +1,131 @@
+{
+  "job_id": 130746340024,
+  "run_id": 43084818218,
+  "commit": "30181880e0ace3dfe2cb9b4a29d855bd6d6e832b",
+  "conclusion": "failure",
+  "log_characters_read": 226500,
+  "log_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43084818218/job/130746340024",
+  "results": [
+    {
+      "suite": "tests/native-press-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 39611,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-office-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 46708,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-pack-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 33654,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-reception-decisions.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 15659,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-youth-draft.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 40098,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-youth-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 80708,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-youth-scout-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 37697,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-fatigue-overview.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 21781,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-carnet-ui.cjs",
+      "variant": "default",
+      "passed": false,
+      "status": 1,
+      "milliseconds": 54729,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-review-regressions.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 104259,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-integration.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 90701,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "routes-1280",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 80812,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "routes-1600",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 83547,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "routes-1920",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 93642,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "progression",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 101535,
+      "error": null
+    }
+  ],
+  "failed_case_diagnosis": "Carnet converts the JSON numeric slot with str(incoming.slot), producing sortant:0.0; the real button uses integer sortant:0. The other bench failures cascade after no outgoing selection."
+}
