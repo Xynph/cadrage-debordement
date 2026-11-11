@@ -1,0 +1,42 @@
+{
+  "off": {
+    "ENV_GESTES": {
+      "active": false,
+      "environment": ""
+    },
+    "ENV_WORKER": {
+      "environment": "",
+      "marker": null,
+      "salaryFloor": null,
+      "workerPid": 98799
+    },
+    "ENV_RESUME": {
+      "budget": null,
+      "environment": "",
+      "forecast": -554300.0,
+      "salaryFloor": null
+    }
+  },
+  "on": {
+    "ENV_GESTES": {
+      "active": true,
+      "environment": "1"
+    },
+    "ENV_WORKER": {
+      "environment": "1",
+      "marker": {
+        "semaines": 52.0,
+        "version": 3.0
+      },
+      "salaryFloor": 270.0,
+      "workerPid": 104927
+    },
+    "ENV_RESUME": {
+      "budget": null,
+      "environment": "1",
+      "forecast": 6031840.0,
+      "salaryFloor": null
+    }
+  },
+  "interpretation": "Activation OK ; projection de reprise ON incorrecte reproduite"
+}

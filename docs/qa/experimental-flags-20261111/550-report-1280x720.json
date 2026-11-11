@@ -1,0 +1,20 @@
+{
+	"affichage": "headless",
+	"controles": 34,
+	"failures": [],
+	"mesures": {
+		"colonnes": [
+			"numero",
+			"joueur",
+			"niveau",
+			"condition",
+			"salaire",
+			"contrat"
+		],
+		"echelle": 0.8,
+		"tri_3000_calcul_ms": 22.397,
+		"tri_3000_total_ms": 93.817,
+		"tri_40_ms": 1.546
+	},
+	"taille": "1280x720"
+}

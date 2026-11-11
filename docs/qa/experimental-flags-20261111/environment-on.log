@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENV_GESTES {"active":true,"environment":"1"}
+ENV_WORKER {"environment":"1","marker":{"semaines":52.0,"version":3.0},"salaryFloor":270.0,"workerPid":104927}
+ENV_RESUME {"budget":null,"environment":"1","forecast":6031840.0,"salaryFloor":null}

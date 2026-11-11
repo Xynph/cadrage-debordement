@@ -1,0 +1,17 @@
+[
+  {
+    "active": false,
+    "environment": "",
+    "metadataEnabled": true
+  },
+  {
+    "active": false,
+    "environment": "0",
+    "metadataEnabled": true
+  },
+  {
+    "active": true,
+    "environment": "1",
+    "metadataEnabled": true
+  }
+]
