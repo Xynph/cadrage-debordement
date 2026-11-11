@@ -43,6 +43,11 @@ func capture(name: String) -> void:
 	var file:=output.path_join(name+".png")
 	check(picture.save_png(file)==OK,"Capture réelle · "+name)
 	captures.append({"file":file,"sha256":FileAccess.get_sha256(file)})
+func trace_location(boundary: String) -> void:
+	var window_size: Vector2i=app.get_window().size
+	var viewport_size: Vector2=app.get_viewport_rect().size
+	var trace: Dictionary={"boundary":boundary,"route":app.route,"last_command":app.last_command,"waiting":app.waiting,"last_error":app.last_error,"window_size":[window_size.x,window_size.y],"viewport_size":[viewport_size.x,viewport_size.y],"locker_tab":app.management_ui.get("immersive08_locker_tab","week"),"has_locker_canvas":app.find_child("ImmersiveLockerRoom",true,false)!=null,"has_relations_page":app.find_child("CarnetRelations",true,false)!=null,"contextual_kind":app.contextual_director.kind,"mandatory_meeting":app.contextual_director.active_meeting(),"match_immersed":app.contextual_director.match_immersed()}
+	print("MANAGEMENT_LOCATION ",JSON.stringify(trace))
 func run() -> void:
 	DirAccess.make_dir_recursive_absolute(output)
 	root.size=Vector2i(2560,1440)
@@ -65,8 +70,11 @@ func run() -> void:
 		if not await command("set_player_load",{"playerId":player_id,"mode":"repos" if index%2==0 else "normal"}):await finish();return
 	app.management_ui.relationships={"playerId":player_id}
 	app.management_ui.preparation={"tab":0,"outer":[0,0,0],"attack":1,"defense":2,"focus":["","",""]}
+	trace_location("before-navigate-vestiaire")
 	app._navigate("Vestiaire");await settle()
+	trace_location("after-navigate-vestiaire")
 	await command("export")
+	trace_location("after-export-on-vestiaire")
 	var before: Dictionary=JSON.parse_string(app.model.meta.exportText).state
 	var profile:=str(app.model.meta.dataDir).path_join("donnees.json")
 	var profile_hash:=FileAccess.get_sha256(profile)
@@ -78,7 +86,9 @@ func run() -> void:
 	var receipt_before: Array=app.decision_feedback.receipts()
 	var page:=app.find_child("CarnetRelations",true,false) as Control
 	check(page!=null,"Le vrai vestiaire est affiché")
-	if page==null:await finish();return
+	if page==null:
+		await capture("vestiaire-page-manquante-2560")
+		await finish();return
 	var surfaces:=page.find_children("*","ScrollContainer",true,false)
 	check(surfaces.size()>=2,"Deux listes de vestiaire contenues")
 	if surfaces.size()<2:await finish();return
