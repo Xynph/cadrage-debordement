@@ -1,7 +1,7 @@
 extends SceneTree
 const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 const ContextualFlow = preload("helpers/contextual_flow.gd")
-class Projection extends Control:
+class LedgerProjectionApp extends Control:
 	var model: Dictionary
 var app: Control
 var checks := 0
@@ -35,7 +35,7 @@ func click(point: Vector2) -> void:
 	await settle()
 func found(id: String) -> Control: return app.find_child(id,true,false) as Control
 func projection_cases() -> void:
-	var owner := Projection.new()
+	var owner := LedgerProjectionApp.new()
 	var entries: Array = [{"title":"Même libellé","amount":-10},{"title":"Même libellé","amount":-10}]
 	owner.model={"finance":{"ledger":entries}}
 	var locator := Finance.ledger_locator(entries,1)
