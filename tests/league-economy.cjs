@@ -130,7 +130,8 @@ test('Attrait : d’autres leviers que le salaire — peu utilisé, sans club, r
  assert.ok(acceptent('elite','accession',1.1,27,{peuUtilise:true})>base+0.3,'un joueur qui a peu joué descend plus volontiers');
  assert.ok(acceptent('elite','accession',1.1,27,{sansClub:1})>base+0.1&&acceptent('elite','accession',1.1,27,{sansClub:2})>acceptent('elite','accession',1.1,27,{sansClub:1}));
  assert.ok(acceptent('elite','accession',1.1,27,{ancienClub:true})>base+0.1);assert.ok(Math.abs(taux('accession','elite',27,{peuUtilise:true})-taux('accession','elite'))<1e-9,'le temps de jeu ne joue que pour descendre');
- assert.deepEqual(E.situation({id:'youth-29-1-3',population:{origin:'released',availableSince:1,clubId:4},dev:{history:[{minutes:120}]}},2,29),{sansClub:1,peuUtilise:true,ancienClub:true});
+ assert.deepEqual(E.situation({id:'youth-29-1-3',population:{origin:'released',availableSince:1,clubId:4},dev:{history:[{minutes:120}]}},3,29),{sansClub:1,peuUtilise:true,ancienClub:true});
+ assert.equal(E.situation({id:'a',population:{origin:'released',availableSince:1}},2,0).sansClub,0,'la saison qui suit sa libération, le joueur n’a pas encore passé de saison sans club');
  assert.deepEqual(E.situation({id:'world:urc:x',population:{origin:'released',availableSince:2,clubId:7},dev:{history:[{minutes:1400}]}},2,7),{sansClub:0,peuUtilise:false,ancienClub:true});
  assert.deepEqual(E.situation({id:'small-1-0-0',population:{origin:'small-club',availableSince:1,clubId:null}},3,29),{sansClub:0,peuUtilise:false,ancienClub:false});assert.deepEqual(E.situation(null,1,0),{sansClub:0,peuUtilise:false,ancienClub:false});
 });

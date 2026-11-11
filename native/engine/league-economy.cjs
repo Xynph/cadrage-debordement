@@ -55,7 +55,7 @@ const rabaisMontee = ecart => Math.min(0.1, 0.1 * (ecart / 30) ** 1.2);
 // Renvoie un multiplicateur (1 = aucun effet) et ses raisons, sans rien dire du niveau du joueur.
 //   origine : championnat que le joueur quitte (null si inconnu) ; destination : celui du club qui recrute ;
 //   situation, tout ce que le club sait déjà du joueur :
-//     sansClub     : saisons passées sans club (0 s'il vient d'être libéré) ;
+//     sansClub     : saisons entières passées sans club (0 la saison qui suit sa libération) ;
 //     peuUtilise   : il a peu joué la saison passée ;
 //     ancienClub   : le club qui recrute l'a formé ou l'a déjà eu sous contrat.
 function attrait({ origine = null, destination, joueurId, age, situation = null }) {
@@ -97,7 +97,8 @@ const dernierClub = joueur => typeof joueur?.formerClub === 'string' ? joueur.fo
 function situation(joueur, saison, clubId, nomClub = null) {
   const depuis = joueur?.population?.availableSince, passee = joueur?.dev?.history?.at?.(-1), forme = /^youth-(\d+)-/.exec(String(joueur?.id ?? ''))?.[1];
   return {
-    sansClub: Number.isInteger(depuis) && Number.isInteger(saison) && joueur?.population?.origin === 'released' ? Math.max(0, saison - depuis) : 0,
+    // Libéré à la fin de la saison N, un joueur n'a passé aucune saison sans club pendant la saison N + 1.
+    sansClub: Number.isInteger(depuis) && Number.isInteger(saison) && joueur?.population?.origin === 'released' ? Math.max(0, saison - depuis - 1) : 0,
     peuUtilise: !!passee && Number.isFinite(passee.minutes) && passee.minutes < 480,
     ancienClub: Number.isInteger(clubId) && (joueur?.population?.clubId === clubId || (forme !== undefined && Number(forme) === clubId) || (nomClub !== null && dernierClub(joueur) === nomClub)),
   };
