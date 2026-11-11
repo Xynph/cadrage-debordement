@@ -1,0 +1,10 @@
+'use strict';
+const path=require('node:path'),fs=require('node:fs'),os=require('node:os'),crypto=require('node:crypto');
+const root=process.argv[2],{createBridge}=require(path.join(root,'native/engine/worker.cjs')),{settleClubMeetings}=require(path.join(root,'tests/helpers/club-meetings.cjs'));
+const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'flag-review-'));let bridge=createBridge({dataDir,seed:27,now:1794178800000}),id=0;
+const result=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});if(!r.ok)throw Error(command+': '+r.error);return r.model};
+const settle=m=>settleClubMeetings(m,result),saveTexts=[];
+const capture=()=>{const text=result('export').meta.exportText;saveTexts.push(text);return JSON.parse(text).state};
+settle(result('new_career',{mode:'common',club:29}));const created=capture();settle(result('train'));result('auto_lineup');result('begin_match');result('delegate');settle(result('finish_round'));const played=capture();
+result('import',{text:saveTexts[1]});const imported=capture();result('shutdown');delete process.env.CD_SALAIRES_PAR_NIVEAU;bridge=createBridge({dataDir,now:1794178800000});const reopened=capture();
+bridge.close();fs.writeFileSync(process.argv[3],JSON.stringify({saveTexts,createdMarker:created.startingSalaries??null,playedMarker:played.startingSalaries??null,reopenedMarker:reopened.startingSalaries??null,rounds:[created.round,played.round,reopened.round],sha:saveTexts.map(x=>crypto.createHash('sha256').update(x).digest('hex')),importEqual:saveTexts[1]===saveTexts[2],reopenEqual:saveTexts[1]===saveTexts[3]}));

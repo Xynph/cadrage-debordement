@@ -1,0 +1,92 @@
+{
+  "created": {
+    "cash": 2300000,
+    "wage": 50670,
+    "ledger": [],
+    "notice": "Salaires dus sur 52 semaines, payés sur les 34 semaines de la saison.",
+    "salaryFloor": 270
+  },
+  "resumed": {
+    "cash": 2300000,
+    "wage": 50670,
+    "ledger": [],
+    "notice": "Montants fictifs. 34 semaines payées par saison. Monde fermé sans Nationale."
+  },
+  "strategyCreated": {
+    "cash": 2300000,
+    "weeklyWages": 108500,
+    "weeksPerSeason": 34,
+    "remainingWeeks": 34,
+    "academyInvestment": 0,
+    "academySpent": 0,
+    "weeklyIncome": 222300,
+    "weeklyCosts": 258900,
+    "baseForecast": 2449900,
+    "notice": "Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.",
+    "budget": {
+      "recettesPrevues": 8953400,
+      "chargesPrevues": 8803500,
+      "horsBudget": 0,
+      "resultatPrevu": 149900,
+      "recettesEncaissees": 0,
+      "chargesPayees": 0,
+      "primeClassementPrevue": 619900,
+      "rang": 8,
+      "proprietaire": {
+        "type": "entreprise",
+        "libelle": "Entreprise actionnaire",
+        "enveloppe": 500000
+      },
+      "apportPrevu": 0,
+      "masseSalariale": 2634840,
+      "plafondSalarial": null,
+      "limiteRecettes": 4655800,
+      "margePlafond": null,
+      "margeRecettes": 2021000,
+      "amendePrevue": 0,
+      "tresorerie": 2300000,
+      "tresoreriePrevue": 2449900,
+      "fonctionnementHebdo": 150400,
+      "semainesDePaie": 34,
+      "plancherSalaire": 270
+    },
+    "facility": {
+      "cost": 750000,
+      "affordable": true,
+      "total": 784800,
+      "remaining": 1015200,
+      "nextLevel": 3,
+      "atMaximum": false,
+      "level": 2,
+      "used": false
+    },
+    "boardHistory": []
+  },
+  "strategyResumed": {
+    "cash": 2300000,
+    "weeklyWages": 50670,
+    "weeksPerSeason": 34,
+    "remainingWeeks": 34,
+    "academyInvestment": 0,
+    "academySpent": 0,
+    "weeklyIncome": 160000,
+    "weeklyCosts": 50670,
+    "baseForecast": 6017220,
+    "notice": "Projection des engagements connus, hors billetterie aléatoire, primes et transferts futurs. Montants de jeu fictifs.",
+    "facility": {
+      "cost": 750000,
+      "affordable": true,
+      "total": 784800,
+      "remaining": 1015200,
+      "nextLevel": 3,
+      "atMaximum": false,
+      "level": 2,
+      "used": false
+    },
+    "boardHistory": []
+  },
+  "marker": {
+    "version": 3,
+    "semaines": 52
+  }
+}

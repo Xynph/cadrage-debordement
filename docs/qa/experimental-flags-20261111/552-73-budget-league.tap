@@ -1,0 +1,244 @@
+TAP version 13
+# Subtest: Recettes visées : moyenne exacte par division, club fort mieux doté
+ok 1 - Recettes visées : moyenne exacte par division, club fort mieux doté
+  ---
+  duration_ms: 2.053965
+  type: 'test'
+  ...
+# Subtest: Parts de recettes : chaque division totalise 100 %
+ok 2 - Parts de recettes : chaque division totalise 100 %
+  ---
+  duration_ms: 0.406236
+  type: 'test'
+  ...
+# Subtest: Une saison type : salaires payés sur 52 semaines, club moyen proche de l’équilibre
+ok 3 - Une saison type : salaires payés sur 52 semaines, club moyen proche de l’équilibre
+  ---
+  duration_ms: 6.541544
+  type: 'test'
+  ...
+# Subtest: Billetterie et boutique seulement à domicile ; entrées invalides refusées
+ok 4 - Billetterie et boutique seulement à domicile ; entrées invalides refusées
+  ---
+  duration_ms: 1.524776
+  type: 'test'
+  ...
+# Subtest: Propriétaire : type stable, enveloppe proportionnée, association sans apport
+ok 5 - Propriétaire : type stable, enveloppe proportionnée, association sans apport
+  ---
+  duration_ms: 41.702892
+  type: 'test'
+  ...
+# Subtest: Prime de classement : décroît avec le rang, redistribue exactement le quart du versement de la ligue
+ok 6 - Prime de classement : décroît avec le rang, redistribue exactement le quart du versement de la ligue
+  ---
+  duration_ms: 0.571438
+  type: 'test'
+  ...
+# Subtest: Affluence : la billetterie suit les résultats récents ; les phases finales rapportent plus
+ok 7 - Affluence : la billetterie suit les résultats récents ; les phases finales rapportent plus
+  ---
+  duration_ms: 1.160401
+  type: 'test'
+  ...
+# Subtest: Saison réelle : 13 réceptions en élite, 15 en accession, la billetterie visée est encaissée
+ok 8 - Saison réelle : 13 réceptions en élite, 15 en accession, la billetterie visée est encaissée
+  ---
+  duration_ms: 9.897582
+  type: 'test'
+  ...
+# Subtest: Règles de la ligue : plafond de 10,7 M€ en élite, 52 % des recettes partout
+ok 9 - Règles de la ligue : plafond de 10,7 M€ en élite, 52 % des recettes partout
+  ---
+  duration_ms: 0.880054
+  type: 'test'
+  ...
+# Subtest: Clôture : le propriétaire comble le déficit jusqu’à son enveloppe, pas au-delà
+ok 10 - Clôture : le propriétaire comble le déficit jusqu’à son enveloppe, pas au-delà
+  ---
+  duration_ms: 6.866479
+  type: 'test'
+  ...
+# Subtest: Clôture : dépassement constaté à la dernière journée, amende et confiance
+ok 11 - Clôture : dépassement constaté à la dernière journée, amende et confiance
+  ---
+  duration_ms: 0.864286
+  type: 'test'
+  ...
+# Subtest: Clubs gérés par le jeu : économies quand le déficit dépasse l’enveloppe, excédents réinvestis
+ok 12 - Clubs gérés par le jeu : économies quand le déficit dépasse l’enveloppe, excédents réinvestis
+  ---
+  duration_ms: 0.419202
+  type: 'test'
+  ...
+# Subtest: Prévision de la saison : champs lisibles, alertes de la ligue et du propriétaire
+ok 13 - Prévision de la saison : champs lisibles, alertes de la ligue et du propriétaire
+  ---
+  duration_ms: 3.595277
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière non marquée : ancien calcul intact pour le club joué et pour les autres
+ok 14 - Moteur, carrière non marquée : ancien calcul intact pour le club joué et pour les autres
+  ---
+  duration_ms: 2498.127261
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : budget annoncé, même modèle pour tous les clubs, sauvegarde valide
+ok 15 - Moteur, carrière marquée : budget annoncé, même modèle pour tous les clubs, sauvegarde valide
+  ---
+  duration_ms: 2829.708807
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : la vente d’un joueur crédite la caisse et entre dans la prévision
+ok 16 - Moteur, carrière marquée : la vente d’un joueur crédite la caisse et entre dans la prévision
+  ---
+  duration_ms: 1682.183885
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : la fin de saison remplace les 2,5 M€ par prime, sanction et apport
+ok 17 - Moteur, carrière marquée : la fin de saison remplace les 2,5 M€ par prime, sanction et apport
+  ---
+  duration_ms: 2231.097926
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : une clôture ne se rejoue pas
+ok 18 - Moteur, carrière marquée : une clôture ne se rejoue pas
+  ---
+  duration_ms: 1441.283441
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : salaire demandé selon le niveau, prolongation hors de l’ancien barème
+ok 19 - Moteur, carrière marquée : salaire demandé selon le niveau, prolongation hors de l’ancien barème
+  ---
+  duration_ms: 2439.844074
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : des comptes illisibles dans une sauvegarde sont rouverts, sans arrêt du jeu
+ok 20 - Moteur, carrière marquée : des comptes illisibles dans une sauvegarde sont rouverts, sans arrêt du jeu
+  ---
+  duration_ms: 8913.219702
+  type: 'test'
+  ...
+# Subtest: Moteur : plancher des offres à 1 000 € par semaine sans la marque, plancher de la règle avec
+ok 21 - Moteur : plancher des offres à 1 000 € par semaine sans la marque, plancher de la règle avec
+  ---
+  duration_ms: 3110.08081
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : les clubs gérés s’autorisent une masse tirée des règles, les joueurs libres valent leur niveau
+ok 22 - Moteur, carrière marquée : les clubs gérés s’autorisent une masse tirée des règles, les joueurs libres valent leur niveau
+  ---
+  duration_ms: 7194.489794
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : données de l’écran Finances tirées du budget de la saison
+ok 23 - Moteur, carrière marquée : données de l’écran Finances tirées du budget de la saison
+  ---
+  duration_ms: 2964.97233
+  type: 'test'
+  ...
+# Subtest: Moteur, carrière marquée : montée du club joué, les clauses jouent et le manager est prévenu
+ok 24 - Moteur, carrière marquée : montée du club joué, les clauses jouent et le manager est prévenu
+  ---
+  duration_ms: 1274.062349
+  type: 'test'
+  ...
+# Subtest: Table : dix championnats, la première division française en référence, parts de recettes à 100 %
+ok 25 - Table : dix championnats, la première division française en référence, parts de recettes à 100 %
+  ---
+  duration_ms: 4.034147
+  type: 'test'
+  ...
+# Subtest: Salaires : la même règle partout, calée sur la masse moyenne de chaque championnat
+ok 26 - Salaires : la même règle partout, calée sur la masse moyenne de chaque championnat
+  ---
+  duration_ms: 44.303617
+  type: 'test'
+  ...
+# Subtest: Salaires : sans table, les deux championnats de référence donnent exactement le résultat d’avant
+ok 27 - Salaires : sans table, les deux championnats de référence donnent exactement le résultat d’avant
+  ---
+  duration_ms: 5.216135
+  type: 'test'
+  ...
+# Subtest: Intersaison : les clubs gérés reviennent au niveau du marché, le club joué garde ses contrats
+ok 28 - Intersaison : les clubs gérés reviennent au niveau du marché, le club joué garde ses contrats
+  ---
+  duration_ms: 19.570253
+  type: 'test'
+  ...
+# Subtest: Intersaison : le niveau des joueurs monte, la masse du championnat reste à sa cible
+ok 29 - Intersaison : le niveau des joueurs monte, la masse du championnat reste à sa cible
+  ---
+  duration_ms: 32.78287
+  type: 'test'
+  ...
+# Subtest: Montée et descente : clauses de contrat variées, jamais uniformes
+ok 30 - Montée et descente : clauses de contrat variées, jamais uniformes
+  ---
+  duration_ms: 59.970715
+  type: 'test'
+  ...
+# Subtest: Limites : personne au-dessus à la création, marge propre à chaque club, dépassement voulu rare
+ok 31 - Limites : personne au-dessus à la création, marge propre à chaque club, dépassement voulu rare
+  ---
+  duration_ms: 117.921773
+  type: 'test'
+  ...
+# Subtest: Demande salariale : selon le niveau et le championnat du club qui recrute
+ok 32 - Demande salariale : selon le niveau et le championnat du club qui recrute
+  ---
+  duration_ms: 6.776802
+  type: 'test'
+  ...
+# Subtest: Attrait : monter coûte moins cher au club, descendre coûte une prime lisible
+ok 33 - Attrait : monter coûte moins cher au club, descendre coûte une prime lisible
+  ---
+  duration_ms: 166.198038
+  type: 'test'
+  ...
+# Subtest: Attrait : pas de règle uniforme — casaniers, voyageurs, ambitieux, pragmatiques
+ok 34 - Attrait : pas de règle uniforme — casaniers, voyageurs, ambitieux, pragmatiques
+  ---
+  duration_ms: 28.190112
+  type: 'test'
+  ...
+# Subtest: Attrait : le Japon, prime nette avant 30 ans, attrait fort après 31 ans
+ok 35 - Attrait : le Japon, prime nette avant 30 ans, attrait fort après 31 ans
+  ---
+  duration_ms: 121.703218
+  type: 'test'
+  ...
+# Subtest: Attrait : d’autres leviers que le salaire — peu utilisé, sans club, retour dans un club connu
+ok 36 - Attrait : d’autres leviers que le salaire — peu utilisé, sans club, retour dans un club connu
+  ---
+  duration_ms: 96.611791
+  type: 'test'
+  ...
+# Subtest: Attrait : rien ne dépend du niveau du joueur
+ok 37 - Attrait : rien ne dépend du niveau du joueur
+  ---
+  duration_ms: 1.176031
+  type: 'test'
+  ...
+# Subtest: Origine d’un joueur du marché : dernier club connu, sinon identifiant de la base, sinon inconnue
+ok 38 - Origine d’un joueur du marché : dernier club connu, sinon identifiant de la base, sinon inconnue
+  ---
+  duration_ms: 0.662644
+  type: 'test'
+  ...
+# Subtest: Budget : chaque championnat a ses recettes, son plafond s’il existe, et la règle des 52 % seulement en France
+ok 39 - Budget : chaque championnat a ses recettes, son plafond s’il existe, et la règle des 52 % seulement en France
+  ---
+  duration_ms: 62.581031
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 40747.908816

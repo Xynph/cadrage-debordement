@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: Référence : croît avec le niveau, bornée aux extrémités
+ok 1 - Référence : croît avec le niveau, bornée aux extrémités
+  ---
+  duration_ms: 7.982507
+  type: 'test'
+  ...
+# Subtest: Politique des clubs : un club fort paie plus, chaque club a son tempérament
+ok 2 - Politique des clubs : un club fort paie plus, chaque club a son tempérament
+  ---
+  duration_ms: 0.764588
+  type: 'test'
+  ...
+# Subtest: Variété : à niveau, poste, âge et club égaux, des joueurs sous-payés et surpayés
+ok 3 - Variété : à niveau, poste, âge et club égaux, des joueurs sous-payés et surpayés
+  ---
+  duration_ms: 9.44185
+  type: 'test'
+  ...
+# Subtest: Application : une seule fois, à la création seulement
+ok 4 - Application : une seule fois, à la création seulement
+  ---
+  duration_ms: 3.816965
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau éteint : rien ne change
+ok 5 - Vrai moteur, drapeau éteint : rien ne change
+  ---
+  duration_ms: 103186.931159
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau éteint : une semaine jouée garde l’ancienne économie, pour tous les clubs
+ok 6 - Vrai moteur, drapeau éteint : une semaine jouée garde l’ancienne économie, pour tous les clubs
+  ---
+  duration_ms: 6.417372
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau allumé : salaires liés au niveau, variés, masses réalistes
+ok 7 - Vrai moteur, drapeau allumé : salaires liés au niveau, variés, masses réalistes
+  ---
+  duration_ms: 81620.892076
+  type: 'test'
+  ...
+# Subtest: Contrats espoirs : hors du noyau, un joueur de 22 ans ou moins a un salaire d’espoir
+ok 8 - Contrats espoirs : hors du noyau, un joueur de 22 ans ou moins a un salaire d’espoir
+  ---
+  duration_ms: 1.701488
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau allumé : budget réaliste pour tous les clubs, sauvegarde relue et reprise exactes
+ok 9 - Vrai moteur, drapeau allumé : budget réaliste pour tous les clubs, sauvegarde relue et reprise exactes
+  ---
+  duration_ms: 0.690334
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, carrière mondiale, drapeau éteint : ni marque ni budget, ancien calcul
+ok 10 - Vrai moteur, carrière mondiale, drapeau éteint : ni marque ni budget, ancien calcul
+  ---
+  duration_ms: 90280.514404
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, carrière mondiale, drapeau allumé : chaque championnat à son niveau, budget pour les 116 clubs
+ok 11 - Vrai moteur, carrière mondiale, drapeau allumé : chaque championnat à son niveau, budget pour les 116 clubs
+  ---
+  duration_ms: 81754.85324
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau allumé : un espoir signe à 20 800 € par an, la sauvegarde l’accepte
+ok 12 - Vrai moteur, drapeau allumé : un espoir signe à 20 800 € par an, la sauvegarde l’accepte
+  ---
+  duration_ms: 1.075062
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau allumé : l’écran Finances reçoit le budget de la saison
+ok 13 - Vrai moteur, drapeau allumé : l’écran Finances reçoit le budget de la saison
+  ---
+  duration_ms: 0.856502
+  type: 'test'
+  ...
+# Subtest: Vrai moteur, drapeau allumé : personne au-dessus des limites à la création
+ok 14 - Vrai moteur, drapeau allumé : personne au-dessus des limites à la création
+  ---
+  duration_ms: 0.917147
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 357148.529032

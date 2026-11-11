@@ -1,0 +1,27 @@
+{
+  "createdMarker": {
+    "version": 3,
+    "semaines": 52
+  },
+  "playedMarker": {
+    "version": 3,
+    "semaines": 52
+  },
+  "reopenedMarker": {
+    "version": 3,
+    "semaines": 52
+  },
+  "rounds": [
+    0,
+    1,
+    1
+  ],
+  "sha": [
+    "9bf07104de9aaf62201dd5492a4b54194d188b2ecd1f579847d25c9639de1691",
+    "41a00945f1a533314b2eb00b007c782eda707308a82e5438f7a81197c2d9a1f8",
+    "41a00945f1a533314b2eb00b007c782eda707308a82e5438f7a81197c2d9a1f8",
+    "41a00945f1a533314b2eb00b007c782eda707308a82e5438f7a81197c2d9a1f8"
+  ],
+  "importEqual": true,
+  "reopenEqual": true
+}
