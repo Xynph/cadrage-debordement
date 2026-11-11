@@ -56,6 +56,66 @@ const generic = conference();
 assert.doesNotMatch(factsText(theme(generic, 'avant_match')), /Saint-Lys|Béziers/);
 assert.doesNotMatch(factsText(theme(generic, 'attaque')), /gagnent la ligne|12[–-]17/);
 
+// A bank prompt about a youngster is not a recorded breakthrough event.
+run(`S.clubs[29].players=[{id:'young-own',name:'Mathis du Club',age:19}];
+  S.clubs[28].players=[{id:'young-away',name:'Jules Adverse',age:18}];`);
+const youth = theme(conference(), 'joueurs');
+assert.match(youth.question, /place|jeunes|formation/i);
+assert.doesNotMatch(factsText(youth), /Mathis du Club|Jules Adverse|éclosion|sujet|thème|imperfections/i,
+  'Le simple âge d’un joueur ne prouve pas une éclosion et ne doit pas lui attribuer l’événement');
+assert.match(youth.answers.find(a=>a.id==='r0').text, /réception|passe|défense|soutien/i);
+assert.doesNotMatch(youth.answers.map(a=>a.text).join('\n'), /sera titulaire|il jouera|je le titulariserai/i);
+run('S=JSON.parse(initial)');
+
+// The native projection receives canonical questions for each reachable topic.
+// Topic eligibility remains the existing engine's responsibility.
+run('const normalPreparation=CDV60RichPress;');
+for(const requestedTheme of ['avant_match','attaque','defense','joueurs','supporters','calendrier','carriere',
+ 'direction','crise','vestiaire','rotation','blessures','classement','phase_finale','formation']){
+ context.requestedTheme=requestedTheme;
+ run(`CDV60RichPress={...normalPreparation,prepare(s){return CDPressQuestionBank.pick({season:s.season,
+   week:s.franceMode.week,seed:s.club,count:2,context:{themes:[requestedTheme]}});}};`);
+ const prepared=read('CDV60RichPress.prepare(S)'),presented=conference();
+ const choices=questions=>questions.map(q=>[q.id,q.journalist.id,q.answers.map(a=>[a.id,a.tone])]);
+ assert.deepEqual(choices(presented),choices(prepared),'Les libellés conservent les choix et leurs tons');
+ for(const q of presented){
+  assert.equal(new Set(q.answers.map(a=>a.text)).size,5);
+  for(const answer of q.answers){
+   assert.ok(answer.text.length>30&&answer.text.length<=600);
+   assert.doesNotMatch(answer.text,/sur «|sujet [«"]|thème [«"]|chantier «/i,requestedTheme+' / '+answer.id);
+  }
+ }
+}
+run('CDV60RichPress=normalPreparation;');
+
+// Every training-bank variant must remain a general policy question when no
+// individual training event is available, including the arrival invitation.
+const trainingBank=read("CDPressQuestionBank.questions.filter(q=>q.theme==='formation')");
+assert.equal(trainingBank.length,20);
+let trainingVariants=0;
+for(const source of trainingBank){
+ for(let variant=0;variant<source.variants.length;variant++){
+  context.trainingSource=source;
+  context.trainingVariant=variant;
+  run(`CDV60RichPress={...normalPreparation,prepare(s){
+   const samples=CDPressQuestionBank.pick({season:s.season,week:s.franceMode.week,seed:s.club,
+    count:2,context:{themes:['formation']}});
+   return [{...trainingSource,question:trainingSource.variants[trainingVariant],
+    variant:trainingVariant,journalist:samples[0].journalist},samples[1]];
+  }};`);
+  const q=conference()[0];
+  assert.match(q.question,/jeunes|formation/i,source.id+' / variante '+variant);
+  assert.doesNotMatch(q.question,/\bson\b|\bsa\b|\bses\b|\bcet\b|\bil\b|premier match|titularisation|espoir|prêt|«/i,
+   source.id+' / variante '+variant+' : aucun joueur ou événement ne doit être présupposé');
+  assert.deepEqual([q.id,q.answers.map(a=>[a.id,a.tone])],
+   [source.id,source.answers.map(a=>[a.id,a.tone])]);
+  assert.equal(q.answers.length,5);
+  trainingVariants++;
+ }
+}
+assert.equal(trainingVariants,60);
+run('CDV60RichPress=normalPreparation;');
+
 run(`
   S.franceMode.fixture={pair:[26,29],phase:'barrage',week:12};
   S.history=[
@@ -107,6 +167,18 @@ assert.doesNotMatch(factsText(injury), /Mathis Rétabli|Baptiste Adverse|2 semai
 run('S.clubs[29].players[1].injury=0');
 assert.doesNotMatch(factsText(theme(conference(), 'blessures')), /Élodie Soubeyran/);
 
+run('S=' + snapshot);
+const individual=theme(grounded,'joueurs');
+context.oldYouthReply='Le sujet « éclosion d’un jeune » révèle des imperfections qu’il faut accepter de travailler.';
+context.oldYouthSource=read('CDPressQuestionBank.questions').find(q=>q.theme==='joueurs'&&q.id!==individual.id).id;
+context.oldYouthReporter=individual.journalist;
+run(`S.pressConference={version:1,history:[{id:oldYouthSource,season:2,week:11,club:29,answerId:'r1',
+  questionText:'Quel rôle pour les jeunes ?',answerText:oldYouthReply,
+  journalist:{id:oldYouthReporter.id,name:oldYouthReporter.name,outlet:oldYouthReporter.outlet}}]};api.validate(S);`);
+const oldYouthFollow=theme(conference(),'joueurs');
+assert.equal(oldYouthFollow.followUp.quote,context.oldYouthReply,'Une ancienne réponse citée reste littérale');
+assert.ok(oldYouthFollow.question.includes(context.oldYouthReply));
+assert.doesNotMatch(oldYouthFollow.answers.map(a=>a.text).join('\n'),/sujet|éclosion|imperfections/i);
 run('S=' + snapshot);
 context.payload = {
   context: read('api.project().context'),

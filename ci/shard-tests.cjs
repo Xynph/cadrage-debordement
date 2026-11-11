@@ -134,6 +134,8 @@ const WEIGHTS_SECONDS = Object.freeze({ ...HISTORICAL_WEIGHTS_SECONDS,
   'tests/godot-roster-foundation.cjs': 200,
   // Suites PASS du run42909005768 (HEAD464021b), wall mesuré +15%.
   // Une mesure individuelle ne déclare pas vert le run global rouge.
+  // V63.1 garde sa réserve historique91 : arrondir79,57s+15% à92
+  // dégrade le rejeu des trois traces; ce poids ne fixe pas son délai maximal.
   'tests/deepen-analytics.cjs': 82,
   'tests/deepen-staff-native.cjs': 624,
   'tests/deepen-youth-worker.cjs': 85,
@@ -155,7 +157,6 @@ const WEIGHTS_SECONDS = Object.freeze({ ...HISTORICAL_WEIGHTS_SECONDS,
   'tests/player-population-capacity.cjs': 142,
   'tests/regen-scouting.cjs': 98,
   'tests/rugby-real-long-career-qa.cjs': 101,
-  'tests/v63-1-long-career.cjs': 92,
   'tests/world-champ-worker.cjs': 125,
   'tests/world-save-runtime.cjs': 92,
   'tests/world-worker-season.cjs': 878,
