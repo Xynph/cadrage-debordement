@@ -111,7 +111,8 @@ function simuler(e,phases,graine){
   const s=p.side===T?sens:-sens;
   // Le plaqué présente le ballon vers son camp (loi 14).
   const B={x:p.x-s*0.7,y:p.y};
-  lacher();ballon.sol=true;ballon.x=B.x;ballon.y=B.y;
+  // Le plaqué pose le ballon derrière lui (0,3 s), sans bond.
+  lacher();ballon.sol=true;ballon.depose={x:ballon.x,y:ballon.y,h:ballon.h,t0:t,B};
   const recupere=p.side!==T; // ballon perdu par l'adversaire : l'équipe qui va marquer le récupère
   const lies=[];
   // Liaison au-dessus du ballon : l'équipe qui va marquer sur le ballon, l'autre en face ; le demi se tient derrière.
@@ -356,6 +357,7 @@ function lancerPercee(){
    if(p.etat==='aplati'){const k=Math.min(1,(t-p.depuis)/0.45);ballon.x+=(G.x-ballon.x)*k;ballon.y+=(G.y-ballon.y)*k;ballon.h=1.0-0.88*k}
   }
   else if(ballon.vol){const v=ballon.vol,a=parId.get(v.a),k=borne((t-v.t0)/(v.t1-v.t0),0,1);ballon.x=v.de.x+(a.x-v.de.x)*k;ballon.y=v.de.y+(a.y-v.de.y)*k;ballon.h=1.0+Math.sin(k*Math.PI)*0.35}
+  else if(ballon.sol&&ballon.depose){const v=ballon.depose,k=borne((t-v.t0)/0.3,0,1);ballon.x=v.x+(v.B.x-v.x)*k;ballon.y=v.y+(v.B.y-v.y)*k;ballon.h=v.h+(0.15-v.h)*k}
   else if(ballon.sol){ballon.h=0.15}
  };
  ballonSuit();garder();
@@ -421,7 +423,7 @@ function lancerPercee(){
    const prochain=d.reste>0?d.coureur:d.chaine[0];
    const prochainPret=!prochain||(ram.x-prochain.x)*sens>=1.5;
    if(pret_&&tousEnJeu&&prochainPret||t-r.forme>6){
-    etat(ram,'ramassage');tenir(ram);ballon.sol=false;
+    etat(ram,'ramassage');tenir(ram);ballon.sol=false;ballon.depose=null;
     evenements.push({t:r1(t),type:'ramassage',joueur:ram.id,horsJeuRespecte:tousEnJeu});
     d.phase='ramassage';d.attente=t+0.4;
     // Tous se relèvent : le ruck est fini quand le ballon est joué.
@@ -475,7 +477,7 @@ function lancerPercee(){
    }
   }else if(d.phase==='aplati'){
    if(t-d.aplati>=0.45&&ballon.porteur){
-    lacher();ballon.sol=true;ballon.x=G.x;ballon.y=G.y;ballon.h=0.12;
+    lacher();ballon.sol=true;ballon.depose=null;ballon.x=G.x;ballon.y=G.y;ballon.h=0.12;
     S.releve=d.aplati+1.3;
    }
    if(t-d.aplati>=0.6&&S.etat==='aplati'){etat(S,'au_sol');S.plonge=null}

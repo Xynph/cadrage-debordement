@@ -18,6 +18,7 @@ const Pass = preload("res://match_pass.gd")
 const Gestes = preload("res://match_gestes.gd")
 const Rendu = preload("res://match_rendu.gd")
 const Animations = preload("res://match_animations.gd")
+const Choregraphie = preload("res://match_choregraphie.gd")
 const CUT_SECONDS := 0.30
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
@@ -62,6 +63,8 @@ var _club_crest: Texture2D
 var _club_branding: MultiMeshInstance3D
 ## Gestes de rugby (touche, ballon porté, essai) : posés par le match en temps forts (repli CD_MATCH_GESTES=0) ou par CD_MATCH_GESTES=1 dans le direct d'origine.
 var _gestes: RefCounted
+## Pistes du chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) : la vue les suit à la place de son interpolation.
+var _choregraphie: RefCounted
 var _cadrage: RefCounted
 # Rendu moderne (Forward+ seulement, voir match_rendu.gd) ; null sous gl_compatibility.
 var _rendu: RefCounted
@@ -194,6 +197,68 @@ func arreter_geste(id: String) -> void:
 		_actors[id].geste = {}
 
 
+## Suit les pistes du chorégraphe (moteur Node) : positions, caps et états des joueurs,
+## ballon. Rend faux sans pistes valides : la vue garde alors son interpolation.
+## `vitesse` : facteur de lecture (la régie accélère les temps forts dans les tests).
+func jouer_choregraphie(pistes: Dictionary, vitesse: float = 1.0) -> bool:
+	if not is_node_ready():
+		return false
+	if _choregraphie == null:
+		_choregraphie = Choregraphie.new(self)
+	_stop_live_pass()
+	_pass_plan = {}
+	_contact_plan = {}
+	if _gestes:
+		_gestes.cancel()
+	if not _choregraphie.charger(pistes):
+		return false
+	_choregraphie.vitesse = vitesse
+	_paused = false
+	_ball.visible = true
+	for entry: Dictionary in _actors.values():
+		entry.geste = {}
+	return true
+
+
+func choregraphie_active() -> bool:
+	return _choregraphie != null and _choregraphie.actif
+
+
+func choregraphie_temps() -> float:
+	return _choregraphie.temps if choregraphie_active() else 0.0
+
+
+func choregraphie_finie() -> bool:
+	return choregraphie_active() and _choregraphie.finie()
+
+
+func figer_choregraphie(fige: bool) -> void:
+	if choregraphie_active():
+		_choregraphie.fige = fige
+		_paused = fige
+
+
+## Fin des pistes : chaque joueur reste où il est et reprend l'interpolation de la vue.
+func arreter_choregraphie() -> void:
+	if not choregraphie_active():
+		return
+	_choregraphie.arreter()
+	for entry: Dictionary in _actors.values():
+		var at: Vector3 = (entry.node as Node3D).position
+		entry.from = at
+		entry.target = at
+		entry.elapsed = BLEND_SECONDS
+		entry.velocity = Vector3.ZERO
+		entry.tangent = Vector3.ZERO
+		entry.holding = false
+		entry.geste = {}
+	_ball_from = _ball.position
+	_ball_target = _ball.position
+	_ball_travel = 1.0
+	_ball_attached = false
+	_carrier_id = ""
+
+
 func set_live_cadence(steps: int) -> void:
 	_live_cadence = steps
 
@@ -207,6 +272,8 @@ func apply_frame(live: Dictionary) -> void:
 		_pending = live.duplicate(true)
 		_has_pending = true
 		return
+	# Une nouvelle image venue de la régie ou du direct met fin aux pistes en cours.
+	arreter_choregraphie()
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -391,10 +458,13 @@ func _process(delta: float) -> void:
 	var preparation := smoothstep(0.0, Pass.PREP_SECONDS, _pass_elapsed)
 	if _gestes:
 		_gestes.advance(delta)
+	if choregraphie_active():
+		_choregraphie.avancer(delta)
 	for id: String in _actors:
 		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
-		var staged: bool = _gestes != null and _gestes.stages(id)
+		var suivi: bool = _choregraphie != null and _choregraphie.stages(id)
+		var staged: bool = suivi or (_gestes != null and _gestes.stages(id))
 		if _gestes:
 			_gestes.restore(id, entry)
 		if entry.rig:
@@ -407,6 +477,8 @@ func _process(delta: float) -> void:
 			var staging: Dictionary = _pass_plan.staging[id]
 			actor.position = (staging.from as Vector3).lerp(staging.mark, preparation)
 			actor.rotation.y = lerp_angle(staging.heading, staging.facing, preparation)
+		elif suivi:
+			_choregraphie.place(id, actor)
 		elif staged:
 			_gestes.place(id, actor)
 		else:
@@ -498,6 +570,9 @@ func _process(delta: float) -> void:
 				else:
 					Cut.apply(actor, entry.rig, entry.cut_direction, cut_progress, entry.cut_pose, entry.cut_plant)
 	_update_contact(delta)
+	# Poses des pistes avant le ballon : les mains du porteur sont à leur place quand il y est mis.
+	if choregraphie_active():
+		_choregraphie.pose()
 	_update_ball(delta)
 	if _gestes:
 		_gestes.pose()
@@ -623,6 +698,9 @@ func _update_contact(delta: float) -> void:
 
 
 func _update_ball(delta: float) -> void:
+	if choregraphie_active():
+		_ball_des_pistes()
+		return
 	if not _ball.visible:
 		return
 	if _gestes != null and _gestes.owns_ball():
@@ -643,6 +721,32 @@ func _update_ball(delta: float) -> void:
 		# Seuls les coups de pied existants utilisent cet arc générique.
 		if _kind in ["kick", "goal", "miss", "kickoff", "drop22", "goalLine"]:
 			_ball.position.y += sin(_ball_travel * PI) * minf(6.0, _ball_from.distance_to(_ball_target) * 0.18)
+
+
+## Ballon des pistes : dans les mains de son porteur, sinon sur sa trajectoire (passe,
+## ballon au sol, aplati).
+func _ball_des_pistes() -> void:
+	_ball.visible = true
+	var porteur: String = _choregraphie.porteur()
+	_carrier_id = porteur
+	for id: String in _actors:
+		_actors[id].holding = id == porteur
+	var tenu: bool = not porteur.is_empty() and _actors.has(porteur) and _actors[porteur].rig and _choregraphie.etat(porteur) != "aplati"
+	var vise: Vector3 = _choregraphie.ballon_piste()
+	if tenu:
+		var entry: Dictionary = _actors[porteur]
+		vise = Presentation.ball_anchor(entry.node, entry.rig)
+		_ball.global_basis = (entry.node as Node3D).global_basis
+	# Changement de source (prise, lâcher, ramassage, aplati) : le ballon rejoint la nouvelle
+	# source en 0,2 s depuis sa place à l'écran, jamais d'un bond.
+	var source := porteur + ("|tenu" if tenu else "|piste")
+	if source != _choregraphie.source_ballon:
+		_choregraphie.source_ballon = source
+		_choregraphie.source_depuis = _choregraphie.temps
+		_choregraphie.source_de = _ball.global_position
+	var k := smoothstep(0.0, 0.2, _choregraphie.temps - _choregraphie.source_depuis)
+	_ball.global_position = (_choregraphie.source_de as Vector3).lerp(vise, k)
+	_ball_attached = tenu and k >= 1.0
 
 
 func set_quality(profile: String) -> void:
