@@ -235,3 +235,24 @@ préparation séparée, provenance exacte et PNG sans retouche :
 [evidence/night-navigation-20261111](evidence/night-navigation-20261111/README.md).
 Ces sept reçus ciblés portent sur leurs SHA respectifs et ne remplacent pas
 une campagne SDK complète sur un même candidat.
+
+
+## Complément phase 9 : contrats et fatigue
+
+Sur common figé `096f3d8f6a879bc2e240e99b2184ab7f3d688182`, les journaux
+graphiques reçus donnent contrats **270/0** (47,834 s) et fatigue **685/0**
+(106,471 s). Ces preuves ont été assemblées sans relancer le SDK. Les wrappers
+ne produisent pas de provenance.json ; le SHA est attribué par root et les
+empreintes des scripts sur ce SHA sont conservées dans le manifeste.
+
+Les captures contrats effectif, mensuelle, annuelle et nom long ont été inspectées :
+unités explicites, colonnes lisibles, nom long tronqué sans élargissement. Ce nom
+long est une substitution UI temporaire du test, pas un joueur réel. Les trois
+captures fatigue ont été inspectées : carrière réelle et confirmation lisibles ;
+la projection de recette avec blessure/suspension/sélection est synthétique, sans
+écriture du profil moteur. Les 685 contrôles comprennent aussi des fixtures
+isolées et ne constituent pas 685 interactions réelles. Les wrappers ne mesurent
+pas les compteurs de parole/Gabi : aucune valeur 0/0 n’est annoncée pour ces cas.
+
+[Journaux, manifeste et cinq PNG originaux sélectionnés](evidence/night-phase9-20261111/README.md).
+Le parcours management graphique sera documenté séparément après réception.

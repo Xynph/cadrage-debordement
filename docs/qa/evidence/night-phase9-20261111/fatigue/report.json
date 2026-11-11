@@ -1,0 +1,11 @@
+{
+  "captures": [
+    "/workspace/work/night-phase9/fatigue/fatigue-confirmation-individuelle-1440.png",
+    "/workspace/work/night-phase9/fatigue/fatigue-carriere-reelle-1440.png",
+    "/workspace/work/night-phase9/fatigue/fatigue-projection-de-recette-1440.png"
+  ],
+  "checks": 685,
+  "display": "X11",
+  "failures": [],
+  "note": "La capture fatigue-projection-de-recette-1440 injecte uniquement la projection UI ; le profil moteur reste intact."
+}
