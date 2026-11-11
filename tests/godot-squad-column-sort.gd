@@ -12,7 +12,7 @@ func check(value: bool,message: String) -> void:
 func settle() -> void:
 	for i in 8: await process_frame
 func person(id: String) -> Dictionary:
-	return {"id":id,"name":id,"pos":"Pilier gauche","fam":0,"age":25,"shirtNumber":1,"rating":70,"potential":75,"condition":95,"physicalLoad":10,"note":70,"salary":1000,"contractEnd":2,"minutes":0,"status":"Titulaire","injury":0}
+	return {"id":id,"name":id,"pos":"Pilier gauche","fam":0,"age":25,"shirtNumber":1,"rating":70,"potential":null,"potentialRange":{"min":70,"max":80},"condition":95,"physicalLoad":10,"note":70,"salary":1000,"contractEnd":2,"minutes":0,"status":"Titulaire","injury":0}
 func names(players: Array) -> Array:
 	return players.map(func(player: Dictionary):return player.id)
 func projections() -> void:
@@ -22,7 +22,14 @@ func projections() -> void:
 	for key: String in numeric:
 		var source: Array = []
 		for pair in [["h",10],["u",null],["b",2],["a",2],["z",0]]:
-			var player := person(pair[0]); player[numeric[key]] = pair[1]; source.append(player)
+			var player := person(pair[0])
+			if key == "Potentiel":
+				# The published potential is an interval; a legacy exact value must not
+				# override its lower bound, and a missing interval remains unknown.
+				player.potential = 99
+				player.potentialRange = null if pair[1] == null else {"min":pair[1],"max":pair[1]+5}
+			else: player[numeric[key]] = pair[1]
+			source.append(player)
 		var before := JSON.stringify(source)
 		var reading := U.defaults(); reading.sort = key
 		check(names(Squad.ordered_players(source,reading,1)) == ["z","a","b","h","u"],"Numérique croissant, zéro connu, nul dernier et égalités ID : "+key)
