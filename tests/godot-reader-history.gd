@@ -73,6 +73,10 @@ func run() -> void:
 	elif app.model.get("live") is Dictionary:
 		await command("finish_round")
 	if not await Flow.settle_club_meetings(app, self, check): await finish(); return
+	# A confirmed result is visible in the calendar before weekly archival.
+	# Finish the real public week before requiring a ClubResult archive link.
+	var completed_week: int = app.model.meta.week
+	if not await Flow.finish_match_week(app, self, check, completed_week): await finish(); return
 	app._navigate("Bureau")
 	await settle()
 	var historical: Dictionary = {}
@@ -82,6 +86,10 @@ func run() -> void:
 			break
 	check(not historical.is_empty(), "Rencontre historique réellement produite par le moteur")
 	if historical.is_empty(): await finish(); return
+	var archived: Array = app.model.get("history", []).filter(func(result: Dictionary):
+		return str(result.get("fixtureId", "")) == str(historical.id) and result.get("pair", []) == [historical.home.id, historical.away.id] and result.get("score", []) == historical.score)
+	check(archived.size() == 1, "Clôture hebdomadaire : résultat archivé réel de la même rencontre, paire et score")
+	if archived.size() != 1: await finish(); return
 	await command("export")
 	var before: Dictionary = JSON.parse_string(app.model.meta.exportText).state
 	var save_path := str(app.model.meta.dataDir).path_join("donnees.json")
