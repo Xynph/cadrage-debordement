@@ -8,6 +8,9 @@ var checks := 0
 var cached_3d_sizes: Dictionary = {}
 var rendered_3d: Array = []
 var pending_3d_checks := 0
+var speech_requests := 0
+var speech_starts := 0
+var speech_observed := false
 var focused := OS.get_environment("CD_ART_DIRECTION_FOCUS") == "1"
 var dialogs_only := OS.get_environment("CD_ART_DIRECTION_DIALOGS_ONLY") == "1"
 var scenario := OS.get_environment("CD_ART_DIRECTION_CASE")
@@ -128,6 +131,11 @@ func run() -> void:
 			if resolutions.is_empty(): finish(); return
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	# Observe the shipped silent guide without replacing it or enabling audio.
+	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
+		speech_observed = true
+		app.coach.speech.requested.connect(func(_text: String): speech_requests += 1)
+		app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
 	if not await wait_model(): finish(); return
 	var maximize:=Callable(app,"_keep_filled_display")
 	if root.size_changed.is_connected(maximize):root.size_changed.disconnect(maximize)
@@ -261,8 +269,13 @@ func match_review() -> void:
 		await capture("Match-qualite-detail")
 func finish() -> void:
 	check(pending_3d_checks == 0,"Toutes les nouvelles scènes 3D ont terminé leur vrai redraw")
+	check(speech_observed,"Compteurs du vrai guide Gabi branchés")
+	check(speech_requests == 0 and speech_starts == 0,"Gabi reste silencieux : aucune demande ni début de parole")
+	if speech_observed and is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
+		var speech: Node = app.coach.speech
+		check(not speech._audio_allowed and speech._id == 0 and not speech._system_active and not speech.speaking and not is_instance_valid(speech.player),"Aucune voix système ou enregistrée activée depuis le démarrage")
 	var report := FileAccess.open(OS.get_environment("CD_ART_DIRECTION_DIR").path_join("report.json"),FileAccess.WRITE)
-	report.store_string(JSON.stringify({"case":scenario,"checks":checks,"failures":failures,"captures":captures,"unavailable_routes":unavailable_routes,"rendered_3d":rendered_3d,"render_scope":"Layout/input recipe; default quality unchanged. Only camera-backed 3D SubViewports are cached between real creation/resize/capture redraws. No animation or frame-rate qualification."},"  "))
+	report.store_string(JSON.stringify({"case":scenario,"checks":checks,"failures":failures,"captures":captures,"unavailable_routes":unavailable_routes,"rendered_3d":rendered_3d,"speech":{"observed":speech_observed,"requests":speech_requests,"starts":speech_starts},"render_scope":"Layout/input recipe; default quality unchanged. Only camera-backed 3D SubViewports are cached between real creation/resize/capture redraws. No animation or frame-rate qualification."},"  "))
 	report.close()
 	if is_instance_valid(app):
 		app.closing = true
