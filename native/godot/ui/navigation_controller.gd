@@ -323,6 +323,7 @@ func open_roster_group() -> void:
 func _open_roster_preset(family: String) -> void:
 	if _blocked() or not _allowed_route("Effectif"): return
 	capture_current()
+	_dispatching = true
 	U.remember(app)
 	if cursor >= 0: _store_roster_reading(history[cursor])
 	var state := U.defaults()
@@ -334,6 +335,7 @@ func _open_roster_preset(family: String) -> void:
 	app.selected_player = ""
 	app._navigate("Effectif", false)
 	observe(app.route, app.selected_player, app.selected_staff_club, true)
+	_dispatching = false
 
 func _person(source: String, id: String) -> Dictionary:
 	var people: Variant = app.model.get(source, [])
