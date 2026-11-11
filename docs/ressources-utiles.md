@@ -113,3 +113,9 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
 - **Statut :** À explorer / Évalué / Retenu / Intégré / Écarté.
 - **Date et vérification effectuée :** distinguer lecture, essai et intégration.
 - **Décision, preuve et prochaine action :** lien vers le fichier ou la PR.
+
+## Recette graphique Linux
+
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [Xvfb21.1.16 Debian13](https://deb.debian.org/debian/pool/main/x/xorg-server/xvfb_21.1.16-1.3+deb13u4_amd64.deb) | Téléchargé et extrait localement le11 novembre2026 ; SHA256 `893d87bf159b6de077a929fc796a73c39f837d45310b2076e3eeebebb80552b6`. Avis X.Org du paquet lu. | Vrai rendu X11/Mesa pour les mesures1280–2560, profils jetables, sans installation globale. | Gratuit ; copyright X.Org, variante de la licence MIT. Aucun binaire ajouté au jeu. | **Retenu** pour la [réception petites fenêtres](qa/small-window-geometry-20261111.md). Serveur temporaire partagé, aucune configuration produit modifiée. |
