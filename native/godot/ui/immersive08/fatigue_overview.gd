@@ -6,6 +6,7 @@ const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Link = preload("res://ui/entity_link.gd")
 const FILTERS := ["À ménager", "Blessés", "Suspendus", "En sélection", "Tout l’effectif"]
 const PLANS := {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const SORT_KEYS := ["name", "pos", "condition", "physicalLoad", "minutes", "injury", "selection", "suspension", "loadPlan"]
@@ -103,6 +104,15 @@ static func compact_button(button: Button, font_size: int) -> void:
 		compact_style.content_margin_bottom = 0
 		button.add_theme_stylebox_override(style_name, compact_style)
 
+static func profile_link(app: Control, parent: Control, rectangle: Rect2, player: Dictionary, id: String) -> Button:
+	var link := D.button(parent, rectangle, "", func(): pass, false, "", false, app.accent, id)
+	compact_button(link, 18)
+	link.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 2, 0))
+	link.add_theme_stylebox_override("hover", C.box(Color(1, 1, 1, .04), C.GOLD, 2, 0))
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 2, 0))
+	Link.bind(link, app, {"kind":"player", "id":str(player.id)}, str(player.get("name", "Joueur")))
+	return link
+
 static func sort_header(app: Control, parent: Control, rectangle: Rect2, caption: String, key: String, state: Dictionary, prefix: String, id: String) -> Button:
 	var active: bool = state.get(prefix + "_sort", "") == key
 	var descending: bool = state.get(prefix + "_descending", false)
@@ -175,7 +185,7 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	C.fill(list)
 	scroll.add_child(list)
 	for row: Dictionary in display_rows: _row(app, list, row)
-	if display_rows.is_empty(): list.add_child(C.wrap("Aucun joueur projeté dans cette carrière.", 18, C.MUTED))
+	if display_rows.is_empty(): list.add_child(C.wrap("Aucun joueur dans cette tranche de charge." if selected_bin >= 0 else "Aucun joueur projeté dans cette carrière.", 18, C.MUTED))
 	var blocker := load_blocker(app)
 	var footer := blocker if not blocker.is_empty() else "Régler prépare le plan ; seule la séance applique ses effets. Chaque modification est confirmée."
 	D.text(panel, 18, 796, footer, 17, C.GOLD if not blocker.is_empty() else C.MUTED, 500, 2178).name = "FatigueLoadPolicy"
@@ -220,11 +230,12 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	item.tooltip_text = str(player.get("name", "")) + " · " + " · ".join(row.reasons)
 	list.add_child(item)
 	D.rect(item, Rect2(0, 0, 2190, 28), C.RAISED if int(row.rank) < 4 else C.PANEL, 2)
+	var link := profile_link(app, item, Rect2(0, 0, 357, 28), player, "FatigueOpenPlayer_" + identifier(str(player.id)))
 	var portrait := G.portrait(int(player.get("portraitIndex", 0)), 0, player)
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	item.add_child(portrait)
+	link.add_child(portrait)
 	D.place(portrait, Rect2(1, 1, 25, 26))
-	D.text(item, 32, 22, player.get("name", "—"), 20, C.IVORY, 600, 325)
+	D.text(link, 32, 22, player.get("name", "—"), 20, C.IVORY, 600, 325)
 	D.text(item, 365, 22, player.get("pos", "—"), 18, C.MUTED, 500, 205)
 	D.text(item, 587, 22, _number(player, "condition", "%"), 19, C.MINT, 600, 68)
 	if player.has("condition"): D.bar(item, Rect2(655, 12, 76, 5), float(player.condition), C.MINT)
