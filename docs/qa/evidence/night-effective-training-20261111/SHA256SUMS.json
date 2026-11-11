@@ -1,14 +1,40 @@
 {
   "sourceDataSha": "297f016584d24810a5f762d20396fcd7c91b0293",
-  "scope": "Public pending/applied session, meta.training, exact published reason and own-XV fixture condition. No edited save, threshold or game engine, no inferred effective mode from condition. Godot receipt validation is pending.",
+  "scope": "Public worker sessions plus actual Godot receipt component validation. Synthetic protocol/boundary cases distinguished from two real public adjustments. No full client/Windows qualification.",
   "files": {
+    "godot-report.json": "06030012d621a105ddec1e297b996035356a8dc8d0e20d3d483909f420d33456",
+    "godot.log": "c6255e885df387ff834514b9dab725642b8e87f1aa458a03b94ba0defc9d064d",
+    "node-run.log": "ef582f4502f51364c6a529d03f172f46dfb3291f7357bc3e7f9a69e9cc7e21ae",
     "public-worker-cases.json": "54ebec4fdfbc9d9a5aa2af88f45b3d425eaf74335dc7d17d8125da23e7734784",
-    "node-run.log": "ef582f4502f51364c6a529d03f172f46dfb3291f7357bc3e7f9a69e9cc7e21ae"
+    "wrapper.log": "60e61d4e57e46e6bec60144941056dae70644b4685803905eef7e1850563e2b8"
   },
   "sourceFilesSha256": {
     "native/godot/ui/decision_feedback.gd": "65f6fff4efa36ecf6830b78b4f3e26f8da310745e4c0a0b4d23a9242eb10873a",
     "tools/qa/effective-training-receipt.cjs": "3858395ab9c382d56e18952e8ee3e8672ec58adfd351cff1d9271d5d758f9b0c",
     "tests/godot-effective-training-receipt.gd": "d36346c359b09b059ab915e0a1545640b88beaac724d62c00b82105a3a66e7d8",
     "tests/godot-effective-training-receipt.cjs": "754637c63553f100575c1b79c31c844364c5e8ae212255f5176253d0a5624832"
+  },
+  "sdkReceipt": {
+    "candidateSha": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+    "sourceProductCommits": [
+      "297f016584d24810a5f762d20396fcd7c91b0293",
+      "cfbd4cbedace72984ddc195fd95041962618dd56"
+    ],
+    "integratedProductCommits": [
+      "545cd07ff4417ebf32014cdac539d50410200fd5",
+      "096f3d8f6a879bc2e240e99b2184ab7f3d688182"
+    ],
+    "checks": 45,
+    "failures": 0,
+    "wrapperExitCode": 0,
+    "godot": "4.7.2-stable official ed1daf0bf",
+    "node": "22.23.4",
+    "audio": "Dummy",
+    "display": "headless",
+    "fixtureExactCopy": true,
+    "fixtureSha256": "54ebec4fdfbc9d9a5aa2af88f45b3d425eaf74335dc7d17d8125da23e7734784",
+    "durationSeconds": null,
+    "durationNote": "No wall-clock duration was instrumented in this wrapper/report; no estimate claimed.",
+    "scope": "Headless Godot RefCounted receipt component with real public worker fixtures; not a full game client or Windows test."
   }
 }

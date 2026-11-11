@@ -101,11 +101,19 @@ des lectures de contrôle.
 [journal Node](evidence/night-effective-training-20261111/node-run.log),
 [empreintes des preuves et sources](evidence/night-effective-training-20261111/SHA256SUMS.json).
 
-## Recette Godot préparée, à recevoir sur le commun
+## Reçu Godot ciblé sur le candidat commun
 
-`tests/godot-effective-training-receipt.cjs` peut réutiliser les deux cas déjà
-obtenus par `CD_EFFECTIVE_TRAINING_REUSE_CASES`, puis reçoit le composant Godot sur
-le candidat commun déjà importé, avec audio Dummy et limite enfant 150 secondes.
+`tests/godot-effective-training-receipt.cjs` a reçu le composant sur
+`096f3d8f6a879bc2e240e99b2184ab7f3d688182` : **45 contrôles, zéro échec,
+wrapper terminé avec le code 0**. Le produit `297f0165` est incorporé par
+`545cd07ff4417ebf32014cdac539d50410200fd5` et les gardes `cfbd4cbe` par
+`096f3d8f6a879bc2e240e99b2184ab7f3d688182`. Les quatre fichiers de produit et
+de recette sont identiques octet pour octet à ces sources de tranche.
+
+Godot 4.7.2 stable, Node 22.23.4, mode headless et audio Dummy. Les deux cas publics
+ont été réutilisés par copie exacte, empreinte vérifiée, sans rejouer les actions
+métier. La limite enfant reste 150 secondes. Aucune durée murale n’a été
+instrumentée dans ce wrapper : aucune durée n’est déduite des dates de fichier.
 
 Les cas de projection sont délimités comme synthétiques : raison exacte, mode
 inconnu/absent, session manquante ou en attente, contexte incohérent/changé,
@@ -115,6 +123,15 @@ citations intouchées, coût conservé, répétition et refus. La borne citée d
 projection ne prétend pas constituer un essai natif à exactement 75 %. Les deux
 ajustements publics, eux, sont de vraies commandes du worker.
 
-**Validation Godot intégrée encore attendue.** Aucun Godot ou import de ce
-worktree, recette Windows, nouveau calcul sportif, campagne CI globale ou
-nouvelle certitude causale n’est revendiqué dans cette tranche.
+[Rapport SDK et deux textes de reçu réellement obtenus](evidence/night-effective-training-20261111/godot-report.json),
+[journal Godot](evidence/night-effective-training-20261111/godot.log),
+[journal du wrapper](evidence/night-effective-training-20261111/wrapper.log).
+Les cas atteints donnent bien « Travail normal appliqué, choix intense » puis
+« Repos appliqué, choix intense », avec les raisons publiques exactes.
+
+Ce reçu qualifie le composant de reçu dans Godot avec les deux vraies données
+publiques et les contre-exemples synthétiques. Il ne constitue pas un parcours
+graphique complet du client. Aucun nouveau Godot ou import de ce worktree,
+recette Windows, nouveau calcul sportif, campagne CI globale ou nouvelle
+certitude causale n’est revendiqué. Les 50 contrôles de la tranche précédente
+d’observations appartiennent à leur reçu sur `1910f03f`, sans substitution de SHA.
