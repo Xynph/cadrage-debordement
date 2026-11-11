@@ -1,0 +1,427 @@
+{
+  "format": 1,
+  "scope": "Composite de recettes SDK locales ciblées ; ni campagne globale complète, ni recette Windows.",
+  "cases": {
+    "nation": {
+      "source_commit": "8ad4b0239e70931f3d49672a2dc9b959fbb8e8f8",
+      "checks": 23,
+      "failures": [],
+      "speech_requests": 0,
+      "speech_starts": 0,
+      "display": "X11",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "files": [
+        {
+          "path": "nation/report.json",
+          "source_path": "/workspace/work/night-final-qa/nation/report.json",
+          "bytes": 1535,
+          "sha256": "597631124beb3f86fab0b32175ca2bfde593f8ca9c2a684dd756d68d7df95ab5"
+        },
+        {
+          "path": "nation/provenance.json",
+          "source_path": "/workspace/work/night-final-qa/nation/provenance.json",
+          "bytes": 764,
+          "sha256": "d87d34273138244f37eaa505578ef6ac5f4ef3ee3ce91354b699451cc9bbdf5b"
+        },
+        {
+          "path": "nation/run.log",
+          "source_path": "/workspace/work/night-final-qa/nation/run.log",
+          "bytes": 933,
+          "sha256": "55309d977f631c5be39ea428db704a9e4acc1bd3ff9556e47632d7491a7e0c0c"
+        },
+        {
+          "path": "nation/godot.log",
+          "source_path": "/workspace/work/night-final-qa/nation/godot.log",
+          "bytes": 500,
+          "sha256": "402a6272138c83d305a79405929d39af23f879b37bd72357690ac7755813c9ac"
+        },
+        {
+          "path": "nation/engine.log",
+          "source_path": "/workspace/work/night-final-qa/nation/engine.log",
+          "bytes": 423,
+          "sha256": "67f894e5da06d4a2fdb05c3c849b5e37896f6b3099b54fd1d67a2d5e1a8c17c4"
+        }
+      ]
+    },
+    "guards": {
+      "source_commit": "0d19ddfa21332c846b086b496ebb7f9a81f2fa4f",
+      "checks": 103,
+      "failures": [],
+      "speech_requests": 0,
+      "speech_starts": 0,
+      "display": "X11",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "files": [
+        {
+          "path": "guards/report.json",
+          "source_path": "/workspace/work/night-final-qa-v2/guards/report.json",
+          "bytes": 3880,
+          "sha256": "b7a10ec82d051da727ac273a7b67754aca9912a04623f62801f6902416da026f"
+        },
+        {
+          "path": "guards/provenance.json",
+          "source_path": "/workspace/work/night-final-qa-v2/guards/provenance.json",
+          "bytes": 764,
+          "sha256": "b0dea6a36b04d5ac01ed7b5d1df422f66936b436d3fb7754b2ca783f566dfa5d"
+        },
+        {
+          "path": "guards/run.log",
+          "source_path": "/workspace/work/night-final-qa-v2/guards/run.log",
+          "bytes": 1259,
+          "sha256": "662fd003aa7100c85625a30e61a1d2a2a8b4fb11844d7ae5f6d78022b0dd48b1"
+        },
+        {
+          "path": "guards/godot.log",
+          "source_path": "/workspace/work/night-final-qa-v2/guards/godot.log",
+          "bytes": 811,
+          "sha256": "fe5a3b7b6165bf7cbae60127a566eebbfe56adc1115a32927ee3c1440b310d3c"
+        },
+        {
+          "path": "guards/engine.log",
+          "source_path": "/workspace/work/night-final-qa-v2/guards/engine.log",
+          "bytes": 734,
+          "sha256": "bcb73f6429d7bd2e62bec37954485e2270eaec27df155935489e1e618d0a107a"
+        }
+      ]
+    },
+    "reading": {
+      "source_commit": "37ede657c3085e67e3727817d8eb0e28ca70b3ae",
+      "checks": 133,
+      "failures": [],
+      "speech_requests": 0,
+      "speech_starts": 0,
+      "display": "X11",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "files": [
+        {
+          "path": "reading/report.json",
+          "source_path": "/workspace/work/night-final-qa-v4/reading/report.json",
+          "bytes": 7476,
+          "sha256": "eedc0374ebb890ad6368d57892f0393f05922ecaa8e775e0832279d21c069c1b"
+        },
+        {
+          "path": "reading/provenance.json",
+          "source_path": "/workspace/work/night-final-qa-v4/reading/provenance.json",
+          "bytes": 1067,
+          "sha256": "9bed96469ffecc237a50e7e50b57bfe3e76bb8b144ffd511448d3811789d08d0"
+        },
+        {
+          "path": "reading/run.log",
+          "source_path": "/workspace/work/night-final-qa-v4/reading/run.log",
+          "bytes": 941,
+          "sha256": "89940b88c511d10930c30d06114204e50bf8d8bfd33c36e451d299fa893cae7b"
+        },
+        {
+          "path": "reading/godot.log",
+          "source_path": "/workspace/work/night-final-qa-v4/reading/godot.log",
+          "bytes": 502,
+          "sha256": "e6e0d3c48e3fc0ed99f486d80373cd77513b7005b9abdb927b0cf0c41b6bf49f"
+        },
+        {
+          "path": "reading/engine.log",
+          "source_path": "/workspace/work/night-final-qa-v4/reading/engine.log",
+          "bytes": 425,
+          "sha256": "b1f45b852932cdec90ed0756ba953ab2d2e859e3f7f56484084bbb2388b3b0f9"
+        }
+      ]
+    },
+    "prospects": {
+      "source_commit": "37ede657c3085e67e3727817d8eb0e28ca70b3ae",
+      "checks": 70,
+      "failures": [],
+      "speech_requests": 0,
+      "speech_starts": 0,
+      "display": "X11",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "files": [
+        {
+          "path": "prospects/report.json",
+          "source_path": "/workspace/work/night-final-qa-v4/prospects/report.json",
+          "bytes": 2703,
+          "sha256": "eb2b570af3473b0085876fd0464e4a07850d8cb50ba413aaedd0a12cd6552471"
+        },
+        {
+          "path": "prospects/provenance.json",
+          "source_path": "/workspace/work/night-final-qa-v4/prospects/provenance.json",
+          "bytes": 1069,
+          "sha256": "d7d456c05d90f51e366158af5848e2285380ddae7b03da2218f9639432c5bd86"
+        },
+        {
+          "path": "prospects/run.log",
+          "source_path": "/workspace/work/night-final-qa-v4/prospects/run.log",
+          "bytes": 942,
+          "sha256": "4ddd683d81daaabb796e48d21786fe3060bd0ce67dd6585d6bd632d8cc9ed5cf"
+        },
+        {
+          "path": "prospects/godot.log",
+          "source_path": "/workspace/work/night-final-qa-v4/prospects/godot.log",
+          "bytes": 503,
+          "sha256": "a91336b489f2c7583a65d345901c61bd48477d474e8b305cbd17881eb80495ad"
+        },
+        {
+          "path": "prospects/engine.log",
+          "source_path": "/workspace/work/night-final-qa-v4/prospects/engine.log",
+          "bytes": 426,
+          "sha256": "f4ad946db7a3e2a04113b1b4ec5fd4fdc06fadae7e7c5c08a3fadc14b5b9c23e"
+        }
+      ]
+    },
+    "staff": {
+      "source_commit": "fbc642e1d3069895d5614caca433ab8f4c83bcf8",
+      "checks": 54,
+      "failures": [],
+      "speech_requests": 0,
+      "speech_starts": 0,
+      "display": "X11",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "files": [
+        {
+          "path": "staff/report.json",
+          "source_path": "/workspace/work/night-phase5-staff/report.json",
+          "bytes": 3078,
+          "sha256": "1f30e74b76b6800cb24715ad101ba70e70ba7f5e3668d6883e184c1c0a0f76be"
+        },
+        {
+          "path": "staff/provenance.json",
+          "source_path": "/workspace/work/night-phase5-staff/provenance.json",
+          "bytes": 1065,
+          "sha256": "23372b085310af32d84511b6d93e115644ff17168b24c9cbddea4029b882c29a"
+        },
+        {
+          "path": "staff/run.log",
+          "source_path": "/workspace/work/night-phase5-staff/run.log",
+          "bytes": 929,
+          "sha256": "7987dd1b2467bca5927fc05ddb36a38e2c57bf203d11499252d9246142c5febe"
+        },
+        {
+          "path": "staff/godot.log",
+          "source_path": "/workspace/work/night-phase5-staff/godot.log",
+          "bytes": 499,
+          "sha256": "cccd069660014911492ef9d83da02f3a56d4f151ea9a92995c5089efe8b1766f"
+        },
+        {
+          "path": "staff/engine.log",
+          "source_path": "/workspace/work/night-phase5-staff/engine.log",
+          "bytes": 422,
+          "sha256": "5699e45fef734772a616c65ab371e1b8aa70e5f51b4f90f225af939c7d20daaa"
+        }
+      ]
+    },
+    "quote": {
+      "source_commit": "dbe6a7e2b7bb22b0cb9d7d5f924e396f9cdd8e3f",
+      "checks": 66,
+      "failures": [],
+      "speech_requests": 0,
+      "speech_starts": 0,
+      "display": "X11",
+      "engine": {
+        "build": "official",
+        "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (official)",
+        "timestamp": 0
+      },
+      "files": [
+        {
+          "path": "quote/report.json",
+          "source_path": "/workspace/work/night-phase6-quote/report.json",
+          "bytes": 3584,
+          "sha256": "d7980ea729ebfdc2be0af7979cc13740974e5c1283e630e187a28b637cf5e3f1"
+        },
+        {
+          "path": "quote/provenance.json",
+          "source_path": "/workspace/work/night-phase6-quote/provenance.json",
+          "bytes": 1065,
+          "sha256": "36d6aa9a8ed6f94c59f2f92e7a6cf8f03f4ae8f8a20000d5e5070c78fdcc3b56"
+        },
+        {
+          "path": "quote/run.log",
+          "source_path": "/workspace/work/night-phase6-quote/run.log",
+          "bytes": 929,
+          "sha256": "2fd351556fdcbf03273b6af9a770c9d52413cb3c6bd848147beebe7668ee3d01"
+        },
+        {
+          "path": "quote/godot.log",
+          "source_path": "/workspace/work/night-phase6-quote/godot.log",
+          "bytes": 499,
+          "sha256": "537fa0b3f43654032468bf9d4faf86cd10e6234853940ddf0c50f034e9f8c1a9"
+        },
+        {
+          "path": "quote/engine.log",
+          "source_path": "/workspace/work/night-phase6-quote/engine.log",
+          "bytes": 422,
+          "sha256": "585a47d667ce0934381a816872a5432f29daf7257b556e43b192f7b3cf9ec6b6"
+        }
+      ]
+    }
+  },
+  "images": [
+    {
+      "path": "images/nation-france-depuis-angleterre-2560.png",
+      "source_path": "/workspace/work/night-final-qa/nation/nation-france-depuis-angleterre-2560.png",
+      "bytes": 256055,
+      "sha256": "1b956129b353e1c9b4c102b5b96ce7cc0b28589d3b3a7c5181feb8dfce591cab",
+      "case": "nation",
+      "source_commit": "8ad4b0239e70931f3d49672a2dc9b959fbb8e8f8",
+      "width": 2560,
+      "height": 1440,
+      "label": "France consultée depuis un mandat anglais",
+      "edited": false
+    },
+    {
+      "path": "images/joueur-fiche-2560.png",
+      "source_path": "/workspace/work/night-final-qa-v4/reading/joueur-fiche-2560.png",
+      "bytes": 643915,
+      "sha256": "805e6c20c69616a72004ef5edc84e97694b60c2bb17e5d3c35525baf6a966de6",
+      "case": "reading",
+      "source_commit": "37ede657c3085e67e3727817d8eb0e28ca70b3ae",
+      "width": 2560,
+      "height": 1440,
+      "label": "Fiche complète joueur ; pas un lecteur modal",
+      "edited": false
+    },
+    {
+      "path": "images/fatigue-tranche-retour-2560.png",
+      "source_path": "/workspace/work/night-final-qa-v4/reading/fatigue-tranche-retour-2560.png",
+      "bytes": 568003,
+      "sha256": "144f7810180bb1aa3acf4ca3c0b1fe113020edce869bf469f1a5454e39fb893f",
+      "case": "reading",
+      "source_commit": "37ede657c3085e67e3727817d8eb0e28ca70b3ae",
+      "width": 2560,
+      "height": 1440,
+      "label": "Retour du graphique filtré avec défilement non nul",
+      "edited": false
+    },
+    {
+      "path": "images/staff-fiche-2560-1440.png",
+      "source_path": "/workspace/work/night-phase5-staff/staff-fiche-2560-1440.png",
+      "bytes": 643011,
+      "sha256": "1a0b54233575aa45384b8e8f6255ac808cc3acce62f907e2b05f40dc57db902d",
+      "case": "staff",
+      "source_commit": "fbc642e1d3069895d5614caca433ab8f4c83bcf8",
+      "width": 2560,
+      "height": 1440,
+      "label": "Staff corrigé et reçu à2560×1440",
+      "edited": false
+    },
+    {
+      "path": "images/staff-fiche-1280-720.png",
+      "source_path": "/workspace/work/night-phase5-staff/staff-fiche-1280-720.png",
+      "bytes": 257007,
+      "sha256": "414c198655fe008a26610ebc3b6b2c9c24170dbc836def02ff399e0518d2f5f3",
+      "case": "staff",
+      "source_commit": "fbc642e1d3069895d5614caca433ab8f4c83bcf8",
+      "width": 1280,
+      "height": 720,
+      "label": "Staff corrigé et reçu à1280×720",
+      "edited": false
+    },
+    {
+      "path": "images/devis-interclub-recu-2560.png",
+      "source_path": "/workspace/work/night-phase6-quote/devis-interclub-recu-2560.png",
+      "bytes": 786924,
+      "sha256": "e22e16b86fb5e73755a665bf772a6d58125ae7106e34ae533cac6f2da6a0c826",
+      "case": "quote",
+      "source_commit": "dbe6a7e2b7bb22b0cb9d7d5f924e396f9cdd8e3f",
+      "width": 2560,
+      "height": 1440,
+      "label": "Vrai devis non vide avant inspection",
+      "edited": false
+    },
+    {
+      "path": "images/devis-interclub-retour-2560.png",
+      "source_path": "/workspace/work/night-phase6-quote/devis-interclub-retour-2560.png",
+      "bytes": 748028,
+      "sha256": "522f0851db996cbcc879b9ebad93640cd520831fa7c39e5fd98d13830d2255fc",
+      "case": "quote",
+      "source_commit": "dbe6a7e2b7bb22b0cb9d7d5f924e396f9cdd8e3f",
+      "width": 2560,
+      "height": 1440,
+      "label": "Même devis non vide après retour",
+      "edited": false
+    },
+    {
+      "path": "images/rencontre-historique-2560.png",
+      "source_path": "/workspace/work/night-final-qa-v2/guards/rencontre-historique-2560.png",
+      "bytes": 596146,
+      "sha256": "a1fc30c8a74eaa93c515c5782db12f311587f0b59953248538ebd42e3137555d",
+      "case": "guards",
+      "source_commit": "0d19ddfa21332c846b086b496ebb7f9a81f2fa4f",
+      "width": 2560,
+      "height": 1440,
+      "label": "Résultat de rencontre réellement jouée ; statistiques absentes non inventées",
+      "edited": false
+    }
+  ],
+  "excluded_artifacts": [
+    {
+      "case": "reading",
+      "file": "staff-profil-2560.png",
+      "reason": "Défaut visuel réel sur37ede657 : texte en colonne. Image négative conservée dans work uniquement ; correctif885071b2 reçu séparément dans staff surfbc642e1."
+    },
+    {
+      "file": "donnees.json et fixtures complètes",
+      "reason": "Profils sportifs et fixtures non inclus ; seuls reçus, provenance, journaux et PNG sélectionnés sont copiés."
+    }
+  ],
+  "reader_limit": "joueur-fiche-2560.png prouve la fiche complète de reading. Aucun PNG du lecteur modal headless n’est substitué à cette fiche.",
+  "documentation": {
+    "path": "README.md",
+    "bytes": 3477,
+    "sha256": "7ba9aa83d71f9de994bc50d0aa291cad25c9c64674e64ea8c71b33112d869cf0"
+  }
+}
