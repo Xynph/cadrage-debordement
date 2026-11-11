@@ -4,15 +4,71 @@
     "tests/godot-portrait-continuity.cjs",
     "tests/godot-contract-negotiation.cjs",
     "tests/deepen-staff-real-ui.cjs",
+    "tests/deepen-staff-hire-ui.cjs",
+    "tests/deepen-match.cjs",
+    "tests/godot-career-final-fixes.cjs",
+    "tests/godot-playbook-watch-ui.cjs",
     "tests/native-press-ui.cjs",
     "tests/godot-office-ui.cjs",
-    "tests/deepen-staff-hire-ui.cjs",
+    "tests/godot-pack-ui.cjs",
+    "tests/godot-reception-decisions.cjs",
+    "tests/deepen-youth-draft.cjs",
+    "tests/deepen-youth-ui.cjs",
+    "tests/godot-youth-scout-ui.cjs",
+    "tests/godot-fatigue-overview.cjs",
+    "tests/godot-carnet-ui.cjs",
+    "tests/godot-review-regressions.cjs",
+    "tests/godot-guide-integration.cjs",
+    "tests/godot-art-direction.cjs",
     "tests/godot-guide-layout.cjs",
-    "tests/godot-lineup-layout.cjs"
+    "tests/godot-lineup-layout.cjs",
+    "tests/godot-interface-layout.cjs",
+    "tests/godot-readability06.cjs"
   ],
+  "groups": {
+    "portraits-staff": [
+      "tests/godot-academy-portraits.cjs",
+      "tests/godot-portrait-continuity.cjs",
+      "tests/godot-contract-negotiation.cjs",
+      "tests/deepen-staff-real-ui.cjs",
+      "tests/deepen-staff-hire-ui.cjs",
+      "tests/deepen-match.cjs",
+      "tests/godot-career-final-fixes.cjs",
+      "tests/godot-playbook-watch-ui.cjs"
+    ],
+    "parcours": [
+      "tests/native-press-ui.cjs",
+      "tests/godot-office-ui.cjs",
+      "tests/godot-pack-ui.cjs",
+      "tests/godot-reception-decisions.cjs",
+      "tests/deepen-youth-draft.cjs",
+      "tests/deepen-youth-ui.cjs",
+      "tests/godot-youth-scout-ui.cjs",
+      "tests/godot-fatigue-overview.cjs",
+      "tests/godot-carnet-ui.cjs",
+      "tests/godot-review-regressions.cjs",
+      "tests/godot-guide-integration.cjs",
+      "tests/godot-art-direction.cjs"
+    ],
+    "layouts": [
+      "tests/godot-guide-layout.cjs",
+      "tests/godot-lineup-layout.cjs",
+      "tests/godot-interface-layout.cjs",
+      "tests/godot-readability06.cjs"
+    ]
+  },
   "suiteEnvironment": {
     "tests/godot-guide-layout.cjs": {
       "CD_GUIDE_GRAPHICS": "1"
+    },
+    "tests/godot-interface-layout.cjs": {
+      "CD_LAYOUT_GRAPHICS": "1"
+    },
+    "tests/godot-readability06.cjs": {
+      "CD_READABILITY06_GRAPHICS": "1"
+    },
+    "tests/native-press-ui.cjs": {
+      "CD_PRESS_GRAPHICS": "1"
     }
   },
   "suiteCases": {
@@ -45,23 +101,84 @@
           "CD_GUIDE_LAYOUT_MODE": "stretch"
         }
       }
-    ]
-  },
-  "groups": {
-    "portraits-staff": [
-      "tests/godot-academy-portraits.cjs",
-      "tests/godot-portrait-continuity.cjs",
-      "tests/godot-contract-negotiation.cjs",
-      "tests/deepen-staff-real-ui.cjs",
-      "tests/deepen-staff-hire-ui.cjs"
     ],
-    "parcours": [
-      "tests/native-press-ui.cjs",
-      "tests/godot-office-ui.cjs"
+    "tests/godot-interface-layout.cjs": [
+      {
+        "id": "management",
+        "env": {
+          "CD_LAYOUT_CASE": "management"
+        }
+      },
+      {
+        "id": "journal",
+        "env": {
+          "CD_LAYOUT_CASE": "journal"
+        }
+      }
     ],
-    "layouts": [
-      "tests/godot-guide-layout.cjs",
-      "tests/godot-lineup-layout.cjs"
+    "tests/godot-readability06.cjs": [
+      {
+        "id": "reading720",
+        "env": {
+          "CD_READABILITY06_CASE": "reading720"
+        }
+      },
+      {
+        "id": "reading900",
+        "env": {
+          "CD_READABILITY06_CASE": "reading900"
+        }
+      },
+      {
+        "id": "reading1080",
+        "env": {
+          "CD_READABILITY06_CASE": "reading1080"
+        }
+      },
+      {
+        "id": "reading1440",
+        "env": {
+          "CD_READABILITY06_CASE": "reading1440"
+        }
+      },
+      {
+        "id": "responsive",
+        "env": {
+          "CD_READABILITY06_CASE": "responsive"
+        }
+      },
+      {
+        "id": "drafts",
+        "env": {
+          "CD_READABILITY06_CASE": "drafts"
+        }
+      }
+    ],
+    "tests/godot-art-direction.cjs": [
+      {
+        "id": "routes-1280",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "routes-1280"
+        }
+      },
+      {
+        "id": "routes-1600",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "routes-1600"
+        }
+      },
+      {
+        "id": "routes-1920",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "routes-1920"
+        }
+      },
+      {
+        "id": "progression",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "progression"
+        }
+      }
     ]
   }
 }
