@@ -4,7 +4,9 @@ extends RefCounted
 ## Absent sans CD_MATCH_ANIMATIONS : le match garde alors ses trois clips
 ## d'origine (repos, marche, course) et rien ne change.
 ##
-## CD_MATCH_ANIMATIONS = chemin absolu d'une bibliothèque .glb produite par
+## CD_MATCH_ANIMATIONS = chemin absolu de la bibliothèque : de préférence une
+## ressource .res (AnimationLibrary) produite par
+## scripts/animations/convertir-bibliotheque.gd, sinon le .glb produit par
 ## scripts/animations/adapter-animations.py (squelette du joueur seul, une
 ## animation par clip, noms « mx_* »). La bibliothèque n'est pas dans le dépôt :
 ## les animations d'origine viennent de Mixamo, dont la licence interdit de
@@ -29,7 +31,6 @@ const HYSTERESIS := 0.45
 const REPOS := "mx_repos_souffle"
 
 var _bibliotheque: AnimationLibrary
-var _source: Node
 var _chemin_squelette := ""
 
 
@@ -46,26 +47,26 @@ func charger() -> bool:
 	if not FileAccess.file_exists(fichier):
 		push_warning("CD_MATCH_ANIMATIONS : fichier introuvable, animations d'origine conservées (%s)" % fichier)
 		return false
-	var document := GLTFDocument.new()
-	var etat := GLTFState.new()
-	if document.append_from_file(fichier, etat) != OK:
-		push_warning("CD_MATCH_ANIMATIONS : lecture impossible (%s)" % fichier)
-		return false
-	_source = document.generate_scene(etat)
-	if _source == null:
-		return false
-	var lecteur := _trouver_lecteur(_source)
-	if lecteur == null or lecteur.get_animation_list().is_empty():
-		push_warning("CD_MATCH_ANIMATIONS : aucune animation dans %s" % fichier)
-		_source.free()
-		_source = null
-		return false
 	_bibliotheque = AnimationLibrary.new()
-	for nom: StringName in lecteur.get_animation_list():
-		var animation := lecteur.get_animation(nom).duplicate(true) as Animation
-		_bibliotheque.add_animation(str(nom).get_file(), animation)
-	_source.free()
-	_source = null
+	if fichier.get_extension().to_lower() in ["res", "tres"]:
+		# Forme conseillée : ressource Godot préparée hors jeu
+		# (scripts/animations/convertir-bibliotheque.gd). Lecture directe, sans
+		# reconstruire de scène.
+		var lue := ResourceLoader.load(fichier, "AnimationLibrary", ResourceLoader.CACHE_MODE_IGNORE) as AnimationLibrary
+		if lue == null:
+			push_warning("CD_MATCH_ANIMATIONS : lecture impossible (%s)" % fichier)
+			_bibliotheque = null
+			return false
+		for nom: StringName in lue.get_animation_list():
+			_bibliotheque.add_animation(nom, lue.get_animation(nom).duplicate(true))
+	else:
+		var source := lire_gltf(fichier)
+		if source.is_empty():
+			push_warning("CD_MATCH_ANIMATIONS : aucune animation lisible dans %s" % fichier)
+			_bibliotheque = null
+			return false
+		for nom: String in source:
+			_bibliotheque.add_animation(nom, source[nom])
 	for palier: Dictionary in PALIERS:
 		if not _bibliotheque.has_animation(palier.clip):
 			push_warning("CD_MATCH_ANIMATIONS : clip %s absent, animations d'origine conservées" % palier.clip)
@@ -135,7 +136,26 @@ func allure(index: int) -> float:
 	return float(PALIERS[index].allure)
 
 
-func _trouver_lecteur(noeud: Node) -> AnimationPlayer:
+## Animations d'un .glb (nom court -> Animation copiée). Sert à l'outil de
+## conversion et, à défaut de ressource préparée, au chargement en jeu.
+static func lire_gltf(fichier: String) -> Dictionary:
+	var resultat := {}
+	var document := GLTFDocument.new()
+	var etat := GLTFState.new()
+	if document.append_from_file(fichier, etat) != OK:
+		return resultat
+	var scene := document.generate_scene(etat)
+	if scene == null:
+		return resultat
+	var lecteur := _trouver_lecteur(scene)
+	if lecteur:
+		for nom: StringName in lecteur.get_animation_list():
+			resultat[str(nom).get_file()] = lecteur.get_animation(nom).duplicate(true)
+	scene.free()
+	return resultat
+
+
+static func _trouver_lecteur(noeud: Node) -> AnimationPlayer:
 	if noeud is AnimationPlayer:
 		return noeud
 	for enfant: Node in noeud.get_children():

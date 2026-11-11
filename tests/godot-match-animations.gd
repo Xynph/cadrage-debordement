@@ -164,14 +164,29 @@ func run() -> void:
 			view._process(1.0 / 30.0)
 		check((view._actors["0-4"].animation as AnimationPlayer).current_animation == "mx/mx_repos_souffle", "retour au repos après l'arrêt")
 	release(pair)
-	# 5. Paliers et hystérésis (calcul pur).
+	# 5. Même bibliothèque convertie en ressource .res (forme conseillée).
+	var resource := folder.path_join("complete.res")
+	var converted := AnimationLibrary.new()
+	var animations := Animations.lire_gltf(full)
+	for name: String in animations:
+		converted.add_animation(name, animations[name])
+	check(animations.size() >= 6 and ResourceSaver.save(converted, resource) == OK, "conversion en ressource (%d clips)" % animations.size())
+	OS.set_environment("CD_MATCH_ANIMATIONS", resource)
+	pair = build()
+	view = pair[1]
+	check(view._animations_adaptees != null and view._actors["0-0"].adapted and view._actors["0-0"].idle == &"mx/mx_repos_souffle", "ressource .res : chargée et branchée")
+	if view._animations_adaptees != null:
+		var seen_res := clips_seen(view, {"0-4": 4.4}, 14)
+		check(seen_res["0-4"].has("mx/mx_sprint"), "ressource .res : sprint (%s)" % [seen_res["0-4"].keys()])
+	release(pair)
+	# 6. Paliers et hystérésis (calcul pur).
 	var tool := Animations.new()
 	check(tool.palier(0.5, -1) == 0 and tool.palier(3.0, -1) == 1 and tool.palier(5.0, -1) == 2 and tool.palier(8.0, -1) == 3, "paliers par vitesse")
 	check(tool.palier(2.1, 1) == 1 and tool.palier(1.7, 1) == 0, "hystérésis trot → marche")
 	check(tool.palier(5.7, 3) == 3 and tool.palier(5.4, 3) == 2, "hystérésis sprint → course")
 	check(tool.palier(9.0, 0) == 3 and tool.palier(0.2, 3) == 0, "saut de plusieurs paliers")
 	OS.set_environment("CD_MATCH_ANIMATIONS", original)
-	for file in ["incomplete.glb", "complete.glb"]:
+	for file in ["incomplete.glb", "complete.glb", "complete.res"]:
 		DirAccess.remove_absolute(folder.path_join(file))
 	DirAccess.remove_absolute(folder)
 	print("MATCH_ANIMATIONS_CHECKS ", JSON.stringify({"checks": checks, "failures": failures}))

@@ -26,6 +26,7 @@ Outils dans `scripts/animations/`, à lancer avec Blender en module Python (`pip
 | `adapter-animations.py` | Convertit une liste de `.fbx` vers le squelette du joueur et écrit la bibliothèque `.glb` (squelette seul) et un fichier de mesures. |
 | `bibliotheque-match.json` | Liste des 28 clips de la première bibliothèque (noms de fichiers Mixamo, relatifs au dossier donné par `--racine`). |
 | `planche-contact.py`, `apercu-video.py` | Contrôle visuel hors jeu (planche d'images, vidéo d'aperçu) à partir de la sortie `.blend`. |
+| `convertir-bibliotheque.gd` | Convertit la bibliothèque `.glb` en ressource Godot `.res`, forme conseillée pour `CD_MATCH_ANIMATIONS` (lecture directe, sans reconstruire de scène). |
 | `exporter-personnage-mixamo.py` | Prépare un personnage du jeu (Gabi) pour « Upload Character » de Mixamo. |
 
 ```
@@ -44,6 +45,13 @@ Méthode : les deux squelettes sont en pose T au repos. Pour chaque os, on prend
 - Vraie bibliothèque de 28 clips chargée dans le match sous Linux sans écran : 868 pistes, aucune non résolue.
 - Conversion relancée depuis les outils du dépôt : mesures identiques.
 - Contrôle visuel hors jeu (planches et vidéo d'aperçu) : marche, trot, course, sprint, crochet, lancer en touche, réception, plaqué, relevé, coup de pied.
+
+## Recette Windows du 11 novembre (PC de Léo)
+
+- `godot-match-animations` : vert.
+- Capture avant/après sur la séquence de gestes (touche, ballon porté, essai), rendu actuel (gl_compatibility) : 246 images de chaque côté, sans erreur.
+- **Forward+ (rendu moderne) : plantage immédiat avec la bibliothèque `.glb`** (code Windows 0xC0000374, corruption du tas, aucun message de Godot). Sans bibliothèque, Forward+ fonctionne. Cause supposée, non démontrée : la reconstruction d'une scène glTF pendant l'exécution. Le chargement d'une ressource `.res` préparée hors jeu l'évite ; à confirmer sous Forward+.
+- Constat visuel : sur ces images, les joueurs liés au ballon porté sont posés par `match_gestes.gd` ; le reste se tient différemment (repos plus droit). La séquence ne contient presque pas de course : elle ne permet pas de juger les paliers de déplacement.
 
 ## Non vérifié / limites
 
