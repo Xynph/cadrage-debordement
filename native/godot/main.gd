@@ -420,6 +420,7 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 	if target == "Presse" and not has_meta("press_mail_origin"): return
 	if target == "Sélections" and not model.get("international") is Dictionary: return
 	if not Immersive.Selections.navigation_allowed(model, target): return
+	if is_instance_valid(navigation_controller): navigation_controller.capture_current()
 	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)

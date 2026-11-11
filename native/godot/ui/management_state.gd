@@ -121,3 +121,79 @@ static func restore(app:Control,page:Control,kind:String) -> void:
 	if not list.is_empty():list[0].scroll_vertical=int(state.scroll)
 	var profiles:=page.find_children("ProfileScroll","ScrollContainer",true,false)
 	if not profiles.is_empty():profiles[0].scroll_vertical=int(app.management_ui.profile_scroll)
+
+# Session history may preserve reading choices and drafts, never the worker model.
+# Structural paths also cover unnamed nested scroll surfaces in the legacy pages.
+static func reading_snapshot(app: Control) -> Dictionary:
+	var result := {"ui":app.management_ui.duplicate(true), "table_division":app.table_division, "roster_filter":app.roster_filter, "roster_sort":app.roster_sort, "selected_player":app.selected_player, "selected_staff_club":app.selected_staff_club, "full_player":app.get_meta("immersive08_full_player", false), "calendar_table":app.get_meta("calendar_table", false), "scrolls":[], "focus":{}}
+	if not is_instance_valid(app.root_content): return result
+	_capture_reading_controls(app.root_content, app.root_content, app.get_viewport().gui_get_focus_owner(), result)
+	return result
+
+static func _control_address(root: Node, node: Node) -> Array[int]:
+	var path: Array[int] = []
+	var current := node
+	while current != root and current != null:
+		path.push_front(current.get_index())
+		current = current.get_parent()
+	return path
+
+static func _capture_reading_controls(root: Control, node: Node, focus: Control, result: Dictionary) -> void:
+	if node is ScrollContainer:
+		result.scrolls.append({"path":_control_address(root, node), "name":str(node.name), "x":node.scroll_horizontal, "y":node.scroll_vertical})
+	if node == focus:
+		result.focus = {"path":_control_address(root, node), "name":str(node.name)}
+		if node is LineEdit:
+			result.focus.caret = node.caret_column
+			result.focus.selection_from = node.get_selection_from_column() if node.has_selection() else -1
+			result.focus.selection_to = node.get_selection_to_column() if node.has_selection() else -1
+	for child in node.get_children():
+		# Popups are independent transactions; history never recreates them or
+		# replays their signals, commands, previews or unsaved field callbacks.
+		if not child is Window: _capture_reading_controls(root, child, focus, result)
+
+static func apply_reading(app: Control, reading: Dictionary) -> void:
+	if not reading.get("ui") is Dictionary: return
+	# These three keys mirror the latest career projection, not a past screen.
+	var shared := {}
+	for key in ["career", "shortlist", "compare"]:
+		if app.management_ui.has(key): shared[key] = app.management_ui[key]
+	app.management_ui = reading.ui.duplicate(true)
+	for key in shared: app.management_ui[key] = shared[key]
+	app.table_division = str(reading.get("table_division", app.table_division))
+	app.selected_player = str(reading.get("selected_player", ""))
+	app.selected_staff_club = int(reading.get("selected_staff_club", -1))
+	app.roster_filter = str(reading.get("roster_filter", "Tous"))
+	app.roster_sort = str(reading.get("roster_sort", "Poste"))
+	app.set_meta("immersive08_full_player", reading.get("full_player", false))
+	app.set_meta("calendar_table", reading.get("calendar_table", false))
+
+static func _reading_control(root: Control, address: Dictionary, type: String = "Control") -> Control:
+	var node: Node = root
+	for index: int in address.get("path", []):
+		if index < 0 or index >= node.get_child_count():
+			node = null
+			break
+		node = node.get_child(index)
+	if node != null and node.is_class(type) and str(node.name) == str(address.get("name", "")): return node
+	# Explicit names survive a layout change; generated names do not identify
+	# another field safely, so never guess in that case.
+	var id := str(address.get("name", ""))
+	if id.is_empty() or id.begins_with("@"): return null
+	var matches := root.find_children(id, type, true, false)
+	return matches[0] if matches.size() == 1 else null
+
+static func restore_reading_controls(app: Control, page: Control, reading: Dictionary) -> void:
+	if not is_instance_valid(page) or page != app.root_content: return
+	var focus: Control = _reading_control(page, reading.get("focus", {}))
+	if focus != null and focus.is_visible_in_tree() and focus.focus_mode != Control.FOCUS_NONE and not (focus is BaseButton and focus.disabled):
+		focus.grab_focus()
+		if focus is LineEdit:
+			focus.caret_column = int(reading.focus.get("caret", focus.caret_column))
+			if int(reading.focus.get("selection_from", -1)) >= 0:
+				focus.select(int(reading.focus.selection_from), int(reading.focus.selection_to))
+	for address: Dictionary in reading.get("scrolls", []):
+		var surface := _reading_control(page, address, "ScrollContainer") as ScrollContainer
+		if surface != null:
+			surface.scroll_horizontal = int(address.x)
+			surface.scroll_vertical = int(address.y)

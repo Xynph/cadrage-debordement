@@ -18,6 +18,8 @@ var _forward: Button
 var _find: Button
 var _restoring := false
 var _palette_return_focus: WeakRef
+var _dispatching := false
+var _reading_revision := 0
 
 func setup(owner_app: Control) -> void:
 	app = owner_app
@@ -26,6 +28,7 @@ func setup(owner_app: Control) -> void:
 	app.get_viewport().size_changed.connect(func(): call_deferred("_fit_palette"))
 
 func reset() -> void:
+	_reading_revision += 1
 	history.clear()
 	cursor = -1
 	if is_instance_valid(_dialog): _dialog.hide()
@@ -36,6 +39,8 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 		_refresh_controls()
 		return
 	var entry := {"route":route, "player":player_id if route == "Effectif" else "", "staff":staff_club if route == "Staff" else -1, "market":""}
+	entry.target = _current_target(route)
+	entry.detail = _reading_location(route)
 	if route == "Effectif": entry.full_player = app.get_meta("immersive08_full_player", false)
 	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
@@ -45,13 +50,43 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 		if same_location and (not roster_lookup or previous.roster == app.management_ui.roster):
 			_refresh_controls()
 			return
-		if not roster_lookup: _store_roster_reading(previous)
+		if not roster_lookup and previous.route == route: _store_roster_reading(previous)
 	history = history.slice(0, cursor + 1)
 	_store_roster_reading(entry)
+	entry.reading = U.reading_snapshot(app)
 	history.append(entry)
 	if history.size() > HISTORY_LIMIT: history.pop_front()
 	cursor = history.size() - 1
 	_refresh_controls()
+
+func _current_target(route: String) -> Dictionary:
+	var target: Dictionary = app.management_ui.get("navigation_target", {})
+	if target.get("route") != route: return {}
+	var kind := str(target.get("kind", ""))
+	var id := str(target.get("id", ""))
+	if route == "Effectif" and kind in ["player", "squad"] and app.selected_player != id: return {}
+	if route == "Recrutement" and kind in ["player", "squad", "market"] and str(app.management_ui.get("market", {}).get("navigation_id", "")) != id: return {}
+	if kind == "nation" and str(app.management_ui.get("international", {}).get("navigation_id", "")) != id: return {}
+	if kind == "staff" and str(app.management_ui.get("staff", {}).get("navigation_id", "")) != id: return {}
+	return target.duplicate(true)
+
+func _reading_location(route: String) -> Dictionary:
+	match route:
+		"Sélections": return {"nation":app.management_ui.get("international", {}).get("navigation_id", ""), "section":app.management_ui.get("international_section", "")}
+		"Staff": return {"person":app.management_ui.get("staff", {}).get("navigation_id", "")}
+		"Classements": return {"division":app.table_division, "tab":app.management_ui.get("competition", {}).get("tab", "league")}
+		"Calendrier": return {"date":app.management_ui.get("calendar_reading", {}).get("selected", "")}
+		"Finances": return {"tab":app.management_ui.get("immersive08_finance_tab", "summary")}
+	return {}
+
+# Called before a route or entity changes. This snapshots only local reading state;
+# no navigation path is permitted to ask the worker to project extra information.
+func capture_current() -> void:
+	if app == null or _restoring or _dispatching or cursor < 0: return
+	if history[cursor].route != app.route: return
+	U.remember(app)
+	_store_roster_reading(history[cursor])
+	history[cursor].reading = U.reading_snapshot(app)
 
 func _store_roster_reading(entry: Dictionary) -> void:
 	if entry.route != "Effectif": return
@@ -222,7 +257,15 @@ func _refresh_results(query: String) -> void:
 			candidates.append({"kind":"menu", "route":"Sélections", "label":"Menu · Sélections internationales"})
 		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
 		for team: Dictionary in app.model.get("staff", {}).get("teams", []):
-			candidates.append({"kind":"club", "id":int(team.id), "route":"Staff", "label":"Club · %s · Annuaire du staff" % G.club_name(team)})
+			candidates.append({"kind":"club", "id":team.id, "route":"Classements", "label":"Club · %s · Détail du club" % G.club_name(team)})
+			for person: Dictionary in team.get("members", []):
+				var staff_id := str(person.get("id", ""))
+				if staff_id.is_empty(): continue
+				candidates.append({"kind":"staff", "id":staff_id, "route":"Staff", "label":"Staff · %s · %s [%s]" % [str(person.get("name", "")), str(person.get("roleLabel", person.get("role", ""))), staff_id]})
+		for team: Dictionary in app.model.get("international", {}).get("teams", []):
+			candidates.append({"kind":"nation", "id":str(team.get("id", "")), "route":"Sélections", "label":"Sélection · %s [%s]" % [str(team.get("name", "")), str(team.get("id", ""))]})
+		for league: Dictionary in app.model.get("leagues", []):
+			candidates.append({"kind":"competition", "id":str(league.get("id", "")), "route":"Classements", "label":"Compétition · %s [%s]" % [str(league.get("name", "")), str(league.get("id", ""))]})
 		var seen := {}
 		for source in ["squad", "market"]:
 			var people: Variant = app.model.get(source, [])
@@ -237,7 +280,7 @@ func _refresh_results(query: String) -> void:
 				candidates.append({"kind":source, "id":id, "route":"Effectif" if source == "squad" else "Recrutement", "label":label})
 	var total := 0
 	for candidate: Dictionary in candidates:
-		if not _allowed_route(candidate.route): continue
+		if not entity_available(candidate): continue
 		if not needle.is_empty() and not U.fold(candidate.label).contains(needle): continue
 		total += 1
 		if _matches.size() >= RESULT_LIMIT: continue
@@ -252,31 +295,16 @@ func _activate_selected() -> void:
 	if not is_instance_valid(_dialog) or _blocked(_dialog): return
 	var selected := _results.get_selected_items()
 	if selected.is_empty(): return
-	var entry: Dictionary = _matches[selected[0]]
-	if not _allowed_route(entry.route): return
-	if entry.kind=="training":
-		_dialog.hide()
-		app.Immersive.open_training(app)
+	var entry: Dictionary = _matches[selected[0]].duplicate(true)
+	if entry.kind == "squad":
+		entry.kind = "player"
+		entry.section = "roster"
+	if not entity_available(entry):
+		_refresh_results(_search.text)
 		return
-	var roster_lookup: bool = entry.kind == "squad"
-	if roster_lookup:
-		if _person("squad", entry.id).is_empty():
-			_refresh_results(_search.text); return
-		U.remember(app)
-		if cursor >= 0: _store_roster_reading(history[cursor])
-		app.management_ui.roster = U.defaults()
-		app.roster_filter = "Tous"; app.roster_sort = "Poste"
-		app.selected_player = entry.id
-	elif entry.kind == "market":
-		if not open_market_player(entry.id): _refresh_results(_search.text)
-		return
-	elif entry.kind == "club":
-		if not _staff_club_exists(entry.id):
-			_refresh_results(_search.text); return
-		app.selected_staff_club = entry.id
+	# The palette is a reading-only popup. Its exact origin is retained on cancel.
 	_dialog.hide()
-	app._navigate(entry.route, not roster_lookup)
-	observe(app.route, app.selected_player, app.selected_staff_club, roster_lookup)
+	if not open_entity(entry): _refresh_results(_search.text)
 
 func open_watched_roster() -> void:
 	_open_roster_preset(U.WATCH_FILTER)
@@ -288,6 +316,8 @@ func open_roster_group() -> void:
 		app._navigate("Effectif")
 
 func _open_roster_preset(family: String) -> void:
+	if _blocked() or not _allowed_route("Effectif"): return
+	capture_current()
 	U.remember(app)
 	if cursor >= 0: _store_roster_reading(history[cursor])
 	var state := U.defaults()
@@ -322,6 +352,8 @@ func _staff_club_exists(id: int) -> bool:
 
 func _valid_entry(entry: Dictionary) -> bool:
 	if not _allowed_route(entry.route): return false
+	var target: Dictionary = entry.get("target", {})
+	if not target.is_empty() and not entity_available(target): return false
 	if not entry.player.is_empty() and _person("squad", entry.player).is_empty(): return false
 	if not entry.market.is_empty() and _person("market", entry.market).is_empty(): return false
 	if int(entry.staff) >= 0 and not _staff_club_exists(int(entry.staff)): return false
@@ -338,11 +370,11 @@ func _travel(direction: int) -> void:
 	if _blocked(): return
 	var next := _destination(direction)
 	if next < 0: return
-	U.remember(app)
-	_store_roster_reading(history[cursor])
+	capture_current()
 	var entry: Dictionary = history[next]
 	_restoring = true
 	cursor = next
+	if entry.get("reading") is Dictionary: U.apply_reading(app, entry.reading)
 	if entry.route == "Effectif":
 		app.selected_player = entry.player
 		app.set_meta("immersive08_full_player", entry.get("full_player", false))
@@ -353,14 +385,17 @@ func _travel(direction: int) -> void:
 	if entry.route == "Préparation" and app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
-	if entry.route == "Recrutement":
+	if entry.route == "Recrutement" and not entry.get("reading") is Dictionary:
 		_set_market_target(entry.market, str(_person("market", entry.market).get("name", "")))
 	app._navigate(entry.route, false, true)
+	_reading_revision += 1
+	_restore_reading_controls(entry.get("reading", {}), _reading_revision)
 	_restoring = false
 	_refresh_controls()
 
 func _blocked(ignore: Window = null, save_shortcut: bool = false) -> bool:
 	if app == null or app.waiting or app.closing or app.connection_error: return true
+	if not save_shortcut and is_instance_valid(app.contextual_director) and (app.contextual_director.active_meeting() or app.contextual_director.match_immersed()): return true
 	if not app.last_error.is_empty():
 		var retry: bool = save_shortcut and app.last_command=="save" and app.model.get("meta",{}).get("saveError",false)
 		if not retry: return true
@@ -379,17 +414,102 @@ func _refresh_controls() -> void:
 	if is_instance_valid(_forward): _forward.disabled = blocked or _destination(1) < 0
 	if is_instance_valid(_find): _find.disabled = blocked
 
+# Compatibility entry point used by the existing roster and scouting screens.
 func open_market_player(id: String) -> bool:
-	var person := _person("market", id)
-	if not _allowed_route("Recrutement") or (not id.is_empty() and person.is_empty()): return false
-	_set_market_target(id, str(person.get("name", "")))
-	if id.is_empty(): app.management_ui.market_tab = 0
-	if is_instance_valid(_dialog): _dialog.hide()
-	app._navigate("Recrutement", false)
-	return true
+	if id.is_empty(): return open_entity({"kind":"menu", "route":"Recrutement"})
+	return open_entity({"kind":"market", "id":id})
 
 func _set_market_target(id: String, display_name: String) -> void:
 	app.management_ui.market = U.defaults()
 	app.management_ui.market.navigation_id = id
 	app.management_ui.market.search = display_name
 	if not id.is_empty(): app.management_ui.market_tab = 0
+
+# Public, typed reading contract. IDs are checked against the current projection,
+# never against a name, a row number or an engine command. Unknown kinds fail closed.
+func entity_available(target: Dictionary) -> bool:
+	if app == null: return false
+	var kind := str(target.get("kind", ""))
+	var id := str(target.get("id", ""))
+	match kind:
+		"menu":
+			var route := str(target.get("route", ""))
+			return route != "Presse" and _allowed_route(route)
+		"player", "squad":
+			return not id.is_empty() and ((_allowed_route("Effectif") and not _person("squad", id).is_empty()) or (_allowed_route("Recrutement") and not _person("market", id).is_empty()))
+		"market":
+			return not id.is_empty() and _allowed_route("Recrutement") and not _person("market", id).is_empty()
+		"nation":
+			return _allowed_route("Sélections") and app.Immersive.Selections.has_method("target_available") and app.Immersive.Selections.target_available(app, id)
+		"staff":
+			return _allowed_route("Staff") and app.StaffViews.has_method("target_available") and app.StaffViews.target_available(app, id)
+		"club", "fixture", "competition", "date":
+			var route := "Calendrier" if kind == "date" else "Classements"
+			return _allowed_route(route) and app.Immersive.Competition.has_method("target_available") and app.Immersive.Competition.target_available(app, kind, target.get("id"))
+		"finance":
+			return _allowed_route("Finances") and app.Immersive.FinanceCanvas.has_method("target_available") and app.Immersive.FinanceCanvas.target_available(app, target.get("id"))
+		"training":
+			return id in ["", "team"] and _allowed_route("Préparation")
+	return false
+
+func _reading_source(source: Window) -> bool:
+	return is_instance_valid(source) and not source.is_queued_for_deletion() and app.is_ancestor_of(source) and source.get_meta("navigation_read_only", false)
+
+func open_entity(target: Dictionary, source_window: Window = null) -> bool:
+	var source: Window = source_window if _reading_source(source_window) else null
+	if _blocked(source) or not entity_available(target): return false
+	capture_current()
+	_reading_revision += 1
+	_dispatching = true
+	var kind := str(target.get("kind", ""))
+	var id := str(target.get("id", ""))
+	if kind in ["player", "squad"] and _person("squad", id).is_empty(): kind = "market"
+	var destination := ""
+	var opened := true
+	match kind:
+		"menu": destination = str(target.route)
+		"player", "squad":
+			destination = "Effectif"
+			app.management_ui.roster = U.defaults()
+			app.management_ui.profile_scroll = 0
+			app.roster_filter = "Tous"
+			app.roster_sort = "Poste"
+			app.selected_player = id
+			app.set_meta("immersive08_full_player", target.get("section", "") != "roster")
+			app.management_ui.player_section = str(target.get("section", ""))
+			if target.get("section", "") == "contract": app.management_ui.immersive_player_tab = 3
+		"market":
+			destination = "Recrutement"
+			_set_market_target(id, str(_person("market", id).get("name", "")))
+		"nation":
+			destination = "Sélections"
+			opened = app.Immersive.Selections.open_target(app, id)
+		"staff":
+			destination = "Staff"
+			opened = app.StaffViews.open_target(app, id)
+		"club", "fixture", "competition", "date":
+			opened = app.Immersive.Competition.open_target(app, kind, target.get("id"))
+			if opened and kind in ["competition", "date"]: destination = app.route
+		"finance":
+			opened = app.Immersive.FinanceCanvas.open_target(app, target.get("id"))
+			if opened: destination = "Finances"
+		"training":
+			destination = "Préparation"
+			app.Immersive.open_training(app)
+	if opened and not destination.is_empty():
+		var location := target.duplicate(true)
+		location.route = destination
+		app.management_ui.navigation_target = location
+		if kind not in ["competition", "date", "finance", "training"]:
+			app._navigate(destination, false, true)
+		observe(app.route, app.selected_player, app.selected_staff_club, kind in ["player", "squad"])
+	_dispatching = false
+	if opened and is_instance_valid(source) and not source.is_queued_for_deletion(): source.queue_free()
+	return opened
+
+func _restore_reading_controls(reading: Dictionary, revision: int) -> void:
+	var page: Control = app.root_content
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if revision != _reading_revision or not is_instance_valid(page) or page != app.root_content: return
+	U.restore_reading_controls(app, page, reading)
