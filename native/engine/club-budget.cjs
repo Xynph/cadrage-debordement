@@ -455,6 +455,20 @@ promoteCover=function(){
  for(const p of club().players)if(!avant.has(p.id))p.salary=salaire;
  return resultat;
 };
+// Joueurs ajoutés pour garder 40 professionnels par club : ils signaient à 1 400–2 200 € par semaine quel que soit
+// le club. Pour les carrières marquées, ils signent au salaire de la règle dans leur club.
+function budgetProfondeur(){
+ if(!budgetActif()||S.live)return nativeProfessionalDepth.fill(S);
+ const tailles=S.clubs.map(c=>c.players.length);nativeProfessionalDepth.fill(S);
+ let forces=null;
+ S.clubs.forEach((c,i)=>{
+  if(c.players.length<=tailles[i])return;
+  forces=forces||budgetForces();
+  for(const p of c.players.slice(tailles[i]))p.salary=nativeStartingSalaries.demande(S,forces,c.id,p,nativeLeagueEconomy);
+ });
+ // La prévision du club joué suit son effectif complété.
+ if(forces&&budgetLisible(S.clubBudget)&&S.clubBudget.saison===S.season){S.clubBudget.clubs.forEach((k,i)=>{k.masse=Math.round(budgetMasse(S.clubs[i])*52);});budgetPrevoir(forces,budgetRepere());}
+}
 // Ce que l'écran Finances lit : mêmes champs qu'avant, remplis par le budget de la saison.
 function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  const b=S.clubBudget;

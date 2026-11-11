@@ -234,3 +234,14 @@ test('Moteur : renfort promu pour compléter la feuille, 2 500 € par semaine s
   const neufs=h.lire('club().players').filter(p=>!avant.includes(p.id));assert.ok(neufs.length>=1,'au moins un renfort');assert.ok(neufs.every(p=>p.salary===attendu),JSON.stringify(neufs.map(p=>p.salary)));
  }
 });
+test('Moteur : joueurs ajoutés pour garder 40 professionnels, ancien salaire sans la marque, salaire de la règle avec',()=>{
+ for(const marque of [false,true]){
+  const h=moteur(marque);h.run("S.clubs[3].players=S.clubs[3].players.slice(0,30);S.clubs[20].players=S.clubs[20].players.slice(0,34);");
+  const avant=h.lire('[3,20].map(i=>S.clubs[i].players.map(p=>p.id))');h.run('budgetProfondeur()');
+  const neufs=h.lire('[3,20].map(i=>S.clubs[i].players)').map((l,k)=>l.filter(p=>!avant[k].includes(p.id)));
+  assert.deepEqual(neufs.map(l=>l.length),[10,6],'les deux clubs reviennent à 40 joueurs');
+  if(!marque)assert.ok(neufs.flat().every(p=>p.salary>=1400&&p.salary<=2200));
+  else{const sal=neufs.flat().map(p=>p.salary);assert.ok(sal.every(x=>x>=150&&x<2600)&&sal.reduce((a,x)=>a+x,0)/sal.length<1100&&sal.some(x=>x<600),JSON.stringify(sal));assert.ok(new Set(neufs.flat().map(p=>p.salary)).size>3,'salaires variés selon le joueur');
+   assert.equal(h.lire('S.clubBudget.clubs[3].masse'),h.lire('budgetMasse(S.clubs[3])*52'));}
+ }
+});
