@@ -1,6 +1,9 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 var director: Node
+## Direct en temps forts : absent sans CD_MATCH_TEMPS_FORTS=1.
+var regie: Node
 var app: Control
 var stage: Node3D
 var model: Dictionary = {}
@@ -88,9 +91,18 @@ func _ready() -> void:
 		bar.add_child(button)
 	var cadence := OptionButton.new()
 	cadence.custom_minimum_size.y = 38
-	for text in ["Cadence ×1", "Cadence ×4", "Cadence ×12"]: cadence.add_item(text)
-	cadence.select(maxi(0, [1, 4, 12].find(app.tick_steps)))
-	cadence.item_selected.connect(func(index: int): app.tick_steps = [1, 4, 12][index]; stage.set_live_cadence(app.tick_steps))
+	if TempsForts.enabled():
+		regie = TempsForts.new()
+		add_child(regie)
+		regie.setup(self, container, viewport, space)
+		# L'horloge de l'écran intermédiaire remplace la cadence du direct.
+		for text in ["Horloge posée", "Horloge normale", "Horloge rapide", "Horloge éclair"]: cadence.add_item(text)
+		cadence.select(maxi(0, ["lente", "normale", "rapide", "eclair"].find(regie.horloge)))
+		cadence.item_selected.connect(func(index: int): regie.choisir_horloge(["lente", "normale", "rapide", "eclair"][index]))
+	else:
+		for text in ["Cadence ×1", "Cadence ×4", "Cadence ×12"]: cadence.add_item(text)
+		cadence.select(maxi(0, [1, 4, 12].find(app.tick_steps)))
+		cadence.item_selected.connect(func(index: int): app.tick_steps = [1, 4, 12][index]; stage.set_live_cadence(app.tick_steps))
 	cadence.set_meta("contextual_enabled", true)
 	bar.add_child(cadence)
 	bar.add_child(S.G.spacer())
@@ -157,9 +169,10 @@ func update_frame(value: Dictionary) -> void:
 	play.set_meta("contextual_enabled", not live.get("finished", false))
 	finish.visible = live.get("finished", false)
 	finish.set_meta("contextual_enabled", live.get("finished", false))
-	stage.set_live_cadence(app.tick_steps)
 	if stage.has_method("set_club_identity"): stage.set_club_identity(model.get("club", {}))
-	stage.apply_frame(live)
+	if regie == null:
+		stage.set_live_cadence(app.tick_steps)
+		stage.apply_frame(live)
 	var lines := PackedStringArray()
 	var rows: Array = live.get("events", [])
 	for event: Variant in rows.slice(maxi(0, rows.size() - 2)):
@@ -167,9 +180,14 @@ func update_frame(value: Dictionary) -> void:
 		else: lines.append(str(event))
 	events.text = "\n".join(lines)
 	events.get_parent().get_parent().visible = not lines.is_empty()
+	if regie != null: regie.receive(model, live)
 	_update_drawer()
 	apply_preferences()
 	director._refresh_controls()
+
+## Vrai quand la régie des temps forts cadence elle-même le match.
+func temps_forts_actifs() -> bool:
+	return regie != null and _live().get("direct") is Dictionary
 
 func _live() -> Dictionary:
 	return model.get("live", {}) if model.get("live") is Dictionary else {}

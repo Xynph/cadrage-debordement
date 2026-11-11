@@ -4,10 +4,10 @@ Demande de Léo : « pour les matchs, réfléchis et recherche comment FM constr
 matchs (temps forts notamment, skip quand le ballon sort en touche ou avant de
 reprendre le jeu par exemple). Il faut plus ressembler à ça. »
 
-Ce document est une conception, pas une livraison de jeu. Il s'appuie sur le code de
-`origin/main` (`96f53704`), sur 24 matchs joués avec le vrai moteur natif et sur les
-sources citées en fin de document. Il est accompagné d'un prototype de sélection des
-temps forts (`native/engine/match-highlights.cjs`, pur calcul, branché sur aucun écran).
+Les sections 1 à 8 sont la conception. Elle s'appuie sur le code de `origin/main`
+(`96f53704`), sur 24 matchs joués avec le vrai moteur natif et sur les sources citées en
+fin de document. **La section 9 décrit la première tranche jouable, réalisée le même jour
+derrière `CD_MATCH_TEMPS_FORTS=1`** : sans cette variable, le jeu est celui d'avant.
 
 Convention de lecture : **[source]** = ce qu'une source dit ; **[code]** = lu dans le
 dépôt ; **[mesuré]** = exécuté pendant ce travail ; **[déduit]** = conclusion personnelle ;
@@ -42,8 +42,8 @@ dépôt ; **[mesuré]** = exécuté pendant ce travail ; **[déduit]** = conclus
 8. **Le manager ne peut pas rater une décision** : le match s'arrête de lui-même sur
    carton, mi-temps, et sur les choix que le joueur s'est réservés ; le reste passe en
    notification non bloquante.
-9. **Première tranche jouable** : alternance temps fort / écran intermédiaire sur les
-   faits existants, derrière `CD_MATCH_TEMPS_FORTS=1`, sans toucher aux gestes ni à la
+9. **Première tranche jouable, réalisée (§ 9)** : alternance temps fort / écran
+   intermédiaire derrière `CD_MATCH_TEMPS_FORTS=1`, sans toucher aux gestes ni à la
    vue 3D en cours de travail dans les PR 554 et 555.
 
 ## 2. Ce que fait Football Manager
@@ -220,14 +220,15 @@ que 0,8 essai par match est annoncé « sur ballon porté » par le texte.
    au-delà de la minute courante.
 4. **Essai et transformation sont un seul événement** : la « transformation prête » est un
    plan de présentation à déduire du score (5 ou 7 points), pas un fait séparé.
-5. **Plusieurs causes ne sont lisibles que dans le texte** : 50:22, pénaltouche, ballon tenu
+5. **Plusieurs causes n'étaient lisibles que dans le texte** : 50:22, pénaltouche, ballon tenu
    en but, en-avant dans l'en-but, couleur du carton, essai « sur ballon porté ». Le
-   moteur les connaît (`RESTART_CAUSES`, `origin`), mais ne les écrit pas dans la scène.
-   Or la règle du dépôt est « jamais déduit de la prose ».
-6. **Incohérence déjà présente** : « essai sur ballon porté » est annoncé pour toute touche
-   proche de la ligne conclue par un essai, même quand la combinaison jouée n'est pas le
-   ballon porté. Le geste de la PR 554 lit la combinaison : il ne montrera pas de maul sur
-   ces essais. À arbitrer côté moteur (lot 1).
+   moteur les connaissait (`RESTART_CAUSES`, `origin`), sans les écrire dans la scène,
+   alors que la règle du dépôt est « jamais déduit de la prose ». **Corrigé dans cette PR**
+   (§ 9.2) : la scène porte maintenant `cause`, `card`, `origin` et `conversion`.
+6. **Incohérence déjà présente, non corrigée** : « essai sur ballon porté » est annoncé pour
+   toute touche proche de la ligne conclue par un essai, même quand la combinaison jouée
+   n'est pas le ballon porté. Le geste de la PR 554 lit la combinaison : il ne montrera pas
+   de maul sur ces essais. Description précise au § 9.6 ; à arbitrer côté moteur.
 7. **La pause fait sauter l'image** à l'état courant du moteur : gênant dès qu'un temps
    fort dure plusieurs secondes.
 
@@ -329,44 +330,53 @@ demanderait une simulation plus fine que la minute (hors périmètre).
 
 ### 4.4 Niveaux et durées
 
-Durées de plan visées, à vitesse normale **[proposé]** : progression balle en main 4,5 s ;
-jeu au pied 4 s ; réception 2,5 s ; alignement formé 1,5 s puis lancer-prise 2 s ; ballon
-porté 7 s ; mêlée liée 1,5 s puis sortie 4 s ; récupération 3 s ; faute de main 2 s ;
-coup de sifflet 1,5 s ; carton 3 s ; tir au but 6 s (5,5 s manqué) ; essai 5 s puis
-transformation 4,5 s ; renvoi 3 à 3,5 s ; entrée 0,6 s, sortie 0,8 s, coupe 0,3 s ;
-ralenti 6 s. Les durées de la touche, du ballon porté et de l'essai reprennent celles
-mesurées par la PR 554.
+Durées de plan jouées par la tranche réalisée, à vitesse normale **[code]** : progression
+balle en main, la distance gagnée à 6,5 m/s (entre 0,8 et 3,6 s) puis 1 s au contact ; jeu
+au pied 2,5 s ; réception 2 s ; alignement formé 1,5 s puis lancer-prise 2 s ; ballon porté
+5 s de plus ; mêlée liée 1,5 s puis sortie 3 s ; récupération 2 s (2,5 s en conquête) ;
+faute de main 1,8 s ; coup de sifflet 1,5 s ; carton 2,5 s ; tir au but 4,5 s (4 s manqué),
+dont 1,2 s tireur prêt ; essai 3,5 s puis transformation 4 s ; renvoi 2,5 s ; action d'en-but
+3 s ; entrée 0,6 s, sortie 0,8 s, coupe 0,3 s. Ce sont des **planchers** : quand la vue 3D
+joue un geste plus long (touche portée, ballon porté, essai aplati de la PR 554), la lecture
+l'attend. Pas de ralenti dans cette tranche.
 
-Résultat du prototype sur les 24 matchs **[mesuré]**. « Total » = action + horloge de
-l'écran intermédiaire à 1,5 s par minute sautée, hors pauses et causeries.
+Sélection **en direct** (`en_direct`, § 9.3) sur les 24 matchs **[mesuré, calculé sur les
+journaux]**. « Total » = action + horloge de l'écran intermédiaire à 1,5 s par minute
+sautée, hors pauses, causeries et délai du moteur.
 
 | Niveau | Ce qu'il montre | Temps forts | Action | Total | Plans sautés | Minutes sautées |
 | --- | --- | --- | --- | --- | --- | --- |
 | **Commentaire seul** | écran intermédiaire uniquement | 0 | 0 | 2 min 09 | 100 % | 100 % |
-| **Résumé** | ce qui change le score ou l'effectif, amorce d'un plan | 7,3 (5–10) | 1 min 54 (1 min 03 – 2 min 45) | 3 min 46 | 90,6 % | 87,5 % |
-| **Clés** (seuil 78, amorce 2) | + cartons, tirs manqués, essais refusés, ballons sauvés près de la ligne, coup d'envoi | 11,3 (6–16) | 2 min 43 (2 min 03 – 3 min 30) | 4 min 22 | 81,3 % | 76,9 % |
-| **Étendus** (seuil 56, amorce 4) | + franchissements, pression dans les 22, conquêtes volées, touches et mêlées à 5 m | 16,8 (13–20) | 4 min 46 (4 min 03 – 5 min 54) | 5 min 46 | 55,3 % | 46,6 % |
-| **Dynamique** (seuil de 54 à 80 selon la tension) | entre clés et étendus, selon l'enjeu | 14,0 (8–20) | 3 min 53 (2 min 10 – 5 min 30) | 5 min 10 | 66,7 % | 59,3 % |
-| **Match complet** | tous les plans, temps morts coupés | 2 périodes | 7 min 45 (6 min 55 – 8 min 37) | 7 min 45 | 0 % | 0 % |
+| **Résumé** | ce qui change le score ou l'effectif, amorce d'un plan | 8,0 (5–13) | 1 min 18 (0 min 44 – 2 min 05) | 3 min 14 | 89,8 % | 90,5 % |
+| **Clés** (seuil 78, amorce 2) | + cartons, tirs manqués, essais refusés, ballons sauvés près de la ligne, coup d'envoi | 12,2 (7–19) | 1 min 55 (1 min 06 – 2 min 42) | 3 min 45 | 81,3 % | 85,1 % |
+| **Étendus** (seuil 56, amorce 4) | + franchissements, pression dans les 22, conquêtes volées, touches et mêlées à 5 m | 21,7 (16–32) | 3 min 21 (2 min 21 – 4 min 45) | 4 min 50 | 62,8 % | 69,3 % |
+| **Dynamique** (seuil de 54 à 80 selon la tension) | entre clés et étendus, selon l'enjeu | 17,5 (8–29) | 2 min 49 (1 min 17 – 4 min 25) | 4 min 26 | 70,0 % | 75,4 % |
+| **Match complet** | tous les plans, temps morts coupés, sans retour à l'écran intermédiaire tant que le jeu continue | en continu | 7 min 27 (6 min 44 – 8 min 11) | 7 min 40 | 0 % | 10,2 % |
 
-Un temps fort dure en moyenne 14,5 s en « clés » (médiane 12,2 ; maximum 31,3) et 17,1 s
-en « étendus » (maximum 57,6).
+Une séquence dure en moyenne 8 s en dynamique (médiane 7,7 ; maximum 23,2). Tous les
+essais sont montrés à tous les niveaux, sauf en commentaire seul (100 sur 100).
 
-**Budget de temps.** Chaque niveau a une durée d'action cible (résumé : 2 min 30 au plus ;
-clés : 2 à 3 min 30 ; étendus : 4 min 30 à 6 min 30 ; dynamique : 2 à 7 min). Match
-pauvre : le seuil baisse par paliers de 4 points jusqu'à tenir le minimum. Match trop
-riche : les temps forts non « toujours montrés » les moins intéressants sont retirés.
-Conséquence voulue : **la durée d'un match est prévisible**, ce qui compte quand on
-enchaîne une saison. En direct, ce réglage a posteriori devient un régulateur : toutes
-les dix minutes de match, comparer le temps d'action cumulé à la cible et déplacer le
-seuil de 4 points.
+La sélection a posteriori du premier prototype (`temps_forts`, sur le journal complet)
+donne, avec les mêmes durées de plan : résumé 1 min 39, clés 2 min 13, étendus 3 min 45,
+dynamique 3 min 16, complet 6 min 24. L'écart vient de ce qu'en direct une fenêtre ne peut
+pas s'étendre vers le futur ni fusionner avec la suivante.
+
+**Budget de temps.** Chaque niveau a une durée d'action cible pour 80 minutes (clés : 1 min 30
+à 2 min 50 ; étendus : 3 min 20 à 5 min ; dynamique : 1 min 30 à 5 min 20). **Régulateur** :
+toutes les cinq minutes de match, le temps d'action déjà montré est comparé à la cible au
+prorata de l'horloge ; le seuil se déplace de 4 points, dans la limite de 16. Conséquence
+voulue : **la durée d'un match est prévisible**, ce qui compte quand on enchaîne une saison.
 
 **Mode dynamique**, à la manière de FM26 **[mesuré]** : quand la tension est d'au moins 0,8,
-44 % des plans sont montrés ; quand elle est de 0,45 ou moins, 8 %. Par match : écart
-final de 7 points ou moins, 4 min 14 d'action et 15,4 temps forts ; écart de plus de 14,
-3 min 22 et 12,8. Dans un match plié (tension sous 0,35), une pénalité réussie n'est plus
-« toujours montrée » : elle passe par le fil et le score clignote. Les essais et les
+40 % des plans sont montrés ; quand elle est de 0,45 ou moins, 8 %. Par match : écart final
+de 7 points ou moins, 3 min 14 d'action, 21 temps forts, 4 min 43 au total ; écart de plus
+de 14, 2 min 18, 13,6 temps forts, 4 min 03. Dans un match plié (tension sous 0,35), une
+pénalité réussie n'est plus « toujours montrée » : elle passe par le fil. Les essais et les
 cartons rouges restent toujours montrés, avec une amorce réduite à un ou deux plans.
+
+**Un plan isolé ne fait pas un temps fort** : hors score et exclusion, une action retenue
+qui ne donnerait qu'un plan voit son amorce allongée de deux plans ; à défaut, l'horloge
+continue. Sans cette règle, un match serré enchaînait des allers-retours de trois secondes.
 
 **Je recommande** le mode dynamique par défaut, et de ne pas proposer « Complets » de FM :
 entre « étendus » et « match complet », il n'y a pas assez de matière pour un cran de plus.
@@ -543,7 +553,10 @@ rejouables, causerie d'après-match (existe), « Valider la journée ». Homme d
 ## 5. Plan de réalisation
 
 Chaque lot est une PR courte. Les lots 2 à 4 n'éditent ni `match_view.gd`, ni
-`match_gestes.gd`, ni `dist/match2d.js`.
+`match_gestes.gd`, ni `dist/match2d.js`. **État au 11 novembre au soir : les lots 0, 1 et 2
+sont réalisés dans cette PR (§ 9), avec une partie des lots 5 (niveaux, dynamique,
+régulateur, temps fort ouvert) et 6 (arrêt sur carton).** Le tableau garde le découpage
+d'origine.
 
 | Lot | Contenu | Fichiers | Drapeau | Tests | Risques |
 | --- | --- | --- | --- | --- | --- |
@@ -563,36 +576,31 @@ revient pour un essai avec les deux actions qui l'ont amené, puis repart. Ce qu
 manquerait encore : coupes soignées (lot 3), chiffres et conseil (lot 4), choix du niveau
 (lot 5). Sans le drapeau, le match est celui d'aujourd'hui.
 
-## 6. Prototype
+## 6. Sélection : module et tests
 
-- `native/engine/match-highlights.cjs` : `temps_forts(events, {niveau, eliminatoire,
-  bonus, ralentis, cible})` rend `{tempsForts:[{debut, fin, minuteDebut, minuteFin, type,
-  types, score, force, duree, plans, coupes, ralenti}], nombre, dureeAction, plansMontres,
-  partPlansSautes, minutesSautees, dureeHorloge…}`. Exporte aussi `normaliser`, `tension`,
-  `NIVEAUX`, `DUREES`, `HORLOGE`.
-- **Pur post-traitement** : aucun `require`, aucun tirage, journal non modifié (le test le
-  passe gelé). Il n'est appelé par aucun fichier du jeu.
-- `tests/match-highlights.cjs` : 7 tests, 2 s. Essai après pénaltouche commençant à
-  l'alignement formé ; pénalité, carton et tir dans un seul temps fort ; tension ; erreurs
-  explicites ; sur un vrai match simulé, temps forts triés et disjoints à chaque niveau,
-  durées croissantes du résumé au match complet ; tout essai et toute pénalité réussie
-  couverts ; pureté.
-- Limites : calcul **a posteriori** sur le journal complet (la variante en ligne est le
-  lot 5) ; causes lues dans le texte en attendant le lot 1 ; durées de plan **visées**, pas
-  mesurées à l'écran ; seuils réglés sur 24 matchs de première journée seulement (pas de
-  phase finale, pas de match très déséquilibré : écart maximal 23) ; ni 50:22 ni ballon
-  porté dans l'échantillon, donc ces deux types ne sont vérifiés que par leur code.
-
-Rejouer :
-
-```
-node --test tests/match-highlights.cjs
-node -e "const H=require('./native/engine/match-highlights.cjs');console.log(H.temps_forts(require('./journal.json'),{niveau:'dynamique'}))"
-```
+- `native/engine/match-highlights.cjs`, deux entrées :
+  - `en_direct(events, {niveau, eliminatoire, bonus, cible})` : la sélection jouée par le
+    direct. Elle rend une décision par rafale (les événements d'un même pas du moteur),
+    la liste des temps forts déjà décidés et `courant`, celui de la dernière rafale.
+    Chaque temps fort porte ses plans : `{i, kind, duree, mouvement, coupe}`, et, après un
+    essai, un plan `transformation` déduit (`reussie`).
+  - `temps_forts(events, {niveau, …})` : la sélection a posteriori du premier prototype,
+    gardée comme référence de mesure.
+  - Exporte aussi `normaliser`, `tension`, `NIVEAUX`, `DUREES`, `HORLOGE`.
+- **Pur calcul** : aucun `require`, aucun tirage, journal non modifié (le test le passe gelé).
+- `tests/match-highlights.cjs` : 11 tests, 2 s. Pour `en_direct` : la décision d'une rafale
+  ne dépend que du passé et ne change plus ensuite (préfixes du journal comparés au
+  journal complet, à chaque niveau) ; temps forts triés et disjoints, amorce jamais sur un
+  plan déjà montré ; résultat répétable ; tout essai montré avec sa transformation ;
+  amorce d'un essai sur la minute précédente ; remises en jeu par une coupe.
+- Limites : seuils réglés sur 24 matchs de première journée (pas de phase finale, écart
+  maximal 23) ; ni 50:22 ni combinaison « ballon porté » dans l'échantillon, donc ces deux
+  types ne sont vérifiés que par leur code ; durées de plan fixées par le code, pas
+  mesurées sur un écran rapide.
 
 ## 7. Vérifications non faites
 
-- Aucune exécution dans Godot : rien de ce document n'a été vu à l'écran.
+- Pour la conception (§ 1 à 6) ; celles de la tranche réalisée sont au § 9.8.
 - Délai d'une requête au moteur : environ 0,8 s par `tick` mesuré ici sur une machine très
   chargée ; à mesurer sur le PC de Léo avant de fixer l'horloge « éclair ».
 - Les textes en ligne de World Rugby n'ont pas été relus ; la référence du dépôt
@@ -600,6 +608,290 @@ node -e "const H=require('./native/engine/match-highlights.cjs');console.log(H.t
 - Les vidéos officielles de FM26 et FM27 n'ont pas été regardées ; les règles de début et
   de fin d'un temps fort de FM restent non sourcées (§ 2.2).
 - Pro Cycling Manager : aucune source lue.
+
+## 9. Tranche jouable réalisée (11 novembre 2026)
+
+Tout est derrière la variable d'environnement **`CD_MATCH_TEMPS_FORTS=1`**. Sans elle : pas
+de régie, pas d'écran intermédiaire, pas de projection du moteur, cadence ×1 / ×4 / ×12
+d'origine (contrôlé par test, § 9.7). Fichiers interdits non touchés : `match_view.gd`,
+`match_gestes.gd`, `dist/match2d.js`.
+
+### 9.1 Ce que voit le joueur
+
+1. Le **coup d'envoi** en 3D : équipes en place, renvoi, réception.
+2. L'**écran intermédiaire** : terrain vu de dessus avec la bande de dix mètres où se joue
+   le match, le ballon, la flèche de l'équipe en possession, les trois dernières actions
+   et les repères des essais, pénalités et cartons ; le fil (sans messages d'avantage) ;
+   sept chiffres ; le regard de l'adjoint et son bouton quand le moteur en projette un.
+   L'horloge avance d'une minute par requête au moteur.
+3. Quand une action est retenue, la 3D revient par un fondu, **repart d'où l'action se
+   trouvait** (retour sur des plans déjà simulés) et joue les plans à vitesse de jeu :
+   une progression balle en main dure le temps de sa distance à 6,5 m/s, au lieu d'un
+   déplacement en 0,55 s. Le bandeau montre l'horloge et le score **de l'instant rejoué**.
+4. Touche, mêlée, renvoi, tir au but et transformation arrivent par une **coupe franche**
+   sur la phase en place ; le tireur attend 1,2 s avant de frapper. Après un essai, un plan
+   « transformation » déduit montre le buteur à 22 m, dans l'axe de l'essai.
+5. À la fin du temps fort, la 3D reste à l'écran le temps de savoir si l'action continue
+   à la minute suivante ; sinon l'écran intermédiaire revient.
+6. **Arrêt automatique** : carton contre mon équipe ou carton rouge adverse (après le temps
+   fort, jamais pendant), mi-temps (déjà existante). Une carte propose Banc, Tactique,
+   Reprendre. Les ordres se donnent en pause et s'appliquent comme aujourd'hui.
+
+### 9.2 Faits structurés du journal (lot 1)
+
+| Champ de la scène | Sur quel `kind` | Valeurs | Écrit par |
+| --- | --- | --- | --- |
+| `cause` | `touch` | `carry-touch`, `indirect-touch`, `direct-touch`, `penalty-touch`, `50-22`, `missed-goal-touch`, `period-end` | `resolveTouch`, `missedGoal` (`dist/restarts.js`), `advanceFlowPlay` (`dist/matchflow.js`) |
+| `cause` | `ingoal` | `held-up`, `attacking-kick-grounded`, `ingoal-knock-on`, `kick-dead`, `defender-grounded` | `resolveInGoal` (`dist/restarts.js`) |
+| `card` | `card` avec `incident` | `yellow`, `red20`, `red` | `giveMatchCard` (`dist/rugby.js`) |
+| `origin`, `conversion` | `try` | `open`, `maul`, `scrum` ; vrai ou faux | `scoreTry` (`dist/rugby.js`) |
+
+Chaque valeur est une variable déjà calculée à l'endroit où l'événement est écrit ;
+`captureMatchAction` (`dist/match-actions.js`) ne la recopie que si elle appartient au
+domaine attendu, et `validateActionScenes` (`dist/saves.js`) contrôle les mêmes domaines.
+La sélection ne lit plus le texte que pour un journal commencé avant ces champs.
+
+**Résultats sportifs inchangés — preuves [mesuré]** :
+- les 24 matchs du moteur natif rejoués avec les mêmes graines après la modification :
+  **24 sur 24 identiques** (journal, score, essais, statistiques, météo) une fois retirés
+  les 658 champs nouveaux ;
+- 4 matchs du harnais comparés à `96f53704` : empreinte SHA-256 identique (journal sans
+  les nouveaux champs, score, statistiques, feuilles de match, tirage suivant) ;
+- dans le dépôt, `tests/match-structured-facts.cjs` rejoue trois matchs contre un témoin
+  qui ignore ces champs à l'enregistrement : même journal, même score, même tirage suivant.
+
+### 9.3 Sélection en direct, sans moteur en avance
+
+Le moteur avance d'une minute par pas ; les événements d'un pas forment une **rafale**.
+À chaque rafale, `en_direct` décide : jouer en 3D ou laisser l'horloge filer.
+
+- **Seul le passé est lu.** L'amorce remonte sur des plans déjà simulés et pas encore
+  montrés, jamais plus loin que la fin du temps fort précédent. Aucun plan n'est montré
+  deux fois.
+- **Sans état.** La fonction rejoue toutes les décisions depuis le coup d'envoi à partir du
+  journal : le résultat est répétable, et la décision d'une rafale ne change plus quand le
+  match continue (contrôlé sur tous les préfixes d'un match, à chaque niveau).
+- **Temps fort ouvert.** Si le dernier plan montré n'est ni un ballon mort ni un ballon
+  perdu, la rafale suivante prolonge le temps fort quand elle reste intéressante (seuil
+  abaissé de 16 points) ou quand la même équipe reste dans les 22 ; deux prolongations au plus.
+- **Fin de match serrée.** Après la 78e minute, à un essai transformé d'écart ou moins,
+  toute rafale jouable est montrée.
+- **Régulateur de rythme** et **plan isolé** : § 4.4.
+
+### 9.4 Côté moteur
+
+- `native/engine/match-direct.cjs` (nouveau) : projection `live.direct` — niveau, horloge,
+  possession, zone, fil, traces, repères, chiffres, élan, cartons en cours, bilan, temps
+  fort courant (plans avec leur scène 3D, position de départ, score avant et après),
+  arrêt-décision. Les scènes des plans passés sont relues par la fonction existante
+  `matchScene` en déplaçant le curseur de présentation, toujours remis à sa place.
+- `native/engine/worker.cjs` : option `matchHighlights` de `createBridge` ; au lancement,
+  `CD_MATCH_TEMPS_FORTS=1` l'active avec le niveau `CD_MATCH_TEMPS_FORTS_NIVEAU`
+  (`aucun`, `resume`, `cles`, `etendus`, `dynamique` par défaut, `integral`). La commande
+  `tick` accepte `{minute:true, temps_forts:<niveau>}` : une minute simulée par pas,
+  présentation à jour avant et après ; le niveau peut changer en cours de match. Sans
+  l'option, ce pas est refusé et `live.direct` n'existe pas.
+- **Aucun effet sur le match** : même carrière et même tirage suivant qu'avec le pas
+  ordinaire (`tests/match-direct.cjs`).
+
+### 9.5 Côté Godot
+
+- `native/godot/ui/contextual/match_temps_forts.gd` (nouveau) : la régie. Trois états
+  (intermédiaire, temps fort, attente). Elle rejoue localement la liste de plans du moteur,
+  sans requête par plan, par l'interface publique de la vue 3D : `apply_frame` et
+  `is_presenting_extended_pass`.
+- `native/godot/ui/contextual/match_between.gd` (nouveau) : l'écran intermédiaire. Composants
+  et couleurs de l'habillage existant (`skin.gd`), aucune ressource ajoutée.
+- `native/godot/ui/contextual/live_view.gd` : création de la régie si la variable est
+  posée ; la cadence devient le choix de l'horloge (posée 3 s par minute, normale 1,5 s,
+  rapide 0,6 s, éclair 0,25 s).
+- `native/godot/main.gd` : une ligne, le minuteur du direct laisse la main à la régie.
+- **Réglages** : niveau par `CD_MATCH_TEMPS_FORTS_NIVEAU` et par la liste « Temps forts » de
+  l'écran intermédiaire (gardée pour la session) ; horloge par la liste de la barre de
+  commandes ou `CD_MATCH_TEMPS_FORTS_HORLOGE` ; vitesse des temps forts par
+  `CD_MATCH_TEMPS_FORTS_VITESSE` (0,5 à 4, 1 par défaut). Il n'existe pas d'écran de
+  réglages de match : rien n'est écrit dans les préférences.
+
+**Point d'accroche pour les PR 554 et 555.** La régie envoie à la vue 3D chaque plan dans
+l'ordre du journal, sortie en touche et mise en place comprises, avec le journal tronqué à
+l'action montrée, et attend tant que `is_presenting_extended_pass()` est vrai. Les gestes et
+la coupe vers la remise en jeu (`cut_to_restart`) se déclenchent donc sur les mêmes faits
+qu'aujourd'hui, sans modification ici. Quand les gestes sont actifs (`CD_MATCH_GESTES=1`),
+la régie ne fait plus sa propre coupe franche et laisse celle de la vue. **Non vérifié** :
+les deux variables ensemble n'ont pas été essayées, la branche 554 n'étant pas fusionnée.
+
+### 9.6 Incohérence « essai sur ballon porté » (décrite, non corrigée)
+
+- **Constat [mesuré]** : sur les 24 matchs, 18 essais sur 100 portent `origin:'maul'` et le
+  texte « sur ballon porté », et **aucun** n'a été précédé d'une touche jouée avec la
+  combinaison `maul` : toutes les touches gagnées de l'échantillon ont `move:'equilibre'`.
+- **Cause [code]** : dans `contestSetPiece` (`dist/rugby.js`), une touche gagnée à moins de
+  23 m de la ligne peut donner un essai dans le même pas, avec l'origine
+  `playbookRules(l)&&['fond','courte'].includes(move.move)?'open':'maul'`. Toute combinaison
+  autre que « fond de touche » et « touche courte » — donc aussi le lancer « équilibré »
+  par défaut — produit `maul`, sans qu'un ballon porté ait été annoncé ni simulé.
+- **Conséquences** : le journal annonce un ballon porté qui n'a pas été joué ; le geste de
+  maul de la PR 554 se déclenche sur la combinaison `maul` et ne s'affichera pas pour ces
+  essais ; la statistique « essais sur ballon porté » ne dit rien du carnet de jeu.
+- **Deux corrections possibles, à trancher** : (a) n'écrire `maul` que si la combinaison
+  jouée est le ballon porté, et « sur lancement de touche » sinon — changement de texte et
+  de fait, sans effet sur le score ; (b) considérer qu'un essai direct après touche près de
+  la ligne est toujours un ballon porté, et faire porter `move:'maul'` par la conquête
+  correspondante. Je recommande (a) : elle ne change aucun tirage.
+
+### 9.7 Tests et preuves
+
+| Test | Ce qu'il prouve | Résultat ici |
+| --- | --- | --- |
+| `tests/match-highlights.cjs` | sélection a posteriori et en direct : causalité, répétabilité, essais montrés, coupes | 11 sur 11, 2 s |
+| `tests/match-structured-facts.cjs` | faits structurés : match inchangé, accord avec le texte, validation des sauvegardes | 3 sur 3, 9 s |
+| `tests/match-direct.cjs` | vrai moteur natif : rien sans l'option ; projection minute par minute ; pas « minute » sans effet sur le match | 3 sur 3, 50 s |
+| `tests/godot-match-temps-forts.cjs` | vraie interface sans affichage et vrai moteur : sans la variable, rien ; avec, coup d'envoi en 3D → écran intermédiaire → second temps fort → écran intermédiaire ; commentaire seul ; arrêt sur carton et reprise ; rien de coupé en 1280×720 et 1920×1080 | 10 puis 171 contrôles, 0 échec, 36 s |
+| `tests/godot-match-temps-forts-capture.cjs` | outil de capture (ne fait rien sans `CD_MATCH_TEMPS_FORTS_PROOF`) | voir § 9.9 |
+
+Tests existants relancés après les modifications, tous réussis : `match-actions`,
+`restarts`, `matchflow`, `rugby`, `saves`, `discipline`, `match-rules`, `match2d`,
+`v19-advantage`, `goalkicking`, `frontrow`, `match3d-adapter`, `ci-selection`,
+`animation-live-cut`, `match-pass-live`, `godot-match-journal` (351 contrôles).
+`godot-match-action-review` échoue ici : il appelle `_select_tab` sur la vue contextuelle
+du direct, qui n'a pas cette fonction sur `origin/main` non plus ; échec antérieur à cette
+PR d'après la lecture du code, **non rejoué sur `main`**.
+
+### 9.8 Ce qui a été vu à l'écran, mesures, non vérifié
+
+**Vu à l'écran [exécuté]**, sous Linux, rendu logiciel (`llvmpipe`, OpenGL), 1280×720, vraie
+interface et vrai moteur, par le script de capture : deux débuts de match (12 minutes avec
+une graine au hasard, 7 minutes avec la graine 11), 167 images regardées par planches :
+
+- **Coup d'envoi** : les deux équipes en place, le renvoi, la réception, la légende du
+  plan sous le terrain, l'horloge « 0′ » ([image](match-temps-forts-20261111/01-coup-d-envoi.jpg)).
+- **Écran intermédiaire** : terrain vu de dessus avec les en-buts aux couleurs des clubs,
+  la bande de dix mètres en surbrillance, le ballon et la flèche de possession ; le fil ;
+  les sept chiffres ; le regard de l'adjoint et son bouton ; la liste « Temps forts » ;
+  l'horloge de la barre de commandes. Rien de coupé en 1280×720
+  ([image](match-temps-forts-20261111/02-ecran-intermediaire.jpg)).
+- **Temps fort en jeu courant** (2e minute) : ballon récupéré, les trente joueurs, la
+  caméra qui suit le ballon ([image](match-temps-forts-20261111/03-temps-fort.jpg)).
+- **Coupe vers une touche formée** (graine 11, 1re minute) : les deux alignements en place
+  dès la première image du plan, puis la conquête
+  ([image](match-temps-forts-20261111/04-touche-formee.jpg)).
+- **Essai puis transformation** : essai en coin, score affiché 0 – 0 pendant le plan puis
+  0 – 5 ; coupe sur le buteur isolé à 22 m dans l'axe de l'essai, tir, ballon qui passe à
+  côté ([image](match-temps-forts-20261111/05-transformation.jpg)).
+- **Progression à vitesse de course** (3e et 4e minutes) : le porteur avance d'image en
+  image jusque dans les 22 mètres, les deux lignes suivent, au lieu d'un saut d'une
+  position à l'autre ([image](match-temps-forts-20261111/06-progression.jpg)).
+- **Temps fort prolongé** : à la 5e minute, la rafale suivante est jouée à la suite, sans
+  retour à l'écran intermédiaire.
+- **Enchaînement** temps fort → écran intermédiaire → temps fort, sans intervention, sur
+  sept minutes de match (trois temps forts et une prolongation).
+
+Défauts vus sur ces captures et corrigés ensuite, **sans nouvelle capture** : la légende de
+l'essai annonçait la transformation manquée et le score avant l'image (elle s'arrête
+maintenant à l'essai, et un tir au but affiche « Tir au but. » jusqu'à la frappe) ;
+l'horloge de l'écran intermédiaire s'écrivait « 1 min » au lieu de « 1′ ».
+
+Ce qui reste faible à l'image : sans les gestes de la PR 554, touche et essai sont des
+placements, pas des gestes ; pendant la transformation, les autres joueurs restent où
+l'essai les a laissés ; la caméra « TV » est lointaine.
+
+**Mesures.**
+- Durée d'un match par niveau, sélection en direct, calculée sur 24 journaux : tableau du
+  § 4.4 (dynamique : 2 min 49 d'action, 4 min 26 avec l'horloge normale ; de 3 min 14 à
+  5 min 43 selon le match).
+- Délai du moteur : 0,67 s par minute simulée ici (machine à 2 cœurs très chargée), soit
+  environ une minute de plus par match ; à mesurer sur le PC de Léo.
+- Lecture réelle : sans affichage et à vitesse ×4, le coup d'envoi (5,9 s prévues) est joué
+  en 1,37 s et un essai (11,2 s prévues) en 2,57 s : la lecture tient les durées prévues.
+- **Les durées relevées sous rendu logiciel ne valent rien** : à moins de 2 images par
+  seconde, Godot plafonne le pas de temps et tout le jeu ralentit (un coup d'envoi de 5,9 s
+  y dure 48 s). Sur un PC à 30 images par seconde ce plafond ne joue pas.
+
+**Non vérifié.**
+- Aucune exécution sous Windows ni avec une carte graphique ; aucun match entier vu à l'écran.
+- `CD_MATCH_TEMPS_FORTS=1` avec `CD_MATCH_GESTES=1` (PR 554 et 555 non fusionnées).
+- Pause demandée par le manager au milieu d'un temps fort (le code fige la lecture ; pas
+  de test), « Confier la fin à l'adjoint », fin de match et causerie d'après-match en
+  temps forts. À la mi-temps, la causerie s'ouvre dès la dernière minute simulée : le
+  dernier temps fort de la période, s'il y en a un, est joué après elle.
+- Rendu en 1920×1080 : seule la mise en page est contrôlée par le test sans affichage.
+- La suite complète des tests du dépôt n'a pas été relancée ici ; seuls les tests du § 9.7
+  l'ont été.
+
+**Limites connues de la tranche.**
+- **Le son suit le moteur, pas l'instant rejoué** : l'ambiance d'un essai peut précéder son
+  image de quelques secondes. À traiter avec la régie (lot son).
+- Pas de ralenti, pas d'avant-match ni d'écran de mi-temps ou de fin dédiés, pas d'autres
+  matchs en direct (lots 4 et 7).
+- Arrêt automatique sur « choix réservé » (pénalité : me demander) non fait : il faut que le
+  moteur sache attendre une décision (lot 6).
+- Les joueurs hors porteur glissent encore d'une formation schématique à l'autre ; seule
+  la progression balle en main est ralentie à vitesse de course. Sans les gestes de la
+  PR 554, une touche ou un essai restent des placements, pas des gestes.
+- Mode « mouvements réduits » : non traité (la conception prévoit d'y forcer le commentaire seul).
+- Le niveau et l'horloge choisis à l'écran valent pour la session, pas pour le profil.
+- Seule la vue contextuelle du direct est branchée ; l'ancien écran `match_screen.gd` ne l'est pas.
+- Après un redémarrage du jeu en cours de match, le dernier temps fort peut être rejoué une fois.
+
+### 9.9 Lancer la capture sur un PC Windows
+
+Depuis la racine du dépôt, projet Godot déjà importé, Node installé :
+
+```
+set CD_GODOT_EXE=C:\chemin\vers\Godot_v4.7.2-stable_win64.exe
+set CD_MATCH_TEMPS_FORTS_PROOF=E:\captures\temps-forts
+node tests\godot-match-temps-forts-capture.cjs
+```
+
+(PowerShell : `$env:CD_GODOT_EXE="…"; $env:CD_MATCH_TEMPS_FORTS_PROOF="…"; node tests\\godot-match-temps-forts-capture.cjs`.)
+
+Le script crée une carrière de test dans un dossier temporaire (le profil du joueur n'est
+pas touché), ouvre le match au coup d'envoi, joue le match entier en mode dynamique sans
+intervention (causeries passées, reprise à la mi-temps et après un carton), écrit
+`tf-00001.jpg`… et `report.json` dans le dossier donné, puis ferme le jeu.
+
+| Variable | Défaut | Rôle |
+| --- | --- | --- |
+| `CD_MATCH_TEMPS_FORTS_PROOF` | — (requis) | dossier absolu des images, de `report.json` et de `godot.log` |
+| `CD_MATCH_TEMPS_FORTS_NIVEAU` | `dynamique` | `aucun`, `resume`, `cles`, `etendus`, `dynamique`, `integral` |
+| `CD_MATCH_TEMPS_FORTS_SIZE` | `1280x720` | taille de la fenêtre et des images |
+| `CD_MATCH_TEMPS_FORTS_EVERY` | `5` | une image enregistrée toutes les N images affichées, à 30 images/s : 6 images par seconde, environ 1 800 images pour 5 minutes |
+| `CD_MATCH_TEMPS_FORTS_MAX` | `2400` | plafond d'images ; au-delà le match continue sans enregistrer (`tronque` dans le rapport) |
+| `CD_MATCH_TEMPS_FORTS_HORLOGE` | `normale` | `lente`, `normale`, `rapide`, `eclair` : accélère l'écran intermédiaire |
+| `CD_MATCH_TEMPS_FORTS_VITESSE` | `1` | vitesse des temps forts, de 0,5 à 4 |
+| `CD_MATCH_TEMPS_FORTS_SEED` | `7` | graine du moteur : même graine, même match |
+| `CD_MATCH_TEMPS_FORTS_CLUB` | `0` | club dirigé |
+| `CD_MATCH_TEMPS_FORTS_MINUTES` | `0` | arrêt après cette minute de match (0 : match entier) |
+| `CD_MATCH_TEMPS_FORTS_GODOT_ARGS` | — | arguments Godot supplémentaires |
+
+`report.json` donne pour chaque image son nom, l'instant en millisecondes, l'état
+(`temps_fort`, `intermediaire`, `attente`, `arret`, `causerie`), l'horloge et le score
+affichés ; et le journal de régie (chaque temps fort : type, durée prévue, durée réelle).
+Pour une vidéo plus courte : `CD_MATCH_TEMPS_FORTS_HORLOGE=rapide`. Pour moins d'images :
+augmenter `CD_MATCH_TEMPS_FORTS_EVERY`.
+
+**Ce que la capture par défaut doit montrer** (graine 7, club 0, mode dynamique ; rejoué
+côté moteur seul **[mesuré]**) : score final 31 – 15, six essais, 14 temps forts et deux
+prolongations, 2 min 41 d'action prévue et 1 min 47 d'horloge, un arrêt sur carton — soit
+environ 4 min 30 plus le délai du moteur et les reprises. Dans l'ordre : coup d'envoi ;
+conquête volée (1′) ; franchissement (2′) ; franchissement (12′) puis essai (14′) ;
+franchissement après le renvoi (14′) ; essais (20′, 21′) ; ballon gratté (21′) ; pénalité
+(23′) ; carton jaune puis essai (29′) ; essais (59′, 60′) ; pénalité (68′) ; carton jaune
+(75′). Entre la 29e et la 59e minute, match plié : l'horloge file sans temps fort.
+
+Sous Linux sans carte graphique (contrôle seulement) :
+
+```
+CD_GODOT_EXE=<godot> CD_MATCH_TEMPS_FORTS_PROOF=<dossier> CD_MATCH_TEMPS_FORTS_MINUTES=7 \\
+CD_MATCH_TEMPS_FORTS_GODOT_ARGS="--display-driver x11 --rendering-method gl_compatibility --audio-driver Dummy" \\
+xvfb-run -a -s "-screen 0 1280x720x24" node tests/godot-match-temps-forts-capture.cjs
+```
+
+### 9.10 Prochaine étape
+
+Voir la vidéo du match entier sur le PC de Léo, puis, dans l'ordre : le son calé sur la
+régie ; la fusion avec les gestes des PR 554 et 555 (essai conjoint des deux variables) ;
+l'écran intermédiaire repris par la graphiste ; les arrêts sur choix réservé.
 
 ## 8. Sources
 

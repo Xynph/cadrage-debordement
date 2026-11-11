@@ -68,13 +68,13 @@ function giveMatchCard(l,side,id,kind='yellow'){
  if(slot<0||slot<3&&!frontRowRules(l)||!p||sh.sentOff.includes(id)||sh.cards.some(c=>c.id===id&&c.until>l.minute))return false;
  if(kind==='yellow'){
   sh.yellowCounts[id]=(sh.yellowCounts[id]||0)+1;l.stats[side].yellows++;
-  if(sh.yellowCounts[id]===1){sh.cards.push({id,until:l.minute+10});if(slot<3)registerFrontExclusion(l,side,id,slot,'yellow',l.minute+10);addEvent(l,`Carton jaune pour ${p.name} : exclusion de 10 minutes de jeu.`,'card',{team:side,actor:id,incident:true});return true}
+  if(sh.yellowCounts[id]===1){sh.cards.push({id,until:l.minute+10});if(slot<3)registerFrontExclusion(l,side,id,slot,'yellow',l.minute+10);addEvent(l,`Carton jaune pour ${p.name} : exclusion de 10 minutes de jeu.`,'card',{team:side,actor:id,incident:true,card:'yellow'});return true}
   kind='red20';
  }
  sh.cards=sh.cards.filter(c=>c.id!==id);sh.on[slot]=null;sh.sentOff.push(id);
  const until=kind==='red20'?l.minute+20:null;
  sh.redCards.push({id,slot,until,filled:false});if(slot<3)registerFrontExclusion(l,side,id,slot,kind,until);
- addEvent(l,`${p.name} ${sh.yellowCounts[id]===2?'reçoit un second jaune':'reçoit un carton rouge'} : sortie définitive du joueur. ${until===null?'Aucun remplacement autorisé.':'Un autre joueur pourra entrer à partir de la '+until+'e minute.'}`,'card',{team:side,actor:id,incident:true});
+ addEvent(l,`${p.name} ${sh.yellowCounts[id]===2?'reçoit un second jaune':'reçoit un carton rouge'} : sortie définitive du joueur. ${until===null?'Aucun remplacement autorisé.':'Un autre joueur pourra entrer à partir de la '+until+'e minute.'}`,'card',{team:side,actor:id,incident:true,card:kind});
  return true;
 }
 function restoreRedReplacements(l,side){
@@ -121,7 +121,7 @@ function goalChance(l,side,conversion=false,tryY=35){
  const shot=goalKickGeometry(conversion,tryY,l.territory,side);
  return clamp((conversion?.28:.23)+skill(kicker,'goal',true)*.006-Math.max(0,shot.distance-25)*.005-shot.angle*.13+(unit(l,side,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0),.22,.93);
 }
-function scoreTry(l,side,origin,startAt=l.territory){if(!beforeTryUnderAdvantage(l,side))return;l.tries[side]++;l.score[side]+=5;const stat=l.stats[side];stat.conversionAttempts++;const tryY=origin==='maul'?10:origin==='open'&&effectiveAttack(l,side)==='large'?(l.minute%2?14:56):35;const ok=Math.random()<goalChance(l,side,true,tryY);if(ok){l.score[side]+=2;stat.conversions++}const candidates=activePlayers(l,side).filter(p=>origin==='maul'||origin==='scrum'?p.fam<=3:p.fam>=3);const scorer=candidates.length?candidates[rand(0,candidates.length-1)]:null;addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai${scorer?' de '+scorer.name:''}${origin==='maul'?' sur ballon porté':origin==='scrum'?' sur mêlée':''}, ${ok?'transformé':'transformation manquée'}. ${l.score.join(' – ')}.`, 'try',{kind:'try',team:side,actor:scorer?.id||null,from:{x:startAt,y:35},to:{x:attackingGoal(side),y:tryY},possession:side});if(restartRules(l)){if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))performKickRestart(l,'kickoff',1-side,'score',side)}else{l.territory=50;l.possession=1-side}}
+function scoreTry(l,side,origin,startAt=l.territory){if(!beforeTryUnderAdvantage(l,side))return;l.tries[side]++;l.score[side]+=5;const stat=l.stats[side];stat.conversionAttempts++;const tryY=origin==='maul'?10:origin==='open'&&effectiveAttack(l,side)==='large'?(l.minute%2?14:56):35;const ok=Math.random()<goalChance(l,side,true,tryY);if(ok){l.score[side]+=2;stat.conversions++}const candidates=activePlayers(l,side).filter(p=>origin==='maul'||origin==='scrum'?p.fam<=3:p.fam>=3);const scorer=candidates.length?candidates[rand(0,candidates.length-1)]:null;addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai${scorer?' de '+scorer.name:''}${origin==='maul'?' sur ballon porté':origin==='scrum'?' sur mêlée':''}, ${ok?'transformé':'transformation manquée'}. ${l.score.join(' – ')}.`, 'try',{kind:'try',team:side,actor:scorer?.id||null,origin,conversion:ok,from:{x:startAt,y:35},to:{x:attackingGoal(side),y:tryY},possession:side});if(restartRules(l)){if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))performKickRestart(l,'kickoff',1-side,'score',side)}else{l.territory=50;l.possession=1-side}}
 // Incidents are simulation categories, not automatic legal card tariffs.
 const DISCIPLINE_INCIDENTS=[
  {id:'offside',label:'hors-jeu',weight:30,serious:false},
