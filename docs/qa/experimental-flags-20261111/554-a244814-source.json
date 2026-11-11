@@ -1,0 +1,34 @@
+{
+  "base": "b25c0aabc34dd519432c78ddec813bcec8a664c0",
+  "head": "a244814ee37d4c553faa2c9d61eea4455671a61d",
+  "verifiedCandidateFilesSHA256": {
+    "dist/match2d.js": "15effacd339f2b3f024ff74896f8a4bd64aab30b83047ca129a8b4ba79ca1711",
+    "docs/match-gestes-20261111.md": "6a3c3241c3684ee620eba37a8ec31fc8571f692bd8ae273dddf11a7a427b75c9",
+    "docs/match-gestes-20261111/lot3-coupe-touche-formee-camera-tv.jpg": "b81a2cd97db717cc7e0a153903c385a130f3c1fc18628abb6d66edf7af9cf61d",
+    "docs/match-gestes-20261111/lot3-prise-camera-action.jpg": "0720c60d0dc83bbc16a4608b96e1511c744cf0a6e2b6ab78a82f079e0e63c329",
+    "docs/match-gestes-20261111/lot3-sequence-camera-action.jpg": "1639646ecdee83f66f902b0e0093dc4614c808d494c03c31a10689afc0684dd9",
+    "docs/match-gestes-20261111/lot3-sequence-camera-tv.jpg": "eb34a437e153bc846e687ebd4afc23b2ae7001942c911e135cf50a92b4f268d5",
+    "docs/touche-cote-alignement-20261111.md": "b3a9366046cb3ee503dd6c3e82537688eccdd1704fa2dcb37016cfc0520cd267",
+    "native/godot/match_gestes.gd": "4fc9efde3b8228a7034682ad6b6ec06a5273d5a6917800b88b0c80420826fc4b",
+    "native/godot/match_view.gd": "74920724d8d534f754c62d66617c43486ce30b5ee8f3efde31b1185b9c4f708c",
+    "tests/fixtures/match-gestes-sequence.json": "51356eb709609cb6b36663a7fbb0c56a610dd75ca679425358678453749e22f0",
+    "tests/godot-match-gestes-capture.gd": "e4768900c09fb78dc89ee962a80e326bdcf0e8de3d70fb365f86c43554d25e7f",
+    "tests/godot-match-gestes-scenes.cjs": "ed0f22843f02509e77dc99bf152d4d207dcd2bc848e69c74676a741ae418a757",
+    "tests/godot-match-gestes.gd": "246c543436e3b2284aaa42de1e970e202543aab8fdbbbf0c8c0714c843b8d891",
+    "tests/lineout-approach.cjs": "53dce24a011b2baf53ab322a34b2a2dd3f360a0de86db67dc658ad7e0bb9f5fd",
+    "tests/lineout-geometry.cjs": "c7069c5b685d33ed4c3a635afaee17a2674d78f670a05dbcbd91385b3df890ac",
+    "tests/lineout-side.cjs": "e4143cdc690c1e7879015782c71324874ea9f6c1757b9990afc4af4448a7da77",
+    "tests/match-actions.cjs": "b9335c966bb5b76da922368b37fa652a5afee302d3a41d3525114bf006eec8e7"
+  },
+  "identicalGitObjects": {
+    "native/engine": "a530527c23878d1ab0231aa8f8b65f8a748b16de",
+    "dist/assets": "0fc8256bbac8fc413a02c945064d4508b40ac446",
+    "dist/match3d/assets": "d6f6e2829e0e8a770565c96e94da8dc28b6d8e6f",
+    "dist/rugby.js": "acfccae63601f797934af95f806e48f9d2a8f274",
+    "dist/restarts.js": "3992eae77b721326939ff345c3a508984651b302",
+    "native/godot/engine_bridge.gd": "4eafffeed0a7e15803745b2a3fd5a8f3d26e9cc4",
+    "scripts/build-godot-prototype.py": "e110e5f040dd2668cabf51480150d1718118dd5a",
+    "tests/godot-match-gestes.cjs": "a4e56af4ae71223c08d7682c132051fef3eb7809"
+  },
+  "lineoutSceneBlob555": "20859e027a760ed71d508e6c918f74f147e0c378"
+}
