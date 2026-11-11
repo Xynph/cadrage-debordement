@@ -1,5 +1,6 @@
 extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
+const Reading = preload("res://ui/management_state.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -29,7 +30,9 @@ func key(code: Key, alt: bool = false) -> void:
 func activate(button: Button) -> void:
 	check(button!=null and button.is_visible_in_tree() and not button.disabled,"Contrôle de consultation rendu")
 	if button==null:return
+	if button.name=="RelationshipCommitmentPlayerLink":trace_relations_scroll("before-focus-commitment")
 	button.grab_focus();await settle()
+	if button.name=="RelationshipCommitmentPlayerLink":trace_relations_scroll("after-focus-before-enter")
 	check(button.has_focus() and button.focus_mode==Control.FOCUS_ALL,"Focus clavier du lien visible")
 	await key(KEY_ENTER)
 func back() -> void:
@@ -43,6 +46,24 @@ func capture(name: String) -> void:
 	var file:=output.path_join(name+".png")
 	check(picture.save_png(file)==OK,"Capture réelle · "+name)
 	captures.append({"file":file,"sha256":FileAccess.get_sha256(file)})
+func trace_relations_scroll(boundary: String) -> void:
+	var page:=app.find_child("CarnetRelations",true,false) as Control
+	var focus:=app.get_viewport().gui_get_focus_owner()
+	var scrolls: Array=[]
+	if page!=null:
+		for surface: ScrollContainer in page.find_children("*","ScrollContainer",true,false):
+			scrolls.append({"name":str(surface.name),"path":str(app.root_content.get_path_to(surface)),"y":surface.scroll_vertical,"max":surface.get_v_scroll_bar().max_value,"page":surface.get_v_scroll_bar().page,"contains_focus":focus!=null and surface.is_ancestor_of(focus)})
+	print("MANAGEMENT_SCROLL ",JSON.stringify({"boundary":boundary,"route":app.route,"focus":str(focus.name) if focus!=null else "","scrolls":scrolls}))
+func trace_stored_scrolls() -> void:
+	var nav: Node=app.navigation_controller
+	if nav.cursor<0:return
+	for address: Dictionary in nav.history[nav.cursor].get("reading",{}).get("scrolls",[]):
+		var candidate: Node=app.root_content
+		for index: int in address.get("path",[]):
+			if candidate==null or index<0 or index>=candidate.get_child_count():candidate=null;break
+			candidate=candidate.get_child(index)
+		var resolved:=Reading._reading_control(app.root_content,address,"ScrollContainer") as ScrollContainer
+		print("MANAGEMENT_STORED_SCROLL ",JSON.stringify({"stored_name":address.get("name",""),"stored_y":address.get("y",-1),"indices":address.get("path",[]),"candidate_name":str(candidate.name) if candidate!=null else "","candidate_class":candidate.get_class() if candidate!=null else "","resolved":resolved!=null,"actual_y":resolved.scroll_vertical if resolved!=null else -1}))
 func trace_location(boundary: String) -> void:
 	var window_size: Vector2i=app.get_window().size
 	var viewport_size: Vector2=app.get_viewport_rect().size
@@ -102,6 +123,7 @@ func run() -> void:
 	var right:=surfaces[1] as ScrollContainer
 	right.scroll_vertical=mini(90,int(right.get_v_scroll_bar().max_value-right.get_v_scroll_bar().page));await settle()
 	var expected_scroll:=right.scroll_vertical
+	trace_relations_scroll("after-setting-right-scroll")
 	check(expected_scroll>0,"Position de lecture non nulle réellement préparée")
 	var commitment:=page.find_child("RelationshipCommitmentPlayerLink",true,false) as Button
 	check(commitment!=null and commitment.get_meta("entity_id","")==player_id,"L’engagement porte l’ID du vrai personnage")
@@ -109,6 +131,8 @@ func run() -> void:
 	check(app.route=="Effectif" and app.selected_player==player_id and app.get_meta("immersive08_full_player",false),"Engagement → fiche complète exacte")
 	await back()
 	check(app.route=="Vestiaire" and app.management_ui.relationships.playerId==player_id,"Retour au joueur sélectionné du vestiaire")
+	trace_relations_scroll("after-back-to-relations")
+	trace_stored_scrolls()
 	page=app.find_child("CarnetRelations",true,false) as Control
 	if page!=null:
 		surfaces=page.find_children("*","ScrollContainer",true,false)
