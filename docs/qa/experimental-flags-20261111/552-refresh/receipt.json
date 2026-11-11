@@ -1,0 +1,39 @@
+{
+  "head": "5666193089a9cd4dd9b37ab6d71f934c1aa2a0c8",
+  "previous": "a25d3066a02da68fcc19818ff6fd7c92e5043ac2",
+  "tree": "db23d2ef9f891c29bb60ed80bed45dfa1af60b5b",
+  "archive": "/workspace/tmp/rg27-pr552-5666193",
+  "node": "v22.23.4",
+  "reviewedAtUtc": "2026-11-11T19:47:07.596075+00:00",
+  "modules": {
+    "native/engine/worker.cjs": "fc5acca4f7e4fb4ff06ff58f3eceec0dcd90c3a64a0dc341b464bc13d6912bd5",
+    "native/engine/starting-salaries.cjs": "4fb1d5eb04e5c90f35e32037fdc524fc51a382c3f7599bcb777dab6f0ef3da31",
+    "native/engine/club-budget.cjs": "ac61321b74c422d79c6e141ca22fdb7d826af2d97285444864b6909333d4e77d",
+    "native/engine/league-economy.cjs": "7dea58602b79de62275f7a16a75b084f88d9673950202b7efc096d875bff3a19"
+  },
+  "results": {
+    "resume-probe.cjs": "34292df78822ff79fa644c6ba1aab5c54791f0d626e2375254b8596e72517057",
+    "resume-integrity-5666193.log": "e0121abc936ba84cc43ab6cc5f4926cf5f89db381d721878060426c5fa8f2acd",
+    "pr552-comments.json": "eb245cba97182e0c199477f88440b04b3680eda04bbdb4b769ee8cce6df936b2",
+    "salary-delta-a25-to-566.patch": "4e202679bcd72f499dc54d5902711424f606c83dfb27647f9523d0a7e0612574",
+    "delta-stat-a25-to-566.tsv": "177572a8b983ecd7596cde7432395f3876d554b1fa9940702b5f0735332d7ddf",
+    "resume-integrity-5666193.json": "e79e760d343a6398aa4e04114293a2ea3c3ab6f6256e545398c19123d9c4d167",
+    "pr552-info.json": "939b073a1b8498562b1d7d6e2ffa139555459830554b2b3ecd62763ed0b7035d",
+    "resume-integrity-probe.cjs": "4cebca5c777920b7a0c5a249819c9891b232f42d102e91ec6bda90baa0ddde56",
+    "worker-read-order.txt": "b6db6e09929cf9a4969ef83e772bdf86ef2d3393f2a3d3ae9ed5aa5d54b7fc70",
+    "resume-projection-5666193.json": "cbb70ae597640633d4accaff21016e263bf28a30bf9ae1cf5298ff9a0c84cb60"
+  },
+  "commands": [
+    {
+      "script": "resume-probe.cjs",
+      "exitCode": 0,
+      "meaning": "observational original probe; reproduced defect"
+    },
+    {
+      "script": "resume-integrity-probe.cjs",
+      "outerLimitSeconds": 90,
+      "exitCode": 1,
+      "meaning": "integrity PASS, first projection RED"
+    }
+  ]
+}

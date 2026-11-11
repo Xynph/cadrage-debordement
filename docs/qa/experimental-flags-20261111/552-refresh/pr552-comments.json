@@ -1,0 +1,52 @@
+{
+  "comments": [
+    {
+      "url": "https://github.com/Xynph/cadrage-debordement/pull/552#issuecomment-6797955797",
+      "body": "**Réception Cloud — À CORRIGER**, candidat `73b28ef334708c302254b4c3603caef102a6c430` (nouveau head relu et retesté).\n\nDéfaut reproduit dans le worker réel : création commune club29/graine27 avec `CD_SALAIRES_PAR_NIVEAU=1`, fermeture puis nouveau bridge sur le même profil, premier `snapshot` sans commande mutante. La marque version3/52 est conservée, mais le plancher salarial disparaît et la prévision de trésorerie passe de2 449 900€ à6 017 220€ ; le budget projeté disparaît. Les hooks sont installés après les retours précoces de `snapshot`/`export`/`shutdown`. L’environnement ON à la reprise ne résout pas cet ordre.\n\nAttendu : installer les hooks avant la première projection de reprise ; tester la cohérence de ce premier modèle, pas seulement l’égalité des exports.\n\nVérifications positives sur ce head : **53/53** contrôles Node en deux exécutions séquentielles. OFF : les quatre exports création/semaine/import/reprise sont strictement identiques au parent pré-expérience `fe79c36`. Cette preuve OFF ne vaut pas comparaison à main96 : la branche doit encore être raccordée à ce main puis reçue à nouveau. ON : données sauvegardées stables, défaut limité ici à la projection initiale.\n\nDossier de réception en préparation dans #556, sondes et journaux conservés. Aucun correctif de votre périmètre, aucun test Windows revendiqué et aucun accord de fusion. Les mentions de plancher non corrigé/Finances non branché dans la description sont désormais périmées.\n",
+      "user": {
+        "login": "Xynph",
+        "name": "Xynph",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/350229047?v=4",
+        "id": 350229047
+      },
+      "id": 6797955797,
+      "pull_request_review_id": null,
+      "in_reply_to_id": null,
+      "created_at": "2026-11-11T14:05:26Z",
+      "updated_at": "2026-11-11T14:05:26Z",
+      "review": null,
+      "side": null,
+      "line": null,
+      "start_line": null,
+      "path": null,
+      "body_html": "<p dir=\"auto\"><strong>Réception Cloud — À CORRIGER</strong>, candidat <code class=\"notranslate\">73b28ef334708c302254b4c3603caef102a6c430</code> (nouveau head relu et retesté).</p>\n<p dir=\"auto\">Défaut reproduit dans le worker réel : création commune club29/graine27 avec <code class=\"notranslate\">CD_SALAIRES_PAR_NIVEAU=1</code>, fermeture puis nouveau bridge sur le même profil, premier <code class=\"notranslate\">snapshot</code> sans commande mutante. La marque version3/52 est conservée, mais le plancher salarial disparaît et la prévision de trésorerie passe de2 449 900€ à6 017 220€ ; le budget projeté disparaît. Les hooks sont installés après les retours précoces de <code class=\"notranslate\">snapshot</code>/<code class=\"notranslate\">export</code>/<code class=\"notranslate\">shutdown</code>. L’environnement ON à la reprise ne résout pas cet ordre.</p>\n<p dir=\"auto\">Attendu : installer les hooks avant la première projection de reprise ; tester la cohérence de ce premier modèle, pas seulement l’égalité des exports.</p>\n<p dir=\"auto\">Vérifications positives sur ce head : <strong>53/53</strong> contrôles Node en deux exécutions séquentielles. OFF : les quatre exports création/semaine/import/reprise sont strictement identiques au parent pré-expérience <code class=\"notranslate\">fe79c36</code>. Cette preuve OFF ne vaut pas comparaison à main96 : la branche doit encore être raccordée à ce main puis reçue à nouveau. ON : données sauvegardées stables, défaut limité ici à la projection initiale.</p>\n<p dir=\"auto\">Dossier de réception en préparation dans <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"6329929668\" data-permission-text=\"Title is private\" data-url=\"https://github.com/Xynph/cadrage-debordement/issues/556\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/Xynph/cadrage-debordement/pull/556/hovercard\" href=\"https://github.com/Xynph/cadrage-debordement/pull/556\">#556</a>, sondes et journaux conservés. Aucun correctif de votre périmètre, aucun test Windows revendiqué et aucun accord de fusion. Les mentions de plancher non corrigé/Finances non branché dans la description sont désormais périmées.</p>"
+    },
+    {
+      "url": "https://github.com/Xynph/cadrage-debordement/pull/552#issuecomment-6800461861",
+      "body": "Actualisation de réception sur `a25d3066a02da68fcc19818ff6fd7c92e5043ac2` : **À CORRIGER**. Les deux nouveaux tests renfort/profondeur passent (2/2), mais la sonde de reprise reproduit toujours exactement le défaut du premier modèle : plancher270 absent, budget absent et prévision2 449 900→6 017 220€. Les nouveaux calculs ne corrigent pas l'installation tardive des hooks. Reçu et sortie conservés dans #556, `docs/reception-claude-20261111/552-salaires-actualisation.md`. Aucun correctif produit repris ni accord de fusion.\n",
+      "user": {
+        "login": "Xynph",
+        "name": "Xynph",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/350229047?v=4",
+        "id": 350229047
+      },
+      "id": 6800461861,
+      "pull_request_review_id": null,
+      "in_reply_to_id": null,
+      "created_at": "2026-11-11T15:52:02Z",
+      "updated_at": "2026-11-11T15:52:02Z",
+      "review": null,
+      "side": null,
+      "line": null,
+      "start_line": null,
+      "path": null,
+      "body_html": "<p dir=\"auto\">Actualisation de réception sur <code class=\"notranslate\">a25d3066a02da68fcc19818ff6fd7c92e5043ac2</code> : <strong>À CORRIGER</strong>. Les deux nouveaux tests renfort/profondeur passent (2/2), mais la sonde de reprise reproduit toujours exactement le défaut du premier modèle : plancher270 absent, budget absent et prévision2 449 900→6 017 220€. Les nouveaux calculs ne corrigent pas l'installation tardive des hooks. Reçu et sortie conservés dans <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"6329929668\" data-permission-text=\"Title is private\" data-url=\"https://github.com/Xynph/cadrage-debordement/issues/556\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/Xynph/cadrage-debordement/pull/556/hovercard\" href=\"https://github.com/Xynph/cadrage-debordement/pull/556\">#556</a>, <code class=\"notranslate\">docs/reception-claude-20261111/552-salaires-actualisation.md</code>. Aucun correctif produit repris ni accord de fusion.</p>"
+    }
+  ],
+  "url": "https://github.com/Xynph/cadrage-debordement/pull/552",
+  "title": "Xynph/cadrage-debordement PR #552 comments",
+  "display_url": "https://github.com/Xynph/cadrage-debordement/pull/552",
+  "display_title": "Xynph/cadrage-debordement PR #552 comments"
+}

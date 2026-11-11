@@ -1,0 +1,40 @@
+{
+  "sha": "5666193089a9cd4dd9b37ab6d71f934c1aa2a0c8",
+  "seed": 27,
+  "now": 1794178800000,
+  "node": "v22.23.4",
+  "firstCommandAfterReopen": "snapshot",
+  "created": {
+    "salaryFloor": 270,
+    "weeklyIncome": 222300,
+    "weeklyCosts": 258900,
+    "baseForecast": 2449900,
+    "hasBudget": true
+  },
+  "firstSnapshot": {
+    "salaryFloor": null,
+    "weeklyIncome": 160000,
+    "weeklyCosts": 50670,
+    "baseForecast": 6017220,
+    "hasBudget": false
+  },
+  "projectionEqual": false,
+  "marker": {
+    "version": 3,
+    "semaines": 52
+  },
+  "exportEqual": true,
+  "exportShaBefore": "f685b334f8832c224d67998cc423020ae24288497115a28b69ada5d6021cc51d",
+  "exportShaAfter": "f685b334f8832c224d67998cc423020ae24288497115a28b69ada5d6021cc51d",
+  "profileUnchangedAtStartup": true,
+  "profileUnchangedAtSnapshot": true,
+  "profileUnchangedAtExport": true,
+  "profileShaBefore": "2e349715d9b5d783c668df8c5ac986c0e3dc7c8b684c7c833af9afd8c70a203d",
+  "profileShaAfter": "2e349715d9b5d783c668df8c5ac986c0e3dc7c8b684c7c833af9afd8c70a203d",
+  "rngSource": "profile protocol 1 seed",
+  "rngBefore": 27,
+  "rngAfter": 27,
+  "rngEqual": true,
+  "clockBefore": 1794178800000,
+  "clockAfter": 1794178800000
+}
