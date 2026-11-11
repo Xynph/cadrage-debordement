@@ -1,0 +1,398 @@
+{
+  "head": "d83a81747416080abd7be49ef4472c060cacd879",
+  "main_reference": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "run": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420",
+  "conclusion": "success",
+  "coverage": "full",
+  "passed_suite_invocations": 625,
+  "unique_suite_paths": 625,
+  "matches_all_expected_cjs": true,
+  "sorted_expected_suite_paths_sha256": "648724f1a7ace66d7ff7f71075d90b70bf1b6a2ab15136b18ccc71a66559efc2",
+  "per_shard": [
+    {
+      "shard": 1,
+      "passed": 124,
+      "decoded_log_sha256": "fa139fa945f72831dbc554b2f1b12a697ed58c4645fcfb64ce32cccab120f11a"
+    },
+    {
+      "shard": 2,
+      "passed": 126,
+      "decoded_log_sha256": "f00758e27fea6e022cdbd682b5a75b963732281cc257b07837480ff712ca94d6"
+    },
+    {
+      "shard": 3,
+      "passed": 125,
+      "decoded_log_sha256": "e35eae91c660810b71b14463bf2a2201f4984d4f6d9a97a8cc4cdb1c56d99a23"
+    },
+    {
+      "shard": 4,
+      "passed": 125,
+      "decoded_log_sha256": "7564caecca602c8c1e89424abead734210ee75f2f21a2d0e267dd0be14f92324"
+    },
+    {
+      "shard": 5,
+      "passed": 125,
+      "decoded_log_sha256": "97cd6d7b6208e571e8b32f47bc3ae0db2eb3e69f0c5fcec1a0ffa7de2e19da42"
+    }
+  ],
+  "classification_log_sha256": "605ff6ad77d1cab0051da77e20afded377e45e1ea3ed488ca22494b04c79e359",
+  "validation_log_sha256": "adf463c0df000495beaaf0439cb555deb9e952e4ec34d5919e467d29a9f0635d",
+  "api_receipt": {
+    "conclusion": "success",
+    "createdAt": "2026-11-11T15:38:23Z",
+    "databaseId": 43050364420,
+    "headSha": "d83a81747416080abd7be49ef4472c060cacd879",
+    "jobs": [
+      {
+        "completedAt": "2026-11-11T15:48:57Z",
+        "conclusion": "success",
+        "databaseId": 130627123920,
+        "name": "classification",
+        "startedAt": "2026-11-11T15:48:44Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v5",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Classifier le changement et vérifier la syntaxe JS modifiée",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v5",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 9,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130627123920"
+      },
+      {
+        "completedAt": "2026-11-11T16:18:17Z",
+        "conclusion": "success",
+        "databaseId": 130631680560,
+        "name": "Suites 3/5",
+        "startedAt": "2026-11-11T15:49:45Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v5",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Tests du jeu et bilan des erreurs",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v5",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 9,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130631680560"
+      },
+      {
+        "completedAt": "2026-11-11T16:36:49Z",
+        "conclusion": "success",
+        "databaseId": 130631680659,
+        "name": "Suites 5/5",
+        "startedAt": "2026-11-11T15:49:00Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v5",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Tests du jeu et bilan des erreurs",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v5",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 9,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130631680659"
+      },
+      {
+        "completedAt": "2026-11-11T16:34:22Z",
+        "conclusion": "success",
+        "databaseId": 130631680714,
+        "name": "Suites 4/5",
+        "startedAt": "2026-11-11T15:49:00Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v5",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Tests du jeu et bilan des erreurs",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v5",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 9,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130631680714"
+      },
+      {
+        "completedAt": "2026-11-11T16:39:50Z",
+        "conclusion": "success",
+        "databaseId": 130631680748,
+        "name": "Suites 2/5",
+        "startedAt": "2026-11-11T15:50:01Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v5",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Tests du jeu et bilan des erreurs",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v5",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 9,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130631680748"
+      },
+      {
+        "completedAt": "2026-11-11T16:37:53Z",
+        "conclusion": "success",
+        "databaseId": 130631680750,
+        "name": "Suites 1/5",
+        "startedAt": "2026-11-11T15:51:43Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v5",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v5",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Tests du jeu et bilan des erreurs",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v5",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v5",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 9,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130631680750"
+      },
+      {
+        "completedAt": "2026-11-11T16:41:07Z",
+        "conclusion": "success",
+        "databaseId": 130661636512,
+        "name": "Validation CI",
+        "startedAt": "2026-11-11T16:41:03Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Publier le verdict natif (sans écriture API)",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 3,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43050364420/job/130661636512"
+      }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-11-11T16:41:25Z"
+  },
+  "note": "625 Node suite invocations, including normal SDK-absent skips in Node shards. Separate real SDK/P1 job is successful; these Node invocations are not 625 real SDK suites."
+}
