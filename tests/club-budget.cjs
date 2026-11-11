@@ -122,7 +122,7 @@ function moteur(marque){
  const h=context();h.run('CDCommonCareer.start(29);');
  h.ctx.nativeStartingSalaries=require('../native/engine/starting-salaries.cjs');h.ctx.nativeLeagueEconomy=require('../native/engine/league-economy.cjs');
  if(marque)h.run("nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})),nativeLeagueEconomy);");
- h.ctx.nativeClubBudget=B;h.run(B.BRANCHEMENT);if(marque)h.run('budgetOuvrir(true)');
+ h.ctx.nativeClubBudget=B;h.run(B.BRANCHEMENT);if(marque)h.run('[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true)');
  const lire=source=>JSON.parse(h.run('JSON.stringify('+source+')'));
  return {...h,lire,semaine:()=>h.run("financeWeek(null,false);worldWeeklyEconomy(CDFranceCompetition.currentFixtures(S).map(f=>({...f,score:[20,10],tries:[2,1]})));")};
 }
@@ -184,7 +184,8 @@ test('Moteur, carrière marquée : salaire demandé selon le niveau, prolongatio
  assert.ok(neuf.every(j=>j.demande>=j.salaire&&j.demande<=Math.max(j.salaire,400)*2.2),'carrière marquée : la demande reste proche du contrat en cours');
  assert.ok(neuf.reduce((s,j)=>s+j.demande,0)<ancien.reduce((s,j)=>s+j.demande,0)/2);
  const libre=h.lire("(()=>{const p=managerPool()[0];return {demande:askingWage(p,'recruit'),ancien:p.salary,plancher:reservationWage(p,'recruit',2)}})()");
- assert.ok(libre.demande>=10&&libre.demande<libre.ancien,'un joueur libre demande un salaire de son niveau, pas l’ancien barème : '+JSON.stringify(libre));
+ const ancienBareme=sans.lire("managerPool()[0].salary");
+ assert.ok(libre.demande>=10&&libre.demande<ancienBareme/2,'un joueur libre demande un salaire de son niveau, pas l’ancien barème ('+ancienBareme+') : '+JSON.stringify(libre));
  assert.ok(libre.plancher<=Math.ceil(libre.demande*1.2/100)*100);
  assert.equal(sans.lire("(()=>{const p=managerPool()[0];return askingWage(p,'recruit')===p.salary})()"),true,'sans la marque, la demande d’un joueur libre reste son salaire affiché');
 });
@@ -193,4 +194,37 @@ test('Moteur, carrière marquée : des comptes illisibles dans une sauvegarde so
   const h=moteur(true);h.run(casse);h.semaine();const b=h.lire('S.clubBudget');
   assert.equal(b.clubs.length,30,casse);assert.equal(b.semaines,1,casse);assert.ok(Number.isFinite(b.prevision.resultatPrevu),casse);assert.equal(h.run('validateCareer(S);true'),true);
  }
+});
+test('Moteur : plancher des offres à 1 000 € par semaine sans la marque, plancher de la règle avec',()=>{
+ const h=moteur(true),sans=moteur(false);
+ assert.equal(h.run('negotiateContractV2!==null&&counterofferQuoteV2!==null'),true,'le texte du plancher est toujours présent dans le moteur');
+ const offrir=(x,salaire)=>x.lire("(()=>{const p=managerPool().filter(p=>p.age<=22)[0],ok=negotiateContract(p.id,'recruit',"+salaire+",2),t=S.economy.talks[talkKey(p.id,'recruit')];return {ok,statut:t?t.status:null,demande:askingWage(p,'recruit')}})()");
+ assert.deepEqual([offrir(sans,400).ok,offrir(sans,900).ok],[false,false],'sans la marque : refus sous 1 000 €');
+ assert.equal(offrir(h,200).ok,false,'avec la marque : refus sous le plancher de la règle');
+ const r=offrir(h,400);assert.equal(r.ok,true);assert.equal(r.statut,'ready');assert.ok(r.demande<=400);
+ assert.equal(h.run('budgetPlancherHebdo()'),270);
+});
+test('Moteur, carrière marquée : les clubs gérés s’autorisent une masse tirée des règles, les joueurs libres valent leur niveau',()=>{
+ const h=moteur(true),sans=moteur(false);
+ assert.equal(sans.run('aiRosterWageLimit(S.clubs[0])>=215000'),true,'sans la marque : ancienne fourchette');
+ const l=h.lire('S.clubs.map(c=>aiRosterWageLimit(c)*52)');
+ assert.ok(l.slice(0,14).every(x=>x<10.7e6&&x>5e6),'élite : sous le plafond');assert.ok(l.slice(14).every(x=>x<8e6&&x>1.5e6));assert.ok(new Set(l).size>25,'chaque club a sa marge');
+ const libres=h.lire('S.economy.freeAgents.map(p=>p.salary)'),avant=sans.lire('S.economy.freeAgents.map(p=>p.salary)');
+ assert.ok(avant.every(x=>x>=2000)&&libres.every(x=>x>=270&&x<2000)&&libres.length===avant.length);
+ assert.equal(h.run("aiRosterSmallClubPlayer(3,77).salary<1500"),true);assert.equal(sans.run("aiRosterSmallClubPlayer(3,77).salary>=2000"),true);
+});
+test('Moteur, carrière marquée : données de l’écran Finances tirées du budget de la saison',()=>{
+ const h=moteur(true),f=h.lire('budgetFinance(0,25000,0)'),p=h.lire('S.clubBudget.prevision');
+ assert.equal(f.baseForecast,p.tresoreriePrevue);assert.equal(f.budget.resultatPrevu,p.resultatPrevu);assert.equal(f.budget.plancherSalaire,270);assert.equal(f.budget.semainesDePaie,34);
+ assert.ok(f.weeklyIncome>25000&&f.weeklyCosts===f.weeklyWages+f.budget.fonctionnementHebdo&&!/fictif/i.test(f.notice));
+ assert.equal(moteur(false).run('budgetFinance(0,0,0)'),null,'sans la marque : rien, l’écran garde ses anciennes données');
+});
+test('Moteur, carrière marquée : montée du club joué, les clauses jouent et le manager est prévenu',()=>{
+ const h=moteur(true);h.semaine();
+ // Le club joué passe en première division : les comptes de la saison passée le disent encore en deuxième.
+ h.run("const L=S.franceMode.leagues,sorti=L.elite.members.pop();L.accession.members=L.accession.members.filter(x=>x!==29).concat(sorti);L.elite.members.push(29);S.season=2;");
+ const avant=h.lire('({nous:budgetMasse(club())*52,descendu:budgetMasse(S.clubs[13])*52})');h.run('worldNewSeason()');const S=h.lire('S');
+ const apres=S.clubs[29].players.reduce((s,p)=>s+p.salary,0)*52;assert.ok(apres>avant.nous*1.03&&apres<avant.nous*1.13,'primes d’accession : '+avant.nous+' → '+apres);
+ assert.ok(S.news.some(n=>/^Montée : \d+ contrats prévoyaient une prime d’accession/.test(n)));assert.equal(S.clubBudget.clubs[29].division,'elite');assert.equal(S.clubBudget.clubs[13].division,'accession');
+ assert.ok(S.startingSalaries.calage.elite>0.5&&S.startingSalaries.calage.accession>0.5,'échelle des deux divisions recalculée');
 });

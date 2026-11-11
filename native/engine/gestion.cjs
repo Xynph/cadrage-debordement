@@ -56,7 +56,7 @@ module.exports=function nativeGestion(command,p){
   return {coverage:{count,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
-  requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=1000&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
+  requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');

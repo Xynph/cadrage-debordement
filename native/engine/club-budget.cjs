@@ -106,6 +106,28 @@ function ajustement(annuel, masseAnnuelle, enveloppe) {
   return economies > 0 ? -economies : 0;
 }
 
+// Masse salariale annuelle qu'un club s'autorise : la plus basse de trois bornes — le plafond de la
+// ligue, 52 % des recettes là où la règle existe, et ce que ses recettes et son propriétaire peuvent
+// porter (économies de fonctionnement comprises). Chaque club garde une marge qui lui est propre ;
+// de temps en temps, un club de mécène choisit de dépasser un peu et de payer l'amende.
+// À la création, personne ne dépasse.
+function limites(forces, saison, { creation = false, types = null } = {}) {
+  const annuels = recettes(forces), resultat = new Map();
+  for (const force of forces) {
+    const regle = ECONOMIE.CHAMPIONNATS[force.division];
+    if (!regle) continue;
+    const annuel = annuels.get(force.id), p = proprietaire(forces, force.id, types?.[force.id]);
+    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + 0.15 * annuel) / (1 + COTISATIONS)]];
+    if (regle.plafond !== null) bornes.push(['plafond', regle.plafond]);
+    if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
+    bornes.sort((x, y) => x[1] - y[1]);
+    const rigueur = unite('rigueur|' + force.id + '|' + saison), audace = !creation && p.type === 'mecene' && unite('audace|' + force.id + '|' + saison) < 0.12;
+    const tolerance = audace ? 1.01 + 0.04 * rigueur : 0.93 + 0.065 * rigueur;
+    resultat.set(force.id, { limite: rond(bornes[0][1] * tolerance), regle: bornes[0][0], tolerance, audace });
+  }
+  return resultat;
+}
+
 // Écritures d'une semaine de compétition.
 //   domicile : le club reçoit ; neutre : match sur terrain neutre ; phase : 'league' ou une phase finale ;
 //   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
@@ -181,6 +203,10 @@ const ANNONCES = Object.freeze({
   association: () => 'Le club appartient à ses adhérents : personne ne comblera un déficit. Chaque euro dépensé cette saison devra être gagné.',
 });
 const annonce = compte => ANNONCES[compte.type](compte.enveloppe);
+// Message au manager quand les clauses de montée ou de descente ont joué dans ses contrats.
+const annonceClauses = (sens, avant, apres, touches) => sens < 0
+  ? `Descente : ${touches} contrats prévoyaient une baisse de salaire en cas de relégation. La masse salariale passe de ${euros(avant)} à ${euros(apres)} par an.`
+  : `Montée : ${touches} contrats prévoyaient une prime d’accession. La masse salariale passe de ${euros(avant)} à ${euros(apres)} par an.`;
 
 // Prévision de la saison du club joué, mise à jour chaque semaine.
 //   compte : compteur du club ; tresorerie : caisse actuelle ; reste : semaines restantes ;
@@ -255,6 +281,15 @@ const budgetLigue=id=>budgetFrance()?CDFranceCompetition.leagueId(S,id):CDWorldC
 const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>({id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base}));
 const budgetSemaineNo=()=>S.franceMode?S.franceMode.week:S.worldMode.week;
 const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
+const budgetTypes=()=>budgetLisible(S.clubBudget)?S.clubBudget.clubs.map(c=>c.type):null;
+// Calculées une fois par saison et par composition des championnats : la question revient à chaque joueur étudié.
+let budgetLimitesMemo=null;
+const budgetLimites=creation=>{
+ const forces=budgetForces(),types=budgetTypes(),cle=S.season+'|'+(creation===true)+'|'+forces.map(f=>f.division+':'+f.base).join(',')+'|'+(types?types.join(','):'');
+ if(!budgetLimitesMemo||budgetLimitesMemo.cle!==cle)budgetLimitesMemo={cle,valeur:nativeClubBudget.limites(forces,S.season,{creation:creation===true,types})};
+ return budgetLimitesMemo.valeur;
+};
+const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
 // Classement, réceptions de saison régulière et réceptions restantes de chaque club, à l'instant présent.
 function budgetRepere(){
  const classement={},receptions={},restantes={};
@@ -366,8 +401,13 @@ worldNewSeason=function(fundingAlreadyPaid){
   }
   w.upgrades=w.upgrades.slice(-30);
  }
- // Les clubs gérés remettent leurs contrats au niveau du marché : sans cela leurs prolongations reviennent à l'ancien barème.
- nativeStartingSalaries.recaler(S,budgetForces(),nativeLeagueEconomy,S.club);
+ // Montées et descentes : la division de la saison passée est dans les comptes, la nouvelle dans la compétition.
+ const mouvements=new Map(),E=nativeLeagueEconomy.CHAMPIONNATS;
+ if(budgetLisible(S.clubBudget))for(const c of S.clubs){const avant=S.clubBudget.clubs[c.id].division,apres=budgetLigue(c.id);if(avant!==apres&&E[avant]&&E[apres]&&E[avant].reputation!==E[apres].reputation)mouvements.set(c.id,E[apres].reputation>E[avant].reputation?1:-1);}
+ // Les clubs gérés remettent leurs contrats au niveau du marché, dans la limite de ce qu'ils s'autorisent.
+ nativeStartingSalaries.recaler(S,budgetForces(),nativeLeagueEconomy,{saufClub:S.club,mouvements,limites:budgetLimites(false)});
+ const sens=mouvements.get(S.club)||0;
+ if(sens){const r=nativeStartingSalaries.clauses(S,S.club,sens);if(r.touches)news(nativeClubBudget.annonceClauses(sens,r.avant,r.apres,r.touches));}
  budgetOuvrir(true);
  return actif;
 };
@@ -380,7 +420,49 @@ salaryDemandBreakdown=function(p,kind='renew',s=S){
  const a=nativeLeagueEconomy.attrait({origine:nativeLeagueEconomy.origine(p,id=>S.clubs[id]?budgetLigue(id):null),destination:budgetLigue(S.club),joueurId:p.id,age:p.age});
  return {...r,base:juste,asked:Math.max(10,Math.round(juste*a.multiplicateur/10)*10)};
 };
+// Plancher des offres de contrat : le moteur refuse tout salaire sous 1 000 € par semaine. Pour les
+// carrières marquées, la même fonction est reprise avec le plancher de la règle des salaires.
+// Si le texte attendu n'y est plus, l'ancien plancher reste en place (un test le signale).
+const budgetReprise=(fonction,ancien,nouveau)=>{const source=fonction.toString();return source.split(ancien).length===2?(0,eval)('('+source.replace(ancien,nouveau)+')'):null;};
+const negotiateContractV1=negotiateContract,negotiateContractV2=budgetReprise(negotiateContract,'wage<1000','wage<budgetPlancherHebdo()');
+negotiateContract=function(id,kind,wage,years){return budgetActif()&&negotiateContractV2?negotiateContractV2(id,kind,wage,years):negotiateContractV1(id,kind,wage,years);};
+const counterofferQuoteV1=counterofferQuote,counterofferQuoteV2=budgetReprise(counterofferQuote,'wage<1000','wage<budgetPlancherHebdo()');
+counterofferQuote=function(s,request,horizon,priorityIndex){return s===S&&budgetActif()&&counterofferQuoteV2?counterofferQuoteV2(s,request,horizon,priorityIndex):counterofferQuoteV1(s,request,horizon,priorityIndex);};
+// Clubs gérés : ce qu'ils s'autorisent en salaires suit les règles de la ligue et leurs moyens,
+// plus l'ancienne fourchette fixe ; un joueur sans club vaut le salaire de son niveau.
+const aiRosterWageLimitV1=aiRosterWageLimit,aiRosterPoolEntryV1=aiRosterPoolEntry,aiRosterSmallClubPlayerV1=aiRosterSmallClubPlayer;
+aiRosterWageLimit=function(c){
+ if(!budgetActif())return aiRosterWageLimitV1(c);
+ const l=budgetLimites(S.season===1).get(c.id);
+ return l?Math.round(l.limite/52):aiRosterWageLimitV1(c);
+};
+const budgetValeur=p=>{if(budgetActif()&&p&&typeof p.id==='string'&&Number.isFinite(p.rating)){p.salary=nativeStartingSalaries.marche(p);p.price=Math.max(0,Math.round(p.salary*2/1000)*1000);}return p;};
+aiRosterSmallClubPlayer=function(slot,index){return budgetValeur(aiRosterSmallClubPlayerV1(slot,index));};
+aiRosterPoolEntry=function(p,origin,clubId=null){if(budgetActif()&&origin!=='released')budgetValeur(p);return aiRosterPoolEntryV1(p,origin,clubId);};
+// Ce que l'écran Finances lit : mêmes champs qu'avant, remplis par le budget de la saison.
+function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
+ const b=S.clubBudget;
+ if(!budgetActif()||!budgetLisible(b)||b.saison!==S.season||!b.prevision)return null;
+ const forces=budgetForces(),c=club(),masse=budgetMasse(c),semaines=wageForecastWeeks();
+ const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:''})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
+ const salaires=-somme(e=>/Salaires des joueurs|Cotisations/.test(e.title)),fonctionnement=-somme(e=>/fonctionnement/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
+ return {weeklyWages:salaires,weeklyIncome:recettes,weeklyCosts:salaires+fonctionnement+hebdoFormation+entretien,baseForecast:b.prevision.tresoreriePrevue,
+  notice:'Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.',
+  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
+}
 `;
 
-module.exports = Object.freeze({ ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT,
-  recettes, semaine, proprietaire, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, euros });
+// À exécuter dans le moteur avant tout autre habillage de validateCareer : la sauvegarde refuse une
+// discussion de contrat sous 1 000 € par semaine. Pour les carrières marquées seulement, la même
+// validation est reprise avec le plancher technique des salaires (10 €). Les autres carrières
+// gardent la fonction d'origine, à l'identique.
+const VALIDATION = `{
+ const source=validateCareer.toString(),ancien='saveInt(t.salary,1000,100000)&&saveInt(t.acceptedSalary,1000,100000)';
+ if(source.split(ancien).length===2){
+  const origine=validateCareer,souple=(0,eval)('('+source.replace(ancien,'saveInt(t.salary,10,100000)&&saveInt(t.acceptedSalary,10,100000)')+')');
+  validateCareer=function(s){return s!==null&&typeof s==='object'&&s.startingSalaries!==undefined?souple(s):origine(s);};
+ }
+}`;
+
+module.exports = Object.freeze({ ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
+  recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, euros });

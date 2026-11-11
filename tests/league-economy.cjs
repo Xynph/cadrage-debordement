@@ -43,12 +43,48 @@ test('Salaires : sans table, les deux championnats de référence donnent exacte
  assert.deepEqual(faire(E),faire(null));assert.deepEqual(faire(E).startingSalaries,{version:3,semaines:52});
 });
 test('Intersaison : les clubs gérés reviennent au niveau du marché, le club joué garde ses contrats',()=>{
- const {forces,state}=monde();M.apply(state,forces,E);const avant=JSON.parse(JSON.stringify(state.clubs));
+ const {forces,state}=monde();M.apply(state,forces,E);
  for(const c of state.clubs)for(const p of c.players)p.salary=6000;
- M.recaler(state,forces,E,5);
+ M.recaler(state,forces,E,{saufClub:5});
  assert.ok(state.clubs[5].players.every(p=>p.salary===6000),'contrats du club joué intacts');
- for(const c of state.clubs)if(c.id!==5)assert.deepEqual(c.players.map(p=>p.salary),avant[c.id].players.map(p=>p.salary),'club '+c.id);
- const sans={season:2,round:0,clubs:[{id:0,players:[{id:'a',rating:70,fam:1,age:25,salary:6000}]}]};M.recaler(sans,forces,E,null);assert.equal(sans.clubs[0].players[0].salary,6000,'carrière non marquée : rien ne bouge');
+ for(const nom of noms){const groupe=state.clubs.filter(c=>forces[c.id].division===nom&&c.id!==5),m=moyenne(groupe.map(masse));
+  assert.ok(Math.abs(m-E.CHAMPIONNATS[nom].masse)/E.CHAMPIONNATS[nom].masse<0.05,nom+' : masse moyenne revenue à la cible ('+Math.round(m)+')');}
+ const sans={season:2,round:0,clubs:[{id:0,players:[{id:'a',rating:70,fam:1,age:25,salary:6000}]}]};M.recaler(sans,forces,E);assert.equal(sans.clubs[0].players[0].salary,6000,'carrière non marquée : rien ne bouge');
+});
+test('Intersaison : le niveau des joueurs monte, la masse du championnat reste à sa cible',()=>{
+ const {forces,state}=monde();M.apply(state,forces,E);
+ for(const c of state.clubs)for(const p of c.players){p.rating+=2;p.age+=1;}
+ const sansEchelle=JSON.parse(JSON.stringify(state)),figee={...E,CHAMPIONNATS:{}};M.recaler(sansEchelle,forces,figee);M.recaler(state,forces,E);
+ for(const nom of noms){const de=x=>moyenne(x.clubs.filter(c=>forces[c.id].division===nom).map(masse)),cible=E.CHAMPIONNATS[nom].masse;
+  if(!E.REFERENCES.includes(nom))assert.ok(de(sansEchelle)>cible*1.15,nom+' : avec l’échelle de la création, la masse dérive ('+Math.round(de(sansEchelle))+')');
+  assert.ok(Math.abs(de(state)-cible)/cible<0.05,nom+' : échelle recalculée, masse à la cible ('+Math.round(de(state))+')');}
+ assert.ok(state.startingSalaries.calage.elite>0&&state.startingSalaries.calage.champ<sansEchelle.startingSalaries.calage.champ);
+});
+test('Montée et descente : clauses de contrat variées, jamais uniformes',()=>{
+ const ids=Array.from({length:2000},(_,i)=>'j'+i),bas=ids.map(i=>M.clause(i,-1)),haut=ids.map(i=>M.clause(i,1));
+ assert.ok(bas.every(x=>x<=1&&x>=0.75)&&haut.every(x=>x>=1&&x<=1.2));assert.ok(ids.every(i=>M.clause(i,0)===1));
+ const part=(l,v)=>l.filter(x=>x===v).length/l.length;assert.ok(Math.abs(part(bas,1)-0.3)<0.04,'trois joueurs sur dix sans clause de descente');assert.ok(Math.abs(part(haut,1)-0.4)<0.04);
+ assert.ok(new Set(bas).size>10&&new Set(haut).size>10);assert.ok(Math.abs(moyenne(bas)-0.885)<0.02&&Math.abs(moyenne(haut)-1.075)<0.02,'en moyenne −11 % à la descente, +7 % à la montée');
+ const {forces,state}=monde();M.apply(state,forces,E);const elite=noms.indexOf('elite')*4,avant=masse(state.clubs[elite]);
+ const r=M.clauses(state,elite,-1);assert.equal(r.avant,avant);assert.equal(r.apres,masse(state.clubs[elite]));assert.ok(r.apres<r.avant*0.93&&r.apres>r.avant*0.82&&r.touches>20);
+ const h=M.clauses(state,elite+1,1);assert.ok(h.apres>h.avant*1.04&&h.apres<h.avant*1.12);
+ assert.deepEqual(M.clauses({clubs:[{id:0,players:[{id:'a',salary:500}]}]},0,-1),{avant:0,apres:0,touches:0},'carrière non marquée : rien');
+ // Club géré relégué : ses salaires de la saison portent la clause.
+ const a=monde(),b=monde();M.apply(a.state,a.forces,E);M.apply(b.state,b.forces,E);M.recaler(a.state,a.forces,E,{});M.recaler(b.state,b.forces,E,{mouvements:new Map([[elite,-1]])});
+ assert.ok(masse(b.state.clubs[elite])<masse(a.state.clubs[elite])*0.94);assert.equal(masse(b.state.clubs[elite+8]),masse(a.state.clubs[elite+8]),'les autres clubs ne sont pas touchés');
+});
+test('Limites : personne au-dessus à la création, marge propre à chaque club, dépassement voulu rare',()=>{
+ const forces=noms.flatMap((division,d)=>Array.from({length:4},(_,i)=>({id:d*4+i,division,base:66+i*3}))),R=B.recettes(forces);
+ const creation=B.limites(forces,1,{creation:true});assert.equal(creation.size,40);
+ for(const [id,l] of creation){const c=E.CHAMPIONNATS[forces[id].division];assert.ok(l.tolerance>=0.93&&l.tolerance<1&&!l.audace);
+  if(c.plafond!==null)assert.ok(l.limite<c.plafond,'sous le plafond : '+id);if(c.ratio)assert.ok(l.limite<R.get(id)*0.52);assert.ok(['plafond','recettes','budget'].includes(l.regle));}
+ assert.ok(new Set([...creation.values()].map(l=>l.tolerance.toFixed(3))).size>25);
+ let audaces=0,total=0;for(let saison=2;saison<40;saison++)for(const [id,l] of B.limites(forces,saison)){total++;if(l.audace){audaces++;assert.ok(l.tolerance>1&&l.tolerance<=1.05);assert.equal(B.proprietaire(forces,id).type,'mecene');}}
+ assert.ok(audaces>0&&audaces/total<0.08,'dépassement voulu rare : '+audaces+' sur '+total);
+ // À la création, un club que la règle placerait au-dessus est ramené juste sous sa limite.
+ const {state}=monde(),riche=noms.indexOf('elite')*4+3;for(const p of state.clubs[riche].players)p.rating=88;
+ M.apply(state,forces,E,creation);const m=masse(state.clubs[riche]);assert.ok(m<=creation.get(riche).limite*1.01&&m>creation.get(riche).limite*0.97,'club riche à '+Math.round(m)+' pour une limite de '+creation.get(riche).limite);
+ assert.equal(M.plancherHebdo(state,'elite'),270);assert.equal(M.plancherHebdo(state,'champ'),150);
 });
 test('Demande salariale : selon le niveau et le championnat du club qui recrute',()=>{
  const {forces,state}=monde();M.apply(state,forces,E);const joueur={id:'recrue',rating:78,fam:3,age:27,salary:9000};

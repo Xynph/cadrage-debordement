@@ -143,6 +143,8 @@ function createBridge(options={}){
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
+  // Carrières aux salaires liés au niveau : plancher des discussions de contrat, avant tout habillage de la validation.
+  run(require('./club-budget.cjs').VALIDATION);
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);
   if(pacificRegistry)ctx.nativeWorldPacificRegistryText=JSON.stringify(pacificRegistry);
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
@@ -462,7 +464,7 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
-      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(S.franceMode)nativeStartingSalaries.apply(S,CDFranceClubs.clubs.map(c=>({id:c.id,division:c.division,base:c.base})),nativeLeagueEconomy);else if(budgetMonde())nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy);if(budgetActif())budgetOuvrir(true);");
+      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
       run('autoLineup();');
       delete ctx.nativeCreationVariation;
      }

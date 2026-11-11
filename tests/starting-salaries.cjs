@@ -33,6 +33,9 @@ const good=(c,p={})=>{const r=b.handle({id:++n,command:c,payload:p});if(!r.ok)th
 let m=settleClubMeetings(good('new_career',{mode:'common',club:29}),good);const S=etat();
 const t=S.clubs.flatMap(c=>c.players),nb=t.length,ma=t.reduce((s,p)=>s+p.salary,0)/nb,mb=t.reduce((s,p)=>s+p.rating,0)/nb;let ab=0,a=0,c=0;for(const p of t){ab+=(p.salary-ma)*(p.rating-mb);a+=(p.salary-ma)**2;c+=(p.rating-mb)**2;}
 const an=k=>k.players.reduce((s,p)=>s+p.salary,0)*52,m75=t.filter(p=>p.rating===75).map(p=>p.salary);
+// Signature d'un espoir du marché à 400 € par semaine (20 800 € par an), par la commande publique.
+const espoir=m.market.filter(p=>p.available&&p.age<=22).sort((a,b)=>a.salary-b.salary)[0],offre=b.handle({id:++n,command:'recruit',payload:{playerId:espoir.id,salary:400,years:2,confirmed:true}});
+const signature={demande:espoir.salary,ok:offre.ok,erreur:offre.error??null,statut:offre.ok?offre.model.meta.negotiation.status:null,salaire:etat().clubs[29].players.find(p=>p.id===espoir.id)?.salary??null,plancher:m.finance.salaryFloor??null,notice:m.finance.notice};
 // Une semaine jouée par l'API publique, puis export, réimport et reprise depuis le disque.
 m=settleClubMeetings(good('train'),good);good('auto_lineup');good('begin_match');good('delegate');settleClubMeetings(good('finish_round'),good);
 const S1=etat(),texte=good('export').meta.exportText;good('import',{text:texte});const reimport=good('export').meta.exportText===texte;
@@ -41,7 +44,7 @@ good('shutdown');b=createBridge({dataDir:dir,now:1794178800000});const reprise=g
 m=settleClubMeetings(good('snapshot'),good);m=settleClubMeetings(good('train'),good);good('auto_lineup');good('begin_match');good('delegate');settleClubMeetings(good('finish_round'),good);const S2=etat();b.close();
 const titres=x=>[...new Set(x.ledger.filter(l=>l.title.includes(' · ')).map(l=>l.title.split(' · ').pop()))].sort();
 console.log(JSON.stringify({marque:S.startingSalaries??null,correlation:ab/Math.sqrt(a*c),elite:S.clubs.slice(0,14).reduce((s,k)=>s+an(k),0)/14,accession:S.clubs.slice(14).reduce((s,k)=>s+an(k),0)/16,ecart75:Math.max(...m75)/Math.min(...m75),
- budget:S.clubBudget??null,annonce:S.news.some(x=>/comblera|adhérents/.test(x)),titres:titres(S1),titres2:titres({ledger:S2.ledger.slice(0,10)}),semaines:[S1.clubBudget?.semaines??null,S2.clubBudget?.semaines??null],reimport,reprise,
+ signature,strategie:m.clubLife.clubStrategy.finance,budget:S.clubBudget??null,annonce:S.news.some(x=>/comblera|adhérents/.test(x)),titres:titres(S1),titres2:titres({ledger:S2.ledger.slice(0,10)}),semaines:[S1.clubBudget?.semaines??null,S2.clubBudget?.semaines??null],reimport,reprise,
  deltas:S1.clubs.map((k,i)=>k.cash-S.clubs[i].cash),masses:S.clubs.map(k=>k.players.reduce((s,p)=>s+p.salary,0)),domicile:S1.history.filter(r=>r.week===0).map(r=>r.pair[0]),vainqueurs:S1.history.filter(r=>r.week===0).map(r=>r.score[0]>r.score[1]?r.pair[0]:r.score[1]>r.score[0]?r.pair[1]:-1)}));`;
 const sorties={};
 function creer(drapeau){
@@ -55,6 +58,8 @@ test('Vrai moteur, drapeau éteint : une semaine jouée garde l’ancienne écon
  assert.deepEqual(x.titres,['Entretien des installations','Partenaires','Prime de victoire','Salaires','Billetterie'].filter(t=>x.titres.includes(t)).sort());assert.ok(x.titres.includes('Salaires')&&!x.titres.includes('Cotisations'));
  for(let i=0;i<29;i++)assert.equal(x.deltas[i],160000-x.masses[i]+(x.domicile.includes(i)?360000:0)+(x.vainqueurs.includes(i)?80000:0),'club '+i+' : ancien calcul hebdomadaire');
  assert.ok(x.reimport&&x.reprise);
+ assert.equal(x.signature.ok,false,'sans la variable, une offre à 400 € par semaine reste refusée');assert.match(x.signature.erreur,/Offre invalide/);assert.ok(x.signature.demande>=1000);assert.equal(x.signature.plancher,null);
+ assert.equal(x.strategie.weeklyIncome,160000);assert.equal(x.strategie.budget,undefined);assert.match(x.signature.notice,/34 semaines payées/);
 });
 test('Vrai moteur, drapeau allumé : salaires liés au niveau, variés, masses réalistes',()=>{
  const x=creer('1');assert.deepEqual(x.marque,{version:3,semaines:52});
@@ -111,4 +116,18 @@ test('Vrai moteur, carrière mondiale, drapeau allumé : chaque championnat à s
  for(const t of ['Abonnements','Cotisations','Staff et fonctionnement'])assert.ok(x.titres.includes(t),t);assert.ok(x.reimport,'export puis import : texte identique');
  // Une semaine : aucun club ne gagne ou ne perd plus de 4 % des recettes moyennes de son championnat.
  x.deltas.forEach((d,i)=>assert.ok(Math.abs(d)<E[x.ligues[i]].recettes*0.04,'club '+i+' ('+x.ligues[i]+') : '+d));
+});
+test('Vrai moteur, drapeau allumé : un espoir signe à 20 800 € par an, la sauvegarde l’accepte',()=>{
+ const x=creer('1');assert.equal(x.signature.ok,true,String(x.signature.erreur));assert.equal(x.signature.statut,'signed');assert.equal(x.signature.salaire,400);
+ assert.equal(x.signature.plancher,270,'plancher de la règle : 14 000 € par an');assert.ok(x.signature.demande<500,'un espoir demande un salaire d’espoir : '+x.signature.demande);
+ assert.ok(x.reimport&&x.reprise,'le contrat à 400 € par semaine passe l’export, l’import et la reprise');
+});
+test('Vrai moteur, drapeau allumé : l’écran Finances reçoit le budget de la saison',()=>{
+ const f=creer('1').strategie,b=f.budget;assert.ok(b&&b.proprietaire.libelle&&Number.isFinite(b.resultatPrevu)&&Number.isFinite(b.fonctionnementHebdo));
+ assert.equal(f.baseForecast,b.tresoreriePrevue);assert.notEqual(f.weeklyIncome,160000);assert.ok(f.weeklyCosts>f.weeklyWages&&f.weeklyWages>0);
+ assert.ok(Math.abs(f.weeklyWages-b.masseSalariale/34*1.4)<f.weeklyWages*0.02,'salaires et cotisations payés sur 34 semaines');assert.ok(!/fictif/i.test(JSON.stringify(f)));
+ assert.match(creer('1').signature.notice,/52 semaines/);
+});
+test('Vrai moteur, drapeau allumé : personne au-dessus des limites à la création',()=>{
+ const x=creer('1');for(const [i,c] of x.budget.clubs.entries())assert.ok(c.division!=='elite'||c.masse<10.7e6,'club '+i+' sous le plafond : '+c.masse);
 });
