@@ -26,17 +26,19 @@ static func _player_target(app: Control, id: Variant) -> Dictionary:
 		if is_instance_valid(navigation) and navigation.has_method("entity_available") and navigation.entity_available(target): return target
 	return {}
 
-static func _person_link(app: Control, parent: Node, id: Variant, name: String) -> void:
+static func _person_link(app: Control, parent: Node, id: Variant, name: String) -> Control:
 	var target := _player_target(app, id)
 	if target.is_empty():
-		parent.add_child(G.wrap(_name(app, id), 14))
-		return
+		var label := G.wrap(_name(app, id), 14)
+		parent.add_child(label)
+		return label
 	var button := G.button(_name(app, id), func(): pass)
 	button.name = name
 	button.custom_minimum_size.y = 40
 	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	EntityLink.bind(button, app, target, _name(app, id))
 	parent.add_child(button)
+	return button
 
 static func _identity(app: Control, parent: Node, identity: Dictionary, id: String, detail: String) -> void:
 	var target := _player_target(app, id)
@@ -58,7 +60,9 @@ static func _identity(app: Control, parent: Node, identity: Dictionary, id: Stri
 	var text := G.v(3)
 	G.fill(text)
 	row.add_child(text)
-	_person_link(app,text,id,"RelationshipPlayerLink")
+	var heading := _person_link(app,text,id,"RelationshipPlayerLink")
+	heading.add_theme_font_size_override("font_size",25)
+	heading.add_theme_font_override("font",G.T.DISPLAY)
 	text.add_child(G.wrap(detail,13))
 
 static func build(app: Control) -> Control:
