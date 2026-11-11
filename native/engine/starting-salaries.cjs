@@ -17,7 +17,7 @@
 // salariale joueurs de 9,9 M€ et 3,2 M€ par club ; 190 000 à 280 000 € selon
 // le poste ; une douzaine de joueurs vers 600 000 €.
 const VERSION = 3;
-const REFERENCE = Object.freeze([[45, 16000], [60, 30000], [66, 52000], [70, 94000], [75, 186000], [80, 300000], [85, 430000], [90, 570000], [95, 680000], [99, 740000]]);
+const REFERENCE = Object.freeze([[45, 16000], [60, 30000], [66, 52000], [70, 94000], [75, 186000], [80, 300000], [85, 400000], [90, 520000], [95, 620000], [99, 700000]]);
 const POSTE = Object.freeze([0.93, 0.84, 1.14, 1.0, 0.97, 1.1, 0.84, 1.1, 0.97]); // familles 0 à 8
 const PLANCHER_ANNUEL = 14000;
 const PLAFOND_ANNUEL = 800000;
