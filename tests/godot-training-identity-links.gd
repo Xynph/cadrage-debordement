@@ -20,6 +20,12 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	check(not app.waiting and app.bridge.last_response_ok,"Worker réel · "+id)
 	await settle()
 func found(id: String) -> Control: return app.find_child(id,true,false) as Control
+func adjustment_dialog() -> Window:
+	# Window inherits Viewport, not Control: found() deliberately serves only
+	# the page controls and cannot be used to observe a real dialog.
+	for child: Node in app.get_children():
+		if child is Window and str(child.name)=="TrainingIndividualDialog" and child.visible and not child.is_queued_for_deletion(): return child
+	return null
 func click(point: Vector2) -> void:
 	var move:=InputEventMouseMotion.new(); move.position=point; move.global_position=point
 	Input.parse_input_event(move); await process_frame
@@ -37,7 +43,11 @@ func adjustment_click(control: Control, local_design_point: Vector2) -> void:
 		if identity == null or not identity.has_meta("entity_kind"): continue
 		var child_point: Vector2 = identity.get_global_transform_with_canvas().affine_inverse() * point
 		check(not Rect2(Vector2.ZERO,identity.size).has_point(child_point),"Clic de réglage hors zone d’identité · "+str(identity.name))
+	var delivered := [0]
+	var action := control as BaseButton
+	action.pressed.connect(func(): delivered[0]+=1,CONNECT_ONE_SHOT)
 	await click(point)
+	check(delivered[0]==1,"Le vrai clic a déclenché le parent de réglage · "+str(control.name))
 
 func activate(link: Control, keyboard: bool) -> void:
 	check(link!=null,"Zone identité présente")
@@ -52,7 +62,7 @@ func activate(link: Control, keyboard: bool) -> void:
 	await settle()
 func profile(id: String) -> void:
 	check(app.route=="Effectif" and app.selected_player==id and app.get_meta("immersive08_full_player",false),"Fiche complète du bon joueur par ID")
-	check(found("TrainingIndividualDialog")==null,"L’identité ne déclenche pas le réglage de charge")
+	check(adjustment_dialog()==null,"L’identité ne déclenche pas le réglage de charge")
 func back() -> void:
 	app.navigation_controller._travel(-1); await settle()
 	check(found("ImmersiveTraining")!=null and int(app.management_ui.get("immersive_training",{}).get("tab",0))==0,"Retour sur la semaine d’entraînement")
@@ -92,7 +102,9 @@ func run() -> void:
 	await activate(found("TrainingAxisPlayerPortrait_"+player_id.validate_node_name()),false); profile(player_id); await back()
 	var axis:=found("TrainingAxis0")
 	await adjustment_click(axis,Vector2(170,62))
-	check(found("TrainingIndividualDialog")!=null,"La zone d’axe hors identité conserve le vrai réglage")
+	var axis_dialog := adjustment_dialog()
+	var axis_person: Dictionary=app.model.squad.filter(func(person: Dictionary): return str(person.id)==player_id)[0]
+	check(axis_dialog!=null and axis_dialog.title==str(axis_person.name),"La zone d’axe hors identité conserve le vrai réglage du bon joueur")
 	app._clear_dialogs(); await settle()
 	var staff_names:=app.find_children("TrainingStaffName_TrainingStaff_*","Button",true,false)
 	check(not staff_names.is_empty(),"Personne réelle du staff disponible par ID projeté")
@@ -113,7 +125,8 @@ func run() -> void:
 	vigilance_component(player)
 	var risk:=found("TrainingRisk_0")
 	await adjustment_click(risk,Vector2(420,20))
-	check(found("TrainingIndividualDialog")!=null,"La zone de vigilance hors nom conserve le réglage")
+	var risk_dialog := adjustment_dialog()
+	check(risk_dialog!=null and risk_dialog.title==str(player.name),"La zone de vigilance hors nom conserve le réglage du bon joueur")
 	app._clear_dialogs(); await settle()
 	check(app.bridge._next_id==requests and saved==FileAccess.get_file_as_bytes(saved_path),"Consultation et ouverture des réglages sans commande ni écriture sportive")
 	await command("export")
