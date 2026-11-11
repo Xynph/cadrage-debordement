@@ -27,6 +27,18 @@ func click(point: Vector2) -> void:
 		var event:=InputEventMouseButton.new(); event.button_index=MOUSE_BUTTON_LEFT; event.pressed=down; event.position=point; event.global_position=point
 		Input.parse_input_event(event); await process_frame
 	await settle()
+func adjustment_click(control: Control, local_design_point: Vector2) -> void:
+	# Dedicated pages are scaled by the shell. An untransformed offset added
+	# to global_position can land on the identity zone instead of this label.
+	var point := control.get_global_transform_with_canvas() * (local_design_point * C.density)
+	check(Rect2(Vector2.ZERO,control.size).has_point(local_design_point*C.density),"Point de réglage dans la carte rendue")
+	for child: Node in control.get_children():
+		var identity := child as Control
+		if identity == null or not identity.has_meta("entity_kind"): continue
+		var child_point: Vector2 = identity.get_global_transform_with_canvas().affine_inverse() * point
+		check(not Rect2(Vector2.ZERO,identity.size).has_point(child_point),"Clic de réglage hors zone d’identité · "+str(identity.name))
+	await click(point)
+
 func activate(link: Control, keyboard: bool) -> void:
 	check(link!=null,"Zone identité présente")
 	if link==null: return
@@ -43,7 +55,7 @@ func profile(id: String) -> void:
 	check(found("TrainingIndividualDialog")==null,"L’identité ne déclenche pas le réglage de charge")
 func back() -> void:
 	app.navigation_controller._travel(-1); await settle()
-	check(found("ImmersiveTraining")!=null and int(app.management_ui.immersive_training.tab)==0,"Retour sur la semaine d’entraînement")
+	check(found("ImmersiveTraining")!=null and int(app.management_ui.get("immersive_training",{}).get("tab",0))==0,"Retour sur la semaine d’entraînement")
 func vigilance_component(player: Dictionary) -> Control:
 	# Component fixture: retain a real projected player, without manufacturing
 	# an alert, changing his condition or writing any worker/model state.
@@ -79,7 +91,7 @@ func run() -> void:
 	await activate(names[0],true); profile(player_id); await back()
 	await activate(found("TrainingAxisPlayerPortrait_"+player_id.validate_node_name()),false); profile(player_id); await back()
 	var axis:=found("TrainingAxis0")
-	await click(axis.global_position+Vector2(C.px(170),C.px(62)))
+	await adjustment_click(axis,Vector2(170,62))
 	check(found("TrainingIndividualDialog")!=null,"La zone d’axe hors identité conserve le vrai réglage")
 	app._clear_dialogs(); await settle()
 	var staff_names:=app.find_children("TrainingStaffName_TrainingStaff_*","Button",true,false)
@@ -100,7 +112,7 @@ func run() -> void:
 	await activate(vigilance_component(player),true); profile(str(player.id)); await back()
 	vigilance_component(player)
 	var risk:=found("TrainingRisk_0")
-	await click(risk.global_position+Vector2(C.px(420),C.px(20)))
+	await adjustment_click(risk,Vector2(420,20))
 	check(found("TrainingIndividualDialog")!=null,"La zone de vigilance hors nom conserve le réglage")
 	app._clear_dialogs(); await settle()
 	check(app.bridge._next_id==requests and saved==FileAccess.get_file_as_bytes(saved_path),"Consultation et ouverture des réglages sans commande ni écriture sportive")
