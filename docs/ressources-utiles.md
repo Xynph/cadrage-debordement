@@ -113,3 +113,9 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
 - **Statut :** À explorer / Évalué / Retenu / Intégré / Écarté.
 - **Date et vérification effectuée :** distinguer lecture, essai et intégration.
 - **Décision, preuve et prochaine action :** lien vers le fichier ou la PR.
+
+## Qualification SDK Linux — 11 novembre 2026
+
+| Ressource | Provenance / relevé | Utilité | Coût / licence | Statut et preuve |
+| --- | --- | --- | --- | --- |
+| [Godot4.7.2 Linux officiel](https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable) | API officielle `releases/372477026` relue le11novembre ; archive Linux77860424octets, SHA256 `cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4`. | Exécuter réellement les suites Godot de CI, sans assimiler SKIP à une validation du rendu. | Gratuit, MIT et notices tierces Godot ; SDK utilisé en QA, sans ajout au ZIP du jeu. | **Retenu** : pins `ci/godot-sdk.json`, archive comparée au digest officiel. Le workflow proposé prépare les assets puis importe le vrai projet. La validation Linux ne prouve pas le fonctionnement d’un EXE Windows. |

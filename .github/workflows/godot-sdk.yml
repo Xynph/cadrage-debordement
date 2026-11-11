@@ -1,0 +1,75 @@
+name: Godot — suites ciblées avec SDK réel
+on:
+  pull_request:
+    branches: [main]
+    paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
+  push:
+    branches: [main]
+    paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godot-sdk-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Préparer le rendu logiciel gratuit sous X11
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+      - name: Installer le SDK officiel épinglé et vérifier son archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib, urllib.request, zipfile
+          config = json.loads(pathlib.Path('ci/godot-sdk.json').read_text())
+          tools = pathlib.Path(os.environ['RUNNER_TEMP']) / 'godot-sdk'
+          tools.mkdir()
+          archive = tools / 'godot.zip'
+          urllib.request.urlretrieve(config['url'], archive)
+          assert archive.stat().st_size == config['bytes'], 'Unexpected SDK archive size'
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == config['sha256'], 'SDK checksum mismatch'
+          with zipfile.ZipFile(archive) as z:
+              names = z.namelist()
+              assert names == [config['executable']], 'Unexpected SDK archive member'
+              z.extractall(tools)
+          executable = tools / config['executable']
+          executable.chmod(0o755)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('CD_GODOT_EXECUTABLE=' + str(executable) + '\n')
+              env.write('CD_GODOT_EXE=' + str(executable) + '\n')
+          PY
+      - name: Préparer et importer le vrai projet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
+          timeout --kill-after=10s 180s "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --import 2>&1 | tee "$RUNNER_TEMP/godot-import.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP/godot-import.log"; then
+            exit 1
+          fi
+      - name: Exécuter les suites qualifiées sans repli SKIP
+        shell: bash
+        env:
+          SDL_AUDIODRIVER: dummy
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a -s '-screen 0 2560x1440x24' node ci/run-godot-sdk.cjs
