@@ -3,6 +3,8 @@ const {selectTests,allTests}=require('../ci/select-tests.cjs');
 const equals=(changed,expected)=>assert.deepEqual(selectTests(changed),expected.sort());
 assert.ok(allTests.length>=21,'La suite complète doit rester disponible');
 assert.ok(allTests.includes('tests/saves.cjs'));
+assert.ok(selectTests(['dist/match2d.js']).includes('tests/lineout-side.cjs'), 'La scène de match sélectionne la régression du côté des alignements');
+assert.ok(selectTests(['dist/match2d.js']).includes('tests/lineout-geometry.cjs'), 'La scène de match sélectionne la géométrie des alignements');
 assert.ok(allTests.includes('tests/v21-numerical-advice.cjs'));
 assert.ok(allTests.includes('tests/v22-tactical-comparison.cjs'));
 assert.ok(allTests.includes('tests/v23-local-zones.cjs'));
