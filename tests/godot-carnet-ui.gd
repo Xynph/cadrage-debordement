@@ -81,6 +81,21 @@ func activate_bench(control: Button, key: String) -> void:
 	for down in [true,false]:
 		var event:=InputEventKey.new();event.keycode=KEY_ENTER;event.pressed=down;Input.parse_input_event(event);await process_frame
 	await settle()
+func press_match_drawer(caption: String, expected: String) -> void:
+	var screen := page_for("Match")
+	var matches := screen.find_children("*","Button",true,false).filter(func(control): return control.text == caption and control.is_visible_in_tree() and not control.disabled)
+	check(matches.size()==1,"Action visible unique du vrai direct : "+caption)
+	if matches.size()!=1: return
+	var control := matches[0] as Button
+	var point := control.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new();motion.position=point;motion.global_position=point
+	root.push_input(motion,true);await process_frame
+	for down in [true,false]:
+		var event:=InputEventMouseButton.new();event.button_index=MOUSE_BUTTON_LEFT;event.position=point;event.global_position=point;event.pressed=down
+		root.push_input(event,true);await process_frame
+	await settle()
+	check(control.has_focus(),"Focus réel du bouton du direct : "+caption)
+	check(screen.drawer_tab==expected and screen.drawer.visible,"Le vrai clic ouvre le tiroir contextuel : "+expected)
 func bounds(route: String) -> void:
 	var page := page_for(route)
 	check(page != null, "Vue carnet " + route)
@@ -366,14 +381,14 @@ func decisions() -> void:
 			if p is Dictionary:p.name="Joueur de réception au nom particulièrement long pour éprouver le banc et les remplacements"
 	app.model=long_names
 	await render("Match")
-	await press("BANC")
+	await press_match_drawer("BANC","Banc")
 	bounds("Match")
 	await capture("match-banc-projection-long")
 	app.model=actual
 	await render("Match")
-	await press("STATS")
+	await press_match_drawer("STATS","Stats")
 	await capture("match-statistiques-1440")
-	await press("BANC")
+	await press_match_drawer("BANC","Banc")
 	await capture("match-banc-1440")
 	var screen: Control=app.match_screen
 	var incoming: Dictionary={}
@@ -381,7 +396,7 @@ func decisions() -> void:
 		if not sub.get("inIds",[]).is_empty(): incoming=sub;break
 	if not incoming.is_empty():
 		check(app.model.live.lineup[int(incoming.slot)].id == incoming.outId,"Le poste publié désigne le vrai joueur sortant")
-		await activate_bench(bench_control(screen,"sortant:"+str(incoming.slot)),"sortant:"+str(incoming.slot))
+		await activate_bench(bench_control(screen,"sortant:"+str(int(incoming.slot))),"sortant:"+str(int(incoming.slot)))
 		for player: Dictionary in app.model.live.reserves:
 			var candidate := bench_control(screen,"entrant:"+str(player.id))
 			check(candidate != null and candidate.disabled == (not player.id in incoming.inIds),"Le banc respecte les aptitudes publiées et refuse les positions interdites : "+str(player.id))
