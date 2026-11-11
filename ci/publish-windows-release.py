@@ -35,7 +35,7 @@ def evidence_files(root):
             require(not path.is_symlink() and root in path.resolve().parents, "Evidence link/outside path refused")
             require(path.stat().st_size < 512 * 1024**2, "Oversized evidence file")
             files[name] = path
-    for name in ("prepare.log", "build.log"):
+    for name in ("controller-unit.log", "prepare.log", "build.log"):
         add(root / name, name)
     for name in ("import.log", "export.log"):
         add(root / "official-build/build" / name, "build/" + name)

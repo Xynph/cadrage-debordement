@@ -153,3 +153,22 @@ Le nouveau reçu refuse correctement ce cas et rapporte un/un ; le cas silencieu
 termine avec 61 contrôles sans échec et zéro/zéro. Ces sondes utilisent Godot Linux,
 sont courtes et ne constituent ni une saison complète ni une recette Windows.
 Les 29 tests Node de l’outillage et le parseur Godot du pilote de reprise passent.
+
+## Journaux vivants et erreurs de script
+
+Le pilote conserve maintenant les octets complets des deux sorties pendant
+l’exécution. Il refuse les erreurs Godot/Parse Error même si l’EXE reste ouvert
+ou quitte avec zéro. Les fichiers restent lisibles pendant leur écriture ; une
+notification de phase puis une indication d’activité périodique permettent de
+suivre le runner. Le nettoyage conserve les journaux et arrête les processus
+possédés, y compris après erreur.
+
+Un test rapide `tests/windows-controller.ps1`, exécuté dans un processus PowerShell
+séparé avant chaque construction, contrôle trois cas : un reçu unique avec sorties
+complètes et environnement filtré ; une erreur de script avec sortie zéro ; une
+erreur de script avant une attente prolongée. Son enfant est PowerShell et son CIM
+est simulé uniquement dans ce processus de test. Il ne produit aucune preuve du
+jeu Windows et ne remplace pas la vraie recette suivante. Les diagnostics locaux
+sous PowerShell 7 strict sont verts. La régression des objets `VoidTaskResult`
+retournés accidentellement a été reproduite puis corrigée : le chemin réussi doit
+retourner un seul dictionnaire, sans objet de tâche asynchrone supplémentaire.

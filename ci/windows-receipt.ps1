@@ -25,11 +25,16 @@ $game = $null; $archive = $null; $extrasPath = $null; $manifestPath = $null
 function Read-Json([string]$Path) { return Get-Content -LiteralPath $Path -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable }
 function Write-Json($Value,[string]$Path) { $Value | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM }
 function Hash([string]$Path) { return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+function Read-Game-Log([string]$Path) {
+    $stream = [IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
+    $reader = [IO.StreamReader]::new($stream)
+    try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+}
 function Python-Check([string[]]$Arguments) {
     & $Python $Verifier @Arguments
     if ($LASTEXITCODE -ne 0) { throw "Windows package validator failed: $($Arguments[0])" }
 }
-function Game-Environment([string]$Mode,[string]$Profile,[string]$Output) {
+function Game-Environment([string]$Mode,[string]$CareerProfile,[string]$Output) {
     $privateUser = Join-Path $EvidenceRoot 'private-user'
     $temp = Join-Path $privateUser 'Temp'
     $roaming = Join-Path $privateUser 'AppData/Roaming'
@@ -40,29 +45,38 @@ function Game-Environment([string]$Mode,[string]$Profile,[string]$Output) {
         SystemRoot=$env:SystemRoot; WINDIR=$env:SystemRoot; COMSPEC=(Join-Path $env:SystemRoot 'System32/cmd.exe');
         PATH="$(Join-Path $env:SystemRoot 'System32');$env:SystemRoot";
         TEMP=$temp; TMP=$temp; USERPROFILE=$privateUser; APPDATA=$roaming; LOCALAPPDATA=$local;
-        CD_GODOT_DATA_DIR=$Profile; CD_GODOT_SELF_TEST=$(if($Mode -eq 'fresh'){'1'}else{'0'});
+        CD_GODOT_DATA_DIR=$CareerProfile; CD_GODOT_SELF_TEST=$(if($Mode -eq 'fresh'){'1'}else{'0'});
         CD_GODOT_QA_CAPTURES=$Output; CD_GODOT_RESUME_OUTPUT=$Output; QA_RESOLUTION='2560x1440';
         CD_GODOT_FRESH_REPORT=(Join-Path $EvidenceRoot 'fresh/report.json');
         CD_GODOT_SEED='13'; CD_GODOT_STARTUP_TRACE='1';
         GALLIUM_DRIVER='llvmpipe'
     }
 }
-function Run-Game([string]$Mode,[string[]]$Arguments,[string]$Profile,[string]$Output,[string]$Exe,[string]$NodeExe) {
+function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe) {
     New-Item -ItemType Directory -Path $Output | Out-Null
     $info = [Diagnostics.ProcessStartInfo]::new()
     $info.FileName = $Exe; $info.WorkingDirectory = Split-Path $Exe
     $info.UseShellExecute = $false; $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
     $info.Environment.Clear()
-    $environment = Game-Environment $Mode $Profile $Output
+    $environment = Game-Environment $Mode $CareerProfile $Output
     foreach ($item in $environment.GetEnumerator()) { $info.Environment[$item.Key] = [string]$item.Value }
     foreach ($argument in $Arguments) { $info.ArgumentList.Add($argument) }
     $process = [Diagnostics.Process]::new(); $process.StartInfo = $info
     $node = $null; $observations = [Collections.Generic.List[object]]::new(); $shutdown = $false; $launched = $false
     $started = [DateTime]::UtcNow
+    $stdoutPath = Join-Path $Output 'stdout.log'; $stderrPath = Join-Path $Output 'stderr.log'
+    $stdoutFile = $null; $stderrFile = $null; $stdout = $null; $stderr = $null
+    $lastLogCheck = $started; $lastHeartbeat = $started
+    $runtimeError = '(?m)^(?:\x1b\[[0-9;]*m)*(?:SCRIPT ERROR:|ERROR:)|Parse Error:'
     try {
+        # Stream the complete bytes to disk while the EXE runs. A script error
+        # must not leave a silent two-hour loop or disappear behind passed=true.
+        $stdoutFile = [IO.FileStream]::new($stdoutPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite,1,[IO.FileOptions]::Asynchronous)
+        $stderrFile = [IO.FileStream]::new($stderrPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::ReadWrite,1,[IO.FileOptions]::Asynchronous)
         if (-not $process.Start()) { throw 'Exported EXE did not start.' }
         $launched = $true
-        $stdout = $process.StandardOutput.ReadToEndAsync(); $stderr = $process.StandardError.ReadToEndAsync()
+        $stdout = $process.StandardOutput.BaseStream.CopyToAsync($stdoutFile); $stderr = $process.StandardError.BaseStream.CopyToAsync($stderrFile)
+        Write-Host "::notice title=Windows EXE ${Mode}::Started exact packaged EXE, PID $($process.Id); complete logs are streaming to disk."
         while (-not $process.HasExited) {
             foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($process.Id)")) {
                 if ($child.Name -ieq 'node.exe' -and $child.CommandLine -like '*worker.cjs*') {
@@ -71,13 +85,26 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$Profile,[string]$O
                     if (-not [string]::Equals([IO.Path]::GetFullPath($sample.executable),[IO.Path]::GetFullPath($NodeExe),[StringComparison]::OrdinalIgnoreCase)) { throw 'CIM observed a host/unexpected Node executable.' }
                 }
             }
+            if (([DateTime]::UtcNow-$lastLogCheck).TotalSeconds -ge 1) {
+                foreach ($log in @($stdoutPath,$stderrPath)) {
+                    if ((Read-Game-Log $log) -match $runtimeError) { throw "Godot runtime/script error during native $Mode; inspect the complete captured logs." }
+                }
+                $lastLogCheck = [DateTime]::UtcNow
+            }
+            if (([DateTime]::UtcNow-$lastHeartbeat).TotalSeconds -ge 300) {
+                Write-Host "::notice title=Windows EXE ${Mode}::Still running; elapsed $([int]([DateTime]::UtcNow-$started).TotalSeconds)s; packaged worker observed=$($null -ne $node)."
+                $lastHeartbeat = [DateTime]::UtcNow
+            }
             if (([DateTime]::UtcNow-$started).TotalSeconds -gt 7200) { throw "Native $Mode reception exceeded two hours." }
             Start-Sleep -Milliseconds 250
             $process.Refresh()
         }
         $process.WaitForExit()
-        $stdout.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $Output 'stdout.log') -Encoding utf8NoBOM
-        $stderr.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $Output 'stderr.log') -Encoding utf8NoBOM
+        [void]$stdout.GetAwaiter().GetResult(); [void]$stderr.GetAwaiter().GetResult()
+        $stdoutFile.Dispose(); $stderrFile.Dispose()
+        foreach ($log in @($stdoutPath,$stderrPath)) {
+            if ((Read-Game-Log $log) -match $runtimeError) { throw "Godot runtime/script error in native $Mode output." }
+        }
         if ($null -eq $node) { throw 'No CIM observation of the owned packaged worker.' }
         $deadline = [DateTime]::UtcNow.AddSeconds(5)
         while ((Get-Process -Id $node.pid -ErrorAction SilentlyContinue) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 100 }
@@ -87,19 +114,24 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$Profile,[string]$O
         if ($process.ExitCode -ne 0 -or -not $shutdown) { throw "Native $Mode failed or its owned worker survived shutdown." }
         return $receipt
     } finally {
-        if ($launched) {
-            if (-not $process.HasExited) { $process.Kill($true); $process.WaitForExit() }
-            $stdout.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $Output 'stdout.log') -Encoding utf8NoBOM
-            $stderr.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $Output 'stderr.log') -Encoding utf8NoBOM
-            if (-not (Test-Path -LiteralPath (Join-Path $Output 'process.json'))) {
-                Write-Json @{executable=$Exe;pid=$process.Id;argv=$Arguments;exitCode=$process.ExitCode;shutdown=$shutdown;cim=@($observations.ToArray());environmentNames=@($environment.Keys|Sort-Object);incomplete=$true} (Join-Path $Output 'process.json')
+        try {
+            if ($launched) {
+                if (-not $process.HasExited) { $process.Kill($true); $process.WaitForExit() }
+                if ($null -ne $stdout) { [void]$stdout.GetAwaiter().GetResult() }
+                if ($null -ne $stderr) { [void]$stderr.GetAwaiter().GetResult() }
+                if (-not (Test-Path -LiteralPath (Join-Path $Output 'process.json'))) {
+                    Write-Json @{executable=$Exe;pid=$process.Id;argv=$Arguments;exitCode=$process.ExitCode;shutdown=$shutdown;cim=@($observations.ToArray());environmentNames=@($environment.Keys|Sort-Object);incomplete=$true} (Join-Path $Output 'process.json')
+                }
             }
+        } finally {
+            if ($null -ne $stdoutFile) { $stdoutFile.Dispose() }
+            if ($null -ne $stderrFile) { $stderrFile.Dispose() }
+            if ($null -ne $node -and -not $shutdown) {
+                $owned = Get-CimInstance Win32_Process -Filter "ProcessId = $($node.pid)"
+                if ($owned -and $owned.ParentProcessId -eq $node.parentPid -and $owned.ExecutablePath -eq $node.executable) { Stop-Process -Id $node.pid -Force }
+            }
+            $process.Dispose()
         }
-        if ($null -ne $node -and -not $shutdown) {
-            $owned = Get-CimInstance Win32_Process -Filter "ProcessId = $($node.pid)"
-            if ($owned -and $owned.ParentProcessId -eq $node.parentPid -and $owned.ExecutablePath -eq $node.executable) { Stop-Process -Id $node.pid -Force }
-        }
-        $process.Dispose()
     }
 }
 
@@ -129,13 +161,13 @@ try {
     $beforePath = Join-Path $EvidenceRoot 'manifest-before.json'
     Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$beforePath)
     $Report.manifestBefore = Read-Json $beforePath
-    $profile = Join-Path $EvidenceRoot 'private-profiles/PrototypeGodot'
-    New-Item -ItemType Directory -Path $profile | Out-Null
+    $CareerProfile = Join-Path $EvidenceRoot 'private-profiles/PrototypeGodot'
+    New-Item -ItemType Directory -Path $CareerProfile | Out-Null
     $fresh = Join-Path $EvidenceRoot 'fresh'
-    $Report.process.fresh = Run-Game 'fresh' @('--headless','--audio-driver','Dummy','--max-fps','120') $profile $fresh $exe $nodeExe
+    $Report.process.fresh = Run-Game 'fresh' @('--headless','--audio-driver','Dummy','--max-fps','120') $CareerProfile $fresh $exe $nodeExe
     $Report.fresh = Read-Json (Join-Path $fresh 'report.json')
     $resume = Join-Path $EvidenceRoot 'resume'
-    $Report.process.resume = Run-Game 'resume' @('--audio-driver','Dummy','--rendering-method','gl_compatibility','--windowed','--resolution','2560x1440','--max-fps','60','--script',$ResumeScript) $profile $resume $exe $nodeExe
+    $Report.process.resume = Run-Game 'resume' @('--audio-driver','Dummy','--rendering-method','gl_compatibility','--windowed','--resolution','2560x1440','--max-fps','60','--script',$ResumeScript) $CareerProfile $resume $exe $nodeExe
     $Report.resume = Read-Json (Join-Path $resume 'report.json')
     $afterPath = Join-Path $EvidenceRoot 'manifest-after.json'
     Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$afterPath)

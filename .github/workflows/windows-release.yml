@@ -49,7 +49,7 @@ jobs:
         shell: pwsh
         run: |
           $root = Join-Path $env:RUNNER_TEMP 'oval-windows-delivery'
-          foreach ($relative in @('prepare.log','build.log','official-build/build/import.log','official-build/build/export.log','evidence/windows-report.json','evidence/fresh/stdout.log','evidence/fresh/stderr.log','evidence/resume/stdout.log','evidence/resume/stderr.log')) {
+          foreach ($relative in @('controller-unit.log','prepare.log','build.log','official-build/build/import.log','official-build/build/export.log','evidence/windows-report.json','evidence/fresh/stdout.log','evidence/fresh/stderr.log','evidence/resume/stdout.log','evidence/resume/stderr.log')) {
             $file = Join-Path $root $relative
             if (Test-Path -LiteralPath $file) { Write-Host "::group::$relative"; Get-Content -LiteralPath $file -Tail 100; Write-Host '::endgroup::' }
           }
