@@ -36,7 +36,18 @@ function metrics(model){
 }
 function play(w){
  settle(w);if(!w.model.meta.trained)w.go('train',{mode:'normal'});settle(w);
- w.go('auto_lineup');w.go('begin_match');w.go('delegate');
+ w.go('auto_lineup');
+ if(!w.model.selection.valid){
+  const coverage=w.model.selection.coverage;
+  if(!coverage?.slots?.length||coverage.slots.length>coverage.places){
+   const error=new Error('Feuille à 23 incomplète, aucun renfort suffisant dans les places professionnelles disponibles.');
+   error.scenarioBlocked={kind:'lineup',errors:w.model.selection.errors,coverage,metrics:metrics(w.model)};throw error;
+  }
+  // This is a real, paid management choice. Never bypass the match guard or
+  // invent a front-row qualification to make a scenario complete.
+  w.go('promote_cover',{confirmed:true,expectedSlots:coverage.slots});assert.equal(w.model.selection.valid,true);
+ }
+ w.go('begin_match');w.go('delegate');
  assert.equal(w.model.live.finished,true);
  const report=w.model.decisions.report,score=[...report.score],side=report.side;
  const result={round:w.model.meta.round,opponent:report.teams[1-side].id,score:score[side]+'–'+score[1-side],
@@ -88,11 +99,14 @@ function campaign(seed,horizon,temp){
   const results=[];
   for(const plan of plans){
    const directory=path.join(temp,'seed-'+seed,plan.id);fs.cpSync(baseDir,directory,{recursive:true});
-   const w=worker(directory,0);
+   const w=worker(directory,0),decisions=[],rounds=[];
    try{
     assert.equal(hash(w.profile()),checkpointHash,'Exact full saved profile copied');
     assert.equal(JSON.parse(w.profile()).seed,checkpointRng);assert.equal(hash(w.state()),stateHash);w.pure();
-    const decisions=[];
+    if(plan.id==='profondeur'&&w.model.decisions.recruitment.places<2){
+     const error=new Error('Deux recrutements demandés, '+w.model.decisions.recruitment.places+' place professionnelle disponible.');
+     error.scenarioBlocked={kind:'capacity',places:w.model.decisions.recruitment.places,required:2};throw error;
+    }
     if(plan.id==='vedette')decisions.push(recruit(w,targets[0].id));
     if(plan.id==='talent_observe'){
      const known=targets.slice().filter(p=>Number.isFinite(p.rating)||Number.isFinite(p.ratingRange?.min));
@@ -105,16 +119,22 @@ function campaign(seed,horizon,temp){
      assert.equal(w.model.finance.cash,before.cash,'Configuring investment charges no money');
      decisions.push({investmentPerSession:12000,before,after:metrics(w.model)});
     }
-    const rounds=[];for(let i=0;i<horizon;i++)rounds.push(play(w));
+    for(let i=0;i<horizon;i++)rounds.push(play(w));
     const end=metrics(w.model);w.pure();
     const matches=rounds.map(r=>({round:r.round,opponent:r.opponent,score:r.score,won:r.won,draw:r.draw}));
-    results.push({...plan,openingProfileSha256:checkpointHash,openingStateSha256:stateHash,openingRng:checkpointRng,
+    results.push({...plan,status:'completed',openingProfileSha256:checkpointHash,openingStateSha256:stateHash,openingRng:checkpointRng,
      decisions,rounds,summary:{wins:matches.filter(m=>m.won).length,draws:matches.filter(m=>m.draw).length,matches:matches.length,
       cashChange:end.cash-initial.cash,wageChange:end.wage-initial.wage,pointsChange:end.points-initial.points,
       academyRatingChange:round(end.academyAverageRating-initial.academyAverageRating),fatigueChange:round(end.averageFatigue-initial.averageFatigue),
       moraleChange:end.morale-initial.morale,trustChange:end.trust-initial.trust},end,commands:w.actions,
      closingProfileSha256:hash(w.profile()),closingStateSha256:hash(w.state()),closingRng:JSON.parse(w.profile()).seed});
     console.error('seed='+seed+' '+plan.id+' '+JSON.stringify(results.at(-1).summary));
+   }catch(error){
+    if(!error.scenarioBlocked)throw error;
+    results.push({...plan,status:'blocked',reason:error.message,blocker:error.scenarioBlocked,
+     openingProfileSha256:checkpointHash,openingStateSha256:stateHash,openingRng:checkpointRng,
+     decisions,rounds,commands:w.actions,end:metrics(w.model),closingProfileSha256:hash(w.profile())});
+    console.error('seed='+seed+' '+plan.id+' BLOCKED '+error.message);
    }finally{w.close();}
   }
   return {seed,checkpointProfileSha256:checkpointHash,checkpointStateSha256:stateHash,checkpointRng,initial,
