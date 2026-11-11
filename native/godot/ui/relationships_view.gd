@@ -106,6 +106,11 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	for candidate: Dictionary in app.model.get("squad", []):
 		if candidate.id == p.id: identity = candidate; break
 	G.person(parent, identity, _name(app, p.id), "Entretien individuel · " + str(p.get("pos", "")))
+	var personality: Variant = p.get("personality")
+	if personality is Dictionary and not str(personality.get("trait", "")).is_empty():
+		var character := G.wrap("Personnalité : %s · leadership %s / 100" % [personality.trait, _number(personality.get("leadership"))], 13)
+		character.name = "RelationshipPersonality"
+		parent.add_child(character)
 	if p.get("score") != null: G.gauge(parent, "Satisfaction", float(p.score))
 	parent.add_child(G.wrap("Satisfaction %s / 100 · condition %s %% · %s minute(s)" % [_number(p.get("score")), int(p.condition), _number(p.get("minutes"))], 15))
 	if int(p.injury) > 0: parent.add_child(G.wrap("Blessure : %s semaine(s). Promesse suspendue si aucune minute jouée." % p.injury, 14, G.ALERT))
@@ -115,7 +120,17 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 		button.name = "Conversation_" + str(c.id)
 		parent.add_child(button)
 	for history: Dictionary in data.get("conversationHistory", []).filter(func(h): return h.playerId == p.id).slice(0, 3):
-		parent.add_child(G.wrap("Entretien S%s J%s · satisfaction %s → %s" % [int(history.season), int(history.round) + 1, int(history.before), int(history.after)], 13))
+		var choice := str({"ecouter":"Écouter", "rassurer":"Rassurer", "clarifier":"Clarifier"}.get(history.get("choice", ""), "Entretien individuel"))
+		var memory := G.wrap("S%s J%s · %s\nSatisfaction %s → %s" % [int(history.season), int(history.round) + 1, choice, _number(history.get("before")), _number(history.get("after"))], 13)
+		memory.name = "RelationshipConversationMemory"
+		parent.add_child(memory)
+	var personal_events: Array = data.get("history", []).filter(func(h): return h.get("playerId") == p.id).slice(0, 3)
+	if not personal_events.is_empty(): parent.add_child(G.section("Nos derniers échanges"))
+	for history: Dictionary in personal_events:
+		var choice := str({"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}.get(history.get("choice", ""), "Décision prise"))
+		var memory := G.wrap("S%s · semaine %s — %s\n%s" % [int(history.season), int(history.week) + 1, str(history.get("title", "")), choice], 13)
+		memory.name = "RelationshipEventMemory"
+		parent.add_child(memory)
 	var promise: Variant = p.get("promise")
 	if promise is Dictionary:
 		parent.add_child(G.wrap("Promesse %s · %s minute(s) / %s rencontres sur 3" % [promise.target, int(promise.minutes), int(promise.completed)], 15))
