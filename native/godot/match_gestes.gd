@@ -52,6 +52,20 @@ const PUSH_PITCH := 0.38   # inclinaison des pousseurs
 const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 const DIVE_REACH := 1.95   # distance pieds -> ballon d'un plongeon bras tendus
 const DIVE_SECONDS := 0.95
+# Essai : le ballon est aplati dans l'en-but, à cette distance derrière la ligne (en-but de 5 m).
+const IN_GOAL := 2.0
+# Course du marqueur : allure de pointe (profil en sinus) ; une longue échappée dure ce qu'elle dure.
+const TRY_PACE := 8.0
+const TRY_RUN_MAX := 10.0
+# Dernière passe avant l'essai quand le marqueur n'est pas le porteur : jamais vers l'avant (loi 11),
+# reçue à SUPPORT_SIDE m sur le côté et SUPPORT_BACK m en retrait du porteur.
+const SUPPORT_SIDE := 2.2
+const SUPPORT_BACK := 1.0
+const SUPPORT_START := 0.6  # le soutien arrive déjà lancé, à 60 % de l'allure où il prend la passe
+const GIVER_PACE := 4.5     # allure de pointe du porteur qui fixe la défense en avançant
+const GIVER_ADVANCE := 6.0  # il avance de six mètres au plus avant de donner
+const PASS_FLIGHT := 0.32
+const TRY_HOLD_MAX := 11.0  # le geste entier tient sous l'échéance de la régie (12 s par plan)
 const OUTRO := 0.45
 # Cadrage pendant un geste (caméras « tv » et « action » seulement).
 const FRAME_IN := 1.5      # rapprochement, en secondes
@@ -108,6 +122,14 @@ var dive_set := false
 var dive_seconds := DIVE_SECONDS
 var turn_seconds := 0.6
 var cheer: Array[String] = []
+# Essai : porteur qui fait la dernière passe (vide si le marqueur portait déjà le ballon),
+# instant de la passe et point de réception.
+var giver := ""
+var pass_at := 0.0
+var receive_at := Vector3.ZERO
+var giver_from := Vector3.ZERO
+# Porteur de la scène précédente : celui qui a le ballon quand l'essai commence.
+var _holder := ""
 var _saved: Dictionary = {}
 var _outro: Dictionary = {}
 var _dt := 1.0 / 60.0
@@ -161,6 +183,8 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 		return
 	if not new_action:
 		return
+	var holder_before := _holder
+	_holder = Presentation.carrier_id(scene)
 	var possession := int(scene.get("possession", -1))
 	var record := _record(live, scene)
 	var team := int(record.get("team", possession))
@@ -183,7 +207,8 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 			if not _last_lineout.is_empty() and is_equal_approx(_line(_last_lineout), line):
 				_align(_last_lineout, thrown_by)
 		if phase == "touche":
-			_resolve(scene, team, featured, kind == "setpiece-win" and str(record.get("move", "")) == "maul")
+			# Ballon porté : combinaison jouée, ou ballon porté formé après la prise (fait « porte » du moteur).
+			_resolve(scene, team, featured, kind == "setpiece-win" and (str(record.get("move", "")) == "maul" or record.get("porte", false) == true))
 		_velocity.clear()
 		return
 	var approaching := phase == "approche"
@@ -195,7 +220,7 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 	elif kind in RESTARTS:
 		cut_to_restart(scene)
 	elif kind == "try" and view._actors.has(featured):
-		_start_try(scene, featured, team)
+		_start_try(scene, featured, team, holder_before)
 	_velocity.clear()
 
 
@@ -219,6 +244,8 @@ func cancel() -> void:
 	phase = ""
 	cast.clear()
 	cheer.clear()
+	giver = ""
+	pass_at = 0.0
 	done = true
 	_ball_ready = false
 
@@ -277,7 +304,7 @@ func advance(delta: float) -> void:
 			_set_dive(view._actors[carrier].node.position, true)
 		done = time >= maxf(drive, peel + dive_seconds) + 1.6
 	elif phase == "essai":
-		done = time >= drive + 1.6
+		done = time >= pass_at + drive + 1.6
 
 
 func restore(id: String, entry: Dictionary) -> void:
@@ -351,10 +378,27 @@ func place(id: String, actor: Node3D) -> void:
 				actor.position = spot
 				actor.rotation.y = facing
 		"essai":
-			var k := clampf(time / drive, 0.0, 1.0)
+			if member.role == "giver":
+				# Le porteur avance, fait la passe, puis ralentit et s'arrête.
+				var go := float(member.get("advance", 0.0))
+				var moved := go * smoothstep(0.0, 1.0, minf(time, pass_at) / maxf(pass_at, 0.01)) + minf(1.2, go * 0.25) * smoothstep(pass_at, pass_at + 0.9, time)
+				actor.position = from + Vector3(dir * moved, 0.0, 0.0)
+				actor.rotation.y = lerp_angle(heading_from, atan2(dir, 0.0), smoothstep(0.0, 0.3, time))
+				return
+			if time < pass_at:
+				# Le soutien, déjà en course, accélère vers la passe et la prend lancé (vitesse continue).
+				var u := time / pass_at
+				var a0 := 2.0 * SUPPORT_START / (1.0 + SUPPORT_START)
+				actor.position = from.lerp(receive_at, a0 * u + (1.0 - a0) * u * u)
+				var way := receive_at - from
+				actor.rotation.y = lerp_angle(heading_from, atan2(way.x, way.z) if way.length() > 0.5 else atan2(dir, 0.0), smoothstep(0.0, 0.25, time))
+				return
+			var run_time := time - pass_at
+			var k := clampf(run_time / drive, 0.0, 1.0)
 			actor.position = dive_from.lerp(dive_to, sin(k * PI * 0.5))
 			var line := dive_to - dive_from
-			var run := lerp_angle(heading_from, atan2(line.x, line.z), smoothstep(0.0, 0.25, time))
+			var start_heading := heading_from if giver.is_empty() else atan2(dir, 0.0)
+			var run := lerp_angle(start_heading, atan2(line.x, line.z), smoothstep(0.0, 0.25, run_time))
 			actor.rotation.y = lerp_angle(run, atan2(dive_axis.x, dive_axis.z), smoothstep(0.5, 0.8, k))
 
 
@@ -465,7 +509,10 @@ func _frame_points() -> Array[Vector3]:
 				ground.append(target)
 				ground.append(Vector3(dir * 52.5, 0.0, target.z))
 		"essai":
-			# Le marqueur, sa course, le point d'essai et l'en-but.
+			# Le marqueur, sa course, le point d'essai et l'en-but ; le porteur de la dernière passe.
+			if not giver.is_empty() and time < pass_at + 0.6:
+				ground.append(giver_from)
+				ground.append(view._actors[carrier].node.position if view._actors.has(carrier) else dive_from)
 			ground.append(dive_from)
 			ground.append(target)
 			ground.append(Vector3(dir * 52.5, 0.0, target.z))
@@ -623,15 +670,30 @@ func _pose_maul_try() -> void:
 
 func _pose_try() -> void:
 	var ball: Node3D = view._ball
-	var dive := smoothstep(drive - 0.42, drive, time)
+	var run_time := time - pass_at
+	var dive := smoothstep(drive - 0.42, drive, run_time)
 	_body(carrier, 1.42 * dive, 0.14 * dive + sin(dive * PI) * 0.3)
 	var scorer: Dictionary = view._actors[carrier]
 	var anchor := Presentation.ball_anchor(scorer.node, scorer.rig)
-	var taken := smoothstep(0.0, 0.3, time)
-	ball.global_position = ball_from.lerp(anchor, taken).lerp(_grounded(), dive * dive)
-	ball.global_basis = ball_from_basis.slerp(scorer.node.global_basis.orthonormalized(), taken)
-	_hold(carrier, ball.global_position, smoothstep(0.1, 0.3, time))
-	var joy := smoothstep(drive + 0.3, drive + 0.75, time)
+	if not giver.is_empty() and view._actors.has(giver):
+		# Dernière passe : le ballon reste dans les mains du porteur jusqu'à la passe, puis vole
+		# en PASS_FLIGHT secondes jusqu'aux mains du marqueur.
+		var hands: Dictionary = view._actors[giver]
+		var given := Presentation.ball_anchor(hands.node, hands.rig)
+		var start := maxf(0.0, pass_at - PASS_FLIGHT)
+		var flight := smoothstep(start, pass_at, time)
+		var taken_back := smoothstep(0.0, 0.25, time)
+		var in_air := given.lerp(anchor, flight) + Vector3.UP * sin(flight * PI) * 0.35
+		ball.global_position = ball_from.lerp(in_air, taken_back).lerp(_grounded(), dive * dive)
+		ball.global_basis = (hands.node as Node3D).global_basis.orthonormalized().slerp(scorer.node.global_basis.orthonormalized(), flight)
+		_hold(giver, given, (1.0 - smoothstep(start, start + 0.12, time)) * smoothstep(0.0, 0.2, time))
+		_hold(carrier, ball.global_position, smoothstep(pass_at - 0.12, pass_at + 0.1, time))
+	else:
+		var taken := smoothstep(0.0, 0.3, time)
+		ball.global_position = ball_from.lerp(anchor, taken).lerp(_grounded(), dive * dive)
+		ball.global_basis = ball_from_basis.slerp(scorer.node.global_basis.orthonormalized(), taken)
+		_hold(carrier, ball.global_position, smoothstep(0.1, 0.3, time))
+	var joy := smoothstep(drive + 0.3, drive + 0.75, run_time)
 	if joy > 0.0:
 		for id: String in cheer:
 			if view._actors.has(id):
@@ -1090,16 +1152,18 @@ func _start_maul() -> void:
 
 func _start_maul_try(scene: Dictionary, scorer: String) -> void:
 	var frame := _frame()
-	target = view._world(scene.get("ball", {}))
+	target = _try_point(scene)
+	# Le regroupement s'arrête sur la ligne ; le marqueur aplatit dans l'en-but.
+	var line: Vector3 = view._world(scene.get("ball", {}))
 	center_from = frame.center
 	axis_from = atan2(frame.u.x, frame.u.z)
 	# Le regroupement reste côté terrain : le marqueur plonge à découvert le long de la touche.
 	var aside := Vector3(0.0, 0.0, 3.0 if target.z <= 0.0 else -3.0)
-	var gap: Vector3 = target + aside - center_from
+	var gap: Vector3 = line + aside - center_from
 	gap.y = 0.0
 	# Le regroupement glisse vers le point d'essai en gardant les épaules vers la ligne.
 	var u := Vector3(dir * maxf(absf(gap.x), absf(gap.z)), 0.0, gap.z).normalized()
-	center_to = target + aside - u * 0.3
+	center_to = line + aside - u * 0.3
 	axis_to = atan2(u.x, u.z)
 	# Le groupe pivote sans faire courir sa queue (2,3 m du centre) à plus de 3 m/s.
 	turn_seconds = maxf(0.6, 1.5 * absf(angle_difference(axis_from, axis_to)) * 2.3 / 3.0)
@@ -1139,16 +1203,51 @@ func _set_dive(from: Vector3, straight: bool) -> void:
 	dive_seconds = maxf(DIVE_SECONDS, 1.5 * Vector2(dive_to.x - from.x, dive_to.z - from.z).length() / 7.5)
 
 
-func _start_try(scene: Dictionary, scorer: String, possession: int) -> void:
+## Point d'essai : celui du moteur (sur la ligne), reporté dans l'en-but.
+func _try_point(scene: Dictionary) -> Vector3:
+	var point: Vector3 = view._world(scene.get("ball", {}))
+	return Vector3(dir * (50.0 + IN_GOAL), point.y, point.z) if absf(absf(point.x) - 50.0) < 1.0 else point
+
+
+func _start_try(scene: Dictionary, scorer: String, possession: int, holder: String = "") -> void:
 	side = possession
 	dir = 1.0 if side == 0 else -1.0
-	target = view._world(scene.get("ball", {}))
+	target = _try_point(scene)
 	cast.clear()
 	carrier = scorer
+	giver = ""
+	pass_at = 0.0
+	var start: Vector3 = view._actors[scorer].node.position
+	# Le ballon est dans les mains d'un partenaire : il le donne au marqueur par une passe
+	# en retrait, le marqueur venant en soutien ; le ballon ne saute jamais d'un joueur à l'autre.
+	if holder != scorer and view._actors.has(holder) and int(view._actors[holder].side) == side and is_instance_valid(view._actors[holder].rig):
+		giver = holder
+		giver_from = view._actors[holder].node.position
+		var lateral := signf(start.z - giver_from.z)
+		if is_zero_approx(lateral):
+			lateral = 1.0 if giver_from.z < 0.0 else -1.0
+		# Le porteur avance vers la ligne pendant que le soutien arrive ; il s'arrête avant l'en-but.
+		var room := maxf(0.0, (dir * 50.0 - giver_from.x) * dir - 4.0)
+		var advance := 0.0
+		pass_at = 0.6
+		for attempt in 3:
+			receive_at = giver_from + Vector3(dir * (advance - SUPPORT_BACK), 0.0, lateral * SUPPORT_SIDE)
+			receive_at.z = clampf(receive_at.z, -34.0, 34.0)
+			# Le soutien accélère jusqu'à prendre la passe à l'allure où il part vers la ligne.
+			_set_dive(receive_at, false)
+			drive = clampf(PI * 0.5 * dive_from.distance_to(dive_to) / TRY_PACE, 0.6, TRY_RUN_MAX)
+			var launch := maxf(PI * 0.5 * dive_from.distance_to(dive_to) / drive, 3.0)
+			# Il court déjà (SUPPORT_START de son allure de départ) et accélère jusqu'à elle.
+			pass_at = clampf(2.0 * start.distance_to(receive_at) / (launch * (1.0 + SUPPORT_START)), 0.6, maxf(0.6, TRY_HOLD_MAX - 1.6 - drive))
+			advance = minf(minf(GIVER_PACE * pass_at / 1.5, GIVER_ADVANCE), room)
+		_enlist(giver, "giver", Vector3.ZERO, 0.0, side)
+		cast[giver]["advance"] = advance
+		start = receive_at
 	_enlist(scorer, "scorer", Vector3.ZERO, 0.0, side)
-	_set_dive(view._actors[scorer].node.position, false)
-	# Course puis plongeon (profil en sinus : pointe π/2 × distance / durée, au plus 7,5 m/s).
-	drive = clampf(PI * 0.5 * dive_from.distance_to(dive_to) / 7.5, 0.6, 3.0)
+	_set_dive(start, false)
+	# Course puis plongeon (profil en sinus : pointe π/2 × distance / durée, au plus TRY_PACE) ;
+	# une longue échappée n'est pas accélérée pour tenir dans le plan.
+	drive = clampf(PI * 0.5 * dive_from.distance_to(dive_to) / TRY_PACE, 0.6, TRY_RUN_MAX)
 	# Les trois partenaires les plus proches lèvent les bras ; ils ne sont pas déplacés.
 	var mates: Array = []
 	for id: String in view._actors:

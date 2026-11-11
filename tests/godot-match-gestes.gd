@@ -320,8 +320,10 @@ func run() -> void:
 	check(maul_spread < 3.8, "Le regroupement reste compact : " + str(maul_spread))
 	check(maul_pitch > 0.2, "Les liés poussent buste engagé : " + str(maul_pitch))
 	check(try_checked, "L'essai prolonge le ballon porté")
-	var try_point := Vector3(float(frames[at_try].scene.ball.x) - 50.0, 0.0, float(frames[at_try].scene.ball.y) - 35.0)
-	check(grounded.is_finite() and Vector3(grounded.x, 0.0, grounded.z).distance_to(try_point) < 0.01 and grounded.y < 0.2, "Ballon aplati au point d'essai du moteur : " + str(grounded))
+	# Point d'essai du moteur (sur la ligne), reporté de Gestes.IN_GOAL mètres dans l'en-but : on voit l'essai.
+	var line_x := float(frames[at_try].scene.ball.x) - 50.0
+	var try_point := Vector3(line_x + signf(line_x) * Gestes.IN_GOAL, 0.0, float(frames[at_try].scene.ball.y) - 35.0)
+	check(grounded.is_finite() and Vector3(grounded.x, 0.0, grounded.z).distance_to(try_point) < 0.01 and grounded.y < 0.2 and absf(grounded.x) > 50.5 and absf(grounded.x) < 55.0, "Ballon aplati dans l'en-but, dans l'axe du point d'essai du moteur : " + str(grounded))
 	check(scorer_pitch > 1.2 and scorer_hands < 0.3, "Le marqueur est allongé, mains sur le ballon : %s / %s" % [scorer_pitch, scorer_hands])
 	check(cheering >= 3, "Les partenaires lèvent les bras : " + str(cheering))
 	check(waited > 6.0, "Le match attend la fin des gestes : " + str(waited))

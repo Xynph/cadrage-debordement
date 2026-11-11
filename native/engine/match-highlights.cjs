@@ -100,7 +100,7 @@ function normaliser(events){
   // Transformation : fait structuré de l'essai, sinon lue dans le score (7 ou 5 points).
   const transformation=kind!=='try'?null:typeof s.conversion==='boolean'?s.conversion:equipe!==null&&score[equipe]-avant[equipe]===7;
   lignes.push({i,kind,type:e.type||'play',periode,min,minute,equipe,possession,x,depuis,transformation,
-   touche:s?Number.isFinite(s.from?.y)&&s.from.y<=4:false,move:s?.move||null,incident:s?.incident===true,
+   touche:s?Number.isFinite(s.from?.y)&&s.from.y<=4:false,move:s?.move||null,porte:s?.porte===true,incident:s?.incident===true,
    scoreAvant:avant,scoreApres:score,essaisAvant,essaisApres:essais,cause:cause(e),
    bandeau:BANDEAUX.has(kind)||kind==='card'&&!s?.incident||kind==='miss'&&e.type!=='miss'});
  }
@@ -140,7 +140,7 @@ function action(l,lignes){
  if(k==='touch'&&l.cause==='50-22')return {type:'cinquante_22',base:64};
  if(k==='lineout'&&d!==null&&d<=10)return {type:'touche_5m',base:60-(d>6?6:0),lancement:true};
  if(k==='scrum'&&l.type==='setup'&&d!==null&&d<=10)return {type:'melee_5m',base:58-(d>6?6:0),lancement:true};
- if(k==='setpiece-win'&&l.move==='maul'&&d!==null&&d<=22)return {type:'ballon_porte',base:d<=10?58:50};
+ if(k==='setpiece-win'&&(l.move==='maul'||l.porte)&&d!==null&&d<=22)return {type:'ballon_porte',base:d<=10?58:50};
  if(k==='carry'&&l.depuis!==null&&d!==null){
   const gain=Math.abs(l.x-l.depuis),entree=d<=22&&distanceLigne(l.equipe,l.depuis)>22;
   if(gain>=22)return {type:'franchissement',base:entree?60:50};
@@ -200,7 +200,7 @@ function mouvementPlan(l){
 }
 function dureePlan(l){
  if(l.bandeau)return 0;
- if(l.kind==='setpiece-win')return (l.touche?DUREES['setpiece-win-touche']:DUREES['setpiece-win-melee'])+(l.move==='maul'?DUREES.maul:0);
+ if(l.kind==='setpiece-win')return (l.touche?DUREES['setpiece-win-touche']:DUREES['setpiece-win-melee'])+(l.move==='maul'||l.porte?DUREES.maul:0);
  if(l.kind==='carry')return mouvementPlan(l)+DUREES.carry;
  return DUREES[l.kind]??0;
 }
