@@ -70,3 +70,14 @@ après sélection explicite de son onglet Aperçu.
 Sans filtre, les wrappers conservent tous leurs scénarios ; aucune durée
 cumulée sous 180 s n’est revendiquée. La recette distante doit fournir un seul
 sélecteur par invocation et conserver le plafond Node de 180 s.
+
+## Réception locale interface management
+
+Le premier scénario isolé est désormais qualifié : `CD_LAYOUT_CASE=management`,
+**857 contrôles, aucun échec**, Node complet **125,846 s**, attente du verrou
+0 s. Le [reçu](qa-sdk-preloads-20261111-layout-final/interface-management-receipt.json),
+le [rapport](qa-sdk-preloads-20261111-layout-final/interface-management-report.json),
+les [sources figées](qa-sdk-preloads-20261111-layout-final/interface-management-source-manifest.json)
+et le [log complet](qa-sdk-preloads-20261111-layout-final/interface-management.log)
+sont archivés. Le SHA du GD effectivement exécuté correspond au gel diagnostic.
+Le cas Journal reste séparément à recevoir ; ce résultat ne le qualifie pas.
