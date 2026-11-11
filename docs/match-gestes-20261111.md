@@ -4,6 +4,99 @@ Seconde moitié de la « tranche de démonstration » : une touche, un ballon po
 un essai, reconnaissables sans légende. Branche `claude/tranche-demo-match-20261111`,
 partie de `fe79c365` (tête de la PR 539).
 
+**Cette branche contient la PR #555** (scène de touche conforme à la loi 18,
+ballon dans les mains du lanceur, avants en marche dès la sortie en touche),
+fusionnée normalement : voir `docs/touche-cote-alignement-20261111.md`.
+
+## Lot 3 : temps morts coupés, touche lue dans la scène du moteur
+
+Consigne de Léo (relayée le 11 novembre) : montrer le match comme Football Manager,
+**sauter les temps morts** plutôt que les animer. Avec `CD_MATCH_GESTES=1` :
+
+- **Sortie en touche** : court plan de fin d'action (0,7 s, `OUT_SHOT`, le direct
+  attend) ; le ballon sort, les joueurs repartent à allure de course vers leur place
+  de la scène (avants à mi-chemin de l'alignement, #555).
+- **Coupe de réalisation** (`cut_to_restart` / `_cut` dans `match_gestes.gd`) : si un
+  joueur au moins est à plus de 11 m (`CUT_BEYOND`) de sa place, la vue coupe sur la
+  remise en jeu **déjà en place** : chacun réapparaît à 1,2 m au plus de sa place,
+  déjà tourné, le lanceur ballon en main, la caméra posée d'un coup sur le plan
+  rapproché (comme un changement de plan télé, coupe franche : aucun fondu, aucun
+  élément graphique ajouté). Puis **1 s de lecture** (`SETTLE`) : derniers pas
+  (1,5 m/s au plus), et le direct reprend pour le lancer. Personne ne traverse le
+  terrain à l'écran.
+- La même coupe sert aux autres remises en jeu quand la mise en place serait une
+  longue course : **mêlée, renvoi au centre, renvoi aux 22, renvoi sur la ligne**
+  (scènes `scrum`, `kickoff`, `drop22`, `goalLine`) ; 1 s de lecture puis le direct
+  reprend. Pénalité : pas de coupe (la scène suivante décide, voir limites).
+- **Mise en place courte** (tous à 11 m au plus) : pas de coupe ; chacun court à
+  6,5 m/s de pointe (avants) ou 7,5 m/s (autres), le direct attend le plus long
+  trajet (2 à 3 s).
+- Pendant les gestes, les joueurs qui ne sont pas mis en scène (arrières, avants
+  libérés du ballon porté) **suivent leur place de la scène à allure de course**
+  au lieu de la transition de 0,55 s de la vue (qui les faisait traverser à
+  50–75 m/s). Jonction au ballon porté, pivot du groupe et plongeon réglés de même
+  (pointe 5 à 7,5 m/s).
+
+Accordé à #555 :
+
+- **Détection de la touche** par le journal (`_is_lineout`) : la scène `lineout`, ou
+  la touche gagnée/perdue que le moteur enregistre juste après la mise en place
+  d'une touche. Plus aucune lecture de `origin.y == 4` (ni dans le générateur de la
+  séquence de test).
+- **Places lues dans la scène du moteur** (loi 18) : lanceur sur la marque et la
+  ligne de touche, vis-à-vis, rangées à 0,5 m de la ligne de remise en jeu (couloir
+  d'un mètre), receveurs, non-participants. Le sauteur et ses deux porteurs prennent
+  trois places voisines au milieu de la rangée ; les autres avants, les places
+  restantes. Les porteurs se resserrent à 0,7 m du sauteur au moment du saut.
+  Constantes propres supprimées (couloir 1,2 m, vis-à-vis à `y = 2,6`, demi à 2,8 m,
+  places `LINE_Z`) ; marque bornée à [5, 95] comme la scène.
+- Ballon : à la coupe, déjà dans les mains du lanceur ; sans coupe, remis au lanceur
+  pendant les 1,6 dernières secondes de la mise en place.
+- Séquence de test régénérée (seules les scènes `touch` et `lineout` changent).
+
+### Captures du lot 3 (1920×1080, caméras du jeu, gestes activés)
+
+Séquence réelle (club 2 du harnais, 76e minute) rejouée au rythme du direct ; une
+image prise à 0,5 / 0,9 / 1,3 s (mêlée, sortie en touche, plan de fin d'action),
+puis 1,4 s (**juste après la coupe** : alignement formé, lanceur ballon au-dessus de
+la tête), 2,0 / 2,4 s (derniers pas), 2,9 / 3,4 s (lancer, prise portée), 6 / 10 s
+(ballon porté), 12,5 / 13,8 s (essai aplati, bras levés).
+
+- caméra TV : ![Séquence TV, lot 3](match-gestes-20261111/lot3-sequence-camera-tv.jpg)
+- caméra action : ![Séquence action, lot 3](match-gestes-20261111/lot3-sequence-camera-action.jpg)
+- image de la coupe, caméra TV : ![Coupe sur la touche formée](match-gestes-20261111/lot3-coupe-touche-formee-camera-tv.jpg)
+- prise portée, caméra action : ![Prise](match-gestes-20261111/lot3-prise-camera-action.jpg)
+
+Lecture critique : la coupe se lit comme un changement de plan (on passe du plan
+large, ballon sorti, au plan rapproché de l'alignement formé) ; plus personne ne
+traverse le terrain. Le couloir d'un mètre laisse les deux rangées presque au contact
+à l'écran (distance réglementaire). En caméra TV, la dernière paire de la rangée
+(14,5 m) touche le bord bas de l'image. Le sauteur ne se distingue des autres qu'au
+moment du saut. Les plans larges d'avant la coupe (sortie en touche) montrent encore
+les gradins en haut de l'image : cadrage d'origine de la caméra TV, inchangé.
+
+### Allure de pointe mesurée, par joueur
+
+Sonde hors dépôt (`mesure-allure.gd`) : la vraie vue de match rejoue la séquence du
+moteur au rythme du direct (pas fixe 1/30 s, 1920×1080), de la sortie en touche à
+l'essai compris ; vitesse au sol de chaque joueur d'une image à l'autre, comptée
+seulement s'il est à l'écran ; l'image d'une coupe n'est pas un déplacement.
+
+| Caméra TV | Avant (`b25c0aab`, gestes) | Après (gestes) | Vue par défaut avant | Vue par défaut après |
+| --- | --- | --- | --- | --- |
+| Pointe la plus haute à l'écran | 76,5 m/s | **7,5 m/s** | 63,5 m/s | 73,9 m/s |
+| Joueurs au-delà de 8,3 m/s | 25 / 30 | **0 / 30** | 24 / 30 | 25 / 30 |
+| Sortie en touche / touche / touche gagnée / essai | 63,5 / 33,1 / 76,5 / 11,8 | 7,5 / 1,5 / 7,5 / 7,2 | 63,5 / 43,9 / 52,9 / 52,9 | 55,7 / 46,7 / 73,9 / 65,6 |
+
+Caméra action, après : mêmes valeurs (pointe 7,5 m/s, 0 joueur au-delà de 8,3 m/s).
+Coupes : sur la touche formée (1,4 s après le début) et sur le renvoi (14,2 s). Durée
+de la séquence avec gestes : 16,7 s (16,3 s avant).
+
+**Sans la variable, la vue par défaut n'est pas corrigée** : elle garde sa transition
+de 0,55 s, et les places conformes de #555 allongent certains trajets (touche gagnée :
+52,9 → 73,9 m/s). Corriger la vue par défaut changerait le rythme de tous les matchs
+(attente à chaque remise en jeu) : décision laissée à Léo, avec le mode « temps forts ».
+
 ## Ce qui est fait
 
 Trois gestes, tous déclenchés par des faits que le moteur produit déjà. Rien
@@ -11,7 +104,7 @@ n'est décidé côté Godot : ni vainqueur, ni porteur, ni marqueur, ni point de
 
 | Geste | Fait du moteur qui le déclenche | Ce que l'on voit |
 | --- | --- | --- |
-| Touche avec porteurs | scène `lineout` (alignement), puis `setpiece-win` ou `setpiece-loss` dont l'origine est une touche | Deux lignes séparées par un couloir entre les 5 et les 15 mètres, talonneur en touche ballon au-dessus de la tête, lancer vissé, deux blocs de saut portés, prise à deux mains par l'équipe que le moteur désigne, bloc adverse battu |
+| Touche avec porteurs | scène `lineout` (alignement, places de la scène), puis `setpiece-win` ou `setpiece-loss` qui suit la mise en place d'une touche dans le journal | Deux lignes séparées par un couloir entre les 5 et les 15 mètres, talonneur en touche ballon au-dessus de la tête, lancer vissé, deux blocs de saut portés, prise à deux mains par l'équipe que le moteur désigne, bloc adverse battu |
 | Ballon porté | même fait `setpiece-win`, combinaison `maul` du carnet de jeu | Le sauteur redescend, le ballon passe à l'arrière, les avants se lient buste engagé, trois adversaires s'opposent, le regroupement avance jusqu'au point de ballon du moteur |
 | Essai aplati | scène `try` | Le marqueur désigné par le moteur se détache, plonge bras tendus, ballon posé au point d'essai du moteur ; ses partenaires lèvent les bras. Hors ballon porté, le marqueur plonge seul et les trois partenaires les plus proches lèvent les bras |
 
@@ -90,13 +183,9 @@ Avec les caméras du jeu, sans vue rapprochée :
 - **En caméra TV, le recadrage rapproche la vue de celle de la caméra action** :
   c'est voulu (c'est la distance où les postures se lisent), mais pendant un geste
   les deux caméras se ressemblent.
-- **Mise en place** : les joueurs proches (moins de 15 m) rejoignent l'alignement
-  en 1,2 à 2 s à allure de course (pointe 9 m/s au plus). Mais dans cette séquence,
-  six avants de l'équipe qui lance partent de positions schématiques du moteur
-  situées de 19 à 42 m de l'alignement (ligne défensive étalée sur toute la
-  largeur) : ils traversent encore le terrain beaucoup trop vite (environ 26 m/s
-  en pointe, contre 69 m/s avant). Ce n'est pas réglable proprement côté
-  présentation sans allonger fortement l'attente ; voir « Prochaine étape ».
+- **Mise en place** (lot 3) : plus de traversée du terrain. Sortie en touche, coupe
+  sur l'alignement formé, une seconde de lecture, lancer. Voir « Lot 3 » ; avant ce
+  lot, six avants traversaient 19 à 42 m en 2 s (environ 26 m/s).
 - **Jambes du ballon porté** : petits pas d'appui plantés en arrière du bassin, genoux
   fléchis, bassin abaissé. Mieux que la marche raide, et lisible à distance ; en vue
   rapprochée, les adversaires gardent les jambes assez tendues vers l'arrière et le
@@ -147,10 +236,10 @@ Avec les caméras du jeu, sans vue rapprochée :
 
 ### Rythme
 
-- Mise en place de l'alignement : 2 s au plus (0,9 s avant). Chaque joueur a sa propre
-  durée (distance / 4,2 m/s, entre 1,2 et 2 s) : les plus proches arrivent puis
-  attendent. Profil de course à allure tenue (pointe 1,25 fois la moyenne, au lieu
-  de 1,5 fois). Lancer, prise et redescente gardent leur durée, décalés d'autant.
+- Mise en place de l'alignement (lot 3) : coupe et 1 s de lecture au-delà de 11 m ;
+  sinon course à 6,5 m/s de pointe (avants) ou 7,5 m/s (autres), chacun à sa durée,
+  le direct attend le plus long trajet. Profil de course à allure tenue (pointe
+  1,25 fois la moyenne). Lancer, prise et redescente gardent leur durée.
 - Ballon porté : 2 m/s de moyenne (au plus 6 s) au lieu d'environ 2,9 m/s, avec le
   même profil à allure tenue.
 - Jambes des pousseurs : bassin abaissé de 12 cm, inclinaison 0,38 rad, pied d'appui
@@ -179,7 +268,9 @@ dans la présentation : équipe qui lance fournie par le moteur (« ne pas inven
 lanceur »), alignement entre les 5 et les 15 mètres, couloir entre les lignes,
 talonneur adverse à deux mètres, maul avec porteur debout lié à au moins un
 partenaire et un adversaire, maul jamais écroulé (le marqueur s'en détache), ballon
-aplati sur la ligne de but. Ce lot : référence relue à nouveau (lois 16, 18, 21) ; les
+aplati sur la ligne de but. Lot 3 : places de touche lues dans la scène du moteur,
+conforme à la loi 18 (#555, texte World Rugby en ligne relu pour cette PR), couloir
+d'un mètre contrôlé par le test. Lot 2 : référence relue à nouveau (lois 16, 18, 21) ; les
 pousseurs fléchissent les jambes mais restent debout, bassin abaissé de 12 cm
 seulement (un maul n'est pas écroulé, loi 16) ; le recadrage ne change rien aux
 faits montrés. **Non vérifié** : le texte en ligne de World Rugby n'a
@@ -191,8 +282,9 @@ des non-participants) ne sont pas mesurées par un test.
 ```
 # séquence du moteur (déjà dans le dépôt, vérifiée par le test)
 node tests/godot-match-gestes-scenes.cjs > tests/fixtures/match-gestes-sequence.json
-# test sans affichage : 125 contrôles (dont caméra : début et fin avec le geste,
-# retour à l'identique, aucune différence sans la variable, pas d'à-coup)
+# test sans affichage : 129 contrôles (dont caméra : début et fin avec le geste,
+# retour à l'identique, aucune différence sans la variable, pas d'à-coup hors coupes ;
+# places de la scène, deux coupes, personne au-delà de 8 m/s à l'écran)
 CD_GODOT_EXE=<godot> node --test tests/godot-match-gestes.cjs
 # captures (affichage requis : Windows, X11 ou Xvfb)
 CD_MATCH_GESTES_PROOF=<dossier> <godot> --path native/godot --script ../../tests/godot-match-gestes-capture.gd
@@ -242,15 +334,20 @@ fixe (1/30 s), donc indépendantes de la vitesse de rendu.
   caméra action, par quelques contrôles, mais sans capture.
 - Le confort réel (mal des transports, ressenti du pivot TV) n'a pas été jugé sur
   écran à 60 images/s : seulement des images fixes et des mesures image par image.
-- Les courses de mise en place de plus de 15 m restent irréalistes (voir lecture
-  critique).
+- Coupe de réalisation : coupe franche seulement (pas de fondu : il faudrait un
+  élément d'habillage, décision de direction artistique). Pénalité et touche rapide :
+  pas de coupe. Mêlée et renvois coupés seulement au-delà de 11 m, sans geste propre
+  (les joueurs y sont à leur place de la scène, schématique).
+- Mise en place courte (moins de 11 m) : contrôlée par un test construit, pas
+  rencontrée dans la séquence réelle capturée.
+- Vue par défaut (sans la variable) : transitions de 0,55 s inchangées, joueurs
+  toujours à 50–75 m/s sur ces scènes.
 
 ## Prochaine étape
 
 - Faire juger le recadrage en mouvement, sur un vrai écran, avant d'en faire le
   comportement par défaut (en particulier le pivot de 20° de la caméra TV).
-- Mise en place des touches : demander au moteur (ou à l'adaptateur de scène) que
-  la scène de sortie en touche rapproche déjà les avants de l'alignement ; la
-  présentation ne peut pas rendre plausible une course de 40 m en 2 s.
+- Mode « temps forts » (conçu en parallèle) : réutiliser `cut_to_restart` comme
+  transition entre deux temps forts, et décider si la vue par défaut adopte la coupe.
 - Remplacer les poses calculées des jambes (poussée, plongeon) par de vraies
   animations, si une ressource libre convenable est retenue.

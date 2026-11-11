@@ -24,7 +24,7 @@ function sequence() {
       const win = frames[n - 3], score = frames[n - 2];
       // Essai marqué par le ballon porté lui-même (le moteur l'aplatit alors à dix mètres de la touche).
       if (score.scene.kind === 'try' && score.scene.ball.y === 10 && /ballon porté/.test(score.event.text) &&
-          win.scene.kind === 'setpiece-win' && win.event.scene.move === 'maul' && win.scene.origin.y === 4 &&
+          win.scene.kind === 'setpiece-win' && win.event.scene.move === 'maul' &&
           win.event.scene.team === score.event.scene.team && frames[n - 4].scene.kind === 'lineout') {
         // Deux scènes de jeu avant, alignement, touche conservée en ballon porté, essai, scène suivante.
         return { club, frames: frames.slice(Math.max(0, n - 7)).map(frame => ({

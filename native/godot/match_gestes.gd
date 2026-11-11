@@ -4,9 +4,14 @@ extends RefCounted
 ##
 ## Aucune règle, aucun tirage, aucun résultat ici. Chaque geste habille un fait
 ## déjà décidé par le moteur et transmis dans la scène :
-##   - « lineout » : l'alignement se met en place, le talonneur arme son lancer ;
-##   - « setpiece-win » / « setpiece-loss » dont l'origine est une touche (y = 4) :
-##     lancer, deux blocs de saut portés, prise par l'équipe que le moteur désigne ;
+##   - « touch » (sortie en touche) : court plan de fin d'action (ballon sorti),
+##     les joueurs repartent à allure de course vers leur place de la scène ;
+##   - « lineout » : alignement aux places que la scène donne (loi 18). Mise en
+##     place courte : à allure de course ; longue : coupe de réalisation sur
+##     l'alignement déjà formé (cut_to_restart), comme pour les autres remises en
+##     jeu (mêlée, renvois) : le temps mort n'est pas animé ;
+##   - « setpiece-win » / « setpiece-loss » qui suit une mise en place de touche dans
+##     le journal : lancer, deux blocs de saut portés, prise par l'équipe que le moteur désigne ;
 ##   - la combinaison « maul » du même fait (lue dans live.events) : ballon porté
 ##     jusqu'au point de ballon transmis ;
 ##   - « try », avec le marqueur désigné par le moteur.
@@ -16,9 +21,21 @@ extends RefCounted
 
 const Presentation = preload("res://match_presentation.gd")
 
-const FORM := 2.0          # mise en place de l'alignement (au plus ; les plus proches arrivent avant)
-const FORM_PACE := 4.2     # allure moyenne de mise en place, en m/s
-const FORM_MIN := 1.2
+const FORM := 2.0          # instant du geste où l'alignement est en place ; la mise en place commence avant (temps négatif)
+const FORM_MIN := 1.2      # durée minimale d'une course de mise en place
+# Mise en place courte : chacun court à une allure crédible ; le direct attend le plus long trajet.
+const PACE_FORWARD := 6.5  # allure de pointe d'un avant, en m/s
+const PACE_BACK := 7.5     # allure de pointe des autres joueurs
+const PACE_MAX := 8.0      # jamais plus vite à l'écran
+const WALK_MIN := 0.55     # course la plus courte (durée d'une transition ordinaire de la vue)
+const DRIVE_RAMP := 0.2    # part de la course passée à accélérer, puis à freiner
+const PEAK := 1.0 / (1.0 - DRIVE_RAMP)  # pointe / allure moyenne du profil de course
+# Temps mort avant une remise en jeu : coupe de réalisation plutôt qu'une longue course.
+const CUT_BEYOND := 11.0   # au-delà de ce trajet (un joueur au moins), coupe sur la remise en jeu en place
+const OUT_SHOT := 0.7      # plan de fin d'action quand le ballon sort en touche, en secondes
+const SETTLE := 1.0        # après la coupe : temps de lecture, chacun fait ses derniers pas
+const SETTLE_STEP := 1.2   # longueur de ces derniers pas, en mètres au plus
+const RESTARTS := ["scrum", "kickoff", "drop22", "goalLine"]
 const RELEASE := FORM + 0.55   # lancer
 const CATCH := FORM + 1.1      # prise à deux mains au sommet
 const DOWN := FORM + 1.4       # début de la redescente
@@ -27,6 +44,7 @@ const LIFT := 1.05         # élévation du sauteur porté, en mètres
 const MAUL_FORM := 0.7
 const MAUL_START := 0.5
 const MAUL_PACE := 2.0     # allure moyenne du ballon porté, en m/s
+const MAUL_JOIN_PACE := 5.0  # allure de pointe des joueurs qui rejoignent le ballon porté (le groupe avance aussi)
 const STRIDE_CYCLE := 0.6  # ballon porté : un cycle de deux petits pas couvre 0,6 m
 const STANCE := 0.65       # part du cycle où le pied pousse au sol
 const CROUCH := 0.12       # abaissement du bassin des pousseurs, en mètres
@@ -87,10 +105,20 @@ var dive_from := Vector3.ZERO
 var dive_to := Vector3.ZERO
 var dive_axis := Vector3.RIGHT
 var dive_set := false
+var dive_seconds := DIVE_SECONDS
+var turn_seconds := 0.6
 var cheer: Array[String] = []
 var _saved: Dictionary = {}
 var _outro: Dictionary = {}
 var _dt := 1.0 / 60.0
+# Mise en place : début (temps du geste, négatif si elle dure plus de FORM), durée, trajets raccourcis hors champ.
+var form_start := 0.0
+var form_seconds := 0.0
+# Coupes de réalisation faites (compteur, pour les contrôles) et ballon déjà remis au lanceur.
+var cuts := 0
+var _ball_ready := false
+var _velocity: Dictionary = {}
+var _last_lineout: Dictionary = {}
 # État du recadrage : rampe d'entrée/sortie et cible amortie.
 var zoom := 0.0
 var _zoom_mode := ""
@@ -114,17 +142,25 @@ func holding_tick() -> bool:
 	return active() and not done
 
 
+## La vue garde la main sur le ballon pendant la course d'approche et tant que le lanceur ne l'a pas reçu.
+func owns_ball() -> bool:
+	return active() and phase not in ["approche", "reprise"] and not (phase == "touche" and time < 0.0)
+
+
 func stages(id: String) -> bool:
 	return cast.has(id) and cast[id].get("staged", true)
 
 
 func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: bool) -> void:
+	var kind := str(scene.get("kind", ""))
+	if kind == "lineout":
+		# Places d'alignement données par la scène, gardées pour une touche reprise après une pause.
+		_last_lineout = scene
 	if not enabled:
 		cancel()
 		return
 	if not new_action:
 		return
-	var kind := str(scene.get("kind", ""))
 	var possession := int(scene.get("possession", -1))
 	var record := _record(live, scene)
 	var team := int(record.get("team", possession))
@@ -138,20 +174,29 @@ func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: boo
 		if absf(point.z + 25.0) < 0.01 and point.distance_to(_frame().center) < 27.0:
 			_start_maul_try(scene, featured)
 			return
-	if kind in ["setpiece-win", "setpiece-loss"] and _is_lineout(scene):
+	if kind in ["setpiece-win", "setpiece-loss"] and _is_lineout(live, scene):
 		var thrown_by := team if kind == "setpiece-win" else 1 - team
 		var line := _line(scene)
 		if not (phase == "touche" and awaiting and throw_side == thrown_by and is_equal_approx(line, line_x)):
 			cancel()
-			_align(scene, thrown_by)
+			# Alignement non présenté (reprise après une pause) : places de la dernière scène de touche, si c'est la même.
+			if not _last_lineout.is_empty() and is_equal_approx(_line(_last_lineout), line):
+				_align(_last_lineout, thrown_by)
 		if phase == "touche":
 			_resolve(scene, team, featured, kind == "setpiece-win" and str(record.get("move", "")) == "maul")
+		_velocity.clear()
 		return
+	var approaching := phase == "approche"
 	cancel()
 	if kind == "lineout":
 		_align(scene, team)
+	elif kind == "touch" or (kind == "advantage" and approaching):
+		_approach(scene)
+	elif kind in RESTARTS:
+		cut_to_restart(scene)
 	elif kind == "try" and view._actors.has(featured):
 		_start_try(scene, featured, team)
+	_velocity.clear()
 
 
 func cancel() -> void:
@@ -175,6 +220,7 @@ func cancel() -> void:
 	cast.clear()
 	cheer.clear()
 	done = true
+	_ball_ready = false
 
 
 func _ball_in_hands() -> bool:
@@ -207,6 +253,8 @@ func advance(delta: float) -> void:
 			cancel()
 			return
 	time += delta
+	for id: String in cast:
+		cast[id].t = float(cast[id].get("t", 0.0)) + delta
 	if phase == "touche" and awaiting:
 		# Alignement prêt : le match reprend et décidera de la prise.
 		time = minf(time, FORM)
@@ -216,12 +264,18 @@ func advance(delta: float) -> void:
 			_start_maul()
 		else:
 			cancel()
+	elif phase == "approche":
+		# Plan de fin d'action : le ballon sort, puis le direct passe à la remise en jeu.
+		done = time >= OUT_SHOT
+	elif phase == "reprise":
+		if time >= SETTLE:
+			cancel()
 	elif phase == "maul":
 		done = time >= MAUL_START + drive + 0.3
 	elif phase == "essai_maul":
 		if time >= peel and not dive_set:
 			_set_dive(view._actors[carrier].node.position, true)
-		done = time >= maxf(drive, peel + DIVE_SECONDS) + 1.6
+		done = time >= maxf(drive, peel + dive_seconds) + 1.6
 	elif phase == "essai":
 		done = time >= drive + 1.6
 
@@ -245,38 +299,50 @@ func place(id: String, actor: Node3D) -> void:
 	var member: Dictionary = cast[id]
 	var from: Vector3 = member.from
 	var heading_from: float = member.heading
+	var before := actor.position
+	if member.role == "walk":
+		_walk(id, member, actor)
+		_velocity[id] = (actor.position - before) / maxf(_dt, 0.001)
+		return
 	match phase:
+		"reprise":
+			actor.position = _run(member, member.mark)
+			actor.rotation.y = member.facing
 		"touche":
 			var mark: Vector3 = member.mark
 			var facing: float = member.facing
 			var close := smoothstep(FORM + 0.05, FORM + 0.35, time)
-			var arrive: float = member.get("form", FORM)
+			var arrive: float = member.form
+			var t: float = member.t
+			# Les porteurs se resserrent contre le sauteur (0,7 m) au moment de le soulever.
 			if member.role == "lift_front":
-				mark.z += 0.5 * close
+				mark.z += float(member.get("close", 0.0)) * close
 				facing = lerp_angle(PI, 0.0, close)
 			elif member.role == "lift_back":
-				mark.z -= 0.5 * close
+				mark.z -= float(member.get("close", 0.0)) * close
 			# Chacun rejoint sa place à son allure : les plus proches arrivent avant les autres.
-			actor.position = from.lerp(mark, _drive_curve(clampf(time / arrive, 0.0, 1.0)))
+			actor.position = _run(member, mark)
 			var heading := heading_from
 			var travel := mark - from
 			if travel.length() > 1.5:
-				heading = lerp_angle(heading, atan2(travel.x, travel.z), smoothstep(0.0, 0.3, time))
-			var turn := smoothstep(arrive * 0.6, arrive, time) if member.role != "lift_front" else smoothstep(arrive * 0.6, FORM + 0.35, time)
+				heading = lerp_angle(heading, atan2(travel.x, travel.z), smoothstep(0.0, 0.3, t))
+			var turn := smoothstep(arrive * 0.6, arrive, t) if member.role != "lift_front" else smoothstep(arrive * 0.6, FORM + 0.35 - form_start, t)
 			actor.rotation.y = lerp_angle(heading, facing, turn)
+			_velocity[id] = (actor.position - before) / maxf(_dt, 0.001)
 		"maul", "essai_maul":
 			var frame := _frame()
 			var slot: Vector2 = member.slot
 			if member.has("slot_from"):
-				slot = (member.slot_from as Vector2).lerp(slot, smoothstep(0.0, 0.5, time))
+				slot = (member.slot_from as Vector2).lerp(slot, smoothstep(0.0, float(member.get("swap", 0.5)), time))
 			var spot: Vector3 = frame.center + frame.u * slot.x + frame.r * slot.y
 			var facing := atan2(frame.u.x, frame.u.z) + (PI if member.role == "opp_pack" else 0.0)
 			if phase == "maul":
-				actor.position = from.lerp(spot, smoothstep(0.0, MAUL_FORM, time))
+				# Chacun rejoint le regroupement à allure de course : les plus éloignés se lient après.
+				actor.position = from.lerp(spot, smoothstep(0.0, float(member.get("join", MAUL_FORM)), time))
 				actor.rotation.y = lerp_angle(heading_from, facing, smoothstep(0.0, 0.5, time))
 			elif id == carrier and dive_set:
 				# Il se détache de la queue, contourne le regroupement puis plonge droit.
-				var k := smoothstep(0.0, 1.0, (time - peel) / DIVE_SECONDS)
+				var k := smoothstep(0.0, 1.0, (time - peel) / dive_seconds)
 				actor.position = dive_from.lerp(dive_to, k)
 				var line := dive_to - dive_from
 				var around := lerp_angle(facing, atan2(line.x, line.z), smoothstep(0.0, 0.25, k))
@@ -318,7 +384,7 @@ func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, m
 	if not FRAME_MIN.has(mode):
 		reset_framing()
 		return [focus, size, offset]
-	var wanted := active()
+	var wanted := active() and phase not in ["approche", "reprise"]
 	var leap := delta > 0.0 and Vector2(focus.x - _zoom_focus.x, focus.z - _zoom_focus.z).length() > FRAME_LEAP * delta
 	_zoom_focus = focus
 	if not wanted and zoom <= 0.0:
@@ -386,7 +452,8 @@ func _frame_points() -> Array[Vector3]:
 		"touche":
 			# Les deux lignes, le lanceur, les demis ; le sauteur porté au sommet.
 			for id: String in cast:
-				ground.append(cast[id].mark)
+				if cast[id].role != "walk":
+					ground.append(cast[id].mark)
 			if not jumper.is_empty() and cast.has(jumper):
 				ground.append(cast[jumper].mark + Vector3.UP * (LIFT + 2.3 - tall))
 		"maul", "essai_maul":
@@ -433,6 +500,11 @@ static func _damp1(current: float, goal: float, speed: float, delta: float) -> A
 
 func _pose_touche() -> void:
 	var ball: Node3D = view._ball
+	if time < 0.0:
+		# Mise en place encore longue : la vue laisse le ballon à la marque ; il est remis au lanceur ensuite.
+		ball_from = ball.global_position
+		ball_from_basis = ball.global_basis
+		return
 	var lift := LIFT * smoothstep(FORM + 0.35, FORM + 0.95, time) * (1.0 - smoothstep(DOWN, DOWN + 0.45, time))
 	_body(jumper, 0.0, lift)
 	var jump: Dictionary = view._actors[jumper]
@@ -450,9 +522,10 @@ func _pose_touche() -> void:
 		lean = lerpf(-0.16, 0.22, (wind - 0.6) / 0.4) * (1.0 - smoothstep(RELEASE + 0.2, RELEASE + 0.7, time))
 	_bend(thrower, lean)
 	if time < RELEASE:
-		ball.global_position = ball_from.lerp(hands, smoothstep(0.0, FORM * 0.8, time))
+		var given := 1.0 if _ball_ready else smoothstep(0.0, FORM * 0.8, time)
+		ball.global_position = ball_from.lerp(hands, given) + Vector3.UP * sin(given * PI) * minf(2.0, ball_from.distance_to(hands) * 0.15)
 		ball.global_basis = ball_from_basis.slerp(pitcher.node.global_basis.orthonormalized(), smoothstep(0.0, FORM * 0.8, time))
-		_hold(thrower, ball.global_position if time > FORM * 0.8 else hands, smoothstep(0.2, FORM * 0.8, time))
+		_hold(thrower, ball.global_position if time > FORM * 0.8 or _ball_ready else hands, 1.0 if _ball_ready else smoothstep(0.2, FORM * 0.8, time))
 		release_point = hands
 	else:
 		var follow: Vector3 = pitcher.node.global_position + pitcher.node.global_basis * Vector3(0.0, 1.85, 0.6)
@@ -506,7 +579,9 @@ func _pose_touche() -> void:
 func _pose_maul() -> void:
 	var weight := smoothstep(0.15, MAUL_FORM, time)
 	for id: String in cast:
-		_bind(id, weight)
+		if cast[id].role != "walk":
+			var join: float = cast[id].get("join", MAUL_FORM)
+			_bind(id, weight if join <= MAUL_FORM else smoothstep(join - 0.55, join, time))
 	var ball: Node3D = view._ball
 	var from: Dictionary = view._actors[jumper]
 	var to: Dictionary = view._actors[carrier]
@@ -522,12 +597,12 @@ func _pose_maul_try() -> void:
 	var push := 1.0 - smoothstep(drive, drive + 0.5, time)
 	var joy := smoothstep(drive + 0.25, drive + 0.7, time)
 	for id: String in cast:
-		if id == carrier:
+		if id == carrier or cast[id].role == "walk":
 			continue
 		_bind(id, push)
 		if joy > 0.0 and cast[id].team == side:
 			_cheer(id, joy)
-	var dive := smoothstep(0.55, 1.0, (time - peel) / DIVE_SECONDS) if dive_set else 0.0
+	var dive := smoothstep(0.55, 1.0, (time - peel) / dive_seconds) if dive_set else 0.0
 	if dive <= 0.0:
 		# Le marqueur quitte sa posture de poussée en douceur avant de se détacher.
 		_ease_body(carrier, 0.2, 0.0)
@@ -570,7 +645,7 @@ func _grounded() -> Vector3:
 ## Posture de poussée liée : buste engagé, bras vers le partenaire de devant.
 func _bind(id: String, weight: float) -> void:
 	var member: Dictionary = cast[id]
-	if member.role == "half":
+	if member.role in ["half", "walk"]:
 		return
 	var entry: Dictionary = view._actors[id]
 	var actor: Node3D = entry.node
@@ -674,7 +749,7 @@ func _frame() -> Dictionary:
 		k = _drive_curve(clampf((time - MAUL_START) / drive, 0.0, 1.0))
 	else:
 		k = smoothstep(0.0, 1.0, clampf(time / drive, 0.0, 1.0))
-		angle = lerp_angle(axis_from, axis_to, smoothstep(0.0, 0.6, time))
+		angle = lerp_angle(axis_from, axis_to, smoothstep(0.0, turn_seconds, time))
 	var u := Vector3(sin(angle), 0.0, cos(angle))
 	var r := Vector3(-u.z, 0.0, u.x)
 	if r.z < 0.0:
@@ -684,7 +759,7 @@ func _frame() -> Dictionary:
 
 ## Course ou poussée : mise en mouvement, allure tenue, arrêt ; vitesse de pointe 1,25 fois la moyenne.
 static func _drive_curve(t: float) -> float:
-	const RAMP := 0.2
+	const RAMP := DRIVE_RAMP
 	var peak := 1.0 / (1.0 - RAMP)
 	if t < RAMP:
 		return 0.5 * peak * t * t / RAMP
@@ -694,51 +769,82 @@ static func _drive_curve(t: float) -> float:
 
 
 func _line(scene: Dictionary) -> float:
-	return clampf(float(scene.origin.x), 6.0, 94.0) - 50.0
+	# Marque bornée comme dans la scène du moteur (loi 18 : jamais à moins de 5 m d'une ligne de but).
+	return clampf(float(scene.origin.x), 5.0, 95.0) - 50.0
 
 
-## Alignement des deux équipes : sauteur, deux porteurs, autres avants, demi de mêlée.
+## Alignement des deux équipes aux places que donne la scène de touche du moteur
+## (loi 18) : lanceur, vis-à-vis, rangées, receveurs, non-participants. Les rôles
+## sans équivalent dans le moteur (sauteur, porteurs) prennent trois places voisines
+## de la rangée ; les autres avants occupent les places restantes, dans l'ordre des postes.
 func _align(scene: Dictionary, thrown_by: int) -> void:
 	var by_slot: Array[Dictionary] = [{}, {}]
+	var spot := {}
+	var slot_of := {}
+	var team_of := {}
 	for player: Dictionary in scene.get("players", []):
 		var id := str(player.get("id", ""))
 		var team := int(player.get("side", -1))
 		if team in [0, 1] and view._actors.has(id) and is_instance_valid(view._actors[id].rig):
 			by_slot[team][int(player.get("slot", -1))] = id
-	if not by_slot[thrown_by].has(1) or not _is_lineout(scene):
+			spot[id] = view._world(player)
+			slot_of[id] = int(player.get("slot", -1))
+			team_of[id] = team
+	if not by_slot[thrown_by].has(1):
 		return
 	cast.clear()
 	line_x = _line(scene)
 	throw_side = thrown_by
 	jumpers = ["", ""]
+	_ball_ready = false
 	for team in 2:
 		var own: Dictionary = by_slot[team]
 		var facing := 1.0 if team == 0 else -1.0
-		var x := line_x - facing * 0.6
 		if own.has(1):
 			if team == thrown_by:
 				thrower = own[1]
-				_enlist(thrower, "thrower", Vector3(line_x, 0.0, -35.7), 0.0, team)
+				_enlist(thrower, "thrower", spot[thrower], 0.0, team, PACE_FORWARD)
 			else:
-				# Talonneur adverse : à deux mètres de la ligne de remise en jeu, dans le couloir des cinq mètres.
-				_enlist(own[1], "line", Vector3(line_x - facing * 2.0, 0.0, -32.4), PI, team)
+				# Talonneur adverse : à deux mètres de la ligne de remise en jeu et de la ligne des 5 m.
+				_enlist(own[1], "line", spot[own[1]], PI, team, PACE_FORWARD)
+		var row: Array[int] = []
+		var places: Array[Vector3] = []
+		for slot in [0, 2, 3, 4, 5, 6, 7]:
+			if own.has(slot):
+				row.append(slot)
+				places.append(spot[own[slot]])
+		places.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.z < b.z)
 		var jumper_slot := 4 if own.has(4) else 3
 		var lifters: Array[int] = []
 		for slot in [0, 2, 3, 5, 6, 7]:
 			if slot != jumper_slot and own.has(slot) and lifters.size() < 2:
 				lifters.append(slot)
-		if own.has(jumper_slot) and lifters.size() == 2:
+		var free: Array[Vector3] = places.duplicate()
+		if own.has(jumper_slot) and lifters.size() == 2 and places.size() >= 3:
+			var c := clampi(places.size() / 2, 1, places.size() - 2)
 			jumpers[team] = own[jumper_slot]
-			_enlist(own[jumper_slot], "jumper", Vector3(x, 0.0, -26.0), PI, team)
-			_enlist(own[lifters[0]], "lift_front", Vector3(x, 0.0, -27.2), PI, team)
-			_enlist(own[lifters[1]], "lift_back", Vector3(x, 0.0, -24.8), PI, team)
-		var place_index := 0
-		for slot in [0, 2, 3, 4, 5, 6, 7]:
-			if own.has(slot) and not cast.has(own[slot]) and place_index < LINE_Z.size():
-				_enlist(own[slot], "line", Vector3(x, 0.0, LINE_Z[place_index]), PI, team)
-				place_index += 1
+			_enlist(own[jumper_slot], "jumper", places[c], PI, team, PACE_FORWARD)
+			_enlist(own[lifters[0]], "lift_front", places[c - 1], PI, team, PACE_FORWARD)
+			_enlist(own[lifters[1]], "lift_back", places[c + 1], PI, team, PACE_FORWARD)
+			cast[own[lifters[0]]].close = maxf(0.0, places[c].z - places[c - 1].z - 0.7)
+			cast[own[lifters[1]]].close = maxf(0.0, places[c + 1].z - places[c].z - 0.7)
+			free = []
+			for index in places.size():
+				if absi(index - c) > 1:
+					free.append(places[index])
+		var next := 0
+		for slot in row:
+			if not cast.has(own[slot]) and next < free.size():
+				_enlist(own[slot], "line", free[next], PI, team, PACE_FORWARD)
+				next += 1
 		if own.has(8):
-			_enlist(own[8], "half", Vector3(x - facing * 2.8, 0.0, -24.5), facing * PI * 0.5, team)
+			_enlist(own[8], "half", spot[own[8]], facing * PI * 0.5, team, PACE_BACK)
+	# Les autres gagnent leur place de non-participant et regardent l'alignement.
+	for id: String in spot:
+		if not cast.has(id):
+			var place: Vector3 = spot[id]
+			_enlist(id, "walk", place, atan2(line_x - place.x, -35.0 - place.z), team_of[id], PACE_FORWARD if int(slot_of[id]) < 8 else PACE_BACK)
+			cast[id].look = true
 	side = thrown_by
 	dir = 1.0 if side == 0 else -1.0
 	jumper = jumpers[side]
@@ -746,9 +852,158 @@ func _align(scene: Dictionary, thrown_by: int) -> void:
 	maul_wanted = false
 	awaiting = true
 	var ball: Node3D = view._ball
-	ball_from = ball.global_position if ball.visible else Vector3(line_x, 1.2, -35.7)
+	ball_from = ball.global_position if ball.visible else spot[thrower]
 	ball_from_basis = ball.global_basis
 	phase = "touche"
+	done = false
+	var farthest := 0.0
+	for id: String in cast:
+		var gap: Vector3 = cast[id].mark - view._actors[id].node.position
+		farthest = maxf(farthest, Vector2(gap.x, gap.z).length())
+	if farthest > CUT_BEYOND:
+		# Temps mort : coupe sur l'alignement déjà formé, lanceur ballon en main.
+		_cut()
+		_ball_ready = true
+		form_seconds = SETTLE
+		form_start = FORM - SETTLE
+		time = form_start
+	else:
+		_schedule()
+
+
+## Mise en place courte (moins de CUT_BEYOND) : chacun court à son allure, au plus
+## PACE_FORWARD ou PACE_BACK ; le direct attend le plus long trajet.
+func _schedule() -> void:
+	var longest := FORM
+	for id: String in cast:
+		_plan(id, cast[id])
+		longest = maxf(longest, cast[id].form)
+	form_seconds = longest
+	form_start = FORM - longest
+	time = form_start
+
+
+## Coupe de réalisation vers une remise en jeu (touche, mêlée, renvoi) : plutôt que
+## d'animer le temps mort, la vue passe d'un plan à l'autre. Chaque joueur de la
+## distribution réapparaît à SETTLE_STEP au plus de sa place, déjà tourné vers elle,
+## et fait ses derniers pas pendant SETTLE ; la caméra coupe avec lui (point suivi
+## et recadrage posés d'un coup). Réutilisable : la distribution (cast) et ses places
+## sont celles du geste en cours.
+func _cut() -> void:
+	_velocity.clear()
+	for id: String in cast:
+		var member: Dictionary = cast[id]
+		var entry: Dictionary = view._actors[id]
+		var actor: Node3D = entry.node
+		var gap: Vector3 = member.mark - actor.position
+		gap.y = 0.0
+		var step := minf(SETTLE_STEP, gap.length())
+		member.from = member.mark - (gap.normalized() * step if gap.length() > 0.01 else Vector3.ZERO)
+		member.heading = member.facing
+		member.t = 0.0
+		member.k0 = 0.0
+		member.form = SETTLE
+		member.dist = step
+		actor.position = member.from
+		actor.rotation.y = member.facing
+		entry.from = member.from
+		entry.velocity = Vector3.ZERO
+		entry.feet.clear()
+	cuts += 1
+	view._camera_cut = true
+	# Recadrage posé d'emblée : la coupe arrive sur le plan rapproché.
+	zoom = 1.0
+	_zoom_mode = ""
+
+
+## Remise en jeu (mêlée, renvoi) dont la mise en place serait une longue course :
+## coupe sur la remise en jeu déjà en place, puis SETTLE de lecture. Rend vrai si
+## la coupe a eu lieu ; sinon la vue garde sa transition ordinaire.
+func cut_to_restart(scene: Dictionary) -> bool:
+	var ball_data: Dictionary = scene.get("ball", {})
+	var aim: Vector3 = view._world(ball_data) if ball_data.has("x") else Vector3.ZERO
+	var farthest := 0.0
+	for player: Dictionary in scene.get("players", []):
+		var id := str(player.get("id", ""))
+		if view._actors.has(id):
+			var gap: Vector3 = view._actors[id].target - view._actors[id].node.position
+			farthest = maxf(farthest, Vector2(gap.x, gap.z).length())
+	if farthest <= CUT_BEYOND:
+		return false
+	cast.clear()
+	for player: Dictionary in scene.get("players", []):
+		var id := str(player.get("id", ""))
+		var team := int(player.get("side", -1))
+		if team in [0, 1] and view._actors.has(id) and is_instance_valid(view._actors[id].rig):
+			var place: Vector3 = view._actors[id].target
+			_enlist(id, "settle", place, atan2(aim.x - place.x, aim.z - place.z), team)
+	if cast.is_empty():
+		return false
+	_cut()
+	zoom = 0.0
+	# Le ballon est déjà à la remise en jeu.
+	view._ball_from = view._ball_target
+	view._ball_travel = 1.0
+	view._ball.position = view._ball_target
+	phase = "reprise"
+	time = 0.0
+	done = false
+	return true
+
+
+## Durée de course d'un joueur (allure de pointe member.peak), départ à sa vitesse actuelle.
+func _plan(id: String, member: Dictionary, forced: float = -1.0) -> void:
+	var along: Vector3 = member.mark - member.from
+	along.y = 0.0
+	var dist := along.length()
+	member.dist = dist
+	member.t = 0.0
+	member.form = forced if forced > 0.0 else maxf(WALK_MIN if member.role == "walk" else FORM_MIN, PEAK * dist / float(member.peak))
+	# Sans arrêt à la reprise : la course part de la vitesse déjà prise dans la bonne direction.
+	var velocity: Vector3 = _velocity.get(id, view._actors[id].get("velocity", Vector3.ZERO))
+	var ahead := velocity.dot(along / dist) if dist > 0.01 else 0.0
+	member.k0 = clampf(maxf(ahead, 0.0) * DRIVE_RAMP * float(member.form) / (PEAK * maxf(dist, 0.01)), 0.0, DRIVE_RAMP)
+
+
+## Position sur la course : profil à allure tenue, repris à la progression k0.
+func _run(member: Dictionary, mark: Vector3) -> Vector3:
+	var k0: float = member.get("k0", 0.0)
+	var k := lerpf(k0, 1.0, clampf(float(member.t) / float(member.form), 0.0, 1.0))
+	var d0 := _drive_curve(k0)
+	return (member.from as Vector3).lerp(mark, (_drive_curve(k) - d0) / maxf(1.0 - d0, 0.001))
+
+
+## Joueur qui suit la place que lui donne la scène, à allure de course ; nouvelle place, nouvelle course.
+func _walk(id: String, member: Dictionary, actor: Node3D) -> void:
+	var goal: Vector3 = view._actors[id].target
+	if not goal.is_equal_approx(member.mark):
+		member.mark = goal
+		member.from = actor.position
+		member.heading = actor.rotation.y
+		member.look = false
+		_plan(id, member)
+	actor.position = _run(member, member.mark)
+	var travel: Vector3 = member.mark - member.from
+	var heading: float = member.heading
+	if travel.length() > 1.5:
+		heading = lerp_angle(heading, atan2(travel.x, travel.z), smoothstep(0.0, 0.3, float(member.t)))
+	if member.get("look", false):
+		heading = lerp_angle(heading, float(member.facing), smoothstep(float(member.form) * 0.6, float(member.form), float(member.t)))
+	actor.rotation.y = heading
+
+
+## Sortie en touche : chacun gagne sa place de la scène à allure de course, sans retenir le direct.
+func _approach(scene: Dictionary) -> void:
+	cast.clear()
+	for player: Dictionary in scene.get("players", []):
+		var id := str(player.get("id", ""))
+		var team := int(player.get("side", -1))
+		if team in [0, 1] and view._actors.has(id) and is_instance_valid(view._actors[id].rig):
+			_enlist(id, "walk", view._actors[id].target, 0.0, team, PACE_FORWARD if int(player.get("slot", -1)) < 8 else PACE_BACK)
+			_plan(id, cast[id])
+	if cast.is_empty():
+		return
+	phase = "approche"
 	time = 0.0
 	done = false
 
@@ -788,11 +1043,15 @@ func _start_maul() -> void:
 	for id: String in cast:
 		var member: Dictionary = cast[id]
 		var actor: Node3D = view._actors[id].node
-		var next := {"from": actor.position, "heading": actor.rotation.y, "staged": true, "team": member.team}
+		if member.role == "walk":
+			keep[id] = member
+			continue
+		var next := {"from": actor.position, "heading": actor.rotation.y, "staged": true, "team": member.team, "peak": member.peak, "t": 0.0}
 		if member.team != side:
-			# Seul le bloc de saut adverse, déjà au contact, s'oppose à la poussée.
+			# Seul le bloc de saut adverse, déjà au contact, s'oppose à la poussée ; les autres
+			# rejoignent leur place de la scène à allure de course.
 			if not front.has(member.role):
-				_release(id)
+				keep[id] = _walker(id, member)
 				continue
 			next.merge({"role": "opp_pack", "slot": front[member.role] + Vector2(1.3, 0.0)})
 		elif front.has(member.role):
@@ -800,7 +1059,7 @@ func _start_maul() -> void:
 		elif member.role == "half":
 			next.merge({"role": "half", "slot": Vector2(-4.0, 0.9)})
 		elif rear.is_empty():
-			_release(id)
+			keep[id] = _walker(id, member)
 			continue
 		else:
 			# Lanceur et autres avants se lient derrière, dans l'ordre d'arrivée.
@@ -811,7 +1070,7 @@ func _start_maul() -> void:
 	var tail := ""
 	var deepest := 1.0
 	for id: String in cast:
-		if cast[id].role == "pack" and cast[id].slot.x < deepest:
+		if cast[id].role == "pack" and (cast[id].slot as Vector2).x < deepest:
 			deepest = cast[id].slot.x
 			tail = id
 	if tail != carrier:
@@ -819,6 +1078,11 @@ func _start_maul() -> void:
 		cast[carrier].slot = cast[tail].slot
 		cast[tail].slot = swapped
 	cast[carrier].role = "tail"
+	# Durée de jonction : pointe de smoothstep = 1,5 × distance / durée, au plus MAUL_JOIN_PACE.
+	for id: String in cast:
+		if cast[id].has("slot"):
+			var spot: Vector3 = center_from + u * (cast[id].slot as Vector2).x + r * (cast[id].slot as Vector2).y
+			cast[id].join = clampf(1.5 * (cast[id].from as Vector3).distance_to(spot) / MAUL_JOIN_PACE, MAUL_FORM, 2.5)
 	phase = "maul"
 	time = 0.0
 	done = false
@@ -837,16 +1101,23 @@ func _start_maul_try(scene: Dictionary, scorer: String) -> void:
 	var u := Vector3(dir * maxf(absf(gap.x), absf(gap.z)), 0.0, gap.z).normalized()
 	center_to = target + aside - u * 0.3
 	axis_to = atan2(u.x, u.z)
+	# Le groupe pivote sans faire courir sa queue (2,3 m du centre) à plus de 3 m/s.
+	turn_seconds = maxf(0.6, 1.5 * absf(angle_difference(axis_from, axis_to)) * 2.3 / 3.0)
 	drive = clampf(center_from.distance_to(center_to) / 2.8, 1.2, 4.0)
 	peel = maxf(drive - DIVE_SECONDS + 0.15, 0.45)
 	previous_carrier = carrier
 	for id: String in cast:
-		cast[id].slot_from = cast[id].slot
+		if cast[id].has("slot"):
+			cast[id].slot_from = cast[id].slot
 	if scorer != carrier:
 		cast[scorer].slot = cast[carrier].slot_from
 		cast[carrier].slot = cast[scorer].slot_from
 		cast[carrier].role = "pack"
 		cast[scorer].role = "tail"
+	# Échange de places à allure de pas (le groupe glisse aussi vers la ligne).
+	for id: String in [scorer, carrier]:
+		if cast.has(id) and cast[id].has("slot_from"):
+			cast[id].swap = maxf(0.5, 1.5 * (cast[id].slot_from as Vector2).distance_to(cast[id].slot) / 3.5)
 	carrier = scorer
 	dive_set = false
 	phase = "essai_maul"
@@ -864,6 +1135,8 @@ func _set_dive(from: Vector3, straight: bool) -> void:
 	dive_from = from
 	dive_to = Vector3(target.x, 0.0, target.z) - h * DIVE_REACH
 	dive_set = true
+	# Plongeon : pointe de smoothstep 1,5 × distance / durée, au plus 7,5 m/s.
+	dive_seconds = maxf(DIVE_SECONDS, 1.5 * Vector2(dive_to.x - from.x, dive_to.z - from.z).length() / 7.5)
 
 
 func _start_try(scene: Dictionary, scorer: String, possession: int) -> void:
@@ -874,7 +1147,8 @@ func _start_try(scene: Dictionary, scorer: String, possession: int) -> void:
 	carrier = scorer
 	_enlist(scorer, "scorer", Vector3.ZERO, 0.0, side)
 	_set_dive(view._actors[scorer].node.position, false)
-	drive = clampf(dive_from.distance_to(dive_to) / 7.5, 0.6, 1.5)
+	# Course puis plongeon (profil en sinus : pointe π/2 × distance / durée, au plus 7,5 m/s).
+	drive = clampf(PI * 0.5 * dive_from.distance_to(dive_to) / 7.5, 0.6, 3.0)
 	# Les trois partenaires les plus proches lèvent les bras ; ils ne sont pas déplacés.
 	var mates: Array = []
 	for id: String in view._actors:
@@ -892,12 +1166,20 @@ func _start_try(scene: Dictionary, scorer: String, possession: int) -> void:
 	done = false
 
 
-func _enlist(id: String, role: String, mark: Vector3, facing: float, team: int) -> void:
+func _enlist(id: String, role: String, mark: Vector3, facing: float, team: int, peak: float = PACE_FORWARD) -> void:
 	var entry: Dictionary = view._actors[id]
-	var form := clampf(Vector2(mark.x - entry.node.position.x, mark.z - entry.node.position.z).length() / FORM_PACE, FORM_MIN, FORM)
-	cast[id] = {"role": role, "team": team, "from": entry.node.position, "heading": entry.node.rotation.y, "mark": mark, "facing": facing, "staged": true, "form": form}
+	cast[id] = {"role": role, "team": team, "from": entry.node.position, "heading": entry.node.rotation.y, "mark": mark, "facing": facing, "staged": true, "peak": peak, "t": 0.0, "form": FORM_MIN, "k0": 0.0}
 	entry.grip = 0.0
 	entry.feet.clear()
+
+
+## Un joueur mis en scène redevient suiveur de sa place dans la scène, à allure de course.
+func _walker(id: String, member: Dictionary) -> Dictionary:
+	var actor: Node3D = view._actors[id].node
+	var next := {"role": "walk", "team": member.team, "from": actor.position, "heading": actor.rotation.y, "mark": view._actors[id].target,
+		"facing": 0.0, "staged": true, "peak": member.get("peak", PACE_BACK), "t": 0.0}
+	_plan(id, next)
+	return next
 
 
 func _featured(scene: Dictionary, possession: int) -> String:
@@ -907,25 +1189,41 @@ func _featured(scene: Dictionary, possession: int) -> String:
 	return ""
 
 
-func _is_lineout(scene: Dictionary) -> bool:
-	var origin: Variant = scene.get("origin")
-	return origin is Dictionary and origin.has("x") and origin.has("y") and absf(float(origin.y) - 4.0) < 0.01
+## Touche : la scène de mise en place elle-même, ou la touche gagnée ou perdue que le
+## moteur enregistre juste après elle dans le journal. À défaut de journal, l'alignement
+## en cours de présentation.
+func _is_lineout(live: Dictionary, scene: Dictionary) -> bool:
+	var kind := str(scene.get("kind", ""))
+	if kind == "lineout":
+		return true
+	if kind not in ["setpiece-win", "setpiece-loss"]:
+		return false
+	var index := _record_index(live, scene)
+	if index > 0:
+		var previous: Variant = live.events[index - 1]
+		return previous is Dictionary and previous.get("scene") is Dictionary and str(previous.scene.get("kind", "")) == "lineout"
+	return index < 0 and phase == "touche" and awaiting
 
 
 ## Fait affiché, retrouvé dans le journal : la clé de scène porte minute et texte.
 func _record(live: Dictionary, scene: Dictionary) -> Dictionary:
+	var index := _record_index(live, scene)
+	return live.events[index].scene if index >= 0 else {}
+
+
+func _record_index(live: Dictionary, scene: Dictionary) -> int:
 	var parser := JSON.new()
 	if parser.parse(str(scene.get("key", ""))) != OK:
-		return {}
+		return -1
 	var key: Variant = parser.data
 	var events: Variant = live.get("events")
 	if not key is Array or key.size() < 2 or not events is Array:
-		return {}
+		return -1
 	for index in range(events.size() - 1, -1, -1):
 		var event: Variant = events[index]
 		if event is Dictionary and event.get("scene") is Dictionary and event.get("text") == key[1] and float(event.get("min", -1)) == float(key[0]):
-			return event.scene
-	return {}
+			return index
+	return -1
 
 
 func _touch(id: String, entry: Dictionary) -> void:

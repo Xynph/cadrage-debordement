@@ -65,7 +65,7 @@ func run() -> void:
 		"size": [size.x, size.y], "club": parsed.get("club"), "images": [], "scenes": []}
 	var started := Time.get_ticks_msec()
 	var render_usec := 0
-	while tail < 1.2 and clock < 40.0:
+	while tail < 1.2 and clock < 60.0:
 		since += STEP
 		if index < frames.size() and since >= TICK and not view.is_presenting_extended_pass():
 			var frame: Dictionary = frames[index]
@@ -95,7 +95,7 @@ func run() -> void:
 			push_error("Écriture impossible : " + name)
 			quit(1)
 			return
-		report.images.append({"file": name, "time": snappedf(clock, 0.01), "phase": phase, "phase_time": snappedf(float(gestes.time), 0.01) if gestes else 0.0})
+		report.images.append({"file": name, "time": snappedf(clock, 0.01), "phase": phase, "phase_time": snappedf(float(gestes.time), 0.01) if gestes else 0.0, "cuts": int(gestes.cuts) if gestes else 0})
 	report["seconds_simulated"] = snappedf(clock, 0.01)
 	report["wall_ms"] = Time.get_ticks_msec() - started
 	report["render_ms_per_image"] = snappedf(render_usec / 1000.0 / maxi(1, report.images.size()), 0.1)

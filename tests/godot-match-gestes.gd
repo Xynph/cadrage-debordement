@@ -140,6 +140,16 @@ func run() -> void:
 	var cuts: Array = []
 	var ball_outside := 0
 	var ball_frames := 0
+	# Allure de chaque joueur à l'écran, image par image, pendant les gestes (mise en place comprise).
+	var last_spots := {}
+	var visible_peak := {}
+	var hidden_jumps := 0
+	var pace_by_phase := {}
+	var screen := Rect2(Vector2.ZERO, Vector2(view.get_viewport().get_visible_rect().size))
+	# Coupes de réalisation : l'image d'après n'est pas un mouvement (ni des joueurs, ni de la caméra).
+	var last_cuts := 0
+	var cut_frames: Array = []
+	var after_cut := 0
 	while index < frames.size() - 1 or gestes.active() or gestes.zoom > 0.0:
 		since += STEP
 		if index < frames.size() - 1 and since >= TICK and not view.is_presenting_extended_pass():
@@ -150,8 +160,31 @@ func run() -> void:
 		clock += STEP
 		if clock > 60.0:
 			break
-		if gestes.active() and geste_started_at < 0.0:
+		if gestes.cuts != last_cuts:
+			last_cuts = gestes.cuts
+			cut_frames.append([snappedf(clock, 0.01), kinds[index]])
+			after_cut = 2
+			last_spots.clear()
+		else:
+			after_cut = maxi(0, after_cut - 1)
+		if gestes.active() and gestes.phase != "approche" and geste_started_at < 0.0:
 			geste_started_at = clock
+		if gestes.active():
+			for id: String in view._actors:
+				var spot: Vector3 = view._actors[id].node.position
+				if last_spots.has(id):
+					var pace: float = Vector2(spot.x - last_spots[id].x, spot.z - last_spots[id].z).length() / STEP
+					var seen: bool = screen.has_point(camera.unproject_position(spot)) or screen.has_point(camera.unproject_position(last_spots[id]))
+					if seen:
+						if pace > float(visible_peak.get(id, 0.0)) and pace > Gestes.PACE_MAX:
+							print("MATCH_GESTES_FAST ", id, " ", gestes.phase, " t=", snappedf(gestes.time, 0.01), " ", snappedf(pace, 0.01))
+						visible_peak[id] = maxf(float(visible_peak.get(id, 0.0)), pace)
+						pace_by_phase[gestes.phase] = snappedf(maxf(float(pace_by_phase.get(gestes.phase, 0.0)), pace), 0.01)
+					elif pace > Gestes.PACE_MAX + 0.3:
+						hidden_jumps += 1
+				last_spots[id] = spot
+		else:
+			last_spots.clear()
 		if gestes.zoom > 0.0 and zoom_started_at < 0.0:
 			zoom_started_at = clock
 		if gestes.zoom > 0.0 and not gestes.active() and geste_started_at < 0.0:
@@ -160,8 +193,9 @@ func run() -> void:
 		if smallest_in.has(gestes.phase):
 			smallest_in[gestes.phase] = minf(smallest_in[gestes.phase], camera.size)
 		if gestes.zoom > 0.0:
-			size_step = maxf(size_step, absf(log(camera.size / last_size)))
-			yaw_step = maxf(yaw_step, last_basis.z.angle_to(camera.global_basis.z))
+			if after_cut == 0:
+				size_step = maxf(size_step, absf(log(camera.size / last_size)))
+				yaw_step = maxf(yaw_step, last_basis.z.angle_to(camera.global_basis.z))
 		elif last_zoom > 0.0:
 			cuts.append([snappedf(clock, 0.01), kinds[index], last_zoom])
 		last_zoom = gestes.zoom
@@ -172,7 +206,7 @@ func run() -> void:
 		var base := Vector3(view._camera_focus.x, 0.0, view._camera_focus.z)
 		var motion := Vector3(aim.x, 0.0, aim.z) - last_aim
 		var base_motion := base - last_base
-		if gestes.zoom > 0.0 and clock > STEP * 2.0:
+		if gestes.zoom > 0.0 and clock > STEP * 2.0 and after_cut == 0:
 			aim_step = maxf(aim_step, motion.distance_to(last_motion) - base_motion.distance_to(last_base_motion))
 		last_motion = motion
 		last_base_motion = base_motion
@@ -191,32 +225,44 @@ func run() -> void:
 		if kind == "lineout" and gestes.phase == "touche" and gestes.awaiting and gestes.done and not aligned:
 			aligned = true
 			var thrower: Node3D = view._actors[gestes.thrower].node
-			check(thrower.position.z < -35.0 and absf(thrower.position.x - (float(frames[index].scene.origin.x) - 50.0)) < 0.01, "Le lanceur est en touche, sur la ligne de remise en jeu")
+			check(thrower.position.z <= -34.99 and absf(thrower.position.x - (float(frames[index].scene.origin.x) - 50.0)) < 0.01, "Le lanceur est sur la ligne de touche, sur la ligne de remise en jeu")
 			check(hands(view, gestes.thrower) < 0.3 and view._ball.global_position.y > 1.9, "Le lanceur tient le ballon au-dessus de la tête")
 			check(not view.is_presenting_extended_pass(), "Alignement prêt : le match reprend la main")
 			var lines: Array[float] = [0.0, 0.0]
 			for id: String in gestes.cast:
 				if gestes.cast[id].role in ["jumper", "lift_front", "lift_back"]:
 					lines[gestes.cast[id].team] += view._actors[id].node.position.x / 3.0
-			check(absf(absf(lines[0] - lines[1]) - 1.2) < 0.05 and lines[0] < lines[1], "Deux lignes séparées par un couloir, chacune de son côté")
+			check(absf(absf(lines[0] - lines[1]) - 1.0) < 0.01 and lines[0] < lines[1], "Deux lignes séparées par le couloir d'un mètre de la loi 18, chacune de son côté")
+			# Chacun est à une place que la scène du moteur donne à son équipe (loi 18) ; les
+			# rôles sans équivalent moteur (sauteur, porteurs) prennent des places de la rangée.
+			var placed := 0
+			var taken := {}
+			for id: String in gestes.cast:
+				var at: Vector3 = view._actors[id].node.position
+				for player: Dictionary in frames[index].scene.players:
+					var place := Vector3(float(player.x) - 50.0, 0.0, float(player.y) - 35.0)
+					var key := str(player.side) + "/" + str(player.slot)
+					if int(player.side) == int(gestes.cast[id].team) and Vector2(at.x - place.x, at.z - place.z).length() < 0.01 and not taken.has(key):
+						taken[key] = id
+						placed += 1
+						break
+			check(placed == gestes.cast.size() and placed == frames[index].scene.players.size(), "Chaque joueur est à une place de la scène de touche : %d / %d" % [placed, gestes.cast.size()])
 			var pace := 0.0
-			var longest := 0.0
-			var far := 0
 			var farthest := 0.0
+			var over := 0
 			for id: String in gestes.cast:
 				var member: Dictionary = gestes.cast[id]
 				var run := Vector2(member.mark.x - member.from.x, member.mark.z - member.from.z).length()
-				longest = maxf(longest, member.form)
-				farthest = maxf(farthest, run)
-				# Au-delà de 15 m, la position schématique de la scène précédente est trop loin
-				# pour une course plausible en deux secondes : limite connue, mesurée à part.
-				if run > 15.0:
-					far += 1
-				else:
-					# Profil de course à allure tenue : pointe à 1,25 fois l'allure moyenne.
-					pace = maxf(pace, 1.25 * run / float(member.form))
-			check(longest >= 1.6 and longest <= Gestes.FORM and pace < 9.0, "Mise en place lisible : %.2f s au plus, pointe %.1f m/s jusqu'à 15 m" % [longest, pace])
-			print("MATCH_GESTES_FORM ", JSON.stringify({"seconds": longest, "peak_m_s_within_15m": pace, "runners_beyond_15m": far, "farthest_m": farthest}))
+				farthest = maxf(farthest, run + float(member.get("shortened", 0.0)))
+				# Profil de course à allure tenue : pointe à 1,25 fois l'allure moyenne.
+				var peak_pace: float = Gestes.PEAK * run / float(member.form)
+				pace = maxf(pace, peak_pace)
+				if peak_pace > float(member.peak) + 0.01:
+					over += 1
+			# Ici la sortie en touche laisse des avants à plus de CUT_BEYOND : coupe sur l'alignement formé,
+			# puis une seconde de derniers pas (SETTLE_STEP au plus), lanceur ballon en main.
+			check(gestes.cuts == 1 and is_equal_approx(gestes.form_seconds, Gestes.SETTLE) and pace <= Gestes.PEAK * Gestes.SETTLE_STEP / Gestes.SETTLE + 0.01, "Coupe sur l'alignement formé, derniers pas seulement : %d coupe, %.2f s, pointe %.2f m/s" % [gestes.cuts, gestes.form_seconds, pace])
+			print("MATCH_GESTES_FORM ", JSON.stringify({"cut": gestes.cuts == 1, "seconds_after_cut": gestes.form_seconds, "planned_peak_m_s": pace, "staged": gestes.cast.size()}))
 		if gestes.phase == "touche" and not gestes.awaiting:
 			winner_jumper = gestes.jumper
 			peak = maxf(peak, lift(view, gestes.jumper, bases))
@@ -250,6 +296,18 @@ func run() -> void:
 					var rig: Skeleton3D = view._actors[id].rig
 					if rig.to_global(rig.get_bone_global_pose(rig.find_bone("Palm.L")).origin).y > 1.9: cheering += 1
 	check(aligned, "La scène d'alignement met les deux équipes en place avant le lancer")
+	var fastest := 0.0
+	var fastest_id := ""
+	for id: String in visible_peak:
+		if visible_peak[id] > fastest:
+			fastest = visible_peak[id]
+			fastest_id = id
+	check(cut_frames.size() == 2 and cut_frames[0][1] == "lineout" and cut_frames[1][1] == "kickoff", "Deux coupes de réalisation : sur la touche formée puis sur le renvoi : " + str(cut_frames))
+	check(fastest <= Gestes.PACE_MAX + 0.3, "Personne ne court plus vite que %.1f m/s à l'écran pendant les gestes : %.2f m/s (%s), %d pas rapides hors champ" % [Gestes.PACE_MAX, fastest, fastest_id, hidden_jumps])
+	var peaks := {}
+	for id: String in visible_peak:
+		peaks[id] = snappedf(visible_peak[id], 0.01)
+	print("MATCH_GESTES_PACE ", JSON.stringify({"visible_peak_m_s": snappedf(fastest, 0.01), "by_phase": pace_by_phase, "fast_steps_off_screen": hidden_jumps, "cuts": cut_frames, "per_player": peaks}))
 	check(winner_jumper == gestes.jumpers[0] or winner_jumper == gestes.jumpers[1], "Le sauteur appartient à un bloc de saut")
 	check(peak > 0.95, "Le sauteur est porté à plus de 95 cm : " + str(peak))
 	check(rival_peak > 0.4 and rival_peak < peak - 0.2, "Le bloc adverse conteste, moins haut : " + str(rival_peak))
@@ -284,6 +342,16 @@ func run() -> void:
 		var model: Node3D = view._actors[id].model
 		check(is_zero_approx(model.rotation.x) and is_equal_approx(model.position.y, float(bases[id])), "Corps rendu à l'animation source : " + id)
 	check(frames == before, "Les scènes du moteur ne sont jamais modifiées")
+
+	# Mise en place courte (joueurs déjà près de leur place) : pas de coupe, course à allure crédible.
+	var cuts_before: int = gestes.cuts
+	gestes.cancel()
+	for player: Dictionary in frames[at_lineout].scene.players:
+		if view._actors.has(str(player.id)):
+			view._actors[str(player.id)].node.position = Vector3(float(player.x) - 50.0 + 2.0, 0.0, float(player.y) - 35.0 + 1.5)
+	gestes._align(frames[at_lineout].scene, int(frames[at_lineout].events[0].scene.team))
+	check(gestes.phase == "touche" and gestes.cuts == cuts_before and gestes.form_seconds >= Gestes.FORM and gestes.form_seconds < 3.0, "Alignement proche : pas de coupe, mise en place courte : %.2f s" % gestes.form_seconds)
+	gestes.cancel()
 
 	# Pause, cadence rapide et mode calme : pas de geste.
 	view.apply_frame(live(frames, at_lineout - 1))
@@ -327,7 +395,7 @@ func run() -> void:
 	view.set_camera("action")
 	view.apply_frame(live(frames, at_lineout - 1))
 	for frame in int(ceil(Gestes.FRAME_OUT / STEP)) + 1: view._process(STEP)
-	check(not gestes.active() and camera_plain(view, ACTION_OFFSET, 16.0), "Caméra action rendue à l'identique")
+	check(gestes.phase in ["", "approche"] and camera_plain(view, ACTION_OFFSET, 16.0), "Caméra action rendue à l'identique")
 	view.set_camera("tv")
 
 	# Essai hors ballon porté : le marqueur désigné plonge seul.

@@ -493,7 +493,7 @@ func _update_contact(delta: float) -> void:
 func _update_ball(delta: float) -> void:
 	if not _ball.visible:
 		return
-	if _gestes != null and _gestes.active():
+	if _gestes != null and _gestes.owns_ball():
 		return
 	if not _pass_plan.is_empty() and _update_live_pass():
 		return
