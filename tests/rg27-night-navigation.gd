@@ -501,7 +501,7 @@ func report_cases() -> void:
 	var before := await snapshot()
 	app._navigate("Recrutement"); await settle()
 	await activate(named("MarketTab3"))
-	check(int(app.management_ui.get("market_tab", -1)) == 3, "Vrai onglet des rapports conservés ouvert")
+	check(int(app.management_ui.market.get("immersive_tab", -1)) == 3, "Vrai onglet des rapports conservés ouvert")
 	check(not await open_entity("report", "__rapport_absent__"), "Rapport inexistant refusé sans ouvrir une autre archive")
 	var report_link := named("MarketEntity_" + str(report.id).validate_node_name()) as Control
 	check(report_link != null and str(report_link.get_meta("entity_id", "")) == str(report.id), "Vrai nom d’archive lié au rapport produit par la mission")
@@ -542,7 +542,7 @@ func report_cases() -> void:
 	else:
 		check(detail != null and detail.visible, "Archive seule conservée si le joueur n’est plus dans le marché projeté")
 	app._clear_dialogs(); await settle()
-	check(int(app.management_ui.get("market_tab", -1)) == 3, "Fermeture du rapport : retour à l’onglet d’archives d’origine")
+	check(int(app.management_ui.market.get("immersive_tab", -1)) == 3, "Fermeture du rapport : retour à l’onglet d’archives d’origine")
 	await unchanged(before, "Lecture du vrai rapport d’observation")
 func guard_cases() -> void:
 	# A press appointment is intentionally absent until its exact persisted mail
