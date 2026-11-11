@@ -256,3 +256,21 @@ pas les compteurs de parole/Gabi : aucune valeur 0/0 n’est annoncée pour ces 
 
 [Journaux, manifeste et cinq PNG originaux sélectionnés](evidence/night-phase9-20261111/README.md).
 Le parcours management graphique sera documenté séparément après réception.
+
+
+## Parcours management réel : reçu final et historiques séparés
+
+Le reçu graphique `management-reading-flow` sur
+`d40311c053aba931756df212c2690adb04a76994` donne **61 contrôles, zéro échec**.
+Les deux PNG originaux 2560×1440 sont inspectés : retour au vestiaire et à la
+même fenêtre des décisions, noms et reçus lisibles. Le défilement de la liste
+indépendante reste à 90 px, le reçu retrouve son défilement et son focus.
+Les assertions vérifient profil/état sportif/RNG/horloge inchangés, reçus et
+brouillon conservés, zéro commande de consultation et compteurs parole 0/0.
+
+Les essais rouges restent distincts : préparation 25/1 sur d896d631 (onglet
+Entretiens et duos non activé), scroll 60/1 sur d0aceccb, puis diagnostic des
+noms de scroll 60/1 sur c657eee4. Leurs journaux sont conservés sans publier
+leurs captures comme preuves qualifiées. Aucun SDK/import n’a été relancé.
+
+[Deux PNG, provenance test/produit, journaux verts et rouges, manifeste](evidence/night-management-reading-20261111/README.md).
