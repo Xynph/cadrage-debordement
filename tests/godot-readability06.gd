@@ -7,6 +7,7 @@ var checks := 0
 var failures: Array[String] = []
 var measurements: Array = []
 var proof := OS.get_environment("CD_READABILITY06_ARTIFACTS")
+var scenario := OS.get_environment("CD_READABILITY06_CASE")
 
 func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
@@ -115,7 +116,9 @@ func run() -> void:
 	var disk := str(app.model.meta.dataDir).path_join("donnees.json")
 	var bytes := FileAccess.get_file_as_bytes(disk)
 	check(not bytes.is_empty(), "Profil réel pour la comparaison disque")
-	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
+	var formats := {"reading720":Vector2i(1280,720),"reading900":Vector2i(1600,900),"reading1080":Vector2i(1920,1080),"reading1440":Vector2i(2560,1440)}
+	var selected_formats: Array = [formats[scenario]] if scenario in formats else []
+	for resolution: Vector2i in selected_formats:
 		await resize_to(resolution)
 		await office_reading(resolution)
 		await roster_reading(resolution, annotated, annotation)
@@ -124,15 +127,20 @@ func run() -> void:
 		for id in ["CreationStart", "CreationClubsScroll"]:
 			check(inside(named(id)), "Création : contrôle directement visible %s %s" % [id,resolution])
 		await capture("creation-dense-" + str(resolution.x))
-	await resize_to(Vector2i(1280,720))
-	await navigate("Effectif")
-	await visit_all_players("compact 720p")
-	await responsive_reading(annotated, annotation)
-	await resize_to(Vector2i(2560,1440))
-	app.selected_player = annotated_id
-	await navigate("Effectif")
-	await visit_all_players("1440p")
-	await immersive_drafts(annotated, annotation)
+	if scenario == "responsive":
+		await resize_to(Vector2i(1280,720))
+		await navigate("Effectif")
+		await visit_all_players("compact 720p")
+		await responsive_reading(annotated, annotation)
+	if scenario == "drafts":
+		await resize_to(Vector2i(2560,1440))
+		app.selected_player = annotated_id
+		await navigate("Effectif")
+		await visit_all_players("1440p")
+		app.selected_player = annotated_id
+		await navigate("Effectif")
+		await immersive_drafts(annotated, annotation)
+	check(scenario in formats or scenario in ["responsive","drafts"], "Scénario de couverture explicite et reconnu")
 	check(FileAccess.get_file_as_bytes(disk) == bytes, "Consultation, clavier et resize : octets du profil inchangés")
 	await command("export")
 	check(app.model.meta.exportText == before, "Consultation et resize : état complet et RNG identiques")
@@ -191,36 +199,60 @@ func roster_rows(roster: Control) -> Array[Node]:
 	if roster == null: return []
 	return roster.find_children("*","Button",true,false).filter(func(row: Node): return row.has_meta("player_id"))
 
+func roster_row_readable(row: Control, viewport: Control) -> bool:
+	# The continuous table reserves a trailing gutter under its scrollbar.
+	# Assert the painted facts, not that blank button gutter, plus the full
+	# line height. No salary, term, identity or status may be clipped.
+	if row == null or viewport == null: return false
+	var bounds := rect(row)
+	var visible := rect(viewport).grow(1)
+	if bounds.position.y < visible.position.y or bounds.end.y > visible.end.y: return false
+	var facts := row.find_children("*","Label",true,false)
+	if facts.is_empty(): return false
+	for label: Label in facts:
+		if not inside(label, viewport): return false
+	return true
+
 func first_roster_page() -> void:
 	var search := named("RosterSearch")
-	var previous := named("RosterPaginationPrevious") as Button
-	check(previous != null and search != null, "Pagination et recherche de l’effectif présentes")
-	if previous == null or search == null: return
+	var scroll := named("SquadScroll") as ScrollContainer
+	check(scroll != null and search != null, "Liste continue et recherche de l’effectif présentes")
+	if scroll == null or search == null: return
 	var selected: String = app.selected_player
-	for i in 60:
-		if previous.disabled: break
-		await keyboard(previous, "page précédente")
-		check(named("RosterSearch") == search, "Recul de page conserve la recherche")
-	check(previous.disabled, "Première page atteinte au clavier")
-	check(app.selected_player == selected, "Recul de page conserve le dossier choisi")
+	scroll.scroll_vertical = 0
+	scroll.scroll_horizontal = 0
+	await settle()
+	check(scroll.scroll_vertical == 0 and named("RosterSearch") == search, "Début de liste atteint sans remplacer la recherche")
+	check(app.selected_player == selected, "Défilement conserve le dossier choisi")
 
 func visit_all_players(format: String) -> void:
 	await first_roster_page()
+	var scroll := named("SquadScroll") as ScrollContainer
 	var search := named("RosterSearch")
+	var rows := roster_rows(scroll)
 	var seen: Array[String] = []
-	var next := named("RosterPaginationNext") as Button
-	check(next != null, "Pagination suivante disponible · " + format)
-	if next == null: return
-	for i in 60:
-		for row: Node in roster_rows(named("SquadScroll")): seen.append(str(row.get_meta("player_id")))
-		if next.disabled: break
-		await keyboard(next, "page suivante " + format)
-		check(named("RosterSearch") == search, "Pagination conserve la recherche · " + format)
+	for row: Button in rows: seen.append(str(row.get_meta("player_id")))
 	var expected: Array[String] = []
 	for player: Dictionary in app.model.squad: expected.append(str(player.id))
-	expected.sort()
-	seen.sort()
-	check(next.disabled and seen == expected, "Exactement tous les identifiants, sans doublon, par pagination clavier · " + format)
+	expected.sort(); seen.sort()
+	check(seen == expected, "Exactement tous les identifiants, sans doublon, dans la liste continue · " + format)
+	if rows.is_empty(): return
+	# The real keyboard command opens each edge dossier and focus scrolls the
+	# same continuous list, without synthesizing pages that no longer exist.
+	for index in [0, rows.size()-1]:
+		var row := rows[index] as Button
+		scroll.ensure_control_visible(row)
+		await keyboard(row, "dossier au bord de la liste · " + format)
+		check(app.selected_player == str(row.get_meta("player_id")), "Dossier exact ouvert par le clavier · " + format)
+		check(row.has_focus() and roster_row_readable(row, scroll), "Faits de la ligne focalisée entièrement exposés · " + format)
+		check(named("RosterSearch") == search, "Lecture clavier conserve la recherche · " + format)
+	if named("ImmersiveRosterTable") != null:
+		await key(KEY_HOME)
+		check(rows[0].has_focus() and roster_row_readable(rows[0],scroll), "Début rejoint le premier joueur au clavier")
+		await key(KEY_PAGEDOWN)
+		check(scroll.scroll_vertical > 0 and scroll.is_ancestor_of(root.gui_get_focus_owner()), "Page suivante déplace réellement le focus et la lecture")
+		await key(KEY_END)
+		check(rows[-1].has_focus() and roster_row_readable(rows[-1],scroll), "Fin rejoint le dernier joueur au clavier")
 
 func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String) -> void:
 	app.selected_player = str(player.id)
@@ -228,13 +260,13 @@ func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String
 	await first_roster_page()
 	var roster := named("SquadScroll")
 	var rows := roster_rows(roster)
-	var complete := rows.filter(func(row: Control): return inside(row, roster))
+	var complete := rows.filter(func(row: Control): return roster_row_readable(row, roster))
 	var immersive := named("ImmersiveRosterTable") != null
 	check(immersive == (resolution.x >= 1600), "Gabarit attendu de l’Effectif " + str(resolution))
 	check(roster != null and not rows.is_empty(), "Table d’effectif natif renseignée " + str(resolution))
 	if immersive:
-		check(rows.size() == 24 and complete.size() == 24, "24 lignes entières de l’Effectif immersif %s · reçu %d/%d" % [resolution,complete.size(),rows.size()])
-		for id in ["RosterColumnSalary", "RosterColumn_CONTRAT", "RosterColumnFatigue", "RosterColumnPotential", "RosterPaginationInfo", "OpenComparison", "OpenPlayerFull"]:
+		check(rows.size() == app.model.squad.size() and complete.size() >= 24, "Liste immersive complète et vingt-quatre lignes de faits entières %s · reçu %d/%d" % [resolution,complete.size(),rows.size()])
+		for id in ["RosterColumnSalary", "RosterColumn_FIN DE CONTRAT", "RosterColumnFatigue", "RosterColumnPotential", "RosterScrollHint", "OpenComparison", "OpenPlayerFull"]:
 			check(inside(named(id), app.body_scroll), "Colonne ou commande visible %s %s" % [id,resolution])
 		var header := named("RosterHeader")
 		var minute := false
@@ -244,7 +276,7 @@ func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String
 		check(minute, "Colonne Minutes visible " + str(resolution))
 	else:
 		check(complete.size() >= 9, "Effectif compact : au moins neuf lignes entières, reçu " + str(complete.size()))
-		check(inside(named("RosterPagination"), app.body_scroll), "Pagination de l’effectif compact visible")
+		check(inside(roster, app.body_scroll) and roster.get_v_scroll_bar().max_value > roster.get_v_scroll_bar().page, "Liste compacte continue dans un viewport défilable")
 		var toolbar := named("RosterTools")
 		check(toolbar != null, "Barre de lecture dédiée compacte")
 		if toolbar != null:
@@ -304,7 +336,7 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 	check(overview_actions != null and rect(overview).end.y - rect(overview_actions).end.y <= 32, "Aperçu compact sans grande surface vide sous les faits")
 	for pair in [["ProfileConditionValue", G.n(player.condition)+"%"], ["ProfileRatingValue", G.n(player.rating)], ["ProfilePotentialValue", G.potential_text(player)],
 		["ProfileMinutesValue", G.n(player.minutes)], ["ProfileAppearancesValue", G.n(player.appearances)],
-		["ProfileContractValue", player.contractLabel], ["ProfileSalaryValue", G.euros(player.salary)], ["ProfileNotePreview", annotation],
+		["ProfileContractValue", "Fin de contrat : " + G.contract_year(player.get("contractEnd"))], ["ProfileSalaryValue", G.salary_amount(player.salary)], ["ProfileNotePreview", annotation],
 		["ProfileRenewalValue", "Disponible" if player.renewal.available else "Indisponible"]]:
 		fact(pair[0], pair[1])
 	check(named("ProfilePlanValue") != null and named("ProfileQualificationsValue") != null, "Plan et qualifications exposés dans le dossier compact")
@@ -340,7 +372,7 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	check("NOTE AU POSTE" not in performances,"La note au poste reste réservée à la tactique")
 	await keyboard(named("FullPlayerTab3"), "contrat du joueur")
 	var contract := labels(named("ImmersivePlayerFull"))
-	check(G.euros(player.salary) + " / semaine" in contract and str(player.contractLabel) in contract, "Salaire et échéance exacts dans Contrat")
+	check(G.salary(player.salary) in contract and "Fin de contrat : " + G.contract_year(player.get("contractEnd")) in contract, "Salaire et échéance exacts dans Contrat")
 	check(G.n(player.condition) + " %" in contract and G.n(player.physicalLoad) in contract, "Condition et charge exactes dans Contrat")
 	var renewal := named("OfferRenewal") as Button
 	check(inside(renewal, app.body_scroll) and renewal.disabled == not bool(player.renewal.available), "Offre de prolongation visible et disponibilité exacte")
@@ -421,6 +453,9 @@ func responsive_reading(player: Dictionary, annotation: String) -> void:
 	search.select(2, 10)
 	search.grab_focus()
 	var compact_tabs := named("ProfileTabs") as TabContainer
+	check(compact_tabs != null, "Dossier compact disponible avant les redimensionnements")
+	if compact_tabs != null: compact_tabs.current_tab = 0
+	await settle()
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(2560,1440), Vector2i(1920,1080)]:
 		await resize_to(resolution)
 		check(named("RosterSearch") == search and search.text == "Équipe œuvrée — éléphant" and search.caret_column == 10 and search.has_selection(), "Saisie Unicode, caret et sélection conservés " + str(resolution))
@@ -471,8 +506,10 @@ func compact_context(player: Dictionary) -> void:
 		var average := named("ProfileMean_" + field) as Label
 		check(average != null and average.text.contains(" / "), "Moyenne comparative présente " + field)
 		if average == null or not average.text.contains(" / "): continue
-		var observed := average.text.split(" / ")[1].replace(" €","").replace("%","").replace(" ans","").replace(" ","").replace(",",".").to_float()
-		check(absf(observed - total / app.model.squad.size()) <= (.51 if field == "salary" else .051), "Moyenne publique exacte " + field)
+		var mean: float = total / app.model.squad.size()
+		var expected := G.salary_amount(mean) if field == "salary" else ("%.1f" % mean).replace(".",",") + ("%" if field == "condition" else " ans" if field == "age" else "")
+		check(average.text.split(" / ")[1] == expected, "Moyenne publique exacte et unité affichée " + field)
+
 	var same: Array = app.model.squad.filter(func(member: Dictionary): return str(member.id) != str(player.id) and member.pos == player.pos)
 	var actions := peers.find_children("ProfilePeerCompare*", "Button", true, false).filter(func(action: Control): return action.is_visible_in_tree())
 	check(actions.size() == mini(3, same.size()), "Jusqu’à trois coéquipiers du même poste à 1080p")
