@@ -47,7 +47,7 @@ traitement de molette, de tri ou de glisser-déposer.
 
 Une fenêtre source n’est ignorée par la garde que si elle appartient à l’app,
 porte explicitement `navigation_read_only=true`, et qu’aucune autre fenêtre ou
-scène obligatoire ne bloque. Elle n’est fermée qu’après succès. Ne jamais
+scène obligatoire ne bloque. Après validation, elle reste suspendue dans son arbre d’origine afin de préserver son contexte. Ne jamais
 attribuer ce marqueur à une négociation, une décision ou une fenêtre contenant
 un brouillon métier.
 
@@ -81,9 +81,23 @@ ne sont jamais restaurés ou modifiés. Les callbacks de saisie et les commandes
 ne sont pas rejoués lors du retour. L’historique reste limité à 60 entrées et
 ignore les entités qui ont disparu de la projection.
 
-Les détails club/rencontre restent des fenêtres de consultation : Échap ou
-FERMER revient à l’appelant intact. Le retour global est bloqué tant qu’une
-fenêtre est ouverte ; il n’y a pas d’historique supplémentaire des fenêtres.
+Les détails club/rencontre restent des fenêtres de consultation. Un lien depuis
+une fenêtre readonly la conserve cachée, sans reparentage ni destruction,
+sous un nom privé enregistré ; son nom public revient au moment de l’affichage.
+Après navigation vers une page, Précédent restitue la même instance du lecteur,
+son focus et son scroll. Après ouverture d’un autre lecteur, Échap, FERMER ou
+Alt + gauche ferme ce nouveau lecteur et restitue son parent. Revenir vers une
+entité déjà présente dans cette chaîne réutilise l’ancêtre, sans doublon.
+
+Seules les fenêtres enregistrées comme sources suspendues survivent à
+`_clear_dialogs`. Leur nombre est borné par les 60 entrées de lecture ; les
+sources rendues inaccessibles par une nouvelle branche d’historique sont
+libérées. Chaque commande envoyée, réponse du worker, reset de carrière ou
+fermeture invalide les lecteurs enregistrés et leurs descendants. Aucun
+lecteur d’une ancienne projection n’est ressuscité ; la navigation ne produit
+elle-même aucun appel worker. Les fenêtres de métier et leurs brouillons ne
+reçoivent jamais cette suspension readonly. Les détails prospects restent des
+enfants de leur fenêtre métier via `inspect_entity`, avec leur garde séparée.
 Les champs dont l’écran conserve déjà les valeurs dans `management_ui` sont
 restaurés. Les brouillons internes à une fenêtre métier ne sont pas migrés :
 la navigation depuis cette fenêtre est refusée.

@@ -20,6 +20,10 @@ var _restoring := false
 var _palette_return_focus: WeakRef
 var _dispatching := false
 var _reading_revision := 0
+var _readers: Dictionary = {}
+var _next_reader := 0
+var _reader_departure := 0
+var _reader_activation := 0
 
 func setup(owner_app: Control) -> void:
 	app = owner_app
@@ -28,6 +32,7 @@ func setup(owner_app: Control) -> void:
 	app.get_viewport().size_changed.connect(func(): call_deferred("_fit_palette"))
 
 func reset() -> void:
+	invalidate_readers()
 	_reading_revision += 1
 	history.clear()
 	cursor = -1
@@ -47,7 +52,7 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	if cursor >= 0:
 		var previous := history[cursor]
 		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
-		if same_location and (not roster_lookup or previous.roster == app.management_ui.roster):
+		if same_location and _reader_departure == 0 and (not roster_lookup or previous.roster == app.management_ui.roster):
 			_refresh_controls()
 			return
 		if not roster_lookup and previous.route == route: _store_roster_reading(previous)
@@ -57,6 +62,7 @@ func observe(route: String, player_id: String = "", staff_club: int = -1, roster
 	history.append(entry)
 	if history.size() > HISTORY_LIMIT: history.pop_front()
 	cursor = history.size() - 1
+	_collect_readers()
 	_refresh_controls()
 
 func _current_target(route: String) -> Dictionary:
@@ -140,6 +146,12 @@ func handle_shortcut(event: InputEvent) -> bool:
 			return true
 		if event.ctrl_pressed and code == KEY_K: return true
 		return false
+	if event.alt_pressed and not event.ctrl_pressed and code in [KEY_LEFT, KEY_RIGHT]:
+		var reader: Window = _active_linked_modal()
+		if reader == null: reader = _active_history_reader()
+		if reader != null and not _blocked(reader):
+			_travel(-1 if code == KEY_LEFT else 1)
+			return true
 	var save_shortcut: bool = code==KEY_S and event.ctrl_pressed and not event.alt_pressed
 	if _blocked(null,save_shortcut): return false
 	if save_shortcut and app._has_career():
@@ -374,10 +386,16 @@ func _destination(direction: int) -> int:
 	return -1
 
 func _travel(direction: int) -> void:
-	if _blocked(): return
+	var child := _active_linked_modal()
+	if child != null:
+		if direction < 0 and not _blocked(child): child.queue_free()
+		return
+	var source := _active_history_reader()
+	if _blocked(source): return
 	var next := _destination(direction)
 	if next < 0: return
 	capture_current()
+	if source != null: _suspend_reader(source)
 	var entry: Dictionary = history[next]
 	_restoring = true
 	cursor = next
@@ -397,6 +415,7 @@ func _travel(direction: int) -> void:
 	app._navigate(entry.route, false, true)
 	_reading_revision += 1
 	_restore_reading_controls(entry.get("reading", {}), _reading_revision)
+	_restore_history_reader(int(entry.get("reader", 0)), _reading_revision)
 	_restoring = false
 	_refresh_controls()
 
@@ -465,12 +484,20 @@ func entity_available(target: Dictionary) -> bool:
 	return false
 
 func _reading_source(source: Window) -> bool:
-	return is_instance_valid(source) and not source.is_queued_for_deletion() and app.is_ancestor_of(source) and source.get_meta("navigation_read_only", false)
+	return is_instance_valid(source) and not source.is_queued_for_deletion() and source.visible and app.is_ancestor_of(source) and source.get_meta("navigation_read_only", false)
 
 func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	var source: Window = source_window if _reading_source(source_window) else null
 	if str(target.get("kind", "")) == "prospect" or _blocked(source) or not entity_available(target): return false
+	if source != null:
+		if str(source.get_meta("entity_kind", "")) == str(target.get("kind", "")) and str(source.get_meta("entity_id", "")) == str(target.get("id", "")): return true
+		var ancestor := _reader_ancestor(target, source)
+		if ancestor != 0:
+			_return_reader_ancestor(ancestor, source)
+			return true
 	capture_current()
+	var reader_token := _suspend_reader(source) if source != null else 0
+	_reader_departure = reader_token
 	_reading_revision += 1
 	_dispatching = true
 	var kind := str(target.get("kind", ""))
@@ -520,7 +547,8 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 			app._navigate(destination, false, true)
 		observe(app.route, app.selected_player, app.selected_staff_club, kind in ["player", "squad"])
 	_dispatching = false
-	if opened and is_instance_valid(source) and not source.is_queued_for_deletion(): source.queue_free()
+	_reader_departure = 0
+	if reader_token != 0: _finish_reader_link(reader_token, opened, destination)
 	return opened
 
 func _restore_reading_controls(reading: Dictionary, revision: int) -> void:
@@ -552,3 +580,214 @@ func inspect_entity(target: Dictionary, owner_window: Window) -> bool:
 	if not entity_available(target): return false
 	var adapter := _prospect_adapter()
 	return adapter != null and adapter.open_target(app, source, str(target.get("id", "")), owner_window)
+
+# Only registered, hidden reading windows survive _clear_dialogs. Business
+# windows never enter this registry; no callback is replayed to rebuild a reader.
+func is_suspended_reader(window: Window) -> bool:
+	for record: Dictionary in _readers.values():
+		if record.suspended and _reader_window(record) == window: return true
+	return false
+
+func _reader_window(record: Dictionary) -> Window:
+	var window := record.window.get_ref() as Window
+	return window if is_instance_valid(window) and not window.is_queued_for_deletion() else null
+
+func _suspend_reader(window: Window) -> int:
+	if not _reading_source(window): return 0
+	var token := 0
+	for key: int in _readers:
+		if _reader_window(_readers[key]) == window: token = key; break
+	if token == 0:
+		_next_reader += 1
+		token = _next_reader
+		_readers[token] = {"window":weakref(window), "original_name":str(window.name), "route":app.route, "suspended":false, "child":null, "child_id":0, "controls":{}}
+		window.tree_exited.connect(_reader_source_closed.bind(token), CONNECT_ONE_SHOT)
+	var record: Dictionary = _readers[token]
+	record.controls = U.reader_snapshot(window)
+	record.suspended = true
+	_reader_activation += 1
+	if cursor < 0: observe(app.route, app.selected_player, app.selected_staff_club)
+	if cursor >= 0: history[cursor].reader = token
+	window.name = "_NavigationReader_%d_%s" % [token, str(record.original_name)]
+	window.hide()
+	return token
+
+func _visible_reading_window() -> Window:
+	var children := app.get_children()
+	children.reverse()
+	for child: Node in children:
+		if child is Window and _reading_source(child): return child
+	return null
+
+func _finish_reader_link(token: int, opened: bool, destination: String) -> void:
+	if not _readers.has(token): return
+	if not opened:
+		_show_reader(token)
+		return
+	if not destination.is_empty():
+		_collect_readers()
+		return
+	var child := _visible_reading_window()
+	if child == null: return
+	var record: Dictionary = _readers[token]
+	record.child = weakref(child)
+	record.child_id = child.get_instance_id()
+	child.tree_exited.connect(_reader_child_closed.bind(token, child.get_instance_id()), CONNECT_ONE_SHOT)
+	child.window_input.connect(_reader_input.bind(weakref(child)))
+	_collect_readers()
+
+func _reader_input(event: InputEvent, window_ref: WeakRef) -> void:
+	var window := window_ref.get_ref() as Window
+	if not is_instance_valid(window): return
+	if event is InputEventKey and event.pressed and not event.echo and event.alt_pressed and not event.ctrl_pressed and event.keycode == KEY_LEFT:
+		if _active_linked_modal() == window and not _blocked(window):
+			window.queue_free()
+			window.set_input_as_handled()
+
+func _active_linked_modal() -> Window:
+	for record: Dictionary in _readers.values():
+		if record.child == null: continue
+		var child := record.child.get_ref() as Window
+		if is_instance_valid(child) and not child.is_queued_for_deletion() and child.visible: return child
+	return null
+
+func _active_history_reader() -> Window:
+	if cursor < 0 or cursor >= history.size(): return null
+	var token := int(history[cursor].get("reader", 0))
+	if not _readers.has(token): return null
+	var window := _reader_window(_readers[token])
+	return window if window != null and window.visible and not _readers[token].suspended else null
+
+func _reader_child_closed(token: int, child_id: int) -> void:
+	if not _readers.has(token) or int(_readers[token].child_id) != child_id: return
+	_readers[token].child = null
+	_readers[token].child_id = 0
+	call_deferred("_show_reader", token)
+
+func _reader_source_closed(token: int) -> void:
+	_readers.erase(token)
+	for entry: Dictionary in history:
+		if int(entry.get("reader", 0)) == token: entry.erase("reader")
+
+func _show_reader(token: int) -> void:
+	if not _readers.has(token) or app == null or app.closing: return
+	var record: Dictionary = _readers[token]
+	var window := _reader_window(record)
+	if window == null or app.route != record.route or _blocked(window): return
+	record.suspended = false
+	if cursor >= 0: history[cursor].reader = token
+	window.name = str(record.original_name)
+	window.show()
+	_reader_activation += 1
+	_restore_reader_controls(token, _reader_activation)
+
+func _restore_reader_controls(token: int, activation: int) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if activation != _reader_activation or not _readers.has(token): return
+	var record: Dictionary = _readers[token]
+	var window := _reader_window(record)
+	if window != null and window.visible and not record.suspended and not _blocked(window):
+		U.restore_reader_controls(window, record.controls)
+
+func _restore_history_reader(token: int, revision: int) -> void:
+	if token == 0: return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if revision == _reading_revision and cursor >= 0 and int(history[cursor].get("reader", 0)) == token:
+		_show_reader(token)
+
+func _discard_reader(token: int) -> void:
+	if not _readers.has(token): return
+	var window := _reader_window(_readers[token])
+	_readers.erase(token)
+	for entry: Dictionary in history:
+		if int(entry.get("reader", 0)) == token: entry.erase("reader")
+	if window != null: window.queue_free()
+
+func _collect_readers() -> void:
+	var keep := {}
+	for entry: Dictionary in history:
+		var token := int(entry.get("reader", 0))
+		if _readers.has(token): keep[token] = true
+	for token: int in _readers:
+		var record: Dictionary = _readers[token]
+		var window := _reader_window(record)
+		if window != null and window.visible: keep[token] = true
+		if record.child != null:
+			var child := record.child.get_ref() as Window
+			if is_instance_valid(child) and not child.is_queued_for_deletion() and child.visible: keep[token] = true
+	# Retain ancestors of a suspended reader referenced by a route entry.
+	var changed := true
+	while changed:
+		changed = false
+		for token: int in _readers:
+			if keep.has(token) or _readers[token].child == null: continue
+			var child: Window = _readers[token].child.get_ref()
+			for retained: int in keep.keys():
+				if _readers.has(retained) and _reader_window(_readers[retained]) == child:
+					keep[token] = true
+					changed = true
+					break
+	for token: int in _readers.keys():
+		if not keep.has(token): _discard_reader(token)
+	while _readers.size() > HISTORY_LIMIT:
+		var removed := false
+		for token: int in _readers.keys():
+			if _readers[token].suspended:
+				_discard_reader(token)
+				removed = true
+				break
+		if not removed: break
+
+func invalidate_readers() -> void:
+	_reader_activation += 1
+	_reader_departure = 0
+	var windows: Dictionary = {}
+	for record: Dictionary in _readers.values():
+		var window := _reader_window(record)
+		if window != null: windows[window.get_instance_id()] = weakref(window)
+		if record.child != null:
+			var child := record.child.get_ref() as Window
+			if is_instance_valid(child) and not child.is_queued_for_deletion(): windows[child.get_instance_id()] = weakref(child)
+	_readers.clear()
+	for entry: Dictionary in history: entry.erase("reader")
+	for window_ref: WeakRef in windows.values():
+		var window := window_ref.get_ref() as Window
+		if is_instance_valid(window) and not window.is_queued_for_deletion():
+			window.hide()
+			window.queue_free()
+
+func _reader_parent(window: Window) -> int:
+	for token: int in _readers:
+		var record: Dictionary = _readers[token]
+		if record.child != null and record.child.get_ref() == window: return token
+	return 0
+
+func _reader_ancestor(target: Dictionary, source: Window) -> int:
+	var current := source
+	var visited := {}
+	while current != null:
+		var parent := _reader_parent(current)
+		if parent == 0 or visited.has(parent): return 0
+		visited[parent] = true
+		current = _reader_window(_readers[parent])
+		if current != null and str(current.get_meta("entity_kind", "")) == str(target.get("kind", "")) and str(current.get_meta("entity_id", "")) == str(target.get("id", "")): return parent
+	return 0
+
+func _return_reader_ancestor(token: int, source: Window) -> void:
+	var ancestor := _reader_window(_readers[token])
+	var windows: Array[Window] = []
+	var current := source
+	while current != null and current != ancestor:
+		windows.append(current)
+		var parent := _reader_parent(current)
+		current = _reader_window(_readers[parent]) if parent != 0 else null
+	_readers[token].child = null
+	_readers[token].child_id = 0
+	for key: int in _readers.keys():
+		if key != token and _reader_window(_readers[key]) in windows: _discard_reader(key)
+	for window: Window in windows:
+		if is_instance_valid(window) and not window.is_queued_for_deletion(): window.queue_free()
+	call_deferred("_show_reader", token)

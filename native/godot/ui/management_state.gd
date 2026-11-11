@@ -197,3 +197,22 @@ static func restore_reading_controls(app: Control, page: Control, reading: Dicti
 		if surface != null:
 			surface.scroll_horizontal = int(address.x)
 			surface.scroll_vertical = int(address.y)
+
+# Suspended readers keep their original tree and controls. Capture only weak
+# references and reading positions; showing one never replays an action callback.
+static func reader_snapshot(window: Window) -> Dictionary:
+	var focus := window.gui_get_focus_owner()
+	var result := {"focus":weakref(focus) if focus != null else null, "scrolls":[]}
+	for surface: ScrollContainer in window.find_children("*", "ScrollContainer", true, false):
+		result.scrolls.append({"control":weakref(surface), "x":surface.scroll_horizontal, "y":surface.scroll_vertical})
+	return result
+
+static func restore_reader_controls(window: Window, reading: Dictionary) -> void:
+	var focus: Control = reading.focus.get_ref() as Control if reading.get("focus") != null else null
+	if is_instance_valid(focus) and window.is_ancestor_of(focus) and focus.is_visible_in_tree() and focus.focus_mode != Control.FOCUS_NONE and not (focus is BaseButton and focus.disabled):
+		focus.grab_focus()
+	for entry: Dictionary in reading.get("scrolls", []):
+		var surface := entry.control.get_ref() as ScrollContainer
+		if is_instance_valid(surface) and window.is_ancestor_of(surface):
+			surface.scroll_horizontal = int(entry.x)
+			surface.scroll_vertical = int(entry.y)

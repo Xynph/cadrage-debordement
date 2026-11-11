@@ -228,6 +228,7 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
 	if _startup_trace and not _startup_model_seen:
 		_startup_model_seen = true
 		_trace_startup("model.first")
@@ -323,6 +324,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 		if not command_wait_overlay.visible or command != active_command:
 			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
+	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
 	waiting = true
 	last_command = command
 	pending_route = target_route
@@ -1011,6 +1013,7 @@ func notice(title:String,text:String) -> void:
 func _clear_dialogs() -> void:
 	for child in get_children():
 		if child is AcceptDialog and child!=file_dialog:
+			if is_instance_valid(navigation_controller) and navigation_controller.is_suspended_reader(child): continue
 			child.hide()
 			child.queue_free()
 
@@ -1051,6 +1054,7 @@ func request_quit() -> void:
 func _close(exit_code: int = 0) -> void:
 	if closing: return
 	closing = true
+	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
 	command_wait_overlay.dismiss()
 	if is_instance_valid(soundscape): soundscape.dispose()
 	if is_instance_valid(coach): coach.destroy()
