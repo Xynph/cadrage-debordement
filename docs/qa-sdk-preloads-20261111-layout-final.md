@@ -81,3 +81,15 @@ les [sources figées](qa-sdk-preloads-20261111-layout-final/interface-management
 et le [log complet](qa-sdk-preloads-20261111-layout-final/interface-management.log)
 sont archivés. Le SHA du GD effectivement exécuté correspond au gel diagnostic.
 Le cas Journal reste séparément à recevoir ; ce résultat ne le qualifie pas.
+
+## Réception locale interface Journal
+
+Le second scénario isolé est qualifié : `CD_LAYOUT_CASE=journal`,
+**33 contrôles, aucun échec**, Node complet **119,380 s**, attente du verrou
+0 s. Son [reçu](qa-sdk-preloads-20261111-layout-final/interface-journal-receipt.json),
+[rapport](qa-sdk-preloads-20261111-layout-final/interface-journal-report.json),
+[sources figées](qa-sdk-preloads-20261111-layout-final/interface-journal-source-manifest.json)
+et [log](qa-sdk-preloads-20261111-layout-final/interface-journal.log) portent
+le même SHA de harness que management. Les deux sélecteurs couvrent désormais
+tous les contrôles de la famille interface. La [tentative cumulée antérieure](qa-sdk-preloads-20261111-layout-final/interface-cumulative-budget-receipt.json)
+reste distincte et non qualifiée (180,298 s, compteur final absent).
