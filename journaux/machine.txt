@@ -1,0 +1,13 @@
+date_recette_debut: 2026-11-11 00:30:54
+noyau: Linux 6.18.44-fc-v338 x86_64
+systeme: Ubuntu 24.04.5 LTS
+processeurs: 2
+modele_cpu: Intel(R) Xeon(R) Processor @ 2.10GHz
+memoire: 7.8Gi
+godot: 4.7.2.stable.official.ed1daf0bf
+godot_sha256: 8d106cbe6144c2dc7e881d61d2429c1a8a76e6b22ef48bd5e48dcf934953f71e
+node: v22.23.4
+python: Python 3.13.18
+xvfb: 2:21.1.12-1ubuntu1.9
+mesa: 25.2.8-0ubuntu0.24.04.4
+pilote: OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
