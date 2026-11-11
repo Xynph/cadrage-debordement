@@ -16,17 +16,41 @@ extends RefCounted
 
 const Presentation = preload("res://match_presentation.gd")
 
-const FORM := 0.9          # mise en place de l'alignement
-const RELEASE := 1.45      # lancer
-const CATCH := 2.0         # prise à deux mains au sommet
-const DOWN := 2.3          # début de la redescente
-const TOUCHE_END := 2.8
+const FORM := 2.0          # mise en place de l'alignement (au plus ; les plus proches arrivent avant)
+const FORM_PACE := 4.2     # allure moyenne de mise en place, en m/s
+const FORM_MIN := 1.2
+const RELEASE := FORM + 0.55   # lancer
+const CATCH := FORM + 1.1      # prise à deux mains au sommet
+const DOWN := FORM + 1.4       # début de la redescente
+const TOUCHE_END := FORM + 1.9
 const LIFT := 1.05         # élévation du sauteur porté, en mètres
 const MAUL_FORM := 0.7
 const MAUL_START := 0.5
+const MAUL_PACE := 2.0     # allure moyenne du ballon porté, en m/s
+const STRIDE_CYCLE := 0.6  # ballon porté : un cycle de deux petits pas couvre 0,6 m
+const STANCE := 0.65       # part du cycle où le pied pousse au sol
+const CROUCH := 0.12       # abaissement du bassin des pousseurs, en mètres
+const PUSH_PITCH := 0.38   # inclinaison des pousseurs
+const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 const DIVE_REACH := 1.95   # distance pieds -> ballon d'un plongeon bras tendus
 const DIVE_SECONDS := 0.95
 const OUTRO := 0.45
+# Cadrage pendant un geste (caméras « tv » et « action » seulement).
+const FRAME_IN := 1.5      # rapprochement, en secondes
+const FRAME_OUT := 1.8     # retour au cadrage normal
+const FRAME_SMOOTH := 0.6  # amortissement du centre et de la taille entre deux temps du geste
+const FRAME_MIN := {"tv": 11.0, "action": 9.0}  # hauteur visible minimale, en mètres
+const FRAME_MARGIN := 1.2
+# Pendant le retour, si le suivi d'origine part en panoramique rapide (ballon
+# renvoyé au centre après un essai : 100 m/s), le recadrage cède aussitôt la place
+# à la caméra d'origine ; mêlé au retour, ce mouvement deviendrait un panoramique
+# encore plus rapide à l'écran, en vue rapprochée. Seuil : 40 m/s, au-delà d'une
+# course ou d'une passe.
+const FRAME_LEAP := 40.0
+# Caméra TV seulement : léger pivot autour du point visé pendant le geste, pour
+# que les lignes de touche ne s'alignent plus sur l'axe de la caméra (le saut
+# se lit alors au-dessus de la ligne). 0,35 rad, soit 20°, en 1,5 s.
+const FRAME_YAW := {"tv": 0.35, "action": 0.0}
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LINE_Z := [-29.0, -23.2, -21.8, -20.4]
 const CONTEST := 0.7        # élévation du bloc adverse, battu
@@ -66,6 +90,15 @@ var dive_set := false
 var cheer: Array[String] = []
 var _saved: Dictionary = {}
 var _outro: Dictionary = {}
+var _dt := 1.0 / 60.0
+# État du recadrage : rampe d'entrée/sortie et cible amortie.
+var zoom := 0.0
+var _zoom_mode := ""
+var _zoom_center := Vector3.ZERO
+var _zoom_center_speed := Vector3.ZERO
+var _zoom_size := 0.0
+var _zoom_size_speed := 0.0
+var _zoom_focus := Vector3.ZERO
 
 
 func _init(owner: Node3D) -> void:
@@ -162,6 +195,7 @@ func _release(id: String) -> void:
 
 
 func advance(delta: float) -> void:
+	_dt = delta
 	for id: String in _outro.keys():
 		_outro[id].age += delta
 		if _outro[id].age >= OUTRO or not view._actors.has(id):
@@ -200,6 +234,8 @@ func restore(id: String, entry: Dictionary) -> void:
 	if is_instance_valid(rig):
 		for index: int in saved.bones:
 			rig.set_bone_pose_rotation(index, saved.bones[index])
+		for index: int in saved.places:
+			rig.set_bone_pose_position(index, saved.places[index])
 	(entry.model as Node3D).transform = saved.model
 	_saved.erase(id)
 
@@ -213,18 +249,21 @@ func place(id: String, actor: Node3D) -> void:
 		"touche":
 			var mark: Vector3 = member.mark
 			var facing: float = member.facing
-			var close := smoothstep(0.95, 1.25, time)
+			var close := smoothstep(FORM + 0.05, FORM + 0.35, time)
+			var arrive: float = member.get("form", FORM)
 			if member.role == "lift_front":
 				mark.z += 0.5 * close
 				facing = lerp_angle(PI, 0.0, close)
 			elif member.role == "lift_back":
 				mark.z -= 0.5 * close
-			actor.position = from.lerp(mark, smoothstep(0.0, FORM, time))
+			# Chacun rejoint sa place à son allure : les plus proches arrivent avant les autres.
+			actor.position = from.lerp(mark, _drive_curve(clampf(time / arrive, 0.0, 1.0)))
 			var heading := heading_from
 			var travel := mark - from
 			if travel.length() > 1.5:
-				heading = lerp_angle(heading, atan2(travel.x, travel.z), smoothstep(0.0, 0.2, time))
-			actor.rotation.y = lerp_angle(heading, facing, smoothstep(0.5, FORM, time) if member.role != "lift_front" else smoothstep(0.5, 1.25, time))
+				heading = lerp_angle(heading, atan2(travel.x, travel.z), smoothstep(0.0, 0.3, time))
+			var turn := smoothstep(arrive * 0.6, arrive, time) if member.role != "lift_front" else smoothstep(arrive * 0.6, FORM + 0.35, time)
+			actor.rotation.y = lerp_angle(heading, facing, turn)
 		"maul", "essai_maul":
 			var frame := _frame()
 			var slot: Vector2 = member.slot
@@ -259,6 +298,8 @@ func pose() -> void:
 		if view._actors.has(id) and not cast.has(id):
 			var fade: float = 1.0 - smoothstep(0.0, OUTRO, _outro[id].age)
 			_body(id, _outro[id].pitch * fade, _outro[id].lift * fade)
+			if _outro[id].lift < 0.0:
+				_ground_feet(id)
 	if not active():
 		return
 	match phase:
@@ -268,9 +309,131 @@ func pose() -> void:
 		"essai": _pose_try()
 
 
+## Cadrage de la caméra suivie pendant un geste. Reçoit le point visé et la
+## hauteur visible normaux ; rend ceux à appliquer. La caméra garde son angle :
+## seuls le point visé et la hauteur visible changent, avec une entrée et une
+## sortie lissées et une cible amortie. Hors geste et rampe retombée, rend
+## exactement les valeurs reçues.
+func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, mode: String, delta: float) -> Array:
+	if not FRAME_MIN.has(mode):
+		reset_framing()
+		return [focus, size, offset]
+	var wanted := active()
+	var leap := delta > 0.0 and Vector2(focus.x - _zoom_focus.x, focus.z - _zoom_focus.z).length() > FRAME_LEAP * delta
+	_zoom_focus = focus
+	if not wanted and zoom <= 0.0:
+		_zoom_mode = ""
+		return [focus, size, offset]
+	var turned := offset.rotated(Vector3.UP, FRAME_YAW[mode])
+	if wanted:
+		var goal := _frame_goal(turned, aspect, size, FRAME_MIN[mode])
+		if _zoom_mode != mode:
+			# Début du geste, ou changement de caméra demandé par le joueur (déjà une coupe).
+			_zoom_mode = mode
+			_zoom_center = goal[0]
+			_zoom_size = goal[1]
+			_zoom_center_speed = Vector3.ZERO
+			_zoom_size_speed = 0.0
+		elif delta > 0.0:
+			var center_step := _damp3(_zoom_center, goal[0], _zoom_center_speed, delta)
+			_zoom_center = center_step[0]
+			_zoom_center_speed = center_step[1]
+			var size_step := _damp1(_zoom_size, goal[1], _zoom_size_speed, delta)
+			_zoom_size = size_step[0]
+			_zoom_size_speed = size_step[1]
+		zoom = minf(1.0, zoom + delta / FRAME_IN)
+	else:
+		zoom = 0.0 if leap else maxf(0.0, zoom - delta / FRAME_OUT)
+		if zoom <= 0.0:
+			_zoom_mode = ""
+			return [focus, size, offset]
+	var w := smoothstep(0.0, 1.0, zoom)
+	# Rapprochement à vitesse perçue constante : interpolation de la hauteur visible en échelle logarithmique.
+	return [focus.lerp(_zoom_center, w), size * pow(_zoom_size / size, w), offset.rotated(Vector3.UP, FRAME_YAW[mode] * w)]
+
+
+func reset_framing() -> void:
+	zoom = 0.0
+	_zoom_mode = ""
+
+
+## Point visé au sol et hauteur visible qui contiennent le geste, vus sous l'angle de la caméra.
+func _frame_goal(offset: Vector3, aspect: float, base: float, smallest: float) -> Array:
+	var basis := Basis.looking_at(-offset, Vector3.UP)
+	var inverse := basis.inverse()
+	var low := Vector2(INF, INF)
+	var high := Vector2(-INF, -INF)
+	for point: Vector3 in _frame_points():
+		var local := inverse * point
+		low = Vector2(minf(low.x, local.x), minf(low.y, local.y))
+		high = Vector2(maxf(high.x, local.x), maxf(high.y, local.y))
+	if not low.is_finite():
+		return [view._camera_focus, base]
+	var middle := (low + high) * 0.5
+	var extent := high - low
+	var size := clampf(maxf(extent.y, extent.x / maxf(aspect, 0.1)) * FRAME_MARGIN, smallest, base)
+	var center := basis * Vector3(middle.x, middle.y, 0.0)
+	var ahead := -basis.z
+	center += ahead * (-center.y / ahead.y)
+	return [Vector3(center.x, 0.0, center.z), size]
+
+
+## Ce que chaque geste doit montrer.
+func _frame_points() -> Array[Vector3]:
+	var ground: Array[Vector3] = []
+	var tall := 2.0
+	match phase:
+		"touche":
+			# Les deux lignes, le lanceur, les demis ; le sauteur porté au sommet.
+			for id: String in cast:
+				ground.append(cast[id].mark)
+			if not jumper.is_empty() and cast.has(jumper):
+				ground.append(cast[jumper].mark + Vector3.UP * (LIFT + 2.3 - tall))
+		"maul", "essai_maul":
+			# Le groupe là où il est, avec de l'espace devant lui dans le sens de la poussée.
+			var frame := _frame()
+			for corner: Vector2 in [Vector2(-3.0, -2.0), Vector2(5.0, -2.0), Vector2(-3.0, 2.0), Vector2(5.0, 2.0)]:
+				ground.append(frame.center + frame.u * corner.x + frame.r * corner.y)
+			if phase == "essai_maul":
+				ground.append(target)
+				ground.append(Vector3(dir * 52.5, 0.0, target.z))
+		"essai":
+			# Le marqueur, sa course, le point d'essai et l'en-but.
+			ground.append(dive_from)
+			ground.append(target)
+			ground.append(Vector3(dir * 52.5, 0.0, target.z))
+			for id: String in cheer:
+				if view._actors.has(id) and (view._actors[id].target as Vector3).distance_to(target) < 12.0:
+					ground.append(view._actors[id].target)
+	var points: Array[Vector3] = []
+	for point: Vector3 in ground:
+		points.append(Vector3(point.x, 0.0, point.z))
+		points.append(Vector3(point.x, maxf(point.y, 0.0) + tall, point.z))
+	return points
+
+
+## Amortissement critique (vitesse continue, aucun dépassement).
+static func _damp3(current: Vector3, goal: Vector3, speed: Vector3, delta: float) -> Array:
+	var omega := 2.0 / FRAME_SMOOTH
+	var x := omega * delta
+	var decay := 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
+	var change := current - goal
+	var push := (speed + omega * change) * delta
+	return [goal + (change + push) * decay, (speed - omega * push) * decay]
+
+
+static func _damp1(current: float, goal: float, speed: float, delta: float) -> Array:
+	var omega := 2.0 / FRAME_SMOOTH
+	var x := omega * delta
+	var decay := 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
+	var change := current - goal
+	var push := (speed + omega * change) * delta
+	return [goal + (change + push) * decay, (speed - omega * push) * decay]
+
+
 func _pose_touche() -> void:
 	var ball: Node3D = view._ball
-	var lift := LIFT * smoothstep(1.25, 1.85, time) * (1.0 - smoothstep(DOWN, DOWN + 0.45, time))
+	var lift := LIFT * smoothstep(FORM + 0.35, FORM + 0.95, time) * (1.0 - smoothstep(DOWN, DOWN + 0.45, time))
 	_body(jumper, 0.0, lift)
 	var jump: Dictionary = view._actors[jumper]
 	var pitcher: Dictionary = view._actors[thrower]
@@ -307,19 +470,19 @@ func _pose_touche() -> void:
 			ball.global_position = overhead.lerp(Presentation.ball_anchor(jump.node, jump.rig), down)
 			ball.global_basis = jump.node.global_basis.orthonormalized()
 	# Sauteur : bras tendus vers le ballon, prise à deux mains.
-	var up := smoothstep(1.3, 1.8, time)
+	var up := smoothstep(FORM + 0.4, FORM + 0.9, time)
 	var reach := Presentation.ball_anchor(jump.node, jump.rig).lerp(overhead, up)
 	_hold(jumper, ball.global_position if time >= CATCH else reach, up)
 	# Bloc adverse : même geste, moins haut et sans le ballon.
 	var rival: String = jumpers[1 - side]
 	var contest := 0.0
 	if not rival.is_empty():
-		contest = CONTEST * smoothstep(1.33, 1.9, time) * (1.0 - smoothstep(2.2, 2.6, time))
+		contest = CONTEST * smoothstep(FORM + 0.43, FORM + 1.0, time) * (1.0 - smoothstep(FORM + 1.3, FORM + 1.7, time))
 		_body(rival, 0.0, contest)
 		var other: Node3D = view._actors[rival].node
 		var top: Vector3 = other.global_position + other.global_basis * Vector3(0.0, contest + 2.0, 0.2)
 		var spread := other.global_basis.x.normalized() * 0.2
-		_arms(rival, top + spread, top - spread, smoothstep(1.4, 1.8, time) * (1.0 - smoothstep(2.25, 2.6, time)), true)
+		_arms(rival, top + spread, top - spread, smoothstep(FORM + 0.5, FORM + 0.9, time) * (1.0 - smoothstep(FORM + 1.35, FORM + 1.7, time)), true)
 	for id: String in cast:
 		var member: Dictionary = cast[id]
 		if member.role not in ["lift_front", "lift_back"] or str(jumpers[member.team]).is_empty():
@@ -327,7 +490,7 @@ func _pose_touche() -> void:
 		var entry: Dictionary = view._actors[id]
 		var actor: Node3D = entry.node
 		var own: bool = member.team == side
-		var grip := smoothstep(1.05, 1.3, time) * (1.0 - smoothstep(DOWN + 0.3, TOUCHE_END, time) if own else 1.0 - smoothstep(2.3, 2.6, time))
+		var grip := smoothstep(FORM + 0.15, FORM + 0.4, time) * (1.0 - smoothstep(DOWN + 0.3, TOUCHE_END, time) if own else 1.0 - smoothstep(FORM + 1.4, FORM + 1.7, time))
 		_bend(id, -0.12 * grip)
 		var rig: Skeleton3D = view._actors[jumpers[member.team]].rig
 		var points: Array[Vector3] = []
@@ -365,7 +528,13 @@ func _pose_maul_try() -> void:
 		if joy > 0.0 and cast[id].team == side:
 			_cheer(id, joy)
 	var dive := smoothstep(0.55, 1.0, (time - peel) / DIVE_SECONDS) if dive_set else 0.0
-	_body(carrier, lerpf(0.2, 1.42, dive), 0.14 * dive + sin(dive * PI) * 0.3)
+	if dive <= 0.0:
+		# Le marqueur quitte sa posture de poussée en douceur avant de se détacher.
+		_ease_body(carrier, 0.2, 0.0)
+		_push_legs(carrier, 1.0 - smoothstep(peel, peel + 0.35, time) if dive_set else 1.0)
+	else:
+		var member: Dictionary = cast[carrier]
+		_body(carrier, lerpf(float(member.get("lean_now", 0.2)), 1.42, dive), lerpf(float(member.get("crouch_now", 0.0)), 0.14, dive) + sin(dive * PI) * 0.3)
 	var scorer: Dictionary = view._actors[carrier]
 	var anchor := Presentation.ball_anchor(scorer.node, scorer.rig)
 	var held := anchor
@@ -406,15 +575,89 @@ func _bind(id: String, weight: float) -> void:
 	var entry: Dictionary = view._actors[id]
 	var actor: Node3D = entry.node
 	if id == carrier:
-		_body(id, 0.2 * weight, 0.0)
+		_ease_body(id, 0.2 * weight, 0.0)
+		_push_legs(id, weight)
 		return
-	_body(id, 0.27 * weight, 0.0)
+	_ease_body(id, PUSH_PITCH * weight, -CROUCH * weight)
+	_push_legs(id, weight)
 	_bend(id, 0.3 * weight)
 	var chest := Presentation.ball_anchor(actor, entry.rig)
 	var forward := actor.global_basis.z.normalized()
 	var lateral := actor.global_basis.x.normalized()
 	var reach := chest + forward * 0.34 + Vector3.DOWN * 0.06
 	_arms(id, reach + lateral * 0.3, reach - lateral * 0.3, weight, false)
+
+
+## Inclinaison et abaissement amortis : un changement de rôle dans le regroupement ne saute pas.
+func _ease_body(id: String, pitch: float, lift: float) -> void:
+	var member: Dictionary = cast[id]
+	member.lean_now = move_toward(float(member.get("lean_now", member.get("pitch", 0.0))), pitch, 1.2 * _dt)
+	member.crouch_now = move_toward(float(member.get("crouch_now", member.get("lift", 0.0))), lift, 0.5 * _dt)
+	_body(id, member.lean_now, member.crouch_now)
+
+
+## Petits pas d'appui du ballon porté : bassin abaissé, pied d'appui planté en
+## arrière du bassin, genou fléchi, pas courts réglés sur la distance parcourue.
+## Le solveur à deux os existant garde les longueurs du modèle.
+func _push_legs(id: String, weight: float) -> void:
+	if weight <= 0.0:
+		return
+	var member: Dictionary = cast[id]
+	var entry: Dictionary = view._actors[id]
+	var actor: Node3D = entry.node
+	var rig: Skeleton3D = entry.rig
+	var forward := actor.global_basis.z.normalized()
+	var last: Vector3 = member.get("gait_from", actor.global_position)
+	if not member.has("gait"):
+		# Décalage propre à chaque joueur : les pas ne sont pas synchronisés.
+		member.gait = fposmod(float(id.hash() % 1000) * 0.0137, 1.0) * STRIDE_CYCLE
+	member.gait = float(member.gait) + (actor.global_position - last).dot(forward)
+	member.gait_from = actor.global_position
+	_keep(id, entry, LEGS)
+	var reach := STANCE * STRIDE_CYCLE
+	for leg in ["L", "R"]:
+		var sign_ := 1.0 if leg == "L" else -1.0
+		var upper := rig.find_bone("UpperLeg." + leg)
+		var lower := rig.find_bone("LowerLeg." + leg)
+		var foot := rig.find_bone("Foot." + leg)
+		if mini(upper, mini(lower, foot)) < 0:
+			continue
+		var hip := rig.to_global(rig.get_bone_global_pose(upper).origin)
+		var knee := rig.to_global(rig.get_bone_global_pose(lower).origin)
+		var source := rig.to_global(rig.get_bone_global_pose(foot).origin)
+		var length := hip.distance_to(knee) + knee.distance_to(source)
+		# Pied posé assez loin derrière le bassin pour pousser, assez près pour fléchir le genou.
+		var height := maxf(hip.y - 0.025, 0.1)
+		var back := sqrt(maxf(0.0, pow(length * 0.93, 2.0) - height * height))
+		var cycle := fposmod(float(member.gait) / STRIDE_CYCLE + (0.0 if leg == "L" else 0.5), 1.0)
+		var along := 0.0
+		var raise := 0.0
+		if cycle < STANCE:
+			along = reach * (0.5 - cycle / STANCE)
+		else:
+			var swing := (cycle - STANCE) / (1.0 - STANCE)
+			along = reach * (smoothstep(0.0, 1.0, swing) - 0.5)
+			raise = sin(swing * PI) * 0.09
+		var hip_local := actor.to_local(hip)
+		var planted := actor.to_global(Vector3(sign_ * 0.14, 0.0, hip_local.z - back + along))
+		planted.y = 0.025 + raise
+		Presentation._solve_leg(rig, leg, source.lerp(planted, minf(weight, 1.0)), forward)
+
+
+## Fin d'un geste : les pieds ne passent jamais sous la pelouse pendant le relâchement.
+func _ground_feet(id: String) -> void:
+	var entry: Dictionary = view._actors[id]
+	var rig: Skeleton3D = entry.rig
+	if not is_instance_valid(rig):
+		return
+	_keep(id, entry, LEGS)
+	for leg in ["L", "R"]:
+		var foot := rig.find_bone("Foot." + leg)
+		if foot < 0:
+			continue
+		var source := rig.to_global(rig.get_bone_global_pose(foot).origin)
+		if source.y < 0.025:
+			Presentation._solve_leg(rig, leg, Vector3(source.x, 0.025, source.z), (entry.node as Node3D).global_basis.z)
 
 
 func _cheer(id: String, weight: float) -> void:
@@ -428,7 +671,7 @@ func _frame() -> Dictionary:
 	var k := 1.0
 	var angle := axis_to
 	if phase == "maul":
-		k = smoothstep(0.0, 1.0, clampf((time - MAUL_START) / drive, 0.0, 1.0))
+		k = _drive_curve(clampf((time - MAUL_START) / drive, 0.0, 1.0))
 	else:
 		k = smoothstep(0.0, 1.0, clampf(time / drive, 0.0, 1.0))
 		angle = lerp_angle(axis_from, axis_to, smoothstep(0.0, 0.6, time))
@@ -437,6 +680,17 @@ func _frame() -> Dictionary:
 	if r.z < 0.0:
 		r = -r
 	return {"center": center_from.lerp(center_to, k), "u": u, "r": r}
+
+
+## Course ou poussée : mise en mouvement, allure tenue, arrêt ; vitesse de pointe 1,25 fois la moyenne.
+static func _drive_curve(t: float) -> float:
+	const RAMP := 0.2
+	var peak := 1.0 / (1.0 - RAMP)
+	if t < RAMP:
+		return 0.5 * peak * t * t / RAMP
+	if t < 1.0 - RAMP:
+		return 0.5 * peak * RAMP + peak * (t - RAMP)
+	return 1.0 - 0.5 * peak * (1.0 - t) * (1.0 - t) / RAMP
 
 
 func _line(scene: Dictionary) -> float:
@@ -525,7 +779,7 @@ func _start_maul() -> void:
 	center_to = target + u * 1.95
 	axis_to = atan2(u.x, u.z)
 	axis_from = axis_to
-	drive = clampf(center_from.distance_to(center_to) / 2.0, 1.6, 4.5)
+	drive = clampf(center_from.distance_to(center_to) / MAUL_PACE, 1.6, 6.0)
 	if not cast.has(carrier) or cast[carrier].team != side or cast[carrier].role == "half":
 		carrier = thrower if cast.has(thrower) and cast[thrower].team == side else jumper
 	var rear: Array[Vector2] = [Vector2(-0.75, -0.32), Vector2(-0.75, 0.32), Vector2(-1.5, -0.5), Vector2(-1.5, 0.5), Vector2(-2.25, 0.0)]
@@ -640,7 +894,8 @@ func _start_try(scene: Dictionary, scorer: String, possession: int) -> void:
 
 func _enlist(id: String, role: String, mark: Vector3, facing: float, team: int) -> void:
 	var entry: Dictionary = view._actors[id]
-	cast[id] = {"role": role, "team": team, "from": entry.node.position, "heading": entry.node.rotation.y, "mark": mark, "facing": facing, "staged": true}
+	var form := clampf(Vector2(mark.x - entry.node.position.x, mark.z - entry.node.position.z).length() / FORM_PACE, FORM_MIN, FORM)
+	cast[id] = {"role": role, "team": team, "from": entry.node.position, "heading": entry.node.rotation.y, "mark": mark, "facing": facing, "staged": true, "form": form}
 	entry.grip = 0.0
 	entry.feet.clear()
 
@@ -675,7 +930,7 @@ func _record(live: Dictionary, scene: Dictionary) -> Dictionary:
 
 func _touch(id: String, entry: Dictionary) -> void:
 	if not _saved.has(id):
-		_saved[id] = {"model": (entry.model as Node3D).transform, "bones": {}}
+		_saved[id] = {"model": (entry.model as Node3D).transform, "bones": {}, "places": {}}
 
 
 func _keep(id: String, entry: Dictionary, names: Array) -> void:
@@ -685,6 +940,8 @@ func _keep(id: String, entry: Dictionary, names: Array) -> void:
 		var index := rig.find_bone(bone)
 		if index >= 0 and not _saved[id].bones.has(index):
 			_saved[id].bones[index] = rig.get_bone_pose_rotation(index)
+			# Les contrôles de pied de ce modèle se déplacent : leur position est rendue aussi.
+			_saved[id].places[index] = rig.get_bone_pose_position(index)
 
 
 func _body(id: String, pitch: float, lift: float) -> void:

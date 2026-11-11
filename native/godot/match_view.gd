@@ -540,10 +540,21 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			var lag := _camera_focus - desired
 			_camera_focus = desired + lag.limit_length(3.0 if _camera_mode == "action" else 8.0)
 		var offset := Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
-		_camera.position = _camera_focus + offset
-		_camera.look_at(_camera_focus)
-		_camera.size = 16.0 if _camera_mode == "action" else 42.0
+		var look := _camera_focus
+		var size := 16.0 if _camera_mode == "action" else 42.0
+		if _gestes:
+			# Pendant un geste : rapprochement amorti (et léger pivot lent en TV), puis retour.
+			var screen := get_viewport().get_visible_rect().size
+			var framed: Array = _gestes.frame_camera(look, size, offset, screen.x / maxf(screen.y, 1.0), _camera_mode, delta)
+			look = framed[0]
+			size = framed[1]
+			offset = framed[2]
+		_camera.position = look + offset
+		_camera.look_at(look)
+		_camera.size = size
 		return
+	if _gestes:
+		_gestes.reset_framing()
 	_camera_focus = Vector3.ZERO
 	_camera.position = Vector3(0, 150, 5)
 	_camera.look_at(Vector3.ZERO)
