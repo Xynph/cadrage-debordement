@@ -295,6 +295,19 @@ func guard_refusal(context: String) -> void:
 	check(app.route == route_before and app.contextual_director.kind == scene_before and app.management_ui == ui_before, context + " : scène et état de lecture préservés")
 	await unchanged(before, context)
 func guard_cases() -> void:
+	# A press appointment is intentionally absent until its exact persisted mail
+	# is opened. Exercise that entrypoint instead of manufacturing scene metadata.
+	var invitation := str(app.model.get("clubLife", {}).get("press", {}).get("conference", {}).get("invitationId", ""))
+	if not app.contextual_director.active_meeting() and not invitation.is_empty():
+		app._show_press_inbox(); await settle()
+		var mail: Control
+		for button: Button in app.find_children("*", "Button", true, false):
+			if str(button.get_meta("message_id", "")) == invitation: mail = button; break
+		check(mail != null, "Courrier de la vraie invitation de presse présent")
+		if mail != null:
+			await activate(mail)
+			await activate(named("InboxOpenPressInvitation"))
+			check(app.get_meta("press_mail_origin", "") == invitation, "Presse ouverte uniquement par son courrier et son invitation exacts")
 	check(app.contextual_director.active_meeting(), "Rendez-vous réel initial présent")
 	if app.contextual_director.active_meeting(): await guard_refusal("Rendez-vous obligatoire")
 	if not await Flow.settle_club_meetings(app, self, check): return
