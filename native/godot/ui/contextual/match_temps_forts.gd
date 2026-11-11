@@ -74,6 +74,8 @@ var _sans_reponse := 0.0
 var _apres_erreur := 0.0
 var _actif := false
 var _resultat_sonne := false
+## Plaquage de fin de course déjà joué pour le plan en cours (animations adaptées seulement).
+var _plaque := false
 ## Nombre d'actions du journal déjà connues du joueur quand le temps fort a commencé.
 var _vus := 0
 
@@ -369,6 +371,7 @@ func _jouer(plan: Dictionary) -> void:
 	phase = "jeu"
 	temps = 0.0
 	_resultat_sonne = false
+	_plaque = false
 	# La clameur de l'essai part quand l'essai est à l'écran.
 	if str(plan.get("kind", "")) == "try": _sonner("try")
 	if float(plan.get("mouvement", 0.0)) > 0.0:
@@ -404,6 +407,9 @@ func _lire(delta: float, reel: float) -> void:
 		if sous_image >= PAS:
 			sous_image = 0.0
 			stage.apply_frame(_image(_interpole(plan.scene, clampf(temps / mouvement, 0.0, 1.0)), false, int(plan.index)))
+	if mouvement > 0.0 and temps >= mouvement and not _plaque:
+		_plaque = true
+		_plaquer(plan)
 	if temps < float(plan.get("duree", 1.0)): return
 	_score = plan.get("score", _score)
 	index += 1
@@ -421,6 +427,38 @@ func _lire(delta: float, reel: float) -> void:
 		# La minute suivante dira si l'action continue : la 3D reste à l'écran.
 		etat = ATTENTE
 	_habiller()
+
+## Fin d'une course balle en main : le porteur est plaqué au point où le moteur l'arrête,
+## par l'adversaire le plus proche de la scène, puis se relève. Seulement avec la
+## bibliothèque d'animations adaptées (CD_MATCH_ANIMATIONS) ; sans elle, rien ne change.
+## Pas de plaquage quand le plan suivant est l'essai du même temps fort.
+func _plaquer(plan: Dictionary) -> void:
+	if str(plan.get("kind", "")) != "carry" or not stage.has_method("jouer_geste") or not stage.has_method("instant_geste"):
+		return
+	if index + 1 < tf.plans.size() and str(tf.plans[index + 1].get("kind", "")) == "try":
+		return
+	var scene: Dictionary = plan.scene
+	var possession := int(scene.get("possession", -1))
+	var porteur: Dictionary = {}
+	for joueur: Dictionary in scene.get("players", []):
+		if joueur.get("featured", false) and int(joueur.get("side", -1)) == possession:
+			porteur = joueur
+	if porteur.is_empty():
+		return
+	var point := Vector2(float(porteur.get("x", 0.0)), float(porteur.get("y", 0.0)))
+	var plaqueur := ""
+	var proche := 4.0
+	for joueur: Dictionary in scene.get("players", []):
+		if int(joueur.get("side", -1)) == possession: continue
+		var distance := point.distance_to(Vector2(float(joueur.get("x", 0.0)), float(joueur.get("y", 0.0))))
+		if distance < proche:
+			proche = distance
+			plaqueur = str(joueur.get("id", ""))
+	# Impact au sol un tiers de seconde après le contact ; le côté ou les jambes selon le joueur.
+	var id := str(porteur.get("id", ""))
+	var chute := "plaque_cote" if id.hash() % 2 == 0 else "plaque_jambes"
+	if stage.jouer_geste(id, chute, maxf(0.0, stage.instant_geste(chute) - 0.35), -1.0, true, [["se_relever", 0.0, 1.9]]) and not plaqueur.is_empty():
+		stage.jouer_geste(plaqueur, "plaquage", maxf(0.0, stage.instant_geste("plaquage") - 0.35), -1.0, true)
 
 func _vers_inter() -> void:
 	etat = INTER
