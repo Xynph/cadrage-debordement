@@ -93,7 +93,7 @@ class Publication(unittest.TestCase):
  def test_bundle_preserves_each_explicit_graphics_mode_without_private_files(self):
   expected={'delivery.json'}
   for mode in ('fresh','resume','angle-clean','mesa-native','mesa-local'):
-   for name in ('report.json','process.json','loaded-modules.json','stdout.log','stderr.log'):
+   for name in ('report.json','process.json','loaded-modules.json','graphics-progress.json','driver-ack.json','stdout.log','stderr.log'):
     self.put('evidence/'+mode+'/'+name,'{}');expected.add(mode+'/'+name)
    self.put('evidence/'+mode+'/capture.png','rendered bytes');expected.add(mode+'/captures/capture.png')
    for name in ('private-profiles/donnees.json','runtime/node.exe','sdk/tool.exe','secret','nested/private.png'):
@@ -159,6 +159,58 @@ class Publication(unittest.TestCase):
     candidate={**report,**change};self.put('evidence/windows-report.json',json.dumps(candidate))
     with self.assertRaisesRegex(ValueError,'full Windows receipt'):
      p.create_bundle(self.root,self.root/('scope-'+str(index)+'.zip'),{'passed':True})
+ def test_partial_graphics_progress_is_preserved_without_a_received_verdict(self):
+  events=[{'stage':'scene.load.begin','frames_drawn':0,'process_frames':0}]
+  self.put('evidence/angle-clean/graphics-progress.json',json.dumps(events))
+  ack={'mode':'graphics-smoke','script_path':'res://qa.gd','pid':10,'executable':'unit.exe','data_dir':'external'}
+  self.put('evidence/angle-clean/driver-ack.json',json.dumps(ack))
+  bundle=self.root/'progress-diagnostic.zip';p.create_bundle(self.root,bundle,{'passed':False})
+  with zipfile.ZipFile(bundle) as archive:
+   self.assertEqual(set(archive.namelist()),{'delivery.json','angle-clean/graphics-progress.json','angle-clean/driver-ack.json'})
+   self.assertEqual(json.loads(archive.read('angle-clean/graphics-progress.json')),events)
+   self.assertEqual(json.loads(archive.read('angle-clean/driver-ack.json')),ack)
+   self.assertFalse(json.loads(archive.read('delivery.json'))['passed'])
+  with self.assertRaisesRegex(ValueError,'Missing received evidence'):
+   p.create_bundle(self.root,self.root/'progress-received.zip',{'passed':True})
+ def test_clean_angle_keeps_preparation_notices_without_inventing_mesa_staging(self):
+  report=self.complete_evidence();(self.root/'evidence/mesa-qa.json').unlink()
+  report['selectedGraphicsDriver']='opengl3_angle'
+  report['qaExtras']={'override.cfg':{'source':'QA launch configuration'}}
+  self.put('evidence/windows-report.json',json.dumps(report))
+  bundle=self.root/'angle-received.zip';p.create_bundle(self.root,bundle,{'passed':True})
+  with zipfile.ZipFile(bundle) as archive:
+   self.assertNotIn('mesa-qa.json',archive.namelist())
+   self.assertNotIn('mesa',json.loads(archive.read('windows-report.json')))
+   self.assertIn('tools/mesa-receipt.json',archive.namelist())
+   self.assertIn('tools/mesa-notices/notices/Mesa.txt',archive.namelist())
+ def test_angle_with_declared_mesa_staging_still_requires_its_actual_receipt(self):
+  report=self.complete_evidence();(self.root/'evidence/mesa-qa.json').unlink()
+  report['selectedGraphicsDriver']='opengl3_angle'
+  for index,staging in enumerate(({'mesa':{'receipt':{'qaOnly':True}}},
+   {'qaExtras':{'opengl32.dll':{'source':'x64/opengl32.dll'}}})):
+   with self.subTest(staging=staging):
+    self.put('evidence/windows-report.json',json.dumps({**report,**staging}))
+    with self.assertRaisesRegex(ValueError,'Missing received evidence: mesa-qa.json'):
+     p.create_bundle(self.root,self.root/('staged-angle-'+str(index)+'.zip'),{'passed':True})
+ def test_declared_driver_ack_requires_its_exact_durable_copy(self):
+  report=self.complete_evidence()
+  ack={'schema':'oval-windows-driver-v1','mode':'resume','script_chain':['res://windows_qa/windows-resume.gd'],
+   'entry_scene':'res://windows_qa/entry.tscn','pid':20,'executable':'unit.exe','data_dir':'external','exported':True}
+  report['resume']['driver_ack']=ack;report['process']['resume']['driverAck']=ack
+  self.put('evidence/windows-report.json',json.dumps(report))
+  self.put('evidence/resume/report.json',json.dumps(report['resume']))
+  self.put('evidence/resume/process.json',json.dumps(report['process']['resume']))
+  with self.subTest(ack='missing'):
+   with self.assertRaisesRegex(ValueError,'Missing received evidence: resume/driver-ack.json'):
+    p.create_bundle(self.root,self.root/'missing-ack.zip',{'passed':True})
+  self.put('evidence/resume/driver-ack.json',json.dumps({**ack,'pid':99}))
+  with self.subTest(ack='changed'):
+   with self.assertRaisesRegex(ValueError,'driver-ack.json differs from receipt'):
+    p.create_bundle(self.root,self.root/'changed-ack.zip',{'passed':True})
+  self.put('evidence/resume/driver-ack.json',json.dumps(ack))
+  bundle=self.root/'matching-ack.zip';p.create_bundle(self.root,bundle,{'passed':True})
+  with zipfile.ZipFile(bundle) as archive:
+   self.assertEqual(json.loads(archive.read('resume/driver-ack.json')),ack)
 unittest.main()
 `;
  const r=spawnSync(process.env.PYTHON||(process.platform==='win32'?'python':'python3'),['-c',script],{cwd:path.resolve(__dirname,'..'),encoding:'utf8',timeout:30000});

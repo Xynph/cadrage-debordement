@@ -54,7 +54,7 @@ def evidence_files(root):
             add(root / "tools/mesa" / name, "tools/mesa-notices/" + name)
     for mode in ("fresh", "resume", "angle-clean", "mesa-native", "mesa-local"):
         directory = root / "evidence" / mode
-        for name in ("report.json", "process.json", "loaded-modules.json", "stdout.log", "stderr.log"):
+        for name in ("report.json", "process.json", "loaded-modules.json", "graphics-progress.json", "driver-ack.json", "stdout.log", "stderr.log"):
             add(directory / name, mode + "/" + name)
         if directory.is_dir():
             for image in sorted(directory.glob("*.png")):
@@ -65,7 +65,7 @@ def evidence_files(root):
 def require_received_evidence(files):
     """A received delivery must preserve the complete proof, not only its verdict."""
     required = {"controller-unit.log", "prepare.log", "build.log", "build/import.log", "build/export.log",
-                "windows-report.json", "archive.json", "mesa-qa.json", "qa-extras.json",
+                "windows-report.json", "archive.json", "qa-extras.json",
                 "manifest-before.json", "manifest-after.json", "manifest-build.json",
                 "tools/toolchain-receipt.json", "tools/mesa-receipt.json"}
     for mode in ("fresh", "resume"):
@@ -76,12 +76,23 @@ def require_received_evidence(files):
     report = module.json_document(files["windows-report.json"].read_text(encoding="utf-8-sig"))
     require(report.get("passed") is True and report.get("scope") != "graphics-smoke-only",
             "A received proof bundle requires a passed full Windows receipt")
+    mesa_dlls = any(name.lower().endswith(".dll") and str(row.get("source", "")).startswith("x64/")
+                    for name, row in report.get("qaExtras", {}).items())
+    # Prepared Mesa tools/notices are not evidence that DLLs were copied or loaded.
+    # A clean ANGLE run has no install_mesa receipt to preserve or manufacture.
+    if report.get("selectedGraphicsDriver") != "opengl3_angle" or report.get("mesa") or mesa_dlls:
+        require("mesa-qa.json" in files, "Missing received evidence: mesa-qa.json")
     for mode in ("fresh", "resume"):
         for name, expected in (("report.json", report.get(mode)),
                                ("process.json", report.get("process", {}).get(mode))):
             actual = module.json_document(files[mode + "/" + name].read_text(encoding="utf-8-sig"))
             require(isinstance(expected, dict) and actual == expected,
                     mode + "/" + name + " differs from receipt")
+        if "driver_ack" in report[mode]:
+            name = mode + "/driver-ack.json"
+            require(name in files, "Missing received evidence: " + name)
+            actual = module.json_document(files[name].read_text(encoding="utf-8-sig"))
+            require(actual == report[mode]["driver_ack"], name + " differs from receipt")
     captures = report["resume"].get("graphics", {}).get("captures", [])
     require(isinstance(captures, list) and captures, "Missing received capture evidence")
     directory = files["resume/report.json"].parent.resolve()
