@@ -135,3 +135,21 @@ Son inventaire réel confirme `x64/opengl32.dll`, `x64/libgallium_wgl.dll` et le
 format PE x64 des DLL de ce dossier. Son propre buildinfo MinGW confirme encore
 LLVM 23.1.4. Le contrôle des DLL reste actif. Les deux premiers essais étaient des
 échecs de préparation, sans lancement du jeu et sans campagne globale JavaScript.
+
+## Observation de Gabi pendant toute la recette
+
+Le compteur du premier pilote était copié au terme de la séquence d’aide, avant
+la saison longue. Le suivi conserve désormais le même dictionnaire depuis le
+premier `_ready` QA, vérifie l’identité de l’objet de parole, garde l’observation
+d’un lecteur éventuel avant destruction et actualise les compteurs après celle-ci.
+La reprise externe branche ses observateurs avant l’attente du moteur et contrôle
+également la destruction. La validation du paquet refuse un ancien instantané
+précoce à la place de cette observation complète. Le verrou de voix du jeu est
+inchangé.
+
+Une injection synthétique de signaux tardifs (sans lecture de son) reproduit le
+trou de preuve de l’ancien pilote : il déclarait encore zéro/zéro et un succès.
+Le nouveau reçu refuse correctement ce cas et rapporte un/un ; le cas silencieux
+termine avec 61 contrôles sans échec et zéro/zéro. Ces sondes utilisent Godot Linux,
+sont courtes et ne constituent ni une saison complète ni une recette Windows.
+Les 29 tests Node de l’outillage et le parseur Godot du pilote de reprise passent.

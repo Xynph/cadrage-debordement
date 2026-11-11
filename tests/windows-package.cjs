@@ -26,6 +26,7 @@ def refused(fn, reason=None):
 exe='C:/QA Relocated/game/OvalLegacy27.exe'
 qa={'passed':True,'mode':'fresh','checks':50,'failures':[],'native_display':'headless','executable':exe,'data_dir':'C:/QA Evidence/private/PrototypeGodot','season':2,'pid':10,'engine_pid':11,'coach':{'starts':0,'ends':0,'voice_available':False,'player_present':False},'layout':[]}
 literal={'id':'unit-question','season':1,'week':1,'club':29,'answerId':'r4','questionText':'Exact unit question?','answerText':'Exact selected unit reply.','journalist':{'id':'unit-journalist','name':'Unit Reporter','outlet':'Unit Paper'}}
+qa['coach']['observation']='From QA startup through coach destruction'
 qa.update(journey={'day_advances':210,'matches_started':30,'matches_finished':30,'weeks_closed':30,'meeting_commands':20,'interseason_reached':True,'season_two_reached':True},systems={'passed':True},native06={'passed':True},press_literals=[{'expected':copy.deepcopy(literal),'archived':copy.deepcopy(literal)} for _ in range(2)])
 `;
 function check(name,body){test(name,()=>{const r=spawnSync(python,['-c',prelude+'\n'+body],{encoding:'utf8',timeout:15000});assert.equal(r.status,0,(r.stdout||'')+(r.stderr||''));});}
@@ -64,6 +65,7 @@ check('resume cannot substitute fresh or headless for graphical proof',`refused(
 bad=copy.deepcopy(qa);bad['mode']='resume';refused(lambda:m.validate_qa_report(bad,exe,'resume'),'graphics')`);
 check('guide audio activity or an allocated voice player invalidates QA',`for key,value in [('starts',1),('ends',1),('voice_available',True),('player_present',True)]:
  bad=copy.deepcopy(qa);bad['coach'][key]=value;refused(lambda:m.validate_qa_report(bad,exe,'fresh'),'audio')`);
+check('an early voice snapshot cannot substitute full-lifetime observation',`bad=copy.deepcopy(qa);bad['coach'].pop('observation',None);refused(lambda:m.validate_qa_report(bad,exe,'fresh'),'observation')`);
 check('process proof requires the packaged node, hash, parent and clean shutdown',`node='C:/QA Relocated/game/runtime/node.exe';sha='d'*64;p={'executable':exe,'pid':10,'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':sha,'exitCode':0,'shutdown':True};m.validate_process(p,exe,node,sha)
 for key,value in [('executable','C:/editor.exe'),('nodeExecutable','C:/host/node.exe'),('nodeSha256','e'*64),('nodeParentPid',9),('shutdown',False),('exitCode',1)]:
  bad=copy.deepcopy(p);bad[key]=value;refused(lambda:m.validate_process(bad,exe,node,sha))`);

@@ -8,6 +8,9 @@ var checks:=0
 var captures:=""
 var engine_pid:=-1
 var coach_reception: Dictionary = {}
+var coach_voice_events := {"starts":0,"ends":0}
+var coach_voice_observing := false
+var coach_speech_instance := 0
 var layout_reception: Array[Dictionary] = []
 var systems_reception: Dictionary = {}
 var file_reception: Dictionary = {}
@@ -96,7 +99,16 @@ static func _club_meeting_command(application: Control, tree: SceneTree, verify:
 	verify.call(ok, "Réponse réelle du rendez-vous : " + command + " · " + str(application.last_error))
 	return ok
 
-func _ready() -> void:call_deferred("_run")
+func _ready() -> void:
+	_observe_coach_voice()
+	call_deferred("_run")
+
+func _observe_coach_voice() -> void:
+	if coach_voice_observing or not is_instance_valid(app) or not is_instance_valid(app.coach) or not is_instance_valid(app.coach.speech): return
+	coach_voice_observing = true
+	coach_speech_instance = app.coach.speech.get_instance_id()
+	app.coach.speech.started.connect(func(_id: int): coach_voice_events.starts += 1)
+	app.coach.speech.ended.connect(func(_id: int): coach_voice_events.ends += 1)
 
 func _check(value:bool,message:String) -> void:
 	checks+=1
@@ -387,10 +399,9 @@ func _coach_reception() -> void:
 	var profile: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var disk_before := FileAccess.get_sha256(profile)
 	var requests: Array[String] = []
-	var events := {"starts":0, "ends":0}
+	_observe_coach_voice()
+	var events := coach_voice_events
 	app.coach.speech.requested.connect(func(text: String): requests.append(text))
-	app.coach.speech.started.connect(func(_id: int): events.starts += 1)
-	app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
 	var help := app.coach.find_child("GuideHelp", true, false) as Button
 	_check(help != null and not help.disabled, "Coach help is available from its usual button")
 	if help != null: help.pressed.emit()
@@ -993,7 +1004,18 @@ func _finish() -> void:
 	if not press_choices.is_empty(): _durable_press_literals()
 	app.closing = true
 	app.timer.stop()
+	var voice_player_present := false
+	if coach_voice_observing:
+		var same_speech: bool = is_instance_valid(app.coach) and is_instance_valid(app.coach.speech) and app.coach.speech.get_instance_id() == coach_speech_instance
+		_check(same_speech, "The same Gabi speech instance was observed throughout the executable receipt")
+		if same_speech:
+			voice_player_present = is_instance_valid(app.coach.speech.player)
+			_check(not voice_player_present and not app.coach.speech.speaking and coach_voice_events.starts == 0 and coach_voice_events.ends == 0, "Gabi remained silent throughout the complete receipt before shutdown")
 	if is_instance_valid(app.coach): app.coach.destroy()
+	await get_tree().process_frame
+	if coach_voice_observing:
+		coach_reception.merge({"starts":coach_voice_events.starts,"ends":coach_voice_events.ends,"player_present":voice_player_present,"observation":"From QA startup through coach destruction"},true)
+		_check(coach_voice_events.starts == 0 and coach_voice_events.ends == 0, "No Gabi speech event occurred during shutdown")
 	if is_instance_valid(app.soundscape): app.soundscape.dispose()
 	app.bridge.stop()
 	var deadline:=Time.get_ticks_msec()+2500

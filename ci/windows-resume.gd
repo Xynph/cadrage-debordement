@@ -135,13 +135,13 @@ func run() -> void:
 	app = scene.instantiate()
 	root.add_child(app)
 	current_scene = app
-	if not await wait_ready(): await finish(); return
-	engine_pid = app.bridge.child_pid
 	check(is_instance_valid(app.coach) and is_instance_valid(app.coach.speech), "Real visual Gabi exists")
 	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
 		app.coach.speech.started.connect(func(_id: int): events.starts += 1)
 		app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
 		check(app.coach.speech.player == null and app.coach.speech.voices.is_empty(), "No Gabi audio player or system voice allocated")
+	if not await wait_ready(): await finish(); return
+	engine_pid = app.bridge.child_pid
 	if not await ask("export"): await finish(); return
 	var exported: Dictionary = JSON.parse_string(app.model.meta.exportText)
 	var after_read: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(file))
@@ -181,6 +181,8 @@ func finish() -> void:
 			player_present = is_instance_valid(app.coach.speech.player)
 			check(not player_present and not app.coach.speech.speaking and events.starts == 0 and events.ends == 0, "Gabi remains silent with no allocated player")
 			app.coach.destroy()
+			await process_frame
+			check(events.starts == 0 and events.ends == 0, "Gabi produces no voice event during destruction")
 		if is_instance_valid(app.soundscape): app.soundscape.dispose()
 		app.bridge.stop()
 		var deadline := Time.get_ticks_msec() + 5000

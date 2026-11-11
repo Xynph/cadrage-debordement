@@ -201,6 +201,7 @@ def validate_qa_report(report, expected_executable, expected_mode):
     require(coach.get("starts") == 0 and coach.get("ends") == 0 and coach.get("voice_available") is False and coach.get("player_present") is False, "Guide audio must remain unallocated and silent")
     if expected_mode == "fresh":
         require(report.get("native_display") == "headless", "Fresh headless receipt required")
+        require(coach.get("observation") == "From QA startup through coach destruction", "Full-lifetime voice observation required")
         journey = report.get("journey", {})
         for key, minimum in (("day_advances", 182), ("matches_started", 26), ("matches_finished", 26), ("weeks_closed", 26), ("meeting_commands", 1)):
             require(type(journey.get(key)) is int and journey[key] >= minimum, "Full-season journey evidence missing: " + key)
