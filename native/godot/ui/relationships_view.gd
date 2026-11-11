@@ -63,7 +63,7 @@ static func _identity(app: Control, parent: Node, identity: Dictionary, id: Stri
 	G.fill(text)
 	row.add_child(text)
 	var heading := _person_link(app,text,id,"RelationshipPlayerLink")
-	heading.add_theme_font_size_override("font_size",25)
+	heading.add_theme_font_size_override("font_size",G.Base.reading_size(25))
 	heading.add_theme_font_override("font",G.T.DISPLAY)
 	text.add_child(G.wrap(detail,13))
 
