@@ -104,14 +104,17 @@ static func compact_button(button: Button, font_size: int) -> void:
 		compact_style.content_margin_bottom = 0
 		button.add_theme_stylebox_override(style_name, compact_style)
 
-static func profile_link(app: Control, parent: Control, rectangle: Rect2, player: Dictionary, id: String) -> Button:
+static func entity_profile_link(app: Control, parent: Control, rectangle: Rect2, target: Dictionary, id: String, caption: String) -> Button:
 	var link := D.button(parent, rectangle, "", func(): pass, false, "", false, app.accent, id)
 	compact_button(link, 18)
 	link.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 2, 0))
 	link.add_theme_stylebox_override("hover", C.box(Color(1, 1, 1, .04), C.GOLD, 2, 0))
 	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 2, 0))
-	Link.bind(link, app, {"kind":"player", "id":str(player.id)}, str(player.get("name", "Joueur")))
+	Link.bind(link, app, target, caption)
 	return link
+
+static func profile_link(app: Control, parent: Control, rectangle: Rect2, player: Dictionary, id: String) -> Button:
+	return entity_profile_link(app,parent,rectangle,{"kind":"player", "id":str(player.id)},id,str(player.get("name", "Joueur")))
 
 static func sort_header(app: Control, parent: Control, rectangle: Rect2, caption: String, key: String, state: Dictionary, prefix: String, id: String) -> Button:
 	var active: bool = state.get(prefix + "_sort", "") == key
