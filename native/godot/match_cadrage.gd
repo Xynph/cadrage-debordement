@@ -17,6 +17,11 @@ const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
 const SUR := 0.8           # part du demi-champ où le ballon doit rester
 const TAILLE_JOUEUR := 2.0
 const VOLS := ["kick", "kickoff", "drop22", "goalLine", "reception", "touch", "goal", "miss", "transformation"]
+## Arrêts de jeu (coup de sifflet, carton) : le ballon est mort, personne ne le porte et
+## les joueurs se tiennent souvent à plus de PROCHES mètres. Le plan montre le groupe le
+## plus proche (au moins TEMOINS joueurs), en plan large ; il ne cadre jamais l'herbe seule.
+const ARRETS := ["penalty", "card", "advantage", "ingoal", "hand-fault"]
+const TEMOINS := 6
 
 var view
 var actif := false
@@ -42,7 +47,7 @@ func _init(owner: Node3D) -> void:
 func regler(on: bool, plan_kind: String = "", longue: bool = false) -> void:
 	actif = on
 	kind = plan_kind
-	large = longue or plan_kind in VOLS
+	large = longue or plan_kind in VOLS or plan_kind in ARRETS
 
 
 ## Parts de la hauteur d'image masquées par l'interface, données par la régie.
@@ -107,9 +112,19 @@ func _but(basis: Basis, aspect: float, mode: String, base: float, focus: Vector3
 	var ballon := _ballon(focus)
 	var sol := Vector3(ballon.x, 0.0, ballon.z)
 	var points: Array[Vector3] = [sol, sol + Vector3.UP * maxf(TAILLE_JOUEUR, ballon.y)]
+	# Joueurs concernés : le porteur, ceux qui sont près du ballon ; au moins TEMOINS joueurs
+	# (les plus proches, 30 m au plus), pour qu'un plan ne montre jamais un terrain vide.
+	var distances: Array = []
 	for id: String in view._actors:
 		var place: Vector3 = view._actors[id].node.position
-		if id == view._carrier_id or Vector2(place.x - sol.x, place.z - sol.z).length() <= PROCHES:
+		var ecart := Vector2(place.x - sol.x, place.z - sol.z).length()
+		distances.append([ecart, id])
+	distances.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	for rang in distances.size():
+		var id: String = distances[rang][1]
+		var ecart: float = distances[rang][0]
+		if id == view._carrier_id or ecart <= PROCHES or (rang < TEMOINS and ecart <= 30.0):
+			var place: Vector3 = view._actors[id].node.position
 			points.append(Vector3(place.x, 0.0, place.z))
 			points.append(Vector3(place.x, TAILLE_JOUEUR, place.z))
 	if kind in VOLS and not view._ball_attached:
