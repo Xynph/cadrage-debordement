@@ -200,13 +200,19 @@ func reading_cases() -> void:
 	search = named("RosterSearch") as LineEdit
 	check(search != null and search.text == "___aucun___" and app.management_ui.roster.search == reading.search, "Retour : recherche et filtre exclusif conservés")
 	check(search != null and search.has_focus() and search.caret_column == 4 and search.get_selection_from_column() == 2 and search.get_selection_to_column() == 6, "Retour : focus, curseur et sélection de saisie conservés")
+	await activate(named("RosterMoreFilters"))
 	var reset := named("RosterReset") as Button
-	if reset != null: reset.pressed.emit(); await settle()
+	check(reset != null, "Réinitialiser est présent dans le vrai dialogue de filtres")
+	await activate(reset)
+	await activate(named("RosterMoreFilters"))
 	var sort := named("RosterSort") as OptionButton
+	check(sort != null, "Tri disponible dans le vrai dialogue de filtres")
 	if sort != null and sort.item_count > 1:
 		var selected_before: String = app.selected_player
 		sort.grab_focus(); sort.select(1); sort.item_selected.emit(1); await settle()
 		check(app.route == "Effectif" and app.selected_player == selected_before and not app.get_meta("immersive08_full_player", false), "Tri de colonne/liste distinct d’une ouverture d’entité")
+	var advanced := named("RosterAdvancedFilters") as AcceptDialog
+	if advanced != null: await activate(advanced.get_ok_button())
 	var scroll := named("SquadScroll") as ScrollContainer
 	if scroll != null:
 		scroll.scroll_vertical = mini(150, int(scroll.get_v_scroll_bar().max_value - scroll.get_v_scroll_bar().page))
@@ -255,6 +261,11 @@ func reading_cases() -> void:
 		check(named("StaffProfile") != null and text(named("StaffProfileName")) == str(person.name) + "\n", "Profil du membre de staff exact")
 		await capture("staff-profil-2560")
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
+	if next.is_empty():
+		for fixture: Dictionary in app.model.get("calendar", []):
+			if fixture.get("home") is Dictionary and fixture.get("away") is Dictionary and (str(fixture.home.get("id")) == str(app.model.club.id) or str(fixture.away.get("id")) == str(app.model.club.id)):
+				next = fixture; break
+	check(not next.is_empty(), "Une rencontre du club est réellement projetée pour consulter son adversaire")
 	if not next.is_empty():
 		var opponent: Dictionary = next.away if int(next.home.id) == int(app.model.club.id) else next.home
 		check(await open_entity("club", opponent.id), "Club adverse ouvert dans son détail existant")
