@@ -1,0 +1,32 @@
+seed=427 reference {"wins":4,"draws":1,"matches":8,"cashChange":2359640,"wageChange":0,"pointsChange":19,"academyRatingChange":0.95,"fatigueChange":3.725,"moraleChange":25,"trustChange":12}
+seed=427 vedette {"wins":4,"draws":1,"matches":8,"cashChange":2092840,"wageChange":12100,"pointsChange":19,"academyRatingChange":0.95,"fatigueChange":3.257,"moraleChange":25,"trustChange":12}
+seed=427 talent_observe {"wins":4,"draws":0,"matches":8,"cashChange":2430240,"wageChange":4800,"pointsChange":17,"academyRatingChange":0.95,"fatigueChange":4.477,"moraleChange":17,"trustChange":10}
+seed=427 profondeur {"wins":4,"draws":0,"matches":8,"cashChange":2430840,"wageChange":9600,"pointsChange":19,"academyRatingChange":0.95,"fatigueChange":4.883,"moraleChange":20,"trustChange":10}
+seed=427 formation {"wins":4,"draws":1,"matches":8,"cashChange":2263640,"wageChange":0,"pointsChange":19,"academyRatingChange":1.983,"fatigueChange":3.725,"moraleChange":25,"trustChange":12}
+/workspace/work/management-quality/tools/qa/management-strategy-comparison.cjs:137
+ catch(error){report.complete=false;report.failure=error.stack;fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');throw error;}
+                                                                                                                           ^
+
+AssertionError [ERR_ASSERTION]: begin_match: Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.
+
+false !== true
+
+    at Object.go (/workspace/work/management-quality/tools/qa/management-strategy-comparison.cjs:16:10)
+    at play (/workspace/work/management-quality/tools/qa/management-strategy-comparison.cjs:39:24)
+    at campaign (/workspace/work/management-quality/tools/qa/management-strategy-comparison.cjs:75:95)
+    at main (/workspace/work/management-quality/tools/qa/management-strategy-comparison.cjs:136:53)
+    at Object.<anonymous> (/workspace/work/management-quality/tools/qa/management-strategy-comparison.cjs:141:26)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

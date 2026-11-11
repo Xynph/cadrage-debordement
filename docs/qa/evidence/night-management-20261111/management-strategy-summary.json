@@ -1,0 +1,816 @@
+{
+  "schema": 1,
+  "completed_alternatives": 14,
+  "blocked_alternatives": 1,
+  "comparison_matches": 112,
+  "common_preparation_matches": 18,
+  "reports": [
+    {
+      "file": "management-strategy-initial-attempt.json",
+      "sha256": "600688d0c1e432e15b9ae1e995c564c6847f162c709fe9f3d5c11b51435907af",
+      "sourceSha": "3feda0a8d850fc9e535bb7f19467e3b935f9b2fe",
+      "runnerSha256": "6bc25360a7523807badf934a06143d40070fe833c45ea8893a889f6e1e406fb2",
+      "original_complete": false
+    },
+    {
+      "file": "management-strategy-731.json",
+      "sha256": "050430ebff2a937808e566be8bf7882a0a4903ba7d869118a2cc379ae0f77d4a",
+      "sourceSha": "1840c1a06258462cd882a95c6345c90b13515b8c",
+      "runnerSha256": "28627d4308f8fbd15fe5e61630f48ab11b8b45bb0c2c5034c5bc97a8d48d7bfc",
+      "original_complete": true
+    },
+    {
+      "file": "management-strategy-1299.json",
+      "sha256": "2c2fd2d8388c573e22e141c67e410e7b8892a71510ab75633d821ca5bb730794",
+      "sourceSha": "1840c1a06258462cd882a95c6345c90b13515b8c",
+      "runnerSha256": "6bc25360a7523807badf934a06143d40070fe833c45ea8893a889f6e1e406fb2",
+      "original_complete": true
+    }
+  ],
+  "campaigns": [
+    {
+      "seed": 427,
+      "checkpointProfileSha256": "db1127e6a4ae01bbd65596426966474f5bba682b5f549d144d6ee590d15f90c6",
+      "checkpointStateSha256": "08dd93f885cf1df9f983e0370a397c55ba599b6bd4ebd04adf3adcd6120706ee",
+      "checkpointRng": 2599053760,
+      "initial": {
+        "season": 1,
+        "week": 6,
+        "cash": 3797730,
+        "wage": 251045,
+        "points": 6,
+        "rank": 12,
+        "morale": 72,
+        "trust": 71,
+        "players": 40,
+        "averageRating": 67.05,
+        "averageCondition": 79.727,
+        "averageFatigue": 15.45,
+        "injured": 1,
+        "academyAverageRating": 59.25,
+        "academyInvestment": 0,
+        "academySpent": 0
+      },
+      "scoutedTargets": [
+        {
+          "id": "p3-18-1794434400000",
+          "clubId": 3,
+          "pos": "Deuxième ligne",
+          "family": 2,
+          "age": 26,
+          "fee": 170000,
+          "salary": 12100,
+          "rating": null,
+          "ratingRange": {
+            "min": 70,
+            "max": 78
+          },
+          "knowledge": "observed"
+        },
+        {
+          "id": "p11-13-1794434400000",
+          "clubId": 11,
+          "pos": "Ailier",
+          "family": 6,
+          "age": 30,
+          "fee": 70000,
+          "salary": 4800,
+          "rating": null,
+          "ratingRange": {
+            "min": 66,
+            "max": 70
+          },
+          "knowledge": "deep"
+        },
+        {
+          "id": "p3-9-1794434400000",
+          "clubId": 3,
+          "pos": "Demi d’ouverture",
+          "family": 5,
+          "age": 28,
+          "fee": 70000,
+          "salary": 4800,
+          "rating": null,
+          "ratingRange": {
+            "min": 77,
+            "max": 81
+          },
+          "knowledge": "deep"
+        }
+      ],
+      "results": [
+        {
+          "id": "reference",
+          "label": "Conserver les moyens",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6157370,
+            "wage": 251045,
+            "points": 25,
+            "rank": 10,
+            "morale": 97,
+            "trust": 83,
+            "players": 40,
+            "averageRating": 67.375,
+            "averageCondition": 79.689,
+            "averageFatigue": 19.175,
+            "injured": 1,
+            "academyAverageRating": 60.2,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 4,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2359640,
+            "wageChange": 0,
+            "pointsChange": 19,
+            "academyRatingChange": 0.95,
+            "fatigueChange": 3.725,
+            "moraleChange": 25,
+            "trustChange": 12
+          }
+        },
+        {
+          "id": "vedette",
+          "label": "Un renfort au salaire élevé",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5890570,
+            "wage": 263145,
+            "points": 25,
+            "rank": 10,
+            "morale": 97,
+            "trust": 83,
+            "players": 41,
+            "averageRating": 67.561,
+            "averageCondition": 80.184,
+            "averageFatigue": 18.707,
+            "injured": 1,
+            "academyAverageRating": 60.2,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 4,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2092840,
+            "wageChange": 12100,
+            "pointsChange": 19,
+            "academyRatingChange": 0.95,
+            "fatigueChange": 3.257,
+            "moraleChange": 25,
+            "trustChange": 12
+          },
+          "quotedTransferFees": 170000,
+          "newWagePerPeriod": 12100
+        },
+        {
+          "id": "talent_observe",
+          "label": "Le meilleur niveau observé parmi les trois pistes",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6227970,
+            "wage": 255845,
+            "points": 23,
+            "rank": 12,
+            "morale": 89,
+            "trust": 81,
+            "players": 41,
+            "averageRating": 67.683,
+            "averageCondition": 80.268,
+            "averageFatigue": 19.927,
+            "injured": 0,
+            "academyAverageRating": 60.2,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 4,
+            "draws": 0,
+            "matches": 8,
+            "cashChange": 2430240,
+            "wageChange": 4800,
+            "pointsChange": 17,
+            "academyRatingChange": 0.95,
+            "fatigueChange": 4.477,
+            "moraleChange": 17,
+            "trustChange": 10
+          },
+          "quotedTransferFees": 70000,
+          "newWagePerPeriod": 4800
+        },
+        {
+          "id": "profondeur",
+          "label": "Deux familles de postes",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6228570,
+            "wage": 260645,
+            "points": 25,
+            "rank": 10,
+            "morale": 92,
+            "trust": 81,
+            "players": 42,
+            "averageRating": 67.738,
+            "averageCondition": 80.602,
+            "averageFatigue": 20.333,
+            "injured": 0,
+            "academyAverageRating": 60.2,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 4,
+            "draws": 0,
+            "matches": 8,
+            "cashChange": 2430840,
+            "wageChange": 9600,
+            "pointsChange": 19,
+            "academyRatingChange": 0.95,
+            "fatigueChange": 4.883,
+            "moraleChange": 20,
+            "trustChange": 10
+          },
+          "quotedTransferFees": 140000,
+          "newWagePerPeriod": 9600
+        },
+        {
+          "id": "formation",
+          "label": "Financer la formation",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6061370,
+            "wage": 251045,
+            "points": 25,
+            "rank": 10,
+            "morale": 97,
+            "trust": 83,
+            "players": 40,
+            "averageRating": 67.375,
+            "averageCondition": 79.689,
+            "averageFatigue": 19.175,
+            "injured": 1,
+            "academyAverageRating": 61.233,
+            "academyInvestment": 12000,
+            "academySpent": 96000
+          },
+          "summary": {
+            "wins": 4,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2263640,
+            "wageChange": 0,
+            "pointsChange": 19,
+            "academyRatingChange": 1.983,
+            "fatigueChange": 3.725,
+            "moraleChange": 25,
+            "trustChange": 12
+          },
+          "sameScoresAsReference": true,
+          "sameClosingRngAsReference": true,
+          "additionalAcademyProgressVsReference": 1.033
+        }
+      ]
+    },
+    {
+      "seed": 731,
+      "checkpointProfileSha256": "0eb7dfac0b8d15596c46abce11bbaab9b55122c56e064e08a51448606a0df610",
+      "checkpointStateSha256": "37a5f17d60435001343545cea0a783ed7d7ea2615e191226385bf937b85b751c",
+      "checkpointRng": 2434446489,
+      "initial": {
+        "season": 1,
+        "week": 6,
+        "cash": 3687696,
+        "wage": 268134,
+        "points": 2,
+        "rank": 14,
+        "morale": 61,
+        "trust": 66,
+        "players": 41,
+        "averageRating": 66.878,
+        "averageCondition": 80.519,
+        "averageFatigue": 14.488,
+        "injured": 4,
+        "academyAverageRating": 59.65,
+        "academyInvestment": 0,
+        "academySpent": 0
+      },
+      "scoutedTargets": [
+        {
+          "id": "p11-25-1794434400000",
+          "clubId": 11,
+          "pos": "Ailier",
+          "family": 6,
+          "age": 33,
+          "fee": 500000,
+          "salary": 12100,
+          "rating": null,
+          "ratingRange": {
+            "min": 74,
+            "max": 78
+          },
+          "knowledge": "deep"
+        },
+        {
+          "id": "p0-15-1794434400000",
+          "clubId": 0,
+          "pos": "Pilier gauche",
+          "family": 0,
+          "age": 21,
+          "fee": 70000,
+          "salary": 4800,
+          "rating": null,
+          "ratingRange": {
+            "min": 78,
+            "max": 82
+          },
+          "knowledge": "deep"
+        },
+        {
+          "id": "p1-11-1794434400000",
+          "clubId": 1,
+          "pos": "Centre",
+          "family": 7,
+          "age": 22,
+          "fee": 70000,
+          "salary": 4800,
+          "rating": null,
+          "ratingRange": {
+            "min": 67,
+            "max": 75
+          },
+          "knowledge": "observed"
+        }
+      ],
+      "results": [
+        {
+          "id": "reference",
+          "label": "Conserver les moyens",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5908624,
+            "wage": 268134,
+            "points": 10,
+            "rank": 14,
+            "morale": 58,
+            "trust": 63,
+            "players": 41,
+            "averageRating": 67.39,
+            "averageCondition": 80.35,
+            "averageFatigue": 16.122,
+            "injured": 3,
+            "academyAverageRating": 60.633,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2220928,
+            "wageChange": 0,
+            "pointsChange": 8,
+            "academyRatingChange": 0.983,
+            "fatigueChange": 1.634,
+            "moraleChange": -3,
+            "trustChange": -3
+          }
+        },
+        {
+          "id": "vedette",
+          "label": "Un renfort au salaire élevé",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5163824,
+            "wage": 280234,
+            "points": 12,
+            "rank": 14,
+            "morale": 63,
+            "trust": 66,
+            "players": 42,
+            "averageRating": 67.571,
+            "averageCondition": 80.911,
+            "averageFatigue": 17.024,
+            "injured": 0,
+            "academyAverageRating": 60.633,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 2,
+            "draws": 0,
+            "matches": 8,
+            "cashChange": 1476128,
+            "wageChange": 12100,
+            "pointsChange": 10,
+            "academyRatingChange": 0.983,
+            "fatigueChange": 2.536,
+            "moraleChange": 2,
+            "trustChange": 0
+          },
+          "quotedTransferFees": 500000,
+          "newWagePerPeriod": 12100
+        },
+        {
+          "id": "talent_observe",
+          "label": "Le meilleur niveau observé parmi les trois pistes",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5656224,
+            "wage": 272934,
+            "points": 5,
+            "rank": 14,
+            "morale": 47,
+            "trust": 58,
+            "players": 42,
+            "averageRating": 67.714,
+            "averageCondition": 80.622,
+            "averageFatigue": 16.786,
+            "injured": 3,
+            "academyAverageRating": 60.633,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 0,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 1968528,
+            "wageChange": 4800,
+            "pointsChange": 3,
+            "academyRatingChange": 0.983,
+            "fatigueChange": 2.298,
+            "moraleChange": -14,
+            "trustChange": -8
+          },
+          "quotedTransferFees": 70000,
+          "newWagePerPeriod": 4800
+        },
+        {
+          "id": "profondeur",
+          "label": "Deux familles de postes",
+          "status": "blocked",
+          "completedMatches": 0,
+          "end": {
+            "season": 1,
+            "week": 6,
+            "cash": 3687696,
+            "wage": 268134,
+            "points": 2,
+            "rank": 14,
+            "morale": 61,
+            "trust": 66,
+            "players": 41,
+            "averageRating": 66.878,
+            "averageCondition": 80.519,
+            "averageFatigue": 14.488,
+            "injured": 4,
+            "academyAverageRating": 59.65,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "reason": "Deux recrutements demandés, 1 place professionnelle disponible.",
+          "blocker": {
+            "kind": "capacity",
+            "places": 1,
+            "required": 2
+          }
+        },
+        {
+          "id": "formation",
+          "label": "Financer la formation",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5812624,
+            "wage": 268134,
+            "points": 10,
+            "rank": 14,
+            "morale": 58,
+            "trust": 63,
+            "players": 41,
+            "averageRating": 67.39,
+            "averageCondition": 80.35,
+            "averageFatigue": 16.122,
+            "injured": 3,
+            "academyAverageRating": 61.683,
+            "academyInvestment": 12000,
+            "academySpent": 96000
+          },
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2124928,
+            "wageChange": 0,
+            "pointsChange": 8,
+            "academyRatingChange": 2.033,
+            "fatigueChange": 1.634,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "sameScoresAsReference": true,
+          "sameClosingRngAsReference": true,
+          "additionalAcademyProgressVsReference": 1.05
+        }
+      ]
+    },
+    {
+      "seed": 1299,
+      "checkpointProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+      "checkpointStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+      "checkpointRng": 1870054293,
+      "initial": {
+        "season": 1,
+        "week": 6,
+        "cash": 3823462,
+        "wage": 256423,
+        "points": 4,
+        "rank": 14,
+        "morale": 72,
+        "trust": 71,
+        "players": 40,
+        "averageRating": 66.725,
+        "averageCondition": 81.053,
+        "averageFatigue": 15.45,
+        "injured": 0,
+        "academyAverageRating": 59.417,
+        "academyInvestment": 0,
+        "academySpent": 0
+      },
+      "scoutedTargets": [
+        {
+          "id": "p5-12-1794434400000",
+          "clubId": 5,
+          "pos": "Centre",
+          "family": 7,
+          "age": 23,
+          "fee": 340000,
+          "salary": 12100,
+          "rating": null,
+          "ratingRange": {
+            "min": 73,
+            "max": 81
+          },
+          "knowledge": "observed"
+        },
+        {
+          "id": "p12-4-1794434400000",
+          "clubId": 12,
+          "pos": "Deuxième ligne",
+          "family": 2,
+          "age": 26,
+          "fee": 70000,
+          "salary": 4800,
+          "rating": null,
+          "ratingRange": {
+            "min": 64,
+            "max": 72
+          },
+          "knowledge": "observed"
+        },
+        {
+          "id": "p6-8-1794434400000",
+          "clubId": 6,
+          "pos": "Demi de mêlée",
+          "family": 4,
+          "age": 29,
+          "fee": 70000,
+          "salary": 4800,
+          "rating": null,
+          "ratingRange": {
+            "min": 73,
+            "max": 81
+          },
+          "knowledge": "observed"
+        }
+      ],
+      "results": [
+        {
+          "id": "reference",
+          "label": "Conserver les moyens",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6073078,
+            "wage": 256423,
+            "points": 11,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 40,
+            "averageRating": 67.075,
+            "averageCondition": 79.784,
+            "averageFatigue": 19.15,
+            "injured": 0,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2249616,
+            "wageChange": 0,
+            "pointsChange": 7,
+            "academyRatingChange": 1,
+            "fatigueChange": 3.7,
+            "moraleChange": -3,
+            "trustChange": -3
+          }
+        },
+        {
+          "id": "vedette",
+          "label": "Un renfort au salaire élevé",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5563278,
+            "wage": 268523,
+            "points": 13,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 41,
+            "averageRating": 67.22,
+            "averageCondition": 80.187,
+            "averageFatigue": 19.854,
+            "injured": 1,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 1739816,
+            "wageChange": 12100,
+            "pointsChange": 9,
+            "academyRatingChange": 1,
+            "fatigueChange": 4.404,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "quotedTransferFees": 340000,
+          "newWagePerPeriod": 12100
+        },
+        {
+          "id": "talent_observe",
+          "label": "Le meilleur niveau observé parmi les trois pistes",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6088678,
+            "wage": 261223,
+            "points": 12,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 41,
+            "averageRating": 67.268,
+            "averageCondition": 80.821,
+            "averageFatigue": 19.244,
+            "injured": 4,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2265216,
+            "wageChange": 4800,
+            "pointsChange": 8,
+            "academyRatingChange": 1,
+            "fatigueChange": 3.794,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "quotedTransferFees": 70000,
+          "newWagePerPeriod": 4800
+        },
+        {
+          "id": "profondeur",
+          "label": "Deux familles de postes",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5763278,
+            "wage": 266023,
+            "points": 9,
+            "rank": 14,
+            "morale": 58,
+            "trust": 63,
+            "players": 42,
+            "averageRating": 67.357,
+            "averageCondition": 81.405,
+            "averageFatigue": 17.833,
+            "injured": 2,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "summary": {
+            "wins": 0,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 1939816,
+            "wageChange": 9600,
+            "pointsChange": 5,
+            "academyRatingChange": 1,
+            "fatigueChange": 2.383,
+            "moraleChange": -14,
+            "trustChange": -8
+          },
+          "quotedTransferFees": 140000,
+          "newWagePerPeriod": 9600
+        },
+        {
+          "id": "formation",
+          "label": "Financer la formation",
+          "status": "completed",
+          "completedMatches": 8,
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5977078,
+            "wage": 256423,
+            "points": 11,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 40,
+            "averageRating": 67.075,
+            "averageCondition": 79.784,
+            "averageFatigue": 19.15,
+            "injured": 0,
+            "academyAverageRating": 61.517,
+            "academyInvestment": 12000,
+            "academySpent": 96000
+          },
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2153616,
+            "wageChange": 0,
+            "pointsChange": 7,
+            "academyRatingChange": 2.1,
+            "fatigueChange": 3.7,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "sameScoresAsReference": true,
+          "sameClosingRngAsReference": true,
+          "additionalAcademyProgressVsReference": 1.1
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Original multi-seed attempt stopped at seed731 during preparation; seed427 evidence reused unchanged.",
+    "Seed731 rerun uses guarded paid cover, then records depth strategy impossible at one available place.",
+    "Different post-decision RNG consumption and roster denominators prevent causal claims from match results.",
+    "No global CI or Windows qualification."
+  ]
+}
