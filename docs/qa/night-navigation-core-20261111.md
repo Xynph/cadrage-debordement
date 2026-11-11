@@ -15,6 +15,7 @@ avant le 12 novembre à 09 h, Paris ; Windows et ZIP restent à Claude.
 | Staff | Annuaire et parcours | Adaptateur ID, validation à la reprise historique | Consultation de `StaffView` |
 | Club / rencontre | Détails dans `CompetitionCanvas` | Adaptateur ID, aucun écran réécrit | Fenêtre existante sur l’appelant |
 | Compétition / date / finances | Écrans et états locaux existants | Adaptateurs ; passage par la même garde | Classement / calendrier / onglet financier |
+| Rapport observation projeté | Rapport de recrutement existant | Adaptateur par `report.id` exact, sans exiger joueur encore marché | Fenêtre rapport existante |
 | Entraînement équipe | Entrée existante préparation | Type `training`, ID vide ou `team` seulement | Préparation, onglet entraînement |
 | Presse | Invitation de courrier exacte | Aucun menu générique vers Presse | Courrier et invitation d’origine conservés |
 | Rendez-vous, causerie, match immersif | Gardes de scènes | Refus avant changement de sélection ou de filtre | Aucun nouveau chemin parallèle |
@@ -26,7 +27,7 @@ avant le 12 novembre à 09 h, Paris ; Windows et ZIP restent à Claude.
 uniquement la projection courante. `open_entity(target, source_window = null)`
 applique aussi les gardes puis ouvre la cible. Types pris en charge : `menu`,
 `player` (alias `squad`), `market`, `nation`, `staff`, `club`, `fixture`,
-`competition`, `date`, `finance`, `training`. Le champ `route` est une entrée
+`competition`, `date`, `finance`, `training`, `report`. Le champ `route` est une entrée
 libre uniquement pour `menu`, parmi les routes déjà permises ; Presse reste
 exclue. Les autres types choisissent leur destination, indépendamment d’une
 route fournie par l’appelant.

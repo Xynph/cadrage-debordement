@@ -439,6 +439,8 @@ func entity_available(target: Dictionary) -> bool:
 			return not id.is_empty() and ((_allowed_route("Effectif") and not _person("squad", id).is_empty()) or (_allowed_route("Recrutement") and not _person("market", id).is_empty()))
 		"market":
 			return not id.is_empty() and _allowed_route("Recrutement") and not _person("market", id).is_empty()
+		"report":
+			return _allowed_route("Recrutement") and app.Immersive.Recruitment.has_method("target_available") and app.Immersive.Recruitment.target_available(app, target.get("id"))
 		"nation":
 			return _allowed_route("Sélections") and app.Immersive.Selections.has_method("target_available") and app.Immersive.Selections.target_available(app, id)
 		"staff":
@@ -481,6 +483,8 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		"market":
 			destination = "Recrutement"
 			_set_market_target(id, str(_person("market", id).get("name", "")))
+		"report":
+			opened = app.Immersive.Recruitment.open_target(app, target.get("id"))
 		"nation":
 			destination = "Sélections"
 			opened = app.Immersive.Selections.open_target(app, id)
