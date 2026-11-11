@@ -33,9 +33,9 @@ function talk(phase) {
 try {
   go('new_career', { mode: 'common', club: 0 });
   settle();
-  const candidate = model.market.find(person => Number.isInteger(person.fam) && person.age <= 40);
+  const candidate = model.clubLife.regenScouting.candidates.find(person => Number.isInteger(person.family) && person.age <= 40);
   assert.ok(candidate, 'Candidat effectivement projeté pour la famille de la mission');
-  go('scout_mission', { family: candidate.fam, maxAge: 40, budget: 10000000, maxWage: 100000, confirmed: true });
+  go('scout_mission', { family: candidate.family, maxAge: 40, budget: 10000000, maxWage: 100000, confirmed: true });
   for (let cycle = 0; cycle < 2; cycle++) {
     settle();
     const week = model.meta.week;
