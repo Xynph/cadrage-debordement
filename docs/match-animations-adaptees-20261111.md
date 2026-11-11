@@ -20,7 +20,7 @@ Toujours sans effet sans `CD_MATCH_ANIMATIONS`. Interface de la vue : `NativeMat
 | `goal`, `miss` (pénalité, transformation), `kick` | joueur mis en avant | `mx_coup_de_pied` | contact du pied (0,75 s) au départ du ballon ; la course d'élan est coupée |
 | `kickoff`, `drop22`, `goalLine` | botteur, seulement s'il est au ballon | `mx_drop` | contact (2,05 s) au départ du ballon |
 | `reception` | receveur | `mx_reception_haute` après un jeu au pied, sinon `mx_reception` | prise ; le clip est coupé juste après (sa suite d'origine est une chute) |
-| fin de course `carry` (régie des temps forts) | porteur, adversaire le plus proche à 4 m | `mx_plaque_cote` ou `mx_plaque_jambes`, puis `mx_se_relever` ; `mx_plaquage` | impact au sol 0,35 s après le contact ; le joueur au sol garde sa place, puis rejoint celle de la scène ; pas de plaquage avant l'essai du même temps fort |
+| fin de course `carry` (régie des temps forts) | porteur, adversaire le plus proche à 4 m | `mx_plaque_cote` ou `mx_plaque_jambes`, puis `mx_se_relever` ; `mx_plaquage` | impact au sol 0,35 s après le contact ; le joueur au sol garde sa place, puis rejoint celle de la scène ; pas de plaquage avant l'essai du même temps fort, ni sans adversaire à 4 m dans la scène (le porteur ne tombe pas seul) |
 | essai aplati | marqueur ; partenaires proches ; trois adversaires les plus proches | `mx_se_relever` puis `mx_joie_poing` ; `mx_joie` / `mx_joie_poing` ; `mx_deception` | 0,3 s après l'aplatissement ; le geste tient l'image 2,6 s au lieu de 1,6 s |
 
 Les clips qui se déplacent (élan du lancer et du coup de pied, chute du plaqué) sont ramenés sur place au chargement (`_retirer_deplacement` : déplacement horizontal du bassin retiré, verticale gardée) : le joueur reste où la scène le place.

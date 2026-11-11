@@ -454,10 +454,13 @@ func _plaquer(plan: Dictionary) -> void:
 		if distance < proche:
 			proche = distance
 			plaqueur = str(joueur.get("id", ""))
+	# Personne au contact dans la scène : pas de plaquage inventé, le porteur ne tombe pas seul.
+	if plaqueur.is_empty():
+		return
 	# Impact au sol un tiers de seconde après le contact ; le côté ou les jambes selon le joueur.
 	var id := str(porteur.get("id", ""))
 	var chute := "plaque_cote" if id.hash() % 2 == 0 else "plaque_jambes"
-	if stage.jouer_geste(id, chute, maxf(0.0, stage.instant_geste(chute) - 0.35), -1.0, true, [["se_relever", 0.0, 1.9]]) and not plaqueur.is_empty():
+	if stage.jouer_geste(id, chute, maxf(0.0, stage.instant_geste(chute) - 0.35), -1.0, true, [["se_relever", 0.0, 1.9]]):
 		stage.jouer_geste(plaqueur, "plaquage", maxf(0.0, stage.instant_geste("plaquage") - 0.35), -1.0, true)
 
 func _vers_inter() -> void:
