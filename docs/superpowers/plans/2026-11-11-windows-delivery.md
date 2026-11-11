@@ -40,8 +40,8 @@ Python offre verify_archive(zip_path, expected_commit), verify_tree(root, manife
 - [ ] Extraire le ZIP dans un chemin QA relocalisé avec espaces, vérifier toutes les entrées et leurs empreintes.
 - [ ] Lancer l'EXE extrait, environnement filtré, runtime local, profil neuf ; contrôler processus enfant, arrêt, rapport et S2.
 - [ ] Ajouter au pilote embarqué la sélection optionnelle QA_RESOLUTION=2560x1440 en conservant ses résolutions historiques par défaut ; déclarer mode/data_dir dans le reçu.
-- [ ] Avec le même EXE, lancer ci/windows-resume.gd sur le profil existant, SELF_TEST désactivé, état/citations comparés avant actions ; réutiliser les commandes publiques.
-- [ ] Qualifier Mesa et capturer réellement les écrans2560×1440 ; déclarer les outils graphiques ajoutés uniquement à la copie QA.
+- [ ] Avec le même EXE, sélectionner WindowsReceiptResume embarqué via l'override QA stable, SELF_TEST désactivé, état/citations comparés avant actions ; réutiliser les commandes publiques.
+- [ ] Recevoir la reprise complète ANGLE propre à10images/s/VSync0, selon le smoke9e6042c reçu, et les cinq captures2560×1440 ; vérifier driver/options/API/caps/modules système hashés sans installation Mesa.
 - [ ] Recontrôler ZIP/manifeste et les compteurs Gabi0, enregistrer chaque limite au lieu de la masquer.
 - [ ] Syntaxe/tests locaux puis recette réelle sur Windows ; aucune preuve native déduite de Linux.
 
@@ -64,5 +64,5 @@ Interfaces: stage_windows_qa(project) copie les deux classes avant import/export
 - [ ] Émettre l'ACK avant toute instanciation de main.tscn ; conserver les comparaisons pures du profil avant cette instanciation.
 - [ ] Supprimer --script ; sélectionner la classe par override.cfg QA hashé et restaurer le démarrage normal pour fresh.
 - [ ] Vérifier staging/cache/dispatch sous Godot Linux disponible, parse/contrôleur/validateur ; signaler qu'il ne s'agit pas d'un reçu Windows.
-- [ ] Faire recevoir d'abord le smoke Windows court par l'intégrateur ; employer ensuite le renderer effectivement reçu pour la reprise complète.
+- [x] Faire recevoir d'abord le smoke Windows court par l'intégrateur : 43003649410 sur9e6042c,18contrôles/0échec ; employer ensuite le renderer effectivement reçu pour la reprise complète, dont l'exécution reste attendue.
 

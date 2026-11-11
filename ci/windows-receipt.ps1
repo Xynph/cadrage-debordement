@@ -156,7 +156,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
         $deadline = [DateTime]::UtcNow.AddSeconds(5)
         while ((Get-Process -Id $node.pid -ErrorAction SilentlyContinue) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 100 }
         $shutdown = -not [bool](Get-Process -Id $node.pid -ErrorAction SilentlyContinue)
-        $receipt = @{executable=$Exe;exeSha256=(Hash $Exe);pid=$process.Id;nodeExecutable=$node.executable;nodePid=$node.pid;nodeParentPid=$node.parentPid;nodeSha256=(Hash $NodeExe);exitCode=$process.ExitCode;shutdown=$shutdown;argv=$Arguments;environmentNames=@($environment.Keys|Sort-Object);cim=@($observations.ToArray());durationSeconds=([DateTime]::UtcNow-$started).TotalSeconds;startedUtc=$started.ToString('o');loadedModules=@($loadedModules.Values);moduleError=$moduleError;driverAck=$driverAck}
+        $receipt = @{executable=$Exe;exeSha256=(Hash $Exe);pid=$process.Id;nodeExecutable=$node.executable;nodePid=$node.pid;nodeParentPid=$node.parentPid;nodeSha256=(Hash $NodeExe);exitCode=$process.ExitCode;shutdown=$shutdown;argv=$Arguments;environmentNames=@($environment.Keys|Sort-Object);systemRoot=$environment.SystemRoot;cim=@($observations.ToArray());durationSeconds=([DateTime]::UtcNow-$started).TotalSeconds;startedUtc=$started.ToString('o');loadedModules=@($loadedModules.Values);moduleError=$moduleError;driverAck=$driverAck}
         Write-Json $receipt (Join-Path $Output 'process.json')
         if ($process.ExitCode -ne 0 -or -not $shutdown) { throw "Native $Mode failed or its owned worker survived shutdown." }
         return $receipt
@@ -167,7 +167,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
                 if ($null -ne $stdout) { [void]$stdout.GetAwaiter().GetResult() }
                 if ($null -ne $stderr) { [void]$stderr.GetAwaiter().GetResult() }
                 if (-not (Test-Path -LiteralPath (Join-Path $Output 'process.json'))) {
-                    Write-Json @{executable=$Exe;pid=$process.Id;argv=$Arguments;exitCode=$process.ExitCode;shutdown=$shutdown;cim=@($observations.ToArray());environmentNames=@($environment.Keys|Sort-Object);driverAck=$driverAck;incomplete=$true} (Join-Path $Output 'process.json')
+                    Write-Json @{executable=$Exe;pid=$process.Id;argv=$Arguments;exitCode=$process.ExitCode;shutdown=$shutdown;cim=@($observations.ToArray());environmentNames=@($environment.Keys|Sort-Object);systemRoot=$environment.SystemRoot;driverAck=$driverAck;incomplete=$true} (Join-Path $Output 'process.json')
                 }
             }
         } finally {
@@ -246,10 +246,10 @@ try {
         Write-Host '::notice title=Windows graphics smoke::Actual exported EXE, observed renderer, packaged Node and nonblank native 1440p PNG received. This is not a full-season receipt.'
         return
     }
-    $mesaPath = Join-Path $EvidenceRoot 'mesa-qa.json'
-    Python-Check @('mesa','--mesa-root',$MesaRoot,'--game-root',$game,'--manifest',$manifestPath,'--output',$mesaPath)
-    $mesa = Read-Json $mesaPath
-    $Report.mesa = $mesa; $Report.qaExtras = $mesa.extras
+    # Received by the real exported EXE in smoke 43003649410: static ANGLE,
+    # system D3D11, VSync disabled and 10 fps. Keep this QA copy free of Mesa.
+    $Report.selectedGraphicsDriver = 'opengl3_angle'
+    $Report.qaExtras = @{}
     Set-QA-Mode $game 'resume' $Report.qaExtras
     $extrasPath = Join-Path $EvidenceRoot 'qa-extras.json'; Write-Json $Report.qaExtras $extrasPath
     $beforePath = Join-Path $EvidenceRoot 'manifest-before.json'
@@ -261,7 +261,7 @@ try {
     $Report.process.fresh = Run-Game 'fresh' @('--headless','--audio-driver','Dummy','--max-fps','120') $CareerProfile $fresh $exe $nodeExe
     $Report.fresh = Read-Json (Join-Path $fresh 'report.json')
     $resume = Join-Path $EvidenceRoot 'resume'
-    $Report.process.resume = Run-Game 'resume' @('--audio-driver','Dummy','--rendering-method','gl_compatibility','--windowed','--resolution','2560x1440','--max-fps','60') $CareerProfile $resume $exe $nodeExe
+    $Report.process.resume = Run-Game 'resume' @('--audio-driver','Dummy','--rendering-method','gl_compatibility','--rendering-driver',$Report.selectedGraphicsDriver,'--windowed','--resolution','2560x1440','--disable-vsync','--max-fps','10') $CareerProfile $resume $exe $nodeExe
     $Report.resume = Read-Json (Join-Path $resume 'report.json')
     $afterPath = Join-Path $EvidenceRoot 'manifest-after.json'
     Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$afterPath)

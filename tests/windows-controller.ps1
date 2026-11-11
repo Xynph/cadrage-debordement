@@ -41,6 +41,7 @@ try {
     $record = Run-Game 'fresh' @('-NoLogo','-NoProfile','-NonInteractive','-Command',$body) (Join-Path $EvidenceRoot 'profile') $output $childExe $childExe
     if ($record -isnot [Collections.IDictionary]) { throw 'Async task results polluted the process receipt: exactly one dictionary required.' }
     if ($record.exitCode -ne 0 -or -not $record.shutdown) { throw 'Diagnostic process did not shut down cleanly.' }
+    if ($record.systemRoot -cne $env:SystemRoot) { throw 'Process receipt omitted its actual Windows system module root.' }
     $captured = Get-Content -LiteralPath (Join-Path $output 'stdout.log') -Raw
     if ($captured -notmatch 'UNIT_CAPTURE_MARKER' -or $captured -match 'UNIT_SENTINEL') { throw 'Captured output is incomplete or the child inherited a forbidden token.' }
     Write-Output 'Controller unit: one receipt dictionary, complete bytes, no token inheritance.'
