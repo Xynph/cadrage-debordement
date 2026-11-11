@@ -159,3 +159,25 @@ assertions d’identité et de lecture pure passaient, mais ce visuel n’est pa
 qualifié. Le propriétaire a préparé le correctif `885071b2` (`G.fill(words)`).
 Un groupe `staff` ciblé et une assertion de largeur/nombre de lignes ont été
 ajoutés pour recevoir ce correctif sans répéter les parcours déjà reçus.
+
+## Réception du correctif visuel staff
+
+`staff` a reçu **54 contrôles, zéro échec** sur
+`fbc642e1d3069895d5614caca433ab8f4c83bcf8` avec le correctif `885071b2`.
+Les trois PNG natifs 2560×1440, 1920×1080 et 1280×720 ont été inspectés :
+le nom, la fonction et l’âge sont désormais horizontaux et lisibles. Le test
+exige une largeur réelle de texte et au plus trois lignes pour ce nom.
+
+L’aller-retour vers le même profil conserve la recherche d’annuaire, le focus,
+le curseur et la sélection de texte ; le vrai bouton de nom ouvre le bon
+`staff_id`. Le reçu conserve l’état sportif, le hash de profil, ses seed et
+horloge, avec zéro commande de consultation et zéro demande/début de parole.
+Preuves : `/workspace/work/night-phase5-staff`.
+
+Précision sur la réception `prospects` précédente : le champ `negotiation`
+était vide après l’édition des deux montants. Elle recevait donc le brouillon
+des conditions, pas encore la conservation d’un devis non vide émis par le
+moteur. Un groupe `quote` séparé est préparé pour soumettre le vrai bouton
+`InterclubNegotiate` avant sa baseline de consultation, conserver sa réponse
+exacte et inspecter le dossier sans aucune clôture de transfert. Son résultat
+reste à renseigner après exécution.
