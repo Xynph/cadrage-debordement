@@ -69,3 +69,40 @@ la souris, vérifie le retour au choix du joueur puis les octets de sauvegarde,
 l’état/RNG et le silence de Gabi. Le script ne prétend pas recevoir un lien de
 score réel : ce geste doit être repris avec le checkpoint de rencontre déjà
 qualifié par la recette commune. Wrapper JavaScript vérifié, aucun SDK lancé ici.
+
+## Complément graphique préparé, sans exécution
+
+`tests/godot-analysis-club-graphics.cjs` et `.gd` sont opt-in :
+`CD_ANALYSIS_CLUB_GRAPHICS=1`, SDK explicite et affichage X11 existant.
+Le délai enfant reste **150 secondes**, dans la garde commune de **180 secondes**.
+Aucun import ni lancement du SDK n’a été effectué sur ce worktree.
+
+Pour une reprise locale, `CD_ANALYSIS_CLUB_GRAPHICS_SOURCE` désigne un profil,
+son dossier `PrototypeGodot` ou `donnees.json`. Le wrapper copie le dossier
+complet vers un nouveau temporaire avant toute ouverture du worker ; il hache
+le fichier source avant et après, y compris après un échec, et conserve
+`source-copy.json`. Aucun chemin `/tmp` local n’est requis par la CI : la CI
+ignore cette option et crée elle-même son checkpoint via les commandes publiques
+et les helpers `prepare_match_day`, causeries, `delegate`, puis
+`finish_match_week`, sans modifier les délais.
+
+Le checkpoint local prioritaire proposé par l’intégrateur a été inspecté en
+lecture seule : `/tmp/cd-reader-history-tZu0GW/PrototypeGodot` conserve le résultat
+propre `accession:2026:league:0:4`, saison 1, clubs 16/29, score 19–10. Il ne
+contient pas de registre individuel activé. La recette conserve cet ID exact et
+ne fabrique aucun match. Si aucune rencontre de saison sûre n’existe, elle
+consigne l’indisponibilité plutôt que de substituer une rencontre.
+
+L’éventuelle activation du registre est une **commande publique explicite de
+préparation sur la copie**, avant le baseline navigation. Les anciennes feuilles
+ne sont pas reconstruites. Les activations ensuite vérifiées sont le score
+collectif réel→fiche de rencontre, l’adversaire→club, les retours avec même
+instance/focus/défilement, le choix de joueur→fiche→retour au même choix, le staff
+et les onglets Trésorerie/Salaires. La sauvegarde, le registre et l’état/RNG sont
+comparés après ces consultations ; les compteurs de parole doivent rester à zéro.
+
+Deux captures natives 2560×1440 sont prévues : l’analyse et la fiche de la vraie
+rencontre. Leur existence, leurs dimensions et leurs SHA seront vérifiés dans
+`report.json`. Elles ne sont pas annoncées comme obtenues avant l’exécution.
+Le wrapper JavaScript a passé `node --check` ; la validation du SDK reste à
+l’intégrateur sur le candidat commun effectivement assemblé.
