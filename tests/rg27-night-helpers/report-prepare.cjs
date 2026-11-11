@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
-const { createBridge } = require('../native/engine/worker.cjs');
-const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
+const { createBridge } = require('../../native/engine/worker.cjs');
+const { settleClubMeetings } = require('../helpers/club-meetings.cjs');
 const [profile, output] = process.argv.slice(2);
 assert.ok(profile && output, 'Profil jetable et dossier de preuves requis');
 fs.mkdirSync(output, { recursive: true });
@@ -67,7 +67,7 @@ try {
   fs.writeFileSync(path.join(output, 'report-preparation.json'), JSON.stringify({
     method: 'production createBridge with public daily-calendar and meeting commands only',
     node: process.version,
-    worker_sha256: crypto.createHash('sha256').update(fs.readFileSync(path.resolve(__dirname, '../native/engine/worker.cjs'))).digest('hex'),
+    worker_sha256: crypto.createHash('sha256').update(fs.readFileSync(path.resolve(__dirname, '../../native/engine/worker.cjs'))).digest('hex'),
     profile_sha256: crypto.createHash('sha256').update(fs.readFileSync(filename)).digest('hex'),
     report_ids: reports.map(report => report.id),
     actual_week: model.meta.week,

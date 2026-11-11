@@ -29,7 +29,7 @@ test('Liens du carnet : vraie consultation par ID, historique et absence de muta
   fs.writeFileSync(path.join(directory, 'provenance.json'), JSON.stringify({ commit, sources, group, graphics, profile }, null, 2));
   const started = Date.now();
   if (group === 'report') {
-    const preparation = spawnSync(process.execPath, [path.resolve(__dirname, 'rg27-night-report-prepare.cjs'), profile, directory], {
+    const preparation = spawnSync(process.execPath, [path.resolve(__dirname, 'rg27-night-helpers/report-prepare.cjs'), profile, directory], {
       cwd: path.resolve(__dirname, '..'), encoding: 'utf8', timeout: 110000, env: process.env,
     });
     const preparationLog = (preparation.stdout || '') + (preparation.stderr || '');
