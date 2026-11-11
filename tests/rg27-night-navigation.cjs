@@ -16,11 +16,12 @@ test('Liens du carnet : vraie consultation par ID, historique et absence de muta
   const project = path.resolve(__dirname, '../native/godot');
   const graphics = process.env.CD_NIGHT_NAV_GRAPHICS === '1';
   const group = process.env.CD_NIGHT_NAV_CASE || 'reading';
-  assert.ok(['reading', 'nation', 'guards'].includes(group), 'Groupe explicite connu');
+  assert.ok(['reading', 'nation', 'guards', 'prospects'].includes(group), 'Groupe explicite connu');
   const files = [
     'ui/navigation_controller.gd', 'ui/management_state.gd', 'main.gd',
     'ui/international_view.gd', 'ui/staff_view.gd',
-    'ui/immersive08/competition_canvas.gd',
+    'ui/immersive08/competition_canvas.gd', 'ui/prospect_profile.gd',
+    'ui/regen_scouting_view.gd', 'ui/interclub_market_view.gd',
   ];
   const sources = Object.fromEntries(files.filter(file => fs.existsSync(path.join(project, file))).map(file => [file,
     crypto.createHash('sha256').update(fs.readFileSync(path.join(project, file))).digest('hex')]));

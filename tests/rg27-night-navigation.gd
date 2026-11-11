@@ -296,6 +296,70 @@ func guard_refusal(context: String) -> void:
 	check(not await open_entity("player", id), context + " : lien refusé proprement")
 	check(app.route == route_before and app.contextual_director.kind == scene_before and app.management_ui == ui_before, context + " : scène et état de lecture préservés")
 	await unchanged(before, context)
+func inspect_and_return(owner: Window, link: Control, target: Dictionary, context: String) -> void:
+	check(link != null and owner.visible, context + " : catalogue et lien réels")
+	if link == null: return
+	var owner_id: int = owner.get_instance_id()
+	link.grab_focus(); await settle()
+	await activate(link)
+	var detail := owner.find_child("ProspectProfile", true, false) as AcceptDialog
+	check(detail != null and detail.visible and str(detail.get_meta("entity_id", "")) == str(target.id) and detail.get_meta("entity_source") == target.source, context + " : dossier du bon ID/source dans la fenêtre appelante")
+	check(not nav.inspect_entity(target, owner), context + " : deuxième dossier refusé pendant le premier")
+	if detail != null:
+		await capture("prospect-" + str(target.source) + "-2560")
+		await activate(detail.get_ok_button())
+	check(is_instance_valid(owner) and owner.get_instance_id() == owner_id and owner.visible, context + " : même fenêtre appelante conservée")
+	check(link.has_focus(), context + " : focus restitué au nom exact")
+func prospects_cases() -> void:
+	var before := await snapshot()
+	app._navigate("Recrutement"); await settle()
+	await activate(named("OpenRegenScouting"))
+	var scout := named("RegenScouting") as Window
+	check(scout != null and scout.visible, "Vrai catalogue de relève ouvert")
+	var candidates: Array = app.model.get("clubLife", {}).get("regenScouting", {}).get("candidates", [])
+	check(not candidates.is_empty(), "Candidats de relève réellement projetés")
+	if scout != null and not candidates.is_empty():
+		var candidate: Dictionary = candidates[0]
+		var candidate_id := str(candidate.get("playerId", candidate.id))
+		var search := scout.find_child("RegenScoutSearch", true, false) as LineEdit
+		search.text = str(candidate.name); search.text_changed.emit(search.text); await settle()
+		var link := scout.find_child("RegenScoutProfile_" + candidate_id.validate_node_name(), true, false) as Control
+		if link != null: scout.scroll.ensure_control_visible(link); await settle()
+		var state_before: Dictionary = scout.state.duplicate(true)
+		var scroll_before: int = scout.scroll.scroll_vertical
+		await inspect_and_return(scout, link, {"kind":"prospect", "source":"regen-candidates", "id":candidate_id}, "Relève")
+		check(scout.state == state_before and scout.scroll.scroll_vertical == scroll_before and search.text == str(candidate.name), "Retour de la relève : recherche, filtres, page et défilement conservés")
+	app._clear_dialogs(); await settle()
+	await activate(named("OpenInterclubMarket"))
+	var market := named("InterclubMarket") as Window
+	check(market != null and market.visible, "Vrai catalogue entre clubs ouvert")
+	var contracted: Array = app.model.get("clubLife", {}).get("interclubMarket", {}).get("candidates", []).filter(func(person: Dictionary): return person.get("available", false))
+	check(not contracted.is_empty(), "Vrai joueur sous contrat disponible pour préparer un brouillon")
+	if market != null and not contracted.is_empty():
+		var candidate: Dictionary = contracted[0]
+		var offer: Control
+		for button: Button in market.find_children("InterclubOffer", "Button", true, false):
+			if str(button.get_meta("player_id", "")) == str(candidate.id): offer = button; break
+		check(offer != null, "Action de préparation du brouillon pour le vrai candidat")
+		if offer != null:
+			await activate(offer)
+			var fee := market.find_child("InterclubFee", true, false) as SpinBox
+			var salary := market.find_child("InterclubSalary", true, false) as SpinBox
+			check(fee != null and salary != null, "Champs réels du brouillon de négociation")
+			if fee != null and salary != null:
+				fee.value = minf(fee.max_value, fee.value + fee.step * 2)
+				salary.value = minf(salary.max_value, salary.value + salary.step)
+				await settle()
+				var draft := {"fee":market.offer_fee,"salary":market.offer_salary,"person":market.selected_person.duplicate(true),"negotiation":market.negotiation.duplicate(true),"query":market.query,"page":market.page,"fee_input":fee.value,"salary_input":salary.value}
+				var link := market.find_child("InterclubProfile_" + str(candidate.id).validate_node_name(), true, false) as Control
+				await inspect_and_return(market, link, {"kind":"prospect", "source":"interclub", "id":str(candidate.id)}, "Marché entre clubs")
+				check(market.offer_fee == draft.fee and market.offer_salary == draft.salary and market.selected_person == draft.person and market.negotiation == draft.negotiation, "Retour interclubs : indemnité, salaire, joueur sélectionné et devis strictement conservés")
+				check(market.query == draft.query and market.page == draft.page and fee.value == draft.fee_input and salary.value == draft.salary_input, "Retour interclubs : recherche, page et champs exacts du brouillon conservés")
+				app.confirm("Confirmation de recette", "La consultation doit respecter cette confirmation visible.", func(): pass)
+				await settle()
+				check(not nav.inspect_entity({"kind":"prospect","source":"interclub","id":str(candidate.id)}, market) and market.find_child("ProspectProfile", true, false) == null, "Confirmation de test visible : inspection refusée sans superposition")
+	app._clear_dialogs(); await settle()
+	await unchanged(before, "Consultation des prospects depuis leurs catalogues")
 func guard_cases() -> void:
 	# A press appointment is intentionally absent until its exact persisted mail
 	# is opened. Exercise that entrypoint instead of manufacturing scene metadata.
@@ -367,5 +431,6 @@ func run() -> void:
 	match group:
 		"nation": await nation_cases()
 		"guards": await guard_cases()
+		"prospects": await prospects_cases()
 		_: await reading_cases()
 	await finish()
