@@ -283,7 +283,7 @@ func _update_drawer() -> void:
 	if drawer_tab.is_empty(): return
 	var live := _live()
 	if drawer_tab == "Journal":
-		journal.update_frame(live)
+		journal.update_frame(regie.montre(live) if regie != null else live)
 		return
 	var presence: Array = [drawer_tab, selected_slot, live.get("paused"), live.get("finished")]
 	match drawer_tab:

@@ -165,6 +165,29 @@ test('En direct, la décision d’une rafale n’utilise que le passé et ne cha
   }
 });
 
+test('En direct, un remplacement ou une consigne donnés pendant la pause ne changent pas le temps fort courant', () => {
+  // Le moteur écrit le remplacement et la consigne à la minute en cours : la dernière rafale
+  // s'allonge de bandeaux. Le temps fort déjà montré doit garder sa clé, sinon il est rejoué.
+  const fins = finsDeRafale(reel.events);
+  let essais = 0;
+  for (const niveau of ['dynamique', 'integral']) {
+    for (const fin of fins) {
+      const journal = reel.events.slice(0, fin + 1);
+      const avant = H.en_direct(journal, { niveau }).courant;
+      if (!avant) continue;
+      const min = journal.at(-1).min, period = journal.at(-1).period;
+      const apres = H.en_direct([...journal,
+        { min, period, type: 'sub', text: 'Remplacement.' },
+        { min, period, type: 'tactic', text: 'Votre attaque : au large.' },
+        { min, period, type: 'tactic', text: 'Votre défense : équilibrée.' }], { niveau }).courant;
+      assert.equal(apres?.cle, avant.cle, `${niveau} : même temps fort après les ordres (${avant.cle})`);
+      assert.deepEqual(apres.plans, avant.plans, `${niveau} : mêmes plans`);
+      essais++;
+    }
+  }
+  assert.ok(essais > 20, 'temps forts essayés : ' + essais);
+});
+
 test('En direct, les temps forts sont triés, disjoints, et l’amorce ne revient jamais sur un plan déjà montré', () => {
   const durees = {};
   for (const niveau of NIVEAUX) {
@@ -172,7 +195,7 @@ test('En direct, les temps forts sont triés, disjoints, et l’amorce ne revien
     let precedent = -1;
     for (const h of bilan.tempsForts) {
       assert.ok(h.debut > precedent && h.fin >= h.debut && h.fin < reel.events.length, `${niveau} : ${h.cle}`);
-      assert.equal(h.cle, h.debut + '-' + h.fin);
+      assert.equal(h.cle, h.debut + '-' + h.plans.at(-1).i);
       assert.ok(h.plans.length > 0 && h.plans.every(p => p.i >= h.debut && p.i <= h.fin && p.duree > 0), 'plans dans la fenêtre');
       assert.ok(!h.suite || precedent >= 0, 'une suite prolonge un temps fort déjà joué');
       precedent = h.fin;

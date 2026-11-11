@@ -143,6 +143,7 @@ test('Sans aucune variable, le moteur du jeu projette les temps forts ; CD_MATCH
     { command: 'tick', payload: { minute: true, temps_forts: 'dynamique' } }, { command: 'shutdown', payload: {} }];
   const defaut = processus({}, requetes);
   assert.equal(defaut[0].ok, true, defaut[0].error);
+  assert.equal(defaut[0].model.live.directError, undefined, 'projection sans erreur');
   assert.equal(defaut[0].model.live.direct.niveau, 'dynamique', 'niveau par défaut');
   assert.equal(defaut[0].model.live.direct.tempsFort.type, 'coup_d_envoi');
   assert.equal(defaut[2].ok, true, defaut[2].error);

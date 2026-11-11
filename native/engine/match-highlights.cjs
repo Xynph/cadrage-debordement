@@ -418,7 +418,10 @@ function en_direct(events,options={}){
   if(debut>=0&&fin>=debut){
    const tout=niveau==='integral',{plans,bandeaux}=plansDe(lignes,debut,fin,tout);
    if(plans.length){
-    const tf={cle:debut+'-'+fin,suite,...decrire(lignes,debut,fin,membres,false,suite,tout),plans,bandeaux};
+    // Clé : début et dernier plan montré. Un remplacement ou une consigne donnés pendant la
+    // pause ajoutent des bandeaux à la même minute et allongent la fenêtre, pas les plans :
+    // le temps fort reste le même et n'est pas rejoué.
+    const tf={cle:debut+'-'+plans.at(-1).i,suite,...decrire(lignes,debut,fin,membres,false,suite,tout),plans,bandeaux};
     tf.plans=plans;tf.nombrePlans=plans.length;
     decision.joue=true;decision.tempsFort=tf;
     const dernier=lignes[plans.at(-1).i];

@@ -60,7 +60,10 @@ func observe_framing() -> void:
 	framing.largest = maxf(framing.largest, camera.size)
 	# Sous le voile du fondu d'entrée, l'image 3D n'est pas encore visible.
 	var veiled: bool = view.regie.voile.visible and view.regie.voile.modulate.a > 0.85
-	if camera.size > 26.5 and not veiled: framing.wide += 1
+	if camera.size > 26.5 and not veiled:
+		framing.wide += 1
+		var gestes: RefCounted = view.stage.get("_gestes")
+		if framing.where.size() < 12: framing.where.append("large %.1f m : plan %d %s à %.2f s, %s, suite %s, poids %.2f, geste %s zoom %.2f, voile %.2f" % [camera.size, view.regie.index, view.regie.phase, view.regie.temps, str(view.regie.tf.plans[view.regie.index].get("kind", "")) if view.regie.index >= 0 else "", str(view.regie.tf.get("suite", false)), float(view.regie.cadrage.poids), str(gestes.phase) if gestes != null else "-", float(gestes.zoom) if gestes != null else 0.0, view.regie.voile.modulate.a if view.regie.voile.visible else 0.0])
 	# Zone libre : ni sous le bandeau du score, ni sous la légende et les commandes.
 	var legend: Control = view.events.get_parent().get_parent().get_parent()
 	var top: float = 0.5 - view.clock.get_global_rect().end.y / maxf(1.0, view.size.y)
@@ -357,16 +360,27 @@ func player_path() -> Array:
 	if bar != null:
 		for child in bar.get_children():
 			if child is Control and child.is_visible_in_tree(): check(screen.grow(1.0).encloses(child.get_global_rect()), "Barre du match dans l'écran en 1280×720 : %s %s" % [child.name, str(child.get_global_rect())])
-	# Pause demandée pendant un temps fort : l'image se fige, la reprise la relance.
+	# Pause demandée pendant un temps fort : l'image se fige, la reprise la relance. Le coup
+	# d'envoi est lu à vitesse réelle le temps de cette étape : à ×4 il peut finir avant que
+	# la réponse du moteur à la pause n'arrive.
+	var allure: float = regie.vitesse
+	regie.vitesse = 1.0
 	view._pause()
 	await wait_command()
 	check(app.model.live.paused and regie.gel and regie.etat == regie.JEU, "La pause demandée pendant un temps fort fige l'image")
 	var frozen := [regie.index, regie.temps, regie.phase]
 	await settle(40)
 	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "REPRENDRE", "Rien n'avance pendant la pause")
+	# Le journal ouvert pendant un temps fort ne devance pas l'image.
+	view._toggle_drawer("Journal")
+	await settle(2)
+	var told: int = view.journal.get("_live").get("events", []).size()
+	check(told == mini(int(regie.tf.plans[regie.index].index) + 1, app.model.live.events.size()), "Le journal ouvert s'arrête à l'action montrée : %d sur %d" % [told, app.model.live.events.size()])
+	view._toggle_drawer("Journal")
 	view._pause()
 	await wait_command()
 	check(not app.model.live.paused and not regie.gel, "La reprise relance le temps fort")
+	regie.vitesse = allure
 	check(await until(func(): return regie.etat == regie.INTER and not app.waiting, 120000), "Le coup d'envoi se termine et rend la main à l'écran intermédiaire")
 	check(float(regie.suivi[0].get("duree_reelle", 0.0)) > 0.0, "Le temps fort interrompu par la pause va à son terme")
 	# Remplacement et consigne pendant l'écran intermédiaire.

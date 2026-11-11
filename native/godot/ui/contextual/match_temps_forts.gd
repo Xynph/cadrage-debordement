@@ -74,6 +74,8 @@ var _sans_reponse := 0.0
 var _apres_erreur := 0.0
 var _actif := false
 var _resultat_sonne := false
+## Nombre d'actions du journal déjà connues du joueur quand le temps fort a commencé.
+var _vus := 0
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
@@ -150,6 +152,16 @@ func _sonner(kind: String) -> void:
 	var sons: Variant = app.get("soundscape")
 	if is_instance_valid(sons) and sons.has_method("play_shown"): sons.play_shown(kind)
 
+## Le match tel que l'image le permet : pendant un temps fort, le journal s'arrête à
+## l'action montrée (le moteur a une minute d'avance).
+func montre(live: Dictionary) -> Dictionary:
+	if etat != JEU or index < 0 or index >= tf.get("plans", []).size(): return live
+	var jusque: int = maxi(int(tf.plans[index].index) + 1, _vus)
+	if jusque >= _events.size(): return live
+	var copie := live.duplicate()
+	copie["events"] = _events.slice(0, jusque)
+	return copie
+
 ## Vrai tant qu'un temps fort reste à montrer : la causerie et le débrief attendent sa fin.
 func retient(live: Dictionary) -> bool:
 	if etat == JEU: return true
@@ -163,13 +175,23 @@ func retient(live: Dictionary) -> bool:
 func receive(model: Dictionary, live: Dictionary) -> void:
 	var direct: Variant = live.get("direct")
 	if not direct is Dictionary:
-		# Moteur lancé sans les temps forts : le direct d'origine garde la main.
+		# Moteur sans projection (repli, ou projection indisponible) : le direct d'origine
+		# garde la main, et un temps fort en cours s'efface devant lui.
+		if etat != INTER or _actif:
+			etat = INTER
+			index = -1
+			gel = false
+			_live = {}
+			_presenter(false)
+			if cadrage != null: cadrage.regler(false)
+			view.events.get_parent().get_parent().get_parent().show()
 		voile.hide()
 		between.hide()
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
 		return
 	if not _actif: _activer(direct)
+	var connus := _events.size()
 	_live = live
 	_teams = live.get("teams", [])
 	_events = live.get("events", [])
@@ -209,6 +231,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		gel = false
 		# Un match déjà en pause (reprise d'une sauvegarde) joue tout de même son temps fort.
 		_pause_au_depart = live.get("paused", false)
+		_vus = connus
 		_demarrer(candidat)
 		# Le modèle arrive après la mise à jour de la vue 3D : on la rejoue sans faire avancer
 		# le temps, pour que la première image du temps fort soit déjà placée et cadrée.
@@ -290,6 +313,9 @@ func _gestes_actifs() -> bool:
 	return stage.get("_gestes") != null
 
 func _demarrer(candidat: Dictionary) -> void:
+	# Une suite peut arriver après un retour à l'écran intermédiaire (pause, arrêt) : la 3D
+	# sort alors du fondu et le cadrage, relâché entre-temps, doit être reposé d'emblée.
+	var depuis_inter := etat == INTER
 	tf = candidat
 	index = 0
 	etat = JEU
@@ -299,7 +325,7 @@ func _demarrer(candidat: Dictionary) -> void:
 	_presenter(true)
 	stage.set_live_cadence(1)
 	# Entrée dans un temps fort : le cadrage rapproché est posé d'emblée (la 3D sort du fondu).
-	if cadrage != null and not tf.get("suite", false): cadrage.couper()
+	if cadrage != null and (depuis_inter or not tf.get("suite", false)): cadrage.couper()
 	var depart: Variant = tf.get("depart")
 	if not tf.get("suite", false) and depart is Dictionary:
 		# Coupe d'entrée : l'action reprend d'où elle se trouvait une minute plus tôt.
@@ -435,6 +461,8 @@ func _montrer_jeu(visible_3d: bool) -> void:
 		# n'apportait qu'une économie et ajoutait un état de plus au moment des coupes.
 
 func _habiller() -> void:
+	# Le journal ouvert suit l'image, pas l'avance du moteur.
+	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.
 	var legende: Control = view.events.get_parent().get_parent().get_parent()
 	if etat == INTER:
