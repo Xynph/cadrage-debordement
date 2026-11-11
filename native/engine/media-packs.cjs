@@ -188,6 +188,13 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   const chosen=binding&&active?.meta.digest===binding.digest?active:null;
   const replacements=new Map();if(chosen){for(const c of edition.clubs){const cp=chosen.clubs[c.id];if(cp?.name)replacements.set(c.name,cp.name);}for(const p of identityPlayers(edition)){const pp=playerIdentity(chosen,p.id);if(pp?.name)replacements.set(p.name,pp.name);}for(const c of model.meta.catalogue){if(chosen.clubs[c.id]?.name)replacements.set(c.name,chosen.clubs[c.id].name);}}
   if(chosen)for(const c of staff.registry.clubs)for(const p of c.members){const custom=chosen.staff?.[p.id];if(custom?.name)replacements.set(p.name,custom.name);}
+  // A career keeps the names it was started with. Texts that quote them follow the pack too, by identifier.
+  if(chosen)(function carried(value){
+   if(!value||typeof value!=='object')return;
+   if(Array.isArray(value)){for(const item of value)carried(item);return;}
+   if(typeof value.id==='string'&&/^(?:lnr|world|staff):/.test(value.id)&&typeof value.name==='string'&&value.name){const identity=playerIdentity(chosen,value.id)||chosen.staff?.[value.id];if(typeof identity?.name==='string'&&identity.name!==value.name)replacements.set(value.name,identity.name);}
+   for(const item of Object.values(value))carried(item);
+  })(model);
   const escaped=[...replacements.keys()].filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));const pattern=escaped.length?new RegExp(escaped.join('|'),'gu'):null;
   function projectTerritory(club,pack){
    const photos=pack.clubs[club.id]?.photos;
