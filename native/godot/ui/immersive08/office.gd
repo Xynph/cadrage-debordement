@@ -9,6 +9,7 @@ const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
+const EntityLink = preload("res://ui/entity_link.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
 
@@ -166,19 +167,12 @@ static func fixture_opponent(model: Dictionary, fixture: Dictionary) -> Dictiona
 
 static func _reading_button(app: Control, target: Dictionary, id: String, caption: String) -> Button:
 	if not reading_available(app, target): return null
-	var destination := target.duplicate(true)
 	var link := Button.new()
 	link.name = id
 	link.set_meta("immersive_style_applied", true)
-	link.set_meta("entity_kind", str(target.kind))
-	link.set_meta("entity_id", str(target.id))
 	for style: String in ["normal", "hover", "pressed", "disabled"]: link.add_theme_stylebox_override(style, StyleBoxEmpty.new())
 	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 3, 0))
-	link.accessibility_name = "Consulter · " + caption
-	link.tooltip_text = link.accessibility_name
-	link.pressed.connect(func():
-		var navigation := _reading_navigation(app)
-		if navigation != null: navigation.open_entity(destination))
+	EntityLink.bind(link, app, target, caption)
 	return link
 
 static func reading_control(app: Control, content: Control, target: Dictionary, id: String, caption: String) -> Control:
@@ -801,8 +795,8 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		period.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): describe_fixture(period, local_date)
-			var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
-			list.add_child(reading_control(app, period, date_reading_target(app, fixture), "OfficeTimelineDateLink_" + fixture_key, period.text))
+		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
+		list.add_child(reading_control(app, period, date_reading_target(app, fixture), "OfficeTimelineDateLink_" + fixture_key, period.text))
 		list.add_child(C.rule())
 		var opponent: Dictionary = fixture.get("away", {}) if fixture.get("home", {}).get("id") == app.model.club.id else fixture.get("home", {})
 		var name := C.label(G.club_name(opponent), 24)
@@ -811,8 +805,8 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		list.add_child(matchup)
 		var crest := opponent_crest(opponent,36)
 		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			matchup.add_child(reading_control(app, crest, club_reading_target(app, opponent), "OfficeTimelineClubCrest_" + fixture_key, G.club_name(opponent)))
-			matchup.add_child(C.fill(reading_control(app, name, club_reading_target(app, opponent), "OfficeTimelineClubName_" + fixture_key, name.text)))
+		matchup.add_child(reading_control(app, crest, club_reading_target(app, opponent), "OfficeTimelineClubCrest_" + fixture_key, G.club_name(opponent)))
+		matchup.add_child(C.fill(reading_control(app, name, club_reading_target(app, opponent), "OfficeTimelineClubName_" + fixture_key, name.text)))
 		var location := P.fixture_location_kind(fixture, app.model.club.id)
 		var marker := C.icon(C.fixture_location_icon(location,true),46,C.GOLD)
 		marker.name = "OfficeVenueIcon"

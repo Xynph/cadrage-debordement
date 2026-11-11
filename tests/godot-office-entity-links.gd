@@ -26,7 +26,7 @@ class Navigation extends Node:
 		if kind == "player": return app.model.get("squad", []).any(func(person: Dictionary): return str(person.id) == str(target.get("id", "")))
 		if kind in ["club", "fixture", "date"]: return Competition.target_available(app, kind, target.get("id", ""))
 		return false
-	func open_entity(target: Dictionary) -> bool:
+	func open_entity(target: Dictionary, _source: Window = null) -> bool:
 		if not entity_available(target): return false
 		targets.append(target.duplicate(true))
 		return true
