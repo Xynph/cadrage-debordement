@@ -93,3 +93,13 @@ et [log](qa-sdk-preloads-20261111-layout-final/interface-journal.log) portent
 le même SHA de harness que management. Les deux sélecteurs couvrent désormais
 tous les contrôles de la famille interface. La [tentative cumulée antérieure](qa-sdk-preloads-20261111-layout-final/interface-cumulative-budget-receipt.json)
 reste distincte et non qualifiée (180,298 s, compteur final absent).
+
+## Réceptions locales de lisibilité
+
+Les scénarios déjà reçus ci-dessous sont qualifiés individuellement. Ceux qui
+ne sont pas cités restent au stade diagnostic compilé, sans résultat inventé.
+Leurs SHA de harness sont comparés au même gel de source `ccf7090`.
+
+| Scénario | Contrôles / échecs | Node hors verrou | Preuves |
+| --- | --- | --- | --- |
+| `responsive` | 124 / 0 | 62,978 s | [reçu](qa-sdk-preloads-20261111-layout-final/readability-responsive-receipt.json), [rapport](qa-sdk-preloads-20261111-layout-final/readability-responsive-report.json), [sources](qa-sdk-preloads-20261111-layout-final/readability-responsive-source-manifest.json), [log](qa-sdk-preloads-20261111-layout-final/readability-responsive.log) |
