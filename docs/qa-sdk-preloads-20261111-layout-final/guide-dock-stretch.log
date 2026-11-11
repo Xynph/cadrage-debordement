@@ -1,0 +1,24 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+GABI LAYOUT : 160 contrôles ; 0 échec(s)
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+Preuves layout : /workspace/qa/sdk-preloads-96/fixtures/cd-guide-layout-stretch-WP4v5W
+TAP version 13
+# Subtest: Gabi compact : dock / stretch
+ok 1 - Gabi compact : dock / stretch
+  ---
+  duration_ms: 49004.503049
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49013.005151
