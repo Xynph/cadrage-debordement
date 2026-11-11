@@ -68,8 +68,9 @@ func run() -> void:
 	check(noise.lines.is_empty() and noise.targets.is_empty(),"Même valeur affichée : aucune ligne 0→0 ni lien vers du bruit")
 	var unchanged:=before.duplicate(true);unchanged.meta.trained=true
 	check(feedback._training_changes(captured,unchanged).lines.is_empty(),"Valeurs stables sans ajout à la séance existante")
-	var snapshot_before:=feedback._training_snapshot(before)
-	var edited_copy:=before.duplicate(true);edited_copy.squad[0].condition=1
+	var edited_copy:=before.duplicate(true)
+	var snapshot_before:=feedback._training_snapshot(edited_copy)
+	edited_copy.squad[0].condition=1
 	check(snapshot_before.people.a.condition==80,"Les mesures au vrai envoi sont conservées comme valeurs, sans référence mutable")
 	var baseline:=receipt(legacy(before),legacy(after),"intense")
 	var enriched:=receipt(before,after,"intense")
