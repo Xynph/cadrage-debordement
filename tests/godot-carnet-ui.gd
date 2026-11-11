@@ -63,6 +63,24 @@ func press(text: String) -> void:
 		check(b.has_focus(), "Focus réel " + text)
 		b.pressed.emit()
 		await settle()
+func bench_control(screen: Control, key: String) -> Button:
+	var controls: Array = screen.drawer_body.find_children("*","Button",true,false).filter(func(control): return control.get_meta("match_bench_focus","") == key)
+	check(controls.size() == 1,"Contrôle du banc lié à une identité unique : "+key)
+	return controls[0] as Button if controls.size() == 1 else null
+func activate_bench(control: Button, key: String) -> void:
+	check(control != null and control.is_visible_in_tree() and not control.disabled,"Action réelle du banc disponible : "+key)
+	if control == null or control.disabled: return
+	control.grab_focus()
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer: ancestor.ensure_control_visible(control)
+		ancestor=ancestor.get_parent()
+	await settle()
+	check(control.has_focus(),"Focus réel du banc : "+key)
+	check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(2).encloses(control.get_global_rect()),"Commande du banc entière dans la fenêtre : "+key)
+	for down in [true,false]:
+		var event:=InputEventKey.new();event.keycode=KEY_ENTER;event.pressed=down;Input.parse_input_event(event);await process_frame
+	await settle()
 func bounds(route: String) -> void:
 	var page := page_for(route)
 	check(page != null, "Vue carnet " + route)
@@ -362,13 +380,15 @@ func decisions() -> void:
 	for sub: Dictionary in app.model.live.get("substitutions",[]):
 		if not sub.get("inIds",[]).is_empty(): incoming=sub;break
 	if not incoming.is_empty():
-		screen.selected_slot=int(incoming.slot)
-		screen._drawer_key=""
-		screen._update_drawer()
+		check(app.model.live.lineup[int(incoming.slot)].id == incoming.outId,"Le poste publié désigne le vrai joueur sortant")
+		await activate_bench(bench_control(screen,"sortant:"+str(incoming.slot)),"sortant:"+str(incoming.slot))
+		for player: Dictionary in app.model.live.reserves:
+			var candidate := bench_control(screen,"entrant:"+str(player.id))
+			check(candidate != null and candidate.disabled == (not player.id in incoming.inIds),"Le banc respecte les aptitudes publiées et refuse les positions interdites : "+str(player.id))
 		var reserve: Dictionary=app.model.live.reserves.filter(func(p):return p is Dictionary and p.id==incoming.inIds[0])[0]
-		await press(str(reserve.name))
+		await activate_bench(bench_control(screen,"entrant:"+str(reserve.id)),"entrant:"+str(reserve.id))
 		await wait_model()
-		check(app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
+		check(app.bridge.last_response_ok and app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
 	await command("delegate")
 	await render("Effectif")
 	check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"La gestion reste verrouillée avant validation du résultat")
