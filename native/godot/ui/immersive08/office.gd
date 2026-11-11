@@ -178,15 +178,26 @@ static func build(app: Control) -> Control:
 	_fixture(hero, app)
 	var priorities := _card(top, "OfficeDecisions", "▦  Vos trois priorités", 418)
 	_priorities(C.content(priorities), app)
+	# Keep the next decision visible while the secondary cards share the
+	# remaining workspace. Their natural minima can exceed a small window.
+	var scroll := ScrollContainer.new()
+	scroll.name = "OfficeReadingScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	C.fill(scroll, true)
+	page.add_child(scroll)
+	var reading := C.v(16)
+	C.fill(reading, true)
+	scroll.add_child(reading)
 	var middle := C.h(16)
-	page.add_child(middle)
+	reading.add_child(middle)
 	_group(C.content(_card(middle, "OfficeGroup", "♡  État du groupe", 448, .77)), app)
 	_standings(C.content(_card(middle, "OfficeStandings", "♜  Classement · " + P.league_name(app.model), 448, 1.25)), app)
 	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans votre Bureau", 448)), app)
 	_recruitment(C.content(_card(middle, "OfficeRecruitment", "⌕  Le profil à suivre", 448)), app)
-	_timeline(C.content(_card(page, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
+	_timeline(C.content(_card(reading, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
 	var results := recent_results(app)
-	if results != null: page.add_child(results)
+	if results != null: reading.add_child(results)
 	return page
 
 static func recent_results(app: Control) -> PanelContainer:
