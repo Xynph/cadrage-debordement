@@ -101,6 +101,33 @@ func cancel_real_drag() -> void:
 	await mouse(target, false); await settle()
 	check(not root.gui_is_dragging() and app.route == "Composition" and app.selected_player == player_before and app.get_meta("immersive08_full_player", false) == full_before, "Annulation du glisser distincte d’un clic de consultation")
 	check(app.bridge._next_id == before_commands, "Glisser annulé : aucune commande de composition ou consultation")
+func fatigue_chart_return() -> void:
+	app.Immersive.open_training(app); await settle()
+	await activate(named("TrainingTab4"))
+	var bins := [0, 0, 0, 0, 0]
+	var players: Array = app.model.get("squad", [])
+	for person: Dictionary in players:
+		if person.get("physicalLoad") is float or person.get("physicalLoad") is int:
+			bins[clampi(int(floorf(float(person.physicalLoad) / 20.0)), 0, 4)] += 1
+	var bucket: int = bins.find(bins.max())
+	await activate(named("FatigueLoadBucket" + str(bucket)))
+	check(int(app.management_ui.immersive_training.get("fatigue_load_bin", -1)) == bucket, "Barre du graphique : filtre de charge exact")
+	var rows: Array = app.find_children("FatigueRow_*", "Control", true, false)
+	check(rows.size() == bins[bucket], "Graphique et liste : mêmes joueurs projetés dans la tranche")
+	var scroll := named("FatigueScroll") as ScrollContainer
+	check(scroll != null and scroll.get_v_scroll_bar().max_value > scroll.get_v_scroll_bar().page, "Liste filtrée réellement assez longue pour défiler")
+	if scroll == null or rows.is_empty(): return
+	scroll.scroll_vertical = mini(120, int(scroll.get_v_scroll_bar().max_value - scroll.get_v_scroll_bar().page)); await settle()
+	var offset: int = scroll.scroll_vertical
+	check(offset > 0, "Défilement non nul réellement atteint avant consultation")
+	var selected_id := str(rows.back().get_meta("player_id", ""))
+	check(await open_entity("player", selected_id), "Joueur du graphique consulté par son ID publié")
+	await back()
+	check(int(app.management_ui.immersive_training.get("fatigue_load_bin", -1)) == bucket, "Retour du joueur : tranche du graphique conservée")
+	check(named("FatigueScroll") != null and named("FatigueScroll").scroll_vertical == offset, "Retour du joueur : défilement non nul exact conservé")
+	await capture("fatigue-tranche-retour-2560")
+	await activate(named("FatigueFilter4"))
+	check(not app.management_ui.immersive_training.has("fatigue_load_bin"), "Tout l’effectif retire le filtre graphique")
 func setup_career() -> bool:
 	var payload := {"mode":"world-champ", "nationalRole":"nation", "nation":"ENG"} if group == "nation" else {"mode":"world-champ", "club":29} if group == "reading" else {"mode":"common", "club":0}
 	if not await command("new_career", payload): return false
@@ -189,6 +216,7 @@ func reading_cases() -> void:
 		await capture("club-adverse-2560")
 		app._clear_dialogs(); await settle()
 	await cancel_real_drag()
+	await fatigue_chart_return()
 	for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
 		root.size = resolution
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
