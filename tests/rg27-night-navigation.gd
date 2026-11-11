@@ -272,6 +272,8 @@ func reading_cases() -> void:
 		var person: Dictionary = teams[0].members[0]
 		check(await open_entity("staff", str(person.id)), "Membre du staff ouvert par son identifiant")
 		check(named("StaffProfile") != null and text(named("StaffProfileName")) == str(person.name) + "\n", "Profil du membre de staff exact")
+		var title := named("StaffProfileName") as Label
+		check(title != null and title.size.x >= 180 and title.get_line_count() <= 3, "Nom du staff lisible sur une vraie largeur, sans colonne d’une lettre")
 		await capture("staff-profil-2560")
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
@@ -380,6 +382,51 @@ func prospects_cases() -> void:
 				confirmation.queue_free(); await settle()
 	app._clear_dialogs(); await settle()
 	await unchanged(before, "Consultation des prospects depuis leurs catalogues")
+func staff_cases() -> void:
+	var before := await snapshot()
+	var teams: Array = app.model.get("staff", {}).get("teams", [])
+	var members: Array = []
+	for team: Dictionary in teams:
+		if str(team.get("id")) == str(app.model.club.id): members = team.get("members", []); break
+	check(not members.is_empty(), "Staff réel du club disponible pour sa recette ciblée")
+	if members.is_empty(): return
+	var person: Dictionary = members[0]
+	var id := str(person.id)
+	for resolution in [Vector2i(2560,1440), Vector2i(1920,1080), Vector2i(1280,720)]:
+		root.size = resolution
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
+		check(await open_entity("staff", id), "Profil du staff exact à " + str(resolution))
+		await settle()
+		var title := named("StaffProfileName") as Label
+		check(title != null and title.text == str(person.name), "Identité du staff conservée à " + str(resolution))
+		check(title != null and title.size.x >= 180 and title.get_line_count() <= 3, "Nom du staff lisible, sans colonne d’une lettre, à " + str(resolution))
+		await capture("staff-fiche-%d-%d" % [resolution.x,resolution.y])
+	root.size = Vector2i(2560,1440)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	check(await open_entity("staff", id), "Même profil du staff avant retour à l’annuaire")
+	await activate(named("StaffProfileDirectory"))
+	var search := named("StaffSearch") as LineEdit
+	check(search != null, "Vraie recherche d’annuaire disponible au retour du profil")
+	if search != null:
+		search.text = str(person.name); search.text_changed.emit(search.text); await settle()
+		search.grab_focus(); search.caret_column = mini(4, search.text.length()); search.select(1, mini(3, search.text.length()))
+		var caret := search.caret_column
+		var selection_from := search.get_selection_from_column()
+		var selection_to := search.get_selection_to_column()
+		check(await open_entity("staff", id), "Consultation depuis l’annuaire filtré et la saisie focalisée")
+		await back()
+		search = named("StaffSearch") as LineEdit
+		check(search != null and search.text == str(person.name) and search.has_focus(), "Retour staff : recherche exacte et focus de saisie conservés")
+		check(search != null and search.caret_column == caret and search.get_selection_from_column() == selection_from and search.get_selection_to_column() == selection_to, "Retour staff : curseur et sélection de texte conservés")
+		var link := named("StaffOpenName_" + id.validate_node_name()) as Control
+		var scroll := named("StaffList") as ScrollContainer
+		if link != null and scroll != null: scroll.ensure_control_visible(link); await settle()
+		await activate(link)
+		check(named("StaffProfile") != null and str(named("StaffProfile").get_meta("staff_id", "")) == id, "Entrée sur le vrai nom du staff : même profil par ID")
+		await back()
+		search = named("StaffSearch") as LineEdit
+		check(search != null and search.text == str(person.name), "Retour du vrai lien du staff : annuaire toujours filtré")
+	await unchanged(before, "Profil et annuaire du staff")
 func guard_cases() -> void:
 	# A press appointment is intentionally absent until its exact persisted mail
 	# is opened. Exercise that entrypoint instead of manufacturing scene metadata.
@@ -452,5 +499,6 @@ func run() -> void:
 		"nation": await nation_cases()
 		"guards": await guard_cases()
 		"prospects": await prospects_cases()
+		"staff": await staff_cases()
 		_: await reading_cases()
 	await finish()
