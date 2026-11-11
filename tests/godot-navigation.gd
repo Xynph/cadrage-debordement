@@ -139,7 +139,7 @@ func run() -> void:
 	await key(KEY_E, false, false, 233); await key(KEY_R, false, false, 114)
 	check(named(app, "NavigationSearch") == palette_search and palette_search.has_focus() and palette_search.text == "ér", "Vraie frappe accentuée de la palette conserve saisie et focus")
 	await search("FORMATION")
-	check(results().item_count == 1 and results().get_item_text(0).contains("Formation"), "Recherche de menu sans casse")
+	check(results().item_count >= 1 and nav._matches[0].kind == "menu" and nav._matches[0].route == "Formation" and results().get_selected_items() == PackedInt32Array([0]), "Recherche sans casse : menu Formation exact sélectionné avant les autres entités correspondantes")
 	await key(KEY_ENTER)
 	check(app.route == "Formation" and not palette().visible, "Entrée ouvre un autre chapitre")
 	await visit("Effectif", other_id)
