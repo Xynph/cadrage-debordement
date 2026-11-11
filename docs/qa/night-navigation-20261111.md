@@ -76,3 +76,53 @@ dans `international.teams`. Dans une carrière `common` sans cette projection,
 le drapeau visuel reste conservé sans destination inventée. La recette des
 drapeaux utilise donc une vraie carrière de club `world-champ` ; France depuis
 un autre mandat utilise une vraie carrière nationale anglaise.
+
+## Première réception du candidat commun
+
+SHA testé : `8ad4b0239e70931f3d49672a2dc9b959fbb8e8f8`, SDK Godot
+`4.7.2.stable.official.ed1daf0bf`, Node 22.23.4, Xvfb 2560×1440,
+OpenGL llvmpipe, audio Dummy et verrou partagé. Sources et empreintes dans
+chaque `provenance.json`, résultats réels dans `report.json` et journaux.
+
+| Groupe | Contrôles | Échecs | Résultat et limite |
+| --- | --- | --- | --- |
+| `reading` | 110 | 1 | Le test cherchait la ligne du joueur alors que sa recherche volontairement vide était encore active. Le reset et le tri ne sont accessibles qu’après ouverture du dialogue « Filtres & tri » ; la fixture est corrigée séparément. Aucun défaut produit déduit de cet échec. |
+| `nation` | 23 | 0 | Vraie carrière nationale anglaise, consultation France, mandat anglais conservé, nation inconnue refusée sans modifier la consultation. |
+| `guards` | 85 | 1 | Le test supposait la presse initiale déjà ouverte. La presse est volontairement invisible avant l’ouverture de son invitation exacte ; la fixture passe désormais par ce courrier. Les gardes causerie et match immersif, ainsi que le vrai résultat historique, passent. |
+
+Cette réception n’est pas entièrement verte. Les corrections de fixture
+nécessitent une reprise ciblée de `reading` et `guards`, sans rejouer la campagne
+SDK complète ou remplacer le reçu déjà valide de `nation`.
+
+Les trois groupes ont obtenu zéro demande et zéro début de parole. Chaque
+parcours de consultation reçu conserve le compteur de commandes, les octets du
+profil, ses seed/horloge persistés et l’état sportif exporté du vrai worker.
+
+Douze PNG réels ont été obtenus dans
+`/workspace/work/night-final-qa/{reading,nation,guards}` : fiche joueur aux cinq
+dimensions prévues, dossier hors club non observé, staff, retour du graphique,
+France depuis l’Angleterre, match en pause et résultat historique. Les images
+fiche 1440p, fiche 720p, recrutement limité, France, graphique et historique
+ont effectivement été inspectées visuellement.
+
+La rencontre historique a été jouée via les commandes publiques :
+Toulouse Capitole XV – Vannes Morbihan XV, `calendar-0`, 24–14 dans ce profil.
+La projection de cette carrière `common` ne conserve pas de statistiques
+détaillées pour cette rencontre ; le reçu prouve la bonne fiche et son résultat,
+sans prétendre avoir reçu des statistiques historiques absentes.
+
+## Reprise ciblée des fixtures
+
+| Candidat / groupe | Reçu | Limite |
+| --- | --- | --- |
+| `c9e7525a2b2daffb8b1b6f6cd7bab756d61d701b` · `reading` | 133 contrôles, 1 échec, 10 PNG | Tous les vrais clics, le tri, le glisser annulé et le retour du graphique défilé passent. L’échec restant venait du collecteur de texte du test : il ignorait `Window.title`, où le bon nom du club était affiché. L’ID du dialogue était correct. |
+| `0d19ddfa21332c846b086b496ebb7f9a81f2fa4f` · `guards` | 103 contrôles, 0 échec, 2 PNG | Rendez-vous de presse ouvert par son courrier exact, causerie, match immersif et consultation du résultat historique reçus sans mutation. Les sources produit sont identiques à `c9e7525a` ; le commit supplémentaire corrige uniquement le nom d’une classe de test financier. |
+| `b02452e7f905d43969ad7a564edc6de0b9d8da56` · amorce `reading` | Échec de parsing du test, aucun contrôle produit | Le nom de constante `Skin` masquait une classe native Godot. Corrigé en `GameSkin` dans le test ; le script complet corrigé a ensuite été vérifié par `--check-only` contre le projet commun importé. |
+
+La correction du collecteur compare le titre à `GameSkin.club_name` afin de
+respecter aussi le nom public d’un pack d’identité. Aucune modification produit
+n’est ajoutée pour satisfaire artificiellement une assertion de test.
+
+Les dossiers de cette reprise sont `night-final-qa-v2/{reading,guards}` et
+`night-final-qa-v3/reading` pour l’amorce rejetée. Ils conservent leurs
+`provenance.json` et journaux au lieu d’être écrasés par la prochaine réception.
