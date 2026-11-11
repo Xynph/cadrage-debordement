@@ -109,8 +109,10 @@ static func open_target(owner_app: Control, kind: String, id: Variant) -> bool:
 		owner_app._navigate("Calendrier", false)
 		return true
 	var dialog_name := "CompetitionClubDetails" if kind == "club" else "CompetitionFixtureDetails"
-	var existing := owner_app.find_child(dialog_name, false, false) as Window
-	if existing != null and not existing.is_queued_for_deletion() and existing.visible: return false
+	# Reading history can retain hidden dialogs of the same kind. Only a visible
+	# reader blocks a new one; names may be renamed by Godot after suspension.
+	for child: Node in owner_app.get_children():
+		if child is Window and not child.is_queued_for_deletion() and child.visible and (str(child.name) == dialog_name or child.get_meta("entity_kind", "") == kind): return false
 	var context: Control = load("res://ui/immersive08/competition_canvas.gd").new()
 	context.app = owner_app
 	context.name = "CompetitionReadingContext"
@@ -119,8 +121,8 @@ static func open_target(owner_app: Control, kind: String, id: Variant) -> bool:
 	context._context(true)
 	if kind == "club": context._club_detail(_target_club(owner_app, str(id)))
 	else: context._fixture_detail(_target_fixture(owner_app, str(id)))
-	var dialog := owner_app.find_child(dialog_name, false, false) as Window
-	if dialog == null:
+	var dialog := context.get_meta("reading_dialog", null) as Window
+	if not is_instance_valid(dialog) or dialog.is_queued_for_deletion():
 		context.queue_free()
 		return false
 	dialog.set_meta("entity_kind", kind)
@@ -725,6 +727,7 @@ func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, cap
 
 func _club_detail(club: Dictionary) -> void:
 	var view := Decisions.dialog(app, G.club_name(club), "CompetitionClubDetails", 880)
+	set_meta("reading_dialog", view[0])
 	view[0].set_meta("navigation_read_only", true)
 	view[0].set_meta("entity_kind", "club")
 	view[0].set_meta("entity_id", str(club.id))
@@ -759,6 +762,7 @@ func _fixture_detail(fixture: Dictionary) -> void:
 		heading = stage if competition_id == "jlo-d1-d2" else _competition_name(fixture) + " · " + stage
 		if competition_id == "access-nationale": heading = _competition_name(fixture)
 	var view := Decisions.dialog(app, heading, "CompetitionFixtureDetails", 880)
+	set_meta("reading_dialog", view[0])
 	view[0].set_meta("navigation_read_only", true)
 	view[0].set_meta("entity_kind", "fixture")
 	view[0].set_meta("entity_id", str(fixture.get("id", "")))
