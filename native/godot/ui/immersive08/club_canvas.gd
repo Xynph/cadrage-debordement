@@ -1,4 +1,5 @@
 extends RefCounted
+const EntityLink = preload("res://ui/entity_link.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -28,6 +29,25 @@ class TrustDial extends Control:
 			if progress > .0:
 				var color := Color("35c362").lerp(Color("a1efae"), float(segment) / 7.0)
 				draw_arc(center, radius, start, lerpf(start, end, progress), 20, color, thickness, true)
+
+static func _navigation(app: Control) -> Node:
+	for field: Dictionary in app.get_property_list():
+		if field.name == "navigation_controller": return app.get("navigation_controller") as Node
+	return null
+
+static func _reading_area(app: Control, parent: Control, rectangle: Rect2, target: Dictionary, id: String, caption: String) -> Button:
+	var navigation := _navigation(app)
+	if not is_instance_valid(navigation) or not navigation.has_method("entity_available") or not navigation.entity_available(target): return null
+	var button := Button.new()
+	button.name = id
+	button.flat = true
+	button.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,2,0))
+	button.add_theme_stylebox_override("hover",C.box(Color(1,1,1,.04),C.GOLD,2,0))
+	button.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,2,0))
+	EntityLink.bind(button,app,target,caption)
+	parent.add_child(button)
+	D.place(button,rectangle)
+	return button
 
 static func build(app: Control, canvas: Control) -> void:
 	canvas.name = "ImmersiveClub"
@@ -258,6 +278,8 @@ static func _locker(card: Panel, app: Control) -> void:
 			value.add_theme_constant_override("line_spacing", 0)
 			value.size.y = value.get_minimum_size().y
 			value.position.y = maxf(value.position.y, title.position.y + title.size.y + 1.0)
+		if i == 2 and not leader.is_empty():
+			_reading_area(app,card,Rect2(value.position/C.density,value.size/C.density),{"kind":"player","id":str(leader.get("id",""))},"ClubLeaderLink",str(leader.get("name","")))
 		if i < 2: D.line(card, Vector2(20,y+72), Vector2(304,y+72), Color(C.LINE,.65))
 	D.button(card, Rect2(20,351,284,36), "Entrer au vestiaire", func(): app._navigate("Vestiaire"), false, "arrow", true, U.GREEN, "ClubLockerAction")
 
@@ -312,6 +334,10 @@ static func _staff(card: Panel, app: Control) -> void:
 		D.text(card, 116, y+54, person.get("name","—"), 28, C.IVORY, 700, 407)
 		D.text(card, 685, y+39, "Carrière" if person.get("personState", "") == "career" else "Archive" if person.get("historical",false) else "Référence", 20, C.GOLD, 500, 128, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.line(card, Vector2(18,y+69), Vector2(690,y+69), Color(C.LINE,.62))
+		var staff_id := str(person.get("id",""))
+		var target := {"kind":"staff","id":staff_id}
+		_reading_area(app,card,Rect2(18,y,82,65),target,"ClubStaffPortrait_"+staff_id.validate_node_name(),str(person.get("name","")))
+		_reading_area(app,card,Rect2(112,y+28,414,36),target,"ClubStaffName_"+staff_id.validate_node_name(),str(person.get("name","")))
 	if people.is_empty():
 		D.text(card, 24, 119, "Annuaire indisponible pour cette carrière", 28, C.IVORY, 700, 660)
 		D.text(card, 24, 157, "Les responsabilités du staff restent accessibles.", 23, C.MUTED, 500, 660)
@@ -365,6 +391,8 @@ static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dicti
 	D.text(card, 1030, 144, "Trésorerie du jeu", 22, C.MUTED, 500, 315)
 	D.text(card, 1366, 107, "Salaires "+G.salary_period(), 22, C.MUTED, 500, 355)
 	D.text(card, 1366, 142, G.salary_amount(finance.get("weeklyWages",app.model.get("finance",{}).get("wage",0))), 28, C.IVORY, 600, 361)
+	_reading_area(app,card,Rect2(1022,77,334,72),{"kind":"finance","id":"cash"},"ClubCashLink","Trésorerie")
+	_reading_area(app,card,Rect2(1358,77,379,72),{"kind":"finance","id":"wages"},"ClubWagesLink","Salaires")
 	var action := D.button(card, Rect2(1750,77,476,73), "Présenter une demande à la direction", func(): _open_strategy(app, 1), true, "arrow", false, Color("966419"), "ClubBoardRequest")
 	var style: StyleBox = D.surface(476,73,Color("ab771e"),Color("694610"),Color("e7bc63"),7).duplicate()
 	style.content_margin_left = C.px(18)
