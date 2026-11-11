@@ -9,7 +9,7 @@ Candidat exact `d05b5f752db3cebfb098c01b4b0d7dcf1743bf8f`, base de réception ma
 - `tests/lineout-side.cjs` : **rouge sur main96**, au premier contrôle équipe1 lançant ; **vert sur main96 + patch**, 186 scènes, dont équipe0/période1:45, équipe1/période1:51, équipe1/période2:43, équipe0/période2:47.
 - `tests/match2d.cjs`, `match-actions.cjs`, `match3d-adapter.cjs`, `v27-physical-load.cjs`, `world-wage-forecast.cjs` : rc0 sur main96 + patch.
 - Sonde comparative indépendante avant/après : **PASS, 80/80 matchs**, 15 140 ticks de scènes, 774 scènes changées. Vingt graines × quatre clubs (0,3,7,11), même tactique conquête, `matchScene` à chaque tick. Comparaison de l’état carrière complet en SHA256 et du prochain tirage aléatoire ; les seuls écarts de scène autorisés sont les x des slots0–7 en touche lancée par l’équipe1. L’état carrière comparé inclut effectifs, conditions/charges physiques, salaires, finances et journal du match.
-- `native-academy-network-validation.cjs` : en cours.
+- `native-academy-network-validation.cjs` : rc0, 110 imports invalides à checksum exact refusés en V1/V2 ; API historiques/jours réels, options valides, pureté, profil/export/octet/RNG préservés.
 
 ## Collision avec PR554 : lecture ciblée
 
