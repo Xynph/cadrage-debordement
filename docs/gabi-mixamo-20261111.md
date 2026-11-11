@@ -71,6 +71,7 @@ Chaîne complète :
 python3 scripts/animations/ajouter-pouces-gabi.py -- gabi-mixamo.fbx /hors-depot/gabi-rig.blend
 python3 scripts/animations/adapter-animations-gabi.py -- /hors-depot/gabi-rig.blend scripts/animations/gestes-gabi.json /hors-depot/gabi.blend --racine /dossier/mixamo
 python3 scripts/animations/corriger-yeux-gabi-blend.py -- /hors-depot/gabi.blend
+python3 scripts/animations/ajouter-expressions-gabi.py /hors-depot/gabi.blend
 python3 scripts/animations/bras-croises-gabi.py -- /hors-depot/gabi.blend
 python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2>
 ```
@@ -122,5 +123,37 @@ Gabi est rendu dans son propre studio (SubViewport du portrait) : la lumière du
 ### Vérifié et limites (nuit du 11 au 12 novembre)
 
 - `tests/godot-gabi-mixamo.cjs` : 131 contrôles (table complète, gestes par moment, attente selon le ton, sourire, clignement, regard, mouvement réduit). Jeu réel sous Xvfb (gl_compatibility) : captures avant/après des deux Gabi au Bureau et vidéo de six moments.
-- Paupière fermée trop sombre : `_apply_vertex_colors` multiplie la couleur peau des paupières par leurs couleurs de sommets (rouge sombre) ; pendant un clignement, l'œil fermé paraît rouge foncé (sans couleurs de sommets, il est trop pâle). À corriger dans le modèle (couleurs de sommets ou matériau des paupières).
+- Paupière fermée trop sombre : `_apply_vertex_colors` multiplie la couleur peau des paupières par leurs couleurs de sommets (rouge sombre) ; pendant un clignement, l'œil fermé paraît rouge foncé (sans couleurs de sommets, il est trop pâle). À corriger dans le modèle (couleurs de sommets ou matériau des paupières). **Corrigé dans les deux modèles** : voir « Expressions » ci-dessous.
 - Rien d'exécuté sous Windows ; courbe AgX vue seulement en rendu logiciel.
+
+## Expressions : regard chaleureux, clignement (nuit du 11 au 12 novembre)
+
+Demande de Léo : « Il faut qu'il ait un regard plus chaleureux. » Trois formes (blend shapes) ajoutées par `scripts/animations/ajouter-expressions-gabi.py`, au Gabi d'origine (`guide/assets/gabi.glb`, dépôt) et au Gabi Mixamo (`gabi.blend` privé, puis `gabi-mixamo.scn` régénérée) :
+
+| Forme | Effet | Repos conseillé |
+|---|---|---|
+| `SourireYeux` | paupière inférieure et peau sous l'œil qui remontent (davantage côté tempe), coin externe plissé, joues qui montent et avancent, légères pattes d'oie | 0,3 (0,5 à 0,65 avec un sourire) |
+| `SourcilsDoux` | sourcils (peints dans la texture du visage : on déplace les sommets de leur zone) relevés à l'intérieur (jusqu'à 7 mm), extérieur un peu abaissé, paupière supérieure relevée de 4° (regard moins fatigué) | 0,4 |
+| `Clignement` | paupière supérieure qui descend jusqu'à fermer l'œil, la paupière inférieure monte de 20 % de l'ouverture | 0 (impulsion 0 → 1 → 0) |
+
+Maillages et indices (le jeu les cherche par nom) :
+- `Mesh_0` : 0 MouthOpen, 1 MouthRound, 2 MouthPress, 3 MouthWide (inchangées, mêmes données), 4 SourireYeux, 5 SourcilsDoux, 6 Clignement (nulle sur le visage, présente pour garder la même liste).
+- `Gabi_Paupieres_D` et `Gabi_Paupieres_G` : 0 SourireYeux, 1 SourcilsDoux, 2 Clignement. Pas de formes de bouche sur les paupières : `coach_portrait_3d.gd` prend le premier maillage portant « MouthOpen », et les paupières viennent avant `Mesh_0` dans la scène.
+- Poids par défaut enregistrés dans les modèles (glTF `weights`, valeurs des clés Blender) : SourireYeux 0,3, SourcilsDoux 0,4, Clignement 0. Godot les lit mais ses instances démarrent à 0 (vérifié sur `gabi-mixamo.scn`) : c'est `gabi_visage.gd` qui pose les valeurs de repos.
+
+Méthode (détail dans l'en-tête du script) : champ de déplacement doux, identique pour la peau et les paupières (elles restent collées au visage) ; paupières tournées autour de l'axe horizontal du globe, le bord glissant sur sa surface ; projection : tout point visible des paupières (sommets, milieux d'arêtes, centres de triangles) reste devant le globe à 1/4, 1/2, 3/4 et 1 de chaque forme (un mélange de formes suit la corde, pas l'arc). Le clignement est aussi contrôlé pour de petits mouvements du regard (±10° de côté, ±6° en hauteur) ; la paupière fermée est donc un peu bombée (jusqu'à 7 mm devant le globe au centre).
+
+Réparations du modèle faites au passage (géométrie de repos et couleurs des paupières, les deux modèles) :
+- un croissant d'iris se voyait à travers la paupière supérieure (sa face avant passait sous la surface du globe depuis l'abaissement de 10°) : faces visibles ramenées 0,3 mm devant le globe ;
+- quatre sommets de `Gabi_Paupieres_G` étaient 4,3 cm trop en avant (éclat sombre à côté du nez) : remis en symétrique de la paupière droite ;
+- paupière fermée rouge foncé dans le jeu : couleurs de sommets des paupières ramenées au blanc et matériau `Gabi_Paupières` à la teinte de la peau voisine (moyenne de la texture du visage sous l'œil et vers la tempe, linéaire 0,394 ; 0,0625 ; 0,044). Le jeu (matériau × couleurs de sommets) et Blender donnent la même teinte.
+
+Chaîne Mixamo : après `corriger-yeux-gabi-blend.py`, lancer `python3 scripts/animations/ajouter-expressions-gabi.py /hors-depot/gabi.blend`, puis `regenerer-gabi.py` avec `--origine` = le `gabi.glb` de la branche (matériaux). Le script refuse un `.glb` qui a déjà ces formes (repartir du `.glb` sans elles) ; sur un `.blend`, il remplace les formes existantes.
+
+Vérifié (rendus Cycles en gros plan de face, trois quarts et profil, à 0 / 0,5 / 1 de chaque forme, et repos chaleureux + MouthWide 0,6) : pas de déchirure, pas d'iris à travers les paupières au regard droit. Import Godot 4.7.2 (`GLTFDocument` sur le `.glb`, chargement de `gabi-mixamo.scn` régénérée) : noms et indices ci-dessus, « MouthOpen » trouvé d'abord sur `Mesh_0`, couleurs de sommets des paupières blanches ; déplacements des formes de bouche identiques à l'avant.
+
+Limites :
+- Le regard de `gabi_visage.gd` va jusqu'à 9° vers le haut et 12° vers le bas : le globe est un ellipsoïde allongé vers l'avant, et la cornée traverse alors la paupière supérieure (en haut) ou inférieure (en bas, surtout avec SourireYeux). C'était déjà le cas, en pire, sur le modèle d'origine. Sans défaut visible : ≤ 5° vers le haut, ≤ 5° vers le bas (≤ 4° avec SourireYeux 0,65). Le clignement reste fermé avec le regard à 14° de côté, 9° en haut ou 12° en bas (essayés un par un).
+- Maillage du visage grossier (≈ 5 mm entre sommets) : pattes d'oie seulement suggérées ; le bas de la paupière inférieure garde ses bords dentelés d'origine ; à SourireYeux 1, quelques points blancs du globe au coin externe inférieur (invisibles à 0,65 et au format du portrait).
+- Vérification en rendu Blender, pas dans le jeu réel.
+
