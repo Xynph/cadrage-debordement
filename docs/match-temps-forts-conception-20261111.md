@@ -7,7 +7,9 @@ reprendre le jeu par exemple). Il faut plus ressembler à ça. »
 Les sections 1 à 8 sont la conception. Elle s'appuie sur le code de `origin/main`
 (`96f53704`), sur 24 matchs joués avec le vrai moteur natif et sur les sources citées en
 fin de document. **La section 9 décrit la première tranche jouable, réalisée le même jour
-derrière `CD_MATCH_TEMPS_FORTS=1`** : sans cette variable, le jeu est celui d'avant.
+derrière `CD_MATCH_TEMPS_FORTS=1`.** **La section 10 décrit la suite : sur décision de Léo,
+le match en temps forts est devenu le mode de base du jeu** ; le direct d'origine reste
+accessible par `CD_MATCH_TEMPS_FORTS=0`.
 
 Convention de lecture : **[source]** = ce qu'une source dit ; **[code]** = lu dans le
 dépôt ; **[mesuré]** = exécuté pendant ce travail ; **[déduit]** = conclusion personnelle ;
@@ -611,10 +613,11 @@ manquerait encore : coupes soignées (lot 3), chiffres et conseil (lot 4), choix
 
 ## 9. Tranche jouable réalisée (11 novembre 2026)
 
-Tout est derrière la variable d'environnement **`CD_MATCH_TEMPS_FORTS=1`**. Sans elle : pas
-de régie, pas d'écran intermédiaire, pas de projection du moteur, cadence ×1 / ×4 / ×12
-d'origine (contrôlé par test, § 9.7). Fichiers interdits non touchés : `match_view.gd`,
-`match_gestes.gd`, `dist/match2d.js`.
+État de cette section : la première tranche, telle que livrée derrière la variable
+d'environnement `CD_MATCH_TEMPS_FORTS=1`, sans toucher à `match_view.gd`, `match_gestes.gd`
+ni `dist/match2d.js`. **Depuis, le mode est devenu celui du jeu par défaut et la branche
+contient les PR 554 et 555 : voir la section 10**, qui fait foi pour les variables, les
+tests et la capture.
 
 ### 9.1 Ce que voit le joueur
 
@@ -892,6 +895,169 @@ xvfb-run -a -s "-screen 0 1280x720x24" node tests/godot-match-temps-forts-captur
 Voir la vidéo du match entier sur le PC de Léo, puis, dans l'ordre : le son calé sur la
 régie ; la fusion avec les gestes des PR 554 et 555 (essai conjoint des deux variables) ;
 l'écran intermédiaire repris par la graphiste ; les arrêts sur choix réservé.
+
+## 10. Le match en temps forts devient le mode de base (11 novembre 2026, suite)
+
+Décision de Léo : le match ne montre que les temps forts, à vitesse réelle ; on coupe le
+trajet (replacements), pas la phase (une touche ou une mêlée qui compte est montrée déjà
+formée). Entre deux temps forts, l'écran intermédiaire (terrain vu de dessus, horloge
+accélérée, commentaire, chiffres, conseil de l'adjoint) ; arrêt quand le manager doit
+décider. Cette section fait foi sur la section 9 pour les variables, les tests et la capture.
+
+### 10.1 Variables
+
+| Variable | Sans elle | Rôle |
+| --- | --- | --- |
+| `CD_MATCH_TEMPS_FORTS=0` | temps forts actifs | repli complet sur le direct d'origine : le moteur ne projette rien, pas de régie, cadence ×1 / ×4 / ×12 |
+| `CD_MATCH_GESTES=0` | gestes actifs avec les temps forts | temps forts sans les gestes ni la coupe vers les remises en jeu de #554 (la régie fait alors sa propre coupe franche) ; sans effet dans le direct d'origine |
+| `CD_MATCH_TEMPS_FORTS_NIVEAU` | réglage du profil, sinon `dynamique` | niveau imposé au lancement (`aucun`, `resume`, `cles`, `etendus`, `dynamique`, `integral`) |
+| `CD_MATCH_TEMPS_FORTS_HORLOGE` | `normale` | horloge de l'écran intermédiaire (`lente`, `normale`, `rapide`, `eclair`) |
+| `CD_MATCH_TEMPS_FORTS_VITESSE` | `1` | tests seulement : accélère la lecture des temps forts (0,5 à 4) |
+
+`CD_MATCH_TEMPS_FORTS=1` reste accepté (même effet que l'absence de variable).
+
+### 10.2 Ce qui a changé depuis la section 9
+
+- **Mode de base** : le moteur lancé par le jeu (`native/engine/worker.cjs`) projette
+  `live.direct` sans variable ; la vue contextuelle du direct crée la régie, le cadrage et
+  les gestes. Le niveau se choisit dans la barre du match (dont « Match complet ») et il
+  est enregistré dans les réglages du profil (`match_highlights`, `user_preferences.gd`).
+- **Gestes de #554 et #555 avec les temps forts** (branches fusionnées dans celle-ci,
+  commit `21aefe51`). Interblocage corrigé : la capture se figeait après le premier temps
+  fort quand la régie attendait sans fin un geste ou une réponse du moteur. Plus aucune
+  attente sans échéance : un geste tient l'image au plus 12 s par plan, une minute
+  demandée sans réponse est redemandée après 3 s, après une erreur du moteur nouvel essai
+  toutes les 5 s ; chaque échéance est écrite dans le journal de régie (`suivi`,
+  événement `echeance`) et le test exige qu'il n'y en ait aucune sur 22 minutes de match.
+- **Gros plan sur chaque temps fort** (`native/godot/match_cadrage.gd`, nouveau) : la caméra
+  suit le ballon et les joueurs concernés, 12 à 18 m visibles en jeu courant, plus large
+  pour les jeux au pied et les longues courses ; coupe nette à l'entrée d'un temps fort et
+  sur une coupe vers une phase ; le ballon ne sort jamais du champ, y compris pendant le
+  recadrage d'un geste ; repli sur le cadrage d'origine si le calcul dégénère.
+- **Gros plan d'une suite** : une suite qui reprend après l'écran intermédiaire (pause,
+  arrêt) pose le cadrage rapproché d'emblée ; elle partait d'un plan large pendant une
+  demi-seconde (relevé par le test : 6 images à plus de 26,5 m de hauteur visible).
+- **Écran intermédiaire à l'échelle de la fenêtre** (`match_between.gd`) : tailles calculées
+  sur la fenêtre, fil défilant, colonnes occupées. Aucun choix de couleurs ni de style :
+  composants et couleurs existants (`skin.gd`), en attendant la graphiste.
+- **Ordre à la mi-temps et à la fin** : la causerie de mi-temps et le débrief attendent la
+  fin du dernier temps fort de la période (`director.gd` interroge la vue ; la régie
+  relance `sync` quand la lecture est finie).
+- **Pause, adjoint, sauvegarde** : une pause demandée pendant un temps fort fige l'image et
+  la reprise la relance ; « Confier la fin à l'adjoint » et un match repris d'une
+  sauvegarde ne rejouent pas ce que le moteur a déjà joué (l'écran intermédiaire montre où
+  en est le match) ; ce qui a été montré est retenu par rencontre, la vue peut être
+  recréée sans rejouer un temps fort.
+- **Plus de rejeu après un ordre donné en pause** : la clé d'un temps fort est désormais
+  son début et son dernier plan (`match-highlights.cjs`), et non la fin de sa fenêtre. Un
+  remplacement ou une consigne s'écrivent à la minute en cours et allongeaient la fenêtre
+  de bandeaux : le temps fort déjà montré changeait de clé et la régie le rejouait (vu
+  sur le parcours du joueur : coup d'envoi joué trois fois ; mesuré sur un match du
+  harnais : 12 temps forts sur 21 auraient changé de clé après un remplacement).
+- **Son** : le stade suit l'image montrée (essai, tir réussi ou manqué déclenchés par la
+  régie), plus l'avance du moteur.
+- **Journal ouvert pendant un temps fort** : il s'arrête à l'action montrée (le moteur a
+  une minute d'avance) au lieu d'annoncer l'essai avant l'image.
+- **Projection en échec** : si la projection `live.direct` lève une erreur, le modèle part
+  sans elle (raison dans `live.directError`) et la vue rend la main au direct d'origine au
+  lieu de bloquer le match.
+- **Capture** : la fenêtre est réellement forcée à la taille demandée, la taille réelle
+  des images est écrite dans `report.json`, qualité JPEG réglable, garde-fou de gel
+  (arrêt avec diagnostic `fige` et code 3).
+
+### 10.3 Tests touchés
+
+| Test | Changement |
+| --- | --- |
+| `tests/match-highlights.cjs` | la clé d'un temps fort suit ses plans ; un remplacement et deux consignes ajoutés à la dernière minute ne changent ni la clé ni les plans du temps fort courant (dynamique et match complet) |
+| `tests/match-direct.cjs` | le moteur en processus projette les temps forts sans variable, et sans erreur de projection ; `CD_MATCH_TEMPS_FORTS=0` les retire |
+| `tests/godot-match-temps-forts.{cjs,gd}` | cinq modes : `inactif` (repli), `actif`, `gestes` (22 minutes à vitesse réelle avec les gestes, sans gel ni échéance, cadrage contrôlé image par image), `reprise` (match repris d'une sauvegarde puis confié à l'adjoint), `defaut` (parcours du joueur sans variable : causerie, coup d'envoi, pause pendant un temps fort — coup d'envoi lu à vitesse réelle le temps de cette étape —, journal ouvert, remplacement et consigne sans rejeu, mi-temps, fin, débrief, son) |
+| `tests/godot-match-temps-forts-capture.{cjs,gd}` | capture du mode de base, sans variable de mode |
+| `tests/godot-contextual.cjs` | le parcours `flow` avance le match par pas du direct : il tourne avec `CD_MATCH_TEMPS_FORTS=0` |
+| `tests/godot-match-journal.cjs` | vérifie le journal au fil des pas du direct : il tourne avec `CD_MATCH_TEMPS_FORTS=0` |
+| `tests/godot-preferences.gd` | nouvelle clé `match_highlights` dans les réglages |
+
+### 10.4 Résultats
+
+Exécutés le 11 novembre 2026 au soir sur la machine de travail (Linux, 2 cœurs, Godot 4.7.2
+sans affichage, vrai moteur), après le commit `3ddd5b9b`, une suite à la fois :
+
+| Suite | Résultat |
+| --- | --- |
+| `godot-match-temps-forts` | 5 modes, 283 contrôles, 0 échec : repli 12 · actif 176 · gestes 14 (22 minutes, 5 141 images observées, hauteur visible de 11,7 à 26 m, ballon jamais hors champ, aucune échéance) · reprise 21 · défaut 60 (causerie de mi-temps et débrief dans l'ordre, 8 réactions du stade calées sur l'image) |
+| `match-direct` | 4 sur 4 |
+| `match-highlights` | 12 sur 12 (dont le nouveau test des ordres en pause) |
+| `match-actions`, `match-commentary-filters`, `match-pass-live`, `match-rules`, `match-structured-facts`, `match-tactical-visual`, `matchflow` | tous réussis |
+| `godot-match-journal`, `godot-match-cut`, `godot-match-framing`, `godot-match-gestes`, `godot-match-gestes-scenes`, `godot-match-motion`, `godot-match-pass`, `godot-match-presentation`, `godot-match-silhouettes`, `godot-match-stadium-evening`, `godot-match-contact07` | tous réussis |
+| `godot-contextual` (5 parcours) | réussi |
+| `godot-preferences`, `godot-soundscape06` | réussis |
+| `godot-match-action-review` | **échec antérieur à cette PR** : `_select_tab` absent de `live_view.gd`, puis délai dépassé ; la suite échoue aussi sur `main` (audit du 11 novembre, `96f53704`) |
+| `scripts/build-rugby-common.cjs --check` | base commune à jour |
+
+Avant les corrections de cette passe, `godot-match-temps-forts` échouait sur deux points :
+six images en plan large au début d'une suite (mode gestes) et le coup d'envoi rejoué après
+un remplacement et une consigne donnés en pause (mode défaut). Les deux sont corrigés dans
+le jeu, pas dans le test. Le seul ajustement du test est la vitesse de lecture pendant
+l'étape de pause : à ×4, le coup d'envoi pouvait finir avant la réponse du moteur.
+
+### 10.5 Capture d'un match complet sur un PC Windows
+
+Depuis la racine du dépôt (branche de la PR 560), projet Godot importé, Node installé.
+Aucune variable de mode : la capture montre ce que voit le joueur, temps forts et gestes.
+
+```
+set CD_GODOT_EXE=C:\chemin\vers\Godot_v4.7.2-stable_win64.exe
+set CD_MATCH_TEMPS_FORTS_PROOF=E:\captures\temps-forts
+set CD_MATCH_GESTES=
+node tests\godot-match-temps-forts-capture.cjs
+```
+
+PowerShell :
+
+```
+$env:CD_GODOT_EXE="C:\chemin\vers\Godot_v4.7.2-stable_win64.exe"
+$env:CD_MATCH_TEMPS_FORTS_PROOF="E:\captures\temps-forts"
+Remove-Item Env:CD_MATCH_GESTES -ErrorAction SilentlyContinue
+node tests\godot-match-temps-forts-capture.cjs
+```
+
+La capture ignore `CD_MATCH_TEMPS_FORTS` ; la ligne qui vide `CD_MATCH_GESTES` ne sert que
+si la fenêtre l'a gardé à `0` d'un essai précédent (capture sans les gestes). Autres réglages : § 9.9 ; s'y ajoutent
+`CD_MATCH_TEMPS_FORTS_QUALITE` (JPEG, 30 à 95, 72 par défaut) et `CD_MATCH_TEMPS_FORTS_GEL`
+(secondes sans progrès avant l'arrêt avec diagnostic, 120 par défaut). En 1920×1080 :
+`set CD_MATCH_TEMPS_FORTS_SIZE=1920x1080`. Code de sortie 3 : direct figé, diagnostic
+dans `report.json` (`fige`) et `godot.log`. Le rapport donne la taille réelle des images
+(`image_size`), le pilote graphique, et `gestes: true` quand les gestes étaient actifs.
+
+### 10.6 Non vérifié, limites
+
+- **Aucune exécution sous Windows ni avec une carte graphique ; aucun match entier vu à
+  l'écran avec les gestes.**
+  Sous Linux (rendu logiciel `llvmpipe`, Xvfb), une capture courte du mode de base a
+  tourné sans gel : 3 minutes de match, 19 images réellement en 1280×720, gestes actifs,
+  2 temps forts, aucune échéance ; à l'œil, gros plan en jeu courant et écran
+  intermédiaire en place. Le match entier n'a pas été capturé ici (trop lent en rendu
+  logiciel).
+- Les tests sans affichage ne disent rien de la fluidité : sous rendu logiciel, moins de
+  2 images par seconde (§ 9.8).
+- Le niveau « Match complet » n'est contrôlé que par sa présence dans la liste ; aucun
+  match entier joué à ce niveau.
+- Le gros plan est contrôlé par la hauteur visible et la place du ballon, pas par l'œil :
+  à juger sur la capture.
+- Le repli sur le direct d'origine en cas d'erreur de projection n'est pas provoqué par un
+  test Godot (côté moteur, le test vérifie seulement qu'un match se projette sans erreur).
+- Restent valables les limites du § 9.8 non reprises ici : pas de ralenti, pas d'écrans
+  d'avant-match, de mi-temps et de fin dédiés, pas d'autres matchs en direct, arrêt sur
+  « choix réservé » non fait, mode « mouvements réduits » non traité, ancien écran
+  `match_screen.gd` non branché ; incohérence « essai sur ballon porté » (§ 9.6) non
+  tranchée, le geste de maul ne se voit donc pas sur ces essais.
+
+### 10.7 Suite
+
+Voir la capture du match entier sur le PC de Léo (graine 7, club 0 : d'après le § 9.9,
+score attendu 31 – 15) ; trancher l'incohérence « essai sur ballon porté » (§ 9.6) ;
+l'écran intermédiaire repris par la graphiste ; les arrêts sur choix réservé (pénalité :
+me demander) ; le mode « mouvements réduits ».
 
 ## 8. Sources
 
