@@ -135,14 +135,33 @@ func fatigue_chart_return() -> void:
 	scroll.scroll_vertical = mini(120, int(scroll.get_v_scroll_bar().max_value - scroll.get_v_scroll_bar().page)); await settle()
 	var offset: int = scroll.scroll_vertical
 	check(offset > 0, "Défilement non nul réellement atteint avant consultation")
-	var selected_id := str(rows.back().get_meta("player_id", ""))
-	check(await open_entity("player", selected_id), "Joueur du graphique consulté par son ID publié")
+	var visible: Array = rows.filter(func(row: Control): return scroll.get_global_rect().encloses(row.get_global_rect()))
+	check(not visible.is_empty(), "Au moins un nom de joueur entièrement visible dans la liste défilée")
+	if visible.is_empty(): return
+	var selected_id := str(visible[0].get_meta("player_id", ""))
+	await click_link(named("FatigueOpenPlayer_" + selected_id.replace(":", "_")))
+	check(app.route == "Effectif" and app.selected_player == selected_id, "Vrai clic sur le nom du graphique : bonne fiche, distinct de Régler")
 	await back()
 	check(int(app.management_ui.immersive_training.get("fatigue_load_bin", -1)) == bucket, "Retour du joueur : tranche du graphique conservée")
 	check(named("FatigueScroll") != null and named("FatigueScroll").scroll_vertical == offset, "Retour du joueur : défilement non nul exact conservé")
 	await capture("fatigue-tranche-retour-2560")
 	await activate(named("FatigueFilter4"))
 	check(not app.management_ui.immersive_training.has("fatigue_load_bin"), "Tout l’effectif retire le filtre graphique")
+	await activate(named("TrainingTab2"))
+	var individual_rows: Array = app.find_children("TrainingIndividual_*", "Button", true, false)
+	check(not individual_rows.is_empty(), "Lignes du travail individuel réellement rendues")
+	if individual_rows.is_empty(): return
+	var player_id := str(individual_rows[0].get_meta("player_id", ""))
+	var individual_scroll := named("TrainingIndividualsScroll") as ScrollContainer
+	var profile_link := named("TrainingOpenPlayer_" + player_id.replace(":", "_")) as Control
+	if individual_scroll != null and profile_link != null: individual_scroll.ensure_control_visible(profile_link); await settle()
+	await click_link(profile_link)
+	check(app.route == "Effectif" and app.selected_player == player_id and named("TrainingIndividualDialog") == null, "Nom du travail individuel ouvre la fiche sans ouvrir le réglage")
+	await back()
+	var row := named("TrainingIndividual_" + player_id.replace(":", "_")) as Control
+	await activate(row)
+	check(named("TrainingIndividualDialog") != null, "Activation de la ligne métier garde son dialogue de réglage distinct")
+	app._clear_dialogs(); await settle()
 func setup_career() -> bool:
 	var payload := {"mode":"world-champ", "nationalRole":"nation", "nation":"ENG"} if group == "nation" else {"mode":"world-champ", "club":29} if group == "reading" else {"mode":"common", "club":0}
 	if not await command("new_career", payload): return false
