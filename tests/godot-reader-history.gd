@@ -139,7 +139,7 @@ func run() -> void:
 	check(date_button.has_focus() and (detail_scroll == null or detail_scroll.scroll_vertical == offset), "Retour conserve le focus de la date et le scroll réel du lecteur")
 	var confirmation := ConfirmationDialog.new()
 	confirmation.name = "ReaderHistoryBusinessConfirmation"
-	app.add_child(confirmation)
+	detail.add_child(confirmation)
 	confirmation.popup_centered(Vector2i(420, 200))
 	await settle()
 	var private_count: int = nav._readers.size()

@@ -388,7 +388,7 @@ func _destination(direction: int) -> int:
 func _travel(direction: int) -> void:
 	var child := _active_linked_modal()
 	if child != null:
-		if direction < 0 and not _blocked(child): child.queue_free()
+		if direction < 0 and not _blocked(child): _close_reader(child)
 		return
 	var source := _active_history_reader()
 	if _blocked(source): return
@@ -641,7 +641,7 @@ func _reader_input(event: InputEvent, window_ref: WeakRef) -> void:
 	if not is_instance_valid(window): return
 	if event is InputEventKey and event.pressed and not event.echo and event.alt_pressed and not event.ctrl_pressed and event.keycode == KEY_LEFT:
 		if _active_linked_modal() == window and not _blocked(window):
-			window.queue_free()
+			_close_reader(window)
 			window.set_input_as_handled()
 
 func _active_linked_modal() -> Window:
@@ -704,7 +704,7 @@ func _discard_reader(token: int) -> void:
 	_readers.erase(token)
 	for entry: Dictionary in history:
 		if int(entry.get("reader", 0)) == token: entry.erase("reader")
-	if window != null: window.queue_free()
+	if window != null: _close_reader(window)
 
 func _collect_readers() -> void:
 	var keep := {}
@@ -789,5 +789,11 @@ func _return_reader_ancestor(token: int, source: Window) -> void:
 	for key: int in _readers.keys():
 		if key != token and _reader_window(_readers[key]) in windows: _discard_reader(key)
 	for window: Window in windows:
-		if is_instance_valid(window) and not window.is_queued_for_deletion(): window.queue_free()
+		if is_instance_valid(window) and not window.is_queued_for_deletion(): _close_reader(window)
 	call_deferred("_show_reader", token)
+
+func _close_reader(window: Window) -> void:
+	# queue_free alone keeps the native exclusive-child slot until deletion.
+	# Release it before an ancestor reader is shown in the same idle cycle.
+	window.hide()
+	window.queue_free()
