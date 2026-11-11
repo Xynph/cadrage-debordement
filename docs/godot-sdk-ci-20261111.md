@@ -18,9 +18,10 @@ du guide peuvent être déclinés sans augmenter cette limite ; une liste de cas
 vide ou dupliquée est refusée. Le runner refuse les sorties SKIP,
 les erreurs de script et les codes non nuls. Le résumé donne la durée réelle,
 sans attente de verrou d'une autre recette locale. Les wrappers conservent leurs
-assertions et leurs profils jetables existants. L'import emploie l'audio Dummy ;
-les suites de la liste initiale sont exécutées en mode headless. Xvfb et Mesa
-permettent aussi de qualifier explicitement les variantes graphiques, sans GPU.
+assertions et leurs profils jetables existants. L'import emploie l'audio Dummy.
+Les cas graphiques Art07 et guide layout/native utilisent X11 sous Xvfb/Mesa ;
+les autres suites sont headless. Les douze suites sont sélectionnées explicitement,
+et seul le cas layout/native du guide est qualifié dans ce manifeste.
 Les recettes vocales ne sont pas ajoutées à la liste : les essais gardent Gabi
 silencieux, et activer le SDK sur tous les shards déclencherait des tests de
 parole qui ne font pas partie de cette réception.
@@ -54,3 +55,11 @@ rapport de reprise. Les14tests unitaires du contrôleur n’exécutent pas Godot
 ils isolent les refus (dont les erreurs/SKIP avec couleurs ANSI) et le lancement
 de chaque cas explicite. Une erreur ANSI était initialement manquée ; la sonde
 rouge puis verte couvre sa normalisation sans modifier le journal brut.
+
+Après les douze suites SDK, le même job exécute séquentiellement les nouvelles
+matrices P1 sous un écran X11 de2560×1440 : principale360s, dialogues
+complémentaires720s, puis trois processus de contrats limités chacun à90s.
+Ces budgets appartiennent aux nouveaux harnais et n'augmentent ni le plafond180s
+des suites SDK existantes ni les délais de la VM Node. Le job global reste borné
+à45minutes. Les cas guide restants et les trois suites de mise en page non reçues
+ne sont pas exécutés par ce manifeste.
