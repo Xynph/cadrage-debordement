@@ -10,6 +10,7 @@ const Office = preload("res://ui/immersive08/office.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
+const Link = preload("res://ui/entity_link.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const WIDTH := 2248
 const LEFT := 1310
@@ -41,6 +42,91 @@ var next_fixture: Dictionary
 var season_results: Array
 var international := false
 
+# Lookup only published view-model data. Missing or ambiguous identifiers never
+# fall back to the currently managed club or the next match.
+static func target_available(owner_app: Control, kind: String, id: Variant) -> bool:
+	match kind:
+		"club": return not _target_club(owner_app, str(id)).is_empty()
+		"fixture": return not _target_fixture(owner_app, str(id)).is_empty()
+		"competition": return owner_app.model.get("leagues", []).any(func(item: Dictionary): return str(item.get("id", "")) == str(id))
+		"date": return preload("res://ui/immersive08/calendar_agenda.gd").valid_date(id)
+	return false
+
+static func _target_club(owner_app: Control, id: String) -> Dictionary:
+	if id.is_empty(): return {}
+	var own_club: Dictionary = owner_app.model.get("club", {})
+	for division: Dictionary in owner_app.model.get("leagues", []):
+		for club: Dictionary in division.get("rows", []):
+			if str(club.get("id", "")) == id: return club
+	if str(own_club.get("id", "")) == id: return own_club
+	for club: Dictionary in owner_app.catalogue:
+		if str(club.get("id", "")) == id: return club
+	return {}
+
+static func _target_fixture(owner_app: Control, id: String) -> Dictionary:
+	if id.is_empty(): return {}
+	var candidates: Array[Dictionary] = []
+	for source: Array in [owner_app.model.get("calendar", []), owner_app.model.get("calendarPlanning", {}).get("fixtures", [])]:
+		for fixture: Dictionary in source:
+			if str(fixture.get("id", "")) == id: candidates.append(fixture)
+	var next: Variant = owner_app.model.get("next")
+	if next is Dictionary and str(next.get("id", "")) == id: candidates.append(next)
+	for result: Dictionary in owner_app.model.get("history", []):
+		if str(result.get("fixtureId", "")) != id: continue
+		var pair: Array = result.get("pair", [])
+		if pair.size() != 2: continue
+		var fixture := result.duplicate(true)
+		fixture.id = result.fixtureId
+		fixture.home = _target_club(owner_app, str(pair[0]))
+		fixture.away = _target_club(owner_app, str(pair[1]))
+		if fixture.home.is_empty() or fixture.away.is_empty(): continue
+		fixture.played = true
+		candidates.append(fixture)
+	if candidates.is_empty(): return {}
+	var selected: Dictionary = candidates[0]
+	for fixture: Dictionary in candidates.slice(1):
+		if fixture.get("home", {}).get("id") != selected.get("home", {}).get("id") or fixture.get("away", {}).get("id") != selected.get("away", {}).get("id"): return {}
+		if fixture.has("date") and selected.has("date") and fixture.date != selected.date: return {}
+		if fixture.get("played", false) and not selected.get("played", false): selected = fixture
+	return selected
+
+static func open_target(owner_app: Control, kind: String, id: Variant) -> bool:
+	if not target_available(owner_app, kind, id): return false
+	if kind == "competition":
+		owner_app.table_division = str(id)
+		if not owner_app.management_ui.get("competition") is Dictionary: owner_app.management_ui.competition = {}
+		owner_app.management_ui.competition.tab = "league"
+		owner_app.management_ui.competition.club_league = str(owner_app.model.get("meta", {}).get("leagueId", ""))
+		owner_app._navigate("Classements", false)
+		return true
+	if kind == "date":
+		var reading: Dictionary = owner_app.management_ui.get("calendar_reading", {}).duplicate(true)
+		reading.selected = str(id)
+		reading.today = str(owner_app.model.get("calendarPlanning", {}).get("today", owner_app.model.get("meta", {}).get("date", "")))
+		reading.focus = "MonthDay_" + str(id)
+		owner_app.management_ui.calendar_reading = reading
+		owner_app._navigate("Calendrier", false)
+		return true
+	var dialog_name := "CompetitionClubDetails" if kind == "club" else "CompetitionFixtureDetails"
+	var existing := owner_app.find_child(dialog_name, false, false) as Window
+	if existing != null and not existing.is_queued_for_deletion() and existing.visible: return false
+	var context: Control = load("res://ui/immersive08/competition_canvas.gd").new()
+	context.app = owner_app
+	context.name = "CompetitionReadingContext"
+	context.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	owner_app.add_child(context)
+	context._context(true)
+	if kind == "club": context._club_detail(_target_club(owner_app, str(id)))
+	else: context._fixture_detail(_target_fixture(owner_app, str(id)))
+	var dialog := owner_app.find_child(dialog_name, false, false) as Window
+	if dialog == null:
+		context.queue_free()
+		return false
+	dialog.set_meta("entity_kind", kind)
+	dialog.set_meta("entity_id", str(id))
+	dialog.tree_exited.connect(context.queue_free)
+	return true
+
 static func build(owner_app: Control, canvas: Control) -> void:
 	var page: Control = load("res://ui/immersive08/competition_canvas.gd").new()
 	page.app = owner_app
@@ -48,14 +134,13 @@ static func build(owner_app: Control, canvas: Control) -> void:
 	D.place(page, Rect2(0, 0, WIDTH, 1240))
 	page._build()
 
-func _build() -> void:
-	name = "CarnetCalendar" if app.route == "Calendrier" else "CarnetStandings"
+func _context(reading_only: bool = false) -> void:
 	own = app.model.get("club", {})
 	international = app.model.meta.get("mode") == "world"
 	if not app.management_ui.get("competition") is Dictionary: app.management_ui.competition = {}
 	state = app.management_ui.competition
 	var club_league := str(app.model.meta.get("leagueId", ""))
-	if state.get("club_league") != club_league:
+	if not reading_only and state.get("club_league") != club_league:
 		state.club_league = club_league
 		if not club_league.is_empty(): app.table_division = club_league
 	var selected_league: String = club_league if app.route == "Calendrier" else app.table_division
@@ -75,6 +160,10 @@ func _build() -> void:
 		fixtures.sort_custom(func(a: Dictionary, b: Dictionary): return int(a.get("week", 0)) < int(b.get("week", 0)))
 	season_results = app.model.get("history", []).duplicate()
 	season_results.reverse()
+
+func _build() -> void:
+	name = "CarnetCalendar" if app.route == "Calendrier" else "CarnetStandings"
+	_context()
 	mode = "calendar" if app.route == "Calendrier" else str(state.get("tab", "league"))
 	_header()
 	match mode:
@@ -224,7 +313,7 @@ func _standings_row(parent: Node, club: Dictionary, index: int, stride: int) -> 
 	row.add_theme_stylebox_override("normal", C.box(fill, Color.TRANSPARENT, 1, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("234538"), WIN, 3, 0))
 	row.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
-	row.pressed.connect(func(): _club_detail(club))
+	Link.bind(row, app, {"kind":"club", "id":str(club.id)}, "Ouvrir le club · " + G.club_name(club))
 	parent.add_child(row)
 	D.place(row, Rect2(0, index * stride, LEFT - 2, stride))
 	if zone.a > 0: D.rect(row, Rect2(4, 1, 4, stride - 2), zone)
@@ -300,6 +389,8 @@ func _next_match() -> void:
 	_crest(panel, away, Rect2(287, 67, 122, 112))
 	D.text(panel, 111, 205, G.club_name(home), 23, C.IVORY, 700, 200, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel, 348, 205, G.club_name(away), 23, C.IVORY, 700, 212, HORIZONTAL_ALIGNMENT_CENTER)
+	_entity_area(panel, Rect2(11,67,200,142), {"kind":"club", "id":str(home.get("id", ""))}, "CompetitionNextHome", "Ouvrir le club · " + G.club_name(home))
+	_entity_area(panel, Rect2(246,67,212,142), {"kind":"club", "id":str(away.get("id", ""))}, "CompetitionNextAway", "Ouvrir le club · " + G.club_name(away))
 	var caption := str(next_fixture.get("label", _phase(next_fixture))).to_upper()
 	var date := _date(next_fixture)
 	if date.is_empty():
@@ -307,6 +398,7 @@ func _next_match() -> void:
 	else:
 		var date_label := D.text(panel, 40, 231, date, 27, C.IVORY, 700, 470)
 		date_label.name = "CompetitionNextDate"
+		_entity_area(panel, Rect2(36,210,470,24), {"kind":"date", "id":str(next_fixture.get("date", ""))}, "CompetitionNextDateLink", "Voir la date dans le calendrier · " + date)
 		D.text(panel, 40, 253, caption, 20, C.MUTED, 600, 470)
 	var location := _location(next_fixture)
 	_box_tag(panel, Rect2(532, 213, 151, 37), location.to_upper(), WARM)
@@ -382,7 +474,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	row.add_theme_stylebox_override("normal", C.box(Color("202519") if current else Color("101a1b"), Color.TRANSPARENT, 3, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("254035"), C.MINT, 3, 0))
 	row.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
-	row.pressed.connect(func(): _fixture_detail(fixture))
+	Link.bind(row, app, {"kind":"fixture", "id":str(fixture.get("id", ""))}, "Ouvrir la rencontre · " + row.accessibility_name)
 	parent.add_child(row)
 	D.place(row, Rect2(2, y, width - 4, line_height))
 	D.line(row, Vector2(9, line_height - 1), Vector2(width - 15, line_height - 1), Color(C.LINE, .75))
@@ -407,6 +499,9 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 			opponent_name.add_theme_constant_override("line_spacing", -4)
 			opponent_name.position.y = 0
 			opponent_name.size.y = C.px(line_height)
+	_entity_area(row, Rect2(emblem_x,0,264 if compact else 445,line_height), {"kind":"club", "id":str(opponent.get("id", ""))}, "CalendarOpponent_" + str(fixture.get("id", y)).validate_node_name(), "Ouvrir le club · " + G.club_name(opponent))
+	if not date.is_empty():
+		_entity_area(row, Rect2(12,0,178 if compact else 232,line_height), {"kind":"date", "id":str(fixture.get("date", ""))}, "CalendarDate_" + str(fixture.get("id", y)).validate_node_name(), "Voir la date dans le calendrier · " + date)
 	var place_x := 470 if compact else 720
 	var location_kind := _location_kind(fixture)
 	_icon(row, C.fixture_location_icon(location_kind), Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.GOLD)
@@ -417,6 +512,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	else:
 		D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 204)
 	D.text(row,589 if compact else 954,middle,World.short_name(_competition_id(fixture),competition,app.model),22,C.MUTED,500,185)
+	_entity_area(row, Rect2(589 if compact else 954,0,185,line_height), {"kind":"competition", "id":competition_id}, "CalendarCompetition_" + str(fixture.get("id", y)).validate_node_name(), "Voir le classement · " + competition)
 	var result_x := width - (140 if compact else 157)
 	var code := _fixture_outcome(fixture)
 	var score := _score(fixture, own.id)
@@ -609,10 +705,29 @@ func _turn(key: String, direction: int, id: String) -> void:
 		target = owner_app.find_child(id + ("Next" if direction < 0 else "Previous"), true, false) as Button
 	if target != null: target.grab_focus.call_deferred()
 
+func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> void:
+	if not target_available(app, str(target.kind), target.id): return
+	var button := Button.new()
+	button.name = id
+	button.flat = true
+	button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+	button.add_theme_stylebox_override("hover", C.box(Color(C.MINT, .06), Color(C.MINT, .55), 3, 0))
+	button.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
+	Link.bind(button, app, target, caption)
+	parent.add_child(button)
+	D.place(button, area)
+
 func _club_detail(club: Dictionary) -> void:
 	var view := Decisions.dialog(app, G.club_name(club), "CompetitionClubDetails", 880)
+	view[0].set_meta("navigation_read_only", true)
+	view[0].set_meta("entity_kind", "club")
+	view[0].set_meta("entity_id", str(club.id))
 	var content: VBoxContainer = view[1]
-	content.add_child(C.label("%s · Rang %s · %s points" % [_league_short(league), S.count_text(club.get("rank")), S.number_text(club.get("points"))], 28, C.IVORY, true, 700))
+	var club_division: Dictionary = {}
+	for division: Dictionary in leagues:
+		if division.get("rows", []).any(func(item: Dictionary): return item.get("id") == club.id): club_division = division; break
+	var division_name := _league_short(club_division) if not club_division.is_empty() else "Club"
+	content.add_child(C.label("%s · Rang %s · %s points" % [division_name, S.count_text(club.get("rank")), S.number_text(club.get("points"))], 28, C.IVORY, true, 700))
 	var summary := "%s V  ·  %s N  ·  %s D  ·  %s points marqués  ·  %s encaissés" % [S.count_text(club.get("won")), S.count_text(club.get("drawn")), S.count_text(club.get("lost")), S.count_text(club.get("pf")), S.count_text(club.get("pa"))]
 	content.add_child(C.wrap(summary, 22, C.MUTED, true))
 	var recent: Array = season_results.filter(func(item: Dictionary): return club.id in item.get("pair", [])).slice(0, 10)
@@ -620,7 +735,13 @@ func _club_detail(club: Dictionary) -> void:
 	for result: Dictionary in recent:
 		var clubs := _matchup(result)
 		content.add_child(C.rule())
-		content.add_child(C.label("%s  %s  %s" % [G.club_name(clubs[0]), _score(result), G.club_name(clubs[1])], 25, C.IVORY))
+		var caption := "%s  %s  %s" % [G.club_name(clubs[0]), _score(result), G.club_name(clubs[1])]
+		var fixture_id := str(result.get("fixtureId", ""))
+		if target_available(app, "fixture", fixture_id):
+			var link := Link.button(app, caption, {"kind":"fixture", "id":fixture_id}, "ClubResult_" + fixture_id.validate_node_name(), view[0])
+			link.clip_text = true
+			content.add_child(link)
+		else: content.add_child(C.label(caption, 25, C.IVORY))
 		content.add_child(C.label(_phase(result), 21, C.MUTED))
 	view[0].popup_centered(Vector2i(880, 565))
 
@@ -632,13 +753,29 @@ func _fixture_detail(fixture: Dictionary) -> void:
 		heading = stage if competition_id == "jlo-d1-d2" else _competition_name(fixture) + " · " + stage
 		if competition_id == "access-nationale": heading = _competition_name(fixture)
 	var view := Decisions.dialog(app, heading, "CompetitionFixtureDetails", 880)
+	view[0].set_meta("navigation_read_only", true)
+	view[0].set_meta("entity_kind", "fixture")
+	view[0].set_meta("entity_id", str(fixture.get("id", "")))
 	var content: VBoxContainer = view[1]
 	content.add_child(C.label("%s  —  %s" % [G.club_name(fixture.get("home", {})), G.club_name(fixture.get("away", {}))], 30, C.IVORY, true, 700))
+	var club_links := C.h(8)
+	content.add_child(club_links)
+	for side: String in ["home", "away"]:
+		var club: Dictionary = fixture.get(side, {})
+		if target_available(app, "club", club.get("id", "")):
+			var link := Link.button(app, G.club_name(club), {"kind":"club", "id":str(club.id)}, "FixtureClub_" + side, view[0])
+			link.clip_text = true
+			link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			club_links.add_child(link)
 	var place := _location(fixture)
 	var venue := _venue_name(fixture)
 	if not venue.is_empty(): place += "  ·  " + venue
 	var date := P.fixture_date(fixture, true)
-	if not date.is_empty(): content.add_child(C.label(date + "  ·  " + _competition_name(fixture),25,WARM))
+	if not date.is_empty():
+		content.add_child(Link.button(app, date, {"kind":"date", "id":str(fixture.get("date", ""))}, "FixtureCalendarDate", view[0]))
+	var division_id := _competition_id(fixture)
+	if target_available(app, "competition", division_id):
+		content.add_child(Link.button(app, _competition_name(fixture), {"kind":"competition", "id":division_id}, "FixtureCompetition", view[0]))
 	if competition_id in JAPAN_COMPETITIONS:
 		for note: String in Club.japan_date_notes(fixture): content.add_child(C.wrap(note, 20, C.MUTED))
 	elif competition_id in ["nationale", "access-nationale", "champ"]:
@@ -646,7 +783,8 @@ func _fixture_detail(fixture: Dictionary) -> void:
 	content.add_child(C.label(_phase(fixture) + "  ·  " + place, 24, C.MUTED))
 	if fixture.get("played", false):
 		var code := _fixture_outcome(fixture)
-		content.add_child(C.label(_score(fixture, own.id) + "  ·  " + str(S.RESULTS.get(code, {}).get("label", "Issue non renseignée")), 37, RESULT_TINTS.get(code, C.IVORY), true, 700))
+		content.add_child(C.label(_score(fixture) + "  ·  " + str(S.RESULTS.get(code, {}).get("label", "Issue non renseignée")), 37, RESULT_TINTS.get(code, C.IVORY), true, 700))
+		_fixture_statistics(content, fixture)
 		var winner: Variant = _fixture_winner(fixture)
 		if winner != null and identities.has(winner):
 			content.add_child(C.label("Vainqueur : " + G.club_name(identities[winner]), 26, C.IVORY))
@@ -657,6 +795,17 @@ func _fixture_detail(fixture: Dictionary) -> void:
 			var prepare := C.button("Rejoindre le match" if live else "Préparer le match", func(): view[0].queue_free(); app._navigate("Match" if live else "Préparation"), true, app.accent)
 			content.add_child(prepare)
 	view[0].popup_centered(Vector2i(880, 520))
+
+func _fixture_statistics(content: VBoxContainer, fixture: Dictionary) -> void:
+	var result := _history_for(fixture)
+	var stats: Variant = fixture.get("stats", result.get("stats"))
+	if not stats is Array or stats.size() != 2 or not stats[0] is Dictionary or not stats[1] is Dictionary: return
+	content.add_child(C.rule())
+	content.add_child(C.label("Statistiques · domicile / extérieur", 23, C.GOLD, true, 700))
+	for item: Array in [["Pénalités concédées", "penalties"], ["Cartons jaunes", "yellows"]]:
+		content.add_child(C.label("%s · %s / %s" % [item[0], S.count_text(stats[0].get(item[1])), S.count_text(stats[1].get(item[1]))], 22, C.IVORY))
+	for item: Array in [["Mêlées conservées", "scrumsWon", "scrums"], ["Touches conservées", "lineoutsWon", "lineouts"], ["Tirs de pénalité", "goals", "goalAttempts"], ["Transformations", "conversions", "conversionAttempts"]]:
+		content.add_child(C.wrap("%s · %s / %s — %s / %s" % [item[0], S.count_text(stats[0].get(item[1])), S.count_text(stats[0].get(item[2])), S.count_text(stats[1].get(item[1])), S.count_text(stats[1].get(item[2]))], 22, C.MUTED))
 
 func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 	var source: String = {

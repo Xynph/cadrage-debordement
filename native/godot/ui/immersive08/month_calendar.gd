@@ -4,6 +4,8 @@ extends VBoxContainer
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Link = preload("res://ui/entity_link.gd")
+const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 const DAY_SECONDS := 86400
 const MONTHS := ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
@@ -720,6 +722,20 @@ func _open_preparation(fixture: Dictionary) -> void:
 	_remember_focus("CalendarOpenFixture_"+str(fixture.get("id","")).validate_node_name())
 	app._navigate("Préparation")
 
+func _club_badge(club: Dictionary, id: String) -> Control:
+	var crest := G.crest(club,C.px(50))
+	if not Competition.target_available(app,"club",club.get("id","")): return crest
+	var link := Button.new()
+	link.name = id
+	link.custom_minimum_size = Vector2(C.px(50),C.px(50))
+	link.flat = true
+	link.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+	link.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,3,0))
+	Link.bind(link,app,{"kind":"club","id":str(club.id)},"Club · " + G.club_name(club))
+	link.add_child(crest)
+	crest.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return link
+
 func _fixture_detail(fixture: Dictionary) -> PanelContainer:
 	var panel := C.card()
 	panel.add_theme_stylebox_override("panel",C.box(Color("25372f"), Color("89744f"), 7, 10))
@@ -727,11 +743,18 @@ func _fixture_detail(fixture: Dictionary) -> PanelContainer:
 	var opponent := _opponent(fixture)
 	var matchup := C.h(10)
 	body.add_child(matchup)
-	matchup.add_child(G.crest(app.model.club,C.px(50)))
+	matchup.add_child(_club_badge(app.model.club,"CalendarOwnClubBadge"))
 	var points := _score(fixture)
-	matchup.add_child(C.label(points if not points.is_empty() else "VS",24,C.GOLD,true,700))
-	matchup.add_child(G.crest(opponent,C.px(50)))
-	body.add_child(C.wrap(G.club_name(opponent),24,C.IVORY,true,700))
+	if not points.is_empty() and Competition.target_available(app,"fixture",fixture.get("id","")):
+		matchup.add_child(Link.button(app,points,{"kind":"fixture","id":str(fixture.id)},"CalendarFixtureScore_"+str(fixture.id).validate_node_name()))
+	else: matchup.add_child(C.label(points if not points.is_empty() else "VS",24,C.GOLD,true,700))
+	matchup.add_child(_club_badge(opponent,"CalendarOpponentBadge_"+str(fixture.get("id","")).validate_node_name()))
+	if Competition.target_available(app,"club",opponent.get("id","")):
+		var opponent_link := Link.button(app,G.club_name(opponent),{"kind":"club","id":str(opponent.id)},"CalendarClub_"+str(fixture.get("id","")).validate_node_name())
+		opponent_link.clip_text = true
+		opponent_link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.add_child(opponent_link)
+	else: body.add_child(C.wrap(G.club_name(opponent),24,C.IVORY,true,700))
 	var place := P.fixture_location_kind(fixture, _club_id())
 	var metadata := PackedStringArray()
 	if PLACES.has(place): metadata.append(PLACES[place])

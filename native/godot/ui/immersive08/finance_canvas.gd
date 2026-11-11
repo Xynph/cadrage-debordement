@@ -3,6 +3,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
+const Link = preload("res://ui/entity_link.gd")
 const G = preload("res://ui/game_skin.gd")
 const KEY = "immersive08_finance_tab"
 const PAGE_KEY_PREFIX = "immersive08_finance_page_"
@@ -54,6 +55,15 @@ class LedgerPlot extends Control:
 		for point in points:
 			draw_circle(point, C.px(7), C.BG)
 			draw_circle(point, C.px(5), C.IVORY)
+
+static func target_available(_app: Control, id: Variant) -> bool:
+	return TABS.any(func(tab: Array): return tab[0] == str(id))
+
+static func open_target(app: Control, id: Variant) -> bool:
+	if not target_available(app, id): return false
+	app.management_ui[KEY] = str(id)
+	app._navigate("Finances", false)
+	return true
 
 static func build(app: Control, canvas: Control) -> void:
 	canvas.name = "ImmersiveFinance"
@@ -120,6 +130,16 @@ static func _metrics(app: Control, canvas: Control, accounts: Dictionary, financ
 		var card := D.panel(canvas, Rect2(i*566,195,550,135), item[0], item[1], "", "FinanceMetric"+str(i))
 		D.text(card, 23, 111, item[2], 54, item[4], 800, 323)
 		D.chip(card, Rect2(346,70,181,46), item[3], item[4])
+		var target := {"kind":"finance", "id":["cash","summary","wages","budget"][i]}
+		if i == 1: target = {"kind":"menu", "route":"Recrutement"}
+		var open := Button.new()
+		open.name = "FinanceMetricLink" + str(i)
+		open.flat = true
+		open.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+		open.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT,C.GOLD,4,0))
+		Link.bind(open,app,target,"Ouvrir · " + str(item[0]))
+		card.add_child(open)
+		D.place(open,Rect2(0,0,550,135))
 
 static func _summary(app: Control, canvas: Control, finance: Dictionary, ledger: Array) -> void:
 	_chart(D.panel(canvas, Rect2(0,346,1398,375), "Flux de trésorerie", "money", "", "FinanceChart"), ledger)
@@ -390,7 +410,8 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 		var player: Dictionary = squad[i]
 		var y := i*34
 		if i%2 == 0: D.rect(rows, Rect2(0,y,1350,33), Color("131e20"))
-		D.text(rows, 25, y+23, player.get("name","—"), 18, C.IVORY, 700, 450)
+		var name_link := D.button(rows, Rect2(21,y+1,450,31), player.get("name","—"), func(): pass, false,"",true,U.GREEN,"FinancePlayerName_"+str(player.id).validate_node_name())
+		Link.bind(name_link,app,{"kind":"player","id":str(player.id),"section":"contract"},"Consulter le contrat · " + str(player.get("name","")))
 		D.text(rows, 491, y+23, player.get("pos","—"), 18, C.MUTED, 500, 198)
 		D.text(rows, 703, y+23, G.contract_year(player.get("contractEnd")), 18, C.MUTED, 500, 228)
 		D.text(rows, 1096, y+23, G.salary_amount(player.get("salary",0)), 18, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -405,8 +426,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.button(agents, Rect2(24,117,786,49), "Ouvrir le travail du club", func(): app._navigate("Travail du club"), false, "arrow", true, U.GREEN, "FinanceAgents")
 
 static func _open_player(app: Control, player_id: String) -> void:
-	app.selected_player = player_id
-	app._navigate("Effectif")
+	app.navigation_controller.open_entity({"kind":"player","id":player_id,"section":"contract"})
 
 static func _transfers(app: Control, canvas: Control, ledger: Array) -> void:
 	var contracts := ledger.filter(func(entry: Dictionary): return _category(str(entry.get("title","")))[0] == "Contrat")
