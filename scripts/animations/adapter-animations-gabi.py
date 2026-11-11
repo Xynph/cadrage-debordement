@@ -1,6 +1,8 @@
-# Adapte des animations Mixamo (X Bot) au Gabi rigué par Mixamo (même nommage d'os, autres proportions).
-# Usage : python3 adapter-animations-gabi.py -- <gabi-mixamo.fbx> <gestes-gabi.json> <sortie.blend|.glb> [--racine <dossier des .fbx>]
-# Sortie .blend : une piste NLA par geste, à passer ensuite à exporter-gabi-mixamo.py.
+# Adapte des animations Mixamo au Gabi rigué par Mixamo (même nommage d'os, autres proportions, autre pose de repos).
+# Usage : python3 adapter-animations-gabi.py -- <gabi-rig.blend|gabi-mixamo.fbx> <gestes-gabi.json> <sortie.blend|.glb> [--racine <dossier>]
+#   gabi-rig.blend : sortie de ajouter-pouces-gabi.py (conseillé : pouces mobiles).
+#   Les chemins de gestes-gabi.json sont relatifs à --racine (défaut : dossier du .json), rangés ainsi :
+#     generique/<nom>.fbx (téléchargés sur X Bot), packs/<pack>/<nom>.fbx, gabi/<nom>.fbx (téléchargés avec Gabi sélectionné).
 # Entrées et sorties hors du dépôt public (fichiers Mixamo, licence). Blender en module Python (pip install bpy).
 import bpy, sys, json, os
 from mathutils import Matrix, Vector, Quaternion
@@ -8,10 +10,13 @@ argv = sys.argv[sys.argv.index('--')+1:]
 gabi, specf, outf = argv[:3]
 racine = argv[argv.index('--racine')+1] if '--racine' in argv else os.path.dirname(os.path.abspath(specf))
 spec = json.load(open(specf)); FPS = 30
-for it in spec: it['fbx'] = os.path.join(racine, it['fbx'])
-bpy.ops.wm.read_factory_settings(use_empty=True)
+for it in spec: it['fbx'] = it['fbx'] if os.path.isabs(it['fbx']) else os.path.join(racine, it['fbx'])
+if gabi.endswith('.blend'):
+    bpy.ops.wm.open_mainfile(filepath=gabi)
+else:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.fbx(filepath=gabi)
 sc = bpy.context.scene; sc.render.fps = FPS
-bpy.ops.import_scene.fbx(filepath=gabi)
 tgt = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
 for a in list(bpy.data.actions): bpy.data.actions.remove(a)
 if tgt.animation_data: tgt.animation_data_clear()
@@ -24,6 +29,17 @@ def walk(b):
 REST = {b.name: b.matrix_local.copy() for b in tgt.data.bones}; PAR = {b.name: (b.parent.name if b.parent else None) for b in tgt.data.bones}
 for pb in tgt.pose.bones: pb.rotation_mode = 'QUATERNION'
 t_hips = (Tw @ REST['mixamorig:Hips'].to_translation()).z
+# Revers des manches : pièces séparées que Mixamo a pondérées entre bras et avant-bras ;
+# elles glissaient. On les accroche entièrement à l'avant-bras.
+for o in bpy.data.objects:
+    if o.type == 'MESH' and o.name.startswith('Gabi_Revers_'):
+        cote = 'Right' if o.name.endswith('_D') else 'Left'
+        g = o.vertex_groups.get('mixamorig:%sForeArm' % cote) or o.vertex_groups.new(name='mixamorig:%sForeArm' % cote)
+        for vg in list(o.vertex_groups):
+            if vg != g: o.vertex_groups.remove(vg)
+        g.add(list(range(len(o.data.vertices))), 1.0, 'REPLACE')
+# Doigts : une seule chaîne plie les quatre doigts collés ; flexion réduite de moitié pour ne pas ouvrir les fentes.
+DOIGTS = 0.5
 for it in spec:
     before = set(bpy.data.objects); ab = set(bpy.data.actions)
     bpy.ops.import_scene.fbx(filepath=it['fbx'])
@@ -70,6 +86,7 @@ for it in spec:
             M[b] = Mb
             if b in rot:
                 L = base.inverted() @ Mb; q = L.to_quaternion()
+                if 'HandIndex' in b: q = Quaternion().slerp(q, DOIGTS)
                 if b in prev and prev[b].dot(q) < 0: q.negate()
                 prev[b] = q; data[b].append(q)
                 if b == 'mixamorig:Hips': hips.append(L.to_translation())

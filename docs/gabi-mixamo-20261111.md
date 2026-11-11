@@ -72,3 +72,21 @@ python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/
 - Le cadrage du portrait est celui du Gabi d'origine (même maillage, même taille) ; certains gestes larges peuvent sortir du cadre (voir captures).
 - Les doigts : une chaîne par main, pas de pouce mobile dans le rig actuel.
 - Aucune exécution sous Windows au moment de ce commit.
+
+
+## Corrections du 11 novembre au soir (yeux, mains, manches, nouveaux gestes)
+
+- **Yeux** (`corriger-yeux-gabi.py` pour le `.glb` d'origine, `corriger-yeux-gabi-blend.py` pour le `.blend` rigué) : les deux pupilles regardaient sur sa droite (≈ 10° pour l'œil droit) ; elles visent désormais un interlocuteur à 1,3 m. Les paupières, blanches (effet « lunettes »), sont couleur peau, et la paupière supérieure est abaissée de 10° (elle couvre le haut de l'iris, regard détendu). Appliqué aussi au Gabi d'origine `guide/assets/gabi.glb` : visible dans le jeu actuel, sans fichier privé.
+- **Pouces** (`ajouter-pouces-gabi.py`) : Mixamo n'avait pas fait d'os de pouce ; trois phalanges ajoutées par main, pondérées sur la géométrie du pouce (distance le long de la surface depuis la pointe). Les gestes Mixamo contiennent déjà le mouvement du pouce.
+- **Doigts** : une seule chaîne plie les quatre doigts collés ; flexion réduite de moitié pour ne pas ouvrir les fentes entre les doigts.
+- **Revers des manches** : accrochés entièrement à l'avant-bras (ils glissaient entre bras et avant-bras).
+- **Gestes** : 40 (liste `gestes-gabi.json`), dont 14 téléchargés avec Gabi sélectionné (marche, demi-tours, s'asseoir/se lever, assis qui parle, téléphone, pouce levé, parle), et `bras_croises` fabriqué (`bras-croises-gabi.py`, cinématique inverse sur la respiration de « repos »). Écartés : Drinking et Sitting Drinking (le bras traverse), les variantes où la source est assise ou accroupie.
+
+Chaîne complète :
+```
+python3 scripts/animations/ajouter-pouces-gabi.py -- gabi-mixamo.fbx /hors-depot/gabi-rig.blend
+python3 scripts/animations/adapter-animations-gabi.py -- /hors-depot/gabi-rig.blend scripts/animations/gestes-gabi.json /hors-depot/gabi.blend --racine /dossier/mixamo
+python3 scripts/animations/corriger-yeux-gabi-blend.py -- /hors-depot/gabi.blend
+python3 scripts/animations/bras-croises-gabi.py -- /hors-depot/gabi.blend
+python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2>
+```
