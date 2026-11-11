@@ -1,0 +1,54 @@
+{
+  "verdict": "A_CORRIGER",
+  "head": "d88dc4db7a87a165a1bbfc25ed269f4008a47d6b",
+  "base": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "productionFilesEdited": false,
+  "githubWrites": false,
+  "targetedBatch": {
+    "passed": 29,
+    "failed": 1,
+    "seconds": 180.561,
+    "fileFailure": "tests/france-saves.cjs",
+    "vmTimeoutMs": 15000
+  },
+  "isolatedCandidate": {
+    "head": "d88dc4db7a87a165a1bbfc25ed269f4008a47d6b",
+    "command": [
+      "/workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node",
+      "--test",
+      "tests/france-saves.cjs"
+    ],
+    "exitCode": 1,
+    "seconds": 110.106,
+    "unchangedVmTimeout": 15000
+  },
+  "baseline": {
+    "baseline": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+    "code": 0,
+    "seconds": 110.304,
+    "log_sha256": "2aa44552542ebebbc88fb901430720bc0a3b8827bb23789337b04eed4e1cb194",
+    "log": "/tmp/rg27-france-saves-main96.log"
+  },
+  "independentProbe": {
+    "passed": true,
+    "head": "d88dc4db7a87a165a1bbfc25ed269f4008a47d6b",
+    "base": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+    "assertions": 35,
+    "oldSeason": 1,
+    "oldRound": 1,
+    "recordedResults": 15,
+    "legacyScheduleSha256": "87e125585c376242adfe8a6baf6db41a5fd37894291239193acc744d90eab7f8",
+    "seconds": 36.261,
+    "limits": [
+      "No Godot or Windows",
+      "No full-season migration independently simulated",
+      "Old world/academy checkpoint compatibility not independently executed"
+    ]
+  },
+  "sourceArchiveUnchanged": true,
+  "limits": [
+    "No Godot or Windows",
+    "No isolated performance cause established",
+    "No independent old-world/academy checkpoint migration"
+  ]
+}

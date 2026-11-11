@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: une ancienne carrière prend une référence sans courrier rétroactif
+ok 1 - une ancienne carrière prend une référence sans courrier rétroactif
+  ---
+  duration_ms: 2.876295
+  type: 'test'
+  ...
+# Subtest: un changement crée un seul courrier et le recalage est durable et idempotent
+ok 2 - un changement crée un seul courrier et le recalage est durable et idempotent
+  ---
+  duration_ms: 1.474158
+  type: 'test'
+  ...
+# Subtest: le maintien de la préparation et les décalages successifs préservent son ancrage
+ok 3 - le maintien de la préparation et les décalages successifs préservent son ancrage
+  ---
+  duration_ms: 0.732372
+  type: 'test'
+  ...
+# Subtest: dates manquantes, matchs terminés et saisons successives ne créent pas de faux changement
+ok 4 - dates manquantes, matchs terminés et saisons successives ne créent pas de faux changement
+  ---
+  duration_ms: 2.55575
+  type: 'test'
+  ...
+# Subtest: la validation refuse un ancrage corrompu ou une décision incohérente
+ok 5 - la validation refuse un ancrage corrompu ou une décision incohérente
+  ---
+  duration_ms: 0.391159
+  type: 'test'
+  ...
+# Planning calendrier : séances, statuts, semaines libres, choix et recalage vérifiés.
+# Subtest: tests/calendar-planning.cjs
+ok 2 - tests/calendar-planning.cjs
+  ---
+  duration_ms: 95.914368
+  type: 'test'
+  ...
+# Calendrier natif : dates simulées, import, choix, séances effectuées, courrier et reprise vérifiés.
+# Subtest: tests/calendar-worker.cjs
+ok 3 - tests/calendar-worker.cjs
+  ---
+  duration_ms: 168554.79194
+  type: 'test'
+  ...
+# {"passed":true,"verifiedRound1":15,"complete":false,"expected":422}
+# Subtest: tests/calendrier01.cjs
+ok 4 - tests/calendrier01.cjs
+  ---
+  duration_ms: 54.472306
+  type: 'test'
+  ...
+# {"passed":true,"addedFixtures":23,"combinedWithPr113":38,"stillMissing":384}
+# Subtest: tests/calendrier02.cjs
+ok 5 - tests/calendrier02.cjs
+  ---
+  duration_ms: 36.907657
+  type: 'test'
+  ...
+# CALENDRIER-04 PASS: 182 + 240 = 422 confrontations officielles, doubles allers-retours et 422 horaires simules distincts.
+# Subtest: tests/calendrier04.cjs
+ok 6 - tests/calendrier04.cjs
+  ---
+  duration_ms: 58.034444
+  type: 'test'
+  ...
+# Subtest: Atelier accessible avant création de carrière, document vérifiable sans mutation
+ok 11 - Atelier accessible avant création de carrière, document vérifiable sans mutation
+  ---
+  duration_ms: 4792.776915
+  type: 'test'
+  ...
+# Subtest: Une carrière, son export, son disque et sa reprise restent exactement identiques
+ok 12 - Une carrière, son export, son disque et sa reprise restent exactement identiques
+  ---
+  duration_ms: 38971.221144
+  type: 'test'
+  ...
+# 359 contrôles calendrier réussis
+# Subtest: tests/competition-editor.cjs
+ok 8 - tests/competition-editor.cjs
+  ---
+  duration_ms: 366.279834
+  type: 'test'
+  ...
+# Subtest: la date du calendrier France30 reste celle de la cadence simulée
+ok 14 - la date du calendrier France30 reste celle de la cadence simulée
+  ---
+  duration_ms: 4.311287
+  type: 'test'
+  ...
+# Subtest: les anciennes sauvegardes France30 peuvent être lues sans mutation
+ok 15 - les anciennes sauvegardes France30 peuvent être lues sans mutation
+  ---
+  duration_ms: 1.987107
+  type: 'test'
+  ...
+# Subtest: le pas du jour refuse une demande périmée et attend le résultat du match
+ok 16 - le pas du jour refuse une demande périmée et attend le résultat du match
+  ---
+  duration_ms: 2.681777
+  type: 'test'
+  ...
+# Subtest: la semaine de repos se clôt le dimanche sans inventer de résultat
+ok 17 - la semaine de repos se clôt le dimanche sans inventer de résultat
+  ---
+  duration_ms: 1.47939
+  type: 'test'
+  ...
+# Subtest: l’import refuse un marqueur de calendrier incompatible
+ok 18 - l’import refuse un marqueur de calendrier incompatible
+  ---
+  duration_ms: 2.155571
+  type: 'test'
+  ...
+# node:vm:149
+#     return ReflectApply(super.runInContext, this, args);
+#            ^
+# Error: Script execution timed out after 15000ms
+#     at Script.runInContext (node:vm:149:12)
+#     at Object.runInContext (node:vm:301:6)
+#     at run (/tmp/rg27-review-573-source/native/engine/worker.cjs:136:24)
+#     at snapshotRaw (/tmp/rg27-review-573-source/native/engine/worker.cjs:251:158)
+#     at snapshot (/tmp/rg27-review-573-source/native/engine/worker.cjs:254:46)
+#     at Object.handle (/tmp/rg27-review-573-source/native/engine/worker.cjs:485:56)
+#     at call (/tmp/rg27-review-573-source/tests/france-saves.cjs:6:137)
+#     at good (/tmp/rg27-review-573-source/tests/france-saves.cjs:6:204)
+#     at Object.<anonymous> (/tmp/rg27-review-573-source/tests/france-saves.cjs:8:143)
+#     at Module._compile (node:internal/modules/cjs/loader:1781:14) {
+#   code: 'ERR_SCRIPT_EXECUTION_TIMEOUT'
+# }
+# Node.js v22.23.4
+# Subtest: tests/france-saves.cjs
+not ok 10 - tests/france-saves.cjs
+  ---
+  duration_ms: 65173.260145
+  type: 'test'
+  location: '/tmp/rg27-review-573-source/tests/france-saves.cjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: published calendars include all fixtures and record open dates without inventing published precision
+ok 20 - published calendars include all fixtures and record open dates without inventing published precision
+  ---
+  duration_ms: 8.105964
+  type: 'test'
+  ...
+# Subtest: next season swaps vacated slots, preserving competitive balance and generating fresh dates
+ok 21 - next season swaps vacated slots, preserving competitive balance and generating fresh dates
+  ---
+  duration_ms: 152.186336
+  type: 'test'
+  ...
+# Subtest: official local match bonuses and chronological recent form survive projection
+ok 22 - official local match bonuses and chronological recent form survive projection
+  ---
+  duration_ms: 39.653197
+  type: 'test'
+  ...
+# Subtest: quarter and promotion dates preserve weeks across seasons and use different identities
+ok 23 - quarter and promotion dates preserve weeks across seasons and use different identities
+  ---
+  duration_ms: 4.6585
+  type: 'test'
+  ...
+# {"passed":true,"seasons":2,"rounds":[29,29],"checkpoints":4,"reloadedSeasonEnd":true,"readableSaveAfterResume":true}
+# Subtest: LNR native save survives midseason and endseason transitions across fresh VM contexts
+ok 24 - LNR native save survives midseason and endseason transitions across fresh VM contexts
+  ---
+  duration_ms: 34558.013271
+  type: 'test'
+  ...
+# Subtest: France30 : première et deuxième division, toutes partitions, déterministe
+ok 25 - France30 : première et deuxième division, toutes partitions, déterministe
+  ---
+  duration_ms: 38.295432
+  type: 'test'
+  ...
+# Subtest: mode historique 14 clubs (game.js)
+ok 26 - mode historique 14 clubs (game.js)
+  ---
+  duration_ms: 1013.006538
+  type: 'test'
+  ...
+# Subtest: Espoirs : poules Élite, Accession et compatibilité
+ok 27 - Espoirs : poules Élite, Accession et compatibilité
+  ---
+  duration_ms: 18.558001
+  type: 'test'
+  ...
+# Subtest: atelier de calendrier fictif : 2 à 32 clubs, simple et aller-retour
+ok 28 - atelier de calendrier fictif : 2 à 32 clubs, simple et aller-retour
+  ---
+  duration_ms: 223.692484
+  type: 'test'
+  ...
+# Subtest: monde : élite, accession, Premiership et URC générés, déterministes, ancien générateur intact
+ok 29 - monde : élite, accession, Premiership et URC générés, déterministes, ancien générateur intact
+  ---
+  duration_ms: 214.67679
+  type: 'test'
+  ...
+# Subtest: sauvegarde France portant l’ancien calendrier : acceptée ; calendrier quelconque : refusé
+ok 30 - sauvegarde France portant l’ancien calendrier : acceptée ; calendrier quelconque : refusé
+  ---
+  duration_ms: 10152.713381
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 29
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180497.787292

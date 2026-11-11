@@ -1,0 +1,15 @@
+{
+  "dist/espoirs-accession-v74.js": "d75f69f9c372b8f16413a0e09ecab28d53d5e62c093bff3ad63bcc1100c46043",
+  "dist/espoirs-league-v73.js": "1284a5026f580909fcea815f10ea64a273cf5329ed4c1692233b6a007bf80ff5",
+  "dist/france-competition.js": "c5c951c9b2b4c42875ac3d4a05d146d8c2f9c10aadb52be21c136b97602e11ff",
+  "dist/france-save-validation.js": "1c9c58e6d2914ebad391f2f2f558bde193de922406f86f683015cd10473a585e",
+  "dist/game.js": "02d8b0a76bf8fe4950251dbe58367610ca2f59f5aabcaf2ee97c3f6fa2f84d59",
+  "dist/rugby-common-rosters.js": "98bd370e513555a7011ce12eaabd4910ce46b86ea12c77f934c717228ce3f56b",
+  "docs/calendrier-alternance-20261111.md": "7a6c8429304a249ad0c7e4f9f1628880d46381cd2729aa6186c6d8892767b3b0",
+  "docs/rugby-rules-reference.md": "c752d63b838ffd20ed123634138aae0a1019e0001f3489dd25f74734157d9e4a",
+  "native/engine/academy.cjs": "d9d2e572b78fcef8a7b83abe5cbd8b91aa0b2967d3493e4a06506ffbea7d1ec9",
+  "native/engine/competition-editor.cjs": "8a329c1ff814c8c830ec5acb6cc0fa37e38edeaab30e7ce83e031338f8465a0d",
+  "native/engine/world-career.cjs": "ddff08ad0751ce64ac49ad5be5cff62bd1967684418413cbac4b119690acfabe",
+  "native/engine/world-competitions.cjs": "e15a1b22b85270d0516ce20f30d03b54b9e09cc315a95c94670dac949bc4fdfe",
+  "tests/schedule-alternance.cjs": "92701be62b499d716ece2270c6df39dced80dda0d45e6cb7126c03714eebc011"
+}

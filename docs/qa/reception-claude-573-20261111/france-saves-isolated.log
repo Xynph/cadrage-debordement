@@ -1,0 +1,44 @@
+TAP version 13
+# node:assert:150
+#   throw new AssertionError(obj);
+#   ^
+# AssertionError [ERR_ASSERTION]: Script execution timed out after 15000ms
+# false !== true
+#     at good (/tmp/rg27-review-573-source/tests/france-saves.cjs:6:223)
+#     at Object.<anonymous> (/tmp/rg27-review-573-source/tests/france-saves.cjs:13:387)
+#     at Module._compile (node:internal/modules/cjs/loader:1781:14)
+#     at Object..js (node:internal/modules/cjs/loader:1913:10)
+#     at Module.load (node:internal/modules/cjs/loader:1505:32)
+#     at Function._load (node:internal/modules/cjs/loader:1309:12)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+#     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+#     at node:internal/main/run_main_module:36:49 {
+#   generatedMessage: false,
+#   code: 'ERR_ASSERTION',
+#   actual: false,
+#   expected: true,
+#   operator: 'strictEqual',
+#   diff: 'simple'
+# }
+# Node.js v22.23.4
+# Subtest: tests/france-saves.cjs
+not ok 1 - tests/france-saves.cjs
+  ---
+  duration_ms: 109959.547378
+  type: 'test'
+  location: '/tmp/rg27-review-573-source/tests/france-saves.cjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 109976.248277

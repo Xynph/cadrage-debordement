@@ -1,0 +1,11 @@
+{
+  "head": "d88dc4db7a87a165a1bbfc25ed269f4008a47d6b",
+  "command": [
+    "/workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node",
+    "--test",
+    "tests/france-saves.cjs"
+  ],
+  "exitCode": 1,
+  "seconds": 110.106,
+  "unchangedVmTimeout": 15000
+}

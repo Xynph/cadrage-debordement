@@ -1,0 +1,17 @@
+[
+  {
+    "script": "scripts/build-rugby-common.cjs",
+    "exitCode": 0,
+    "seconds": 0.714
+  },
+  {
+    "script": "scripts/build-world-registry.cjs",
+    "exitCode": 0,
+    "seconds": 2.023
+  },
+  {
+    "script": "scripts/build-staff-registry.cjs",
+    "exitCode": 0,
+    "seconds": 0.071
+  }
+]

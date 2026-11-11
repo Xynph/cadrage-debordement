@@ -1,0 +1,39 @@
+{
+  "head": "d88dc4db7a87a165a1bbfc25ed269f4008a47d6b",
+  "command": [
+    "/workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node",
+    "--test",
+    "--test-concurrency=2",
+    "tests/schedule-alternance.cjs",
+    "tests/calendar-mail.cjs",
+    "tests/calendar-planning.cjs",
+    "tests/calendar-worker.cjs",
+    "tests/calendrier01.cjs",
+    "tests/calendrier02.cjs",
+    "tests/calendrier04.cjs",
+    "tests/competition-editor.cjs",
+    "tests/competition-editor-worker.cjs",
+    "tests/france-calendar-cadence.cjs",
+    "tests/france-saves.cjs",
+    "tests/japan-season.cjs",
+    "tests/lnr-cross-season-recovery.cjs"
+  ],
+  "exitCode": 1,
+  "seconds": 180.561,
+  "node": "v22.23.4",
+  "files": [
+    "schedule-alternance",
+    "calendar-mail",
+    "calendar-planning",
+    "calendar-worker",
+    "calendrier01",
+    "calendrier02",
+    "calendrier04",
+    "competition-editor",
+    "competition-editor-worker",
+    "france-calendar-cadence",
+    "france-saves",
+    "japan-season",
+    "lnr-cross-season-recovery"
+  ]
+}
