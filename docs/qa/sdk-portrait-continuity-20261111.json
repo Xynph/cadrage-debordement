@@ -1,0 +1,81 @@
+{
+  "base_commit": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "sdk": "Godot4.7.2 official Linux",
+  "node": "22.23.4",
+  "audio": "Dummy",
+  "source_sha256": "b65ddea8c78142416cea2271276cf632404deb639e6fda7f250a94c1c7d766cd",
+  "helper_sha256": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d",
+  "correction": "Rank actual market through published knowledge; exact rating may be null. Inspect the actual office spotlight, including its legitimate empty reason, rather than assuming it is the entire market. Retain actual promotion, small/large/full portraits, reopen, bank2 opponent, save/RNG/disk checks.",
+  "baseline": {
+    "code": 1,
+    "node_seconds": 29.321,
+    "diagnostic_stop": true,
+    "first_error": "Invalid type in float(): exact rating null"
+  },
+  "qualified_receipt": {
+    "suite": "godot-portrait-continuity",
+    "source_sha": "96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates",
+    "code": "0",
+    "execution_seconds": "43.419",
+    "lock_wait_seconds": "76.967",
+    "diagnostic_stop": "False",
+    "limit_seconds": "180",
+    "log": "/workspace/qa/sdk-semantics-updated/logs/updated-market-null-godot-portrait-continuity.log"
+  },
+  "checks": 57,
+  "failures": 0,
+  "logs": [
+    {
+      "path": "/workspace/qa/sdk-semantics-96/logs/baseline-godot-portrait-continuity.log",
+      "sha256": "8accc6ad9cf07501547c65caddebd3520473e89ed6353b40301e461008a80704",
+      "excerpt": [
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "FAIL: Piste réelle du bureau conserve sa banque",
+        "SDK_DIAGNOSTIC_STOP: terminal GDScript error; remaining assertions were not executed.",
+        "    SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.",
+        "    SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor."
+      ]
+    },
+    {
+      "path": "/workspace/qa/sdk-semantics-updated/logs/updated-godot-portrait-continuity.log",
+      "sha256": "58093d471b188d7ca9861df0aa2d1747d1e68ab0881804ff2933903b9c99cf5f",
+      "excerpt": [
+        "FAIL: Vrai marché disponible",
+        "Banque/base réellement reçue : players:041",
+        "{\"checks\":52,\"failures\":[\"Vrai marché disponible\"]}",
+        "    FAIL: Vrai marché disponible",
+        "    Banque/base réellement reçue : players:041",
+        "    {\"checks\":52,\"failures\":[\"Vrai marché disponible\"]}",
+        "# pass 0",
+        "# fail 1",
+        "# duration_ms 39055.656903"
+      ]
+    },
+    {
+      "path": "/workspace/qa/sdk-semantics-updated/logs/updated-market-null-godot-portrait-continuity.log",
+      "sha256": "479384c4cdf61fa9dac4d426d13bacc55d4c61e8e3858ebf546098957afb718d",
+      "excerpt": [
+        "Banque/base réellement reçue : players:041",
+        "{\"checks\":57,\"failures\":[]}",
+        "# pass 1",
+        "# fail 0",
+        "# duration_ms 43293.538528"
+      ]
+    }
+  ]
+}
