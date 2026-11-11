@@ -1,5 +1,5 @@
 extends RefCounted
-## Cadrage des temps forts (CD_MATCH_TEMPS_FORTS=1). Pendant un temps fort, la caméra
+## Cadrage des temps forts (mode de base du match ; repli CD_MATCH_TEMPS_FORTS=0). Pendant un temps fort, la caméra
 ## du jeu (TV ou contact) se rapproche de l'action : le ballon, son porteur et les
 ## joueurs proches, à une hauteur visible de 12 à 18 m, plus large pour un jeu au pied
 ## ou une longue course. Le ballon ne sort jamais du champ. Présentation seulement :

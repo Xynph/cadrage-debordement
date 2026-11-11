@@ -1,12 +1,13 @@
 'use strict';
-// Capture d'un match en temps forts dans la vraie interface, avec le vrai moteur.
+// Capture d'un match en temps forts dans la vraie interface, avec le vrai moteur :
+// ce que le joueur voit par défaut (temps forts, gestes, cadrage), sans variable de mode.
 // Outil manuel : sans CD_MATCH_TEMPS_FORTS_PROOF il ne fait rien (la CI le saute).
 //
 //   CD_GODOT_EXE                  exécutable Godot 4.7.2 (ou CD_GODOT_EXECUTABLE)
 //   CD_MATCH_TEMPS_FORTS_PROOF    dossier absolu des images (tf-00001.jpg…) et de report.json — requis
 //   CD_MATCH_TEMPS_FORTS_NIVEAU   aucun | resume | cles | etendus | dynamique (défaut) | integral
 //   CD_MATCH_TEMPS_FORTS_HORLOGE  lente | normale (défaut) | rapide | eclair : horloge de l'écran intermédiaire
-//   CD_MATCH_TEMPS_FORTS_VITESSE  vitesse des temps forts, 0.5 à 4 (défaut 1)
+//   CD_MATCH_TEMPS_FORTS_VITESSE  réglage d'essai : vitesse des temps forts, 0.5 à 4 (défaut 1, la vitesse réelle du jeu)
 //   CD_MATCH_TEMPS_FORTS_SIZE     "1280x720" par défaut
 //   CD_MATCH_TEMPS_FORTS_EVERY    une image enregistrée toutes les N images affichées à 30 images/s (défaut 5, soit 6 par seconde)
 //   CD_MATCH_TEMPS_FORTS_MAX      nombre maximal d'images (défaut 2400)
@@ -16,7 +17,7 @@
 //   CD_MATCH_TEMPS_FORTS_CLUB     club dirigé dans le harnais (défaut 0)
 //   CD_MATCH_TEMPS_FORTS_SEED     graine du moteur, entier (défaut 7) : même graine, même match
 //   CD_MATCH_TEMPS_FORTS_GODOT_ARGS  arguments Godot supplémentaires, séparés par des espaces
-//   CD_MATCH_GESTES=1             transmis tel quel à la vue 3D quand elle sait jouer les gestes
+//   CD_MATCH_GESTES=0             capture sans les gestes ni la coupe vers les remises en jeu (actifs par défaut)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const proof=process.env.CD_MATCH_TEMPS_FORTS_PROOF;
@@ -38,7 +39,9 @@ const save=path.join(work,'live.json');
 fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
 const extra=(process.env.CD_MATCH_TEMPS_FORTS_GODOT_ARGS||'').split(/\s+/).filter(Boolean);
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(work,'PrototypeGodot'),
- CD_GODOT_SEED:seed,CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_NIVEAU:process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique',CD_MATCH_TEMPS_FORTS_SIZE:size,CD_MATCH_TEMPS_FORTS_SAVE:save};
+ CD_GODOT_SEED:seed,CD_MATCH_TEMPS_FORTS_NIVEAU:process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique',CD_MATCH_TEMPS_FORTS_SIZE:size,CD_MATCH_TEMPS_FORTS_SAVE:save};
+// Le mode de base, tel que le joueur le lance : aucune variable de mode n'est posée.
+delete env.CD_MATCH_TEMPS_FORTS;if(env.CD_MATCH_GESTES!=='0')delete env.CD_MATCH_GESTES;
 const started=Date.now();
 const result=spawnSync(godot,[...extra,'--windowed','--resolution',size,'--max-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts-capture.gd')],{env,encoding:'utf8',windowsHide:false,timeout:3600000,maxBuffer:64*1024*1024});
 const output=(result.stdout||'')+(result.stderr||'');

@@ -1,5 +1,6 @@
 extends Node
-## Régie du direct en temps forts. Elle n'existe qu'avec CD_MATCH_TEMPS_FORTS=1.
+## Régie du match en temps forts : le mode de base du match (repli sur le direct
+## d'origine avec CD_MATCH_TEMPS_FORTS=0).
 ##
 ## Trois états : écran intermédiaire (l'horloge file, une minute simulée par requête),
 ## temps fort (la vue 3D rejoue localement une liste de plans déjà simulés) et attente
@@ -7,7 +8,10 @@ extends Node
 ## rien de sportif : fenêtres, plans et arrêts viennent de `live.direct`, projeté par
 ## le moteur. Elle pilote la vue 3D par sa seule interface publique (`apply_frame`,
 ## `is_presenting_extended_pass`) : les gestes et les coupes vers les remises en jeu
-## de la vue s'y greffent sans rien changer ici.
+## de la vue font partie de ce mode (repli : CD_MATCH_GESTES=0).
+##
+## Un temps fort se joue toujours à vitesse réelle ; seule l'horloge de l'écran
+## intermédiaire se règle. CD_MATCH_TEMPS_FORTS_VITESSE ne sert qu'aux tests.
 const S = preload("res://ui/contextual/skin.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
 const Cadrage = preload("res://match_cadrage.gd")
@@ -68,9 +72,11 @@ var _debut_ms := 0
 var _tenu := 0.0
 var _sans_reponse := 0.0
 var _apres_erreur := 0.0
+var _actif := false
+var _resultat_sonne := false
 
 static func enabled() -> bool:
-	return OS.get_environment("CD_MATCH_TEMPS_FORTS") == "1"
+	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
 
 func setup(owner_view: Control, container: Control, target: SubViewport, space: Control) -> void:
 	name = "MatchTempsForts"
@@ -81,15 +87,16 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	app = view.app
 	stage = view.stage
 	viewport = target
-	var choisi := str(app.management_ui.get("match_temps_forts_niveau", OS.get_environment("CD_MATCH_TEMPS_FORTS_NIVEAU")))
+	# Niveau : le choix de la session, sinon celui imposé au lancement, sinon le réglage enregistré.
+	var retenu := OS.get_environment("CD_MATCH_TEMPS_FORTS_NIVEAU")
+	var preferences: Variant = app.get("user_preferences")
+	if retenu.is_empty() and preferences != null: retenu = str(preferences.data.get("match_highlights", ""))
+	var choisi := str(app.management_ui.get("match_temps_forts_niveau", retenu))
 	niveau = choisi if choisi in NIVEAUX else "dynamique"
 	var cadence := str(app.management_ui.get("match_temps_forts_horloge", OS.get_environment("CD_MATCH_TEMPS_FORTS_HORLOGE")))
 	horloge = cadence if HORLOGES.has(cadence) else "normale"
 	var allure := OS.get_environment("CD_MATCH_TEMPS_FORTS_VITESSE")
 	vitesse = clampf(float(allure), 0.5, 4.0) if allure.is_valid_float() else 1.0
-	if stage.has_method("set_cadrage"):
-		cadrage = Cadrage.new(stage)
-		stage.set_cadrage(cadrage)
 	voile = ColorRect.new()
 	voile.name = "MatchBetweenVeil"
 	voile.color = Color(S.PANEL, 1.0)
@@ -99,7 +106,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	view.move_child(voile, container.get_index() + 1)
 	between = Between.new()
 	space.add_child(between)
-	between.niveau_choisi.connect(_choisir_niveau)
+	between.niveau_choisi.connect(choisir_niveau)
 	between.reprise_demandee.connect(func(): app._command("pause", {"paused": false}))
 	between.tiroir_demande.connect(func(titre: String): view._toggle_drawer(titre))
 
@@ -108,21 +115,61 @@ func choisir_horloge(valeur: String) -> void:
 	horloge = valeur
 	app.management_ui["match_temps_forts_horloge"] = valeur
 
-func _choisir_niveau(id: String) -> void:
-	if id not in NIVEAUX: return
+func choisir_niveau(id: String) -> void:
+	if id not in NIVEAUX or id == niveau: return
 	niveau = id
 	app.management_ui["match_temps_forts_niveau"] = id
+	# Le niveau choisi vaut pour les prochains matchs, comme la caméra.
+	var preferences: Variant = app.get("user_preferences")
+	if preferences != null and preferences.data.get("match_highlights") != id and not preferences.set_value("match_highlights", id):
+		app.notice("Réglage non enregistré", preferences.last_error)
+	if view.has_method("montrer_reglages_temps_forts") and _live.get("direct") is Dictionary:
+		var direct: Dictionary = _live.direct.duplicate()
+		direct["niveau"] = id
+		view.montrer_reglages_temps_forts(direct, self)
+
+## Premier modèle projeté par le moteur : la vue 3D passe en mode temps forts.
+func _activer(direct: Dictionary) -> void:
+	_actif = true
+	if stage.has_method("set_cadrage"):
+		cadrage = Cadrage.new(stage)
+		stage.set_cadrage(cadrage)
+	# Gestes et coupes vers les remises en jeu font partie du mode de base.
+	if OS.get_environment("CD_MATCH_GESTES") != "0" and stage.has_method("set_gestes"): stage.set_gestes(true)
+	if view.has_method("montrer_reglages_temps_forts"): view.montrer_reglages_temps_forts(direct, self)
+
+func _exit_tree() -> void:
+	_presenter(false)
+
+## Le son du stade suit ce qui est montré, pas l'avance du moteur.
+func _presenter(valeur: bool) -> void:
+	var sons: Variant = app.get("soundscape") if is_instance_valid(app) else null
+	if is_instance_valid(sons) and sons.has_method("set_presenting"): sons.set_presenting(valeur)
+
+func _sonner(kind: String) -> void:
+	var sons: Variant = app.get("soundscape")
+	if is_instance_valid(sons) and sons.has_method("play_shown"): sons.play_shown(kind)
+
+## Vrai tant qu'un temps fort reste à montrer : la causerie et le débrief attendent sa fin.
+func retient(live: Dictionary) -> bool:
+	if etat == JEU: return true
+	var direct: Variant = live.get("direct")
+	if not direct is Dictionary or not direct.get("tempsFort") is Dictionary: return false
+	var rencontre := str(direct.get("rencontre", "")) + "|"
+	if str(app.management_ui.get("match_temps_forts_rencontre", "")) != rencontre and int(live.get("minute", 0)) > 0: return false
+	return rencontre + str(direct.tempsFort.get("cle", "")) != str(app.management_ui.get("match_temps_forts_cle", ""))
 
 ## Appelée par la vue à chaque modèle reçu, après la mise à jour du bandeau.
 func receive(model: Dictionary, live: Dictionary) -> void:
 	var direct: Variant = live.get("direct")
 	if not direct is Dictionary:
-		# Moteur lancé sans la variable : le direct d'origine reprend la main.
+		# Moteur lancé sans les temps forts : le direct d'origine garde la main.
 		voile.hide()
 		between.hide()
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
 		return
+	if not _actif: _activer(direct)
 	_live = live
 	_teams = live.get("teams", [])
 	_events = live.get("events", [])
@@ -135,6 +182,21 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	var candidat: Variant = direct.get("tempsFort")
 	var nouveau: bool = candidat is Dictionary and rencontre + str(candidat.get("cle", "")) != str(app.management_ui.get("match_temps_forts_cle", ""))
 	var signale: Variant = direct.get("arret")
+	# Match repris en cours de route (sauvegarde) ou fin confiée à l'adjoint : ce que le
+	# moteur a déjà joué n'est pas rejoué, l'écran intermédiaire montre où en est le match.
+	var premiere: bool = str(app.management_ui.get("match_temps_forts_rencontre", "")) != rencontre
+	app.management_ui["match_temps_forts_rencontre"] = rencontre
+	var delegue: bool = live.get("finished", false) and str(app.get("last_command")) == "delegate"
+	if (premiere and int(live.get("minute", 0)) > 0) or delegue:
+		if candidat is Dictionary: app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
+		if signale is Dictionary: app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
+		nouveau = false
+		_arret_attendu = {}
+		if etat != INTER:
+			gel = false
+			index = -1
+			_vers_inter()
+		suivi.append({"evenement": "delegation" if delegue else "reprise", "horloge": str(direct.get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
 	if signale is Dictionary and rencontre + str(signale.get("cle", "")) != str(app.management_ui.get("match_temps_forts_arret", "")):
 		app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
 		_arret_attendu = signale
@@ -156,6 +218,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		var fige: bool = live.get("paused", false) and not _pause_au_depart and not live.get("atBreak", false) and not live.get("finished", false)
 		if fige != gel:
 			gel = fige
+			_presenter(not gel)
 			if index >= 0 and index < tf.plans.size(): stage.apply_frame(_image(tf.plans[index].scene, gel, int(tf.plans[index].index)))
 	elif etat == ATTENTE:
 		_vers_inter()
@@ -233,6 +296,7 @@ func _demarrer(candidat: Dictionary) -> void:
 	_debut_ms = Time.get_ticks_msec()
 	_score = tf.get("scoreAvant", _live.get("score", [0, 0]))
 	_montrer_jeu(true)
+	_presenter(true)
 	stage.set_live_cadence(1)
 	# Entrée dans un temps fort : le cadrage rapproché est posé d'emblée (la 3D sort du fondu).
 	if cadrage != null and not tf.get("suite", false): cadrage.couper()
@@ -278,6 +342,9 @@ func _jouer(plan: Dictionary) -> void:
 	var scene: Dictionary = plan.scene
 	phase = "jeu"
 	temps = 0.0
+	_resultat_sonne = false
+	# La clameur de l'essai part quand l'essai est à l'écran.
+	if str(plan.get("kind", "")) == "try": _sonner("try")
 	if float(plan.get("mouvement", 0.0)) > 0.0:
 		_depuis = _derniers.duplicate()
 		stage.apply_frame(_image(_interpole(scene, clampf(PAS / float(plan.mouvement), 0.0, 1.0)), false, int(plan.index)))
@@ -299,7 +366,12 @@ func _lire(delta: float, reel: float) -> void:
 		if temps >= float(PRET.get(str(plan.get("kind", "")), 0.0)): _jouer(plan)
 		return
 	# Le résultat d'un tir s'affiche après la frappe, pas avant.
-	if plan.has("annonce") and temps >= RESULTAT and temps - delta < RESULTAT: _habiller()
+	if plan.has("annonce") and temps >= RESULTAT and not _resultat_sonne:
+		_resultat_sonne = true
+		_habiller()
+		var marque: Array = plan.get("score", _score)
+		var reussi: bool = str(plan.get("kind", "")) == "goal" or (str(plan.get("kind", "")) == "transformation" and marque.size() >= 2 and _score.size() >= 2 and int(marque[0]) + int(marque[1]) > int(_score[0]) + int(_score[1]))
+		_sonner("goal" if reussi else "miss")
 	var mouvement := float(plan.get("mouvement", 0.0))
 	if mouvement > 0.0 and temps < mouvement + PAS:
 		sous_image += delta
@@ -317,6 +389,8 @@ func _lire(delta: float, reel: float) -> void:
 	if _live.get("paused", false) or _live.get("finished", false) or not _arret_attendu.is_empty():
 		_vers_inter()
 		_apres_lecture()
+		# Mi-temps ou fin de match : la causerie retenue pendant l'action peut s'ouvrir.
+		if is_instance_valid(view.director): view.director.call_deferred("sync")
 	else:
 		# La minute suivante dira si l'action continue : la 3D reste à l'écran.
 		etat = ATTENTE
@@ -325,6 +399,7 @@ func _lire(delta: float, reel: float) -> void:
 func _vers_inter() -> void:
 	etat = INTER
 	attente = 0.0
+	_presenter(false)
 	if cadrage != null: cadrage.regler(false)
 	_montrer_jeu(false)
 	suivi.append({"evenement": "intermediaire", "horloge": str(_live.get("direct", {}).get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
@@ -372,6 +447,7 @@ func _habiller() -> void:
 		if _live.get("finished", false): view.clock.text = "TERMINÉ"
 		elif _live.get("atBreak", false): view.clock.text = "MI-TEMPS"
 		elif not heure.is_empty(): view.clock.text = heure
+		_valider(_live.get("finished", false))
 		if not voile.visible:
 			voile.modulate.a = 1.0
 			voile.show()
@@ -380,9 +456,17 @@ func _habiller() -> void:
 		return
 	if index < 0 or index >= tf.get("plans", []).size(): return
 	var plan: Dictionary = tf.plans[index]
+	# Le dernier temps fort se regarde avant de valider la journée.
+	_valider(false)
 	view.clock.text = str(plan.get("horloge", ""))
 	if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
 	var attend_resultat: bool = plan.has("annonce") and (phase == "pret" or temps < RESULTAT)
 	view.events.text = str(plan.get("annonce" if attend_resultat else "texte", ""))
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
+
+func _valider(visible_fin: bool) -> void:
+	if view.finish.visible == visible_fin: return
+	view.finish.visible = visible_fin
+	view.finish.set_meta("contextual_enabled", visible_fin)
+	if is_instance_valid(view.director): view.director._refresh_controls()

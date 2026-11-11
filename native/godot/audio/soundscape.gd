@@ -21,6 +21,9 @@ var _registered := false
 var _profile_ready := false
 var _active := false
 var _live_active := false
+## Match en temps forts : la vue rejoue un instant déjà simulé.
+var _presenting := false
+var _shown := false
 var _voice_active := false
 var _bed_gain := 0.0
 var _reaction_gain := 0.0
@@ -178,7 +181,19 @@ func set_voice_active(value: bool) -> void:
 	_voice_active = value
 
 func refresh_visibility(route: String, live_visible: bool) -> void:
-	_active = route == "Match" and live_visible and _live_active
+	_shown = route == "Match" and live_visible
+	_active = _shown and (_live_active or _presenting)
+
+## Match en temps forts : le stade s'entend pendant un temps fort rejoué, même si le
+## moteur est déjà à la mi-temps ou au coup de sifflet final.
+func set_presenting(value: bool) -> void:
+	_presenting = value
+	_active = _shown and (_live_active or _presenting)
+
+## Match en temps forts : la réaction du stade part quand l'action est à l'écran.
+func play_shown(kind: String) -> bool:
+	var id: String = {"try": "stadium-try", "goal": "stadium-goal", "miss": "stadium-miss"}.get(kind, "")
+	return not id.is_empty() and _play_reaction(id)
 
 func _process(delta: float) -> void:
 	if not _registered:
@@ -224,6 +239,7 @@ func _reaction_for(event: Variant) -> String:
 func observe_model(model: Dictionary, route: String, command: String = "snapshot", live_visible: bool = false, response_ok: bool = true) -> void:
 	var live: Dictionary = model.get("live", {}) if model.get("live") is Dictionary else {}
 	_live_active = not live.is_empty() and not live.get("paused", false) and not live.get("atBreak", false) and not live.get("finished", false)
+	if live.is_empty(): _presenting = false
 	refresh_visibility(route, live_visible)
 	if live.is_empty():
 		_signature = ""
@@ -253,7 +269,9 @@ func observe_model(model: Dictionary, route: String, command: String = "snapshot
 	var cue := ""
 	if current >= 0:
 		var key := str(current) + ":" + history[current]
-		if not reset and forward and not _seen.has(key) and response_ok and command == "tick" and _active:
+		# En temps forts, le moteur a une minute d'avance sur l'écran : la régie déclenche
+		# elle-même la réaction quand l'action est montrée (play_shown).
+		if not reset and forward and not _seen.has(key) and response_ok and command == "tick" and _active and not live.get("direct") is Dictionary:
 			cue = _reaction_for(events[current])
 		# Consume even while paused, muted, invisible, imported, resumed or sought.
 		for index in current + 1:

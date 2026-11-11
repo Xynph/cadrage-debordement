@@ -177,7 +177,7 @@ function createBridge(options={}){
     if(calendar)S.franceCalendar={day:calendar.calendarCadence.day};
    }
    const nativeConfirmMatchResult=(${confirmMatchResult.toString()});`);
-  // Direct en temps forts (CD_MATCH_TEMPS_FORTS=1) : lecture seule du match en cours.
+  // Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : lecture seule du match en cours.
   run(`const nativeMatchDirect=(${matchDirect.lecteur.toString()})();`);
   let matchHighlights=options.matchHighlights??null;
   const matchDirectReader={scenes:indices=>JSON.parse(run('JSON.stringify(nativeMatchDirect.scenes('+JSON.stringify(indices)+'))')),transformation:(index,made)=>JSON.parse(run('JSON.stringify(nativeMatchDirect.transformation('+Number(index)+','+(made===true)+'))')),etat:()=>JSON.parse(run('JSON.stringify(nativeMatchDirect.etat())'))};
@@ -411,7 +411,7 @@ function createBridge(options={}){
       if(!Number.isInteger(steps)||steps<1||steps>120)throw Error('Nombre de pas invalide (1 à 120).');
       if(payload.minute!==undefined||payload.temps_forts!==undefined){
        // Direct en temps forts : un pas = une minute simulée, présentation à jour avant et après.
-       if(!matchHighlights)throw Error('Temps forts non activés (CD_MATCH_TEMPS_FORTS=1).');
+       if(!matchHighlights)throw Error('Temps forts non activés (repli CD_MATCH_TEMPS_FORTS=0).');
        if(payload.minute!==true||steps!==1)throw Error('Pas de minute invalide.');
        if(payload.temps_forts!==undefined){if(!matchDirect.NIVEAUX.includes(payload.temps_forts))throw Error('Niveau de temps forts inconnu.');matchHighlights=payload.temps_forts;}
        run('syncMatchPresentation(S.live);tick();if(S.live)syncMatchPresentation(S.live)');
@@ -503,7 +503,7 @@ function createBridge(options={}){
 module.exports={createBridge,applicationRoot,IMPORT_LIMIT_BYTES,REQUEST_LIMIT_BYTES,WORLD_IMPORT_LIMIT_BYTES,WORLD_REQUEST_LIMIT_BYTES,EXTENDED_IMPORT_LIMIT_BYTES,EXTENDED_REQUEST_LIMIT_BYTES,CHAMP_IMPORT_LIMIT_BYTES,CHAMP_REQUEST_LIMIT_BYTES,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
- try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='1'?(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique'):null;bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
+ try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
  input.on('line',line=>{

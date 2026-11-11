@@ -1,12 +1,14 @@
 'use strict';
 
-// Direct en temps forts (CD_MATCH_TEMPS_FORTS=1), par le vrai moteur natif :
-// projection `live.direct` minute par minute, sans effet sur le match.
+// Match en temps forts, par le vrai moteur natif : projection `live.direct` minute par
+// minute, sans effet sur le match. C'est le mode de base du moteur lancé par le jeu
+// (repli : CD_MATCH_TEMPS_FORTS=0) ; `createBridge` ne projette que sur demande.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
+const { spawnSync } = require('node:child_process');
 const { createBridge } = require('../native/engine/worker.cjs');
 const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
@@ -27,7 +29,7 @@ function demarrer(jeu) {
   return skipMatchTalk(jeu.call('begin_match'), jeu.call);
 }
 
-test('Sans la variable, rien ne change : pas de projection, pas de pas « minute »', () => {
+test('Sans l’option du pont, rien ne change : pas de projection, pas de pas « minute »', () => {
   const jeu = ouvrir({});
   try {
     const model = demarrer(jeu);
@@ -118,4 +120,44 @@ test('Le pas « minute » et la sélection ne changent ni le match ni le tirage'
   assert.ok(direct.selections > 0);
   assert.equal(direct.carriere, ordinaire.carriere, 'même carrière, journal et score compris');
   assert.equal(direct.tirage, ordinaire.tirage, 'même tirage suivant');
+});
+
+// Le moteur tel que le jeu le lance : un processus, des requêtes ligne par ligne.
+function processus(env, requetes) {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-direct-processus-'));
+  const propre = { ...process.env, ...env };
+  for (const nom of ['CD_MATCH_TEMPS_FORTS', 'CD_MATCH_TEMPS_FORTS_NIVEAU']) if (!(nom in env)) delete propre[nom];
+  try {
+    const sortie = spawnSync(process.execPath, [path.resolve(__dirname, '../native/engine/worker.cjs'), '--data-dir', dataDir],
+      { input: requetes.map((r, i) => JSON.stringify({ id: i + 1, ...r })).join('\n') + '\n', encoding: 'utf8', env: propre, timeout: 120000, maxBuffer: 256 * 1024 * 1024 });
+    assert.equal(sortie.status, 0, sortie.stderr);
+    return sortie.stdout.trim().split('\n').map(ligne => JSON.parse(ligne));
+  } finally { fs.rmSync(dataDir, { recursive: true, force: true }); }
+}
+
+test('Sans aucune variable, le moteur du jeu projette les temps forts ; CD_MATCH_TEMPS_FORTS=0 rend le direct d’origine', () => {
+  const source = context();
+  source.run('start(0);beginMatch()');
+  const texte = source.run('JSON.stringify(createSaveDocument())');
+  const requetes = [{ command: 'import', payload: { text: texte } }, { command: 'pause', payload: { paused: false } },
+    { command: 'tick', payload: { minute: true, temps_forts: 'dynamique' } }, { command: 'shutdown', payload: {} }];
+  const defaut = processus({}, requetes);
+  assert.equal(defaut[0].ok, true, defaut[0].error);
+  assert.equal(defaut[0].model.live.direct.niveau, 'dynamique', 'niveau par défaut');
+  assert.equal(defaut[0].model.live.direct.tempsFort.type, 'coup_d_envoi');
+  assert.equal(defaut[2].ok, true, defaut[2].error);
+  assert.ok(defaut[2].model.live.minute >= 1 && defaut[2].model.live.direct, 'une minute simulée par requête');
+  const complet = processus({ CD_MATCH_TEMPS_FORTS_NIVEAU: 'integral' }, requetes.slice(0, 1).concat(requetes.slice(-1)));
+  assert.equal(complet[0].model.live.direct.niveau, 'integral', 'niveau imposé au lancement');
+  const repli = processus({ CD_MATCH_TEMPS_FORTS: '0' }, requetes);
+  assert.equal(repli[0].ok, true, repli[0].error);
+  assert.equal(repli[0].model.live.direct, undefined, 'repli : aucune projection');
+  assert.equal(repli[2].ok, false);
+  assert.match(repli[2].error, /Temps forts non activés/);
+  // Le pas d'origine reste servi dans les deux modes.
+  for (const mode of [{}, { CD_MATCH_TEMPS_FORTS: '0' }]) {
+    const pas = processus(mode, [requetes[0], requetes[1], { command: 'tick', payload: { steps: 4 } }, requetes[3]]);
+    assert.equal(pas[2].ok, true, pas[2].error);
+    assert.ok(pas[2].model.live.events.length > pas[0].model.live.events.length, 'le pas d’origine avance');
+  }
 });

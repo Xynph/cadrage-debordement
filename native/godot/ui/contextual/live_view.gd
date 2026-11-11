@@ -2,8 +2,12 @@ extends Control
 const S = preload("res://ui/contextual/skin.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 var director: Node
-## Direct en temps forts : absent sans CD_MATCH_TEMPS_FORTS=1.
+## Régie du match en temps forts (mode de base ; absente avec CD_MATCH_TEMPS_FORTS=0).
 var regie: Node
+var _cadence: OptionButton
+var _niveau: OptionButton
+var _niveaux: Array = []
+var _reglages_temps_forts := false
 var app: Control
 var stage: Node3D
 var model: Dictionary = {}
@@ -89,22 +93,26 @@ func _ready() -> void:
 		var button := S.button(pair[1], func(): _choose_camera(pair[0]))
 		_camera_controls.append(button)
 		bar.add_child(button)
-	var cadence := OptionButton.new()
-	cadence.custom_minimum_size.y = 38
+	_cadence = OptionButton.new()
+	_cadence.custom_minimum_size.y = 38
+	for text in ["Cadence ×1", "Cadence ×4", "Cadence ×12"]: _cadence.add_item(text)
+	_cadence.select(maxi(0, [1, 4, 12].find(app.tick_steps)))
+	_cadence.item_selected.connect(_choisir_cadence)
+	_cadence.set_meta("contextual_enabled", true)
+	bar.add_child(_cadence)
+	# Ce que le match montre, des temps forts choisis au match complet : visible en temps forts.
+	_niveau = OptionButton.new()
+	_niveau.name = "MatchLevel"
+	_niveau.custom_minimum_size.y = 38
+	_niveau.tooltip_text = "Ce que le match montre : des temps forts choisis au match complet. Conservé pour les prochains matchs."
+	_niveau.set_meta("contextual_enabled", true)
+	_niveau.item_selected.connect(func(index: int): if regie != null and index >= 0 and index < _niveaux.size(): regie.choisir_niveau(str(_niveaux[index].get("id", ""))))
+	_niveau.hide()
+	bar.add_child(_niveau)
 	if TempsForts.enabled():
 		regie = TempsForts.new()
 		add_child(regie)
 		regie.setup(self, container, viewport, space)
-		# L'horloge de l'écran intermédiaire remplace la cadence du direct.
-		for text in ["Horloge posée", "Horloge normale", "Horloge rapide", "Horloge éclair"]: cadence.add_item(text)
-		cadence.select(maxi(0, ["lente", "normale", "rapide", "eclair"].find(regie.horloge)))
-		cadence.item_selected.connect(func(index: int): regie.choisir_horloge(["lente", "normale", "rapide", "eclair"][index]))
-	else:
-		for text in ["Cadence ×1", "Cadence ×4", "Cadence ×12"]: cadence.add_item(text)
-		cadence.select(maxi(0, [1, 4, 12].find(app.tick_steps)))
-		cadence.item_selected.connect(func(index: int): app.tick_steps = [1, 4, 12][index]; stage.set_live_cadence(app.tick_steps))
-	cadence.set_meta("contextual_enabled", true)
-	bar.add_child(cadence)
 	bar.add_child(S.G.spacer())
 	bar.add_child(S.button("CONFIER LA FIN À L’ADJOINT", func(): app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?", func(): director.command("delegate"))))
 	finish = S.button("VALIDER LA JOURNÉE  →", func(): director.command("finish_round"), false, true)
@@ -166,7 +174,8 @@ func update_frame(value: Dictionary) -> void:
 	if live.get("finished", false): clock.text = "TERMINÉ"
 	elif live.get("atBreak", false): clock.text = "MI-TEMPS"
 	play.text = "REPRENDRE" if live.get("paused", false) else "PAUSE"
-	play.set_meta("contextual_enabled", not live.get("finished", false))
+	# Une causerie retenue par un temps fort : la reprise passera par elle.
+	play.set_meta("contextual_enabled", not live.get("finished", false) and director._talk().is_empty())
 	finish.visible = live.get("finished", false)
 	finish.set_meta("contextual_enabled", live.get("finished", false))
 	if stage.has_method("set_club_identity"): stage.set_club_identity(model.get("club", {}))
@@ -180,10 +189,41 @@ func update_frame(value: Dictionary) -> void:
 		else: lines.append(str(event))
 	events.text = "\n".join(lines)
 	events.get_parent().get_parent().visible = not lines.is_empty()
-	if regie != null: regie.receive(model, live)
+	if regie != null:
+		regie.receive(model, live)
+		if live.get("direct") is Dictionary: montrer_reglages_temps_forts(live.direct, regie)
 	_update_drawer()
 	apply_preferences()
 	director._refresh_controls()
+
+func _choisir_cadence(index: int) -> void:
+	if _reglages_temps_forts:
+		regie.choisir_horloge(["lente", "normale", "rapide", "eclair"][index])
+		return
+	app.tick_steps = [1, 4, 12][index]
+	stage.set_live_cadence(app.tick_steps)
+
+## Appelée par la régie quand le moteur projette les temps forts : l'horloge de l'écran
+## intermédiaire remplace la cadence du direct, et le niveau se choisit dans la barre.
+func montrer_reglages_temps_forts(direct: Dictionary, source: Node) -> void:
+	if not _reglages_temps_forts:
+		_reglages_temps_forts = true
+		_cadence.clear()
+		for text in ["Horloge posée", "Horloge normale", "Horloge rapide", "Horloge éclair"]: _cadence.add_item(text)
+		_cadence.select(maxi(0, ["lente", "normale", "rapide", "eclair"].find(source.horloge)))
+		_cadence.tooltip_text = "Vitesse de l’horloge entre deux temps forts. Un temps fort se joue toujours à vitesse réelle."
+	var niveaux: Array = direct.get("niveaux", [])
+	if JSON.stringify(niveaux) != JSON.stringify(_niveaux):
+		_niveaux = niveaux.duplicate(true)
+		_niveau.clear()
+		for item: Dictionary in _niveaux: _niveau.add_item(str(item.get("label", "")))
+	for index in _niveaux.size():
+		if _niveaux[index].get("id") == source.niveau and _niveau.selected != index: _niveau.select(index)
+	_niveau.visible = not _niveaux.is_empty()
+
+## Vrai tant qu'un temps fort reste à montrer : la causerie attend la fin de l'action.
+func retient_la_causerie(live: Dictionary) -> bool:
+	return regie != null and regie.retient(live)
 
 ## Vrai quand la régie des temps forts cadence elle-même le match.
 func temps_forts_actifs() -> bool:

@@ -1,8 +1,13 @@
 extends SceneTree
-## Direct en temps forts dans la vraie interface, avec le vrai moteur.
-## Mode « actif » (CD_MATCH_TEMPS_FORTS=1) : coup d'envoi en 3D, écran intermédiaire,
-## nouveau temps fort, arrêt sur carton, lisibilité en 1280×720 et 1920×1080.
-## Mode « inactif » : la régie n'existe pas et le direct d'origine est inchangé.
+## Match en temps forts dans la vraie interface, avec le vrai moteur.
+## Mode « defaut » (aucune variable) : le parcours du joueur — causerie, coup d'envoi,
+## pause pendant un temps fort, remplacement et consigne sur l'écran intermédiaire,
+## mi-temps, fin de match et débrief, son du stade calé sur l'image.
+## Mode « reprise » (aucune variable) : match repris en cours de route, niveau conservé,
+## fin confiée à l'adjoint.
+## Mode « actif » : coup d'envoi en 3D, écran intermédiaire, nouveau temps fort, arrêt
+## sur carton, lisibilité en 1280×720 et 1920×1080. Mode « gestes » : vingt minutes
+## avec les gestes. Mode « inactif » (CD_MATCH_TEMPS_FORTS=0) : direct d'origine inchangé.
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -118,16 +123,27 @@ func run() -> void:
 	var deadline := Time.get_ticks_msec() + 60000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
 	app.timer.stop()
-	await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("live.json"))})
-	await settle()
-	var view := surface()
-	check(view != null and view.has_method("temps_forts_actifs"), "Le match s'ouvre dans la vue du direct")
-	if view != null:
-		if mode == "actif": await active(view)
-		elif mode == "gestes": await gestures(view)
-		else: await inactive(view)
+	var followed: Array = []
+	if mode == "reprise":
+		# Aucune importation : la carrière et son match en cours viennent du dossier de données.
+		await settle()
+		followed = await resumed()
+	elif mode == "defaut":
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("causerie.json"))})
+		await settle()
+		followed = await player_path()
+	else:
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("live.json"))})
+		await settle()
+		var view := surface()
+		check(view != null and view.has_method("temps_forts_actifs"), "Le match s'ouvre dans la vue du direct")
+		if view != null:
+			if mode == "actif": await active(view)
+			elif mode == "gestes": await gestures(view)
+			else: await inactive(view)
+			if view.regie != null: followed = view.regie.suivi
 	var report := FileAccess.open(proof.path_join("report-" + mode + ".json"), FileAccess.WRITE)
-	report.store_string(JSON.stringify({"checks": checks, "failures": failures, "suivi": view.regie.suivi if view != null and view.regie != null else []}, "  "))
+	report.store_string(JSON.stringify({"checks": checks, "failures": failures, "suivi": followed}, "  "))
 	report.close()
 	app.closing = true
 	app.bridge.stop()
@@ -135,11 +151,12 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func inactive(view: Control) -> void:
-	check(view.regie == null and not view.temps_forts_actifs(), "Sans la variable, aucune régie")
-	check(view.stage.get("_cadrage") == null, "Sans la variable, aucun recadrage de la vue 3D")
-	check(view.find_child("MatchBetween", true, false) == null and view.find_child("MatchBetweenVeil", true, false) == null, "Sans la variable, aucun écran intermédiaire")
-	check(not app.model.live.has("direct"), "Sans la variable, le moteur ne projette rien")
-	check(view.find_children("*", "OptionButton", true, false).any(func(option: OptionButton): return option.item_count == 3 and option.get_item_text(0) == "Cadence ×1"), "La cadence d'origine est conservée")
+	check(view.regie == null and not view.temps_forts_actifs(), "Repli (CD_MATCH_TEMPS_FORTS=0) : aucune régie")
+	check(view.stage.get("_cadrage") == null and view.stage.get("_gestes") == null, "Repli : ni recadrage ni gestes sur la vue 3D")
+	check(view.find_child("MatchBetween", true, false) == null and view.find_child("MatchBetweenVeil", true, false) == null, "Repli : aucun écran intermédiaire")
+	check(not app.model.live.has("direct"), "Repli : le moteur ne projette rien")
+	check(view.find_children("*", "OptionButton", true, false).any(func(option: OptionButton): return option.is_visible_in_tree() and option.item_count == 3 and option.get_item_text(0) == "Cadence ×1"), "Repli : la cadence d'origine est conservée")
+	check(not view.find_child("MatchLevel", true, false).is_visible_in_tree(), "Repli : pas de choix de niveau dans la barre")
 	var before: int = app.model.live.events.size()
 	await command("pause", {"paused": false})
 	app.timer.stop()
@@ -250,6 +267,257 @@ func gestures(view: Control) -> void:
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "intermediaire").size() >= 2, "Retours à l'écran intermédiaire")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance").is_empty(), "Aucune attente n'a dû être interrompue par une échéance : " + str(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance")))
 	check_framing("Temps forts et gestes", played.size())
-	await until(func(): return not app.waiting and regie.etat != regie.JEU, 60000)
+	# Le match est laissé en pause au milieu d'un temps fort, niveau « étendus » choisi :
+	# le mode « reprise » repart de ce dossier de données.
+	var playing: bool = await until(func(): return not app.waiting and regie.etat == regie.JEU and regie.index >= 0, 120000)
+	print("Pause demandée pendant un temps fort : ", playing, " (minute ", int(app.model.live.minute), ")")
+	await until(func(): return not app.waiting, 30000)
 	app._command("pause", {"paused": true})
 	await wait_command()
+	check(app.model.live.paused and (not playing or regie.gel), "La pause demandée pendant un temps fort fige l'image")
+	regie.choisir_niveau("etendus")
+	check(app.user_preferences.data.get("match_highlights") == "etendus", "Le niveau choisi est enregistré dans les réglages : " + str(app.user_preferences.last_error))
+
+func talk() -> Dictionary:
+	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	return value if value is Dictionary else {}
+
+func highlights(entries: Array) -> int:
+	return entries.filter(func(entry: Dictionary): return entry.evenement == "temps_fort").size()
+
+## Ce que le son du stade a joué, et ce que l'écran montrait à cet instant.
+var cues: Array = []
+var shown: Dictionary = {}
+func hear(id: String) -> void:
+	if not id.begins_with("stadium-"): return
+	var view := surface()
+	var regie: Node = view.regie if view != null else null
+	var kind := ""
+	if regie != null and regie.etat == regie.JEU and regie.index >= 0 and regie.index < regie.tf.plans.size(): kind = str(regie.tf.plans[regie.index].get("kind", ""))
+	cues.append({"id": id, "kind": kind})
+
+func watch() -> void:
+	var view := surface()
+	if view == null or view.regie == null: return
+	var regie: Node = view.regie
+	if regie.etat == regie.JEU and regie.index >= 0 and regie.index < regie.tf.plans.size(): shown[str(regie.tf.plans[regie.index].get("kind", ""))] = true
+
+## Attend la causerie d'une phase ; note si un temps fort l'a retenue et s'il a bien été joué avant.
+func reach_talk(phase: String, limit_ms: int) -> Dictionary:
+	var result := {"reached": false, "held": false, "played": true, "minute": 0}
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while Time.get_ticks_msec() < deadline:
+		await process_frame
+		watch()
+		var scene := talk()
+		if scene.is_empty() or scene.get("phase") != phase: continue
+		if app.contextual_director.kind == "live":
+			if not result.held:
+				var view := surface()
+				check(view != null and view.regie != null and view.retient_la_causerie(app.model.live), "La causerie n'attend que la fin d'un temps fort (%s)" % phase)
+			result.held = true
+			continue
+		if app.contextual_director.kind == "locker":
+			result.reached = true
+			result.minute = int(app.model.live.minute)
+			var direct: Dictionary = app.model.live.get("direct", {})
+			if direct.get("tempsFort") is Dictionary:
+				result.played = str(app.management_ui.get("match_temps_forts_cle", "")) == str(direct.get("rencontre", "")) + "|" + str(direct.tempsFort.get("cle", ""))
+			return result
+	return result
+
+## Le parcours du joueur, sans aucune variable : le match s'ouvre en temps forts.
+func player_path() -> Array:
+	var director: Node = app.contextual_director
+	var followed: Array = []
+	check(OS.get_environment("CD_MATCH_TEMPS_FORTS").is_empty() and OS.get_environment("CD_MATCH_GESTES").is_empty(), "Aucune variable de mode n'est posée")
+	check(director.active() and director.kind == "locker" and talk().get("phase") == "pre", "La causerie d'avant-match précède le coup d'envoi")
+	if director.kind != "locker": return followed
+	if is_instance_valid(app.soundscape): app.soundscape.cue_played.connect(hear)
+	director.view._continue(true)
+	await wait_command()
+	await settle()
+	var view := surface()
+	check(view != null and view.regie != null and view.temps_forts_actifs(), "Sans variable, le match s'ouvre en temps forts")
+	if view == null or view.regie == null: return followed
+	var regie: Node = view.regie
+	followed = regie.suivi
+	check(regie.niveau == "dynamique", "Niveau par défaut : dynamique (" + regie.niveau + ")")
+	check(view.stage.get("_gestes") != null and view.stage.get("_cadrage") == regie.cadrage and regie.cadrage != null, "Gestes et cadrage font partie du mode de base")
+	check(regie.etat == regie.JEU and not regie.between.visible, "Le coup d'envoi est joué en 3D")
+	var level: OptionButton = view.find_child("MatchLevel", true, false)
+	check(level != null and level.is_visible_in_tree() and level.item_count == 6 and level.get_item_text(level.selected) == "Dynamique", "Le niveau se choisit dans la barre du match")
+	var labels: Array = []
+	if level != null:
+		for index in level.item_count: labels.append(level.get_item_text(index))
+	check("Match complet" in labels, "Le choix « Match complet » est proposé : " + str(labels))
+	check(view.find_children("*", "OptionButton", true, false).any(func(option: OptionButton): return option.is_visible_in_tree() and option.item_count == 4 and option.get_item_text(1) == "Horloge normale"), "L'horloge de l'écran intermédiaire remplace la cadence")
+	var screen := Rect2(Vector2.ZERO, Vector2(root.size))
+	var bar: Control = level.get_parent() if level != null else null
+	if bar != null:
+		for child in bar.get_children():
+			if child is Control and child.is_visible_in_tree(): check(screen.grow(1.0).encloses(child.get_global_rect()), "Barre du match dans l'écran en 1280×720 : %s %s" % [child.name, str(child.get_global_rect())])
+	# Pause demandée pendant un temps fort : l'image se fige, la reprise la relance.
+	view._pause()
+	await wait_command()
+	check(app.model.live.paused and regie.gel and regie.etat == regie.JEU, "La pause demandée pendant un temps fort fige l'image")
+	var frozen := [regie.index, regie.temps, regie.phase]
+	await settle(40)
+	check(frozen == [regie.index, regie.temps, regie.phase] and view.play.text == "REPRENDRE", "Rien n'avance pendant la pause")
+	view._pause()
+	await wait_command()
+	check(not app.model.live.paused and not regie.gel, "La reprise relance le temps fort")
+	check(await until(func(): return regie.etat == regie.INTER and not app.waiting, 120000), "Le coup d'envoi se termine et rend la main à l'écran intermédiaire")
+	check(float(regie.suivi[0].get("duree_reelle", 0.0)) > 0.0, "Le temps fort interrompu par la pause va à son terme")
+	# Remplacement et consigne pendant l'écran intermédiaire.
+	await until(func(): return regie.etat == regie.INTER and not app.waiting, 60000)
+	await command("pause", {"paused": true})
+	var before := highlights(regie.suivi)
+	var options: Array = app.model.live.get("substitutions", []).filter(func(option: Dictionary): return not option.get("inIds", []).is_empty())
+	check(not options.is_empty(), "Des remplacements sont proposés pendant la pause")
+	if not options.is_empty():
+		var choice: Dictionary = options[0]
+		await command("substitute", {"slot": int(choice.slot), "outId": choice.outId, "inId": choice.inIds[0]})
+		check(app.model.live.lineup[int(choice.slot)].get("id") == choice.inIds[0], "Le remplaçant entre pendant l'écran intermédiaire")
+	var tactics: Dictionary = app.model.get("tactics", {})
+	var other := ""
+	for option: Dictionary in tactics.get("attacks", []):
+		if option.get("id") != tactics.get("attack"): other = str(option.get("id"))
+	check(not other.is_empty(), "Une autre consigne est proposée")
+	await command("set_tactics", {"attack": other, "defense": tactics.get("defense", "equilibre")})
+	check(app.model.tactics.attack == other, "La consigne donnée pendant l'écran intermédiaire est appliquée")
+	check(regie.etat == regie.INTER and regie.between.is_visible_in_tree() and highlights(regie.suivi) == before, "Remplacement et consigne ne rejouent aucun temps fort")
+	var minute: int = app.model.live.minute
+	await settle(40)
+	check(app.model.live.minute == minute and not app.waiting, "En pause, l'horloge attend")
+	await command("pause", {"paused": false})
+	check(await until(func(): return app.model.live.minute > minute, 60000), "Le match reprend après la pause")
+	# Le niveau choisi dans la barre vaut tout de suite et pour les prochains matchs.
+	var extended := labels.find("Temps forts étendus")
+	if level != null and extended >= 0:
+		level.select(extended)
+		level.item_selected.emit(extended)
+		check(regie.niveau == "etendus" and app.user_preferences.data.get("match_highlights") == "etendus", "Le niveau choisi est appliqué et enregistré : " + str(app.user_preferences.last_error))
+		check(FileAccess.get_file_as_string(str(app.model.meta.dataDir).path_join("interface.json")).contains("etendus"), "Le niveau est écrit dans les réglages du profil")
+	# Mi-temps : le dernier temps fort de la période passe avant la causerie.
+	var sample: Dictionary = {}
+	var half := {"reached": false}
+	var deadline := Time.get_ticks_msec() + 400000
+	while Time.get_ticks_msec() < deadline and talk().get("phase") != "half":
+		await process_frame
+		watch()
+		var direct: Dictionary = app.model.live.get("direct", {})
+		if sample.is_empty() and direct.get("tempsFort") is Dictionary and int(app.model.live.minute) > 3: sample = direct.tempsFort.duplicate(true)
+	half = await reach_talk("half", 120000)
+	check(half.reached, "La causerie de mi-temps s'ouvre")
+	check(half.played, "Le dernier temps fort de la première période est joué avant la causerie")
+	print("Mi-temps à la minute ", half.minute, " · causerie retenue par un temps fort : ", half.held)
+	if not half.reached: return followed
+	var half_scene := talk().duplicate(true)
+	var seen_key := str(app.management_ui.get("match_temps_forts_cle", ""))
+	director.view._continue(true)
+	await wait_command()
+	view = surface()
+	check(view != null and view.regie != null, "La seconde période reprend dans la vue du match")
+	if view == null or view.regie == null: return followed
+	regie = view.regie
+	var journal: Array = regie.suivi
+	# Seul un temps fort nouveau (le coup d'envoi de la seconde période) peut s'ouvrir ici.
+	check(highlights(journal) == 0 or (highlights(journal) == 1 and str(app.management_ui.get("match_temps_forts_cle", "")) != seen_key), "Après la causerie, aucun temps fort de la première période n'est rejoué : " + str(journal))
+	check(await until(func(): return int(app.model.live.minute) > int(half.minute) + 1, 60000), "La seconde période avance")
+	# Démonstration à coup sûr : une causerie arrive avec un temps fort encore à montrer.
+	await until(func(): return regie.etat == regie.INTER and not app.waiting, 120000)
+	await command("pause", {"paused": true})
+	check(not sample.is_empty(), "Un temps fort réel sert de modèle")
+	if not sample.is_empty():
+		var model: Dictionary = app.model.duplicate(true)
+		sample["cle"] = "avant-causerie"
+		sample["suite"] = false
+		model.live.direct.tempsFort = sample
+		model.clubLife.matchTalks.scene = half_scene
+		app.model = model
+		var already := highlights(journal)
+		director.sync()
+		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie")
+		check(not view.finish.visible, "Pas de validation pendant le temps fort")
+		check(await until(func(): return director.kind == "locker", 120000), "La causerie s'ouvre quand le temps fort est fini")
+		var last: Dictionary = journal.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")[-1] if highlights(journal) > already else {}
+		check(highlights(journal) == already + 1 and float(last.get("duree_reelle", 0.0)) > 0.0, "Le temps fort est allé à son terme avant la causerie")
+		followed = followed + journal
+		await command("snapshot")
+		await settle()
+		view = surface()
+		check(view != null and view.regie != null and view.regie.etat == view.regie.INTER and highlights(view.regie.suivi) == 0, "Retour au match sans rejouer le temps fort")
+		if view == null or view.regie == null: return followed
+		regie = view.regie
+		journal = regie.suivi
+	await command("pause", {"paused": false})
+	# Fin de match : le dernier temps fort, puis le débrief, puis le retour au club.
+	deadline = Time.get_ticks_msec() + 400000
+	while Time.get_ticks_msec() < deadline and talk().get("phase") != "post":
+		await process_frame
+		watch()
+	var post: Dictionary = await reach_talk("post", 120000)
+	check(post.reached and app.model.live.finished, "Le débrief s'ouvre à la fin du match")
+	check(post.played, "Le dernier temps fort du match est joué avant le débrief")
+	print("Fin du match à la minute ", post.minute, " · débrief retenu par un temps fort : ", post.held, " · score ", app.model.live.score)
+	followed = followed + journal
+	if post.reached:
+		director.view._continue(true)
+		await wait_command()
+		await settle()
+		check(app.model.get("live") == null and not director.active(), "Le débrief validé rend la main au club")
+		check(app.root_content.is_visible_in_tree(), "L'écran du club revient après le match")
+	# Le son du stade suit l'image : chaque réaction part pendant le plan qu'elle accompagne.
+	var expected := {"stadium-try": ["try"], "stadium-goal": ["goal", "transformation"], "stadium-miss": ["miss", "transformation"]}
+	var misplaced: Array = cues.filter(func(cue: Dictionary): return cue.kind not in expected.get(cue.id, []))
+	check(misplaced.is_empty(), "Aucune réaction du stade hors de l'action montrée : " + str(misplaced))
+	var audible: bool = is_instance_valid(app.soundscape) and app.soundscape.get("_profile_ready") and int(app.soundscape.preferences.get_value("stadium_volume")) > 0
+	var scoring: bool = shown.has("try") or shown.has("goal") or shown.has("miss") or shown.has("transformation")
+	print("Réactions du stade : ", cues.size(), " · son actif : ", audible, " · plans montrés : ", shown.keys())
+	if audible and scoring: check(not cues.is_empty(), "Le stade réagit aux essais et aux tirs montrés")
+	return followed
+
+## Match repris en cours de route : rien n'est rejoué, puis la fin est confiée à l'adjoint.
+func resumed() -> Array:
+	var director: Node = app.contextual_director
+	var view := surface()
+	check(view != null and view.regie != null and view.temps_forts_actifs(), "Le match en cours rouvre en temps forts")
+	if view == null or view.regie == null: return []
+	var regie: Node = view.regie
+	var direct: Dictionary = app.model.live.direct
+	print("Reprise à ", direct.get("horloge"), " · temps fort déjà simulé : ", direct.get("tempsFort") is Dictionary)
+	check(int(app.model.live.minute) >= 20, "La sauvegarde reprend en cours de match (minute %d)" % int(app.model.live.minute))
+	check(regie.etat == regie.INTER and regie.between.is_visible_in_tree() and highlights(regie.suivi) == 0, "Aucun temps fort passé n'est rejoué à la reprise")
+	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "reprise"), "La reprise est notée par la régie")
+	check(is_equal_approx(regie.vitesse, 1.0), "Un temps fort se joue à vitesse réelle")
+	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
+	var level: OptionButton = view.find_child("MatchLevel", true, false)
+	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
+	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
+	check(view.clock.text == str(direct.get("horloge", "")), "L'horloge du match repris est affichée : " + view.clock.text)
+	await settle(40)
+	check(highlights(regie.suivi) == 0 and regie.etat == regie.INTER and not app.waiting, "En pause, le match repris attend")
+	var minute: int = app.model.live.minute
+	await command("pause", {"paused": false})
+	check(await until(func(): return int(app.model.live.minute) >= minute + 2, 120000), "Le match repris continue")
+	# « Confier la fin à l'adjoint » : pendant un temps fort si possible.
+	var playing: bool = await until(func(): return regie.etat == regie.JEU and not app.waiting, 180000)
+	await until(func(): return not app.waiting, 30000)
+	var before := highlights(regie.suivi)
+	await command("delegate")
+	check(app.model.live.finished, "L'adjoint termine le match : " + app.last_error)
+	await settle()
+	print("Fin confiée à l'adjoint pendant un temps fort : ", playing, " · score final ", app.model.live.score)
+	check(regie.etat == regie.INTER and regie.between.is_visible_in_tree(), "La fin confiée ramène à l'écran intermédiaire")
+	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "delegation"), "La délégation est notée par la régie")
+	await settle(60)
+	check(highlights(regie.suivi) == before and regie.etat == regie.INTER, "Aucun temps fort n'est joué après la délégation")
+	var final: Array = app.model.live.score
+	check(view.clock.text == "TERMINÉ" and view.score.text == "%d — %d" % [int(final[0]), int(final[1])], "Le score final est affiché : " + view.score.text)
+	check(view.finish.is_visible_in_tree() and not view.finish.disabled, "La journée peut être validée")
+	var followed: Array = regie.suivi
+	await command("finish_round")
+	await settle()
+	check(app.model.get("live") == null and (not director.active() or director.kind != "live"), "La journée validée referme le match")
+	return followed

@@ -1,5 +1,5 @@
 extends Control
-## Écran intermédiaire du direct en temps forts (CD_MATCH_TEMPS_FORTS=1).
+## Écran intermédiaire du match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0).
 ## Il n'affiche que la projection `live.direct` du moteur : zone de jeu et possession
 ## sur un terrain vu de dessus, fil, chiffres, regard de l'adjoint. Aucun calcul sportif.
 ## Contenu et hiérarchie seulement : composants et couleurs de l'habillage existant.

@@ -1,5 +1,5 @@
 'use strict';
-// Direct en temps forts (CD_MATCH_TEMPS_FORTS=1) : projection `live.direct` du modèle.
+// Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : projection `live.direct` du modèle.
 //
 // Lecture seule. La sélection vient de match-highlights.cjs (`en_direct`) ; ce module
 // y ajoute ce que l'écran doit afficher : les scènes 3D des plans à rejouer, le fil,

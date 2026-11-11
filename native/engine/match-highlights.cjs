@@ -11,7 +11,7 @@
 //    cause, card, origin, conversion}}
 // Deux sorties :
 // - `en_direct` décide au fil du match, rafale par rafale (les événements d'un même pas du
-//   moteur), avec le seul passé : c'est ce que joue le direct derrière CD_MATCH_TEMPS_FORTS=1 ;
+//   moteur), avec le seul passé : c'est ce que joue le match en temps forts, mode de base du jeu ;
 // - `temps_forts` choisit a posteriori sur le journal complet : il sert de référence de mesure.
 // Un temps fort : {debut, fin, minuteDebut, minuteFin, type, types, score, force, duree, plans, coupes}
 // où `debut` et `fin` sont des indices (inclus) dans le journal.

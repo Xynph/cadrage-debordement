@@ -56,7 +56,7 @@ var _stadium_kit: Node3D
 var _club_identity_key := ""
 var _club_crest: Texture2D
 var _club_branding: MultiMeshInstance3D
-## Gestes de rugby (touche, ballon porté, essai) : absents sans CD_MATCH_GESTES=1.
+## Gestes de rugby (touche, ballon porté, essai) : posés par le match en temps forts (repli CD_MATCH_GESTES=0) ou par CD_MATCH_GESTES=1 dans le direct d'origine.
 var _gestes: RefCounted
 var _cadrage: RefCounted
 
@@ -118,7 +118,7 @@ func set_stadium_evening(enabled: bool) -> void:
 		_stadium_kit.set_evening(enabled)
 
 
-## Cadrage des temps forts (CD_MATCH_TEMPS_FORTS=1) : posé par la régie du direct, absent sinon.
+## Cadrage des temps forts : posé par la régie du match en temps forts, absent dans le direct d'origine.
 func set_cadrage(value: RefCounted) -> void:
 	_cadrage = value
 

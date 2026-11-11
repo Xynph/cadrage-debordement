@@ -78,7 +78,7 @@ func run() -> void:
 		return
 	var report := {"driver": RenderingServer.get_current_rendering_driver_name(), "adapter": RenderingServer.get_video_adapter_name(),
 		"size": [size.x, size.y], "window": [window_size.x, window_size.y], "jpeg_quality": quality, "resized": false, "niveau": view.regie.niveau, "horloge": view.regie.horloge, "vitesse": view.regie.vitesse, "every": every,
-		"gestes": OS.get_environment("CD_MATCH_GESTES") == "1", "images": [], "suivi": [], "tronque": false}
+		"gestes": view.stage.get("_gestes") != null, "images": [], "suivi": [], "tronque": false}
 	var regies: Array = []
 	var started := Time.get_ticks_msec()
 	var frame := 0
@@ -111,7 +111,9 @@ func run() -> void:
 		# Ce qu'un joueur ferait : passer la causerie, relancer après la mi-temps ou un carton.
 		if app.waiting or not str(app.last_error).is_empty(): hold = 0.0
 		elif talk is Dictionary:
-			hold += delta
+			# La causerie n'est passée qu'une fois ouverte : un temps fort en cours la retient.
+			if app.contextual_director.kind != "locker": hold = 0.0
+			else: hold += delta
 			if hold >= 2.0:
 				hold = 0.0
 				app._command("match_talk_continue", {"key": talk.key, "phase": talk.phase, "skip": true})
