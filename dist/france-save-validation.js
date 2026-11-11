@@ -28,7 +28,7 @@ const CDFranceSaveValidation=(()=>{
   check(f.competitionRules==='fr-pro-2026-27'&&f.matchRules==='fr-pro-2025'&&f.startSeason===2026&&saveInt(f.week,0,34),'référentiel ou semaine invalide.');
   check(keys(f.leagues,['elite','accession'])&&saveObject(f.previousRanks)&&saveArray(f.yearbook,15),'état de compétition invalide.');
   check(f.yearbook.length===Math.min(15,s.season-1),'palmarès incomplet.');
-  const all=[];for(const id of ['elite','accession']){const l=f.leagues[id],n=id==='elite'?14:16;check(keys(l,['members','schedule','round','phase','playoff','champion','finalist'])&&Array.isArray(l.members)&&l.members.length===n&&l.members.every(i=>saveInt(i,0,29)),'partition invalide.');all.push(...l.members);check(equal(l.schedule,C.schedule(l.members)),'calendrier altéré.');}
+  const all=[];for(const id of ['elite','accession']){const l=f.leagues[id],n=id==='elite'?14:16;check(keys(l,['members','schedule','round','phase','playoff','champion','finalist'])&&Array.isArray(l.members)&&l.members.length===n&&l.members.every(i=>saveInt(i,0,29)),'partition invalide.');all.push(...l.members);check(equal(l.schedule,C.schedule(l.members))||equal(l.schedule,C.legacySchedule(l.members)),'calendrier altéré.');}
   check(new Set(all).size===30,'partition non disjointe.');
   const replay={season:s.season,club:s.club,history:[],clubs:s.clubs.map(c=>({...c,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[]})),franceMode:JSON.parse(JSON.stringify(f))};
   replay.franceMode.week=0;replay.franceMode.accessMatch=null;replay.franceMode.movement=null;

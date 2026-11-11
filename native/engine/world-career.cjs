@@ -116,14 +116,14 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   })];
  }));
  const baseCache=new Map();
- function baseFixtures(s,partition,pools){
-  const key=JSON.stringify([s.season,lnrOpening(s),partition,pools]);if(baseCache.has(key))return baseCache.get(key);
+ function baseFixtures(s,partition,pools,legacyCalendar=false){
+  const key=JSON.stringify([s.season,lnrOpening(s),partition,pools,legacyCalendar]);if(baseCache.has(key))return baseCache.get(key);
   const season=2026+s.season-1,excludedWeeks=C.europeanWeeks({season}),clubs=currentClubs(s,partition),fixtures=[];
   for(const competitionId of IDS){
    const participants=partition[competitionId].map(id=>clubs[id]);
    const rounds=competitionId==='srp'
     ?SRP.calendarFixtures({clubs:participants,season:srpSeason(s),...srpOptions})
-    :champLeague(competitionId)?CH.calendarFixtures({clubs:partition[competitionId],...champOptions(s)}):nationallyMutable(competitionId)?N.calendarFixtures({clubs:partition[competitionId],...nationaleOptions(s)}):japanLeague(competitionId)?JP.regular({id:competitionId,members:partition[competitionId],year:japanYear(s),anchor:japanAnchor(s)}):C.regularFixtures({clubs:participants,competitionId,season,startDate:day(s,0),excludedWeeks,initialFixtures:s.season===1?((lnrOpening(s)?lnrRegular[competitionId]:undefined)??REG.initialFixtures?.[competitionId]):undefined});
+    :champLeague(competitionId)?CH.calendarFixtures({clubs:partition[competitionId],...champOptions(s)}):nationallyMutable(competitionId)?N.calendarFixtures({clubs:partition[competitionId],...nationaleOptions(s)}):japanLeague(competitionId)?JP.regular({id:competitionId,members:partition[competitionId],year:japanYear(s),anchor:japanAnchor(s)}):C.regularFixtures({clubs:participants,competitionId,season,startDate:day(s,0),excludedWeeks,legacyCalendar,initialFixtures:s.season===1?((lnrOpening(s)?lnrRegular[competitionId]:undefined)??REG.initialFixtures?.[competitionId]):undefined});
    fixtures.push(...rounds);
   }
   for(const competitionId of ['champions','challenge']){
@@ -478,8 +478,10 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   const byFixture=new Map(w.fixtures.map(f=>[f.id,f]));
   for(const r of s.history){const f=byFixture.get(r.fixtureId);check(f&&!played.has(r.fixtureId),'résultat sans rencontre unique.');played.add(r.fixtureId);check(f.week<s.round&&eq(r.pair,[f.homeId,f.awayId])&&r.season===s.season&&r.competitionId===f.competitionId&&r.leagueId===f.competitionId&&r.phase===f.phase&&r.competitionRound===f.round&&r.round===f.week&&r.week===f.week&&r.date===f.date&&r.poolId===(f.poolId??null)&&r.neutral===f.neutral,'résultat incompatible avec le calendrier.');V.result(r,f,null,edition.version);}
   check(w.fixtures.filter(f=>f.week<s.round).every(f=>played.has(f.id)),'rencontres passées manquantes.');
-  const shadow={...s,worldMode:{...w,leagues:Object.fromEntries(IDS.map(id=>[id,{members:partition[id],phase:'league',champion:null,finalist:null}])),europe:Object.fromEntries(['champions','challenge'].map(id=>[id,{pools:pools[id],phase:'pool',champion:null,finalist:null}])),fixtures:baseFixtures(s,partition,pools).map(f=>fixtureShape(s,f)),movement:null,access:undefined,...(JP?{japan:null}:{}),...(N?{nationale:null}:{}),...(CH?{champ:champBoundary()}: {})}};
-  planStages(shadow,false);shadow.worldMode.fixtures.sort(fixtureOrder);
+  // Une saison générée avant le calendrier alterné (11/11/2026) est relue avec l’ancien générateur ; la saison suivante prend le nouveau.
+  const shadowFor=legacyCalendar=>{const shadow={...s,worldMode:{...w,leagues:Object.fromEntries(IDS.map(id=>[id,{members:partition[id],phase:'league',champion:null,finalist:null}])),europe:Object.fromEntries(['champions','challenge'].map(id=>[id,{pools:pools[id],phase:'pool',champion:null,finalist:null}])),fixtures:baseFixtures(s,partition,pools,legacyCalendar).map(f=>fixtureShape(s,f)),movement:null,access:undefined,...(JP?{japan:null}:{}),...(N?{nationale:null}:{}),...(CH?{champ:champBoundary()}: {})}};
+  planStages(shadow,false);shadow.worldMode.fixtures.sort(fixtureOrder);return shadow;};
+  let shadow=shadowFor(false);if(!eq(w.fixtures,shadow.worldMode.fixtures)){const legacy=shadowFor(true);if(eq(w.fixtures,legacy.worldMode.fixtures))shadow=legacy;}
   const requiredDraws=IDS.filter(id=>shadow.worldMode.leagues[id].seeds).map(id=>'league:'+id);
   if(shadow.worldMode.europe.champions.seeds)requiredDraws.push('pool:champions','pool:challenge');
   check(eq(Object.keys(w.draws).sort(),requiredDraws.sort()),'tirage enregistré hors de sa phase.');

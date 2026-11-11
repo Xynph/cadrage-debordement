@@ -16,8 +16,12 @@ const rand=(seed,mod)=>(hash(seed)%mod);
 const safe=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ids=()=>Array.from({length:20},(_,i)=>i);
 const name=(s,id)=>{if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.name(s,'accession',id);const base=(s.lnrMode?.version===1?REAL:FICTION)[Math.floor(id/10)]?.[id%10]||('Centre '+id);return root.CDEspoirsMovementV75?.name(s,'accession',id,base)||base};
-function fixtures(groups){
- const schedule=groups.map(ids=>{const a=ids.slice(),out=[];for(let r=0;r<18;r++){const day=[];for(let i=0;i<5;i++){const x=a[i],y=a[9-i];day.push((r+i)%2?[y,x]:[x,y])}out.push(day);a.splice(1,0,a.pop())}return out});
+// Tables de Berger avec alternance, retour en miroir inversé (docs/calendrier-alternance-20261111.md) ;
+// legacy=true rend le calendrier antérieur au 11 novembre 2026 pour relire les saisons déjà commencées.
+function fixtures(groups,legacy=false){
+ const berger=ids=>{const n=10,m=9,out=[];for(let q=0;q<m;q++){const r=(q+2)%m,day=[r%2?[m,r]:[r,m]];for(let k=1;k<n/2;k++){const a=(r+k)%m,b=(r-k+m)%m;day.push(k%2?[a,b]:[b,a])}out.push(day.map(p=>[ids[p[0]],ids[p[1]]]))}return out.concat(out.map(d=>d.map(([h,a])=>[a,h])))};
+ const old=ids=>{const a=ids.slice(),out=[];for(let r=0;r<18;r++){const day=[];for(let i=0;i<5;i++){const x=a[i],y=a[9-i];day.push((r+i)%2?[y,x]:[x,y])}out.push(day);a.splice(1,0,a.pop())}return out};
+ const schedule=groups.map(legacy?old:berger);
  return Array.from({length:18},(_,i)=>[...schedule[0][i],...schedule[1][i]])}
 function prospects(season,club){return Array.from({length:22},(_,i)=>{const h=hash(season+':'+club+':'+i),rating=42+h%25;
  return {id:'a74-'+season+'-'+club+'-'+i,name:'Espoir '+(club+1)+'-'+(i+1),pos:POSITIONS[i%15],slot:i%15,age:17+rand(h+':age',5),rating,potential:clamp(rating+8+rand(h+':potential',17),rating,95),condition:100,minutes:0};})}
