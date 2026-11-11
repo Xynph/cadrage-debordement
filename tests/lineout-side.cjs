@@ -3,9 +3,9 @@
 // Règle appliquée : chaque équipe se place du côté de son PROPRE en-but par rapport
 // à la ligne de touche, quelle que soit l'équipe qui lance et quelle que soit la mi-temps.
 // L'équipe 0 attaque vers x croissant (son en-but est en x=0), l'équipe 1 vers x décroissant.
-// Les scènes sont celles du vrai moteur (aucun fait écrit à la main) ; le test ne fige
-// volontairement ni l'écart entre les alignements, ni leur profondeur, ni la position du
-// ballon, qui restent des abstractions de la scène.
+// Les scènes sont celles du vrai moteur (aucun fait écrit à la main). Le lanceur, sur la
+// marque (loi 18.22), n'est d'aucun côté et n'est pas compté ici ; couloir, profondeurs,
+// vis-à-vis, receveurs et non-participants sont vérifiés par tests/lineout-geometry.cjs.
 const assert = require('node:assert/strict');
 const { context } = require('./harness.cjs');
 const { normalize } = require('../dist/match3d/scene-adapter.js');
@@ -23,7 +23,7 @@ function verify(raw) {
   const label = `lancer équipe ${team}, mi-temps ${period}, touche en x=${ball.x}`;
   assert.ok([0, 1].includes(team), label);
   assert.equal(raw.possession, team, `${label} : la possession est celle de l’équipe qui lance`);
-  const lines = [0, 1].map(side => raw.players.filter(p => p.side === side && p.slot < 8));
+  const lines = [0, 1].map(side => raw.players.filter(p => p.side === side && p.slot < 8 && !(side === team && p.slot === 1)));
   const backs = [0, 1].map(side => raw.players.filter(p => p.side === side && p.slot >= 8));
   for (const side of [0, 1]) {
     // Sens d’attaque de cette équipe : +1 pour l’équipe 0, -1 pour l’équipe 1.

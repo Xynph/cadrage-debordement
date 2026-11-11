@@ -8,13 +8,20 @@ function matchScene(l){
  const on=record?.on||real.sheets.map((sh,side)=>{const active=new Set(activePlayers(real,side).map(p=>p.id));return sh.on.map(id=>active.has(id)?id:null)});
  const kind=record?.kind||'message',team=record?.team??real.possession,possession=record?.possession??real.possession;
  const ball=record?{...record.to}:{x:real.territory,y:35},origin=record?{...record.from}:ball,players=[];
+ if(kind==='lineout'){ball.x=clamp(ball.x,5,95);origin.x=clamp(origin.x,5,95)} // jamais à moins de 5 m de la ligne de but (loi 18), dans la scène seulement
  for(let side=0;side<2;side++)on[side].forEach((id,slot)=>{
   if(!id)return;const p=matchPlayer(real,side,id);if(!p)return;
   const attack=side===possession,dir=possession===0?1:-1,formation=['goal','miss'].includes(kind)?origin:ball;
   let x=formation.x+(attack?-dir:dir)*(slot<8?5+slot%3*3:13+(slot-8)*2.8),y=slot<8?ball.y+(Math.floor(slot/3)-1)*4+(slot%3-1)*3:7+(slot-8)*9.3;
   if(kind==='carry'&&record?.style==='conquete'&&slot<8){x=ball.x+(attack?-dir:dir)*(3+slot%3*1.5);y=ball.y+(Math.floor(slot/3)-1)*3}
   if(kind==='scrum'&&slot<8){x=ball.x+(side===0?-1:1)*(1.5+slot%3*2.1);y=ball.y+(Math.floor(slot/3)-1)*2.7}
-  if(kind==='lineout'&&slot<8){x=ball.x+(side===0?-2:2);y=slot===1?2:9+slot*3.3}
+  // Touche (loi 18) : rangées à 0,5 m de part et d'autre de la ligne de remise en jeu, entre 5 et 15 m ; lanceur sur la marque ;
+  // vis-à-vis à 2 m de la marque et de la ligne des 5 m ; demi receveur à 2 m de sa rangée ; non-participants à 10 m au moins ou sur leur ligne de but.
+  if(kind==='lineout'){const back=side===0?-1:1,goal=side===0?0:100;
+   if(slot===1){x=ball.x+(side===team?0:back*2);y=side===team?0:3}
+   else if(slot<8){x=ball.x+back*.5;y=5.5+(slot?slot-1:0)*1.5}
+   else if(slot===8){x=ball.x+back*2.5;y=10}
+   else{const off=13+(slot-8)*2.8;x=Math.abs(ball.x-goal)<=off?goal:ball.x+back*off}}
   if(['kickoff','drop22','goalLine'].includes(kind)){x=ball.x+(side===team?(team===0?-1:1)*8:(team===0?1:-1)*20);y=5+slot*4.2}
   if(record?.plans&&!['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)){
    const attackPlan=record.plans.attack[side],defencePlan=record.plans.defence[side];
@@ -25,7 +32,7 @@ function matchScene(l){
   if(record?.move==='maul'&&side===team&&slot<8){x=ball.x+(side===0?-1:1)*(2+slot%3*1.3);y=ball.y+(Math.floor(slot/3)-1)*2.5}
   const featured=id===record?.actor;
   if(featured&&['carry','turnover','reception','try','setpiece-win','setpiece-loss','kick','goal','miss'].includes(kind)){x=['kick','goal','miss'].includes(kind)?origin.x:ball.x;y=['kick','goal','miss'].includes(kind)?origin.y:ball.y}
-  players.push({id,side,slot,x:featured&&kind==='try'?x:clamp(x,1.5,98.5),y:clamp(y,2,68),name:p.name,condition:p.condition,featured});
+  players.push({id,side,slot,x:featured&&kind==='try'||kind==='lineout'?x:clamp(x,1.5,98.5),y:kind==='lineout'?y:clamp(y,2,68),name:p.name,condition:p.condition,featured});
  });
  return {ball,origin,players,stage:record?ACTION_LABELS[kind]:'État actuel',kind,team,possession,event,key:event||real.minute,period:record?.period||(real.flow?.period||1),restart:['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)?{kind}:null};
 }
