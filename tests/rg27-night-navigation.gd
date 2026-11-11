@@ -169,6 +169,16 @@ func setup_career() -> bool:
 	if not await command("new_career", payload): return false
 	if group != "guards" and group != "nation":
 		if not await Flow.settle_club_meetings(app, self, check): return false
+	if group == "prospects":
+		var regen: Array = app.model.get("clubLife", {}).get("regenScouting", {}).get("candidates", [])
+		var available: Array = app.model.get("clubLife", {}).get("interclubMarket", {}).get("candidates", []).filter(func(person: Dictionary): return person.get("available", false))
+		visits.append({"preparation":"catalogues réels de common0", "regen_candidates":regen.size(), "available_interclub":available.size()})
+		if regen.is_empty() or available.is_empty():
+			# Public career creation is test setup. No projected availability,
+			# roster, cash, quote or hidden player data is rewritten here.
+			if not await command("new_career", {"mode":"fiction", "club":13}): return false
+			if not await Flow.settle_club_meetings(app, self, check): return false
+			visits.append({"preparation":"carrière publique fiction13 pour catalogue et place disponibles", "club_id":app.model.club.id})
 	return true
 func nation_cases() -> void:
 	check(app.model.get("international", {}).get("nation") == "ENG", "Carrière réelle : nation gérée anglaise")
