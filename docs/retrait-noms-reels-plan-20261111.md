@@ -116,5 +116,34 @@ tout de suite, elle ne modifie pas le dépôt public.
    pack Rugby Réel, les vrais noms, comme aujourd'hui.
 3. **Réécriture de l'historique** : plus tard.
 
+## Étape 3 préparée : les noms inventés existent
+
+Dans le dépôt privé, PR 1 (`claude/noms-inventes-v1`), sans rien changer au
+dépôt public :
+
+- `outils/noms-inventes/` : viviers de noms courants par aire culturelle,
+  générateur à graine, contrôle indépendant ;
+- `propositions/noms-joueurs-v1.json` et `noms-staffs-v1.json` : un nom
+  inventé par identifiant, pour 1 592 joueurs et 471 staffs. Ces deux
+  fichiers ne contiennent aucun nom réel.
+
+Contrôles passés : aucun patronyme ni nom complet d'un joueur ou staff réel
+de la base ; quatre lettres d'écart au moins avec chaque joueur réel du même
+club, six avec le joueur réel de même identifiant ; sortie identique d'une
+exécution à l'autre ; trois sorties faussées à la main sont refusées.
+
+Reste à faire dans le dépôt du jeu, après la fusion de la version commune :
+
+1. `scripts/build-rugby-common.cjs` et le registre des staffs lisent ces
+   fichiers au lieu de dériver un alias du nom réel.
+2. Test à écrire : une carrière existante garde les noms de sa sauvegarde ;
+   une nouvelle affiche les noms inventés ; le pack importé affiche les vrais
+   noms sur les mêmes identifiants.
+3. Journalistes et médias inventés à la place des dix journalistes réels.
+4. Joueurs étrangers du mode Monde : même traitement, viviers à compléter.
+
+Limite à connaître : le profil sportif (club, poste, âge, notes) reste celui
+du joueur réel. Un nom inventé retire le nom, pas la ressemblance.
+
 Je ne suis pas juriste. Ce plan réduit l'exposition ; il ne remplace pas un
 avis sur le droit des données personnelles et le droit à l'image.
