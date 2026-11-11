@@ -46,10 +46,32 @@ Aucun moteur de calendrier/économie, fichier d’animation, ZIP ou Windows modi
 
 ## Validation
 
-À compléter avec les reçus réellement exécutés. Les tests de lookup synthétiques
-ne constituent pas une recette d’une rencontre historique réelle ; celle-ci est
-réservée au harness fonctionnel commun. Les nouvelles captures et l’état de la
-CI doivent être cités avec le SHA effectivement validé dans la PR commune.
+Reçu local du 11 novembre, SDK Godot `4.7.2.stable.official.ed1daf0bf`,
+audio `Dummy`, tête produit `6ec95c60540eca0dcabf25a248f02750e8c5d94f` :
+`WORLD ENTITY TARGETS : 26 contrôles ; 0 échec(s)`, sortie 0.
+Commande : `godot --headless --audio-driver Dummy --path native/godot --script ../../tests/godot-world-entity-targets.gd`
+sous le verrou partagé `/workspace/work/rg27-godot.lock` ; garde externe 40 s.
+Le helper commun `entity_link.gd` est repris de la branche navigation-core,
+sans être dupliqué dans les commits de cette branche.
+
+Les deux premières tentatives locales ont révélé des ressources `.ttf.import`
+manquantes dans ce nouveau worktree (copier le cache `.godot` seul ne suffit
+pas). Après reprise des cartes d’import générées par le SDK et du helper corrigé,
+la troisième exécution ci-dessus compile les dépendances et réussit. Les anciens
+échecs de chargement ne constituent pas un défaut produit corrigé ici.
+
+Les 26 contrôles de lookup synthétiques vérifient identifiants absents/ambigus,
+année bissextile, conservation modèle/commandes, nation sans club, onglets
+financiers et rapport conservé après sortie du marché. Ils ne constituent pas
+une recette d’une rencontre historique ni d’un rapport réellement générés ;
+celles-ci sont réservées au harness fonctionnel commun. Aucune capture, recette
+Windows ou CI complète n’est revendiquée par ce reçu.
+
+Raccord financier vérifié par `git merge-file` entre la finance `origin/main`,
+notre tête produit et `origin/claude/salaires-par-niveau-20261111` : sortie 0,
+sans conflit. Le résultat contient les cibles de consultation, les liens de
+salaires et la fonction `_season_budget` de Claude ; aucun moteur n’a été
+exécuté ou modifié pour ce contrôle.
 
 ## Rapports et dossiers de recrutement
 
