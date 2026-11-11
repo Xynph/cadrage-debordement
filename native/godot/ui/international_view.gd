@@ -46,6 +46,32 @@ static func _nation_link(app: Control, nation_id: String, caption: String) -> Bu
 	link.set_meta("entity_id", nation_id)
 	return link
 
+static func _projected_reading(app: Control, content: Control, target: Dictionary, control_name: String, caption: String) -> Control:
+	if not app.navigation_controller.entity_available(target): return content
+	var destination := target.duplicate(true)
+	# Preserve the original label's immersive styling before wrapping it in a
+	# transparent reading control. Generic legacy buttons have larger margins.
+	preload("res://ui/immersive08/legacy_style.gd").apply(content, app.accent)
+	var link := Button.new()
+	link.name = control_name
+	link.set_meta("immersive_style_applied", true)
+	link.custom_minimum_size = content.get_combined_minimum_size()
+	link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if content is Label: link.add_theme_font_size_override("font_size", content.get_theme_font_size("font_size"))
+	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", G.T.box(Color.TRANSPARENT, 2, G.GOLD))
+	link.set_meta("entity_kind", str(destination.kind))
+	link.set_meta("entity_id", str(destination.id))
+	link.accessibility_name = "Consulter · " + caption
+	link.tooltip_text = link.accessibility_name
+	link.pressed.connect(func(): app.navigation_controller.open_entity(destination))
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	link.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.minimum_size_changed.connect(func():
+		if is_instance_valid(link): link.custom_minimum_size.y = content.get_combined_minimum_size().y)
+	return link
+
 static func _nation_details(app: Control, team: Dictionary) -> Control:
 	var page := G.v(8)
 	page.name = "InternationalNationDetails"
@@ -242,7 +268,7 @@ static func build(app: Control) -> Control:
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	page.add_child(tabs)
-	tabs.add_child(_callups(international, names))
+	tabs.add_child(_callups(app, international, names))
 	tabs.add_child(_editions(app, international, names))
 	tabs.add_child(_offers(app, international, role))
 	var sections := ["callups", "editions", "offers"]
@@ -258,17 +284,23 @@ static func build(app: Control) -> Control:
 		app.management_ui.international_section = sections[index])
 	return page
 
-static func _callups(international: Dictionary, names: Dictionary) -> Control:
+static func _callups(app: Control, international: Dictionary, names: Dictionary) -> Control:
 	var view := G.v()
 	view.name = "Convocations"
 	for callup: Dictionary in international.get("callups", []):
 		var list := G.panel(view)
-		list.add_child(G.section(str(names.get(callup.nation, callup.nation)),
-			"%s au %s" % [callup.from, callup.through]))
+		var caption := str(names.get(callup.nation, callup.nation))
+		var heading := G.section(caption, "%s au %s" % [callup.from, callup.through])
+		var title := heading.get_child(0) as Control
+		heading.remove_child(title)
+		var title_link := _projected_reading(app, title, {"kind":"nation", "id":str(callup.nation)}, "InternationalCallupNation_" + str(callup.nation).validate_node_name(), caption)
+		heading.add_child(title_link)
+		heading.move_child(title_link, 0)
+		list.add_child(heading)
 		for player: Dictionary in callup.get("players", []):
 			var identity := "%s · %s · %s ans" % [player.name, player.pos, G.n(player.age)]
 			identity += " · Niveau " + G.rating_text(player)
-			list.add_child(G.wrap(identity, 15, G.INK))
+			list.add_child(_projected_reading(app, G.wrap(identity, 15, G.INK), {"kind":"player", "id":str(player.get("id", ""))}, "InternationalCallupPlayer_" + str(player.get("id", "")).validate_node_name(), str(player.name)))
 	if view.get_child_count() == 0: view.add_child(G.wrap("Aucune convocation enregistrée."))
 	return view
 
@@ -422,8 +454,8 @@ static func _edition_standings(app: Control, list: Control, tables: Array, names
 			_refresh_editions(app, "InternationalEditionPool"))
 	for row: Dictionary in tables[pool].get("rows", []):
 		var team: String = row.get("teamId", "")
-		list.add_child(G.wrap("%s. %s · %s J · %s pts" % [
-			G.n(row.rank), names.get(team, team), G.n(row.played), G.n(row.points)], 15, G.INK))
+		var caption := "%s. %s · %s J · %s pts" % [G.n(row.rank), names.get(team, team), G.n(row.played), G.n(row.points)]
+		list.add_child(_projected_reading(app, G.wrap(caption, 15, G.INK), {"kind":"nation", "id":team}, "InternationalStandingNation_" + team.validate_node_name(), str(names.get(team, team))))
 
 static func _edition_fixtures(app: Control, list: Control, fixtures: Array, names: Dictionary, state: Dictionary) -> void:
 	if fixtures.is_empty():
