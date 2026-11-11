@@ -60,6 +60,7 @@ static func _profile(app: Control, parent: Container, person: Dictionary) -> voi
 	appearance.portraitRole = "staff"
 	heading.add_child(G.portrait(0, 82, appearance))
 	var words := G.v(5)
+	G.fill(words)
 	heading.add_child(words)
 	var title := G.wrap(str(person.get("name", "")), 24, G.INK)
 	title.name = "StaffProfileName"
