@@ -1,0 +1,320 @@
+{
+  "captures": [
+    "1920-Presse.png",
+    "1920-Accueil.png",
+    "1920-Création.png",
+    "1920-Bureau.png",
+    "1920-Effectif.png",
+    "1920-Composition.png",
+    "1920-Préparation.png",
+    "1920-Plan de jeu.png",
+    "1920-Plan de jeu-Phases arrêtées.png",
+    "1920-Plan de jeu-Lecture du match.png",
+    "1920-Recrutement.png",
+    "1920-Formation.png",
+    "1920-Formation-professionnels.png",
+    "1920-Centre.png",
+    "1920-Centre-Parcours.png",
+    "1920-Centre-Parcours-detail.png",
+    "1920-Centre-Centres.png",
+    "1920-Centre-Filières.png",
+    "1920-Centre-Passerelle pro.png",
+    "1920-Centre-Générations.png",
+    "1920-Staff.png",
+    "1920-Travail du club.png",
+    "1920-Travail du club-Médical.png",
+    "1920-Travail du club-Agents.png",
+    "1920-Vestiaire.png",
+    "1920-Finances.png",
+    "1920-Stratégie.png",
+    "1920-Stratégie-Projet sportif.png",
+    "1920-Stratégie-Supporters.png",
+    "1920-Club.png",
+    "1920-Carrière.png",
+    "1920-Calendrier.png",
+    "1920-Classements.png",
+    "1920-Classements-accession.png",
+    "1920-Rivalités.png",
+    "1920-Match.png",
+    "1920-Packs.png",
+    "1920-Comparaison.png",
+    "1920-Contrat.png",
+    "1920-Archives.png",
+    "1920-Menu-sauvegardes.png",
+    "1920-Crédits.png",
+    "1920-Dossier-adverse.png",
+    "1920-Paramètres.png"
+  ],
+  "case": "routes-1920",
+  "checks": 211,
+  "failures": [],
+  "render_scope": "Layout/input recipe; default quality unchanged. Only camera-backed 3D SubViewports are cached between real creation/resize/capture redraws. No animation or frame-rate qualification.",
+  "rendered_3d": [
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "creation/resize",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualPress/ContextualRoomViewport/@SubViewport@983",
+      "reason": "creation/resize",
+      "size": "(1920, 1080)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Presse",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualPress/ContextualRoomViewport/@SubViewport@983",
+      "reason": "capture Presse",
+      "size": "(1920, 1080)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualBoardRoom/@Control@1126/ContextualRoomViewport/@SubViewport@1127",
+      "reason": "creation/resize",
+      "size": "(1920, 1080)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Accueil",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Création",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@2076/@VBoxContainer@2108/@MarginContainer@2122/CareerContent/@Control@2123/OfficeProps/Studio",
+      "reason": "creation/resize",
+      "size": "(520, 156)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@2076/@VBoxContainer@2108/@MarginContainer@2122/CareerContent/@Control@2123/OfficeProps/Studio",
+      "reason": "capture Bureau",
+      "size": "(520, 156)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Bureau",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Effectif",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Composition",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Préparation",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Plan de jeu",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Plan de jeu-Phases arrêtées",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Plan de jeu-Lecture du match",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Recrutement",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Formation",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Formation-professionnels",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre-Parcours",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre-Parcours-detail",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre-Centres",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre-Filières",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre-Passerelle pro",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Centre-Générations",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Staff",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Travail du club",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Travail du club-Médical",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Travail du club-Agents",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Vestiaire",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Finances",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Stratégie",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Stratégie-Projet sportif",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Stratégie-Supporters",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Club",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Carrière",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Calendrier",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Classements",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Classements-accession",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Rivalités",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@11301/@VBoxContainer@11333/@MarginContainer@11347/CareerContent/CareerWorkspace/@VBoxContainer@11351/CarnetMatch/@HBoxContainer@11363/ImmersiveMatchPitch/@SubViewportContainer@11364/@SubViewport@11365",
+      "reason": "creation/resize",
+      "size": "(1293, 761)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@11301/@VBoxContainer@11333/@MarginContainer@11347/CareerContent/CareerWorkspace/@VBoxContainer@11351/CarnetMatch/@HBoxContainer@11363/ImmersiveMatchPitch/@SubViewportContainer@11364/@SubViewport@11365",
+      "reason": "capture Match",
+      "size": "(1293, 761)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Match",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Packs",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Comparaison",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Contrat",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Archives",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Menu-sauvegardes",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Crédits",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Dossier-adverse",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Paramètres",
+      "size": "(768, 768)"
+    }
+  ],
+  "speech": {
+    "observed": true,
+    "requests": 0,
+    "starts": 0
+  },
+  "unavailable_routes": []
+}

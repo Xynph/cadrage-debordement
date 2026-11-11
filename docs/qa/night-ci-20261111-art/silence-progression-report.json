@@ -1,0 +1,123 @@
+{
+  "captures": [
+    "1600-Bureau-apres-deux-matchs.png",
+    "1600-Finances-apres-deux-matchs.png",
+    "1600-Presse-apres-deux-matchs.png",
+    "1600-Rivalités-apres-deux-matchs.png",
+    "1600-Match-direct.png",
+    "1600-Match-Banc.png",
+    "1600-Match-Stats.png"
+  ],
+  "case": "progression",
+  "checks": 168,
+  "failures": [],
+  "render_scope": "Layout/input recipe; default quality unchanged. Only camera-backed 3D SubViewports are cached between real creation/resize/capture redraws. No animation or frame-rate qualification.",
+  "rendered_3d": [
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "creation/resize",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualBoardRoom/@Control@800/ContextualRoomViewport/@SubViewport@801",
+      "reason": "creation/resize",
+      "size": "(2560, 1440)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLocker/ContextualRoomViewport/@SubViewport@2455",
+      "reason": "creation/resize",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLiveMatch/LiveMatchViewport/@SubViewport@3562",
+      "reason": "creation/resize",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLocker/ContextualRoomViewport/@SubViewport@5574",
+      "reason": "creation/resize",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLiveMatch/LiveMatchViewport/@SubViewport@6681",
+      "reason": "creation/resize",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@7865/@VBoxContainer@7897/@MarginContainer@7911/CareerContent/@Control@7912/OfficeProps/Studio",
+      "reason": "creation/resize",
+      "size": "(520, 156)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ImmersiveShell/ImmersiveLayout/@HBoxContainer@7865/@VBoxContainer@7897/@MarginContainer@7911/CareerContent/@Control@7912/OfficeProps/Studio",
+      "reason": "capture Bureau-apres-deux-matchs",
+      "size": "(520, 156)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Bureau-apres-deux-matchs",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Finances-apres-deux-matchs",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Presse-apres-deux-matchs",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Rivalités-apres-deux-matchs",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLocker/ContextualRoomViewport/@SubViewport@10278",
+      "reason": "creation/resize",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLiveMatch/LiveMatchViewport/@SubViewport@11385",
+      "reason": "creation/resize",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Match-direct",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLiveMatch/LiveMatchViewport/@SubViewport@11385",
+      "reason": "capture Match-direct",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Match-Banc",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLiveMatch/LiveMatchViewport/@SubViewport@11385",
+      "reason": "capture Match-Banc",
+      "size": "(1600, 900)"
+    },
+    {
+      "path": "/root/CadrageDebordement/CoachGuide/@VBoxContainer@310/@Control@314/GabiPortrait3D/GabiPortraitViewport",
+      "reason": "capture Match-Stats",
+      "size": "(768, 768)"
+    },
+    {
+      "path": "/root/CadrageDebordement/ContextualImmersion/ContextualLiveMatch/LiveMatchViewport/@SubViewport@11385",
+      "reason": "capture Match-Stats",
+      "size": "(1600, 900)"
+    }
+  ],
+  "speech": {
+    "observed": true,
+    "requests": 0,
+    "starts": 0
+  },
+  "unavailable_routes": []
+}
