@@ -1129,6 +1129,27 @@ bibliothèque ». Sans `CD_MATCH_ANIMATIONS`, rien ne change.
   navigation est refusée (immersion) et la relecture reste celle du match, jusqu'à sa
   fermeture ». 46 contrôles, 0 échec.
 
+### 11.4 Exécuté, non vérifié
+
+- Tests (Linux, Godot 4.7.2, une suite à la fois) : nouveaux `match-essai-visible`,
+  `godot-match-essai`, `godot-match-gestes-adaptes`, `godot-match-cadrage-arret` ; relancés
+  sans échec : `match-highlights`, `match-structured-facts`, `match-actions`, `saves`,
+  `match-direct`, `matchflow`, `rugby`, `restarts`, `match-rules`, `match2d`,
+  `match3d-adapter`, `match-pass-live`, `match-commentary-filters`, `match-tactical-visual`,
+  `discipline`, `goalkicking`, `frontrow`, `v19-advantage`, `godot-match-temps-forts`
+  (5 modes, 283 contrôles), `godot-match-gestes` (129), `godot-match-animations`,
+  `godot-match-action-review` (46), `godot-match-journal`, `godot-match-framing`,
+  `godot-match-cut`, `godot-match-motion`, `godot-match-pass`, `godot-match-presentation`.
+- Graines 3, 11, 42, 99 et 2024 (moteur natif, minute par minute, niveau dynamique) :
+  23 essais, 23 joués dans un temps fort ; les deux essais sur ballon porté suivent leur
+  conquête `porte`.
+- Captures Xvfb (rendu logiciel, graine 7, 24 premières minutes : touche à la 1re, essais
+  aux 14e et 20e, touche, ballon porté et essai à la 21e), avec et sans
+  `CD_MATCH_ANIMATIONS` ; match complet sans la bibliothèque pour la 75e minute.
+- **Non vérifié** : rien sous Windows ni en Forward+ ; allure des clips Mixamo jugée à
+  l'œil sur ces captures seulement ; le plaqué déclenché par la régie n'a pas de test
+  automatique avec bibliothèque ; suite complète du dépôt non relancée.
+
 ## 8. Sources
 
 Consultées le 11 novembre 2026. « Officiel » = Sports Interactive ou l'éditeur du jeu.
