@@ -7,6 +7,13 @@ func candidates_page(name_filter: String) -> void:
 	if tab!=null: tab.select(1); tab.item_selected.emit(1); await settle()
 	var search := app.find_child("StaffSearch",true,false) as LineEdit
 	if search!=null: search.text=name_filter; search.text_changed.emit(name_filter); await settle()
+func employed_page(name_filter: String) -> void:
+	await staff_page(name_filter)
+	# Directory reading survives navigation. Select the real team tab rather
+	# than relying on a render to reset the previously visited candidates tab.
+	var tab := app.find_child("StaffCareerTab",true,false) as OptionButton
+	check(tab != null,"Onglet équipe du staff public après recrutement")
+	if tab!=null: tab.select(0); tab.item_selected.emit(0); await settle()
 func choose_years(value: int) -> void:
 	var field := app.find_child("StaffContractYears",true,false) as OptionButton
 	check(field!=null,"Choix de durée public")
@@ -62,11 +69,11 @@ func run() -> void:
 	for person: Dictionary in app.model.clubLife.staffEmployment.own:
 		if person.id==candidate.id:employed=person;break
 	check(not employed.is_empty() and employed.contractEnd==2 and employed.employed,"Recrutement confirmé deux saisons, contrat réellement rémunéré")
-	await staff_page(str(candidate.name));await press(button("StaffRenew"));await choose_years(3)
+	await employed_page(str(candidate.name));await press(button("StaffRenew"));await choose_years(3)
 	contract=dialog("StaffContract")
 	if contract!=null:geometry(contract,"Devis prolongation");await press(contract.get_ok_button())
 	before=await exported_state()
-	await staff_page(str(candidate.name));await press(button("StaffRenew"))
+	await employed_page(str(candidate.name));await press(button("StaffRenew"))
 	check(selected_years()==3,"Prolongation préparée trois saisons conservée après fermeture")
 	await press(button("StaffContractConfirm"));await response("prolongation rémunérée")
 	var state: Dictionary=JSON.parse_string(await exported_state())
