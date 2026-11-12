@@ -275,11 +275,11 @@ func _refresh_results(query: String) -> void:
 			for person: Dictionary in team.get("members", []):
 				var staff_id := str(person.get("id", ""))
 				if staff_id.is_empty(): continue
-				candidates.append({"kind":"staff", "id":staff_id, "route":"Staff", "label":"Staff · %s · %s [%s]" % [str(person.get("name", "")), str(person.get("roleLabel", person.get("role", ""))), staff_id]})
+				candidates.append({"kind":"staff", "id":staff_id, "route":"Staff", "label":"Staff · %s · %s" % [str(person.get("name", "")), str(person.get("roleLabel", person.get("role", "")))]})
 		for team: Dictionary in app.model.get("international", {}).get("teams", []):
-			candidates.append({"kind":"nation", "id":str(team.get("id", "")), "route":"Sélections", "label":"Sélection · %s [%s]" % [str(team.get("name", "")), str(team.get("id", ""))]})
+			candidates.append({"kind":"nation", "id":str(team.get("id", "")), "route":"Sélections", "label":"Sélection · %s" % str(team.get("name", ""))})
 		for league: Dictionary in app.model.get("leagues", []):
-			candidates.append({"kind":"competition", "id":str(league.get("id", "")), "route":"Classements", "label":"Compétition · %s [%s]" % [str(league.get("name", "")), str(league.get("id", ""))]})
+			candidates.append({"kind":"competition", "id":str(league.get("id", "")), "route":"Classements", "label":"Compétition · %s" % str(league.get("name", ""))})
 		var seen := {}
 		for source in ["squad", "market"]:
 			var people: Variant = app.model.get(source, [])
