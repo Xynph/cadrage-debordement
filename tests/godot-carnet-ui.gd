@@ -91,7 +91,7 @@ func press_match_drawer(caption: String, expected: String) -> void:
 	var plus: MenuButton = screen.find_child("MatchBetweenMore", true, false) as MenuButton
 	if matches.is_empty() and plus != null and plus.is_visible_in_tree():
 		var menu := plus.get_popup()
-		var libelle := {"STATS": "Statistiques", "JOURNAL": "Journal du match"}.get(caption, "")
+		var libelle: String = str({"STATS": "Statistiques", "JOURNAL": "Journal du match"}.get(caption, ""))
 		var index := -1
 		for n in menu.item_count:
 			if menu.get_item_text(n) == libelle: index = n
