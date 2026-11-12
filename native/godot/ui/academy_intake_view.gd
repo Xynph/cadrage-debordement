@@ -45,8 +45,11 @@ static func open(app: Control) -> AcceptDialog:
 		for p: Dictionary in academy:
 			if release.has(str(p.id)) and int(p.age) <= 17: released_crabos += 1
 		var total := crabos_now - released_crabos + keep.size()
-		counter.text = "Crabos après votre choix : %d / %d%s" % [total, cap, "  — faites de la place avant de valider" if total > cap else ""]
-		dialog.get_ok_button().disabled = total > cap
+		var everyone := int(data.get("academy", 0)) - release.size() + keep.size()
+		var limit := int(data.get("capacity", 75))
+		var full := total > cap or everyone > limit
+		counter.text = "Crabos après votre choix : %d / %d · centre : %d / %d%s" % [total, cap, everyone, limit, "  — faites de la place avant de valider" if full else ""]
+		dialog.get_ok_button().disabled = full
 	list.add_child(counter)
 	list.add_child(G.section("Les candidats", "Gardez ceux que vous voulez former. Les autres quittent le centre."))
 	for p: Dictionary in data.players:

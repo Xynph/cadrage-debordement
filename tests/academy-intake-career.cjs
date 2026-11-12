@@ -43,13 +43,19 @@ test('Génération du 1er juillet · carrière France', t => {
 
   const before = state();
   const crabos = before.development.academy.filter(p => p.age <= 17).length;
-  const keep = view.players.slice(0, Math.min(view.players.length, 35 - crabos)).map(p => p.id);
+  const room = Math.min(35 - crabos, 75 - before.development.academy.length);
+  assert.ok(room >= 0);
+  // Le centre est presque plein : on libère l'Espoir le plus âgé pour garder un jeune de plus.
+  const oldest = before.development.academy.filter(p => p.age >= 18).sort((a, b) => b.age - a.age)[0];
+  const keep = view.players.slice(0, Math.min(view.players.length, room + 1)).map(p => p.id);
+  assert.equal(ask('academy_intake_confirm', { context: view.context, confirmed: true, keep: view.players.map(p => p.id), release: [] }).ok, false);
   assert.equal(ask('academy_intake_confirm', { context: view.context, confirmed: false, keep, release: [] }).ok, false);
-  model = ok('academy_intake_confirm', { context: view.context, confirmed: true, keep, release: [] });
+  model = ok('academy_intake_confirm', { context: view.context, confirmed: true, keep, release: [oldest.id] });
   assert.equal(model.clubLife.academyIntake.available, false);
   const after = state();
   assert.equal(after.academyIntake, undefined);
   assert.ok(keep.every(pid => after.development.academy.some(p => p.id === pid)));
+  assert.ok(!after.development.academy.some(p => p.id === oldest.id));
   assert.ok(model.decisions.development.academy.some(p => p.id === keep[0] && Number.isFinite(p.rating)));
   assert.ok(after.aiRoster.academies.every(c => c.players.filter(p => p.age <= 17).length <= 35 && c.players.length <= 75));
   const text = ok('export').meta.exportText;
