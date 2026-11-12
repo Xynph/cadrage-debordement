@@ -22,6 +22,14 @@ const GAZE_ANGLES := Vector3(14.0, 5.0, 5.0)
 const BLINK := &"Clignement"
 const EYE_SMILE := &"SourireYeux"
 const SOFT_BROWS := &"SourcilsDoux"
+## Sourire de la bouche (forme ajoutée le 12 novembre : commissures, joues, légère asymétrie). Si le
+## modèle l'a, il remplace l'essentiel de MouthWide/MouthPress ; au repos, commissures à peine relevées
+## (MOUTH_SMILE_REST) et lèvres entrouvertes qui bougent un peu avec la respiration (LIPS_REST).
+const MOUTH_SMILE := &"Sourire"
+const MOUTH_SMILE_REST := 0.12
+const MOUTH_SMILE_WIDE := 0.25
+const LIPS_REST := Vector2(0.06, 0.03)  # ouverture moyenne, amplitude
+const LIPS_BREATH := 4.2  # secondes par respiration
 ## Valeurs de repos conseillées pour un regard chaleureux.
 const EYE_SMILE_REST := 0.3
 const SOFT_BROWS_REST := 0.4
@@ -57,6 +65,8 @@ var _smile_phase := -1.0
 var _smile_peak := 0.0
 var _smile_hold := 0.0
 var _static := false
+var _mouth_open := -1
+var _breath := 0.0
 
 
 func setup(character: Node3D, mouth: MeshInstance3D) -> void:
@@ -66,13 +76,14 @@ func setup(character: Node3D, mouth: MeshInstance3D) -> void:
 	if mouth != null:
 		_mouth_press = mouth.find_blend_shape_by_name(&"MouthPress")
 		_mouth_wide = mouth.find_blend_shape_by_name(&"MouthWide")
+		_mouth_open = mouth.find_blend_shape_by_name(&"MouthOpen")
 	for node in character.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
 		if StringName(mesh.name) in EYES and mesh.find_blend_shape_by_name(GAZE_SHAPES[0]) < 0:
 			_build_gaze_shapes(mesh)
 	for node in character.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
-		for shape: StringName in GAZE_SHAPES + [BLINK, EYE_SMILE, SOFT_BROWS]:
+		for shape: StringName in GAZE_SHAPES + [BLINK, EYE_SMILE, SOFT_BROWS, MOUTH_SMILE]:
 			var index := mesh.find_blend_shape_by_name(shape)
 			if index >= 0:
 				if not _shapes.has(shape): _shapes[shape] = []
@@ -174,6 +185,7 @@ func follow_gesture(clip: StringName, carnet: Array, pensive: Array) -> void:
 
 func _process(delta: float) -> void:
 	if _static: return
+	_breath = fmod(_breath + delta / LIPS_BREATH, 1.0)
 	_update_gaze(delta)
 	_update_blink(delta)
 	_update_smile(delta)
@@ -246,9 +258,23 @@ func _update_smile(delta: float) -> void:
 		_smile_wait = random.randf_range(3.0, 8.0) if tone == "positif" else random.randf_range(6.0, 13.0)
 
 
-## Bouche au repos (hors parole) : valeurs MouthPress et MouthWide du sourire.
+## Bouche au repos (hors parole) : valeurs MouthPress et MouthWide du sourire. Avec la forme
+## « Sourire », MouthWide n'ajoute qu'un peu de largeur et MouthPress n'est plus utile.
 func mouth_rest() -> Vector2:
-	return Vector2(SMILE_PRESS, SMILE_WIDE) * smile if not speaking and not _static else Vector2.ZERO
+	if speaking or _static: return Vector2.ZERO
+	if has_shape(MOUTH_SMILE): return Vector2(0.0, MOUTH_SMILE_WIDE) * smile
+	return Vector2(SMILE_PRESS, SMILE_WIDE) * smile
+
+## Poids de la forme « Sourire » : commissures à peine relevées au repos (et en parlant), jusqu'au
+## sourire franc ; rien au ton négatif ni en mouvement réduit.
+func mouth_smile() -> float:
+	if _static or tone == "negatif": return 0.0
+	return MOUTH_SMILE_REST + (1.0 - MOUTH_SMILE_REST) * (0.0 if speaking else smile)
+
+## Lèvres au repos (hors parole, modèle avec « Sourire ») : entrouvertes, au rythme de la respiration.
+func lips_rest() -> float:
+	if speaking or _static or not has_shape(MOUTH_SMILE): return 0.0
+	return LIPS_REST.x + LIPS_REST.y * sin(TAU * _breath)
 
 
 func _apply() -> void:
@@ -260,10 +286,12 @@ func _apply() -> void:
 	var warm := 0.0 if tone == "negatif" else EYE_SMILE_REST
 	_weight(EYE_SMILE, clampf(warm + 0.35 * smile, 0.0, 1.0))
 	_weight(SOFT_BROWS, SOFT_BROWS_REST)
+	_weight(MOUTH_SMILE, mouth_smile())
 	if _mouth != null and not speaking:
 		var rest := mouth_rest()
 		if _mouth_press >= 0: _mouth.set_blend_shape_value(_mouth_press, rest.x)
 		if _mouth_wide >= 0: _mouth.set_blend_shape_value(_mouth_wide, rest.y)
+		if _mouth_open >= 0 and has_shape(MOUTH_SMILE): _mouth.set_blend_shape_value(_mouth_open, lips_rest())
 
 
 func shape_value(shape: StringName) -> float:
