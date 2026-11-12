@@ -42,7 +42,7 @@ anciens sont datés et ne remplacent pas ce tableau de réception.
 
 - [Arbitrages](night-management-20261111.md) : trois checkpoints, quatorze
   alternatives terminées sur huit matchs, soit 112 matchs ; dix-huit matchs de
-  préparation distincts. Une stratégie de deux recrues reste bloquée par une
+  préparation commune. Une stratégie de deux recrues reste bloquée par une
   seule place disponible. Coûts non égalisés ; pas de gagnant universel ni de
   certitude causale sur les scores.
 - [Conséquences de séance](night-observed-training-20261111.md) : quatre

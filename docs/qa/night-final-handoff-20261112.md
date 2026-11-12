@@ -28,9 +28,11 @@ résolution par nom ou lecture cachée n'est ajoutée.
 
 - France depuis un mandat anglais ouvre bien France (23/0 dans le SDK 7607),
   sans candidature, prise de poste ou changement de nation contrôlée.
-- Joueurs/portraits, contrat/salaire, prospects, rapports, staff, clubs,
-  compétitions, rencontres historiques et dates réutilisent leurs lecteurs
-  existants. Le dossier non observé garde ses informations limitées.
+- Joueurs/portraits, contrat/salaire, rapports, staff, clubs, compétitions,
+  rencontres historiques et dates réutilisent les destinations et composants
+  existants. Les prospects disposent d’un nouveau dossier de lecture utilisant
+  les composants existants, limité aux données connues. Le dossier non observé
+  garde ses informations limitées.
 - Finance ouvre l'onglet ou l'écriture exacte du journal ; la barre de fatigue
   ouvre sa tranche ; les engagements et entretiens ouvrent la personne connue.
 - La séance publiée ouvre son programme au jour exact par session.id. Une date
@@ -107,8 +109,8 @@ Aucune nouvelle palette, police ou direction artistique. Les effets connus sont
 expliqués sans causalité certaine ou potentiel caché inventé.
 
 - [Arbitrages](night-management-20261111.md) : 14 alternatives, huit matchs par
-  branche, trois checkpoints, **112 matchs** et 18 scénarios de préparation
-  distincts. Une stratégie à deux recrues est bloquée par la capacité réelle.
+  branche, trois checkpoints, **112 matchs** et 18 matchs de préparation
+  commune. Une stratégie à deux recrues est bloquée par la capacité réelle.
   L'académie coûte 96000, avec progression supplémentaire observée de
   +1,033 / +1,05 / +1,10 sur les trois paires à RNG et scores identiques ; aucun
   vainqueur global ni rendement salarial garanti n'est conclu.
@@ -126,7 +128,7 @@ expliqués sans causalité certaine ou potentiel caché inventé.
 - [Personnages et mémoire](night-character-story-persistence-20261112.md) : deux
   choix depuis un même profil, deux échéances, personnalité, promesse et histoire
   conservées après reprise. La troisième clôture est refusée transactionnellement,
-  sans mutation. Les 249 entrées contre plafond du validateur 240 sont une hypothèse forte,
+  sans mutation. Les 249 minutes cumulées contre le plafond du validateur de 240 minutes sont une hypothèse forte,
   pas une cause unique démontrée ; moteur réservé laissé à Claude.
 
 ## Coordination et limites réservées
