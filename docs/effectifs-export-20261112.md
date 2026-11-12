@@ -190,6 +190,72 @@ pour le club joué (`gere: true` pour tous dans `budgetSemaine`, prévision
 alignée). Les prolongations non faites restent un effet du protocole de
 mesure (un manager réel prolonge ou recrute).
 
-## Mesures
+## Mesures obtenues (travail interrompu à la demande de Léo)
 
-À compléter.
+Machine partagée (2 CPU, Godot et autres carrières presque en continu, deux
+mesures tuées par manque de mémoire) : la référence `main` sur trois saisons
+et les trois saisons après correction n'ont pas pu être menées au bout.
+
+### Carrière mondiale, drapeau allumé, une saison et une intersaison
+
+`world-champ`, graine 27, club 30, semaines déléguées, outil
+`ci/world-career-measure.cjs`. Code mesuré : commit `c9b8c824` (avant le
+recalage qui garde la place des recrues, `9502e308`, et avant la fusion de
+`306ed97e`). Effectif moyen des clubs gérés :
+
+| Championnat | Création | Fin S1 | Après intersaison 1 | Avant (#552), après intersaison 1 |
+| --- | --- | --- | --- | --- |
+| 1re française | 56,6 | 56,1 | 53,4 (48-58) | 51,5 |
+| 2e française | 48,9 | 49,3 | 47,9 | — |
+| 1re anglaise | 63,6 | 63,5 | 58,1 (cible ≤ 58) | — |
+| celte | 55,5 | 55,6 | 53,7 | — |
+| Pacifique | 40,1 | 40,2 | 40,0 | — |
+| 1re japonaise | 54,8 | 54,8 | 52,5 | (54,8 → 41,3 en deux saisons) |
+| 2e japonaise | 52,6 | 52,6 | 50,6 | — |
+| 3e française | 46,0 | 46,3 | 44,6 | — |
+| 2e anglaise | 46,4 | 46,9 | 44,9 | — |
+
+Mouvements : intersaison 1, 588 départs et 347 arrivées (avant : ≈ 600 et
+112) ; transferts entre clubs gérés : 25 à la fenêtre de la semaine 13, 43 à
+l'intersaison (avant : 1 par saison). Stratégies à la première fenêtre :
+formateur 47, équilibre 39, rajeunissement 14, vente 12, vedettes 3. Aucun
+club au-dessus de son plafond à aucun point (avant : un club du Pacifique
+après chaque intersaison). Masse médiane après intersaison 1 : 10,13 M€ en
+1re française (plafond 10,7), 7,07 en 1re anglaise (7,5), 2,45 au Pacifique
+(2,6).
+
+Lecture : la baisse restante (≈ 2 joueurs par club à l'intersaison) vient de
+la masse autorisée, déjà remplie par le recalage de l'intersaison ; d'où le
+commit `9502e308` (limite de recalage au prorata de l'effectif sous
+contrat), **non mesuré en carrière**.
+
+Club joué (passif, aucune prolongation) : masse 6,05 → 3,26 M€ à
+l'intersaison 1 (contrats échus non prolongés ; médiane des clubs anglais
+7,07) ; caisse 4,00 → 3,86 (fin S1) → 4,62 (après intersaison 1), contre
+4,74 → 5,75 avant (#552), avec le même train de vie que les clubs gérés.
+
+### Taille de la sauvegarde (même carrière)
+
+| Point | État persisté | Export | Format |
+| --- | --- | --- | --- |
+| Création | 19,3 Mo | 19,3 Mio | v1 |
+| Fin S1 | 22,8 Mo | 22,8 Mio | v1 |
+| Après intersaison 1 | 25,3 Mo | 23,7 Mio | v2 (marché Champ) ; v3 non nécessaire |
+
+Composition après l'intersaison 1 : joueurs des clubs 14,3 Mo (dont
+`worldProfile` 4,45, `rosterProfile` 0,75, `hiddenTraitsV2` 0,64, fiches de
+progression 1,70), centres de formation 5,2 Mo (8 027 jeunes), joueurs libres
+1,6 Mo et marché 1,6 Mo (950 joueurs), encadrement 1,8 Mo. Le v3 retire
+≈ 6 Mo de champs de référence de plus que le v2. Croissance : environ 3 Mo par
+saison, dont ≈ 1,7 Mo de fiches de progression (bornées à quatre saisons hors
+club du manager depuis `4dc6af65`, effet à partir de la saison 5) ;
+validation : 1,74 million de nœuds après l'intersaison 1 pour une limite de
+2,6 millions.
+
+Reprise et import vérifiés avec le code de la branche : profil créé par
+`main` (création) puis profil après l'intersaison 1 relus depuis le disque,
+exportés, réimportés, réexportés à l'identique (même empreinte).
+
+### Carrière France
+
+Voir le tableau plus haut (trois saisons, avant/après).
