@@ -1,6 +1,6 @@
 # Passation Cloud — Rugby Legacy 27, nuit du 12 novembre 2026
 
-État intermédiaire à 05:42 UTC (06:42 Paris). Échéance de travail : 07:30 UTC,
+État intermédiaire à 05:56 UTC (06:56 Paris). Échéance de travail : 07:30 UTC,
 08:30 Paris. **Aucune fusion Cloud dans main avant 08:00 UTC / 09:00 Paris.**
 Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 
@@ -12,9 +12,11 @@ Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 | [#576](https://github.com/Xynph/cadrage-debordement/pull/576) | `cloud/rg27-night-common-20261111` · `37e085b687b4e9a603085beaa50fecf9d6cace22` | Lot commun navigation, gestion et Art ; SDK initial rouge conservé |
 | [#582](https://github.com/Xynph/cadrage-debordement/pull/582) | `cloud/rg27-night-followup-20261112` · `76077ed3f2af0ff029c8a413fc26451a25ac647f` | Correctifs de réception ; SDK complet 75/75 et JavaScript sept jobs verts sur cette même tête |
 | [#583](https://github.com/Xynph/cadrage-debordement/pull/583) | `cloud/rg27-night-closeout-20261112` · `1a7b083b8a090d735ef1b08245b5f4faf430f76b` | Séance exacte, retour/brouillon et libellés de recherche ; tête closeout figée, SDK rouge conservé |
-| [#584](https://github.com/Xynph/cadrage-debordement/pull/584) | `cloud/rg27-night-qualification-20261112` · `ec0044ea99e22aeaad29751ccde1279c1699b577` | Correction de cible séance et recette gardes, revue ciblée approuvée ; SDK complet 76/76, JavaScript encore en cours |
+| [#584](https://github.com/Xynph/cadrage-debordement/pull/584) | `cloud/rg27-night-qualification-20261112` · `ec0044ea99e22aeaad29751ccde1279c1699b577` | Correction de cible séance et recette gardes, revue ciblée approuvée ; SDK complet 76/76 et JavaScript sept jobs/646 CJS verts sur ce même SHA |
 | [#581](https://github.com/Xynph/cadrage-debordement/pull/581) | `cloud/rg27-night-receipts-20261112` | Preuves et présente passation ; branche documentaire, distincte du produit figé |
 | [#577](https://github.com/Xynph/cadrage-debordement/pull/577) | `c8a5a61d1dd708f662592bf971fe8d5a25ad1742` | Reçu Art ciblé historique déjà incorporé au lot ; pas de second patch à appliquer |
+
+Le candidat final `ec0044ea99e22aeaad29751ccde1279c1699b577` possède deux campagnes complètes vertes sur sa propre source : SDK 76/76 et JavaScript sept jobs/646 CJS. Les éventuels SKIP internes aux wrappers Node restent distingués du SDK réellement exécuté. La veille de coordination se poursuit jusqu’à 08:30 Paris.
 
 Le lot est empilé #572 → #576 → #582 → #583 → #584. #581 complète les preuves et ne
 constitue pas une deuxième source produit à fusionner aveuglément. Aucune PR
@@ -64,7 +66,7 @@ les nouveaux résultats Staff/Nation/Compétition ont des libellés humains.
 | `1a7b083b…` | [SDK complet 43152464850](night-closeout-sdk-full-20261112.md) | **74/76, rouge** ; gardes timeout superviseur 180007 ms et Carnet 4666/27 ; 57 suites / 75 couples distincts, matrices 4942/0 et 1905/0 + trois contrats séparés |
 | `1a7b083b…` | [JavaScript 43152477147](night-closeout-javascript-20261112.md) | **Sept jobs verts, 646 CJS distincts** ; son SDK reste rouge 74/76, donc pas de qualification complète sur les deux campagnes |
 | `ec0044ea…` | [SDK complet 43157636998](night-qualification-sdk-full-20261112.md) | **76/76, quatre jobs verts**, 57 suites / 75 couples distincts ; P1 4942/0 et 1905/0 + trois contrats ; Art 827/146 captures annoncées/0 |
-| `ec0044ea…` | [JavaScript 43157653421](https://github.com/Xynph/cadrage-debordement/actions/runs/43157653421) | Lancé une fois à 04:52 UTC ; **en attente**, 646 CJS racine attendus ; aucune conclusion héritée |
+| `ec0044ea…` | [JavaScript 43157653421](night-qualification-javascript-20261112.md) | **Sept jobs verts, 646 CJS distincts**, gate `131001971040` ; même source que le SDK 76/76, sans transfert d’un ancien vert |
 
 Sur 7607, les quatre variantes Art passent avec **840 contrôles, 146 captures
 annoncées, zéro échec**, progression 135593 ms sous son délai enfant 150 s.
