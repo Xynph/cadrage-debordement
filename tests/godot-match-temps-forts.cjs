@@ -98,9 +98,10 @@ if(veut('terrain2d')){
 }
 if(veut('entracte')){
  const entracte=run('entracte');
- assert.deepEqual(entracte.failures,[]);assert.ok(entracte.checks>=20,'contrôles de l’entracte : '+entracte.checks);
+ assert.deepEqual(entracte.failures,[]);assert.ok(entracte.checks>=12,'contrôles de l’entracte : '+entracte.checks);
  const ordre=entracte.suivi.map(e=>e.evenement);
- assert.ok(ordre.includes('entracte_retenu')&&ordre.includes('tiroir')&&ordre.includes('entracte_passe'),'entracte : '+ordre.join(', '));
+ // Décision de Léo (12 novembre 2026) : plus de pause minimale, de retenue ni de « Passer ».
+ assert.ok(ordre.includes('tiroir')&&!ordre.includes('entracte_retenu')&&!ordre.includes('entracte_passe'),'entracte : '+ordre.join(', '));
  bilan.push('entracte '+entracte.checks);
 }
 console.log('Preuves temps forts : '+directory+' · contrôles : '+bilan.join(' · '));
