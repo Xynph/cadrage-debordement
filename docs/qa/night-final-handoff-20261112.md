@@ -1,6 +1,6 @@
 # Passation Cloud — Rugby Legacy 27, nuit du 12 novembre 2026
 
-État intermédiaire à 06:46 UTC (07:46 Paris). Échéance de travail : 07:30 UTC,
+Clôture à 07:30 UTC (08:30 Paris). Échéance de travail : 07:30 UTC,
 08:30 Paris. **Aucune fusion Cloud dans main avant 08:00 UTC / 09:00 Paris.**
 Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 
@@ -16,7 +16,7 @@ Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 | [#581](https://github.com/Xynph/cadrage-debordement/pull/581) | `cloud/rg27-night-receipts-20261112` | Preuves et présente passation ; branche documentaire, distincte du produit figé |
 | [#577](https://github.com/Xynph/cadrage-debordement/pull/577) | `c8a5a61d1dd708f662592bf971fe8d5a25ad1742` | Reçu Art ciblé historique déjà incorporé au lot ; pas de second patch à appliquer |
 
-Le candidat final `ec0044ea99e22aeaad29751ccde1279c1699b577` possède deux campagnes complètes vertes sur sa propre source : SDK 76/76 et JavaScript sept jobs/646 CJS. Les éventuels SKIP internes aux wrappers Node restent distingués du SDK réellement exécuté. La veille de coordination se poursuit jusqu’à 08:30 Paris.
+Le candidat final `ec0044ea99e22aeaad29751ccde1279c1699b577` possède deux campagnes complètes vertes sur sa propre source : SDK 76/76 et JavaScript sept jobs/646 CJS. Les éventuels SKIP internes aux wrappers Node restent distingués du SDK réellement exécuté. La veille de coordination est clôturée à 08:30 Paris.
 
 Le lot est empilé #572 → #576 → #582 → #583 → #584. #581 complète les preuves et ne
 constitue pas une deuxième source produit à fusionner aveuglément. Aucune PR
@@ -142,7 +142,7 @@ expliqués sans causalité certaine ou potentiel caché inventé.
 
 ## Coordination et limites réservées
 
-Main actuellement observé : `7a409dd1342244f67c9aef576555c986f9b7994f`, fusion #580 à 06:41 UTC. Son [JavaScript 43169857850](https://github.com/Xynph/cadrage-debordement/actions/runs/43169857850) est en cours ; aucun ancien vert n'est transféré à cette tête. La vérification statique ciblée c39→7a4 ne détecte aucun retrait ou renommage des API consommées par navigation, lecteurs, gardes et cycle guide/speech. Le chorégraphe ajoute l'option `matchChoreography`, désactivée par défaut et activable via `CD_MATCH_CHOREGRAPHE=1` ; les signatures et replis existants sont conservés. Cette lecture limitée ne qualifie pas le comportement runtime.
+Main actuellement observé : `7a409dd1342244f67c9aef576555c986f9b7994f`, fusion #580 à 06:41 UTC. Son [JavaScript 43169857850](https://github.com/Xynph/cadrage-debordement/actions/runs/43169857850) attend encore son gate final au relevé de clôture : classification et cinq suites réussies, gate `131038496984` en queue ; aucun ancien vert n'est transféré à cette tête. La vérification statique ciblée c39→7a4 ne détecte aucun retrait ou renommage des API consommées par navigation, lecteurs, gardes et cycle guide/speech. Le chorégraphe ajoute l'option `matchChoreography`, désactivée par défaut et activable via `CD_MATCH_CHOREGRAPHE=1` ; les signatures et replis existants sont conservés. Cette lecture limitée ne qualifie pas le comportement runtime.
 
 Le [rapprochement virtuel ec+7a4](evidence/night-final-handoff-20261112/virtual-merge-ec-main7a4.json) est sans conflit, arbre `1d62328e3424b58ca4d6b47366df763b4339bd91`, code 0. Aucun merge réel ni test du cumul. Après 09 h, recevoir les modes temps forts par défaut et de repli, et explicitement le chorégraphe opt-in s'il est retenu. Aucun audit moteur, animation ou asset réservé n'a été refait.
 
@@ -198,3 +198,11 @@ Après 09 h Paris seulement :
 5. Intégrer après ces réceptions, puis seulement retirer/clore les PR familiales comme incorporées. Claude conserve la recette PC, le ZIP et les assets privés ; aucune livraison Windows ni asset Mixamo public n'est produite par Cloud.
 
 Aucun futur cumul n'est qualifié par les verts des sources antérieures.
+
+## Relevé de clôture — 08:30 Paris
+
+La veille a été arrêtée proprement à **07:30:00 UTC**, sans annulation ni relance de CI distante. La lecture de clôture à **07:30:31 UTC** confirme main `7a409dd1342244f67c9aef576555c986f9b7994f`. Son JavaScript **43169857850** reste queued/conclusion nulle : classification et cinq suites sont réussies, le gate **131038496984** attend encore son exécution. Aucun verdict global vert n’est attribué à cette tête à la clôture ; sa campagne distante peut poursuivre après notre arrêt.
+
+Les PR **#572, #576, #577, #581, #582, #583 et #584** sont vérifiées ouvertes, brouillons et non fusionnées. La source produit finale **`ec0044ea99e22aeaad29751ccde1279c1699b577`** reste intacte, avec ses deux campagnes complètes vertes : **SDK 43157636998, 76/76** et **JavaScript 43157653421, sept jobs/646 CJS**, tentative 1. Les anciens rouges demeurent inchangés. Les deux worktrees de livraison n’ont aucune modification suivie en attente et sont conservés.
+
+Aucune fusion Cloud vers main, clôture familiale anticipée, livraison Windows/ZIP, modification de configuration GitHub, hausse de délai ou dépense de nouveau service n’a été effectuée. Les scénarios réservés à Claude restent documentés. Après **09 h Paris**, partir du dernier main réel, recevoir le cumul et ses inventaires/gates propres avant intégration ; Claude conserve le ZIP et la recette PC.
