@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory=$true)][string]$PackageZip,
     [Parameter(Mandatory=$true)][ValidatePattern('^[0-9a-f]{40}$')][string]$SourceCommit,
     [Parameter(Mandatory=$true)][string]$EvidenceRoot,
-    [Parameter(Mandatory=$true)][string]$MesaRoot,
+    [string]$MesaRoot,
+    [string]$ToolchainRoot,
     [switch]$GraphicsSmoke,
     [ValidateNotNullOrEmpty()][string]$HardwareAnimations
 )
@@ -16,7 +17,14 @@ $EvidenceRoot = [IO.Path]::GetFullPath($EvidenceRoot)
 if (Test-Path -LiteralPath $EvidenceRoot) { throw 'EvidenceRoot must be new; refuse overwriting an old receipt.' }
 New-Item -ItemType Directory -Path $EvidenceRoot | Out-Null
 $PackageZip = (Resolve-Path -LiteralPath $PackageZip).Path
-$MesaRoot = (Resolve-Path -LiteralPath $MesaRoot).Path
+if ($HardwareAnimations) {
+    if ($GraphicsSmoke -or $MesaRoot -or -not $ToolchainRoot) { throw 'Hardware receipt needs its native toolchain and no Mesa path.' }
+    $ToolchainRoot = (Resolve-Path -LiteralPath $ToolchainRoot).Path
+} else {
+    if (-not $MesaRoot -or $ToolchainRoot) { throw 'Hosted receipt needs its Mesa toolchain path.' }
+    $MesaRoot = (Resolve-Path -LiteralPath $MesaRoot).Path
+    $ToolchainRoot = Split-Path $MesaRoot
+}
 $Python = (Get-Command python -ErrorAction Stop).Source
 $Verifier = Join-Path $PSScriptRoot 'windows-package.py'
 $ReportPath = Join-Path $EvidenceRoot 'windows-report.json'
@@ -273,9 +281,11 @@ try {
     if ($LASTEXITCODE -ne 0 -or $head -cne $SourceCommit) { throw 'Receipt checkout does not match SourceCommit.' }
     $Report.sourceTree = (& git -C $repo rev-parse "${SourceCommit}^{tree}").Trim()
     if ($LASTEXITCODE -ne 0 -or $Report.sourceTree -cnotmatch '^[0-9a-f]{40}$') { throw 'Source Git tree cannot be resolved.' }
-    $toolsPath = Join-Path (Split-Path $MesaRoot) 'toolchain-receipt.json'
+    $toolsPath = Join-Path $ToolchainRoot 'toolchain-receipt.json'
     $tools = Read-Json $toolsPath
-    if (-not [string]::Equals([IO.Path]::GetFullPath($tools.mesaRoot),$MesaRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'MesaRoot differs from the prepared toolchain.' }
+    if ($HardwareAnimations) {
+        if ($tools.mesaQaOnly -ne $false -or $tools.ContainsKey('mesaRoot')) { throw 'Hardware receipt refuses a Mesa-prepared toolchain.' }
+    } elseif (-not [string]::Equals([IO.Path]::GetFullPath($tools.mesaRoot),$MesaRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'MesaRoot differs from the prepared toolchain.' }
     $Report.tools = @{receipt=$tools;receiptSha256=(Hash $toolsPath);powershell=$PSVersionTable.PSVersion.ToString();python=$Python}
     $archiveReceipt = Join-Path $EvidenceRoot 'archive.json'
     Python-Check @('extract','--zip',$PackageZip,'--source-commit',$SourceCommit,'--source-tree',$Report.sourceTree,'--destination',(Join-Path $EvidenceRoot 'Relocated QA with spaces'),'--receipt',$archiveReceipt)
