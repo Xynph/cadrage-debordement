@@ -32,7 +32,8 @@ function run(mode,dossier=mode){
  if(mode==='reprise')Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_GODOT_SEED:'7'});
  if(mode==='actif')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4'});
  // Temps forts et gestes ensemble, à vitesse de jeu : vingt minutes de match sans que rien ne se fige.
- if(mode==='gestes')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_GESTES:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_GODOT_SEED:'7'});
+ // Graine 8 : avec le calendrier alterné (autre adversaire en J1), la graine 7 ne donne que 3 temps forts en 22 minutes.
+ if(mode==='gestes')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_GESTES:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_GODOT_SEED:'8'});
  const result=spawnSync(godot,['--headless','--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
  const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(directory,'godot-'+mode+'.log'),output);console.log(output);
  if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:/);
