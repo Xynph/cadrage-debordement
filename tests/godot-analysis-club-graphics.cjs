@@ -11,13 +11,14 @@ const sha = file => crypto.createHash('sha256').update(fs.readFileSync(file)).di
 test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p', {
   skip: !process.env.CD_GODOT_EXECUTABLE ? 'SDK Godot requis' : process.env.CD_ANALYSIS_CLUB_GRAPHICS !== '1' && 'Recette graphique opt-in : CD_ANALYSIS_CLUB_GRAPHICS=1',
 }, () => {
+  const deadline = Date.now() + 180000;
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-analysis-club-graphics-'));
   const output = process.env.CD_ANALYSIS_CLUB_GRAPHICS_OUTPUT || path.join(profile, 'proofs');
   fs.mkdirSync(output, { recursive: true });
   // Local checkpoints accelerate an explicit replay. CI creates its own career
-  // through the public commands in the GDScript and never requires a /tmp path.
+  // through the production Node API and never requires a /tmp path.
   const selected = process.env.CI ? '' : process.env.CD_ANALYSIS_CLUB_GRAPHICS_SOURCE || '';
-  const receipt = { source: null, source_sha256_before: null, source_sha256_after: null, copied_profile: profile, expected_fixture: '', setup: selected ? 'copied-checkpoint' : 'public-career' };
+  const receipt = { source: null, source_sha256_before: null, source_sha256_after: null, copied_profile: profile, expected_fixture: '', setup: selected ? 'copied-checkpoint' : 'public-career-node' };
   let sourceFile;
   if (selected) {
     let source = path.resolve(selected);
@@ -45,15 +46,33 @@ test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours 
   receipt.sha = head.status === 0 ? head.stdout.trim() : 'unknown';
   let result;
   try {
+    if (!selected) {
+      const prepared = spawnSync(process.execPath, [path.resolve(__dirname, 'helpers/analysis-club-public-prepare.cjs'), profile, output], {
+        env: process.env, encoding: 'utf8', windowsHide: true,
+        timeout: Math.min(60000, Math.max(1, deadline - Date.now() - 1000)),
+      });
+      fs.writeFileSync(path.join(output, 'public-preparation.log'), (prepared.stdout || '') + (prepared.stderr || ''));
+      if (prepared.error) throw prepared.error;
+      assert.equal(prepared.status, 0, prepared.stderr);
+      const preparation = JSON.parse(fs.readFileSync(path.join(output, 'public-preparation.json'), 'utf8'));
+      assert.equal(preparation.ok, true);
+      assert.equal(sha(path.join(profile, 'PrototypeGodot', 'donnees.json')), preparation.profile_sha256,
+        'Le replay doit ouvrir exactement le profil public préparé et fermé');
+      receipt.expected_fixture = preparation.expected_fixture;
+      receipt.archived_result = preparation.archived_result;
+      receipt.public_preparation = 'public-preparation.json';
+    }
+    const remaining = deadline - Date.now() - 1000;
+    assert.ok(remaining > 0, 'Budget global de 180 s épuisé avant le replay');
     result = spawnSync(process.env.CD_GODOT_EXECUTABLE, [
       '--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '2560x1440',
       '--audio-driver', 'Dummy', '--max-fps', '120', '--path', 'native/godot',
       '--script', path.resolve(__dirname, 'godot-analysis-club-graphics.gd'),
     ], {
       env: { ...process.env, CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: profile,
-        CD_ANALYSIS_CLUB_GRAPHICS_COPIED: selected ? '1' : '0', CD_ANALYSIS_CLUB_GRAPHICS_EXPECTED_FIXTURE: receipt.expected_fixture,
+        CD_ANALYSIS_CLUB_GRAPHICS_COPIED: '1', CD_ANALYSIS_CLUB_GRAPHICS_EXPECTED_FIXTURE: receipt.expected_fixture,
         CD_ANALYSIS_CLUB_GRAPHICS_OUTPUT: output, CD_ANALYSIS_CLUB_GRAPHICS_SHA: receipt.sha },
-      encoding: 'utf8', windowsHide: true, timeout: 150000,
+      encoding: 'utf8', windowsHide: true, timeout: Math.min(150000, remaining),
     });
   } finally {
     if (sourceFile) {
