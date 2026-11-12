@@ -67,8 +67,8 @@ func observe_framing() -> void:
 	framing.largest = maxf(framing.largest, camera.size)
 	# Sous le voile du fondu d'entrée, l'image 3D n'est pas encore visible.
 	var veiled: bool = view.regie.voile.visible and view.regie.voile.modulate.a > 0.85
-	# Plan large : au-delà du cadrage le plus large d'un temps fort (32 m en TV depuis le 12 novembre 2026).
-	if camera.size > 32.5 and not veiled:
+	# Plan large : au-delà du cadrage le plus large d'un temps fort (54 m en TV depuis le soir du 12 novembre 2026).
+	if camera.size > 54.5 and not veiled:
 		framing.wide += 1
 		var gestes: RefCounted = view.stage.get("_gestes")
 		if framing.where.size() < 12: framing.where.append("large %.1f m : plan %d %s à %.2f s, %s, suite %s, poids %.2f, geste %s zoom %.2f, voile %.2f" % [camera.size, view.regie.index, view.regie.phase, view.regie.temps, str(view.regie.tf.plans[view.regie.index].get("kind", "")) if view.regie.index >= 0 else "", str(view.regie.tf.get("suite", false)), float(view.regie.cadrage.poids), str(gestes.phase) if gestes != null else "-", float(gestes.zoom) if gestes != null else 0.0, view.regie.voile.modulate.a if view.regie.voile.visible else 0.0])
@@ -86,8 +86,8 @@ func check_framing(label: String, highlights: int) -> void:
 	print(label, " — cadrage : ", framing.frames, " images, hauteur visible de ", snappedf(framing.smallest, 0.1), " à ", snappedf(framing.largest, 0.1), " m, ballon hors champ ", framing.outside, " (", framing.hidden, " sous le voile d'entrée), images larges visibles ", framing.wide, " ", framing.where)
 	check(framing.frames >= 60, label + " : cadrage observé pendant les temps forts (%d images)" % framing.frames)
 	check(framing.outside == 0, label + " : le ballon ne sort jamais du champ visible (%d images : %s)" % [framing.outside, str(framing.where)])
-	# Caméra reculée (12 novembre 2026) : 15 à 16 m au plus serré en TV, jamais plus près que 9 m (contact).
-	check(framing.smallest >= 9.0 and framing.smallest <= 24.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
+	# Caméra reculée (12 novembre 2026, soir) : 26 à 28 m au plus serré en TV, jamais plus près que 9 m (contact).
+	check(framing.smallest >= 9.0 and framing.smallest <= 42.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
 	check(framing.wide == 0 and highlights > 0, label + " : jamais de plan large visible pendant un temps fort (%d images)" % framing.wide)
 
 func inside(outer: Rect2, inner: Rect2) -> bool:
