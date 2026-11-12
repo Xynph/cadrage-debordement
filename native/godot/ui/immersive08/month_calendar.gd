@@ -176,6 +176,7 @@ func _invalidate_session() -> void:
 		app.management_ui.erase("navigation_target")
 
 func _refresh() -> void:
+	_template_draft_id()
 	if not selected_session.is_empty():
 		var valid := Competition.target_available(app, "session", selected_session) and filter in ["all", "training"]
 		valid = valid and sessions.any(func(session: Dictionary): return session.get("id") == selected_session and session.get("date") == selected)
@@ -818,6 +819,22 @@ func _preparation(body: VBoxContainer) -> void:
 		var label := "%s/%s   %s" % [session.date.right(2),session.date.substr(5,2),session.get("label","Entraînement")]
 		body.add_child(C.wrap(label,18,C.MUTED))
 
+func _template_draft_id() -> String:
+	var draft: Variant = app.management_ui.get("calendar_template_draft")
+	if draft == null: return ""
+	var valid := draft is Dictionary and not next_fixture.is_empty() and app._live().is_empty()
+	var fixture_id: Variant = next_fixture.get("id")
+	var template_id: Variant = draft.get("template") if draft is Dictionary else null
+	valid = valid and fixture_id is String and not fixture_id.is_empty() and draft.get("fixture") == fixture_id
+	valid = valid and template_id is String and not template_id.is_empty()
+	if valid:
+		var matches: Array = planning.get("templates", []).filter(func(template: Dictionary): return template.get("id") == template_id)
+		valid = matches.size() == 1 and planning.get("appliedTemplates", {}).get(fixture_id) != template_id
+	if not valid:
+		app.management_ui.erase("calendar_template_draft")
+		return ""
+	return template_id
+
 func _templates(body: VBoxContainer) -> void:
 	var templates: Array = planning.get("templates", [])
 	var fixture_id: Variant = next_fixture.get("id")
@@ -851,12 +868,25 @@ func _templates(body: VBoxContainer) -> void:
 			chooser.set_item_disabled(chooser.item_count-1, true)
 	body.add_child(chooser)
 	chooser.select(0)
+	var draft_id := _template_draft_id()
+	if not draft_id.is_empty():
+		for index in range(1, chooser.item_count):
+			if chooser.get_item_metadata(index) == draft_id and not chooser.is_item_disabled(index):
+				chooser.select(index)
+				break
 	var apply := _action("Appliquer au prochain match", func():
 		if chooser.selected > 0:
 			app._command("calendar_template", {"fixtureId":fixture_id,"template":chooser.get_item_metadata(chooser.selected)})
 	, "CalendarApplyTemplate", "Choisissez un modèle de semaine avant de l’appliquer.")
-	apply.disabled = true
-	chooser.item_selected.connect(func(index: int): apply.disabled = index < 1)
+	apply.disabled = chooser.selected < 1 or chooser.is_item_disabled(chooser.selected)
+	chooser.item_selected.connect(func(index: int):
+		var selected_id: Variant = chooser.get_item_metadata(index)
+		var selectable := index > 0 and not chooser.is_item_disabled(index) and selected_id is String and not selected_id.is_empty()
+		apply.disabled = not selectable
+		if selectable:
+			app.management_ui.calendar_template_draft = {"fixture":fixture_id, "template":selected_id}
+		else: app.management_ui.erase("calendar_template_draft")
+	)
 	body.add_child(apply)
 
 func _undated_panel() -> void:
