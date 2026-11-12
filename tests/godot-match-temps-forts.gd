@@ -286,7 +286,9 @@ func interval(view: Control) -> void:
 	check(regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() >= depart_tf + 2, "Le match enchaîne 2D et temps forts")
 	check(not regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_retenu"), "Aucun temps fort n'est retenu : il part dès qu'il est déclenché")
 	check(not passer_vu, "Plus de bouton « Passer »")
-	check(horloges.size() >= 3 and horloges.keys().all(func(h: String): return ":" in h), "L'horloge défile en 2D entre deux temps forts (%d valeurs, ex. %s)" % [horloges.size(), str(horloges.keys().slice(0, 4))])
+	# Secondes qui roulent (« 12:41 ») ; l'horloge sans secondes du bandeau 3D peut apparaître à la bascule.
+	var roulantes: Array = horloges.keys().filter(func(h: String): return ":" in h)
+	check(roulantes.size() >= 3, "L'horloge défile en 2D entre deux temps forts (%d valeurs, ex. %s)" % [roulantes.size(), str(horloges.keys().filter(func(h: String): return not ":" in h).slice(0, 4))])
 	# Deuxième entracte : la tactique ouverte met le match en pause, la consigne passe, rien ne part.
 	check(await until(func(): return regie.etat == regie.INTER, 120000), "Retour en 2D")
 	await until(func(): return not app.waiting, 30000)
