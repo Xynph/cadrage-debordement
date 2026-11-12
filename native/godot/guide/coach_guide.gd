@@ -589,6 +589,8 @@ func _show_page(force: bool, request_speech: bool = true) -> void:
 		var scroll: ScrollContainer = find_child("GuideTextScroll", true, false); scroll.scroll_vertical = 0
 		if _allows_automatic_speech(): speech.speak(bubble.text)
 		else: speech.stop()
+		# Sans voix (muet, mode texte, voix désactivée) : Gabi remue les lèvres à l'apparition de la bulle.
+		if speech._active < 0 and portrait.has_method("mime"): portrait.mime(bubble.text)
 
 func _step(direction: int, skip_page: bool = false) -> void:
 	if _blocked(): return

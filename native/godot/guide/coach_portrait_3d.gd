@@ -82,6 +82,11 @@ var _speaking := false
 var _mouth: MeshInstance3D
 var _mouth_shapes := PackedInt32Array()
 var _articulation := Vector4.ZERO
+## Lèvres qui bougent sans voix (bulle affichée en mode texte ou muet) : durée restante, syllabe en cours.
+var _mime_left := 0.0
+var _mime_time := 0.0
+var _mime_syllable := -1
+var _mime_shape := Vector2.ZERO
 
 ## Modèle à afficher : le Gabi Mixamo s'il est fourni et lisible, sinon celui du jeu (ou null).
 static func load_model(game_dir := "") -> PackedScene:
@@ -250,6 +255,10 @@ func set_reduced_motion(value: bool) -> void:
 	_sync_visibility()
 
 func set_speaking(value: bool) -> void:
+	if _mime_left > 0.0 and value and get_tree().process_frame.is_connected(_mime_step):
+		# Une vraie voix prend le relais du mouvement de lèvres sans voix.
+		get_tree().process_frame.disconnect(_mime_step)
+		_mime_left = 0.0
 	var changed := value != _speaking
 	_speaking = value
 	if not value: _articulation = Vector4.ZERO
@@ -267,6 +276,44 @@ func _sync_talk() -> void:
 	elif not _speaking and current in _talks:
 		_play_idle()
 
+## Bulle affichée sans voix : la bouche s'ouvre légèrement, au rythme de syllabes (environ 4,5 par
+## seconde, amplitude variable), pendant 1,2 à 4 s selon la longueur du texte. Une vraie voix, un
+## guide masqué ou le mouvement réduit l'arrêtent.
+const MIME_RATE := 4.5
+const MIME_OPEN := Vector2(0.16, 0.40)
+func mime(text: String) -> void:
+	if not _can_animate() or text.strip_edges().is_empty(): return
+	if _speaking and not is_miming(): return  # une vraie voix parle déjà
+	_mime_left = clampf(text.strip_edges().length() / 16.0, 1.2, 4.0)
+	_mime_time = 0.0
+	_mime_syllable = -1
+	if not _speaking: set_speaking(true)
+	if not get_tree().process_frame.is_connected(_mime_step): get_tree().process_frame.connect(_mime_step)
+
+func is_miming() -> bool:
+	return _mime_left > 0.0
+
+func _mime_step() -> void:
+	var delta := get_process_delta_time()
+	_mime_left -= delta
+	_mime_time += delta
+	if _mime_left <= 0.0 or not _can_animate() or not _speaking:
+		_stop_mime()
+		return
+	var phase := _mime_time * MIME_RATE
+	if int(phase) != _mime_syllable:
+		_mime_syllable = int(phase)
+		_mime_shape = Vector2(_gesture_random.randf_range(MIME_OPEN.x, MIME_OPEN.y), _gesture_random.randf_range(0.0, 0.35) if _gesture_random.randf() < 0.3 else 0.0)
+	var open := _mime_shape.x * pow(sin(PI * fposmod(phase, 1.0)), 2.0)
+	# Fin de phrase : la bouche se referme en douceur.
+	open *= clampf(_mime_left / 0.25, 0.0, 1.0)
+	set_articulation(open, _mime_shape.y, 0.0, 0.0)
+
+func _stop_mime() -> void:
+	if get_tree() != null and get_tree().process_frame.is_connected(_mime_step): get_tree().process_frame.disconnect(_mime_step)
+	_mime_left = 0.0
+	if _speaking: set_speaking(false)
+
 func set_articulation(value: float, rounding: float = 0.0, press: float = 0.0, wide: float = 0.0) -> void:
 	_articulation = Vector4(value, rounding, press, wide).clamp(Vector4.ZERO, Vector4.ONE)
 	_sync_mouth()
@@ -277,7 +324,7 @@ func _sync_mouth() -> void:
 	# Hors parole, le visage peut garder un léger sourire (MouthPress, MouthWide).
 	if not _speaking and is_instance_valid(visage) and _can_animate():
 		var rest: Vector2 = visage.mouth_rest()
-		weights = Vector4(0.0, 0.0, rest.x, rest.y)
+		weights = Vector4(visage.lips_rest(), 0.0, rest.x, rest.y)
 	for index in _mouth_shapes.size():
 		if _mouth_shapes[index] >= 0:
 			_mouth.set_blend_shape_value(_mouth_shapes[index], weights[index])
