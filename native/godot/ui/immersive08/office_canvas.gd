@@ -275,6 +275,7 @@ static func _recruitment(card: Panel, app: Control) -> void:
 	D.button(card,Rect2(23,391,500,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")
 
 static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void:
+	D.button(card, Rect2(1710, 10, 510, 42), "Préparer la suite du club", func(): load("res://ui/manager_planning.gd").open(app), false, "calendar", false, app.accent, "OfficeManagerPlanning")
 	var fixtures := Office.upcoming_matches(app.model)
 	var tiles: Array[Panel] = []
 	var grounds: Array[Label] = []

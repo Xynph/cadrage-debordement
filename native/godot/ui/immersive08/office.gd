@@ -669,6 +669,9 @@ static func timeline_period(fixture: Dictionary) -> String:
 	return date if not date.is_empty() else "SEM. %02d" % (int(fixture.get("week", 0))+1)
 
 static func _timeline(parent: VBoxContainer, app: Control) -> void:
+	var planning := C.button("Préparer la suite du club", func(): load("res://ui/manager_planning.gd").open(app))
+	planning.name = "OfficeManagerPlanning"
+	parent.add_child(planning)
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
 	parent.add_child(row)

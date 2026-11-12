@@ -124,6 +124,7 @@ func stop() -> void:
 
 func _io_loop() -> void:
 	var pending := PackedByteArray()
+	var receiver = preload("res://model_transport.gd").new()
 	while true:
 		_wake.wait()
 		_mutex.lock()
@@ -132,6 +133,7 @@ func _io_loop() -> void:
 			return
 		var request: Dictionary = _queue.pop_front()
 		_mutex.unlock()
+		request["transport"] = {"version":1, "base":receiver.revision}
 		_stdio.store_buffer((JSON.stringify(request) + "\n").to_utf8_buffer())
 		if _stdio.get_error() != OK:
 			call_deferred("_transport_error", "Écriture impossible vers le moteur local.")
@@ -166,6 +168,10 @@ func _io_loop() -> void:
 			# Uncorrelated responses cannot complete a queued request safely.
 			# Terminate our child rather than leaving a live worker with no reader.
 			call_deferred("_transport_error", str(response.get("error", "Réponse sans identifiant : moteur fermé.")))
+			return
+		response = receiver.accept(response)
+		if response.is_empty():
+			call_deferred("_transport_error", "Révision du modèle incohérente : relancez le moteur local.")
 			return
 		call_deferred("_accept", response)
 		if request.command == "shutdown":
