@@ -29,7 +29,7 @@
       "players": [
         {
           "id": "world:champ:7c8b8a958fb0522bb063",
-          "name": "Adrian Harhill",
+          "name": "Alasdair MCCULLOCH",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 30,
@@ -118,7 +118,7 @@
         },
         {
           "id": "world:champ:9a47f5a0db16d172e332",
-          "name": "Brandon Fairfield",
+          "name": "Luke COATES",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 31,
@@ -207,7 +207,7 @@
         },
         {
           "id": "world:champ:73f7001cc2f5b342e486",
-          "name": "Blake Beckden",
+          "name": "Arthur BLOOMFIELD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -296,7 +296,7 @@
         },
         {
           "id": "world:champ:01dc5ae9176e9a2d51f4",
-          "name": "Taylor Galeby",
+          "name": "Donal GANNON",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -385,7 +385,7 @@
         },
         {
           "id": "world:champ:c6871ef632cfc151e5c9",
-          "name": "Felix Roseham",
+          "name": "Joel BOOTH",
           "pos": "Arrière",
           "fam": 8,
           "age": 23,
@@ -474,7 +474,7 @@
         },
         {
           "id": "world:champ:384fde29bdeb14295e0d",
-          "name": "Noah Harrowdale",
+          "name": "Kyle DANGERFIELD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 31,
@@ -563,7 +563,7 @@
         },
         {
           "id": "world:champ:1829a69149e374127b55",
-          "name": "Rhys Goldside",
+          "name": "Kyle FAIRCLOUGH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 29,
@@ -652,7 +652,7 @@
         },
         {
           "id": "world:champ:7a61f3078518fe633645",
-          "name": "Lewis Farlock",
+          "name": "Blake OLLERENSHAW",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -741,7 +741,7 @@
         },
         {
           "id": "world:champ:29b57e967d115207b1f1",
-          "name": "Jacob Copeness",
+          "name": "Brodie JOWETT",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -830,7 +830,7 @@
         },
         {
           "id": "world:champ:41ae2fa907c19f9a9806",
-          "name": "Marcus Kenfield",
+          "name": "Henry GOODWIN",
           "pos": "Arrière",
           "fam": 8,
           "age": 23,
@@ -919,7 +919,7 @@
         },
         {
           "id": "world:champ:f929750abe07b92dc8ac",
-          "name": "Patrick Huntton",
+          "name": "Logan SMART",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 21,
@@ -1008,7 +1008,7 @@
         },
         {
           "id": "world:champ:7f5366224926d4bc48dc",
-          "name": "Austin Trentden",
+          "name": "Ben BOWERS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 19,
@@ -1097,7 +1097,7 @@
         },
         {
           "id": "world:champ:9b7f326cee2f173345bb",
-          "name": "Leo Eastworth",
+          "name": "Callum BOND",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -1186,7 +1186,7 @@
         },
         {
           "id": "world:champ:0a3aaed6a8197f2426b7",
-          "name": "Alfie Brooklea",
+          "name": "Kurt WAKEFIELD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -1275,7 +1275,7 @@
         },
         {
           "id": "world:champ:4c4885aae167c91efe9d",
-          "name": "Oliver Beckward",
+          "name": "Phil HAINES",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -1364,7 +1364,7 @@
         },
         {
           "id": "world:champ:790377e25cd5adf5ac96",
-          "name": "Max Galeness",
+          "name": "Glenn DEARDEN",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -1453,7 +1453,7 @@
         },
         {
           "id": "world:champ:de88f4c2151b981e6bf2",
-          "name": "George Lanebank",
+          "name": "Patrick CHANDLER",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -1542,7 +1542,7 @@
         },
         {
           "id": "world:champ:eacdd69dbdba822143a7",
-          "name": "Jonah Rainbridge",
+          "name": "Joe BROOKS",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 20,
@@ -1631,7 +1631,7 @@
         },
         {
           "id": "world:champ:ff1055be40754a811c3b",
-          "name": "Joel Clarketon",
+          "name": "Linden SIMMONS",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 22,
@@ -1720,7 +1720,7 @@
         },
         {
           "id": "world:champ:1716f7319d2a66daaf26",
-          "name": "Harry Watermere",
+          "name": "Darren DOWNES",
           "pos": "Centre",
           "fam": 7,
           "age": 30,
@@ -1809,7 +1809,7 @@
         },
         {
           "id": "world:champ:7f37929a4d436686fbf8",
-          "name": "Hugo Shermill",
+          "name": "Edward AMOS",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -1898,7 +1898,7 @@
         },
         {
           "id": "world:champ:afa8dfaff9abed6d17fb",
-          "name": "Owen Hillton",
+          "name": "Matthew BOOTHROYD",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 19,
@@ -1987,7 +1987,7 @@
         },
         {
           "id": "world:champ:b6a89022d6ecd5faecf4",
-          "name": "Caspar Fieldford",
+          "name": "Edward BREWER",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -2076,7 +2076,7 @@
         },
         {
           "id": "world:champ:81acbd3e74eba29fa672",
-          "name": "Rory Valeholm",
+          "name": "David BLAKELEY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -2165,7 +2165,7 @@
         },
         {
           "id": "world:champ:3bece39994c2ff0fdc25",
-          "name": "Alastair Pacebrook",
+          "name": "Linden NORTH",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 20,
@@ -2254,7 +2254,7 @@
         },
         {
           "id": "world:champ:20209ca3118f2fba5aa2",
-          "name": "Oliver Hillmill",
+          "name": "Isileli ULA",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -2343,7 +2343,7 @@
         },
         {
           "id": "world:champ:970c4ea303adc532baab",
-          "name": "Theo Copestone",
+          "name": "Angus FORBES",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -2432,7 +2432,7 @@
         },
         {
           "id": "world:champ:0660082e64e50e0940db",
-          "name": "Caspar Bellbridge",
+          "name": "Pete SLINGSBY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 18,
@@ -2521,7 +2521,7 @@
         },
         {
           "id": "world:champ:6972f82edce12c845d43",
-          "name": "Joel Deanberry",
+          "name": "Jacob BLACKBURN",
           "pos": "Talonneur",
           "fam": 1,
           "age": 20,
@@ -2610,7 +2610,7 @@
         },
         {
           "id": "world:champ:ed0f8a58e8b8f64f5fe3",
-          "name": "Morgan Sladeby",
+          "name": "Monty ABBOTT",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 22,
@@ -2699,7 +2699,7 @@
         },
         {
           "id": "world:champ:c46259be0061fcc400d4",
-          "name": "Sam Blackhill",
+          "name": "Reuben WARING",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 20,
@@ -2788,7 +2788,7 @@
         },
         {
           "id": "world:champ:5e115bb91a6aa781b10b",
-          "name": "Harvey Harrowley",
+          "name": "Sebastian ATHERTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 29,
@@ -2877,7 +2877,7 @@
         },
         {
           "id": "world:champ:6f4f701b56eaef769087",
-          "name": "Simon Whitland",
+          "name": "Piers BICKERSTAFF",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -2966,7 +2966,7 @@
         },
         {
           "id": "world:champ:d334db157f04b0713c49",
-          "name": "Isaac Yorklock",
+          "name": "Darcy SUTCLIFFE",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -3055,7 +3055,7 @@
         },
         {
           "id": "world:champ:a82ddf0518b5e1125bca",
-          "name": "Chris Carrford",
+          "name": "Samuel KEEBLE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 19,
@@ -3144,7 +3144,7 @@
         },
         {
           "id": "world:champ:4ee4ac3e72919fd5f554",
-          "name": "Evan Kenbrook",
+          "name": "Shaun BOWKER",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -3254,7 +3254,7 @@
       "players": [
         {
           "id": "world:champ:37aa20b9e66a5936ad4f",
-          "name": "Lewis Dalewood",
+          "name": "Barnaby PROBERT",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -3343,7 +3343,7 @@
         },
         {
           "id": "world:champ:03c03e84bf021cc24a51",
-          "name": "Aidan Wynnlock",
+          "name": "George ASHCROFT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -3432,7 +3432,7 @@
         },
         {
           "id": "world:champ:3cffe8f5e08d1e5ff9f2",
-          "name": "Blake Blythelea",
+          "name": "Jude CROMPTON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 29,
@@ -3521,7 +3521,7 @@
         },
         {
           "id": "world:champ:fd2f4df2725e48b1bba8",
-          "name": "Connor Valestone",
+          "name": "Zac NAYLOR",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -3610,7 +3610,7 @@
         },
         {
           "id": "world:champ:77caa70d19ccbbb41d66",
-          "name": "Archie Thornford",
+          "name": "Samuel WHELAN",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -3699,7 +3699,7 @@
         },
         {
           "id": "world:champ:d329a6a563b055fca38a",
-          "name": "Bailey Beckford",
+          "name": "Isaac MATHER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 30,
@@ -3788,7 +3788,7 @@
         },
         {
           "id": "world:champ:85fe92cb21e177cd204f",
-          "name": "Lachlan Farlea",
+          "name": "Caleb RIDLEY",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -3877,7 +3877,7 @@
         },
         {
           "id": "world:champ:11d0b938bf1ad9711304",
-          "name": "Leo Shawwood",
+          "name": "Rhodri HUMPHRIES",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -3966,7 +3966,7 @@
         },
         {
           "id": "world:champ:58d936917cb82a84b4e7",
-          "name": "Brandon Stonestead",
+          "name": "Darren GATENBY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -4055,7 +4055,7 @@
         },
         {
           "id": "world:champ:9772f8345c94ebf2b86e",
-          "name": "Nathan Carrridge",
+          "name": "Jake PICKERING",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -4144,7 +4144,7 @@
         },
         {
           "id": "world:champ:5b93eed242e90637a2de",
-          "name": "Isaac Goldstead",
+          "name": "Ethan STEELE",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 24,
@@ -4233,7 +4233,7 @@
         },
         {
           "id": "world:champ:12b045e2fc8f0e4c2719",
-          "name": "Ellis Bellwick",
+          "name": "Seth SHUTTLEWORTH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -4322,7 +4322,7 @@
         },
         {
           "id": "world:champ:03b5b67f53870710720f",
-          "name": "Felix Shermere",
+          "name": "Connor TINDALL",
           "pos": "Arrière",
           "fam": 8,
           "age": 21,
@@ -4411,7 +4411,7 @@
         },
         {
           "id": "world:champ:878faa2dc3aa9b206da8",
-          "name": "Alastair Silvergrove",
+          "name": "Hamish HUDSON",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -4500,7 +4500,7 @@
         },
         {
           "id": "world:champ:1d163c7375aa6b05df13",
-          "name": "Jamie Lindford",
+          "name": "Adam HOUGHTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -4589,7 +4589,7 @@
         },
         {
           "id": "world:champ:40436dfdf07fe70d2677",
-          "name": "Declan Aldercroft",
+          "name": "Darren BRAITHWAITE",
           "pos": "Centre",
           "fam": 7,
           "age": 20,
@@ -4678,7 +4678,7 @@
         },
         {
           "id": "world:champ:5f2f893fa72b1eb04692",
-          "name": "Francis Whitcroft",
+          "name": "Adam BOOTHROYD",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -4767,7 +4767,7 @@
         },
         {
           "id": "world:champ:2fadfb65ff8d5263a2b1",
-          "name": "Archie Ashmoor",
+          "name": "Scott AMBROSE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -4856,7 +4856,7 @@
         },
         {
           "id": "world:champ:1e4f8032d05e68b42c8b",
-          "name": "Hamish Ashholm",
+          "name": "Leon HOWARTH",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -4945,7 +4945,7 @@
         },
         {
           "id": "world:champ:a3a5a8987376b4e4dcba",
-          "name": "Arthur Bentwell",
+          "name": "Rhys HOWELL",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 19,
@@ -5034,7 +5034,7 @@
         },
         {
           "id": "world:champ:ccd4d352b46027ce87aa",
-          "name": "Gabriel Paceham",
+          "name": "Clay FENTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 20,
@@ -5123,7 +5123,7 @@
         },
         {
           "id": "world:champ:46d9e4a7ced841bbda4f",
-          "name": "Morgan Deanwater",
+          "name": "Brodie BRYANT",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -5212,7 +5212,7 @@
         },
         {
           "id": "world:champ:cd08651aba432083d6e6",
-          "name": "Adrian Sherstead",
+          "name": "Theo GLEDHILL",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 30,
@@ -5301,7 +5301,7 @@
         },
         {
           "id": "world:champ:9cdd06aa332a43deb500",
-          "name": "Jonah Kaycliff",
+          "name": "Mateo VAKE",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 20,
@@ -5390,7 +5390,7 @@
         },
         {
           "id": "world:champ:89fc06281c798412bf35",
-          "name": "Tyler Carwell",
+          "name": "Luke LANGLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 33,
@@ -5479,7 +5479,7 @@
         },
         {
           "id": "world:champ:d4b0eff8d35fe6ac93b8",
-          "name": "Ethan Claydale",
+          "name": "Jacob HUXLEY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -5589,7 +5589,7 @@
       "players": [
         {
           "id": "world:champ:0ca5695282a33028bd3a",
-          "name": "Lachlan Trentford",
+          "name": "Logan STAFFORD",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -5678,7 +5678,7 @@
         },
         {
           "id": "world:champ:5500b5b3c697b058c269",
-          "name": "Elliot Bellbridge",
+          "name": "Marcus WADSWORTH",
           "pos": "Arrière",
           "fam": 8,
           "age": 18,
@@ -5767,7 +5767,7 @@
         },
         {
           "id": "world:champ:7f7e9bfdf9fcd23e0c3d",
-          "name": "Will Rainwell",
+          "name": "Jamie BARRACLOUGH",
           "pos": "Talonneur",
           "fam": 1,
           "age": 20,
@@ -5856,7 +5856,7 @@
         },
         {
           "id": "world:champ:67bd82383c0a74f2df97",
-          "name": "Alec Blackwell",
+          "name": "Piers BAGSHAW",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -5945,7 +5945,7 @@
         },
         {
           "id": "world:champ:f0f29bdf4fca41f9127a",
-          "name": "Jack Carberry",
+          "name": "Jai MICKLETHWAITE",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 26,
@@ -6034,7 +6034,7 @@
         },
         {
           "id": "world:champ:89c2c95ee639418f571b",
-          "name": "Ben Hopemore",
+          "name": "Martin NEAL",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -6123,7 +6123,7 @@
         },
         {
           "id": "world:champ:b98a418882e6692f43f9",
-          "name": "Archie Greenworth",
+          "name": "Lawrence ASHCROFT",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -6212,7 +6212,7 @@
         },
         {
           "id": "world:champ:eae4dc000bcd370eec2d",
-          "name": "Leo Halegate",
+          "name": "Charlie APPLEGATE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -6301,7 +6301,7 @@
         },
         {
           "id": "world:champ:4ef59479604d43bcdcb5",
-          "name": "Victor Nashham",
+          "name": "Daniel HUBBARD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -6390,7 +6390,7 @@
         },
         {
           "id": "world:champ:3b6aa5be885283d1edf0",
-          "name": "Louis Holtfield",
+          "name": "Howard VANCE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -6479,7 +6479,7 @@
         },
         {
           "id": "world:champ:c87d5328dbec118e3fc7",
-          "name": "Charlie Mereworth",
+          "name": "Raymond FAULKNER",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -6568,7 +6568,7 @@
         },
         {
           "id": "world:champ:0d7add19b6d617895cf9",
-          "name": "Toby Nashpark",
+          "name": "Ian SHEPHERD",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -6657,7 +6657,7 @@
         },
         {
           "id": "world:champ:25211344b355a1309cc7",
-          "name": "Sam Woodbank",
+          "name": "Angus HARDCASTLE",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -6746,7 +6746,7 @@
         },
         {
           "id": "world:champ:ca1443f6939eed34deb7",
-          "name": "Thomas Westford",
+          "name": "Tavita TAULAFO",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -6835,7 +6835,7 @@
         },
         {
           "id": "world:champ:b2ca731415fd5e851bef",
-          "name": "Simon Valewell",
+          "name": "Nicholas QUICK",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 18,
@@ -6924,7 +6924,7 @@
         },
         {
           "id": "world:champ:166ec06de0d7e7269585",
-          "name": "Reuben Holtburn",
+          "name": "Dafydd DAVENPORT",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 29,
@@ -7013,7 +7013,7 @@
         },
         {
           "id": "world:champ:e7d4850681dc548a24dd",
-          "name": "Harry Copeberry",
+          "name": "Neil OLLERENSHAW",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -7102,7 +7102,7 @@
         },
         {
           "id": "world:champ:58b8fd566235101275ff",
-          "name": "Ezra Grantfield",
+          "name": "Hector WEIR",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -7191,7 +7191,7 @@
         },
         {
           "id": "world:champ:2d1561dbcff652418e1f",
-          "name": "Louis Portergrove",
+          "name": "Euan JARDINE",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -7280,7 +7280,7 @@
         },
         {
           "id": "world:champ:653617fa1703f9819606",
-          "name": "Brett Hartward",
+          "name": "Padraig LOONEY",
           "pos": "Centre",
           "fam": 7,
           "age": 20,
@@ -7369,7 +7369,7 @@
         },
         {
           "id": "world:champ:e27246711fc37e78f56c",
-          "name": "Jack Blackdale",
+          "name": "Hunter JOWETT",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -7458,7 +7458,7 @@
         },
         {
           "id": "world:champ:44c09b8e44cc4f7b9b90",
-          "name": "Reuben Hopeholm",
+          "name": "Tim GOODWIN",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 20,
@@ -7547,7 +7547,7 @@
         },
         {
           "id": "world:champ:1b0b4ca38088353f5497",
-          "name": "Tom Shawmoor",
+          "name": "Maurice FARRINGTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -7636,7 +7636,7 @@
         },
         {
           "id": "world:champ:bb1902d4f1bda3e1522e",
-          "name": "Taylor Pikeberry",
+          "name": "Linden SPOONER",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -7725,7 +7725,7 @@
         },
         {
           "id": "world:champ:5dde16745c56a6c45a63",
-          "name": "Arthur Porterholm",
+          "name": "Joseph BALDWIN",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -7814,7 +7814,7 @@
         },
         {
           "id": "world:champ:49be6e045b201187ed16",
-          "name": "Jason Eastlea",
+          "name": "Maurice DRAKE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 19,
@@ -7903,7 +7903,7 @@
         },
         {
           "id": "world:champ:fbc689c3651b316b3769",
-          "name": "Sonny Flintvale",
+          "name": "Clive MACKENZIE",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -7992,7 +7992,7 @@
         },
         {
           "id": "world:champ:7ee413d2a135092b3410",
-          "name": "Anton Harrowness",
+          "name": "Max HORTON",
           "pos": "Talonneur",
           "fam": 1,
           "age": 22,
@@ -8081,7 +8081,7 @@
         },
         {
           "id": "world:champ:bef2694768d6501a2198",
-          "name": "Francis Raingate",
+          "name": "David UTTLEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 22,
@@ -8170,7 +8170,7 @@
         },
         {
           "id": "world:champ:40c1dd6686641ce1eaa2",
-          "name": "Peter Whitshore",
+          "name": "Lawrence PENROSE",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -8259,7 +8259,7 @@
         },
         {
           "id": "world:champ:85292d2828d81d0a9c34",
-          "name": "Archie Penmoor",
+          "name": "Dylan KELLETT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -8348,7 +8348,7 @@
         },
         {
           "id": "world:champ:892859cd6bd160e55074",
-          "name": "Tyler Rosestead",
+          "name": "Mark ALCOCK",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -8437,7 +8437,7 @@
         },
         {
           "id": "world:champ:8889db4ec872dc9bf000",
-          "name": "Kieran Stonehill",
+          "name": "Ryan DEARDEN",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 19,
@@ -8526,7 +8526,7 @@
         },
         {
           "id": "world:champ:a907404fae0c349fba92",
-          "name": "Chris Wardmere",
+          "name": "William TOLLEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -8615,7 +8615,7 @@
         },
         {
           "id": "world:champ:30648a4f1038500e46fa",
-          "name": "Archie Yorkberry",
+          "name": "Tom BANCROFT",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 29,
@@ -8704,7 +8704,7 @@
         },
         {
           "id": "world:champ:a0ded77589e2b5890a88",
-          "name": "Austin Galeden",
+          "name": "Ryan HATFIELD",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -8793,7 +8793,7 @@
         },
         {
           "id": "world:champ:2934833c26bd851ae204",
-          "name": "Josh Trentpark",
+          "name": "Louie MAUDSLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -8882,7 +8882,7 @@
         },
         {
           "id": "world:champ:3a37f9e055a9f0a49b24",
-          "name": "Harry Whitburn",
+          "name": "Stephen BRACEWELL",
           "pos": "Talonneur",
           "fam": 1,
           "age": 21,
@@ -8971,7 +8971,7 @@
         },
         {
           "id": "world:champ:6511d53d0cd19a86eaab",
-          "name": "Austin Wynnholm",
+          "name": "Liam QUARMBY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -9060,7 +9060,7 @@
         },
         {
           "id": "world:champ:c85cf1fb02f00d5b43bc",
-          "name": "Tom Heathshore",
+          "name": "Warren THORPE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -9149,7 +9149,7 @@
         },
         {
           "id": "world:champ:83963dc0608dc839dc83",
-          "name": "Hamish Wynnstone",
+          "name": "Hector DUDLEY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -9238,7 +9238,7 @@
         },
         {
           "id": "world:champ:843ee07206051f717c16",
-          "name": "Brandon Bellbrook",
+          "name": "Walter WOLFE",
           "pos": "Arrière",
           "fam": 8,
           "age": 26,
@@ -9327,7 +9327,7 @@
         },
         {
           "id": "world:champ:39a42c513decc8a060b1",
-          "name": "Chris Roseholm",
+          "name": "Stuart MORLEY",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -9416,7 +9416,7 @@
         },
         {
           "id": "world:champ:48d4c231b083061a835b",
-          "name": "Ben Whitby",
+          "name": "Stephen DARLINGTON",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 20,
@@ -9505,7 +9505,7 @@
         },
         {
           "id": "world:champ:3c8173007bb5cad688c3",
-          "name": "Isaac Wynnwell",
+          "name": "Gerallt PARFITT",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 26,
@@ -9594,7 +9594,7 @@
         },
         {
           "id": "world:champ:e12cc7229dfb80608153",
-          "name": "Rowan Bentburn",
+          "name": "Bobby ROTHWELL",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -9683,7 +9683,7 @@
         },
         {
           "id": "world:champ:9c5117ac047e5dc321bc",
-          "name": "Max Aldercroft",
+          "name": "Charlie NAYLOR",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -9793,7 +9793,7 @@
       "players": [
         {
           "id": "world:champ:ffeed7ce7ba4accc6633",
-          "name": "David Blythemoor",
+          "name": "Ryan RAFFERTY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 19,
@@ -9882,7 +9882,7 @@
         },
         {
           "id": "world:champ:2137f86eaf550464a837",
-          "name": "Tyler Brookburn",
+          "name": "Zac TOMLINSON",
           "pos": "Arrière",
           "fam": 8,
           "age": 20,
@@ -9971,7 +9971,7 @@
         },
         {
           "id": "world:champ:ddaa5b95bbcdcb5559de",
-          "name": "Carl Reedcliff",
+          "name": "Jonny LACEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 30,
@@ -10060,7 +10060,7 @@
         },
         {
           "id": "world:champ:07ea70a49e30c4d404d6",
-          "name": "Sam Eastcroft",
+          "name": "Tom EMERY",
           "pos": "Centre",
           "fam": 7,
           "age": 25,
@@ -10149,7 +10149,7 @@
         },
         {
           "id": "world:champ:bb03aff9e20fd4ccfa0f",
-          "name": "Gabriel Pacebrook",
+          "name": "Kane BOOTHROYD",
           "pos": "Arrière",
           "fam": 8,
           "age": 25,
@@ -10238,7 +10238,7 @@
         },
         {
           "id": "world:champ:7ae5ad37cbdc502db862",
-          "name": "Nathan Claymore",
+          "name": "Rhodri BIGGS",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -10327,7 +10327,7 @@
         },
         {
           "id": "world:champ:489bf34600c7abb4c263",
-          "name": "Brett Valewater",
+          "name": "Gareth DRAKE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -10416,7 +10416,7 @@
         },
         {
           "id": "world:champ:1ba4e63ea5f4fd7c35f9",
-          "name": "Austin Claywater",
+          "name": "Cameron RAMSBOTTOM",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -10505,7 +10505,7 @@
         },
         {
           "id": "world:champ:32a3d0849820ad98a80c",
-          "name": "Brett Oakstead",
+          "name": "Felix RAVENSCROFT",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -10594,7 +10594,7 @@
         },
         {
           "id": "world:champ:4d3b46bf6eed6cc46eba",
-          "name": "Gabriel Fordward",
+          "name": "Ellis KINGSLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 24,
@@ -10683,7 +10683,7 @@
         },
         {
           "id": "world:champ:02ddd773220a3290b430",
-          "name": "Rhys Ashdale",
+          "name": "Trevor DEWHURST",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -10772,7 +10772,7 @@
         },
         {
           "id": "world:champ:a06064dcd6554255c6e4",
-          "name": "Leo Sladestead",
+          "name": "Zachary HIBBERT",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 30,
@@ -10861,7 +10861,7 @@
         },
         {
           "id": "world:champ:8d5773e7f50fe0660254",
-          "name": "Kieran Hallbank",
+          "name": "Cathal HEGARTY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -10950,7 +10950,7 @@
         },
         {
           "id": "world:champ:55ae5eed41e3b9cdfbeb",
-          "name": "Liam Grantbridge",
+          "name": "Dan PROCTOR",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -11039,7 +11039,7 @@
         },
         {
           "id": "world:champ:667260b91c0cd7d04952",
-          "name": "Ralph Wilddale",
+          "name": "Byron DRIVER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -11128,7 +11128,7 @@
         },
         {
           "id": "world:champ:dde1fe2505cdbec03e22",
-          "name": "Charlie Harrowbank",
+          "name": "Rhys DRURY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 18,
@@ -11217,7 +11217,7 @@
         },
         {
           "id": "world:champ:ab908dfbcaa0cbed96ea",
-          "name": "Oliver Goldridge",
+          "name": "Arthur MAYHEW",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -11306,7 +11306,7 @@
         },
         {
           "id": "world:champ:b643dc2e7e4405649fbf",
-          "name": "Max Frostmill",
+          "name": "Nathaniel WETHERBY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 19,
@@ -11395,7 +11395,7 @@
         },
         {
           "id": "world:champ:fd8977dbeefb42613220",
-          "name": "Toby Irvberry",
+          "name": "Louie TATTERSALL",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -11484,7 +11484,7 @@
         },
         {
           "id": "world:champ:90ed119e297386022af5",
-          "name": "Francis Halestone",
+          "name": "Graeme SIMPSON",
           "pos": "Centre",
           "fam": 7,
           "age": 30,
@@ -11573,7 +11573,7 @@
         },
         {
           "id": "world:champ:01ce98cb8545b8d41b62",
-          "name": "Tyler Carrlock",
+          "name": "Luke BAGSHAW",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 19,
@@ -11662,7 +11662,7 @@
         },
         {
           "id": "world:champ:679c1b5539533670dcb4",
-          "name": "Jules Goldland",
+          "name": "Tobias HAWORTH",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -11751,7 +11751,7 @@
         },
         {
           "id": "world:champ:5e1916faebb528803c5c",
-          "name": "Ellis Eastgrove",
+          "name": "Adrian WADSWORTH",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 19,
@@ -11840,7 +11840,7 @@
         },
         {
           "id": "world:champ:89dbabcd1f2e42c11e3e",
-          "name": "Theo Thornwell",
+          "name": "Lewis DUCKWORTH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 18,
@@ -11929,7 +11929,7 @@
         },
         {
           "id": "world:champ:d11df1be1ac4140b84e0",
-          "name": "Gabriel Lindfield",
+          "name": "Rupert INGRAM",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 31,
@@ -12018,7 +12018,7 @@
         },
         {
           "id": "world:champ:e2ad499ea52b865cca70",
-          "name": "Morgan Huntstone",
+          "name": "Beau BARKER",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -12107,7 +12107,7 @@
         },
         {
           "id": "world:champ:59b010d41a9c05e1f242",
-          "name": "George Bainbrook",
+          "name": "Louis RIMMER",
           "pos": "Centre",
           "fam": 7,
           "age": 30,
@@ -12196,7 +12196,7 @@
         },
         {
           "id": "world:champ:4187c9cc745c5967e5d7",
-          "name": "Theo Marshmere",
+          "name": "Freddie HUXLEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -12285,7 +12285,7 @@
         },
         {
           "id": "world:champ:6287c8bd0da0f9dce45c",
-          "name": "Corey Slademoor",
+          "name": "Hunter KENT",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -12374,7 +12374,7 @@
         },
         {
           "id": "world:champ:179e0a47ca04c9ca8617",
-          "name": "Simon Frostham",
+          "name": "Tyler ASHBY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 30,
@@ -12463,7 +12463,7 @@
         },
         {
           "id": "world:champ:5a1c8363b78a0803c00b",
-          "name": "Hamish Irvhill",
+          "name": "Fraser MALLINSON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -12552,7 +12552,7 @@
         },
         {
           "id": "world:champ:749981b2a0b8797d8dcd",
-          "name": "Ezra Huntton",
+          "name": "Morgan YORATH",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -12641,7 +12641,7 @@
         },
         {
           "id": "world:champ:6776061ae16197ed37c1",
-          "name": "Simon Swifthill",
+          "name": "Ethan TANNER",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -12730,7 +12730,7 @@
         },
         {
           "id": "world:champ:75b593443937b253a57f",
-          "name": "Taylor Woodmere",
+          "name": "Felix BREWER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 20,
@@ -12819,7 +12819,7 @@
         },
         {
           "id": "world:champ:5ea006e4fb4262304b64",
-          "name": "Caspar Lindstead",
+          "name": "Idris HOWELLS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -12908,7 +12908,7 @@
         },
         {
           "id": "world:champ:9a08749a37f29c046990",
-          "name": "Ethan Waterside",
+          "name": "Patrick WINTER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -12997,7 +12997,7 @@
         },
         {
           "id": "world:champ:6cac8f4646ff90577422",
-          "name": "Ryan Whitthorne",
+          "name": "Blake ANSTEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 20,
@@ -13086,7 +13086,7 @@
         },
         {
           "id": "world:champ:7d4c164e35ca49c618eb",
-          "name": "Victor Holtbank",
+          "name": "Kieran BULL",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -13175,7 +13175,7 @@
         },
         {
           "id": "world:champ:e3137473a8a5fb94daae",
-          "name": "Alastair Bainhaven",
+          "name": "Clay DOHERTY",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -13264,7 +13264,7 @@
         },
         {
           "id": "world:champ:c341471f2a581a70aee6",
-          "name": "Jason Yorkhill",
+          "name": "Monty HOWARTH",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 28,
@@ -13353,7 +13353,7 @@
         },
         {
           "id": "world:champ:111186a5baf7c842b397",
-          "name": "Harvey Marshburn",
+          "name": "Reuben STUBBS",
           "pos": "Centre",
           "fam": 7,
           "age": 29,
@@ -13442,7 +13442,7 @@
         },
         {
           "id": "world:champ:47b20ee514aab6bd4a0b",
-          "name": "Kieran Huntwater",
+          "name": "Trent STAFFORD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -13531,7 +13531,7 @@
         },
         {
           "id": "world:champ:f73094aa16fd6503b4aa",
-          "name": "Brandon Marshside",
+          "name": "Murray MACNEIL",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 28,
@@ -13620,7 +13620,7 @@
         },
         {
           "id": "world:champ:6fec58653b0e83e473fb",
-          "name": "David Ryedale",
+          "name": "Ross SUMMERS",
           "pos": "Arrière",
           "fam": 8,
           "age": 20,
@@ -13709,7 +13709,7 @@
         },
         {
           "id": "world:champ:92719e5a93b26cd6e3a1",
-          "name": "Louis Westcliff",
+          "name": "Josh FENNELL",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 21,
@@ -13798,7 +13798,7 @@
         },
         {
           "id": "world:champ:52e7e4723157c8b7309d",
-          "name": "Cameron Yorkwater",
+          "name": "Blake SHORT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -13887,7 +13887,7 @@
         },
         {
           "id": "world:champ:b42e268554b1b34f24c0",
-          "name": "Marcus Carrwater",
+          "name": "Trevor PLATT",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 25,
@@ -13976,7 +13976,7 @@
         },
         {
           "id": "world:champ:a03eb590b8077ed1f98d",
-          "name": "Jack Holtworth",
+          "name": "Andrew BUCHANAN",
           "pos": "Talonneur",
           "fam": 1,
           "age": 30,
@@ -14065,7 +14065,7 @@
         },
         {
           "id": "world:champ:e97a4e5e118873c51e79",
-          "name": "Rory Flintward",
+          "name": "Curtis WHITAKER",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -14154,7 +14154,7 @@
         },
         {
           "id": "world:champ:d7aa150e10d3e1de1814",
-          "name": "Hugo Beckmore",
+          "name": "Toby KERSHAW",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -14243,7 +14243,7 @@
         },
         {
           "id": "world:champ:01f3f310193cd407a9c3",
-          "name": "Tom Ashwater",
+          "name": "Robert ALCOCK",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -14332,7 +14332,7 @@
         },
         {
           "id": "world:champ:2ac38f61a8509b772e33",
-          "name": "Sam Lakewick",
+          "name": "Terence CROWTHER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 26,
@@ -14421,7 +14421,7 @@
         },
         {
           "id": "world:champ:94283a658ba6b43c4313",
-          "name": "Callum Fairhill",
+          "name": "Gus FENTON",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -14510,7 +14510,7 @@
         },
         {
           "id": "world:champ:fe11fdc719da9f225c56",
-          "name": "Jamie Blackworth",
+          "name": "Russell ARKWRIGHT",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -14599,7 +14599,7 @@
         },
         {
           "id": "world:champ:c3a2f2f1b9297dbc70d1",
-          "name": "Francis Fenham",
+          "name": "Graham FIELDING",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 29,
@@ -14688,7 +14688,7 @@
         },
         {
           "id": "world:champ:30a271e1c45a1e3830b1",
-          "name": "Hamish Hartcliff",
+          "name": "Ed BICKERSTAFF",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -14777,7 +14777,7 @@
         },
         {
           "id": "world:champ:3e4906029b7ccf25e931",
-          "name": "Jacob Yorkby",
+          "name": "Mitchell DEARDEN",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -14866,7 +14866,7 @@
         },
         {
           "id": "world:champ:a57d0a13e9dff972efa9",
-          "name": "Elliot Oxpark",
+          "name": "Carl BOURNE",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -14955,7 +14955,7 @@
         },
         {
           "id": "world:champ:cedab5d50b94ceeabbe9",
-          "name": "Max Westwell",
+          "name": "Ivan THORPE",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -15044,7 +15044,7 @@
         },
         {
           "id": "world:champ:d8ca3af698f5847e6000",
-          "name": "David Bellwell",
+          "name": "Giles HADDOCK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -15154,7 +15154,7 @@
       "players": [
         {
           "id": "world:champ:d8eacaaee16e2d5c5e3f",
-          "name": "Liam Westmere",
+          "name": "Rory MORLEY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 19,
@@ -15243,7 +15243,7 @@
         },
         {
           "id": "world:champ:bb08ea6e9760a83db715",
-          "name": "Adrian Pikeness",
+          "name": "Ethan POPPLEWELL",
           "pos": "Talonneur",
           "fam": 1,
           "age": 20,
@@ -15332,7 +15332,7 @@
         },
         {
           "id": "world:champ:07b63ebf1c6811c31611",
-          "name": "Tom Harburn",
+          "name": "Roland BARNES",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -15421,7 +15421,7 @@
         },
         {
           "id": "world:champ:aca44d0b5e2542a61edf",
-          "name": "Victor Pikemore",
+          "name": "Archie BOSWELL",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -15510,7 +15510,7 @@
         },
         {
           "id": "world:champ:1173c91ae4ea1833e8b3",
-          "name": "Chris Trentwood",
+          "name": "Shaun BREWER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -15599,7 +15599,7 @@
         },
         {
           "id": "world:champ:70ff3c30d6864f34cf3d",
-          "name": "Caspar Blytheden",
+          "name": "Owen JEFFERSON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 19,
@@ -15688,7 +15688,7 @@
         },
         {
           "id": "world:champ:8733fe82de5e043301d4",
-          "name": "Arthur Kenthorne",
+          "name": "Tyler PROBERT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 19,
@@ -15777,7 +15777,7 @@
         },
         {
           "id": "world:champ:e849c484164d8a4baccb",
-          "name": "Peter Millvale",
+          "name": "Glyn PROSSER",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -15866,7 +15866,7 @@
         },
         {
           "id": "world:champ:7d549e558d1c6051e591",
-          "name": "Marcus Kenvale",
+          "name": "Rupert PRESCOTT",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -15955,7 +15955,7 @@
         },
         {
           "id": "world:champ:c7497ba1451d0a7ed42e",
-          "name": "Ellis Ridgecroft",
+          "name": "Aidan HARDCASTLE",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -16044,7 +16044,7 @@
         },
         {
           "id": "world:champ:23e11ba8605a64f86692",
-          "name": "Will Bentmoor",
+          "name": "Dave EDMUNDS",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -16133,7 +16133,7 @@
         },
         {
           "id": "world:champ:3fb0a9af29f4f6fe6b3a",
-          "name": "George Whitlea",
+          "name": "Jamie FRY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -16222,7 +16222,7 @@
         },
         {
           "id": "world:champ:30c111fc5780828f0214",
-          "name": "Sonny Westlock",
+          "name": "Jacob WHITFIELD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -16311,7 +16311,7 @@
         },
         {
           "id": "world:champ:d3ee9de367f490604aa7",
-          "name": "Callum Burgrove",
+          "name": "Giles STUBBS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -16400,7 +16400,7 @@
         },
         {
           "id": "world:champ:d82c22e3860c93b23320",
-          "name": "Ethan Millcliff",
+          "name": "Philip WARDLE",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -16489,7 +16489,7 @@
         },
         {
           "id": "world:champ:000b7e8d157f1636bb5e",
-          "name": "Ethan Alderhaven",
+          "name": "Danny GADSBY",
           "pos": "Centre",
           "fam": 7,
           "age": 18,
@@ -16578,7 +16578,7 @@
         },
         {
           "id": "world:champ:48652f33c6ace07d84b1",
-          "name": "Marcus Froststone",
+          "name": "Odhran CAREY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -16667,7 +16667,7 @@
         },
         {
           "id": "world:champ:ce6ab0d608119bb6a188",
-          "name": "Rhys Frostby",
+          "name": "Wilfred HUDSON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -16756,7 +16756,7 @@
         },
         {
           "id": "world:champ:b65cae123f6b7f34f78d",
-          "name": "Josh Burpark",
+          "name": "Steve OLLERENSHAW",
           "pos": "Arrière",
           "fam": 8,
           "age": 22,
@@ -16845,7 +16845,7 @@
         },
         {
           "id": "world:champ:adf74312914847248566",
-          "name": "Ralph Harrowford",
+          "name": "Andrew FANSHAWE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -16934,7 +16934,7 @@
         },
         {
           "id": "world:champ:86992094ed1b82f03bae",
-          "name": "Max Blythemore",
+          "name": "Ieuan CLOUGH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 24,
@@ -17023,7 +17023,7 @@
         },
         {
           "id": "world:champ:93abb02f41a8ef5ac450",
-          "name": "Harvey Whitlock",
+          "name": "Vaea POUONO",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -17112,7 +17112,7 @@
         },
         {
           "id": "world:champ:be0944d12dfcef564407",
-          "name": "Archie Whitlock",
+          "name": "Craig SHEPPARD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 29,
@@ -17201,7 +17201,7 @@
         },
         {
           "id": "world:champ:6d9801ca820400702e8b",
-          "name": "Will Woodfield",
+          "name": "Lachlan BYWATER",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 29,
@@ -17290,7 +17290,7 @@
         },
         {
           "id": "world:champ:ac24490f33239b5422a4",
-          "name": "Carl Harrowland",
+          "name": "Tomos DRAPER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -17379,7 +17379,7 @@
         },
         {
           "id": "world:champ:1cf701ab2584818590c9",
-          "name": "Rhys Beckbrook",
+          "name": "Halani OTAI",
           "pos": "Talonneur",
           "fam": 1,
           "age": 21,
@@ -17468,7 +17468,7 @@
         },
         {
           "id": "world:champ:2b109501feb32acff2ef",
-          "name": "Jordan Porterbrook",
+          "name": "Alexander BABBAGE",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 23,
@@ -17557,7 +17557,7 @@
         },
         {
           "id": "world:champ:63596e3fe806d4329d0a",
-          "name": "Sam Oakton",
+          "name": "Lee YATES",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 20,
@@ -17646,7 +17646,7 @@
         },
         {
           "id": "world:champ:a6c1e73eb4752abca25a",
-          "name": "Rhys Carrward",
+          "name": "Ryan WHELAN",
           "pos": "Arrière",
           "fam": 8,
           "age": 26,
@@ -17735,7 +17735,7 @@
         },
         {
           "id": "world:champ:7b7eaf609fb3058758a5",
-          "name": "Ralph Kenden",
+          "name": "Terence BISHOP",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -17824,7 +17824,7 @@
         },
         {
           "id": "world:champ:01fc8e085aa8243b5836",
-          "name": "Harry Huntridge",
+          "name": "Wade PARKER",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -17913,7 +17913,7 @@
         },
         {
           "id": "world:champ:50e905cc3e5e5df03a95",
-          "name": "Theo Starwick",
+          "name": "Seth CARTWRIGHT",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 20,
@@ -18002,7 +18002,7 @@
         },
         {
           "id": "world:champ:394237d74adfc86be91e",
-          "name": "Thomas Strandstone",
+          "name": "Reece DUDLEY",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -18091,7 +18091,7 @@
         },
         {
           "id": "world:champ:509e9da977add56bdd19",
-          "name": "Oscar Stoneby",
+          "name": "Harrison MILES",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -18180,7 +18180,7 @@
         },
         {
           "id": "world:champ:a30d3deb4aaa06f2922d",
-          "name": "Elliot Mereley",
+          "name": "Patrick SUTCLIFFE",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -18269,7 +18269,7 @@
         },
         {
           "id": "world:champ:53a86acbb1d470ee6556",
-          "name": "Declan Daleden",
+          "name": "Dominic GREENHALGH",
           "pos": "Centre",
           "fam": 7,
           "age": 30,
@@ -18358,7 +18358,7 @@
         },
         {
           "id": "world:champ:589d38e5323f2d6386d5",
-          "name": "Sonny Ashgrove",
+          "name": "Jack WHITEHEAD",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 20,
@@ -18447,7 +18447,7 @@
         },
         {
           "id": "world:champ:ab669671e0cefdd922e2",
-          "name": "Caspar Kenwood",
+          "name": "Wilfred GARNER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 29,
@@ -18536,7 +18536,7 @@
         },
         {
           "id": "world:champ:c9c8efccd261ba656c46",
-          "name": "Oliver Newwater",
+          "name": "Ashley CALVERT",
           "pos": "Talonneur",
           "fam": 1,
           "age": 30,
@@ -18625,7 +18625,7 @@
         },
         {
           "id": "world:champ:9be23480ffdb9ba1ebba",
-          "name": "Archie Stonedale",
+          "name": "Steve COTTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 26,
@@ -18714,7 +18714,7 @@
         },
         {
           "id": "world:champ:0015717c0d6f91c84f94",
-          "name": "Rory Greenmore",
+          "name": "Llyr BEYNON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -18803,7 +18803,7 @@
         },
         {
           "id": "world:champ:65913944eace5e50cde1",
-          "name": "Anton Bellbridge",
+          "name": "Wesley HOLLAND",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 20,
@@ -18892,7 +18892,7 @@
         },
         {
           "id": "world:champ:54bcc9772f57d6fa4cfe",
-          "name": "Finley Strandside",
+          "name": "Iwan CROFT",
           "pos": "Centre",
           "fam": 7,
           "age": 19,
@@ -18981,7 +18981,7 @@
         },
         {
           "id": "world:champ:bce3265a6861ebbd04ab",
-          "name": "Charlie Shawbank",
+          "name": "Jonathan LITTLE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -19070,7 +19070,7 @@
         },
         {
           "id": "world:champ:69d1809330be94f6811a",
-          "name": "Will Pacedale",
+          "name": "Lloyd GRAVELL",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -19159,7 +19159,7 @@
         },
         {
           "id": "world:champ:433743fe8d5a73746e1d",
-          "name": "Seth Sherbank",
+          "name": "Joel TETLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -19248,7 +19248,7 @@
         },
         {
           "id": "world:champ:418cda586edab8a44ee9",
-          "name": "Morgan Buckbygrove",
+          "name": "Hunter MEADOWS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -19358,7 +19358,7 @@
       "players": [
         {
           "id": "world:champ:d8be4e2355f8d2b0a6f7",
-          "name": "Miles Lindholm",
+          "name": "Macsen BEBB",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -19447,7 +19447,7 @@
         },
         {
           "id": "world:champ:b93f94f653fda6cebe2b",
-          "name": "Daniel Stonelea",
+          "name": "Darren WADSWORTH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 30,
@@ -19536,7 +19536,7 @@
         },
         {
           "id": "world:champ:0fd60a4fb51fc8c83d7a",
-          "name": "Owen Farburn",
+          "name": "Albie BISHOP",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -19625,7 +19625,7 @@
         },
         {
           "id": "world:champ:e7095c2e575f1ff7b742",
-          "name": "Alec Galecliff",
+          "name": "Donal HARRINGTON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -19714,7 +19714,7 @@
         },
         {
           "id": "world:champ:09384730fb13820811c3",
-          "name": "Reuben Southwick",
+          "name": "Reggie BARKER",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -19803,7 +19803,7 @@
         },
         {
           "id": "world:champ:6d36e3efba32e5815da6",
-          "name": "Owen Lindhill",
+          "name": "Killian WRENN",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -19892,7 +19892,7 @@
         },
         {
           "id": "world:champ:9126e20185762b6b5854",
-          "name": "Alec Northgrove",
+          "name": "Jarvis GODDARD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -19981,7 +19981,7 @@
         },
         {
           "id": "world:champ:84d810f051466aa58cf5",
-          "name": "Alfie Marshley",
+          "name": "Marcus CLOUGH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 27,
@@ -20070,7 +20070,7 @@
         },
         {
           "id": "world:champ:9d78f7d74275558ff6a3",
-          "name": "Gabriel Lanecliff",
+          "name": "Bobby DARLINGTON",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -20159,7 +20159,7 @@
         },
         {
           "id": "world:champ:20423c216b8c9d638752",
-          "name": "Patrick Valecliff",
+          "name": "Callum REDFERN",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -20248,7 +20248,7 @@
         },
         {
           "id": "world:champ:5b75541472e89ffe2ea8",
-          "name": "Anton Nashstead",
+          "name": "Martin BROMLEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -20337,7 +20337,7 @@
         },
         {
           "id": "world:champ:1863446a6005d5f7b5e1",
-          "name": "Hugo Reedshore",
+          "name": "Owen BLACKBURN",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -20426,7 +20426,7 @@
         },
         {
           "id": "world:champ:3c1b070fa4cb207c8bcb",
-          "name": "Finley Holtmill",
+          "name": "Ofa TAUFALELE",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 31,
@@ -20515,7 +20515,7 @@
         },
         {
           "id": "world:champ:fba0b89fd2859aa4a248",
-          "name": "Milo Rowshore",
+          "name": "Jamie PARKER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -20604,7 +20604,7 @@
         },
         {
           "id": "world:champ:c49251608455243eaa0d",
-          "name": "Seth Kenvale",
+          "name": "Theo CHILTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 21,
@@ -20693,7 +20693,7 @@
         },
         {
           "id": "world:champ:8efeca720ed9b9815a79",
-          "name": "Rory Silverford",
+          "name": "Connor FERGUSON",
           "pos": "Arrière",
           "fam": 8,
           "age": 18,
@@ -20782,7 +20782,7 @@
         },
         {
           "id": "world:champ:86e1f307c39234403505",
-          "name": "Ben Nashside",
+          "name": "Teddy CASTLE",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -20871,7 +20871,7 @@
         },
         {
           "id": "world:champ:e4a451ff2b2d270de8bc",
-          "name": "Adrian Maydell",
+          "name": "Harris MACNEIL",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -20960,7 +20960,7 @@
         },
         {
           "id": "world:champ:90586cb602a3060fb832",
-          "name": "Louis Wildwick",
+          "name": "Jai ALLCOCK",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -21049,7 +21049,7 @@
         },
         {
           "id": "world:champ:6d7a52e02011f1811c57",
-          "name": "Alfie Northridge",
+          "name": "Kurt SLATER",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -21138,7 +21138,7 @@
         },
         {
           "id": "world:champ:0c9195dae159f692c230",
-          "name": "Ellis Blythebridge",
+          "name": "Reece ASHTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -21227,7 +21227,7 @@
         },
         {
           "id": "world:champ:92568b73e664aee255ef",
-          "name": "Anton Strandwick",
+          "name": "Trent BABBAGE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -21316,7 +21316,7 @@
         },
         {
           "id": "world:champ:529ca3405f72e61d3369",
-          "name": "Josh Fairmore",
+          "name": "Fraser BUCHANAN",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -21405,7 +21405,7 @@
         },
         {
           "id": "world:champ:f8f97355bd45c4b74078",
-          "name": "Gabriel Trentgate",
+          "name": "Gareth GATES",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -21494,7 +21494,7 @@
         },
         {
           "id": "world:champ:658732e1a883b50b842c",
-          "name": "Will Harham",
+          "name": "Albie NIGHTINGALE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -21583,7 +21583,7 @@
         },
         {
           "id": "world:champ:d03c088ae0c2f63f3f47",
-          "name": "Archie Rainpark",
+          "name": "Harris WADDELL",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 24,
@@ -21672,7 +21672,7 @@
         },
         {
           "id": "world:champ:ecedba91d89e35a76081",
-          "name": "George Fenfield",
+          "name": "Stan CROSS",
           "pos": "Arrière",
           "fam": 8,
           "age": 23,
@@ -21761,7 +21761,7 @@
         },
         {
           "id": "world:champ:5d244d0e5e5aebe95b57",
-          "name": "Andre Frostward",
+          "name": "Livai VAKALOLOMA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -21850,7 +21850,7 @@
         },
         {
           "id": "world:champ:029fda3e62edbe26fea0",
-          "name": "Milo Woodside",
+          "name": "Aidan DRURY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 20,
@@ -21939,7 +21939,7 @@
         },
         {
           "id": "world:champ:47c73bb5445c5e2a5fb5",
-          "name": "Elliot Whitward",
+          "name": "Roland TRAVIS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -22049,7 +22049,7 @@
       "players": [
         {
           "id": "world:champ:ba13929c8e0d0b514e1c",
-          "name": "Blake Beckmill",
+          "name": "Ieuan OXLEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -22138,7 +22138,7 @@
         },
         {
           "id": "world:champ:814ac633bf45162d4a15",
-          "name": "Blake Woodwick",
+          "name": "Innes HAY",
           "pos": "Centre",
           "fam": 7,
           "age": 19,
@@ -22227,7 +22227,7 @@
         },
         {
           "id": "world:champ:0dc4d7d6f2d47440dfae",
-          "name": "George Alderward",
+          "name": "Hamish GALBRAITH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -22316,7 +22316,7 @@
         },
         {
           "id": "world:champ:479b97ec64d78f7fbd48",
-          "name": "Jason Brookworth",
+          "name": "Struan WADDELL",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 24,
@@ -22405,7 +22405,7 @@
         },
         {
           "id": "world:champ:fdfd8c54502806b4f7a1",
-          "name": "Leo Northgate",
+          "name": "Alex PADGETT",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -22494,7 +22494,7 @@
         },
         {
           "id": "world:champ:f8667c73f3bc4a560281",
-          "name": "Jason Buckbywell",
+          "name": "Reece CHADWICK",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -22583,7 +22583,7 @@
         },
         {
           "id": "world:champ:26190d5f31489da89559",
-          "name": "Sonny Oakbrook",
+          "name": "Tobias WOLFE",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -22672,7 +22672,7 @@
         },
         {
           "id": "world:champ:c38b5e63853e2e470f6c",
-          "name": "Liam Wardbank",
+          "name": "Theo CATTERALL",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -22761,7 +22761,7 @@
         },
         {
           "id": "world:champ:0b8714898d1dee702a2b",
-          "name": "Lachlan Woodshore",
+          "name": "Simon STOKES",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -22850,7 +22850,7 @@
         },
         {
           "id": "world:champ:8102a4d0ab1a8859d9d9",
-          "name": "Cameron Kenmere",
+          "name": "Gavin POTTER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 21,
@@ -22939,7 +22939,7 @@
         },
         {
           "id": "world:champ:71ef96155d08aee253ca",
-          "name": "Jack Fielddale",
+          "name": "Craig DAWES",
           "pos": "Talonneur",
           "fam": 1,
           "age": 18,
@@ -23028,7 +23028,7 @@
         },
         {
           "id": "world:champ:9a68268f618503c5c554",
-          "name": "Caspar Westridge",
+          "name": "Craig HALLIDAY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -23117,7 +23117,7 @@
         },
         {
           "id": "world:champ:1ea4925540b724a7668e",
-          "name": "Reuben Farness",
+          "name": "Mike FIELD",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 19,
@@ -23206,7 +23206,7 @@
         },
         {
           "id": "world:champ:168dcadcd0e323721a52",
-          "name": "Harry Bainham",
+          "name": "Max BATTERSBY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -23295,7 +23295,7 @@
         },
         {
           "id": "world:champ:2f7aaa726f4ea894dfc3",
-          "name": "Milo Eastpark",
+          "name": "Elia VAAULU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 19,
@@ -23384,7 +23384,7 @@
         },
         {
           "id": "world:champ:41aa86782d825bb9ba7a",
-          "name": "Josh Goldmere",
+          "name": "Daniel GOODALL",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 30,
@@ -23473,7 +23473,7 @@
         },
         {
           "id": "world:champ:26212774b9758042cace",
-          "name": "Ezra Strandgate",
+          "name": "Aidan NOONAN",
           "pos": "Ailier",
           "fam": 6,
           "age": 30,
@@ -23562,7 +23562,7 @@
         },
         {
           "id": "world:champ:f3ec68afe9c9d9947619",
-          "name": "Cameron Beckland",
+          "name": "Fionn GORMLEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 27,
@@ -23651,7 +23651,7 @@
         },
         {
           "id": "world:champ:ebccdde80aeab553f9c4",
-          "name": "Aidan Huntmere",
+          "name": "Glenn LOWE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -23740,7 +23740,7 @@
         },
         {
           "id": "world:champ:6786d3d833ea52ac4baf",
-          "name": "Milo Yorkmore",
+          "name": "Jasper EDDLESTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -23829,7 +23829,7 @@
         },
         {
           "id": "world:champ:5717d2da7cad377c164e",
-          "name": "Nathan Ashmore",
+          "name": "Curtis FERGUSON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -23918,7 +23918,7 @@
         },
         {
           "id": "world:champ:825cf785204cf5afff1f",
-          "name": "Rory Carrstead",
+          "name": "Robert HOWARTH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -24007,7 +24007,7 @@
         },
         {
           "id": "world:champ:89829afbdea3d0ffd557",
-          "name": "Archie Strandmore",
+          "name": "Howard LEACH",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 20,
@@ -24096,7 +24096,7 @@
         },
         {
           "id": "world:champ:87a26eefb91d010d089e",
-          "name": "Peter Grantlock",
+          "name": "Aaron MELLOR",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 28,
@@ -24185,7 +24185,7 @@
         },
         {
           "id": "world:champ:753f6125a710ba714259",
-          "name": "Ethan Ryewick",
+          "name": "Giles HOWE",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 30,
@@ -24274,7 +24274,7 @@
         },
         {
           "id": "world:champ:e3163d5702751d249c89",
-          "name": "Callum Halldell",
+          "name": "Matt HARDCASTLE",
           "pos": "Arrière",
           "fam": 8,
           "age": 19,
@@ -24363,7 +24363,7 @@
         },
         {
           "id": "world:champ:d62724a65122d3312fc3",
-          "name": "Owen Hallbrook",
+          "name": "Isaac FOSTER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -24452,7 +24452,7 @@
         },
         {
           "id": "world:champ:886abc9b0a55ff4c1cf8",
-          "name": "Liam Harwood",
+          "name": "Roland MACKENZIE",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -24541,7 +24541,7 @@
         },
         {
           "id": "world:champ:021410b35826722cb7df",
-          "name": "Sonny Trentwick",
+          "name": "Tyler JOWETT",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 24,
@@ -24630,7 +24630,7 @@
         },
         {
           "id": "world:champ:65578a8d8811915e590e",
-          "name": "Simon Kaystead",
+          "name": "Byron WHITFIELD",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -24719,7 +24719,7 @@
         },
         {
           "id": "world:champ:82f4b9a4967c6cd56e15",
-          "name": "Ben Greenby",
+          "name": "Louis WADSWORTH",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -24808,7 +24808,7 @@
         },
         {
           "id": "world:champ:dedcc32baa762160fb78",
-          "name": "Hamish Rowhaven",
+          "name": "Albie PILKINGTON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 23,
@@ -24897,7 +24897,7 @@
         },
         {
           "id": "world:champ:3c6075887e611c6777d0",
-          "name": "Harry Ryeden",
+          "name": "Cai PLATT",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -24986,7 +24986,7 @@
         },
         {
           "id": "world:champ:4c2590baed59655023c9",
-          "name": "Archie Maydale",
+          "name": "Ross GODDARD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -25075,7 +25075,7 @@
         },
         {
           "id": "world:champ:1f1eee3df440965940b8",
-          "name": "Alec Whitmill",
+          "name": "Curtis WOMERSLEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 19,
@@ -25185,7 +25185,7 @@
       "players": [
         {
           "id": "world:champ:f5b3a88f96d4d33ff5d1",
-          "name": "Francis Irvfield",
+          "name": "Stuart FIELD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -25274,7 +25274,7 @@
         },
         {
           "id": "world:champ:804395d17e94da0d05bb",
-          "name": "Patrick Bainholm",
+          "name": "Mitchell BAGSHAW",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -25363,7 +25363,7 @@
         },
         {
           "id": "world:champ:ac72d27ff50f30f1fbe9",
-          "name": "Francis Rowland",
+          "name": "Finley ASHTON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -25452,7 +25452,7 @@
         },
         {
           "id": "world:champ:3ad2905beecbea2bb38d",
-          "name": "Cameron Swiftwick",
+          "name": "Archie SALTER",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 30,
@@ -25541,7 +25541,7 @@
         },
         {
           "id": "world:champ:a6c6573b4e29e3bc27a8",
-          "name": "Daniel Wildcroft",
+          "name": "Reggie JESSOP",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -25630,7 +25630,7 @@
         },
         {
           "id": "world:champ:2d24411301db24392561",
-          "name": "Rory Fordhaven",
+          "name": "Meirion TOVEY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -25719,7 +25719,7 @@
         },
         {
           "id": "world:champ:49afa226d6febe035f2b",
-          "name": "Lachlan Galegate",
+          "name": "Macsen HAVARD",
           "pos": "Talonneur",
           "fam": 1,
           "age": 22,
@@ -25808,7 +25808,7 @@
         },
         {
           "id": "world:champ:ab0b90b6be8b5b777525",
-          "name": "Liam Oakburn",
+          "name": "Anthony HAMPSON",
           "pos": "Centre",
           "fam": 7,
           "age": 25,
@@ -25897,7 +25897,7 @@
         },
         {
           "id": "world:champ:b1be40f0eb7a0fce7351",
-          "name": "Rhys Woodmore",
+          "name": "Max KERSHAW",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 30,
@@ -25986,7 +25986,7 @@
         },
         {
           "id": "world:champ:569d323d00f12f7b502b",
-          "name": "Archie Rowmill",
+          "name": "Zac BATTERSBY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 26,
@@ -26075,7 +26075,7 @@
         },
         {
           "id": "world:champ:ddced29a0ea7a86814e7",
-          "name": "Ryan Buckbyfield",
+          "name": "Nathaniel GRIMSHAW",
           "pos": "Arrière",
           "fam": 8,
           "age": 28,
@@ -26164,7 +26164,7 @@
         },
         {
           "id": "world:champ:4b21ef71331bdf744cb4",
-          "name": "Jack Sherhill",
+          "name": "Calvin O'DWYER",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -26253,7 +26253,7 @@
         },
         {
           "id": "world:champ:4e1c87897faec6baceeb",
-          "name": "Toby Heathwick",
+          "name": "Logan LESTER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -26342,7 +26342,7 @@
         },
         {
           "id": "world:champ:bff5ec0f823fa19ef2e5",
-          "name": "Isaac Clayberry",
+          "name": "Mark BUTTERWORTH",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 21,
@@ -26431,7 +26431,7 @@
         },
         {
           "id": "world:champ:0cbfae2c7f1c74470daa",
-          "name": "Oscar Glenham",
+          "name": "Darcy EASTWOOD",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 26,
@@ -26520,7 +26520,7 @@
         },
         {
           "id": "world:champ:625c7df09225913736a0",
-          "name": "Ryan Alderbridge",
+          "name": "Andrew MOUNSEY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -26609,7 +26609,7 @@
         },
         {
           "id": "world:champ:2cb3a635c78af0cdd4f4",
-          "name": "Alfie Fieldstead",
+          "name": "Louis LONGBOTTOM",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -26698,7 +26698,7 @@
         },
         {
           "id": "world:champ:3f3d97e68a93ea999ba4",
-          "name": "Carl Parkshore",
+          "name": "Trevor FAIRCLOUGH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -26787,7 +26787,7 @@
         },
         {
           "id": "world:champ:465f0a80f4bec2f3b3cc",
-          "name": "Harry Wardlock",
+          "name": "Louis PILKINGTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 30,
@@ -26876,7 +26876,7 @@
         },
         {
           "id": "world:champ:f7fc757633765b1e925e",
-          "name": "Freddie Penhill",
+          "name": "Alfie TINDALL",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -26965,7 +26965,7 @@
         },
         {
           "id": "world:champ:daa2326bd6a2522354ad",
-          "name": "Marcus Huntburn",
+          "name": "Adam SAUNDERS",
           "pos": "Centre",
           "fam": 7,
           "age": 39,
@@ -27054,7 +27054,7 @@
         },
         {
           "id": "world:champ:fc099df48d91ed7fcddc",
-          "name": "Patrick Blackbridge",
+          "name": "Stephen CALVERT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 35,
@@ -27143,7 +27143,7 @@
         },
         {
           "id": "world:champ:dfa7f4a1b41a97e7f0a8",
-          "name": "Simon Marshside",
+          "name": "Steffan EBBSWORTH",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -27232,7 +27232,7 @@
         },
         {
           "id": "world:champ:ae46983b86b9f2b1cc17",
-          "name": "Francis Flintholm",
+          "name": "Ted AMOS",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -27321,7 +27321,7 @@
         },
         {
           "id": "world:champ:235b1fb435a48ba95600",
-          "name": "Thomas Penmill",
+          "name": "Zane LEACH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -27410,7 +27410,7 @@
         },
         {
           "id": "world:champ:5da9b0e5f5779784153d",
-          "name": "Morgan Shawworth",
+          "name": "Alexander JEFFERSON",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -27499,7 +27499,7 @@
         },
         {
           "id": "world:champ:f9b053fb0a9c8cf24cdf",
-          "name": "Marcus Copeness",
+          "name": "Cooper MURGATROYD",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -27588,7 +27588,7 @@
         },
         {
           "id": "world:champ:53002eaf2a439b19099f",
-          "name": "Ben Blackshore",
+          "name": "Theo MORTON",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 31,
@@ -27677,7 +27677,7 @@
         },
         {
           "id": "world:champ:42ce1ccb7b42131c8ab6",
-          "name": "Freddie Lakestead",
+          "name": "Logan MARRIOTT",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -27766,7 +27766,7 @@
         },
         {
           "id": "world:champ:8427385122ceb80213d0",
-          "name": "Freddie Burberry",
+          "name": "Anthony BRAMWELL",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -27855,7 +27855,7 @@
         },
         {
           "id": "world:champ:76f062c4a0f8bef8835a",
-          "name": "Blake Fieldden",
+          "name": "Jack FERNLEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -27944,7 +27944,7 @@
         },
         {
           "id": "world:champ:d5e659ec42151e506cfa",
-          "name": "Ben Porterwood",
+          "name": "Harri WOGAN",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -28033,7 +28033,7 @@
         },
         {
           "id": "world:champ:876a0cac007cc33cd854",
-          "name": "Carl Fenridge",
+          "name": "Scott RIMMER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -28122,7 +28122,7 @@
         },
         {
           "id": "world:champ:c992783998e27ed79156",
-          "name": "Andre Carstead",
+          "name": "Iwan WETHERBY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -28211,7 +28211,7 @@
         },
         {
           "id": "world:champ:0bb98b23d736ecd9f659",
-          "name": "Harvey Irvmoor",
+          "name": "Rowan DAVENPORT",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -28300,7 +28300,7 @@
         },
         {
           "id": "world:champ:bd4e49c79ceb9f22c061",
-          "name": "Adam Wynnham",
+          "name": "Nigel HALSTEAD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -28410,7 +28410,7 @@
       "players": [
         {
           "id": "world:champ:acdd6057b7473d2e376c",
-          "name": "Tyler Yorkmill",
+          "name": "Will FOTHERGILL",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 29,
@@ -28499,7 +28499,7 @@
         },
         {
           "id": "world:champ:e8de0dce44edb7d40c8c",
-          "name": "Sonny Southcroft",
+          "name": "Wilfred WILCOX",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -28588,7 +28588,7 @@
         },
         {
           "id": "world:champ:9d8af5010081e9f1d21e",
-          "name": "Chris Northlea",
+          "name": "Aaron WINTER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 32,
@@ -28677,7 +28677,7 @@
         },
         {
           "id": "world:champ:5c225e107ada81aa0278",
-          "name": "Carl Hopehill",
+          "name": "Fraser DAVEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 32,
@@ -28766,7 +28766,7 @@
         },
         {
           "id": "world:champ:a7471b1ef943aa96d473",
-          "name": "Peter Buckbydale",
+          "name": "Gary BANNISTER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -28855,7 +28855,7 @@
         },
         {
           "id": "world:champ:48ac3a726c7ef1eb0f9c",
-          "name": "Alfie Hartburn",
+          "name": "Gabriel BOSTOCK",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 31,
@@ -28944,7 +28944,7 @@
         },
         {
           "id": "world:champ:3ac00b4f62d1a2fb94bd",
-          "name": "Morgan Reedholm",
+          "name": "Ethan DRIVER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 36,
@@ -29033,7 +29033,7 @@
         },
         {
           "id": "world:champ:f7995d68852a2ee3e2a4",
-          "name": "Brett Sladehaven",
+          "name": "Fraser FERNLEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 26,
@@ -29122,7 +29122,7 @@
         },
         {
           "id": "world:champ:838e45fa8a897dc04bdd",
-          "name": "Jacob Irvness",
+          "name": "Oscar VANCE",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -29211,7 +29211,7 @@
         },
         {
           "id": "world:champ:7136bc52fc05973b6cbb",
-          "name": "Liam Wynnland",
+          "name": "George MONK",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -29300,7 +29300,7 @@
         },
         {
           "id": "world:champ:29b9a740965b241be667",
-          "name": "Ellis Carham",
+          "name": "Mark PIKE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -29389,7 +29389,7 @@
         },
         {
           "id": "world:champ:099c60035502be492745",
-          "name": "Hamish Whitwater",
+          "name": "Christopher GAWTHORPE",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -29478,7 +29478,7 @@
         },
         {
           "id": "world:champ:cc05060179a7bdbac4e0",
-          "name": "Chris Newside",
+          "name": "Louie SMART",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -29567,7 +29567,7 @@
         },
         {
           "id": "world:champ:202d4cf47633cab05782",
-          "name": "Leo Ryeland",
+          "name": "Tristan MOORHOUSE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -29656,7 +29656,7 @@
         },
         {
           "id": "world:champ:7c315f0974f88566e76e",
-          "name": "Rory Marshwell",
+          "name": "Joseph HINCHCLIFFE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -29745,7 +29745,7 @@
         },
         {
           "id": "world:champ:1b0d35e39cb853929d81",
-          "name": "Chris Deanby",
+          "name": "Nathan TATE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -29834,7 +29834,7 @@
         },
         {
           "id": "world:champ:14ebe219464cca4c8fa4",
-          "name": "Hugo Carmill",
+          "name": "Gus SAVAGE",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 29,
@@ -29923,7 +29923,7 @@
         },
         {
           "id": "world:champ:fe1422bb5840869811cd",
-          "name": "David Nashstone",
+          "name": "Jon BARWICK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -30012,7 +30012,7 @@
         },
         {
           "id": "world:champ:b04348a88dc3648de33d",
-          "name": "Ellis Baincliff",
+          "name": "Gary BUSH",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 31,
@@ -30101,7 +30101,7 @@
         },
         {
           "id": "world:champ:d5fd64b61af1e86f93bc",
-          "name": "Callum Strandmoor",
+          "name": "Gruffydd GITTINS",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -30190,7 +30190,7 @@
         },
         {
           "id": "world:champ:7f520b4e17cc7af27ea9",
-          "name": "Tyler Parkwater",
+          "name": "Leo DRAPER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 22,
@@ -30279,7 +30279,7 @@
         },
         {
           "id": "world:champ:792386506e31092c50a6",
-          "name": "Arthur Frostward",
+          "name": "Wilfred PROBERT",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -30368,7 +30368,7 @@
         },
         {
           "id": "world:champ:8d0a6a6fbedf96d33814",
-          "name": "Anton Fieldgrove",
+          "name": "Adam GLOVER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -30457,7 +30457,7 @@
         },
         {
           "id": "world:champ:228a5b89220f5d2feecd",
-          "name": "Daniel Silvermore",
+          "name": "Wade PEACOCK",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -30546,7 +30546,7 @@
         },
         {
           "id": "world:champ:43b5e91ef150340b3d5c",
-          "name": "Chris Fieldvale",
+          "name": "Tomos RIDLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -30635,7 +30635,7 @@
         },
         {
           "id": "world:champ:f78223a47aa5ab853f49",
-          "name": "Hugo Yorkthorne",
+          "name": "Callum SHORT",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -30724,7 +30724,7 @@
         },
         {
           "id": "world:champ:494b9beba4e8dc818b7b",
-          "name": "Liam Bainpark",
+          "name": "Joe MILLWARD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 35,
@@ -30813,7 +30813,7 @@
         },
         {
           "id": "world:champ:8fd4a69df207c87437a0",
-          "name": "Marcus Carrwood",
+          "name": "Duncan ECCLES",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -30902,7 +30902,7 @@
         },
         {
           "id": "world:champ:948cbdbdc563911b60d5",
-          "name": "Austin Oxstone",
+          "name": "Philip BOOTH",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 31,
@@ -30991,7 +30991,7 @@
         },
         {
           "id": "world:champ:f514c0164100ea31ca56",
-          "name": "Harry Fairburn",
+          "name": "Samuel CROSS",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -31080,7 +31080,7 @@
         },
         {
           "id": "world:champ:b459306b5133c0a19969",
-          "name": "Connor Daleshore",
+          "name": "Albie WOOTTON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -31169,7 +31169,7 @@
         },
         {
           "id": "world:champ:0d8673ee256ce2ce4960",
-          "name": "Reuben Goldmoor",
+          "name": "Rhodri JEREMIAH",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -31258,7 +31258,7 @@
         },
         {
           "id": "world:champ:e27006b5fbac18181d7c",
-          "name": "Declan Lindstone",
+          "name": "Kyle ACKROYD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -31347,7 +31347,7 @@
         },
         {
           "id": "world:champ:277ff7e940518961f257",
-          "name": "Seth Pacedell",
+          "name": "Robbie KIRBY",
           "pos": "Arrière",
           "fam": 8,
           "age": 27,
@@ -31436,7 +31436,7 @@
         },
         {
           "id": "world:champ:19a7a7de3f01b595856d",
-          "name": "Sonny Goldshore",
+          "name": "Gus HOLLAND",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -31525,7 +31525,7 @@
         },
         {
           "id": "world:champ:95bb05c5cdecf35f67b3",
-          "name": "Caspar Holtpark",
+          "name": "Ivan GORTON",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -31614,7 +31614,7 @@
         },
         {
           "id": "world:champ:c6db959286f2b352b976",
-          "name": "Rory Brookward",
+          "name": "Nathaniel IBBOTSON",
           "pos": "Talonneur",
           "fam": 1,
           "age": 33,
@@ -31703,7 +31703,7 @@
         },
         {
           "id": "world:champ:5df4fbe4bb1b8ef609e7",
-          "name": "Ellis Thornshore",
+          "name": "Richard SANDERS",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 24,
@@ -31792,7 +31792,7 @@
         },
         {
           "id": "world:champ:b104643461124185292c",
-          "name": "Rowan Farford",
+          "name": "Arthur ALLSOPP",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -31881,7 +31881,7 @@
         },
         {
           "id": "world:champ:192b7f4ee90c98a57cba",
-          "name": "Ezra Flintholm",
+          "name": "Eddie TETLEY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -31970,7 +31970,7 @@
         },
         {
           "id": "world:champ:7f990d80bcba40dbc219",
-          "name": "Jack Heathcliff",
+          "name": "Elliot MERRITT",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -32059,7 +32059,7 @@
         },
         {
           "id": "world:champ:57df327e3dbdf833b21a",
-          "name": "Max Fenland",
+          "name": "Theo HUXLEY",
           "pos": "Centre",
           "fam": 7,
           "age": 32,
@@ -32148,7 +32148,7 @@
         },
         {
           "id": "world:champ:4bdc1c6dab8cc790d7e9",
-          "name": "Ben Brookbank",
+          "name": "Morgan FERGUSON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 27,
@@ -32237,7 +32237,7 @@
         },
         {
           "id": "world:champ:28d1d328d6a2ae8929b6",
-          "name": "Peter Clarkeland",
+          "name": "Albie CROFT",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -32326,7 +32326,7 @@
         },
         {
           "id": "world:champ:73c94ed41548ab2a3db1",
-          "name": "Toby Aldercliff",
+          "name": "Darren BOWERS",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -32415,7 +32415,7 @@
         },
         {
           "id": "world:champ:281345ede31d8e870a39",
-          "name": "Felix Huntgrove",
+          "name": "Brandon TUCKER",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -32504,7 +32504,7 @@
         },
         {
           "id": "world:champ:27ceb8cd24d84d7b0a13",
-          "name": "Cameron Sherburn",
+          "name": "Arwel EBBSWORTH",
           "pos": "Arrière",
           "fam": 8,
           "age": 27,
@@ -32593,7 +32593,7 @@
         },
         {
           "id": "world:champ:c82fb213f1a6ebcb1d22",
-          "name": "Harvey Hillward",
+          "name": "Leon GREGORY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 26,
@@ -32682,7 +32682,7 @@
         },
         {
           "id": "world:champ:221cc51c59c773579049",
-          "name": "Victor Kayby",
+          "name": "Nigel MELLING",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -32771,7 +32771,7 @@
         },
         {
           "id": "world:champ:acc0ae1a6b3931047fc2",
-          "name": "Milo Bainby",
+          "name": "Joel FAULKNER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 20,
@@ -32860,7 +32860,7 @@
         },
         {
           "id": "world:champ:b88bdcd1b19e95be607c",
-          "name": "Simon Oxridge",
+          "name": "Adam HIBBERT",
           "pos": "Arrière",
           "fam": 8,
           "age": 29,
@@ -32949,7 +32949,7 @@
         },
         {
           "id": "world:champ:28ec5e379eff0f1f8cfc",
-          "name": "Isaac Meredale",
+          "name": "Hector RAMSBOTTOM",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -33038,7 +33038,7 @@
         },
         {
           "id": "world:champ:69761aeaf1f42d578399",
-          "name": "Thomas Laneham",
+          "name": "Diarmuid LACEY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -33127,7 +33127,7 @@
         },
         {
           "id": "world:champ:01d5f73be0ae25a94496",
-          "name": "Blake Rainberry",
+          "name": "Cai TREW",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -33237,7 +33237,7 @@
       "players": [
         {
           "id": "world:champ:0cc8ed768e6e748fffc2",
-          "name": "Elliot Merebridge",
+          "name": "Russell HORTON",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -33326,7 +33326,7 @@
         },
         {
           "id": "world:champ:17c003840cf2d65f5573",
-          "name": "Oliver Starside",
+          "name": "Ronnie HEYWOOD",
           "pos": "Arrière",
           "fam": 8,
           "age": 26,
@@ -33415,7 +33415,7 @@
         },
         {
           "id": "world:champ:a643970c96c46a05d971",
-          "name": "Archie Ridgemoor",
+          "name": "Leon HOUGHTON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 18,
@@ -33504,7 +33504,7 @@
         },
         {
           "id": "world:champ:d7b29ebbd1e2d0ef40fe",
-          "name": "Joel Ridgevale",
+          "name": "Iosefa IOSIA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 20,
@@ -33593,7 +33593,7 @@
         },
         {
           "id": "world:champ:a48dcc5e5a02ee1c8a47",
-          "name": "Isaac Kaywood",
+          "name": "Hamish BOURNE",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -33682,7 +33682,7 @@
         },
         {
           "id": "world:champ:879383c055cd92f46238",
-          "name": "Rory Kaywood",
+          "name": "Zachary HOLLAND",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -33771,7 +33771,7 @@
         },
         {
           "id": "world:champ:045766fa405395fc04d5",
-          "name": "Tom Bentden",
+          "name": "Hector CLOUGH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -33860,7 +33860,7 @@
         },
         {
           "id": "world:champ:dbb8205959b61e7353b1",
-          "name": "Reuben Hopeley",
+          "name": "Brad OLDFIELD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -33949,7 +33949,7 @@
         },
         {
           "id": "world:champ:417039d45e9570860f88",
-          "name": "Tom Penburn",
+          "name": "Ben BAINES",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 19,
@@ -34038,7 +34038,7 @@
         },
         {
           "id": "world:champ:d8463a424199bcb5167b",
-          "name": "Josh Rowburn",
+          "name": "Patrick KENT",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 28,
@@ -34127,7 +34127,7 @@
         },
         {
           "id": "world:champ:ec4f2b5209bc915f74f6",
-          "name": "Sonny Lakewick",
+          "name": "Callum GOULD",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -34216,7 +34216,7 @@
         },
         {
           "id": "world:champ:ab521afc6607286f48fa",
-          "name": "Carl Farmoor",
+          "name": "Ieuan QUARMBY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -34305,7 +34305,7 @@
         },
         {
           "id": "world:champ:eac243c56f33c5133abf",
-          "name": "Harry Pacestead",
+          "name": "Robert PADGETT",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -34394,7 +34394,7 @@
         },
         {
           "id": "world:champ:7dab2c5e5d27103527d2",
-          "name": "Harvey Laneford",
+          "name": "Rhys YORK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -34483,7 +34483,7 @@
         },
         {
           "id": "world:champ:eb7a042db82df0d8d0c4",
-          "name": "Adrian Hallridge",
+          "name": "Dylan YORATH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -34572,7 +34572,7 @@
         },
         {
           "id": "world:champ:b2ca5d19af1f8dc330f9",
-          "name": "Nathan Deanmore",
+          "name": "Gareth MILNER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -34661,7 +34661,7 @@
         },
         {
           "id": "world:champ:3842b0c461e37b8e9f49",
-          "name": "Tom Buckbywell",
+          "name": "Chris BENTLEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -34750,7 +34750,7 @@
         },
         {
           "id": "world:champ:778450cf0aa45e4ce880",
-          "name": "Callum Wardton",
+          "name": "Tyler GOODWIN",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -34839,7 +34839,7 @@
         },
         {
           "id": "world:champ:1560879157eaeb7175fa",
-          "name": "Carl Hillhill",
+          "name": "Jake STUBBS",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -34928,7 +34928,7 @@
         },
         {
           "id": "world:champ:0741d693f3d983204ced",
-          "name": "Jack Ashden",
+          "name": "Frank HORROCKS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -35017,7 +35017,7 @@
         },
         {
           "id": "world:champ:25afd8ec0f16494a4987",
-          "name": "Connor Rowham",
+          "name": "Finley DUNSTAN",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 22,
@@ -35106,7 +35106,7 @@
         },
         {
           "id": "world:champ:8c35b2626ada7edcabfa",
-          "name": "Ezra Strandham",
+          "name": "Darragh MONAGHAN",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -35195,7 +35195,7 @@
         },
         {
           "id": "world:champ:1f664f50ca37c1a66111",
-          "name": "Rory Southcroft",
+          "name": "Ellis BECKETT",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -35284,7 +35284,7 @@
         },
         {
           "id": "world:champ:6c6def4dd93bde91bff2",
-          "name": "Brandon Reedbank",
+          "name": "Aled PRYDDERCH",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -35373,7 +35373,7 @@
         },
         {
           "id": "world:champ:79eda0526736deddca58",
-          "name": "Brandon Thornberry",
+          "name": "Shaun HINDLE",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -35462,7 +35462,7 @@
         },
         {
           "id": "world:champ:8fa2f719c7ffe0952f18",
-          "name": "Alastair Southstone",
+          "name": "Ashley GREENHALGH",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -35551,7 +35551,7 @@
         },
         {
           "id": "world:champ:f4694e5e63fb55b9ac47",
-          "name": "Thomas Cardale",
+          "name": "Frank SNOW",
           "pos": "Arrière",
           "fam": 8,
           "age": 28,
@@ -35640,7 +35640,7 @@
         },
         {
           "id": "world:champ:8c1c2b918efbbdc84e03",
-          "name": "Alec Ashness",
+          "name": "Mike TETLEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 28,
@@ -35729,7 +35729,7 @@
         },
         {
           "id": "world:champ:5963f2cea80f8f7b26d1",
-          "name": "Carl Clarkeridge",
+          "name": "Gus BANNISTER",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -35818,7 +35818,7 @@
         },
         {
           "id": "world:champ:add1b408be9d2cfada87",
-          "name": "Rory Eastshore",
+          "name": "Ueni LOKENI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -35928,7 +35928,7 @@
       "players": [
         {
           "id": "world:champ:4e513de81f6aea6bd4ba",
-          "name": "Taylor Rosegrove",
+          "name": "Eddie CLEGG",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 34,
@@ -36017,7 +36017,7 @@
         },
         {
           "id": "world:champ:ec1d92b063ccaa1c85c4",
-          "name": "Ethan Pikewick",
+          "name": "Noah COPLEY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -36106,7 +36106,7 @@
         },
         {
           "id": "world:champ:61e10a0ee0ec3b8e4c8a",
-          "name": "Ben Fenstone",
+          "name": "Nicholas TOLLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 22,
@@ -36195,7 +36195,7 @@
         },
         {
           "id": "world:champ:adbe17d7ab13194487fc",
-          "name": "Rhys Roseshore",
+          "name": "Curtis BROCKLEHURST",
           "pos": "Arrière",
           "fam": 8,
           "age": 23,
@@ -36284,7 +36284,7 @@
         },
         {
           "id": "world:champ:6d3f846c3ffb54f55cf2",
-          "name": "Bailey Rowstone",
+          "name": "Tevita NAEATA",
           "pos": "Ailier",
           "fam": 6,
           "age": 30,
@@ -36373,7 +36373,7 @@
         },
         {
           "id": "world:champ:ad3ab4f57f02fa21db8d",
-          "name": "Elliot Trentland",
+          "name": "Gwion HOPKIN",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -36462,7 +36462,7 @@
         },
         {
           "id": "world:champ:bfb1c9f71aac750f6e59",
-          "name": "Harvey Blytheberry",
+          "name": "Steffan LODWICK",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -36551,7 +36551,7 @@
         },
         {
           "id": "world:champ:e588962fc696301ded84",
-          "name": "Aidan Greymill",
+          "name": "Danny TATTERSALL",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -36640,7 +36640,7 @@
         },
         {
           "id": "world:champ:1f7ade79384b953f4382",
-          "name": "Arthur Flintden",
+          "name": "Victor CLIFFORD",
           "pos": "Arrière",
           "fam": 8,
           "age": 29,
@@ -36729,7 +36729,7 @@
         },
         {
           "id": "world:champ:6a013f51f10fa3023f1d",
-          "name": "Harry Northmill",
+          "name": "Stuart PIKE",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 27,
@@ -36818,7 +36818,7 @@
         },
         {
           "id": "world:champ:c6bec430afd361c2d729",
-          "name": "Caspar Greenpark",
+          "name": "Jasper GARDNER",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 28,
@@ -36907,7 +36907,7 @@
         },
         {
           "id": "world:champ:012123223464c15a415f",
-          "name": "Francis Harrowgate",
+          "name": "Lawrence PEACOCK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -36996,7 +36996,7 @@
         },
         {
           "id": "world:champ:2ee059bc35661411eba6",
-          "name": "Declan Ridgeden",
+          "name": "Edwin GODDARD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 31,
@@ -37085,7 +37085,7 @@
         },
         {
           "id": "world:champ:0ef227e95cba4a9b901a",
-          "name": "Morgan Ryeley",
+          "name": "Fraser BLACKMORE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -37174,7 +37174,7 @@
         },
         {
           "id": "world:champ:8a3d1b00165633022e1a",
-          "name": "Rory Clarkeley",
+          "name": "Will MARLOW",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -37263,7 +37263,7 @@
         },
         {
           "id": "world:champ:dd9790c561535f4b3b52",
-          "name": "Lewis Newness",
+          "name": "Blake KIRBY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -37352,7 +37352,7 @@
         },
         {
           "id": "world:champ:6ac8c60ad84c24bc7669",
-          "name": "Theo Irvfield",
+          "name": "Steffan PRYDDERCH",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -37441,7 +37441,7 @@
         },
         {
           "id": "world:champ:02dad2e791f224c3284d",
-          "name": "Ellis Beckgate",
+          "name": "Nathaniel ALCOCK",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -37530,7 +37530,7 @@
         },
         {
           "id": "world:champ:90666a7b1503edeb2959",
-          "name": "Seth Swiftmill",
+          "name": "Kurt IRELAND",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 32,
@@ -37619,7 +37619,7 @@
         },
         {
           "id": "world:champ:980d6c3c2072372a6652",
-          "name": "Austin Harrowberry",
+          "name": "Leo MIDDLETON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 26,
@@ -37708,7 +37708,7 @@
         },
         {
           "id": "world:champ:452365e146e066a8257f",
-          "name": "Harvey Hartmoor",
+          "name": "Hamish ASHWORTH",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -37797,7 +37797,7 @@
         },
         {
           "id": "world:champ:4c997b7c445e9b28b157",
-          "name": "Theo Millmoor",
+          "name": "Bryn PASK",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -37886,7 +37886,7 @@
         },
         {
           "id": "world:champ:648cfec837f4232d1cca",
-          "name": "Toby Penside",
+          "name": "Craig ASPINALL",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -37975,7 +37975,7 @@
         },
         {
           "id": "world:champ:3f8ec45d81d9c3e9fc4b",
-          "name": "Felix Woodhaven",
+          "name": "Raymond HANCOCK",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 19,
@@ -38064,7 +38064,7 @@
         },
         {
           "id": "world:champ:6e6297dec7ef606d957b",
-          "name": "Alec Lakefield",
+          "name": "Theo LESTER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -38153,7 +38153,7 @@
         },
         {
           "id": "world:champ:e73a3e69fc6251753176",
-          "name": "Lachlan Millholm",
+          "name": "Trent BILTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -38242,7 +38242,7 @@
         },
         {
           "id": "world:champ:3f0ee0952f69b9850665",
-          "name": "Tom Bellfield",
+          "name": "Chris HAMMOND",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 26,
@@ -38331,7 +38331,7 @@
         },
         {
           "id": "world:champ:d82261cf6492e39e031a",
-          "name": "Elliot Harrowwater",
+          "name": "Douglas FAIRBAIRN",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 30,
@@ -38420,7 +38420,7 @@
         },
         {
           "id": "world:champ:d75fba1c3ab4478e9cf6",
-          "name": "Freddie Stargate",
+          "name": "Angus HOLROYD",
           "pos": "Centre",
           "fam": 7,
           "age": 19,
@@ -38509,7 +38509,7 @@
         },
         {
           "id": "world:champ:3496d6fd54c713107415",
-          "name": "Jonah Shawhaven",
+          "name": "Dan TWIGG",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 29,
@@ -38598,7 +38598,7 @@
         },
         {
           "id": "world:champ:9340ca642cdc598e202d",
-          "name": "Joel Halestone",
+          "name": "Toby LACEY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -38687,7 +38687,7 @@
         },
         {
           "id": "world:champ:5f5721116bec2e411861",
-          "name": "Caspar Sladeham",
+          "name": "Patrick PICKLES",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -38776,7 +38776,7 @@
         },
         {
           "id": "world:champ:22753c0bbc2ddf5f1057",
-          "name": "Max Swiftmore",
+          "name": "Noah SPOONER",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -38865,7 +38865,7 @@
         },
         {
           "id": "world:champ:16cdc29d8836c9f195e7",
-          "name": "Theo Heathcliff",
+          "name": "Ewan WARDLE",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -38975,7 +38975,7 @@
       "players": [
         {
           "id": "world:champ:0d89cff0e131a45ce721",
-          "name": "Callum Northlea",
+          "name": "Julian THORNLEY",
           "pos": "Talonneur",
           "fam": 1,
           "age": 18,
@@ -39064,7 +39064,7 @@
         },
         {
           "id": "world:champ:17a0ad34caa932b8eb24",
-          "name": "Archie Lindley",
+          "name": "Kurt ROBERTSON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 19,
@@ -39153,7 +39153,7 @@
         },
         {
           "id": "world:champ:ed3f8db269e3240b2e35",
-          "name": "Ellis Fenberry",
+          "name": "Paulo TUIMAVAVE",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -39242,7 +39242,7 @@
         },
         {
           "id": "world:champ:0ea0770be82650c5d79e",
-          "name": "Ben Galeburn",
+          "name": "Aidan GORMLEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -39331,7 +39331,7 @@
         },
         {
           "id": "world:champ:14363dc094e23393551a",
-          "name": "Andre Penmore",
+          "name": "Callum MCNAB",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -39420,7 +39420,7 @@
         },
         {
           "id": "world:champ:ef3c1dd33df386a971bc",
-          "name": "Liam Beckland",
+          "name": "Reuben EDDLESTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 20,
@@ -39509,7 +39509,7 @@
         },
         {
           "id": "world:champ:a7a497b0d04466df1ee3",
-          "name": "Alec Reedcroft",
+          "name": "Alexander NEAL",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -39598,7 +39598,7 @@
         },
         {
           "id": "world:champ:f0234d232fb1937d628f",
-          "name": "Jordan Hopestone",
+          "name": "David HALSTEAD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -39687,7 +39687,7 @@
         },
         {
           "id": "world:champ:c2962b70cdfc191d1a8e",
-          "name": "Josh Hallmore",
+          "name": "Tomos HARCOURT",
           "pos": "Arrière",
           "fam": 8,
           "age": 25,
@@ -39776,7 +39776,7 @@
         },
         {
           "id": "world:champ:aa82bd0710fddc790ada",
-          "name": "Adrian Harrowwick",
+          "name": "Eddie WHITWORTH",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -39865,7 +39865,7 @@
         },
         {
           "id": "world:champ:1269e18293d7bbb93185",
-          "name": "Tom Claywood",
+          "name": "Solomone VAKA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -39954,7 +39954,7 @@
         },
         {
           "id": "world:champ:0ceea2261906ecd8925c",
-          "name": "Joel Huntland",
+          "name": "Rhuairidh MCKECHNIE",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -40043,7 +40043,7 @@
         },
         {
           "id": "world:champ:ec03535e790a43c623a9",
-          "name": "Cameron Bainward",
+          "name": "Gerallt UPJOHN",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 30,
@@ -40132,7 +40132,7 @@
         },
         {
           "id": "world:champ:788281131b227ed077b7",
-          "name": "Lachlan Silvervale",
+          "name": "Gruffydd CADWALLADER",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -40221,7 +40221,7 @@
         },
         {
           "id": "world:champ:3983fe15d36bcef99ea4",
-          "name": "Rory Silvermore",
+          "name": "Zachary STANHOPE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -40310,7 +40310,7 @@
         },
         {
           "id": "world:champ:b847f34c34ae3a62f43c",
-          "name": "Rhys Paceley",
+          "name": "Tobias HUBBARD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -40399,7 +40399,7 @@
         },
         {
           "id": "world:champ:85c2b917d2c4f7e3baeb",
-          "name": "Sam Wardgate",
+          "name": "Anthony WAKEFIELD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -40488,7 +40488,7 @@
         },
         {
           "id": "world:champ:bb5298fb699c358aef12",
-          "name": "Austin Hallstead",
+          "name": "Victor MILLWARD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -40577,7 +40577,7 @@
         },
         {
           "id": "world:champ:04e2f18a47bbbb8bd4ca",
-          "name": "Anton Wynnham",
+          "name": "Philip POTTER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 30,
@@ -40666,7 +40666,7 @@
         },
         {
           "id": "world:champ:4070c124df8b3a50b96d",
-          "name": "Gareth Grantgrove",
+          "name": "Ueni PENITANI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 28,
@@ -40755,7 +40755,7 @@
         },
         {
           "id": "world:champ:6d5865b6b6fcf1793a89",
-          "name": "Kai Heathmill",
+          "name": "Jon HATFIELD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -40844,7 +40844,7 @@
         },
         {
           "id": "world:champ:cfce6569ce34730a54ee",
-          "name": "Leo Halemere",
+          "name": "Caleb BEALE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -40933,7 +40933,7 @@
         },
         {
           "id": "world:champ:46b061bd9e12e7fc7bf7",
-          "name": "Jack Harrowwick",
+          "name": "Edward FANSHAWE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 30,
@@ -41022,7 +41022,7 @@
         },
         {
           "id": "world:champ:885568758e0884d78fdb",
-          "name": "Joel Oxshore",
+          "name": "Gary GODDARD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 31,
@@ -41111,7 +41111,7 @@
         },
         {
           "id": "world:champ:bab600c1cfa25482753f",
-          "name": "Marcus Heathley",
+          "name": "Tomas LOONEY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -41200,7 +41200,7 @@
         },
         {
           "id": "world:champ:db6bfb8df683a617fe52",
-          "name": "Harvey Stoneton",
+          "name": "Robert INGLEBY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -41289,7 +41289,7 @@
         },
         {
           "id": "world:champ:da3489f70a08adda64f8",
-          "name": "Rory Whitness",
+          "name": "Jack WOOTTON",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -41378,7 +41378,7 @@
         },
         {
           "id": "world:champ:1305acfb7c02e4737f8f",
-          "name": "Francis Hillness",
+          "name": "Aled JEREMIAH",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 29,
@@ -41467,7 +41467,7 @@
         },
         {
           "id": "world:champ:7694236a715743ce184f",
-          "name": "Will Sladecliff",
+          "name": "Mark IRELAND",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 19,
@@ -41556,7 +41556,7 @@
         },
         {
           "id": "world:champ:4f5c39f3654a0fc46174",
-          "name": "Tom Fordholm",
+          "name": "Louis HANCOCK",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 24,
@@ -41645,7 +41645,7 @@
         },
         {
           "id": "world:champ:8a85384a918856e22037",
-          "name": "Hamish Rowness",
+          "name": "Nicholas TUNSTALL",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -41734,7 +41734,7 @@
         },
         {
           "id": "world:champ:9c86d5971c97d6666d1d",
-          "name": "Adam Wildward",
+          "name": "Stuart BAMFORD",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 19,
@@ -41823,7 +41823,7 @@
         },
         {
           "id": "world:champ:fc623907a736111df8a2",
-          "name": "Joel Valeholm",
+          "name": "Kai NUTTALL",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -41912,7 +41912,7 @@
         },
         {
           "id": "world:champ:ff96c6fe404b86ad233d",
-          "name": "Milo Clarkemill",
+          "name": "Bobby PARKIN",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -42001,7 +42001,7 @@
         },
         {
           "id": "world:champ:f8ded3e53121aa71cf5d",
-          "name": "Andre Southwick",
+          "name": "Beau SMART",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -42090,7 +42090,7 @@
         },
         {
           "id": "world:champ:84112417d8c640b1d610",
-          "name": "Brandon Millford",
+          "name": "Andy ENTWISTLE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -42179,7 +42179,7 @@
         },
         {
           "id": "world:champ:026b19eec5fd9f8244f3",
-          "name": "Seth Frostlock",
+          "name": "Jacob BICKLEY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -42268,7 +42268,7 @@
         },
         {
           "id": "world:champ:14c012c31932c42be038",
-          "name": "Gabriel Rainmore",
+          "name": "Ross KEARNEY",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -42357,7 +42357,7 @@
         },
         {
           "id": "world:champ:6dd77c004350d072326f",
-          "name": "Tyler Whitcliff",
+          "name": "Linden TATE",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -42446,7 +42446,7 @@
         },
         {
           "id": "world:champ:3b959b19a3b07c7362b9",
-          "name": "Ezra Oxcliff",
+          "name": "Dean FIELD",
           "pos": "Ailier",
           "fam": 6,
           "age": 30,
@@ -42535,7 +42535,7 @@
         },
         {
           "id": "world:champ:b2ef2622dfbc31508373",
-          "name": "Evan Bentvale",
+          "name": "Ashley SHEPPARD",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 29,
@@ -42624,7 +42624,7 @@
         },
         {
           "id": "world:champ:7590ec439a5d5425b622",
-          "name": "Tyler Glenberry",
+          "name": "Monty CLAYTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 19,
@@ -42713,7 +42713,7 @@
         },
         {
           "id": "world:champ:deb37c3d610614be22f4",
-          "name": "Rowan Harwood",
+          "name": "Gavin NETHERTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -42802,7 +42802,7 @@
         },
         {
           "id": "world:champ:3d0c771a188d029b30b9",
-          "name": "Hugo Nashstead",
+          "name": "Craig LIGHTFOOT",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 28,
@@ -42891,7 +42891,7 @@
         },
         {
           "id": "world:champ:2e5d179e96f9a6a2b1f6",
-          "name": "Harvey Blythelea",
+          "name": "Noah DARLINGTON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 30,
@@ -42980,7 +42980,7 @@
         },
         {
           "id": "world:champ:36b1659242d56aec02c4",
-          "name": "Simon Valehaven",
+          "name": "Reuben BROMLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 26,
@@ -43069,7 +43069,7 @@
         },
         {
           "id": "world:champ:2764a929526753e136e0",
-          "name": "Sonny Millwater",
+          "name": "Rupert VANCE",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -43158,7 +43158,7 @@
         },
         {
           "id": "world:champ:d8076ec185d8b4c67aea",
-          "name": "Harvey Millward",
+          "name": "Torquil TURNBULL",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -43247,7 +43247,7 @@
         },
         {
           "id": "world:champ:13c2e676669a086935ff",
-          "name": "Gareth Ashfield",
+          "name": "Ted MOORHOUSE",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -43336,7 +43336,7 @@
         },
         {
           "id": "world:champ:2d2af1c53c268eaab9b1",
-          "name": "Anton Kayland",
+          "name": "Ewan PURVES",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -43425,7 +43425,7 @@
         },
         {
           "id": "world:champ:edb97755bbd852f6161e",
-          "name": "Nathan Trentbrook",
+          "name": "Finlay MACNEIL",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 27,
@@ -43514,7 +43514,7 @@
         },
         {
           "id": "world:champ:03663c21bf318d69c276",
-          "name": "Ben Pacewell",
+          "name": "Fraser BUSH",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -43603,7 +43603,7 @@
         },
         {
           "id": "world:champ:6112429e65e05b2e46ec",
-          "name": "Gabriel Oxby",
+          "name": "Graham YARWOOD",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 29,
@@ -43692,7 +43692,7 @@
         },
         {
           "id": "world:champ:17d6f36c6f7516034c2d",
-          "name": "Archie Hartmore",
+          "name": "Connor WEAVER",
           "pos": "Arrière",
           "fam": 8,
           "age": 28,
@@ -43781,7 +43781,7 @@
         },
         {
           "id": "world:champ:4db89c8431aca3c04411",
-          "name": "Ethan Heathwell",
+          "name": "Christopher THACKERAY",
           "pos": "Centre",
           "fam": 7,
           "age": 19,
@@ -43870,7 +43870,7 @@
         },
         {
           "id": "world:champ:ebce784b0e7739c33536",
-          "name": "Ezra Hallby",
+          "name": "Elia AFAMASAGA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -43959,7 +43959,7 @@
         },
         {
           "id": "world:champ:b276c34ea9d1f64fbc7f",
-          "name": "Freddie Lindland",
+          "name": "Samuel GILL",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -44048,7 +44048,7 @@
         },
         {
           "id": "world:champ:4bfcac34c7a11ba33e08",
-          "name": "Harvey Porterwick",
+          "name": "Jacob WALMSLEY",
           "pos": "Arrière",
           "fam": 8,
           "age": 25,
@@ -44137,7 +44137,7 @@
         },
         {
           "id": "world:champ:b059e2a85b443cdc503f",
-          "name": "Sonny Glenridge",
+          "name": "Stan ALLCOCK",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -44226,7 +44226,7 @@
         },
         {
           "id": "world:champ:1877fdbf984d5df5ee8a",
-          "name": "Finley Greyburn",
+          "name": "Tristan JAGGER",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 19,
@@ -44336,7 +44336,7 @@
       "players": [
         {
           "id": "world:champ:304b58053cef21cade5d",
-          "name": "Hugo Ridgecliff",
+          "name": "Niko FUATAI",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 19,
@@ -44425,7 +44425,7 @@
         },
         {
           "id": "world:champ:6450f474a45a4219216e",
-          "name": "Declan Carrgate",
+          "name": "Semisi FONOKALAFI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -44514,7 +44514,7 @@
         },
         {
           "id": "world:champ:594a6ba0f4f9146b8f28",
-          "name": "Sonny Portergrove",
+          "name": "Beau WORTHINGTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -44603,7 +44603,7 @@
         },
         {
           "id": "world:champ:36b6b84d62312b0b0b14",
-          "name": "Brett Hartthorne",
+          "name": "Bryn GATENBY",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -44692,7 +44692,7 @@
         },
         {
           "id": "world:champ:7c4cb1afdbe097afabf1",
-          "name": "Arthur Oakby",
+          "name": "Albie MIDDLETON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -44781,7 +44781,7 @@
         },
         {
           "id": "world:champ:bb9f91f6943020c97137",
-          "name": "Hugo Hilldell",
+          "name": "Ivan DEARDEN",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -44870,7 +44870,7 @@
         },
         {
           "id": "world:champ:78bce446b511647c3e6e",
-          "name": "Dylan Oxburn",
+          "name": "Riley SCHOFIELD",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 30,
@@ -44959,7 +44959,7 @@
         },
         {
           "id": "world:champ:748fc51f76b231edcd9e",
-          "name": "Toby Rainvale",
+          "name": "Mark PARKIN",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 23,
@@ -45048,7 +45048,7 @@
         },
         {
           "id": "world:champ:699476b0baaad15f812d",
-          "name": "George Sladeworth",
+          "name": "Finn DENTON",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 19,
@@ -45137,7 +45137,7 @@
         },
         {
           "id": "world:champ:a3aa1612af51e02feb16",
-          "name": "Alastair Strandburn",
+          "name": "Pita VAKE",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -45226,7 +45226,7 @@
         },
         {
           "id": "world:champ:12d2f5fb3d2be47cbab1",
-          "name": "Taylor Hartridge",
+          "name": "Terence CAMERON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 20,
@@ -45315,7 +45315,7 @@
         },
         {
           "id": "world:champ:8186b65e11003c0a16b3",
-          "name": "Aidan Woodstone",
+          "name": "Angus ALDERTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -45404,7 +45404,7 @@
         },
         {
           "id": "world:champ:168561b90f79e783ab26",
-          "name": "Carl Pacefield",
+          "name": "Sam HACKETT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -45493,7 +45493,7 @@
         },
         {
           "id": "world:champ:46b48dfa3e7cfbc776fd",
-          "name": "Daniel Newlea",
+          "name": "Tommy LESTER",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -45582,7 +45582,7 @@
         },
         {
           "id": "world:champ:95de537208338f2c05a9",
-          "name": "Ralph Blackmoor",
+          "name": "Jonathan BOOTHROYD",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -45671,7 +45671,7 @@
         },
         {
           "id": "world:champ:4ed5c6d47bd88b168b2c",
-          "name": "Archie Beckfield",
+          "name": "Aaron SHEPHERD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -45760,7 +45760,7 @@
         },
         {
           "id": "world:champ:3bfb4267fc91120a833b",
-          "name": "Sonny Valelock",
+          "name": "Wade PICKLES",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -45849,7 +45849,7 @@
         },
         {
           "id": "world:champ:0cd9234c6e508b888f75",
-          "name": "Ethan Lindhaven",
+          "name": "Ross WELCH",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -45938,7 +45938,7 @@
         },
         {
           "id": "world:champ:997669e1307adc38abf3",
-          "name": "Jamie Eastness",
+          "name": "Dafydd HOWARD",
           "pos": "Arrière",
           "fam": 8,
           "age": 22,
@@ -46027,7 +46027,7 @@
         },
         {
           "id": "world:champ:b97004e8dfe113583fe7",
-          "name": "Isaac Goldbridge",
+          "name": "Piers ROBERTSON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -46116,7 +46116,7 @@
         },
         {
           "id": "world:champ:45d2a229f03cf00a9bcc",
-          "name": "Brett Stonewick",
+          "name": "Rupert MURGATROYD",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -46205,7 +46205,7 @@
         },
         {
           "id": "world:champ:b59c26725437e4fccb53",
-          "name": "Tyler Wildford",
+          "name": "Jacob RAVENSCROFT",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -46294,7 +46294,7 @@
         },
         {
           "id": "world:champ:d33973fc111878672f70",
-          "name": "Lewis Wardholm",
+          "name": "Cecil DUNSTAN",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -46383,7 +46383,7 @@
         },
         {
           "id": "world:champ:2643bfb5245f6fe7b0ca",
-          "name": "Ryan Parkfield",
+          "name": "Ieuan HINCHCLIFFE",
           "pos": "Arrière",
           "fam": 8,
           "age": 25,
@@ -46472,7 +46472,7 @@
         },
         {
           "id": "world:champ:7ccafbd61007778f59a8",
-          "name": "Rowan Yorkford",
+          "name": "Scott MELLOR",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -46561,7 +46561,7 @@
         },
         {
           "id": "world:champ:b68151d0a426e0df1401",
-          "name": "Alfie Wildhaven",
+          "name": "Arwel GETHIN",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -46650,7 +46650,7 @@
         },
         {
           "id": "world:champ:88207dc96a6071c6c992",
-          "name": "Jacob Valecroft",
+          "name": "Ben SHORT",
           "pos": "Centre",
           "fam": 7,
           "age": 25,
@@ -46739,7 +46739,7 @@
         },
         {
           "id": "world:champ:986425ad407793956a14",
-          "name": "Anton Blythewick",
+          "name": "Gwyn HARRIES",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -46828,7 +46828,7 @@
         },
         {
           "id": "world:champ:61d93321b146364a83d0",
-          "name": "Alfie Thornbrook",
+          "name": "Angus COTTERILL",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 28,
@@ -46917,7 +46917,7 @@
         },
         {
           "id": "world:champ:0b236376897667061898",
-          "name": "George Farland",
+          "name": "Eddie BOSTOCK",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -47006,7 +47006,7 @@
         },
         {
           "id": "world:champ:22d233a700362fa3ac2c",
-          "name": "Tom Lindvale",
+          "name": "Viliamu SAMUELU",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -47095,7 +47095,7 @@
         },
         {
           "id": "world:champ:16c2d3f88072ad6c2e09",
-          "name": "David Deanworth",
+          "name": "Inoke FUNAKI",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 19,
@@ -47184,7 +47184,7 @@
         },
         {
           "id": "world:champ:548506793b7054d7a63a",
-          "name": "Marcus Hallvale",
+          "name": "Daniel BENTLEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -47273,7 +47273,7 @@
         },
         {
           "id": "world:champ:ec84386b5e4a701abdb6",
-          "name": "Gareth Fordlock",
+          "name": "Carl DARLINGTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -47362,7 +47362,7 @@
         },
         {
           "id": "world:champ:d8ef5b84ebc5587ad849",
-          "name": "Jason Hillwood",
+          "name": "Tim SAGAR",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -47451,7 +47451,7 @@
         },
         {
           "id": "world:champ:1c0cee6baf56543bd9ff",
-          "name": "Peter Eastham",
+          "name": "Frank FAIRHURST",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -47540,7 +47540,7 @@
         },
         {
           "id": "world:champ:5c6da2367a3b9868d390",
-          "name": "Toby Porterden",
+          "name": "Oliver SUTCLIFFE",
           "pos": "Centre",
           "fam": 7,
           "age": 19,
@@ -47629,7 +47629,7 @@
         },
         {
           "id": "world:champ:5685f3117a5a4c7232ec",
-          "name": "Jack Bellgrove",
+          "name": "Eddie YEOMANS",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -47718,7 +47718,7 @@
         },
         {
           "id": "world:champ:9de57eb139284fb9cb0b",
-          "name": "Liam Silverton",
+          "name": "Rory LOCKHART",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -47807,7 +47807,7 @@
         },
         {
           "id": "world:champ:5011f6454b976b15cd9f",
-          "name": "Marcus Hillcliff",
+          "name": "Andrew SPARKS",
           "pos": "Centre",
           "fam": 7,
           "age": 18,
@@ -47896,7 +47896,7 @@
         },
         {
           "id": "world:champ:15542601a660aa230a9b",
-          "name": "Rhys Fielddale",
+          "name": "Will CASTLE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 30,
@@ -47985,7 +47985,7 @@
         },
         {
           "id": "world:champ:5116cdc2c9f5444d5d63",
-          "name": "Harry Northwater",
+          "name": "Samiu FONUA",
           "pos": "Ailier",
           "fam": 6,
           "age": 30,
@@ -48074,7 +48074,7 @@
         },
         {
           "id": "world:champ:bc7fc1c657aa2b5e8ee9",
-          "name": "Blake Ryestone",
+          "name": "Samisoni MAHE",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 31,
@@ -48163,7 +48163,7 @@
         },
         {
           "id": "world:champ:4ef8470976bee94d2540",
-          "name": "Reuben Hartland",
+          "name": "Cian STAPLETON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 28,
@@ -48252,7 +48252,7 @@
         },
         {
           "id": "world:champ:3e726d9ae88136c33233",
-          "name": "Theo Halebank",
+          "name": "Murray CALDER",
           "pos": "Arrière",
           "fam": 8,
           "age": 21,
@@ -48341,7 +48341,7 @@
         },
         {
           "id": "world:champ:6c34cb58ac0d3b483501",
-          "name": "Caspar Blythewater",
+          "name": "Declan INGLEBY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 25,
@@ -48430,7 +48430,7 @@
         },
         {
           "id": "world:champ:3b667967557e0ad8d904",
-          "name": "Rowan Whitfield",
+          "name": "Hugo LEACH",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -48519,7 +48519,7 @@
         },
         {
           "id": "world:champ:190d440d88b3676c7fab",
-          "name": "Brandon Carmoor",
+          "name": "Kyle UNSWORTH",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 21,
@@ -48608,7 +48608,7 @@
         },
         {
           "id": "world:champ:77ba93bd4a2884318fd9",
-          "name": "Ellis Galewater",
+          "name": "Peter BILTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -48697,7 +48697,7 @@
         },
         {
           "id": "world:champ:b70f0e8e29dd2142c6c1",
-          "name": "Andre Claycliff",
+          "name": "Rory STAINTON",
           "pos": "Centre",
           "fam": 7,
           "age": 20,
@@ -48786,7 +48786,7 @@
         },
         {
           "id": "world:champ:761f5c52169775ea2b12",
-          "name": "Hugo Clarkebrook",
+          "name": "Jonathan PRESCOTT",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 20,
@@ -48875,7 +48875,7 @@
         },
         {
           "id": "world:champ:fa8a66fdfa0fe72cf614",
-          "name": "Ethan Valewood",
+          "name": "Liam KENDALL",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -48964,7 +48964,7 @@
         },
         {
           "id": "world:champ:15bf6fa28f34d2c062fd",
-          "name": "Marcus Pencliff",
+          "name": "Alex WATERS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 30,
@@ -49053,7 +49053,7 @@
         },
         {
           "id": "world:champ:e1e9f9d1cc803678d8ac",
-          "name": "Ellis Southgate",
+          "name": "Gavin AYLWARD",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -49142,7 +49142,7 @@
         },
         {
           "id": "world:champ:05557c03c17987976ddc",
-          "name": "Rhys Copecliff",
+          "name": "Curtis CROSS",
           "pos": "Centre",
           "fam": 7,
           "age": 29,
@@ -49252,7 +49252,7 @@
       "players": [
         {
           "id": "world:champ:50f88951074eafdbfcfc",
-          "name": "Alfie Ashburn",
+          "name": "Marcus SEDGWICK",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -49341,7 +49341,7 @@
         },
         {
           "id": "world:champ:45c70ee6bc7e627c327b",
-          "name": "Ralph Deanden",
+          "name": "Dean STAFFORD",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -49430,7 +49430,7 @@
         },
         {
           "id": "world:champ:9b15ef19091e570f2e53",
-          "name": "Rory Hillworth",
+          "name": "Kane DAVEY",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 31,
@@ -49519,7 +49519,7 @@
         },
         {
           "id": "world:champ:f8def46c79a4e1fcf5b9",
-          "name": "Thomas Merehill",
+          "name": "Brandon DEARDEN",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -49608,7 +49608,7 @@
         },
         {
           "id": "world:champ:553ad1dee62858c16cd8",
-          "name": "Max Watermill",
+          "name": "Ivan BARWICK",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 29,
@@ -49697,7 +49697,7 @@
         },
         {
           "id": "world:champ:2b8aa3e76151b5292d4f",
-          "name": "Daniel Blytheton",
+          "name": "Dafydd BOND",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 22,
@@ -49786,7 +49786,7 @@
         },
         {
           "id": "world:champ:5e1e993a911f540fbb52",
-          "name": "Alfie Southham",
+          "name": "Huw BAYNHAM",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -49875,7 +49875,7 @@
         },
         {
           "id": "world:champ:b1c1e057dbc61c21e9e2",
-          "name": "Blake Porterward",
+          "name": "David TOMLINSON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -49964,7 +49964,7 @@
         },
         {
           "id": "world:champ:2597d13861dda1e3eb79",
-          "name": "Peter Deanwell",
+          "name": "Siale HALAPIO",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -50053,7 +50053,7 @@
         },
         {
           "id": "world:champ:3e5f084e1cdf94d46138",
-          "name": "Will Strandpark",
+          "name": "Beau MILES",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 34,
@@ -50142,7 +50142,7 @@
         },
         {
           "id": "world:champ:3db0a8a403ac6197d09a",
-          "name": "Ezra Silverlea",
+          "name": "Ryan BIRCH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -50231,7 +50231,7 @@
         },
         {
           "id": "world:champ:fe4ecda73665c55cf29f",
-          "name": "Nathan Ryewick",
+          "name": "Stephen DALTON",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 29,
@@ -50320,7 +50320,7 @@
         },
         {
           "id": "world:champ:042085b052a910a31996",
-          "name": "Kieran Bentgrove",
+          "name": "Darcy WEBSTER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -50409,7 +50409,7 @@
         },
         {
           "id": "world:champ:2528ddd89a3491117a0c",
-          "name": "Cameron Wildton",
+          "name": "William MONK",
           "pos": "Ailier",
           "fam": 6,
           "age": 20,
@@ -50498,7 +50498,7 @@
         },
         {
           "id": "world:champ:707403a633b0630cd3e3",
-          "name": "Milo Wardbridge",
+          "name": "Leon COTTERILL",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -50587,7 +50587,7 @@
         },
         {
           "id": "world:champ:878b3533a7ee3e96acbf",
-          "name": "Ralph Bainmore",
+          "name": "Finn DRURY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 25,
@@ -50676,7 +50676,7 @@
         },
         {
           "id": "world:champ:c4d1136dc732d938ae2f",
-          "name": "Lewis Oxbank",
+          "name": "Jack MIDDLETON",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -50765,7 +50765,7 @@
         },
         {
           "id": "world:champ:ee2104e2d5204d6fefc3",
-          "name": "Jordan Hillley",
+          "name": "Jonathan MARLOW",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 34,
@@ -50854,7 +50854,7 @@
         },
         {
           "id": "world:champ:2547cb58cda6f913b000",
-          "name": "Ralph Eastham",
+          "name": "Manasa CAUCAU",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -50943,7 +50943,7 @@
         },
         {
           "id": "world:champ:d9b2dd3f95dccfa86068",
-          "name": "Callum Fenside",
+          "name": "Ellis CROMPTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -51032,7 +51032,7 @@
         },
         {
           "id": "world:champ:4f612e990098fbd4c5da",
-          "name": "Alfie Irvburn",
+          "name": "Dave BOWERS",
           "pos": "Ailier",
           "fam": 6,
           "age": 34,
@@ -51121,7 +51121,7 @@
         },
         {
           "id": "world:champ:d4bb333a97e3cf8a6411",
-          "name": "Dylan Deanridge",
+          "name": "Aidan HARGREAVES",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -51210,7 +51210,7 @@
         },
         {
           "id": "world:champ:ec68307c0ad96a1b6f13",
-          "name": "Ryan Oakwick",
+          "name": "Joel APPLEGATE",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 23,
@@ -51299,7 +51299,7 @@
         },
         {
           "id": "world:champ:7ab2505e687b309606ee",
-          "name": "Morgan Clayvale",
+          "name": "Maika IKANIVERE",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 27,
@@ -51388,7 +51388,7 @@
         },
         {
           "id": "world:champ:15e2db7570b8132cd18c",
-          "name": "Ellis Wildwick",
+          "name": "Albie BUTCHER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 36,
@@ -51477,7 +51477,7 @@
         },
         {
           "id": "world:champ:d1c144bba4211db8f8a8",
-          "name": "Aidan Ridgestone",
+          "name": "Lachlan SADLER",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 18,
@@ -51566,7 +51566,7 @@
         },
         {
           "id": "world:champ:73b66a652e97219c0bd2",
-          "name": "Adam Silverstone",
+          "name": "Lawrence ASHTON",
           "pos": "Arrière",
           "fam": 8,
           "age": 28,
@@ -51655,7 +51655,7 @@
         },
         {
           "id": "world:champ:63210191ad2be334c98e",
-          "name": "Kieran Lakefield",
+          "name": "Tom CHARLTON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 34,
@@ -51744,7 +51744,7 @@
         },
         {
           "id": "world:champ:4e987e972121f6445e69",
-          "name": "Bailey Harshore",
+          "name": "Morgan CRADDOCK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 19,
@@ -51833,7 +51833,7 @@
         },
         {
           "id": "world:champ:05855a2b75e15ef09fb1",
-          "name": "Ralph Blackcliff",
+          "name": "Dean KAY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -51922,7 +51922,7 @@
         },
         {
           "id": "world:champ:7aabaddb2cca69696834",
-          "name": "Miles Stranddell",
+          "name": "Rupert SWIFT",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -52011,7 +52011,7 @@
         },
         {
           "id": "world:champ:b125259325982fc3c052",
-          "name": "Ellis Rowberry",
+          "name": "Benjamin BAMFORD",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -52100,7 +52100,7 @@
         },
         {
           "id": "world:champ:6839035764fceb64c417",
-          "name": "Alfie Holtford",
+          "name": "Tommy NUTTALL",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -52189,7 +52189,7 @@
         },
         {
           "id": "world:champ:51c1a240502a1dcc9fcb",
-          "name": "Elliot Newmore",
+          "name": "Gus BLACKMORE",
           "pos": "Centre",
           "fam": 7,
           "age": 35,
@@ -52278,7 +52278,7 @@
         },
         {
           "id": "world:champ:c62aa7268c174f5f2fa4",
-          "name": "Isaac Oakden",
+          "name": "Hamish COPLEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 32,
@@ -52367,7 +52367,7 @@
         },
         {
           "id": "world:champ:e717c9db5c72c76ecc60",
-          "name": "Charlie Kendale",
+          "name": "Maurice PARKER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -52456,7 +52456,7 @@
         },
         {
           "id": "world:champ:d3470f2c6e5a17a5fcf9",
-          "name": "George Ashstone",
+          "name": "Fotu FANGUPO",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 37,
@@ -52545,7 +52545,7 @@
         },
         {
           "id": "world:champ:89ac879300010d3e018d",
-          "name": "Aidan Goldmere",
+          "name": "Cai UNSWORTH",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -52634,7 +52634,7 @@
         },
         {
           "id": "world:champ:e6d5be4c4f37ea324efb",
-          "name": "Liam Clarkehaven",
+          "name": "Christopher SHEPPARD",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -52723,7 +52723,7 @@
         },
         {
           "id": "world:champ:6bdfd53c6ec027b18d45",
-          "name": "Simon Pikeridge",
+          "name": "Josh WHITWORTH",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 26,
@@ -52812,7 +52812,7 @@
         },
         {
           "id": "world:champ:76e2968ec0c7430c7620",
-          "name": "Joel Heathgate",
+          "name": "Frank IBBOTSON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -52901,7 +52901,7 @@
         },
         {
           "id": "world:champ:9918273e039ab3fecdc7",
-          "name": "Brett Irvlea",
+          "name": "Rory HAMILTON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -52990,7 +52990,7 @@
         },
         {
           "id": "world:champ:a16f0c1bac2c0900ad34",
-          "name": "Rowan Flintlea",
+          "name": "Gabriel AMBROSE",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -53079,7 +53079,7 @@
         },
         {
           "id": "world:champ:c3163d404c34e5f61a44",
-          "name": "Toby Claystone",
+          "name": "Joseph CALVERT",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -53168,7 +53168,7 @@
         },
         {
           "id": "world:champ:9b6efcf0bfda596a4b5b",
-          "name": "Connor Trentbridge",
+          "name": "Niall DEMPSEY",
           "pos": "Arrière",
           "fam": 8,
           "age": 30,
@@ -53257,7 +53257,7 @@
         },
         {
           "id": "world:champ:b72388bb677a0bdf5ef8",
-          "name": "Morgan Dalewell",
+          "name": "Fakaosi VAIPULU",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,

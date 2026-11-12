@@ -9,7 +9,7 @@
         {
           "id": "staff:0:a735d395295ae565",
           "clubId": 0,
-          "name": "Clémend Poitrenaut",
+          "name": "Jannie Rossouw",
           "role": "Entraîneur des arrières",
           "sourceSeason": null,
           "sourceDate": "2026-02-27",
@@ -20,7 +20,7 @@
         {
           "id": "staff:0:add043fefd2b5b6a",
           "clubId": 0,
-          "name": "Ugu Mole",
+          "name": "Clément Durieux",
           "role": "Manager - Entraîneur",
           "sourceSeason": "2025/26",
           "sourceDate": null,
@@ -31,7 +31,7 @@
         {
           "id": "staff:0:c617eecbe4fa05f8",
           "clubId": 0,
-          "name": "Jeam Bouilhoa",
+          "name": "Michel Prigent",
           "role": "Entraîneur des avants",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-09-11",
@@ -42,7 +42,7 @@
         {
           "id": "staff:0:ef097d786cdf1681",
           "clubId": 0,
-          "name": "Laurend Thueri",
+          "name": "Damien Vialatte",
           "role": "Entraîneur de la défense",
           "sourceSeason": null,
           "sourceDate": "2026-09-18",
@@ -58,7 +58,7 @@
         {
           "id": "staff:1:035e6638a41ac064",
           "clubId": 1,
-          "name": "Nordina FATTANO",
+          "name": "Patrice Santoni",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -69,7 +69,7 @@
         {
           "id": "staff:1:0507180361066d63",
           "clubId": 1,
-          "name": "Loïs ARNOUN",
+          "name": "Thomas Ferrand",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -80,7 +80,7 @@
         {
           "id": "staff:1:17b9725efb5b1a6d",
           "clubId": 1,
-          "name": "Vincend DUBOM-LABORDA",
+          "name": "Giacomo Carbone",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -91,7 +91,7 @@
         {
           "id": "staff:1:1f1c6af0f5dd4376",
           "clubId": 1,
-          "name": "Auréliem COLOGNO",
+          "name": "Archie Walker",
           "role": "Entraîneur de La Défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -102,7 +102,7 @@
         {
           "id": "staff:1:22fb4e8c77e7575e",
           "clubId": 1,
-          "name": "Evam THOMPSOM",
+          "name": "Pascal Sirven",
           "role": "Analyste de la performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -113,7 +113,7 @@
         {
           "id": "staff:1:3462bd150abf3787",
           "clubId": 1,
-          "name": "Heino ADAMZ",
+          "name": "Pascal Vasseur",
           "role": "Entraîneur des skills",
           "sourceSeason": null,
           "sourceDate": null,
@@ -124,7 +124,7 @@
         {
           "id": "staff:1:3cdf429fa38bbe8d",
           "clubId": 1,
-          "name": "PERRI WATSOM",
+          "name": "Philippe Prévost",
           "role": "ANALYSTE VIDÉO",
           "sourceSeason": null,
           "sourceDate": null,
@@ -135,7 +135,7 @@
         {
           "id": "staff:1:4d7cf95bc2c2bf87",
           "clubId": 1,
-          "name": "Yannicc BRA",
+          "name": "Patrice Irigoyen",
           "role": "Manager",
           "sourceSeason": null,
           "sourceDate": null,
@@ -146,7 +146,7 @@
         {
           "id": "staff:1:64ff818899db6b42",
           "clubId": 1,
-          "name": "Amauri LANGELLE",
+          "name": "Gilles Guibert",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -157,7 +157,7 @@
         {
           "id": "staff:1:69e99c56b2aa39c8",
           "clubId": 1,
-          "name": "Bertrant FABRA",
+          "name": "Alain Nicolle",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -168,7 +168,7 @@
         {
           "id": "staff:1:6f164817068a4754",
           "clubId": 1,
-          "name": "Juliem BAREZ",
+          "name": "Didier Buisson",
           "role": "Analyste vidéo et data",
           "sourceSeason": null,
           "sourceDate": null,
@@ -179,7 +179,7 @@
         {
           "id": "staff:1:74fc027199c7f199",
           "clubId": 1,
-          "name": "Mana ESPIASSA",
+          "name": "Philippe Lagrange",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -190,7 +190,7 @@
         {
           "id": "staff:1:80388c8a7c4fd0ee",
           "clubId": 1,
-          "name": "Bertrant DEDIEA",
+          "name": "Clément Le Meur",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -201,7 +201,7 @@
         {
           "id": "staff:1:9968aaab376dbf17",
           "clubId": 1,
-          "name": "Jeam-Baptista POUS",
+          "name": "Cédric Fradin",
           "role": "Entraîneur de la mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -212,7 +212,7 @@
         {
           "id": "staff:1:9adae53a27f89c74",
           "clubId": 1,
-          "name": "Ludovis LOUSTAA",
+          "name": "Maxime Duchemin",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -223,7 +223,7 @@
         {
           "id": "staff:1:9b70db265bc680df",
           "clubId": 1,
-          "name": "Shaum SOWERBI",
+          "name": "Anthony Burel",
           "role": "Entraineur des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -234,7 +234,7 @@
         {
           "id": "staff:1:9bf2409228ba145f",
           "clubId": 1,
-          "name": "Cyrin GOMEZ",
+          "name": "Cristian Benedetti",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -245,7 +245,7 @@
         {
           "id": "staff:1:9d37bbb747aeb31f",
           "clubId": 1,
-          "name": "Noen MCNAMARE",
+          "name": "Trent Sutton",
           "role": "Entraîneur de l'attaque",
           "sourceSeason": null,
           "sourceDate": null,
@@ -256,7 +256,7 @@
         {
           "id": "staff:1:b6bc79a766f1e593",
           "clubId": 1,
-          "name": "Victol AZALBERD",
+          "name": "Jean-François Beaufils",
           "role": "Sport Scientist",
           "sourceSeason": null,
           "sourceDate": null,
@@ -267,7 +267,7 @@
         {
           "id": "staff:1:e292aae744740bd1",
           "clubId": 1,
-          "name": "Jacquez PIROM",
+          "name": "Philippe Aguerre",
           "role": "Vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -278,7 +278,7 @@
         {
           "id": "staff:1:ebc9c61640a35512",
           "clubId": 1,
-          "name": "Damiem TOURDIAZ",
+          "name": "Stefan Strydom",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -289,7 +289,7 @@
         {
           "id": "staff:1:efe02e78c41431cc",
           "clubId": 1,
-          "name": "Arnaut DROUOD",
+          "name": "Franck Jourdan",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -305,7 +305,7 @@
         {
           "id": "staff:2:0fa73da3056664a4",
           "clubId": 2,
-          "name": "Francc VICTOL",
+          "name": "Fabien Grandjean",
           "role": "Médecin, traumatologie",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -316,7 +316,7 @@
         {
           "id": "staff:2:2a366d48cca8add6",
           "clubId": 2,
-          "name": "Rémo TALÈZ",
+          "name": "Laurent Casanova",
           "role": "Entraîneur des trois-quarts",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -327,7 +327,7 @@
         {
           "id": "staff:2:2f2c1c7ca38c170c",
           "clubId": 2,
-          "name": "Uino ATONIU",
+          "name": "Eben Strydom",
           "role": "Mêlée",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -338,7 +338,7 @@
         {
           "id": "staff:2:3720ec6cf8a6ec02",
           "clubId": 2,
-          "name": "Sébastiem BOBOUN",
+          "name": "Régis Puig",
           "role": "Responsable de l'attaque",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -349,7 +349,7 @@
         {
           "id": "staff:2:3a51008d39697cc3",
           "clubId": 2,
-          "name": "Ludovis HUMETS",
+          "name": "Angus Bailey",
           "role": "Responsable Médical",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -360,7 +360,7 @@
         {
           "id": "staff:2:3fd2353ce96065fe",
           "clubId": 2,
-          "name": "Lus RAZAFITSALAME",
+          "name": "Jean-François Chatelain",
           "role": "Data analyst",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -371,7 +371,7 @@
         {
           "id": "staff:2:42680517d940ac2f",
           "clubId": 2,
-          "name": "Ludovis GIRART",
+          "name": "Fabien Trouche",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -382,7 +382,7 @@
         {
           "id": "staff:2:4e1fa45931f5dd40",
           "clubId": 2,
-          "name": "Thierri LÉVÈQUA",
+          "name": "Damien Bayle",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -393,7 +393,7 @@
         {
           "id": "staff:2:4e449e2079e9a108",
           "clubId": 2,
-          "name": "Seam DOUGALN",
+          "name": "Mateo Romero",
           "role": "Intervenant spécifique, attitudes au contact",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -404,7 +404,7 @@
         {
           "id": "staff:2:4fc3bd7ad8b7f372",
           "clubId": 2,
-          "name": "Evam COURTIEZ",
+          "name": "Xavier Gillet",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -415,7 +415,7 @@
         {
           "id": "staff:2:57e68a1ab8bb7c3c",
           "clubId": 2,
-          "name": "Valentim CHALEROUS",
+          "name": "Elliot Hart",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -426,7 +426,7 @@
         {
           "id": "staff:2:6533a3578cae59a9",
           "clubId": 2,
-          "name": "Thibaut HUGUENI",
+          "name": "Vincent Calmels",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -437,7 +437,7 @@
         {
           "id": "staff:2:813f3b1241c63f34",
           "clubId": 2,
-          "name": "Florend AGOUNINA",
+          "name": "Philippe Kieffer",
           "role": "Analyste Vidéo et Analyse Performance",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -448,7 +448,7 @@
         {
           "id": "staff:2:8d8a062201173780",
           "clubId": 2,
-          "name": "Matthiea LEROI",
+          "name": "Anthony Dos Santos",
           "role": "Analyste Vidéo et Statistiques",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -459,7 +459,7 @@
         {
           "id": "staff:2:92dc9181a196136e",
           "clubId": 2,
-          "name": "Bastiem HILLAIRA",
+          "name": "Jean-Philippe Cousin",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -470,7 +470,7 @@
         {
           "id": "staff:2:9a55e977a63a7af2",
           "clubId": 2,
-          "name": "Adriem VACHOM",
+          "name": "Ludovic Bocquet",
           "role": "Responsable de la Préparation Physique",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -481,7 +481,7 @@
         {
           "id": "staff:2:a30ff05cf12532b2",
           "clubId": 2,
-          "name": "Jeam-Baptista PAQUED",
+          "name": "Elia Negri",
           "role": "Responsable de la performance",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -492,7 +492,7 @@
         {
           "id": "staff:2:b421179cd384f46f",
           "clubId": 2,
-          "name": "Thomaz BATAILLA",
+          "name": "Antoine Rault",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -503,7 +503,7 @@
         {
           "id": "staff:2:b55a60ade29cc97c",
           "clubId": 2,
-          "name": "Pierra GUÉRIM",
+          "name": "Bruno Duteil",
           "role": "Médecin écho graph",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -514,7 +514,7 @@
         {
           "id": "staff:2:d4673d3cf920b36a",
           "clubId": 2,
-          "name": "Jeam BEAUSSAND",
+          "name": "Bruno Thibault",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -525,7 +525,7 @@
         {
           "id": "staff:2:d8534dc9103df702",
           "clubId": 2,
-          "name": "Ronam U'GARE",
+          "name": "Cédric Bonnafous",
           "role": "Manager de l'équipe première",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -536,7 +536,7 @@
         {
           "id": "staff:2:dfebaeed21242503",
           "clubId": 2,
-          "name": "Dominiqua MERLANDA",
+          "name": "Richard Poisson",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -547,7 +547,7 @@
         {
           "id": "staff:2:eb93dd0d023befab",
           "clubId": 2,
-          "name": "Lyliam BARTHUEN",
+          "name": "Diarmuid Lynch",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -558,7 +558,7 @@
         {
           "id": "staff:2:edfe72e9579d9961",
           "clubId": 2,
-          "name": "Donnache RYAM",
+          "name": "Sébastien Arnould",
           "role": "Entraîneur des avants",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -569,7 +569,7 @@
         {
           "id": "staff:2:fc961524f4897419",
           "clubId": 2,
-          "name": "Quentim DELOL",
+          "name": "Alain Vila",
           "role": "Assistant analyste vidéo",
           "sourceSeason": null,
           "sourceDate": "2025-10-29T14:17:41+01:00",
@@ -585,7 +585,7 @@
         {
           "id": "staff:3:1649129d75662223",
           "clubId": 3,
-          "name": "Francc AZÉME",
+          "name": "Nicolas Michaud",
           "role": "Entraineur principal",
           "sourceSeason": "2025-2026",
           "sourceDate": "2026-09-03T08:21:41+00:00",
@@ -596,7 +596,7 @@
         {
           "id": "staff:3:4c473ed3675884ff",
           "clubId": 3,
-          "name": "Ales CODLINK",
+          "name": "Benoît Cadiou",
           "role": "Entraineur des avants",
           "sourceSeason": "2025-2026",
           "sourceDate": "2026-09-03T08:21:41+00:00",
@@ -607,7 +607,7 @@
         {
           "id": "staff:3:bfb64d13ffc58c80",
           "clubId": 3,
-          "name": "Maxima PETITJEAM",
+          "name": "Divan Odendaal",
           "role": "Responsable de la stratégie du jeu au pied",
           "sourceSeason": "2025-2026",
           "sourceDate": "2026-09-03T08:21:41+00:00",
@@ -618,7 +618,7 @@
         {
           "id": "staff:3:e6a619c235e8ffd5",
           "clubId": 3,
-          "name": "Richia GRAI",
+          "name": "Alexandre Maire",
           "role": "Consultant \"attitude aux contacts\"",
           "sourceSeason": "2025-2026",
           "sourceDate": "2026-09-03T08:21:41+00:00",
@@ -634,7 +634,7 @@
         {
           "id": "staff:4:029d717aceed2b50",
           "clubId": 4,
-          "name": "Ophélia BELLU-JUNTA",
+          "name": "Estelle Richard",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -645,7 +645,7 @@
         {
           "id": "staff:4:0b71b79f45097b0f",
           "clubId": 4,
-          "name": "Etienna LABAD",
+          "name": "Thomas Mercier",
           "role": "Intervenant Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -656,7 +656,7 @@
         {
           "id": "staff:4:1e47f882df5f4204",
           "clubId": 4,
-          "name": "Philippa POUGED",
+          "name": "Frédéric Legrand",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -667,7 +667,7 @@
         {
           "id": "staff:4:24c0f5b9fa58becc",
           "clubId": 4,
-          "name": "Adriem SAVOYA",
+          "name": "Jean-François Leca",
           "role": "Data Analyst",
           "sourceSeason": null,
           "sourceDate": null,
@@ -678,7 +678,7 @@
         {
           "id": "staff:4:2d34323ae3372a7b",
           "clubId": 4,
-          "name": "Antoina RINALDO",
+          "name": "Philippe Courtois",
           "role": "kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -689,7 +689,7 @@
         {
           "id": "staff:4:30062964babb5d2b",
           "clubId": 4,
-          "name": "Alexandra CORREART",
+          "name": "Josh Dempsey",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -700,7 +700,7 @@
         {
           "id": "staff:4:31f7603a8a8ca2f8",
           "clubId": 4,
-          "name": "Juliem SARRAUTA",
+          "name": "Damien Picard",
           "role": "Entraîneur - ÉQUIPE PRO",
           "sourceSeason": null,
           "sourceDate": null,
@@ -711,7 +711,7 @@
         {
           "id": "staff:4:34224db0a749580c",
           "clubId": 4,
-          "name": "Maxima VOGLEL",
+          "name": "Olivier Le Bihan",
           "role": "Analyste rugby",
           "sourceSeason": null,
           "sourceDate": null,
@@ -722,7 +722,7 @@
         {
           "id": "staff:4:3db80014535277bc",
           "clubId": 4,
-          "name": "Juliem BODEAA",
+          "name": "Jamie Chapman",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -733,7 +733,7 @@
         {
           "id": "staff:4:50f4621763758b3a",
           "clubId": 4,
-          "name": "Brias POUYA",
+          "name": "Alain Geoffroy",
           "role": "Responsable analyse rugby - Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -744,7 +744,7 @@
         {
           "id": "staff:4:53315ca3571fcc43",
           "clubId": 4,
-          "name": "Geoffrei LANNA-PETID",
+          "name": "Maxime Heitz",
           "role": "Entraîneur - RESPONSABLE DÉVELOPPEMENT INDIVIDUEL",
           "sourceSeason": null,
           "sourceDate": null,
@@ -755,7 +755,7 @@
         {
           "id": "staff:4:552246695607b472",
           "clubId": 4,
-          "name": "Sébastiem PIQUERONIEZ",
+          "name": "Alain Le Tallec",
           "role": "Manager - Directeur sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -766,7 +766,7 @@
         {
           "id": "staff:4:75f72bbb4b6d3192",
           "clubId": 4,
-          "name": "Thomaz CHOVEAA",
+          "name": "Arnaud Wagner",
           "role": "Entraîneur - ÉQUIPE PRO",
           "sourceSeason": null,
           "sourceDate": null,
@@ -777,7 +777,7 @@
         {
           "id": "staff:4:7ab7ba467bc3d194",
           "clubId": 4,
-          "name": "Romaim BOURDION",
+          "name": "Cédric Marquès",
           "role": "Responsable de la performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -788,7 +788,7 @@
         {
           "id": "staff:4:8cd95de74f0d0986",
           "clubId": 4,
-          "name": "Jérôma GARCÈZ",
+          "name": "Nicolas Blot",
           "role": "CONSULTANT ARBITRAGE",
           "sourceSeason": null,
           "sourceDate": null,
@@ -799,7 +799,7 @@
         {
           "id": "staff:4:8fe01f051727b09d",
           "clubId": 4,
-          "name": "Saran BREDOM",
+          "name": "Stéphanie Béraud",
           "role": "Intervenante nutrition",
           "sourceSeason": null,
           "sourceDate": null,
@@ -810,7 +810,7 @@
         {
           "id": "staff:4:a60d4d4e03a46677",
           "clubId": 4,
-          "name": "Brandom FAJARDU",
+          "name": "Florent Peyre",
           "role": "Directeur sportif adjoint",
           "sourceSeason": null,
           "sourceDate": null,
@@ -821,7 +821,7 @@
         {
           "id": "staff:4:ad8aabda77ba2b84",
           "clubId": 4,
-          "name": "Geoffrei DUPEYRA",
+          "name": "Emmanuel Soler",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -832,7 +832,7 @@
         {
           "id": "staff:4:ae90f722045c925d",
           "clubId": 4,
-          "name": "Camilla MAHIEA",
+          "name": "Bernard Gallet",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -843,7 +843,7 @@
         {
           "id": "staff:4:b2acb19817472be9",
           "clubId": 4,
-          "name": "Antoina NICOUT",
+          "name": "Arnaud Wolff",
           "role": "Entraîneur - ÉQUIPE PRO",
           "sourceSeason": null,
           "sourceDate": null,
@@ -854,7 +854,7 @@
         {
           "id": "staff:4:c83cd1101de23054",
           "clubId": 4,
-          "name": "Carloz MUZZIU",
+          "name": "Olivier Mallet",
           "role": "Entraîneur - responsable mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -865,7 +865,7 @@
         {
           "id": "staff:4:ccbe5fd8bf796ae1",
           "clubId": 4,
-          "name": "Mathiea VINEGRE",
+          "name": "Patrice Zimmermann",
           "role": "Ostéopathe - Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -876,7 +876,7 @@
         {
           "id": "staff:4:d73b58a03fdc5276",
           "clubId": 4,
-          "name": "Rémo CERVANTEZ",
+          "name": "Julien Gasc",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -887,7 +887,7 @@
         {
           "id": "staff:4:e0c0fc4e427d2492",
           "clubId": 4,
-          "name": "Geoffrei COTTEREAA",
+          "name": "Philippe Bécu",
           "role": "Préparateur physique et Responsable Data",
           "sourceSeason": null,
           "sourceDate": null,
@@ -898,7 +898,7 @@
         {
           "id": "staff:4:e45df563e27f145f",
           "clubId": 4,
-          "name": "Alizéa SAIND-MARTIM",
+          "name": "Sébastien Gandon",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -909,7 +909,7 @@
         {
           "id": "staff:4:e88ecf20c399033b",
           "clubId": 4,
-          "name": "Antoina HENRO",
+          "name": "Christophe Lacroix",
           "role": "Médecin coordonnateur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -925,7 +925,7 @@
         {
           "id": "staff:5:049b181f77b6ed2c",
           "clubId": 5,
-          "name": "Arnaut Baratchard",
+          "name": "Florent Marini",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -936,7 +936,7 @@
         {
           "id": "staff:5:1ce5db4b7376d18f",
           "clubId": 5,
-          "name": "Vincend Guenim",
+          "name": "Jean-Philippe Puech",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -947,7 +947,7 @@
         {
           "id": "staff:5:1d33e0ac437cd3b0",
           "clubId": 5,
-          "name": "Benjamim Arquiel",
+          "name": "Florent Le Bihan",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -958,7 +958,7 @@
         {
           "id": "staff:5:24afbea5674e56e0",
           "clubId": 5,
-          "name": "Thibaut Grassinous",
+          "name": "Yannick Faure",
           "role": "Analyste vidéo",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -969,7 +969,7 @@
         {
           "id": "staff:5:3c1332ca7044d2d2",
           "clubId": 5,
-          "name": "Nicolaz Champrez",
+          "name": "Damien Mangin",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -980,7 +980,7 @@
         {
           "id": "staff:5:479ebaf584c3432a",
           "clubId": 5,
-          "name": "Géralt Romanzim",
+          "name": "Jandre van Zyl",
           "role": "Data scientist",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -991,7 +991,7 @@
         {
           "id": "staff:5:4b9d3224b8512d9b",
           "clubId": 5,
-          "name": "Thibauld Girout",
+          "name": "Philippe Coll",
           "role": "Responsable de la performance",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1002,7 +1002,7 @@
         {
           "id": "staff:5:5262a5323b4442b2",
           "clubId": 5,
-          "name": "Ludovis Gailled",
+          "name": "Jean-Marc Michel",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1013,7 +1013,7 @@
         {
           "id": "staff:5:6146889a07603c0a",
           "clubId": 5,
-          "name": "Gerart Frasel",
+          "name": "Antoine Lavigne",
           "role": "Manager General",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1024,7 +1024,7 @@
         {
           "id": "staff:5:6443859550b00b0a",
           "clubId": 5,
-          "name": "Thibauld Martim",
+          "name": "Sébastien Lesage",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1035,7 +1035,7 @@
         {
           "id": "staff:5:68459576830e6a95",
           "clubId": 5,
-          "name": "Laurend Traverz",
+          "name": "Éric Vila",
           "role": "Directeur du rugby",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1046,7 +1046,7 @@
         {
           "id": "staff:5:716e0eec5c000573",
           "clubId": 5,
-          "name": "Jeam Monribod",
+          "name": "Thomas Le Gall",
           "role": "Entraîneur de la touche",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1057,7 +1057,7 @@
         {
           "id": "staff:5:8482cabea3f91eb6",
           "clubId": 5,
-          "name": "Camilla Lopes",
+          "name": "Arnaud Ménard",
           "role": "Entraineur des arrières",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1068,7 +1068,7 @@
         {
           "id": "staff:5:b0be3f05f1bc0665",
           "clubId": 5,
-          "name": "Clauda Labanèra",
+          "name": "Sébastien Leray",
           "role": "Médecin",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1079,7 +1079,7 @@
         {
           "id": "staff:5:bbc56a45ed9aa0f4",
           "clubId": 5,
-          "name": "Nicc Abendanom",
+          "name": "Bruno Vallet",
           "role": "Entraineur de la défense",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1090,7 +1090,7 @@
         {
           "id": "staff:5:cc805a98e6cb2c24",
           "clubId": 5,
-          "name": "Andrée Moretto",
+          "name": "Franck Lartigue",
           "role": "Entraineur des avants",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1101,7 +1101,7 @@
         {
           "id": "staff:5:d5f3f53df469d69b",
           "clubId": 5,
-          "name": "Antoina Kneblewsko",
+          "name": "Adrien Bonnefoy",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1112,7 +1112,7 @@
         {
           "id": "staff:5:e944f9502a898432",
           "clubId": 5,
-          "name": "Xam Gelez",
+          "name": "Serge Bouvet",
           "role": "Analyste vidéo",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1123,7 +1123,7 @@
         {
           "id": "staff:5:f434d4c9d1160e5b",
           "clubId": 5,
-          "name": "Virgin Merlim",
+          "name": "Alexandre Marin",
           "role": "Data scientist",
           "sourceSeason": "2026-2027",
           "sourceDate": null,
@@ -1139,7 +1139,7 @@
         {
           "id": "staff:6:0ba7cbfbb5ec631e",
           "clubId": 6,
-          "name": "Benoid Gai",
+          "name": "Gilles Capdevielle",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1150,7 +1150,7 @@
         {
           "id": "staff:6:0d78ee0fad721c9b",
           "clubId": 6,
-          "name": "Françoiz GELES",
+          "name": "Éric Carrère",
           "role": "Entraîneur jeu au pied",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1161,7 +1161,7 @@
         {
           "id": "staff:6:2132b085bcd40deb",
           "clubId": 6,
-          "name": "Théophila BARRIERA",
+          "name": "Jérôme Boudet",
           "role": "GPS - Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1172,7 +1172,7 @@
         {
           "id": "staff:6:4ea3ae6d3b1c7024",
           "clubId": 6,
-          "name": "Christopha URIOZ",
+          "name": "Jean-Philippe Hamelin",
           "role": "Entraineur principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1183,7 +1183,7 @@
         {
           "id": "staff:6:54a00d66627cbe3c",
           "clubId": 6,
-          "name": "Francc VUILBERD",
+          "name": "Stéphane Thiébaut",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1194,7 +1194,7 @@
         {
           "id": "staff:6:5bcb2a4cf4676ffc",
           "clubId": 6,
-          "name": "Thomaz LAUDA",
+          "name": "Xavier Robineau",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1205,7 +1205,7 @@
         {
           "id": "staff:6:5f167c112a87608f",
           "clubId": 6,
-          "name": "Antoina LEOPOLT",
+          "name": "Olivier Jouan",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1216,7 +1216,7 @@
         {
           "id": "staff:6:6ab8ac8fcf5176d5",
           "clubId": 6,
-          "name": "Alexandra CASTOLE",
+          "name": "Darcy Tucker",
           "role": "Entraîneur de la mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1227,7 +1227,7 @@
         {
           "id": "staff:6:724291cf6e11730b",
           "clubId": 6,
-          "name": "Koule TUKINU",
+          "name": "Anthony Pierron",
           "role": "Entraîneur Skills \"Collisions\"",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1238,7 +1238,7 @@
         {
           "id": "staff:6:87ed8c0beea121d6",
           "clubId": 6,
-          "name": "Juliem LAÏRLA",
+          "name": "Damien Lebon",
           "role": "Entraîneur des avants et de la défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1249,7 +1249,7 @@
         {
           "id": "staff:6:90b4577e181a5fd4",
           "clubId": 6,
-          "name": "Grégoira Dumond",
+          "name": "Andrés Aguirre",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1260,7 +1260,7 @@
         {
           "id": "staff:6:93e706e28323a025",
           "clubId": 6,
-          "name": "Stéphana WALRANT",
+          "name": "Adrien Coll",
           "role": "Nutritionniste Référent",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1271,7 +1271,7 @@
         {
           "id": "staff:6:97e5be8627111e30",
           "clubId": 6,
-          "name": "Mathiea RAYA",
+          "name": "Neels Uys",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1282,7 +1282,7 @@
         {
           "id": "staff:6:a84c2f786e28d4e6",
           "clubId": 6,
-          "name": "Salin AOUICHA",
+          "name": "Olivier Alleaume",
           "role": "Préparation Physique et Réathlétisation",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1293,7 +1293,7 @@
         {
           "id": "staff:6:ab20c2d9e7c4f893",
           "clubId": 6,
-          "name": "Mourat ABET",
+          "name": "Riaan Labuschagne",
           "role": "Responsable de la Préparation Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1304,7 +1304,7 @@
         {
           "id": "staff:6:c7473af195e71cf7",
           "clubId": 6,
-          "name": "Anthoni COMPTOUL",
+          "name": "Frédéric Dupuis",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1315,7 +1315,7 @@
         {
           "id": "staff:6:d1f0c4cd7da0972e",
           "clubId": 6,
-          "name": "Joa Larkim",
+          "name": "Jean-Philippe Esnault",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1326,7 +1326,7 @@
         {
           "id": "staff:6:e3a620641567b420",
           "clubId": 6,
-          "name": "Frédéris CHARRIEL",
+          "name": "Mathieu Aubin",
           "role": "Entraîneur des 3/4 et de l'attaque",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1337,7 +1337,7 @@
         {
           "id": "staff:6:e7201cc63fa59a48",
           "clubId": 6,
-          "name": "Anga-Françoiz COSTELLE",
+          "name": "Thierry Gineste",
           "role": "Responsable de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1353,7 +1353,7 @@
         {
           "id": "staff:7:1db28ee8aa850bae",
           "clubId": 7,
-          "name": "Nicolaz PORTIEL",
+          "name": "Gilles Romain",
           "role": "Pôle Analyse de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1364,7 +1364,7 @@
         {
           "id": "staff:7:1e43bec1a2b74df9",
           "clubId": 7,
-          "name": "Lionen BEAUXIZ",
+          "name": "Agustín Ortiz",
           "role": "Entraîneurs / Consultants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1375,7 +1375,7 @@
         {
           "id": "staff:7:202257c9f133f39a",
           "clubId": 7,
-          "name": "Sylvaim VAURAS",
+          "name": "Vincent Hamon",
           "role": "Pôle Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1386,7 +1386,7 @@
         {
           "id": "staff:7:2d9d593360080a41",
           "clubId": 7,
-          "name": "Ton MATHEVED",
+          "name": "Jean-Luc Arnould",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1397,7 +1397,7 @@
         {
           "id": "staff:7:4098376c2bf99e7e",
           "clubId": 7,
-          "name": "Pierra SAGOD",
+          "name": "Ramiro Toledo",
           "role": "Pôle Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1408,7 +1408,7 @@
         {
           "id": "staff:7:49514a188ab7bc13",
           "clubId": 7,
-          "name": "Clémend TASTED",
+          "name": "Adrien Kieffer",
           "role": "Pôle Analyse de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1419,7 +1419,7 @@
         {
           "id": "staff:7:5cba203c7bc84427",
           "clubId": 7,
-          "name": "Baptista BOUQUED",
+          "name": "Clément Lemaître",
           "role": "Pôle Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1430,7 +1430,7 @@
         {
           "id": "staff:7:5e36a13c121c1450",
           "clubId": 7,
-          "name": "Jeam-Philippa HAGEL",
+          "name": "Pierre Santoni",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1441,7 +1441,7 @@
         {
           "id": "staff:7:709c05bffd9ebd7e",
           "clubId": 7,
-          "name": "Juliem PURICELLO",
+          "name": "Damien Lesueur",
           "role": "Entraîneurs / Consultants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1452,7 +1452,7 @@
         {
           "id": "staff:7:7312d47404c969d7",
           "clubId": 7,
-          "name": "Emmanuen MAIGNIEM",
+          "name": "Gideon Oosthuizen",
           "role": "Entraîneurs / Consultants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1463,7 +1463,7 @@
         {
           "id": "staff:7:7a4f1665b5c5e16d",
           "clubId": 7,
-          "name": "Karin GHEZAN",
+          "name": "Fabrice Houdin",
           "role": "Entraîneur principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1474,7 +1474,7 @@
         {
           "id": "staff:7:887c8360480bbda7",
           "clubId": 7,
-          "name": "Romaim LOURSAS",
+          "name": "Jean-Luc Delrieu",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1485,7 +1485,7 @@
         {
           "id": "staff:7:8c1db82594397b19",
           "clubId": 7,
-          "name": "Alexandra GUÉRIM",
+          "name": "Benoît Leclère",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1496,7 +1496,7 @@
         {
           "id": "staff:7:a65e548503ff0449",
           "clubId": 7,
-          "name": "Juliem DELOIRA",
+          "name": "Alexandre Moreau",
           "role": "Pôle Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1507,7 +1507,7 @@
         {
           "id": "staff:7:ac132e65c31d246b",
           "clubId": 7,
-          "name": "Guillauma JEGOA",
+          "name": "Grégory Baillet",
           "role": "Pôle Analyse de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1518,7 +1518,7 @@
         {
           "id": "staff:7:ad9c6c21473c4c07",
           "clubId": 7,
-          "name": "Sébastiem PINOM",
+          "name": "Jérôme Besnard",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1529,7 +1529,7 @@
         {
           "id": "staff:7:b7f910db1465d56a",
           "clubId": 7,
-          "name": "Alexandra DALOS",
+          "name": "Jérôme Bourgoin",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1540,7 +1540,7 @@
         {
           "id": "staff:7:be2e232bf495744d",
           "clubId": 7,
-          "name": "AP ZONDAGN",
+          "name": "Richard Reynaud",
           "role": "Entraîneurs / Consultants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1551,7 +1551,7 @@
         {
           "id": "staff:7:c59b4c0ac61374dc",
           "clubId": 7,
-          "name": "Georga SMITN",
+          "name": "Maxime Guyot",
           "role": "Entraîneurs / Consultants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1562,7 +1562,7 @@
         {
           "id": "staff:7:f526d16ae92841f4",
           "clubId": 7,
-          "name": "Pierra COTELLA",
+          "name": "David Bouvet",
           "role": "Pôle Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1573,7 +1573,7 @@
         {
           "id": "staff:7:f9911ef92fb81b2f",
           "clubId": 7,
-          "name": "Antoina DA BEAUCHESNA",
+          "name": "Florent Auger",
           "role": "Pôle Analyse de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1584,7 +1584,7 @@
         {
           "id": "staff:7:fbd7692f10724587",
           "clubId": 7,
-          "name": "Robim DELAITRA",
+          "name": "Marc Font",
           "role": "Pôle Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1595,7 +1595,7 @@
         {
           "id": "staff:7:fc32d21255dc0882",
           "clubId": 7,
-          "name": "Maxenca DESGARCEAUS",
+          "name": "Emmanuel Lamy",
           "role": "Pôle Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1611,7 +1611,7 @@
         {
           "id": "staff:8:06b1e51d69ea37bb",
           "clubId": 8,
-          "name": "Sébastiem Nietu",
+          "name": "Denis Baron",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1622,7 +1622,7 @@
         {
           "id": "staff:8:16de8cb9aa1d9c02",
           "clubId": 8,
-          "name": "Jessa Mogk",
+          "name": "Mathieu Trémoulet",
           "role": "Responsable Graines de Cistes – Entraîneur adjoint",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1633,7 +1633,7 @@
         {
           "id": "staff:8:1ec2c65f34f4965b",
           "clubId": 8,
-          "name": "Geoffrei Doumayroa",
+          "name": "Emmanuel Thébault",
           "role": "Entraîneur spécifique – Défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1644,7 +1644,7 @@
         {
           "id": "staff:8:26a4423c703de34a",
           "clubId": 8,
-          "name": "Fabiem Simom",
+          "name": "Sébastien Perrot",
           "role": "Responsable kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1655,7 +1655,7 @@
         {
           "id": "staff:8:316605bab830fabe",
           "clubId": 8,
-          "name": "Jeremi NUGEYRA",
+          "name": "Hervé Picard",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1666,7 +1666,7 @@
         {
           "id": "staff:8:48cb78d24a40c3da",
           "clubId": 8,
-          "name": "Bensom Stanlei",
+          "name": "Declan Kinsella",
           "role": "Entraîneur spécifique – Rucks et Attitudes au contact",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1677,7 +1677,7 @@
         {
           "id": "staff:8:57257b0f3d9179ef",
           "clubId": 8,
-          "name": "Joam Caudullu",
+          "name": "Gilles Froment",
           "role": "Entraîneur principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1688,7 +1688,7 @@
         {
           "id": "staff:8:5b70f3a02a5e287a",
           "clubId": 8,
-          "name": "Gaëlla Mignod",
+          "name": "Sophie Le Borgne",
           "role": "Responsable capsule Graine de Cistes – Entraîneur adjoint rucks et attitudes au contact",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1699,7 +1699,7 @@
         {
           "id": "staff:8:5eb2001b8b21c09e",
           "clubId": 8,
-          "name": "Jacquez Giordam",
+          "name": "Alain Veyrat",
           "role": "Coordinateur médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1710,7 +1710,7 @@
         {
           "id": "staff:8:601a49e6b4b74efd",
           "clubId": 8,
-          "name": "Oliviel Barbel",
+          "name": "Mateo Roldán",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1721,7 +1721,7 @@
         {
           "id": "staff:8:66189480d9dec4e3",
           "clubId": 8,
-          "name": "Pierricc BRAZ",
+          "name": "Sylvain Avril",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1732,7 +1732,7 @@
         {
           "id": "staff:8:67972a19bf6f2b3d",
           "clubId": 8,
-          "name": "Maxenca Ruffenacn",
+          "name": "Serge Vacher",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1743,7 +1743,7 @@
         {
           "id": "staff:8:7aeca1d323df7a48",
           "clubId": 8,
-          "name": "Didiel Bez",
+          "name": "Marius Cronje",
           "role": "Entraîneur spécifique – Mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1754,7 +1754,7 @@
         {
           "id": "staff:8:80b7c00e3818774f",
           "clubId": 8,
-          "name": "Sébastiem Roussen",
+          "name": "Sylvain Briand",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1765,7 +1765,7 @@
         {
           "id": "staff:8:8f9feb7aac1ce54b",
           "clubId": 8,
-          "name": "Benjamim Den Moran",
+          "name": "Michel Bouvier",
           "role": "Responsable Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1776,7 +1776,7 @@
         {
           "id": "staff:8:b1c159f5d7a6dcd3",
           "clubId": 8,
-          "name": "Héli Casarim",
+          "name": "David Lopes",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1787,7 +1787,7 @@
         {
           "id": "staff:8:b5bb2c6908844e5d",
           "clubId": 8,
-          "name": "Guillauma Soun",
+          "name": "Bruno Samson",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1798,7 +1798,7 @@
         {
           "id": "staff:8:b8b2fd514dab5c00",
           "clubId": 8,
-          "name": "Antoina Battud",
+          "name": "Fabien Berger",
           "role": "Entraîneur spécifique – Touche et du jeu d’avant",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1809,7 +1809,7 @@
         {
           "id": "staff:8:ccf138a40dfe68c5",
           "clubId": 8,
-          "name": "Guillen Julie",
+          "name": "Florent Sauvage",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1820,7 +1820,7 @@
         {
           "id": "staff:8:d2303115e4910c98",
           "clubId": 8,
-          "name": "Jeremi VALLZ",
+          "name": "Oisin Maguire",
           "role": "Consultant skills et jeu au pied",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1831,7 +1831,7 @@
         {
           "id": "staff:8:d4a8f4188815c558",
           "clubId": 8,
-          "name": "Benoid Paillaugua",
+          "name": "Rémi Collin",
           "role": "Entraîneur spécifique – Phases offensives",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1842,7 +1842,7 @@
         {
           "id": "staff:8:dffc7c1847a46a88",
           "clubId": 8,
-          "name": "Bernart Laporta",
+          "name": "Sylvain Régnier",
           "role": "Directeur du rugby",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1853,7 +1853,7 @@
         {
           "id": "staff:8:eb642638cfcf3771",
           "clubId": 8,
-          "name": "Robim Panissed",
+          "name": "Sylvain Lebas",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1864,7 +1864,7 @@
         {
           "id": "staff:8:f7acab7e3100174c",
           "clubId": 8,
-          "name": "Patricc Chassaink",
+          "name": "Lionel Arnal",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1880,7 +1880,7 @@
         {
           "id": "staff:9:144688f4dd2785cc",
           "clubId": 9,
-          "name": "Matthiaz LACAZA",
+          "name": "Antonio Bianco",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1891,7 +1891,7 @@
         {
           "id": "staff:9:1780cf3eb8b21280",
           "clubId": 9,
-          "name": "Juliem TASTED",
+          "name": "Pierre Oger",
           "role": "Entraîneur des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1902,7 +1902,7 @@
         {
           "id": "staff:9:1d834c55a6df1302",
           "clubId": 9,
-          "name": "Xaviel SADOURNI",
+          "name": "Maxime Delannoy",
           "role": "Entraîneur principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1913,7 +1913,7 @@
         {
           "id": "staff:9:2a64535200460363",
           "clubId": 9,
-          "name": "Robim ENJALBERD",
+          "name": "Didier Keller",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1924,7 +1924,7 @@
         {
           "id": "staff:9:48bd430aaa9eca67",
           "clubId": 9,
-          "name": "Geoffrei DUFFAA",
+          "name": "Alexandre Payet",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1935,7 +1935,7 @@
         {
           "id": "staff:9:51adf8123b1a57ea",
           "clubId": 9,
-          "name": "Élisa GARNIEL",
+          "name": "Isabelle Foucher",
           "role": "Diététicienne",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1946,7 +1946,7 @@
         {
           "id": "staff:9:6756338d8e075ed5",
           "clubId": 9,
-          "name": "Anthoni CORBIERA",
+          "name": "Frédéric Rousseau",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1957,7 +1957,7 @@
         {
           "id": "staff:9:6d6a847576b360bc",
           "clubId": 9,
-          "name": "Pascan ROUANED",
+          "name": "Patrice Granier",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1968,7 +1968,7 @@
         {
           "id": "staff:9:749454686ee0a267",
           "clubId": 9,
-          "name": "Jeam-Françoiz FERRIA",
+          "name": "Serge Lecoq",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1979,7 +1979,7 @@
         {
           "id": "staff:9:8d15c3e43ebaf73c",
           "clubId": 9,
-          "name": "Pierra LASSUZ",
+          "name": "Romain Genet",
           "role": "Directeur de la performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -1990,7 +1990,7 @@
         {
           "id": "staff:9:8d4e0fdb0b0a1a01",
           "clubId": 9,
-          "name": "Jonatham SUINOD",
+          "name": "Damien Demange",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2001,7 +2001,7 @@
         {
           "id": "staff:9:91df5cfca1a64106",
           "clubId": 9,
-          "name": "San FILLON",
+          "name": "Edoardo Milani",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2012,7 +2012,7 @@
         {
           "id": "staff:9:9e03d72841a35db9",
           "clubId": 9,
-          "name": "Fabrica ESTEBANES",
+          "name": "Christophe Prost",
           "role": "Entraîneur de la défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2023,7 +2023,7 @@
         {
           "id": "staff:9:9f618ee3e404dc51",
           "clubId": 9,
-          "name": "Matthiea AXISE",
+          "name": "Fabrice Péron",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2034,7 +2034,7 @@
         {
           "id": "staff:9:ba1617cc564f95d1",
           "clubId": 9,
-          "name": "David ZIRAKASHVILO",
+          "name": "Fabrice Andrieu",
           "role": "Consultant mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2045,7 +2045,7 @@
         {
           "id": "staff:9:bbaf19fc6b60345e",
           "clubId": 9,
-          "name": "Jérémi BRUHIEL",
+          "name": "Romain Perrier",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2056,7 +2056,7 @@
         {
           "id": "staff:9:c26f08a3d83939a6",
           "clubId": 9,
-          "name": "Juliem DUMORE",
+          "name": "Benoît Meunier",
           "role": "Entraîneur des arrières",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2067,7 +2067,7 @@
         {
           "id": "staff:9:c5898f81ef296194",
           "clubId": 9,
-          "name": "Clémend BOISSOM",
+          "name": "Fabrice Labbé",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2078,7 +2078,7 @@
         {
           "id": "staff:9:d2f3046ae66c4eb0",
           "clubId": 9,
-          "name": "Lucaz LOUPIAZ",
+          "name": "Franck Philippe",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2089,7 +2089,7 @@
         {
           "id": "staff:9:f4cb4b6b5e9c6776",
           "clubId": 9,
-          "name": "Timotha MARAVAN",
+          "name": "Rémi Bordier",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2105,7 +2105,7 @@
         {
           "id": "staff:10:1046b4d7882713ef",
           "clubId": 10,
-          "name": "Oliviel Azan",
+          "name": "Hervé Weber",
           "role": "Conquête et Défense",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2116,7 +2116,7 @@
         {
           "id": "staff:10:1d4bce5bd14bd314",
           "clubId": 10,
-          "name": "Joa Rokocoku",
+          "name": "Michel Gaudin",
           "role": "Attaque",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2127,7 +2127,7 @@
         {
           "id": "staff:10:27be6dfb13160dba",
           "clubId": 10,
-          "name": "Baptista Servad",
+          "name": "Frédéric Barthe",
           "role": "Staff médical",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2138,7 +2138,7 @@
         {
           "id": "staff:10:3edd6c744f00d9b2",
           "clubId": 10,
-          "name": "Juliam Salvo",
+          "name": "Alain Renault",
           "role": "Défense",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2149,7 +2149,7 @@
         {
           "id": "staff:10:550b9c27ba29d61e",
           "clubId": 10,
-          "name": "Geoffrei Colled",
+          "name": "Patrice Peyrot",
           "role": "Staff médical",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2160,7 +2160,7 @@
         {
           "id": "staff:10:642b4b492c07fa8e",
           "clubId": 10,
-          "name": "Paun Stridgeom",
+          "name": "Jandre Rossouw",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2171,7 +2171,7 @@
         {
           "id": "staff:10:6c40e26c71ad708f",
           "clubId": 10,
-          "name": "Fabiem Mougei",
+          "name": "Jean-François Monnier",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2182,7 +2182,7 @@
         {
           "id": "staff:10:9819c7126d9b77e2",
           "clubId": 10,
-          "name": "Chloa Dusard",
+          "name": "Charlotte Marion",
           "role": "Staff médical",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2193,7 +2193,7 @@
         {
           "id": "staff:10:a6ef06bf6f85211e",
           "clubId": 10,
-          "name": "Patrica Collazu",
+          "name": "Florent Pierron",
           "role": "Manager",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2204,7 +2204,7 @@
         {
           "id": "staff:10:bd7a4fbc4c44f22e",
           "clubId": 10,
-          "name": "Damiem Venez",
+          "name": "Marc Launay",
           "role": "Analyste vidéo",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2215,7 +2215,7 @@
         {
           "id": "staff:10:cd6a82e8ef40207e",
           "clubId": 10,
-          "name": "Romaim Bucailla",
+          "name": "Bernard Boulay",
           "role": "Staff médical",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2226,7 +2226,7 @@
         {
           "id": "staff:10:d925d690c9da2b57",
           "clubId": 10,
-          "name": "Romaim Carcagnu",
+          "name": "Florent Maury",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2237,7 +2237,7 @@
         {
           "id": "staff:10:dcfb57ce939abe0f",
           "clubId": 10,
-          "name": "Sylvaim Blanchart",
+          "name": "Thierry Chatelain",
           "role": "Staff médical",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2248,7 +2248,7 @@
         {
           "id": "staff:10:dee5d81a7ee6bdbb",
           "clubId": 10,
-          "name": "Sebastianu Pero",
+          "name": "Xavier Laval",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2259,7 +2259,7 @@
         {
           "id": "staff:10:f2c1587480593b31",
           "clubId": 10,
-          "name": "Jérémi Burled-Parenden",
+          "name": "Ruben Wessels",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-10-26T13:02:16+00:00",
@@ -2275,7 +2275,7 @@
         {
           "id": "staff:11:0f0e84418fa8ff8b",
           "clubId": 11,
-          "name": "Julez Bothoren",
+          "name": "Sylvain Maréchal",
           "role": "Analyste",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2286,7 +2286,7 @@
         {
           "id": "staff:11:1c42fa3c7c3af3d3",
           "clubId": 11,
-          "name": "Elliod Rubiu",
+          "name": "Pascal Burel",
           "role": "Médecin",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2297,7 +2297,7 @@
         {
           "id": "staff:11:380128dc7a40148f",
           "clubId": 11,
-          "name": "Fret Schmitd",
+          "name": "Arno Zietsman",
           "role": "Analyste / recrutement",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2308,7 +2308,7 @@
         {
           "id": "staff:11:4a250920a6528bcb",
           "clubId": 11,
-          "name": "Rori Kockotd",
+          "name": "Nicolas Chassagne",
           "role": "Entraîneur de la défense",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2319,7 +2319,7 @@
         {
           "id": "staff:11:5e443ac49e79babf",
           "clubId": 11,
-          "name": "Paun-Maria Lallemend",
+          "name": "Mickaël Delpech",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2330,7 +2330,7 @@
         {
           "id": "staff:11:76777529955817b6",
           "clubId": 11,
-          "name": "Franciscu Gomes Kodele",
+          "name": "Michel Papin",
           "role": "Entraîneur de la mêlée",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2341,7 +2341,7 @@
         {
           "id": "staff:11:7a9ac8895d31f2cd",
           "clubId": 11,
-          "name": "Maxima Redom",
+          "name": "Tomos Fisher",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2352,7 +2352,7 @@
         {
           "id": "staff:11:8882533475868da3",
           "clubId": 11,
-          "name": "Nicolaz Fayed",
+          "name": "Sébastien Crépin",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2363,7 +2363,7 @@
         {
           "id": "staff:11:97650353ece18e95",
           "clubId": 11,
-          "name": "Dimitro Jacquod",
+          "name": "Mickaël Loiseau",
           "role": "Responsable vidéo",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2374,7 +2374,7 @@
         {
           "id": "staff:11:9fd31755607c4a73",
           "clubId": 11,
-          "name": "Françoiz Castes",
+          "name": "Florent Loubet",
           "role": "Préparateur physique / réathlétisation",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2385,7 +2385,7 @@
         {
           "id": "staff:11:a6fee84e42cb3ed5",
           "clubId": 11,
-          "name": "Paun Gustart",
+          "name": "Elia Milani",
           "role": "Entraîneur principal",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2396,7 +2396,7 @@
         {
           "id": "staff:11:b59a9cd17d9ad5c0",
           "clubId": 11,
-          "name": "Jeam-Mars Samanoz",
+          "name": "Mickaël Chéron",
           "role": "Kiné",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2407,7 +2407,7 @@
         {
           "id": "staff:11:b8b07e0e920b6239",
           "clubId": 11,
-          "name": "Hugu Dehaina",
+          "name": "Marc Quentin",
           "role": "Analyste",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2418,7 +2418,7 @@
         {
           "id": "staff:11:b9d8ae3b8d004753",
           "clubId": 11,
-          "name": "Perri Freshwatel",
+          "name": "Alexandre Blin",
           "role": "Entraîneur des avants",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2429,7 +2429,7 @@
         {
           "id": "staff:11:bd41e41ab8db11da",
           "clubId": 11,
-          "name": "Rada Basala",
+          "name": "Serge Lefèvre",
           "role": "Préparateur physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2440,7 +2440,7 @@
         {
           "id": "staff:11:d030f3b443a9e8d7",
           "clubId": 11,
-          "name": "Morgam Parre",
+          "name": "Marc Marie",
           "role": "Entraîneur de l’attaque",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2451,7 +2451,7 @@
         {
           "id": "staff:11:d0df2b14f092fdd5",
           "clubId": 11,
-          "name": "Iam Vasz",
+          "name": "Mathieu Soulé",
           "role": "Entraîneur des skills",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2462,7 +2462,7 @@
         {
           "id": "staff:11:d304f3d282849d19",
           "clubId": 11,
-          "name": "Dam Baugn",
+          "name": "Santiago Vega",
           "role": "Responsable prépa physique",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2473,7 +2473,7 @@
         {
           "id": "staff:11:dfa7573a4abb9202",
           "clubId": 11,
-          "name": "Vincend Goddeliera",
+          "name": "Benoît Mazeau",
           "role": "Sport scientist",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-08-31T15:24:48+00:00",
@@ -2489,7 +2489,7 @@
         {
           "id": "staff:12:02cb5ddb59fe41c0",
           "clubId": 12,
-          "name": "Jacquez-Louiz POTGIETEL",
+          "name": "Philippe Thomasset",
           "role": "Spécialiste du Jeu au pied",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2500,7 +2500,7 @@
         {
           "id": "staff:12:2f20a0b017872962",
           "clubId": 12,
-          "name": "Benjamim ARMANGAA",
+          "name": "Jean-Marc Grandjean",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2511,7 +2511,7 @@
         {
           "id": "staff:12:2f582aa211c588ba",
           "clubId": 12,
-          "name": "Jeremi RUIS",
+          "name": "Grégory Blondel",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2522,7 +2522,7 @@
         {
           "id": "staff:12:304ffaabcdba9597",
           "clubId": 12,
-          "name": "Nicolaz MOHL",
+          "name": "Laurent Lemarchand",
           "role": "kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2533,7 +2533,7 @@
         {
           "id": "staff:12:30e0ffb17d712a38",
           "clubId": 12,
-          "name": "Brica Puthot",
+          "name": "Jean-François Ferrari",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2544,7 +2544,7 @@
         {
           "id": "staff:12:33645beb389c1fcd",
           "clubId": 12,
-          "name": "Nicolaz Nadaa",
+          "name": "Xavier Muller",
           "role": "Entraineur de l'attaque et des trois-quarts",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2555,7 +2555,7 @@
         {
           "id": "staff:12:4256e475c43caa3a",
           "clubId": 12,
-          "name": "Guillauma OLLIVIEL",
+          "name": "Declan Payne",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2566,7 +2566,7 @@
         {
           "id": "staff:12:45e4aa27e3c17898",
           "clubId": 12,
-          "name": "Mars JULIE",
+          "name": "Nicolas Carré",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2577,7 +2577,7 @@
         {
           "id": "staff:12:4d5dfe5439ecb558",
           "clubId": 12,
-          "name": "Mathiea CIDRA",
+          "name": "Éric Lainé",
           "role": "Entraîneur principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2588,7 +2588,7 @@
         {
           "id": "staff:12:505be4b0c74885ea",
           "clubId": 12,
-          "name": "Emmanuen HERRERU",
+          "name": "Philippe Madec",
           "role": "kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2599,7 +2599,7 @@
         {
           "id": "staff:12:54a2401f5142c57e",
           "clubId": 12,
-          "name": "Arthul ALVARES",
+          "name": "Florent Fradin",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2610,7 +2610,7 @@
         {
           "id": "staff:12:6a5fcbeeef24eb61",
           "clubId": 12,
-          "name": "Georgez HERAZ",
+          "name": "Bruno Bonnefoy",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2621,7 +2621,7 @@
         {
           "id": "staff:12:73d16d6657c75ffb",
           "clubId": 12,
-          "name": "Elia BONDOUI",
+          "name": "Éric Darrieux",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2632,7 +2632,7 @@
         {
           "id": "staff:12:75ff04de796a33b1",
           "clubId": 12,
-          "name": "Laurend LABID",
+          "name": "Olivier Dewaele",
           "role": "Manager Général",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2643,7 +2643,7 @@
         {
           "id": "staff:12:9f6206dfce3c7ab7",
           "clubId": 12,
-          "name": "Nicolaz MAZ",
+          "name": "Christophe Antoine",
           "role": "Entraîneur des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2654,7 +2654,7 @@
         {
           "id": "staff:12:9fd4a7dfe49c0476",
           "clubId": 12,
-          "name": "Cedris BELLART",
+          "name": "Julien Le Moal",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2665,7 +2665,7 @@
         {
           "id": "staff:12:a4022c75ae878179",
           "clubId": 12,
-          "name": "Clémend ROCE",
+          "name": "Antoine Bossard",
           "role": "kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2676,7 +2676,7 @@
         {
           "id": "staff:12:a61334c8f06f2922",
           "clubId": 12,
-          "name": "Dominiqua SCHENCC",
+          "name": "Grégory Barbier",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2687,7 +2687,7 @@
         {
           "id": "staff:12:b9810d2bb8edb283",
           "clubId": 12,
-          "name": "Valentim Baralle",
+          "name": "Thomas Hénin",
           "role": "kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2698,7 +2698,7 @@
         {
           "id": "staff:12:de273cb772389fad",
           "clubId": 12,
-          "name": "Carloz VELE",
+          "name": "Olivier Voisin",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2709,7 +2709,7 @@
         {
           "id": "staff:12:ee0724bb5252bc12",
           "clubId": 12,
-          "name": "Nicolaz Godignom",
+          "name": "Grégory Dufresne",
           "role": "Entraineur de la défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2720,7 +2720,7 @@
         {
           "id": "staff:12:f0f3fdec04ef920e",
           "clubId": 12,
-          "name": "Brica Macn",
+          "name": "Maximiliano Soria",
           "role": "Intervenant spécifique sur le secteur de la Touche",
           "sourceSeason": "2026-2027",
           "sourceDate": "2026-07-21",
@@ -2731,7 +2731,7 @@
         {
           "id": "staff:12:fcca2089c5141099",
           "clubId": 12,
-          "name": "Isaas Gautiel",
+          "name": "Ludovic Bessière",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2747,7 +2747,7 @@
         {
           "id": "staff:13:0b25dad0d08a4019",
           "clubId": 13,
-          "name": "Victol LOPES",
+          "name": "Patrice Pierre",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2758,7 +2758,7 @@
         {
           "id": "staff:13:0c46c3b1ad571f63",
           "clubId": 13,
-          "name": "Yoanm BOULANGEL",
+          "name": "Stéphane Bayle",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2769,7 +2769,7 @@
         {
           "id": "staff:13:0c5fd230c5c987da",
           "clubId": 13,
-          "name": "Jeremi DAVIDSOM",
+          "name": "Guillaume Heitz",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2780,7 +2780,7 @@
         {
           "id": "staff:13:0d06471864684944",
           "clubId": 13,
-          "name": "Anthoni ROBERD",
+          "name": "Philippe Cuvelier",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2791,7 +2791,7 @@
         {
           "id": "staff:13:1d41910f7dae199a",
           "clubId": 13,
-          "name": "Elisabetn RIGAN",
+          "name": "Alexandre Harriague",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2802,7 +2802,7 @@
         {
           "id": "staff:13:1e2f52054597ade8",
           "clubId": 13,
-          "name": "Patrica NGASSE",
+          "name": "Antoine Delattre",
           "role": "Médecin référent",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2813,7 +2813,7 @@
         {
           "id": "staff:13:2177375219d1a6cc",
           "clubId": 13,
-          "name": "Corentim JOLI",
+          "name": "Jean-Luc Poulain",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2824,7 +2824,7 @@
         {
           "id": "staff:13:2edeca13d8d06b2c",
           "clubId": 13,
-          "name": "Jeam-Noën SPITZEL",
+          "name": "Julien Gaubert",
           "role": "Manager sportif",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2835,7 +2835,7 @@
         {
           "id": "staff:13:2f8f45335ba9fa7d",
           "clubId": 13,
-          "name": "Simom BOISBLUCHA",
+          "name": "Manuel Benítez",
           "role": "Responsable Performance",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2846,7 +2846,7 @@
         {
           "id": "staff:13:46454df46a446df2",
           "clubId": 13,
-          "name": "Aymeris CHATEIGNEL",
+          "name": "Gilles Binet",
           "role": "Analyste vidéo",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2857,7 +2857,7 @@
         {
           "id": "staff:13:6bd6927d58a1d94c",
           "clubId": 13,
-          "name": "Mikaela TUUGAHALE",
+          "name": "Jacopo Zanetti",
           "role": "Entraîneur mêlée",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2868,7 +2868,7 @@
         {
           "id": "staff:13:80ba984f54c3607a",
           "clubId": 13,
-          "name": "Kévim SANCHES",
+          "name": "Hernán Peralta",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2879,7 +2879,7 @@
         {
           "id": "staff:13:8746f55960f6a697",
           "clubId": 13,
-          "name": "Julez LA BAIN",
+          "name": "Jean-Luc Soulé",
           "role": "Entraîneur de la défense",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2890,7 +2890,7 @@
         {
           "id": "staff:13:9d253c485aeb1d3d",
           "clubId": 13,
-          "name": "Mathiea DEMI",
+          "name": "Ludovic Lassalle",
           "role": "Chargé des datas",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2901,7 +2901,7 @@
         {
           "id": "staff:13:9f62c0c2f71e1490",
           "clubId": 13,
-          "name": "Thomaz LA DIMNE",
+          "name": "Romain Chabot",
           "role": "Diététicien",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2912,7 +2912,7 @@
         {
           "id": "staff:13:beb15c3673136752",
           "clubId": 13,
-          "name": "Goulvem LA GARRES",
+          "name": "Pascal Desmoulins",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2923,7 +2923,7 @@
         {
           "id": "staff:13:e9687fad5a86a569",
           "clubId": 13,
-          "name": "Titouam RODA",
+          "name": "Serge Vaysse",
           "role": "Assistant analyste vidéo",
           "sourceSeason": null,
           "sourceDate": "2026-07-09T20:26:59+00:00",
@@ -2939,7 +2939,7 @@
         {
           "id": "staff:14:38954c79211eb2de",
           "clubId": 14,
-          "name": "Antoina GUERRERU",
+          "name": "Mathieu Leray",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2950,7 +2950,7 @@
         {
           "id": "staff:14:4bb9ba4666f608fa",
           "clubId": 14,
-          "name": "GURTHRU STEENKAMB",
+          "name": "Guillaume Lacroix",
           "role": "Entraineur Principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2961,7 +2961,7 @@
         {
           "id": "staff:14:67d86afdd53b3a12",
           "clubId": 14,
-          "name": "Laurend ARBU",
+          "name": "Nicolas Pasquier",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2972,7 +2972,7 @@
         {
           "id": "staff:14:b4f06a7082f9b74f",
           "clubId": 14,
-          "name": "Sébastiem DUMAZ",
+          "name": "Richard Papin",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2983,7 +2983,7 @@
         {
           "id": "staff:14:bb95084528607b4b",
           "clubId": 14,
-          "name": "Florend JAULIM",
+          "name": "Didier Lagrange",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -2994,7 +2994,7 @@
         {
           "id": "staff:14:e3f446e0d9b845b5",
           "clubId": 14,
-          "name": "Remi DROSZ",
+          "name": "Luke Regan",
           "role": "Médecin Référent",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3005,7 +3005,7 @@
         {
           "id": "staff:14:eca17f2b33f40ae7",
           "clubId": 14,
-          "name": "Benoid ESCANDA",
+          "name": "Denis Evrard",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3021,7 +3021,7 @@
         {
           "id": "staff:15:0c8ce0cf0eabea85",
           "clubId": 15,
-          "name": "Boriz Bouhraoue",
+          "name": "Samuele Pellegrino",
           "role": "Entraîneur en chef",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3032,7 +3032,7 @@
         {
           "id": "staff:15:11fec601e332dae6",
           "clubId": 15,
-          "name": "Joam Ascasu",
+          "name": "David Colin",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3043,7 +3043,7 @@
         {
           "id": "staff:15:13d834b38ccf8eef",
           "clubId": 15,
-          "name": "Bixenta Feuillada",
+          "name": "Donal Power",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3054,7 +3054,7 @@
         {
           "id": "staff:15:1dac49574be7950b",
           "clubId": 15,
-          "name": "Romaim Lonce",
+          "name": "Eoin Kelly",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3065,7 +3065,7 @@
         {
           "id": "staff:15:3e3450b6356e6516",
           "clubId": 15,
-          "name": "Julez Guberd",
+          "name": "Thierry Dubreuil",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3076,7 +3076,7 @@
         {
           "id": "staff:15:69eaa651af2bce62",
           "clubId": 15,
-          "name": "Rémi Bonfilz",
+          "name": "Jean-Luc Maillard",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3087,7 +3087,7 @@
         {
           "id": "staff:15:753d7c224085f1b0",
           "clubId": 15,
-          "name": "Jéroma Filitoge",
+          "name": "Jean-Marc Rault",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3098,7 +3098,7 @@
         {
           "id": "staff:15:94a691f12116d977",
           "clubId": 15,
-          "name": "Fret Ouraban",
+          "name": "Franck Payet",
           "role": "Responsable de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3109,7 +3109,7 @@
         {
           "id": "staff:15:aa6d2542ab57aad6",
           "clubId": 15,
-          "name": "Antoina Cazod",
+          "name": "Franck Normand",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3120,7 +3120,7 @@
         {
           "id": "staff:15:d6f88d3901607b1f",
           "clubId": 15,
-          "name": "Guillauma Zunzarrem",
+          "name": "Philippe Villard",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3136,7 +3136,7 @@
         {
           "id": "staff:16:0094d53219b0fc65",
           "clubId": 16,
-          "name": "Grégori PATAD",
+          "name": "Pieter Kruger",
           "role": "Manager sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3147,7 +3147,7 @@
         {
           "id": "staff:16:1970c37382f222e5",
           "clubId": 16,
-          "name": "Saït HIRECHA",
+          "name": "Régis Roy",
           "role": "Organisation défensive",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3158,7 +3158,7 @@
         {
           "id": "staff:16:24306c43197c1989",
           "clubId": 16,
-          "name": "Gari WASHINGTOM",
+          "name": "Pierre Barbier",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3169,7 +3169,7 @@
         {
           "id": "staff:16:48c4ed7f4bf12745",
           "clubId": 16,
-          "name": "Francc ROMANED",
+          "name": "Adrien Keller",
           "role": "Suivi médical et réathlétisation",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3180,7 +3180,7 @@
         {
           "id": "staff:16:58f20835d3218dfb",
           "clubId": 16,
-          "name": "Fabiem FORTASSIM",
+          "name": "Benoît Evrard",
           "role": "Animation offensive et lignes arrière",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3191,7 +3191,7 @@
         {
           "id": "staff:16:5b4964455c03cca2",
           "clubId": 16,
-          "name": "Maria MEYNART",
+          "name": "Hélène Bonnafous",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3202,7 +3202,7 @@
         {
           "id": "staff:16:627058f36388065f",
           "clubId": 16,
-          "name": "Arnaut MELE",
+          "name": "Ludovic Normand",
           "role": "Avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3213,7 +3213,7 @@
         {
           "id": "staff:16:906b27b51722aedb",
           "clubId": 16,
-          "name": "Juliem REBEYRON-BRIMEUL",
+          "name": "Patricio Suárez",
           "role": "Directeur de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3224,7 +3224,7 @@
         {
           "id": "staff:16:961a5e36b60014f4",
           "clubId": 16,
-          "name": "Antoina KLEIM",
+          "name": "Jean-Philippe Trémoulet",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3235,7 +3235,7 @@
         {
           "id": "staff:16:a4b2954a43b7477e",
           "clubId": 16,
-          "name": "Fabrica PLANADA",
+          "name": "Marc Rougier",
           "role": "Kinésithérapeute",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3246,7 +3246,7 @@
         {
           "id": "staff:16:a93848295d094a08",
           "clubId": 16,
-          "name": "Goderdzo SHVELIDZA",
+          "name": "Thomas Duval",
           "role": "Mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3257,7 +3257,7 @@
         {
           "id": "staff:16:a9f2bbeef40a77d2",
           "clubId": 16,
-          "name": "Lée DANOVARU",
+          "name": "Alice Béchet",
           "role": "Nutritionniste",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3268,7 +3268,7 @@
         {
           "id": "staff:16:ad2f0a230762f6eb",
           "clubId": 16,
-          "name": "Cédris CHADOURNA",
+          "name": "Olivier Madec",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3279,7 +3279,7 @@
         {
           "id": "staff:16:d3a36331777985da",
           "clubId": 16,
-          "name": "Jeam-Gaën GUILLU",
+          "name": "Didier Tixier",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3290,7 +3290,7 @@
         {
           "id": "staff:16:d860d6409dc06921",
           "clubId": 16,
-          "name": "Bastiem PEYRAMAURA",
+          "name": "Xavier Pierre",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3301,7 +3301,7 @@
         {
           "id": "staff:16:d8737eaf2b4df4c7",
           "clubId": 16,
-          "name": "Maxima CUBERTAFOM",
+          "name": "Florent Capdevielle",
           "role": "Dentiste",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3317,7 +3317,7 @@
         {
           "id": "staff:17:1e777b2071f57942",
           "clubId": 17,
-          "name": "Cyrin Barraa",
+          "name": "Wynand Odendaal",
           "role": "Kiné",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3328,7 +3328,7 @@
         {
           "id": "staff:17:3e14da0fe65486c0",
           "clubId": 17,
-          "name": "Gautiel everhart",
+          "name": "Didier Imbert",
           "role": "Kiné",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3339,7 +3339,7 @@
         {
           "id": "staff:17:4846d9d497e6f4a6",
           "clubId": 17,
-          "name": "Fabrica Culinad",
+          "name": "Alexandre Carpentier",
           "role": "Intervenant Skills",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3350,7 +3350,7 @@
         {
           "id": "staff:17:4900123787ee2ae4",
           "clubId": 17,
-          "name": "Philippa Averouz",
+          "name": "Laurent Lavigne",
           "role": "Kiné",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3361,7 +3361,7 @@
         {
           "id": "staff:17:624ded452312e172",
           "clubId": 17,
-          "name": "Thomaz Richaut",
+          "name": "Bernard Béraud",
           "role": "Médecin",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3372,7 +3372,7 @@
         {
           "id": "staff:17:6f98cb8c2648c3a4",
           "clubId": 17,
-          "name": "Juam Pablu Orlando",
+          "name": "Grégory Lebas",
           "role": "Intervenant Mêlée",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3383,7 +3383,7 @@
         {
           "id": "staff:17:8a0f733f9a0cc36e",
           "clubId": 17,
-          "name": "Lus Saind-Affra",
+          "name": "Serge Ménard",
           "role": "Kiné",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3394,7 +3394,7 @@
         {
           "id": "staff:17:9a69893eb5ced71b",
           "clubId": 17,
-          "name": "Floriam Nicod",
+          "name": "Thierry Maréchal",
           "role": "Entraîneur principal et en charge des arrières",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3405,7 +3405,7 @@
         {
           "id": "staff:17:b5d7fe9da766e442",
           "clubId": 17,
-          "name": "Laurend Delahaya",
+          "name": "Enrico Battaglia",
           "role": "Préparateur Physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3416,7 +3416,7 @@
         {
           "id": "staff:17:bc43e5dfe7f203cb",
           "clubId": 17,
-          "name": "Bernart Lemahiea",
+          "name": "Grégory Delaunay",
           "role": "Médecin",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3427,7 +3427,7 @@
         {
           "id": "staff:17:cbdc904bb9151ee8",
           "clubId": 17,
-          "name": "Thomaz Tabarand",
+          "name": "Julien Harriague",
           "role": "Assistant préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3438,7 +3438,7 @@
         {
           "id": "staff:17:ccdbd40d6ab9aead",
           "clubId": 17,
-          "name": "Anthoni Latinu",
+          "name": "Kobus Scholtz",
           "role": "Coordinateur médical",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3449,7 +3449,7 @@
         {
           "id": "staff:17:e144ccf3e699bdb2",
           "clubId": 17,
-          "name": "Jeam-Baptista Dambiella",
+          "name": "Adrien Lesueur",
           "role": "Intervenant Jeu au pied",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3460,7 +3460,7 @@
         {
           "id": "staff:17:ec0d2cedf729662c",
           "clubId": 17,
-          "name": "Jérémi Devilla",
+          "name": "Jake Bennett",
           "role": "Préparateur Physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3471,7 +3471,7 @@
         {
           "id": "staff:17:ed5ce1c91c4b29ef",
           "clubId": 17,
-          "name": "Laurend Berga",
+          "name": "Ewan Hart",
           "role": "Kiné",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3482,7 +3482,7 @@
         {
           "id": "staff:17:f03dcb55b1237e0b",
           "clubId": 17,
-          "name": "Yanm Kergourlai",
+          "name": "Grégory Faure",
           "role": "Directeur Sportif",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3493,7 +3493,7 @@
         {
           "id": "staff:17:fe7281ba26ebbf87",
           "clubId": 17,
-          "name": "Auréliem Becu",
+          "name": "Romain Chambon",
           "role": "Entraîneur des avants",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -3509,7 +3509,7 @@
         {
           "id": "staff:18:035be7083d83192d",
           "clubId": 18,
-          "name": "Chloa Bohart",
+          "name": "Julie Soulier",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3520,7 +3520,7 @@
         {
           "id": "staff:18:09053bd992f4077b",
           "clubId": 18,
-          "name": "Davit Irazoquo",
+          "name": "Hervé Sallaberry",
           "role": "Entraîneur des trois-quarts",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3531,7 +3531,7 @@
         {
           "id": "staff:18:4eff4e5c43fe4ef5",
           "clubId": 18,
-          "name": "Ales Hugonnart",
+          "name": "Damien Ferrand",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3542,7 +3542,7 @@
         {
           "id": "staff:18:89f59988fb2a6512",
           "clubId": 18,
-          "name": "Dania Da Beel",
+          "name": "Éric Audibert",
           "role": "Jeu au pied",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3553,7 +3553,7 @@
         {
           "id": "staff:18:a19f3cc2a4673612",
           "clubId": 18,
-          "name": "Morganm Deniz",
+          "name": "Didier Wolff",
           "role": "Préparation physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3564,7 +3564,7 @@
         {
           "id": "staff:18:a523d264e42d5429",
           "clubId": 18,
-          "name": "Romaim Guérim",
+          "name": "Mickaël Thébault",
           "role": "Directeur de la performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3575,7 +3575,7 @@
         {
           "id": "staff:18:dbd3f3aabeda0940",
           "clubId": 18,
-          "name": "Jérôma Villegaz",
+          "name": "Thomas Lagarde",
           "role": "Entraineur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3586,7 +3586,7 @@
         {
           "id": "staff:18:f5a2f3cbd549de8d",
           "clubId": 18,
-          "name": "Lionen Ringevan",
+          "name": "Thierry Alleaume",
           "role": "Entraîneur de la défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3602,7 +3602,7 @@
         {
           "id": "staff:19:0f874ab7a7a11214",
           "clubId": 19,
-          "name": "Alexandra Via",
+          "name": "Marcos Santillán",
           "role": "Responsable préparation physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3613,7 +3613,7 @@
         {
           "id": "staff:19:189dfaa7a53c7d81",
           "clubId": 19,
-          "name": "Guillauma Cazanava",
+          "name": "Marc Soler",
           "role": "Entraîneur adjoint des 3/4",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3624,7 +3624,7 @@
         {
           "id": "staff:19:19dd4368233b715f",
           "clubId": 19,
-          "name": "Barri Maddockz",
+          "name": "Ludovic Garcin",
           "role": "Entraîneur des 3/4",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3635,7 +3635,7 @@
         {
           "id": "staff:19:1bd6b8060929ef5c",
           "clubId": 19,
-          "name": "Nicolaz Raven",
+          "name": "Vincent Robineau",
           "role": "Responsable Médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3646,7 +3646,7 @@
         {
           "id": "staff:19:41a2471eceb3a00e",
           "clubId": 19,
-          "name": "Luce Tatu",
+          "name": "Sébastien Marty",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3657,7 +3657,7 @@
         {
           "id": "staff:19:6c6881edacac206a",
           "clubId": 19,
-          "name": "Emilianu Bargamscho",
+          "name": "Guillaume Lecomte",
           "role": "Entraîneur des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3668,7 +3668,7 @@
         {
           "id": "staff:19:75a79d0cb8436e5d",
           "clubId": 19,
-          "name": "Garetn Babel",
+          "name": "Jean-Philippe Pujol",
           "role": "Entraîneur principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3679,7 +3679,7 @@
         {
           "id": "staff:19:76f1fec40e6dc86e",
           "clubId": 19,
-          "name": "Jamia Cudmora",
+          "name": "Lionel Etchart",
           "role": "Entraîneur adjoint des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3690,7 +3690,7 @@
         {
           "id": "staff:19:cecaa4382144805d",
           "clubId": 19,
-          "name": "Matthev Clarkim",
+          "name": "Fabien Toussaint",
           "role": "Directeur sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3701,7 +3701,7 @@
         {
           "id": "staff:19:f19f0e6a4ba10525",
           "clubId": 19,
-          "name": "Baptista Bouqued 0525",
+          "name": "Ben Richardson",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3717,7 +3717,7 @@
         {
           "id": "staff:20:32f5b3e828880921",
           "clubId": 20,
-          "name": "Simom SCOZZAFAVA",
+          "name": "Christophe Duclos",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3728,7 +3728,7 @@
         {
           "id": "staff:20:4051a8e75aeb22c1",
           "clubId": 20,
-          "name": "Alexiz LALARMA",
+          "name": "Bruno Barthélémy",
           "role": "Entraîneur des skills",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3739,7 +3739,7 @@
         {
           "id": "staff:20:48db3c9b1ffd20e2",
           "clubId": 20,
-          "name": "Gregori MENNEROM",
+          "name": "David Rousset",
           "role": "Préparateur Physique – Responsable GPS",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3750,7 +3750,7 @@
         {
           "id": "staff:20:4fa315d45869fa3c",
           "clubId": 20,
-          "name": "Thierri PORTE",
+          "name": "Luca De Luca",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3761,7 +3761,7 @@
         {
           "id": "staff:20:7259a5c7b4db524f",
           "clubId": 20,
-          "name": "Benjamim DENGLOZ",
+          "name": "Adrien Jolivet",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3772,7 +3772,7 @@
         {
           "id": "staff:20:8895e13cace633b8",
           "clubId": 20,
-          "name": "Fabiem BESSOM",
+          "name": "Jack Fitzgerald",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3783,7 +3783,7 @@
         {
           "id": "staff:20:88a4417c352a2d9a",
           "clubId": 20,
-          "name": "Yanm MYALLONNIEL",
+          "name": "Denis Rouquette",
           "role": "Réathlétisation",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3794,7 +3794,7 @@
         {
           "id": "staff:20:92d23a21ecf8adb7",
           "clubId": 20,
-          "name": "Oliviel RAJOM",
+          "name": "Franck Vernhes",
           "role": "Médecin Référent",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3805,7 +3805,7 @@
         {
           "id": "staff:20:9c9092bde828e839",
           "clubId": 20,
-          "name": "Fabiem CIBRAI",
+          "name": "Guillaume Aubin",
           "role": "Manager sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3816,7 +3816,7 @@
         {
           "id": "staff:20:b6606d21c35da3e1",
           "clubId": 20,
-          "name": "Vincend DEBATI",
+          "name": "Rémi Jourdain",
           "role": "Entraineur de la mêlée",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3827,7 +3827,7 @@
         {
           "id": "staff:20:cfe4eb513104d756",
           "clubId": 20,
-          "name": "Morgam DEFLERZ",
+          "name": "Rémi Bonet",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3838,7 +3838,7 @@
         {
           "id": "staff:20:d2242a35a18058d3",
           "clubId": 20,
-          "name": "Marianu TAVERNE",
+          "name": "Nahuel Córdoba",
           "role": "Entraîneur des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3849,7 +3849,7 @@
         {
           "id": "staff:20:dbda4aea8aba348a",
           "clubId": 20,
-          "name": "Vincend VAREYOM",
+          "name": "Romain Georges",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3860,7 +3860,7 @@
         {
           "id": "staff:20:e110c63728cc8673",
           "clubId": 20,
-          "name": "Théu MORANT",
+          "name": "Fabrice Sabatier",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3871,7 +3871,7 @@
         {
           "id": "staff:20:f5b3fec4448395a0",
           "clubId": 20,
-          "name": "Johanm AUTHIEL",
+          "name": "Christophe Guitton",
           "role": "Entraîneur des arrières",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3887,7 +3887,7 @@
         {
           "id": "staff:21:1f693ebdcbac5359",
           "clubId": 21,
-          "name": "Patrica Halimo",
+          "name": "Alexandre Prigent",
           "role": "Responsable du secteur médical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3898,7 +3898,7 @@
         {
           "id": "staff:21:3a266785f80e73d0",
           "clubId": 21,
-          "name": "Louiz Goulled",
+          "name": "Denis Dauphin",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3909,7 +3909,7 @@
         {
           "id": "staff:21:4180e38252a12c3a",
           "clubId": 21,
-          "name": "Alexandra Marcu",
+          "name": "Emmanuel Estève",
           "role": "Responsable de la Performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3920,7 +3920,7 @@
         {
           "id": "staff:21:584d07cc8a6393f4",
           "clubId": 21,
-          "name": "Charlez-Antoina Henri",
+          "name": "Sylvain Raynal",
           "role": "Paramédical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3931,7 +3931,7 @@
         {
           "id": "staff:21:78665553fff1c155",
           "clubId": 21,
-          "name": "Nicolaz Cardod",
+          "name": "Diarmuid Fitzgerald",
           "role": "Paramédical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3942,7 +3942,7 @@
         {
           "id": "staff:21:7ad5e0b000a01d76",
           "clubId": 21,
-          "name": "Stéphana Vivinuz",
+          "name": "Éric Marion",
           "role": "Paramédical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3953,7 +3953,7 @@
         {
           "id": "staff:21:8413a5d7d95a719d",
           "clubId": 21,
-          "name": "Alica Lamberd",
+          "name": "Cécile Neveu",
           "role": "Paramédical",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3964,7 +3964,7 @@
         {
           "id": "staff:21:9b5ad46bec47ea75",
           "clubId": 21,
-          "name": "Thomaz Bardod",
+          "name": "Hendrik Cronje",
           "role": "Médecin",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3975,7 +3975,7 @@
         {
           "id": "staff:21:adce6060d1e2c1ef",
           "clubId": 21,
-          "name": "Sébastiem Fouassiel",
+          "name": "Fabien Lecoq",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3986,7 +3986,7 @@
         {
           "id": "staff:21:b367b61e4772c40e",
           "clubId": 21,
-          "name": "Juliem Dupui",
+          "name": "Jean-Marc Cochet",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -3997,7 +3997,7 @@
         {
           "id": "staff:21:bb1fbd4b2c0bc94c",
           "clubId": 21,
-          "name": "Rémi Ladauga",
+          "name": "Toby Dunn",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4008,7 +4008,7 @@
         {
           "id": "staff:21:c8073f074e11d65d",
           "clubId": 21,
-          "name": "Julez Plissom",
+          "name": "Emmanuel Marchal",
           "role": "Entraîneur",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4019,7 +4019,7 @@
         {
           "id": "staff:21:f55c1a059a20ae96",
           "clubId": 21,
-          "name": "Philippa SAIND-ANDRA",
+          "name": "Laurent Rossignol",
           "role": "Directeur Sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4035,7 +4035,7 @@
         {
           "id": "staff:22:11654f608a519b07",
           "clubId": 22,
-          "name": "BOSCN Gillez",
+          "name": "Jean-Luc Armand",
           "role": "Entraîneur 3/4",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4046,7 +4046,7 @@
         {
           "id": "staff:22:3dadd9c32d7efca0",
           "clubId": 22,
-          "name": "ROCHIEL Jordam",
+          "name": "Charlie Henderson",
           "role": "Entraîneur spécifique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4057,7 +4057,7 @@
         {
           "id": "staff:22:43888e89f591c2f6",
           "clubId": 22,
-          "name": "DELMAZ Jacquez",
+          "name": "Anthony Leclercq",
           "role": "Manager sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4068,7 +4068,7 @@
         {
           "id": "staff:22:7fd9ac37185ebf15",
           "clubId": 22,
-          "name": "BARRIERA Cédris",
+          "name": "Nahuel Prieto",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4079,7 +4079,7 @@
         {
           "id": "staff:22:a03c562e17a77c8d",
           "clubId": 22,
-          "name": "BATTEAA Auréliem",
+          "name": "Duncan Scott",
           "role": "Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4090,7 +4090,7 @@
         {
           "id": "staff:22:a466cd48f27d21c2",
           "clubId": 22,
-          "name": "FOURTANA Davit",
+          "name": "Vincent Boucher",
           "role": "Entraîneur avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4101,7 +4101,7 @@
         {
           "id": "staff:22:cf43bd3ab68aaa13",
           "clubId": 22,
-          "name": "MIALHA Jérémi",
+          "name": "Anthony Bouvier",
           "role": "Directeur performance",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4112,7 +4112,7 @@
         {
           "id": "staff:22:e184b9a8519d00d3",
           "clubId": 22,
-          "name": "MALED Charlez",
+          "name": "Stéphane Paoli",
           "role": "Directeur sportif",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4128,7 +4128,7 @@
         {
           "id": "staff:23:1504b9e4294b05a0",
           "clubId": 23,
-          "name": "Croued Alexandra",
+          "name": "Ludovic Duchêne",
           "role": "Kinésithérapeute",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4139,7 +4139,7 @@
         {
           "id": "staff:23:1713893370e80dfb",
           "clubId": 23,
-          "name": "Larted Bertrant",
+          "name": "Denis Loiseau",
           "role": "Responsable préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4150,7 +4150,7 @@
         {
           "id": "staff:23:5e9ede855d47beed",
           "clubId": 23,
-          "name": "Rei Anthoni",
+          "name": "Mickaël Peyre",
           "role": "Responsable préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4161,7 +4161,7 @@
         {
           "id": "staff:23:79fd660283d3661a",
           "clubId": 23,
-          "name": "Ryam Dava",
+          "name": "Clément Morvan",
           "role": "Entraineur de la mêlée",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4172,7 +4172,7 @@
         {
           "id": "staff:23:81f6681a99064af2",
           "clubId": 23,
-          "name": "Reggiardu Mauriciu",
+          "name": "Alexandre Thierry",
           "role": "Manager",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4183,7 +4183,7 @@
         {
           "id": "staff:23:868787c8b78bb392",
           "clubId": 23,
-          "name": "Jam Guillauma",
+          "name": "Hervé Carlier",
           "role": "Entraineur des 3/4",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4194,7 +4194,7 @@
         {
           "id": "staff:23:8c9a9b9d9ad45843",
           "clubId": 23,
-          "name": "Barrim Jordam",
+          "name": "Frédéric Pineau",
           "role": "Préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4205,7 +4205,7 @@
         {
           "id": "staff:23:a0a0d8fea8e323e9",
           "clubId": 23,
-          "name": "Céra-Labourdetta Paun",
+          "name": "Jean-Luc Binet",
           "role": "Préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4216,7 +4216,7 @@
         {
           "id": "staff:23:ae3f8e64b33ce0c5",
           "clubId": 23,
-          "name": "Gritto Juliem",
+          "name": "Cédric Dauphin",
           "role": "Kinésithérapeute",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4227,7 +4227,7 @@
         {
           "id": "staff:23:b39d2478bf29793f",
           "clubId": 23,
-          "name": "EYMART Mattéu",
+          "name": "Mickaël Oger",
           "role": "Préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4238,7 +4238,7 @@
         {
           "id": "staff:23:da0d31c438063041",
           "clubId": 23,
-          "name": "La Bleiz Pascan",
+          "name": "Michel Sabatier",
           "role": "Médecin",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4249,7 +4249,7 @@
         {
           "id": "staff:23:e3c101c484e1637f",
           "clubId": 23,
-          "name": "Vaquim Rémo",
+          "name": "Alain Berthier",
           "role": "Entraineur de la touche",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4265,7 +4265,7 @@
         {
           "id": "staff:24:22d619b801e88d1d",
           "clubId": 24,
-          "name": "GUILLAUMA LAFORGUA",
+          "name": "Patrice Jamet",
           "role": "Entraîneur des 3/4",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4276,7 +4276,7 @@
         {
           "id": "staff:24:28602cc6a9bbffb1",
           "clubId": 24,
-          "name": "CLEMEND MEILLAS",
+          "name": "Mathieu Crépin",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4287,7 +4287,7 @@
         {
           "id": "staff:24:6abea1d533cffcaa",
           "clubId": 24,
-          "name": "QUENTIM JUTIEL",
+          "name": "Frédéric Andrieu",
           "role": "Adjoint Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4298,7 +4298,7 @@
         {
           "id": "staff:24:7de9f640ee437712",
           "clubId": 24,
-          "name": "ALEXANDRA RUIS",
+          "name": "Frédéric Lelièvre",
           "role": "Manager",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4309,7 +4309,7 @@
         {
           "id": "staff:24:ad33035f2b60c686",
           "clubId": 24,
-          "name": "MATHIEA HALBWACHZ",
+          "name": "Yannick Besse",
           "role": "Responsable Préparateur physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4325,7 +4325,7 @@
         {
           "id": "staff:25:4e4e7805f467e7b7",
           "clubId": 25,
-          "name": "JÉRÉMI WANIM",
+          "name": "Michel Latour",
           "role": "ENTRAINEUR ARRIÈRE",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4336,7 +4336,7 @@
         {
           "id": "staff:25:78c744e5854fbf2c",
           "clubId": 25,
-          "name": "ROMÉU GONTINÉAS",
+          "name": "Emmanuel Gérard",
           "role": "ENTRAÎNEUR GÉNÉRAL",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4347,7 +4347,7 @@
         {
           "id": "staff:25:80bbb55883f208b3",
           "clubId": 25,
-          "name": "BASTIEM COEURED",
+          "name": "Bruno Maugé",
           "role": "PRÉPARATEUR PHYSIQUE",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4358,7 +4358,7 @@
         {
           "id": "staff:25:855d3a8542f45bc3",
           "clubId": 25,
-          "name": "TIN DANIEN",
+          "name": "Maximiliano Flores",
           "role": "ENTRAÎNEUR MÊLÉE",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4369,7 +4369,7 @@
         {
           "id": "staff:25:bcf7174e24d21519",
           "clubId": 25,
-          "name": "MATHIEA LESCURA",
+          "name": "Max Robertson",
           "role": "ENTRAINEUR AVANT",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4380,7 +4380,7 @@
         {
           "id": "staff:25:cae8bad9241fd014",
           "clubId": 25,
-          "name": "PATRICA CLAISSA",
+          "name": "Nicolas Leclerc",
           "role": "MÉDECIN",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4391,7 +4391,7 @@
         {
           "id": "staff:25:cb9548d8d45b0d1e",
           "clubId": 25,
-          "name": "ALAM GAILLART",
+          "name": "Jean-François Giraud",
           "role": "KINÉSITHÉRAPEUTE",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4402,7 +4402,7 @@
         {
           "id": "staff:25:dc337803242012d0",
           "clubId": 25,
-          "name": "SÉBASTIEM DELPIROA",
+          "name": "Stéphane Le Guen",
           "role": "PRÉPARATEUR PHYSIQUE",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4418,7 +4418,7 @@
         {
           "id": "staff:26:13227c069c7cfea2",
           "clubId": 26,
-          "name": "Sequa Germaim",
+          "name": "Pierre Desmoulins",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4429,7 +4429,7 @@
         {
           "id": "staff:26:1c31943c0685a9b5",
           "clubId": 26,
-          "name": "Etchetu Vincend",
+          "name": "Chris Morris",
           "role": "Entraineur Principal",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4440,7 +4440,7 @@
         {
           "id": "staff:26:5292d3ddf0e98b53",
           "clubId": 26,
-          "name": "La Bourhiz Felis",
+          "name": "Ciaran Regan",
           "role": "Entraineur de la défense",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4451,7 +4451,7 @@
         {
           "id": "staff:26:98c24775a85a1804",
           "clubId": 26,
-          "name": "Barten Louiz",
+          "name": "Gerhard Zietsman",
           "role": "Kiné",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4462,7 +4462,7 @@
         {
           "id": "staff:26:a7d4392623bee6a6",
           "clubId": 26,
-          "name": "CAUSSIDIEZ-LALI Hugu",
+          "name": "Maxime Ledoux",
           "role": "Ostéopathe",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4473,7 +4473,7 @@
         {
           "id": "staff:26:b82d749dc8cf6559",
           "clubId": 26,
-          "name": "LOUIZ Sebastiem",
+          "name": "Olivier Cadet",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4484,7 +4484,7 @@
         {
           "id": "staff:26:c2560d233ec4a375",
           "clubId": 26,
-          "name": "Jauberd Tin",
+          "name": "Marc Charpentier",
           "role": "Préparateur Physique",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4495,7 +4495,7 @@
         {
           "id": "staff:26:cca6dc757a95f57c",
           "clubId": 26,
-          "name": "Augusd Oliviel",
+          "name": "David Dufresne",
           "role": "Entraineur des avants",
           "sourceSeason": null,
           "sourceDate": null,
@@ -4511,7 +4511,7 @@
         {
           "id": "staff:27:4702b5a29b9dd2cb",
           "clubId": 27,
-          "name": "Karlem ASIESHVILO",
+          "name": "Anthony Rémy",
           "role": "Entraîneur spécifique de la mêlée",
           "sourceSeason": null,
           "sourceDate": "2026-06-16",
@@ -4522,7 +4522,7 @@
         {
           "id": "staff:27:9710e6ffeee5315d",
           "clubId": 27,
-          "name": "Joham SNYMAM",
+          "name": "Vincent Etchart",
           "role": "Avants, aux côtés du nouvel entraîneur mêlée",
           "sourceSeason": null,
           "sourceDate": "2026-06-16",
@@ -4533,7 +4533,7 @@
         {
           "id": "staff:27:97632d31643ddca5",
           "clubId": 27,
-          "name": "Sébastiem TILLOUZ BORDA",
+          "name": "Paul Booth",
           "role": "Manager",
           "sourceSeason": null,
           "sourceDate": "2026-07-22",
@@ -4549,7 +4549,7 @@
         {
           "id": "staff:28:0584f9dd667ee3c4",
           "clubId": 28,
-          "name": "Xaviel PEMEJE",
+          "name": "Cédric Duchêne",
           "role": "Manager Général Sportif",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4560,7 +4560,7 @@
         {
           "id": "staff:28:05c469690883e97b",
           "clubId": 28,
-          "name": "Jom SISTIAGUA",
+          "name": "Angus Sharp",
           "role": "Kinésithérapeute",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4571,7 +4571,7 @@
         {
           "id": "staff:28:144a18253c671dde",
           "clubId": 28,
-          "name": "Nattam JOUANIA",
+          "name": "Xavier Pons",
           "role": "Préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4582,7 +4582,7 @@
         {
           "id": "staff:28:195102c28ca5b70f",
           "clubId": 28,
-          "name": "Léonart PARIZ",
+          "name": "Jacopo Russo",
           "role": "Entraîneur spécifique de la défense",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4593,7 +4593,7 @@
         {
           "id": "staff:28:1aa8dd7df2143149",
           "clubId": 28,
-          "name": "Léu MORELED",
+          "name": "Anthony Le Borgne",
           "role": "Responsable préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4604,7 +4604,7 @@
         {
           "id": "staff:28:1b0c8fdcee1943be",
           "clubId": 28,
-          "name": "Pierra-Louiz MARRED",
+          "name": "Jean-François Cochet",
           "role": "Assistant arbitrage & infirmier",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4615,7 +4615,7 @@
         {
           "id": "staff:28:22e58c5c5013b079",
           "clubId": 28,
-          "name": "Alica BARIOS",
+          "name": "Lucie Calmels",
           "role": "Kinésithérapeute",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4626,7 +4626,7 @@
         {
           "id": "staff:28:32dfe12246c1d9d2",
           "clubId": 28,
-          "name": "Phillib VAM SCHALKWYC",
+          "name": "Antoine Chardon",
           "role": "Entraîneur spécifique mêlée et combat",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4637,7 +4637,7 @@
         {
           "id": "staff:28:43c977fb8f0af124",
           "clubId": 28,
-          "name": "Thomaz BORNERD-ANTELU",
+          "name": "Guillaume Rivière",
           "role": "Préparateur physique et réathlétisation",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4648,7 +4648,7 @@
         {
           "id": "staff:28:66050d2bc4f999a0",
           "clubId": 28,
-          "name": "Davit PENALVE",
+          "name": "Cormac Murphy",
           "role": "Entraîneur conquête et touches",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4659,7 +4659,7 @@
         {
           "id": "staff:28:8528d7648d4d070d",
           "clubId": 28,
-          "name": "Leonardu CASINO",
+          "name": "Bryn Pearce",
           "role": "Médecin",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4670,7 +4670,7 @@
         {
           "id": "staff:28:8b6caf680b47e068",
           "clubId": 28,
-          "name": "Mana CABANEZ",
+          "name": "Jean-François Hénin",
           "role": "Entraîneur attaque et système offensif",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4681,7 +4681,7 @@
         {
           "id": "staff:28:96f6e0d6da8d9367",
           "clubId": 28,
-          "name": "Maxima MOUTTED",
+          "name": "Christophe Dos Santos",
           "role": "Préparateur physique",
           "sourceSeason": "2026/27",
           "sourceDate": null,
@@ -4697,7 +4697,7 @@
         {
           "id": "staff:29:00feb6a52876d52f",
           "clubId": 29,
-          "name": "FLAVIEM GIRART",
+          "name": "Lionel Puech",
           "role": "MÉDECIN",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4708,7 +4708,7 @@
         {
           "id": "staff:29:04029fa400135dad",
           "clubId": 29,
-          "name": "Jonatham Wisniewsko",
+          "name": "Ludovic Bonet",
           "role": "Directeur Sportif",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4719,7 +4719,7 @@
         {
           "id": "staff:29:07ba3bb21aec76bc",
           "clubId": 29,
-          "name": "Scotd Newlandz",
+          "name": "Laurent Torres",
           "role": "Défense et touche",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4730,7 +4730,7 @@
         {
           "id": "staff:29:2a9c88c6d0a544a3",
           "clubId": 29,
-          "name": "GAUTIEL ANSELMO",
+          "name": "Marc Schneider",
           "role": "KINÉSITHÉRAPEUTE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4741,7 +4741,7 @@
         {
           "id": "staff:29:2bf9fca35d3772e2",
           "clubId": 29,
-          "name": "AGNÈZ AILLAUT",
+          "name": "Fanny Garcin",
           "role": "MÉDECIN",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4752,7 +4752,7 @@
         {
           "id": "staff:29:5b075de0c216cf1c",
           "clubId": 29,
-          "name": "Erwam DESRIEUS",
+          "name": "Luke Wilson",
           "role": "DIÉTÉTICIEN",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4763,7 +4763,7 @@
         {
           "id": "staff:29:66bfd8c803e218fb",
           "clubId": 29,
-          "name": "REGIZ LANTHEAUMA",
+          "name": "Éric Puig",
           "role": "PRÉPARATEUR PHYSIQUE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4774,7 +4774,7 @@
         {
           "id": "staff:29:83e92abb551ffb20",
           "clubId": 29,
-          "name": "RADOSLAF SPASOF",
+          "name": "Julien Duval",
           "role": "KINÉSITHÉRAPEUTE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4785,7 +4785,7 @@
         {
           "id": "staff:29:a14efb81a0385b7d",
           "clubId": 29,
-          "name": "Téu Garaven",
+          "name": "Franck Le Cam",
           "role": "Skills individuels",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4796,7 +4796,7 @@
         {
           "id": "staff:29:d6c8ca1bfd9c7bb0",
           "clubId": 29,
-          "name": "Benjamim Thieri",
+          "name": "Mathieu Chabert",
           "role": "Jeu offensif et lignes arrières",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4807,7 +4807,7 @@
         {
           "id": "staff:29:db9e43a98d62d570",
           "clubId": 29,
-          "name": "KILIAM BERNART",
+          "name": "Yannick Toussaint",
           "role": "PRÉPARATEUR PHYSIQUE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4818,7 +4818,7 @@
         {
           "id": "staff:29:e09f5e65ee0c32d6",
           "clubId": 29,
-          "name": "BENOÎD ROCHAZ",
+          "name": "Frédéric Lecomte",
           "role": "PODOLOGUE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4829,7 +4829,7 @@
         {
           "id": "staff:29:e18d6a5787a3755d",
           "clubId": 29,
-          "name": "ROXAM BERNART",
+          "name": "Anthony Bourdon",
           "role": "PRÉPARATEUR PHYSIQUE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4840,7 +4840,7 @@
         {
           "id": "staff:29:f4f4acc117365894",
           "clubId": 29,
-          "name": "Romaim Terraim",
+          "name": "Nicolas Peyrot",
           "role": "Entraîneur Principal",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
@@ -4851,7 +4851,7 @@
         {
           "id": "staff:29:ffc9bb8b4e4dd31d",
           "clubId": 29,
-          "name": "ROMAIM SOUBEYRANT",
+          "name": "Lionel Chabaud",
           "role": "OSTÉOPATHE",
           "sourceSeason": "2026/27",
           "sourceDate": "2026-07-01",
