@@ -822,7 +822,7 @@ func _preparation(body: VBoxContainer) -> void:
 func _template_draft_id() -> String:
 	var draft: Variant = app.management_ui.get("calendar_template_draft")
 	if draft == null: return ""
-	var valid := draft is Dictionary and not next_fixture.is_empty() and app._live().is_empty()
+	var valid: bool = draft is Dictionary and not next_fixture.is_empty() and app._live().is_empty()
 	var fixture_id: Variant = next_fixture.get("id")
 	var template_id: Variant = draft.get("template") if draft is Dictionary else null
 	valid = valid and fixture_id is String and not fixture_id.is_empty() and draft.get("fixture") == fixture_id
@@ -881,7 +881,7 @@ func _templates(body: VBoxContainer) -> void:
 	apply.disabled = chooser.selected < 1 or chooser.is_item_disabled(chooser.selected)
 	chooser.item_selected.connect(func(index: int):
 		var selected_id: Variant = chooser.get_item_metadata(index)
-		var selectable := index > 0 and not chooser.is_item_disabled(index) and selected_id is String and not selected_id.is_empty()
+		var selectable: bool = index > 0 and not chooser.is_item_disabled(index) and selected_id is String and not selected_id.is_empty()
 		apply.disabled = not selectable
 		if selectable:
 			app.management_ui.calendar_template_draft = {"fixture":fixture_id, "template":selected_id}
