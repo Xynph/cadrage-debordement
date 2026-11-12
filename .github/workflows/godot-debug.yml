@@ -1,0 +1,108 @@
+name: Debug Godot
+on:
+  push:
+    branches: [claude/godot-ci-vert-20261112]
+    paths: ['ci/debug-suites.txt', '.github/workflows/godot-debug.yml']
+permissions:
+  contents: read
+jobs:
+  godot:
+    name: Debug ${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      # Version exacte épinglée : archive officielle godotengine/godot-builds, somme
+      # SHA-256 vérifiée à chaque exécution (y compris depuis le cache). Concorde avec
+      # SHA512-SUMS.txt de la release : 9aa00f7a…ed54c65.
+      GODOT_VERSION: 4.7.2-stable
+      GODOT_ZIP: Godot_v4.7.2-stable_linux.x86_64.zip
+      GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Cache de l'archive Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cd-godot
+          key: godot-4.7.2-stable-linux-x86_64-cadd3204e728a35d
+      - name: Installer Godot 4.7.2 (SHA-256 vérifiée)
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$HOME/.cache/cd-godot/$GODOT_ZIP"
+          mkdir -p "$(dirname "$archive")"
+          if [[ ! -f "$archive" ]]; then
+            curl -fsSL --retry 3 --retry-delay 5 -o "$archive.part" \
+              "https://github.com/godotengine/godot-builds/releases/download/$GODOT_VERSION/$GODOT_ZIP"
+            mv "$archive.part" "$archive"
+          fi
+          if ! echo "$GODOT_SHA256  $archive" | sha256sum -c -; then
+            rm -f "$archive"
+            echo "::error::Somme SHA-256 de Godot invalide"
+            exit 1
+          fi
+          unzip -q -o "$archive" -d "$RUNNER_TEMP/godot"
+          exe="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$exe"
+          echo "CD_GODOT_EXECUTABLE=$exe" >> "$GITHUB_ENV"
+          echo "CD_GODOT_EXE=$exe" >> "$GITHUB_ENV"
+      - name: Serveur X virtuel et rendu logiciel Mesa
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends xvfb xauth libgl1 libgl1-mesa-dri \
+            libglx-mesa0 libegl1 libxcursor1 libxinerama1 libxrandr2 libxi6 libxkbcommon0 libfontconfig1
+          node ci/godot-env.cjs --check
+      - name: Cache des imports Godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            native/godot/.godot
+            native/godot/**/*.import
+            native/godot/**/*.uid
+          key: godot-import-4.7.2-${{ hashFiles('native/godot/**') }}
+          restore-keys: godot-import-4.7.2-
+      - name: Préparer le projet Godot (staging des ressources)
+        shell: bash
+        # Comme en local : registres anonymisés, photos, portraits et modèle CC0 copiés
+        # dans native/godot/assets (ignoré par Git), requis par les suites natives.
+        run: python3 scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
+      - name: Importer le projet Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          start=$SECONDS
+          timeout 900 "$CD_GODOT_EXECUTABLE" --headless --editor --import --path native/godot \
+            > "$RUNNER_TEMP/godot-import.log" 2>&1 || { tail -50 "$RUNNER_TEMP/godot-import.log"; exit 1; }
+          tail -5 "$RUNNER_TEMP/godot-import.log"
+          echo "Import Godot : $((SECONDS-start)) s"
+      - name: Suites Godot (SDK obligatoire, xvfb, rendu logiciel)
+        shell: bash
+        # Délai d'étape (échec) plus court que celui du job (annulation) : un
+        # dépassement ne doit pas faire passer le run entier à « cancelled ».
+        timeout-minutes: 40
+        env:
+          SHARD: ${{ matrix.shard }}
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          set -euo pipefail
+          awk -v s="$SHARD" 'NF && (NR-1)%4==s-1' ci/debug-suites.txt > "$RUNNER_TEMP/godot-suites.txt"
+          [ -s "$RUNNER_TEMP/godot-suites.txt" ] || exit 0
+          xvfb-run -a -s "-screen 0 1920x1080x24" \
+            bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Debug $SHARD"
+      - name: Inspection des projets temporaires
+        if: always()
+        shell: bash
+        run: |
+          ls -la /tmp | head -40
+          for d in /tmp/cd-layout-* /tmp/cd-guide-layout-*; do [ -d "$d" ] && { echo "== $d"; ls -la "$d" "$d/godot" "$d/godot/helpers" "$d/helpers" 2>&1 | head -60; }; done
