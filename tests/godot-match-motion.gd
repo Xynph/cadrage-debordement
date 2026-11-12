@@ -66,10 +66,13 @@ func run() -> void:
 	for frame in 50: view._process(1.0 / 60.0)
 	var receiver: Dictionary = view._actors.b
 	var anchor: Vector3 = load("res://match_presentation.gd").ball_anchor(receiver.node, receiver.rig)
-	check(view._ball.global_position.distance_to(anchor) < 0.001, "The reception finishes at the receiving athlete's hands")
+	# Port du ballon (4b036446, #587) : le ballon n'est plus posé sur le point fixe ball_anchor mais
+	# replacé d'après les poignets (carry_ball : deux mains devant le ventre, écart borné à 0,3 m).
+	# L'arrivée se mesure donc à la tolérance du port (0,4 m de l'ancre) et les mains au ballon réel.
+	check(view._ball.global_position.distance_to(anchor) < 0.4, "The reception finishes at the receiving athlete's hands")
 	for side in ["L", "R"]:
 		var palm: int = receiver.rig.find_bone("Palm." + side)
-		check(receiver.rig.to_global(receiver.rig.get_bone_global_pose(palm).origin).distance_to(anchor) < 0.28, "Receiving hands close on the real ball: " + side)
+		check(receiver.rig.to_global(receiver.rig.get_bone_global_pose(palm).origin).distance_to(view._ball.global_position) < 0.3, "Receiving hands close on the real ball: " + side)
 	check(receiving == receiving_before, "Reception preserves its complete input dictionary")
 	metrics.first_receiver_ball_step_m = ball_step
 	metrics.first_receiver_ball_rotation_rad = ball_turn
@@ -83,7 +86,8 @@ func run() -> void:
 		view.apply_frame(moving_receiver)
 		for frame in 10: view._process(1.0 / 60.0)
 	var caught: Vector3 = load("res://match_presentation.gd").ball_anchor(view._actors.b.node, view._actors.b.rig)
-	check(view._ball.global_position.distance_to(caught) < 0.001, "Moving receiver snapshots do not indefinitely restart the ball's incoming journey")
+	# Même tolérance que l'arrivée de la réception (port du ballon #587, ballon replacé d'après les poignets).
+	check(view._ball.global_position.distance_to(caught) < 0.4, "Moving receiver snapshots do not indefinitely restart the ball's incoming journey")
 	# At a slow continuous walk a low support foot should remain planted rather
 	# than skating along with the root. Measure the actual rendered skeleton.
 	view.apply_frame(fixture(50.4))

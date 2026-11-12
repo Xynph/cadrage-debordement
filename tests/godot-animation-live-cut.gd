@@ -87,7 +87,10 @@ func run() -> void:
 		check(actor.position.is_equal_approx(expected), "L’appui reste sur le trajet de la phase")
 		var anchor := Presentation.ball_anchor(actor, rig)
 		var gap := anchor.distance_to(view._ball.global_position)
-		check(gap < 0.001, "Le ballon suit la poitrine sans trajet séparé")
+		# Port du ballon (4b036446, #587) : le ballon suit les poignets et le buste (deux mains devant le
+		# ventre, ~0,25 m sous l'ancre fixe de la poitrine) au lieu d'être posé sur ball_anchor. Un
+		# trajet séparé écarterait le ballon de plusieurs mètres : borne 0,4 m.
+		check(gap < 0.4, "Le ballon suit la poitrine sans trajet séparé")
 		for id: String in view._actors:
 			if id != plan.carrier:
 				check(view._actors[id].cut_pose.is_empty(), "Aucun autre joueur ne prend la pose")
