@@ -78,6 +78,7 @@ func run() -> void:
 	projection_cases()
 	root.size=Vector2i(2560,1440)
 	app=load("res://main.tscn").instantiate(); root.add_child(app)
+	app.coach.speech.set_muted(true)
 	app.coach.speech.requested.connect(func(_text: String): speech_requests+=1)
 	app.coach.speech.started.connect(func(_id: int): speech_starts+=1)
 	var until:=Time.get_ticks_msec()+30000

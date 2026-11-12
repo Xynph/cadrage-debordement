@@ -44,7 +44,7 @@ func scroll_of(window: Window) -> ScrollContainer:
 	var surfaces := window.find_children("*", "ScrollContainer", true, false)
 	return surfaces[0] if not surfaces.is_empty() else null
 func finish() -> void:
-	check(speech_requests == 0 and speech_starts == 0, "Silence : aucune demande ni début de parole")
+	check(speech_requests == 0 and speech_starts == 0 and int(app.coach.speech._id) == 0, "Silence : aucune demande ni début de parole")
 	print("READER HISTORY : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	if app != null and app.bridge != null: app.bridge.stop()
 	quit(0 if failures.is_empty() else 1)
@@ -52,14 +52,14 @@ func run() -> void:
 	root.size = Vector2i(2560, 1440)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	app.coach.speech.set_muted(true)
+	app.coach.speech.requested.connect(func(_line: String): speech_requests += 1)
+	app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Projection initiale du vrai worker")
 	if app.model.is_empty(): await finish(); return
 	app.timer.stop()
-	app.coach.speech.set_muted(true)
-	app.coach.speech.requested.connect(func(_line: String): speech_requests += 1)
-	app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
 	nav = app.navigation_controller
 	if not await command("new_career", {"mode":"world-champ", "club":29}): await finish(); return
 	if not await Flow.settle_club_meetings(app, self, check): await finish(); return
