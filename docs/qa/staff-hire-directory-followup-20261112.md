@@ -9,3 +9,16 @@ Les trois absences de commande attendues correspondent aux deux ouvertures de St
 Le correctif touche uniquement la recette `deepen-staff-hire-ui.gd` : un helper `employed_page` sélectionne explicitement le vrai contrôle StaffCareerTab, onglet 0, avant les deux ouvertures de prolongation. Il vérifie la présence de cet onglet. Le parcours candidats reste explicitement sur 1. Les six assertions existantes, les vrais événements clavier de confirmation, le refus disque, les états exportés et la reprise sont conservés. Aucun reset de lecture produit ni commande métier supplémentaire.
 
 Validation avant réception : `git diff --check` seulement ; aucun Godot, import ni collecte lancé dans ce worktree. L’intégrateur doit confirmer le diagnostic par la recette réelle sous verrou sur le candidat assemblé.
+
+## Invariant audio distinct du défaut d’onglet
+
+Un commit QA séparé ajoute `--audio-driver Dummy` aux wrappers `deepen-staff-real-ui.cjs` et `deepen-staff-hire-ui.cjs`. La recette hire mute le coach immédiatement après l’ajout de chacune des deux instances du client, avant toute attente ou commande. Elle compte les signaux requested/started sur les deux instances, conserve le compteur `_id` du premier client avant sa destruction et vérifie au finish que signaux et identifiants restent à zéro. Aucune commande supplémentaire ; tous les contrôles fonctionnels existants sont conservés.
+
+L’intégrateur peut exécuter le script corrigé avec le produit et les imports du common figé :
+
+```sh
+cd /workspace/work/staff-hire-followup
+flock /workspace/work/rg27-godot.lock env CD_GODOT_EXECUTABLE=/workspace/work/tools/Godot_v4.7.2-stable_linux.x86_64 CD_STAFF_REAL_ROOT=/workspace/work/night-common /workspace/work/tools/node-v22.23.4-linux-x64/bin/node --test tests/deepen-staff-hire-ui.cjs
+```
+
+Même commande avec `tests/deepen-staff-real-ui.cjs` pour la recette de paie/rupture, si réception souhaitée. Les scripts de test viennent du worktree ; scènes produit et cache restent ceux du common. Aucun SDK/import lancé par le producteur.
