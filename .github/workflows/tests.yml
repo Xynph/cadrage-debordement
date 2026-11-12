@@ -93,6 +93,8 @@ jobs:
               tests/native-club-support-season.cjs) limit=1200s ;;
               tests/native-club-world-worker.cjs) limit=900s ;;
               tests/native-club-strategy.cjs) limit=600s ;;
+              # Carrière mondiale de 58 clubs sur 3 saisons (>180 s sur GitHub) : budget propre, sans toucher la limite globale.
+              tests/world-roster-stability.cjs) limit=600s ;;
               tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) limit=900s ;;
               tests/deepen-staff-native.cjs) limit=1200s ;;
               tests/custom-competition-worker.cjs) limit=900s ;;
