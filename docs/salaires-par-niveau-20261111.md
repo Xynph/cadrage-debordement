@@ -411,18 +411,171 @@ ans (calcul sur la formule du jeu, `/home/claude/audit/acceptation.cjs`) :
   2 000 € par semaine) : à chaque intersaison, leurs contrats sont remis au
   niveau de la règle (`recaler`). Conséquence assumée : chez eux, un joueur
   qui progresse est augmenté dès l'été suivant.
-- **Le moteur refuse toute offre sous 1 000 € par semaine** (52 000 € par
+- **Le moteur refusait toute offre sous 1 000 € par semaine** (52 000 € par
   an) : `dist/economy.js`, fonction `negotiateContract`, et
-  `native/engine/gestion.cjs`, ligne 59. Non corrigé. Dans une carrière
-  marquée, le manager ne peut donc pas signer un espoir à 20 000 € par an :
-  il paie au moins 52 000 €.
+  `native/engine/gestion.cjs`, ligne 59. Corrigé depuis pour les carrières
+  marquées (plancher de la règle, voir la suite ci-dessous).
 - Le marché entre clubs (`native/engine/interclub-market.cjs`) a le même
   plancher et n'est pas branché dans le moteur livré ; il n'a pas été touché.
 
+## Suite du 11 novembre : plancher, clauses, attrait recalé
+
+Tout reste derrière `CD_SALAIRES_PAR_NIVEAU=1`, pour les carrières marquées.
+
+- **Plancher des contrats** : 270 € par semaine (14 000 € par an), celui de
+  la règle des salaires, au lieu de 1 000 €. La validation de sauvegarde
+  l'accepte pour ces carrières. Un espoir signe à 20 800 € par an (testé par
+  la commande publique, export, réimport et reprise).
+- **Clauses de montée et de descente** propres à chaque joueur : baisse de 8
+  à 25 % en cas de descente pour sept joueurs sur dix, prime de 5 à 20 % en
+  cas de montée pour six sur dix.
+- **Clubs gérés** : la masse qu'ils s'autorisent suit le plafond de la ligue,
+  les 52 % des recettes (France) et leurs moyens, avec une marge propre à
+  chaque club. À la création, aucun ne dépasse.
+- **Écran Finances** : il lit le budget de la saison (propriétaire, plafond,
+  marge, amende encourue) au lieu des anciennes prévisions.
+- **Renforts d'urgence** (espoir promu pour compléter la feuille de match) :
+  au plancher de la règle au lieu de 2 500 € par semaine (`dist/rugby.js:14`).
+- **Joueurs de complément** (40 professionnels par club) : au salaire de la
+  règle dans leur club au lieu de 1 400 à 2 200 € par semaine
+  (`native/engine/professional-depth.cjs:44`).
+- **Saisons sans club** : un joueur libéré à la fin de la saison N n'a passé
+  aucune saison sans club pendant la saison N + 1. Le levier partait une
+  saison trop tôt ; corrigé.
+
+### Attrait recalé (décision de Léo : « assez réaliste, tout en restant jouable »)
+
+Cible : un joueur de première division française accepte de descendre en
+deuxième division ≈10 à 20 % du temps à salaire égal, ≈50 % à +15-20 %, la
+plupart à +30 %. Réputations resserrées en tête (anglaise 92, celte 90,
+Pacifique 86) ; prime de descente faible entre championnats proches ; Japon :
+prime nette jusqu'à 29 ans, attrait fort à partir de 31 ans ; tempéraments
+casanier, voyageur, ambitieux, pragmatique ; leviers sans rapport avec le
+niveau (peu utilisé, sans club, retour dans un club connu).
+
+Taux d'acceptation recalculés sur la formule du moteur (5 000 joueurs, 27 ans,
+seuil du jeu, contrat de deux ans), offre exprimée en part du salaire juste
+du club acheteur. Ils remplacent le tableau plus haut, antérieur au recalage :
+
+| Origine → destination | 100 % | 110 % | 115 % | 120 % | 130 % | 33 ans, 100 % / 120 % |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1re française → 2e française | 13 % | 26 % | 45 % | 71 % | 97 % | 13 % / 71 % |
+| 1re française → 1re japonaise | 11 % | 43 % | 68 % | 89 % | 100 % | 100 % / 100 % |
+| 1re française → celte | 82 % | 100 % | 100 % | 100 % | 100 % | 82 % / 100 % |
+| 1re française → 1re anglaise | 88 % | 100 % | 100 % | 100 % | 100 % | 88 % / 100 % |
+| 1re anglaise → 1re française | 97 % | 100 % | 100 % | 100 % | 100 % | 97 % / 100 % |
+
+La cible de Léo est tenue pour la descente en deuxième division française
+(13 % à salaire égal, 45 à 71 % à +15-20 %, 97 % à +30 %). Hors de France, le
+Top 14 attire bien davantage qu'il n'est quitté : un joueur anglais le rejoint
+97 fois sur 100 à salaire égal, un joueur du Top 14 part en Angleterre ou en
+URC 82 à 88 fois sur 100 à salaire égal (écart de réputation faible, voir plus
+haut). Ces taux restent calculés sur la formule : la mesure ci-dessous montre
+que les clubs gérés ne font presque aucun transfert, ils ne sont donc pas
+vérifiables par des offres réelles entre clubs gérés.
+
+## Mesure sur deux saisons, carrière mondiale (12 novembre)
+
+Carrière mondiale la plus large (`world-champ`, 116 clubs), graine 27, club
+joué 30 (1re division anglaise), API publique du worker, semaines déléguées,
+`next_season` à chaque fin de saison. Drapeau allumé ; une première saison
+drapeau éteint sert de référence. Code : `main` f05708e2 fusionné. Montants en
+M€ par an (salaires hebdomadaires × 52).
+
+La troisième saison n'a pas pu être mesurée : la deuxième a pris 47 minutes
+(la machine était partagée) et le processus a été arrêté à la limite de deux
+heures pendant la troisième. Deux saisons et deux intersaisons sont donc
+consignées.
+
+Masse salariale médiane par championnat (maximum entre parenthèses) :
+
+| Championnat (clubs) | Plafond | Création | Après intersaison 1 | Après intersaison 2 |
+| --- | --- | --- | --- | --- |
+| 1re française (14) | 10,7 | 9,6 (max 10,4) | 9,8 (max 10,4) | 10,06 (max 10,59) |
+| 2e française (16) | — | 3,28 (max 5,15) | 3,07 (max 8,03) | 2,91 (max 7,84) |
+| 3e française (14) | — | 1,46 (max 1,98) | 1,54 (max 2,94) | 1,54 (max 2,25) |
+| 1re anglaise (10) | 7,5 | 6,99 (max 7,45) | 7,16 (max 7,46) | 6,59 (max 7,37) |
+| 2e anglaise (14) | — | 1,13 (max 1,51) | 1,19 (max 1,55) | 1,29 (max 1,49) |
+| celte (URC) (16) | — | 5,49 (max 7,31) | 5,65 (max 7,72) | 5,8 (max 8,01) |
+| Pacifique (SRP) (10) | 2,6 | 2,32 (max 2,56) | 2,41 (max 2,68), 1 au-dessus | 2,47 (max 2,65), 1 au-dessus |
+| 1re japonaise (12) | — | 6,04 (max 9,04) | 6,22 (max 8,92) | 6,34 (max 10,01) |
+| 2e japonaise (8) | — | 2,13 (max 3,05) | 2,18 (max 3,7) | 1,95 (max 3,36) |
+| invités (2) | — | 5,33 | 5,65 | 5,55 |
+
+| Moment | Masse totale | Au-dessus du plafond | Clubs endettés | Effectif moyen, 1re française | Caisse du club joué |
+| --- | --- | --- | --- | --- | --- |
+| Création | 486,9 | 0 | 0 | 56,6 | 4,00 |
+| Fin de saison 1 | 487,5 | 0 | 1 (invité) | 56,6 | 4,74 |
+| Après intersaison 1 | 483,6 | 1 (SRP) | 0 | 51,5 | 5,75 |
+| Fin de saison 2 | 485,0 | 1 (SRP) | 1 (invité) | 51,6 | 10,10 |
+| Après intersaison 2 | 483,0 | 1 (SRP) | 0 | 46,5 | 10,38 |
+
+Référence drapeau éteint, même graine : masse totale 1 478,7 M€ à la création
+puis 1 346,4 après la première intersaison ; médiane 18,7 M€ en 1re française,
+17,2 en 1re anglaise, 12,0 dans le Pacifique ; les 34 clubs des trois
+championnats plafonnés sont au-dessus de leur plafond ; 5 clubs endettés en
+fin de saison 1 (contre 1 drapeau allumé).
+
+Lecture :
+
+- **Stabilité** : la masse totale ne dérive pas (−0,8 % en deux saisons) ;
+  aucun club de 1re française ni de 1re anglaise ne dépasse son plafond. Un
+  club du Pacifique reste 2 à 3 % au-dessus du sien après chaque intersaison :
+  dépassement léger, non corrigé.
+- **Endettement** : un seul club, un invité, passe sous zéro en fin de saison
+  et revient positif à l'intersaison (apport du propriétaire). Aucun club des
+  championnats nationaux n'est endetté.
+- **Club joué** : sa caisse passe de 4,0 à 10,4 M€ en deux saisons (+4,4 M€ sur
+  la seule saison 2, semaines déléguées). À surveiller : le club joué
+  s'enrichit nettement plus vite que les clubs gérés (médiane anglaise 8,1 M€).
+- **Mouvements entre championnats** : presque uniquement par montée et
+  descente avec le club (saison 1 : 88 joueurs de 2e vers 3e française, 83 en
+  sens inverse, 48 de 2e vers 1re, 45 de 1re vers 2e, 50 et 39 au Japon ;
+  saison 2 : chiffres voisins). Un seul joueur change de club par saison
+  (1re française vers 2e anglaise, puis 2e anglaise vers Pacifique), au même
+  salaire. Les clubs gérés de la carrière mondiale ne se transfèrent pas de
+  joueurs : départs (596 puis 619, retraites et fins de contrat) et arrivées
+  (112 puis 232, jeunes et joueurs libres). C'est vrai aussi drapeau éteint
+  (632 départs, 103 arrivées, un transfert) : ce n'est pas un effet de ce
+  travail, mais la réputation des championnats ne joue donc que sur les offres
+  du manager et sur les joueurs libres.
+- **Effectifs** : ils baissent d'environ cinq joueurs par saison (1re
+  française 56,6 → 51,5 → 46,5 ; 1re japonaise 54,8 → 41,3). Même pente
+  drapeau éteint (56,6 → 49,9) : défaut existant, signalé, non traité ici.
+- **Export refusé en fin de saison 2** : « Le fichier est trop volumineux
+  (24 Mio UTF-8 maximum pour cette édition) ». L'état persisté fait 31,5 Mo
+  (27,8 Mo pour la carrière) : effectifs 14,3 Mo, académies des clubs gérés
+  5,2 Mo, encadrement 1,8 Mo, économie 1,7 Mo, marché 1,7 Mo. Ce travail n'ajoute
+  qu'environ 20 ko (budget de saison et marque ; salaires et fins de contrat
+  existaient déjà). L'export redevient possible après l'intersaison. Défaut
+  de l'édition, signalé, non traité ici ; la reprise depuis le disque n'est pas
+  concernée.
+
 ## Tests
 
-`node --test tests/starting-salaries.cjs tests/club-budget.cjs tests/league-economy.cjs` :
-41 sur 41.
+`node --test`, un fichier à la fois, après fusion de `main` (f05708e2),
+drapeau éteint puis allumé : `starting-salaries` 14, `club-budget` 26,
+`league-economy` 15, soit 55 sur 55 dans les deux cas.
+
+Suites voisines (économie, contrats, budget, finances, transferts, salaires),
+un fichier à la fois, drapeau éteint puis allumé : `economy`, `economy-audit`,
+`champion-budget-regression`, `ai-transfer-competition`, `coach-market`,
+`deepen-market`, `deepen-market-worker`, `finance-planning`,
+`finance-v2-playable`, `france-finance`, `interclub-market`,
+`staff-contract-quality-audit`, `transfer-planning`, `v31-finance-forecasts`,
+`v33-contract-renewals`, `v35-salary-demand`, `v46-v51-contracts`,
+`v51-financial-recovery`, `v51-financial-regressions`, `v51-world-finance`,
+`v58-2-contract-cycle`, `world-epcr-draw-budget`, `world-finance-ko`,
+`world-initial-contracts`, `world-wage-forecast` : tous verts dans les deux
+cas. `world-finance-flow-audit` : 5 sur 5 drapeau éteint, 4 sur 5 drapeau
+allumé. Le test en échec attend 54 clubs gérés réconciliés avec l'ancien
+barème (160 000 € par semaine) et en trouve 0 : l'audit
+`ci/world-finance-flow-audit.cjs` modélise les flux remplacés par ce travail.
+Attendu tant que l'audit ne connaît pas le nouveau budget ; à adapter avant
+toute activation. Les tests Godot (`godot-*`, `deepen-market-ui`) n'ont pas
+tourné : SDK absent.
+
+Ce qui suit décrit l'état du premier lot (41 tests).
 
 - `tests/club-budget.cjs` (20 tests, 3 secondes) : recettes, propriétaire,
   prime de classement, affluence, phases finales, règles de la ligue,
@@ -444,7 +597,8 @@ Suites existantes relancées sans la variable après l'extension :
 `france-cover` 1 sur 1, `management-france-day-worker` 1 sur 1.
 
 Non vérifié pour l'extension mondiale : une seule graine, un seul club joué
-(première division anglaise), une seule saison ; les autres éditions
-mondiales (58, 68, 88 et 102 clubs) ; le taux d'acceptation par des offres
-réelles dans une carrière mondiale (il est calculé sur la formule) ;
-l'effet sur les montées et descentes entre championnats.
+(première division anglaise), deux saisons (mesure du 12 novembre, plus haut) ;
+la troisième saison ; les autres éditions mondiales (58, 68, 88 et 102
+clubs) ; le taux d'acceptation par des offres réelles dans une carrière
+mondiale (il est calculé sur la formule, et les clubs gérés ne transfèrent
+presque pas).
