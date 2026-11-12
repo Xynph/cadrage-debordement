@@ -44,7 +44,8 @@
     "tests/godot-effective-training-receipt.cjs",
     "tests/godot-analysis-club-links.cjs",
     "tests/godot-analysis-club-graphics.cjs",
-    "tests/godot-office-entity-links.cjs"
+    "tests/godot-office-entity-links.cjs",
+    "tests/godot-calendar-session-links.cjs"
   ],
   "groups": {
     "portraits-staff": [
@@ -61,7 +62,8 @@
       "tests/godot-staff-fictional-labels.cjs",
       "tests/rg27-night-navigation.cjs",
       "tests/godot-world-entity-targets.cjs",
-      "tests/godot-analysis-club-graphics.cjs"
+      "tests/godot-analysis-club-graphics.cjs",
+      "tests/godot-calendar-session-links.cjs"
     ],
     "parcours": [
       "tests/native-press-ui.cjs",
@@ -273,6 +275,14 @@
         "id": "report",
         "env": {
           "CD_NIGHT_NAV_CASE": "report"
+        }
+      }
+    ],
+    "tests/godot-calendar-session-links.cjs": [
+      {
+        "id": "default",
+        "env": {
+          "CD_SESSION_LINKS_CAPTURE": "1"
         }
       }
     ]
