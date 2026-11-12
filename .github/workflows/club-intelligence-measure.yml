@@ -1,0 +1,126 @@
+name: Mesure des clubs gérés (carrières longues)
+# Lancement manuel seulement : mesures longues des effectifs, transferts,
+# stratégies, erreurs, masses et taille de l'export sur plusieurs saisons,
+# drapeau des salaires par niveau allumé et éteint, plus les suites longues
+# qui ne tiennent pas sur une machine locale partagée.
+on:
+  workflow_dispatch:
+    inputs:
+      code_ref:
+        description: "Commit ou branche mesuré (vide : celui du lancement). L'outil de mesure vient toujours du lancement."
+        required: false
+        default: ''
+      seasons:
+        description: Nombre de saisons
+        required: false
+        default: '3'
+      modes:
+        description: 'Modes, séparés par des virgules (common, world-champ)'
+        required: false
+        default: 'common,world-champ'
+      flags:
+        description: 'Valeurs du drapeau CD_SALAIRES_PAR_NIVEAU (0, 1)'
+        required: false
+        default: '0,1'
+      tests:
+        description: "Suites longues à relancer (espaces), ou 'aucune'"
+        required: false
+        default: 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/native-academy-groups.cjs tests/player-population-capacity.cjs tests/france-long-career.cjs tests/france-long-career-late.cjs tests/world-career.cjs tests/world-roster-stability.cjs'
+permissions:
+  contents: read
+concurrency:
+  group: club-intelligence-measure-${{ github.ref }}-${{ inputs.code_ref }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        shell: bash
+        env:
+          MODES: ${{ inputs.modes }}
+          FLAGS: ${{ inputs.flags }}
+        run: |
+          set -euo pipefail
+          json=$(node -e 'const m=process.env.MODES.split(",").map(s=>s.trim()).filter(Boolean),f=process.env.FLAGS.split(",").map(s=>s.trim()).filter(Boolean);const include=[];for(const mode of m)for(const flag of f)include.push({mode,flag,club:mode==="common"?29:30});console.log(JSON.stringify({include}))')
+          echo "matrix=$json" >> "$GITHUB_OUTPUT"
+  measure:
+    name: Mesure ${{ matrix.mode }} drapeau ${{ matrix.flag }}
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          path: outil
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.code_ref || github.sha }}
+          path: code
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Carrière mesurée
+        shell: bash
+        env:
+          CD_SALAIRES_PAR_NIVEAU: ${{ matrix.flag }}
+          NODE_OPTIONS: --max-old-space-size=12288
+        run: |
+          set -euo pipefail
+          cp outil/ci/world-career-measure.cjs code/ci/world-career-measure.cjs
+          cd code
+          sha=$(git rev-parse HEAD)
+          echo "Code mesuré : $sha"
+          mkdir -p "$RUNNER_TEMP/out"
+          /usr/bin/time -f "max_rss_kb=%M wall_s=%e" node ci/world-career-measure.cjs --seed 27 --mode "${{ matrix.mode }}" --club "${{ matrix.club }}" --seasons "${{ inputs.seasons }}" --out "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.json" | tee "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.log"
+          node -e 'const r=require(process.argv[1]);r.codeSha=process.argv[2];require("fs").writeFileSync(process.argv[1],JSON.stringify(r,null,1));if(r.status!=="completed"){console.error(r.failure);process.exit(1)}' "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.json" "$sha"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mesure-${{ matrix.mode }}-flag${{ matrix.flag }}
+          path: ${{ runner.temp }}/out
+          retention-days: 14
+  long-tests:
+    name: Suites longues
+    if: ${{ inputs.tests != 'aucune' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.code_ref || github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Suites
+        shell: bash
+        env:
+          TESTS: ${{ inputs.tests }}
+        run: |
+          set -uo pipefail
+          failures=0
+          echo "| Suite | Résultat | Durée |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          for test in $TESTS; do
+            [[ -f "$test" ]] || { echo "| $test | ABSENTE | - |" >> "$GITHUB_STEP_SUMMARY"; continue; }
+            echo "::group::$test"
+            start=$SECONDS
+            if timeout --signal=TERM --kill-after=10s 5400s /usr/bin/time -f "max_rss_kb=%M wall_s=%e" node "$test"; then
+              echo "| $test | OK | $((SECONDS-start)) s |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              code=$?; failures=$((failures+1))
+              echo "::error file=$test::Échec (code $code, $((SECONDS-start)) s)"
+              echo "| $test | ECHEC ($code) | $((SECONDS-start)) s |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            echo "::endgroup::"
+          done
+          [[ "$failures" -eq 0 ]]

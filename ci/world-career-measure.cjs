@@ -1,5 +1,5 @@
 'use strict';
-// Mesure manuelle (hors CI) : effectifs, mouvements, masses salariales et taille
+// Mesure manuelle ou en CI (workflow « Mesure des clubs gérés ») : effectifs, mouvements, masses salariales et taille
 // persistée d'une carrière mondiale, saison par saison, par l'API publique du worker.
 // node ci/world-career-measure.cjs --seed 27 --mode world-champ --club 30 --seasons 3 --out /chemin/rapport.json [--keep /dossier]
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
@@ -33,6 +33,34 @@ function sizes(text,s){
  for(const [k,v] of Object.entries(s))out[k]=Buffer.byteLength(JSON.stringify(v)??'');
  return Object.fromEntries(Object.entries(out).sort((a,b)=>b[1]-a[1]).slice(0,16));
 }
+// Où se trouve chaque joueur : championnat de son club, vivier libre ou centre.
+function placements(s){
+ const at=new Map();
+ for(const c of s.clubs){const lg=leagueOf(s,c);for(const p of c.players)at.set(p.id,lg);}
+ for(const p of s.economy?.freeAgents||[])if(!at.has(p.id))at.set(p.id,'libre');
+ return at;
+}
+// Mouvements entre deux points de mesure : origine > destination (championnat,
+// « libre », « sortie » pour retraite ou bassin abstrait).
+function movements(prev,now){
+ if(!prev)return null;
+ const out={};
+ for(const [id,from] of prev){const to=now.get(id)??'sortie';if(to!==from){const k=from+'>'+to;out[k]=(out[k]||0)+1;}}
+ for(const [id,to] of now)if(!prev.has(id)){const k='nouveau>'+to;out[k]=(out[k]||0)+1;}
+ return Object.fromEntries(Object.entries(out).sort((a,b)=>b[1]-a[1]));
+}
+// Directions des clubs gérés (carrières qui en ont) : stratégies, profils, compteurs.
+function directions(s){
+ const d=s.clubDirections;if(!d||typeof d!=='object')return null;
+ const strategies={},byLeague={},traits={};
+ for(const [id,x] of Object.entries(d.clubs||{})){
+  const lg=leagueOf(s,s.clubs[Number(id)]||{id:Number(id)}),st=x.strategy||'aucune';
+  strategies[st]=(strategies[st]||0)+1;(byLeague[lg]??={})[st]=(byLeague[lg][st]||0)+1;
+  for(const [k,v] of Object.entries(x.traits||{}))if(typeof v==='number')(traits[k]??=[]).push(v);
+ }
+ return {strategies,byLeague,traits:Object.fromEntries(Object.entries(traits).map(([k,v])=>[k,{median:median(v),min:Math.min(...v),max:Math.max(...v)}])),
+  tally:d.tally||null,news:(d.feed||[]).slice(0,25)};
+}
 function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
  const leagues={};
  for(const c of s.clubs){
@@ -48,7 +76,8 @@ function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
   professionals:s.clubs.reduce((n,c)=>n+c.players.length,0),academies,freeAgents:s.economy.freeAgents.length,market:s.market.length,
   retired:s.development?.retired?.length,userCash:round(s.clubs[s.club].cash/1e6),userPayroll:round(s.clubs[s.club].players.reduce((n,p)=>n+p.salary,0)*52/1e6),
   budget,debtClubs:debt,userLedger:s.__ledger,
-  stateBytes:Buffer.byteLength(storeText),profileBytes,stateSizes:sizes(storeText,s),export:exportResult,events};
+  stateBytes:Buffer.byteLength(storeText),profileBytes,stateSizes:sizes(storeText,s),export:exportResult,events,
+  interclub:(s.economy?.transfers||[]).filter(t=>/ achète | prête | rapatrie | engage /.test(t.text||'')).length,directions:directions(s)};
 }
 function run(o){
  const started=Date.now(),dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-measure-'));
@@ -57,7 +86,7 @@ function run(o){
  const go=(command,payload={})=>{const r=bridge.handle({id:++serial,command,payload});assert(r.ok,command+': '+r.error);return model=r.model;};
  const profile=path.join(dir,'PrototypeGodot/donnees.json');
  const state=()=>{const raw=fs.readFileSync(profile,'utf8');const text=JSON.parse(raw).store['bdt-v1'];return {text,bytes:Buffer.byteLength(raw)};};
- let prevLedger=[],ledgerSum={};
+ let prevLedger=[],ledgerSum={},prevPlaces=null;
  const ledger=s=>{const now=s.ledger||[];let n=now.length;if(prevLedger.length){const head=JSON.stringify(prevLedger[0]);for(let i=0;i<now.length;i++){if(JSON.stringify(now[i])===head&&JSON.stringify(now.slice(i,i+3))===JSON.stringify(prevLedger.slice(0,3))){n=i;break;}}}
   for(const e of now.slice(0,n)){const k=String(e.title).replace(/ · .*/,'').replace(/\d+/g,'#');ledgerSum[k]=round((ledgerSum[k]||0)+e.amount/1e6,3);}prevLedger=now;};
  const track=s=>{for(const e of s.aiRoster?.events||[]){const k=JSON.stringify(e);if(seen.has(k))continue;seen.add(k);const lg=leagueOf(s,s.clubs[e.clubId]||{id:e.clubId});const key=e.kind;counts[key]??={};counts[key][lg]=(counts[key][lg]||0)+1;}};
@@ -65,8 +94,9 @@ function run(o){
  const capture=label=>{
   const {text,bytes}=state(),s=JSON.parse(text);track(s);ledger(s);s.__ledger=ledgerSum;ledgerSum={};
   let exp=null;const t=Date.now();if(label.startsWith('end-')||label==='after-S'+o.seasons)try{const r=bridge.handle({id:++serial,command:'export',payload:{}});exp=r.ok?{ok:true,bytes:Buffer.byteLength(r.model.meta.exportText),ms:Date.now()-t}:{ok:false,error:r.error};}catch(e){exp={ok:false,error:String(e.message)};}
-  const row=observe(label,s,text,bytes,exp,counts,Date.now()-started);counts={};report.observations.push(row);
-  console.log(JSON.stringify({label,elapsed:Math.round(row.elapsedMs/1000),stateMB:round(row.stateBytes/1048576),export:!exp?null:exp.ok?round(exp.bytes/1048576):exp.error,elite:row.byLeague.elite,events:row.events}));
+  const row=observe(label,s,text,bytes,exp,counts,Date.now()-started);counts={};
+  const now=placements(s);row.movements=movements(prevPlaces,now);prevPlaces=now;report.observations.push(row);
+  console.log(JSON.stringify({label,elapsed:Math.round(row.elapsedMs/1000),stateMB:round(row.stateBytes/1048576),export:!exp?null:exp.ok?round(exp.bytes/1048576):exp.error,elite:row.byLeague.elite,events:row.events,strategies:row.directions?.strategies}));
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();
  };
