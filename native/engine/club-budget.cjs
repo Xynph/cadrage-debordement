@@ -484,9 +484,13 @@ function budgetConformite(){
  }
  return touche;
 }
+// Le moteur appelle budgetAvantProfondeur(), puis nativeProfessionalDepth.fill(S) tel quel, puis budgetProfondeur() :
+// hors carrières marquées, ces deux appels ne font rien et le remplissage reste celui d'origine, à l'identique.
+let budgetTaillesAvant=null;
+function budgetAvantProfondeur(){budgetTaillesAvant=budgetActif()&&!S.live?S.clubs.map(c=>c.players.length):null;}
 function budgetProfondeur(){
- if(!budgetActif()||S.live)return nativeProfessionalDepth.fill(S);
- const tailles=S.clubs.map(c=>c.players.length);nativeProfessionalDepth.fill(S);
+ const tailles=budgetTaillesAvant;budgetTaillesAvant=null;
+ if(!tailles||!budgetActif()||S.live||tailles.length!==S.clubs.length)return;
  let forces=null;
  S.clubs.forEach((c,i)=>{
   if(c.players.length<=tailles[i])return;

@@ -100,6 +100,36 @@ acheteur ni vendeur par ce chemin.
 
 ## 3. Export refusé en fin de saison 2
 
+### Cause
+
+L'état persisté d'une carrière mondiale de 116 clubs pèse déjà 19,3 Mo à la
+création, pour une limite d'export de 24 Mio. Près d'un tiers est fait de
+copies exactes des registres du jeu, recopiées dans chaque joueur :
+
+| Champ, par joueur | Taille à la création | Ce que c'est |
+| --- | --- | --- |
+| `worldProfile` | 4,95 Mo | profil mondial du joueur, identique au registre (la validation l'exige) |
+| `rosterProfile` | 0,83 Mo | fiche d'effectif de la fondation, identique à la référence (exigé) |
+| `hiddenTraitsV2` | 0,71 Mo | traits initiaux, identiques à la source pour les joueurs du registre (exigé) |
+
+S'y ajoute le marché visible, copie des joueurs libres (jusqu'à 1 900), que
+seule l'édition Champ renvoyait au vivier par identifiant.
+
+### Correction : export v3 (`dist/saves.js`)
+
+- Quand le fichier ordinaire (v1) ou le marché Champ réduit (v2) ne tiennent
+  pas dans la limite, l'export passe en **v3** : chaque champ de référence
+  identique à son registre est remplacé, à sa place, par la marque `true` ; le
+  marché renvoie au vivier par identifiant, pour toutes les éditions
+  mondiales. Un champ modifié reste écrit en entier : la réduction est sans
+  perte.
+- À l'écriture, un contrôle aller-retour reconstruit l'état et compare son
+  empreinte à celle de l'état exporté ; en cas d'écart, pas de v3.
+- À la lecture, les champs sont reconstruits depuis les registres de
+  l'édition avant le contrôle d'empreinte et la validation ; une marque sans
+  référence est refusée. Les fichiers v1 et v2 restent lus tels quels ; le
+  profil sur disque (reprise) ne change pas de format.
+
 À compléter avec les mesures.
 
 ## Mesures

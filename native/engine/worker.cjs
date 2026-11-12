@@ -492,7 +492,7 @@ function createBridge(options={}){
      run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
      if(advancesWithinWeek)run('save()');
-     else run('budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
+     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
      const model=snapshotRaw({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
