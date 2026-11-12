@@ -658,3 +658,21 @@ Legs et Hit To Side Of Body (chute sur le dos), Tripping et soccer trip. `mx_plo
 (goalkeeper diving save) et `mx_poussee` (Pushing) restent dans la bibliothèque, non joués.
 La passe reste procédurale : aucun clip de la bibliothèque ne fait une passe latérale à deux
 mains.
+
+### 12.6 Premier temps fort de la vidéo d'étape (coup d'envoi), revu image par image
+
+Léo : « c'est mieux. Quelques bugs dans le 1er temps fort » (graine 7, coup d'envoi puis
+réception de Clément Garcia). Relevé sur les 354 images et corrigé :
+
+| Défaut vu | Cause | Correction |
+| --- | --- | --- |
+| Équipe qui reçoit alignée en une seule file à la même distance, joueurs qui restent ensuite immobiles en ligne | le chorégraphe gardait la place `y` de la scène du moteur et ne reculait que les joueurs à moins de 10 m | formation de réception par numéro : avants en groupes à 11–17 m, demis à 19 et 24 m, trois-quarts étagés à 27–33 m, arrière à 38 m, symétrisée du côté où tombe le ballon (`ouvrirEnvoi`, `match-choregraphe.cjs`) |
+| Ballon décollé devant le porteur après la réception | ancrage du ballon sur le torse, mains posées ensuite sans pouvoir l'atteindre | ballon tenu (§ 12.4) |
+| Plaqueur qui traverse le porteur et tombe dans une autre direction après la réception | plongeon du plaqueur sur sa propre vitesse | plaquage du § 12.3 |
+| Anneaux rouges et bleus sous les joueurs | — | retirés (§ 12.2) |
+
+Relevés, non corrigés ici : le bouton du bandeau affiche « REPRENDRE » pendant le coup d'envoi
+d'un match importé en pause (comportement voulu depuis le 11 novembre : le premier temps fort se
+joue, puis le match attend) ; les sigles des clubs dans les textes du moteur (« FDG », « SDB »)
+ne correspondent pas aux noms affichés par le bandeau quand un pack de noms est actif (identités,
+hors de ce chantier).
