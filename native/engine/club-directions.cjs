@@ -29,7 +29,7 @@
 // créées avec cet état (S.clubDirections) l'utilisent ; les autres gardent les
 // cinq stratégies fixes de club-transfers.cjs, sans migration.
 module.exports=function clubDirections(T,N){
- const VERSION=1,FEED=30,WATCH=160,LOANS=120,TALLY_SEASONS=4,CASH_FLOOR=400000;
+ const VERSION=1,FEED=30,WATCH=160,LOANS=120,TALLY_SEASONS=4,TALLY_KEYS=1900,CASH_FLOOR=400000;
  const MAX_BUYS=3,MAX_SALES=3,ROUNDS=3,MAX_LOANS_OUT=2;
  const STRATEGIES=Object.freeze(['vedettes','formateur','rajeunissement','reconstruction','maintien','vente','equilibre']);
  // Pays et réputation de repli quand l'économie des ligues n'est pas chargée.
@@ -144,6 +144,8 @@ module.exports=function clubDirections(T,N){
  // ---- Comptes, fil d'actualité --------------------------------------------
  function count(kind,clubId,n=1){
   const t=state().tally,key=S.season+'|'+(clubId==null?'monde':leagueOf(clubId))+'|'+kind;
+  // L'arbre de sauvegarde refuse un objet de plus de 2000 clés (safeTree).
+  if(!Object.hasOwn(t,key)&&Object.keys(t).length>=TALLY_KEYS)return;
   t[key]=(t[key]||0)+n;
  }
  function trimTally(){
@@ -468,7 +470,7 @@ module.exports=function clubDirections(T,N){
    if(x.objective==null)x.objective=objectiveFor(c,peers,x);
    const sit=situation(c,peers,x),{strategy}=choose(c,peers,x,sit);
    if(strategy!==x.strategy){
-    count('bascule:'+x.strategy+'>'+strategy,c.id);
+    count('bascule:'+x.strategy+'-vers-'+strategy,null);
     if(['reconstruction','vente','vedettes'].includes(strategy)&&S.season>1)say(c.name+' change de cap : la direction veut '+STRATEGY_LABEL[strategy]+' ('+profileText(x)+').',[c.id],strategy!=='vedettes'||sit.promoted);
     x.strategy=strategy;x.since=S.season;
    }
@@ -623,7 +625,7 @@ module.exports=function clubDirections(T,N){
    ok(/^pres-\d{1,3}(-s\d{1,5})?$/.test(x.president.id)&&/^ds-\d{1,3}(-s\d{1,5})?$/.test(x.director.id)&&(x.coach.id===null||typeof x.coach.id==='string'&&/^[A-Za-z0-9:._-]{1,240}$/.test(x.coach.id)));
    ok(Array.isArray(x.director.network)&&x.director.network.length>=1&&x.director.network.length<=4&&x.director.network.every(id=>typeof id==='string'&&id.length<=16));
   }
-  ok(d.tally&&typeof d.tally==='object'&&Object.keys(d.tally).length<=4000&&Object.entries(d.tally).every(([k,v])=>k.length<=80&&int(v,0,1e6)));
+  ok(d.tally&&typeof d.tally==='object'&&Object.keys(d.tally).length<=TALLY_KEYS&&Object.entries(d.tally).every(([k,v])=>k.length<=80&&!/[<>"`&]/.test(k)&&int(v,0,1e6)));
   ok(Array.isArray(d.feed)&&d.feed.length<=FEED&&d.feed.every(t=>typeof t==='string'&&t.length<=400));
   ok(Array.isArray(d.watch)&&d.watch.length<=WATCH&&(d.formed===undefined||Array.isArray(d.formed)&&d.formed.length<=WATCH));
   ok(Array.isArray(d.loans)&&d.loans.length<=LOANS&&d.loans.every(l=>l&&typeof l.playerId==='string'&&int(l.from,0,s.clubs.length-1)&&int(l.to,0,s.clubs.length-1)&&int(l.until,1,s.season+1)));

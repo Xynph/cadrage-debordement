@@ -311,7 +311,7 @@ if(s.aiRoster!==undefined){
    saveCheck(saveInt(r[key],0,100));
   // Transferts entre clubs gérés (carrières mondiales) : compteurs et stratégie de la saison.
   for(const key of ['bought','sold'])saveCheck(r[key]===undefined||world&&saveInt(r[key],0,100),'Transferts de club invalides.');
-  saveCheck(r.strategy===undefined||world&&['vedettes','formateur','rajeunissement','vente','equilibre'].includes(r.strategy),'Stratégie de club invalide.');
+  saveCheck(r.strategy===undefined||world&&['vedettes','formateur','rajeunissement','vente','equilibre',...(s.clubDirections!==undefined?['reconstruction','maintien']:[])].includes(r.strategy),'Stratégie de club invalide.');
   saveCheck(saveNumber(r.fees,0,1e10));
  }
  for(const e of a.events)saveCheck(saveObject(e)&&saveInt(e.clubId,0,maxClub)&&

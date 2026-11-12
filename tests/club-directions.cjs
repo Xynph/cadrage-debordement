@@ -82,6 +82,7 @@ function run(seed){
  assert.equal(JSON.stringify(a.moves),JSON.stringify(b.moves),'déterministe');
  assert.equal(JSON.stringify(a.w.S.clubDirections),JSON.stringify(b.w.S.clubDirections));
  const t=a.w.S.clubDirections.tally;assert.ok(Object.keys(t).some(k=>k.includes('|strategie:')),'stratégies comptées');
+ assert.ok(Object.keys(t).every(k=>!/[<>"`&]/.test(k)),'clés de compteur acceptées par l’arbre de sauvegarde');
  assert.ok(a.moves.every(m=>m.buyer!==a.w.S.club&&m.seller!==a.w.S.club),'le club du manager n’est pas concerné');
  // Revue de saison : objectif manqué compté, direction réévaluée.
  assert.ok(Object.keys(t).some(k=>/\|objectif-(manque|depasse)$/.test(k)));}
