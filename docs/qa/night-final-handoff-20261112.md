@@ -1,6 +1,6 @@
 # Passation Cloud — Rugby Legacy 27, nuit du 12 novembre 2026
 
-État intermédiaire à 04:08 UTC (05:08 Paris). Échéance de travail : 07:30 UTC,
+État intermédiaire à 04:55 UTC (05:55 Paris). Échéance de travail : 07:30 UTC,
 08:30 Paris. **Aucune fusion Cloud dans main avant 08:00 UTC / 09:00 Paris.**
 Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 
@@ -11,11 +11,12 @@ Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 | [#572](https://github.com/Xynph/cadrage-debordement/pull/572) | `7b23f7af01938928b0e29f1a4676486421e89bbc` | Base, contient déjà #566 ; ne pas réintégrer #566 séparément |
 | [#576](https://github.com/Xynph/cadrage-debordement/pull/576) | `cloud/rg27-night-common-20261111` · `37e085b687b4e9a603085beaa50fecf9d6cace22` | Lot commun navigation, gestion et Art ; SDK initial rouge conservé |
 | [#582](https://github.com/Xynph/cadrage-debordement/pull/582) | `cloud/rg27-night-followup-20261112` · `76077ed3f2af0ff029c8a413fc26451a25ac647f` | Correctifs de réception ; SDK complet 75/75 et JavaScript sept jobs verts sur cette même tête |
-| [#583](https://github.com/Xynph/cadrage-debordement/pull/583) | `cloud/rg27-night-closeout-20261112` · `1a7b083b8a090d735ef1b08245b5f4faf430f76b` | Séance exacte, retour/brouillon et libellés de recherche ; tête finale figée pour CI |
+| [#583](https://github.com/Xynph/cadrage-debordement/pull/583) | `cloud/rg27-night-closeout-20261112` · `1a7b083b8a090d735ef1b08245b5f4faf430f76b` | Séance exacte, retour/brouillon et libellés de recherche ; tête closeout figée, SDK rouge conservé |
+| [#584](https://github.com/Xynph/cadrage-debordement/pull/584) | `cloud/rg27-night-qualification-20261112` · `ec0044ea99e22aeaad29751ccde1279c1699b577` | Correction de cible séance et recette gardes, revue ciblée approuvée ; nouvelles campagnes complètes en attente |
 | [#581](https://github.com/Xynph/cadrage-debordement/pull/581) | `cloud/rg27-night-receipts-20261112` | Preuves et présente passation ; branche documentaire, distincte du produit figé |
 | [#577](https://github.com/Xynph/cadrage-debordement/pull/577) | `c8a5a61d1dd708f662592bf971fe8d5a25ad1742` | Reçu Art ciblé historique déjà incorporé au lot ; pas de second patch à appliquer |
 
-Le lot est empilé #572 → #576 → #582 → #583. #581 complète les preuves et ne
+Le lot est empilé #572 → #576 → #582 → #583 → #584. #581 complète les preuves et ne
 constitue pas une deuxième source produit à fusionner aveuglément. Aucune PR
 familiale n'est clôturée comme incorporée avant intégration réelle et reçu.
 
@@ -60,14 +61,20 @@ les nouveaux résultats Staff/Nation/Compétition ont des libellés humains.
 | `76077ed3…` | [SDK complet 43138356742](night-followup-sdk-full-20261112.md) | **75/75**, quatre jobs ; 56 suites, 74 couples distincts et doublon Guide historique conservé ; matrices P1 4797/0 et 1905/0 + trois contrats séparés |
 | `76077ed3…` | [JavaScript 43138359860](night-followup-javascript-20261112.md) | Sept jobs verts, 645 CJS distincts, gate `130946563545` |
 | `b860cf95…` | [Séance et brouillon](https://github.com/Xynph/cadrage-debordement/blob/1a7b083b8a090d735ef1b08245b5f4faf430f76b/docs/qa/night-calendar-session-reading-20261112.md) | **146/0**, graphique X11 52,234 s TAP ; Agenda 61/0 et Navigation 156/0 séparés ; six contrats de registre verts |
-| `1a7b083b…` | [SDK complet 43152464850](https://github.com/Xynph/cadrage-debordement/actions/runs/43152464850) | Lancé une fois à 04:05 UTC ; **en cours**, 76 exécutions attendues / 57 suites / 75 couples distincts |
+| `1a7b083b…` | [SDK complet 43152464850](night-closeout-sdk-full-20261112.md) | **74/76, rouge** ; gardes timeout superviseur 180007 ms et Carnet 4666/27 ; 57 suites / 75 couples distincts, matrices 4942/0 et 1905/0 + trois contrats séparés |
 | `1a7b083b…` | [JavaScript 43152477147](https://github.com/Xynph/cadrage-debordement/actions/runs/43152477147) | Lancé une fois à 04:05 UTC ; **en cours**, 646 CJS racine attendus ; aucun verdict anticipé |
+| `ec0044ea…` | [SDK complet 43157636998](https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998) | Lancé une fois à 04:52 UTC ; **en attente**, 76 exécutions attendues / 57 suites / 75 couples distincts |
+| `ec0044ea…` | [JavaScript 43157653421](https://github.com/Xynph/cadrage-debordement/actions/runs/43157653421) | Lancé une fois à 04:52 UTC ; **en attente**, 646 CJS racine attendus ; aucune conclusion héritée |
 
 Sur 7607, les quatre variantes Art passent avec **840 contrôles, 146 captures
 annoncées, zéro échec**, progression 135593 ms sous son délai enfant 150 s.
 Les 848 contrôles de l'ancien reçu #577 appartiennent à son autre source.
 Délais enfants 150/180 s, limite VM 15 s et workflows inchangés. Le nouveau
 wrapper séance garde un enfant 90 s et le superviseur existant 180 s.
+
+Le complément [#584](https://github.com/Xynph/cadrage-debordement/pull/584) est publié et figé sur ec0044ea, sans déplacer #583 : minimum local des liens séance 18→19 px pour conserver la cible écran après ajustement global ; diagnostics gardes collectés et transmis au parent avant un éventuel timeout ; cache QA Art limité aux SubViewports avec caméra 3D dans les gardes graphiques, avec redraws frais, textures contrôlées et rendu 2D actif. Aucun réglage de production modifié.
+
+Les [réceptions locales exactes et six captures](https://github.com/Xynph/cadrage-debordement/blob/ec0044ea99e22aeaad29751ccde1279c1699b577/docs/qa/night-qualification-20261112.md) restent distinctes : Carnet 4672/0 headless et 4726/0 graphique sur `340aa4ea` ; séance 146/0 sur `4d5b0df8` (scroll clavier 12/12, souris 130/130) ; gardes 112/0 graphique sur `70305d11` (103 contrôles initiaux + neuf de rendu), 99/0 headless avec cache désactivé. Parole 0/0/0, quatre reçus gardes sans commande de lien et paires état/profil/seed/clock inchangées. Revue indépendante des trois fichiers approuvée, aucun point ouvert. Les durées gardes 114,643→61,760 s sont observées sur profils initiaux différents : aucune comparaison causale à checkpoint identique ni cause du timeout CI démontrée. Aucun verdict global ne vient de ces verts locaux.
 
 Les échecs d'acceptation (absence initiale d'adaptateur, caption/Back, brouillon)
 et les erreurs de harness/parsing restent séparés des verts. La revue finale
@@ -133,10 +140,12 @@ expliqués sans causalité certaine ou potentiel caché inventé.
 
 ## Coordination et limites réservées
 
-Main observé : `44c7ebef0edb8a04310a4c6fe9b4a221ce630e83` (#574), après
-`b30c331c…` (#575) et `f9c55a92…` (#553). Les interfaces lues pour nos liens
+Main observé : `c39dfffbd023200cb190d54322291c9f96c6fe22` (#578, contenant #560/#571), après `44c7ebef…` (#574), `b30c331c…` (#575) et `f9c55a92…` (#553). Les interfaces lues pour nos liens
 conservent id/name et les entrées de lecture ; les garde-fous de sauvegarde par
 ID restent présents. Ce constat statique ne qualifie pas les migrations runtime.
+Le JavaScript de main 44c est reçu vert par le moniteur :
+[43150131282](https://github.com/Xynph/cadrage-debordement/actions/runs/43150131282),
+sept jobs dont gate `130975227686` ; ce vert est historique depuis c39 et reste distinct des branches Cloud. Le JavaScript c39 [43157056905](https://github.com/Xynph/cadrage-debordement/actions/runs/43157056905) est encore en cours au présent état ; les trois validations natives dédiées ont été observées vertes par le moniteur. Aucune API consommée par les lecteurs/gardes ou le cycle guide/speech n’est retirée dans le delta 44→c39. Le nouveau mode temps forts enrichit live et peut retarder une causerie : cette cadence doit être reçue sur le cumul réel, sans déduire de sûreté runtime de la lecture statique.
 
 `git merge-tree --write-tree 1a7b083b… 44c7ebef…` reçoit le 12 novembre un arbre
 virtuel propre `5f08188bd7c0c3c11e15bfef13b47b7f54e9a048`, code 0. Aucune
@@ -144,6 +153,7 @@ branche main déplacée et aucune recette du cumul réel n'en est déduite. Les
 [contrôles de frontières Git](evidence/night-final-handoff-20261112/git-boundaries.json)
 conservent les sources exactes, les 28 chemins natifs et leurs hashes, ainsi que
 l’absence de changements d’assets produit et de configuration GitHub depuis #572.
+Le rapprochement virtuel final ec0044ea+c39 est aussi propre, arbre `fc156a9ae704a6ace7b3d6d6b14293702264fe48`, code 0 : [frontières exactes ec](evidence/night-final-handoff-20261112/git-boundaries-ec0044ea.json). Aucune intégration réelle ou recette cumulative n’est revendiquée.
 
 Le [repro d'archive presse](night-claude-press-archive-compatibility-20261112.md)
 sur f9 puis 44 montre qu'un pack presse compatible peut transformer un fragment
@@ -151,7 +161,7 @@ de citation affichée, alors que l'entrée archive reste inchangée. C'est une
 projection représentative isolée, pas une occurrence de carrière ni une migration
 qualifiée. Aucun patch du moteur réservé ; reprise précise livrée à Claude.
 
-Branches réservées, rendu, animations, économie, calendriers métier, identité et
+Branches réservées, rendu, animations, économie, calendriers métier, moteurs/données d’identité et
 assets Mixamo n'ont pas de développement concurrent. Aucun fichier Mixamo ou
 conversion ajouté au dépôt public ; les neuf PNG Gabi non suivis sont laissés
 intacts et exclus des commits. Tenue Gabi préservée, aucun chargement GLTF runtime
