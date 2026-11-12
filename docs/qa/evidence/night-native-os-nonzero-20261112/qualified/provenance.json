@@ -1,0 +1,114 @@
+{
+  "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+  "variants": {
+    "two-matches": {
+      "source_profile": "/tmp/rg27-night-navigation-profile-6N503T/PrototypeGodot",
+      "copied_profile": "/workspace/work/native-os-followup-input/profile/PrototypeGodot",
+      "profile_parent": "/workspace/work/native-os-followup-input/profile",
+      "expected_fixture": "s1-elite-league-1-0",
+      "expected_score": [
+        20,
+        10
+      ],
+      "expected_archive": {
+        "fixtureId": "s1-elite-league-1-0",
+        "season": 1,
+        "week": 1,
+        "pair": [
+          12,
+          0
+        ],
+        "score": [
+          20,
+          10
+        ],
+        "phase": "league"
+      },
+      "require_nonzero_scroll": true,
+      "files": [
+        {
+          "name": "donnees-precedentes.json",
+          "bytes": 5745229,
+          "sha256_before": "589be7153805f6d38b3309d454e5a478758c84bed01fc810ea1b0b867f8e4365",
+          "sha256_after_copy": "589be7153805f6d38b3309d454e5a478758c84bed01fc810ea1b0b867f8e4365",
+          "copy_sha256": "589be7153805f6d38b3309d454e5a478758c84bed01fc810ea1b0b867f8e4365"
+        },
+        {
+          "name": "donnees.json",
+          "bytes": 5745234,
+          "sha256_before": "016760df473facd2b7e389fb8454d8e2276489f1c0bbd4dc1d1ac7d4b27fffaa",
+          "sha256_after_copy": "016760df473facd2b7e389fb8454d8e2276489f1c0bbd4dc1d1ac7d4b27fffaa",
+          "copy_sha256": "016760df473facd2b7e389fb8454d8e2276489f1c0bbd4dc1d1ac7d4b27fffaa"
+        },
+        {
+          "name": "guide.json",
+          "bytes": 145,
+          "sha256_before": "451663f238f3e7edd3ddcb4fe06835ecf78954a7bc7c2563a0a8bba48b6e6329",
+          "sha256_after_copy": "451663f238f3e7edd3ddcb4fe06835ecf78954a7bc7c2563a0a8bba48b6e6329",
+          "copy_sha256": "451663f238f3e7edd3ddcb4fe06835ecf78954a7bc7c2563a0a8bba48b6e6329"
+        }
+      ],
+      "origin": "Vrai checkpoint public de mission reçu47/0 sur d896d631 ;37 commandes publiques, deux semaines. Source conservée sans édition."
+    },
+    "common-fallback": {
+      "source_profile": "/tmp/cd-analysis-club-graphics-UK7pUD/PrototypeGodot",
+      "copied_profile": "/workspace/work/native-os-followup-input/fallback-profile/PrototypeGodot",
+      "profile_parent": "/workspace/work/native-os-followup-input/fallback-profile",
+      "expected_fixture": "s1-elite-league-0-0",
+      "expected_score": [
+        15,
+        20
+      ],
+      "expected_archive": {
+        "fixtureId": "s1-elite-league-0-0",
+        "season": 1,
+        "week": 0,
+        "pair": [
+          0,
+          13
+        ],
+        "score": [
+          15,
+          20
+        ],
+        "phase": "league"
+      },
+      "require_nonzero_scroll": false,
+      "files": [
+        {
+          "name": "donnees-precedentes.json",
+          "bytes": 5707962,
+          "sha256_before": "dc7f7603d528e03fc64e3d3d27cef810fbd114c7f4defe69f237950a16c2d00e",
+          "sha256_after_copy": "dc7f7603d528e03fc64e3d3d27cef810fbd114c7f4defe69f237950a16c2d00e",
+          "copy_sha256": "dc7f7603d528e03fc64e3d3d27cef810fbd114c7f4defe69f237950a16c2d00e"
+        },
+        {
+          "name": "donnees.json",
+          "bytes": 5708097,
+          "sha256_before": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b",
+          "sha256_after_copy": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b",
+          "copy_sha256": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b"
+        },
+        {
+          "name": "guide.json",
+          "bytes": 196,
+          "sha256_before": "20e0bbb5066230197f9ee8095ff922d1ffe39584b85dc1c77a814602f6656677",
+          "sha256_after_copy": "20e0bbb5066230197f9ee8095ff922d1ffe39584b85dc1c77a814602f6656677",
+          "copy_sha256": "20e0bbb5066230197f9ee8095ff922d1ffe39584b85dc1c77a814602f6656677"
+        }
+      ],
+      "origin": "Source exacte de la première recette native47/0 ; limite de scroll0 connue. Source conservée sans édition."
+    }
+  },
+  "source_code_sha256": {
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "93ff59c1b2056305e3526d1f732b47ae742d0d3a39bc6e2d1be17b61881e6241",
+    "native/godot/ui/immersive08/club_canvas.gd": "9c696238f2e64cf7d233cf0cceb2bf8d1c093adb568b719b8d55e1d2e15d6742",
+    "native/godot/ui/performance_analysis_view.gd": "f39ac81c6f5fb38e6b129521c14be76bd03f1d6f70de44d9d36678db93373891",
+    "native/godot/ui/immersive08/competition_canvas.gd": "71e086850c5139ccd59eea66c05ee2b8fdd1d0caa524cd55293d2366586d1cba"
+  },
+  "runtime_lock_note": "Only runtime profil.lock excluded; save files and guide exact copies. No source write.",
+  "execution_note": "Prepared only; no Godot/import/input/capture launched by functional_qa. Nonzero scroll remains unqualified until root runtime.",
+  "probe_sha256": "c63b452145f99f7637cfcb0c19d8a597dd84e7b8a6230f687578751f1d0899fd",
+  "oskeys_sha256": "32e884227a5bc0163b1ac1466a62bab5ba113533367e6b69d1e066fcc849a941"
+}
