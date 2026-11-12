@@ -75,6 +75,7 @@ func _current_target(route: String) -> Dictionary:
 	if route == "Recrutement" and kind in ["player", "squad", "market"] and str(app.management_ui.get("market", {}).get("navigation_id", "")) != id: return {}
 	if kind == "nation" and str(app.management_ui.get("international", {}).get("navigation_id", "")) != id: return {}
 	if kind == "staff" and str(app.management_ui.get("staff", {}).get("navigation_id", "")) != id: return {}
+	if kind == "session" and not app.Immersive.Competition.session_context_matches(app, target.get("id")): return {}
 	return target.duplicate(true)
 
 func _reading_location(route: String) -> Dictionary:
@@ -475,8 +476,8 @@ func entity_available(target: Dictionary) -> bool:
 			return _allowed_route("Sélections") and app.Immersive.Selections.has_method("target_available") and app.Immersive.Selections.target_available(app, id)
 		"staff":
 			return _allowed_route("Staff") and app.StaffViews.has_method("target_available") and app.StaffViews.target_available(app, id)
-		"club", "fixture", "competition", "date":
-			var route := "Calendrier" if kind == "date" else "Classements"
+		"club", "fixture", "competition", "date", "session":
+			var route := "Calendrier" if kind in ["date", "session"] else "Classements"
 			return _allowed_route(route) and app.Immersive.Competition.has_method("target_available") and app.Immersive.Competition.target_available(app, kind, target.get("id"))
 		"finance":
 			return _allowed_route("Finances") and app.Immersive.FinanceCanvas.has_method("target_available") and app.Immersive.FinanceCanvas.target_available(app, target.get("id"))
@@ -490,6 +491,12 @@ func _reading_source(source: Window) -> bool:
 func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	var source: Window = source_window if _reading_source(source_window) else null
 	if str(target.get("kind", "")) == "prospect" or _blocked(source) or not entity_available(target): return false
+	# A repeated session keeps the original history entry and source snapshot.
+	# World owns both validation and the exact visible session context.
+	if source == null and str(target.get("kind", "")) == "session" and app.Immersive.Competition.session_context_matches(app, target.get("id")):
+		var focus := app.find_child(app.Immersive.Competition.session_focus_name(str(target.id)), true, false) as Control
+		if focus != null: focus.grab_focus()
+		return true
 	if source != null:
 		if str(source.get_meta("entity_kind", "")) == str(target.get("kind", "")) and str(source.get_meta("entity_id", "")) == str(target.get("id", "")): return true
 		var ancestor := _reader_ancestor(target, source)
@@ -533,9 +540,9 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		"staff":
 			destination = "Staff"
 			opened = app.StaffViews.open_target(app, id)
-		"club", "fixture", "competition", "date":
+		"club", "fixture", "competition", "date", "session":
 			opened = app.Immersive.Competition.open_target(app, kind, target.get("id"))
-			if opened and kind in ["competition", "date"]: destination = app.route
+			if opened and kind in ["competition", "date", "session"]: destination = app.route
 		"finance":
 			opened = app.Immersive.FinanceCanvas.open_target(app, target.get("id"))
 			if opened: destination = "Finances"
@@ -548,7 +555,7 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		app.management_ui.navigation_target = location
 		if kind == "menu":
 			app._navigate(destination, false)
-		elif kind not in ["competition", "date", "finance", "training"]:
+		elif kind not in ["competition", "date", "session", "finance", "training"]:
 			app._navigate(destination, false, true)
 		observe(app.route, app.selected_player, app.selected_staff_club, kind in ["player", "squad"])
 	_dispatching = false
