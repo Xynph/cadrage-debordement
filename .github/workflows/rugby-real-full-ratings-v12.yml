@@ -1,7 +1,7 @@
 name: Rugby Reel V12 - full ratings and native matches
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (chantier versionné clos, contrôles Node repris par tests.yml).
+# Anciens déclencheurs : push, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  push:
-    branches: [data/rugby-real-full-ratings-v12-20261107]
   workflow_dispatch:
 permissions:
   contents: read

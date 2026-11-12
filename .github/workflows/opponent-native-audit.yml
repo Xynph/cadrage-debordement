@@ -1,11 +1,8 @@
 name: IA adverse - audit 24 matchs natifs
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/tactical-plans.js'
-      - 'tests/opponent-native-browser.py'
-      - '.github/workflows/opponent-native-audit.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

@@ -1,13 +1,7 @@
 name: V58 Consolidation Entraineurs
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (suites Node déjà exécutées par tests.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/coach-career.js'
-      - 'dist/coach-negotiations.js'
-      - 'dist/coach-contract-cycle.js'
-      - 'tests/v58-*.cjs'
-      - '.github/workflows/v58-coach-consolidated.yml'
   workflow_dispatch:
 permissions:
   contents: read

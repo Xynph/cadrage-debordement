@@ -1,17 +1,7 @@
 name: LNR V12 V11 - integration native multi seasons
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (chantier versionné clos, contrôles Node repris par tests.yml).
+# Anciens déclencheurs : push, pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  push:
-    branches: [integration/lnr-v12-v11-live-20261107]
-  pull_request:
-    paths:
-      - 'dist/lnr-ratings-v12.js'
-      - 'dist/lnr-v11-aging.js'
-      - 'dist/lnr-career.js'
-      - 'dist/development.js'
-      - 'dist/saves.js'
-      - 'dist/index.html'
-      - 'tools/lnr-v12-v11-preview/**'
-      - '.github/workflows/lnr-v12-v11-live.yml'
   workflow_dispatch:
 jobs:
   build-offline-asset:

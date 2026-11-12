@@ -1,13 +1,7 @@
 name: MATCH 3D — réception Chromium et hors ligne
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/match3d/**'
-      - 'tests/match3d-*'
-      - '.github/workflows/match3d-browser.yml'
-      - 'scripts/build-offline.py'
   workflow_dispatch:
 
 permissions:
