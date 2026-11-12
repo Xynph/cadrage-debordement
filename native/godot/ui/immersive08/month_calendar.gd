@@ -557,7 +557,9 @@ func _session_caption(session: Dictionary, prefix: String, caption: String, colo
 	link.name = prefix + str(id).sha256_text()
 	link.flat = true
 	link.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	link.custom_minimum_size.y = 18
+	# Global layout fitting can slightly shrink local pixels; keep the physical
+	# target above 18 px after that fit and integer minimum-size rounding.
+	link.custom_minimum_size.y = 19
 	link.add_theme_font_override("font", C.font(weight))
 	link.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 	for state_name in ["normal", "hover", "pressed", "focus"]:
