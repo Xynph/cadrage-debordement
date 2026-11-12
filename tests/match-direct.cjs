@@ -171,7 +171,7 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
     let model = demarrer(jeu);
     let deroules = 0;
     const bornes = [], vus = new Set();
-    let verifies = 0;
+    let verifies = 0, sigles = 0;
     for (let k = 0; k < 60 && !model.live.finished && !model.live.atBreak && !(k > 0 && model.live.paused); k++) {
       model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
       const live = model.live, direct = live.direct, events = live.events;
@@ -185,6 +185,15 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       }
       bornes.push(direct.borne);
       assert.ok(direct.borne <= events.length && direct.fil.every(l => l.i < direct.borne) && direct.deroule.every(d => d.i < direct.borne) && direct.reperes.every(r => r.i < direct.borne), 'fil, déroulé et repères bornés');
+      // Sigles : le fil nomme les clubs comme l'écran (identité affichée), pas par le sigle interne.
+      for (const equipe of live.teams) {
+        const affiche = equipe.presentation?.abbr;
+        if (affiche && affiche !== equipe.abbr) {
+          const interne = new RegExp(`\\b${equipe.abbr}\\b`);
+          assert.ok([...direct.fil, ...direct.deroule].every(l => !interne.test(l.texte)), `sigle interne ${equipe.abbr} absent du fil (affiché : ${affiche})`);
+          sigles++;
+        }
+      }
       const vues = H.normaliser(events).slice(0, direct.borne);
       assert.deepEqual(direct.score, vues.length ? vues.at(-1).scoreApres : [0, 0], 'score de ce qui a été montré');
       // Déroulé : derniers faits jouables, dans l'ordre, jamais au-delà du journal.
@@ -223,5 +232,6 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
     assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
+    assert.ok(sigles > 0, 'sigles affichés vérifiés');
   } finally { jeu.fermer(); }
 });

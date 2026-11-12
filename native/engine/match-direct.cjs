@@ -109,20 +109,23 @@ function compacte(scene){
 }
 // Derniers faits jouables, chacun avec la place des trente joueurs que le moteur leur donne
 // (la même que la vue 3D) : la vue 2D les rejoue dans l'ordre pendant l'entracte.
-function deroule(lignes,events,lire,rencontre){
+function deroule(lignes,events,lire,rencontre,nommer=t=>String(t||'')){
  const derniere=lignes.length?lignes[lignes.length-1]:null;if(!derniere)return [];
  const retenues=lignes.filter(l=>!l.bandeau&&!SANS_IMAGE.has(l.kind)&&events[l.i]?.scene&&derniere.minute-l.minute<=4&&l.periode===derniere.periode).slice(-DEROULE_MAX);
- const manquants=retenues.filter(l=>!SCENES_2D.has(rencontre+'|'+l.i)||l.i>=events.length-2).map(l=>l.i);
+ // Clé : la rencontre (saison, journée, affiche) ne suffit pas (même affiche rejouée depuis une
+ // sauvegarde, autre carrière dans le même processus) : on y joint l'empreinte du fait.
+ const cle=i=>{const s=events[i]?.scene||{};return rencontre+'|'+i+'|'+(events[i]?.min??'')+'|'+s.kind+'|'+s.team+'|'+s.possession+'|'+s.from?.x+','+s.from?.y+'|'+s.to?.x+','+s.to?.y+'|'+String(events[i]?.text||'').length};
+ const manquants=retenues.filter(l=>!SCENES_2D.has(cle(l.i))||l.i>=events.length-2).map(l=>l.i);
  if(manquants.length){
   const scenes=lire.scenes(manquants);
-  manquants.forEach((i,n)=>SCENES_2D.set(rencontre+'|'+i,compacte(scenes[n])));
+  manquants.forEach((i,n)=>SCENES_2D.set(cle(i),compacte(scenes[n])));
   while(SCENES_2D.size>96)SCENES_2D.delete(SCENES_2D.keys().next().value);
  }
  return retenues.map(l=>{
-  const s=events[l.i].scene,scene=SCENES_2D.get(rencontre+'|'+l.i);
+  const s=events[l.i].scene,scene=SCENES_2D.get(cle(l.i));
   if(!scene)return null;
   return {i:l.i,horloge:horloge(l),minute:l.minute,kind:l.kind,equipe:l.equipe,move:s.move||null,porte:s.porte===true,cause:s.cause||null,
-   gain:Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?r1(Math.abs(s.to.x-s.from.x)):0,score:l.scoreApres,...(l.kind==='try'?{transformation:l.transformation===true}:{}),texte:String(events[l.i].text||''),scene};
+   gain:Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?r1(Math.abs(s.to.x-s.from.x)):0,score:l.scoreApres,...(l.kind==='try'?{transformation:l.transformation===true}:{}),texte:nommer(events[l.i].text),scene};
  }).filter(Boolean);
 }
 // Domination minute par minute, de -100 (l'équipe qui reçoit, côté 1, domine) à +100 (côté 0) :
@@ -222,9 +225,20 @@ function borneEntracte(lignes,bilan){
 // Chiffres cumulés du moteur (possession, mêlées, pénalités…) tels qu'ils étaient quand le
 // journal s'arrêtait avant la borne : relevés à chaque projection, par rencontre.
 const RELEVES=new Map();
+// Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran les nomme par
+// leur identité affichée (presentation.abbr). Le texte montré reprend le sigle affiché.
+function renommeur(equipes){
+ const paires=(Array.isArray(equipes)?equipes:[]).map(t=>[String(t?.abbr||''),String(t?.presentation?.abbr||'')]).filter(([a,b])=>/^[A-Z0-9]{2,5}$/.test(a)&&b&&a!==b);
+ if(!paires.length)return t=>String(t||'');
+ const motif=new RegExp('(?<![\\p{L}\\p{N}])('+paires.map(p=>p[0]).join('|')+')(?![\\p{L}\\p{N}])','gu'),table=new Map(paires);
+ return t=>String(t||'').replace(motif,a=>table.get(a));
+}
+
 function releve(rencontre,n,valeurs,borne){
  let liste=RELEVES.get(rencontre);
  if(!liste){liste=[];RELEVES.set(rencontre,liste);while(RELEVES.size>4)RELEVES.delete(RELEVES.keys().next().value)}
+ // Journal plus court que le dernier relevé : autre match de la même affiche (sauvegarde rechargée).
+ if(liste.length&&liste.at(-1).n>n)liste.length=0;
  if(!liste.length||liste.at(-1).n<n)liste.push({n,...valeurs});
  else if(liste.at(-1).n===n)liste[liste.length-1]={n,...valeurs};
  while(liste.length>240)liste.shift();
@@ -235,7 +249,7 @@ function releve(rencontre,n,valeurs,borne){
 // `lire` : accès en lecture au moteur ({scenes, transformation, etat, profils}).
 // `options.choregraphe` : joindre au temps fort sa mise en scène continue (chorégraphe).
 function project(model,niveau,lire,options={}){
- const live=model.live,events=live.events;
+ const live=model.live,events=live.events,nommer=renommeur(live.teams);
  if(!NIVEAUX.includes(niveau))throw new RangeError('Niveau de temps forts inconnu : '+niveau);
  const phase=model.next?.phase,eliminatoire=typeof phase==='string'&&phase!=='league';
  const bilan=selection.en_direct(events,{niveau,eliminatoire}),lignes=selection.normaliser(events),etat=lire.etat()||{};
@@ -247,7 +261,7 @@ function project(model,niveau,lire,options={}){
  const passe=releve(String(etat.rencontre||''),events.length,{stats:live.stats||[],statsRows:live.statsRows||[],tactique:etat.tactique||null},borne);
  // Fil : sans les messages d'avantage, les retours de carton ni les mises en place.
  const bruit=l=>l.kind==='advantage'||l.kind==='card'&&!l.incident||l.type==='setup'||l.kind==='miss'&&l.type!=='miss';
- const fil=vues.filter(l=>!bruit(l)).slice(-10).map(l=>({i:l.i,horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
+ const fil=vues.filter(l=>!bruit(l)).slice(-10).map(l=>({i:l.i,horloge:horloge(l),texte:nommer(events[l.i].text),kind:l.kind,equipe:l.equipe}));
  const traces=vues.filter(l=>jouable(l)&&events[l.i].scene).slice(-3).map(l=>({depuis:point(events[l.i].scene.from),vers:point(events[l.i].scene.to),equipe:l.equipe,kind:l.kind})).filter(t=>t.depuis&&t.vers);
  const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>({i:l.i,kind:l.kind,equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red'}));
  // Chiffres : ceux que le moteur tient déjà.
@@ -282,7 +296,7 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),deroule:deroule(vues,events,lire,String(etat.rencontre||'')),
+  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null};
  const tf=bilan.courant;
  if(tf){
@@ -292,7 +306,7 @@ function project(model,niveau,lire,options={}){
    const scene=p.kind==='transformation'?lire.transformation(p.i,p.reussie):parIndex.get(p.i);
    if(!scene)continue; // sans scène enregistrée, le plan reste dans le fil
    plans.push({index:p.i,kind:p.kind,duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
-    texte:legende(p,String(events[p.i].text||'')),...(ANNONCES[p.kind]?{annonce:ANNONCES[p.kind]}:{}),
+    texte:legende(p,nommer(events[p.i].text)),...(ANNONCES[p.kind]?{annonce:ANNONCES[p.kind]}:{}),
     score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,scene});
   }
   // Position de départ : le dernier plan jouable avant la fenêtre, pour que le premier
@@ -304,7 +318,7 @@ function project(model,niveau,lire,options={}){
   }
   if(plans.length)direct.tempsFort={cle:tf.cle,suite:tf.suite,type:tf.type,titre:TYPES[tf.type]||'Temps fort',types:tf.types,score:tf.score,force:tf.force,
    duree:tf.duree,debut:tf.debut,fin:tf.fin,scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
-   bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:String(events[i].text||'')}))};
+   bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:nommer(events[i].text)}))};
   if(plans.length&&(options.choregraphe===true||options.choregraphe==='entrees')){
    try{
     const c=choregraphier(direct.tempsFort,plans,events,lire);
@@ -320,7 +334,7 @@ function project(model,niveau,lire,options={}){
   for(let i=rafale[0];i<=rafale[1];i++){
    const l=lignes[i];
    if(l.kind==='card'&&l.incident&&(l.equipe===direct.camp||l.cause==='red'))
-    direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:String(events[i].text||''),horloge:horloge(l)};
+    direct.arret={cle:'carton-'+i,raison:'carton',rouge:l.cause==='red',pourNous:l.equipe!==direct.camp,texte:nommer(events[i].text),horloge:horloge(l)};
   }
  }
  return direct;

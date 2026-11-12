@@ -185,7 +185,7 @@ func update_frame(value: Dictionary) -> void:
 	var lines := PackedStringArray()
 	var rows: Array = live.get("events", [])
 	for event: Variant in rows.slice(maxi(0, rows.size() - 2)):
-		if event is Dictionary: lines.append("%s'  %s" % [str(event.get("min", "")), str(event.get("text", ""))])
+		if event is Dictionary: lines.append("%s'  %s" % [str(event.get("min", "")), sigles_affiches(str(event.get("text", "")), live.get("teams", []))])
 		else: lines.append(str(event))
 	events.text = "\n".join(lines)
 	events.get_parent().get_parent().visible = not lines.is_empty()
@@ -195,6 +195,19 @@ func update_frame(value: Dictionary) -> void:
 	_update_drawer()
 	apply_preferences()
 	director._refresh_controls()
+
+## Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran affiche le
+## sigle de leur identité (presentation.abbr). Même règle que match-direct.cjs (renommeur).
+static func sigles_affiches(texte: String, equipes: Array) -> String:
+	for equipe: Variant in equipes:
+		if not equipe is Dictionary: continue
+		var interne := str(equipe.get("abbr", ""))
+		var identite: Variant = equipe.get("presentation")
+		var affiche := str(identite.get("abbr", "")) if identite is Dictionary else ""
+		if not RegEx.create_from_string("^[A-Z0-9]{2,5}$").search(interne) or affiche.is_empty() or affiche == interne: continue
+		var motif := RegEx.create_from_string("\\b" + interne + "\\b")
+		if motif != null: texte = motif.sub(texte, affiche, true)
+	return texte
 
 func _choisir_cadence(index: int) -> void:
 	if _reglages_temps_forts:
