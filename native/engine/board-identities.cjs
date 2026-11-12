@@ -53,4 +53,22 @@ function replacements(boards,database){
  if(!boards)return [];
  return Object.entries(boards).map(([id,item])=>[baseName(id,database),item.name]).filter(([from])=>from);
 }
-module.exports={ingest,validateInstalled,replacements,baseName,ID,MAX_NAME};
+// Conversion du fichier de collecte des directions réelles (dépôt privé de
+// données, `pack/directions.json`, format `rugby-legacy-directions-reelles`
+// version 1 : { clubs: [{ clubId, president:{name,role,…}, directeurSportif:
+// {name,role,…}, entraineur:{…} }] }) vers la rubrique `boards` du manifeste.
+// Seuls `name` du président et du directeur sportif passent ; rôle, source,
+// date et `cree` restent dans le fichier de collecte. L'entraîneur passe par la
+// rubrique `staff` (entraîneur principal du club), pas par `boards`.
+function fromDirections(file){
+ ensure(object(file)&&file.format==='rugby-legacy-directions-reelles'&&file.version===1&&Array.isArray(file.clubs),'directions : fichier de collecte inconnu.');
+ const out=[];
+ for(const c of file.clubs){
+  ensure(object(c)&&Number.isInteger(c.clubId)&&c.clubId>=0,'directions : club sans identifiant.');
+  for(const [prefix,key]of [['pres','president'],['ds','directeurSportif']]){
+   const name=c[key]?.name;if(typeof name==='string'&&name.trim())out.push({id:prefix+'-'+c.clubId,name:name.trim()});
+  }
+ }
+ return out;
+}
+module.exports={ingest,validateInstalled,replacements,baseName,fromDirections,ID,MAX_NAME};

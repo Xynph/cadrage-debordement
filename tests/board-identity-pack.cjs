@@ -40,5 +40,13 @@ for(const [label,raw] of [
  assert.deepEqual(pairs.map(p=>p[1]),rubric.map(r=>r.name));assert.equal(pairs[0][0],n);
  assert.ok(boards.validateInstalled(boards.ingest(rubric,world).boards,world));
  assert.throws(()=>boards.validateInstalled({'pres-0':{name:'X Test',extra:1}},world),/Pack refusé/);}
+// Conversion du fichier de collecte (forme de pack/directions.json, noms inventés).
+{const file={format:'rugby-legacy-directions-reelles',version:1,saison:'2026/27',clubs:[
+  {clubId:0,president:{name:'Président Test Zéro',role:'Président',source:'https://exemple.test',date:'2026-11-12'},directeurSportif:{name:'Directeur Test Zéro',role:'Directeur sportif',cree:true},entraineur:{name:'Entraîneur Test',role:'Manager'}},
+  {clubId:12,president:{name:'Président Test Douze',role:'Président'},directeurSportif:{name:' ',role:'Directeur sportif'}}]};
+ const list=boards.fromDirections(file);
+ assert.deepEqual(list,rubric,'président et directeur sportif seulement, sans rôle ni source');
+ assert.equal(media.analyse(archive({...base,boards:list}),world).meta.counts.boards,3,'rubrique convertie acceptée');
+ assert.throws(()=>boards.fromDirections({format:'autre',version:1,clubs:[]}),/Pack refusé/);}
 fs.rmSync(root,{recursive:true,force:true});
 console.log('PASS rubrique boards : présidents et directeurs sportifs par identifiant, refus, nom de base, remplacement');

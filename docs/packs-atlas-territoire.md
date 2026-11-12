@@ -168,8 +168,18 @@ affichage ; un jeu antérieur refuse un pack qui la porte.
   rubrique pourra les préciser par une clé `traits` ; elle est refusée tant
   qu'elle n'est pas définie.
 
-Pour le dépôt privé `rugby-reel-donnees`, fichier proposé
-`pack/directions.json` : `[{ "id": "pres-0", "name": "…" }, …]`, avec, hors du
-pack, la source et la date de chaque nom dans un fichier de provenance (le
-pack lui-même n'accepte que `id` et `name`). `tests/board-identity-pack.cjs`
-couvre le schéma, les refus, le nom de base et le remplacement.
+Le dépôt privé `rugby-reel-donnees` porte `pack/directions.json` (format
+`rugby-legacy-directions-reelles`, version 1, 116 clubs, `clubId` 0 à 115 de
+l'édition mondiale v5), qui n'a pas la forme de la rubrique : un objet par club
+avec `president`, `directeurSportif` et `entraineur`, chacun
+`{ name, role, source?, date?, cree? }`. Le constructeur du pack le convertit
+avec `boardIdentities.fromDirections(fichier)` (`native/engine/board-identities.cjs`) :
+`president.name` → `pres-<clubId>`, `directeurSportif.name` → `ds-<clubId>` ;
+`role`, `source`, `date`, `cree` et `notes` restent dans le fichier de collecte.
+`entraineur` ne passe pas par `boards` : son nom va dans la rubrique `staff`
+(entraîneur principal du club dans le registre de staff). Contrôle du 12
+novembre 2026 sur le fichier fusionné : 232 entrées converties, toutes
+acceptées par l'édition à 116 clubs, championnats concordants (top14 → elite,
+prod2 → accession, autres identiques). `tests/board-identity-pack.cjs` couvre
+le schéma, les refus, le nom de base, le remplacement et la conversion (noms
+inventés).
