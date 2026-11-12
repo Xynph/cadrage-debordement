@@ -2,6 +2,8 @@
 
 Ce lot est empilé sur le candidat figé `37e085b687b4e9a603085beaa50fecf9d6cace22`. Il agrandit la cible de consultation de la date du prochain match selon la hauteur réelle de son texte, sans changer la destination, la police ou les commandes du jeu. Le contrôle géométrique initial est conservé ; le libellé accessible est également vérifié.
 
+Le [diagnostic du texte et de sa cible](competition-date-ink-20261112.md) distingue le rectangle du Label de ses pixels visibles. L’échantillon numérique est contenu aux cinq densités examinées ; cette sonde isolée n’est ni une capture du jeu à cinq tailles ni une preuve de clic. La cible conserve sa position pour ne pas empiéter sur les liens des clubs.
+
 Les autres changements concernent la recette : sélection explicite de l’onglet des employés avant une prolongation ; remplacement des anciennes assertions de pagination par la liste complète et son défilement ; salaire de comparaison vérifié selon la période et l’arrondi affichés ; viewport Gestion initialisé en 1440×900 avec dialogues intégrés. Les matrices 1280×800, 1440×900 et 1920×1080 restent présentes. Aucun message `ERROR:` n’est filtré.
 
 Les clients de lecture sont désormais mutés et leurs signaux observés avant la première attente. Les contrôles finaux incluent les demandes, démarrages et l’identifiant vocal nul. L’identifiant n’est pas remis à zéro par mute/stop : il couvre aussi une éventuelle émission antérieure au branchement. Les limites des anciens reçus restent explicites dans l’[audit](sdk-new-readers-silence-audit-20261112.md).
