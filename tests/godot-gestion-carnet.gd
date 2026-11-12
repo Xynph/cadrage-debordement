@@ -3,11 +3,17 @@ const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String]=[]
 var checks:=0
+var started_ms:=0
+var speech_requests:=0
+var speech_starts:=0
 func _initialize() -> void:
+	started_ms=Time.get_ticks_msec()
 	call_deferred("run")
 func check(ok:bool,message:String) -> void:
 	checks+=1
-	if not ok: failures.append(message);printerr("FAIL: "+message)
+	if not ok:
+		failures.append(message);printerr("FAIL: "+message)
+		trace("assertion.failed",{"message":message})
 func named(node:Node,id:String) -> Node:
 	if str(node.name)==id:return node
 	for child in node.get_children():
@@ -17,16 +23,23 @@ func named(node:Node,id:String) -> Node:
 func settle() -> void:
 	for i in 6:await process_frame
 func command(id:String,payload:Dictionary={}) -> void:
-	app._command(id,payload)
+	trace("command.begin",{"command":id,"payload_keys":payload.keys()})
+	var accepted:bool=app._command(id,payload)
+	trace("command.sent",{"command":id,"accepted":accepted})
 	var until:=Time.get_ticks_msec()+30000
 	while app.waiting and Time.get_ticks_msec()<until:await process_frame
 	check(not app.waiting and app.bridge.last_response_ok,"Commande réelle "+id)
+	trace("command.response",{"command":id,"accepted":accepted,"ok":app.bridge.last_response_ok})
 	await settle()
+	trace("command.settled",{"command":id})
 func finish() -> void:
+	check(speech_requests==0 and speech_starts==0,"Silence : aucune demande ni démarrage de parole")
+	trace("finish",{"failures":failures,"speech_requests":speech_requests,"speech_starts":speech_starts})
 	print("GESTION CARNET : ",checks," contrôles ; ",failures.size()," échec(s)")
-	app.bridge.stop()
+	if is_instance_valid(app) and app.bridge!=null:app.bridge.stop()
 	quit(0 if failures.is_empty() else 1)
 func activate(control:Control) -> void:
+	trace("activate.begin",{"control":str(control.name) if control!=null else "<missing>"})
 	check(control!=null,"Commande présente")
 	if control==null:return
 	check(not (control is BaseButton and control.disabled),"Commande activable "+str(control.name))
@@ -35,11 +48,13 @@ func activate(control:Control) -> void:
 	await settle()
 	check(control.has_focus(),"Focus clavier "+str(control.name))
 	await key(KEY_ENTER)
+	trace("activate.end",{"control":str(control.name) if is_instance_valid(control) else "<replaced>"})
 func texts(node:Node) -> String:
 	var result:String=node.text+"\n" if node is Label else ""
 	for child in node.get_children():result+=texts(child)
 	return result
 func capture(id:String) -> void:
+	trace("capture",{"id":id})
 	if DisplayServer.get_name()=="headless":return
 	await RenderingServer.frame_post_draw
 	var folder:=OS.get_environment("CD_GESTION_CAPTURES")
@@ -53,6 +68,7 @@ func bounds(id:String) -> void:
 	var page:Control=named(app,id)
 	check(page!=null and page.get_global_rect().end.x<=app.size.x+1 and page.get_global_rect().end.y<=app.size.y+1,"Vue bornée dans le canvas logique "+id+" "+str(root.size)+" "+str(page.get_global_rect()))
 func choose(id:String,text:String) -> void:
+	trace("choose",{"control":id,"value":text})
 	var choice:OptionButton=named(app,id)
 	for i in choice.item_count:
 		if choice.get_item_text(i)==text:
@@ -62,12 +78,24 @@ func state() -> Dictionary:
 	await command("export")
 	return JSON.parse_string(app.model.meta.exportText).state
 func run() -> void:
+	trace("startup.begin")
 	app=load("res://main.tscn").instantiate()
 	root.add_child(app)
-	while app.model.is_empty():await process_frame
+	if is_instance_valid(app.coach):
+		app.coach.speech.set_muted(true)
+		app.coach.speech.requested.connect(func(_text:String):speech_requests+=1)
+		app.coach.speech.started.connect(func(_id:int):speech_starts+=1)
+	trace("startup.wait-model")
+	var startup_until:=Time.get_ticks_msec()+30000
+	while app.model.is_empty() and Time.get_ticks_msec()<startup_until:await process_frame
+	check(not app.model.is_empty(),"Projection initiale du vrai worker reçue dans la borne de préparation")
+	trace("startup.model",{"received":not app.model.is_empty()})
+	if app.model.is_empty():finish();return
 	app.timer.stop()
 	await command("new_career",{"club":0,"mode":"common"})
+	trace("meetings.begin")
 	await ContextualFlow.settle_club_meetings(app, self, check)
+	trace("meetings.end")
 	app._navigate("Effectif")
 	await settle()
 	check(named(app,"RosterSearch") is LineEdit,"Recherche effectif réellement accessible")
@@ -92,6 +120,7 @@ func run() -> void:
 	check(search.has_focus() and search.text=="éxr" and search.caret_column==1 and search.get_selection_from_column()==1 and search.get_selection_to_column()==2,"Retour menu conserve saisie, focus, caret et sélection de texte")
 	await key(KEY_TAB)
 	check(app.get_viewport().gui_get_focus_owner()==named(app,"RosterFamily"),"Tab passe réellement de la recherche aux filtres")
+	trace("section.utilities")
 	var U=load("res://ui/management_state.gd")
 	var sample:Array=[{"id":"b","name":"Éric Test","pos":"Pilier","fam":0,"rating":70,"condition":80,"age":23,"injury":0,"contractEnd":1},{"id":"a","name":"Eric Autre","pos":"Pilier","fam":0,"rating":70,"condition":80,"age":24,"injury":2,"contractEnd":2},{"id":"c","name":"Zoé","pos":"Centre","fam":5,"rating":71,"condition":90,"age":22,"injury":0,"contractEnd":3}]
 	var state:Dictionary=U.defaults()
@@ -105,6 +134,7 @@ func run() -> void:
 	check(U.players(sample,state,1).map(func(p):return p.id)==["b"],"Échéance de contrat sur saison courante")
 	state.contract="Tous";state.position="Centre"
 	check(U.players(sample,state,1).map(func(p):return p.id)==["c"],"Poste exact sans famille inventée")
+	trace("section.archives.empty")
 	app._navigate("Classements");await settle()
 	check(named(app,"OpenArchives") is Button,"Archives accessibles depuis les classements")
 	await activate(named(app,"OpenArchives"))
@@ -115,16 +145,19 @@ func run() -> void:
 	var bytes:=FileAccess.get_file_as_bytes(filename)
 	app._navigate("Effectif");await settle()
 	await activate(named(app,"RosterReset"))
+	trace("section.profile.continuity")
 	var profile_before:ScrollContainer=named(app,"ProfileScroll")
 	profile_before.scroll_vertical=110;await settle()
 	var profile_offset:=profile_before.scroll_vertical
 	search=named(app,"RosterSearch");search.grab_focus();await key(KEY_A,97)
 	check(named(app,"ProfileScroll")==profile_before and profile_before.scroll_vertical==profile_offset,"La frappe ne reconstruit pas le dossier ni son scroll")
 	await activate(named(app,"RosterReset"))
+	trace("section.roster.family")
 	await choose("RosterFamily","Arrières")
 	for row:Button in app.body.find_children("SquadPlayer*","Button",true,false):
 		check(app.model.squad.any(func(p):return str(p.id)==str(row.get_meta("player_id")) and float(p.fam)>3),"Filtre famille appliqué au vrai ID")
 	await activate(named(app,"RosterReset"))
+	trace("section.roster.sort")
 	await choose("RosterSort","Niveau")
 	var rows:Array=app.body.find_children("SquadPlayer*","Button",true,false)
 	var previous:=101.0
@@ -150,6 +183,7 @@ func run() -> void:
 	var after_tick_page:int=app.management_ui.roster.page
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
 	check(app.management_ui.roster.page==after_tick_page and named(app,"SquadScroll").scroll_vertical==0,"Page postérieure à un tick conservée au prochain menu")
+	trace("section.comparison")
 	await activate(named(app,"CompareSelected"))
 	rows=app.body.find_children("SquadPlayer*","Button",true,false)
 	await activate(rows[0])
@@ -163,6 +197,7 @@ func run() -> void:
 	var selected:Dictionary=app.model.squad.filter(func(p):return str(p.id)==first_id)[0]
 	check(texts(named(app,"PlayerComparison")).contains(str(selected.name)) and texts(named(app,"PlayerComparison")).contains(app.G.euros(selected.salary)),"Comparaison expose identité et salaire réels")
 	app._clear_dialogs();await settle()
+	trace("section.renewal")
 	app.selected_player=str(app.model.squad.filter(func(p):return p.renewal.available)[0].id)
 	app._render();await settle()
 	var profile_tabs:TabContainer=named(app,"ProfileTabs")
@@ -177,6 +212,7 @@ func run() -> void:
 	check(named(app,"OfferSummary").text!=old_summary and named(app,"OfferSummary").text.contains("écart") and named(app,"OfferSummary").text.contains("IMMÉDIAT"),"Récapitulatif réactif immédiat / hebdomadaire / écart")
 	await activate(offer.get_cancel_button())
 	app._navigate("Recrutement");await settle()
+	trace("section.market.capacity")
 	check(int(app.model.decisions.recruitment.capacity)==67 and int(app.model.decisions.recruitment.places)==6,"Capacité commune : six admissions restent possibles pour61professionnels")
 	var available_players:Array=app.model.market.filter(func(p:Dictionary):return p.available)
 	check(not available_players.is_empty(),"Des pistes réellement admissibles restent proposées")
@@ -195,6 +231,7 @@ func run() -> void:
 	market_search.clear();market_search.text_changed.emit("");await settle()
 	check(before==await state(),"Recherche/tri/fiches/comparaison/offres annulées : S et RNG identiques")
 	check(bytes==FileAccess.get_file_as_bytes(filename),"Lectures de gestion sans écriture disque")
+	trace("section.market.watch")
 	var tracks:Array=app.body.find_children("Follow*","Button",true,false)
 	check(not tracks.is_empty(),"Piste réelle à suivre")
 	var tracked_id:String=tracks[0].get_meta("follow_id")
@@ -212,6 +249,7 @@ func run() -> void:
 	check(app.management_ui.shortlist==[tracked_id] and app.management_ui.market.followed and tracked_id in app.model.clubLife.managerCareer.watch,"Suivi persistant activé par Entrée et reçu du moteur")
 	check(app.body.find_children("Follow*","Button",true,false).size()==1,"Filtre suivis réduit aux vrais IDs")
 	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
+		trace("matrix.resolution",{"resolution":[resolution.x,resolution.y]})
 		root.size=resolution
 		if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(resolution)
 		app._navigate("Effectif");await settle();bounds("CarnetSquad");await capture("effectif-"+str(resolution.x))
@@ -220,17 +258,23 @@ func run() -> void:
 	var after:Dictionary=await state()
 	check(before==after,"Naviguer et filtrer après un suivi : S et RNG identiques")
 	check(bytes==FileAccess.get_file_as_bytes(filename),"Lectures après suivi sans nouvelle écriture disque")
+	trace("section.projection.begin")
 	await projections()
+	trace("section.market-archive.begin")
 	await real_market_and_archives()
 	finish()
 func real_market_and_archives() -> void:
+	trace("real-market.start")
 	await command("new_career",{"club":29,"mode":"france"})
+	trace("meetings.begin")
 	await ContextualFlow.settle_club_meetings(app, self, check)
+	trace("meetings.end")
 	check(app.management_ui.compare.is_empty() and app.management_ui.shortlist.is_empty() and app.management_ui.roster.search.is_empty(),"Vraie nouvelle carrière efface les IDs et filtres de la précédente")
 	app._navigate("Recrutement");await settle()
 	var candidate:Dictionary=app.model.market.filter(func(p):return p.available)[0]
 	var before:Dictionary=await state()
 	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
+		trace("matrix.resolution",{"resolution":[resolution.x,resolution.y]})
 		root.size=resolution
 		if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(resolution)
 		app._navigate("Recrutement");await settle()
@@ -277,6 +321,7 @@ func real_market_and_archives() -> void:
 	app._clear_dialogs();app.model=original;await settle()
 	check(archived==await state(),"Archives et projection pack sans mutation")
 func projections() -> void:
+	trace("projections.start")
 	var saved:Dictionary=app.model.duplicate(true)
 	var ids:Array=app.management_ui.compare.duplicate()
 	app.model.squad[0].name="Éric Nom de réception très long pour vérifier la lisibilité et le maintien de son identifiant"
@@ -312,3 +357,24 @@ func key(code:int,unicode:int=0,shift:bool=false) -> void:
 		Input.parse_input_event(event)
 		await process_frame
 	await settle()
+
+func trace(stage:String,detail:Dictionary={}) -> void:
+	var row:=detail.duplicate(true)
+	row.stage=stage
+	row.milliseconds=Time.get_ticks_msec()-started_ms
+	row.checks=checks
+	if is_instance_valid(app):
+		row.route=app.route
+		row.waiting=app.waiting
+		row.last_command=app.last_command
+		row.last_error=app.last_error
+	var line:=JSON.stringify(row)
+	print("GESTION_PROGRESS ",line)
+	var path:=OS.get_environment("CD_GESTION_PROGRESS")
+	if path.is_empty():return
+	var file:=FileAccess.open(path,FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
+	if file==null:
+		checks+=1;failures.append("Écriture de la preuve progressive impossible")
+		printerr("FAIL: Écriture de la preuve progressive impossible · ",FileAccess.get_open_error())
+		return
+	file.seek_end();file.store_line(line);file.flush();file.close()
