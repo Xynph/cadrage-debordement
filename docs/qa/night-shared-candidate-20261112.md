@@ -28,7 +28,7 @@ sont des reçus ciblés, chacun attaché à son propre SHA.
 | Journal financier depuis graphique | 40 / 0 | `0d19ddfa` | Écriture exacte, page/focus et invalidation d’un journal modifié |
 | Revue des contrats | 270 / 0 | `096f3d8f` | [Phase9](evidence/night-phase9-20261111/README.md), quatre captures dont nom long synthétique |
 | Fatigue | 685 / 0 | `096f3d8f` | Même dossier, vraie carrière et cas UI isolés explicités |
-| Reçus/vestiaire et double défilement | 61 / 0 | `d40311c0` | [Retour de lecture](evidence/night-management-reading-20261111/README.md), scroll90, fenêtre exacte, parole0/0 |
+| Reçus/vestiaire et double défilement | 61 / 0 | `d40311c0` | [Retour de lecture](evidence/night-management-reading-20261111/README.md), scroll à 90 px, fenêtre exacte, parole 0/0 |
 | Retour depuis un lecteur issu d’une page | 50 / 0 | `58e4651e` | [Correctif](night-page-reader-back-20261112.md), confirmations métier protégées |
 | Analyse/Club/Bureau sur copie WorldChamp | 72 / 0 | `bd6a5fe6` | [Trois PNG](evidence/night-analysis-club-office-20261112/README.md), source externe inchangée |
 | Chaîne de lecteurs après correctif | 115 / 0 | `bd6a5fe6` | [Régression](night-page-reader-back-20261112.md), pas de nouveau verdict Windows |
@@ -41,36 +41,36 @@ anciens sont datés et ne remplacent pas ce tableau de réception.
 ## Gestion observée
 
 - [Arbitrages](night-management-20261111.md) : trois checkpoints, quatorze
-  alternatives terminées sur huit matchs, soit112matchs ; dix-huit matchs de
+  alternatives terminées sur huit matchs, soit 112 matchs ; dix-huit matchs de
   préparation distincts. Une stratégie de deux recrues reste bloquée par une
   seule place disponible. Coûts non égalisés ; pas de gagnant universel ni de
   certitude causale sur les scores.
 - [Conséquences de séance](night-observed-training-20261111.md) : quatre
   politiques publiques depuis le même checkpoint ; condition et charge connues
-  comparées sur les mêmes IDs. Reçu Godot50/0 exact `5fd450b3`.
-- [Mode effectif](night-effective-training-receipt-20261111.md) :45/0 sur
+  comparées sur les mêmes IDs. Reçu Godot 50/0 exact `5fd450b3`.
+- [Mode effectif](night-effective-training-receipt-20261111.md) : 45/0 sur
   `096f3d8f`. Deux ajustements publics intense→normal et intense→repos ; les
   nouveaux reçus distinguent demande et mode appliqué, sans réécrire les anciens.
 - [Concurrence](night-rival-comparison-20261112.md) : neuf dossiers, dix-huit
-  transferts confirmés/repris, quarante-cinq offres de dix clubs. Les63non-offres
+  transferts confirmés/repris, quarante-cinq offres de dix clubs. Les 63 non-offres
   n’ont pas de motif inventé. Les styles tactiques et fenêtres autonomes ne sont
   pas qualifiés par une négociation publique. Les lots bornés restent séparés.
 - [Histoire de personnage](night-character-story-persistence-20261112.md) : deux
   choix depuis le même profil, deux journées enregistrées par branche, mémoire,
   échéances et redémarrage vérifiés. Le refus de la troisième clôture préserve
   profil, état exporté, RNG et horloge. **Limite moteur réservée à Claude :**
-  249minutes cumulées font face à une borne de validation240 ; hypothèse précise
+  249 minutes cumulées font face à une borne de validation à 240 ; hypothèse précise
   étayée, cause unique non instrumentée. Aucun contournement ni correctif moteur.
 
 ## Validation globale et coordination
 
 Les [quatre reprises Art](night-ci-20261111.md) sont vertes sur `c8a5a61d` :
-848contrôles,146captures, parole0/0. Elles ne rendent pas vert l’ancien SDK
-`43099288304` sur7b23 :47succès sur48exécutions. La marge progression CI reste
-2,954s. Le benchmark local du commun sura432 est distinct.
+848 contrôles, 146 captures, parole 0/0. Elles ne rendent pas vert l’ancien SDK
+`43099288304` sur 7b23 : 47 succès sur 48 exécutions. La marge progression CI reste
+2,954s. Le benchmark local du commun sur a432 est distinct.
 
-Le [registre partagé](sdk-common-final-registry-20261112.md) contient75exécutions,
-56suites distinctes et74couples suite/cas ; le doublon guide-layout/layout-native
+Le [registre partagé](sdk-common-final-registry-20261112.md) contient 75 exécutions,
+56 suites distinctes et 74 couples suite/cas ; le doublon guide-layout/layout-native
 est conservé. Les nouvelles inscriptions rejoignent les familles existantes,
 sans modifier workflows, paramètres, permissions ou limites. Une seule campagne
 SDK full et une campagne JavaScript du HEAD publié sont à recevoir après gel.
@@ -82,12 +82,12 @@ fusion virtuelle Git du lot commun avec ce main ne présente pas de conflit ;
 ce n’est ni une intégration réelle ni une recette du cumul futur de Claude.
 
 Aucun diff moteur, données, économie, calendrier, workflow, project.godot,
-ressource Gabi/3D ou art depuis6648. Les PNG Gabi générés non suivis ne sont
+ressource Gabi/3D ou art depuis 6648. Les PNG Gabi générés non suivis ne sont
 pas ajoutés. Aucune ressource Mixamo, conversion ou chargement GLTF à l’exécution.
 La [revue indépendante](night-independent-review-20261112.md) et les essais
 rouges conservés délimitent les conclusions.
 
-Après09h : reprendre main réellement intégré par Claude, réconcilier les
+Après 09 h : reprendre main réellement intégré par Claude, réconcilier les
 brouillons sans double patch #566/Art, recevoir les nouveaux SHA et le gate
 serveur avant fusion. Ne fermer aucune PR familiale avant intégration et
 réception réelles. Le ZIP et la recette Windows restent au chantier de Claude.
