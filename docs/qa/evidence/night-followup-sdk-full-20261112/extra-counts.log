@@ -1,0 +1,7 @@
+2026-11-12T02:24:02.7084099Z CARNET : 4286 contrôles ; 0 échec(s)
+2026-11-12T02:29:51.2579788Z ART DIRECTION : 224 contrôles ; 49 captures ; 0 échecs
+2026-11-12T02:31:10.5849606Z ART DIRECTION : 217 contrôles ; 46 captures ; 0 échecs
+2026-11-12T02:32:42.4944371Z ART DIRECTION : 211 contrôles ; 44 captures ; 0 échecs
+2026-11-12T02:34:58.0870401Z ART DIRECTION : 188 contrôles ; 7 captures ; 0 échecs
+2026-11-12T02:36:20.5003646Z GESTION_PROGRESS {"checks":274,"display":"headless","embedded_subwindows":true,"failures":[],"last_command":"export","last_error":"","milliseconds":44026,"root_size":[1920,1080],"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+2026-11-12T02:36:20.5004869Z GESTION CARNET : 274 contrôles ; 0 échec(s)
