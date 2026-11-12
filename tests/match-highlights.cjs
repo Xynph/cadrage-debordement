@@ -297,5 +297,8 @@ test('Niveau dynamique : une vraie part de grosses actions sans point, tous les 
   assert.ok(part(points) <= 0.5, 'temps forts qui marquent : ' + Math.round(part(points) * 100) + ' %');
   assert.ok(part(grosses) >= 0.35 && part(grosses) <= 0.6, 'grosses actions sans point : ' + Math.round(part(grosses) * 100) + ' %');
   assert.ok(quarts.every(q => q / episodes >= 0.15), 'temps forts répartis sur le match : ' + quarts.join(' / '));
-  assert.ok(part(memes) <= 0.08, 'deux temps forts quasi identiques d’affilée (choix libres) : ' + Math.round(part(memes) * 100) + ' %');
+  // Seuil porté de 8 à 10 % avec le découpage des longues courses (docs/match-courses-20261112.md) :
+  // les essais que l'importance fait monter (« franchissement », « contre-attaque ») ne sont plus des
+  // rattrapages forcés et entrent dans ce compte des choix libres (16 matchs : 6,6 % → 8,7 %).
+  assert.ok(part(memes) <= 0.1, 'deux temps forts quasi identiques d’affilée (choix libres) : ' + Math.round(part(memes) * 100) + ' %');
 });
