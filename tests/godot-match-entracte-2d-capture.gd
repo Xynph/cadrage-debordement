@@ -3,8 +3,8 @@ extends SceneTree
 ## La vraie interface et le vrai moteur, à vitesse réelle : coup d'envoi en 3D, puis les
 ## entractes demandés (terrain 2D et tableau de bord), et le début du temps fort suivant.
 ## À lancer avec --write-movie et --fixed-fps 30 : chaque image du film vaut 1/30 s de jeu.
-## Variables : CD_ENTRACTE_2D_SAVE (match exporté), CD_ENTRACTE_2D_PNG (capture PNG au milieu du
-## premier entracte complet), CD_ENTRACTE_2D_NOMBRE (entractes à filmer, 2 par défaut).
+## Variables : CD_ENTRACTE_2D_SAVE (match exporté), CD_ENTRACTE_2D_PNG (capture PNG à 5 s du
+## dernier entracte filmé), CD_ENTRACTE_2D_NOMBRE (entractes à filmer, 2 par défaut).
 
 var app: Control
 
@@ -49,7 +49,7 @@ func run() -> void:
 	var dans_entracte := 0.0
 	var apres := 0.0
 	var image := 0
-	var capture_faite := false
+	var capture_faite := 0
 	while image < 30 * 600:
 		await process_frame
 		image += 1
@@ -62,9 +62,10 @@ func run() -> void:
 		precedent = regie.etat
 		if regie.etat == regie.INTER and entractes >= 1:
 			dans_entracte += 1.0 / 30.0
-			# Capture au milieu du premier entracte : le terrain joue, le tableau est rempli.
-			if not capture_faite and not png.is_empty() and dans_entracte >= 5.0 and regie.between.terrain.places.size() >= 28:
-				capture_faite = true
+			# Capture à 5 s de chaque entracte (la dernière l'emporte) : le terrain joue, le tableau
+			# est rempli de plus de minutes de jeu.
+			if capture_faite != entractes and not png.is_empty() and dans_entracte >= 5.0 and regie.between.terrain.places.size() >= 28:
+				capture_faite = entractes
 				var shot := root.get_texture().get_image()
 				shot.save_png(png)
 				print("CAPTURE ", png, " ", view.clock.text)

@@ -5,7 +5,7 @@
 //
 //   CD_GODOT_EXE           exécutable Godot 4.7.2 (ou CD_GODOT_EXECUTABLE)
 //   CD_ENTRACTE_2D_FILM    fichier .avi absolu du film (MJPEG ; ffmpeg le convertit ensuite)
-//   CD_ENTRACTE_2D_PNG     capture PNG au milieu du premier entracte (facultatif)
+//   CD_ENTRACTE_2D_PNG     capture PNG à 5 s du dernier entracte filmé (facultatif)
 //   CD_ENTRACTE_2D_NOMBRE  entractes filmés (défaut 2)
 //   CD_ENTRACTE_2D_SEED    graine du moteur (défaut 7)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
