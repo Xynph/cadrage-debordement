@@ -433,6 +433,9 @@ def cuire(src, dossier):
     print('fini')
 
 
+PEAU_LEVRES = 0.92      # lèvres peintes sur la tête : un peu plus sombres que sur la coque (même rendu)
+
+
 def appliquer(dossier, src, dst):
     g=pg.GLTF2().load(src); blob=bytearray(g.binary_blob())
     d=np.load(os.path.join(dossier,'tete.npz')); head=d['head']; uvn=d['uvn'].astype(np.float64).copy(); uvn[...,1]=1-uvn[...,1]
@@ -469,17 +472,42 @@ def appliquer(dossier, src, dst):
         if mime=='image/jpeg': im.save(b,'JPEG',quality=q,optimize=True,subsampling=0 if 'norm' in nom.lower() else 2)
         else: im.save(b,'PNG',optimize=True)
         k=ajouter_image(g,blob,b.getvalue(),mime,nom); g.textures.append(pg.Texture(sampler=1,source=k)); print(nom,len(b.getvalue())); return len(g.textures)-1
-    tc=tex(os.path.join(dossier,'tete_couleur.png'),'image/jpeg',90,'Gabi_Tete_Couleur')
-    tn=tex(os.path.join(dossier,'tete_normale.png'),'image/jpeg',92,'Gabi_Tete_Normale')
+    # lèvres peintes aussi sur la tête autour de la coque (v4) : le contour lisse des lèvres dépasse par endroits le
+    # bord en dents de scie de la coque (lèvre inférieure, x ≈ +1 cm ; haut de la lèvre supérieure) ; avant, la
+    # lèvre y était coupée net (encoche) et la peau claire d'origine apparaissait au-delà. Mêmes couleurs et même fondu que la coque.
+    import importlib.util; sys.dont_write_bytecode=True
+    sp=importlib.util.spec_from_file_location('sourire',os.path.join(os.path.dirname(os.path.abspath(__file__)),'ajouter-sourire-gabi.py')); S=importlib.util.module_from_spec(sp); sp.loader.exec_module(S)
+    tx=np.load(os.path.join(dossier,'texels.npz')); TX=tx['X']
+    img=np.asarray(Image.open(os.path.join(dossier,'tete_couleur.png')).convert('RGB')).copy(); flat=img.reshape(-1,3)
+    # texels de la peau autour de la coque, loin de la fente (près de la fente, la coque couvre tout ; au coin, le
+    # visage se replie vers l'intérieur de la bouche) ; au-dessus de la fente, rien sous la moustache (masque)
+    zl=np.where((TX[:,2]>0.10)&(tx['nz']>0.2)&(np.abs(TX[:,0])<0.075)&(np.abs(TX[:,1]-1.465)<0.04))[0]
+    Pz=TX[zl].astype(np.float64); _,frac=S.position_levre(Pz)
+    moust=np.asarray(Image.open(os.path.join(dossier,'tete_masques.png')).convert('RGB')).reshape(-1,3)[tx['pix'][zl],1]/255.0
+    poids=S.ss(0.35,0.55,frac)*(1-S.ss(0.15,0.45,moust))
+    zl=zl[poids>0]; poids=poids[poids>0]
+    pix=tx['pix'][zl]; fond=flat[pix].astype(np.float64)
+    nv=fond+(S.teinte_levres(TX[zl,0].astype(np.float64),TX[zl,1].astype(np.float64),fond)-fond)*poids[:,None]
+    # même rendu que la coque : la peau du visage, en retrait, est éclairée un peu plus fort (même correction que
+    # PEAU_COQUE, en sens inverse) ; relief des mèches de barbe effacé sous la lèvre (carte de normales à plat)
+    Pz=TX[zl].astype(np.float64); _,frac=S.position_levre(Pz)
+    alpha=poids*(1-S.ss(0.72,1.06,frac))*(1-S.ss(0.86,1.0,np.abs(Pz[:,0])/S.COIN))
+    nv=nv*(1-(1-PEAU_LEVRES)*alpha)[:,None]
+    flat[pix]=np.clip(nv+0.5,0,255).astype(np.uint8)
+    chemin_couleur=os.path.join(dossier,'tete_couleur_levres.png'); Image.fromarray(img).save(chemin_couleur)
+    nimg=np.asarray(Image.open(os.path.join(dossier,'tete_normale.png')).convert('RGB')).copy(); nf=nimg.reshape(-1,3)
+    nf[pix]=np.clip(nf[pix]+(np.array([127.5,127.5,255.0])-nf[pix])*alpha[:,None]+0.5,0,255).astype(np.uint8)
+    chemin_normale=os.path.join(dossier,'tete_normale_levres.png'); Image.fromarray(nimg).save(chemin_normale)
+    print('lèvres peintes sur la tête',int((np.abs(nv-fond).max(1)>1).sum()),'texels')
+    tc=tex(chemin_couleur,'image/jpeg',90,'Gabi_Tete_Couleur')
+    tn=tex(chemin_normale,'image/jpeg',92,'Gabi_Tete_Normale')
     ta=tex(os.path.join(dossier,'tete_ao.png'),'image/jpeg',88,'Gabi_Tete_Occlusion')
     # coque des lèvres : hors du contour, la peau de la nouvelle texture de la tête (mèches de barbe jusqu'au bord)
-    import importlib.util; sys.dont_write_bytecode=True
     from scipy.spatial import cKDTree
-    sp=importlib.util.spec_from_file_location('sourire',os.path.join(os.path.dirname(os.path.abspath(__file__)),'ajouter-sourire-gabi.py')); S=importlib.util.module_from_spec(sp); sp.loader.exec_module(S)
     pl=next(q for q in me.primitives if g.materials[q.material].name=='M_Gabi_V3_Levres')
     PL=lire(g,blob,pl.attributes.POSITION).astype(np.float64); UL=lire(g,blob,pl.attributes.TEXCOORD_0).astype(np.float64)
     u2x=np.polyfit(UL[:,0],PL[:,0],1); v2y=np.polyfit(UL[:,1],PL[:,1],1)
-    tx=np.load(os.path.join(dossier,'texels.npz')); TX=tx['X']; TC=np.asarray(Image.open(os.path.join(dossier,'tete_couleur.png')).convert('RGB')).reshape(-1,3).astype(np.float64)[tx['pix']]
+    TC=np.asarray(Image.open(chemin_couleur).convert('RGB')).reshape(-1,3).astype(np.float64)[tx['pix']]
     sel=np.where((tx['nz']>0.2)&(TX[:,2]>0.09)&(np.abs(TX[:,1]-1.47)<0.06)&(np.abs(TX[:,0])<0.12))[0]
     arbre=cKDTree(TX[sel][:,:2].astype(np.float64))
     def peau(X,Y):

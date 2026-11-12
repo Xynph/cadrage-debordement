@@ -313,9 +313,21 @@ S.economy=S.economy||{version:1,week:S.round,talks:{},listings:{},offers:[],tran
 function economyLocked(){if(S.live){toast('Validez la rencontre avant de modifier les contrats ou l’effectif.');return true}return false}
 // Game abstraction, not a registration rule: the common roster already starts
 // above42 at several clubs. Keep six places beyond its immutable initial size.
+// Effectif réel du club à la création : registre mondial de l'édition jouée,
+// sinon base commune. Une carrière mondiale lisait à tort la base commune
+// française par numéro de club (42 places pour presque tous les clubs).
+function professionalReferenceSize(c=club(),s=S){
+ if(typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)){
+  const clubs=CDWorldCareer.edition(s)?.registry?.clubs,row=clubs?.[c.id]?.id===c.id?clubs[c.id]:clubs?.find(x=>x.id===c.id);
+  return row?row.players.length:null;
+ }
+ if(!s?.commonDatabase||typeof CDCommonRosters==='undefined')return null;
+ return CDCommonRosters.clubs[c.id]?.players.length||36;
+}
 function professionalCapacity(c=club(),s=S){
- if(!s?.commonDatabase||typeof CDCommonRosters==='undefined')return 42;
- return Math.min(100,Math.max(42,(CDCommonRosters.clubs[c.id]?.players.length||36)+6));
+ const reference=professionalReferenceSize(c,s);
+ if(reference===null)return 42;
+ return Math.min(100,Math.max(42,reference+6));
 }
 // A loan moves the player, not his contractual place at the originating club.
 // Count IDs once, including an archived office after manager mobility. Returned

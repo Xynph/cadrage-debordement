@@ -96,8 +96,8 @@ func inside(outer: Rect2, inner: Rect2) -> bool:
 func layout(view: Control, size: Vector2i) -> void:
 	root.size = size
 	root.content_scale_size = size
-	await settle(12)
 	var between: Control = view.regie.between
+	await settle(12)
 	var label := "%d×%d" % [size.x, size.y]
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
 	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
@@ -107,23 +107,38 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
 	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
 	check(between.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0, label + " : rien sous le bandeau du score")
-	var feed: ScrollContainer = between.fil.get_parent()
+	var feed: Control = between.fil.get_parent()
 	for node: Control in between.find_children("*", "Control", true, false):
 		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
 		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé")
 	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
-	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p, et la colonne de droite est remplie.
+	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).get_child(0)
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(26 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
+	# Les commandes communes sont là dans chaque mise en page.
+	for nom in ["MatchBetweenTactics", "MatchBetweenBench", "MatchBetweenSettings", "MatchBetweenMore"]:
+		var noeud: Control = between.find_child(nom, true, false)
+		check(noeud != null and noeud.is_visible_in_tree(), label + " : commande " + nom)
+	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
+	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
+	check(between.xv.is_visible_in_tree() and between.xv.columns == 3, label + " : Mon XV visible, nom et numéro par joueur")
+	check(between.details.is_visible_in_tree() and between.details.get_child_count() >= 2, label + " : stats détaillées par thème")
 	var column: Control = between.adjoint_cadre.get_parent()
 	var used := 0.0
 	for panel: Control in column.get_children():
 		if panel.visible: used += panel.size.y
 	check(used >= column.size.y * 0.9, label + " : la colonne de droite est occupée (%d sur %d px)" % [int(used), int(column.size.y)])
-	check(feed.size.y >= between.px(200), label + " : le fil garde de la hauteur (%d px)" % int(feed.size.y))
+	# Colonne repliable : le terrain prend la place, puis la colonne revient.
+	var largeur := pitch.size.x
+	var languette: Button = between.find_child("MatchBetweenFold", true, false)
+	languette.pressed.emit()
+	await settle(4)
+	check(not column.is_visible_in_tree() and pitch.size.x > largeur + 50.0, label + " : colonne repliée, terrain agrandi (%d → %d px)" % [int(largeur), int(pitch.size.x)])
+	languette.pressed.emit()
+	await settle(4)
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
 			check(cell.get_minimum_size().x <= cell.size.x + 1.0 or cell.clip_text, label + " : chiffre entier : " + cell.text)
@@ -281,7 +296,7 @@ func interval(view: Control) -> void:
 		await process_frame
 		if regie.etat != regie.JEU:
 			horloges[view.clock.text] = true
-			if between.passer.is_visible_in_tree(): passer_vu = true
+			if between.find_children("*", "Button", true, false).any(func(b: Button): return b.is_visible_in_tree() and ("Passer" in b.text or "Skip" in b.name)): passer_vu = true
 	var attendu: float = (Time.get_ticks_msec() - debut) / 1000.0
 	check(regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() >= depart_tf + 2, "Le match enchaîne 2D et temps forts")
 	check(not regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_retenu"), "Aucun temps fort n'est retenu : il part dès qu'il est déclenché")
@@ -353,7 +368,10 @@ func gestures(view: Control) -> void:
 	print("Hauteur visible minimale pendant les gestes : ", snappedf(smallest, 0.1), " m")
 	check(int(app.model.live.minute) >= goal, "Vingt minutes de match jouées avec les deux variables (minute %d)" % int(app.model.live.minute))
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
-	check(played.size() >= 4, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
+	# Depuis l'entracte de #587 (le chrono du match défile entre deux temps forts), vingt-deux minutes de match
+	# contiennent trois à cinq temps forts au lieu de quatre à six : « plusieurs » se lit désormais à partir de trois,
+	# et les contrôles suivants (terme atteint, retours à l'écran intermédiaire, aucune échéance) restent inchangés.
+	check(played.size() >= 3, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
 	check(played.filter(func(entry: Dictionary): return entry.has("duree_reelle")).size() >= played.size() - 1, "Les temps forts vont à leur terme")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "intermediaire").size() >= 2, "Retours à l'écran intermédiaire")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance").is_empty(), "Aucune attente n'a dû être interrompue par une échéance : " + str(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance")))
@@ -616,13 +634,16 @@ func player_path() -> Array:
 	if not sample.is_empty():
 		var model: Dictionary = app.model.duplicate(true)
 		sample["cle"] = "avant-causerie"
-		sample["suite"] = false
+		# Depuis l'entracte (#587), un temps fort qui n'est pas la suite d'une action attend la fin de l'entracte, et le
+		# match est ici en pause (l'entracte ne défile pas). La démonstration cible donc un temps fort « suite » :
+		# il part aussitôt, et la causerie doit l'attendre. La retenue par l'entracte est couverte par interval().
+		sample["suite"] = true
 		model.live.direct.tempsFort = sample
 		model.clubLife.matchTalks.scene = half_scene
 		app.model = model
 		var already := highlights(journal)
 		director.sync()
-		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie")
+		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie · " + str(director.kind) + " · état " + str(regie.etat) + " (JEU=" + str(regie.JEU) + ", INTER=" + str(regie.INTER) + ")")
 		check(not view.finish.visible, "Pas de validation pendant le temps fort")
 		check(await until(func(): return director.kind == "locker", 120000), "La causerie s'ouvre quand le temps fort est fini")
 		var last: Dictionary = journal.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")[-1] if highlights(journal) > already else {}
@@ -678,8 +699,8 @@ func resumed() -> Array:
 	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
 	# Écran intermédiaire : sa barre de commandes porte le niveau (la barre du direct est masquée).
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
-	if level != null and not level.is_visible_in_tree(): level = regie.between.niveau
-	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
+	var repris: String = level.get_item_text(level.selected) if level != null and level.is_visible_in_tree() else regie.between.niveau_libelle()
+	check(repris == "Temps forts étendus", "La barre ou les paramètres montrent le niveau repris : " + repris)
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
 	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
 	var differee: String = regie.between.horloge_differee().trim_suffix("′")
@@ -842,18 +863,21 @@ func terrain2d(view: Control) -> void:
 	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
 	var banc: Button = between.find_child("MatchBetweenBench", true, false)
 	check(banc != null and banc.is_visible_in_tree() and between.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
-	between.choisir_onglet("Mon XV")
-	await settle(2)
-	check(between.xv.get_parent().is_visible_in_tree() and not between.fil.get_parent().is_visible_in_tree(), "Onglet Mon XV affiché")
+	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Mon XV et le dernier fait affichés ensemble")
+	var noms_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button).map(func(b: Button): return b.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text))
+	check(noms_xv.size() == 15 and noms_xv.all(func(t: Array): return t.size() >= 2 and not str(t[0]).is_empty()), "Mon XV : nom de famille et note visibles pour chaque joueur : " + str(noms_xv.slice(0, 3)))
+	# Paramètres : vitesse de l'horloge et temps forts montrés dans un petit panneau.
+	between.find_child("MatchBetweenSettings", true, false).pressed.emit()
+	await settle(4)
+	check(between.panneau_parametres.visible and between.grille_niveaux.get_child_count() == 6, "Paramètres : le panneau s'ouvre avec les six niveaux de temps forts")
+	between.panneau_parametres.hide()
 	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	(rangs_xv[9] as Button).pressed.emit()
 	await settle(4)
 	check(view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 9, "Un joueur de Mon XV ouvre le banc sur lui (poste %d)" % view.selected_slot)
 	view._fermer_tiroir()
-	between.choisir_onglet("Chiffres")
-	await settle(2)
-	check(between.tableau.get_child_count() >= rangs.size(), "Onglet Chiffres : tous les chiffres du moteur")
-	between.choisir_onglet("Le fil")
+	var menu: MenuButton = between.find_child("MatchBetweenMore", true, false)
+	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
 	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
 	root.size = Vector2i(1280, 720)

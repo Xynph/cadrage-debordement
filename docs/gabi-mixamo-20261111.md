@@ -250,3 +250,41 @@ python3 scripts/animations/nettete-tete-gabi.py appliquer /hors-depot/tete <gabi
 python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2> --tete /hors-depot/tete
 ```
 `<gabi.glb sans tête dédiée>` : `git show 6f395b6f:native/godot/guide/assets/gabi.glb` (sortie de `retoucher-teint-gabi.py`). Pour `regenerer-gabi.py`, `--origine` peut rester le `gabi.glb` du dépôt (matériaux repris) : `appliquer` refuse un `.glb` déjà traité. Le résultat est reproductible à l'octet près.
+
+## Lèvres v4 (12 novembre, fin d'après-midi)
+
+Demande de Léo : « Pour Gabi, y'a un petit souci avec sa lèvre inférieure. Corrige ça et rends ses lèvres un peu plus en volume et un peu plus épaisses ».
+
+Constat (gros plans de face et de 3/4, au repos, au sourire franc et en parole) :
+
+- **Encoche sous la lèvre inférieure**, environ 1 cm à gauche de Gabi. Le contour de la coque des lèvres est en dents de scie. À cet endroit, son bord ne descend qu'à 11,5 mm sous la fente, alors que la lèvre peinte descend jusqu'à 16 mm. La lèvre était coupée net, et la peau claire d'origine apparaissait dessous.
+- **Cassure en parole** : dans la forme MouthOpen d'origine, ce sommet du bord ne descend que de 8,3 mm, contre 11 à 13 mm pour ses voisins. La lèvre se pinçait.
+- Au-dessus de la lèvre supérieure, une **bande claire polygonale** : la coque, sous la moustache, était éclairée comme de la peau en pleine lumière.
+
+Corrections :
+
+- **Lèvres peintes aussi sur la texture de la tête** autour de la coque (`nettete-tete-gabi.py appliquer`). Elles reprennent la teinte et le fondu de la coque (`teinte_levres`), un peu plus sombres (`PEAU_LEVRES`), avec la carte de normales à plat sous la lèvre (sans mèches de barbe). Rien n'est peint au-dessus de la fente sous la moustache (masque), ni près de la fente.
+- **MouthOpen lissé** sur la lèvre inférieure et le haut du menton (`lisser_ouverture`) :
+  - régression locale d'après les colonnes de sommets voisines ;
+  - correction de 3 mm au plus ;
+  - la fente et la lèvre supérieure ne bougent pas ;
+  - le visage et la coque restent collés.
+- **Ombre sous la moustache** sur la coque, au-delà du bord de la lèvre supérieure (`OMBRE_MOUSTACHE` 0,42, hors coins).
+- **Lèvres plus épaisses et plus en volume** (`VERSIONS[4]`) :
+  - lèvre supérieure 22 % plus haute, inférieure 28 % ;
+  - avancée de 4,6 et 5,8 mm (contre 3,4 et 3,8) ;
+  - étirement de 2,2 mm (contre 1,5) ;
+  - l'avancée de la lèvre inférieure s'éteint sur le premier rang de la barbe (`portee_inf` 1,3).
+- Couleur (rose chaud), sourire, yeux et netteté inchangés.
+
+Dans un `.blend`, la propriété `volume_levres` vaut désormais la version appliquée : 1 ou 3 pour la v3, 4 pour la v4. Le script n'ajoute que la différence. `ouverture_lissee` marque le lissage de MouthOpen.
+
+Chaîne :
+1. `ajouter-expressions-gabi.py`, `ajouter-sourire-gabi.py` puis `retoucher-teint-gabi.py`, depuis `edc903a2` ;
+2. `nettete-tete-gabi.py preparer`, puis `appliquer` ;
+3. pour le Gabi Mixamo : `ajouter-sourire-gabi.py /hors-depot/gabi.blend`, puis `regenerer-gabi.py … --tete <dossier préparé>`.
+
+Reste visible en très gros plan seulement :
+- un léger facettage au bas de la lèvre inférieure (maillage du visage grossier) ;
+- deux petits traits sombres au-dessus des commissures ;
+- quelques dents au bord haut de la coque.
