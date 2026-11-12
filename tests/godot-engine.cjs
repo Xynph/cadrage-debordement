@@ -240,7 +240,9 @@ func _settle_club_meetings(model: Dictionary) -> bool:
     _failed("Question réelle sans réponse autorisée")
     return true
    answers.append({"questionId":question.id,"answerId":question.answers[0].id})
-  bridge.send("press_conference",{"context":press.context,"answers":answers})
+  var payload := {"context":press.context,"answers":answers}
+  if press.conference.get("invitationId") is String: payload.invitationId = press.conference.invitationId
+  bridge.send("press_conference",payload)
  elif meeting.ackAllowed:
   bridge.send("club_meeting_ack",{"meetingId":meeting.id})
  else:

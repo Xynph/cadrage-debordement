@@ -1191,8 +1191,8 @@ func run() -> void:
 		var tactics: Control = app.find_child("ImmersiveTactics",true,false)
 		check(tactics != null,"Tactique native du gabarit approuvé")
 		if tactics != null:
-			reference_rects({"TacticsPitch":Rect2(280,264,1070,906), "TacticsIdentity":Rect2(1366,264,548,906),
-				"TacticsBench":Rect2(1930,264,598,529), "TacticsSelectedPlayer":Rect2(1930,809,598,361),
+			reference_rects({"TacticsPitch":Rect2(280,264,1070,906), "TacticsIdentity":Rect2(1980,264,548,906),
+				"TacticsBench":Rect2(1366,264,598,529), "TacticsOutside":Rect2(1366,809,598,361),
 				"TacticsMatchup0":Rect2(280,1186,546,158), "TacticsMatchup1":Rect2(842,1186,546,158),
 				"TacticsMatchup2":Rect2(1404,1186,546,158), "TacticsVigilance":Rect2(1966,1186,562,158),
 				"TacticsSave":Rect2(1983,121,248,48), "TacticsValidate":Rect2(2247,121,281,48)})

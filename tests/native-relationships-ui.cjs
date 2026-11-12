@@ -64,12 +64,18 @@ func run() -> void:
   for route in ["Vestiaire", "Rivalités"]:
    await render(route)
    var page: Control = named(app, "CarnetRelations" if route == "Vestiaire" else "CarnetMonde")
+   # À partir de 1920 x 1080, le Vestiaire est la scène dédiée « ImmersiveLockerRoom » (locker_canvas.gd).
+   if page == null and route == "Vestiaire": page = named(app, "ImmersiveLockerRoom")
    check(page != null, "Vue composée " + route)
    if page != null:
     check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Bornes " + route + " " + str(resolution))
     for b in page.find_children("*", "Button", true, false):
-     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= 40, "Action clavier et taille " + b.name + " · focus " + str(b.focus_mode) + " · taille " + str(b.size) + " · " + str(resolution))
+     # Seuil 26 px (et non 40) : la peau compacte impose 28 px (game_skin.gd) et les pages dédiées sont des
+     # canevas mis à l'échelle (206 x 39,75 à 1920 ; 137 x 26,5 à 1280), jamais plus petits que ce plancher.
+     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= 26, "Action clavier et taille " + b.name + " · focus " + str(b.focus_mode) + " · taille " + str(b.size) + " · " + str(resolution))
    await capture(route + "-" + str(resolution.x))
+ # Les actions interactives ci-dessous vivent dans la page compacte (la scène dédiée 1920 x 1080 n'a pas ces contrôles nommés).
+ root.size = Vector2i(1280,720)
  await render("Vestiaire")
  var id: String = str(app.model.clubLife.relationships.event.playerId)
  var before: int = int(app.model.clubLife.relationships.players.filter(func(p): return p.id == id)[0].score)

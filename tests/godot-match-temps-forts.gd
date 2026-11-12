@@ -362,7 +362,10 @@ func gestures(view: Control) -> void:
 	print("Hauteur visible minimale pendant les gestes : ", snappedf(smallest, 0.1), " m")
 	check(int(app.model.live.minute) >= goal, "Vingt minutes de match jouées avec les deux variables (minute %d)" % int(app.model.live.minute))
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
-	check(played.size() >= 4, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
+	# Depuis l'entracte de #587 (le chrono du match défile entre deux temps forts), vingt-deux minutes de match
+	# contiennent trois à cinq temps forts au lieu de quatre à six : « plusieurs » se lit désormais à partir de trois,
+	# et les contrôles suivants (terme atteint, retours à l'écran intermédiaire, aucune échéance) restent inchangés.
+	check(played.size() >= 3, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
 	check(played.filter(func(entry: Dictionary): return entry.has("duree_reelle")).size() >= played.size() - 1, "Les temps forts vont à leur terme")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "intermediaire").size() >= 2, "Retours à l'écran intermédiaire")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance").is_empty(), "Aucune attente n'a dû être interrompue par une échéance : " + str(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance")))

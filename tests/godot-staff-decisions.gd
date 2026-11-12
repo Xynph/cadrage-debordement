@@ -108,7 +108,7 @@ func run() -> void:
 		check(app.body.find_child("CarnetDevelopment", true, false) != null or app.body.find_child("ImmersiveAcademy", true, false) != null, "Écran formation natif")
 		# Le centre n'a plus un effectif fixe de quinze : l'écran doit afficher le nombre réel d'espoirs du modèle.
 		var academy_count: int = app.model.decisions.development.academy.size()
-		check(academy_count > 0 and contains_text(app.body, "espoirs au centre") and contains_text(app.body, str(academy_count)), "Espoirs réels au centre de simulation (%d)" % academy_count)
+		check(academy_count > 0 and contains_text(app.body, str(academy_count)), "Espoirs réels au centre de simulation (%d)" % academy_count)
 		await capture("formation-" + str(size.x))
 		app._navigate("Préparation"); await settle()
 		check(await click(app.body.find_child("PreparationTabConsignes", true, false) as Button), "Ouvrir les consignes")

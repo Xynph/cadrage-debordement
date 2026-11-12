@@ -91,7 +91,9 @@ func layout_and_capture(id: String) -> void:
 	check(rect.position.x >= 0 and rect.end.x <= app.size.x + 1 and rect.end.y <= app.size.y + 1, "Guide dans la fenêtre : " + id)
 	for key in (["GuideNext", "GuideClose", "GuideStop", "GuideReplay", "GuideOptions"] if guide.expanded else ["GuideTour", "GuideHelp"]):
 		var control: Control = named(guide, key)
-		if control.is_visible_in_tree(): check(control.get_global_rect().intersection(rect).size == control.size, "Bouton non coupé : " + key + " / " + id)
+		if control.is_visible_in_tree(): # Tolérance de 0,05 px : la mise à l'échelle à 1920 x 1080 laisse 34,0 contre 33,99994 (arrondi flottant), pas un bouton coupé.
+			var gap: Vector2 = (control.get_global_rect().intersection(rect).size - control.size).abs()
+			check(gap.x <= 0.05 and gap.y <= 0.05, "Bouton non coupé : " + key + " / " + id)
 	check(app.root_content.offset_bottom == 0, "Bulle flottante sans espace réservé : " + id)
 	check(guide.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Contour du coach traversable à la souris : " + id)
 	check(rect.size.x <= 500, "Coach discret de largeur bornée : " + id)

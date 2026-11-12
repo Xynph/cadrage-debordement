@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -14,7 +15,7 @@ func response() -> void:
 	var deadline := Time.get_ticks_msec()+45000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline: await process_frame
 	app.timer.stop()
-	check(not app.waiting and app.bridge.last_response_ok,"Réponse du véritable worker")
+	check(not app.waiting and app.bridge.last_response_ok,"Réponse du véritable worker · "+str(app.last_error))
 	await settle()
 func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id,payload)
@@ -62,6 +63,8 @@ func run() -> void:
 	app.bridge.model_changed.connect(func(_model: Dictionary): model_revisions+=1)
 	await response()
 	await command("new_career",{"mode":"fiction","club":0})
+	# Une carrière neuve ouvre d'abord son rendez-vous de direction : le moteur refuse l'activation tant qu'il n'est pas traité.
+	await ContextualFlow.settle_club_meetings(app,self,check)
 	await history()
 	var enable: Button = app.body.find_child("PlayerMatchHistoryEnable",true,false)
 	check(enable!=null,"Activation dans le véritable écran Histoire")
@@ -82,10 +85,15 @@ func run() -> void:
 	await key(dialog.get_ok_button())
 	await response()
 	check(app.model.clubLife.playerMatchHistory.enabled,"Activation confirmée reçue du worker")
+	# Calendrier quotidien : coup d'envoi le jour du match seulement, causerie d'avant-match, puis clôture de la semaine.
+	if not await ContextualFlow.prepare_match_day(app,self,check): finish();return
+	var previous_week: int=int(app.model.meta.week)
 	await command("begin_match")
+	await ContextualFlow.skip_talk(app,self,"pre",check)
 	check(not app.model.get("live",{}).is_empty(),"Vraie rencontre commencée")
 	await command("delegate")
 	await command("finish_round")
+	await ContextualFlow.finish_match_week(app,self,check,previous_week)
 	check(app.model.clubLife.playerMatchHistory.recordedMatches==1,"Une rencontre réellement capturée")
 	await history()
 	var picker: OptionButton = app.body.find_child("PerformancePlayerChoice",true,false)

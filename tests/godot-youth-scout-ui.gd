@@ -207,7 +207,10 @@ func run() -> void:
 	young=await open_youth()
 	var xp: Dictionary={};var annual: Dictionary={}
 	for person:Dictionary in app.model.clubLife.youthDevelopment.players:
-		if person.model=="xp" and person.stage=="academy" and xp.is_empty():xp=person
+		# La séance ne fait progresser qu'un jeune disponible et sous son plafond (graine non fixée : le premier
+		# jeune de la liste pouvait être blessé ou déjà au plafond, donc sans aucune observation à enregistrer).
+		var trainable: bool=int(person.get("injury",0))==0 and float(person.get("condition",100))>=65.0 and float(person.get("rating",0))<float(person.get("potential",0))-1.0
+		if person.model=="xp" and person.stage=="academy" and xp.is_empty() and trainable:xp=person
 		if person.model=="annual-v11" and annual.is_empty():annual=person
 	check(not xp.is_empty(),"Vrai jeune XP présent dans la carrière courante")
 	if not xp.is_empty():
@@ -247,7 +250,12 @@ func run() -> void:
 	await command("train",{"mode":"normal"})
 	var trained: Dictionary=app.model.clubLife.youthDevelopment.players.filter(func(p):return p.id==xp.id)[0]
 	check(trained.observations.any(func(o):return o.reason=="trainWeek"),"Vraie séance enregistrée dans les observations")
-	check(trained.deltas.generalXP>0 and trained.deltas.focusedXP>0,"Gains XP réellement observés après séance")
+	# Les compteurs d'XP repartent de zéro à chaque point de niveau gagné (development.js : xp -= 1) : l'écart du
+	# compteur est alors négatif alors que la progression est bien observée. On accepte donc l'écart de compteur
+	# positif OU le gain de niveau / de qualité correspondant.
+	var attribute_gain: bool=false
+	for key in trained.deltas.attributes: attribute_gain=attribute_gain or float(trained.deltas.attributes[key])>0.0
+	check((trained.deltas.generalXP>0 or trained.deltas.rating>0) and (trained.deltas.focusedXP>0 or attribute_gain),"Gains XP réellement observés après séance")
 	young=await open_youth();await search(young,"YouthDevelopmentSearch",xp.name)
 	check(button("YouthPlanSave")==null,"Objectif verrouillé après séance")
 	var text: String=""
