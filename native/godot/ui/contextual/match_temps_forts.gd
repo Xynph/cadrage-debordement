@@ -157,11 +157,23 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.reprise_demandee.connect(func(): app._command("pause", {"paused": false}))
 	between.tiroir_demande.connect(func(titre: String): view._toggle_drawer(titre))
 	between.passer_demande.connect(passer)
+	# Mon XV : un joueur choisi ouvre le banc sur lui (le match se met en pause).
+	between.joueur_choisi.connect(func(poste: int):
+		view.selected_slot = poste
+		view._drawer_key = ""
+		if view.drawer.visible and view.drawer_tab == "Banc": view._update_drawer()
+		else: view._toggle_drawer("Banc"))
+	between.score_joue.connect(_score_joue)
+	# Terrain 2D : il suit l'horloge de l'entracte et repart de la dernière image connue.
+	between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
+	if preferences != null: between.terrain.calme = bool(preferences.data.get("reduced_motion", false))
+	between.terrain.recaler(-1)
 
 func choisir_horloge(valeur: String) -> void:
 	if not HORLOGES.has(valeur): return
 	horloge = valeur
 	app.management_ui["match_temps_forts_horloge"] = valeur
+	if between != null: between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
 
 func choisir_niveau(id: String) -> void:
 	if id not in NIVEAUX or id == niveau: return
@@ -275,6 +287,8 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 			gel = false
 			index = -1
 			_vers_inter()
+		# Le terrain 2D ne rejoue pas ce que le moteur a déjà joué : il part de la dernière image.
+		between.terrain.recaler(-1)
 		suivi.append({"evenement": "delegation" if delegue else "reprise", "horloge": str(direct.get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
 	if signale is Dictionary and rencontre + str(signale.get("cle", "")) != str(app.management_ui.get("match_temps_forts_arret", "")):
 		app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
@@ -336,6 +350,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
 	if etat == JEU:
+		between.terrain.gel = true
 		_lire(delta * vitesse, delta)
 		return
 	if _entracte_et_horloge(delta): return
@@ -404,6 +419,8 @@ func _entracte_et_horloge(delta: float) -> bool:
 		if _entracte >= 0.0: _entracte += delta
 		_roule += delta
 		if not _retenu.is_empty(): _retenu_depuis += delta
+	# Le terrain 2D se fige avec le match (pause, tiroir ouvert, arrêt sur carton).
+	between.terrain.gel = fige or _tiroir or not arret.is_empty()
 	if _tiroir and not _pause_tiroir and not fige and not _live.is_empty() and not _live.get("finished", false) and not _live.get("atBreak", false) and not app.waiting:
 		_pause_tiroir = app._command("pause", {"paused": true})
 	_habiller_horloge()
@@ -737,6 +754,8 @@ func _plaquer(plan: Dictionary) -> void:
 		stage.jouer_geste(plaqueur, "plaquage", maxf(0.0, stage.instant_geste("plaquage") - 0.35), -1.0, true)
 
 func _vers_inter() -> void:
+	# Le terrain 2D reprend où le temps fort s'est arrêté : rien de ce qu'il a montré n'est rejoué.
+	if etat != INTER and not tf.is_empty(): between.terrain.recaler(int(tf.get("fin", -1)))
 	etat = INTER
 	attente = 0.0
 	_presenter(false)
@@ -786,6 +805,9 @@ func _habiller() -> void:
 		# Temps fort retenu par l'entracte : score et horloge d'avant lui (rien n'est annoncé avant l'image).
 		var montre_live: Dictionary = _live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live
 		var marque: Array = montre_live.get("score", [0, 0])
+		# Le terrain 2D rejoue encore des faits en retard sur le moteur : le score suit ce qu'il montre.
+		var differe: Array = between.score_differe()
+		if not differe.is_empty(): marque = differe
 		if marque.size() >= 2: view.score.text = "%d — %d" % [int(marque[0]), int(marque[1])]
 		var heure := str(montre_live.get("direct", {}).get("horloge", ""))
 		if _live.get("finished", false) and _retenu.is_empty(): view.clock.text = "TERMINÉ"
@@ -812,6 +834,13 @@ func _habiller() -> void:
 	if phase == "choregraphie" and not _jalon_montre: view.events.text = ""
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
+
+## Un fait vient d'être joué sur le terrain 2D : le bandeau du score le suit.
+func _score_joue(marque: Array) -> void:
+	if etat != INTER or marque.size() < 2: return
+	var differe: Array = between.score_differe()
+	var montre_score: Array = differe if not differe.is_empty() else (_live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live).get("score", marque)
+	if montre_score.size() >= 2: view.score.text = "%d — %d" % [int(montre_score[0]), int(montre_score[1])]
 
 func _valider(visible_fin: bool) -> void:
 	if view.finish.visible == visible_fin: return

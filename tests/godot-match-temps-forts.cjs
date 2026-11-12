@@ -39,6 +39,8 @@ function run(mode,dossier=mode){
  // Entracte entre deux temps forts, à sa durée par défaut et à vitesse réelle (horloge rapide pour la durée du test).
  delete env.CD_MATCH_TEMPS_FORTS_ENTRACTE;
  if(mode==='entracte')Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_GODOT_SEED:'7'});
+ // Terrain 2D : horloge normale, vitesse réelle, comme le joueur le voit.
+ if(mode==='terrain2d')Object.assign(env,{CD_GODOT_SEED:'7'});
  const result=spawnSync(godot,['--headless','--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
  const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(directory,'godot-'+mode+'.log'),output);console.log(output);
  if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:/);
@@ -84,6 +86,12 @@ if(veut('choregraphie')){
  assert.deepEqual(chore.failures,[]);assert.ok(chore.checks>=9,'contrôles du chorégraphe : '+chore.checks);
  assert.ok(chore.suivi.some(e=>e.evenement==='choregraphie'&&e.duree_reelle>0),'pistes jouées : '+JSON.stringify(chore.suivi.map(e=>e.evenement)));
  bilan.push('chorégraphe '+chore.checks);
+}
+if(veut('terrain2d')){
+ // Terrain 2D de l'entracte : pastilles qui rejouent les faits du moteur, tableau de bord.
+ const terrain=run('terrain2d');
+ assert.deepEqual(terrain.failures,[]);assert.ok(terrain.checks>=25,'contrôles du terrain 2D : '+terrain.checks);
+ bilan.push('terrain 2D '+terrain.checks);
 }
 if(veut('entracte')){
  const entracte=run('entracte');

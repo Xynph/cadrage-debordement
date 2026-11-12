@@ -94,6 +94,105 @@ function choregraphier(tf,plans,events,lire){
  return c;
 }
 
+// --- Entracte en 2D (vue de dessus, façon « match overview ») ----------------------------
+// Tout ce qui suit est lu dans le journal, sans rien écrire ni tirer : le moteur reste la
+// source de vérité, la vue 2D ne fait qu'interpoler entre ces images.
+const SANS_IMAGE=new Set(['message','advantage','card','sub','tactic','break','end']);
+const DEROULE_MAX=14;
+const r1=n=>Math.round(n*10)/10;
+// Scènes déjà calculées (une scène passée ne change plus, sauf la toute dernière).
+const SCENES_2D=new Map();
+function compacte(scene){
+ if(!scene||!Array.isArray(scene.players))return null;
+ return {kind:scene.kind,possession:scene.possession,periode:scene.period,ballon:[r1(scene.ball.x),r1(scene.ball.y)],origine:[r1(scene.origin.x),r1(scene.origin.y)],
+  joueurs:scene.players.map(p=>[p.side,p.slot,r1(p.x),r1(p.y),p.featured?1:0,p.id])};
+}
+// Derniers faits jouables, chacun avec la place des trente joueurs que le moteur leur donne
+// (la même que la vue 3D) : la vue 2D les rejoue dans l'ordre pendant l'entracte.
+function deroule(lignes,events,lire,rencontre){
+ const derniere=lignes.length?lignes[lignes.length-1]:null;if(!derniere)return [];
+ const retenues=lignes.filter(l=>!l.bandeau&&!SANS_IMAGE.has(l.kind)&&events[l.i]?.scene&&derniere.minute-l.minute<=4&&l.periode===derniere.periode).slice(-DEROULE_MAX);
+ const manquants=retenues.filter(l=>!SCENES_2D.has(rencontre+'|'+l.i)||l.i>=events.length-2).map(l=>l.i);
+ if(manquants.length){
+  const scenes=lire.scenes(manquants);
+  manquants.forEach((i,n)=>SCENES_2D.set(rencontre+'|'+i,compacte(scenes[n])));
+  while(SCENES_2D.size>96)SCENES_2D.delete(SCENES_2D.keys().next().value);
+ }
+ return retenues.map(l=>{
+  const s=events[l.i].scene,scene=SCENES_2D.get(rencontre+'|'+l.i);
+  if(!scene)return null;
+  return {i:l.i,horloge:horloge(l),minute:l.minute,kind:l.kind,equipe:l.equipe,move:s.move||null,porte:s.porte===true,cause:s.cause||null,
+   gain:Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?r1(Math.abs(s.to.x-s.from.x)):0,score:l.scoreApres,...(l.kind==='try'?{transformation:l.transformation===true}:{}),texte:String(events[l.i].text||''),scene};
+ }).filter(Boolean);
+}
+// Domination minute par minute, de -100 (l'équipe qui reçoit, côté 1, domine) à +100 (côté 0) :
+// occupation (où se joue le ballon), possession, points et franchissements. Lissée comme une
+// courbe d'élan : une minute sans fait laisse retomber la courbe vers l'équilibre.
+function domination(lignes){
+ const parMinute=new Map();let fin=0,miTemps=null;
+ for(const l of lignes){
+  if(l.kind==='break'&&miTemps===null)miTemps=l.minute;
+  if(l.bandeau||SANS_IMAGE.has(l.kind))continue;
+  const m=Math.max(1,l.minute);fin=Math.max(fin,m);
+  const a=parMinute.get(m)||{terrain:0,n:0,possession:0,points:0};
+  if(l.x!==null){a.terrain+=(l.x-50)/50;a.n++}
+  if(l.possession!==null)a.possession+=l.possession===0?1:-1;
+  const marques=[0,1].map(s=>(l.scoreApres[s]||0)-(l.scoreAvant[s]||0));
+  a.points+=(marques[0]-marques[1])/7;
+  if(l.kind==='carry'&&l.equipe!==null&&l.x!==null&&l.depuis!==null&&Math.abs(l.x-l.depuis)>=22)a.points+=l.equipe===0?.35:-.35;
+  parMinute.set(m,a);
+ }
+ const courbe=[];let lisse=0;
+ for(let m=1;m<=fin;m++){
+  const a=parMinute.get(m);
+  if(!a){lisse*=.82;courbe.push(Math.round(lisse*100));continue}
+  const brut=Math.max(-1,Math.min(1,(a.n?a.terrain/a.n*.6:0)+(a.possession/Math.max(1,a.n||1))*.25+a.points*.6));
+  lisse=lisse*.55+brut*.45;
+  courbe.push(Math.round(Math.max(-1,Math.min(1,lisse))*100));
+ }
+ return {minutes:courbe,miTemps};
+}
+// Chiffres du rugby tirés du journal : chaque course se termine par un plaquage (ruck) ;
+// une course de 22 m ou plus est un franchissement (comme `longGains` du moteur), un essai en
+// jeu courant passe la dernière défense. Plaquages manqués = franchissements et essais en jeu
+// courant subis (le moteur ne compte pas les plaquages joueur par joueur).
+function chiffresRugby(lignes,events){
+ const t=[0,1].map(()=>({courses:0,metres:0,franchissements:0,essaisCourant:0,recuperations:0,enAvant:0,plaquesStoppes:0}));
+ for(const l of lignes){
+  if(l.equipe===null)continue;const e=t[l.equipe],s=events[l.i]?.scene;
+  if(l.kind==='carry'&&l.x!==null&&l.depuis!==null){
+   const gain=Math.abs(l.x-l.depuis);e.courses++;e.metres+=gain;
+   if(gain>=22)e.franchissements++;else t[1-l.equipe].plaquesStoppes++;
+  }
+  if(l.kind==='turnover'){e.recuperations++;e.plaquesStoppes++}
+  if(l.kind==='hand-fault')e.enAvant++;
+  if(l.kind==='try'&&s?.origin==='open')e.essaisCourant++;
+ }
+ return t;
+}
+// Note de match des joueurs du manager : 6 au coup d'envoi, puis ce que le journal leur
+// attribue (courses et mètres, franchissements, essais, ballons récupérés, tirs, cartons, fautes).
+function notesDuMatch(lignes,events,camp){
+ const notes={};if(camp!==0&&camp!==1)return notes;
+ const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=notes[id]||(notes[id]={note:6,faits:0,essais:0,metres:0});n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(typeof fait==='number')n.metres+=fait};
+ for(const l of lignes){
+  const s=events[l.i]?.scene;if(!s||s.actor==null)continue;
+  const id=String(s.actor),nous=Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(id);if(!nous)continue;
+  const gain=Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?Math.abs(s.to.x-s.from.x):0;
+  if(l.kind==='carry')ajoute(id,.04+Math.min(.5,gain/45)+(gain>=22?.25:0),Math.round(gain));
+  else if(l.kind==='try')ajoute(id,1,'essai');
+  else if(l.kind==='turnover')ajoute(id,.45);
+  else if(l.kind==='reception')ajoute(id,.08);
+  else if(l.kind==='kick')ajoute(id,.05);
+  else if(l.kind==='goal')ajoute(id,.3);
+  else if(l.kind==='miss')ajoute(id,-.15);
+  else if(l.kind==='card')ajoute(id,s.card==='red'||l.cause==='red'?-2:-1);
+  else if((l.kind==='hand-fault'||l.kind==='penalty')&&s.team!==camp)ajoute(id,-.35);
+ }
+ for(const n of Object.values(notes))n.note=Math.round(Math.max(3,Math.min(9.9,n.note))*10)/10;
+ return notes;
+}
+
 // `lire` : accès en lecture au moteur ({scenes, transformation, etat, profils}).
 // `options.choregraphe` : joindre au temps fort sa mise en scène continue (chorégraphe).
 function project(model,niveau,lire,options={}){
@@ -105,9 +204,9 @@ function project(model,niveau,lire,options={}){
  const derniere=[...lignes].reverse().find(jouable)||null;
  // Fil : sans les messages d'avantage, les retours de carton ni les mises en place.
  const bruit=l=>l.kind==='advantage'||l.kind==='card'&&!l.incident||l.type==='setup'||l.kind==='miss'&&l.type!=='miss';
- const fil=lignes.filter(l=>!bruit(l)).slice(-10).map(l=>({horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
+ const fil=lignes.filter(l=>!bruit(l)).slice(-10).map(l=>({i:l.i,horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
  const traces=lignes.filter(l=>jouable(l)&&events[l.i].scene).slice(-3).map(l=>({depuis:point(events[l.i].scene.from),vers:point(events[l.i].scene.to),equipe:l.equipe,kind:l.kind})).filter(t=>t.depuis&&t.vers);
- const reperes=lignes.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>({kind:l.kind,equipe:l.equipe,horloge:horloge(l),x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red'}));
+ const reperes=lignes.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>({i:l.i,kind:l.kind,equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red'}));
  // Chiffres : ceux que le moteur tient déjà.
  const rang=nom=>(live.statsRows||[]).find(r=>r.label===nom);
  const chiffres=[];
@@ -118,9 +217,27 @@ function project(model,niveau,lire,options={}){
  // Élan : où s'est joué le match pendant les dix dernières minutes (0 = en-but de l'équipe qui reçoit).
  const recents=derniere?lignes.filter(l=>jouable(l)&&l.x!==null&&l.periode===derniere.periode&&derniere.minute-l.minute<10):[];
  const elan=recents.length?Math.round(recents.reduce((n,l)=>n+l.x,0)/recents.length):50;
+ // Tableau de bord de l'entracte : valeurs chiffrées des deux équipes (barres comparées).
+ const rugby=chiffresRugby(lignes,events),stats=live.stats||[];
+ const pourcent=(a,b)=>a+b>0?[Math.round(a/(a+b)*100),100-Math.round(a/(a+b)*100)]:[50,50];
+ const possessionTotale=(stats[0]?.possession||0)+(stats[1]?.possession||0);
+ const tableau=[
+  {cle:'possession',label:'Possession',valeurs:pourcent(stats[0]?.possession||0,stats[1]?.possession||0),unite:'%',vide:!possessionTotale},
+  {cle:'occupation',label:'Occupation',valeurs:possessionTotale?[Math.round((stats[0]?.territory||0)/possessionTotale),Math.round((stats[1]?.territory||0)/possessionTotale)]:[50,50],unite:'%',vide:!possessionTotale},
+  {cle:'metres',label:'Mètres gagnés',valeurs:rugby.map(e=>Math.round(e.metres))},
+  {cle:'franchissements',label:'Franchissements',valeurs:rugby.map(e=>e.franchissements)},
+  {cle:'plaquages',label:'Plaquages réussis',valeurs:rugby.map(e=>e.plaquesStoppes)},
+  {cle:'plaquages_manques',label:'Plaquages manqués',valeurs:[0,1].map(s=>rugby[1-s].franchissements+rugby[1-s].essaisCourant),inverse:true},
+  {cle:'melees',label:'Mêlées gagnées',valeurs:[0,1].map(s=>stats[s]?.scrumsWon||0),sur:[0,1].map(s=>stats[s]?.scrums||0)},
+  {cle:'touches',label:'Touches gagnées',valeurs:[0,1].map(s=>stats[s]?.lineoutsWon||0),sur:[0,1].map(s=>stats[s]?.lineouts||0)},
+  {cle:'recuperations',label:'Ballons récupérés',valeurs:rugby.map(e=>e.recuperations)},
+  {cle:'penalites',label:'Pénalités concédées',valeurs:[0,1].map(s=>stats[s]?.penalties||0),inverse:true},
+  {cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true}
+ ];
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',camp:etat.camp??-1,
   possession:etat.possession??null,zone:{x:Number.isFinite(etat.territoire)?etat.territoire:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:etat.cartons||[],
+  tableau,domination:domination(lignes),notes:notesDuMatch(lignes,events,etat.camp??-1),deroule:deroule(lignes,events,lire,String(etat.rencontre||'')),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null};
  const tf=bilan.courant;
  if(tf){
@@ -164,4 +281,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project});
+module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,domination,chiffresRugby,notesDuMatch,DEROULE_MAX});
