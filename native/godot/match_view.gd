@@ -24,6 +24,9 @@ const CUT_SECONDS := 0.30
 ## montre l'action d'un peu plus loin et cache mieux appuis et contacts approximatifs.
 const TV_OFFSET := Vector3(0, 60, 69)
 const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
+## Hauteur visible (m) de la caméra de base. 12 novembre 2026 (soir) : TV 42 -> 64, action 16 -> 24 (vue retransmission large).
+const TV_TAILLE := 64.0
+const ACTION_TAILLE := 24.0
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
 var _ball: Node3D
@@ -859,7 +862,7 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			_camera_focus = desired + lag.limit_length(3.0 if _camera_mode == "action" else 8.0)
 		var offset := ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
 		var look := _camera_focus
-		var size := 16.0 if _camera_mode == "action" else 42.0
+		var size := ACTION_TAILLE if _camera_mode == "action" else TV_TAILLE
 		var wide := size
 		var screen := get_viewport().get_visible_rect().size
 		if _cadrage:
