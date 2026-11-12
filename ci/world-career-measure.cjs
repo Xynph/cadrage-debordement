@@ -34,9 +34,11 @@ function sizes(text,s){
  return Object.fromEntries(Object.entries(out).sort((a,b)=>b[1]-a[1]).slice(0,16));
 }
 // Où se trouve chaque joueur : championnat de son club, vivier libre ou centre.
+// Le club compte : un joueur dont le club change de division (promotion,
+// relégation) n'a pas bougé ; il est compté sous « club:… » à part.
 function placements(s){
  const at=new Map();
- for(const c of s.clubs){const lg=leagueOf(s,c);for(const p of c.players)at.set(p.id,lg);}
+ for(const c of s.clubs){const lg=leagueOf(s,c);for(const p of c.players)at.set(p.id,lg+'#'+c.id);}
  for(const p of s.economy?.freeAgents||[])if(!at.has(p.id))at.set(p.id,'libre');
  return at;
 }
@@ -44,9 +46,10 @@ function placements(s){
 // « libre », « sortie » pour retraite ou bassin abstrait).
 function movements(prev,now){
  if(!prev)return null;
- const out={};
- for(const [id,from] of prev){const to=now.get(id)??'sortie';if(to!==from){const k=from+'>'+to;out[k]=(out[k]||0)+1;}}
- for(const [id,to] of now)if(!prev.has(id)){const k='nouveau>'+to;out[k]=(out[k]||0)+1;}
+ const out={},lg=x=>x.split('#')[0],club=x=>x.split('#')[1];
+ for(const [id,from] of prev){const to=now.get(id)??'sortie';if(to===from)continue;
+  const k=club(from)!==undefined&&club(from)===club(to)?'club:'+lg(from)+'>'+lg(to):lg(from)+'>'+lg(to);out[k]=(out[k]||0)+1;}
+ for(const [id,to] of now)if(!prev.has(id)){const k='nouveau>'+lg(to);out[k]=(out[k]||0)+1;}
  return Object.fromEntries(Object.entries(out).sort((a,b)=>b[1]-a[1]));
 }
 // Directions des clubs gérés (carrières qui en ont) : stratégies, profils, compteurs.
