@@ -124,7 +124,7 @@ func layout(view: Control, size: Vector2i) -> void:
 		check(noeud != null and noeud.is_visible_in_tree(), label + " : commande " + nom)
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
-	check(between.xv.is_visible_in_tree() and between.xv.columns == 2, label + " : Mon XV visible, nom et numéro par joueur")
+	check(between.xv.is_visible_in_tree() and between.xv.columns == 3, label + " : Mon XV visible, nom et numéro par joueur")
 	check(between.details.is_visible_in_tree() and between.details.get_child_count() >= 2, label + " : stats détaillées par thème")
 	var column: Control = between.adjoint_cadre.get_parent()
 	var used := 0.0
@@ -340,7 +340,7 @@ func interval(view: Control) -> void:
 	# « Passer » : le prochain temps fort part sans attendre la fin de l'entracte.
 	check(await until(func(): return regie.etat == regie.JEU, 180000), "Temps fort suivant")
 	check(await until(func(): return regie.etat == regie.INTER and regie.entracte_en_cours(), 180000), "Troisième entracte")
-	check(between.passer.is_visible_in_tree(), "Le bouton « Passer » est proposé pendant l'entracte")
+	check(between.find_child("MatchBetweenSkip", true, false) == null, "Pas de bouton « Passer » : le match défile à la vitesse de l’horloge (choix de Léo)")
 	var passe_a := Time.get_ticks_msec()
 	between.passer_demande.emit()
 	check(await until(func(): return regie.etat == regie.JEU, 120000), "« Passer » mène au prochain temps fort")

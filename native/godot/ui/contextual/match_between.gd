@@ -62,8 +62,6 @@ var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
 var _arret: Dictionary = {}
-var entracte: Label
-var passer: Button
 var _entracte := ["", false]
 var _dernier: Array = []
 var _lignes: Array = []
@@ -401,7 +399,7 @@ func _construire() -> void:
 	if not _arret.is_empty(): montrer_arret(_arret)
 	if not terrain.fait_joue.is_connected(_fait_joue): terrain.fait_joue.connect(_fait_joue)
 
-## Commandes : où est le ballon, l'entracte et « Passer », Tactique, Banc, Paramètres (vitesse
+## Commandes : où est le ballon, Tactique, Banc, Paramètres (vitesse
 ## de l'horloge, temps forts montrés) et Plus (statistiques, journal, délégation).
 func _commandes() -> void:
 	etat = _texte("", 34, IVOIRE, false, true)
@@ -410,14 +408,8 @@ func _commandes() -> void:
 	etat.clip_text = true
 	etat.custom_minimum_size.x = px(120)
 	S.G.fill(etat)
-	entracte = _texte("", 26, DOUX)
-	entracte.name = "MatchBetweenInterval"
-	passer = _bouton("PASSER  ›", func(): passer_demande.emit(), true, true)
-	passer.name = "MatchBetweenSkip"
-	passer.custom_minimum_size.x = px(180)
-	passer.tooltip_text = "Aller tout de suite au prochain temps fort."
-	passer.set_meta("contextual_enabled", true)
-	montrer_entracte(_entracte[0], _entracte[1], true)
+	# Pas de bouton « Passer » ni de compte à rebours (choix de Léo) : le match défile en 2D à
+	# la vitesse de l'horloge choisie dans les paramètres.
 	tactique = _bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique"))
 	tactique.name = "MatchBetweenTactics"
 	tactique.tooltip_text = "Consignes d’attaque et de défense (le match se met en pause)."
@@ -538,7 +530,7 @@ func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(180))
+	domination.custom_minimum_size = Vector2(0, px(150))
 	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements), et les essais, tirs réussis et cartons déjà vus."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
@@ -548,8 +540,8 @@ func _composants() -> void:
 	fil.name = "MatchBetweenFeed"
 	xv = GridContainer.new()
 	xv.name = "MatchBetweenSquad"
-	xv.columns = 2
-	xv.add_theme_constant_override("h_separation", px(14))
+	xv.columns = 3
+	xv.add_theme_constant_override("h_separation", px(8))
 	xv.add_theme_constant_override("v_separation", px(2))
 	S.G.fill(xv)
 	adjoint = S.G.v(px(10))
@@ -571,7 +563,7 @@ func _page() -> void:
 	var barre := S.G.h(px(12))
 	barre.alignment = BoxContainer.ALIGNMENT_END
 	gauche.add_child(barre)
-	for noeud: Control in [etat, entracte, passer, tactique, banc, parametres, plus]: barre.add_child(noeud)
+	for noeud: Control in [etat, tactique, banc, parametres, plus]: barre.add_child(noeud)
 	# Terrain habillé : le dernier fait en bandeau, en haut à gauche, comme à la télévision.
 	var scene := Control.new()
 	scene.name = "MatchBetweenScene"
@@ -804,7 +796,7 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 ## Chiffre clé : libellé, valeur de l'équipe qui reçoit, barre comparée, valeur de l'autre.
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var ligne := S.G.h(px(12))
-	ligne.custom_minimum_size.y = px(58)
+	ligne.custom_minimum_size.y = px(50)
 	var titre := _texte(str(rang.get("label", "")), 26, DOUX)
 	titre.clip_text = true
 	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -869,7 +861,7 @@ func _remplir_details() -> void:
 		if not par_cle.has(cle): continue
 		var rang: Dictionary = par_cle[cle]
 		var ligne := S.G.h(px(10))
-		ligne.custom_minimum_size.y = px(40)
+		ligne.custom_minimum_size.y = px(36)
 		var a := _texte(_valeur(rang, 0), 28, IVOIRE)
 		a.add_theme_font_override("font", CHIFFRES_GRAS)
 		a.custom_minimum_size.x = px(70)
@@ -906,7 +898,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var anneau := px(58)
+	var anneau := px(54)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -925,7 +917,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.add_theme_stylebox_override("focus", focus)
 		S.G.fill(case)
 		# Ligne du joueur : anneau d'énergie et numéro, nom de famille, note du match à droite.
-		var colonne := S.G.h(px(10))
+		var colonne := S.G.h(px(6))
 		colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		S.full(colonne)
 		case.add_child(colonne)
@@ -957,7 +949,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		var etiquette_note := _texte("%.1f" % note, 28, Color("9fd5a6") if note >= 7.0 else (ALERTE if note < 5.5 else DOUX), false, true)
 		etiquette_note.add_theme_font_override("font", CHIFFRES_GRAS)
 		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		etiquette_note.custom_minimum_size.x = px(44)
+		etiquette_note.custom_minimum_size.x = px(38)
 		etiquette_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		colonne.add_child(etiquette_note)
 		# Nom gardé pour les lecteurs d'écran et les tests, montré en infobulle.
@@ -979,12 +971,12 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.custom_minimum_size.y = anneau + px(4)
 		xv.add_child(case)
 
-## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 11 lettres.
+## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 9 lettres.
 static func _nom_court(nom: String) -> String:
 	var morceaux := nom.strip_edges().split(" ", false)
 	if morceaux.is_empty(): return ""
 	var famille := " ".join(morceaux.slice(1)) if morceaux.size() > 1 else morceaux[0]
-	return famille if famille.length() <= 11 else famille.substr(0, 10) + "."
+	return famille if famille.length() <= 9 else famille.substr(0, 8) + "."
 
 const PORTRAIT = preload("res://guide/assets/coach-poses.png")
 const MATTE = preload("res://guide/coach_matte.gdshader")
@@ -1122,14 +1114,9 @@ func _lecture(direct: Dictionary) -> String:
 			if int(v[camp]) >= int(v[1 - camp]) + 3: return "Déjà %d pénalités concédées : attention à la discipline." % int(v[camp])
 	return ""
 
-## Entracte : texte (« Prochaine action dans 6 s ») et bouton « Passer ».
-func montrer_entracte(texte: String, bouton: bool, force: bool = false) -> void:
-	if not force and _entracte[0] == texte and _entracte[1] == bouton: return
+## Entracte : la régie annonce encore son compte à rebours ; l'écran ne l'affiche plus.
+func montrer_entracte(texte: String, bouton: bool, _force: bool = false) -> void:
 	_entracte = [texte, bouton]
-	if not is_instance_valid(entracte): return
-	entracte.text = texte
-	entracte.visible = not texte.is_empty()
-	passer.visible = bouton
 
 func montrer_arret(valeur: Dictionary) -> void:
 	_arret = valeur
