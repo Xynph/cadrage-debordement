@@ -93,6 +93,13 @@ func run() -> void:
 	var watched := ""
 	var moved := started
 	var stall_ms := maxi(30, number("CD_MATCH_TEMPS_FORTS_GEL", 120)) * 1000
+	# Types de pistes voulus (chorégraphe) : seul le premier temps fort de chaque type est enregistré.
+	var types_voulus := OS.get_environment("CD_MATCH_TEMPS_FORTS_TYPES").split(",", false)
+	var types_vus := {}
+	var cle_gardee := ""
+	var type_garde := ""
+	var queue := 0.0
+	report["sequences"] = []
 	while true:
 		await process_frame
 		frame += 1
@@ -137,10 +144,31 @@ func run() -> void:
 				"geste_temps": float(gestes.time) if gestes != null else 0.0, "secondes_sans_progres": (now - moved) / 1000.0}
 			push_error("Direct figé : " + JSON.stringify(report.fige))
 			break
+		var garder := true
+		if not types_voulus.is_empty():
+			garder = false
+			if regie != null and regie.etat == regie.JEU and regie.tf.get("choregraphie") is Dictionary:
+				var genre := str(regie.tf.choregraphie.get("type", ""))
+				var cle := str(regie.tf.get("cle", ""))
+				if cle == cle_gardee or (genre in types_voulus and not types_vus.has(genre)):
+					if cle != cle_gardee:
+						cle_gardee = cle
+						type_garde = genre
+						types_vus[genre] = true
+						report.sequences.append({"type": genre, "horloge": str(regie.tf.get("horlogeDebut", "")), "premiere": report.images.size() + 1})
+					garder = true
+					queue = 1.0
+			if not garder and queue > 0.0:
+				# Une seconde de plus après le temps fort gardé (score, journal).
+				queue -= 1.0 / 30.0
+				garder = true
+			if garder and not report.sequences.is_empty(): report.sequences[-1]["derniere"] = report.images.size()
+			if regie != null: regie.vitesse = 1.0 if garder else 6.0
 		var over: bool = live.is_empty() or live.get("finished", false) or (last_minute > 0 and int(live.get("minute", 0)) >= last_minute)
+		if not types_voulus.is_empty() and types_vus.size() >= types_voulus.size() and queue <= 0.0: over = true
 		if over and (regie == null or regie.etat != regie.JEU): ending += delta
 		if ending >= 3.0 or now - started > limit_ms: break
-		if frame % every != 0: continue
+		if frame % every != 0 or not garder: continue
 		if report.images.size() >= maximum:
 			report.tronque = true
 			continue
@@ -160,7 +188,7 @@ func run() -> void:
 		bytes += written
 		largest = maxi(largest, written)
 		render_usec += Time.get_ticks_usec() - before
-		report.images.append({"file": name, "ms": now - started, "etat": state, "horloge": view.clock.text if view != null else "", "score": view.score.text if view != null else ""})
+		report.images.append({"file": name, "ms": now - started, "etat": state, "horloge": view.clock.text if view != null else "", "score": view.score.text if view != null else "", "type": type_garde})
 	for played: Node in regies:
 		if is_instance_valid(played): report.suivi.append_array(played.suivi)
 	var final_live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}

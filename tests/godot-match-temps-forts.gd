@@ -298,6 +298,7 @@ func choreography(view: Control) -> void:
 	var fige_ok := false
 	var fige_detail := ""
 	var balle_ok := true
+	var joueurs_ok := true
 	var apres_index := -1
 	while int(app.model.live.minute) < 17 and Time.get_ticks_msec() < deadline:
 		await process_frame
@@ -316,6 +317,9 @@ func choreography(view: Control) -> void:
 			if montre.get("events", []).size() > maxi(int(plan.index), int(regie._vus)): journal_avance = true
 		var ball: Node3D = view.stage.get("_ball")
 		if not (ball.visible and ball.global_position.is_finite()): balle_ok = false
+		# Chaque joueur des pistes est à l'écran, premier temps fort du match compris (coup d'envoi).
+		for joueur: Dictionary in pistes.joueurs:
+			if not view.stage._actors.has(str(joueur.id)) or not (view.stage._actors[str(joueur.id)].node as Node3D).is_visible_in_tree(): joueurs_ok = false
 		# Pause au milieu des pistes : l'image se fige, puis la lecture reprend.
 		if not fige_teste and view.stage.choregraphie_temps() > 3.0 and not app.waiting:
 			fige_teste = true
@@ -339,6 +343,7 @@ func choreography(view: Control) -> void:
 	check(not journal_avance, "Le journal ouvert n'annonce rien avant l'image (l'essai jamais avant l'aplati)")
 	check(fige_teste and fige_ok, "Une pause pendant les pistes les fige, puis la lecture reprend (%s)" % fige_detail)
 	check(balle_ok, "Ballon visible et fini pendant les pistes")
+	check(joueurs_ok, "Chaque joueur des pistes est à l'écran pendant les pistes")
 	var lues: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "choregraphie")
 	check(lues.size() >= 1 and lues.all(func(entry: Dictionary): return entry.has("duree_reelle")), "Pistes lues jusqu'au bout : " + str(lues))
 	if not lues.is_empty():

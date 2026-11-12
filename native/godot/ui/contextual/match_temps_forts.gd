@@ -395,6 +395,15 @@ func _jouer_choregraphie(plan: Dictionary) -> bool:
 	if dernier < index or dernier >= tf.plans.size() or not pistes.get("jalons") is Array:
 		suivi.append({"evenement": "choregraphie_refusee", "debut_ms": Time.get_ticks_msec()})
 		return false
+	# Joueurs pas encore à l'écran (premier temps fort du match, sans scène de départ) : la scène du
+	# plan les pose d'abord, figée, pour que les pistes aient qui déplacer.
+	if stage.has_method("jouer_choregraphie") and pistes.get("joueurs") is Array and plan.get("scene") is Dictionary:
+		var absents := 0
+		for joueur: Variant in pistes.joueurs:
+			if joueur is Dictionary and not stage._actors.has(str(joueur.get("id", ""))): absents += 1
+		if absents > 0:
+			stage.apply_frame(_image(plan.scene, true, int(plan.get("index", 0)) - 1))
+			_derniers = _positions(plan.scene)
 	if not stage.has_method("jouer_choregraphie") or not stage.jouer_choregraphie(pistes, vitesse):
 		suivi.append({"evenement": "choregraphie_refusee", "debut_ms": Time.get_ticks_msec()})
 		return false
