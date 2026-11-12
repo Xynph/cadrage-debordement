@@ -254,9 +254,10 @@ class Energie extends Control:
 
 	func _draw() -> void:
 		var c := size * 0.5
-		var epais := maxf(3.0, 7.0 * densite)
+		var epais := maxf(4.0, 9.0 * densite)
 		var r := minf(size.x, size.y) * 0.5 - epais * 0.5 - 1.0
-		draw_arc(c, r, 0.0, TAU, 48, Color("232f2e"), epais, true)
+		draw_circle(c, r, Color("0b1012"))
+		draw_arc(c, r, 0.0, TAU, 48, Color("2c3a37"), epais, true)
 		var part := clampf(valeur / 100.0, 0.0, 1.0)
 		if part > 0.0: draw_arc(c, r, -PI * 0.5, -PI * 0.5 + TAU * part, maxi(6, roundi(48 * part)), teinte_pour(valeur), epais, true)
 		if not numero.is_empty():
@@ -798,13 +799,13 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var titre := _texte(str(rang.get("label", "")), 26, DOUX)
 	titre.clip_text = true
 	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	titre.custom_minimum_size.x = px(150)
-	S.G.fill(titre, false, 1.1)
+	titre.custom_minimum_size.x = px(120)
+	S.G.fill(titre, false, 1.6)
 	ligne.add_child(titre)
-	var a := _texte(_valeur(rang, 0), 44, IVOIRE)
+	var a := _texte(_valeur(rang, 0), 40, IVOIRE)
 	a.add_theme_font_override("font", CHIFFRES_GRAS)
 	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	a.custom_minimum_size.x = px(104)
+	a.custom_minimum_size.x = px(84)
 	ligne.add_child(a)
 	var barre := Barre.new()
 	barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
@@ -813,9 +814,9 @@ func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	barre.custom_minimum_size = Vector2(px(80), px(30))
 	S.G.fill(barre, false, 1.0)
 	ligne.add_child(barre)
-	var b := _texte(_valeur(rang, 1), 44, IVOIRE)
+	var b := _texte(_valeur(rang, 1), 40, IVOIRE)
 	b.add_theme_font_override("font", CHIFFRES_GRAS)
-	b.custom_minimum_size.x = px(104)
+	b.custom_minimum_size.x = px(84)
 	ligne.add_child(b)
 	parent.add_child(ligne)
 
@@ -859,12 +860,13 @@ func _remplir_details() -> void:
 		if not par_cle.has(cle): continue
 		var rang: Dictionary = par_cle[cle]
 		var ligne := S.G.h(px(10))
-		ligne.custom_minimum_size.y = px(36)
+		ligne.custom_minimum_size.y = px(48)
 		var a := _texte(_valeur(rang, 0), 28, IVOIRE)
 		a.add_theme_font_override("font", CHIFFRES_GRAS)
 		a.custom_minimum_size.x = px(70)
 		ligne.add_child(a)
-		var milieu := S.G.v(0)
+		var milieu := S.G.v(px(6))
+		milieu.alignment = BoxContainer.ALIGNMENT_CENTER
 		S.G.fill(milieu)
 		var titre := _texte(str(rang.get("label", "")), 22, DOUX)
 		titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -873,8 +875,8 @@ func _remplir_details() -> void:
 		var barre := Barre.new()
 		barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
 		barre.couleurs = terrain.couleurs.duplicate()
-		barre.densite = _densite * 0.7
-		barre.custom_minimum_size = Vector2(px(60), px(12))
+		barre.densite = _densite * 1.3
+		barre.custom_minimum_size = Vector2(px(60), px(14))
 		milieu.add_child(barre)
 		ligne.add_child(milieu)
 		var b := _texte(_valeur(rang, 1), 28, IVOIRE)
@@ -944,7 +946,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		etiquette_nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		S.G.fill(etiquette_nom)
 		colonne.add_child(etiquette_nom)
-		var etiquette_note := _texte("%.1f" % note, 28, Color("9fd5a6") if note >= 7.0 else (ALERTE if note < 5.5 else DOUX), false, true)
+		var etiquette_note := _texte("%.1f" % note, 28, _teinte_note(note), false, true)
 		etiquette_note.add_theme_font_override("font", CHIFFRES_GRAS)
 		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		etiquette_note.custom_minimum_size.x = px(38)
@@ -968,6 +970,15 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
 		case.custom_minimum_size.y = anneau + px(4)
 		xv.add_child(case)
+
+## Couleur de la note du match : vert au-dessus de 6,5, ivoire autour de 6, jaune sous 6,
+## alerte sous 5,5 (6 au coup d'envoi).
+static func _teinte_note(note: float) -> Color:
+	if note >= 7.0: return Color("82e3a3")
+	if note >= 6.5: return Color("65b081")
+	if note >= 6.0: return IVOIRE
+	if note >= 5.5: return Color("c9c46a")
+	return ALERTE
 
 ## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 9 lettres.
 static func _nom_court(nom: String) -> String:

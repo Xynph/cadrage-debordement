@@ -514,12 +514,13 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	# Ballon : ovale blanc, ombre qui s'écarte quand il est en l'air.
 	var sol := point(ballon.x, ballon.y)
 	var leve := Vector2(0, -hauteur * e * 0.55)
-	var taille := maxf(6.0, r * 0.62) * (1.0 + hauteur * 0.035)
+	var taille := maxf(7.0, r * 0.72) * (1.0 + hauteur * 0.035)
 	draw_set_transform(sol + Vector2(hauteur * e * 0.2, 0), 0.0, Vector2(1.25, 0.8))
 	draw_circle(Vector2.ZERO, taille, Color(0, 0, 0, clampf(0.45 - hauteur * 0.015, 0.15, 0.45)))
 	draw_set_transform(sol + leve, -0.5, Vector2(1.35, 0.9))
 	# Halo clair : le ballon reste lisible sur les pastilles comme sur l'herbe.
-	draw_circle(Vector2.ZERO, taille * 1.7, Color(1, 1, 1, 0.16))
+	draw_circle(Vector2.ZERO, taille * 2.1, Color(S.GOLD, 0.22))
+	draw_circle(Vector2.ZERO, taille * 1.6, Color(1, 1, 1, 0.30))
 	draw_circle(Vector2.ZERO, taille, Color("fbf8ee"))
 	draw_arc(Vector2.ZERO, taille, 0.0, TAU, 20, Color("3a2a1a"), maxf(1.0, taille * 0.22), true)
 	draw_set_transform(Vector2.ZERO, 0.0)
