@@ -12,8 +12,27 @@ var speech_requests := 0
 var speech_starts := 0
 var output := OS.get_environment("CD_NIGHT_NAV_OUTPUT")
 var group := OS.get_environment("CD_NIGHT_NAV_CASE")
+var progress_started: int = Time.get_ticks_msec()
 
-func _initialize() -> void: call_deferred("run")
+func _initialize() -> void:
+	DirAccess.make_dir_recursive_absolute(output)
+	progress("initialize")
+	call_deferred("run")
+func progress(stage: String, extra: Dictionary = {}) -> void:
+	var entry: Dictionary = {"stage":stage,"elapsed_ms":Time.get_ticks_msec()-progress_started,"case":group,"checks":checks}
+	if is_instance_valid(app):
+		entry.route = app.route
+		entry.waiting = app.waiting
+		entry.command = app.last_command
+		entry.error = app.last_error
+	entry.merge(extra,true)
+	var file: String = output.path_join("progress.jsonl")
+	var access: FileAccess = FileAccess.open(file,FileAccess.READ_WRITE if FileAccess.file_exists(file) else FileAccess.WRITE)
+	if access != null:
+		access.seek_end()
+		access.store_line(JSON.stringify(entry))
+		access.close()
+	print("NIGHT_PROGRESS ",JSON.stringify(entry))
 func check(value: bool, message: String) -> void:
 	checks += 1
 	if not value: failures.append(message); printerr("FAIL: ", message)
@@ -21,6 +40,8 @@ func settle() -> void:
 	for frame in 8: await process_frame
 func named(id: String) -> Node: return app.find_child(id, true, false)
 func command(id: String, payload: Dictionary = {}) -> bool:
+	var request_started: int = Time.get_ticks_msec()
+	progress("command_begin",{"request":id,"payload_keys":payload.keys()})
 	var accepted: bool = app._command(id, payload)
 	check(accepted, "Commande de préparation autorisée : " + id)
 	var deadline := Time.get_ticks_msec() + 30000
@@ -29,6 +50,7 @@ func command(id: String, payload: Dictionary = {}) -> bool:
 	var ok: bool = not app.waiting and app.bridge.last_response_ok
 	check(ok, "Réponse du vrai worker : " + id + " · " + app.last_error)
 	await settle()
+	progress("command_end",{"request":id,"accepted":accepted,"ok":ok,"request_ms":Time.get_ticks_msec()-request_started})
 	return accepted and ok
 func key(code: Key, alt: bool = false) -> void:
 	for down in [true, false]:
@@ -51,6 +73,7 @@ func open_entity(kind: String, id: Variant, section: String = "") -> bool:
 	visits.append({"target":target, "accepted":accepted, "route_after":app.route, "selected_player":app.selected_player})
 	return accepted
 func capture(id: String) -> void:
+	progress("capture_begin",{"capture":id})
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
@@ -58,6 +81,7 @@ func capture(id: String) -> void:
 	var filename := output.path_join(id + ".png")
 	check(image.save_png(filename) == OK, "Capture réelle : " + id)
 	captures.append({"file":filename, "width":image.get_width(), "height":image.get_height(), "route":app.route, "sha256":FileAccess.get_sha256(filename)})
+	progress("capture_end",{"capture":id})
 func snapshot() -> Dictionary:
 	await command("export")
 	var file := str(app.model.meta.dataDir).path_join("donnees.json")
@@ -305,6 +329,7 @@ func reading_cases() -> void:
 		await capture("fiche-%d-%d" % [resolution.x, resolution.y])
 	await unchanged(before, "Parcours joueurs staff clubs")
 func guard_refusal(context: String) -> void:
+	progress("guard_begin",{"context":context})
 	var before := await snapshot()
 	var route_before: String = app.route
 	var scene_before: String = app.contextual_director.kind
@@ -545,6 +570,7 @@ func report_cases() -> void:
 	check(int(app.management_ui.market.get("immersive_tab", -1)) == 3, "Fermeture du rapport : retour à l’onglet d’archives d’origine")
 	await unchanged(before, "Lecture du vrai rapport d’observation")
 func guard_cases() -> void:
+	progress("guard_cases_begin")
 	# A press appointment is intentionally absent until its exact persisted mail
 	# is opened. Exercise that entrypoint instead of manufacturing scene metadata.
 	var invitation := str(app.model.get("clubLife", {}).get("press", {}).get("conference", {}).get("invitationId", ""))
@@ -591,6 +617,7 @@ func guard_cases() -> void:
 		await capture("rencontre-historique-2560")
 		await unchanged(before, "Consultation du résultat historique")
 func finish() -> void:
+	progress("finish",{"failures":failures})
 	if is_instance_valid(app.coach):
 		check(app.coach.speech.muted and not app.coach.speech.speaking and app.coach.speech.player == null, "Gabi silencieux, aucun lecteur audio")
 	check(speech_requests == 0 and speech_starts == 0, "Compteurs de parole : zéro demande et zéro début")
@@ -599,6 +626,7 @@ func finish() -> void:
 	print("NAVIGATION NOCTURNE ", group, " : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	await app._close(0 if failures.is_empty() else 1)
 func run() -> void:
+	progress("run")
 	root.size = Vector2i(2560,1440)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 30000
