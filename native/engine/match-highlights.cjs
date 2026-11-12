@@ -30,6 +30,20 @@ const NIVEAUX=Object.freeze({
 });
 const SEUIL_DYNAMIQUE=t=>86-32*t; // de 54 (tout se joue) à 80 (match plié)
 
+// Grosses actions sans point (12 novembre 2026, demande de Léo : « pas que des essais ou des
+// transformations […] pour qu'on ne sache pas à l'avance ce qu'il va se passer ») : franchissement
+// stoppé, essai sauvé ou tenu en l'air, ballon récupéré près de sa ligne, longue séquence
+// défendue, pénalité manquée, contre-attaque, jeu au pied dangereux. Elles sont cotées au niveau
+// d'une pénalité réussie, et le niveau dynamique en garde une part réelle (régulateur d'issue) :
+// voir docs/match-temps-forts-conception-20261111.md, § 13.
+const GROSSES=new Set(['franchissement','ballon_sauve','ballon_tenu_en_but','essai_refuse','penalite_manquee','pression_dans_les_22',
+ 'pres_de_la_ligne','cinquante_22','jeu_au_pied_dangereux','contre_attaque','touche_5m','melee_5m','en_but_sous_pression','ballon_porte']);
+// Régulateur d'issue du niveau dynamique : après quatre temps forts, si la part de ceux qui
+// marquent dépasse PART_POINTS, le seuil des grosses actions sans point baisse de BONUS_GROSSES
+// (et remonte d'autant si elles dépassent PART_GROSSES). Deux temps forts de même type à moins
+// de MEME_TYPE minutes : le second (non forcé) doit dépasser un seuil relevé de REPETITION.
+const PART_POINTS=0.5,PART_GROSSES=0.5,BONUS_GROSSES=10,MEME_TYPE=8,REPETITION=12;
+
 // Durée minimale d'un plan à l'écran, en secondes, à vitesse normale. Quand un geste
 // de la vue 3D dure plus longtemps (touche portée, ballon porté, essai aplati de la
 // PR 554), la lecture l'attend : ces valeurs sont alors un plancher. La progression
@@ -129,7 +143,7 @@ function action(l,lignes){
  const k=l.kind,d=l.equipe===null||l.x===null?null:distanceLigne(l.equipe,l.x);
  if(k==='try')return {type:'essai',base:100,force:true};
  if(k==='goal')return {type:'penalite_reussie',base:74,force:true};
- if(k==='miss'&&l.type==='miss')return {type:'penalite_manquee',base:64};
+ if(k==='miss'&&l.type==='miss')return {type:'penalite_manquee',base:70};
  if(k==='card'&&l.incident)return l.cause==='red'?{type:'carton_rouge',base:94,force:true}:{type:'carton_jaune',base:80};
  if(k==='ingoal'){
   if(l.cause==='ingoal-knock-on')return {type:'essai_refuse',base:84};
@@ -143,16 +157,18 @@ function action(l,lignes){
  if(k==='setpiece-win'&&(l.move==='maul'||l.porte)&&d!==null&&d<=22)return {type:'ballon_porte',base:d<=10?58:50};
  if(k==='carry'&&l.depuis!==null&&d!==null){
   const gain=Math.abs(l.x-l.depuis),entree=d<=22&&distanceLigne(l.equipe,l.depuis)>22;
-  if(gain>=22)return {type:'franchissement',base:entree?60:50};
-  if(d<=8)return {type:'pres_de_la_ligne',base:54};
+  if(gain>=22)return {type:'franchissement',base:entree?70:62};
+  if(d<=8)return {type:'pres_de_la_ligne',base:60};
+  // Contre-attaque : douze mètres au moins gagnés depuis son propre camp.
+  if(gain>=12&&distanceLigne(l.equipe,l.depuis)>=55)return {type:'contre_attaque',base:54};
   if(entree)return {type:'entree_dans_les_22',base:40};
   return d<=22?{type:'jeu_dans_les_22',base:34}:{type:'progression',base:12};
  }
  if(k==='turnover'||k==='setpiece-loss'){
   if(l.equipe===null||l.x===null)return {type:'ballon_recupere',base:14};
   const perdant=1-l.equipe,danger=distanceLigne(perdant,l.x);
-  if(danger<=22)return {type:'ballon_sauve',base:danger<=10?62:54}; // la défense récupère dans ses 22
-  if(d<=30)return {type:'ballon_gratte_haut',base:50};            // récupération dans le camp adverse
+  if(danger<=22)return {type:'ballon_sauve',base:danger<=10?70:62}; // la défense récupère dans ses 22
+  if(d<=30)return {type:'ballon_gratte_haut',base:40};            // récupération dans le camp adverse
   return k==='setpiece-loss'?{type:'conquete_volee',base:40}:{type:'ballon_recupere',base:16};
  }
  if(k==='kickoff'){
@@ -161,6 +177,8 @@ function action(l,lignes){
   if(reprise)return {type:'reprise',base:40,lancement:true};
   return null;
  }
+ // Jeu au pied dangereux : le ballon tombe dans les 22 adverses.
+ if(k==='kick'&&l.depuis!==null&&d!==null&&d<=22&&Math.abs(l.x-l.depuis)>=20)return {type:'jeu_au_pied_dangereux',base:56};
  if(k==='kick'&&l.depuis!==null&&Math.abs(l.x-l.depuis)>=35)return {type:'long_jeu_au_pied',base:26};
  if(k==='penalty')return {type:'penalite_sifflee',base:d!==null&&d<=45?30:18};
  if(k==='hand-fault')return {type:'faute_de_main',base:d!==null&&d<=22?38:12};
@@ -359,7 +377,8 @@ function en_direct(events,options={}){
  if(!regle)throw new RangeError('Niveau de temps forts inconnu : '+niveau);
  const lignes=normaliser(events),dynamique=niveau==='dynamique',regule=options.cible!==false&&['cles','etendus','dynamique'].includes(niveau);
  const cible=options.cible||regle.cible;
- const etat={montre:-1,cumul:0,decalage:0,reglage:0,ouvert:false,suites:0,equipe:null,dernierJoue:false};
+ const etat={montre:-1,cumul:0,decalage:0,reglage:0,ouvert:false,suites:0,equipe:null,dernierJoue:false,
+  episodes:0,points:0,grosses:0,dernierType:null,dernierMinute:-99};
  const decisions=[];
  for(const r of rafales(lignes)){
   const jouables=[];
@@ -383,7 +402,19 @@ function en_direct(events,options={}){
    // Fin de match serrée : après la 78e, à un essai transformé d'écart, tout est montré.
    if(derniere.periode===2&&derniere.minute>=78&&Math.abs(derniere.scoreApres[0]-derniere.scoreApres[1])<=7&&!['break','end'].includes(lignes[jouables.at(-1)].kind))
     ancres.push({i:jouables.at(-1),type:'fin_de_match_serree',base:80,score:80,force:true,tension:1});
-   const seuilDe=a=>(dynamique?SEUIL_DYNAMIQUE(a.tension):regle.seuil)+etat.decalage;
+   // Niveau dynamique : part réelle de grosses actions sans point, et pas deux temps forts
+   // quasi identiques d'affilée (même type à moins de MEME_TYPE minutes).
+   const issue=a=>{
+    if(!dynamique||etat.episodes<4)return 0;
+    let ajuste=0;
+    if(GROSSES.has(a.type)){
+     if(etat.points/etat.episodes>PART_POINTS)ajuste-=BONUS_GROSSES;
+     else if(etat.grosses/etat.episodes>PART_GROSSES)ajuste+=BONUS_GROSSES;
+    }
+    return ajuste;
+   };
+   const repetition=a=>dynamique&&a.type===etat.dernierType&&derniere.minute-etat.dernierMinute<MEME_TYPE?REPETITION:0;
+   const seuilDe=a=>(dynamique?SEUIL_DYNAMIQUE(a.tension):regle.seuil)+etat.decalage+issue(a)+repetition(a);
    const forcee=a=>a.force&&!(dynamique&&a.type==='penalite_reussie'&&a.tension<.35);
    const retenues=ancres.filter(a=>(forcee(a)||a.score>=seuilDe(a))&&!(niveau==='resume'&&a.type==='coup_d_envoi'));
    decision.seuil=ancres.length?Math.round(Math.min(...ancres.map(seuilDe))):null;
@@ -429,6 +460,13 @@ function en_direct(events,options={}){
     // Ouverte : la rafale a été montrée jusqu'au bout et le ballon vit encore.
     etat.ouvert=plans.at(-1).i===jouables.at(-1)&&!FINS.has(dernier.kind)&&!['turnover','setpiece-loss','card'].includes(dernier.kind);
     etat.equipe=dernier.possession;
+    if(!suite){
+     etat.episodes++;
+     const kinds=plans.map(p=>p.kind);
+     if(kinds.includes('try')||kinds.includes('goal'))etat.points++;
+     else if(tf.types.some(t=>GROSSES.has(t)))etat.grosses++;
+     etat.dernierType=tf.type;etat.dernierMinute=derniere.minute;
+    }
    }
   }
   if(!decision.joue){etat.ouvert=false;etat.suites=0}
@@ -455,4 +493,4 @@ function en_direct(events,options={}){
   dureeHorloge:Object.fromEntries(Object.entries(HORLOGE).map(([nom,sec])=>[nom,Math.round(sautees*sec)]))};
 }
 
-module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,normaliser,tension,temps_forts,en_direct});
+module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,dansLes22,normaliser,tension,temps_forts,en_direct});

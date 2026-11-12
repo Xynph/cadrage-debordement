@@ -1,11 +1,8 @@
 name: V24 progression carriere - 3 5 10 ans
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (suites Node déjà exécutées par tests.yml).
+# Anciens déclencheurs : pull_request. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/development.js'
-      - 'tests/v24-career-depth.cjs'
-      - '.github/workflows/v24-career-depth.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

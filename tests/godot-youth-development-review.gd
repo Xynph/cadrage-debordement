@@ -3,7 +3,9 @@ extends "godot-youth-scout-ui.gd"
 func run() -> void:
 	root.size = Vector2i(1280,800)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
-	await command("snapshot"); print("review.snapshot"); await command("new_career",{"mode":"common","club":0}); print("review.career")
+	# Le moteur envoie lui-même le premier instantané au démarrage : on attend sa réponse (comme la recette parente)
+	# au lieu de le redemander, car la commande est refusée tant que cet instantané initial est en vol (rendu logiciel lent).
+	await response("snapshot initial"); print("review.snapshot"); await command("new_career",{"mode":"common","club":0}); print("review.career")
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	var view := await open_youth(); print("review.open")
 	check(view != null,"Dialogue suivi existant")

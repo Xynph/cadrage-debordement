@@ -32,6 +32,11 @@ var _bench_focus_key := ""
 var _camera_controls: Array[Button] = []
 var _applied_camera := ""
 var _applied_quality := ""
+## Écusson et couleur de chaque club dans le bandeau (remplis au premier affichage).
+var _ecussons: Array = [null, null]
+var _ecussons_cle := ""
+## Barre de commandes du bas : masquée pendant l'écran intermédiaire (il a sa propre barre).
+var barre_commandes: Control
 
 func _ready() -> void:
 	name = "ContextualLiveMatch"
@@ -53,21 +58,58 @@ func _ready() -> void:
 	viewport.add_child(stage)
 	var frame := S.frame(self, 18)
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var scoreboard := S.panel(frame, 10)
-	var banner := S.G.h(12)
+	# Bandeau de score façon retransmission : horloge en pastille, écusson et couleur de chaque
+	# club, score très grand en police d'affichage. L'élément le plus visible de l'écran.
+	var scoreboard := S.panel(frame, 8)
+	var coque_score: PanelContainer = scoreboard.get_parent().get_parent()
+	var fond := S.G.T.box(Color(0.05, 0.11, 0.09, 0.94), 12, Color(S.GOLD, 0.28))
+	fond.shadow_color = Color(0, 0, 0, 0.3)
+	fond.shadow_size = 8
+	coque_score.add_theme_stylebox_override("panel", fond)
+	var banner := S.G.h(14)
 	scoreboard.add_child(banner)
-	clock = S.label("", 24, S.GOLD)
-	clock.custom_minimum_size.x = 125
-	banner.add_child(clock)
-	home = S.label("", 22)
+	var pastille := PanelContainer.new()
+	var style_pastille := S.G.T.box(S.GOLD, 20)
+	style_pastille.content_margin_left = 16
+	style_pastille.content_margin_right = 16
+	style_pastille.content_margin_top = 2
+	style_pastille.content_margin_bottom = 2
+	pastille.add_theme_stylebox_override("panel", style_pastille)
+	pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	banner.add_child(pastille)
+	clock = S.label("", 28, Color("10201a"))
+	clock.add_theme_font_override("font", S.G.T.DISPLAY)
+	clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	clock.custom_minimum_size.x = 92
+	pastille.add_child(clock)
+	home = S.label("", 24)
+	home.add_theme_font_override("font", S.G.T.DISPLAY)
 	home.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	home.clip_text = true
+	home.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	S.G.fill(home)
 	banner.add_child(home)
-	score = S.label("", 32, S.GOLD)
-	score.custom_minimum_size.x = 145
+	_ecussons[0] = S.G.h(6)
+	banner.add_child(_ecussons[0])
+	var cadre_score := PanelContainer.new()
+	var style_score := S.G.T.box(Color(0, 0, 0, 0.32), 10, Color(S.GOLD, 0.35))
+	style_score.content_margin_left = 22
+	style_score.content_margin_right = 22
+	style_score.content_margin_top = 0
+	style_score.content_margin_bottom = 0
+	cadre_score.add_theme_stylebox_override("panel", style_score)
+	banner.add_child(cadre_score)
+	score = S.label("", 46, S.GOLD)
+	score.add_theme_font_override("font", S.G.T.DISPLAY)
+	score.custom_minimum_size.x = 150
 	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	banner.add_child(score)
-	away = S.label("", 22)
+	cadre_score.add_child(score)
+	_ecussons[1] = S.G.h(6)
+	banner.add_child(_ecussons[1])
+	away = S.label("", 24)
+	away.add_theme_font_override("font", S.G.T.DISPLAY)
+	away.clip_text = true
+	away.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	S.G.fill(away)
 	banner.add_child(away)
 	play = S.button("PAUSE", _pause)
@@ -85,6 +127,7 @@ func _ready() -> void:
 	event_panel.add_child(events)
 	event_row.add_child(S.G.spacer())
 	var controls := S.panel(frame, 8)
+	barre_commandes = controls.get_parent().get_parent()
 	var bar := S.G.h(7)
 	controls.add_child(bar)
 	for title in ["Tactique", "Banc", "Stats", "Journal"]:
@@ -114,7 +157,7 @@ func _ready() -> void:
 		add_child(regie)
 		regie.setup(self, container, viewport, space)
 	bar.add_child(S.G.spacer())
-	bar.add_child(S.button("CONFIER LA FIN À L’ADJOINT", func(): app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?", func(): director.command("delegate"))))
+	bar.add_child(S.button("CONFIER LA FIN À L’ADJOINT", confier_fin))
 	finish = S.button("VALIDER LA JOURNÉE  →", func(): director.command("finish_round"), false, true)
 	bar.add_child(finish)
 	drawer = PanelContainer.new()
@@ -131,7 +174,7 @@ func _ready() -> void:
 	drawer.add_child(drawer_margin)
 	var drawer_column := S.G.v(8)
 	drawer_margin.add_child(drawer_column)
-	drawer_column.add_child(S.button("FERMER  ×", func(): drawer_tab = ""; drawer.hide()))
+	drawer_column.add_child(S.button("FERMER  ×", _fermer_tiroir))
 	_bench_feedback = S.G.v(2)
 	_bench_context = S.wrap("", 14, S.TEXT)
 	_bench_context.name = "MatchBenchContext"
@@ -168,6 +211,7 @@ func update_frame(value: Dictionary) -> void:
 	if teams.size() >= 2:
 		home.text = S.G.club_name(teams[0])
 		away.text = S.G.club_name(teams[1])
+		_poser_ecussons(teams)
 	var scores: Array = live.get("score", [0, 0])
 	score.text = "%d — %d" % [int(scores[0]), int(scores[1])]
 	clock.text = "%d min" % int(live.get("minute", 0))
@@ -185,7 +229,7 @@ func update_frame(value: Dictionary) -> void:
 	var lines := PackedStringArray()
 	var rows: Array = live.get("events", [])
 	for event: Variant in rows.slice(maxi(0, rows.size() - 2)):
-		if event is Dictionary: lines.append("%s'  %s" % [str(event.get("min", "")), str(event.get("text", ""))])
+		if event is Dictionary: lines.append("%s'  %s" % [str(event.get("min", "")), sigles_affiches(str(event.get("text", "")), live.get("teams", []))])
 		else: lines.append(str(event))
 	events.text = "\n".join(lines)
 	events.get_parent().get_parent().visible = not lines.is_empty()
@@ -195,6 +239,19 @@ func update_frame(value: Dictionary) -> void:
 	_update_drawer()
 	apply_preferences()
 	director._refresh_controls()
+
+## Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran affiche le
+## sigle de leur identité (presentation.abbr). Même règle que match-direct.cjs (renommeur).
+static func sigles_affiches(texte: String, equipes: Array) -> String:
+	for equipe: Variant in equipes:
+		if not equipe is Dictionary: continue
+		var interne := str(equipe.get("abbr", ""))
+		var identite: Variant = equipe.get("presentation")
+		var affiche := str(identite.get("abbr", "")) if identite is Dictionary else ""
+		if not RegEx.create_from_string("^[A-Z0-9]{2,5}$").search(interne) or affiche.is_empty() or affiche == interne: continue
+		var motif := RegEx.create_from_string("\\b" + interne + "\\b")
+		if motif != null: texte = motif.sub(texte, affiche, true)
+	return texte
 
 func _choisir_cadence(index: int) -> void:
 	if _reglages_temps_forts:
@@ -232,6 +289,31 @@ func temps_forts_actifs() -> bool:
 func _live() -> Dictionary:
 	return model.get("live", {}) if model.get("live") is Dictionary else {}
 
+func confier_fin() -> void:
+	app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?", func(): director.command("delegate"))
+
+## Écussons et filets de couleur des deux clubs dans le bandeau de score.
+func _poser_ecussons(teams: Array) -> void:
+	var cle := JSON.stringify(teams.map(func(t: Variant): return [S.G.club_name(t), S.G.identity(t).get("color", "")] if t is Dictionary else []))
+	if cle == _ecussons_cle or _ecussons[0] == null: return
+	_ecussons_cle = cle
+	for cote in 2:
+		var boite: HBoxContainer = _ecussons[cote]
+		for enfant in boite.get_children(): enfant.queue_free()
+		if teams.size() <= cote or not teams[cote] is Dictionary: continue
+		var filet := ColorRect.new()
+		filet.color = Color.from_string(str(S.G.identity(teams[cote]).get("color", "#d8c183")), S.GOLD)
+		filet.custom_minimum_size = Vector2(6, 40)
+		filet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var ecusson := S.G.crest(teams[cote], 44)
+		ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if cote == 0:
+			boite.add_child(ecusson)
+			boite.add_child(filet)
+		else:
+			boite.add_child(filet)
+			boite.add_child(ecusson)
+
 func _pause() -> void:
 	var live := _live()
 	director.command("pause", {"paused":not live.get("paused", false)})
@@ -268,13 +350,22 @@ func _toggle_drawer(title: String) -> void:
 		if focused != null and drawer_body.is_ancestor_of(focused):
 			_bench_focus_key = str(focused.get_meta("match_bench_focus", ""))
 	if title == drawer_tab and drawer.visible:
-		drawer_tab = ""
-		drawer.hide()
+		_fermer_tiroir()
 		return
 	drawer_tab = title
 	drawer.show()
 	_drawer_key = ""
 	_update_drawer()
+	# Entre deux temps forts : la tactique ou le banc ouverts mettent le match en pause (les
+	# changements ne se font qu'en pause) ; le prochain temps fort attend leur fermeture.
+	if regie != null:
+		if title in ["Tactique", "Banc"]: regie.tiroir_ouvert()
+		else: regie.tiroir_ferme()
+
+func _fermer_tiroir() -> void:
+	drawer_tab = ""
+	drawer.hide()
+	if regie != null: regie.tiroir_ferme()
 
 func _update_drawer() -> void:
 	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible
@@ -288,7 +379,7 @@ func _update_drawer() -> void:
 	var presence: Array = [drawer_tab, selected_slot, live.get("paused"), live.get("finished")]
 	match drawer_tab:
 		"Banc": presence.append(_bench_presence(live))
-		"Stats": presence.append(live.get("statsRows", []))
+		"Stats": presence.append(_stats(live))
 		"Tactique":
 			presence.append(model.get("tactics", {}))
 			presence.append(model.get("decisions", {}).get("liveAdvice"))
@@ -309,12 +400,17 @@ func _update_drawer() -> void:
 			_bench(live)
 			if not bench_focus.is_empty(): _restore_bench_focus(bench_focus)
 		"Stats":
-			for stat: Dictionary in live.get("statsRows", []):
+			for stat: Dictionary in _stats(live):
 				drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
 				drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, S.GOLD))
-			if live.get("statsRows", []).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
+			if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
 		"Tactique": _tactics(live)
 	director._refresh_controls()
+
+## Chiffres du tiroir : entre deux temps forts, ceux d'avant la borne du moteur (rien d'un temps fort à venir).
+func _stats(live: Dictionary) -> Array:
+	if regie != null and regie.etat != regie.JEU and live.get("direct") is Dictionary and live.direct.has("statsRows"): return live.direct.statsRows
+	return live.get("statsRows", [])
 
 func _bench_presence(live: Dictionary) -> Array:
 	# Condition and spatial presentation change on every tick. Rebuild controls

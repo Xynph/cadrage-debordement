@@ -71,7 +71,7 @@ const OUTRO := 0.45
 const FRAME_IN := 1.5      # rapprochement, en secondes
 const FRAME_OUT := 1.8     # retour au cadrage normal
 const FRAME_SMOOTH := 0.6  # amortissement du centre et de la taille entre deux temps du geste
-const FRAME_MIN := {"tv": 11.0, "action": 9.0}  # hauteur visible minimale, en mètres
+const FRAME_MIN := {"tv": 15.0, "action": 9.0}  # hauteur visible minimale, en mètres (TV : 11 m avant le 12 novembre 2026)
 const FRAME_MARGIN := 1.2
 # Pendant le retour, si le suivi d'origine part en panoramique rapide (ballon
 # renvoyé au centre après un essai : 100 m/s), le recadrage cède aussitôt la place

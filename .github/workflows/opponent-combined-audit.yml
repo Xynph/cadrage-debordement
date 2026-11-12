@@ -1,13 +1,8 @@
 name: Reception IA combinee - 24 graines et V16
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (suites Node déjà exécutées par tests.yml).
+# Anciens déclencheurs : pull_request. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/opponent-combined-audit.yml'
-      - 'docs/opponent-combined-audit.md'
-      - 'dist/rugby.js'
-      - 'tests/opponent-defensive-scout.cjs'
-      - 'tests/champion-budget-regression.cjs'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

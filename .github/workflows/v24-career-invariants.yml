@@ -1,11 +1,8 @@
 name: V24 career invariants
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (suites Node déjà exécutées par tests.yml).
+# Anciens déclencheurs : pull_request. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'tests/v24-career-invariants.cjs'
-      - '.github/workflows/v24-career-invariants.yml'
-      - 'dist/development.js'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

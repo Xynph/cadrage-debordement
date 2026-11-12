@@ -222,6 +222,8 @@ static func _weekly(finance: Dictionary) -> Array:
 	var maintenance: Variant = null
 	if wages != null and academy != null and finance.has("weeklyCosts"):
 		maintenance = maxf(0.0,float(finance.weeklyCosts)-float(wages)-float(academy))
+	# Carrières au budget de saison : les cotisations suivent les salaires, le reste est le fonctionnement du club.
+	if finance.has("budget"): return [["Salaires et cotisations","people",wages],["Formation","school",academy],["Staff et fonctionnement","settings",maintenance]]
 	return [["Salaires","people",wages],["Formation","school",academy],["Installations","settings",maintenance]]
 
 static func _allocation(card: Panel, finance: Dictionary) -> void:
@@ -338,7 +340,7 @@ static func _due(card: Panel, app: Control, finance: Dictionary) -> void:
 	if remaining <= 0:
 		D.text(card, 22, 119, "Aucun paiement hebdomadaire restant dans la projection.", 24, C.MUTED, 500, 788)
 		return
-	var rows := [["Salaires de l’effectif","people",finance.get("weeklyWages")],["Formation à la séance","school",finance.get("academyInvestment")],["Recettes prévues au modèle","money",finance.get("weeklyIncome")]]
+	var rows := [["Salaires et cotisations" if finance.has("budget") else "Salaires de l’effectif","people",finance.get("weeklyWages")],["Formation à la séance","school",finance.get("academyInvestment")],["Recettes régulières hors guichet" if finance.has("budget") else "Recettes prévues au modèle","money",finance.get("weeklyIncome")]]
 	for i in rows.size():
 		var item: Array = rows[i]
 		var y := 64+i*38
@@ -360,9 +362,25 @@ static func _footer(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.line(card, Vector2(861,19), Vector2(861,80))
 	var trend := "Indisponible" if forecast == null else "Solde négatif" if float(forecast) < 0.0 else "Solde positif" if float(forecast) > 0.0 else "À l’équilibre"
 	D.chip(card, Rect2(885,27,183,46), trend, hue)
-	D.text(card, 1086, 44, "Trésorerie projetée sur les engagements connus", 25, C.IVORY, 600, 650)
-	D.text(card, 1086, 72, "Hors billetterie aléatoire, primes et transferts futurs", 22, C.MUTED, 500, 650)
+	D.text(card, 1086, 44, "Trésorerie prévue en fin de saison" if finance.has("budget") else "Trésorerie projetée sur les engagements connus", 25, C.IVORY, 600, 650)
+	D.text(card, 1086, 72, "Prime de classement et soutien du propriétaire compris" if finance.has("budget") else "Hors billetterie aléatoire, primes et transferts futurs", 22, C.MUTED, 500, 650)
 	D.button(card, Rect2(1758,21,467,58), "Ajuster les engagements", func(): _strategy(app), true, "arrow", false, U.GREEN, "FinanceAdjustBudget")
+
+# Budget de saison : propriétaire, règles de la ligue et prévision, en lignes de texte sous les décisions.
+static func _season_budget(card: Panel, budget: Dictionary) -> void:
+	var owner: Dictionary = budget.get("proprietaire", {})
+	var envelope := float(owner.get("enveloppe",0))
+	var lines := ["Propriétaire : %s · %s" % [str(owner.get("libelle","—")), "comble jusqu’à %s de pertes cette saison" % U.amount(envelope) if envelope > 0.0 else "aucune perte comblée, chaque euro dépensé doit être gagné"]]
+	var rules := "Masse salariale : %s par an" % U.amount(budget.get("masseSalariale"))
+	if budget.get("plafondSalarial") != null: rules += " · plafond de la ligue %s, marge %s" % [U.amount(budget.plafondSalarial),U.amount(budget.get("margePlafond"))]
+	if budget.get("limiteRecettes") != null: rules += " · limite de 52 %% des recettes %s, marge %s" % [U.amount(budget.limiteRecettes),U.amount(budget.get("margeRecettes"))]
+	lines.append(rules)
+	lines.append("Saison prévue : recettes %s · charges %s · résultat %s" % [U.amount(budget.get("recettesPrevues")),U.amount(budget.get("chargesPrevues")),U.amount(budget.get("resultatPrevu"))])
+	var fine := float(budget.get("amendePrevue",0))
+	lines.append("Amende de la ligue encourue : %s" % U.amount(fine) if fine > 0.0 else "Aucune amende de la ligue encourue · prime de classement attendue %s" % U.amount(budget.get("primeClassementPrevue")))
+	for i in lines.size():
+		var line := D.text(card, 25, 672+i*30, lines[i], 24, C.ALERT if i == 3 and fine > 0.0 else C.IVORY if i == 0 else C.MUTED, 500, 1348)
+		line.name = "FinanceSeasonBudget%d" % i
 
 static func _strategy(app: Control) -> void:
 	app.management_ui.immersive08_strategy_tab = 0
@@ -501,6 +519,7 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.text(decisions, 25, 125, "Des choix pour le projet du club", 47, C.IVORY, 700, 1348)
 	D.text(decisions, 25, 173, "%d semaines restantes sur %d" % [int(finance.get("remainingWeeks",0)),int(finance.get("weeksPerSeason",0))], 28, C.GOLD, 600, 1348)
 	var cards := [["Formation","school","Investissement par séance",finance.get("academyInvestment")],["Installations","settings","Niveau indisponible",null],["Partenaires","shield","Recettes hebdomadaires du modèle",finance.get("weeklyIncome")]]
+	if finance.get("budget") is Dictionary: cards[2] = ["Recettes régulières","shield","Partenaires, ligue, abonnements · par semaine",finance.get("weeklyIncome")]
 	var facility: Variant = finance.get("facility")
 	if facility is Dictionary:
 		cards[1][2] = "Niveau actuel %s / 10 · devis suivant" % G.n(facility.level)
@@ -516,3 +535,4 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.text(decisions, 25, 488, "Les montants reprennent les engagements du club.", 26, C.MUTED, 500, 1348)
 	D.text(decisions, 25, 529, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 26, C.MUTED, 500, 1348)
 	D.button(decisions, Rect2(25,575,550,58), "Ouvrir les décisions financières", func(): _strategy(app), true, "arrow", false, U.GREEN, "FinanceBudgetDecisions")
+	if finance.get("budget") is Dictionary: _season_budget(decisions, finance.budget)

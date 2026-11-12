@@ -9,6 +9,12 @@ extends SceneTree
 ## Mode « actif » : coup d'envoi en 3D, écran intermédiaire, nouveau temps fort, arrêt
 ## sur carton, lisibilité en 1280×720 et 1920×1080. Mode « gestes » : vingt minutes
 ## avec les gestes. Mode « inactif » (CD_MATCH_TEMPS_FORTS=0) : direct d'origine inchangé.
+## Mode « entracte » : entre deux temps forts, l'horloge défile, le temps fort suivant attend
+## la fin de l'entracte, la tactique ouverte met en pause et ses changements passent, « Passer »
+## abrège ; aucun anneau au sol sous les joueurs.
+## Mode « terrain2d » : pendant l'entracte, le match continue sur le terrain 2D (pastilles qui
+## rejouent les faits du moteur, possession suivie, pause qui fige, rien d'inventé) et le
+## tableau de bord (domination, chiffres, Mon XV, adjoint) est alimenté par les vraies données.
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -61,7 +67,8 @@ func observe_framing() -> void:
 	framing.largest = maxf(framing.largest, camera.size)
 	# Sous le voile du fondu d'entrée, l'image 3D n'est pas encore visible.
 	var veiled: bool = view.regie.voile.visible and view.regie.voile.modulate.a > 0.85
-	if camera.size > 26.5 and not veiled:
+	# Plan large : au-delà du cadrage le plus large d'un temps fort (32 m en TV depuis le 12 novembre 2026).
+	if camera.size > 32.5 and not veiled:
 		framing.wide += 1
 		var gestes: RefCounted = view.stage.get("_gestes")
 		if framing.where.size() < 12: framing.where.append("large %.1f m : plan %d %s à %.2f s, %s, suite %s, poids %.2f, geste %s zoom %.2f, voile %.2f" % [camera.size, view.regie.index, view.regie.phase, view.regie.temps, str(view.regie.tf.plans[view.regie.index].get("kind", "")) if view.regie.index >= 0 else "", str(view.regie.tf.get("suite", false)), float(view.regie.cadrage.poids), str(gestes.phase) if gestes != null else "-", float(gestes.zoom) if gestes != null else 0.0, view.regie.voile.modulate.a if view.regie.voile.visible else 0.0])
@@ -79,7 +86,8 @@ func check_framing(label: String, highlights: int) -> void:
 	print(label, " — cadrage : ", framing.frames, " images, hauteur visible de ", snappedf(framing.smallest, 0.1), " à ", snappedf(framing.largest, 0.1), " m, ballon hors champ ", framing.outside, " (", framing.hidden, " sous le voile d'entrée), images larges visibles ", framing.wide, " ", framing.where)
 	check(framing.frames >= 60, label + " : cadrage observé pendant les temps forts (%d images)" % framing.frames)
 	check(framing.outside == 0, label + " : le ballon ne sort jamais du champ visible (%d images : %s)" % [framing.outside, str(framing.where)])
-	check(framing.smallest >= 9.0 and framing.smallest <= 18.5, label + " : l'action est cadrée de près (%.1f m au plus serré)" % framing.smallest)
+	# Caméra reculée (12 novembre 2026) : 15 à 16 m au plus serré en TV, jamais plus près que 9 m (contact).
+	check(framing.smallest >= 9.0 and framing.smallest <= 24.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
 	check(framing.wide == 0 and highlights > 0, label + " : jamais de plan large visible pendant un temps fort (%d images)" % framing.wide)
 
 func inside(outer: Rect2, inner: Rect2) -> bool:
@@ -96,20 +104,21 @@ func layout(view: Control, size: Vector2i) -> void:
 	var pitch: Control = between.terrain
 	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 300, label + " : terrain lisible (%s)" % str(pitch.size))
 	var controls: Control = view.finish.get_parent().get_parent().get_parent()
-	check(between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
+	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
+	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
 	check(between.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0, label + " : rien sous le bandeau du score")
 	var feed: ScrollContainer = between.fil.get_parent()
 	for node: Control in between.find_children("*", "Control", true, false):
 		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
 		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé")
-	check(between.chiffres.get_child_count() >= 5 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
+	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
 	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p, et la colonne de droite est remplie.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).get_child(0)
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(26 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
-	var column: Control = between.chiffres.get_parent().get_parent().get_parent().get_parent()
+	var column: Control = between.adjoint_cadre.get_parent()
 	var used := 0.0
 	for panel: Control in column.get_children():
 		if panel.visible: used += panel.size.y
@@ -145,6 +154,8 @@ func run() -> void:
 			if mode == "actif": await active(view)
 			elif mode == "gestes": await gestures(view)
 			elif mode == "choregraphie": await choreography(view)
+			elif mode == "entracte": await interval(view)
+			elif mode == "terrain2d": await terrain2d(view)
 			else: await inactive(view)
 			if view.regie != null: followed = view.regie.suivi
 	var report := FileAccess.open(proof.path_join("report-" + mode + ".json"), FileAccess.WRITE)
@@ -184,7 +195,9 @@ func active(view: Control) -> void:
 	# Le match importé est en pause : le temps fort va tout de même à son terme, puis l'écran intermédiaire attend.
 	check(await until(func(): return regie.etat == regie.INTER, 30000), "Le temps fort se termine")
 	check(between.is_visible_in_tree() and regie.voile.visible, "L'écran intermédiaire couvre la 3D")
-	check(view.clock.text == str(app.model.live.direct.horloge) and view.clock.text.ends_with("′"), "Même écriture de l'horloge sur l'écran intermédiaire : " + view.clock.text)
+	# Entracte : l'horloge du moteur, avec les secondes qui roulent (« 1:00 », « 40+2:15 »).
+	# (ou la minute du fait que le terrain 2D rejoue encore, en retard sur le moteur).
+	check(view.clock.text.begins_with(str(app.model.live.direct.horloge).trim_suffix("′") + ":") or view.clock.text.begins_with(str(app.model.live.direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not between.horloge_differee().is_empty() and view.clock.text.begins_with(between.horloge_differee().trim_suffix("′") + ":"), "Horloge du moteur, secondes comprises, sur l'écran intermédiaire : " + view.clock.text)
 	check(str(view.stage.get("_action_key")) != first_key, "Les plans du temps fort se sont succédé")
 	var minute: int = app.model.live.minute
 	await settle(40)
@@ -234,6 +247,94 @@ func active(view: Control) -> void:
 	app._command("pause", {"paused": true})
 	await wait_command()
 
+## Entracte entre deux temps forts (retours de Léo, 12 novembre 2026).
+func interval(view: Control) -> void:
+	var regie: Node = view.regie
+	check(regie != null and view.temps_forts_actifs(), "La régie cadence le match")
+	if regie == null: return
+	var between: Control = regie.between
+	# Aucun anneau au sol : ni repère d'équipe sous les joueurs, ni repère du ballon en vue TV.
+	await settle(4)
+	var anneaux := 0
+	for id: String in view.stage._actors:
+		var acteur: Node3D = view.stage._actors[id].node
+		if acteur.get_node_or_null("TeamMarker") != null: anneaux += 1
+		for maillage: Node in acteur.find_children("*", "MeshInstance3D", true, false):
+			if (maillage as MeshInstance3D).mesh is TorusMesh: anneaux += 1
+	check(view.stage._actors.size() == 30 and anneaux == 0, "Aucun anneau au sol sous les %d joueurs (%d trouvés)" % [view.stage._actors.size(), anneaux])
+	check(not view.stage._ball_marker.visible, "Pas de repère au sol du ballon en vue TV")
+	view.stage.set_camera("tactical")
+	await settle(2)
+	check(view.stage._ball_marker.visible, "Vue de dessus : le repère du ballon reste, le ballon y est minuscule")
+	view.stage.set_camera("tv")
+	check(regie.entracte >= 6.0 and regie.entracte <= 10.0, "Entracte par défaut entre 6 et 10 s : %.1f s" % regie.entracte)
+	# Fin du coup d'envoi (le match importé est en pause) : l'entracte commence.
+	check(await until(func(): return regie.etat == regie.INTER, 60000), "Le coup d'envoi se termine")
+	if app.model.live.paused: await command("pause", {"paused": false})
+	# Entracte avec un temps fort retenu (pas la suite d'une action) : l'horloge défile, rien ne
+	# part avant la fin de l'entracte.
+	var horloges := {}
+	var retenu := func(): return regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_retenu")
+	var debut := Time.get_ticks_msec()
+	while not retenu.call() and Time.get_ticks_msec() - debut < 240000:
+		await process_frame
+		if regie.etat == regie.INTER and regie.entracte_en_cours(): horloges[view.clock.text] = true
+	check(retenu.call(), "Un temps fort arrive pendant un entracte et y est retenu")
+	var score_retenu: String = view.score.text
+	var t_retenu := Time.get_ticks_msec()
+	while regie.etat != regie.JEU and Time.get_ticks_msec() - t_retenu < 60000:
+		await process_frame
+		if regie.etat != regie.JEU:
+			horloges[view.clock.text] = true
+			if view.score.text != score_retenu: score_retenu = "changé"
+	var fins: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "entracte_fin")
+	var inters: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "intermediaire")
+	var tfs: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
+	var attendu: float = (float(tfs[-1].debut_ms) - float(inters[-1].debut_ms)) / 1000.0 if not tfs.is_empty() and not inters.is_empty() else 0.0
+	check(regie.etat == regie.JEU and not fins.is_empty(), "Le temps fort retenu part")
+	check(horloges.size() >= 6 and horloges.keys().all(func(h: String): return ":" in h), "L'horloge défile pendant l'entracte (%d valeurs, ex. %s)" % [horloges.size(), str(horloges.keys().slice(0, 4))])
+	check(not fins.is_empty() and float(fins[-1].ecoule) >= regie.entracte - 0.05, "Rien ne part avant la fin de l'entracte : %s" % str(fins.slice(-1)))
+	check(attendu >= regie.entracte - 0.5, "Écran intermédiaire montré %.1f s avant le temps fort retenu (entracte %.1f s)" % [attendu, regie.entracte])
+	check(score_retenu != "changé", "Le score ne bouge pas pendant la retenue (rien n'annonce l'action)")
+	# Deuxième entracte : la tactique ouverte met le match en pause, la consigne passe, rien ne part.
+	check(await until(func(): return regie.etat == regie.INTER and regie.entracte_en_cours(), 120000), "Deuxième entracte")
+	await until(func(): return not app.waiting, 30000)
+	var avant: Dictionary = app.model.get("tactics", {}).duplicate()
+	view._toggle_drawer("Tactique")
+	check(await until(func(): return app.model.live.paused and not app.waiting, 30000), "Tactique ouverte pendant l'entracte : le match se met en pause")
+	var horloge_figee: String = view.clock.text
+	await settle(2)
+	var options: Array = app.model.get("tactics", {}).get("attacks", [])
+	var autre := ""
+	for option: Dictionary in options:
+		if option.get("id") != avant.get("attack"): autre = str(option.get("id")); break
+	check(not autre.is_empty(), "Une autre consigne offensive est proposée")
+	var boutons: Array = view.drawer_body.find_children("*", "Button", true, false).filter(func(b: Button): return not b.disabled)
+	check(boutons.size() >= 2, "Les consignes sont modifiables pendant la pause de l'entracte (%d boutons actifs)" % boutons.size())
+	await command("set_tactics", {"attack": autre, "defense": avant.get("defense", "equilibre")})
+	check(str(app.model.get("tactics", {}).get("attack", "")) == autre, "La consigne choisie pendant l'entracte est prise en compte : " + autre)
+	var temps_forts: int = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size()
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < int((regie.entracte + 2.0) * 1000.0): await process_frame
+	check(regie.etat != regie.JEU and regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() == temps_forts, "Tiroir ouvert : aucun temps fort ne part")
+	check(view.clock.text == horloge_figee, "Pause : l'horloge est figée (%s → %s)" % [horloge_figee, view.clock.text])
+	view._toggle_drawer("Tactique")
+	check(await until(func(): return not app.model.live.paused and not app.waiting, 30000), "Tactique fermée : le match reprend")
+	# La consigne vaut pour la suite du match, comme une consigne donnée en pause aujourd'hui.
+	check(await until(func(): return app.model.live.minute > 0 and str(app.model.get("tactics", {}).get("attack", "")) == autre, 30000), "La consigne reste en place après la reprise")
+	# « Passer » : le prochain temps fort part sans attendre la fin de l'entracte.
+	check(await until(func(): return regie.etat == regie.JEU, 180000), "Temps fort suivant")
+	check(await until(func(): return regie.etat == regie.INTER and regie.entracte_en_cours(), 180000), "Troisième entracte")
+	check(between.passer.is_visible_in_tree(), "Le bouton « Passer » est proposé pendant l'entracte")
+	var passe_a := Time.get_ticks_msec()
+	between.passer_demande.emit()
+	check(await until(func(): return regie.etat == regie.JEU, 120000), "« Passer » mène au prochain temps fort")
+	var passe_s: float = (Time.get_ticks_msec() - passe_a) / 1000.0
+	check(regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_passe") and passe_s < regie.entracte, "Le temps fort part sur « Passer », sans attendre la fin de l'entracte (%.1f s)" % passe_s)
+	print("ENTRACTE ", JSON.stringify({"premier_s": attendu, "horloges": horloges.size(), "passer_s": (Time.get_ticks_msec() - passe_a) / 1000.0}))
+	app._command("pause", {"paused": true})
+	await wait_command()
+
 ## Temps forts et gestes ensemble : vingt minutes de match sans que rien ne se fige.
 func gestures(view: Control) -> void:
 	var regie: Node = view.regie
@@ -267,7 +368,10 @@ func gestures(view: Control) -> void:
 	print("Hauteur visible minimale pendant les gestes : ", snappedf(smallest, 0.1), " m")
 	check(int(app.model.live.minute) >= goal, "Vingt minutes de match jouées avec les deux variables (minute %d)" % int(app.model.live.minute))
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
-	check(played.size() >= 4, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
+	# Depuis l'entracte de #587 (le chrono du match défile entre deux temps forts), vingt-deux minutes de match
+	# contiennent trois à cinq temps forts au lieu de quatre à six : « plusieurs » se lit désormais à partir de trois,
+	# et les contrôles suivants (terme atteint, retours à l'écran intermédiaire, aucune échéance) restent inchangés.
+	check(played.size() >= 3, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
 	check(played.filter(func(entry: Dictionary): return entry.has("duree_reelle")).size() >= played.size() - 1, "Les temps forts vont à leur terme")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "intermediaire").size() >= 2, "Retours à l'écran intermédiaire")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance").is_empty(), "Aucune attente n'a dû être interrompue par une échéance : " + str(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance")))
@@ -530,13 +634,16 @@ func player_path() -> Array:
 	if not sample.is_empty():
 		var model: Dictionary = app.model.duplicate(true)
 		sample["cle"] = "avant-causerie"
-		sample["suite"] = false
+		# Depuis l'entracte (#587), un temps fort qui n'est pas la suite d'une action attend la fin de l'entracte, et le
+		# match est ici en pause (l'entracte ne défile pas). La démonstration cible donc un temps fort « suite » :
+		# il part aussitôt, et la causerie doit l'attendre. La retenue par l'entracte est couverte par interval().
+		sample["suite"] = true
 		model.live.direct.tempsFort = sample
 		model.clubLife.matchTalks.scene = half_scene
 		app.model = model
 		var already := highlights(journal)
 		director.sync()
-		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie")
+		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie · " + str(director.kind) + " · état " + str(regie.etat) + " (JEU=" + str(regie.JEU) + ", INTER=" + str(regie.INTER) + ")")
 		check(not view.finish.visible, "Pas de validation pendant le temps fort")
 		check(await until(func(): return director.kind == "locker", 120000), "La causerie s'ouvre quand le temps fort est fini")
 		var last: Dictionary = journal.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")[-1] if highlights(journal) > already else {}
@@ -590,10 +697,14 @@ func resumed() -> Array:
 	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "reprise"), "La reprise est notée par la régie")
 	check(is_equal_approx(regie.vitesse, 1.0), "Un temps fort se joue à vitesse réelle")
 	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
+	# Écran intermédiaire : sa barre de commandes porte le niveau (la barre du direct est masquée).
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
+	if level != null and not level.is_visible_in_tree(): level = regie.between.niveau
 	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
-	check(view.clock.text == str(direct.get("horloge", "")), "L'horloge du match repris est affichée : " + view.clock.text)
+	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
+	var differee: String = regie.between.horloge_differee().trim_suffix("′")
+	check(view.clock.text.begins_with(str(direct.get("horloge", "")).trim_suffix("′") + ":") or view.clock.text.begins_with(str(direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not differee.is_empty() and view.clock.text.begins_with(differee + ":"), "L'horloge du match repris est affichée : " + view.clock.text)
 	await settle(40)
 	check(highlights(regie.suivi) == 0 and regie.etat == regie.INTER and not app.waiting, "En pause, le match repris attend")
 	var minute: int = app.model.live.minute
@@ -619,3 +730,153 @@ func resumed() -> Array:
 	await settle()
 	check(app.model.get("live") == null and (not director.active() or director.kind != "live"), "La journée validée referme le match")
 	return followed
+
+## Terrain 2D de l'entracte (demande de Léo, 12 novembre 2026) et tableau de bord autour.
+func terrain2d(view: Control) -> void:
+	var regie: Node = view.regie
+	check(regie != null and view.temps_forts_actifs(), "La régie cadence le match")
+	if regie == null: return
+	var between: Control = regie.between
+	var terrain: Control = between.terrain
+	check(terrain != null and terrain.name == "MatchBetweenPitch", "Le terrain 2D est dans l'écran intermédiaire")
+	# Chaque fait joué sur le terrain : où sont les joueurs à la fin, et à qui est le ballon.
+	var joues: Array[Dictionary] = []
+	var ecarts := {"max": 0.0, "faits": 0, "possession": 0, "hors_journal": 0, "avant_retenu": 0}
+	terrain.fait_joue.connect(func(item: Dictionary):
+		var live: Dictionary = app.model.live
+		var i := int(item.get("i", -1))
+		var evenement: Variant = live.events[i] if i >= 0 and i < live.events.size() else null
+		if not evenement is Dictionary or not evenement.get("scene") is Dictionary: ecarts.hors_journal += 1
+		elif int(evenement.scene.get("possession", -1)) != int(terrain.possession): ecarts.possession += 1
+		if not regie._retenu.is_empty() and i >= regie._retenu_vus: ecarts.avant_retenu += 1
+		for cle: String in terrain.cibles:
+			ecarts.max = maxf(ecarts.max, (terrain.places[cle] as Vector2).distance_to(terrain.cibles[cle].place))
+		ecarts.faits += 1
+		joues.append(item))
+	check(await until(func(): return regie.etat == regie.INTER, 60000), "Le coup d'envoi se termine")
+	await settle(4)
+	check(terrain.places.size() >= 28 and terrain.places.size() <= 30, "Trente pastilles sur le terrain après le coup d'envoi (%d)" % terrain.places.size())
+	check(terrain.suivi.any(func(e: Dictionary): return e.evenement == "recale"), "Le terrain repart de la dernière image du temps fort")
+	# Pause (match importé en pause) : tout est figé.
+	check(app.model.live.paused and terrain.gel, "Match en pause : le terrain 2D est figé")
+	var fige: Dictionary = terrain.places.duplicate()
+	var images: int = terrain.images
+	await settle(30)
+	check(terrain.images == images and fige.keys().all(func(c: String): return (terrain.places[c] as Vector2).is_equal_approx(fige[c])), "Pause : aucune pastille ne bouge")
+	await command("pause", {"paused": false})
+	# Pendant les entractes : les pastilles bougent, les faits du moteur s'enchaînent. Plusieurs
+	# entractes : un temps fort décidé tout de suite peut laisser un entracte sans fait montrable.
+	var debut := Time.get_ticks_msec()
+	var deplacement := 0.0
+	var ballons := {}
+	var fil_en_avance := 0
+	var score_faux := 0
+	var devoile := 0
+	var entractes := 0
+	while entractes < 5 and (ecarts.faits < 4 or entractes < 2) and Time.get_ticks_msec() - debut < 300000:
+		check(await until(func(): return regie.etat == regie.INTER and between.visible, 120000), "Entracte %d" % (entractes + 1))
+		if app.model.live.paused and regie.arret.is_empty() and not app.model.live.finished: await command("pause", {"paused": false})
+		if not regie.arret.is_empty(): between.reprise_demandee.emit()
+		entractes += 1
+		# Plus haut indice du journal montré pendant l'entracte (terrain, fil) : le temps fort
+		# suivant doit commencer après (« on découvre l'action en la regardant »).
+		var montre_max := -1
+		var avant: Dictionary = terrain.places.duplicate()
+		var t0 := Time.get_ticks_msec()
+		while regie.etat != regie.JEU and Time.get_ticks_msec() - t0 < 90000:
+			await process_frame
+			if app.model.live.get("finished", false) or app.model.live.get("atBreak", false): break
+			if regie.etat == regie.INTER and between.visible:
+				montre_max = maxi(montre_max, terrain.joue_i)
+				for ligne: Dictionary in between._lignes: montre_max = maxi(montre_max, int(ligne.get("i", -1)))
+			for cle: String in terrain.places:
+				if avant.has(cle): deplacement += (terrain.places[cle] as Vector2).distance_to(avant[cle])
+			avant = terrain.places.duplicate()
+			ballons[str(terrain.ballon.round())] = true
+			# Le fil ne dit jamais un fait que le terrain n'a pas encore joué.
+			if terrain.prochain_i() >= 0:
+				for enfant: Node in between.fil.get_children():
+					if not enfant.is_queued_for_deletion() and int(enfant.get_meta("i", -1)) >= terrain.prochain_i():
+						fil_en_avance += 1
+						if fil_en_avance < 4: print("FIL_AVANCE ", enfant.get_meta("i", -1), " prochain=", terrain.prochain_i(), " joue=", terrain.joue_i)
+			var differe: Array = between.score_differe()
+			if not differe.is_empty() and view.score.text != "%d — %d" % [int(differe[0]), int(differe[1])]: score_faux += 1
+		var suivant: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
+		if regie.etat == regie.JEU and not suivant.is_empty() and montre_max >= int(suivant[-1].get("debut", -1)): devoile += 1
+		print("ENTRACTE2D ", entractes, " montre_max=", montre_max, " temps_fort_debut=", int(suivant[-1].get("debut", -1)) if not suivant.is_empty() else -1, " faits=", ecarts.faits)
+	check(entractes >= 2 and devoile == 0, "Rien du temps fort suivant n'a été montré pendant les %d entractes (%d dévoilé(s))" % [entractes, devoile])
+	check(deplacement > 30.0, "Les pastilles bougent pendant l'entracte (%.0f m cumulés)" % deplacement)
+	check(ballons.size() >= 4, "Le ballon circule (%d positions)" % ballons.size())
+	check(ecarts.faits >= 1, "Des faits du moteur sont rejoués sur le terrain (%d)" % ecarts.faits)
+	check(ecarts.max < 0.05, "En fin de fait, chaque pastille est à la place du moteur (écart max %.3f m)" % ecarts.max)
+	check(ecarts.possession == 0, "Le terrain suit la possession du moteur (%d écart(s))" % ecarts.possession)
+	check(ecarts.hors_journal == 0 and ecarts.avant_retenu == 0, "Rien d'inventé : chaque fait vient du journal, aucun après un temps fort retenu")
+	check(fil_en_avance == 0, "Le fil attend que le terrain ait joué le fait (%d ligne(s) en avance)" % fil_en_avance)
+	check(score_faux == 0, "Le score suit le terrain quand il rejoue un fait en retard")
+	check(terrain.cadence > 0.0 and absf(terrain.cadence - float(regie.HORLOGES[regie.horloge]) / regie.vitesse) < 0.01, "Le terrain suit l'horloge de l'entracte")
+	# Tableau de bord : alimenté par la projection du moteur.
+	check(await until(func(): return regie.etat == regie.INTER and regie._retenu.is_empty(), 120000), "Retour à l'écran intermédiaire")
+	await until(func(): return not app.waiting, 30000)
+	if not app.model.live.paused: await command("pause", {"paused": true})
+	await settle(6)
+	var direct: Dictionary = regie._live_inter.get("direct", app.model.live.direct)
+	var minutes: Array = direct.get("domination", {}).get("minutes", [])
+	check(minutes.size() >= 1 and between.domination.minutes == minutes, "Domination : la courbe du moteur, minute par minute (%d minutes)" % minutes.size())
+	check(minutes.all(func(v: Variant): return absf(float(v)) <= 100.0), "Domination bornée")
+	var rangs: Array = direct.get("tableau", [])
+	check(rangs.size() >= 10 and between.chiffres.get_child_count() == 3, "Chiffres clés : trois en grand, %d dans l'onglet" % rangs.size())
+	for ligne: Node in between.chiffres.get_children():
+		var titre := (ligne.get_child(0) as Label).text
+		var rang: Array = rangs.filter(func(r: Dictionary): return str(r.label) == titre)
+		check(rang.size() == 1 and (ligne.get_child(1) as Label).text.begins_with(str(int(rang[0].valeurs[0]))) and (ligne.get_child(3) as Label).text.begins_with(str(int(rang[0].valeurs[1]))) or rang.size() == 1 and rang[0].get("vide", false), "Chiffre « %s » repris du moteur" % titre)
+	var lineup: Array = between._passe(app.model, app.model.live, direct).lineup
+	var lignes_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
+	check(lignes_xv.size() == lineup.size() and lineup.size() == 15, "Mon XV : quinze joueurs (%d)" % lignes_xv.size())
+	var conformes := 0
+	for poste in mini(lineup.size(), lignes_xv.size()):
+		var joueur: Variant = lineup[poste]
+		if not joueur is Dictionary: continue
+		var textes: Array = lignes_xv[poste].find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+		var energie: Array = lignes_xv[poste].find_children("*", "Control", true, false).filter(func(c: Control): return c.get("valeur") != null)
+		var note := float(direct.get("notes", {}).get(str(joueur.id), {}).get("note", 6.0))
+		if str(joueur.name) in textes and "%.1f" % note in textes and not energie.is_empty() and is_equal_approx(float(energie[0].valeur), float(joueur.condition)): conformes += 1
+	check(conformes == lineup.size(), "Mon XV : nom, note et énergie du moteur pour chaque joueur (%d/%d)" % [conformes, lineup.size()])
+	var alertes_attendues := lineup.filter(func(j: Variant): return j is Dictionary and (int(j.get("injury", 0)) > 0 or float(j.get("condition", 100)) < between.FATIGUE)).size()
+	check(between.alertes_xv.size() >= alertes_attendues, "Alertes de fatigue et de blessure reprises (%d pour %d)" % [between.alertes_xv.size(), alertes_attendues])
+	# Alerte de fatigue : un joueur à bout (condition modifiée sur une copie) est signalé par l'adjoint.
+	var copie: Dictionary = app.model.duplicate(true)
+	copie.live.lineup[6].condition = 31
+	var direct_complet: Dictionary = direct.duplicate()
+	direct_complet["borne"] = copie.live.events.size()
+	between.update_frame(copie, copie.live, direct_complet, func(_c: Dictionary): pass)
+	var adjoint_textes: Array = between.adjoint.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	check(adjoint_textes.any(func(t: String): return t.begins_with("N° 7") and "31" in t), "L'adjoint signale le joueur à bout : " + str(adjoint_textes.slice(0, 3)))
+	var phrases := {}
+	var redites := 0
+	for t: String in adjoint_textes:
+		for phrase: String in t.split(". ", false):
+			var cle := phrase.strip_edges().trim_suffix(".")
+			if cle.length() > 12 and phrases.has(cle): redites += 1
+			phrases[cle] = true
+	check(redites == 0, "L'adjoint ne répète pas une phrase : " + str(adjoint_textes))
+	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
+	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
+	var banc: Button = between.find_child("MatchBetweenBench", true, false)
+	check(banc != null and banc.is_visible_in_tree() and between.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
+	between.choisir_onglet("Mon XV")
+	await settle(2)
+	check(between.xv.get_parent().is_visible_in_tree() and not between.fil.get_parent().is_visible_in_tree(), "Onglet Mon XV affiché")
+	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
+	(rangs_xv[9] as Button).pressed.emit()
+	await settle(4)
+	check(view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 9, "Un joueur de Mon XV ouvre le banc sur lui (poste %d)" % view.selected_slot)
+	view._fermer_tiroir()
+	between.choisir_onglet("Chiffres")
+	await settle(2)
+	check(between.tableau.get_child_count() >= rangs.size(), "Onglet Chiffres : tous les chiffres du moteur")
+	between.choisir_onglet("Le fil")
+	await layout(view, Vector2i(1280, 720))
+	await layout(view, Vector2i(1920, 1080))
+	root.size = Vector2i(1280, 720)
+	root.content_scale_size = root.size
+	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))

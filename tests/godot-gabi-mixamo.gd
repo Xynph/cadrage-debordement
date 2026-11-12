@@ -22,9 +22,9 @@ const MIXAMO_CLIPS := [&"repos", &"repos_respire", &"appui", &"parle", &"parle_2
 	&"telephone_marche", &"bras_croises"]
 const TALKS := ["parle", "parle_2", "parle_3", "parle_4", "parle_5", "parle_7", "parle_8"]
 const WAITS := ["repos_respire", "appui", "regarde_bas", "reflechit"]
-const RARE := ["tablette", "baille"]
+const RARE := ["tablette"]
 const NEVER := ["bras_croises", "assis_debout", "debout_assis", "assis_parle", "assis_pouce", "marche",
-	"tourne_g", "tourne_d", "telephone", "telephone_marche", "rit"]
+	"tourne_g", "tourne_d", "telephone", "telephone_marche", "rit", "decu", "baille", "applaudit"]
 
 var failures: Array[String] = []
 var checks := 0
@@ -69,7 +69,7 @@ func _add_mesh(scene: Node3D, node_name: String, mesh: ArrayMesh) -> void:
 	instance.owner = scene
 
 
-func _scene(clip_names: Array, with_mouth: bool, with_face := false) -> PackedScene:
+func _scene(clip_names: Array, with_mouth: bool, with_face := false, with_smile := false) -> PackedScene:
 	var scene := Node3D.new()
 	scene.name = "GabiEssai"
 	var player := AnimationPlayer.new()
@@ -85,13 +85,14 @@ func _scene(clip_names: Array, with_mouth: bool, with_face := false) -> PackedSc
 	player.add_animation_library(&"", library)
 	if with_mouth:
 		var mesh := ArrayMesh.new()
-		for shape: StringName in Portrait3D.MOUTH_SHAPES:
+		var mouth_shapes: Array = Portrait3D.MOUTH_SHAPES + ([&"Sourire"] if with_smile else [])
+		for shape: StringName in mouth_shapes:
 			mesh.add_blend_shape(shape)
 		var arrays := []
 		arrays.resize(Mesh.ARRAY_MAX)
 		arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3.ZERO, Vector3.RIGHT, Vector3.UP])
 		var shapes := []
-		for shape in Portrait3D.MOUTH_SHAPES:
+		for shape in mouth_shapes:
 			var moved := []
 			moved.resize(Mesh.ARRAY_MAX)
 			moved[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3.ZERO, Vector3.RIGHT, Vector3.UP * 1.2])
@@ -165,7 +166,9 @@ func _run() -> void:
 
 	_check_table()
 	_check_origin_profile()
+	_check_head_texture(origin)
 	_check_mixamo_profile(by_variable)
+	_check_mouth(load(_save(_scene(MIXAMO_CLIPS, true, true, true), folder.path_join("gabi-bouche-essai.scn"))))
 	print("GABI_MIXAMO_CHECKS ", JSON.stringify({"checks": checks, "failures": failures}))
 	quit(1 if failures else 0)
 
@@ -189,6 +192,29 @@ func _check_origin_profile() -> void:
 	check(portrait.visage != null and not portrait.visage.has_shape(&"Clignement"), "Gabi d'origine sans formes du visage : rien ne casse")
 	portrait.free()
 
+
+## Netteté de la tête (scripts/animations/nettete-tete-gabi.py) : visage, barbe, sourcils et cheveux ont leur propre
+## matériau (Gabi_Tete) avec une couleur et une carte de normales 2K, sur Mesh_0, avec les mêmes formes d'expression.
+func _check_head_texture(origin: PackedScene) -> void:
+	if origin == null:
+		return
+	var scene := origin.instantiate()
+	var head: StandardMaterial3D = null
+	var body: MeshInstance3D = null
+	for mesh_instance: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+		if mesh_instance.mesh == null:
+			continue
+		for i in mesh_instance.mesh.get_surface_count():
+			var material := mesh_instance.mesh.surface_get_material(i) as StandardMaterial3D
+			if material != null and material.resource_name == "Gabi_Tete":
+				head = material
+				body = mesh_instance
+	check(head != null, "Tête : matériau Gabi_Tete présent")
+	if head != null:
+		check(head.albedo_texture != null and head.albedo_texture.get_width() >= 2048, "Tête : couleur 2K dédiée")
+		check(head.normal_enabled and head.normal_texture != null and head.normal_texture.get_width() >= 2048, "Tête : carte de normales 2K")
+		check(body.find_blend_shape_by_name(&"Clignement") >= 0 and body.find_blend_shape_by_name(&"MouthOpen") >= 0, "Tête : formes d'expression conservées")
+	scene.free()
 
 func _check_table() -> void:
 	# Toutes les bulles du jeu ont une catégorie ; chaque catégorie n'appelle que des clips existants.
@@ -359,14 +385,20 @@ func _check_mixamo_profile(packed: PackedScene) -> void:
 	# Regard : saccades autour du joueur, carnet consulté, puis retour.
 	player.advance(1.2)
 	check(player.current_animation == "repos", "Repos avant le contrôle du regard")
+	# Les saccades sont tirées au hasard (attente 0,7 à 2,6 s, 30 % pile dans les yeux, sinon petit décalage) :
+	# une fenêtre fixe de 3 s pouvait ne contenir aucun décalage mesurable. On observe jusqu'à 12 s, sans rien
+	# relâcher sur le contrat : un décalage > 0,05 apparaît, et le regard reste petit (< 0,5) vers le joueur.
 	var moved := false
-	for i in 60:
+	for i in 240:
 		visage._process(0.05)
 		moved = moved or visage.gaze.length() > 0.05
+		if moved: break
 	check(moved and visage.gaze.length() < 0.5 and visage.look == "joueur", "Petites saccades autour du joueur")
 	portrait._play_gesture(&"regarde_bas")
 	for i in 20: visage._process(0.05)
 	check(visage.look == "carnet" and visage.shape_value(&"RegardBas") > 0.6, "Regard vers le carnet quand il le consulte")
+	check(visage.shape_value(&"Clignement") >= visage.LID_FOLLOW * visage.shape_value(&"RegardBas") - 0.01,
+		"La paupière supérieure suit le regard vers le bas")
 	player.advance(1.2)
 	for i in 20: visage._process(0.05)
 	check(visage.look == "joueur" and visage.shape_value(&"RegardBas") < 0.5, "Le regard revient vers le joueur")
@@ -382,4 +414,50 @@ func _check_mixamo_profile(packed: PackedScene) -> void:
 	check(not player.is_playing() and not portrait.is_processing() and not visage.is_processing(), "Guide masqué : tout est suspendu")
 	portrait.show()
 	check(player.current_animation == "repos", "Réouverture au repos")
+	portrait.free()
+
+
+## Bouche (12 novembre) : forme « Sourire », lèvres entrouvertes au repos, lèvres qui bougent sans voix.
+func _check_mouth(packed: PackedScene) -> void:
+	var portrait := Portrait3D.new()
+	portrait.model = packed
+	root.add_child(portrait)
+	var visage = portrait.visage
+	var face := portrait.find_child("Visage", true, false) as MeshInstance3D
+	var smile_index := face.find_blend_shape_by_name(&"Sourire")
+	check(visage.has_shape(&"Sourire") and smile_index >= 0, "Forme « Sourire » de la bouche pilotée")
+	visage._smile_wait = 99.0
+	var opens: Array[float] = []
+	for i in 50:
+		visage._process(0.1)
+		opens.append(face.get_blend_shape_value(0))
+	check(is_equal_approx(face.get_blend_shape_value(smile_index), visage.MOUTH_SMILE_REST), "Repos : commissures à peine relevées")
+	check(opens.min() >= 0.02 and opens.max() <= 0.1 and opens.max() - opens.min() > 0.03, "Repos : lèvres entrouvertes qui bougent avec la respiration (%.2f à %.2f)" % [opens.min(), opens.max()])
+	visage.smile_now(1.0)
+	for i in 8: visage._process(0.1)
+	check(face.get_blend_shape_value(smile_index) > 0.8 and face.get_blend_shape_value(3) <= visage.MOUTH_SMILE_WIDE + 0.001 and is_zero_approx(face.get_blend_shape_value(2)),
+		"Sourire franc par la forme « Sourire », MouthWide léger, sans MouthPress")
+	visage.set_tone("negatif")
+	visage._process(0.1)
+	check(is_zero_approx(face.get_blend_shape_value(smile_index)), "Ton négatif : pas de sourire de la bouche")
+	visage.set_tone("neutre")
+	# Bulle sans voix : la bouche s'ouvre légèrement au rythme de syllabes, puis se referme.
+	portrait.mime("Un banc, ce n'est pas une salle d'attente.")
+	check(portrait.is_miming() and portrait._speaking, "Bulle sans voix : Gabi remue les lèvres")
+	var widest := 0.0
+	for i in 20:
+		portrait._mime_time += 0.05
+		portrait._mime_step()
+		widest = maxf(widest, face.get_blend_shape_value(0))
+	check(widest > 0.1 and widest <= portrait.MIME_OPEN.y + 0.001, "Ouverture légère (%.2f)" % widest)
+	portrait._mime_left = 0.0
+	portrait._mime_step()
+	check(not portrait.is_miming() and not portrait._speaking, "Fin de la bulle : bouche au repos")
+	portrait.set_speaking(true)
+	portrait.mime("Texte pendant une vraie voix.")
+	check(not portrait.is_miming(), "Une vraie voix n'est pas doublée par le mouvement sans voix")
+	portrait.set_speaking(false)
+	portrait.set_reduced_motion(true)
+	portrait.mime("Texte en mouvement réduit.")
+	check(not portrait.is_miming() and not portrait._speaking, "Mouvement réduit : pas de mouvement de lèvres")
 	portrait.free()

@@ -384,10 +384,17 @@ function simuler(e,phases,graine){
   const k=parId.get(String(ouverture.botteur)),r=parId.get(String(ouverture.receveur));
   const dk=dirDe(k.side);
   // Partenaires du botteur derrière le ballon au coup d'envoi (loi 12) ; adversaires à 10 m au moins.
+  // Équipe qui reçoit (12 novembre 2026, retours de Léo : « placements irréalistes ») : non plus
+  // en file à la même distance, mais avants en groupes entre 11 et 17 m, demis à 19 et 24 m,
+  // trois-quarts étagés de 27 à 33 m, arrière à 38 m ; positions par numéro (slot), symétrisées
+  // du côté où tombe le ballon. Valeurs choisies, non mesurées.
+  const RECOIT=[[14,18],[13,24],[14,30],[11.5,40],[11.5,52],[15,46],[16,58],[17,35],[19,38],[24,30],[30,8],[27,22],[31,48],[33,62],[38,35]];
+  const cote=(ouverture.chute?.y??ouverture.y)>35?-1:1;
   for(const j of J){
    if(j===k){placer(j,ouverture.x-dk*2.2,ouverture.y-1.2);continue}
    const ds=dirDe(j.side);
    if(j.side===k.side&&(j.x-ouverture.x)*ds>-0.8)placer(j,ouverture.x-ds*(1+(j.slot%4)*0.6),j.y);
+   else if(j.side!==k.side&&j!==r&&RECOIT[j.slot]){const [p,y]=RECOIT[j.slot];placer(j,borne(ouverture.x+dk*p,-2,102),borne(cote>0?y:70-y,3,67))}
    else if(j.side!==k.side&&(ouverture.x-j.x)*dk<10.5&&(j.x-ouverture.x)*dk<10.5)placer(j,ouverture.x+dk*(11+(j.slot%5)*1.5),j.y);
   }
   ballon.x=ouverture.x;ballon.y=ouverture.y;ballon.h=0.15;ballon.sol=true;

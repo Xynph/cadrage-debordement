@@ -121,7 +121,7 @@ test('diff Git complet des parents réels, y compris un chemin déjà corrigé d
   assert.deepEqual(diffs[0].map(change => change.status).sort(), ['A', 'D']);
 });
 
-test('chaque profil utile remplit cinq shards et le complet découvre toutes les suites', () => {
+test('chaque profil utile est réparti sans perte et le complet découvre toutes les suites', () => {
   const all = allTestFiles();
   assert.deepEqual(suitesForCoverage('full', all), all);
   assert.ok(all.includes('tests/v60-press-relations.cjs'));
@@ -132,7 +132,10 @@ test('chaque profil utile remplit cinq shards et le complet découvre toutes les
   ]) {
     const selected = suitesForCoverage(profile, all);
     assert.ok(selected.length < all.length / 4, profile);
-    assert.ok(planShards(selected).every(shard => shard.length > 0), profile);
+    const plan = planShards(selected);
+    assert.deepEqual(plan.flat().sort(), selected.slice().sort(), profile);
+    // Moins de suites que de shards : seuls les derniers shards peuvent rester vides.
+    assert.ok(plan.filter(shard => shard.length > 0).length === Math.min(plan.length, selected.length), profile);
     for (const test of mandatory) assert.ok(selected.includes('tests/' + test + '.cjs'), test);
     assert.ok(!selected.includes('tests/native-academy-integrated-long.cjs'), profile);
   }

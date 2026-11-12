@@ -51,12 +51,34 @@ function aiRosterEvent(clubId,kind,p,fee=0){
   salary:p.salary,fee});
  S.aiRoster.events=S.aiRoster.events.slice(0,AI_ROSTER_MAX_EVENTS);
 }
+// Effectif visé par un club géré : sa taille réelle à la création (registre ou
+// base commune), bornée entre le plancher de 40 professionnels et 58. Sans
+// référence ou en politique v1, l'ancienne cible indicative de 37.
+const AI_ROSTER_TARGET_MIN=40,AI_ROSTER_TARGET_MAX=58,AI_ROSTER_SEASON_RECRUITS=6;
+function aiRosterTarget(c,s=S){
+ // La politique historique (population v1) garde ses seuils figés.
+ const reference=aiRosterPopulationActive(s)&&typeof professionalReferenceSize==='function'?professionalReferenceSize(c,s):null;
+ if(reference===null)return 37;
+ return clamp(reference,AI_ROSTER_TARGET_MIN,Math.min(AI_ROSTER_TARGET_MAX,professionalCapacity(c,s)-2));
+}
+// Plafond des recrues de la saison : 2 comme avant, davantage pour combler un
+// effectif sous sa cible (au plus 6).
+function aiRosterSeasonRecruitLimit(c){
+ if(aiRosterTarget(c)===37)return 2;
+ return clamp(2+Math.max(0,aiRosterTarget(c)-c.players.length),2,AI_ROSTER_SEASON_RECRUITS);
+}
 function aiRosterPayroll(c){return c.players.reduce((sum,p)=>sum+p.salary,0)}
 function aiRosterWageLimit(c){
  const info=worldActive()?worldClub(c.id):null;
  const liquidity=Math.max(0,c.cash-(info?.debt||0));
  // 1 M€ de liquidité nette au-dessus de 1,5 M€ ouvre 11 111 € de salaires hebdomadaires.
- return clamp(Math.round(235000+Math.max(0,liquidity-1500000)/90),215000,335000);
+ const limit=clamp(Math.round(235000+Math.max(0,liquidity-1500000)/90),215000,335000);
+ // Avec une cible d'effectif, un club peut compléter son groupe à son salaire moyen actuel :
+ // l'ancienne fourchette fixe, sous la masse de départ de nombreux clubs, les empêchait de
+ // remplacer leurs départs. La règle des salaires (drapeau) remplace cette limite.
+ const goal=aiRosterTarget(c);
+ if(goal===37||!c.players.length)return limit;
+ return Math.max(limit,Math.round(aiRosterPayroll(c)/c.players.length*goal));
 }
 function aiRosterContracts(){
  if(!aiRosterActive()||S.aiRoster.lastContracts===S.season)return false;
@@ -72,7 +94,7 @@ function aiRosterContracts(){
   for(const p of expiry){
    const salary=clamp(Math.round(p.salary*(p.age>=32?.97:p.age<=27?1.04:1.01)/100)*100,1000,100000);
    const fee=Math.round(p.salary*2/1000)*1000;
-   const essential=c.players.length-releasedIds.size<=28||
+   const essential=c.players.length-releasedIds.size<=aiRosterTarget(c)-9||
     [0,1,2].some(slot=>slotEligible(p,slot)&&
       c.players.filter(q=>!releasedIds.has(q.id)&&q.id!==p.id&&q.contractEnd>S.season&&slotEligible(q,slot)).length<2);
    const merit=aiRosterPriority(c,p)>=c.base-4;
@@ -110,7 +132,7 @@ function aiRosterAcademy(c){
  return S.aiRoster.academies.find(a=>a.clubId===c.id);
 }
 function aiRosterPromote(c,slot,emergency=false){
- if((c.players.length>=40||professionalPlaces(c)<=0))return false;
+ if((c.players.length>=Math.max(40,aiRosterTarget(c))||professionalPlaces(c)<=0))return false;
  const a=aiRosterAcademy(c);if(!a)return false;
  const eligible=a.players.filter(p=>p.age>=18&&slotEligible(p,slot))
   .sort((x,y)=>fitScore(y,FAMILIES[slot])-fitScore(x,FAMILIES[slot])||x.id.localeCompare(y.id));
@@ -194,7 +216,7 @@ function aiRosterAuctionWinner(offers){
 function aiRosterMarketProposals(clubs,pool){
  const proposals=[];
  for(const {c,urgent} of clubs){
-  if(aiRosterReport(c.id).recruited>=2||c.cash<450000||
+  if(aiRosterReport(c.id).recruited>=aiRosterSeasonRecruitLimit(c)||c.cash<450000||
    worldActive()&&worldClub(c.id).debt>=2000000)continue;
   const candidates=aiRosterPopulationActive()?aiRosterPopulationTargets(c,pool):recruitmentTargets(c,pool,false);
   const eligible=candidates
@@ -210,7 +232,7 @@ function aiRosterMarketProposals(clubs,pool){
 }
 function aiRosterMayRecruit(c){
  if(professionalPlaces(c)<=0)return false;
- if(c.players.length<40)return true;
+ if(c.players.length<Math.max(40,aiRosterTarget(c)))return true;
  return typeof nativeProfessionalDepth!=='undefined'&&aiRosterPopulationActive()&&
   c.players.length<nativeProfessionalDepth.minimum+2&&c.players.some(p=>p.id.startsWith('depth-'));
 }
@@ -248,7 +270,7 @@ function aiRosterRecruitmentWeek(){
   for(const {winner,competitors} of winners){
    if(count>=windowLimit)break;
    const {c,best}=winner,p=best.p;
-   if(aiRosterReport(c.id).recruited>=2||!aiRosterMayRecruit(c)||
+   if(aiRosterReport(c.id).recruited>=aiRosterSeasonRecruitLimit(c)||!aiRosterMayRecruit(c)||
     !pool.some(x=>x.id===p.id)||S.clubs.some(x=>x.players.some(y=>y.id===p.id))||
     c.cash-best.finance.fee<400000||
     aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))continue;
@@ -286,7 +308,7 @@ function aiRosterPanel(){
  const history=st.events.slice(0,15).map(x=>'<div class="news"><small>S'+x.season+' · '+
   visualEscape(S.clubs[x.clubId]?.abbr||'Club')+' · '+
   ({renew:'Prolongation',release:'Départ libre',retire:'Retraite',recruit:'Recrutement',
-   promote:'Promotion formation',emergency:'Renfort d’urgence'})[x.kind]+'</small>'+
+   promote:'Promotion formation',emergency:'Renfort d’urgence',sell:'Vente à un club'})[x.kind]+'</small>'+
   '<p>'+visualEscape(x.name)+(x.fee?' · coût '+money(x.fee):'')+'</p></div>').join('');
  return '<section class="card"><h2>Observatoire des effectifs IA</h2>'+
  '<p class="help">Simulation fictive : les clubs prennent des décisions de contrats, recrutent dans le marché existant, développent des espoirs et conservent une réserve financière. Les salaires sont hebdomadaires ; une seule fenêtre de recrutement par demi-saison. La formation d’urgence intervient uniquement si la feuille de match manque de joueurs qualifiés.</p>'+
@@ -308,11 +330,19 @@ function aiRosterPopulationReport(){
  return r;
 }
 function aiRosterDepthNeeds(c){
- if(c.players.length>=37||professionalPlaces(c)<=0)return [];
- return AI_POPULATION_DEPTH.map(([slot,target])=>{
+ const goal=aiRosterTarget(c);
+ if(c.players.length>=goal||professionalPlaces(c)<=0)return [];
+ const rows=AI_POPULATION_DEPTH.map(([slot,weight])=>{
+  const target=Math.round(weight*goal/37);
   const count=c.players.filter(p=>p.age<p.dev.retireAge&&slotEligible(p,slot)).length;
   return {slot,pos:POS[slot],score:Math.max(0,target-count)*30,target,count};
- }).filter(n=>n.score>0).sort((a,b)=>b.score-a.score||a.slot-b.slot);
+ });
+ const needs=rows.filter(n=>n.score>0).sort((a,b)=>b.score-a.score||a.slot-b.slot);
+ // Les polyvalents comptent à plusieurs postes : un effectif sous sa cible
+ // garde au moins un besoin, au poste le moins couvert.
+ if(needs.length||c.players.length>=goal-1||goal===37)return needs;
+ const thin=rows.slice().sort((a,b)=>a.count/a.target-b.count/b.target||a.slot-b.slot)[0];
+ return [{...thin,score:20}];
 }
 function aiRosterMarketNeeds(c){
  const usual=aiRosterDepthNeeds(c);
@@ -320,7 +350,9 @@ function aiRosterMarketNeeds(c){
  // Keep depth contracts. A place above the floor can secure longer-term
  // cover at a position that still depends on one of those contracts.
  const upgrades=[];
- for(const [slot,target] of AI_POPULATION_DEPTH){
+ const goal=aiRosterTarget(c);
+ for(const [slot,weight] of AI_POPULATION_DEPTH){
+  const target=Math.round(weight*goal/37);
   const eligible=c.players.filter(p=>p.age<p.dev.retireAge&&slotEligible(p,slot));
   const support=eligible.filter(p=>p.id.startsWith('depth-'));
   const count=eligible.length-support.length;
@@ -420,7 +452,12 @@ function aiRosterPopulationTargets(c,pool){
    (n.supportEstimate===undefined||evidence.quality>=n.supportEstimate+(succession?0:4)));
   if(!need)continue;
   const finance=recruitmentFinance(c,p);
-  out.push({p,need,evidence,finance,within:finance.sustainable&&p.salary<=100000,
+  // Avec une cible d'effectif (registre ou base commune), la soutenabilité se juge sur les moyens
+  // propres du club (masse autorisée et trésorerie, vérifiées à la signature) et non sur la
+  // projection fixe de 160 000 € de recettes par semaine, que dépasse la masse de la plupart des
+  // clubs de première division : ils ne recrutaient plus personne.
+  const sustainable=aiRosterTarget(c)===37?finance.sustainable:c.cash-finance.fee>=300000;
+  out.push({p,need,evidence,finance,within:sustainable&&p.salary<=100000,
    score:need.score*2+Math.round(evidence.quality/2)-(p.age>=32?10:0)});
  }
  return out.sort((a,b)=>Number(b.within)-Number(a.within)||b.score-a.score||a.p.id.localeCompare(b.p.id)).slice(0,12);
@@ -453,14 +490,14 @@ function aiRosterPopulationYouthIntake(){
    const target=slot>=15?[1,0,2,3,5,8,9,10][slot-15]:slot;
    if(slot<15?sheet.lineup[slot]:sheet.bench[slot-15])continue;
    if(aiRosterPromote(c,target,true)){sheet=buildSheet(c);continue}
-   if(c.players.length>=40||professionalPlaces(c)<=0)continue;
+   if(c.players.length>=Math.max(40,aiRosterTarget(c))||professionalPlaces(c)<=0)continue;
    const p=academyPlayer(c.id,target,S.season,100+serial++,true);
    p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);
    delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);
    p.contractEnd=S.season+Math.min(2,Math.max(1,p.dev.retireAge-p.age-1));p.academy=false;
    p.joinedSeason=S.season;p.joinedRound=S.round;c.players.push(p);aiRosterEvent(c.id,'emergency',p);sheet=buildSheet(c);
   }
-  for(let n=0;n<10&&c.players.length<37;n++){
+  for(let n=0;n<10&&c.players.length<aiRosterTarget(c);n++){
    const needs=aiRosterDepthNeeds(c);let promoted=false;
    for(const need of needs)if(aiRosterPromote(c,need.slot,false)){promoted=true;break}
    if(!promoted)break;

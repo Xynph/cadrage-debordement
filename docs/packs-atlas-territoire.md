@@ -120,3 +120,66 @@ empreinte avant cette migration, puis enregistre l’empreinte de l’état vér
 rubrique, la bascule pack → base → pack, la reprise, l’altération du pack
 installé et l’import d’une ancienne sauvegarde. Le pack Rugby Réel privé fournit
 sa rubrique dans son dépôt de données (`pack/journalistes.json`).
+
+## Identités des directions de club (présidents, directeurs sportifs)
+
+Chaque club géré d'une carrière mondiale a une direction (président,
+directeur sportif, entraîneur ; voir `docs/effectifs-export-20261112.md`,
+section 5). Le jeu de base donne au président et au directeur sportif un nom
+inventé, tiré du générateur de noms du staff (`staff-completion.cjs`, culture
+de nom selon le pays du club). Un pack peut leur donner leur vrai nom avec la
+rubrique facultative `boards`, acceptée dans un `pack.json` de schéma v1 à v4.
+Un pack sans rubrique garde exactement son contenu, son empreinte et son
+affichage ; un jeu antérieur refuse un pack qui la porte.
+
+```json
+"boards": [
+  { "id": "pres-0", "name": "Prénom Nom" },
+  { "id": "ds-0", "name": "Prénom Nom" }
+]
+```
+
+- Identifiants : `pres-<club>` (président) et `ds-<club>` (directeur sportif),
+  où `<club>` est l'identifiant numérique du club dans l'édition du pack
+  (`clubs[].id` du registre, le même que pour la rubrique `clubs`). Un club
+  inconnu de l'édition est refusé.
+- Chaque entrée contient exactement `id` et `name` ; liste non vide, au plus
+  deux entrées par club. Mêmes refus que la presse : identifiant inconnu ou
+  dupliqué, clé supplémentaire (`source`, `traits`…), nom vide, entouré
+  d'espaces ou de plus de 80 caractères, caractère de contrôle,
+  `< > [ ] { } \`, adresse (`https://…`, `www.…`).
+- Le manifeste installé porte `meta.boardIdentityVersion: 1` et la rubrique
+  normalisée, revalidée à chaque lecture.
+- La sauvegarde ne reçoit jamais ces noms : le pack actif remplace, à
+  l'affichage, le nom inventé de base (nouvelles, profil de direction).
+- Seuls les dirigeants de départ sont concernés : un successeur arrivé en cours
+  de carrière (`pres-<club>-s<saison>`, `ds-<club>-s<saison>`) garde un nom
+  inventé.
+- **Entraîneurs** : ce sont les entraîneurs principaux du staff de la carrière.
+  Leur vrai nom passe par la rubrique `staff` existante, par l'identifiant du
+  registre de staff (`staff:<club>:<empreinte>`). L'entraîneur retenu est le
+  membre actif dont le rôle désigne l'entraîneur principal (« Head Coach »,
+  « Entraîneur principal », « Manager », « Director of Rugby »…), sinon le
+  meilleur entraîneur du club. Le collecteur signale les clubs dont
+  l'entraîneur principal manque dans le registre de staff ou y est marqué
+  historique : ils doivent être ajoutés au registre de staff (pas à `boards`).
+- Les traits (ambition, patience, prudence ; compétence, goût formation,
+  préférence nationale, réseau) restent ceux du jeu. Une version 2 de la
+  rubrique pourra les préciser par une clé `traits` ; elle est refusée tant
+  qu'elle n'est pas définie.
+
+Le dépôt privé `rugby-reel-donnees` porte `pack/directions.json` (format
+`rugby-legacy-directions-reelles`, version 1, 116 clubs, `clubId` 0 à 115 de
+l'édition mondiale v5), qui n'a pas la forme de la rubrique : un objet par club
+avec `president`, `directeurSportif` et `entraineur`, chacun
+`{ name, role, source?, date?, cree? }`. Le constructeur du pack le convertit
+avec `boardIdentities.fromDirections(fichier)` (`native/engine/board-identities.cjs`) :
+`president.name` → `pres-<clubId>`, `directeurSportif.name` → `ds-<clubId>` ;
+`role`, `source`, `date`, `cree` et `notes` restent dans le fichier de collecte.
+`entraineur` ne passe pas par `boards` : son nom va dans la rubrique `staff`
+(entraîneur principal du club dans le registre de staff). Contrôle du 12
+novembre 2026 sur le fichier fusionné : 232 entrées converties, toutes
+acceptées par l'édition à 116 clubs, championnats concordants (top14 → elite,
+prod2 → accession, autres identiques). `tests/board-identity-pack.cjs` couvre
+le schéma, les refus, le nom de base, le remplacement et la conversion (noms
+inventés).
