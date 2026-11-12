@@ -42,8 +42,9 @@ const TOUCHES_AU_PIED=Object.freeze(['direct-touch','indirect-touch','50-22']);
 const GAIN_PERCEE=10;
 // Défense : écart entre deux joueurs de la ligne (valeur choisie), en mètres.
 const EPAULE=5.2;
-// Ballon porté (loi 16) : allure de la poussée, en m/s, et montée en allure.
-const MAUL_ALLURE=1.3,MAUL_ELAN=0.6;
+// Ballon porté (loi 16) : allure de la poussée, en m/s (plus vite sur un long ballon porté
+// donné par le moteur, jusqu'à MAUL_ALLURE_MAX), et montée en allure.
+const MAUL_ALLURE=1.3,MAUL_ALLURE_MAX=1.9,MAUL_ELAN=0.6;
 // Poteaux (loi 8) : 5,6 m d'écart, barre à 3 m, au milieu de la ligne de but (y = 35).
 const POTEAUX=Object.freeze({y:35,demi:2.8,barre:3});
 
@@ -417,7 +418,8 @@ function simuler(e,phases,graine){
   defs.forEach((j,i)=>membres.set(j,{dx:placesDef[i][0],dy:placesDef[i][1]}));
   const groupe=[...membres.keys()];
   const cibleX=essai?G.x+sens*1.6:borne(fini(ouverture.gain)?ouverture.gain:M.x+sens*6,3,97);
-  d.maul={M,membres,porteur:P,v:0,t0:t,forme:null,cibleX,cibleY:essai?G.y:M.y,arret:null,sorti:null,transfert:null,finTouche:null,contacts:groupeContact(groupe,60),L:sp.L};
+  const allure=borne(Math.abs(cibleX-M.x)/16,MAUL_ALLURE,MAUL_ALLURE_MAX);
+  d.maul={M,membres,porteur:P,v:0,t0:t,allure,forme:null,cibleX,cibleY:essai?G.y:M.y,arret:null,sorti:null,transfert:null,finTouche:null,contacts:groupeContact(groupe,60),L:sp.L};
   d.phase='maul';
   evenements.push({t:r1(t),type:'maul',x:r2(M.x),y:r2(M.y),porteur:P.id,cible:r2(cibleX)});
  }
@@ -963,7 +965,7 @@ function simuler(e,phases,graine){
    if(ballon.vol&&!ballon.vol.vers&&t>=ballon.vol.t1)tenir(parId.get(ballon.vol.a));
    // Poussée : le ballon porté avance quand le porteur du fond tient le ballon, jusqu'au point voulu.
    const reste=(m.cibleX-M.x)*sens,pousse=m.forme&&t-m.forme>=0.8&&ballon.porteur===P.id&&!m.arret&&reste>0.02;
-   m.v=pousse?Math.min(MAUL_ALLURE,m.v+MAUL_ELAN*PAS):Math.max(0,m.v-1.5*PAS);
+   m.v=pousse?Math.min(m.allure,m.v+MAUL_ELAN*PAS):Math.max(0,m.v-1.5*PAS);
    if(m.v>0&&reste>0){M.x+=sens*Math.min(reste,m.v*PAS);M.y+=(m.cibleY-M.y)*Math.min(1,0.3*PAS)}
    // Fin de l'alignement : tous les pieds du ballon porté au-delà de la ligne de touche (loi 18).
    if(!m.finTouche&&lies.filter(j=>j.side===T).length>=3&&lies.filter(j=>j.side===T).every(j=>(j.x-m.L.x)*sens>0.5)){m.finTouche=t;evenements.push({t:r1(t),type:'fin_touche'})}
