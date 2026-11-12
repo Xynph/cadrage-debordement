@@ -67,7 +67,7 @@
   ['Cardiff Vallée','Pays de Galles','GB'],['Fiji Islands Youth','Fidji','FJ'],
   ['Cape Youth Rugby','Afrique du Sud','ZA'],['Rosario Club','Argentine','AR']
  ];
- const surnames=['Martin','Bernard','Perrin','Le Goff','Robert','Santos','Morel','Silva','Laurent','Dumas','Tavita','Beridze'];
+ const surnames=['Ferrandou','Bernard','Vergnolles','Le Goff','Robert','Santos','Morel','Silva','Laurent','Dumas','Tavita','Beridze'];
  const firstnames=['Eliott','Noam','Mael','Hugo','Mathis','Timo','Leo','Tane','Lucas','Pablo','Nino','Sami'];
  const fam=(s,p)=>s?.development?.academy?.find(q=>q.pos===p.pos)||s?.development?.academy?.[0];
  function network(st,s){
