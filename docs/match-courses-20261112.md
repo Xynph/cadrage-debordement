@@ -80,3 +80,16 @@ essais par match identiques (même décision). Seul seuil de test touché :
 `tests/match-highlights.cjs`, deux temps forts quasi identiques d'affilée ≤ 10 % (au lieu de
 8 %) : sur ses 16 matchs, 6,6 % → 8,7 %, parce que les essais qui montent par l'importance
 (« franchissement », « contre-attaque ») ne sont plus des rattrapages forcés exclus du compte.
+
+## 5. Valeurs figées
+
+Aucune valeur figée à régénérer :
+
+- `france-parity` (fiction et LNR) passe **avec** le découpage, au hash près : le match délégué du
+  test passe bien par le découpage (6 appels de `courseDecoupee`, 6 essais), mais l'état hashé
+  après `finishRound` ne garde pas le journal du direct, et tirages, score et feuilles sont
+  identiques (§ 2). Avec `CD_MATCH_COURSES=0`, même résultat.
+- `france-long-career` et `france-long-career-late` : S6 et S11, RNG compris, identiques.
+- Fixtures du chorégraphe (`match-choregraphe-essais.json`, `tranche2`, `tranche3`) : ce sont des
+  entrées figées du chorégraphe, toujours valides ; le test « moteur natif » de
+  `tests/match-choregraphe.cjs` rejoue un match découpé et met en scène chaque essai en jeu courant.
