@@ -21,6 +21,7 @@ test('Séance publiée : route exacte, garde réelle, liens clavier/souris et le
   fs.writeFileSync(path.join(profile, 'provenance.json'), JSON.stringify(receipt, null, 2));
   const result = spawnSync(process.env.CD_GODOT_EXECUTABLE, [
     ...(capture ? [] : ['--headless']), '--audio-driver', 'Dummy', '--max-fps', '120',
+    '--log-file', path.join(profile, 'engine.log'),
     '--path', path.join(productRoot, 'native/godot'), '--script', path.join(__dirname, 'godot-calendar-session-links.gd'),
   ], {cwd:productRoot, encoding:'utf8', windowsHide:true, timeout:90000,
     env:{...process.env, CD_NODE_EXECUTABLE:process.execPath, CD_GODOT_SELF_TEST:'0',

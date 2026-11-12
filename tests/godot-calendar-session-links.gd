@@ -1,6 +1,7 @@
 extends SceneTree
 # Catches wrong-session routing, silent malformed-ID acceptance, lost reading
 # context and hidden consultation commands against the actual shipped scene.
+const MonthView = preload("res://ui/immersive08/month_calendar.gd")
 const Flow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
@@ -9,10 +10,13 @@ var requests := 0
 var starts := 0
 var output := OS.get_environment("CD_SESSION_LINKS_OUTPUT")
 var captures: Array[String] = []
+var diagnostics: Array[Dictionary] = []
 func _initialize() -> void: call_deferred("run")
 func check(ok: bool, message: String) -> void:
 	checks += 1
-	if not ok: failures.append(message); printerr("FAIL: ", message)
+	if not ok:
+		failures.append(message); printerr("FAIL: ", message)
+		progress("assertion_failed", {"message":message})
 func settle() -> void:
 	for frame in 8: await process_frame
 func wait_worker() -> void:
@@ -21,7 +25,27 @@ func wait_worker() -> void:
 	app.timer.stop()
 	check(not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok, "Projection réelle reçue : " + app.last_error)
 	await settle()
-func calendar() -> Control: return app.find_child("CarnetCalendar", true, false)
+func calendar() -> MonthView:
+	# Both the table HBox and the program have this name. Only the shipped
+	# month-calendar script exposes selected/month/filter/view.
+	return app.find_child("CarnetCalendar", true, false) as MonthView
+func table() -> HBoxContainer:
+	return app.find_child("CarnetCalendar", true, false) as HBoxContainer
+func progress(stage: String, extra: Dictionary = {}) -> void:
+	var entry := {"stage":stage,"ticks":Time.get_ticks_msec(),"extra":extra}
+	if is_instance_valid(app):
+		entry["route"] = app.route
+		entry["reading"] = snapshot()
+		entry["target"] = app.management_ui.get("navigation_target", {}).duplicate(true)
+		entry["calendar_reading"] = app.management_ui.get("calendar_reading", {}).duplicate(true)
+		if is_instance_valid(app.navigation_controller):
+			entry["cursor"] = app.navigation_controller.cursor
+			entry["history"] = app.navigation_controller.history.duplicate(true)
+	diagnostics.append(entry)
+	var file := FileAccess.open(output.path_join("progress.json"),FileAccess.WRITE)
+	if file != null:
+		file.store_string(JSON.stringify(diagnostics,"  ")); file.close()
+	print("SESSION_STAGE ", stage)
 func press(name: String) -> void:
 	var b := app.find_child(name, true, false) as Button
 	check(b != null and not b.disabled, "Action réelle disponible : " + name)
@@ -98,7 +122,7 @@ func finish() -> void:
 	var speech_id := int(app.coach.speech._id) if is_instance_valid(app.coach) else -1
 	check(requests == 0 and starts == 0 and speech_id == 0, "Mute précoce : requested=0, started=0, _id=0")
 	var f := FileAccess.open(output.path_join("report.json"), FileAccess.WRITE)
-	f.store_string(JSON.stringify({"checks":checks,"failures":failures,"speech":{"requested":requests,"started":starts,"id":speech_id},"captures":captures,"display":DisplayServer.get_name(),"test_sha":OS.get_environment("CD_SESSION_LINKS_TEST_SHA"),"product_sha":OS.get_environment("CD_SESSION_LINKS_PRODUCT_SHA")}, "  ")); f.close()
+	f.store_string(JSON.stringify({"checks":checks,"failures":failures,"speech":{"requested":requests,"started":starts,"id":speech_id},"captures":captures,"diagnostics":diagnostics,"display":DisplayServer.get_name(),"test_sha":OS.get_environment("CD_SESSION_LINKS_TEST_SHA"),"product_sha":OS.get_environment("CD_SESSION_LINKS_PRODUCT_SHA")}, "  ")); f.close()
 	print("SESSION LINKS : %d contrôles ; %d échecs" % [checks, failures.size()])
 	await app._close(0 if failures.is_empty() else 1)
 func run() -> void:
@@ -112,6 +136,7 @@ func run() -> void:
 		app.coach.speech.set_muted(true)
 		app.coach.speech.requested.connect(func(_line: String): requests += 1)
 		app.coach.speech.started.connect(func(_id: int): starts += 1)
+	progress("main_loaded")
 	await wait_worker()
 	check(app._command("new_career", {"club":0,"mode":"common"}), "Création publique Common 0")
 	await wait_worker()
@@ -126,9 +151,25 @@ func run() -> void:
 	var id := str(chosen.id); var date := str(chosen.date)
 	var scene: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
 	check(scene is Dictionary and not scene.get("completed", false), "Garde testée pendant le vrai rendez-vous obligatoire")
+	# The projected press scene is dormant until its actual persisted invitation
+	# is opened. Enter through that public mail UI, as the production guard does.
+	var invitation := str(app.model.get("clubLife", {}).get("press", {}).get("conference", {}).get("invitationId", ""))
+	if not app.contextual_director.active_meeting() and not invitation.is_empty():
+		app._show_press_inbox(); await settle()
+		var mail: Button
+		for button: Button in app.find_children("*","Button",true,false):
+			if str(button.get_meta("message_id", "")) == invitation: mail = button; break
+		check(mail != null, "Courrier de la vraie invitation de presse présent")
+		if mail != null:
+			mail.grab_focus(); await settle(); await key(KEY_ENTER)
+			await press("InboxOpenPressInvitation")
+			check(app.get_meta("press_mail_origin", "") == invitation, "Presse ouverte depuis son courrier exact")
+	check(app.contextual_director.active_meeting(), "Garde obligatoire réellement active avant refus")
+	progress("real_meeting_entered", {"invitation":invitation,"active_meeting":app.contextual_director.active_meeting()})
 	check(app.navigation_controller.entity_available({"kind":"session","id":id}), "ID réel résolvable indépendamment de la garde obligatoire")
 	reject({"kind":"session","id":id}, "Rendez-vous obligatoire refuse la séance réelle")
 	if not await Flow.settle_club_meetings(app, self, check): await finish(); return
+	progress("public_preparation_complete")
 	# All business preparation is complete. No export or command after baseline.
 	var baseline := JSON.stringify(app.model)
 	var profile := str(app.model.meta.dataDir).path_join("donnees.json")
@@ -166,6 +207,7 @@ func run() -> void:
 	app._navigate("Calendrier"); await settle()
 	calendar()._select(today); await settle()
 	var nav: Node = app.navigation_controller
+	progress("before_real_adapter")
 	check(nav.open_entity({"kind":"session","id":id}), "Adaptateur session accepte l’ID réel après préparation")
 	await settle()
 	if calendar() == null or calendar().selected != date:
@@ -203,13 +245,13 @@ func run() -> void:
 		app._navigate("Bureau"); await settle()
 		app.set_meta("calendar_table", true)
 		app._navigate("Calendrier"); await settle()
-		check(calendar() == null and app.get_meta("calendar_table",false), "Origine : vraie vue tableau du Calendrier")
+		check(calendar() == null and table() != null and table().is_visible_in_tree() and app.get_meta("calendar_table",false), "Origine : vraie vue tableau du Calendrier")
 		check(nav.open_entity({"kind":"session","id":id}), "Tableau vers séance publiée")
 		await settle()
 		check(not app.get_meta("calendar_table",true) and calendar() != null, "Ouverture construit le programme hors tableau")
 		target_ok(id,date,str(chosen.get("label","Entraînement")))
 		await key(KEY_LEFT,true)
-		check(app.get_meta("calendar_table",false) and calendar() == null, "Back restaure la vraie vue tableau")
+		check(app.get_meta("calendar_table",false) and calendar() == null and table() != null and table().is_visible_in_tree(), "Back restaure la vraie vue tableau")
 		check(nav.open_entity({"kind":"session","id":id}), "Réouverture de la séance depuis le tableau restauré")
 		await settle()
 		for size: Vector2i in [Vector2i(1280,720), Vector2i(1920,1080), Vector2i(2560,1440)]:
@@ -247,6 +289,7 @@ func run() -> void:
 		if weekly.size() == 1:
 			var source := weekly[0]
 			var before: Dictionary = await source_snapshot(source)
+			progress("keyboard_source", {"source_snapshot":before})
 			await key(KEY_ENTER)
 			target_ok(id,date,str(chosen.get("label","Entraînement")))
 			var history_count: int = nav.history.size()
@@ -254,12 +297,15 @@ func run() -> void:
 			await settle()
 			check(nav.history.size() == history_count and app.find_children("*","AcceptDialog",true,false).filter(func(d): return d.visible).is_empty(), "Répétition sans nouvelle entrée ni dialogue")
 			await key(KEY_LEFT,true)
+			progress("keyboard_back", {"before":before,"after":snapshot()})
 			check(snapshot() == before, "Back clavier restitue date, mois, vue, filtre, scrolls et focus exacts")
 			weekly = links(app.find_child("CalendarWeekSessionDetails",true,false),id)
 			if weekly.size() == 1:
 				var before_mouse: Dictionary = await source_snapshot(weekly[0])
+				progress("mouse_source", {"source_snapshot":before_mouse})
 				await mouse(weekly[0]); target_ok(id,date,str(chosen.get("label","Entraînement")))
 				await key(KEY_LEFT,true)
+				progress("mouse_back", {"before":before_mouse,"after":snapshot()})
 				check(snapshot() == before_mouse, "Back après clic restitue le contexte hebdomadaire")
 	# Explicit SYNTHETIC projection: collision, same-day slots and past date.
 	# This section is never captured, sent to the worker, or persisted.
@@ -297,4 +343,5 @@ func run() -> void:
 	check(JSON.stringify(app.model) == baseline, "Modèle intégral, RNG projeté et horloge inchangés")
 	check(saved == FileAccess.get_file_as_bytes(profile), "Profil sportif inchangé octet pour octet")
 	check(app.bridge._next_id == bridge_id and app.last_command == command and not app.waiting and app.timer.is_stopped(), "Consultation sans commande, bridge ni horloge active")
+	progress("finish")
 	await finish()
