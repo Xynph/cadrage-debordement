@@ -1,6 +1,6 @@
 # Registre SDK commun — inventaire et campagne finale du 12 novembre 2026
 
-Ce document prépare une seule campagne SDK commune après stabilisation. **Aucun dispatch global commun n’est revendiqué ici.** Le nouveau parcours graphique `public-career` a atteint sa limite enfant de 150 s pendant la préparation, avant les contrôles UI ; sa préparation par les seules API publiques Node est en cours de correction. La réception sur copie qualifiée reste distincte.
+Ce document prépare une seule campagne SDK commune après stabilisation. **Aucun dispatch global commun n’est revendiqué ici.** Le nouveau parcours graphique `public-career` est reçu localement sur `0e644e61` après préparation par les seules API publiques Node ; le reçu détaillé ci-dessous lève l’attente de préparation. La réception sur copie qualifiée et les précédents timeouts restent distincts.
 
 ## Source exacte du registre
 
@@ -72,7 +72,7 @@ Les 24 anciennes inscriptions followup, leurs groupes, leurs variantes et leurs 
 - Mémoire des relations, conséquences observées et mode effectif associent des commandes publiques de préparation à des projections contrôlées. Les copies de fixtures publiques locales restent identifiées ; les générations fraîches du futur SDK doivent garder leur propre preuve.
 - Les wrappers de parcours du vrai main — notamment profile-reading, reader-history, entity-navigation, navigation, training-identity-links, finance-ledger-links, management-reading-flow, GestionCarnet et Night — exercent le vrai client/worker ou une archive importée prévue par leur recette. Les lecteurs purement consultatifs ne doivent pas déclencher de commande métier, modifier l’export/profil ou consommer le RNG sportif.
 - Sur le candidat commun : entity-navigation 50/0 est reçu sur 58e ; graphique partagé sur copie 72/0 en 65,703 s et reader-history 115/0 en 113,959 s sont reçus sur bd6. Ces reçus ciblés ont leurs SHA propres.
-- La première variante graphique `public-career` sur bd6 a expiré à 150 s pendant la préparation, jusqu’au 30 août, **avant les contrôles UI**. La copie qualifiée 72/0 n’est pas utilisée pour la déclarer verte. La préparation Node des mêmes étapes publiques puis le même replay UI est attendue sous **180 s au total, enfant Godot au plus 150 s, VM 15 s**.
+- La première variante graphique `public-career` sur bd6 a expiré à 150 s pendant la préparation, jusqu’au 30 août, **avant les contrôles UI**. La copie qualifiée 72/0 n’est pas utilisée pour la déclarer verte. Ce timeout reste conservé dans l’historique des preuves. La réception ultérieure avec préparation Node est décrite ci-dessous ; elle ne requalifie pas cette tentative.
 - Les quatre réceptions Art sur c8a5 restent dans [leur passation](night-ci-20261111.md) : elles ne sont ni la campagne commune ni la performance du nouveau code UI.
 - Les PNG locaux réels et les PNG produits sur runners restent distincts. Aucun résultat Windows, ZIP PC, fluidité, cadence ou validation exhaustive de toutes les fenêtres n’est revendiqué par ce registre. Claude conserve le ZIP et la recette PC.
 
@@ -92,7 +92,7 @@ Ces enveloppes ne garantissent pas le temps maximal si toutes les anciennes rece
 
 ## Une seule demande de campagne, après le gel final
 
-La commande ci-dessous est une **commande future à exécuter par root**, pas un dispatch déjà effectué. Attendre la réception du nouveau parcours graphique public et le gel final intégrant cette documentation ; publier ce HEAD puis remplacer le SHA d’exemple par ses quarante caractères exacts. Le SHA d’inventaire bd6 ne remplace pas ce futur HEAD publié.
+La commande ci-dessous est une **commande future à exécuter par root**, pas un dispatch déjà effectué. La réception publique locale est maintenant disponible ; attendre le gel final intégrant cette documentation et ses preuves, publier ce HEAD puis remplacer le SHA d’exemple par ses quarante caractères exacts. Le SHA d’inventaire bd6 ne remplace pas ce futur HEAD publié.
 
 Avant le POST :
 
@@ -124,3 +124,14 @@ Pour annoncer la campagne reçue : les quatre jobs doivent être terminés avec 
 Relevé de coordination du 12 novembre à 00:23:17 UTC (01:23:17 Paris) : main est `eb2b1833ca514773f35aa347ce405bd404f0005e`, fusion #550, sans nouvelle fusion ensuite au relevé. Sa CI JavaScript [43120082969](https://github.com/Xynph/cadrage-debordement/actions/runs/43120082969) a ses sept jobs réussis ; ce reçu ne qualifie pas le SDK du lot commun. Aucun rebase ou intégration de main n’est revendiqué par ce document.
 
 Aucune fusion Cloud avant le 12 novembre à 09 h, heure de Paris. Arrêt et passation à 08 h 30 ; le présent document ne modifie ni cette réservation ni les responsabilités de Claude.
+
+
+## Réception locale publique après préparation Node
+
+Le parcours frais est reçu sur le SHA source exact `0e644e61ef3f78a6df4346f8d14d5ea33515c097`. Les preuves archivées sont préparées dans le commit QA `bd09478d`, à intégrer au gel publié : [rapport UI](evidence/night-public-common-replay-20261112/qualified/report.json), [préparation publique](evidence/night-public-common-replay-20261112/qualified/public-preparation.json), [commandes acceptées](evidence/night-public-common-replay-20261112/qualified/public-preparation-actions.jsonl), [TAP et durée](evidence/night-public-common-replay-20261112/qualified/run.log), [provenance](evidence/night-public-common-replay-20261112/provenance.json) et [manifeste des captures](evidence/night-public-common-replay-20261112/manifest.json).
+
+- Préparation `common`, club `0`, par le vrai `createBridge` et les API publiques : **20 commandes acceptées en 20 682 ms**, du 7 au 14 septembre 2026, semaine 0 à semaine 1. Aucun checkpoint externe n’est fourni (`source=null`, préparation `public-career-node`). Le replay ouvre la rencontre réellement archivée `s1-elite-league-0-0`.
+- Même recette graphique Analyse/Club/Bureau : **72 contrôles, zéro échec**, avec trois PNG natifs **2560 × 1440**. Le wrapper termine avec code 0 en **72 938,245 ms**, préparation comprise.
+- Les gardes restent **Node 60 s, enfant Godot au plus 150 s, total 180 s, VM 15 s**. Aucun délai, seed, cas ou paramètre de campagne n’est modifié.
+
+La copie WorldChamp à 72/0 et le lecteur frais à 115/0 restent des reçus séparés. L’historique conserve aussi les tentatives WorldChamp expirées en préparation graphique (150 s) puis Node (60 s). Le présent reçu qualifie ce parcours public local ; il ne constitue ni une campagne SDK globale, ni une comparaison de performance à checkpoint identique. Les données du registre restent **45 followup / 63 cas, 75 exécutions / 56 suites distinctes**. La commande unique future ci-dessus reste réservée à root sur le HEAD final publié et vérifié.
