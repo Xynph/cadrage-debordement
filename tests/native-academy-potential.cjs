@@ -112,3 +112,30 @@ test('Migration : les points acquis, la majoration historique et les profils doc
   assert.equal(h.run('normalizeAcademyPotential(S)'), false);
   assert.deepEqual(h.state().development.academy, after);
 });
+
+test('Qualité des fournées : pays, installations et responsable de la formation déplacent le potentiel', () => {
+  const h = context(437493);
+  const result = JSON.parse(h.run(`start(0, 'france');
+    const base = {id:3, base:72, abbr:'ZZZ'};
+    const sample = club => Array.from({length:60}, (_, year) => POS.map((_, slot) =>
+      potentialAtRole(academyPlayer(club.id, slot, year+1, slot, false, club)))).flat();
+    const stats = club => { const scores = sample(club); return {
+      weight:academyRecruitmentWeight(club), mean:scores.reduce((a,b)=>a+b,0)/scores.length,
+      prospects:scores.filter(score => score >= 83).length }; };
+    const france = stats({...base, country:'FR'});
+    const japan = stats({...base, country:'JP'});
+    S.staffCareer = {version:1, people:[[{id:'f1', clubId:3, role:'formation', level:75}]]};
+    const goodStaff = stats({...base, country:'FR'});
+    S.staffCareer.people = [[{id:'f2', clubId:3, role:'formation', level:45}]];
+    const weakStaff = stats({...base, country:'FR'});
+    delete S.staffCareer;
+    JSON.stringify({france, japan, goodStaff, weakStaff,
+      bounded:[academyRecruitmentWeight({id:9, base:99, abbr:'TCX', country:'FR'}), academyRecruitmentWeight({id:9, base:40, abbr:'X', country:'GE'})]});`));
+  console.log(JSON.stringify(result));
+  assert.ok(result.japan.weight < result.france.weight);
+  assert.ok(result.japan.mean < result.france.mean);
+  assert.ok(result.goodStaff.weight > result.france.weight && result.goodStaff.prospects > result.france.prospects);
+  assert.ok(result.weakStaff.weight < result.france.weight && result.weakStaff.prospects < result.france.prospects);
+  assert.ok(result.japan.prospects > 0, 'Un petit pays de rugby garde des surprises');
+  assert.ok(result.bounded.every(weight => weight >= 0 && weight <= 6));
+});
