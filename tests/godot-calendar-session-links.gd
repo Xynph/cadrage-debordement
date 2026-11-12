@@ -340,6 +340,38 @@ func run() -> void:
 		app.management_ui = real_ui
 		app._navigate("Calendrier"); await settle()
 		nav.history = real_history; nav.cursor = real_cursor
+	# Explicit SYNTHETIC valid targets with optional caption absent in content.
+	# Run independently of the Back result so that a separate history failure
+	# cannot conceal an empty accessible-name regression. No captures or saves.
+	if nav.entity_available({"kind":"session","id":id}):
+		var caption_ui: Dictionary = app.management_ui.duplicate(true)
+		var caption_history: Array[Dictionary] = nav.history.duplicate(true)
+		var caption_cursor: int = nav.cursor
+		var caption_table: bool = app.get_meta("calendar_table",false)
+		var caption_route: String = app.route
+		var caption_case := 0
+		for blank: String in ["", "  \t "]:
+			var caption_model: Dictionary = original.duplicate(true)
+			var slot: Dictionary = chosen.duplicate(true)
+			slot.id = "synthetic-blank-caption-" + str(caption_case)
+			slot.label = blank
+			caption_model.calendarPlanning.sessions = [slot]
+			app.model = caption_model
+			check(nav.open_entity({"kind":"session","id":str(slot.id)}), "Projection synthétique : séance datée avec libellé vide ou blanc acceptée")
+			await settle()
+			var buttons := links(app.find_child("MonthDayDetail",true,false),str(slot.id))
+			check(buttons.size() == 1, "Libellé optionnel : bouton détail lié au bon ID brut")
+			if buttons.size() == 1:
+				var caption := buttons[0].text.strip_edges()
+				var accessible := buttons[0].accessibility_name.strip_edges()
+				check(not caption.is_empty() and not accessible.is_empty(), "Libellé optionnel vide ou blanc : texte et nom accessible utiles")
+				check(not caption.contains(str(slot.id)) and not accessible.contains(str(slot.id)), "Libellé de repli sans identifiant technique affiché ni annoncé")
+			caption_case += 1
+		app.model = original
+		app.management_ui = caption_ui
+		app.set_meta("calendar_table",caption_table)
+		app._navigate(caption_route); await settle()
+		nav.history = caption_history; nav.cursor = caption_cursor
 	check(JSON.stringify(app.model) == baseline, "Modèle intégral, RNG projeté et horloge inchangés")
 	check(saved == FileAccess.get_file_as_bytes(profile), "Profil sportif inchangé octet pour octet")
 	check(app.bridge._next_id == bridge_id and app.last_command == command and not app.waiting and app.timer.is_stopped(), "Consultation sans commande, bridge ni horloge active")
