@@ -573,6 +573,13 @@ func reception() -> void:
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
 	check(message_rows(list).size() == expected_total, "Réouvrir restaure le message dans la boîte")
+	# Le changement de dossier ne garantit pas que l'alerte contrat reste le message sélectionné (la boîte
+	# réaffiche aussi les avis du calendrier) : on la rouvre par son texte avant d'activer « ouvrir ».
+	for row: Button in message_rows(list):
+		if row.get_meta("message_text") == original:
+			row.pressed.emit()
+			await settle()
+			break
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
@@ -846,7 +853,10 @@ func desktop_1080() -> void:
 			check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
 			var first_action: Button = null
 			for candidate: Button in app.body.find_children("*","Button",true,false):
-				if candidate.is_visible_in_tree(): first_action = candidate; break
+				# « OBSERVER LA PRÉPARATION » (ContextualObserveTraining) est l'entrée du système contextuel (director.gd),
+				# posée en tête du corps de « Travail du club » avec le style du bandeau contextuel : la DA compacte
+				# s'applique aux commandes propres de la page, pas à cette entrée.
+				if candidate.is_visible_in_tree() and candidate.name != "ContextualObserveTraining": first_action = candidate; break
 			# Certaines pages s'ouvrent désormais sur un bandeau contextuel : la première vraie commande visible porte la DA.
 			check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande"))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
@@ -895,12 +905,24 @@ func navigation_flow() -> void:
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Le lien local conserve aussi l’onglet et la navigation reste sans commande")
 	root.size = original_size
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	# Le gabarit natif se redimensionne après un délai (cf. resize_shell) : sans cette attente, l'effectif s'ouvre
+	# encore en repli compact (ni tableau ni fiche complète).
+	await create_timer(.16).timeout
 	await settle()
+	# La fiche complète est un état mémorisé (meta immersive08_full_player) : on part du tableau de l'effectif.
+	app.set_meta("immersive08_full_player",false)
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
-	await click(app.find_child("OpenPlayerFull",true,false))
-	await settle()
+	var open_full: Button = null
+	for attempt in 40:
+		open_full = app.find_child("OpenPlayerFull",true,false) as Button
+		if open_full != null: break
+		await process_frame
+	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size))
+	if open_full != null:
+		await click(open_full)
+		await settle()
 	await click(app.find_child("Nav_Bureau",true,false))
 	await settle()
 	await key(KEY_LEFT,false,true)
@@ -1046,6 +1068,11 @@ func match_flow() -> void:
 	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)
 	await click(kickoff)
 	await worker()
+	# Depuis la causerie d'avant-match, le coup d'envoi attend qu'elle soit traitée : on la passe par la commande publique.
+	var talk_scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	if talk_scene is Dictionary and str(talk_scene.get("phase", "")) == "pre":
+		await ContextualFlow.skip_talk(app, self, "pre", check)
+		await settle()
 	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,
 		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s"
 		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect)])
@@ -1287,6 +1314,8 @@ func run() -> void:
 		await settle()
 		# Depuis l'évolution de la composition, un premier clic sélectionne le numéro et un second sur le même numéro ouvre ses choix.
 		check(app.selected_slot==9,"Le bas du maillot 10 sélectionne son poste malgré l’enveloppe voisine")
+		# Le premier clic reconstruit la composition : le bouton précédent est libéré, on le retrouve avant le second clic.
+		fly_half=app.find_child("LineupSlot10",true,false)
 		await click(fly_half,Vector2(.97,.92))
 		await settle()
 		var candidates: AcceptDialog = app.find_child("LineupCandidates",true,false)
@@ -1358,8 +1387,20 @@ func run() -> void:
 			app.find_child("LineupPlayer"+chosen.replace(":","_"),true,false).pressed.emit()
 			await worker()
 			check(app.bridge.last_response_ok and str(app.model.selection.slots[0].playerId)==chosen,"Affectation réelle du joueur qualifié")
-			app.find_child("TacticsChoosePlayer",true,false).pressed.emit()
-			await settle()
+			# L'affectation ferme le sélecteur : le numéro déjà sélectionné le rouvre, puis « Consignes du joueur »
+			# (TacticsIndividualInstructions) ouvre les consignes individuelles (le bouton TacticsChoosePlayer n'existe plus).
+			var reopen: Button = app.find_child("LineupSlot01",true,false) as Button
+			if reopen != null:
+				reopen.pressed.emit()
+				await settle()
+				if app.find_child("LineupCandidates",true,false) == null:
+					reopen.pressed.emit()
+					await settle()
+			var individual_instructions: Button = app.find_child("TacticsIndividualInstructions",true,false) as Button
+			check(individual_instructions != null, "Le sélecteur de poste propose les consignes du joueur")
+			if individual_instructions != null:
+				individual_instructions.pressed.emit()
+				await settle()
 			var recovery:Button=app.find_child("IndividualLoad_repos",true,false)
 			check(recovery!=null,"Sous-menu de consignes individuelles illustré")
 			if recovery!=null:recovery.pressed.emit();await worker()

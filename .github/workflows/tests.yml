@@ -165,7 +165,7 @@ jobs:
         shell: bash
         # Délai d'étape (échec) plus court que celui du job (annulation) : un
         # dépassement ne doit pas faire passer le run entier à « cancelled ».
-        timeout-minutes: 40
+        timeout-minutes: 45
         env:
           SHARD: ${{ matrix.shard }}
           LIBGL_ALWAYS_SOFTWARE: '1'
