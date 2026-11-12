@@ -39,6 +39,8 @@ function run(mode,dossier=mode){
  else delete env.CD_MATCH_CHOREGRAPHE;
  // Entracte entre deux temps forts, à sa durée par défaut et à vitesse réelle (horloge rapide pour la durée du test).
  delete env.CD_MATCH_TEMPS_FORTS_ENTRACTE;
+ // « gestes » compte les temps forts de vingt minutes de match : entracte court (le test porte sur les gestes, pas sur l'entracte de 8 s).
+ if(mode==='gestes')env.CD_MATCH_TEMPS_FORTS_ENTRACTE='2';
  if(mode==='entracte')Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_GODOT_SEED:'7'});
  // Terrain 2D : horloge normale, vitesse réelle, comme le joueur le voit.
  if(mode==='terrain2d')Object.assign(env,{CD_GODOT_SEED:'7'});
