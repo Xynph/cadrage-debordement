@@ -96,7 +96,11 @@ jobs:
           GALLIUM_DRIVER: llvmpipe
         run: |
           set -euo pipefail
-          awk -v s="$SHARD" 'NF && (NR-1)%4==s-1' ci/debug-suites.txt > "$RUNNER_TEMP/godot-suites.txt"
+          if grep -qx ALL ci/debug-suites.txt; then
+            node ci/shard-tests.cjs "$SHARD" godot 4 > "$RUNNER_TEMP/godot-suites.txt"
+          else
+            awk -v s="$SHARD" 'NF && (NR-1)%4==s-1' ci/debug-suites.txt > "$RUNNER_TEMP/godot-suites.txt"
+          fi
           [ -s "$RUNNER_TEMP/godot-suites.txt" ] || exit 0
           xvfb-run -a -s "-screen 0 1920x1080x24" \
             bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Debug $SHARD"

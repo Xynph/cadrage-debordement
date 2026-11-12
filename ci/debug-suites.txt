@@ -1,2 +1,1 @@
-tests/godot-interface-layout.cjs
-tests/godot-lineup-layout.cjs
+ALL
