@@ -111,6 +111,7 @@ test('Tous les essais montrés, 50 s au plus par temps fort, sélection détermi
     });
     let episode = 0;
     for (const h of bilan.tempsForts) {
+      assert.ok(!h.plans.some(p => p.kind === 'break' || p.kind === 'end'), `${niveau} ${h.cle} : ni mi-temps ni fin de match dans un temps fort`);
       episode = h.suite ? episode + h.duree : h.duree;
       assert.ok(episode <= H.DUREE_MAX + 1e-9 || h.types.includes('essai'), `${niveau} ${h.cle} : ${episode} s`);
     }

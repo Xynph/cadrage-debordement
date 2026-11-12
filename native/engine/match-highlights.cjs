@@ -531,7 +531,8 @@ const REFRACTAIRE=Object.freeze({minutes:2,points:8});
 // danger sans point) ; moins de 30 % : il remonte.
 const ISSUE=Object.freeze({apres:4,haut:.5,bas:.3,pas:6});
 const finNaturelle=l=>FINS.has(l.kind)||l.kind==='turnover'||l.kind==='setpiece-loss';
-const montrable=l=>!l.bandeau&&dureePlan(l)>0;
+// Mi-temps et fin du match : jamais dans un temps fort déclenché (l'écran de pause s'en charge).
+const montrable=l=>!l.bandeau&&dureePlan(l)>0&&l.kind!=='break'&&l.kind!=='end';
 
 // Équipe qui a le ballon au début du fait j, et endroit d'où il part.
 function situation(lignes,j){

@@ -97,16 +97,16 @@ k = 0 à 199), mêmes journaux avant et après. « Avant » : `en_direct` préc�
 | Niveau | | Temps forts / match | Avec point | Sans point | Quarts 0-20 / 20-40 / 40-60 / 60-80 | Action / match | Entracte moyen | Retenus par l'entracte | Essais montrés |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Clés | avant | 13,5 (8–23) | 47,2 % | 52,8 % | 28 / 22 / 21 / 29 % | 131 s | 11,2 s | 65,5 % | 856 / 856 |
-| Clés | après | 13,2 (6–22) | 44,9 % | 55,1 % | 26 / 23 / 24 / 27 % | 133 s | 10,8 s | 68,6 % | 856 / 856 |
+| Clés | après | 13,2 (6–22) | 45,0 % | 55,0 % | 26 / 23 / 24 / 27 % | 132 s | 10,8 s | 68,6 % | 856 / 856 |
 | Dynamique | avant | 17,5 (8–26) | 33,7 % | 66,3 % | 29 / 23 / 22 / 27 % | 180 s | 9,5 s | 78,2 % | 856 / 856 |
-| Dynamique | après | 15,4 (7–24) | 38,5 % | 61,5 % | 28 / 23 / 23 / 26 % | 157 s | 10,0 s | 72,9 % | 856 / 856 |
+| Dynamique | après | 15,4 (7–24) | 38,5 % | 61,5 % | 28 / 23 / 23 / 26 % | 156 s | 10,0 s | 72,9 % | 856 / 856 |
 | Étendus | avant | 22,0 (15–29) | 26,0 % | 74,0 % | 24 / 23 / 25 / 28 % | 216 s | 8,7 s | 86,1 % | 856 / 856 |
-| Étendus | après | 22,6 (15–31) | 24,7 % | 75,3 % | 25 / 24 / 26 / 26 % | 216 s | 8,5 s | 88,6 % | 856 / 856 |
+| Étendus | après | 22,5 (15–31) | 24,7 % | 75,3 % | 25 / 24 / 26 / 26 % | 214 s | 8,5 s | 88,7 % | 856 / 856 |
 
 Après : 100 % des temps forts déclenchés par l'importance ont leur déclencheur avant ou sur
 le dernier fait montré (l'issue) ; épisode le plus long 42 s. Rattrapages (essai sans
-importance montée avant) : 18 % des temps forts en dynamique (63 % des essais), 24 % en clés,
-6 % en étendus.
+importance montée avant) : 19 % des temps forts en dynamique (65 % des essais), 24 % en clés,
+7 % en étendus. Ni la mi-temps ni la fin du match n'entrent dans un temps fort déclenché.
 
 **Limite constatée** : dans le journal du moteur, un essai est souvent un seul fait qui part de
 20 à 40 m (la course entière) ; le danger n'a donc pas le temps de monter avant lui. Ces essais
