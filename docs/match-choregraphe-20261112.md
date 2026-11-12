@@ -1,4 +1,4 @@
-# Chorégraphe de temps forts — conception, première et deuxième tranches (12 novembre 2026)
+# Chorégraphe de temps forts — conception, trois tranches (12 novembre 2026)
 
 Branche `claude/match-choregraphe-20261112`, partie de `claude/match-nuit-20261111`
 (PR 578 : temps forts #560, animations adaptées #571). Drapeau **`CD_MATCH_CHOREGRAPHE=1`**,
@@ -21,6 +21,11 @@ change ni le score, ni le marqueur, ni le point d'essai. Il met en scène ce qui
 > jeu formée, récupération, temps de jeu du moteur), et deux types s'ajoutent : le
 > franchissement sans essai et le jeu au pied avec chasse. La défense suit la consigne
 > tactique. Les §§ 2 à 9 décrivent la première tranche ; le § 10 dit ce qui a changé.
+>
+> **Troisième tranche (§ 11)** : ballon porté depuis la touche (essai ou arrêt), pénalité
+> tentée au but et pénalité jouée en touche ; la défense lit l'attaque (côté fort, couverture
+> du pied) ; correction du premier temps fort du match (joueurs absents de l'écran) ; capture
+> dans l'interface complète.
 
 Première tranche : **un seul type d'action, l'essai en jeu courant** (fait `origin:'open'`
 de `scoreTry`). Les essais sur ballon porté et sur mêlée gardent les gestes actuels.
@@ -211,7 +216,7 @@ fort, puis remonte les plans qui y mènent tant qu'elle sait les montrer :
 | `jeu_au_pied` | `kick` (réception), `touch` sur coup de pied (`direct-touch`, `indirect-touch`, `50-22`), ou coup d'envoi + réception | idem | ballon récupéré ensuite par l'équipe qui a botté |
 
 Non couverts (le temps fort garde alors les gestes existants à partir de ces plans) : ballon
-porté (`move:'maul'`), pénalités, fautes de main, cartons, sorties en touche sur un ballon
+porté (`move:'maul'`) et pénalités (couverts depuis la troisième tranche, § 11), fautes de main, cartons, sorties en touche sur un ballon
 porté, transformations. Une touche gagnée en ballon porté, par exemple, se joue comme avant,
 et les pistes partent du plan suivant.
 
@@ -332,7 +337,8 @@ son receveur avance de 5 m au plus pour fixer (il reculait sans fin).
 
 ### 10.8 Limites
 
-- Ballon porté, pénalité, faute de main et touche sur ballon porté restent aux gestes.
+- Ballon porté, pénalité, faute de main et touche sur ballon porté restent aux gestes
+  (ballon porté et pénalités : couverts par la troisième tranche, § 11).
 - Pas de contestation au sol, de jeu au pied rasant ni de rebond simulé (un ballon non pris
   tombe et le receveur le ramasse) ; pas de 50:22 vu dans le jeu d'entrées.
 - La défense ne lit toujours pas l'attaque ; la consigne ne change que la profondeur et la
@@ -374,3 +380,204 @@ xvfb-run -a -s "-screen 0 1280x720x24" node tests/godot-match-choregraphie-captu
   chasses et des couvertures : à juger par Léo sur la vidéo.
 - Les jeux au pied de jeu courant et en touche ne viennent que de la graine 7 au niveau
   intégral ; aucun 50:22 ni renvoi aux 22 vu.
+
+## 11. Troisième tranche (12 novembre 2026, fin de nuit)
+
+Pistes toujours en **version 2** : les ajouts (types, états, événements) ne changent pas le
+format ; la vue d'avant les lirait sans les poses nouvelles.
+
+### 11.1 Ce qui est couvert
+
+| Type (`type`) | Fait clé | Plans couverts | Fin |
+| --- | --- | --- | --- |
+| `ballon_porte` | `setpiece-win` d'une touche avec `move:'maul'` ou `porte:true` (le moteur écrit `porte` sur la conquête quand un essai sur ballon porté suit) | la touche (`lineout`), la conquête, et l'essai `origin:'maul'` s'il suit | essai aplati par le marqueur du moteur, ou arrêt au gain du moteur et ballon sorti vers le demi |
+| `penalite_au_but` | `goal` ou `miss` précédé du coup de sifflet (`penalty`, cartons éventuels entre les deux) | le coup de sifflet, les cartons, le tir | ballon passé entre les poteaux ou à côté, puis mort dans l'en-but |
+| `penalite_en_touche` | `touch` de cause `penalty-touch` précédé du coup de sifflet | le coup de sifflet, les cartons, la frappe | ballon sorti en touche au point du moteur |
+
+Ordre de choix du fait clé dans un temps fort : essai (en jeu courant ou sur ballon porté),
+franchissement, ballon porté sans essai, pénalité au but, jeu au pied, pénaltouche. La touche
+gagnée après une pénaltouche se joue ensuite par les gestes existants (une seule série de
+pistes par temps fort).
+
+**Pénalité « jouée à la main » : non montrée.** Le moteur (`executePenaltyChoice`) ne connaît
+que le tir au but et la pénaltouche ; une pénalité jouée vite à la main n'existe pas dans ses
+faits. La montrer inventerait une décision : le moteur reste la source de vérité. À ajouter au
+moteur d'abord si Léo la veut (choix tactique, risque, gain).
+
+Au niveau « dynamique », la sélection des temps forts retire la pénaltouche de ses plans
+(`match-highlights.cjs`) : `penalite_en_touche` ne se voit qu'au niveau « match complet ».
+
+### 11.2 Déroulé
+
+- **Ballon porté** (lois 16 et 18) : la touche formée de la deuxième tranche (alignements,
+  lancer, sauteur levé), puis, à la retombée du sauteur, les avants de l'équipe qui lance se
+  lient autour de lui (sauteur devant, ses leveurs de chaque côté, les autres derrière, le
+  porteur au fond) et six avants adverses se lient en face (talonneur et n° 8 restent en garde
+  sur les côtés). État `maul` à l'arrivée à sa place. Formé quand le porteur, trois partenaires
+  et un adversaire sont liés ; le ballon est transmis de main en main au porteur du fond, puis
+  le ballon porté avance (montée en allure, 1,3 à 1,9 m/s selon la distance que le moteur
+  donne) jusqu'au gain du moteur (`to.x` de la conquête). Avec essai : il continue dans
+  l'en-but et le marqueur du moteur aplatit au point d'essai (jalon de l'essai à l'aplati,
+  joie, déception) ; sans essai : il s'arrête, et une seconde plus tard le ballon sort vers le
+  demi (passe en retrait), les liés se délient. Hors du ballon porté, chacun reste derrière le
+  pied le plus en arrière de ses joueurs liés ; les arrières restent à 10 m (ou sur leur ligne
+  de but) jusqu'à la fin de l'alignement (tous les pieds du ballon porté au-delà de la ligne de
+  touche) ou au ballon sorti.
+- **Porteur du fond** : le marqueur du moteur s'il y a essai ; sinon le joueur que le moteur
+  nomme sur la conquête s'il est un avant, sinon le n° 8.
+- **Pénalité au but** (loi 20) : le botteur du moteur va au point de la faute (au trot s'il
+  est loin), prend le ballon, le pose (état `placement`), recule de 4,2 m et s'écarte de 1,8 m
+  (élan), attend, court, frappe. Le ballon passe la ligne de but entre les poteaux (5,6 m) à
+  4,6 m de haut (réussite) ou au point du moteur à côté (`to.y` = 42), puis retombe 7 m dans
+  l'en-but. Le jalon du tir (score) tombe au passage de la ligne, jamais avant. Adversaires à
+  10 m au moins du point, vers leur ligne ; partenaires derrière le ballon.
+- **Pénaltouche** : même arrivée au point, puis frappe de volée jusqu'au point de sortie du
+  moteur (trajectoire et règles de jeu au pied de la deuxième tranche) ; les avants se
+  rapprochent de la touche. Botteur non nommé par le moteur : l'ouvreur, sinon l'arrière,
+  sinon le demi.
+- **Cartons** entre le coup de sifflet et le tir : leur jalon tombe une seconde après le début
+  (la légende montre le carton avant le tir).
+
+### 11.3 La défense lit l'attaque
+
+En jeu courant et pendant les rucks, la ligne défensive (hors arrière) compte les attaquants
+debout à moins de 30 m du ballon de chaque côté : elle glisse vers le côté fort de 1,3 m par
+attaquant d'écart (9 m au plus), avec **5,2 m entre deux défenseurs** (au lieu d'une ligne
+étalée sur toute la largeur, qui restait centrée sur le terrain quel que soit le ballon).
+L'ailier du côté faible (n° 11 ou 14) sort de la ligne et recule à 11 m en second rideau, à
+17 m du ballon en largeur : avec l'arrière, il couvre le jeu au pied. La consigne
+(pression, prudente) règle toujours la profondeur et la montée. Valeurs choisies, non mesurées.
+
+### 11.4 Corrections de la régie
+
+Quand les pistes ouvraient le premier temps fort du match (coup d'envoi, sans scène de
+départ), aucun joueur n'était encore créé dans la vue : seuls le ballon et son anneau se
+voyaient pendant tout le coup d'envoi. La régie pose maintenant la scène du plan (figée)
+avant les pistes si un joueur des pistes manque à l'écran. Le défaut existait depuis la
+deuxième tranche ; il n'apparaissait pas dans la vidéo de la deuxième tranche (vue 3D seule,
+qui posait une première image).
+
+Pendant les pistes, un tir au but devient le plan courant à son jalon (passage du ballon) :
+la légende montre maintenant son résultat et la clameur part à cet instant, au lieu de
+« Tir au but. » jusqu'à la fin des pistes. Le bandeau du score, lui, avance à la fin du plan
+(après l'essai ou le tir), comme sans pistes.
+
+### 11.5 Garanties ajoutées et contrôles
+
+`tests/match-choregraphe.cjs` (17 tests) ajoute le jeu d'entrées
+`tests/fixtures/match-choregraphe-tranche3.json` : **20 temps forts entiers** du moteur
+natif, profils compris (option `matchChoreography:'entrees'`) : 8 ballons portés (6 essais,
+2 arrêts ; graines 3, 7, 11, 13, 21, 99, le club dirigé jouant la combinaison de touche
+« ballon porté » via `playbook_set`), 8 pénalités au but (6 réussies, 2 manquées, dont 3 après
+un carton ; graines 3, 5, 7, 42, 99) et 4 pénaltouches (graines 3 et 11, niveau « match
+complet »).
+
+| Garantie | Contrôle |
+| --- | --- |
+| Chaque type, chaque fait montré | jalons = plans couverts, dans l'ordre, dans la durée ; coupe d'entrée sur la touche, pas sur une pénalité |
+| Ballon porté | lancer et saut ; au moins 6 attaquants et 4 défenseurs liés ; porteur du fond ; loi 16 (hors du ballon porté, derrière le pied le plus en arrière des liés de son équipe, contrôlé tant que le ballon porté est dans le champ de jeu) ; loi 18 (arrières à 10 m ou sur leur ligne jusqu'à la fin de l'alignement) ; essai : marqueur du moteur, aplati au point d'essai, aucun plaquage, jalon à l'aplati ; arrêt : au gain du moteur (à 0,1 m), ballon sorti vers le demi, jamais dans l'en-but |
+| Pénalités | seul le botteur a le ballon ; frappe du botteur ; adversaires à 10 m du point à la frappe (loi 20) ; au but : ballon posé, frappé du point, passage entre les poteaux au-dessus de la barre (réussite) ou à côté (échec), jalon au passage ; en touche : sortie au point du moteur, jalon à la sortie |
+| Défense qui lit l'attaque | aux rucks des 32 temps forts de la deuxième tranche où l'écart d'attaquants d'un côté à l'autre est d'au moins 3 : ligne vers le côté fort dans 37 cas sur 40 (30 avant), ailier en second rideau à 6 m au moins derrière la ligne dans 29 cas sur 40 (0 avant) ; seuils du test : 85 % et 65 % |
+| Communes | vitesses et accélérations, chevauchements, ballon continu, déterminisme, passes, ruck : sur les 61 temps forts des trois jeux d'entrées ; match natif identique avec ou sans drapeau |
+
+`tests/godot-match-choregraphie` lit en plus un ballon porté avec essai, un sans essai, une
+pénalité réussie, une manquée et une pénaltouche (liés du ballon porté, sauteur, ballon posé,
+frappe montrés). Le mode `choregraphie` du test de la régie contrôle que chaque joueur des
+pistes est à l'écran pendant les pistes.
+
+### 11.6 Exécuté (Linux, 2 cœurs partagés, Godot 4.7.2)
+
+| Suite | Résultat |
+| --- | --- |
+| `tests/match-choregraphe.cjs` | 17 sur 17, match natif graine 7 avec et sans drapeau identique |
+| `tests/godot-match-choregraphie.cjs` | 269 524 contrôles, 0 échec (quinze pistes) |
+| `tests/godot-match-temps-forts.cjs` | 6 modes, 298 contrôles, 0 échec ; mode `choregraphie` : 15 contrôles, dont « chaque joueur des pistes à l’écran » |
+| Relancés sans échec | `match-direct` (4), `match-highlights` (12), `match-essai-visible` (7), `match-structured-facts` (3), `match-actions` (1), `godot-match-essai`, `godot-match-gestes`, `godot-match-gestes-adaptes`, `godot-match-cadrage-arret`, `godot-match-animations`, `godot-match-framing`, `godot-match-cut`, `godot-match-presentation`, `godot-match-journal` |
+
+`node scripts/build-rugby-common.cjs --check` : base commune inchangée après la fusion de
+`origin/main` (conflit de `docs/ressources-utiles.md` résolu en gardant les deux ajouts).
+
+### 11.7 Vidéo de contrôle dans l'interface complète
+
+Vidéo hors dépôt `choregraphe-tranche3.mp4` (1 min 50, 1280×720, 30 images/s) : **la vraie
+interface** (bandeau du score, légende, commandes, écran intermédiaire), le vrai moteur lancé
+par Godot, `CD_MATCH_CHOREGRAPHE=1`, bibliothèque Mixamo, Xvfb en rendu logiciel,
+`--fixed-fps 30` (vitesse réelle). Cinq séquences, un titre incrusté au montage :
+
+| Séquence | Match | Pistes |
+| --- | --- | --- |
+| Ballon porté depuis la touche, essai (11′) | graine 3, club 0, combinaison de touche « ballon porté » | 27,2 s lues en 27,23 s ; légende de l'essai à l'aplati, score à la transformation |
+| Pénalité tentée au but, réussie (10′) | idem | 16 s lues en 16,07 s ; « Pénalité réussie » au passage du ballon |
+| Essai en jeu courant (14′) | graine 7, club 0 | 18 s lues en 18,03 s ; légende vide avant l'aplati |
+| Franchissement (14′) | idem | 25,6 s lues en 25,63 s ; légende qui avance à chaque jalon |
+| Coup d'envoi, chasse et réception (0′) | graine 3 | 12 s lues en 12,07 s ; joueurs à l'écran (correction du § 11.4) |
+
+Aucune échéance ni piste refusée dans les deux captures. La pénaltouche n'y figure pas : au
+niveau « match complet », aucune n'est tombée entre la 21e et la 46e minute de la graine 11
+dans Godot (le match lancé par l'interface diffère de celui du pont pour une même graine) ;
+elle n'est vue que dans les tests et la vue 3D.
+
+Commandes (depuis la racine) :
+
+```
+# Ballon porté, pénalité, coup d'envoi
+CD_MATCH_CHOREGRAPHE=1 CD_MATCH_ANIMATIONS=/chemin/mixamo-match.res \
+CD_GODOT_EXE=/chemin/Godot_v4.7.2-stable_linux.x86_64 CD_MATCH_TEMPS_FORTS_PROOF=/chemin/capA \
+CD_MATCH_TEMPS_FORTS_SEED=3 CD_MATCH_TEMPS_FORTS_MINUTES=14 CD_MATCH_TEMPS_FORTS_HORLOGE=eclair \
+CD_MATCH_TEMPS_FORTS_EVERY=1 CD_MATCH_TEMPS_FORTS_GEL=3000 CD_MATCH_TEMPS_FORTS_LIMITE=6000 \
+CD_MATCH_TEMPS_FORTS_GODOT_ARGS="--fixed-fps 30" CD_MATCH_TEMPS_FORTS_TOUCHE=maul \
+CD_MATCH_TEMPS_FORTS_TYPES=jeu_au_pied,penalite_au_but,ballon_porte \
+xvfb-run -a -s "-screen 0 1280x720x24" node tests/godot-match-temps-forts-capture.cjs
+# Essai et franchissement : graine 7, CD_MATCH_TEMPS_FORTS_DEPUIS=13, MINUTES=30,
+# TYPES=essai_jeu_courant,franchissement (sans TOUCHE)
+```
+
+Le rendu logiciel est lent (environ 0,5 s par image) : une capture de ce type prend 30 min.
+`GEL` doit dépasser la durée réelle d'un plan de pistes (sinon faux diagnostic « figé »).
+
+### 11.8 Choix faits sans Léo
+
+- Pénalité jouée à la main non montrée : absente des faits du moteur (§ 11.1).
+- Porteur du fond d'un ballon porté sans essai : le joueur nommé par le moteur s'il est un
+  avant, sinon le n° 8 ; avec essai, le marqueur (un avant, d'après le moteur).
+- Six avants adverses liés, talonneur et n° 8 en garde ; poussée de 1,3 à 1,9 m/s.
+- Ballon porté sans essai : jalon de la conquête à la prise du sauteur (comme une touche),
+  arrêt au gain du moteur puis ballon sorti vers le demi.
+- Pénalité au but : élan de 4,2 m en arrière et 1,8 m de côté ; ballon 4,6 m au-dessus de la
+  ligne de but sur une réussite ; un échec passe à côté (point du moteur), jamais sous la barre.
+- Pénaltouche : botteur non nommé par le moteur = l'ouvreur.
+- Défense : 5,2 m entre deux défenseurs, glissement de 1,3 m par attaquant d'écart, ailier du
+  côté faible en second rideau à 11 m.
+- Outil de capture : temps forts non retenus joués à vitesse 6 sans image.
+
+### 11.9 Limites
+
+- Le moteur donne des essais sur ballon porté lancés à 25 ou 30 m de la ligne : ils sont
+  montrés tels quels (environ 16 s de poussée), ce qui reste long pour un ballon porté.
+- Pas de ballon porté qui s'écroule, qui tourne ou qui sort en touche (le moteur ne le décide
+  pas) ; pas de contestation dans le ballon porté.
+- Les pistes s'arrêtent au fait clé : la touche qui suit une pénaltouche est jouée par les
+  gestes existants.
+- Un ballon porté suivi d'un temps de jeu puis d'un essai en jeu courant reste aux gestes
+  jusqu'au ballon porté compris : les pistes de l'essai partent du temps de jeu suivant.
+- Bibliothèque Mixamo sans clip de liaison ni de pose du ballon : poses procédurales `maul`
+  et `placement`.
+- La lecture de l'attaque ne vaut que pour la ligne défensive en jeu courant et au ruck ; pas
+  de montée ciblée sur le receveur.
+
+### 11.10 Non vérifié
+
+- Rien sous Windows ni avec une carte graphique ; fluidité réelle inconnue (rendu logiciel).
+- Crédibilité rugbystique du ballon porté (forme, allure), de l'élan du botteur et de la
+  glissade défensive : à juger par Léo sur la vidéo ; valeurs choisies, non mesurées.
+- Pénaltouche vue dans les tests et la vue 3D, pas dans l'interface complète (§ 11.7).
+- Pénalité manquée et ballon porté sans essai vus dans les tests et la vue 3D seulement.
+
+### 11.11 Suite conseillée
+
+1. Juger la vidéo ; régler la forme et l'allure du ballon porté, l'élan du botteur.
+2. Ajouter au moteur la pénalité jouée à la main (décision, risque, gain), puis la mettre en
+   scène.
+3. Enchaîner pénaltouche, touche et ballon porté dans une même série de pistes.
+4. Faute de main, ballon porté qui s'écroule ou sort, contestation au sol.
+5. Clips Mixamo de liaison (ruck, mêlée, ballon porté), de pose du ballon et d'aplati.
