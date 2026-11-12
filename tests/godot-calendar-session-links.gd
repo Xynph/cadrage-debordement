@@ -29,8 +29,14 @@ func calendar() -> MonthView:
 	# Both the table HBox and the program have this name. Only the shipped
 	# month-calendar script exposes selected/month/filter/view.
 	return app.find_child("CarnetCalendar", true, false) as MonthView
-func table() -> HBoxContainer:
-	return app.find_child("CarnetCalendar", true, false) as HBoxContainer
+func table() -> Control:
+	var widget := app.find_child("CarnetCalendar", true, false) as Control
+	return widget if widget != null and not widget is MonthView else null
+func table_present() -> bool:
+	# Compact legacy tables and wide dedicated canvases have different wrapper
+	# classes. Their public month-switch action is the common table-view contract.
+	var month_switch := app.find_child("CalendarShowMonth",true,false) as Button
+	return calendar() == null and table() != null and app.get_meta("calendar_table",false) and month_switch != null and month_switch.is_visible_in_tree() and not month_switch.disabled
 func progress(stage: String, extra: Dictionary = {}) -> void:
 	var entry := {"stage":stage,"ticks":Time.get_ticks_msec(),"extra":extra}
 	if is_instance_valid(app):
@@ -78,6 +84,7 @@ func snapshot() -> Dictionary:
 	var state: Dictionary = app.management_ui.get("calendar_reading", {}).duplicate(true)
 	state["calendar_present"] = calendar() != null
 	state["table_observed"] = app.get_meta("calendar_table", false)
+	state["table_widget_class"] = table().get_class() if table() != null else ""
 	if calendar() != null:
 		state["month_observed"] = calendar().month
 		state["selected_observed"] = calendar().selected
@@ -245,13 +252,13 @@ func run() -> void:
 		app._navigate("Bureau"); await settle()
 		app.set_meta("calendar_table", true)
 		app._navigate("Calendrier"); await settle()
-		check(calendar() == null and table() != null and table().is_visible_in_tree() and app.get_meta("calendar_table",false), "Origine : vraie vue tableau du Calendrier")
+		check(table_present(), "Origine : vraie vue tableau du Calendrier")
 		check(nav.open_entity({"kind":"session","id":id}), "Tableau vers séance publiée")
 		await settle()
 		check(not app.get_meta("calendar_table",true) and calendar() != null, "Ouverture construit le programme hors tableau")
 		target_ok(id,date,str(chosen.get("label","Entraînement")))
 		await key(KEY_LEFT,true)
-		check(app.get_meta("calendar_table",false) and calendar() == null and table() != null and table().is_visible_in_tree(), "Back restaure la vraie vue tableau")
+		check(table_present(), "Back restaure la vraie vue tableau")
 		check(nav.open_entity({"kind":"session","id":id}), "Réouverture de la séance depuis le tableau restauré")
 		await settle()
 		for size: Vector2i in [Vector2i(1280,720), Vector2i(1920,1080), Vector2i(2560,1440)]:
