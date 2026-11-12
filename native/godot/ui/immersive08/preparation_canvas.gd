@@ -9,6 +9,7 @@ const World = preload("res://ui/immersive08/world_archive.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const MatchContext = preload("res://ui/preparation_match_context.gd")
 const Briefing = preload("res://ui/preparation_briefing.gd")
+const PersonName = preload("res://ui/person_name.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
 const GOLD = Color("ffcd69")
@@ -378,7 +379,7 @@ func _sheet_map(section: Control) -> void:
 		button.size.x = C.px(30)
 		button.tooltip_text = str(player.get("name","Poste non affecté")) + " · " + str(player.get("pos",""))
 		button.set_meta("player_id",id)
-		var surname := str(player.get("name","—")).get_slice(" ",str(player.get("name","")).get_slice_count(" ")-1)
+		var surname := PersonName.surname(str(player.get("name","—")))
 		D.text(panel,point.x,point.y+26,surname,13,C.IVORY,500,72,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel,18,345,"Schéma indicatif · cliquer pour la fiche",14,C.MUTED,500,390)
 

@@ -31,8 +31,8 @@ MANIFEST_LIMIT = 4 * MIB
 MAX_PIXELS = 40_000_000
 MAX_FOREIGN_EDGE = 512
 SAFE_ASSET = re.compile(r'medias/[0-9a-f]{64}\.(?:png|jpg|webp)\Z')
-# Same final-letter substitutions as the French staff catalogue.
-ENDINGS = dict(zip('abcdefghijklmnopqrstuvwxyz', ('e','p','s','t','a','v','k','n','o','g','c','n','n','m','u','b','k','l','z','d','a','f','v','s','i','s')))
+# Display names of the public staff catalogue, by identifier. None is derived from a private identity.
+BASE_STAFF_NAMES = ROOT / 'data/names/noms-monde-staffs-v1.json'
 
 
 def need(ok, message):
@@ -84,20 +84,19 @@ def fold(value):
     return unicodedata.normalize('NFKC', value).casefold()
 
 
-def pseudonym(real, suffix, reserved, used):
-    def replace(word):
-        letters = word[0]
-        last = letters[-1]
-        new = ENDINGS.get(last.lower(), 'a')
-        return letters[:-1] + (new.upper() if last.isupper() else new)
+def base_staff_names():
+    document = load(BASE_STAFF_NAMES)
+    need(document.get('format') == 'rugby-legacy-noms-inventes' and document.get('version') == 1
+         and isinstance(document.get('noms'), dict), 'Fichier des noms de base du staff invalide.')
+    return document['noms']
 
-    alias = re.sub(r'[^\W\d_]+', replace, unicodedata.normalize('NFKC', real))
-    if fold(alias) in reserved or fold(alias) in used:
-        alias += ' ' + suffix
-    while fold(alias) in reserved or fold(alias) in used:
-        alias += 'x'
-    used.add(fold(alias))
-    return alias
+
+def base_name(names, ident, reserved, used):
+    need(ident in names, 'Nom de base absent pour un membre du staff : ' + ident)
+    value = name(names[ident])
+    need(fold(value) not in reserved and fold(value) not in used, 'Nom de base refusé : ' + ident)
+    used.add(fold(value))
+    return value
 
 
 def compile_staff(french, overlay, private_french_names=()):
@@ -109,6 +108,7 @@ def compile_staff(french, overlay, private_french_names=()):
     used = {fold(x['name']) for x in prior}
     reserved = {fold(name(x['name'])) for x in overlay['staff']} | {fold(x) for x in private_french_names}
     private, ids, by_club_name = [], {p['id'] for p in prior}, set()
+    names = base_staff_names()
     for person in sorted(overlay['staff'], key=lambda p: (p['clubId'], p['id'])):
         club = person['clubId']
         need(type(club) is int and 30 <= club < 58, 'Club étranger du staff invalide.')
@@ -120,7 +120,7 @@ def compile_staff(french, overlay, private_french_names=()):
              'Source officielle du staff absente.')
         ids.add(ident)
         by_club_name.add((club, fold(real)))
-        alias = pseudonym(real, ident[-4:], reserved, used)
+        alias = base_name(names, ident, reserved, used)
         clubs[club]['members'].append({'id': ident, 'clubId': club, 'name': alias, 'role': role,
                                        'sourceSeason': person.get('sourceSeason'),
                                        'sourceDate': person.get('sourceDate'),

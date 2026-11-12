@@ -1,5 +1,6 @@
 extends Control
 const G = preload("res://ui/carnet_skin.gd")
+const PersonName = preload("res://ui/person_name.gd")
 var app: Control
 var tiles: Array[Control] = []
 var portraits: Array[Control] = []
@@ -37,8 +38,7 @@ func _ready() -> void:
 			portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
 			face.add_child(portrait)
 		portraits.append(portrait)
-		var parts:=name.split(" ")
-		var surname:=" ".join(parts.slice(1)) if parts.size()>1 else name
+		var surname:=PersonName.surname(name)
 		var caption:=G.label("%02d %s"%[slot+1,surname],12)
 		caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 		caption.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
