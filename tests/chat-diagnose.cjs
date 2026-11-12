@@ -14,11 +14,11 @@ test('commande strictement autorisée sans texte additionnel',()=>{
 test('jobs officiels SUCCESS exacts, skipped ou duplicata bloquants ; Godot informatif ignoré',()=>{
  const jobs=require('../ci/ci-jobs.cjs').OFFICIAL_JOBS.map(name=>({name,status:'completed',conclusion:'success'}));
  assert.equal(completedSeven(jobs),true);
- assert.equal(jobs.length,12);
+ assert.equal(jobs.length,require('../ci/ci-jobs.cjs').SHARD_COUNT+2);
  assert.equal(completedSeven([...jobs,{...jobs[0]}]),false);
  assert.equal(completedSeven([...jobs,{name:'Godot 1/3',status:'completed',conclusion:'failure'}]),true);
  assert.equal(completedSeven(jobs.slice(1)),false);
- assert.equal(completedSeven([...jobs,{name:'Suites 11/10',status:'completed',conclusion:'success'}]),false);
+ assert.equal(completedSeven([...jobs,{name:'Suites 6/5',status:'completed',conclusion:'success'}]),false);
  assert.equal(completedSeven(jobs.map((j,i)=>i===2?{...j,conclusion:'skipped'}:j)),false);
 });
 test('CI main respecte SHA et événement exacts',()=>{

@@ -126,9 +126,9 @@ function repairFixture(options={}){
  const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+REPAIR_RUN;
  const cmd=validateEvent(e,env);
  const failed=jobs().map(j=>({...j}));
- for(const name of ['Suites 1/10','Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
+ for(const name of ['Suites 1/'+require('../ci/ci-jobs.cjs').SHARD_COUNT,'Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
  if(options.wrongFailure)failed.find(x=>x.name==='classification').conclusion='failure';
- if(options.skippedShard)failed.find(x=>x.name==='Suites 2/10').conclusion='skipped';
+ if(options.skippedShard)failed.find(x=>x.name==='Suites 2/'+require('../ci/ci-jobs.cjs').SHARD_COUNT).conclusion='skipped';
  if(options.extraJob)failed.push({name:'extra',status:'completed',conclusion:'success'});
  const badRun={...run(REPAIR_MAIN,options.wrongRun?REPAIR_RUN-1:REPAIR_RUN,'workflow_dispatch'),conclusion:'failure'};
  const api=(url)=>{

@@ -9,7 +9,7 @@ assert.ok(all.length >= 81, 'Toutes les suites doivent être découvertes');
 assert.ok(all.includes('tests/saves.cjs'));
 const groups = planShards(all);
 assert.equal(groups.length, SHARD_COUNT);
-assert.equal(SHARD_COUNT, 10);
+assert.equal(SHARD_COUNT, 5);
 for (const group of groups) assert.ok(group.length, 'Groupe vide');
 assert.equal(new Set(groups.flat()).size, all.length, 'Suite dupliquée');
 assert.deepEqual(groups.flat().sort(), all.slice().sort(), 'Suite omise');
@@ -42,16 +42,16 @@ for (let shard = 1; shard <= SHARD_COUNT; shard++) {
   assert.equal(run.status, 0, run.stderr);
   listed.push(...run.stdout.trim().split('\n'));
 }
-assert.deepEqual(listed.sort(), all.slice().sort(), 'Les dix shards CLI couvrent toutes les suites');
-assert.equal(cli('11').status, 1);
-assert.match(cli('11').stderr, /hors de 1\.\.10/);
+assert.deepEqual(listed.sort(), all.slice().sort(), 'Les cinq shards CLI couvrent toutes les suites');
+assert.equal(cli('6').status, 1);
+assert.match(cli('6').stderr, /hors de 1\.\.5/);
 for (const args of [[], ['0'], ['x'], ['1', 'full', '0'], ['1', 'full', '2', 'extra']]) {
   const run = cli(...args);
   assert.equal(run.status, 2, args.join(' '));
   assert.match(run.stderr, /Usage : node ci\/shard-tests\.cjs <shard>/);
 }
 assert.equal(cli('1', 'inconnue').status, 1);
-assert.equal(cli('9', 'native-art').stdout, '', 'Shard vide autorisé en couverture ciblée');
+assert.equal(cli('9', 'native-art', '10').stdout, '', 'Shard vide autorisé en couverture ciblée');
 const snapshot = Object.keys(WEIGHTS_SECONDS);
 for (let i = 0; i < 58; i++) snapshot.push('tests/synthetic-' + i + '.cjs');
 const scores = planShards(snapshot).map(group =>

@@ -30,16 +30,16 @@ const run=(head_sha,id=101)=>({id,head_sha,event:'pull_request',name:'Tests Java
 const green=require('../ci/ci-jobs.cjs').OFFICIAL_JOBS
   .map(name=>({name,status:'completed',conclusion:'success'}));
 assert.equal(statusCI(sha,[run(old)],{101:green}),'CI absente sur HEAD');
-assert.equal(statusCI(sha,[run(sha)],{101:green}),'12/12 SUCCESS (gate non exécuté)');
+assert.equal(statusCI(sha,[run(sha)],{101:green}),(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+'/'+(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+' SUCCESS (gate non exécuté)');
 assert.equal(statusCI(sha,[run(sha)],{}),'Jobs CI non vérifiés');
 assert.equal(statusCI(sha,[{...run(sha),status:'in_progress'}],{}),'CI en cours');
 assert.equal(statusCI(sha,[{...run(sha),conclusion:'failure'}],{}),'CI échouée ou annulée');
-assert.equal(statusCI(sha,[run(sha)],{101:green.slice(0,11)}),'CI incomplète ou non conforme');
+assert.equal(statusCI(sha,[run(sha)],{101:green.slice(0,-1)}),'CI incomplète ou non conforme');
 assert.equal(statusCI(sha,[run(sha)],{101:[...green,green[0]]}),'CI incomplète ou non conforme');
 assert.equal(statusCI('bad',[],{}),'SHA invalide');
 const rich=attachCI(select([base(7,['docs/readme.md'])]),[run(sha)],()=>green);
-assert.match(rich[0].ci,/12\/12 SUCCESS/);
-assert.match(report(rich),/12\/12 SUCCESS/);
+assert.match(rich[0].ci,/7\/7 SUCCESS/);
+assert.match(report(rich),/7\/7 SUCCESS/);
 
 assert.equal(gateNumber('259'),259);
 assert.throws(()=>gateNumber('0'),/invalide/);

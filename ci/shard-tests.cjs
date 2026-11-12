@@ -82,6 +82,39 @@ function suitesForShard(shard, coverage = 'full', count, files = allTestFiles())
   return plan[shard - 1];
 }
 
+// Réservations mémoire (Mo) : section « memory » de ci/suite-weights.json (ci/suite-weights.cjs).
+const MEMORY = Object.freeze({
+  defaultMb: PROFILE.memory?.default_mb ?? 1024,
+  budgetMb: PROFILE.memory?.budget_mb ?? 12288,
+  suites: Object.freeze({ ...(PROFILE.memory?.suites || {}) })
+});
+const memoryOf = f => MEMORY.suites[f] ?? MEMORY.defaultMb;
+// Simulation de l'ordonnanceur de ci/run-shard-suites.sh pour une liste de suites : au plus
+// « parallel » suites, somme des réservations ≤ budget (une suite trop grosse tourne seule),
+// la première suite de la liste (poids décroissant) qui tient démarre. Renvoie la durée
+// murale et le pic de mémoire réservée. Estimation : la contention CPU n'est pas modélisée.
+function simulateShard(files, duration, parallel, { memory = memoryOf, budget = MEMORY.budgetMb, weights = WEIGHTS_SECONDS } = {}) {
+  const weight = f => Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : DEFAULT_WEIGHT;
+  const pending = files.slice().sort((a, b) => weight(b) - weight(a) || lexical(a, b));
+  let now = 0, used = 0, peak = 0;
+  const running = [];
+  while (pending.length || running.length) {
+    while (pending.length && running.length < parallel) {
+      const k = pending.findIndex(f => used + memory(f) <= budget || running.length === 0);
+      if (k < 0) break;
+      const [f] = pending.splice(k, 1);
+      running.push({ end: now + duration(f), mb: memory(f) });
+      used += memory(f);
+      peak = Math.max(peak, used);
+    }
+    running.sort((a, b) => a.end - b.end);
+    const done = running.shift();
+    now = done.end;
+    used -= done.mb;
+  }
+  return { wall: now, peakMb: peak };
+}
+
 const USAGE = 'Usage : node ci/shard-tests.cjs <shard> [full|web|native-art|godot] [nombre-de-shards]\n' +
   '  shard : 1..N ; N par défaut ' + SHARD_COUNT + ' (godot : ' + GODOT_SHARD_COUNT + '), au plus ' + MAX_SHARDS + '.';
 if (require.main === module) {
@@ -106,6 +139,6 @@ if (require.main === module) {
   }
 }
 module.exports = {
-  allTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount,
+  allTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY,
   WEIGHTS_SECONDS, GODOT_WEIGHTS_SECONDS, DEFAULT_WEIGHT, GODOT_DEFAULT_WEIGHT, MAX_SHARDS
 };

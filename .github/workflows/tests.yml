@@ -2,6 +2,10 @@ name: Tests JavaScript
 on:
   pull_request:
     branches: [main]
+    # ready_for_review : la batterie complète part au passage d'un brouillon en prête.
+    # Sur un brouillon, seuls la classification (syntaxe JS modifiée) et le verdict
+    # tournent : « Validation CI » reste rouge tant que les suites n'ont pas tourné.
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
   workflow_dispatch:
@@ -9,9 +13,11 @@ on:
 permissions:
   contents: read
 
+# PR : seul le dernier push compte. main : seul le dernier commit fusionné compte (chaque
+# PR a déjà passé la batterie complète) ; workflow_dispatch n'est jamais annulé.
 concurrency:
   group: tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 jobs:
   classification:
@@ -19,6 +25,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       coverage: ${{ steps.diff.outputs.coverage }}
+      draft: ${{ github.event.pull_request.draft == true }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -38,18 +45,19 @@ jobs:
         run: node ci/test-coverage.cjs
 
   shards:
-    name: Suites ${{ matrix.shard }}/10
+    name: Suites ${{ matrix.shard }}/5
     needs: classification
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' }}
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        shard: [1, 2, 3, 4, 5]
     runs-on: ubuntu-latest
-    # Dix lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
-    # les suites conservées. Nombre de shards : ci/ci-jobs.cjs (SHARD_COUNT).
+    # Cinq lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
+    # les suites conservées, quatre à la fois par runner sous budget mémoire.
+    # Nombre de shards et parallélisme : ci/ci-jobs.cjs (SHARD_COUNT, SHARD_PARALLEL).
     # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
-    timeout-minutes: 45
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v5
         with:
@@ -64,25 +72,26 @@ jobs:
           COVERAGE: ${{ needs.classification.outputs.coverage }}
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 10 > "$RUNNER_TEMP/shard-suites.txt"
+          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 5 > "$RUNNER_TEMP/shard-suites.txt"
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
           if [[ "${#suites[@]}" -eq 0 ]]; then
             # Couverture ciblée (web, native-art) : moins de suites que de shards.
             # En couverture complète, un shard vide est une erreur de planification.
             [[ "$COVERAGE" != full ]] || exit 1
-            echo "### Shard $SHARD/10 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Shard $SHARD/5 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          # Deux suites à la fois : elles sont mono-cœur et le runner a 4 cœurs.
-          # Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
-          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/10 ($COVERAGE)" 2
+          # Quatre suites à la fois (runner à 4 cœurs), sous budget mémoire de 12 Go :
+          # les suites lourdes ne tournent jamais à quatre. Budgets par suite, journaux
+          # groupés et résumé : ci/run-shard-suites.sh.
+          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/5 ($COVERAGE)" 4
   godot:
     name: Godot ${{ matrix.shard }}/3
     needs: classification
     # Suites qui pilotent le SDK (source lisant CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
     # NON BLOQUANT pour commencer : hors des dépendances de « Validation CI » et
     # continue-on-error, tant que ces suites ne sont pas fiables et rapides en CI.
-    if: ${{ needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.draft != 'true' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
     continue-on-error: true
     strategy:
       fail-fast: false
@@ -188,12 +197,18 @@ jobs:
           CLASSIFICATION: ${{ needs.classification.result }}
           COVERAGE: ${{ needs.classification.outputs.coverage }}
           SHARDS: ${{ needs.shards.result }}
+          DRAFT: ${{ needs.classification.outputs.draft }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           result='ÉCHEC'
-          if [[ "$CLASSIFICATION" == "success" ]]; then
+          # Brouillon : la batterie complète n'a pas tourné, verdict jamais vert (sauf PR
+          # purement documentaire, qui n'a aucune suite à lancer). Passer la PR en prête.
+          draft_wait=''
+          if [[ "${DRAFT:-false}" == "true" && "$COVERAGE" != "documentation" ]]; then
+            draft_wait='Brouillon : batterie complète non lancée, passer la PR en prête pour la lancer'
+          elif [[ "$CLASSIFICATION" == "success" ]]; then
             case "$EVENT_NAME:$COVERAGE:$SHARDS" in
               pull_request:documentation:skipped|pull_request:web:success|pull_request:native-art:success|\
               pull_request:full:success|push:full:success|workflow_dispatch:full:success)
@@ -210,9 +225,11 @@ jobs:
             echo "- Classification : $CLASSIFICATION"
             echo "- Suites : $SHARDS"
             echo "- Couverture : $COVERAGE"
+            if [[ -n "$draft_wait" ]]; then echo "- $draft_wait"; fi
             echo "- [Voir les contrôles et les erreurs]($url)"
             echo ""
             echo "Ce résumé est informatif : seule la conclusion du contrôle Validation CI autorise la décision de fusion."
           } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -n "$draft_wait" ]]; then echo "::warning title=Brouillon::$draft_wait"; fi
           echo "::notice title=Verdict CI::$result sur $HEAD_SHA - $url"
           [[ "$result" == "SUCCÈS" ]]
