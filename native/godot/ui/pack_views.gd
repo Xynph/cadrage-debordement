@@ -242,6 +242,8 @@ static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
 		media.append(["Staff", "%s identités · %s portraits" % [G.n(counts.staff), G.n(int(counts.get("staffOfficial", 0)) + int(counts.get("staffSynthetic", 0)))]])
 	if counts.has("cityPhotos") or counts.has("stadiumPhotos"):
 		media.append(["Lieux", "%s villes en photo · %s stades en photo" % [G.n(counts.get("cityPhotos", 0)), G.n(counts.get("stadiumPhotos", 0))]])
+	if counts.has("journalists") or counts.has("outlets"):
+		media.append(["Presse", "%s journalistes · %s rédactions" % [G.n(counts.get("journalists", 0)), G.n(counts.get("outlets", 0))]])
 	for item: Array in media:
 		parent.add_child(C.rule())
 		var line := C.h(16)

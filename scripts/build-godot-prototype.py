@@ -104,7 +104,7 @@ def voice_notice(coverage):
 
 
 def stage(node):
-    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs", "build-world-registry.cjs"):
+    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs", "base-names.cjs", "build-world-registry.cjs"):
         subprocess.run([str(node), str(ROOT / "scripts" / compiler), "--check"], cwd=ROOT, check=True)
     voice_coverage = validate_voice_assets(PROJECT)
     assets = PROJECT / "assets"
@@ -133,6 +133,18 @@ def stage(node):
     print(f"Staging vérifié : registres anonymisés, {voice_coverage['recorded']}/{voice_coverage['total']} bulles enregistrées, {voice_coverage['pending']} en attente explicite ; 60 photos, 30 territoires, portraits et modèle CC0.", flush=True)
 
 
+def stage_windows_qa(project):
+    # The official release template ignores --script. Ship named QA main loops,
+    # dormant until an override.cfg is added to a verified, disposable QA copy.
+    if any(path.name.casefold() == "override.cfg" for path in project.rglob("*")):
+        raise ValueError("Un override.cfg de recette ne doit jamais être livré")
+    qa = project / "windows_qa"
+    qa.mkdir()
+    for name in ("windows-resume.gd", "windows-graphics-smoke.gd"):
+        shutil.copy2(ROOT / "ci" / name, qa / name)
+    (qa / "entry.tscn").write_text('[gd_scene format=3]\n[node name="WindowsReceiptEntry" type="Node"]\n', encoding="utf-8")
+
+
 def build(args):
     provenance = source_provenance(args.source_commit)
     target = args.output.resolve()
@@ -149,6 +161,7 @@ def build(args):
     work = target / "build"
     source = work / "project"
     shutil.copytree(PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
+    stage_windows_qa(source)
     project_file = source / "project.godot"
     config, replacements = re.subn(r'^config/version="[^"]+"$', f'config/version="{BUILD_VERSION}"', project_file.read_text(encoding="utf-8"), flags=re.MULTILINE)
     assert replacements == 1, "Version du projet absente ou ambiguë"

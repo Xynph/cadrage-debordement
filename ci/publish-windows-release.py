@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import zipfile
 
@@ -52,9 +53,9 @@ def evidence_files(root):
             name = row["path"]
             verifier().safe_name(name)
             add(root / "tools/mesa" / name, "tools/mesa-notices/" + name)
-    for mode in ("fresh", "resume"):
+    for mode in ("fresh", "resume", "angle-clean", "mesa-native", "mesa-local"):
         directory = root / "evidence" / mode
-        for name in ("report.json", "process.json", "stdout.log", "stderr.log"):
+        for name in ("report.json", "process.json", "loaded-modules.json", "graphics-progress.json", "driver-ack.json", "stdout.log", "stderr.log"):
             add(directory / name, mode + "/" + name)
         if directory.is_dir():
             for image in sorted(directory.glob("*.png")):
@@ -62,9 +63,56 @@ def evidence_files(root):
     return files
 
 
+def require_received_evidence(files):
+    """A received delivery must preserve the complete proof, not only its verdict."""
+    required = {"controller-unit.log", "prepare.log", "build.log", "build/import.log", "build/export.log",
+                "windows-report.json", "archive.json", "qa-extras.json",
+                "manifest-before.json", "manifest-after.json", "manifest-build.json",
+                "tools/toolchain-receipt.json", "tools/mesa-receipt.json"}
+    for mode in ("fresh", "resume"):
+        required.update(mode + "/" + name for name in
+                        ("report.json", "process.json", "loaded-modules.json", "stdout.log", "stderr.log"))
+    require(required <= files.keys(), "Missing received evidence: " + ", ".join(sorted(required - files.keys())))
+    module = verifier()
+    report = module.json_document(files["windows-report.json"].read_text(encoding="utf-8-sig"))
+    require(report.get("passed") is True and report.get("scope") != "graphics-smoke-only",
+            "A received proof bundle requires a passed full Windows receipt")
+    mesa_dlls = any(name.lower().endswith(".dll") and str(row.get("source", "")).startswith("x64/")
+                    for name, row in report.get("qaExtras", {}).items())
+    # Prepared Mesa tools/notices are not evidence that DLLs were copied or loaded.
+    # A clean ANGLE run has no install_mesa receipt to preserve or manufacture.
+    if report.get("selectedGraphicsDriver") != "opengl3_angle" or report.get("mesa") or mesa_dlls:
+        require("mesa-qa.json" in files, "Missing received evidence: mesa-qa.json")
+    for mode in ("fresh", "resume"):
+        for name, expected in (("report.json", report.get(mode)),
+                               ("process.json", report.get("process", {}).get(mode))):
+            actual = module.json_document(files[mode + "/" + name].read_text(encoding="utf-8-sig"))
+            require(isinstance(expected, dict) and actual == expected,
+                    mode + "/" + name + " differs from receipt")
+        if "driver_ack" in report[mode]:
+            name = mode + "/driver-ack.json"
+            require(name in files, "Missing received evidence: " + name)
+            actual = module.json_document(files[name].read_text(encoding="utf-8-sig"))
+            require(actual == report[mode]["driver_ack"], name + " differs from receipt")
+    captures = report["resume"].get("graphics", {}).get("captures", [])
+    require(isinstance(captures, list) and captures, "Missing received capture evidence")
+    directory = files["resume/report.json"].parent.resolve()
+    for row in captures:
+        path = Path(row.get("path", "")).resolve()
+        selected = files.get("resume/captures/" + path.name)
+        require(path.parent == directory and selected is not None and selected.resolve() == path,
+                "Missing received capture in resume evidence: " + str(path))
+    mesa = module.json_document(files["tools/mesa-receipt.json"].read_text(encoding="utf-8-sig"))
+    for row in mesa.get("licenses", []):
+        name = "tools/mesa-notices/" + row["path"]
+        require(name in files, "Missing received evidence: " + name)
+
+
 def create_bundle(root, destination, metadata):
     files = evidence_files(root)
     require(files, "No actual diagnostic or QA evidence to publish")
+    if metadata.get("passed") is True:
+        require_received_evidence(files)
     require(not Path(destination).exists(), "Refuse an existing proof bundle")
     with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         archive.writestr("delivery.json", json.dumps(metadata, indent=2, ensure_ascii=False))
@@ -84,6 +132,32 @@ def received_report(root, source_commit):
     actual_exe = Path(root) / "evidence/Relocated QA with spaces/OvalLegacy27-PrototypeGodot/OvalLegacy27.exe"
     module.validate_windows_report(report, source_commit, str(actual_exe))
     return report, expected_zip
+
+
+def direct_receipt_assets(root, report):
+    """Expose the original full report and only its verified resume captures."""
+    root = Path(root).resolve()
+    files = evidence_files(root)
+    require_received_evidence(files)
+    module = verifier()
+    sources = [("windows-report.json", files["windows-report.json"], module.digest(files["windows-report.json"]))]
+    for index, row in enumerate(report["resume"]["graphics"]["captures"], 1):
+        path = Path(row["path"]).resolve()
+        selected = files.get("resume/captures/" + path.name)
+        require(selected is not None and selected.resolve() == path and module.digest(selected) == row["sha256"],
+                "Unselected, outside or changed received capture: " + str(path))
+        stem = re.sub(r"[^A-Za-z0-9._-]+", "-", path.stem).strip(".-_")[:80] or "capture"
+        sources.append((f"windows-resume-{index:02d}-{stem}.png", selected, row["sha256"]))
+    destination = root / "public-assets"
+    require(not destination.exists(), "Refuse existing direct receipt assets")
+    destination.mkdir()
+    assets = []
+    for name, source, expected_sha in sources:
+        target = destination / name
+        shutil.copyfile(source, target)
+        require(module.digest(target) == expected_sha, "Direct receipt asset bytes changed: " + name)
+        assets.append(target)
+    return assets
 
 
 def gh(*args):
@@ -112,12 +186,16 @@ def publish(root, source_commit, repo, run_id, attempt, diagnostic=False):
     module = verifier()
     if package:
         metadata["package"] = {"name": package.name, "sha256": module.digest(package), "bytes": package.stat().st_size}
+    direct_assets = direct_receipt_assets(root, report) if report else []
+    if direct_assets:
+        metadata["receiptAssets"] = [{"name": path.name, "sha256": module.digest(path), "bytes": path.stat().st_size}
+                                    for path in direct_assets]
     bundle = root / f"{tag}-proofs.zip"
     files = create_bundle(root, bundle, metadata)
     metadata["proofBundle"] = {"name": bundle.name, "sha256": module.digest(bundle), "bytes": bundle.stat().st_size, "files": len(files)}
     metadata_path = root / "delivery.json"
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    assets = ([package] if package else []) + [bundle, metadata_path]
+    assets = ([package] if package else []) + [bundle, metadata_path] + direct_assets
     sums = root / "SHA256SUMS.txt"
     sums.write_text("".join(f"{module.digest(path)}  {path.name}\n" for path in assets), encoding="ascii")
     assets.append(sums)

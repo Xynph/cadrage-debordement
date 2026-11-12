@@ -1,6 +1,10 @@
+class_name WindowsGraphicsSmoke
 extends "windows-resume.gd"
 # A short startup/graphics probe of the real exported EXE. No career is created.
 # Inherits actual window capture, runtime observation and silent shutdown helpers.
+func driver_mode() -> String:
+	return "graphics-smoke"
+
 func run() -> void:
 	report.mode = "graphics-smoke"
 	report.scope = "graphics-smoke-only"
@@ -8,8 +12,15 @@ func run() -> void:
 	check(OS.get_name() == "Windows" and not OS.has_feature("editor") and DisplayServer.get_name() == "Windows", "Actual exported Windows graphics required")
 	if not failures.is_empty(): await finish(); return
 	DirAccess.make_dir_recursive_absolute(output)
+	trace_graphics("scene.load.begin", {"renderer":RenderingServer.get_current_rendering_method(),"adapter":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"api_version":RenderingServer.get_video_adapter_api_version(),"vsync_mode":DisplayServer.window_get_vsync_mode()})
 	app = load("res://main.tscn").instantiate()
+	trace_graphics("scene.load.end")
+	process_frame.connect(func(): trace_graphics("process_frame.first"), CONNECT_ONE_SHOT)
+	RenderingServer.frame_pre_draw.connect(func(): trace_graphics("render.pre_draw.first"), CONNECT_ONE_SHOT)
+	RenderingServer.frame_post_draw.connect(func(): trace_graphics("render.post_draw.first"), CONNECT_ONE_SHOT)
+	trace_graphics("scene.add.begin")
 	root.add_child(app)
+	trace_graphics("scene.add.end", {"child_pid":app.bridge.child_pid})
 	current_scene = app
 	check(is_instance_valid(app.coach) and is_instance_valid(app.coach.speech), "Real Gabi is present")
 	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):

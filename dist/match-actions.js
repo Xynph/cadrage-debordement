@@ -1,5 +1,9 @@
 'use strict';
 // Structured action facts are recorded by the engine, never inferred from prose.
+// Optional facts already known to the caller (no draw, no state change): why the ball left play
+// or was made dead, the colour of a card, the try's origin and whether it was converted.
+const ACTION_CAUSES={touch:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch','period-end'],ingoal:['held-up','attacking-kick-grounded','ingoal-knock-on','kick-dead','defender-grounded']};
+const ACTION_CARDS=['yellow','red20','red'],ACTION_TRY_ORIGINS=['open','maul','scrum'];
 const ACTION_KINDS=['message','carry','turnover','scrum','lineout','setpiece-win','setpiece-loss','kick','kickoff','drop22','goalLine','reception','touch','hand-fault','try','goal','miss','penalty','advantage','card','sub','tactic','break','end','ingoal'];
 const ACTION_LABELS={message:'Jeu courant',carry:'Progression',turnover:'Récupération',scrum:'Mêlée',lineout:'Touche','setpiece-win':'Ballon conservé','setpiece-loss':'Ballon récupéré',kick:'Jeu au pied',kickoff:'Renvoi au centre',drop22:'Renvoi aux 22',goalLine:'Renvoi sur la ligne',reception:'Réception',touch:'Sortie en touche','hand-fault':'Faute de main',try:'Essai',goal:'Pénalité réussie',miss:'Tir manqué',penalty:'Pénalité',advantage:'Avantage',card:'Discipline',sub:'Remplacement',tactic:'Consigne',break:'Mi-temps',end:'Fin du match',ingoal:'En-but'};
 const MATCH_PLAYBACK=new WeakMap();
@@ -17,7 +21,7 @@ function captureMatchAction(l,type,meta={}){
  const neutral=['message','card','sub','tactic','break','end','advantage'].includes(kind);
  const base={x:neutral&&prior?prior.to.x:l.territory,y:prior?.to.y??35};
  const from={...(meta.from||base)},to={...(meta.to||from)};
- return {v:1,kind,team,...(meta.move?{move:meta.move}:{}),style:effectiveAttack(l,team),...(tacticalRules(l)?{plans:{attack:[0,1].map(side=>effectiveAttack(l,side)),defence:[0,1].map(side=>effectiveDefence(l,side))}}:{}),incident:meta.incident===true,possession:meta.possession??l.possession,actor:meta.actor??null,from,to,score:[...l.score],tries:[...l.tries],on:l.sheets.map((sh,side)=>{const active=new Set(activePlayers(l,side).map(p=>p.id));return sh.on.map(id=>active.has(id)?id:null)}),period:l.flow?.period||(l.minute>40?2:1)};
+ return {v:1,kind,team,...(meta.move?{move:meta.move}:{}),...(ACTION_CAUSES[kind]?.includes(meta.cause)?{cause:meta.cause}:{}),...(kind==='card'&&ACTION_CARDS.includes(meta.card)?{card:meta.card}:{}),...(kind==='try'&&ACTION_TRY_ORIGINS.includes(meta.origin)&&typeof meta.conversion==='boolean'?{origin:meta.origin,conversion:meta.conversion}:{}),style:effectiveAttack(l,team),...(tacticalRules(l)?{plans:{attack:[0,1].map(side=>effectiveAttack(l,side)),defence:[0,1].map(side=>effectiveDefence(l,side))}}:{}),incident:meta.incident===true,possession:meta.possession??l.possession,actor:meta.actor??null,from,to,score:[...l.score],tries:[...l.tries],on:l.sheets.map((sh,side)=>{const active=new Set(activePlayers(l,side).map(p=>p.id));return sh.on.map(id=>active.has(id)?id:null)}),period:l.flow?.period||(l.minute>40?2:1)};
 }
 function playback(l){l=l.visualSource||l;let p=MATCH_PLAYBACK.get(l);if(!p){p={cursor:l.events.length-1,stop:false};MATCH_PLAYBACK.set(l,p)}return p}
 function presentationPending(l){l=l.visualSource||l;return playback(l).cursor<l.events.length-1}

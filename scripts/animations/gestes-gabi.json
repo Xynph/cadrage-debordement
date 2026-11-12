@@ -1,0 +1,206 @@
+[
+ {
+  "nom": "repos",
+  "fbx": "generique/Standing Idle.fbx",
+  "fin": null
+ },
+ {
+  "nom": "repos_respire",
+  "fbx": "generique/Breathing Idle.fbx",
+  "fin": null
+ },
+ {
+  "nom": "appui",
+  "fbx": "packs/Gestures Pack Basic/weight shift.fbx",
+  "fin": null
+ },
+ {
+  "nom": "parle",
+  "fbx": "generique/Talking (2).fbx",
+  "fin": null
+ },
+ {
+  "nom": "parle_2",
+  "fbx": "generique/Talking (1).fbx",
+  "fin": null
+ },
+ {
+  "nom": "parle_3",
+  "fbx": "generique/Talking (3).fbx",
+  "fin": null
+ },
+ {
+  "nom": "parle_4",
+  "fbx": "generique/Talking (4).fbx",
+  "fin": null
+ },
+ {
+  "nom": "explique",
+  "fbx": "generique/Hands Forward Gesture.fbx",
+  "fin": null
+ },
+ {
+  "nom": "insiste",
+  "fbx": "generique/Arm Gesture.fbx",
+  "fin": null
+ },
+ {
+  "nom": "argumente",
+  "fbx": "generique/Standing Arguing.fbx",
+  "fin": 12
+ },
+ {
+  "nom": "reflechit",
+  "fbx": "generique/Thinking.fbx",
+  "fin": null
+ },
+ {
+  "nom": "approuve",
+  "fbx": "packs/Gestures Pack Basic/head nod yes.fbx",
+  "fin": null
+ },
+ {
+  "nom": "approuve_fort",
+  "fbx": "generique/Agreeing.fbx",
+  "fin": null
+ },
+ {
+  "nom": "refuse",
+  "fbx": "packs/Gestures Pack Basic/shaking head no.fbx",
+  "fin": null
+ },
+ {
+  "nom": "hausse",
+  "fbx": "generique/Shrugging.fbx",
+  "fin": null
+ },
+ {
+  "nom": "sceptique",
+  "fbx": "generique/Whatever Gesture.fbx",
+  "fin": null
+ },
+ {
+  "nom": "montre",
+  "fbx": "generique/Pointing Forward.fbx",
+  "fin": null
+ },
+ {
+  "nom": "salut",
+  "fbx": "generique/Waving.fbx",
+  "fin": null
+ },
+ {
+  "nom": "remercie",
+  "fbx": "generique/Thankful.fbx",
+  "fin": null
+ },
+ {
+  "nom": "decu",
+  "fbx": "generique/Disappointed.fbx",
+  "fin": null
+ },
+ {
+  "nom": "rit",
+  "fbx": "generique/Laughing.fbx",
+  "fin": null
+ },
+ {
+  "nom": "surpris",
+  "fbx": "generique/Surprised.fbx",
+  "fin": null
+ },
+ {
+  "nom": "content",
+  "fbx": "generique/Happy Idle.fbx",
+  "fin": null
+ },
+ {
+  "nom": "tablette",
+  "fbx": "generique/Standing Using Touchscreen Tablet.fbx",
+  "fin": 20
+ },
+ {
+  "nom": "regarde_bas",
+  "fbx": "generique/Looking Down.fbx",
+  "fin": null
+ },
+ {
+  "nom": "baille",
+  "fbx": "generique/Yawn.fbx",
+  "fin": null
+ },
+ {
+  "nom": "applaudit",
+  "fbx": "generique/Clapping.fbx",
+  "fin": null
+ },
+ {
+  "nom": "marche",
+  "fbx": "gabi/Walking.fbx",
+  "fin": null
+ },
+ {
+  "nom": "tourne_g",
+  "fbx": "gabi/Left Turn.fbx",
+  "fin": null
+ },
+ {
+  "nom": "tourne_d",
+  "fbx": "gabi/Right Turn.fbx",
+  "fin": null
+ },
+ {
+  "nom": "assis_debout",
+  "fbx": "gabi/Sit To Stand.fbx",
+  "fin": null,
+  "sur_place": false
+ },
+ {
+  "nom": "debout_assis",
+  "fbx": "gabi/Stand To Sit.fbx",
+  "fin": null,
+  "sur_place": false
+ },
+ {
+  "nom": "assis_parle",
+  "fbx": "gabi/Sitting Talking.fbx",
+  "fin": 15,
+  "sur_place": true
+ },
+ {
+  "nom": "assis_pouce",
+  "fbx": "gabi/Sitting Thumbs Up.fbx",
+  "fin": null,
+  "sur_place": true
+ },
+ {
+  "nom": "pouce",
+  "fbx": "gabi/Standing Thumbs Up.fbx",
+  "fin": null
+ },
+ {
+  "nom": "telephone",
+  "fbx": "gabi/Talking On A Cell Phone.fbx",
+  "fin": 20
+ },
+ {
+  "nom": "telephone_marche",
+  "fbx": "gabi/Talking Phone Pacing.fbx",
+  "fin": 20
+ },
+ {
+  "nom": "parle_5",
+  "fbx": "gabi/Talking.fbx",
+  "fin": null
+ },
+ {
+  "nom": "parle_7",
+  "fbx": "gabi/Talking (2).fbx",
+  "fin": null
+ },
+ {
+  "nom": "parle_8",
+  "fbx": "gabi/Talking (3).fbx",
+  "fin": null
+ }
+]

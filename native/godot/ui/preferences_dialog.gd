@@ -46,7 +46,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	motion.name = "PreferencesMotion"; motion.text = "Mouvement réduit · mode calme"; motion.custom_minimum_size.y = 36
 	comfort.add_child(motion)
 	comfort.add_child(C.wrap("Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles.",17,C.MUTED))
-	var camera := _choice(comfort,"Caméra préférée",["TV","Tactique","Action"],"PreferencesCamera")
+	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
 	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))

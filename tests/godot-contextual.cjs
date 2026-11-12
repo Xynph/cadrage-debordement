@@ -33,7 +33,10 @@ for (const [name,script] of [
       XDG_DATA_HOME:path.join(temporary,'data'),XDG_CONFIG_HOME:path.join(temporary,'config'),XDG_CACHE_HOME:path.join(temporary,'cache'),
       APPDATA:path.join(temporary,'appdata'),LOCALAPPDATA:path.join(temporary,'localappdata'),TEMP:path.join(temporary,'tmp'),TMP:path.join(temporary,'tmp'),
       CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_SEED:'13',
-      CD_GODOT_DATA_DIR:path.join(temporary,'profile'),CD_CONTEXTUAL_ARTIFACTS:artifacts},
+      CD_GODOT_DATA_DIR:path.join(temporary,'profile'),CD_CONTEXTUAL_ARTIFACTS:artifacts,
+      // Direct d'origine : le parcours « flow » avance le match par pas du direct et attend la causerie
+      // dès la fin de la période. Le parcours en temps forts est couvert par tests/godot-match-temps-forts.
+      ...(name==='flow'?{CD_MATCH_TEMPS_FORTS:'0'}:{})},
     encoding:'utf8',windowsHide:true,timeout:285000,maxBuffer:16*1024*1024
   });
   const output = (result.stdout||'')+(result.stderr||'');

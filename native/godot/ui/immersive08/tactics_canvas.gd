@@ -8,6 +8,7 @@ const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
+const PersonName = preload("res://ui/person_name.gd")
 
 class Pitch extends Control:
 	func _draw() -> void:
@@ -35,9 +36,7 @@ static func _player(app:Control,slot:int) -> Dictionary:
 
 static func _slot_name(player:Dictionary) -> String:
 	if player.is_empty(): return "À pourvoir"
-	var name := str(player.name)
-	var parts := name.split(" ")
-	return parts[0].left(1)+". "+" ".join(parts.slice(1)) if parts.size()>1 else name
+	return PersonName.initial_and_surname(str(player.name))
 
 static func build(app:Control) -> Control:
 	var page:=Control.new()

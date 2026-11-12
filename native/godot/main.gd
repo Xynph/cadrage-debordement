@@ -1027,6 +1027,8 @@ func _live_tick() -> void:
 	if waiting or closing: return
 	if _match_visible() and is_instance_valid(match_screen.stage) and match_screen.stage.is_presenting_extended_pass():
 		return
+	# Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : la régie de la vue demande elle-même chaque minute.
+	if is_instance_valid(match_screen) and match_screen.has_method("temps_forts_actifs") and match_screen.temps_forts_actifs(): return
 	var live := _live()
 	if not live.is_empty() and not live.get("paused",false) and not live.get("finished",false): _command("tick",{"steps":tick_steps})
 
