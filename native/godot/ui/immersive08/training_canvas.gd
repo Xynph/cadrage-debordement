@@ -298,6 +298,7 @@ func _vigilance() -> void:
 			var baseline := 26 if reasons.size() == 1 else 17 + line * 17
 			var reason := D.text(button, 452, baseline, reasons[line], 19, PALE_GOLD, 700, 183, HORIZONTAL_ALIGNMENT_RIGHT)
 			reason.name = "TrainingRiskReason%d" % line
+		_person_link(button,Rect2(47,0,214,38),"player",p,"TrainingRiskPlayer_"+str(p.get("id","")).validate_node_name())
 
 func _axes(tile: Panel) -> void:
 	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
@@ -315,6 +316,18 @@ func _axes(tile: Panel) -> void:
 		D.text(hit, 108, 65, _focus_name(p.get("development", {})), 23, C.MUTED, 500, 340)
 		_icon(hit, "check" if p.get("development", {}).get("available", false) else "clock", Rect2(485, 25, 28, 28), GREEN if p.get("development", {}).get("available", false) else PALE_GOLD)
 		D.line(hit, Vector2(1, 82), Vector2(530, 82), Color(C.LINE, .65))
+		var player_key := str(p.get("id","")).validate_node_name()
+		_person_link(hit,Rect2(3,3,81,73),"player",p,"TrainingAxisPlayerPortrait_"+player_key)
+		_person_link(hit,Rect2(103,0,375,42),"player",p,"TrainingAxisPlayerName_"+player_key)
+
+# Identity zones are reading actions. The remainder of each training card
+# keeps its existing adjustment callback, including the current session guard.
+func _person_link(parent: Control, rectangle: Rect2, kind: String, person: Dictionary, id: String) -> Button:
+	if person.is_empty(): return null
+	var person_id := str(person.get("id", ""))
+	var target := {"kind":kind,"id":person_id}
+	if person_id.is_empty() or not app.navigation_controller.entity_available(target): return null
+	return Fatigue.entity_profile_link(app,parent,rectangle,target,id,str(person.get("name","")))
 
 func _staff_cards(tile: Panel) -> void:
 	var labels := [["Préparateur", "Charge collective"], ["Adjoint", "Sélection des 23"], ["Cellule médicale", "Disponibilité du groupe"]]
@@ -332,6 +345,9 @@ func _staff_cards(tile: Panel) -> void:
 			var delegated: bool = app.model.get("decisions", {}).get("delegation", {}).get(key, false)
 			D.chip(tile, Rect2(width - 177, y + 7, 155, 36), "Délégué" if delegated else "À votre main", GREEN if delegated else C.IVORY)
 		D.line(tile, Vector2(17, y + 82), Vector2(width - 20, y + 82), Color(C.LINE, .65))
+		var person_key := str(tile.name)+"_"+str(person.get("id","")).validate_node_name()
+		_person_link(tile,Rect2(17,y+2,82,73),"staff",person,"TrainingStaffPortrait_"+person_key)
+		_person_link(tile,Rect2(121,y+3,width-306 if i < 2 else width-141,38),"staff",person,"TrainingStaffName_"+person_key)
 
 func _groups() -> void:
 	var section := D.panel(self, Rect2(4, 260, 1740, 950), "Plans de travail", "people", "", "TrainingGroupPlans")
@@ -373,8 +389,9 @@ func _individuals() -> void:
 		row.custom_minimum_size.y = C.px(32)
 		Fatigue.compact_button(row, 18)
 		list.add_child(row)
-		_portrait(row, p, Rect2(7, 2, 26, 28))
-		D.text(row, 63, 24, str(p.name), 20, C.IVORY, 700, 366)
+		var link := Fatigue.profile_link(app, row, Rect2(0, 0, 429, 32), p, "TrainingOpenPlayer_" + str(p.id).replace(":", "_"))
+		_portrait(link, p, Rect2(7, 2, 26, 28))
+		D.text(link, 63, 24, str(p.name), 20, C.IVORY, 700, 366)
 		D.text(row, 442, 24, str(p.pos), 18, C.MUTED, 500, 330)
 		D.text(row, 802, 24, Fatigue._number(p, "condition", " %"), 19, GREEN, 600, 160)
 		D.text(row, 993, 24, Fatigue._number(p, "physicalLoad", " / 100"), 19, PALE_GOLD if p in watched else C.IVORY, 600, 150)

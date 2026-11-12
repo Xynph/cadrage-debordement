@@ -1,0 +1,25 @@
+{"output":"/workspace/work/rival-comparison/work/management-rival-comparison.json","complete":false,"checks":509,"elapsedMs":121579,"checkpoints":3,"targets":7,"confirmedTransfers":12}
+/workspace/work/rival-comparison/tools/qa/management-rival-comparison.cjs:118
+ }catch(error){report.error={message:error.message,stack:error.stack};throw error;}
+                                                                      ^
+
+AssertionError [ERR_ASSERTION]: The bounded collection remains within two minutes
+    at check (/workspace/work/rival-comparison/tools/qa/management-rival-comparison.cjs:15:58)
+    at Object.send (/workspace/work/rival-comparison/tools/qa/management-rival-comparison.cjs:21:36)
+    at main (/workspace/work/rival-comparison/tools/qa/management-rival-comparison.cjs:95:16)
+    at Object.<anonymous> (/workspace/work/rival-comparison/tools/qa/management-rival-comparison.cjs:126:26)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

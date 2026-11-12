@@ -60,7 +60,6 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	dialog.title = "Offre à " + str(player.name)
 	dialog.dialog_text = ""
 	var content := C.v(10)
-	content.custom_minimum_size.x = 1460
 	content.set_meta("immersive_style_applied",true)
 	dialog.add_child(content)
 	var scroll := ScrollContainer.new()

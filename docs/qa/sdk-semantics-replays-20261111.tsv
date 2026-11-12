@@ -1,0 +1,8 @@
+suite	source_sha	code	execution_seconds	lock_wait_seconds	diagnostic_stop	limit_seconds	log
+godot-immersion-copy	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	0	2.285	172.836	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-godot-immersion-copy.log
+godot-regen-portraits	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	0	2.693	390.397	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-godot-regen-portraits.log
+godot-club-memory	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	0	23.23	365.172	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-godot-club-memory.log
+godot-squad-column-sort	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	0	21.242	268.009	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-godot-squad-column-sort.log
+godot-academy-portraits	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	1	28.06	30.361	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-godot-academy-portraits.log
+godot-portrait-continuity	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	1	39.122	40.522	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-godot-portrait-continuity.log
+deepen-youth-draft	96f537040bf9f2e37bf10b0a9b09518b732244a2 + test updates	1	150.481	142.037	False	180	/workspace/qa/sdk-semantics-updated/logs/updated-deepen-youth-draft.log

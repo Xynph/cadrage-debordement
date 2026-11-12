@@ -1,0 +1,18 @@
+{
+  "checks": 42,
+  "failures": [
+    "ID réel résolvable indépendamment de la garde obligatoire",
+    "Adaptateur session accepte l’ID réel après préparation",
+    "Adaptateur session manquant : le vrai ID doit sélectionner 2026-09-08"
+  ],
+  "product_sha": "c517b0643adf4ce8368caa76fce77608dd94dc77",
+  "test_sha": "11534446b659551b5b099b067b79937048361b34",
+  "display": "headless",
+  "speech": {
+    "id": 0,
+    "requested": 0,
+    "started": 0
+  },
+  "raw_report_sha256": "ed7d6bc2918d0df475c502ec9e7460f062159cc53f63e4fb709ce281857c0afb",
+  "extract_kind": "Top-level whitelist; no history snapshots."
+}

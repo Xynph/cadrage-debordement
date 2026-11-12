@@ -1,0 +1,35 @@
+{
+  "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+  "source_profile": "/tmp/cd-analysis-club-graphics-UK7pUD/PrototypeGodot",
+  "copied_profile": "/workspace/work/native-os-input/profile/PrototypeGodot",
+  "files": [
+    {
+      "name": "donnees-precedentes.json",
+      "sha256": "dc7f7603d528e03fc64e3d3d27cef810fbd114c7f4defe69f237950a16c2d00e",
+      "bytes": 5707962
+    },
+    {
+      "name": "donnees.json",
+      "sha256": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b",
+      "bytes": 5708097
+    },
+    {
+      "name": "guide.json",
+      "sha256": "20e0bbb5066230197f9ee8095ff922d1ffe39584b85dc1c77a814602f6656677",
+      "bytes": 196
+    }
+  ],
+  "runtime_lock_note": "profil.lock is a runtime artifact and was not copied. All save/guide files are exact copies; source files untouched.",
+  "source_code_sha256": {
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "93ff59c1b2056305e3526d1f732b47ae742d0d3a39bc6e2d1be17b61881e6241",
+    "native/godot/ui/immersive08/club_canvas.gd": "9c696238f2e64cf7d233cf0cceb2bf8d1c093adb568b719b8d55e1d2e15d6742",
+    "native/godot/ui/performance_analysis_view.gd": "f39ac81c6f5fb38e6b129521c14be76bd03f1d6f70de44d9d36678db93373891",
+    "native/godot/ui/immersive08/competition_canvas.gd": "7201a900e371955fdbce2f401c816533d7b69f348a7f0fce098b6ca0dc1f474b"
+  },
+  "probe_sha256": "f5b08cecb2f1092e6a9779f92bcd25046848f29a558628e9343a5ff7f8e2e8dd",
+  "oskeys_sha256": "18f26b67a933513d6218d0b96831165ec24c6a362f05e3fd8125e333a287b81e",
+  "execution_note": "Prepared only: no Godot, X11 input or capture executed by functional_qa.",
+  "root_instrumentation": "Observe root and modal Window.window_input as well as scene input; explicitly mute the copied career speech before any worker response. No input injected by probe.",
+  "harness_correction": "Compare exact numeric elements after numeric type and array size checks: Godot JSON arrays contain floats and array equality to an int literal array is false. No product or fixture changed."
+}

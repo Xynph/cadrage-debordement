@@ -8,23 +8,24 @@ func _initialize() -> void:
 	call_deferred("run")
 func check(value: bool, message: String) -> void:
 	checks += 1
+	if value and message.begins_with("Préparation explicite du rendez-vous : "):print("SDK_MEETING ",Time.get_ticks_msec()," ",message)
 	if not value: failures.append(message); printerr("FAIL: ", message)
 func settle() -> void:
 	for i in 8: await process_frame
 func command(id: String, payload: Dictionary = {}, target: String = "") -> void:
+	print("SDK_COMMAND ",Time.get_ticks_msec()," godot-guide-integration ",id)
+	var previous_week: int=app.model.get("meta",{}).get("week",-1)
 	app._command(id, payload, target)
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.waiting and app.bridge.last_response_ok, "Commande réelle " + id)
+	if id=="begin_match" and app.bridge.last_response_ok: await ContextualFlow.skip_talk(app,self,"pre",check)
+	if id=="finish_round" and app.bridge.last_response_ok: await ContextualFlow.finish_match_week(app,self,check,previous_week)
 	await settle()
 func clear_press() -> void:
-	if not app._press_required(): return
-	var press: Dictionary = app.model.clubLife.press
-	var conference: Dictionary = press.conference
-	var answers: Array[Dictionary] = []
-	for question in conference.questions:
-		answers.append({"questionId":question.id,"answerId":"r4"})
-	await command("press_conference", {"context":press.context,"invitationId":conference.invitationId,"answers":answers})
+	# Publishing answers completes the decision; Continue clears its mandatory
+	# appointment. Both public transitions are required before daily progression.
+	await ContextualFlow.settle_club_meetings(app, self, check)
 func prepare_match() -> void:
 	for day in 40:
 		await clear_press()
@@ -279,11 +280,13 @@ func run() -> void:
 		check(not app.coach.expanded, "Pas d'aide développée pendant le direct")
 		await command("pause", {"paused":true})
 		app.coach.open_help(); await settle()
-		check(app.coach.expanded, "Aide explicitement ouverte en pause")
+		check(not app.coach.is_visible_in_tree(), "Le direct contextuel garde Gabi masqué même en pause")
 		app.confirm("Vérification", "Dialogue réel de réception", func(): pass)
 		await settle()
 		check(not app.coach.expanded and not app.coach.speech.speaking, "Dialogue prioritaire et parole arrêtée")
 		app._clear_dialogs(); await settle()
+		await command("delegate"); await command("finish_round")
+		app._navigate("Bureau"); await settle()
 		app.coach.disable(); await settle()
 		check(not app.coach.visible, "Désactivation persistée sans erreur")
 		app.settings(); await settle()

@@ -1,0 +1,11 @@
+4: # GESTION_PROGRESS {"checks":0,"milliseconds":0,"stage":"startup.begin"}
+6: # GESTION_PROGRESS {"checks":1,"last_command":"snapshot","last_error":"","milliseconds":5802,"received":true,"route":"Accueil","stage":"startup.model","waiting":false}
+37: # SCRIPT ERROR: Invalid access to property or key 'page' on a base object of type 'Dictionary'.
+44: # GESTION_WRAPPER {"phase":"child-close","status":null,"signal":"SIGTERM","timed_out":false,"output_limit":false,"milliseconds":90857,"child_timeout_ms":150000,"error":null,"trace":"/tmp/cd-gestion-carnet-zAplmH/progress.jsonl"}
+49:   duration_ms: 90895.99017
+56:     GESTION_PROGRESS {"checks":0,"milliseconds":0,"stage":"startup.begin"}
+58:     GESTION_PROGRESS {"checks":1,"last_command":"snapshot","last_error":"","milliseconds":5802,"received":true,"route":"Accueil","stage":"startup.model","waiting":false}
+89:     SCRIPT ERROR: Invalid access to property or key 'page' on a base object of type 'Dictionary'.
+114: # pass 0
+115: # fail 1
+119: # duration_ms 90952.401086

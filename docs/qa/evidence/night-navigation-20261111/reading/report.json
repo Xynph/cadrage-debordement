@@ -1,0 +1,296 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/joueur-fiche-2560.png",
+      "height": 1440,
+      "route": "Effectif",
+      "sha256": "805e6c20c69616a72004ef5edc84e97694b60c2bb17e5d3c35525baf6a966de6",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/recrutement-cible-2560.png",
+      "height": 1440,
+      "route": "Recrutement",
+      "sha256": "45d59075ca00730f706824cbf0e8c6293e67b6e85e5d36deed82a26497c27fb8",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/staff-profil-2560.png",
+      "height": 1440,
+      "route": "Staff",
+      "sha256": "246458e1dde42c959fbb2ed3298656d175f91bf1cd51930553d21a6addb929dc",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/club-adverse-2560.png",
+      "height": 1440,
+      "route": "Staff",
+      "sha256": "2273407a8f2db1ee7b34670b825f7fb23a1dcab48631176bd7db4ad6d088ec45",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/fatigue-tranche-retour-2560.png",
+      "height": 1440,
+      "route": "Préparation",
+      "sha256": "144f7810180bb1aa3acf4ca3c0b1fe113020edce869bf469f1a5454e39fb893f",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/fiche-1280-720.png",
+      "height": 720,
+      "route": "Effectif",
+      "sha256": "4029e0f8a939c08738534bba7bac7fd5a075a0596929f9d582b9b91644c31c2b",
+      "width": 1280
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/fiche-1440-900.png",
+      "height": 900,
+      "route": "Effectif",
+      "sha256": "0e17c1485bcbaa7d6df18a951370fd99de1badf481f91b00b9124577069c7f10",
+      "width": 1440
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/fiche-1600-900.png",
+      "height": 900,
+      "route": "Effectif",
+      "sha256": "1aa9f6429586e64abcaf589aeb8d73774f27eb2b9142cc149d2afb0a5fe91873",
+      "width": 1600
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/fiche-1920-1080.png",
+      "height": 1080,
+      "route": "Effectif",
+      "sha256": "fdd6cffc42df27281d25fc325656395f1ac3189095e0ee9950d1769db9e3b8b7",
+      "width": 1920
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/reading/fiche-2560-1440.png",
+      "height": 1440,
+      "route": "Effectif",
+      "sha256": "45cce2d511a276f89d9f6a7ca2fbfc917f953db3a227e7116a3916adbc95b0e8",
+      "width": 2560
+    }
+  ],
+  "case": "reading",
+  "checks": 133,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Parcours joueurs staff clubs",
+      "link_commands": 0,
+      "profile_sha256_after": "7186913e9e4fc9ceb36c0bb3906052a3f1b5a29ddb6207b84f70d2bfff12b268",
+      "profile_sha256_before": "7186913e9e4fc9ceb36c0bb3906052a3f1b5a29ddb6207b84f70d2bfff12b268",
+      "saved_clock_after": 1794436588243.0,
+      "saved_clock_before": 1794436588243.0,
+      "saved_seed_after": 2552537110.0,
+      "saved_seed_before": 2552537110.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "activation": "Enter",
+      "control": "RosterMoreFilters",
+      "id": "",
+      "kind": "",
+      "route_before": "Effectif"
+    },
+    {
+      "activation": "Enter",
+      "control": "RosterReset",
+      "id": "",
+      "kind": "",
+      "route_before": "Effectif"
+    },
+    {
+      "activation": "Enter",
+      "control": "RosterMoreFilters",
+      "id": "",
+      "kind": "",
+      "route_before": "Effectif"
+    },
+    {
+      "activation": "Enter",
+      "control": "@Button@3513",
+      "id": "",
+      "kind": "",
+      "route_before": "Effectif"
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "activation": "mouse",
+      "control": "SquadOpenPlayer_lnr_10372",
+      "id": "lnr:10372",
+      "kind": "player",
+      "route_before": "Effectif"
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "activation": "Enter",
+      "control": "PlayerOriginNationLink",
+      "id": "FRA",
+      "kind": "nation",
+      "route_before": "Effectif"
+    },
+    {
+      "accepted": true,
+      "route_after": "Recrutement",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "small-1-0-0",
+        "kind": "market"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+        "kind": "staff"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": 16.0,
+        "kind": "club"
+      }
+    },
+    {
+      "activation": "Enter",
+      "control": "TrainingTab4",
+      "id": "",
+      "kind": "",
+      "route_before": "Préparation"
+    },
+    {
+      "activation": "Enter",
+      "control": "FatigueLoadBucket0",
+      "id": "",
+      "kind": "",
+      "route_before": "Préparation"
+    },
+    {
+      "activation": "mouse",
+      "control": "FatigueOpenPlayer_lnr_11291",
+      "id": "lnr:11291",
+      "kind": "player",
+      "route_before": "Préparation"
+    },
+    {
+      "activation": "Enter",
+      "control": "FatigueFilter4",
+      "id": "",
+      "kind": "",
+      "route_before": "Préparation"
+    },
+    {
+      "activation": "Enter",
+      "control": "TrainingTab2",
+      "id": "",
+      "kind": "",
+      "route_before": "Préparation"
+    },
+    {
+      "activation": "mouse",
+      "control": "TrainingOpenPlayer_lnr_10372",
+      "id": "lnr:10372",
+      "kind": "player",
+      "route_before": "Préparation"
+    },
+    {
+      "activation": "Enter",
+      "control": "TrainingIndividual_lnr_10372",
+      "id": "",
+      "kind": "",
+      "route_before": "Préparation"
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Effectif",
+      "selected_player": "lnr:10372",
+      "target": {
+        "id": "lnr:10372",
+        "kind": "player"
+      }
+    }
+  ]
+}

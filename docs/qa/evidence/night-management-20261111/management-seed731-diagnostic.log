@@ -1,0 +1,14 @@
+completed 1
+completed 2
+completed 3
+completed 4
+completed 5
+INVALID 5 [
+  'Choisissez 15 titulaires et 8 remplaçants.',
+  'Remplaçant 18 à compléter.'
+] coverage {
+  slots: [ 18 ],
+  places: 2,
+  weeklySalary: 2500,
+  totalWeeklySalary: 2500
+} profile /tmp/rg27-731-diagnostic-rM73su/PrototypeGodot/donnees.json

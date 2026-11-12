@@ -1,0 +1,173 @@
+{
+  "format": 1,
+  "product_sha": "b860cf9557d8b308b9eb700772eba8b23d49378c",
+  "test_sha": "b860cf9557d8b308b9eb700772eba8b23d49378c",
+  "checks": 146,
+  "failures": [],
+  "wrapper_exit_code": 0,
+  "subtest_ms": "52181.631349",
+  "tap_total_ms": "52234.463087",
+  "speech": {
+    "id": 0,
+    "requested": 0,
+    "started": 0
+  },
+  "scope": "Session published-day reading plus unapplied CalendarTemplate draft preserved by Back; SDK viewport events, not OS native.",
+  "draft_real_template_id": "standard",
+  "draft_real_fixture_id": "weekly:1:0:league:0:13",
+  "draft_application_command_sent": false,
+  "assertion_scope": "Native chooser.selected and metadata standard plus Apply enabled checked by test; report diagnostics record selected/expected template and stored UI draft entries. No invented paired sporting hashes.",
+  "resolutions_checked": [
+    [
+      1280,
+      720
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "capture_count": 1,
+  "raw_report_source": "/tmp/cd-session-links-gtaKUY/report.json",
+  "raw_report_bytes": 292606,
+  "raw_report_sha256": "8ea2af0407a5355968446f296f570e6951615ae24f4007128a2ab5274e765467",
+  "files": [
+    {
+      "path": "qualified/run.log",
+      "source_path": "/workspace/work/night-followup-receipts/session-draft-green-typed.log",
+      "bytes": 1369,
+      "sha256": "19a1f607299a66a8d4a21dacbbd88976efb4fd79c6fb063ba38c2e61ceb5bfef"
+    },
+    {
+      "path": "qualified/engine.log",
+      "source_path": "/tmp/cd-session-links-gtaKUY/engine.log",
+      "bytes": 830,
+      "sha256": "f439e8843f313e1c1255c5a6508200db3db929fb9b2efbcd486c308a3442f321"
+    },
+    {
+      "path": "qualified/provenance.json",
+      "source_path": "/tmp/cd-session-links-gtaKUY/provenance.json",
+      "bytes": 241,
+      "sha256": "3d0c62effc3833f0e43d1102eff91bbddb10d8064e1e6a3ae735001b8ebba7ee"
+    },
+    {
+      "path": "images/session-1440.png",
+      "source_path": "/tmp/cd-session-links-gtaKUY/session-1440.png",
+      "bytes": 508612,
+      "sha256": "f3ec95da2349036ef880f70509ab9ecea8a8f55fe827147b30cc9efe78d57347"
+    }
+  ],
+  "history": [
+    {
+      "product_sha": "96a978d5a37308b8e804a4280b0e7db050cdfced",
+      "test_sha": "96a978d5a37308b8e804a4280b0e7db050cdfced",
+      "checks": 143,
+      "failures": [
+        "Back conserve le brouillon exact de semaine type et Appliquer actif sans application"
+      ],
+      "qualified": false,
+      "subtest_ms": "22212.897035",
+      "tap_total_ms": "22287.859193",
+      "excerpt": {
+        "path": "history/red-draft-loss-143-1/excerpt.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-draft-red.log",
+        "raw_bytes": 2462,
+        "raw_sha256": "5551b47d86e3c60a2b273e95b63f756331159ce0ba8a897d4efca733f0eda85d",
+        "excerpt_sha256": "e9a6a175a30974dc78d15f52f8270bc77bad7c33378e5558ca3f94f99a5595b6",
+        "original_line_numbers": true
+      },
+      "report_raw_bytes": 330732,
+      "report_raw_sha256": "96a2edd99dce2d3eb6b78ab8aaf4eb5c66974181c3ebdd7f26faacd974bd71b5",
+      "images_published": false
+    },
+    {
+      "product_sha": "98c14027d025eb2fb3b6fbfedf21f3ef810392f2",
+      "test_sha": "98c14027d025eb2fb3b6fbfedf21f3ef810392f2",
+      "qualified": false,
+      "final_report": null,
+      "failure": "valid/selectable bool type inference parse errors at month_calendar.gd825/884; dependent compilation failed then child90s timeout.",
+      "subtest_ms": "90094.492153",
+      "tap_total_ms": "90155.510599",
+      "excerpt": {
+        "path": "history/typed-first-compile-timeout/excerpt.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-draft-green.log",
+        "raw_bytes": 4274,
+        "raw_sha256": "f7cbd6fc635bb3095454a9dd80c4aceaa90d21fdfcefe0a09879bcd0a076e13f",
+        "excerpt_sha256": "ed6591066276e30d5976982d6372f772d6100d539f8665d928d774aebcea0815",
+        "original_line_numbers": true
+      },
+      "engine_excerpt": {
+        "path": "history/typed-first-compile-timeout/engine-excerpt.log",
+        "source_path": "/tmp/cd-session-links-jbIjQJ/engine.log",
+        "raw_bytes": 2829,
+        "raw_sha256": "91e29707ca8901a8488448d0ca400cee2112bb7df125d8a4dcf050f2a355bb4f",
+        "excerpt_sha256": "fcb3eb303862209fef515f30bf98de865c9c390e94d62e1c16a9719502483789",
+        "original_line_numbers": true
+      },
+      "provenance": {
+        "path": "history/typed-first-compile-timeout/provenance.json",
+        "source_path": "/tmp/cd-session-links-jbIjQJ/provenance.json",
+        "bytes": 241,
+        "sha256": "939573ec810c3b70d8d456d27b83f90ce1830cedb7adb34a56bd4ec60ea637af"
+      },
+      "images_published": false
+    }
+  ],
+  "regressions": [
+    {
+      "suite": "calendar-agenda",
+      "source_sha": "b860cf9557d8b308b9eb700772eba8b23d49378c",
+      "source_attribution": "Root executed same b860 candidate; source file hashes captured separately.",
+      "checks": 61,
+      "failures": 0,
+      "wrapper_exit_code": 0,
+      "subtest_ms": "16395.220622",
+      "tap_total_ms": "16443.108809",
+      "log": {
+        "path": "regressions/calendar-agenda.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-draft-agenda.log",
+        "bytes": 546,
+        "sha256": "13211ccd91d4a5bcd41c6fb3ce60fc68eb3354b83ad37239ee2e9285ee2b0b20"
+      }
+    },
+    {
+      "suite": "navigation",
+      "source_sha": "b860cf9557d8b308b9eb700772eba8b23d49378c",
+      "source_attribution": "Root executed same b860 candidate; source file hashes captured separately.",
+      "checks": 156,
+      "failures": 0,
+      "wrapper_exit_code": 0,
+      "subtest_ms": "48575.619428",
+      "tap_total_ms": "48624.292127",
+      "log": {
+        "path": "regressions/navigation.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-draft-navigation.log",
+        "bytes": 574,
+        "sha256": "0a6929f46021561f08a7052569a5be767bdfdf8ee55af7d44af5fe188aeb8aca"
+      }
+    }
+  ],
+  "image": {
+    "path": "images/session-1440.png",
+    "width": 2560,
+    "height": 1440,
+    "sha256": "f3ec95da2349036ef880f70509ab9ecea8a8f55fe827147b30cc9efe78d57347",
+    "edited": false,
+    "classification": "Real published-day program before draft roundtrip; does not visually show restored chooser state."
+  },
+  "source_files_sha256": {
+    "tests/godot-calendar-session-links.cjs": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307",
+    "tests/godot-calendar-session-links.gd": "72bd37c4f43439787a60df32742b5696700f10f3f28fa1f8febf64db64431ad7",
+    "native/godot/ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "native/godot/ui/immersive08/calendar_agenda.gd": "a57aadbef62944faeffedf37b2dd84ab7c7b894a9c0e77ada9b328f1a8cc15d6",
+    "native/godot/ui/immersive08/month_calendar.gd": "cd3488546d14393145a0241a080428fd3d3c73539759df4ebaad902311187738",
+    "tests/godot-calendar-agenda.cjs": "4035f6e17a7edc15fb4ef85fbf62780b7346c1f2b84269538bdb681c3632104d",
+    "tests/godot-calendar-agenda.gd": "3d0de19f288b354a04639fea97ba479e4450b27d0494eb2ca960470b25f7fd56",
+    "tests/godot-navigation.cjs": "0ee71265f130fa9442a4ef66f31cd3e0e74c5c6874a5aac34845eba4c74a0cbf",
+    "tests/godot-navigation.gd": "191c8eb29be21f34f1ddeae79da55641e22098ab901533880a3fd14591ed45f3"
+  }
+}

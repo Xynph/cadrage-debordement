@@ -20,6 +20,14 @@ static func _crest(parent: Node, club: Dictionary, rectangle: Rect2) -> void:
 	parent.add_child(image)
 	D.place(image,rectangle)
 
+static func _label_reading(app: Control, parent: Node, label: Label, target: Dictionary, id: String, caption: String) -> void:
+	Office.reading_overlay(app, parent, Rect2(label.position / C.density, label.size / C.density), target, id, caption)
+
+static func _scheduled_reading(app: Control, parent: Node, fixture: Dictionary, opponent: Label, timing: Label) -> void:
+	var club := Office.fixture_opponent(app.model, fixture)
+	_label_reading(app, parent, opponent, Office.club_reading_target(app, club), "OfficeScheduledOpponent", opponent.text)
+	_label_reading(app, parent, timing, Office.date_reading_target(app, fixture), "OfficeScheduledDate", timing.text)
+
 static func build(app: Control) -> Control:
 	var page := Control.new()
 	page.name = "ImmersiveOffice"
@@ -63,14 +71,18 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
 			D.chip(card,Rect2(24,22,281,29),"SEMAINE EXEMPTE",C.GOLD)
-			D.text(card,27,121,Office.scheduled_opponent(app,upcoming),51,C.IVORY,800,645).name = "UpcomingOpponent"
-			D.text(card,27,183,"Prochain match · " + Office.scheduled_when(app,upcoming),27,C.IVORY,600,645).name = "UpcomingWhen"
+			var opponent := D.text(card,27,121,Office.scheduled_opponent(app,upcoming),51,C.IVORY,800,645)
+			opponent.name = "UpcomingOpponent"
+			var timing := D.text(card,27,183,"Prochain match · " + Office.scheduled_when(app,upcoming),27,C.IVORY,600,645)
+			timing.name = "UpcomingWhen"
+			_scheduled_reading(app,card,upcoming,opponent,timing)
 			var venue := Office.scheduled_venue(app,upcoming)
 			if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty() and not scheduled.is_empty():
 			D.text(card,27,45,"PROCHAINE RENCONTRE",22,C.GOLD,700,640)
-			D.text(card,27,115,Office.scheduled_opponent(app, scheduled),48,C.IVORY,800,645)
-			D.text(card,27,169,Office.scheduled_when(app, scheduled),27,C.IVORY,600,645)
+			var opponent := D.text(card,27,115,Office.scheduled_opponent(app, scheduled),48,C.IVORY,800,645)
+			var timing := D.text(card,27,169,Office.scheduled_when(app, scheduled),27,C.IVORY,600,645)
+			_scheduled_reading(app,card,scheduled,opponent,timing)
 			D.text(card,27,210,P.fixture_venue(scheduled),22,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
@@ -82,8 +94,11 @@ static func _fixture(card: Panel, app: Control) -> void:
 				D.text(card,27,121,"Préparation · " + World.name_for(app.model,"champ"),58,C.IVORY,800,920)
 				D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
 			else:
-				D.text(card,27,121,Office.scheduled_opponent(app,fixture),51,C.IVORY,800,645).name = "UpcomingOpponent"
-				D.text(card,27,183,Office.scheduled_when(app,fixture),27,C.IVORY,600,645).name = "UpcomingWhen"
+				var opponent := D.text(card,27,121,Office.scheduled_opponent(app,fixture),51,C.IVORY,800,645)
+				opponent.name = "UpcomingOpponent"
+				var timing := D.text(card,27,183,Office.scheduled_when(app,fixture),27,C.IVORY,600,645)
+				timing.name = "UpcomingWhen"
+				_scheduled_reading(app,card,fixture,opponent,timing)
 				var venue := Office.scheduled_venue(app,fixture)
 				if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 
@@ -103,10 +118,14 @@ static func _fixture(card: Panel, app: Control) -> void:
 	D.chip(card,Rect2(505,22,164,29),location,C.GOLD)
 	_crest(card,next.get("home",{}),Rect2(27,72,64,64))
 	_crest(card,next.get("away",{}),Rect2(27,151,64,64))
-	D.text(card,111,111,G.club_name(next.get("home",{})).to_upper(),39,C.IVORY,800,554)
+	Office.reading_overlay(app,card,Rect2(27,72,64,64),Office.club_reading_target(app,next.get("home",{})),"OfficeNextHomeClubCrest",G.club_name(next.get("home",{})))
+	Office.reading_overlay(app,card,Rect2(27,151,64,64),Office.club_reading_target(app,next.get("away",{})),"OfficeNextAwayClubCrest",G.club_name(next.get("away",{})))
+	var home_name := D.text(card,111,111,G.club_name(next.get("home",{})).to_upper(),39,C.IVORY,800,554)
+	_label_reading(app,card,home_name,Office.club_reading_target(app,next.get("home",{})),"OfficeNextHomeClubName",home_name.text)
 	D.line(card,Vector2(111,143),Vector2(669,143),Color(C.LINE,.60))
 	D.text(card,61,148,"VS",17,C.GOLD,700,44,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(card,111,189,G.club_name(next.get("away",{})).to_upper(),39,C.IVORY,800,554)
+	var away_name := D.text(card,111,189,G.club_name(next.get("away",{})).to_upper(),39,C.IVORY,800,554)
+	_label_reading(app,card,away_name,Office.club_reading_target(app,next.get("away",{})),"OfficeNextAwayClubName",away_name.text)
 	for side in ["home","away"]:
 		var team: Dictionary = next.get(side,{})
 		if not team.has("rank") or not team.has("points"): continue
@@ -119,7 +138,9 @@ static func _fixture(card: Panel, app: Control) -> void:
 	D.place(calendar,Rect2(29,227,25,25))
 	var date := P.fixture_date(next, true)
 	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
-	D.text(card,67,250,date+" · "+Office.fixture_competition(app.model,next),27,C.IVORY,600,601).name="OfficeFixtureDate"
+	var next_timing := D.text(card,67,250,date+" · "+Office.fixture_competition(app.model,next),27,C.IVORY,600,601)
+	next_timing.name="OfficeFixtureDate"
+	_label_reading(app,card,next_timing,Office.date_reading_target(app,next),"OfficeNextDate",next_timing.text)
 	var venue_name := P.fixture_venue(next,false)
 	if not venue_name.is_empty():
 		var home := C.icon("home",23,C.MUTED)
@@ -201,6 +222,7 @@ static func _group(card: Panel, app: Control) -> void:
 			if reason.is_empty(): continue
 			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,370)
 			example.tooltip_text = example.text
+			_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
 			break
 	else:
 		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,370)
@@ -298,11 +320,14 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void
 		period.name = "OfficeTimelineDate%d" % i
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): Office.describe_fixture(period, local_date)
+		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
+		_label_reading(app,card,period,Office.date_reading_target(app,fixture),"OfficeTimelineDateLink_"+fixture_key,period.text)
 		D.line(card,Vector2(x+14,118),Vector2(x+290,118),Office.UPCOMING_BORDER)
 		var crest := Office.opponent_crest(opponent,42)
 		crest.name += str(i)
 		card.add_child(crest)
 		D.place(crest,Rect2(x+16,122,42,42))
+		Office.reading_overlay(app,card,Rect2(x+16,122,42,42),Office.club_reading_target(app,opponent),"OfficeTimelineClubCrest_"+fixture_key,G.club_name(opponent))
 		var name := D.text(card,x+64,151,G.club_name(opponent),23,C.IVORY,600,170)
 		name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		name.max_lines_visible = 2
@@ -310,6 +335,7 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void
 		name.add_theme_constant_override("line_spacing",-C.px(2))
 		D.place(name,Rect2(x+64,119,170,50))
 		Office.describe_fixture(name, name.text + " · " + place)
+		_label_reading(app,card,name,Office.club_reading_target(app,opponent),"OfficeTimelineClubName_"+fixture_key,name.text)
 		var label := Office.short_fixture_label(app.model,fixture)
 		D.text(card,x+16,196,label+" · "+place,20,C.MUTED,500,272)
 		var venue := P.fixture_venue(fixture, false)

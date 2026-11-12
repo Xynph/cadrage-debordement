@@ -4,6 +4,8 @@ extends VBoxContainer
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Link = preload("res://ui/entity_link.gd")
+const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 const DAY_SECONDS := 86400
 const MONTHS := ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
@@ -40,6 +42,7 @@ var month := ""
 var selected := ""
 var filter := "all"
 var view_mode := "month"
+var selected_session := ""
 
 static func build(owner_app: Control, table_callback: Callable = Callable()) -> Control:
 	var view: VBoxContainer = load("res://ui/immersive08/month_calendar.gd").new()
@@ -83,6 +86,7 @@ func _setup(owner_app: Control, table_callback: Callable) -> void:
 		initial = remembered
 	month = initial.left(7)
 	selected = initial
+	selected_session = str(reading.get("selected_session", ""))
 	_refresh()
 	var focus_id := str(reading.get("focus",""))
 	if not focus_id.is_empty():
@@ -133,6 +137,7 @@ func _shift_month(amount: int) -> void:
 		number = 1
 	if year < 2 or year > 9998: return
 	month = "%04d-%02d" % [year,number]
+	_invalidate_session()
 	selected = today if today.begins_with(month) else month + "-01"
 	_refresh()
 	var target := find_child("MonthPrevious" if amount < 0 else "MonthNext", true, false) as Control
@@ -140,6 +145,7 @@ func _shift_month(amount: int) -> void:
 
 func _select(date: String) -> void:
 	if _date(date).is_empty(): return
+	if date != selected: _invalidate_session()
 	month = date.left(7)
 	selected = date
 	_refresh()
@@ -148,6 +154,7 @@ func _select(date: String) -> void:
 
 func _filter_by(value: String) -> void:
 	if value not in Agenda.FILTERS: return
+	if value != filter: _invalidate_session()
 	filter = value
 	_refresh()
 	var target := find_child("MonthFilter_" + value, true, false) as Control
@@ -163,8 +170,19 @@ func _view_as(value: String) -> void:
 func _remember_focus(id: String) -> void:
 	app.management_ui["calendar_reading"]["focus"] = id
 
+func _invalidate_session() -> void:
+	selected_session = ""
+	if app.management_ui.get("navigation_target", {}).get("kind", "") == "session":
+		app.management_ui.erase("navigation_target")
+
 func _refresh() -> void:
+	_template_draft_id()
+	if not selected_session.is_empty():
+		var valid := Competition.target_available(app, "session", selected_session) and filter in ["all", "training"]
+		valid = valid and sessions.any(func(session: Dictionary): return session.get("id") == selected_session and session.get("date") == selected)
+		if not valid: _invalidate_session()
 	app.management_ui["calendar_reading"] = {"today":today, "selected":selected, "filter":filter,"view":view_mode}
+	if not selected_session.is_empty(): app.management_ui.calendar_reading.selected_session = selected_session
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
@@ -200,13 +218,28 @@ func _refresh() -> void:
 	var body := C.content(left)
 	body.add_theme_constant_override("separation", 0)
 	_toolbar(body)
-	if view_mode == "week": _week_grid(body)
-	else: _grid(body)
-	_legend(body)
-	_context_panels(body)
-	if view_mode == "week": _week_sessions(body)
+	# The program may grow with published sessions. Keep its toolbar fixed and
+	# scroll the program, rather than extending the whole career workspace.
+	var program := _reading_scroll(body, "CalendarProgramScroll", 0)
+	if view_mode == "week": _week_grid(program)
+	else: _grid(program)
+	_legend(program)
+	_context_panels(program)
+	if view_mode == "week": _week_sessions(program)
 	_detail(workspace)
 	_undated_panel()
+
+func _reading_scroll(parent: Node, id: String, separation: int = 8) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = id
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	C.fill(scroll, true)
+	parent.add_child(scroll)
+	var body := C.v(separation)
+	C.fill(body)
+	scroll.add_child(body)
+	return body
 
 static func _plural(count: int, singular: String, plural: String) -> String:
 	return "%d %s" % [count, singular if count == 1 else plural]
@@ -496,8 +529,8 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
 	var label := str(session.get("label","Entraînement"))
-	var caption := C.label(label, 18, C.MUTED if past else Color("d8eee7"), true, 700)
-	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var caption := _session_caption(session, "CalendarSessionDetail_" if expanded else "CalendarSessionGridLink_", label, C.MUTED if past else Color("d8eee7"), 700)
+	caption.set("text_overrun_behavior", TextServer.OVERRUN_TRIM_ELLIPSIS)
 	text.add_child(caption)
 	var forwards := _caption(session.get("forwards"))
 	var backs := _caption(session.get("backs"))
@@ -515,6 +548,30 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(clock)
 	return panel
+
+func _session_caption(session: Dictionary, prefix: String, caption: String, color: Color, weight: int) -> Control:
+	if caption.strip_edges().is_empty(): caption = "Entraînement"
+	var id: Variant = session.get("id")
+	if not Competition.target_available(app, "session", id): return C.label(caption, 18, color, true, weight)
+	var link := Button.new()
+	link.name = prefix + str(id).sha256_text()
+	link.flat = true
+	link.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	# Global layout fitting can slightly shrink local pixels; keep the physical
+	# target above 18 px after that fit and integer minimum-size rounding.
+	link.custom_minimum_size.y = 19
+	link.add_theme_font_override("font", C.font(weight))
+	link.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+	for state_name in ["normal", "hover", "pressed", "focus"]:
+		link.add_theme_color_override("font_color" if state_name == "normal" else "font_" + state_name + "_color", color)
+	for state_name in ["normal", "hover", "pressed", "disabled"]:
+		link.add_theme_stylebox_override(state_name, StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.MINT, 2, 0))
+	link.set_meta("immersive_style_applied", true)
+	link.text = caption
+	Link.bind(link, app, {"kind":"session", "id":id}, caption)
+	link.focus_entered.connect(_remember_focus.bind(str(link.name)))
+	return link
 
 static func _caption(value: Variant) -> String:
 	return value if value is String else ""
@@ -644,8 +701,8 @@ func _week_sessions(parent: Node) -> void:
 		body.add_child(line)
 		var fields := [[str(session.date).right(2)+"/"+str(session.date).substr(5,2),.6],[str(session.get("label","Entraînement")),1.4],[str(session.get("forwards","—")),1.0],[str(session.get("backs","—")),1.0]]
 		for index in fields.size():
-			var label := C.label(fields[index][0],18,C.GOLD if index == 0 else C.IVORY)
-			label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			var label := _session_caption(session, "CalendarWeekSessionLink_", fields[index][0], C.IVORY, 600) if index == 1 else C.label(fields[index][0],18,C.GOLD if index == 0 else C.IVORY)
+			label.set("text_overrun_behavior", TextServer.OVERRUN_TRIM_ELLIPSIS)
 			label.tooltip_text = str(fields[index][0])
 			line.add_child(C.fill(label,false,fields[index][1]))
 	body.add_child(C.wrap("Les tirets signalent des ateliers non précisés dans la séance publiée. Ce contexte reste visible quel que soit le filtre de la grille.",16,C.FAINT))
@@ -660,6 +717,7 @@ func _detail(parent: Node) -> void:
 	body.add_child(C.label(heading,20,C.MINT if selected == today else C.IVORY,true,700))
 	var title := "Aujourd’hui · " + _display_date(selected) if selected == today else _display_date(selected)
 	body.add_child(C.wrap(title,24,C.IVORY,true,700))
+	body = _reading_scroll(body, "CalendarDayDetailScroll")
 	if selected != today and not today.is_empty() and selected > today and not next_fixture.is_empty() and selected < next_fixture.date:
 		var remaining := _days_before(selected,next_fixture.date)
 		if remaining <= 7:
@@ -704,6 +762,20 @@ func _open_preparation(fixture: Dictionary) -> void:
 	_remember_focus("CalendarOpenFixture_"+str(fixture.get("id","")).validate_node_name())
 	app._navigate("Préparation")
 
+func _club_badge(club: Dictionary, id: String) -> Control:
+	var crest := G.crest(club,C.px(50))
+	if not Competition.target_available(app,"club",club.get("id","")): return crest
+	var link := Button.new()
+	link.name = id
+	link.custom_minimum_size = Vector2(C.px(50),C.px(50))
+	link.flat = true
+	link.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+	link.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,3,0))
+	Link.bind(link,app,{"kind":"club","id":str(club.id)},"Club · " + G.club_name(club))
+	link.add_child(crest)
+	crest.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return link
+
 func _fixture_detail(fixture: Dictionary) -> PanelContainer:
 	var panel := C.card()
 	panel.add_theme_stylebox_override("panel",C.box(Color("25372f"), Color("89744f"), 7, 10))
@@ -711,11 +783,18 @@ func _fixture_detail(fixture: Dictionary) -> PanelContainer:
 	var opponent := _opponent(fixture)
 	var matchup := C.h(10)
 	body.add_child(matchup)
-	matchup.add_child(G.crest(app.model.club,C.px(50)))
+	matchup.add_child(_club_badge(app.model.club,"CalendarOwnClubBadge"))
 	var points := _score(fixture)
-	matchup.add_child(C.label(points if not points.is_empty() else "VS",24,C.GOLD,true,700))
-	matchup.add_child(G.crest(opponent,C.px(50)))
-	body.add_child(C.wrap(G.club_name(opponent),24,C.IVORY,true,700))
+	if not points.is_empty() and Competition.target_available(app,"fixture",fixture.get("id","")):
+		matchup.add_child(Link.button(app,points,{"kind":"fixture","id":str(fixture.id)},"CalendarFixtureScore_"+str(fixture.id).validate_node_name()))
+	else: matchup.add_child(C.label(points if not points.is_empty() else "VS",24,C.GOLD,true,700))
+	matchup.add_child(_club_badge(opponent,"CalendarOpponentBadge_"+str(fixture.get("id","")).validate_node_name()))
+	if Competition.target_available(app,"club",opponent.get("id","")):
+		var opponent_link := Link.button(app,G.club_name(opponent),{"kind":"club","id":str(opponent.id)},"CalendarClub_"+str(fixture.get("id","")).validate_node_name())
+		opponent_link.clip_text = true
+		opponent_link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.add_child(opponent_link)
+	else: body.add_child(C.wrap(G.club_name(opponent),24,C.IVORY,true,700))
 	var place := P.fixture_location_kind(fixture, _club_id())
 	var metadata := PackedStringArray()
 	if PLACES.has(place): metadata.append(PLACES[place])
@@ -741,6 +820,22 @@ func _preparation(body: VBoxContainer) -> void:
 	for session: Dictionary in related:
 		var label := "%s/%s   %s" % [session.date.right(2),session.date.substr(5,2),session.get("label","Entraînement")]
 		body.add_child(C.wrap(label,18,C.MUTED))
+
+func _template_draft_id() -> String:
+	var draft: Variant = app.management_ui.get("calendar_template_draft")
+	if draft == null: return ""
+	var valid: bool = draft is Dictionary and not next_fixture.is_empty() and app._live().is_empty()
+	var fixture_id: Variant = next_fixture.get("id")
+	var template_id: Variant = draft.get("template") if draft is Dictionary else null
+	valid = valid and fixture_id is String and not fixture_id.is_empty() and draft.get("fixture") == fixture_id
+	valid = valid and template_id is String and not template_id.is_empty()
+	if valid:
+		var matches: Array = planning.get("templates", []).filter(func(template: Dictionary): return template.get("id") == template_id)
+		valid = matches.size() == 1 and planning.get("appliedTemplates", {}).get(fixture_id) != template_id
+	if not valid:
+		app.management_ui.erase("calendar_template_draft")
+		return ""
+	return template_id
 
 func _templates(body: VBoxContainer) -> void:
 	var templates: Array = planning.get("templates", [])
@@ -775,12 +870,25 @@ func _templates(body: VBoxContainer) -> void:
 			chooser.set_item_disabled(chooser.item_count-1, true)
 	body.add_child(chooser)
 	chooser.select(0)
+	var draft_id := _template_draft_id()
+	if not draft_id.is_empty():
+		for index in range(1, chooser.item_count):
+			if chooser.get_item_metadata(index) == draft_id and not chooser.is_item_disabled(index):
+				chooser.select(index)
+				break
 	var apply := _action("Appliquer au prochain match", func():
 		if chooser.selected > 0:
 			app._command("calendar_template", {"fixtureId":fixture_id,"template":chooser.get_item_metadata(chooser.selected)})
 	, "CalendarApplyTemplate", "Choisissez un modèle de semaine avant de l’appliquer.")
-	apply.disabled = true
-	chooser.item_selected.connect(func(index: int): apply.disabled = index < 1)
+	apply.disabled = chooser.selected < 1 or chooser.is_item_disabled(chooser.selected)
+	chooser.item_selected.connect(func(index: int):
+		var selected_id: Variant = chooser.get_item_metadata(index)
+		var selectable: bool = index > 0 and not chooser.is_item_disabled(index) and selected_id is String and not selected_id.is_empty()
+		apply.disabled = not selectable
+		if selectable:
+			app.management_ui.calendar_template_draft = {"fixture":fixture_id, "template":selected_id}
+		else: app.management_ui.erase("calendar_template_draft")
+	)
 	body.add_child(apply)
 
 func _undated_panel() -> void:

@@ -1,0 +1,428 @@
+{
+  "schema": 1,
+  "kind": "composite-targeted-receipt",
+  "completeUniqueCases": 9,
+  "confirmedTransfers": 18,
+  "rivalOfferOccurrences": 45,
+  "uniqueRivalClubs": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    10,
+    11
+  ],
+  "publishedNeedValues": [
+    1,
+    2,
+    3,
+    5
+  ],
+  "publicReactionStylesAvailable": 0,
+  "provenance": [
+    {
+      "file": "initial-bounded.json",
+      "sourceSha": "8c2f8d157d48c95ba6b675fc462615b0dcb6655e",
+      "scriptSha256": "ef79a600897cce46e72dfae99d2b6ed33764cc819b65417cf6b81b748414c600",
+      "complete": false,
+      "checksObserved": 509,
+      "elapsedMs": 121579,
+      "reusedSeeds": [
+        427,
+        731
+      ],
+      "reasonIncomplete": "The bounded collection remains within two minutes",
+      "runnerCommit": "8d709cda361296e0cc4f4c5c0c7330e492a73659"
+    },
+    {
+      "file": "checkpoint-1299.json",
+      "sourceSha": "8d709cda361296e0cc4f4c5c0c7330e492a73659",
+      "scriptSha256": "5d7eac4ab0e585cfe899f4d154eceb6b4f4a85a5459855fc10cdb8703a0e2744",
+      "complete": true,
+      "checksObserved": 206,
+      "elapsedMs": 54240,
+      "reusedSeeds": [
+        1299
+      ],
+      "runnerCommit": "ef11379192ec7c29775c85b61f4ef20f8d2f8985"
+    }
+  ],
+  "resumeCheckpointIdentical": true,
+  "sourceFilesIdentical": true,
+  "sourceFiles": {
+    "native/engine/interclub-market.cjs": "b4e5a14d124ac00eebcd34ef248a114feff93693c2a0d37e32379080b1c504ac",
+    "native/engine/model.cjs": "f3d972a8e0b1d41146cee49aca0fc06f33184f43171a831c928b72c56d3cf907",
+    "native/engine/club-world.cjs": "22da2d5d576d082ea4dc7dff829f4875321f45022e5c1829c59cfd15d226b468",
+    "dist/ai-roster-cycle.js": "56f6aee09b7c022e5f6feaf82445da6a0517915134a822205adee9c911322cc2",
+    "tools/qa/management-rival-observation.cjs": "82c151499f9345a0bfe3fa300d4c6b8d1c6f16e456f60a595b281863caf90e2a"
+  },
+  "checkpoints": [
+    {
+      "seed": 427,
+      "humanClub": 13,
+      "profileSha256": "45d6d09ed1a591c95e8c1446e346e8296347073e9a7dedb0c5a5700822692684",
+      "rng": 3668155195,
+      "clock": 1794434400000,
+      "families": [
+        2,
+        6,
+        4
+      ]
+    },
+    {
+      "seed": 731,
+      "humanClub": 6,
+      "profileSha256": "e0d03f8dbd350419c33f94ac05a2b3312877cbe09ab7d3d54736a56ff8dc7e43",
+      "rng": 3369175147,
+      "clock": 1794434400000,
+      "families": [
+        2,
+        6,
+        4
+      ]
+    },
+    {
+      "seed": 1299,
+      "humanClub": 0,
+      "profileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+      "rng": 2810554531,
+      "clock": 1794434400000,
+      "families": [
+        2,
+        6,
+        4
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "seed": 427,
+      "humanClub": 13,
+      "playerId": "p10-4-1794434400000",
+      "position": "Deuxième ligne",
+      "family": 2,
+      "askingFee": 80000,
+      "askingSalary": 5700,
+      "offeringClubs": 6,
+      "rivalOffers": 5,
+      "needValues": [
+        1,
+        2
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 0,
+          "fee": 87000,
+          "salary": 6000,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 13,
+          "fee": 88000,
+          "salary": 6100,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 427,
+      "humanClub": 13,
+      "playerId": "p11-13-1794434400000",
+      "position": "Ailier",
+      "family": 6,
+      "askingFee": 70000,
+      "askingSalary": 4800,
+      "offeringClubs": 5,
+      "rivalOffers": 4,
+      "needValues": [
+        1,
+        2
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 0,
+          "fee": 76000,
+          "salary": 5100,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 13,
+          "fee": 77000,
+          "salary": 5200,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 427,
+      "humanClub": 13,
+      "playerId": "p9-8-1794434400000",
+      "position": "Demi de mêlée",
+      "family": 4,
+      "askingFee": 80000,
+      "askingSalary": 5700,
+      "offeringClubs": 8,
+      "rivalOffers": 7,
+      "needValues": [
+        1,
+        2,
+        3
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 3,
+          "fee": 90000,
+          "salary": 6200,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 13,
+          "fee": 91000,
+          "salary": 6300,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 731,
+      "humanClub": 6,
+      "playerId": "p8-4-1794434400000",
+      "position": "Deuxième ligne",
+      "family": 2,
+      "askingFee": 80000,
+      "askingSalary": 5200,
+      "offeringClubs": 9,
+      "rivalOffers": 8,
+      "needValues": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 4,
+          "fee": 96000,
+          "salary": 5900,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 6,
+          "fee": 97000,
+          "salary": 6000,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 731,
+      "humanClub": 6,
+      "playerId": "p3-13-1794434400000",
+      "position": "Ailier",
+      "family": 6,
+      "askingFee": 80000,
+      "askingSalary": 5200,
+      "offeringClubs": 6,
+      "rivalOffers": 5,
+      "needValues": [
+        1,
+        2
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 0,
+          "fee": 87000,
+          "salary": 5500,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 6,
+          "fee": 88000,
+          "salary": 5600,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 731,
+      "humanClub": 6,
+      "playerId": "p3-8-1794434400000",
+      "position": "Demi de mêlée",
+      "family": 4,
+      "askingFee": 70000,
+      "askingSalary": 4800,
+      "offeringClubs": 8,
+      "rivalOffers": 7,
+      "needValues": [
+        1,
+        2
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 4,
+          "fee": 76000,
+          "salary": 5100,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 6,
+          "fee": 77000,
+          "salary": 5200,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 1299,
+      "humanClub": 0,
+      "playerId": "p12-4-1794434400000",
+      "position": "Deuxième ligne",
+      "family": 2,
+      "askingFee": 70000,
+      "askingSalary": 4800,
+      "offeringClubs": 5,
+      "rivalOffers": 4,
+      "needValues": [
+        2,
+        3
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 10,
+          "fee": 79000,
+          "salary": 5200,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 0,
+          "fee": 80000,
+          "salary": 5300,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 1299,
+      "humanClub": 0,
+      "playerId": "p5-10-1794434400000",
+      "position": "Ailier",
+      "family": 6,
+      "askingFee": 80000,
+      "askingSalary": 5200,
+      "offeringClubs": 3,
+      "rivalOffers": 2,
+      "needValues": [
+        1,
+        2
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 8,
+          "fee": 87000,
+          "salary": 5500,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 0,
+          "fee": 88000,
+          "salary": 5600,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    },
+    {
+      "seed": 1299,
+      "humanClub": 0,
+      "playerId": "p6-8-1794434400000",
+      "position": "Demi de mêlée",
+      "family": 4,
+      "askingFee": 70000,
+      "askingSalary": 4800,
+      "offeringClubs": 4,
+      "rivalOffers": 3,
+      "needValues": [
+        1,
+        2
+      ],
+      "overBudgetHumanRefused": true,
+      "rivalOffersUnaffectedByHumanBudgetControl": true,
+      "confirmed": [
+        {
+          "policy": "asking-price",
+          "buyerId": 8,
+          "fee": 76000,
+          "salary": 5100,
+          "humanWon": false,
+          "persisted": true
+        },
+        {
+          "policy": "public-overbid",
+          "buyerId": 0,
+          "fee": 77000,
+          "salary": 5200,
+          "humanWon": true,
+          "persisted": true
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Initial complete-batch attempt stopped at its own two-minute budget: no single all-green global run is claimed.",
+    "No public full profile or sporting state; hashes and public quote/transfer projections only.",
+    "Non-offering clubs have no projected refusal reason.",
+    "Coach reaction personality is not a tactical identity.",
+    "Autonomous recruitment windows were not executed by this runner."
+  ]
+}

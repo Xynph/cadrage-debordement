@@ -7,6 +7,8 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/management_state.gd")
 const Press = preload("res://ui/press_view.gd")
+const Link = preload("res://ui/entity_link.gd")
+const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Reading = preload("res://ui/immersive08/reception_reading.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
@@ -305,7 +307,19 @@ static func _context(card: Panel, app: Control, state: Dictionary, message: Dict
 	var panel := D.panel(card,Rect2(26,top,1112,height),"","","","InboxContext")
 	D.text(panel,18,32,"EN CONTEXTE",22,C.GOLD,700,1060)
 	var next: Variant = app.model.get("next")
-	if next is Dictionary and not next.is_empty():
+	var notice: Dictionary = message.get("calendar_notice",{})
+	if not notice.is_empty():
+		D.text(panel,18,68,"Rencontre reprogrammée · " + str(notice.get("opponent","")),23,C.IVORY,700,850)
+		D.text(panel,18,97,P.fixture_date({"date":notice.get("toDate")}),18,C.MUTED,500,850)
+		var target := {"kind":"fixture","id":str(notice.get("fixtureId",""))}
+		var caption := "Rencontre"
+		if not Competition.target_available(app,"fixture",target.id):
+			target = {"kind":"date","id":str(notice.get("toDate",""))}
+			caption = "Calendrier"
+		if Competition.target_available(app,str(target.kind),target.id):
+			var link := Link.button(app,caption,target,"InboxContextFixture")
+			panel.add_child(link); D.place(link,Rect2(910,53,183,34))
+	elif next is Dictionary and not next.is_empty():
 		D.text(panel,18,68,next.get("label","Prochaine rencontre"),23,C.IVORY,700,850)
 		D.text(panel,18,97,P.fixture_date(next),18,C.MUTED,500,850)
 		D.button(panel,Rect2(910,53,183,34),"Préparation",_open_related.bind(app,message,Callable(app,"_navigate").bind("Préparation")),false,"tactic",false,app.accent,"InboxContextPreparation")
@@ -366,15 +380,7 @@ static func _context(card: Panel, app: Control, state: Dictionary, message: Dict
 		if row_height>50: D.text(button,12,45,item.text,17,C.MUTED,500,1050)
 
 static func _open_current_player(app: Control, player_id: String) -> void:
-	if not app.model.get("squad", []).any(func(player: Dictionary): return str(player.id)==player_id): return
-	U.remember(app)
-	app.management_ui.roster = U.defaults()
-	app.roster_filter = "Tous"
-	app.roster_sort = "Poste"
-	app.selected_player = player_id
-	app.management_ui.profile_scroll = 0
-	app.set_meta("immersive08_full_player",true)
-	app._navigate("Effectif",false,true)
+	app.navigation_controller.open_entity({"kind":"player","id":player_id,"section":"contract"})
 
 static func _list(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
 	D.text(card,25,43,"Messages (%d)" % messages.size(),28,C.IVORY,700,390)

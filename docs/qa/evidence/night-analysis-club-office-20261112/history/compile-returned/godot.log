@@ -1,0 +1,18 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "returned" variable because the value doesn't have a set type.
+          at: GDScript::reload (/workspace/work/night-common/tests/helpers/office-reading-cases.gd:21)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:0)
+ERROR: Failed to load script "/workspace/work/night-common/tests/godot-analysis-club-graphics.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Invalid call. Nonexistent function 'run' in base 'GDScript'.
+          at: run (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:175)
+          GDScript backtrace (most recent call first):
+              [0] run (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:175)
+              [1] key (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:35)
+              [2] settle (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:21)

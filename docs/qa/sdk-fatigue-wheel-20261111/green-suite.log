@@ -1,0 +1,25 @@
+SDK_RUNTIME_LOG: /tmp/oval-fatigue-reception-kip9hA/engine.log
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SDK_WHEEL_EDGE {"direction":"up","header_after":614.0,"header_before":614.0,"inner_after":0,"inner_before":0,"inner_limit":563,"list":"FatigueScroll","outer_after":16,"outer_before":16,"panel_after":519.0,"panel_before":519.0}
+SDK_WHEEL_EDGE {"direction":"down","header_after":630.0,"header_before":630.0,"inner_after":563,"inner_before":563,"inner_limit":563,"list":"FatigueScroll","outer_after":0,"outer_before":0,"panel_after":535.0,"panel_before":535.0}
+SDK_WHEEL_EDGE {"direction":"up","header_after":450.0,"header_before":450.0,"inner_after":0,"inner_before":0,"inner_limit":576,"list":"TrainingIndividualsScroll","outer_after":16,"outer_before":16,"panel_after":388.0,"panel_before":388.0}
+SDK_WHEEL_EDGE {"direction":"down","header_after":466.0,"header_before":466.0,"inner_after":576,"inner_before":576,"inner_limit":576,"list":"TrainingIndividualsScroll","outer_after":0,"outer_before":0,"panel_after":404.0,"panel_before":404.0}
+FATIGUE : 604 contrôles ; 0 échecs
+Réception fatigue : /tmp/oval-fatigue-reception-kip9hA
+TAP version 13
+# Subtest: Fatigue : vrais identifiants, seuils communs, filtres et charge confirmée sans séance implicite
+ok 1 - Fatigue : vrais identifiants, seuils communs, filtres et charge confirmée sans séance implicite
+  ---
+  duration_ms: 53165.427825
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53180.716413

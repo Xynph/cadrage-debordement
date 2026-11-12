@@ -1,0 +1,36 @@
+{
+  "suite": "godot-guide-layout",
+  "case": "layout",
+  "mode": "stretch",
+  "code": 0,
+  "nodeSeconds": 44.283,
+  "lockWaitSeconds": 0.0,
+  "stopped": "",
+  "ci180Qualified": true,
+  "log": "/workspace/qa/sdk-preloads-96/final/godot-guide-layout__layout-stretch__layout-green-d83-r3.log",
+  "runtimeLogs": [
+    "/workspace/qa/sdk-preloads-96/fixtures/cd-guide-layout-stretch-pDc8hd/godot-engine.log"
+  ],
+  "productionBase": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "productionOverlay": "d83a81747416080abd7be49ef4472c060cacd879",
+  "productionOverlaySha256": {
+    "native/godot/ui/contextual/director.gd": "cda6f3b75e6b57cf327b05b25e67b50d5bf9901107be74d630287d8f523b63c3",
+    "native/godot/ui/contract_negotiation.gd": "369f78850c2111f28a33ebcb9aa1f85378965a84aa02dc133a4124d2e5880035",
+    "native/godot/ui/immersive08/dialogs.gd": "ef61b2b005bc0435af1300445de57640b07a0c66c9734e915f0d72c131e88f15",
+    "native/godot/ui/immersive08/month_calendar.gd": "dd56d22c28a067c2131fed78f9652ae46486a7a7c919025c95ceeebdcc9d2ce9",
+    "native/godot/ui/immersive08/office.gd": "c0e0d9820623472108c3a398444b3f6755e5804a724df3b3a1b19dabfb81d88f",
+    "native/godot/ui/profile_safety_view.gd": "ecda9155be9105c8106b7b55e9a7b2e41f29981cf8b3ad3ef1870f40de95f232"
+  },
+  "silenceAssertion": "voice_requests.is_empty() and guide.speech.muted and guide.speech.player == null",
+  "checks": 256,
+  "failures": [],
+  "gdSha256": "54333cdb925ee43aa6778c6feaf76e52ec899705a7a67fc79cafaa1150caf948",
+  "cjsSha256": "c0254d0242734054186f6035545d2ebd2ff2fa547a5a4e2a2020e7bbdb380b4f",
+  "helperSha256": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d",
+  "env": {
+    "DISPLAY": ":102",
+    "CD_GUIDE_GRAPHICS": "1",
+    "CD_GUIDE_LAYOUT_CASE": "layout",
+    "CD_GUIDE_LAYOUT_MODE": "stretch"
+  }
+}

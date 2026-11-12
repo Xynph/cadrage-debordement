@@ -1,0 +1,134 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-followup-receipts/silent-core/guards/navigation-refusee-match-2560.png",
+      "height": 1440,
+      "route": "Match",
+      "sha256": "e7e5bf508d08a36797f01033755104b74fe62f1b8384bd55383e9bac9ab0f9a6",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-followup-receipts/silent-core/guards/rencontre-historique-2560.png",
+      "height": 1440,
+      "route": "Réception",
+      "sha256": "554324e1488714e94682fda3c83662919663f606764c44744f7ab69cd183702d",
+      "width": 2560
+    }
+  ],
+  "case": "guards",
+  "checks": 103,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Rendez-vous obligatoire",
+      "link_commands": 0,
+      "profile_sha256_after": "a236f2af67aef14733888495fd0fec108388cf916a10c9836afe96d6bb347879",
+      "profile_sha256_before": "a236f2af67aef14733888495fd0fec108388cf916a10c9836afe96d6bb347879",
+      "saved_clock_after": 1794448009641.0,
+      "saved_clock_before": 1794448009641.0,
+      "saved_seed_after": 2615439951.0,
+      "saved_seed_before": 2615439951.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Causerie obligatoire",
+      "link_commands": 0,
+      "profile_sha256_after": "912619fd6cc734b074f7cc6e92cfa0e0cd35ea0bc9ad1696bf9cf086d92ff5cd",
+      "profile_sha256_before": "912619fd6cc734b074f7cc6e92cfa0e0cd35ea0bc9ad1696bf9cf086d92ff5cd",
+      "saved_clock_after": 1794448045492.0,
+      "saved_clock_before": 1794448045492.0,
+      "saved_seed_after": 4051526582.0,
+      "saved_seed_before": 4051526582.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Match immersif",
+      "link_commands": 0,
+      "profile_sha256_after": "2c5b41b0170c6f499586357545e7ba0ce46c00b3e0680ad2c7161af87d3ce4a7",
+      "profile_sha256_before": "2c5b41b0170c6f499586357545e7ba0ce46c00b3e0680ad2c7161af87d3ce4a7",
+      "saved_clock_after": 1794448079804.0,
+      "saved_clock_before": 1794448079804.0,
+      "saved_seed_after": 4051526582.0,
+      "saved_seed_before": 4051526582.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Consultation du résultat historique",
+      "link_commands": 0,
+      "profile_sha256_after": "1c4f7d4de083daffb4b58d4a39e9265bed7bf51c60f5ccff95e0abfd4c738c48",
+      "profile_sha256_before": "1c4f7d4de083daffb4b58d4a39e9265bed7bf51c60f5ccff95e0abfd4c738c48",
+      "saved_clock_after": 1794448116065.0,
+      "saved_clock_before": 1794448116065.0,
+      "saved_seed_after": 1483088847.0,
+      "saved_seed_before": 1483088847.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_id": 0,
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "activation": "Enter",
+      "control": "InboxPressInvitation",
+      "id": "",
+      "kind": "",
+      "route_before": "Réception"
+    },
+    {
+      "activation": "Enter",
+      "control": "InboxOpenPressInvitation",
+      "id": "",
+      "kind": "",
+      "route_before": "Réception"
+    },
+    {
+      "accepted": false,
+      "route_after": "Réception",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Match",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Match",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Réception",
+      "selected_player": "",
+      "target": {
+        "id": "calendar-0",
+        "kind": "fixture"
+      }
+    }
+  ]
+}

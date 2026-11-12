@@ -1,0 +1,367 @@
+{
+  "checks": 143,
+  "failures": [
+    "Back conserve le brouillon exact de semaine type et Appliquer actif sans application"
+  ],
+  "product_sha": "96a978d5a37308b8e804a4280b0e7db050cdfced",
+  "test_sha": "96a978d5a37308b8e804a4280b0e7db050cdfced",
+  "display": "headless",
+  "speech": {
+    "id": 0,
+    "requested": 0,
+    "started": 0
+  },
+  "captures": [],
+  "extract_kind": "Whitelist derived from original report.json. No full navigation history, management_ui or model copied.",
+  "raw_report_source": "/tmp/cd-session-links-wAYKbE/report.json",
+  "raw_report_bytes": 330732,
+  "raw_report_sha256": "96a2edd99dce2d3eb6b78ab8aaf4eb5c66974181c3ebdd7f26faacd974bd71b5",
+  "diagnostics": [
+    {
+      "stage": "main_loaded",
+      "ticks": 2718,
+      "route": "Accueil",
+      "reading": {
+        "calendar_present": false,
+        "focus_observed": "",
+        "scrolls_observed": {},
+        "table_observed": false,
+        "table_widget_class": ""
+      },
+      "extra": {}
+    },
+    {
+      "stage": "real_meeting_entered",
+      "ticks": 8592,
+      "route": "Réception",
+      "reading": {
+        "calendar_present": false,
+        "focus_observed": "",
+        "scrolls_observed": {},
+        "table_observed": false,
+        "table_widget_class": ""
+      },
+      "extra": {
+        "active_meeting": true,
+        "invitation": "press-v1:1:0:0"
+      }
+    },
+    {
+      "stage": "public_preparation_complete",
+      "ticks": 13490,
+      "route": "Réception",
+      "reading": {
+        "calendar_present": false,
+        "focus_observed": "",
+        "scrolls_observed": {},
+        "table_observed": false,
+        "table_widget_class": ""
+      },
+      "extra": {}
+    },
+    {
+      "stage": "before_real_adapter",
+      "ticks": 15587,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "all",
+        "filter_observed": "all",
+        "focus": "MonthDay_2026-09-07",
+        "focus_observed": "MonthDay_2026-09-07",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "@ScrollContainer@5049": [
+            0,
+            0
+          ],
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            0
+          ]
+        },
+        "selected": "2026-09-07",
+        "selected_observed": "2026-09-07",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    },
+    {
+      "stage": "keyboard_source",
+      "ticks": 17551,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "matches",
+        "filter_observed": "matches",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            12
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    },
+    {
+      "stage": "keyboard_back",
+      "ticks": 17897,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "matches",
+        "filter_observed": "matches",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            12
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    },
+    {
+      "stage": "mouse_source",
+      "ticks": 17963,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "matches",
+        "filter_observed": "matches",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            123
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    },
+    {
+      "stage": "mouse_back",
+      "ticks": 18293,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "matches",
+        "filter_observed": "matches",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            123
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    },
+    {
+      "stage": "template_draft_source",
+      "ticks": 18609,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "all",
+        "filter_observed": "all",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "@ScrollContainer@9185": [
+            0,
+            0
+          ],
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            0
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {
+        "fixture_id": "weekly:1:0:league:0:13",
+        "template_id": "standard"
+      }
+    },
+    {
+      "stage": "assertion_failed",
+      "ticks": 18882,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "all",
+        "filter_observed": "all",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "@ScrollContainer@9730": [
+            0,
+            0
+          ],
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            0
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    },
+    {
+      "stage": "template_draft_back",
+      "ticks": 18888,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "all",
+        "filter_observed": "all",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "@ScrollContainer@9730": [
+            0,
+            0
+          ],
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            0
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {
+        "expected_template_id": "standard"
+      }
+    },
+    {
+      "stage": "finish",
+      "ticks": 21237,
+      "route": "Calendrier",
+      "reading": {
+        "calendar_present": true,
+        "filter": "all",
+        "filter_observed": "all",
+        "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+        "month_observed": "2026-09",
+        "scrolls_observed": {
+          "@ScrollContainer@12337": [
+            0,
+            0
+          ],
+          "CalendarDayDetailScroll": [
+            0,
+            0
+          ],
+          "CalendarProgramScroll": [
+            0,
+            18
+          ]
+        },
+        "selected": "2026-09-08",
+        "selected_observed": "2026-09-08",
+        "table_observed": false,
+        "table_widget_class": "",
+        "today": "2026-09-07",
+        "view": "week",
+        "view_observed": "week"
+      },
+      "extra": {}
+    }
+  ]
+}

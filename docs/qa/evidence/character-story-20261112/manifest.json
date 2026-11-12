@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "baseSha": "9563792e28cbb0dd134b6b78e24ab4c88ce08d51",
+  "scenarioSourceSha": "fe0bc57874f729c2a6e62630bcbf913f627231c6",
+  "replaySourceSha": "21f02becf52db37a827dcc103493463b5560d3a6",
+  "nodeVersion": "v22.23.4",
+  "scope": "Two recorded rounds per branch; third match finished but closure refused. No Godot or product modification.",
+  "files": [
+    {
+      "file": "tools/qa/character-story-persistence.cjs",
+      "bytes": 16757,
+      "sha256": "c13b1400fa09ba8023eb18484af5544a4e210fe476edc82ea3997ae8c28e5227"
+    },
+    {
+      "file": "tools/qa/character-promise-closure-replay.cjs",
+      "bytes": 1643,
+      "sha256": "5e82b82eb672a06cde42546658e1356a4bb9b50c64ff6371479aa614f3d89eec"
+    },
+    {
+      "file": "native/engine/worker.cjs",
+      "bytes": 48757,
+      "sha256": "431d31ce590549c603a2434773440c15d83a661182070b87e0e20c3beba60f97"
+    },
+    {
+      "file": "native/engine/relationships.cjs",
+      "bytes": 9967,
+      "sha256": "71b6228ee147c0dbafbfda33cb8586bac66f514c316f4da29bdcc2de99ef6769"
+    },
+    {
+      "file": "dist/economy.js",
+      "bytes": 85047,
+      "sha256": "559b911ff359efaf1efaf66fa8e350e8fe2467d17f34047eb774fd7923406831"
+    },
+    {
+      "file": "dist/saves.js",
+      "bytes": 70506,
+      "sha256": "86bec54ef07f0a6079b22cda5869adc504c09626e94901d486baf44e35e1debd"
+    },
+    {
+      "file": "dist/living-locker-room-v117-v123.js",
+      "bytes": 10882,
+      "sha256": "40461d90fbc4d985c29721ffcc458d7689a4c8a5b15210d3175a1d5f4aaed9a1"
+    },
+    {
+      "file": "docs/qa/evidence/character-story-20261112/public-cases.json",
+      "bytes": 225280,
+      "sha256": "b81e44dc4cad0d771348ebe8ac3a586075cdb36c41aaba86df3c72a083d6c8f9"
+    },
+    {
+      "file": "docs/qa/evidence/character-story-20261112/refusal-replay.json",
+      "bytes": 1200,
+      "sha256": "95477a8a0cff1e8306cbe73ce788fec39d951c3001a5ffe081a8bb5d88765aa1"
+    }
+  ]
+}

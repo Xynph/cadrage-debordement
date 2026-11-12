@@ -1,0 +1,37 @@
+2026-11-12T02:16:00.4252683Z SDK_RESULT {"suite":"tests/native-press-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":67558,"error":null}
+2026-11-12T02:17:11.4397167Z SDK_RESULT {"suite":"tests/godot-office-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":71013,"error":null}
+2026-11-12T02:18:02.2951732Z {"checks":122,"failures":[],"passed":true}
+2026-11-12T02:18:02.2960939Z SDK_RESULT {"suite":"tests/godot-pack-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":50856,"error":null}
+2026-11-12T02:18:22.5268040Z SDK_RESULT {"suite":"tests/godot-reception-decisions.cjs","variant":"default","passed":true,"status":0,"milliseconds":20230,"error":null}
+2026-11-12T02:19:18.1888193Z SDK_RESULT {"suite":"tests/deepen-youth-draft.cjs","variant":"default","passed":true,"status":0,"milliseconds":55660,"error":null}
+2026-11-12T02:21:18.9926727Z SDK_RESULT {"suite":"tests/deepen-youth-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":120804,"error":null}
+2026-11-12T02:22:08.8240823Z {"checks":314,"failures":[]}
+2026-11-12T02:22:08.8248246Z SDK_RESULT {"suite":"tests/godot-youth-scout-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":49832,"error":null}
+2026-11-12T02:22:42.6473537Z SDK_RESULT {"suite":"tests/godot-fatigue-overview.cjs","variant":"default","passed":true,"status":0,"milliseconds":33823,"error":null}
+2026-11-12T02:24:02.7084099Z CARNET : 4286 contrôles ; 0 échec(s)
+2026-11-12T02:24:02.7089943Z SDK_RESULT {"suite":"tests/godot-carnet-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":80062,"error":null}
+2026-11-12T02:26:41.3060311Z {"checks":15,"error_messages":["Écriture de sauvegarde impossible : Fichier de sauvegarde ou de secours non ordinaire."],"errors":1,"failures":[],"mode":"disk","passed":true}
+2026-11-12T02:26:41.3067752Z {"checks":54,"error_messages":[],"errors":0,"failures":[],"mode":"ui","passed":true}
+2026-11-12T02:26:41.3073800Z {"checks":37,"error_messages":["Le fichier JSON est incomplet ou illisible.","Le fichier JSON est incomplet ou illisible.","Le fichier JSON est incomplet ou illisible."],"errors":3,"failures":[],"mode":"limits","passed":true}
+2026-11-12T02:26:41.3082009Z {"checks":18,"error_messages":["Message trop volumineux.","Le moteur est fermé."],"errors":2,"failures":[],"mode":"null-response","passed":true}
+2026-11-12T02:26:41.3085006Z {"checks":13,"error_messages":[],"errors":0,"failures":[],"mode":"recovery","passed":true}
+2026-11-12T02:26:41.3090333Z {"checks":53,"error_messages":["Ce fichier n’est pas un export Cadrage Débordement.","Le moteur est fermé."],"errors":2,"failures":[],"mode":"decisions","passed":true}
+2026-11-12T02:26:41.3092780Z {"checks":27,"error_messages":[],"errors":0,"failures":[],"mode":"tactics","passed":true}
+2026-11-12T02:26:41.3099966Z {"checks":102,"error_messages":[],"errors":0,"failures":[],"mode":"bench","passed":true}
+2026-11-12T02:26:41.3101959Z {"checks":85,"error_messages":[],"errors":0,"failures":[],"mode":"modal","passed":true}
+2026-11-12T02:26:41.3114571Z {"checks":43,"error_messages":[],"errors":0,"failures":[],"mode":"focus","passed":true}
+2026-11-12T02:26:41.3119911Z SDK_RESULT {"suite":"tests/godot-review-regressions.cjs","variant":"default","passed":true,"status":0,"milliseconds":158598,"error":null}
+2026-11-12T02:28:40.6078760Z SDK_RESULT {"suite":"tests/godot-guide-integration.cjs","variant":"default","passed":true,"status":0,"milliseconds":119297,"error":null}
+2026-11-12T02:29:51.2583000Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1280","passed":true,"status":0,"milliseconds":70653,"error":null}
+2026-11-12T02:31:10.5852876Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1600","passed":true,"status":0,"milliseconds":79327,"error":null}
+2026-11-12T02:32:42.4950092Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1920","passed":true,"status":0,"milliseconds":91909,"error":null}
+2026-11-12T02:34:58.0873611Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"progression","passed":true,"status":0,"milliseconds":135593,"error":null}
+2026-11-12T02:35:15.6193004Z SDK_RESULT {"suite":"tests/godot-entity-navigation.cjs","variant":"default","passed":true,"status":0,"milliseconds":17534,"error":null}
+2026-11-12T02:35:35.6451559Z SDK_RESULT {"suite":"tests/godot-management-reading-flow.cjs","variant":"default","passed":true,"status":0,"milliseconds":20017,"error":null}
+2026-11-12T02:36:20.5003646Z GESTION_PROGRESS {"checks":274,"display":"headless","embedded_subwindows":true,"failures":[],"last_command":"export","last_error":"","milliseconds":44026,"root_size":[1920,1080],"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+2026-11-12T02:36:20.5004869Z GESTION CARNET : 274 contrôles ; 0 échec(s)
+2026-11-12T02:36:20.5024459Z SDK_RESULT {"suite":"tests/godot-gestion-carnet.cjs","variant":"default","passed":true,"status":0,"milliseconds":44835,"error":null}
+2026-11-12T02:36:48.0817062Z SDK_RESULT {"suite":"tests/godot-observed-training-consequences.cjs","variant":"default","passed":true,"status":0,"milliseconds":27610,"error":null}
+2026-11-12T02:37:06.0550211Z SDK_RESULT {"suite":"tests/godot-effective-training-receipt.cjs","variant":"default","passed":true,"status":0,"milliseconds":17973,"error":null}
+2026-11-12T02:37:06.7320306Z OFFICE_ENTITY_LINKS {"checks":52,"failures":[]}
+2026-11-12T02:37:06.7330821Z SDK_RESULT {"suite":"tests/godot-office-entity-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":677,"error":null}

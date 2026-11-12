@@ -1,0 +1,51 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+MANAGEMENT_LOCATION {"boundary":"before-navigate-vestiaire","contextual_kind":"","has_locker_canvas":false,"has_relations_page":false,"last_command":"set_player_load","last_error":"","locker_tab":"week","mandatory_meeting":false,"match_immersed":false,"route":"Réception","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT_LOCATION {"boundary":"after-navigate-vestiaire","contextual_kind":"","has_locker_canvas":true,"has_relations_page":false,"last_command":"set_player_load","last_error":"","locker_tab":"week","mandatory_meeting":false,"match_immersed":false,"route":"Vestiaire","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT_LOCATION {"boundary":"after-activate-locker-people","contextual_kind":"","has_locker_canvas":true,"has_relations_page":true,"last_command":"set_player_load","last_error":"","locker_tab":"people","mandatory_meeting":false,"match_immersed":false,"route":"Vestiaire","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT_LOCATION {"boundary":"after-export-on-vestiaire","contextual_kind":"","has_locker_canvas":true,"has_relations_page":true,"last_command":"export","last_error":"","locker_tab":"people","mandatory_meeting":false,"match_immersed":false,"route":"Vestiaire","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT READING FLOW : 60 contrôles ; 1 échec(s)
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+FAIL: Retour conserve le scroll de l’autre liste
+
+Preuves parcours gestion : /workspace/work/night-phase9/management-people
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+MANAGEMENT_LOCATION {"boundary":"before-navigate-vestiaire","contextual_kind":"","has_locker_canvas":false,"has_relations_page":false,"last_command":"set_player_load","last_error":"","locker_tab":"week","mandatory_meeting":false,"match_immersed":false,"route":"Réception","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT_LOCATION {"boundary":"after-navigate-vestiaire","contextual_kind":"","has_locker_canvas":true,"has_relations_page":false,"last_command":"set_player_load","last_error":"","locker_tab":"week","mandatory_meeting":false,"match_immersed":false,"route":"Vestiaire","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT_LOCATION {"boundary":"after-activate-locker-people","contextual_kind":"","has_locker_canvas":true,"has_relations_page":true,"last_command":"set_player_load","last_error":"","locker_tab":"people","mandatory_meeting":false,"match_immersed":false,"route":"Vestiaire","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT_LOCATION {"boundary":"after-export-on-vestiaire","contextual_kind":"","has_locker_canvas":true,"has_relations_page":true,"last_command":"export","last_error":"","locker_tab":"people","mandatory_meeting":false,"match_immersed":false,"route":"Vestiaire","viewport_size":[2560.0,1440.0],"waiting":false,"window_size":[2560,1440]}
+MANAGEMENT READING FLOW : 60 contrôles ; 1 échec(s)
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+FAIL: Retour conserve le scroll de l’autre liste
+
+
+1 !== 0
+
+    at Object.<anonymous> (/workspace/work/night-common/tests/godot-management-reading-flow.cjs:11:43)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

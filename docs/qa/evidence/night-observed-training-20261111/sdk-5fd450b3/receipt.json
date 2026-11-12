@@ -1,0 +1,45 @@
+{
+  "candidate_sha": "5fd450b31f36a28cc14fe7eee586021ffa06d10f",
+  "checks": 50,
+  "failures": [],
+  "wrapper_exit_code": 0,
+  "exit_code_attribution": "Code 0 observé et communiqué par root à la fin du wrapper.",
+  "godot": "4.7.2-stable official ed1daf0bf",
+  "display": "headless",
+  "audio": "Dummy",
+  "duration_ms": null,
+  "duration_note": "Durée non instrumentée ; aucune durée reconstruite.",
+  "fixture": {
+    "sha256": "dfae8dcf7e4802c1263ee63f2a7b29ac88587a9f1e5320a39d7c14fb4d312f76",
+    "bytes": 132972,
+    "reused": true,
+    "reuse_attribution": "Même fixture publique hachée réutilisée selon exécution root.",
+    "published": false
+  },
+  "source_files_sha256": {
+    "tests/godot-observed-training-consequences.cjs": "ece35e122b7b581289d5e7eef3a8f1150359b6393a7ece9a681bdf7d12c891af",
+    "tests/godot-observed-training-consequences.gd": "abb1fc85de9b5e5e7db16d01f0565e90aabdabb9f1ae3214e687a77b2aa9a8f6",
+    "tools/qa/observed-training-consequences.cjs": "0fd7ae43efb115fc83bd1031abecfcb77c394c2359b876569211310ddb4b1dc9",
+    "native/godot/ui/decision_feedback.gd": "65f6fff4efa36ecf6830b78b4f3e26f8da310745e4c0a0b4d23a9242eb10873a",
+    "native/engine/worker.cjs": "431d31ce590549c603a2434773440c15d83a661182070b87e0e20c3beba60f97"
+  },
+  "files": {
+    "godot-report.json": {
+      "sha256": "42a5ebaa0cf597f2003ad4d686f3793d6c7cd120fbec7df703f0666f11c9ed2e",
+      "bytes": 205,
+      "source_path": "/workspace/work/night-phase10/observed-current/godot-report.json"
+    },
+    "godot.log": {
+      "sha256": "b23b5e6fee348342f71d00087ca6b8031ccec17abfeb0d092f21041efcc696d9",
+      "bytes": 134,
+      "source_path": "/workspace/work/night-phase10/observed-current/godot.log"
+    },
+    "wrapper.log": {
+      "sha256": "9ae34d9e7fc50dd88a08e5ffef87b476e7f4fda29d342ab9c5fae36537dcf120",
+      "bytes": 217,
+      "source_path": "/workspace/work/night-phase9/observed-current.log"
+    }
+  },
+  "scope": "Composant de reçu Godot avec vraies alternatives publiques réutilisées et contre-exemples synthétiques ; pas un parcours client graphique, pas Windows.",
+  "speech_counters": "Non mesurés dans ce rapport ; host de composant, aucune valeur 0/0 annoncée."
+}

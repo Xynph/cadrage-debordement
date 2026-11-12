@@ -1,0 +1,16 @@
+SDK_RUNTIME_LOG: /workspace/qa/sdk-runtime/fatigue-edge-probe-175026.log
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+EDGE {"direction":"up","force_pass":false,"header_after":630.0,"header_before":614.0,"inner_after":0,"inner_before":0,"inner_limit":563,"list":"FatigueScroll","mouse_filter":1,"outer_after":0,"outer_before":16,"outer_limit":16,"panel_after":535.0,"panel_before":519.0}
+FAIL: La page ne bouge pas à la borne de la liste : up
+FAIL: En-tête et panneau globalement fixes à la borne : up
+EDGE {"direction":"down","force_pass":false,"header_after":614.0,"header_before":630.0,"inner_after":563,"inner_before":563,"inner_limit":563,"list":"FatigueScroll","mouse_filter":1,"outer_after":16,"outer_before":0,"outer_limit":16,"panel_after":519.0,"panel_before":535.0}
+FAIL: La page ne bouge pas à la borne de la liste : down
+FAIL: En-tête et panneau globalement fixes à la borne : down
+EDGE {"direction":"up","force_pass":false,"header_after":466.0,"header_before":450.0,"inner_after":0,"inner_before":0,"inner_limit":576,"list":"TrainingIndividualsScroll","mouse_filter":1,"outer_after":0,"outer_before":16,"outer_limit":16,"panel_after":404.0,"panel_before":388.0}
+FAIL: La page ne bouge pas à la borne de la liste : up
+FAIL: En-tête et panneau globalement fixes à la borne : up
+EDGE {"direction":"down","force_pass":false,"header_after":450.0,"header_before":466.0,"inner_after":576,"inner_before":576,"inner_limit":576,"list":"TrainingIndividualsScroll","mouse_filter":1,"outer_after":16,"outer_before":0,"outer_limit":16,"panel_after":388.0,"panel_before":404.0}
+FAIL: La page ne bouge pas à la borne de la liste : down
+FAIL: En-tête et panneau globalement fixes à la borne : down
+EDGE_PROBE 22 checks, 8 failures

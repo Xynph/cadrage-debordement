@@ -30,7 +30,7 @@ func run() -> void:
 	if OS.has_environment("CD_STAFF_REAL_WORKER"): ProjectSettings.set_setting("native_engine/worker_path",OS.get_environment("CD_STAFF_REAL_WORKER"))
 	root.size = Vector2i(1920,1080)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
-	await command("snapshot"); await command("new_career",{"mode":"fiction","club":0})
+	await response("snapshot initial"); await command("new_career",{"mode":"fiction","club":0}); await ContextualFlow.settle_club_meetings(app, self, check)
 	await staff_page()
 	if not app.model.clubLife.staffCareer.get("active",false):
 		await press(button("EnableStaffCareer")); await confirm_action(); await staff_page()
@@ -77,7 +77,12 @@ func run() -> void:
 	check(FileAccess.get_file_as_bytes(profile)==bytes,"Refus disque conserve octets du profil")
 	await staff_page(str(coach.name)); await adoption_confirmation(); await confirm_action()
 	check(int(app.model.clubLife.staffEmployment.weeklyWages)==500,"Adoption confirmée vaut 500 €/semaine")
-	await command("train",{"mode":"normal"}); await command("auto_lineup"); await command("begin_match"); await command("delegate"); await command("finish_round")
+	await command("train",{"mode":"normal"}); await command("auto_lineup")
+	if not await ContextualFlow.prepare_match_day(app,self,check): await finish(); return
+	var previous_week: int=app.model.meta.week
+	await command("begin_match"); await ContextualFlow.skip_talk(app, self, "pre", check)
+	await command("delegate"); await command("finish_round")
+	if not await ContextualFlow.finish_match_week(app,self,check,previous_week): await finish(); return
 	var paid_state: Dictionary = JSON.parse_string(await exported_state())
 	check(paid_state.staffEmployment.payments.size()==1 and int(paid_state.staffEmployment.payments[0].amount)==500,"Une vraie semaine paie exactement 500 € une seule fois")
 	check(paid_state.ledger.any(func(row):return str(row.title).begins_with("Salaires du staff") and int(row.amount)==-500),"Débit réel présent dans le grand livre")

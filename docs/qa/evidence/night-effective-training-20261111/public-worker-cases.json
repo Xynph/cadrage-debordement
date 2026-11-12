@@ -1,0 +1,375 @@
+{
+  "schema": 1,
+  "sourceSha": "297f016584d24810a5f762d20396fcd7c91b0293",
+  "runnerSha256": "3858395ab9c382d56e18952e8ee3e8672ec58adfd351cff1d9271d5d758f9b0c",
+  "nodeVersion": "v22.23.4",
+  "method": "Public pending/applied session plus current meta.training in matching club/season/week; exact public reason retained verbatim",
+  "limits": [
+    "The session has no own mode field or timestamp: clubSupport.context and meta must match.",
+    "The collective mode does not replace individual exceptions.",
+    "No before/after condition is used to infer the receipt mode or invent its reason.",
+    "The two fixtures are different career moments, not an equal-checkpoint strategy comparison."
+  ],
+  "cases": [
+    {
+      "id": "delegated_fresh_career",
+      "requested": "intense",
+      "applied": "normal",
+      "before": {
+        "club": {
+          "id": 13
+        },
+        "meta": {
+          "mode": "fictional14",
+          "season": 1,
+          "week": 0,
+          "trained": false,
+          "training": "normal",
+          "morale": 77,
+          "saveError": false
+        },
+        "finance": {
+          "cash": 2500000,
+          "wage": 251045
+        },
+        "squad": [],
+        "clubLife": {
+          "clubSupport": {
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 13
+            },
+            "training": {
+              "session": {
+                "status": "pending",
+                "reason": null
+              }
+            }
+          }
+        }
+      },
+      "after": {
+        "club": {
+          "id": 13
+        },
+        "meta": {
+          "mode": "fictional14",
+          "season": 1,
+          "week": 0,
+          "trained": true,
+          "training": "normal",
+          "morale": 77,
+          "saveError": false
+        },
+        "finance": {
+          "cash": 2500000,
+          "wage": 251045
+        },
+        "squad": [],
+        "clubLife": {
+          "clubSupport": {
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 13
+            },
+            "training": {
+              "session": {
+                "status": "applied",
+                "reason": "Travail collectif retenu avec une condition moyenne de 94%."
+              }
+            }
+          }
+        }
+      },
+      "publicLineupMeanConditionBefore": 94.33333333333333,
+      "publicWarmupMatches": 0,
+      "recoveryOverrideReached": false,
+      "commands": [
+        {
+          "command": "new_career",
+          "payload": {
+            "mode": "fiction",
+            "club": 13
+          }
+        },
+        {
+          "command": "press_conference",
+          "payload": {
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 13
+            },
+            "answers": [
+              {
+                "questionId": "avant_match-0-1",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "attaque-0-1",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "defense-0-1",
+                "answerId": "r3"
+              }
+            ]
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:0:13:1"
+          }
+        },
+        {
+          "command": "club_meeting_ack",
+          "payload": {
+            "meetingId": "club-meeting:1:0:13:2"
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:0:13:2"
+          }
+        },
+        {
+          "command": "set_delegation",
+          "payload": {
+            "key": "training",
+            "enabled": true
+          }
+        },
+        {
+          "command": "train",
+          "payload": {
+            "mode": "intense"
+          }
+        }
+      ],
+      "profileBeforeSha256": "c80bfaa9a23b24b5ccc39b90755da46a396ec8de07e7dd681edbd69783614e5f",
+      "profileAfterSha256": "8871a070d02084bf54da84634abe5eec80fff0a5c4b7d03a32ad9f1409a28097",
+      "seedBefore": 3668155195,
+      "seedAfter": 3668155195,
+      "clockBefore": 1794434400000,
+      "clockAfter": 1794434400000,
+      "readOnlyCollectionPreservedProfile": true
+    },
+    {
+      "id": "delegated_after_public_matches",
+      "requested": "intense",
+      "applied": "repos",
+      "before": {
+        "club": {
+          "id": 13
+        },
+        "meta": {
+          "mode": "fictional14",
+          "season": 1,
+          "week": 1,
+          "trained": false,
+          "training": "normal",
+          "morale": 74,
+          "saveError": false
+        },
+        "finance": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "squad": [],
+        "clubLife": {
+          "clubSupport": {
+            "context": {
+              "season": 1,
+              "week": 1,
+              "club": 13
+            },
+            "training": {
+              "session": {
+                "status": "pending",
+                "reason": null
+              }
+            }
+          }
+        }
+      },
+      "after": {
+        "club": {
+          "id": 13
+        },
+        "meta": {
+          "mode": "fictional14",
+          "season": 1,
+          "week": 1,
+          "trained": true,
+          "training": "repos",
+          "morale": 74,
+          "saveError": false
+        },
+        "finance": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "squad": [],
+        "clubLife": {
+          "clubSupport": {
+            "context": {
+              "season": 1,
+              "week": 1,
+              "club": 13
+            },
+            "training": {
+              "session": {
+                "status": "applied",
+                "reason": "Récupération retenu avec une condition moyenne de 72%."
+              }
+            }
+          }
+        }
+      },
+      "publicLineupMeanConditionBefore": 71.69221133333335,
+      "publicWarmupMatches": 1,
+      "recoveryOverrideReached": true,
+      "commands": [
+        {
+          "command": "new_career",
+          "payload": {
+            "mode": "fiction",
+            "club": 13
+          }
+        },
+        {
+          "command": "press_conference",
+          "payload": {
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 13
+            },
+            "answers": [
+              {
+                "questionId": "avant_match-0-1",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "attaque-0-1",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "defense-0-1",
+                "answerId": "r3"
+              }
+            ]
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:0:13:1"
+          }
+        },
+        {
+          "command": "club_meeting_ack",
+          "payload": {
+            "meetingId": "club-meeting:1:0:13:2"
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:0:13:2"
+          }
+        },
+        {
+          "command": "set_delegation",
+          "payload": {
+            "key": "training",
+            "enabled": false
+          }
+        },
+        {
+          "command": "train",
+          "payload": {
+            "mode": "normal"
+          }
+        },
+        {
+          "command": "auto_lineup",
+          "payload": {}
+        },
+        {
+          "command": "begin_match",
+          "payload": {}
+        },
+        {
+          "command": "delegate",
+          "payload": {}
+        },
+        {
+          "command": "finish_round",
+          "payload": {}
+        },
+        {
+          "command": "press_conference",
+          "payload": {
+            "context": {
+              "season": 1,
+              "week": 1,
+              "club": 13
+            },
+            "answers": [
+              {
+                "questionId": "avant_match-0-0",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "attaque-0-0",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "defense-0-0",
+                "answerId": "r3"
+              },
+              {
+                "questionId": "joueurs-0-0",
+                "answerId": "r3"
+              }
+            ]
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:1:13:3"
+          }
+        },
+        {
+          "command": "set_delegation",
+          "payload": {
+            "key": "training",
+            "enabled": true
+          }
+        },
+        {
+          "command": "train",
+          "payload": {
+            "mode": "intense"
+          }
+        }
+      ],
+      "profileBeforeSha256": "bde7e477a0a00d8bcfc4963b1df6637d3663f2d381832facf36301ba55079231",
+      "profileAfterSha256": "b9a9b98a42fb31f472bc04de518f2335c876ccd88f903578374828088c1b8b8c",
+      "seedBefore": 3161170221,
+      "seedAfter": 3161170221,
+      "clockBefore": 1794434400000,
+      "clockAfter": 1794434400000,
+      "readOnlyCollectionPreservedProfile": true
+    }
+  ],
+  "realNormalOverride": true,
+  "realRecoveryOverride": true,
+  "complete": true
+}

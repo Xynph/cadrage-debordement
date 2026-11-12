@@ -1,0 +1,6 @@
+# DEEPEN_STAFF_HIRE_UI: 104 contrôles, 0 échec(s)
+# {"checks":104,"failures":[]}
+# Subtest: Staff réel : recrutement et prolongation avec durée conservée après refus disque
+ok 1 - Staff réel : recrutement et prolongation avec durée conservée après refus disque
+  duration_ms: 29657.434079
+# duration_ms 29724.364109

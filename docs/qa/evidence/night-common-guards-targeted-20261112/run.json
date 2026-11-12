@@ -1,0 +1,152 @@
+{
+  "id": 43134340431,
+  "head_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+  "head_branch": "cloud/rg27-night-common-20261111",
+  "event": "workflow_dispatch",
+  "status": "completed",
+  "conclusion": "success",
+  "run_attempt": 1,
+  "updated_at": "2026-11-12T01:27:31Z",
+  "jobs": [
+    {
+      "id": 130905913641,
+      "run_id": 43134340431,
+      "workflow_name": "Godot \u2014 suites cibl\u00e9es avec SDK r\u00e9el",
+      "head_branch": "cloud/rg27-night-common-20261111",
+      "run_url": "https://api.github.com/repos/Xynph/cadrage-debordement/actions/runs/43134340431",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVc6Z_M8AAAAeepm5KQ",
+      "head_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+      "url": "https://api.github.com/repos/Xynph/cadrage-debordement/actions/jobs/130905913641",
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43134340431/job/130905913641",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-12T01:24:51Z",
+      "started_at": "2026-11-12T01:24:53Z",
+      "completed_at": "2026-11-12T01:27:31Z",
+      "name": "sdk-targeted",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-12T01:24:54Z",
+          "completed_at": "2026-11-12T01:24:55Z"
+        },
+        {
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-12T01:24:55Z",
+          "completed_at": "2026-11-12T01:25:05Z"
+        },
+        {
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-12T01:25:05Z",
+          "completed_at": "2026-11-12T01:25:05Z"
+        },
+        {
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-12T01:25:05Z",
+          "completed_at": "2026-11-12T01:25:05Z"
+        },
+        {
+          "name": "Valider le scope et s\u00e9lectionner les cas SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-12T01:25:05Z",
+          "completed_at": "2026-11-12T01:25:06Z"
+        },
+        {
+          "name": "Pr\u00e9parer le rendu logiciel gratuit sous X11",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-12T01:25:06Z",
+          "completed_at": "2026-11-12T01:25:11Z"
+        },
+        {
+          "name": "Installer le SDK officiel \u00e9pingl\u00e9 et v\u00e9rifier son archive",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-12T01:25:11Z",
+          "completed_at": "2026-11-12T01:25:12Z"
+        },
+        {
+          "name": "Pr\u00e9parer et importer le vrai projet",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-12T01:25:12Z",
+          "completed_at": "2026-11-12T01:25:38Z"
+        },
+        {
+          "name": "Ex\u00e9cuter les suites qualifi\u00e9es sans repli SKIP",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-12T01:25:38Z",
+          "completed_at": "2026-11-12T01:27:28Z"
+        },
+        {
+          "name": "Mesurer les petites fen\u00eatres avec le vrai rendu X11",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-12T01:27:28Z",
+          "completed_at": "2026-11-12T01:27:28Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-12T01:27:28Z",
+          "completed_at": "2026-11-12T01:27:28Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-12T01:27:28Z",
+          "completed_at": "2026-11-12T01:27:28Z"
+        },
+        {
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-12T01:27:28Z",
+          "completed_at": "2026-11-12T01:27:28Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-12T01:27:28Z",
+          "completed_at": "2026-11-12T01:27:28Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/Xynph/cadrage-debordement/check-runs/130905913641",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000024943,
+      "runner_name": "GitHub Actions 1000024943",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

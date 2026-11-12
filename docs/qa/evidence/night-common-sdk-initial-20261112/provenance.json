@@ -1,0 +1,63 @@
+{
+  "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+  "head_branch": "cloud/rg27-night-common-20261111",
+  "event": "workflow_dispatch",
+  "scope": "full",
+  "run_id": 43129063385,
+  "run_attempt": 1,
+  "source_hash_method": "git show SHA:path and git rev-parse SHA:path; never a moving worktree",
+  "source_files": {
+    "ci/godot-sdk.json": {
+      "git_blob": "04943b8df01a58091d4bb699196e2f4e855bc0c8",
+      "sha256": "79c1ed6c5eb8e2e8ff5009a38fab1dc830061f7866bdbd802b348adea96cfd65"
+    },
+    "ci/godot-sdk-followup.json": {
+      "git_blob": "58b45f5307832f0e075dc62e20da9b00930803fb",
+      "sha256": "9d2448c9a3c37bcdce5cc0cd95bc0d38df81fc8f010ae4c5505dc99174f4cf72"
+    },
+    "ci/run-godot-sdk.cjs": {
+      "git_blob": "21084df1110f18383a3128574ffba0f863f5335d",
+      "sha256": "8b7696517620c812777dd3c7072ecd359c7ba7e6105f0e0081a758721b862b6d"
+    },
+    "tests/deepen-staff-hire-ui.cjs": {
+      "git_blob": "afa7c7f488d1d27f91b4b22eb775a5c7ed115bab",
+      "sha256": "b1acdd1a467070cb0fa8543fdfaa7ad4d3f02f1026a88fb9aa8204b7ae46b532"
+    },
+    "tests/deepen-staff-hire-ui.gd": {
+      "git_blob": "2ca1c1330b534f181c83638575388d612e3e933d",
+      "sha256": "c3373a7b3bf8d3180f1e396bbb32b56d4966668fc0197c9dda2444da25cbc910"
+    },
+    "tests/rg27-night-navigation.cjs": {
+      "git_blob": "66d7a18aa161f6ec2da3bce23ea6643500d3ccb3",
+      "sha256": "d229f7cdac93da2659e198028d6cdfc8eebfc5f87637efc159445f9870fd4899"
+    },
+    "tests/rg27-night-navigation.gd": {
+      "git_blob": "80ce301b4e704d6bbf8e0d65a5c3d6ac0449880a",
+      "sha256": "0a640b889454586a43689c6cf95141d4ae044604c8c0f212faa4f79ae10d2288"
+    },
+    "tests/godot-carnet-ui.cjs": {
+      "git_blob": "15a7ec1c8cc1515d78d69f95793eebb11cb0d38e",
+      "sha256": "0b56c7b0d57a45dd4cbc61844f01c25687de6ee12b234d2b47d8b13fe1e93498"
+    },
+    "tests/godot-carnet-ui.gd": {
+      "git_blob": "6a3c5051d6f8bd37b58c943dbf9e343a11d7b3dd",
+      "sha256": "fa8b689ca84d83859ece45435726307ad725dfeef918dbbce80d9febcbdbacdf"
+    },
+    "tests/godot-gestion-carnet.cjs": {
+      "git_blob": "b7664d124692efa0ff9ea98b74449f9f675aedc8",
+      "sha256": "62daa1db00e4cd5981e19fe55d9241ca22f35f9508d867f73d64b4637dfc0167"
+    },
+    "tests/godot-gestion-carnet.gd": {
+      "git_blob": "b760598fa1c0c63d5175652217cfe6daada21f24",
+      "sha256": "8498e73721c4a02babd7a5b2222cdf24f543867c469a55a74ff0e9e9953ce8de"
+    }
+  },
+  "logs_method": "GitHub connector github_fetch_workflow_job_logs on completed jobs, selected original lines only; timestamps retained",
+  "run_method": "GitHub REST read-only snapshots",
+  "artifacts_api": "No artifacts returned when inspected after the initial SDK jobs finished",
+  "limitations": [
+    "No runner temporary profiles or screenshots were recovered.",
+    "Timeout causes are not established by these logs.",
+    "This receipt covers the initial attempt only; later targeted receipts remain separate."
+  ]
+}

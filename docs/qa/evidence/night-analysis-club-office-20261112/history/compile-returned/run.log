@@ -1,0 +1,46 @@
+TAP version 13
+# Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+# OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+# libspeechd.so.2: cannot open shared object file: No such file or directory
+# WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+#      at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+# SCRIPT ERROR: Parse Error: Cannot infer the type of "returned" variable because the value doesn't have a set type.
+#           at: GDScript::reload (/workspace/work/night-common/tests/helpers/office-reading-cases.gd:21)
+# SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+#           at: GDScript::reload (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:0)
+# ERROR: Failed to load script "/workspace/work/night-common/tests/godot-analysis-club-graphics.gd" with error "Compilation failed".
+#    at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+# SCRIPT ERROR: Invalid call. Nonexistent function 'run' in base 'GDScript'.
+#           at: run (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:175)
+#           GDScript backtrace (most recent call first):
+#               [0] run (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:175)
+#               [1] key (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:35)
+#               [2] settle (/workspace/work/night-common/tests/godot-analysis-club-graphics.gd:21)
+# Preuves graphiques Analyse/Club/Bureau : /workspace/work/night-phase10/analysis-club-office-v4
+# Subtest: Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p
+not ok 1 - Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p
+  ---
+  duration_ms: 150966.192176
+  type: 'test'
+  location: '/workspace/work/night-common/tests/godot-analysis-club-graphics.cjs:11:1'
+  failureType: 'testCodeFailure'
+  error: 'spawnSync /workspace/work/tools/Godot_v4.7.2-stable_linux.x86_64 ETIMEDOUT'
+  code: 'ETIMEDOUT'
+  stack: |-
+    Object.spawnSync (node:internal/child_process:1120:20)
+    spawnSync (node:child_process:902:24)
+    TestContext.<anonymous> (/workspace/work/night-common/tests/godot-analysis-club-graphics.cjs:48:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 151049.484097

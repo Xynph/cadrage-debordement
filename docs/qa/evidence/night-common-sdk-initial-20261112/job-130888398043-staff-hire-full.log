@@ -1,0 +1,82 @@
+2026-11-12T00:44:03.3934711Z ##[group]Real SDK: tests/deepen-staff-hire-ui.cjs / default
+2026-11-12T00:44:29.0118976Z Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+2026-11-12T00:44:29.0119362Z 
+2026-11-12T00:44:29.0119581Z SDK_COMMAND 5559 godot-youth-scout-ui new_career
+2026-11-12T00:44:29.0120402Z SDK_MEETING 6705 Préparation explicite du rendez-vous : press_conference
+2026-11-12T00:44:29.0121095Z SDK_MEETING 7373 Préparation explicite du rendez-vous : club_meeting_continue
+2026-11-12T00:44:29.0121756Z SDK_MEETING 7960 Préparation explicite du rendez-vous : club_meeting_ack
+2026-11-12T00:44:29.0122407Z SDK_MEETING 8517 Préparation explicite du rendez-vous : club_meeting_continue
+2026-11-12T00:44:29.0122884Z SDK_COMMAND 10835 godot-youth-scout-ui export
+2026-11-12T00:44:29.0123266Z SDK_COMMAND 12905 godot-youth-scout-ui export
+2026-11-12T00:44:29.0123638Z SDK_COMMAND 15364 godot-youth-scout-ui export
+2026-11-12T00:44:29.0124006Z SDK_COMMAND 17714 godot-youth-scout-ui export
+2026-11-12T00:44:29.0124390Z SDK_COMMAND 18797 godot-youth-scout-ui export
+2026-11-12T00:44:29.0124760Z SDK_COMMAND 19529 godot-youth-scout-ui export
+2026-11-12T00:44:29.0125117Z SDK_COMMAND 24720 godot-youth-scout-ui export
+2026-11-12T00:44:29.0125543Z DEEPEN_STAFF_HIRE_UI: 89 contrôles, 6 échec(s)
+2026-11-12T00:44:29.0127503Z {"checks":89,"failures":["Commande clavier présente","Choix de durée public","Commande clavier présente","Prolongation préparée trois saisons conservée après fermeture","Commande clavier présente","Prolongation réelle trois saisons sans contrat financier en double"]}
+2026-11-12T00:44:29.0128758Z FAIL: Commande clavier présente
+2026-11-12T00:44:29.0129089Z FAIL: Choix de durée public
+2026-11-12T00:44:29.0129414Z FAIL: Commande clavier présente
+2026-11-12T00:44:29.0129901Z FAIL: Prolongation préparée trois saisons conservée après fermeture
+2026-11-12T00:44:29.0130352Z FAIL: Commande clavier présente
+2026-11-12T00:44:29.0130842Z FAIL: Prolongation réelle trois saisons sans contrat financier en double
+2026-11-12T00:44:29.0131331Z Preuve staff : /tmp/cd-staff-real-ui-UGwTi2
+2026-11-12T00:44:29.0131627Z TAP version 13
+2026-11-12T00:44:29.0132430Z # Subtest: Staff réel : recrutement et prolongation avec durée conservée après refus disque
+2026-11-12T00:44:29.0133244Z not ok 1 - Staff réel : recrutement et prolongation avec durée conservée après refus disque
+2026-11-12T00:44:29.0133679Z   ---
+2026-11-12T00:44:29.0133888Z   duration_ms: 25578.001682
+2026-11-12T00:44:29.0134130Z   type: 'test'
+2026-11-12T00:44:29.0134660Z   location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/deepen-staff-hire-ui.cjs:3:1'
+2026-11-12T00:44:29.0135227Z   failureType: 'testCodeFailure'
+2026-11-12T00:44:29.0135486Z   error: |-
+2026-11-12T00:44:29.0135856Z     Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+2026-11-12T00:44:29.0136251Z     
+2026-11-12T00:44:29.0136552Z     SDK_COMMAND 5559 godot-youth-scout-ui new_career
+2026-11-12T00:44:29.0137948Z     SDK_MEETING 6705 Préparation explicite du rendez-vous : press_conference
+2026-11-12T00:44:29.0138725Z     SDK_MEETING 7373 Préparation explicite du rendez-vous : club_meeting_continue
+2026-11-12T00:44:29.0139388Z     SDK_MEETING 7960 Préparation explicite du rendez-vous : club_meeting_ack
+2026-11-12T00:44:29.0140023Z     SDK_MEETING 8517 Préparation explicite du rendez-vous : club_meeting_continue
+2026-11-12T00:44:29.0140500Z     SDK_COMMAND 10835 godot-youth-scout-ui export
+2026-11-12T00:44:29.0140873Z     SDK_COMMAND 12905 godot-youth-scout-ui export
+2026-11-12T00:44:29.0141246Z     SDK_COMMAND 15364 godot-youth-scout-ui export
+2026-11-12T00:44:29.0141621Z     SDK_COMMAND 17714 godot-youth-scout-ui export
+2026-11-12T00:44:29.0141974Z     SDK_COMMAND 18797 godot-youth-scout-ui export
+2026-11-12T00:44:29.0142332Z     SDK_COMMAND 19529 godot-youth-scout-ui export
+2026-11-12T00:44:29.0142701Z     SDK_COMMAND 24720 godot-youth-scout-ui export
+2026-11-12T00:44:29.0143114Z     DEEPEN_STAFF_HIRE_UI: 89 contrôles, 6 échec(s)
+2026-11-12T00:44:29.0144729Z     {"checks":89,"failures":["Commande clavier présente","Choix de durée public","Commande clavier présente","Prolongation préparée trois saisons conservée après fermeture","Commande clavier présente","Prolongation réelle trois saisons sans contrat financier en double"]}
+2026-11-12T00:44:29.0145844Z     FAIL: Commande clavier présente
+2026-11-12T00:44:29.0146179Z     FAIL: Choix de durée public
+2026-11-12T00:44:29.0146504Z     FAIL: Commande clavier présente
+2026-11-12T00:44:29.0146973Z     FAIL: Prolongation préparée trois saisons conservée après fermeture
+2026-11-12T00:44:29.0148121Z     FAIL: Commande clavier présente
+2026-11-12T00:44:29.0148630Z     FAIL: Prolongation réelle trois saisons sans contrat financier en double
+2026-11-12T00:44:29.0149020Z     
+2026-11-12T00:44:29.0149192Z     
+2026-11-12T00:44:29.0149366Z     1 !== 0
+2026-11-12T00:44:29.0149545Z     
+2026-11-12T00:44:29.0149738Z   code: 'ERR_ASSERTION'
+2026-11-12T00:44:29.0149988Z   name: 'AssertionError'
+2026-11-12T00:44:29.0150241Z   expected: 0
+2026-11-12T00:44:29.0150438Z   actual: 1
+2026-11-12T00:44:29.0150641Z   operator: 'strictEqual'
+2026-11-12T00:44:29.0150875Z   stack: |-
+2026-11-12T00:44:29.0151467Z     TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/deepen-staff-hire-ui.cjs:6:191)
+2026-11-12T00:44:29.0152137Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-11-12T00:44:29.0152520Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-11-12T00:44:29.0152906Z     Test.start (node:internal/test_runner/test:944:17)
+2026-11-12T00:44:29.0153384Z     startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+2026-11-12T00:44:29.0153774Z   ...
+2026-11-12T00:44:29.0153963Z 1..1
+2026-11-12T00:44:29.0154139Z # tests 1
+2026-11-12T00:44:29.0154320Z # suites 0
+2026-11-12T00:44:29.0154505Z # pass 0
+2026-11-12T00:44:29.0154685Z # fail 1
+2026-11-12T00:44:29.0154866Z # cancelled 0
+2026-11-12T00:44:29.0155067Z # skipped 0
+2026-11-12T00:44:29.0155255Z # todo 0
+2026-11-12T00:44:29.0155470Z # duration_ms 25585.887711
+2026-11-12T00:44:29.0156358Z SDK_RESULT {"suite":"tests/deepen-staff-hire-ui.cjs","variant":"default","passed":false,"status":1,"milliseconds":25621,"error":null}
+2026-11-12T00:44:29.0157507Z ##[endgroup]

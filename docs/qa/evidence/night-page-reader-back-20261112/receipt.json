@@ -1,0 +1,76 @@
+{
+  "component_sha": "58e4651e4abdcb78113a249cbc50699471df702b",
+  "component_checks": 50,
+  "component_failures": [],
+  "component_wrapper_exit_code_observed_by_integrator": 0,
+  "component_duration_ms": 18633.622347,
+  "graphic_sha": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+  "graphic_checks": 72,
+  "graphic_failures": [],
+  "graphic_wrapper_exit_code_observed_by_integrator": 0,
+  "graphic_duration_ms": 65702.733753,
+  "same_navigation_controller_blob": "3ea5c4f1f262edca7267c0df4eaa9ac12447cd57",
+  "real_fixture": "accession:2026:league:0:4",
+  "source_profile_sha256_before": "989fabbd101c29417c39d280d29152b84384e7be5dad4529ec450d85f70c59a1",
+  "source_profile_sha256_after": "989fabbd101c29417c39d280d29152b84384e7be5dad4529ec450d85f70c59a1",
+  "source_unchanged": true,
+  "files": [
+    {
+      "file": "red-b4c894ec-graphics.log",
+      "bytes": 756,
+      "sha256": "31e57ba2ef8c993aefbe9b751d5f61ca86ea70141733fa8761e320b9bc3dc89c"
+    },
+    {
+      "file": "entity-58e4651e-wrapper.log",
+      "bytes": 538,
+      "sha256": "e549f764818ce957afd9b3a7bb5579ce83ea435578a47c10117211bdf5ddc96a"
+    },
+    {
+      "file": "graphics-bd6a5fe6.log",
+      "bytes": 496,
+      "sha256": "7817a26d5a47a8d9032ae2e49883af2e809f3f5953005b0a02101cc0ecb83f6f"
+    },
+    {
+      "file": "graphics-bd6a5fe6-wrapper.log",
+      "bytes": 977,
+      "sha256": "5ef98545aea47a4984b623b9a37d9797861546ace6bd344a766f99ffab4bb588"
+    },
+    {
+      "file": "graphics-bd6a5fe6-report.json",
+      "bytes": 1812,
+      "sha256": "e4b9dc33262f418bc87d8a3dded854825a9465bbec301a0b9e0766cd77fddbe7"
+    },
+    {
+      "file": "graphics-bd6a5fe6-source-copy.json",
+      "bytes": 696,
+      "sha256": "dc95de7b3103a5d73e33a4a61aee67025e41e166c007925fbedb3e86e887f4a3"
+    }
+  ],
+  "captures": [
+    {
+      "source_file": "/workspace/work/night-phase10/analysis-club-office-v5/analyse-rencontre-reelle-2560.png",
+      "sha256": "1e911c8d02ed638c501237781f3b2a362e40f757c4c1851424152ea6d8e96df0",
+      "bytes": 732979,
+      "width": 2560,
+      "height": 1440,
+      "copied_in_this_receipt": false
+    },
+    {
+      "source_file": "/workspace/work/night-phase10/analysis-club-office-v5/fiche-rencontre-reelle-2560.png",
+      "sha256": "02d304cced63c42edb240174e405a85fb82e8b7dbd66aecc777049b113272001",
+      "bytes": 578017,
+      "width": 2560,
+      "height": 1440,
+      "copied_in_this_receipt": false
+    },
+    {
+      "source_file": "/workspace/work/night-phase10/analysis-club-office-v5/bureau-liens-reels-2560.png",
+      "sha256": "61371169c40459d7fce0f79751ebc4c20691d5efd6820388930cf4ccbd9879a4",
+      "bytes": 979271,
+      "width": 2560,
+      "height": 1440,
+      "copied_in_this_receipt": false
+    }
+  ],
+  "scope": "Two targeted native receipts, distinct exact SHAs; not a global SDK/CI campaign or Windows qualification."
+}
