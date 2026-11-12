@@ -18,6 +18,11 @@
 //   CD_MATCH_TEMPS_FORTS_SEED     graine du moteur, entier (défaut 7) : même graine, même match
 //   CD_MATCH_TEMPS_FORTS_GODOT_ARGS  arguments Godot supplémentaires, séparés par des espaces
 //   CD_MATCH_GESTES=0             capture sans les gestes ni la coupe vers les remises en jeu (actifs par défaut)
+//   CD_MATCH_TEMPS_FORTS_TYPES    chorégraphe (CD_MATCH_CHOREGRAPHE=1) : types de pistes à capturer, séparés par des virgules ;
+//                                 seul le premier temps fort de chaque type est enregistré, à vitesse réelle, les autres
+//                                 passent à vitesse 6 sans image ; la capture s'arrête quand tous ont été vus
+//   CD_MATCH_TEMPS_FORTS_TOUCHE   combinaison de touche du club dirigé avant le coup d'envoi (ex. maul : ballons portés)
+//   CD_MATCH_TEMPS_FORTS_DEPUIS   minute à partir de laquelle les temps forts sont joués (avant : commentaire seul)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const proof=process.env.CD_MATCH_TEMPS_FORTS_PROOF;
@@ -34,7 +39,9 @@ if(!/^(0|[1-9]\d*)$/.test(seed)){console.error('CD_MATCH_TEMPS_FORTS_SEED invali
 const work=fs.mkdtempSync(path.join(os.tmpdir(),'cd-temps-forts-capture-'));
 const {context}=require('./harness.cjs');
 const source=context();
-source.run(`start(${club});beginMatch()`);
+const touche=process.env.CD_MATCH_TEMPS_FORTS_TOUCHE||'';
+if(touche&&!/^[a-z]+$/.test(touche)){console.error('CD_MATCH_TEMPS_FORTS_TOUCHE invalide.');process.exit(2);}
+source.run(`start(${club});${touche?`setPlaybookChoice('lineout','${touche}');`:''}beginMatch()`);
 const save=path.join(work,'live.json');
 fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
 const extra=(process.env.CD_MATCH_TEMPS_FORTS_GODOT_ARGS||'').split(/\s+/).filter(Boolean);
@@ -43,7 +50,7 @@ const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.exec
 // Le mode de base, tel que le joueur le lance : aucune variable de mode n'est posée.
 delete env.CD_MATCH_TEMPS_FORTS;if(env.CD_MATCH_GESTES!=='0')delete env.CD_MATCH_GESTES;
 const started=Date.now();
-const result=spawnSync(godot,[...extra,'--windowed','--resolution',size,'--max-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts-capture.gd')],{env,encoding:'utf8',windowsHide:false,timeout:3600000,maxBuffer:64*1024*1024});
+const result=spawnSync(godot,[...extra,'--windowed','--resolution',size,'--max-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts-capture.gd')],{env,encoding:'utf8',windowsHide:false,timeout:Math.max(3600000,(Number(process.env.CD_MATCH_TEMPS_FORTS_LIMITE)||2400)*1000+600000),maxBuffer:64*1024*1024});
 const output=(result.stdout||'')+(result.stderr||'');
 fs.writeFileSync(path.join(proof,'godot.log'),output);
 fs.rmSync(work,{recursive:true,force:true});

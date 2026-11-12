@@ -35,6 +35,9 @@ const FONDU := 0.5
 const ECHEANCE_GESTE := 12.0
 const ECHEANCE_DEMANDE := 3.0
 const ECHEANCE_ERREUR := 5.0
+## Pistes du chorégraphe (CD_MATCH_CHOREGRAPHE=1) : marge au-delà de leur durée avant de
+## reprendre la main (la vue ne les lit plus, par exemple).
+const ECHEANCE_CHOREGRAPHIE := 5.0
 
 var view: Control
 var app: Control
@@ -78,9 +81,19 @@ var _resultat_sonne := false
 var _plaque := false
 ## Nombre d'actions du journal déjà connues du joueur quand le temps fort a commencé.
 var _vus := 0
+## Pistes du chorégraphe en cours : le fait du plan courant est-il déjà à l'écran (jalon passé) ?
+## Les pistes couvrent les plans `premier` à `dernier` ; chaque plan a son jalon (instant
+## où son fait est montré : ballon gagné, porteur plaqué, réception, essai aplati).
+var _jalon_montre := false
+var _jalons_lus := 0
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
+
+## Chorégraphe de temps forts : éteint par défaut (CD_MATCH_CHOREGRAPHE=1 pour l'activer,
+## côté moteur comme côté vue).
+static func choregraphe_demande() -> bool:
+	return OS.get_environment("CD_MATCH_CHOREGRAPHE") == "1"
 
 func setup(owner_view: Control, container: Control, target: SubViewport, space: Control) -> void:
 	name = "MatchTempsForts"
@@ -158,7 +171,9 @@ func _sonner(kind: String) -> void:
 ## l'action montrée (le moteur a une minute d'avance).
 func montre(live: Dictionary) -> Dictionary:
 	if etat != JEU or index < 0 or index >= tf.get("plans", []).size(): return live
-	var jusque: int = maxi(int(tf.plans[index].index) + 1, _vus)
+	# Pendant les pistes du chorégraphe, chaque fait n'entre au journal qu'une fois montré.
+	var avance := 0 if phase == "choregraphie" and not _jalon_montre else 1
+	var jusque: int = maxi(int(tf.plans[index].index) + avance, _vus)
 	if jusque >= _events.size(): return live
 	var copie := live.duplicate()
 	copie["events"] = _events.slice(0, jusque)
@@ -244,7 +259,8 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		if fige != gel:
 			gel = fige
 			_presenter(not gel)
-			if index >= 0 and index < tf.plans.size(): stage.apply_frame(_image(tf.plans[index].scene, gel, int(tf.plans[index].index)))
+			if phase == "choregraphie": stage.figer_choregraphie(gel)
+			elif index >= 0 and index < tf.plans.size(): stage.apply_frame(_image(tf.plans[index].scene, gel, int(tf.plans[index].index)))
 	elif etat == ATTENTE:
 		_vers_inter()
 	if etat != JEU:
@@ -352,6 +368,8 @@ func _commencer_plan() -> void:
 		var legende: Control = view.events.get_parent().get_parent().get_parent()
 		cadrage.couvrir(view.clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
 		if plan.get("coupe", false): cadrage.couper()
+	if _jouer_choregraphie(plan):
+		return
 	if plan.get("coupe", false) and not _gestes_actifs():
 		# Coupe franche : la phase est montrée déjà en place.
 		var pret := scene.duplicate()
@@ -365,6 +383,90 @@ func _commencer_plan() -> void:
 			_habiller()
 			return
 	_jouer(plan)
+
+## Pistes continues du chorégraphe pour ce plan (moteur Node, CD_MATCH_CHOREGRAPHE=1) :
+## la vue les suit à la place de l'interpolation et des gestes du plan. Sans pistes, ou
+## si la vue les refuse, le plan se joue comme avant.
+func _jouer_choregraphie(plan: Dictionary) -> bool:
+	var pistes: Variant = tf.get("choregraphie")
+	if not choregraphe_demande() or not pistes is Dictionary or int(pistes.get("premier", -1)) != index:
+		return false
+	var dernier := int(pistes.get("dernier", -1))
+	if dernier < index or dernier >= tf.plans.size() or not pistes.get("jalons") is Array:
+		suivi.append({"evenement": "choregraphie_refusee", "debut_ms": Time.get_ticks_msec()})
+		return false
+	# Joueurs pas encore à l'écran (premier temps fort du match, sans scène de départ) : la scène du
+	# plan les pose d'abord, figée, pour que les pistes aient qui déplacer.
+	if stage.has_method("jouer_choregraphie") and pistes.get("joueurs") is Array and plan.get("scene") is Dictionary:
+		var absents := 0
+		for joueur: Variant in pistes.joueurs:
+			if joueur is Dictionary and not stage._actors.has(str(joueur.get("id", ""))): absents += 1
+		if absents > 0:
+			stage.apply_frame(_image(plan.scene, true, int(plan.get("index", 0)) - 1))
+			_derniers = _positions(plan.scene)
+	if not stage.has_method("jouer_choregraphie") or not stage.jouer_choregraphie(pistes, vitesse):
+		suivi.append({"evenement": "choregraphie_refusee", "debut_ms": Time.get_ticks_msec()})
+		return false
+	phase = "choregraphie"
+	_resultat_sonne = false
+	temps = 0.0
+	_tenu = 0.0
+	_jalon_montre = false
+	_jalons_lus = 0
+	# Plusieurs temps de jeu : cadrage rapproché du jeu courant, qui suit le ballon ; une remise en
+	# jeu formée part d'une coupe.
+	if cadrage != null:
+		# Jeu au pied et pénalités : cadrage large des coups de pied ; franchissement : celui d'une
+		# longue course ; ballon porté : cadrage rapproché du jeu courant.
+		var genre := str(pistes.get("type", ""))
+		cadrage.regler(true, "kick" if genre == "jeu_au_pied" or genre.begins_with("penalite") else "carry", genre == "franchissement")
+		if pistes.get("coupe", false): cadrage.couper()
+	suivi.append({"evenement": "choregraphie", "plan": str(plan.get("kind", "")), "type": str(pistes.get("type", "")), "premier": index, "dernier": dernier,
+		"duree_prevue": float(pistes.get("duree", 0.0)), "debut_ms": Time.get_ticks_msec()})
+	_habiller()
+	return true
+
+func _lire_choregraphie(reel: float) -> void:
+	_tenu += reel
+	var pistes: Dictionary = tf.choregraphie
+	var jalons: Array = pistes.get("jalons", [])
+	var dernier := int(pistes.get("dernier", index))
+	# Chaque plan couvert prend la main à son jalon : légende, journal et score suivent l'image ;
+	# la clameur et la légende de l'essai partent quand le ballon est aplati à l'écran.
+	while _jalons_lus < jalons.size() and jalons[_jalons_lus] is Array and float(jalons[_jalons_lus][0]) <= stage.choregraphie_temps() + 0.0001:
+		var k := clampi(int(jalons[_jalons_lus][1]), index, dernier)
+		_jalons_lus += 1
+		if k > index:
+			_score = tf.plans[index].get("score", _score)
+			index = k
+		_jalon_montre = true
+		if str(tf.plans[index].get("kind", "")) == "try": _sonner("try")
+		# Tir au but : son jalon est le passage du ballon, le résultat est à l'écran.
+		if tf.plans[index].has("annonce") and not _resultat_sonne:
+			_resultat_sonne = true
+			_sonner("goal" if str(tf.plans[index].get("kind", "")) == "goal" else "miss")
+		_habiller()
+	var echue := _tenu > float(pistes.get("duree", 0.0)) / maxf(vitesse, 0.01) + ECHEANCE_CHOREGRAPHIE
+	if stage.choregraphie_active() and not stage.choregraphie_finie() and not echue:
+		return
+	if echue: suivi.append({"evenement": "echeance", "cause": "choregraphie", "debut_ms": Time.get_ticks_msec()})
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) == "choregraphie":
+			suivi[i]["duree_reelle"] = _tenu
+			break
+	_jalon_montre = true
+	if index < dernier:
+		_score = tf.plans[index].get("score", _score)
+		index = dernier
+	stage.arreter_choregraphie()
+	# Places réelles en fin de pistes : point de départ du plan suivant.
+	_derniers = {}
+	for id: String in stage._actors:
+		var at: Vector3 = (stage._actors[id].node as Node3D).position
+		_derniers[id] = Vector2(at.x + 50.0, at.z + 35.0)
+	# Le plan se termine comme un plan ordinaire : score, plan suivant ou fin du temps fort.
+	phase = "jeu"
+	temps = float(tf.plans[index].get("duree", 1.0))
 
 func _jouer(plan: Dictionary) -> void:
 	var scene: Dictionary = plan.scene
@@ -384,6 +486,9 @@ func _jouer(plan: Dictionary) -> void:
 
 func _lire(delta: float, reel: float) -> void:
 	if gel or index < 0 or index >= tf.plans.size(): return
+	if phase == "choregraphie":
+		_lire_choregraphie(reel)
+		return
 	# Une passe longue ou un geste de la vue tient l'image : la lecture l'attend, avec une échéance.
 	if stage.is_presenting_extended_pass() and _tenu < ECHEANCE_GESTE:
 		_tenu += reel
@@ -416,7 +521,11 @@ func _lire(delta: float, reel: float) -> void:
 	if index < tf.plans.size():
 		_commencer_plan()
 		return
-	suivi[-1]["duree_reelle"] = (Time.get_ticks_msec() - _debut_ms) / 1000.0
+	# Durée du temps fort : sur son entrée (les pistes du chorégraphe ont la leur, à la suite).
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) == "temps_fort":
+			suivi[i]["duree_reelle"] = (Time.get_ticks_msec() - _debut_ms) / 1000.0
+			break
 	index = -1
 	if _live.get("paused", false) or _live.get("finished", false) or not _arret_attendu.is_empty():
 		_vers_inter()
@@ -529,8 +638,11 @@ func _habiller() -> void:
 	_valider(false)
 	view.clock.text = str(plan.get("horloge", ""))
 	if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
-	var attend_resultat: bool = plan.has("annonce") and (phase == "pret" or temps < RESULTAT)
+	# Pistes : un plan n'est courant qu'à son jalon (passage du ballon pour un tir) : le résultat est montré.
+	var attend_resultat: bool = plan.has("annonce") and phase != "choregraphie" and (phase == "pret" or temps < RESULTAT)
 	view.events.text = str(plan.get("annonce" if attend_resultat else "texte", ""))
+	# Pistes du chorégraphe : jamais un fait (l'essai compris) annoncé avant d'être à l'écran.
+	if phase == "choregraphie" and not _jalon_montre: view.events.text = ""
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
 

@@ -1,7 +1,8 @@
 'use strict';
 // Golden states measured against 9044998e with seed/clock fixed. This runs in shallow CI checkouts.
-// Hashes re-measured for the alternating home/away schedule (PR #573): with the previous schedule()
-// put back, every stage, RNG and export hash equals the 9044998e capture.
+// Hashes re-measured for the alternating home/away schedule (PR #573) and for the drawn-name pools that lost
+// their real full names (#579, 6 surnames replaced): with the previous schedule() put back and those surnames
+// mapped back, every stage, RNG and export checksum equals the 9044998e capture.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {context}=require('./france-harness.cjs'),baseline=require('./france-legacy-parity.json');const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 const {freezeFranceBirths}=require('./helpers/frozen-france-births.cjs');
