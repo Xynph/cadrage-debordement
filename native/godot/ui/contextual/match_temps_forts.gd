@@ -163,7 +163,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.horloge_choisie.connect(choisir_horloge)
 	between.delegation_demandee.connect(view.confier_fin)
 	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
-	between.visibility_changed.connect(func(): if view.barre_commandes != null: view.barre_commandes.visible = not between.visible)
+	between.visibility_changed.connect(_barre_unique)
 	# Mon XV : un joueur choisi ouvre le banc sur lui (le match se met en pause).
 	between.joueur_choisi.connect(func(poste: int):
 		view.selected_slot = poste
@@ -175,6 +175,10 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
 	if preferences != null: between.terrain.calme = bool(preferences.data.get("reduced_motion", false))
 	between.terrain.recaler(-1)
+
+## Une seule barre de commandes pendant l'entracte ; le match fini la rend (« Valider la journée » y est).
+func _barre_unique() -> void:
+	if view != null and view.barre_commandes != null: view.barre_commandes.visible = not between.visible or bool(_live.get("finished", false))
 
 func choisir_horloge(valeur: String) -> void:
 	if not HORLOGES.has(valeur): return
@@ -360,6 +364,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		attente = 0.0
 		# Un arrêt suit le temps fort retenu, jamais avant lui.
 		if _retenu.is_empty(): _apres_lecture()
+	if bool(live.get("finished", false)): _barre_unique()
 	_habiller()
 
 func _process(delta: float) -> void:
