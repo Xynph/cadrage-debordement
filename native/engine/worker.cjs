@@ -9,7 +9,7 @@ const positionAptitudes=require('./position-aptitudes.cjs');
 const careerVariation=require('./career-variation.cjs');
 const potentialEvolution=require('./potential-evolution.cjs'),potentialEvolutionValidation=potentialEvolution();
 const inSeasonDevelopment=require('./in-season-development.cjs');
-const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs');
+const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs'),boardNames=require('./staff-completion.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makeNational=require('./international-native.cjs');
@@ -167,7 +167,7 @@ function createBridge(options={}){
   run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
   run(`const nativeClubTransfers=(${clubTransfers.toString()})();nativeClubTransfers.installHooks();`);
   // Directions des clubs gérés (carrières mondiales créées avec elles) ; validation de leur état.
-  run(`const nativeClubDirections=(${clubDirections.toString()})(nativeClubTransfers);
+  run(`const nativeClubDirections=(${clubDirections.toString()})(nativeClubTransfers,(${boardNames.factory.toString()})());
    const nativeClubDirectionsValidator=validateCareer;validateCareer=state=>{const result=nativeClubDirectionsValidator(state);nativeClubDirections.validate(state);return result;};`);
   run(`const nativeInSeasonDevelopment=(${inSeasonDevelopment.toString()})();nativeInSeasonDevelopment.installHooks();const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
   run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();

@@ -28,7 +28,7 @@
 // club, joueur, saison), jamais le générateur des matchs. Seules les carrières
 // créées avec cet état (S.clubDirections) l'utilisent ; les autres gardent les
 // cinq stratégies fixes de club-transfers.cjs, sans migration.
-module.exports=function clubDirections(T){
+module.exports=function clubDirections(T,N){
  const VERSION=1,FEED=30,WATCH=160,LOANS=120,TALLY_SEASONS=4,CASH_FLOOR=400000;
  const MAX_BUYS=3,MAX_SALES=3,ROUNDS=3,MAX_LOANS_OUT=2;
  const STRATEGIES=Object.freeze(['vedettes','formateur','rajeunissement','reconstruction','maintien','vente','equilibre']);
@@ -53,10 +53,51 @@ module.exports=function clubDirections(T){
  const week=()=>S.worldMode?.week??S.round;
 
  // ---- Personnes et traits -------------------------------------------------
- function person(role,clubId,since,bias={}){
+ // Président et directeur sportif : identifiant stable par club (pres-<club>,
+ // ds-<club>), nom inventé tiré du générateur de noms du staff ; un pack
+ // d'identités (rubrique « boards ») peut le remplacer à l'affichage. Leurs
+ // successeurs (pres-<club>-s<saison>) gardent un nom inventé.
+ // Entraîneur : l'entraîneur principal du club dans le staff de la carrière.
+ function clubCountry(clubId){
+  try{return CDWorldCareer.edition(S).registry.clubs.find(r=>r.id===clubId)?.country||'FR';}catch{return 'FR';}
+ }
+ function boardName(id,clubId){
+  if(N?.profile)return N.profile('board:'+id,{function:'teamManager',country:clubCountry(clubId)}).name;
+  return (id.startsWith('pres-')?'Président':'Directeur sportif')+' de '+(S.clubs[clubId]?.name||'club');
+ }
+ function traitsFor(role,key,bias={}){
   const traits={};
-  for(const k of ROLE_TRAITS[role])traits[k]=clamp(Math.round(15+70*roll('trait',role,clubId,since,k)+(bias[k]||0)),0,100);
-  return {since,traits};
+  for(const k of ROLE_TRAITS[role])traits[k]=clamp(Math.round(15+70*roll('trait',role,key,k)+(bias[k]||0)),0,100);
+  return traits;
+ }
+ function person(role,clubId,since,bias={}){
+  const first=!S.clubDirections?.clubs?.[clubId];
+  const id=(role==='president'?'pres-':'ds-')+clubId+(first?'':'-s'+since.split(':')[0]);
+  return {id,name:boardName(id,clubId),since,traits:traitsFor(role,clubId+'|'+since,bias)};
+ }
+ const staffActive=()=>S.staffCareer?.version===1&&Array.isArray(S.staffCareer.people);
+ const staffPeople=()=>staffActive()?S.staffCareer.people.flat():[];
+ const HEAD=/head coach|entra[iî]neur principal|^entra[iî]neur$|^manager$|manager ?- ?entra|manager sportif|manager g[ée]n[ée]ral|director of rugby|directeur du rugby|head of rugby|senior coach|^coach$|rugby manager|first team coach|manager de l.[ée]quipe premi/i;
+ const NOT_HEAD=/academy|acad[ée]mie|assistant|adjoint|junior|transition|university|skills|forwards|backs|defen|attack|scrum|kicking|lineout|line-out|s&c|avants|arri[eè]res|d[ée]fense|attaque|m[êe]l[ée]e|touche|jeu au pied|pr[ée]para|r[ée]athl|formation|espoirs/i;
+ function headScore(p){const l=String(p.roleLabel||'');return (HEAD.test(l)&&!NOT_HEAD.test(l)?2:0)+(p.role==='coach'&&!NOT_HEAD.test(l)?1:0);}
+ function headCoach(clubId){
+  return staffPeople().filter(p=>p.clubId===clubId&&p.role==='coach').sort((a,b)=>headScore(b)-headScore(a)||b.level-a.level||(a.id<b.id?-1:1))[0]||null;
+ }
+ function coachFrom(clubId,p,since){
+  if(!p)return {id:null,name:'Entraîneur de '+(S.clubs[clubId]?.name||'club'),since,traits:traitsFor('coach',clubId+'|'+since)};
+  // Les traits suivent la personne : un entraîneur garde son tempérament d'un club à l'autre.
+  return {id:p.id,name:p.name,since,traits:traitsFor('coach',p.id,{panic:-Math.round((p.level-60)/2)})};
+ }
+ function staffEvent(kind,p,clubId){
+  const st=S.staffCareer;
+  st.history.push({season:S.season,kind,id:p.id,clubId,name:p.name,role:p.role,appearanceId:p.appearanceId,appearanceAge:p.appearanceAge,age:p.age,sourcePlayerId:p.sourcePlayerId,...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),amount:0});
+  st.history=st.history.slice(-512);
+ }
+ // L'entraîneur de la direction suit le staff réel (retraite, recrutement de l'intersaison).
+ function syncCoach(c,x){
+  if(!staffActive())return;
+  const head=headCoach(c.id);
+  if(head&&head.id!==x.coach.id){x.coach=coachFrom(c.id,head,S.season+':'+week());if(S.season>1||week()>0)count('entraineur-arrivee',c.id);}
  }
  // Réseau du directeur sportif : son championnat, plus d'autres selon sa compétence
  // et l'attrait des championnats (un bon recruteur d'un club réputé voit plus loin).
@@ -78,7 +119,7 @@ module.exports=function clubDirections(T){
  function newDirection(c,peers,season){
   const b=bias(c,peers);
   const d={strategy:'equilibre',since:season,objective:null,confidence:60,missed:0,league:leagueOf(c.id),
-   president:person('president',c.id,season+':0',b.president),director:person('director',c.id,season+':0',b.director),coach:person('coach',c.id,season+':0',b.coach)};
+   president:person('president',c.id,season+':0',b.president),director:person('director',c.id,season+':0',b.director),coach:coachFrom(c.id,headCoach(c.id),season+':0')};
   d.director.network=network(c,d.director,season+':0');
   return d;
  }
@@ -196,6 +237,7 @@ module.exports=function clubDirections(T){
    else if(moved===1)x.confidence=clamp(x.confidence+20,0,100);
    x.lastRank=moved?null:lastRank;x.league=lg;
    if(c.id===S.club)continue;
+   syncCoach(c,x);
    // Président : reprise après une crise, ou passage de relais.
    const crisis=(worldClub(c.id)?.debt||0)>0||c.cash<500000;
    const takeover=crisis?roll('takeover',c.id,S.season)<.3:roll('takeover',c.id,S.season)<.04+(x.confidence<25?.08:0);
@@ -203,8 +245,8 @@ module.exports=function clubDirections(T){
     const investor=roll('investor',c.id,S.season)<(crisis?.35:.5);
     x.president=person('president',c.id,S.season+':0',investor?{ambition:20,prudence:-15}:{prudence:20,ambition:-10});
     x.confidence=60;count('president-change',c.id);
-    say(c.name+' change de président : '+(investor?'un investisseur ambitieux reprend le club.':'un dirigeant prudent arrive pour remettre les comptes en ordre.'),[c.id],true);
-    if(roll('newdir',c.id,S.season)<.6){x.director=person('director',c.id,S.season+':0',{});x.director.network=network(c,x.director,S.season+':0');count('directeur-change',c.id);}
+    say(c.name+' change de président : '+x.president.name+(investor?', investisseur ambitieux, reprend le club.':', dirigeant prudent, arrive pour remettre les comptes en ordre.'),[c.id],true);
+    if(roll('newdir',c.id,S.season)<.6){x.director=person('director',c.id,S.season+':0',{});say(c.name+' nomme '+x.director.name+' directeur sportif.',[c.id],false);x.director.network=network(c,x.director,S.season+':0');count('directeur-change',c.id);}
    }
    // Entraîneur : un président impatient sanctionne l'objectif manqué.
    else if(x.missed>0&&S.season>1&&roll('coachend',c.id,S.season)<.15+x.missed*.15+(50-x.president.traits.patience)/200)fireCoach(c,x,'à l’intersaison après une saison décevante');
@@ -219,10 +261,28 @@ module.exports=function clubDirections(T){
   });
   trimTally();
  }
+ // Renvoi : l'entraîneur principal quitte le staff du club, le meilleur entraîneur
+ // libre du marché du staff le remplace. Sans remplaçant disponible, le président
+ // garde son entraîneur (la confiance baisse).
  function fireCoach(c,x,when){
-  x.coach=person('coach',c.id,S.season+':'+week(),{});x.confidence=clamp(x.confidence+10,0,100);x.marks??={};x.marks.fired=S.season;
+  const since=S.season+':'+week();
+  if(staffActive()){
+   const head=headCoach(c.id);
+   const next=staffPeople().filter(p=>p.clubId===null&&p.role==='coach'&&p.age<p.retireAge-1&&p.id!==head?.id)
+    .sort((a,b)=>b.level-a.level||(seedHash(state().seed+'|coach|'+c.id+'|'+a.id)%97)-(seedHash(state().seed+'|coach|'+c.id+'|'+b.id)%97)||(a.id<b.id?-1:1))[0];
+   if(!next){x.confidence=clamp(x.confidence-5,0,100);return false;}
+   const gone=head?.name||x.coach.name;
+   if(head){head.clubId=null;head.contractEnd=null;staffEvent('release',head,c.id);}
+   next.clubId=c.id;next.contractEnd=Math.min(S.season+2,S.season+next.retireAge-next.age-1);staffEvent('ai-hire',next,c.id);
+   x.coach=coachFrom(c.id,next,since);
+   say(c.name+' se sépare de son entraîneur '+gone+' '+when+' ; '+next.name+' prend l’équipe.',[c.id],true);
+  }else{
+   const gone=x.coach.name;x.coach=coachFrom(c.id,null,since);
+   say(c.name+' se sépare de son entraîneur '+gone+' '+when+'.',[c.id],true);
+  }
+  x.confidence=clamp(x.confidence+10,0,100);x.marks??={};x.marks.fired=S.season;
   count('entraineur-renvoye',c.id);
-  say(c.name+' se sépare de son entraîneur '+when+'.',[c.id],true);
+  return true;
  }
  // Chaque semaine : série noire, président impatient, entraîneur renvoyé.
  function weekly(){
@@ -232,7 +292,7 @@ module.exports=function clubDirections(T){
   for(const [lg,peers] of Object.entries(leagueRows())){
    const rows=table(lg);
    for(const c of peers){
-    const x=d.clubs[c.id];if(!x||x.marks?.fired===S.season)continue;
+    const x=d.clubs[c.id];if(!x)continue;syncCoach(c,x);if(x.marks?.fired===S.season)continue;
     const i=rows.findIndex(r=>r.clubId===c.id),row=rows[i];if(!row||row.played<6)continue;
     const form=(row.form||[]).slice(-6),losses=form.filter(f=>f==='L').length,gap=i+1-(x.objective??i+1);
     if(losses>=5&&gap>=3){
@@ -559,7 +619,8 @@ module.exports=function clubDirections(T){
   ok(Object.keys(d.clubs).length<=s.clubs.length&&Object.keys(d.clubs).every(k=>/^(0|[1-9]\d*)$/.test(k)&&Number(k)<s.clubs.length));
   for(const x of Object.values(d.clubs)){
    ok(x&&STRATEGIES.includes(x.strategy)&&int(x.since,1,s.season)&&int(x.confidence,0,100)&&(x.objective===null||int(x.objective,1,64))&&int(x.missed??0,0,3));
-   for(const role of Object.keys(ROLE_TRAITS)){ok(x[role]&&typeof x[role].since==='string'&&x[role].since.length<=12);traits(x[role].traits,role);}
+   for(const role of Object.keys(ROLE_TRAITS)){const r=x[role];ok(r&&typeof r.since==='string'&&r.since.length<=12&&typeof r.name==='string'&&r.name.length>0&&r.name.length<=160&&!/[<>\x00-\x1f]/.test(r.name));traits(r.traits,role);}
+   ok(/^pres-\d{1,3}(-s\d{1,5})?$/.test(x.president.id)&&/^ds-\d{1,3}(-s\d{1,5})?$/.test(x.director.id)&&(x.coach.id===null||typeof x.coach.id==='string'&&/^[A-Za-z0-9:._-]{1,240}$/.test(x.coach.id)));
    ok(Array.isArray(x.director.network)&&x.director.network.length>=1&&x.director.network.length<=4&&x.director.network.every(id=>typeof id==='string'&&id.length<=16));
   }
   ok(d.tally&&typeof d.tally==='object'&&Object.keys(d.tally).length<=4000&&Object.entries(d.tally).every(([k,v])=>k.length<=80&&int(v,0,1e6)));

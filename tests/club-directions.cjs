@@ -5,7 +5,7 @@
 const assert=require('node:assert/strict'),vm=require('node:vm');
 const transfers=require('../native/engine/club-transfers.cjs'),directions=require('../native/engine/club-directions.cjs');
 const POS=['Pilier gauche','Talonneur','Pilier droit','Deuxième ligne','Deuxième ligne','Troisième ligne aile','Troisième ligne aile','Numéro 8','Demi de mêlée','Demi d’ouverture','Ailier','Centre','Centre','Ailier','Arrière'];
-function world(seed=27,{cash,ages}={}){
+function world(seed=27,{cash,ages,staff}={}){
  const N=8;cash??=[9e6,1.2e6,3e6,3e6,2.5e6,0.6e6,2e6,4e6];ages??=[27,26,21,32,25,28,24,26];
  const player=(club,i,age)=>({id:`p${club}-${i}`,name:`Joueur ${club}-${i}`,pos:POS[i%15],age,salary:4000+120*(i%9)+club*150,contractEnd:2+(i%3),joinedSeason:0,note:58+(i*7+club*5)%26,injury:0,dev:{retireAge:37}});
  const clubs=cash.map((c,id)=>({id,name:'Club '+id,cash:c,base:70+(id%3),players:Array.from({length:46},(_,i)=>player(id,i,ages[id]+(i%6)-2))}));
@@ -22,8 +22,9 @@ function world(seed=27,{cash,ages}={}){
   aiRosterMayRecruit:c=>c.players.length<46,professionalPlaces:c=>52-c.players.length,money:x=>x+' €',
   aiRosterReport:id=>{let r=reports.find(x=>x.clubId===id&&x.season===ctx.S.season);if(!r){r={clubId:id,season:ctx.S.season,recruited:0};reports.push(r);}return r;},
   aiRosterEvent:(clubId,kind,p,fee)=>events.push({clubId,kind,playerId:p.id,fee}),aiRosterRecruitmentWeek:()=>0,news:t=>news.push(t)};
+ if(staff)ctx.S.staffCareer={version:1,people:[staff],history:[]};
  vm.createContext(ctx);
- vm.runInContext('var nativeClubTransfers=('+transfers.toString()+')();var api=('+directions.toString()+')(nativeClubTransfers);',ctx);
+ vm.runInContext('var nativeClubTransfers=('+transfers.toString()+')();var api=('+directions.toString()+')(nativeClubTransfers,('+require("../native/engine/staff-completion.cjs").factory.toString()+')());',ctx);
  assert.ok(ctx.api.create(ctx.S,seed));
  return {ctx,api:ctx.api,S:ctx.S,events,news};
 }
@@ -111,4 +112,18 @@ function ctx2(S,id){return Object.keys(S.worldMode.leagues).find(k=>S.worldMode.
  assert.notEqual(x.coach.since,before,'entraîneur remplacé');
  assert.ok(!news.some(t=>/se sépare/.test(t)),'hors du championnat du manager : pas de nouvelle');
  assert.ok(S.clubDirections.feed.some(t=>/se sépare de son entraîneur/.test(t)),'fil des directions');}
+// Personnes : président et directeur sportif identifiés par club, nom inventé ; entraîneur = entraîneur principal du staff.
+{const coach=(id,clubId,roleLabel,level)=>({id,name:'Nom '+id,role:'coach',roleLabel,level,clubId,contractEnd:clubId===null?null:2,age:50,retireAge:70,appearanceId:id,appearanceAge:50,sourcePlayerId:null});
+ const staff=[coach('s-avants',3,'Forwards Coach',80),coach('s-chef',3,'Head Coach',60),coach('s-libre',null,'Entraîneur',72),coach('s-libre2',null,'Entraîneur',55)];
+ const {S,api}=world(27,{staff});const x=S.clubDirections.clubs[3];
+ assert.equal(x.president.id,'pres-3');assert.equal(x.director.id,'ds-3');assert.ok(/\S+ \S+/.test(x.president.name)&&x.president.name!==x.director.name,'noms inventés');
+ assert.equal(x.president.name,require('../native/engine/board-identities.cjs').baseName('pres-3',{clubs:[{id:3,country:'FR'}]}),'même nom de base que la rubrique boards');
+ assert.equal(x.coach.id,'s-chef','entraîneur principal du staff, pas son adjoint mieux noté');assert.equal(x.coach.name,'Nom s-chef');
+ x.objective=1;x.president.traits.patience=5;
+ for(let wk=6;wk<14&&x.coach.id==='s-chef';wk++){S.worldMode.week=wk;S.round=wk;api.weekly();}
+ assert.equal(x.coach.id,'s-libre','meilleur entraîneur libre engagé');
+ assert.equal(staff[1].clubId,null);assert.equal(staff[2].clubId,3);
+ assert.deepEqual(S.staffCareer.history.map(e=>e.kind+':'+e.id),['release:s-chef','ai-hire:s-libre']);
+ assert.ok(S.clubDirections.feed.some(t=>t.includes('Nom s-chef')&&t.includes('Nom s-libre')));
+ assert.ok(api.validate(S));}
 console.log('PASS directions des clubs gérés : traits, stratégie émergente, évaluation bruitée, besoins, fenêtres déterministes, prêts, jokers, renvoi d’entraîneur');
