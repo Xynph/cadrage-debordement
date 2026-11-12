@@ -6,6 +6,7 @@ const Profile = preload("res://guide/guide_profile.gd")
 const Speech = preload("res://guide/guide_speech.gd")
 const Portrait = preload("res://guide/coach_portrait.gd")
 const Balloon = preload("res://guide/coach_bubble.gd")
+const Moments = preload("res://guide/gabi_moments.gd")
 const INK := Color("e9dec8")
 const GOLD := Color("d0b178")
 var app: Control
@@ -568,7 +569,9 @@ func _show_page(force: bool, request_speech: bool = true) -> void:
 	var key := mode + ":" + id + ":" + str(fragment_index) + ":" + str(app.route)
 	current_id = id
 	_title.text = "GABI · " + page[1]
-	portrait.set_context(id)
+	# Portrait 3D : le geste suit le moment de la bulle (catégorie et ton, voir gabi_moments.gd).
+	if portrait.has_method("set_moment"): portrait.set_moment(Moments.moment(id, fragment_id, app.model))
+	else: portrait.set_context(id)
 	_progress.text = "%d/%d" % [fragment_index + 1, fragments.size()]
 	bubble.text = str(fragments[fragment_index].text)
 	_previous.visible = mode != "context"; _next.visible = true
