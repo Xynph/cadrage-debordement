@@ -346,6 +346,13 @@ func _tactics(live: Dictionary) -> void:
 			if tactics.get(pair[0]) == option.get("id"): S.selected(button, S.GOLD)
 			drawer_body.add_child(button)
 			drawer_body.add_child(S.wrap(str(option.get("description", "")), 13))
+	# Consigne sur pénalité : tir au but, pénaltouche, jouer vite à la main, ou selon le contexte.
+	if not tactics.get("penalties", []).is_empty():
+		drawer_body.add_child(S.label("Sur pénalité", 18, S.GOLD))
+		for option: Dictionary in tactics.get("penalties", []):
+			var bouton := S.button(str(option.get("label", "")), func(): director.command("set_penalty_policy", {"policy":option.get("id")}), allowed)
+			if tactics.get("penalty") == option.get("id"): S.selected(bouton, S.GOLD)
+			drawer_body.add_child(bouton)
 	var notes := S.G.panel(drawer_body)
 	preload("res://ui/decision_views.gd").match_notes(app, notes, model)
 

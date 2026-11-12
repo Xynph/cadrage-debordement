@@ -35,7 +35,7 @@ function performKickRestart(l,kind,team,cause,by){
  ballPossession(l,retain?team:1-team,landing);const receiver=actionPlayer(l,l.possession,'receiver');addEvent(l,`${receiver?.name||S.clubs[l.pair[l.possession]].abbr} (${S.clubs[l.pair[l.possession]].abbr}) récupère le ballon à la réception.`,'play',{kind:'reception',team:l.possession,actor:receiver?.id||null,from:{x:at,y:35},to:{x:landing,y:35}});return true;
 }
 function handFault(l,offender,forward=false){
- tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender});
+ tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
  return grantSetPiece(l,'scrum',1-offender,at,forward?'forward-pass':'knock-on',offender);
 }
 function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false}={}){

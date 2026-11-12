@@ -63,6 +63,14 @@ test('Chaque fait structuré dit la même chose que le texte du journal', () => 
         assert.equal(s.conversion, !e.text.includes('transformation manquée'), e.text);
         assert.equal(s.origin === 'maul', e.text.includes('sur ballon porté'), e.text);
         assert.equal(s.origin === 'scrum', e.text.includes('sur mêlée'), e.text);
+      } else if (s.kind === 'hand-fault') {
+        // Faute de main : sa nature (en-avant ou passe en avant) et le joueur fautif.
+        assert.equal(s.cause, e.text.includes('passe en avant') ? 'forward-pass' : 'knock-on', e.text);
+        assert.ok(s.actor !== null, 'faute de main nommée : ' + e.text);
+      } else if (s.kind === 'penalty') {
+        // Coup de sifflet : la nature de la faute (règles professionnelles révisées).
+        if (s.cause !== undefined) assert.ok(['offside', 'ruck', 'holding', 'obstruction', 'dangerous'].includes(s.cause), e.text);
+        assert.equal(s.cause === 'holding', e.text.includes('ballon conservé au sol'), e.text);
       } else if (s.kind === 'card') {
         assert.equal(s.card !== undefined, s.incident === true, 'couleur sur le carton infligé seulement : ' + e.text);
         if (s.incident) { cartons++; assert.equal(s.card === 'yellow', e.text.startsWith('Carton jaune'), e.text); }

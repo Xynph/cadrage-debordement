@@ -1,6 +1,6 @@
 'use strict';
 const DIFFICULTIES={decouverte:['Découverte','Un entraîneur adverse au plan stable, avec des changements tardifs.'],classique:['Classique','Rotation, choix du style selon les qualités et la météo, adaptation à la mi-temps.'],expert:['Expert','Gestion du banc et des postes clés, adaptation au score et recherche des bonus.']};
-const PENALTY_POLICIES={auto:'Selon le contexte',points:'Chercher les points',touch:'Chercher la pénaltouche'};
+const PENALTY_POLICIES={auto:'Selon le contexte',points:'Chercher les points',touch:'Chercher la pénaltouche',main:'Jouer vite à la main'};
 function normalizeOppositionSnapshot(state){if(!state.difficulty)state.difficulty='classique';if(state.defence===undefined)state.defence='equilibre';for(let c of state.clubs){if(c.morale===undefined){let value=75;for(let f of c.form)value=clamp(value+(f==='V'?6:f==='D'?-5:1),25,98);c.morale=value}}return state}
 function setupOpposition(){if(S)normalizeOppositionSnapshot(S)}
 function clubMorale(ci){return ci===S.club?S.morale:(S.clubs[ci].morale??75)}
