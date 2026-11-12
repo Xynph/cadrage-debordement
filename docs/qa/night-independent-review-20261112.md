@@ -20,3 +20,14 @@ relecteur n’a exécuté ni Godot, import, CI, mutation de fichier, campagne gl
 ou recette Windows. Les moteurs réservés à Claude n’ont pas fait l’objet d’un
 audit général. Les tests effectivement reçus gardent leurs SHA et leurs portées
 propres dans les autres documents de recette.
+
+## Revue complémentaire du retour depuis une page
+
+Le même relecteur indépendant a examiné le correctif exact
+`4a51841f922d0dc344a0c2ade1258ceccf8b6825`, intégré sous `58e4651e`.
+Aucun défaut concret supplémentaire n’a été signalé : priorité aux enfants,
+weakrefs, invalidation avant fermeture, restitution conditionnée à la page ou
+à l’entrée historique originale et protection des confirmations métier.
+Cette seconde lecture reste statique ; les reçus réels 50/0 sur `58e4651e` et
+72/0 sur `bd6a5fe6` sont documentés séparément dans
+[night-page-reader-back-20261112.md](night-page-reader-back-20261112.md).
