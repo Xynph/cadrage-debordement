@@ -143,7 +143,7 @@ func _group_upgrade() -> void:
 	if not preview.get("available", false):
 		_action(self, rectangle, "Pourquoi la mise à jour attend", func(): _group_upgrade_reason(preview), false, "people", "AcademyGroupsBlocked")
 		return
-	var text := "Compléter les U18 et U21 des %d clubs ? %d jeunes rejoindront les centres. Les joueurs en place garderont leur fiche et leurs acquis." % [int(preview.centers), int(preview.additions)]
+	var text := "Compléter les Crabos et Espoirs des %d clubs ? %d jeunes rejoindront les centres. Les joueurs en place garderont leur fiche et leurs acquis." % [int(preview.centers), int(preview.additions)]
 	_action(self, rectangle, "Compléter les centres de formation", func():
 		app.confirm("30 U18 et 30 U21 par club", text, func():
 			app._command("academy_groups_enable", {"confirmed": true, "context": preview.context}), true), true, "people", "AcademyGroupsEnable")
