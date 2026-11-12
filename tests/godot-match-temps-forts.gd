@@ -296,6 +296,7 @@ func choreography(view: Control) -> void:
 	var journal_avance := false
 	var fige_teste := false
 	var fige_ok := false
+	var fige_detail := ""
 	var balle_ok := true
 	var apres_index := -1
 	while int(app.model.live.minute) < 17 and Time.get_ticks_msec() < deadline:
@@ -311,24 +312,32 @@ func choreography(view: Control) -> void:
 		if not regie._jalon_montre:
 			if not str(view.events.text).is_empty(): annonce_avant = true
 			var montre: Dictionary = regie.montre(app.model.live)
-			if montre.get("events", []).size() > int(plan.index): journal_avance = true
+			# Ce que le joueur connaissait déjà avant le temps fort reste au journal (plans d'une minute passée).
+			if montre.get("events", []).size() > maxi(int(plan.index), int(regie._vus)): journal_avance = true
 		var ball: Node3D = view.stage.get("_ball")
 		if not (ball.visible and ball.global_position.is_finite()): balle_ok = false
 		# Pause au milieu des pistes : l'image se fige, puis la lecture reprend.
 		if not fige_teste and view.stage.choregraphie_temps() > 3.0 and not app.waiting:
 			fige_teste = true
+			# Match déjà arrêté au départ du temps fort (le temps fort se joue quand même) : le manager
+			# relance d'abord, puis demande la pause.
+			if app.model.live.paused:
+				app._command("pause", {"paused": false})
+				await wait_command()
+				await settle(2)
 			app._command("pause", {"paused": true})
 			await wait_command()
 			await settle(4)
 			var t0: float = view.stage.choregraphie_temps()
 			await settle(20)
 			fige_ok = regie.gel and absf(view.stage.choregraphie_temps() - t0) < 0.001 and regie.phase == "choregraphie"
+			fige_detail = "gel %s, écart %.3f s, phase %s, pause %s, au départ %s, état %d, index %d, suivi %s" % [str(regie.gel), view.stage.choregraphie_temps() - t0, regie.phase, str(app.model.live.paused), str(regie._pause_au_depart), regie.etat, regie.index, str(regie.suivi.slice(-4).map(func(e): return e.evenement))]
 			app._command("pause", {"paused": false})
 			await wait_command()
 	check(vu, "L'essai en jeu courant est joué par les pistes du chorégraphe (minute %d)" % int(app.model.live.minute))
 	check(not annonce_avant, "Aucune légende avant son jalon (l'essai jamais avant l'aplati)")
 	check(not journal_avance, "Le journal ouvert n'annonce rien avant l'image (l'essai jamais avant l'aplati)")
-	check(fige_teste and fige_ok, "Une pause pendant les pistes les fige, puis la lecture reprend")
+	check(fige_teste and fige_ok, "Une pause pendant les pistes les fige, puis la lecture reprend (%s)" % fige_detail)
 	check(balle_ok, "Ballon visible et fini pendant les pistes")
 	var lues: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "choregraphie")
 	check(lues.size() >= 1 and lues.all(func(entry: Dictionary): return entry.has("duree_reelle")), "Pistes lues jusqu'au bout : " + str(lues))
