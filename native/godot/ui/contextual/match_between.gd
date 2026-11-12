@@ -642,9 +642,10 @@ func _page() -> void:
 	var groupe := ButtonGroup.new()
 	onglets.clear()
 	for n in 2:
-		var onglet := _segment("Mon XV" if n == 0 else "Adversaire", groupe, (n == 1) == onglet_adverse)
+		# Onglets « Mon XV | XV adverse » (choix de Léo).
+		var onglet := _segment("Mon XV" if n == 0 else "XV adverse", groupe, (n == 1) == onglet_adverse)
 		onglet.name = "MatchBetweenTabOwn" if n == 0 else "MatchBetweenTabOpponent"
-		onglet.custom_minimum_size = Vector2(px(150), px(52))
+		onglet.custom_minimum_size = Vector2(px(170), px(52))
 		onglet.add_theme_font_size_override("font_size", px(30))
 		var adverse := n == 1
 		onglet.pressed.connect(func():
@@ -931,9 +932,7 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	_xv_donnees = [joueurs, direct]
 	S.clear(xv)
-	# Onglet adverse : son nom court ; les alertes de Mon XV restent calculées pour Gabi.
-	var camp := int(direct.get("camp", -1))
-	if onglets.size() == 2 and camp in [0, 1] and _equipes.size() > 1 - camp and _equipes[1 - camp] is Dictionary: onglets[1].text = S.G.club_abbr(_equipes[1 - camp])
+	# Onglet adverse : les alertes de Mon XV restent calculées pour Gabi.
 	if onglet_adverse:
 		_alertes_seules(joueurs, direct)
 		_remplir_xv_adverse(direct)
@@ -1025,8 +1024,8 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
 		xv.add_child(case)
 
-## XV adverse (`direct.adversaire`) : le même tableau, aux couleurs adverses ; la feuille du
-## dernier fait montré, rien de caché (pas de remplacement à venir, pas de note d'observation).
+## XV adverse (`direct.adversaire`) : le même tableau, aux couleurs adverses ; la feuille actuelle
+## (ses remplacements se voient tout de suite), notes bornées aux faits montrés.
 func _remplir_xv_adverse(direct: Dictionary) -> void:
 	var liste: Array = direct.get("adversaire", []) if direct.get("adversaire") is Array else []
 	var camp := int(direct.get("camp", -1))

@@ -232,12 +232,13 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
       const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
       assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
-      // XV adverse : la feuille du dernier fait montré, notes bornées ; plaquages = chiffre adverse.
-      const eux = 1 - camp, dernier = [...vues].reverse().map(l => events[l.i]?.scene?.on?.[eux]).find(o => Array.isArray(o) && o.length);
-      if (dernier) {
-        assert.deepEqual(direct.adversaire.map(j => j && j.joueur), dernier.slice(0, 15).map(id => id == null ? null : String(id)), 'XV adverse du dernier fait montré');
+      // XV adverse : la feuille actuelle (remplacements visibles tout de suite), notes bornées ;
+      // ses plaquages ne dépassent pas le chiffre d'équipe (un remplacé emporte les siens).
+      const eux = 1 - camp;
+      if (vues.length) {
+        assert.equal(direct.adversaire.length, 15, 'XV adverse complet');
         assert.ok(direct.adversaire.every(j => !j || (j.nom && j.note >= 3 && j.note <= 9.9)), 'noms et notes adverses');
-        assert.equal(direct.adversaire.reduce((n, j) => n + (j ? j.plaquages : 0), 0), t.plaquages.valeurs[eux], 'plaquages adverses = chiffre d\'équipe');
+        assert.ok(direct.adversaire.reduce((n, j) => n + (j ? j.plaquages : 0), 0) <= t.plaquages.valeurs[eux], 'plaquages adverses bornés par le chiffre d\'équipe');
       }
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
