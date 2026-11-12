@@ -22,3 +22,22 @@ flock /workspace/work/rg27-godot.lock env CD_GODOT_EXECUTABLE=/workspace/work/to
 ```
 
 Même commande avec `tests/deepen-staff-real-ui.cjs` pour la recette de paie/rupture, si réception souhaitée. Les scripts de test viennent du worktree ; scènes produit et cache restent ceux du common. Aucun SDK/import lancé par le producteur.
+
+## Réception root, scripts séparés du produit
+
+Les deux scripts ont été exécutés par root depuis ce worktree à la source tests `e373c8f321bc8b9d95db9c6d897124ba3f60de4a`. Les scènes produit et leur cache provenaient de `/workspace/work/night-common`, exactement `37e085b687b4e9a603085beaa50fecf9d6cace22`, via `CD_STAFF_REAL_ROOT`. Cette réception mixte qualifie les scripts corrigés contre ce produit figé ; elle ne prétend pas être une nouvelle exécution CI ni un produit modifié. Aucun nouveau SDK exécuté pour rédiger ce reçu.
+
+| Recette | Contrôles / échecs | Durée sous-test | Durée TAP | Sortie | Extrait publié |
+|---|---:|---:|---:|---:|---|
+| Hire : recrutement, refus disque, devis/durées, prolongation, reprise | 104 / 0 | 29,657434 s | 29,724364 s | 0 | [staff-hire.log](receipts/staff-followup-20261112/staff-hire.log) |
+| Real : devis, adoption, paie, rupture, refus disque, reprise | 186 / 0 | 41,899808 s | 41,950403 s | 0 | [staff-real.log](receipts/staff-followup-20261112/staff-real.log) |
+
+Mapping des changements reçus :
+
+- `b5145db4aa3840c4bd0c2e5c4f5eb441ddc67d25` : helper test `employed_page` et ses deux appels, sélection explicite de l’onglet équipe après l’onglet candidats conservé. Le défaut initial CI reste consigné : 89 contrôles / 6 échecs en cascade. Aucun changement produit.
+- `e373c8f321bc8b9d95db9c6d897124ba3f60de4a` : pilote Dummy explicite dans les deux wrappers ; hire mute les deux clients et vérifie au finish requested/started ainsi que les identifiants `_id` à zéro. Ces compteurs sont contrôlés dans hire uniquement. Pour real, la preuve porte sur le pilote Dummy et les assertions fonctionnelles existantes ; aucun compteur de parole supplémentaire n’est revendiqué.
+
+Les logs publiés contiennent exclusivement les résumés DEEPEN, le JSON checks/failures vide, le nom/succès du sous-test et ses deux durées. Aucune ligne de commande métier, identité individuelle, état exporté, chemin de profil temporaire ni sauvegarde n’est copiée. Les logs complets demeurent chez root : `/workspace/work/night-followup-receipts/staff-hire.log` et `staff-real.log`. Empreintes SHA-256 de ces sources complètes, pour rattachement :
+
+- `staff-hire.log` : `038eea6a3ca0b55f437bca37b536cd6d611013cb2e97f78017180aac8c05f0c4`
+- `staff-real.log` : `c4ee11c04035863e2b72c4781555e72880ed908c680b4dc5d7cc3808e27c524c`
