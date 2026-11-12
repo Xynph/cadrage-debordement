@@ -139,3 +139,19 @@ Ce complément est préparé sur `b4c894ec`, et requiert les liens Bureau
 `321849e1` puis leur correctif `231b229b`. Aucun Godot/import ou SDK n'a été
 exécuté dans le worktree de préparation. La précédente réception Analyse/Club
 et ses échecs ne sont pas transformés en reçu de ce scope étendu.
+
+
+## Réception graphique ciblée du 12 novembre 2026
+
+Les préparations et attentes des sections précédentes sont historiques.
+Le parcours commun Analyse/Club/Bureau est reçu sur
+`bd6a5fe63fe52fbb5ecf4a55859676876c7d983e` : **72 contrôles, zéro échec, sortie 0,
+65,703 s**, trois PNG originaux 2560×1440 inspectés. Les actions reçues sont
+énumérées dans le rapport par ID et activation réelle ; ce résultat commun
+ne compte pas comme trois suites séparées. Les consultations conservent les
+lecteurs/retours, choix de joueur, sauvegarde et état sportif/RNG.
+
+[Preuves exactes, visites, copie source et historiques rouges](evidence/night-analysis-club-office-20261112/README.md).
+Le test passe l’assertion de silence avec audio Dummy ; ses compteurs ne sont
+pas sérialisés dans le rapport. Une bulle textuelle Gabi est visible sur la
+capture Analyse. Aucun import/SDK n’a été relancé pour cette documentation.
