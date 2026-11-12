@@ -1,0 +1,18 @@
+2026-11-12T04:58:17.3154558Z NAVIGATION NOCTURNE reading : 134 contrôles ; 0 échec(s)
+2026-11-12T04:58:44.6860348Z NAVIGATION NOCTURNE nation : 23 contrôles ; 0 échec(s)
+2026-11-12T04:59:40.5572629Z NAVIGATION NOCTURNE guards : 112 contrôles ; 0 échec(s)
+2026-11-12T05:00:13.7441544Z NAVIGATION NOCTURNE prospects : 70 contrôles ; 0 échec(s)
+2026-11-12T05:00:51.0780401Z NAVIGATION NOCTURNE staff : 54 contrôles ; 0 échec(s)
+2026-11-12T05:01:24.1557366Z NAVIGATION NOCTURNE quote : 66 contrôles ; 0 échec(s)
+2026-11-12T05:02:11.4572208Z NAVIGATION NOCTURNE report : 47 contrôles ; 0 échec(s)
+2026-11-12T05:04:03.4518057Z SESSION LINKS : 146 contrôles ; 0 échecs
+2026-11-12T04:59:52.1704249Z CARNET_SPEECH requested=0 started=0 id=0
+2026-11-12T04:59:52.1704667Z CARNET : 4670 contrôles ; 0 échec(s)
+2026-11-12T05:03:28.6757445Z ART DIRECTION : 224 contrôles ; 49 captures ; 0 échecs
+2026-11-12T05:04:12.7735746Z ART DIRECTION : 217 contrôles ; 46 captures ; 0 échecs
+2026-11-12T05:05:05.4454269Z ART DIRECTION : 211 contrôles ; 44 captures ; 0 échecs
+2026-11-12T05:06:15.0515916Z ART DIRECTION : 175 contrôles ; 7 captures ; 0 échecs
+2026-11-12T05:07:08.1194263Z GESTION_PROGRESS {"checks":274,"display":"headless","embedded_subwindows":true,"failures":[],"last_command":"export","last_error":"","milliseconds":28209,"root_size":[1920,1080],"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+2026-11-12T05:07:08.1195303Z GESTION CARNET : 274 contrôles ; 0 échec(s)
+2026-11-12T05:08:00.9405605Z SMALL WINDOW GEOMETRY 4942 checks 0 failures; output=/home/runner/work/_temp/geometry-main
+2026-11-12T05:14:55.2321535Z SMALL WINDOW GEOMETRY 1905 checks 0 failures; output=/home/runner/work/_temp/geometry-extra

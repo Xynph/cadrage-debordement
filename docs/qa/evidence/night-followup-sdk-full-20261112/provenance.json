@@ -1,0 +1,156 @@
+{
+  "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+  "run_id": 43138356742,
+  "run_attempt": 1,
+  "event": "workflow_dispatch",
+  "scope": "full",
+  "source_method": "Exact git show SHA:path and git rev-parse SHA:path; no moving worktree hashes",
+  "changed_non_documentation_since_S": [
+    "native/godot/ui/immersive08/competition_canvas.gd",
+    "tests/deepen-staff-hire-ui.cjs",
+    "tests/deepen-staff-hire-ui.gd",
+    "tests/deepen-staff-real-ui.cjs",
+    "tests/godot-analysis-club-graphics.gd",
+    "tests/godot-analysis-club-links.gd",
+    "tests/godot-carnet-ui.cjs",
+    "tests/godot-carnet-ui.gd",
+    "tests/godot-entity-navigation.gd",
+    "tests/godot-finance-ledger-links.gd",
+    "tests/godot-gestion-carnet.cjs",
+    "tests/godot-gestion-carnet.gd",
+    "tests/godot-management-reading-flow.gd",
+    "tests/godot-navigation.gd",
+    "tests/godot-profile-reading.gd",
+    "tests/godot-reader-history.gd",
+    "tests/godot-staff-fictional-labels.cjs",
+    "tests/godot-training-identity-links.gd",
+    "tests/rg27-night-navigation.gd"
+  ],
+  "source_files": {
+    "ci/godot-sdk-followup.json": {
+      "git_blob": "58b45f5307832f0e075dc62e20da9b00930803fb",
+      "sha256": "9d2448c9a3c37bcdce5cc0cd95bc0d38df81fc8f010ae4c5505dc99174f4cf72"
+    },
+    "ci/godot-sdk.json": {
+      "git_blob": "04943b8df01a58091d4bb699196e2f4e855bc0c8",
+      "sha256": "79c1ed6c5eb8e2e8ff5009a38fab1dc830061f7866bdbd802b348adea96cfd65"
+    },
+    "ci/run-godot-sdk.cjs": {
+      "git_blob": "21084df1110f18383a3128574ffba0f863f5335d",
+      "sha256": "8b7696517620c812777dd3c7072ecd359c7ba7e6105f0e0081a758721b862b6d"
+    },
+    "native/engine/worker.cjs": {
+      "git_blob": "9254ca39122456da071868de936bea8a84c3e219",
+      "sha256": "431d31ce590549c603a2434773440c15d83a661182070b87e0e20c3beba60f97"
+    },
+    "native/godot/ui/immersive08/competition_canvas.gd": {
+      "git_blob": "7b4574009af6248082ec4ee9b1a15cf2c98818b0",
+      "sha256": "71e086850c5139ccd59eea66c05ee2b8fdd1d0caa524cd55293d2366586d1cba"
+    },
+    "tests/deepen-staff-hire-ui.cjs": {
+      "git_blob": "398ef0e4a991151e3e31da4574f144b77efa109d",
+      "sha256": "5d7e29bbf684d7d14384ac4d0866e0d0590abd7d86060345f1eb875a3e9f9d0f"
+    },
+    "tests/deepen-staff-hire-ui.gd": {
+      "git_blob": "bfdc3a9bcd5a82e0045a0494ee68ce50a07a937d",
+      "sha256": "ff8ea17ad411f26a58d17f19af49f8af4487f78f47527b24ab4e5c894e7deb09"
+    },
+    "tests/deepen-staff-real-ui.cjs": {
+      "git_blob": "470bd7c641d0c164805b740163cc3cf00a8540e6",
+      "sha256": "ce5346eed0c7f9e3df6a685211862414421d3847bbd586948743e3990112f7ad"
+    },
+    "tests/godot-analysis-club-graphics.gd": {
+      "git_blob": "45064ec523b103eb25177c9057e86f889a4ae0a1",
+      "sha256": "7ea3ff396f35c9c37a823d597976d83732d196d9c780e3f990156c5ece3b80dd"
+    },
+    "tests/godot-analysis-club-links.gd": {
+      "git_blob": "f771feba0216dd88b10f18ae896b2a2e2eaf766f",
+      "sha256": "fab8bbee5e00614fe5992b76bfc16c6492a8ce718341f751f6ed52fcced97d32"
+    },
+    "tests/godot-art-direction.cjs": {
+      "git_blob": "4a264901c3b1577659ffbdeece113df4cf6bc05b",
+      "sha256": "7bffec21a8244239e1f8ce5ccff92e91754e8ba90d4b330ab4799d888f13a2c6"
+    },
+    "tests/godot-art-direction.gd": {
+      "git_blob": "f117cd611ccf907ce121b1fc0cfd39400b8df6e4",
+      "sha256": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f"
+    },
+    "tests/godot-carnet-ui.cjs": {
+      "git_blob": "ae8e19e8c4f8220865af74ccd71abe12f1c2a77c",
+      "sha256": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d"
+    },
+    "tests/godot-carnet-ui.gd": {
+      "git_blob": "0771f9f7746a260aed398a5b36627aa8e8abbf56",
+      "sha256": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf"
+    },
+    "tests/godot-entity-navigation.gd": {
+      "git_blob": "bdd70a9ffc16d1891e7320e450f01ba5724dd876",
+      "sha256": "a58360e62eb4a55e376a2d79b17754645d006e66ba8ae2f02a872447da61bf22"
+    },
+    "tests/godot-finance-ledger-links.gd": {
+      "git_blob": "9777c87a81dd0b2f49ea4500930da7f9d7e7ceac",
+      "sha256": "944f48615985cae16566f1f36aef8f3aadf04f4b9180b7de6fb4294fd29ad596"
+    },
+    "tests/godot-gestion-carnet.cjs": {
+      "git_blob": "c051c0d4fccfd043b020f84410b3192f953fa878",
+      "sha256": "7157d0e5f6b1cccd7441866c3565e1f3be55f9b3668dc6b43c875c181558d216"
+    },
+    "tests/godot-gestion-carnet.gd": {
+      "git_blob": "796b3932ed59b378cb8eccea59c70cc2bb2d6dcf",
+      "sha256": "dade6fb537b376345911c0f31fe99f1a7e4b606e372a9dc71bda86a679b9aa86"
+    },
+    "tests/godot-management-reading-flow.gd": {
+      "git_blob": "d3347a8b7453e5c7db5e2c37dd65c982aeaa10ea",
+      "sha256": "fa73f04ced3f26bd97b8989a23bade35a95cefa952c137f970cc1160a82c288e"
+    },
+    "tests/godot-navigation.gd": {
+      "git_blob": "e602b9e6df2fc3f048a63934e25c3455076b50bf",
+      "sha256": "191c8eb29be21f34f1ddeae79da55641e22098ab901533880a3fd14591ed45f3"
+    },
+    "tests/godot-profile-reading.gd": {
+      "git_blob": "d377a01b65b23a451258acebd8f41080681f38f0",
+      "sha256": "31fdfb16afb8006757f4899871ccf913dcb3a510e982f032580518bc30b82c16"
+    },
+    "tests/godot-reader-history.gd": {
+      "git_blob": "cb777e304ef751d65371c3af0bc4508505884271",
+      "sha256": "d02b483a84a844e4ec316298cdb88ec21486bd305fd727515f5b0fd0190a8ddf"
+    },
+    "tests/godot-staff-fictional-labels.cjs": {
+      "git_blob": "97f3b2103392a2decfae851791826a18824d90e6",
+      "sha256": "f4fdcce5b31b2120d01a16f74b228fcc6472cca620935167e8c90e125490427c"
+    },
+    "tests/godot-training-identity-links.gd": {
+      "git_blob": "82b0c699ab33d961aae4307f5c16f465bf53702d",
+      "sha256": "7708e9346e876fc488af2c94e3f81e6ef0831de3f4d5fe98df6dc8fe8ec769aa"
+    },
+    "tests/rg27-night-navigation.gd": {
+      "git_blob": "39b11c3d8406b71db6c8dc8d5ba8d86aa7a42ab8",
+      "sha256": "7c43efb78f7180ad4e770163cde65e95f0fc665b5bcdd08d3c206c1c9ab04021"
+    }
+  },
+  "logs_method": "Selected original timestamped lines from GitHub connector fetch_workflow_job_logs on four completed jobs",
+  "expected_results": 75,
+  "passed": 75,
+  "failed": 0,
+  "distinct_suites": 56,
+  "distinct_suite_case_pairs": 74,
+  "matrices_outside_registry": {
+    "main_checks": 4797,
+    "main_failures": 0,
+    "extra_checks": 1905,
+    "extra_failures": 0,
+    "contracts_passed": 3,
+    "contracts_failed": 0
+  },
+  "art_stdout": {
+    "checks": 840,
+    "captures_announced": 146,
+    "failures": 0
+  },
+  "limitations": [
+    "JavaScript followup verdict remains a separate run.",
+    "Captures announced by passing wrappers are not copied here; no CI screenshots or complete runner profiles recovered.",
+    "No animation/frame-rate/Windows qualification.",
+    "No causal comparison of durations between different campaigns or seeds."
+  ]
+}

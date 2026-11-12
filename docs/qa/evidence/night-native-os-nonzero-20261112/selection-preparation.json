@@ -1,0 +1,10 @@
+{
+  "inspected_profiles_count": 57,
+  "method": "Read-only saved JSON metadata only; no worker/simulation/projection write.",
+  "strategy_profiles_found": "Existing Fiction13 strategy profiles did not have usable own fixtureId values. No history ID invented.",
+  "primary": "two-matches",
+  "primary_reason": "Existing exact public mission checkpoint has two current-season own matches with real fixtureId; scroll extent must still be measured by root runtime.",
+  "fallback": "common-fallback",
+  "fallback_reason": "Exact profile used by previous native47/0 reception, real15–20. Known scroll0 limit explicitly retained.",
+  "runtime_rule": "Primary requires real scroll extent>0 and visible focused target. If unavailable, report red/unavailable then root may run fallback separately; no fake state or automatic substitution."
+}

@@ -1,0 +1,524 @@
+{
+  "id": 43157636998,
+  "head_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+  "head_branch": "cloud/rg27-night-qualification-20261112",
+  "event": "workflow_dispatch",
+  "status": "completed",
+  "conclusion": "success",
+  "run_attempt": 1,
+  "created_at": "2026-11-12T04:52:45Z",
+  "updated_at": "2026-11-12T05:16:14Z",
+  "run_started_at": "2026-11-12T04:52:45Z",
+  "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998",
+  "path": ".github/workflows/godot-sdk.yml",
+  "jobs": [
+    {
+      "id": 130981171153,
+      "run_id": 43157636998,
+      "run_attempt": 1,
+      "head_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+      "name": "sdk-portraits-staff",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-12T04:52:47Z",
+      "started_at": "2026-11-12T04:52:51Z",
+      "completed_at": "2026-11-12T05:04:07Z",
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998/job/130981171153",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-12T04:52:51Z",
+          "completed_at": "2026-11-12T04:52:52Z"
+        },
+        {
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-12T04:52:52Z",
+          "completed_at": "2026-11-12T04:53:04Z"
+        },
+        {
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-12T04:53:04Z",
+          "completed_at": "2026-11-12T04:53:04Z"
+        },
+        {
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-12T04:53:04Z",
+          "completed_at": "2026-11-12T04:53:05Z"
+        },
+        {
+          "name": "Valider le scope et sélectionner les cas SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-12T04:53:05Z",
+          "completed_at": "2026-11-12T04:53:05Z"
+        },
+        {
+          "name": "Préparer le rendu logiciel gratuit sous X11",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-12T04:53:05Z",
+          "completed_at": "2026-11-12T04:53:11Z"
+        },
+        {
+          "name": "Installer le SDK officiel épinglé et vérifier son archive",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-12T04:53:11Z",
+          "completed_at": "2026-11-12T04:53:12Z"
+        },
+        {
+          "name": "Préparer et importer le vrai projet",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-12T04:53:12Z",
+          "completed_at": "2026-11-12T04:53:40Z"
+        },
+        {
+          "name": "Exécuter les suites qualifiées sans repli SKIP",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-12T04:53:40Z",
+          "completed_at": "2026-11-12T05:04:03Z"
+        },
+        {
+          "name": "Mesurer les petites fenêtres avec le vrai rendu X11",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-12T05:04:03Z",
+          "completed_at": "2026-11-12T05:04:03Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-12T05:04:03Z",
+          "completed_at": "2026-11-12T05:04:03Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-12T05:04:03Z",
+          "completed_at": "2026-11-12T05:04:03Z"
+        },
+        {
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-12T05:04:03Z",
+          "completed_at": "2026-11-12T05:04:03Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-12T05:04:03Z",
+          "completed_at": "2026-11-12T05:04:03Z"
+        }
+      ]
+    },
+    {
+      "id": 130981171394,
+      "run_id": 43157636998,
+      "run_attempt": 1,
+      "head_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+      "name": "sdk-parcours",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-12T04:52:47Z",
+      "started_at": "2026-11-12T04:53:29Z",
+      "completed_at": "2026-11-12T05:07:36Z",
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998/job/130981171394",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-12T04:53:30Z",
+          "completed_at": "2026-11-12T04:53:30Z"
+        },
+        {
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-12T04:53:30Z",
+          "completed_at": "2026-11-12T04:53:41Z"
+        },
+        {
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-12T04:53:41Z",
+          "completed_at": "2026-11-12T04:53:41Z"
+        },
+        {
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-12T04:53:41Z",
+          "completed_at": "2026-11-12T04:53:41Z"
+        },
+        {
+          "name": "Valider le scope et sélectionner les cas SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-12T04:53:41Z",
+          "completed_at": "2026-11-12T04:53:41Z"
+        },
+        {
+          "name": "Préparer le rendu logiciel gratuit sous X11",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-12T04:53:41Z",
+          "completed_at": "2026-11-12T04:53:45Z"
+        },
+        {
+          "name": "Installer le SDK officiel épinglé et vérifier son archive",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-12T04:53:45Z",
+          "completed_at": "2026-11-12T04:53:46Z"
+        },
+        {
+          "name": "Préparer et importer le vrai projet",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-12T04:53:46Z",
+          "completed_at": "2026-11-12T04:54:09Z"
+        },
+        {
+          "name": "Exécuter les suites qualifiées sans repli SKIP",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-12T04:54:09Z",
+          "completed_at": "2026-11-12T05:07:33Z"
+        },
+        {
+          "name": "Mesurer les petites fenêtres avec le vrai rendu X11",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-12T05:07:33Z",
+          "completed_at": "2026-11-12T05:07:33Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-12T05:07:33Z",
+          "completed_at": "2026-11-12T05:07:33Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-12T05:07:33Z",
+          "completed_at": "2026-11-12T05:07:33Z"
+        },
+        {
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-12T05:07:33Z",
+          "completed_at": "2026-11-12T05:07:33Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-12T05:07:33Z",
+          "completed_at": "2026-11-12T05:07:33Z"
+        }
+      ]
+    },
+    {
+      "id": 130981171431,
+      "run_id": 43157636998,
+      "run_attempt": 1,
+      "head_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+      "name": "sdk-layouts",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-12T04:52:47Z",
+      "started_at": "2026-11-12T04:53:10Z",
+      "completed_at": "2026-11-12T05:08:33Z",
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998/job/130981171431",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-12T04:53:10Z",
+          "completed_at": "2026-11-12T04:53:11Z"
+        },
+        {
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-12T04:53:11Z",
+          "completed_at": "2026-11-12T04:53:25Z"
+        },
+        {
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-12T04:53:25Z",
+          "completed_at": "2026-11-12T04:53:26Z"
+        },
+        {
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-12T04:53:26Z",
+          "completed_at": "2026-11-12T04:53:26Z"
+        },
+        {
+          "name": "Valider le scope et sélectionner les cas SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-12T04:53:26Z",
+          "completed_at": "2026-11-12T04:53:26Z"
+        },
+        {
+          "name": "Préparer le rendu logiciel gratuit sous X11",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-12T04:53:26Z",
+          "completed_at": "2026-11-12T04:53:32Z"
+        },
+        {
+          "name": "Installer le SDK officiel épinglé et vérifier son archive",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-12T04:53:32Z",
+          "completed_at": "2026-11-12T04:53:34Z"
+        },
+        {
+          "name": "Préparer et importer le vrai projet",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-12T04:53:34Z",
+          "completed_at": "2026-11-12T04:54:07Z"
+        },
+        {
+          "name": "Exécuter les suites qualifiées sans repli SKIP",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-12T04:54:07Z",
+          "completed_at": "2026-11-12T05:08:28Z"
+        },
+        {
+          "name": "Mesurer les petites fenêtres avec le vrai rendu X11",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-12T05:08:28Z",
+          "completed_at": "2026-11-12T05:08:28Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-12T05:08:28Z",
+          "completed_at": "2026-11-12T05:08:28Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-12T05:08:28Z",
+          "completed_at": "2026-11-12T05:08:29Z"
+        },
+        {
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-12T05:08:29Z",
+          "completed_at": "2026-11-12T05:08:29Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-12T05:08:29Z",
+          "completed_at": "2026-11-12T05:08:29Z"
+        }
+      ]
+    },
+    {
+      "id": 130981171457,
+      "run_id": 43157636998,
+      "run_attempt": 1,
+      "head_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+      "name": "sdk",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-12T04:52:47Z",
+      "started_at": "2026-11-12T04:53:42Z",
+      "completed_at": "2026-11-12T05:16:13Z",
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998/job/130981171457",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-12T04:53:43Z",
+          "completed_at": "2026-11-12T04:53:44Z"
+        },
+        {
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-12T04:53:44Z",
+          "completed_at": "2026-11-12T04:53:57Z"
+        },
+        {
+          "name": "Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-12T04:53:57Z",
+          "completed_at": "2026-11-12T04:53:58Z"
+        },
+        {
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-12T04:53:58Z",
+          "completed_at": "2026-11-12T04:53:58Z"
+        },
+        {
+          "name": "Valider le scope et sélectionner les cas SDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-12T04:53:58Z",
+          "completed_at": "2026-11-12T04:53:58Z"
+        },
+        {
+          "name": "Préparer le rendu logiciel gratuit sous X11",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-12T04:53:58Z",
+          "completed_at": "2026-11-12T04:54:05Z"
+        },
+        {
+          "name": "Installer le SDK officiel épinglé et vérifier son archive",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-12T04:54:05Z",
+          "completed_at": "2026-11-12T04:54:07Z"
+        },
+        {
+          "name": "Préparer et importer le vrai projet",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-12T04:54:07Z",
+          "completed_at": "2026-11-12T04:54:46Z"
+        },
+        {
+          "name": "Exécuter les suites qualifiées sans repli SKIP",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-12T04:54:46Z",
+          "completed_at": "2026-11-12T05:03:12Z"
+        },
+        {
+          "name": "Mesurer les petites fenêtres avec le vrai rendu X11",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-12T05:03:12Z",
+          "completed_at": "2026-11-12T05:16:09Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-12T05:16:09Z",
+          "completed_at": "2026-11-12T05:16:09Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-12T05:16:09Z",
+          "completed_at": "2026-11-12T05:16:10Z"
+        },
+        {
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-12T05:16:10Z",
+          "completed_at": "2026-11-12T05:16:10Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-12T05:16:10Z",
+          "completed_at": "2026-11-12T05:16:10Z"
+        }
+      ]
+    }
+  ]
+}

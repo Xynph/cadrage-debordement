@@ -1,0 +1,86 @@
+2026-11-12T04:53:53.7787363Z # tests 1
+2026-11-12T04:53:53.7787577Z # pass 1
+2026-11-12T04:53:53.7787684Z # fail 0
+2026-11-12T04:53:53.7788659Z SDK_RESULT {"suite":"tests/godot-academy-portraits.cjs","variant":"default","passed":true,"status":0,"milliseconds":13591,"error":null}
+2026-11-12T04:54:13.5183758Z # tests 1
+2026-11-12T04:54:13.5183968Z # pass 1
+2026-11-12T04:54:13.5184072Z # fail 0
+2026-11-12T04:54:13.5185319Z SDK_RESULT {"suite":"tests/godot-portrait-continuity.cjs","variant":"default","passed":true,"status":0,"milliseconds":19739,"error":null}
+2026-11-12T04:54:34.1808735Z # tests 1
+2026-11-12T04:54:34.1808959Z # pass 1
+2026-11-12T04:54:34.1809064Z # fail 0
+2026-11-12T04:54:34.1810142Z SDK_RESULT {"suite":"tests/godot-contract-negotiation.cjs","variant":"default","passed":true,"status":0,"milliseconds":20663,"error":null}
+2026-11-12T04:55:02.9447425Z # tests 1
+2026-11-12T04:55:02.9447650Z # pass 1
+2026-11-12T04:55:02.9447757Z # fail 0
+2026-11-12T04:55:02.9448594Z SDK_RESULT {"suite":"tests/deepen-staff-real-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":28763,"error":null}
+2026-11-12T04:55:22.7852794Z # tests 1
+2026-11-12T04:55:22.7853006Z # pass 1
+2026-11-12T04:55:22.7853118Z # fail 0
+2026-11-12T04:55:22.7853975Z SDK_RESULT {"suite":"tests/deepen-staff-hire-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":19841,"error":null}
+2026-11-12T04:55:34.6287551Z SDK_RESULT {"suite":"tests/deepen-match.cjs","variant":"default","passed":true,"status":0,"milliseconds":11844,"error":null}
+2026-11-12T04:56:15.8229172Z # tests 8
+2026-11-12T04:56:15.8229433Z # pass 8
+2026-11-12T04:56:15.8229565Z # fail 0
+2026-11-12T04:56:15.8230563Z SDK_RESULT {"suite":"tests/godot-career-final-fixes.cjs","variant":"default","passed":true,"status":0,"milliseconds":41192,"error":null}
+2026-11-12T04:56:35.7596148Z SDK_RESULT {"suite":"tests/godot-playbook-watch-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":19939,"error":null}
+2026-11-12T04:56:36.4143301Z # tests 1
+2026-11-12T04:56:36.4143625Z # pass 1
+2026-11-12T04:56:36.4143781Z # fail 0
+2026-11-12T04:56:36.4145024Z SDK_RESULT {"suite":"tests/godot-entity-projections.cjs","variant":"default","passed":true,"status":0,"milliseconds":654,"error":null}
+2026-11-12T04:56:37.0679090Z # tests 1
+2026-11-12T04:56:37.0679310Z # pass 1
+2026-11-12T04:56:37.0679420Z # fail 0
+2026-11-12T04:56:37.0680354Z SDK_RESULT {"suite":"tests/godot-prospect-profile.cjs","variant":"default","passed":true,"status":0,"milliseconds":654,"error":null}
+2026-11-12T04:56:37.4414506Z # tests 1
+2026-11-12T04:56:37.4414735Z # pass 1
+2026-11-12T04:56:37.4414854Z # fail 0
+2026-11-12T04:56:37.4415760Z SDK_RESULT {"suite":"tests/godot-staff-fictional-labels.cjs","variant":"default","passed":true,"status":0,"milliseconds":374,"error":null}
+2026-11-12T04:58:17.3154558Z NAVIGATION NOCTURNE reading : 134 contrôles ; 0 échec(s)
+2026-11-12T04:58:17.3157381Z # tests 1
+2026-11-12T04:58:17.3157599Z # pass 1
+2026-11-12T04:58:17.3157708Z # fail 0
+2026-11-12T04:58:17.3158516Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"reading","passed":true,"status":0,"milliseconds":99872,"error":null}
+2026-11-12T04:58:44.6860348Z NAVIGATION NOCTURNE nation : 23 contrôles ; 0 échec(s)
+2026-11-12T04:58:44.6863449Z # tests 1
+2026-11-12T04:58:44.6863668Z # pass 1
+2026-11-12T04:58:44.6863774Z # fail 0
+2026-11-12T04:58:44.6864629Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"nation","passed":true,"status":0,"milliseconds":27371,"error":null}
+2026-11-12T04:59:40.5572629Z NAVIGATION NOCTURNE guards : 112 contrôles ; 0 échec(s)
+2026-11-12T04:59:40.5574981Z # tests 1
+2026-11-12T04:59:40.5575303Z # pass 1
+2026-11-12T04:59:40.5575415Z # fail 0
+2026-11-12T04:59:40.5577450Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"guards","passed":true,"status":0,"milliseconds":55868,"error":null}
+2026-11-12T05:00:13.7441544Z NAVIGATION NOCTURNE prospects : 70 contrôles ; 0 échec(s)
+2026-11-12T05:00:13.7444772Z # tests 1
+2026-11-12T05:00:13.7444981Z # pass 1
+2026-11-12T05:00:13.7445082Z # fail 0
+2026-11-12T05:00:13.7445930Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"prospects","passed":true,"status":0,"milliseconds":33190,"error":null}
+2026-11-12T05:00:51.0780401Z NAVIGATION NOCTURNE staff : 54 contrôles ; 0 échec(s)
+2026-11-12T05:00:51.0785699Z # tests 1
+2026-11-12T05:00:51.0785914Z # pass 1
+2026-11-12T05:00:51.0786015Z # fail 0
+2026-11-12T05:00:51.0786809Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"staff","passed":true,"status":0,"milliseconds":37333,"error":null}
+2026-11-12T05:01:24.1557366Z NAVIGATION NOCTURNE quote : 66 contrôles ; 0 échec(s)
+2026-11-12T05:01:24.1560234Z # tests 1
+2026-11-12T05:01:24.1560451Z # pass 1
+2026-11-12T05:01:24.1560555Z # fail 0
+2026-11-12T05:01:24.1561385Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"quote","passed":true,"status":0,"milliseconds":33078,"error":null}
+2026-11-12T05:02:11.4572208Z NAVIGATION NOCTURNE report : 47 contrôles ; 0 échec(s)
+2026-11-12T05:02:11.4575630Z # tests 1
+2026-11-12T05:02:11.4575847Z # pass 1
+2026-11-12T05:02:11.4575954Z # fail 0
+2026-11-12T05:02:11.4576766Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"report","passed":true,"status":0,"milliseconds":47301,"error":null}
+2026-11-12T05:02:12.0141981Z # tests 1
+2026-11-12T05:02:12.0142189Z # pass 1
+2026-11-12T05:02:12.0142452Z # fail 0
+2026-11-12T05:02:12.0143308Z SDK_RESULT {"suite":"tests/godot-world-entity-targets.cjs","variant":"default","passed":true,"status":0,"milliseconds":558,"error":null}
+2026-11-12T05:03:17.2573984Z # tests 1
+2026-11-12T05:03:17.2574188Z # pass 1
+2026-11-12T05:03:17.2574288Z # fail 0
+2026-11-12T05:03:17.2575098Z SDK_RESULT {"suite":"tests/godot-analysis-club-graphics.cjs","variant":"default","passed":true,"status":0,"milliseconds":65243,"error":null}
+2026-11-12T05:04:03.4518057Z SESSION LINKS : 146 contrôles ; 0 échecs
+2026-11-12T05:04:03.4521028Z # tests 1
+2026-11-12T05:04:03.4521267Z # pass 1
+2026-11-12T05:04:03.4521367Z # fail 0
+2026-11-12T05:04:03.4522227Z SDK_RESULT {"suite":"tests/godot-calendar-session-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":46195,"error":null}

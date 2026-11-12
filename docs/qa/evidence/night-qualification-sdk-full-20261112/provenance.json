@@ -1,0 +1,201 @@
+{
+  "source_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+  "run_id": 43157636998,
+  "run_attempt": 1,
+  "event": "workflow_dispatch",
+  "scope": "full",
+  "source_method": "Exact git show SHA:path and git rev-parse SHA:path; no mutable-worktree source hashes",
+  "source_files": {
+    ".github/workflows/tests.yml": {
+      "git_blob": "a5681c340fad535e00c6f62f4de520a268bd9544",
+      "sha256": "806bf4421c9ddd400440b6afc25cfaf1f606aa8182c3b905ad25a7eb1ed55a88"
+    },
+    "ci/godot-sdk-followup.json": {
+      "git_blob": "4a3e9f4535ff54ab73ca437dbcdfc4126e08c427",
+      "sha256": "250897ba33f5f232e99f016f8e540621e7b1ffe22d9a1c679567825532ed7b17"
+    },
+    "ci/godot-sdk.json": {
+      "git_blob": "04943b8df01a58091d4bb699196e2f4e855bc0c8",
+      "sha256": "79c1ed6c5eb8e2e8ff5009a38fab1dc830061f7866bdbd802b348adea96cfd65"
+    },
+    "ci/run-godot-sdk.cjs": {
+      "git_blob": "21084df1110f18383a3128574ffba0f863f5335d",
+      "sha256": "8b7696517620c812777dd3c7072ecd359c7ba7e6105f0e0081a758721b862b6d"
+    },
+    "ci/shard-tests.cjs": {
+      "git_blob": "6c9f83d03c15c2250f96ef5b237b1b93078bbb4e",
+      "sha256": "434e135640dd625f56d6e98e257cf33e8f5fecf90110fb86ec82ef8c1408db69"
+    },
+    "ci/test-coverage.cjs": {
+      "git_blob": "6fb4d5e5396d038d95030cbb9975ece1b08db5a7",
+      "sha256": "436e1ea7ac2d833b836a1a23063abc2f3e86034d9d02777e304b251b4522ad60"
+    },
+    "native/engine/worker.cjs": {
+      "git_blob": "9254ca39122456da071868de936bea8a84c3e219",
+      "sha256": "431d31ce590549c603a2434773440c15d83a661182070b87e0e20c3beba60f97"
+    },
+    "native/godot/project.godot": {
+      "git_blob": "8f31568d85a1d0ce7a63a60294df0afbbfc08d61",
+      "sha256": "bfdea6c40d9189c6f09cbd498c10c3ca814911b2b88793184120583c164778f0"
+    },
+    "native/godot/ui/immersive08/competition_canvas.gd": {
+      "git_blob": "b6d4b3d4806fa00c765e179adbeb817d05b3d314",
+      "sha256": "fed0822713e24d869c81f67b8fa95b525075e4c6b0ee0b48b944c93a1aac5e41"
+    },
+    "native/godot/ui/immersive08/month_calendar.gd": {
+      "git_blob": "e6cf8a6dbfdc8edaa2d0eb2a03adad5499e4b8e1",
+      "sha256": "a5464cbdced4f55cce38f1218967bf5d2f5598c9c9ec0f3b274166e739a80001"
+    },
+    "native/godot/ui/navigation_controller.gd": {
+      "git_blob": "16c0215a41d13bbabde032af169b1fca544913d7",
+      "sha256": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a"
+    },
+    "tests/deepen-staff-hire-ui.cjs": {
+      "git_blob": "398ef0e4a991151e3e31da4574f144b77efa109d",
+      "sha256": "5d7e29bbf684d7d14384ac4d0866e0d0590abd7d86060345f1eb875a3e9f9d0f"
+    },
+    "tests/deepen-staff-hire-ui.gd": {
+      "git_blob": "bfdc3a9bcd5a82e0045a0494ee68ce50a07a937d",
+      "sha256": "ff8ea17ad411f26a58d17f19af49f8af4487f78f47527b24ab4e5c894e7deb09"
+    },
+    "tests/deepen-staff-real-ui.cjs": {
+      "git_blob": "470bd7c641d0c164805b740163cc3cf00a8540e6",
+      "sha256": "ce5346eed0c7f9e3df6a685211862414421d3847bbd586948743e3990112f7ad"
+    },
+    "tests/godot-analysis-club-graphics.gd": {
+      "git_blob": "45064ec523b103eb25177c9057e86f889a4ae0a1",
+      "sha256": "7ea3ff396f35c9c37a823d597976d83732d196d9c780e3f990156c5ece3b80dd"
+    },
+    "tests/godot-analysis-club-links.gd": {
+      "git_blob": "f771feba0216dd88b10f18ae896b2a2e2eaf766f",
+      "sha256": "fab8bbee5e00614fe5992b76bfc16c6492a8ce718341f751f6ed52fcced97d32"
+    },
+    "tests/godot-art-direction.cjs": {
+      "git_blob": "4a264901c3b1577659ffbdeece113df4cf6bc05b",
+      "sha256": "7bffec21a8244239e1f8ce5ccff92e91754e8ba90d4b330ab4799d888f13a2c6"
+    },
+    "tests/godot-art-direction.gd": {
+      "git_blob": "f117cd611ccf907ce121b1fc0cfd39400b8df6e4",
+      "sha256": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f"
+    },
+    "tests/godot-calendar-session-links.cjs": {
+      "git_blob": "a7fce3d06dbaa221880b3c924c8ba5ddc6f50b84",
+      "sha256": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307"
+    },
+    "tests/godot-calendar-session-links.gd": {
+      "git_blob": "9699f35366c4113968121edec29e4ecae472b0ac",
+      "sha256": "72bd37c4f43439787a60df32742b5696700f10f3f28fa1f8febf64db64431ad7"
+    },
+    "tests/godot-carnet-ui.cjs": {
+      "git_blob": "ae8e19e8c4f8220865af74ccd71abe12f1c2a77c",
+      "sha256": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d"
+    },
+    "tests/godot-carnet-ui.gd": {
+      "git_blob": "0771f9f7746a260aed398a5b36627aa8e8abbf56",
+      "sha256": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf"
+    },
+    "tests/godot-entity-navigation.gd": {
+      "git_blob": "bdd70a9ffc16d1891e7320e450f01ba5724dd876",
+      "sha256": "a58360e62eb4a55e376a2d79b17754645d006e66ba8ae2f02a872447da61bf22"
+    },
+    "tests/godot-finance-ledger-links.gd": {
+      "git_blob": "9777c87a81dd0b2f49ea4500930da7f9d7e7ceac",
+      "sha256": "944f48615985cae16566f1f36aef8f3aadf04f4b9180b7de6fb4294fd29ad596"
+    },
+    "tests/godot-gestion-carnet.cjs": {
+      "git_blob": "c051c0d4fccfd043b020f84410b3192f953fa878",
+      "sha256": "7157d0e5f6b1cccd7441866c3565e1f3be55f9b3668dc6b43c875c181558d216"
+    },
+    "tests/godot-gestion-carnet.gd": {
+      "git_blob": "796b3932ed59b378cb8eccea59c70cc2bb2d6dcf",
+      "sha256": "dade6fb537b376345911c0f31fe99f1a7e4b606e372a9dc71bda86a679b9aa86"
+    },
+    "tests/godot-management-reading-flow.gd": {
+      "git_blob": "d3347a8b7453e5c7db5e2c37dd65c982aeaa10ea",
+      "sha256": "fa73f04ced3f26bd97b8989a23bade35a95cefa952c137f970cc1160a82c288e"
+    },
+    "tests/godot-navigation.gd": {
+      "git_blob": "e602b9e6df2fc3f048a63934e25c3455076b50bf",
+      "sha256": "191c8eb29be21f34f1ddeae79da55641e22098ab901533880a3fd14591ed45f3"
+    },
+    "tests/godot-profile-reading.gd": {
+      "git_blob": "d377a01b65b23a451258acebd8f41080681f38f0",
+      "sha256": "31fdfb16afb8006757f4899871ccf913dcb3a510e982f032580518bc30b82c16"
+    },
+    "tests/godot-reader-history.gd": {
+      "git_blob": "cb777e304ef751d65371c3af0bc4508505884271",
+      "sha256": "d02b483a84a844e4ec316298cdb88ec21486bd305fd727515f5b0fd0190a8ddf"
+    },
+    "tests/godot-staff-fictional-labels.cjs": {
+      "git_blob": "97f3b2103392a2decfae851791826a18824d90e6",
+      "sha256": "f4fdcce5b31b2120d01a16f74b228fcc6472cca620935167e8c90e125490427c"
+    },
+    "tests/godot-training-identity-links.gd": {
+      "git_blob": "82b0c699ab33d961aae4307f5c16f465bf53702d",
+      "sha256": "7708e9346e876fc488af2c94e3f81e6ef0831de3f4d5fe98df6dc8fe8ec769aa"
+    },
+    "tests/rg27-night-navigation.cjs": {
+      "git_blob": "7355fdf4bcfa481db21c586c73ecf2f372717d85",
+      "sha256": "c17e1f4f6164a908340af01c657de3a62729ff7dd10b4c7346caf47fb0e11681"
+    },
+    "tests/rg27-night-navigation.gd": {
+      "git_blob": "2fb2e6c1f32d4bd0636a8a5853107548816693c5",
+      "sha256": "806e10400496e4eaa32259736fc3104dbd9ca8a6b560573635035ae544963d5e"
+    }
+  },
+  "changed_non_documentation_since_1a7": [
+    "native/godot/ui/immersive08/month_calendar.gd",
+    "tests/rg27-night-navigation.cjs",
+    "tests/rg27-night-navigation.gd"
+  ],
+  "expected_results": 76,
+  "distinct_suites": 57,
+  "distinct_suite_case_pairs": 75,
+  "exact_registry_multiset_match": true,
+  "passed": 76,
+  "failed": 0,
+  "matrices_outside_registry": {
+    "main_checks": 4942,
+    "main_failures": 0,
+    "extra_checks": 1905,
+    "extra_failures": 0,
+    "contracts_passed": 3,
+    "contracts_failed": 0
+  },
+  "art_stdout": {
+    "checks_by_variant": [
+      224,
+      217,
+      211,
+      175
+    ],
+    "captures_announced_by_variant": [
+      49,
+      46,
+      44,
+      7
+    ],
+    "checks_total": 827,
+    "captures_total": 146,
+    "failures": 0
+  },
+  "targeted_stdout": {
+    "carnet_checks": 4670,
+    "carnet_failures": 0,
+    "guards_checks_observed": 112,
+    "guards_failures": 0,
+    "session_checks": 146,
+    "session_failures": 0,
+    "gestion_checks": 274,
+    "gestion_failures": 0
+  },
+  "speech_scope": "Carnet and Gestion publish requested/started/id zero in original selected stdout; Night GD asserts requested/started/id zero at finish, wrapper requires report and checks requested/started zero; all actual cases passed. No fixed guards check count imposed.",
+  "logs_method": "Selected original timestamped lines from GitHub connector logs of four completed jobs; metadata GET run/jobs with exact head SHA and completed status. No rerun or cancellation.",
+  "limitations": [
+    "The separate same-source JavaScript run remains pending at receipt creation; no dual-green verdict anticipated.",
+    "Old 1a7 SDK red result is preserved; no unique root cause of its timeout inferred from this newer source success.",
+    "Local qualification counts and CI counts are distinct; observed guards totals are not a fixed threshold.",
+    "No complete profile/log/PNG copy or visual inspection of announced CI captures.",
+    "No performance, animation/FPS, Windows or causal timing qualification."
+  ]
+}
