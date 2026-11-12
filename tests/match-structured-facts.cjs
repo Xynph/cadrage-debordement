@@ -7,12 +7,12 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { context } = require('./harness.cjs');
 
-const NOUVEAUX = ['cause', 'card', 'origin', 'conversion'];
+const NOUVEAUX = ['cause', 'card', 'origin', 'conversion', 'tackler'];
 
 function match(club, sansFaits) {
   const { run } = context();
   // Témoin : le même moteur, dont l'enregistrement de la scène ignore les nouveaux faits.
-  if (sansFaits) run('var avecFaits=captureMatchAction;captureMatchAction=function(l,type,meta={}){const {cause,card,origin,conversion,...reste}=meta;return avecFaits(l,type,reste)};');
+  if (sansFaits) run('var avecFaits=captureMatchAction;captureMatchAction=function(l,type,meta={}){const {cause,card,origin,conversion,tackler,...reste}=meta;return avecFaits(l,type,reste)};');
   run(`start(${club}); beginMatch(); continueMatch();`);
   for (let i = 0; i < 900 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   assert.equal(run('S.live.finished'), true);
@@ -66,6 +66,8 @@ test('Chaque fait structuré dit la même chose que le texte du journal', () => 
       } else if (s.kind === 'card') {
         assert.equal(s.card !== undefined, s.incident === true, 'couleur sur le carton infligé seulement : ' + e.text);
         if (s.incident) { cartons++; assert.equal(s.card === 'yellow', e.text.startsWith('Carton jaune'), e.text); }
+      } else if (s.kind === 'carry') {
+        for (const key of NOUVEAUX) if (key !== 'tackler') assert.equal(s[key], undefined, `${key} réservé à sa scène : ${s.kind}`);
       } else {
         for (const key of NOUVEAUX) assert.equal(s[key], undefined, `${key} réservé à sa scène : ${s.kind}`);
       }
@@ -84,4 +86,28 @@ test('La sauvegarde accepte les nouveaux faits et refuse une valeur inconnue', (
   assert.equal(verdict('carry', 'cause', 'carry-touch'), 'refusé');
   assert.equal(verdict('try', 'origin', 'drop'), 'refusé');
   assert.equal(verdict('touch', 'card', 'yellow'), 'refusé');
+  assert.equal(verdict('touch', 'tackler', 'x'), 'refusé');
+  assert.equal(run(`(()=>{const copie=JSON.parse(JSON.stringify(S));const e=copie.live.events.find(e=>e.scene&&e.scene.kind==='carry'&&e.scene.tackler);e.scene.tackler=e.scene.actor;try{validateCareer(copie);return 'accepté'}catch(error){return 'refusé'}})()`), 'refusé', 'le plaqueur est un adversaire');
+});
+
+test('Plaqueur nommé : un adversaire sur le terrain, pour chaque temps de jeu, sans tirage', () => {
+  let courses = 0;
+  const vus = new Set();
+  for (const { avec } of matchs) {
+    for (const e of avec.events) {
+      const s = e.scene;
+      if (!s || s.kind !== 'carry') continue;
+      courses++;
+      assert.ok(s.tackler != null, 'chaque temps de jeu nomme son plaqueur : ' + e.text);
+      assert.ok(s.on[1 - s.team].includes(s.tackler), 'le plaqueur est un adversaire sur le terrain');
+      assert.ok(!s.on[s.team].includes(s.tackler));
+      vus.add(s.on[1 - s.team].indexOf(s.tackler));
+      // Franchissement : la couverture (arrière ou ailier) ; gain court : un avant.
+      const gain = Math.abs(s.to.x - s.from.x), poste = s.on[1 - s.team].indexOf(s.tackler);
+      if (gain >= 22) assert.ok([10, 13, 14].includes(poste), e.text);
+      if (gain < 4) assert.ok(poste < 8, e.text);
+    }
+  }
+  assert.ok(courses > 30, `échantillon : ${courses} temps de jeu`);
+  assert.ok(vus.size >= 5, `plusieurs postes plaquent : ${[...vus].join(',')}`);
 });
