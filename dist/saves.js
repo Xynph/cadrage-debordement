@@ -441,13 +441,14 @@ function expandSaveReferences(s){
 }
 function compactSaveDocument(doc){
  if(!worldCareerActive(doc.state))return null;
- const base=champPortableSave(doc.state)?compactChampDocument(doc)??doc:doc;
+ // Le marché visible renvoie au vivier par identifiant, pour toutes les éditions mondiales en v3.
+ const base=compactChampDocument(doc)??doc;
  const state=JSON.parse(JSON.stringify(base.state));
- if(!compactSaveReferences(state))return base===doc?null:base;
+ if(!compactSaveReferences(state)&&base===doc)return null;
  // Contrôle aller-retour : la lecture doit retrouver exactement l'état exporté.
  const check=JSON.parse(JSON.stringify(state));expandSaveReferences(check);
  if(check.market.some(p=>typeof p==='string'))check.market=expandChampMarket(check);
- if(saveChecksum(check)!==doc.checksum)return base===doc?null:base;
+ if(saveChecksum(check)!==doc.checksum)return null;
  return {...doc,exportVersion:3,state};
 }
 function createSaveDocument(state=S){
@@ -486,7 +487,7 @@ function parseSaveDocument(text){
  saveCheck(typeof doc.exportedAt==='string'&&Number.isFinite(Date.parse(doc.exportedAt))&&typeof doc.checksum==='string');
  if(reduced){
   expandSaveReferences(doc.state);
-  if(Array.isArray(doc.state.market)&&doc.state.market.some(p=>typeof p==='string')){saveCheck(champPortableSave(doc.state),'Référence de marché Champ invalide ou dupliquée.');doc.state.market=expandChampMarket(doc.state);}
+  if(Array.isArray(doc.state.market)&&doc.state.market.some(p=>typeof p==='string'))doc.state.market=expandChampMarket(doc.state);
  }
  if(compact)doc.state.market=expandChampMarket(doc.state);
  // L'empreinte porte sur le fichier tel qu'exporté : la validation peut migrer
