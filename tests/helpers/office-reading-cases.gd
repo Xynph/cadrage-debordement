@@ -13,17 +13,17 @@ static func _next_fixture(model: Dictionary) -> Dictionary:
 	var announced := Office.P.next_nationale_fixture(model)
 	return announced if not announced.is_empty() else Office.P.next_scheduled_fixture(model)
 
-static func _unavailable(harness: Node, id: String, reason: String) -> void:
+static func _unavailable(harness: SceneTree, id: String, reason: String) -> void:
 	harness.visits.append({"name":id,"scope":"office","available":false,"reason":reason})
 
-static func _back_from_dialog(harness: Node, window: Window, label: String) -> bool:
+static func _back_from_dialog(harness: SceneTree, window: Window, label: String) -> bool:
 	await harness.key(KEY_LEFT, true)
 	var returned := _closed(window) and not harness.nav._blocked()
 	harness.check(_closed(window), "Bureau · Back masque ou libère le lecteur · " + label)
 	harness.check(not harness.nav._blocked(), "Bureau · navigation disponible après Back · " + label)
 	return returned
 
-static func run(harness: Node, expected_fixture: String) -> void:
+static func run(harness: SceneTree, expected_fixture: String) -> void:
 	var app: Control = harness.app
 	# Do not hide an upstream Back failure by switching the route behind a modal.
 	if harness.nav._blocked():
