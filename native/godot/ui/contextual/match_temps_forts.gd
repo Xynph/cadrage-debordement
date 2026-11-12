@@ -38,15 +38,12 @@ const ECHEANCE_ERREUR := 5.0
 ## Pistes du chorégraphe (CD_MATCH_CHOREGRAPHE=1) : marge au-delà de leur durée avant de
 ## reprendre la main (la vue ne les lit plus, par exemple).
 const ECHEANCE_CHOREGRAPHIE := 5.0
-## Entracte entre deux temps forts (demande de Léo, 12 novembre 2026) : après un temps fort,
-## l'écran intermédiaire reste au moins ENTRACTE secondes réelles ; l'horloge y défile
-## (minutes du moteur, secondes qui roulent), le score et le fil restent ceux d'avant le
-## prochain temps fort. Un temps fort reçu pendant l'entracte attend sa fin (une suite de
-## l'action en cours part tout de suite). « Passer » l'abrège, la pause le fige, ouvrir la
-## tactique ou le banc met le match en pause le temps des changements.
-## CD_MATCH_TEMPS_FORTS_ENTRACTE (secondes, 0 à 30) le règle pour les essais. Le match
-## complet (« integral ») reste continu : pas d'entracte.
-const ENTRACTE := 8.0
+## Entre deux temps forts (décision de Léo, 12 novembre 2026, après le déclenchement par
+## l'importance) : plus de pause minimale ni de retenue, plus de « Passer ». Le match défile en 2D
+## à l'horloge choisie (secondes qui roulent) ; dès que le moteur déclenche un temps fort, il part
+## au début de l'action, même juste après le précédent. Le manager règle en pause, ou en ouvrant
+## Tactique ou Banc (pause posée le temps des changements). Le match complet reste continu.
+const ENTRACTE := 0.0
 
 var view: Control
 var app: Control
@@ -144,8 +141,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	horloge = cadence if HORLOGES.has(cadence) else "normale"
 	var allure := OS.get_environment("CD_MATCH_TEMPS_FORTS_VITESSE")
 	vitesse = clampf(float(allure), 0.5, 4.0) if allure.is_valid_float() else 1.0
-	var pause_voulue := OS.get_environment("CD_MATCH_TEMPS_FORTS_ENTRACTE")
-	entracte = clampf(float(pause_voulue), 0.0, 30.0) if pause_voulue.is_valid_float() else ENTRACTE
+	entracte = ENTRACTE
 	voile = ColorRect.new()
 	voile.name = "MatchBetweenVeil"
 	voile.color = Color(S.PANEL, 1.0)
@@ -418,9 +414,9 @@ func _process(delta: float) -> void:
 func _duree_entracte() -> float:
 	return 0.0 if niveau == "integral" else entracte / maxf(vitesse, 0.01)
 
-## Un temps fort qui n'est pas la suite de l'action attend la fin de l'entracte.
-func _doit_retenir(candidat: Dictionary) -> bool:
-	return _entracte >= 0.0 and not _passer and not candidat.get("suite", false) and _entracte < _duree_entracte() and not _causerie_attend()
+## Aucun temps fort n'est retenu : il part dès que le moteur le déclenche (décision de Léo).
+func _doit_retenir(_candidat: Dictionary) -> bool:
+	return false
 
 ## Une causerie (mi-temps, débrief) attend le temps fort : il se montre sans finir l'entracte
 ## (en pause, l'horloge de l'entracte est figée et la causerie n'ouvrirait jamais).
@@ -472,7 +468,8 @@ func _entracte_et_horloge(delta: float) -> bool:
 	if _retenu.is_empty():
 		return false
 	if (fige and not _causerie_attend()) or _tiroir or app.waiting: return true
-	if not _passer and _entracte < _duree_entracte() and not _causerie_attend(): return true
+	# Entracte en cours seulement (_entracte < 0 : retenu pour le terrain 2D, pas pour l'entracte).
+	if not _passer and _entracte >= 0.0 and _entracte < _duree_entracte() and not _causerie_attend(): return true
 	_lancer_retenu()
 	return true
 
@@ -503,7 +500,7 @@ func _habiller_horloge() -> void:
 	if not _retenu.is_empty():
 		var k := clampf(_retenu_depuis / maxf(0.05, _retenu_reste), 0.0, 1.0)
 		part = lerpf(_retenu_part, 0.999, k)
-		reste = maxf(0.0, _duree_entracte() - _entracte)
+		reste = maxf(0.0, _duree_entracte() - _entracte) if _entracte >= 0.0 else 0.0
 	var heure := _horloge_inter.trim_suffix("′").strip_edges()
 	# Le terrain 2D rejoue encore des faits en retard : l'horloge suit la minute qu'il montre.
 	var differee: String = between.horloge_differee().trim_suffix("′").strip_edges()
@@ -579,7 +576,7 @@ func _demarrer(candidat: Dictionary) -> void:
 		stage.apply_frame(_image(depart, false, int(tf.get("debut", 0)) - 1))
 		_derniers = _positions(depart)
 	suivi.append({"evenement": "temps_fort", "cle": str(tf.get("cle", "")), "type": str(tf.get("type", "")), "suite": bool(tf.get("suite", false)),
-		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "debut_ms": _debut_ms})
+		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "declenchement": tf.get("declenchement"), "debut_ms": _debut_ms})
 	_commencer_plan()
 
 func _commencer_plan() -> void:

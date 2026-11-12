@@ -56,7 +56,7 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
       assert.ok(direct.fil.length > 0 && direct.fil.every(l => typeof l.texte === 'string' && l.kind !== 'advantage'), 'fil sans messages d’avantage');
       assert.ok(direct.chiffres.length >= 5 && direct.chiffres.every(c => typeof c.home === 'string' && typeof c.away === 'string'));
       assert.ok(direct.zone.x >= 0 && direct.zone.x <= 100 && [0, 1].includes(direct.possession));
-      const attendu = H.en_direct(live.events, { niveau: 'dynamique' }).courant;
+      const attendu = H.en_direct(live.events, { niveau: 'dynamique', camp: direct.camp }).courant;
       assert.equal(direct.tempsFort?.cle ?? null, attendu?.cle ?? null, 'la projection suit la sélection en direct');
       const tf = direct.tempsFort;
       if (!tf || vus.some(v => v.cle === tf.cle)) return;
