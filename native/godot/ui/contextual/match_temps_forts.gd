@@ -111,6 +111,8 @@ var _pause_tiroir := false
 ## Horloge qui défile : dernière horloge du moteur montrée, secondes réelles depuis, et
 ## dernier modèle montrable (rien du temps fort retenu : score, fil).
 var _horloge_inter := ""
+## Minute du dernier fait montré par l'entracte (direct.horlogeMontree).
+var _horloge_montree := ""
 var _minute_inter := -1
 var _roule := 0.0
 var _live_inter: Dictionary = {}
@@ -152,16 +154,37 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	view.add_child(voile)
 	view.move_child(voile, container.get_index() + 1)
 	between = Between.new()
+	between.horloge = horloge
 	space.add_child(between)
 	between.niveau_choisi.connect(choisir_niveau)
 	between.reprise_demandee.connect(func(): app._command("pause", {"paused": false}))
 	between.tiroir_demande.connect(func(titre: String): view._toggle_drawer(titre))
 	between.passer_demande.connect(passer)
+	between.horloge_choisie.connect(choisir_horloge)
+	between.delegation_demandee.connect(view.confier_fin)
+	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
+	between.visibility_changed.connect(_barre_unique)
+	# Mon XV : un joueur choisi ouvre le banc sur lui (le match se met en pause).
+	between.joueur_choisi.connect(func(poste: int):
+		view.selected_slot = poste
+		view._drawer_key = ""
+		if view.drawer.visible and view.drawer_tab == "Banc": view._update_drawer()
+		else: view._toggle_drawer("Banc"))
+	between.score_joue.connect(_score_joue)
+	# Terrain 2D : il suit l'horloge de l'entracte et repart de la dernière image connue.
+	between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
+	if preferences != null: between.terrain.calme = bool(preferences.data.get("reduced_motion", false))
+	between.terrain.recaler(-1)
+
+## Une seule barre de commandes pendant l'entracte ; le match fini la rend (« Valider la journée » y est).
+func _barre_unique() -> void:
+	if view != null and view.barre_commandes != null: view.barre_commandes.visible = not between.visible or bool(_live.get("finished", false))
 
 func choisir_horloge(valeur: String) -> void:
 	if not HORLOGES.has(valeur): return
 	horloge = valeur
 	app.management_ui["match_temps_forts_horloge"] = valeur
+	if between != null: between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
 
 func choisir_niveau(id: String) -> void:
 	if id not in NIVEAUX or id == niveau: return
@@ -207,6 +230,13 @@ func montre(live: Dictionary) -> Dictionary:
 		var cache := live.duplicate()
 		cache["events"] = live.get("events", []).slice(0, _retenu_vus)
 		return cache
+	# Écran intermédiaire : rien d'un temps fort à venir (le moteur a une minute d'avance).
+	if etat != JEU and live.get("direct") is Dictionary and live.direct.has("borne"):
+		var borne := int(live.direct.borne)
+		if borne >= live.get("events", []).size(): return live
+		var vue := live.duplicate()
+		vue["events"] = live.get("events", []).slice(0, borne)
+		return vue
 	if etat != JEU or index < 0 or index >= tf.get("plans", []).size(): return live
 	# Pendant les pistes du chorégraphe, chaque fait n'entre au journal qu'une fois montré.
 	var avance := 0 if phase == "choregraphie" and not _jalon_montre else 1
@@ -275,6 +305,8 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 			gel = false
 			index = -1
 			_vers_inter()
+		# Le terrain 2D ne rejoue pas ce que le moteur a déjà joué : il part de la dernière image.
+		between.terrain.recaler(-1)
 		suivi.append({"evenement": "delegation" if delegue else "reprise", "horloge": str(direct.get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
 	if signale is Dictionary and rencontre + str(signale.get("cle", "")) != str(app.management_ui.get("match_temps_forts_arret", "")):
 		app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
@@ -306,6 +338,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 			_minute_inter = minute
 			_roule = 0.0
 		_horloge_inter = str(direct.get("horloge", ""))
+		_horloge_montree = str(direct.get("horlogeMontree", ""))
 		between.update_frame(model, live, direct, func(conseil: Dictionary): app._command("set_tactics", {"attack": conseil.get("attack"), "defense": conseil.get("defence")}))
 	if nouveau:
 		app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
@@ -331,11 +364,13 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		attente = 0.0
 		# Un arrêt suit le temps fort retenu, jamais avant lui.
 		if _retenu.is_empty(): _apres_lecture()
+	if bool(live.get("finished", false)): _barre_unique()
 	_habiller()
 
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
 	if etat == JEU:
+		between.terrain.gel = true
 		_lire(delta * vitesse, delta)
 		return
 	if _entracte_et_horloge(delta): return
@@ -366,7 +401,13 @@ func _duree_entracte() -> float:
 
 ## Un temps fort qui n'est pas la suite de l'action attend la fin de l'entracte.
 func _doit_retenir(candidat: Dictionary) -> bool:
-	return _entracte >= 0.0 and not _passer and not candidat.get("suite", false) and _entracte < _duree_entracte()
+	return _entracte >= 0.0 and not _passer and not candidat.get("suite", false) and _entracte < _duree_entracte() and not _causerie_attend()
+
+## Une causerie (mi-temps, débrief) attend le temps fort : il se montre sans finir l'entracte
+## (en pause, l'horloge de l'entracte est figée et la causerie n'ouvrirait jamais).
+func _causerie_attend() -> bool:
+	var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	return scene is Dictionary and not scene.is_empty()
 
 ## Vrai pendant l'entracte, temps fort reçu ou non (la commande « Passer » est proposée).
 func entracte_en_cours() -> bool:
@@ -404,13 +445,15 @@ func _entracte_et_horloge(delta: float) -> bool:
 		if _entracte >= 0.0: _entracte += delta
 		_roule += delta
 		if not _retenu.is_empty(): _retenu_depuis += delta
+	# Le terrain 2D se fige avec le match (pause, tiroir ouvert, arrêt sur carton).
+	between.terrain.gel = fige or _tiroir or not arret.is_empty()
 	if _tiroir and not _pause_tiroir and not fige and not _live.is_empty() and not _live.get("finished", false) and not _live.get("atBreak", false) and not app.waiting:
 		_pause_tiroir = app._command("pause", {"paused": true})
 	_habiller_horloge()
 	if _retenu.is_empty():
 		return false
-	if fige or _tiroir or app.waiting: return true
-	if not _passer and _entracte < _duree_entracte(): return true
+	if (fige and not _causerie_attend()) or _tiroir or app.waiting: return true
+	if not _passer and _entracte < _duree_entracte() and not _causerie_attend(): return true
 	_lancer_retenu()
 	return true
 
@@ -443,6 +486,11 @@ func _habiller_horloge() -> void:
 		part = lerpf(_retenu_part, 0.999, k)
 		reste = maxf(0.0, _duree_entracte() - _entracte)
 	var heure := _horloge_inter.trim_suffix("′").strip_edges()
+	# Le terrain 2D rejoue encore des faits en retard : l'horloge suit la minute qu'il montre.
+	var differee: String = between.horloge_differee().trim_suffix("′").strip_edges()
+	# Sinon, la minute du dernier fait montré (le moteur a de l'avance : rien d'un temps fort à venir).
+	if differee.is_empty(): differee = _horloge_montree.trim_suffix("′").strip_edges()
+	if not differee.is_empty() and differee.replace("+", "").is_valid_int(): heure = differee
 	if not heure.is_empty() and heure.replace("+", "").is_valid_int():
 		view.clock.text = "%s:%02d" % [heure, int(part * 60.0)]
 	var texte := ""
@@ -512,7 +560,7 @@ func _demarrer(candidat: Dictionary) -> void:
 		stage.apply_frame(_image(depart, false, int(tf.get("debut", 0)) - 1))
 		_derniers = _positions(depart)
 	suivi.append({"evenement": "temps_fort", "cle": str(tf.get("cle", "")), "type": str(tf.get("type", "")), "suite": bool(tf.get("suite", false)),
-		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "duree_prevue": float(tf.get("duree", 0.0)), "debut_ms": _debut_ms})
+		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "debut_ms": _debut_ms})
 	_commencer_plan()
 
 func _commencer_plan() -> void:
@@ -737,6 +785,8 @@ func _plaquer(plan: Dictionary) -> void:
 		stage.jouer_geste(plaqueur, "plaquage", maxf(0.0, stage.instant_geste("plaquage") - 0.35), -1.0, true)
 
 func _vers_inter() -> void:
+	# Le terrain 2D reprend où le temps fort s'est arrêté : rien de ce qu'il a montré n'est rejoué.
+	if etat != INTER and not tf.is_empty(): between.terrain.recaler(int(tf.get("fin", -1)))
 	# L'entracte se compte depuis l'apparition de l'écran intermédiaire (l'attente en 3D n'en fait pas partie).
 	if etat != INTER and _entracte >= 0.0: _entracte = 0.0
 	etat = INTER
@@ -787,7 +837,11 @@ func _habiller() -> void:
 		# temps fort (40+2′ en arrêts de jeu).
 		# Temps fort retenu par l'entracte : score et horloge d'avant lui (rien n'est annoncé avant l'image).
 		var montre_live: Dictionary = _live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live
-		var marque: Array = montre_live.get("score", [0, 0])
+		# Score de ce qui a été montré, pas celui du moteur (une minute d'avance).
+		var marque: Array = montre_live.get("direct", {}).get("score", montre_live.get("score", [0, 0]))
+		# Le terrain 2D rejoue encore des faits en retard sur le moteur : le score suit ce qu'il montre.
+		var differe: Array = between.score_differe()
+		if not differe.is_empty(): marque = differe
 		if marque.size() >= 2: view.score.text = "%d — %d" % [int(marque[0]), int(marque[1])]
 		var heure := str(montre_live.get("direct", {}).get("horloge", ""))
 		if _live.get("finished", false) and _retenu.is_empty(): view.clock.text = "TERMINÉ"
@@ -814,6 +868,14 @@ func _habiller() -> void:
 	if phase == "choregraphie" and not _jalon_montre: view.events.text = ""
 	view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 	legende.visible = not view.events.text.is_empty()
+
+## Un fait vient d'être joué sur le terrain 2D : le bandeau du score le suit.
+func _score_joue(marque: Array) -> void:
+	if etat != INTER or marque.size() < 2: return
+	var differe: Array = between.score_differe()
+	var base: Dictionary = _live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live
+	var montre_score: Array = differe if not differe.is_empty() else base.get("direct", {}).get("score", base.get("score", marque))
+	if montre_score.size() >= 2: view.score.text = "%d — %d" % [int(montre_score[0]), int(montre_score[1])]
 
 func _valider(visible_fin: bool) -> void:
 	if view.finish.visible == visible_fin: return

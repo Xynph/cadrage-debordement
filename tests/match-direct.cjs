@@ -163,3 +163,75 @@ test('Sans aucune variable, le moteur du jeu projette les temps forts ; CD_MATCH
     assert.ok(pas[2].model.live.events.length > pas[0].model.live.events.length, 'le pas d’origine avance');
   }
 });
+
+test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes, lus dans le journal', () => {
+  const D = require('../native/engine/match-direct.cjs');
+  const jeu = ouvrir({ matchHighlights: 'dynamique' });
+  try {
+    let model = demarrer(jeu);
+    let deroules = 0;
+    const bornes = [], vus = new Set();
+    let verifies = 0, sigles = 0;
+    for (let k = 0; k < 60 && !model.live.finished && !model.live.atBreak && !(k > 0 && model.live.paused); k++) {
+      model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
+      const live = model.live, direct = live.direct, events = live.events;
+      // Rien d'un temps fort à venir avant qu'il soit joué : tout ce que l'entracte a montré
+      // (borne des minutes précédentes) précède le début de chaque nouveau temps fort.
+      const tf = direct.tempsFort;
+      if (tf && !vus.has(tf.cle)) {
+        vus.add(tf.cle);
+        for (const b of bornes) assert.ok(b <= tf.debut, `borne ${b} au-delà du début ${tf.debut} du temps fort ${tf.type} (${tf.horlogeDebut})`);
+        verifies++;
+      }
+      bornes.push(direct.borne);
+      assert.ok(direct.borne <= events.length && direct.fil.every(l => l.i < direct.borne) && direct.deroule.every(d => d.i < direct.borne) && direct.reperes.every(r => r.i < direct.borne), 'fil, déroulé et repères bornés');
+      // Sigles : le fil nomme les clubs comme l'écran (identité affichée), pas par le sigle interne.
+      for (const equipe of live.teams) {
+        const affiche = equipe.presentation?.abbr;
+        if (affiche && affiche !== equipe.abbr) {
+          const interne = new RegExp(`\\b${equipe.abbr}\\b`);
+          assert.ok([...direct.fil, ...direct.deroule].every(l => !interne.test(l.texte)), `sigle interne ${equipe.abbr} absent du fil (affiché : ${affiche})`);
+          sigles++;
+        }
+      }
+      const vues = H.normaliser(events).slice(0, direct.borne);
+      assert.deepEqual(direct.score, vues.length ? vues.at(-1).scoreApres : [0, 0], 'score de ce qui a été montré');
+      // Déroulé : derniers faits jouables, dans l'ordre, jamais au-delà du journal.
+      assert.ok(direct.deroule.length <= D.DEROULE_MAX);
+      let avant = -1;
+      for (const item of direct.deroule) {
+        assert.ok(item.i > avant && item.i < events.length, 'ordre et journal');
+        avant = item.i;
+        const s = events[item.i].scene;
+        assert.ok(s, 'chaque fait a sa scène dans le journal');
+        assert.equal(item.kind, s.kind);
+        assert.equal(item.scene.possession, s.possession, 'possession du moteur');
+        assert.ok(item.scene.joueurs.length >= 26 && item.scene.joueurs.length <= 30, 'trente joueurs au plus');
+        for (const [cote, poste, x, y] of item.scene.joueurs) assert.ok([0, 1].includes(cote) && poste >= 0 && poste <= 14 && x >= 0 && x <= 100 && y >= -1 && y <= 71);
+        if (s.kind === 'carry') assert.ok(Math.abs(item.scene.ballon[0] - s.to.x) < 0.11 && Math.abs(item.scene.origine[0] - s.from.x) < 0.11, 'ballon au point du moteur');
+        assert.deepEqual(item.score, H.normaliser(events)[item.i].scoreApres);
+      }
+      deroules += direct.deroule.length;
+      // Domination : une valeur par minute jouée, bornée.
+      const d = direct.domination;
+      assert.ok(Array.isArray(d.minutes) && d.minutes.every(v => Number.isInteger(v) && v >= -100 && v <= 100));
+      assert.deepEqual(d, D.domination(vues));
+      // Chiffres : possession sur 100, plaquages tirés des courses adverses.
+      const t = Object.fromEntries(direct.tableau.map(r => [r.cle, r]));
+      assert.equal(t.possession.valeurs[0] + t.possession.valeurs[1], 100);
+      const lignes = vues;
+      for (const cote of [0, 1]) {
+        const courses = lignes.filter(l => l.kind === 'carry' && l.equipe === 1 - cote && Math.abs(l.x - l.depuis) < 22).length;
+        const recup = lignes.filter(l => l.kind === 'turnover' && l.equipe === cote).length;
+        assert.equal(t.plaquages.valeurs[cote], courses + recup, 'plaquages réussis = courses adverses stoppées + ballons récupérés');
+        assert.equal(t.en_avant.valeurs[cote], lignes.filter(l => l.kind === 'hand-fault' && l.equipe === cote).length);
+      }
+      // Notes : joueurs du manager seulement, bornées.
+      const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
+      for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
+    }
+    assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
+    assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
+    assert.ok(sigles > 0, 'sigles affichés vérifiés');
+  } finally { jeu.fermer(); }
+});

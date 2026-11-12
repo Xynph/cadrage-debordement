@@ -493,4 +493,4 @@ function en_direct(events,options={}){
   dureeHorloge:Object.fromEntries(Object.entries(HORLOGE).map(([nom,sec])=>[nom,Math.round(sautees*sec)]))};
 }
 
-module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,normaliser,tension,temps_forts,en_direct});
+module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,dansLes22,normaliser,tension,temps_forts,en_direct});
