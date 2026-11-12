@@ -108,6 +108,7 @@ jobs:
       - name: Suites
         shell: bash
         env:
+          CD_STABILITY_FULL: '1'  # world-roster-stability : 58 clubs, 3 saisons (la CI de tests.yml joue la version réduite)
           TESTS: ${{ inputs.tests || 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/native-academy-groups.cjs tests/player-population-capacity.cjs tests/france-long-career.cjs tests/france-long-career-late.cjs tests/world-career.cjs tests/world-roster-stability.cjs' }}
         run: |
           set -uo pipefail
