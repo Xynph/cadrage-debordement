@@ -504,6 +504,9 @@ func _process(delta: float) -> void:
 				else Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, BLEND_SECONDS))
 		var movement := actor.position - previous
 		var speed := movement.length() / maxf(delta, 0.001)
+		# Allure lissée : elle décide du port du ballon (deux mains ou sous le bras).
+		if delta > 0.0 and not _paused:
+			entry.allure = lerpf(float(entry.get("allure", 0.0)), minf(speed, 12.0), 1.0 - exp(-6.0 * delta))
 		var moving := speed > 0.035 and not _paused
 		if moving and not in_pass and not staged:
 			var change := angle_difference(actor.rotation.y, atan2(movement.x, movement.z))
@@ -591,10 +594,20 @@ func _process(delta: float) -> void:
 		var approaching: bool = entry.holding and _ball.visible and center.distance_to(_ball.global_position) < 0.38
 		var can_grip: bool = entry.holding and (_ball_attached or approaching)
 		entry.grip = move_toward(float(entry.grip), 1.0 if can_grip else 0.0, delta * 6.0)
+		if not entry.holding:
+			entry.tenu = 0.0
+			entry.cote_ballon = 0.0
+			entry.porte = 0.0
+		elif not _paused:
+			entry.tenu = float(entry.get("tenu", 0.0)) + delta
 		if rig and entry.grip > 0.0:
 			if approaching and not _ball_attached:
 				center = _ball.global_position
-			Presentation.hold_ball(actor, rig, center, entry.grip)
+				Presentation.hold_ball(actor, rig, center, entry.grip)
+			else:
+				_porter_ballon(id, entry, delta)
+		elif rig:
+			_bras_hors_ballon(id, entry)
 	if not _pass_plan.is_empty() and _pass_elapsed >= _pass_plan.duration:
 		_stop_live_pass(true)
 	# Repère au sol du ballon : seulement dans la vue de dessus, où le ballon est minuscule ;
@@ -605,6 +618,74 @@ func _process(delta: float) -> void:
 		_ball_marker.global_basis = Basis.IDENTITY
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+
+## Port du ballon par le porteur : deux mains (prise, passe proche, allure modérée) ou calé sous
+## le bras du côté opposé au défenseur le plus proche (course lancée). Le ballon suit les poignets.
+const PORT_SOUS_LE_BRAS := 4.3     # allure (m/s) à partir de laquelle le ballon est calé sous le bras
+const PORT_APRES_PRISE := 0.5      # deux mains au moins pendant ce temps après la prise
+const PASSE_ARMEE := 0.42          # armé de la passe avant le lâcher, en secondes
+const PASSE_FIN := 0.3             # fin du geste de passe après le lâcher
+
+func _porter_ballon(id: String, entry: Dictionary, delta: float) -> void:
+	var actor: Node3D = entry.node
+	var swing := -1.0
+	var toward := 1.0
+	if choregraphie_active():
+		var passe: Dictionary = _choregraphie.passe_de(id, 0.0, PASSE_ARMEE)
+		if not passe.is_empty():
+			swing = 1.0 - clampf((float(passe.t) - _choregraphie.temps) / PASSE_ARMEE, 0.0, 1.0)
+			toward = _cote_de(actor, str(passe.vers))
+	var voulu := 1.0 if swing < 0.0 and float(entry.get("allure", 0.0)) >= PORT_SOUS_LE_BRAS and float(entry.get("tenu", 0.0)) >= PORT_APRES_PRISE else 0.0
+	entry.tuck = move_toward(float(entry.get("tuck", 0.0)), voulu, delta * 3.0)
+	if float(entry.get("cote_ballon", 0.0)) == 0.0:
+		# Le ballon loin du défenseur le plus proche : calé sous le bras de l'autre côté.
+		entry.cote_ballon = -_cote_du_plus_proche(id, actor)
+	var tenue: Array = Presentation.carry_ball(actor, entry.rig, float(entry.grip), float(entry.tuck), float(entry.cote_ballon), swing, toward)
+	var possede: bool = _ball_attached and _carrier_id == id and not (_gestes != null and _gestes.owns_ball())
+	# Raccord en 0,2 s depuis la place donnée par la trajectoire (prise, passe reçue).
+	entry.porte = move_toward(float(entry.get("porte", 0.0)), 1.0 if possede else 0.0, delta * 5.0)
+	if possede and not _paused:
+		var w := smoothstep(0.0, 1.0, float(entry.porte))
+		_ball.global_position = _ball.global_position.lerp(tenue[0], w)
+		_ball.global_basis = _ball.global_basis.orthonormalized().slerp((tenue[1] as Basis).orthonormalized(), w)
+
+
+## Bras sans ballon : fin du geste de passe, ou mains tendues vers le ballon qui arrive.
+func _bras_hors_ballon(id: String, entry: Dictionary) -> void:
+	if not choregraphie_active():
+		return
+	var actor: Node3D = entry.node
+	var passe: Dictionary = _choregraphie.passe_de(id, PASSE_FIN, 0.0)
+	if not passe.is_empty():
+		var age := _choregraphie.temps - float(passe.t)
+		Presentation.pass_follow(actor, entry.rig, _cote_de(actor, str(passe.vers)), 1.0 - clampf(age / PASSE_FIN, 0.0, 1.0))
+		return
+	var prise := _choregraphie.reception_de(id, 0.45)
+	if prise > 0.0 and _ball.visible:
+		Presentation.reach_ball(actor, entry.rig, _ball.global_position, 1.0 - clampf((prise - _choregraphie.temps) / 0.45, 0.0, 1.0))
+
+
+## Côté (1 gauche, -1 droite, repère du joueur) où se trouve `autre`.
+func _cote_de(actor: Node3D, autre: String) -> float:
+	if not _actors.has(autre):
+		return 1.0
+	var local := actor.global_basis.inverse() * ((_actors[autre].node as Node3D).global_position - actor.global_position)
+	return 1.0 if local.x >= 0.0 else -1.0
+
+
+func _cote_du_plus_proche(id: String, actor: Node3D) -> float:
+	var proche := ""
+	var mieux := INF
+	for autre: String in _actors:
+		if autre == id or _actors[autre].side == _actors[id].side:
+			continue
+		var d := (_actors[autre].node as Node3D).global_position.distance_squared_to(actor.global_position)
+		if d < mieux:
+			mieux = d
+			proche = autre
+	# Personne : ballon sous le bras droit.
+	return _cote_de(actor, proche) if not proche.is_empty() else 1.0
 
 
 func _is_pass_player(id: String) -> bool:
@@ -879,6 +960,9 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	_recolor(model, side)
 	if _rendu:
 		_rendu.equiper_joueur(actor)
+	var squelette := Presentation.rig_for(model)
+	if squelette:
+		squelette.set_meta("repos_relatif", actor.global_basis.inverse() * squelette.global_basis)
 	var animation := _find_animation(model)
 	var idle := StringName()
 	var run := StringName()
@@ -905,7 +989,8 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_beat": -1.0, "cut_normal_speed": false, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
-		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "geste": {}, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
+		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "geste": {}, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0,
+		"allure": 0.0, "tenu": 0.0, "tuck": 0.0, "cote_ballon": 0.0, "porte": 0.0}
 
 
 func _model_bounds(node: Node3D, origin: Node3D) -> AABB:
