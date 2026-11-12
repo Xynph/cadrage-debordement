@@ -1,6 +1,8 @@
 extends SceneTree
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
+var speech_requests := 0
+var speech_starts := 0
 var checks := 0
 var failures: Array[String] = []
 const ROUTES = {"Effectif":"CarnetSquad", "Composition":"CarnetLineup", "Préparation":"CarnetPreparation", "Recrutement":"CarnetMarket", "Finances":"CarnetFinance", "Club":"CarnetClub", "Calendrier":"CarnetCalendar", "Classements":"CarnetStandings", "Match":"CarnetMatch", "Accueil":"CarnetHome", "Création":"CarnetCreation", "Packs":"CarnetPacks"}
@@ -456,6 +458,10 @@ func projections() -> void:
 	app.accent=Color(app.G.identity(saved.club).get("color","#d43e47"))
 	await render("Bureau")
 func finish() -> void:
+	check(is_instance_valid(app.coach) and is_instance_valid(app.coach.speech), "Voix du client disponible pour le contrôle final")
+	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
+		check(speech_requests == 0 and speech_starts == 0 and app.coach.speech._id == 0, "Client Carnet : aucune parole demandée ni démarrée, identifiant vocal nul")
+		print("CARNET_SPEECH requested=", speech_requests, " started=", speech_starts, " id=", app.coach.speech._id)
 	print("CARNET : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	app.closing=true
 	if is_instance_valid(app.coach):app.coach.destroy()
@@ -468,6 +474,13 @@ func finish() -> void:
 func run() -> void:
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	# The single client is muted synchronously after _ready, before any awaited frame.
+	check(is_instance_valid(app.coach) and is_instance_valid(app.coach.speech), "Voix du client disponible dès son instanciation")
+	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
+		app.coach.speech.requested.connect(func(_text: String): speech_requests += 1)
+		app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
+		app.coach.speech.set_muted(true)
+		check(app.coach.speech._id == 0, "Client Carnet : aucune parole avant la mise en sourdine précoce")
 	await wait_model()
 	app.timer.stop()
 	await command("new_career", {"club":0,"mode":"common"})
