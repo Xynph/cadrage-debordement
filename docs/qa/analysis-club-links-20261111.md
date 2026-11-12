@@ -101,8 +101,41 @@ instance/focus/défilement, le choix de joueur→fiche→retour au même choix, 
 et les onglets Trésorerie/Salaires. La sauvegarde, le registre et l’état/RNG sont
 comparés après ces consultations ; les compteurs de parole doivent rester à zéro.
 
-Deux captures natives 2560×1440 sont prévues : l’analyse et la fiche de la vraie
-rencontre. Leur existence, leurs dimensions et leurs SHA seront vérifiés dans
+Trois captures natives 2560×1440 sont prévues : l’analyse, la fiche de la vraie
+rencontre et le Bureau sur le même checkpoint. Leur existence, leurs dimensions et leurs SHA seront vérifiés dans
 `report.json`. Elles ne sont pas annoncées comme obtenues avant l’exécution.
 Le wrapper JavaScript a passé `node --check` ; la validation du SDK reste à
 l’intégrateur sur le candidat commun effectivement assemblé.
+
+
+## Complément Bureau sur le même replay
+
+Le helper séparé `tests/helpers/office-reading-cases.gd` complète le même client
+et le même profil jetable. Le wrapper conserve un seul clone, un seul setup
+public éventuel, la frontière de baseline déjà placée après l'activation
+explicite du registre, puis les mêmes comparaisons sauvegarde/état/RNG et
+compteurs de parole. Aucun nouveau match, semaine, entraînement ou commande
+métier n'est ajouté par le helper. Les délais enfant 150 s et commun 180 s
+restent inchangés.
+
+Les gestes ajoutés sont clic réel sur le prochain adversaire puis Back,
+Entrée sur sa date publiée puis Back, clic sur l'alerte physique lorsqu'un
+joueur à surveiller existe, et score du résultat de calendrier attendu lorsque
+son ID est unique et concordant. Les données absentes du checkpoint sont
+explicitement consignées dans `visits` avec `available: false` et leur raison ;
+elles ne deviennent pas de faux cas de fatigue ou de résultat reçu. La capture
+Bureau est prise dans le vrai client en 2560×1440, sans aperçu fabriqué.
+
+Après chaque Back depuis un détail, le replay exige la fenêtre masquée ou
+libérée et `navigation_controller._blocked() == false`, puis le focus et le
+défilement de la source. Ces assertions sont aussi ajoutées aux deux retours
+initiaux Analyse→rencontre et Analyse→club. Si un lecteur antérieur reste actif,
+le helper échoue explicitement au lieu de changer la route derrière sa fenêtre ;
+il n'appelle ni `_travel` directement ni FERMER pour contourner un défaut du
+raccourci. La correction commune du registre page→modal, détenue par le
+propriétaire du contrôleur, doit être assemblée pour la réception.
+
+Ce complément est préparé sur `b4c894ec`, et requiert les liens Bureau
+`321849e1` puis leur correctif `231b229b`. Aucun Godot/import ou SDK n'a été
+exécuté dans le worktree de préparation. La précédente réception Analyse/Club
+et ses échecs ne sont pas transformés en reçu de ce scope étendu.

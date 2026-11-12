@@ -3,6 +3,7 @@ const Flow = preload("helpers/contextual_flow.gd")
 const Analysis = preload("res://ui/performance_analysis_view.gd")
 const Club = preload("res://ui/immersive08/club_canvas.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
+const OfficeCases = preload("helpers/office-reading-cases.gd")
 var app: Control
 var nav: Node
 var failures: Array[String] = []
@@ -136,6 +137,8 @@ func run() -> void:
 	check(detail!=null and detail.visible and str(detail.get_meta("entity_id",""))==str(target.id),"Score ouvre la fiche de sa vraie rencontre")
 	await capture("fiche-rencontre-reelle-2560")
 	await key(KEY_LEFT,true)
+	check(not is_instance_valid(detail) or not detail.visible,"Back rencontre masque ou libère la fenêtre de lecture")
+	check(not nav._blocked(),"Back rencontre rend la navigation disponible")
 	check(is_instance_valid(score) and score.is_visible_in_tree() and score.has_focus() and scroll.scroll_vertical==source_scroll,"Retour exact au score source : même instance, focus et défilement")
 	var opponent:=found("PerformanceOpponent_"+str(target.id).validate_node_name()) as Button
 	await activate(opponent,true)
@@ -143,6 +146,8 @@ func run() -> void:
 	check(club!=null and club.visible and str(club.get_meta("entity_id",""))==str(result.opponent),"Adversaire ouvre le club du résultat exact")
 	check(club!=null and club.title==GameSkin.club_name(app.Immersive.Competition._target_club(app,str(result.opponent))),"Titre du club conforme à son identité publique")
 	await key(KEY_LEFT,true)
+	check(not is_instance_valid(club) or not club.visible,"Back club masque ou libère la fenêtre de lecture")
+	check(not nav._blocked(),"Back club rend la navigation disponible")
 	check(is_instance_valid(opponent) and opponent.has_focus(),"Retour exact au lien adversaire")
 	var choice:=found("PerformancePlayerChoice") as OptionButton
 	check(choice!=null and choice.item_count>1,"Sélecteur joueur réel disponible après préparation explicite")
@@ -167,6 +172,7 @@ func run() -> void:
 		await activate(found(item[0]) as Control)
 		check(app.route=="Finances" and app.management_ui.immersive08_finance_tab==item[1],"Bon onglet financier · "+str(item[1]))
 		await key(KEY_LEFT,true)
+	await OfficeCases.run(self,str(target.id))
 	check(app.bridge._next_id==requests and saved==FileAccess.get_file_as_bytes(save_path),"Liens graphiques sans commande ni écriture de sauvegarde")
 	await command("export")
 	check(before==JSON.parse_string(app.model.meta.exportText).state,"État sportif, registre, RNG inchangés après consultation")

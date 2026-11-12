@@ -8,7 +8,7 @@ const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 const sha = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
-test('Analyse et Club graphiques : résultat réel, lecteurs et retours exacts en 1440p', {
+test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p', {
   skip: !process.env.CD_GODOT_EXECUTABLE ? 'SDK Godot requis' : process.env.CD_ANALYSIS_CLUB_GRAPHICS !== '1' && 'Recette graphique opt-in : CD_ANALYSIS_CLUB_GRAPHICS=1',
 }, () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-analysis-club-graphics-'));
@@ -65,13 +65,13 @@ test('Analyse et Club graphiques : résultat réel, lecteurs et retours exacts e
   const log = (result.stdout || '') + (result.stderr || '');
   fs.writeFileSync(path.join(output, 'godot.log'), log);
   console.log(log.trim());
-  console.log('Preuves graphiques Analyse/Club : ' + output);
+  console.log('Preuves graphiques Analyse/Club/Bureau : ' + output);
   if (sourceFile) assert.equal(receipt.source_sha256_after, receipt.source_sha256_before, 'Le profil source doit rester inchangé, même après un échec de recette');
   if (result.error) throw result.error;
   assert.equal(result.status, 0, log);
   assert.doesNotMatch(log, /SCRIPT ERROR|Parse Error|ERROR:/);
   const report = JSON.parse(fs.readFileSync(path.join(output, 'report.json'), 'utf8'));
   assert.deepEqual(report.failures, []);
-  assert.equal(report.captures.length, 2);
+  assert.equal(report.captures.length, 3);
   for (const capture of report.captures) assert.deepEqual([capture.width, capture.height], [2560, 1440]);
 });
