@@ -28,8 +28,8 @@ function leagueOf(s,club){
  for(const [key,l] of Object.entries(leagues))if(Array.isArray(l.members)&&l.members.includes(club.id))return key;
  return 'guest';
 }
-function sizes(text){
- const s=JSON.parse(text),out={total:Buffer.byteLength(text)};
+function sizes(text,s){
+ const out={total:Buffer.byteLength(text)};
  for(const [k,v] of Object.entries(s))out[k]=Buffer.byteLength(JSON.stringify(v)??'');
  return Object.fromEntries(Object.entries(out).sort((a,b)=>b[1]-a[1]).slice(0,16));
 }
@@ -48,7 +48,7 @@ function observe(label,s,storeText,profileBytes,exportResult,events,elapsedMs){
   professionals:s.clubs.reduce((n,c)=>n+c.players.length,0),academies,freeAgents:s.economy.freeAgents.length,market:s.market.length,
   retired:s.development?.retired?.length,userCash:round(s.clubs[s.club].cash/1e6),userPayroll:round(s.clubs[s.club].players.reduce((n,p)=>n+p.salary,0)*52/1e6),
   budget,debtClubs:debt,userLedger:s.__ledger,
-  stateBytes:Buffer.byteLength(storeText),profileBytes,stateSizes:sizes(storeText),export:exportResult,events};
+  stateBytes:Buffer.byteLength(storeText),profileBytes,stateSizes:sizes(storeText,s),export:exportResult,events};
 }
 function run(o){
  const started=Date.now(),dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-measure-'));
@@ -64,9 +64,9 @@ function run(o){
  const save=()=>{fs.mkdirSync(path.dirname(o.out),{recursive:true});fs.writeFileSync(o.out,JSON.stringify(report,null,1));};
  const capture=label=>{
   const {text,bytes}=state(),s=JSON.parse(text);track(s);ledger(s);s.__ledger=ledgerSum;ledgerSum={};
-  let exp;const t=Date.now();try{const r=bridge.handle({id:++serial,command:'export',payload:{}});exp=r.ok?{ok:true,bytes:Buffer.byteLength(r.model.meta.exportText),ms:Date.now()-t}:{ok:false,error:r.error};}catch(e){exp={ok:false,error:String(e.message)};}
+  let exp=null;const t=Date.now();if(label.startsWith('end-')||label==='after-S'+o.seasons)try{const r=bridge.handle({id:++serial,command:'export',payload:{}});exp=r.ok?{ok:true,bytes:Buffer.byteLength(r.model.meta.exportText),ms:Date.now()-t}:{ok:false,error:r.error};}catch(e){exp={ok:false,error:String(e.message)};}
   const row=observe(label,s,text,bytes,exp,counts,Date.now()-started);counts={};report.observations.push(row);
-  console.log(JSON.stringify({label,elapsed:Math.round(row.elapsedMs/1000),stateMB:round(row.stateBytes/1048576),export:exp.ok?round(exp.bytes/1048576):exp.error,elite:row.byLeague.elite,events:row.events}));
+  console.log(JSON.stringify({label,elapsed:Math.round(row.elapsedMs/1000),stateMB:round(row.stateBytes/1048576),export:!exp?null:exp.ok?round(exp.bytes/1048576):exp.error,elite:row.byLeague.elite,events:row.events}));
   if(o.keep){fs.mkdirSync(o.keep,{recursive:true});fs.copyFileSync(profile,path.join(o.keep,label+'.json'));}
   save();
  };
@@ -77,7 +77,8 @@ function run(o){
    for(let week=model.meta.week,guard=0;model.meta.phase!=='ended'&&guard<80;week++,guard++){
     if(model.next){if(!model.selection.valid)go('auto_lineup');if(!model.selection.valid)go('promote_cover',{confirmed:true});go('begin_match');go('delegate');}
     settleClubMeetings(go('finish_round'),go);
-    {const {text}=state(),st=JSON.parse(text);ledger(st);if(week%4===0)track(st);}
+    // Pas de lecture hebdomadaire de l'état : la machine est partagée (mémoire).
+    // Les mouvements se lisent aux points de mesure (clichés et rapports de saison).
    }
    capture('end-S'+season);
    settleClubMeetings(go('next_season',{confirmed:true}),go);capture('after-S'+season);

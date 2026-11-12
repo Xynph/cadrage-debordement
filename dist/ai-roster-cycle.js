@@ -72,7 +72,13 @@ function aiRosterWageLimit(c){
  const info=worldActive()?worldClub(c.id):null;
  const liquidity=Math.max(0,c.cash-(info?.debt||0));
  // 1 M€ de liquidité nette au-dessus de 1,5 M€ ouvre 11 111 € de salaires hebdomadaires.
- return clamp(Math.round(235000+Math.max(0,liquidity-1500000)/90),215000,335000);
+ const limit=clamp(Math.round(235000+Math.max(0,liquidity-1500000)/90),215000,335000);
+ // Avec une cible d'effectif, un club peut compléter son groupe à son salaire moyen actuel :
+ // l'ancienne fourchette fixe, sous la masse de départ de nombreux clubs, les empêchait de
+ // remplacer leurs départs. La règle des salaires (drapeau) remplace cette limite.
+ const goal=aiRosterTarget(c);
+ if(goal===37||!c.players.length)return limit;
+ return Math.max(limit,Math.round(aiRosterPayroll(c)/c.players.length*goal));
 }
 function aiRosterContracts(){
  if(!aiRosterActive()||S.aiRoster.lastContracts===S.season)return false;
@@ -446,7 +452,12 @@ function aiRosterPopulationTargets(c,pool){
    (n.supportEstimate===undefined||evidence.quality>=n.supportEstimate+(succession?0:4)));
   if(!need)continue;
   const finance=recruitmentFinance(c,p);
-  out.push({p,need,evidence,finance,within:finance.sustainable&&p.salary<=100000,
+  // Avec une cible d'effectif (registre ou base commune), la soutenabilité se juge sur les moyens
+  // propres du club (masse autorisée et trésorerie, vérifiées à la signature) et non sur la
+  // projection fixe de 160 000 € de recettes par semaine, que dépasse la masse de la plupart des
+  // clubs de première division : ils ne recrutaient plus personne.
+  const sustainable=aiRosterTarget(c)===37?finance.sustainable:c.cash-finance.fee>=300000;
+  out.push({p,need,evidence,finance,within:sustainable&&p.salary<=100000,
    score:need.score*2+Math.round(evidence.quality/2)-(p.age>=32?10:0)});
  }
  return out.sort((a,b)=>Number(b.within)-Number(a.within)||b.score-a.score||a.p.id.localeCompare(b.p.id)).slice(0,12);
