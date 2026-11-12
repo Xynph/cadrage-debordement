@@ -474,6 +474,9 @@ func _ecartees(ordre: Array, r: float, porteur: String) -> Dictionary:
 				else:
 					centres[ca] -= sens * pousse
 					centres[cb] += sens * pousse
+	# Une pastille écartée au bord (ruck sur la touche) reste entière dans le cadre.
+	var bord := Vector2(r + 1.0, r + 1.0)
+	for cle: String in ordre: centres[cle] = (centres[cle] as Vector2).clamp(bord, size - bord)
 	return centres
 
 func _dessiner_jeu(police: Font, e: float) -> void:
