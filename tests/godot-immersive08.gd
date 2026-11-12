@@ -906,11 +906,20 @@ func navigation_flow() -> void:
 	root.size = original_size
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
+	# La fiche complète est un état mémorisé (meta immersive08_full_player) : on part du tableau de l'effectif.
+	app.set_meta("immersive08_full_player",false)
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
-	await click(app.find_child("OpenPlayerFull",true,false))
-	await settle()
+	var open_full: Button = null
+	for attempt in 40:
+		open_full = app.find_child("OpenPlayerFull",true,false) as Button
+		if open_full != null: break
+		await process_frame
+	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size))
+	if open_full != null:
+		await click(open_full)
+		await settle()
 	await click(app.find_child("Nav_Bureau",true,false))
 	await settle()
 	await key(KEY_LEFT,false,true)
@@ -1370,8 +1379,20 @@ func run() -> void:
 			app.find_child("LineupPlayer"+chosen.replace(":","_"),true,false).pressed.emit()
 			await worker()
 			check(app.bridge.last_response_ok and str(app.model.selection.slots[0].playerId)==chosen,"Affectation réelle du joueur qualifié")
-			app.find_child("TacticsChoosePlayer",true,false).pressed.emit()
-			await settle()
+			# L'affectation ferme le sélecteur : le numéro déjà sélectionné le rouvre, puis « Consignes du joueur »
+			# (TacticsIndividualInstructions) ouvre les consignes individuelles (le bouton TacticsChoosePlayer n'existe plus).
+			var reopen: Button = app.find_child("LineupSlot01",true,false) as Button
+			if reopen != null:
+				reopen.pressed.emit()
+				await settle()
+				if app.find_child("LineupCandidates",true,false) == null:
+					reopen.pressed.emit()
+					await settle()
+			var individual_instructions: Button = app.find_child("TacticsIndividualInstructions",true,false) as Button
+			check(individual_instructions != null, "Le sélecteur de poste propose les consignes du joueur")
+			if individual_instructions != null:
+				individual_instructions.pressed.emit()
+				await settle()
 			var recovery:Button=app.find_child("IndividualLoad_repos",true,false)
 			check(recovery!=null,"Sous-menu de consignes individuelles illustré")
 			if recovery!=null:recovery.pressed.emit();await worker()
