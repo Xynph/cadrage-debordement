@@ -17,7 +17,7 @@ for(const side of [0,1]){
  run('while(presentationPending(l))presentationTick(l)');
 }
 // Named carrying comments use the same actor highlighted by the pitch.
-run('Math.random=()=>.5;ballPossession(l,0,40);advanceCausalPlay(l)');assert.equal(run('displayedAction(l).scene.kind'),'carry');assert.equal(run('displayedAction(l).text.includes(matchPlayer(l,0,displayedAction(l).scene.actor).name)'),true);
+run('Math.random=()=>.43;ballPossession(l,0,40);advanceCausalPlay(l)');assert.equal(run('displayedAction(l).scene.kind'),'carry');assert.equal(run('displayedAction(l).text.includes(matchPlayer(l,0,displayedAction(l).scene.actor).name)'),true);
 run('commentaryFilter="highlights"');assert.ok(run('matchCommentary(l).includes(displayedAction(l).text)'));
 // Old snapshots still show the pre-card players, subsequent card snapshots do not.
 run('var prior=l.events.length-1,id=l.sheets[0].on[3];giveMatchCard(l,0,id);var card=l.events.length-1;playback(l).cursor=prior');assert.equal(run('matchScene(l).players.some(p=>p.id===id)'),true);run('playback(l).cursor=card');assert.equal(run('matchScene(l).players.some(p=>p.id===id)'),false);

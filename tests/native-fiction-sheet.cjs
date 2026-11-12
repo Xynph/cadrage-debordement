@@ -58,24 +58,25 @@ function prepare(b,seed){
  assert.equal(good(b,'snapshot').selection.valid,true);
  // Prepare the shortage explicitly after J1: current positional allocation and
  // career variation legitimately change which player a seeded match injures.
+ // Club 6 hosts club 0 at J2 in the alternating schedule (club 12 did before 2026-11-11).
  // Keep the two existing side-qualified props, with one unavailable at J2;
  // no qualification is added and all other opponent players remain healthy.
  const slot=seed===1?0:2,injury=seed===1?3:4;
- b.probe(`var specialists=S.clubs[12].players.filter(p=>slotEligible(p,${slot}));if(specialists.length!==2)throw Error('Expected two existing qualified props');for(var p of S.clubs[12].players)p.injury=0;specialists.find(p=>p.id==='p12-${slot}-1700000000000').injury=${injury};validateCareer(S)`);
+ b.probe(`var specialists=S.clubs[6].players.filter(p=>slotEligible(p,${slot}));if(specialists.length!==2)throw Error('Expected two existing qualified props');for(var p of S.clubs[6].players)p.injury=0;specialists.find(p=>p.id==='p6-${slot}-1700000000000').injury=${injury};validateCareer(S)`);
  good(b,'save');
 }
 try{
  for(const seed of [1,5])check('native seed '+seed+': explicit prop shortage after J1, J2, export/import/restart and J3 RNG',()=>{
   let b=bridge('seed-'+seed,seed);prepare(b,seed);const before=profile('seed-'+seed);fixtures.set(seed,before);
-  const beforeState=state(b),injured='p12-'+(seed===1?0:2)+'-1700000000000';
-  assert.equal(beforeState.round,1);assert.equal(beforeState.live,null);assert.equal(beforeState.clubs[12].players.find(p=>p.id===injured).injury,seed===1?3:4);
+  const beforeState=state(b),injured='p6-'+(seed===1?0:2)+'-1700000000000';
+  assert.equal(beforeState.round,1);assert.equal(beforeState.live,null);assert.equal(beforeState.clubs[6].players.find(p=>p.id===injured).injury,seed===1?3:4);
   const reopened=copied('reopened-'+seed,before);assert.equal(good(reopened,'snapshot').meta.profileError,'');assert.deepEqual(state(reopened),beforeState);
   good(b,'begin_match');good(reopened,'begin_match');validateNative(b);
   assert.deepEqual(state(b),state(reopened),'same saved S and RNG give the same actual J2');
   assert.equal(profile('seed-'+seed).seed,profile('reopened-'+seed).seed);
-  const after=state(b),added=after.clubs[12].players.filter(p=>!beforeState.clubs[12].players.some(q=>q.id===p.id));
-  assert.equal(added.length,1);assert.equal(added[0].pos,seed===1?'Pilier gauche':'Pilier droit');assert.equal(after.clubs[12].players.find(p=>p.id===injured).injury,seed===1?2:3);
-  assert.ok(after.aiRoster.events.some(event=>event.kind==='emergency'&&event.clubId===12&&event.playerId===added[0].id&&event.fee===0),'the public export records the actual emergency reinforcement');
+  const after=state(b),added=after.clubs[6].players.filter(p=>!beforeState.clubs[6].players.some(q=>q.id===p.id));
+  assert.equal(added.length,1);assert.equal(added[0].pos,seed===1?'Pilier gauche':'Pilier droit');assert.equal(after.clubs[6].players.find(p=>p.id===injured).injury,seed===1?2:3);
+  assert.ok(after.aiRoster.events.some(event=>event.kind==='emergency'&&event.clubId===6&&event.playerId===added[0].id&&event.fee===0),'the public export records the actual emergency reinforcement');
   good(b,'pause',{paused:true});const text=good(b,'export').meta.exportText,rng=profile('seed-'+seed).seed;
   good(b,'import',{text});assert.equal(good(b,'export').meta.exportText,text);assert.equal(profile('seed-'+seed).seed,rng);
   const saved=state(b),disk=fs.readFileSync(file('seed-'+seed));b.close();b=bridge('seed-'+seed,12345);
@@ -90,15 +91,15 @@ try{
   good(b,'begin_match');good(b,'delegate');settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));good(b,'begin_match');validateNative(b);
  });
  for(const seed of [1,5])check('coverage seed '+seed+': deterministic, idempotent, no healing/cash/history changes',()=>{
-  const h=harness(fixtures.get(seed)),before=h.state(),rng=h.seed(),payroll=h.run('aiRosterPayroll(S.clubs[12])');
-  h.run('CDFranceCareer.ensureAISheet(S.clubs[12]);validateCareer(S)');const after=h.state(),added=after.clubs[12].players.at(-1);
-  assert.equal(h.seed(),rng);assert.deepEqual(after.clubs[12].players.slice(0,-1),before.clubs[12].players);assert.deepEqual(after.clubs[0],before.clubs[0]);
+  const h=harness(fixtures.get(seed)),before=h.state(),rng=h.seed(),payroll=h.run('aiRosterPayroll(S.clubs[6])');
+  h.run('CDFranceCareer.ensureAISheet(S.clubs[6]);validateCareer(S)');const after=h.state(),added=after.clubs[6].players.at(-1);
+  assert.equal(h.seed(),rng);assert.deepEqual(after.clubs[6].players.slice(0,-1),before.clubs[6].players);assert.deepEqual(after.clubs[0],before.clubs[0]);
   assert.deepEqual(after.clubs.map(c=>c.cash),before.clubs.map(c=>c.cash));assert.deepEqual(after.history,before.history);assert.deepEqual(after.ledger,before.ledger);
-  assert.equal(added.id,'youth-12-1-500');assert.equal(added.salary,2000);assert.equal(added.contractEnd,3);assert.equal(added.injury,0);assert.equal(added.dev.minutes,0);assert.equal(added.dev.appearances,0);assert.equal(added.dev.careerMinutes,0);assert.deepEqual(added.dev.history,[]);
-  assert.equal(h.run('aiRosterPayroll(S.clubs[12])'),payroll+2000,'the real future payroll includes the new salary');
+  assert.equal(added.id,'youth-6-1-500');assert.equal(added.salary,2000);assert.equal(added.contractEnd,3);assert.equal(added.injury,0);assert.equal(added.dev.minutes,0);assert.equal(added.dev.appearances,0);assert.equal(added.dev.careerMinutes,0);assert.deepEqual(added.dev.history,[]);
+  assert.equal(h.run('aiRosterPayroll(S.clubs[6])'),payroll+2000,'the real future payroll includes the new salary');
   const event=after.aiRoster.events[0];assert.equal(event.kind,'emergency');assert.equal(event.playerId,added.id);assert.equal(event.fee,0);
   const ids=allPlayers(after).map(p=>p.id);assert.equal(new Set(ids).size,ids.length);
-  h.run('CDFranceCareer.ensureAISheet(S.clubs[12])');assert.deepEqual(h.state(),after);assert.equal(h.seed(),rng);
+  h.run('CDFranceCareer.ensureAISheet(S.clubs[6])');assert.deepEqual(h.state(),after);assert.equal(h.seed(),rng);
   h.run('beginMatch();validateCareer(S)');qualified(h.state());
   // Eligibility is checked on managerSheet's final allocation, not just buildSheet.
   assert.equal(h.run('S.live.sheets.every((sh,side)=>sh.on.every((id,i)=>slotEligible(matchPlayer(S.live,side,id),i))&&sh.bench.every((id,i)=>benchEligible(matchPlayer(S.live,side,id),i)))'),true);
@@ -106,28 +107,28 @@ try{
  check('native kickoff covers its opponent only; incomplete human sheet rolls back',()=>{
   const h=harness(fixtures.get(5));h.run('S.clubs[11].players.filter(p=>p.pos===POS[0]).slice(1).forEach(p=>p.injury=2)');
   const before=h.state(),persisted=clone(fixtures.get(5));persisted.store['bdt-v1']=JSON.stringify(before);const b=copied('outside-pair',persisted);good(b,'begin_match');validateNative(b);const after=state(b);
-  assert.deepEqual(after.clubs[11].players.map(p=>p.id),before.clubs[11].players.map(p=>p.id),'unrelated injured AI receives no reinforcement');assert.equal(after.clubs[12].players.length,before.clubs[12].players.length+1);assert.deepEqual(after.clubs[0].players.map(p=>p.id),before.clubs[0].players.map(p=>p.id));
+  assert.deepEqual(after.clubs[11].players.map(p=>p.id),before.clubs[11].players.map(p=>p.id),'unrelated injured AI receives no reinforcement');assert.equal(after.clubs[6].players.length,before.clubs[6].players.length+1);assert.deepEqual(after.clubs[0].players.map(p=>p.id),before.clubs[0].players.map(p=>p.id));
   const human=harness(fixtures.get(5));human.run('club().players.filter(p=>p.pos===POS[0]).forEach(p=>p.injury=2);validateCareer(S)');const invalid=clone(fixtures.get(5));invalid.store['bdt-v1']=JSON.stringify(human.state());const refused=inspected('invalid-human',invalid),factory=refused.matchFactory(),bytes=fs.readFileSync(file('invalid-human')),own=state(refused);
   assert.equal(call(refused,'begin_match').ok,false);assert.equal(refused.matchFactory(),factory);assert.deepEqual(state(refused),own);assert.deepEqual(fs.readFileSync(file('invalid-human')),bytes);
  });
  check('existing eligible academy player is promoted before creating a new player',()=>{
-  const h=harness(fixtures.get(5));h.run('var youth=academyPlayer(12,2,1,700);youth.age=18;youth.contractEnd=null;aiRosterAcademy(S.clubs[12]).players.push(youth);validateCareer(S)');
-  const before=h.state(),rng=h.seed(),id=h.run('youth.id');h.run('CDFranceCareer.ensureAISheet(S.clubs[12]);validateCareer(S)');
-  const after=h.state();assert.equal(after.clubs[12].players.length,before.clubs[12].players.length+1);assert.equal(after.clubs[12].players.at(-1).id,id);assert.equal(after.aiRoster.events[0].kind,'promote');assert.equal(after.clubs[12].players.at(-1).contractEnd,3);assert.equal(h.run('aiRosterAcademy(S.clubs[12]).players.length'),0);assert.equal(h.seed(),rng);
+  const h=harness(fixtures.get(5));h.run('var youth=academyPlayer(6,2,1,700);youth.age=18;youth.contractEnd=null;aiRosterAcademy(S.clubs[6]).players.push(youth);validateCareer(S)');
+  const before=h.state(),rng=h.seed(),id=h.run('youth.id');h.run('CDFranceCareer.ensureAISheet(S.clubs[6]);validateCareer(S)');
+  const after=h.state();assert.equal(after.clubs[6].players.length,before.clubs[6].players.length+1);assert.equal(after.clubs[6].players.at(-1).id,id);assert.equal(after.aiRoster.events[0].kind,'promote');assert.equal(after.clubs[6].players.at(-1).contractEnd,3);assert.equal(h.run('aiRosterAcademy(S.clubs[6]).players.length'),0);assert.equal(h.seed(),rng);
  });
  check('fallback IDs skip collisions in clubs, both academies, market and free agents',()=>{
   const h=harness(fixtures.get(5));h.run(`
-   function reserved(serial,academy=false){var p=JSON.parse(JSON.stringify(S.clubs[1].players[10]));p.id='youth-12-1-'+serial;if(academy){p.age=18;p.academy=true;p.contractEnd=null;}return p;}
+   function reserved(serial,academy=false){var p=JSON.parse(JSON.stringify(S.clubs[1].players[10]));p.id='youth-6-1-'+serial;if(academy){p.age=18;p.academy=true;p.contractEnd=null;}return p;}
    S.clubs[1].players.push(reserved(500));aiRosterAcademy(S.clubs[1]).players.push(reserved(501,true));S.development.academy.push(reserved(502,true));S.market.push(reserved(503));S.economy.freeAgents.push(reserved(504));validateCareer(S);
-   CDFranceCareer.ensureAISheet(S.clubs[12]);validateCareer(S);
-  `);assert.equal(h.state().clubs[12].players.at(-1).id,'youth-12-1-505');const ids=allPlayers(h.state()).map(p=>p.id);assert.equal(new Set(ids).size,ids.length);
+   CDFranceCareer.ensureAISheet(S.clubs[6]);validateCareer(S);
+  `);assert.equal(h.state().clubs[6].players.at(-1).id,'youth-6-1-505');const ids=allPlayers(h.state()).map(p=>p.id);assert.equal(new Set(ids).size,ids.length);
  });
  check('existing 40 promotion / 100 fallback limits stay in force',()=>{
   for(const [count,want] of [[39,40],[40,41],[99,100]]){
-   const h=harness(fixtures.get(5));h.run(`while(S.clubs[12].players.length<${count}){var extra=JSON.parse(JSON.stringify(S.clubs[12].players[10]));extra.id='padding-'+S.clubs[12].players.length;S.clubs[12].players.push(extra);}var candidate=academyPlayer(12,2,1,700);candidate.age=18;candidate.contractEnd=null;aiRosterAcademy(S.clubs[12]).players.push(candidate);validateCareer(S);CDFranceCareer.ensureAISheet(S.clubs[12]);validateCareer(S)`);
-   assert.equal(h.state().clubs[12].players.length,want);assert.equal(h.state().aiRoster.events[0].kind,count===39?'promote':'emergency');assert.equal(h.run('aiRosterAcademy(S.clubs[12]).players.length'),count===39?0:1);
+   const h=harness(fixtures.get(5));h.run(`while(S.clubs[6].players.length<${count}){var extra=JSON.parse(JSON.stringify(S.clubs[6].players[10]));extra.id='padding-'+S.clubs[6].players.length;S.clubs[6].players.push(extra);}var candidate=academyPlayer(6,2,1,700);candidate.age=18;candidate.contractEnd=null;aiRosterAcademy(S.clubs[6]).players.push(candidate);validateCareer(S);CDFranceCareer.ensureAISheet(S.clubs[6]);validateCareer(S)`);
+   assert.equal(h.state().clubs[6].players.length,want);assert.equal(h.state().aiRoster.events[0].kind,count===39?'promote':'emergency');assert.equal(h.run('aiRosterAcademy(S.clubs[6]).players.length'),count===39?0:1);
   }
-  const h=harness(fixtures.get(5));h.run("while(S.clubs[12].players.length<100){var extra=JSON.parse(JSON.stringify(S.clubs[12].players[10]));extra.id='padding-'+S.clubs[12].players.length;S.clubs[12].players.push(extra);}validateCareer(S)");
+  const h=harness(fixtures.get(5));h.run("while(S.clubs[6].players.length<100){var extra=JSON.parse(JSON.stringify(S.clubs[6].players[10]));extra.id='padding-'+S.clubs[6].players.length;S.clubs[6].players.push(extra);}validateCareer(S)");
   const persisted=clone(fixtures.get(5));persisted.store['bdt-v1']=JSON.stringify(h.state());const b=copied('limit',persisted),bytes=fs.readFileSync(file('limit')),before=state(b);
   const rejected=call(b,'begin_match');assert.equal(rejected.ok,false);assert.match(rejected.error,/plafond de 100/);assert.deepEqual(state(b),before);assert.deepEqual(fs.readFileSync(file('limit')),bytes);assert.equal(profile('limit').seed,persisted.seed);
  });
@@ -140,8 +141,8 @@ try{
   const text=good(b,'export').meta.exportText;good(b,'import',{text});assert.deepEqual(state(b),old);good(b,'shutdown');const reopened=bridge('legacy',1);assert.deepEqual(state(reopened),old);
  });
  check('fiction legacy live conversion does not recruit and module absence preserves its old contract',()=>{
-  const h=harness(fixtures.get(5)),before=h.state();h.run('createRugbyMatch([0,12],{minute:12,score:[0,0],tries:[0,0],events:[],finished:false,used:[]})');assert.deepEqual(h.state(),before);
-  const absent=harness(fixtures.get(5),{files:CORE_FILES.filter(f=>f!=='france-career.js')}),old=absent.state();absent.run('S.live=createRugbyMatch([0,12])');assert.deepEqual(absent.state().clubs,old.clubs);assert.equal(absent.state().live.sheets[1].bench[2],null);assert.throws(()=>absent.run('validateCareer(S)'),/données de carrière incohérentes/);
+  const h=harness(fixtures.get(5)),before=h.state();h.run('createRugbyMatch([0,6],{minute:12,score:[0,0],tries:[0,0],events:[],finished:false,used:[]})');assert.deepEqual(h.state(),before);
+  const absent=harness(fixtures.get(5),{files:CORE_FILES.filter(f=>f!=='france-career.js')}),old=absent.state();absent.run('S.live=createRugbyMatch([0,6])');assert.deepEqual(absent.state().clubs,old.clubs);assert.equal(absent.state().live.sheets[1].bench[2],null);assert.throws(()=>absent.run('validateCareer(S)'),/données de carrière incohérentes/);
   // The previously supported France conversion keeps its existing coverage.
   const france=context(5);france.run("start(0,'france');var pair=CDFranceCompetition.currentFixtures(S).find(f=>!f.pair.includes(S.club)).pair;var opponent=S.clubs[pair[0]];opponent.players.filter(p=>p.pos===POS[2]).slice(1).forEach(p=>p.injury=2)");
   const count=france.run('opponent.players.length');france.run('createRugbyMatch(pair,{minute:12,score:[0,0],tries:[0,0],events:[],finished:false,used:[]})');assert.equal(france.run('opponent.players.length'),count+1);
@@ -168,12 +169,12 @@ try{
   assert.deepEqual(fs.readFileSync(target),bytes);good(b,'begin_match');good(control,'begin_match');assert.deepEqual(state(b),state(control));assert.equal(profile('disk-failure').seed,profile('disk-control').seed);
  });
  check('native coverage waits for scheduled recovery and adds no unnecessary player',()=>{
-  const persisted=clone(fixtures.get(5)),s=JSON.parse(persisted.store['bdt-v1']),injured=s.clubs[12].players.find(p=>p.id==='p12-2-1700000000000');injured.injury=1;persisted.store['bdt-v1']=JSON.stringify(s);
-  const b=copied('recover-first',persisted);good(b,'begin_match');validateNative(b);const after=state(b);assert.equal(after.clubs[12].players.find(p=>p.id===injured.id).injury,0);assert.equal(after.clubs[12].players.length,s.clubs[12].players.length);assert.deepEqual(after.aiRoster.events,s.aiRoster.events);
+  const persisted=clone(fixtures.get(5)),s=JSON.parse(persisted.store['bdt-v1']),injured=s.clubs[6].players.find(p=>p.id==='p6-2-1700000000000');injured.injury=1;persisted.store['bdt-v1']=JSON.stringify(s);
+  const b=copied('recover-first',persisted);good(b,'begin_match');validateNative(b);const after=state(b);assert.equal(after.clubs[6].players.find(p=>p.id===injured.id).injury,0);assert.equal(after.clubs[6].players.length,s.clubs[6].players.length);assert.deepEqual(after.aiRoster.events,s.aiRoster.events);
  });
  check('native match factory is restored after success, refusal, thrown cover, disk failure and no fixture',()=>{
   const success=inspected('inspected-success',fixtures.get(5)),original=success.matchFactory();good(success,'begin_match');assert.equal(success.matchFactory(),original);assert.equal(call(success,'begin_match').ok,false);assert.equal(success.matchFactory(),original);
-  const h=harness(fixtures.get(5));h.run("while(S.clubs[12].players.length<100){var extra=JSON.parse(JSON.stringify(S.clubs[12].players[10]));extra.id='padding-'+S.clubs[12].players.length;S.clubs[12].players.push(extra);}validateCareer(S)");
+  const h=harness(fixtures.get(5));h.run("while(S.clubs[6].players.length<100){var extra=JSON.parse(JSON.stringify(S.clubs[6].players[10]));extra.id='padding-'+S.clubs[6].players.length;S.clubs[6].players.push(extra);}validateCareer(S)");
   const capped=clone(fixtures.get(5));capped.store['bdt-v1']=JSON.stringify(h.state());const fail=inspected('inspected-cover-error',capped),beforeFactory=fail.matchFactory(),before=state(fail),bytes=fs.readFileSync(file('inspected-cover-error'));
   assert.match(call(fail,'begin_match').error,/plafond de 100/);assert.equal(fail.matchFactory(),beforeFactory);assert.deepEqual(state(fail),before);assert.deepEqual(fs.readFileSync(file('inspected-cover-error')),bytes);
   const disk=inspected('inspected-disk-error',fixtures.get(5)),diskFactory=disk.matchFactory(),target=file('inspected-disk-error');fs.renameSync(target,target+'.held');fs.mkdirSync(target);
