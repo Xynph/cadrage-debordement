@@ -27,7 +27,7 @@
       "players": [
         {
           "id": "world:srp:p-02398dd72470f1614d7620a1",
-          "name": "Kena Avaro",
+          "name": "Eruera MOREHU",
           "pos": "Talonneur",
           "fam": 1,
           "age": 21,
@@ -116,7 +116,7 @@
         },
         {
           "id": "world:srp:p-03501f40f07461646201189d",
-          "name": "Naleo Rinave",
+          "name": "Eddie FOSTER",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -205,7 +205,7 @@
         },
         {
           "id": "world:srp:p-080276ab2f55e7b1a7f9bafd",
-          "name": "Jalen Rinave",
+          "name": "Tui IOSIA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 34,
@@ -294,7 +294,7 @@
         },
         {
           "id": "world:srp:p-0db64e590e0d1e3b957bb252",
-          "name": "Leano Enavé",
+          "name": "Riley MEADOWS",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -383,7 +383,7 @@
         },
         {
           "id": "world:srp:p-16d399b112416147de4daf04",
-          "name": "Aelen Paravo",
+          "name": "Tanielu FUIMAONO",
           "pos": "Arrière",
           "fam": 8,
           "age": 22,
@@ -472,7 +472,7 @@
         },
         {
           "id": "world:srp:p-1e0e02eab25e52066159f0f8",
-          "name": "Aimo Varela",
+          "name": "Steve HOLLIS",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -561,7 +561,7 @@
         },
         {
           "id": "world:srp:p-25a97f122a30cd48f3596946",
-          "name": "Yalen Pelari",
+          "name": "Naibuka KOROVULAVULA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -650,7 +650,7 @@
         },
         {
           "id": "world:srp:p-25be3fce7caf469cd7cbe7e6",
-          "name": "Zaren Eleno",
+          "name": "Tobias STOTT",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -739,7 +739,7 @@
         },
         {
           "id": "world:srp:p-31c3b8e552613b5c2b35ce57",
-          "name": "Matea Marive",
+          "name": "Brad TUNSTALL",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -828,7 +828,7 @@
         },
         {
           "id": "world:srp:p-3206336ab597b7b32e388e23",
-          "name": "Falco Kivale",
+          "name": "Rupeni VOLAVOLA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -917,7 +917,7 @@
         },
         {
           "id": "world:srp:p-34effff58317330b9a37f2a9",
-          "name": "Matea Naviro",
+          "name": "Hemi HAPI",
           "pos": "Talonneur",
           "fam": 1,
           "age": 28,
@@ -1006,7 +1006,7 @@
         },
         {
           "id": "world:srp:p-3edb712db3d3142e79a55fc8",
-          "name": "Pavo Paravo",
+          "name": "Hohepa TAKEREI",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -1095,7 +1095,7 @@
         },
         {
           "id": "world:srp:p-4063e3cb940db463c623fbf5",
-          "name": "Kaleo Cerano",
+          "name": "Manaaki TAWHIRI",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 26,
@@ -1184,7 +1184,7 @@
         },
         {
           "id": "world:srp:p-4dc2d336028c052b274e2404",
-          "name": "Garan Javero",
+          "name": "Tawera HIKUROA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -1273,7 +1273,7 @@
         },
         {
           "id": "world:srp:p-5626368fdd9fe6789b1d0e2f",
-          "name": "Tavio Cerano",
+          "name": "Fetu SIAOSI",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -1362,7 +1362,7 @@
         },
         {
           "id": "world:srp:p-5679777efb3b15baf6f2b2fe",
-          "name": "Olan Bavon",
+          "name": "Theo HOWARD",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -1451,7 +1451,7 @@
         },
         {
           "id": "world:srp:p-5ba2bbce023ff21b55fae2e1",
-          "name": "Naven Farela",
+          "name": "Pele SOLIAI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -1540,7 +1540,7 @@
         },
         {
           "id": "world:srp:p-7e7a2316f731f01dd2a2ae03",
-          "name": "Lanen Nerali",
+          "name": "Craig MOUNSEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -1629,7 +1629,7 @@
         },
         {
           "id": "world:srp:p-87d7899a33fe4bff97f09d1f",
-          "name": "Oren Evaro",
+          "name": "Tane TOMOANA",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 35,
@@ -1718,7 +1718,7 @@
         },
         {
           "id": "world:srp:p-8c8c33319737755a6f27c06f",
-          "name": "Ialeo Hanaro",
+          "name": "Petelo LOKENI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 33,
@@ -1807,7 +1807,7 @@
         },
         {
           "id": "world:srp:p-91a1a51eeb2be6ee0de2ac0f",
-          "name": "Anori Daneri",
+          "name": "Ian BURGESS",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -1896,7 +1896,7 @@
         },
         {
           "id": "world:srp:p-9af9648d8882fd6a227b8d16",
-          "name": "Matea Levalo",
+          "name": "Faleolo STOWERS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -1985,7 +1985,7 @@
         },
         {
           "id": "world:srp:p-9bd15ee9e3ee83c5028a40cd",
-          "name": "Savio Gavani",
+          "name": "Siosaia SIKA",
           "pos": "Centre",
           "fam": 7,
           "age": 34,
@@ -2074,7 +2074,7 @@
         },
         {
           "id": "world:srp:p-a396775fc0219fbb26984e3f",
-          "name": "Elio Daveri",
+          "name": "Greg SANDERS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 33,
@@ -2163,7 +2163,7 @@
         },
         {
           "id": "world:srp:p-a794ef713fdd56a8e0a6c022",
-          "name": "Hoku Saravi",
+          "name": "Warren ARKWRIGHT",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -2252,7 +2252,7 @@
         },
         {
           "id": "world:srp:p-ab95fd7108c3600aaedfd941",
-          "name": "Savio Varela",
+          "name": "Stan HARVEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -2341,7 +2341,7 @@
         },
         {
           "id": "world:srp:p-b6107721eb413bb27f14b376",
-          "name": "Ialeo Galivo",
+          "name": "Joe ROYLE",
           "pos": "Centre",
           "fam": 7,
           "age": 29,
@@ -2430,7 +2430,7 @@
         },
         {
           "id": "world:srp:p-b7d83b578ed909d32ff01651",
-          "name": "Ialeo Calevi",
+          "name": "Vaea LEALAIAULOTO",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -2519,7 +2519,7 @@
         },
         {
           "id": "world:srp:p-bdc8db154294bb7a89064f96",
-          "name": "Pareo Kavero",
+          "name": "Cecil OLLERENSHAW",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 24,
@@ -2608,7 +2608,7 @@
         },
         {
           "id": "world:srp:p-be47c986cdf432b3cd03948a",
-          "name": "Ilan Calave",
+          "name": "Josaia LEWANAVANUA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 24,
@@ -2697,7 +2697,7 @@
         },
         {
           "id": "world:srp:p-c02c57c61de34d61bd3999c7",
-          "name": "Tiora Melavi",
+          "name": "Jayden BREWER",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 23,
@@ -2786,7 +2786,7 @@
         },
         {
           "id": "world:srp:p-c3410597b0ad5696b99a4f54",
-          "name": "Belao Daleva",
+          "name": "Maurice FENTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -2875,7 +2875,7 @@
         },
         {
           "id": "world:srp:p-db0dd7bb8d499eaf4a4caaaf",
-          "name": "Haren Navelu",
+          "name": "Afa IEREMIA",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -2964,7 +2964,7 @@
         },
         {
           "id": "world:srp:p-deb54a547b5c1f8c086e7951",
-          "name": "Haren Bavon",
+          "name": "Malo MAIAVA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -3053,7 +3053,7 @@
         },
         {
           "id": "world:srp:p-e1d5c0e800d2ed4cdf2733fa",
-          "name": "Bairo Halivo",
+          "name": "Manaia WIKAIRA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 32,
@@ -3142,7 +3142,7 @@
         },
         {
           "id": "world:srp:p-ea63eddb6292eea6a910412c",
-          "name": "Naven Halivo",
+          "name": "Josh WOODCOCK",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -3231,7 +3231,7 @@
         },
         {
           "id": "world:srp:p-efc707e3e465a824cf34caaf",
-          "name": "Alika Favera",
+          "name": "Owen CROSS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 32,
@@ -3320,7 +3320,7 @@
         },
         {
           "id": "world:srp:p-f0138d60abd31f4f3055afe8",
-          "name": "Fenio Maravi",
+          "name": "Samuel SLINGSBY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -3409,7 +3409,7 @@
         },
         {
           "id": "world:srp:p-f3c9f239b3affeb39c325779",
-          "name": "Kaleo Saravi",
+          "name": "Connor EASTWOOD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -3517,7 +3517,7 @@
       "players": [
         {
           "id": "world:srp:p-054d4d4a13ab9de7e14bca38",
-          "name": "Alika Kavero",
+          "name": "Ioane VAIFALE",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -3606,7 +3606,7 @@
         },
         {
           "id": "world:srp:p-083eb399491b61be02cfd559",
-          "name": "Halea Naviro",
+          "name": "Bobby JEFFERSON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 22,
@@ -3695,7 +3695,7 @@
         },
         {
           "id": "world:srp:p-0a54d82b12067043c0c2c125",
-          "name": "Hoku Farela",
+          "name": "Blake HANCOCK",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -3784,7 +3784,7 @@
         },
         {
           "id": "world:srp:p-16d63845da1a68510828dfcd",
-          "name": "Anori Avelan",
+          "name": "Tommy ELSTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -3873,7 +3873,7 @@
         },
         {
           "id": "world:srp:p-188a30403081f1690b62eaf6",
-          "name": "Hoku Talaro",
+          "name": "Terence HAYWARD",
           "pos": "Arrière",
           "fam": 8,
           "age": 29,
@@ -3962,7 +3962,7 @@
         },
         {
           "id": "world:srp:p-1b5025dcec3506cd4053246e",
-          "name": "Hoku Meralo",
+          "name": "Joseph APPLEGATE",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 37,
@@ -4051,7 +4051,7 @@
         },
         {
           "id": "world:srp:p-2143ee794ba729380737ee13",
-          "name": "Maelo Telari",
+          "name": "Mitchell SWINDELLS",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -4140,7 +4140,7 @@
         },
         {
           "id": "world:srp:p-244e29a18b22cc064f7435f4",
-          "name": "Maren Favea",
+          "name": "Viliamu TOLEAFOA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -4229,7 +4229,7 @@
         },
         {
           "id": "world:srp:p-3148a92863eceaf60385ca55",
-          "name": "Arven Havari",
+          "name": "Harrison WELCH",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 26,
@@ -4318,7 +4318,7 @@
         },
         {
           "id": "world:srp:p-345fbb6c6e708ace9659916d",
-          "name": "Isaro Evaro",
+          "name": "Mason BRAITHWAITE",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -4407,7 +4407,7 @@
         },
         {
           "id": "world:srp:p-486f81a68aad69a2e5dda9c7",
-          "name": "Pavo Elvari",
+          "name": "Afa LEIATAUA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 32,
@@ -4496,7 +4496,7 @@
         },
         {
           "id": "world:srp:p-4950d9bb9898260f52d1cd6a",
-          "name": "Haren Galivo",
+          "name": "Samuel SCHOFIELD",
           "pos": "Centre",
           "fam": 7,
           "age": 29,
@@ -4585,7 +4585,7 @@
         },
         {
           "id": "world:srp:p-4aa121cab7c1b55dcb700a68",
-          "name": "Naro Daleva",
+          "name": "Duncan HINDLE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -4674,7 +4674,7 @@
         },
         {
           "id": "world:srp:p-51dc1e038989d561ecdbd422",
-          "name": "Ereno Avelan",
+          "name": "Tristan MILNER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -4763,7 +4763,7 @@
         },
         {
           "id": "world:srp:p-53af2f047d73af08687c70a6",
-          "name": "Naleoë Daveri",
+          "name": "Danny GATENBY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -4852,7 +4852,7 @@
         },
         {
           "id": "world:srp:p-636f0d44950c484fd5a47e77",
-          "name": "Ialeo Barela",
+          "name": "Eddie GREGORY",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -4941,7 +4941,7 @@
         },
         {
           "id": "world:srp:p-6ea7247738642760a41cd415",
-          "name": "Ereno Ivare",
+          "name": "Benjamin BULL",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -5030,7 +5030,7 @@
         },
         {
           "id": "world:srp:p-751a62efab0ed9af318613d2",
-          "name": "Matea Talaro",
+          "name": "Giles CHADWICK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -5119,7 +5119,7 @@
         },
         {
           "id": "world:srp:p-8356c6fe78b9b6121421f520",
-          "name": "Belao Delano",
+          "name": "Samuel HEATON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -5208,7 +5208,7 @@
         },
         {
           "id": "world:srp:p-85f59ec701b30b7339fe637d",
-          "name": "Ralo Kelaro",
+          "name": "Alfie HORTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -5297,7 +5297,7 @@
         },
         {
           "id": "world:srp:p-86dfb96aa37022b9eb89a176",
-          "name": "Revan Lanove",
+          "name": "Ethan POOLE",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -5386,7 +5386,7 @@
         },
         {
           "id": "world:srp:p-8d007f404544b99a3a64c273",
-          "name": "Taleo Lavari",
+          "name": "Curtis KENDALL",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -5475,7 +5475,7 @@
         },
         {
           "id": "world:srp:p-8e555faed0a42c702150d924",
-          "name": "Ialeo Meralo",
+          "name": "Tyler MAKEPEACE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -5564,7 +5564,7 @@
         },
         {
           "id": "world:srp:p-9ab8b3f3e0964441e659a749",
-          "name": "Telen Levalo",
+          "name": "Sefo SCHWENKE",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -5653,7 +5653,7 @@
         },
         {
           "id": "world:srp:p-9e00447a1ca2087faf918a97",
-          "name": "Ravio Selano",
+          "name": "Nick YATES",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -5742,7 +5742,7 @@
         },
         {
           "id": "world:srp:p-aac4b700753c0ec2827e7095",
-          "name": "Yalen Levalo",
+          "name": "Jacob BANCROFT",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -5831,7 +5831,7 @@
         },
         {
           "id": "world:srp:p-abcb46cfa6d8d1970902f45a",
-          "name": "Matea Kelaro",
+          "name": "Ellis BIGGS",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -5920,7 +5920,7 @@
         },
         {
           "id": "world:srp:p-b94cf04732447bbb6c659106",
-          "name": "Naro Avelan",
+          "name": "Jayden TANNER",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -6009,7 +6009,7 @@
         },
         {
           "id": "world:srp:p-c52a71dbaace6807cf25ab28",
-          "name": "Salen Haleni",
+          "name": "Paulo PENITANI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -6098,7 +6098,7 @@
         },
         {
           "id": "world:srp:p-c6bd7d0cc9b7eeced617e30d",
-          "name": "Calen Naviro",
+          "name": "Wade ADDISON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -6187,7 +6187,7 @@
         },
         {
           "id": "world:srp:p-cbe33c0dd853edaa301da0e3",
-          "name": "Belao Daveri",
+          "name": "Loni OTAI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -6276,7 +6276,7 @@
         },
         {
           "id": "world:srp:p-d066825df937df5426bc6232",
-          "name": "Ralo Enavé",
+          "name": "Robert HARDCASTLE",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -6365,7 +6365,7 @@
         },
         {
           "id": "world:srp:p-d9d4fbca0de7785f488da6d1",
-          "name": "Varo Haleni",
+          "name": "Jonathan MOUNSEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -6454,7 +6454,7 @@
         },
         {
           "id": "world:srp:p-e5e3f4803070eee985970aed",
-          "name": "Pavo Avaro",
+          "name": "Hector COULSON",
           "pos": "Ailier",
           "fam": 6,
           "age": 33,
@@ -6543,7 +6543,7 @@
         },
         {
           "id": "world:srp:p-eed29498f5c0fb7c4e785998",
-          "name": "Calen Telari",
+          "name": "Thomas DENTON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 22,
@@ -6632,7 +6632,7 @@
         },
         {
           "id": "world:srp:p-fd2b42980ee66f81ee141efe",
-          "name": "Falco Naviro",
+          "name": "Freddie CHAMBERS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -6740,7 +6740,7 @@
       "players": [
         {
           "id": "world:srp:p-0f6fc91693becda15e7221fe",
-          "name": "Taleo Delano",
+          "name": "Maurice BRIERLEY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 33,
@@ -6829,7 +6829,7 @@
         },
         {
           "id": "world:srp:p-2129b72590e496018aa82c01",
-          "name": "Kiro Ravelo",
+          "name": "Dave INGRAM",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -6918,7 +6918,7 @@
         },
         {
           "id": "world:srp:p-222445ecabc252c0b3004a14",
-          "name": "Taleo Halivo",
+          "name": "Matt FISHER",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -7007,7 +7007,7 @@
         },
         {
           "id": "world:srp:p-25414b53e1d57da6135cea19",
-          "name": "Naven Javero",
+          "name": "Whetu WAAKA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 30,
@@ -7096,7 +7096,7 @@
         },
         {
           "id": "world:srp:p-2565a3bf385536fbebcfeaeb",
-          "name": "Revan Eleno",
+          "name": "Barnaby BRADSHAW",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -7185,7 +7185,7 @@
         },
         {
           "id": "world:srp:p-2a2757c8b2578ef2b5e73618",
-          "name": "Garan Navelu",
+          "name": "Tai POTAE",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -7274,7 +7274,7 @@
         },
         {
           "id": "world:srp:p-2de34d39dbfffe43411d22b0",
-          "name": "Taren Salaro",
+          "name": "Arthur CROMPTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 30,
@@ -7363,7 +7363,7 @@
         },
         {
           "id": "world:srp:p-37321867bb767f73fa7fc1f4",
-          "name": "Yalen Cavero",
+          "name": "Ioane TAFUA",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -7452,7 +7452,7 @@
         },
         {
           "id": "world:srp:p-3751550f2cbca088357a40e0",
-          "name": "Alika Haleni",
+          "name": "Iosefa MATAGI",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 31,
@@ -7541,7 +7541,7 @@
         },
         {
           "id": "world:srp:p-411bc1a4b339a2f628772ee4",
-          "name": "Eshan Calevi",
+          "name": "Mateo TAKULUA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -7630,7 +7630,7 @@
         },
         {
           "id": "world:srp:p-45229f99fa67032d4d6bff5d",
-          "name": "Revan Lorave",
+          "name": "Emosi QERA",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -7719,7 +7719,7 @@
         },
         {
           "id": "world:srp:p-4f091d88786e27292b8109b3",
-          "name": "Matea Calevi",
+          "name": "Shaun BURGESS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -7808,7 +7808,7 @@
         },
         {
           "id": "world:srp:p-61bb8d2afd3ad2b5e6f1e783",
-          "name": "Dario Darelo",
+          "name": "Toa MATUU",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -7897,7 +7897,7 @@
         },
         {
           "id": "world:srp:p-62c93c24e10314bcf3d01c58",
-          "name": "Taleo Malaro",
+          "name": "Ben RHODES",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -7986,7 +7986,7 @@
         },
         {
           "id": "world:srp:p-636326ab7a6c6dfc1db7bb4a",
-          "name": "Naleoë Daneri",
+          "name": "Jiuta NAULAGO",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -8075,7 +8075,7 @@
         },
         {
           "id": "world:srp:p-63e642831e99c1fdf4848ba0",
-          "name": "Rane Farela",
+          "name": "Sosefo PIUKALA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -8164,7 +8164,7 @@
         },
         {
           "id": "world:srp:p-64b9bf7fcac6bc56816068da",
-          "name": "Maren Lorave",
+          "name": "Rhodri MARRIOTT",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -8253,7 +8253,7 @@
         },
         {
           "id": "world:srp:p-6cec3c583916d262839119a7",
-          "name": "Belao Selano",
+          "name": "Jamie MARLOW",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -8342,7 +8342,7 @@
         },
         {
           "id": "world:srp:p-724f734b6caa9dbb76061ef4",
-          "name": "Alika Galivo",
+          "name": "Mikaere RANGIHUNA",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -8431,7 +8431,7 @@
         },
         {
           "id": "world:srp:p-8a5c558d57d0d92f76011e7d",
-          "name": "Aelen Vavelo",
+          "name": "Tui SUA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -8520,7 +8520,7 @@
         },
         {
           "id": "world:srp:p-8a61d350e00bb11ed343fbaa",
-          "name": "Tiora Salivo",
+          "name": "Iosefa TUIMAVAVE",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -8609,7 +8609,7 @@
         },
         {
           "id": "world:srp:p-8ec1cca3dc108a6168a9a376",
-          "name": "Garan Marive",
+          "name": "Mana WIHONGI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -8698,7 +8698,7 @@
         },
         {
           "id": "world:srp:p-90edcc60a88108aaac1c0370",
-          "name": "Naleo Kivale",
+          "name": "Rhodri SOUTHGATE",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -8787,7 +8787,7 @@
         },
         {
           "id": "world:srp:p-9cfc6fdd55e88037b8705c0a",
-          "name": "Ravio Havari",
+          "name": "Declan ASPINALL",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -8876,7 +8876,7 @@
         },
         {
           "id": "world:srp:p-a3b629e27c9eb26dee3bdadb",
-          "name": "Lanen Noravi",
+          "name": "Sione VUNA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -8965,7 +8965,7 @@
         },
         {
           "id": "world:srp:p-a54f82f37d045168b7013beb",
-          "name": "Halea Pelari",
+          "name": "Josua TUISAWAU",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -9054,7 +9054,7 @@
         },
         {
           "id": "world:srp:p-a57afe7f4b146e6e8d605047",
-          "name": "Garan Noravi",
+          "name": "Peni VAIFALE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -9143,7 +9143,7 @@
         },
         {
           "id": "world:srp:p-b0738b7e818e6fac1a0156ed",
-          "name": "Haren Lavari",
+          "name": "Rewi KEREOPA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -9232,7 +9232,7 @@
         },
         {
           "id": "world:srp:p-bd4a876b676e65e38db9dabc",
-          "name": "Kaelo Pelari",
+          "name": "Riki POMARE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -9321,7 +9321,7 @@
         },
         {
           "id": "world:srp:p-c0d00d5175c6a9756d9306da",
-          "name": "Salen Pelari",
+          "name": "Kieran TWIGG",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -9410,7 +9410,7 @@
         },
         {
           "id": "world:srp:p-cc064bf96db50d33b10a20a3",
-          "name": "Eshan Gavani",
+          "name": "Mana RURAWHE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -9499,7 +9499,7 @@
         },
         {
           "id": "world:srp:p-dbcc5e2cffc1bbb83ce6bc8a",
-          "name": "Miro Melavi",
+          "name": "Hamish MERRITT",
           "pos": "Arrière",
           "fam": 8,
           "age": 22,
@@ -9588,7 +9588,7 @@
         },
         {
           "id": "world:srp:p-ded663b7bd434a280a1515b4",
-          "name": "Salen Delano",
+          "name": "Maaka TAIAPA",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -9677,7 +9677,7 @@
         },
         {
           "id": "world:srp:p-e17c9f8a348039a41b21bbd8",
-          "name": "Irema Rinave",
+          "name": "Phil MEADOWS",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -9766,7 +9766,7 @@
         },
         {
           "id": "world:srp:p-f8c9530bd6b7bb2111b6a8d6",
-          "name": "Ereno Maravi",
+          "name": "Tumanako POHATU",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -9855,7 +9855,7 @@
         },
         {
           "id": "world:srp:p-fa82c5fc3010a8a384bf532e",
-          "name": "Ralo Noravi",
+          "name": "Lafaele TOFILAU",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -9944,7 +9944,7 @@
         },
         {
           "id": "world:srp:p-faf42709228617540de78afd",
-          "name": "Lior Talaro",
+          "name": "Kyle SCARBOROUGH",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -10033,7 +10033,7 @@
         },
         {
           "id": "world:srp:p-fcf11955d8a3b8ab1af31022",
-          "name": "Dario Gavani",
+          "name": "Meli SENIKAU",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 33,
@@ -10122,7 +10122,7 @@
         },
         {
           "id": "world:srp:p-fd8de475aefcfa4680df5032",
-          "name": "Naleo Melavi",
+          "name": "Manaia NGARIMU",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 22,
@@ -10230,7 +10230,7 @@
       "players": [
         {
           "id": "world:srp:p-0aa9384992e65e7e37229ab3",
-          "name": "Anori Cavero",
+          "name": "Fred PRATT",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -10319,7 +10319,7 @@
         },
         {
           "id": "world:srp:p-0bdd701c35adc3c9c4773158",
-          "name": "Ialeo Melavi",
+          "name": "Giles BIGGS",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -10408,7 +10408,7 @@
         },
         {
           "id": "world:srp:p-0c92bc9a7b82858588a90b74",
-          "name": "Aferi Lavari",
+          "name": "Rewi HAPI",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -10497,7 +10497,7 @@
         },
         {
           "id": "world:srp:p-1a589ac8c132c2112465b27d",
-          "name": "Varen Evaro",
+          "name": "Siale TAUFALELE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -10586,7 +10586,7 @@
         },
         {
           "id": "world:srp:p-1b7d7b541d92bb5a7feb309b",
-          "name": "Belao Noravi",
+          "name": "Riki PAEWAI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -10675,7 +10675,7 @@
         },
         {
           "id": "world:srp:p-1dd288751cd3313715013490",
-          "name": "Alika Eleno",
+          "name": "David GRAINGER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 32,
@@ -10764,7 +10764,7 @@
         },
         {
           "id": "world:srp:p-1eed92688a4a113e45640162",
-          "name": "Varo Ravelo",
+          "name": "Manaaki WAAKA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -10853,7 +10853,7 @@
         },
         {
           "id": "world:srp:p-1f64902c9c8c363598052f4c",
-          "name": "Varen Maravi",
+          "name": "Darcy FORSTER",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -10942,7 +10942,7 @@
         },
         {
           "id": "world:srp:p-1fb32095cfdc3fa1c3f6021c",
-          "name": "Kaelo Darelo",
+          "name": "Jayden RHODES",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 32,
@@ -11031,7 +11031,7 @@
         },
         {
           "id": "world:srp:p-20e72f6a2de567813bdcfb40",
-          "name": "Kaelo Malaro",
+          "name": "Ollie FAIRHURST",
           "pos": "Arrière",
           "fam": 8,
           "age": 28,
@@ -11120,7 +11120,7 @@
         },
         {
           "id": "world:srp:p-22f001ba4c7358b376f41425",
-          "name": "Kena Marive",
+          "name": "Gethin HARCOURT",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -11209,7 +11209,7 @@
         },
         {
           "id": "world:srp:p-2784ac3e7878a63c706fde40",
-          "name": "Maren Gavani",
+          "name": "Bradley CHILTON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -11298,7 +11298,7 @@
         },
         {
           "id": "world:srp:p-2b94c3a5809381a870e4c3a5",
-          "name": "Lior Cavero",
+          "name": "Teddy KENNEDY",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -11387,7 +11387,7 @@
         },
         {
           "id": "world:srp:p-2df50fa585ff15887cdb417d",
-          "name": "Tiora Ravelo",
+          "name": "Darcy BLAKELEY",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -11476,7 +11476,7 @@
         },
         {
           "id": "world:srp:p-362f936dc902758b4cba279b",
-          "name": "Eleni Lanove",
+          "name": "Dave DAVENPORT",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 26,
@@ -11565,7 +11565,7 @@
         },
         {
           "id": "world:srp:p-41a4bcb76d2c21e7c87f71c6",
-          "name": "Ravio Valeno",
+          "name": "Simon STAFFORD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -11654,7 +11654,7 @@
         },
         {
           "id": "world:srp:p-4403077236c2152cc11a0e32",
-          "name": "Garan Gavani",
+          "name": "Aminiasi SERUVAKULA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 24,
@@ -11743,7 +11743,7 @@
         },
         {
           "id": "world:srp:p-473637d6f541ad4ab815f730",
-          "name": "Falco Evaro",
+          "name": "Rewi KEREAMA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 21,
@@ -11832,7 +11832,7 @@
         },
         {
           "id": "world:srp:p-4863e5a15cd04e670a589fea",
-          "name": "Pavo Kivale",
+          "name": "Benjamin BEECHAM",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -11921,7 +11921,7 @@
         },
         {
           "id": "world:srp:p-56c093d3c328bb208a8ae698",
-          "name": "Isaro Ravelo",
+          "name": "Kolio TAULAFO",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -12010,7 +12010,7 @@
         },
         {
           "id": "world:srp:p-5741c778c851f048d371969a",
-          "name": "Eleni Noravi",
+          "name": "Jarvis COTTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 25,
@@ -12099,7 +12099,7 @@
         },
         {
           "id": "world:srp:p-5777786803ce50abaa22d325",
-          "name": "Taleo Selano",
+          "name": "Kurt LONGBOTTOM",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -12188,7 +12188,7 @@
         },
         {
           "id": "world:srp:p-6ffa87d54c147cea0023c34c",
-          "name": "Garan Havari",
+          "name": "Bryn UNDERWOOD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -12277,7 +12277,7 @@
         },
         {
           "id": "world:srp:p-7cd2d42706835f0e52e96d49",
-          "name": "Miro Barela",
+          "name": "Kahurangi MAHUIKA",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 28,
@@ -12366,7 +12366,7 @@
         },
         {
           "id": "world:srp:p-985edb027dcd990bc6506f82",
-          "name": "Ravio Saravi",
+          "name": "Tipene WINIATA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 34,
@@ -12455,7 +12455,7 @@
         },
         {
           "id": "world:srp:p-9c4511f5c8075f6ef82c3257",
-          "name": "Eshan Lavari",
+          "name": "Anaru MOREHU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 31,
@@ -12544,7 +12544,7 @@
         },
         {
           "id": "world:srp:p-a0c107ac942316c1d8f516d5",
-          "name": "Tavio Enavé",
+          "name": "Loni KEFU",
           "pos": "Arrière",
           "fam": 8,
           "age": 36,
@@ -12633,7 +12633,7 @@
         },
         {
           "id": "world:srp:p-a1b4773205129b5c7ec5a824",
-          "name": "Zaren Saravi",
+          "name": "Wesley BAGSHAW",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -12722,7 +12722,7 @@
         },
         {
           "id": "world:srp:p-b7619540a33aad1518989e8b",
-          "name": "Pareo Pelari",
+          "name": "Cecil TATTERSALL",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -12811,7 +12811,7 @@
         },
         {
           "id": "world:srp:p-beb3268b93139ec4e03aa3f6",
-          "name": "Jalen Malaro",
+          "name": "Jarvis TINDALL",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -12900,7 +12900,7 @@
         },
         {
           "id": "world:srp:p-c081713118227ca5962ef870",
-          "name": "Taleo Taveli",
+          "name": "Michael ROWLEY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 22,
@@ -12989,7 +12989,7 @@
         },
         {
           "id": "world:srp:p-c59df9a301a42833d577a156",
-          "name": "Eshan Oleno",
+          "name": "Ellis OLDFIELD",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -13078,7 +13078,7 @@
         },
         {
           "id": "world:srp:p-ca8eace7308d167b9dc28182",
-          "name": "Belao Favea",
+          "name": "Mike COGGINS",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 24,
@@ -13167,7 +13167,7 @@
         },
         {
           "id": "world:srp:p-d3d45b99f24a7b1ec23edb86",
-          "name": "Lior Halivo",
+          "name": "Kyle WEBSTER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -13256,7 +13256,7 @@
         },
         {
           "id": "world:srp:p-db20c9ae057963e49b2b7a43",
-          "name": "Bairo Lorave",
+          "name": "Hirini NGATA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 35,
@@ -13345,7 +13345,7 @@
         },
         {
           "id": "world:srp:p-df2361f8a37fab0569485825",
-          "name": "Belao Ileno",
+          "name": "Hamish MORLEY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -13434,7 +13434,7 @@
         },
         {
           "id": "world:srp:p-e8d54b0a650a487b4169ad3e",
-          "name": "Fenio Calave",
+          "name": "Kolio MATAGI",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 26,
@@ -13523,7 +13523,7 @@
         },
         {
           "id": "world:srp:p-f423c9f6f3572e75a8768c76",
-          "name": "Halea Kavero",
+          "name": "Russell CASTLE",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -13612,7 +13612,7 @@
         },
         {
           "id": "world:srp:p-f8fef548420c302f6c20309d",
-          "name": "Emano Evaro",
+          "name": "Tim PENROSE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -13720,7 +13720,7 @@
       "players": [
         {
           "id": "world:srp:p-04b64e97d2a8896ca7245ce4",
-          "name": "Garan Avaro",
+          "name": "Apenisa BALE",
           "pos": "Centre",
           "fam": 7,
           "age": 34,
@@ -13809,7 +13809,7 @@
         },
         {
           "id": "world:srp:p-08d0fc920412c162887f8d17",
-          "name": "Irema Ravelo",
+          "name": "Akuila BULIVOU",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 29,
@@ -13898,7 +13898,7 @@
         },
         {
           "id": "world:srp:p-0d08f0505255244bf42f5f86",
-          "name": "Naro Cavero",
+          "name": "Mataiasi QALOVAKI",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 24,
@@ -13987,7 +13987,7 @@
         },
         {
           "id": "world:srp:p-157a3758f4fcfd4f8ff21232",
-          "name": "Emano Ravelo",
+          "name": "Kalivati RAKUITA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 24,
@@ -14076,7 +14076,7 @@
         },
         {
           "id": "world:srp:p-18d78b38db63aa3d6db03de2",
-          "name": "Pareo Haleni",
+          "name": "Isoa KUNATANI",
           "pos": "Talonneur",
           "fam": 1,
           "age": 32,
@@ -14165,7 +14165,7 @@
         },
         {
           "id": "world:srp:p-1953bc73586d6bec7040503e",
-          "name": "Kaelo Noravi",
+          "name": "Ilaitia SERUVAKULA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -14254,7 +14254,7 @@
         },
         {
           "id": "world:srp:p-1b2725800ad9fd2e01f382f0",
-          "name": "Irema Valeno",
+          "name": "Mesake WAQANIVALU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -14343,7 +14343,7 @@
         },
         {
           "id": "world:srp:p-1d3e30961b9c8601f796cf73",
-          "name": "Maren Maravi",
+          "name": "Jese SENIKAU",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 30,
@@ -14432,7 +14432,7 @@
         },
         {
           "id": "world:srp:p-2394e07084d278d67aef546c",
-          "name": "Kanoa Bavon",
+          "name": "Ratu KACIVI",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -14521,7 +14521,7 @@
         },
         {
           "id": "world:srp:p-26f59350cd8c3735c93aae9a",
-          "name": "Calen Eleno",
+          "name": "Filipo GONELEVU",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -14610,7 +14610,7 @@
         },
         {
           "id": "world:srp:p-2791b83436e7b7b2aca2fde9",
-          "name": "Ilan Tivaro",
+          "name": "Uraia BATIBASAGA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -14699,7 +14699,7 @@
         },
         {
           "id": "world:srp:p-2c60b376136d5670d23f25af",
-          "name": "Varo Paravo",
+          "name": "Filimoni MOMOEDONU",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -14788,7 +14788,7 @@
         },
         {
           "id": "world:srp:p-2d9b66e3090f99bd034fec03",
-          "name": "Ralo Selano",
+          "name": "Nacanieli VAKACEGU",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 36,
@@ -14877,7 +14877,7 @@
         },
         {
           "id": "world:srp:p-2fdcbb7c131b753dab7b221f",
-          "name": "Pavo Vavelo",
+          "name": "Sakiusa CAKAU",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -14966,7 +14966,7 @@
         },
         {
           "id": "world:srp:p-3a04a7f3e8113eac24173f78",
-          "name": "Jalen Elvari",
+          "name": "Ulaiasi MATANITOBUA",
           "pos": "Arrière",
           "fam": 8,
           "age": 22,
@@ -15055,7 +15055,7 @@
         },
         {
           "id": "world:srp:p-3a66e6a505fe19ac5a6fed34",
-          "name": "Dario Daleva",
+          "name": "Kelepi SAUTURAGA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -15144,7 +15144,7 @@
         },
         {
           "id": "world:srp:p-3b3f779b3a1faff0fd1046c6",
-          "name": "Varen Galivo",
+          "name": "Sireli WAQAVATU",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -15233,7 +15233,7 @@
         },
         {
           "id": "world:srp:p-429164efec1aee38d7005130",
-          "name": "Tiora Saravi",
+          "name": "Marika CAMA",
           "pos": "Arrière",
           "fam": 8,
           "age": 21,
@@ -15322,7 +15322,7 @@
         },
         {
           "id": "world:srp:p-4668907bd1eee921dba7e7fc",
-          "name": "Pareo Lavari",
+          "name": "Paula LOMANI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -15411,7 +15411,7 @@
         },
         {
           "id": "world:srp:p-4a2777ed96c7c2be2a75fefb",
-          "name": "Irema Levalo",
+          "name": "Wame VUETIBAU",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 31,
@@ -15500,7 +15500,7 @@
         },
         {
           "id": "world:srp:p-4c4ebb61d84aff289423e3c2",
-          "name": "Aelen Taveli",
+          "name": "Temesia GONEVA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 29,
@@ -15589,7 +15589,7 @@
         },
         {
           "id": "world:srp:p-56234b0d68648ff0eef53fb0",
-          "name": "Isaro Favera",
+          "name": "Esala TIKOIROTUMA",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -15678,7 +15678,7 @@
         },
         {
           "id": "world:srp:p-609ab2d53e6d04e373dcc77b",
-          "name": "Emano Relavo",
+          "name": "Sakiusa CAVUBATI",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 22,
@@ -15767,7 +15767,7 @@
         },
         {
           "id": "world:srp:p-6245a5124c96d7832ad497d0",
-          "name": "Miro Malaro",
+          "name": "Nemani VAKALALABURE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 31,
@@ -15856,7 +15856,7 @@
         },
         {
           "id": "world:srp:p-687d159d4ade117fba403f0b",
-          "name": "Kaleo Ileno",
+          "name": "Iliesa RADRODRO",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -15945,7 +15945,7 @@
         },
         {
           "id": "world:srp:p-7256d53b11f653d5cac05671",
-          "name": "Irema Enavé",
+          "name": "Kelepi LAGILAGI",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -16034,7 +16034,7 @@
         },
         {
           "id": "world:srp:p-72ee24f8e44d2aa36800df62",
-          "name": "Miro Salivo",
+          "name": "Kini TAWAKE",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -16123,7 +16123,7 @@
         },
         {
           "id": "world:srp:p-7b5969b5c5596166abb1f06a",
-          "name": "Lukan Kelaro",
+          "name": "Manasa RAVULA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -16212,7 +16212,7 @@
         },
         {
           "id": "world:srp:p-7e74565c2a685a97ea3ac77e",
-          "name": "Dario Ileno",
+          "name": "Samisoni VATUBUA",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 32,
@@ -16301,7 +16301,7 @@
         },
         {
           "id": "world:srp:p-8f5102dc9e9db4144bf8bbb0",
-          "name": "Calen Vavelo",
+          "name": "Apisai TUKANA",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 22,
@@ -16390,7 +16390,7 @@
         },
         {
           "id": "world:srp:p-9f47038e68b73bf62c502636",
-          "name": "Falco Noravi",
+          "name": "Simione TUINASAU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -16479,7 +16479,7 @@
         },
         {
           "id": "world:srp:p-a2af007996c4086b13346722",
-          "name": "Arven Vavelo",
+          "name": "Mesake DERENALAGI",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -16568,7 +16568,7 @@
         },
         {
           "id": "world:srp:p-a567391706f96ec0ca9c28db",
-          "name": "Dario Favera",
+          "name": "Semi RATURAGA",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -16657,7 +16657,7 @@
         },
         {
           "id": "world:srp:p-a842f2dcc745585fade5ffbf",
-          "name": "Fenio Favera",
+          "name": "Apenisa LIGAIRI",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 33,
@@ -16746,7 +16746,7 @@
         },
         {
           "id": "world:srp:p-a8457ce39a5fea10ddf22904",
-          "name": "Ialeo Daveri",
+          "name": "Taitusi GAVIDI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -16835,7 +16835,7 @@
         },
         {
           "id": "world:srp:p-b4f610ca8d0cf914f067651e",
-          "name": "Eleni Varela",
+          "name": "Elia TIKODUADUA",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -16924,7 +16924,7 @@
         },
         {
           "id": "world:srp:p-c2063c784e721044bd63ea4b",
-          "name": "Fenio Salaro",
+          "name": "Viliame TUWAI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -17013,7 +17013,7 @@
         },
         {
           "id": "world:srp:p-d653639bb647fd04b592f16e",
-          "name": "Anori Telari",
+          "name": "Vatiliai LUTUNATABUA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -17102,7 +17102,7 @@
         },
         {
           "id": "world:srp:p-ded501bbe3570659c3ccec48",
-          "name": "Kena Bavon",
+          "name": "Jone RAIKABULA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -17210,7 +17210,7 @@
       "players": [
         {
           "id": "world:srp:p-02d03bc899dae1467ef19ed5",
-          "name": "Lukan Hanaro",
+          "name": "Tim ILLINGWORTH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -17299,7 +17299,7 @@
         },
         {
           "id": "world:srp:p-03c7819776fc4941a38e163f",
-          "name": "Aferi Javero",
+          "name": "Gary DRAPER",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -17388,7 +17388,7 @@
         },
         {
           "id": "world:srp:p-0c9d4f2b7da45c6160b4a553",
-          "name": "Taleo Avaro",
+          "name": "Kahurangi TIPOKI",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -17477,7 +17477,7 @@
         },
         {
           "id": "world:srp:p-1527b2b806e861a006e46003",
-          "name": "Falco Calave",
+          "name": "Reuben DAWES",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -17566,7 +17566,7 @@
         },
         {
           "id": "world:srp:p-158915b0623423a8642d3c75",
-          "name": "Naleoë Evaro",
+          "name": "Apisai VAKACEGU",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -17655,7 +17655,7 @@
         },
         {
           "id": "world:srp:p-18c3c917f93010aba1c6ed84",
-          "name": "Taren Haleni",
+          "name": "William JEFFERSON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -17744,7 +17744,7 @@
         },
         {
           "id": "world:srp:p-1ea3598c636a066cf960ac47",
-          "name": "Rane Navelu",
+          "name": "Lafaele KIRISOME",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 24,
@@ -17833,7 +17833,7 @@
         },
         {
           "id": "world:srp:p-1f42b3b4953635073a75bfa6",
-          "name": "Oren Navelu",
+          "name": "Warren WILKINSON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 30,
@@ -17922,7 +17922,7 @@
         },
         {
           "id": "world:srp:p-21e991716c82e566d00ab0c1",
-          "name": "Eshan Ileno",
+          "name": "Kai GOUGH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 23,
@@ -18011,7 +18011,7 @@
         },
         {
           "id": "world:srp:p-2398dc43b11fcbe8cca9e174",
-          "name": "Kena Hanaro",
+          "name": "Tavita TALIAOA",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -18100,7 +18100,7 @@
         },
         {
           "id": "world:srp:p-23f232421b4ad7326c13154b",
-          "name": "Belao Olave",
+          "name": "Pita KARAKA",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -18189,7 +18189,7 @@
         },
         {
           "id": "world:srp:p-26022dca5055122d7b9e2241",
-          "name": "Ialeo Daleva",
+          "name": "Kitione NAULU",
           "pos": "Talonneur",
           "fam": 1,
           "age": 25,
@@ -18278,7 +18278,7 @@
         },
         {
           "id": "world:srp:p-2b44f9fdffd878ac4ae19930",
-          "name": "Tavio Ravelo",
+          "name": "Hone ERUERA",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -18367,7 +18367,7 @@
         },
         {
           "id": "world:srp:p-3d08cf21053c7483b9336193",
-          "name": "Kaleo Hanaro",
+          "name": "Felix SCARBOROUGH",
           "pos": "Arrière",
           "fam": 8,
           "age": 23,
@@ -18456,7 +18456,7 @@
         },
         {
           "id": "world:srp:p-48a02f096f55d58422d57faf",
-          "name": "Taleo Oleno",
+          "name": "Toni KAUHALALALO",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 32,
@@ -18545,7 +18545,7 @@
         },
         {
           "id": "world:srp:p-4aa804f3b88e7da78e1b2ed4",
-          "name": "Lior Taveli",
+          "name": "Tawera PAKI",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 26,
@@ -18634,7 +18634,7 @@
         },
         {
           "id": "world:srp:p-5a76e5ffb3a4c058917f244b",
-          "name": "Ilan Hanaro",
+          "name": "Jake COULSON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -18723,7 +18723,7 @@
         },
         {
           "id": "world:srp:p-63ae8d8769a930264353a5ff",
-          "name": "Lanen Ileno",
+          "name": "Maama MOTULIKI",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -18812,7 +18812,7 @@
         },
         {
           "id": "world:srp:p-64eb90163822ea2c35801284",
-          "name": "Tiora Ileno",
+          "name": "Clive WHITEHEAD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -18901,7 +18901,7 @@
         },
         {
           "id": "world:srp:p-67cfffd4af5311a453cc0161",
-          "name": "Belao Nerali",
+          "name": "Sebastián RODRIGUEZ",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 33,
@@ -18990,7 +18990,7 @@
         },
         {
           "id": "world:srp:p-7270102e481ce38a33aa08e6",
-          "name": "Aimo Javero",
+          "name": "Leuo MATUU",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -19079,7 +19079,7 @@
         },
         {
           "id": "world:srp:p-754272432352d99aaaa3825d",
-          "name": "Tavio Javero",
+          "name": "Harvey ASHWORTH",
           "pos": "Arrière",
           "fam": 8,
           "age": 25,
@@ -19168,7 +19168,7 @@
         },
         {
           "id": "world:srp:p-75f2370929313d2e7a567f1a",
-          "name": "Aferi Havari",
+          "name": "Kai CROFT",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 28,
@@ -19257,7 +19257,7 @@
         },
         {
           "id": "world:srp:p-79a63ceef747bdda11067142",
-          "name": "Salen Galivo",
+          "name": "Malakai KEFU",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -19346,7 +19346,7 @@
         },
         {
           "id": "world:srp:p-814aa553c916a886db5d79a9",
-          "name": "Fenio Kalari",
+          "name": "Joe WHITFIELD",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -19435,7 +19435,7 @@
         },
         {
           "id": "world:srp:p-932f48a9a2ebd2a502ebc51d",
-          "name": "Ralo Evaro",
+          "name": "Fakaosi VUNA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -19524,7 +19524,7 @@
         },
         {
           "id": "world:srp:p-9d3015aaa862794c68aed16c",
-          "name": "Halea Avaro",
+          "name": "Hugo ALLSOPP",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 31,
@@ -19613,7 +19613,7 @@
         },
         {
           "id": "world:srp:p-9e46a710bd440410c4c9855c",
-          "name": "Arven Farela",
+          "name": "Taitusi DELAI",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -19702,7 +19702,7 @@
         },
         {
           "id": "world:srp:p-a22b9e6af67872523c735a60",
-          "name": "Lior Farela",
+          "name": "Angus GRAINGER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -19791,7 +19791,7 @@
         },
         {
           "id": "world:srp:p-a902654c4941788afa44e35c",
-          "name": "Naleo Farela",
+          "name": "Oliver WHALLEY",
           "pos": "Ailier",
           "fam": 6,
           "age": 21,
@@ -19880,7 +19880,7 @@
         },
         {
           "id": "world:srp:p-cdaa885b4e4fa85e8fad943c",
-          "name": "Falco Salivo",
+          "name": "Declan WOLFE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -19969,7 +19969,7 @@
         },
         {
           "id": "world:srp:p-d467ce3caf54b3a75458061b",
-          "name": "Naleo Cerano",
+          "name": "James CLAYTON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 19,
@@ -20058,7 +20058,7 @@
         },
         {
           "id": "world:srp:p-d6385010b604a40f08a4c3e2",
-          "name": "Tiora Delano",
+          "name": "Stuart CHARLTON",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 26,
@@ -20147,7 +20147,7 @@
         },
         {
           "id": "world:srp:p-d9bb91e0805e307d4d2b7424",
-          "name": "Revan Naviro",
+          "name": "Viliamu TUIASOSOPO",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -20236,7 +20236,7 @@
         },
         {
           "id": "world:srp:p-e129c7b3337856ed9764b6ae",
-          "name": "Kaiva Lorave",
+          "name": "Ryan WEBSTER",
           "pos": "Centre",
           "fam": 7,
           "age": 25,
@@ -20325,7 +20325,7 @@
         },
         {
           "id": "world:srp:p-ec97f2258b4f45a4a00f681c",
-          "name": "Lior Salivo",
+          "name": "Henare WIKAIRA",
           "pos": "Ailier",
           "fam": 6,
           "age": 26,
@@ -20414,7 +20414,7 @@
         },
         {
           "id": "world:srp:p-ee9812b671f169d4c15fc314",
-          "name": "Halea Eleno",
+          "name": "Hale TAUFAHEMA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 28,
@@ -20503,7 +20503,7 @@
         },
         {
           "id": "world:srp:p-f5be682a8fd45948a88d6b13",
-          "name": "Dario Paravo",
+          "name": "Isikeli VAKARURU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -20592,7 +20592,7 @@
         },
         {
           "id": "world:srp:p-f64d744f3ec8a40e7705b409",
-          "name": "Pareo Lanove",
+          "name": "Dan LATHAM",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -20700,7 +20700,7 @@
       "players": [
         {
           "id": "world:srp:p-0519e583d4fbd52bf02eb62a",
-          "name": "Irema Eleno",
+          "name": "Alfie LANGLEY",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -20789,7 +20789,7 @@
         },
         {
           "id": "world:srp:p-0b6ee948c27becc738b3443d",
-          "name": "Leano Javero",
+          "name": "Rongo HERANGI",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 34,
@@ -20878,7 +20878,7 @@
         },
         {
           "id": "world:srp:p-14efec312b6718d04795c244",
-          "name": "Kiro Tivaro",
+          "name": "Christopher BROOKS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 35,
@@ -20967,7 +20967,7 @@
         },
         {
           "id": "world:srp:p-1910b62861a9798b63dda217",
-          "name": "Fenio Lanove",
+          "name": "Ivan GLEDHILL",
           "pos": "Centre",
           "fam": 7,
           "age": 26,
@@ -21056,7 +21056,7 @@
         },
         {
           "id": "world:srp:p-27a9d486f50b178cd5f0791d",
-          "name": "Naro Varela",
+          "name": "Ofa TANGITAU",
           "pos": "Talonneur",
           "fam": 1,
           "age": 22,
@@ -21145,7 +21145,7 @@
         },
         {
           "id": "world:srp:p-2b101c679d952d75425623fd",
-          "name": "Tavio Haleni",
+          "name": "Ilaisa TIKODUADUA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 24,
@@ -21234,7 +21234,7 @@
         },
         {
           "id": "world:srp:p-315fbfa5ebae42f1a521cb1d",
-          "name": "Halea Ivare",
+          "name": "Alofa TAULAFO",
           "pos": "Arrière",
           "fam": 8,
           "age": 27,
@@ -21323,7 +21323,7 @@
         },
         {
           "id": "world:srp:p-3e98a251071901d424173039",
-          "name": "Kena Favea",
+          "name": "Manaia MANIAPOTO",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -21412,7 +21412,7 @@
         },
         {
           "id": "world:srp:p-421a0e8fd929af7e40f1448d",
-          "name": "Arven Maravi",
+          "name": "Fili FRUEAN",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -21501,7 +21501,7 @@
         },
         {
           "id": "world:srp:p-4ac27c1497a37a4325014ce4",
-          "name": "Pareo Telari",
+          "name": "Christopher KEEBLE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -21590,7 +21590,7 @@
         },
         {
           "id": "world:srp:p-4d5488b28fb1196d5b6a43d2",
-          "name": "Leano Delano",
+          "name": "Tavita LEFAU",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -21679,7 +21679,7 @@
         },
         {
           "id": "world:srp:p-53418dbeea7491b912ebdcef",
-          "name": "Lanen Talaro",
+          "name": "Tanielu SCHWENKE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -21768,7 +21768,7 @@
         },
         {
           "id": "world:srp:p-600ac8fa2a3a0dfe5cd6c2e0",
-          "name": "Aferi Delano",
+          "name": "Nigel MERRITT",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 22,
@@ -21857,7 +21857,7 @@
         },
         {
           "id": "world:srp:p-688eda42736ff4766e0b6811",
-          "name": "Pavo Darelo",
+          "name": "Rewi TUHIWAI",
           "pos": "Centre",
           "fam": 7,
           "age": 29,
@@ -21946,7 +21946,7 @@
         },
         {
           "id": "world:srp:p-71e67583782dcc5ac996a685",
-          "name": "Lanen Havari",
+          "name": "Henare RANGINUI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -22035,7 +22035,7 @@
         },
         {
           "id": "world:srp:p-760d24c42939ef523d5540ec",
-          "name": "Taren Saravi",
+          "name": "Kelemete FIA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 23,
@@ -22124,7 +22124,7 @@
         },
         {
           "id": "world:srp:p-76313cc334ee426a6becebef",
-          "name": "Salen Ravelo",
+          "name": "Adam GARDNER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 29,
@@ -22213,7 +22213,7 @@
         },
         {
           "id": "world:srp:p-792b76b75d2c019effbe9e21",
-          "name": "Miro Ravelo",
+          "name": "Lisiate FONOKALAFI",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 27,
@@ -22302,7 +22302,7 @@
         },
         {
           "id": "world:srp:p-7eb604cf9b59f396735fa6ae",
-          "name": "Telen Favera",
+          "name": "Henare TAMIHANA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 28,
@@ -22391,7 +22391,7 @@
         },
         {
           "id": "world:srp:p-91cd22f143d05ab4470b9bf5",
-          "name": "Ialeo Enavé",
+          "name": "Joseph CRAWFORD",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 28,
@@ -22480,7 +22480,7 @@
         },
         {
           "id": "world:srp:p-95627f315d195376b355bcd8",
-          "name": "Naro Daveri",
+          "name": "Filipo CAKAUNIVALU",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -22569,7 +22569,7 @@
         },
         {
           "id": "world:srp:p-9762417df0e7a2dadae14dc8",
-          "name": "Pareo Hanaro",
+          "name": "Pita NGARIMU",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 23,
@@ -22658,7 +22658,7 @@
         },
         {
           "id": "world:srp:p-996c820f20d97c9e3cfbacc8",
-          "name": "Miro Havari",
+          "name": "Vatiliai BATIBASAGA",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 30,
@@ -22747,7 +22747,7 @@
         },
         {
           "id": "world:srp:p-a199c5703af05d9f9e35b60f",
-          "name": "Revan Relavo",
+          "name": "Otenili VEIKUNE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 25,
@@ -22836,7 +22836,7 @@
         },
         {
           "id": "world:srp:p-a1a87aa4500c660e47560f13",
-          "name": "Eshan Favera",
+          "name": "Hirini TAPSELL",
           "pos": "Ailier",
           "fam": 6,
           "age": 24,
@@ -22925,7 +22925,7 @@
         },
         {
           "id": "world:srp:p-ad4f562ddb4ba3f4d57dcac9",
-          "name": "Anori Haleni",
+          "name": "Julian WOOTTON",
           "pos": "Talonneur",
           "fam": 1,
           "age": 28,
@@ -23014,7 +23014,7 @@
         },
         {
           "id": "world:srp:p-ae1cfc1527aa20360223ef73",
-          "name": "Oren Taveli",
+          "name": "Hirini MATENGA",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -23103,7 +23103,7 @@
         },
         {
           "id": "world:srp:p-b3d7c7bbc1774844a3eda0f0",
-          "name": "Olan Ravelo",
+          "name": "Hoani PARAONE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 20,
@@ -23192,7 +23192,7 @@
         },
         {
           "id": "world:srp:p-b7111c1b739cc9ac2a1d64da",
-          "name": "Maren Calevi",
+          "name": "Reece GILL",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -23281,7 +23281,7 @@
         },
         {
           "id": "world:srp:p-ba0b2a5425a64eb252d3fd04",
-          "name": "Aferi Ileno",
+          "name": "Robert FENTON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -23370,7 +23370,7 @@
         },
         {
           "id": "world:srp:p-bbbbc2877383300323c37fcd",
-          "name": "Garan Vavelo",
+          "name": "Kolio VAIFALE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 23,
@@ -23459,7 +23459,7 @@
         },
         {
           "id": "world:srp:p-e239ef58322839222f02e266",
-          "name": "Kiro Bavon",
+          "name": "Manaaki TAMATEA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 23,
@@ -23548,7 +23548,7 @@
         },
         {
           "id": "world:srp:p-e39fab09b414bad436d2fd6c",
-          "name": "Lukan Halivo",
+          "name": "Andrew BISHOP",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -23637,7 +23637,7 @@
         },
         {
           "id": "world:srp:p-e7d8421f4ade7834f8f74353",
-          "name": "Tavio Eleno",
+          "name": "Matthew CLOUGH",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -23726,7 +23726,7 @@
         },
         {
           "id": "world:srp:p-ee090068fb8cc5d466a67035",
-          "name": "Arven Javero",
+          "name": "Sefo TUALA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 30,
@@ -23815,7 +23815,7 @@
         },
         {
           "id": "world:srp:p-ef7f9bbb0cffbeedb4b4a3d8",
-          "name": "Yalen Favea",
+          "name": "Scott SWINDELLS",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -23904,7 +23904,7 @@
         },
         {
           "id": "world:srp:p-f04620ef4abbf7c33956bfaf",
-          "name": "Lior Javero",
+          "name": "Cai UTTLEY",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -23993,7 +23993,7 @@
         },
         {
           "id": "world:srp:p-f1683a35aa211d6cb2a2c481",
-          "name": "Varo Daveri",
+          "name": "Phil BEECHAM",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -24082,7 +24082,7 @@
         },
         {
           "id": "world:srp:p-fb2c136477b795ffa6a2e35d",
-          "name": "Tavio Varela",
+          "name": "Hemi TAIAPA",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -24190,7 +24190,7 @@
       "players": [
         {
           "id": "world:srp:p-0799544374826b43134f2422",
-          "name": "Tiora Calevi",
+          "name": "Ivan SPOONER",
           "pos": "Arrière",
           "fam": 8,
           "age": 20,
@@ -24279,7 +24279,7 @@
         },
         {
           "id": "world:srp:p-07d24a78cbaf834d33476673",
-          "name": "Lanen Salivo",
+          "name": "Stan TRAVIS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 24,
@@ -24368,7 +24368,7 @@
         },
         {
           "id": "world:srp:p-091a4a3b58e147987103f81f",
-          "name": "Aimo Olave",
+          "name": "Craig WOMERSLEY",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 31,
@@ -24457,7 +24457,7 @@
         },
         {
           "id": "world:srp:p-0a4cc6d83c012f5ce2a42229",
-          "name": "Belao Lanove",
+          "name": "Kurt ATHERTON",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -24546,7 +24546,7 @@
         },
         {
           "id": "world:srp:p-0ff6bff7a7bb8814a00c3308",
-          "name": "Lanen Selano",
+          "name": "Mark DOWNES",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -24635,7 +24635,7 @@
         },
         {
           "id": "world:srp:p-13a13bd0d71504f796be7653",
-          "name": "Naleoë Relavo",
+          "name": "Aidan SLINGSBY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 27,
@@ -24724,7 +24724,7 @@
         },
         {
           "id": "world:srp:p-1b1c72df38a3ce03e4c01669",
-          "name": "Halea Levalo",
+          "name": "Greg COCKCROFT",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 29,
@@ -24813,7 +24813,7 @@
         },
         {
           "id": "world:srp:p-2cb1e4960fa4ed355f40bfb2",
-          "name": "Savio Javero",
+          "name": "Jed EDDLESTON",
           "pos": "Talonneur",
           "fam": 1,
           "age": 21,
@@ -24902,7 +24902,7 @@
         },
         {
           "id": "world:srp:p-2ce6a452b0dd300e9f11c031",
-          "name": "Kaleo Havari",
+          "name": "Terence ECCLES",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 19,
@@ -24991,7 +24991,7 @@
         },
         {
           "id": "world:srp:p-3154391ed7981030644d8ba9",
-          "name": "Aferi Meralo",
+          "name": "Owen MOORHOUSE",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -25080,7 +25080,7 @@
         },
         {
           "id": "world:srp:p-355a9344e4daed613d23b06b",
-          "name": "Hoku Valeno",
+          "name": "Fakaosi HAVILI",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -25169,7 +25169,7 @@
         },
         {
           "id": "world:srp:p-379eecc04497452c0a39e7b4",
-          "name": "Hoku Lanove",
+          "name": "Thomas ELLWOOD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -25258,7 +25258,7 @@
         },
         {
           "id": "world:srp:p-3a54c16b77930eeb78c2336a",
-          "name": "Taleo Gavani",
+          "name": "Pele LEVASA",
           "pos": "Centre",
           "fam": 7,
           "age": 27,
@@ -25347,7 +25347,7 @@
         },
         {
           "id": "world:srp:p-5622851a7718dc63d0f37175",
-          "name": "Ravio Lanove",
+          "name": "Lafaele FALEAFAGA",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -25436,7 +25436,7 @@
         },
         {
           "id": "world:srp:p-58bd95332c228d36f57fa3bc",
-          "name": "Tiora Taveli",
+          "name": "Wilfred ALLSOPP",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -25525,7 +25525,7 @@
         },
         {
           "id": "world:srp:p-64ada9c625b8fa9fb2f39512",
-          "name": "Eshan Naviro",
+          "name": "Charlie LACEY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -25614,7 +25614,7 @@
         },
         {
           "id": "world:srp:p-67aa1dedbd97e73efc48512e",
-          "name": "Fenio Kavero",
+          "name": "Aminiasi YALAYALA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 30,
@@ -25703,7 +25703,7 @@
         },
         {
           "id": "world:srp:p-695a72dc0824ea9fc7b30ec8",
-          "name": "Tavio Havari",
+          "name": "Elia WAQANIVALU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -25792,7 +25792,7 @@
         },
         {
           "id": "world:srp:p-6faffaa673fcaaa283d1bef1",
-          "name": "Revan Haleni",
+          "name": "Ross MORLEY",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -25881,7 +25881,7 @@
         },
         {
           "id": "world:srp:p-780b24fbf402644f5233fb38",
-          "name": "Lior Eleno",
+          "name": "Sefo SEUMALO",
           "pos": "Ailier",
           "fam": 6,
           "age": 19,
@@ -25970,7 +25970,7 @@
         },
         {
           "id": "world:srp:p-7ecd2662a2d61f55986b151d",
-          "name": "Kiro Relavo",
+          "name": "Kali TUITAVAKE",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -26059,7 +26059,7 @@
         },
         {
           "id": "world:srp:p-7f95f7f922309eecc9e1a269",
-          "name": "Olan Telari",
+          "name": "Duncan PENROSE",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -26148,7 +26148,7 @@
         },
         {
           "id": "world:srp:p-91c1dd9a22526dcd2bdc024f",
-          "name": "Kena Talaro",
+          "name": "Inoke HUFANGA",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 27,
@@ -26237,7 +26237,7 @@
         },
         {
           "id": "world:srp:p-980022403a438fcb55d29995",
-          "name": "Kiro Pelari",
+          "name": "Kurt DEAN",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 25,
@@ -26326,7 +26326,7 @@
         },
         {
           "id": "world:srp:p-9a0b7602dda69db024e21562",
-          "name": "Kena Daveri",
+          "name": "Matiu KARAKA",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 21,
@@ -26415,7 +26415,7 @@
         },
         {
           "id": "world:srp:p-a53263f37fc19a13680e0b0b",
-          "name": "Miro Delano",
+          "name": "Will DUCKWORTH",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -26504,7 +26504,7 @@
         },
         {
           "id": "world:srp:p-a570af2287d35acc5f9df2a4",
-          "name": "Bairo Saravi",
+          "name": "Sevanaia TAUKEI",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -26593,7 +26593,7 @@
         },
         {
           "id": "world:srp:p-acdfa9493ec27fcf89fd6912",
-          "name": "Eleni Lorave",
+          "name": "Isoa QALO",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 24,
@@ -26682,7 +26682,7 @@
         },
         {
           "id": "world:srp:p-c84a4e2e59968926959fa98e",
-          "name": "Zaren Salaro",
+          "name": "Semisi TAU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -26771,7 +26771,7 @@
         },
         {
           "id": "world:srp:p-d0348b34e84d440c6d52018b",
-          "name": "Isaro Pelari",
+          "name": "Wesley RAMSDEN",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 21,
@@ -26860,7 +26860,7 @@
         },
         {
           "id": "world:srp:p-d2a0d63b3ef0c87feb331cf4",
-          "name": "Leano Navelu",
+          "name": "Keith WINTER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -26949,7 +26949,7 @@
         },
         {
           "id": "world:srp:p-d7377369e1ed59d2587c3180",
-          "name": "Miro Kelaro",
+          "name": "Louie CHILTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -27038,7 +27038,7 @@
         },
         {
           "id": "world:srp:p-e36e320997c403e2e8887c94",
-          "name": "Pareo Cavero",
+          "name": "Jai LEIGH",
           "pos": "Ailier",
           "fam": 6,
           "age": 29,
@@ -27127,7 +27127,7 @@
         },
         {
           "id": "world:srp:p-e5b4a95996af4e50f165ee17",
-          "name": "Taren Daneri",
+          "name": "Ariki TAWHIRI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -27216,7 +27216,7 @@
         },
         {
           "id": "world:srp:p-ed660ba9d4ce8fc8e3ea8336",
-          "name": "Belao Salaro",
+          "name": "John PILKINGTON",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -27305,7 +27305,7 @@
         },
         {
           "id": "world:srp:p-ef1e14ca5dce05db3b32b870",
-          "name": "Halea Avelan",
+          "name": "Taniela MAHE",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 28,
@@ -27394,7 +27394,7 @@
         },
         {
           "id": "world:srp:p-f6a9faa4f00d32de76bb8005",
-          "name": "Pavo Halivo",
+          "name": "Jon WATERS",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -27483,7 +27483,7 @@
         },
         {
           "id": "world:srp:p-f83b426ec8b12bb1627f0393",
-          "name": "Maelo Valeno",
+          "name": "Seth HEATH",
           "pos": "Ailier",
           "fam": 6,
           "age": 31,
@@ -27572,7 +27572,7 @@
         },
         {
           "id": "world:srp:p-fa74b2ec71c5e0d37f1f3ba2",
-          "name": "Miro Tivaro",
+          "name": "Declan HAMILTON",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 25,
@@ -27661,7 +27661,7 @@
         },
         {
           "id": "world:srp:p-faf46fbe9d0b83bddc1140ca",
-          "name": "Naro Calevi",
+          "name": "Byron HATFIELD",
           "pos": "Ailier",
           "fam": 6,
           "age": 23,
@@ -27750,7 +27750,7 @@
         },
         {
           "id": "world:srp:p-ff958e51c8833e5a4d9be7ff",
-          "name": "Maren Havari",
+          "name": "Manu ALAPATI",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 23,
@@ -27858,7 +27858,7 @@
       "players": [
         {
           "id": "world:srp:p-025f55620f6b6b7ed480217d",
-          "name": "Dario Kavero",
+          "name": "Barney CASTLE",
           "pos": "Arrière",
           "fam": 8,
           "age": 21,
@@ -27947,7 +27947,7 @@
         },
         {
           "id": "world:srp:p-0aa514b9aa8f5d0efb212c93",
-          "name": "Dario Favea",
+          "name": "Keith BROCKLEHURST",
           "pos": "Arrière",
           "fam": 8,
           "age": 23,
@@ -28036,7 +28036,7 @@
         },
         {
           "id": "world:srp:p-0ec3b7a55cde081a32be8ccb",
-          "name": "Lanen Saravi",
+          "name": "Byron ROBERTSON",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -28125,7 +28125,7 @@
         },
         {
           "id": "world:srp:p-11e90b5c240b462242e0739d",
-          "name": "Ralo Lanove",
+          "name": "Penaia KOLINISAU",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 26,
@@ -28214,7 +28214,7 @@
         },
         {
           "id": "world:srp:p-1289074640878414168d2ecd",
-          "name": "Calen Lanove",
+          "name": "Max ILLINGWORTH",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -28303,7 +28303,7 @@
         },
         {
           "id": "world:srp:p-14dcaf036c1582746263d1b9",
-          "name": "Tiora Eleno",
+          "name": "Temesia RATUMAITAVUKI",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -28392,7 +28392,7 @@
         },
         {
           "id": "world:srp:p-169546ec7e064f34f88e2ed4",
-          "name": "Ravio Haleni",
+          "name": "Zachary GOODALL",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -28481,7 +28481,7 @@
         },
         {
           "id": "world:srp:p-1fa994ac037e0eea78439fd5",
-          "name": "Aferi Avaro",
+          "name": "Aleki ESERA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 32,
@@ -28570,7 +28570,7 @@
         },
         {
           "id": "world:srp:p-221a58a9a2d85dea5fdd9f92",
-          "name": "Eleni Enavé",
+          "name": "Matiu MANIHERA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 34,
@@ -28659,7 +28659,7 @@
         },
         {
           "id": "world:srp:p-247832bbbd53b461261d5595",
-          "name": "Telen Calave",
+          "name": "Adrian GIBBONS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 37,
@@ -28748,7 +28748,7 @@
         },
         {
           "id": "world:srp:p-2f1813bfde5f4b7c1860a906",
-          "name": "Aimo Oleno",
+          "name": "Thomas GLOVER",
           "pos": "Talonneur",
           "fam": 1,
           "age": 26,
@@ -28837,7 +28837,7 @@
         },
         {
           "id": "world:srp:p-303529caba8bbbba9b9ff501",
-          "name": "Revan Calave",
+          "name": "Martin COGGINS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -28926,7 +28926,7 @@
         },
         {
           "id": "world:srp:p-31e644fd10c555f619821101",
-          "name": "Eleni Marive",
+          "name": "Joseph GOULD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -29015,7 +29015,7 @@
         },
         {
           "id": "world:srp:p-323e05cc0aa95696f145c86f",
-          "name": "Olan Kivale",
+          "name": "Joseph ASHWORTH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 26,
@@ -29104,7 +29104,7 @@
         },
         {
           "id": "world:srp:p-33833e9a0f68f6d8d7577da0",
-          "name": "Arven Favera",
+          "name": "Kolio FUIMAONO",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 19,
@@ -29193,7 +29193,7 @@
         },
         {
           "id": "world:srp:p-3afd2a2c37fbef3801ccde3b",
-          "name": "Salen Cavero",
+          "name": "Fraser MICKLETHWAITE",
           "pos": "Centre",
           "fam": 7,
           "age": 24,
@@ -29282,7 +29282,7 @@
         },
         {
           "id": "world:srp:p-6170aac71d4531420fbeac2b",
-          "name": "Savio Barela",
+          "name": "Ed BICKLEY",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -29371,7 +29371,7 @@
         },
         {
           "id": "world:srp:p-660548b390fa29b4a5853ad2",
-          "name": "Taren Paravo",
+          "name": "Gary KITCHEN",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -29460,7 +29460,7 @@
         },
         {
           "id": "world:srp:p-6f78b5872e47ce1c47914022",
-          "name": "Yalen Daneri",
+          "name": "William HUBBARD",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 37,
@@ -29549,7 +29549,7 @@
         },
         {
           "id": "world:srp:p-79209ce39122f74126d272c3",
-          "name": "Olan Ivare",
+          "name": "Jack PENROSE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 21,
@@ -29638,7 +29638,7 @@
         },
         {
           "id": "world:srp:p-8de60ae871099bca32bb1061",
-          "name": "Kaiva Delano",
+          "name": "Rowan BURGESS",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 23,
@@ -29727,7 +29727,7 @@
         },
         {
           "id": "world:srp:p-8e7176244e470702a9e62905",
-          "name": "Eshan Saravi",
+          "name": "Ed SALTER",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 31,
@@ -29816,7 +29816,7 @@
         },
         {
           "id": "world:srp:p-95fa2e09ecebc34fa2dace64",
-          "name": "Savio Lanove",
+          "name": "Dafydd FAIRHURST",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 21,
@@ -29905,7 +29905,7 @@
         },
         {
           "id": "world:srp:p-a15ac43c43c80799b3bd0bc6",
-          "name": "Maelo Favera",
+          "name": "Penaia SOQETA",
           "pos": "Ailier",
           "fam": 6,
           "age": 22,
@@ -29994,7 +29994,7 @@
         },
         {
           "id": "world:srp:p-b24991fc20252edc8f8610ca",
-          "name": "Naleo Maravi",
+          "name": "Jake RUSHTON",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -30083,7 +30083,7 @@
         },
         {
           "id": "world:srp:p-b7cd5a43a4e7b559e75900a3",
-          "name": "Ralo Gavani",
+          "name": "Rhys MILES",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 27,
@@ -30172,7 +30172,7 @@
         },
         {
           "id": "world:srp:p-bb236a547b675dc059fa81e5",
-          "name": "Haren Marive",
+          "name": "Riley SHEPHERD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 32,
@@ -30261,7 +30261,7 @@
         },
         {
           "id": "world:srp:p-bf2e23d9feacf13176228faf",
-          "name": "Ilan Cerano",
+          "name": "Vili LEA",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 24,
@@ -30350,7 +30350,7 @@
         },
         {
           "id": "world:srp:p-c0d5a991b5406010868c30b2",
-          "name": "Alika Avelan",
+          "name": "Vilimoni RATUVOU",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -30439,7 +30439,7 @@
         },
         {
           "id": "world:srp:p-c75ae5319f3739bff5fa531a",
-          "name": "Bairo Valeno",
+          "name": "Jordan DAVENPORT",
           "pos": "Talonneur",
           "fam": 1,
           "age": 31,
@@ -30528,7 +30528,7 @@
         },
         {
           "id": "world:srp:p-cd4e214a3d6c2243e755daa3",
-          "name": "Fenio Gavani",
+          "name": "Faafetai SALANOA",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 29,
@@ -30617,7 +30617,7 @@
         },
         {
           "id": "world:srp:p-d6c7906d5ff6106b4c1f8852",
-          "name": "Isaro Hanaro",
+          "name": "Taitusi CAKAU",
           "pos": "Centre",
           "fam": 7,
           "age": 30,
@@ -30706,7 +30706,7 @@
         },
         {
           "id": "world:srp:p-d934abde22f9dd2c5e13f51a",
-          "name": "Salen Noravi",
+          "name": "Pita VEA",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 19,
@@ -30795,7 +30795,7 @@
         },
         {
           "id": "world:srp:p-f1aa2393e0fc45e471aceb50",
-          "name": "Ilan Ivare",
+          "name": "Spencer MAYHEW",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 20,
@@ -30884,7 +30884,7 @@
         },
         {
           "id": "world:srp:p-f497e4177c33f51092954189",
-          "name": "Lanen Daneri",
+          "name": "Jake GLEDHILL",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 22,
@@ -30973,7 +30973,7 @@
         },
         {
           "id": "world:srp:p-f6f8b18cc6b32abab85263bf",
-          "name": "Eleni Daneri",
+          "name": "Tommy IBBOTSON",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -31081,7 +31081,7 @@
       "players": [
         {
           "id": "world:srp:p-041005fce48875fb1e3331c7",
-          "name": "Kaiva Favea",
+          "name": "Linden YARWOOD",
           "pos": "Ailier",
           "fam": 6,
           "age": 28,
@@ -31170,7 +31170,7 @@
         },
         {
           "id": "world:srp:p-0759e9ec07869aed97950228",
-          "name": "Olan Darelo",
+          "name": "Kurt HOLDEN",
           "pos": "Centre",
           "fam": 7,
           "age": 21,
@@ -31259,7 +31259,7 @@
         },
         {
           "id": "world:srp:p-099105b4f26537ec8e831cba",
-          "name": "Aimo Kelaro",
+          "name": "Gethin COPLEY",
           "pos": "Centre",
           "fam": 7,
           "age": 22,
@@ -31348,7 +31348,7 @@
         },
         {
           "id": "world:srp:p-0ed220a99e8ed4ad187646bc",
-          "name": "Lukan Darelo",
+          "name": "Will HARTSHORN",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 35,
@@ -31437,7 +31437,7 @@
         },
         {
           "id": "world:srp:p-0fbd2b3f8a96c98ad63e7060",
-          "name": "Bairo Kavero",
+          "name": "Zane CRABTREE",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 22,
@@ -31526,7 +31526,7 @@
         },
         {
           "id": "world:srp:p-1acabbb24f265212c1628c9e",
-          "name": "Haren Taveli",
+          "name": "Alexander SEDGWICK",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 26,
@@ -31615,7 +31615,7 @@
         },
         {
           "id": "world:srp:p-2025e7db64b9fb99df3f9b62",
-          "name": "Oren Salivo",
+          "name": "Rhodri BOOTH",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 32,
@@ -31704,7 +31704,7 @@
         },
         {
           "id": "world:srp:p-21f494df4cf02e2c7cabff30",
-          "name": "Fenio Selano",
+          "name": "Thomas MILLWARD",
           "pos": "Talonneur",
           "fam": 1,
           "age": 27,
@@ -31793,7 +31793,7 @@
         },
         {
           "id": "world:srp:p-29c6a76aaddd70d32f07eb61",
-          "name": "Pareo Ivare",
+          "name": "Noah STUBBS",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 20,
@@ -31882,7 +31882,7 @@
         },
         {
           "id": "world:srp:p-36380ef7fca548ef92439788",
-          "name": "Taren Melavi",
+          "name": "Tasi FUIMAONO",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 25,
@@ -31971,7 +31971,7 @@
         },
         {
           "id": "world:srp:p-483120b21a6e95f486186926",
-          "name": "Maren Barela",
+          "name": "Liam PIKE",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 24,
@@ -32060,7 +32060,7 @@
         },
         {
           "id": "world:srp:p-487368ea2cc25ea8670deb8d",
-          "name": "Naro Cerano",
+          "name": "Dylan SWIFT",
           "pos": "Ailier",
           "fam": 6,
           "age": 27,
@@ -32149,7 +32149,7 @@
         },
         {
           "id": "world:srp:p-4af42190e048210b498b598e",
-          "name": "Kanoa Varela",
+          "name": "Patricio MORALES",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 23,
@@ -32238,7 +32238,7 @@
         },
         {
           "id": "world:srp:p-4b8e49208e6c192d6b1f2302",
-          "name": "Varo Selano",
+          "name": "Iosefa LAUINA",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -32327,7 +32327,7 @@
         },
         {
           "id": "world:srp:p-6a6b34421754550da5ee1e7b",
-          "name": "Pavo Selano",
+          "name": "Edward GAWTHORPE",
           "pos": "Ailier",
           "fam": 6,
           "age": 20,
@@ -32416,7 +32416,7 @@
         },
         {
           "id": "world:srp:p-6f29ff1da4651280c11fd827",
-          "name": "Garan Valeno",
+          "name": "Rob CRAWFORD",
           "pos": "Pilier droit",
           "fam": 0,
           "age": 31,
@@ -32505,7 +32505,7 @@
         },
         {
           "id": "world:srp:p-721df2ea91a36cec260c7286",
-          "name": "Ravio Daveri",
+          "name": "Jai BRIERLEY",
           "pos": "Numéro 8",
           "fam": 3,
           "age": 23,
@@ -32594,7 +32594,7 @@
         },
         {
           "id": "world:srp:p-742a1429437af6da9f414b83",
-          "name": "Rane Hanaro",
+          "name": "Benjamin BURNHAM",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 27,
@@ -32683,7 +32683,7 @@
         },
         {
           "id": "world:srp:p-83e336ac4fd3f99a8539d899",
-          "name": "Aimo Avaro",
+          "name": "Dave SAUNDERS",
           "pos": "Centre",
           "fam": 7,
           "age": 36,
@@ -32772,7 +32772,7 @@
         },
         {
           "id": "world:srp:p-8854e1591aa259421f70b4ac",
-          "name": "Taren Relavo",
+          "name": "Lewis CLIFFORD",
           "pos": "Deuxième ligne",
           "fam": 2,
           "age": 25,
@@ -32861,7 +32861,7 @@
         },
         {
           "id": "world:srp:p-88cf23515aa5d7757ca60dd7",
-          "name": "Taleo Evaro",
+          "name": "Julian BANCROFT",
           "pos": "Centre",
           "fam": 7,
           "age": 23,
@@ -32950,7 +32950,7 @@
         },
         {
           "id": "world:srp:p-9dc388b21efbfd45da6b97c1",
-          "name": "Tavio Noravi",
+          "name": "Anthony POTTER",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 26,
@@ -33039,7 +33039,7 @@
         },
         {
           "id": "world:srp:p-a238e29e9d10b9f8b541fc9f",
-          "name": "Kiro Lavari",
+          "name": "Rupert ROYLE",
           "pos": "Centre",
           "fam": 7,
           "age": 28,
@@ -33128,7 +33128,7 @@
         },
         {
           "id": "world:srp:p-a886ac05937430654f5f8bea",
-          "name": "Varo Varela",
+          "name": "Sireli VEITOKANI",
           "pos": "Talonneur",
           "fam": 1,
           "age": 30,
@@ -33217,7 +33217,7 @@
         },
         {
           "id": "world:srp:p-b49029215535cba6efdc685d",
-          "name": "Zaren Paravo",
+          "name": "Dylan BOSWELL",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 27,
@@ -33306,7 +33306,7 @@
         },
         {
           "id": "world:srp:p-c2675ccc4d817dce73c22102",
-          "name": "Matea Havari",
+          "name": "Feleti LUTUI",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 20,
@@ -33395,7 +33395,7 @@
         },
         {
           "id": "world:srp:p-c27aa0587bed6c8ea5fd4767",
-          "name": "Lior Lorave",
+          "name": "Eroni TIKOIROTUMA",
           "pos": "Pilier gauche",
           "fam": 0,
           "age": 23,
@@ -33484,7 +33484,7 @@
         },
         {
           "id": "world:srp:p-ca56a0df2ae32cec5917ff03",
-          "name": "Kiro Javero",
+          "name": "Daniel TOMLINSON",
           "pos": "Arrière",
           "fam": 8,
           "age": 24,
@@ -33573,7 +33573,7 @@
         },
         {
           "id": "world:srp:p-cac7e6784bb971b2d290dfef",
-          "name": "Arven Haleni",
+          "name": "Lewis HADDOCK",
           "pos": "Demi de mêlée",
           "fam": 4,
           "age": 25,
@@ -33662,7 +33662,7 @@
         },
         {
           "id": "world:srp:p-d3d2e2c626fafd4bd8bf22de",
-          "name": "Rane Kalari",
+          "name": "Bautista ACUNA",
           "pos": "Talonneur",
           "fam": 1,
           "age": 28,
@@ -33751,7 +33751,7 @@
         },
         {
           "id": "world:srp:p-d4be57aff1641266d4eb38a4",
-          "name": "Naleoë Ivare",
+          "name": "Keith TATE",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 30,
@@ -33840,7 +33840,7 @@
         },
         {
           "id": "world:srp:p-d5aacda0b0bf77128e671b38",
-          "name": "Kaiva Hanaro",
+          "name": "Zane CASTLE",
           "pos": "Demi d’ouverture",
           "fam": 5,
           "age": 22,
@@ -33929,7 +33929,7 @@
         },
         {
           "id": "world:srp:p-da35ee2669a606f7294b4ac4",
-          "name": "Lukan Avaro",
+          "name": "Matthew ASHBY",
           "pos": "Troisième ligne",
           "fam": 3,
           "age": 21,
@@ -34018,7 +34018,7 @@
         },
         {
           "id": "world:srp:p-f307378fad5b6cebae2ec3b3",
-          "name": "Belao Marive",
+          "name": "Philip ROBERTSON",
           "pos": "Arrière",
           "fam": 8,
           "age": 28,
