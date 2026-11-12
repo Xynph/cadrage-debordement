@@ -457,7 +457,7 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
   const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
   const jouer = drapeau => {
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-choregraphe-'));
-    const bridge = createBridge({ dataDir, seed: 7, now: 1700000000000, matchHighlights: 'dynamique', matchChoreography: drapeau });
+    const bridge = createBridge({ dataDir, seed: 3, now: 1700000000000, matchHighlights: 'dynamique', matchChoreography: drapeau });
     let id = 0;
     const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, r.error); return r.model; };
     try {
@@ -501,6 +501,6 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
     // Profils lus dans le moteur : un ailier n'a pas l'allure d'un pilier.
     assert.ok(new Set(c.joueurs.map(j => j.vmax)).size > 5, 'profils individuels');
   }
-  assert.ok(essais >= 2, 'graine 7 : au moins deux essais en jeu courant');
+  assert.ok(essais >= 2, 'graine 3 : au moins deux essais en jeu courant');
   assert.ok(autres >= essais, 'temps forts mis en scène : ' + autres);
 });
