@@ -182,6 +182,7 @@ function simuler(e,phases,graine){
   d.soutiens=choisirSoutiens(p);
   // Plaqueur : celui que le moteur nomme (fait `tackler`, le même que la colonne Plaq. de l'entracte),
   // sinon le défenseur debout le plus proche du point visé (l'arrière garde la profondeur).
+  // Allure plafonnée par le profil : un plaqueur nommé loin du point arrive en retard et le relais prévu plus bas s'applique.
   const arr=arriereDe(1-p.side),nomme=defenseurNomme(etape,p.side);
   d.plaqueur=nomme||J.filter(j=>j.side!==p.side&&debout(j)&&j!==arr).sort((a,b)=>dist(a,d.objectif)-dist(b,d.objectif)||a.slot-b.slot)[0];
   d.debutJeu=t;
@@ -391,10 +392,10 @@ function simuler(e,phases,graine){
   const dk=dirDe(k.side);
   // Partenaires du botteur derrière le ballon au coup d'envoi (loi 12) ; adversaires à 10 m au moins.
   // Équipe qui reçoit (12 novembre 2026, retours de Léo : « placements irréalistes ») : non plus
-  // en file à la même distance, mais avants en groupes entre 11 et 17 m, demis à 20 et 24 m,
+  // en file à la même distance, mais avants en groupes entre 11 et 17 m, demis à 19 et 24 m,
   // trois-quarts étagés de 27 à 33 m, arrière à 38 m ; positions par numéro (slot), symétrisées
   // du côté où tombe le ballon. Valeurs choisies, non mesurées.
-  const RECOIT=[[14,18],[13,24],[14,30],[11.5,40],[11.5,52],[15,46],[16,58],[17,35],[20,41],[24,30],[30,8],[27,22],[31,48],[33,62],[38,35]];
+  const RECOIT=[[14,18],[13,24],[14,30],[11.5,40],[11.5,52],[15,46],[16,58],[17,35],[19,38],[24,30],[30,8],[27,22],[31,48],[33,62],[38,35]];
   const cote=(ouverture.chute?.y??ouverture.y)>35?-1:1;
   for(const j of J){
    if(j===k){placer(j,ouverture.x-dk*2.2,ouverture.y-1.2);continue}

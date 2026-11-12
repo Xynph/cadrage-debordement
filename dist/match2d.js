@@ -10,9 +10,9 @@ const KICKOFF_SPOTS=[[7,44],[7,50],[7,56],[2,45],[2,50],[1.5,40],[2,55],[2,60],[
 // N° 10 qui ne botte pas (le moteur a désigné un autre botteur) : dans la ligne, à côté du botteur.
 const KICKOFF_TEN=[1.5,27];
 // Receveur : [distance devant le ballon, largeur] ; mêmes valeurs que l'équipe qui reçoit dans le
-// chorégraphe (avants en groupes entre 11 et 17 m, demis à 20 et 24 m, trois-quarts de 27 à 33 m,
+// chorégraphe (avants en groupes entre 11 et 17 m, demis à 19 et 24 m, trois-quarts de 27 à 33 m,
 // arrière à 38 m). Valeurs choisies, non mesurées.
-const KICKOFF_RECEIVE=[[14,18],[13,24],[14,30],[11.5,40],[11.5,52],[15,46],[16,58],[17,35],[20,41],[24,30],[30,8],[27,22],[31,48],[33,62],[38,35]];
+const KICKOFF_RECEIVE=[[14,18],[13,24],[14,30],[11.5,40],[11.5,52],[15,46],[16,58],[17,35],[19,38],[24,30],[30,8],[27,22],[31,48],[33,62],[38,35]];
 function visualEscape(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function matchScene(l){
  const real=l.visualSource||l,event=displayedAction(real),record=event?.scene;
