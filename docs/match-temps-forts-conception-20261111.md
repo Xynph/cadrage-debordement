@@ -1150,6 +1150,13 @@ bibliothèque ». Sans `CD_MATCH_ANIMATIONS`, rien ne change.
   l'œil sur ces captures seulement ; le plaqué déclenché par la régie n'a pas de test
   automatique avec bibliothèque ; suite complète du dépôt non relancée.
 
+## 12. Chorégraphe de temps forts (12 novembre 2026)
+
+Branche `claude/match-choregraphe-20261112`, drapeau `CD_MATCH_CHOREGRAPHE=1` (éteint par
+défaut). Pour un essai en jeu courant, le moteur joint au temps fort des pistes continues
+de 12 à 25 s (trente joueurs et ballon, pas de 0,2 s) ; la vue les suit à la place du plan
+d'essai. Conception, garanties, tests et limites : [match-choregraphe-20261112.md](match-choregraphe-20261112.md).
+
 ## 8. Sources
 
 Consultées le 11 novembre 2026. « Officiel » = Sports Interactive ou l'éditeur du jeu.
