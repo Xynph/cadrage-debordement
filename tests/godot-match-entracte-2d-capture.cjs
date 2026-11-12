@@ -8,6 +8,7 @@
 //   CD_ENTRACTE_2D_PNG     capture PNG à 5 s du dernier entracte filmé (facultatif)
 //   CD_ENTRACTE_2D_NOMBRE  entractes filmés (défaut 2)
 //   CD_ENTRACTE_2D_SEED    graine du moteur (défaut 7)
+//   CD_ENTRACTE_2D_VUES    mises en page enchaînées (« staff,mix,tele », une toutes les 4 s)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const film=process.env.CD_ENTRACTE_2D_FILM;

@@ -40,6 +40,8 @@ var cadence := 1.5
 var gel := false
 ## Mode calme (préférence « mouvement réduit ») : pas de respiration ni de traînée.
 var calme := false
+## Étiquette du fait en cours en haut à gauche du terrain (l'entracte la remplace par son fil).
+var legende := true
 ## Zone de jeu et repères du moteur (essais, pénalités, cartons), pour le fond.
 var direct: Dictionary = {}
 
@@ -528,7 +530,7 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 		draw_colored_polygon(PackedVector2Array([pointe + sens * r * 0.7, pointe + Vector2(0, r * 0.55), pointe - Vector2(0, r * 0.55)]), Color(couleurs[possession], 0.9))
 	# Fait en cours, en surimpression discrète en haut à gauche du terrain.
 	var item: Dictionary = _courant if not _courant.is_empty() else joue
-	if not item.is_empty():
+	if legende and not item.is_empty():
 		var libelle := str(LIBELLES.get(str(item.get("kind", "")), ""))
 		if str(item.get("kind", "")) == "try" and _courant.is_empty(): libelle = "Essai transformé" if item.get("transformation", false) else "Essai non transformé"
 		var texte := "%s  %s" % [str(item.get("horloge", "")), libelle]

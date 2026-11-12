@@ -93,13 +93,15 @@ func check_framing(label: String, highlights: int) -> void:
 func inside(outer: Rect2, inner: Rect2) -> bool:
 	return inner.position.x >= outer.position.x - 1.0 and inner.position.y >= outer.position.y - 1.0 and inner.end.x <= outer.end.x + 1.0 and inner.end.y <= outer.end.y + 1.0
 
-func layout(view: Control, size: Vector2i) -> void:
+func layout(view: Control, size: Vector2i, disposition: String = "staff") -> void:
 	root.size = size
 	root.content_scale_size = size
-	await settle(12)
 	var between: Control = view.regie.between
-	var label := "%d×%d" % [size.x, size.y]
+	between.choisir_disposition(disposition)
+	await settle(12)
+	var label := "%d×%d %s" % [size.x, size.y, disposition]
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
+	check(between.disposition == disposition, label + " : mise en page appliquée")
 	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
 	var pitch: Control = between.terrain
 	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 300, label + " : terrain lisible (%s)" % str(pitch.size))
@@ -107,23 +109,38 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
 	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
 	check(between.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0, label + " : rien sous le bandeau du score")
-	var feed: ScrollContainer = between.fil.get_parent()
+	var feed: Control = between.fil.get_parent()
 	for node: Control in between.find_children("*", "Control", true, false):
 		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
 		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé")
 	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
-	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p, et la colonne de droite est remplie.
+	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).get_child(0)
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(26 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
-	var column: Control = between.adjoint_cadre.get_parent()
-	var used := 0.0
-	for panel: Control in column.get_children():
-		if panel.visible: used += panel.size.y
-	check(used >= column.size.y * 0.9, label + " : la colonne de droite est occupée (%d sur %d px)" % [int(used), int(column.size.y)])
-	check(feed.size.y >= between.px(200), label + " : le fil garde de la hauteur (%d px)" % int(feed.size.y))
+	# Les commandes communes sont là dans chaque mise en page.
+	for nom in ["MatchBetweenTactics", "MatchBetweenBench", "MatchBetweenLayout", "MatchBetweenMore", "MatchHighlightLevel", "MatchBetweenSpeed"]:
+		var noeud: Control = between.find_child(nom, true, false)
+		check(noeud != null and noeud.is_visible_in_tree(), label + " : commande " + nom)
+	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
+	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
+	if disposition == "staff":
+		var column: Control = between.adjoint_cadre.get_parent()
+		var used := 0.0
+		for panel: Control in column.get_children():
+			if panel.visible: used += panel.size.y
+		check(used >= column.size.y * 0.9, label + " : la colonne de droite est occupée (%d sur %d px)" % [int(used), int(column.size.y)])
+		check(feed.size.y >= between.px(200), label + " : le fil garde de la hauteur (%d px)" % int(feed.size.y))
+	if disposition != "tele": check(between.xv.is_visible_in_tree(), label + " : Mon XV visible")
+	else:
+		check(not between.xv.is_visible_in_tree(), label + " : Mon XV replié en tiroir")
+		between.find_child("MatchBetweenSquadToggle", true, false).pressed.emit()
+		await settle(3)
+		check(between.xv.is_visible_in_tree() and inside(between.get_global_rect(), between.tiroir_xv.get_global_rect()), label + " : le tiroir Mon XV s'ouvre dans l'écran")
+		between.find_child("MatchBetweenSquadToggle", true, false).pressed.emit()
+		await settle(2)
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
 			check(cell.get_minimum_size().x <= cell.size.x + 1.0 or cell.clip_text, label + " : chiffre entier : " + cell.text)
@@ -857,20 +874,28 @@ func terrain2d(view: Control) -> void:
 	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
 	var banc: Button = between.find_child("MatchBetweenBench", true, false)
 	check(banc != null and banc.is_visible_in_tree() and between.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
-	between.choisir_onglet("Mon XV")
-	await settle(2)
-	check(between.xv.get_parent().is_visible_in_tree() and not between.fil.get_parent().is_visible_in_tree(), "Onglet Mon XV affiché")
+	between.choisir_disposition("staff")
+	await settle(4)
+	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Banc du staff : Mon XV et le fil affichés ensemble")
 	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	(rangs_xv[9] as Button).pressed.emit()
 	await settle(4)
 	check(view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 9, "Un joueur de Mon XV ouvre le banc sur lui (poste %d)" % view.selected_slot)
 	view._fermer_tiroir()
-	between.choisir_onglet("Chiffres")
-	await settle(2)
-	check(between.tableau.get_child_count() >= rangs.size(), "Onglet Chiffres : tous les chiffres du moteur")
-	between.choisir_onglet("Le fil")
-	await layout(view, Vector2i(1280, 720))
-	await layout(view, Vector2i(1920, 1080))
+	var menu: MenuButton = between.find_child("MatchBetweenMore", true, false)
+	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
+	# Mise en page : enregistrée dans les réglages, reprise par un nouvel écran.
+	between.choisir_disposition("mix")
+	await settle(4)
+	check(app.user_preferences.data.get("match_entracte") == "mix", "La mise en page choisie est enregistrée : " + str(app.user_preferences.last_error))
+	var repris: Control = load("res://ui/contextual/match_between.gd").new()
+	view.add_child(repris)
+	check(repris.disposition == "mix", "Un nouvel écran reprend la mise en page enregistrée")
+	repris.queue_free()
+	for vue: String in ["staff", "mix", "tele"]:
+		await layout(view, Vector2i(1280, 720), vue)
+		await layout(view, Vector2i(1920, 1080), vue)
+	between.choisir_disposition("staff")
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))
