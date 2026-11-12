@@ -145,12 +145,13 @@ function domination(lignes){
   if(l.kind==='carry'&&l.equipe!==null&&l.x!==null&&l.depuis!==null&&Math.abs(l.x-l.depuis)>=22)a.points+=l.equipe===0?.35:-.35;
   parMinute.set(m,a);
  }
- const courbe=[];let lisse=0;
+ const courbe=[];let lisse=0,premiere=true;
  for(let m=1;m<=fin;m++){
   const a=parMinute.get(m);
   if(!a){lisse*=.82;courbe.push(Math.round(lisse*100));continue}
   const brut=Math.max(-1,Math.min(1,(a.n?a.terrain/a.n*.6:0)+(a.possession/Math.max(1,a.n||1))*.25+a.points*.6));
-  lisse=lisse*.55+brut*.45;
+  // Première minute jouée : pas de lissage (la courbe se lit dès le coup d'envoi).
+  lisse=premiere?brut:lisse*.55+brut*.45;premiere=false;
   courbe.push(Math.round(Math.max(-1,Math.min(1,lisse))*100));
  }
  return {minutes:courbe,miTemps};
@@ -278,19 +279,26 @@ function project(model,niveau,lire,options={}){
  // Tableau de bord de l'entracte : valeurs chiffrées des deux équipes (barres comparées).
  const rugby=chiffresRugby(vues,events),stats=passe?.stats||[];
  const pourcent=(a,b)=>a+b>0?[Math.round(a/(a+b)*100),100-Math.round(a/(a+b)*100)]:[50,50];
- const possessionTotale=(stats[0]?.possession||0)+(stats[1]?.possession||0);
+ // Possession et occupation lues dans le journal montré (faits joués, bornés) : les compteurs
+ // par minute du moteur donnent 100 % / 0 % en début de match. Pas de pourcentage avant
+ // quelques faits ; les compteurs restent masqués (« — ») tant qu'ils sont nuls en début de match.
+ const joues=vues.filter(l=>jouable(l)&&!SANS_IMAGE.has(l.kind));
+ const tenus=[0,1].map(s=>joues.filter(l=>l.possession===s).length);
+ const occupes=[joues.filter(l=>l.x!==null&&l.x>50).length,joues.filter(l=>l.x!==null&&l.x<50).length];
+ const tot=a=>a[0]+a[1],minuteVue=derniere?.minute??0,MIN_FAITS=6;
+ const compte=(rang)=>({...rang,vide:rang.valeurs[0]+rang.valeurs[1]===0&&minuteVue<10});
  const tableau=[
-  {cle:'possession',label:'Possession',valeurs:pourcent(stats[0]?.possession||0,stats[1]?.possession||0),unite:'%',vide:!possessionTotale},
-  {cle:'occupation',label:'Occupation',valeurs:possessionTotale?[Math.round((stats[0]?.territory||0)/possessionTotale),Math.round((stats[1]?.territory||0)/possessionTotale)]:[50,50],unite:'%',vide:!possessionTotale},
-  {cle:'metres',label:'Mètres gagnés',valeurs:rugby.map(e=>Math.round(e.metres))},
-  {cle:'franchissements',label:'Franchissements',valeurs:rugby.map(e=>e.franchissements)},
-  {cle:'plaquages',label:'Plaquages réussis',valeurs:rugby.map(e=>e.plaquesStoppes)},
-  {cle:'plaquages_manques',label:'Plaquages manqués',valeurs:[0,1].map(s=>rugby[1-s].franchissements+rugby[1-s].essaisCourant),inverse:true},
-  {cle:'melees',label:'Mêlées gagnées',valeurs:[0,1].map(s=>stats[s]?.scrumsWon||0),sur:[0,1].map(s=>stats[s]?.scrums||0)},
-  {cle:'touches',label:'Touches gagnées',valeurs:[0,1].map(s=>stats[s]?.lineoutsWon||0),sur:[0,1].map(s=>stats[s]?.lineouts||0)},
-  {cle:'recuperations',label:'Ballons récupérés',valeurs:rugby.map(e=>e.recuperations)},
-  {cle:'penalites',label:'Pénalités concédées',valeurs:[0,1].map(s=>stats[s]?.penalties||0),inverse:true},
-  {cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true}
+  {cle:'possession',label:'Possession',valeurs:pourcent(tenus[0],tenus[1]),unite:'%',vide:tot(tenus)<MIN_FAITS},
+  {cle:'occupation',label:'Occupation',valeurs:pourcent(occupes[0],occupes[1]),unite:'%',vide:tot(occupes)<MIN_FAITS},
+  compte({cle:'metres',label:'Mètres gagnés',valeurs:rugby.map(e=>Math.round(e.metres))}),
+  compte({cle:'franchissements',label:'Franchissements',valeurs:rugby.map(e=>e.franchissements)}),
+  compte({cle:'plaquages',label:'Plaquages réussis',valeurs:rugby.map(e=>e.plaquesStoppes)}),
+  compte({cle:'plaquages_manques',label:'Plaquages manqués',valeurs:[0,1].map(s=>rugby[1-s].franchissements+rugby[1-s].essaisCourant),inverse:true}),
+  compte({cle:'melees',label:'Mêlées gagnées',valeurs:[0,1].map(s=>stats[s]?.scrumsWon||0),sur:[0,1].map(s=>stats[s]?.scrums||0)}),
+  compte({cle:'touches',label:'Touches gagnées',valeurs:[0,1].map(s=>stats[s]?.lineoutsWon||0),sur:[0,1].map(s=>stats[s]?.lineouts||0)}),
+  compte({cle:'recuperations',label:'Ballons récupérés',valeurs:rugby.map(e=>e.recuperations)}),
+  compte({cle:'penalites',label:'Pénalités concédées',valeurs:[0,1].map(s=>stats[s]?.penalties||0),inverse:true}),
+  compte({cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true})
  ];
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',camp:etat.camp??-1,
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},

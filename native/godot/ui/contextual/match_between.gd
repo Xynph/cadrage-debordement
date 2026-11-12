@@ -23,6 +23,8 @@ signal score_joue(score: Array)
 
 ## Chiffres clés sous le terrain (le reste dans l'onglet « Chiffres »).
 const CLES := ["possession", "occupation", "plaquages", "franchissements", "penalites"]
+## Chiffres qui prennent la place d'un chiffre clé encore vide.
+const RELAIS := ["metres", "melees", "touches", "recuperations", "en_avant"]
 const ONGLETS := ["Le fil", "Mon XV", "Chiffres"]
 const FATIGUE := 55
 const EPUISE := 40
@@ -75,19 +77,25 @@ class Domination extends Control:
 		var zone := Rect2(Vector2(marge.x, marge.y), size - Vector2(marge.x + 6.0 * densite, marge.y * 2.0))
 		if zone.size.x < 40.0 or zone.size.y < 20.0: return
 		var milieu := zone.position.y + zone.size.y * 0.5
-		var fin := maxi(80, minutes.size())
+		# Échelle qui s'élargit avec le match (20, 40, 60 puis 80 minutes) : la courbe se lit dès
+		# les premières minutes au lieu d'occuper un coin d'un axe de 80 minutes.
+		var fin := clampi(int(ceil(float(minutes.size() + 2) / 20.0)) * 20, 20, 80)
+		fin = maxi(fin, minutes.size())
 		var pas := zone.size.x / float(fin)
 		draw_rect(zone, Color(1, 1, 1, 0.03))
 		draw_line(Vector2(zone.position.x, milieu), Vector2(zone.end.x, milieu), Color(S.MUTED, 0.45), 1.0)
-		for repere in [20, 40, 60]:
+		var graduation := 5 if fin <= 20 else 10 if fin <= 40 else 20
+		for repere in range(graduation, fin, graduation):
 			var x := zone.position.x + float(repere) * pas
-			draw_dashed_line(Vector2(x, zone.position.y), Vector2(x, zone.end.y), Color(S.MUTED, 0.25 if repere != 40 else 0.5), 1.0, 4.0)
+			draw_dashed_line(Vector2(x, zone.position.y), Vector2(x, zone.end.y), Color(S.MUTED, 0.5 if repere == 40 else 0.25), 1.0, 4.0)
+			draw_string(police, Vector2(x - 20.0, zone.end.y + corps * 0.55), "%d'" % repere, HORIZONTAL_ALIGNMENT_CENTER, 40.0, maxi(9, roundi(corps * 0.55)), Color(S.MUTED, 0.7))
 		for cote in 2:
 			draw_string(police, Vector2(0, milieu + (-zone.size.y * 0.22 if cote == 0 else zone.size.y * 0.22 + corps * 0.7)), str(sigles[cote]), HORIZONTAL_ALIGNMENT_LEFT, marge.x - 4.0, corps, couleurs[cote].lightened(0.15))
 		for n in minutes.size():
 			var v := clampf(float(minutes[n]) / 100.0, -1.0, 1.0)
 			if absf(v) < 0.02: continue
 			var h := v * zone.size.y * 0.5
+			if absf(h) < 3.0: h = signf(v) * 3.0
 			var barre := Rect2(Vector2(zone.position.x + n * pas + pas * 0.12, milieu - maxf(h, 0.0)), Vector2(maxf(1.0, pas * 0.76), absf(h)))
 			draw_rect(barre, Color(couleurs[0 if v > 0.0 else 1], 0.92))
 		# Points marqués : un jalon à la minute, du côté de l'équipe qui marque.
@@ -387,6 +395,12 @@ func _fait_joue(item: Dictionary) -> void:
 	if marque is Array and (marque as Array).size() == 2: score_joue.emit(marque)
 
 ## Score à montrer tant que le terrain rejoue des faits en retard sur le moteur, sinon vide.
+## Minute à afficher tant que le terrain rejoue des faits en retard sur le moteur (« 1′ »), sinon vide :
+## l'horloge du bandeau suit ce que montre le terrain, comme le score.
+func horloge_differee() -> String:
+	if terrain == null or not terrain.en_retard(): return ""
+	return terrain.horloge_montree()
+
 func score_differe() -> Array:
 	if terrain == null or not terrain.en_retard() or terrain.joue.is_empty(): return []
 	var marque: Variant = terrain.joue.get("score")
@@ -459,9 +473,16 @@ func _remplir_chiffres(direct: Dictionary, live: Dictionary) -> void:
 	S.clear(chiffres)
 	S.clear(tableau)
 	var rangs: Array = direct.get("tableau", [])
+	# Cinq chiffres clés : d'abord ceux qui disent déjà quelque chose (une stat encore vide en
+	# début de match cède sa place), sinon les libellés sans valeur (« — »).
+	var par_cle := {}
+	for rang: Dictionary in rangs: par_cle[str(rang.get("cle", ""))] = rang
+	var choisis: Array = []
+	for cle: String in CLES + RELAIS:
+		if par_cle.has(cle) and not par_cle[cle].get("vide", false) and choisis.size() < CLES.size(): choisis.append(par_cle[cle])
 	for cle: String in CLES:
-		for rang: Dictionary in rangs:
-			if str(rang.get("cle", "")) == cle: _ligne_chiffre(chiffres, rang)
+		if par_cle.has(cle) and par_cle[cle].get("vide", false) and choisis.size() < CLES.size(): choisis.append(par_cle[cle])
+	for rang: Dictionary in choisis: _ligne_chiffre(chiffres, rang)
 	var equipes: Array = live.get("teams", [])
 	var entete := S.G.h(px(12))
 	for cote in 2:
@@ -568,7 +589,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		if str(alerte.alerte) in ["épuisé", "fatigué"]: texte = "N° %d %s : %d %% d’énergie, à surveiller." % [int(alerte.poste) + 1, str(alerte.nom), roundi(float(alerte.condition))]
 		if str(alerte.alerte) == "épuisé": texte = "N° %d %s est à bout (%d %%) : un remplacement s’impose." % [int(alerte.poste) + 1, str(alerte.nom), roundi(float(alerte.condition))]
 		var etiquette := _texte(texte, 26, Color("f0b080"), true)
-		etiquette.max_lines_visible = 1 if _densite < 0.7 else 2
+		etiquette.max_lines_visible = 2
 		etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		etiquette.tooltip_text = texte
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -580,10 +601,10 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 			if not str(raison).is_empty(): raisons.append(str(raison))
 	var lecture := _lecture(direct)
 	if not lecture.is_empty(): raisons.push_front(lecture)
-	for raison: String in raisons.slice(0, maxi(1, 3 - lignes)):
+	for raison: String in raisons.slice(0, maxi(1, (2 if _densite < 0.7 else 3) - lignes)):
 		var texte := _texte(raison, 26, S.TEXT, true)
-		# Petit écran : une ligne par raison, le texte entier reste en infobulle.
-		texte.max_lines_visible = 1 if _densite < 0.7 else 2
+		# Retour à la ligne (deux lignes, trois sur grand écran) ; le texte entier reste en infobulle.
+		texte.max_lines_visible = 2 if _densite < 0.7 else 3
 		texte.tooltip_text = raison
 		texte.mouse_filter = Control.MOUSE_FILTER_PASS
 		texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS

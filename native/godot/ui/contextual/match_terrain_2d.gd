@@ -147,6 +147,11 @@ func prochain_i() -> int:
 	if not _file.is_empty(): return int(_file[0].get("i", -1))
 	return -1
 
+## Horloge du fait que le terrain montre (en cours, sinon le dernier joué), « » si aucun.
+func horloge_montree() -> String:
+	var item: Dictionary = _courant if not _courant.is_empty() else joue
+	return str(item.get("horloge", ""))
+
 func file_attente() -> int:
 	return _file.size() + (0 if _courant.is_empty() else 1)
 
@@ -426,6 +431,29 @@ func _draw() -> void:
 			draw_arc(ou, px(11), 0.0, TAU, 16, Color(1, 1, 1, 0.8), maxf(1.0, px(2)), true)
 	_dessiner_jeu(police, e)
 
+## Centres dessinés : les pastilles qui se chevauchent sont un peu écartées à l'affichage
+## (numéros lisibles) ; les places du moteur (`places`) ne changent pas. Le porteur reste au ballon.
+func _ecartees(ordre: Array, r: float, porteur: String) -> Dictionary:
+	var centres := {}
+	for cle: String in ordre: centres[cle] = point(places[cle].x, places[cle].y)
+	var voulu := r * 1.9
+	for passe in 3:
+		for a in ordre.size():
+			for b in range(a + 1, ordre.size()):
+				var ca: String = ordre[a]
+				var cb: String = ordre[b]
+				var ecart: Vector2 = centres[cb] - centres[ca]
+				var d := ecart.length()
+				if d >= voulu: continue
+				var sens := ecart / d if d > 0.01 else Vector2(0, 1 if (a + b) % 2 == 0 else -1)
+				var pousse := (voulu - d) * 0.5
+				if ca == porteur: centres[cb] += sens * pousse * 2.0
+				elif cb == porteur: centres[ca] -= sens * pousse * 2.0
+				else:
+					centres[ca] -= sens * pousse
+					centres[cb] += sens * pousse
+	return centres
+
 func _dessiner_jeu(police: Font, e: float) -> void:
 	var r := rayon()
 	# Traînée du ballon : où il vient d'aller.
@@ -440,13 +468,14 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	# Ombres, puis pastilles : défense dessous, attaque dessus.
 	var ordre: Array = places.keys()
 	ordre.sort_custom(func(a: String, b: String): return (1 if a.begins_with("%d:" % possession) else 0) < (1 if b.begins_with("%d:" % possession) else 0))
+	var centres := _ecartees(ordre, r, porteur)
 	for cle: String in ordre:
-		draw_circle(point(places[cle].x, places[cle].y) + Vector2(r * 0.18, r * 0.22), r, Color(0, 0, 0, 0.28))
+		draw_circle(centres[cle] + Vector2(r * 0.18, r * 0.22), r, Color(0, 0, 0, 0.28))
 	var taille_numero := roundi(clampf(r * 1.15, 10.0, 34.0))
 	for cle: String in ordre:
 		var cote := int(cle.get_slice(":", 0))
 		var poste := int(cle.get_slice(":", 1))
-		var centre := point(places[cle].x, places[cle].y)
+		var centre: Vector2 = centres[cle]
 		draw_circle(centre, r, couleurs[cote])
 		draw_arc(centre, r, 0.0, TAU, 24, Color(encres[cote], 0.55), maxf(1.0, r * 0.12), true)
 		if cote == camp: draw_arc(centre, r + maxf(1.5, r * 0.2), 0.0, TAU, 24, Color(S.GOLD, 0.5), maxf(1.0, r * 0.12), true)

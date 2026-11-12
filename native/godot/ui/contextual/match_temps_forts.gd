@@ -467,6 +467,9 @@ func _habiller_horloge() -> void:
 		part = lerpf(_retenu_part, 0.999, k)
 		reste = maxf(0.0, _duree_entracte() - _entracte)
 	var heure := _horloge_inter.trim_suffix("′").strip_edges()
+	# Le terrain 2D rejoue encore des faits en retard : l'horloge suit la minute qu'il montre.
+	var differee: String = between.horloge_differee().trim_suffix("′").strip_edges()
+	if not differee.is_empty() and differee.replace("+", "").is_valid_int(): heure = differee
 	if not heure.is_empty() and heure.replace("+", "").is_valid_int():
 		view.clock.text = "%s:%02d" % [heure, int(part * 60.0)]
 	var texte := ""
