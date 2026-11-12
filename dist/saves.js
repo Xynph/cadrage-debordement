@@ -7,7 +7,7 @@ const SAVE_FORMAT='cadrage-debordement-save',SAVE_LIMIT=8*1024*1024,WORLD_SAVE_L
 function saveUtf8Bytes(text){let bytes=0;for(let i=0;i<text.length;i++){const c=text.charCodeAt(i);if(c<128)bytes++;else if(c<2048)bytes+=2;else if(c>=0xd800&&c<=0xdbff&&text.charCodeAt(i+1)>=0xdc00&&text.charCodeAt(i+1)<=0xdfff){bytes+=4;i++;}else bytes+=3;}return bytes;}
 let pendingSave=null,saveReadToken=0,lastSaveError=false,validatingStartup=true,loadedSaveText=null,loadSaveFailure='';
 function saveError(message){throw new Error(message)}
-function saveCheck(ok,message='Le fichier contient des données de carrière incohérentes.'){if(!ok)saveError(message)}
+function saveCheck(ok,message='Le fichier contient des données de carrière incohérentes.'){if(!ok)saveError(message+' @'+String(new Error().stack).split('\n').slice(2,6).join(' | '))}
 // Stable intrinsic references avoid repeated global lookups in the VM hot path.
 const nativeSaveFinite=Number.isFinite,nativeSaveInteger=Number.isInteger,nativeSaveIsArray=Array.isArray;
 function saveObject(v){return v!==null&&typeof v==='object'&&!nativeSaveIsArray(v)}
