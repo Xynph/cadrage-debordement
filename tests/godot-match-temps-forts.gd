@@ -753,34 +753,47 @@ func terrain2d(view: Control) -> void:
 	await settle(30)
 	check(terrain.images == images and fige.keys().all(func(c: String): return (terrain.places[c] as Vector2).is_equal_approx(fige[c])), "Pause : aucune pastille ne bouge")
 	await command("pause", {"paused": false})
-	# Pendant l'entracte : les pastilles bougent, les faits du moteur s'enchaînent.
+	# Pendant les entractes : les pastilles bougent, les faits du moteur s'enchaînent. Plusieurs
+	# entractes : un temps fort décidé tout de suite peut laisser un entracte sans fait montrable.
 	var debut := Time.get_ticks_msec()
-	var depart: Dictionary = terrain.places.duplicate()
 	var deplacement := 0.0
 	var ballons := {}
 	var fil_en_avance := 0
 	var score_faux := 0
-	# Plus haut indice du journal montré pendant l'entracte (terrain, fil, repères) : le temps fort
-	# suivant doit commencer après (« on découvre l'action en la regardant »).
-	var montre_max := -1
-	while regie.etat != regie.JEU and Time.get_ticks_msec() - debut < 60000:
-		await process_frame
-		if regie.etat == regie.INTER and between.visible:
-			montre_max = maxi(montre_max, terrain.joue_i)
-			for ligne: Dictionary in between._lignes: montre_max = maxi(montre_max, int(ligne.get("i", -1)))
-		ballons[str(terrain.ballon.round())] = true
-		# Le fil ne dit jamais un fait que le terrain n'a pas encore joué.
-		if terrain.en_retard() and terrain.joue_i >= 0:
-			for ligne: Dictionary in between._lignes:
-				if int(ligne.get("i", -1)) > terrain.joue_i:
-					for enfant: Node in between.fil.get_children():
-						if enfant is HBoxContainer and (enfant.get_child(2) as Label).text == str(ligne.get("texte", "")): fil_en_avance += 1
-		var differe: Array = between.score_differe()
-		if not differe.is_empty() and view.score.text != "%d — %d" % [int(differe[0]), int(differe[1])]: score_faux += 1
-	for cle: String in depart:
-		if terrain.places.has(cle): deplacement += (terrain.places[cle] as Vector2).distance_to(depart[cle])
-	var suivant: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
-	check(regie.etat == regie.JEU and not suivant.is_empty() and montre_max < int(suivant[-1].get("debut", -1)), "Rien du temps fort suivant n'a été montré pendant l'entracte (montré jusqu'à %d, temps fort à partir de %d)" % [montre_max, int(suivant[-1].get("debut", -1)) if not suivant.is_empty() else -1])
+	var devoile := 0
+	var entractes := 0
+	while entractes < 5 and (ecarts.faits < 4 or entractes < 2) and Time.get_ticks_msec() - debut < 300000:
+		check(await until(func(): return regie.etat == regie.INTER and between.visible, 120000), "Entracte %d" % (entractes + 1))
+		if app.model.live.paused and regie.arret.is_empty() and not app.model.live.finished: await command("pause", {"paused": false})
+		if not regie.arret.is_empty(): between.reprise_demandee.emit()
+		entractes += 1
+		# Plus haut indice du journal montré pendant l'entracte (terrain, fil) : le temps fort
+		# suivant doit commencer après (« on découvre l'action en la regardant »).
+		var montre_max := -1
+		var avant: Dictionary = terrain.places.duplicate()
+		var t0 := Time.get_ticks_msec()
+		while regie.etat != regie.JEU and Time.get_ticks_msec() - t0 < 90000:
+			await process_frame
+			if app.model.live.get("finished", false) or app.model.live.get("atBreak", false): break
+			if regie.etat == regie.INTER and between.visible:
+				montre_max = maxi(montre_max, terrain.joue_i)
+				for ligne: Dictionary in between._lignes: montre_max = maxi(montre_max, int(ligne.get("i", -1)))
+			for cle: String in terrain.places:
+				if avant.has(cle): deplacement += (terrain.places[cle] as Vector2).distance_to(avant[cle])
+			avant = terrain.places.duplicate()
+			ballons[str(terrain.ballon.round())] = true
+			# Le fil ne dit jamais un fait que le terrain n'a pas encore joué.
+			if terrain.prochain_i() >= 0:
+				for enfant: Node in between.fil.get_children():
+					if not enfant.is_queued_for_deletion() and int(enfant.get_meta("i", -1)) >= terrain.prochain_i():
+						fil_en_avance += 1
+						if fil_en_avance < 4: print("FIL_AVANCE ", enfant.get_meta("i", -1), " prochain=", terrain.prochain_i(), " joue=", terrain.joue_i)
+			var differe: Array = between.score_differe()
+			if not differe.is_empty() and view.score.text != "%d — %d" % [int(differe[0]), int(differe[1])]: score_faux += 1
+		var suivant: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
+		if regie.etat == regie.JEU and not suivant.is_empty() and montre_max >= int(suivant[-1].get("debut", -1)): devoile += 1
+		print("ENTRACTE2D ", entractes, " montre_max=", montre_max, " temps_fort_debut=", int(suivant[-1].get("debut", -1)) if not suivant.is_empty() else -1, " faits=", ecarts.faits)
+	check(entractes >= 2 and devoile == 0, "Rien du temps fort suivant n'a été montré pendant les %d entractes (%d dévoilé(s))" % [entractes, devoile])
 	check(deplacement > 30.0, "Les pastilles bougent pendant l'entracte (%.0f m cumulés)" % deplacement)
 	check(ballons.size() >= 4, "Le ballon circule (%d positions)" % ballons.size())
 	check(ecarts.faits >= 1, "Des faits du moteur sont rejoués sur le terrain (%d)" % ecarts.faits)
@@ -834,7 +847,8 @@ func terrain2d(view: Control) -> void:
 	between.choisir_onglet("Mon XV")
 	await settle(2)
 	check(between.xv.get_parent().is_visible_in_tree() and not between.fil.get_parent().is_visible_in_tree(), "Onglet Mon XV affiché")
-	(lignes_xv[9] as Button).pressed.emit()
+	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
+	(rangs_xv[9] as Button).pressed.emit()
 	await settle(4)
 	check(view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 9, "Un joueur de Mon XV ouvre le banc sur lui (poste %d)" % view.selected_slot)
 	view._fermer_tiroir()

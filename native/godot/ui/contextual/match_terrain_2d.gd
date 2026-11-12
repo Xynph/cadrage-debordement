@@ -141,6 +141,12 @@ func recaler(indice: int) -> void:
 func en_retard() -> bool:
 	return not _file.is_empty() or not _courant.is_empty()
 
+## Indice du prochain fait encore à jouer (le fil s'arrête avant lui), -1 si aucun.
+func prochain_i() -> int:
+	if not _courant.is_empty(): return int(_courant.get("i", -1))
+	if not _file.is_empty(): return int(_file[0].get("i", -1))
+	return -1
+
 func file_attente() -> int:
 	return _file.size() + (0 if _courant.is_empty() else 1)
 

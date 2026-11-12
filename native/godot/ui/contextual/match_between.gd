@@ -399,12 +399,14 @@ func _remplir_fil() -> void:
 	var visibles: Array = []
 	for entree: Dictionary in _lignes:
 		var i := int(entree.get("i", -1))
-		if terrain.en_retard() and i > terrain.joue_i and terrain.joue_i >= 0: continue
+		var prochain := terrain.prochain_i()
+		if prochain >= 0 and i >= prochain: continue
 		visibles.append(entree)
 	for index in range(visibles.size() - 1, -1, -1):
 		var entree: Dictionary = visibles[index]
 		var dernier := index == visibles.size() - 1
 		var ligne := S.G.h(px(12))
+		ligne.set_meta("i", int(entree.get("i", -1)))
 		var pastille := ColorRect.new()
 		pastille.custom_minimum_size = Vector2(px(8), 0)
 		var equipe := int(entree.get("equipe", -1)) if entree.get("equipe") != null else -1
