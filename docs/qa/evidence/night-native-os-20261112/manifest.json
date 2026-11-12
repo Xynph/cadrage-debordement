@@ -1,0 +1,168 @@
+{
+  "format": 1,
+  "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+  "scope": "Linux X11/XTest native keyboard Return + AltLeft only; not a full SDK campaign or Windows receipt.",
+  "checks": 47,
+  "failures": [],
+  "exit_code": 0,
+  "exit_code_attribution": "Fin du processus code0 observée par root ; le rapport brut compte47/0.",
+  "elapsed_ms": 43908,
+  "source_profile_files_hash_only": [
+    {
+      "name": "donnees-precedentes.json",
+      "sha256": "dc7f7603d528e03fc64e3d3d27cef810fbd114c7f4defe69f237950a16c2d00e",
+      "bytes": 5707962,
+      "unchanged": true
+    },
+    {
+      "name": "donnees.json",
+      "sha256": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b",
+      "bytes": 5708097,
+      "unchanged": true
+    },
+    {
+      "name": "guide.json",
+      "sha256": "20e0bbb5066230197f9ee8095ff922d1ffe39584b85dc1c77a814602f6656677",
+      "bytes": 196,
+      "unchanged": true
+    }
+  ],
+  "source_code_files_verified": 5,
+  "copied_exact_scripts": true,
+  "qualified_files": [
+    {
+      "path": "qualified/report.json",
+      "source_path": "/workspace/work/native-os-input/evidence/report.json",
+      "bytes": 7341,
+      "sha256": "38330d7815f7c7bf37611f9018c555be57417281f44f547d4db720807bb7672e"
+    },
+    {
+      "path": "qualified/state.json",
+      "source_path": "/workspace/work/native-os-input/evidence/state.json",
+      "bytes": 7209,
+      "sha256": "175b91de0e6e9bf2caa2eb6cda764fc48f69de1b6701251b341b1e68eb761957"
+    },
+    {
+      "path": "qualified/godot.log",
+      "source_path": "/workspace/work/native-os-input/godot.log",
+      "bytes": 537,
+      "sha256": "73b3ed3466719c63284fa9b306282e663075ffaea9b86a76ebbacd9629765d44"
+    },
+    {
+      "path": "qualified/os-input-actions.jsonl",
+      "source_path": "/workspace/work/native-os-input/os-input-actions.jsonl",
+      "bytes": 2482,
+      "sha256": "fd203f9d63cf7f8f5629baabee279d4acadfc5ceddd8b003d63548c5461153d8"
+    },
+    {
+      "path": "qualified/provenance.json",
+      "source_path": "/workspace/work/native-os-input/provenance.json",
+      "bytes": 2117,
+      "sha256": "68c8c6b078609016300d991e951f50cbcf23945da95d58bb74b26eb822ff80e6"
+    },
+    {
+      "path": "desktop-control-status.json",
+      "source_path": "/workspace/work/native-os-input/desktop-control-status.json",
+      "bytes": 413,
+      "sha256": "f0a3dd37e19db32d1c6e60c69c2f38a15537dedb4bb97339e4ea25d57aa45a3f"
+    },
+    {
+      "path": "scripts/probe.gd",
+      "source_path": "/workspace/work/native-os-input/probe.gd",
+      "bytes": 10748,
+      "sha256": "f5b08cecb2f1092e6a9779f92bcd25046848f29a558628e9343a5ff7f8e2e8dd"
+    },
+    {
+      "path": "scripts/oskeys.py",
+      "source_path": "/workspace/work/native-os-input/oskeys.py",
+      "bytes": 4464,
+      "sha256": "18f26b67a933513d6218d0b96831165ec24c6a362f05e3fd8125e333a287b81e"
+    },
+    {
+      "path": "diagnostic/array-diagnostic.gd",
+      "source_path": "/workspace/work/native-os-input/array-diagnostic.gd",
+      "bytes": 295,
+      "sha256": "b803705ebb51f44c7168f5b2f9c64e2be200b20321e6837b7ae8d43524d20678"
+    },
+    {
+      "path": "diagnostic/array-diagnostic.log",
+      "source_path": "/workspace/work/native-os-input/array-diagnostic.log",
+      "bytes": 203,
+      "sha256": "435bb6fd92e2623c03e35287661f61645dcdeb583d259447c8bffe91aea29c67"
+    }
+  ],
+  "images": [
+    {
+      "path": "images/ready-2560.png",
+      "source_path": "/workspace/work/native-os-input/evidence/ready-2560.png",
+      "bytes": 634412,
+      "sha256": "eaad2f938f3cbe6d820d9f74a2d430089e9d8cdb8b6d89a65dfc4ac7c70bceff",
+      "width": 2560,
+      "height": 1440,
+      "phase": "ready-2560",
+      "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+      "edited": false
+    },
+    {
+      "path": "images/modal-2560.png",
+      "source_path": "/workspace/work/native-os-input/evidence/modal-2560.png",
+      "bytes": 591269,
+      "sha256": "2ca456167f046d12fbed9e1f453e6743f08c792ac22d4315b51bbd235ddaf9f7",
+      "width": 2560,
+      "height": 1440,
+      "phase": "modal-2560",
+      "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+      "edited": false
+    },
+    {
+      "path": "images/returned-2560.png",
+      "source_path": "/workspace/work/native-os-input/evidence/returned-2560.png",
+      "bytes": 634412,
+      "sha256": "eaad2f938f3cbe6d820d9f74a2d430089e9d8cdb8b6d89a65dfc4ac7c70bceff",
+      "width": 2560,
+      "height": 1440,
+      "phase": "returned-2560",
+      "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+      "edited": false
+    }
+  ],
+  "history": {
+    "label": "red-array-comparison",
+    "checks": 47,
+    "failures": [
+      "Archive réelle unique et score 15–20 conservé"
+    ],
+    "qualified": false,
+    "images_published": false,
+    "files": [
+      {
+        "path": "history/red-array-comparison/godot.log",
+        "source_path": "/workspace/work/native-os-input/history/red-array-comparison/godot.log",
+        "bytes": 591,
+        "sha256": "62a89accd33a738e08cc003c7269fc664636315d1b128204389aeafad2e64b37"
+      },
+      {
+        "path": "history/red-array-comparison/os-input-actions.jsonl",
+        "source_path": "/workspace/work/native-os-input/history/red-array-comparison/os-input-actions.jsonl",
+        "bytes": 2509,
+        "sha256": "7ee1d0f83cb19a7374bfa1e95be1a0b1647ed3da77ecd9deab49db691ca62a51"
+      },
+      {
+        "path": "history/red-array-comparison/report.json",
+        "source_path": "/workspace/work/native-os-input/history/red-array-comparison/evidence/report.json",
+        "bytes": 7037,
+        "sha256": "bd13c68ef208a6b7304adbf769efe16071dabe33d5dc241ec0152daf4901dcd3"
+      },
+      {
+        "path": "history/red-array-comparison/state.json",
+        "source_path": "/workspace/work/native-os-input/history/red-array-comparison/evidence/state.json",
+        "bytes": 6903,
+        "sha256": "dc5ee95f99eef38f6573f81f2f34baeda22818c320f3456849b7f3cf0920e0e0"
+      }
+    ]
+  },
+  "documentation": {
+    "path": "README.md",
+    "sha256": "98b9d4fb06810020bf426d27aeb5815911ea853abec45bd5fecf3c7c52c01b72"
+  }
+}

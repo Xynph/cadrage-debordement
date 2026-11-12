@@ -1,0 +1,23 @@
+{
+  "seed": 731,
+  "source_commit": "1840c1a0",
+  "stage": "preparation_before_common_checkpoint",
+  "week": 5,
+  "valid": false,
+  "errors": [
+    "Choisissez 15 titulaires et 8 remplaçants.",
+    "Remplaçant 18 à compléter."
+  ],
+  "coverage": {
+    "slots": [
+      18
+    ],
+    "places": 2,
+    "weeklySalary": 2500,
+    "totalWeeklySalary": 2500
+  },
+  "professionals": 40,
+  "places": 2,
+  "profileSha256": "f371e27b807a064be36766890be6b312c0039f0344125afbf71a3a4a56f8a1ca",
+  "scope": "Actual public selection projection at the refusal. No fixture, injury, qualification, capacity, finances or RNG edited."
+}

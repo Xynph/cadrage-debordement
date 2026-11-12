@@ -6,6 +6,7 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
+const Link = preload("res://ui/entity_link.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const ROW_HEIGHT := 38
 const WIDTH := 2248
@@ -34,6 +35,39 @@ var table_scroll: ScrollContainer
 var direction: Button
 var position_filter: OptionButton
 var sort_headers: Dictionary = {}
+
+static func _target_report(owner_app: Control, id: Variant) -> Dictionary:
+	if str(id).is_empty(): return {}
+	var found: Dictionary = {}
+	for report: Dictionary in owner_app.model.get("decisions", {}).get("recruitment", {}).get("reports", []):
+		if str(report.get("id", "")) != str(id): continue
+		if not found.is_empty(): return {}
+		found = report
+	return found
+
+static func target_available(owner_app: Control, id: Variant) -> bool:
+	return not _target_report(owner_app, id).is_empty()
+
+static func open_target(owner_app: Control, id: Variant) -> bool:
+	var report := _target_report(owner_app, id)
+	if report.is_empty(): return false
+	var existing := owner_app.find_child("RecruitmentReport", false, false) as Window
+	if existing != null and not existing.is_queued_for_deletion() and existing.visible: return false
+	var view := Decisions.dialog(owner_app, "Rapport d’observation", "RecruitmentReport", 920)
+	view[0].set_meta("navigation_read_only", true)
+	view[0].set_meta("entity_kind", "report")
+	view[0].set_meta("entity_id", str(report.id))
+	# This archived report remains readable even when the player has left the
+	# current market. Link to a current dossier only if that projection exists.
+	var player_id := str(report.get("playerId", ""))
+	var current: Array = owner_app.model.get("market", []).filter(func(player: Dictionary): return str(player.get("id", "")) == player_id)
+	if not player_id.is_empty() and current.size() == 1:
+		var link := Link.button(owner_app, "Dossier actuel · " + str(current[0].get("name", "")), {"kind":"market", "id":player_id}, "ReportCurrentPlayer", view[0])
+		link.clip_text = true
+		view[1].add_child(link)
+	Decisions.scout_report(view[1], report)
+	Dialogs.show_centered(view[0], Vector2i(920, 565))
+	return true
 
 static func build(owner_app: Control, canvas: Control) -> void:
 	var page: Control = load("res://ui/immersive08/recruitment_canvas.gd").new()
@@ -369,6 +403,10 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		D.text(row, 1043, 25, Sort.report_status(report), 17, C.MUTED, 500, 112)
 		var status := _report_label(item)
 		_badge(row, Rect2(1179, 5, 205, 27), status, _report_color(item),17)
+	if tab != 3 and not report.is_empty():
+		_reading_area(row,Rect2(1039,0,128,ROW_HEIGHT),{"kind":"report","id":str(report.get("id",""))},"MarketReportLink_"+str(report.get("id","")).validate_node_name(),"Rapport d’observation · " + str(item.get("name","")))
+	var entity_target := {"kind":"report", "id":str(item.id)} if tab == 3 else {"kind":"market", "id":player_id}
+	_reading_area(row,Rect2(60,0,426 if tab == 3 else 257,ROW_HEIGHT),entity_target,"MarketEntity_"+str(item.id).validate_node_name(),str(item.get("name","Dossier")))
 	row.pressed.connect(func():
 		state["report_id" if tab == 3 else "player_id"] = str(item.id)
 		var target := str(row.name)
@@ -396,6 +434,9 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 	_portrait(panel, Rect2(16, 12, 345, 240), player, str(person.get("playerId", player_id)), true)
 	D.text(panel, 370, 57, str(person.get("name", "—")).to_upper(), 46, C.IVORY, 800, 440)
 	D.text(panel, 374, 89, person.get("pos", "—"), 27, C.IVORY, 600, 430)
+	var entity_target := {"kind":"report", "id":str(report.get("id",""))} if tab == 3 else {"kind":"market", "id":player_id}
+	_reading_area(panel,Rect2(16,12,345,240),entity_target,"RecruitmentPortraitLink",str(person.get("name","Dossier")))
+	_reading_area(panel,Rect2(370,12,440,54),entity_target,"RecruitmentNameLink",str(person.get("name","Dossier")))
 	D.rect(panel, Rect2(374, 104, 211, 84), Color("0d4e31"), 9)
 	D.text(panel, 479, 172, G.rating_text(person), 43, C.IVORY, 800, 197, HORIZONTAL_ALIGNMENT_CENTER)
 	D.line(panel, Vector2(599, 111), Vector2(599, 186), C.LINE)
@@ -411,6 +452,8 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 	var source := D.rect(panel, Rect2(16, 255, 490, 43), Color("152224"), 7, C.LINE)
 	_icon(source, "people", Rect2(16, 10, 23, 23), C.IVORY)
 	D.text(source, 52, 29, info.get("source", "Aucune observation enregistrée"), 24, C.IVORY, 600, 426)
+	if not report.is_empty():
+		_reading_area(source,Rect2(0,0,490,43),{"kind":"report","id":str(report.get("id",""))},"RecruitmentSourceReport","Rapport d’observation daté")
 	if person.get("scouting") is Dictionary:
 		var observer := D.button(panel,Rect2(520,255,294,43),"",func(): pass,false,"search",true,app.accent,"ObserveRecruitment")
 		preload("res://ui/player_observation.gd").configure(observer,app,person)
@@ -526,10 +569,20 @@ func _staff(index: int, role: String = "") -> void:
 		for prefix: String in families[i]:
 			if role.begins_with(prefix): field.select(i); return
 
+func _reading_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> void:
+	if not app.navigation_controller.entity_available(target): return
+	var link := Button.new()
+	link.name = id
+	link.flat = true
+	link.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+	link.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.06),Color(C.MINT,.55),3,0))
+	link.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,WARM,3,0))
+	Link.bind(link,app,target,caption)
+	parent.add_child(link)
+	D.place(link,area)
+
 func _report_dialog(report: Dictionary) -> void:
-	var view := Decisions.dialog(app, "Rapport d’observation", "RecruitmentReport", 920)
-	Decisions.scout_report(view[1], report)
-	Dialogs.show_centered(view[0], Vector2i(920, 565))
+	app.navigation_controller.open_entity({"kind":"report", "id":str(report.get("id", ""))})
 
 func _compare() -> void:
 	load("res://ui/immersive08/recruitment_comparison.gd").open(app, str(dossier.get_meta("player_id", "")), report_by_player)

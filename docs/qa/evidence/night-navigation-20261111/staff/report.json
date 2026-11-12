@@ -1,0 +1,116 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-phase5-staff/staff-fiche-2560-1440.png",
+      "height": 1440,
+      "route": "Staff",
+      "sha256": "1a0b54233575aa45384b8e8f6255ac808cc3acce62f907e2b05f40dc57db902d",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-phase5-staff/staff-fiche-1920-1080.png",
+      "height": 1080,
+      "route": "Staff",
+      "sha256": "eb031730681c31fed3dbcb8683f94bc42a86ff9d442b0b749cc00d3ba625f2dd",
+      "width": 1920
+    },
+    {
+      "file": "/workspace/work/night-phase5-staff/staff-fiche-1280-720.png",
+      "height": 720,
+      "route": "Staff",
+      "sha256": "414c198655fe008a26610ebc3b6b2c9c24170dbc836def02ff399e0518d2f5f3",
+      "width": 1280
+    }
+  ],
+  "case": "staff",
+  "checks": 54,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Profil et annuaire du staff",
+      "link_commands": 0,
+      "profile_sha256_after": "4ef8d6664f45455eb59d4e1b12c63d5e68abfdc7013e7d16ca6fb8725fd58467",
+      "profile_sha256_before": "4ef8d6664f45455eb59d4e1b12c63d5e68abfdc7013e7d16ca6fb8725fd58467",
+      "saved_clock_after": 1794437172564.0,
+      "saved_clock_before": 1794437172564.0,
+      "saved_seed_after": 2035127520.0,
+      "saved_seed_before": 2035127520.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "",
+      "target": {
+        "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+        "kind": "staff"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "",
+      "target": {
+        "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+        "kind": "staff"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "",
+      "target": {
+        "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+        "kind": "staff"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "",
+      "target": {
+        "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+        "kind": "staff"
+      }
+    },
+    {
+      "activation": "Enter",
+      "control": "StaffProfileDirectory",
+      "id": "",
+      "kind": "",
+      "route_before": "Staff"
+    },
+    {
+      "accepted": true,
+      "route_after": "Staff",
+      "selected_player": "",
+      "target": {
+        "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+        "kind": "staff"
+      }
+    },
+    {
+      "activation": "Enter",
+      "control": "StaffOpenName_staff-career_reference_staff_0_c617eecbe4fa05f8",
+      "id": "staff-career:reference:staff:0:c617eecbe4fa05f8",
+      "kind": "staff",
+      "route_before": "Staff"
+    }
+  ]
+}

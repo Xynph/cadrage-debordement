@@ -1,0 +1,35 @@
+{
+  "source_sha": "fba9f7f6fa3000225043b323f1ce1703713d590f",
+  "files": {
+    "green": {
+      "source": "/workspace/work/night-followup-receipts/gestion-configured-viewport.log",
+      "sha256": "6f2d7517f29bc30ec3b424ad978b5441a6eb1fbc9edf38520c37090edfb8d334",
+      "bytes": 37953
+    },
+    "red-comparison": {
+      "source": "/workspace/work/night-followup-receipts/gestion-continuous-list.log",
+      "sha256": "344fd7d40076a00f05bc6cea60220c29cdd0a908838c17fcae31109e1c9c01fe",
+      "bytes": 55676
+    },
+    "red-native-popup": {
+      "source": "/workspace/work/night-followup-receipts/silent-core/gestion-carnet.log",
+      "sha256": "57f28612af9169a302d1f88cb8c52bd83d90d4584ecb3d2af52065b02df89263",
+      "bytes": 66648
+    },
+    "diagnostic-pagination": {
+      "source": "/workspace/work/night-followup-receipts/gestion-diagnostic.log",
+      "sha256": "4ac6863e13f596ec18a6b40da1e037259723e1df4dc65516b0b30bb5c31d90f1",
+      "bytes": 14260
+    },
+    "green-native": {
+      "source": "/tmp/cd-gestion-carnet-6ryJHI/godot.log",
+      "sha256": "188c3ebd18c7dad2a060e446211eb8de501815266be0e5e121d1d5e5df69fdf6",
+      "bytes": 36888
+    }
+  },
+  "sources": {
+    "tests/godot-gestion-carnet.gd": "dade6fb537b376345911c0f31fe99f1a7e4b606e372a9dc71bda86a679b9aa86",
+    "tests/godot-gestion-carnet.cjs": "7157d0e5f6b1cccd7441866c3565e1f3be55f9b3668dc6b43c875c181558d216",
+    "native/godot/ui/immersive08/dialogs.gd": "ef61b2b005bc0435af1300445de57640b07a0c66c9734e915f0d72c131e88f15"
+  }
+}

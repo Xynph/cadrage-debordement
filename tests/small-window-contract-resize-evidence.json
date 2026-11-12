@@ -1,0 +1,1411 @@
+{
+  "production_commit": "e2ded6a8d4f2964ec5b22b68ec84a64b06463569",
+  "fixture_parent_commit": "6be4134ede8ebe39f96bcc6ecd5bc8b72a9932a2",
+  "scope": "Presentation fixture only; no EngineBridge or career-engine acceptance. One existing negotiation window is resized without rebuilding controls.",
+  "display": "X11 on Xvfb :101; Godot 4.7.2; audio Dummy",
+  "source_freeze_sha256": {
+    "tests/small-window-contracts.gd": "6a0b33fa70b11f1056e63e01b1e22357010bbd44f537dd2b02faa0e5c53668fb",
+    "tests/small-window-contracts.cjs": "3df3d94c52fc37ec094d075c195055dd5c99cb90c69935eb9946087eaa9cac99",
+    "native/godot/ui/contract_negotiation.gd": "369f78850c2111f28a33ebcb9aa1f85378965a84aa02dc133a4124d2e5880035",
+    "native/godot/ui/immersive08/dialogs.gd": "ef61b2b005bc0435af1300445de57640b07a0c66c9734e915f0d72c131e88f15"
+  },
+  "source_freeze_verified_before_and_after": true,
+  "captures_written": 0,
+  "node_test_result": {
+    "passed": 1,
+    "failed": 0,
+    "name_pattern": "Open contract"
+  },
+  "report": {
+    "display": "X11",
+    "failures": [],
+    "reports": [],
+    "resize_report": {
+      "dialog_id": 42580575726,
+      "keyboard": {
+        "committed_salary": 18900.0,
+        "cycle": [
+          "salary",
+          "years",
+          "reuse",
+          "cancel",
+          "ok",
+          "salary"
+        ],
+        "shift_tab": "salary",
+        "tab": "years"
+      },
+      "salary_id": 45264930422,
+      "stages": [
+        {
+          "dialog_id": 42580575726,
+          "focus": "salary",
+          "geometry": {
+            "controls": [
+              {
+                "global_rect": [
+                  1387.0,
+                  1112.0,
+                  260.0,
+                  46.0
+                ],
+                "name": "@Button@7",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  877.0,
+                  804.0,
+                  260.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  0.0,
+                  0.0,
+                  1540.0,
+                  860.0
+                ]
+              },
+              {
+                "global_rect": [
+                  1558.0,
+                  532.0,
+                  468.0,
+                  39.0
+                ],
+                "name": "OfferSalary",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  1048.0,
+                  224.0,
+                  468.0,
+                  39.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  1558.0,
+                  607.0,
+                  468.0,
+                  39.0
+                ],
+                "name": "OfferYears",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  1048.0,
+                  299.0,
+                  468.0,
+                  39.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  1558.0,
+                  707.0,
+                  468.0,
+                  46.0
+                ],
+                "name": "ContractUseCounteroffer",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  1048.0,
+                  399.0,
+                  468.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  534.0,
+                  793.0,
+                  1492.0,
+                  105.0
+                ],
+                "name": "OfferSummary",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  24.0,
+                  485.0,
+                  1492.0,
+                  105.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  520.0,
+                  924.0,
+                  1520.0,
+                  24.0
+                ],
+                "name": "ContractNextAction",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  10.0,
+                  616.0,
+                  1520.0,
+                  24.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  912.0,
+                  1112.0,
+                  75.0,
+                  46.0
+                ],
+                "name": "@Button@9",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  402.0,
+                  804.0,
+                  75.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  0.0,
+                  0.0,
+                  1540.0,
+                  860.0
+                ]
+              }
+            ],
+            "dialog": [
+              510.0,
+              308.0,
+              1540.0,
+              860.0
+            ],
+            "frame": [
+              510.0,
+              272.0,
+              1540.0,
+              896.0
+            ],
+            "has_requested_size": true,
+            "label": "open-contract-resize",
+            "minimum": [
+              1540,
+              0
+            ],
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "resolution": [
+              2560,
+              1440
+            ]
+          },
+          "resolution": [
+            2560,
+            1440
+          ],
+          "salary_id": 45264930422,
+          "salary_text": "18900",
+          "salary_value": 18700.0,
+          "years": 3.0,
+          "years_id": 45382370941
+        },
+        {
+          "dialog_id": 42580575726,
+          "focus": "salary",
+          "geometry": {
+            "controls": [
+              {
+                "global_rect": [
+                  699.0,
+                  648.0,
+                  260.0,
+                  46.0
+                ],
+                "name": "@Button@7",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  685.0,
+                  596.0,
+                  260.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  0.0,
+                  0.0,
+                  1252.0,
+                  652.0
+                ]
+              },
+              {
+                "global_rect": [
+                  864.0,
+                  276.0,
+                  370.0,
+                  39.0
+                ],
+                "name": "OfferSalary",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  850.0,
+                  224.0,
+                  370.0,
+                  39.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1232.0,
+                  576.0
+                ]
+              },
+              {
+                "global_rect": [
+                  864.0,
+                  351.0,
+                  370.0,
+                  39.0
+                ],
+                "name": "OfferYears",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  850.0,
+                  299.0,
+                  370.0,
+                  39.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1232.0,
+                  576.0
+                ]
+              },
+              {
+                "global_rect": [
+                  864.0,
+                  451.0,
+                  370.0,
+                  46.0
+                ],
+                "name": "ContractUseCounteroffer",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  850.0,
+                  399.0,
+                  370.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1232.0,
+                  576.0
+                ]
+              },
+              {
+                "global_rect": [
+                  38.0,
+                  533.0,
+                  1196.0,
+                  105.0
+                ],
+                "name": "OfferSummary",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  24.0,
+                  481.0,
+                  1196.0,
+                  105.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1232.0,
+                  576.0
+                ]
+              },
+              {
+                "global_rect": [
+                  24.0,
+                  614.0,
+                  1224.0,
+                  24.0
+                ],
+                "name": "ContractNextAction",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  10.0,
+                  562.0,
+                  1224.0,
+                  24.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1232.0,
+                  576.0
+                ]
+              },
+              {
+                "global_rect": [
+                  320.0,
+                  648.0,
+                  75.0,
+                  46.0
+                ],
+                "name": "@Button@9",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  306.0,
+                  596.0,
+                  75.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  0.0,
+                  0.0,
+                  1252.0,
+                  652.0
+                ]
+              }
+            ],
+            "dialog": [
+              14.0,
+              52.0,
+              1252.0,
+              652.0
+            ],
+            "frame": [
+              14.0,
+              16.0,
+              1252.0,
+              688.0
+            ],
+            "has_requested_size": true,
+            "label": "open-contract-resize",
+            "minimum": [
+              1252,
+              0
+            ],
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "resolution": [
+              1280,
+              720
+            ]
+          },
+          "resolution": [
+            1280,
+            720
+          ],
+          "salary_id": 45264930422,
+          "salary_text": "18900",
+          "salary_value": 18700.0,
+          "years": 3.0,
+          "years_id": 45382370941
+        },
+        {
+          "dialog_id": 42580575726,
+          "focus": "salary",
+          "geometry": {
+            "controls": [
+              {
+                "global_rect": [
+                  1387.0,
+                  1112.0,
+                  260.0,
+                  46.0
+                ],
+                "name": "@Button@7",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  877.0,
+                  804.0,
+                  260.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  0.0,
+                  0.0,
+                  1540.0,
+                  860.0
+                ]
+              },
+              {
+                "global_rect": [
+                  1558.0,
+                  532.0,
+                  468.0,
+                  39.0
+                ],
+                "name": "OfferSalary",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  1048.0,
+                  224.0,
+                  468.0,
+                  39.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  1558.0,
+                  607.0,
+                  468.0,
+                  39.0
+                ],
+                "name": "OfferYears",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  1048.0,
+                  299.0,
+                  468.0,
+                  39.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  1558.0,
+                  707.0,
+                  468.0,
+                  46.0
+                ],
+                "name": "ContractUseCounteroffer",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  1048.0,
+                  399.0,
+                  468.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  534.0,
+                  793.0,
+                  1492.0,
+                  105.0
+                ],
+                "name": "OfferSummary",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  24.0,
+                  485.0,
+                  1492.0,
+                  105.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  520.0,
+                  924.0,
+                  1520.0,
+                  24.0
+                ],
+                "name": "ContractNextAction",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  10.0,
+                  616.0,
+                  1520.0,
+                  24.0
+                ],
+                "visible_bounds": [
+                  10.0,
+                  10.0,
+                  1520.0,
+                  784.0
+                ]
+              },
+              {
+                "global_rect": [
+                  912.0,
+                  1112.0,
+                  75.0,
+                  46.0
+                ],
+                "name": "@Button@9",
+                "overflow": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rect": [
+                  402.0,
+                  804.0,
+                  75.0,
+                  46.0
+                ],
+                "visible_bounds": [
+                  0.0,
+                  0.0,
+                  1540.0,
+                  860.0
+                ]
+              }
+            ],
+            "dialog": [
+              510.0,
+              308.0,
+              1540.0,
+              860.0
+            ],
+            "frame": [
+              510.0,
+              272.0,
+              1540.0,
+              896.0
+            ],
+            "has_requested_size": true,
+            "label": "open-contract-resize",
+            "minimum": [
+              1540,
+              0
+            ],
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "resolution": [
+              2560,
+              1440
+            ]
+          },
+          "resolution": [
+            2560,
+            1440
+          ],
+          "salary_id": 45264930422,
+          "salary_text": "19100",
+          "salary_value": 18900.0,
+          "years": 3.0,
+          "years_id": 45382370941
+        }
+      ],
+      "years_id": 45382370941
+    },
+    "shared_reports": [
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1387.0,
+              1112.0,
+              260.0,
+              46.0
+            ],
+            "name": "@Button@7",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              877.0,
+              804.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              532.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              224.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              607.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              299.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              707.0,
+              468.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              399.0,
+              468.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              534.0,
+              793.0,
+              1492.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              485.0,
+              1492.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              520.0,
+              924.0,
+              1520.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              616.0,
+              1520.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              912.0,
+              1112.0,
+              75.0,
+              46.0
+            ],
+            "name": "@Button@9",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              804.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          510.0,
+          272.0,
+          1540.0,
+          896.0
+        ],
+        "has_requested_size": true,
+        "label": "open-contract-resize",
+        "minimum": [
+          1540,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              699.0,
+              648.0,
+              260.0,
+              46.0
+            ],
+            "name": "@Button@7",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              685.0,
+              596.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              864.0,
+              276.0,
+              370.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              850.0,
+              224.0,
+              370.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1232.0,
+              576.0
+            ]
+          },
+          {
+            "global_rect": [
+              864.0,
+              351.0,
+              370.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              850.0,
+              299.0,
+              370.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1232.0,
+              576.0
+            ]
+          },
+          {
+            "global_rect": [
+              864.0,
+              451.0,
+              370.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              850.0,
+              399.0,
+              370.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1232.0,
+              576.0
+            ]
+          },
+          {
+            "global_rect": [
+              38.0,
+              533.0,
+              1196.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              481.0,
+              1196.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1232.0,
+              576.0
+            ]
+          },
+          {
+            "global_rect": [
+              24.0,
+              614.0,
+              1224.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              562.0,
+              1224.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1232.0,
+              576.0
+            ]
+          },
+          {
+            "global_rect": [
+              320.0,
+              648.0,
+              75.0,
+              46.0
+            ],
+            "name": "@Button@9",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              306.0,
+              596.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1252.0,
+          652.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1252.0,
+          688.0
+        ],
+        "has_requested_size": true,
+        "label": "open-contract-resize",
+        "minimum": [
+          1252,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1387.0,
+              1112.0,
+              260.0,
+              46.0
+            ],
+            "name": "@Button@7",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              877.0,
+              804.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              532.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              224.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              607.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              299.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              707.0,
+              468.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              399.0,
+              468.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              534.0,
+              793.0,
+              1492.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              485.0,
+              1492.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              520.0,
+              924.0,
+              1520.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              616.0,
+              1520.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              912.0,
+              1112.0,
+              75.0,
+              46.0
+            ],
+            "name": "@Button@9",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              804.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          510.0,
+          272.0,
+          1540.0,
+          896.0
+        ],
+        "has_requested_size": true,
+        "label": "open-contract-resize",
+        "minimum": [
+          1540,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      }
+    ]
+  }
+}

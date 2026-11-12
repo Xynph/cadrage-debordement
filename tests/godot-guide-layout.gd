@@ -5,6 +5,7 @@ var app: Control
 var guide: Control
 var checks := 0
 var failures: Array[String] = []
+var voice_requests: Array[String] = []
 var metrics: Array = []
 func _initialize() -> void:
 	call_deferred("run")
@@ -51,7 +52,7 @@ func geometry(id: String) -> void:
 	check(contained(rect,balloon.get_global_rect()), "Bulle non coupée : " + id)
 	for p in balloon.get_tail_points():
 		check(p.x > scroll.position.x + scroll.size.x, "Pointe hors de la zone du texte : " + id)
-	for name in ["GuideClose","GuideReplay","GuideStop","GuideOptions","GuideNext"]:
+	for name in ["GuideClose","GuideOptions","GuideNext"]:
 		var button: Button = guide.find_child(name,true,false)
 		check(button.is_visible_in_tree() and contained(rect,button.get_global_rect()), "Commande entière " + name + " : " + id)
 	check(guide.mouse_filter == Control.MOUSE_FILTER_IGNORE and balloon.mouse_filter == Control.MOUSE_FILTER_IGNORE and guide.bubble.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Bulle traversable : " + id)
@@ -70,7 +71,9 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
 	app._command("new_career",{"club":0,"mode":"common"}); await wait_model()
 	await ContextualFlow.settle_club_meetings(app, self, check)
-	guide = load("res://guide/coach_guide.gd").new(); app.add_child(guide); guide.setup(app); guide.speech.set_muted(true)
+	guide = load("res://guide/coach_guide.gd").new(); app.add_child(guide); guide.setup(app, false); guide.speech.set_muted(true)
+	guide.speech.requested.connect(func(text: String): voice_requests.append(text))
+	check(guide.find_child("GuideReplay",true,false) == null and guide.find_child("GuideStop",true,false) == null,"Guide texte : aucune commande de lecture vocale")
 	if OS.get_environment("CD_GUIDE_LAYOUT_CASE") == "dock":
 		await dock_cases(); await finish(); return
 	var disk_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
@@ -105,9 +108,11 @@ func run() -> void:
 		check(contained(Rect2(Vector2.ZERO,app.size),guide._settings_panel.get_global_rect()),"Panneau options entier dans la fenêtre : "+str(resolution.x))
 		check(not guide._settings_panel.get_global_rect().intersects(guide._expanded.get_global_rect()),"Options ne peignent pas sur la bulle : "+str(resolution.x))
 		print("OPTIONS ",resolution," guide=",guide.get_global_rect()," panel=",guide._settings_panel.get_global_rect()," optionsMin=",guide._options.get_minimum_size()," noticeMin=",guide._notice.get_minimum_size())
-		for name in ["GuideVoice","GuideSpeed","GuideMute","GuideDisable"]:
+		for name in ["GuideVoice","GuideSpeed","GuideMute"]:
 			var control: Control = guide.find_child(name,true,false)
-			check(contained(guide.get_global_rect(),control.get_global_rect()), "Options entières : "+name+str(resolution.x))
+			check(not control.is_visible_in_tree(), "Option vocale masquée en mode texte : "+name+str(resolution.x))
+		var disable: Button = guide.find_child("GuideDisable",true,false)
+		check(disable.is_visible_in_tree() and contained(guide.get_global_rect(),disable.get_global_rect()) and disable.focus_mode == Control.FOCUS_ALL,"Désactivation entière et accessible au clavier : "+str(resolution.x))
 		if OS.get_environment("CD_GUIDE_LAYOUT_MODE") == "native" and resolution.x == 1280: await capture("1280-options")
 		guide._settings_open = false; guide._layout(); await settle()
 		var close_button: Button = guide.find_child("GuideClose",true,false)
@@ -123,14 +128,7 @@ func run() -> void:
 	var obstacle := Button.new(); obstacle.text = "CONFIRMER LE CHOIX"; app.root_content.add_child(obstacle)
 	obstacle.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	obstacle.global_position = Vector2(220,app.size.y * .4); obstacle.size = Vector2(app.size.x - 220,app.size.y * .6)
-	var wav := AudioStreamWAV.new(); wav.format = AudioStreamWAV.FORMAT_16_BITS; wav.mix_rate = 24000
-	var pcm := PackedByteArray(); pcm.resize(4800); wav.data = pcm
-	var fixture := OS.get_environment("CD_GODOT_DATA_DIR").path_join("voice-fixture"); DirAccess.make_dir_recursive_absolute(fixture)
-	check(wav.save_to_wav(fixture.path_join("silence.wav")) == OK,"WAV de réception locale créé")
 	var tip: String = Content.fragments("bureau")[0].text
-	var manifest := FileAccess.open(fixture.path_join("manifest.json"),FileAccess.WRITE)
-	manifest.store_string(JSON.stringify({"clips":[{"id":"layout-bureau","text":tip,"text_sha256":tip.sha256_text(),"file":"silence.wav"}]})); manifest.close()
-	guide.speech.load_manifest(fixture.path_join("manifest.json")); guide.speech.volume = 0; guide.speech.set_muted(false)
 	var requests: Array[String] = []; guide.speech.requested.connect(func(text: String):requests.append(text))
 	guide.consider_context("Bureau",app.model,"snapshot",true); await settle()
 	check(not guide.expanded and "bureau" not in guide.profile.data.seen,"Aucun espace : invitation sans consommer la visite")
@@ -145,7 +143,7 @@ func run() -> void:
 	if guide.expanded: guide.close()
 	await click(guide.find_child("GuideHelp",true,false))
 	check(guide.expanded and guide.mode == "context" and "bureau" in guide.profile.data.seen,"Invitation rouvre le même contexte et marque alors la visite")
-	check(requests == [tip],"Réouverture : voix demandée une seule fois pour le texte affiché")
+	check(requests.is_empty() and guide.speech.muted and guide.bubble.text == tip,"Réouverture : texte exact affiché sans aucune demande vocale")
 	guide.speech.set_muted(true); guide.close()
 	obstacle = Button.new(); obstacle.text = "CONFIRMER LE CHOIX"; app.root_content.add_child(obstacle)
 	obstacle.global_position = Vector2(220,app.size.y * .4); obstacle.size = Vector2(app.size.x - 220,app.size.y * .6)
@@ -178,12 +176,6 @@ func dock_cases() -> void:
 	root.size = Vector2i(1440,1440); root.content_scale_size = Vector2i(1440,1440)
 	app._navigate("Recrutement"); await settle()
 	var tip: String = Content.fragment("decision-contrat").text
-	var voice_dir := OS.get_environment("CD_GODOT_DATA_DIR").path_join("dock-important-voice"); DirAccess.make_dir_recursive_absolute(voice_dir)
-	var wav := AudioStreamWAV.new(); wav.format = AudioStreamWAV.FORMAT_16_BITS; wav.mix_rate = 24000
-	var pcm := PackedByteArray(); pcm.resize(4800); wav.data = pcm; check(wav.save_to_wav(voice_dir.path_join("silence.wav")) == OK,"WAV local de réception conseil important")
-	var manifest := FileAccess.open(voice_dir.path_join("manifest.json"),FileAccess.WRITE)
-	manifest.store_string(JSON.stringify({"clips":[{"id":"dock-important","text":tip,"text_sha256":tip.sha256_text(),"file":"silence.wav"}]})); manifest.close()
-	guide.speech.load_manifest(voice_dir.path_join("manifest.json")); guide.speech.volume = 0; guide.speech.set_muted(false)
 	var requested: Array[String] = []; var on_requested := func(text: String):requested.append(text)
 	guide.speech.requested.connect(on_requested)
 	var facts: Dictionary = app.model.duplicate(true); facts.meta.negotiation = {"status":"signed","playerId":"dock-layout-only"}
@@ -193,7 +185,7 @@ func dock_cases() -> void:
 	notice.hide(); notice.queue_free(); await process_frame
 	guide.consider_context("Recrutement",facts,"snapshot",true); await settle()
 	check(guide.expanded and guide.bubble.text == tip,"Conseil important réellement lisible après la notice")
-	check(requested == [tip],"Parole exacte du conseil important demandée une seule fois")
+	check(requested.is_empty() and guide.speech.muted,"Conseil important lisible sans aucune demande vocale")
 	check(contained(Rect2(Vector2.ZERO,app.size),guide.get_global_rect()) and guide.position.y >= app.size.y*.55,"Conseil important dans la zone basse, loin des titres")
 	check(not guide._covers_priority(guide._priority_rects()),"Conseil important sans masquer les offres")
 	var stable := guide.position
@@ -271,6 +263,7 @@ func dock_cases() -> void:
 	var file := FileAccess.open(OS.get_environment("CD_GUIDE_CAPTURES").path_join("metrics.json"),FileAccess.WRITE); file.store_string(JSON.stringify(metrics,"\t")); file.close()
 
 func finish() -> void:
+	check(voice_requests.is_empty() and guide.speech.muted and guide.speech.player == null,"Gabi strictement silencieux : zéro requested et aucun lecteur audio")
 	guide.destroy(); await process_frame; app.bridge.stop()
 	var until := Time.get_ticks_msec() + 4000
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < until: await process_frame

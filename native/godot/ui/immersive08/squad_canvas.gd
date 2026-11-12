@@ -337,6 +337,7 @@ func _row(player:Dictionary,index:int) -> void:
 	row.add_child(portrait)
 	D.place(portrait,Rect2(54,2,31,30))
 	D.text(row,95,24,player.name,23,C.IVORY,600,190)
+	_reading_link(row, Rect2(54,2,231,30), player, "", "SquadOpenPlayer_")
 	var main_position := D.text(row,325,24,primary_caption(player),21,C.MUTED,500,154)
 	main_position.name = "RosterPrimaryPosition"
 	main_position.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -370,6 +371,8 @@ func _row(player:Dictionary,index:int) -> void:
 		var contract_end: Variant = player.get("contractEnd")
 		var expiring: bool = contract_end != null and int(contract_end) <= int(app.model.meta.get("season",1))
 		D.text(row,1296,24,G.contract_year(contract_end),22,C.AMBER if expiring else C.MUTED,500,150,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterContractEnd"
+		_reading_link(row, Rect2(993,2,210,30), player, "contract", "SquadOpenSalary_")
+		_reading_link(row, Rect2(1221,2,150,30), player, "contract", "SquadOpenContract_")
 	D.text(row,1407,24,G.n(player.get("minutes",0)),22,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_RIGHT)
 	var status:String="Blessé" if float(player.get("injury",0))>0 else str(player.get("status","Disponible"))
 	D.chip(row,Rect2(1477,3,170,26),status,C.ALERT if status=="Blessé" else C.GOLD if status.contains("clé") else C.MINT)
@@ -380,6 +383,23 @@ func _row(player:Dictionary,index:int) -> void:
 		_profile()
 		selected_summary.text="1 joueur sélectionné · "+str(player.name)
 		app._observe_navigation())
+
+func _reading_link(parent: Control, rectangle: Rect2, player: Dictionary, section: String, prefix: String) -> void:
+	var player_id := str(player.id)
+	var link := Button.new()
+	link.name = prefix + player_id.validate_node_name()
+	link.custom_minimum_size = Vector2.ZERO
+	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("hover", C.box(Color(C.MINT,.08),Color.TRANSPARENT,2,0))
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT,C.GOLD,2,0))
+	link.accessibility_name = ("Consulter le contrat · " if section == "contract" else "Consulter la fiche · ") + str(player.name)
+	link.tooltip_text = link.accessibility_name
+	link.set_meta("entity_kind", "player")
+	link.set_meta("entity_id", player_id)
+	link.set_meta("entity_section", section)
+	link.pressed.connect(func(): app.navigation_controller.open_entity({"kind":"player", "id":player_id, "section":section}))
+	parent.add_child(link)
+	D.place(link, rectangle)
 
 func _row_key(event: InputEvent, current: Button) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo or event.ctrl_pressed or event.alt_pressed: return

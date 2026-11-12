@@ -1,0 +1,40 @@
+SDK_RUNTIME_LOG: /workspace/qa/sdk-runtime/godot-carnet-ui-179433.log
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SDK_COMMAND godot-carnet-ui new_career
+SDK_COMMAND godot-carnet-ui export
+SDK_COMMAND godot-carnet-ui export
+SDK_COMMAND godot-carnet-ui new_career
+SDK_COMMAND godot-carnet-ui auto_lineup
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-07" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-08" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-09" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-10" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-11" }
+SDK_COMMAND godot-carnet-ui pause
+SDK_COMMAND godot-carnet-ui export
+SDK_COMMAND godot-carnet-ui export
+SDK_COMMAND godot-carnet-ui delegate
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-12" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-13" }
+SDK_COMMAND godot-carnet-ui new_career
+SDK_COMMAND godot-carnet-ui new_career
+SDK_COMMAND godot-carnet-ui new_career
+CARNET : 3767 contrôles ; 0 échec(s)
+Preuves Carnet : /tmp/cd-carnet-ui-dqAgK8
+TAP version 13
+# Subtest: Carnet du club : tous menus natifs, vraies actions, focus et lectures sans mutation
+ok 1 - Carnet du club : tous menus natifs, vraies actions, focus et lectures sans mutation
+  ---
+  duration_ms: 124570.726862
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 124583.149695

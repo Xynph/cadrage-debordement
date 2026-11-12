@@ -1,0 +1,35 @@
+L1: TAP version 13
+L2: # Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+L3: # OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+L4: # SESSION_STAGE main_loaded
+L5: # SESSION_STAGE real_meeting_entered
+L6: # SESSION_STAGE public_preparation_complete
+L10: # SCRIPT ERROR: Parse Error: Cannot infer the type of "valid" variable because the value doesn't have a set type.
+L11: #           at: GDScript::reload (res://ui/immersive08/month_calendar.gd:825)
+L12: # SCRIPT ERROR: Parse Error: Cannot infer the type of "selectable" variable because the value doesn't have a set type.
+L13: #           at: GDScript::reload (res://ui/immersive08/month_calendar.gd:884)
+L14: # SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+L15: #           at: GDScript::reload (/workspace/work/night-closeout/tests/godot-calendar-session-links.gd:0)
+L16: # ERROR: Failed to load script "/workspace/work/night-closeout/tests/godot-calendar-session-links.gd" with error "Compilation failed".
+L17: #    at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+L18: # SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+L19: #           at: _existing_page (res://ui/immersive08/shell.gd:604)
+L20: #           GDScript backtrace (most recent call first):
+L29: # SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+L30: #           at: _existing_page (res://ui/immersive08/shell.gd:604)
+L31: #           GDScript backtrace (most recent call first):
+L38: # SCRIPT ERROR: Invalid call. Nonexistent function '_select' in base 'Nil'.
+L39: #           at: run (/workspace/work/night-closeout/tests/godot-calendar-session-links.gd:266)
+L40: #           GDScript backtrace (most recent call first):
+L44: # Subtest: Séance publiée : route exacte, garde réelle, liens clavier/souris et lecture sans effets
+L45: not ok 1 - Séance publiée : route exacte, garde réelle, liens clavier/souris et lecture sans effets
+L47:   duration_ms: 90094.492153
+L50:   failureType: 'testCodeFailure'
+L51:   error: 'spawnSync /workspace/work/tools/Godot_v4.7.2-stable_linux.x86_64 ETIMEDOUT'
+L52:   code: 'ETIMEDOUT'
+L62: 1..1
+L63: # tests 1
+L65: # pass 0
+L66: # fail 1
+L68: # skipped 0
+L70: # duration_ms 90155.510599

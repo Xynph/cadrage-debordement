@@ -234,6 +234,7 @@ func install_entrypoints() -> void:
 			S.G.fill(words)
 			row.add_child(words)
 			row.add_child(S.G.button("OUVRIR", func(): open_invitation(str(invitation.id))))
+		_contain_entry_content(parent, list)
 	elif app.route == "Préparation":
 		var parent: Node = app.root_content.find_child("PreparationEntrainement", true, false)
 		if parent == null and app.management_ui.get("preparation", {}).get("tab", 0) == 2:
@@ -249,3 +250,25 @@ func _add_training_entry(parent: Node) -> void:
 	button.disabled = not _live().is_empty() or app.model.get("meta", {}).get("phase") == "ended"
 	parent.add_child(button)
 	parent.move_child(button, 0)
+	_contain_entry_content(parent, button)
+
+func _contain_entry_content(parent: Node, entry: Control) -> void:
+	if parent != app.body: return
+	for inner: ScrollContainer in parent.find_children("*", "ScrollContainer", true, false):
+		inner.mouse_force_pass_scroll_events = false
+		inner.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Full-height career pages were sized before these entrypoints were added.
+	# Give the page the remaining space while keeping the new actions visible.
+	var scroll := ScrollContainer.new()
+	scroll.name = "ContextualPageWorkspace"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	S.G.fill(scroll, true)
+	var content := S.G.v(0)
+	S.G.fill(content, true)
+	for child in parent.get_children():
+		if child == entry: continue
+		parent.remove_child(child)
+		content.add_child(child)
+	parent.add_child(scroll)
+	scroll.add_child(content)

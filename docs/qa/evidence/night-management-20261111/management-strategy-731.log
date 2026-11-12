@@ -1,0 +1,6 @@
+seed=731 reference {"wins":1,"draws":1,"matches":8,"cashChange":2220928,"wageChange":0,"pointsChange":8,"academyRatingChange":0.983,"fatigueChange":1.634,"moraleChange":-3,"trustChange":-3}
+seed=731 vedette {"wins":2,"draws":0,"matches":8,"cashChange":1476128,"wageChange":12100,"pointsChange":10,"academyRatingChange":0.983,"fatigueChange":2.536,"moraleChange":2,"trustChange":0}
+seed=731 talent_observe {"wins":0,"draws":1,"matches":8,"cashChange":1968528,"wageChange":4800,"pointsChange":3,"academyRatingChange":0.983,"fatigueChange":2.298,"moraleChange":-14,"trustChange":-8}
+seed=731 profondeur BLOCKED Deux recrutements demandés, 1 place professionnelle disponible.
+seed=731 formation {"wins":1,"draws":1,"matches":8,"cashChange":2124928,"wageChange":0,"pointsChange":8,"academyRatingChange":2.033,"fatigueChange":1.634,"moraleChange":-3,"trustChange":-3}
+/workspace/work/management-quality/work/management-strategy-731.json

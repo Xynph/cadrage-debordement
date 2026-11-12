@@ -1,0 +1,104 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-final-qa-v4/prospects/prospect-regen-candidates-2560.png",
+      "height": 1440,
+      "route": "Recrutement",
+      "sha256": "28617d181558373d1b1a1d5c8a8ce551bf4dd33fb130d510ec0ee8284ae633ca",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-final-qa-v4/prospects/prospect-interclub-2560.png",
+      "height": 1440,
+      "route": "Recrutement",
+      "sha256": "dbbef84eb056c80c757113d0e2d4c69b53f566a38d3d17bf5512997930b6277d",
+      "width": 2560
+    }
+  ],
+  "case": "prospects",
+  "checks": 70,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Consultation des prospects depuis leurs catalogues",
+      "link_commands": 0,
+      "profile_sha256_after": "2cd0ab352289c3072293b5309c107b1f158e6c70d81f6bfc71b7097138c2bedb",
+      "profile_sha256_before": "2cd0ab352289c3072293b5309c107b1f158e6c70d81f6bfc71b7097138c2bedb",
+      "saved_clock_after": 1794436671301.0,
+      "saved_clock_before": 1794436671301.0,
+      "saved_seed_after": 3939898079.0,
+      "saved_seed_before": 3939898079.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "available_interclub": 1422,
+      "preparation": "catalogues réels de common0",
+      "regen_candidates": 9
+    },
+    {
+      "activation": "Enter",
+      "control": "OpenRegenScouting",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "RegenScoutProfile_small-1-1-0",
+      "id": "small-1-1-0",
+      "kind": "prospect",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "ProspectProfileClose",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "OpenInterclubMarket",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "InterclubOffer",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "InterclubProfile_lnr_9642",
+      "id": "lnr:9642",
+      "kind": "prospect",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "ProspectProfileClose",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    }
+  ]
+}

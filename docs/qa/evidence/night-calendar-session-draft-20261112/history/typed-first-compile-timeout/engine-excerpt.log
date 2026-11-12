@@ -1,0 +1,23 @@
+L1: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+L2: WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+L3:    at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+L6: SCRIPT ERROR: Parse Error: Cannot infer the type of "valid" variable because the value doesn't have a set type.
+L7:    at: GDScript::reload (res://ui/immersive08/month_calendar.gd:825)
+L8: SCRIPT ERROR: Parse Error: Cannot infer the type of "selectable" variable because the value doesn't have a set type.
+L9:    at: GDScript::reload (res://ui/immersive08/month_calendar.gd:884)
+L10: SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+L11:    at: GDScript::reload (/workspace/work/night-closeout/tests/godot-calendar-session-links.gd:0)
+L12: ERROR: Failed to load script "/workspace/work/night-closeout/tests/godot-calendar-session-links.gd" with error "Compilation failed".
+L13:    at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+L14: SESSION_STAGE main_loaded
+L15: SESSION_STAGE real_meeting_entered
+L16: SESSION_STAGE public_preparation_complete
+L17: SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+L18:    at: _existing_page (res://ui/immersive08/shell.gd:604)
+L19:    GDScript backtrace (most recent call first):
+L28: SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+L29:    at: _existing_page (res://ui/immersive08/shell.gd:604)
+L30:    GDScript backtrace (most recent call first):
+L37: SCRIPT ERROR: Invalid call. Nonexistent function '_select' in base 'Nil'.
+L38:    at: run (/workspace/work/night-closeout/tests/godot-calendar-session-links.gd:266)
+L39:    GDScript backtrace (most recent call first):

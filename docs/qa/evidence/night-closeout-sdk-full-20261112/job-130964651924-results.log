@@ -1,0 +1,68 @@
+2026-11-12T04:07:31.8879466Z SDK_RESULT {"suite":"tests/native-press-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":66207,"error":null}
+2026-11-12T04:08:41.3212508Z # tests 1
+2026-11-12T04:08:41.3212872Z # pass 1
+2026-11-12T04:08:41.3213048Z # fail 0
+2026-11-12T04:08:41.3214536Z SDK_RESULT {"suite":"tests/godot-office-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":69433,"error":null}
+2026-11-12T04:09:30.2141808Z # tests 1
+2026-11-12T04:09:30.2142194Z # pass 1
+2026-11-12T04:09:30.2142393Z # fail 0
+2026-11-12T04:09:30.2143985Z SDK_RESULT {"suite":"tests/godot-pack-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":48894,"error":null}
+2026-11-12T04:09:49.6953009Z # tests 1
+2026-11-12T04:09:49.6953600Z # pass 1
+2026-11-12T04:09:49.6953884Z # fail 0
+2026-11-12T04:09:49.6956640Z SDK_RESULT {"suite":"tests/godot-reception-decisions.cjs","variant":"default","passed":true,"status":0,"milliseconds":19481,"error":null}
+2026-11-12T04:10:43.7910833Z # tests 1
+2026-11-12T04:10:43.7911222Z # pass 1
+2026-11-12T04:10:43.7911401Z # fail 0
+2026-11-12T04:10:43.7913061Z SDK_RESULT {"suite":"tests/deepen-youth-draft.cjs","variant":"default","passed":true,"status":0,"milliseconds":54094,"error":null}
+2026-11-12T04:12:41.8904220Z # tests 1
+2026-11-12T04:12:41.8904600Z # pass 1
+2026-11-12T04:12:41.8904777Z # fail 0
+2026-11-12T04:12:41.8906209Z SDK_RESULT {"suite":"tests/deepen-youth-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":118099,"error":null}
+2026-11-12T04:13:31.4334899Z # tests 1
+2026-11-12T04:13:31.4335258Z # pass 1
+2026-11-12T04:13:31.4335435Z # fail 0
+2026-11-12T04:13:31.4336905Z SDK_RESULT {"suite":"tests/godot-youth-scout-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":49543,"error":null}
+2026-11-12T04:14:03.6653537Z # tests 1
+2026-11-12T04:14:03.6653895Z # pass 1
+2026-11-12T04:14:03.6654068Z # fail 0
+2026-11-12T04:14:03.6655509Z SDK_RESULT {"suite":"tests/godot-fatigue-overview.cjs","variant":"default","passed":true,"status":0,"milliseconds":32232,"error":null}
+2026-11-12T04:15:18.7929569Z CARNET : 4666 contrôles ; 27 échec(s)
+2026-11-12T04:15:18.8011599Z # tests 1
+2026-11-12T04:15:18.8012235Z # pass 0
+2026-11-12T04:15:18.8012557Z # fail 1
+2026-11-12T04:15:18.8014014Z SDK_RESULT {"suite":"tests/godot-carnet-ui.cjs","variant":"default","passed":false,"status":1,"milliseconds":75128,"error":null}
+2026-11-12T04:17:49.4170411Z # tests 1
+2026-11-12T04:17:49.4171222Z # pass 1
+2026-11-12T04:17:49.4171405Z # fail 0
+2026-11-12T04:17:49.4173217Z SDK_RESULT {"suite":"tests/godot-review-regressions.cjs","variant":"default","passed":true,"status":0,"milliseconds":150619,"error":null}
+2026-11-12T04:19:46.8108882Z # tests 1
+2026-11-12T04:19:46.8109238Z # pass 1
+2026-11-12T04:19:46.8109409Z # fail 0
+2026-11-12T04:19:46.8111263Z SDK_RESULT {"suite":"tests/godot-guide-integration.cjs","variant":"default","passed":true,"status":0,"milliseconds":117396,"error":null}
+2026-11-12T04:20:55.6147568Z ART DIRECTION : 224 contrôles ; 49 captures ; 0 échecs
+2026-11-12T04:20:55.6151578Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1280","passed":true,"status":0,"milliseconds":68806,"error":null}
+2026-11-12T04:22:12.3012243Z ART DIRECTION : 217 contrôles ; 46 captures ; 0 échecs
+2026-11-12T04:22:12.3015542Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1600","passed":true,"status":0,"milliseconds":76686,"error":null}
+2026-11-12T04:23:43.3330164Z ART DIRECTION : 211 contrôles ; 44 captures ; 0 échecs
+2026-11-12T04:23:43.3333675Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1920","passed":true,"status":0,"milliseconds":91031,"error":null}
+2026-11-12T04:25:42.5946906Z ART DIRECTION : 168 contrôles ; 7 captures ; 0 échecs
+2026-11-12T04:25:42.5950028Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"progression","passed":true,"status":0,"milliseconds":119262,"error":null}
+2026-11-12T04:25:59.6602449Z ENTITY_SPEECH {"id":0,"requests":0,"starts":0}
+2026-11-12T04:25:59.6609297Z # tests 1
+2026-11-12T04:25:59.6609660Z # pass 1
+2026-11-12T04:25:59.6609906Z # fail 0
+2026-11-12T04:25:59.6611882Z SDK_RESULT {"suite":"tests/godot-entity-navigation.cjs","variant":"default","passed":true,"status":0,"milliseconds":17067,"error":null}
+2026-11-12T04:26:19.2222634Z SDK_RESULT {"suite":"tests/godot-management-reading-flow.cjs","variant":"default","passed":true,"status":0,"milliseconds":19551,"error":null}
+2026-11-12T04:27:02.3826664Z GESTION_PROGRESS {"checks":274,"display":"headless","embedded_subwindows":true,"failures":[],"last_command":"export","last_error":"","milliseconds":42289,"root_size":[1920,1080],"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+2026-11-12T04:27:02.3827834Z GESTION CARNET : 274 contrôles ; 0 échec(s)
+2026-11-12T04:27:02.3832663Z # tests 1
+2026-11-12T04:27:02.3833027Z # pass 1
+2026-11-12T04:27:02.3833203Z # fail 0
+2026-11-12T04:27:02.3834638Z SDK_RESULT {"suite":"tests/godot-gestion-carnet.cjs","variant":"default","passed":true,"status":0,"milliseconds":43141,"error":null}
+2026-11-12T04:27:29.0322060Z SDK_RESULT {"suite":"tests/godot-observed-training-consequences.cjs","variant":"default","passed":true,"status":0,"milliseconds":26679,"error":null}
+2026-11-12T04:27:46.5915447Z SDK_RESULT {"suite":"tests/godot-effective-training-receipt.cjs","variant":"default","passed":true,"status":0,"milliseconds":17560,"error":null}
+2026-11-12T04:27:47.2704786Z # tests 1
+2026-11-12T04:27:47.2705327Z # pass 1
+2026-11-12T04:27:47.2705613Z # fail 0
+2026-11-12T04:27:47.2708160Z SDK_RESULT {"suite":"tests/godot-office-entity-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":678,"error":null}

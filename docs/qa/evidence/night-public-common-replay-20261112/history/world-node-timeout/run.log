@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p
+not ok 1 - Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p
+  ---
+  duration_ms: 60118.983956
+  type: 'test'
+  location: '/workspace/work/night-common/tests/godot-analysis-club-graphics.cjs:11:1'
+  failureType: 'testCodeFailure'
+  error: 'spawnSync /workspace/work/tools/node-v22.23.4-linux-x64/bin/node ETIMEDOUT'
+  code: 'ETIMEDOUT'
+  stack: |-
+    Object.spawnSync (node:internal/child_process:1120:20)
+    spawnSync (node:child_process:902:24)
+    TestContext.<anonymous> (/workspace/work/night-common/tests/godot-analysis-club-graphics.cjs:50:24)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 60182.146694

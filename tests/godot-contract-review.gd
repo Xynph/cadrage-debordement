@@ -26,6 +26,28 @@ func choose(control: OptionButton, index: int) -> void:
 	control.select(index)
 	control.item_selected.emit(index)
 	await settle()
+
+func activate(control: Control, keyboard: bool) -> void:
+	check(is_instance_valid(control), "Lien de lecture présent")
+	if not is_instance_valid(control): return
+	control.grab_focus()
+	await settle()
+	check(control.has_focus(), "Focus clavier visible : " + str(control.name))
+	for down in [true, false]:
+		if keyboard:
+			var key := InputEventKey.new()
+			key.keycode = KEY_ENTER
+			key.pressed = down
+			Input.parse_input_event(key)
+		else:
+			var click := InputEventMouseButton.new()
+			click.position = control.get_global_rect().get_center()
+			click.global_position = click.position
+			click.button_index = MOUSE_BUTTON_LEFT
+			click.pressed = down
+			root.push_input(click, true)
+		await process_frame
+	await settle()
 func pure_cases() -> void:
 	check(Review.projected_mark({"rating":77,"note":91,"potential":88}, "rating") == "77", "Niveau global lu sans utiliser la note au poste")
 	check(Review.projected_mark({"rating":77,"potential":99,"potentialRange":{"min":86,"max":90}}, "potential") == "86–90", "Potentiel fourni en fourchette, jamais scalaire")
@@ -195,6 +217,31 @@ func run() -> void:
 	check(level != null and level.text == Review.projected_mark(target, "rating"), "Colonne Niveau égale au niveau global projeté")
 	check(potential != null and potential.text == Review.projected_mark(target, "potential"), "Colonne Potentiel égale au potentiel projeté")
 	check(level.get_index() == 2 and potential.get_index() == 3, "Niveau et Potentiel côte à côte après le poste")
+	for scenario: Array in [["ContractNameLink", "", true], ["ContractPortraitLink", "", false], ["ContractSalaryLink", "contract", true], ["ContractEndLink", "contract", false]]:
+		view = review()
+		var link := button(str(scenario[0]), str(target.id))
+		check(link != null and link.get_meta("entity_kind", "") == "player" and link.get_meta("entity_id", "") == str(target.id), "Horizon : lien exact " + str(scenario[0]))
+		if link == null: continue
+		view.find_child("ContractReviewScroll", true, false).ensure_control_visible(link)
+		await settle()
+		var reading_before: Dictionary = app.management_ui.roster.contract_review.duplicate(true)
+		var last_command: String = app.last_command
+		await activate(link, bool(scenario[2]))
+		check(app.selected_player == str(target.id) and app.get_meta("immersive08_full_player", false), "Nom/portrait/condition ouvre la bonne fiche complète")
+		if scenario[1] == "contract": check(int(app.management_ui.immersive_player_tab) == 3, "Salaire et échéance ouvrent l’onglet Contrat")
+		check(app.last_command == last_command and app.get_node_or_null("ContractOffer") == null, "Le lien de lecture ne négocie ni ne commande")
+		var native_back := app.find_child("PlayerBackToSquad", true, false) as Button
+		check(native_back != null, "Retour natif présent après lien horizon")
+		if native_back == null: continue
+		await activate(native_back, true)
+		view = review()
+		check(view != null, "Retour à la revue des échéances")
+		if view == null: continue
+		for field: String in ["season", "search", "sort", "descending", "position", "status", "precision"]:
+			check(app.management_ui.roster.contract_review.get(field) == reading_before.get(field), "Revue conservée après lien : " + field)
+		link = button(str(scenario[0]), str(target.id))
+		check(link != null and link.has_focus(), "Focus rendu au lien horizon exact")
+		check(absi(view.find_child("ContractReviewScroll", true, false).scroll_vertical - int(reading_before.scroll)) <= 1, "Défilement de la revue conservé")
 	var profile := button("ContractProfile", str(target.id))
 	view.find_child("ContractReviewScroll", true, false).ensure_control_visible(profile)
 	profile.grab_focus()

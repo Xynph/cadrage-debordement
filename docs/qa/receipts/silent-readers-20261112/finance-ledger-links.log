@@ -1,0 +1,5 @@
+# FINANCE LEDGER LINKS : 38 contrôles ; 0 échec(s)
+# Subtest: Graphique financier : écritures archivées exactes, clavier, clic et lecture pure
+ok 1 - Graphique financier : écritures archivées exactes, clavier, clic et lecture pure
+  duration_ms: 11016.095198
+# duration_ms 11086.372225

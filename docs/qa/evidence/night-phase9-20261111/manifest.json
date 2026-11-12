@@ -1,0 +1,155 @@
+{
+  "format": 1,
+  "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+  "source_attribution": "SHA de common figé communiqué par root pour ces deux exécutions ; pas de provenance.json émis par les wrappers.",
+  "scope": "Réceptions graphiques locales ciblées, pas une campagne SDK globale.",
+  "speech_counters": "Non mesurés par ces wrappers : aucune valeur 0/0 déduite.",
+  "cases": {
+    "contracts": {
+      "checks": 270,
+      "failures": [],
+      "display": "X11",
+      "duration_ms": 47833.74511,
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "test_source_sha256": {
+        "tests/godot-contract-review.gd": "4fe89c308ee3bb5d98d309f6b2bf40ff050da113de16939673b536103da5a841",
+        "tests/godot-contract-review.cjs": "6dbafb11638e2a9220c4106b05052c5fe941893717e13f7ec68ee3bc239ddf18"
+      },
+      "files": [
+        {
+          "path": "contracts/report.json",
+          "source_path": "/workspace/work/night-phase9/contracts/report.json",
+          "bytes": 57,
+          "sha256": "ab40f6bba86333a7cff02bb0b7cc85735c090021a212ec3baa8e62b5eb0702d5"
+        },
+        {
+          "path": "contracts/godot.log",
+          "source_path": "/workspace/work/night-phase9/contracts/godot.log",
+          "bytes": 489,
+          "sha256": "a7da49c948d1bc4406bd376c46a15a35ef3b324075ad4c22f35ae725badeb0a0"
+        },
+        {
+          "path": "contracts/engine.log",
+          "source_path": "/workspace/work/night-phase9/contracts/engine.log",
+          "bytes": 412,
+          "sha256": "21e004995a1a2cc262d3d4eb9a956944d36507c68e5dd2ef3249ef3af66d225b"
+        },
+        {
+          "path": "contracts/run.log",
+          "source_path": "/workspace/work/night-phase9/contracts.log",
+          "bytes": 943,
+          "sha256": "7604bfac858adcbebd7ada7ec4e009a84d36a0e770eeea5100eaad7cf5245f62"
+        }
+      ]
+    },
+    "fatigue": {
+      "checks": 685,
+      "failures": [],
+      "display": "X11",
+      "duration_ms": 106471.075246,
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "test_source_sha256": {
+        "tests/godot-fatigue-overview.gd": "83909dcfc4a979df9379ccc19bb1406465d4711ed89742d32e6d3528e9286f23",
+        "tests/godot-fatigue-overview.cjs": "d30ab29c84f828e1e25a9631a286b7b34b6576528844ff5dc81d60b4619dd631"
+      },
+      "files": [
+        {
+          "path": "fatigue/report.json",
+          "source_path": "/workspace/work/night-phase9/fatigue/report.json",
+          "bytes": 452,
+          "sha256": "b8dbf38512551712a5d5db78950d4901a82262887d210093b470a0c3f47bf14b"
+        },
+        {
+          "path": "fatigue/godot.log",
+          "source_path": "/workspace/work/night-phase9/fatigue/godot.log",
+          "bytes": 1420,
+          "sha256": "2cafa1b8b0641683ae9e9c6fa8e75f136a75f8a1fdafe58da830882feb50ad93"
+        },
+        {
+          "path": "fatigue/engine.log",
+          "source_path": "/workspace/work/night-phase9/fatigue/engine.log",
+          "bytes": 1343,
+          "sha256": "6911ff3adfcae4bee9265d6355bd85c90eae296e220468c9916dd86210709cc6"
+        },
+        {
+          "path": "fatigue/run.log",
+          "source_path": "/workspace/work/night-phase9/fatigue.log",
+          "bytes": 1891,
+          "sha256": "d5a77d1921e12194fe8d2828e6edad64453313015d52f6509b0af22ca0b9895c"
+        }
+      ]
+    }
+  },
+  "images": [
+    {
+      "path": "images/contrats-effectif.png",
+      "source_path": "/workspace/work/night-phase9/contracts/contrats-effectif.png",
+      "bytes": 700641,
+      "sha256": "3aa154e08a9c894cfc83b631906eb3a31dce7716c64b0cf899c8ddb1e389ebf2",
+      "case": "contracts",
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "width": 2560,
+      "height": 1440,
+      "classification": "carriere_reelle",
+      "caption": "Revue réelle : effectif et échéances, salaire hebdomadaire",
+      "edited": false
+    },
+    {
+      "path": "images/contrats-monthly.png",
+      "source_path": "/workspace/work/night-phase9/contracts/contrats-monthly.png",
+      "bytes": 705751,
+      "sha256": "c8aa2c35a4b076994828edbf771af907634c361d55ae721741a82955496fcd36",
+      "case": "contracts",
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "width": 2560,
+      "height": 1440,
+      "classification": "carriere_reelle",
+      "caption": "Même revue réelle, montants mensuels affichés",
+      "edited": false
+    },
+    {
+      "path": "images/contrats-nom-long.png",
+      "source_path": "/workspace/work/night-phase9/contracts/contrats-nom-long.png",
+      "bytes": 331429,
+      "sha256": "1a623e7da559e088c84bc557c6078cb5505bbcb2bbfc86b45e5238c6b4c18afd",
+      "case": "contracts",
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "width": 2560,
+      "height": 1440,
+      "classification": "projection_ui_synthetique",
+      "caption": "Nom remplacé uniquement dans la projection UI puis restauré ; troncature illustrée",
+      "edited": false
+    },
+    {
+      "path": "images/fatigue-carriere-reelle-1440.png",
+      "source_path": "/workspace/work/night-phase9/fatigue/fatigue-carriere-reelle-1440.png",
+      "bytes": 564195,
+      "sha256": "b32231f70132f94b21618302cb341c9ff2d9238c4bdb465751a7edd3855ada5d",
+      "case": "fatigue",
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "width": 2560,
+      "height": 1440,
+      "classification": "carriere_reelle",
+      "caption": "Carrière réelle après confirmation du plan individuel ; aucune séance lancée",
+      "edited": false
+    },
+    {
+      "path": "images/fatigue-projection-de-recette-1440.png",
+      "source_path": "/workspace/work/night-phase9/fatigue/fatigue-projection-de-recette-1440.png",
+      "bytes": 573180,
+      "sha256": "bd0b01c38a8138283c9eb1dabfb677897a510dfab9fd037d7332a177e1a68386",
+      "case": "fatigue",
+      "source_commit": "096f3d8f6a879bc2e240e99b2184ab7f3d688182",
+      "width": 2560,
+      "height": 1440,
+      "classification": "projection_ui_synthetique",
+      "caption": "Condition, charge, blessure, suspension et sélection injectées uniquement dans la projection UI ; profil moteur intact",
+      "edited": false
+    }
+  ],
+  "documentation": {
+    "path": "README.md",
+    "bytes": 2622,
+    "sha256": "e7fdd85ee2bd3c3b566d41daa04608d2142a795be356c212c0fe58ac76c2ecea"
+  }
+}

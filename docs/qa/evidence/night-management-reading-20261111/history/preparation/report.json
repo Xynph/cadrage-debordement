@@ -1,0 +1,10 @@
+{
+  "captures": [],
+  "checks": 25,
+  "failures": [
+    "Le vrai vestiaire est affiché"
+  ],
+  "scope": "Real game client/worker; requires common read-only window suspension before running.",
+  "speech_requests": 0,
+  "speech_starts": 0
+}

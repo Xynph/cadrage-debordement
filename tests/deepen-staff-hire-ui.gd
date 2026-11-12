@@ -1,5 +1,18 @@
 extends "deepen-staff-real-ui.gd"
 
+var speech_requested := 0
+var speech_started := 0
+var closed_speech_ids := 0
+func mute_and_watch_coach() -> void:
+	app.coach.speech.set_muted(true)
+	app.coach.speech.requested.connect(func(_text: String): speech_requested += 1)
+	app.coach.speech.started.connect(func(_id: int): speech_started += 1)
+func finish() -> void:
+	check(speech_requested == 0 and speech_started == 0 and closed_speech_ids == 0 and int(app.coach.speech._id) == 0,
+		"Silence recrutement : requested, started et identifiants des deux clients à zéro")
+	print("DEEPEN_STAFF_HIRE_UI: "+str(checks)+" contrôles, "+str(failures.size())+" échec(s)")
+	await super.finish()
+
 func candidates_page(name_filter: String) -> void:
 	await staff_page()
 	var tab := app.find_child("StaffCareerTab",true,false) as OptionButton
@@ -7,6 +20,13 @@ func candidates_page(name_filter: String) -> void:
 	if tab!=null: tab.select(1); tab.item_selected.emit(1); await settle()
 	var search := app.find_child("StaffSearch",true,false) as LineEdit
 	if search!=null: search.text=name_filter; search.text_changed.emit(name_filter); await settle()
+func employed_page(name_filter: String) -> void:
+	await staff_page(name_filter)
+	# Directory reading survives navigation. Select the real team tab rather
+	# than relying on a render to reset the previously visited candidates tab.
+	var tab := app.find_child("StaffCareerTab",true,false) as OptionButton
+	check(tab != null,"Onglet équipe du staff public après recrutement")
+	if tab!=null: tab.select(0); tab.item_selected.emit(0); await settle()
 func choose_years(value: int) -> void:
 	var field := app.find_child("StaffContractYears",true,false) as OptionButton
 	check(field!=null,"Choix de durée public")
@@ -20,8 +40,8 @@ func selected_years() -> int:
 func run() -> void:
 	if OS.has_environment("CD_STAFF_REAL_WORKER"): ProjectSettings.set_setting("native_engine/worker_path",OS.get_environment("CD_STAFF_REAL_WORKER"))
 	root.size=Vector2i(1920,1080)
-	app=load("res://main.tscn").instantiate();root.add_child(app)
-	await command("snapshot");await command("new_career",{"mode":"fiction","club":0});await staff_page()
+	app=load("res://main.tscn").instantiate();root.add_child(app);mute_and_watch_coach()
+	await response("snapshot initial");await command("new_career",{"mode":"fiction","club":0}); await ContextualFlow.settle_club_meetings(app, self, check);await staff_page()
 	if not app.model.clubLife.staffCareer.get("active",false):await press(button("EnableStaffCareer"));await confirm_action();await staff_page()
 	await press(button("StaffEmploymentEnable"));await confirm_action()
 	var candidate: Dictionary={}
@@ -62,11 +82,11 @@ func run() -> void:
 	for person: Dictionary in app.model.clubLife.staffEmployment.own:
 		if person.id==candidate.id:employed=person;break
 	check(not employed.is_empty() and employed.contractEnd==2 and employed.employed,"Recrutement confirmé deux saisons, contrat réellement rémunéré")
-	await staff_page(str(candidate.name));await press(button("StaffRenew"));await choose_years(3)
+	await employed_page(str(candidate.name));await press(button("StaffRenew"));await choose_years(3)
 	contract=dialog("StaffContract")
 	if contract!=null:geometry(contract,"Devis prolongation");await press(contract.get_ok_button())
 	before=await exported_state()
-	await staff_page(str(candidate.name));await press(button("StaffRenew"))
+	await employed_page(str(candidate.name));await press(button("StaffRenew"))
 	check(selected_years()==3,"Prolongation préparée trois saisons conservée après fermeture")
 	await press(button("StaffContractConfirm"));await response("prolongation rémunérée")
 	var state: Dictionary=JSON.parse_string(await exported_state())
@@ -75,8 +95,8 @@ func run() -> void:
 	before=await exported_state()
 	app.bridge.stop();deadline=Time.get_ticks_msec()+6000
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await process_frame
+	closed_speech_ids += int(app.coach.speech._id)
 	app.queue_free();await process_frame
-	app=load("res://main.tscn").instantiate();root.add_child(app);await response("reprise recrutement prolongé")
+	app=load("res://main.tscn").instantiate();root.add_child(app);mute_and_watch_coach();await response("reprise recrutement prolongé")
 	check(await exported_state()==before,"Reprise exacte du recrutement et de la prolongation")
-	print("DEEPEN_STAFF_HIRE_UI: "+str(checks)+" contrôles, "+str(failures.size())+" échec(s)")
 	await finish()

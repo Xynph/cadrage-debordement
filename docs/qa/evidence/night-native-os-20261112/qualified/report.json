@@ -1,0 +1,247 @@
+{
+  "after": {
+    "bridge_next_id": 1,
+    "focus_instance": 165423353605,
+    "focus_name": "PerformanceMatchScore_s1-elite-league-0-0",
+    "model_sha256": "33a1d1c33e92e1749f92556c6bd517c0defcf2698320384df27a2c7479ed446d",
+    "profile_sha256": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b",
+    "requested": 0,
+    "route": "Club",
+    "saved_clock": 1794443356698.0,
+    "saved_seed": 425321206.0,
+    "score_focused": true,
+    "score_instance": 165423353605,
+    "scroll_y": 0,
+    "speech_id": 0,
+    "started": 0
+  },
+  "archive_identity": {
+    "matching_rows": 1,
+    "score": [
+      15.0,
+      20.0
+    ],
+    "score_types": [
+      3,
+      3
+    ]
+  },
+  "baseline": {
+    "bridge_next_id": 1,
+    "focus_instance": 165423353605,
+    "focus_name": "PerformanceMatchScore_s1-elite-league-0-0",
+    "model_sha256": "33a1d1c33e92e1749f92556c6bd517c0defcf2698320384df27a2c7479ed446d",
+    "profile_sha256": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b",
+    "requested": 0,
+    "route": "Club",
+    "saved_clock": 1794443356698.0,
+    "saved_seed": 425321206.0,
+    "score_focused": true,
+    "score_instance": 165423353605,
+    "scroll_y": 0,
+    "speech_id": 0,
+    "started": 0
+  },
+  "captures": [
+    {
+      "file": "/workspace/work/native-os-input/evidence/ready-2560.png",
+      "height": 1440,
+      "sha256": "eaad2f938f3cbe6d820d9f74a2d430089e9d8cdb8b6d89a65dfc4ac7c70bceff",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/native-os-input/evidence/modal-2560.png",
+      "height": 1440,
+      "sha256": "2ca456167f046d12fbed9e1f453e6743f08c792ac22d4315b51bbd235ddaf9f7",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/native-os-input/evidence/returned-2560.png",
+      "height": 1440,
+      "sha256": "eaad2f938f3cbe6d820d9f74a2d430089e9d8cdb8b6d89a65dfc4ac7c70bceff",
+      "width": 2560
+    }
+  ],
+  "checks": 47,
+  "elapsed_ms": 43908,
+  "failures": [],
+  "fixture_id": "s1-elite-league-0-0",
+  "input_source": "X11 events supplied externally; this probe never injects inputs or calls navigation history directly.",
+  "native_key_events": [
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194309,
+      "origin": "root-window-input",
+      "physical_keycode": 4194309,
+      "pressed": true,
+      "ticks_ms": 32839
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194309,
+      "origin": "scene-input",
+      "physical_keycode": 4194309,
+      "pressed": true,
+      "ticks_ms": 32839
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194309,
+      "origin": "root-window-input",
+      "physical_keycode": 4194309,
+      "pressed": false,
+      "ticks_ms": 32907
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194309,
+      "origin": "scene-input",
+      "physical_keycode": 4194309,
+      "pressed": false,
+      "ticks_ms": 32907
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194328,
+      "origin": "root-window-input",
+      "physical_keycode": 4194328,
+      "pressed": true,
+      "ticks_ms": 43007
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194328,
+      "origin": "modal-window-input",
+      "physical_keycode": 4194328,
+      "pressed": true,
+      "ticks_ms": 43007
+    },
+    {
+      "alt": true,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194319,
+      "origin": "root-window-input",
+      "physical_keycode": 4194319,
+      "pressed": true,
+      "ticks_ms": 43007
+    },
+    {
+      "alt": true,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194319,
+      "origin": "modal-window-input",
+      "physical_keycode": 4194319,
+      "pressed": true,
+      "ticks_ms": 43009
+    },
+    {
+      "alt": true,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194319,
+      "origin": "root-window-input",
+      "physical_keycode": 4194319,
+      "pressed": false,
+      "ticks_ms": 43083
+    },
+    {
+      "alt": true,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194319,
+      "origin": "scene-input",
+      "physical_keycode": 4194319,
+      "pressed": false,
+      "ticks_ms": 43083
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194328,
+      "origin": "root-window-input",
+      "physical_keycode": 4194328,
+      "pressed": false,
+      "ticks_ms": 43083
+    },
+    {
+      "alt": false,
+      "device": 16,
+      "echo": false,
+      "keycode": 4194328,
+      "origin": "scene-input",
+      "physical_keycode": 4194328,
+      "pressed": false,
+      "ticks_ms": 43083
+    }
+  ],
+  "phase_history": [
+    {
+      "elapsed_ms": 11120,
+      "phase": "ready"
+    },
+    {
+      "elapsed_ms": 33018,
+      "phase": "modal"
+    },
+    {
+      "elapsed_ms": 42988,
+      "phase": "returned"
+    },
+    {
+      "elapsed_ms": 43615,
+      "phase": "finished"
+    }
+  ],
+  "provenance": {
+    "copied_profile": "/workspace/work/native-os-input/profile/PrototypeGodot",
+    "execution_note": "Prepared only: no Godot, X11 input or capture executed by functional_qa.",
+    "files": [
+      {
+        "bytes": 5707962.0,
+        "name": "donnees-precedentes.json",
+        "sha256": "dc7f7603d528e03fc64e3d3d27cef810fbd114c7f4defe69f237950a16c2d00e"
+      },
+      {
+        "bytes": 5708097.0,
+        "name": "donnees.json",
+        "sha256": "6c75b4870fa04cb28972a93bbe13fec61ab9114cd0f94931e4a43c0ec1eb2b4b"
+      },
+      {
+        "bytes": 196.0,
+        "name": "guide.json",
+        "sha256": "20e0bbb5066230197f9ee8095ff922d1ffe39584b85dc1c77a814602f6656677"
+      }
+    ],
+    "harness_correction": "Compare exact numeric elements after numeric type and array size checks: Godot JSON arrays contain floats and array equality to an int literal array is false. No product or fixture changed.",
+    "oskeys_sha256": "18f26b67a933513d6218d0b96831165ec24c6a362f05e3fd8125e333a287b81e",
+    "probe_sha256": "f5b08cecb2f1092e6a9779f92bcd25046848f29a558628e9343a5ff7f8e2e8dd",
+    "root_instrumentation": "Observe root and modal Window.window_input as well as scene input; explicitly mute the copied career speech before any worker response. No input injected by probe.",
+    "runtime_lock_note": "profil.lock is a runtime artifact and was not copied. All save/guide files are exact copies; source files untouched.",
+    "source_code_sha256": {
+      "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+      "native/godot/ui/immersive08/club_canvas.gd": "9c696238f2e64cf7d233cf0cceb2bf8d1c093adb568b719b8d55e1d2e15d6742",
+      "native/godot/ui/immersive08/competition_canvas.gd": "7201a900e371955fdbce2f401c816533d7b69f348a7f0fce098b6ca0dc1f474b",
+      "native/godot/ui/navigation_controller.gd": "93ff59c1b2056305e3526d1f732b47ae742d0d3a39bc6e2d1be17b61881e6241",
+      "native/godot/ui/performance_analysis_view.gd": "f39ac81c6f5fb38e6b129521c14be76bd03f1d6f70de44d9d36678db93373891"
+    },
+    "source_profile": "/tmp/cd-analysis-club-graphics-UK7pUD/PrototypeGodot",
+    "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22"
+  },
+  "sdk_launched_by": "root only",
+  "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22"
+}

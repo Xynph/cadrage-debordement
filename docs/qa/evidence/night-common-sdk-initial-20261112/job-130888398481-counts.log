@@ -1,0 +1,25 @@
+2026-11-12T00:42:34.9296076Z SDK_RESULT {"suite":"tests/godot-match-journal.cjs","variant":"default","passed":true,"status":0,"milliseconds":32698,"error":null}
+2026-11-12T00:42:36.2468801Z # fail 0
+2026-11-12T00:42:36.2470243Z SDK_RESULT {"suite":"tests/godot-immersion-copy.cjs","variant":"default","passed":true,"status":0,"milliseconds":1317,"error":null}
+2026-11-12T00:42:37.7439916Z # fail 0
+2026-11-12T00:42:37.7450217Z SDK_RESULT {"suite":"tests/godot-regen-portraits.cjs","variant":"default","passed":true,"status":0,"milliseconds":1497,"error":null}
+2026-11-12T00:42:53.1232943Z SDK_RESULT {"suite":"tests/godot-club-memory.cjs","variant":"default","passed":true,"status":0,"milliseconds":15379,"error":null}
+2026-11-12T00:43:06.9171358Z # fail 0
+2026-11-12T00:43:06.9172605Z SDK_RESULT {"suite":"tests/godot-squad-column-sort.cjs","variant":"default","passed":true,"status":0,"milliseconds":13794,"error":null}
+2026-11-12T00:43:41.3245096Z # fail 0
+2026-11-12T00:43:41.3246332Z SDK_RESULT {"suite":"tests/godot-epcr-preparation.cjs","variant":"default","passed":true,"status":0,"milliseconds":34407,"error":null}
+2026-11-12T00:44:31.1215669Z # fail 0
+2026-11-12T00:44:31.1216857Z SDK_RESULT {"suite":"tests/godot-immersive-reception.cjs","variant":"default","passed":true,"status":0,"milliseconds":49798,"error":null}
+2026-11-12T00:45:08.5124373Z # fail 0
+2026-11-12T00:45:08.5125628Z SDK_RESULT {"suite":"tests/godot-native06-integration.cjs","variant":"default","passed":true,"status":0,"milliseconds":37390,"error":null}
+2026-11-12T00:46:34.9273177Z SDK_RESULT {"suite":"tests/godot-art-direction07.cjs","variant":"default","passed":true,"status":0,"milliseconds":86415,"error":null}
+2026-11-12T00:47:31.7536764Z # fail 0
+2026-11-12T00:47:31.7538154Z SDK_RESULT {"suite":"tests/godot-competition-editor.cjs","variant":"default","passed":true,"status":0,"milliseconds":56827,"error":null}
+2026-11-12T00:48:01.8747288Z # fail 0
+2026-11-12T00:48:01.8748709Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"layout-native","passed":true,"status":0,"milliseconds":30120,"error":null}
+2026-11-12T00:48:52.4136740Z # fail 0
+2026-11-12T00:48:52.4138097Z SDK_RESULT {"suite":"tests/godot-contextual.cjs","variant":"default","passed":true,"status":0,"milliseconds":50538,"error":null}
+2026-11-12T00:52:34.2843904Z SMALL WINDOW GEOMETRY 4797 checks 0 failures; output=/home/runner/work/_temp/geometry-main
+2026-11-12T00:57:55.9581020Z SMALL WINDOW GEOMETRY 1905 checks 0 failures; output=/home/runner/work/_temp/geometry-extra
+2026-11-12T00:59:04.7736292Z # pass 3
+2026-11-12T00:59:04.7736514Z # fail 0

@@ -3,7 +3,7 @@ extends "godot-youth-scout-ui.gd"
 func response(id: String) -> void:
 	var deadline := Time.get_ticks_msec()+45000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline: await process_frame
-	check(not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok,"Vrai worker : "+id)
+	check(not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok,"Vrai worker : "+id+" · "+str(app.last_error))
 	app.timer.stop()
 	await settle()
 
@@ -19,6 +19,7 @@ func run() -> void:
 	root.add_child(app)
 	await response("startup")
 	await command("new_career",{"mode":"common","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var view := await open_youth()
 	await press(button("YouthDevelopmentEnable"))
 	await confirm_action()
