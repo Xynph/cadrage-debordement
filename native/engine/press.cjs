@@ -56,9 +56,18 @@ function factory(){
  const keys=(value,allowed)=>obj(value)&&Object.keys(value).every(k=>allowed.includes(k));
  const text=t=>typeof t==='string'&&t.length>0&&t.length<=600&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(t);
  const reporter=id=>CDPressQuestionBank.journalists.find(j=>j.id===id);
+ // L'archive garde la signature écrite le jour de la conférence. L'écran présente
+ // l'identité actuelle du même journaliste (base, ou pack actif par projection),
+ // comme pour les joueurs et les clubs ; la sauvegarde n'est pas réécrite.
+ const signature=id=>{const j=reporter(id);return {id:j.id,name:j.name,outlet:j.outlet};};
  const validAnswer=(id,answerId)=>CDPressQuestionBank.questions.some(q=>q.id===id&&q.answers.some(a=>a.id===answerId));
  function validate(s){
   if(!s)return true;
+  // Anciennes carrières : les identifiants de dix journalistes ont changé. On les renomme sans toucher aux textes archivés.
+  {const anciens=CDPressQuestionBank.legacyJournalistIds||{},cle=t=>{let h=2166136261;for(const o of unescape(encodeURIComponent(String(t)))){h^=o.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,'0');},neuf=id=>reporter(id)?id:anciens[cle(id)]||id;
+   for(const h of s.pressConference?.history||[])if(h.journalist?.id!==undefined)h.journalist.id=neuf(h.journalist.id);
+   for(const e of s.pressConference?.lastOutcome?.exchanges||[])if(e.journalistId!==undefined)e.journalistId=neuf(e.journalistId);
+   const c=s.pressPeople?.contacts;if(c)for(const id of Object.keys(c)){const n=neuf(id);if(n!==id&&c[n]===undefined){c[n]=c[id];delete c[id];}}}
   const date=(season,week)=>int(season,1,s.season)&&int(week,0,maxWeek(s))&&(season<s.season||week<=weekOf(s));
   const clubId=id=>typeof id==='string'&&/^club-\d+$/.test(id)&&int(Number(id.slice(5)),0,s.clubs.length-1);
   if(s.pressInvitations!==undefined){
@@ -353,7 +362,7 @@ function factory(){
   const required=mandatory()&&!!questions;
   const reason=S.live?'Conférence indisponible pendant un match.':required?requiredReason:
    questions?'':mandatory()?'Aucune invitation de presse en attente.':'Conférence déjà réalisée cette semaine.';
-  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
+  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
  }
  function execute(command,payload){
   check(command==='press_conference','Commande de presse inconnue.');check(!!S,'Créez ou importez une carrière.');check(!S.live,'Conférence indisponible pendant un match.');validate(S);
