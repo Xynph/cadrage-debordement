@@ -287,6 +287,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	# l'écran intermédiaire garde alors le score, le fil et l'horloge d'avant lui.
 	if (premiere and int(live.get("minute", 0)) > 0) or delegue: _retenu = {}
 	if nouveau and (not _retenu.is_empty() or _doit_retenir(candidat)):
+		if etat == ATTENTE: _vers_inter()
 		if _retenu.is_empty() or str(_retenu.get("cle", "")) != str(candidat.get("cle", "")):
 			_retenu_vus = connus
 			_retenu_depuis = 0.0
@@ -296,7 +297,6 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 				"ecoule": _entracte, "debut_ms": Time.get_ticks_msec()})
 		_retenu = candidat
 		nouveau = false
-		if etat == ATTENTE: _vers_inter()
 	elif not nouveau:
 		_retenu = {}
 	if _retenu.is_empty():
@@ -737,6 +737,8 @@ func _plaquer(plan: Dictionary) -> void:
 		stage.jouer_geste(plaqueur, "plaquage", maxf(0.0, stage.instant_geste("plaquage") - 0.35), -1.0, true)
 
 func _vers_inter() -> void:
+	# L'entracte se compte depuis l'apparition de l'écran intermédiaire (l'attente en 3D n'en fait pas partie).
+	if etat != INTER and _entracte >= 0.0: _entracte = 0.0
 	etat = INTER
 	attente = 0.0
 	_presenter(false)
