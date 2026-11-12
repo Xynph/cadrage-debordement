@@ -70,30 +70,32 @@ const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)?{x:Math.max(0,Math.
 
 // Mises en scène déjà calculées (le temps fort reste le même pendant plusieurs pas).
 const CHOREGRAPHIES=new Map();
-// Chorégraphie d'un temps fort contenant un essai en jeu courant (CD_MATCH_CHOREGRAPHE=1).
-// Présentation seule : en cas d'échec, le temps fort part sans elle (repli de la vue).
+// Chorégraphie d'un temps fort (CD_MATCH_CHOREGRAPHE=1) : essai en jeu courant, franchissement
+// sans essai, jeu au pied et chasse, avec les plans qui les amènent (remise en jeu, récupération,
+// temps de jeu). Présentation seule : en cas d'échec, le temps fort part sans elle (repli de la vue).
 function choregraphier(tf,plans,events,lire){
- const n=plans.findIndex(p=>p.kind==='try');
- if(n<0)return null;
+ const cle=tf.cle+'|'+plans.map(p=>p.index).join(',');
+ if(CHOREGRAPHIES.has(cle))return CHOREGRAPHIES.get(cle);
+ // Scène affichée avant le premier plan quand le temps fort n'a pas de départ (suite d'action).
  let avant=null;
- if(n===0&&!tf.depart){
+ if(!tf.depart){
   const idx=plans[0].index;
   for(let i=idx-1;i>=0&&avant===null;i--){const e=events[i];if(e?.scene&&!['advantage','card','break','end'].includes(e.scene.kind))avant=lire.scenes([i])[0]}
  }
- const cle=tf.cle+'|'+plans[n].index;
- if(CHOREGRAPHIES.has(cle))return CHOREGRAPHIES.get(cle);
- const base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle});
- if(!base)return null;
+ const base=choregraphe.entreeDepuisTempsFort({...tf,plans},events,{avant,cle:tf.cle});
+ if(!base){CHOREGRAPHIES.set(cle,null);return null}
  const ids=base.joueurs.map(p=>p.id),bruts=typeof lire.profils==='function'?lire.profils(ids):{},profils={};
  for(const p of base.joueurs)profils[p.id]=choregraphe.profil(p.slot,bruts[p.id]?.vitesse);
- const c={...choregraphe.composer({...base,profils}),plan:n};
+ const c=choregraphe.composer({...base,profils});
+ // Outil de test (options.choregraphe === 'entrees') : l'entrée est jointe, pour en faire un jeu d'essai.
+ Object.defineProperty(c,'entree',{value:{...base,profils},enumerable:false});
  CHOREGRAPHIES.set(cle,c);
  while(CHOREGRAPHIES.size>8)CHOREGRAPHIES.delete(CHOREGRAPHIES.keys().next().value);
  return c;
 }
 
 // `lire` : accès en lecture au moteur ({scenes, transformation, etat, profils}).
-// `options.choregraphe` : joindre au temps fort la mise en scène continue de son essai en jeu courant.
+// `options.choregraphe` : joindre au temps fort sa mise en scène continue (chorégraphe).
 function project(model,niveau,lire,options={}){
  const live=model.live,events=live.events;
  if(!NIVEAUX.includes(niveau))throw new RangeError('Niveau de temps forts inconnu : '+niveau);
@@ -141,8 +143,12 @@ function project(model,niveau,lire,options={}){
   if(plans.length)direct.tempsFort={cle:tf.cle,suite:tf.suite,type:tf.type,titre:TYPES[tf.type]||'Temps fort',types:tf.types,score:tf.score,force:tf.force,
    duree:tf.duree,debut:tf.debut,fin:tf.fin,scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
    bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:String(events[i].text||'')}))};
-  if(plans.length&&options.choregraphe===true){
-   try{const c=choregraphier(direct.tempsFort,plans,events,lire);if(c)direct.tempsFort.choregraphie=c}
+  if(plans.length&&(options.choregraphe===true||options.choregraphe==='entrees')){
+   try{
+    const c=choregraphier(direct.tempsFort,plans,events,lire);
+    if(c)direct.tempsFort.choregraphie=c;
+    if(c&&options.choregraphe==='entrees')direct.tempsFort.choregraphieEntree=c.entree;
+   }
    catch(error){direct.tempsFort.choregraphieErreur=String(error?.message||error)}
   }
  }

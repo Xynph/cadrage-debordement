@@ -1,8 +1,10 @@
 extends SceneTree
 ## Chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) dans la vue 3D.
-## 1. Pistes valides : chaque joueur suit sa piste (après le raccord de 0,6 s), le ballon
-##    est dans les mains du porteur des pistes ou sur sa trajectoire, il finit au sol au
-##    point d'essai ; allure à l'écran plafonnée ; animation de course quand on court.
+## 1. Pistes valides, pour chaque type (essai, franchissement, jeu au pied) et chaque remise
+##    en jeu (mêlée, touche, coup d'envoi, jeu ouvert) : chaque joueur suit sa piste (après le
+##    raccord de 0,6 s, ou d'emblée sur une coupe), le ballon est dans les mains du porteur des
+##    pistes ou sur sa trajectoire, il finit là où les pistes le laissent ; allure à l'écran
+##    plafonnée ; animation de course quand on court ; mêlée liée, lancer, saut, coup de pied montrés.
 ## 2. Fin des pistes : les joueurs restent où ils sont, la vue reprend son interpolation.
 ## 3. Repli : pistes absentes, d'une autre version ou incomplètes refusées, rien ne change ;
 ##    une nouvelle image de la régie met fin aux pistes.
@@ -58,76 +60,28 @@ func track_point(pistes: Dictionary, id: String, t: float) -> Vector3:
 func run() -> void:
 	var texte := FileAccess.get_file_as_string(OS.get_environment("CD_CHOREGRAPHIE_PISTES"))
 	var donnees: Variant = JSON.parse_string(texte)
-	check(donnees is Dictionary, "pistes lisibles")
-	if not donnees is Dictionary:
+	check(donnees is Dictionary and donnees.get("cas") is Array and not donnees.cas.is_empty(), "pistes lisibles")
+	if not donnees is Dictionary or not donnees.get("cas") is Array or donnees.cas.is_empty():
 		finish()
 		return
-	var entree: Dictionary = donnees.entree
-	var pistes: Dictionary = donnees.pistes
-	var duree := float(pistes.duree)
-
-	# --- 1. Lecture des pistes ------------------------------------------------
-	var view = make_view()
+	# --- 1. Lecture des pistes, pour chaque type mis en scène -------------------
+	var view = null
+	for cas: Dictionary in donnees.cas:
+		view = make_view()
+		await process_frame
+		lire(view, cas)
+		view.queue_free()
+		await process_frame
+	var entree: Dictionary = donnees.cas[0].entree
+	var pistes: Dictionary = donnees.cas[0].pistes
+	view = make_view()
 	await process_frame
 	view.apply_frame(start_frame(entree, "[69,\"depart\",\"reception\"]"))
 	for i in 30:
 		view._process(STEP)
-	check(view.jouer_choregraphie(pistes), "pistes acceptées")
-	check(view.choregraphie_active(), "pistes actives")
-	var ecart_max := 0.0
-	var allure_max := 0.0
-	var ballon_max := 0.0
-	var mains_max := 0.0
-	var course_vue := false
-	var porteurs_vus: Dictionary = {}
-	var avant: Dictionary = {}
-	for id: String in view._actors:
-		avant[id] = view._actors[id].node.position
-	var ballon_avant: Vector3 = view._ball.global_position
-	var t := 0.0
-	var images := 0
-	while view.choregraphie_active() and not view.choregraphie_finie() and images < int((duree + 2.0) / STEP):
+	check(view.jouer_choregraphie(pistes), "pistes acceptées (fin)")
+	while view.choregraphie_active() and not view.choregraphie_finie():
 		view._process(STEP)
-		images += 1
-		t = view.choregraphie_temps()
-		for id: String in view._actors:
-			var at: Vector3 = view._actors[id].node.position
-			check(at.is_finite(), "position finie")
-			allure_max = maxf(allure_max, Vector2(at.x - avant[id].x, at.z - avant[id].z).length() / STEP)
-			avant[id] = at
-			if t > 0.7:
-				var piste := track_point(pistes, id, t)
-				# Échantillon le plus proche : 0,1 s d'avance ou de retard au plus, soit < 1 m à 9,4 m/s.
-				ecart_max = maxf(ecart_max, Vector2(at.x - piste.x, at.z - piste.z).length())
-			if view._actors[id].running:
-				course_vue = true
-		var porteur: String = view._choregraphie.porteur()
-		if not porteur.is_empty():
-			porteurs_vus[porteur] = true
-			check(view._actors[porteur].holding and view._carrier_id == porteur, "le porteur des pistes tient le ballon (%.1f s)" % t)
-			# Après le raccord de prise (0,2 s), le ballon est dans ses mains.
-			if view._choregraphie.etat(porteur) != "aplati" and t - view._choregraphie.source_depuis > 0.25:
-				var entry: Dictionary = view._actors[porteur]
-				mains_max = maxf(mains_max, view._ball.global_position.distance_to(Presentation.ball_anchor(entry.node, entry.rig)))
-		var b: Vector3 = view._ball.global_position
-		if t > 0.7:
-			if b.distance_to(ballon_avant) / STEP > 15.0: print("BALLON_RAPIDE %.2f %.1f %s %s" % [t, b.distance_to(ballon_avant) / STEP, porteur, view._choregraphie.source_ballon])
-			ballon_max = maxf(ballon_max, b.distance_to(ballon_avant) / STEP)
-		ballon_avant = b
-	check(view.choregraphie_finie(), "pistes lues jusqu'au bout (%.1f / %.1f s)" % [t, duree])
-	check(absf(images * STEP - duree) < 0.2, "durée à l'écran = durée des pistes (%.2f / %.1f s)" % [images * STEP, duree])
-	check(ecart_max < 1.0, "chaque joueur suit sa piste (écart %.2f m)" % ecart_max)
-	check(allure_max < 10.5, "aucune allure surhumaine à l'écran (%.1f m/s)" % allure_max)
-	check(ballon_max < 25.0, "ballon jamais téléporté (%.1f m/s)" % ballon_max)
-	check(mains_max < 0.05, "ballon dans les mains du porteur (%.3f m)" % mains_max)
-	check(course_vue, "animation de course pendant les pistes")
-	check(porteurs_vus.has(str(pistes.marqueur)), "le marqueur a porté le ballon")
-	var essai := Vector3(float(pistes.essai.x) - 50.0, 0.0, float(pistes.essai.y) - 35.0)
-	var fin: Vector3 = view._ball.global_position
-	check(Vector2(fin.x - essai.x, fin.z - essai.z).length() < 0.2 and fin.y < 0.25, "ballon aplati au point d'essai (%s)" % str(fin))
-	check(view._choregraphie.porteur().is_empty(), "plus de porteur après l'aplati")
-	results["lecture"] = {"duree": duree, "images": images, "ecart_max": snappedf(ecart_max, 0.01), "allure_max": snappedf(allure_max, 0.1),
-		"ballon_max": snappedf(ballon_max, 0.1), "mains_max": snappedf(mains_max, 0.001), "porteurs": porteurs_vus.keys()}
 
 	# --- 2. Fin des pistes : chacun reste en place, interpolation d'origine ----
 	var places: Dictionary = {}
@@ -152,7 +106,7 @@ func run() -> void:
 		repli._process(STEP)
 	check(not repli.jouer_choregraphie({}), "pas de pistes : refusé")
 	var autre := pistes.duplicate(true)
-	autre.version = 2
+	autre.version = 99
 	check(not repli.jouer_choregraphie(autre), "autre version : refusé")
 	var tronquee := pistes.duplicate(true)
 	tronquee.joueurs[0].x = tronquee.joueurs[0].x.slice(0, 5)
@@ -179,6 +133,103 @@ func run() -> void:
 	repli.queue_free()
 	await process_frame
 	finish()
+
+
+## Lit des pistes jusqu'au bout dans une vue neuve et contrôle que la vue les suit.
+func lire(view, cas: Dictionary) -> void:
+	var entree: Dictionary = cas.entree
+	var pistes: Dictionary = cas.pistes
+	var nom := str(cas.get("source", pistes.get("type", "")))
+	var duree := float(pistes.duree)
+	var coupe := bool(pistes.get("coupe", false))
+	view.apply_frame(start_frame(entree, "[69,\"depart\",\"reception\"]"))
+	for i in 30:
+		view._process(STEP)
+	check(view.jouer_choregraphie(pistes), "%s : pistes acceptées" % nom)
+	check(view.choregraphie_active(), "%s : pistes actives" % nom)
+	# Coupe sur une remise en jeu formée : chacun est déjà à sa place de départ.
+	if coupe:
+		view._process(0.0)
+		var ecart0 := 0.0
+		for id: String in view._actors:
+			var at: Vector3 = view._actors[id].node.position
+			var piste0 := track_point(pistes, id, 0.0)
+			ecart0 = maxf(ecart0, Vector2(at.x - piste0.x, at.z - piste0.z).length())
+		check(ecart0 < 0.05, "%s : coupe sur la remise en jeu en place (écart %.2f m)" % [nom, ecart0])
+	var ecart_max := 0.0
+	var allure_max := 0.0
+	var ballon_max := 0.0
+	var mains_max := 0.0
+	var course_vue := false
+	var porteurs_vus: Dictionary = {}
+	var etats_vus: Dictionary = {}
+	var avant: Dictionary = {}
+	for id: String in view._actors:
+		avant[id] = view._actors[id].node.position
+	var ballon_avant: Vector3 = view._ball.global_position
+	var t := 0.0
+	var images := 0
+	var raccord := 0.05 if coupe else 0.7
+	while view.choregraphie_active() and not view.choregraphie_finie() and images < int((duree + 2.0) / STEP):
+		view._process(STEP)
+		images += 1
+		t = view.choregraphie_temps()
+		for id: String in view._actors:
+			var at: Vector3 = view._actors[id].node.position
+			check(at.is_finite(), "position finie")
+			# Sur une coupe, la première image peut sauter (changement de plan) ; ensuite non.
+			if images > 1 or not coupe:
+				allure_max = maxf(allure_max, Vector2(at.x - avant[id].x, at.z - avant[id].z).length() / STEP)
+			avant[id] = at
+			if t > raccord:
+				var piste := track_point(pistes, id, t)
+				# Échantillon le plus proche : 0,1 s d'avance ou de retard au plus, soit < 1 m à 9,4 m/s.
+				ecart_max = maxf(ecart_max, Vector2(at.x - piste.x, at.z - piste.z).length())
+			if view._actors[id].running:
+				course_vue = true
+			etats_vus[view._choregraphie.etat(id)] = true
+		var porteur: String = view._choregraphie.porteur()
+		if not porteur.is_empty():
+			porteurs_vus[porteur] = true
+			check(view._actors[porteur].holding and view._carrier_id == porteur, "%s : le porteur des pistes tient le ballon (%.1f s)" % [nom, t])
+			# Après le raccord de prise (0,2 s), le ballon est dans ses mains.
+			if view._choregraphie.etat(porteur) != "aplati" and t - view._choregraphie.source_depuis > 0.25:
+				var entry: Dictionary = view._actors[porteur]
+				mains_max = maxf(mains_max, view._ball.global_position.distance_to(Presentation.ball_anchor(entry.node, entry.rig)))
+		var b: Vector3 = view._ball.global_position
+		if t > raccord and (images > 1 or not coupe):
+			ballon_max = maxf(ballon_max, b.distance_to(ballon_avant) / STEP)
+		ballon_avant = b
+	check(view.choregraphie_finie(), "%s : pistes lues jusqu'au bout (%.1f / %.1f s)" % [nom, t, duree])
+	check(absf(images * STEP - duree) < 0.2, "%s : durée à l'écran = durée des pistes (%.2f / %.1f s)" % [nom, images * STEP, duree])
+	check(ecart_max < 1.0, "%s : chaque joueur suit sa piste (écart %.2f m)" % [nom, ecart_max])
+	check(allure_max < 10.5, "%s : aucune allure surhumaine à l'écran (%.1f m/s)" % [nom, allure_max])
+	# Lancer en touche et coup de pied compris (vitesse en trois dimensions, hauteur comprise).
+	check(ballon_max < 30.0, "%s : ballon jamais téléporté (%.1f m/s)" % [nom, ballon_max])
+	check(mains_max < 0.05, "%s : ballon dans les mains du porteur (%.3f m)" % [nom, mains_max])
+	check(course_vue, "%s : animation de course pendant les pistes" % nom)
+	# Chaque porteur des pistes a eu le ballon à l'écran.
+	for paire: Variant in pistes.ballon.porteurs:
+		if paire is Array and paire[1] != null:
+			check(porteurs_vus.has(str(paire[1])), "%s : %s a porté le ballon à l'écran" % [nom, str(paire[1])])
+	# Fin : le ballon est là où les pistes le laissent (aplati, au sol, sorti en touche) ou dans les mains.
+	var n: int = pistes.ballon.x.size() - 1
+	var fin: Vector3 = view._ball.global_position
+	if view._choregraphie.porteur().is_empty():
+		var vise := Vector3(float(pistes.ballon.x[n]) - 50.0, 0.0, float(pistes.ballon.y[n]) - 35.0)
+		check(Vector2(fin.x - vise.x, fin.z - vise.z).length() < 0.3 and fin.y < 0.3, "%s : ballon au sol là où les pistes le laissent (%s)" % [nom, str(fin)])
+	if str(pistes.type) == "essai_jeu_courant":
+		var essai := Vector3(float(pistes.essai.x) - 50.0, 0.0, float(pistes.essai.y) - 35.0)
+		check(Vector2(fin.x - essai.x, fin.z - essai.z).length() < 0.2 and fin.y < 0.25, "%s : ballon aplati au point d'essai (%s)" % [nom, str(fin)])
+		check(view._choregraphie.porteur().is_empty(), "%s : plus de porteur après l'aplati" % nom)
+	if str(pistes.get("ouverture", "")) == "melee":
+		check(etats_vus.has("melee"), "%s : mêlée liée montrée" % nom)
+	if str(pistes.get("ouverture", "")) == "touche":
+		check(etats_vus.has("saut") and etats_vus.has("lancer"), "%s : lancer et sauteur levé montrés" % nom)
+	if str(pistes.type) == "jeu_au_pied":
+		check(etats_vus.has("jeu_au_pied"), "%s : coup de pied montré" % nom)
+	results[nom] = {"duree": duree, "images": images, "ecart_max": snappedf(ecart_max, 0.01), "allure_max": snappedf(allure_max, 0.1),
+		"ballon_max": snappedf(ballon_max, 0.1), "mains_max": snappedf(mains_max, 0.001), "porteurs": porteurs_vus.size()}
 
 
 func finish() -> void:

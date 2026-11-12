@@ -8,12 +8,14 @@ extends RefCounted
 ## trajectoire, ni résultat. Les déplacements gardent les animations par palier de
 ## vitesse de la vue ; les états (plaquage, chute, relevé, aplati, joie) jouent les
 ## gestes de la bibliothèque adaptée quand CD_MATCH_ANIMATIONS est défini, sinon une
-## pose procédurale simple (buste incliné, joueur au sol).
+## pose procédurale simple (buste incliné, joueur au sol, mêlée liée, sauteur levé en touche).
+## Les pistes peuvent couvrir tout le temps fort (remise en jeu formée, temps de jeu, jeu au
+## pied) : `coupe` vrai, la première image est posée d'emblée (coupe de réalisation), sans raccord.
 ##
 ## Sans pistes valides, `charger` rend faux et la vue garde son interpolation habituelle.
 ## Conception : docs/match-choregraphe-20261112.md.
 
-const VERSION := 1
+const VERSION := 2
 ## Les premières images rejoignent les pistes depuis la place réelle de chaque joueur
 ## (la scène précédente a pu être mise en scène autrement) : fondu de position.
 const RACCORD := 0.6
@@ -21,7 +23,10 @@ const RACCORD := 0.6
 const POSES := {
 	"plaquage": [1.15, 0.05], "plaquage_rate": [1.25, 0.08], "plaque": [1.0, 0.0], "au_sol": [1.45, 0.12],
 	"aplati": [1.35, 0.1], "ruck": [0.55, -0.12], "ramassage": [0.7, -0.1], "se_relever": [0.6, 0.0],
+	"melee": [1.1, -0.3], "soutien_saut": [0.3, -0.08], "saut": [0.0, 1.0],
 }
+## Sauteur de touche : levé et redescendu vite (les leveurs le portent), le reste à vitesse bornée.
+const LEVEE := 3.0
 const SOL := ["plaquage", "plaquage_rate", "plaque", "au_sol", "aplati"]
 
 var view: Node3D
@@ -48,6 +53,7 @@ var _ballon_depart := Vector3.ZERO
 var source_ballon := ""
 var source_depuis := 0.0
 var source_de := Vector3.ZERO
+var coupe_ballon := false
 
 
 func _init(owner: Node3D) -> void:
@@ -59,6 +65,7 @@ func charger(donnees: Dictionary) -> bool:
 	arreter()
 	if int(donnees.get("version", 0)) != VERSION or not donnees.get("joueurs") is Array or not donnees.get("ballon") is Dictionary:
 		return false
+	var coupe := bool(donnees.get("coupe", false))
 	var p := float(donnees.get("pas", 0.0))
 	var d := float(donnees.get("duree", 0.0))
 	if p <= 0.0 or d <= 0.0:
@@ -95,16 +102,18 @@ func charger(donnees: Dictionary) -> bool:
 	for e: Variant in donnees.get("evenements", []):
 		if e is Dictionary and str(e.get("type", "")) == "aplati":
 			aplati_a = float(e.get("t", -1.0))
-	# Écart entre la place réelle de chaque joueur et le début de sa piste.
+	# Écart entre la place réelle de chaque joueur et le début de sa piste (aucun sur une coupe).
 	for id: String in _pistes:
-		if view._actors.has(id):
+		if view._actors.has(id) and not coupe:
 			var depart := _point(id, 0.0)
 			var actor: Node3D = view._actors[id].node
 			_raccord[id] = Vector3(actor.position.x - depart.x, 0.0, actor.position.z - depart.z)
-	_ballon_depart = view._ball.global_position if view._ball.visible else Vector3.ZERO
+	_ballon_depart = view._ball.global_position if view._ball.visible and not coupe else Vector3.ZERO
 	source_ballon = ""
 	source_depuis = 0.0
 	source_de = _ballon_depart
+	# Coupe : le ballon est posé d'emblée à sa place des pistes (pas de raccord depuis l'image d'avant).
+	coupe_ballon = coupe
 	actif = true
 	return true
 
@@ -231,6 +240,12 @@ func _gestes_de_l_etat(id: String) -> void:
 			view.jouer_geste(id, "se_relever", 0.2)
 		"reception":
 			view.jouer_geste(id, "reception", maxf(0.0, view.instant_geste("reception") - 0.3), view.instant_geste("reception") + 0.25)
+		"saut":
+			view.jouer_geste(id, "reception_haute", maxf(0.0, view.instant_geste("reception_haute") - 0.8), view.instant_geste("reception_haute") + 0.4)
+		"lancer":
+			view.jouer_geste(id, "lancer", maxf(0.0, view.instant_geste("lancer") - 0.6), view.instant_geste("lancer") + 0.3)
+		"jeu_au_pied":
+			view.jouer_geste(id, "coup_de_pied", maxf(0.0, view.instant_geste("coup_de_pied") - 0.45), view.instant_geste("coup_de_pied") + 0.35)
 		"joie":
 			view.jouer_geste(id, "joie_poing" if id == marqueur else "joie", 0.35, 2.4)
 		"deception":
@@ -257,11 +272,14 @@ func pose() -> void:
 			voulu = POSES[nom]
 			if nom == "se_relever":
 				voulu = [0.0, 0.0]
+		# Le sauteur est levé même quand un geste de prise joue ses bras.
+		if nom == "saut":
+			voulu = [0.0, POSES.saut[1]]
 		# La pose rejoint la pose voulue à vitesse bornée : ni bascule ni redressement d'un coup.
 		var vu: Array = _poses.get(id, [0.0, 0.0, temps])
 		var dt := clampf(temps - float(vu[2]), 0.0, 0.1)
 		var pitch := move_toward(float(vu[0]), float(voulu[0]), 5.0 * dt)
-		var lift := move_toward(float(vu[1]), float(voulu[1]), 0.6 * dt)
+		var lift := move_toward(float(vu[1]), float(voulu[1]), (LEVEE if nom == "saut" or float(vu[1]) > 0.2 else 0.6) * dt)
 		if nom == "se_relever":
 			pitch = move_toward(float(vu[0]), 0.0, 1.6 * dt)
 		_poses[id] = [pitch, lift, temps]

@@ -740,6 +740,12 @@ func _ball_des_pistes() -> void:
 	# Changement de source (prise, lâcher, ramassage, aplati) : le ballon rejoint la nouvelle
 	# source en 0,2 s depuis sa place à l'écran, jamais d'un bond.
 	var source := porteur + ("|tenu" if tenu else "|piste")
+	if _choregraphie.coupe_ballon:
+		# Coupe sur une remise en jeu formée : le ballon est déjà à sa place.
+		_choregraphie.coupe_ballon = false
+		_choregraphie.source_ballon = source
+		_choregraphie.source_depuis = _choregraphie.temps - 1.0
+		_choregraphie.source_de = vise
 	if source != _choregraphie.source_ballon:
 		_choregraphie.source_ballon = source
 		_choregraphie.source_depuis = _choregraphie.temps

@@ -282,8 +282,9 @@ func gestures(view: Control) -> void:
 	regie.choisir_niveau("etendus")
 	check(app.user_preferences.data.get("match_highlights") == "etendus", "Le niveau choisi est enregistré dans les réglages : " + str(app.user_preferences.last_error))
 
-## Chorégraphe (CD_MATCH_CHOREGRAPHE=1) : l'essai en jeu courant de la 14e minute (graine 7)
-## est joué par les pistes du moteur, de bout en bout, sans annonce avant l'aplati ; une
+## Chorégraphe (CD_MATCH_CHOREGRAPHE=1) : le temps fort de l'essai en jeu courant de la
+## 14e minute (graine 7) est joué par les pistes du moteur, de bout en bout (depuis sa remise en
+## jeu ou sa récupération), chaque fait annoncé à son jalon, l'essai jamais avant l'aplati ; une
 ## pause pendant les pistes les fige ; le temps fort continue ensuite (transformation).
 func choreography(view: Control) -> void:
 	var regie: Node = view.regie
@@ -307,7 +308,7 @@ func choreography(view: Control) -> void:
 		vu = true
 		var pistes: Dictionary = regie.tf.choregraphie
 		var plan: Dictionary = regie.tf.plans[regie.index]
-		if not regie._aplati_montre:
+		if not regie._jalon_montre:
 			if not str(view.events.text).is_empty(): annonce_avant = true
 			var montre: Dictionary = regie.montre(app.model.live)
 			if montre.get("events", []).size() > int(plan.index): journal_avance = true
@@ -325,8 +326,8 @@ func choreography(view: Control) -> void:
 			app._command("pause", {"paused": false})
 			await wait_command()
 	check(vu, "L'essai en jeu courant est joué par les pistes du chorégraphe (minute %d)" % int(app.model.live.minute))
-	check(not annonce_avant, "Aucune légende d'essai avant l'aplati")
-	check(not journal_avance, "Le journal ouvert n'annonce pas l'essai avant l'aplati")
+	check(not annonce_avant, "Aucune légende avant son jalon (l'essai jamais avant l'aplati)")
+	check(not journal_avance, "Le journal ouvert n'annonce rien avant l'image (l'essai jamais avant l'aplati)")
 	check(fige_teste and fige_ok, "Une pause pendant les pistes les fige, puis la lecture reprend")
 	check(balle_ok, "Ballon visible et fini pendant les pistes")
 	var lues: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "choregraphie")
@@ -334,7 +335,8 @@ func choreography(view: Control) -> void:
 	if not lues.is_empty():
 		var prevue: float = float(lues[0].duree_prevue) / regie.vitesse
 		check(absf(float(lues[0].duree_reelle) - prevue) < prevue * 0.25 + 2.0, "Durée lue ≈ durée des pistes (%s s pour %s s, pause comprise)" % [str(lues[0].duree_reelle), str(prevue)])
-		check(float(lues[0].duree_prevue) >= 12.0 and float(lues[0].duree_prevue) <= 25.0, "Temps fort d'essai de 12 à 25 s : %s s" % str(lues[0].duree_prevue))
+		check(float(lues[0].duree_prevue) >= 12.0 and float(lues[0].duree_prevue) <= 50.0, "Temps fort de 12 à 50 s : %s s" % str(lues[0].duree_prevue))
+		check(int(lues[0].get("dernier", -1)) >= int(lues[0].get("premier", 0)), "Plans couverts par les pistes : %s" % str(lues[0]))
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement in ["echeance", "choregraphie_refusee"]).is_empty(), "Ni échéance ni pistes refusées : " + str(regie.suivi.filter(func(entry: Dictionary): return entry.evenement in ["echeance", "choregraphie_refusee"])))
 	check(apres_index > 0 or regie.suivi.any(func(entry: Dictionary): return entry.evenement == "intermediaire"), "Le temps fort continue après les pistes (plan %d)" % apres_index)
 
