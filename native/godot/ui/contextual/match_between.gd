@@ -649,6 +649,7 @@ func _page() -> void:
 		var adverse := n == 1
 		onglet.pressed.connect(func():
 			onglet_adverse = adverse
+			for k in onglets.size(): onglets[k].set_pressed_no_signal((k == 1) == adverse)
 			if not _xv_donnees.is_empty(): _remplir_xv(_xv_donnees[0], _xv_donnees[1]))
 		onglets.append(onglet)
 		tete.add_child(onglet)
