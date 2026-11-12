@@ -137,7 +137,7 @@ func command(id: String, payload: Dictionary = {}, expected: bool = true) -> voi
 	var until := Time.get_ticks_msec()+30000
 	while app.waiting and Time.get_ticks_msec()<until: await process_frame
 	app.timer.stop()
-	check(not app.waiting and app.bridge.last_response_ok == expected,"Main/worker réel " + id)
+	check(not app.waiting and app.bridge.last_response_ok == expected,"Main/worker réel " + id + (" · " + str(app.last_error) if app.bridge.last_response_ok != expected else ""))
 	await settle()
 func run_main() -> void:
 	ProjectSettings.set_setting("native_engine/worker_path",OS.get_environment("CD_FEEDBACK_WORKER"))
@@ -223,6 +223,8 @@ func run_main() -> void:
 	app.user_preferences.last_error = ""
 	await command("import",{"text":exported})
 	check(app.decision_feedback.receipts().is_empty(),"Main import réussi remet historique à zéro")
+	# Calendrier quotidien : le coup d'envoi n'est ouvert que le jour du match, après les rendez-vous du club.
+	if not await ContextualFlow.prepare_match_day(app, self, check): app.bridge.stop(); app.queue_free(); return
 	await command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", check)
 	await command("pause",{"paused":true})

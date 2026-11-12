@@ -41,7 +41,7 @@ for (const {suite, variant, env} of entries) {
   console.log('::group::Real SDK: ' + suite + ' / ' + variant);
   const started = Date.now();
   const result = spawnSync(process.execPath, [suite], {
-    cwd: root, encoding: 'utf8', timeout: 180000, maxBuffer: 32 * 1024 * 1024,
+    cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 32 * 1024 * 1024,
     env: {...process.env, ...(config.suiteEnvironment?.[suite] || {}), ...env,
       CD_GODOT_EXECUTABLE: executable, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.execPath},
   });

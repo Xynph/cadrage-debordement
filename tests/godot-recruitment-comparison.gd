@@ -28,7 +28,10 @@ func run() -> void:
 	check(Comparison.candidates(candidates, "emile", "", []).size() == 1, "Recherche accentuée insensible aux accents")
 	check(Comparison.candidates(candidates, "introuvable", "", ["a", "c"]).size() == 2, "Filtres ne perdent pas les pistes choisies")
 	check(Comparison.value({"id":"a", "potential":99}, "potential", {}) == null, "Potentiel absent du rapport non inventé")
-	var resolutions: Array[Vector2i] = [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]
+	# Le tableau de recrutement et son comparateur appartiennent à la scène dédiée, construite seulement
+	# à partir de 1920x1080 (ui/immersive08/shell.gd, _dedicated_page) ; en dessous, la page classique n'a ni
+	# « CompareMarket » ni état partagé. Le test cible donc les deux tailles où le comparateur existe.
+	var resolutions: Array[Vector2i] = [Vector2i(1920,1080),Vector2i(2560,1440)]
 	var requested := OS.get_environment("QA_RESOLUTION")
 	if not requested.is_empty():
 		var dimension := requested.split("x")

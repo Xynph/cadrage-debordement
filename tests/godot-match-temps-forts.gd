@@ -368,7 +368,10 @@ func gestures(view: Control) -> void:
 	print("Hauteur visible minimale pendant les gestes : ", snappedf(smallest, 0.1), " m")
 	check(int(app.model.live.minute) >= goal, "Vingt minutes de match jouées avec les deux variables (minute %d)" % int(app.model.live.minute))
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
-	check(played.size() >= 4, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
+	# Depuis l'entracte de #587 (le chrono du match défile entre deux temps forts), vingt-deux minutes de match
+	# contiennent trois à cinq temps forts au lieu de quatre à six : « plusieurs » se lit désormais à partir de trois,
+	# et les contrôles suivants (terme atteint, retours à l'écran intermédiaire, aucune échéance) restent inchangés.
+	check(played.size() >= 3, "Plusieurs temps forts joués avec les gestes : %d" % played.size())
 	check(played.filter(func(entry: Dictionary): return entry.has("duree_reelle")).size() >= played.size() - 1, "Les temps forts vont à leur terme")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "intermediaire").size() >= 2, "Retours à l'écran intermédiaire")
 	check(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance").is_empty(), "Aucune attente n'a dû être interrompue par une échéance : " + str(regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "echeance")))
@@ -631,13 +634,16 @@ func player_path() -> Array:
 	if not sample.is_empty():
 		var model: Dictionary = app.model.duplicate(true)
 		sample["cle"] = "avant-causerie"
-		sample["suite"] = false
+		# Depuis l'entracte (#587), un temps fort qui n'est pas la suite d'une action attend la fin de l'entracte, et le
+		# match est ici en pause (l'entracte ne défile pas). La démonstration cible donc un temps fort « suite » :
+		# il part aussitôt, et la causerie doit l'attendre. La retenue par l'entracte est couverte par interval().
+		sample["suite"] = true
 		model.live.direct.tempsFort = sample
 		model.clubLife.matchTalks.scene = half_scene
 		app.model = model
 		var already := highlights(journal)
 		director.sync()
-		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie")
+		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie · " + str(director.kind) + " · état " + str(regie.etat) + " (JEU=" + str(regie.JEU) + ", INTER=" + str(regie.INTER) + ")")
 		check(not view.finish.visible, "Pas de validation pendant le temps fort")
 		check(await until(func(): return director.kind == "locker", 120000), "La causerie s'ouvre quand le temps fort est fini")
 		var last: Dictionary = journal.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")[-1] if highlights(journal) > already else {}
