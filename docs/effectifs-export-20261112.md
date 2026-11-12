@@ -43,6 +43,31 @@ montre la convergence de toutes les ligues vers 37,0 en saison 10.
 - **Recrues de la saison** : 2 comme avant, plus le manque à la cible, au plus 6.
 - Un effectif sous sa cible garde au moins un besoin (au poste le moins couvert)
   quand les polyvalents masquent les manques par poste.
+- **Moyens propres** : avec une cible, un recrutement n'est plus jugé sur la
+  projection fixe de 160 000 € de recettes hebdomadaires (`recruitmentFinance`),
+  que dépasse la masse de la plupart des clubs de première division (tout
+  recrutement y était « non soutenable »), mais sur la trésorerie du club et sa
+  masse autorisée. Sans la règle des salaires, cette masse autorisée permet de
+  compléter le groupe au salaire moyen actuel du club (l'ancienne fourchette
+  fixe de 215 à 335 k€ par semaine était sous la masse de départ de nombreux
+  clubs) ; avec la règle des salaires, c'est sa limite (plafond de la ligue,
+  52 % des recettes, moyens du propriétaire).
+
+### Carrière France (base commune, 30 clubs)
+
+Même défaut, même correction (chargeur des tests, club 29, graine 827381,
+politique de population v2, sans le drapeau). Effectif moyen des clubs gérés :
+
+| Point | 1re division, avant | 1re division, après | 2e division, avant | 2e division, après |
+| --- | --- | --- | --- | --- |
+| Création | 57,5 | 57,5 | 49,8 | 49,8 |
+| Après intersaison 1 | 51,8 | 56,0 | 44,4 | 48,0 |
+| Après intersaison 2 | 45,7 | 55,6 | 40,1 | 49,0 |
+| Après intersaison 3 | 41,0 | 55,8 | 37,3 | 49,1 |
+
+Cibles : 1re division 50 à 58 (moyenne 56), 2e division 40 à 58. Les
+carrières historiques (population v1) et leurs captures figées
+(`france-parity`, `france-long-career`) ne changent pas.
 
 ## 2. Transferts entre clubs gérés
 

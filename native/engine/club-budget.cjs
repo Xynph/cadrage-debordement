@@ -221,7 +221,8 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const fixes = annuel * (regle.partenaires + regle.ligue * (1 - PART_PRIME) + regle.divers + regle.billetterie * PART_ABONNEMENTS) / semaines;
   const guichet = annuel * (regle.billetterie * (1 - PART_ABONNEMENTS) + regle.boutique) / Math.max(1, receptions);
   const recettesPrevues = rond(compte.recettes + fixes * reste + guichet * receptionsRestantes + prime);
-  const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + annuel * FONCTIONNEMENT / semaines) * reste);
+  const fonctionnement = annuel * FONCTIONNEMENT + ajustement(annuel, masseHebdo * 52, compte.enveloppe);
+  const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   // Transferts, primes de signature, travaux : tout ce qui a bougé la caisse hors du budget courant.
   const horsBudget = rond(tresorerie - compte.depart - (compte.recettes - compte.charges));
   const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
@@ -345,7 +346,10 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
  const b=budgetEtat(),masse=budgetMasse(c);
  const ecritures=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines:wageForecastWeeks(),receptions:repere.receptions[c.id]||12,
   domicile:!!rencontre&&rencontre.pair[0]===c.id,neutre:!!rencontre&&rencontre.neutral===true,phase:!rencontre||rencontre.phase==='pool'?'league':rencontre.phase,resultats:c.form.slice(-5),
-  repere:S.season+'|'+budgetSemaineNo(),gere:c.id!==S.club,libelle}));
+  // Même train de vie pour le club joué que pour les clubs gérés (décision de Léo du 12 novembre) :
+  // l'excédent de l'exercice est réinvesti à 70 % dans le staff et le fonctionnement, un déficit
+  // au-delà de l'enveloppe du propriétaire est réduit par des économies.
+  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle}));
  nativeClubBudget.compter(b.clubs[c.id],ecritures,masse*52,repere.classement[c.id]||null);
  return ecritures;
 }
@@ -508,7 +512,7 @@ function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  const b=S.clubBudget;
  if(!budgetActif()||!budgetLisible(b)||b.saison!==S.season||!b.prevision)return null;
  const forces=budgetForces(),c=club(),masse=budgetMasse(c),semaines=wageForecastWeeks();
- const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:''})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
+ const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
  const salaires=-somme(e=>/Salaires des joueurs|Cotisations/.test(e.title)),fonctionnement=-somme(e=>/fonctionnement/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
  return {weeklyWages:salaires,weeklyIncome:recettes,weeklyCosts:salaires+fonctionnement+hebdoFormation+entretien,baseForecast:b.prevision.tresoreriePrevue,
   notice:'Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.',
