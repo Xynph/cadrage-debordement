@@ -219,6 +219,13 @@ func montre(live: Dictionary) -> Dictionary:
 		var cache := live.duplicate()
 		cache["events"] = live.get("events", []).slice(0, _retenu_vus)
 		return cache
+	# Écran intermédiaire : rien d'un temps fort à venir (le moteur a une minute d'avance).
+	if etat != JEU and live.get("direct") is Dictionary and live.direct.has("borne"):
+		var borne := int(live.direct.borne)
+		if borne >= live.get("events", []).size(): return live
+		var vue := live.duplicate()
+		vue["events"] = live.get("events", []).slice(0, borne)
+		return vue
 	if etat != JEU or index < 0 or index >= tf.get("plans", []).size(): return live
 	# Pendant les pistes du chorégraphe, chaque fait n'entre au journal qu'une fois montré.
 	var avance := 0 if phase == "choregraphie" and not _jalon_montre else 1
@@ -529,7 +536,7 @@ func _demarrer(candidat: Dictionary) -> void:
 		stage.apply_frame(_image(depart, false, int(tf.get("debut", 0)) - 1))
 		_derniers = _positions(depart)
 	suivi.append({"evenement": "temps_fort", "cle": str(tf.get("cle", "")), "type": str(tf.get("type", "")), "suite": bool(tf.get("suite", false)),
-		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "duree_prevue": float(tf.get("duree", 0.0)), "debut_ms": _debut_ms})
+		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "debut_ms": _debut_ms})
 	_commencer_plan()
 
 func _commencer_plan() -> void:
@@ -806,7 +813,8 @@ func _habiller() -> void:
 		# temps fort (40+2′ en arrêts de jeu).
 		# Temps fort retenu par l'entracte : score et horloge d'avant lui (rien n'est annoncé avant l'image).
 		var montre_live: Dictionary = _live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live
-		var marque: Array = montre_live.get("score", [0, 0])
+		# Score de ce qui a été montré, pas celui du moteur (une minute d'avance).
+		var marque: Array = montre_live.get("direct", {}).get("score", montre_live.get("score", [0, 0]))
 		# Le terrain 2D rejoue encore des faits en retard sur le moteur : le score suit ce qu'il montre.
 		var differe: Array = between.score_differe()
 		if not differe.is_empty(): marque = differe
@@ -841,7 +849,8 @@ func _habiller() -> void:
 func _score_joue(marque: Array) -> void:
 	if etat != INTER or marque.size() < 2: return
 	var differe: Array = between.score_differe()
-	var montre_score: Array = differe if not differe.is_empty() else (_live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live).get("score", marque)
+	var base: Dictionary = _live_inter if not _retenu.is_empty() and not _live_inter.is_empty() else _live
+	var montre_score: Array = differe if not differe.is_empty() else base.get("direct", {}).get("score", base.get("score", marque))
 	if montre_score.size() >= 2: view.score.text = "%d — %d" % [int(montre_score[0]), int(montre_score[1])]
 
 func _valider(visible_fin: bool) -> void:

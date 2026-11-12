@@ -760,8 +760,14 @@ func terrain2d(view: Control) -> void:
 	var ballons := {}
 	var fil_en_avance := 0
 	var score_faux := 0
+	# Plus haut indice du journal montré pendant l'entracte (terrain, fil, repères) : le temps fort
+	# suivant doit commencer après (« on découvre l'action en la regardant »).
+	var montre_max := -1
 	while regie.etat != regie.JEU and Time.get_ticks_msec() - debut < 60000:
 		await process_frame
+		if regie.etat == regie.INTER and between.visible:
+			montre_max = maxi(montre_max, terrain.joue_i)
+			for ligne: Dictionary in between._lignes: montre_max = maxi(montre_max, int(ligne.get("i", -1)))
 		ballons[str(terrain.ballon.round())] = true
 		# Le fil ne dit jamais un fait que le terrain n'a pas encore joué.
 		if terrain.en_retard() and terrain.joue_i >= 0:
@@ -773,6 +779,8 @@ func terrain2d(view: Control) -> void:
 		if not differe.is_empty() and view.score.text != "%d — %d" % [int(differe[0]), int(differe[1])]: score_faux += 1
 	for cle: String in depart:
 		if terrain.places.has(cle): deplacement += (terrain.places[cle] as Vector2).distance_to(depart[cle])
+	var suivant: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
+	check(regie.etat == regie.JEU and not suivant.is_empty() and montre_max < int(suivant[-1].get("debut", -1)), "Rien du temps fort suivant n'a été montré pendant l'entracte (montré jusqu'à %d, temps fort à partir de %d)" % [montre_max, int(suivant[-1].get("debut", -1)) if not suivant.is_empty() else -1])
 	check(deplacement > 30.0, "Les pastilles bougent pendant l'entracte (%.0f m cumulés)" % deplacement)
 	check(ballons.size() >= 4, "Le ballon circule (%d positions)" % ballons.size())
 	check(ecarts.faits >= 1, "Des faits du moteur sont rejoués sur le terrain (%d)" % ecarts.faits)
@@ -797,7 +805,7 @@ func terrain2d(view: Control) -> void:
 		var titre := (ligne.get_child(0) as Label).text
 		var rang: Array = rangs.filter(func(r: Dictionary): return str(r.label) == titre)
 		check(rang.size() == 1 and (ligne.get_child(1) as Label).text.begins_with(str(int(rang[0].valeurs[0]))) and (ligne.get_child(3) as Label).text.begins_with(str(int(rang[0].valeurs[1]))) or rang.size() == 1 and rang[0].get("vide", false), "Chiffre « %s » repris du moteur" % titre)
-	var lineup: Array = app.model.live.get("lineup", [])
+	var lineup: Array = between._passe(app.model, app.model.live, direct).lineup
 	var lignes_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	check(lignes_xv.size() == lineup.size() and lineup.size() == 15, "Mon XV : quinze joueurs (%d)" % lignes_xv.size())
 	var conformes := 0
@@ -814,7 +822,9 @@ func terrain2d(view: Control) -> void:
 	# Alerte de fatigue : un joueur à bout (condition modifiée sur une copie) est signalé par l'adjoint.
 	var copie: Dictionary = app.model.duplicate(true)
 	copie.live.lineup[6].condition = 31
-	between.update_frame(copie, copie.live, direct, func(_c: Dictionary): pass)
+	var direct_complet: Dictionary = direct.duplicate()
+	direct_complet["borne"] = copie.live.events.size()
+	between.update_frame(copie, copie.live, direct_complet, func(_c: Dictionary): pass)
 	var adjoint_textes: Array = between.adjoint.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
 	check(adjoint_textes.any(func(t: String): return t.begins_with("N° 7") and "31" in t), "L'adjoint signale le joueur à bout : " + str(adjoint_textes.slice(0, 3)))
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)

@@ -297,7 +297,7 @@ func _update_drawer() -> void:
 	var presence: Array = [drawer_tab, selected_slot, live.get("paused"), live.get("finished")]
 	match drawer_tab:
 		"Banc": presence.append(_bench_presence(live))
-		"Stats": presence.append(live.get("statsRows", []))
+		"Stats": presence.append(_stats(live))
 		"Tactique":
 			presence.append(model.get("tactics", {}))
 			presence.append(model.get("decisions", {}).get("liveAdvice"))
@@ -318,12 +318,17 @@ func _update_drawer() -> void:
 			_bench(live)
 			if not bench_focus.is_empty(): _restore_bench_focus(bench_focus)
 		"Stats":
-			for stat: Dictionary in live.get("statsRows", []):
+			for stat: Dictionary in _stats(live):
 				drawer_body.add_child(S.label(str(stat.get("label", "")), 13))
 				drawer_body.add_child(S.label("%s    —    %s" % [str(stat.get("home", "")), str(stat.get("away", ""))], 23, S.GOLD))
-			if live.get("statsRows", []).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
+			if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14))
 		"Tactique": _tactics(live)
 	director._refresh_controls()
+
+## Chiffres du tiroir : entre deux temps forts, ceux d'avant la borne du moteur (rien d'un temps fort à venir).
+func _stats(live: Dictionary) -> Array:
+	if regie != null and regie.etat != regie.JEU and live.get("direct") is Dictionary and live.direct.has("statsRows"): return live.direct.statsRows
+	return live.get("statsRows", [])
 
 func _bench_presence(live: Dictionary) -> Array:
 	# Condition and spatial presentation change on every tick. Rebuild controls

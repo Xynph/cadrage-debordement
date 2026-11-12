@@ -170,9 +170,23 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
   try {
     let model = demarrer(jeu);
     let deroules = 0;
-    for (let k = 0; k < 26 && !model.live.finished; k++) {
+    const bornes = [], vus = new Set();
+    let verifies = 0;
+    for (let k = 0; k < 60 && !model.live.finished && !model.live.atBreak && !(k > 0 && model.live.paused); k++) {
       model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
       const live = model.live, direct = live.direct, events = live.events;
+      // Rien d'un temps fort à venir avant qu'il soit joué : tout ce que l'entracte a montré
+      // (borne des minutes précédentes) précède le début de chaque nouveau temps fort.
+      const tf = direct.tempsFort;
+      if (tf && !vus.has(tf.cle)) {
+        vus.add(tf.cle);
+        for (const b of bornes) assert.ok(b <= tf.debut, `borne ${b} au-delà du début ${tf.debut} du temps fort ${tf.type} (${tf.horlogeDebut})`);
+        verifies++;
+      }
+      bornes.push(direct.borne);
+      assert.ok(direct.borne <= events.length && direct.fil.every(l => l.i < direct.borne) && direct.deroule.every(d => d.i < direct.borne) && direct.reperes.every(r => r.i < direct.borne), 'fil, déroulé et repères bornés');
+      const vues = H.normaliser(events).slice(0, direct.borne);
+      assert.deepEqual(direct.score, vues.length ? vues.at(-1).scoreApres : [0, 0], 'score de ce qui a été montré');
       // Déroulé : derniers faits jouables, dans l'ordre, jamais au-delà du journal.
       assert.ok(direct.deroule.length <= D.DEROULE_MAX);
       let avant = -1;
@@ -192,22 +206,22 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       // Domination : une valeur par minute jouée, bornée.
       const d = direct.domination;
       assert.ok(Array.isArray(d.minutes) && d.minutes.every(v => Number.isInteger(v) && v >= -100 && v <= 100));
-      assert.deepEqual(d, D.domination(H.normaliser(events)));
+      assert.deepEqual(d, D.domination(vues));
       // Chiffres : possession sur 100, plaquages tirés des courses adverses.
       const t = Object.fromEntries(direct.tableau.map(r => [r.cle, r]));
       assert.equal(t.possession.valeurs[0] + t.possession.valeurs[1], 100);
-      const lignes = H.normaliser(events);
+      const lignes = vues;
       for (const cote of [0, 1]) {
         const courses = lignes.filter(l => l.kind === 'carry' && l.equipe === 1 - cote && Math.abs(l.x - l.depuis) < 22).length;
         const recup = lignes.filter(l => l.kind === 'turnover' && l.equipe === cote).length;
         assert.equal(t.plaquages.valeurs[cote], courses + recup, 'plaquages réussis = courses adverses stoppées + ballons récupérés');
         assert.equal(t.en_avant.valeurs[cote], lignes.filter(l => l.kind === 'hand-fault' && l.equipe === cote).length);
-        assert.equal(t.melees.valeurs[cote], live.stats[cote].scrumsWon);
       }
       // Notes : joueurs du manager seulement, bornées.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
       for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
+    assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
   } finally { jeu.fermer(); }
 });

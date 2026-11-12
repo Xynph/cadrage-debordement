@@ -193,6 +193,45 @@ function notesDuMatch(lignes,events,camp){
  return notes;
 }
 
+// Entracte sans rien dévoiler (demande de Léo, 12 novembre 2026 : « on découvre l'action en la
+// regardant ») : le moteur a une minute d'avance, et un temps fort à venir peut commencer
+// jusqu'à quelques plans avant son action (amorce, `fenetre` de match-highlights), ou au début
+// d'une série dans les 22. `borneEntracte` rend le premier indice du journal qu'un temps fort à
+// venir pourrait encore contenir : l'entracte (fil, chiffres, score, terrain 2D) s'arrête avant.
+// Tout ce qui a été montré en 3D (jusqu'à la fin du dernier temps fort) reste montrable.
+const AMORCE_MAX=8;
+function borneEntracte(lignes,bilan){
+ const montre=(bilan.tempsForts||[]).reduce((n,h)=>Math.max(n,h.fin),-1);
+ let borne=lignes.length,vus=0,minute=null;
+ for(let j=lignes.length-1;j>montre;j--){
+  const l=lignes[j];if(l.bandeau)continue;
+  const chaine=l.kind==='penalty'||l.kind==='card'&&l.incident;
+  if(selection.FINS.has(l.kind)&&!chaine)break;
+  if(minute!==null&&minute-l.minute>1)break;
+  borne=j;minute=l.minute;if(!chaine)vus++;
+  if(vus>=AMORCE_MAX||selection.LANCEMENTS.has(l.kind)||l.kind==='turnover'||l.kind==='setpiece-loss'||l.kind==='penalty')break;
+ }
+ let equipe=null;
+ for(let j=lignes.length-1;j>montre;j--){
+  const l=lignes[j];if(l.bandeau)continue;
+  if(!selection.dansLes22(l)||equipe!==null&&l.possession!==equipe)break;
+  equipe=l.possession;borne=Math.min(borne,j);
+ }
+ return Math.max(montre+1,Math.min(borne,lignes.length));
+}
+// Chiffres cumulés du moteur (possession, mêlées, pénalités…) tels qu'ils étaient quand le
+// journal s'arrêtait avant la borne : relevés à chaque projection, par rencontre.
+const RELEVES=new Map();
+function releve(rencontre,n,valeurs,borne){
+ let liste=RELEVES.get(rencontre);
+ if(!liste){liste=[];RELEVES.set(rencontre,liste);while(RELEVES.size>4)RELEVES.delete(RELEVES.keys().next().value)}
+ if(!liste.length||liste.at(-1).n<n)liste.push({n,...valeurs});
+ else if(liste.at(-1).n===n)liste[liste.length-1]={n,...valeurs};
+ while(liste.length>240)liste.shift();
+ let choisi=null;for(const r of liste)if(r.n<=borne)choisi=r;
+ return choisi;
+}
+
 // `lire` : accès en lecture au moteur ({scenes, transformation, etat, profils}).
 // `options.choregraphe` : joindre au temps fort sa mise en scène continue (chorégraphe).
 function project(model,niveau,lire,options={}){
@@ -201,24 +240,29 @@ function project(model,niveau,lire,options={}){
  const phase=model.next?.phase,eliminatoire=typeof phase==='string'&&phase!=='league';
  const bilan=selection.en_direct(events,{niveau,eliminatoire}),lignes=selection.normaliser(events),etat=lire.etat()||{};
  const jouable=l=>!l.bandeau&&l.kind!=='break'&&l.kind!=='end';
- const derniere=[...lignes].reverse().find(jouable)||null;
+ // L'entracte ne montre que le journal d'avant la borne (rien d'un temps fort à venir).
+ const borne=borneEntracte(lignes,bilan);
+ const vues=lignes.slice(0,borne);
+ const derniere=[...vues].reverse().find(jouable)||null;
+ const passe=releve(String(etat.rencontre||''),events.length,{stats:live.stats||[],statsRows:live.statsRows||[],tactique:etat.tactique||null},borne);
  // Fil : sans les messages d'avantage, les retours de carton ni les mises en place.
  const bruit=l=>l.kind==='advantage'||l.kind==='card'&&!l.incident||l.type==='setup'||l.kind==='miss'&&l.type!=='miss';
- const fil=lignes.filter(l=>!bruit(l)).slice(-10).map(l=>({i:l.i,horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
- const traces=lignes.filter(l=>jouable(l)&&events[l.i].scene).slice(-3).map(l=>({depuis:point(events[l.i].scene.from),vers:point(events[l.i].scene.to),equipe:l.equipe,kind:l.kind})).filter(t=>t.depuis&&t.vers);
- const reperes=lignes.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>({i:l.i,kind:l.kind,equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red'}));
+ const fil=vues.filter(l=>!bruit(l)).slice(-10).map(l=>({i:l.i,horloge:horloge(l),texte:String(events[l.i].text||''),kind:l.kind,equipe:l.equipe}));
+ const traces=vues.filter(l=>jouable(l)&&events[l.i].scene).slice(-3).map(l=>({depuis:point(events[l.i].scene.from),vers:point(events[l.i].scene.to),equipe:l.equipe,kind:l.kind})).filter(t=>t.depuis&&t.vers);
+ const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>({i:l.i,kind:l.kind,equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red'}));
  // Chiffres : ceux que le moteur tient déjà.
- const rang=nom=>(live.statsRows||[]).find(r=>r.label===nom);
+ // Aucun relevé assez ancien (début de match, reprise) : les libellés, sans valeur.
+ const rang=nom=>passe?(passe.statsRows||[]).find(r=>r.label===nom):(live.statsRows||[]).filter(r=>r.label===nom).map(r=>({...r,home:'—',away:'—'}))[0];
  const chiffres=[];
  for(const [nom,titre] of [['Possession','Possession'],['Territoire','Occupation'],['Touches conservées','Touches conservées'],['Mêlées conservées','Mêlées conservées'],['Pénalités concédées','Pénalités concédées']]){
   const r=rang(nom);if(r)chiffres.push({label:titre,home:String(r.home),away:String(r.away)});
  }
- if(etat.tactique)chiffres.push({label:'Franchissements',home:String(etat.tactique[0].longGains),away:String(etat.tactique[1].longGains)},{label:'Fautes de main',home:String(etat.tactique[0].handErrors),away:String(etat.tactique[1].handErrors)});
+ if(passe?.tactique)chiffres.push({label:'Franchissements',home:String(passe.tactique[0].longGains),away:String(passe.tactique[1].longGains)},{label:'Fautes de main',home:String(passe.tactique[0].handErrors),away:String(passe.tactique[1].handErrors)});
  // Élan : où s'est joué le match pendant les dix dernières minutes (0 = en-but de l'équipe qui reçoit).
- const recents=derniere?lignes.filter(l=>jouable(l)&&l.x!==null&&l.periode===derniere.periode&&derniere.minute-l.minute<10):[];
+ const recents=derniere?vues.filter(l=>jouable(l)&&l.x!==null&&l.periode===derniere.periode&&derniere.minute-l.minute<10):[];
  const elan=recents.length?Math.round(recents.reduce((n,l)=>n+l.x,0)/recents.length):50;
  // Tableau de bord de l'entracte : valeurs chiffrées des deux équipes (barres comparées).
- const rugby=chiffresRugby(lignes,events),stats=live.stats||[];
+ const rugby=chiffresRugby(vues,events),stats=passe?.stats||[];
  const pourcent=(a,b)=>a+b>0?[Math.round(a/(a+b)*100),100-Math.round(a/(a+b)*100)]:[50,50];
  const possessionTotale=(stats[0]?.possession||0)+(stats[1]?.possession||0);
  const tableau=[
@@ -235,9 +279,10 @@ function project(model,niveau,lire,options={}){
   {cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true}
  ];
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',camp:etat.camp??-1,
-  possession:etat.possession??null,zone:{x:Number.isFinite(etat.territoire)?etat.territoire:50,kind:derniere?.kind||'message'},
-  fil,traces,reperes,chiffres,elan,cartons:etat.cartons||[],
-  tableau,domination:domination(lignes),notes:notesDuMatch(lignes,events,etat.camp??-1),deroule:deroule(lignes,events,lire,String(etat.rencontre||'')),
+  possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
+  fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
+  borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
+  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),deroule:deroule(vues,events,lire,String(etat.rencontre||'')),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null};
  const tf=bilan.courant;
  if(tf){
@@ -281,4 +326,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,domination,chiffresRugby,notesDuMatch,DEROULE_MAX});
+module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,DEROULE_MAX});

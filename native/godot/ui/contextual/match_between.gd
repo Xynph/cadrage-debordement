@@ -342,7 +342,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.camp = int(direct.get("camp", -1))
 	terrain.regler_equipes(equipes)
 	# Le terrain rejoue les faits que le joueur peut voir : rien au-delà du journal montré.
-	terrain.alimenter(direct.get("deroule", []), live.get("events", []).size())
+	terrain.alimenter(direct.get("deroule", []), mini(live.get("events", []).size(), int(direct.get("borne", live.get("events", []).size()))))
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_niveaux = direct.get("niveaux", [])
@@ -358,16 +358,18 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	domination.couleurs = terrain.couleurs.duplicate()
 	domination.sigles = [S.G.club_abbr(equipes[0]) if equipes.size() > 0 and equipes[0] is Dictionary else "", S.G.club_abbr(equipes[1]) if equipes.size() > 1 and equipes[1] is Dictionary else ""]
 	domination.queue_redraw()
-	var conseil: Variant = model.get("decisions", {}).get("liveAdvice")
+	# Conseil de l'adjoint et composition tels qu'ils étaient avant la borne : rien d'un temps fort à venir.
+	var passe := _passe(model, live, direct)
+	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []),
-		live.get("lineup", []), live.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs])
+		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs])
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
-	_remplir_xv(live, direct)
-	_remplir_adjoint(model, live, direct, appliquer)
+	_remplir_xv(passe.lineup, direct)
+	_remplir_adjoint(conseil, live, direct, appliquer)
 
 func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	var possession: Variant = direct.get("possession")
@@ -468,7 +470,7 @@ func _remplir_chiffres(direct: Dictionary, live: Dictionary) -> void:
 	tableau.add_child(entete)
 	for rang: Dictionary in rangs: _ligne_chiffre(tableau, rang)
 	# Chiffres du moteur qui ne se comparent pas en barre (tirs, cartons).
-	for rang: Dictionary in live.get("statsRows", []):
+	for rang: Dictionary in direct.get("statsRows", []):
 		if not str(rang.get("label", "")) in ["Cartons jaunes", "Tirs de pénalité", "Transformations", "Dont non disputées"]: continue
 		var ligne := S.G.h(px(12))
 		var titre := _texte(str(rang.get("label", "")), 26, S.MUTED)
@@ -478,14 +480,13 @@ func _remplir_chiffres(direct: Dictionary, live: Dictionary) -> void:
 		tableau.add_child(ligne)
 
 ## Mon XV : numéro, nom, note du match, énergie et alertes (fatigue, blessure, carton).
-func _remplir_xv(live: Dictionary, direct: Dictionary) -> void:
+func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	S.clear(xv)
 	alertes_xv.clear()
 	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
 	var cartons: Dictionary = {}
 	for carton: Variant in direct.get("cartons", []):
 		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
-	var joueurs: Array = live.get("lineup", [])
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, S.MUTED, true))
 		return
@@ -553,7 +554,7 @@ func _remplir_xv(live: Dictionary, direct: Dictionary) -> void:
 		xv.add_child(ligne)
 
 ## L'adjoint : alertes de Mon XV d'abord, puis son regard sur les consignes, et les accès directs.
-func _remplir_adjoint(model: Dictionary, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
+func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	S.clear(adjoint)
 	adjoint_cadre.visible = not live.get("finished", false)
 	adjoint.add_child(_titre("Le regard de l’adjoint"))
@@ -571,7 +572,6 @@ func _remplir_adjoint(model: Dictionary, live: Dictionary, direct: Dictionary, a
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
 		adjoint.add_child(etiquette)
 		lignes += 1
-	var conseil: Variant = model.get("decisions", {}).get("liveAdvice")
 	var raisons: Array = []
 	if conseil is Dictionary:
 		for raison in [conseil.get("attackReason", ""), conseil.get("defenceReason", "")]:
@@ -604,6 +604,24 @@ func _remplir_adjoint(model: Dictionary, live: Dictionary, direct: Dictionary, a
 		bouton.tooltip_text = "Appliquer les consignes proposées." if possible else "Mettez le match en pause pour modifier vos consignes."
 		S.G.fill(bouton)
 		actions.add_child(bouton)
+
+## Relevés successifs (taille du journal, composition, conseil de l'adjoint) : l'écran montre le
+## dernier pris quand le journal s'arrêtait avant la borne du moteur (`direct.borne`).
+var _releves: Array = []
+func _passe(model: Dictionary, live: Dictionary, direct: Dictionary) -> Dictionary:
+	var n: int = live.get("events", []).size()
+	var actuel := {"n": n, "lineup": live.get("lineup", []), "conseil": model.get("decisions", {}).get("liveAdvice")}
+	if _releves.is_empty() or int(_releves[-1].n) < n: _releves.append(actuel)
+	elif int(_releves[-1].n) == n: _releves[-1] = actuel
+	else: _releves = [actuel]
+	while _releves.size() > 60: _releves.remove_at(0)
+	var borne := int(direct.get("borne", n))
+	var choisi: Dictionary = {}
+	for releve: Dictionary in _releves:
+		if int(releve.n) <= borne: choisi = releve
+	# Aucun relevé assez ancien : la composition sans alerte nouvelle, pas de conseil.
+	if choisi.is_empty(): return {"lineup": _releves[0].lineup, "conseil": null}
+	return choisi
 
 ## Une phrase tirée des chiffres du moteur : qui domine depuis cinq minutes, la discipline.
 func _lecture(direct: Dictionary) -> String:
