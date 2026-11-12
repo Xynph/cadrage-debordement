@@ -1,15 +1,7 @@
 name: Consolidation native V56 V57 V62 V63
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (suites Node déjà exécutées par tests.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'tests/v56-integration-readiness.cjs'
-      - 'tests/v57-native-functional.cjs'
-      - 'tests/v62-native-integration-gates.cjs'
-      - 'tests/v63-native-career-transactions.cjs'
-      - 'tests/v63-1-long-career.cjs'
-      - 'tests/v63-2-stress-native.cjs'
-      - '.github/workflows/native-career-v56-v63-consolidated.yml'
   workflow_dispatch:
 permissions:
   contents: read

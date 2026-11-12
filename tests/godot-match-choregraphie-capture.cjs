@@ -7,6 +7,7 @@
 //   CD_CHOREGRAPHIE_CAPTURE      dossier absolu des images (img-00001.jpg…) et de report.json — requis
 //   CD_CHOREGRAPHIE_SOURCES      sources à jouer, séparées par « ; » (défaut : une par type et remise en jeu)
 //   CD_MATCH_ANIMATIONS          bibliothèque Mixamo hors dépôt (facultative)
+//   CD_CHOREGRAPHIE_GROS_PLAN=1  plan serré (6,5 m) sur le ballon et son porteur (tenue du ballon, plaquages)
 // Sous Linux sans écran : xvfb-run -a -s "-screen 0 1280x720x24" node tests/godot-match-choregraphie-capture.cjs
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {spawnSync}=require('node:child_process');

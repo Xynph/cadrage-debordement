@@ -1,0 +1,17 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-phase10/management-stable-scroll/vestiaire-retour-fiche-2560.png",
+      "sha256": "50074415460acaf1781a1a0c28a1f446a170626845e6c57e8e603898ef04fb27"
+    },
+    {
+      "file": "/workspace/work/night-phase10/management-stable-scroll/decisions-retour-fiche-2560.png",
+      "sha256": "7c3b658d3bc52d69b0a67f63eb231a1d7cd9cda9b6a8959931d02e24a186a839"
+    }
+  ],
+  "checks": 61,
+  "failures": [],
+  "scope": "Real game client/worker; requires common read-only window suspension before running.",
+  "speech_requests": 0,
+  "speech_starts": 0
+}

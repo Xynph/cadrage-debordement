@@ -1,0 +1,134 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-followup-receipts/qualification-guards-visible/navigation-refusee-match-2560.png",
+      "height": 1440,
+      "route": "Match",
+      "sha256": "948a4d746146ec9317fa4e9934304e1442748d5210a810db2355c15781451762",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-followup-receipts/qualification-guards-visible/rencontre-historique-2560.png",
+      "height": 1440,
+      "route": "Réception",
+      "sha256": "bbb887a950e5d3e1fd3a48eebfb3e647b2bc80466f35f6246d6b04c35d1ef73c",
+      "width": 2560
+    }
+  ],
+  "case": "guards",
+  "checks": 103,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Rendez-vous obligatoire",
+      "link_commands": 0,
+      "profile_sha256_after": "1f8fb0bfe43bf9ca2ee7e0ebbe1b5e427ec18d13f7b9e4980efa169bf0bfe192",
+      "profile_sha256_before": "1f8fb0bfe43bf9ca2ee7e0ebbe1b5e427ec18d13f7b9e4980efa169bf0bfe192",
+      "saved_clock_after": 1794458287996.0,
+      "saved_clock_before": 1794458287996.0,
+      "saved_seed_after": 685191327.0,
+      "saved_seed_before": 685191327.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Causerie obligatoire",
+      "link_commands": 0,
+      "profile_sha256_after": "0f6877537c9ee2fe087c261769a06aab8396130f5683003d5952a0209e8f5b7a",
+      "profile_sha256_before": "0f6877537c9ee2fe087c261769a06aab8396130f5683003d5952a0209e8f5b7a",
+      "saved_clock_after": 1794458322922.0,
+      "saved_clock_before": 1794458322922.0,
+      "saved_seed_after": 4057401030.0,
+      "saved_seed_before": 4057401030.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Match immersif",
+      "link_commands": 0,
+      "profile_sha256_after": "73a39937b0939b7fd0382c0b2118b4ff5b2c2b2419d45ceda6f6b4917dc4b1a6",
+      "profile_sha256_before": "73a39937b0939b7fd0382c0b2118b4ff5b2c2b2419d45ceda6f6b4917dc4b1a6",
+      "saved_clock_after": 1794458353047.0,
+      "saved_clock_before": 1794458353047.0,
+      "saved_seed_after": 4057401030.0,
+      "saved_seed_before": 4057401030.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Consultation du résultat historique",
+      "link_commands": 0,
+      "profile_sha256_after": "b0ba5e7f8e585d56a1e872161b40c832452e766046d86024f47297d21524a3bd",
+      "profile_sha256_before": "b0ba5e7f8e585d56a1e872161b40c832452e766046d86024f47297d21524a3bd",
+      "saved_clock_after": 1794458386669.0,
+      "saved_clock_before": 1794458386669.0,
+      "saved_seed_after": 1317193915.0,
+      "saved_seed_before": 1317193915.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_id": 0,
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "activation": "Enter",
+      "control": "InboxPressInvitation",
+      "id": "",
+      "kind": "",
+      "route_before": "Réception"
+    },
+    {
+      "activation": "Enter",
+      "control": "InboxOpenPressInvitation",
+      "id": "",
+      "kind": "",
+      "route_before": "Réception"
+    },
+    {
+      "accepted": false,
+      "route_after": "Réception",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Match",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Match",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Réception",
+      "selected_player": "",
+      "target": {
+        "id": "calendar-0",
+        "kind": "fixture"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+4: # GESTION_PROGRESS {"checks":0,"display":"headless","embedded_subwindows":true,"milliseconds":0,"root_size":[64,64],"stage":"startup.begin"}
+5: # GESTION_PROGRESS {"checks":0,"display":"headless","embedded_subwindows":true,"milliseconds":0,"root_size":[1440,900],"stage":"startup.viewport-configured"}
+7: # GESTION_PROGRESS {"checks":1,"display":"headless","embedded_subwindows":true,"last_command":"snapshot","last_error":"","milliseconds":5783,"received":true,"root_size":[1440,900],"route":"Accueil","stage":"startup.model","waiting":false}
+45: # GESTION_PROGRESS {"checks":156,"display":"headless","displayed_salary":"4 200 €","embedded_subwindows":true,"last_command":"tick","last_error":"","milliseconds":20249,"name_present":true,"period_present":true,"raw_weekly_amount":"4 160 €","root_size":[1440,900],"route":"Effectif","salary_heading":"Salaire par semaine","salary_present":true,"stage":"comparison.presentation","waiting":false}
+149: # GESTION_PROGRESS {"checks":274,"display":"headless","embedded_subwindows":true,"failures":[],"last_command":"export","last_error":"","milliseconds":44752,"root_size":[1920,1080],"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+150: # GESTION CARNET : 274 contrôles ; 0 échec(s)
+151: # GESTION_WRAPPER {"phase":"child-close","status":0,"signal":null,"timed_out":false,"output_limit":false,"milliseconds":45631,"child_timeout_ms":150000,"error":null,"trace":"/tmp/cd-gestion-carnet-6ryJHI/progress.jsonl"}
+156:   duration_ms: 45669.93811
+162: # pass 1
+163: # fail 0
+167: # duration_ms 45725.497737

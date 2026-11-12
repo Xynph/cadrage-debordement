@@ -1,0 +1,28 @@
+'use strict';
+const crypto=require('node:crypto'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict'),{spawn}=require('node:child_process');
+(async()=>{
+  const godot=process.env.CD_GODOT_EXECUTABLE;
+  if(!godot)throw new Error('CD_GODOT_EXECUTABLE requis : ce contrôle utilise le vrai rendu X11.');
+  const output=process.env.CD_GEOMETRY_OUTPUT||fs.mkdtempSync(path.join(os.tmpdir(),'oval-small-geometry-'));
+  fs.mkdirSync(output,{recursive:true});
+  const profile=fs.mkdtempSync(path.join(os.tmpdir(),'oval-small-profile-'));
+  if(process.env.CD_GEOMETRY_SEED_PROFILE)fs.cpSync(process.env.CD_GEOMETRY_SEED_PROFILE,profile,{recursive:true});
+  const script=process.env.CD_GEOMETRY_SCRIPT||'small-window-geometry.gd';
+  assert.match(script,/^small-window-geometry[-\w]*\.gd$/);
+  const files=['tests/small-window-geometry.cjs','tests/small-window-geometry.gd','tests/'+script,'native/godot/ui/contextual/director.gd','native/godot/ui/immersive08/month_calendar.gd','native/godot/ui/immersive08/office.gd','native/godot/ui/immersive08/dialogs.gd','native/godot/ui/contract_negotiation.gd','native/godot/ui/profile_safety_view.gd'];
+  const manifest=()=>Object.fromEntries([...new Set(files)].map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.resolve(__dirname,'..',file))).digest('hex')]));
+  const before=manifest();fs.writeFileSync(path.join(output,'source-manifest.json'),JSON.stringify(before,null,2));
+  const args=['-w','600','/tmp/rg27-godot-sdk.lock','timeout',process.env.CD_GEOMETRY_TIMEOUT||'360',godot,'--flush-stdout','--display-driver','x11','--rendering-method','gl_compatibility','--windowed','--resolution','1920x1080','--audio-driver','Dummy','--max-fps','60','--path','native/godot','--log-file',path.join(output,'engine.log'),'--script',path.resolve(__dirname,script)];
+  const child=spawn('flock',args,{cwd:path.resolve(__dirname,'..'),detached:true,env:{...process.env,CD_GEOMETRY_OUTPUT:output,CD_GODOT_DATA_DIR:profile,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_GUIDE_MODULE_TEST:'1'}});
+  let log='',aborted=false;
+  const stop=()=>{if(aborted)return;aborted=true;try{process.kill(-child.pid,'SIGTERM');}catch(error){if(error.code!=='ESRCH')throw error;}};
+  const receive=chunk=>{const text=chunk.toString();log+=text;process.stdout.write(text);if(/SCRIPT ERROR|Parse Error|ERROR:/.test(log))stop();};
+  child.stdout.on('data',receive);child.stderr.on('data',receive);
+  const deadline=setTimeout(stop,850000);
+  const status=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve);});
+  clearTimeout(deadline);
+  fs.writeFileSync(path.join(output,'godot.log'),log);console.log('Preuves : '+output);
+  assert.deepEqual(manifest(),before,'Sources de réception inchangées pendant le lot');
+  assert.equal(status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
+  const report=JSON.parse(fs.readFileSync(path.join(output,'report.json'),'utf8'));assert.deepEqual(report.failures,[]);assert.equal(report.profile_unchanged,true);
+})().catch(error=>{console.error(error);process.exitCode=1;});

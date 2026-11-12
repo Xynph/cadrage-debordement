@@ -19,6 +19,123 @@ static func managed_team(model: Dictionary) -> Dictionary:
 		if team.id == international.get("nation"): return team
 	return {}
 
+# A consultation target belongs to the UI session, never to the sporting role.
+static func team_by_id(model: Dictionary, nation_id: String) -> Dictionary:
+	var international: Variant = model.get("international")
+	if not international is Dictionary: return {}
+	for team: Dictionary in international.get("teams", []):
+		if str(team.get("id", "")) == nation_id: return team
+	return {}
+
+static func open_target(app: Control, nation_id: String) -> bool:
+	if not target_available(app, nation_id): return false
+	var reading: Dictionary = app.management_ui.get("international", {})
+	reading.navigation_id = nation_id
+	app.management_ui.international = reading
+	return true
+
+static func target_available(app: Control, nation_id: String) -> bool:
+	return not nation_id.is_empty() and not team_by_id(app.model, nation_id).is_empty()
+
+static func _nation_link(app: Control, nation_id: String, caption: String) -> Button:
+	var link := G.button(caption, func(): app.navigation_controller.open_entity({"kind":"nation", "id":nation_id}))
+	link.name = "OpenNation_" + nation_id.validate_node_name()
+	link.accessibility_name = "Consulter la sélection · " + caption
+	link.tooltip_text = link.accessibility_name
+	link.set_meta("entity_kind", "nation")
+	link.set_meta("entity_id", nation_id)
+	return link
+
+static func _projected_reading(app: Control, content: Control, target: Dictionary, control_name: String, caption: String) -> Control:
+	if not app.navigation_controller.entity_available(target): return content
+	var destination := target.duplicate(true)
+	# Preserve the original label's immersive styling before wrapping it in a
+	# transparent reading control. Generic legacy buttons have larger margins.
+	preload("res://ui/immersive08/legacy_style.gd").apply(content, app.accent)
+	var link := Button.new()
+	link.name = control_name
+	link.set_meta("immersive_style_applied", true)
+	link.custom_minimum_size = content.get_combined_minimum_size()
+	link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if content is Label: link.add_theme_font_size_override("font_size", content.get_theme_font_size("font_size"))
+	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", G.T.box(Color.TRANSPARENT, 2, G.GOLD))
+	link.set_meta("entity_kind", str(destination.kind))
+	link.set_meta("entity_id", str(destination.id))
+	link.accessibility_name = "Consulter · " + caption
+	link.tooltip_text = link.accessibility_name
+	link.pressed.connect(func(): app.navigation_controller.open_entity(destination))
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	link.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.minimum_size_changed.connect(func():
+		if is_instance_valid(link): link.custom_minimum_size.y = content.get_combined_minimum_size().y)
+	return link
+
+static func _nation_details(app: Control, team: Dictionary) -> Control:
+	var page := G.v(8)
+	page.name = "InternationalNationDetails"
+	G.fill(page, true)
+	page.set_meta("nation_id", str(team.id))
+	var heading := G.h(12)
+	page.add_child(heading)
+	heading.add_child(nation_badge(team, 60))
+	var title := G.label(str(team.name), 27, G.INK, true)
+	title.name = "InternationalNationName"
+	heading.add_child(title)
+	var back := G.button("Toutes les sélections", func():
+		app.management_ui.international.navigation_id = ""
+		app._render(false))
+	back.name = "InternationalNationDirectory"
+	page.add_child(back)
+	var list := G.scroll(page)
+	var international: Dictionary = app.model.get("international", {})
+	var names := _team_names(international)
+	var nation_id := str(team.id)
+	for callup: Dictionary in international.get("callups", []):
+		if str(callup.get("nation", "")) != nation_id or callup.get("players", []).is_empty(): continue
+		var camp := G.panel(list)
+		camp.add_child(G.section("Convocations connues", "%s au %s" % [callup.get("from", ""), callup.get("through", "")]))
+		for player: Dictionary in callup.get("players", []):
+			var known := false
+			for source: String in ["squad", "market"]:
+				if app.model.get(source, []).any(func(person: Dictionary): return str(person.get("id", "")) == str(player.get("id", ""))): known = true
+			var caption := "%s · %s" % [player.get("name", ""), player.get("pos", "")]
+			if known:
+				var player_id := str(player.id)
+				var link := G.button(caption, func(): app.navigation_controller.open_entity({"kind":"player", "id":player_id}))
+				link.accessibility_name = "Consulter la fiche · " + str(player.name)
+				link.set_meta("entity_kind", "player")
+				link.set_meta("entity_id", player_id)
+				camp.add_child(link)
+			else: camp.add_child(G.wrap(caption, 15, G.INK))
+	var found := false
+	for edition: Dictionary in international.get("editions", []):
+		var fixtures: Array = edition.get("fixtures", []).filter(func(fixture: Dictionary):
+			return fixture.get("homeId") == nation_id or fixture.get("awayId") == nation_id)
+		if fixtures.is_empty(): continue
+		found = true
+		var card := G.panel(list)
+		card.add_child(G.section(_edition_title(edition, _edition_year(edition))))
+		for table: Dictionary in edition.get("tables", []):
+			for standing: Dictionary in table.get("rows", []):
+				if str(standing.get("teamId", "")) == nation_id:
+					card.add_child(G.wrap("Classement · %s · %s J · %s pts" % [G.n(standing.get("rank")), G.n(standing.get("played")), G.n(standing.get("points"))], 15, G.INK))
+		for fixture: Dictionary in fixtures:
+			var line := G.h(8)
+			card.add_child(line)
+			line.add_child(G.label(P.fixture_date(fixture), 14, G.MUTED))
+			for side: String in ["homeId", "awayId"]:
+				var id := str(fixture.get(side, ""))
+				var caption := str(names.get(id, id)) if not id.is_empty() else "À déterminer"
+				if not team_by_id(app.model, id).is_empty(): line.add_child(_nation_link(app, id, caption))
+				else: line.add_child(G.label(caption, 15, G.INK))
+				if side == "homeId": line.add_child(G.label("–", 15, G.MUTED))
+			var result: Variant = fixture.get("result")
+			if result is Dictionary: line.add_child(G.label("%s – %s" % [G.n(result.get("home")), G.n(result.get("away"))], 15, G.INK))
+	if not found: list.add_child(G.wrap("Aucune rencontre annoncée pour cette sélection."))
+	return page
+
 static func nation_badge(team: Dictionary, width: int) -> Control:
 	var code := str(team.get("flagCode", "")).to_lower()
 	var path := "res://art/flags/%s.svg" % code
@@ -129,6 +246,8 @@ static func _add_play_button(app: Control, parent: Control, international: Dicti
 		parent.add_child(G.wrap("Prochain match · %s · %s" % [P.fixture_date(next), _fixture_name(next, names)]))
 
 static func build(app: Control) -> Control:
+	var target := team_by_id(app.model, str(app.management_ui.get("international", {}).get("navigation_id", "")))
+	if not target.is_empty(): return _nation_details(app, target)
 	var page := G.v(8)
 	page.name = "InternationalSelections"
 	var international: Dictionary = app.model.get("international", {})
@@ -140,11 +259,16 @@ static func build(app: Control) -> Control:
 		page.add_child(G.section("%s · %s" % [status, names.get(nation, nation)]))
 	else:
 		page.add_child(G.section("Votre carrière en club", "Suivez les convocations et les postes disponibles."))
+	var directory := HFlowContainer.new()
+	directory.name = "InternationalNationLinks"
+	page.add_child(directory)
+	for team: Dictionary in international.get("teams", []):
+		directory.add_child(_nation_link(app, str(team.id), str(team.name)))
 	_add_play_button(app, page, international, names)
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	page.add_child(tabs)
-	tabs.add_child(_callups(international, names))
+	tabs.add_child(_callups(app, international, names))
 	tabs.add_child(_editions(app, international, names))
 	tabs.add_child(_offers(app, international, role))
 	var sections := ["callups", "editions", "offers"]
@@ -160,17 +284,23 @@ static func build(app: Control) -> Control:
 		app.management_ui.international_section = sections[index])
 	return page
 
-static func _callups(international: Dictionary, names: Dictionary) -> Control:
+static func _callups(app: Control, international: Dictionary, names: Dictionary) -> Control:
 	var view := G.v()
 	view.name = "Convocations"
 	for callup: Dictionary in international.get("callups", []):
 		var list := G.panel(view)
-		list.add_child(G.section(str(names.get(callup.nation, callup.nation)),
-			"%s au %s" % [callup.from, callup.through]))
+		var caption := str(names.get(callup.nation, callup.nation))
+		var heading := G.section(caption, "%s au %s" % [callup.from, callup.through])
+		var title := heading.get_child(0) as Control
+		heading.remove_child(title)
+		var title_link := _projected_reading(app, title, {"kind":"nation", "id":str(callup.nation)}, "InternationalCallupNation_" + str(callup.nation).validate_node_name(), caption)
+		heading.add_child(title_link)
+		heading.move_child(title_link, 0)
+		list.add_child(heading)
 		for player: Dictionary in callup.get("players", []):
 			var identity := "%s · %s · %s ans" % [player.name, player.pos, G.n(player.age)]
 			identity += " · Niveau " + G.rating_text(player)
-			list.add_child(G.wrap(identity, 15, G.INK))
+			list.add_child(_projected_reading(app, G.wrap(identity, 15, G.INK), {"kind":"player", "id":str(player.get("id", ""))}, "InternationalCallupPlayer_" + str(player.get("id", "")).validate_node_name(), str(player.name)))
 	if view.get_child_count() == 0: view.add_child(G.wrap("Aucune convocation enregistrée."))
 	return view
 
@@ -324,8 +454,8 @@ static func _edition_standings(app: Control, list: Control, tables: Array, names
 			_refresh_editions(app, "InternationalEditionPool"))
 	for row: Dictionary in tables[pool].get("rows", []):
 		var team: String = row.get("teamId", "")
-		list.add_child(G.wrap("%s. %s · %s J · %s pts" % [
-			G.n(row.rank), names.get(team, team), G.n(row.played), G.n(row.points)], 15, G.INK))
+		var caption := "%s. %s · %s J · %s pts" % [G.n(row.rank), names.get(team, team), G.n(row.played), G.n(row.points)]
+		list.add_child(_projected_reading(app, G.wrap(caption, 15, G.INK), {"kind":"nation", "id":team}, "InternationalStandingNation_" + team.validate_node_name(), str(names.get(team, team))))
 
 static func _edition_fixtures(app: Control, list: Control, fixtures: Array, names: Dictionary, state: Dictionary) -> void:
 	if fixtures.is_empty():

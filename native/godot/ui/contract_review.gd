@@ -362,6 +362,27 @@ func _cell(text: String, width: float, color: Color = C.IVORY, font_size: int = 
 	label.tooltip_text = text
 	return label
 
+func _reading_cell(content: Control, player: Dictionary, prefix: String, section: String = "") -> Button:
+	var player_id := str(player.id)
+	var control_id := action_id(prefix, player_id)
+	var link := Button.new()
+	link.name = control_id
+	link.custom_minimum_size = content.get_combined_minimum_size()
+	link.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 2, 0))
+	link.set_meta("player_id", player_id)
+	link.set_meta("entity_kind", "player")
+	link.set_meta("entity_id", player_id)
+	link.set_meta("entity_section", section)
+	link.accessibility_name = ("Consulter le contrat · " if section == "contract" else "Consulter la fiche · ") + str(player.get("name", "Joueur"))
+	link.tooltip_text = link.accessibility_name
+	link.pressed.connect(func(): _open_profile(player_id, section, control_id))
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	link.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return link
+
 func _bar(parent: Node, caption: String, value: int, total: int, color: Color) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
@@ -398,8 +419,8 @@ func _row(player: Dictionary) -> void:
 	line.add_child(identity)
 	var portrait: Control = G.portrait(int(player.get("portraitIndex", 0)), 30, player)
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	identity.add_child(portrait)
-	identity.add_child(_cell(str(player.get("name", "Joueur")), 264, C.IVORY, 18))
+	identity.add_child(_reading_cell(portrait, player, "ContractPortraitLink"))
+	identity.add_child(_reading_cell(_cell(str(player.get("name", "Joueur")), 264, C.IVORY, 18), player, "ContractNameLink"))
 	var ending := horizon(player)
 	var year := int(app.model.get("meta", {}).get("season", 1))
 	var position := _cell(position_text(player), 160, C.MUTED)
@@ -417,11 +438,11 @@ func _row(player: Dictionary) -> void:
 	potential.tooltip_text = "Potentiel / 100. Ce plafond n’est pas garanti."
 	line.add_child(potential)
 	line.add_child(_cell(G.n(player.age) if player.get("age") != null else "—", 60, C.MUTED))
-	line.add_child(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED))
+	line.add_child(_reading_cell(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED), player, "ContractEndLink", "contract"))
 	var salary: Variant = player.get("salary")
 	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 145)
 	salary_cell.name = action_id("ContractSalary",str(player.id))
-	line.add_child(salary_cell)
+	line.add_child(_reading_cell(salary_cell, player, "ContractSalaryLink", "contract"))
 	line.add_child(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 95, C.MUTED))
 	line.add_child(_cell(str(player.get("status", "—")), 110, C.MUTED, 16))
 	line.add_child(_cell(renewal_reason(player, not app._live().is_empty()), 190, C.MUTED, 16))
@@ -432,6 +453,8 @@ func _row(player: Dictionary) -> void:
 	var id := str(player.id)
 	var profile := _button("Fiche", action_id("ContractProfile", id), func(): _open_profile(id))
 	profile.set_meta("player_id", id)
+	profile.set_meta("entity_kind", "player")
+	profile.set_meta("entity_id", id)
 	profile.custom_minimum_size.x = 100
 	actions.add_child(profile)
 	var discussion: Dictionary = player.get("renewal", {}).get("negotiation", {})
@@ -451,13 +474,10 @@ func _remember(id: String) -> void:
 	state.focus = id
 	state.scroll = _scroll.scroll_vertical
 
-func _open_profile(id: String) -> void:
+func _open_profile(id: String, section: String = "", control_id: String = "") -> void:
 	if _find(id).is_empty(): return
-	_remember(action_id("ContractProfile", id))
-	app.selected_player = id
-	app.management_ui.profile_scroll = 0
-	app.set_meta("immersive08_full_player", true)
-	app._render()
+	_remember(control_id if not control_id.is_empty() else action_id("ContractProfile", id))
+	app.navigation_controller.open_entity({"kind":"player", "id":id, "section":section})
 
 func _open_quote(id: String) -> void:
 	var player := _find(id)

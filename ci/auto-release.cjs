@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const {execute,JOBS}=require('./chat-release.cjs');
+const {SHARD_JOB_SKIPPED,officialJobs}=require('./ci-jobs.cjs');
 
 const REPO='Xynph/cadrage-debordement', REPO_ID=1439603196, OWNER_ID=350229047;
 const SHA=/^[a-f0-9]{40}$/;
@@ -171,8 +172,9 @@ function verifyCI(api,pr,files){
   need(run.status==='completed'&&run.conclusion==='success','CI PR en attente ou non réussie (run '+run.id+')');
  }
  const green=JOBS.map(name=>[name,'success']);
- const docs=[['classification','success'],['Validation CI','success'],['Suites ${{ matrix.shard }}/5','skipped']];
- const jobs=terminalJobs(api,js);
+ const docs=[['classification','success'],['Validation CI','success'],[SHARD_JOB_SKIPPED,'skipped']];
+ // Jobs Godot informatifs (non bloquants) exclus du décompte officiel.
+ const jobs=officialJobs(terminalJobs(api,js));
  need(greenJobs(jobs,green)||(!css&&greenJobs(jobs,docs)),'Jobs JavaScript inattendus ou incomplets');
  if(css)need(greenJobs(terminalJobs(api,latest.get(chromium.id)),[[CHROMIUM_JOB,'success']]),
    'Job Chromium manquant ou non réussi');
@@ -230,7 +232,7 @@ async function main(){
   if(result.mode==='check'){
    summary(subject+' · Contrôles réussis. Contrôle en lecture seule.');
   }else{
-   summary(subject+' · Fusion `'+result.mergedSha+'` · [CI post-fusion 7/7](https://github.com/'+REPO+'/actions/runs/'+result.postRun+')');
+   summary(subject+' · Fusion `'+result.mergedSha+'` · [CI post-fusion '+JOBS.length+'/'+JOBS.length+'](https://github.com/'+REPO+'/actions/runs/'+result.postRun+')');
   }
   console.log(JSON.stringify(result));
  }catch(error){

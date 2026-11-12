@@ -1,0 +1,22 @@
+{
+  "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+  "run_id": 43138359860,
+  "run_attempt": 1,
+  "coverage": "full",
+  "job_count": 7,
+  "all_jobs": "success",
+  "pass_lines": 645,
+  "distinct_pass_suites": 645,
+  "source_inventory": "PASS suite multiset equals exact git ls-tree source SHA root tests/*.cjs excluding harness.cjs",
+  "source_files_sha256": {
+    ".github/workflows/tests.yml": "806bf4421c9ddd400440b6afc25cfaf1f606aa8182c3b905ad25a7eb1ed55a88",
+    "ci/test-coverage.cjs": "436e1ea7ac2d833b836a1a23063abc2f3e86034d9d02777e304b251b4522ad60",
+    "ci/shard-tests.cjs": "434e135640dd625f56d6e98e257cf33e8f5fecf90110fb86ec82ef8c1408db69"
+  },
+  "logs_method": "Selected original timestamped PASS lines plus final gate env/notice from completed GitHub connector job logs",
+  "sdk_same_source_run": 43138356742,
+  "limitations": [
+    "JavaScript wrapper PASS may include SDK/graphics SKIP when opt-in absent; real SDK qualification is in its separate full run.",
+    "Does not qualify future calendar-session or any newer source SHA."
+  ]
+}

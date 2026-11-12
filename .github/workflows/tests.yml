@@ -38,17 +38,18 @@ jobs:
         run: node ci/test-coverage.cjs
 
   shards:
-    name: Suites ${{ matrix.shard }}/5
+    name: Suites ${{ matrix.shard }}/10
     needs: classification
     if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     runs-on: ubuntu-latest
-    # Campagnes cumulées : cinq lots équilibrés, toutes les suites conservées.
+    # Dix lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
+    # les suites conservées. Nombre de shards : ci/ci-jobs.cjs (SHARD_COUNT).
     # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
@@ -63,70 +64,117 @@ jobs:
           COVERAGE: ${{ needs.classification.outputs.coverage }}
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" > "$RUNNER_TEMP/shard-suites.txt"
+          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 10 > "$RUNNER_TEMP/shard-suites.txt"
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
-          total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
-          [[ "${#suites[@]}" -gt 0 ]] || exit 1
-          failures=0
-          executed=0
-          current_suite=initialisation
-          # Keep the last real suite observable through check annotations even
-          # when a runner interruption prevents the final Markdown summary.
-          trap 'printf "::error file=%s::Interruption SIGTERM pendant la suite %s\n" "$current_suite" "$current_suite"; exit 143' TERM
-          trap 'printf "::error file=%s::Interruption SIGINT pendant la suite %s\n" "$current_suite" "$current_suite"; exit 130' INT
-          for test in "${suites[@]}"; do
-            current_suite="$test"
-            executed=$((executed+1))
-            echo "::group::$test"
-            start=$SECONDS
-            limit=180s
-            # Budgets ciblés de réception cumulative, distincts des poids de
-            # planification. Support a terminé en 883/941 s avant optimisation ;
-            # Nationale22 en 237,6 s. Les autres réserves longues sont provisoires
-            # après les timeouts observés sur 42891746395, sans retirer de contrôle.
-            case "$test" in
-              tests/world-worker-season.cjs) limit=1200s ;;
-              tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) limit=900s ;;
-              tests/native-academy-integrated-long.cjs) limit=1800s ;;
-              tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) limit=600s ;;
-              tests/native-nationale-reduced-bench.cjs|tests/native-match-talks.cjs|tests/godot-roster-foundation.cjs) limit=300s ;;
-              tests/native-club-support-season.cjs) limit=1200s ;;
-              tests/native-club-world-worker.cjs) limit=900s ;;
-              tests/native-club-strategy.cjs) limit=600s ;;
-              # Carrière mondiale de 58 clubs sur 3 saisons (>180 s sur GitHub) : budget propre, sans toucher la limite globale.
-              tests/world-roster-stability.cjs) limit=600s ;;
-              tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) limit=900s ;;
-              tests/deepen-staff-native.cjs) limit=1200s ;;
-              tests/custom-competition-worker.cjs) limit=900s ;;
-              # Réception locale complète233s; conserve créations, Rooms et refus.
-              tests/youth-scout-native.cjs) limit=600s ;;
-              # Fixtures complètes PASS locales142/126s, sans refus précoce.
-              tests/world-catalogue-dedup.cjs|tests/world-venue-media.cjs) limit=300s ;;
-              tests/career-variation-worker.cjs|tests/management-day-worker.cjs) limit=600s ;;
-              # PASS CI42909005768 :179,80/159,68s, marge finie avant le cap180.
-              tests/france-career.cjs|tests/world-worker.cjs) limit=300s ;;
-              tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) limit=420s ;;
-            esac
-            if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
-              echo "PASS $test ($((SECONDS-start)) s)"
-              echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
-            else
-              code=$?
-              failures=$((failures+1))
-              echo "::error file=$test::Échec ou délai dépassé (code $code, durée $((SECONDS-start)) s, limite $limit)"
-              echo "| $test | ECHEC ($code) | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
-            fi
-            echo "::endgroup::"
-          done
-          {
-            echo "### Shard $SHARD/5 ($COVERAGE) : $executed suites sur $total"
-            echo "| Suite | Résultat | Durée |"
-            echo "| --- | --- | --- |"
-            cat "$RUNNER_TEMP/results.md"
-            echo ""
-            echo "**Échecs : $failures**"
-          } >> "$GITHUB_STEP_SUMMARY"
-          [[ "$failures" -eq 0 ]]
+          if [[ "${#suites[@]}" -eq 0 ]]; then
+            # Couverture ciblée (web, native-art) : moins de suites que de shards.
+            # En couverture complète, un shard vide est une erreur de planification.
+            [[ "$COVERAGE" != full ]] || exit 1
+            echo "### Shard $SHARD/10 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Deux suites à la fois : elles sont mono-cœur et le runner a 4 cœurs.
+          # Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
+          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/10 ($COVERAGE)" 2
+  godot:
+    name: Godot ${{ matrix.shard }}/3
+    needs: classification
+    # Suites qui pilotent le SDK (source lisant CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
+    # NON BLOQUANT pour commencer : hors des dépendances de « Validation CI » et
+    # continue-on-error, tant que ces suites ne sont pas fiables et rapides en CI.
+    if: ${{ needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      # Version exacte épinglée : archive officielle godotengine/godot-builds, somme
+      # SHA-256 vérifiée à chaque exécution (y compris depuis le cache). Concorde avec
+      # SHA512-SUMS.txt de la release : 9aa00f7a…ed54c65.
+      GODOT_VERSION: 4.7.2-stable
+      GODOT_ZIP: Godot_v4.7.2-stable_linux.x86_64.zip
+      GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Cache de l'archive Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cd-godot
+          key: godot-4.7.2-stable-linux-x86_64-cadd3204e728a35d
+      - name: Installer Godot 4.7.2 (SHA-256 vérifiée)
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$HOME/.cache/cd-godot/$GODOT_ZIP"
+          mkdir -p "$(dirname "$archive")"
+          if [[ ! -f "$archive" ]]; then
+            curl -fsSL --retry 3 --retry-delay 5 -o "$archive.part" \
+              "https://github.com/godotengine/godot-builds/releases/download/$GODOT_VERSION/$GODOT_ZIP"
+            mv "$archive.part" "$archive"
+          fi
+          if ! echo "$GODOT_SHA256  $archive" | sha256sum -c -; then
+            rm -f "$archive"
+            echo "::error::Somme SHA-256 de Godot invalide"
+            exit 1
+          fi
+          unzip -q -o "$archive" -d "$RUNNER_TEMP/godot"
+          exe="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$exe"
+          echo "CD_GODOT_EXECUTABLE=$exe" >> "$GITHUB_ENV"
+          echo "CD_GODOT_EXE=$exe" >> "$GITHUB_ENV"
+      - name: Serveur X virtuel et rendu logiciel Mesa
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends xvfb xauth libgl1 libgl1-mesa-dri \
+            libglx-mesa0 libegl1 libxcursor1 libxinerama1 libxrandr2 libxi6 libxkbcommon0 libfontconfig1
+          node ci/godot-env.cjs --check
+      - name: Cache des imports Godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            native/godot/.godot
+            native/godot/**/*.import
+            native/godot/**/*.uid
+          key: godot-import-4.7.2-${{ hashFiles('native/godot/**') }}
+          restore-keys: godot-import-4.7.2-
+      - name: Préparer le projet Godot (staging des ressources)
+        shell: bash
+        # Comme en local : registres anonymisés, photos, portraits et modèle CC0 copiés
+        # dans native/godot/assets (ignoré par Git), requis par les suites natives.
+        run: python3 scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
+      - name: Importer le projet Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          start=$SECONDS
+          timeout 900 "$CD_GODOT_EXECUTABLE" --headless --editor --import --path native/godot \
+            > "$RUNNER_TEMP/godot-import.log" 2>&1 || { tail -50 "$RUNNER_TEMP/godot-import.log"; exit 1; }
+          tail -5 "$RUNNER_TEMP/godot-import.log"
+          echo "Import Godot : $((SECONDS-start)) s"
+      - name: Suites Godot (SDK obligatoire, xvfb, rendu logiciel)
+        shell: bash
+        # Délai d'étape (échec) plus court que celui du job (annulation) : un
+        # dépassement ne doit pas faire passer le run entier à « cancelled ».
+        timeout-minutes: 40
+        env:
+          SHARD: ${{ matrix.shard }}
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          set -euo pipefail
+          node ci/shard-tests.cjs "$SHARD" godot 3 > "$RUNNER_TEMP/godot-suites.txt"
+          xvfb-run -a -s "-screen 0 1920x1080x24" \
+            bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/3"
   validation:
     name: Validation CI
     if: ${{ always() }}

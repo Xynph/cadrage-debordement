@@ -1,0 +1,55 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+SDK_COMMAND 8330 art-direction new_career
+SDK_CAPTURE 14234 Presse
+SDK_COMMAND 21193 art-direction academy_activate
+SDK_CAPTURE 23228 Accueil
+SDK_CAPTURE 25311 Création
+SDK_CAPTURE 26885 Bureau
+SDK_CAPTURE 29003 Effectif
+SDK_CAPTURE 29990 Composition
+SDK_CAPTURE 31168 Préparation
+SDK_CAPTURE 32224 Plan de jeu
+SDK_CAPTURE 33046 Plan de jeu-Phases arrêtées
+SDK_CAPTURE 33560 Plan de jeu-Lecture du match
+SDK_CAPTURE 35017 Recrutement
+SDK_CAPTURE 37317 Formation
+SDK_CAPTURE 38865 Formation-professionnels
+SDK_CAPTURE 42630 Centre
+SDK_CAPTURE 45047 Centre-Parcours
+SDK_CAPTURE 45991 Centre-Parcours-detail
+SDK_CAPTURE 46589 Centre-Centres
+SDK_CAPTURE 47249 Centre-Filières
+SDK_CAPTURE 47982 Centre-Passerelle pro
+SDK_CAPTURE 48512 Centre-Générations
+SDK_CAPTURE 50178 Staff
+SDK_CAPTURE 51228 Travail du club
+SDK_CAPTURE 51747 Travail du club-Médical
+SDK_CAPTURE 52324 Travail du club-Agents
+SDK_CAPTURE 53263 Vestiaire
+SDK_CAPTURE 54134 Finances
+SDK_CAPTURE 55483 Stratégie
+SDK_CAPTURE 56017 Stratégie-Projet sportif
+SDK_CAPTURE 56604 Stratégie-Supporters
+SDK_CAPTURE 57582 Club
+SDK_CAPTURE 58545 Carrière
+SDK_CAPTURE 59478 Calendrier
+SDK_CAPTURE 60431 Classements
+SDK_CAPTURE 61034 Classements-accession
+SDK_CAPTURE 61987 Rivalités
+SDK_CAPTURE 63557 Match
+SDK_CAPTURE 64439 Packs
+SDK_CAPTURE 66518 Comparaison
+SDK_CAPTURE 67155 Contrat
+SDK_CAPTURE 67783 Archives
+SDK_CAPTURE 68350 Menu-sauvegardes
+SDK_CAPTURE 68926 Crédits
+SDK_CAPTURE 69771 Dossier-adverse
+SDK_CAPTURE 70435 Paramètres
+ART DIRECTION : 211 contrôles ; 44 captures ; 0 échecs
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+
+Réception artistique : /tmp/cd-art-direction-2rEZeK

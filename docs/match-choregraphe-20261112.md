@@ -581,3 +581,98 @@ Le rendu logiciel est lent (environ 0,5 s par image) : une capture de ce type pr
 3. Enchaîner pénaltouche, touche et ballon porté dans une même série de pistes.
 4. Faute de main, ballon porté qui s'écroule ou sort, contestation au sol.
 5. Clips Mixamo de liaison (ruck, mêlée, ballon porté), de pose du ballon et d'aplati.
+
+## 12. Retours de Léo sur les vidéos (12 novembre 2026, branche `claude/match-retours-leo-20261112`)
+
+Demande : « il faut que la caméra soit de plus loin pour masquer les défauts. Retravaille aussi
+les plaquages et il faut qu'on ait plus la sensation que le joueur a le ballon dans les mains.
+Et arrête les cercles rouges ou bleus aux pieds des joueurs, ça fait pas réaliste ». Entracte
+entre deux temps forts et choix des temps forts : [match-temps-forts-conception-20261111.md](match-temps-forts-conception-20261111.md), § 13.
+
+### 12.1 Caméra plus loin
+
+- Caméra TV (`match_view.gd`, `TV_OFFSET`) : décalage (0, 60, 69) au lieu de (0, 55, 75), soit
+  environ 41° au-dessus de l'horizon au lieu de 36° : un peu plus en surplomb, les appuis et
+  les contacts se lisent moins de côté.
+- Cadrage des temps forts (`match_cadrage.gd`) : **16 à 24 m** de hauteur visible en TV au lieu
+  de 12 à 18 m ; 32 m au lieu de 26 m pour un jeu au pied ou une longue course. Le recadrage
+  des gestes ne descend plus sous 15 m en TV (11 m avant). Caméra « contact » inchangée.
+- Le porteur et le ballon restent dans la zone sûre de l'image (règle inchangée du cadrage).
+
+### 12.2 Plus d'anneaux au sol
+
+L'anneau aux couleurs de l'équipe sous chaque joueur est supprimé, partout (direct d'origine
+compris) : les maillots suffisent. Le repère doré du ballon ne s'affiche plus qu'en vue de
+dessus, où le ballon fait quelques pixels ; jamais en vue TV ni contact. Le porteur n'a pas
+d'autre marque : la tenue du ballon (§ 12.4) et le cadrage le désignent.
+
+### 12.3 Plaquages
+
+- **Contact** (`match_choregraphie.gd`) : 0,35 s avant le plaquage d'une piste, la vue amène
+  le plaqueur à la taille du porteur, à son côté (celui d'où il arrive) à 0,42 m et 0,3 m en
+  retrait, tourné dans le sens de la course du porteur ; il le suit pendant la chute, puis
+  rejoint sa piste en 0,5 s quand il se relève. Il ne traverse plus le porteur et ne part plus
+  sur sa propre trajectoire. Les pistes du moteur ne changent pas (essai de modification du
+  chorégraphe abandonné : il rendait deux mises en scène du jeu d'entrées impossibles).
+- **Chute vers l'avant** (bibliothèque) : le porteur plaqué joue `mx_plaque_avant` (chute à
+  plat ventre, impact 0,45 s après le contact) au lieu de chutes sur le dos ou de côté ; le
+  plaqueur plonge bras tendus (`mx_aplati`, impact au même moment) puis reste à plat ventre ;
+  relevé depuis le ventre (`mx_se_relever_ventre`). Sans ces clips : anciens gestes ; sans
+  bibliothèque : pose procédurale inchangée (buste incliné vers l'avant).
+- Le porteur garde le ballon pendant la chute : les bras suivent le buste (§ 12.4).
+
+### 12.4 Ballon dans les mains
+
+`match_presentation.gd` (`carry_ball`, `pass_follow`, `reach_ball`), `match_view.gd` :
+
+- Le ballon est tenu **à deux mains devant le ventre** (prise, arrêt, passe proche) ou **calé
+  sous le bras** à partir de 4,3 m/s, du côté tourné vers la caméra (choisi à la prise : le
+  ballon reste visible), après 0,5 s de prise ; passage de l'un à l'autre en 0,33 s.
+- Les cibles des mains suivent le **buste** (repère du torse, penché en course, couché dans une
+  chute), puis le ballon est replacé d'après les **poignets réellement atteints** : il ne flotte
+  plus devant le joueur quand les bras ne peuvent pas atteindre le point visé. Grand axe du
+  ballon vers l'avant et le bas, comme tenu.
+- **Passe** (pistes) : 0,42 s avant le lâcher, le passeur arme à deux mains depuis la hanche
+  opposée et lance vers le côté du receveur ; ses bras finissent le geste 0,3 s après le lâcher.
+- **Réception** : 0,45 s avant la prise, les mains du receveur vont chercher le ballon qui arrive.
+- Raccord de 0,2 s entre la trajectoire et les mains à chaque prise.
+
+### 12.5 Bibliothèque Mixamo (hors dépôt)
+
+Quatre clips ajoutés à `scripts/animations/bibliotheque-match.json` (32 clips) et à
+`match_animations.gd`, convertis par la chaîne habituelle (`adapter-animations.py`, puis
+`convertir-bibliotheque.gd`) :
+
+| Geste | Clip | Source Mixamo | Usage |
+| --- | --- | --- | --- |
+| `plaque_avant` | `mx_plaque_avant` | Fall Flat | porteur plaqué, chute vers l'avant ; fin tenue au sol |
+| `plongeon_avant` | `mx_aplati` | Run To Dive | plaqueur (plaquage réussi ou raté), aplati de l'essai |
+| `se_relever_ventre` | `mx_se_relever_ventre` | Getting Up | relevé après une chute à plat ventre |
+| `poussee` | `mx_poussee_melee` | Push Start | mêlée, ruck, ballon porté : buste penché, bras tendus, fin tenue |
+
+Clips regardés et écartés (planches hors dépôt) : Quarterback Pass et Throwing (passe à un bras,
+par-dessus l'épaule), goalkeeper pass (passe à la main de gardien : ramassage possible pour le
+demi, non branché faute de temps), Male Crouch Pose (une seule image), Pushing (finit debout),
+Holding Down, soccer tackle (tacle glissé pieds en avant, pas un plaquage de rugby), Hit To The
+Legs et Hit To Side Of Body (chute sur le dos), Tripping et soccer trip. `mx_plongeon`
+(goalkeeper diving save) et `mx_poussee` (Pushing) restent dans la bibliothèque, non joués.
+La passe reste procédurale : aucun clip de la bibliothèque ne fait une passe latérale à deux
+mains.
+
+### 12.6 Premier temps fort de la vidéo d'étape (coup d'envoi), revu image par image
+
+Léo : « c'est mieux. Quelques bugs dans le 1er temps fort » (graine 7, coup d'envoi puis
+réception de Clément Garcia). Relevé sur les 354 images et corrigé :
+
+| Défaut vu | Cause | Correction |
+| --- | --- | --- |
+| Équipe qui reçoit alignée en une seule file à la même distance, joueurs qui restent ensuite immobiles en ligne | le chorégraphe gardait la place `y` de la scène du moteur et ne reculait que les joueurs à moins de 10 m | formation de réception par numéro : avants en groupes à 11–17 m, demis à 19 et 24 m, trois-quarts étagés à 27–33 m, arrière à 38 m, symétrisée du côté où tombe le ballon (`ouvrirEnvoi`, `match-choregraphe.cjs`) |
+| Ballon décollé devant le porteur après la réception | ancrage du ballon sur le torse, mains posées ensuite sans pouvoir l'atteindre | ballon tenu (§ 12.4) |
+| Plaqueur qui traverse le porteur et tombe dans une autre direction après la réception | plongeon du plaqueur sur sa propre vitesse | plaquage du § 12.3 |
+| Anneaux rouges et bleus sous les joueurs | — | retirés (§ 12.2) |
+
+Relevés, non corrigés ici : le bouton du bandeau affiche « REPRENDRE » pendant le coup d'envoi
+d'un match importé en pause (comportement voulu depuis le 11 novembre : le premier temps fort se
+joue, puis le match attend) ; les sigles des clubs dans les textes du moteur (« FDG », « SDB »)
+ne correspondent pas aux noms affichés par le bandeau quand un pack de noms est actif (identités,
+hors de ce chantier).

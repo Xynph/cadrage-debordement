@@ -1,0 +1,165 @@
+{
+  "format": 1,
+  "scope": "Réception graphique ciblée Analyse/Club/Bureau, pas campagne globale ni Windows.",
+  "source_commit": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+  "checks": 72,
+  "failures": [],
+  "duration_ms": 65702.733753,
+  "wrapper_exit_code": 0,
+  "speech_note": "Le test compte requested/started et vérifie _id nul ; assertion passée parmi72 contrôles. report.json ne sérialise pas ces compteurs. Bulle texte Gabi visible sur PNG Analyse ; audio Dummy.",
+  "files": [
+    {
+      "path": "qualified/report.json",
+      "source_path": "/workspace/work/night-phase10/analysis-club-office-v5/report.json",
+      "bytes": 1812,
+      "sha256": "e4b9dc33262f418bc87d8a3dded854825a9465bbec301a0b9e0766cd77fddbe7"
+    },
+    {
+      "path": "qualified/godot.log",
+      "source_path": "/workspace/work/night-phase10/analysis-club-office-v5/godot.log",
+      "bytes": 496,
+      "sha256": "7817a26d5a47a8d9032ae2e49883af2e809f3f5953005b0a02101cc0ecb83f6f"
+    },
+    {
+      "path": "qualified/source-copy.json",
+      "source_path": "/workspace/work/night-phase10/analysis-club-office-v5/source-copy.json",
+      "bytes": 696,
+      "sha256": "dc95de7b3103a5d73e33a4a61aee67025e41e166c007925fbedb3e86e887f4a3"
+    },
+    {
+      "path": "qualified/run.log",
+      "source_path": "/workspace/work/night-phase9/analysis-club-office-v5.log",
+      "bytes": 977,
+      "sha256": "5ef98545aea47a4984b623b9a37d9797861546ace6bd344a766f99ffab4bb588"
+    }
+  ],
+  "images": [
+    {
+      "path": "images/analyse-rencontre-reelle-2560.png",
+      "source_path": "/workspace/work/night-phase10/analysis-club-office-v5/analyse-rencontre-reelle-2560.png",
+      "bytes": 732979,
+      "sha256": "1e911c8d02ed638c501237781f3b2a362e40f757c4c1851424152ea6d8e96df0",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+      "edited": false
+    },
+    {
+      "path": "images/fiche-rencontre-reelle-2560.png",
+      "source_path": "/workspace/work/night-phase10/analysis-club-office-v5/fiche-rencontre-reelle-2560.png",
+      "bytes": 578017,
+      "sha256": "02d304cced63c42edb240174e405a85fb82e8b7dbd66aecc777049b113272001",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+      "edited": false
+    },
+    {
+      "path": "images/bureau-liens-reels-2560.png",
+      "source_path": "/workspace/work/night-phase10/analysis-club-office-v5/bureau-liens-reels-2560.png",
+      "bytes": 979271,
+      "sha256": "61371169c40459d7fce0f79751ebc4c20691d5efd6820388930cf4ccbd9879a4",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+      "edited": false
+    }
+  ],
+  "history": [
+    {
+      "source_commit": "b4c894ecc40c7dc4346db93dca2e3138295e791a",
+      "qualified": false,
+      "description": "40 contrôles,6 échecs ; vrais retours Back, défaut produit à distinguer de la préparation.",
+      "source_unchanged": true,
+      "images_published": false,
+      "files": [
+        {
+          "path": "history/back-failures/report.json",
+          "source_path": "/workspace/work/night-phase10/analysis-club-graphics-v2/report.json",
+          "bytes": 1455,
+          "sha256": "599f5c483989b717ccb343d9677a416ce422f27d624e44d559c158a0790b0939"
+        },
+        {
+          "path": "history/back-failures/godot.log",
+          "source_path": "/workspace/work/night-phase10/analysis-club-graphics-v2/godot.log",
+          "bytes": 756,
+          "sha256": "31e57ba2ef8c993aefbe9b751d5f61ca86ea70141733fa8761e320b9bc3dc89c"
+        },
+        {
+          "path": "history/back-failures/source-copy.json",
+          "source_path": "/workspace/work/night-phase10/analysis-club-graphics-v2/source-copy.json",
+          "bytes": 696,
+          "sha256": "161f837578d0250b23bda513e9f50216c1a16b2b883cc79f4db6dc57b325b719"
+        },
+        {
+          "path": "history/back-failures/run.log",
+          "source_path": "/workspace/work/night-phase9/analysis-club-graphics-v2.log",
+          "bytes": 2651,
+          "sha256": "d895bd2375053fb2ac75e99a1b1a1e8a8aeb4240bbb42aab0c40d45c7b4553f8"
+        }
+      ]
+    },
+    {
+      "source_commit": "58e4651e4abdcb78113a249cbc50699471df702b",
+      "qualified": false,
+      "description": "Parsing test : paramètre Node refusait le SceneTree ; aucun reçu produit.",
+      "source_unchanged": true,
+      "images_published": false,
+      "files": [
+        {
+          "path": "history/parse-scenetree/godot.log",
+          "source_path": "/workspace/work/night-phase10/analysis-club-office-v3/godot.log",
+          "bytes": 905,
+          "sha256": "8fc9affe4598c0d7fd71d8a1c213c9558ace3235f1d44069df1ec17afae87378"
+        },
+        {
+          "path": "history/parse-scenetree/source-copy.json",
+          "source_path": "/workspace/work/night-phase10/analysis-club-office-v3/source-copy.json",
+          "bytes": 696,
+          "sha256": "196ca102b6f062e24a1999495f88af4dfa92bd047068af4f7e868d4dd2ee9ae9"
+        },
+        {
+          "path": "history/parse-scenetree/run.log",
+          "source_path": "/workspace/work/night-phase9/analysis-club-office-v3.log",
+          "bytes": 2950,
+          "sha256": "9dab9ce20ba7e8cf7f798d6112b7597ae742f6f50d46a8552180c2635d511ebc"
+        }
+      ]
+    },
+    {
+      "source_commit": "8c2f8d157d48c95ba6b675fc462615b0dcb6655e",
+      "qualified": false,
+      "description": "Inférence de returned dans le helper, compilation échouée et timeout enfant150s ; aucun reçu produit.",
+      "source_unchanged": true,
+      "images_published": false,
+      "files": [
+        {
+          "path": "history/compile-returned/godot.log",
+          "source_path": "/workspace/work/night-phase10/analysis-club-office-v4/godot.log",
+          "bytes": 1529,
+          "sha256": "785c21ca3308c5f4d3af0a4af3a3977b9b4f8cba5856e8fbcbb155676a1c1c6c"
+        },
+        {
+          "path": "history/compile-returned/source-copy.json",
+          "source_path": "/workspace/work/night-phase10/analysis-club-office-v4/source-copy.json",
+          "bytes": 696,
+          "sha256": "4309b83bcc19a3dac8f4dc3da6951a9b880420efda0ee91ec2e847474f018ca3"
+        },
+        {
+          "path": "history/compile-returned/run.log",
+          "source_path": "/workspace/work/night-phase9/analysis-club-office-v4.log",
+          "bytes": 2716,
+          "sha256": "bcc2a3b33f9b241b292c26d57ae1d7e785be828d2d9c9fb0dc9c262c5f67580d"
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "path": "provenance.json",
+    "sha256": "1282ae7d112cd775cd50c545aa8982badbcb1fab397c1b52344aae16b3d96348"
+  },
+  "documentation": {
+    "path": "README.md",
+    "sha256": "5a088adc9667968f8dc3017a728c651fdc782bd14981516140c778d0fe57a257"
+  }
+}

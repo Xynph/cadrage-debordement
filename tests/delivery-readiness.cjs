@@ -6,7 +6,7 @@ const path = require('node:path');
 const { aggregate, inspect, validateDispatch, publication, markdown } = require('../ci/delivery-readiness.cjs');
 const repo = 'Xynph/cadrage-debordement';
 const a = 'a'.repeat(40), b = 'b'.repeat(40), c = 'c'.repeat(40);
-const names = ['classification', ...[1,2,3,4,5].map(i => `Suites ${i}/5`), 'Validation CI'];
+const names = require('../ci/ci-jobs.cjs').OFFICIAL_JOBS;
 const jobs = () => names.map(name => ({name, status:'completed', conclusion:'success'}));
 const run = (id, sha=b, event='pull_request', workflow_id=10) => ({id, workflow_id, head_sha:sha, event,
   head_branch: event==='pull_request'?'feature':'main', name:'Tests JavaScript', path:'.github/workflows/tests.yml',
@@ -21,6 +21,11 @@ test('bilan lié au HEAD/main et commande propriétaire sans fusion', () => {
   assert.equal(result.ready,true); assert.equal(result.command,`/cd-check 204 ${b}`);
   assert.match(markdown(result),/informatif/); assert.match(markdown(result),new RegExp(a));
   assert(!markdown(result).includes('/cd-merge'));
+  // Un job Godot informatif rouge (continue-on-error) ne bloque pas le bilan.
+  const godot=snapshot();
+  godot.jobs[2].push({name:'Godot 2/3',status:'completed',conclusion:'failure'});
+  godot.mainJobs.push({name:'Godot 2/3',status:'completed',conclusion:'failure'});
+  assert.equal(aggregate(godot).ready,true);
 });
 for (const [label, mutate] of [
   ['CI absente',s=>s.runs=[]],['en cours',s=>s.runs[0].status='in_progress'],

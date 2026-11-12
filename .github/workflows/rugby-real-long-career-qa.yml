@@ -1,16 +1,7 @@
 name: Rugby Reel - ten-season native career QA
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (chantier versionné clos, contrôles Node repris par tests.yml).
+# Anciens déclencheurs : push, pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  push:
-    branches: [qa/rugby-real-long-career-20261107]
-    paths:
-      - 'tests/rugby-real-long-career-qa.cjs'
-      - '.github/workflows/rugby-real-long-career-qa.yml'
-      - 'docs/rugby-real-long-career-qa-20261107.md'
-  pull_request:
-    paths:
-      - 'tests/rugby-real-long-career-qa.cjs'
-      - '.github/workflows/rugby-real-long-career-qa.yml'
-      - 'docs/rugby-real-long-career-qa-20261107.md'
   workflow_dispatch:
 permissions:
   contents: read

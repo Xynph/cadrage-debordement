@@ -1,0 +1,175 @@
+{
+  "format": 1,
+  "scope": "Parcours management graphique ciblé ; reçu vert et historiques rouges séparés.",
+  "source_commit": "d40311c053aba931756df212c2690adb04a76994",
+  "qualified": {
+    "checks": 61,
+    "failures": [],
+    "speech_requests": 0,
+    "speech_starts": 0,
+    "files": [
+      {
+        "path": "qualified/report.json",
+        "source_path": "/workspace/work/night-phase10/management-stable-scroll/report.json",
+        "bytes": 601,
+        "sha256": "be86b50e14126872795da1491c4f60c9595981475d82ef06d347d0a167fa4a3a"
+      },
+      {
+        "path": "qualified/godot.log",
+        "source_path": "/workspace/work/night-phase10/management-stable-scroll/godot.log",
+        "bytes": 11134,
+        "sha256": "84196b362bbd97807920a97bc2e2a9b333220b8876b51fe9d126be696a459226"
+      },
+      {
+        "path": "qualified/run.log",
+        "source_path": "/workspace/work/night-phase9/management-stable-scroll.log",
+        "bytes": 11217,
+        "sha256": "5dc4ba90a4ebacd324daa71591964036641282020cb145ef4eb9c7afc68844bd"
+      }
+    ]
+  },
+  "images": [
+    {
+      "path": "images/vestiaire-retour-fiche-2560.png",
+      "source_path": "/workspace/work/night-phase10/management-stable-scroll/vestiaire-retour-fiche-2560.png",
+      "bytes": 578676,
+      "sha256": "50074415460acaf1781a1a0c28a1f446a170626845e6c57e8e603898ef04fb27",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "d40311c053aba931756df212c2690adb04a76994",
+      "edited": false,
+      "qualification": "Reçu final 61/0 uniquement"
+    },
+    {
+      "path": "images/decisions-retour-fiche-2560.png",
+      "source_path": "/workspace/work/night-phase10/management-stable-scroll/decisions-retour-fiche-2560.png",
+      "bytes": 599862,
+      "sha256": "7c3b658d3bc52d69b0a67f63eb231a1d7cd9cda9b6a8959931d02e24a186a839",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "d40311c053aba931756df212c2690adb04a76994",
+      "edited": false,
+      "qualification": "Reçu final 61/0 uniquement"
+    }
+  ],
+  "historical_failures": [
+    {
+      "label": "preparation",
+      "source_commit": "d896d631bd2ea141283c0e09609695a547a6b200",
+      "checks": 25,
+      "failures": [
+        "Le vrai vestiaire est affiché"
+      ],
+      "qualified": false,
+      "images_published": false,
+      "files": [
+        {
+          "path": "history/preparation/report.json",
+          "source_path": "/workspace/work/night-phase9/management/report.json",
+          "bytes": 239,
+          "sha256": "63680b24c8ada538e3df24d16fe91253bc2cc1507fa7d6785b382e620c6adda8"
+        },
+        {
+          "path": "history/preparation/godot.log",
+          "source_path": "/workspace/work/night-phase9/management/godot.log",
+          "bytes": 534,
+          "sha256": "2b612fc638a6eb1904997e55f3f7c4de1ac41f9fbe815427e2122a53e2d52803"
+        },
+        {
+          "path": "history/preparation/run.log",
+          "source_path": "/workspace/work/night-phase9/management-reading-flow.log",
+          "bytes": 1938,
+          "sha256": "34a2633a4a5b46e9ef1d8e2c4fe92cadd94d9d47cd2e47bd7a238a35b08e3d88"
+        }
+      ],
+      "context": "Préparation : onglet Entretiens et duos non activé ; wrapper coach déjà flag0.",
+      "source_attribution": "Mapping exact communiqué par root.",
+      "test_source_sha256": {
+        "tests/godot-management-reading-flow.cjs": "77442048cd8bbc3580f3394af6108eeda3a8bbbe0c8a654b11158b5bca9d3731",
+        "tests/godot-management-reading-flow.gd": "73519165a3304e0b35128d8d0bc055e15b3bf5c2b03785b92d069209b497f879"
+      }
+    },
+    {
+      "label": "scroll-people",
+      "source_commit": "d0aceccb28b51ebea3fb15d7c5dbfb3adb7ea988",
+      "checks": 60,
+      "failures": [
+        "Retour conserve le scroll de l’autre liste"
+      ],
+      "qualified": false,
+      "images_published": false,
+      "files": [
+        {
+          "path": "history/scroll-people/report.json",
+          "source_path": "/workspace/work/night-phase9/management-people/report.json",
+          "bytes": 639,
+          "sha256": "a2da101228b1672d473a4627e43b18df2b8c5af13c0271cd80854208acb80137"
+        },
+        {
+          "path": "history/scroll-people/godot.log",
+          "source_path": "/workspace/work/night-phase9/management-people/godot.log",
+          "bytes": 1929,
+          "sha256": "2d94dc148fd449b6fe2c9aef70121bb162cdec684d4421131ae396e69be23387"
+        },
+        {
+          "path": "history/scroll-people/run.log",
+          "source_path": "/workspace/work/night-phase9/management-people.log",
+          "bytes": 4735,
+          "sha256": "bc34a055e79372117316241c2b4ad8bc8cb41d730ccf2176d58ffb6d364dfa87"
+        }
+      ],
+      "context": "Défilement de l’autre liste non conservé.",
+      "source_attribution": "Mapping exact communiqué par root.",
+      "test_source_sha256": {
+        "tests/godot-management-reading-flow.cjs": "77442048cd8bbc3580f3394af6108eeda3a8bbbe0c8a654b11158b5bca9d3731",
+        "tests/godot-management-reading-flow.gd": "0af8f5478ef454a7242a9da91af125e89f9742d09768960abd684f02d2db0230"
+      }
+    },
+    {
+      "label": "scroll-diagnostic",
+      "source_commit": "c657eee47816bdca3a79e83d389bbd80bf5a64d0",
+      "checks": 60,
+      "failures": [
+        "Retour conserve le scroll de l’autre liste"
+      ],
+      "qualified": false,
+      "images_published": false,
+      "files": [
+        {
+          "path": "history/scroll-diagnostic/report.json",
+          "source_path": "/workspace/work/night-phase10/management-scroll/report.json",
+          "bytes": 641,
+          "sha256": "ca568f0e8fe6ab636d0419370719c82bb756a488bbff4bd2bf760fc78e68bc61"
+        },
+        {
+          "path": "history/scroll-diagnostic/godot.log",
+          "source_path": "/workspace/work/night-phase10/management-scroll/godot.log",
+          "bytes": 11091,
+          "sha256": "05ca51b6ed117419db127ecc08451b95cefba1884d652e12784e3a8229f6f8dd"
+        },
+        {
+          "path": "history/scroll-diagnostic/run.log",
+          "source_path": "/workspace/work/night-phase9/management-scroll.log",
+          "bytes": 23060,
+          "sha256": "9cb539c12873f02b633f5b3a0e1b6eed4c49fb7cff7688eacd087fc4dda0ea54"
+        }
+      ],
+      "context": "Diagnostic du même défaut : noms des surfaces de défilement.",
+      "source_attribution": "Mapping exact communiqué par root.",
+      "test_source_sha256": {
+        "tests/godot-management-reading-flow.cjs": "77442048cd8bbc3580f3394af6108eeda3a8bbbe0c8a654b11158b5bca9d3731",
+        "tests/godot-management-reading-flow.gd": "a9fe35432b238a8cf61c31b346f9729775f4e4df5e18994e448def9955c945bd"
+      }
+    }
+  ],
+  "provenance.json": {
+    "path": "provenance.json",
+    "bytes": 1538,
+    "sha256": "47e696f23d877398bcf0bcd45e1b79581c55f015583bf60dac628210d86705f8"
+  },
+  "README.md": {
+    "path": "README.md",
+    "bytes": 3419,
+    "sha256": "687ed1cda10abf9d317881fc75bfb517dfb923282f12e0b63c515162fa2260e7"
+  }
+}

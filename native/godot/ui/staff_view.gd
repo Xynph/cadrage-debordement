@@ -4,6 +4,90 @@ const U = preload("res://ui/management_state.gd")
 const ImmersiveUI = preload("res://ui/immersive08/club_ui.gd")
 const Career = preload("res://ui/staff_career_view.gd")
 
+static func reading(app: Control) -> Dictionary:
+	if not app.management_ui.get("staff") is Dictionary: app.management_ui.staff = {}
+	return app.management_ui.staff
+
+static func person_by_id(model: Dictionary, staff_id: String) -> Dictionary:
+	if staff_id.is_empty(): return {}
+	for team: Dictionary in model.get("staff", {}).get("teams", []):
+		for person: Dictionary in team.get("members", []):
+			if str(person.get("id", "")) == staff_id: return person
+	var career: Dictionary = model.get("clubLife", {}).get("staffCareer", {})
+	for source: String in ["candidates", "retired"]:
+		for person: Dictionary in career.get(source, []):
+			if str(person.get("id", "")) == staff_id: return person
+	return {}
+
+static func open_target(app: Control, staff_id: String) -> bool:
+	if not target_available(app, staff_id): return false
+	reading(app).navigation_id = staff_id
+	return true
+
+static func target_available(app: Control, staff_id: String) -> bool:
+	return not person_by_id(app.model, staff_id).is_empty()
+
+static func name_link(app: Control, person: Dictionary, text_size: int = 24) -> Button:
+	var staff_id := str(person.get("id", ""))
+	var link := G.button(str(person.get("name", "")), func():
+		app.navigation_controller.open_entity({"kind":"staff", "id":staff_id}))
+	link.name = "StaffOpenName_" + staff_id.validate_node_name()
+	link.accessibility_name = "Consulter le profil · " + str(person.get("name", ""))
+	link.tooltip_text = link.accessibility_name
+	link.set_meta("entity_kind", "staff")
+	link.set_meta("entity_id", staff_id)
+	link.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	link.add_theme_font_size_override("font_size", G.Base.reading_size(text_size))
+	return link
+
+static func portrait_link(app: Control, photo: Control, person: Dictionary) -> Button:
+	var link := name_link(app, person)
+	link.name = "StaffOpenPortrait_" + str(person.get("id", "")).validate_node_name()
+	link.text = ""
+	link.custom_minimum_size = photo.custom_minimum_size
+	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	link.add_child(photo)
+	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return link
+
+static func _profile(app: Control, parent: Container, person: Dictionary) -> void:
+	var list := G.scroll(parent)
+	list.name = "StaffProfile"
+	list.set_meta("staff_id", str(person.id))
+	var heading := G.h(12)
+	list.add_child(heading)
+	var appearance := person.duplicate(true)
+	appearance.portraitRole = "staff"
+	heading.add_child(G.portrait(0, 82, appearance))
+	var words := G.v(5)
+	G.fill(words)
+	heading.add_child(words)
+	var title := G.wrap(str(person.get("name", "")), 24, G.INK)
+	title.name = "StaffProfileName"
+	words.add_child(title)
+	words.add_child(G.wrap(str(person.get("roleLabel", person.get("role", "Staff"))), 15, G.GOLD))
+	if person.has("age"): words.add_child(G.wrap("%s ans" % G.n(person.age), 14))
+	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
+		if team.get("members", []).any(func(member: Dictionary): return str(member.get("id", "")) == str(person.id)):
+			words.add_child(G.wrap(str(team.get("name", "")), 14))
+			break
+	if person.get("contractEnd") != null: list.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 14))
+	var employment := Career._employment_person(app, str(person.id))
+	if employment.get("employed", false):
+		list.add_child(G.wrap("Contrat rémunéré · %s · %s paies restantes" % [G.salary(employment.get("paidSalary", 0)), G.n(employment.get("remainingPayments", 0))], 14))
+	var events: Array = app.model.get("clubLife", {}).get("staffCareer", {}).get("history", []).filter(func(event: Dictionary):
+		return str(event.get("id", "")) == str(person.id))
+	if not events.is_empty():
+		list.add_child(G.section("Parcours dans votre carrière"))
+		var labels := {"reference-already-retired":"Retraite", "player-conversion":"Reconversion dans le staff", "retirement":"Retraite", "voluntary-retirement":"Départ à la retraite", "contract-ended":"Fin de contrat", "ai-renewal":"Prolongation", "ai-hire":"Arrivée au club", "hire":"Arrivée au club", "renew":"Prolongation", "release":"Départ du club"}
+		for event: Dictionary in events:
+			list.add_child(G.wrap("Saison %s · %s" % [G.n(event.get("season", "—")), str(labels.get(event.get("kind", ""), "Évolution du parcours"))], 14))
+	var back := G.button("Retour à l’annuaire", func():
+		reading(app).navigation_id = ""
+		app._render(false))
+	back.name = "StaffProfileDirectory"
+	list.add_child(back)
+
 class Avatar extends Control:
 	func _draw() -> void:
 		draw_style_box(G.T.box(Color("ddd5c6"), 8), Rect2(Vector2.ZERO, size))
@@ -36,6 +120,10 @@ static func build(app: Control) -> Control:
 	duties.add_child(G.wrap("Les identités du staff ne modifient ni ses capacités ni les résultats. Les signatures restent à confirmer par vous.", 12))
 	duties.add_child(G.button("RECRUTEMENT →", func(): app._navigate("Recrutement")))
 	var right := G.panel(page, 1.9)
+	var target := person_by_id(app.model, str(reading(app).get("navigation_id", "")))
+	if not target.is_empty():
+		_profile(app, right, target)
+		return page
 	var career: Dictionary = app.model.get("clubLife", {}).get("staffCareer", {})
 	if career.get("active", false):
 		G.chapter(right, "10", "Les carrières du staff", "Contrats, candidats et reconversions dans votre partie.", app.accent)
@@ -70,12 +158,15 @@ static func build(app: Control) -> Control:
 	search.placeholder_text = "Rechercher un nom ou une fonction…"
 	search.add_theme_color_override("font_placeholder_color", G.MUTED)
 	search.custom_minimum_size.y = 38
+	search.text = str(reading(app).get("search", ""))
 	right.add_child(search)
 	var count := G.label("", 12, G.MUTED)
 	count.name = "StaffCount"
 	right.add_child(count)
 	var list := G.scroll(right)
 	list.get_parent().name = "StaffList"
+	list.get_parent().set_deferred("scroll_vertical", int(reading(app).get("scroll", 0)))
+	list.get_parent().get_v_scroll_bar().value_changed.connect(func(value: float): reading(app).scroll = value)
 	var redraw := func(query: String):
 		for child in list.get_children(): list.remove_child(child); child.queue_free()
 		var shown := 0
@@ -83,15 +174,15 @@ static func build(app: Control) -> Control:
 		for person: Dictionary in people:
 			if not needle.is_empty() and not U.fold(str(person.name) + " " + str(person.role)).contains(needle): continue
 			shown += 1
-			_person(list, person)
+			_person(app, list, person)
 		count.text = "%d / %d membres" % [shown, people.size()]
 		if shown == 0: list.add_child(G.wrap("Aucun membre ne correspond à cette recherche.", 15))
-	search.text_changed.connect(redraw)
-	redraw.call("")
+	search.text_changed.connect(func(query: String): reading(app).search = query; redraw.call(query))
+	redraw.call(search.text)
 	right.add_child(G.wrap("Retrouvez les fonctions de chaque membre de l’encadrement.", 12))
 	return page
 
-static func _person(parent: VBoxContainer, person: Dictionary) -> void:
+static func _person(app: Control, parent: VBoxContainer, person: Dictionary) -> void:
 	var card := G.card(parent)
 	var row := G.h(16)
 	row.set_meta("staff_id", person.id)
@@ -100,11 +191,11 @@ static func _person(parent: VBoxContainer, person: Dictionary) -> void:
 	appearance.portraitRole = "staff"
 	var photo := G.portrait(0, 82, appearance)
 	photo.custom_minimum_size.y = 104
-	row.add_child(photo)
+	row.add_child(portrait_link(app, photo, person))
 	var text := G.v(5)
 	G.fill(text)
 	row.add_child(text)
-	text.add_child(G.wrap(person.name, 24, G.INK))
+	text.add_child(name_link(app, person))
 	text.add_child(G.wrap(person.role, 15, G.GOLD))
 	var season := str(person.get("sourceSeason")) if person.get("sourceSeason") != null else "Saison non précisée"
 	var date := " · source du " + str(person.sourceDate) if person.get("sourceDate") != null else ""

@@ -1,0 +1,10 @@
+{
+  "environment_id": "ccarenv_b64_Y2NhcmVudl8yM2FiYWYwNGY5ZTg4MTkxODIzNmQ5ZmQwODkyZTcxMA",
+  "remote_desktop": {
+    "enabled": true,
+    "state": "unknown"
+  },
+  "cua_getState_error": "the gaas-browser node_repl sandbox cannot be disabled",
+  "completion_summary_received": true,
+  "fallback": "Native OS X11 events via libXtst/libX11 on existing isolated DISPLAY=:91; no desktop or sandbox setting changed"
+}

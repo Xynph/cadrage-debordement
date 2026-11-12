@@ -90,7 +90,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 	var facts: Dictionary = player.get("playerFacts", {})
 	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
 	if not facts.is_empty():
-		var identity := preload("res://ui/player_identity.gd").row(facts,22,C.IVORY)
+		var identity := preload("res://ui/player_identity.gd").row(facts,22,C.IVORY,app)
 		hero.add_child(identity)
 		D.place(identity,Rect2(671,228,1010,30))
 	var injury := float(player.get("injury", 0))

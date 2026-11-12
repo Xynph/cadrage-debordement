@@ -8,6 +8,8 @@ const S = preload("res://ui/contextual/skin.gd")
 signal niveau_choisi(id: String)
 signal reprise_demandee
 signal tiroir_demande(titre: String)
+## Entracte entre deux temps forts : le manager l'abrège.
+signal passer_demande
 
 var terrain: Terrain
 var etat: Label
@@ -23,6 +25,9 @@ var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
 var _arret: Dictionary = {}
+var entracte: Label
+var passer: Button
+var _entracte := ["", false]
 var _dernier: Array = []
 
 ## Terrain vu de dessus : 100 m de champ de jeu et deux en-buts de 8 m.
@@ -171,6 +176,17 @@ func _construire() -> void:
 	etat.clip_text = true
 	S.G.fill(etat)
 	entete.add_child(etat)
+	# Entracte : ce qui attend, et de quoi l'abréger.
+	entracte = _texte("", 26, S.TEXT)
+	entracte.name = "MatchBetweenInterval"
+	entete.add_child(entracte)
+	passer = _bouton("PASSER  ›", func(): passer_demande.emit())
+	passer.name = "MatchBetweenSkip"
+	passer.custom_minimum_size = Vector2(px(220), px(68))
+	passer.tooltip_text = "Aller tout de suite au prochain temps fort."
+	passer.set_meta("contextual_enabled", true)
+	entete.add_child(passer)
+	montrer_entracte(_entracte[0], _entracte[1], true)
 	entete.add_child(_texte("Temps forts", 26, S.MUTED))
 	niveau = OptionButton.new()
 	niveau.name = "MatchHighlightLevel"
@@ -322,6 +338,15 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 			bouton.name = "MatchBetweenApplyAdvice"
 			bouton.tooltip_text = "" if possible else "Mettez le match en pause pour modifier vos consignes."
 			adjoint.add_child(bouton)
+
+## Entracte : texte (« Prochaine action dans 6 s ») et bouton « Passer ».
+func montrer_entracte(texte: String, bouton: bool, force: bool = false) -> void:
+	if not force and _entracte[0] == texte and _entracte[1] == bouton: return
+	_entracte = [texte, bouton]
+	if not is_instance_valid(entracte): return
+	entracte.text = texte
+	entracte.visible = not texte.is_empty()
+	passer.visible = bouton
 
 func montrer_arret(valeur: Dictionary) -> void:
 	_arret = valeur

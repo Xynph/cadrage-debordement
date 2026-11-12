@@ -138,5 +138,25 @@
   "nom": "mx_plongeon",
   "fbx": "Soccer Game Pack/goalkeeper diving save.fbx",
   "sur_place": false
+ },
+ {
+  "nom": "mx_plaque_avant",
+  "fbx": "Fall Flat.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_aplati",
+  "fbx": "Run To Dive.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_se_relever_ventre",
+  "fbx": "Getting Up.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_poussee_melee",
+  "fbx": "Push Start.fbx",
+  "sur_place": false
  }
 ]

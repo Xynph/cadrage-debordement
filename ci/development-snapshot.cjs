@@ -3,7 +3,7 @@
 const {execFileSync}=require('node:child_process');
 const REPO='Xynph/cadrage-debordement';
 const SHA=/^[0-9a-f]{40}$/;
-const CI_JOBS=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const {OFFICIAL_JOBS:CI_JOBS,officialJobs}=require('./ci-jobs.cjs');
 function need(ok,msg){if(!ok)throw Error(msg);}
 function latest(runs,sha){
  const m=new Map();
@@ -17,7 +17,8 @@ function latest(runs,sha){
  return [...m.values()].sort((a,b)=>a.workflow_id-b.workflow_id);
 }
 function seven(jobs){
- return Array.isArray(jobs)&&jobs.length===7&&CI_JOBS.every(n=>jobs.filter(j=>j.name===n&&j.status==='completed'&&j.conclusion==='success').length===1);
+jobs=officialJobs(jobs);
+ return Array.isArray(jobs)&&jobs.length===CI_JOBS.length&&CI_JOBS.every(n=>jobs.filter(j=>j.name===n&&j.status==='completed'&&j.conclusion==='success').length===1);
 }
 function evaluate({pr,main,collection,jobs=[],reads=0}){
  need(pr&&SHA.test(pr.head?.sha||'')&&SHA.test(main||''),'Snapshot invalide');
@@ -38,7 +39,7 @@ function evaluate({pr,main,collection,jobs=[],reads=0}){
   wait(r.status!=='completed','Workflow en cours : '+r.id);
   stop(r.status==='completed'&&r.conclusion!=='success','Workflow non vert : '+r.id);
  }
- if(ci?.status==='completed')stop(!seven(jobs),'Les sept jobs officiels ne sont pas tous verts');
+ if(ci?.status==='completed')stop(!seven(jobs),'Les '+CI_JOBS.length+' jobs officiels ne sont pas tous verts');
  else if(ci)wait(true,'Validation CI en attente');
  return {status:blockers.length?'STOP':pending.length?'EN_ATTENTE':'CONTROLE_POSSIBLE',
   pr:pr.number,head:pr.head.sha,main,reads,ciRun:ci?.id||null,

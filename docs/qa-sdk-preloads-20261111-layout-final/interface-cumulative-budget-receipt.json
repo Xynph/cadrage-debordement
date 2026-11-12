@@ -1,0 +1,20 @@
+{
+  "suite": "godot-interface-layout",
+  "case": "",
+  "mode": "",
+  "code": -15,
+  "nodeSeconds": 180.298,
+  "lockWaitSeconds": 3.726,
+  "stopped": "Node wrapper exceeded CI budget 180s",
+  "ci180Qualified": false,
+  "log": "/workspace/qa/sdk-preloads-96/final/godot-interface-layout__layout-green-d83-r2.log",
+  "runtimeLogs": [
+    "/workspace/qa/sdk-preloads-96/fixtures/cd-layout-6Ct04g/runtime.log"
+  ],
+  "assertionsCompleted": false,
+  "checks": null,
+  "observedFailures": [],
+  "gdSha256": "3bfc0d9d4e4b36a590c3be7e1c37c855e84fda7972ad3551248d25b89ea65f89",
+  "helperSha256": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d",
+  "purpose": "Cumulative attempt before independent scenario split; not qualified"
+}

@@ -1,0 +1,11 @@
+{
+  "tests/small-window-geometry.cjs": "344572c5e80f8b1ea57b2556fd30d2fcb2ec4b1f012cbe6c9563dafd639c7d2f",
+  "tests/small-window-geometry.gd": "9a1b1ebeba1ac310bcb7104c65117a2e1993c9fa780d60cf8d40fe0b7a5983ec",
+  "tests/small-window-geometry-extra-dialogs.gd": "9a994a9d838225ca9919e2b3caecc07d7db737de6356299ad0bb2b55e695f936",
+  "native/godot/ui/contextual/director.gd": "cda6f3b75e6b57cf327b05b25e67b50d5bf9901107be74d630287d8f523b63c3",
+  "native/godot/ui/immersive08/month_calendar.gd": "dd56d22c28a067c2131fed78f9652ae46486a7a7c919025c95ceeebdcc9d2ce9",
+  "native/godot/ui/immersive08/office.gd": "c0e0d9820623472108c3a398444b3f6755e5804a724df3b3a1b19dabfb81d88f",
+  "native/godot/ui/immersive08/dialogs.gd": "ef61b2b005bc0435af1300445de57640b07a0c66c9734e915f0d72c131e88f15",
+  "native/godot/ui/contract_negotiation.gd": "369f78850c2111f28a33ebcb9aa1f85378965a84aa02dc133a4124d2e5880035",
+  "native/godot/ui/profile_safety_view.gd": "ecda9155be9105c8106b7b55e9a7b2e41f29981cf8b3ad3ef1870f40de95f232"
+}

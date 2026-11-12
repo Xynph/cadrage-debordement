@@ -1,0 +1,173 @@
+{
+  "format": 1,
+  "scope": "Replay public Common0 ciblé ; distinct du checkpoint WorldChamp copié et de reader-history frais.",
+  "source_commit": "0e644e61ef3f78a6df4346f8d14d5ea33515c097",
+  "checks": 72,
+  "failures": [],
+  "wrapper_exit_code": 0,
+  "wrapper_duration_ms": 72938.244666,
+  "tap_total_ms": 73006.039713,
+  "preparation": {
+    "setup": "public-career-node",
+    "mode": "common",
+    "club": 0,
+    "commands_accepted": 20,
+    "elapsed_ms": 20682,
+    "start_date": "2026-09-07",
+    "end_date": "2026-09-14",
+    "fixture": "s1-elite-league-0-0",
+    "score": [
+      15,
+      20
+    ]
+  },
+  "speech_note": "Assertion requested/started et identifiant de parole nuls passée avec audio Dummy. Compteurs non sérialisés dans report.json ; bulle texte Gabi visible.",
+  "files": [
+    {
+      "path": "qualified/report.json",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/report.json",
+      "bytes": 1762,
+      "sha256": "187e9d9c591669ed46fd75f6acdd5640acef5927e6e05e61b0dcbcca02f41fe1"
+    },
+    {
+      "path": "qualified/godot.log",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/godot.log",
+      "bytes": 496,
+      "sha256": "7817a26d5a47a8d9032ae2e49883af2e809f3f5953005b0a02101cc0ecb83f6f"
+    },
+    {
+      "path": "qualified/source-copy.json",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/source-copy.json",
+      "bytes": 528,
+      "sha256": "2af7bda94d102d5b97d43e1887d229fc2012cff28b584d7e6769014efbfb4280"
+    },
+    {
+      "path": "qualified/public-preparation.json",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/public-preparation.json",
+      "bytes": 5364,
+      "sha256": "43fa8f296fa2bb8972560e12cc8779c0cee0f89759b5353c6a6baef549cc7de1"
+    },
+    {
+      "path": "qualified/public-preparation-actions.jsonl",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/public-preparation-actions.jsonl",
+      "bytes": 2648,
+      "sha256": "6bc8fd5eba05d9356d881962329494f7da026256ee5ff9551903cf13116fec3c"
+    },
+    {
+      "path": "qualified/public-preparation.log",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/public-preparation.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "qualified/run.log",
+      "source_path": "/workspace/work/night-phase9/public-common-replay.log",
+      "bytes": 975,
+      "sha256": "3710af393f99d863c1483c49ed705c5c3a0c87ef3defe0c96233f60d20e8427b"
+    }
+  ],
+  "images": [
+    {
+      "path": "images/analyse-rencontre-reelle-2560.png",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/analyse-rencontre-reelle-2560.png",
+      "bytes": 736877,
+      "sha256": "44ad7b38b98e1d8abd64577fd6176e1faee7b12f85b83291d33cfc5f82fd2cbe",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "0e644e61ef3f78a6df4346f8d14d5ea33515c097",
+      "edited": false
+    },
+    {
+      "path": "images/fiche-rencontre-reelle-2560.png",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/fiche-rencontre-reelle-2560.png",
+      "bytes": 591269,
+      "sha256": "2ca456167f046d12fbed9e1f453e6743f08c792ac22d4315b51bbd235ddaf9f7",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "0e644e61ef3f78a6df4346f8d14d5ea33515c097",
+      "edited": false
+    },
+    {
+      "path": "images/bureau-liens-reels-2560.png",
+      "source_path": "/workspace/work/night-phase11/public-common-replay/bureau-liens-reels-2560.png",
+      "bytes": 1076846,
+      "sha256": "27e45f31261f57868217b7fff9011497b7be7b360a1b773d765e3ca9b7755899",
+      "width": 2560,
+      "height": 1440,
+      "source_commit": "0e644e61ef3f78a6df4346f8d14d5ea33515c097",
+      "edited": false
+    }
+  ],
+  "history": [
+    {
+      "source_commit": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+      "qualified": false,
+      "description": "Préparation graphique WorldChamp fraîche ; timeout enfant150s, sans capture ni rapport UI.",
+      "ui_result": null,
+      "images_published": false,
+      "external_source": null,
+      "files": [
+        {
+          "path": "history/world-graphics-timeout/godot.log",
+          "source_path": "/workspace/work/night-phase10/analysis-club-office-public/godot.log",
+          "bytes": 1311,
+          "sha256": "060034851d55929f69e5dffc13857191bc4313b11f21495c691eeef5b81fec35"
+        },
+        {
+          "path": "history/world-graphics-timeout/source-copy.json",
+          "source_path": "/workspace/work/night-phase10/analysis-club-office-public/source-copy.json",
+          "bytes": 251,
+          "sha256": "babaae14f6495808d57e8aa50957ca5454efe063f2d571abd5b54c0b56287637"
+        },
+        {
+          "path": "history/world-graphics-timeout/run.log",
+          "source_path": "/workspace/work/night-phase9/analysis-club-office-public.log",
+          "bytes": 2506,
+          "sha256": "2d5f4c6450d2477213beb17357d30c82892518d79b13364a2a7170d6d6a7fd7a"
+        }
+      ]
+    },
+    {
+      "source_commit": "892442016acf9e5d6bfe2ef5be94da8c41f7603b",
+      "qualified": false,
+      "description": "Préparation Node WorldChamp fraîche ; timeout60s après23 commandes acceptées, avant clôture de semaine ; aucun replay UI lancé.",
+      "ui_result": null,
+      "images_published": false,
+      "external_source": null,
+      "files": [
+        {
+          "path": "history/world-node-timeout/source-copy.json",
+          "source_path": "/workspace/work/night-phase11/public-node-replay/source-copy.json",
+          "bytes": 256,
+          "sha256": "ade364a431c7a320077f7c6b5e56a73bc88ccf1de689051482c9a5ba02cf1e42"
+        },
+        {
+          "path": "history/world-node-timeout/public-preparation-actions.jsonl",
+          "source_path": "/workspace/work/night-phase11/public-node-replay/public-preparation-actions.jsonl",
+          "bytes": 3023,
+          "sha256": "d97e63483a7ac31d7193010b8a9809b4a9b9a79cd8780d6bcd1e9a44da978632"
+        },
+        {
+          "path": "history/world-node-timeout/public-preparation.log",
+          "source_path": "/workspace/work/night-phase11/public-node-replay/public-preparation.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "history/world-node-timeout/run.log",
+          "source_path": "/workspace/work/night-phase9/public-node-replay.log",
+          "bytes": 1055,
+          "sha256": "1977770815b4eb30c7679bf816e310a18c4fac084720ff1cb0bae905c5324f01"
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "path": "provenance.json",
+    "sha256": "3cd6f4097017e21b478cff6c108cca2b4e5bde75d9c17e25e56d4c1b2776f711"
+  },
+  "documentation": {
+    "path": "README.md",
+    "sha256": "ae4298c829c322d2d3920894d64bba1dd53efc2a8a96458016a14052e0142ec6"
+  }
+}

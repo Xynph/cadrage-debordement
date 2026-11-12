@@ -110,18 +110,37 @@ LAT = np.array([-0.0165, -0.0105, 0.0015, 0.0105, 0.0165, 0.0225, 0.0265])
 HAUT = np.array([9.0, 9.4, 10.6, 11.5, 11.7, 11.1, 6.0])
 BAS = np.array([-21.6, -22.6, -21.8, -19.1, -14.8, -8.1, 4.0])
 LARG_HAUT, LARG_BAS = 38.0, 30.0       # étendue de la paupière, du bord libre au bord collé au visage
+# Paupière supérieure relevée (12 novembre, Léo : « on dirait qu'il plisse les yeux ») : le bord libre mesuré
+# ci-dessus (HAUT) couvrait le tiers haut de l'iris. Il est remonté de RELEVE degrés au milieu de l'œil, moins vers
+# les coins (profil_releve), pour arriver à peu près au bord haut de l'iris, très légèrement dessus. Les coins ne
+# bougent pas. HAUT reste la mesure d'avant ; le bord effectif est bord_haut(lat) = HAUT + releve_applique × profil.
+RELEVE = float(os.environ.get("GABI_RELEVE", "10.5"))   # GABI_RELEVE : essais seulement
+releve_applique = 0.0
 
 
-def angles(P, c, cote, forme):
+def profil_releve(lat):
+    """0 aux coins de l'œil, 1 sur la largeur de l'iris (le bord suit l'arc de l'iris)."""
+    return ss(-0.0205, -0.006, lat) * (1 - ss(0.013, 0.0262, lat))
+
+
+def bord_haut(lat):
+    return np.interp(lat, LAT, HAUT) + releve_applique * profil_releve(lat)
+
+
+def angles(P, c, cote, forme, delta=0.0):
     """Angle (degrés, > 0 vers le haut) dont tourne chaque point autour de l'axe horizontal passant par le centre
     du globe. Champ continu : entre les deux bords libres (coins de l'œil), interpolation linéaire, donc ni
     déchirure ni croisement des paupières."""
     d = P - c; lat = cote * d[:, 0]; r = np.linalg.norm(d, axis=1)
     phi = np.degrees(np.arctan2(d[:, 1], d[:, 2]))
-    ph, pb = np.interp(lat, LAT, HAUT), np.interp(lat, LAT, BAS); ouv = ph - pb
+    ph, pb = bord_haut(lat), np.interp(lat, LAT, BAS); ouv = ph - pb
     tomb = lambda t: 1 - ss(0.08, 1.0, t)
     haut = tomb((phi - ph) / LARG_HAUT)
-    if forme == 'Clignement':
+    if forme == 'Releve':
+        # géométrie de repos : seule la paupière supérieure remonte (bord libre de « delta » degrés au plus)
+        dh, db = -delta * profil_releve(lat), 0.0 * lat
+        bas = np.zeros_like(r)
+    elif forme == 'Clignement':
         # les bords se rejoignent à 20 % de l'ouverture au-dessus du bord inférieur ; seules les paupières
         attenue = ss(-0.033, -0.025, lat) * (1 - ss(0.027, 0.034, lat))
         dh, db = 0.8 * ouv * attenue, 0.2 * ouv * attenue
@@ -152,7 +171,7 @@ def ouverture(P, c, cote):
     """1 pour les points de paupière autour de l'ouverture de l'œil (jusqu'à ~8° des bords libres), 0 au-delà de
     18° : ailleurs, la paupière est cachée derrière la peau du visage et doit bouger exactement comme elle."""
     d = P - c; lat = cote * d[:, 0]; phi = np.degrees(np.arctan2(d[:, 1], d[:, 2]))
-    ph, pb = np.interp(lat, LAT, HAUT), np.interp(lat, LAT, BAS)
+    ph, pb = bord_haut(lat), np.interp(lat, LAT, BAS)
     loin = np.maximum(np.maximum(pb - phi, phi - ph), 0)
     return (1 - ss(8, 18, loin)) * ss(-0.031, -0.024, lat) * (1 - ss(0.027, 0.033, lat))
 
@@ -339,7 +358,7 @@ def reparer_paupieres(maillages):
         d = P - globe.c; lat = cote * d[:, 0]; phi = np.degrees(np.arctan2(d[:, 1], d[:, 2]))
         e0 = globe.ecart(P); dehors = (normales(P, F) * d).sum(1) / np.linalg.norm(d, axis=1)
         zone = ((lat > -0.026) & (lat < 0.028) & (phi > np.interp(lat, LAT, BAS) - 14)
-                & (phi < np.interp(lat, LAT, HAUT) + 24) & (e0 > -0.003) & (dehors > 0.3))
+                & (phi < bord_haut(lat) + 24) & (e0 > -0.003) & (dehors > 0.3))
         exige = np.where(zone, 0.0003, -1.0)
         Q, pousse = projeter(P, P, [globe], F, soude, aretes, temps=(1.0,), exige=exige)
         print(f'  {paup} : faces visibles ramenées devant le globe, poussée max {pousse * 1000:.2f} mm')
@@ -354,9 +373,31 @@ def normales(P, F):
     return n / np.maximum(np.linalg.norm(n, axis=1), 1e-12)[:, None]
 
 
-def calculer(maillages):
-    """maillages : nom -> (P (n,3) repère glTF, F (m,3) triangles).
+def relever_paupieres(repos, maillages, fixes, deja):
+    """Remonte le bord de la paupière supérieure (géométrie de repos) jusqu'à RELEVE degrés au milieu de l'œil.
+    deja : relèvement déjà appliqué au fichier (un .blend retraité) ; seul l'écart est appliqué. Le bord glisse sur
+    le globe ; la paupière reste devant lui (projection)."""
+    global releve_applique
+    releve_applique = deja
+    delta = RELEVE - deja
+    if abs(delta) < 1e-6: return repos
+    sorties = dict(repos)
+    for oeil, paup, cote in YEUX:
+        P = repos[paup]; F = maillages[paup][1]; globe = fixes[oeil]; soude, aretes = voisins(P, F)
+        g = ouverture(P, globe.c, cote)
+        cible = tourner(P, globe, angles(P, globe.c, cote, 'Releve', delta), g)
+        Q, pousse = projeter(P, cible, [globe], F, soude, aretes, temps=(1.0,), zone=g > 0.5)
+        print(f'  {paup} : paupière supérieure relevée de {delta:.1f}° au milieu, poussée max {pousse * 1000:.2f} mm')
+        sorties[paup] = Q
+    releve_applique = RELEVE
+    return sorties
+
+
+def calculer(maillages, deja=0.0):
+    """maillages : nom -> (P (n,3) repère glTF, F (m,3) triangles). deja : relèvement de paupière déjà appliqué.
     Renvoie (nouvelles positions de repos des paupières, nom -> {forme: déplacements (n,3)})."""
+    global releve_applique
+    releve_applique = deja
     res = {}
     globes = {oeil: Globe(maillages[oeil][0]) for oeil, _, _ in YEUX}
     fixes = {oeil: Globe(maillages[oeil][0], regard=False) for oeil, _, _ in YEUX}
@@ -368,6 +409,7 @@ def calculer(maillages):
         gl = globes[oeil]
         res['Mesh_0']['SourireYeux'] += tourner(P, gl, angles(P, gl.c, cote, 'SourireYeux'), False) - P
     repos = reparer_paupieres(maillages)
+    repos = relever_paupieres(repos, maillages, fixes, deja)
     for oeil, paup, cote in YEUX:
         globe = globes[oeil]
         P = repos[paup]; F = maillages[paup][1]; N = normales(P, F); soude, aretes = voisins(P, F)
@@ -515,7 +557,9 @@ def traiter_blend(chemin, valeurs):
     if obj['Mesh_0'].data.shape_keys:
         cles = [k.name for k in obj['Mesh_0'].data.shape_keys.key_blocks[1:] if k.name not in FORMES]
         assert cles == BOUCHE, f'formes de bouche inattendues : {cles}'
-    nouveaux, res = calculer(maillages)
+    deja = float(obj['Gabi_Paupieres_D'].get('releve_paupiere', 0.0))
+    nouveaux, res = calculer(maillages, deja)
+    for n in ('Gabi_Paupieres_D', 'Gabi_Paupieres_G'): obj[n]['releve_paupiere'] = RELEVE
     for n in ('Mesh_0', 'Gabi_Paupieres_D', 'Gabi_Paupieres_G'):
         o = obj[n]; me = o.data
         Minv = np.linalg.inv(W[n][:3, :3])

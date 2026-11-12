@@ -1,10 +1,7 @@
 name: DATA06 bulk roster capture
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (chantier versionné clos, contrôles Node repris par tests.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    paths:
-      - tools/data06-itsrugby-bulk.cjs
-      - tests/data06-itsrugby-bulk.test.cjs
-      - .github/workflows/data06-itsrugby-bulk.yml
   workflow_dispatch:
     inputs:
       clubs:

@@ -1,0 +1,132 @@
+{
+  "format": 1,
+  "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+  "scope": "Native Linux X11 Return/AltLeft with real nonzero UI scroll; not OS-wheel proof, full SDK campaign, Cua or Windows qualification.",
+  "checks": 59,
+  "failures": [],
+  "exit_code": 0,
+  "exit_code_attribution": "Process exit0 observed by root; raw report59/0.",
+  "elapsed_ms": 67632,
+  "elapsed_scope": "Probe elapsed including waits for externally supplied OS actions, not a performance benchmark.",
+  "fixture": "s1-elite-league-1-0",
+  "archive_home_away_score": [
+    20,
+    10
+  ],
+  "club_away_perspective_score": [
+    10,
+    20
+  ],
+  "scroll_y_before": 45,
+  "scroll_y_after": 45,
+  "scroll_limit": 45,
+  "baseline_equals_after_all_fields": true,
+  "source_files_hash_only": [
+    {
+      "name": "donnees-precedentes.json",
+      "bytes": 5745229,
+      "sha256": "589be7153805f6d38b3309d454e5a478758c84bed01fc810ea1b0b867f8e4365",
+      "source_unchanged_after_reception": true
+    },
+    {
+      "name": "donnees.json",
+      "bytes": 5745234,
+      "sha256": "016760df473facd2b7e389fb8454d8e2276489f1c0bbd4dc1d1ac7d4b27fffaa",
+      "source_unchanged_after_reception": true
+    },
+    {
+      "name": "guide.json",
+      "bytes": 145,
+      "sha256": "451663f238f3e7edd3ddcb4fe06835ecf78954a7bc7c2563a0a8bba48b6e6329",
+      "source_unchanged_after_reception": true
+    }
+  ],
+  "files": [
+    {
+      "path": "qualified/report.json",
+      "source_path": "/workspace/work/native-os-followup-input/evidence/report.json",
+      "bytes": 10633,
+      "sha256": "dcc54d44646828564420cf4221da63142029276cd7d9fc9b652fcfbe98df88da"
+    },
+    {
+      "path": "qualified/state.json",
+      "source_path": "/workspace/work/native-os-followup-input/evidence/state.json",
+      "bytes": 10501,
+      "sha256": "b4deb2f86a2e41c50690a3d6acc3a978d47ea95a00e94f18e6f2f87398a98f01"
+    },
+    {
+      "path": "qualified/godot.log",
+      "source_path": "/workspace/work/native-os-followup-input/godot.log",
+      "bytes": 537,
+      "sha256": "73b3ed3466719c63284fa9b306282e663075ffaea9b86a76ebbacd9629765d44"
+    },
+    {
+      "path": "qualified/os-input-actions.jsonl",
+      "source_path": "/workspace/work/native-os-followup-input/os-input-actions.jsonl",
+      "bytes": 2404,
+      "sha256": "080b8e97c06dc7d6c77c40ad6e02a51c1ab8fb1fd73c07c792b2fb8ce635deb9"
+    },
+    {
+      "path": "qualified/provenance.json",
+      "source_path": "/workspace/work/native-os-followup-input/provenance.json",
+      "bytes": 5061,
+      "sha256": "1e8d4ea2b7e063f338f736cac544f26275b690808b0e0794661054c01223f50f"
+    },
+    {
+      "path": "selection.json",
+      "source_path": "/workspace/work/native-os-followup-input/selection.json",
+      "bytes": 1597,
+      "sha256": "022663a720e5807f9462666ec9e51030f76ddacecbe5a86bdbea562d882b108a"
+    },
+    {
+      "path": "scripts/probe.gd",
+      "source_path": "/workspace/work/native-os-followup-input/probe.gd",
+      "bytes": 13462,
+      "sha256": "c63b452145f99f7637cfcb0c19d8a597dd84e7b8a6230f687578751f1d0899fd"
+    },
+    {
+      "path": "scripts/oskeys.py",
+      "source_path": "/workspace/work/native-os-followup-input/oskeys.py",
+      "bytes": 4473,
+      "sha256": "32e884227a5bc0163b1ac1466a62bab5ba113533367e6b69d1e066fcc849a941"
+    }
+  ],
+  "images": [
+    {
+      "path": "images/ready-2560.png",
+      "source_path": "/workspace/work/native-os-followup-input/evidence/ready-2560.png",
+      "bytes": 737797,
+      "sha256": "dd8329e5b14b2d92150460c0a651a84455790d09dd1ca39c83a5bb2379e5b6f9",
+      "width": 2560,
+      "height": 1440,
+      "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+      "edited": false
+    },
+    {
+      "path": "images/modal-2560.png",
+      "source_path": "/workspace/work/native-os-followup-input/evidence/modal-2560.png",
+      "bytes": 599211,
+      "sha256": "7e83f57f003e278e48b8572d83cc283e67573a0efdcd1265a4c2121ca07eed27",
+      "width": 2560,
+      "height": 1440,
+      "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+      "edited": false
+    },
+    {
+      "path": "images/returned-2560.png",
+      "source_path": "/workspace/work/native-os-followup-input/evidence/returned-2560.png",
+      "bytes": 634552,
+      "sha256": "6f38ead74b053fc84c60b4c073343814f0b381931fea4f6133cb87239226628a",
+      "width": 2560,
+      "height": 1440,
+      "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+      "edited": false
+    }
+  ],
+  "fallback_run": false,
+  "longer_node_preparation_run": false,
+  "documentation": {
+    "path": "README.md",
+    "sha256": "d182e71663fea0615fe8db321611ea1539d0234b95ef4c8630d1b37190041e08"
+  }
+}

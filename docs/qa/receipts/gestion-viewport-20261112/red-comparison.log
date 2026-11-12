@@ -1,0 +1,17 @@
+4: # GESTION_PROGRESS {"checks":0,"milliseconds":1,"stage":"startup.begin"}
+6: # GESTION_PROGRESS {"checks":1,"last_command":"snapshot","last_error":"","milliseconds":5738,"received":true,"route":"Accueil","stage":"startup.model","waiting":false}
+44: # FAIL: Comparaison expose identité et salaire réels
+48: # ERROR: Window 0 spawned at invalid position: (-738, -398).
+156: # GESTION_PROGRESS {"checks":273,"failures":["Comparaison expose identité et salaire réels"],"last_command":"export","last_error":"","milliseconds":44846,"route":"Classements","speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+157: # GESTION CARNET : 273 contrôles ; 1 échec(s)
+158: # GESTION_WRAPPER {"phase":"child-close","status":1,"signal":null,"timed_out":false,"output_limit":false,"milliseconds":45697,"child_timeout_ms":150000,"error":null,"trace":"/tmp/cd-gestion-carnet-6yqkeY/progress.jsonl"}
+163:   duration_ms: 45730.517056
+170:     GESTION_PROGRESS {"checks":0,"milliseconds":1,"stage":"startup.begin"}
+172:     GESTION_PROGRESS {"checks":1,"last_command":"snapshot","last_error":"","milliseconds":5738,"received":true,"route":"Accueil","stage":"startup.model","waiting":false}
+210:     FAIL: Comparaison expose identité et salaire réels
+214:     ERROR: Window 0 spawned at invalid position: (-738, -398).
+322:     GESTION_PROGRESS {"checks":273,"failures":["Comparaison expose identité et salaire réels"],"last_command":"export","last_error":"","milliseconds":44846,"route":"Classements","speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+323:     GESTION CARNET : 273 contrôles ; 1 échec(s)
+341: # pass 0
+342: # fail 1
+346: # duration_ms 45777.867475

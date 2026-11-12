@@ -1,0 +1,33 @@
+2026-11-12T00:41:24.4983006Z [36;1mtimeout --kill-after=10s 180s "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --import 2>&1 | tee "$RUNNER_TEMP/godot-import.log"[0m
+2026-11-12T00:42:22.6190827Z {"checks":83,"failures":[]}
+2026-11-12T00:42:22.6209751Z SDK_RESULT {"suite":"tests/godot-academy-portraits.cjs","variant":"default","passed":true,"status":0,"milliseconds":19664,"error":null}
+2026-11-12T00:42:51.8676946Z {"checks":55,"failures":[]}
+2026-11-12T00:42:51.8686105Z SDK_RESULT {"suite":"tests/godot-portrait-continuity.cjs","variant":"default","passed":true,"status":0,"milliseconds":29248,"error":null}
+2026-11-12T00:43:20.4645766Z SDK_RESULT {"suite":"tests/godot-contract-negotiation.cjs","variant":"default","passed":true,"status":0,"milliseconds":28596,"error":null}
+2026-11-12T00:44:03.3925480Z {"checks":198,"failures":[]}
+2026-11-12T00:44:03.3931583Z SDK_RESULT {"suite":"tests/deepen-staff-real-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":42927,"error":null}
+2026-11-12T00:44:29.0127503Z {"checks":89,"failures":["Commande clavier présente","Choix de durée public","Commande clavier présente","Prolongation préparée trois saisons conservée après fermeture","Commande clavier présente","Prolongation réelle trois saisons sans contrat financier en double"]}
+2026-11-12T00:44:29.0133244Z not ok 1 - Staff réel : recrutement et prolongation avec durée conservée après refus disque
+2026-11-12T00:44:29.0144729Z     {"checks":89,"failures":["Commande clavier présente","Choix de durée public","Commande clavier présente","Prolongation préparée trois saisons conservée après fermeture","Commande clavier présente","Prolongation réelle trois saisons sans contrat financier en double"]}
+2026-11-12T00:44:29.0149988Z   name: 'AssertionError'
+2026-11-12T00:44:29.0156358Z SDK_RESULT {"suite":"tests/deepen-staff-hire-ui.cjs","variant":"default","passed":false,"status":1,"milliseconds":25621,"error":null}
+2026-11-12T00:44:45.3022781Z Action review: 58 checks, 0 failures
+2026-11-12T00:44:45.3024231Z SDK_RESULT {"suite":"tests/deepen-match.cjs","variant":"default","passed":true,"status":0,"milliseconds":16290,"error":null}
+2026-11-12T00:45:50.1400432Z {"checks":123,"failures":[],"passed":true}
+2026-11-12T00:45:50.1424362Z SDK_RESULT {"suite":"tests/godot-career-final-fixes.cjs","variant":"default","passed":true,"status":0,"milliseconds":64838,"error":null}
+2026-11-12T00:46:19.3407762Z SDK_RESULT {"suite":"tests/godot-playbook-watch-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":29201,"error":null}
+2026-11-12T00:46:20.1084141Z ENTITY_PROJECTIONS {"checks":21,"failures":[]}
+2026-11-12T00:46:20.1089874Z SDK_RESULT {"suite":"tests/godot-entity-projections.cjs","variant":"default","passed":true,"status":0,"milliseconds":768,"error":null}
+2026-11-12T00:46:20.9747749Z PROSPECT_PROFILE {"checks":19,"failures":[]}
+2026-11-12T00:46:20.9755755Z SDK_RESULT {"suite":"tests/godot-prospect-profile.cjs","variant":"default","passed":true,"status":0,"milliseconds":866,"error":null}
+2026-11-12T00:46:21.4600350Z SDK_RESULT {"suite":"tests/godot-staff-fictional-labels.cjs","variant":"default","passed":true,"status":0,"milliseconds":485,"error":null}
+2026-11-12T00:48:39.4138901Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"reading","passed":true,"status":0,"milliseconds":137953,"error":null}
+2026-11-12T00:49:24.7212212Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"nation","passed":true,"status":0,"milliseconds":45307,"error":null}
+2026-11-12T00:52:24.7950637Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"guards","passed":false,"status":null,"milliseconds":180074,"error":"spawnSync /opt/hostedtoolcache/node/22.23.4/x64/bin/node ETIMEDOUT"}
+2026-11-12T00:53:18.6393936Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"prospects","passed":true,"status":0,"milliseconds":53843,"error":null}
+2026-11-12T00:54:17.4286405Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"staff","passed":true,"status":0,"milliseconds":58789,"error":null}
+2026-11-12T00:55:10.7230918Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"quote","passed":true,"status":0,"milliseconds":53295,"error":null}
+2026-11-12T00:56:26.5255527Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"report","passed":true,"status":0,"milliseconds":75802,"error":null}
+2026-11-12T00:56:27.2018216Z SDK_RESULT {"suite":"tests/godot-world-entity-targets.cjs","variant":"default","passed":true,"status":0,"milliseconds":676,"error":null}
+2026-11-12T00:58:16.0652026Z SDK_RESULT {"suite":"tests/godot-analysis-club-graphics.cjs","variant":"default","passed":true,"status":0,"milliseconds":108863,"error":null}
+2026-11-12T00:58:16.0731312Z ##[error]Process completed with exit code 1.

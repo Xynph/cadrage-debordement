@@ -116,8 +116,9 @@ test('Mort subite au point 4 avec un tir de chaque côté et preuve de terrain',
 });
 
 test('Relecture du match réel à partir de JSON dans les deux périodes', () => {
-  // Native v2 initializer consumes RNG for population: seed42 reaches real extra time.
-  const h=setup({phase:'relegation',seed:42});
+  // Native v2 initializer consumes RNG for population: seed 9 reaches real extra time
+  // (SDB-VDC, first fixture of the alternating schedule; seed 42 did with the former SDB-FDG).
+  const h=setup({phase:'relegation',seed:9});
   assert.equal(h.run('S.aiRosterVersion'),2,'exercise real current population setup');
   h.run(`let reloads=0;
     for(let i=0;i<150&&!l.finished;i++){

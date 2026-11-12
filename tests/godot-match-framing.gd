@@ -69,9 +69,14 @@ func run() -> void:
 		comfort(view, "Returned ball is immediately comfortable: ")
 		for frame in 30: view._process(1.0 / 60.0)
 		check(view._carrier_id == "0-0" and carrier.holding and float(carrier.grip) == 1.0, "Valid carry and grip restore when ball returns")
-		check(view._ball.visible and view._ball_marker.is_visible_in_tree(), "Returned ball and presentation ring are visible")
+		# Plus de cercle au sol en vue de retransmission (12 novembre 2026) ; il reste en vue de dessus.
+		check(view._ball.visible and not view._ball_marker.is_visible_in_tree(), "Returned ball is visible, without a ground ring in the broadcast view")
+		view.set_camera("tactical")
+		view._process(1.0 / 60.0)
 		var ring_position := Vector3(view._ball.global_position.x, 0.028, view._ball.global_position.z)
-		check(view._ball_marker.global_position.is_equal_approx(ring_position), "Returned ring follows ball on the ground")
+		check(view._ball_marker.is_visible_in_tree() and view._ball_marker.global_position.is_equal_approx(ring_position), "Top view keeps the ball ring on the ground")
+		view.set_camera("tv")
+		view._process(1.0 / 60.0)
 		var rig: Skeleton3D = carrier.rig
 		for hand in ["Palm.L", "Palm.R"]:
 			var palm := rig.find_bone(hand)
@@ -84,9 +89,8 @@ func run() -> void:
 	check(home == Color("a12f41"), "Home club source colour retained")
 	check(Vector3(home.r, home.g, home.b).distance_to(Vector3(away.r, away.g, away.b)) > 0.65, "Similar source shirts receive a visibly contrasting away kit")
 	check(garment(view, "1-0", "Shirt2") == Color("a73043"), "Away detail retains club source colour")
-	var home_marker = view._actors["0-0"].node.get_node("TeamMarker").material_override.albedo_color
-	var away_marker = view._actors["1-0"].node.get_node("TeamMarker").material_override.albedo_color
-	check(home_marker != away_marker, "Team markers remain distinct")
+	# Aucun anneau d'équipe aux pieds des joueurs (retours de Léo, 12 novembre 2026) : les maillots distinguent les équipes.
+	check(view._actors.values().all(func(entry: Dictionary): return entry.node.get_node_or_null("TeamMarker") == null), "No team ring at the players' feet")
 	check(garment(view, "0-0", "Pants") == Color("202b35"), "Home shorts retain their original anthracite palette")
 	check(garment(view, "1-0", "Pants") == Color("e5dfd1"), "Away shorts retain their original ivory palette")
 	check(garment(view, "0-0", "Socks") == home and garment(view, "1-0", "Socks") == away, "High socks follow contrasting team colours")
@@ -110,11 +114,6 @@ func run() -> void:
 	close_tone.teams = [{"color": "#d4b340"}, {"color": "#d4b340"}]
 	view.apply_frame(close_tone)
 	check(garment(view, "1-0", "Shirt") == Color("202b35"), "Identical golden shirts keep the darker fallback")
-	var outlined := view._actors["1-0"].node.get_node("TeamMarker") as MeshInstance3D
-	var outline_material := outlined.material_override as ShaderMaterial
-	check(outline_material != null, "Dark away marker has a visible rim")
-	if outline_material:
-		check(outline_material.get_shader_parameter("marker_color") == Color("202b35"), "Dark away marker keeps its jersey colour")
 	close_tone.teams = [{"color": "#d43e47"}, {"color": "#6f9ac9"}]
 	view.apply_frame(close_tone)
 	check(garment(view, "1-0", "Shirt") == Color("6f9ac9"), "Toulouse–Vannes keeps its contrasting source kits")

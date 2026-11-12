@@ -18,5 +18,10 @@ a.equal(m.delta({wallSeconds:30},{wallSeconds:20},'wallSeconds'),-33.3);
 a.match(m.report(x,{...x,run:2,wallSeconds:20}),/-33\.3 %/);
 a.throws(()=>m.summarize({...run,status:'in_progress'},jobs),/Run non terminal/);
 a.throws(()=>m.summarize(run,[...jobs.slice(0,6),{...jobs[6],conclusion:'failure'}]),/Job non terminal/);
-a.throws(()=>m.summarize(run,jobs.slice(1)),/7 jobs/);
+a.throws(()=>m.summarize(run,jobs.slice(1)),/Série complète/);
+// Dix shards (novembre 2026) et job Godot informatif rouge : comparables, Godot ignoré.
+const ten=Array.from({length:10},(_,i)=>({id:10+i,name:'Suites '+(i+1)+'/10',status:'completed',conclusion:'success',started_at:start,completed_at:end}));
+const y=m.summarize(run,[...ten,jobs[5],jobs[6],{id:30,name:'Godot 1/3',status:'completed',conclusion:'failure',started_at:start,completed_at:end}],{10:'PASS tests/saves.cjs (7 s)'});
+a.equal(y.shardCount,10);a.equal(y.shardPeakSeconds,20);a.equal(y.runnerSeconds,240);a.equal(x.shardCount,5);
+a.throws(()=>m.summarize(run,[...ten.slice(1),jobs[5],jobs[6]]),/Série complète/);
 console.log('ci-run-metrics PASS');

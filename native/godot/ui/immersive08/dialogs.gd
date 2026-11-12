@@ -8,6 +8,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 static func prepare(dialog: AcceptDialog, width: int, accent: Color) -> void:
 	dialog.theme = Legacy.theme(accent)
 	dialog.min_size = Vector2i(width,0)
+	dialog.set_meta("immersive_dialog_minimum",dialog.min_size)
 	dialog.dialog_autowrap = true
 	dialog.visibility_changed.connect(_dress.bind(dialog,accent))
 	dialog.tree_entered.connect(_watch_host.bind(dialog))
@@ -59,6 +60,10 @@ static func _fit(dialog: AcceptDialog) -> void:
 	var target: Vector2i = dialog.get_meta("immersive_dialog_size",dialog.size)
 	# Les sélecteurs peuvent se replier à leur minimum avant le layout de leur liste.
 	if file_picker: target = Vector2i((Vector2(screen) * .7).round())
+	# A requested width is a preferred minimum, not a reason to escape the host.
+	# Restore it when the host grows again; content controls retain their own minima.
+	var preferred_minimum: Vector2i = dialog.get_meta("immersive_dialog_minimum",dialog.min_size)
+	dialog.min_size = Vector2i(mini(preferred_minimum.x,screen.x-28),mini(preferred_minimum.y,screen.y-68))
 	target.x=min(target.x,screen.x-28)
 	target.y=min(target.y,screen.y-68)
 	if target!=dialog.size: dialog.size=target

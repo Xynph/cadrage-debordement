@@ -1,11 +1,7 @@
 name: LNR V12 V11 preview - native contract and saves
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (chantier versionné clos, contrôles Node repris par tests.yml).
+# Anciens déclencheurs : push, pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  push:
-    branches: [integration/lnr-v12-v11-preview-20261107]
-  pull_request:
-    paths:
-      - 'tools/lnr-v12-v11-preview/**'
-      - '.github/workflows/lnr-v12-v11-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read

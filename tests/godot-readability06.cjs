@@ -6,7 +6,8 @@ const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;
-test('Lisibilité 0.6 : repères actifs, trois formats, clavier et brouillons intacts', {
+for (const scenario of process.env.CD_READABILITY06_CASE ? [process.env.CD_READABILITY06_CASE] : ['reading720','reading900','reading1080','reading1440','responsive','drafts'])
+test('Lisibilité 0.6 : ' + scenario + ' / données, clavier et sauvegarde intacts', {
   skip: !godot && 'SDK Godot requis',
 }, () => {
   const dir = fs.mkdtempSync(path.join(process.env.CD_READABILITY06_TEMP || os.tmpdir(), 'cd-readability06-'));
@@ -18,10 +19,13 @@ test('Lisibilité 0.6 : repères actifs, trois formats, clavier et brouillons in
   }
   for (const name of ['ui', 'guide', 'audio']) fs.cpSync(path.join(source, name), path.join(project, name), { recursive: true });
   fs.copyFileSync(path.join(__dirname, 'godot-readability06.gd'), path.join(project, 'readability06-test.gd'));
+  // The copied harness resolves its relative preload beside itself.
+  fs.mkdirSync(path.join(project, 'helpers'), { recursive: true });
+  fs.copyFileSync(path.join(__dirname, 'helpers/contextual_flow.gd'), path.join(project, 'helpers/contextual_flow.gd'));
   for (const name of ['art', 'assets', 'fonts', 'branding', 'shaders', '.godot']) fs.symlinkSync(path.join(source, name), path.join(project, name), 'junction');
   fs.symlinkSync(path.resolve(source, '../engine'), path.join(dir, 'engine'), 'junction');
   const manifest = {};
-  for (const base of ['', 'ui', 'guide', 'audio']) for (const name of fs.readdirSync(path.join(project, base))) {
+  for (const base of ['', 'ui', 'guide', 'audio', 'helpers']) for (const name of fs.readdirSync(path.join(project, base))) {
     const file = path.join(project, base, name);
     if (fs.statSync(file).isFile() && /\.(gd|godot|tscn|json)$/.test(name)) {
       manifest[path.join(base, name)] = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
@@ -31,7 +35,7 @@ test('Lisibilité 0.6 : repères actifs, trois formats, clavier et brouillons in
   for (const name of ['AppData/Roaming', 'AppData/Local', 'tmp']) fs.mkdirSync(path.join(dir, name), { recursive: true });
   const environment = { ...process.env, APPDATA: path.join(dir, 'AppData/Roaming'), LOCALAPPDATA: path.join(dir, 'AppData/Local'),
     TEMP: path.join(dir, 'tmp'), TMP: path.join(dir, 'tmp'), CD_NODE_EXECUTABLE: process.execPath,
-    CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: path.join(dir, 'profile'), CD_READABILITY06_ARTIFACTS: dir };
+    CD_GODOT_SELF_TEST: '0', CD_READABILITY06_CASE: scenario, CD_GODOT_DATA_DIR: path.join(dir, 'profile'), CD_READABILITY06_ARTIFACTS: dir };
   const preflight = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--path', project,
     '--check-only', '--script', path.join(project, 'main.gd')], { env: environment, encoding: 'utf8', windowsHide: true, timeout: 30000 });
   const preflightOutput = (preflight.stdout || '') + (preflight.stderr || '');
