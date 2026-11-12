@@ -26,6 +26,7 @@
 - Filtre initial masquant les séances : la destination devient visible, puis Back restaure le filtre.
 - Créneau passé : aucune affirmation de réalisation ou d’effet sportif.
 - Cible déjà ouverte et scène obligatoire : ni doublon d’historique ni contournement des gardes.
+- Origine `calendar_table=true` : construire le programme, puis restaurer le tableau au retour.
 
 ---
 
@@ -38,7 +39,7 @@
 - [ ] Écrire un parcours réel : carrière Common 0, refus pendant le rendez-vous obligatoire, puis préparation publique terminée avant baseline.
 - [ ] Choisir un ID réel daté différent d’aujourd’hui ; filtrer la grille, ouvrir le lien hebdomadaire au clavier puis à la souris, vérifier jour exact, focus et contenu publiés.
 - [ ] Vérifier Back : sélection/mois/vue/filtre/scroll/focus ; répétition sans doublon ; profil/modèle/seed/horloge/bridge inchangés.
-- [ ] Ajouter les cinq classes du Review Focus. Les projections négatives sont des copies isolées, jamais des sauvegardes modifiées.
+- [ ] Ajouter les classes du Review Focus. Les projections synthétiques sont des copies isolées, jamais des sauvegardes modifiées ou des captures présentées comme réelles.
 - [ ] Fixer mute et compteurs avant attente ; wrapper enfant 90 s, budget registre proposé 120 s, sans avancer de journées ni exporter pendant la consultation.
 - [ ] Root reçoit d’abord le rouge attendu sur la base sans adaptateur, sans Parse Error ni faux échec de fixture. Conserver ce reçu puis annoncer le début de l’implémentation.
 

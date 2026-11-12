@@ -11,9 +11,12 @@ Approche retenue : réutiliser le programme du jour, sélectionner la date de la
 - Cible commune `kind=session`, `id` égal à l’identifiant projeté, route de consultation Calendrier.
 - Une seule séance correspondante dans `model.calendarPlanning.sessions`, avec ID non vide et date ISO valide. ID inconnu, ambigu, absent ou séance mal datée : refus sans navigation.
 - Lecture du programme existant, filtre `all` pour rendre la séance visible, date sélectionnée exacte et focus sur le bouton de la séance dans le détail du jour.
+- Capturer l’origine avant mutation puis définir `calendar_table=false` : depuis la vue tableau, le programme ne serait sinon pas construit. Back restaure cette valeur d’origine.
 - Noms de contrôles déterministes avec préfixes distincts grille/semaine/détail et hash interne de l’ID pour éviter les collisions de noms assainis. Ni ID ni hash affiché au joueur.
+- Chaque bouton porte `entity_kind=session`, `entity_id=<ID brut projeté>`. Noms : `CalendarSessionGridLink_`, `CalendarWeekSessionLink_` ou `CalendarSessionDetail_`, suivis du SHA256 de l’ID. `Competition.session_focus_name(id)` fournit le nom du détail ; le test observe l’ID et le focus, sans utiliser ce helper pour calculer son attente.
 - Les libellés de séance de la grille et du contexte hebdomadaire deviennent des liens seulement si la cible existe. Les données sans destination valide restent des libellés.
 - Un clic répété sur la même destination ne crée pas de dialogue ni d’entrée d’historique supplémentaire. Back restitue mois, date, filtre, vue, scroll et focus de départ.
+- Deux séances du même jour restent distinctes par ID. Une sélection manuelle d’un autre jour invalide la cible séance active ; les gardes s’appliquent même à une cible déjà ouverte.
 - Les gardes communes restent applicables. Aucun appel métier, sauvegarde sportive, RNG ou horloge modifié pendant la consultation.
 - Une date passée décrit un créneau passé ; elle ne prouve ni séance exécutée, ni charge, ni progression. Aucune donnée cachée ni estimation nouvelle.
 
