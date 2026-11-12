@@ -395,8 +395,8 @@ func _jouer_choregraphie(plan: Dictionary) -> bool:
 	temps = 0.0
 	_tenu = 0.0
 	_aplati_montre = false
-	# Une action longue, plusieurs temps de jeu : cadrage d'une course, pas d'un plan fixe.
-	if cadrage != null: cadrage.regler(true, "carry", true)
+	# Plusieurs temps de jeu : cadrage rapproché du jeu courant, qui suit le ballon.
+	if cadrage != null: cadrage.regler(true, "carry", false)
 	suivi.append({"evenement": "choregraphie", "plan": str(plan.get("kind", "")), "duree_prevue": float(pistes.get("duree", 0.0)), "debut_ms": Time.get_ticks_msec()})
 	_habiller()
 	return true
