@@ -132,6 +132,64 @@ seule l'édition Champ renvoyait au vivier par identifiant.
 
 À compléter avec les mesures.
 
+## 4. Décisions de Léo sur l'économie (12 novembre)
+
+### Attrait : quitter le Top 14 à salaire égal devient rare
+
+`native/engine/league-economy.cjs`, `QUITTER_REFERENCE = 0.12` : un joueur qui
+quitte le championnat de référence (première division française, réputation
+100) pour un championnat étranger moins réputé demande 12 % de plus (premiers
+salaires du monde, sélection nationale qui retient les joueurs du
+championnat, vie installée). Le Japon garde sa règle d'âge (prime jusqu'à 29
+ans, attrait fort dès 31 ans). Taux d'acceptation sur la formule du jeu (5 000
+joueurs, 27 ans, seuil du jeu, contrat de deux ans, offre en part du salaire
+juste du club acheteur) :
+
+| Origine → destination | 100 % | 110 % | 120 % | 130 % | Avant, à 100 % |
+| --- | --- | --- | --- | --- | --- |
+| 1re française → 1re anglaise | 25 % | 85 % | 100 % | 100 % | 88 % |
+| 1re française → celte | 19 % | 77 % | 99 % | 100 % | 82 % |
+| 1re française → Pacifique | 9 % | 59 % | 96 % | 100 % | 64 % |
+| 1re française → 2e française | 13 % | 26 % | 71 % | 97 % | 13 % (inchangé ; 45 % à 115 %) |
+| 1re anglaise → 1re française | 97 % | 100 % | 100 % | 100 % | 97 % |
+| celte → 1re française | 98 % | 100 % | 100 % | 100 % | 98 % |
+
+Justification de 15-30 % : la cible de Léo (« nettement plus rare »), et la
+réalité du Top 14 (salaires les plus élevés, sélection française réservée de
+fait aux joueurs du championnat). L'attrait sert au salaire demandé au club
+joué et, désormais, au salaire des transferts entre clubs gérés.
+
+### Plafond : aucun club géré au-dessus
+
+Cause du club du Pacifique au-dessus de son plafond après chaque intersaison :
+`limites()` (`native/engine/club-budget.cjs`) laisse un club de mécène
+« audacieux » (12 % des saisons) s'autoriser 1 à 5 % au-dessus de sa borne la
+plus basse, y compris quand cette borne est le plafond de la ligue ; les
+contrats recalés à l'intersaison suivent cette limite. S'y ajoutaient les
+joueurs de complément (plancher de 40 professionnels) signés au salaire de la
+règle sans regarder la masse, et les renforts d'urgence. Corrections :
+
+- la masse autorisée ne dépasse jamais le plafond (l'audace ne joue que sous
+  les autres bornes, 52 % des recettes ou moyens du propriétaire) ;
+- un joueur de complément d'un club géré signe sous sa masse autorisée,
+  jamais sous le plancher de la règle ;
+- filet de conformité après chaque commande (`budgetConformite`) : un club
+  géré d'une ligue plafonnée qui dépasse ramène ses contrats sous le plafond
+  par la même retenue proportionnelle que l'intersaison. Le club joué n'est
+  pas touché : il reçoit l'alerte de la ligue et paie l'amende s'il dépasse.
+
+### Caisse du club joué
+
+Cause : les clubs gérés réinvestissent 70 % de l'excédent de l'exercice dans
+le staff et le fonctionnement (`ajustement`, `club-budget.cjs`) et
+économisent quand le déficit dépasse l'enveloppe du propriétaire ; le club
+joué gardait 100 % de son excédent. Dans une mesure en semaines déléguées, le
+manager ne prolonge personne : les contrats échus partent, la masse du club
+joué baisse et l'excédent grossit d'autant. Correction : même train de vie
+pour le club joué (`gere: true` pour tous dans `budgetSemaine`, prévision
+alignée). Les prolongations non faites restent un effet du protocole de
+mesure (un manager réel prolonge ou recrute).
+
 ## Mesures
 
 À compléter.
