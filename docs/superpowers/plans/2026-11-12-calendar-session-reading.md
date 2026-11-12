@@ -47,7 +47,7 @@
 
 **Owners:** world_links (`competition_canvas.gd`, `month_calendar.gd`) ; navigation_core (`navigation_controller.gd`) ; worktrees séparés.
 
-**Interfaces:** `Competition.target_available(owner_app, "session", id)` et `Competition.open_target(owner_app, "session", id)` réutilisent les signatures existantes ; ajouter `Competition.session_focus_name(id: String) -> String` pour le bouton du détail. `calendar_reading.focus` contient ce nom stable.
+**Interfaces:** `Competition.target_available(owner_app, "session", id)` et `Competition.open_target(owner_app, "session", id)` réutilisent les signatures existantes ; ajouter `Competition.session_focus_name(id: String) -> String` pour le bouton du détail. `calendar_reading.focus` contient ce nom stable. `Competition.session_context_matches(owner_app: Control, id: Variant) -> bool` valide que la séance exacte est encore sélectionnée dans le programme visible ; core l’utilise pour la cible courante et la répétition, après les gardes. World possède la persistance/invalidation de ce contexte de lecture.
 
 - [ ] World résout uniquement la séance unique de `calendarPlanning.sessions`, date validée par `calendar_agenda.valid_date`.
 - [ ] World réutilise l’ouverture date, définit filtre/date/focus et rend des boutons cohérents avec les polices et styles existants ; aucun nouveau dialogue ou réglage métier.
