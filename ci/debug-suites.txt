@@ -1,8 +1,5 @@
 tests/native-club-support-ui.cjs
-tests/godot-engine.cjs
-tests/godot-guide.cjs
 tests/deepen-analytics-real-ui.cjs
 tests/godot-immersive08.cjs
 tests/godot-match-temps-forts.cjs
-tests/godot-staff-decisions.cjs
 tests/native-relationships-ui.cjs

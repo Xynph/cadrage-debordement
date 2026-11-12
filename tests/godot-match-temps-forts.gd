@@ -634,7 +634,7 @@ func player_path() -> Array:
 		app.model = model
 		var already := highlights(journal)
 		director.sync()
-		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie")
+		check(director.kind == "live" and regie.etat == regie.JEU, "Un temps fort à montrer retient la causerie · " + str(director.kind) + " · état " + str(regie.etat) + " (JEU=" + str(regie.JEU) + ", INTER=" + str(regie.INTER) + ")")
 		check(not view.finish.visible, "Pas de validation pendant le temps fort")
 		check(await until(func(): return director.kind == "locker", 120000), "La causerie s'ouvre quand le temps fort est fini")
 		var last: Dictionary = journal.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")[-1] if highlights(journal) > already else {}

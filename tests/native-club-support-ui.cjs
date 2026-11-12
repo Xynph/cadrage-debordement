@@ -41,6 +41,7 @@ func run() -> void:
  while app.model.is_empty() and Time.get_ticks_msec() < startup_deadline: await process_frame
  await settle()
  # Le rendez-vous de direction d'une carrière neuve doit être traité : sinon le moteur refuse réunions, plans et briefings.
+ await command("snapshot")
  await preload("res://qa_runner.gd").settle_club_meetings(app, self, check)
  await command("export")
  var before: String = app.model.meta.exportText

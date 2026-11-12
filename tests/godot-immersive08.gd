@@ -508,7 +508,10 @@ func reception() -> void:
 	var list: VBoxContainer = app.find_child("InboxMessageRows", true, false)
 	check(app.route == "Réception" and list != null, "La Réception ouvre un écran propre")
 	if list == null: return
-	check(list.get_child_count() == app.model.messages.size(), "Chaque message reçu du moteur est consultable")
+	# Les courriers d'une même rencontre ou conférence sont groupés sous un en-tête repliable : on déplie chaque
+	# groupe pour que tous les messages du moteur soient consultables, puis on ne compte que les lignes de message.
+	list = await expand_threads()
+	check(message_rows(list).size() == app.model.messages.size(), "Chaque message reçu du moteur est consultable")
 	var portrait := app.find_child("Art_mail_staff", true, false) as TextureRect
 	check(portrait != null, "Illustration de la Réception chargée en jeu")
 	if portrait != null:
@@ -517,12 +520,12 @@ func reception() -> void:
 		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
 		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
 	await capture("05-reception-2560x1440")
-	var first: Button = list.get_child(0)
+	var first: Button = message_rows(list)[0]
 	var original: String = first.get_meta("message_text")
 	app.find_child("InboxFolder1", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	var last: Button = list.get_child(list.get_child_count()-1)
+	var last: Button = message_rows(list)[message_rows(list).size()-1]
 	var unread: String = last.get_meta("message_text")
 	last.pressed.emit()
 	await settle()
@@ -530,11 +533,12 @@ func reception() -> void:
 	app.find_child("InboxToggleRead", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == app.model.messages.size()-1, "Le marquage explicite retire le message des non lus")
+	list = await expand_threads()
+	check(message_rows(list).size() == app.model.messages.size()-1, "Le marquage explicite retire le message des non lus")
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	first = list.get_child(0)
+	first = message_rows(list)[0]
 	first.pressed.emit()
 	await settle()
 	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
@@ -542,20 +546,33 @@ func reception() -> void:
 	app.find_child("InboxFolder2", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == 1, "Favoris limité au message épinglé")
+	check(message_rows(list).size() == 1, "Favoris limité au message épinglé")
 	app.find_child("InboxToggleArchive", true, false).pressed.emit()
 	app.find_child("InboxFolder3", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == 1 and list.get_child(0).get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
+	check(message_rows(list).size() == 1 and message_rows(list)[0].get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
 	app.find_child("InboxToggleArchive", true, false).pressed.emit()
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == app.model.messages.size(), "Réouvrir restaure le message dans la boîte")
+	list = await expand_threads()
+	check(message_rows(list).size() == app.model.messages.size(), "Réouvrir restaure le message dans la boîte")
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
+
+func message_rows(list: Node) -> Array:
+	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))
+
+func expand_threads() -> VBoxContainer:
+	for attempt in 24:
+		var list: VBoxContainer = app.find_child("InboxMessageRows", true, false)
+		var closed: Array = list.get_children().filter(func(node: Node): return node.has_meta("thread_key") and node is Button and node.text.begins_with("▸"))
+		if closed.is_empty(): return list
+		closed[0].pressed.emit()
+		await settle()
+	return app.find_child("InboxMessageRows", true, false)
 
 func resize_shell() -> void:
 	app._navigate("Bureau")
@@ -689,7 +706,7 @@ func families() -> void:
 		app._navigate(item[0])
 		await settle()
 		var view: Control = app.find_child(item[1],true,false)
-		check(view!=null and view.is_visible_in_tree(),"Gabarit raccordé au vrai parcours · "+str(item[0]))
+		check(view!=null and view.is_visible_in_tree(),"Gabarit raccordé au vrai parcours · "+str(item[0])+" · route "+str(app.route)+" · vue "+str(item[1])+" trouvée : "+str(view!=null)+" · presse vide : "+str(app.model.get("clubLife",{}).get("press",{}).is_empty()))
 		if item[0]=="Formation":
 			var selected: String = app.management_ui.immersive_academy.get("player","")
 			var roster: Array = app.model.decisions.development.academy

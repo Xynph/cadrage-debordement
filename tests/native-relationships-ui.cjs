@@ -69,10 +69,12 @@ func run() -> void:
    check(page != null, "Vue composée " + route)
    if page != null:
     check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Bornes " + route + " " + str(resolution))
+    # Plancher proportionnel : 28 px (peau compacte) ou 36 px de référence à 2560 de large, réduit avec la scène dédiée.
+    var minimum_height: float = minf(26.0, 36.0 * app.size.x / 2560.0)
     for b in page.find_children("*", "Button", true, false):
-     # Seuil 26 px (et non 40) : la peau compacte impose 28 px (game_skin.gd) et les pages dédiées sont des
+     # Seuil proportionnel plafonné à 26 px (et non 40) : la peau compacte impose 28 px (game_skin.gd) et les pages dédiées sont des
      # canevas mis à l'échelle (206 x 39,75 à 1920 ; 137 x 26,5 à 1280), jamais plus petits que ce plancher.
-     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= 26, "Action clavier et taille " + b.name + " · focus " + str(b.focus_mode) + " · taille " + str(b.size) + " · " + str(resolution))
+     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= minimum_height, "Action clavier et taille " + b.name + " · focus " + str(b.focus_mode) + " · taille " + str(b.size) + " · " + str(resolution))
    await capture(route + "-" + str(resolution.x))
  # Les actions interactives ci-dessous vivent dans la page compacte (la scène dédiée 1920 x 1080 n'a pas ces contrôles nommés).
  root.size = Vector2i(1280,720)

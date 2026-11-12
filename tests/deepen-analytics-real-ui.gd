@@ -100,7 +100,7 @@ func run() -> void:
 	check(picker!=null,"Choix du joueur dans la véritable application")
 	if picker==null: finish();return
 	var details: Control = app.body.find_child("PerformancePlayerDetail",true,false)
-	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés")
+	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | "))
 	var actual: Dictionary = app.model.clubLife.playerMatchHistory.players[0]
 	check(text(details).contains(str(actual.name)),"Identité du joueur issue du vrai worker")
 	check(actual.measuredMatches>0 and actual.minutes!=null,"Minutes réellement mesurées")
