@@ -1,6 +1,6 @@
 # Passation Cloud — Rugby Legacy 27, nuit du 12 novembre 2026
 
-État intermédiaire à 05:56 UTC (06:56 Paris). Échéance de travail : 07:30 UTC,
+État intermédiaire à 06:46 UTC (07:46 Paris). Échéance de travail : 07:30 UTC,
 08:30 Paris. **Aucune fusion Cloud dans main avant 08:00 UTC / 09:00 Paris.**
 Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 
@@ -142,7 +142,11 @@ expliqués sans causalité certaine ou potentiel caché inventé.
 
 ## Coordination et limites réservées
 
-Main observé : `c39dfffbd023200cb190d54322291c9f96c6fe22` (#578, contenant #560/#571), après `44c7ebef…` (#574), `b30c331c…` (#575) et `f9c55a92…` (#553). Les interfaces lues pour nos liens
+Main actuellement observé : `7a409dd1342244f67c9aef576555c986f9b7994f`, fusion #580 à 06:41 UTC. Son [JavaScript 43169857850](https://github.com/Xynph/cadrage-debordement/actions/runs/43169857850) est en cours ; aucun ancien vert n'est transféré à cette tête. La vérification statique ciblée c39→7a4 ne détecte aucun retrait ou renommage des API consommées par navigation, lecteurs, gardes et cycle guide/speech. Le chorégraphe ajoute l'option `matchChoreography`, désactivée par défaut et activable via `CD_MATCH_CHOREGRAPHE=1` ; les signatures et replis existants sont conservés. Cette lecture limitée ne qualifie pas le comportement runtime.
+
+Le [rapprochement virtuel ec+7a4](evidence/night-final-handoff-20261112/virtual-merge-ec-main7a4.json) est sans conflit, arbre `1d62328e3424b58ca4d6b47366df763b4339bd91`, code 0. Aucun merge réel ni test du cumul. Après 09 h, recevoir les modes temps forts par défaut et de repli, et explicitement le chorégraphe opt-in s'il est retenu. Aucun audit moteur, animation ou asset réservé n'a été refait.
+
+Référence historique : `c39dfffbd023200cb190d54322291c9f96c6fe22` (#578, contenant #560/#571), après `44c7ebef…` (#574), `b30c331c…` (#575) et `f9c55a92…` (#553). Les interfaces lues pour nos liens
 conservent id/name et les entrées de lecture ; les garde-fous de sauvegarde par
 ID restent présents. Ce constat statique ne qualifie pas les migrations runtime.
 Le JavaScript de main 44c est reçu vert par le moniteur :
@@ -155,7 +159,7 @@ branche main déplacée et aucune recette du cumul réel n'en est déduite. Les
 [contrôles de frontières Git](evidence/night-final-handoff-20261112/git-boundaries.json)
 conservent les sources exactes, les 28 chemins natifs et leurs hashes, ainsi que
 l’absence de changements d’assets produit et de configuration GitHub depuis #572.
-Le rapprochement virtuel final ec0044ea+c39 est aussi propre, arbre `fc156a9ae704a6ace7b3d6d6b14293702264fe48`, code 0 : [frontières exactes ec](evidence/night-final-handoff-20261112/git-boundaries-ec0044ea.json). Aucune intégration réelle ou recette cumulative n’est revendiquée.
+Le rapprochement virtuel ec0044ea+c39 est aussi propre, arbre `fc156a9ae704a6ace7b3d6d6b14293702264fe48`, code 0 : [frontières exactes ec](evidence/night-final-handoff-20261112/git-boundaries-ec0044ea.json). Aucune intégration réelle ou recette cumulative n’est revendiquée.
 
 Le [repro d'archive presse](night-claude-press-archive-compatibility-20261112.md)
 sur f9 puis 44 montre qu'un pack presse compatible peut transformer un fragment
@@ -190,7 +194,7 @@ Après 09 h Paris seulement :
 1. Relever le dernier main effectivement intégré par Claude et créer une branche de cumul depuis ce SHA. Garder les sources reçues 37/7607/1a7/ec intactes.
 2. Y intégrer le contenu cumulé de #584, déjà descendant de #572/#576/#582/#583, puis les seuls compléments documentaires de #581. Ne pas reprendre #566 ni le patch Art #577 séparément.
 3. Vérifier interfaces et conflits puis dériver les inventaires depuis les objets Git du nouveau SHA résultant. **76 SDK et 646 CJS appartiennent à ec ; le cumul peut contenir davantage de cas issus du nouveau main.** Recevoir une campagne complète SDK et JavaScript sur ce même nouveau SHA et leurs gates, sans emprunter les verts d'ec ou de main.
-4. Recevoir les gardes réelles avec les temps forts par défaut et leur repli `CD_MATCH_TEMPS_FORTS=0` : invitation exacte, causerie retenue par le dernier temps fort, match immersif et retour historique. Adapter seulement les points communs ou la recette si nécessaire ; laisser moteur, animations et assets réservés à Claude. Ne relever ni délais existants ni limite VM 15 s.
+4. Recevoir les gardes réelles avec les temps forts par défaut et leur repli `CD_MATCH_TEMPS_FORTS=0` : invitation exacte, causerie retenue par le dernier temps fort, match immersif et retour historique. Recevoir aussi le mode opt-in `CD_MATCH_CHOREGRAPHE=1` si retenu, distinct des temps forts par défaut. Adapter seulement les points communs ou la recette si nécessaire ; laisser moteur, animations et assets réservés à Claude. Ne relever ni délais existants ni limite VM 15 s.
 5. Intégrer après ces réceptions, puis seulement retirer/clore les PR familiales comme incorporées. Claude conserve la recette PC, le ZIP et les assets privés ; aucune livraison Windows ni asset Mixamo public n'est produite par Cloud.
 
 Aucun futur cumul n'est qualifié par les verts des sources antérieures.

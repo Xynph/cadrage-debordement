@@ -1,0 +1,21 @@
+{
+  "cloud_product_head": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+  "observed_main": "7a409dd1342244f67c9aef576555c986f9b7994f",
+  "main_pr": 580,
+  "source_boundaries_reference": "git-boundaries-ec0044ea.json",
+  "virtual_merge": {
+    "command": [
+      "git",
+      "merge-tree",
+      "--write-tree",
+      "ec0044ea99e22aeaad29751ccde1279c1699b577",
+      "7a409dd1342244f67c9aef576555c986f9b7994f"
+    ],
+    "exit_code": 0,
+    "tree": "1d62328e3424b58ca4d6b47366df763b4339bd91",
+    "conflicts": [],
+    "actual_main_merge": false,
+    "runtime_qualified": false
+  },
+  "scope": "Git objects and consumed API seams only. No engine/animation/assets audit. Existing source ec remains unchanged and qualified independently."
+}
