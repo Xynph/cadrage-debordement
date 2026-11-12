@@ -28,18 +28,22 @@ const APLATI=12;            // décélération du plongeon d'aplati (glissade co
 const CONTACT=1.0;          // distance du plaquage
 const RATE=1.35;            // distance où un défenseur tente (et rate) le plaquage d'un porteur en percée
 const CLOTURE=1.8;          // après le dernier fait (ruck formé, ballon sorti), la scène dure encore ce temps
-const TYPES=Object.freeze(['essai_jeu_courant','franchissement','jeu_au_pied']);
+const TYPES=Object.freeze(['essai_jeu_courant','franchissement','jeu_au_pied','ballon_porte','penalite_au_but','penalite_en_touche']);
 const ETATS=Object.freeze(['course','passe','reception','plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','ramassage','aplati','joie','deception',
- 'melee','lancer','saut','soutien_saut','jeu_au_pied']);
+ 'melee','lancer','saut','soutien_saut','jeu_au_pied','maul','placement']);
 // États de contact : la décélération y est celle d'une chute, pas celle d'une course.
 const CHUTES=new Set(['plaquage','plaque','plaquage_rate','aplati','au_sol']);
 // Allure plafond par état (m/s) ; null = plafond du profil.
 const PLAFOND=Object.freeze({course:null,passe:null,reception:null,plaquage:null,plaque:null,plaquage_rate:null,au_sol:0,se_relever:0.4,ruck:0.6,ramassage:1.5,aplati:null,joie:2.5,deception:1.5,
- melee:0.6,lancer:0.3,saut:0.3,soutien_saut:0.3,jeu_au_pied:null});
+ melee:0.6,lancer:0.3,saut:0.3,soutien_saut:0.3,jeu_au_pied:null,maul:2.4,placement:0.3});
 // Coups de pied qui finissent en touche (cause du fait « touch » du moteur).
 const TOUCHES_AU_PIED=Object.freeze(['direct-touch','indirect-touch','50-22']);
 // Gain du moteur à partir duquel un temps de jeu est montré comme une percée (plaquages ratés, couverture).
 const GAIN_PERCEE=10;
+// Ballon porté (loi 16) : allure de la poussée, en m/s, et montée en allure.
+const MAUL_ALLURE=1.3,MAUL_ELAN=0.6;
+// Poteaux (loi 8) : 5,6 m d'écart, barre à 3 m, au milieu de la ligne de but (y = 35).
+const POTEAUX=Object.freeze({y:35,demi:2.8,barre:3});
 
 // Profil physique d'un joueur : allure de pointe et accélération plafonnées.
 // `vitesse` : compétence « Vitesse » du moteur (15 à 99, forme comprise) si elle est connue.
@@ -66,7 +70,12 @@ function valider(e){
  const cle=e.type==='essai_jeu_courant'?e.marqueur:e.vedette;
  const vedette=joueurs.find(p=>String(p.id)===String(cle));
  if(!vedette||vedette.side!==e.equipe)throw new RangeError(e.type==='essai_jeu_courant'?'Chorégraphe : marqueur absent de son équipe':'Chorégraphe : joueur clé absent de son équipe');
- if(e.type==='essai_jeu_courant'&&(!e.essai||![0,100].includes(e.essai.x)||!fini(e.essai.y)))throw new RangeError('Chorégraphe : point d’essai invalide');
+ // Essai sur ballon porté : marqueur et point d'essai du moteur, comme en jeu courant.
+ const essaiPorte=e.type==='ballon_porte'&&e.marqueur!=null;
+ if(essaiPorte){const m=joueurs.find(p=>String(p.id)===String(e.marqueur));if(!m||m.side!==e.equipe)throw new RangeError('Chorégraphe : marqueur absent de son équipe')}
+ if((e.type==='essai_jeu_courant'||essaiPorte)&&(!e.essai||![0,100].includes(e.essai.x)||!fini(e.essai.y)))throw new RangeError('Chorégraphe : point d’essai invalide');
+ if(e.type==='ballon_porte'&&e.ouverture?.k!=='touche')throw new RangeError('Chorégraphe : un ballon porté part d’une touche');
+ if(e.type.startsWith('penalite')&&e.ouverture?.k!=='penalite')throw new RangeError('Chorégraphe : une pénalité part de son point');
  if(!e.ballon||!fini(e.ballon.x)||!fini(e.ballon.y))throw new RangeError('Chorégraphe : ballon de départ invalide');
  if(![0,1].includes(e.possession))throw new RangeError('Chorégraphe : possession de départ invalide');
  const etapes=Array.isArray(e.etapes)?e.etapes:null;
@@ -80,7 +89,7 @@ function valider(e){
   if(e.type!=='essai_jeu_courant'&&etapes.some(s=>s.k==='essai'))throw new RangeError('Chorégraphe : essai hors d’un temps fort d’essai');
  }
  const o=e.ouverture;
- if(o&&!['jeu','melee','touche','envoi'].includes(o.k))throw new RangeError('Chorégraphe : ouverture invalide');
+ if(o&&!['jeu','melee','touche','envoi','penalite'].includes(o.k))throw new RangeError('Chorégraphe : ouverture invalide');
  if(o&&o.k!=='jeu'&&(!fini(o.x)||!fini(o.y)))throw new RangeError('Chorégraphe : point de remise en jeu invalide');
  if(o?.k==='envoi'&&(!ids.has(String(o.botteur))||!ids.has(String(o.receveur))))throw new RangeError('Chorégraphe : botteur ou receveur absent');
  return {...e,joueurs};
@@ -90,7 +99,7 @@ function valider(e){
 // avant le fait clé. Rend null si la mise en scène n'aboutit pas.
 function simuler(e,phases,graine){
  const alea=tirage(graine);
- const T=e.equipe,essai=e.type==='essai_jeu_courant';
+ const T=e.equipe,essai=e.type==='essai_jeu_courant'||e.type==='ballon_porte'&&e.marqueur!=null;
  const sens=essai?(e.essai.x===100?1:-1):(e.sens===1||e.sens===-1?e.sens:T===0?1:-1);
  const ligne=sens>0?100:0;
  const G=essai?{x:ligne+sens*EN_BUT,y:borne(e.essai.y,5,65)}:null;
@@ -124,7 +133,7 @@ function simuler(e,phases,graine){
  const etat=(j,nom,suite=[])=>{if(!ETATS.includes(nom))throw Error(nom);j.etat=nom;j.depuis=t;j.suite=suite;const l=etatsJ.get(j.id);if(l.at(-1)[1]!==nom)l.push([r1(t),nom])};
  const tenir=j=>{ballon.porteur=j.id;ballon.vol=null;ballon.sol=false;ballon.depose=null;if(porteurs.at(-1)?.[1]!==j.id)porteurs.push([r1(t),j.id])};
  const lacher=()=>{ballon.porteur=null;if(porteurs.at(-1)?.[1]!==null)porteurs.push([r1(t),null])};
- const debout=j=>!['plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','aplati','melee','saut','soutien_saut'].includes(j.etat);
+ const debout=j=>!['plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','aplati','melee','saut','soutien_saut','maul','placement'].includes(j.etat);
  const vers=(j,x,y,allure,arrive=true)=>{j.cible={x:borne(x,-3,103),y:borne(y,1.5,68.5)};j.allure=Math.min(allure,j.vmax);j.arrive=arrive};
  const jalon=plan=>{if(Number.isInteger(plan)&&!jalons.some(([,k])=>k===plan))jalons.push([r1(t),plan])};
 
@@ -384,10 +393,114 @@ function simuler(e,phases,graine){
   vers(k,ouverture.x-dk*0.4,ouverture.y-0.3,3);
  }
 
+ // --- Ballon porté (loi 16) -----------------------------------------------------
+ // Après la prise en touche : les avants des deux équipes se lient autour du sauteur, le ballon
+ // est transmis au porteur du fond, le ballon porté avance jusqu'au point du moteur (ou jusque
+ // dans l'en-but si le moteur a donné l'essai), puis s'arrête et le ballon sort vers le demi.
+ function formerMaul(){
+  const sp=d.sp,sJ=sp.sauteur;
+  const P=parId.get(String(essai?e.marqueur:e.vedette))||sJ;
+  const M={x:sJ.x,y:sJ.y},membres=new Map();
+  // Attaque : sauteur devant, ses leveurs de chaque côté, les autres avants derrière, le porteur au fond.
+  const avant=[sJ,...sp.leveurs].filter(j=>j!==P);
+  const placesAvant=[[0.45,0],[0.05,-0.7],[0.05,0.7]];
+  avant.forEach((j,i)=>membres.set(j,{dx:placesAvant[i][0],dy:placesAvant[i][1]}));
+  const autres=J.filter(j=>j.side===T&&j.slot<8&&j!==P&&!membres.has(j)).sort((a,b)=>dist(a,M)-dist(b,M)||a.slot-b.slot);
+  const placesArriere=[[-0.6,-0.65],[-0.6,0.65],[-0.75,0],[-1.2,-0.8],[-1.2,0.8],[-1.35,0]];
+  autres.forEach((j,i)=>membres.set(j,{dx:placesArriere[i%6][0]-Math.floor(i/6)*0.5,dy:placesArriere[i%6][1]}));
+  membres.set(P,{dx:-1.75,dy:0});
+  // Défense : six avants liés en face (talonneur et n° 8 restent en garde sur les côtés).
+  const defs=J.filter(j=>j.side!==T&&j.slot<8&&![1,7].includes(j.slot)).sort((a,b)=>dist(a,M)-dist(b,M)||a.slot-b.slot);
+  const placesDef=[[1.2,-0.6],[1.2,0.6],[1.35,0],[1.85,-0.8],[1.85,0.8],[2.0,0]];
+  defs.forEach((j,i)=>membres.set(j,{dx:placesDef[i][0],dy:placesDef[i][1]}));
+  const groupe=[...membres.keys()];
+  const cibleX=essai?G.x+sens*1.6:borne(fini(ouverture.gain)?ouverture.gain:M.x+sens*6,3,97);
+  d.maul={M,membres,porteur:P,v:0,t0:t,forme:null,cibleX,cibleY:essai?G.y:M.y,arret:null,sorti:null,transfert:null,finTouche:null,contacts:groupeContact(groupe,60),L:sp.L};
+  d.phase='maul';
+  evenements.push({t:r1(t),type:'maul',x:r2(M.x),y:r2(M.y),porteur:P.id,cible:r2(cibleX)});
+ }
+ function comportementMaul(j){
+  const m=d.maul,M=m.M,o=m.membres.get(j);
+  if(o){vers(j,M.x+sens*o.dx,M.y+o.dy,j.etat==='maul'?2.4:j.vmax*0.8);return}
+  // Arrières : à 10 m de la ligne de touche tant que l'alignement n'est pas fini (loi 18).
+  if(j.slot>8&&!m.finTouche&&j!==demiDe(T)){vers(j,j.x,j.y,1);return}
+  // Hors du ballon porté : derrière le pied le plus en arrière des joueurs liés de son équipe (loi 16).
+  const ds=dirDe(j.side),lies=[...m.membres.keys()].filter(q=>q.side===j.side&&q.etat==='maul');
+  const fond=lies.length?Math.min(...lies.map(q=>q.x*ds))*ds:M.x-ds*2;
+  const ligneOff=fond-ds*0.4,c=M.y<35?1:-1;
+  if(j.side===T){
+   if(j===demiDe(T)){vers(j,ligneOff-sens*2.4,borne(m.porteur.y+c*1.4,2,68),3.5);return}
+   if(j.slot<8){vers(j,ligneOff-sens*1.6,borne(M.y+((j.slot%3)-1)*2.5,2,68),3);return}
+   const rang=j.slot-8;
+   vers(j,ligneOff-sens*(5+rang*1.4),borne(M.y+c*(4+rang*6),3,67),4.5);return;
+  }
+  const arr=arriereDe(1-T);
+  if(j===arr){vers(j,ligneOff+sens*16,borne(M.y*0.5+35*0.5,5,65),4);return}
+  if(j.slot<8){vers(j,ligneOff+sens*1.0,borne(M.y+(j.slot===1?-2.4:2.4),1.5,68.5),3);return}
+  // Ligne défensive : en jeu, étalée du côté ouvert.
+  const ligne=J.filter(q=>q.side===j.side&&q.slot>=8&&q!==arr).sort((a,b)=>a.slot-b.slot);
+  const k=ligne.indexOf(j);
+  vers(j,ligneOff+sens*(1.4+k*0.3),borne(M.y+c*(3.5+k*6),2,68),4.5);
+ }
+
+ // --- Pénalité (loi 20) ------------------------------------------------------
+ // Le botteur va au point de la faute, prend le ballon ; au but : il le pose, recule (élan),
+ // frappe, le ballon passe entre les poteaux ou à côté (le moteur l'a décidé) ; en touche : il
+ // tape en touche au point du moteur. Les adversaires reculent à 10 m.
+ const ligneBut=sens>0?100:0;
+ function ouvrirPenalite(){
+  const Pm={x:borne(ouverture.x,3,97),y:borne(ouverture.y,5,65)};
+  const k=parId.get(String(e.vedette));
+  ballon.x=Pm.x;ballon.y=Pm.y;ballon.h=0.15;ballon.sol=true;ballon.depose=null;
+  const u=(()=>{const dx=ligneBut-Pm.x,dy=POTEAUX.y-Pm.y,l=Math.hypot(dx,dy)||1;return {x:dx/l,y:dy/l}})();
+  d.sp={k:'penalite',P:Pm,botteur:k,etape:0,u,elan:{x:Pm.x-u.x*4.2-u.y*1.8,y:Pm.y-u.y*4.2+u.x*1.8}};
+  d.pen=true;d.phase='penalite';
+  jalon(ouverture.plan);
+  evenements.push({t:0,type:'penalite',x:r2(Pm.x),y:r2(Pm.y),botteur:k.id,issue:ouverture.issue});
+ }
+ function tirerAuBut(k){
+  const sp=d.sp,Pm=sp.P,reussi=!!ouverture.reussi;
+  // Passage de la ligne de but : entre les poteaux (réussite) ou au point du moteur (échec).
+  const yBut=reussi?POTEAUX.y+(alea()-0.5)*2.4:(fini(ouverture.cible?.y)&&Math.abs(ouverture.cible.y-POTEAUX.y)>POTEAUX.demi+0.4?ouverture.cible.y:POTEAUX.y+(Pm.y>=35?1:-1)*(POTEAUX.demi+2.5));
+  const xl=ligneBut+sens*7,kg=Math.abs(ligneBut-Pm.x)/Math.abs(xl-Pm.x);
+  const yl=Pm.y+(yBut-Pm.y)/kg;
+  const D=Math.hypot(xl-Pm.x,yl-Pm.y),vol=Math.max(1.5,D/18);
+  const h0=0.25,h1=0.15,hg=reussi?4.6:3.8;
+  const apex=(hg-h0-(h1-h0)*kg)/(4*kg*(1-kg));
+  etat(k,'jeu_au_pied');lacher();
+  ballon.sol=false;ballon.depose=null;
+  ballon.vol={de:{x:Pm.x,y:Pm.y},vers:{x:xl,y:borne(yl,-2,72)},t0:t,t1:t+vol,depuis:k.id,h0,h1,apex};
+  sp.tir={t0:t,tg:t+vol*kg,t1:t+vol,reussi,yBut,hg};
+  d.phase='but';
+  evenements.push({t:r1(t),type:'tir_au_but',joueur:k.id,x:r2(Pm.x),y:r2(Pm.y),reussi,passage:{x:ligneBut,y:r2(yBut),h:r2(hg),t:r1(t+vol*kg)}});
+ }
+ function comportementPenalite(j){
+  const sp=d.sp,Pm=sp.P,k=sp.botteur,but=ouverture.issue==='but';
+  if(j===k){
+   if(d.phase==='armer'){vers(j,j.x+sens*1.5,j.y,2.5,false);return}
+   if(d.phase==='but'){vers(j,j.x+sp.u.x*1.5,j.y+sp.u.y*1.5,1.5);return}
+   if(sp.etape===0){vers(j,Pm.x-sp.u.x*0.5,Pm.y-sp.u.y*0.5,dist(j,Pm)>12?Math.min(j.vmax,6):4);return}
+   if(sp.etape<=2){vers(j,Pm.x-sp.u.x*0.5,Pm.y-sp.u.y*0.5,1);return}
+   if(sp.etape===3){vers(j,sp.elan.x,sp.elan.y,1.2);return} // il recule en regardant le ballon
+   vers(j,Pm.x-sp.u.x*0.3,Pm.y-sp.u.y*0.3,5.2,false);return; // course d'élan
+  }
+  const ds=dirDe(j.side),devant=(j.x-Pm.x)*ds;
+  if(j.side!==T){
+   // Adversaires : à 10 m au moins du point, vers leur ligne (loi 20) ; puis immobiles pendant le tir.
+   if(-devant<10.5){vers(j,Pm.x+sens*(10.8+(j.slot%4)*1.3),borne(j.y,2,68),4);return}
+   vers(j,j.x,j.y,0.8);return;
+  }
+  // Partenaires : derrière le ballon ; en touche, les avants se rapprochent de la touche à venir.
+  if(devant>-1){vers(j,Pm.x-sens*(1.8+(j.slot%5)*1.1),borne(j.y,2,68),3.2);return}
+  if(!but&&j.slot<8){vers(j,Math.min(j.x*sens,(Pm.x-sens*2)*sens)*sens,borne(j.y+(ouverture.cible?.y<35?-1:1)*1.5,3,67),2.2);return}
+  vers(j,j.x,j.y,0.8);
+ }
+
  // Porteur de départ (jeu ouvert) : le joueur mis en avant par la scène de départ, sinon le plus proche du ballon.
  if(ouverture.k==='melee')ouvrirMelee();
  else if(ouverture.k==='touche')ouvrirTouche();
  else if(ouverture.k==='envoi')ouvrirEnvoi();
+ else if(ouverture.k==='penalite')ouvrirPenalite();
  else{
   let porteur=(e.porteur!=null&&parId.get(String(e.porteur))?.side===pos0)?parId.get(String(e.porteur)):null;
   if(!porteur)porteur=J.filter(j=>j.side===pos0).sort((a,b)=>dist(a,ballon)-dist(b,ballon))[0];
@@ -459,7 +572,9 @@ function simuler(e,phases,graine){
   vers(j,ref.x-dr*(6+(j.slot%4)*2),borne(ref.y+((j.slot%5)-2)*7,3,67),4.5);
  }
  function comportement(j){
-  if(!debout(j)&&!['ruck','melee'].includes(j.etat))return; // chute, sol, relevé, sauteur levé : géré par l'état
+  // Liés d'un ballon porté fini : ils tiennent leur place jusqu'à se délier.
+  if(j.etat==='maul'&&d.phase!=='maul'){vers(j,j.x,j.y,0.5);return}
+  if(!debout(j)&&!['ruck','melee','maul','placement'].includes(j.etat))return; // chute, sol, relevé, sauteur levé : géré par l'état
   if(j.etat==='ruck'){vers(j,j.lie.x,j.lie.y,3);return}
   if(['joie','deception'].includes(j.etat)){j.cible=null;return}
   // Joueur appelé au ruck : il y court, puis se lie.
@@ -469,6 +584,8 @@ function simuler(e,phases,graine){
   }
   if(d.phase==='cloture'||d.phase==='fin'&&!G){vers(j,borne(j.x+j.vx*0.6,1,99),j.y+j.vy*0.6,2);return}
   if(['melee','touche','envoi'].includes(d.phase))return comportementRemise(j);
+  if(d.phase==='maul')return comportementMaul(j);
+  if(['penalite','but'].includes(d.phase)||d.pen&&d.phase==='armer')return comportementPenalite(j);
   if(d.apresPied)return comportementPied(j);
   return comportementJeu(j);
  }
@@ -633,7 +750,7 @@ function simuler(e,phases,graine){
   }
   // Plus le risque de heurt est grand, plus l'attrait de la cible cède devant l'évitement.
   if(j.plonge){wx=j.plonge.x;wy=j.plonge.y}
-  else if(j.cible&&(debout(j)||j.etat==='ruck'||['melee','saut','soutien_saut'].includes(j.etat))){
+  else if(j.cible&&(debout(j)||j.etat==='ruck'||['melee','saut','soutien_saut','maul','placement'].includes(j.etat))){
    const dx=j.cible.x-j.x,dy=j.cible.y-j.y,l=Math.hypot(dx,dy);
    if(l>0.05){let a=j.allure*(1-0.8*Math.min(1,danger));if(j.arrive)a=Math.min(a,Math.sqrt(2*j.amax*0.7*Math.max(0,l-0.1)));wx=dx/l*a;wy=dy/l*a}
   }
@@ -697,7 +814,7 @@ function simuler(e,phases,graine){
   const v=Math.hypot(j.vx,j.vy);
   let voulu=j.cap;
   if(j.plonge||v>2)voulu=Math.atan2(j.vy,j.vx);
-  else if(j.etat==='melee')voulu=dirDe(j.side)>0?0:Math.PI;
+  else if(j.etat==='melee'||j.etat==='maul')voulu=dirDe(j.side)>0?0:Math.PI;
   else if(debout(j)||['saut','soutien_saut'].includes(j.etat)){const b=ballon.porteur?parId.get(ballon.porteur):ballon;if(dist(b,j)>0.2)voulu=Math.atan2(b.y-j.y,b.x-j.x)}
   const diff=Math.atan2(Math.sin(voulu-j.cap),Math.cos(voulu-j.cap)),max=6*PAS;
   j.cap+=borne(diff,-max,max);j.cap=Math.atan2(Math.sin(j.cap),Math.cos(j.cap));
@@ -736,7 +853,8 @@ function simuler(e,phases,graine){
    if(j.etat==='plaque'&&age>=0.7)etat(j,'au_sol');
    if(j.etat==='au_sol'&&j.releve!=null&&t>=j.releve){etat(j,'se_relever');j.releve=null}
    if(j.etat==='se_relever'&&age>=1.0)etat(j,'course');
-   if(j.etat==='melee'&&j.libere!=null&&t>=j.libere){etat(j,'course');j.libere=null}
+   if((j.etat==='melee'||j.etat==='maul')&&j.libere!=null&&t>=j.libere){etat(j,'course');j.libere=null}
+   if(j.etat==='placement'&&age>=1.2)etat(j,'course');
    if(j.etat==='ruck'&&!['ruck','cloture'].includes(d.phase)&&age>0.3)etat(j,'course');
    if(j.plonge){const v=Math.hypot(j.vx,j.vy),f=j.etat==='aplati'?APLATI:CHUTE;j.plonge={x:j.vx*Math.max(0,v-f*PAS)/Math.max(v,1e-6),y:j.vy*Math.max(0,v-f*PAS)/Math.max(v,1e-6)}}
   }
@@ -788,7 +906,9 @@ function simuler(e,phases,graine){
     evenements.push({t:r1(t),type:'reception',joueur:sp.sauteur.id});
    }else if(sp.etape===3&&age>=2.5){
     sp.etape=4;etat(sp.sauteur,'course');for(const l of sp.leveurs)etat(l,'course');
-   }else if(sp.etape===4&&age>=2.8){
+   }else if(sp.etape===4&&age>=2.8&&e.type==='ballon_porte'){
+    sp.etape=5;formerMaul();
+  }else if(sp.etape===4&&age>=2.8){
     const dm=demiDe(T);
     if(pret(sp.sauteur,dm)||age>6){
      sp.etape=5;
@@ -806,6 +926,70 @@ function simuler(e,phases,graine){
     lancerPied(k,{issue:'reception',x:ouverture.chute?.x,y:ouverture.chute?.y,receveur:sp.receveur.id,plan:ouverture.planReception},{x:ouverture.x,y:ouverture.y});
     d.coup.envoi=true;
    }
+  }else if(d.phase==='maul'){
+   const m=d.maul,M=m.M,P=m.porteur;
+   for(const [j,o] of m.membres)if(debout(j)&&!['passe','reception'].includes(j.etat)&&!m.sorti&&dist(j,{x:M.x+sens*o.dx,y:M.y+o.dy})<0.7)etat(j,'maul');
+   const lies=[...m.membres.keys()].filter(j=>j.etat==='maul');
+   // Formé (loi 16) : porteur, au moins un partenaire et un adversaire liés.
+   if(!m.forme&&lies.some(j=>j.side!==T)&&lies.filter(j=>j.side===T).length>=3){m.forme=t;evenements.push({t:r1(t),type:'maul_forme'})}
+   // Le ballon passe de main en main jusqu'au porteur du fond.
+   if(m.forme&&!m.transfert&&ballon.porteur&&ballon.porteur!==P.id&&P.etat==='maul'){
+    const de=parId.get(ballon.porteur);lacher();
+    ballon.vol={de:{x:de.x,y:de.y},a:P.id,t0:t,t1:t+0.5,depuis:de.id,h0:1.0,cloche:0.05};m.transfert=t;
+    evenements.push({t:r1(t),type:'transmission',de:de.id,vers:P.id});
+   }
+   if(ballon.vol&&!ballon.vol.vers&&t>=ballon.vol.t1)tenir(parId.get(ballon.vol.a));
+   // Poussée : le ballon porté avance quand le porteur du fond tient le ballon, jusqu'au point voulu.
+   const reste=(m.cibleX-M.x)*sens,pousse=m.forme&&t-m.forme>=0.8&&ballon.porteur===P.id&&!m.arret&&reste>0.02;
+   m.v=pousse?Math.min(MAUL_ALLURE,m.v+MAUL_ELAN*PAS):Math.max(0,m.v-1.5*PAS);
+   if(m.v>0&&reste>0){M.x+=sens*Math.min(reste,m.v*PAS);M.y+=(m.cibleY-M.y)*Math.min(1,0.3*PAS)}
+   // Fin de l'alignement : tous les pieds du ballon porté au-delà de la ligne de touche (loi 18).
+   if(!m.finTouche&&lies.filter(j=>j.side===T).length>=3&&lies.filter(j=>j.side===T).every(j=>(j.x-m.L.x)*sens>0.5)){m.finTouche=t;evenements.push({t:r1(t),type:'fin_touche'})}
+   if(essai&&ballon.porteur===S.id&&(S.x-(G.x-sens*0.6))*sens>=0){
+    // Essai sur ballon porté : le porteur du fond aplatit dans l'en-but, au point du moteur.
+    etat(S,'aplati');S.plonge={x:sens*1.0,y:(G.y-S.y)*0.5};d.phase='aplati';d.aplati=t;
+    for(const j of m.membres.keys())if(j!==S&&j.etat==='maul')j.libere=t+0.4+((j.slot*7+j.side*3)%6)*0.15;
+    for(const c of m.contacts)c.t1=Math.max(c.t1,t+3.5);
+    evenements.push({t:r1(t),type:'aplati',joueur:S.id,x:r2(G.x),y:r2(G.y)});
+    jalon(e.planEssai);
+   }else if(!essai&&!m.arret&&m.forme&&reste<=0.05){m.arret=t;evenements.push({t:r1(t),type:'maul_arrete',x:r2(M.x)})}
+   else if(essai&&!m.arret&&t-m.t0>40)return null;
+   if(m.arret&&!m.sorti&&t-m.arret>=1.0){
+    // Arrêt : le ballon sort du ballon porté vers le demi (en retrait), les liés se délient.
+    const dm=demiDe(T);
+    if(pret(P,dm)||t-m.arret>5){
+     m.sorti=t;
+     for(const j of m.membres.keys())if(j!==P&&j.etat==='maul')j.libere=t+0.3+((j.slot*7+j.side*3)%6)*0.12;
+     for(const c of m.contacts)c.t1=Math.min(c.t1,t+1.8);
+     d.chaine=[];d.apres=null;d.etape={k:'sortie'};
+     passer(P,dm);
+     evenements.push({t:r1(t),type:'sortie_maul',joueur:dm.id});
+    }
+   }
+  }else if(d.phase==='penalite'){
+   const sp=d.sp,k=sp.botteur,Pm=sp.P,but=ouverture.issue==='but';
+   if(sp.etape===0){
+    if(t>=1.0)for(const p of ouverture.autres||[])jalon(p);
+    if(dist(k,Pm)<0.9&&t>=1.4){sp.etape=1;sp.t1=t;etat(k,'ramassage');tenir(k);ballon.sol=false;
+     for(const p of ouverture.autres||[])jalon(p);
+     evenements.push({t:r1(t),type:'ramassage',joueur:k.id,horsJeuRespecte:true})}
+    else if(t>16)return null;
+   }else if(sp.etape===1&&t-sp.t1>=0.6){
+    if(but){
+     // Il pose le ballon sur le point de la faute (loi 20 : au point ou en arrière, dans son axe).
+     sp.etape=2;sp.t2=t;etat(k,'placement');lacher();ballon.sol=true;ballon.depose={x:ballon.x,y:ballon.y,h:ballon.h,t0:t,B:{x:Pm.x,y:Pm.y},dur:0.6};
+     evenements.push({t:r1(t),type:'placement',joueur:k.id});
+    }else{
+     // Pénaltouche : il tape en touche, de volée, au point du moteur.
+     sp.etape=5;d.phase='armer';d.armer={k,st:{k:'pied',issue:'touche',x:ouverture.cible?.x,cote:ouverture.cible?.y>35?70:0,plan:ouverture.planTir},t0:t};
+    }
+   }else if(sp.etape===2&&t-sp.t2>=1.3){sp.etape=3;sp.t3=t}
+   else if(sp.etape===3&&(t-sp.t3>=3.4||t-sp.t3>=1.6&&dist(k,sp.elan)<0.3)){sp.etape=4;sp.t4=t}
+   else if(sp.etape===4&&(dist(k,{x:Pm.x-sp.u.x*0.3,y:Pm.y-sp.u.y*0.3})<0.5||t-sp.t4>3.5))tirerAuBut(k);
+  }else if(d.phase==='but'){
+   const sp=d.sp;
+   if(t>=sp.tir.tg)jalon(ouverture.planTir);
+   if(t>=sp.tir.t1&&ballon.vol){ballon.vol=null;ballon.sol=true;ballon.depose=null;ballon.h=0.15;evenements.push({t:r1(t),type:'ballon_mort',x:r2(ballon.x),y:r2(ballon.y)});cloturer()}
   }else if(d.phase==='armer'){
    if(t-d.armer.t0>=0.6)lancerPied(d.armer.k,d.armer.st);
   }else if(d.phase==='vol'){
@@ -957,7 +1141,7 @@ function simuler(e,phases,graine){
   }
   // Fin sur un pas de sortie : la dernière image des pistes tombe sur la durée annoncée.
   if(d.phase==='fin'&&n%Math.round(PAS_SORTIE/PAS)===0)break;
-  for(const j of J){if(j.etat==='ruck'||debout(j)||['melee','saut','soutien_saut'].includes(j.etat))comportement(j)}
+  for(const j of J){if(j.etat==='ruck'||debout(j)||['melee','saut','soutien_saut','maul','placement'].includes(j.etat))comportement(j)}
   for(const j of J)integrer(j);
   separer();
   for(const j of J){j.x+=j.vx*PAS;j.y+=j.vy*PAS;j.x=borne(j.x,-7,107);j.y=borne(j.y,0.3,69.7);capDe(j)}
@@ -978,12 +1162,11 @@ function sortie(r,e,graine,phases){
   x:r.echantillons.map(s=>r2(s[i][0])),y:r.echantillons.map(s=>r2(s[i][1])),
   v:r.echantillons.map(s=>r2(s[i][2])),cap:r.echantillons.map(s=>r2(s[i][3])),
   etats:r.etatsJ.get(j.id)}));
- const essai=e.type==='essai_jeu_courant';
  const o={version:VERSION,type:e.type,graine,phases,pas:PAS_SORTIE,duree:r.duree,equipe:e.equipe,sens:r.sens,vedette:r.S.id,
   joueurs,ballon:{x:r.ballonPiste.map(b=>r2(b[0])),y:r.ballonPiste.map(b=>r2(b[1])),h:r.ballonPiste.map(b=>r2(b[2])),porteurs:r.porteurs},
   evenements:r.evenements,contacts:r.contacts.map(c=>[r1(c.t0),r1(c.t1),c.a,c.b]),jalons:r.jalons,
-  ouverture:(e.ouverture||{k:'jeu'}).k,coupe:!!(e.ouverture&&e.ouverture.k!=='jeu')};
- if(essai){o.marqueur=r.S.id;o.essai={x:r2(r.G.x),y:r2(r.G.y)}}
+  ouverture:(e.ouverture||{k:'jeu'}).k,coupe:!!(e.ouverture&&['melee','touche','envoi'].includes(e.ouverture.k))};
+ if(r.G){o.marqueur=r.S.id;o.essai={x:r2(r.G.x),y:r2(r.G.y)}}
  if(Number.isInteger(e.premier))o.premier=e.premier;
  if(Number.isInteger(e.dernier))o.dernier=e.dernier;
  if(Number.isInteger(e.plan))o.plan=e.plan;
@@ -996,7 +1179,7 @@ function composer(entree){
  const e=valider(entree);
  const graine=(Number.isInteger(e.graine)?e.graine:hacher(JSON.stringify([e.marqueur,e.vedette,e.essai,e.ballon])))>>>0;
  const alea=tirage(graine);
- const faits=Array.isArray(e.etapes)?e.etapes.filter(s=>!s.cle&&s.k!=='recup').length+(e.ouverture&&e.ouverture.k!=='jeu'?1:0):0;
+ const faits=Array.isArray(e.etapes)?e.etapes.filter(s=>!s.cle&&s.k!=='recup').length+(e.ouverture&&e.ouverture.k!=='jeu'?1:0)+(e.type==='ballon_porte'&&e.marqueur!=null?1:0):0;
  const max=Math.min(DUREE_PLAFOND,DUREE_MAX+6*faits);
  const cible=fini(e.duree_cible)?borne(e.duree_cible,DUREE_MIN,max):Math.min(max,14+alea()*8+4*faits);
  const essais=[];
@@ -1055,19 +1238,64 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
  const plans=tf?.plans;if(!Array.isArray(plans))return null;
  const rec=k=>events?.[plans[k]?.index]?.scene||null;
  const gain=r=>r&&fini(r.to?.x)&&fini(r.from?.x)?Math.abs(r.to.x-r.from.x):0;
+ // Ballon porté : la touche (plan `i - 1`), la conquête (`i`) et, si le moteur l'a donné, l'essai (`n`).
+ function entreeBallonPorte(i,n){
+  const l=rec(i-1),w=rec(i),T=w.team;
+  const depart=plans[i-1].scene;if(!depart||!Array.isArray(depart.players))return null;
+  const avant8=id=>{const p=depart.players.find(q=>String(q.id)===String(id));return p&&p.side===T&&p.slot<8?String(p.id):null};
+  // Porteur du fond : le marqueur (essai), sinon le joueur que le moteur nomme s'il est un avant, sinon le n° 8.
+  const marqueur=n!=null?avant8(rec(n).actor):null;
+  if(n!=null&&!marqueur)return null;
+  const n8=depart.players.find(q=>q.side===T&&q.slot===7);
+  const vedette=marqueur||avant8(w.actor)||(n8?String(n8.id):null);
+  if(!vedette)return null;
+  const ouverture={k:'touche',x:l.from?.x??l.to?.x,y:l.from?.y??l.to?.y,plan:i-1,planGain:i,lance:l.team,sauteur:null,gain:xDe(w.to)};
+  const e=finir({type:'ballon_porte',equipe:T,vedette,sens:fini(w.to?.x)&&fini(w.from?.x)&&Math.abs(w.to.x-w.from.x)>0.5?Math.sign(w.to.x-w.from.x):T===0?1:-1,
+   ouverture,etapes:[],premier:i-1,dernier:n??i,tf,plans,rec,profils,avant,cle,marqueur});
+  if(e&&n!=null)e.planEssai=n;
+  return e;
+ }
+ // Pénalité : le coup de sifflet (plan `penalty`), les cartons éventuels, puis le tir au but
+ // (`goal`, `miss`) ou la touche (`touch` sur pénalité) au plan `g`.
+ function entreePenalite(g){
+  const r=rec(g),T=r?.team;if(![0,1].includes(T))return null;
+  let p=g-1;const autres=[];
+  while(p>=0&&plans[p].kind==='card'){autres.unshift(p);p--}
+  if(p<0||plans[p].kind!=='penalty'||rec(p)?.team!==T)return null;
+  const depart=plans[p].scene;if(!depart||!Array.isArray(depart.players)||!fini(depart.ball?.x))return null;
+  const but=plans[g].kind!=='touch';
+  let botteur=r.actor!=null?String(r.actor):null;
+  if(!botteur||!depart.players.some(q=>String(q.id)===botteur&&q.side===T)){
+   // Botteur non nommé (pénaltouche) : l'ouvreur, sinon l'arrière, sinon le demi (choix de mise en scène).
+   const pick=[9,14,8].map(s=>depart.players.find(q=>q.side===T&&q.slot===s)).find(Boolean);
+   if(!pick)return null;botteur=String(pick.id);
+  }
+  const ouverture={k:'penalite',x:depart.ball.x,y:fini(depart.ball.y)?depart.ball.y:35,botteur,issue:but?'but':'touche',reussi:plans[g].kind==='goal',
+   cible:r.to?{x:r.to.x,y:r.to.y}:null,plan:p,autres,planTir:g};
+  const sens=but?(fini(r.to?.x)?(r.to.x>=50?1:-1):T===0?1:-1):(fini(r.to?.x)&&fini(depart.ball.x)&&Math.abs(r.to.x-depart.ball.x)>1?Math.sign(r.to.x-depart.ball.x):T===0?1:-1);
+  return finir({type:but?'penalite_au_but':'penalite_en_touche',equipe:T,vedette:botteur,sens,ouverture,etapes:[],premier:p,dernier:g,tf,plans,rec,profils,avant,cle});
+ }
  let type=null,k=-1;
  const nEssai=plans.findIndex(p=>p.kind==='try');
+ // Ballon porté depuis une touche gagnée (combinaison « maul », ou ballon porté formé avant un essai).
+ const porte=i=>{const r=rec(i);return i>0&&plans[i].kind==='setpiece-win'&&plans[i-1].kind==='lineout'&&r&&(r.move==='maul'||r.porte)&&[0,1].includes(r.team)&&!!rec(i-1)};
  if(nEssai>=0){
   const r=rec(nEssai);
-  if(!r||r.kind!=='try'||r.origin!=='open'||![0,1].includes(r.team)||r.actor==null)return null;
+  if(!r||r.kind!=='try'||![0,1].includes(r.team)||r.actor==null)return null;
+  if(r.origin==='maul'){if(!porte(nEssai-1)||rec(nEssai-1).team!==r.team)return null;return entreeBallonPorte(nEssai-1,nEssai)}
+  if(r.origin!=='open')return null;
   type='essai_jeu_courant';k=nEssai;
  }else{
   for(let i=plans.length-1;i>=0;i--){const r=rec(i);if(plans[i].kind==='carry'&&r?.actor!=null&&gain(r)>=22){type='franchissement';k=i;break}}
+  if(!type)for(let i=plans.length-1;i>=0;i--)if(porte(i))return entreeBallonPorte(i,null);
+  // Pénalité tentée au but (réussie ou manquée), puis pénalité jouée en touche.
+  if(!type)for(let i=plans.length-1;i>=0;i--)if(['goal','miss'].includes(plans[i].kind)){const e=entreePenalite(i);if(e)return e}
   if(!type)for(let i=plans.length-1;i>=0;i--){
    const r=rec(i);if(!r)continue;
    if(plans[i].kind==='kick'&&r.actor!=null||plans[i].kind==='touch'&&TOUCHES_AU_PIED.includes(r.cause)){type='jeu_au_pied';k=i;break}
    if(plans[i].kind==='reception'&&i>0&&['kickoff','drop22'].includes(plans[i-1].kind)){type='jeu_au_pied';k=i;break}
   }
+  if(!type)for(let i=plans.length-1;i>=0;i--)if(plans[i].kind==='touch'&&rec(i)?.cause==='penalty-touch'){const e=entreePenalite(i);if(e)return e}
  }
  if(!type)return null;
  const r=rec(k),T=r.team;
@@ -1114,7 +1342,7 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
  }
  return finir({type,equipe:T,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle});
 }
-function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur}){
+function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur,marqueur}){
  // Scène de départ : la remise en jeu formée, sinon la scène affichée juste avant le premier plan.
  const depart=ouverture&&ouverture.k!=='jeu'?plans[premier].scene:premier>0?plans[premier-1].scene:(avant||tf.depart);
  if(!depart||!Array.isArray(depart.players))return null;
@@ -1137,6 +1365,7 @@ function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,pla
  if(defense)e.defense=defense;
  if(type==='essai_jeu_courant'){e.marqueur=vedette;e.essai={x:plans[dernier].scene.ball.x,y:plans[dernier].scene.ball.y}}
  else{e.vedette=vedette;e.sens=sens}
+ if(marqueur!=null){e.marqueur=marqueur;e.essai={x:plans[dernier].scene.ball.x,y:plans[dernier].scene.ball.y}}
  return e;
 }
 

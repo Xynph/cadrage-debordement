@@ -8,7 +8,8 @@ extends RefCounted
 ## trajectoire, ni résultat. Les déplacements gardent les animations par palier de
 ## vitesse de la vue ; les états (plaquage, chute, relevé, aplati, joie) jouent les
 ## gestes de la bibliothèque adaptée quand CD_MATCH_ANIMATIONS est défini, sinon une
-## pose procédurale simple (buste incliné, joueur au sol, mêlée liée, sauteur levé en touche).
+## pose procédurale simple (buste incliné, joueur au sol, mêlée liée, sauteur levé en touche,
+## avants liés d'un ballon porté, botteur qui pose le ballon d'une pénalité).
 ## Les pistes peuvent couvrir tout le temps fort (remise en jeu formée, temps de jeu, jeu au
 ## pied) : `coupe` vrai, la première image est posée d'emblée (coupe de réalisation), sans raccord.
 ##
@@ -24,6 +25,8 @@ const POSES := {
 	"plaquage": [1.15, 0.05], "plaquage_rate": [1.25, 0.08], "plaque": [1.0, 0.0], "au_sol": [1.45, 0.12],
 	"aplati": [1.35, 0.1], "ruck": [0.55, -0.12], "ramassage": [0.7, -0.1], "se_relever": [0.6, 0.0],
 	"melee": [1.1, -0.3], "soutien_saut": [0.3, -0.08], "saut": [0.0, 1.0],
+	# Ballon porté : liés debout, buste penché vers l'avant ; botteur accroupi qui pose le ballon.
+	"maul": [0.7, -0.15], "placement": [0.85, -0.35],
 }
 ## Sauteur de touche : levé et redescendu vite (les leveurs le portent), le reste à vitesse bornée.
 const LEVEE := 3.0

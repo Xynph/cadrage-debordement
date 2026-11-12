@@ -1,7 +1,8 @@
 extends SceneTree
 ## Chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) dans la vue 3D.
-## 1. Pistes valides, pour chaque type (essai, franchissement, jeu au pied) et chaque remise
-##    en jeu (mêlée, touche, coup d'envoi, jeu ouvert) : chaque joueur suit sa piste (après le
+## 1. Pistes valides, pour chaque type (essai, franchissement, jeu au pied, ballon porté,
+##    pénalité au but ou en touche) et chaque remise en jeu (mêlée, touche, coup d'envoi, jeu
+##    ouvert, pénalité) : chaque joueur suit sa piste (après le
 ##    raccord de 0,6 s, ou d'emblée sur une coupe), le ballon est dans les mains du porteur des
 ##    pistes ou sur sa trajectoire, il finit là où les pistes le laissent ; allure à l'écran
 ##    plafonnée ; animation de course quand on court ; mêlée liée, lancer, saut, coup de pied montrés.
@@ -218,7 +219,7 @@ func lire(view, cas: Dictionary) -> void:
 	if view._choregraphie.porteur().is_empty():
 		var vise := Vector3(float(pistes.ballon.x[n]) - 50.0, 0.0, float(pistes.ballon.y[n]) - 35.0)
 		check(Vector2(fin.x - vise.x, fin.z - vise.z).length() < 0.3 and fin.y < 0.3, "%s : ballon au sol là où les pistes le laissent (%s)" % [nom, str(fin)])
-	if str(pistes.type) == "essai_jeu_courant":
+	if pistes.has("essai"):
 		var essai := Vector3(float(pistes.essai.x) - 50.0, 0.0, float(pistes.essai.y) - 35.0)
 		check(Vector2(fin.x - essai.x, fin.z - essai.z).length() < 0.2 and fin.y < 0.25, "%s : ballon aplati au point d'essai (%s)" % [nom, str(fin)])
 		check(view._choregraphie.porteur().is_empty(), "%s : plus de porteur après l'aplati" % nom)
@@ -228,6 +229,12 @@ func lire(view, cas: Dictionary) -> void:
 		check(etats_vus.has("saut") and etats_vus.has("lancer"), "%s : lancer et sauteur levé montrés" % nom)
 	if str(pistes.type) == "jeu_au_pied":
 		check(etats_vus.has("jeu_au_pied"), "%s : coup de pied montré" % nom)
+	if str(pistes.type) == "ballon_porte":
+		check(etats_vus.has("maul") and etats_vus.has("saut"), "%s : sauteur levé puis avants liés du ballon porté montrés" % nom)
+	if str(pistes.type).begins_with("penalite"):
+		check(etats_vus.has("jeu_au_pied"), "%s : frappe du botteur montrée" % nom)
+	if str(pistes.type) == "penalite_au_but":
+		check(etats_vus.has("placement"), "%s : ballon posé montré" % nom)
 	results[nom] = {"duree": duree, "images": images, "ecart_max": snappedf(ecart_max, 0.01), "allure_max": snappedf(allure_max, 0.1),
 		"ballon_max": snappedf(ballon_max, 0.1), "mains_max": snappedf(mains_max, 0.001), "porteurs": porteurs_vus.size()}
 

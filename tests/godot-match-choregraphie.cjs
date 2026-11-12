@@ -8,11 +8,17 @@ const C=require('../native/engine/match-choregraphe.cjs');
 test('Vue 3D : suit les pistes du chorégraphe (joueurs, ballon, porteur) pour chaque type, repli sans pistes',{skip:!process.env.CD_GODOT_EXE&&'Godot SDK required'},()=>{
  const project=process.env.CD_MATCH_PROJECT||path.resolve(__dirname,'../native/godot');
  // Essai du moteur natif (graine 7, 70′ : ballon récupéré, ruck, percée), puis un temps fort entier
- // par type et par remise en jeu (mêlée, touche, coup d'envoi, jeu ouvert) du jeu d'entrées.
+ // par type et par remise en jeu (mêlée, touche, coup d'envoi, jeu ouvert) du jeu d'entrées, puis
+ // un par type et par issue de la troisième tranche.
  const cas=[JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','match-choregraphe-essais.json'),'utf8'))[1]];
  const vus=new Set();
  for(const f of JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','match-choregraphe-tranche2.json'),'utf8'))){
   const cle=f.entree.type+'|'+f.entree.ouverture.k;
+  if(!vus.has(cle)){vus.add(cle);cas.push(f)}
+ }
+ // Troisième tranche : ballon porté (essai, arrêt), pénalité au but (réussie, manquée), pénaltouche.
+ for(const f of JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','match-choregraphe-tranche3.json'),'utf8'))){
+  const o=f.entree.ouverture,cle=f.entree.type+'|'+(f.entree.marqueur!=null)+'|'+(o.reussi??'');
   if(!vus.has(cle)){vus.add(cle);cas.push(f)}
  }
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-choregraphie-godot-'));

@@ -9,7 +9,10 @@
 // - tests/fixtures/match-choregraphe-tranche2.json : temps forts entiers du moteur natif
 //   (graines 3, 7, 11, 42 et 99), tels que `entreeDepuisTempsFort` les construit : essais
 //   depuis la mêlée ou la touche formée, le coup d'envoi ou la récupération, franchissements
-//   sans essai, jeu au pied et chasse.
+//   sans essai, jeu au pied et chasse ;
+// - tests/fixtures/match-choregraphe-tranche3.json : troisième tranche, temps forts entiers du
+//   moteur natif : ballons portés depuis la touche (essai ou arrêt), pénalités tentées au but
+//   (réussies, manquées, après un carton) et pénalités jouées en touche.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -19,11 +22,13 @@ const C = require('../native/engine/match-choregraphe.cjs');
 
 const ENTREES = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-essais.json'), 'utf8'));
 const TRANCHE2 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche2.json'), 'utf8'));
+const TRANCHE3 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche3.json'), 'utf8'));
 const ETATS_CHUTE = new Set(['plaquage', 'plaque', 'plaquage_rate', 'aplati', 'au_sol']);
 const SOL = new Set(['plaque', 'au_sol', 'aplati', 'se_relever']);
 const COMPOSES = ENTREES.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
 const COMPOSES2 = TRANCHE2.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
-const TOUS = [...COMPOSES, ...COMPOSES2];
+const COMPOSES3 = TRANCHE3.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
+const TOUS = [...COMPOSES, ...COMPOSES2, ...COMPOSES3];
 
 const etatA = (j, t) => { let s = 'course'; for (const [u, x] of j.etats) if (u <= t + 1e-6) s = x; return s; };
 const enContact = (c, t, a, b) => c.contacts.some(([t0, t1, x, y]) => t >= t0 - 0.25 && t <= t1 + 0.25 && (x === a && y === b || x === b && y === a));
@@ -46,7 +51,7 @@ test('Neuf essais en jeu courant du moteur : une mise en scène de 12 à 25 s ch
 
 test('Temps forts entiers : chaque type mis en scène, de 12 s à la durée permise, chaque fait du moteur montré à son jalon', () => {
   const types = new Set(COMPOSES2.map(({ c }) => c.type)), ouvertures = new Set(COMPOSES2.map(({ c }) => c.ouverture));
-  for (const t of C.TYPES) assert.ok(types.has(t), `type ${t} couvert par le jeu d’entrées`);
+  for (const t of C.TYPES) assert.ok(types.has(t) || COMPOSES3.some(({ c }) => c.type === t), `type ${t} couvert par le jeu d’entrées`);
   for (const o of ['jeu', 'melee', 'touche', 'envoi']) assert.ok(ouvertures.has(o), `ouverture ${o} couverte`);
   for (const { source, entree, c } of COMPOSES2) {
     assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax && c.dureeMax <= C.DUREE_PLAFOND, `${source} : durée ${c.duree} (plafond ${c.dureeMax})`);
@@ -289,6 +294,123 @@ test('Ballon continu : jamais téléporté, vitesse d’une passe au plus', () =
   }
 });
 
+// Jalons, durée et pistes complètes : comme pour la deuxième tranche.
+test('Troisième tranche : chaque temps fort mis en scène dans la durée permise, chaque fait du moteur montré à son jalon', () => {
+  const types = new Set(COMPOSES3.map(({ c }) => c.type));
+  for (const t of ['ballon_porte', 'penalite_au_but', 'penalite_en_touche']) assert.ok(types.has(t), `type ${t} couvert`);
+  for (const { source, entree, c } of COMPOSES3) {
+    assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax && c.dureeMax <= C.DUREE_PLAFOND, `${source} : durée ${c.duree} (plafond ${c.dureeMax})`);
+    const n = Math.round(c.duree / c.pas) + 1;
+    assert.equal(c.ballon.x.length, n, `${source} : un échantillon de ballon par pas`);
+    for (const j of c.joueurs) for (const k of ['x', 'y', 'v', 'cap']) assert.equal(j[k].length, n, `${source} : piste ${k} complète`);
+    assert.equal(c.premier, entree.premier); assert.equal(c.dernier, entree.dernier);
+    assert.equal(c.coupe, c.type === 'ballon_porte', `${source} : coupe d'entrée sur la touche formée, pas sur une pénalité`);
+    assert.deepEqual(c.jalons.map(([, k]) => k), entree.jalonsAttendus, `${source} : jalons ${JSON.stringify(c.jalons)}`);
+    const temps = c.jalons.map(([t]) => t);
+    for (let i = 1; i < temps.length; i++) assert.ok(temps[i] >= temps[i - 1], `${source} : jalons dans l’ordre`);
+    assert.ok(temps.every(t => t >= 0 && t <= c.duree), `${source} : jalons dans la durée`);
+  }
+});
+
+test('Ballon porté (lois 16 et 18) : lancer, saut, avants liés des deux équipes, poussée jusqu’au point du moteur, essai ou ballon sorti', () => {
+  let essais = 0, arrets = 0;
+  for (const { source, entree, c } of COMPOSES3.filter(({ c }) => c.type === 'ballon_porte')) {
+    const ev = type => c.evenements.filter(e => e.type === type);
+    const etatsDe = j => new Set(j.etats.map(([, e]) => e));
+    assert.ok(ev('lancer').length === 1 && c.joueurs.some(j => etatsDe(j).has('saut')), `${source} : lancer et saut`);
+    const maul = ev('maul')[0], forme = ev('maul_forme')[0];
+    assert.ok(maul && forme && forme.t >= maul.t, `${source} : ballon porté formé`);
+    const lies = side => c.joueurs.filter(j => j.side === side && etatsDe(j).has('maul'));
+    assert.ok(lies(c.equipe).length >= 6 && lies(1 - c.equipe).length >= 4, `${source} : avants liés des deux équipes (${lies(c.equipe).length} et ${lies(1 - c.equipe).length})`);
+    // Le porteur du fond a le ballon pendant la poussée.
+    const porteurs = c.ballon.porteurs.filter(([, id]) => id).map(([, id]) => id);
+    assert.ok(porteurs.includes(maul.porteur), `${source} : porteur du fond`);
+    const fin = (ev('aplati')[0] || ev('sortie_maul')[0] || {}).t;
+    assert.ok(Number.isFinite(fin), `${source} : essai ou ballon sorti`);
+    const dir = side => side === c.equipe ? c.sens : -c.sens, sauteur = ev('lancer')[0].sauteur;
+    // Loi 16 : hors du ballon porté, chacun reste derrière le pied le plus en arrière des liés de son équipe.
+    const membres = new Set([...lies(0), ...lies(1)].map(j => j.id));
+    // Un ballon porté n'existe que dans le champ de jeu : le contrôle s'arrête quand il entre dans l'en-but.
+    const ligne = c.sens > 0 ? 100 : 0;
+    for (let i = indice(c, forme.t + 1.5); i * c.pas < fin; i++) {
+      const t = i * c.pas;
+      if (c.joueurs.some(j => etatA(j, t) === 'maul' && (j.x[i] - ligne) * c.sens > -0.3)) break;
+      for (const side of [0, 1]) {
+        const l = c.joueurs.filter(j => j.side === side && etatA(j, t) === 'maul');
+        if (!l.length) continue;
+        const fond = Math.min(...l.map(j => j.x[i] * dir(side)));
+        for (const j of c.joueurs.filter(j => j.side === side && !membres.has(j.id) && etatA(j, t) === 'course'))
+          assert.ok(j.x[i] * dir(side) <= fond + 0.15, `${source} : ${j.id} (n° ${j.slot + 1}) hors-jeu au ballon porté de ${(j.x[i] * dir(side) - fond).toFixed(2)} m à ${t.toFixed(1)} s`);
+      }
+    }
+    // Loi 18 : arrières à 10 m jusqu'à la fin de l'alignement (pieds du ballon porté au-delà de la ligne de touche, ou ballon sorti).
+    const finTouche = Math.min(...[...ev('fin_touche'), ...ev('passe')].map(e => e.t), c.duree);
+    // Dix mètres, ou leur ligne de but si elle est plus près (loi 18).
+    const recul = side => Math.min(10, Math.abs((dir(side) > 0 ? 0 : 100) - entree.ouverture.x));
+    for (const j of c.joueurs.filter(j => j.slot > 8))
+      for (let i = 0; i * c.pas <= finTouche; i++) assert.ok((entree.ouverture.x - j.x[i]) * dir(j.side) >= recul(j.side) - 0.6, `${source} : ${j.id} à ${((entree.ouverture.x - j.x[i]) * dir(j.side)).toFixed(1)} m de la touche à ${(i * c.pas).toFixed(1)} s`);
+    if (entree.marqueur != null) {
+      essais++;
+      // Essai sur ballon porté : le marqueur du moteur aplatit au point d'essai, seul, à la fin de la poussée.
+      assert.equal(ev('aplati').length, 1); assert.equal(ev('aplati')[0].joueur, String(entree.marqueur));
+      assert.equal(porteurs.at(-1), String(entree.marqueur), `${source} : dernier porteur = marqueur`);
+      const n = c.ballon.x.length - 1;
+      assert.ok(Math.abs(c.ballon.x[n] - c.essai.x) < 0.01 && Math.abs(c.ballon.y[n] - c.essai.y) < 0.01 && c.ballon.h[n] <= 0.15, `${source} : ballon aplati au point d’essai`);
+      assert.ok(!ev('plaquage').length, `${source} : aucun plaquage`);
+      // Rien n'est annoncé avant l'aplati : le jalon de l'essai tombe à l'aplati.
+      assert.equal(c.jalons.at(-1)[1], entree.planEssai); assert.ok(Math.abs(c.jalons.at(-1)[0] - ev('aplati')[0].t) < 0.11);
+    } else {
+      arrets++;
+      // Arrêt : le ballon porté s'arrête au point du moteur, puis le ballon sort vers le demi.
+      const a = ev('maul_arrete')[0];
+      assert.ok(a && Math.abs(a.x - Math.max(3, Math.min(97, entree.ouverture.gain))) < 0.1, `${source} : arrêt au point du moteur (${a?.x} pour ${entree.ouverture.gain})`);
+      const s = ev('sortie_maul')[0], demi = c.joueurs.find(j => j.side === c.equipe && j.slot === 8);
+      assert.ok(s && s.joueur === demi.id && porteurs.at(-1) === demi.id, `${source} : ballon sorti vers le demi`);
+      assert.ok(!ev('aplati').length && c.ballon.x.every(x => c.sens > 0 ? x < 100 : x > 0), `${source} : jamais d’essai suggéré`);
+    }
+    assert.ok(sauteur, source);
+  }
+  assert.ok(essais >= 2 && arrets >= 1, `ballons portés : ${essais} essais, ${arrets} arrêts`);
+});
+
+test('Pénalités (loi 20) : botteur du moteur, ballon posé au point, adversaires à 10 m, tir réussi entre les poteaux ou manqué ; pénaltouche au point du moteur', () => {
+  let buts = 0, manques = 0, touches = 0;
+  for (const { source, entree, c } of COMPOSES3.filter(({ c }) => c.type.startsWith('penalite'))) {
+    const o = entree.ouverture, ev = type => c.evenements.filter(e => e.type === type);
+    const dir = side => side === c.equipe ? c.sens : -c.sens;
+    const porteurs = c.ballon.porteurs.filter(([, id]) => id).map(([, id]) => id);
+    assert.deepEqual([...new Set(porteurs)], [String(o.botteur)], `${source} : seul le botteur a le ballon`);
+    assert.ok(!ev('aplati').length && !ev('plaquage').length, `${source} : ni essai ni plaquage`);
+    const tir = ev('tir_au_but')[0] || ev('jeu_au_pied')[0];
+    assert.ok(tir && tir.joueur === String(o.botteur), `${source} : frappe du botteur`);
+    const i = Math.floor(tir.t / c.pas + 1e-6); // dernier échantillon avant la frappe
+    // Loi 20 : adversaires à 10 m au moins du point, vers leur ligne, au moment de la frappe.
+    for (const j of c.joueurs.filter(j => j.side !== c.equipe)) assert.ok((j.x[i] - o.x) * dir(c.equipe) >= 9.5, `${source} : ${j.id} à ${((j.x[i] - o.x) * dir(c.equipe)).toFixed(1)} m du point à la frappe`);
+    if (o.issue === 'but') {
+      // Ballon posé au point de la faute (placement), frappé de là.
+      assert.ok(ev('placement').length === 1 && ev('placement')[0].t < tir.t, `${source} : ballon posé`);
+      assert.ok(Math.hypot(c.ballon.x[i] - o.x, c.ballon.y[i] - Math.max(5, Math.min(65, o.y))) < 0.15 && c.ballon.h[i] < 0.4, `${source} : ballon au point à la frappe`);
+      const p = tir.passage, reussi = o.reussi;
+      assert.equal(tir.reussi, reussi, `${source} : issue du moteur`);
+      // Passage de la ligne de but : entre les poteaux et au-dessus de la barre, ou à côté.
+      const k = c.ballon.x.findIndex(x => (x - p.x) * c.sens >= 0);
+      assert.ok(k > 0, `${source} : ballon jusqu’à la ligne de but`);
+      const f = (p.x - c.ballon.x[k - 1]) / (c.ballon.x[k] - c.ballon.x[k - 1]), y = c.ballon.y[k - 1] + (c.ballon.y[k] - c.ballon.y[k - 1]) * f, h = c.ballon.h[k - 1] + (c.ballon.h[k] - c.ballon.h[k - 1]) * f;
+      if (reussi) { buts++; assert.ok(Math.abs(y - 35) < 2.8 && h > 3.2, `${source} : entre les poteaux (y ${y.toFixed(2)}, h ${h.toFixed(2)})`); }
+      else { manques++; assert.ok(Math.abs(y - 35) > 2.8 || h < 3, `${source} : à côté (y ${y.toFixed(2)}, h ${h.toFixed(2)})`); }
+      // Le score n'avance qu'au passage du ballon : jalon du tir à cet instant.
+      assert.equal(c.jalons.at(-1)[1], o.planTir); assert.ok(Math.abs(c.jalons.at(-1)[0] - p.t) <= 0.11, `${source} : jalon au passage (${c.jalons.at(-1)[0]} / ${p.t})`);
+    } else {
+      touches++;
+      const n = c.ballon.x.length - 1;
+      assert.ok(c.ballon.y[n] < 0 || c.ballon.y[n] > 70, `${source} : ballon sorti en touche`);
+      assert.ok(Math.abs(c.ballon.x[n] - o.cible.x) < 0.5, `${source} : sortie au point du moteur`);
+      assert.equal(c.jalons.at(-1)[1], o.planTir); assert.ok(Math.abs(c.jalons.at(-1)[0] - ev('touche')[0].t) < 0.11);
+    }
+  }
+  assert.ok(buts >= 2 && manques >= 1 && touches >= 2, `pénalités : ${buts} réussies, ${manques} manquées, ${touches} en touche`);
+});
+
 test('Entrées invalides refusées ; essai sur ballon porté ou mêlée non mis en scène', () => {
   const { entree } = COMPOSES[0];
   assert.throws(() => C.composer({ ...entree, type: 'melee' }), /type non pris en charge/);
@@ -296,7 +418,7 @@ test('Entrées invalides refusées ; essai sur ballon porté ou mêlée non mis 
   assert.throws(() => C.composer({ ...entree, essai: { x: 50, y: 35 } }), /point d’essai/);
   const tf = { cle: 'k', plans: [{ kind: 'setpiece-win', index: 0, scene: { players: entree.joueurs, ball: entree.ballon, possession: entree.possession } }, { kind: 'try', index: 1, scene: { ball: entree.essai } }] };
   const events = [{ scene: { kind: 'setpiece-win' } }, { scene: { kind: 'try', origin: 'maul', team: entree.equipe, actor: entree.marqueur } }];
-  assert.equal(C.entreeDepuisTempsFort(tf, events), null, 'essai sur ballon porté : pas de chorégraphie');
+  assert.equal(C.entreeDepuisTempsFort(tf, events), null, 'essai sur ballon porté sans la touche qui le forme : pas de chorégraphie');
   events[1].scene.origin = 'open';
   const e = C.entreeDepuisTempsFort(tf, events);
   assert.equal(e.type, 'essai_jeu_courant');
