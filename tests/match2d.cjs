@@ -17,7 +17,7 @@ for(const team of [0,1]){
  const {s,kicker}=JSON.parse(k),dk=team===0?1:-1,eq=s.players.filter(p=>p.side===team),re=s.players.filter(p=>p.side!==team);
  assert.ok(eq.every(p=>(p.x-50)*dk<0),'partenaires du botteur derrière le ballon');
  const botteur=eq.find(p=>p.id===kicker),dix=eq.find(p=>p.slot===9);
- assert.ok(Math.hypot(botteur.x-50,botteur.y-35)<4,'le botteur nommé par le moteur au ballon');assert.equal(dix.y,40,'le n° 10 prend la place du botteur dans la ligne');
+ assert.ok(Math.hypot(botteur.x-50,botteur.y-35)<4,'le botteur nommé par le moteur au ballon');assert.ok(Math.abs(dix.x-50)<=2&&Math.abs(dix.y-27)<1,'le n° 10 dans la ligne, à côté du botteur');
  const ligne=eq.filter(p=>Math.abs(p.x-50)<=2.5);assert.ok(ligne.length>=10&&Math.max(...ligne.map(p=>p.y))-Math.min(...ligne.map(p=>p.y))>=55,'chasseurs alignés sur la largeur');
  assert.ok(re.every(p=>(p.x-50)*dk>=10),'receveurs à 10 m au moins');
  const prof=slot=>(re.find(p=>p.slot===slot).x-50)*dk;

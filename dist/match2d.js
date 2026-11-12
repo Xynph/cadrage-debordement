@@ -5,8 +5,10 @@ const MATCH_FRAMES=new WeakMap();
 // Coup d'envoi et renvois au pied (loi 12) : places par poste (slot 0 = n° 1), sans tirage.
 // Botteur : [recul derrière le ballon, largeur]. Chasseurs alignés sur la largeur à hauteur du
 // botteur (ou légèrement en retrait), avants du côté où le ballon est envoyé, piliers et talonneur
-// en deuxième rideau, arrière en couverture. Le n° 10 (ou le botteur que le moteur désigne) au ballon.
-const KICKOFF_SPOTS=[[7,44],[7,50],[7,56],[2,45],[2,50],[1.5,40],[2,55],[2,60],[5,27],[2.5,32],[1.5,5],[1.5,21],[1.5,13],[1.5,66],[22,35]];
+// en deuxième rideau, arrière en couverture. Le n° 10 au ballon, ou le botteur que le moteur désigne.
+const KICKOFF_SPOTS=[[7,44],[7,50],[7,56],[2,45],[2,50],[1.5,40],[2,55],[2,60],[6,24],[2.5,32],[1.5,5],[1.5,21],[1.5,13],[1.5,66],[22,35]];
+// N° 10 qui ne botte pas (le moteur a désigné un autre botteur) : dans la ligne, à côté du botteur.
+const KICKOFF_TEN=[1.5,27];
 // Receveur : [distance devant le ballon, largeur] ; mêmes valeurs que l'équipe qui reçoit dans le
 // chorégraphe (avants en groupes entre 11 et 17 m, demis à 20 et 24 m, trois-quarts de 27 à 33 m,
 // arrière à 38 m). Valeurs choisies, non mesurées.
@@ -20,7 +22,7 @@ function matchScene(l){
  if(kind==='lineout'){ball.x=clamp(ball.x,5,95);ball.y=0;origin.x=clamp(origin.x,5,95)} // loi 18, dans la scène seulement : marque à 5 m au moins de la ligne de but ; ballon dans les mains du lanceur
  // Sortie en touche (ou avantage) suivie d'une touche : les avants sont déjà en marche vers leur place d'alignement.
  const lineoutNext=['touch','advantage'].includes(kind)?upcomingLineout(real,event):null;
- // Botteur désigné par le moteur au renvoi : il prend la place du n° 10 (et le n° 10 la sienne).
+ // Botteur désigné par le moteur au renvoi : il prend la place du n° 10, qui se range à côté de lui.
  const kickSlot=['kickoff','drop22','goalLine'].includes(kind)&&record?.actor!=null&&[0,1].includes(team)?on[team].indexOf(record.actor):-1;
  for(let side=0;side<2;side++)on[side].forEach((id,slot)=>{
   if(!id)return;const p=matchPlayer(real,side,id);if(!p)return;
@@ -33,7 +35,7 @@ function matchScene(l){
   if(kind==='lineout')({x,y}=lineoutSpot(side,slot,ball.x,team,y));
   if(['kickoff','drop22','goalLine'].includes(kind)){
    const dk=team===0?1:-1;
-   if(side===team){const at=slot===kickSlot?9:slot===9&&kickSlot>=0?kickSlot:slot,[back,width]=KICKOFF_SPOTS[at]||[2,35];x=ball.x-dk*back;y=width}
+   if(side===team){const [back,width]=slot===kickSlot?KICKOFF_SPOTS[9]:slot===9&&kickSlot>=0&&kickSlot!==9?KICKOFF_TEN:KICKOFF_SPOTS[slot]||[2,35];x=ball.x-dk*back;y=width}
    else{const [ahead,width]=KICKOFF_RECEIVE[slot]||[20,35];x=ball.x+dk*ahead;y=width}
   }
   if(record?.plans&&!['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)){
