@@ -504,7 +504,9 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 		draw_arc(centre, r * 0.9, PI * 1.05, PI * 1.6, 10, Color(1, 1, 1, 0.22), maxf(1.0, r * 0.08), true)
 		if cote == camp: draw_arc(centre, r + maxf(1.5, r * 0.2), 0.0, TAU, 24, Color(S.GOLD, 0.5), maxf(1.0, r * 0.12), true)
 		if cle == porteur:
-			draw_circle(centre, r * 1.9, Color(S.GOLD, 0.16))
+			# Halo du porteur : il respire doucement (fixe si les animations sont réduites).
+			var souffle := 0.0 if calme else sin(_temps * 4.0) * 0.12
+			draw_circle(centre, r * (1.9 + souffle), Color(S.GOLD, 0.16))
 			draw_arc(centre, r + maxf(2.5, r * 0.38), 0.0, TAU, 32, S.GOLD, maxf(2.0, r * 0.22), true)
 		var numero := str(poste + 1)
 		var largeur := police.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_numero).x

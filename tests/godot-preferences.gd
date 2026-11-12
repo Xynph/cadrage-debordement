@@ -108,7 +108,7 @@ func profile_cases() -> void:
 	check(not p.set_value("volume",10) and not p.last_error.is_empty(),"Écriture sans chargement refusée visiblement")
 	var folder := directory.path_join("valid")
 	check(p.load_profile(folder),"Dossier absolu neuf accepté")
-	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","match_entracte":"staff"},"Valeurs par défaut sans carrière")
+	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique"},"Valeurs par défaut sans carrière")
 	check(not FileAccess.file_exists(folder.path_join("interface.json")),"Lire un profil absent ne crée pas de fichier")
 	check(not p.load_profile("relative-folder") and not p.last_error.is_empty(),"Chemin relatif refusé visiblement")
 	check(p.load_profile(folder),"Retour au dossier absolu")

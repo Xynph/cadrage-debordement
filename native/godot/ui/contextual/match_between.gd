@@ -6,8 +6,8 @@ extends Control
 ## un tableau de bord inspiré des écrans « match overview » des jeux de management de football,
 ## adapté au rugby : domination minute par minute, chiffres clés comparés, fil, Mon XV (note,
 ## énergie, alertes), regard de l'adjoint et accès direct à la tactique et aux remplacements.
-## Trois mises en page au choix (Banc du staff, Vue mixte, Retransmission) partagent ces
-## composants. Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
+## Une seule mise en page (choix de Léo) : grand terrain habillé, frise dessous, colonne
+## repliable à droite. Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
 const S = preload("res://ui/contextual/skin.gd")
 const T = preload("res://theme.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
@@ -32,39 +32,32 @@ const CLES := ["possession", "occupation", "plaquages"]
 const RELAIS := ["franchissements", "metres", "penalites", "melees", "touches"]
 const FATIGUE := 55
 const EPUISE := 40
-## Trois mises en page au choix du joueur (demande de Léo, 12 novembre 2026), sur les mêmes
-## composants : « staff » (B, par défaut), « mix » (C) et « tele » (A, retransmission).
-const DISPOSITIONS := ["staff", "mix", "tele"]
-const LIBELLES_DISPOSITION := {"staff": "Banc du staff", "mix": "Vue mixte", "tele": "Retransmission"}
-
-## Mise en page choisie : elle vaut pour les matchs suivants (réglage `match_entracte`).
-signal disposition_choisie(id: String)
-
-var disposition := "staff"
 var terrain: Terrain2D
 var etat: Label
-var niveau: OptionButton
+var parametres: Button
+var panneau_parametres: PopupPanel
+var groupe_horloge: ButtonGroup
+var groupe_niveaux: ButtonGroup
+var grille_niveaux: GridContainer
+var bandeau: PanelContainer
 var fil: VBoxContainer
 var chiffres: VBoxContainer
 var xv: GridContainer
 var adjoint: VBoxContainer
-var vitesse: OptionButton
 var tactique: Button
 var banc: Button
 var plus: MenuButton
-var mise_en_page: OptionButton
 ## Horloge de l'entracte choisie (reprise de la régie à l'ouverture).
 var horloge := "normale"
 const HORLOGES_IDS := ["lente", "normale", "rapide", "eclair"]
+const HORLOGES_COURTS := ["Posée", "Normale", "Rapide", "Éclair"]
 var adjoint_cadre: Control
 var domination: Domination
 var arret: PanelContainer
 var arret_titre: Label
 var arret_texte: Label
-## Vue mixte : colonne de droite repliée ; Retransmission : tiroir Mon XV ouvert.
+## Colonne de droite repliée (le terrain prend la place).
 var colonne_repliee := false
-var tiroir_xv: PanelContainer
-var tiroir_xv_ouvert := false
 var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
@@ -74,6 +67,13 @@ var passer: Button
 var _entracte := ["", false]
 var _dernier: Array = []
 var _lignes: Array = []
+var _dernier_fait := -1
+var _rangs: Array = []
+var details: VBoxContainer
+var theme_stats := "Attaque"
+## Stats détaillées par thème (tout est borné à ce qui a été montré, comme les chiffres clés).
+const THEMES := {"Attaque": ["metres", "franchissements", "temps_de_jeu", "pieds"], "Défense": ["plaquages", "plaquages_manques", "recuperations"],
+	"Conquête": ["melees", "touches"], "Discipline": ["penalites", "en_avant", "cartons"]}
 ## Alertes de Mon XV (fatigue, blessure, carton) : pour l'adjoint et les tests.
 var alertes_xv: Array[Dictionary] = []
 
@@ -230,6 +230,18 @@ class Barre extends Control:
 		draw_circle(r.position + Vector2(rayon, rayon), rayon, teinte)
 		draw_circle(Vector2(r.end.x - rayon, r.position.y + rayon), rayon, teinte)
 
+## Engrenage du bouton Paramètres.
+class Engrenage extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.5
+		var teinte := Color("f2ecdc")
+		for n in 8:
+			var a := TAU * n / 8.0
+			draw_line(c + Vector2.from_angle(a) * r * 0.55, c + Vector2.from_angle(a) * r * 0.95, teinte, maxf(2.0, r * 0.28))
+		draw_circle(c, r * 0.62, teinte)
+		draw_circle(c, r * 0.28, Color("18231f"))
+
 ## Énergie d'un joueur (condition du moteur, 0 à 100) : anneau autour du numéro, vert, jaune à
 ## surveiller (moins de 70), couleur d'alerte sous le seuil de fatigue de l'adjoint (55).
 class Energie extends Control:
@@ -293,20 +305,6 @@ func _habiller(bouton: Control, principal: bool = false) -> void:
 	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		bouton.add_theme_color_override(couleur, FOND if principal else (IVOIRE if couleur == "font_color" else OR))
 
-func _choix(nom: String, libelles: Array, largeur: float, infobulle: String) -> OptionButton:
-	var choix := OptionButton.new()
-	choix.name = nom
-	choix.custom_minimum_size = Vector2(px(largeur), px(64))
-	choix.add_theme_font_size_override("font_size", px(26))
-	choix.add_theme_font_override("font", TITRES)
-	choix.get_popup().add_theme_font_size_override("font_size", px(26))
-	choix.tooltip_text = infobulle
-	choix.set_meta("contextual_enabled", true)
-	choix.clip_text = true
-	for libelle: String in libelles: choix.add_item(libelle)
-	_habiller(choix)
-	return choix
-
 ## Charte de l'écran (rugby-legacy-27-couleurs.ase) : fond sapin presque noir, panneaux à peine
 ## plus clairs et sans bordure, ivoire pour l'information, or rare, vert favorable.
 const FOND := Color("0b1012")
@@ -326,6 +324,10 @@ func _panneau(parent: Node, marge: int, fond: Color = Color(PANNEAU, 0.94)) -> V
 	var coque := PanelContainer.new()
 	var style := S.G.T.box(fond, maxi(6, px(14)))
 	style.set_border_width_all(0)
+	# Profondeur : ombre douce sous chaque panneau, posé sur le fond sapin.
+	style.shadow_color = Color(0, 0, 0, 0.32)
+	style.shadow_size = maxi(3, px(18))
+	style.shadow_offset = Vector2(0, maxf(1.0, px(5)))
 	coque.add_theme_stylebox_override("panel", style)
 	parent.add_child(coque)
 	var bord := S.G.margin(marge)
@@ -348,8 +350,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	S.full(self)
 	_densite = densite_pour(get_viewport_rect().size)
-	var preferences: Variant = _preferences()
-	if preferences != null and str(preferences.data.get("match_entracte", "")) in DISPOSITIONS: disposition = str(preferences.data.match_entracte)
 	_construire()
 	resized.connect(_a_l_echelle)
 	visibility_changed.connect(_apparaitre)
@@ -363,41 +363,27 @@ func _apparaitre() -> void:
 	modulate.a = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
-func _preferences() -> Variant:
+func _animations_reduites() -> bool:
 	var noeud: Node = get_parent()
 	while noeud != null:
 		var preferences: Variant = noeud.get("user_preferences")
-		if preferences != null and preferences.get("data") is Dictionary: return preferences
+		if preferences != null and preferences.get("data") is Dictionary: return bool(preferences.data.get("reduced_motion", false))
 		noeud = noeud.get_parent()
-	return null
-
-func _animations_reduites() -> bool:
-	var preferences: Variant = _preferences()
-	return preferences != null and bool(preferences.data.get("reduced_motion", false))
+	return false
 
 ## La fenêtre a changé de taille : tout l'écran est reconstruit à la nouvelle échelle.
 func _a_l_echelle() -> void:
 	var densite := densite_pour(get_viewport_rect().size)
 	if is_equal_approx(densite, _densite): return
 	_densite = densite
-	_reconstruire()
-
-func _reconstruire() -> void:
 	_construire()
 	if not _dernier.is_empty(): update_frame.callv(_dernier)
 
-## Mise en page choisie par le joueur (Banc du staff, Mix, Retransmission) : enregistrée dans
-## ses réglages, elle vaut pour les matchs suivants.
-func choisir_disposition(id: String) -> void:
-	if not id in DISPOSITIONS or id == disposition: return
-	disposition = id
-	var preferences: Variant = _preferences()
-	if preferences != null and preferences.data.get("match_entracte") != id and preferences.has_method("set_value"): preferences.set_value("match_entracte", id)
-	disposition_choisie.emit(id)
-	_reconstruire()
-
+## Une seule mise en page (choix de Léo, 12 novembre 2026) : grand terrain habillé comme une
+## retransmission (dernier fait en bandeau), frise du match dessous, colonne étroite repliable
+## à droite (Mon XV avec les noms, chiffres clés et stats par thème, Gabi).
 func _construire() -> void:
-	# Le terrain garde sa lecture (places, file des faits) d'une échelle et d'une mise en page à l'autre.
+	# Le terrain garde sa lecture (places, file des faits) d'une échelle à l'autre.
 	var ancien := terrain
 	if ancien != null and ancien.get_parent() != null: ancien.get_parent().remove_child(ancien)
 	for enfant in get_children():
@@ -410,17 +396,13 @@ func _construire() -> void:
 	terrain.custom_minimum_size = Vector2(320, 180)
 	_commandes()
 	_composants()
-	match disposition:
-		"tele": _page_tele()
-		"mix": _page_mix()
-		_: _page_staff()
+	_page()
 	_arret_decision()
 	if not _arret.is_empty(): montrer_arret(_arret)
 	if not terrain.fait_joue.is_connected(_fait_joue): terrain.fait_joue.connect(_fait_joue)
 
-## Commandes de l'écran, les mêmes dans les trois mises en page : où est le ballon, l'entracte
-## et « Passer », Tactique, Banc, vitesse de l'horloge, niveau des temps forts, mise en page et
-## le reste (statistiques, journal, délégation) dans un menu.
+## Commandes : où est le ballon, l'entracte et « Passer », Tactique, Banc, Paramètres (vitesse
+## de l'horloge, temps forts montrés) et Plus (statistiques, journal, délégation).
 func _commandes() -> void:
 	etat = _texte("", 34, IVOIRE, false, true)
 	etat.name = "MatchBetweenState"
@@ -436,11 +418,6 @@ func _commandes() -> void:
 	passer.tooltip_text = "Aller tout de suite au prochain temps fort."
 	passer.set_meta("contextual_enabled", true)
 	montrer_entracte(_entracte[0], _entracte[1], true)
-	vitesse = _choix("MatchBetweenSpeed", ["Horloge posée", "Horloge normale", "Horloge rapide", "Horloge éclair"], 250, "Vitesse de l’horloge entre deux temps forts. Un temps fort se joue toujours à vitesse réelle.")
-	vitesse.select(maxi(0, HORLOGES_IDS.find(horloge)))
-	vitesse.item_selected.connect(func(index: int):
-		horloge = HORLOGES_IDS[index]
-		horloge_choisie.emit(horloge))
 	tactique = _bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique"))
 	tactique.name = "MatchBetweenTactics"
 	tactique.tooltip_text = "Consignes d’attaque et de défense (le match se met en pause)."
@@ -449,12 +426,6 @@ func _commandes() -> void:
 	banc.name = "MatchBetweenBench"
 	banc.tooltip_text = "Ouvrir le banc et faire un remplacement (le match se met en pause)."
 	banc.set_meta("contextual_enabled", true)
-	niveau = _choix("MatchHighlightLevel", [], 300, "Temps forts montrés : des plus choisis au match complet.")
-	niveau.item_selected.connect(func(index: int): if index >= 0 and index < _niveaux.size(): niveau_choisi.emit(str(_niveaux[index].get("id", ""))))
-	for item: Dictionary in _niveaux: niveau.add_item(str(item.get("label", "")))
-	mise_en_page = _choix("MatchBetweenLayout", DISPOSITIONS.map(func(id: String): return str(LIBELLES_DISPOSITION[id])), 250, "Mise en page de l’écran entre deux temps forts (enregistrée pour les matchs suivants).")
-	mise_en_page.select(DISPOSITIONS.find(disposition))
-	mise_en_page.item_selected.connect(func(index: int): choisir_disposition.call_deferred(DISPOSITIONS[index]))
 	plus = MenuButton.new()
 	plus.name = "MatchBetweenMore"
 	plus.text = "PLUS  ▾"
@@ -462,21 +433,112 @@ func _commandes() -> void:
 	plus.custom_minimum_size = Vector2(px(130), px(64))
 	plus.add_theme_font_size_override("font_size", px(28))
 	plus.add_theme_font_override("font", TITRES)
-	plus.get_popup().add_theme_font_size_override("font_size", px(26))
-	for libelle: String in ["Statistiques", "Journal du match", "Confier la fin à l’adjoint"]: plus.get_popup().add_item(libelle)
-	plus.get_popup().id_pressed.connect(func(id: int):
+	plus.tooltip_text = "Statistiques complètes, journal du match, confier la fin à l’adjoint."
+	plus.set_meta("contextual_enabled", true)
+	_habiller(plus)
+	var menu := plus.get_popup()
+	menu.add_theme_font_size_override("font_size", px(26))
+	for libelle: String in ["Statistiques", "Journal du match", "Confier la fin à l’adjoint"]: menu.add_item(libelle)
+	menu.id_pressed.connect(func(id: int):
 		if id == 0: tiroir_demande.emit("Stats")
 		elif id == 1: tiroir_demande.emit("Journal")
 		else: delegation_demandee.emit())
-	plus.set_meta("contextual_enabled", true)
-	_habiller(plus)
+	# Paramètres (engrenage) : vitesse de l'horloge et temps forts montrés, dans un petit panneau.
+	parametres = _bouton("PARAMÈTRES", func(): _ouvrir_parametres())
+	parametres.name = "MatchBetweenSettings"
+	parametres.tooltip_text = "Vitesse de l’horloge entre deux temps forts et temps forts montrés."
+	parametres.set_meta("contextual_enabled", true)
+	var engrenage := Engrenage.new()
+	engrenage.custom_minimum_size = Vector2(px(30), px(30))
+	engrenage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parametres.add_child(engrenage)
+	parametres.add_theme_constant_override("h_separation", 0)
+	(parametres.get_theme_stylebox("normal") as StyleBox).content_margin_left = px(58)
+	for etat_bouton in ["hover", "pressed", "focus"]:
+		var style: StyleBox = parametres.get_theme_stylebox(etat_bouton)
+		if style != null: style.content_margin_left = px(58)
+	parametres.resized.connect(func(): engrenage.position = Vector2(px(20), (parametres.size.y - engrenage.size.y) * 0.5))
+	panneau_parametres = PopupPanel.new()
+	panneau_parametres.name = "MatchBetweenSettingsPanel"
+	panneau_parametres.add_theme_stylebox_override("panel", S.G.T.box(PANNEAU, maxi(6, px(14)), Color(OR, 0.4)))
+	parametres.add_child(panneau_parametres)
+	var marge := S.G.margin(px(22))
+	panneau_parametres.add_child(marge)
+	var colonne := S.G.v(px(14))
+	marge.add_child(colonne)
+	colonne.add_child(_texte("Vitesse de l’horloge", 26, FAIBLE))
+	var rangee_horloge := S.G.h(px(8))
+	colonne.add_child(rangee_horloge)
+	groupe_horloge = ButtonGroup.new()
+	for n in HORLOGES_IDS.size():
+		var choix := _segment(HORLOGES_COURTS[n], groupe_horloge, HORLOGES_IDS[n] == horloge)
+		choix.name = "MatchBetweenSpeed%d" % n
+		var id: String = HORLOGES_IDS[n]
+		choix.pressed.connect(func():
+			horloge = id
+			horloge_choisie.emit(id))
+		rangee_horloge.add_child(choix)
+	colonne.add_child(_texte("Temps forts montrés", 26, FAIBLE))
+	grille_niveaux = GridContainer.new()
+	grille_niveaux.name = "MatchHighlightLevel"
+	grille_niveaux.columns = 3
+	grille_niveaux.add_theme_constant_override("h_separation", px(8))
+	grille_niveaux.add_theme_constant_override("v_separation", px(8))
+	colonne.add_child(grille_niveaux)
+	_remplir_niveaux()
 
-## Composants communs : frise du match, chiffres clés, fil, Mon XV, carte de Gabi.
+## Bouton d'un choix unique (segment) : or quand il est choisi.
+func _segment(texte: String, groupe: ButtonGroup, choisi: bool) -> Button:
+	var bouton := Button.new()
+	bouton.text = texte
+	bouton.toggle_mode = true
+	bouton.button_group = groupe
+	bouton.button_pressed = choisi
+	bouton.custom_minimum_size = Vector2(px(170), px(56))
+	bouton.add_theme_font_size_override("font_size", px(26))
+	bouton.add_theme_font_override("font", TITRES)
+	bouton.set_meta("contextual_enabled", true)
+	_habiller(bouton)
+	var choisi_style := S.G.T.box(Color(OR, 0.18), maxi(4, px(10)), OR)
+	choisi_style.set_border_width_all(maxi(1, px(2)))
+	bouton.add_theme_stylebox_override("pressed", choisi_style)
+	bouton.add_theme_color_override("font_pressed_color", OR)
+	return bouton
+
+func _ouvrir_parametres() -> void:
+	var cadre := parametres.get_global_rect()
+	panneau_parametres.reset_size()
+	var taille := panneau_parametres.get_contents_minimum_size()
+	panneau_parametres.popup(Rect2i(Vector2i(int(cadre.end.x - taille.x), int(cadre.end.y + px(8))), Vector2i(taille)))
+
+func _remplir_niveaux(choisi: String = "") -> void:
+	if not is_instance_valid(grille_niveaux): return
+	S.clear(grille_niveaux)
+	groupe_niveaux = ButtonGroup.new()
+	for n in _niveaux.size():
+		var id := str(_niveaux[n].get("id", ""))
+		var choix := _segment(str(_niveaux[n].get("label", "")), groupe_niveaux, id == choisi)
+		choix.custom_minimum_size.x = px(260)
+		choix.pressed.connect(func(): niveau_choisi.emit(id))
+		grille_niveaux.add_child(choix)
+
+func _libelle_niveau(id: Variant) -> String:
+	for item: Dictionary in _niveaux:
+		if item.get("id") == id: return str(item.get("label", ""))
+	return ""
+
+## Libellé du niveau de temps forts choisi dans les paramètres (vide s'il n'y en a pas).
+func niveau_libelle() -> String:
+	if groupe_niveaux == null: return ""
+	var choisi := groupe_niveaux.get_pressed_button()
+	return choisi.text if choisi != null else ""
+
+## Composants : frise du match, chiffres clés, fil, Mon XV, carte de Gabi.
 func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(150))
+	domination.custom_minimum_size = Vector2(0, px(180))
 	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements), et les essais, tirs réussis et cartons déjà vus."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
@@ -486,123 +548,66 @@ func _composants() -> void:
 	fil.name = "MatchBetweenFeed"
 	xv = GridContainer.new()
 	xv.name = "MatchBetweenSquad"
-	xv.columns = 5
-	xv.add_theme_constant_override("h_separation", px(4))
-	xv.add_theme_constant_override("v_separation", px(4))
+	xv.columns = 2
+	xv.add_theme_constant_override("h_separation", px(14))
+	xv.add_theme_constant_override("v_separation", px(2))
 	S.G.fill(xv)
 	adjoint = S.G.v(px(10))
 	adjoint.name = "MatchBetweenAdvice"
 
-## Fil défilant (Banc du staff) : les derniers faits, le plus récent en haut.
-func _fil_defilant(parent: Control) -> void:
-	var defilant := ScrollContainer.new()
-	defilant.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	S.G.fill(defilant, true)
-	parent.add_child(defilant)
-	S.G.fill(fil)
-	defilant.add_child(fil)
-
-## Barre de commandes sur une ligne.
-func _barre(parent: Control, avec_reglages: bool = true) -> HBoxContainer:
-	var barre := S.G.h(px(12))
-	barre.alignment = BoxContainer.ALIGNMENT_END
-	parent.add_child(barre)
-	barre.add_child(etat)
-	for noeud: Control in [entracte, passer, tactique, banc]: barre.add_child(noeud)
-	if avec_reglages:
-		for noeud: Control in [vitesse, niveau, mise_en_page]: barre.add_child(noeud)
-	barre.add_child(plus)
-	return barre
-
 ## Carte de Gabi (portrait, une phrase, l'action proposée) dans un panneau en relief.
 func _carte_gabi(parent: Control) -> void:
-	var cadre := _panneau(parent, px(18), Color(RELIEF, 0.96))
+	var cadre := _panneau(parent, px(18), Color(RELIEF, 0.97))
 	adjoint_cadre = cadre.get_parent().get_parent()
 	cadre.add_child(adjoint)
 
-## B « Banc du staff » : le terrain et, dessous, la frise du match et le fil ; à droite les
-## chiffres clés, Mon XV en anneaux d'énergie et Gabi.
-func _page_staff() -> void:
-	var page := S.G.v(px(16))
-	S.full(page)
-	add_child(page)
-	_barre(page)
-	var corps := S.G.h(px(20))
-	S.G.fill(corps, true)
-	page.add_child(corps)
-	var gauche := S.G.v(px(16))
-	S.G.fill(gauche, true, 2.3)
-	corps.add_child(gauche)
-	var cadre_terrain := _panneau(gauche, px(8))
-	S.G.fill(cadre_terrain.get_parent().get_parent(), true, 1.0)
-	S.G.fill(terrain, true)
-	cadre_terrain.add_child(terrain)
-	var bas := S.G.h(px(16))
-	bas.custom_minimum_size.y = px(280)
-	gauche.add_child(bas)
-	var cadre_frise := _panneau(bas, px(14))
-	S.G.fill(cadre_frise.get_parent().get_parent(), true, 1.6)
-	cadre_frise.add_child(domination)
-	var cadre_fil := _panneau(bas, px(14))
-	S.G.fill(cadre_fil.get_parent().get_parent(), true, 1.0)
-	_fil_defilant(cadre_fil)
-	var droite := S.G.v(px(14))
-	droite.custom_minimum_size.x = px(700)
-	S.G.fill(droite, true, 1.0)
-	corps.add_child(droite)
-	var cadre_chiffres := _panneau(droite, px(18))
-	cadre_chiffres.add_child(chiffres)
-	var cadre_xv := _panneau(droite, px(18))
-	cadre_xv.add_child(_titre("Mon XV", "énergie · note"))
-	cadre_xv.add_child(xv)
-	_carte_gabi(droite)
-	S.G.fill(adjoint_cadre, true)
-
-## Terrain avec surimpressions (Mix, Retransmission) : le dernier fait en bandeau en haut à
-## gauche, comme un habillage de retransmission.
-func _scene(parent: Control) -> Control:
-	var scene := Control.new()
-	scene.name = "MatchBetweenScene"
-	scene.clip_contents = true
-	S.G.fill(scene, true)
-	parent.add_child(scene)
-	S.full(terrain)
-	scene.add_child(terrain)
-	var bandeau := PanelContainer.new()
-	bandeau.name = "MatchBetweenBanner"
-	var style := S.G.T.box(Color(FOND, 0.84), maxi(4, px(8)))
-	style.content_margin_left = px(16)
-	style.content_margin_right = px(16)
-	style.content_margin_top = px(8)
-	style.content_margin_bottom = px(8)
-	bandeau.add_theme_stylebox_override("panel", style)
-	bandeau.position = Vector2(px(20), px(18))
-	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scene.add_child(bandeau)
-	bandeau.add_child(fil)
-	scene.resized.connect(func(): bandeau.custom_minimum_size.x = 0; bandeau.size = Vector2.ZERO; fil.custom_minimum_size.x = minf(px(1100), scene.size.x * 0.62))
-	return scene
-
-## C « Mix » : terrain quasi plein écran avec habillage, frise du match dessous, colonne étroite
-## repliable à droite (commandes, Mon XV, chiffres clés, Gabi).
-func _page_mix() -> void:
+func _page() -> void:
 	var page := S.G.h(px(16))
 	S.full(page)
 	add_child(page)
 	var gauche := S.G.v(px(12))
 	S.G.fill(gauche, true, 1.0)
 	page.add_child(gauche)
-	_barre(gauche, false)
-	var scene := _scene(gauche)
-	scene.custom_minimum_size.y = px(400)
+	var barre := S.G.h(px(12))
+	barre.alignment = BoxContainer.ALIGNMENT_END
+	gauche.add_child(barre)
+	for noeud: Control in [etat, entracte, passer, tactique, banc, parametres, plus]: barre.add_child(noeud)
+	# Terrain habillé : le dernier fait en bandeau, en haut à gauche, comme à la télévision.
+	var scene := Control.new()
+	scene.name = "MatchBetweenScene"
+	scene.clip_contents = true
+	S.G.fill(scene, true)
+	scene.custom_minimum_size.y = px(420)
+	gauche.add_child(scene)
+	S.full(terrain)
+	scene.add_child(terrain)
+	bandeau = PanelContainer.new()
+	bandeau.name = "MatchBetweenBanner"
+	var style := S.G.T.box(Color(FOND, 0.88), maxi(4, px(8)))
+	style.border_width_left = maxi(2, px(6))
+	style.border_color = OR
+	style.content_margin_left = px(14)
+	style.content_margin_right = px(18)
+	style.content_margin_top = px(8)
+	style.content_margin_bottom = px(8)
+	style.shadow_color = Color(0, 0, 0, 0.45)
+	style.shadow_size = maxi(3, px(14))
+	style.shadow_offset = Vector2(0, maxf(1.0, px(4)))
+	bandeau.add_theme_stylebox_override("panel", style)
+	bandeau.position = Vector2(px(24), px(20))
+	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scene.add_child(bandeau)
+	bandeau.add_child(fil)
+	scene.resized.connect(func():
+		fil.custom_minimum_size.x = minf(px(1150), scene.size.x * 0.66)
+		bandeau.size = Vector2.ZERO)
 	var cadre_frise := _panneau(gauche, px(12))
 	cadre_frise.add_child(domination)
-	domination.custom_minimum_size.y = px(170)
 	domination.size_flags_vertical = Control.SIZE_FILL
 	# Languette : replie ou déplie la colonne de droite (le terrain prend la place).
 	var languette := Button.new()
 	languette.name = "MatchBetweenFold"
-	languette.text = "›" if not colonne_repliee else "‹"
+	languette.text = "‹" if colonne_repliee else "›"
 	languette.custom_minimum_size = Vector2(px(44), px(120))
 	languette.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	languette.add_theme_font_size_override("font_size", px(34))
@@ -612,72 +617,23 @@ func _page_mix() -> void:
 	page.add_child(languette)
 	var droite := S.G.v(px(14))
 	droite.name = "MatchBetweenColumn"
-	droite.custom_minimum_size.x = px(560)
+	droite.custom_minimum_size.x = px(640)
 	droite.visible = not colonne_repliee
 	page.add_child(droite)
 	languette.pressed.connect(func():
 		colonne_repliee = not colonne_repliee
 		languette.text = "‹" if colonne_repliee else "›"
 		droite.visible = not colonne_repliee)
-	# Réglages de l'entracte en tête de colonne : la barre du terrain garde l'essentiel.
-	for noeud: Control in [mise_en_page, niveau, vitesse]:
-		noeud.custom_minimum_size.x = 0
-		droite.add_child(noeud)
 	var cadre_xv := _panneau(droite, px(16))
-	cadre_xv.add_child(_titre("Mon XV", "énergie"))
+	cadre_xv.add_child(_titre("Mon XV", "énergie · note"))
 	cadre_xv.add_child(xv)
 	var cadre_chiffres := _panneau(droite, px(16))
 	cadre_chiffres.add_child(chiffres)
+	details = S.G.v(px(2))
+	details.name = "MatchBetweenDetails"
+	cadre_chiffres.add_child(details)
 	_carte_gabi(droite)
 	S.G.fill(adjoint_cadre, true)
-
-## A « Retransmission » : le terrain occupe l'écran ; en bas, un tiers translucide porte la
-## frise du match, les chiffres clés et Gabi ; Mon XV s'ouvre en tiroir par-dessus le terrain.
-func _page_tele() -> void:
-	var page := S.G.v(px(12))
-	S.full(page)
-	add_child(page)
-	var barre := _barre(page)
-	var bouton_xv := _bouton("MON XV", func(): _basculer_tiroir_xv())
-	bouton_xv.name = "MatchBetweenSquadToggle"
-	bouton_xv.tooltip_text = "Énergie et notes de vos quinze joueurs."
-	bouton_xv.set_meta("contextual_enabled", true)
-	barre.add_child(bouton_xv)
-	barre.move_child(bouton_xv, banc.get_index() + 1)
-	var scene := _scene(page)
-	scene.custom_minimum_size.y = px(420)
-	# Tiers bas, sous le terrain : frise, chiffres clés, Gabi.
-	var bas := S.G.h(px(18))
-	bas.name = "MatchBetweenLowerThird"
-	bas.custom_minimum_size.y = px(250)
-	page.add_child(bas)
-	var cadre_frise := _panneau(bas, px(12))
-	S.G.fill(cadre_frise.get_parent().get_parent(), true, 1.3)
-	cadre_frise.add_child(domination)
-	var cadre_chiffres := _panneau(bas, px(16))
-	S.G.fill(cadre_chiffres.get_parent().get_parent(), true, 1.15)
-	cadre_chiffres.add_child(chiffres)
-	_carte_gabi(bas)
-	S.G.fill(adjoint_cadre, true, 1.2)
-	# Tiroir Mon XV, ancré à droite du terrain.
-	tiroir_xv = PanelContainer.new()
-	tiroir_xv.name = "MatchBetweenSquadDrawer"
-	tiroir_xv.add_theme_stylebox_override("panel", S.G.T.box(Color(PANNEAU, 0.95), maxi(6, px(14))))
-	tiroir_xv.visible = tiroir_xv_ouvert
-	scene.add_child(tiroir_xv)
-	var marge := S.G.margin(px(18))
-	tiroir_xv.add_child(marge)
-	var colonne := S.G.v(px(10))
-	marge.add_child(colonne)
-	colonne.add_child(_titre("Mon XV", "énergie · note"))
-	colonne.add_child(xv)
-	scene.resized.connect(func():
-		tiroir_xv.size = Vector2(px(600), 0)
-		tiroir_xv.position = Vector2(scene.size.x - tiroir_xv.get_combined_minimum_size().x - px(20), px(18)))
-
-func _basculer_tiroir_xv() -> void:
-	tiroir_xv_ouvert = not tiroir_xv_ouvert
-	if is_instance_valid(tiroir_xv): tiroir_xv.visible = tiroir_xv_ouvert
 
 ## Arrêt-décision : le match attend le manager.
 func _arret_decision() -> void:
@@ -732,11 +688,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_niveaux = direct.get("niveaux", [])
-	if niveau.item_count != _niveaux.size():
-		niveau.clear()
-		for item: Dictionary in _niveaux: niveau.add_item(str(item.get("label", "")))
-	for index in _niveaux.size():
-		if _niveaux[index].get("id") == direct.get("niveau") and niveau.selected != index: niveau.select(index)
+	if niveau_libelle() != _libelle_niveau(direct.get("niveau")) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(str(direct.get("niveau", "")))
 	var dom: Dictionary = direct.get("domination", {}) if direct.get("domination") is Dictionary else {}
 	domination.minutes = dom.get("minutes", [])
 	domination.mi_temps = dom.get("miTemps")
@@ -748,7 +700,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []),
-		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, disposition])
+		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs])
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
@@ -784,8 +736,7 @@ func score_differe() -> Array:
 	var marque: Variant = terrain.joue.get("score")
 	return marque if marque is Array and (marque as Array).size() == 2 else []
 
-## Fil : une ligne n'y entre qu'une fois son fait joué sur le terrain. Banc du staff : les
-## derniers faits, le plus récent en haut ; Mix et Retransmission : le dernier, en bandeau.
+## Fil : une ligne n'y entre qu'une fois son fait joué sur le terrain ; le dernier, en bandeau.
 func _remplir_fil() -> void:
 	if not is_instance_valid(fil): return
 	S.clear(fil)
@@ -795,13 +746,18 @@ func _remplir_fil() -> void:
 		var i := int(entree.get("i", -1))
 		if prochain >= 0 and i >= prochain: continue
 		visibles.append(entree)
-	var bandeau := disposition != "staff"
-	var nombre := 1 if bandeau else 12
-	for index in range(visibles.size() - 1, maxi(-1, visibles.size() - 1 - nombre), -1):
-		fil.add_child(_ligne_fil(visibles[index], index == visibles.size() - 1, bandeau))
-	if visibles.is_empty(): fil.add_child(_texte("Le coup d’envoi approche.", 26, DOUX, not bandeau))
+	# Le dernier fait joué, en bandeau ; il apparaît en fondu (sauf animations réduites).
+	if not visibles.is_empty():
+		var ligne := _ligne_fil(visibles[-1], true, true)
+		fil.add_child(ligne)
+		var i := int(visibles[-1].get("i", -1))
+		if i != _dernier_fait and not _animations_reduites() and is_inside_tree():
+			ligne.modulate.a = 0.0
+			create_tween().tween_property(ligne, "modulate:a", 1.0, 0.3).set_trans(Tween.TRANS_SINE)
+		_dernier_fait = i
+	else: fil.add_child(_texte("Le coup d’envoi approche.", 26, DOUX))
 
-func _ligne_fil(entree: Dictionary, dernier: bool, bandeau: bool) -> Control:
+func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	var kind := str(entree.get("kind", ""))
 	var essai := kind == "try"
 	var points := kind in ["try", "goal", "transformation"]
@@ -809,14 +765,14 @@ func _ligne_fil(entree: Dictionary, dernier: bool, bandeau: bool) -> Control:
 	var teinte: Color = terrain.couleurs[equipe] if equipe in [0, 1] else FAIBLE
 	# Minute en or, pictogramme du fait aux couleurs du club, texte ; les essais en ivoire gras.
 	var ligne := PanelContainer.new()
-	var fond := S.G.T.box(Color(OR, 0.12) if essai and not bandeau else Color(0, 0, 0, 0), maxi(4, px(10)))
+	var fond := S.G.T.box(Color(OR, 0.12) if essai and not en_bandeau else Color(0, 0, 0, 0), maxi(4, px(10)))
 	fond.content_margin_left = px(6)
 	fond.content_margin_right = px(6)
 	fond.content_margin_top = px(4)
 	fond.content_margin_bottom = px(4)
 	ligne.add_theme_stylebox_override("panel", fond)
 	ligne.set_meta("i", int(entree.get("i", -1)))
-	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE if bandeau else Control.MOUSE_FILTER_PASS
+	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE if en_bandeau else Control.MOUSE_FILTER_PASS
 	var rang := S.G.h(px(14))
 	ligne.add_child(rang)
 	var heure := _texte(str(entree.get("horloge", "")), 30, OR if dernier or points else FAIBLE, false, true)
@@ -830,10 +786,10 @@ func _ligne_fil(entree: Dictionary, dernier: bool, bandeau: bool) -> Control:
 	icone.custom_minimum_size = Vector2(px(38), px(38))
 	icone.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	rang.add_child(icone)
-	var texte := _texte(str(entree.get("texte", "")), 28 if bandeau or essai else 26, IVOIRE if dernier or points else DOUX, not bandeau, essai)
-	texte.max_lines_visible = 1 if bandeau else (3 if dernier or essai else 2)
+	var texte := _texte(str(entree.get("texte", "")), 28 if en_bandeau or essai else 26, IVOIRE if dernier or points else DOUX, not en_bandeau, essai)
+	texte.max_lines_visible = 1 if en_bandeau else (3 if dernier or essai else 2)
 	texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	if bandeau: texte.clip_text = true
+	if en_bandeau: texte.clip_text = true
 	S.G.fill(texte)
 	rang.add_child(texte)
 	return ligne
@@ -887,6 +843,56 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	for cle: String in CLES:
 		if par_cle.has(cle) and par_cle[cle].get("vide", false) and choisis.size() < CLES.size(): choisis.append(par_cle[cle])
 	for rang: Dictionary in choisis: _ligne_chiffre(chiffres, rang)
+	_rangs = rangs
+	_remplir_details()
+
+## Stats détaillées par thème (onglets compacts) : barres fines bicolores, chiffres lisibles.
+func _remplir_details() -> void:
+	if not is_instance_valid(details): return
+	S.clear(details)
+	var onglets := S.G.h(px(6))
+	details.add_child(onglets)
+	var groupe := ButtonGroup.new()
+	for nom: String in THEMES:
+		var bouton := _segment(nom, groupe, nom == theme_stats)
+		bouton.name = "MatchBetweenTheme" + nom
+		bouton.custom_minimum_size = Vector2(0, px(48))
+		bouton.add_theme_font_size_override("font_size", px(24))
+		S.G.fill(bouton)
+		bouton.pressed.connect(func():
+			theme_stats = nom
+			_remplir_details.call_deferred())
+		onglets.add_child(bouton)
+	var par_cle := {}
+	for rang: Dictionary in _rangs: par_cle[str(rang.get("cle", ""))] = rang
+	for cle: String in THEMES[theme_stats]:
+		if not par_cle.has(cle): continue
+		var rang: Dictionary = par_cle[cle]
+		var ligne := S.G.h(px(10))
+		ligne.custom_minimum_size.y = px(40)
+		var a := _texte(_valeur(rang, 0), 28, IVOIRE)
+		a.add_theme_font_override("font", CHIFFRES_GRAS)
+		a.custom_minimum_size.x = px(70)
+		ligne.add_child(a)
+		var milieu := S.G.v(0)
+		S.G.fill(milieu)
+		var titre := _texte(str(rang.get("label", "")), 22, DOUX)
+		titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titre.clip_text = true
+		milieu.add_child(titre)
+		var barre := Barre.new()
+		barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
+		barre.couleurs = terrain.couleurs.duplicate()
+		barre.densite = _densite * 0.7
+		barre.custom_minimum_size = Vector2(px(60), px(12))
+		milieu.add_child(barre)
+		ligne.add_child(milieu)
+		var b := _texte(_valeur(rang, 1), 28, IVOIRE)
+		b.add_theme_font_override("font", CHIFFRES_GRAS)
+		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		b.custom_minimum_size.x = px(70)
+		ligne.add_child(b)
+		details.add_child(ligne)
 
 ## Mon XV : quinze anneaux d'énergie autour des numéros, la note du match dessous ; nom, poste
 ## et alertes en infobulle ; un clic ouvre le banc sur le joueur.
@@ -900,7 +906,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var anneau := px(96 if disposition == "staff" else (64 if disposition == "mix" else 84))
+	var anneau := px(58)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -918,22 +924,22 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.add_theme_stylebox_override("hover", survol)
 		case.add_theme_stylebox_override("focus", focus)
 		S.G.fill(case)
-		var colonne := S.G.v(px(2))
+		# Ligne du joueur : anneau d'énergie et numéro, nom de famille, note du match à droite.
+		var colonne := S.G.h(px(10))
 		colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		colonne.alignment = BoxContainer.ALIGNMENT_CENTER
 		S.full(colonne)
 		case.add_child(colonne)
 		var energie := Energie.new()
 		energie.numero = str(poste + 1)
 		energie.densite = _densite
 		energie.custom_minimum_size = Vector2(anneau, anneau)
-		energie.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		energie.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		energie.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		colonne.add_child(energie)
 		if not joueur is Dictionary:
 			energie.valeur = 0.0
 			case.tooltip_text = "%d · poste vacant" % (poste + 1)
-			case.custom_minimum_size.y = anneau + px(40)
+			case.custom_minimum_size.y = anneau + px(4)
 			xv.add_child(case)
 			continue
 		var id := str(joueur.get("id", ""))
@@ -941,8 +947,17 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		var note := float(fiche.get("note", 6.0))
 		var condition := float(joueur.get("condition", 100))
 		energie.valeur = condition
-		var etiquette_note := _texte("%.1f" % note, 24, Color("9fd5a6") if note >= 7.0 else (ALERTE if note < 5.5 else DOUX), false, true)
-		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var nom_court := _nom_court(str(joueur.get("name", "")))
+		var etiquette_nom := _texte(nom_court, 28, IVOIRE, false, true)
+		etiquette_nom.clip_text = true
+		etiquette_nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		etiquette_nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		S.G.fill(etiquette_nom)
+		colonne.add_child(etiquette_nom)
+		var etiquette_note := _texte("%.1f" % note, 28, Color("9fd5a6") if note >= 7.0 else (ALERTE if note < 5.5 else DOUX), false, true)
+		etiquette_note.add_theme_font_override("font", CHIFFRES_GRAS)
+		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		etiquette_note.custom_minimum_size.x = px(44)
 		etiquette_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		colonne.add_child(etiquette_note)
 		# Nom gardé pour les lecteurs d'écran et les tests, montré en infobulle.
@@ -961,8 +976,15 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 			alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
 			detail += "\n" + alerte.capitalize()
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
-		case.custom_minimum_size.y = anneau + px(40)
+		case.custom_minimum_size.y = anneau + px(4)
 		xv.add_child(case)
+
+## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 11 lettres.
+static func _nom_court(nom: String) -> String:
+	var morceaux := nom.strip_edges().split(" ", false)
+	if morceaux.is_empty(): return ""
+	var famille := " ".join(morceaux.slice(1)) if morceaux.size() > 1 else morceaux[0]
+	return famille if famille.length() <= 11 else famille.substr(0, 10) + "."
 
 const PORTRAIT = preload("res://guide/assets/coach-poses.png")
 const MATTE = preload("res://guide/coach_matte.gdshader")
@@ -1009,7 +1031,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	portrait.texture = image
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.custom_minimum_size = Vector2(px(112), px(112))
+	portrait.custom_minimum_size = Vector2(px(96), px(96))
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var matte := ShaderMaterial.new()

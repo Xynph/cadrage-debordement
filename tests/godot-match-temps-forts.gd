@@ -93,15 +93,13 @@ func check_framing(label: String, highlights: int) -> void:
 func inside(outer: Rect2, inner: Rect2) -> bool:
 	return inner.position.x >= outer.position.x - 1.0 and inner.position.y >= outer.position.y - 1.0 and inner.end.x <= outer.end.x + 1.0 and inner.end.y <= outer.end.y + 1.0
 
-func layout(view: Control, size: Vector2i, disposition: String = "staff") -> void:
+func layout(view: Control, size: Vector2i) -> void:
 	root.size = size
 	root.content_scale_size = size
 	var between: Control = view.regie.between
-	between.choisir_disposition(disposition)
 	await settle(12)
-	var label := "%d×%d %s" % [size.x, size.y, disposition]
+	var label := "%d×%d" % [size.x, size.y]
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
-	check(between.disposition == disposition, label + " : mise en page appliquée")
 	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
 	var pitch: Control = between.terrain
 	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 300, label + " : terrain lisible (%s)" % str(pitch.size))
@@ -121,26 +119,26 @@ func layout(view: Control, size: Vector2i, disposition: String = "staff") -> voi
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(26 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
 	# Les commandes communes sont là dans chaque mise en page.
-	for nom in ["MatchBetweenTactics", "MatchBetweenBench", "MatchBetweenLayout", "MatchBetweenMore", "MatchHighlightLevel", "MatchBetweenSpeed"]:
+	for nom in ["MatchBetweenTactics", "MatchBetweenBench", "MatchBetweenSettings", "MatchBetweenMore"]:
 		var noeud: Control = between.find_child(nom, true, false)
 		check(noeud != null and noeud.is_visible_in_tree(), label + " : commande " + nom)
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
-	if disposition == "staff":
-		var column: Control = between.adjoint_cadre.get_parent()
-		var used := 0.0
-		for panel: Control in column.get_children():
-			if panel.visible: used += panel.size.y
-		check(used >= column.size.y * 0.9, label + " : la colonne de droite est occupée (%d sur %d px)" % [int(used), int(column.size.y)])
-		check(feed.size.y >= between.px(200), label + " : le fil garde de la hauteur (%d px)" % int(feed.size.y))
-	if disposition != "tele": check(between.xv.is_visible_in_tree(), label + " : Mon XV visible")
-	else:
-		check(not between.xv.is_visible_in_tree(), label + " : Mon XV replié en tiroir")
-		between.find_child("MatchBetweenSquadToggle", true, false).pressed.emit()
-		await settle(3)
-		check(between.xv.is_visible_in_tree() and inside(between.get_global_rect(), between.tiroir_xv.get_global_rect()), label + " : le tiroir Mon XV s'ouvre dans l'écran")
-		between.find_child("MatchBetweenSquadToggle", true, false).pressed.emit()
-		await settle(2)
+	check(between.xv.is_visible_in_tree() and between.xv.columns == 2, label + " : Mon XV visible, nom et numéro par joueur")
+	check(between.details.is_visible_in_tree() and between.details.get_child_count() >= 2, label + " : stats détaillées par thème")
+	var column: Control = between.adjoint_cadre.get_parent()
+	var used := 0.0
+	for panel: Control in column.get_children():
+		if panel.visible: used += panel.size.y
+	check(used >= column.size.y * 0.9, label + " : la colonne de droite est occupée (%d sur %d px)" % [int(used), int(column.size.y)])
+	# Colonne repliable : le terrain prend la place, puis la colonne revient.
+	var largeur := pitch.size.x
+	var languette: Button = between.find_child("MatchBetweenFold", true, false)
+	languette.pressed.emit()
+	await settle(4)
+	check(not column.is_visible_in_tree() and pitch.size.x > largeur + 50.0, label + " : colonne repliée, terrain agrandi (%d → %d px)" % [int(largeur), int(pitch.size.x)])
+	languette.pressed.emit()
+	await settle(4)
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
 			check(cell.get_minimum_size().x <= cell.size.x + 1.0 or cell.clip_text, label + " : chiffre entier : " + cell.text)
@@ -710,8 +708,8 @@ func resumed() -> Array:
 	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
 	# Écran intermédiaire : sa barre de commandes porte le niveau (la barre du direct est masquée).
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
-	if level != null and not level.is_visible_in_tree(): level = regie.between.niveau
-	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
+	var repris := level.get_item_text(level.selected) if level != null and level.is_visible_in_tree() else regie.between.niveau_libelle()
+	check(repris == "Temps forts étendus", "La barre ou les paramètres montrent le niveau repris : " + repris)
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
 	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
 	var differee: String = regie.between.horloge_differee().trim_suffix("′")
@@ -874,9 +872,14 @@ func terrain2d(view: Control) -> void:
 	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
 	var banc: Button = between.find_child("MatchBetweenBench", true, false)
 	check(banc != null and banc.is_visible_in_tree() and between.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
-	between.choisir_disposition("staff")
+	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Mon XV et le dernier fait affichés ensemble")
+	var noms_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button).map(func(b: Button): return b.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text))
+	check(noms_xv.size() == 15 and noms_xv.all(func(t: Array): return t.size() >= 2 and not str(t[0]).is_empty()), "Mon XV : nom de famille et note visibles pour chaque joueur : " + str(noms_xv.slice(0, 3)))
+	# Paramètres : vitesse de l'horloge et temps forts montrés dans un petit panneau.
+	between.find_child("MatchBetweenSettings", true, false).pressed.emit()
 	await settle(4)
-	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Banc du staff : Mon XV et le fil affichés ensemble")
+	check(between.panneau_parametres.visible and between.grille_niveaux.get_child_count() == 6, "Paramètres : le panneau s'ouvre avec les six niveaux de temps forts")
+	between.panneau_parametres.hide()
 	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	(rangs_xv[9] as Button).pressed.emit()
 	await settle(4)
@@ -884,18 +887,8 @@ func terrain2d(view: Control) -> void:
 	view._fermer_tiroir()
 	var menu: MenuButton = between.find_child("MatchBetweenMore", true, false)
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
-	# Mise en page : enregistrée dans les réglages, reprise par un nouvel écran.
-	between.choisir_disposition("mix")
-	await settle(4)
-	check(app.user_preferences.data.get("match_entracte") == "mix", "La mise en page choisie est enregistrée : " + str(app.user_preferences.last_error))
-	var repris: Control = load("res://ui/contextual/match_between.gd").new()
-	view.add_child(repris)
-	check(repris.disposition == "mix", "Un nouvel écran reprend la mise en page enregistrée")
-	repris.queue_free()
-	for vue: String in ["staff", "mix", "tele"]:
-		await layout(view, Vector2i(1280, 720), vue)
-		await layout(view, Vector2i(1920, 1080), vue)
-	between.choisir_disposition("staff")
+	await layout(view, Vector2i(1280, 720))
+	await layout(view, Vector2i(1920, 1080))
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	print("TERRAIN2D ", JSON.stringify({"faits": ecarts.faits, "deplacement": deplacement, "ballons": ballons.size(), "minutes": minutes.size()}))

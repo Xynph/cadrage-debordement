@@ -161,7 +161,7 @@ function domination(lignes){
 // jeu courant passe la dernière défense. Plaquages manqués = franchissements et essais en jeu
 // courant subis (le moteur ne compte pas les plaquages joueur par joueur).
 function chiffresRugby(lignes,events){
- const t=[0,1].map(()=>({courses:0,metres:0,franchissements:0,essaisCourant:0,recuperations:0,enAvant:0,plaquesStoppes:0}));
+ const t=[0,1].map(()=>({courses:0,metres:0,franchissements:0,essaisCourant:0,recuperations:0,enAvant:0,plaquesStoppes:0,pieds:0,cartons:0}));
  for(const l of lignes){
   if(l.equipe===null)continue;const e=t[l.equipe],s=events[l.i]?.scene;
   if(l.kind==='carry'&&l.x!==null&&l.depuis!==null){
@@ -170,6 +170,8 @@ function chiffresRugby(lignes,events){
   }
   if(l.kind==='turnover'){e.recuperations++;e.plaquesStoppes++}
   if(l.kind==='hand-fault')e.enAvant++;
+  if(['kick','touch','drop22','goalLine'].includes(l.kind))e.pieds++;
+  if(l.kind==='card'&&l.incident)e.cartons++;
   if(l.kind==='try'&&s?.origin==='open')e.essaisCourant++;
  }
  return t;
@@ -298,7 +300,11 @@ function project(model,niveau,lire,options={}){
   compte({cle:'touches',label:'Touches gagnées',valeurs:[0,1].map(s=>stats[s]?.lineoutsWon||0),sur:[0,1].map(s=>stats[s]?.lineouts||0)}),
   compte({cle:'recuperations',label:'Ballons récupérés',valeurs:rugby.map(e=>e.recuperations)}),
   compte({cle:'penalites',label:'Pénalités concédées',valeurs:[0,1].map(s=>stats[s]?.penalties||0),inverse:true}),
-  compte({cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true})
+  compte({cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true}),
+  // Entracte façon match overview (demande de Léo) : temps de jeu, jeu au pied, cartons montrés.
+  compte({cle:'temps_de_jeu',label:'Temps de jeu',valeurs:rugby.map(e=>e.courses)}),
+  compte({cle:'pieds',label:'Coups de pied',valeurs:rugby.map(e=>e.pieds)}),
+  compte({cle:'cartons',label:'Cartons',valeurs:rugby.map(e=>e.cartons),inverse:true})
  ];
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
   // Minute du dernier fait montré (borne) : l'horloge de l'entracte ne court pas devant ce qui a été vu.

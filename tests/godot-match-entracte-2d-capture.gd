@@ -4,9 +4,7 @@ extends SceneTree
 ## entractes demandés (terrain 2D et tableau de bord), et le début du temps fort suivant.
 ## À lancer avec --write-movie et --fixed-fps 30 : chaque image du film vaut 1/30 s de jeu.
 ## Variables : CD_ENTRACTE_2D_SAVE (match exporté), CD_ENTRACTE_2D_PNG (capture PNG à 5 s du
-## dernier entracte filmé), CD_ENTRACTE_2D_NOMBRE (entractes à filmer, 2 par défaut),
-## CD_ENTRACTE_2D_VUES (mises en page à enchaîner, ex. « staff,mix,tele » : une toutes les
-## 4 s d'entracte ; « %s » dans CD_ENTRACTE_2D_PNG donne une capture par mise en page).
+## dernier entracte filmé), CD_ENTRACTE_2D_NOMBRE (entractes à filmer, 2 par défaut).
 
 var app: Control
 
@@ -61,11 +59,6 @@ func run() -> void:
 	var capture_faite := 0
 	# Images du film : la vue racine elle-même (1280×720 exactes), une par image de jeu.
 	var images_dossier := OS.get_environment("CD_ENTRACTE_2D_IMAGES")
-	var vues: PackedStringArray = OS.get_environment("CD_ENTRACTE_2D_VUES").split(",", false)
-	var temps_vues := 0.0
-	var vue_depuis := 0.0
-	var captures_vues := {}
-	if not vues.is_empty(): regie.between.choisir_disposition(vues[0])
 	while image < 30 * 600:
 		await process_frame
 		image += 1
@@ -81,19 +74,7 @@ func run() -> void:
 			dans_entracte += 1.0 / 30.0
 			# Capture à 5 s de chaque entracte (la dernière l'emporte) : le terrain joue, le tableau
 			# est rempli de plus de minutes de jeu.
-			if not vues.is_empty():
-				temps_vues += 1.0 / 30.0
-				vue_depuis += 1.0 / 30.0
-				var vue := vues[int(temps_vues / 4.0) % vues.size()]
-				if vue != regie.between.disposition:
-					regie.between.choisir_disposition(vue)
-					vue_depuis = 0.0
-				# Une capture par mise en page, dans le dernier entracte filmé (la dernière l'emporte).
-				if "%s" in png and entractes >= maxi(1, voulu - 3) and vue_depuis >= 2.5 and captures_vues.get(vue, 0) != entractes and regie.between.terrain.places.size() >= 28:
-					captures_vues[vue] = entractes
-					root.get_texture().get_image().save_png(png % vue)
-					print("CAPTURE ", png % vue, " ", view.clock.text)
-			if not "%s" in png and capture_faite != entractes and not png.is_empty() and dans_entracte >= 5.0 and regie.between.terrain.places.size() >= 28:
+			if capture_faite != entractes and not png.is_empty() and dans_entracte >= 5.0 and regie.between.terrain.places.size() >= 28:
 				capture_faite = entractes
 				var shot := root.get_texture().get_image()
 				shot.save_png(png)
