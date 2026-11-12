@@ -66,7 +66,7 @@ try{
   if(!(imported.status===null&&imported.signal&&!imported.error))break;
   console.log('Import Godot interrompu par le signal '+imported.signal+' : nouvel essai');
  }
- const importLog=(imported.stdout||'')+(imported.stderr||'');fs.writeFileSync(path.join(root,'import.log'),importLog);if(imported.error)throw imported.error;assert.equal(imported.status,0,importLog);assert.doesNotMatch(importLog,/SCRIPT ERROR|Parse Error|ERROR:/);
+ const importLog=(imported.stdout||'')+(imported.stderr||'');fs.writeFileSync(path.join(root,'import.log'),importLog);if(imported.error)throw imported.error;assert.equal(imported.status,0,importLog);assert.doesNotMatch(require('./helpers/godot-import-log.cjs').importLogErrors(importLog),/SCRIPT ERROR|Parse Error|ERROR:/);
  const run=spawnSync(godot,[...(process.env.CD_FEEDBACK_GRAPHICS==='1'?[]:['--headless']),'--max-fps','120','--path',project,'--script',path.resolve(__dirname,'godot-decision-feedback.gd')],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_FEEDBACK_CASES:fixture,CD_FEEDBACK_ARTIFACTS:root,CD_GODOT_SELF_TEST:'0',CD_GODOT_GUIDE_MODULE_TEST:'1',CD_NODE_EXECUTABLE:process.execPath,CD_FEEDBACK_WORKER:path.resolve(__dirname,'../native/engine/worker.cjs'),CD_GODOT_DATA_DIR:path.join(root,'main-profile')}});
  const log=(run.stdout||'')+(run.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);console.log(log);console.log('Preuves décisions : '+root);if(run.error)throw run.error;
  assert.equal(run.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);

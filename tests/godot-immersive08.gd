@@ -905,6 +905,9 @@ func navigation_flow() -> void:
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Le lien local conserve aussi l’onglet et la navigation reste sans commande")
 	root.size = original_size
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	# Le gabarit natif se redimensionne après un délai (cf. resize_shell) : sans cette attente, l'effectif s'ouvre
+	# encore en repli compact (ni tableau ni fiche complète).
+	await create_timer(.16).timeout
 	await settle()
 	# La fiche complète est un état mémorisé (meta immersive08_full_player) : on part du tableau de l'effectif.
 	app.set_meta("immersive08_full_player",false)
@@ -1065,6 +1068,11 @@ func match_flow() -> void:
 	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)
 	await click(kickoff)
 	await worker()
+	# Depuis la causerie d'avant-match, le coup d'envoi attend qu'elle soit traitée : on la passe par la commande publique.
+	var talk_scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	if talk_scene is Dictionary and str(talk_scene.get("phase", "")) == "pre":
+		await ContextualFlow.skip_talk(app, self, "pre", check)
+		await settle()
 	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,
 		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s"
 		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect)])
