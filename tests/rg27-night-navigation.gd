@@ -338,6 +338,7 @@ func guard_refusal(context: String) -> void:
 	check(not await open_entity("player", id), context + " : lien refusé proprement")
 	check(app.route == route_before and app.contextual_director.kind == scene_before and app.management_ui == ui_before, context + " : scène et état de lecture préservés")
 	await unchanged(before, context)
+	progress("guard_end",{"context":context})
 func inspect_and_return(owner: Window, link: Control, target: Dictionary, context: String) -> void:
 	check(link != null and owner.visible, context + " : catalogue et lien réels")
 	if link == null: return
@@ -586,13 +587,21 @@ func guard_cases() -> void:
 			check(app.get_meta("press_mail_origin", "") == invitation, "Presse ouverte uniquement par son courrier et son invitation exacts")
 	check(app.contextual_director.active_meeting(), "Rendez-vous réel initial présent")
 	if app.contextual_director.active_meeting(): await guard_refusal("Rendez-vous obligatoire")
-	if not await Flow.settle_club_meetings(app, self, check): return
-	if not await Flow.prepare_match_day(app, self, check): return
+	progress("flow_begin",{"flow":"settle_club_meetings","boundary":"before_match"})
+	var initial_meetings_ok: bool = await Flow.settle_club_meetings(app, self, check)
+	progress("flow_end",{"flow":"settle_club_meetings","boundary":"before_match","ok":initial_meetings_ok})
+	if not initial_meetings_ok: return
+	progress("flow_begin",{"flow":"prepare_match_day"})
+	var match_day_ok: bool = await Flow.prepare_match_day(app, self, check)
+	progress("flow_end",{"flow":"prepare_match_day","ok":match_day_ok})
+	if not match_day_ok: return
 	await command("auto_lineup")
 	await command("begin_match")
 	check(app.contextual_director.kind == "locker", "Vraie causerie avant-match")
 	await guard_refusal("Causerie obligatoire")
+	progress("flow_begin",{"flow":"skip_talk","phase":"pre"})
 	await Flow.skip_talk(app, self, "pre", check)
+	progress("flow_end",{"flow":"skip_talk","phase":"pre"})
 	app.timer.stop()
 	await command("pause", {"paused":true})
 	check(app.contextual_director.kind == "live", "Vrai match immersif en pause")
@@ -600,10 +609,15 @@ func guard_cases() -> void:
 	await capture("navigation-refusee-match-2560")
 	await command("delegate")
 	if app.model.get("clubLife", {}).get("matchTalks", {}).get("scene") is Dictionary:
+		progress("flow_begin",{"flow":"skip_talk","phase":"post"})
 		await Flow.skip_talk(app, self, "post", check)
+		progress("flow_end",{"flow":"skip_talk","phase":"post"})
 	elif app.model.get("live") is Dictionary:
 		await command("finish_round")
-	if not await Flow.settle_club_meetings(app, self, check): return
+	progress("flow_begin",{"flow":"settle_club_meetings","boundary":"after_result"})
+	var final_meetings_ok: bool = await Flow.settle_club_meetings(app, self, check)
+	progress("flow_end",{"flow":"settle_club_meetings","boundary":"after_result","ok":final_meetings_ok})
+	if not final_meetings_ok: return
 	var historical: Dictionary = {}
 	for fixture: Dictionary in app.model.get("calendar", []):
 		if fixture.get("played", false) and fixture.get("score") is Array:
