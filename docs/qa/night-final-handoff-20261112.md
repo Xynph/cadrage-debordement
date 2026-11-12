@@ -62,7 +62,7 @@ les nouveaux résultats Staff/Nation/Compétition ont des libellés humains.
 | `76077ed3…` | [JavaScript 43138359860](night-followup-javascript-20261112.md) | Sept jobs verts, 645 CJS distincts, gate `130946563545` |
 | `b860cf95…` | [Séance et brouillon](https://github.com/Xynph/cadrage-debordement/blob/1a7b083b8a090d735ef1b08245b5f4faf430f76b/docs/qa/night-calendar-session-reading-20261112.md) | **146/0**, graphique X11 52,234 s TAP ; Agenda 61/0 et Navigation 156/0 séparés ; six contrats de registre verts |
 | `1a7b083b…` | [SDK complet 43152464850](night-closeout-sdk-full-20261112.md) | **74/76, rouge** ; gardes timeout superviseur 180007 ms et Carnet 4666/27 ; 57 suites / 75 couples distincts, matrices 4942/0 et 1905/0 + trois contrats séparés |
-| `1a7b083b…` | [JavaScript 43152477147](https://github.com/Xynph/cadrage-debordement/actions/runs/43152477147) | Lancé une fois à 04:05 UTC ; **en cours**, 646 CJS racine attendus ; aucun verdict anticipé |
+| `1a7b083b…` | [JavaScript 43152477147](night-closeout-javascript-20261112.md) | **Sept jobs verts, 646 CJS distincts** ; son SDK reste rouge 74/76, donc pas de qualification complète sur les deux campagnes |
 | `ec0044ea…` | [SDK complet 43157636998](https://github.com/Xynph/cadrage-debordement/actions/runs/43157636998) | Lancé une fois à 04:52 UTC ; **en attente**, 76 exécutions attendues / 57 suites / 75 couples distincts |
 | `ec0044ea…` | [JavaScript 43157653421](https://github.com/Xynph/cadrage-debordement/actions/runs/43157653421) | Lancé une fois à 04:52 UTC ; **en attente**, 646 CJS racine attendus ; aucune conclusion héritée |
 
