@@ -6,6 +6,7 @@ const staffRegistry=require('./staff.cjs');
 const venues=require('./venue-media.cjs');
 const leagues=require('./competition-identities.cjs');
 const pressIdentities=require('./press-identities.cjs');
+const boardIdentities=require('./board-identities.cjs');
 const legacyAliases=require('./world-legacy-aliases.json');
 const aliasesFor=database=>database.id===legacyAliases.databaseId&&database.version===5?legacyAliases.aliases:{};
 const identityPlayers=database=>[...database.clubs.flatMap(c=>c.players),...Object.values(aliasesFor(database)).map(row=>row.player)];
@@ -64,7 +65,7 @@ function analyse(file,database,pressCatalogue=pressIdentities.defaultCatalogue()
  if(custom)manifest=readJson('pack.json');else{check(!world,'base de données incompatible.');const found=[...entries.keys()].filter(n=>n.endsWith('/inventaire.json')||n==='inventaire.json');check(found.length===1,'un seul manifeste requis.');root=found[0].slice(0,-'inventaire.json'.length);const source=readJson(found[0]);check(source.schema==='rugby-real-unified-pack-v2'&&Array.isArray(source.entries),'format non pris en charge.');manifest={schema:'cd-identity-pack-v1',id:'rugby-reel',name:name(source.packName),version:name(source.season),databaseId:database.id,rightsStatus:'not-cleared-for-public-distribution',clubs:[],players:[],assets:[]};
   for(const entry of source.entries){check(object(entry)&&['logo','portrait'].includes(entry.kind)&&(entry.kind==='logo'||typeof entry.synthetic==='boolean')&&['downloaded','generated-ai'].includes(entry.status),'inventaire invalide.');const aid='asset-'+manifest.assets.length;manifest.assets.push({id:aid,path:root+entry.path,sha256:entry.sha256,bytes:entry.bytes});if(entry.kind==='logo'){const club=database.clubs.find(c=>c.slug===entry.id);check(club,'club inconnu.');const gallery=entries.get(root+'Photos/'+entry.id+'/index.html');check(gallery,'titre de club absent.');const title=/<title>([^<]{1,500})<\/title>/i.exec(utf8(gallery.read(LIMITS.manifest)));check(title,'titre de club invalide.');manifest.clubs.push({id:club.id,name:name(textEntity(title[1])),abbr:deriveAbbreviation(textEntity(title[1])),logo:aid});}else manifest.players.push({id:entry.id,name:name(entry.name),portrait:aid,synthetic:entry.synthetic});}
  }
- const v4=manifest.schema==='cd-identity-pack-v4';keys(manifest,['schema','id','name','version','databaseId','rightsStatus','clubs','players','assets','staff',...(v4?['competitions']:[]),...(custom?['press']:[])]);const v3=v4||manifest.schema==='cd-identity-pack-v3';const v2=v3||manifest.schema==='cd-identity-pack-v2';check((v2||manifest.schema==='cd-identity-pack-v1')&&manifest.databaseId===database.id&&(!v3||world&&database.version>=5),'base de données incompatible.');check(v2?Array.isArray(manifest.staff)&&manifest.staff.length<=staffIds.size:!Object.hasOwn(manifest,'staff'),'liste staff incompatible.');check(typeof manifest.id==='string'&&/^[a-z0-9][a-z0-9-]{0,39}$/.test(manifest.id),'identifiant de pack invalide.');manifest.name=name(manifest.name);manifest.version=name(manifest.version);manifest.rightsStatus=name(manifest.rightsStatus);check(Array.isArray(manifest.clubs)&&manifest.clubs.length<=(world?database.clubCount:30)&&Array.isArray(manifest.players)&&manifest.players.length<=identityPlayers(database).length&&Array.isArray(manifest.assets)&&manifest.assets.length<=(world?identityPlayers(database).length+database.clubCount:1622)+(v2?staffIds.size:0)+(v3?2*database.clubCount:0)+(v4?leagues.allowed(database).size:0),'listes invalides.');
+ const v4=manifest.schema==='cd-identity-pack-v4';keys(manifest,['schema','id','name','version','databaseId','rightsStatus','clubs','players','assets','staff',...(v4?['competitions']:[]),...(custom?['press','boards']:[])]);const v3=v4||manifest.schema==='cd-identity-pack-v3';const v2=v3||manifest.schema==='cd-identity-pack-v2';check((v2||manifest.schema==='cd-identity-pack-v1')&&manifest.databaseId===database.id&&(!v3||world&&database.version>=5),'base de données incompatible.');check(v2?Array.isArray(manifest.staff)&&manifest.staff.length<=staffIds.size:!Object.hasOwn(manifest,'staff'),'liste staff incompatible.');check(typeof manifest.id==='string'&&/^[a-z0-9][a-z0-9-]{0,39}$/.test(manifest.id),'identifiant de pack invalide.');manifest.name=name(manifest.name);manifest.version=name(manifest.version);manifest.rightsStatus=name(manifest.rightsStatus);check(Array.isArray(manifest.clubs)&&manifest.clubs.length<=(world?database.clubCount:30)&&Array.isArray(manifest.players)&&manifest.players.length<=identityPlayers(database).length&&Array.isArray(manifest.assets)&&manifest.assets.length<=(world?identityPlayers(database).length+database.clubCount:1622)+(v2?staffIds.size:0)+(v3?2*database.clubCount:0)+(v4?leagues.allowed(database).size:0),'listes invalides.');
  const players=new Set(identityPlayers(database).map(p=>p.id)),clubs=new Set(database.clubs.map(c=>c.id)),assetMap=new Map(),photoAssets=v3?new Map():null,used=new Set(),files=new Map();
  for(const a of manifest.assets){keys(a,['id','path','sha256','bytes']);check(typeof a.id==='string'&&/^[a-zA-Z0-9_-]{1,80}$/.test(a.id)&&!assetMap.has(a.id),'identifiant de média invalide/dupliqué.');check(typeof a.sha256==='string'&&/^[0-9a-f]{64}$/.test(a.sha256)&&Number.isSafeInteger(a.bytes)&&a.bytes>0&&a.bytes<=LIMITS.image,'empreinte/taille média invalide.');a.path=zipPath(a.path);check(!used.has(a.path),'média déclaré plusieurs fois.');used.add(a.path);const e=entries.get(a.path);check(e&&!e.dir&&e.length===a.bytes,'média absent/taille incorrecte.');const data=e.read(),info=imageInfo(data);check(hash(data)===a.sha256,'empreinte SHA256 incorrecte.');const filename=a.sha256+'.'+info.ext;assetMap.set(a.id,filename);if(photoAssets)photoAssets.set(a.id,{file:filename,bytes:a.bytes,...info});files.set(filename,data);}
  const extended=v2&&database.version>=4;
@@ -89,10 +90,12 @@ function analyse(file,database,pressCatalogue=pressIdentities.defaultCatalogue()
  // Rubrique facultative, quel que soit le schéma v1 à v4 : un pack qui ne la
  // porte pas garde exactement son contenu, son empreinte et son comportement.
  const pressRubric=Object.hasOwn(manifest,'press')?pressIdentities.ingest(manifest.press,pressCatalogue):null;
+ // Rubrique facultative des présidents et directeurs sportifs, même principe.
+ const boardRubric=Object.hasOwn(manifest,'boards')?boardIdentities.ingest(manifest.boards,database):null;
  check(referenced.size===assetMap.size,'média sans identité.');
  for(const e of entries.values()){if(e.dir||used.has(e.name))continue;check(/\.(json|csv|txt|html)$/i.test(e.name),'fichier supplémentaire interdit : '+e.name);e.read(LIMITS.manifest);}
- const meta={id:manifest.id+'-'+zip.digest,name:manifest.name,version:manifest.version,digest:zip.digest,databaseId:manifest.databaseId,counts:{clubs:manifest.clubs.length,players:manifest.players.length,logos,official,synthetic,...(v2?{staff:manifest.staff.length,staffOfficial,staffSynthetic}:{}),...(v3?{cityPhotos,stadiumPhotos}:{}),...(v4?{competitions:manifest.competitions.length,competitionLogos}:{}),...(pressRubric?pressRubric.counts:{})},rightsStatus:manifest.rightsStatus,...(v3?{venueMediaVersion:1}:{}),...(v4?{competitionIdentityVersion:1}:{}),...(pressRubric?{pressIdentityVersion:1}:{})};
- return {meta,clubs:mappedClubs,players:mappedPlayers,staff:mappedStaff,competitions,press:pressRubric?.press,files};
+ const meta={id:manifest.id+'-'+zip.digest,name:manifest.name,version:manifest.version,digest:zip.digest,databaseId:manifest.databaseId,counts:{clubs:manifest.clubs.length,players:manifest.players.length,logos,official,synthetic,...(v2?{staff:manifest.staff.length,staffOfficial,staffSynthetic}:{}),...(v3?{cityPhotos,stadiumPhotos}:{}),...(v4?{competitions:manifest.competitions.length,competitionLogos}:{}),...(pressRubric?pressRubric.counts:{}),...(boardRubric?boardRubric.counts:{})},rightsStatus:manifest.rightsStatus,...(v3?{venueMediaVersion:1}:{}),...(v4?{competitionIdentityVersion:1}:{}),...(pressRubric?{pressIdentityVersion:1}:{}),...(boardRubric?{boardIdentityVersion:1}:{})};
+ return {meta,clubs:mappedClubs,players:mappedPlayers,staff:mappedStaff,competitions,press:pressRubric?.press,boards:boardRubric?.boards,files};
 }
 function* mediaFiles(pack){
  for(const group of [pack.clubs,pack.players,pack.staff||{},pack.competitions||{}])for(const item of Object.values(group)){
@@ -134,6 +137,7 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
     check(allowed.has(playerId),'personne installée inconnue.');keys(p,['name','portrait','portraitStatus',...(edition.version>=4&&group===pack.staff?['role']:[])]);if(p.name!==undefined)name(p.name);if(p.role!==undefined)name(p.role);check(p.name!==undefined||p.portrait!==undefined||p.role!==undefined,'identité installée vide.');check(p.portrait!==undefined?['official','synthetic'].includes(p.portraitStatus):p.portraitStatus===undefined,'mention portrait installé invalide.');
    }
    check(pack.meta.pressIdentityVersion===1?pack.press!==undefined&&!!pressIdentities.validateInstalled(pack.press,pressBank):pack.meta.pressIdentityVersion===undefined&&pack.press===undefined,'identités de presse installées invalides.');
+   check(pack.meta.boardIdentityVersion===1?pack.boards!==undefined&&!!boardIdentities.validateInstalled(pack.boards,edition):pack.meta.boardIdentityVersion===undefined&&pack.boards===undefined,'identités des directions installées invalides.');
    const branded=pack.meta.competitionIdentityVersion===1;
    check(branded?atlas&&object(pack.competitions):pack.meta.competitionIdentityVersion===undefined&&pack.competitions===undefined,'identités de compétition installées invalides.');
    if(branded){
@@ -162,7 +166,7 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   try{
    confined(stage);
    for(const [n,data]of pack.files)fs.writeFileSync(path.join(stage,n),data,{flag:'wx'});
-   fs.writeFileSync(path.join(stage,'manifest.json'),JSON.stringify({meta:pack.meta,clubs:pack.clubs,players:pack.players,staff:pack.staff,competitions:pack.competitions,press:pack.press}),{flag:'wx'});
+   fs.writeFileSync(path.join(stage,'manifest.json'),JSON.stringify({meta:pack.meta,clubs:pack.clubs,players:pack.players,staff:pack.staff,competitions:pack.competitions,press:pack.press,boards:pack.boards}),{flag:'wx'});
    confined(target);
    if(fs.existsSync(target)){fs.renameSync(target,backup);moved=true;}
    try{fs.renameSync(stage,target);}catch(error){if(moved)fs.renameSync(backup,target);throw error;}
@@ -203,6 +207,8 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   })(model);
   // Journalistes et rédactions : le texte archivé garde les noms de base, le pack actif les présente.
   if(chosen)for(const [from,to]of pressIdentities.replacements(chosen.press,pressBank))replacements.set(from,to);
+  // Présidents et directeurs sportifs de départ : nom inventé de la base → nom du pack.
+  if(chosen)for(const [from,to]of boardIdentities.replacements(chosen.boards,edition))replacements.set(from,to);
   const escaped=[...replacements.keys()].filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));const pattern=escaped.length?new RegExp(escaped.join('|'),'gu'):null;
   function projectTerritory(club,pack){
    const photos=pack.clubs[club.id]?.photos;

@@ -226,4 +226,65 @@ python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/
 ```
 Gabi d'origine (`gabi.glb`) : depuis `git show edc903a2:native/godot/guide/assets/gabi.glb`, `ajouter-expressions-gabi.py`, puis `ajouter-sourire-gabi.py`, puis `retoucher-teint-gabi.py`.
 
-Reste à faire : fentes sombres entre les doigts (maillage des doigts collés, visibles de près) ; pouce gauche sans flexion ; quelques dents de scie au bord haut de la coque des lèvres, visibles seulement en très gros plan ; cassure de la lèvre inférieure dans la forme MouthOpen d'origine ; netteté des textures du visage et de la barbe (2K pour tout le corps), à traiter à part.
+Reste à faire : fentes sombres entre les doigts (maillage des doigts collés, visibles de près) ; pouce gauche sans flexion ; quelques dents de scie au bord haut de la coque des lèvres, visibles seulement en très gros plan ; cassure de la lèvre inférieure dans la forme MouthOpen d'origine ; netteté des textures du visage et de la barbe : voir la section suivante.
+
+## Netteté de la tête (12 novembre, après-midi) : `nettete-tete-gabi.py`
+
+Demande de Léo : visage et barbe flous de près. Constat : la tête n'occupait qu'une petite zone de la texture 2K du corps (≈ 0,7 texel/mm au visage).
+
+- **Texture dédiée** : les triangles de la tête (y > 1,30 m, hors chemise ; visage, barbe, moustache, sourcils, cheveux, oreilles) passent dans une nouvelle primitive de `Mesh_0`, matériau `Gabi_Tete` (mêmes sommets, poids et formes d'expression). Dépliage à part dans Blender (projection intelligente, 1,4 rad), îlots du visage agrandis de 80 % : ≈ 2,8 texels/mm au visage, 1,5 ailleurs, anisotropie 1,2. Couleur actuelle re-cuite texel par texel (yeux, bouche et teint validés inchangés).
+- **Détail réel** (procédural, dans `cuire`) :
+  - mèches directionnelles (bruit 3D étiré le long de la pousse, ±22 % de luminosité, plus marquées sur la moustache) : sourcils vers la tempe, moustache vers le bas et l'extérieur, barbe vers le bas, cheveux suivant les bandes de la texture d'origine ;
+  - barbe continue sous la lèvre inférieure et au centre du menton (zone claire et rosée d'origine teintée vers la couleur de la barbe) ;
+  - front et tempes lisses : pas de mèches hors de la chevelure et des sourcils (sourcils = zone sombre seulement) ;
+  - peau : grain léger (pores) et variations de teinte douces ;
+  - carte de normales 2K : relief des mèches et du grain, composé avec la carte d'origine ; occlusion 1K.
+- **Coque des lèvres** : hors du contour des lèvres, elle prend la peau de la nouvelle texture (mèches de barbe jusqu'au bord, plus de plaque claire polygonale) ; texture 1024×512.
+- **Poids** : textures en JPEG (couleur q90, normales q92, occlusion q88, lèvres q92) ; `gabi.glb` passe de 7,9 à 10,9 Mo. Scène Mixamo privée : 45 Mo (textures non compressées avec mipmaps, comme avant).
+- **Contrôles** (`tests/godot-gabi-mixamo.gd`) : matériau `Gabi_Tete` présent, couleur et normales 2K, formes d'expression conservées.
+
+Chaîne (le dossier de travail est hors dépôt ; `preparer` demande environ 2,7 Go de mémoire et 2 min 30) :
+```
+python3 scripts/animations/nettete-tete-gabi.py preparer <gabi.glb sans tête dédiée> /hors-depot/tete
+python3 scripts/animations/nettete-tete-gabi.py appliquer /hors-depot/tete <gabi.glb sans tête dédiée> native/godot/guide/assets/gabi.glb
+python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2> --tete /hors-depot/tete
+```
+`<gabi.glb sans tête dédiée>` : `git show 6f395b6f:native/godot/guide/assets/gabi.glb` (sortie de `retoucher-teint-gabi.py`). Pour `regenerer-gabi.py`, `--origine` peut rester le `gabi.glb` du dépôt (matériaux repris) : `appliquer` refuse un `.glb` déjà traité. Le résultat est reproductible à l'octet près.
+
+## Lèvres v4 (12 novembre, fin d'après-midi)
+
+Demande de Léo : « Pour Gabi, y'a un petit souci avec sa lèvre inférieure. Corrige ça et rends ses lèvres un peu plus en volume et un peu plus épaisses ».
+
+Constat (gros plans de face et de 3/4, au repos, au sourire franc et en parole) :
+
+- **Encoche sous la lèvre inférieure**, environ 1 cm à gauche de Gabi. Le contour de la coque des lèvres est en dents de scie. À cet endroit, son bord ne descend qu'à 11,5 mm sous la fente, alors que la lèvre peinte descend jusqu'à 16 mm. La lèvre était coupée net, et la peau claire d'origine apparaissait dessous.
+- **Cassure en parole** : dans la forme MouthOpen d'origine, ce sommet du bord ne descend que de 8,3 mm, contre 11 à 13 mm pour ses voisins. La lèvre se pinçait.
+- Au-dessus de la lèvre supérieure, une **bande claire polygonale** : la coque, sous la moustache, était éclairée comme de la peau en pleine lumière.
+
+Corrections :
+
+- **Lèvres peintes aussi sur la texture de la tête** autour de la coque (`nettete-tete-gabi.py appliquer`). Elles reprennent la teinte et le fondu de la coque (`teinte_levres`), un peu plus sombres (`PEAU_LEVRES`), avec la carte de normales à plat sous la lèvre (sans mèches de barbe). Rien n'est peint au-dessus de la fente sous la moustache (masque), ni près de la fente.
+- **MouthOpen lissé** sur la lèvre inférieure et le haut du menton (`lisser_ouverture`) :
+  - régression locale d'après les colonnes de sommets voisines ;
+  - correction de 3 mm au plus ;
+  - la fente et la lèvre supérieure ne bougent pas ;
+  - le visage et la coque restent collés.
+- **Ombre sous la moustache** sur la coque, au-delà du bord de la lèvre supérieure (`OMBRE_MOUSTACHE` 0,42, hors coins).
+- **Lèvres plus épaisses et plus en volume** (`VERSIONS[4]`) :
+  - lèvre supérieure 22 % plus haute, inférieure 28 % ;
+  - avancée de 4,6 et 5,8 mm (contre 3,4 et 3,8) ;
+  - étirement de 2,2 mm (contre 1,5) ;
+  - l'avancée de la lèvre inférieure s'éteint sur le premier rang de la barbe (`portee_inf` 1,3).
+- Couleur (rose chaud), sourire, yeux et netteté inchangés.
+
+Dans un `.blend`, la propriété `volume_levres` vaut désormais la version appliquée : 1 ou 3 pour la v3, 4 pour la v4. Le script n'ajoute que la différence. `ouverture_lissee` marque le lissage de MouthOpen.
+
+Chaîne :
+1. `ajouter-expressions-gabi.py`, `ajouter-sourire-gabi.py` puis `retoucher-teint-gabi.py`, depuis `edc903a2` ;
+2. `nettete-tete-gabi.py preparer`, puis `appliquer` ;
+3. pour le Gabi Mixamo : `ajouter-sourire-gabi.py /hors-depot/gabi.blend`, puis `regenerer-gabi.py … --tete <dossier préparé>`.
+
+Reste visible en très gros plan seulement :
+- un léger facettage au bas de la lèvre inférieure (maillage du visage grossier) ;
+- deux petits traits sombres au-dessus des commissures ;
+- quelques dents au bord haut de la coque.

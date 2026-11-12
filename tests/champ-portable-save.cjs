@@ -57,6 +57,10 @@ const ordinary=JSON.parse(run('JSON.stringify(createSaveDocument({...codecState,
 assert.equal(ordinary.exportVersion,1);
 ctx.codecOrdinary=JSON.stringify(ordinary);
 assert.equal(run('JSON.stringify(parseSaveDocument(codecOrdinary))'),ctx.codecOrdinary);
-assert.throws(()=>run('createSaveDocument({...codecState,worldMode:{version:4}})'),/trop volumineux/i);
+// Depuis l'export v3, les autres éditions mondiales renvoient aussi le marché au vivier.
+const otherEdition=JSON.parse(run('JSON.stringify(createSaveDocument({...codecState,worldMode:{version:4}}))'));
+assert.equal(otherEdition.exportVersion,3);assert.deepEqual(otherEdition.state.market,['agent:b',{id:'agent:c',condition:64},'agent:a']);
+ctx.codecOther=JSON.stringify(otherEdition);
+assert.equal(run('JSON.stringify(parseSaveDocument(codecOther).state)'),JSON.stringify({...source,worldMode:{version:4}}));
 assert.throws(()=>run('createSaveDocument({...codecState,market:codecState.market.map(p=>({...p,condition:0}))})'),/trop volumineux/i);
-console.log('PASS export Champ : v1, v2, références sûres, ordre, état et secours identiques, édition et plafond');
+console.log('PASS export Champ : v1, v2, v3 pour les autres éditions, références sûres, ordre, état et secours identiques, plafond');

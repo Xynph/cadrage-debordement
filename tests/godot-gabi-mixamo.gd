@@ -166,6 +166,7 @@ func _run() -> void:
 
 	_check_table()
 	_check_origin_profile()
+	_check_head_texture(origin)
 	_check_mixamo_profile(by_variable)
 	_check_mouth(load(_save(_scene(MIXAMO_CLIPS, true, true, true), folder.path_join("gabi-bouche-essai.scn"))))
 	print("GABI_MIXAMO_CHECKS ", JSON.stringify({"checks": checks, "failures": failures}))
@@ -191,6 +192,29 @@ func _check_origin_profile() -> void:
 	check(portrait.visage != null and not portrait.visage.has_shape(&"Clignement"), "Gabi d'origine sans formes du visage : rien ne casse")
 	portrait.free()
 
+
+## Netteté de la tête (scripts/animations/nettete-tete-gabi.py) : visage, barbe, sourcils et cheveux ont leur propre
+## matériau (Gabi_Tete) avec une couleur et une carte de normales 2K, sur Mesh_0, avec les mêmes formes d'expression.
+func _check_head_texture(origin: PackedScene) -> void:
+	if origin == null:
+		return
+	var scene := origin.instantiate()
+	var head: StandardMaterial3D = null
+	var body: MeshInstance3D = null
+	for mesh_instance: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+		if mesh_instance.mesh == null:
+			continue
+		for i in mesh_instance.mesh.get_surface_count():
+			var material := mesh_instance.mesh.surface_get_material(i) as StandardMaterial3D
+			if material != null and material.resource_name == "Gabi_Tete":
+				head = material
+				body = mesh_instance
+	check(head != null, "Tête : matériau Gabi_Tete présent")
+	if head != null:
+		check(head.albedo_texture != null and head.albedo_texture.get_width() >= 2048, "Tête : couleur 2K dédiée")
+		check(head.normal_enabled and head.normal_texture != null and head.normal_texture.get_width() >= 2048, "Tête : carte de normales 2K")
+		check(body.find_blend_shape_by_name(&"Clignement") >= 0 and body.find_blend_shape_by_name(&"MouthOpen") >= 0, "Tête : formes d'expression conservées")
+	scene.free()
 
 func _check_table() -> void:
 	# Toutes les bulles du jeu ont une catégorie ; chaque catégorie n'appelle que des clips existants.
@@ -361,10 +385,14 @@ func _check_mixamo_profile(packed: PackedScene) -> void:
 	# Regard : saccades autour du joueur, carnet consulté, puis retour.
 	player.advance(1.2)
 	check(player.current_animation == "repos", "Repos avant le contrôle du regard")
+	# Les saccades sont tirées au hasard (attente 0,7 à 2,6 s, 30 % pile dans les yeux, sinon petit décalage) :
+	# une fenêtre fixe de 3 s pouvait ne contenir aucun décalage mesurable. On observe jusqu'à 12 s, sans rien
+	# relâcher sur le contrat : un décalage > 0,05 apparaît, et le regard reste petit (< 0,5) vers le joueur.
 	var moved := false
-	for i in 60:
+	for i in 240:
 		visage._process(0.05)
 		moved = moved or visage.gaze.length() > 0.05
+		if moved: break
 	check(moved and visage.gaze.length() < 0.5 and visage.look == "joueur", "Petites saccades autour du joueur")
 	portrait._play_gesture(&"regarde_bas")
 	for i in 20: visage._process(0.05)

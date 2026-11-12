@@ -18,7 +18,7 @@ func wait_response() -> void:
 func ask(command: String,payload: Dictionary={}) -> void:
 	app._command(command,payload)
 	await wait_response()
-	check(app.bridge.last_response_ok,"commande "+command)
+	check(app.bridge.last_response_ok,"commande "+command+" · "+str(app.last_error))
 func run() -> void:
 	AudioServer.set_bus_mute(0,true)
 	root.size=Vector2i(1280,720)
@@ -28,6 +28,8 @@ func run() -> void:
 	while (app.model.is_empty() or app.waiting) and Time.get_ticks_msec()<deadline: await process_frame
 	app.timer.stop()
 	await ask("new_career",{"mode":"common","club":0})
+	# Une carrière neuve ouvre d'abord le rendez-vous de direction : tant qu'il n'est pas traité, le moteur refuse toute négociation.
+	await preload("res://qa_runner.gd").settle_club_meetings(app,self,check)
 	await ask("export")
 	var initial: String=app.model.meta.exportText
 	var profile: String=str(app.model.meta.dataDir).path_join("donnees.json")
