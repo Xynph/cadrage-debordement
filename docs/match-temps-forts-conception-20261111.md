@@ -1168,6 +1168,10 @@ point marqué, pour qu'on ne sache pas à l'avance ce qu'il va se passer ». Bra
 
 ### 13.1 Entracte entre deux temps forts
 
+> **Remplacé le 12 novembre 2026** (décision de Léo) : plus de pause minimale de 8 s, plus de
+> retenue ni de « Passer » ; le temps fort part dès que le moteur le déclenche. Voir
+> [match-importance-20261112.md](match-importance-20261112.md).
+
 - Après chaque temps fort, l'écran intermédiaire reste au moins **8 s réelles** (constante
   `ENTRACTE` de `match_temps_forts.gd` ; `CD_MATCH_TEMPS_FORTS_ENTRACTE`, 0 à 30 s, pour les
   essais). Valeur choisie dans la fourchette 6 à 10 s : le temps de lire le fil et d'ouvrir la

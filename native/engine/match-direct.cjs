@@ -161,7 +161,7 @@ function domination(lignes){
 // jeu courant passe la dernière défense. Plaquages manqués = franchissements et essais en jeu
 // courant subis (le moteur ne compte pas les plaquages joueur par joueur).
 function chiffresRugby(lignes,events){
- const t=[0,1].map(()=>({courses:0,metres:0,franchissements:0,essaisCourant:0,recuperations:0,enAvant:0,plaquesStoppes:0}));
+ const t=[0,1].map(()=>({courses:0,metres:0,franchissements:0,essaisCourant:0,recuperations:0,enAvant:0,plaquesStoppes:0,pieds:0,cartons:0}));
  for(const l of lignes){
   if(l.equipe===null)continue;const e=t[l.equipe],s=events[l.i]?.scene;
   if(l.kind==='carry'&&l.x!==null&&l.depuis!==null){
@@ -170,6 +170,8 @@ function chiffresRugby(lignes,events){
   }
   if(l.kind==='turnover'){e.recuperations++;e.plaquesStoppes++}
   if(l.kind==='hand-fault')e.enAvant++;
+  if(['kick','touch','drop22','goalLine'].includes(l.kind))e.pieds++;
+  if(l.kind==='card'&&l.incident)e.cartons++;
   if(l.kind==='try'&&s?.origin==='open')e.essaisCourant++;
  }
  return t;
@@ -206,6 +208,18 @@ function notesDuMatch(lignes,events,camp){
 const AMORCE_MAX=8;
 function borneEntracte(lignes,bilan){
  const montre=(bilan.tempsForts||[]).reduce((n,h)=>Math.max(n,h.fin),-1);
+ // Déclenchement par l'importance (match-importance-20261112) : le moteur ouvre un temps fort au
+ // début de l'action qui monte. Une action terminée sans avoir monté ne sera plus montrée en 3D :
+ // la 2D peut la dérouler. L'action en cours (ou la pénalité qui peut amener un tir) reste
+ // retenue depuis le début que lui donnerait le moteur (même règle, `debutAction`).
+ if(bilan.mode==='importance'){
+  let dernier=-1;for(let j=lignes.length-1;j>montre;j--)if(!lignes[j].bandeau){dernier=j;break}
+  if(dernier<0)return Math.max(montre+1,lignes.length);
+  const l=lignes[dernier],close=selection.FINS.has(l.kind)&&l.kind!=='penalty'||l.kind==='turnover'||l.kind==='setpiece-loss';
+  if(close)return lignes.length;
+  const amorce=(selection.IMPORTANCE[bilan.niveau]||{amorce:AMORCE_MAX}).amorce;
+  return Math.max(montre+1,selection.debutAction(lignes,dernier,montre+1,amorce));
+ }
  let borne=lignes.length,vus=0,minute=null;
  for(let j=lignes.length-1;j>montre;j--){
   const l=lignes[j];if(l.bandeau)continue;
@@ -253,7 +267,7 @@ function project(model,niveau,lire,options={}){
  const live=model.live,events=live.events,nommer=renommeur(live.teams);
  if(!NIVEAUX.includes(niveau))throw new RangeError('Niveau de temps forts inconnu : '+niveau);
  const phase=model.next?.phase,eliminatoire=typeof phase==='string'&&phase!=='league';
- const bilan=selection.en_direct(events,{niveau,eliminatoire}),lignes=selection.normaliser(events),etat=lire.etat()||{};
+ const etat=lire.etat()||{},bilan=selection.en_direct(events,{niveau,eliminatoire,camp:etat.camp}),lignes=selection.normaliser(events);
  const jouable=l=>!l.bandeau&&l.kind!=='break'&&l.kind!=='end';
  // L'entracte ne montre que le journal d'avant la borne (rien d'un temps fort à venir).
  const borne=borneEntracte(lignes,bilan);
@@ -298,7 +312,11 @@ function project(model,niveau,lire,options={}){
   compte({cle:'touches',label:'Touches gagnées',valeurs:[0,1].map(s=>stats[s]?.lineoutsWon||0),sur:[0,1].map(s=>stats[s]?.lineouts||0)}),
   compte({cle:'recuperations',label:'Ballons récupérés',valeurs:rugby.map(e=>e.recuperations)}),
   compte({cle:'penalites',label:'Pénalités concédées',valeurs:[0,1].map(s=>stats[s]?.penalties||0),inverse:true}),
-  compte({cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true})
+  compte({cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true}),
+  // Entracte façon match overview (demande de Léo) : temps de jeu, jeu au pied, cartons montrés.
+  compte({cle:'temps_de_jeu',label:'Temps de jeu',valeurs:rugby.map(e=>e.courses)}),
+  compte({cle:'pieds',label:'Coups de pied',valeurs:rugby.map(e=>e.pieds)}),
+  compte({cle:'cartons',label:'Cartons',valeurs:rugby.map(e=>e.cartons),inverse:true})
  ];
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
   // Minute du dernier fait montré (borne) : l'horloge de l'entracte ne court pas devant ce qui a été vu.
@@ -327,7 +345,9 @@ function project(model,niveau,lire,options={}){
    if(avant)depart=lire.scenes([avant.i])[0];
   }
   if(plans.length)direct.tempsFort={cle:tf.cle,suite:tf.suite,type:tf.type,titre:TYPES[tf.type]||'Temps fort',types:tf.types,score:tf.score,force:tf.force,
-   duree:tf.duree,debut:tf.debut,fin:tf.fin,scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
+   duree:tf.duree,debut:tf.debut,fin:tf.fin,
+   // Déclenchement (journal de régie et tests ; jamais affiché : il ne doit rien annoncer).
+   declenchement:tf.declencheur===undefined?null:{fait:tf.declencheur,importance:tf.importance,seuil:tf.seuil,rattrapage:tf.rattrapage===true},scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
    bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:nommer(events[i].text)}))};
   if(plans.length&&(options.choregraphe===true||options.choregraphe==='entrees')){
    try{

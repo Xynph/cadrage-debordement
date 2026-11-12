@@ -57,8 +57,10 @@ func run() -> void:
 	var dialog: AcceptDialog = journal.find_child("MatchActionReview",true,false)
 	check(dialog!=null and dialog.visible,"Ouverture réelle par clavier")
 	if dialog!=null:
-		check(dialog.events==original.events,"Faits réels du worker copiés sans changement")
-		check(dialog.selection.size()==original.events.size(),"Tous les événements consultables")
+		# #596 : le journal n'affiche que les faits déjà montrés (rien d'un temps fort à venir, le moteur a
+		# une minute d'avance, cf. match_temps_forts.montre) : préfixe non vide, copié sans changement.
+		check(dialog.events.size()>0 and dialog.events.size()<=original.events.size() and dialog.events==original.events.slice(0,dialog.events.size()),"Faits réels du worker copiés sans changement")
+		check(dialog.selection.size()==dialog.events.size(),"Tous les événements consultables")
 		var last: int = dialog.index
 		if last>0:
 			await key(dialog.previous)

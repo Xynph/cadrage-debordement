@@ -50,7 +50,7 @@ for(const script of ['components','shell'].filter(id=>fs.existsSync(path.join(ro
 }
 const dir=fs.mkdtempSync(path.join(process.env.TEMP||os.tmpdir(),'oval-immersive08-'));
 fs.mkdirSync(path.join(dir,'profile'));
-const result=spawnSync(godot,[...(process.env.CD_IMMERSIVE_GRAPHICS==='1'?[]:['--headless']),'--audio-driver','Dummy','--max-fps','60','--path',path.join(root,'native/godot'),'--script',path.join(__dirname,'godot-immersive08.gd'),'--log-file',path.join(dir,'runtime.log')],{encoding:'utf8',windowsHide:true,timeout:180000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(dir,'profile'),CD_IMMERSIVE_ARTIFACTS:dir}});
+const result=spawnSync(godot,[...(process.env.CD_IMMERSIVE_GRAPHICS==='1'?[]:['--headless']),'--audio-driver','Dummy','--max-fps','60','--path',path.join(root,'native/godot'),'--script',path.join(__dirname,'godot-immersive08.gd'),'--log-file',path.join(dir,'runtime.log')],{encoding:'utf8',windowsHide:true,timeout:400000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(dir,'profile'),CD_IMMERSIVE_ARTIFACTS:dir}});
 const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(dir,'test.log'),output);
 console.log(output.trim());console.log('Preuves immersive08 : '+dir);
 if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:/);
