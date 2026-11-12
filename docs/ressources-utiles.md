@@ -124,6 +124,17 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
 | [Crédits des scènes 3D](../native/godot/ui/contextual/rooms/CREDITS.md) | Auteurs, licences et ressources réellement redistribuées. |
 | [Audit des idées GitHub](idees-github-20261108.md) | Inventaire historique du 8 novembre ; ses états peuvent être dépassés. Suivre ses renvois vers la réception et comparer au code actuel. |
 
+## Choix du modèle et de l'effort — 12 novembre 2026
+
+- **Référence fournie :** [Which Claude model should you build with?](https://claude.dev/blog/which-claude-model-should-you-build-with/)
+- **Provenance :** message de Léo transmettant les principes adaptés par Claude
+  à Codex ; plafond de session, quota, effort moyen par défaut et vérification
+  avant escalade. Utilité : dimensionner chaque tâche sans multiplier les sessions.
+- **Statut :** principes du message retenus dans AGENTS ; article **non consulté**.
+  Aucune exécution d'un modèle externe, aucun service payant utilisé. Coût et
+  licence de l'article non vérifiés ; aucune réutilisation de son contenu.
+- **Preuve :** décision consignée dans le ticket commun #591 le 12/11/2026.
+
 ## Modèle pour une nouvelle entrée
 
 - **Titre et URL pérenne :**
