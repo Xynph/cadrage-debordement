@@ -621,7 +621,7 @@ func _process(delta: float) -> void:
 
 
 ## Port du ballon par le porteur : deux mains (prise, passe proche, allure modérée) ou calé sous
-## le bras du côté opposé au défenseur le plus proche (course lancée). Le ballon suit les poignets.
+## le bras tourné vers la caméra (course lancée). Le ballon suit les poignets.
 const PORT_SOUS_LE_BRAS := 4.3     # allure (m/s) à partir de laquelle le ballon est calé sous le bras
 const PORT_APRES_PRISE := 0.5      # deux mains au moins pendant ce temps après la prise
 const PASSE_ARMEE := 0.42          # armé de la passe avant le lâcher, en secondes
@@ -639,8 +639,9 @@ func _porter_ballon(id: String, entry: Dictionary, delta: float) -> void:
 	var voulu := 1.0 if swing < 0.0 and float(entry.get("allure", 0.0)) >= PORT_SOUS_LE_BRAS and float(entry.get("tenu", 0.0)) >= PORT_APRES_PRISE else 0.0
 	entry.tuck = move_toward(float(entry.get("tuck", 0.0)), voulu, delta * 3.0)
 	if float(entry.get("cote_ballon", 0.0)) == 0.0:
-		# Le ballon loin du défenseur le plus proche : calé sous le bras de l'autre côté.
-		entry.cote_ballon = -_cote_du_plus_proche(id, actor)
+		# Calé sous le bras tourné vers la caméra, choisi à la prise : le ballon reste visible.
+		var vers_camera := _camera.global_position - actor.global_position if is_instance_valid(_camera) else Vector3.BACK
+		entry.cote_ballon = 1.0 if actor.global_basis.x.dot(Vector3(vers_camera.x, 0.0, vers_camera.z)) >= 0.0 else -1.0
 	var tenue: Array = Presentation.carry_ball(actor, entry.rig, float(entry.grip), float(entry.tuck), float(entry.cote_ballon), swing, toward)
 	var possede: bool = _ball_attached and _carrier_id == id and not (_gestes != null and _gestes.owns_ball())
 	# Raccord en 0,2 s depuis la place donnée par la trajectoire (prise, passe reçue).
@@ -658,10 +659,10 @@ func _bras_hors_ballon(id: String, entry: Dictionary) -> void:
 	var actor: Node3D = entry.node
 	var passe: Dictionary = _choregraphie.passe_de(id, PASSE_FIN, 0.0)
 	if not passe.is_empty():
-		var age := _choregraphie.temps - float(passe.t)
+		var age: float = _choregraphie.temps - float(passe.t)
 		Presentation.pass_follow(actor, entry.rig, _cote_de(actor, str(passe.vers)), 1.0 - clampf(age / PASSE_FIN, 0.0, 1.0))
 		return
-	var prise := _choregraphie.reception_de(id, 0.45)
+	var prise: float = _choregraphie.reception_de(id, 0.45)
 	if prise > 0.0 and _ball.visible:
 		Presentation.reach_ball(actor, entry.rig, _ball.global_position, 1.0 - clampf((prise - _choregraphie.temps) / 0.45, 0.0, 1.0))
 
@@ -672,20 +673,6 @@ func _cote_de(actor: Node3D, autre: String) -> float:
 		return 1.0
 	var local := actor.global_basis.inverse() * ((_actors[autre].node as Node3D).global_position - actor.global_position)
 	return 1.0 if local.x >= 0.0 else -1.0
-
-
-func _cote_du_plus_proche(id: String, actor: Node3D) -> float:
-	var proche := ""
-	var mieux := INF
-	for autre: String in _actors:
-		if autre == id or _actors[autre].side == _actors[id].side:
-			continue
-		var d := (_actors[autre].node as Node3D).global_position.distance_squared_to(actor.global_position)
-		if d < mieux:
-			mieux = d
-			proche = autre
-	# Personne : ballon sous le bras droit.
-	return _cote_de(actor, proche) if not proche.is_empty() else 1.0
 
 
 func _is_pass_player(id: String) -> bool:

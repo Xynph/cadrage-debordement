@@ -35,7 +35,7 @@ const SEUIL_DYNAMIQUE=t=>86-32*t; // de 54 (tout se joue) à 80 (match plié)
 // stoppé, essai sauvé ou tenu en l'air, ballon récupéré près de sa ligne, longue séquence
 // défendue, pénalité manquée, contre-attaque, jeu au pied dangereux. Elles sont cotées au niveau
 // d'une pénalité réussie, et le niveau dynamique en garde une part réelle (régulateur d'issue) :
-// voir docs/match-temps-forts-conception-20261111.md, § 12.
+// voir docs/match-temps-forts-conception-20261111.md, § 13.
 const GROSSES=new Set(['franchissement','ballon_sauve','ballon_tenu_en_but','essai_refuse','penalite_manquee','pression_dans_les_22',
  'pres_de_la_ligne','cinquante_22','jeu_au_pied_dangereux','contre_attaque','touche_5m','melee_5m','en_but_sous_pression','ballon_porte']);
 // Régulateur d'issue du niveau dynamique : après quatre temps forts, si la part de ceux qui
