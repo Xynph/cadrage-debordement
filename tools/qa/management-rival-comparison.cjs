@@ -6,10 +6,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('nod
 const {createBridge}=require('../../native/engine/worker.cjs');
 const {settleClubMeetings}=require('../../tests/helpers/club-meetings.cjs');
 const ROOT=path.resolve(__dirname,'../..'),hash=value=>crypto.createHash('sha256').update(value).digest('hex');
-const CHECKPOINTS=[{seed:427,club:13},{seed:731,club:6},{seed:1299,club:0}],PREFERRED_FAMILIES=[2,6,4,1,3,5,7,8,0];
+const ALLOWED_CHECKPOINTS=[{seed:427,club:13},{seed:731,club:6},{seed:1299,club:0}],PREFERRED_FAMILIES=[2,6,4,1,3,5,7,8,0];
+const selectedSeed=Number(process.argv.find(value=>value.startsWith('--checkpoint-seed='))?.slice(18));
+assert.ok(ALLOWED_CHECKPOINTS.some(item=>item.seed===selectedSeed),'Choose exactly one bounded public checkpoint: --checkpoint-seed=427, 731 or 1299');
+const CHECKPOINTS=ALLOWED_CHECKPOINTS.filter(item=>item.seed===selectedSeed);
 const output=path.resolve(process.argv.find(value=>value.startsWith('--output='))?.slice(9)||'work/management-rival-comparison.json');
 const report={schema:1,sourceSha:execFileSync('git',['rev-parse','HEAD'],{cwd:ROOT,encoding:'utf8'}).trim(),nodeVersion:process.version,scriptSha256:hash(fs.readFileSync(__filename)),checkpoints:[],checks:0,complete:false,
- method:'Three independent public Fiction careers; up to three publicly available positional families each; repeated negotiation, public-cash negative control, exact complete-profile forks and actual confirmed auctions.',
+ method:'One explicit batch from three approved independent public Fiction careers; up to three publicly available positional families each; repeated negotiation, public-cash negative control, exact complete-profile forks and actual confirmed auctions.',
  limits:['Different checkpoints are not the same world or a causal experiment.','Only quoted positive need is observed; non-offers have no per-club reason.','Public coach reaction personality is not a tactical identity or evidence of recruitment motive.','No hidden player rating, potential, skill, condition or private decision score selects a target.','Full profiles and exported career states are never published.','This negotiated-release channel does not execute or qualify an autonomous transfer window.'],
  sourceFiles:Object.fromEntries(['native/engine/interclub-market.cjs','native/engine/model.cjs','native/engine/club-world.cjs','dist/ai-roster-cycle.js','tools/qa/management-rival-observation.cjs'].map(file=>[file,hash(fs.readFileSync(path.join(ROOT,file)))]))};
 const check=(condition,message)=>{report.checks++;assert.ok(condition,message);};
