@@ -669,7 +669,8 @@ func resumed() -> Array:
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
 	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
-	check(view.clock.text == str(direct.get("horloge", "")), "L'horloge du match repris est affichée : " + view.clock.text)
+	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
+	check(view.clock.text.begins_with(str(direct.get("horloge", "")).trim_suffix("′") + ":"), "L'horloge du match repris est affichée : " + view.clock.text)
 	await settle(40)
 	check(highlights(regie.suivi) == 0 and regie.etat == regie.INTER and not app.waiting, "En pause, le match repris attend")
 	var minute: int = app.model.live.minute
