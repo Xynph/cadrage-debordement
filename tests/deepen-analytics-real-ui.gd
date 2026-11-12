@@ -110,7 +110,7 @@ func run() -> void:
 		picker.select(measured_index)
 		picker.item_selected.emit(measured_index)
 		await settle()
-	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | "))
+	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | ")+" · index="+str(measured_index)+" items="+str(picker.item_count)+" feuilles modèle="+str(roster.filter(func(p: Dictionary): return p.get("matches",[]).size()>0).size())+" · "+str(picker.get_item_text(0))+" ; "+str(picker.get_item_text(mini(1,picker.item_count-1))))
 	var measured_name: String = picker.get_item_text(measured_index).split(" · ")[0]
 	var actual: Dictionary = {}
 	for candidate: Dictionary in roster:

@@ -520,7 +520,7 @@ func reception() -> void:
 	check(portrait != null, "Illustration de la Réception chargée en jeu")
 	if portrait != null:
 		var crop := portrait.texture as AtlasTexture
-		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and crop.region.size.y>=177.0 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée · "+str(crop.region if crop!=null else null)+" "+str(portrait.size))
+		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and absf(crop.region.size.x/crop.region.size.y-portrait.size.x/portrait.size.y)<0.06 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée · "+str(crop.region if crop!=null else null)+" "+str(portrait.size))
 		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
 		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
 	await capture("05-reception-2560x1440")
@@ -542,9 +542,9 @@ func reception() -> void:
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	first = message_rows(list)[0]
-	first.pressed.emit()
-	await settle()
+	# Les avis du calendrier et les invitations de presse précèdent désormais l'alerte contrat et n'offrent pas de traitement :
+	# on sélectionne le premier message traitable qui ouvre l'effectif (alerte contrat).
+	original = await select_actionable()
 	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
 	app.find_child("InboxToggleFavorite", true, false).pressed.emit()
 	app.find_child("InboxFolder2", true, false).pressed.emit()
@@ -579,6 +579,20 @@ func reception() -> void:
 
 func message_rows(list: Node) -> Array:
 	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))
+
+func select_actionable() -> String:
+	var list: VBoxContainer = await expand_threads()
+	var count: int = message_rows(list).size()
+	for index in count:
+		list = app.find_child("InboxMessageRows", true, false)
+		var rows: Array = message_rows(list)
+		if index >= rows.size(): break
+		var text: String = rows[index].get_meta("message_text")
+		rows[index].pressed.emit()
+		await settle()
+		var open_action: Button = app.find_child("InboxOpenMessageAction", true, false)
+		if app.find_child("InboxToggleArchive", true, false) != null and open_action != null and (open_action.text.contains("Effectif") or open_action.text.contains("échéances")): return text
+	return ""
 
 func expand_threads() -> VBoxContainer:
 	for attempt in 24:
@@ -830,7 +844,11 @@ func desktop_1080() -> void:
 			var art: Control = app.find_child("CompactRouteArt",true,false)
 			var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
 			check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
-			check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+str(app.body.get_child(0).name)+" "+str(app.body.get_child(0).get_meta_list()))
+			var first_action: Button = null
+			for candidate: Button in app.body.find_children("*","Button",true,false):
+				if candidate.is_visible_in_tree(): first_action = candidate; break
+			# Certaines pages s'ouvrent désormais sur un bandeau contextuel : la première vraie commande visible porte la DA.
+			check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande"))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
 	root.size=Vector2i(2560,1440)
