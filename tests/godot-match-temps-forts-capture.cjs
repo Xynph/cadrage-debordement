@@ -22,6 +22,7 @@
 //                                 seul le premier temps fort de chaque type est enregistré, à vitesse réelle, les autres
 //                                 passent à vitesse 6 sans image ; la capture s'arrête quand tous ont été vus
 //   CD_MATCH_TEMPS_FORTS_TOUCHE   combinaison de touche du club dirigé avant le coup d'envoi (ex. maul : ballons portés)
+//   CD_MATCH_TEMPS_FORTS_DEPUIS   minute à partir de laquelle les temps forts sont joués (avant : commentaire seul)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const proof=process.env.CD_MATCH_TEMPS_FORTS_PROOF;

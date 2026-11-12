@@ -100,6 +100,9 @@ func run() -> void:
 	var type_garde := ""
 	var queue := 0.0
 	report["sequences"] = []
+	# Avant cette minute, commentaire seul (aucun temps fort) ; ensuite, le niveau demandé.
+	var depuis := number("CD_MATCH_TEMPS_FORTS_DEPUIS", 0)
+	var niveau_voulu := OS.get_environment("CD_MATCH_TEMPS_FORTS_NIVEAU")
 	while true:
 		await process_frame
 		frame += 1
@@ -144,6 +147,9 @@ func run() -> void:
 				"geste_temps": float(gestes.time) if gestes != null else 0.0, "secondes_sans_progres": (now - moved) / 1000.0}
 			push_error("Direct figé : " + JSON.stringify(report.fige))
 			break
+		if depuis > 0 and regie != null and regie.etat != regie.JEU and not live.is_empty():
+			var voulu := "aucun" if int(live.get("minute", 0)) < depuis else (niveau_voulu if not niveau_voulu.is_empty() else "dynamique")
+			if regie.niveau != voulu: regie.choisir_niveau(voulu)
 		var garder := true
 		if not types_voulus.is_empty():
 			garder = false
