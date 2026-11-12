@@ -431,8 +431,12 @@ function parseSaveDocument(text){
  saveCheck(doc.exportVersion===1||compact,'Cette version d’export n’est pas prise en charge.');
  saveCheck(typeof doc.exportedAt==='string'&&Number.isFinite(Date.parse(doc.exportedAt))&&typeof doc.checksum==='string');
  if(compact)doc.state.market=expandChampMarket(doc.state);
+ // L'empreinte porte sur le fichier tel qu'exporté : la validation peut migrer
+ // une ancienne carrière (identifiants de journalistes renommés, par exemple).
+ const exportedChecksum=saveChecksum(doc.state);
  validateCareer(doc.state);
- saveCheck(saveChecksum(doc.state)===doc.checksum,'Le fichier a été modifié ou endommagé depuis son export.');
+ saveCheck(exportedChecksum===doc.checksum,'Le fichier a été modifié ou endommagé depuis son export.');
+ doc.checksum=saveChecksum(doc.state);// empreinte de l'état vérifié, contrôlée à la confirmation
  return doc;
 }
 function saveFileName(doc){return `Cadrage-Debordement-${doc.state.clubs[doc.state.club].abbr}-S${doc.state.season}-${doc.state.phase==='league'?'J'+(doc.state.round+1):doc.state.phase.toUpperCase()}-${doc.exportedAt.replace(/[-:]/g,'').slice(0,15)}.json`}

@@ -6,6 +6,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
 const SquadCanvas = preload("res://ui/immersive08/squad_canvas.gd")
+const SocleEffectif = preload("res://ui/socle/ecran_effectif.gd")
 const TacticsCanvas = preload("res://ui/immersive08/tactics_canvas.gd")
 const PlayerCanvas = preload("res://ui/immersive08/player_canvas.gd")
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
@@ -607,6 +608,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Effectif":
 			var player:=P.player(app.model,app.selected_player)
 			if app.get_meta("immersive08_full_player",false) and not player.is_empty():app.body.add_child(PlayerCanvas.build(app,player))
+			elif SocleEffectif.actif(app):app.body.add_child(SocleEffectif.build(app))
 			elif app.get_window().size.x>=1600:app.body.add_child(SquadCanvas.build(app))
 			else:
 				var roster: Control = app.SquadViews.squad(app)
