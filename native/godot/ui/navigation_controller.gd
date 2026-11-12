@@ -21,6 +21,7 @@ var _palette_return_focus: WeakRef
 var _dispatching := false
 var _reading_revision := 0
 var _readers: Dictionary = {}
+var _page_readers: Dictionary = {}
 var _next_reader := 0
 var _reader_departure := 0
 var _reader_activation := 0
@@ -503,6 +504,7 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	var kind := str(target.get("kind", ""))
 	var id := str(target.get("id", ""))
 	if kind in ["player", "squad"] and _person("squad", id).is_empty(): kind = "market"
+	var page_origin := _page_reader_origin() if source == null and kind in ["club", "fixture", "report"] else {}
 	var destination := ""
 	var opened := true
 	match kind:
@@ -552,6 +554,7 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	_dispatching = false
 	_reader_departure = 0
 	if reader_token != 0: _finish_reader_link(reader_token, opened, destination)
+	elif opened and destination.is_empty() and not page_origin.is_empty(): _finish_page_reader(page_origin, target)
 	return opened
 
 func _restore_reading_controls(reading: Dictionary, revision: int) -> void:
@@ -652,6 +655,10 @@ func _active_linked_modal() -> Window:
 		if record.child == null: continue
 		var child := record.child.get_ref() as Window
 		if is_instance_valid(child) and not child.is_queued_for_deletion() and child.visible: return child
+	# A modal child always takes precedence over its root page reader.
+	for record: Dictionary in _page_readers.values():
+		var window := record.window.get_ref() as Window
+		if is_instance_valid(window) and not window.is_queued_for_deletion() and window.visible: return window
 	return null
 
 func _active_history_reader() -> Window:
@@ -707,7 +714,9 @@ func _discard_reader(token: int) -> void:
 	_readers.erase(token)
 	for entry: Dictionary in history:
 		if int(entry.get("reader", 0)) == token: entry.erase("reader")
-	if window != null: _close_reader(window)
+	if window != null:
+		_page_readers.erase(window.get_instance_id())
+		_close_reader(window)
 
 func _collect_readers() -> void:
 	var keep := {}
@@ -754,7 +763,11 @@ func invalidate_readers() -> void:
 		if record.child != null:
 			var child := record.child.get_ref() as Window
 			if is_instance_valid(child) and not child.is_queued_for_deletion(): windows[child.get_instance_id()] = weakref(child)
+	for record: Dictionary in _page_readers.values():
+		var window := record.window.get_ref() as Window
+		if is_instance_valid(window) and not window.is_queued_for_deletion(): windows[window.get_instance_id()] = weakref(window)
 	_readers.clear()
+	_page_readers.clear()
 	for entry: Dictionary in history: entry.erase("reader")
 	for window_ref: WeakRef in windows.values():
 		var window := window_ref.get_ref() as Window
@@ -800,3 +813,37 @@ func _close_reader(window: Window) -> void:
 	# Release it before an ancestor reader is shown in the same idle cycle.
 	window.hide()
 	window.queue_free()
+
+# The first reader opened from a page has no suspended Window parent. Track its
+# real origin separately so Back closes it instead of remaining behind _blocked.
+func _page_reader_origin() -> Dictionary:
+	var reading := U.reading_snapshot(app)
+	return {"page":weakref(app.root_content), "route":app.route, "entry":history[cursor] if cursor >= 0 else null, "controls":{"focus":reading.get("focus", {}).duplicate(true), "scrolls":reading.get("scrolls", []).duplicate(true)}}
+
+func _finish_page_reader(origin: Dictionary, target: Dictionary) -> void:
+	var window := _visible_reading_window()
+	if window == null or str(window.get_meta("entity_kind", "")) != str(target.get("kind", "")) or str(window.get_meta("entity_id", "")) != str(target.get("id", "")): return
+	var id := window.get_instance_id()
+	origin.window = weakref(window)
+	_page_readers[id] = origin
+	window.window_input.connect(_reader_input.bind(weakref(window)))
+	window.tree_exited.connect(_page_reader_closed.bind(id), CONNECT_ONE_SHOT)
+
+func _page_reader_closed(id: int) -> void:
+	if not _page_readers.has(id): return
+	var origin: Dictionary = _page_readers[id]
+	_page_readers.erase(id)
+	_restore_page_reader(origin, _reader_activation)
+
+func _restore_page_reader(origin: Dictionary, activation: int) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if activation != _reader_activation or app == null or app.closing or app.route != origin.route or _blocked(): return
+	var page: Control = app.root_content
+	if not is_instance_valid(page): return
+	var original := origin.page.get_ref() as Control
+	var same_entry: bool = cursor >= 0 and origin.entry is Dictionary and is_same(history[cursor], origin.entry)
+	# A route round trip may have rebuilt the page. Only its exact original
+	# reading entry can authorize restoration to a reconstructed page.
+	if page != original and not same_entry: return
+	U.restore_reading_controls(app, page, origin.controls)
