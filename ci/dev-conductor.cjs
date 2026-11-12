@@ -41,11 +41,11 @@ function select(prs) {
       p.conflicts.length?'Coordonner les chemins communs avant toute écriture':
       !p.ready?'Résoudre draft, conflits ou état de fusion incertain':
       p.sensitive?'Contrôles renforcés et gate officiel sur HEAD exact':
-      'Contrôler CI 7/7 et gate officiel sur HEAD exact';
+      'Contrôler CI '+EXPECTED.length+'/'+EXPECTED.length+' et gate officiel sur HEAD exact';
   }
   return sorted;
 }
-const EXPECTED=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const {OFFICIAL_JOBS:EXPECTED,officialJobs}=require('./ci-jobs.cjs');
 function statusCI(sha,runs,jobs){
   if(!/^[0-9a-f]{40}$/.test(sha||''))return 'SHA invalide';
   const matching=(runs||[]).filter(r=>r.head_sha===sha&&r.event==='pull_request'&&
@@ -53,14 +53,14 @@ function statusCI(sha,runs,jobs){
   matching.sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)||b.id-a.id);
   const run=matching[0];
   if(!run)return 'CI absente sur HEAD';
-  const j=jobs?.[run.id];
+  const j=officialJobs(jobs?.[run.id]);
   if(run.status!=='completed')return 'CI en cours';
   if(run.conclusion!=='success')return 'CI échouée ou annulée';
   if(!Array.isArray(j))return 'Jobs CI non vérifiés';
   if(j.length!==EXPECTED.length||!EXPECTED.every(name=>
     j.filter(x=>x.name===name&&x.status==='completed'&&x.conclusion==='success').length===1))
     return 'CI incomplète ou non conforme';
-  return '7/7 SUCCESS (gate non exécuté)';
+  return EXPECTED.length+'/'+EXPECTED.length+' SUCCESS (gate non exécuté)';
 }
 function attachCI(rows,runs,getJobs){
   return rows.map(row=>{

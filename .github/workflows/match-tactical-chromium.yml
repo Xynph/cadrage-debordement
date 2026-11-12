@@ -1,13 +1,8 @@
 name: Reception Chromium observatoire tactique
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/match-tactical-visual.js'
-      - 'dist/match-cockpit.js'
-      - 'dist/index.html'
-      - 'tests/match-tactical-browser.py'
-      - '.github/workflows/match-tactical-chromium.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

@@ -2,11 +2,18 @@ name: Windows — constructeur officiel et recette EXE
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, ready_for_review]
+  # Recette automatique non bloquante de l'EXE à chaque fusion sur main.
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       source_sha:
-        description: SHA complet du main exact à construire et recevoir
-        required: true
+        description: >-
+          Brouillon de Release : SHA complet du main exact (lancer depuis main).
+          Laisser vide pour une simple recette avec EXE téléchargeable, sur n'importe
+          quelle branche (par exemple celle d'une PR).
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -91,11 +98,80 @@ jobs:
           }
           "Recette ciblée de ``$env:SOURCE_COMMIT``. Aucun artefact/cache Actions, aucun paquet publié par ce job PR." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
+  recette:
+    # Machines Windows gratuites du dépôt public. Hors de tests.yml : jamais requis par
+    # la règle de main (seul « Validation CI » l'est), donc non bloquant pour les PR.
+    name: Recette Windows EXE (non bloquante)
+    if: >-
+      github.event.repository.private == false && (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && inputs.source_sha == ''))
+    runs-on: windows-2022
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Conserver les octets des sources
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      # Constructeur officiel (outils épinglés et vérifiés), puis recette native de l'EXE
+      # extrait du ZIP : démarrage sur profil vierge, création d'une carrière par l'interface,
+      # matchs joués dans la vue 3D, sauvegarde, relance de l'EXE et reprise à l'identique.
+      - name: Construire l'EXE et dérouler la recette automatique
+        id: receipt
+        shell: pwsh
+        run: ./ci/run-windows-build.ps1 -SourceCommit $env:SOURCE_COMMIT
+      - name: EXE téléchargeable (archive officielle)
+        if: always() && steps.receipt.outputs.package != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: RugbyLegacy27-Windows-x64-${{ github.sha }}
+          path: ${{ steps.receipt.outputs.package }}
+          if-no-files-found: ignore
+          retention-days: 14
+          compression-level: 0
+      - name: Preuves de recette (rapport, journaux, captures)
+        if: always() && steps.receipt.outputs.evidence != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: recette-windows-${{ github.sha }}
+          path: |
+            ${{ steps.receipt.outputs.root }}/*.log
+            ${{ steps.receipt.outputs.root }}/official-build/build/*.log
+            ${{ steps.receipt.outputs.evidence }}
+            !${{ steps.receipt.outputs.evidence }}/private-user
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Verdict de recette
+        if: always()
+        shell: pwsh
+        env:
+          OUTCOME: ${{ steps.receipt.outcome }}
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP 'oval-windows-delivery/evidence/windows-report.json'
+          $lines = @("## Recette Windows EXE : $env:OUTCOME", '', "- Commit : ``$env:SOURCE_COMMIT``")
+          if (Test-Path -LiteralPath $report) {
+            $qa = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+            $lines += "- Rapport : passed=$($qa.passed) ; échec : $($qa.failure)"
+            foreach ($limit in @($qa.limits)) { if ($limit) { $lines += "- Limite : $limit" } }
+          } else { $lines += '- Rapport de recette absent (construction interrompue).' }
+          $lines += '- EXE : artefact « RugbyLegacy27-Windows-x64-<sha> » (ZIP officiel, 14 jours). Non bloquant : seul « Validation CI » est requis.'
+          $lines -join "`n" | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
   receive-main:
     name: Paquet main et preuves Windows en brouillon
     if: >-
       github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
-      github.event.repository.private == false
+      inputs.source_sha != '' && github.event.repository.private == false
     runs-on: windows-2022
     timeout-minutes: 120
     permissions:

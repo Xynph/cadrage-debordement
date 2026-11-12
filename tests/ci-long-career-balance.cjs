@@ -3,7 +3,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { allTestFiles, planShards, WEIGHTS_SECONDS } = require('../ci/shard-tests.cjs');
+const { allTestFiles, planShards, planLoads } = require('../ci/shard-tests.cjs');
+const { SHARD_COUNT } = require('../ci/ci-jobs.cjs');
+// Décision du régime à cinq shards (poids figés au 11 novembre 2026), rejouée telle quelle.
+const WEIGHTS_SECONDS = require('./fixtures/ci/weights-5-shards-20261111.json').weights;
 const LONG = 'tests/lnr-career-long.cjs';
 assert.equal(WEIGHTS_SECONDS[LONG], 55, 'Reserve de capacite suite longue');
 const fixture = fs.readFileSync(path.resolve(__dirname, 'ci-shard-profiles.cjs'), 'utf8');
@@ -18,8 +21,8 @@ assert.equal(profiles.length, 3, 'Trois traces completes attendues');
 const historical = Object.keys(profiles[0]).sort();
 assert.equal(historical.length, 220);
 const previous = { ...WEIGHTS_SECONDS, [LONG]: 40 };
-const oldPlan = planShards(historical, previous);
-const newPlan = planShards(historical);
+const oldPlan = planShards(historical, previous, 5);
+const newPlan = planShards(historical, WEIGHTS_SECONDS, 5);
 const peak = (groups, profile) => Math.max(...groups.map(g =>
   g.reduce((sum, file) => sum + (profile[file] || 0), 0)));
 const before = profiles.map(p => peak(oldPlan, p));
@@ -29,12 +32,12 @@ assert.deepEqual(after, [148, 156, 161], 'Le nouvel equilibrage ne reproduit plu
 assert.ok(after.every((x, i) => x <= before[i]), 'Regression historique');
 const all = allTestFiles();
 const groups = planShards(all);
-assert.equal(groups.length, 5);
+assert.equal(groups.length, SHARD_COUNT);
 assert.ok(groups.every(g => g.length > 0));
 assert.deepEqual(groups.flat().sort(), all.slice().sort(), 'Couverture complete');
 assert.equal(new Set(groups.flat()).size, all.length);
 assert.deepEqual(planShards(all.slice().reverse()), groups, 'Determinisme');
-const load = groups.map(g => g.reduce((sum, f) => sum + (WEIGHTS_SECONDS[f] || 1), 0));
+const load = planLoads(groups);
 assert.ok(Math.max(...load) - Math.min(...load) <= 5, 'Deséquilibre des poids prevus');
 console.log('CI LONG CAREER BALANCE PASS: ' + before.join('/') +
   ' -> ' + after.join('/') + ' s (rejeu, pas gain causal) ; suites ' + all.length);

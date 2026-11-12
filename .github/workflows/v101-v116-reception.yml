@@ -1,14 +1,7 @@
 name: Reception management V101-V116 Chromium PC
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'tests/v101-v116-reception-browser.mjs'
-      - '.github/workflows/v101-v116-reception.yml'
-      - 'dist/espoirs-coaching-v101-v104.js'
-      - 'dist/sporting-director-v105-v110.js'
-      - 'dist/fan-experience-v111-v116.js'
-      - 'dist/v101-v116-ui-bridge.js'
   workflow_dispatch:
 permissions:
   contents: read

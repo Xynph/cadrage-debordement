@@ -1,11 +1,7 @@
 name: V4.9 Premium finance and academy visual acceptance
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    paths:
-      - 'dist/index.html'
-      - 'dist/premium-v49.css'
-      - 'tests/premium-v49-browser.py'
-      - '.github/workflows/premium-v49.yml'
   workflow_dispatch:
 jobs:
   chromium-v49:

@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),{execFileSync}=require('node:child_process');
 const REPO='Xynph/cadrage-debordement',OWNER=350229047,REPO_ID=1439603196;
-const REQUIRED=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const {OFFICIAL_JOBS:REQUIRED,officialJobs}=require('./ci-jobs.cjs');
 const SHA=/^[0-9a-f]{40}$/;
 function need(v,m){if(!v)throw Error(m);}
 function parseEvent(e,env){
@@ -19,7 +19,8 @@ function assess({pr,expected,main,runs,jobs,files,otherFiles,comments,overlapEvi
  const matches=(runs||[]).filter(r=>r.event==='pull_request'&&r.name==='Tests JavaScript'&&r.head_sha===expected).sort((a,b)=>b.id-a.id);
  const run=matches[0];
  if(!run||run.status!=='completed'||run.conclusion!=='success')errors.push('CI non verte au HEAD exact');
- if(!run||!Array.isArray(jobs)||jobs.length!==7||!REQUIRED.every(n=>jobs.filter(j=>j.name===n&&j.status==='completed'&&j.conclusion==='success').length===1))errors.push('CI 7/7 non confirmée');
+ const official=officialJobs(jobs);
+ if(!run||!Array.isArray(jobs)||official.length!==REQUIRED.length||!REQUIRED.every(n=>official.filter(j=>j.name===n&&j.status==='completed'&&j.conclusion==='success').length===1))errors.push('CI '+REQUIRED.length+'/'+REQUIRED.length+' non confirmée');
  const own=new Set(files||[]);
  if(!own.size)errors.push('Fichiers PR non vérifiables');
  const overlaps=(otherFiles||[]).filter(x=>own.has(x.path));

@@ -1,192 +1,58 @@
 'use strict';
 // Répartition complète et déterministe : toutes les suites sont conservées.
-// Pondérations = max des durées de trois runs SUCCESS (PR #41708215803,
-// main #41709297149, PR #41715682628) + 15 % de marge arrondie.
+// Poids de planification (secondes) : ci/suite-weights.json, recalculé par
+// ci/suite-weights.cjs à partir des CD_CPU_PROFILE wall_s de runs GitHub verts
+// (médiane + 15 %). Section « js » pour les shards « Suites i/N », section « godot »
+// pour les jobs Godot (suites qui pilotent le SDK via CD_GODOT_EXE/CD_GODOT_EXECUTABLE).
 // Le pic simulé ne constitue pas une mesure de gain réel ; reprofiler régulièrement.
-// V63.2 : réserve anti-colocation (poids de planification, PAS sa durée mesurée).
-// Cinq runs SUCCESS : 62/67/82/100/109 s ; P90 interpolé 105,4 s.
-// Réserve 150 pour éviter de grouper cette suite variable avec d'autres longues.
-// Rejeu des trois anciens profils : aucun pic supérieur au plan précédent.
 const fs = require('node:fs');
 const path = require('node:path');
-const HISTORICAL_WEIGHTS_SECONDS = Object.freeze({
-  // Rendez-vous obligatoires : PASS locaux du 10 novembre 2026 (Node 24),
-  // parcours complets et recettes de compatibilité, maximum + 15 % arrondi.
-  // Ce sont des poids de planification, pas des durées GitHub mesurées.
-  'tests/deepen-analytics.cjs': 25,
-  'tests/deepen-market-worker.cjs': 23,
-  'tests/deepen-youth-worker.cjs': 35,
-  'tests/france-cover.cjs': 11,
-  'tests/interclub-market.cjs': 21,
-  'tests/lifecycle-native.cjs': 55,
-  'tests/native-academy-integrated-long.cjs': 394,
-  'tests/native-academy-worker.cjs': 56,
-  'tests/native-club-strategy.cjs': 87,
-  'tests/native-club-support-effects.cjs': 15,
-  'tests/native-club-support-medical.cjs': 50,
-  'tests/native-club-support-training-forecast.cjs': 33,
-  'tests/native-club-support.cjs': 50,
-  'tests/native-coach-notes06-worker.cjs': 18,
-  'tests/native-contextual-integration.cjs': 153,
-  'tests/native-fiction-sheet.cjs': 80,
-  'tests/native-manager-career-worker.cjs': 199,
-  'tests/native-match-talks.cjs': 57,
-  'tests/native-press-followups06-worker.cjs': 13,
-  'tests/native-press-worker.cjs': 19,
-  'tests/native-relationships.cjs': 49,
-  'tests/regen-scouting.cjs': 35,
-  'tests/world-champ-worker.cjs': 53,
-  'tests/world-worker-season.cjs': 375,
-  // Staff et rendez-vous combinés : suites complètes PASS locales Node 24,
-  // le 10 novembre 2026. Maximum mesuré + 15 %, pas des durées GitHub.
-  'tests/native-staff-completion.cjs': 34,
-  'tests/native-staff-completion-season.cjs': 5,
-  'tests/staff-completion.cjs': 2,
-  'tests/regen-portrait-persistence.cjs': 12,
-  'tests/staff-career.cjs': 2,
-  'tests/native-club-support-season.cjs': 197,
-  // Dernière réception PC527 : Node22.23.4,166,988s/15,264s,+15%.
-  'tests/deepen-staff-native.cjs': 193,
-  'tests/world-worker-atomic.cjs': 18,
-  // Profils #409 et #412 du 9 novembre 2026. Maximum mesuré et marge de 15 %.
-  'tests/v63-2-stress-native.cjs': 150,
-  'tests/v63-1-long-career.cjs': 91,
-  'tests/ai-roster-cycle.cjs': 87,
-  'tests/world-career.cjs': 74,
-  'tests/rugby.cjs': 59,
-  'tests/lnr-multiclub-continuity.cjs': 55,
-  'tests/lnr-career-long.cjs': 55,
-  // Population v2 : mesures Node 22 48 / 29,6 / 12,2 s.
-  'tests/player-population-worker.cjs': 15,
-  // Suites d'au moins 35 s sur #422, #423 et les cinq shards verts de #424.
-  // Maximum + 15 % (runs 42606201094, 42641635525, 42669973393 tentative 1).
-  'tests/france-career.cjs': 46,
-  'tests/france-long-career-late.cjs': 94,
-  'tests/france-long-career.cjs': 90,
-  'tests/godot-common-rosters.cjs': 51,
-  'tests/godot-roster-foundation.cjs': 50,
-  'tests/native-academy-loan-capacity.cjs': 59,
-  'tests/native-academy-network-validation.cjs': 73,
-  'tests/native-club-world-worker.cjs': 88,
-  'tests/native-delegate-transaction06.cjs': 187,
-  'tests/native-manager-career-reverse.cjs': 62,
-  'tests/native-press-personalities-worker.cjs': 95,
-  'tests/native-press-season.cjs': 64,
-  'tests/player-population-capacity.cjs': 55,
-  'tests/player-population-seasons.cjs': 83,
-  'tests/rugby-real-long-career-qa.cjs': 99,
-  'tests/world-worker.cjs': 43,
-  'tests/youth-scout-native.cjs': 65,
-  'tests/lnr05-rotation-audit.cjs': 40,
-  'tests/lnr05-fatigue-scenarios.cjs': 38,
-  'tests/lnr05-multiseason-strategies.cjs': 37,
-  'tests/lnr05-evidence-long.cjs': 35,
-  'tests/opposition.cjs': 34,
-  'tests/manager-mobility.cjs': 32,
-  'tests/lnr-cross-season-recovery.cjs': 26,
-  'tests/lnr-save-resume-continuation.cjs': 25,
-  'tests/saves.cjs': 22,
-  'tests/tactical-plans.cjs': 19,
-  'tests/lnr-save-integrity-guards.cjs': 17,
-  'tests/career-resilience.cjs': 14,
-  'tests/lnr05-rest-policy-audit.cjs': 11,
-  'tests/economy-audit.cjs': 6,
-  'tests/lnr-save-import-rollback-stress.cjs': 5,
-  'tests/v28-collective-preparation.cjs': 5,
-  'tests/v29-focused-development.cjs': 5
-});
-// Réception cumulative du 10 novembre : réserves de planification provisoires.
-// Les anciens profils n'incluaient pas simultanément observation, attributs,
-// nouvelles populations et rendez-vous. Ces réserves NE sont PAS des mesures
-// GitHub : elles équilibrent les campagnes en attendant le prochain profil CI.
-// Support : campagne complète locale 883/941 s avant optimisation pure ;
-// Nationale22 : 237,6 s ; les budgets d'arrêt restent distincts dans tests.yml.
-const WEIGHTS_SECONDS = Object.freeze({ ...HISTORICAL_WEIGHTS_SECONDS,
-  'tests/native-club-support-season.cjs': 750,
-  'tests/world-worker-season.cjs': 650,
-  'tests/native-manager-career-worker.cjs': 450,
-  'tests/native-manager-career-reverse.cjs': 400,
-  'tests/native-delegate-transaction06.cjs': 450,
-  'tests/native-contextual-integration.cjs': 350,
-  'tests/native-club-world-worker.cjs': 450,
-  'tests/native-club-strategy.cjs': 300,
-  'tests/native-press-season.cjs': 450,
-  'tests/native-press-personalities-worker.cjs': 450,
-  'tests/deepen-staff-native.cjs': 600,
-  'tests/custom-competition-worker.cjs': 450,
-  'tests/career-variation-worker.cjs': 300,
-  'tests/native-academy-integrated-long.cjs': 1000,
-  'tests/native-nationale-reduced-bench.cjs': 250,
-  'tests/native-player-knowledge-worker.cjs': 150,
-  'tests/native-academy-groups.cjs': 160,
-  'tests/progression-policies.cjs': 280,
-  'tests/profile-safety-worker.cjs': 160,
-  'tests/integration-cloud-complete.cjs': 150,
-  'tests/native-nation-meetings.cjs': 125,
-  'tests/native-club-meetings.cjs': 190,
-  'tests/native-academy-loan-capacity.cjs': 180,
-  'tests/native-professional-depth.cjs': 80,
-  'tests/native-player-attributes.cjs': 80,
-  'tests/potential-evolution-worker.cjs': 80,
-  'tests/management-day-worker.cjs': 350,
-  'tests/management-france-day-worker.cjs': 60,
-  'tests/native-match-talks.cjs': 210,
-  'tests/godot-roster-foundation.cjs': 200,
-  // Suites PASS du run42909005768 (HEAD464021b), wall mesuré +15%.
-  // Une mesure individuelle ne déclare pas vert le run global rouge.
-  // V63.1 garde sa réserve historique91 : arrondir79,57s+15% à92
-  // dégrade le rejeu des trois traces; ce poids ne fixe pas son délai maximal.
-  'tests/deepen-analytics.cjs': 82,
-  'tests/deepen-staff-native.cjs': 624,
-  'tests/deepen-youth-worker.cjs': 85,
-  'tests/epcr-preparation-worker.cjs': 103,
-  'tests/france-career.cjs': 207,
-  'tests/france-saves.cjs': 97,
-  'tests/godot-common-rosters.cjs': 80,
-  'tests/godot-engine.cjs': 91,
-  'tests/lifecycle-native.cjs': 109,
-  'tests/native-academy-appearance-bank.cjs': 100,
-  'tests/native-academy-integrated-long.cjs': 1263,
-  'tests/native-academy-network-validation.cjs': 80,
-  'tests/native-club-support-medical.cjs': 119,
-  'tests/native-fiction-sheet.cjs': 100,
-  'tests/native-manager-career-reverse.cjs': 515,
-  'tests/native-manager-career-worker.cjs': 480,
-  'tests/native-press-personalities-worker.cjs': 516,
-  'tests/native-staff-completion.cjs': 77,
-  'tests/player-population-capacity.cjs': 142,
-  'tests/regen-scouting.cjs': 98,
-  'tests/rugby-real-long-career-qa.cjs': 101,
-  'tests/world-champ-worker.cjs': 125,
-  'tests/world-save-runtime.cjs': 92,
-  'tests/world-worker-season.cjs': 878,
-  'tests/world-worker.cjs': 184,
-  // Réserve : PASS local complet236,649s sousNode22, y compris fixture legacy.
-  'tests/youth-scout-native.cjs': 300,
-  // PASS locaux Node22, deux suites au plus en parallèle : temps reçus+15%.
-  // Catalogue: wall ; venue: somme des deux cas (détail dans la réception JSON).
-  'tests/world-catalogue-dedup.cjs': 164,
-  'tests/world-venue-media.cjs': 145
-});
+const { SHARD_COUNT, GODOT_SHARD_COUNT } = require('./ci-jobs.cjs');
+
+const PROFILE = JSON.parse(fs.readFileSync(path.join(__dirname, 'suite-weights.json'), 'utf8'));
+const WEIGHTS_SECONDS = Object.freeze({ ...PROFILE.js.weights });
+const GODOT_WEIGHTS_SECONDS = Object.freeze({ ...PROFILE.godot.weights });
+// Une suite Godot inconnue démarre au moins un moteur : poids par défaut plus élevé.
+const DEFAULT_WEIGHT = 1;
+const GODOT_DEFAULT_WEIGHT = 30;
+const MAX_SHARDS = 64;
+const GODOT_SDK = /\bprocess\.env\.CD_GODOT_EXE(?:CUTABLE)?\b/;
+
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+function testsDir() { return path.resolve(__dirname, '..', 'tests'); }
 function allTestFiles() {
-  return fs.readdirSync(path.resolve(__dirname, '..', 'tests'), { withFileTypes: true })
+  return fs.readdirSync(testsDir(), { withFileTypes: true })
     .filter(e => e.isFile() && e.name.endsWith('.cjs') && e.name !== 'harness.cjs')
     .map(e => 'tests/' + e.name).sort(lexical);
 }
-function planShards(files, weights = WEIGHTS_SECONDS) {
+// Suites qui lancent réellement le moteur : leur source lit process.env.CD_GODOT_EXE ou
+// process.env.CD_GODOT_EXECUTABLE. Les autres tests/godot-*.cjs (manifestes, effectifs, imports)
+// sont du JavaScript pur et restent couverts par les shards « Suites ».
+function godotTestFiles(files = allTestFiles(), read = f => fs.readFileSync(path.join(testsDir(), path.basename(f)), 'utf8')) {
+  return files.filter(f => GODOT_SDK.test(read(f))).sort(lexical);
+}
+function shardCount(value) {
+  const text = String(value);
+  if (!/^[1-9][0-9]*$/.test(text) || Number(text) > MAX_SHARDS) throw Error('Nombre de shards invalide : ' + text);
+  return Number(text);
+}
+// Glouton LPT : suites triées par poids décroissant, chacune au shard le moins chargé
+// (égalité : le moins de suites, puis le plus petit indice). Moins de suites que de
+// shards : les derniers shards restent vides (couvertures ciblées web/native-art).
+function planShards(files, weights = WEIGHTS_SECONDS, count = SHARD_COUNT, fallback = DEFAULT_WEIGHT) {
+  count = shardCount(count);
   if (!Array.isArray(files) || files.length === 0) throw Error('Liste des suites absente');
   if (files.some(f => typeof f !== 'string' ||
       !/^tests\/[A-Za-z0-9._-]+\.cjs$/.test(f) || f === 'tests/harness.cjs'))
     throw Error('Chemin de suite invalide');
   if (new Set(files).size !== files.length) throw Error('Suite dupliquée');
   const weight = f => {
-    const value = Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : 1;
+    const value = Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : fallback;
     if (!Number.isFinite(value) || value < 1) throw Error('Poids invalide : ' + f);
     return value;
   };
   const ordered = files.slice().sort((a, b) => weight(b) - weight(a) || lexical(a, b));
-  const shards = Array.from({ length: 5 }, () => ({ weight: 0, files: [] }));
+  const shards = Array.from({ length: count }, () => ({ weight: 0, files: [] }));
   for (const file of ordered) {
     let target = 0;
     for (let i = 1; i < shards.length; i++) {
@@ -199,17 +65,39 @@ function planShards(files, weights = WEIGHTS_SECONDS) {
   }
   return shards.map(g => g.files.sort(lexical));
 }
+function planLoads(groups, weights = WEIGHTS_SECONDS, fallback = DEFAULT_WEIGHT) {
+  return groups.map(g => g.reduce((sum, f) =>
+    sum + (Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : fallback), 0));
+}
+// Suites d'un shard pour une couverture donnée. « godot » : suites SDK, poids godot.
+function suitesForShard(shard, coverage = 'full', count, files = allTestFiles()) {
+  const godot = coverage === 'godot';
+  count = shardCount(count ?? (godot ? GODOT_SHARD_COUNT : SHARD_COUNT));
+  shard = shardCount(shard);
+  if (shard > count) throw Error('Shard ' + shard + ' hors de 1..' + count);
+  const suites = godot ? godotTestFiles(files) : require('./test-coverage.cjs').suitesForCoverage(coverage, files);
+  const plan = godot ? planShards(suites, GODOT_WEIGHTS_SECONDS, count, GODOT_DEFAULT_WEIGHT) : planShards(suites, WEIGHTS_SECONDS, count);
+  // Couverture complète : chaque shard doit recevoir au moins une suite.
+  if (coverage === 'full' && plan.some(g => g.length === 0)) throw Error('Il faut au moins une suite par shard');
+  return plan[shard - 1];
+}
+
+const USAGE = 'Usage : node ci/shard-tests.cjs <shard> [full|web|native-art|godot] [nombre-de-shards]\n' +
+  '  shard : 1..N ; N par défaut ' + SHARD_COUNT + ' (godot : ' + GODOT_SHARD_COUNT + '), au plus ' + MAX_SHARDS + '.';
 if (require.main === module) {
-  const [, , shard, coverage = 'full'] = process.argv;
-  if (process.argv.length > 4 || !/^[1-5]$/.test(shard)) {
-    console.error('Usage : node ci/shard-tests.cjs <1|2|3|4|5> [full|web|native-art]');
+  const [, , shard, coverage = 'full', count] = process.argv;
+  if (process.argv.length > 5 || !shard || !/^[1-9][0-9]*$/.test(shard) ||
+      (count !== undefined && !/^[1-9][0-9]*$/.test(count))) {
+    console.error(USAGE);
     process.exitCode = 2;
   } else {
     try {
-      const { suitesForCoverage } = require('./test-coverage.cjs');
-      const suites = suitesForCoverage(coverage, allTestFiles());
-      if (suites.length < 5) throw Error('Il faut au moins une suite par shard');
-      for (const file of planShards(suites)[Number(shard) - 1])
+      // Ordre d'exécution : poids décroissant (les plus longues démarrent en premier
+      // quand ci/run-shard-suites.sh lance plusieurs suites en parallèle).
+      const weights = coverage === 'godot' ? GODOT_WEIGHTS_SECONDS : WEIGHTS_SECONDS;
+      const fallback = coverage === 'godot' ? GODOT_DEFAULT_WEIGHT : DEFAULT_WEIGHT;
+      const weight = f => Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : fallback;
+      for (const file of suitesForShard(shard, coverage, count).sort((a, b) => weight(b) - weight(a) || lexical(a, b)))
         console.log(file);
     } catch (error) {
       console.error(error.message);
@@ -217,4 +105,7 @@ if (require.main === module) {
     }
   }
 }
-module.exports = { allTestFiles, planShards, WEIGHTS_SECONDS };
+module.exports = {
+  allTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount,
+  WEIGHTS_SECONDS, GODOT_WEIGHTS_SECONDS, DEFAULT_WEIGHT, GODOT_DEFAULT_WEIGHT, MAX_SHARDS
+};

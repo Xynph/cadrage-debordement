@@ -1,14 +1,7 @@
 name: Effectif Premium — parcours natif PC
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/premium-squad.*'
-      - 'dist/premium-editorial.*'
-      - 'dist/ui02-*'
-      - 'dist/index.html'
-      - 'tests/premium-squad*'
-      - '.github/workflows/premium-squad.yml'
   workflow_dispatch:
 permissions:
   contents: read
