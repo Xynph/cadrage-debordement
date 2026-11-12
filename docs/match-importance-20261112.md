@@ -20,7 +20,8 @@ Mesure : `node tools/qa/match-importance-mesure.cjs 200`. Code : `native/engine/
 | Un essai n'est annoncé que s'il est vu | Filet : un essai (ou un rouge) que l'importance n'a pas fait monter est montré depuis le début de son action (`rattrapage`). Tous les essais sont montrés. |
 | On coupe le trajet, pas la phase | Le temps fort s'ouvre sur la touche ou la mêlée déjà formée, le ballon récupéré, le coup de sifflet d'un tir au but ; le coup de pied de pénaltouche n'est pas montré. |
 | Temps forts jusqu'à 50 s | `DUREE_MAX = 50` s d'action, suites comprises (sauf pour ne pas couper un essai). |
-| Le chrono défile entre deux temps forts | Après un temps fort, le seuil monte de 8 pendant deux minutes de jeu ; l'entracte reste d'au moins 8 s réelles (inchangé). |
+| Le chrono défile entre deux temps forts | L'entracte reste d'au moins 8 s réelles (inchangé) : c'est le temps de réglage du manager. |
+| Des temps forts aléatoires (retour de Léo sur la note : « parfois 2 à la suite, parfois très peu ») | Ni période de calme après un temps fort, ni régulateur de rythme : les temps forts suivent le match (dispersion mesurée au § 7). |
 
 ## 2. Signaux de l'importance (0 à 100)
 
@@ -50,9 +51,9 @@ fait, minute, bonus, phase finale.
 | Dynamique (défaut) | 76 | 14 | 76 → 62 | 3 plans |
 | Étendus | 56 | 6 | 56 → 50 | 4 plans |
 
-- Période réfractaire : +8 pendant deux minutes de jeu après la fin d'un temps fort.
-- Régulateur de rythme : toutes les cinq minutes, ±4 selon la durée d'action visée du niveau
-  (borné à ±12).
+- Pas de période de calme ni de régulateur de rythme (prévus dans la note de 16 h, retirés à la
+  demande de Léo) : deux temps forts peuvent se suivre si le jeu le justifie, et un match fermé
+  peut rester longtemps sans rien.
 - Régulateur d'issue (dynamique, après quatre temps forts) : plus de 50 % ont marqué → −6 ;
   moins de 30 % → +6. Il ne lit que les temps forts déjà montrés.
 - Résumé, match complet et commentaire seul gardent leur règle (`en_direct_retrospectif`).
@@ -76,8 +77,8 @@ fait, minute, bonus, phase finale.
   son début, rien n'est révélé). Puis, si le terrain 2D n'a pas fini de dérouler ce qui précède
   la borne, la 3D attend encore au plus `BASCULE` = 3 s : la 3D reprend là où la 2D s'arrête.
 - Pourquoi pas « attendre la séquence suivante » : ce serait jeter une action jugée importante
-  (et c'est impossible pour un essai) ; la période réfractaire rend déjà ces retenues moins
-  fréquentes.
+  (et c'est impossible pour un essai). Deux temps forts à la suite sont donc séparés par
+  l'entracte de 8 s, ou s'enchaînent sans entracte quand c'est la même séquence (suite).
 
 ## 6. Exemples
 
@@ -96,17 +97,32 @@ k = 0 à 199), mêmes journaux avant et après. « Avant » : `en_direct` préc�
 
 | Niveau | | Temps forts / match | Avec point | Sans point | Quarts 0-20 / 20-40 / 40-60 / 60-80 | Action / match | Entracte moyen | Retenus par l'entracte | Essais montrés |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Clés | avant | 13,5 (8–23) | 47,2 % | 52,8 % | 28 / 22 / 21 / 29 % | 131 s | 11,2 s | 65,5 % | 856 / 856 |
-| Clés | après | 13,2 (6–22) | 45,0 % | 55,0 % | 26 / 23 / 24 / 27 % | 132 s | 10,8 s | 68,6 % | 856 / 856 |
-| Dynamique | avant | 17,5 (8–26) | 33,7 % | 66,3 % | 29 / 23 / 22 / 27 % | 180 s | 9,5 s | 78,2 % | 856 / 856 |
-| Dynamique | après | 15,4 (7–24) | 38,5 % | 61,5 % | 28 / 23 / 23 / 26 % | 156 s | 10,0 s | 72,9 % | 856 / 856 |
-| Étendus | avant | 22,0 (15–29) | 26,0 % | 74,0 % | 24 / 23 / 25 / 28 % | 216 s | 8,7 s | 86,1 % | 856 / 856 |
-| Étendus | après | 22,5 (15–31) | 24,7 % | 75,3 % | 25 / 24 / 26 / 26 % | 214 s | 8,5 s | 88,7 % | 856 / 856 |
+| Clés | avant | 13,5 | 47,2 % | 52,8 % | 28 / 22 / 21 / 29 % | 131 s | 11,2 s | 65,5 % | 856 / 856 |
+| Clés | après | 13,6 | 44,6 % | 55,4 % | 26 / 23 / 24 / 27 % | 134 s | 10,7 s | 69,2 % | 856 / 856 |
+| Dynamique | avant | 17,5 | 33,7 % | 66,3 % | 29 / 23 / 22 / 27 % | 180 s | 9,5 s | 78,2 % | 856 / 856 |
+| Dynamique | après | 15,5 | 38,3 % | 61,7 % | 28 / 23 / 23 / 26 % | 156 s | 10,0 s | 72,8 % | 856 / 856 |
+| Étendus | avant | 22,0 | 26,0 % | 74,0 % | 24 / 23 / 25 / 28 % | 216 s | 8,7 s | 86,1 % | 856 / 856 |
+| Étendus | après | 21,5 | 26,2 % | 73,8 % | 27 / 24 / 24 / 25 % | 205 s | 8,7 s | 86,6 % | 856 / 856 |
+
+**Dispersion** (demande de Léo : des temps forts aléatoires). Écart : minutes de jeu entre la
+fin d'un temps fort et le début du suivant, dans la même période ; « consécutifs » : écart
+d'une minute au plus.
+
+| Niveau | | Temps forts / match : min – médiane – max (p10 – p90) | Écart médian | Écart p10 / p90 / max | Consécutifs |
+| --- | --- | --- | --- | --- | --- |
+| Clés | avant | 8 – 14 – 23 (10 – 17) | 3 min | 1 / 12 / 31 min | 25,6 % |
+| Clés | après | 6 – 13 – 23 (9 – 18) | 3 min | 1 / 11 / 33 min | 22,3 % |
+| Dynamique | avant | 8 – 17 – 26 (12 – 23) | 2 min | 1 / 8 / 31 min | 35,3 % |
+| Dynamique | après | 8 – 15 – 23 (11 – 20) | 3 min | 1 / 9 / 27 min | 25,1 % |
+| Étendus | avant | 15 – 22 – 29 (18 – 26) | 2 min | 0 / 7 / 28 min | 41,0 % |
+| Étendus | après | 12 – 22 – 30 (16 – 27) | 2 min | 1 / 6 / 31 min | 33,8 % |
 
 Après : 100 % des temps forts déclenchés par l'importance ont leur déclencheur avant ou sur
-le dernier fait montré (l'issue) ; épisode le plus long 42 s. Rattrapages (essai sans
-importance montée avant) : 19 % des temps forts en dynamique (65 % des essais), 24 % en clés,
+le dernier fait montré (l'issue) ; épisode le plus long 41 s. Rattrapages (essai sans
+importance montée avant) : 18 % des temps forts en dynamique (62 % des essais), 23 % en clés,
 7 % en étendus. Ni la mi-temps ni la fin du match n'entrent dans un temps fort déclenché.
+Un temps fort sur quatre en dynamique suit le précédent à une minute au plus ; les longues
+périodes sans temps fort dépassent 9 minutes de jeu une fois sur dix.
 
 **Limite constatée** : dans le journal du moteur, un essai est souvent un seul fait qui part de
 20 à 40 m (la course entière) ; le danger n'a donc pas le temps de monter avant lui. Ces essais

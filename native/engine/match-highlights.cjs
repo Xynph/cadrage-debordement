@@ -523,9 +523,11 @@ const IMPORTANCE=Object.freeze({
 });
 // Durée maximale d'un temps fort (secondes d'action, demande de Léo : jusqu'à 50 s).
 const DUREE_MAX=50;
-// Après un temps fort, l'action suivante doit monter plus haut pendant deux minutes de jeu :
-// le match continue en 2D et le manager a le temps d'ajuster (l'entracte reste au moins 8 s).
-const REFRACTAIRE=Object.freeze({minutes:2,points:8});
+// Ni période de calme après un temps fort, ni régulateur de rythme (retour de Léo, 12 novembre
+// 2026 : « faut que ce soit aléatoire les temps forts, parfois 2 à la suite, parfois très peu ») :
+// les temps forts suivent le match. Deux à la suite si le jeu le justifie (l'entracte de 8 s
+// les sépare, ou la suite directe si c'est la même séquence), de longues périodes sans rien
+// quand le match est fermé. Le temps de réglage du manager vient de l'entracte minimal.
 // Régulateur d'issue (dynamique), aveugle à l'issue de l'action en cours : il ne lit que les
 // temps forts déjà montrés. Plus de la moitié ont marqué : le seuil baisse (on montre plus de
 // danger sans point) ; moins de 30 % : il remonte.
@@ -635,12 +637,11 @@ function finAction(lignes,j,plafond){
 
 function en_direct_importance(events,options={}){
  const niveau=options.niveau||'dynamique',regle=options.regle||IMPORTANCE[niveau],lignes=normaliser(events);
- const dynamique=niveau==='dynamique',regule=options.cible!==false,cible=options.cible||NIVEAUX[niveau].cible;
- const etat={montre:-1,ouvert:false,dureeEpisode:0,fermeA:null,decalage:0,reglage:0,cumul:0,episodes:0,points:0,ajuste:0};
+ const dynamique=niveau==='dynamique';
+ const etat={montre:-1,ouvert:false,dureeEpisode:0,cumul:0,episodes:0,points:0,ajuste:0};
  const decisions=[];
  const seuilDe=(l,v)=>{
-  let s=regle.base-regle.pente*(v.tension??tension(l,options))+etat.decalage+etat.ajuste;
-  if(etat.fermeA&&etat.fermeA.periode===l.periode&&l.minute-etat.fermeA.minute<REFRACTAIRE.minutes)s+=REFRACTAIRE.points;
+  const s=regle.base-regle.pente*(v.tension??tension(l,options))+etat.ajuste;
   return Math.round(s);
  };
  for(const r of rafales(lignes)){
@@ -694,28 +695,18 @@ function en_direct_importance(events,options={}){
     etat.dureeEpisode=suite?etat.dureeEpisode+tf.duree:tf.duree;
     const dernierMontre=lignes[plans.at(-1).i],resteRafale=lignes.slice(fin+1,r.fin+1).some(montrable);
     etat.ouvert=etat.dureeEpisode<DUREE_MAX&&!resteRafale&&!finNaturelle(dernierMontre)&&dernierMontre.kind!=='card';
-    if(!etat.ouvert)etat.fermeA={periode:dernierMontre.periode,minute:dernierMontre.minute};
     if(!suite){
      etat.episodes++;
      if(plans.some(p=>p.kind==='try'||p.kind==='goal'))etat.points++;
     }
    }
   }
-  if(!decision.joue){if(etat.ouvert)etat.fermeA={periode:derniere.periode,minute:derniere.minute};etat.ouvert=false}
+  if(!decision.joue)etat.ouvert=false;
   // Régulateur d'issue (dynamique) : il ne lit que les temps forts déjà montrés.
   if(dynamique&&etat.episodes>=ISSUE.apres){
    const part=etat.points/etat.episodes;
    etat.ajuste=part>ISSUE.haut?-ISSUE.pas:part<ISSUE.bas?ISSUE.pas:0;
   }
-  // Régulateur de rythme : toutes les cinq minutes, le temps d'action montré est comparé à la cible.
-  const m=Math.min(80,derniere.minute);
-  if(regule&&m>=10&&m-etat.reglage>=5){
-   etat.reglage=m;
-   if(etat.cumul<cible[0]*m/80)etat.decalage=Math.max(-12,etat.decalage-4);
-   else if(etat.cumul>cible[1]*m/80)etat.decalage=Math.min(12,etat.decalage+4);
-   else etat.decalage-=Math.sign(etat.decalage)*4;
-  }
-  decision.decalage=etat.decalage;
   decisions.push(decision);
  }
  const tempsForts=decisions.filter(d=>d.joue).map(d=>d.tempsFort),derniereDecision=decisions.at(-1)||null;
@@ -738,6 +729,6 @@ function en_direct(events,options={}){
  return en_direct_importance(events,options);
 }
 
-module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,IMPORTANCE,DUREE_MAX,REFRACTAIRE,dansLes22,normaliser,tension,
+module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,IMPORTANCE,DUREE_MAX,dansLes22,normaliser,tension,
  importance,debutAction,finAction,temps_forts,en_direct,en_direct_retrospectif});
 

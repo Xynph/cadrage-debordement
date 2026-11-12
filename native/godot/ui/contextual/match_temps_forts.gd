@@ -49,7 +49,7 @@ const ECHEANCE_CHOREGRAPHIE := 5.0
 const ENTRACTE := 8.0
 ## Bascule 2D → 3D (déclenchement par l'importance, 12 novembre 2026) : le moteur ouvre le temps
 ## fort au début de l'action qui monte ; le terrain 2D finit d'abord de dérouler ce qui précède
-## (jusqu'à la borne), au plus BASCULE secondes réelles, puis la 3D prend le relais à cet endroit.
+## (jusqu'à la borne), au plus BASCULE secondes (à vitesse ×1, divisées par la vitesse de lecture), puis la 3D prend le relais à cet endroit.
 const BASCULE := 3.0
 
 var view: Control
@@ -327,7 +327,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		if _retenu.is_empty() or str(_retenu.get("cle", "")) != str(candidat.get("cle", "")):
 			_retenu_vus = connus
 			_retenu_depuis = 0.0
-			_retenu_reste = maxf(0.5, _duree_entracte() - _entracte) if _entracte >= 0.0 else BASCULE
+			_retenu_reste = maxf(0.5, _duree_entracte() - _entracte) if _entracte >= 0.0 else _bascule()
 			_retenu_part = _part_minute()
 			suivi.append({"evenement": "entracte_retenu", "cle": str(candidat.get("cle", "")), "horloge": str(candidat.get("horlogeDebut", "")),
 				"ecoule": _entracte, "debut_ms": Time.get_ticks_msec()})
@@ -408,6 +408,9 @@ func _doit_retenir(candidat: Dictionary) -> bool:
 	if _passer or candidat.get("suite", false) or niveau == "integral" or _causerie_attend(): return false
 	return (_entracte >= 0.0 and _entracte < _duree_entracte()) or _terrain_en_retard()
 
+func _bascule() -> float:
+	return BASCULE / maxf(vitesse, 0.01)
+
 ## Le terrain 2D n'a pas fini de dérouler le jeu d'avant le temps fort (bascule au bon endroit).
 func _terrain_en_retard() -> bool:
 	return etat != JEU and between != null and between.visible and between.terrain.en_retard()
@@ -464,7 +467,7 @@ func _entracte_et_horloge(delta: float) -> bool:
 	if (fige and not _causerie_attend()) or _tiroir or app.waiting: return true
 	if not _passer and _entracte < _duree_entracte() and not _causerie_attend(): return true
 	# Bascule 2D → 3D : le terrain finit de dérouler le jeu d'avant (3 s au plus, jamais devant une causerie).
-	if not _passer and _terrain_en_retard() and _retenu_depuis < BASCULE and not _causerie_attend(): return true
+	if not _passer and _terrain_en_retard() and _retenu_depuis < _bascule() and not _causerie_attend(): return true
 	_lancer_retenu()
 	return true
 

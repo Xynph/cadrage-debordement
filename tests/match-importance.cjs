@@ -155,3 +155,17 @@ test('Un exemple écrit à la main : la touche formée près de la ligne ouvre l
   }
   assert.equal(tfs[0].importance, tfs[1].importance, 'même importance, essai ou ballon perdu');
 });
+
+test('Les temps forts suivent le match : parfois deux à la suite, parfois de longs moments sans rien', () => {
+  // Retour de Léo (12 novembre 2026) : « faut que ce soit aléatoire les temps forts, parfois 2 à la
+  // suite, parfois très peu de temps forts » — ni période de calme ni régulateur de rythme.
+  const nombres = [], ecarts = [];
+  for (const { camp, events } of matchs) {
+    const tfs = H.en_direct(events, { niveau: 'dynamique', camp }).tempsForts.filter(h => !h.suite);
+    nombres.push(tfs.length);
+    for (let n = 1; n < tfs.length; n++) if (tfs[n].periode === tfs[n - 1].periode) ecarts.push(tfs[n].minuteDebut - tfs[n - 1].minuteFin);
+  }
+  assert.ok(Math.max(...nombres) - Math.min(...nombres) >= 4, 'des matchs riches et des matchs pauvres : ' + nombres.join(', '));
+  assert.ok(ecarts.some(e => e <= 1), 'deux temps forts à la suite');
+  assert.ok(ecarts.some(e => e >= 10), 'de longs moments sans temps fort : ' + Math.max(...ecarts) + ' min');
+});
