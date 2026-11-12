@@ -1,5 +1,7 @@
 'use strict';
 // Golden states measured against 9044998e with seed/clock fixed. This runs in shallow CI checkouts.
+// Hashes re-measured once the drawn-name pools lost their real full names (6 surnames replaced):
+// with those surnames mapped back, every stage, RNG and export checksum equals the 9044998e capture.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {context}=require('./france-harness.cjs'),baseline=require('./france-legacy-parity.json');const hash=s=>crypto.createHash('sha256').update(s).digest('hex');
 const {freezeFranceBirths}=require('./helpers/frozen-france-births.cjs');
