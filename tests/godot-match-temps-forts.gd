@@ -708,7 +708,7 @@ func resumed() -> Array:
 	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
 	# Écran intermédiaire : sa barre de commandes porte le niveau (la barre du direct est masquée).
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
-	var repris := level.get_item_text(level.selected) if level != null and level.is_visible_in_tree() else regie.between.niveau_libelle()
+	var repris: String = level.get_item_text(level.selected) if level != null and level.is_visible_in_tree() else regie.between.niveau_libelle()
 	check(repris == "Temps forts étendus", "La barre ou les paramètres montrent le niveau repris : " + repris)
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
 	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
