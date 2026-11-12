@@ -354,7 +354,11 @@ func _vivre(delta: float) -> void:
 # --- Dessin -------------------------------------------------------------------
 
 func champ() -> Rect2:
-	var libre := size - Vector2(px(24), px(24))
+	# Marge intérieure : une pastille posée sur une ligne de touche (y jusqu'à -2 ou 72) reste
+	# entière dans le cadre, même sur un petit terrain (entracte en tableau de bord).
+	var marge := maxf(9.0, px(20)) + 3.0
+	var libre := size - Vector2(px(24) + 2.0 * marge, 2.0 * marge)
+	libre.y *= LARGEUR / (LARGEUR + 4.0)
 	var echelle := minf(libre.x / (100.0 + 2.0 * EN_BUT), libre.y / LARGEUR)
 	var taille := Vector2((100.0 + 2.0 * EN_BUT) * echelle, LARGEUR * echelle)
 	return Rect2((size - taille) * 0.5, taille)

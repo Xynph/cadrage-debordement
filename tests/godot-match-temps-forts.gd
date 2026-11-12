@@ -102,7 +102,9 @@ func layout(view: Control, size: Vector2i) -> void:
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
 	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
 	var pitch: Control = between.terrain
-	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 300, label + " : terrain lisible (%s)" % str(pitch.size))
+	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 260, label + " : terrain lisible (%s)" % str(pitch.size))
+	# Pastilles entières dans le cadre : la marge intérieure couvre une pastille sur la touche.
+	check(pitch.point(0.0, -2.0).y - pitch.rayon() >= 0.0 and pitch.point(100.0, 72.0).y + pitch.rayon() <= pitch.size.y, label + " : pastilles du bord entières dans le terrain")
 	var controls: Control = view.finish.get_parent().get_parent().get_parent()
 	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
 	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
@@ -615,9 +617,10 @@ func player_path() -> Array:
 	check(await until(func(): return app.model.live.minute > minute, 60000), "Le match reprend après la pause")
 	# Le niveau choisi dans la barre vaut tout de suite et pour les prochains matchs.
 	var extended := labels.find("Temps forts étendus")
-	if level != null and extended >= 0:
-		level.select(extended)
-		level.item_selected.emit(extended)
+	# Le niveau se choisit dans Paramètres (bouton du panneau, comme le joueur).
+	if extended >= 0:
+		(grille.get_child(extended) as Button).pressed.emit()
+		await settle(2)
 		check(regie.niveau == "etendus" and app.user_preferences.data.get("match_highlights") == "etendus", "Le niveau choisi est appliqué et enregistré : " + str(app.user_preferences.last_error))
 		check(FileAccess.get_file_as_string(str(app.model.meta.dataDir).path_join("interface.json")).contains("etendus"), "Le niveau est écrit dans les réglages du profil")
 	# Mi-temps : le dernier temps fort de la période passe avant la causerie.

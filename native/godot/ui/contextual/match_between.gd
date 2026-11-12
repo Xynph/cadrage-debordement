@@ -34,6 +34,10 @@ signal camera_demandee(mode: String)
 ## pendant l'entracte ; sans elle, la barre reste en haut de l'écran intermédiaire.
 var hote_barre: Control
 
+## Libellés courts des stats comparées (le libellé complet en infobulle) : rien de tronqué.
+const LIBELLES_COURTS := {"metres": "Mètres gagnés", "franchissements": "Franchissements", "plaquages": "Plaquages",
+	"plaquages_manques": "Plaq. manqués", "recuperations": "Récupérations", "melees": "Mêlées", "touches": "Touches",
+	"penalites": "Pénalités", "en_avant": "En-avant", "pieds": "Jeu au pied"}
 ## Les douze stats comparées de la tuile Statistiques (le reste dans le tiroir, menu Plus).
 const STATS := ["possession", "occupation", "metres", "franchissements", "plaquages", "plaquages_manques",
 	"recuperations", "melees", "touches", "penalites", "en_avant", "pieds"]
@@ -662,7 +666,7 @@ func _page() -> void:
 	var scene := Control.new()
 	scene.name = "MatchBetweenScene"
 	scene.clip_contents = true
-	scene.custom_minimum_size = Vector2(px(660), px(400))
+	scene.custom_minimum_size = Vector2(px(660), px(440))
 	cadre_terrain.add_child(scene)
 	S.full(terrain)
 	scene.add_child(terrain)
@@ -864,7 +868,9 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var ligne := S.G.h(px(12))
 	ligne.custom_minimum_size.y = px(44)
-	var titre := _texte(str(rang.get("label", "")), 24, DOUX)
+	var titre := _texte(str(LIBELLES_COURTS.get(str(rang.get("cle", "")), rang.get("label", ""))), 24, DOUX)
+	titre.tooltip_text = str(rang.get("label", ""))
+	titre.mouse_filter = Control.MOUSE_FILTER_PASS
 	titre.clip_text = true
 	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	titre.custom_minimum_size.x = px(120)
