@@ -169,7 +169,10 @@ func run() -> void:
 				queue -= 1.0 / 30.0
 				garder = true
 			if garder and not report.sequences.is_empty(): report.sequences[-1]["derniere"] = report.images.size()
-			if regie != null: regie.vitesse = 1.0 if garder else 6.0
+			if regie != null:
+				regie.vitesse = 1.0 if garder else 6.0
+				# Pistes déjà lancées (même image que le début du temps fort) : même vitesse.
+				if view.stage.choregraphie_active(): view.stage._choregraphie.vitesse = regie.vitesse
 		var over: bool = live.is_empty() or live.get("finished", false) or (last_minute > 0 and int(live.get("minute", 0)) >= last_minute)
 		if not types_voulus.is_empty() and types_vus.size() >= types_voulus.size() and queue <= 0.0: over = true
 		if over and (regie == null or regie.etat != regie.JEU): ending += delta

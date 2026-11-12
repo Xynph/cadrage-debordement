@@ -408,6 +408,7 @@ func _jouer_choregraphie(plan: Dictionary) -> bool:
 		suivi.append({"evenement": "choregraphie_refusee", "debut_ms": Time.get_ticks_msec()})
 		return false
 	phase = "choregraphie"
+	_resultat_sonne = false
 	temps = 0.0
 	_tenu = 0.0
 	_jalon_montre = false
@@ -440,6 +441,10 @@ func _lire_choregraphie(reel: float) -> void:
 			index = k
 		_jalon_montre = true
 		if str(tf.plans[index].get("kind", "")) == "try": _sonner("try")
+		# Tir au but : son jalon est le passage du ballon, le résultat est à l'écran.
+		if tf.plans[index].has("annonce") and not _resultat_sonne:
+			_resultat_sonne = true
+			_sonner("goal" if str(tf.plans[index].get("kind", "")) == "goal" else "miss")
 		_habiller()
 	var echue := _tenu > float(pistes.get("duree", 0.0)) / maxf(vitesse, 0.01) + ECHEANCE_CHOREGRAPHIE
 	if stage.choregraphie_active() and not stage.choregraphie_finie() and not echue:
@@ -633,7 +638,8 @@ func _habiller() -> void:
 	_valider(false)
 	view.clock.text = str(plan.get("horloge", ""))
 	if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
-	var attend_resultat: bool = plan.has("annonce") and (phase == "pret" or temps < RESULTAT)
+	# Pistes : un plan n'est courant qu'à son jalon (passage du ballon pour un tir) : le résultat est montré.
+	var attend_resultat: bool = plan.has("annonce") and phase != "choregraphie" and (phase == "pret" or temps < RESULTAT)
 	view.events.text = str(plan.get("annonce" if attend_resultat else "texte", ""))
 	# Pistes du chorégraphe : jamais un fait (l'essai compris) annoncé avant d'être à l'écran.
 	if phase == "choregraphie" and not _jalon_montre: view.events.text = ""
