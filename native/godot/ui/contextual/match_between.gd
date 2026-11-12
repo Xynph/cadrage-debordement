@@ -6,7 +6,8 @@ extends Control
 ## un tableau de bord inspiré des écrans « match overview » des jeux de management de football,
 ## adapté au rugby : domination minute par minute, chiffres clés comparés, fil, Mon XV (note,
 ## énergie, alertes), regard de l'adjoint et accès direct à la tactique et aux remplacements.
-## Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
+## Une seule mise en page (choix de Léo) : grand terrain habillé, frise dessous, colonne
+## repliable à droite. Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
 const S = preload("res://ui/contextual/skin.gd")
 const T = preload("res://theme.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
@@ -25,44 +26,52 @@ signal joueur_choisi(poste: int)
 ## Score du dernier fait joué sur le terrain (le moteur a parfois une minute d'avance).
 signal score_joue(score: Array)
 
-## Chiffres clés sous le terrain (le reste dans l'onglet « Chiffres »).
+## Chiffres clés (le reste dans le tiroir Statistiques).
 const CLES := ["possession", "occupation", "plaquages"]
 ## Chiffres qui prennent la place d'un chiffre clé encore vide.
 const RELAIS := ["franchissements", "metres", "penalites", "melees", "touches"]
-const ONGLETS := ["Le fil", "Mon XV", "Chiffres"]
 const FATIGUE := 55
 const EPUISE := 40
-
 var terrain: Terrain2D
 var etat: Label
-var niveau: OptionButton
+var parametres: Button
+var panneau_parametres: PopupPanel
+var groupe_horloge: ButtonGroup
+var groupe_niveaux: ButtonGroup
+var grille_niveaux: GridContainer
+var bandeau: PanelContainer
 var fil: VBoxContainer
 var chiffres: VBoxContainer
-var tableau: VBoxContainer
-var xv: VBoxContainer
+var xv: GridContainer
 var adjoint: VBoxContainer
-var vitesse: OptionButton
+var tactique: Button
+var banc: Button
+var plus: MenuButton
 ## Horloge de l'entracte choisie (reprise de la régie à l'ouverture).
 var horloge := "normale"
 const HORLOGES_IDS := ["lente", "normale", "rapide", "eclair"]
+const HORLOGES_COURTS := ["Posée", "Normale", "Rapide", "Éclair"]
 var adjoint_cadre: Control
-var alertes: VBoxContainer
 var domination: Domination
 var arret: PanelContainer
 var arret_titre: Label
 var arret_texte: Label
-var onglet := "Le fil"
-var _onglets: Dictionary = {}
-var _pages: Dictionary = {}
+## Colonne de droite repliée (le terrain prend la place).
+var colonne_repliee := false
 var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
 var _arret: Dictionary = {}
-var entracte: Label
-var passer: Button
 var _entracte := ["", false]
 var _dernier: Array = []
 var _lignes: Array = []
+var _dernier_fait := -1
+var _rangs: Array = []
+var details: VBoxContainer
+var theme_stats := "Attaque"
+## Stats détaillées par thème (tout est borné à ce qui a été montré, comme les chiffres clés).
+const THEMES := {"Attaque": ["metres", "franchissements", "temps_de_jeu", "pieds"], "Défense": ["plaquages", "plaquages_manques", "recuperations"],
+	"Conquête": ["melees", "touches"], "Discipline": ["penalites", "en_avant", "cartons"]}
 ## Alertes de Mon XV (fatigue, blessure, carton) : pour l'adjoint et les tests.
 var alertes_xv: Array[Dictionary] = []
 
@@ -132,61 +141,67 @@ class Domination extends Control:
 					if poly.size() >= 3 and aire > 0.5: draw_polygon(poly, fondu)
 					draw_line(p0, p1, teinte.lightened(0.15), maxf(1.5, 3.0 * densite), true)
 		draw_line(Vector2(zone.position.x, milieu), Vector2(zone.end.x, milieu), Color(S.TEXT, 0.35), maxf(1.0, 1.5 * densite))
-		# Points marqués : un jalon à la minute, du côté de l'équipe qui marque.
+		# Frise du match : chaque essai, tir réussi ou carton déjà montré devient un pictogramme
+		# à sa minute, au-dessus de l'axe pour l'équipe qui reçoit, au-dessous pour l'autre, relié
+		# à l'axe par une tige aux couleurs du club.
+		var rayon := maxf(7.0, 17.0 * densite)
 		for repere: Dictionary in reperes:
-			if str(repere.get("kind", "")) == "card": continue
 			var m := float(repere.get("minute", 0))
-			var cote := int(repere.get("equipe", 0))
-			var ou := Vector2(zone.position.x + (m - 0.5) * pas, zone.position.y + 4.0 * densite if cote == 0 else zone.end.y - 4.0 * densite)
-			draw_circle(ou, maxf(3.0, 8.0 * densite), couleurs[cote])
-			draw_arc(ou, maxf(3.0, 8.0 * densite), 0.0, TAU, 12, S.TEXT, 1.0, true)
+			var cote := clampi(int(repere.get("equipe", 0)), 0, 1)
+			var x := zone.position.x + clampf((m - 0.5) * pas, 0.0, zone.size.x)
+			var ou := Vector2(x, zone.position.y + rayon if cote == 0 else zone.end.y - rayon)
+			draw_line(Vector2(x, milieu), ou, Color(couleurs[cote].lightened(0.2), 0.8), maxf(1.0, 2.0 * densite), true)
+			Picto.dessiner(self, ou, rayon, str(repere.get("kind", "")), couleurs[cote], bool(repere.get("rouge", false)))
 		if not minutes.is_empty():
 			var x := zone.position.x + minutes.size() * pas
 			draw_line(Vector2(x, zone.position.y), Vector2(x, zone.end.y), S.GOLD, maxf(1.5, 3.0 * densite))
 
-## Pictogramme d'un fait du fil : essai, pénalité, carton, mêlée, touche, plaquage, jeu au pied.
+## Pictogramme d'un fait (fil, frise du match) : essai, tir au but, carton, mêlée, touche, jeu au
+## pied, ballon perdu. Pastille sombre cerclée aux couleurs du club, signe clair au centre.
+class Picto:
+	static func dessiner(ci: CanvasItem, c: Vector2, r: float, kind: String, teinte: Color, rouge: bool = false) -> void:
+		ci.draw_circle(c, r, Color("121a1c"))
+		ci.draw_circle(c, r, Color(teinte, 0.28))
+		ci.draw_arc(c, r - 0.5, 0.0, TAU, 28, teinte.lightened(0.15), maxf(1.0, r * 0.12), true)
+		var epais := maxf(1.2, r * 0.14)
+		var blanc := Color("f2ecdc")
+		match kind:
+			"try":
+				ci.draw_set_transform(c, -0.6, Vector2(1.4, 0.85))
+				ci.draw_circle(Vector2.ZERO, r * 0.42, Color("e0b35a"))
+				ci.draw_set_transform(Vector2.ZERO, 0.0)
+				ci.draw_line(c + Vector2(-r * 0.22, r * 0.12), c + Vector2(r * 0.22, -r * 0.12), Color("3a2a1a"), epais * 0.7, true)
+			"goal", "miss", "penalty", "transformation":
+				ci.draw_line(c + Vector2(-r * 0.35, -r * 0.5), c + Vector2(-r * 0.35, r * 0.5), blanc, epais, true)
+				ci.draw_line(c + Vector2(r * 0.35, -r * 0.5), c + Vector2(r * 0.35, r * 0.5), blanc, epais, true)
+				ci.draw_line(c + Vector2(-r * 0.35, r * 0.1), c + Vector2(r * 0.35, r * 0.1), blanc, epais, true)
+			"card":
+				ci.draw_rect(Rect2(c - Vector2(r * 0.3, r * 0.45), Vector2(r * 0.6, r * 0.9)), Color("d43e47") if rouge else Color("e8c24a"))
+			"scrum", "setpiece-win", "setpiece-loss":
+				for dx in [-0.3, 0.3]:
+					for dy in [-0.22, 0.22]: ci.draw_circle(c + Vector2(dx, dy) * r, r * 0.17, blanc)
+			"lineout":
+				ci.draw_line(c + Vector2(0, -r * 0.5), c + Vector2(0, r * 0.5), blanc, epais, true)
+				ci.draw_circle(c + Vector2(0, -r * 0.5), r * 0.16, blanc)
+			"turnover", "hand-fault":
+				ci.draw_line(c - Vector2(r * 0.35, r * 0.35), c + Vector2(r * 0.35, r * 0.35), blanc, epais, true)
+				ci.draw_line(c + Vector2(-r * 0.35, r * 0.35), c + Vector2(r * 0.35, -r * 0.35), blanc, epais, true)
+			"kick", "kickoff", "drop22", "goalLine", "touch":
+				ci.draw_arc(c + Vector2(0, r * 0.35), r * 0.5, PI * 1.1, PI * 1.9, 12, blanc, epais, true)
+				ci.draw_circle(c + Vector2(r * 0.4, -r * 0.05), r * 0.14, blanc)
+			"carry":
+				ci.draw_line(c + Vector2(-r * 0.4, 0), c + Vector2(r * 0.3, 0), blanc, epais, true)
+				ci.draw_colored_polygon(PackedVector2Array([c + Vector2(r * 0.5, 0), c + Vector2(r * 0.18, -r * 0.24), c + Vector2(r * 0.18, r * 0.24)]), blanc)
+			_:
+				ci.draw_circle(c, r * 0.18, blanc)
+
 class Icone extends Control:
-	const S = preload("res://ui/contextual/skin.gd")
 	var kind := ""
 	var teinte := Color.WHITE
 	var rouge := false
 
 	func _draw() -> void:
-		var c := size * 0.5
-		var r := minf(size.x, size.y) * 0.5
-		draw_circle(c, r, Color(teinte, 0.22))
-		draw_arc(c, r - 0.5, 0.0, TAU, 24, Color(teinte, 0.7), maxf(1.0, r * 0.1), true)
-		var epais := maxf(1.2, r * 0.14)
-		var blanc := Color("f1f0df")
-		match kind:
-			"try":
-				draw_set_transform(c, -0.6, Vector2(1.4, 0.85))
-				draw_circle(Vector2.ZERO, r * 0.42, S.GOLD)
-				draw_set_transform(Vector2.ZERO, 0.0)
-				draw_line(c + Vector2(-r * 0.22, r * 0.12), c + Vector2(r * 0.22, -r * 0.12), Color("3a2a1a"), epais * 0.7, true)
-			"goal", "miss", "penalty", "transformation":
-				draw_line(c + Vector2(-r * 0.35, -r * 0.5), c + Vector2(-r * 0.35, r * 0.5), blanc, epais, true)
-				draw_line(c + Vector2(r * 0.35, -r * 0.5), c + Vector2(r * 0.35, r * 0.5), blanc, epais, true)
-				draw_line(c + Vector2(-r * 0.35, r * 0.1), c + Vector2(r * 0.35, r * 0.1), blanc, epais, true)
-			"card":
-				draw_rect(Rect2(c - Vector2(r * 0.28, r * 0.42), Vector2(r * 0.56, r * 0.84)), Color("d43e47") if rouge else Color("e8c24a"))
-			"scrum", "setpiece-win", "setpiece-loss":
-				for dx in [-0.3, 0.3]:
-					for dy in [-0.22, 0.22]: draw_circle(c + Vector2(dx, dy) * r, r * 0.17, blanc)
-			"lineout":
-				draw_line(c + Vector2(0, -r * 0.5), c + Vector2(0, r * 0.5), blanc, epais, true)
-				draw_circle(c + Vector2(0, -r * 0.5), r * 0.16, blanc)
-			"turnover", "hand-fault":
-				draw_line(c - Vector2(r * 0.35, r * 0.35), c + Vector2(r * 0.35, r * 0.35), blanc, epais, true)
-				draw_line(c + Vector2(-r * 0.35, r * 0.35), c + Vector2(r * 0.35, -r * 0.35), blanc, epais, true)
-			"kick", "kickoff", "drop22", "goalLine", "touch":
-				draw_arc(c + Vector2(0, r * 0.35), r * 0.5, PI * 1.1, PI * 1.9, 12, blanc, epais, true)
-				draw_circle(c + Vector2(r * 0.4, -r * 0.05), r * 0.14, blanc)
-			"carry":
-				draw_line(c + Vector2(-r * 0.4, 0), c + Vector2(r * 0.3, 0), blanc, epais, true)
-				draw_colored_polygon(PackedVector2Array([c + Vector2(r * 0.5, 0), c + Vector2(r * 0.18, -r * 0.24), c + Vector2(r * 0.18, r * 0.24)]), blanc)
-			_:
-				draw_circle(c, r * 0.18, blanc)
+		Picto.dessiner(self, size * 0.5, minf(size.x, size.y) * 0.5, kind, teinte, rouge)
 
 ## Barre comparée d'un chiffre : valeurs des deux équipes et parts de la barre.
 class Barre extends Control:
@@ -213,18 +228,44 @@ class Barre extends Control:
 		draw_circle(r.position + Vector2(rayon, rayon), rayon, teinte)
 		draw_circle(Vector2(r.end.x - rayon, r.position.y + rayon), rayon, teinte)
 
-## Énergie d'un joueur (condition du moteur, 0 à 100).
+## Engrenage du bouton Paramètres.
+class Engrenage extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.5
+		var teinte := Color("f2ecdc")
+		for n in 8:
+			var a := TAU * n / 8.0
+			draw_line(c + Vector2.from_angle(a) * r * 0.55, c + Vector2.from_angle(a) * r * 0.95, teinte, maxf(2.0, r * 0.28))
+		draw_circle(c, r * 0.62, teinte)
+		draw_circle(c, r * 0.28, Color("18231f"))
+
+## Énergie d'un joueur (condition du moteur, 0 à 100) : anneau autour du numéro, vert, jaune à
+## surveiller (moins de 70), couleur d'alerte sous le seuil de fatigue de l'adjoint (55).
 class Energie extends Control:
-	const S = preload("res://ui/contextual/skin.gd")
+	const CHIFFRES = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
 	var valeur := 100.0
+	var numero := ""
 	var densite := 0.5
+	var marque := Color.TRANSPARENT
+
+	static func teinte_pour(v: float) -> Color:
+		return Color("65b081") if v >= 70.0 else (Color("c9c46a") if v >= 55.0 else Color("e2876f"))
 
 	func _draw() -> void:
-		var h := maxf(5.0, 12.0 * densite)
-		var y := (size.y - h) * 0.5
-		draw_rect(Rect2(0, y, size.x, h), Color(1, 1, 1, 0.1))
-		var teinte := Color("7fbf86") if valeur >= 70.0 else (S.GOLD if valeur >= 55.0 else Color("e0703f"))
-		draw_rect(Rect2(0, y, size.x * clampf(valeur / 100.0, 0.0, 1.0), h), teinte)
+		var c := size * 0.5
+		var epais := maxf(4.0, 9.0 * densite)
+		var r := minf(size.x, size.y) * 0.5 - epais * 0.5 - 1.0
+		draw_circle(c, r, Color("0b1012"))
+		draw_arc(c, r, 0.0, TAU, 48, Color("2c3a37"), epais, true)
+		var part := clampf(valeur / 100.0, 0.0, 1.0)
+		if part > 0.0: draw_arc(c, r, -PI * 0.5, -PI * 0.5 + TAU * part, maxi(6, roundi(48 * part)), teinte_pour(valeur), epais, true)
+		if not numero.is_empty():
+			var corps := roundi(maxf(13.0, r * 0.95))
+			var largeur := CHIFFRES.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
+			draw_string(CHIFFRES, c + Vector2(-largeur * 0.5, corps * 0.36), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Color("f2ecdc"))
+		# Blessure ou carton : pastille en haut à droite de l'anneau.
+		if marque.a > 0.0: draw_circle(c + Vector2(r, -r) * 0.72, maxf(3.0, 7.0 * densite), marque)
 
 ## Échelle de l'interface, comme les autres écrans du jeu (immersive08/components.gd) :
 ## les tailles sont écrites pour 2560×1440 et réduites jusqu'à la moitié en 1280×720.
@@ -237,27 +278,55 @@ func px(valeur: float) -> int:
 func _texte(texte: String, taille: float, couleur: Color, retour: bool = false, titre: bool = false) -> Label:
 	var etiquette := S.wrap(texte, px(taille), couleur) if retour else S.label(texte, px(taille), couleur)
 	etiquette.add_theme_font_size_override("font_size", px(taille))
-	if titre: etiquette.add_theme_font_override("font", T.DISPLAY)
+	if titre: etiquette.add_theme_font_override("font", TITRES)
 	return etiquette
 
+## Bouton de l'écran : à plat sur le panneau (charte : pas de bordure), le bouton principal en or.
 func _bouton(texte: String, action: Callable, actif: bool = true, principal: bool = false) -> Button:
 	var bouton := S.button(texte, action, actif, principal)
-	bouton.custom_minimum_size.y = px(68)
-	bouton.add_theme_font_size_override("font_size", px(26))
+	bouton.custom_minimum_size.y = px(64)
+	bouton.add_theme_font_size_override("font_size", px(28))
+	bouton.add_theme_font_override("font", TITRES)
+	_habiller(bouton, principal)
 	return bouton
 
-## Charte de l'écran (cinq teintes) : fond vert profond, vert de jeu, doré, texte clair, texte
-## atténué. Les panneaux se fondent dans le fond (voile vert, filet doré très léger).
-const FOND_PANNEAU := Color(0.07, 0.15, 0.12, 0.86)
-const FILET := Color(0.85, 0.76, 0.51, 0.13)
+func _habiller(bouton: Control, principal: bool = false) -> void:
+	var fonds := [OR, OR.lightened(0.12), OR.darkened(0.1)] if principal else [RELIEF, SURVOL, SURVOL.lightened(0.05)]
+	var etats := ["normal", "hover", "pressed"]
+	for n in etats.size():
+		var style := S.G.T.box(fonds[n], maxi(4, px(10)))
+		style.content_margin_left = px(22)
+		style.content_margin_right = px(22)
+		bouton.add_theme_stylebox_override(etats[n], style)
+	var focus := S.G.T.box(Color.TRANSPARENT, maxi(4, px(10)), OR)
+	focus.set_border_width_all(maxi(1, px(3)))
+	bouton.add_theme_stylebox_override("focus", focus)
+	for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		bouton.add_theme_color_override(couleur, FOND if principal else (IVOIRE if couleur == "font_color" else OR))
 
-func _panneau(parent: Node, marge: int) -> VBoxContainer:
+## Charte de l'écran (rugby-legacy-27-couleurs.ase) : fond sapin presque noir, panneaux à peine
+## plus clairs et sans bordure, ivoire pour l'information, or rare, vert favorable.
+const FOND := Color("0b1012")
+const PANNEAU := Color("121a1c")
+const RELIEF := Color("18231f")
+const SURVOL := Color("1f2e2b")
+const TRAIT := Color("232f2e")
+const IVOIRE := Color("f2ecdc")
+const DOUX := Color("aeb9b3")
+const FAIBLE := Color("7b8a84")
+const OR := Color("e0b35a")
+const ALERTE := Color("e2876f")
+const TITRES = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
+const CHIFFRES_GRAS = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
+
+func _panneau(parent: Node, marge: int, fond: Color = Color(PANNEAU, 0.94)) -> VBoxContainer:
 	var coque := PanelContainer.new()
-	var style := S.G.T.box(FOND_PANNEAU, maxi(6, px(14)), FILET)
-	style.set_border_width_all(1)
-	style.shadow_color = Color(0, 0, 0, 0.22)
-	style.shadow_size = maxi(2, px(10))
-	style.shadow_offset = Vector2(0, maxf(1.0, px(3)))
+	var style := S.G.T.box(fond, maxi(6, px(14)))
+	style.set_border_width_all(0)
+	# Profondeur : ombre douce sous chaque panneau, posé sur le fond sapin.
+	style.shadow_color = Color(0, 0, 0, 0.32)
+	style.shadow_size = maxi(3, px(18))
+	style.shadow_offset = Vector2(0, maxf(1.0, px(5)))
 	coque.add_theme_stylebox_override("panel", style)
 	parent.add_child(coque)
 	var bord := S.G.margin(marge)
@@ -266,11 +335,14 @@ func _panneau(parent: Node, marge: int) -> VBoxContainer:
 	bord.add_child(colonne)
 	return colonne
 
-## Titre de panneau discret : petites capitales atténuées, le contenu prime.
-func _titre(texte: String) -> Label:
-	var etiquette := _texte(texte, 21, Color(S.MUTED, 0.72), false, true)
-	etiquette.uppercase = true
-	return etiquette
+## Titre de panneau : une ligne en ivoire, et à droite une précision atténuée.
+func _titre(texte: String, precision: String = "") -> Control:
+	var ligne := S.G.h(px(10))
+	var etiquette := _texte(texte, 28, IVOIRE, false, true)
+	S.G.fill(etiquette)
+	ligne.add_child(etiquette)
+	if not precision.is_empty(): ligne.add_child(_texte(precision, 24, FAIBLE))
+	return ligne
 
 func _ready() -> void:
 	name = "MatchBetween"
@@ -306,6 +378,9 @@ func _a_l_echelle() -> void:
 	_construire()
 	if not _dernier.is_empty(): update_frame.callv(_dernier)
 
+## Une seule mise en page (choix de Léo, 12 novembre 2026) : grand terrain habillé comme une
+## retransmission (dernier fait en bandeau), frise du match dessous, colonne étroite repliable
+## à droite (Mon XV avec les noms, chiffres clés et stats par thème, Gabi).
 func _construire() -> void:
 	# Le terrain garde sa lecture (places, file des faits) d'une échelle à l'autre.
 	var ancien := terrain
@@ -314,147 +389,250 @@ func _construire() -> void:
 		remove_child(enfant)
 		enfant.queue_free()
 	_cle = ""
-	var page := S.G.v(px(16))
-	S.full(page)
-	add_child(page)
-	# En-tête : où est le ballon, l'entracte et de quoi l'abréger, le niveau des temps forts.
-	var entete := S.G.h(px(20))
-	page.add_child(entete)
-	etat = _texte("", 34, S.GOLD, false, true)
+	terrain = ancien if ancien != null else Terrain2D.new()
+	terrain.densite = _densite
+	terrain.legende = false
+	terrain.custom_minimum_size = Vector2(320, 180)
+	_commandes()
+	_composants()
+	_page()
+	_arret_decision()
+	if not _arret.is_empty(): montrer_arret(_arret)
+	if not terrain.fait_joue.is_connected(_fait_joue): terrain.fait_joue.connect(_fait_joue)
+
+## Commandes : où est le ballon, Tactique, Banc, Paramètres (vitesse
+## de l'horloge, temps forts montrés) et Plus (statistiques, journal, délégation).
+func _commandes() -> void:
+	etat = _texte("", 34, IVOIRE, false, true)
 	etat.name = "MatchBetweenState"
 	etat.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	etat.clip_text = true
+	etat.custom_minimum_size.x = px(120)
 	S.G.fill(etat)
-	entete.add_child(etat)
-	# Barre de commandes unique de l'écran : entracte, Passer, vitesse, Tactique, Banc, niveau,
-	# et le reste (statistiques, journal, délégation) dans un menu.
-	entracte = _texte("", 26, S.TEXT)
-	entracte.name = "MatchBetweenInterval"
-	entete.add_child(entracte)
-	passer = _bouton("PASSER  ›", func(): passer_demande.emit(), true, true)
-	passer.name = "MatchBetweenSkip"
-	passer.custom_minimum_size = Vector2(px(200), px(64))
-	passer.tooltip_text = "Aller tout de suite au prochain temps fort."
-	passer.set_meta("contextual_enabled", true)
-	entete.add_child(passer)
-	montrer_entracte(_entracte[0], _entracte[1], true)
-	vitesse = OptionButton.new()
-	vitesse.name = "MatchBetweenSpeed"
-	vitesse.custom_minimum_size = Vector2(px(250), px(64))
-	vitesse.add_theme_font_size_override("font_size", px(26))
-	vitesse.get_popup().add_theme_font_size_override("font_size", px(26))
-	vitesse.tooltip_text = "Vitesse de l’horloge entre deux temps forts. Un temps fort se joue toujours à vitesse réelle."
-	vitesse.set_meta("contextual_enabled", true)
-	for libelle: String in ["Horloge posée", "Horloge normale", "Horloge rapide", "Horloge éclair"]: vitesse.add_item(libelle)
-	vitesse.select(maxi(0, HORLOGES_IDS.find(horloge)))
-	vitesse.item_selected.connect(func(index: int):
-		horloge = HORLOGES_IDS[index]
-		horloge_choisie.emit(horloge))
-	entete.add_child(vitesse)
-	var tactique := _bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique"))
+	# Pas de bouton « Passer » ni de compte à rebours (choix de Léo) : le match défile en 2D à
+	# la vitesse de l'horloge choisie dans les paramètres.
+	tactique = _bouton("TACTIQUE", func(): tiroir_demande.emit("Tactique"))
 	tactique.name = "MatchBetweenTactics"
 	tactique.tooltip_text = "Consignes d’attaque et de défense (le match se met en pause)."
 	tactique.set_meta("contextual_enabled", true)
-	entete.add_child(tactique)
-	var banc := _bouton("BANC", func(): tiroir_demande.emit("Banc"))
+	banc = _bouton("BANC", func(): tiroir_demande.emit("Banc"))
 	banc.name = "MatchBetweenBench"
 	banc.tooltip_text = "Ouvrir le banc et faire un remplacement (le match se met en pause)."
 	banc.set_meta("contextual_enabled", true)
-	entete.add_child(banc)
-	niveau = OptionButton.new()
-	niveau.name = "MatchHighlightLevel"
-	niveau.custom_minimum_size = Vector2(px(330), px(64))
-	niveau.add_theme_font_size_override("font_size", px(26))
-	niveau.get_popup().add_theme_font_size_override("font_size", px(26))
-	niveau.tooltip_text = "Temps forts montrés : des plus choisis au match complet."
-	niveau.set_meta("contextual_enabled", true)
-	niveau.item_selected.connect(func(index: int): if index >= 0 and index < _niveaux.size(): niveau_choisi.emit(str(_niveaux[index].get("id", ""))))
-	entete.add_child(niveau)
-	var plus := MenuButton.new()
+	plus = MenuButton.new()
 	plus.name = "MatchBetweenMore"
 	plus.text = "PLUS  ▾"
 	plus.flat = false
-	plus.custom_minimum_size = Vector2(px(150), px(64))
-	plus.add_theme_font_size_override("font_size", px(26))
-	plus.get_popup().add_theme_font_size_override("font_size", px(26))
-	for libelle: String in ["Statistiques", "Journal du match", "Confier la fin à l’adjoint"]: plus.get_popup().add_item(libelle)
-	plus.get_popup().id_pressed.connect(func(id: int):
+	plus.custom_minimum_size = Vector2(px(130), px(64))
+	plus.add_theme_font_size_override("font_size", px(28))
+	plus.add_theme_font_override("font", TITRES)
+	plus.tooltip_text = "Statistiques complètes, journal du match, confier la fin à l’adjoint."
+	plus.set_meta("contextual_enabled", true)
+	_habiller(plus)
+	var menu := plus.get_popup()
+	menu.add_theme_font_size_override("font_size", px(26))
+	for libelle: String in ["Statistiques", "Journal du match", "Confier la fin à l’adjoint"]: menu.add_item(libelle)
+	menu.id_pressed.connect(func(id: int):
 		if id == 0: tiroir_demande.emit("Stats")
 		elif id == 1: tiroir_demande.emit("Journal")
 		else: delegation_demandee.emit())
-	plus.set_meta("contextual_enabled", true)
-	for etat_bouton in ["normal", "hover", "pressed"]: plus.add_theme_stylebox_override(etat_bouton, S.G.T.box(S.PANEL, 4, Color("66745e")))
-	entete.add_child(plus)
-	var corps := S.G.h(px(20))
-	S.G.fill(corps, true)
-	page.add_child(corps)
-	# Colonne principale : le terrain, puis la domination et les chiffres clés.
-	var gauche := S.G.v(px(16))
-	S.G.fill(gauche, true, 2.3)
-	corps.add_child(gauche)
-	var cadre_terrain := _panneau(gauche, px(8))
-	S.G.fill(cadre_terrain.get_parent().get_parent(), true, 1.0)
-	terrain = ancien if ancien != null else Terrain2D.new()
-	terrain.densite = _densite
-	terrain.custom_minimum_size = Vector2(320, 180)
-	S.G.fill(terrain, true)
-	cadre_terrain.add_child(terrain)
-	# Sous le terrain, pleine largeur : la domination façon FM, aux couleurs des deux clubs.
-	var cadre_domination := _panneau(gauche, px(12))
+	# Paramètres (engrenage) : vitesse de l'horloge et temps forts montrés, dans un petit panneau.
+	parametres = _bouton("PARAMÈTRES", func(): _ouvrir_parametres())
+	parametres.name = "MatchBetweenSettings"
+	parametres.tooltip_text = "Vitesse de l’horloge entre deux temps forts et temps forts montrés."
+	parametres.set_meta("contextual_enabled", true)
+	var engrenage := Engrenage.new()
+	engrenage.custom_minimum_size = Vector2(px(30), px(30))
+	engrenage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parametres.add_child(engrenage)
+	parametres.add_theme_constant_override("h_separation", 0)
+	(parametres.get_theme_stylebox("normal") as StyleBox).content_margin_left = px(58)
+	for etat_bouton in ["hover", "pressed", "focus"]:
+		var style: StyleBox = parametres.get_theme_stylebox(etat_bouton)
+		if style != null: style.content_margin_left = px(58)
+	parametres.resized.connect(func(): engrenage.position = Vector2(px(20), (parametres.size.y - engrenage.size.y) * 0.5))
+	panneau_parametres = PopupPanel.new()
+	panneau_parametres.name = "MatchBetweenSettingsPanel"
+	panneau_parametres.add_theme_stylebox_override("panel", S.G.T.box(PANNEAU, maxi(6, px(14)), Color(OR, 0.4)))
+	parametres.add_child(panneau_parametres)
+	var marge := S.G.margin(px(22))
+	panneau_parametres.add_child(marge)
+	var colonne := S.G.v(px(14))
+	marge.add_child(colonne)
+	colonne.add_child(_texte("Vitesse de l’horloge", 26, FAIBLE))
+	var rangee_horloge := S.G.h(px(8))
+	colonne.add_child(rangee_horloge)
+	groupe_horloge = ButtonGroup.new()
+	for n in HORLOGES_IDS.size():
+		var choix := _segment(HORLOGES_COURTS[n], groupe_horloge, HORLOGES_IDS[n] == horloge)
+		choix.name = "MatchBetweenSpeed%d" % n
+		var id: String = HORLOGES_IDS[n]
+		choix.pressed.connect(func():
+			horloge = id
+			horloge_choisie.emit(id))
+		rangee_horloge.add_child(choix)
+	colonne.add_child(_texte("Temps forts montrés", 26, FAIBLE))
+	grille_niveaux = GridContainer.new()
+	grille_niveaux.name = "MatchHighlightLevel"
+	grille_niveaux.columns = 3
+	grille_niveaux.add_theme_constant_override("h_separation", px(8))
+	grille_niveaux.add_theme_constant_override("v_separation", px(8))
+	colonne.add_child(grille_niveaux)
+	_remplir_niveaux()
+
+## Bouton d'un choix unique (segment) : or quand il est choisi.
+func _segment(texte: String, groupe: ButtonGroup, choisi: bool) -> Button:
+	var bouton := Button.new()
+	bouton.text = texte
+	bouton.toggle_mode = true
+	bouton.button_group = groupe
+	bouton.button_pressed = choisi
+	bouton.custom_minimum_size = Vector2(px(170), px(56))
+	bouton.add_theme_font_size_override("font_size", px(26))
+	bouton.add_theme_font_override("font", TITRES)
+	bouton.set_meta("contextual_enabled", true)
+	_habiller(bouton)
+	var choisi_style := S.G.T.box(Color(OR, 0.18), maxi(4, px(10)), OR)
+	choisi_style.set_border_width_all(maxi(1, px(2)))
+	bouton.add_theme_stylebox_override("pressed", choisi_style)
+	bouton.add_theme_color_override("font_pressed_color", OR)
+	return bouton
+
+func _ouvrir_parametres() -> void:
+	var cadre := parametres.get_global_rect()
+	panneau_parametres.reset_size()
+	var taille := panneau_parametres.get_contents_minimum_size()
+	panneau_parametres.popup(Rect2i(Vector2i(int(cadre.end.x - taille.x), int(cadre.end.y + px(8))), Vector2i(taille)))
+
+func _remplir_niveaux(choisi: String = "") -> void:
+	if not is_instance_valid(grille_niveaux): return
+	S.clear(grille_niveaux)
+	groupe_niveaux = ButtonGroup.new()
+	for n in _niveaux.size():
+		var id := str(_niveaux[n].get("id", ""))
+		var choix := _segment(str(_niveaux[n].get("label", "")), groupe_niveaux, id == choisi)
+		choix.custom_minimum_size.x = px(260)
+		choix.pressed.connect(func(): niveau_choisi.emit(id))
+		grille_niveaux.add_child(choix)
+
+func _libelle_niveau(id: Variant) -> String:
+	for item: Dictionary in _niveaux:
+		if item.get("id") == id: return str(item.get("label", ""))
+	return ""
+
+## Libellé du niveau de temps forts choisi dans les paramètres (vide s'il n'y en a pas).
+func niveau_libelle() -> String:
+	if groupe_niveaux == null: return ""
+	var choisi := groupe_niveaux.get_pressed_button()
+	return choisi.text if choisi != null else ""
+
+## Composants : frise du match, chiffres clés, fil, Mon XV, carte de Gabi.
+func _composants() -> void:
 	domination = Domination.new()
 	domination.name = "MatchBetweenMomentum"
 	domination.densite = _densite
-	domination.custom_minimum_size = Vector2(0, px(120))
-	domination.tooltip_text = "Qui domine, minute par minute : occupation, possession, points et franchissements."
+	domination.custom_minimum_size = Vector2(0, px(150))
+	domination.tooltip_text = "Qui domine, minute par minute (occupation, possession, points, franchissements), et les essais, tirs réussis et cartons déjà vus."
 	domination.mouse_filter = Control.MOUSE_FILTER_PASS
 	S.G.fill(domination, true)
-	cadre_domination.add_child(domination)
-	# Colonne de droite : chiffres clés en grand, onglets (fil, Mon XV, chiffres), l'adjoint.
-	var droite := S.G.v(px(14))
-	droite.custom_minimum_size.x = px(600)
-	S.G.fill(droite, true, 1.0)
-	corps.add_child(droite)
-	var cadre_chiffres := _panneau(droite, px(14))
-	chiffres = S.G.v(px(2))
+	chiffres = S.G.v(px(6))
 	chiffres.name = "MatchBetweenFigures"
-	cadre_chiffres.add_child(chiffres)
-	var cadre_onglets := _panneau(droite, px(18))
-	S.G.fill(cadre_onglets.get_parent().get_parent(), true, 1.0)
-	var barre_onglets := S.G.h(px(8))
-	cadre_onglets.add_child(barre_onglets)
-	_onglets.clear()
-	_pages.clear()
-	for titre: String in ONGLETS:
-		var bouton := _bouton(titre.to_upper(), func(): choisir_onglet(titre))
-		bouton.name = "MatchBetweenTab" + titre.replace(" ", "")
-		bouton.custom_minimum_size.y = px(58)
-		bouton.set_meta("contextual_enabled", true)
-		S.G.fill(bouton)
-		barre_onglets.add_child(bouton)
-		_onglets[titre] = bouton
-	fil = S.G.scroll(cadre_onglets)
+	fil = S.G.v(px(8))
 	fil.name = "MatchBetweenFeed"
-	fil.add_theme_constant_override("separation", px(10))
-	_pages["Le fil"] = fil.get_parent()
-	xv = S.G.scroll(cadre_onglets)
+	xv = GridContainer.new()
 	xv.name = "MatchBetweenSquad"
-	xv.add_theme_constant_override("separation", px(4))
-	_pages["Mon XV"] = xv.get_parent()
-	tableau = S.G.scroll(cadre_onglets)
-	tableau.name = "MatchBetweenTable"
-	tableau.add_theme_constant_override("separation", px(4))
-	_pages["Chiffres"] = tableau.get_parent()
-	for defilant: ScrollContainer in _pages.values():
-		defilant.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		S.G.fill(defilant, true)
-	choisir_onglet(onglet)
-	adjoint = _panneau(droite, px(18))
+	xv.columns = 3
+	xv.add_theme_constant_override("h_separation", px(8))
+	xv.add_theme_constant_override("v_separation", px(2))
+	S.G.fill(xv)
+	adjoint = S.G.v(px(10))
 	adjoint.name = "MatchBetweenAdvice"
-	adjoint_cadre = adjoint.get_parent().get_parent()
-	# Arrêt-décision : le match attend le manager.
+
+## Carte de Gabi (portrait, une phrase, l'action proposée) dans un panneau en relief.
+func _carte_gabi(parent: Control) -> void:
+	var cadre := _panneau(parent, px(18), Color(RELIEF, 0.97))
+	adjoint_cadre = cadre.get_parent().get_parent()
+	cadre.add_child(adjoint)
+
+func _page() -> void:
+	var page := S.G.h(px(16))
+	S.full(page)
+	add_child(page)
+	var gauche := S.G.v(px(12))
+	S.G.fill(gauche, true, 1.0)
+	page.add_child(gauche)
+	var barre := S.G.h(px(12))
+	barre.alignment = BoxContainer.ALIGNMENT_END
+	gauche.add_child(barre)
+	for noeud: Control in [etat, tactique, banc, parametres, plus]: barre.add_child(noeud)
+	# Le dernier fait en bandeau, comme à la télévision, au-dessus du terrain (il ne cache
+	# aucun joueur).
+	bandeau = PanelContainer.new()
+	bandeau.name = "MatchBetweenBanner"
+	var style := S.G.T.box(Color(FOND, 0.88), maxi(4, px(8)))
+	style.border_width_left = maxi(2, px(6))
+	style.border_color = OR
+	style.content_margin_left = px(14)
+	style.content_margin_right = px(18)
+	style.content_margin_top = px(8)
+	style.content_margin_bottom = px(8)
+	style.shadow_color = Color(0, 0, 0, 0.45)
+	style.shadow_size = maxi(3, px(14))
+	style.shadow_offset = Vector2(0, maxf(1.0, px(4)))
+	bandeau.add_theme_stylebox_override("panel", style)
+	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gauche.add_child(bandeau)
+	bandeau.add_child(fil)
+	S.G.fill(fil)
+	var scene := Control.new()
+	scene.name = "MatchBetweenScene"
+	scene.clip_contents = true
+	S.G.fill(scene, true)
+	scene.custom_minimum_size.y = px(400)
+	gauche.add_child(scene)
+	S.full(terrain)
+	scene.add_child(terrain)
+	var cadre_frise := _panneau(gauche, px(12))
+	cadre_frise.add_child(domination)
+	domination.size_flags_vertical = Control.SIZE_FILL
+	# Languette : replie ou déplie la colonne de droite (le terrain prend la place).
+	var languette := Button.new()
+	languette.name = "MatchBetweenFold"
+	languette.text = "‹" if colonne_repliee else "›"
+	languette.custom_minimum_size = Vector2(px(44), px(120))
+	languette.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	languette.add_theme_font_size_override("font_size", px(34))
+	languette.tooltip_text = "Replier ou déplier la colonne Mon XV et Gabi."
+	languette.set_meta("contextual_enabled", true)
+	_habiller(languette)
+	page.add_child(languette)
+	var droite := S.G.v(px(14))
+	droite.name = "MatchBetweenColumn"
+	droite.custom_minimum_size.x = px(640)
+	droite.visible = not colonne_repliee
+	page.add_child(droite)
+	languette.pressed.connect(func():
+		colonne_repliee = not colonne_repliee
+		languette.text = "‹" if colonne_repliee else "›"
+		droite.visible = not colonne_repliee)
+	var cadre_xv := _panneau(droite, px(16))
+	cadre_xv.add_child(_titre("Mon XV", "énergie · note"))
+	cadre_xv.add_child(xv)
+	var cadre_chiffres := _panneau(droite, px(16))
+	cadre_chiffres.add_child(chiffres)
+	details = S.G.v(px(2))
+	details.name = "MatchBetweenDetails"
+	cadre_chiffres.add_child(details)
+	_carte_gabi(droite)
+	S.G.fill(adjoint_cadre, true)
+
+## Arrêt-décision : le match attend le manager.
+func _arret_decision() -> void:
 	arret = PanelContainer.new()
 	arret.name = "MatchBetweenStop"
-	arret.add_theme_stylebox_override("panel", S.G.T.box(S.PANEL, 5, S.GOLD))
+	var style := S.G.T.box(PANNEAU, maxi(6, px(14)), OR)
+	style.set_border_width_all(maxi(1, px(3)))
+	arret.add_theme_stylebox_override("panel", style)
 	arret.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	arret.custom_minimum_size = Vector2(px(920), 0)
 	arret.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -464,9 +642,9 @@ func _construire() -> void:
 	arret.add_child(marge)
 	var colonne := S.G.v(px(20))
 	marge.add_child(colonne)
-	arret_titre = _texte("", 44, S.GOLD, false, true)
+	arret_titre = _texte("", 44, OR, false, true)
 	colonne.add_child(arret_titre)
-	arret_texte = _texte("", 30, S.TEXT, true)
+	arret_texte = _texte("", 30, IVOIRE, true)
 	arret_texte.custom_minimum_size.x = px(840)
 	colonne.add_child(arret_texte)
 	var choix := S.G.h(px(16))
@@ -476,26 +654,6 @@ func _construire() -> void:
 	choix.add_child(S.G.spacer())
 	choix.add_child(_bouton("REPRENDRE LE MATCH", func(): reprise_demandee.emit(), true, true))
 	arret.hide()
-	if not _arret.is_empty(): montrer_arret(_arret)
-	if not terrain.fait_joue.is_connected(_fait_joue): terrain.fait_joue.connect(_fait_joue)
-
-func choisir_onglet(titre: String) -> void:
-	if not titre in ONGLETS: return
-	onglet = titre
-	for nom: String in _pages: (_pages[nom] as Control).visible = nom == titre
-	for nom: String in _onglets:
-		var bouton: Button = _onglets[nom]
-		if nom == titre:
-			for etat_bouton in ["normal", "hover", "pressed"]:
-				var choisi := S.G.T.box(Color(S.GOLD, 0.14), maxi(4, px(10)), Color(S.GOLD, 0.55))
-				choisi.set_border_width_all(0)
-				choisi.border_width_bottom = maxi(2, px(4))
-				bouton.add_theme_stylebox_override(etat_bouton, choisi)
-			bouton.add_theme_color_override("font_color", S.GOLD)
-		else:
-			for etat_bouton in ["normal", "hover", "pressed"]: bouton.add_theme_stylebox_override(etat_bouton, S.G.T.box(Color(0, 0, 0, 0.12), maxi(4, px(10)), FILET))
-			bouton.add_theme_color_override("font_color", S.MUTED)
-			bouton.add_theme_color_override("font_color", S.TEXT)
 
 static func _zone(x: float, possession: int) -> String:
 	# Vu de l'équipe en possession : distance jusqu'à la ligne d'essai adverse.
@@ -521,11 +679,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_niveaux = direct.get("niveaux", [])
-	if niveau.item_count != _niveaux.size():
-		niveau.clear()
-		for item: Dictionary in _niveaux: niveau.add_item(str(item.get("label", "")))
-	for index in _niveaux.size():
-		if _niveaux[index].get("id") == direct.get("niveau") and niveau.selected != index: niveau.select(index)
+	if niveau_libelle() != _libelle_niveau(direct.get("niveau")) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(str(direct.get("niveau", "")))
 	var dom: Dictionary = direct.get("domination", {}) if direct.get("domination") is Dictionary else {}
 	domination.minutes = dom.get("minutes", [])
 	domination.mi_temps = dom.get("miTemps")
@@ -548,12 +702,12 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 
 func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	var possession: Variant = direct.get("possession")
-	if live.get("finished", false): etat.text = "MATCH TERMINÉ"
-	elif live.get("atBreak", false): etat.text = "MI-TEMPS"
+	if live.get("finished", false): etat.text = "Match terminé"
+	elif live.get("atBreak", false): etat.text = "Mi-temps"
 	elif (possession is float or possession is int) and equipes.size() >= 2:
 		var cote := clampi(int(possession), 0, 1)
-		etat.text = "%s · ballon %s" % [S.G.club_name(equipes[cote]).to_upper(), _zone(float(direct.get("zone", {}).get("x", 50.0)), cote)]
-	else: etat.text = "LE MATCH"
+		etat.text = "%s a le ballon %s" % [S.G.club_name(equipes[cote]), _zone(float(direct.get("zone", {}).get("x", 50.0)), cote)]
+	else: etat.text = "Le match"
 
 ## Un fait vient d'être joué sur le terrain : le fil le montre, le score le suit.
 func _fait_joue(item: Dictionary) -> void:
@@ -561,75 +715,75 @@ func _fait_joue(item: Dictionary) -> void:
 	var marque: Variant = item.get("score")
 	if marque is Array and (marque as Array).size() == 2: score_joue.emit(marque)
 
-## Score à montrer tant que le terrain rejoue des faits en retard sur le moteur, sinon vide.
 ## Minute à afficher tant que le terrain rejoue des faits en retard sur le moteur (« 1′ »), sinon vide :
 ## l'horloge du bandeau suit ce que montre le terrain, comme le score.
 func horloge_differee() -> String:
 	if terrain == null or not terrain.en_retard(): return ""
 	return terrain.horloge_montree()
 
+## Score à montrer tant que le terrain rejoue des faits en retard sur le moteur, sinon vide.
 func score_differe() -> Array:
 	if terrain == null or not terrain.en_retard() or terrain.joue.is_empty(): return []
 	var marque: Variant = terrain.joue.get("score")
 	return marque if marque is Array and (marque as Array).size() == 2 else []
 
+## Fil : une ligne n'y entre qu'une fois son fait joué sur le terrain ; le dernier, en bandeau.
 func _remplir_fil() -> void:
 	if not is_instance_valid(fil): return
 	S.clear(fil)
-	# Une ligne n'entre au fil qu'une fois son fait joué sur le terrain.
 	var visibles: Array = []
+	var prochain := terrain.prochain_i()
 	for entree: Dictionary in _lignes:
 		var i := int(entree.get("i", -1))
-		var prochain := terrain.prochain_i()
 		if prochain >= 0 and i >= prochain: continue
 		visibles.append(entree)
-	for index in range(visibles.size() - 1, -1, -1):
-		var entree: Dictionary = visibles[index]
-		var dernier := index == visibles.size() - 1
-		var kind := str(entree.get("kind", ""))
-		var essai := kind == "try"
-		var points := kind in ["try", "goal", "transformation"]
-		var equipe := int(entree.get("equipe", -1)) if entree.get("equipe") != null else -1
-		var teinte: Color = terrain.couleurs[equipe] if equipe in [0, 1] else S.MUTED
-		# Ligne du fil : minute en pastille, pictogramme du fait aux couleurs du club, texte ;
-		# les points marqués sont mis en valeur (fond doré, texte clair).
-		var ligne := PanelContainer.new()
-		var fond := S.G.T.box(Color(S.GOLD, 0.16) if essai else (Color(S.GOLD, 0.07) if points else Color(0, 0, 0, 0)), maxi(4, px(10)), Color(S.GOLD, 0.45) if essai else Color.TRANSPARENT)
-		fond.content_margin_left = px(8)
-		fond.content_margin_right = px(8)
-		fond.content_margin_top = px(6)
-		fond.content_margin_bottom = px(6)
-		ligne.add_theme_stylebox_override("panel", fond)
-		ligne.set_meta("i", int(entree.get("i", -1)))
-		var rang := S.G.h(px(14))
-		ligne.add_child(rang)
-		var pastille := PanelContainer.new()
-		var style_minute := S.G.T.box(Color(teinte, 0.85) if dernier or points else Color(1, 1, 1, 0.08), maxi(6, px(22)))
-		style_minute.content_margin_left = px(10)
-		style_minute.content_margin_right = px(10)
-		style_minute.content_margin_top = px(2)
-		style_minute.content_margin_bottom = px(2)
-		pastille.add_theme_stylebox_override("panel", style_minute)
-		pastille.custom_minimum_size.x = px(76)
-		pastille.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		var heure := _texte(str(entree.get("horloge", "")), 26, (Color("152019") if teinte.get_luminance() > 0.55 else Color.WHITE) if dernier or points else S.MUTED, false, true)
-		heure.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		pastille.add_child(heure)
-		rang.add_child(pastille)
-		var icone := Icone.new()
-		icone.kind = kind
-		icone.teinte = teinte
-		icone.rouge = str(entree.get("texte", "")).to_lower().contains("rouge")
-		icone.custom_minimum_size = Vector2(px(40), px(40))
-		icone.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		rang.add_child(icone)
-		var texte := _texte(str(entree.get("texte", "")), 30 if essai else (28 if dernier else 26), S.TEXT if dernier or points else Color(S.TEXT, 0.78), true, essai)
-		texte.max_lines_visible = 3 if dernier or essai else 2
-		texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		S.G.fill(texte)
-		rang.add_child(texte)
+	# Le dernier fait joué, en bandeau ; il apparaît en fondu (sauf animations réduites).
+	if not visibles.is_empty():
+		var ligne := _ligne_fil(visibles[-1], true, true)
 		fil.add_child(ligne)
-	if visibles.is_empty(): fil.add_child(_texte("Le coup d’envoi approche.", 26, S.MUTED, true))
+		var i := int(visibles[-1].get("i", -1))
+		if i != _dernier_fait and not _animations_reduites() and is_inside_tree():
+			ligne.modulate.a = 0.0
+			create_tween().tween_property(ligne, "modulate:a", 1.0, 0.3).set_trans(Tween.TRANS_SINE)
+		_dernier_fait = i
+	else: fil.add_child(_texte("Le coup d’envoi approche.", 26, DOUX))
+
+func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
+	var kind := str(entree.get("kind", ""))
+	var essai := kind == "try"
+	var points := kind in ["try", "goal", "transformation"]
+	var equipe := int(entree.get("equipe", -1)) if entree.get("equipe") != null else -1
+	var teinte: Color = terrain.couleurs[equipe] if equipe in [0, 1] else FAIBLE
+	# Minute en or, pictogramme du fait aux couleurs du club, texte ; les essais en ivoire gras.
+	var ligne := PanelContainer.new()
+	var fond := S.G.T.box(Color(OR, 0.12) if essai and not en_bandeau else Color(0, 0, 0, 0), maxi(4, px(10)))
+	fond.content_margin_left = px(6)
+	fond.content_margin_right = px(6)
+	fond.content_margin_top = px(4)
+	fond.content_margin_bottom = px(4)
+	ligne.add_theme_stylebox_override("panel", fond)
+	ligne.set_meta("i", int(entree.get("i", -1)))
+	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE if en_bandeau else Control.MOUSE_FILTER_PASS
+	var rang := S.G.h(px(14))
+	ligne.add_child(rang)
+	var heure := _texte(str(entree.get("horloge", "")), 30, OR if dernier or points else FAIBLE, false, true)
+	heure.custom_minimum_size.x = px(56)
+	heure.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	rang.add_child(heure)
+	var icone := Icone.new()
+	icone.kind = kind
+	icone.teinte = teinte
+	icone.rouge = str(entree.get("texte", "")).to_lower().contains("rouge")
+	icone.custom_minimum_size = Vector2(px(38), px(38))
+	icone.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	rang.add_child(icone)
+	var texte := _texte(str(entree.get("texte", "")), 28 if en_bandeau or essai else 26, IVOIRE if dernier or points else DOUX, not en_bandeau, essai)
+	texte.max_lines_visible = 1 if en_bandeau else (3 if dernier or essai else 2)
+	texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if en_bandeau: texte.clip_text = true
+	S.G.fill(texte)
+	rang.add_child(texte)
+	return ligne
 
 func _valeur(rang: Dictionary, cote: int) -> String:
 	var valeurs: Array = rang.get("valeurs", [0, 0])
@@ -638,39 +792,40 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 	if rang.get("sur") is Array: texte += "/%d" % int(rang.sur[cote])
 	return texte
 
+## Chiffre clé : libellé, valeur de l'équipe qui reçoit, barre comparée, valeur de l'autre.
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
-	# Chiffres clés (sous les onglets) : valeurs en grand, aux couleurs des clubs.
-	var grand := parent == chiffres
 	var ligne := S.G.h(px(12))
-	ligne.custom_minimum_size.y = px(62 if grand else 40)
-	var titre := _texte(str(rang.get("label", "")), 26, S.MUTED)
+	ligne.custom_minimum_size.y = px(50)
+	var titre := _texte(str(rang.get("label", "")), 26, DOUX)
 	titre.clip_text = true
 	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	titre.custom_minimum_size.x = px(150)
-	S.G.fill(titre, false, 1.2)
+	titre.custom_minimum_size.x = px(120)
+	S.G.fill(titre, false, 1.6)
 	ligne.add_child(titre)
-	var a := _texte(_valeur(rang, 0), 46 if grand else 28, terrain.couleurs[0].lightened(0.35) if grand else S.TEXT, false, true)
+	var a := _texte(_valeur(rang, 0), 40, IVOIRE)
+	a.add_theme_font_override("font", CHIFFRES_GRAS)
 	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	a.custom_minimum_size.x = px(110 if grand else 78)
+	a.custom_minimum_size.x = px(84)
 	ligne.add_child(a)
 	var barre := Barre.new()
 	barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
 	barre.couleurs = terrain.couleurs.duplicate()
 	barre.densite = _densite
-	barre.custom_minimum_size = Vector2(px(90), px(30))
+	barre.custom_minimum_size = Vector2(px(80), px(30))
 	S.G.fill(barre, false, 1.0)
 	ligne.add_child(barre)
-	var b := _texte(_valeur(rang, 1), 46 if grand else 28, terrain.couleurs[1].lightened(0.35) if grand else S.TEXT, false, true)
-	b.custom_minimum_size.x = px(110 if grand else 78)
+	var b := _texte(_valeur(rang, 1), 40, IVOIRE)
+	b.add_theme_font_override("font", CHIFFRES_GRAS)
+	b.custom_minimum_size.x = px(84)
 	ligne.add_child(b)
 	parent.add_child(ligne)
 
-func _remplir_chiffres(direct: Dictionary, live: Dictionary) -> void:
+func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	S.clear(chiffres)
-	S.clear(tableau)
 	var rangs: Array = direct.get("tableau", [])
-	# Cinq chiffres clés : d'abord ceux qui disent déjà quelque chose (une stat encore vide en
-	# début de match cède sa place), sinon les libellés sans valeur (« — »).
+	# Trois chiffres clés : d'abord ceux qui disent déjà quelque chose (une stat encore vide en
+	# début de match cède sa place), sinon les libellés sans valeur (« — »). Les autres sont dans
+	# le tiroir Statistiques (menu Plus).
 	var par_cle := {}
 	for rang: Dictionary in rangs: par_cle[str(rang.get("cle", ""))] = rang
 	var choisis: Array = []
@@ -679,26 +834,60 @@ func _remplir_chiffres(direct: Dictionary, live: Dictionary) -> void:
 	for cle: String in CLES:
 		if par_cle.has(cle) and par_cle[cle].get("vide", false) and choisis.size() < CLES.size(): choisis.append(par_cle[cle])
 	for rang: Dictionary in choisis: _ligne_chiffre(chiffres, rang)
-	var equipes: Array = live.get("teams", [])
-	var entete := S.G.h(px(12))
-	for cote in 2:
-		var nom := _texte(S.G.club_abbr(equipes[cote]) if equipes.size() > cote and equipes[cote] is Dictionary else "", 26, terrain.couleurs[cote].lightened(0.2), false, true)
-		nom.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if cote == 0 else HORIZONTAL_ALIGNMENT_RIGHT
-		S.G.fill(nom)
-		entete.add_child(nom)
-	tableau.add_child(entete)
-	for rang: Dictionary in rangs: _ligne_chiffre(tableau, rang)
-	# Chiffres du moteur qui ne se comparent pas en barre (tirs, cartons).
-	for rang: Dictionary in direct.get("statsRows", []):
-		if not str(rang.get("label", "")) in ["Cartons jaunes", "Tirs de pénalité", "Transformations", "Dont non disputées"]: continue
-		var ligne := S.G.h(px(12))
-		var titre := _texte(str(rang.get("label", "")), 26, S.MUTED)
-		S.G.fill(titre)
-		ligne.add_child(titre)
-		ligne.add_child(_texte("%s  —  %s" % [str(rang.get("home", "")), str(rang.get("away", ""))], 28, S.TEXT, false, true))
-		tableau.add_child(ligne)
+	_rangs = rangs
+	_remplir_details()
 
-## Mon XV : numéro, nom, note du match, énergie et alertes (fatigue, blessure, carton).
+## Stats détaillées par thème (onglets compacts) : barres fines bicolores, chiffres lisibles.
+func _remplir_details() -> void:
+	if not is_instance_valid(details): return
+	S.clear(details)
+	var onglets := S.G.h(px(6))
+	details.add_child(onglets)
+	var groupe := ButtonGroup.new()
+	for nom: String in THEMES:
+		var bouton := _segment(nom, groupe, nom == theme_stats)
+		bouton.name = "MatchBetweenTheme" + nom
+		bouton.custom_minimum_size = Vector2(0, px(48))
+		bouton.add_theme_font_size_override("font_size", px(24))
+		S.G.fill(bouton)
+		bouton.pressed.connect(func():
+			theme_stats = nom
+			_remplir_details.call_deferred())
+		onglets.add_child(bouton)
+	var par_cle := {}
+	for rang: Dictionary in _rangs: par_cle[str(rang.get("cle", ""))] = rang
+	for cle: String in THEMES[theme_stats]:
+		if not par_cle.has(cle): continue
+		var rang: Dictionary = par_cle[cle]
+		var ligne := S.G.h(px(10))
+		ligne.custom_minimum_size.y = px(48)
+		var a := _texte(_valeur(rang, 0), 28, IVOIRE)
+		a.add_theme_font_override("font", CHIFFRES_GRAS)
+		a.custom_minimum_size.x = px(70)
+		ligne.add_child(a)
+		var milieu := S.G.v(px(6))
+		milieu.alignment = BoxContainer.ALIGNMENT_CENTER
+		S.G.fill(milieu)
+		var titre := _texte(str(rang.get("label", "")), 22, DOUX)
+		titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titre.clip_text = true
+		milieu.add_child(titre)
+		var barre := Barre.new()
+		barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
+		barre.couleurs = terrain.couleurs.duplicate()
+		barre.densite = _densite * 1.3
+		barre.custom_minimum_size = Vector2(px(60), px(14))
+		milieu.add_child(barre)
+		ligne.add_child(milieu)
+		var b := _texte(_valeur(rang, 1), 28, IVOIRE)
+		b.add_theme_font_override("font", CHIFFRES_GRAS)
+		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		b.custom_minimum_size.x = px(70)
+		ligne.add_child(b)
+		details.add_child(ligne)
+
+## Mon XV : quinze anneaux d'énergie autour des numéros, la note du match dessous ; nom, poste
+## et alertes en infobulle ; un clic ouvre le banc sur le joueur.
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	S.clear(xv)
 	alertes_xv.clear()
@@ -707,70 +896,96 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	for carton: Variant in direct.get("cartons", []):
 		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
 	if joueurs.is_empty():
-		xv.add_child(_texte("Composition indisponible.", 26, S.MUTED, true))
+		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var entete := S.G.h(px(10))
-	for colonne in [["N°", 50], ["Joueur", 0], ["Note", 80], ["Énergie", 170]]:
-		var titre := _texte(str(colonne[0]), 22, S.MUTED)
-		if int(colonne[1]) > 0: titre.custom_minimum_size.x = px(colonne[1])
-		else: S.G.fill(titre)
-		entete.add_child(titre)
-	xv.add_child(entete)
+	var anneau := px(54)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
-		var ligne := Button.new()
-		ligne.name = "MatchBetweenPlayer%d" % (poste + 1)
-		ligne.flat = true
-		ligne.custom_minimum_size.y = px(52)
-		ligne.focus_mode = Control.FOCUS_ALL
-		ligne.set_meta("contextual_enabled", true)
-		ligne.pressed.connect(func(): joueur_choisi.emit(poste))
-		var rangee := S.G.h(px(10))
-		rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		S.full(rangee)
-		ligne.add_child(rangee)
-		var numero := _texte(str(poste + 1), 28, S.GOLD, false, true)
-		numero.custom_minimum_size.x = px(50)
-		rangee.add_child(numero)
+		var case := Button.new()
+		case.name = "MatchBetweenPlayer%d" % (poste + 1)
+		case.flat = true
+		case.focus_mode = Control.FOCUS_ALL
+		case.set_meta("contextual_enabled", true)
+		case.pressed.connect(func(): joueur_choisi.emit(poste))
+		var vide := StyleBoxEmpty.new()
+		case.add_theme_stylebox_override("normal", vide)
+		case.add_theme_stylebox_override("pressed", vide)
+		var survol := S.G.T.box(SURVOL, maxi(4, px(10)))
+		var focus := S.G.T.box(Color.TRANSPARENT, maxi(4, px(10)), OR)
+		for style: StyleBox in [vide, survol, focus]: style.set_content_margin_all(0)
+		case.add_theme_stylebox_override("hover", survol)
+		case.add_theme_stylebox_override("focus", focus)
+		S.G.fill(case)
+		# Ligne du joueur : anneau d'énergie et numéro, nom de famille, note du match à droite.
+		var colonne := S.G.h(px(6))
+		colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		S.full(colonne)
+		case.add_child(colonne)
+		var energie := Energie.new()
+		energie.numero = str(poste + 1)
+		energie.densite = _densite
+		energie.custom_minimum_size = Vector2(anneau, anneau)
+		energie.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		energie.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		colonne.add_child(energie)
 		if not joueur is Dictionary:
-			rangee.add_child(_texte("Poste vacant", 26, S.MUTED))
-			xv.add_child(ligne)
+			energie.valeur = 0.0
+			case.tooltip_text = "%d · poste vacant" % (poste + 1)
+			case.custom_minimum_size.y = anneau + px(4)
+			xv.add_child(case)
 			continue
 		var id := str(joueur.get("id", ""))
-		var nom := _texte(str(joueur.get("name", "")), 26, S.TEXT)
-		nom.clip_text = true
-		nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		S.G.fill(nom)
-		rangee.add_child(nom)
 		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
 		var note := float(fiche.get("note", 6.0))
-		var etiquette_note := _texte("%.1f" % note, 28, Color("9fd5a6") if note >= 7.0 else (Color("e88d6a") if note < 5.5 else S.TEXT), false, true)
-		etiquette_note.custom_minimum_size.x = px(80)
-		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		rangee.add_child(etiquette_note)
 		var condition := float(joueur.get("condition", 100))
-		var energie := Energie.new()
 		energie.valeur = condition
-		energie.densite = _densite
-		energie.custom_minimum_size = Vector2(px(100), px(30))
-		energie.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rangee.add_child(energie)
-		var pourcent := _texte("%d %%" % roundi(condition), 22, S.MUTED)
-		pourcent.custom_minimum_size.x = px(62)
-		rangee.add_child(pourcent)
+		var nom_court := _nom_court(str(joueur.get("name", "")))
+		var etiquette_nom := _texte(nom_court, 28, IVOIRE, false, true)
+		etiquette_nom.clip_text = true
+		etiquette_nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		etiquette_nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		S.G.fill(etiquette_nom)
+		colonne.add_child(etiquette_nom)
+		var etiquette_note := _texte("%.1f" % note, 28, _teinte_note(note), false, true)
+		etiquette_note.add_theme_font_override("font", CHIFFRES_GRAS)
+		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		etiquette_note.custom_minimum_size.x = px(38)
+		etiquette_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		colonne.add_child(etiquette_note)
+		# Nom gardé pour les lecteurs d'écran et les tests, montré en infobulle.
+		var nom := _texte(str(joueur.get("name", "")), 20, FAIBLE)
+		nom.visible = false
+		colonne.add_child(nom)
 		var alerte := ""
 		if int(joueur.get("injury", 0)) > 0: alerte = "blessé"
 		elif cartons.has(id): alerte = "carton jaune, retour %s′" % str(cartons[id].get("retour", "")) if cartons[id].get("retour") != null else "exclu"
 		elif condition < EPUISE: alerte = "épuisé"
 		elif condition < FATIGUE: alerte = "fatigué"
-		var detail := "%d · %s · %s\nNote %.1f (%d action%s du match)" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else ""]
+		if alerte == "blessé": energie.marque = ALERTE
+		elif alerte.begins_with("carton") or alerte == "exclu": energie.marque = Color("e8c24a")
+		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match)" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else ""]
 		if not alerte.is_empty():
 			alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
-			var marque := _texte(alerte.to_upper(), 20, Color("f0a070") if alerte != "fatigué" else S.GOLD, false, true)
-			rangee.add_child(marque)
 			detail += "\n" + alerte.capitalize()
-		ligne.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
-		xv.add_child(ligne)
+		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
+		case.custom_minimum_size.y = anneau + px(4)
+		xv.add_child(case)
+
+## Couleur de la note du match : vert au-dessus de 6,5, ivoire autour de 6, jaune sous 6,
+## alerte sous 5,5 (6 au coup d'envoi).
+static func _teinte_note(note: float) -> Color:
+	if note >= 7.0: return Color("82e3a3")
+	if note >= 6.5: return Color("65b081")
+	if note >= 6.0: return IVOIRE
+	if note >= 5.5: return Color("c9c46a")
+	return ALERTE
+
+## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 9 lettres.
+static func _nom_court(nom: String) -> String:
+	var morceaux := nom.strip_edges().split(" ", false)
+	if morceaux.is_empty(): return ""
+	var famille := " ".join(morceaux.slice(1)) if morceaux.size() > 1 else morceaux[0]
+	return famille if famille.length() <= 9 else famille.substr(0, 8) + "."
 
 const PORTRAIT = preload("res://guide/assets/coach-poses.png")
 const MATTE = preload("res://guide/coach_matte.gdshader")
@@ -802,13 +1017,12 @@ static func _sans_redites(raisons: Array) -> Array:
 		if not gardees.is_empty(): sortie.push_front(". ".join(gardees) + ".")
 	return sortie
 
-## L'adjoint : alertes de Mon XV d'abord, puis son regard sur les consignes, et les accès directs.
+## Gabi : son portrait et une seule phrase forte (l'alerte la plus grave, sinon sa lecture du
+## match, sinon sa première raison), le reste en infobulle, et l'action qui va avec.
 func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	S.clear(adjoint)
 	adjoint_cadre.visible = not live.get("finished", false)
-	# Carte de l'adjoint : son portrait et une seule phrase forte (l'alerte la plus grave, sinon
-	# sa lecture du match, sinon sa première raison) ; le reste en infobulle.
-	var carte := S.G.h(px(16))
+	var carte := S.G.h(px(18))
 	adjoint.add_child(carte)
 	var portrait := TextureRect.new()
 	var image := AtlasTexture.new()
@@ -818,24 +1032,26 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	portrait.texture = image
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.custom_minimum_size = Vector2(px(120), px(120))
+	portrait.custom_minimum_size = Vector2(px(96), px(96))
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var matte := ShaderMaterial.new()
 	matte.shader = MATTE
 	portrait.material = matte
 	carte.add_child(portrait)
-	var colonne := S.G.v(px(6))
+	var colonne := S.G.v(px(8))
 	S.G.fill(colonne)
 	carte.add_child(colonne)
-	colonne.add_child(_titre("Gabi · l’adjoint"))
+	colonne.add_child(_texte("Gabi, votre adjoint", 22, FAIBLE))
 	var graves := alertes_xv.filter(func(a: Dictionary): return a.alerte != "fatigué")
 	var fatigues := alertes_xv.filter(func(a: Dictionary): return a.alerte == "fatigué")
 	var phrases: Array = []
+	var remplacer := -1
 	for alerte: Dictionary in (graves + fatigues).slice(0, 1):
 		var texte := "N° %d %s : %s." % [int(alerte.poste) + 1, str(alerte.nom), str(alerte.alerte)]
 		if str(alerte.alerte) in ["épuisé", "fatigué"]: texte = "N° %d %s : %d %% d’énergie, à surveiller." % [int(alerte.poste) + 1, str(alerte.nom), roundi(float(alerte.condition))]
 		if str(alerte.alerte) == "épuisé": texte = "N° %d %s est à bout (%d %%) : un remplacement s’impose." % [int(alerte.poste) + 1, str(alerte.nom), roundi(float(alerte.condition))]
+		if str(alerte.alerte) in ["épuisé", "fatigué", "blessé"]: remplacer = int(alerte.poste)
 		phrases.append([texte, Color("f0b080")])
 	var raisons: Array = []
 	if conseil is Dictionary:
@@ -844,23 +1060,32 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	var lecture := _lecture(direct)
 	if not lecture.is_empty(): raisons.push_front(lecture)
 	raisons = _sans_redites(raisons)
-	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), S.TEXT])
+	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), IVOIRE])
 	for phrase: Array in phrases:
-		var etiquette := _texte(str(phrase[0]), 30, phrase[1], true, true)
+		var etiquette := _texte(str(phrase[0]), 32, phrase[1], true, true)
 		etiquette.max_lines_visible = 3
 		etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		etiquette.tooltip_text = "\n".join(raisons) if not raisons.is_empty() else str(phrase[0])
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
 		colonne.add_child(etiquette)
-	var actions := S.G.h(px(12))
+	var actions := S.G.h(px(10))
 	colonne.add_child(actions)
-	# Le bouton n'apparaît que si l'adjoint propose autre chose que les consignes en place.
-	if conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):
+	# L'action qui va avec la phrase : remplacer le joueur signalé, ou appliquer les consignes
+	# proposées (seulement si l'adjoint propose autre chose que les consignes en place).
+	if remplacer >= 0:
+		var poste := remplacer
+		var bouton_remplacer := _bouton("Remplacer le %d" % (poste + 1), func(): joueur_choisi.emit(poste), true, true)
+		bouton_remplacer.name = "MatchBetweenReplace"
+		bouton_remplacer.custom_minimum_size.y = px(56)
+		bouton_remplacer.tooltip_text = "Ouvrir le banc sur ce joueur."
+		bouton_remplacer.set_meta("contextual_enabled", true)
+		actions.add_child(bouton_remplacer)
+	elif conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):
 		var possible: bool = conseil.get("canAct", false) and conseil.get("defenceAvailable", false)
-		var bouton := _bouton("APPLIQUER", func(): appliquer.call(conseil), possible, true)
+		var bouton := _bouton("Appliquer", func(): appliquer.call(conseil), possible, true)
 		bouton.name = "MatchBetweenApplyAdvice"
+		bouton.custom_minimum_size.y = px(56)
 		bouton.tooltip_text = "Appliquer les consignes proposées." if possible else "Mettez le match en pause pour modifier vos consignes."
-		S.G.fill(bouton)
 		actions.add_child(bouton)
 
 ## Relevés successifs (taille du journal, composition, conseil de l'adjoint) : l'écran montre le
@@ -898,14 +1123,9 @@ func _lecture(direct: Dictionary) -> String:
 			if int(v[camp]) >= int(v[1 - camp]) + 3: return "Déjà %d pénalités concédées : attention à la discipline." % int(v[camp])
 	return ""
 
-## Entracte : texte (« Prochaine action dans 6 s ») et bouton « Passer ».
-func montrer_entracte(texte: String, bouton: bool, force: bool = false) -> void:
-	if not force and _entracte[0] == texte and _entracte[1] == bouton: return
+## Entracte : la régie annonce encore son compte à rebours ; l'écran ne l'affiche plus.
+func montrer_entracte(texte: String, bouton: bool, _force: bool = false) -> void:
 	_entracte = [texte, bouton]
-	if not is_instance_valid(entracte): return
-	entracte.text = texte
-	entracte.visible = not texte.is_empty()
-	passer.visible = bouton
 
 func montrer_arret(valeur: Dictionary) -> void:
 	_arret = valeur
