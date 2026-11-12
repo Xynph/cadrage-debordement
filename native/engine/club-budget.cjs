@@ -420,7 +420,15 @@ worldNewSeason=function(fundingAlreadyPaid){
  const mouvements=new Map(),E=nativeLeagueEconomy.CHAMPIONNATS;
  if(budgetLisible(S.clubBudget))for(const c of S.clubs){const avant=S.clubBudget.clubs[c.id].division,apres=budgetLigue(c.id);if(avant!==apres&&E[avant]&&E[apres]&&E[avant].reputation!==E[apres].reputation)mouvements.set(c.id,E[apres].reputation>E[avant].reputation?1:-1);}
  // Les clubs gérés remettent leurs contrats au niveau du marché, dans la limite de ce qu'ils s'autorisent.
- nativeStartingSalaries.recaler(S,budgetForces(),nativeLeagueEconomy,{saufClub:S.club,mouvements,limites:budgetLimites(false)});
+ // Un club sous son effectif visé garde la place de ses recrues : sa masse recalée ne prend que la part
+ // de sa limite qui correspond aux joueurs déjà sous contrat (sinon le recalage remplit toute la limite
+ // et l'empêche de remplacer ses départs).
+ const limitesRecalage=new Map();
+ for(const [id,l] of budgetLimites(false)){
+  const c=S.clubs.find(x=>x.id===id),cible=c&&id!==S.club&&typeof aiRosterTarget==='function'?aiRosterTarget(c):0;
+  limitesRecalage.set(id,cible>c?.players.length?{...l,limite:Math.round(l.limite*c.players.length/cible)}:l);
+ }
+ nativeStartingSalaries.recaler(S,budgetForces(),nativeLeagueEconomy,{saufClub:S.club,mouvements,limites:limitesRecalage});
  const sens=mouvements.get(S.club)||0;
  if(sens){const r=nativeStartingSalaries.clauses(S,S.club,sens);if(r.touches)news(nativeClubBudget.annonceClauses(sens,r.avant,r.apres,r.touches));}
  budgetOuvrir(true);
