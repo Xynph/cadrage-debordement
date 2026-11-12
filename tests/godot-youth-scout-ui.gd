@@ -4,6 +4,9 @@ var app: Control
 var checks := 0
 var failures: Array[String] = []
 func _initialize() -> void: call_deferred("run")
+func num(value: Variant, fallback: float) -> float:
+	return float(value) if typeof(value) in [TYPE_INT, TYPE_FLOAT] else fallback
+
 func check(value: bool, message: String) -> void:
 	checks += 1
 	if value and message.begins_with("Préparation explicite du rendez-vous : "):print("SDK_MEETING ",Time.get_ticks_msec()," ",message)
@@ -209,7 +212,7 @@ func run() -> void:
 	for person:Dictionary in app.model.clubLife.youthDevelopment.players:
 		# La séance ne fait progresser qu'un jeune disponible et sous son plafond (graine non fixée : le premier
 		# jeune de la liste pouvait être blessé ou déjà au plafond, donc sans aucune observation à enregistrer).
-		var trainable: bool=int(person.get("injury",0))==0 and float(person.get("condition",100))>=65.0 and float(person.get("rating",0))<float(person.get("potential",0))-1.0
+		var trainable: bool=num(person.get("injury",0),0.0)==0.0 and num(person.get("condition",100),100.0)>=65.0 and num(person.get("rating",0),0.0)<num(person.get("potential",0),INF)-1.0
 		if person.model=="xp" and person.stage=="academy" and xp.is_empty() and trainable:xp=person
 		if person.model=="annual-v11" and annual.is_empty():annual=person
 	check(not xp.is_empty(),"Vrai jeune XP présent dans la carrière courante")

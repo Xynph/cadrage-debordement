@@ -520,7 +520,7 @@ func reception() -> void:
 	check(portrait != null, "Illustration de la Réception chargée en jeu")
 	if portrait != null:
 		var crop := portrait.texture as AtlasTexture
-		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and crop.region.size.y>=177.0 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée")
+		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and crop.region.size.y>=177.0 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée · "+str(crop.region if crop!=null else null)+" "+str(portrait.size))
 		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
 		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
 	await capture("05-reception-2560x1440")
@@ -551,12 +551,23 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	check(message_rows(list).size() == 1, "Favoris limité au message épinglé")
-	app.find_child("InboxToggleArchive", true, false).pressed.emit()
+	# Le dossier Favoris n'a pas de sélection : on rouvre le message avant d'agir dessus.
+	if app.find_child("InboxToggleArchive", true, false) == null and not message_rows(list).is_empty():
+		message_rows(list)[0].pressed.emit()
+		await settle()
+	var archive_button: Button = app.find_child("InboxToggleArchive", true, false)
+	check(archive_button != null, "L’archivage du message sélectionné est proposé dans les favoris")
+	if archive_button != null: archive_button.pressed.emit()
 	app.find_child("InboxFolder3", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	check(message_rows(list).size() == 1 and message_rows(list)[0].get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
-	app.find_child("InboxToggleArchive", true, false).pressed.emit()
+	if app.find_child("InboxToggleArchive", true, false) == null and not message_rows(list).is_empty():
+		message_rows(list)[0].pressed.emit()
+		await settle()
+	var unarchive_button: Button = app.find_child("InboxToggleArchive", true, false)
+	check(unarchive_button != null, "Le message archivé peut être désarchivé")
+	if unarchive_button != null: unarchive_button.pressed.emit()
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
@@ -819,7 +830,7 @@ func desktop_1080() -> void:
 			var art: Control = app.find_child("CompactRouteArt",true,false)
 			var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
 			check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
-			check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route)
+			check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+str(app.body.get_child(0).name)+" "+str(app.body.get_child(0).get_meta_list()))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
 	root.size=Vector2i(2560,1440)
@@ -881,9 +892,10 @@ func navigation_flow() -> void:
 	app._navigate("Réception")
 	await settle()
 	var training_task: Button
+	await expand_threads()
 	for task: Button in app.find_children("InboxRecommendation*","Button",true,false):
 		if task.text == "Organiser la charge de la semaine": training_task = task; break
-	check(training_task!=null,"La Réception propose la charge collective encore à décider")
+	check(training_task!=null,"La Réception propose la charge collective encore à décider · boutons : "+str(app.find_children("InboxRecommendation*","Button",true,false).map(func(b: Button): return b.text)))
 	if training_task!=null:
 		await click(training_task)
 		await settle()
@@ -1255,6 +1267,10 @@ func run() -> void:
 		var fly_half: Button=app.find_child("LineupSlot10",true,false)
 		await click(fly_half,Vector2(.97,.92))
 		await settle()
+		# Depuis l'évolution de la composition, un premier clic sélectionne le numéro et un second sur le même numéro ouvre ses choix.
+		check(app.selected_slot==9,"Le bas du maillot 10 sélectionne son poste malgré l’enveloppe voisine")
+		await click(fly_half,Vector2(.97,.92))
+		await settle()
 		var candidates: AcceptDialog = app.find_child("LineupCandidates",true,false)
 		check(app.selected_slot==9 and candidates!=null,"Le bas du maillot 10 ouvre son poste malgré l’enveloppe voisine")
 		if candidates!=null:
@@ -1309,10 +1325,13 @@ func run() -> void:
 		check(app.bridge.last_response_ok and app.model.tactics.defense=="pression" and app.model.tactics.attack=="occupation","Consigne défensive enregistrée sans écraser l’attaque")
 		app.find_child("LineupSlot01",true,false).pressed.emit()
 		await settle()
-		check(app.find_child("LineupCandidates",true,false)!=null,"Le maillot ouvre les choix du poste")
+		check(app.selected_slot==0,"Le premier appui sélectionne le maillot")
+		app.find_child("LineupSlot01",true,false).pressed.emit()
+		await settle()
+		check(app.find_child("LineupCandidates",true,false)!=null,"Le maillot ouvre les choix du poste (second appui sur le numéro sélectionné)")
 		var eligibility:Array=app.model.selection.slots[0].eligibleIds
 		var chosen:String=""
-		for candidate:Button in app.find_child("LineupCandidatesList",true,false).get_children():
+		for candidate:Button in (app.find_child("LineupCandidatesList",true,false).get_children() if app.find_child("LineupCandidatesList",true,false)!=null else []):
 			var player_id:String=candidate.get_meta("player_id")
 			check(candidate.disabled==(player_id not in eligibility),"Qualifications réelles conservées : "+player_id)
 			if chosen.is_empty() and not candidate.disabled and player_id!=str(app.model.selection.slots[0].playerId):chosen=player_id
