@@ -9,6 +9,7 @@ const positionAptitudes=require('./position-aptitudes.cjs');
 const careerVariation=require('./career-variation.cjs');
 const potentialEvolution=require('./potential-evolution.cjs'),potentialEvolutionValidation=potentialEvolution();
 const inSeasonDevelopment=require('./in-season-development.cjs');
+const clubTransfers=require('./club-transfers.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makeNational=require('./international-native.cjs');
@@ -162,6 +163,7 @@ function createBridge(options={}){
    const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
   run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+  run(`const nativeClubTransfers=(${clubTransfers.toString()})();nativeClubTransfers.installHooks();`);
   run(`const nativeInSeasonDevelopment=(${inSeasonDevelopment.toString()})();nativeInSeasonDevelopment.installHooks();const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
   run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();
    const nativeKnowledgeValidator=validateCareer;validateCareer=state=>{const result=nativeKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
