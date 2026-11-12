@@ -235,3 +235,13 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
     assert.ok(sigles > 0, 'sigles affichés vérifiés');
   } finally { jeu.fermer(); }
 });
+
+test('Note de départ : 6,5 au coup d’entrée (titulaire comme remplaçant), puis ce que le journal attribue', () => {
+  const D = require('../native/engine/match-direct.cjs');
+  assert.equal(D.NOTE_DEPART, 6.5);
+  const on = [['a', 'b', ...Array(13).fill(null)], ['x', ...Array(14).fill(null)]];
+  const events = [{ scene: { actor: 'a', on, from: { x: 50 }, to: { x: 50 } } }, { scene: { actor: 'b', on, from: { x: 50 }, to: { x: 50 } } }];
+  const notes = D.notesDuMatch([{ i: 0, kind: 'reception', equipe: 0 }, { i: 1, kind: 'miss', equipe: 0 }], events, 0);
+  assert.equal(notes.a.note, 6.6, 'une réception : 6,5 + 0,08');
+  assert.equal(notes.b.note, 6.4, 'un tir manqué : 6,5 − 0,15');
+});

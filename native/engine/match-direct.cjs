@@ -176,11 +176,14 @@ function chiffresRugby(lignes,events){
  }
  return t;
 }
-// Note de match des joueurs du manager : 6 au coup d'envoi, puis ce que le journal leur
+// Note de départ (demande de Léo, 12 novembre 2026) : 6,5 pour un titulaire au coup d'envoi comme pour
+// un remplaçant à son entrée ; seule base des notes de match (aucune moyenne de saison n'en dépend).
+const NOTE_DEPART=6.5;
+// Note de match des joueurs du manager : NOTE_DEPART au coup d'envoi, puis ce que le journal leur
 // attribue (courses et mètres, franchissements, essais, ballons récupérés, tirs, cartons, fautes).
 function notesDuMatch(lignes,events,camp){
  const notes={};if(camp!==0&&camp!==1)return notes;
- const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=notes[id]||(notes[id]={note:6,faits:0,essais:0,metres:0});n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(typeof fait==='number')n.metres+=fait};
+ const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=notes[id]||(notes[id]={note:NOTE_DEPART,faits:0,essais:0,metres:0});n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(typeof fait==='number')n.metres+=fait};
  for(const l of lignes){
   const s=events[l.i]?.scene;if(!s||s.actor==null)continue;
   const id=String(s.actor),nous=Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(id);if(!nous)continue;
@@ -370,4 +373,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,DEROULE_MAX});
+module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,DEROULE_MAX});

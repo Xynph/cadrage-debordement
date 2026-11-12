@@ -838,7 +838,7 @@ func terrain2d(view: Control) -> void:
 		if not joueur is Dictionary: continue
 		var textes: Array = lignes_xv[poste].find_children("*", "Label", true, false).map(func(l: Label): return l.text)
 		var energie: Array = lignes_xv[poste].find_children("*", "Control", true, false).filter(func(c: Control): return c.get("valeur") != null)
-		var note := float(direct.get("notes", {}).get(str(joueur.id), {}).get("note", 6.0))
+		var note := float(direct.get("notes", {}).get(str(joueur.id), {}).get("note", 6.5))
 		if str(joueur.name) in textes and "%.1f" % note in textes and not energie.is_empty() and is_equal_approx(float(energie[0].valeur), float(joueur.condition)): conformes += 1
 	check(conformes == lineup.size(), "Mon XV : nom, note et énergie du moteur pour chaque joueur (%d/%d)" % [conformes, lineup.size()])
 	var alertes_attendues := lineup.filter(func(j: Variant): return j is Dictionary and (int(j.get("injury", 0)) > 0 or float(j.get("condition", 100)) < between.FATIGUE)).size()

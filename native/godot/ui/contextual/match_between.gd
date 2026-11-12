@@ -936,7 +936,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 			continue
 		var id := str(joueur.get("id", ""))
 		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
-		var note := float(fiche.get("note", 6.0))
+		var note := float(fiche.get("note", NOTE_DEPART))
 		var condition := float(joueur.get("condition", 100))
 		energie.valeur = condition
 		var nom_court := _nom_court(str(joueur.get("name", "")))
@@ -971,13 +971,15 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.custom_minimum_size.y = anneau + px(4)
 		xv.add_child(case)
 
-## Couleur de la note du match : vert au-dessus de 6,5, ivoire autour de 6, jaune sous 6,
-## alerte sous 5,5 (6 au coup d'envoi).
+## Note de départ du moteur (match-direct.cjs, NOTE_DEPART) : titulaire au coup d'envoi, remplaçant à son entrée.
+const NOTE_DEPART := 6.5
+## Couleur de la note du match : vert au-dessus de 7, ivoire autour de 6,5, jaune sous 6,5,
+## alerte sous 6 (6,5 au coup d'envoi).
 static func _teinte_note(note: float) -> Color:
-	if note >= 7.0: return Color("82e3a3")
-	if note >= 6.5: return Color("65b081")
-	if note >= 6.0: return IVOIRE
-	if note >= 5.5: return Color("c9c46a")
+	if note >= 7.5: return Color("82e3a3")
+	if note >= 7.0: return Color("65b081")
+	if note >= 6.5: return IVOIRE
+	if note >= 6.0: return Color("c9c46a")
 	return ALERTE
 
 ## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 9 lettres.
