@@ -209,7 +209,11 @@ func run() -> void:
 	check(named(app,"ComparisonPlayer0").get_item_metadata(named(app,"ComparisonPlayer0").selected)==last_id,"Premier dossier lié à son ID")
 	check(named(app,"ComparisonPlayer1").get_item_metadata(named(app,"ComparisonPlayer1").selected)==first_id,"Second dossier lié à son ID")
 	var selected:Dictionary=app.model.squad.filter(func(p):return str(p.id)==first_id)[0]
-	check(texts(named(app,"PlayerComparison")).contains(str(selected.name)) and texts(named(app,"PlayerComparison")).contains(app.G.euros(selected.salary)),"Comparaison expose identité et salaire réels")
+	var comparison_text:=texts(named(app,"PlayerComparison"))
+	var displayed_salary:String=app.G.salary_amount(selected.salary)
+	var salary_heading:String="Salaire "+app.G.salary_period()
+	trace("comparison.presentation",{"player_id":first_id,"name_present":comparison_text.contains(str(selected.name)),"raw_weekly_amount":app.G.euros(selected.salary),"displayed_salary":displayed_salary,"salary_heading":salary_heading,"salary_present":comparison_text.contains(displayed_salary),"period_present":comparison_text.contains(salary_heading)})
+	check(comparison_text.contains(str(selected.name)) and comparison_text.contains(displayed_salary) and comparison_text.contains(salary_heading),"Comparaison expose identité et salaire réels selon la période et l’arrondi affichés")
 	app._clear_dialogs();await settle()
 	trace("section.renewal")
 	app.selected_player=str(app.model.squad.filter(func(p):return p.renewal.available)[0].id)
