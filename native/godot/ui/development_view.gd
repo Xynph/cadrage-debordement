@@ -21,6 +21,7 @@ static func build(app: Control) -> Control:
 	var intake := "Le 1er juillet, une nouvelle génération de 16 ans arrive : vous choisissez qui garder en Crabos (16-17 ans) ; à 18 ans, ils passent en Espoirs. " if group_policy >= 3 else "À l’intersaison, les clubs complètent les groupes U18 et U21. " if group_policy >= 2 else "Le centre accueille de nouveaux Espoirs à l’intersaison. "
 	text.add_child(G.wrap(intake + follow_up, 14))
 	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
+	preload("res://ui/academy_intake_view.gd").entry(app, text)
 	text.add_child(G.wrap("Objectifs des jeunes : suivre les changements observés, sans gain immédiat ajouté.",13))
 	preload("res://ui/youth_development_view.gd").entry(app,text)
 	text.add_child(G.separator())
