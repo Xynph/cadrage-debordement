@@ -255,6 +255,31 @@ test('Remises en jeu et jeu au pied : hors-jeu de mêlée (5 m), de touche (10 m
   assert.ok(melees >= 1 && touches >= 1 && pieds >= 1, `remises en jeu contrôlées : ${melees} mêlées, ${touches} touches, ${pieds} coups de pied`);
 });
 
+test('Consigne défensive (plans.defence) : au ruck, la ligne en pression attend plus près du ballon que la prudente ; même issue', () => {
+  let compares = 0, cas = 0;
+  // Profondeur de la ligne défensive (hors arrière) au moment où le ballon est joué au ruck.
+  const profondeur = c => {
+    const l = [];
+    for (const r of c.evenements.filter(e => e.type === 'ramassage')) {
+      const i = Math.round(r.t / c.pas);
+      for (const j of c.joueurs) if (j.side !== c.equipe && j.slot !== 14 && etatA(j, r.t) === 'course' && Math.abs(j.y[i] - c.ballon.y[i]) < 25) l.push(Math.abs(j.x[i] - c.ballon.x[i]));
+    }
+    return l.length ? l.reduce((a, b) => a + b, 0) / l.length : null;
+  };
+  for (const { source, entree } of COMPOSES2.filter(({ entree }) => entree.type !== 'jeu_au_pied')) {
+    const jouer = consigne => C.composer({ ...entree, defense: [consigne, consigne] });
+    const presse = jouer('pression'), prudente = jouer('prudente');
+    // Même issue : mêmes jalons (plans du moteur), même joueur clé.
+    assert.deepEqual(presse.jalons.map(([, k]) => k), prudente.jalons.map(([, k]) => k), source);
+    assert.equal(presse.vedette, prudente.vedette);
+    const a = profondeur(presse), b = profondeur(prudente);
+    if (a === null || b === null) continue;
+    cas++;
+    if (a < b) compares++;
+  }
+  assert.ok(cas >= 8 && compares >= cas * 0.75, `ligne plus près du ruck sous pression dans ${compares} temps forts sur ${cas}`);
+});
+
 test('Ballon continu : jamais téléporté, vitesse d’une passe au plus', () => {
   for (const { source, c } of TOUS) {
     for (let i = 1; i < c.ballon.x.length; i++) {

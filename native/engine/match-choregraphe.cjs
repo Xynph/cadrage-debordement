@@ -98,7 +98,7 @@ function simuler(e,phases,graine){
  // Défense : consigne tactique de l'équipe qui défend (pression : montée plus rapide, ligne
  // plus haute ; prudente : ligne plus profonde, montée retenue). Présentation seule.
  const consigne=side=>String(e.defense?.[side]||'equilibre');
- const montee=side=>consigne(side)==='pression'?{vitesse:3.4,haut:3.2,allure:6.3}:consigne(side)==='prudente'?{vitesse:1.8,haut:5.6,allure:4.8}:{vitesse:2.5,haut:4.5,allure:5.5};
+ const montee=side=>consigne(side)==='pression'?{vitesse:3.6,haut:2.8,fond:0.9,ruck:0.6,allure:6.3}:consigne(side)==='prudente'?{vitesse:1.5,haut:6.5,fond:3.2,ruck:2.6,allure:4.8}:{vitesse:2.5,haut:4.5,fond:1.2,ruck:0.9,allure:5.5};
  const ouverture=e.ouverture||{k:'jeu'};
  const J=e.joueurs.map(p=>{const pr=e.profils?.[p.id]||profil(p.slot,undefined);return {id:String(p.id),side:p.side,slot:p.slot|0,x:borne(p.x,-3,103),y:borne(p.y,0.5,69.5),vx:0,vy:0,vmax:pr.vmax,amax:pr.amax,etat:'course',depuis:0,role:'',cible:null,allure:0,arrive:true,cap:p.side===0?0:Math.PI,suite:[],plonge:null,rate:false}});
  const parId=new Map(J.map(j=>[j.id,j]));
@@ -591,8 +591,8 @@ function simuler(e,phases,graine){
   const centre=borne(ref.y,3+((n-1)/2)*6,67-((n-1)/2)*6);
   const voulu=centre+(k-(n-1)/2)*6.2;
   let y=borne(voulu+(by-ref.y)*0.5,2,68),x;
-  if(d.phase==='ruck'){x=horsJeu(j.side)+sens*(consigne(j.side)==='prudente'?1.6:0.9)}
-  else{const monte=Math.min(m.haut-1.2,(t-(d.debutJeu??t))*m.vitesse);x=ref.x+sens*Math.max(1.2,m.haut-monte)}
+  if(d.phase==='ruck'){x=horsJeu(j.side)+sens*m.ruck}
+  else{const monte=Math.min(m.haut-m.fond,(t-(d.debutJeu??t))*m.vitesse);x=ref.x+sens*Math.max(m.fond,m.haut-monte)}
   // Jamais devant la ligne de hors-jeu pendant un ruck.
   // Hors-jeu au ruck : il revient derrière la ligne en le contournant (jamais à travers le ruck).
   if(d.phase==='ruck'&&!enJeu(j)){x=horsJeu(j.side)+sens*1.2;if(Math.abs(j.y-d.ruck.B.y)<3.5)y=d.ruck.B.y+Math.sign((j.y-d.ruck.B.y)||1)*4}
