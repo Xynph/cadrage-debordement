@@ -50,7 +50,10 @@ function lecteur(){
   etat(){
    const l=S.live;if(!l)return null;
    const cartons=l.userSide>=0?l.sheets[l.userSide].cards.map(c=>({id:c.id,nom:matchPlayer(l,l.userSide,c.id)?.name||'',retour:c.until})):[];
-   return {rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,
+   // Effectif adverse du jour (titulaires et remplaçants) : nom, poste et état visible de chacun.
+   const eux=l.userSide>=0?1-l.userSide:-1,feuille=eux>=0?l.sheets[eux]:null;
+   const effectifAdverse=feuille?[...feuille.on,...(feuille.bench||[])].filter(Boolean).map(id=>{const p=matchPlayer(l,eux,id);return p?{id:String(p.id),name:p.name,pos:p.pos,condition:Math.round(p.condition??100)}:null}).filter(Boolean):[];
+   return {rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,
     tactique:l.tacticalStats?l.tacticalStats.map(s=>({longGains:s.longGains,handErrors:s.handErrors,metres:Math.round(s.metres)})):null};
   }
  };
@@ -220,14 +223,20 @@ function notesDuMatch(lignes,events,camp){
  for(const n of Object.values(notes))n.note=Math.round(Math.max(3,Math.min(9.9,n.note))*10)/10;
  return notes;
 }
-// Adversaires à surveiller : les deux meilleures notes adverses de ce qui a été montré, par
-// numéro (le poste sur la feuille au moment du dernier fait), sans nom.
-function aSurveiller(lignes,events,camp){
+// XV adverse (onglet de la tuile Mon XV) : la feuille adverse telle que le dernier fait montré
+// la donne (un remplacement à venir n'y est pas), notes et chiffres bornés à ce qui a été montré.
+function xvAdverse(lignes,events,camp,effectif){
  if(camp!==0&&camp!==1)return [];
- const eux=1-camp,notes=notesDuMatch(lignes,events,eux),numeros={};
- for(const l of lignes){const on=events[l.i]?.scene?.on?.[eux];if(Array.isArray(on))on.forEach((id,poste)=>{if(id!=null)numeros[String(id)]=poste+1})}
- return Object.entries(notes).filter(([id,n])=>numeros[id]&&n.faits>=2).sort((a,b)=>b[1].note-a[1].note||b[1].faits-a[1].faits).slice(0,2)
-  .map(([id,n])=>({numero:numeros[id],note:n.note,faits:n.faits,essais:n.essais,metres:Math.round(n.metres),plaquages:n.plaquages}));
+ const eux=1-camp,notes=notesDuMatch(lignes,events,eux),fiches=new Map((effectif||[]).map(p=>[String(p.id),p]));
+ let on=null;
+ for(let k=lignes.length-1;k>=0&&!on;k--){const o=events[lignes[k].i]?.scene?.on?.[eux];if(Array.isArray(o)&&o.length)on=o}
+ if(!on)return [];
+ return on.slice(0,15).map(id=>{
+  if(id==null)return null;const f=fiches.get(String(id)),n=notes[String(id)]||{note:6,faits:0,essais:0,metres:0,plaquages:0};
+  // Clés propres à l'entracte (pas id/name : la couche « connaissance des joueurs » du modèle
+  // habille ces objets-là et masque la note d'un joueur adverse non observé).
+  return {joueur:String(id),nom:f?.name||'',poste:f?.pos||'',energie:f?.condition??null,note:n.note,faits:n.faits,essais:n.essais,metres:Math.round(n.metres),plaquages:n.plaquages};
+ });
 }
 
 // Entracte sans rien dévoiler (demande de Léo, 12 novembre 2026 : « on découvre l'action en la
@@ -343,7 +352,7 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),surveiller:aSurveiller(vues,events,etat.camp??-1),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
+  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null};
  const tf=bilan.courant;
  if(tf){
@@ -387,4 +396,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,aSurveiller,plaqueur,DEROULE_MAX});
+module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX});

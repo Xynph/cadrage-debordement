@@ -76,9 +76,13 @@ var _dernier: Array = []
 var _lignes: Array = []
 var _dernier_fait := -1
 var _rangs: Array = []
-## Faits marquants (les derniers faits joués) et adversaires à surveiller.
+## Faits marquants (les derniers faits joués).
 var faits: VBoxContainer
-var surveiller: VBoxContainer
+## Onglets de la tuile principale : Mon XV ou le XV adverse (`direct.adversaire`).
+var onglet_adverse := false
+var onglets: Array[Button] = []
+var _xv_donnees: Array = []
+var _equipes: Array = []
 ## Tuile principale (Mon XV) : l'œil commence par elle.
 var tuile_principale: PanelContainer
 ## Alertes de Mon XV (fatigue, blessure, carton) : pour l'adjoint et les tests.
@@ -401,6 +405,8 @@ func _construire() -> void:
 	terrain = ancien if ancien != null else Terrain2D.new()
 	terrain.densite = _densite
 	terrain.legende = false
+	# Petit terrain : pastilles plus petites, écartées à l'affichage (numéros lisibles au ruck).
+	terrain.taille_pastilles = 0.8
 	terrain.custom_minimum_size = Vector2(320, 180)
 	_commandes()
 	_composants()
@@ -563,8 +569,6 @@ func _composants() -> void:
 	S.G.fill(xv)
 	faits = S.G.v(px(4))
 	faits.name = "MatchBetweenHighlights"
-	surveiller = S.G.v(px(6))
-	surveiller.name = "MatchBetweenWatch"
 	adjoint = S.G.v(px(10))
 	adjoint.name = "MatchBetweenAdvice"
 
@@ -601,7 +605,7 @@ func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, c
 	return etiquette
 
 ## Tableau de bord en tuiles (rendu 1 choisi par Léo) : barre de commandes, puis trois colonnes.
-## Gauche : Mon XV, tuile principale en relief, et les adversaires à surveiller. Centre : terrain
+## Gauche : Mon XV (onglet : le XV adverse), tuile principale en relief. Centre : terrain
 ## 2D petit (dernier fait en bandeau au-dessus), momentum, faits marquants. Droite : Gabi, stats.
 func _page() -> void:
 	var page := S.G.v(px(18))
@@ -632,17 +636,32 @@ func _page() -> void:
 	bord.border_width_left = maxi(2, px(5))
 	bord.border_color = Color(OR, 0.85)
 	tuile_principale.add_theme_stylebox_override("panel", bord)
-	cadre_xv.add_child(_titre("Mon XV", "note · énergie · plaquages · mètres", true))
+	# Onglets « Mon XV | <adversaire> » : le même tableau, aux couleurs de l'équipe choisie.
+	var tete := S.G.h(px(8))
+	cadre_xv.add_child(tete)
+	var groupe := ButtonGroup.new()
+	onglets.clear()
+	for n in 2:
+		var onglet := _segment("Mon XV" if n == 0 else "Adversaire", groupe, (n == 1) == onglet_adverse)
+		onglet.name = "MatchBetweenTabOwn" if n == 0 else "MatchBetweenTabOpponent"
+		onglet.custom_minimum_size = Vector2(px(150), px(52))
+		onglet.add_theme_font_size_override("font_size", px(30))
+		var adverse := n == 1
+		onglet.pressed.connect(func():
+			onglet_adverse = adverse
+			if not _xv_donnees.is_empty(): _remplir_xv(_xv_donnees[0], _xv_donnees[1]))
+		onglets.append(onglet)
+		tete.add_child(onglet)
+	var precision := _texte("note · énergie · plaquages · mètres", 22, FAIBLE)
+	precision.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	S.G.fill(precision)
+	tete.add_child(precision)
 	var entete := S.G.h(px(8))
 	for colonne: Array in COLONNES_XV:
 		entete.add_child(_cellule(str(colonne[0]).to_upper(), int(colonne[1]), FAIBLE, 20, int(colonne[1]) > 0 and colonne[0] != "Poste" and colonne[0] != "Énergie"))
 	cadre_xv.add_child(entete)
 	cadre_xv.add_child(xv)
-	var espace := Control.new()
-	S.G.fill(espace, true)
-	cadre_xv.add_child(espace)
-	cadre_xv.add_child(_titre("Adversaires à surveiller", "ce qu’ils ont montré"))
-	cadre_xv.add_child(surveiller)
+	S.G.fill(xv, true)
 	# Centre : terrain petit, momentum, faits marquants.
 	var centre := S.G.v(px(20))
 	S.G.fill(centre, false, 1.0)
@@ -688,6 +707,7 @@ func _page() -> void:
 	S.G.fill(cadre_chiffres.get_parent().get_parent(), true)
 	cadre_chiffres.add_child(_titre("Statistiques", "comparées"))
 	cadre_chiffres.add_child(chiffres)
+	S.G.fill(chiffres, true)
 
 ## Arrêt-décision : le match attend le manager.
 func _arret_decision() -> void:
@@ -734,6 +754,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 		_densite = densite
 		_construire()
 	var equipes: Array = live.get("teams", [])
+	_equipes = equipes
 	terrain.direct = direct
 	terrain.camp = int(direct.get("camp", -1))
 	terrain.regler_equipes(equipes)
@@ -761,7 +782,6 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
 	_remplir_xv(passe.lineup, direct)
-	_remplir_surveiller(direct)
 	_remplir_adjoint(conseil, live, direct, appliquer)
 
 func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
@@ -868,6 +888,7 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var ligne := S.G.h(px(12))
 	ligne.custom_minimum_size.y = px(40)
+	S.G.fill(ligne, true)
 	var titre := _texte(str(LIBELLES_COURTS.get(str(rang.get("cle", "")), rang.get("label", ""))), 26, DOUX)
 	titre.tooltip_text = str(rang.get("label", ""))
 	titre.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -907,7 +928,15 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 ## Mon XV : tableau complet, une ligne par joueur (numéro, nom, poste, note colorée, jauge
 ## d'énergie, plaquages, mètres, essais) ; alertes en infobulle ; un clic ouvre le banc sur lui.
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
+	_xv_donnees = [joueurs, direct]
 	S.clear(xv)
+	# Onglet adverse : son nom court ; les alertes de Mon XV restent calculées pour Gabi.
+	var camp := int(direct.get("camp", -1))
+	if onglets.size() == 2 and camp in [0, 1] and _equipes.size() > 1 - camp and _equipes[1 - camp] is Dictionary: onglets[1].text = S.G.club_abbr(_equipes[1 - camp])
+	if onglet_adverse:
+		_alertes_seules(joueurs, direct)
+		_remplir_xv_adverse(direct)
+		return
 	alertes_xv.clear()
 	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
 	var cartons: Dictionary = {}
@@ -934,7 +963,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		for style: StyleBox in [vide, survol, focus]: style.set_content_margin_all(0)
 		case.add_theme_stylebox_override("hover", survol)
 		case.add_theme_stylebox_override("focus", focus)
-		S.G.fill(case)
+		S.G.fill(case, true)
 		case.custom_minimum_size.y = hauteur
 		var ligne := S.G.h(px(8))
 		ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -995,33 +1024,87 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
 		xv.add_child(case)
 
-## Adversaires à surveiller (`direct.surveiller`) : numéro, note, ce qu'ils ont montré.
-func _remplir_surveiller(direct: Dictionary) -> void:
-	if not is_instance_valid(surveiller): return
-	S.clear(surveiller)
-	var liste: Array = direct.get("surveiller", []) if direct.get("surveiller") is Array else []
+## XV adverse (`direct.adversaire`) : le même tableau, aux couleurs adverses ; la feuille du
+## dernier fait montré, rien de caché (pas de remplacement à venir, pas de note d'observation).
+func _remplir_xv_adverse(direct: Dictionary) -> void:
+	var liste: Array = direct.get("adversaire", []) if direct.get("adversaire") is Array else []
 	var camp := int(direct.get("camp", -1))
 	if liste.is_empty():
-		surveiller.add_child(_texte("Rien de marquant chez l’adversaire pour l’instant.", 24, FAIBLE))
+		xv.add_child(_texte("Composition adverse pas encore vue.", 26, DOUX, true))
 		return
-	for item: Variant in liste:
-		if not item is Dictionary: continue
-		var ligne := S.G.h(px(10))
+	var hauteur := px(48)
+	for poste in liste.size():
+		var j: Variant = liste[poste]
+		var case := Button.new()
+		case.name = "MatchBetweenOpponent%d" % (poste + 1)
+		case.flat = true
+		case.focus_mode = Control.FOCUS_NONE
+		case.mouse_filter = Control.MOUSE_FILTER_PASS
+		var fond := S.G.T.box(Color(1, 1, 1, 0.03 if poste % 2 == 0 else 0.0), maxi(3, px(8)))
+		fond.set_content_margin_all(0)
+		for etat_bouton in ["normal", "hover", "pressed", "focus"]: case.add_theme_stylebox_override(etat_bouton, fond)
+		S.G.fill(case, true)
+		case.custom_minimum_size.y = hauteur
+		var ligne := S.G.h(px(8))
+		ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		S.full(ligne)
+		case.add_child(ligne)
 		var pastille := W.Numero.new()
-		pastille.numero = str(int(item.get("numero", 0)))
+		pastille.numero = str(poste + 1)
 		pastille.densite = _densite
 		pastille.teinte = terrain.couleurs[1 - camp] if camp in [0, 1] else ALERTE
-		pastille.custom_minimum_size = Vector2(px(52), px(44))
+		pastille.custom_minimum_size = Vector2(px(int(COLONNES_XV[0][1])), hauteur)
 		ligne.add_child(pastille)
-		var note := float(item.get("note", 6.0))
-		ligne.add_child(_cellule("%.1f" % note, 60, _teinte_note(note), 28, true))
-		var morceaux: PackedStringArray = []
-		if int(item.get("essais", 0)) > 0: morceaux.append("%d essai%s" % [int(item.essais), "s" if int(item.essais) > 1 else ""])
-		if int(item.get("metres", 0)) > 0: morceaux.append("%d m portés" % int(item.metres))
-		if int(item.get("plaquages", 0)) > 0: morceaux.append("%d plaquages" % int(item.plaquages))
-		morceaux.append("%d actions" % int(item.get("faits", 0)))
-		ligne.add_child(_cellule(" · ".join(morceaux), 0, DOUX, 24))
-		surveiller.add_child(ligne)
+		if not j is Dictionary:
+			ligne.add_child(_cellule("Poste vacant", 0, FAIBLE))
+			xv.add_child(case)
+			continue
+		var note := float(j.get("note", 6.0))
+		ligne.add_child(_cellule(_nom_court(str(j.get("nom", ""))), 0, IVOIRE, 28))
+		ligne.add_child(_cellule(poste_court(str(j.get("poste", ""))), int(COLONNES_XV[2][1]), FAIBLE, 22))
+		var cadre_note := PanelContainer.new()
+		cadre_note.add_theme_stylebox_override("panel", S.G.T.box(Color(_teinte_note(note), 0.16), maxi(3, px(8))))
+		cadre_note.custom_minimum_size = Vector2(px(int(COLONNES_XV[3][1])), 0)
+		cadre_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cadre_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var etiquette_note := _cellule("%.1f" % note, 0, _teinte_note(note), 28, true)
+		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cadre_note.add_child(etiquette_note)
+		ligne.add_child(cadre_note)
+		if j.get("energie") != null:
+			var jauge := W.Jauge.new()
+			jauge.valeur = float(j.energie)
+			jauge.densite = _densite
+			jauge.custom_minimum_size = Vector2(px(int(COLONNES_XV[4][1])), hauteur)
+			ligne.add_child(jauge)
+		else: ligne.add_child(_cellule("—", int(COLONNES_XV[4][1]), FAIBLE, 26, true))
+		ligne.add_child(_cellule(str(int(j.get("plaquages", 0))), int(COLONNES_XV[5][1]), IVOIRE, 28, true))
+		ligne.add_child(_cellule(str(int(j.get("metres", 0))), int(COLONNES_XV[6][1]), IVOIRE, 28, true))
+		var essais := int(j.get("essais", 0))
+		ligne.add_child(_cellule(str(essais) if essais > 0 else "–", int(COLONNES_XV[7][1]), OR if essais > 0 else FAIBLE, 28, true))
+		var nom := _texte(str(j.get("nom", "")), 20, FAIBLE)
+		nom.visible = false
+		ligne.add_child(nom)
+		case.tooltip_text = "%d · %s · %s\nNote %.1f (%d action%s montrée%s)" % [poste + 1, str(j.get("poste", "")), str(j.get("nom", "")), note, int(j.get("faits", 0)), "s" if int(j.get("faits", 0)) > 1 else "", "s" if int(j.get("faits", 0)) > 1 else ""]
+		xv.add_child(case)
+
+## Alertes de Mon XV sans le tableau (onglet adverse ouvert) : Gabi les garde.
+func _alertes_seules(joueurs: Array, direct: Dictionary) -> void:
+	alertes_xv.clear()
+	var cartons := {}
+	for carton: Variant in direct.get("cartons", []):
+		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
+	for poste in joueurs.size():
+		var joueur: Variant = joueurs[poste]
+		if not joueur is Dictionary: continue
+		var id := str(joueur.get("id", ""))
+		var condition := float(joueur.get("condition", 100))
+		var alerte := ""
+		if int(joueur.get("injury", 0)) > 0: alerte = "blessé"
+		elif cartons.has(id): alerte = "carton jaune, retour %s′" % str(cartons[id].get("retour", "")) if cartons[id].get("retour") != null else "exclu"
+		elif condition < EPUISE: alerte = "épuisé"
+		elif condition < FATIGUE: alerte = "fatigué"
+		if not alerte.is_empty(): alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
 
 ## Couleur de la note du match : vert au-dessus de 6,5, ivoire autour de 6, jaune sous 6,
 ## alerte sous 5,5 (6 au coup d'envoi).
@@ -1112,6 +1195,8 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	var lecture := _lecture(direct)
 	if not lecture.is_empty(): raisons.push_front(lecture)
 	raisons = _sans_redites(raisons)
+	var parlantes := raisons.filter(func(r: String): return not r.begins_with("Aucun") and not r.begins_with("Pas assez"))
+	if phrases.is_empty() and parlantes.is_empty(): phrases.append([_lecture_generale(direct), IVOIRE])
 	if phrases.is_empty() and not raisons.is_empty(): phrases.append([_phrase_forte(raisons), IVOIRE])
 	for phrase: Array in phrases:
 		var etiquette := _texte(str(phrase[0]), 32, phrase[1], true, true)
@@ -1157,6 +1242,27 @@ func _passe(model: Dictionary, live: Dictionary, direct: Dictionary) -> Dictiona
 	# Aucun relevé assez ancien : la composition sans alerte nouvelle, pas de conseil.
 	if choisi.is_empty(): return {"lineup": _releves[0].lineup, "conseil": null}
 	return choisi
+
+## Lecture utile dès la première minute (quand le conseil du moteur n'a encore rien à dire) :
+## occupation, possession et score de ce qui a été montré.
+func _lecture_generale(direct: Dictionary) -> String:
+	var camp := int(direct.get("camp", -1))
+	if not camp in [0, 1]: return "Le match se met en place : je vous signale le premier joueur en difficulté."
+	var valeurs := {}
+	for rang: Variant in direct.get("tableau", []):
+		if rang is Dictionary and not rang.get("vide", false): valeurs[str(rang.get("cle", ""))] = rang.get("valeurs", [0, 0])
+	var score: Array = direct.get("score", [0, 0]) if direct.get("score") is Array else [0, 0]
+	var ecart := int(score[camp]) - int(score[1 - camp]) if score.size() == 2 else 0
+	if valeurs.has("occupation"):
+		var o := int(valeurs.occupation[camp])
+		if o >= 58: return ("On joue dans leur moitié (%d %% d’occupation) : restez patients, les points viendront." % o) if ecart <= 0 else ("On mène et on occupe leur camp (%d %%) : gardez cette pression." % o)
+		if o <= 42: return "On joue trop dans notre camp (%d %% d’occupation) : il faut en sortir au pied." % o
+	if valeurs.has("possession"):
+		var p := int(valeurs.possession[camp])
+		if p >= 58: return "On a le ballon (%d %%) : il faut maintenant gagner la ligne d’avantage." % p
+		if p <= 42: return "Ils ont le ballon (%d %%) : notre défense doit monter vite et rester groupée." % (100 - p)
+	if ecart < 0: return "Menés de %d point%s, mais le match reste ouvert : pas de précipitation." % [-ecart, "s" if -ecart > 1 else ""]
+	return "Début de match équilibré : j’observe leur organisation et je vous signale le premier joueur en difficulté."
 
 ## Une phrase tirée des chiffres du moteur : qui domine depuis cinq minutes, la discipline.
 func _lecture(direct: Dictionary) -> String:

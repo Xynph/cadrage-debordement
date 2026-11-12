@@ -130,7 +130,7 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
 	check(between.xv.is_visible_in_tree() and between.xv.columns == 1 and between.tuile_principale.is_ancestor_of(between.xv), label + " : Mon XV en tableau, tuile principale")
-	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1 and between.surveiller.is_visible_in_tree(), label + " : faits marquants et adversaires à surveiller")
+	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants")
 	# Terrain 2D petit (rendu 1) : moins de 45 % de la largeur et de la hauteur de l'écran.
 	check(pitch.size.x <= size.x * 0.45 and pitch.size.y <= size.y * 0.45, label + " : terrain 2D petit (%s)" % str(pitch.size))
 	var column: Control = between.adjoint_cadre.get_parent()
@@ -895,6 +895,16 @@ func terrain2d(view: Control) -> void:
 	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Mon XV et le dernier fait affichés ensemble")
 	var noms_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button).map(func(b: Button): return b.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text))
 	check(noms_xv.size() == 15 and noms_xv.all(func(t: Array): return t.size() >= 2 and not str(t[0]).is_empty()), "Mon XV : nom de famille et note visibles pour chaque joueur : " + str(noms_xv.slice(0, 3)))
+	# Onglet adverse : le même tableau pour le XV adverse du dernier fait montré, puis retour à Mon XV.
+	var adverse: Array = direct.get("adversaire", [])
+	between.find_child("MatchBetweenTabOpponent", true, false).pressed.emit()
+	await settle(2)
+	var lignes_adverses: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
+	var noms_adverses: Array = lignes_adverses.map(func(b: Button): return b.find_children("*", "Label", true, false).map(func(l: Label): return l.text))
+	check(adverse.size() == 15 and lignes_adverses.size() == 15 and range(15).all(func(k: int): return adverse[k] == null or str(adverse[k].nom) in noms_adverses[k]), "Onglet adverse : le XV adverse, nom et note de chaque joueur (%d lignes)" % lignes_adverses.size())
+	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
+	await settle(2)
+	check(between.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer")).size() == 15, "Retour à Mon XV")
 	# Paramètres : vitesse de l'horloge et temps forts montrés dans un petit panneau.
 	view.find_child("MatchBetweenSettings", true, false).pressed.emit()
 	await settle(4)

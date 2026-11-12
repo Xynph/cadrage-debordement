@@ -42,6 +42,8 @@ var gel := false
 var calme := false
 ## Étiquette du fait en cours en haut à gauche du terrain (l'entracte la remplace par son fil).
 var legende := true
+## Taille des pastilles (1 : terrain plein écran ; plus petit sur le terrain de l'entracte en tuiles).
+var taille_pastilles := 1.0
 ## Zone de jeu et repères du moteur (essais, pénalités, cartons), pour le fond.
 var direct: Dictionary = {}
 
@@ -373,7 +375,7 @@ func point(x: float, y: float) -> Vector2:
 
 ## Rayon des pastilles : lisible en 720p (8 px au moins), proportionné au terrain.
 func rayon() -> float:
-	return maxf(maxf(9.0, px(20)), echelle() * 1.5)
+	return maxf(maxf(9.0, px(20)), echelle() * 1.5) * taille_pastilles
 
 func _draw() -> void:
 	var c := champ()
@@ -459,7 +461,7 @@ func _ecartees(ordre: Array, r: float, porteur: String) -> Dictionary:
 	var centres := {}
 	for cle: String in ordre: centres[cle] = point(places[cle].x, places[cle].y)
 	var voulu := r * 1.9
-	for passe in 3:
+	for passe in 6:
 		for a in ordre.size():
 			for b in range(a + 1, ordre.size()):
 				var ca: String = ordre[a]
@@ -475,8 +477,11 @@ func _ecartees(ordre: Array, r: float, porteur: String) -> Dictionary:
 					centres[ca] -= sens * pousse
 					centres[cb] += sens * pousse
 	# Une pastille écartée au bord (ruck sur la touche) reste entière dans le cadre.
-	var bord := Vector2(r + 1.0, r + 1.0)
-	for cle: String in ordre: centres[cle] = (centres[cle] as Vector2).clamp(bord, size - bord)
+	# Cadre : le terrain lui-même, élargi d'un demi-rayon (une pastille déborde à peine de la touche).
+	var cadre := champ().grow(r * 0.5)
+	var bas := Vector2(maxf(cadre.position.x, r + 1.0), maxf(cadre.position.y, r + 1.0))
+	var haut := Vector2(minf(cadre.end.x, size.x - r - 1.0), minf(cadre.end.y, size.y - r - 1.0))
+	for cle: String in ordre: centres[cle] = (centres[cle] as Vector2).clamp(bas, haut)
 	return centres
 
 func _dessiner_jeu(police: Font, e: float) -> void:
