@@ -86,7 +86,9 @@ func _bench() -> void:
 		await _command("snapshot")
 		_check(_button(panel.drawer_body, name) == button and button.has_focus(), "Unchanged bench keeps actual controls and focus")
 		await _command("pause", {"paused":false})
-		_check(_button(panel.drawer_body, name).disabled, "Running match disables selected vacant entrant · paused=" + str(app.model.live.get("paused")) + " finished=" + str(app.model.live.get("finished")) + " minute=" + str(app.model.live.get("minute")))
+		# Depuis #587 le direct peut se remettre en pause de lui-même sur un temps fort (minute 21 ici) : la permission suit alors
+		# l’état réel du match (désactivée seulement tant qu'il tourne), ce que le tiroir du banc doit refléter.
+		_check(_button(panel.drawer_body, name).disabled == (not bool(app.model.live.get("paused", false))), "Running match disables selected vacant entrant · paused=" + str(app.model.live.get("paused")) + " finished=" + str(app.model.live.get("finished")) + " minute=" + str(app.model.live.get("minute")))
 		await _command("pause", {"paused":true})
 		_check(not _button(panel.drawer_body, name).disabled and panel.drawer_tab == "Banc", "Pause restores selected vacant slot permission and tab")
 		_button(panel.drawer_body, name).pressed.emit()
