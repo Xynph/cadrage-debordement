@@ -259,3 +259,103 @@ exportés, réimportés, réexportés à l'identique (même empreinte).
 ### Carrière France
 
 Voir le tableau plus haut (trois saisons, avant/après).
+
+## 5. Directions des clubs gérés : une stratégie qui vit (demande de Léo, 12 novembre)
+
+Demande : « que les clubs aient une véritable intelligence dans leur stratégie,
+pas juste 5 choix prédéfinis […] des logiques, des erreurs, de la vraie réalité ».
+Module `native/engine/club-directions.cjs`, branché sur la fenêtre de
+`club-transfers.cjs` et sur la semaine du cycle des effectifs.
+
+### Qui décide
+
+Chaque club a une **direction** à trois personnes, aux traits de 0 à 100,
+persistants, tirés de la graine de la carrière et biaisés par la situation du
+club à la création (réputation, trésorerie, installations) :
+
+| Personne | Traits | Effet |
+| --- | --- | --- |
+| Président | ambition, patience, prudence financière | objectif de classement, prix qu'il accepte de payer, salaires, durée des contrats, renvoi de l'entraîneur |
+| Directeur sportif | compétence d'évaluation, goût formation / vedettes, préférence nationale, réseau (1 à 4 championnats suivis) | justesse des notes estimées, cibles, marchés regardés |
+| Entraîneur | tendance à paniquer, confiance aux jeunes | achats pressés, prêts de jeunes |
+
+Les hommes changent : entraîneur renvoyé après une série noire (au moins cinq
+défaites sur six et trois places sous l'objectif ; plus vite avec un président
+impatient) ou à l'intersaison après un objectif manqué ; président remplacé par
+une reprise (30 % des saisons de crise, 4 % sinon), un investisseur ambitieux ou
+un dirigeant prudent, souvent avec un nouveau directeur sportif.
+
+### Comment la stratégie émerge
+
+Sept caps possibles (vedettes, formateur, rajeunissement, reconstruction,
+maintien, vente, équilibre), notés à chaque fenêtre à partir de la situation
+réelle — classement face à l'objectif, forme des cinq derniers matchs,
+trésorerie en semaines de masse et face aux autres clubs du championnat, masse
+face à sa limite (plafond), âge des trente meilleurs, part des jeunes,
+installations, promotion ou zone de relégation, objectif manqué la saison
+passée — pondérée par les traits. Une direction garde son cap sans raison nette
+(inertie) ; une crise de trésorerie impose la vente. Exemples : un club riche
+qui manque son objectif passe en reconstruction (vend ses trentenaires bien
+payés, achète moins de 27 ans) ; un promu ou un club en zone rouge joue le
+maintien (joueurs expérimentés qui améliorent tout de suite le XV) ; un club
+dont la caisse ne couvre plus six semaines de masse vend ses gros salaires.
+
+### Comment le marché se joue
+
+- **Besoins par poste** : profondeur visée, blessés (comptés 0,4), joueurs de
+  31-32 ans (0,8) et 33 ans et plus (0,5), fins de contrat à la fenêtre de
+  mi-saison (0,6).
+- **Évaluation bruitée** : note estimée = note réelle ± 2 à 10 points selon la
+  compétence du directeur sportif, + 4 hors de son réseau, et un recruteur peu
+  fiable se laisse impressionner par les gros salaires. Stable pour un couple
+  club-joueur dans la saison.
+- **Concurrence** : chaque club choisit sa cible ; plusieurs clubs sur le même
+  joueur → enchère (indemnité et salaire), le perdant se reporte au tour
+  suivant.
+- **Négociation** : prix demandé (valeur, rabais d'un vendeur pressé, majoration
+  d'un joueur non proposé) contre prix maximal de l'acheteur (gain attendu,
+  ambition, prudence, panique) ; un vendeur en vente coupe la poire en deux,
+  sinon l'écart fait échouer.
+- **Attrait du championnat** : salaire demandé par le joueur (règle des
+  salaires quand le drapeau est allumé) ; un joueur peut refuser un championnat
+  nettement moins réputé si la hausse ne compense pas.
+- **Bornes inchangées** : trois achats et trois ventes par club et par saison,
+  masse autorisée et plafond, réserve de trésorerie (plus haute pour un
+  président prudent), places, clubs japonais entre eux, club du manager exclu.
+
+### Erreurs (comptées dans `S.clubDirections.tally`)
+
+Joueur surestimé (note estimée ≥ note réelle + 5 au moment de l'achat), surpaie
+en panique, vieux joueur (32 ans et plus, deux ans ou plus), doublon (achat
+sans besoin d'un directeur sportif peu fiable, ou poste déjà surchargé),
+contrat trop long (trentenaire signé deux ans de trop par une direction
+ambitieuse et peu regardante), jeune parti qui explose ailleurs (vendu à 21 ans
+ou moins, +6 points de note dans un autre club).
+
+### Mouvements
+
+Transferts nationaux et entre championnats (limités au réseau du directeur
+sportif), prêts de jeunes de 18 à 21 ans sans temps de jeu vers la division
+inférieure du même pays (retour la saison suivante), jokers médicaux (blessure
+de six semaines ou plus à un poste dégarni, joueur libre jusqu'à la fin de la
+saison, un par club et par saison), retours au club formateur (joueur de 29 ans
+et plus lancé par le club, à salaire réduit). Fins de contrat et joueurs libres :
+cycle des effectifs inchangé.
+
+### Ce que voit le manager
+
+Pas de nouvel écran. Les faits du championnat du manager (changement de cap avec
+le profil de la direction, renvoi d'entraîneur, nouveau président, gros
+transfert, retour au club formateur, jeune parti qui explose) deviennent des
+nouvelles du jeu, trois au plus par semaine ; l'actualité des transferts donne
+la raison de chaque achat. Le fil complet (`S.clubDirections.feed`, 30 lignes)
+sert aux mesures.
+
+### Compatibilité, déterminisme
+
+Seules les carrières mondiales créées avec ce code ont `S.clubDirections`
+(validé à la sauvegarde, environ 42 Ko pour 116 clubs, compteurs gardés sur
+quatre saisons). Les autres carrières et la carrière France gardent les cinq
+stratégies fixes, sans migration. Tous les tirages sont des empreintes (graine
+de la carrière, club, joueur, saison, semaine), jamais le générateur des matchs.
+`CD_DIRECTIONS_CLUBS=0` coupe la création (preuve d'origine des valeurs).
