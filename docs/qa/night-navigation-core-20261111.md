@@ -153,3 +153,11 @@ bloquante. Les chaînes page → club → lecteur enfant et page → club → jo
 conservent leurs contextes, avec une restitution conditionnée à la page ou son
 entrée historique d’origine. Voir les
 [reçus ciblés 50/0 et 72/0, par SHA exact](night-page-reader-back-20261112.md).
+
+
+Le contrôleur des lecteurs racines a aussi reçu sa régression SDK headless
+`reader-history` sur `bd6a5fe63fe52fbb5ecf4a55859676876c7d983e` : 115/0,
+113,959 s natifs, sans erreur native. Le
+[reçu exact, son journal et ses empreintes de sources](evidence/night-page-reader-back-20261112/reader-history-bd6a5fe6-receipt.json)
+restent distincts du 115/0 historique sur `a4326db5` et du nouveau scénario CI
+`common0`, encore à recevoir séparément.
