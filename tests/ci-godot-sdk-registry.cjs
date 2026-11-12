@@ -17,6 +17,7 @@ const required = [
   'godot-effective-training-receipt',
   'godot-analysis-club-links',
   'godot-analysis-club-graphics',
+  'godot-office-entity-links',
 ].map(name => 'tests/' + name + '.cjs');
 
 test('SDK registry groups cover every declared wrapper exactly once', () => {

@@ -43,7 +43,8 @@
     "tests/godot-observed-training-consequences.cjs",
     "tests/godot-effective-training-receipt.cjs",
     "tests/godot-analysis-club-links.cjs",
-    "tests/godot-analysis-club-graphics.cjs"
+    "tests/godot-analysis-club-graphics.cjs",
+    "tests/godot-office-entity-links.cjs"
   ],
   "groups": {
     "portraits-staff": [
@@ -79,7 +80,8 @@
       "tests/godot-management-reading-flow.cjs",
       "tests/godot-gestion-carnet.cjs",
       "tests/godot-observed-training-consequences.cjs",
-      "tests/godot-effective-training-receipt.cjs"
+      "tests/godot-effective-training-receipt.cjs",
+      "tests/godot-office-entity-links.cjs"
     ],
     "layouts": [
       "tests/godot-guide-layout.cjs",
