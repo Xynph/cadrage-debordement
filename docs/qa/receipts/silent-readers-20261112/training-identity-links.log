@@ -1,0 +1,5 @@
+# TRAINING IDENTITY LINKS : 55 contrôles ; 0 échec(s)
+# Subtest: Entraînement : identité distincte des réglages, joueur et staff par ID
+ok 1 - Entraînement : identité distincte des réglages, joueur et staff par ID
+  duration_ms: 16005.705872
+# duration_ms 16052.97343
