@@ -8,8 +8,8 @@ calendrier, donnée sportive ou style modifié.
 
 ## Inventaire avant modification
 
-Le reçu de `train` indiquait déjà la séance réellement appliquée, son mode, les
-variations de trésorerie, salaires et moral. Ces textes, montants et résumés
+Le reçu de `train` indiquait déjà la séance confirmée, le mode alors demandé et
+les variations de trésorerie, salaires et moral. Ces textes, montants et résumés
 restent son préfixe inchangé. Les fiches et la préparation exposent déjà les
 valeurs actuelles de condition, charge physique et niveau des joueurs connus du
 club ; ce lot les rapproche seulement dans le reçu.
@@ -63,6 +63,9 @@ payload ; la délégation peut appliquer un autre mode, comme le vérifie déjà
 prétendent donc pas expliquer à elles seules le mode effectivement exécuté.
 Une clarification de ce libellé doit exploiter séparément le reçu public de
 `clubSupport.training.session`, sans réécrire silencieusement les anciens textes.
+Cette clarification a ensuite été réalisée et reçue dans la
+[tranche du mode collectif effectivement appliqué](night-effective-training-receipt-20261111.md),
+distincte de la présente étape historique.
 
 ## Scénarios publics réellement exécutés
 
