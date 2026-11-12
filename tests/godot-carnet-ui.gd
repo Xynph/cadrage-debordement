@@ -125,6 +125,9 @@ func bounds(route: String) -> void:
 			var font_size := b.get_theme_font_size("font_size")
 			var text_height := b.get_theme_font("font").get_height(font_size)*scale
 			check(hit.size.x>=20 and hit.size.y>=maxf(18,text_height), "Cible et texte utilisables " + route + " " + str(b.name))
+			if b.name == "CompetitionNextDateLink":
+				var date_caption := named(page,"CompetitionNextDate") as Label
+				check(date_caption != null and not date_caption.text.strip_edges().is_empty() and b.accessibility_name.contains(date_caption.text),"Lien de date : libellé visible et nom accessible concordants")
 func contrast(first: Color, second: Color) -> float:
 	var a:=first.srgb_to_linear().get_luminance()
 	var b:=second.srgb_to_linear().get_luminance()

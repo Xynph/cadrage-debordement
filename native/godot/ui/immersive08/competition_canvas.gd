@@ -402,7 +402,12 @@ func _next_match() -> void:
 	else:
 		var date_label := D.text(panel, 40, 231, date, 27, C.IVORY, 700, 470)
 		date_label.name = "CompetitionNextDate"
-		_entity_area(panel, Rect2(36,210,470,24), {"kind":"date", "id":str(next_fixture.get("date", ""))}, "CompetitionNextDateLink", "Voir la date dans le calendrier · " + date)
+		var date_link := _entity_area(panel, Rect2(36,210,470,24), {"kind":"date", "id":str(next_fixture.get("date", ""))}, "CompetitionNextDateLink", "Voir la date dans le calendrier · " + date)
+		if date_link != null:
+			# Cover both the inherited Button font and its separate visible date.
+			# The minimum also survives density scaling without shrinking the hit.
+			var inherited_height := date_link.get_theme_font("font").get_height(date_link.get_theme_font_size("font_size"))
+			date_link.size.y = maxf(18.0,maxf(date_link.size.y,maxf(ceilf(date_label.size.y),ceilf(inherited_height))))
 		D.text(panel, 40, 253, caption, 20, C.MUTED, 600, 470)
 	var location := _location(next_fixture)
 	_box_tag(panel, Rect2(532, 213, 151, 37), location.to_upper(), WARM)
@@ -713,8 +718,8 @@ func _turn(key: String, direction: int, id: String) -> void:
 		target = owner_app.find_child(id + ("Next" if direction < 0 else "Previous"), true, false) as Button
 	if target != null: target.grab_focus.call_deferred()
 
-func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> void:
-	if not target_available(app, str(target.kind), target.id): return
+func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, caption: String) -> Button:
+	if not target_available(app, str(target.kind), target.id): return null
 	var button := Button.new()
 	button.name = id
 	button.flat = true
@@ -724,6 +729,7 @@ func _entity_area(parent: Node, area: Rect2, target: Dictionary, id: String, cap
 	Link.bind(button, app, target, caption)
 	parent.add_child(button)
 	D.place(button, area)
+	return button
 
 func _club_detail(club: Dictionary) -> void:
 	var view := Decisions.dialog(app, G.club_name(club), "CompetitionClubDetails", 880)
