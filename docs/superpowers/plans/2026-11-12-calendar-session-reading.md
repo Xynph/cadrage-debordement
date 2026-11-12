@@ -39,6 +39,7 @@
 - [x] Écrire un parcours réel : carrière Common 0, refus pendant le rendez-vous obligatoire, puis préparation publique terminée avant baseline.
 - [x] Choisir un ID réel daté différent d’aujourd’hui ; filtrer la grille, ouvrir le lien hebdomadaire au clavier puis à la souris, vérifier jour exact, focus et contenu publiés.
 - [x] Vérifier Back : sélection/mois/vue/filtre/scroll/focus ; répétition sans doublon ; profil/modèle/seed/horloge/bridge inchangés.
+- [ ] Recevoir le correctif final du brouillon de semaine type : choix non appliqué restitué, bouton Appliquer cohérent, modèles supprimés/actifs et prochain match changé refusés. Revue finale ciblée après le rouge observé, puis preuve verte exacte ; aucun appel métier pour restituer un formulaire.
 - [x] Ajouter les classes du Review Focus. Les projections synthétiques sont des copies isolées, jamais des sauvegardes modifiées ou des captures présentées comme réelles.
 - [x] Fixer mute et compteurs avant attente ; wrapper enfant 90 s, superviseur existant 180 s, sans avancer de journées ni exporter pendant la consultation. La proposition initiale de 120 s n’était pas consommée par le contrôleur : aucun champ ignoré ni changement du contrôleur n’est ajouté.
 - [x] Root reçoit d’abord le rouge attendu sur la base sans adaptateur, sans Parse Error ni faux échec de fixture. Conserver ce reçu puis annoncer le début de l’implémentation.

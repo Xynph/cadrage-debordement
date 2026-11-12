@@ -16,6 +16,7 @@ Approche retenue : réutiliser le programme du jour, sélectionner la date de la
 - Chaque bouton porte `entity_kind=session`, `entity_id=<ID brut projeté>`. Noms : `CalendarSessionGridLink_`, `CalendarWeekSessionLink_` ou `CalendarSessionDetail_`, suivis du SHA256 de l’ID. `Competition.session_focus_name(id)` fournit le nom du détail ; le test observe l’ID et le focus, sans utiliser ce helper pour calculer son attente.
 - Les libellés de séance de la grille et du contexte hebdomadaire deviennent des liens seulement si la cible existe. Les données sans destination valide restent des libellés.
 - Un clic répété sur la même destination ne crée pas de dialogue ni d’entrée d’historique supplémentaire. Back restitue mois, date, filtre, vue, scroll et focus de départ.
+- Le choix non appliqué d’une semaine type reste un brouillon UI lors de l’ouverture d’une séance et du retour. Restituer ses identifiants publics ne déclenche ni signal d’application ni commande. Un modèle supprimé, déjà actif ou associé à un autre prochain match invalide ce brouillon ; une nouvelle carrière le réinitialise.
 - Deux séances du même jour restent distinctes par ID. Une sélection manuelle d’un autre jour invalide la cible séance active ; les gardes s’appliquent même à une cible déjà ouverte.
 - Les gardes communes restent applicables. Aucun appel métier, sauvegarde sportive, RNG ou horloge modifié pendant la consultation.
 - Une date passée décrit un créneau passé ; elle ne prouve ni séance exécutée, ni charge, ni progression. Aucune donnée cachée ni estimation nouvelle.
