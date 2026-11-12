@@ -348,12 +348,16 @@ son receveur avance de 5 m au plus pour fixer (il reculait sans fin).
 | --- | --- |
 | `tests/match-choregraphe.cjs` | 13 sur 13 (≈ 60 s) : 9 essais de la première tranche et 32 temps forts entiers ; match natif graine 7 avec et sans drapeau identique |
 | `tests/godot-match-choregraphie.cjs` | 207 923 contrôles, 0 échec : la vue suit dix pistes (essai de la première tranche, puis une par type et ouverture) |
-| `tests/godot-match-temps-forts.cjs` (mode `choregraphie`) | 14 contrôles, 0 échec : temps fort de la 14e minute joué par les pistes depuis sa remise en jeu, rien annoncé avant son jalon, pause qui fige, ni échéance ni refus |
-| Relancés sans échec | `match-direct` (4), `match-highlights` (12), `match-essai-visible` (7), `match-structured-facts` (3), `match-actions` (1) |
+| `tests/godot-match-temps-forts.cjs` | 6 modes, 297 contrôles, 0 échec ; mode `choregraphie` (14) : temps fort de la 14e minute joué par les pistes depuis sa remise en jeu, rien annoncé avant son jalon, pause qui fige, ni échéance ni refus |
+| Relancés sans échec | `match-direct` (4), `match-highlights` (12), `match-essai-visible` (7), `match-structured-facts` (3), `match-actions` (1), `godot-match-essai`, `godot-match-gestes`, `godot-match-gestes-adaptes`, `godot-match-cadrage-arret`, `godot-match-animations`, `godot-match-framing`, `godot-match-cut`, `godot-match-presentation`, `godot-match-journal` |
 
 Vidéo de contrôle (hors dépôt, `choregraphe-tranche2.mp4`) : `tests/godot-match-choregraphie-capture.cjs`
 sous Xvfb, rendu logiciel, `--fixed-fps 30` (vitesse réelle), 1280×720, bibliothèque Mixamo
-`CD_MATCH_ANIMATIONS`, sept séquences du jeu d'entrées avec un titre court incrusté au montage :
+`CD_MATCH_ANIMATIONS`, sept séquences du jeu d'entrées (2 min 30, 4 496 images) avec un titre
+court incrusté au montage : essai depuis une mêlée (30,6 s de pistes), essai depuis une touche
+(21,6 s), franchissement plaqué puis ballon récupéré (19,6 s), franchissement après le coup
+d'envoi (20,6 s), jeu au pied avec chasse et réception (24 s), jeu au pied en touche (13,6 s),
+coup d'envoi avec chasse et récupération (12,8 s) :
 
 ```
 CD_CHOREGRAPHIE_CAPTURE=/chemin/images CD_GODOT_EXE=/chemin/Godot_v4.7.2-stable_linux.x86_64 \
