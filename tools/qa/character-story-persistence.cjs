@@ -17,7 +17,7 @@ function worker(directory){
   const after=model?{cash:model.finance?.cash,wage:model.finance?.wage,morale:model.meta?.morale,trust:model.meta?.trust}:null;
   commands.push({requestId:serial,command,payload:copy(payload),accepted:response.ok,error:response.error??null,before,after,
    cashChange:Number.isFinite(before?.cash)&&Number.isFinite(after?.cash)?after.cash-before.cash:null,wageChange:Number.isFinite(before?.wage)&&Number.isFinite(after?.wage)?after.wage-before.wage:null});
-  assert.equal(response.ok,ok,command+': '+response.error);return model;
+  if(ok!==null)assert.equal(response.ok,ok,command+': '+response.error);return model;
  };
  const go=(command,payload={})=>send(command,payload,true);
  const stateHash=()=>{const text=go('export').meta.exportText;return hash(JSON.parse(text).state);};
@@ -31,7 +31,8 @@ function worker(directory){
   assert.deepEqual(bytes(),prior,'Restart must retain exact profile bytes');assert.equal(stateHash(),state,'Restart retains the complete career state');
   const receipt={afterRequestId:serial,profileSha256:hash(prior),stateSha256:state,seed:JSON.parse(prior).seed,clock:JSON.parse(prior).clock,unchanged:true};restarts.push(receipt);return receipt;
  };
- return {go,reject,read,restart,bytes,stateHash,commands,restarts,get model(){return model;},close:()=>bridge.close()};
+ const attempt=(command,payload={})=>{const prior=bytes(),state=stateHash();send(command,payload,null);const receipt=copy(commands.at(-1));if(!receipt.accepted){assert.deepEqual(bytes(),prior);assert.equal(stateHash(),state);receipt.profileUnchanged=true;receipt.stateUnchanged=true;}return receipt;};
+ return {go,reject,attempt,read,restart,bytes,stateHash,commands,restarts,get model(){return model;},close:()=>bridge.close()};
 }
 function archive(event){
  return Object.fromEntries(['key','playerId','kind','title','context','trait','leadership','choice','season','week','status'].filter(k=>Object.hasOwn(event,k)).map(k=>[k,event[k]]));
@@ -72,7 +73,9 @@ function play(w,target,partner){
  w.go('begin_match');const on=w.model.live.lineup.filter(Boolean).map(p=>p.id),pairAtKickoff=on.includes(target)&&on.includes(partner);
  w.go('delegate');assert.equal(w.model.live.finished,true);const report=w.model.decisions.report,score=copy(report.score),side=report.side;
  const result={round:w.model.meta.round,opponentId:report.teams[1-side].id,score:score[side]+'–'+score[1-side],won:score[side]>score[1-side],draw:score[side]===score[1-side],selection,pairTogetherAtKickoff:pairAtKickoff};
- w.go('finish_round');settleClubMeetings(w.model,w.go);return result;
+ const saved=JSON.parse(w.go('export').meta.exportText).state;
+ result.ownCharacterRecordedMatchMinutes=saved.live.sheets[saved.live.userSide].minutes[target];
+ result.closure=w.attempt('finish_round');if(result.closure.accepted)settleClubMeetings(w.model,w.go);return result;
 }
 function collect(output){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'rg27-character-memory-')),checkpoint=path.join(temp,'checkpoint');let initial=worker(checkpoint);
@@ -120,10 +123,11 @@ function collect(output){
       }
      }
      branch.rounds.push(play(w,target,partner));observe('after_round_'+(i+1));
+     if(!branch.rounds.at(-1).closure.accepted){branch.blockedAt='finish_round_'+(i+1);break;}
      if(i===0){w.restart();observe('after_restart_round_1');}
     }
     const final=observe('final');branch.commands=w.commands;branch.restarts=w.restarts;
-    branch.summary={playedRounds:branch.rounds.length,wins:branch.rounds.filter(r=>r.won).length,draws:branch.rounds.filter(r=>r.draw).length,
+    branch.summary={attemptedRounds:branch.rounds.length,recordedRounds:branch.rounds.filter(r=>r.closure.accepted).length,blockedAt:branch.blockedAt??null,wins:branch.rounds.filter(r=>r.closure.accepted&&r.won).length,draws:branch.rounds.filter(r=>r.closure.accepted&&r.draw).length,
      targetMinutes:final.character.minutes-baseline.character.minutes,satisfaction:final.character.satisfaction,morale:final.morale,trust:final.trust,
      cashChange:final.finance.cash-baseline.finance.cash,wageChange:final.finance.wage-baseline.finance.wage,
      trait:final.character.personality.trait,leadership:final.character.personality.leadership,pairScore:final.pair.score,
