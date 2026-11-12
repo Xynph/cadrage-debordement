@@ -549,6 +549,7 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	return panel
 
 func _session_caption(session: Dictionary, prefix: String, caption: String, color: Color, weight: int) -> Control:
+	if caption.strip_edges().is_empty(): caption = "Entraînement"
 	var id: Variant = session.get("id")
 	if not Competition.target_available(app, "session", id): return C.label(caption, 18, color, true, weight)
 	var link := Button.new()
