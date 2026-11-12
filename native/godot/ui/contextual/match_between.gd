@@ -572,7 +572,17 @@ func _carte_gabi(parent: Control) -> void:
 
 ## Colonnes de Mon XV (largeurs à l'échelle 2560) : numéro, nom, poste, note, énergie,
 ## plaquages, mètres, essais.
-const COLONNES_XV := [["", 52], ["Joueur", 0], ["Poste", 70], ["Note", 84], ["Énergie", 230], ["Plaq.", 70], ["Mètres", 86], ["Essais", 70]]
+const COLONNES_XV := [["", 52], ["Joueur", 0], ["Poste", 56], ["Note", 74], ["Énergie", 190], ["Plaq.", 64], ["Mètres", 80], ["Essais", 64]]
+## Poste en deux signes, comme sur une feuille de match.
+const POSTES_COURTS := {"pilier gauche": "PG", "talonneur": "TA", "pilier droit": "PD", "deuxième ligne": "2L", "troisième ligne": "3L",
+	"numéro 8": "N8", "demi de mêlée": "DM", "demi d’ouverture": "DO", "demi d'ouverture": "DO", "ailier": "AI", "centre": "CE", "arrière": "AR"}
+
+static func poste_court(poste: String) -> String:
+	var cle := poste.strip_edges().to_lower()
+	if cle.begins_with("numéro"): return "N8" if cle.ends_with("8") else "3L"
+	for nom: String in POSTES_COURTS:
+		if cle.begins_with(nom): return POSTES_COURTS[nom]
+	return poste.substr(0, 3).to_upper()
 
 func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, chiffre: bool = false) -> Label:
 	var etiquette := _texte(texte, taille, couleur, false, not chiffre)
@@ -900,7 +910,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var hauteur := px(50)
+	var hauteur := px(54)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -941,7 +951,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		var note: float = d.note
 		var condition: float = d.energie
 		ligne.add_child(_cellule(_nom_court(str(d.nom)), 0, IVOIRE, 28))
-		ligne.add_child(_cellule(str(d.poste), int(COLONNES_XV[2][1]), FAIBLE, 22))
+		ligne.add_child(_cellule(poste_court(str(d.poste)), int(COLONNES_XV[2][1]), FAIBLE, 22))
 		# Note dans une pastille teintée, énergie en jauge, puis les chiffres du joueur.
 		var cadre_note := PanelContainer.new()
 		cadre_note.add_theme_stylebox_override("panel", S.G.T.box(Color(_teinte_note(note), 0.16), maxi(3, px(8))))
