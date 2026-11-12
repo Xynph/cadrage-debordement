@@ -40,6 +40,8 @@ const PLAFOND=Object.freeze({course:null,passe:null,reception:null,plaquage:null
 const TOUCHES_AU_PIED=Object.freeze(['direct-touch','indirect-touch','50-22']);
 // Gain du moteur à partir duquel un temps de jeu est montré comme une percée (plaquages ratés, couverture).
 const GAIN_PERCEE=10;
+// Défense : écart entre deux joueurs de la ligne (valeur choisie), en mètres.
+const EPAULE=5.2;
 // Ballon porté (loi 16) : allure de la poussée, en m/s, et montée en allure.
 const MAUL_ALLURE=1.3,MAUL_ELAN=0.6;
 // Poteaux (loi 8) : 5,6 m d'écart, barre à 3 m, au milieu de la ligne de but (y = 35).
@@ -589,6 +591,22 @@ function simuler(e,phases,graine){
   if(d.apresPied)return comportementPied(j);
   return comportementJeu(j);
  }
+ // Lecture de l'attaque par la défense `side` autour du point `ref` : côté fort (attaquants debout
+ // à moins de 30 m, de part et d'autre du ballon), glissement de la ligne vers lui, et ailier
+ // du côté faible en couverture du pied. Présentation seule, calculée une fois par pas.
+ function lecture(side,ref){
+  const k=r1(t)+'|'+side;
+  if(d.lu?.k===k)return d.lu;
+  const attaque=J.filter(q=>q.side!==side&&debout(q)&&Math.abs(q.x-ref.x)<30);
+  const g=attaque.filter(q=>q.y<ref.y-2).length,dr=attaque.filter(q=>q.y>ref.y+2).length;
+  const fort=dr>g?1:dr<g?-1:(ref.y<35?1:-1);
+  const glisse=borne((dr-g)*1.3,-9,9);
+  // Ailier du côté faible (n° 11 ou 14 selon le côté) : il recule couvrir le jeu au pied.
+  const ailiers=J.filter(q=>q.side===side&&[10,13].includes(q.slot)&&debout(q));
+  const couverture=ailiers.sort((a,b)=>(a.y-ref.y)*fort-(b.y-ref.y)*fort||a.slot-b.slot)[0]||null;
+  d.lu={k,glisse,faible:-fort,couverture,fort};
+  return d.lu;
+ }
  function comportementJeu(j){
   // Ramasseur du ruck (demi ou gratteur), quelle que soit l'équipe.
   if(d.phase==='ruck'&&d.ruck&&j===d.ruck.ramasseur){const q=pointRamassage(d.ruck);vers(j,q.x,q.y,j.vmax*0.9);return}
@@ -701,12 +719,16 @@ function simuler(e,phases,graine){
    return;
   }
   // Ligne défensive : en jeu, étalée sur la largeur, elle glisse vers le ballon puis monte selon la consigne.
+  // Elle lit l'attaque : glissement vers le côté fort (là où les attaquants sont les plus nombreux)
+  // et couverture du pied (l'ailier du côté faible recule en second rideau avec l'arrière).
   const m=montee(j.side);
-  const ligneDef=def.filter(x=>x!==arriere&&debout(x)).sort((a,b)=>a.y-b.y||a.slot-b.slot);
-  const k=ligneDef.indexOf(j),n=ligneDef.length;
   const ref=d.ruck&&d.phase==='ruck'?d.ruck.B:{x:bx,y:by};
-  const centre=borne(ref.y,3+((n-1)/2)*6,67-((n-1)/2)*6);
-  const voulu=centre+(k-(n-1)/2)*6.2;
+  const lu=lecture(j.side,ref);
+  if(j===lu.couverture){vers(j,ref.x+sens*(m.fond+11),borne(ref.y+lu.faible*17,8,62),Math.min(j.vmax,5.5));return}
+  const ligneDef=def.filter(x=>x!==arriere&&x!==lu.couverture&&debout(x)).sort((a,b)=>a.y-b.y||a.slot-b.slot);
+  const k=ligneDef.indexOf(j),n=ligneDef.length,ecart=n>1?Math.min(6.2,(EPAULE*(n-1)>64?64/(n-1):EPAULE)):0;
+  const centre=borne(ref.y+lu.glisse,2+((n-1)/2)*ecart,68-((n-1)/2)*ecart);
+  const voulu=centre+(k-(n-1)/2)*ecart;
   let y=borne(voulu+(by-ref.y)*0.5,2,68),x;
   if(d.phase==='ruck'){x=horsJeu(j.side)+sens*m.ruck}
   else{const monte=Math.min(m.haut-m.fond,(t-(d.debutJeu??t))*m.vitesse);x=ref.x+sens*Math.max(m.fond,m.haut-monte)}

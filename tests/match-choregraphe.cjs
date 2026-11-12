@@ -285,6 +285,32 @@ test('Consigne défensive (plans.defence) : au ruck, la ligne en pression attend
   assert.ok(cas >= 8 && compares >= cas * 0.75, `ligne plus près du ruck sous pression dans ${compares} temps forts sur ${cas}`);
 });
 
+test('La défense lit l’attaque : ligne qui glisse vers le côté fort, ailier du côté faible en couverture du pied', () => {
+  let cas = 0, glisse = 0, couvre = 0;
+  for (const { source, c } of COMPOSES2) {
+    for (const r of c.evenements.filter(e => e.type === 'ramassage')) {
+      const i = Math.round(r.t / c.pas), bx = c.ballon.x[i], by = c.ballon.y[i];
+      const debout = j => etatA(j, r.t) === 'course';
+      const att = c.joueurs.filter(j => j.side === c.equipe && debout(j) && Math.abs(j.x[i] - bx) < 30);
+      const g = att.filter(j => j.y[i] < by - 2).length, d = att.filter(j => j.y[i] > by + 2).length;
+      if (Math.abs(d - g) < 3) continue;
+      const def = c.joueurs.filter(j => j.side !== c.equipe && debout(j) && j.slot !== 14);
+      const profond = j => Math.abs(j.x[i] - bx);
+      const ailiers = def.filter(j => j.slot === 10 || j.slot === 13).sort((a, b) => profond(b) - profond(a));
+      const ligne = def.filter(j => j !== ailiers[0]);
+      if (ligne.length < 6) continue;
+      cas++;
+      const centre = ligne.reduce((n, j) => n + j.y[i], 0) / ligne.length;
+      if (Math.sign(centre - by) === Math.sign(d - g)) glisse++;
+      const moyenne = ligne.reduce((n, j) => n + profond(j), 0) / ligne.length;
+      if (ailiers[0] && profond(ailiers[0]) >= moyenne + 6) couvre++;
+    }
+  }
+  assert.ok(cas >= 10, `rucks lus : ${cas}`);
+  assert.ok(glisse >= cas * 0.85, `ligne vers le côté fort dans ${glisse} cas sur ${cas}`);
+  assert.ok(couvre >= cas * 0.65, `ailier en couverture dans ${couvre} cas sur ${cas}`);
+});
+
 test('Ballon continu : jamais téléporté, vitesse d’une passe au plus', () => {
   for (const { source, c } of TOUS) {
     for (let i = 1; i < c.ballon.x.length; i++) {
