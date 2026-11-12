@@ -57,7 +57,15 @@ try{
  if(process.env.CD_FEEDBACK_GRAPHICS==='1'){
   const settings=path.join(project,'project.godot');fs.writeFileSync(settings,fs.readFileSync(settings,'utf8').replace('window/size/viewport_width=1440','window/size/viewport_width=1280').replace('window/size/viewport_height=900','window/size/viewport_height=720'));
  }
- const imported=spawnSync(godot,['--headless','--editor','--import','--path',project],{encoding:'utf8',windowsHide:true,timeout:90000});
+ // L'import éditeur de Godot 4.7.2 plante par intermittence sur les machines GitHub chargées (signal 11 dans
+ // preload_reimporting_scene, run 43262510105) : un plantage du moteur (statut nul, signal) est rejoué une fois ;
+ // une erreur d'import ordinaire (statut non nul, ERROR:/Parse Error) reste fatale ci-dessous.
+ let imported;
+ for(let attempt=0;attempt<2;attempt++){
+  imported=spawnSync(godot,['--headless','--editor','--import','--path',project],{encoding:'utf8',windowsHide:true,timeout:90000});
+  if(!(imported.status===null&&imported.signal&&!imported.error))break;
+  console.log('Import Godot interrompu par le signal '+imported.signal+' : nouvel essai');
+ }
  const importLog=(imported.stdout||'')+(imported.stderr||'');fs.writeFileSync(path.join(root,'import.log'),importLog);if(imported.error)throw imported.error;assert.equal(imported.status,0,importLog);assert.doesNotMatch(importLog,/SCRIPT ERROR|Parse Error|ERROR:/);
  const run=spawnSync(godot,[...(process.env.CD_FEEDBACK_GRAPHICS==='1'?[]:['--headless']),'--max-fps','120','--path',project,'--script',path.resolve(__dirname,'godot-decision-feedback.gd')],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_FEEDBACK_CASES:fixture,CD_FEEDBACK_ARTIFACTS:root,CD_GODOT_SELF_TEST:'0',CD_GODOT_GUIDE_MODULE_TEST:'1',CD_NODE_EXECUTABLE:process.execPath,CD_FEEDBACK_WORKER:path.resolve(__dirname,'../native/engine/worker.cjs'),CD_GODOT_DATA_DIR:path.join(root,'main-profile')}});
  const log=(run.stdout||'')+(run.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);console.log(log);console.log('Preuves décisions : '+root);if(run.error)throw run.error;

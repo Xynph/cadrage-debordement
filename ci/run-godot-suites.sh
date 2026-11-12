@@ -27,6 +27,7 @@ engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absen
 declare -A suite_limits=(
   [tests/godot-art-direction.cjs]=600
   [tests/godot-match-temps-forts.cjs]=600
+  [tests/godot-immersive08.cjs]=420
 )
 failures=0; executed=0; other_skips=0
 : > "$work/results.md"

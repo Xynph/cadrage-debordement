@@ -51,6 +51,8 @@ budget() {
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
     # PASS CI 42909005768 : 179,80/159,68 s, marge finie avant le cap 180.
     tests/france-career.cjs|tests/world-worker.cjs) echo 300s ;;
+    # native-fiction-sheet : délai de 180 s atteint sous charge (Suites 6/10, run 43262510105) ; marge doublée, assertions inchangées.
+    tests/native-fiction-sheet.cjs) echo 420s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     *) echo 180s ;;
   esac

@@ -573,6 +573,13 @@ func reception() -> void:
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
 	check(message_rows(list).size() == expected_total, "Réouvrir restaure le message dans la boîte")
+	# Le changement de dossier ne garantit pas que l'alerte contrat reste le message sélectionné (la boîte
+	# réaffiche aussi les avis du calendrier) : on la rouvre par son texte avant d'activer « ouvrir ».
+	for row: Button in message_rows(list):
+		if row.get_meta("message_text") == original:
+			row.pressed.emit()
+			await settle()
+			break
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
@@ -846,7 +853,10 @@ func desktop_1080() -> void:
 			check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
 			var first_action: Button = null
 			for candidate: Button in app.body.find_children("*","Button",true,false):
-				if candidate.is_visible_in_tree(): first_action = candidate; break
+				# « OBSERVER LA PRÉPARATION » (ContextualObserveTraining) est l'entrée du système contextuel (director.gd),
+				# posée en tête du corps de « Travail du club » avec le style du bandeau contextuel : la DA compacte
+				# s'applique aux commandes propres de la page, pas à cette entrée.
+				if candidate.is_visible_in_tree() and candidate.name != "ContextualObserveTraining": first_action = candidate; break
 			# Certaines pages s'ouvrent désormais sur un bandeau contextuel : la première vraie commande visible porte la DA.
 			check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande"))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
@@ -1287,6 +1297,8 @@ func run() -> void:
 		await settle()
 		# Depuis l'évolution de la composition, un premier clic sélectionne le numéro et un second sur le même numéro ouvre ses choix.
 		check(app.selected_slot==9,"Le bas du maillot 10 sélectionne son poste malgré l’enveloppe voisine")
+		# Le premier clic reconstruit la composition : le bouton précédent est libéré, on le retrouve avant le second clic.
+		fly_half=app.find_child("LineupSlot10",true,false)
 		await click(fly_half,Vector2(.97,.92))
 		await settle()
 		var candidates: AcceptDialog = app.find_child("LineupCandidates",true,false)
