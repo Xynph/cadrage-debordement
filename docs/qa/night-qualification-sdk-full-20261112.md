@@ -17,7 +17,7 @@ Le Carnet complet reçoit **4 670 contrôles / 0 échec**, en **49 316 ms** ; se
 
 La [campagne complète antérieure sur `1a7b083b`](night-closeout-sdk-full-20261112.md) reste **rouge, 74/76** : Carnet et Night guards n’y sont pas requalifiés. Le présent succès sur une nouvelle source n’établit pas, à lui seul, une cause unique au précédent timeout ni un gain causal de performance.
 
-GestionCarnet reçoit **274/0** avec `speech_requests=0`, `speech_starts=0`, `speech_id=0` dans son état final. Les quatre variantes Art impriment **224/0, 217/0, 211/0 et 175/0**, soit **827 contrôles**, avec respectivement **49, 46, 44 et 7 captures annoncées** (146). Les comptes locaux et ceux des anciennes campagnes restent distincts. Les [lignes originales](evidence/night-qualification-sdk-full-20261112/extra-counts.log) sont conservées ; les captures annoncées ne sont ni recopiées ni présentées comme inspectées ici.
+GestionCarnet reçoit **274/0** avec `speech_requests=0`, `speech_starts=0`, `speech_id=0` dans son état final. Les quatre variantes Art impriment **224/0, 217/0, 211/0 et 175/0**, soit **827 contrôles**, avec respectivement **49, 46, 44 et 7 captures annoncées** (146). Le contrôleur de la variante progression termine en **69 606 ms**, sous son délai enfant inchangé de 150 s. Les comptes locaux et ceux des anciennes campagnes restent distincts. Les [lignes originales](evidence/night-qualification-sdk-full-20261112/extra-counts.log) sont conservées ; les captures annoncées ne sont ni recopiées ni présentées comme inspectées ici.
 
 ## Matrices et traçabilité
 
