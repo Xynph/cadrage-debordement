@@ -1,0 +1,6163 @@
+{
+  "schema": 1,
+  "sourceSha": "1840c1a06258462cd882a95c6345c90b13515b8c",
+  "scriptSha256": "6bc25360a7523807badf934a06143d40070fe833c45ea8893a889f6e1e406fb2",
+  "nodeVersion": "v22.23.4",
+  "workerSha256": "431d31ce590549c603a2434773440c15d83a661182070b87e0e20c3beba60f97",
+  "engineFilesUnmodified": true,
+  "method": "Complete isolated saved profiles copied byte for byte including saved RNG and clock; public worker commands only",
+  "edition": "Fiction, XV adulte professionnel français 2025–2026, historical engine abstractions; no rule modification or 2026/27 compliance claim",
+  "limits": [
+    "Directed scenario, not a balance verdict or proof of causal performance.",
+    "Expensive scouted target does not guarantee a star.",
+    "Budgets and total spends differ; no claim of equal spend.",
+    "No tactical/manual substitution differences: normal training, auto lineup and full delegation for all branches.",
+    "Scouting warm-up and mandatory meetings precede the common checkpoint.",
+    "No Windows execution, no Godot/3D/audio needed."
+  ],
+  "horizon": 8,
+  "campaigns": [
+    {
+      "seed": 1299,
+      "checkpointProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+      "checkpointStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+      "checkpointRng": 1870054293,
+      "initial": {
+        "season": 1,
+        "week": 6,
+        "cash": 3823462,
+        "wage": 256423,
+        "points": 4,
+        "rank": 14,
+        "morale": 72,
+        "trust": 71,
+        "players": 40,
+        "averageRating": 66.725,
+        "averageCondition": 81.053,
+        "averageFatigue": 15.45,
+        "injured": 0,
+        "academyAverageRating": 59.417,
+        "academyInvestment": 0,
+        "academySpent": 0
+      },
+      "scouting": {
+        "selection": "Public salary, fees and distinct families only; no hidden ability or potential read for decisions",
+        "targets": [
+          {
+            "id": "p5-12-1794434400000",
+            "clubId": 5,
+            "pos": "Centre",
+            "family": 7,
+            "age": 23,
+            "fee": 340000,
+            "salary": 12100,
+            "rating": null,
+            "ratingRange": {
+              "min": 73,
+              "max": 81
+            },
+            "knowledge": "observed"
+          },
+          {
+            "id": "p12-4-1794434400000",
+            "clubId": 12,
+            "pos": "Deuxième ligne",
+            "family": 2,
+            "age": 26,
+            "fee": 70000,
+            "salary": 4800,
+            "rating": null,
+            "ratingRange": {
+              "min": 64,
+              "max": 72
+            },
+            "knowledge": "observed"
+          },
+          {
+            "id": "p6-8-1794434400000",
+            "clubId": 6,
+            "pos": "Demi de mêlée",
+            "family": 4,
+            "age": 29,
+            "fee": 70000,
+            "salary": 4800,
+            "rating": null,
+            "ratingRange": {
+              "min": 73,
+              "max": 81
+            },
+            "knowledge": "observed"
+          }
+        ],
+        "preparation": [
+          {
+            "round": 0,
+            "opponent": 0,
+            "score": "0–28",
+            "won": false,
+            "draw": false,
+            "metrics": {
+              "season": 1,
+              "week": 1,
+              "cash": 2388577,
+              "wage": 256423,
+              "points": 0,
+              "rank": 13,
+              "morale": 74,
+              "trust": 74,
+              "players": 40,
+              "averageRating": 66.7,
+              "averageCondition": 89.582,
+              "averageFatigue": 6.65,
+              "injured": 0,
+              "academyAverageRating": 59.417,
+              "academyInvestment": 0,
+              "academySpent": 0
+            }
+          },
+          {
+            "round": 1,
+            "opponent": 11,
+            "score": "22–17",
+            "won": true,
+            "draw": false,
+            "metrics": {
+              "season": 1,
+              "week": 2,
+              "cash": 2794154,
+              "wage": 256423,
+              "points": 4,
+              "rank": 9,
+              "morale": 82,
+              "trust": 77,
+              "players": 40,
+              "averageRating": 66.7,
+              "averageCondition": 85.909,
+              "averageFatigue": 9.65,
+              "injured": 1,
+              "academyAverageRating": 59.417,
+              "academyInvestment": 0,
+              "academySpent": 0
+            }
+          },
+          {
+            "round": 2,
+            "opponent": 9,
+            "score": "6–23",
+            "won": false,
+            "draw": false,
+            "metrics": {
+              "season": 1,
+              "week": 3,
+              "cash": 3049731,
+              "wage": 256423,
+              "points": 4,
+              "rank": 12,
+              "morale": 80,
+              "trust": 75,
+              "players": 40,
+              "averageRating": 66.7,
+              "averageCondition": 82.817,
+              "averageFatigue": 11.825,
+              "injured": 1,
+              "academyAverageRating": 59.417,
+              "academyInvestment": 0,
+              "academySpent": 0
+            }
+          },
+          {
+            "round": 3,
+            "opponent": 7,
+            "score": "3–15",
+            "won": false,
+            "draw": false,
+            "metrics": {
+              "season": 1,
+              "week": 4,
+              "cash": 3299308,
+              "wage": 256423,
+              "points": 4,
+              "rank": 13,
+              "morale": 78,
+              "trust": 75,
+              "players": 40,
+              "averageRating": 66.7,
+              "averageCondition": 81.879,
+              "averageFatigue": 13.3,
+              "injured": 0,
+              "academyAverageRating": 59.417,
+              "academyInvestment": 0,
+              "academySpent": 0
+            }
+          },
+          {
+            "round": 4,
+            "opponent": 5,
+            "score": "3–10",
+            "won": false,
+            "draw": false,
+            "metrics": {
+              "season": 1,
+              "week": 5,
+              "cash": 3554885,
+              "wage": 256423,
+              "points": 4,
+              "rank": 14,
+              "morale": 75,
+              "trust": 71,
+              "players": 40,
+              "averageRating": 66.7,
+              "averageCondition": 81.284,
+              "averageFatigue": 14.35,
+              "injured": 0,
+              "academyAverageRating": 59.417,
+              "academyInvestment": 0,
+              "academySpent": 0
+            }
+          },
+          {
+            "round": 5,
+            "opponent": 3,
+            "score": "3–18",
+            "won": false,
+            "draw": false,
+            "metrics": {
+              "season": 1,
+              "week": 6,
+              "cash": 3823462,
+              "wage": 256423,
+              "points": 4,
+              "rank": 14,
+              "morale": 72,
+              "trust": 71,
+              "players": 40,
+              "averageRating": 66.725,
+              "averageCondition": 81.053,
+              "averageFatigue": 15.45,
+              "injured": 0,
+              "academyAverageRating": 59.417,
+              "academyInvestment": 0,
+              "academySpent": 0
+            }
+          }
+        ],
+        "commands": [
+          {
+            "command": "new_career",
+            "payload": {
+              "mode": "fiction",
+              "club": 13
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-0-1",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "attaque-0-1",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "defense-0-1",
+                  "answerId": "r3"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:0:13:1"
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "club_meeting_ack",
+            "payload": {
+              "meetingId": "club-meeting:1:0:13:2"
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:0:13:2"
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "observe_player",
+            "payload": {
+              "playerId": "p5-12-1794434400000",
+              "confirmed": true,
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 13
+              }
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "observe_player",
+            "payload": {
+              "playerId": "p12-4-1794434400000",
+              "confirmed": true,
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 13
+              }
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "observe_player",
+            "payload": {
+              "playerId": "p6-8-1794434400000",
+              "confirmed": true,
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 13
+              }
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "train",
+            "payload": {
+              "mode": "normal"
+            },
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "auto_lineup",
+            "payload": {},
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "begin_match",
+            "payload": {},
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "delegate",
+            "payload": {},
+            "season": 1,
+            "week": 0
+          },
+          {
+            "command": "finish_round",
+            "payload": {},
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 1,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-0-0",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "attaque-0-0",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "defense-0-0",
+                  "answerId": "r3"
+                },
+                {
+                  "questionId": "joueurs-0-0",
+                  "answerId": "r3"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:1:13:3"
+            },
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "train",
+            "payload": {
+              "mode": "normal"
+            },
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "auto_lineup",
+            "payload": {},
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "begin_match",
+            "payload": {},
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "delegate",
+            "payload": {},
+            "season": 1,
+            "week": 1
+          },
+          {
+            "command": "finish_round",
+            "payload": {},
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 2,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-0-3",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "attaque-1-0",
+                  "answerId": "r4"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:2:13:4"
+            },
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "medical_protocol",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 2,
+                "club": 13
+              },
+              "id": "p13-25-1794434400000",
+              "protocol": "standard"
+            },
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:2:13:5"
+            },
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "train",
+            "payload": {
+              "mode": "normal"
+            },
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "auto_lineup",
+            "payload": {},
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "begin_match",
+            "payload": {},
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "delegate",
+            "payload": {},
+            "season": 1,
+            "week": 2
+          },
+          {
+            "command": "finish_round",
+            "payload": {},
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 3,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-0-2",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "attaque-0-2",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "defense-0-2",
+                  "answerId": "r4"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:3:13:6"
+            },
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "train",
+            "payload": {
+              "mode": "normal"
+            },
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "club_meeting_ack",
+            "payload": {
+              "meetingId": "club-meeting:1:3:13:7"
+            },
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:3:13:7"
+            },
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "auto_lineup",
+            "payload": {},
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "begin_match",
+            "payload": {},
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "delegate",
+            "payload": {},
+            "season": 1,
+            "week": 3
+          },
+          {
+            "command": "finish_round",
+            "payload": {},
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 4,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-1-0",
+                  "answerId": "r3"
+                },
+                {
+                  "questionId": "attaque-2-0",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "defense-1-0",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "joueurs-1-0",
+                  "answerId": "r4"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:4:13:8"
+            },
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "club_meeting_ack",
+            "payload": {
+              "meetingId": "club-meeting:1:4:13:9"
+            },
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:4:13:9"
+            },
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "train",
+            "payload": {
+              "mode": "normal"
+            },
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "auto_lineup",
+            "payload": {},
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "begin_match",
+            "payload": {},
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "delegate",
+            "payload": {},
+            "season": 1,
+            "week": 4
+          },
+          {
+            "command": "finish_round",
+            "payload": {},
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 5,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-2-0",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "attaque-3-0",
+                  "answerId": "r4"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:5:13:10"
+            },
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "train",
+            "payload": {
+              "mode": "normal"
+            },
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "auto_lineup",
+            "payload": {},
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "begin_match",
+            "payload": {},
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "delegate",
+            "payload": {},
+            "season": 1,
+            "week": 5
+          },
+          {
+            "command": "finish_round",
+            "payload": {},
+            "season": 1,
+            "week": 6
+          },
+          {
+            "command": "press_conference",
+            "payload": {
+              "context": {
+                "season": 1,
+                "week": 6,
+                "club": 13
+              },
+              "answers": [
+                {
+                  "questionId": "avant_match-1-2",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "attaque-1-2",
+                  "answerId": "r4"
+                },
+                {
+                  "questionId": "defense-1-2",
+                  "answerId": "r3"
+                }
+              ]
+            },
+            "season": 1,
+            "week": 6
+          },
+          {
+            "command": "club_meeting_continue",
+            "payload": {
+              "meetingId": "club-meeting:1:6:13:11"
+            },
+            "season": 1,
+            "week": 6
+          }
+        ]
+      },
+      "results": [
+        {
+          "id": "reference",
+          "label": "Conserver les moyens",
+          "openingProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+          "openingStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+          "openingRng": 1870054293,
+          "decisions": [],
+          "rounds": [
+            {
+              "round": 6,
+              "opponent": 1,
+              "score": "12–29",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 7,
+                "cash": 4042039,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 40,
+                "averageRating": 66.775,
+                "averageCondition": 81.278,
+                "averageFatigue": 16.125,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 7,
+              "opponent": 12,
+              "score": "3–7",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 8,
+                "cash": 4356616,
+                "wage": 256423,
+                "points": 5,
+                "rank": 14,
+                "morale": 68,
+                "trust": 67,
+                "players": 40,
+                "averageRating": 66.85,
+                "averageCondition": 80.514,
+                "averageFatigue": 16.825,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 8,
+              "opponent": 10,
+              "score": "26–26",
+              "won": false,
+              "draw": true,
+              "metrics": {
+                "season": 1,
+                "week": 9,
+                "cash": 4589193,
+                "wage": 256423,
+                "points": 7,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 40,
+                "averageRating": 66.875,
+                "averageCondition": 80.139,
+                "averageFatigue": 18.05,
+                "injured": 3,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 9,
+              "opponent": 8,
+              "score": "23–19",
+              "won": true,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 10,
+                "cash": 5004770,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 80,
+                "trust": 72,
+                "players": 40,
+                "averageRating": 66.9,
+                "averageCondition": 79.142,
+                "averageFatigue": 18.5,
+                "injured": 3,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 10,
+              "opponent": 6,
+              "score": "16–27",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 11,
+                "cash": 5250347,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 77,
+                "trust": 70,
+                "players": 40,
+                "averageRating": 66.95,
+                "averageCondition": 80.028,
+                "averageFatigue": 17.925,
+                "injured": 2,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 11,
+              "opponent": 4,
+              "score": "5–15",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 12,
+                "cash": 5466924,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 74,
+                "trust": 70,
+                "players": 40,
+                "averageRating": 66.95,
+                "averageCondition": 80.623,
+                "averageFatigue": 18.375,
+                "injured": 3,
+                "academyAverageRating": 59.567,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 12,
+              "opponent": 2,
+              "score": "0–6",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 13,
+                "cash": 5809501,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 72,
+                "trust": 70,
+                "players": 40,
+                "averageRating": 67,
+                "averageCondition": 79.842,
+                "averageFatigue": 19.025,
+                "injured": 2,
+                "academyAverageRating": 60.167,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 13,
+              "opponent": 0,
+              "score": "8–14",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 14,
+                "cash": 6073078,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 69,
+                "trust": 68,
+                "players": 40,
+                "averageRating": 67.075,
+                "averageCondition": 79.784,
+                "averageFatigue": 19.15,
+                "injured": 0,
+                "academyAverageRating": 60.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2249616,
+            "wageChange": 0,
+            "pointsChange": 7,
+            "academyRatingChange": 1,
+            "fatigueChange": 3.7,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6073078,
+            "wage": 256423,
+            "points": 11,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 40,
+            "averageRating": 67.075,
+            "averageCondition": 79.784,
+            "averageFatigue": 19.15,
+            "injured": 0,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "commands": [
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-2-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:12"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "id": "p13-22-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:13"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 8,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-1-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:14"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-2",
+                    "answerId": "r3"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:16"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-20-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:17"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-26-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:18"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-1-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-3-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:21"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "id": "p13-4-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:22"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "id": "p13-27-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:23"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:24"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:24"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 11,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-3-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:11:13:25"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-2",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-3-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-2",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:26"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "id": "p13-28-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:27"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:28"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:28"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:29"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:29"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-0-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "joueurs-0-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:30"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:31"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:31"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:32"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:32"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:33"
+              },
+              "season": 1,
+              "week": 14
+            }
+          ],
+          "closingProfileSha256": "725eecd1b579bcd549f5206da7d7f72f2b2cd00cc5d1ea69b0b10f29c360b0a1",
+          "closingStateSha256": "78514121528c0f2713ab0bec854807b72883dbe3b9033f9b6e9bf53849188d64",
+          "closingRng": 1722321810
+        },
+        {
+          "id": "vedette",
+          "label": "Un renfort au salaire élevé",
+          "openingProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+          "openingStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+          "openingRng": 1870054293,
+          "decisions": [
+            {
+              "quote": {
+                "id": "p5-12-1794434400000",
+                "clubId": 5,
+                "pos": "Centre",
+                "family": 7,
+                "age": 23,
+                "fee": 340000,
+                "salary": 12100,
+                "rating": null,
+                "ratingRange": {
+                  "min": 73,
+                  "max": 81
+                },
+                "knowledge": "observed"
+              },
+              "before": {
+                "season": 1,
+                "week": 6,
+                "cash": 3823462,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 40,
+                "averageRating": 66.725,
+                "averageCondition": 81.053,
+                "averageFatigue": 15.45,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              },
+              "after": {
+                "season": 1,
+                "week": 6,
+                "cash": 3483462,
+                "wage": 268523,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 41,
+                "averageRating": 66.878,
+                "averageCondition": 80.658,
+                "averageFatigue": 15.902,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "rounds": [
+            {
+              "round": 6,
+              "opponent": 1,
+              "score": "12–29",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 7,
+                "cash": 3689939,
+                "wage": 268523,
+                "points": 4,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 41,
+                "averageRating": 66.927,
+                "averageCondition": 81.265,
+                "averageFatigue": 16.317,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 7,
+              "opponent": 12,
+              "score": "3–7",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 8,
+                "cash": 3992416,
+                "wage": 268523,
+                "points": 5,
+                "rank": 14,
+                "morale": 68,
+                "trust": 67,
+                "players": 41,
+                "averageRating": 67,
+                "averageCondition": 80.899,
+                "averageFatigue": 16.756,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 8,
+              "opponent": 10,
+              "score": "26–26",
+              "won": false,
+              "draw": true,
+              "metrics": {
+                "season": 1,
+                "week": 9,
+                "cash": 4212893,
+                "wage": 268523,
+                "points": 7,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 41,
+                "averageRating": 67.024,
+                "averageCondition": 80.879,
+                "averageFatigue": 17.707,
+                "injured": 3,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 9,
+              "opponent": 8,
+              "score": "22–28",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 10,
+                "cash": 4493370,
+                "wage": 268523,
+                "points": 7,
+                "rank": 14,
+                "morale": 69,
+                "trust": 67,
+                "players": 41,
+                "averageRating": 67.049,
+                "averageCondition": 80.57,
+                "averageFatigue": 17.951,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 10,
+              "opponent": 6,
+              "score": "37–42",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 11,
+                "cash": 4705847,
+                "wage": 268523,
+                "points": 8,
+                "rank": 14,
+                "morale": 66,
+                "trust": 65,
+                "players": 41,
+                "averageRating": 67.098,
+                "averageCondition": 81.169,
+                "averageFatigue": 18.024,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 11,
+              "opponent": 4,
+              "score": "33–5",
+              "won": true,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 12,
+                "cash": 5112324,
+                "wage": 268523,
+                "points": 13,
+                "rank": 14,
+                "morale": 74,
+                "trust": 70,
+                "players": 41,
+                "averageRating": 67.098,
+                "averageCondition": 80.799,
+                "averageFatigue": 18.878,
+                "injured": 1,
+                "academyAverageRating": 59.567,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 12,
+              "opponent": 2,
+              "score": "16–25",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 13,
+                "cash": 5320801,
+                "wage": 268523,
+                "points": 13,
+                "rank": 14,
+                "morale": 72,
+                "trust": 70,
+                "players": 41,
+                "averageRating": 67.146,
+                "averageCondition": 80.591,
+                "averageFatigue": 19.512,
+                "injured": 1,
+                "academyAverageRating": 60.167,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 13,
+              "opponent": 0,
+              "score": "3–21",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 14,
+                "cash": 5563278,
+                "wage": 268523,
+                "points": 13,
+                "rank": 14,
+                "morale": 69,
+                "trust": 68,
+                "players": 41,
+                "averageRating": 67.22,
+                "averageCondition": 80.187,
+                "averageFatigue": 19.854,
+                "injured": 1,
+                "academyAverageRating": 60.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 1739816,
+            "wageChange": 12100,
+            "pointsChange": 9,
+            "academyRatingChange": 1,
+            "fatigueChange": 4.404,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5563278,
+            "wage": 268523,
+            "points": 13,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 41,
+            "averageRating": 67.22,
+            "averageCondition": 80.187,
+            "averageFatigue": 19.854,
+            "injured": 1,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "commands": [
+            {
+              "command": "interclub_transfer",
+              "payload": {
+                "playerId": "p5-12-1794434400000",
+                "sellerId": 5,
+                "fee": 340000,
+                "salary": 12100,
+                "sourceSalary": 11439,
+                "contractEnd": 2,
+                "context": {
+                  "season": 1,
+                  "week": 6,
+                  "club": 13
+                },
+                "confirmed": true
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-2-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:12"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "id": "p13-22-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:13"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 8,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-1-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:14"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-2",
+                    "answerId": "r3"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:16"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-20-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:17"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p5-12-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:18"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-1-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-3-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:21"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 11,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-3-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:11:13:22"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-2",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-3-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-2",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:23"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:24"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:24"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:25"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:25"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-0-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "joueurs-0-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:26"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "id": "depth-13-1-2",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:27"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:28"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:28"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:29"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "id": "p13-29-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:30"
+              },
+              "season": 1,
+              "week": 14
+            }
+          ],
+          "closingProfileSha256": "7d9da4615a5034848022650e9c88fcb455033523ef49b782ac4a1a179b3506c4",
+          "closingStateSha256": "b5d04081b00102a20f84f79e952097b4d4869fae0075c99d986482a16e00fb61",
+          "closingRng": 1470003047
+        },
+        {
+          "id": "talent_observe",
+          "label": "Le meilleur niveau observé parmi les trois pistes",
+          "openingProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+          "openingStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+          "openingRng": 1870054293,
+          "decisions": [
+            {
+              "quote": {
+                "id": "p6-8-1794434400000",
+                "clubId": 6,
+                "pos": "Demi de mêlée",
+                "family": 4,
+                "age": 29,
+                "fee": 70000,
+                "salary": 4800,
+                "rating": null,
+                "ratingRange": {
+                  "min": 73,
+                  "max": 81
+                },
+                "knowledge": "observed"
+              },
+              "before": {
+                "season": 1,
+                "week": 6,
+                "cash": 3823462,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 40,
+                "averageRating": 66.725,
+                "averageCondition": 81.053,
+                "averageFatigue": 15.45,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              },
+              "after": {
+                "season": 1,
+                "week": 6,
+                "cash": 3753462,
+                "wage": 261223,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 41,
+                "averageRating": 66.927,
+                "averageCondition": 81.464,
+                "averageFatigue": 15.195,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "rounds": [
+            {
+              "round": 6,
+              "opponent": 1,
+              "score": "12–29",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 7,
+                "cash": 3967239,
+                "wage": 261223,
+                "points": 4,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 41,
+                "averageRating": 66.976,
+                "averageCondition": 81.672,
+                "averageFatigue": 15.732,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 7,
+              "opponent": 12,
+              "score": "3–7",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 8,
+                "cash": 4277016,
+                "wage": 261223,
+                "points": 5,
+                "rank": 14,
+                "morale": 68,
+                "trust": 67,
+                "players": 41,
+                "averageRating": 67.049,
+                "averageCondition": 81.361,
+                "averageFatigue": 16.171,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 8,
+              "opponent": 10,
+              "score": "26–26",
+              "won": false,
+              "draw": true,
+              "metrics": {
+                "season": 1,
+                "week": 9,
+                "cash": 4504793,
+                "wage": 261223,
+                "points": 7,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 41,
+                "averageRating": 67.073,
+                "averageCondition": 81.246,
+                "averageFatigue": 17.195,
+                "injured": 3,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 9,
+              "opponent": 8,
+              "score": "20–19",
+              "won": true,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 10,
+                "cash": 4856570,
+                "wage": 261223,
+                "points": 11,
+                "rank": 14,
+                "morale": 80,
+                "trust": 72,
+                "players": 41,
+                "averageRating": 67.098,
+                "averageCondition": 79.446,
+                "averageFatigue": 17.927,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 10,
+              "opponent": 6,
+              "score": "20–33",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 11,
+                "cash": 5185347,
+                "wage": 261223,
+                "points": 11,
+                "rank": 14,
+                "morale": 77,
+                "trust": 70,
+                "players": 41,
+                "averageRating": 67.146,
+                "averageCondition": 80.484,
+                "averageFatigue": 17.976,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 11,
+              "opponent": 4,
+              "score": "22–31",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 12,
+                "cash": 5491124,
+                "wage": 261223,
+                "points": 11,
+                "rank": 14,
+                "morale": 74,
+                "trust": 70,
+                "players": 41,
+                "averageRating": 67.146,
+                "averageCondition": 79.394,
+                "averageFatigue": 18.659,
+                "injured": 2,
+                "academyAverageRating": 59.567,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 12,
+              "opponent": 2,
+              "score": "17–20",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 13,
+                "cash": 5765901,
+                "wage": 261223,
+                "points": 12,
+                "rank": 14,
+                "morale": 72,
+                "trust": 70,
+                "players": 41,
+                "averageRating": 67.195,
+                "averageCondition": 78.973,
+                "averageFatigue": 19.341,
+                "injured": 2,
+                "academyAverageRating": 60.167,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 13,
+              "opponent": 0,
+              "score": "15–36",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 14,
+                "cash": 6088678,
+                "wage": 261223,
+                "points": 12,
+                "rank": 14,
+                "morale": 69,
+                "trust": 68,
+                "players": 41,
+                "averageRating": 67.268,
+                "averageCondition": 80.821,
+                "averageFatigue": 19.244,
+                "injured": 4,
+                "academyAverageRating": 60.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2265216,
+            "wageChange": 4800,
+            "pointsChange": 8,
+            "academyRatingChange": 1,
+            "fatigueChange": 3.794,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 6088678,
+            "wage": 261223,
+            "points": 12,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 41,
+            "averageRating": 67.268,
+            "averageCondition": 80.821,
+            "averageFatigue": 19.244,
+            "injured": 4,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "commands": [
+            {
+              "command": "interclub_transfer",
+              "payload": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4503,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 6,
+                  "club": 13
+                },
+                "confirmed": true
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-2-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:12"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "id": "p13-22-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:13"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 8,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-1-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:14"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-2",
+                    "answerId": "r3"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:16"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-20-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:17"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-26-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:18"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-1-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-3-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:21"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 11,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-3-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:11:13:22"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-2",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-3-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-2",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:23"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "id": "p13-27-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:24"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:25"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:25"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:26"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:26"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-0-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "joueurs-0-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:27"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "id": "p13-6-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:28"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:29"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "id": "p13-1-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:30"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "id": "p13-17-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:31"
+              },
+              "season": 1,
+              "week": 14
+            }
+          ],
+          "closingProfileSha256": "516ce57cde6b26e6f6f40ab5a701161cc5fee91fac5beda99c5259fa4f965e1d",
+          "closingStateSha256": "2a869c8d8772c47cf0d54e2f85f238bd0107bc3a05240d7a57f6401a2b7357d0",
+          "closingRng": 3547790674
+        },
+        {
+          "id": "profondeur",
+          "label": "Deux familles de postes",
+          "openingProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+          "openingStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+          "openingRng": 1870054293,
+          "decisions": [
+            {
+              "quote": {
+                "id": "p12-4-1794434400000",
+                "clubId": 12,
+                "pos": "Deuxième ligne",
+                "family": 2,
+                "age": 26,
+                "fee": 70000,
+                "salary": 4800,
+                "rating": null,
+                "ratingRange": {
+                  "min": 64,
+                  "max": 72
+                },
+                "knowledge": "observed"
+              },
+              "before": {
+                "season": 1,
+                "week": 6,
+                "cash": 3823462,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 40,
+                "averageRating": 66.725,
+                "averageCondition": 81.053,
+                "averageFatigue": 15.45,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              },
+              "after": {
+                "season": 1,
+                "week": 6,
+                "cash": 3753462,
+                "wage": 261223,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 41,
+                "averageRating": 66.854,
+                "averageCondition": 80.66,
+                "averageFatigue": 15.902,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "quote": {
+                "id": "p6-8-1794434400000",
+                "clubId": 6,
+                "pos": "Demi de mêlée",
+                "family": 4,
+                "age": 29,
+                "fee": 70000,
+                "salary": 4800,
+                "rating": null,
+                "ratingRange": {
+                  "min": 73,
+                  "max": 81
+                },
+                "knowledge": "observed"
+              },
+              "before": {
+                "season": 1,
+                "week": 6,
+                "cash": 3753462,
+                "wage": 261223,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 41,
+                "averageRating": 66.854,
+                "averageCondition": 80.66,
+                "averageFatigue": 15.902,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              },
+              "after": {
+                "season": 1,
+                "week": 6,
+                "cash": 3683462,
+                "wage": 266023,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 42,
+                "averageRating": 67.048,
+                "averageCondition": 81.07,
+                "averageFatigue": 15.643,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "rounds": [
+            {
+              "round": 6,
+              "opponent": 1,
+              "score": "12–29",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 7,
+                "cash": 3892439,
+                "wage": 266023,
+                "points": 4,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 42,
+                "averageRating": 67.095,
+                "averageCondition": 81.702,
+                "averageFatigue": 15.929,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 7,
+              "opponent": 12,
+              "score": "3–7",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 8,
+                "cash": 4197416,
+                "wage": 266023,
+                "points": 5,
+                "rank": 14,
+                "morale": 68,
+                "trust": 67,
+                "players": 42,
+                "averageRating": 67.167,
+                "averageCondition": 81.818,
+                "averageFatigue": 16.119,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 8,
+              "opponent": 10,
+              "score": "26–26",
+              "won": false,
+              "draw": true,
+              "metrics": {
+                "season": 1,
+                "week": 9,
+                "cash": 4482393,
+                "wage": 266023,
+                "points": 7,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 42,
+                "averageRating": 67.19,
+                "averageCondition": 81.658,
+                "averageFatigue": 17.119,
+                "injured": 3,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 9,
+              "opponent": 8,
+              "score": "24–34",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 10,
+                "cash": 4724370,
+                "wage": 266023,
+                "points": 7,
+                "rank": 14,
+                "morale": 69,
+                "trust": 67,
+                "players": 42,
+                "averageRating": 67.214,
+                "averageCondition": 79.919,
+                "averageFatigue": 17.786,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 10,
+              "opponent": 6,
+              "score": "14–17",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 11,
+                "cash": 5040347,
+                "wage": 266023,
+                "points": 8,
+                "rank": 14,
+                "morale": 66,
+                "trust": 65,
+                "players": 42,
+                "averageRating": 67.262,
+                "averageCondition": 81.237,
+                "averageFatigue": 17.548,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 11,
+              "opponent": 4,
+              "score": "14–17",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 12,
+                "cash": 5335324,
+                "wage": 266023,
+                "points": 9,
+                "rank": 14,
+                "morale": 63,
+                "trust": 65,
+                "players": 42,
+                "averageRating": 67.262,
+                "averageCondition": 80.903,
+                "averageFatigue": 17.929,
+                "injured": 2,
+                "academyAverageRating": 59.567,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 12,
+              "opponent": 2,
+              "score": "0–6",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 13,
+                "cash": 5560301,
+                "wage": 266023,
+                "points": 9,
+                "rank": 14,
+                "morale": 61,
+                "trust": 65,
+                "players": 42,
+                "averageRating": 67.31,
+                "averageCondition": 80.763,
+                "averageFatigue": 17.976,
+                "injured": 1,
+                "academyAverageRating": 60.167,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            },
+            {
+              "round": 13,
+              "opponent": 0,
+              "score": "3–30",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 14,
+                "cash": 5763278,
+                "wage": 266023,
+                "points": 9,
+                "rank": 14,
+                "morale": 58,
+                "trust": 63,
+                "players": 42,
+                "averageRating": 67.357,
+                "averageCondition": 81.405,
+                "averageFatigue": 17.833,
+                "injured": 2,
+                "academyAverageRating": 60.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              }
+            }
+          ],
+          "summary": {
+            "wins": 0,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 1939816,
+            "wageChange": 9600,
+            "pointsChange": 5,
+            "academyRatingChange": 1,
+            "fatigueChange": 2.383,
+            "moraleChange": -14,
+            "trustChange": -8
+          },
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5763278,
+            "wage": 266023,
+            "points": 9,
+            "rank": 14,
+            "morale": 58,
+            "trust": 63,
+            "players": 42,
+            "averageRating": 67.357,
+            "averageCondition": 81.405,
+            "averageFatigue": 17.833,
+            "injured": 2,
+            "academyAverageRating": 60.417,
+            "academyInvestment": 0,
+            "academySpent": 0
+          },
+          "commands": [
+            {
+              "command": "interclub_transfer",
+              "payload": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4562,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 6,
+                  "club": 13
+                },
+                "confirmed": true
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "interclub_transfer",
+              "payload": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4503,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 6,
+                  "club": 13
+                },
+                "confirmed": true
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-2-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:12"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "id": "p13-22-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:13"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 8,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-1-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:14"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-2",
+                    "answerId": "r3"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:16"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-20-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:17"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-26-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:18"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-1-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-3-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:21"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 11,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-3-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:11:13:22"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-2",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-3-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-2",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:23"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "id": "p13-19-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:24"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:25"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:25"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:26"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:26"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-0-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "joueurs-0-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:27"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:28"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "id": "p13-14-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:29"
+              },
+              "season": 1,
+              "week": 14
+            }
+          ],
+          "closingProfileSha256": "8f9932b14ecfdbcc8c4e38b91782dce44d311e628ec9546bc4dd0dbc266a09e2",
+          "closingStateSha256": "ec6f9f6c44422db2434bb1fbd3d394857793dd9e5b5dcfc0e82a1a2cbcfc0039",
+          "closingRng": 264551099
+        },
+        {
+          "id": "formation",
+          "label": "Financer la formation",
+          "openingProfileSha256": "5978fa0bd9943f8baab844a053b14ffcdd600d4b76f0dea9b09597076694ae98",
+          "openingStateSha256": "b27fa49a780063ce76c5e541c682aac18dbcb6e8d4febd03ac674a4e7bdbd4b2",
+          "openingRng": 1870054293,
+          "decisions": [
+            {
+              "investmentPerSession": 12000,
+              "before": {
+                "season": 1,
+                "week": 6,
+                "cash": 3823462,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 40,
+                "averageRating": 66.725,
+                "averageCondition": 81.053,
+                "averageFatigue": 15.45,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 0,
+                "academySpent": 0
+              },
+              "after": {
+                "season": 1,
+                "week": 6,
+                "cash": 3823462,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 72,
+                "trust": 71,
+                "players": 40,
+                "averageRating": 66.725,
+                "averageCondition": 81.053,
+                "averageFatigue": 15.45,
+                "injured": 0,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 12000,
+                "academySpent": 0
+              }
+            }
+          ],
+          "rounds": [
+            {
+              "round": 6,
+              "opponent": 1,
+              "score": "12–29",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 7,
+                "cash": 4030039,
+                "wage": 256423,
+                "points": 4,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 40,
+                "averageRating": 66.775,
+                "averageCondition": 81.278,
+                "averageFatigue": 16.125,
+                "injured": 1,
+                "academyAverageRating": 59.417,
+                "academyInvestment": 12000,
+                "academySpent": 12000
+              }
+            },
+            {
+              "round": 7,
+              "opponent": 12,
+              "score": "3–7",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 8,
+                "cash": 4332616,
+                "wage": 256423,
+                "points": 5,
+                "rank": 14,
+                "morale": 68,
+                "trust": 67,
+                "players": 40,
+                "averageRating": 66.85,
+                "averageCondition": 80.514,
+                "averageFatigue": 16.825,
+                "injured": 1,
+                "academyAverageRating": 60.383,
+                "academyInvestment": 12000,
+                "academySpent": 24000
+              }
+            },
+            {
+              "round": 8,
+              "opponent": 10,
+              "score": "26–26",
+              "won": false,
+              "draw": true,
+              "metrics": {
+                "season": 1,
+                "week": 9,
+                "cash": 4553193,
+                "wage": 256423,
+                "points": 7,
+                "rank": 14,
+                "morale": 71,
+                "trust": 69,
+                "players": 40,
+                "averageRating": 66.875,
+                "averageCondition": 80.139,
+                "averageFatigue": 18.05,
+                "injured": 3,
+                "academyAverageRating": 60.417,
+                "academyInvestment": 12000,
+                "academySpent": 36000
+              }
+            },
+            {
+              "round": 9,
+              "opponent": 8,
+              "score": "23–19",
+              "won": true,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 10,
+                "cash": 4956770,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 80,
+                "trust": 72,
+                "players": 40,
+                "averageRating": 66.9,
+                "averageCondition": 79.142,
+                "averageFatigue": 18.5,
+                "injured": 3,
+                "academyAverageRating": 60.417,
+                "academyInvestment": 12000,
+                "academySpent": 48000
+              }
+            },
+            {
+              "round": 10,
+              "opponent": 6,
+              "score": "16–27",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 11,
+                "cash": 5190347,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 77,
+                "trust": 70,
+                "players": 40,
+                "averageRating": 66.95,
+                "averageCondition": 80.028,
+                "averageFatigue": 17.925,
+                "injured": 2,
+                "academyAverageRating": 60.75,
+                "academyInvestment": 12000,
+                "academySpent": 60000
+              }
+            },
+            {
+              "round": 11,
+              "opponent": 4,
+              "score": "5–15",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 12,
+                "cash": 5394924,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 74,
+                "trust": 70,
+                "players": 40,
+                "averageRating": 66.95,
+                "averageCondition": 80.623,
+                "averageFatigue": 18.375,
+                "injured": 3,
+                "academyAverageRating": 61.383,
+                "academyInvestment": 12000,
+                "academySpent": 72000
+              }
+            },
+            {
+              "round": 12,
+              "opponent": 2,
+              "score": "0–6",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 13,
+                "cash": 5725501,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 72,
+                "trust": 70,
+                "players": 40,
+                "averageRating": 67,
+                "averageCondition": 79.842,
+                "averageFatigue": 19.025,
+                "injured": 2,
+                "academyAverageRating": 61.383,
+                "academyInvestment": 12000,
+                "academySpent": 84000
+              }
+            },
+            {
+              "round": 13,
+              "opponent": 0,
+              "score": "8–14",
+              "won": false,
+              "draw": false,
+              "metrics": {
+                "season": 1,
+                "week": 14,
+                "cash": 5977078,
+                "wage": 256423,
+                "points": 11,
+                "rank": 14,
+                "morale": 69,
+                "trust": 68,
+                "players": 40,
+                "averageRating": 67.075,
+                "averageCondition": 79.784,
+                "averageFatigue": 19.15,
+                "injured": 0,
+                "academyAverageRating": 61.517,
+                "academyInvestment": 12000,
+                "academySpent": 96000
+              }
+            }
+          ],
+          "summary": {
+            "wins": 1,
+            "draws": 1,
+            "matches": 8,
+            "cashChange": 2153616,
+            "wageChange": 0,
+            "pointsChange": 7,
+            "academyRatingChange": 2.1,
+            "fatigueChange": 3.7,
+            "moraleChange": -3,
+            "trustChange": -3
+          },
+          "end": {
+            "season": 1,
+            "week": 14,
+            "cash": 5977078,
+            "wage": 256423,
+            "points": 11,
+            "rank": 14,
+            "morale": 69,
+            "trust": 68,
+            "players": 40,
+            "averageRating": 67.075,
+            "averageCondition": 79.784,
+            "averageFatigue": 19.15,
+            "injured": 0,
+            "academyAverageRating": 61.517,
+            "academyInvestment": 12000,
+            "academySpent": 96000
+          },
+          "commands": [
+            {
+              "command": "club_academy_investment",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 6,
+                  "club": 13
+                },
+                "amount": 12000,
+                "confirmed": true
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 6
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-2-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:12"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 7,
+                  "club": 13
+                },
+                "id": "p13-22-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:7:13:13"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 7
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 8,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-4-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-1-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:14"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:8:13:15"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 8
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-2-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-2-2",
+                    "answerId": "r3"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:16"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-20-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:17"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 9,
+                  "club": 13
+                },
+                "id": "p13-26-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:18"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:19"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:9:13:20"
+              },
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 9
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-1-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "joueurs-3-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:21"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "id": "p13-4-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:22"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 10,
+                  "club": 13
+                },
+                "id": "p13-27-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:23"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:24"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:10:13:24"
+              },
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 10
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 11,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-2-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-3-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:11:13:25"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 11
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-3-2",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "attaque-3-2",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-3-2",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:26"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "medical_protocol",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 12,
+                  "club": 13
+                },
+                "id": "p13-28-1794434400000",
+                "protocol": "standard"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:27"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:28"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:28"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:29"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:12:13:29"
+              },
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 12
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 13,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-1",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "defense-0-1",
+                    "answerId": "r3"
+                  },
+                  {
+                    "questionId": "joueurs-0-1",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:30"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "train",
+              "payload": {
+                "mode": "normal"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:31"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:31"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_ack",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:32"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:13:13:32"
+              },
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "auto_lineup",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "begin_match",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "delegate",
+              "payload": {},
+              "season": 1,
+              "week": 13
+            },
+            {
+              "command": "finish_round",
+              "payload": {},
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "press_conference",
+              "payload": {
+                "context": {
+                  "season": 1,
+                  "week": 14,
+                  "club": 13
+                },
+                "answers": [
+                  {
+                    "questionId": "avant_match-0-0",
+                    "answerId": "r4"
+                  },
+                  {
+                    "questionId": "attaque-0-0",
+                    "answerId": "r4"
+                  }
+                ]
+              },
+              "season": 1,
+              "week": 14
+            },
+            {
+              "command": "club_meeting_continue",
+              "payload": {
+                "meetingId": "club-meeting:1:14:13:33"
+              },
+              "season": 1,
+              "week": 14
+            }
+          ],
+          "closingProfileSha256": "6bfd909f9d3839fb1991d0ae03098e2684f1c85d00825c3ceae3eaa400fa2ad9",
+          "closingStateSha256": "22fa8ebbb16df6e90b01505c8d89c2b0f32c1d6136c965a99c36c7e36e61786a",
+          "closingRng": 1722321810
+        }
+      ]
+    }
+  ],
+  "complete": true
+}

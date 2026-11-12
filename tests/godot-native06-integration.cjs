@@ -19,6 +19,9 @@ test('Raccordements natifs06 : vrais boutons, son indépendant et réponse tick 
   }
   fs.symlinkSync(path.resolve(source, '../engine'), path.join(dir, 'engine'), 'junction');
   fs.copyFileSync(path.join(__dirname, 'godot-native06-integration.gd'), path.join(project, 'native06-integration.gd'));
+  // The copied harness resolves its relative preload beside itself.
+  fs.mkdirSync(path.join(project, 'helpers'), { recursive: true });
+  fs.copyFileSync(path.join(__dirname, 'helpers/contextual_flow.gd'), path.join(project, 'helpers/contextual_flow.gd'));
   const bridge = createBridge({ dataDir: path.join(dir, 'fixture'), seed: 506, now: 1700000000000 });
   let sequence = 0, found = false;
   const call = (command, payload = {}) => {
@@ -49,7 +52,7 @@ test('Raccordements natifs06 : vrais boutons, son indépendant et réponse tick 
   } finally { bridge.close(); }
   assert.ok(found, 'Fixture événement typé réellement issue du worker natif');
   const manifest = {};
-  for (const base of ['', 'ui', 'guide', 'audio']) for (const name of fs.readdirSync(path.join(project, base))) {
+  for (const base of ['', 'ui', 'guide', 'audio', 'helpers']) for (const name of fs.readdirSync(path.join(project, base))) {
     const file = path.join(project, base, name);
     if (fs.statSync(file).isFile() && /\.(gd|godot|tscn|json)$/.test(name))
       manifest[path.join(base, name)] = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');

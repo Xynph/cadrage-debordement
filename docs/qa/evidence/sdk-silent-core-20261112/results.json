@@ -1,0 +1,50 @@
+[
+  {
+    "suite": "tests/godot-gestion-carnet.cjs",
+    "case": "gestion-carnet",
+    "source": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+    "code": 1,
+    "elapsed_ms": 48980,
+    "log": "/workspace/work/night-followup-receipts/silent-core/gestion-carnet.log"
+  },
+  {
+    "suite": "tests/godot-entity-navigation.cjs",
+    "case": "entity-navigation",
+    "source": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+    "code": 0,
+    "elapsed_ms": 17522,
+    "log": "/workspace/work/night-followup-receipts/silent-core/entity-navigation.log"
+  },
+  {
+    "suite": "tests/godot-navigation.cjs",
+    "case": "navigation",
+    "source": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+    "code": 0,
+    "elapsed_ms": 49883,
+    "log": "/workspace/work/night-followup-receipts/silent-core/navigation.log"
+  },
+  {
+    "suite": "tests/godot-management-reading-flow.cjs",
+    "case": "management-reading-flow",
+    "source": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+    "code": 0,
+    "elapsed_ms": 35720,
+    "log": "/workspace/work/night-followup-receipts/silent-core/management-reading-flow.log"
+  },
+  {
+    "suite": "tests/godot-analysis-club-graphics.cjs",
+    "case": "analysis-club-graphics",
+    "source": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+    "code": 0,
+    "elapsed_ms": 73655,
+    "log": "/workspace/work/night-followup-receipts/silent-core/analysis-club-graphics.log"
+  },
+  {
+    "suite": "tests/rg27-night-navigation.cjs",
+    "case": "night-guards",
+    "source": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+    "code": 0,
+    "elapsed_ms": 121102,
+    "log": "/workspace/work/night-followup-receipts/silent-core/night-guards.log"
+  }
+]

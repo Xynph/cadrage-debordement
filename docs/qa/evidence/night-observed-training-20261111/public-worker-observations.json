@@ -1,0 +1,2938 @@
+{
+  "schema": 1,
+  "sourceSha": "6d120934b8edada837c388a08391d16e98842081",
+  "runnerSha256": "0fd7ae43efb115fc83bd1031abecfcb77c394c2359b876569211310ddb4b1dc9",
+  "nodeVersion": "v22.23.4",
+  "method": "Same complete temporary saved profile copied byte for byte, public TRAIN commands, explicit owned projections only",
+  "limits": [
+    "Before/after observations do not attribute the whole change to a single cause.",
+    "These four training sessions do not establish a long-term progression guarantee.",
+    "No potential, hidden opponent data, edited save, coefficient or forecast is collected."
+  ],
+  "checkpointProfileSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+  "checkpointStateSha256": "643eacbfbfb1db563720fb3b679066aa8525a57857da1087c11d0fb6e94b9334",
+  "checkpointRng": 3161170221,
+  "checkpointClock": 1794434400000,
+  "setupCommands": [
+    {
+      "command": "new_career",
+      "payload": {
+        "mode": "fiction",
+        "club": 13
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "press_conference",
+      "payload": {
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        },
+        "answers": [
+          {
+            "questionId": "avant_match-0-1",
+            "answerId": "r4"
+          },
+          {
+            "questionId": "attaque-0-1",
+            "answerId": "r4"
+          },
+          {
+            "questionId": "defense-0-1",
+            "answerId": "r3"
+          }
+        ]
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "club_meeting_continue",
+      "payload": {
+        "meetingId": "club-meeting:1:0:13:1"
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "club_meeting_ack",
+      "payload": {
+        "meetingId": "club-meeting:1:0:13:2"
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "club_meeting_continue",
+      "payload": {
+        "meetingId": "club-meeting:1:0:13:2"
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "train",
+      "payload": {
+        "mode": "normal"
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "auto_lineup",
+      "payload": {},
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "begin_match",
+      "payload": {},
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "delegate",
+      "payload": {},
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "finish_round",
+      "payload": {},
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "press_conference",
+      "payload": {
+        "context": {
+          "season": 1,
+          "week": 1,
+          "club": 13
+        },
+        "answers": [
+          {
+            "questionId": "avant_match-0-0",
+            "answerId": "r4"
+          },
+          {
+            "questionId": "attaque-0-0",
+            "answerId": "r4"
+          },
+          {
+            "questionId": "defense-0-0",
+            "answerId": "r3"
+          },
+          {
+            "questionId": "joueurs-0-0",
+            "answerId": "r3"
+          }
+        ]
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "club_meeting_continue",
+      "payload": {
+        "meetingId": "club-meeting:1:1:13:3"
+      },
+      "ok": true,
+      "error": null
+    },
+    {
+      "command": "set_delegation",
+      "payload": {
+        "key": "training",
+        "enabled": false
+      },
+      "ok": true,
+      "error": null
+    }
+  ],
+  "individualExceptionId": "p13-0-1794434400000",
+  "individualRestActuallyObserved": {
+    "playerId": "p13-0-1794434400000",
+    "collectiveIntense": {
+      "condition": 72.74630000000037,
+      "physicalLoad": 24
+    },
+    "withRestException": {
+      "condition": 96.74630000000037,
+      "physicalLoad": 0
+    }
+  },
+  "complete": true,
+  "privateFixtureSha256": "dfae8dcf7e4802c1263ee63f2a7b29ac88587a9f1e5320a39d7c14fb4d312f76",
+  "sourceFilesSha256": {
+    "native/godot/ui/decision_feedback.gd": "b2140251177c99ec21150ede903fb540573e8480d73e0128409f34a14f44be1f",
+    "tools/qa/observed-training-consequences.cjs": "0fd7ae43efb115fc83bd1031abecfcb77c394c2359b876569211310ddb4b1dc9"
+  },
+  "cases": [
+    {
+      "id": "repos",
+      "mode": "repos",
+      "ok": true,
+      "expected": [
+        {
+          "field": "condition",
+          "count": 40,
+          "before": 89.38457925000003,
+          "after": 99.63529375,
+          "beforeText": "89,4",
+          "afterText": "99,6",
+          "visible": true
+        },
+        {
+          "field": "physicalLoad",
+          "count": 40,
+          "before": 6.65,
+          "after": 0,
+          "beforeText": "6,7",
+          "afterText": "0",
+          "visible": true
+        },
+        {
+          "field": "rating",
+          "count": 40,
+          "before": 67.05,
+          "after": 67.05,
+          "beforeText": "67,1",
+          "afterText": "67,1",
+          "visible": false
+        }
+      ],
+      "commands": [
+        {
+          "command": "train",
+          "payload": {
+            "mode": "repos"
+          },
+          "ok": true,
+          "error": null
+        }
+      ],
+      "openingCheckpointSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "beforeTrainProfileSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "afterTrainProfileSha256": "8142959d3984ab59e56258ffa799f94e1e6a13bf6999b17b655f2c96c9c4827c",
+      "rngBeforeTrain": 3161170221,
+      "rngAfterTrain": 3161170221,
+      "readOnlyCollectionPreservedProfile": true,
+      "context": {
+        "club": 13,
+        "mode": "fictional14",
+        "season": 1,
+        "week": 1
+      },
+      "finance": {
+        "before": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "after": {
+          "cash": 2408955,
+          "wage": 251045
+        }
+      },
+      "trained": {
+        "before": false,
+        "after": true
+      },
+      "sameOwnedPlayers": [
+        {
+          "id": "p13-0-1794434400000",
+          "condition": {
+            "before": 66.74630000000037,
+            "after": 96.74630000000037
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-1-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 73,
+            "after": 73
+          }
+        },
+        {
+          "id": "p13-2-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-3-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 80,
+            "after": 80
+          }
+        },
+        {
+          "id": "p13-4-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-5-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-6-1794434400000",
+          "condition": {
+            "before": 75.83269999999973,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-7-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-8-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-9-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 75,
+            "after": 75
+          }
+        },
+        {
+          "id": "p13-10-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-11-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-12-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 72,
+            "after": 72
+          }
+        },
+        {
+          "id": "p13-13-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-14-1794434400000",
+          "condition": {
+            "before": 74.69689999999986,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 78,
+            "after": 78
+          }
+        },
+        {
+          "id": "p13-15-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 70,
+            "after": 70
+          }
+        },
+        {
+          "id": "p13-16-1794434400000",
+          "condition": {
+            "before": 65.61049999999972,
+            "after": 95.61049999999972
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-17-1794434400000",
+          "condition": {
+            "before": 63.05495000000028,
+            "after": 93.05495000000028
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-18-1794434400000",
+          "condition": {
+            "before": 74.51613000000016,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 0
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-19-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-20-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-21-1794434400000",
+          "condition": {
+            "before": 72.99319999999986,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-22-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-23-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-24-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-25-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 64,
+            "after": 64
+          }
+        },
+        {
+          "id": "p13-26-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-27-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 71,
+            "after": 71
+          }
+        },
+        {
+          "id": "p13-28-1794434400000",
+          "condition": {
+            "before": 74.4129499999998,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-29-1794434400000",
+          "condition": {
+            "before": 71.83193999999988,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 0
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "depth-13-1-1",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 58,
+            "after": 58
+          }
+        },
+        {
+          "id": "depth-13-1-2",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-3",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 57,
+            "after": 57
+          }
+        },
+        {
+          "id": "depth-13-1-4",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-5",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 54,
+            "after": 54
+          }
+        },
+        {
+          "id": "depth-13-1-6",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 59,
+            "after": 59
+          }
+        },
+        {
+          "id": "depth-13-1-7",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-8",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-9",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 56,
+            "after": 56
+          }
+        },
+        {
+          "id": "depth-13-1-10",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        }
+      ]
+    },
+    {
+      "id": "normal",
+      "mode": "normal",
+      "ok": true,
+      "expected": [
+        {
+          "field": "condition",
+          "count": 40,
+          "before": 89.38457925000003,
+          "after": 96.88457925000002,
+          "beforeText": "89,4",
+          "afterText": "96,9",
+          "visible": true
+        },
+        {
+          "field": "physicalLoad",
+          "count": 40,
+          "before": 6.65,
+          "after": 2.9,
+          "beforeText": "6,7",
+          "afterText": "2,9",
+          "visible": true
+        },
+        {
+          "field": "rating",
+          "count": 40,
+          "before": 67.05,
+          "after": 67.05,
+          "beforeText": "67,1",
+          "afterText": "67,1",
+          "visible": false
+        }
+      ],
+      "commands": [
+        {
+          "command": "train",
+          "payload": {
+            "mode": "normal"
+          },
+          "ok": true,
+          "error": null
+        },
+        {
+          "command": "train",
+          "payload": {
+            "mode": "normal"
+          },
+          "ok": true,
+          "error": null
+        }
+      ],
+      "openingCheckpointSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "beforeTrainProfileSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "afterTrainProfileSha256": "5a674697a67a15908b51acfaa7b1e3b8c31b7ea496b454b2ae1578ef3e4329ca",
+      "rngBeforeTrain": 3161170221,
+      "rngAfterTrain": 3161170221,
+      "readOnlyCollectionPreservedProfile": true,
+      "context": {
+        "club": 13,
+        "mode": "fictional14",
+        "season": 1,
+        "week": 1
+      },
+      "finance": {
+        "before": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "after": {
+          "cash": 2408955,
+          "wage": 251045
+        }
+      },
+      "trained": {
+        "before": false,
+        "after": true
+      },
+      "sameOwnedPlayers": [
+        {
+          "id": "p13-0-1794434400000",
+          "condition": {
+            "before": 66.74630000000037,
+            "after": 86.74630000000037
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-1-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 73,
+            "after": 73
+          }
+        },
+        {
+          "id": "p13-2-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-3-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 91.57344999999992
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 80,
+            "after": 80
+          }
+        },
+        {
+          "id": "p13-4-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-5-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 93.56110000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-6-1794434400000",
+          "condition": {
+            "before": 75.83269999999973,
+            "after": 95.83269999999973
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-7-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-8-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-9-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 91.57344999999992
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 75,
+            "after": 75
+          }
+        },
+        {
+          "id": "p13-10-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-11-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-12-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 93.56110000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 72,
+            "after": 72
+          }
+        },
+        {
+          "id": "p13-13-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-14-1794434400000",
+          "condition": {
+            "before": 74.69689999999986,
+            "after": 94.69689999999986
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 78,
+            "after": 78
+          }
+        },
+        {
+          "id": "p13-15-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 70,
+            "after": 70
+          }
+        },
+        {
+          "id": "p13-16-1794434400000",
+          "condition": {
+            "before": 65.61049999999972,
+            "after": 85.61049999999972
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-17-1794434400000",
+          "condition": {
+            "before": 63.05495000000028,
+            "after": 83.05495000000028
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-18-1794434400000",
+          "condition": {
+            "before": 74.51613000000016,
+            "after": 94.51613000000016
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 6
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-19-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-20-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-21-1794434400000",
+          "condition": {
+            "before": 72.99319999999986,
+            "after": 92.99319999999986
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-22-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-23-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-24-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-25-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 64,
+            "after": 64
+          }
+        },
+        {
+          "id": "p13-26-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 92.70925000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-27-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 92.70925000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 71,
+            "after": 71
+          }
+        },
+        {
+          "id": "p13-28-1794434400000",
+          "condition": {
+            "before": 74.4129499999998,
+            "after": 94.4129499999998
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 8
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-29-1794434400000",
+          "condition": {
+            "before": 71.83193999999988,
+            "after": 91.83193999999988
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 6
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "depth-13-1-1",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 58,
+            "after": 58
+          }
+        },
+        {
+          "id": "depth-13-1-2",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-3",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 57,
+            "after": 57
+          }
+        },
+        {
+          "id": "depth-13-1-4",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-5",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 54,
+            "after": 54
+          }
+        },
+        {
+          "id": "depth-13-1-6",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 59,
+            "after": 59
+          }
+        },
+        {
+          "id": "depth-13-1-7",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-8",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-9",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 56,
+            "after": 56
+          }
+        },
+        {
+          "id": "depth-13-1-10",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 0
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        }
+      ]
+    },
+    {
+      "id": "normal_repeat",
+      "mode": "normal",
+      "ok": true,
+      "error": null,
+      "expected": [
+        {
+          "field": "condition",
+          "count": 40,
+          "before": 96.88457925000002,
+          "after": 96.88457925000002,
+          "beforeText": "96,9",
+          "afterText": "96,9",
+          "visible": false
+        },
+        {
+          "field": "physicalLoad",
+          "count": 40,
+          "before": 2.9,
+          "after": 2.9,
+          "beforeText": "2,9",
+          "afterText": "2,9",
+          "visible": false
+        },
+        {
+          "field": "rating",
+          "count": 40,
+          "before": 67.05,
+          "after": 67.05,
+          "beforeText": "67,1",
+          "afterText": "67,1",
+          "visible": false
+        }
+      ],
+      "noNewReceipt": true,
+      "profileUnchanged": true,
+      "context": {
+        "club": 13,
+        "mode": "fictional14",
+        "season": 1,
+        "week": 1
+      },
+      "finance": {
+        "before": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "after": {
+          "cash": 2408955,
+          "wage": 251045
+        }
+      },
+      "trained": {
+        "before": true,
+        "after": true
+      }
+    },
+    {
+      "id": "intense",
+      "mode": "intense",
+      "ok": true,
+      "expected": [
+        {
+          "field": "condition",
+          "count": 40,
+          "before": 89.38457925000003,
+          "after": 91.63457925000003,
+          "beforeText": "89,4",
+          "afterText": "91,6",
+          "visible": true
+        },
+        {
+          "field": "physicalLoad",
+          "count": 40,
+          "before": 6.65,
+          "after": 12.65,
+          "beforeText": "6,7",
+          "afterText": "12,7",
+          "visible": true
+        },
+        {
+          "field": "rating",
+          "count": 40,
+          "before": 67.05,
+          "after": 67.05,
+          "beforeText": "67,1",
+          "afterText": "67,1",
+          "visible": false
+        }
+      ],
+      "commands": [
+        {
+          "command": "train",
+          "payload": {
+            "mode": "intense"
+          },
+          "ok": true,
+          "error": null
+        }
+      ],
+      "openingCheckpointSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "beforeTrainProfileSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "afterTrainProfileSha256": "bb520ff32a834c6976bc7e796e86dbaf15c718b3070cbf48c1cd9c224ebca5c6",
+      "rngBeforeTrain": 3161170221,
+      "rngAfterTrain": 995497365,
+      "readOnlyCollectionPreservedProfile": true,
+      "context": {
+        "club": 13,
+        "mode": "fictional14",
+        "season": 1,
+        "week": 1
+      },
+      "finance": {
+        "before": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "after": {
+          "cash": 2408955,
+          "wage": 251045
+        }
+      },
+      "trained": {
+        "before": false,
+        "after": true
+      },
+      "sameOwnedPlayers": [
+        {
+          "id": "p13-0-1794434400000",
+          "condition": {
+            "before": 66.74630000000037,
+            "after": 72.74630000000037
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-1-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 73,
+            "after": 73
+          }
+        },
+        {
+          "id": "p13-2-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-3-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 77.57344999999992
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 80,
+            "after": 80
+          }
+        },
+        {
+          "id": "p13-4-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-5-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 79.56110000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-6-1794434400000",
+          "condition": {
+            "before": 75.83269999999973,
+            "after": 81.83269999999973
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-7-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-8-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-9-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 77.57344999999992
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 75,
+            "after": 75
+          }
+        },
+        {
+          "id": "p13-10-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-11-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-12-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 79.56110000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 72,
+            "after": 72
+          }
+        },
+        {
+          "id": "p13-13-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-14-1794434400000",
+          "condition": {
+            "before": 74.69689999999986,
+            "after": 80.69689999999986
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 78,
+            "after": 78
+          }
+        },
+        {
+          "id": "p13-15-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 70,
+            "after": 70
+          }
+        },
+        {
+          "id": "p13-16-1794434400000",
+          "condition": {
+            "before": 65.61049999999972,
+            "after": 71.61049999999972
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-17-1794434400000",
+          "condition": {
+            "before": 63.05495000000028,
+            "after": 69.05495000000028
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-18-1794434400000",
+          "condition": {
+            "before": 74.51613000000016,
+            "after": 80.51613000000016
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 22
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-19-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-20-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-21-1794434400000",
+          "condition": {
+            "before": 72.99319999999986,
+            "after": 78.99319999999986
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-22-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-23-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-24-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-25-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 64,
+            "after": 64
+          }
+        },
+        {
+          "id": "p13-26-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 78.70925000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-27-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 78.70925000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 71,
+            "after": 71
+          }
+        },
+        {
+          "id": "p13-28-1794434400000",
+          "condition": {
+            "before": 74.4129499999998,
+            "after": 80.4129499999998
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-29-1794434400000",
+          "condition": {
+            "before": 71.83193999999988,
+            "after": 77.83193999999988
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 22
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "depth-13-1-1",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 58,
+            "after": 58
+          }
+        },
+        {
+          "id": "depth-13-1-2",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-3",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 57,
+            "after": 57
+          }
+        },
+        {
+          "id": "depth-13-1-4",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-5",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 54,
+            "after": 54
+          }
+        },
+        {
+          "id": "depth-13-1-6",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 59,
+            "after": 59
+          }
+        },
+        {
+          "id": "depth-13-1-7",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-8",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-9",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 56,
+            "after": 56
+          }
+        },
+        {
+          "id": "depth-13-1-10",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        }
+      ]
+    },
+    {
+      "id": "intense_exception_repos",
+      "mode": "intense",
+      "ok": true,
+      "expected": [
+        {
+          "field": "condition",
+          "count": 40,
+          "before": 89.38457925000003,
+          "after": 92.23457925000002,
+          "beforeText": "89,4",
+          "afterText": "92,2",
+          "visible": true
+        },
+        {
+          "field": "physicalLoad",
+          "count": 40,
+          "before": 6.65,
+          "after": 12.05,
+          "beforeText": "6,7",
+          "afterText": "12,1",
+          "visible": true
+        },
+        {
+          "field": "rating",
+          "count": 40,
+          "before": 67.05,
+          "after": 67.05,
+          "beforeText": "67,1",
+          "afterText": "67,1",
+          "visible": false
+        }
+      ],
+      "commands": [
+        {
+          "command": "set_player_load",
+          "payload": {
+            "playerId": "p13-0-1794434400000",
+            "mode": "repos"
+          },
+          "ok": true,
+          "error": null
+        },
+        {
+          "command": "train",
+          "payload": {
+            "mode": "intense"
+          },
+          "ok": true,
+          "error": null
+        }
+      ],
+      "openingCheckpointSha256": "0f72da5ba607f2d9622320137c6eea2a949d36e9270ab6641176276abeb0d66f",
+      "beforeTrainProfileSha256": "dc39b780dcc48785cab8548dbc7eb8c02e4c604f85666a1ac0407e3c58256756",
+      "afterTrainProfileSha256": "77bd0ef5f5a7664be62c8dd2dcf7c7fd64f509313559dbedb06b713cf6406369",
+      "rngBeforeTrain": 3161170221,
+      "rngAfterTrain": 517989262,
+      "readOnlyCollectionPreservedProfile": true,
+      "context": {
+        "club": 13,
+        "mode": "fictional14",
+        "season": 1,
+        "week": 1
+      },
+      "finance": {
+        "before": {
+          "cash": 2408955,
+          "wage": 251045
+        },
+        "after": {
+          "cash": 2408955,
+          "wage": 251045
+        }
+      },
+      "trained": {
+        "before": false,
+        "after": true
+      },
+      "sameOwnedPlayers": [
+        {
+          "id": "p13-0-1794434400000",
+          "condition": {
+            "before": 66.74630000000037,
+            "after": 96.74630000000037
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 0
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-1-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 73,
+            "after": 73
+          }
+        },
+        {
+          "id": "p13-2-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-3-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 77.57344999999992
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 80,
+            "after": 80
+          }
+        },
+        {
+          "id": "p13-4-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-5-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 79.56110000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-6-1794434400000",
+          "condition": {
+            "before": 75.83269999999973,
+            "after": 81.83269999999973
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-7-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-8-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-9-1794434400000",
+          "condition": {
+            "before": 71.57344999999992,
+            "after": 77.57344999999992
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 75,
+            "after": 75
+          }
+        },
+        {
+          "id": "p13-10-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-11-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-12-1794434400000",
+          "condition": {
+            "before": 73.56110000000018,
+            "after": 79.56110000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 72,
+            "after": 72
+          }
+        },
+        {
+          "id": "p13-13-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-14-1794434400000",
+          "condition": {
+            "before": 74.69689999999986,
+            "after": 80.69689999999986
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 78,
+            "after": 78
+          }
+        },
+        {
+          "id": "p13-15-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 70,
+            "after": 70
+          }
+        },
+        {
+          "id": "p13-16-1794434400000",
+          "condition": {
+            "before": 65.61049999999972,
+            "after": 71.61049999999972
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "p13-17-1794434400000",
+          "condition": {
+            "before": 63.05495000000028,
+            "after": 69.05495000000028
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-18-1794434400000",
+          "condition": {
+            "before": 74.51613000000016,
+            "after": 80.51613000000016
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 22
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-19-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-20-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 65,
+            "after": 65
+          }
+        },
+        {
+          "id": "p13-21-1794434400000",
+          "condition": {
+            "before": 72.99319999999986,
+            "after": 78.99319999999986
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-22-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        },
+        {
+          "id": "p13-23-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 68,
+            "after": 68
+          }
+        },
+        {
+          "id": "p13-24-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 69,
+            "after": 69
+          }
+        },
+        {
+          "id": "p13-25-1794434400000",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 64,
+            "after": 64
+          }
+        },
+        {
+          "id": "p13-26-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 78.70925000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 77,
+            "after": 77
+          }
+        },
+        {
+          "id": "p13-27-1794434400000",
+          "condition": {
+            "before": 72.70925000000018,
+            "after": 78.70925000000018
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 71,
+            "after": 71
+          }
+        },
+        {
+          "id": "p13-28-1794434400000",
+          "condition": {
+            "before": 74.4129499999998,
+            "after": 80.4129499999998
+          },
+          "physicalLoad": {
+            "before": 18,
+            "after": 24
+          },
+          "rating": {
+            "before": 76,
+            "after": 76
+          }
+        },
+        {
+          "id": "p13-29-1794434400000",
+          "condition": {
+            "before": 71.83193999999988,
+            "after": 77.83193999999988
+          },
+          "physicalLoad": {
+            "before": 16,
+            "after": 22
+          },
+          "rating": {
+            "before": 67,
+            "after": 67
+          }
+        },
+        {
+          "id": "depth-13-1-1",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 58,
+            "after": 58
+          }
+        },
+        {
+          "id": "depth-13-1-2",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-3",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 57,
+            "after": 57
+          }
+        },
+        {
+          "id": "depth-13-1-4",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 61,
+            "after": 61
+          }
+        },
+        {
+          "id": "depth-13-1-5",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 54,
+            "after": 54
+          }
+        },
+        {
+          "id": "depth-13-1-6",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 59,
+            "after": 59
+          }
+        },
+        {
+          "id": "depth-13-1-7",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-8",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 60,
+            "after": 60
+          }
+        },
+        {
+          "id": "depth-13-1-9",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 56,
+            "after": 56
+          }
+        },
+        {
+          "id": "depth-13-1-10",
+          "condition": {
+            "before": 100,
+            "after": 100
+          },
+          "physicalLoad": {
+            "before": 0,
+            "after": 6
+          },
+          "rating": {
+            "before": 63,
+            "after": 63
+          }
+        }
+      ]
+    }
+  ]
+}

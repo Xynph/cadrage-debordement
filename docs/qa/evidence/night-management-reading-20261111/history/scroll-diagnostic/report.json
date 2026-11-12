@@ -1,0 +1,19 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-phase10/management-scroll/vestiaire-retour-fiche-2560.png",
+      "sha256": "4b01f7b1383b18ffd2064591d68987fa49fa86fe803743af8b6972017d0fdfaa"
+    },
+    {
+      "file": "/workspace/work/night-phase10/management-scroll/decisions-retour-fiche-2560.png",
+      "sha256": "64fef12a6265ca3d568923e319a248212f9687fdf556ceab69b9ba26ab2507b7"
+    }
+  ],
+  "checks": 60,
+  "failures": [
+    "Retour conserve le scroll de l’autre liste"
+  ],
+  "scope": "Real game client/worker; requires common read-only window suspension before running.",
+  "speech_requests": 0,
+  "speech_starts": 0
+}

@@ -1,0 +1,42 @@
+{
+  "before": {
+    "profileSha256": "35e33b4909845d55978da41321e243ebbce0f5b8d103ed20c752e0034ce51e84",
+    "stateSha256": "c1bbf507427ddaab81420b3f411588a32bc8ec1efed08700e04fe266ed83c8f4",
+    "seed": 4086047321,
+    "clock": 1794434400000,
+    "publicOwnCharacter": {
+      "id": "p13-21-1794434400000",
+      "promise": {
+        "target": "rotation",
+        "season": 1,
+        "round": 0,
+        "completed": 2,
+        "minutes": 168
+      },
+      "recordedMinutes": 168,
+      "finishedMatchMinutes": 81
+    }
+  },
+  "requestId": 2,
+  "accepted": false,
+  "error": "Le fichier contient des données de carrière incohérentes.",
+  "after": {
+    "profileSha256": "35e33b4909845d55978da41321e243ebbce0f5b8d103ed20c752e0034ce51e84",
+    "stateSha256": "c1bbf507427ddaab81420b3f411588a32bc8ec1efed08700e04fe266ed83c8f4",
+    "seed": 4086047321,
+    "clock": 1794434400000,
+    "publicOwnCharacter": {
+      "id": "p13-21-1794434400000",
+      "promise": {
+        "target": "rotation",
+        "season": 1,
+        "round": 0,
+        "completed": 2,
+        "minutes": 168
+      },
+      "recordedMinutes": 168,
+      "finishedMatchMinutes": 81
+    }
+  },
+  "transactionUnchanged": true
+}

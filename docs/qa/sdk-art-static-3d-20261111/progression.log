@@ -1,0 +1,46 @@
+SDK_RUNTIME_LOG: /workspace/qa/sdk-runtime/godot-art-direction-194654.log
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+SDK_COMMAND 13306 art-direction new_career
+SDK_COMMAND 29718 art-direction academy_activate
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-07" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-08" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-09" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-10" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-11" }
+SDK_COMMAND 41669 art-direction begin_match
+SDK_COMMAND 51500 art-direction delegate
+SDK_COMMAND 53468 art-direction finish_round
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-12" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-13" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-14" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-15" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-16" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-17" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-18" }
+SDK_COMMAND 78436 art-direction begin_match
+SDK_COMMAND 83119 art-direction delegate
+SDK_COMMAND 84786 art-direction finish_round
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-19" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-20" }
+SDK_CAPTURE 102121 Bureau-apres-deux-matchs
+SDK_CAPTURE 103318 Finances-apres-deux-matchs
+SDK_CAPTURE 105359 Presse-apres-deux-matchs
+SDK_CAPTURE 106360 Rivalités-apres-deux-matchs
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-21" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-22" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-23" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-24" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-25" }
+SDK_COMMAND 115688 art-direction begin_match
+SDK_COMMAND 120893 art-direction pause
+SDK_CAPTURE 122754 Match-direct
+SDK_CAPTURE 124161 Match-Banc
+SDK_CAPTURE 125426 Match-Stats
+ART DIRECTION : 165 contrôles ; 7 captures ; 0 échecs
+
+Réception artistique : /tmp/cd-art-direction-meVYQ6

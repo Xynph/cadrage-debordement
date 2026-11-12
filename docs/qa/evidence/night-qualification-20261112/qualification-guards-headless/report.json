@@ -1,0 +1,122 @@
+{
+  "cache_enabled": false,
+  "captures": [],
+  "case": "guards",
+  "checks": 99,
+  "display": "headless",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Rendez-vous obligatoire",
+      "link_commands": 0,
+      "profile_sha256_after": "926057d840ea48b1c8426e37871360d45e31873858424157b0804f814e0ce293",
+      "profile_sha256_before": "926057d840ea48b1c8426e37871360d45e31873858424157b0804f814e0ce293",
+      "saved_clock_after": 1794458783271.0,
+      "saved_clock_before": 1794458783271.0,
+      "saved_seed_after": 2215327258.0,
+      "saved_seed_before": 2215327258.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Causerie obligatoire",
+      "link_commands": 0,
+      "profile_sha256_after": "ac34809345ca29df21ad8938fc5b6df556de4df972704261291eb345a06db278",
+      "profile_sha256_before": "ac34809345ca29df21ad8938fc5b6df556de4df972704261291eb345a06db278",
+      "saved_clock_after": 1794458800632.0,
+      "saved_clock_before": 1794458800632.0,
+      "saved_seed_after": 3239402613.0,
+      "saved_seed_before": 3239402613.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Match immersif",
+      "link_commands": 0,
+      "profile_sha256_after": "f25c7c0cc77ecf10906169e8b0a7aacb80736e7d181c6e71fa74f21d53eaffd7",
+      "profile_sha256_before": "f25c7c0cc77ecf10906169e8b0a7aacb80736e7d181c6e71fa74f21d53eaffd7",
+      "saved_clock_after": 1794458805977.0,
+      "saved_clock_before": 1794458805977.0,
+      "saved_seed_after": 3239402613.0,
+      "saved_seed_before": 3239402613.0,
+      "state_unchanged": true
+    },
+    {
+      "context": "Consultation du résultat historique",
+      "link_commands": 0,
+      "profile_sha256_after": "d673afbdc42b8b0303d05715c0d05e4bddb3037c66165572464d56e3f772f866",
+      "profile_sha256_before": "d673afbdc42b8b0303d05715c0d05e4bddb3037c66165572464d56e3f772f866",
+      "saved_clock_after": 1794458810797.0,
+      "saved_clock_before": 1794458810797.0,
+      "saved_seed_after": 1660639196.0,
+      "saved_seed_before": 1660639196.0,
+      "state_unchanged": true
+    }
+  ],
+  "render_scope": "Headless guards; original rendering behavior unchanged, no 3D cache or texture assertions.",
+  "rendered_3d": [],
+  "speech_id": 0,
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "activation": "Enter",
+      "control": "InboxPressInvitation",
+      "id": "",
+      "kind": "",
+      "route_before": "Réception"
+    },
+    {
+      "activation": "Enter",
+      "control": "InboxOpenPressInvitation",
+      "id": "",
+      "kind": "",
+      "route_before": "Réception"
+    },
+    {
+      "accepted": false,
+      "route_after": "Réception",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Match",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Match",
+      "selected_player": "",
+      "target": {
+        "id": "lnr:2399",
+        "kind": "player"
+      }
+    },
+    {
+      "accepted": true,
+      "route_after": "Réception",
+      "selected_player": "",
+      "target": {
+        "id": "calendar-0",
+        "kind": "fixture"
+      }
+    }
+  ]
+}

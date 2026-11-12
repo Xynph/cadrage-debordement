@@ -1,0 +1,35 @@
+L1: TAP version 13
+L2: # Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+L3: # SESSION_STAGE main_loaded
+L4: # SESSION_STAGE real_meeting_entered
+L5: # SESSION_STAGE public_preparation_complete
+L6: # SESSION_STAGE before_real_adapter
+L7: # SESSION REAL FIXTURE: second same-day slot absent; isolated synthetic case follows
+L8: # SESSION_STAGE assertion_failed
+L9: # SESSION_STAGE assertion_failed
+L10: # SESSION_STAGE keyboard_source
+L11: # SESSION_STAGE keyboard_back
+L12: # SESSION_STAGE assertion_failed
+L13: # SESSION_STAGE assertion_failed
+L14: # SESSION_STAGE assertion_failed
+L15: # SESSION_STAGE finish
+L16: # SESSION LINKS : 100 contrôles ; 5 échecs
+L17: # FAIL: Origine : vraie vue tableau du Calendrier
+L18: # FAIL: Back restaure la vraie vue tableau
+L19: # FAIL: Back clavier restitue date, mois, vue, filtre, scrolls et focus exacts
+L20: # FAIL: Libellé optionnel vide ou blanc : texte et nom accessible utiles
+L21: # FAIL: Libellé optionnel vide ou blanc : texte et nom accessible utiles
+L23: # Subtest: Séance publiée : route exacte, garde réelle, liens clavier/souris et lecture sans effets
+L24: not ok 1 - Séance publiée : route exacte, garde réelle, liens clavier/souris et lecture sans effets
+L26:   duration_ms: 19770.228966
+L29:   failureType: 'testCodeFailure'
+L30:   error: |-
+L56:   code: 'ERR_ASSERTION'
+L68: 1..1
+L69: # tests 1
+L71: # pass 0
+L72: # fail 1
+L73: # cancelled 0
+L74: # skipped 0
+L75: # todo 0
+L76: # duration_ms 19830.203654

@@ -1,0 +1,2374 @@
+{
+  "schema": 1,
+  "sourceSha": "8d709cda361296e0cc4f4c5c0c7330e492a73659",
+  "nodeVersion": "v22.23.4",
+  "scriptSha256": "5d7eac4ab0e585cfe899f4d154eceb6b4f4a85a5459855fc10cdb8703a0e2744",
+  "checkpoints": [
+    {
+      "seed": 1299,
+      "club": 0,
+      "targets": [
+        {
+          "target": {
+            "id": "p12-4-1794434400000",
+            "name": "Pierre Moreau",
+            "pos": "Deuxième ligne",
+            "family": 2,
+            "sellerId": 12,
+            "fee": 70000,
+            "salary": 4800,
+            "sourceSalary": 4562,
+            "contractEnd": 1
+          },
+          "publicQuote": {
+            "playerId": "p12-4-1794434400000",
+            "sellerId": 12,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            },
+            "seller": {
+              "accepted": true,
+              "counter": 70000,
+              "reason": "Le vendeur accepte cette indemnité."
+            },
+            "player": {
+              "accepted": true,
+              "counter": 4800,
+              "reason": "Le joueur accepte ce salaire."
+            },
+            "humanReady": true,
+            "humanReason": "Offre recevable.",
+            "offers": [
+              {
+                "clubId": 10,
+                "club": "Racing des Horizons",
+                "fee": 79000,
+                "salary": 5200,
+                "need": 3,
+                "human": false
+              },
+              {
+                "clubId": 11,
+                "club": "Étoile des Deux Rives",
+                "fee": 79000,
+                "salary": 5200,
+                "need": 3,
+                "human": false
+              },
+              {
+                "clubId": 1,
+                "club": "Union de l'Estuaire",
+                "fee": 76000,
+                "salary": 5100,
+                "need": 2,
+                "human": false
+              },
+              {
+                "clubId": 8,
+                "club": "Rugby des Garrigues",
+                "fee": 76000,
+                "salary": 5100,
+                "need": 2,
+                "human": false
+              },
+              {
+                "clubId": 0,
+                "club": "Stade des Brumes",
+                "fee": 70000,
+                "salary": 4800,
+                "need": 2,
+                "human": true
+              }
+            ],
+            "winner": {
+              "clubId": 10,
+              "club": "Racing des Horizons",
+              "fee": 79000,
+              "salary": 5200,
+              "need": 3,
+              "human": false
+            },
+            "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+          },
+          "publicClubs": [
+            {
+              "id": 0,
+              "name": "Stade des Brumes",
+              "cash": 7500000,
+              "role": "human",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253800,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 70000,
+              "salaryIfOffered": 4800,
+              "cashAfterFeeIfOffered": 7430000,
+              "reserveAndEightWagesIfOffered": 6991600,
+              "nonOfferReason": null
+            },
+            {
+              "id": 1,
+              "name": "Union de l'Estuaire",
+              "cash": 6400000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 255026,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 76000,
+              "salaryIfOffered": 5100,
+              "cashAfterFeeIfOffered": 6324000,
+              "reserveAndEightWagesIfOffered": 5883200,
+              "nonOfferReason": null
+            },
+            {
+              "id": 2,
+              "name": "Écume Atlantique",
+              "cash": 5800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 255135,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 5,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 3,
+              "name": "Dragons des Landes",
+              "cash": 5600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 285642,
+              "publicFamilyPlayers": 4,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 4,
+              "name": "Vallée des Cerfs",
+              "cash": 4600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 267702,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 0,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 5,
+              "name": "Aigles des Falaises",
+              "cash": 4300000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 268383,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 6,
+              "name": "Volcans du Plateau",
+              "cash": 4800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 271763,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 7,
+              "name": "Olympique des Confluences",
+              "cash": 4500000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 269386,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 8,
+              "name": "Rugby des Garrigues",
+              "cash": 4900000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253969,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 76000,
+              "salaryIfOffered": 5100,
+              "cashAfterFeeIfOffered": 4824000,
+              "reserveAndEightWagesIfOffered": 4383200,
+              "nonOfferReason": null
+            },
+            {
+              "id": 9,
+              "name": "Bisons du Haut-Pays",
+              "cash": 3700000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 256186,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 10,
+              "name": "Racing des Horizons",
+              "cash": 5700000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 260606,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 3,
+              "feeIfOffered": 79000,
+              "salaryIfOffered": 5200,
+              "cashAfterFeeIfOffered": 5621000,
+              "reserveAndEightWagesIfOffered": 5179400,
+              "nonOfferReason": null
+            },
+            {
+              "id": 11,
+              "name": "Étoile des Deux Rives",
+              "cash": 4600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253473,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 3,
+              "feeIfOffered": 79000,
+              "salaryIfOffered": 5200,
+              "cashAfterFeeIfOffered": 4521000,
+              "reserveAndEightWagesIfOffered": 4079400,
+              "nonOfferReason": null
+            },
+            {
+              "id": 12,
+              "name": "Corsaires du Midi",
+              "cash": 2800000,
+              "role": "seller",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 278773,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": null
+            },
+            {
+              "id": 13,
+              "name": "Faucons du Golfe",
+              "cash": 2500000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 256423,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            }
+          ],
+          "overBudgetControl": {
+            "proposal": {
+              "playerId": "p12-4-1794434400000",
+              "sellerId": 12,
+              "fee": 7501000,
+              "salary": 4800,
+              "sourceSalary": 4562,
+              "contractEnd": 1,
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 0
+              }
+            },
+            "humanReady": false,
+            "humanReason": "Effectif ou provision financière insuffisants.",
+            "rivalOffersUnchanged": true
+          },
+          "forks": [
+            {
+              "policy": "asking-price",
+              "openingProfileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+              "openingRng": 2810554531,
+              "proposal": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4562,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                }
+              },
+              "quote": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "seller": {
+                  "accepted": true,
+                  "counter": 70000,
+                  "reason": "Le vendeur accepte cette indemnité."
+                },
+                "player": {
+                  "accepted": true,
+                  "counter": 4800,
+                  "reason": "Le joueur accepte ce salaire."
+                },
+                "humanReady": true,
+                "humanReason": "Offre recevable.",
+                "offers": [
+                  {
+                    "clubId": 10,
+                    "club": "Racing des Horizons",
+                    "fee": 79000,
+                    "salary": 5200,
+                    "need": 3,
+                    "human": false
+                  },
+                  {
+                    "clubId": 11,
+                    "club": "Étoile des Deux Rives",
+                    "fee": 79000,
+                    "salary": 5200,
+                    "need": 3,
+                    "human": false
+                  },
+                  {
+                    "clubId": 1,
+                    "club": "Union de l'Estuaire",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 8,
+                    "club": "Rugby des Garrigues",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 0,
+                    "club": "Stade des Brumes",
+                    "fee": 70000,
+                    "salary": 4800,
+                    "need": 2,
+                    "human": true
+                  }
+                ],
+                "winner": {
+                  "clubId": 10,
+                  "club": "Racing des Horizons",
+                  "fee": 79000,
+                  "salary": 5200,
+                  "need": 3,
+                  "human": false
+                },
+                "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+              },
+              "confirmedPayload": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4562,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "expectedWinner": 10,
+                "expectedFee": 79000,
+                "expectedSalary": 5200,
+                "confirmed": true
+              },
+              "receipt": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "buyerId": 10,
+                "fee": 79000,
+                "salary": 5200,
+                "contractEnd": 1,
+                "competingClubs": 5,
+                "humanWon": false
+              },
+              "owner": {
+                "clubId": 10,
+                "salary": 5200,
+                "contractEnd": 1
+              },
+              "buyerCashChange": -79000,
+              "sellerCashChange": 79000,
+              "closingProfileSha256": "b1ec5a9587b26d1e266b01784cf91ecaace7a68f4fbd0e4773e4076b7128480a",
+              "closingStateSha256": "061d86f7e25e6d27bd033f4fe96eb62d741de3ec671c44bab37e5767c7b73d18",
+              "persisted": true,
+              "humanOverbidReady": true,
+              "commands": [
+                {
+                  "command": "snapshot",
+                  "payload": {}
+                },
+                {
+                  "command": "interclub_negotiate",
+                  "payload": {
+                    "playerId": "p12-4-1794434400000",
+                    "sellerId": 12,
+                    "fee": 70000,
+                    "salary": 4800,
+                    "sourceSalary": 4562,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    }
+                  }
+                },
+                {
+                  "command": "interclub_auction",
+                  "payload": {
+                    "playerId": "p12-4-1794434400000",
+                    "sellerId": 12,
+                    "fee": 70000,
+                    "salary": 4800,
+                    "sourceSalary": 4562,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    },
+                    "expectedWinner": 10,
+                    "expectedFee": 79000,
+                    "expectedSalary": 5200,
+                    "confirmed": true
+                  }
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                }
+              ],
+              "invariants": [
+                "Opening profile and RNG identical",
+                "Quote leaves bytes unchanged",
+                "Winner revalidated on actual confirmation",
+                "Exactly one public owner",
+                "Public cash debit and credit reconciled",
+                "Public contract and full state persist after restart"
+              ]
+            },
+            {
+              "policy": "public-overbid",
+              "openingProfileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+              "openingRng": 2810554531,
+              "proposal": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "fee": 80000,
+                "salary": 5300,
+                "sourceSalary": 4562,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                }
+              },
+              "quote": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "seller": {
+                  "accepted": true,
+                  "counter": 70000,
+                  "reason": "Le vendeur accepte cette indemnité."
+                },
+                "player": {
+                  "accepted": true,
+                  "counter": 4800,
+                  "reason": "Le joueur accepte ce salaire."
+                },
+                "humanReady": true,
+                "humanReason": "Offre recevable.",
+                "offers": [
+                  {
+                    "clubId": 0,
+                    "club": "Stade des Brumes",
+                    "fee": 80000,
+                    "salary": 5300,
+                    "need": 2,
+                    "human": true
+                  },
+                  {
+                    "clubId": 10,
+                    "club": "Racing des Horizons",
+                    "fee": 79000,
+                    "salary": 5200,
+                    "need": 3,
+                    "human": false
+                  },
+                  {
+                    "clubId": 11,
+                    "club": "Étoile des Deux Rives",
+                    "fee": 79000,
+                    "salary": 5200,
+                    "need": 3,
+                    "human": false
+                  },
+                  {
+                    "clubId": 1,
+                    "club": "Union de l'Estuaire",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 8,
+                    "club": "Rugby des Garrigues",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  }
+                ],
+                "winner": {
+                  "clubId": 0,
+                  "club": "Stade des Brumes",
+                  "fee": 80000,
+                  "salary": 5300,
+                  "need": 2,
+                  "human": true
+                },
+                "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+              },
+              "confirmedPayload": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "fee": 80000,
+                "salary": 5300,
+                "sourceSalary": 4562,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "expectedWinner": 0,
+                "expectedFee": 80000,
+                "expectedSalary": 5300,
+                "confirmed": true
+              },
+              "receipt": {
+                "playerId": "p12-4-1794434400000",
+                "sellerId": 12,
+                "buyerId": 0,
+                "fee": 80000,
+                "salary": 5300,
+                "contractEnd": 1,
+                "competingClubs": 5,
+                "humanWon": true
+              },
+              "owner": {
+                "clubId": 0,
+                "salary": 5300,
+                "contractEnd": 1
+              },
+              "buyerCashChange": -80000,
+              "sellerCashChange": 80000,
+              "closingProfileSha256": "a138f1f67bd3e771f342352b85b1f9c7ec76754863bc396abb4dce8331ff97c4",
+              "closingStateSha256": "bba18e552f57c4a71591c0f29ee7816004314fa8da49e77cc803f31f3c55d87c",
+              "persisted": true,
+              "humanOverbidReady": true,
+              "commands": [
+                {
+                  "command": "snapshot",
+                  "payload": {}
+                },
+                {
+                  "command": "interclub_negotiate",
+                  "payload": {
+                    "playerId": "p12-4-1794434400000",
+                    "sellerId": 12,
+                    "fee": 80000,
+                    "salary": 5300,
+                    "sourceSalary": 4562,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    }
+                  }
+                },
+                {
+                  "command": "interclub_auction",
+                  "payload": {
+                    "playerId": "p12-4-1794434400000",
+                    "sellerId": 12,
+                    "fee": 80000,
+                    "salary": 5300,
+                    "sourceSalary": 4562,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    },
+                    "expectedWinner": 0,
+                    "expectedFee": 80000,
+                    "expectedSalary": 5300,
+                    "confirmed": true
+                  }
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                }
+              ],
+              "invariants": [
+                "Opening profile and RNG identical",
+                "Quote leaves bytes unchanged",
+                "Winner revalidated on actual confirmation",
+                "Exactly one public owner",
+                "Public cash debit and credit reconciled",
+                "Public contract and full state persist after restart"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "id": "p5-10-1794434400000",
+            "name": "Thomas Bernard",
+            "pos": "Ailier",
+            "family": 6,
+            "sellerId": 5,
+            "fee": 80000,
+            "salary": 5200,
+            "sourceSalary": 4879,
+            "contractEnd": 1
+          },
+          "publicQuote": {
+            "playerId": "p5-10-1794434400000",
+            "sellerId": 5,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            },
+            "seller": {
+              "accepted": true,
+              "counter": 80000,
+              "reason": "Le vendeur accepte cette indemnité."
+            },
+            "player": {
+              "accepted": true,
+              "counter": 5200,
+              "reason": "Le joueur accepte ce salaire."
+            },
+            "humanReady": true,
+            "humanReason": "Offre recevable.",
+            "offers": [
+              {
+                "clubId": 8,
+                "club": "Rugby des Garrigues",
+                "fee": 87000,
+                "salary": 5500,
+                "need": 2,
+                "human": false
+              },
+              {
+                "clubId": 11,
+                "club": "Étoile des Deux Rives",
+                "fee": 84000,
+                "salary": 5400,
+                "need": 1,
+                "human": false
+              },
+              {
+                "clubId": 0,
+                "club": "Stade des Brumes",
+                "fee": 80000,
+                "salary": 5200,
+                "need": 2,
+                "human": true
+              }
+            ],
+            "winner": {
+              "clubId": 8,
+              "club": "Rugby des Garrigues",
+              "fee": 87000,
+              "salary": 5500,
+              "need": 2,
+              "human": false
+            },
+            "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+          },
+          "publicClubs": [
+            {
+              "id": 0,
+              "name": "Stade des Brumes",
+              "cash": 7500000,
+              "role": "human",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253800,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 80000,
+              "salaryIfOffered": 5200,
+              "cashAfterFeeIfOffered": 7420000,
+              "reserveAndEightWagesIfOffered": 6978400,
+              "nonOfferReason": null
+            },
+            {
+              "id": 1,
+              "name": "Union de l'Estuaire",
+              "cash": 6400000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 255026,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 2,
+              "name": "Écume Atlantique",
+              "cash": 5800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 255135,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 3,
+              "name": "Dragons des Landes",
+              "cash": 5600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 285642,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 4,
+              "name": "Vallée des Cerfs",
+              "cash": 4600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 267702,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 5,
+              "name": "Aigles des Falaises",
+              "cash": 4300000,
+              "role": "seller",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 268383,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": null
+            },
+            {
+              "id": 6,
+              "name": "Volcans du Plateau",
+              "cash": 4800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 271763,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 7,
+              "name": "Olympique des Confluences",
+              "cash": 4500000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 269386,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 8,
+              "name": "Rugby des Garrigues",
+              "cash": 4900000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253969,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 87000,
+              "salaryIfOffered": 5500,
+              "cashAfterFeeIfOffered": 4813000,
+              "reserveAndEightWagesIfOffered": 4369000,
+              "nonOfferReason": null
+            },
+            {
+              "id": 9,
+              "name": "Bisons du Haut-Pays",
+              "cash": 3700000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 256186,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 10,
+              "name": "Racing des Horizons",
+              "cash": 5700000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 260606,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 4,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 11,
+              "name": "Étoile des Deux Rives",
+              "cash": 4600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253473,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 1,
+              "feeIfOffered": 84000,
+              "salaryIfOffered": 5400,
+              "cashAfterFeeIfOffered": 4516000,
+              "reserveAndEightWagesIfOffered": 4072800,
+              "nonOfferReason": null
+            },
+            {
+              "id": 12,
+              "name": "Corsaires du Midi",
+              "cash": 2800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 278773,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 13,
+              "name": "Faucons du Golfe",
+              "cash": 2500000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 256423,
+              "publicFamilyPlayers": 5,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            }
+          ],
+          "overBudgetControl": {
+            "proposal": {
+              "playerId": "p5-10-1794434400000",
+              "sellerId": 5,
+              "fee": 7501000,
+              "salary": 5200,
+              "sourceSalary": 4879,
+              "contractEnd": 1,
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 0
+              }
+            },
+            "humanReady": false,
+            "humanReason": "Effectif ou provision financière insuffisants.",
+            "rivalOffersUnchanged": true
+          },
+          "forks": [
+            {
+              "policy": "asking-price",
+              "openingProfileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+              "openingRng": 2810554531,
+              "proposal": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "fee": 80000,
+                "salary": 5200,
+                "sourceSalary": 4879,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                }
+              },
+              "quote": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "seller": {
+                  "accepted": true,
+                  "counter": 80000,
+                  "reason": "Le vendeur accepte cette indemnité."
+                },
+                "player": {
+                  "accepted": true,
+                  "counter": 5200,
+                  "reason": "Le joueur accepte ce salaire."
+                },
+                "humanReady": true,
+                "humanReason": "Offre recevable.",
+                "offers": [
+                  {
+                    "clubId": 8,
+                    "club": "Rugby des Garrigues",
+                    "fee": 87000,
+                    "salary": 5500,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 11,
+                    "club": "Étoile des Deux Rives",
+                    "fee": 84000,
+                    "salary": 5400,
+                    "need": 1,
+                    "human": false
+                  },
+                  {
+                    "clubId": 0,
+                    "club": "Stade des Brumes",
+                    "fee": 80000,
+                    "salary": 5200,
+                    "need": 2,
+                    "human": true
+                  }
+                ],
+                "winner": {
+                  "clubId": 8,
+                  "club": "Rugby des Garrigues",
+                  "fee": 87000,
+                  "salary": 5500,
+                  "need": 2,
+                  "human": false
+                },
+                "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+              },
+              "confirmedPayload": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "fee": 80000,
+                "salary": 5200,
+                "sourceSalary": 4879,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "expectedWinner": 8,
+                "expectedFee": 87000,
+                "expectedSalary": 5500,
+                "confirmed": true
+              },
+              "receipt": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "buyerId": 8,
+                "fee": 87000,
+                "salary": 5500,
+                "contractEnd": 1,
+                "competingClubs": 3,
+                "humanWon": false
+              },
+              "owner": {
+                "clubId": 8,
+                "salary": 5500,
+                "contractEnd": 1
+              },
+              "buyerCashChange": -87000,
+              "sellerCashChange": 87000,
+              "closingProfileSha256": "d588ad6abbd28e8b744015c3c18c2f34efdf2e058e61094a882d21be7b0dcb8f",
+              "closingStateSha256": "8ee27f32b8c87f54c19c3b26f3b713667d48869cc8e2ec3537683b12b8407273",
+              "persisted": true,
+              "humanOverbidReady": true,
+              "commands": [
+                {
+                  "command": "snapshot",
+                  "payload": {}
+                },
+                {
+                  "command": "interclub_negotiate",
+                  "payload": {
+                    "playerId": "p5-10-1794434400000",
+                    "sellerId": 5,
+                    "fee": 80000,
+                    "salary": 5200,
+                    "sourceSalary": 4879,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    }
+                  }
+                },
+                {
+                  "command": "interclub_auction",
+                  "payload": {
+                    "playerId": "p5-10-1794434400000",
+                    "sellerId": 5,
+                    "fee": 80000,
+                    "salary": 5200,
+                    "sourceSalary": 4879,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    },
+                    "expectedWinner": 8,
+                    "expectedFee": 87000,
+                    "expectedSalary": 5500,
+                    "confirmed": true
+                  }
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                }
+              ],
+              "invariants": [
+                "Opening profile and RNG identical",
+                "Quote leaves bytes unchanged",
+                "Winner revalidated on actual confirmation",
+                "Exactly one public owner",
+                "Public cash debit and credit reconciled",
+                "Public contract and full state persist after restart"
+              ]
+            },
+            {
+              "policy": "public-overbid",
+              "openingProfileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+              "openingRng": 2810554531,
+              "proposal": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "fee": 88000,
+                "salary": 5600,
+                "sourceSalary": 4879,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                }
+              },
+              "quote": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "seller": {
+                  "accepted": true,
+                  "counter": 80000,
+                  "reason": "Le vendeur accepte cette indemnité."
+                },
+                "player": {
+                  "accepted": true,
+                  "counter": 5200,
+                  "reason": "Le joueur accepte ce salaire."
+                },
+                "humanReady": true,
+                "humanReason": "Offre recevable.",
+                "offers": [
+                  {
+                    "clubId": 0,
+                    "club": "Stade des Brumes",
+                    "fee": 88000,
+                    "salary": 5600,
+                    "need": 2,
+                    "human": true
+                  },
+                  {
+                    "clubId": 8,
+                    "club": "Rugby des Garrigues",
+                    "fee": 87000,
+                    "salary": 5500,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 11,
+                    "club": "Étoile des Deux Rives",
+                    "fee": 84000,
+                    "salary": 5400,
+                    "need": 1,
+                    "human": false
+                  }
+                ],
+                "winner": {
+                  "clubId": 0,
+                  "club": "Stade des Brumes",
+                  "fee": 88000,
+                  "salary": 5600,
+                  "need": 2,
+                  "human": true
+                },
+                "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+              },
+              "confirmedPayload": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "fee": 88000,
+                "salary": 5600,
+                "sourceSalary": 4879,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "expectedWinner": 0,
+                "expectedFee": 88000,
+                "expectedSalary": 5600,
+                "confirmed": true
+              },
+              "receipt": {
+                "playerId": "p5-10-1794434400000",
+                "sellerId": 5,
+                "buyerId": 0,
+                "fee": 88000,
+                "salary": 5600,
+                "contractEnd": 1,
+                "competingClubs": 3,
+                "humanWon": true
+              },
+              "owner": {
+                "clubId": 0,
+                "salary": 5600,
+                "contractEnd": 1
+              },
+              "buyerCashChange": -88000,
+              "sellerCashChange": 88000,
+              "closingProfileSha256": "bdcc68d0a897651ea80568490a6bb8e62cb4ab1ab0fe7a3743de676219495fd0",
+              "closingStateSha256": "063e2b7264475b1536884f33a774a17d4c157f891b1b5e12889122a3fa70b202",
+              "persisted": true,
+              "humanOverbidReady": true,
+              "commands": [
+                {
+                  "command": "snapshot",
+                  "payload": {}
+                },
+                {
+                  "command": "interclub_negotiate",
+                  "payload": {
+                    "playerId": "p5-10-1794434400000",
+                    "sellerId": 5,
+                    "fee": 88000,
+                    "salary": 5600,
+                    "sourceSalary": 4879,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    }
+                  }
+                },
+                {
+                  "command": "interclub_auction",
+                  "payload": {
+                    "playerId": "p5-10-1794434400000",
+                    "sellerId": 5,
+                    "fee": 88000,
+                    "salary": 5600,
+                    "sourceSalary": 4879,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    },
+                    "expectedWinner": 0,
+                    "expectedFee": 88000,
+                    "expectedSalary": 5600,
+                    "confirmed": true
+                  }
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                }
+              ],
+              "invariants": [
+                "Opening profile and RNG identical",
+                "Quote leaves bytes unchanged",
+                "Winner revalidated on actual confirmation",
+                "Exactly one public owner",
+                "Public cash debit and credit reconciled",
+                "Public contract and full state persist after restart"
+              ]
+            }
+          ]
+        },
+        {
+          "target": {
+            "id": "p6-8-1794434400000",
+            "name": "Alexandre Dumont",
+            "pos": "Demi de mêlée",
+            "family": 4,
+            "sellerId": 6,
+            "fee": 70000,
+            "salary": 4800,
+            "sourceSalary": 4503,
+            "contractEnd": 1
+          },
+          "publicQuote": {
+            "playerId": "p6-8-1794434400000",
+            "sellerId": 6,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            },
+            "seller": {
+              "accepted": true,
+              "counter": 70000,
+              "reason": "Le vendeur accepte cette indemnité."
+            },
+            "player": {
+              "accepted": true,
+              "counter": 4800,
+              "reason": "Le joueur accepte ce salaire."
+            },
+            "humanReady": true,
+            "humanReason": "Offre recevable.",
+            "offers": [
+              {
+                "clubId": 8,
+                "club": "Rugby des Garrigues",
+                "fee": 76000,
+                "salary": 5100,
+                "need": 2,
+                "human": false
+              },
+              {
+                "clubId": 10,
+                "club": "Racing des Horizons",
+                "fee": 76000,
+                "salary": 5100,
+                "need": 2,
+                "human": false
+              },
+              {
+                "clubId": 2,
+                "club": "Écume Atlantique",
+                "fee": 73000,
+                "salary": 5000,
+                "need": 1,
+                "human": false
+              },
+              {
+                "clubId": 0,
+                "club": "Stade des Brumes",
+                "fee": 70000,
+                "salary": 4800,
+                "need": 1,
+                "human": true
+              }
+            ],
+            "winner": {
+              "clubId": 8,
+              "club": "Rugby des Garrigues",
+              "fee": 76000,
+              "salary": 5100,
+              "need": 2,
+              "human": false
+            },
+            "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+          },
+          "publicClubs": [
+            {
+              "id": 0,
+              "name": "Stade des Brumes",
+              "cash": 7500000,
+              "role": "human",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253800,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 1,
+              "feeIfOffered": 70000,
+              "salaryIfOffered": 4800,
+              "cashAfterFeeIfOffered": 7430000,
+              "reserveAndEightWagesIfOffered": 6991600,
+              "nonOfferReason": null
+            },
+            {
+              "id": 1,
+              "name": "Union de l'Estuaire",
+              "cash": 6400000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 255026,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 2,
+              "name": "Écume Atlantique",
+              "cash": 5800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 255135,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 1,
+              "feeIfOffered": 73000,
+              "salaryIfOffered": 5000,
+              "cashAfterFeeIfOffered": 5727000,
+              "reserveAndEightWagesIfOffered": 5287000,
+              "nonOfferReason": null
+            },
+            {
+              "id": 3,
+              "name": "Dragons des Landes",
+              "cash": 5600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 285642,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 0,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 4,
+              "name": "Vallée des Cerfs",
+              "cash": 4600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 267702,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 1,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 5,
+              "name": "Aigles des Falaises",
+              "cash": 4300000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 268383,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 6,
+              "name": "Volcans du Plateau",
+              "cash": 4800000,
+              "role": "seller",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 271763,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 1,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": null
+            },
+            {
+              "id": 7,
+              "name": "Olympique des Confluences",
+              "cash": 4500000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 269386,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 8,
+              "name": "Rugby des Garrigues",
+              "cash": 4900000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253969,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 1,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 76000,
+              "salaryIfOffered": 5100,
+              "cashAfterFeeIfOffered": 4824000,
+              "reserveAndEightWagesIfOffered": 4383200,
+              "nonOfferReason": null
+            },
+            {
+              "id": 9,
+              "name": "Bisons du Haut-Pays",
+              "cash": 3700000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 256186,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 1,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 10,
+              "name": "Racing des Horizons",
+              "cash": 5700000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 260606,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 1,
+              "reactionPersonality": null,
+              "offered": true,
+              "quotedNeed": 2,
+              "feeIfOffered": 76000,
+              "salaryIfOffered": 5100,
+              "cashAfterFeeIfOffered": 5624000,
+              "reserveAndEightWagesIfOffered": 5183200,
+              "nonOfferReason": null
+            },
+            {
+              "id": 11,
+              "name": "Étoile des Deux Rives",
+              "cash": 4600000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 253473,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 3,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 12,
+              "name": "Corsaires du Midi",
+              "cash": 2800000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 278773,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            },
+            {
+              "id": 13,
+              "name": "Faucons du Golfe",
+              "cash": 2500000,
+              "role": "potential-rival",
+              "publicContractedPlayers": 40,
+              "publicPayroll": 256423,
+              "publicFamilyPlayers": 3,
+              "publicFamilyContractsBeyondSeason": 2,
+              "reactionPersonality": null,
+              "offered": false,
+              "quotedNeed": null,
+              "feeIfOffered": null,
+              "salaryIfOffered": null,
+              "cashAfterFeeIfOffered": null,
+              "reserveAndEightWagesIfOffered": null,
+              "nonOfferReason": "not-published"
+            }
+          ],
+          "overBudgetControl": {
+            "proposal": {
+              "playerId": "p6-8-1794434400000",
+              "sellerId": 6,
+              "fee": 7501000,
+              "salary": 4800,
+              "sourceSalary": 4503,
+              "contractEnd": 1,
+              "context": {
+                "season": 1,
+                "week": 0,
+                "club": 0
+              }
+            },
+            "humanReady": false,
+            "humanReason": "Effectif ou provision financière insuffisants.",
+            "rivalOffersUnchanged": true
+          },
+          "forks": [
+            {
+              "policy": "asking-price",
+              "openingProfileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+              "openingRng": 2810554531,
+              "proposal": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4503,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                }
+              },
+              "quote": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "seller": {
+                  "accepted": true,
+                  "counter": 70000,
+                  "reason": "Le vendeur accepte cette indemnité."
+                },
+                "player": {
+                  "accepted": true,
+                  "counter": 4800,
+                  "reason": "Le joueur accepte ce salaire."
+                },
+                "humanReady": true,
+                "humanReason": "Offre recevable.",
+                "offers": [
+                  {
+                    "clubId": 8,
+                    "club": "Rugby des Garrigues",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 10,
+                    "club": "Racing des Horizons",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 2,
+                    "club": "Écume Atlantique",
+                    "fee": 73000,
+                    "salary": 5000,
+                    "need": 1,
+                    "human": false
+                  },
+                  {
+                    "clubId": 0,
+                    "club": "Stade des Brumes",
+                    "fee": 70000,
+                    "salary": 4800,
+                    "need": 1,
+                    "human": true
+                  }
+                ],
+                "winner": {
+                  "clubId": 8,
+                  "club": "Rugby des Garrigues",
+                  "fee": 76000,
+                  "salary": 5100,
+                  "need": 2,
+                  "human": false
+                },
+                "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+              },
+              "confirmedPayload": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "fee": 70000,
+                "salary": 4800,
+                "sourceSalary": 4503,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "expectedWinner": 8,
+                "expectedFee": 76000,
+                "expectedSalary": 5100,
+                "confirmed": true
+              },
+              "receipt": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "buyerId": 8,
+                "fee": 76000,
+                "salary": 5100,
+                "contractEnd": 1,
+                "competingClubs": 4,
+                "humanWon": false
+              },
+              "owner": {
+                "clubId": 8,
+                "salary": 5100,
+                "contractEnd": 1
+              },
+              "buyerCashChange": -76000,
+              "sellerCashChange": 76000,
+              "closingProfileSha256": "c323b1ed2ad8d4463496a193438ad2b200ea840177d5825e5416b41b792a2984",
+              "closingStateSha256": "f10faf308392305297b072dc206d1f5795e6e4a155d7cffab7f392fca88963d8",
+              "persisted": true,
+              "humanOverbidReady": true,
+              "commands": [
+                {
+                  "command": "snapshot",
+                  "payload": {}
+                },
+                {
+                  "command": "interclub_negotiate",
+                  "payload": {
+                    "playerId": "p6-8-1794434400000",
+                    "sellerId": 6,
+                    "fee": 70000,
+                    "salary": 4800,
+                    "sourceSalary": 4503,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    }
+                  }
+                },
+                {
+                  "command": "interclub_auction",
+                  "payload": {
+                    "playerId": "p6-8-1794434400000",
+                    "sellerId": 6,
+                    "fee": 70000,
+                    "salary": 4800,
+                    "sourceSalary": 4503,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    },
+                    "expectedWinner": 8,
+                    "expectedFee": 76000,
+                    "expectedSalary": 5100,
+                    "confirmed": true
+                  }
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                }
+              ],
+              "invariants": [
+                "Opening profile and RNG identical",
+                "Quote leaves bytes unchanged",
+                "Winner revalidated on actual confirmation",
+                "Exactly one public owner",
+                "Public cash debit and credit reconciled",
+                "Public contract and full state persist after restart"
+              ]
+            },
+            {
+              "policy": "public-overbid",
+              "openingProfileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+              "openingRng": 2810554531,
+              "proposal": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "fee": 77000,
+                "salary": 5200,
+                "sourceSalary": 4503,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                }
+              },
+              "quote": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "seller": {
+                  "accepted": true,
+                  "counter": 70000,
+                  "reason": "Le vendeur accepte cette indemnité."
+                },
+                "player": {
+                  "accepted": true,
+                  "counter": 4800,
+                  "reason": "Le joueur accepte ce salaire."
+                },
+                "humanReady": true,
+                "humanReason": "Offre recevable.",
+                "offers": [
+                  {
+                    "clubId": 0,
+                    "club": "Stade des Brumes",
+                    "fee": 77000,
+                    "salary": 5200,
+                    "need": 1,
+                    "human": true
+                  },
+                  {
+                    "clubId": 8,
+                    "club": "Rugby des Garrigues",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 10,
+                    "club": "Racing des Horizons",
+                    "fee": 76000,
+                    "salary": 5100,
+                    "need": 2,
+                    "human": false
+                  },
+                  {
+                    "clubId": 2,
+                    "club": "Écume Atlantique",
+                    "fee": 73000,
+                    "salary": 5000,
+                    "need": 1,
+                    "human": false
+                  }
+                ],
+                "winner": {
+                  "clubId": 0,
+                  "club": "Stade des Brumes",
+                  "fee": 77000,
+                  "salary": 5200,
+                  "need": 1,
+                  "human": true
+                },
+                "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+              },
+              "confirmedPayload": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "fee": 77000,
+                "salary": 5200,
+                "sourceSalary": 4503,
+                "contractEnd": 1,
+                "context": {
+                  "season": 1,
+                  "week": 0,
+                  "club": 0
+                },
+                "expectedWinner": 0,
+                "expectedFee": 77000,
+                "expectedSalary": 5200,
+                "confirmed": true
+              },
+              "receipt": {
+                "playerId": "p6-8-1794434400000",
+                "sellerId": 6,
+                "buyerId": 0,
+                "fee": 77000,
+                "salary": 5200,
+                "contractEnd": 1,
+                "competingClubs": 4,
+                "humanWon": true
+              },
+              "owner": {
+                "clubId": 0,
+                "salary": 5200,
+                "contractEnd": 1
+              },
+              "buyerCashChange": -77000,
+              "sellerCashChange": 77000,
+              "closingProfileSha256": "f5a7826ec3952a5f3ca048d4a92ad2ef11cb22b9f12935bd8e7ab69628f7b985",
+              "closingStateSha256": "7559ddc46f9cbd661b1fa0963ae06a5b7a97ec9e2882eb3a5d77fd117eb87386",
+              "persisted": true,
+              "humanOverbidReady": true,
+              "commands": [
+                {
+                  "command": "snapshot",
+                  "payload": {}
+                },
+                {
+                  "command": "interclub_negotiate",
+                  "payload": {
+                    "playerId": "p6-8-1794434400000",
+                    "sellerId": 6,
+                    "fee": 77000,
+                    "salary": 5200,
+                    "sourceSalary": 4503,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    }
+                  }
+                },
+                {
+                  "command": "interclub_auction",
+                  "payload": {
+                    "playerId": "p6-8-1794434400000",
+                    "sellerId": 6,
+                    "fee": 77000,
+                    "salary": 5200,
+                    "sourceSalary": 4503,
+                    "contractEnd": 1,
+                    "context": {
+                      "season": 1,
+                      "week": 0,
+                      "club": 0
+                    },
+                    "expectedWinner": 0,
+                    "expectedFee": 77000,
+                    "expectedSalary": 5200,
+                    "confirmed": true
+                  }
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                },
+                {
+                  "command": "export",
+                  "payload": {}
+                }
+              ],
+              "invariants": [
+                "Opening profile and RNG identical",
+                "Quote leaves bytes unchanged",
+                "Winner revalidated on actual confirmation",
+                "Exactly one public owner",
+                "Public cash debit and credit reconciled",
+                "Public contract and full state persist after restart"
+              ]
+            }
+          ]
+        }
+      ],
+      "profileSha256": "181286c062660db2b42b6d1b2dbc5c219bedb2c6221db9511ff7dd448148377c",
+      "openingRng": 2810554531,
+      "openingClock": 1794434400000,
+      "publicContext": {
+        "season": 1,
+        "week": 0,
+        "club": 0
+      },
+      "publicHumanCash": 7500000,
+      "publicAvailableCandidates": 374,
+      "selectedFamilies": [
+        2,
+        6,
+        4
+      ],
+      "initialStateSha256": "284d052c717ce67a16efed0142506aa3efbf596eb22946a886d61828dbfe30af",
+      "commands": [
+        {
+          "command": "new_career",
+          "payload": {
+            "mode": "fiction",
+            "club": 0
+          }
+        },
+        {
+          "command": "press_conference",
+          "payload": {
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            },
+            "answers": [
+              {
+                "questionId": "avant_match-0-0",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "attaque-0-0",
+                "answerId": "r4"
+              },
+              {
+                "questionId": "defense-0-0",
+                "answerId": "r3"
+              }
+            ]
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:0:0:1"
+          }
+        },
+        {
+          "command": "club_meeting_ack",
+          "payload": {
+            "meetingId": "club-meeting:1:0:0:2"
+          }
+        },
+        {
+          "command": "club_meeting_continue",
+          "payload": {
+            "meetingId": "club-meeting:1:0:0:2"
+          }
+        },
+        {
+          "command": "export",
+          "payload": {}
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p12-4-1794434400000",
+            "sellerId": 12,
+            "fee": 70000,
+            "salary": 4800,
+            "sourceSalary": 4562,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p12-4-1794434400000",
+            "sellerId": 12,
+            "fee": 70000,
+            "salary": 4800,
+            "sourceSalary": 4562,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p12-4-1794434400000",
+            "sellerId": 12,
+            "fee": 7501000,
+            "salary": 4800,
+            "sourceSalary": 4562,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p5-10-1794434400000",
+            "sellerId": 5,
+            "fee": 80000,
+            "salary": 5200,
+            "sourceSalary": 4879,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p5-10-1794434400000",
+            "sellerId": 5,
+            "fee": 80000,
+            "salary": 5200,
+            "sourceSalary": 4879,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p5-10-1794434400000",
+            "sellerId": 5,
+            "fee": 7501000,
+            "salary": 5200,
+            "sourceSalary": 4879,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p6-8-1794434400000",
+            "sellerId": 6,
+            "fee": 70000,
+            "salary": 4800,
+            "sourceSalary": 4503,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p6-8-1794434400000",
+            "sellerId": 6,
+            "fee": 70000,
+            "salary": 4800,
+            "sourceSalary": 4503,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        },
+        {
+          "command": "interclub_negotiate",
+          "payload": {
+            "playerId": "p6-8-1794434400000",
+            "sellerId": 6,
+            "fee": 7501000,
+            "salary": 4800,
+            "sourceSalary": 4503,
+            "contractEnd": 1,
+            "context": {
+              "season": 1,
+              "week": 0,
+              "club": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "checks": 206,
+  "complete": true,
+  "method": "One explicit batch from three approved independent public Fiction careers; up to three publicly available positional families each; repeated negotiation, public-cash negative control, exact complete-profile forks and actual confirmed auctions.",
+  "limits": [
+    "Different checkpoints are not the same world or a causal experiment.",
+    "Only quoted positive need is observed; non-offers have no per-club reason.",
+    "Public coach reaction personality is not a tactical identity or evidence of recruitment motive.",
+    "No hidden player rating, potential, skill, condition or private decision score selects a target.",
+    "Full profiles and exported career states are never published.",
+    "This negotiated-release channel does not execute or qualify an autonomous transfer window."
+  ],
+  "sourceFiles": {
+    "native/engine/interclub-market.cjs": "b4e5a14d124ac00eebcd34ef248a114feff93693c2a0d37e32379080b1c504ac",
+    "native/engine/model.cjs": "f3d972a8e0b1d41146cee49aca0fc06f33184f43171a831c928b72c56d3cf907",
+    "native/engine/club-world.cjs": "22da2d5d576d082ea4dc7dff829f4875321f45022e5c1829c59cfd15d226b468",
+    "dist/ai-roster-cycle.js": "56f6aee09b7c022e5f6feaf82445da6a0517915134a822205adee9c911322cc2",
+    "tools/qa/management-rival-observation.cjs": "82c151499f9345a0bfe3fa300d4c6b8d1c6f16e456f60a595b281863caf90e2a"
+  },
+  "elapsedMs": 54240,
+  "totals": {
+    "checkpoints": 1,
+    "targets": 3,
+    "confirmedTransfers": 6
+  }
+}

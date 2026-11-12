@@ -1,6 +1,7 @@
 extends AcceptDialog
 const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const Prospect = preload("res://ui/prospect_profile.gd")
 var app: Control
 var rows: VBoxContainer
 var query := ""
@@ -33,8 +34,16 @@ static func open(owner_app: Control) -> AcceptDialog:
 func _data() -> Dictionary:
 	return app.model.get("clubLife",{}).get("interclubMarket",{})
 
+func inspection_allowed(target: Dictionary) -> bool:
+	return not app.waiting and not pending and not Prospect.has_child_window(self) and target.get("kind") == "prospect" and target.get("source") == "interclub" and Prospect.target_available(app, "interclub", str(target.get("id", "")))
+
+func _profile_heading(parent: Container, person: Dictionary) -> void:
+	parent.add_child(Prospect.inspection_button(app, self, "interclub", str(person.id), str(person.name), "InterclubProfile_" + str(person.id).validate_node_name()))
+	parent.add_child(G.wrap("%s · %s · %s ans" % [str(person.get("club", "")), str(person.get("pos", "")), G.n(person.get("age", "—"))], 13))
+
 func _build() -> void:
 	name = "InterclubMarket"
+	set_meta("navigation_inspection_source", "interclub")
 	title = "Marché entre clubs"
 	get_ok_button().text = "FERMER"
 	app._prepare_dialog(self,880)
@@ -95,7 +104,7 @@ func _redraw() -> void:
 	for i in range(page*PAGE_SIZE,mini((page+1)*PAGE_SIZE,filtered.size())):
 		var person: Dictionary = filtered[i]
 		var card := G.card(rows)
-		card.add_child(G.section(str(person.name),"%s · %s · %d ans" % [str(person.club),str(person.pos),int(person.age)]))
+		_profile_heading(card, person)
 		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance S%d conservée" % [G.euros(person.fee),G.salary(person.salary),int(person.contractEnd)],13))
 		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),12,G.ALERT))
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
@@ -118,7 +127,7 @@ func _draw_negotiation() -> void:
 		child.queue_free()
 	search_field.editable = false
 	var person := selected_person
-	rows.add_child(G.section(str(person.name), "Négocier avec " + str(person.club)))
+	_profile_heading(rows, person)
 	rows.add_child(G.wrap("La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; vous verrez le gagnant pressenti avant de confirmer.",13))
 	var fields := G.h(12)
 	rows.add_child(fields)

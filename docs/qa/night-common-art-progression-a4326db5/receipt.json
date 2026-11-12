@@ -1,0 +1,81 @@
+{
+  "source_commit": "a4326db5ff9d079dfabf64b79ad6100314d5145d",
+  "source_tree": "acb0452befc9319cb2b76e6ac85c5d164865e806",
+  "art_blob": "f117cd611ccf907ce121b1fc0cfd39400b8df6e4",
+  "source_unchanged_after": true,
+  "scope": "One local Art progression case on common UI. Not global UI or remote CI qualification.",
+  "checks": 175,
+  "failures": 0,
+  "captures": [
+    {
+      "name": "1600-Bureau-apres-deux-matchs.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "b9b559145684287cfdd26761173628b4a7fa53771c741b476d9966049d87c718"
+    },
+    {
+      "name": "1600-Finances-apres-deux-matchs.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "e6da3a35162326c03ed92a0ab7ea0d36b607588d3e998c8aba00d00082402ea3"
+    },
+    {
+      "name": "1600-Presse-apres-deux-matchs.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "37469932fe30d933593cc6ea3b02c3ac29c2220ef54c5facb585e44afc3c69d5"
+    },
+    {
+      "name": "1600-Rivalités-apres-deux-matchs.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "72fa6b23734b22dc3c92d124b85df2edafd96ed5dc8774ada5ef9d0fb0bbbe6b"
+    },
+    {
+      "name": "1600-Match-direct.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "d5bba8e425e48f13209ed13a8e63a669fb865203314b7fa2fc0bd6274e4a1566"
+    },
+    {
+      "name": "1600-Match-Banc.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "60cc03f7c0d936322d49e8f67f0bc17ade812dee960f0345dc104a9bcd3c5f03"
+    },
+    {
+      "name": "1600-Match-Stats.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "b63a3673ada0485b4ea02e50e8b76dc961428801840cf683c8859d9758228688"
+    }
+  ],
+  "speech": {
+    "observed": true,
+    "requests": 0,
+    "starts": 0
+  },
+  "commands": [
+    "new_career",
+    "academy_activate",
+    "begin_match",
+    "delegate",
+    "finish_round",
+    "begin_match",
+    "delegate",
+    "finish_round",
+    "begin_match",
+    "pause"
+  ],
+  "completed_match_results": 2,
+  "real_seconds_after_shared_lock": 86.1,
+  "user_seconds": 276.6,
+  "sys_seconds": 13.07,
+  "child_limit_seconds": 150,
+  "supervisor_limit_seconds": 180,
+  "audio": "Dummy",
+  "seed": "Default unchanged; no override introduced",
+  "original_artifact_path": "/tmp/cd-art-direction-omj1O3",
+  "log_sha256": "4d9be4b78e9388583f8a57bcac1b1be1812273f8d01ded2364dddcbad2db907a",
+  "report_sha256": "1d3ee4de9fe1d707cc791e296c131591b2369ad09874d1959c86a5c19dd3813b"
+}

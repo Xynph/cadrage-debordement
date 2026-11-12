@@ -1,0 +1,19 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-phase9/management-people/vestiaire-retour-fiche-2560.png",
+      "sha256": "76e638bf5e0298f11eb56e34ea73bbc79cbe015d53b3660fe5d5fcadc19540ea"
+    },
+    {
+      "file": "/workspace/work/night-phase9/management-people/decisions-retour-fiche-2560.png",
+      "sha256": "a09751180ae14b804c588f1433e79ac2e8fbd2b6d50e3ef75f5064db3df6f966"
+    }
+  ],
+  "checks": 60,
+  "failures": [
+    "Retour conserve le scroll de l’autre liste"
+  ],
+  "scope": "Real game client/worker; requires common read-only window suspension before running.",
+  "speech_requests": 0,
+  "speech_starts": 0
+}

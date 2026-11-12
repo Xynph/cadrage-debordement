@@ -1,0 +1,14 @@
+suite	source_sha	code	execution_seconds	lock_wait_seconds	diagnostic_stop	limit_seconds	log
+godot-match-journal	96f537040bf9f2e37bf10b0a9b09518b732244a2	0	54.445	168.289	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-match-journal.log
+godot-club-memory	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	17.876	298.882	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-club-memory.log
+godot-academy-portraits	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	27.607	370.528	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-academy-portraits.log
+godot-portrait-continuity	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	29.321	261.645	True	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-portrait-continuity.log
+deepen-youth-draft	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	40.351	29.099	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-deepen-youth-draft.log
+deepen-youth-ui	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	96.367	39.293	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-deepen-youth-ui.log
+godot-guide-integration	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	151.109	197.106	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-guide-integration.log
+deepen-match	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	21.179	307.77	True	180	/workspace/qa/sdk-semantics-96/logs/baseline-deepen-match.log
+deepen-staff-hire-ui	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	20.483	0.001	True	180	/workspace/qa/sdk-semantics-96/logs/baseline-deepen-staff-hire-ui.log
+deepen-staff-real-ui	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	17.436	0.001	True	180	/workspace/qa/sdk-semantics-96/logs/baseline-deepen-staff-real-ui.log
+godot-contract-negotiation	96f537040bf9f2e37bf10b0a9b09518b732244a2	1	20.712	0.0	True	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-contract-negotiation.log
+godot-contextual	96f537040bf9f2e37bf10b0a9b09518b732244a2	0	100.907	0.0	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-contextual.log
+godot-art-direction	96f537040bf9f2e37bf10b0a9b09518b732244a2	124	180.059	0.0	False	180	/workspace/qa/sdk-semantics-96/logs/baseline-godot-art-direction.log

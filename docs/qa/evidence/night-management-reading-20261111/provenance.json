@@ -1,0 +1,22 @@
+{
+  "commit": "d40311c053aba931756df212c2690adb04a76994",
+  "attribution": "Source common figée communiquée par root ; empreintes calculées depuis les objets git de ce SHA, sans SDK/import.",
+  "sources": {
+    "tests/godot-management-reading-flow.gd": "dbd26f102923ed056ed3b3a23bb05bb1cc05385cb4edf527ff78d4c13b2af735",
+    "tests/godot-management-reading-flow.cjs": "77442048cd8bbc3580f3394af6108eeda3a8bbbe0c8a654b11158b5bca9d3731",
+    "tests/helpers/contextual_flow.gd": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145",
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "f47be5842fb1762a53a911904ef431369d8daa4765493f7b50136850dd8ce10d",
+    "native/godot/ui/management_state.gd": "3f9030b0d7e569023acc1f541990aa8601edbcfd725710aad5be73adcc001dd9",
+    "native/godot/ui/decision_feedback.gd": "65f6fff4efa36ecf6830b78b4f3e26f8da310745e4c0a0b4d23a9242eb10873a",
+    "native/godot/ui/relationships_view.gd": "8bc51b2abf4ea19c879cf405074007a2b3c12ed7518988874f6b6d6388f79c54",
+    "native/godot/ui/immersive08/locker_canvas.gd": "05bc26f702dc4a8098a8bae30a7f16e163484be11698b328fa8f796ca9f5822a",
+    "native/engine/worker.cjs": "431d31ce590549c603a2434773440c15d83a661182070b87e0e20c3beba60f97"
+  },
+  "group": "management-reading-flow",
+  "graphics": true,
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "duration_ms": null,
+  "duration_note": "Le wrapper ne publie pas de durée TAP ; aucune durée reconstruite."
+}

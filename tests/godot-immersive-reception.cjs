@@ -15,6 +15,9 @@ test('Réception immersive : accès réels au staff, jeunes, atelier et analyses
  fs.cpSync(path.resolve(source,'../engine'),engine,{recursive:true});
  fs.symlinkSync(path.resolve(source,'../../dist'),path.join(dir,'dist'),'junction');
  fs.copyFileSync(path.join(__dirname,'godot-immersive-reception.gd'),path.join(project,'reception-test.gd'));
+ // The copied harness resolves its relative preload beside itself.
+ fs.mkdirSync(path.join(project, 'helpers'), { recursive: true });
+ fs.copyFileSync(path.join(__dirname, 'helpers/contextual_flow.gd'), path.join(project, 'helpers/contextual_flow.gd'));
  const env={...process.env,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_DATA_DIR:dir+'-profile',CD_RECEPTION_UI_ARTIFACTS:dir,XDG_DATA_HOME:path.join(dir,'xdg-data'),XDG_CONFIG_HOME:path.join(dir,'xdg-config'),XDG_CACHE_HOME:path.join(dir,'xdg-cache')};
  for(const key of ['XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME'])fs.mkdirSync(env[key],{recursive:true});
  const imported=spawnSync(godot,['--headless','--editor','--path',project,'--import'],{env,encoding:'utf8',timeout:90000});

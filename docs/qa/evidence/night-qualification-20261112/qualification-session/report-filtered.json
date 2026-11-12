@@ -1,0 +1,256 @@
+{
+  "checks": 146,
+  "display": "X11",
+  "failures": [],
+  "product_sha": "4d5b0df8d218c0c1e6d64459603db91b18cc05c4",
+  "test_sha": "4d5b0df8d218c0c1e6d64459603db91b18cc05c4",
+  "speech": {
+    "id": 0,
+    "requested": 0,
+    "started": 0
+  },
+  "captures": [
+    "session-1440.png"
+  ],
+  "diagnostics": [
+    {
+      "stage": "main_loaded",
+      "ticks": 3967,
+      "route": "Accueil",
+      "target": {},
+      "extra": {}
+    },
+    {
+      "stage": "real_meeting_entered",
+      "ticks": 20296,
+      "route": "Réception",
+      "target": {},
+      "extra": {
+        "active_meeting": true,
+        "invitation": "press-v1:1:0:0"
+      }
+    },
+    {
+      "stage": "public_preparation_complete",
+      "ticks": 28158,
+      "route": "Réception",
+      "target": {},
+      "extra": {}
+    },
+    {
+      "stage": "before_real_adapter",
+      "ticks": 41803,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {}
+    },
+    {
+      "stage": "keyboard_source",
+      "ticks": 49536,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {
+        "source_snapshot": {
+          "calendar_present": true,
+          "filter": "matches",
+          "filter_observed": "matches",
+          "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "month_observed": "2026-09",
+          "scrolls_observed": {
+            "CalendarDayDetailScroll": [
+              0,
+              0
+            ],
+            "CalendarProgramScroll": [
+              0,
+              12
+            ]
+          },
+          "selected": "2026-09-08",
+          "selected_observed": "2026-09-08",
+          "table_observed": false,
+          "table_widget_class": "",
+          "today": "2026-09-07",
+          "view": "week",
+          "view_observed": "week"
+        }
+      }
+    },
+    {
+      "stage": "keyboard_back",
+      "ticks": 50095,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {
+        "after": {
+          "calendar_present": true,
+          "filter": "matches",
+          "filter_observed": "matches",
+          "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "month_observed": "2026-09",
+          "scrolls_observed": {
+            "CalendarDayDetailScroll": [
+              0,
+              0
+            ],
+            "CalendarProgramScroll": [
+              0,
+              12
+            ]
+          },
+          "selected": "2026-09-08",
+          "selected_observed": "2026-09-08",
+          "table_observed": false,
+          "table_widget_class": "",
+          "today": "2026-09-07",
+          "view": "week",
+          "view_observed": "week"
+        },
+        "before": {
+          "calendar_present": true,
+          "filter": "matches",
+          "filter_observed": "matches",
+          "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "month_observed": "2026-09",
+          "scrolls_observed": {
+            "CalendarDayDetailScroll": [
+              0,
+              0
+            ],
+            "CalendarProgramScroll": [
+              0,
+              12
+            ]
+          },
+          "selected": "2026-09-08",
+          "selected_observed": "2026-09-08",
+          "table_observed": false,
+          "table_widget_class": "",
+          "today": "2026-09-07",
+          "view": "week",
+          "view_observed": "week"
+        }
+      }
+    },
+    {
+      "stage": "mouse_source",
+      "ticks": 50205,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {
+        "source_snapshot": {
+          "calendar_present": true,
+          "filter": "matches",
+          "filter_observed": "matches",
+          "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "month_observed": "2026-09",
+          "scrolls_observed": {
+            "CalendarDayDetailScroll": [
+              0,
+              0
+            ],
+            "CalendarProgramScroll": [
+              0,
+              130
+            ]
+          },
+          "selected": "2026-09-08",
+          "selected_observed": "2026-09-08",
+          "table_observed": false,
+          "table_widget_class": "",
+          "today": "2026-09-07",
+          "view": "week",
+          "view_observed": "week"
+        }
+      }
+    },
+    {
+      "stage": "mouse_back",
+      "ticks": 50816,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {
+        "after": {
+          "calendar_present": true,
+          "filter": "matches",
+          "filter_observed": "matches",
+          "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "month_observed": "2026-09",
+          "scrolls_observed": {
+            "CalendarDayDetailScroll": [
+              0,
+              0
+            ],
+            "CalendarProgramScroll": [
+              0,
+              130
+            ]
+          },
+          "selected": "2026-09-08",
+          "selected_observed": "2026-09-08",
+          "table_observed": false,
+          "table_widget_class": "",
+          "today": "2026-09-07",
+          "view": "week",
+          "view_observed": "week"
+        },
+        "before": {
+          "calendar_present": true,
+          "filter": "matches",
+          "filter_observed": "matches",
+          "focus": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "focus_observed": "CalendarWeekSessionLink_8ea0ef08b4c89a6c2411f12840a9a618e4791f2e6a0c4773f03e70d19bf762fa",
+          "month_observed": "2026-09",
+          "scrolls_observed": {
+            "CalendarDayDetailScroll": [
+              0,
+              0
+            ],
+            "CalendarProgramScroll": [
+              0,
+              130
+            ]
+          },
+          "selected": "2026-09-08",
+          "selected_observed": "2026-09-08",
+          "table_observed": false,
+          "table_widget_class": "",
+          "today": "2026-09-07",
+          "view": "week",
+          "view_observed": "week"
+        }
+      }
+    },
+    {
+      "stage": "template_draft_source",
+      "ticks": 51454,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {
+        "fixture_id": "weekly:1:0:league:0:13",
+        "template_id": "standard"
+      }
+    },
+    {
+      "stage": "template_draft_back",
+      "ticks": 51933,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {
+        "expected_template_id": "standard"
+      }
+    },
+    {
+      "stage": "finish",
+      "ticks": 55238,
+      "route": "Calendrier",
+      "target": {},
+      "extra": {}
+    }
+  ]
+}

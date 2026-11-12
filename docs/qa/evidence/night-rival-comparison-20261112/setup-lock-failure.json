@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "kind": "runner-setup-failure",
+  "sourceSha": "8c2f8d157d48c95ba6b675fc462615b0dcb6655e",
+  "scriptSha256": "1fbb7aa556804b75df3a497744fea75d6aab86bc05bd72ad9721a0ceebfa082c",
+  "elapsedMs": 5223,
+  "checksObserved": 43,
+  "confirmedTransfers": 0,
+  "reason": "Copying the source worker process lock caused EEXIST before any confirmed transfer. Only the runtime lock was later excluded from the clone; saved data, RNG and clock remain hash-checked.",
+  "checkpointProfileSha256": "45d6d09ed1a591c95e8c1446e346e8296347073e9a7dedb0c5a5700822692684"
+}

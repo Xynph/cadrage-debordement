@@ -1,0 +1,9 @@
+{
+  "checks": 124,
+  "display_server": "X11",
+  "failures": [],
+  "measurements": [],
+  "real_dpi_tested": false,
+  "reported_screen_dpi": 96,
+  "reported_screen_scale": 1.0
+}

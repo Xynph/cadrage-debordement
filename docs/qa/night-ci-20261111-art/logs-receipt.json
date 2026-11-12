@@ -1,0 +1,97 @@
+{
+  "source_sha": "c8a5a61d1dd708f662592bf971fe8d5a25ad1742",
+  "scope": "Targeted Art only; not a full SDK campaign.",
+  "cases": [
+    {
+      "case": "routes-1280",
+      "run_id": 43111365722,
+      "job_id": 130827953274,
+      "targeted_selection": "2026-11-11T22:38:26.2205585Z SDK TARGETED ONLY: tests/godot-art-direction.cjs / routes-1280",
+      "sdk_result": {
+        "suite": "tests/godot-art-direction.cjs",
+        "variant": "routes-1280",
+        "passed": true,
+        "status": 0,
+        "milliseconds": 59695,
+        "error": null
+      },
+      "art": {
+        "checks": 224,
+        "captures": 49,
+        "failures": 0
+      },
+      "node_version": "2026-11-11T22:38:24.2066226Z node: v22.23.4"
+    },
+    {
+      "case": "routes-1600",
+      "run_id": 43113727750,
+      "job_id": 130836190935,
+      "targeted_selection": "2026-11-11T22:40:45.0537216Z SDK TARGETED ONLY: tests/godot-art-direction.cjs / routes-1600",
+      "sdk_result": {
+        "suite": "tests/godot-art-direction.cjs",
+        "variant": "routes-1600",
+        "passed": true,
+        "status": 0,
+        "milliseconds": 87892,
+        "error": null
+      },
+      "art": {
+        "checks": 217,
+        "captures": 46,
+        "failures": 0
+      },
+      "node_version": "2026-11-11T22:40:44.4656421Z node: v22.23.4"
+    },
+    {
+      "case": "routes-1920",
+      "run_id": 43114128613,
+      "job_id": 130837575270,
+      "targeted_selection": "2026-11-11T22:43:44.1334440Z SDK TARGETED ONLY: tests/godot-art-direction.cjs / routes-1920",
+      "sdk_result": {
+        "suite": "tests/godot-art-direction.cjs",
+        "variant": "routes-1920",
+        "passed": true,
+        "status": 0,
+        "milliseconds": 98175,
+        "error": null
+      },
+      "art": {
+        "checks": 211,
+        "captures": 44,
+        "failures": 0
+      },
+      "node_version": "2026-11-11T22:43:43.8494616Z node: v22.23.4"
+    },
+    {
+      "case": "progression",
+      "run_id": 43114541546,
+      "job_id": 130838989867,
+      "targeted_selection": "2026-11-11T22:46:42.2779857Z SDK TARGETED ONLY: tests/godot-art-direction.cjs / progression",
+      "sdk_result": {
+        "suite": "tests/godot-art-direction.cjs",
+        "variant": "progression",
+        "passed": true,
+        "status": 0,
+        "milliseconds": 147046,
+        "error": null
+      },
+      "art": {
+        "checks": 196,
+        "captures": 7,
+        "failures": 0
+      },
+      "node_version": "2026-11-11T22:46:41.5675170Z node: v22.23.4"
+    }
+  ],
+  "totals": {
+    "checks": 848,
+    "captures": 146,
+    "failures": 0
+  },
+  "limits": {
+    "child_seconds": 150,
+    "controller_seconds": 180,
+    "vm_seconds": 15,
+    "changed": false
+  }
+}

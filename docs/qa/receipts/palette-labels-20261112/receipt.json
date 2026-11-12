@@ -1,0 +1,32 @@
+{
+  "source_sha": "b349979f37f3b24f269477cfe1d2e835865ad1c5",
+  "files": {
+    "entity-navigation.log": {
+      "sha256": "24b1aabf8acca4154e234e0b7f33da7186acbb0dac97bc60db19057c74434160",
+      "source": "/workspace/work/night-followup-receipts/palette-labels/entity-navigation.log"
+    },
+    "navigation.log": {
+      "sha256": "6c9884b6e49149729a8c77f85b449f8e7c9c9c86fd49472cd98f133baec09a2b",
+      "source": "/workspace/work/night-followup-receipts/palette-labels/navigation.log"
+    },
+    "results.json": {
+      "sha256": "730ee8ddf28fa16b6ff1e21d03340f7a5b3ad91868f38515da41370819e3476a",
+      "source": "/workspace/work/night-followup-receipts/palette-labels/results.json"
+    }
+  },
+  "controller_sha256": "b94f5423085796738f3863593e692d6584abdf26469ed16bc588e6971b227ffa",
+  "results": [
+    {
+      "source": "b349979f37f3b24f269477cfe1d2e835865ad1c5",
+      "suite": "entity-navigation",
+      "exit_code": 0,
+      "elapsed_ms": 18599
+    },
+    {
+      "source": "b349979f37f3b24f269477cfe1d2e835865ad1c5",
+      "suite": "navigation",
+      "exit_code": 0,
+      "elapsed_ms": 48304
+    }
+  ]
+}
