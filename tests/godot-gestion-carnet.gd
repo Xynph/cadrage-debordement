@@ -80,6 +80,13 @@ func state() -> Dictionary:
 	return JSON.parse_string(app.model.meta.exportText).state
 func run() -> void:
 	trace("startup.begin")
+	# A custom SceneTree has no usable native desktop on the headless driver.
+	# Keep the supported legacy viewport and embed dialogs in that viewport,
+	# as the existing small-window contract recipe does.
+	root.gui_embed_subwindows=true
+	root.size=Vector2i(1440,900)
+	if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(root.size)
+	trace("startup.viewport-configured")
 	app=load("res://main.tscn").instantiate()
 	root.add_child(app)
 	if is_instance_valid(app.coach):
@@ -91,6 +98,7 @@ func run() -> void:
 	while app.model.is_empty() and Time.get_ticks_msec()<startup_until:await process_frame
 	check(not app.model.is_empty(),"Projection initiale du vrai worker reçue dans la borne de préparation")
 	trace("startup.model",{"received":not app.model.is_empty()})
+	check(root.size==Vector2i(1440,900) and root.gui_embed_subwindows,"Viewport initial de gestion 1440×900 et dialogues intégrés explicitement configurés")
 	if app.model.is_empty():finish();return
 	app.timer.stop()
 	await command("new_career",{"club":0,"mode":"common"})
@@ -382,6 +390,9 @@ func trace(stage:String,detail:Dictionary={}) -> void:
 	row.stage=stage
 	row.milliseconds=Time.get_ticks_msec()-started_ms
 	row.checks=checks
+	row.root_size=[root.size.x,root.size.y]
+	row.embedded_subwindows=root.gui_embed_subwindows
+	row.display=DisplayServer.get_name()
 	if is_instance_valid(app):
 		row.route=app.route
 		row.waiting=app.waiting
