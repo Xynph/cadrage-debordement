@@ -1,0 +1,11 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+DATE_INK {"density":0.5,"ink":[20.0,107.0,94.0,9.0],"ink_enclosed":true,"label":[20.0,102.0,235.0,17.0],"target":[18.0,105.0,235.0,18.0],"viewport":[1280.0,800.0]}
+DATE_INK {"density":0.5625,"ink":[23.0,119.0,101.0,11.0],"ink_enclosed":true,"label":[23.0,115.0,264.0,18.0],"target":[20.25,118.125,264.375,18.0],"viewport":[1440.0,900.0]}
+DATE_INK {"density":0.625,"ink":[25.0,132.0,115.0,12.0],"ink_enclosed":true,"label":[25.0,127.0,294.0,21.0],"target":[22.5,131.25,293.75,21.0],"viewport":[1600.0,1000.0]}
+DATE_INK {"density":0.75,"ink":[30.0,158.0,135.0,15.0],"ink_enclosed":true,"label":[30.0,153.0,353.0,24.0],"target":[27.0,157.5,352.5,24.0],"viewport":[1920.0,1080.0]}
+DATE_INK {"density":1.0,"ink":[40.0,212.0,182.0,19.0],"ink_enclosed":true,"label":[40.0,204.0,470.0,33.0],"target":[36.0,210.0,470.0,33.0],"viewport":[2560.0,1440.0]}
