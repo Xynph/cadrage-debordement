@@ -19,6 +19,11 @@ module.exports={
   const rank={press:0,medical:1,board:2};
   let installed=false,advanceFrom=null;
   const readCommands=['snapshot','export','save','load','import','shutdown','list_profiles','profile_list'];
+  // Réglages de présentation des packs d'identités : ni temps, ni effectif, ni finances, ni décision de club.
+  // Ils restent possibles pendant un rendez-vous ; le pack n'est appliqué qu'à l'affichage (voir docs/packs-pendant-un-rendez-vous.md).
+  const presentationCommands=['pack_inspect','pack_install','pack_select'];
+  const passive=command=>readCommands.includes(command)||presentationCommands.includes(command);
+  const pending='terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre';
   const stage=p=>p.medicalV68?.stage||null;
   const medicalAvailable=s=>!s.live&&!s.trained&&s.phase==='league';
   const priority=s=>s.v105to110?.priority||'stabilite';
@@ -110,7 +115,7 @@ module.exports={
   }
   function observe(command,payload={}){
    // Called by the worker after an accepted command, inside its atomic save.
-   if(!S||typeof command!=='string'||readCommands.includes(command))return;
+   if(!S||typeof command!=='string'||passive(command))return;
    const transition=advanceFrom;advanceFrom=null;
    let st=S.clubMeetings;
    // Leaving the club expires its pending work, never its decision history.
@@ -166,14 +171,14 @@ module.exports={
   }
   function guard(command,payload={}){
    const st=S?.clubMeetings,e=st?.current||st?.queue?.[0];
-   if(!hasClub()||!e||readCommands.includes(command)||command==='new_career')return true;
+   if(!hasClub()||!e||passive(command)||command==='new_career')return true;
    // The mandate controller validates the actual offer and confirmation before
    // observe() expires club obligations after an accepted departure.
    if(command==='national_take_job'&&payload.role==='nation'&&payload.confirmed===true)return true;
    // A pre-existing private conversation gets to finish before queued rooms.
    if(!st.current&&S.sceneInvitations?.activeId&&['scene_invitation_reply','scene_invitation_close'].includes(command)&&payload.id===S.sceneInvitations.activeId)return true;
    if(['club_meeting_ack','club_meeting_continue'].includes(command))return true;
-   if(!st.current||e.completed)check(false,'terminez le rendez-vous du club avant de poursuivre');
+   if(!st.current||e.completed)check(false,pending);
    check(!S.live&&same(e.context,context()),'contexte périmé');
    if(e.kind==='press'&&command==='press_conference'){check(same(payload.context,e.context),'contexte de presse périmé');return true;}
    if(e.kind==='medical'&&['medical_protocol','medical_return'].includes(command)){
@@ -186,7 +191,7 @@ module.exports={
     check(payload.playerId===e.playerId&&p&&p.injury<=0&&stage(p)==='reprise'&&!S.trained&&S.phase!=='ended'&&['collective','repos','normal','intense'].includes(payload.mode),'charge de reprise indisponible pour ce joueur');return true;
    }
    if(e.kind==='board'&&['club_board_priority','club_board_project','club_board_objective'].includes(command)){check(same(payload.context,e.context),'contexte de direction périmé');return true;}
-   check(false,'terminez le rendez-vous du club avant de poursuivre');
+   check(false,pending);
   }
   function execute(command,payload){
    check(!!S,'carrière absente');check(hasClub(),'mandat en club absent');validate(S);
