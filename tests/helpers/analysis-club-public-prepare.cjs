@@ -12,7 +12,7 @@ assert.ok(profile && output, 'Profil jetable et preuves requis');
 fs.mkdirSync(output, { recursive: true });
 const started = Date.now();
 const actions = [];
-const receipt = { method: 'production createBridge/public commands', mode: 'world-champ', club: 29,
+const receipt = { method: 'production createBridge/public commands', mode: 'common', club: 0,
   node: process.version, worker_sha256: sha(path.resolve(__dirname, '../../native/engine/worker.cjs')),
   flags: { dailyCalendar: true, mandatoryPress: true, internationalCareer: true }, actions };
 function sha(file) { return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'); }
@@ -49,7 +49,7 @@ try {
     receipt.seed = seed;
   }
   bridge = createBridge(options);
-  go('new_career', { mode: 'world-champ', club: 29 });
+  go('new_career', { mode: receipt.mode, club: receipt.club });
   receipt.start_date = model.meta.calendarToday;
   settle();
   // advance_day performs the real scheduled training. No extra train command:
