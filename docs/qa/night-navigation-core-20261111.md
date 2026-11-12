@@ -143,3 +143,13 @@ réels 2560×1440. Les noms stables des deux listes du vestiaire permettent
 le retour exact à la position 90 sans relâcher le résolveur commun.
 Le [diagnostic rouge et la réception par SHA](night-management-scroll-20261111.md)
 distinguent la préparation du bon onglet du défaut produit de défilement.
+
+## Lecteur initial ouvert depuis une page
+
+Les lecteurs club, rencontre et rapport ouverts directement par `open_entity`
+sont eux aussi raccordés à Alt + gauche. La fermeture du lecteur exact est
+vérifiée avant de conclure au retour de focus ; une confirmation métier reste
+bloquante. Les chaînes page → club → lecteur enfant et page → club → joueur
+conservent leurs contextes, avec une restitution conditionnée à la page ou son
+entrée historique d’origine. Voir les
+[reçus ciblés 50/0 et 72/0, par SHA exact](night-page-reader-back-20261112.md).
