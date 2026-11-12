@@ -106,10 +106,11 @@ func run() -> void:
 	var measured_index := 0
 	for index in picker.item_count:
 		if not picker.get_item_text(index).ends_with(" · 0 feuille(s)"): measured_index=index; break
-	if measured_index>0:
-		picker.select(measured_index)
-		picker.item_selected.emit(measured_index)
-		await settle()
+	# La fiche affichée à l'ouverture est celle du joueur sélectionné par la vue (« Alexandre Colin », sans feuille en CI),
+	# qui n'est pas forcément l'entrée 0 du sélecteur : on sélectionne toujours explicitement le joueur mesuré.
+	picker.select(measured_index)
+	picker.item_selected.emit(measured_index)
+	await settle()
 	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | ")+" · index="+str(measured_index)+" items="+str(picker.item_count)+" feuilles modèle="+str(roster.filter(func(p: Dictionary): return p.get("matches",[]).size()>0).size())+" · "+str(picker.get_item_text(0))+" ; "+str(picker.get_item_text(mini(1,picker.item_count-1))))
 	var measured_name: String = picker.get_item_text(measured_index).split(" · ")[0]
 	var actual: Dictionary = {}
