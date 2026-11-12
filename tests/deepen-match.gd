@@ -75,7 +75,10 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func cases(dialog: AcceptDialog, original: Dictionary, model_before: String, disk_path: String, disk_before: PackedByteArray) -> void:
-	check(dialog.timeline.item_count==original.events.size(),"Chronologie issue de tous les faits réels")
+	# #596 : le journal n'affiche que les faits déjà montrés (rien d'un temps fort à venir, le moteur a
+	# une minute d'avance, cf. match_temps_forts.montre). La chronologie couvre donc tous les faits du
+	# journal montré, qui est un préfixe non vide des faits du worker.
+	check(dialog.timeline.item_count==dialog.events.size() and dialog.events.size()>0 and dialog.events.size()<=original.events.size() and dialog.events==original.events.slice(0,dialog.events.size()),"Chronologie issue de tous les faits réels montrés")
 	check(dialog.phases.size()>0,"Séquences dérivées des plans réels")
 	var frozen := JSON.stringify(dialog.events)
 	await command("pause",{"paused":false})
