@@ -93,6 +93,11 @@ func capture_current() -> void:
 	if app == null or _restoring or _dispatching or cursor < 0: return
 	if history[cursor].route != app.route: return
 	U.remember(app)
+	# Manual calendar reading can invalidate a session without changing route.
+	# Refresh that entry before destination deduplication, alongside its snapshot.
+	if str(history[cursor].get("target", {}).get("kind", "")) == "session":
+		history[cursor].target = _current_target(app.route)
+		history[cursor].detail = _reading_location(app.route)
 	_store_roster_reading(history[cursor])
 	history[cursor].reading = U.reading_snapshot(app)
 
