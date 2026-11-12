@@ -78,6 +78,28 @@ function factory() {
     // Spread generated game rounds over the season; dates are never claimed official.
     return Array.from({length: rounds}, (_, i) => available[Math.floor(i * (available.length - 1) / Math.max(1, rounds - 1))]);
   }
+  // Tables de Berger (méthode du cercle) avec alternance : au plus deux réceptions ou deux déplacements de
+  // suite par phase ; départ au troisième tour du cercle pour que le retour en miroir n'en crée pas trois au
+  // raccord (docs/calendrier-alternance-20261111.md). Nombre impair : l'adversaire fictif fixe donne l'exemption.
+  function berger(list) {
+    const n = list.length + list.length % 2, m = n - 1, rounds = [];
+    for (let q = 0; q < m; q++) {
+      const r = (q + 2) % m, pairs = [r % 2 ? [m, r] : [r, m]];
+      for (let k = 1; k < n / 2; k++) { const a = (r + k) % m, b = (r - k + m) % m; pairs.push(k % 2 ? [a, b] : [b, a]); }
+      rounds.push(pairs.filter(p => p[0] < list.length && p[1] < list.length).map(p => [list[p[0]], list[p[1]]]));
+    }
+    return rounds;
+  }
+  // URC (4 boucliers de 4) : 12 adversaires une fois, 3 du bouclier deux fois, soit 18 journées. Aucun cercle
+  // classique ne couvre ce format ; ce gabarit, obtenu hors ligne puis vérifié par tests/schedule-alternance.cjs,
+  // donne 9 réceptions, au plus deux rencontres de suite au même endroit, 4 ou 5 réceptions par moitié et un
+  // retour de derby au moins six journées après l'aller. Emplacement = 4 × rang du bouclier + rang dans le bouclier.
+  const URC_TEMPLATE = '1023457689badcef.02316457a89bcefd.0dc12fe39458b67a.601742358ef9acdb.03127465b8a9cfed.f0e12d3c4b5a9687.07615243f89edacb.e01f2c3da4b58679.50417263d89cfabe.09812b3ad4c56fe7.a01b28394e5fc67d.0c1de2f384956ab7.302147568b9afcde.0819a2b3c4d5e67f.0ba19238f45e6dc7.201346758ab9ecdf.0132546798abcdfe.401526738cd9aebf';
+  function urcRounds(groups) {
+    const slots = [...groups.values()].flat();
+    return URC_TEMPLATE.split('.').map(day => Array.from({length: 8}, (_, i) => [slots[parseInt(day[2*i], 16)], slots[parseInt(day[2*i+1], 16)]]));
+  }
+  // Calendrier antérieur au 11 novembre 2026 (sans alternance), conservé pour relire les saisons déjà commencées.
   function circle(list) {
     const rotating = list.slice(), rounds = [];
     assert(rotating.length % 2 === 0, 'even club count required');
@@ -119,17 +141,21 @@ function factory() {
     const p = rules(competitionId), byId = validateClubs(clubs);
     assert(['elite','accession','prem','urc'].includes(competitionId), 'regularFixtures requires a domestic league');
     assert(clubs.length === p.clubs, 'incorrect league club count');
-    let rounds = circle(clubs.map(c => c.id));
+    const legacy = options.legacyCalendar === true;
+    let rounds = legacy ? circle(clubs.map(c => c.id)) : berger(clubs.map(c => c.id));
     if (competitionId === 'urc') {
       const groups = new Map();
       for (const c of clubs) { assert(typeof c.shield === 'string' && c.shield, 'URC shield required'); if (!groups.has(c.shield)) groups.set(c.shield, []); groups.get(c.shield).push(c.id); }
       assert(groups.size === 4 && [...groups.values()].every(g => g.length === 4), 'URC requires four geographical groups of four');
+      if (!legacy) rounds = urcRounds(groups);
+      else {
       const cross = rounds.flat().filter(([a,b]) => byId.get(a).shield !== byId.get(b).shield), directed = orient(cross);
       rounds = rounds.map(ps => ps.map(([a,b]) => directed.get(edgeKey(a,b)) || [a,b]));
       const first = new Map(rounds.flat().map(pair => [edgeKey(...pair), pair]));
       const extra = Array.from({length:3},()=>[]);
       for (const group of groups.values()) circle(group).forEach((ps,r) => ps.forEach(([a,b]) => { const pair = first.get(edgeKey(a,b)); extra[r].push([pair[1],pair[0]]); }));
       rounds.push(...extra);
+      }
     } else rounds.push(...rounds.map(ps => ps.map(([a,b]) => [b,a])));
     const dates = roundDates({...options, rounds:p.rounds});
     const generated = rounds.flatMap((pairs,round) => pairs.map(([homeId,awayId],slot) => ({id:`${competitionId}:${year(season)}:league:${round}:${slot}`,competitionId,season,round,date:dates[round],homeId,awayId,phase:'league',scheduleSource:'generated-game'})));

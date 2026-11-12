@@ -11,7 +11,7 @@ function record() {
     start(0); beginMatch(); pauseMatch();
     var live = S.live;
     live.paused = false; syncMatchPresentation(live);
-    Math.random = () => .5;
+    Math.random = () => .43;
     ballPossession(live, 0, 85); advanceCausalPlay(live);
     var carry = playback(live).cursor;
     var firstScoringEvent = live.events.length;

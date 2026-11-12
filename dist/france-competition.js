@@ -7,7 +7,13 @@ const CDFranceCompetition=(()=>{
  const leagueId=(s,id=s.club)=>IDS.find(k=>s.franceMode.leagues[k].members.includes(id));
  const members=(s,id)=>s.franceMode.leagues[id].members.slice();
  const regularRounds=(s,id=leagueId(s))=>id==='elite'?26:30;
- function schedule(ids){let a=ids.slice(),out=[];for(let r=0;r<a.length-1;r++){const pairs=[];for(let i=0;i<a.length/2;i++){let h=a[i],v=a[a.length-1-i];if((r+i)%2)[h,v]=[v,h];pairs.push([h,v]);}out.push(pairs);a.splice(1,0,a.pop());}return out.concat(out.map(r=>r.map(([h,a])=>[a,h])));}
+ // Tables de Berger (méthode du cercle) avec alternance : au plus deux réceptions ou deux déplacements de suite,
+ // retour = miroir de l'aller, domicile/extérieur inversés. Le départ au troisième tour du cercle évite une
+ // troisième rencontre consécutive au raccord aller/retour. Voir docs/calendrier-alternance-20261111.md.
+ function berger(ids){const n=ids.length+ids.length%2,m=n-1,out=[];for(let q=0;q<m;q++){const r=(q+2)%m,pairs=[r%2?[m,r]:[r,m]];for(let k=1;k<n/2;k++){const a=(r+k)%m,b=(r-k+m)%m;pairs.push(k%2?[a,b]:[b,a]);}out.push(pairs.filter(p=>p[0]<ids.length&&p[1]<ids.length).map(p=>[ids[p[0]],ids[p[1]]]));}return out;}
+ function schedule(ids){const out=berger(ids);return out.concat(out.map(r=>r.map(([h,a])=>[a,h])));}
+ // Calendrier antérieur au 11 novembre 2026 (sans alternance), conservé pour relire les saisons déjà commencées.
+ function legacySchedule(ids){let a=ids.slice(),out=[];for(let r=0;r<a.length-1;r++){const pairs=[];for(let i=0;i<a.length/2;i++){let h=a[i],v=a[a.length-1-i];if((r+i)%2)[h,v]=[v,h];pairs.push([h,v]);}out.push(pairs);a.splice(1,0,a.pop());}return out.concat(out.map(r=>r.map(([h,a])=>[a,h])));}
  const regularWeek=(id,r)=>id==='accession'?r:Array.from({length:30},(_,i)=>i).filter(i=>!REST.includes(i))[r];
  const points=(r,i)=>(r.score[i]>r.score[1-i]?4:r.score[i]===r.score[1-i]?2:0)+(r.tries[i]-r.tries[1-i]>=3?1:0)+(r.score[i]<r.score[1-i]&&r.score[1-i]-r.score[i]<=5?1:0);
  const outcome=(r,id)=>{const side=r.pair.indexOf(id),phase=r.franceContext?.phase??r.phase;return phase&&phase!=='league'&&r.winner!==undefined?(r.winner===id?1:-1):Math.sign(r.score[side]-r.score[1-side]);};
@@ -30,5 +36,5 @@ const CDFranceCompetition=(()=>{
   f.week++;if(f.week===34){f.movement=planMovement(s);s.ending=`${s.clubs[f.leagues.elite.champion].name} champion ; ${s.clubs[f.leagues.accession.champion].name} accède à l’élite.`;}project(s);
  }
  function beginSeason(s,initial=false){const old=s.franceMode;const partition=initial?{elite:Array.from({length:14},(_,i)=>i),accession:Array.from({length:16},(_,i)=>i+14)}:old.movement;if(!partition)throw Error('Mouvements de division non établis.');const yearbook=initial?[]:old.yearbook.concat({season:s.season-1,champions:IDS.map(id=>old.leagues[id].champion),finalists:IDS.map(id=>old.leagues[id].finalist),standings:Object.fromEntries(IDS.map(id=>[id,ranked(s,id).map(c=>c.id)])),movement:JSON.parse(JSON.stringify(old.movement))}).slice(-15);const previousRanks=initial?{}:Object.fromEntries(IDS.flatMap(id=>ranked(s,id).map((c,i)=>[c.id,i+1])));s.franceMode={version:1,catalogue:'france-territories-2026-10-31-v1',competitionRules:'fr-pro-2026-27',matchRules:'fr-pro-2025',startSeason:2026,week:0,leagues:Object.fromEntries(IDS.map(id=>[id,{members:partition[id].slice(),schedule:schedule(partition[id]),round:0,phase:'league',playoff:null,champion:null,finalist:null}])),accessMatch:null,movement:null,yearbook,previousRanks};project(s);}
- return Object.freeze({active,leagueId,members,regularRounds,schedule,regularWeek,ranked,currentFixtures,userFixture,label,project,record,closeWeek,planMovement,beginSeason,points,outcome});
+ return Object.freeze({active,leagueId,members,regularRounds,schedule,legacySchedule,regularWeek,ranked,currentFixtures,userFixture,label,project,record,closeWeek,planMovement,beginSeason,points,outcome});
 })();
