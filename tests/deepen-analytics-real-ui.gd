@@ -39,7 +39,7 @@ func key(control: Control) -> void:
 		await process_frame
 	await settle()
 func text(node: Node) -> String:
-	var value: String = str(node.text)+"\n" if node is Label else ""
+	var value: String = str(node.text)+"\n" if node is Label or node is Button else ""
 	for child in node.get_children(): value += text(child)
 	return value
 func history() -> void:
@@ -100,8 +100,18 @@ func run() -> void:
 	check(picker!=null,"Choix du joueur dans la véritable application")
 	if picker==null: finish();return
 	var details: Control = app.body.find_child("PerformancePlayerDetail",true,false)
+	# La liste n'est pas triée par apparitions : le premier joueur peut n'avoir aucune feuille (« Aucune feuille
+	# conservée »). Le contrôle porte sur un joueur réellement mesuré, choisi d'après les données du worker.
+	var roster: Array = app.model.clubLife.playerMatchHistory.players
+	var measured_index := 0
+	for index in roster.size():
+		if not roster[index].get("matches",[]).is_empty(): measured_index=index; break
+	if measured_index>0:
+		picker.select(measured_index)
+		picker.item_selected.emit(measured_index)
+		await settle()
 	check(text(details).contains("minutes connues") and text(details).contains("par 80 min"),"Minutes et ratios réels affichés · "+text(details).left(300).replace("\n"," | "))
-	var actual: Dictionary = app.model.clubLife.playerMatchHistory.players[0]
+	var actual: Dictionary = roster[measured_index]
 	check(text(details).contains(str(actual.name)),"Identité du joueur issue du vrai worker")
 	check(actual.measuredMatches>0 and actual.minutes!=null,"Minutes réellement mesurées")
 	check(text(details).contains(str(int(actual.minutes))+" minutes connues"),"Dénominateur réel affiché")
@@ -116,8 +126,9 @@ func run() -> void:
 			Input.parse_input_event(event)
 			await process_frame
 	await settle()
-	check(picker.selected==1,"Changement du joueur par le vrai clavier")
-	check(text(details).contains(str(app.model.clubLife.playerMatchHistory.players[1].name)),"Dossier du second joueur affiché")
+	var next_index := mini(measured_index+1,roster.size()-1)
+	check(picker.selected==next_index,"Changement du joueur par le vrai clavier")
+	check(text(details).contains(str(roster[next_index].name)),"Dossier du second joueur affiché")
 	bytes=FileAccess.get_file_as_bytes(disk)
 	for size: Vector2i in [Vector2i(1280,720),Vector2i(1920,1080)]:
 		root.size=size

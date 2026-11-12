@@ -703,6 +703,8 @@ func families() -> void:
 		await settle()
 		check(app.route=="Préparation" and app.management_ui.preparation.tab==0,"Retour au dossier de préparation")
 	for item: Array in FAMILIES:
+		# « Presse » ne s'ouvre que depuis un courrier de la Réception (main.gd : press_mail_origin) ; la recette pose la même origine.
+		if item[0]=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(item[0])
 		await settle()
 		var view: Control = app.find_child(item[1],true,false)
@@ -767,6 +769,8 @@ func desktop_1080() -> void:
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
 	for item: Array in FAMILIES:
+		# « Presse » ne s'ouvre que depuis un courrier de la Réception (main.gd : press_mail_origin) ; la recette pose la même origine.
+		if item[0]=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(item[0])
 		await settle()
 		var view: Control = app.find_child("ImmersiveFinance" if item[0]=="Finances" else item[1],true,false)
@@ -795,6 +799,7 @@ func desktop_1080() -> void:
 	await settle()
 	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre","Préparation","Recrutement",
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
+		if route=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(route)
 		await settle()
 		if route=="Calendrier":

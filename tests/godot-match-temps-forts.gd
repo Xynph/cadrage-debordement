@@ -628,7 +628,10 @@ func player_path() -> Array:
 	if not sample.is_empty():
 		var model: Dictionary = app.model.duplicate(true)
 		sample["cle"] = "avant-causerie"
-		sample["suite"] = false
+		# Depuis l'entracte (#587), un temps fort qui n'est pas la suite d'une action attend la fin de l'entracte, et le
+		# match est ici en pause (l'entracte ne défile pas). La démonstration cible donc un temps fort « suite » :
+		# il part aussitôt, et la causerie doit l'attendre. La retenue par l'entracte est couverte par interval().
+		sample["suite"] = true
 		model.live.direct.tempsFort = sample
 		model.clubLife.matchTalks.scene = half_scene
 		app.model = model

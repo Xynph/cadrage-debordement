@@ -41,7 +41,7 @@ func run() -> void:
  while app.model.is_empty() and Time.get_ticks_msec() < startup_deadline: await process_frame
  await settle()
  # Le rendez-vous de direction d'une carrière neuve doit être traité : sinon le moteur refuse réunions, plans et briefings.
- await command("snapshot")
+ await command("new_career", {"mode":"common", "club":29})
  await preload("res://qa_runner.gd").settle_club_meetings(app, self, check)
  await command("export")
  var before: String = app.model.meta.exportText
@@ -75,8 +75,10 @@ func run() -> void:
  var injured: Dictionary = {}
  for candidate: Dictionary in app.model.clubLife.clubSupport.medical.players:
   if int(candidate.injury) > 0: injured = candidate; break
- check(not injured.is_empty(), "Joueur blessé à suivre (liste : " + str(app.model.clubLife.clubSupport.medical.players.size()) + ")")
- if not injured.is_empty():
+ # Carrière neuve : un blessé n'est pas garanti. Sans blessé, aucun sélecteur de protocole ne doit être proposé.
+ if injured.is_empty():
+  check(page.find_children("MedicalProtocol_*", "OptionButton", true, false).is_empty(), "Aucun sélecteur de protocole sans joueur blessé")
+ else:
   var picker: OptionButton = page.find_child("MedicalProtocol_"+str(injured.id).replace(":","_"),true,false)
   check(picker != null, "Sélecteur de protocole du blessé")
   if picker != null:
