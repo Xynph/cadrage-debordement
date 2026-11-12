@@ -465,7 +465,8 @@ func _entracte_et_horloge(delta: float) -> bool:
 	if _retenu.is_empty():
 		return false
 	if (fige and not _causerie_attend()) or _tiroir or app.waiting: return true
-	if not _passer and _entracte < _duree_entracte() and not _causerie_attend(): return true
+	# Entracte en cours seulement (_entracte < 0 : retenu pour le terrain 2D, pas pour l'entracte).
+	if not _passer and _entracte >= 0.0 and _entracte < _duree_entracte() and not _causerie_attend(): return true
 	# Bascule 2D → 3D : le terrain finit de dérouler le jeu d'avant (3 s au plus, jamais devant une causerie).
 	if not _passer and _terrain_en_retard() and _retenu_depuis < _bascule() and not _causerie_attend(): return true
 	_lancer_retenu()
