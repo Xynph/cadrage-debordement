@@ -113,12 +113,12 @@ func layout(view: Control, size: Vector2i) -> void:
 	for node: Control in between.find_children("*", "Control", true, false):
 		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
-		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé")
+		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé" + ("" if inside(between.get_global_rect(), node.get_global_rect()) else " (%s hors de %s)" % [str(node.get_global_rect()), str(between.get_global_rect())]))
 	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
 	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).get_child(0)
-	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(24 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
+	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(26 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
 	var bande: Control = view.get("bande_temps_forts")
@@ -848,7 +848,8 @@ func terrain2d(view: Control) -> void:
 	var rangs: Array = direct.get("tableau", [])
 	check(rangs.size() >= 10 and between.chiffres.get_child_count() == between.STATS.filter(func(c: String): return rangs.any(func(r: Dictionary): return str(r.cle) == c)).size() and between.chiffres.get_child_count() >= 10, "Statistiques : %d comparées sur %d" % [between.chiffres.get_child_count(), rangs.size()])
 	for ligne: Node in between.chiffres.get_children():
-		var titre := (ligne.get_child(0) as Label).text
+		# Libellé court à l'écran, libellé du moteur en infobulle.
+		var titre := (ligne.get_child(0) as Label).tooltip_text
 		var rang: Array = rangs.filter(func(r: Dictionary): return str(r.label) == titre)
 		check(rang.size() == 1 and (ligne.get_child(1) as Label).text.begins_with(str(int(rang[0].valeurs[0]))) and (ligne.get_child(3) as Label).text.begins_with(str(int(rang[0].valeurs[1]))) or rang.size() == 1 and rang[0].get("vide", false), "Chiffre « %s » repris du moteur" % titre)
 	var lineup: Array = between._passe(app.model, app.model.live, direct).lineup

@@ -666,7 +666,7 @@ func _page() -> void:
 	var scene := Control.new()
 	scene.name = "MatchBetweenScene"
 	scene.clip_contents = true
-	scene.custom_minimum_size = Vector2(px(660), px(440))
+	scene.custom_minimum_size = Vector2(px(660), px(400))
 	cadre_terrain.add_child(scene)
 	S.full(terrain)
 	scene.add_child(terrain)
@@ -814,7 +814,7 @@ func _remplir_fil() -> void:
 	# Faits marquants : les derniers faits joués, le plus récent en haut.
 	if is_instance_valid(faits):
 		S.clear(faits)
-		var nombre := 4 if _densite < 0.6 else 6
+		var nombre := 3 if _densite < 0.6 else 4
 		var recents := visibles.slice(maxi(0, visibles.size() - nombre))
 		recents.reverse()
 		for n in recents.size(): faits.add_child(_ligne_fil(recents[n], n == 0, false))
@@ -867,8 +867,8 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 ## Chiffre clé : libellé, valeur de l'équipe qui reçoit, barre comparée, valeur de l'autre.
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var ligne := S.G.h(px(12))
-	ligne.custom_minimum_size.y = px(44)
-	var titre := _texte(str(LIBELLES_COURTS.get(str(rang.get("cle", "")), rang.get("label", ""))), 24, DOUX)
+	ligne.custom_minimum_size.y = px(40)
+	var titre := _texte(str(LIBELLES_COURTS.get(str(rang.get("cle", "")), rang.get("label", ""))), 26, DOUX)
 	titre.tooltip_text = str(rang.get("label", ""))
 	titre.mouse_filter = Control.MOUSE_FILTER_PASS
 	titre.clip_text = true
@@ -916,7 +916,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var hauteur := px(54)
+	var hauteur := px(48)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
