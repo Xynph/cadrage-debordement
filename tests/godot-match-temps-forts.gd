@@ -2,7 +2,8 @@ extends SceneTree
 ## Match en temps forts dans la vraie interface, avec le vrai moteur.
 ## Mode « defaut » (aucune variable) : le parcours du joueur — causerie, coup d'envoi,
 ## pause pendant un temps fort, remplacement et consigne sur l'écran intermédiaire,
-## mi-temps, fin de match et débrief, son du stade calé sur l'image.
+## mi-temps, fin de match et débrief, son du stade calé sur l'image ; un arrêt sur carton
+## (le match attend le manager) est repris comme avec le bouton « Reprendre le match ».
 ## Mode « reprise » (aucune variable) : match repris en cours de route, niveau conservé,
 ## fin confiée à l'adjoint.
 ## Mode « actif » : coup d'envoi en 3D, écran intermédiaire, nouveau temps fort, arrêt
@@ -299,11 +300,21 @@ func hear(id: String) -> void:
 	if regie != null and regie.etat == regie.JEU and regie.index >= 0 and regie.index < regie.tf.plans.size(): kind = str(regie.tf.plans[regie.index].get("kind", ""))
 	cues.append({"id": id, "kind": kind})
 
+## Arrêts-décisions (clés) repris pendant le parcours du joueur.
+var stoppages: Array = []
 func watch() -> void:
 	var view := surface()
 	if view == null or view.regie == null: return
 	var regie: Node = view.regie
 	if regie.etat == regie.JEU and regie.index >= 0 and regie.index < regie.tf.plans.size(): shown[str(regie.tf.plans[regie.index].get("kind", ""))] = true
+	# Arrêt sur carton : le match est en pause et attend le manager (aucune échéance, voulu).
+	# Le joueur reprend une fois par arrêt, comme avec le bouton de l'écran intermédiaire.
+	if not regie.arret.is_empty() and regie.between.arret.visible and app.model.live.get("paused", false) and not app.waiting:
+		var cle := str(regie.arret.get("cle", ""))
+		if cle not in stoppages:
+			stoppages.append(cle)
+			print("Arrêt-décision repris : ", regie.arret.get("texte", ""), " (", regie.arret.get("horloge", ""), ")")
+			regie.between.reprise_demandee.emit()
 
 ## Attend la causerie d'une phase ; note si un temps fort l'a retenue et s'il a bien été joué avant.
 func reach_talk(phase: String, limit_ms: int) -> Dictionary:
@@ -474,7 +485,7 @@ func player_path() -> Array:
 	var post: Dictionary = await reach_talk("post", 120000)
 	check(post.reached and app.model.live.finished, "Le débrief s'ouvre à la fin du match")
 	check(post.played, "Le dernier temps fort du match est joué avant le débrief")
-	print("Fin du match à la minute ", post.minute, " · débrief retenu par un temps fort : ", post.held, " · score ", app.model.live.score)
+	print("Fin du match à la minute ", post.minute, " · débrief retenu par un temps fort : ", post.held, " · score ", app.model.live.score, " · arrêts sur carton repris : ", stoppages.size())
 	followed = followed + journal
 	if post.reached:
 		director.view._continue(true)
