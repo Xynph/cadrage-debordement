@@ -37,6 +37,9 @@ function run(mode,dossier=mode){
  // Chorégraphe de temps forts (éteint par défaut) : l'essai en jeu courant de la 14e minute.
  if(mode==='choregraphie')Object.assign(env,{CD_MATCH_CHOREGRAPHE:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'2',CD_GODOT_SEED:'7'});
  else delete env.CD_MATCH_CHOREGRAPHE;
+ // Entracte entre deux temps forts, à sa durée par défaut et à vitesse réelle (horloge rapide pour la durée du test).
+ delete env.CD_MATCH_TEMPS_FORTS_ENTRACTE;
+ if(mode==='entracte')Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'rapide',CD_GODOT_SEED:'7'});
  const result=spawnSync(godot,['--headless','--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:600000});
  const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(directory,'godot-'+mode+'.log'),output);console.log(output);
  if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:/);
@@ -82,5 +85,12 @@ if(veut('choregraphie')){
  assert.deepEqual(chore.failures,[]);assert.ok(chore.checks>=9,'contrôles du chorégraphe : '+chore.checks);
  assert.ok(chore.suivi.some(e=>e.evenement==='choregraphie'&&e.duree_reelle>0),'pistes jouées : '+JSON.stringify(chore.suivi.map(e=>e.evenement)));
  bilan.push('chorégraphe '+chore.checks);
+}
+if(veut('entracte')){
+ const entracte=run('entracte');
+ assert.deepEqual(entracte.failures,[]);assert.ok(entracte.checks>=20,'contrôles de l’entracte : '+entracte.checks);
+ const ordre=entracte.suivi.map(e=>e.evenement);
+ assert.ok(ordre.includes('entracte_retenu')&&ordre.includes('tiroir')&&ordre.includes('entracte_passe'),'entracte : '+ordre.join(', '));
+ bilan.push('entracte '+entracte.checks);
 }
 console.log('Preuves temps forts : '+directory+' · contrôles : '+bilan.join(' · '));

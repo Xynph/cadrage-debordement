@@ -36,6 +36,115 @@ static func hold_ball(actor: Node3D, rig: Skeleton3D, center: Vector3, weight: f
 		var tangent := rig.global_basis.inverse() * actor.global_basis * Vector3(-sign_ * 0.6, 0.25, 0.8).normalized()
 		_orient(rig, palm, Basis(Quaternion(direction, tangent.normalized())) * pose.basis, weight)
 
+## Port du ballon (12 novembre 2026, demande de Léo : « qu'on ait plus la sensation que le
+## joueur a le ballon dans les mains »). Le ballon est tenu à deux mains devant le ventre, ou
+## calé sous un bras en course (`tuck` 0 à 1, `side` 1 = bras gauche, -1 = bras droit) ; `swing`
+## (0 à 1, négatif sinon) : armé puis lancer d'une passe à deux mains vers `toward` (côté du
+## receveur, 1 = gauche du passeur). Les bras sont posés sur la pose d'animation, puis le ballon
+## est replacé d'après les poignets réellement atteints : il ne flotte jamais hors des mains.
+## Rend [centre du ballon, orientation du ballon].
+const POIGNET := Vector3(0.165, -0.035, -0.045)
+
+static func carry_ball(actor: Node3D, rig: Skeleton3D, weight: float, tuck: float, side: float, swing: float = -1.0, toward: float = 1.0) -> Array:
+	var torso := rig.find_bone("Torso")
+	var chest := rig.to_global(rig.get_bone_global_pose(torso).origin)
+	var b := body_frame(actor, rig, torso)
+	var centre := chest + b * Vector3(0.0, -0.2, 0.27)
+	var axe := Vector3(0.0, -0.45, 1.0)
+	if swing >= 0.0:
+		# Passe à deux mains : le ballon part de la hanche opposée et file vers le receveur.
+		var k := smoothstep(0.0, 1.0, swing)
+		centre = chest + b * Vector3(-toward * 0.26, -0.26, 0.18).lerp(Vector3(toward * 0.36, -0.08, 0.44), k)
+		axe = Vector3(toward * 0.5 * k, -0.35, 1.0)
+		tuck = 0.0
+	var cale := chest + b * Vector3(side * 0.17, -0.19, 0.12)
+	centre = centre.lerp(cale, tuck)
+	axe = axe.lerp(Vector3(side * 0.12, -0.25, 1.0), tuck)
+	var long := (b * axe).normalized()
+	var ecart := Vector3.ZERO
+	var poids := 0.0
+	for cote in ["L", "R"]:
+		var sg := 1.0 if cote == "L" else -1.0
+		var main := centre + b * Vector3(sg * POIGNET.x, POIGNET.y, POIGNET.z)
+		var pole := b * Vector3(sg * 0.7, -0.8, -0.15)
+		var w := weight
+		if tuck > 0.0:
+			if sg == side:
+				# Bras qui cale le ballon contre les côtes : main sur la pointe avant, coude en arrière.
+				main = main.lerp(centre + long * 0.13 + b * Vector3(side * 0.06, -0.04, 0.0), tuck)
+				pole = pole.lerp(b * Vector3(side * 0.45, -0.55, -0.75), tuck)
+			else:
+				w = weight * (1.0 - tuck)
+		if w <= 0.001:
+			continue
+		_solve_arm(rig, cote, main, pole, w)
+		_palm(actor, rig, cote, w)
+		var poignet := rig.find_bone("Palm." + cote)
+		if poignet >= 0:
+			ecart += (rig.to_global(rig.get_bone_global_pose(poignet).origin) - main) * w
+			poids += w
+	# Le ballon suit les poignets réellement atteints (bras trop courts, geste en cours).
+	if poids > 0.0:
+		centre += (ecart / poids).limit_length(0.3)
+	var haut := b.y
+	var cote_axe := long.cross(haut)
+	if cote_axe.length_squared() < 0.0001:
+		cote_axe = b.x
+	cote_axe = cote_axe.normalized()
+	return [centre, Basis(long, cote_axe.cross(long).normalized(), cote_axe)]
+
+
+## Fin d'une passe : les bras finissent le geste vers le receveur, puis rendent la main.
+static func pass_follow(actor: Node3D, rig: Skeleton3D, toward: float, weight: float) -> void:
+	if weight <= 0.0:
+		return
+	var torso := rig.find_bone("Torso")
+	var chest := rig.to_global(rig.get_bone_global_pose(torso).origin)
+	var b := body_frame(actor, rig, torso)
+	var centre := chest + b * Vector3(toward * 0.42, -0.04, 0.48)
+	for cote in ["L", "R"]:
+		var sg := 1.0 if cote == "L" else -1.0
+		_solve_arm(rig, cote, centre + b * Vector3(sg * POIGNET.x, POIGNET.y, POIGNET.z), b * Vector3(sg * 0.7, -0.8, -0.15), weight)
+
+
+## Réception : les deux mains vont chercher le ballon qui arrive, à portée de bras.
+static func reach_ball(actor: Node3D, rig: Skeleton3D, ball: Vector3, weight: float) -> void:
+	if weight <= 0.0:
+		return
+	var torso := rig.find_bone("Torso")
+	var chest := rig.to_global(rig.get_bone_global_pose(torso).origin)
+	var vers := ball - chest
+	var b := actor.global_basis
+	var devant := chest + b * Vector3(0.0, -0.05, 0.4)
+	var cible := chest + vers.limit_length(0.55) if vers.dot(b.z) > 0.0 else devant
+	hold_ball(actor, rig, cible, weight)
+
+
+## Repère du buste : celui du joueur, tourné comme le buste l'est par rapport à sa pose de
+## repos (penché en course, couché dans une chute) ; le ballon suit le buste, pas la verticale.
+static func body_frame(actor: Node3D, rig: Skeleton3D, torso: int) -> Basis:
+	if torso < 0:
+		return actor.global_basis
+	var pose := (rig.global_basis * rig.get_bone_global_pose(torso).basis).orthonormalized()
+	# Repère du squelette au repos par rapport au joueur (posé à la création) : une bascule
+	# procédurale du modèle (chute sans bibliothèque) compte alors aussi.
+	var relatif: Basis = rig.get_meta("repos_relatif", actor.global_basis.inverse() * rig.global_basis)
+	var repos := (actor.global_basis * relatif * rig.get_bone_global_rest(torso).basis).orthonormalized()
+	return (pose * repos.inverse()).orthonormalized() * actor.global_basis.orthonormalized()
+
+
+static func _palm(actor: Node3D, rig: Skeleton3D, side: String, weight: float) -> void:
+	var sign_ := 1.0 if side == "L" else -1.0
+	var palm := rig.find_bone("Palm." + side)
+	var middle := rig.find_bone("MiddleHand." + side)
+	if palm < 0 or middle < 0:
+		return
+	var pose := rig.get_bone_global_pose(palm)
+	var direction := (rig.get_bone_global_pose(middle).origin - pose.origin).normalized()
+	var tangent := rig.global_basis.inverse() * actor.global_basis * Vector3(-sign_ * 0.6, 0.25, 0.8).normalized()
+	_orient(rig, palm, Basis(Quaternion(direction, tangent.normalized())) * pose.basis, weight)
+
+
 static func restore_contact(rig: Skeleton3D, base: Dictionary) -> void:
 	# Source clips need their original pose before the next layer is evaluated.
 	# In particular, advance(0) during a pause must never accumulate a lean.

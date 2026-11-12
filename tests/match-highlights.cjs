@@ -255,3 +255,47 @@ test('En direct, l’amorce d’un essai revient sur la minute précédente et l
   const course = etendu.tempsForts.flatMap(h => h.plans).find(p => p.kind === 'carry');
   assert.ok(course.mouvement > 0 && course.duree > course.mouvement, 'la course dure le temps de la distance');
 });
+
+// Retours de Léo (12 novembre 2026) : « pas que des essais ou des transformations, il faut
+// qu'il y ait aussi des grosses actions sans point marqué, pour qu'on ne sache pas à l'avance
+// ce qu'il va se passer ». Mesure sur des matchs du harnais (niveau dynamique, sélection en direct).
+const GROSSES = H.GROSSES || new Set(['franchissement', 'ballon_sauve', 'ballon_tenu_en_but', 'essai_refuse', 'penalite_manquee', 'pression_dans_les_22',
+  'pres_de_la_ligne', 'cinquante_22', 'jeu_au_pied_dangereux', 'contre_attaque', 'touche_5m', 'melee_5m', 'en_but_sous_pression', 'ballon_porte']);
+test('Niveau dynamique : une vraie part de grosses actions sans point, tous les essais, tout le match', () => {
+  const matchs = [];
+  for (let k = 0; k < 16; k++) {
+    const { run } = context();
+    run(`for (let i = 0; i < ${k * 7919}; i++) Math.random(); start(${k % 10}); beginMatch(); continueMatch();`);
+    for (let i = 0; i < 800 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
+    assert.equal(run('S.live.finished'), true);
+    matchs.push(JSON.parse(run('JSON.stringify(S.live.events)')));
+  }
+  let episodes = 0, points = 0, grosses = 0, memes = 0, essais = 0, vus = 0;
+  const quarts = [0, 0, 0, 0];
+  for (const events of matchs) {
+    const bilan = H.en_direct(events, { niveau: 'dynamique' });
+    essais += events.filter(e => e.scene?.kind === 'try').length;
+    let precedent = null;
+    for (const tf of bilan.tempsForts) {
+      vus += tf.plans.filter(p => p.kind === 'try').length;
+      // Une transformation n'est jamais un temps fort à elle seule : elle suit son essai.
+      assert.ok(tf.plans.some(p => p.kind !== 'transformation'), 'temps fort fait d’une transformation seule');
+      tf.plans.forEach((p, n) => { if (p.kind === 'transformation') assert.equal(tf.plans[n - 1]?.kind, 'try', 'transformation sans son essai'); });
+      if (tf.suite) continue;
+      episodes++;
+      const marque = tf.plans.some(p => p.kind === 'try' || p.kind === 'goal');
+      if (marque) points++; else if (tf.types.some(t => GROSSES.has(t))) grosses++;
+      quarts[Math.min(3, Math.floor(tf.minuteDebut / 20))]++;
+      // Un essai, un carton ou une pénalité réussie se montrent toujours : seuls les choix libres comptent.
+      const signature = tf.type + '|' + marque;
+      if (signature === precedent && !tf.force) memes++;
+      precedent = signature;
+    }
+  }
+  assert.equal(vus, essais, 'chaque essai est montré');
+  const part = n => n / episodes;
+  assert.ok(part(points) <= 0.5, 'temps forts qui marquent : ' + Math.round(part(points) * 100) + ' %');
+  assert.ok(part(grosses) >= 0.35 && part(grosses) <= 0.6, 'grosses actions sans point : ' + Math.round(part(grosses) * 100) + ' %');
+  assert.ok(quarts.every(q => q / episodes >= 0.15), 'temps forts répartis sur le match : ' + quarts.join(' / '));
+  assert.ok(part(memes) <= 0.08, 'deux temps forts quasi identiques d’affilée (choix libres) : ' + Math.round(part(memes) * 100) + ' %');
+});
