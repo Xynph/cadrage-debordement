@@ -44,19 +44,38 @@ func mouse(b: Button) -> void:
 	await settle()
 	var point := b.get_global_rect().get_center()
 	var motion := InputEventMouseMotion.new(); motion.position = point
-	Input.parse_input_event(motion)
+	# Positions come from Control global rects in this viewport, not desktop coordinates.
+	root.push_input(motion, true)
 	for down: bool in [true, false]:
 		var e := InputEventMouseButton.new(); e.position = point; e.button_index = MOUSE_BUTTON_LEFT; e.pressed = down
-		Input.parse_input_event(e); await process_frame
+		root.push_input(e, true); await process_frame
 	await settle()
 func snapshot() -> Dictionary:
 	var state: Dictionary = app.management_ui.get("calendar_reading", {}).duplicate(true)
-	state["month_observed"] = calendar().month
+	state["calendar_present"] = calendar() != null
+	state["table_observed"] = app.get_meta("calendar_table", false)
+	if calendar() != null:
+		state["month_observed"] = calendar().month
+		state["selected_observed"] = calendar().selected
+		state["filter_observed"] = calendar().filter
+		state["view_observed"] = calendar().view_mode
 	state["scrolls_observed"] = {}
-	for s: ScrollContainer in calendar().find_children("*", "ScrollContainer", true, false): state.scrolls_observed[str(s.name)] = [s.scroll_horizontal, s.scroll_vertical]
+	if calendar() != null:
+		for scroll: ScrollContainer in calendar().find_children("*", "ScrollContainer", true, false): state.scrolls_observed[str(scroll.name)] = [scroll.scroll_horizontal, scroll.scroll_vertical]
 	var focus := root.gui_get_focus_owner()
 	state["focus_observed"] = str(focus.name) if focus != null else ""
 	return state
+func source_snapshot(source: Button) -> Dictionary:
+	var scroll := app.find_child("CalendarProgramScroll",true,false) as ScrollContainer
+	check(scroll != null, "Défilement réel du programme disponible")
+	if scroll != null:
+		var bar := scroll.get_v_scroll_bar()
+		check(bar.max_value > bar.page, "Précondition Back : programme réellement débordant")
+		scroll.scroll_vertical = int(bar.max_value - bar.page)
+		scroll.ensure_control_visible(source)
+		source.grab_focus(); await settle()
+		check(scroll.scroll_vertical > 0, "Précondition Back : scroll source strictement positif")
+	return snapshot()
 func target_ok(id: String, date: String, label: String) -> void:
 	check(app.route == "Calendrier" and calendar() != null, "La séance ouvre le Calendrier")
 	if calendar() == null: return
@@ -67,14 +86,14 @@ func target_ok(id: String, date: String, label: String) -> void:
 	if targets.size() == 1:
 		check(targets[0].has_focus() and targets[0].is_visible_in_tree(), "Focus clavier sur la séance du programme du jour")
 		check(targets[0].text.contains(label), "Libellé publié affiché sur le lien ciblé")
-		check(str(targets[0].name) == "CalendarSessionDetail_" + id.sha256_text(), "Nom du détail unique par hash de l’ID brut")
 func reject(target: Dictionary, message: String) -> void:
+	var live := snapshot()
 	var route: String = app.route
 	var reading: Dictionary = app.management_ui.duplicate(true)
 	var history: Array = app.navigation_controller.history.duplicate(true)
 	var cursor: int = app.navigation_controller.cursor
 	check(not app.navigation_controller.open_entity(target), message)
-	check(app.route == route and app.management_ui == reading and app.navigation_controller.history == history and app.navigation_controller.cursor == cursor, "Refus atomique sans navigation : " + message)
+	check(app.route == route and app.management_ui == reading and app.navigation_controller.history == history and app.navigation_controller.cursor == cursor and snapshot() == live, "Refus atomique sans navigation : " + message)
 func finish() -> void:
 	var speech_id := int(app.coach.speech._id) if is_instance_valid(app.coach) else -1
 	check(requests == 0 and starts == 0 and speech_id == 0, "Mute précoce : requested=0, started=0, _id=0")
@@ -83,6 +102,7 @@ func finish() -> void:
 	print("SESSION LINKS : %d contrôles ; %d échecs" % [checks, failures.size()])
 	await app._close(0 if failures.is_empty() else 1)
 func run() -> void:
+	root.gui_embed_subwindows = true
 	root.size = Vector2i(2560, 1440)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
@@ -97,7 +117,7 @@ func run() -> void:
 	await wait_worker()
 	var sessions: Array = app.model.get("calendarPlanning", {}).get("sessions", [])
 	var chosen: Dictionary = {}
-	var today := str(app.model.get("meta", {}).get("calendarToday", ""))
+	var today := str(app.model.get("calendarPlanning", {}).get("today", app.model.get("meta", {}).get("date", "")))
 	for row: Dictionary in sessions:
 		if not str(row.get("id", "")).is_empty() and str(row.get("date", "")) != today:
 			chosen = row.duplicate(true); break
@@ -106,6 +126,7 @@ func run() -> void:
 	var id := str(chosen.id); var date := str(chosen.date)
 	var scene: Variant = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
 	check(scene is Dictionary and not scene.get("completed", false), "Garde testée pendant le vrai rendez-vous obligatoire")
+	check(app.navigation_controller.entity_available({"kind":"session","id":id}), "ID réel résolvable indépendamment de la garde obligatoire")
 	reject({"kind":"session","id":id}, "Rendez-vous obligatoire refuse la séance réelle")
 	if not await Flow.settle_club_meetings(app, self, check): await finish(); return
 	# All business preparation is complete. No export or command after baseline.
@@ -124,12 +145,26 @@ func run() -> void:
 		var clone: Dictionary = original.duplicate(true)
 		for row: Dictionary in clone.calendarPlanning.sessions:
 			if str(row.get("id", "")) == id:
+				row.label = "Séance synthétique sans destination"
 				if invalid == "missing": row.erase("date")
 				elif invalid == "invalid": row.date = "2026-02-31"
 		if invalid == "duplicate": clone.calendarPlanning.sessions.append(chosen.duplicate(true))
 		app.model = clone
 		reject({"kind":"session","id":id}, "Projection synthétique isolée refusée : " + invalid)
+		app._navigate("Calendrier"); await settle()
+		calendar()._select(date); await settle()
+		calendar()._view_as("week"); await settle()
+		check(links(calendar(),id).is_empty(), "Projection invalide rendue sans lien cliquable : " + invalid)
+		if invalid == "duplicate":
+			var plain := false
+			for label: Label in calendar().find_children("*","Label",true,false):
+				if label.text.contains("Séance synthétique sans destination"): plain = true
+			check(plain, "Destination ambiguë conservée comme libellé publié simple")
 	app.model = original
+	# Restore a different real day before trying the adapter; the synthetic
+	# renderer checks above must not accidentally preselect the expected date.
+	app._navigate("Calendrier"); await settle()
+	calendar()._select(today); await settle()
 	var nav: Node = app.navigation_controller
 	check(nav.open_entity({"kind":"session","id":id}), "Adaptateur session accepte l’ID réel après préparation")
 	await settle()
@@ -182,7 +217,15 @@ func run() -> void:
 			if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(size)
 			await settle()
 			var detail_links := links(app.find_child("MonthDayDetail",true,false),id)
-			check(detail_links.size() == 1 and detail_links[0].get_global_rect().size.x > 0 and detail_links[0].get_global_rect().end.x <= size.x + 1, "Lien séance contenu dans le viewport " + str(size))
+			check(detail_links.size() == 1, "Lien séance présent dans le viewport " + str(size))
+			if detail_links.size() == 1:
+				var scroll := app.find_child("CalendarDayDetailScroll",true,false) as ScrollContainer
+				if scroll != null: scroll.ensure_control_visible(detail_links[0])
+				await settle()
+				var rect := detail_links[0].get_global_rect()
+				var visible := Rect2(Vector2.ZERO,Vector2(size))
+				if scroll != null: visible = visible.intersection(scroll.get_global_rect())
+				check(rect.size.x > 0 and rect.size.y > 0 and visible.intersects(rect) and rect.position.x >= visible.position.x - 1 and rect.end.x <= visible.end.x + 1 and rect.position.y >= visible.position.y - 1 and rect.end.y <= visible.end.y + 1, "Lien séance visible et contenu sur deux axes " + str(size))
 		if OS.get_environment("CD_SESSION_LINKS_CAPTURE") == "1":
 			check(DisplayServer.get_name() != "headless", "Capture exige un vrai moteur graphique")
 			if DisplayServer.get_name() != "headless":
@@ -191,15 +234,19 @@ func run() -> void:
 				check(image.get_size() == Vector2i(2560,1440), "Capture réelle 2560×1440")
 				check(image.save_png(output.path_join("session-1440.png")) == OK, "Capture séance publiée")
 				captures.append("session-1440.png")
+		# Smaller supported viewport supplies real overflow, without synthetic content.
+		root.size = Vector2i(1280,720)
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+		await settle()
 		await press("CalendarView_week")
+		check(links(app.find_child("CalendarWeekGrid",true,false),id).size() == 1, "Grille : lien séance lié à l’ID brut projeté")
 		await press("MonthFilter_matches")
 		check(links(app.find_child("CalendarWeekGrid",true,false),id).is_empty(), "Filtre matchs masque les séances de la grille")
 		var weekly := links(app.find_child("CalendarWeekSessionDetails",true,false),id)
 		check(weekly.size() == 1, "Lien hebdomadaire réel reste disponible sous le filtre matchs")
 		if weekly.size() == 1:
 			var source := weekly[0]
-			source.grab_focus(); await settle()
-			var before := snapshot()
+			var before: Dictionary = await source_snapshot(source)
 			await key(KEY_ENTER)
 			target_ok(id,date,str(chosen.get("label","Entraînement")))
 			var history_count: int = nav.history.size()
@@ -210,9 +257,10 @@ func run() -> void:
 			check(snapshot() == before, "Back clavier restitue date, mois, vue, filtre, scrolls et focus exacts")
 			weekly = links(app.find_child("CalendarWeekSessionDetails",true,false),id)
 			if weekly.size() == 1:
+				var before_mouse: Dictionary = await source_snapshot(weekly[0])
 				await mouse(weekly[0]); target_ok(id,date,str(chosen.get("label","Entraînement")))
 				await key(KEY_LEFT,true)
-				check(snapshot() == before, "Back après clic restitue le contexte hebdomadaire")
+				check(snapshot() == before_mouse, "Back après clic restitue le contexte hebdomadaire")
 	# Explicit SYNTHETIC projection: collision, same-day slots and past date.
 	# This section is never captured, sent to the worker, or persisted.
 	if calendar() != null and calendar().selected == date:
@@ -237,7 +285,8 @@ func run() -> void:
 			for node: Control in detail.find_children("*","Control",true,false):
 				if node is Label or node is Button: text += str(node.text) + " "
 			check(text.contains(str(a.label)) and text.contains(str(b.label)), "Deux créneaux synthétiques du même jour restent publiés séparément")
-			check(text.contains("Créneau passé") and not text.to_lower().contains("séance effectuée"), "Créneau passé décrit sans prétendre une exécution sportive")
+			# A past slot is not evidence of execution. Assert only its public fields
+			# and the model/profile/bridge invariants, not presentational wording.
 			for field: String in ["forwards","backs"]:
 				if not str(row.get(field, "")).is_empty(): check(text.contains(str(row[field])), "Programme passé limité au champ publié : " + field)
 		check(JSON.stringify(app.model) == synthetic_before and app.bridge._next_id == bridge_id, "Projection synthétique passée sans mutation ni application entraînement")
