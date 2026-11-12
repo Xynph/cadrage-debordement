@@ -4,6 +4,10 @@ name: Mesure des clubs gérés (carrières longues)
 # drapeau des salaires par niveau allumé et éteint, plus les suites longues
 # qui ne tiennent pas sur une machine locale partagée.
 on:
+  # Une poussée sur une branche « mesure/… » lance la même mesure avec les valeurs
+  # par défaut (le lancement manuel exige que le fichier soit connu de GitHub).
+  push:
+    branches: ['mesure/**']
   workflow_dispatch:
     inputs:
       code_ref:
@@ -41,8 +45,8 @@ jobs:
       - id: m
         shell: bash
         env:
-          MODES: ${{ inputs.modes }}
-          FLAGS: ${{ inputs.flags }}
+          MODES: ${{ inputs.modes || 'common,world-champ' }}
+          FLAGS: ${{ inputs.flags || '0,1' }}
         run: |
           set -euo pipefail
           json=$(node -e 'const m=process.env.MODES.split(",").map(s=>s.trim()).filter(Boolean),f=process.env.FLAGS.split(",").map(s=>s.trim()).filter(Boolean);const include=[];for(const mode of m)for(const flag of f)include.push({mode,flag,club:mode==="common"?29:30});console.log(JSON.stringify({include}))')
@@ -80,7 +84,7 @@ jobs:
           sha=$(git rev-parse HEAD)
           echo "Code mesuré : $sha"
           mkdir -p "$RUNNER_TEMP/out"
-          /usr/bin/time -f "max_rss_kb=%M wall_s=%e" node ci/world-career-measure.cjs --seed 27 --mode "${{ matrix.mode }}" --club "${{ matrix.club }}" --seasons "${{ inputs.seasons }}" --out "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.json" | tee "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.log"
+          /usr/bin/time -f "max_rss_kb=%M wall_s=%e" node ci/world-career-measure.cjs --seed 27 --mode "${{ matrix.mode }}" --club "${{ matrix.club }}" --seasons "${{ inputs.seasons || 3 }}" --out "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.json" | tee "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.log"
           node -e 'const r=require(process.argv[1]);r.codeSha=process.argv[2];require("fs").writeFileSync(process.argv[1],JSON.stringify(r,null,1));if(r.status!=="completed"){console.error(r.failure);process.exit(1)}' "$RUNNER_TEMP/out/${{ matrix.mode }}-flag${{ matrix.flag }}.json" "$sha"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -104,7 +108,7 @@ jobs:
       - name: Suites
         shell: bash
         env:
-          TESTS: ${{ inputs.tests }}
+          TESTS: ${{ inputs.tests || 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/native-academy-groups.cjs tests/player-population-capacity.cjs tests/france-long-career.cjs tests/france-long-career-late.cjs tests/world-career.cjs tests/world-roster-stability.cjs' }}
         run: |
           set -uo pipefail
           failures=0
