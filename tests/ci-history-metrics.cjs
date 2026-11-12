@@ -14,7 +14,13 @@ assert.equal(a.slowest[0].p90,40);assert.match(report(a),/P90 130 s/);
 assert.throws(()=>analyze([sample(1,100,20,2)]),/Au moins deux/);
 assert.throws(()=>analyze([sample(1,100,20,2),sample(1,110,30,3)]),/dupliqué/);
 const red=sample(2,110,30,3);red.jobs[6].conclusion='failure';
-assert.throws(()=>analyze([sample(1,100,20,2),red]),/7 jobs SUCCESS/);
+assert.throws(()=>analyze([sample(1,100,20,2),red]),/Jobs officiels SUCCESS/);
+// Passage à dix shards : runs à 5 et à 10 shards comparables ; job Godot informatif ignoré.
+const ten=sample(4,90,25,2);ten.jobs=Array.from({length:10},(_,i)=>({name:'Suites '+(i+1)+'/10',status:'completed',conclusion:'success',log:i===0?'PASS tests/slow.cjs (25 s)\nPASS tests/quick.cjs (2 s)':'PASS tests/extra'+i+'.cjs (1 s)'}));
+ten.jobs.push({name:'classification',status:'completed',conclusion:'success'},{name:'Validation CI',status:'completed',conclusion:'success'},{name:'Godot 1/3',status:'completed',conclusion:'failure'});
+assert.equal(analyze([sample(1,100,20,2),ten]).slowest[0].name,'tests/slow.cjs');
+const partial=sample(5,90,25,2);partial.jobs.splice(1,1);
+assert.throws(()=>analyze([sample(1,100,20,2),partial]),/Série complète/);
 const missing=sample(2,110,30,3);delete missing.jobs[0].log;
 assert.throws(()=>analyze([sample(1,100,20,2),missing]),/Log shard manquant/);
 const mixed=sample(2,110,30,3);mixed.jobs[0].log='PASS tests/slow.cjs (30 s)';

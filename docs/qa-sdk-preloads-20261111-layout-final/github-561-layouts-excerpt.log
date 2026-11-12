@@ -1,0 +1,41 @@
+2026-11-11T18:31:13.5265881Z GABI LAYOUT : 260 contrôles ; 0 échec(s)
+2026-11-11T18:31:13.5274452Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"layout-native","passed":true,"status":0,"milliseconds":46737,"error":null}
+2026-11-11T18:31:52.0163974Z GABI LAYOUT : 256 contrôles ; 0 échec(s)
+2026-11-11T18:31:52.0172111Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"layout-stretch","passed":true,"status":0,"milliseconds":38489,"error":null}
+2026-11-11T18:32:40.0976906Z GABI LAYOUT : 160 contrôles ; 0 échec(s)
+2026-11-11T18:32:40.0989708Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"dock-native","passed":true,"status":0,"milliseconds":48082,"error":null}
+2026-11-11T18:33:28.3607451Z GABI LAYOUT : 160 contrôles ; 0 échec(s)
+2026-11-11T18:33:28.3618332Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"dock-stretch","passed":true,"status":0,"milliseconds":48263,"error":null}
+2026-11-11T18:34:08.5071240Z SDK_RESULT {"suite":"tests/godot-lineup-layout.cjs","variant":"default","passed":true,"status":0,"milliseconds":40146,"error":null}
+2026-11-11T18:36:00.3987729Z Interface adaptative : 857 contrôles ; 0 échec(s)
+2026-11-11T18:36:00.3993835Z SDK_RESULT {"suite":"tests/godot-interface-layout.cjs","variant":"management","passed":true,"status":0,"milliseconds":111891,"error":null}
+2026-11-11T18:37:47.1016880Z Interface adaptative : 33 contrôles ; 0 échec(s)
+2026-11-11T18:37:47.1019970Z SDK_RESULT {"suite":"tests/godot-interface-layout.cjs","variant":"journal","passed":true,"status":0,"milliseconds":106704,"error":null}
+2026-11-11T18:38:34.5827800Z Lisibilité06 : 249 contrôles ; 6 échec(s)
+2026-11-11T18:38:34.5830588Z FAIL: Tuile entière dans le Bureau OfficeGroup (1280, 720)
+2026-11-11T18:38:34.5831132Z FAIL: Tuile entière dans le Bureau OfficeStandings (1280, 720)
+2026-11-11T18:38:34.5831661Z FAIL: Tuile entière dans le Bureau OfficeJournal (1280, 720)
+2026-11-11T18:38:34.5832193Z FAIL: Tuile entière dans le Bureau OfficeRecruitment (1280, 720)
+2026-11-11T18:38:34.5832726Z FAIL: Tuile entière dans le Bureau OfficeTimeline (1280, 720)
+2026-11-11T18:38:34.5833329Z FAIL: Accès métier visible depuis le Bureau OfficeCalendarAction (1280, 720)
+2026-11-11T18:38:34.5840175Z     Lisibilité06 : 249 contrôles ; 6 échec(s)
+2026-11-11T18:38:34.5842392Z     FAIL: Tuile entière dans le Bureau OfficeGroup (1280, 720)
+2026-11-11T18:38:34.5842900Z     FAIL: Tuile entière dans le Bureau OfficeStandings (1280, 720)
+2026-11-11T18:38:34.5843394Z     FAIL: Tuile entière dans le Bureau OfficeJournal (1280, 720)
+2026-11-11T18:38:34.5843898Z     FAIL: Tuile entière dans le Bureau OfficeRecruitment (1280, 720)
+2026-11-11T18:38:34.5844410Z     FAIL: Tuile entière dans le Bureau OfficeTimeline (1280, 720)
+2026-11-11T18:38:34.5845894Z     FAIL: Accès métier visible depuis le Bureau OfficeCalendarAction (1280, 720)
+2026-11-11T18:38:34.5853484Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading720","passed":false,"status":1,"milliseconds":47481,"error":null}
+2026-11-11T18:39:29.3166285Z Lisibilité06 : 260 contrôles ; 0 échec(s)
+2026-11-11T18:39:29.3173768Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading900","passed":true,"status":0,"milliseconds":54734,"error":null}
+2026-11-11T18:40:29.3316557Z Lisibilité06 : 251 contrôles ; 1 échec(s)
+2026-11-11T18:40:29.3320489Z FAIL: Liste immersive complète et vingt-quatre lignes de faits entières (1920, 1080) · reçu 23/61
+2026-11-11T18:40:29.3332249Z     Lisibilité06 : 251 contrôles ; 1 échec(s)
+2026-11-11T18:40:29.3336828Z     FAIL: Liste immersive complète et vingt-quatre lignes de faits entières (1920, 1080) · reçu 23/61
+2026-11-11T18:40:29.3344356Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading1080","passed":false,"status":1,"milliseconds":60015,"error":null}
+2026-11-11T18:41:39.9528599Z Lisibilité06 : 259 contrôles ; 0 échec(s)
+2026-11-11T18:41:39.9538112Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading1440","passed":true,"status":0,"milliseconds":70621,"error":null}
+2026-11-11T18:42:26.1959207Z Lisibilité06 : 124 contrôles ; 0 échec(s)
+2026-11-11T18:42:26.1970600Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"responsive","passed":true,"status":0,"milliseconds":46243,"error":null}
+2026-11-11T18:43:19.4091170Z Lisibilité06 : 101 contrôles ; 0 échec(s)
+2026-11-11T18:43:19.4105662Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"drafts","passed":true,"status":0,"milliseconds":53213,"error":null}

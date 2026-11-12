@@ -1,0 +1,43 @@
+2026-11-12T02:15:55.4726310Z {"checks":83,"failures":[]}
+2026-11-12T02:15:55.4742111Z SDK_RESULT {"suite":"tests/godot-academy-portraits.cjs","variant":"default","passed":true,"status":0,"milliseconds":16492,"error":null}
+2026-11-12T02:16:20.2564987Z {"checks":57,"failures":[]}
+2026-11-12T02:16:20.2572924Z SDK_RESULT {"suite":"tests/godot-portrait-continuity.cjs","variant":"default","passed":true,"status":0,"milliseconds":24784,"error":null}
+2026-11-12T02:16:44.7401434Z SDK_RESULT {"suite":"tests/godot-contract-negotiation.cjs","variant":"default","passed":true,"status":0,"milliseconds":24483,"error":null}
+2026-11-12T02:17:20.7705951Z {"checks":192,"failures":[]}
+2026-11-12T02:17:20.7710785Z SDK_RESULT {"suite":"tests/deepen-staff-real-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":36030,"error":null}
+2026-11-12T02:17:43.5841183Z DEEPEN_STAFF_HIRE_UI: 104 contrôles, 0 échec(s)
+2026-11-12T02:17:43.5841685Z {"checks":104,"failures":[]}
+2026-11-12T02:17:43.5847022Z SDK_RESULT {"suite":"tests/deepen-staff-hire-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":22814,"error":null}
+2026-11-12T02:17:57.5027552Z Action review: 58 checks, 0 failures
+2026-11-12T02:17:57.5028478Z SDK_RESULT {"suite":"tests/deepen-match.cjs","variant":"default","passed":true,"status":0,"milliseconds":13919,"error":null}
+2026-11-12T02:18:51.3167106Z {"checks":123,"failures":[],"passed":true}
+2026-11-12T02:18:51.3186086Z SDK_RESULT {"suite":"tests/godot-career-final-fixes.cjs","variant":"default","passed":true,"status":0,"milliseconds":53814,"error":null}
+2026-11-12T02:19:15.6263053Z SDK_RESULT {"suite":"tests/godot-playbook-watch-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":24309,"error":null}
+2026-11-12T02:19:16.2871167Z ENTITY_PROJECTIONS {"checks":21,"failures":[]}
+2026-11-12T02:19:16.2875824Z SDK_RESULT {"suite":"tests/godot-entity-projections.cjs","variant":"default","passed":true,"status":0,"milliseconds":661,"error":null}
+2026-11-12T02:19:17.0400169Z PROSPECT_PROFILE {"checks":19,"failures":[]}
+2026-11-12T02:19:17.0405075Z SDK_RESULT {"suite":"tests/godot-prospect-profile.cjs","variant":"default","passed":true,"status":0,"milliseconds":752,"error":null}
+2026-11-12T02:19:17.4206615Z SDK_RESULT {"suite":"tests/godot-staff-fictional-labels.cjs","variant":"default","passed":true,"status":0,"milliseconds":380,"error":null}
+2026-11-12T02:21:01.8201733Z NIGHT_PROGRESS {"case":"reading","checks":132,"command":"export","elapsed_ms":100241,"error":"","failures":[],"route":"Effectif","stage":"finish","waiting":false}
+2026-11-12T02:21:01.8202387Z NAVIGATION NOCTURNE reading : 134 contrôles ; 0 échec(s)
+2026-11-12T02:21:01.8208496Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"reading","passed":true,"status":0,"milliseconds":104396,"error":null}
+2026-11-12T02:21:35.8396450Z NIGHT_PROGRESS {"case":"nation","checks":21,"command":"export","elapsed_ms":31085,"error":"","failures":[],"route":"Sélections","stage":"finish","waiting":false}
+2026-11-12T02:21:35.8397045Z NAVIGATION NOCTURNE nation : 23 contrôles ; 0 échec(s)
+2026-11-12T02:21:35.8403195Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"nation","passed":true,"status":0,"milliseconds":34021,"error":null}
+2026-11-12T02:23:52.0361920Z NIGHT_PROGRESS {"case":"guards","checks":101,"command":"export","elapsed_ms":134660,"error":"","failures":[],"route":"Réception","stage":"finish","waiting":false}
+2026-11-12T02:23:52.0362520Z NAVIGATION NOCTURNE guards : 103 contrôles ; 0 échec(s)
+2026-11-12T02:23:52.0368790Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"guards","passed":true,"status":0,"milliseconds":136192,"error":null}
+2026-11-12T02:24:32.1353550Z NIGHT_PROGRESS {"case":"prospects","checks":68,"command":"export","elapsed_ms":38303,"error":"","failures":[],"route":"Recrutement","stage":"finish","waiting":false}
+2026-11-12T02:24:32.1354237Z NAVIGATION NOCTURNE prospects : 70 contrôles ; 0 échec(s)
+2026-11-12T02:24:32.1360737Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"prospects","passed":true,"status":0,"milliseconds":40101,"error":null}
+2026-11-12T02:25:17.4224159Z NIGHT_PROGRESS {"case":"staff","checks":52,"command":"export","elapsed_ms":43557,"error":"","failures":[],"route":"Staff","stage":"finish","waiting":false}
+2026-11-12T02:25:17.4224757Z NAVIGATION NOCTURNE staff : 54 contrôles ; 0 échec(s)
+2026-11-12T02:25:17.4230850Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"staff","passed":true,"status":0,"milliseconds":45288,"error":null}
+2026-11-12T02:25:57.9866246Z NIGHT_PROGRESS {"case":"quote","checks":64,"command":"export","elapsed_ms":38886,"error":"","failures":[],"route":"Recrutement","stage":"finish","waiting":false}
+2026-11-12T02:25:57.9867805Z NAVIGATION NOCTURNE quote : 66 contrôles ; 0 échec(s)
+2026-11-12T02:25:57.9876855Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"quote","passed":true,"status":0,"milliseconds":40563,"error":null}
+2026-11-12T02:26:58.8531403Z NIGHT_PROGRESS {"case":"report","checks":45,"command":"export","elapsed_ms":26132,"error":"","failures":[],"route":"Recrutement","stage":"finish","waiting":false}
+2026-11-12T02:26:58.8532419Z NAVIGATION NOCTURNE report : 47 contrôles ; 0 échec(s)
+2026-11-12T02:26:58.8538623Z SDK_RESULT {"suite":"tests/rg27-night-navigation.cjs","variant":"report","passed":true,"status":0,"milliseconds":60868,"error":null}
+2026-11-12T02:26:59.4205438Z SDK_RESULT {"suite":"tests/godot-world-entity-targets.cjs","variant":"default","passed":true,"status":0,"milliseconds":568,"error":null}
+2026-11-12T02:28:24.0858778Z SDK_RESULT {"suite":"tests/godot-analysis-club-graphics.cjs","variant":"default","passed":true,"status":0,"milliseconds":84665,"error":null}

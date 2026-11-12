@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
 const Watch = preload("res://ui/management_state.gd")
 var app: Control
@@ -65,7 +66,47 @@ func scrolling_case(scroll_name: String, row_pattern: String, row_type: String, 
 	await settle()
 	check(scroll.scroll_vertical > 0 and rows[0].global_position.y < first_y, "La molette fait défiler les lignes : " + scroll_name)
 	check(header.global_position.y == header_y and scroll.get_parent().global_position.y == panel_y, "En-tête et panneau fixes pendant le défilement : " + scroll_name)
+	for direction in ["up", "down"]: await wheel_edge(scroll, header, direction, scroll_name)
 	scroll.scroll_vertical = 0
+	await settle()
+
+func wheel_over(scroll: ScrollContainer, direction: String, count: int, factor: float = 3.0) -> void:
+	var point := scroll.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new();motion.position=point;motion.global_position=point
+	root.push_input(motion,true);await process_frame
+	for index in count:
+		var event := InputEventMouseButton.new()
+		event.button_index=MOUSE_BUTTON_WHEEL_UP if direction=="up" else MOUSE_BUTTON_WHEEL_DOWN
+		event.position=point;event.global_position=point;event.pressed=true;event.factor=factor
+		root.push_input(event,true);await process_frame
+	await settle()
+
+func wheel_edge(scroll: ScrollContainer, header: Button, direction: String, label: String) -> void:
+	var page := app.find_child("ContextualPageWorkspace",true,false) as ScrollContainer
+	check(page != null,"La vraie page défilante entoure la liste : "+label)
+	if page == null: return
+	var outer_limit := int(page.get_v_scroll_bar().max_value-page.get_v_scroll_bar().page)
+	var inner_limit := int(scroll.get_v_scroll_bar().max_value-scroll.get_v_scroll_bar().page)
+	check(outer_limit>0 and inner_limit>0,"La sonde exerce deux portées réelles de défilement : "+label)
+	var original_inner := scroll.scroll_vertical
+	var original_outer := page.scroll_vertical
+	# Give the outer page room to move in the attempted direction. A passing
+	# assertion therefore proves containment, rather than another exhausted bar.
+	scroll.scroll_vertical=0 if direction=="up" else inner_limit
+	page.scroll_vertical=outer_limit if direction=="up" else 0
+	await settle()
+	var inner_before := scroll.scroll_vertical
+	var outer_before := page.scroll_vertical
+	var header_y := header.global_position.y
+	var panel_y: float = scroll.get_parent().global_position.y
+	await wheel_over(scroll,direction,2)
+	print("SDK_WHEEL_EDGE ",JSON.stringify({"list":label,"direction":direction,"inner_before":inner_before,"inner_after":scroll.scroll_vertical,"inner_limit":inner_limit,"outer_before":outer_before,"outer_after":page.scroll_vertical,"header_before":header_y,"header_after":header.global_position.y,"panel_before":panel_y,"panel_after":scroll.get_parent().global_position.y}))
+	check(scroll.scroll_vertical==inner_before,"La liste conserve sa borne réelle : "+label+" / "+direction)
+	check(page.scroll_vertical==outer_before,"La molette sur la liste ne déplace pas la page à sa borne : "+label+" / "+direction)
+	check(header.global_position.y==header_y and scroll.get_parent().global_position.y==panel_y,"En-tête et panneau globalement fixes à la borne : "+label+" / "+direction)
+	await wheel_over(scroll,"down" if direction=="up" else "up",1,1.0)
+	check(scroll.scroll_vertical>0 and scroll.scroll_vertical<inner_limit and page.scroll_vertical==outer_before and header.global_position.y==header_y and scroll.get_parent().global_position.y==panel_y,"La molette repart dans la liste sans déplacer la page : "+label+" / "+direction)
+	scroll.scroll_vertical=original_inner;page.scroll_vertical=original_outer
 	await settle()
 
 func projection_cases() -> void:
@@ -91,6 +132,10 @@ func projection_cases() -> void:
 	check(not Watch.watch_reason({"physicalLoad":70,"condition":80}).is_empty(), "Charge 70 sous surveillance")
 	check(not Watch.watch_reason({"physicalLoad":0,"condition":79.9}).is_empty(), "Condition sous 80 sous surveillance")
 	check(JSON.stringify(fixture) == before, "Filtres et tri sans mutation de la projection")
+	for pair in [[0, 0], [19.99, 0], [20, 1], [39.99, 1], [40, 2], [60, 3], [80, 4], [100, 4]]:
+		check(Fatigue.load_bucket({"physicalLoad":pair[0]}) == pair[1], "Tranche de charge exacte : " + str(pair[0]))
+	for unknown in [{}, {"physicalLoad":null}, {"physicalLoad":"inconnue"}, {"physicalLoad":NAN}]:
+		check(Fatigue.load_bucket(unknown) == -1, "Une charge inconnue ne devient pas un joueur à charge nulle")
 	sort_cases()
 
 func sort_cases() -> void:
@@ -128,6 +173,7 @@ func run() -> void:
 	if app.model.is_empty(): quit(1); return
 	app.timer.stop()
 	await command("new_career", {"mode":"common", "club":29})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app.coach.close()
 	var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var unchanged := FileAccess.get_sha256(filename)
@@ -147,6 +193,19 @@ func run() -> void:
 			visible_rows += 1
 	check(visible_rows >= 20, "Au moins vingt joueurs visibles dans le tableau dense à 1440p")
 	await scrolling_case("FatigueScroll", "FatigueRow_*", "Control", "FatigueSort_name")
+	for bucket in 5:
+		await press("FatigueLoadBucket" + str(bucket))
+		var filtered := app.find_children("FatigueRow_*", "Control", true, false)
+		var expected: Array = app.model.squad.filter(func(person: Dictionary): return Fatigue.load_bucket(person) == bucket)
+		check(filtered.size() == expected.size(), "Barre du graphique ouvre exactement sa tranche, même vide : " + str(bucket))
+		var expected_ids := expected.map(func(person: Dictionary): return str(person.id))
+		for row: Control in filtered:
+			check(str(row.get_meta("player_id")) in expected_ids, "La liste filtrée ne remplace pas la tranche par l’effectif complet")
+		await press("FatigueSort_pos")
+		check(app.management_ui.immersive_training.fatigue_load_bin == bucket, "Le tri conserve la tranche du graphique")
+	check(app.bridge._next_id == requests and FileAccess.get_sha256(filename) == unchanged, "Consultation graphique : aucune commande ni écriture sportive")
+	await press("FatigueFilter4")
+	check(not app.management_ui.immersive_training.has("fatigue_load_bin"), "Tout l’effectif retire explicitement le filtre du graphique")
 	for key in Fatigue.SORT_KEYS:
 		for descending in [false, true]:
 			await press("FatigueSort_" + key)

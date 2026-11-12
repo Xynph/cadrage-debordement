@@ -13,7 +13,10 @@ func check(value: bool, message: String) -> void:
 func settle() -> void:
 	for i in 8: await process_frame
 func command(id: String, payload: Dictionary = {}) -> void:
-	app._command(id,payload)
+	print("SDK_COMMAND deepen-match ",id)
+	var accepted: bool=app._command(id,payload)
+	check(accepted,"Commande publique acceptée : "+id)
+	if not accepted:return
 	var deadline := Time.get_ticks_msec()+30000
 	while app.waiting and Time.get_ticks_msec()<deadline: await process_frame
 	check(not app.waiting and app.bridge.last_response_ok,"Commande "+id)
@@ -39,9 +42,10 @@ func run() -> void:
 	app.timer.stop()
 	app._navigate("Match")
 	await settle()
-	app.match_screen._select_tab("Journal")
+	check(app.contextual_director.active() and app.contextual_director.kind == "live", "Le vrai direct contextuel est affiché")
+	if app.match_screen.drawer_tab != "Journal" or not app.match_screen.drawer.visible: app.match_screen._toggle_drawer("Journal")
 	await settle()
-	journal=app.body.find_child("MatchJournal",true,false)
+	journal=app.match_screen.find_child("MatchJournal",true,false)
 	if OS.get_environment("CD_DEEPEN_MATCH_GRAPHICS")=="1":
 		# This recipe receives the UI, not the already tested 3D animation layer.
 		app.match_screen.stage.get_viewport().render_target_update_mode=SubViewport.UPDATE_ONCE
@@ -165,17 +169,18 @@ func cases(dialog: AcceptDialog, original: Dictionary, model_before: String, dis
 	check(is_instance_valid(dialog),"Panne du moteur conserve la copie locale")
 	app.reconnect()
 	deadline=Time.get_ticks_msec()+30000
-	while (app.bridge.child_pid<=0 or not app.bridge.last_response_ok) and Time.get_ticks_msec()<deadline: await process_frame
+	while (app.waiting or app.bridge.child_pid<=0 or not app.bridge.last_response_ok) and Time.get_ticks_msec()<deadline: await process_frame
 	await settle()
 	app.timer.stop()
-	check(app.bridge.child_pid>0 and app.bridge.last_response_ok,"Reconnexion au vrai profil")
+	check(not app.waiting and app.bridge.child_pid>0 and app.bridge.last_response_ok,"Reconnexion au vrai profil après réception du snapshot")
 	app._clear_dialogs()
 	if is_instance_valid(dialog):
 		check(dialog.events==projected.events,"Reconnexion ne réécrit pas la relecture locale")
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("live.json"))})
 	app.timer.stop()
 	check(not is_instance_valid(dialog),"Import réel ferme les faits de l’ancien contexte")
-	journal=app.body.find_child("MatchJournal",true,false)
+	if app.match_screen.drawer_tab != "Journal" or not app.match_screen.drawer.visible: app.match_screen._toggle_drawer("Journal")
+	journal=app.match_screen.find_child("MatchJournal",true,false)
 	await key(journal.review)
 	dialog=journal.find_child("MatchActionReview",true,false)
 	await command("new_career",{"mode":"fiction","club":1})

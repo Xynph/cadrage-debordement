@@ -4,6 +4,16 @@ var app: Control
 var failures: Array[String] = []
 var checks := 0
 var watched_id := ""
+var advice_fixture: Control
+class AdviceHost extends Control:
+	var model: Dictionary = {}
+	var accent := Color("234e53")
+	var waiting := false
+	var management_ui: Dictionary = {}
+	var sent: Array = []
+	func _command(id: String, payload: Dictionary) -> bool:
+		sent.append({"id":id,"payload":payload.duplicate(true)})
+		return true
 func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
 	checks += 1
@@ -39,9 +49,9 @@ func keyboard(button: BaseButton) -> void:
 		await process_frame
 	await wait_model()
 func advice_buttons() -> Array:
-	return app.body.find_children("*", "Button", true, false).filter(func(b): return b.text.begins_with("ADAPTER « "))
+	return advice_fixture.find_children("*", "Button", true, false).filter(func(b): return b.text.begins_with("ADAPTER « "))
 func advice_page() -> Control:
-	return app.body.find_child("PlaybookTabs", true, false).get_child(2)
+	return advice_fixture.find_child("PlaybookTabs", true, false).get_child(2)
 func labels(node: Node) -> String:
 	var text: String = node.text + "\n" if node is Label else ""
 	for child in node.get_children(): text += labels(child)
@@ -82,41 +92,51 @@ func run() -> void:
 	quit(0 if failures.is_empty() else 1)
 func playbook_case() -> void:
 	await load_fixture("live")
-	app._navigate("Plan de jeu")
-	await settle()
+	app.timer.stop()
 	var data: Dictionary = app.model.clubLife.playbook
 	check(data.general.attack == "conquete" and data.general.defence == "prudente" and data.staffAdvice.suggestions.is_empty() and data.staffAdvice.zoneSuggestions.size() == 1, "Fixture réelle : général correct et seul conflit local")
-	app.body.find_child("PlaybookTabs", true, false).current_tab = 2
-	await settle()
-	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
-		root.size = resolution
-		await settle()
-		check(advice_buttons().size() == 1, "Conseil local visible à " + str(resolution))
-		check(not labels(advice_page()).contains("Aucune consigne supplémentaire"), "Aucune fausse absence de conseil")
-	var before: Dictionary = await state()
-	app._navigate("Plan de jeu")
-	await settle()
-	var buttons := advice_buttons()
-	if not buttons.is_empty():
-		await keyboard(buttons[0])
-		check(app.last_command == "playbook_staff_zone", "Commande exacte playbook_staff_zone depuis Entrée")
-		var after: Dictionary = await state()
-		check(after.live.playbooks[0].zones.sortie.attack == "conquete" and after.manager.playbook.zones.sortie.attack == "conquete", "La seule zone contradictoire est corrigée dans le live et le carnet")
-		after.live.playbooks[0].zones.sortie.attack = "large"
-		after.manager.playbook.zones.sortie.attack = "large"
-		# UI command also appends an event and selects the historical playbook tab.
-		check(after.tactic == before.tactic and after.defence == before.defence and after.live.tactics == before.live.tactics and after.live.defences == before.live.defences, "Les plans généraux restent identiques")
-		check(after.live.playbooks == before.live.playbooks and after.manager.playbook == before.manager.playbook, "Aucune autre zone ni phase arrêtée modifiée")
-	# Explicit projection only: duplicate source advice must not duplicate controls.
-	app.model.clubLife.playbook = data.duplicate(true)
-	app.model.clubLife.playbook.staffAdvice.suggestions = data.staffAdvice.zoneSuggestions.duplicate(true)
-	app._render()
-	await settle()
-	check(advice_buttons().size() == 1, "Projection UI : conseils généraux/locaux dédoublonnés par kind/value")
-	app.model.clubLife.playbook.available = false
-	app._render()
-	await settle()
-	check(advice_buttons().all(func(b): return b.disabled), "Projection UI : conseils désactivés quand le carnet est indisponible")
+	var surface: Control = app.match_screen
+	for route in ["Plan de jeu", "Recrutement"]:
+		app._navigate(route); await settle()
+		check(app.route == "Match" and app.contextual_director.kind == "live" and app.match_screen == surface, "Direct réel : navigation verrouillée vers " + route)
+	check(not app.root_content.is_visible_in_tree(), "Le carnet de gestion reste masqué pendant le direct")
+	# Receive the retained classic advice renderer as an explicit isolated UI
+	# projection. It is no longer a navigable screen during the live match.
+	var host := AdviceHost.new(); root.add_child(host); host.model=app.model.duplicate(true)
+	host.z_index=110; host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	advice_fixture=preload("res://ui/playbook_view.gd").build(host);host.add_child(advice_fixture)
+	advice_fixture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var tabs:=advice_fixture.find_child("PlaybookTabs",true,false) as TabContainer
+	tabs.current_tab=2;await settle()
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+		root.size=resolution;await settle()
+		check(advice_buttons().size()==1,"Projection du renderer conservé : conseil local visible " + str(resolution))
+		check(not labels(advice_page()).contains("Aucune consigne supplémentaire"),"Projection : aucune fausse absence de conseil")
+	var before: Dictionary=await state()
+	await keyboard(advice_buttons()[0])
+	check(host.sent.size()==1 and host.sent[0].id=="playbook_staff_zone","Le contrôle conservé construit la commande exacte")
+	if host.sent.size()==1:
+		await command(host.sent[0].id,host.sent[0].payload)
+		var after: Dictionary=await state()
+		check(after.live.playbooks[0].zones.sortie.attack=="conquete" and after.manager.playbook.zones.sortie.attack=="conquete","La commande publique réelle corrige la seule zone contradictoire")
+		after.live.playbooks[0].zones.sortie.attack="large";after.manager.playbook.zones.sortie.attack="large"
+		check(after.tactic==before.tactic and after.defence==before.defence and after.live.tactics==before.live.tactics and after.live.defences==before.live.defences,"Plans généraux inchangés")
+		check(after.live.playbooks==before.live.playbooks and after.manager.playbook==before.manager.playbook,"Aucune autre zone ni phase arrêtée modifiée")
+	# Independent projected rows keep the duplicate and availability contracts.
+	host.model.clubLife.playbook=data.duplicate(true)
+	host.model.clubLife.playbook.staffAdvice.suggestions=data.staffAdvice.zoneSuggestions.duplicate(true)
+	advice_fixture.queue_free();await settle()
+	advice_fixture=preload("res://ui/playbook_view.gd").build(host);host.add_child(advice_fixture)
+	advice_fixture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	(advice_fixture.find_child("PlaybookTabs",true,false) as TabContainer).current_tab=2;await settle()
+	check(advice_buttons().size()==1,"Projection : conseils généraux et locaux dédoublonnés")
+	host.model.clubLife.playbook.available=false
+	advice_fixture.queue_free();await settle()
+	advice_fixture=preload("res://ui/playbook_view.gd").build(host);host.add_child(advice_fixture)
+	advice_fixture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	(advice_fixture.find_child("PlaybookTabs",true,false) as TabContainer).current_tab=2;await settle()
+	check(advice_buttons().size()==1 and advice_buttons().all(func(b):return b.disabled),"Projection : conseil visible mais indisponible quand le carnet est fermé")
+	host.queue_free();await settle();advice_fixture=null
 func watch_case() -> void:
 	await load_fixture("full")
 	app._navigate("Recrutement")
@@ -183,7 +203,7 @@ func watch_case() -> void:
 	await load_fixture("live")
 	app._navigate("Recrutement")
 	await settle()
-	track = await reveal_watch_button()
-	check(not app._live().is_empty() and track != null and track.disabled, "Vrai match en pause : action de suivi visible et bloquée")
+	check(not app._live().is_empty() and app.route == "Match" and app.contextual_director.kind == "live", "Vrai match en pause : recrutement inaccessible par la garde contextuelle")
+	check(not app.root_content.is_visible_in_tree(), "Le suivi ne peut pas être actionné dans une page de gestion masquée")
 	# Restore the save produced by the keyboard action for process restart.
 	await command("import", {"text":saved})

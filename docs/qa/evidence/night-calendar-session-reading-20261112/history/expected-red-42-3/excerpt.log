@@ -1,0 +1,20 @@
+L1: TAP version 13
+L2: # Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+L3: # SESSION LINKS : 42 contrôles ; 3 échecs
+L4: # FAIL: ID réel résolvable indépendamment de la garde obligatoire
+L5: # FAIL: Adaptateur session accepte l’ID réel après préparation
+L6: # FAIL: Adaptateur session manquant : le vrai ID doit sélectionner 2026-09-08
+L8: # Subtest: Séance publiée : route exacte, garde réelle, liens clavier/souris et lecture sans effets
+L9: not ok 1 - Séance publiée : route exacte, garde réelle, liens clavier/souris et lecture sans effets
+L11:   duration_ms: 15962.184416
+L14:   failureType: 'testCodeFailure'
+L15:   error: |-
+L26:   code: 'ERR_ASSERTION'
+L38: 1..1
+L39: # tests 1
+L41: # pass 0
+L42: # fail 1
+L43: # cancelled 0
+L44: # skipped 0
+L45: # todo 0
+L46: # duration_ms 16012.903898

@@ -1,0 +1,18 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-followup-receipts/silent-core/management/vestiaire-retour-fiche-2560.png",
+      "sha256": "1dae209f1e1f37bf745d3d31fc203d55617ae3cb351bf67873e133f1316751e5"
+    },
+    {
+      "file": "/workspace/work/night-followup-receipts/silent-core/management/decisions-retour-fiche-2560.png",
+      "sha256": "62325a792e1c7f047f451bcc7df4f285571ed41e6372f1687477f7dce4aeb65a"
+    }
+  ],
+  "checks": 61,
+  "failures": [],
+  "scope": "Real game client/worker; requires common read-only window suspension before running.",
+  "speech_id": 0,
+  "speech_requests": 0,
+  "speech_starts": 0
+}

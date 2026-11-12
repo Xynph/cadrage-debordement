@@ -1,0 +1,22 @@
+{
+  "checks": 45,
+  "failures": [],
+  "projectionCasesScope": "Protocol/legacy/stale/boundary counterexamples are synthetic projections, not real condition-threshold runs.",
+  "publicCases": [
+    {
+      "applied": "normal",
+      "id": "delegated_fresh_career",
+      "requested": "intense",
+      "summary": "Séance effectuée · Mode collectif appliqué : Travail normal · choix demandé : Travail intense.",
+      "text": "Mode collectif appliqué : Travail normal · choix demandé : Travail intense.\nTrésorerie : 2 500 000 € → 2 500 000 € (stable)\nSalaires par semaine : 251 000 € → 251 000 € (stable)\nMoral collectif : 77.0 → 77.0 / 100 (stable)\nCompte rendu de la séance : Travail collectif retenu avec une condition moyenne de 94%."
+    },
+    {
+      "applied": "repos",
+      "id": "delegated_after_public_matches",
+      "requested": "intense",
+      "summary": "Séance effectuée · Mode collectif appliqué : Repos · choix demandé : Travail intense.",
+      "text": "Mode collectif appliqué : Repos · choix demandé : Travail intense.\nTrésorerie : 2 408 955 € → 2 408 955 € (stable)\nSalaires par semaine : 251 000 € → 251 000 € (stable)\nMoral collectif : 74.0 → 74.0 / 100 (stable)\nCompte rendu de la séance : Récupération retenu avec une condition moyenne de 72%."
+    }
+  ],
+  "sourceDataSha": "297f016584d24810a5f762d20396fcd7c91b0293"
+}

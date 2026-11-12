@@ -14,16 +14,14 @@ function namesCheck(names){
 }
 function generate(payload){
  check(shape(payload,['name','clubs','doubleRound'])&&text(payload.name)&&typeof payload.doubleRound==='boolean','paramètres de génération invalides');namesCheck(payload.clubs);
- const clubs=payload.clubs.map((name,i)=>({id:'club-'+(i+1),name})),ring=clubs.map(c=>c.id),fixtures=[];
- if(ring.length%2)ring.push(null);
- const firstRounds=ring.length-1;
- for(let r=0;r<firstRounds;r++){
-  for(let i=0;i<ring.length/2;i++){
-   let homeId=ring[i],awayId=ring[ring.length-1-i];if(!homeId||!awayId)continue;
-   if((r+i)%2)[homeId,awayId]=[awayId,homeId];
-   fixtures.push({round:r+1,homeId,awayId});
-  }
-  ring.splice(1,0,ring.pop());
+ const clubs=payload.clubs.map((name,i)=>({id:'club-'+(i+1),name})),fixtures=[];
+ // Tables de Berger avec alternance : au plus deux réceptions ou déplacements de suite (trois seulement à
+ // quatre clubs en aller-retour, inévitable) ; nombre impair : le club exempté est l'adversaire fictif fixe.
+ const n=clubs.length+clubs.length%2,m=n-1,firstRounds=m;
+ for(let q=0;q<m;q++){
+  const r=(q+2)%m,pairs=[r%2?[m,r]:[r,m]];
+  for(let k=1;k<n/2;k++){const a=(r+k)%m,b=(r-k+m)%m;pairs.push(k%2?[a,b]:[b,a]);}
+  for(const [h,a] of pairs)if(h<clubs.length&&a<clubs.length)fixtures.push({round:q+1,homeId:clubs[h].id,awayId:clubs[a].id});
  }
  if(payload.doubleRound)for(const f of fixtures.slice())fixtures.push({round:f.round+firstRounds,homeId:f.awayId,awayId:f.homeId});
  const doc={format:FORMAT,version:1,kind:'fictional-preview',name:payload.name,doubleRound:payload.doubleRound,rounds:firstRounds*(payload.doubleRound?2:1),clubs,fixtures};

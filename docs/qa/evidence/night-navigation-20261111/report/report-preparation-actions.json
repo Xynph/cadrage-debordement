@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "command": "new_career",
+    "payload": {
+      "mode": "common",
+      "club": 0
+    },
+    "ok": true
+  },
+  {
+    "id": 2,
+    "command": "press_conference",
+    "payload": {
+      "context": {
+        "season": 1,
+        "week": 0,
+        "club": 0
+      },
+      "answers": [
+        {
+          "questionId": "carriere-0-0",
+          "answerId": "r3"
+        },
+        {
+          "questionId": "vestiaire-0-2",
+          "answerId": "r3"
+        },
+        {
+          "questionId": "formation-0-2",
+          "answerId": "r4"
+        }
+      ],
+      "invitationId": "press-v1:1:0:0"
+    },
+    "ok": true
+  },
+  {
+    "id": 3,
+    "command": "club_meeting_continue",
+    "payload": {
+      "meetingId": "club-meeting:1:0:0:1"
+    },
+    "ok": true
+  },
+  {
+    "id": 4,
+    "command": "club_meeting_ack",
+    "payload": {
+      "meetingId": "club-meeting:1:0:0:2"
+    },
+    "ok": true
+  },
+  {
+    "id": 5,
+    "command": "club_meeting_continue",
+    "payload": {
+      "meetingId": "club-meeting:1:0:0:2"
+    },
+    "ok": true
+  },
+  {
+    "id": 6,
+    "command": "scout_mission",
+    "payload": {
+      "family": 1,
+      "maxAge": 40,
+      "budget": 10000000,
+      "maxWage": 100000,
+      "confirmed": true
+    },
+    "ok": true
+  },
+  {
+    "id": 7,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-07"
+    },
+    "ok": true
+  },
+  {
+    "id": 8,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-08"
+    },
+    "ok": true
+  },
+  {
+    "id": 9,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-09"
+    },
+    "ok": true
+  },
+  {
+    "id": 10,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-10"
+    },
+    "ok": true
+  },
+  {
+    "id": 11,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-11"
+    },
+    "ok": true
+  },
+  {
+    "id": 12,
+    "command": "auto_lineup",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 13,
+    "command": "begin_match",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 14,
+    "command": "match_talk_continue",
+    "payload": {
+      "key": "match:1:0:0:0-13:league:s1-elite-league-0-0",
+      "phase": "pre",
+      "skip": true
+    },
+    "ok": true
+  },
+  {
+    "id": 15,
+    "command": "delegate",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 16,
+    "command": "finish_round",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 17,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-12"
+    },
+    "ok": true
+  },
+  {
+    "id": 18,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-13"
+    },
+    "ok": true
+  },
+  {
+    "id": 19,
+    "command": "press_conference",
+    "payload": {
+      "context": {
+        "season": 1,
+        "week": 1,
+        "club": 0
+      },
+      "answers": [
+        {
+          "questionId": "avant_match-0-3",
+          "answerId": "r4"
+        },
+        {
+          "questionId": "attaque-0-3",
+          "answerId": "r4"
+        },
+        {
+          "questionId": "defense-0-3",
+          "answerId": "r3"
+        },
+        {
+          "questionId": "joueurs-0-3",
+          "answerId": "r4"
+        }
+      ],
+      "invitationId": "press-v1:1:1:0"
+    },
+    "ok": true
+  },
+  {
+    "id": 20,
+    "command": "club_meeting_continue",
+    "payload": {
+      "meetingId": "club-meeting:1:1:0:3"
+    },
+    "ok": true
+  },
+  {
+    "id": 21,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-14"
+    },
+    "ok": true
+  },
+  {
+    "id": 22,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-15"
+    },
+    "ok": true
+  },
+  {
+    "id": 23,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-16"
+    },
+    "ok": true
+  },
+  {
+    "id": 24,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-17"
+    },
+    "ok": true
+  },
+  {
+    "id": 25,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-18"
+    },
+    "ok": true
+  },
+  {
+    "id": 26,
+    "command": "auto_lineup",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 27,
+    "command": "begin_match",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 28,
+    "command": "match_talk_continue",
+    "payload": {
+      "key": "match:1:1:0:12-0:league:s1-elite-league-1-0",
+      "phase": "pre",
+      "skip": true
+    },
+    "ok": true
+  },
+  {
+    "id": 29,
+    "command": "delegate",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 30,
+    "command": "finish_round",
+    "payload": {},
+    "ok": true
+  },
+  {
+    "id": 31,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-19"
+    },
+    "ok": true
+  },
+  {
+    "id": 32,
+    "command": "advance_day",
+    "payload": {
+      "fromDate": "2026-09-20"
+    },
+    "ok": true
+  },
+  {
+    "id": 33,
+    "command": "press_conference",
+    "payload": {
+      "context": {
+        "season": 1,
+        "week": 2,
+        "club": 0
+      },
+      "answers": [
+        {
+          "questionId": "avant_match-0-1",
+          "answerId": "r4"
+        },
+        {
+          "questionId": "attaque-0-1",
+          "answerId": "r4"
+        }
+      ],
+      "invitationId": "press-v1:1:2:0"
+    },
+    "ok": true
+  },
+  {
+    "id": 34,
+    "command": "club_meeting_continue",
+    "payload": {
+      "meetingId": "club-meeting:1:2:0:4"
+    },
+    "ok": true
+  },
+  {
+    "id": 35,
+    "command": "medical_protocol",
+    "payload": {
+      "context": {
+        "season": 1,
+        "week": 2,
+        "club": 0
+      },
+      "id": "lnr:2437",
+      "protocol": "standard"
+    },
+    "ok": true
+  },
+  {
+    "id": 36,
+    "command": "club_meeting_continue",
+    "payload": {
+      "meetingId": "club-meeting:1:2:0:5"
+    },
+    "ok": true
+  },
+  {
+    "id": 37,
+    "command": "snapshot",
+    "payload": {},
+    "ok": true
+  }
+]

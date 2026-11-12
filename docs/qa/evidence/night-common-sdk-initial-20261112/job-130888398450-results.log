@@ -1,0 +1,37 @@
+2026-11-12T00:42:50.9930266Z SDK_RESULT {"suite":"tests/native-press-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":51799,"error":null}
+2026-11-12T00:43:51.5531713Z SDK_RESULT {"suite":"tests/godot-office-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":60560,"error":null}
+2026-11-12T00:44:31.4635053Z {"checks":122,"failures":[],"passed":true}
+2026-11-12T00:44:31.4639693Z SDK_RESULT {"suite":"tests/godot-pack-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":39912,"error":null}
+2026-11-12T00:44:48.6976988Z SDK_RESULT {"suite":"tests/godot-reception-decisions.cjs","variant":"default","passed":true,"status":0,"milliseconds":17233,"error":null}
+2026-11-12T00:45:33.4605163Z SDK_RESULT {"suite":"tests/deepen-youth-draft.cjs","variant":"default","passed":true,"status":0,"milliseconds":44762,"error":null}
+2026-11-12T00:47:10.7021731Z SDK_RESULT {"suite":"tests/deepen-youth-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":97242,"error":null}
+2026-11-12T00:47:52.8769247Z {"checks":314,"failures":[]}
+2026-11-12T00:47:52.8774008Z SDK_RESULT {"suite":"tests/godot-youth-scout-ui.cjs","variant":"default","passed":true,"status":0,"milliseconds":42176,"error":null}
+2026-11-12T00:48:20.8960814Z SDK_RESULT {"suite":"tests/godot-fatigue-overview.cjs","variant":"default","passed":true,"status":0,"milliseconds":28018,"error":null}
+2026-11-12T00:49:25.8654707Z not ok 1 - Carnet du club : tous menus natifs, vraies actions, focus et lectures sans mutation
+2026-11-12T00:49:25.8665302Z   name: 'AssertionError'
+2026-11-12T00:49:25.8670124Z SDK_RESULT {"suite":"tests/godot-carnet-ui.cjs","variant":"default","passed":false,"status":1,"milliseconds":64970,"error":null}
+2026-11-12T00:51:31.7569818Z {"checks":15,"error_messages":["Écriture de sauvegarde impossible : Fichier de sauvegarde ou de secours non ordinaire."],"errors":1,"failures":[],"mode":"disk","passed":true}
+2026-11-12T00:51:31.7575619Z {"checks":72,"error_messages":[],"errors":0,"failures":[],"mode":"ui","passed":true}
+2026-11-12T00:51:31.7578363Z {"checks":37,"error_messages":["Le fichier JSON est incomplet ou illisible.","Le fichier JSON est incomplet ou illisible.","Le fichier JSON est incomplet ou illisible."],"errors":3,"failures":[],"mode":"limits","passed":true}
+2026-11-12T00:51:31.7580550Z {"checks":18,"error_messages":["Message trop volumineux.","Le moteur est fermé."],"errors":2,"failures":[],"mode":"null-response","passed":true}
+2026-11-12T00:51:31.7582060Z {"checks":13,"error_messages":[],"errors":0,"failures":[],"mode":"recovery","passed":true}
+2026-11-12T00:51:31.7587464Z {"checks":53,"error_messages":["Ce fichier n’est pas un export Cadrage Débordement.","Le moteur est fermé."],"errors":2,"failures":[],"mode":"decisions","passed":true}
+2026-11-12T00:51:31.7589821Z {"checks":27,"error_messages":[],"errors":0,"failures":[],"mode":"tactics","passed":true}
+2026-11-12T00:51:31.7596150Z {"checks":85,"error_messages":[],"errors":0,"failures":[],"mode":"bench","passed":true}
+2026-11-12T00:51:31.7597545Z {"checks":85,"error_messages":[],"errors":0,"failures":[],"mode":"modal","passed":true}
+2026-11-12T00:51:31.7606522Z {"checks":43,"error_messages":[],"errors":0,"failures":[],"mode":"focus","passed":true}
+2026-11-12T00:51:31.7610386Z SDK_RESULT {"suite":"tests/godot-review-regressions.cjs","variant":"default","passed":true,"status":0,"milliseconds":125892,"error":null}
+2026-11-12T00:53:11.4732280Z SDK_RESULT {"suite":"tests/godot-guide-integration.cjs","variant":"default","passed":true,"status":0,"milliseconds":99712,"error":null}
+2026-11-12T00:54:04.0313455Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1280","passed":true,"status":0,"milliseconds":52561,"error":null}
+2026-11-12T00:55:03.1765808Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1600","passed":true,"status":0,"milliseconds":59145,"error":null}
+2026-11-12T00:56:13.7693879Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"routes-1920","passed":true,"status":0,"milliseconds":70593,"error":null}
+2026-11-12T00:57:47.5675591Z SDK_RESULT {"suite":"tests/godot-art-direction.cjs","variant":"progression","passed":true,"status":0,"milliseconds":93798,"error":null}
+2026-11-12T00:58:02.0143930Z SDK_RESULT {"suite":"tests/godot-entity-navigation.cjs","variant":"default","passed":true,"status":0,"milliseconds":14448,"error":null}
+2026-11-12T00:58:19.0530517Z SDK_RESULT {"suite":"tests/godot-management-reading-flow.cjs","variant":"default","passed":true,"status":0,"milliseconds":17032,"error":null}
+2026-11-12T01:01:19.1497518Z SDK_RESULT {"suite":"tests/godot-gestion-carnet.cjs","variant":"default","passed":false,"status":null,"milliseconds":180103,"error":"spawnSync /opt/hostedtoolcache/node/22.23.4/x64/bin/node ETIMEDOUT"}
+2026-11-12T01:01:41.0576989Z SDK_RESULT {"suite":"tests/godot-observed-training-consequences.cjs","variant":"default","passed":true,"status":0,"milliseconds":21908,"error":null}
+2026-11-12T01:01:55.3659965Z SDK_RESULT {"suite":"tests/godot-effective-training-receipt.cjs","variant":"default","passed":true,"status":0,"milliseconds":14308,"error":null}
+2026-11-12T01:01:55.9360148Z OFFICE_ENTITY_LINKS {"checks":52,"failures":[]}
+2026-11-12T01:01:55.9364930Z SDK_RESULT {"suite":"tests/godot-office-entity-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":570,"error":null}
+2026-11-12T01:01:55.9445740Z ##[error]Process completed with exit code 1.

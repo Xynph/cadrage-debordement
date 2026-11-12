@@ -1,0 +1,21 @@
+{
+  "source_sha": "37e085b687b4e9a603085beaa50fecf9d6cace22",
+  "run_id": 43134340431,
+  "job_id": 130905913641,
+  "suite": "tests/rg27-night-navigation.cjs",
+  "case": "guards",
+  "scope": "targeted",
+  "checks": 103,
+  "failures": 0,
+  "milliseconds": 109631,
+  "run_attempt": 1,
+  "source_files_sha256": {
+    "tests/rg27-night-navigation.cjs": "d229f7cdac93da2659e198028d6cdfc8eebfc5f87637efc159445f9870fd4899",
+    "tests/rg27-night-navigation.gd": "0a640b889454586a43689c6cf95141d4ae044604c8c0f212faa4f79ae10d2288",
+    "ci/godot-sdk-followup.json": "9d2448c9a3c37bcdce5cc0cd95bc0d38df81fc8f010ae4c5505dc99174f4cf72",
+    "ci/run-godot-sdk.cjs": "8b7696517620c812777dd3c7072ecd359c7ba7e6105f0e0081a758721b862b6d"
+  },
+  "source_method": "git show exact source SHA:path; no traced local driver",
+  "logs_method": "GitHub connector fetch_workflow_job_logs, completed job, selected original lines only",
+  "limits": "Separate targeted receipt; does not replace initial full SDK failure."
+}

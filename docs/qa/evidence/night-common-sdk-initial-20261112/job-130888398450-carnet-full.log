@@ -1,0 +1,84 @@
+2026-11-12T00:48:20.8961801Z ##[group]Real SDK: tests/godot-carnet-ui.cjs / default
+2026-11-12T00:49:25.8642650Z Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+2026-11-12T00:49:25.8643088Z 
+2026-11-12T00:49:25.8643284Z SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8643857Z SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8644284Z SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8645039Z SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8645465Z SDK_COMMAND godot-carnet-ui auto_lineup
+2026-11-12T00:49:25.8645987Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-07" }
+2026-11-12T00:49:25.8646581Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-08" }
+2026-11-12T00:49:25.8647105Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-09" }
+2026-11-12T00:49:25.8647649Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-10" }
+2026-11-12T00:49:25.8648158Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-11" }
+2026-11-12T00:49:25.8648604Z SDK_COMMAND godot-carnet-ui pause
+2026-11-12T00:49:25.8648968Z SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8649325Z SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8649681Z SDK_COMMAND godot-carnet-ui delegate
+2026-11-12T00:49:25.8650148Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-12" }
+2026-11-12T00:49:25.8650678Z SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-13" }
+2026-11-12T00:49:25.8651204Z SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8651739Z SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8652025Z SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8652535Z CARNET : 4281 contrôles ; 1 échec(s)
+2026-11-12T00:49:25.8652919Z FAIL: Cible et texte utilisables Classements CompetitionNextDateLink
+2026-11-12T00:49:25.8653268Z Preuves Carnet : /tmp/cd-carnet-ui-HsQn39
+2026-11-12T00:49:25.8653503Z TAP version 13
+2026-11-12T00:49:25.8654132Z # Subtest: Carnet du club : tous menus natifs, vraies actions, focus et lectures sans mutation
+2026-11-12T00:49:25.8654707Z not ok 1 - Carnet du club : tous menus natifs, vraies actions, focus et lectures sans mutation
+2026-11-12T00:49:25.8655038Z   ---
+2026-11-12T00:49:25.8655209Z   duration_ms: 64931.80455
+2026-11-12T00:49:25.8655399Z   type: 'test'
+2026-11-12T00:49:25.8655781Z   location: '/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-carnet-ui.cjs:5:1'
+2026-11-12T00:49:25.8656404Z   failureType: 'testCodeFailure'
+2026-11-12T00:49:25.8656620Z   error: |-
+2026-11-12T00:49:25.8656911Z     Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+2026-11-12T00:49:25.8657403Z     
+2026-11-12T00:49:25.8657597Z     SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8657864Z     SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8658099Z     SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8658331Z     SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8658578Z     SDK_COMMAND godot-carnet-ui auto_lineup
+2026-11-12T00:49:25.8658888Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-07" }
+2026-11-12T00:49:25.8659238Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-08" }
+2026-11-12T00:49:25.8659563Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-09" }
+2026-11-12T00:49:25.8660018Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-10" }
+2026-11-12T00:49:25.8660543Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-11" }
+2026-11-12T00:49:25.8660893Z     SDK_COMMAND godot-carnet-ui pause
+2026-11-12T00:49:25.8661142Z     SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8661379Z     SDK_COMMAND godot-carnet-ui export
+2026-11-12T00:49:25.8661611Z     SDK_COMMAND godot-carnet-ui delegate
+2026-11-12T00:49:25.8661893Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-12" }
+2026-11-12T00:49:25.8662216Z     SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-13" }
+2026-11-12T00:49:25.8662503Z     SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8662742Z     SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8662977Z     SDK_COMMAND godot-carnet-ui new_career
+2026-11-12T00:49:25.8663288Z     CARNET : 4281 contrôles ; 1 échec(s)
+2026-11-12T00:49:25.8664018Z     FAIL: Cible et texte utilisables Classements CompetitionNextDateLink
+2026-11-12T00:49:25.8664345Z     
+2026-11-12T00:49:25.8664496Z     
+2026-11-12T00:49:25.8664642Z     1 !== 0
+2026-11-12T00:49:25.8664795Z     
+2026-11-12T00:49:25.8665099Z   code: 'ERR_ASSERTION'
+2026-11-12T00:49:25.8665302Z   name: 'AssertionError'
+2026-11-12T00:49:25.8665488Z   expected: 0
+2026-11-12T00:49:25.8665659Z   actual: 1
+2026-11-12T00:49:25.8665835Z   operator: 'strictEqual'
+2026-11-12T00:49:25.8666018Z   stack: |-
+2026-11-12T00:49:25.8666447Z     TestContext.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-carnet-ui.cjs:9:44)
+2026-11-12T00:49:25.8666931Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-11-12T00:49:25.8667225Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-11-12T00:49:25.8667525Z     Test.start (node:internal/test_runner/test:944:17)
+2026-11-12T00:49:25.8667887Z     startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+2026-11-12T00:49:25.8668183Z   ...
+2026-11-12T00:49:25.8668332Z 1..1
+2026-11-12T00:49:25.8668484Z # tests 1
+2026-11-12T00:49:25.8668640Z # suites 0
+2026-11-12T00:49:25.8668803Z # pass 0
+2026-11-12T00:49:25.8668952Z # fail 1
+2026-11-12T00:49:25.8669111Z # cancelled 0
+2026-11-12T00:49:25.8669283Z # skipped 0
+2026-11-12T00:49:25.8669439Z # todo 0
+2026-11-12T00:49:25.8669610Z # duration_ms 64937.73261
+2026-11-12T00:49:25.8670124Z SDK_RESULT {"suite":"tests/godot-carnet-ui.cjs","variant":"default","passed":false,"status":1,"milliseconds":64970,"error":null}
+2026-11-12T00:49:25.8670811Z ##[endgroup]

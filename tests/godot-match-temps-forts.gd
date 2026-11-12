@@ -2,7 +2,8 @@ extends SceneTree
 ## Match en temps forts dans la vraie interface, avec le vrai moteur.
 ## Mode « defaut » (aucune variable) : le parcours du joueur — causerie, coup d'envoi,
 ## pause pendant un temps fort, remplacement et consigne sur l'écran intermédiaire,
-## mi-temps, fin de match et débrief, son du stade calé sur l'image.
+## mi-temps, fin de match et débrief, son du stade calé sur l'image ; un arrêt sur carton
+## (le match attend le manager) est repris comme avec le bouton « Reprendre le match ».
 ## Mode « reprise » (aucune variable) : match repris en cours de route, niveau conservé,
 ## fin confiée à l'adjoint.
 ## Mode « actif » : coup d'envoi en 3D, écran intermédiaire, nouveau temps fort, arrêt
@@ -268,23 +269,31 @@ func interval(view: Control) -> void:
 	# Fin du coup d'envoi (le match importé est en pause) : l'entracte commence.
 	check(await until(func(): return regie.etat == regie.INTER, 60000), "Le coup d'envoi se termine")
 	if app.model.live.paused: await command("pause", {"paused": false})
-	# Premier entracte : l'horloge défile, rien ne part avant sa fin.
-	var debut := Time.get_ticks_msec()
+	# Entracte avec un temps fort retenu (pas la suite d'une action) : l'horloge défile, rien ne
+	# part avant la fin de l'entracte.
 	var horloges := {}
-	var parti_tot := false
-	while regie.etat != regie.JEU and Time.get_ticks_msec() - debut < 120000:
+	var retenu := func(): return regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_retenu")
+	var debut := Time.get_ticks_msec()
+	while not retenu.call() and Time.get_ticks_msec() - debut < 240000:
 		await process_frame
-		horloges[view.clock.text] = true
-		if regie.etat == regie.JEU: break
-	var attendu: float = (Time.get_ticks_msec() - debut) / 1000.0
-	var retenus: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "entracte_retenu")
+		if regie.etat == regie.INTER and regie.entracte_en_cours(): horloges[view.clock.text] = true
+	check(retenu.call(), "Un temps fort arrive pendant un entracte et y est retenu")
+	var score_retenu: String = view.score.text
+	var t_retenu := Time.get_ticks_msec()
+	while regie.etat != regie.JEU and Time.get_ticks_msec() - t_retenu < 60000:
+		await process_frame
+		if regie.etat != regie.JEU:
+			horloges[view.clock.text] = true
+			if view.score.text != score_retenu: score_retenu = "changé"
 	var fins: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "entracte_fin")
-	check(regie.etat == regie.JEU, "Un second temps fort finit par partir")
+	var inters: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "intermediaire")
+	var tfs: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
+	var attendu: float = (float(tfs[-1].debut_ms) - float(inters[-1].debut_ms)) / 1000.0 if not tfs.is_empty() and not inters.is_empty() else 0.0
+	check(regie.etat == regie.JEU and not fins.is_empty(), "Le temps fort retenu part")
 	check(horloges.size() >= 6 and horloges.keys().all(func(h: String): return ":" in h), "L'horloge défile pendant l'entracte (%d valeurs, ex. %s)" % [horloges.size(), str(horloges.keys().slice(0, 4))])
-	check(attendu >= regie.entracte - 0.5, "Rien ne part avant la fin de l'entracte : %.1f s pour %.1f s" % [attendu, regie.entracte])
-	# Temps fort reçu pendant l'entracte : il attend sa fin (sinon il est arrivé après elle).
-	check(fins.is_empty() or float(fins[-1].ecoule) >= regie.entracte - 0.05, "Le temps fort retenu part à la fin de l'entracte : %s" % str(fins))
-	check(retenus.size() == fins.size(), "Chaque temps fort retenu part une fois (%d retenus, %d partis)" % [retenus.size(), fins.size()])
+	check(not fins.is_empty() and float(fins[-1].ecoule) >= regie.entracte - 0.05, "Rien ne part avant la fin de l'entracte : %s" % str(fins.slice(-1)))
+	check(attendu >= regie.entracte - 0.5, "Écran intermédiaire montré %.1f s avant le temps fort retenu (entracte %.1f s)" % [attendu, regie.entracte])
+	check(score_retenu != "changé", "Le score ne bouge pas pendant la retenue (rien n'annonce l'action)")
 	# Deuxième entracte : la tactique ouverte met le match en pause, la consigne passe, rien ne part.
 	check(await until(func(): return regie.etat == regie.INTER and regie.entracte_en_cours(), 120000), "Deuxième entracte")
 	await until(func(): return not app.waiting, 30000)
@@ -318,8 +327,8 @@ func interval(view: Control) -> void:
 	var passe_a := Time.get_ticks_msec()
 	between.passer_demande.emit()
 	check(await until(func(): return regie.etat == regie.JEU, 120000), "« Passer » mène au prochain temps fort")
-	var derniere_fin: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "entracte_fin")
-	check(not derniere_fin.is_empty() and derniere_fin[-1].passe, "Le temps fort part sur « Passer » : %s" % str(derniere_fin.slice(-1)))
+	var passe_s: float = (Time.get_ticks_msec() - passe_a) / 1000.0
+	check(regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_passe") and passe_s < regie.entracte, "Le temps fort part sur « Passer », sans attendre la fin de l'entracte (%.1f s)" % passe_s)
 	print("ENTRACTE ", JSON.stringify({"premier_s": attendu, "horloges": horloges.size(), "passer_s": (Time.get_ticks_msec() - passe_a) / 1000.0}))
 	app._command("pause", {"paused": true})
 	await wait_command()
@@ -463,11 +472,21 @@ func hear(id: String) -> void:
 	if regie != null and regie.etat == regie.JEU and regie.index >= 0 and regie.index < regie.tf.plans.size(): kind = str(regie.tf.plans[regie.index].get("kind", ""))
 	cues.append({"id": id, "kind": kind})
 
+## Arrêts-décisions (clés) repris pendant le parcours du joueur.
+var stoppages: Array = []
 func watch() -> void:
 	var view := surface()
 	if view == null or view.regie == null: return
 	var regie: Node = view.regie
 	if regie.etat == regie.JEU and regie.index >= 0 and regie.index < regie.tf.plans.size(): shown[str(regie.tf.plans[regie.index].get("kind", ""))] = true
+	# Arrêt sur carton : le match est en pause et attend le manager (aucune échéance, voulu).
+	# Le joueur reprend une fois par arrêt, comme avec le bouton de l'écran intermédiaire.
+	if not regie.arret.is_empty() and regie.between.arret.visible and app.model.live.get("paused", false) and not app.waiting:
+		var cle := str(regie.arret.get("cle", ""))
+		if cle not in stoppages:
+			stoppages.append(cle)
+			print("Arrêt-décision repris : ", regie.arret.get("texte", ""), " (", regie.arret.get("horloge", ""), ")")
+			regie.between.reprise_demandee.emit()
 
 ## Attend la causerie d'une phase ; note si un temps fort l'a retenue et s'il a bien été joué avant.
 func reach_talk(phase: String, limit_ms: int) -> Dictionary:
@@ -638,7 +657,7 @@ func player_path() -> Array:
 	var post: Dictionary = await reach_talk("post", 120000)
 	check(post.reached and app.model.live.finished, "Le débrief s'ouvre à la fin du match")
 	check(post.played, "Le dernier temps fort du match est joué avant le débrief")
-	print("Fin du match à la minute ", post.minute, " · débrief retenu par un temps fort : ", post.held, " · score ", app.model.live.score)
+	print("Fin du match à la minute ", post.minute, " · débrief retenu par un temps fort : ", post.held, " · score ", app.model.live.score, " · arrêts sur carton repris : ", stoppages.size())
 	followed = followed + journal
 	if post.reached:
 		director.view._continue(true)
@@ -673,7 +692,8 @@ func resumed() -> Array:
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
 	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
-	check(view.clock.text == str(direct.get("horloge", "")), "L'horloge du match repris est affichée : " + view.clock.text)
+	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
+	check(view.clock.text.begins_with(str(direct.get("horloge", "")).trim_suffix("′") + ":"), "L'horloge du match repris est affichée : " + view.clock.text)
 	await settle(40)
 	check(highlights(regie.suivi) == 0 and regie.etat == regie.INTER and not app.waiting, "En pause, le match repris attend")
 	var minute: int = app.model.live.minute

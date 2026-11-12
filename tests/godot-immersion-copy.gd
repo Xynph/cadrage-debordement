@@ -2,6 +2,7 @@ extends SceneTree
 const Copy = preload("res://ui/management_copy.gd")
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 class Host extends Control:
+	const Immersive = preload("res://ui/immersive08/shell.gd")
 	var model: Dictionary = {}
 var checks := 0
 var failures: Array[String] = []

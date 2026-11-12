@@ -1,0 +1,10 @@
+
+DIAGNOSTIC STOP: Node wrapper exceeded CI budget 180s
+
+RUNTIME LOG /workspace/qa/sdk-preloads-96/fixtures/cd-layout-6Ct04g/runtime.log
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+   at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+ROSTER_RESIZE_GEOMETRY {"pixel_tolerance":11,"rows":["[P: (144.6075, 359.5645), S: (602.8568, 25.40401)]","[P: (144.6075, 386.9226), S: (602.8568, 25.40401)]","[P: (144.6075, 414.2808), S: (602.8568, 25.40401)]"],"strict":11,"viewport":"[P: (144.6075, 359.5645), S: (610.6733, 301.9169)]"}

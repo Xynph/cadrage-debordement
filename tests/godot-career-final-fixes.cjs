@@ -23,7 +23,9 @@ const clock=harness();clock.run('beginMatch();while(!S.live.paused&&!S.live.fini
 clock.run('continueMatch();for(let i=0;i<25;i++)advanceRugby(S.live)');const resumed=capture(clock);
 clock.run('pauseMatch()');const tactical=capture(clock);
 // Real simulated season and real tied knockout. No score/result is fabricated.
-const season=harness(0);season.run('for(let w=0;w<30;w++){autoLineup();finishRound();}if(!nextMatch())finishRound();autoLineup();');
+// Club 4 finishes 3rd-6th with the alternating calendar, so its knockout starts with a barrage
+// (club 0 now finishes in the top two and skips straight to the semi-final).
+const season=harness(4);season.run('for(let w=0;w<30;w++){autoLineup();finishRound();}if(!nextMatch())finishRound();autoLineup();');
 const knockout=season.state();season.run('beginMatch();var initialMatch=JSON.stringify(S);var tied=false;for(let attempt=0;attempt<40&&!tied;attempt++){S=JSON.parse(initialMatch);for(let steps=0;steps<120&&!S.live.finished;steps++){if(S.live.paused)continueMatch();advanceRugby(S.live);if(S.live.knockout){tied=true;break;}}}');
 assert.equal(season.run('tied'),true,'seeded native knockout reaches a real extra time');
 const extraStart=capture(season);season.run('pauseMatch()');const extraPause=capture(season);season.run('continueMatch();while(!S.live.finished&&S.live.knockout.period===1)advanceRugby(S.live)');const extraSecond=capture(season);
@@ -72,7 +74,7 @@ test('Disk refusal of a legal vacant change restores the match before retry',()=
  const p={slot:8,inId:m.live.substitutions[8].inIds[0]},r=refuseSavePublication(file,()=>api.call('substitute',p));assert.equal(r.ok,false);assert.match(r.error,/sauvegarde/);assert.equal(api.good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes);assert.equal(api.good('substitute',p).live.lineup[8].id,p.inId);
 }));
 test('Projection distinguishes real halftime from historical marker, tactical pause and real extra-time transitions',()=>{
- assert.equal(halftime.model.live.minute,42);assert.equal(resumed.model.live.minute,67);
+ assert.equal(halftime.model.live.minute,41);assert.equal(resumed.model.live.minute,66);
  for(const [name,fixture,atBreak] of [['halftime',halftime,true],['resumed',resumed,false],['tactical',tactical,false],['extra start',extraStart,false],['extra pause',extraPause,false],['extra second',extraSecond,false]]){
   assert.equal(fixture.model.live.halftime,true,name+' preserves historical marker');assert.equal(fixture.model.live.atBreak,atBreak,name+' actual break');
   assert.equal(JSON.parse(fixture.text).state.live.halftime,true);assert.equal(Object.hasOwn(JSON.parse(fixture.text).state.live,'atBreak'),false,'projection is not written into saves');

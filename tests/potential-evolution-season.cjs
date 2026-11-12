@@ -2,7 +2,9 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./native-reference-harness.cjs');
 test('a complete fictional season uses actual training, human and AI matches and one annual review',()=>{
- const h=context({seed:917});h.run('start(0,"fiction");nativeSystems.execute("academy_activate",{season:S.season,week:S.round,club:S.club,confirmed:true});');
+ // Seed 918: with the alternating schedule (since 2026-11-11) this season still ends with a
+ // squad that needs cover at the new-season intake, as seed 917 did with the former schedule.
+ const h=context({seed:918});h.run('start(0,"fiction");nativeSystems.execute("academy_activate",{season:S.season,week:S.round,club:S.club,confirmed:true});');
  let cycles=0;
  while(h.run('S.phase!=="ended"')&&cycles++<40){
   h.run(`autoLineup();trainWeek();if(sheetErrors().length)promoteCover();if(nextMatch()){beginMatch();if(!S.live)throw Error('No match '+S.round+' '+JSON.stringify(sheetErrors()));for(var i=0;!S.live.finished&&i<180;i++){S.live.paused=false;advanceRugby(S.live);}if(!S.live.finished)throw Error('Match unfinished');}finishRound();`);

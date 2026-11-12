@@ -1,0 +1,92 @@
+{
+  "sha": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+  "checks": 115,
+  "failures": [],
+  "wrapper_exit_code_observed_by_integrator": 0,
+  "native_duration_ms": 113958.644857,
+  "tap_duration_ms": 114019.259514,
+  "mode": "world-champ",
+  "club": 29,
+  "driver": "Godot 4.7.2 --headless --audio-driver Dummy",
+  "profile_source_file": "/tmp/cd-reader-history-WNPc2i/PrototypeGodot/donnees.json",
+  "profile_bytes": 25118362,
+  "profile_sha256": "f9bdead2b4a064ab47b8a15384420f4ec06ac2969fd4c292fcbefc622313b94e",
+  "profile_copied": false,
+  "log": {
+    "file": "reader-history-bd6a5fe6-wrapper.log",
+    "bytes": 1428,
+    "sha256": "7dd347b6d4231fd9520bac0e3ba9cb41602fedd79567a4643d61a1c3b194d697"
+  },
+  "sources": [
+    {
+      "path": "native/godot/ui/navigation_controller.gd",
+      "tested_git_blob": "3ea5c4f1f262edca7267c0df4eaa9ac12447cd57",
+      "tested_sha256": "93ff59c1b2056305e3526d1f732b47ae742d0d3a39bc6e2d1be17b61881e6241",
+      "bytes": 39976,
+      "base_0e644e61_git_blob": "3ea5c4f1f262edca7267c0df4eaa9ac12447cd57",
+      "same_on_document_base": true
+    },
+    {
+      "path": "native/godot/ui/management_state.gd",
+      "tested_git_blob": "4819f627d83442a4551188c7fc239c3a8010e545",
+      "tested_sha256": "3f9030b0d7e569023acc1f541990aa8601edbcfd725710aad5be73adcc001dd9",
+      "bytes": 13118,
+      "base_0e644e61_git_blob": "4819f627d83442a4551188c7fc239c3a8010e545",
+      "same_on_document_base": true
+    },
+    {
+      "path": "native/godot/main.gd",
+      "tested_git_blob": "e76278aaf2c61aa22ddb07c2c78555b0b03abe66",
+      "tested_sha256": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+      "bytes": 51659,
+      "base_0e644e61_git_blob": "e76278aaf2c61aa22ddb07c2c78555b0b03abe66",
+      "same_on_document_base": true
+    },
+    {
+      "path": "native/godot/ui/immersive08/competition_canvas.gd",
+      "tested_git_blob": "2d023c9556a1b9c59c7a9d3966b6d910d6309fe0",
+      "tested_sha256": "7201a900e371955fdbce2f401c816533d7b69f348a7f0fce098b6ca0dc1f474b",
+      "bytes": 61734,
+      "base_0e644e61_git_blob": "2d023c9556a1b9c59c7a9d3966b6d910d6309fe0",
+      "same_on_document_base": true
+    },
+    {
+      "path": "tests/godot-reader-history.gd",
+      "tested_git_blob": "b210cabd0f744b3580577bc6af7c84f14111aadc",
+      "tested_sha256": "7c381de65ce1adfe22308e9aafdcc4c4f34660bd7825c3c81028d788d5b69941",
+      "bytes": 9846,
+      "base_0e644e61_git_blob": "b210cabd0f744b3580577bc6af7c84f14111aadc",
+      "same_on_document_base": true
+    },
+    {
+      "path": "tests/godot-reader-history.cjs",
+      "tested_git_blob": "1480778ff6f3e46491790e702a08c04d3a821f43",
+      "tested_sha256": "5cf66e4be36cd585c5a7637bf7295d689a4ed2aa74ee03d1a7121ada65eab23a",
+      "bytes": 1298,
+      "base_0e644e61_git_blob": "1480778ff6f3e46491790e702a08c04d3a821f43",
+      "same_on_document_base": true
+    },
+    {
+      "path": "tests/helpers/contextual_flow.gd",
+      "tested_git_blob": "d4a04146175b4c1fe6ba263daf5b76af65abe708",
+      "tested_sha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145",
+      "bytes": 4289,
+      "base_0e644e61_git_blob": "d4a04146175b4c1fe6ba263daf5b76af65abe708",
+      "same_on_document_base": true
+    },
+    {
+      "path": "native/godot/qa_runner.gd",
+      "tested_git_blob": "5e8ec9d7e86c62d972e7a2c04400441f986148dc",
+      "tested_sha256": "956171368b715e9a462f7af801377613d357a13830888ec87622dbb79e25848f",
+      "bytes": 68140,
+      "base_0e644e61_git_blob": "5e8ec9d7e86c62d972e7a2c04400441f986148dc",
+      "same_on_document_base": true
+    }
+  ],
+  "historical_receipt_distinct": {
+    "sha": "a4326db5ff9d079dfabf64b79ad6100314d5145d",
+    "checks": 115,
+    "scope": "Earlier reader chain receipt, predates the page-origin root reader fix."
+  },
+  "not_qualified_by_this_run": "The newer common0 fresh CI setup on 0e644e61 changes the driver preparation; its result must be received separately."
+}

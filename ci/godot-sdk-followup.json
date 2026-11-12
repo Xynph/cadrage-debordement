@@ -1,0 +1,290 @@
+{
+  "suites": [
+    "tests/godot-academy-portraits.cjs",
+    "tests/godot-portrait-continuity.cjs",
+    "tests/godot-contract-negotiation.cjs",
+    "tests/deepen-staff-real-ui.cjs",
+    "tests/deepen-staff-hire-ui.cjs",
+    "tests/deepen-match.cjs",
+    "tests/godot-career-final-fixes.cjs",
+    "tests/godot-playbook-watch-ui.cjs",
+    "tests/native-press-ui.cjs",
+    "tests/godot-office-ui.cjs",
+    "tests/godot-pack-ui.cjs",
+    "tests/godot-reception-decisions.cjs",
+    "tests/deepen-youth-draft.cjs",
+    "tests/deepen-youth-ui.cjs",
+    "tests/godot-youth-scout-ui.cjs",
+    "tests/godot-fatigue-overview.cjs",
+    "tests/godot-carnet-ui.cjs",
+    "tests/godot-review-regressions.cjs",
+    "tests/godot-guide-integration.cjs",
+    "tests/godot-art-direction.cjs",
+    "tests/godot-guide-layout.cjs",
+    "tests/godot-lineup-layout.cjs",
+    "tests/godot-interface-layout.cjs",
+    "tests/godot-readability06.cjs",
+    "tests/godot-entity-projections.cjs",
+    "tests/godot-prospect-profile.cjs",
+    "tests/godot-staff-fictional-labels.cjs",
+    "tests/rg27-night-navigation.cjs",
+    "tests/godot-world-entity-targets.cjs",
+    "tests/godot-entity-navigation.cjs",
+    "tests/godot-management-reading-flow.cjs",
+    "tests/godot-gestion-carnet.cjs",
+    "tests/godot-finance-ledger-links.cjs",
+    "tests/godot-reader-history.cjs",
+    "tests/godot-training-identity-links.cjs",
+    "tests/godot-navigation.cjs",
+    "tests/godot-relationships-memory.cjs",
+    "tests/godot-management-reading-links.cjs",
+    "tests/godot-national-reading-links.cjs",
+    "tests/godot-profile-reading.cjs",
+    "tests/godot-observed-training-consequences.cjs",
+    "tests/godot-effective-training-receipt.cjs",
+    "tests/godot-analysis-club-links.cjs",
+    "tests/godot-analysis-club-graphics.cjs",
+    "tests/godot-office-entity-links.cjs",
+    "tests/godot-calendar-session-links.cjs"
+  ],
+  "groups": {
+    "portraits-staff": [
+      "tests/godot-academy-portraits.cjs",
+      "tests/godot-portrait-continuity.cjs",
+      "tests/godot-contract-negotiation.cjs",
+      "tests/deepen-staff-real-ui.cjs",
+      "tests/deepen-staff-hire-ui.cjs",
+      "tests/deepen-match.cjs",
+      "tests/godot-career-final-fixes.cjs",
+      "tests/godot-playbook-watch-ui.cjs",
+      "tests/godot-entity-projections.cjs",
+      "tests/godot-prospect-profile.cjs",
+      "tests/godot-staff-fictional-labels.cjs",
+      "tests/rg27-night-navigation.cjs",
+      "tests/godot-world-entity-targets.cjs",
+      "tests/godot-analysis-club-graphics.cjs",
+      "tests/godot-calendar-session-links.cjs"
+    ],
+    "parcours": [
+      "tests/native-press-ui.cjs",
+      "tests/godot-office-ui.cjs",
+      "tests/godot-pack-ui.cjs",
+      "tests/godot-reception-decisions.cjs",
+      "tests/deepen-youth-draft.cjs",
+      "tests/deepen-youth-ui.cjs",
+      "tests/godot-youth-scout-ui.cjs",
+      "tests/godot-fatigue-overview.cjs",
+      "tests/godot-carnet-ui.cjs",
+      "tests/godot-review-regressions.cjs",
+      "tests/godot-guide-integration.cjs",
+      "tests/godot-art-direction.cjs",
+      "tests/godot-entity-navigation.cjs",
+      "tests/godot-management-reading-flow.cjs",
+      "tests/godot-gestion-carnet.cjs",
+      "tests/godot-observed-training-consequences.cjs",
+      "tests/godot-effective-training-receipt.cjs",
+      "tests/godot-office-entity-links.cjs"
+    ],
+    "layouts": [
+      "tests/godot-guide-layout.cjs",
+      "tests/godot-lineup-layout.cjs",
+      "tests/godot-interface-layout.cjs",
+      "tests/godot-readability06.cjs",
+      "tests/godot-finance-ledger-links.cjs",
+      "tests/godot-reader-history.cjs",
+      "tests/godot-training-identity-links.cjs",
+      "tests/godot-navigation.cjs",
+      "tests/godot-relationships-memory.cjs",
+      "tests/godot-management-reading-links.cjs",
+      "tests/godot-national-reading-links.cjs",
+      "tests/godot-profile-reading.cjs",
+      "tests/godot-analysis-club-links.cjs"
+    ]
+  },
+  "suiteEnvironment": {
+    "tests/godot-guide-layout.cjs": {
+      "CD_GUIDE_GRAPHICS": "1"
+    },
+    "tests/godot-interface-layout.cjs": {
+      "CD_LAYOUT_GRAPHICS": "1"
+    },
+    "tests/godot-readability06.cjs": {
+      "CD_READABILITY06_GRAPHICS": "1"
+    },
+    "tests/native-press-ui.cjs": {
+      "CD_PRESS_GRAPHICS": "1"
+    },
+    "tests/rg27-night-navigation.cjs": {
+      "CD_NIGHT_NAV_GRAPHICS": "1"
+    },
+    "tests/godot-effective-training-receipt.cjs": {
+      "CD_EFFECTIVE_TRAINING_REUSE_CASES": ""
+    },
+    "tests/godot-analysis-club-graphics.cjs": {
+      "CD_ANALYSIS_CLUB_GRAPHICS": "1",
+      "CD_ANALYSIS_CLUB_GRAPHICS_SOURCE": ""
+    }
+  },
+  "suiteCases": {
+    "tests/godot-guide-layout.cjs": [
+      {
+        "id": "layout-native",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "layout",
+          "CD_GUIDE_LAYOUT_MODE": "native"
+        }
+      },
+      {
+        "id": "layout-stretch",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "layout",
+          "CD_GUIDE_LAYOUT_MODE": "stretch"
+        }
+      },
+      {
+        "id": "dock-native",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "dock",
+          "CD_GUIDE_LAYOUT_MODE": "native"
+        }
+      },
+      {
+        "id": "dock-stretch",
+        "env": {
+          "CD_GUIDE_LAYOUT_CASE": "dock",
+          "CD_GUIDE_LAYOUT_MODE": "stretch"
+        }
+      }
+    ],
+    "tests/godot-interface-layout.cjs": [
+      {
+        "id": "management",
+        "env": {
+          "CD_LAYOUT_CASE": "management"
+        }
+      },
+      {
+        "id": "journal",
+        "env": {
+          "CD_LAYOUT_CASE": "journal"
+        }
+      }
+    ],
+    "tests/godot-readability06.cjs": [
+      {
+        "id": "reading720",
+        "env": {
+          "CD_READABILITY06_CASE": "reading720"
+        }
+      },
+      {
+        "id": "reading900",
+        "env": {
+          "CD_READABILITY06_CASE": "reading900"
+        }
+      },
+      {
+        "id": "reading1080",
+        "env": {
+          "CD_READABILITY06_CASE": "reading1080"
+        }
+      },
+      {
+        "id": "reading1440",
+        "env": {
+          "CD_READABILITY06_CASE": "reading1440"
+        }
+      },
+      {
+        "id": "responsive",
+        "env": {
+          "CD_READABILITY06_CASE": "responsive"
+        }
+      },
+      {
+        "id": "drafts",
+        "env": {
+          "CD_READABILITY06_CASE": "drafts"
+        }
+      }
+    ],
+    "tests/godot-art-direction.cjs": [
+      {
+        "id": "routes-1280",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "routes-1280"
+        }
+      },
+      {
+        "id": "routes-1600",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "routes-1600"
+        }
+      },
+      {
+        "id": "routes-1920",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "routes-1920"
+        }
+      },
+      {
+        "id": "progression",
+        "env": {
+          "CD_ART_DIRECTION_CASE": "progression"
+        }
+      }
+    ],
+    "tests/rg27-night-navigation.cjs": [
+      {
+        "id": "reading",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "reading"
+        }
+      },
+      {
+        "id": "nation",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "nation"
+        }
+      },
+      {
+        "id": "guards",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "guards"
+        }
+      },
+      {
+        "id": "prospects",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "prospects"
+        }
+      },
+      {
+        "id": "staff",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "staff"
+        }
+      },
+      {
+        "id": "quote",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "quote"
+        }
+      },
+      {
+        "id": "report",
+        "env": {
+          "CD_NIGHT_NAV_CASE": "report"
+        }
+      }
+    ],
+    "tests/godot-calendar-session-links.cjs": [
+      {
+        "id": "default",
+        "env": {
+          "CD_SESSION_LINKS_CAPTURE": "1"
+        }
+      }
+    ]
+  }
+}

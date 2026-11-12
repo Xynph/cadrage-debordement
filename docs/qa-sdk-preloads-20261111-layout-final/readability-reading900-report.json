@@ -1,0 +1,19 @@
+{
+  "checks": 260,
+  "display_server": "X11",
+  "failures": [],
+  "measurements": [
+    {
+      "canvas": "(1600.0, 900.0)",
+      "office_tiles": 7,
+      "roster_height": 560.992065429688,
+      "roster_rows": 24,
+      "roster_variant": "immersive",
+      "row_height": 20.7591857910156,
+      "window": "(1600, 900)"
+    }
+  ],
+  "real_dpi_tested": false,
+  "reported_screen_dpi": 96,
+  "reported_screen_scale": 1.0
+}

@@ -1,0 +1,39 @@
+{
+  "source_sha": "ec0044ea99e22aeaad29751ccde1279c1699b577",
+  "run_id": 43157653421,
+  "run_attempt": 1,
+  "event": "workflow_dispatch",
+  "coverage": "full",
+  "job_count": 7,
+  "all_jobs": "success",
+  "pass_lines": 646,
+  "distinct_pass_suites": 646,
+  "source_inventory": "Exact git ls-tree source SHA root tests/*.cjs excluding harness.cjs; exact multiset equality with all original PASS lines",
+  "source_tests_tree": "9f933d5521f25a972761d5d15cdb6fdd5cc938a2",
+  "expected_inventory_sha256": "9b77883a0a74ceb4d05f47aa34ece5731d018d716b23bbad502893751cfbeb72",
+  "source_files": {
+    ".github/workflows/tests.yml": {
+      "git_blob": "a5681c340fad535e00c6f62f4de520a268bd9544",
+      "sha256": "806bf4421c9ddd400440b6afc25cfaf1f606aa8182c3b905ad25a7eb1ed55a88"
+    },
+    "ci/test-coverage.cjs": {
+      "git_blob": "6fb4d5e5396d038d95030cbb9975ece1b08db5a7",
+      "sha256": "436e1ea7ac2d833b836a1a23063abc2f3e86034d9d02777e304b251b4522ad60"
+    },
+    "ci/shard-tests.cjs": {
+      "git_blob": "6c9f83d03c15c2250f96ef5b237b1b93078bbb4e",
+      "sha256": "434e135640dd625f56d6e98e257cf33e8f5fecf90110fb86ec82ef8c1408db69"
+    }
+  },
+  "logs_method": "Selected original timestamped PASS lines from completed GitHub connector job logs; final gate, classification and three original SDK SKIP examples",
+  "same_source_sdk_run": 43157636998,
+  "same_source_sdk_conclusion": "success",
+  "same_source_sdk_passed": 76,
+  "same_source_sdk_results": 76,
+  "limitations": [
+    "Root Node wrapper PASS can contain an internal SDK/graphics SKIP; actual SDK qualification is in the separate same-SHA full run.",
+    "Two complete green campaigns qualify their tested scope only, not Windows, FPS or future source.",
+    "Old red 1a7 SDK and separate green JavaScript remain unchanged; no verdict is borrowed.",
+    "No local worker/Godot run, whole log/profile/PNG recovery, source/workflow/timeout/budget change, push or merge."
+  ]
+}

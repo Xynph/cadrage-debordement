@@ -5,7 +5,7 @@ const REPO = 'Xynph/cadrage-debordement';
 const OWNER_ID = 350229047;
 const REPO_ID = 1439603196;
 const RULESET = 26326518;
-const JOBS = ['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const {OFFICIAL_JOBS: JOBS, officialJobs} = require('./ci-jobs.cjs');
 function assert(ok,msg) { if (!ok) throw Error(msg); }
 function validate(event,env) {
   assert(env.GITHUB_EVENT_NAME==='issue_comment'&&env.GITHUB_REPOSITORY===REPO&&env.GITHUB_ACTOR==='Xynph'&&env.GITHUB_TRIGGERING_ACTOR==='Xynph','Acteur ou événement non autorisé');
@@ -34,7 +34,8 @@ function pages(endpoint,key,max=10) {
   throw Error('Trop de pages : '+endpoint);
 }
 function completedSeven(jobs) {
-  return jobs.length===7&&JOBS.every(name=>jobs.filter(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success').length===1);
+  jobs=officialJobs(jobs);
+  return jobs.length===JOBS.length&&JOBS.every(name=>jobs.filter(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success').length===1);
 }
 function latestRun(runs,sha,workflowId,events) {
   return runs.filter(r=>r.workflow_id===workflowId&&r.head_sha===sha&&r.head_branch==='main'&&events.includes(r.event)).sort((a,b)=>b.id-a.id)[0];
@@ -94,8 +95,8 @@ function format(result,error,runUrl) {
     'READY='+result.ready+' mergeable='+result.mergeable+' mergeable_state='+result.mergeable_state,
     'ruleset #'+RULESET+' vérifié='+result.ruleset,
     'Critères ruleset (lecture Actions)='+JSON.stringify(result.ruleDetails||{}),
-    'main Tests JavaScript 7/7='+result.mainCI+' (run '+(result.mainRun||'absent')+')',
-    'PR Tests JavaScript 7/7='+result.prCI+' (run '+(result.prRun||'absent')+')',
+    'main Tests JavaScript '+JOBS.length+'/'+JOBS.length+'='+result.mainCI+' (run '+(result.mainRun||'absent')+')',
+    'PR Tests JavaScript '+JOBS.length+'/'+JOBS.length+'='+result.prCI+' (run '+(result.prRun||'absent')+')',
     'Checks requis manquants/non SUCCESS='+JSON.stringify(result.missing),
     'Ce diagnostic n’autorise pas à contourner /cd-check puis /cd-merge ni à fusionner une tête différente.',
     'Run : '+runUrl

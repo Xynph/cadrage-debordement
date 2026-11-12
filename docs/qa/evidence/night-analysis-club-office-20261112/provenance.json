@@ -1,0 +1,15 @@
+{
+  "commit": "bd6a5fe63fe52fbb5ecf4a55859676876c7d983e",
+  "source_attribution": "Concordant au report.json et source-copy.json originaux.",
+  "source_files_sha256": {
+    "tests/godot-analysis-club-graphics.cjs": "469cdd02c9e313c9c97297a1e9fb915dbc1203c87d56f66bc5ec7b69cd71e20f",
+    "tests/godot-analysis-club-graphics.gd": "fdb7e7392f2c0958f00d15bb4e10cac29a9eb6b3883af8faf79d46beeeb299f8",
+    "tests/helpers/office-reading-cases.gd": "6456ab14e4a089ca489b1600cc302b24c616d81188cc4e4b4bb6d46551402477",
+    "native/godot/ui/navigation_controller.gd": "93ff59c1b2056305e3526d1f732b47ae742d0d3a39bc6e2d1be17b61881e6241",
+    "native/godot/ui/performance_analysis_view.gd": "f39ac81c6f5fb38e6b129521c14be76bd03f1d6f70de44d9d36678db93373891",
+    "native/godot/ui/immersive08/club_canvas.gd": "9c696238f2e64cf7d233cf0cceb2bf8d1c093adb568b719b8d55e1d2e15d6742",
+    "native/godot/ui/immersive08/office_canvas.gd": "d8ff080ce7f76ddef05912f5c3a6e128f07396d176a49684372967226c2d11b8",
+    "native/godot/ui/office_view.gd": "6eb3d020f8a2012c346cbd0be07fcfe21d5f52d926471949958d58feb07a2ab3",
+    "native/godot/ui/immersive08/competition_canvas.gd": "7201a900e371955fdbce2f401c816533d7b69f348a7f0fce098b6ca0dc1f474b"
+  }
+}

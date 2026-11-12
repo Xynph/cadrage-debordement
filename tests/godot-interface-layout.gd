@@ -6,6 +6,7 @@ var app: Control
 var checks := 0
 var failures: Array[String] = []
 var proof := OS.get_environment("CD_LAYOUT_ARTIFACTS")
+var scenario := OS.get_environment("CD_LAYOUT_CASE")
 func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
 	checks += 1
@@ -61,6 +62,16 @@ func shared_hit(first: Button, second: Button) -> bool:
 			var point := Vector2(x,y)
 			if hits(first,point) and hits(second,point):return true
 	return false
+func press_from_mail() -> bool:
+	app._navigate("Réception"); await settle(); app.coach.close()
+	for id in ["InboxActivity_todo","InboxPressInvitation","InboxOpenPressInvitation"]:
+		var action := named(id) as Button
+		var available := action != null and action.is_visible_in_tree() and not action.disabled
+		check(available,"Accès public à la conférence : "+id)
+		if not available: return false
+		await enter(action)
+	check(app.route == "Presse","Le courrier ouvre sa conférence existante")
+	return app.route == "Presse"
 func density_contract() -> void:
 	# Catches the old 1080p cap: a 1440p desktop must gain canvas space,
 	# rather than enlarge the same controls by 4/3.
@@ -96,6 +107,11 @@ func run() -> void:
 	DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()
 	check(root.content_scale_size==root.size,"Référence physique correcte au démarrage")
+	check(scenario in ["","management","journal"],"Scénario interface reconnu")
+	if scenario == "journal":
+		await journal_reading()
+		finish()
+		return
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Composition");await settle();app.coach.close()
@@ -149,11 +165,15 @@ func run() -> void:
 			check(hits(opening,point) and not hits(center,point),"Le contour transparent du centre ne masque pas le nom de l’ouvreur")
 			await click_point(point)
 			var opener := app.find_child("LineupCandidates",true,false) as AcceptDialog
-			check(app.selected_slot==9 and opener!=null and opener.visible,"Le vrai clic sélectionne l’ouvreur")
+			check(app.selected_slot==9,"Le vrai clic sélectionne l’ouvreur")
+			await enter(lineup_slot(10))
+			opener = app.find_child("LineupCandidates",true,false) as AcceptDialog
+			check(opener != null and opener.visible,"La seconde activation ouvre les candidats de l’ouvreur")
 			if opener!=null:opener.hide();opener.queue_free();await settle()
 		bench=lineup_slot(23)
 		await enter(bench)
 		check(app.selected_slot==22,"Sélection réelle du banc23 par Entrée")
+		await enter(lineup_slot(23))
 		var candidates := app.find_child("LineupCandidates",true,false) as AcceptDialog
 		check(candidates != null and candidates.visible,"Entrée ouvre la liste de candidats du poste choisi")
 		if candidates != null:
@@ -192,9 +212,17 @@ func run() -> void:
 	check(search.has_focus(),"Focus saisie gardé")
 	search.text="";search.text_changed.emit("");await settle()
 	var rows:=0
+	var strict_rows := 0
+	var roster_bounds := named("SquadScroll").get_global_rect()
+	var row_geometry: Array = []
 	for row in named("SquadScroll").find_children("*","Button",true,false):
-		if named("SquadScroll").get_global_rect().encloses(row.get_global_rect()):rows+=1
-	check(rows>=3,"Effectif : au moins trois lignes après resize")
+		if not row.has_meta("player_id"): continue
+		var bounds: Rect2 = row.get_global_rect()
+		if roster_bounds.encloses(bounds): strict_rows += 1
+		if roster_bounds.grow(1).encloses(bounds): rows += 1
+		if row_geometry.size() < 3: row_geometry.append(str(bounds))
+	print("ROSTER_RESIZE_GEOMETRY ",JSON.stringify({"viewport":str(roster_bounds),"rows":row_geometry,"strict":strict_rows,"pixel_tolerance":rows}))
+	check(rows>=3,"Effectif : au moins trois lignes après resize, tolérance de rasterisation 1px")
 	app.coach.open_help();await settle()
 	await click_at(named("GuideOptions"),.5)
 	# UI-only error projection for the screenshot, restored before invariants.
@@ -238,16 +266,16 @@ func run() -> void:
 		for button in named("PreparationEntrainement").find_children("*","BaseButton",true,false):
 			check(app.body_scroll.get_global_rect().encloses(button.get_global_rect()),"Commande entraînement entière "+str(button.name))
 	await capture("preparation-1280")
-	app._navigate("Presse");await settle();app.coach.close()
-	var tabs:TabContainer=named("PressTabs")
-	tabs.current_tab=1
-	var answers:Array=app.body.find_children("PressAnswer_*","Button",true,false)
-	if not answers.is_empty():
-		await enter(answers[0])
-		var draft:Variant=app.get_meta("press_draft_choices",{}).duplicate(true)
-		for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
-		check(app.get_meta("press_draft_choices",{})==draft and tabs.current_tab==1 and answers[0].button_pressed,"Brouillon et onglet Presse conservés")
-	else:check(false,"Fixture dispose de réponses Presse")
+	if await press_from_mail():
+		var tabs:TabContainer=named("PressTabs")
+		tabs.current_tab=1
+		var answers:Array=app.body.find_children("PressAnswer_*","Button",true,false)
+		if not answers.is_empty():
+			await enter(answers[0])
+			var draft:Variant=app.get_meta("press_draft_choices",{}).duplicate(true)
+			for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
+			check(app.get_meta("press_draft_choices",{})==draft and tabs.current_tab==1 and answers[0].button_pressed,"Brouillon et onglet Presse conservés")
+		else:check(false,"Fixture dispose de réponses Presse")
 	check(FileAccess.get_file_as_bytes(disk)==bytes,"Resize et lecture : disque inchangé")
 	await command("export")
 	check(app.model.meta.exportText==before,"Resize et lecture : export S/RNG identique")
@@ -267,15 +295,26 @@ func run() -> void:
 			var receipt:Window=app.find_child("DecisionFeedbackDialog",true,false)
 			check(receipt!=null and receipt.visible,"Clic réel N10 %s %s"%[resolution,fraction])
 			if receipt!=null:receipt.hide();receipt.queue_free();await settle()
+	if scenario != "management": await journal_reading()
+	finish()
+
+func journal_reading() -> void:
+	var disk := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("live.json"))})
 	app._navigate("Match");await settle();app.coach.close()
-	app.match_screen._select_tab("Journal");await settle()
+	var match_surface: Control = app.contextual_director.view if app.contextual_director.active() and app.contextual_director.kind == "live" else app.match_screen
+	var journal_button: Button
+	for button: Button in match_surface.find_children("*","Button",true,false):
+		if button.text == "JOURNAL" and button.is_visible_in_tree(): journal_button = button; break
+	check(journal_button != null, "Le Journal s’ouvre depuis la vraie surface de match visible")
+	if journal_button != null: await enter(journal_button)
+	await settle()
 	await command("export")
 	var live_before:String=app.model.meta.exportText
 	var live_bytes:=FileAccess.get_file_as_bytes(disk)
-	var journal:Control=named("MatchJournal")
-	var stage:Node=app.match_screen.stage
-	var journal_search:LineEdit=named("MatchJournalSearch")
+	var journal:Control=match_surface.find_child("MatchJournal",true,false)
+	var stage:Node=match_surface.stage
+	var journal_search:LineEdit=journal.find_child("MatchJournalSearch",true,false)
 	journal_search.grab_focus();await settle()
 	for down in [true,false]:
 		var key:=InputEventKey.new();key.keycode=KEY_E;key.unicode=101;key.pressed=down
@@ -287,7 +326,7 @@ func run() -> void:
 	var journal_scroll:int=journal.scroll.scroll_vertical
 	for resolution in [Vector2i(2560,1440),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(1280,720)]:
 		await resize_to(resolution)
-		check(named("MatchJournal")==journal and app.match_screen.stage==stage,"Journal et caméra sur les mêmes instances")
+		check(match_surface.find_child("MatchJournal",true,false)==journal and match_surface.stage==stage,"Journal et caméra sur les mêmes instances")
 		check(journal_search.text=="e" and journal_search.caret_column==1 and journal_search.has_focus(),"Recherche Journal et caret conservés")
 		check(journal.scroll.scroll_vertical==journal_scroll,"Position de relecture Journal conservée")
 		check(journal.scroll.size.y>=200,"Journal conserve plusieurs lignes")
@@ -296,6 +335,8 @@ func run() -> void:
 	check(FileAccess.get_file_as_bytes(disk)==live_bytes,"Match lecture resize disque inchangé")
 	await command("export")
 	check(app.model.meta.exportText==live_before,"Match lecture resize S/RNG inchangés")
+
+func finish() -> void:
 	var file:=FileAccess.open(proof.path_join("report.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures},"  "));file.close()
 	app.closing=true;app.bridge.stop()

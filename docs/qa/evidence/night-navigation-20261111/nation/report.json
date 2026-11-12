@@ -1,0 +1,61 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-final-qa/nation/nation-france-depuis-angleterre-2560.png",
+      "height": 1440,
+      "route": "Sélections",
+      "sha256": "1b956129b353e1c9b4c102b5b96ce7cc0b28589d3b3a7c5181feb8dfce591cab",
+      "width": 2560
+    }
+  ],
+  "case": "nation",
+  "checks": 23,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Consultation de la France",
+      "link_commands": 0,
+      "profile_sha256_after": "d5b001d148fe13351131f0f044383c7795f1ad38f00dd5fd2ef8a1a5bc8a11c4",
+      "profile_sha256_before": "d5b001d148fe13351131f0f044383c7795f1ad38f00dd5fd2ef8a1a5bc8a11c4",
+      "saved_clock_after": 1794435571931.0,
+      "saved_clock_before": 1794435571931.0,
+      "saved_seed_after": 2154241438.0,
+      "saved_seed_before": 2154241438.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "accepted": true,
+      "route_after": "Sélections",
+      "selected_player": "",
+      "target": {
+        "id": "FRA",
+        "kind": "nation"
+      }
+    },
+    {
+      "accepted": false,
+      "route_after": "Sélections",
+      "selected_player": "",
+      "target": {
+        "id": "__absente__",
+        "kind": "nation"
+      }
+    }
+  ]
+}

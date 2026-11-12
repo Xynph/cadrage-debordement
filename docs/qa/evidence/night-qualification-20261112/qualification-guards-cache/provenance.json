@@ -1,0 +1,17 @@
+{
+  "commit": "70305d1137be5779758472fcc9a4e8eec10f2e95",
+  "sources": {
+    "ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "ui/management_state.gd": "3f9030b0d7e569023acc1f541990aa8601edbcfd725710aad5be73adcc001dd9",
+    "main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "ui/international_view.gd": "9645191c43167407359d06aeef885a4aa126d3943a3d41c65f33cba01f570108",
+    "ui/staff_view.gd": "9ebd220f72466b5d851980d917dff809cdc7beb17482d979e6d044170424658d",
+    "ui/immersive08/competition_canvas.gd": "fed0822713e24d869c81f67b8fa95b525075e4c6b0ee0b48b944c93a1aac5e41",
+    "ui/prospect_profile.gd": "2e9d67952c2a938912bbed13c997962f6dc4812394029523b7eb07f8a640fb83",
+    "ui/regen_scouting_view.gd": "051a073adc7a5e3134c9e11312a121e1ad950617a386f7076c0e93a57692e49b",
+    "ui/interclub_market_view.gd": "98d9f86718abfe689b21e1951ca0db9ae5f5c357ee05a4d4110e27b644a5fb6b"
+  },
+  "group": "guards",
+  "graphics": true,
+  "profile": "/tmp/rg27-night-navigation-profile-KaQzEB"
+}

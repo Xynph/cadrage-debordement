@@ -11,10 +11,14 @@ test('commande strictement autorisée sans texte additionnel',()=>{
  assert.throws(()=>validate({...event,comment:{...event.comment,user:{id:55,login:'intrus',type:'User'}}},env));
  assert.throws(()=>validate(event,{...env,GITHUB_TRIGGERING_ACTOR:'intrus'}));
 });
-test('7 jobs SUCCESS exacts, skipped ou duplicata bloquants',()=>{
- const jobs=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'].map(name=>({name,status:'completed',conclusion:'success'}));
+test('jobs officiels SUCCESS exacts, skipped ou duplicata bloquants ; Godot informatif ignoré',()=>{
+ const jobs=require('../ci/ci-jobs.cjs').OFFICIAL_JOBS.map(name=>({name,status:'completed',conclusion:'success'}));
  assert.equal(completedSeven(jobs),true);
+ assert.equal(jobs.length,12);
  assert.equal(completedSeven([...jobs,{...jobs[0]}]),false);
+ assert.equal(completedSeven([...jobs,{name:'Godot 1/3',status:'completed',conclusion:'failure'}]),true);
+ assert.equal(completedSeven(jobs.slice(1)),false);
+ assert.equal(completedSeven([...jobs,{name:'Suites 11/10',status:'completed',conclusion:'success'}]),false);
  assert.equal(completedSeven(jobs.map((j,i)=>i===2?{...j,conclusion:'skipped'}:j)),false);
 });
 test('CI main respecte SHA et événement exacts',()=>{

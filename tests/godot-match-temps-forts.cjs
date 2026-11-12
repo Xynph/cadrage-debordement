@@ -32,7 +32,8 @@ function run(mode,dossier=mode){
  if(mode==='reprise')Object.assign(env,{CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_GODOT_SEED:'7'});
  if(mode==='actif')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4'});
  // Temps forts et gestes ensemble, à vitesse de jeu : vingt minutes de match sans que rien ne se fige.
- if(mode==='gestes')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_GESTES:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_GODOT_SEED:'7'});
+ // Graine 8 : avec le calendrier alterné (autre adversaire en J1), la graine 7 ne donne que 3 temps forts en 22 minutes.
+ if(mode==='gestes')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_GESTES:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_GODOT_SEED:'8'});
  // Chorégraphe de temps forts (éteint par défaut) : l'essai en jeu courant de la 14e minute.
  if(mode==='choregraphie')Object.assign(env,{CD_MATCH_CHOREGRAPHE:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'2',CD_GODOT_SEED:'7'});
  else delete env.CD_MATCH_CHOREGRAPHE;

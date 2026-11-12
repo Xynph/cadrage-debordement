@@ -1,0 +1,5 @@
+# READER HISTORY : 115 contrôles ; 0 échec(s)
+# Subtest: Lecteurs natifs : fenêtres exactes, chaîne modale et retour sans mutation
+ok 1 - Lecteurs natifs : fenêtres exactes, chaîne modale et retour sans mutation
+  duration_ms: 115580.593792
+# duration_ms 115631.853027

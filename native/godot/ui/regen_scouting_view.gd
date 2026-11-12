@@ -5,6 +5,7 @@ const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Prospect = preload("res://ui/prospect_profile.gd")
 const PAGE_SIZE := 20
 const FAMILIES := ["Piliers","Talonneurs","Deuxième ligne","Troisième ligne","Demi de mêlée","Ouverture","Ailiers","Centres","Arrières"]
 var app: Control
@@ -33,8 +34,13 @@ static func open(owner_app: Control) -> AcceptDialog:
 func _data() -> Dictionary:
 	return app.model.get("clubLife",{}).get("regenScouting",{})
 
+func inspection_allowed(target: Dictionary) -> bool:
+	var source := "regen-shortlist" if bool(state.get("watched", false)) else "regen-candidates"
+	return not app.waiting and not Prospect.has_child_window(self) and target.get("kind") == "prospect" and target.get("source") == source and Prospect.target_available(app, source, str(target.get("id", "")))
+
 func _build() -> void:
 	name = "RegenScouting"
+	set_meta("navigation_inspection_source", "regen")
 	title = "Détecter la relève"
 	get_ok_button().text = "FERMER"
 	app._prepare_dialog(self,360)
@@ -127,9 +133,14 @@ func _redraw() -> void:
 func _person(person: Dictionary,data: Dictionary) -> void:
 	var card := G.card(list); card.name = "RegenScoutCard"; card.set_meta("player_id",str(person.get("playerId",person.id)))
 	var row := G.h(10); card.add_child(row)
-	if person.has("name"): row.add_child(G.portrait(0,64,person))
+	var player_id := str(person.get("playerId", person.id))
+	var source := "regen-shortlist" if bool(state.watched) else "regen-candidates"
+	if person.has("name"):
+		row.add_child(Prospect.inspection_button(app, self, source, player_id, str(person.name), "RegenScoutPortrait_" + player_id.validate_node_name(), G.portrait(0,64,person)))
 	var info := G.v(4); G.fill(info); row.add_child(info)
-	info.add_child(G.wrap(str(person.get("name","Profil indisponible · "+str(person.id))),20,G.INK))
+	if person.has("name"):
+		info.add_child(Prospect.inspection_button(app, self, source, player_id, str(person.name), "RegenScoutProfile_" + player_id.validate_node_name()))
+	else: info.add_child(G.wrap("Profil indisponible · " + str(person.id),20,G.INK))
 	if person.has("age"):
 		info.add_child(G.wrap("%s · %d ans · %s" % [str(person.get("pos","")),int(person.age),Copy.notice("scouting", person.get("origin",{}).get("label","Origine non précisée"))],13))
 		var origin: Dictionary = person.get("origin",{})

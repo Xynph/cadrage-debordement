@@ -1,0 +1,5 @@
+# PROFILE READING : 40 contrôles ; 0 échec(s)
+# Subtest: Fiche complète et retour natif : recherche, tri, sélection et scroll conservés
+ok 1 - Fiche complète et retour natif : recherche, tri, sélection et scroll conservés
+  duration_ms: 17844.874118
+# duration_ms 17885.118224

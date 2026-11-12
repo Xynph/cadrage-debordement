@@ -2,7 +2,7 @@
 // Seul le code de main est exécuté avec le jeton ; jamais celui de la PR.
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const REPO='Xynph/cadrage-debordement',OWNER_ID=350229047,REPO_ID=1439603196;
-const JOBS=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const {OFFICIAL_JOBS:JOBS,officialJobs}=require('./ci-jobs.cjs');
 function need(value,message){if(!value)throw Error(message);}
 function owner(user){return user?.id===OWNER_ID&&user.login==='Xynph'&&user.type==='User';}
 function validateEvent(e,env){
@@ -20,6 +20,7 @@ function validateEvent(e,env){
    ...(repair?{repairMain:repair[4],failedRun:Number(repair[5])}:{})};
 }
 function fullCI(run,jobs,sha,workflowId){
+ jobs=officialJobs(jobs);
  return !!run&&run.workflow_id===workflowId&&run.head_branch==='main'&&run.head_sha===sha&&['push','workflow_dispatch'].includes(run.event)&&run.name==='Tests JavaScript'&&run.status==='completed'&&run.conclusion==='success'&&jobs.length===JOBS.length&&JOBS.every(name=>jobs.filter(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success').length===1);
 }
 function latestCI(runs,sha,id){return runs.filter(r=>r.workflow_id===id&&r.head_sha===sha&&r.head_branch==='main'&&['push','workflow_dispatch'].includes(r.event)).sort((a,b)=>b.id-a.id)[0];}
@@ -49,10 +50,10 @@ async function execute(cmd,event,d){
      before.head_branch==='main'&&['push','workflow_dispatch'].includes(before.event)&&
      before.status==='completed'&&before.conclusion==='failure',
      'La CI main citée n’est pas la dernière exécution rouge exacte');
-   const failed=listJobs(before.id);
+   const failed=officialJobs(listJobs(before.id));
    need(failed.length===JOBS.length&&JOBS.every(name=>
      failed.filter(x=>x.name===name&&x.status==='completed').length===1),
-     'Sept jobs main obligatoires absents ou ambigus');
+     'Jobs main obligatoires ('+JOBS.length+') absents ou ambigus');
    need(failed.find(x=>x.name==='classification').conclusion==='success'&&
      failed.find(x=>x.name==='Validation CI').conclusion==='failure'&&
      JOBS.filter(n=>n.startsWith('Suites ')).every(n=>

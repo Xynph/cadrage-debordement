@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "sourceSha": "3feda0a8d850fc9e535bb7f19467e3b935f9b2fe",
+  "nodeVersion": "v22.23.4",
+  "scriptSha256": "82c151499f9345a0bfe3fa300d4c6b8d1c6f16e456f60a595b281863caf90e2a",
+  "method": "Real public worker, complete saved profile fork including RNG, actual negotiation and confirmed auction in isolated temporary profiles",
+  "limits": [
+    "One player and one checkpoint do not qualify every club or recruitment window.",
+    "This channel uses public positional need and affordability; no claim that tactical style explains its bids.",
+    "No hidden rating or potential used to select the target.",
+    "A quote is distinguished from the confirmed transfer and its saved receipt."
+  ],
+  "results": [
+    {
+      "policy": "prix_demande",
+      "proposal": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "fee": 280000,
+        "salary": 10100,
+        "sourceSalary": 9556,
+        "contractEnd": 2,
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        }
+      },
+      "quote": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        },
+        "seller": {
+          "accepted": true,
+          "counter": 280000,
+          "reason": "Le vendeur accepte cette indemnité."
+        },
+        "player": {
+          "accepted": true,
+          "counter": 10100,
+          "reason": "Le joueur accepte ce salaire."
+        },
+        "humanReady": true,
+        "humanReason": "Offre recevable.",
+        "offers": [
+          {
+            "clubId": 8,
+            "club": "Rugby des Garrigues",
+            "fee": 303000,
+            "salary": 10700,
+            "need": 2,
+            "human": false
+          },
+          {
+            "clubId": 1,
+            "club": "Union de l'Estuaire",
+            "fee": 292000,
+            "salary": 10400,
+            "need": 1,
+            "human": false
+          },
+          {
+            "clubId": 7,
+            "club": "Olympique des Confluences",
+            "fee": 292000,
+            "salary": 10400,
+            "need": 1,
+            "human": false
+          },
+          {
+            "clubId": 13,
+            "club": "Faucons du Golfe",
+            "fee": 280000,
+            "salary": 10100,
+            "need": 2,
+            "human": true
+          }
+        ],
+        "winner": {
+          "clubId": 8,
+          "club": "Rugby des Garrigues",
+          "fee": 303000,
+          "salary": 10700,
+          "need": 2,
+          "human": false
+        },
+        "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+      },
+      "confirmedPayload": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "fee": 280000,
+        "salary": 10100,
+        "sourceSalary": 9556,
+        "contractEnd": 2,
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        },
+        "expectedWinner": 8,
+        "expectedFee": 303000,
+        "expectedSalary": 10700,
+        "confirmed": true
+      },
+      "receipt": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "buyerId": 8,
+        "fee": 303000,
+        "salary": 10700,
+        "contractEnd": 2,
+        "competingClubs": 4,
+        "humanWon": false
+      },
+      "openingProfileSha256": "45d6d09ed1a591c95e8c1446e346e8296347073e9a7dedb0c5a5700822692684",
+      "closingProfileSha256": "bc4051366ce72a3993bd76b9df69276deea56fdd82efe8d080e11e3f38ad08cd",
+      "buyerCashChange": -303000,
+      "sellerCashChange": 303000,
+      "newSalary": 10700,
+      "persisted": true,
+      "invariants": [
+        "Quote leaves career, RNG and disk unchanged",
+        "Expected quote winner revalidated before confirmation",
+        "Exactly one owner after transfer",
+        "Buyer and seller cash reconciled",
+        "Contract persists after real worker restart"
+      ]
+    },
+    {
+      "policy": "surenchere",
+      "proposal": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "fee": 304000,
+        "salary": 10800,
+        "sourceSalary": 9556,
+        "contractEnd": 2,
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        }
+      },
+      "quote": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        },
+        "seller": {
+          "accepted": true,
+          "counter": 280000,
+          "reason": "Le vendeur accepte cette indemnité."
+        },
+        "player": {
+          "accepted": true,
+          "counter": 10100,
+          "reason": "Le joueur accepte ce salaire."
+        },
+        "humanReady": true,
+        "humanReason": "Offre recevable.",
+        "offers": [
+          {
+            "clubId": 13,
+            "club": "Faucons du Golfe",
+            "fee": 304000,
+            "salary": 10800,
+            "need": 2,
+            "human": true
+          },
+          {
+            "clubId": 8,
+            "club": "Rugby des Garrigues",
+            "fee": 303000,
+            "salary": 10700,
+            "need": 2,
+            "human": false
+          },
+          {
+            "clubId": 1,
+            "club": "Union de l'Estuaire",
+            "fee": 292000,
+            "salary": 10400,
+            "need": 1,
+            "human": false
+          },
+          {
+            "clubId": 7,
+            "club": "Olympique des Confluences",
+            "fee": 292000,
+            "salary": 10400,
+            "need": 1,
+            "human": false
+          }
+        ],
+        "winner": {
+          "clubId": 13,
+          "club": "Faucons du Golfe",
+          "fee": 304000,
+          "salary": 10800,
+          "need": 2,
+          "human": true
+        },
+        "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+      },
+      "confirmedPayload": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "fee": 304000,
+        "salary": 10800,
+        "sourceSalary": 9556,
+        "contractEnd": 2,
+        "context": {
+          "season": 1,
+          "week": 0,
+          "club": 13
+        },
+        "expectedWinner": 13,
+        "expectedFee": 304000,
+        "expectedSalary": 10800,
+        "confirmed": true
+      },
+      "receipt": {
+        "playerId": "p0-16-1794434400000",
+        "sellerId": 0,
+        "buyerId": 13,
+        "fee": 304000,
+        "salary": 10800,
+        "contractEnd": 2,
+        "competingClubs": 4,
+        "humanWon": true
+      },
+      "openingProfileSha256": "45d6d09ed1a591c95e8c1446e346e8296347073e9a7dedb0c5a5700822692684",
+      "closingProfileSha256": "b1a604905cbd2d2e5b045d7901156b749852a5bd8a60cadd5a7b8e4c0cd5b811",
+      "buyerCashChange": -304000,
+      "sellerCashChange": 304000,
+      "newSalary": 10800,
+      "persisted": true,
+      "invariants": [
+        "Quote leaves career, RNG and disk unchanged",
+        "Expected quote winner revalidated before confirmation",
+        "Exactly one owner after transfer",
+        "Buyer and seller cash reconciled",
+        "Contract persists after real worker restart"
+      ]
+    }
+  ],
+  "target": {
+    "id": "p0-16-1794434400000",
+    "pos": "Talonneur",
+    "sellerId": 0,
+    "fee": 280000,
+    "salary": 10100,
+    "knowledge": "unobserved"
+  },
+  "checkpointProfileSha256": "45d6d09ed1a591c95e8c1446e346e8296347073e9a7dedb0c5a5700822692684",
+  "checkpointRng": 3668155195,
+  "publicQuote": {
+    "playerId": "p0-16-1794434400000",
+    "sellerId": 0,
+    "context": {
+      "season": 1,
+      "week": 0,
+      "club": 13
+    },
+    "seller": {
+      "accepted": true,
+      "counter": 280000,
+      "reason": "Le vendeur accepte cette indemnité."
+    },
+    "player": {
+      "accepted": true,
+      "counter": 10100,
+      "reason": "Le joueur accepte ce salaire."
+    },
+    "humanReady": true,
+    "humanReason": "Offre recevable.",
+    "offers": [
+      {
+        "clubId": 8,
+        "club": "Rugby des Garrigues",
+        "fee": 303000,
+        "salary": 10700,
+        "need": 2,
+        "human": false
+      },
+      {
+        "clubId": 1,
+        "club": "Union de l'Estuaire",
+        "fee": 292000,
+        "salary": 10400,
+        "need": 1,
+        "human": false
+      },
+      {
+        "clubId": 7,
+        "club": "Olympique des Confluences",
+        "fee": 292000,
+        "salary": 10400,
+        "need": 1,
+        "human": false
+      },
+      {
+        "clubId": 13,
+        "club": "Faucons du Golfe",
+        "fee": 280000,
+        "salary": 10100,
+        "need": 2,
+        "human": true
+      }
+    ],
+    "winner": {
+      "clubId": 8,
+      "club": "Rugby des Garrigues",
+      "fee": 303000,
+      "salary": 10700,
+      "need": 2,
+      "human": false
+    },
+    "notice": "Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation."
+  },
+  "complete": true
+}

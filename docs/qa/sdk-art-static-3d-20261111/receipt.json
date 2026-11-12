@@ -1,0 +1,50 @@
+{
+  "source_commit": "7b23f7af01938928b0e29f1a4676486421e89bbc",
+  "backend": "Includes main9c2ea18 and PR558; all908 tracked native/dist files matched Git blobs after private staging/import.",
+  "director_sha256": "5ef054804aec0863fbfada373c0249328c181f8b4b1633d1efc4c9f35055d086",
+  "script_sha256": "7b991f19a4678d44a7925208fe69eeb173b5a19da124a67669370d0fecd0285a",
+  "change": "QA-only UPDATE_ONCE caching for camera-backed3D SubViewports. Real creation/resize redraws and mandatory fresh3D texture/size checks before every root2D capture. The root2D viewport, eight-frame UI settling, default quality, commands, two daily matches,7captures,4cases and demos are retained.",
+  "qualification_scope": "Layout/input and actual captured frames; no animation or frame-rate qualification.",
+  "red_ci": {
+    "run": "43099288304",
+    "job": "130785370695",
+    "source_log": "/tmp/rg27-art-progress-7b.log",
+    "sha256": "0cc6639a9e4db12df0095f80e79ef57f2becf1a73f454c2637dae26bcd6b2b5d",
+    "child_timeout_seconds": 150,
+    "last_command": "pause",
+    "last_command_ticks_ms": 141225,
+    "assertion_failures_observed": 0
+  },
+  "green_local": {
+    "case": "progression",
+    "checks": 165,
+    "original_checks_retained": 144,
+    "real3D_texture_checks": 20,
+    "pending_redraw_completion_checks": 1,
+    "failures": 0,
+    "exit": 0,
+    "node_seconds": 127.287,
+    "child_limit_seconds": 150,
+    "global_limit_seconds": 180,
+    "vm_limit_seconds": 15,
+    "godot": "4.7.2-stable",
+    "node": "22.23.4",
+    "audio": "Dummy",
+    "display": "LinuxX11/llvmpipe",
+    "captures": {
+      "1600-Bureau-apres-deux-matchs.png": "1a384caa0125ae88c49b0a25b0ed6bcbc1dd19c6b55dfa899943b100e1f5d9df",
+      "1600-Finances-apres-deux-matchs.png": "47061596a7dda83faf3055000cd45899dffbfe811ebcefde3ee9c3a35d76b807",
+      "1600-Presse-apres-deux-matchs.png": "fcf3797442e6cb867c2a205c0710cdc99bd6a73a24c716e270f95363cd799bba",
+      "1600-Rivalités-apres-deux-matchs.png": "5684d10864ad073de0fc1cd7695b73d4e6bfbab378aadc35eadf7504964d8a25",
+      "1600-Match-direct.png": "5eb491f1f3fe18fc0567791a942219f89fed2d35d40535b0895917407a8af609",
+      "1600-Match-Banc.png": "0f8ebf8f0b7944cefae94e078f0b55cff2988ca95ee85c167f11838da1039e35",
+      "1600-Match-Stats.png": "07f9c8d12b23b5f2e46ea0c58e1ba74c916abdbcc0fa7432efa45158bfd4927b"
+    }
+  },
+  "other_cases": "routes-1280, routes-1600, routes-1920 require remoteCI qualification because the Art-only cache applies to all4cases. No further local campaigns run.",
+  "artifacts": {
+    "progression.log": "ed5e7912936ef9de74ffc042787de3be9ae32a8985f248e1dd1968e29f73745b",
+    "report.json": "6e241952774bbfc1e543820964d87e25ece56c4144881f126df80b9864e4cbcd",
+    "source-freeze.json": "5a69233ea8e3ff572e4456974f31c2800de89647f2ac73afcfcbbfaa623ca6d7"
+  }
+}

@@ -1,0 +1,17 @@
+4: # GESTION_PROGRESS {"checks":0,"milliseconds":0,"stage":"startup.begin"}
+6: # GESTION_PROGRESS {"checks":1,"last_command":"snapshot","last_error":"","milliseconds":5893,"received":true,"route":"Accueil","stage":"startup.model","waiting":false}
+44: # GESTION_PROGRESS {"checks":155,"displayed_salary":"4 200 €","last_command":"tick","last_error":"","milliseconds":22016,"name_present":true,"period_present":true,"raw_weekly_amount":"4 160 €","route":"Effectif","salary_heading":"Salaire par semaine","salary_present":true,"stage":"comparison.presentation","waiting":false}
+47: # ERROR: Window 0 spawned at invalid position: (-738, -398).
+155: # GESTION_PROGRESS {"checks":273,"failures":[],"last_command":"export","last_error":"","milliseconds":47669,"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+156: # GESTION CARNET : 273 contrôles ; 0 échec(s)
+157: # GESTION_WRAPPER {"phase":"child-close","status":0,"signal":null,"timed_out":false,"output_limit":false,"milliseconds":48764,"child_timeout_ms":150000,"error":null,"trace":"/tmp/cd-gestion-carnet-jnEk7t/progress.jsonl"}
+162:   duration_ms: 48808.036157
+239:     GESTION_PROGRESS {"checks":0,"milliseconds":0,"stage":"startup.begin"}
+241:     GESTION_PROGRESS {"checks":1,"last_command":"snapshot","last_error":"","milliseconds":5893,"received":true,"route":"Accueil","stage":"startup.model","waiting":false}
+279:     GESTION_PROGRESS {"checks":155,"displayed_salary":"4 200 €","last_command":"tick","last_error":"","milliseconds":22016,"name_present":true,"period_present":true,"raw_weekly_amount":"4 160 €","route":"Effectif","salary_heading":"Salaire par semaine","salary_present":true,"stage":"comparison.presentation","waiting":false}
+282:     ERROR: Window 0 spawned at invalid position: (-738, -398).
+390:     GESTION_PROGRESS {"checks":273,"failures":[],"last_command":"export","last_error":"","milliseconds":47669,"route":"Classements","speech_id":0,"speech_requests":0,"speech_starts":0,"stage":"finish","waiting":false}
+391:     GESTION CARNET : 273 contrôles ; 0 échec(s)
+402: # pass 0
+403: # fail 1
+407: # duration_ms 48876.375921
