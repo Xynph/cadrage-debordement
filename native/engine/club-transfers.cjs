@@ -87,8 +87,21 @@ module.exports=function clubTransfers(){
  }
  // Ce que le joueur demande pour signer chez l'acheteur : son salaire, l'attrait du
  // championnat quand la règle des salaires le fournit, sinon l'écart de réputation.
+ let memo={};
  function demand(p,seller,buyer){
-  if(typeof nativeTransferDemand==='function'){const d=nativeTransferDemand(p,seller,buyer);if(Number.isFinite(d)&&d>0)return d;}
+  const key=buyer.id+'|'+p.id;
+  if(!memo.demand)memo.demand=new Map();
+  if(!memo.demand.has(key))memo.demand.set(key,rawDemand(p,seller,buyer));
+  return memo.demand.get(key);
+ }
+ function rawDemand(p,seller,buyer){
+  // Règle des salaires active (carrières marquées) : salaire juste chez l'acheteur × attrait du championnat.
+  if(typeof budgetActif==='function'&&budgetActif()&&typeof nativeStartingSalaries!=='undefined'&&typeof nativeLeagueEconomy!=='undefined'){
+   const forces=memo.forces??=budgetForces(),juste=nativeStartingSalaries.demande(S,forces,buyer.id,p,nativeLeagueEconomy);
+   const a=nativeLeagueEconomy.attrait({origine:budgetLigue(seller.id),destination:budgetLigue(buyer.id),joueurId:p.id,age:p.age,situation:nativeLeagueEconomy.situation(p,S.season,buyer.id,buyer.name)});
+   // Le joueur ne signe pas sous son salaire actuel ni sous ce que l'attrait lui fait demander.
+   return Math.max(p.salary*a.multiplicateur,juste*a.multiplicateur);
+  }
   const gap=(worldClub(seller.id)?.reputation??seller.base)-(worldClub(buyer.id)?.reputation??buyer.base);
   return p.salary*(1+Math.max(-.08,Math.min(.25,gap*.008)));
  }
@@ -134,6 +147,10 @@ module.exports=function clubTransfers(){
  }
  function transferWindow(){
   if(!enabled())return [];
+  memo={};
+  try{return openWindow();}finally{memo={};}
+ }
+ function openWindow(){
   const rows=leagueRows(),plans=new Map(),reports=new Map(),done=[];
   for(const peers of Object.values(rows))for(const c of peers)plans.set(c.id,strategy(c,peers));
   for(const c of S.clubs)if(c.id!==S.club){const r=aiRosterReport(c.id);r.strategy=plans.get(c.id);reports.set(c.id,r);}
@@ -157,6 +174,7 @@ module.exports=function clubTransfers(){
     let best=null;
     for(const offer of pool){
      const w=wanted(buyer,plan,offer,known);if(!w)continue;
+     if(aiRosterPayroll(buyer)+offer.p.salary>aiRosterWageLimit(buyer)||buyer.cash-offer.fee-CASH_FLOOR<0)continue;
      const salary=clamp(Math.round(Math.max(offer.p.salary,demand(offer.p,offer.seller,buyer))*(plan==='vedettes'?1.08:1.03)/100)*100,270,100000);
      if(!affordable(buyer,offer,salary))continue;
      if(!best||w.score>best.w.score||w.score===best.w.score&&offer.p.id<best.offer.p.id)best={offer,w,salary};

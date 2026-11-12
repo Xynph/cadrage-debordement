@@ -24,8 +24,9 @@ const median=v=>{const s=v.slice().sort((a,b)=>a-b);return s.length?s[s.length>>
 const round=(x,d=2)=>Math.round(x*10**d)/10**d;
 
 function leagueOf(s,club){
- const w=s.worldMode;const id=w?.clubs?.[club.id]?.leagueId??w?.clubs?.find?.(c=>c.id===club.id)?.leagueId;
- return id??club.leagueId??'?';
+ const leagues=s.worldMode?.leagues??s.franceMode?.leagues??{};
+ for(const [key,l] of Object.entries(leagues))if(Array.isArray(l.members)&&l.members.includes(club.id))return key;
+ return 'guest';
 }
 function sizes(text){
  const s=JSON.parse(text),out={total:Buffer.byteLength(text)};
@@ -73,7 +74,7 @@ function run(o){
   bridge=createBridge({dataDir:dir,seed:o.seed,now:1794178800000});
   settleClubMeetings(go('new_career',{mode:o.mode,club:o.club}),go);capture('initial');
   for(let season=1;season<=o.seasons;season++){
-   for(let week=model.meta.week;week<46;week++){
+   for(let week=model.meta.week,guard=0;model.meta.phase!=='ended'&&guard<80;week++,guard++){
     if(model.next){if(!model.selection.valid)go('auto_lineup');if(!model.selection.valid)go('promote_cover',{confirmed:true});go('begin_match');go('delegate');}
     settleClubMeetings(go('finish_round'),go);
     {const {text}=state(),st=JSON.parse(text);ledger(st);if(week%4===0)track(st);}

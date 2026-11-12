@@ -103,8 +103,10 @@ test('Attrait : monter coûte moins cher au club, descendre coûte une prime lis
  // Première → deuxième division française : une minorité au salaire juste, la moitié vers +15 à +20 %, presque tous à +30 %.
  const juste=acceptent('elite','accession',1),moitie=acceptent('elite','accession',1.175),large=acceptent('elite','accession',1.3);
  assert.ok(juste>=0.1&&juste<=0.2,'au salaire juste : '+juste);assert.ok(moitie>=0.4&&moitie<=0.65,'à +17,5 % : '+moitie);assert.ok(large>=0.9,'à +30 % : '+large);
- // Championnats proches : écart faible.
- assert.ok(acceptent('elite','prem',1)>0.8&&acceptent('elite','urc',1)>0.75&&acceptent('elite','prem',1.1)>0.98);assert.ok(taux('elite','prem')<1.06&&taux('elite','urc')<1.08);
+ // Quitter la première division française pour l'étranger, à salaire égal : rare (15 à 30 %), la plupart à +20 %.
+ for(const d of ['prem','urc']){const a=acceptent('elite',d,1);assert.ok(a>=0.15&&a<=0.3,'elite → '+d+' au salaire juste : '+a);assert.ok(acceptent('elite',d,1.2)>0.95,'elite → '+d+' à +20 %');}
+ // Dans l'autre sens, le Top 14 attire toujours : écart faible entre championnats proches.
+ assert.ok(acceptent('prem','elite',1)>0.9&&acceptent('urc','elite',1)>0.9&&acceptent('prem','urc',1)>0.85);assert.ok(taux('prem','urc')<1.03);
  assert.ok(E.primeDescente(8)<0.05&&Math.abs(E.primeDescente(30)-0.3)<1e-9&&E.primeDescente(80)===0.55&&E.rabaisMontee(60)===0.1);
  for(const o of [...noms,null])for(const d of noms)for(let i=0;i<40;i++){const a=E.attrait({origine:o,destination:d,joueurId:'x'+i,age:20+i%18,situation:{sansClub:i%3,peuUtilise:i%2===0,ancienClub:i%5===0}});assert.ok(a.multiplicateur>=0.82&&a.multiplicateur<=1.6);}
  assert.throws(()=>E.attrait({origine:'elite',destination:'inconnu',joueurId:'a',age:25}),/inconnu/);

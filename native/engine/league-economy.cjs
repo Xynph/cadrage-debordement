@@ -48,6 +48,10 @@ const POIDS_PRESTIGE = Object.freeze({ ambitieux: 1.35, pragmatique: 0.35 });
 // Prime demandée pour descendre : faible entre championnats proches, forte quand l'écart se creuse
 // (30 points d'écart, de la première à la deuxième division française : +30 % pour un joueur ordinaire).
 const primeDescente = ecart => Math.min(0.55, 0.3 * (ecart / 30) ** 1.6);
+// Prime pour quitter le championnat de référence (première division française) vers l'étranger :
+// à salaire égal, environ un joueur sur quatre part en Angleterre, un sur cinq dans le championnat celte
+// (décision de Léo du 12 novembre : partir doit être nettement plus rare que 82 à 88 sur 100).
+const QUITTER_REFERENCE = 0.12;
 // Rabais consenti pour monter : jusqu'à 10 %.
 const rabaisMontee = ecart => Math.min(0.1, 0.1 * (ecart / 30) ** 1.2);
 
@@ -72,6 +76,10 @@ function attrait({ origine = null, destination, joueurId, age, situation = null 
       raisons.push('championnat moins réputé');
       if (situation?.peuUtilise) raisons.push('cherche du temps de jeu');
     }
+    // Quitter le championnat de référence pour un championnat étranger moins réputé : premiers
+    // salaires du monde, sélection nationale qui retient les joueurs du championnat, vie installée.
+    // Le Japon garde sa propre règle d'âge, ci-dessous.
+    if (vers.pays !== depuis.pays && vers.pays !== 'japon' && depuis.reputation >= 100 && ecart < 0) { taux += QUITTER_REFERENCE; raisons.push('quitter le meilleur championnat'); }
     if (vers.pays !== depuis.pays) {
       if (profil === 'casanier') { taux += 0.08; raisons.push('attaché à son pays'); }
       else if (profil === 'voyageur') { taux -= 0.04; raisons.push('envie de découvrir un autre rugby'); }
@@ -117,4 +125,4 @@ function origine(joueur, ligueDuClub, ligueDuNom = null) {
   return prefixe && Object.hasOwn(CHAMPIONNATS, prefixe) ? prefixe : null;
 }
 
-module.exports = Object.freeze({ CHAMPIONNATS, REFERENCES, temperament, attrait, situation, origine, dernierClub, primeDescente, rabaisMontee, unite });
+module.exports = Object.freeze({ CHAMPIONNATS, REFERENCES, QUITTER_REFERENCE, temperament, attrait, situation, origine, dernierClub, primeDescente, rabaisMontee, unite });

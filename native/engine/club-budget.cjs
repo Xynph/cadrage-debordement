@@ -109,7 +109,8 @@ function ajustement(annuel, masseAnnuelle, enveloppe) {
 // Masse salariale annuelle qu'un club s'autorise : la plus basse de trois bornes — le plafond de la
 // ligue, 52 % des recettes là où la règle existe, et ce que ses recettes et son propriétaire peuvent
 // porter (économies de fonctionnement comprises). Chaque club garde une marge qui lui est propre ;
-// de temps en temps, un club de mécène choisit de dépasser un peu et de payer l'amende.
+// de temps en temps, un club de mécène choisit de dépasser un peu la borne des recettes et de payer
+// l'amende, jamais le plafond de la ligue.
 // À la création, personne ne dépasse.
 function limites(forces, saison, { creation = false, types = null } = {}) {
   const annuels = recettes(forces), resultat = new Map();
@@ -123,7 +124,10 @@ function limites(forces, saison, { creation = false, types = null } = {}) {
     bornes.sort((x, y) => x[1] - y[1]);
     const rigueur = unite('rigueur|' + force.id + '|' + saison), audace = !creation && p.type === 'mecene' && unite('audace|' + force.id + '|' + saison) < 0.12;
     const tolerance = audace ? 1.01 + 0.04 * rigueur : 0.93 + 0.065 * rigueur;
-    resultat.set(force.id, { limite: rond(bornes[0][1] * tolerance), regle: bornes[0][0], tolerance, audace });
+    // Le plafond salarial d'une ligue n'est jamais dépassé volontairement, même par un mécène
+    // audacieux (décision de Léo du 12 novembre) : l'audace ne joue que sous les autres bornes.
+    const limite = regle.plafond !== null ? Math.min(regle.plafond, bornes[0][1] * tolerance) : bornes[0][1] * tolerance;
+    resultat.set(force.id, { limite: rond(limite), regle: bornes[0][0], tolerance, audace });
   }
   return resultat;
 }
@@ -457,6 +461,25 @@ promoteCover=function(){
 };
 // Joueurs ajoutés pour garder 40 professionnels par club : ils signaient à 1 400–2 200 € par semaine quel que soit
 // le club. Pour les carrières marquées, ils signent au salaire de la règle dans leur club.
+// Filet de sécurité, après chaque commande : un club géré d'une ligue plafonnée qui dépasse le
+// plafond (renfort d'urgence promu, prolongation indispensable) ramène ses contrats sous le
+// plafond, comme à l'intersaison (même retenue proportionnelle, jamais sous le plancher).
+function budgetConformite(){
+ let touche=false;
+ for(const c of S.clubs){
+  if(c.id===S.club)continue;
+  const plafond=nativeClubBudget.PLAFOND_SALARIAL[budgetLigue(c.id)];
+  if(!plafond)continue;
+  const masse=budgetMasse(c)*52;
+  if(masse<=plafond)continue;
+  const plancher=nativeStartingSalaries.plancherHebdo(S,budgetLigue(c.id));
+  // Retenue calculée sur la part au-dessus du plancher, arrondie vers le bas.
+  const libre=c.players.reduce((n,p)=>n+Math.max(0,p.salary-plancher),0)*52,retenue=libre>0?Math.max(0,1-(masse-plafond)/libre):0;
+  for(const p of c.players)if(p.salary>plancher)p.salary=Math.max(plancher,Math.floor((plancher+(p.salary-plancher)*retenue)/10)*10);
+  touche=true;
+ }
+ return touche;
+}
 function budgetProfondeur(){
  if(!budgetActif()||S.live)return nativeProfessionalDepth.fill(S);
  const tailles=S.clubs.map(c=>c.players.length);nativeProfessionalDepth.fill(S);
@@ -464,8 +487,19 @@ function budgetProfondeur(){
  S.clubs.forEach((c,i)=>{
   if(c.players.length<=tailles[i])return;
   forces=forces||budgetForces();
-  for(const p of c.players.slice(tailles[i]))p.salary=nativeStartingSalaries.demande(S,forces,c.id,p,nativeLeagueEconomy);
+  const nouveaux=c.players.slice(tailles[i]);
+  for(const p of nouveaux)p.salary=nativeStartingSalaries.demande(S,forces,c.id,p,nativeLeagueEconomy);
+  // Un club géré ne franchit pas sa masse autorisée (au plus le plafond de la ligue) pour un joueur de
+  // complément : il le signe sous le salaire de la règle, jamais sous le plancher.
+  if(c.id!==S.club){
+   const limite=aiRosterWageLimit(c),autres=budgetMasse(c)-nouveaux.reduce((n,p)=>n+p.salary,0);
+   if(autres+nouveaux.reduce((n,p)=>n+p.salary,0)>limite){
+    const plancher=nativeStartingSalaries.plancherHebdo(S,budgetLigue(c.id)),part=Math.floor((limite-autres)/nouveaux.length/10)*10;
+    for(const p of nouveaux)p.salary=Math.max(plancher,Math.min(p.salary,part));
+   }
+  }
  });
+ if(budgetConformite())forces=forces||budgetForces();
  // La prévision du club joué suit son effectif complété.
  if(forces&&budgetLisible(S.clubBudget)&&S.clubBudget.saison===S.season){S.clubBudget.clubs.forEach((k,i)=>{k.masse=Math.round(budgetMasse(S.clubs[i])*52);});budgetPrevoir(forces,budgetRepere());}
 }
