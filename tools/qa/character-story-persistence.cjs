@@ -13,11 +13,11 @@ function worker(directory){
  const send=(command,payload={},ok=true)=>{
   const before=model?{cash:model.finance?.cash,wage:model.finance?.wage,morale:model.meta?.morale,trust:model.meta?.trust}:null;
   const response=bridge.handle({id:++serial,command,payload});
-  assert.equal(response.id,serial);assert.equal(response.ok,ok,command+': '+response.error);if(response.model)model=response.model;
+  assert.equal(response.id,serial);if(response.model)model=response.model;
   const after=model?{cash:model.finance?.cash,wage:model.finance?.wage,morale:model.meta?.morale,trust:model.meta?.trust}:null;
   commands.push({requestId:serial,command,payload:copy(payload),accepted:response.ok,error:response.error??null,before,after,
    cashChange:Number.isFinite(before?.cash)&&Number.isFinite(after?.cash)?after.cash-before.cash:null,wageChange:Number.isFinite(before?.wage)&&Number.isFinite(after?.wage)?after.wage-before.wage:null});
-  return model;
+  assert.equal(response.ok,ok,command+': '+response.error);return model;
  };
  const go=(command,payload={})=>send(command,payload,true);
  const stateHash=()=>{const text=go('export').meta.exportText;return hash(JSON.parse(text).state);};
@@ -100,6 +100,7 @@ function collect(output){
    try{
     assert.deepEqual(w.bytes(),profile,'The two policies start from the exact same saved profile');assert.equal(w.stateHash(),opening.stateSha256);
     const branch={choice,label:choice==='ecouter'?'Écouter sans nouvelle obligation de rôle':'Confier un rôle et avancer un engagement de 60 minutes',openingProfileSha256:hash(w.bytes()),openingSeed:JSON.parse(w.bytes()).seed,openingClock:JSON.parse(w.bytes()).clock,observations:[],rounds:[],rejections:[]};
+    branch.commands=w.commands;branch.restarts=w.restarts;report.branches.push(branch);
     const observe=phase=>{const observation=story(w.model,target,partner);verifyMemory(observation,baseline,event,choice);const integrity=w.read();branch.observations.push({phase,story:observation,integrity});return observation;};
     w.go('locker_room_decision',{context:w.model.clubLife.relationships.context,eventKey:event.key,choice});observe('after_initial_choice');
     branch.rejections.push(w.reject('locker_room_decision',{context:w.model.clubLife.relationships.context,eventKey:event.key,choice}));
@@ -130,13 +131,13 @@ function collect(output){
      originalEventStillArchived:final.personalEvents.some(e=>e.key===event.key),conversationCount:final.conversations.length,
      closingProfileSha256:branch.observations.at(-1).integrity.profileSha256,closingStateSha256:branch.observations.at(-1).integrity.stateSha256,
      closingSeed:branch.observations.at(-1).integrity.seed,closingClock:branch.observations.at(-1).integrity.clock};
-    report.branches.push(branch);console.error(choice+' '+JSON.stringify(branch.summary));
+    console.error(choice+' '+JSON.stringify(branch.summary));
    }finally{w.close();}
   }
   assert.equal(report.branches[0].openingProfileSha256,report.branches[1].openingProfileSha256);assert.equal(report.branches[0].openingSeed,report.branches[1].openingSeed);assert.equal(report.branches[0].openingClock,report.branches[1].openingClock);
   report.complete=true;fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');return report;
- }catch(error){report.complete=false;report.failure=error.stack;fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');throw error;}
- finally{initial?.close();fs.rmSync(temp,{recursive:true,force:true});}
+ }catch(error){report.complete=false;report.failure=error.stack;report.localDiagnosticDirectory=temp;fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');throw error;}
+ finally{initial?.close();if(report.complete)fs.rmSync(temp,{recursive:true,force:true});}
 }
 if(require.main===module){const output=path.resolve(process.argv.find(a=>a.startsWith('--output='))?.slice(9)||'work/character-story-persistence.json');const r=collect(output);console.log(JSON.stringify({output,complete:r.complete,branches:r.branches.length}));}
 module.exports={collect};
