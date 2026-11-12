@@ -300,7 +300,9 @@ function project(model,niveau,lire,options={}){
   compte({cle:'penalites',label:'Pénalités concédées',valeurs:[0,1].map(s=>stats[s]?.penalties||0),inverse:true}),
   compte({cle:'en_avant',label:'En-avant',valeurs:rugby.map(e=>e.enAvant),inverse:true})
  ];
- const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',camp:etat.camp??-1,
+ const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
+  // Minute du dernier fait montré (borne) : l'horloge de l'entracte ne court pas devant ce qui a été vu.
+  horlogeMontree:derniere?horloge(derniere):etat.horloge||'',camp:etat.camp??-1,
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],

@@ -196,7 +196,7 @@ func active(view: Control) -> void:
 	check(between.is_visible_in_tree() and regie.voile.visible, "L'écran intermédiaire couvre la 3D")
 	# Entracte : l'horloge du moteur, avec les secondes qui roulent (« 1:00 », « 40+2:15 »).
 	# (ou la minute du fait que le terrain 2D rejoue encore, en retard sur le moteur).
-	check(view.clock.text.begins_with(str(app.model.live.direct.horloge).trim_suffix("′") + ":") or not between.horloge_differee().is_empty() and view.clock.text.begins_with(between.horloge_differee().trim_suffix("′") + ":"), "Horloge du moteur, secondes comprises, sur l'écran intermédiaire : " + view.clock.text)
+	check(view.clock.text.begins_with(str(app.model.live.direct.horloge).trim_suffix("′") + ":") or view.clock.text.begins_with(str(app.model.live.direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not between.horloge_differee().is_empty() and view.clock.text.begins_with(between.horloge_differee().trim_suffix("′") + ":"), "Horloge du moteur, secondes comprises, sur l'écran intermédiaire : " + view.clock.text)
 	check(str(view.stage.get("_action_key")) != first_key, "Les plans du temps fort se sont succédé")
 	var minute: int = app.model.live.minute
 	await settle(40)
@@ -695,7 +695,7 @@ func resumed() -> Array:
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
 	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
 	var differee: String = regie.between.horloge_differee().trim_suffix("′")
-	check(view.clock.text.begins_with(str(direct.get("horloge", "")).trim_suffix("′") + ":") or not differee.is_empty() and view.clock.text.begins_with(differee + ":"), "L'horloge du match repris est affichée : " + view.clock.text)
+	check(view.clock.text.begins_with(str(direct.get("horloge", "")).trim_suffix("′") + ":") or view.clock.text.begins_with(str(direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not differee.is_empty() and view.clock.text.begins_with(differee + ":"), "L'horloge du match repris est affichée : " + view.clock.text)
 	await settle(40)
 	check(highlights(regie.suivi) == 0 and regie.etat == regie.INTER and not app.waiting, "En pause, le match repris attend")
 	var minute: int = app.model.live.minute

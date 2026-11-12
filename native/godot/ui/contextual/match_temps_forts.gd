@@ -111,6 +111,8 @@ var _pause_tiroir := false
 ## Horloge qui défile : dernière horloge du moteur montrée, secondes réelles depuis, et
 ## dernier modèle montrable (rien du temps fort retenu : score, fil).
 var _horloge_inter := ""
+## Minute du dernier fait montré par l'entracte (direct.horlogeMontree).
+var _horloge_montree := ""
 var _minute_inter := -1
 var _roule := 0.0
 var _live_inter: Dictionary = {}
@@ -327,6 +329,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 			_minute_inter = minute
 			_roule = 0.0
 		_horloge_inter = str(direct.get("horloge", ""))
+		_horloge_montree = str(direct.get("horlogeMontree", ""))
 		between.update_frame(model, live, direct, func(conseil: Dictionary): app._command("set_tactics", {"attack": conseil.get("attack"), "defense": conseil.get("defence")}))
 	if nouveau:
 		app.management_ui["match_temps_forts_cle"] = rencontre + str(candidat.get("cle", ""))
@@ -469,6 +472,8 @@ func _habiller_horloge() -> void:
 	var heure := _horloge_inter.trim_suffix("′").strip_edges()
 	# Le terrain 2D rejoue encore des faits en retard : l'horloge suit la minute qu'il montre.
 	var differee: String = between.horloge_differee().trim_suffix("′").strip_edges()
+	# Sinon, la minute du dernier fait montré (le moteur a de l'avance : rien d'un temps fort à venir).
+	if differee.is_empty(): differee = _horloge_montree.trim_suffix("′").strip_edges()
 	if not differee.is_empty() and differee.replace("+", "").is_valid_int(): heure = differee
 	if not heure.is_empty() and heure.replace("+", "").is_valid_int():
 		view.clock.text = "%s:%02d" % [heure, int(part * 60.0)]
