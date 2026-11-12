@@ -553,7 +553,8 @@ Lecture :
 
 ## Tests
 
-`node --test`, un fichier à la fois, après fusion de `main` (f05708e2),
+`node --test`, un fichier à la fois, après fusion de `main` (f05708e2, puis
+de nouveau après c39dfffb, mêmes résultats),
 drapeau éteint puis allumé : `starting-salaries` 14, `club-budget` 26,
 `league-economy` 15, soit 55 sur 55 dans les deux cas.
 
