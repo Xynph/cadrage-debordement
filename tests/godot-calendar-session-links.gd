@@ -125,6 +125,69 @@ func reject(target: Dictionary, message: String) -> void:
 	var cursor: int = app.navigation_controller.cursor
 	check(not app.navigation_controller.open_entity(target), message)
 	check(app.route == route and app.management_ui == reading and app.navigation_controller.history == history and app.navigation_controller.cursor == cursor and snapshot() == live, "Refus atomique sans navigation : " + message)
+func template_draft_roundtrip(id: String, date: String) -> void:
+	if calendar() == null: return
+	calendar()._select(date); await settle()
+	calendar()._view_as("week"); await settle()
+	calendar()._filter_by("all"); await settle()
+	var chooser := app.find_child("CalendarTemplate", true, false) as OptionButton
+	var apply := app.find_child("CalendarApplyTemplate", true, false) as Button
+	check(chooser != null and apply != null and chooser.is_visible_in_tree(), "Brouillon réel : choix de semaine type présent sous filtre all")
+	if chooser == null or apply == null: return
+	var index := -1
+	for item in range(1, chooser.item_count):
+		if not chooser.is_item_disabled(item) and chooser.get_item_metadata(item) is String:
+			index = item; break
+	check(index > 0, "Brouillon réel : modèle public sélectionnable disponible")
+	if index < 1: return
+	var template_id: String = chooser.get_item_metadata(index)
+	var fixture_id: String = calendar().next_fixture.id
+	check(app.model.calendarPlanning.templates.any(func(row: Dictionary): return row.get("id") == template_id), "Le choix observé correspond à un ID de modèle public")
+	# Select the real native chooser and deliver its UI selection callback only.
+	# Never press Apply: choosing is an unapplied UI draft, not preparation.
+	chooser.select(index); chooser.item_selected.emit(index)
+	check(not apply.disabled and chooser.get_item_metadata(chooser.selected) == template_id, "Précondition : modèle choisi sans application et bouton Appliquer actif")
+	var sources := links(app.find_child("CalendarWeekSessionDetails", true, false), id)
+	check(sources.size() == 1, "Brouillon réel : lien séance exact disponible avant consultation")
+	if sources.size() != 1: return
+	var session_caption: String = sources[0].text
+	sources[0].grab_focus(); await settle()
+	progress("template_draft_source", {"fixture_id":fixture_id,"template_id":template_id})
+	await key(KEY_ENTER)
+	target_ok(id, date, session_caption)
+	await key(KEY_LEFT, true)
+	chooser = app.find_child("CalendarTemplate", true, false) as OptionButton
+	apply = app.find_child("CalendarApplyTemplate", true, false) as Button
+	check(chooser != null and apply != null and chooser.selected > 0 and chooser.get_item_metadata(chooser.selected) == template_id and not apply.disabled, "Back conserve le brouillon exact de semaine type et Appliquer actif sans application")
+	progress("template_draft_back", {"expected_template_id":template_id})
+	# Explicit isolated synthetic projections: no capture, command or save.
+	# Restore the same draft UI separately for each invalidation case.
+	var real_model: Dictionary = app.model
+	var real_ui: Dictionary = app.management_ui.duplicate(true)
+	var real_history: Array[Dictionary] = app.navigation_controller.history.duplicate(true)
+	var real_cursor: int = app.navigation_controller.cursor
+	for invalid: String in ["removed", "already_applied", "different_fixture"]:
+		var clone: Dictionary = real_model.duplicate(true)
+		if invalid == "removed":
+			clone.calendarPlanning.templates = clone.calendarPlanning.templates.filter(func(row: Dictionary): return row.get("id") != template_id)
+		elif invalid == "already_applied":
+			if not clone.calendarPlanning.get("appliedTemplates") is Dictionary: clone.calendarPlanning.appliedTemplates = {}
+			clone.calendarPlanning.appliedTemplates[fixture_id] = template_id
+		else:
+			for row: Dictionary in clone.calendarPlanning.fixtures:
+				if row.get("id") == fixture_id: row.id = "synthetic-different-fixture-draft"
+		app.model = clone
+		app.management_ui = real_ui.duplicate(true)
+		app._navigate("Calendrier"); await settle()
+		chooser = app.find_child("CalendarTemplate", true, false) as OptionButton
+		apply = app.find_child("CalendarApplyTemplate", true, false) as Button
+		var cleared := (chooser == null and apply == null) or (chooser != null and apply != null and chooser.selected == 0 and apply.disabled)
+		check(cleared, "Projection isolée : brouillon non réutilisé si " + invalid)
+	app.model = real_model
+	app.management_ui = real_ui
+	app._navigate("Calendrier"); await settle()
+	app.navigation_controller.history = real_history; app.navigation_controller.cursor = real_cursor
+
 func finish() -> void:
 	var speech_id := int(app.coach.speech._id) if is_instance_valid(app.coach) else -1
 	check(requests == 0 and starts == 0 and speech_id == 0, "Mute précoce : requested=0, started=0, _id=0")
@@ -314,6 +377,7 @@ func run() -> void:
 				await key(KEY_LEFT,true)
 				progress("mouse_back", {"before":before_mouse,"after":snapshot()})
 				check(snapshot() == before_mouse, "Back après clic restitue le contexte hebdomadaire")
+	await template_draft_roundtrip(id, date)
 	# Explicit SYNTHETIC projection: collision, same-day slots and past date.
 	# This section is never captured, sent to the worker, or persisted.
 	if calendar() != null and calendar().selected == date:
