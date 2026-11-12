@@ -96,7 +96,7 @@ func run() -> void:
 	if OS.get_environment("CD_ANALYSIS_CLUB_GRAPHICS_COPIED")!="1":
 		if not await prepare_public_checkpoint(): finish(); return
 	else:
-		check(app.model.get("club") is Dictionary,"Copie locale chargée sans créer une autre carrière")
+		check(app.model.get("club") is Dictionary,"Carrière préparée chargée sans créer une autre carrière")
 		if not await Flow.settle_club_meetings(app,self,check): finish(); return
 	app.coach.close()
 	var expected:=OS.get_environment("CD_ANALYSIS_CLUB_GRAPHICS_EXPECTED_FIXTURE")
