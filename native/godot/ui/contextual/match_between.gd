@@ -80,7 +80,7 @@ class Domination extends Control:
 		draw_rect(zone, Color(1, 1, 1, 0.03))
 		draw_line(Vector2(zone.position.x, milieu), Vector2(zone.end.x, milieu), Color(S.MUTED, 0.45), 1.0)
 		for repere in [20, 40, 60]:
-			var x := zone.position.x + repere * pas
+			var x := zone.position.x + float(repere) * pas
 			draw_dashed_line(Vector2(x, zone.position.y), Vector2(x, zone.end.y), Color(S.MUTED, 0.25 if repere != 40 else 0.5), 1.0, 4.0)
 		for cote in 2:
 			draw_string(police, Vector2(0, milieu + (-zone.size.y * 0.22 if cote == 0 else zone.size.y * 0.22 + corps * 0.7)), str(sigles[cote]), HORIZONTAL_ALIGNMENT_LEFT, marge.x - 4.0, corps, couleurs[cote].lightened(0.15))
