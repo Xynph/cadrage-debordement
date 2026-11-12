@@ -372,7 +372,7 @@ function rafales(lignes){
 const DEDANS=['carry','setpiece-win','lineout','scrum','reception'];
 const dansLes22=l=>!l.bandeau&&l.possession!==null&&l.x!==null&&distanceLigne(l.possession,l.x)<=22&&DEDANS.includes(l.kind);
 
-function en_direct(events,options={}){
+function en_direct_retrospectif(events,options={}){
  const niveau=options.niveau||'dynamique',regle=NIVEAUX[niveau];
  if(!regle)throw new RangeError('Niveau de temps forts inconnu : '+niveau);
  const lignes=normaliser(events),dynamique=niveau==='dynamique',regule=options.cible!==false&&['cles','etendus','dynamique'].includes(niveau);
@@ -493,4 +493,250 @@ function en_direct(events,options={}){
   dureeHorloge:Object.fromEntries(Object.entries(HORLOGE).map(([nom,sec])=>[nom,Math.round(sautees*sec)]))};
 }
 
-module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,dansLes22,normaliser,tension,temps_forts,en_direct});
+// ---------------------------------------------------------------------------
+// Déclenchement par l'importance (12 novembre 2026, demande de Léo : « le moteur de match
+// détermine quand une action est suffisamment importante pour être montrée et donc passer au
+// temps fort »). Conception : docs/match-importance-20261112.md.
+//
+// Comme dans Football Manager, le match se déroule en continu (entracte 2D) et la bascule en
+// 3D est décidée au moment où l'action devient importante, avant que son issue soit connue :
+// - l'importance d'un fait se calcule sur la situation AU DÉBUT de ce fait (où est le ballon,
+//   qui l'a, ce qui vient de se passer, le contexte du match), jamais sur ce qu'il produit
+//   (essai, points, gain de terrain, ballon perdu) : elle ne lit ni `to`, ni `scoreApres`, ni la
+//   nature du fait quand elle dit son issue (un tir au but compte comme « tir au but », réussi
+//   ou non ; un essai comme le temps de jeu qui le porte) ;
+// - le temps fort s'ouvre au début de l'action qui monte (touche ou mêlée formée, ballon
+//   récupéré, réception, coup de sifflet d'une pénalité tentée), quelques plans au plus avant le
+//   déclencheur, et se ferme à la fin naturelle de la séquence (ballon mort, coup de sifflet,
+//   ballon perdu), 50 s au plus ;
+// - filet de sécurité : un essai (ou un carton rouge) que l'importance n'a pas fait monter est
+//   montré quand même, depuis le début de son action (`rattrapage`) — on ne dit « essai » que si
+//   on le voit. Sa part est mesurée (§ mesures du document).
+// Calcul pur et rejoué depuis le coup d'envoi, comme `en_direct_retrospectif` : déterministe,
+// la décision d'un fait ne dépend que du journal écrit jusqu'à lui.
+const IMPORTANCE=Object.freeze({
+ // seuil = base - pente × tension (0 match plié, 1 tout se joue) ; amorce : plans au plus avant
+ // le déclencheur. « Dynamique » montre moins qu'« étendus », plus que « clés ».
+ cles:Object.freeze({base:74,pente:6,amorce:2}),
+ etendus:Object.freeze({base:56,pente:6,amorce:4}),
+ dynamique:Object.freeze({base:76,pente:14,amorce:3})
+});
+// Durée maximale d'un temps fort (secondes d'action, demande de Léo : jusqu'à 50 s).
+const DUREE_MAX=50;
+// Après un temps fort, l'action suivante doit monter plus haut pendant deux minutes de jeu :
+// le match continue en 2D et le manager a le temps d'ajuster (l'entracte reste au moins 8 s).
+const REFRACTAIRE=Object.freeze({minutes:2,points:8});
+// Régulateur d'issue (dynamique), aveugle à l'issue de l'action en cours : il ne lit que les
+// temps forts déjà montrés. Plus de la moitié ont marqué : le seuil baisse (on montre plus de
+// danger sans point) ; moins de 30 % : il remonte.
+const ISSUE=Object.freeze({apres:4,haut:.5,bas:.3,pas:6});
+const finNaturelle=l=>FINS.has(l.kind)||l.kind==='turnover'||l.kind==='setpiece-loss';
+const montrable=l=>!l.bandeau&&dureePlan(l)>0;
+
+// Équipe qui a le ballon au début du fait j, et endroit d'où il part.
+function situation(lignes,j){
+ const l=lignes[j];let p=j-1;
+ while(p>=0&&lignes[p].bandeau)p--;
+ const precedent=p>=0?lignes[p]:null;
+ let equipe;
+ if(['lineout','scrum','goal','miss'].includes(l.kind))equipe=l.equipe; // lanceur, introducteur, buteur
+ else if(l.kind==='kickoff'||l.kind==='drop22'||l.kind==='goalLine')equipe=l.equipe===null?null:1-l.equipe; // l'adversaire reçoit
+ else equipe=precedent?.possession??l.equipe;
+ const x=l.depuis??precedent?.x??null;
+ return {equipe:[0,1].includes(equipe)?equipe:null,x,precedent,p};
+}
+
+// Joueurs en moins de chaque équipe au début du fait j (jaune : dix minutes ; rouge : jusqu'au bout).
+function enMoins(lignes,j){
+ const n=[0,0],m=lignes[j].minute;
+ for(let k=0;k<j;k++){
+  const l=lignes[k];if(l.kind!=='card'||!l.incident||l.equipe===null)continue;
+  if(l.cause==='red'||m-l.minute<10)n[l.equipe]++;
+ }
+ return n;
+}
+
+// Importance (0–100) du fait j, à son début. Signaux : danger (zone, phase formée près de la
+// ligne, tir au but), franchissement en cours, temps de jeu enchaînés, surnombre (ballon
+// récupéré, adversaire en infériorité), contexte (tension du score, fin de match, mi-temps
+// proche, club du manager en attaque).
+function importance(lignes,j,options={}){
+ const l=lignes[j],{equipe,x,precedent,p}=situation(lignes,j);
+ const signaux={danger:0,phase:0,franchissement:0,enchaines:0,surnombre:0,contexte:0};
+ if(equipe===null||x===null)return {valeur:0,signaux,equipe,type:null};
+ const d=distanceLigne(equipe,x);
+ let type='danger';
+ signaux.danger=d<=5?60:d<=10?54:d<=22?46:d<=35?36:d<=50?20:8;
+ if(l.kind==='goal'||l.kind==='miss'){signaux.danger=0;signaux.phase=66;type='tir_au_but'}
+ else if((l.kind==='lineout'||l.kind==='scrum')&&d<=22){signaux.phase=d<=10?16:8;type=l.kind==='lineout'?'touche_dans_les_22':'melee_dans_les_22'}
+ else if(l.kind==='kickoff'&&!lignes.slice(0,j).some(q=>q.kind==='kickoff')){signaux.phase=40;type='coup_d_envoi'}
+ if(precedent&&precedent.possession===equipe){
+  // Franchissement en cours : la course qui vient de finir a fait un trou.
+  if(precedent.kind==='carry'&&precedent.depuis!==null&&precedent.x!==null){
+   const gain=Math.abs(precedent.x-precedent.depuis);
+   if(gain>=22){signaux.franchissement=20;type='franchissement'}else if(gain>=12){signaux.franchissement=8;if(type==='danger')type='contre_attaque'}
+  }
+  // Ballon récupéré à l'instant : la défense adverse est désorganisée.
+  if((precedent.kind==='turnover'||precedent.kind==='setpiece-loss')&&precedent.equipe===equipe){signaux.surnombre+=8;if(type==='danger')type='ballon_recupere'}
+ }
+ // Temps de jeu enchaînés par l'équipe en possession dans le camp adverse.
+ let temps=0;
+ for(let k=p;k>=0;k--){
+  const q=lignes[k];if(q.bandeau)continue;
+  if(q.possession!==equipe||finNaturelle(q)||q.x===null||distanceLigne(equipe,q.x)>50)break;
+  temps++;if(LANCEMENTS.has(q.kind))break;
+ }
+ signaux.enchaines=Math.min(16,4*Math.max(0,temps-1));
+ if(signaux.enchaines>=8&&d<=22&&type==='danger')type='pression_dans_les_22';
+ const moins=enMoins(lignes,j);
+ if(moins[1-equipe]>moins[equipe]&&d<=50)signaux.surnombre+=8*(moins[1-equipe]-moins[equipe]);
+ const brut=signaux.danger+signaux.phase+signaux.franchissement+signaux.enchaines+signaux.surnombre;
+ // Contexte : tension du score (lue avant le fait), fin de match serrée, mi-temps proche, club du manager.
+ const t=tension(l,options),ecart=Math.abs(l.scoreAvant[0]-l.scoreAvant[1]);
+ let contexte=0;
+ if(l.periode===2&&l.minute>=72&&ecart<=7)contexte+=8;
+ if(l.periode===1&&l.minute>=37)contexte+=4;
+ if(options.camp===equipe)contexte+=3;
+ const valeur=brut*(.8+.4*t)+contexte;
+ signaux.contexte=Math.round(valeur-brut);
+ if(type==='danger'&&d<=10)type='pres_de_la_ligne';
+ return {valeur:Math.round(borne(valeur,0,100)),signaux,equipe,tension:t,type,distance:Math.round(d)};
+}
+
+// Début de l'action qui contient le fait j : on remonte jusqu'à son lancement (touche ou mêlée
+// formée, ballon récupéré, coup de sifflet d'un tir au but), sans franchir un ballon mort,
+// `amorce` plans au plus, jamais plus d'une minute d'écart. On coupe le trajet, pas la phase.
+function debutAction(lignes,j,plancher,amorce){
+ if(LANCEMENTS.has(lignes[j].kind))return j;
+ let debut=j,vus=0;
+ for(let k=j-1;k>=plancher&&vus<amorce;k--){
+  const l=lignes[k];if(l.bandeau)continue;
+  const chaine=l.kind==='penalty'&&['goal','miss'].includes(lignes[j].kind)||l.kind==='card'&&l.incident;
+  if(finNaturelle(l)&&!chaine||lignes[debut].minute-l.minute>1)break;
+  debut=k;if(!chaine)vus++;
+  if(LANCEMENTS.has(l.kind)||l.kind==='penalty')break;
+ }
+ return debut;
+}
+// Fin naturelle de la séquence ouverte au fait j (incluse), au plus tard `plafond`. La pénalité
+// tentée garde son tir ; le carton et les bandeaux de la même minute restent dans le temps fort.
+function finAction(lignes,j,plafond){
+ let fin=j;
+ const close=k=>finNaturelle(lignes[k])&&!(lignes[k].kind==='penalty'&&k<plafond&&['goal','miss'].includes(lignes.slice(k+1,plafond+1).find(q=>!q.bandeau&&!(q.kind==='card'&&q.incident))?.kind));
+ if(!close(j))for(let k=j+1;k<=plafond;k++){
+  const l=lignes[k];if(l.bandeau)continue;
+  if(l.kind==='kickoff'||l.kind==='drop22'||l.kind==='goalLine'||l.kind==='break'||l.kind==='end'||l.minute-lignes[fin].minute>1)break;
+  fin=k;if(close(k))break;
+ }
+ while(fin+1<=plafond&&(lignes[fin+1].bandeau||lignes[fin+1].kind==='card'&&lignes[fin+1].incident)&&lignes[fin+1].minute===lignes[fin].minute)fin++;
+ return fin;
+}
+
+function en_direct_importance(events,options={}){
+ const niveau=options.niveau||'dynamique',regle=options.regle||IMPORTANCE[niveau],lignes=normaliser(events);
+ const dynamique=niveau==='dynamique',regule=options.cible!==false,cible=options.cible||NIVEAUX[niveau].cible;
+ const etat={montre:-1,ouvert:false,dureeEpisode:0,fermeA:null,decalage:0,reglage:0,cumul:0,episodes:0,points:0,ajuste:0};
+ const decisions=[];
+ const seuilDe=(l,v)=>{
+  let s=regle.base-regle.pente*(v.tension??tension(l,options))+etat.decalage+etat.ajuste;
+  if(etat.fermeA&&etat.fermeA.periode===l.periode&&l.minute-etat.fermeA.minute<REFRACTAIRE.minutes)s+=REFRACTAIRE.points;
+  return Math.round(s);
+ };
+ for(const r of rafales(lignes)){
+  const derniere=lignes[r.fin];
+  const decision={rafale:[r.debut,r.fin],periode:derniere.periode,minute:derniere.minute,joue:false,tempsFort:null,seuil:null,importance:null};
+  let debut=-1,fin=-1,suite=false,declencheur=null,rattrapage=false,membres=[];
+  const ajoute=(d,f)=>{debut=debut<0?d:Math.min(debut,d);fin=Math.max(fin,f)};
+  // 1. L'action montrée n'était pas finie : elle continue, sans entracte.
+  if(etat.ouvert&&etat.dureeEpisode<DUREE_MAX){
+   const premier=lignes.slice(r.debut,r.fin+1).find(montrable);
+   if(premier){ajoute(r.debut,finAction(lignes,premier.i,r.fin));suite=true;membres.push({type:'suite_de_l_action',score:0,force:false})}
+  }
+  // 2. Faits de la rafale, dans l'ordre : le premier qui passe le seuil ouvre le temps fort.
+  for(let j=Math.max(r.debut,etat.montre+1,fin+1);j<=r.fin;j++){
+   const l=lignes[j];if(!montrable(l)||j<=fin)continue;
+   const v=importance(lignes,j,options),seuil=seuilDe(l,v);
+   if(decision.importance===null||v.valeur>decision.importance){decision.importance=v.valeur;decision.seuil=seuil}
+   if(v.valeur<seuil)continue;
+   const d=debutAction(lignes,j,Math.max(etat.montre+1,fin+1),regle.amorce);
+   ajoute(d,finAction(lignes,j,r.fin));
+   if(declencheur===null)declencheur={i:j,importance:v.valeur,seuil,type:v.type,signaux:v.signaux};
+   membres.push({type:v.type,score:v.valeur,force:false});
+   j=fin;
+  }
+  // 3. Filet : un essai ou un carton rouge non couverts sont montrés depuis le début de leur action.
+  for(let j=Math.max(r.debut,etat.montre+1);j<=r.fin;j++){
+   const l=lignes[j],grave=l.kind==='try'||l.kind==='card'&&l.incident&&l.cause==='red';
+   if(!grave||debut>=0&&j>=debut&&j<=fin)continue;
+   ajoute(debutAction(lignes,j,Math.max(etat.montre+1,0),regle.amorce),finAction(lignes,j,r.fin));
+   rattrapage=declencheur===null&&!suite;
+   membres.push({type:l.kind==='try'?'essai':'carton_rouge',score:100,force:true});
+  }
+  // 50 s au plus par temps fort (suites comprises) : la fin recule jusqu'au dernier plan qui tient,
+  // sans jamais couper un essai ou un carton rouge déjà retenus.
+  if(debut>=0){
+   const deja=suite?etat.dureeEpisode:0,garde=membres.some(m=>m.force)?Math.max(...[...Array(fin-debut+1).keys()].map(k=>debut+k).filter(k=>lignes[k].kind==='try'||lignes[k].kind==='card'&&lignes[k].incident&&lignes[k].cause==='red')):-1;
+   while(fin>Math.max(debut,garde)&&deja+decrire(lignes,debut,fin,membres.length?membres:[{type:'jeu',score:0}],false,suite).duree>DUREE_MAX)fin--;
+   if(garde<0&&deja+decrire(lignes,debut,fin,membres.length?membres:[{type:'jeu',score:0}],false,suite).duree>DUREE_MAX){debut=-1;fin=-1}
+  }
+  if(debut>=0){
+   const {plans,bandeaux}=plansDe(lignes,debut,fin);
+   if(plans.length){
+    const desc=decrire(lignes,debut,fin,membres,false,suite);
+    // Types a posteriori (mesure seulement : jamais montrés avant l'image).
+    const issues=[];for(let k=debut;k<=fin;k++){const a=lignes[k].bandeau?null:action(lignes[k],lignes);if(a)issues.push(a.type)}
+    const tf={cle:debut+'-'+plans.at(-1).i,suite,...desc,type:suite?'suite_de_l_action':declencheur?.type||(membres[0]?.type??'jeu'),
+     types:[...new Set([...membres.map(m=>m.type),...issues])],plans,bandeaux,nombrePlans:plans.length,
+     declencheur:declencheur?.i??null,importance:declencheur?.importance??null,seuil:declencheur?.seuil??null,signaux:declencheur?.signaux??null,rattrapage};
+    decision.joue=true;decision.tempsFort=tf;
+    etat.montre=fin;etat.cumul+=tf.duree;
+    etat.dureeEpisode=suite?etat.dureeEpisode+tf.duree:tf.duree;
+    const dernierMontre=lignes[plans.at(-1).i],resteRafale=lignes.slice(fin+1,r.fin+1).some(montrable);
+    etat.ouvert=etat.dureeEpisode<DUREE_MAX&&!resteRafale&&!finNaturelle(dernierMontre)&&dernierMontre.kind!=='card';
+    if(!etat.ouvert)etat.fermeA={periode:dernierMontre.periode,minute:dernierMontre.minute};
+    if(!suite){
+     etat.episodes++;
+     if(plans.some(p=>p.kind==='try'||p.kind==='goal'))etat.points++;
+    }
+   }
+  }
+  if(!decision.joue){if(etat.ouvert)etat.fermeA={periode:derniere.periode,minute:derniere.minute};etat.ouvert=false}
+  // Régulateur d'issue (dynamique) : il ne lit que les temps forts déjà montrés.
+  if(dynamique&&etat.episodes>=ISSUE.apres){
+   const part=etat.points/etat.episodes;
+   etat.ajuste=part>ISSUE.haut?-ISSUE.pas:part<ISSUE.bas?ISSUE.pas:0;
+  }
+  // Régulateur de rythme : toutes les cinq minutes, le temps d'action montré est comparé à la cible.
+  const m=Math.min(80,derniere.minute);
+  if(regule&&m>=10&&m-etat.reglage>=5){
+   etat.reglage=m;
+   if(etat.cumul<cible[0]*m/80)etat.decalage=Math.max(-12,etat.decalage-4);
+   else if(etat.cumul>cible[1]*m/80)etat.decalage=Math.min(12,etat.decalage+4);
+   else etat.decalage-=Math.sign(etat.decalage)*4;
+  }
+  decision.decalage=etat.decalage;
+  decisions.push(decision);
+ }
+ const tempsForts=decisions.filter(d=>d.joue).map(d=>d.tempsFort),derniereDecision=decisions.at(-1)||null;
+ const montrables=lignes.filter(montrable).length,montres=tempsForts.reduce((n,h)=>n+h.plans.filter(p=>p.kind!=='transformation').length,0);
+ const sautees=decisions.filter(d=>!d.joue).length;
+ return {niveau,mode:'importance',decisions,tempsForts,courant:derniereDecision?.joue?derniereDecision.tempsFort:null,
+  nombre:tempsForts.filter(h=>!h.suite).length,dureeAction:Math.round(etat.cumul),plansMontres:montres,plansTotal:montrables,
+  partPlansSautes:montrables?Math.round((1-montres/montrables)*1000)/10:0,
+  rafales:decisions.length,rafalesSautees:sautees,partRafalesSautees:decisions.length?Math.round(sautees/decisions.length*1000)/10:0,
+  dureeHorloge:Object.fromEntries(Object.entries(HORLOGE).map(([nom,sec])=>[nom,Math.round(sautees*sec)]))};
+}
+
+// Sélection en direct : par l'importance pour les niveaux clés, étendus et dynamique (le moteur
+// décide) ; le résumé (ce qui change le score), le match complet et le commentaire seul gardent
+// leur règle. `options.retrospectif` : ancienne sélection, pour la mesure avant / après.
+function en_direct(events,options={}){
+ const niveau=options.niveau||'dynamique';
+ if(!NIVEAUX[niveau])throw new RangeError('Niveau de temps forts inconnu : '+niveau);
+ if(options.retrospectif||!IMPORTANCE[niveau])return en_direct_retrospectif(events,options);
+ return en_direct_importance(events,options);
+}
+
+module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,IMPORTANCE,DUREE_MAX,REFRACTAIRE,dansLes22,normaliser,tension,
+ importance,debutAction,finAction,temps_forts,en_direct,en_direct_retrospectif});
+

@@ -47,6 +47,10 @@ const ECHEANCE_CHOREGRAPHIE := 5.0
 ## CD_MATCH_TEMPS_FORTS_ENTRACTE (secondes, 0 à 30) le règle pour les essais. Le match
 ## complet (« integral ») reste continu : pas d'entracte.
 const ENTRACTE := 8.0
+## Bascule 2D → 3D (déclenchement par l'importance, 12 novembre 2026) : le moteur ouvre le temps
+## fort au début de l'action qui monte ; le terrain 2D finit d'abord de dérouler ce qui précède
+## (jusqu'à la borne), au plus BASCULE secondes réelles, puis la 3D prend le relais à cet endroit.
+const BASCULE := 3.0
 
 var view: Control
 var app: Control
@@ -319,7 +323,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		if _retenu.is_empty() or str(_retenu.get("cle", "")) != str(candidat.get("cle", "")):
 			_retenu_vus = connus
 			_retenu_depuis = 0.0
-			_retenu_reste = maxf(0.5, _duree_entracte() - _entracte)
+			_retenu_reste = maxf(0.5, _duree_entracte() - _entracte) if _entracte >= 0.0 else BASCULE
 			_retenu_part = _part_minute()
 			suivi.append({"evenement": "entracte_retenu", "cle": str(candidat.get("cle", "")), "horloge": str(candidat.get("horlogeDebut", "")),
 				"ecoule": _entracte, "debut_ms": Time.get_ticks_msec()})
@@ -396,7 +400,12 @@ func _duree_entracte() -> float:
 
 ## Un temps fort qui n'est pas la suite de l'action attend la fin de l'entracte.
 func _doit_retenir(candidat: Dictionary) -> bool:
-	return _entracte >= 0.0 and not _passer and not candidat.get("suite", false) and _entracte < _duree_entracte()
+	if _passer or candidat.get("suite", false) or niveau == "integral": return false
+	return (_entracte >= 0.0 and _entracte < _duree_entracte()) or _terrain_en_retard()
+
+## Le terrain 2D n'a pas fini de dérouler le jeu d'avant le temps fort (bascule au bon endroit).
+func _terrain_en_retard() -> bool:
+	return etat != JEU and between != null and between.visible and between.terrain.en_retard()
 
 ## Vrai pendant l'entracte, temps fort reçu ou non (la commande « Passer » est proposée).
 func entracte_en_cours() -> bool:
@@ -443,6 +452,7 @@ func _entracte_et_horloge(delta: float) -> bool:
 		return false
 	if fige or _tiroir or app.waiting: return true
 	if not _passer and _entracte < _duree_entracte(): return true
+	if not _passer and _terrain_en_retard() and _retenu_depuis < BASCULE: return true
 	_lancer_retenu()
 	return true
 
@@ -454,7 +464,7 @@ func _lancer_retenu() -> void:
 	gel = false
 	_pause_au_depart = _live.get("paused", false)
 	_vus = _retenu_vus
-	suivi.append({"evenement": "entracte_fin", "ecoule": _entracte, "passe": _passer, "debut_ms": Time.get_ticks_msec()})
+	suivi.append({"evenement": "entracte_fin", "ecoule": _entracte, "passe": _passer, "attente_terrain": _retenu_depuis, "debut_ms": Time.get_ticks_msec()})
 	_demarrer(candidat)
 	stage._process(0.0)
 	_habiller()
@@ -473,7 +483,7 @@ func _habiller_horloge() -> void:
 	if not _retenu.is_empty():
 		var k := clampf(_retenu_depuis / maxf(0.05, _retenu_reste), 0.0, 1.0)
 		part = lerpf(_retenu_part, 0.999, k)
-		reste = maxf(0.0, _duree_entracte() - _entracte)
+		reste = maxf(0.0, _duree_entracte() - _entracte) if _entracte >= 0.0 else 0.0
 	var heure := _horloge_inter.trim_suffix("′").strip_edges()
 	# Le terrain 2D rejoue encore des faits en retard : l'horloge suit la minute qu'il montre.
 	var differee: String = between.horloge_differee().trim_suffix("′").strip_edges()
@@ -549,7 +559,7 @@ func _demarrer(candidat: Dictionary) -> void:
 		stage.apply_frame(_image(depart, false, int(tf.get("debut", 0)) - 1))
 		_derniers = _positions(depart)
 	suivi.append({"evenement": "temps_fort", "cle": str(tf.get("cle", "")), "type": str(tf.get("type", "")), "suite": bool(tf.get("suite", false)),
-		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "debut_ms": _debut_ms})
+		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "declenchement": tf.get("declenchement"), "debut_ms": _debut_ms})
 	_commencer_plan()
 
 func _commencer_plan() -> void:
