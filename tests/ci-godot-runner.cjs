@@ -1,6 +1,7 @@
 'use strict';
-// Jobs Godot de la CI : détection uniforme du SDK (ci/godot-env.cjs) et refus des suites
-// qui se sautent faute de moteur (ci/run-godot-suites.sh). Faux exécutable, aucun SDK requis.
+// Lanceurs de la CI : shards « Suites » en parallèle (ci/run-shard-suites.sh), détection
+// uniforme du SDK Godot (ci/godot-env.cjs) et refus des suites qui se sautent faute de
+// moteur (ci/run-godot-suites.sh). Faux exécutable, aucun SDK requis.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -71,6 +72,38 @@ test('le lanceur Godot échoue sur un saut faute de moteur et accepte les vraies
     r = runList([ok], { [EXECUTABLE]: path.join(dir, 'absent') });
     assert.notEqual(r.status, 0, 'SDK absent : le job échoue avant toute suite');
     assert.doesNotMatch(r.stdout, /PASS /);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('le lanceur de shard exécute en parallèle, garde chaque journal et compte les échecs', { skip: !unix && 'bash POSIX requis' }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-shard-runner-'));
+  try {
+    const suite = (name, body) => { const file = path.join(dir, name + '.cjs'); fs.writeFileSync(file, body); return file; };
+    const slow = suite('lente', "setTimeout(()=>console.log('fin lente'),800);\n");
+    const quick = suite('rapide', "console.log('fin rapide');\n");
+    const red = suite('rouge', 'process.exit(4);\n');
+    const run = (files, parallel) => {
+      const list = path.join(dir, 'liste-' + parallel + '-' + files.length + '.txt');
+      const summary = list + '.md';
+      fs.writeFileSync(list, files.join('\n') + '\n');
+      const r = spawnSync('bash', [path.join(root, 'ci/run-shard-suites.sh'), list, 'Essai', String(parallel)], {
+        encoding: 'utf8', timeout: 60000, env: { ...process.env, GITHUB_STEP_SUMMARY: summary } });
+      return { ...r, summary: fs.existsSync(summary) ? fs.readFileSync(summary, 'utf8') : '' };
+    };
+    let r = run([slow, quick], 2);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    // La lente démarre la première mais la rapide termine avant elle : vraie exécution parallèle.
+    assert.ok(r.stdout.indexOf('PASS ' + quick) < r.stdout.indexOf('PASS ' + slow), r.stdout);
+    assert.match(r.stdout, /::group::.*lente\.cjs\nfin lente\n/);
+    assert.match(r.stdout, /CD_CPU_PROFILE suite=.*rapide\.cjs .*wall_s=/);
+    assert.match(r.summary, /Essai : 2 suites sur \d+ \(2 en parallèle\)/);
+    r = run([slow, red, quick], 2);
+    assert.equal(r.status, 1);
+    assert.match(r.summary, /rouge\.cjs \| ECHEC \(4\)/);
+    assert.match(r.summary, /Échecs : 1/);
+    assert.equal(run([quick], 9).status, 2, 'Parallélisme borné');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

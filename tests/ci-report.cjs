@@ -23,7 +23,8 @@ assert.equal(OFFICIAL_JOBS.length,SHARD_COUNT+2);
 assert.ok(yaml.includes('    name: Suites ${{ matrix.shard }}/'+SHARD_COUNT+'\n'));
 assert.ok(yaml.includes('        shard: ['+range(SHARD_COUNT)+']\n'));
 assert.ok(yaml.includes('node ci/shard-tests.cjs "$SHARD" "$COVERAGE" '+SHARD_COUNT+' '));
-assert.ok(yaml.includes('### Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE)'));
+assert.ok(yaml.includes('bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE)" 2\n'));
+assert.ok(yaml.includes('### Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE) : aucune suite attribuée'));
 // Jobs Godot : SDK épinglé et vérifié, SDK obligatoire, non bloquants pour l'instant.
 const godot=yaml.split('\n  godot:\n')[1].split('\n  validation:\n')[0];
 assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUNT+'\n'));

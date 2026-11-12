@@ -66,7 +66,6 @@ jobs:
           set -euo pipefail
           node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 10 > "$RUNNER_TEMP/shard-suites.txt"
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
-          total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
           if [[ "${#suites[@]}" -eq 0 ]]; then
             # Couverture ciblée (web, native-art) : moins de suites que de shards.
             # En couverture complète, un shard vide est une erreur de planification.
@@ -74,64 +73,9 @@ jobs:
             echo "### Shard $SHARD/10 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          failures=0
-          executed=0
-          current_suite=initialisation
-          # Keep the last real suite observable through check annotations even
-          # when a runner interruption prevents the final Markdown summary.
-          trap 'printf "::error file=%s::Interruption SIGTERM pendant la suite %s\n" "$current_suite" "$current_suite"; exit 143' TERM
-          trap 'printf "::error file=%s::Interruption SIGINT pendant la suite %s\n" "$current_suite" "$current_suite"; exit 130' INT
-          for test in "${suites[@]}"; do
-            current_suite="$test"
-            executed=$((executed+1))
-            echo "::group::$test"
-            start=$SECONDS
-            limit=180s
-            # Budgets ciblés de réception cumulative, distincts des poids de
-            # planification. Support a terminé en 883/941 s avant optimisation ;
-            # Nationale22 en 237,6 s. Les autres réserves longues sont provisoires
-            # après les timeouts observés sur 42891746395, sans retirer de contrôle.
-            case "$test" in
-              tests/world-worker-season.cjs) limit=1200s ;;
-              tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) limit=900s ;;
-              tests/native-academy-integrated-long.cjs) limit=1800s ;;
-              tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) limit=600s ;;
-              tests/native-nationale-reduced-bench.cjs|tests/native-match-talks.cjs|tests/godot-roster-foundation.cjs) limit=300s ;;
-              tests/native-club-support-season.cjs) limit=1200s ;;
-              tests/native-club-world-worker.cjs) limit=900s ;;
-              tests/native-club-strategy.cjs) limit=600s ;;
-              tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) limit=900s ;;
-              tests/deepen-staff-native.cjs) limit=1200s ;;
-              tests/custom-competition-worker.cjs) limit=900s ;;
-              # Réception locale complète233s; conserve créations, Rooms et refus.
-              tests/youth-scout-native.cjs) limit=600s ;;
-              # Fixtures complètes PASS locales142/126s, sans refus précoce.
-              tests/world-catalogue-dedup.cjs|tests/world-venue-media.cjs) limit=300s ;;
-              tests/career-variation-worker.cjs|tests/management-day-worker.cjs) limit=600s ;;
-              # PASS CI42909005768 :179,80/159,68s, marge finie avant le cap180.
-              tests/france-career.cjs|tests/world-worker.cjs) limit=300s ;;
-              tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) limit=420s ;;
-            esac
-            if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
-              echo "PASS $test ($((SECONDS-start)) s)"
-              echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
-            else
-              code=$?
-              failures=$((failures+1))
-              echo "::error file=$test::Échec ou délai dépassé (code $code, durée $((SECONDS-start)) s, limite $limit)"
-              echo "| $test | ECHEC ($code) | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
-            fi
-            echo "::endgroup::"
-          done
-          {
-            echo "### Shard $SHARD/10 ($COVERAGE) : $executed suites sur $total"
-            echo "| Suite | Résultat | Durée |"
-            echo "| --- | --- | --- |"
-            cat "$RUNNER_TEMP/results.md"
-            echo ""
-            echo "**Échecs : $failures**"
-          } >> "$GITHUB_STEP_SUMMARY"
-          [[ "$failures" -eq 0 ]]
+          # Deux suites à la fois : elles sont mono-cœur et le runner a 4 cœurs.
+          # Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
+          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/10 ($COVERAGE)" 2
   godot:
     name: Godot ${{ matrix.shard }}/3
     needs: classification

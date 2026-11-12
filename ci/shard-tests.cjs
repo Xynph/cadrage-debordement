@@ -92,7 +92,13 @@ if (require.main === module) {
     process.exitCode = 2;
   } else {
     try {
-      for (const file of suitesForShard(shard, coverage, count)) console.log(file);
+      // Ordre d'exécution : poids décroissant (les plus longues démarrent en premier
+      // quand ci/run-shard-suites.sh lance plusieurs suites en parallèle).
+      const weights = coverage === 'godot' ? GODOT_WEIGHTS_SECONDS : WEIGHTS_SECONDS;
+      const fallback = coverage === 'godot' ? GODOT_DEFAULT_WEIGHT : DEFAULT_WEIGHT;
+      const weight = f => Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : fallback;
+      for (const file of suitesForShard(shard, coverage, count).sort((a, b) => weight(b) - weight(a) || lexical(a, b)))
+        console.log(file);
     } catch (error) {
       console.error(error.message);
       process.exitCode = 1;
