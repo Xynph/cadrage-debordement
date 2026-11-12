@@ -140,7 +140,10 @@ ID restent présents. Ce constat statique ne qualifie pas les migrations runtime
 
 `git merge-tree --write-tree 1a7b083b… 44c7ebef…` reçoit le 12 novembre un arbre
 virtuel propre `5f08188bd7c0c3c11e15bfef13b47b7f54e9a048`, code 0. Aucune
-branche main déplacée et aucune recette du cumul réel n'en est déduite.
+branche main déplacée et aucune recette du cumul réel n'en est déduite. Les
+[contrôles de frontières Git](evidence/night-final-handoff-20261112/git-boundaries.json)
+conservent les sources exactes, les 28 chemins natifs et leurs hashes, ainsi que
+l’absence de changements d’assets produit et de configuration GitHub depuis #572.
 
 Le [repro d'archive presse](night-claude-press-archive-compatibility-20261112.md)
 sur f9 puis 44 montre qu'un pack presse compatible peut transformer un fragment
