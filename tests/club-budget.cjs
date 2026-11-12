@@ -245,3 +245,22 @@ test('Moteur : joueurs ajoutés pour garder 40 professionnels, ancien salaire sa
    assert.equal(h.lire('S.clubBudget.clubs[3].masse'),h.lire('budgetMasse(S.clubs[3])*52'));}
  }
 });
+test('Plafond : la masse autorisée d’un club n’en passe jamais au-dessus, même pour un mécène audacieux',()=>{
+ const tous=[...forces,...Array.from({length:10},(_,i)=>({id:30+i,division:'prem',base:66+2*i})),...Array.from({length:10},(_,i)=>({id:40+i,division:'srp',base:64+2*i}))];
+ let audaces=0;
+ for(let saison=1;saison<=40;saison++)for(const [id,l] of B.limites(tous,saison)){
+  const plafond=B.PLAFOND_SALARIAL[tous.find(f=>f.id===id).division];if(l.audace)audaces++;
+  if(plafond)assert.ok(l.limite<=plafond,'saison '+saison+', club '+id+' : '+l.limite+' > '+plafond);
+ }
+ assert.ok(audaces>0,'des mécènes audacieux existent toujours (sous les autres bornes)');
+});
+test('Moteur, carrière marquée : un club géré au-dessus du plafond revient dessous après la commande, le club joué n’est pas touché',()=>{
+ const h=moteur(true),plafond=B.PLAFOND_SALARIAL.elite;
+ h.run('for(const i of [3,S.club])for(const p of S.clubs[i].players)p.salary=Math.round(p.salary*2.2)');
+ const joueAvant=h.lire('budgetMasse(S.clubs[S.club])');
+ assert.ok(h.lire('budgetMasse(S.clubs[3])*52')>plafond);
+ h.run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur()');
+ assert.ok(h.lire('budgetMasse(S.clubs[3])*52')<=plafond,'club géré ramené sous le plafond');
+ assert.ok(h.lire('S.clubs[3].players.every(p=>p.salary>=nativeStartingSalaries.plancherHebdo(S,"elite")||p.salary<300)'));
+ assert.equal(h.lire('budgetMasse(S.clubs[S.club])'),joueAvant,'le club joué reçoit l’alerte de la ligue, pas de retenue');
+});
