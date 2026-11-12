@@ -104,14 +104,15 @@ func layout(view: Control, size: Vector2i) -> void:
 	var pitch: Control = between.terrain
 	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 300, label + " : terrain lisible (%s)" % str(pitch.size))
 	var controls: Control = view.finish.get_parent().get_parent().get_parent()
-	check(between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
+	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
+	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
 	check(between.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0, label + " : rien sous le bandeau du score")
 	var feed: ScrollContainer = between.fil.get_parent()
 	for node: Control in between.find_children("*", "Control", true, false):
 		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
 		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé")
-	check(between.chiffres.get_child_count() >= 5 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
+	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
 	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p, et la colonne de droite est remplie.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).get_child(0)
@@ -690,7 +691,9 @@ func resumed() -> Array:
 	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "reprise"), "La reprise est notée par la régie")
 	check(is_equal_approx(regie.vitesse, 1.0), "Un temps fort se joue à vitesse réelle")
 	check(regie.niveau == "etendus", "Le niveau enregistré au match précédent est repris : " + regie.niveau)
+	# Écran intermédiaire : sa barre de commandes porte le niveau (la barre du direct est masquée).
 	var level: OptionButton = view.find_child("MatchLevel", true, false)
+	if level != null and not level.is_visible_in_tree(): level = regie.between.niveau
 	check(level != null and level.is_visible_in_tree() and level.get_item_text(level.selected) == "Temps forts étendus", "La barre montre le niveau repris")
 	check(view.stage.get("_gestes") != null, "Les gestes sont actifs par défaut")
 	# Écran intermédiaire : la minute du moteur, secondes comprises (entracte, 12 novembre 2026).
@@ -815,7 +818,7 @@ func terrain2d(view: Control) -> void:
 	check(minutes.size() >= 1 and between.domination.minutes == minutes, "Domination : la courbe du moteur, minute par minute (%d minutes)" % minutes.size())
 	check(minutes.all(func(v: Variant): return absf(float(v)) <= 100.0), "Domination bornée")
 	var rangs: Array = direct.get("tableau", [])
-	check(rangs.size() >= 10 and between.chiffres.get_child_count() == 5, "Chiffres clés : cinq lignes sous le terrain, %d dans l'onglet" % rangs.size())
+	check(rangs.size() >= 10 and between.chiffres.get_child_count() == 3, "Chiffres clés : trois en grand, %d dans l'onglet" % rangs.size())
 	for ligne: Node in between.chiffres.get_children():
 		var titre := (ligne.get_child(0) as Label).text
 		var rang: Array = rangs.filter(func(r: Dictionary): return str(r.label) == titre)

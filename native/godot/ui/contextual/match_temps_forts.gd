@@ -154,11 +154,16 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	view.add_child(voile)
 	view.move_child(voile, container.get_index() + 1)
 	between = Between.new()
+	between.horloge = horloge
 	space.add_child(between)
 	between.niveau_choisi.connect(choisir_niveau)
 	between.reprise_demandee.connect(func(): app._command("pause", {"paused": false}))
 	between.tiroir_demande.connect(func(titre: String): view._toggle_drawer(titre))
 	between.passer_demande.connect(passer)
+	between.horloge_choisie.connect(choisir_horloge)
+	between.delegation_demandee.connect(view.confier_fin)
+	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
+	between.visibility_changed.connect(func(): if view.barre_commandes != null: view.barre_commandes.visible = not between.visible)
 	# Mon XV : un joueur choisi ouvre le banc sur lui (le match se met en pause).
 	between.joueur_choisi.connect(func(poste: int):
 		view.selected_slot = poste

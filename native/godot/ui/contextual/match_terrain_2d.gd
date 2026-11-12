@@ -367,7 +367,7 @@ func point(x: float, y: float) -> Vector2:
 
 ## Rayon des pastilles : lisible en 720p (8 px au moins), proportionné au terrain.
 func rayon() -> float:
-	return maxf(maxf(8.0, px(17)), echelle() * 1.25)
+	return maxf(maxf(9.0, px(20)), echelle() * 1.5)
 
 func _draw() -> void:
 	var c := champ()
@@ -375,17 +375,27 @@ func _draw() -> void:
 	var e := c.size.y / LARGEUR
 	var police: Font = T.DISPLAY
 	# Pelouse tondue en bandes de 10 m, en-buts un ton plus sombre.
-	draw_rect(c.grow(px(10)), Color("1c3024"))
-	for bande in 12:
-		var x0 := -EN_BUT + bande * 10.0
-		var teinte := Color("2f5a3a") if bande % 2 == 0 else Color("2a5134")
-		if bande == 0 or bande == 11: teinte = Color("24452d")
-		draw_rect(Rect2(point(x0, 0), Vector2(10.0 * e, c.size.y)), teinte)
-	var ligne := Color(1, 1, 1, 0.82)
-	var fine := maxf(1.0, px(2.5))
+	# Pelouse tondue : bandes de 5 m à peine contrastées, en-buts un ton plus sombre, léger
+	# assombrissement le long des touches (profondeur).
+	draw_rect(c.grow(px(10)), Color("16281e"))
+	for bande in 24:
+		var x0 := -EN_BUT + bande * 5.0
+		var teinte := Color("31603c") if bande % 2 == 0 else Color("285132")
+		if x0 < 0.0 or x0 >= 100.0: teinte = teinte.darkened(0.16)
+		draw_rect(Rect2(point(x0, 0), Vector2(5.0 * e, c.size.y)), teinte)
+	# Vignettage : la pelouse s'assombrit doucement vers les bords (touches et en-buts).
+	for bord in 10:
+		var k := float(bord) / 10.0
+		var voile := Color(0, 0, 0, 0.07 * (1.0 - k))
+		draw_rect(Rect2(point(-EN_BUT, k * 6.0), Vector2(c.size.x, 0.6 * e)), voile)
+		draw_rect(Rect2(point(-EN_BUT, LARGEUR - k * 6.0 - 0.6), Vector2(c.size.x, 0.6 * e)), voile)
+		draw_rect(Rect2(point(-EN_BUT + k * 6.0, 0), Vector2(0.6 * e, c.size.y)), voile)
+		draw_rect(Rect2(point(100.0 + EN_BUT - k * 6.0 - 0.6, 0), Vector2(0.6 * e, c.size.y)), voile)
+	var ligne := Color(1, 1, 1, 0.88)
+	var fine := maxf(1.2, px(2.5))
 	# Couleurs des en-buts : celles des équipes qui les défendent, en léger voile.
 	for cote in 2:
-		draw_rect(Rect2(point(-EN_BUT if cote == 0 else 100.0, 0), Vector2(EN_BUT * e, c.size.y)), Color(couleurs[cote], 0.16))
+		draw_rect(Rect2(point(-EN_BUT if cote == 0 else 100.0, 0), Vector2(EN_BUT * e, c.size.y)), Color(couleurs[cote], 0.12))
 	# Zone de jeu actuelle (bande de 10 m du moteur).
 	var zone: Dictionary = direct.get("zone", {})
 	if not zone.is_empty():
@@ -408,8 +418,14 @@ func _draw() -> void:
 	for x in [0.0, 100.0]:
 		var gauche := point(x, 35.0 - 2.8)
 		var droite := point(x, 35.0 + 2.8)
+		# Ombre portée des poteaux sur l'en-but (vue de dessus, soleil de face) puis la barre.
+		var sens := Vector2(-1.0 if x == 0.0 else 1.0, 0.35) * e * 6.0
+		for montant: Vector2 in [gauche, droite]: draw_line(montant, montant + sens, Color(0, 0, 0, 0.28), maxf(2.0, px(5)), true)
+		draw_line(gauche + sens * 0.55, droite + sens * 0.55, Color(0, 0, 0, 0.2), maxf(2.0, px(4)), true)
 		draw_line(gauche, droite, Color.WHITE, maxf(2.0, px(5)))
-		for montant: Vector2 in [gauche, droite]: draw_circle(montant, maxf(2.5, px(6)), Color.WHITE)
+		for montant: Vector2 in [gauche, droite]:
+			draw_circle(montant, maxf(3.0, px(8)), Color.WHITE)
+			draw_arc(montant, maxf(3.0, px(8)), 0.0, TAU, 16, Color(0, 0, 0, 0.35), 1.0, true)
 	# Sigles des clubs dans leur en-but.
 	for cote in mini(equipes.size(), 2):
 		var nom := S.G.club_abbr(equipes[cote]) if equipes[cote] is Dictionary else ""
@@ -460,7 +476,8 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	if _trace.size() >= 2:
 		for n in range(1, _trace.size()):
 			var a := float(n) / float(_trace.size())
-			draw_line(point(_trace[n - 1].x, _trace[n - 1].y), point(_trace[n].x, _trace[n].y), Color(S.GOLD, 0.15 + 0.45 * a), maxf(1.5, px(4)) * a, true)
+			draw_line(point(_trace[n - 1].x, _trace[n - 1].y), point(_trace[n].x, _trace[n].y), Color(S.GOLD, 0.08 + 0.5 * a * a), maxf(1.0, px(3)) * (0.35 + 0.65 * a), true)
+		draw_circle(point(_trace[0].x, _trace[0].y), maxf(1.5, px(4)), Color(S.GOLD, 0.25))
 	var porteur := ""
 	if not _courant.is_empty() or not joue.is_empty():
 		var vedette := _vedette()
@@ -469,27 +486,36 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	var ordre: Array = places.keys()
 	ordre.sort_custom(func(a: String, b: String): return (1 if a.begins_with("%d:" % possession) else 0) < (1 if b.begins_with("%d:" % possession) else 0))
 	var centres := _ecartees(ordre, r, porteur)
+	# Ombres douces : deux disques fondus, décalés vers le bas à droite.
 	for cle: String in ordre:
-		draw_circle(centres[cle] + Vector2(r * 0.18, r * 0.22), r, Color(0, 0, 0, 0.28))
-	var taille_numero := roundi(clampf(r * 1.15, 10.0, 34.0))
+		draw_circle(centres[cle] + Vector2(r * 0.22, r * 0.3), r * 1.18, Color(0, 0, 0, 0.10))
+		draw_circle(centres[cle] + Vector2(r * 0.14, r * 0.2), r * 0.98, Color(0, 0, 0, 0.18))
+	var taille_numero := roundi(clampf(r * 1.2, 11.0, 38.0))
 	for cle: String in ordre:
 		var cote := int(cle.get_slice(":", 0))
 		var poste := int(cle.get_slice(":", 1))
 		var centre: Vector2 = centres[cle]
+		# Maillot : couleur du club, reflet en haut à gauche, liseré sombre fin.
 		draw_circle(centre, r, couleurs[cote])
-		draw_arc(centre, r, 0.0, TAU, 24, Color(encres[cote], 0.55), maxf(1.0, r * 0.12), true)
+		draw_circle(centre - Vector2(r * 0.22, r * 0.26), r * 0.62, Color(1, 1, 1, 0.09))
+		draw_arc(centre, r, 0.0, TAU, 28, Color(0, 0, 0, 0.35), maxf(1.0, r * 0.1), true)
+		draw_arc(centre, r * 0.9, PI * 1.05, PI * 1.6, 10, Color(1, 1, 1, 0.22), maxf(1.0, r * 0.08), true)
 		if cote == camp: draw_arc(centre, r + maxf(1.5, r * 0.2), 0.0, TAU, 24, Color(S.GOLD, 0.5), maxf(1.0, r * 0.12), true)
-		if cle == porteur: draw_arc(centre, r + maxf(2.5, r * 0.38), 0.0, TAU, 28, S.GOLD, maxf(2.0, r * 0.2), true)
+		if cle == porteur:
+			draw_circle(centre, r * 1.9, Color(S.GOLD, 0.16))
+			draw_arc(centre, r + maxf(2.5, r * 0.38), 0.0, TAU, 32, S.GOLD, maxf(2.0, r * 0.22), true)
 		var numero := str(poste + 1)
 		var largeur := police.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_numero).x
 		draw_string(police, centre + Vector2(-largeur * 0.5, taille_numero * 0.36), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_numero, encres[cote])
 	# Ballon : ovale blanc, ombre qui s'écarte quand il est en l'air.
 	var sol := point(ballon.x, ballon.y)
 	var leve := Vector2(0, -hauteur * e * 0.55)
-	var taille := maxf(4.0, r * 0.5) * (1.0 + hauteur * 0.035)
+	var taille := maxf(6.0, r * 0.62) * (1.0 + hauteur * 0.035)
 	draw_set_transform(sol + Vector2(hauteur * e * 0.2, 0), 0.0, Vector2(1.25, 0.8))
 	draw_circle(Vector2.ZERO, taille, Color(0, 0, 0, clampf(0.45 - hauteur * 0.015, 0.15, 0.45)))
 	draw_set_transform(sol + leve, -0.5, Vector2(1.35, 0.9))
+	# Halo clair : le ballon reste lisible sur les pastilles comme sur l'herbe.
+	draw_circle(Vector2.ZERO, taille * 1.7, Color(1, 1, 1, 0.16))
 	draw_circle(Vector2.ZERO, taille, Color("fbf8ee"))
 	draw_arc(Vector2.ZERO, taille, 0.0, TAU, 20, Color("3a2a1a"), maxf(1.0, taille * 0.22), true)
 	draw_set_transform(Vector2.ZERO, 0.0)
