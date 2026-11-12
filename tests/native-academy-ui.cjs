@@ -21,7 +21,7 @@ func settle() -> void:
 func response() -> void:
  var until:=Time.get_ticks_msec()+30000
  while app.waiting and Time.get_ticks_msec()<until: await process_frame
- check(not app.waiting and app.bridge.last_response_ok,"Commande réelle terminée")
+ check(not app.waiting and app.bridge.last_response_ok,"Commande réelle terminée · "+str(app.last_error))
  await settle()
 func command(id:String,payload:Dictionary={}) -> void:
  app._command(id,payload)
@@ -55,6 +55,8 @@ func run() -> void:
  while app.model.is_empty():await process_frame
  app.timer.stop()
  await command("new_career",{"mode":"common","club":29})
+ # Une carrière neuve ouvre d'abord son rendez-vous de direction : le moteur refuse toute dépense tant qu'il n'est pas traité.
+ await preload("res://qa_runner.gd").settle_club_meetings(app,self,check)
  app._navigate("Centre");await settle()
  await enter(named(app,"academy_activate_action"));await confirm()
  check(app.model.clubLife.academyPathways.active,"Activation depuis le vrai bouton")
