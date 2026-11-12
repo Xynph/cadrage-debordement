@@ -165,24 +165,38 @@ func run() -> void:
 		var p:Dictionary=app.model.squad.filter(func(x):return str(x.id)==str(row.get_meta("player_id")))[0]
 		check(float(p.rating)<=previous,"Tri réel décroissant du niveau")
 		previous=float(p.rating)
-	await activate(named(app,"RosterPaginationNext"))
+	trace("section.roster.distant-row")
 	rows=app.body.find_children("SquadPlayer*","Button",true,false)
+	check(rows.size()==app.model.squad.size(),"La liste complète rend tous les vrais joueurs après le tri")
 	var last:Button=rows[-1]
 	var last_id:String=last.get_meta("player_id")
-	await activate(last)
+	var last_name:String=str(last.name)
 	var scroll:ScrollContainer=named(app,"SquadScroll")
+	check(not scroll.get_global_rect().intersects(last.get_global_rect()),"La ligne éloignée est initialement hors du viewport de liste")
+	scroll.ensure_control_visible(last);await settle()
+	await activate(last)
 	var offset:=scroll.scroll_vertical
-	var roster_page:int=app.management_ui.roster.page
-	check(app.selected_player==last_id and roster_page>0 and offset==0,"Entrée ouvre un dossier hors première page sans défilement")
+	check(app.selected_player==last_id and offset>0 and last.has_focus(),"Entrée ouvre la ligne éloignée après un vrai défilement et conserve son focus")
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
-	check(app.selected_player==last_id and app.roster_sort=="Niveau" and app.management_ui.roster.page==roster_page and named(app,"SquadScroll").scroll_vertical==offset,"Retour menu : ID, tri, page et focus conservés")
+	var restored_last:Button=named(app,last_name)
+	check(app.selected_player==last_id and app.roster_sort=="Niveau" and named(app,"SquadScroll").scroll_vertical==offset and restored_last!=null and restored_last.has_focus(),"Retour menu : ID, tri, scroll non nul et focus de la ligne éloignée conservés")
 	# UI-only projection of a timer response which updates the model without rendering.
+	var before_tick_scroll:ScrollContainer=named(app,"SquadScroll")
 	app.last_command="tick";app._receive_model(app.model.duplicate(true));await settle()
 	scroll=named(app,"SquadScroll")
-	await activate(named(app,"RosterPaginationPrevious"))
-	var after_tick_page:int=app.management_ui.roster.page
+	check(scroll==before_tick_scroll and scroll.scroll_vertical==offset and app.selected_player==last_id and app.roster_sort=="Niveau","Un tick de projection conserve la liste, son scroll, le tri et le dossier sélectionné")
+	# In a continuous list, a manual reading move replaces the old previous-page
+	# action. Focusing the fixed sort field avoids asking follow_focus to reveal
+	# the off-screen selected row; selection must remain unchanged while scrolling.
+	var sort_focus:Control=named(app,"RosterSort")
+	sort_focus.grab_focus()
+	scroll.scroll_vertical=mini(90,int((scroll.get_v_scroll_bar().max_value-scroll.get_v_scroll_bar().page)/2))
+	await settle()
+	var after_tick_offset:=scroll.scroll_vertical
+	check(after_tick_offset>0 and after_tick_offset!=offset and app.selected_player==last_id,"Après le tick, une autre position de lecture réelle ne remplace pas le dossier")
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
-	check(app.management_ui.roster.page==after_tick_page and named(app,"SquadScroll").scroll_vertical==0,"Page postérieure à un tick conservée au prochain menu")
+	var returned_sort:Control=named(app,"RosterSort")
+	check(app.selected_player==last_id and app.roster_sort=="Niveau" and named(app,"SquadScroll").scroll_vertical==after_tick_offset and returned_sort!=null and returned_sort.has_focus(),"Lecture postérieure au tick : ID, tri, scroll et focus conservés au prochain menu")
 	trace("section.comparison")
 	await activate(named(app,"CompareSelected"))
 	rows=app.body.find_children("SquadPlayer*","Button",true,false)
