@@ -9,7 +9,7 @@ assert.throws(()=>parseEvent({...event,comment:{...event.comment,body:'/cd-merge
 assert.throws(()=>parseEvent(event,{...env,GITHUB_ACTOR:'attacker'}));
 assert.throws(()=>parseEvent({...event,issue:{number:74}},env));
 assert.throws(()=>parseEvent({...event,sender:{id:1,login:'Xynph'}},env));
-const names=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const names=require('../ci/ci-jobs.cjs').OFFICIAL_JOBS;
 function fixture(){return {pr:{number:336,state:'open',base:{ref:'main',sha:MAIN},head:{sha:SHA,repo:{full_name:'Xynph/cadrage-debordement'}},mergeable:true,mergeable_state:'clean',draft:true},expected:SHA,main:MAIN,runs:[{id:99,event:'pull_request',name:'Tests JavaScript',head_sha:SHA,status:'completed',conclusion:'success'}],jobs:names.map(name=>({name,status:'completed',conclusion:'success'})),files:['ci/a.cjs'],otherFiles:[],comments:[{id:12,user:{login:'Xynph'},body:'RÉSERVATION PR #336 : ci/a.cjs'}]};}
 let a=assess(fixture());assert.equal(a.technicalPass,true);assert.equal(a.authorizedToMerge,false);assert.equal(a.ruleSet.attested,false);
 let f=fixture();f.pr.mergeable_state='unstable';assert.equal(assess(f).technicalPass,false);
@@ -46,6 +46,7 @@ console.log('pr-preflight: 12 assertions/scénarios PASS');
  function fakeRequire(id){
   if(id==='node:fs')return fakeFs;
   if(id==='node:child_process')return {execFileSync:fakeExec};
+  if(id==='./ci-jobs.cjs')return require('../ci/ci-jobs.cjs');
   throw Error('Unexpected import: '+id);
  }
  fakeRequire.main=moduleShim; // démarre réellement main(), comme node ci/pr-preflight.cjs

@@ -15,8 +15,33 @@ assert.match(yaml,/CLASSIFICATION: \$\{\{ needs\.classification\.result \}\}/);
 assert.match(yaml,/SHARDS: \$\{\{ needs\.shards\.result \}\}/);
 assert.match(yaml,/COVERAGE: \$\{\{ needs\.classification\.outputs\.coverage \}\}/);
 assert.match(yaml,/if: \$\{\{ always\(\) \}\}/);
-assert.match(yaml,/name: Suites \$\{\{ matrix.shard \}\}\/5/);
-assert.match(yaml,/shard: \[1, 2, 3, 4, 5\]/);
+// Nombre de shards : une seule source (ci/ci-jobs.cjs) que la matrice doit refléter.
+const {SHARD_COUNT,GODOT_SHARD_COUNT,OFFICIAL_JOBS}=require('../ci/ci-jobs.cjs');
+const range=n=>Array.from({length:n},(_,i)=>i+1).join(', ');
+assert.equal(SHARD_COUNT,10);
+assert.equal(OFFICIAL_JOBS.length,SHARD_COUNT+2);
+assert.ok(yaml.includes('    name: Suites ${{ matrix.shard }}/'+SHARD_COUNT+'\n'));
+assert.ok(yaml.includes('        shard: ['+range(SHARD_COUNT)+']\n'));
+assert.ok(yaml.includes('node ci/shard-tests.cjs "$SHARD" "$COVERAGE" '+SHARD_COUNT+' '));
+assert.ok(yaml.includes('### Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE)'));
+// Jobs Godot : SDK épinglé et vérifié, SDK obligatoire, non bloquants pour l'instant.
+const godot=yaml.split('\n  godot:\n')[1].split('\n  validation:\n')[0];
+assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUNT+'\n'));
+assert.ok(godot.includes('        shard: ['+range(GODOT_SHARD_COUNT)+']\n'));
+assert.ok(godot.includes('node ci/shard-tests.cjs "$SHARD" godot '+GODOT_SHARD_COUNT+' '));
+assert.match(godot,/continue-on-error: true/);
+assert.match(godot,/GODOT_VERSION: 4\.7\.2-stable\n/);
+assert.match(godot,/GODOT_SHA256: [0-9a-f]{64}\n/);
+assert.match(godot,/sha256sum -c -/);
+assert.match(godot,/https:\/\/github\.com\/godotengine\/godot-builds\/releases\/download\/\$GODOT_VERSION\/\$GODOT_ZIP/);
+assert.match(godot,/actions\/cache@v4/);
+assert.match(godot,/xvfb-run -a/);
+assert.match(godot,/LIBGL_ALWAYS_SOFTWARE: '1'/);
+assert.match(godot,/bash ci\/run-godot-suites\.sh/);
+assert.match(godot,/CD_GODOT_EXECUTABLE=\$exe/);
+assert.match(godot,/CD_GODOT_EXE=\$exe/);
+// Tant qu'ils sont non bloquants, les jobs Godot restent hors du verdict officiel.
+assert.doesNotMatch(yaml.split('\n  validation:\n')[1],/godot/i);
 assert.doesNotMatch(yaml,/issues: write/);
 assert.doesNotMatch(yaml,/github\.rest\.issues\.createComment/);
 assert.doesNotMatch(yaml,/workflow_run:/);
