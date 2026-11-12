@@ -22,9 +22,9 @@ const MIXAMO_CLIPS := [&"repos", &"repos_respire", &"appui", &"parle", &"parle_2
 	&"telephone_marche", &"bras_croises"]
 const TALKS := ["parle", "parle_2", "parle_3", "parle_4", "parle_5", "parle_7", "parle_8"]
 const WAITS := ["repos_respire", "appui", "regarde_bas", "reflechit"]
-const RARE := ["tablette", "baille"]
+const RARE := ["tablette"]
 const NEVER := ["bras_croises", "assis_debout", "debout_assis", "assis_parle", "assis_pouce", "marche",
-	"tourne_g", "tourne_d", "telephone", "telephone_marche", "rit"]
+	"tourne_g", "tourne_d", "telephone", "telephone_marche", "rit", "decu", "baille", "applaudit"]
 
 var failures: Array[String] = []
 var checks := 0

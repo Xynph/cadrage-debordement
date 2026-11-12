@@ -29,6 +29,9 @@ const SOFT_BROWS_REST := 0.4
 const SMILE_WIDE := 0.75
 const SMILE_PRESS := 0.3
 const BLINK_TIME := Vector3(0.07, 0.04, 0.13)  # fermeture, tenue, ouverture
+## La paupière supérieure suit le regard vers le bas (part de « Clignement » à RegardBas = 1) : sans
+## elle, l'iris descend sous une paupière immobile et le blanc apparaît au-dessus (regard fixe).
+const LID_FOLLOW := 0.12
 
 var tone := "neutre"
 var speaking := false
@@ -253,7 +256,7 @@ func _apply() -> void:
 	_weight(&"RegardDroite", maxf(-gaze.x, 0.0))
 	_weight(&"RegardHaut", maxf(gaze.y, 0.0))
 	_weight(&"RegardBas", maxf(-gaze.y, 0.0))
-	_weight(BLINK, blink)
+	_weight(BLINK, maxf(blink, LID_FOLLOW * maxf(-gaze.y, 0.0)))
 	var warm := 0.0 if tone == "negatif" else EYE_SMILE_REST
 	_weight(EYE_SMILE, clampf(warm + 0.35 * smile, 0.0, 1.0))
 	_weight(SOFT_BROWS, SOFT_BROWS_REST)
