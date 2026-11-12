@@ -1,0 +1,74 @@
+2026-11-12T04:07:11.7817347Z # tests 1
+2026-11-12T04:07:11.7817725Z # pass 1
+2026-11-12T04:07:11.7817908Z # fail 0
+2026-11-12T04:07:11.7819452Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"layout-native","passed":true,"status":0,"milliseconds":44750,"error":null}
+2026-11-12T04:07:49.2187262Z # tests 1
+2026-11-12T04:07:49.2187732Z # pass 1
+2026-11-12T04:07:49.2187911Z # fail 0
+2026-11-12T04:07:49.2189449Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"layout-stretch","passed":true,"status":0,"milliseconds":37438,"error":null}
+2026-11-12T04:08:36.9636908Z # tests 1
+2026-11-12T04:08:36.9637576Z # pass 1
+2026-11-12T04:08:36.9637895Z # fail 0
+2026-11-12T04:08:36.9640630Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"dock-native","passed":true,"status":0,"milliseconds":47745,"error":null}
+2026-11-12T04:09:24.3541671Z # tests 1
+2026-11-12T04:09:24.3542080Z # pass 1
+2026-11-12T04:09:24.3542310Z # fail 0
+2026-11-12T04:09:24.3544619Z SDK_RESULT {"suite":"tests/godot-guide-layout.cjs","variant":"dock-stretch","passed":true,"status":0,"milliseconds":47391,"error":null}
+2026-11-12T04:10:03.7412979Z SDK_RESULT {"suite":"tests/godot-lineup-layout.cjs","variant":"default","passed":true,"status":0,"milliseconds":39387,"error":null}
+2026-11-12T04:11:52.6596795Z SDK_RESULT {"suite":"tests/godot-interface-layout.cjs","variant":"management","passed":true,"status":0,"milliseconds":108918,"error":null}
+2026-11-12T04:13:38.4986462Z SDK_RESULT {"suite":"tests/godot-interface-layout.cjs","variant":"journal","passed":true,"status":0,"milliseconds":105839,"error":null}
+2026-11-12T04:15:02.8598656Z # tests 1
+2026-11-12T04:15:02.8599044Z # pass 1
+2026-11-12T04:15:02.8599231Z # fail 0
+2026-11-12T04:15:02.8600785Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading720","passed":true,"status":0,"milliseconds":84360,"error":null}
+2026-11-12T04:15:56.5541569Z # tests 1
+2026-11-12T04:15:56.5541963Z # pass 1
+2026-11-12T04:15:56.5542151Z # fail 0
+2026-11-12T04:15:56.5543956Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading900","passed":true,"status":0,"milliseconds":53694,"error":null}
+2026-11-12T04:16:56.5467621Z # tests 1
+2026-11-12T04:16:56.5467989Z # pass 1
+2026-11-12T04:16:56.5468165Z # fail 0
+2026-11-12T04:16:56.5469721Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading1080","passed":true,"status":0,"milliseconds":59993,"error":null}
+2026-11-12T04:18:05.9052910Z # tests 1
+2026-11-12T04:18:05.9053278Z # pass 1
+2026-11-12T04:18:05.9053455Z # fail 0
+2026-11-12T04:18:05.9055337Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"reading1440","passed":true,"status":0,"milliseconds":69359,"error":null}
+2026-11-12T04:18:51.5604487Z # tests 1
+2026-11-12T04:18:51.5604878Z # pass 1
+2026-11-12T04:18:51.5605060Z # fail 0
+2026-11-12T04:18:51.5606569Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"responsive","passed":true,"status":0,"milliseconds":45655,"error":null}
+2026-11-12T04:19:44.4797217Z # tests 1
+2026-11-12T04:19:44.4797596Z # pass 1
+2026-11-12T04:19:44.4797777Z # fail 0
+2026-11-12T04:19:44.4799266Z SDK_RESULT {"suite":"tests/godot-readability06.cjs","variant":"drafts","passed":true,"status":0,"milliseconds":52919,"error":null}
+2026-11-12T04:19:54.7746812Z # tests 1
+2026-11-12T04:19:54.7747331Z # pass 1
+2026-11-12T04:19:54.7747581Z # fail 0
+2026-11-12T04:19:54.7749988Z SDK_RESULT {"suite":"tests/godot-finance-ledger-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":10295,"error":null}
+2026-11-12T04:21:56.2860287Z # tests 1
+2026-11-12T04:21:56.2860662Z # pass 1
+2026-11-12T04:21:56.2860842Z # fail 0
+2026-11-12T04:21:56.2862352Z SDK_RESULT {"suite":"tests/godot-reader-history.cjs","variant":"default","passed":true,"status":0,"milliseconds":121511,"error":null}
+2026-11-12T04:22:12.8909481Z # tests 1
+2026-11-12T04:22:12.8909837Z # pass 1
+2026-11-12T04:22:12.8910011Z # fail 0
+2026-11-12T04:22:12.8922573Z SDK_RESULT {"suite":"tests/godot-training-identity-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":16606,"error":null}
+2026-11-12T04:23:01.1294935Z NAVIGATION_SPEECH {"id":0,"requests":0,"starts":0}
+2026-11-12T04:23:01.1301826Z # tests 1
+2026-11-12T04:23:01.1302546Z # pass 1
+2026-11-12T04:23:01.1302972Z # fail 0
+2026-11-12T04:23:01.1306336Z SDK_RESULT {"suite":"tests/godot-navigation.cjs","variant":"default","passed":true,"status":0,"milliseconds":48239,"error":null}
+2026-11-12T04:23:10.4342848Z SDK_RESULT {"suite":"tests/godot-relationships-memory.cjs","variant":"default","passed":true,"status":0,"milliseconds":9304,"error":null}
+2026-11-12T04:23:11.0924735Z SDK_RESULT {"suite":"tests/godot-management-reading-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":659,"error":null}
+2026-11-12T04:23:11.7671932Z # tests 1
+2026-11-12T04:23:11.7672296Z # pass 1
+2026-11-12T04:23:11.7672483Z # fail 0
+2026-11-12T04:23:11.7674550Z SDK_RESULT {"suite":"tests/godot-national-reading-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":673,"error":null}
+2026-11-12T04:23:30.0481006Z # tests 1
+2026-11-12T04:23:30.0481416Z # pass 1
+2026-11-12T04:23:30.0481594Z # fail 0
+2026-11-12T04:23:30.0483100Z SDK_RESULT {"suite":"tests/godot-profile-reading.cjs","variant":"default","passed":true,"status":0,"milliseconds":18282,"error":null}
+2026-11-12T04:23:56.2417283Z # tests 1
+2026-11-12T04:23:56.2417674Z # pass 1
+2026-11-12T04:23:56.2417880Z # fail 0
+2026-11-12T04:23:56.2419534Z SDK_RESULT {"suite":"tests/godot-analysis-club-links.cjs","variant":"default","passed":true,"status":0,"milliseconds":26193,"error":null}
