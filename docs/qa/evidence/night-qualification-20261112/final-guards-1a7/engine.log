@@ -1,0 +1,50 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+   at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+NIGHT_PROGRESS {"case":"guards","checks":0,"elapsed_ms":8,"stage":"initialize"}
+NIGHT_PROGRESS {"case":"guards","checks":0,"elapsed_ms":84,"stage":"run"}
+NIGHT_PROGRESS {"case":"guards","checks":2,"command":"snapshot","elapsed_ms":7831,"error":"","payload_keys":["mode","club"],"request":"new_career","route":"Accueil","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":4,"command":"new_career","elapsed_ms":11047,"error":"","ok":true,"request":"new_career","request_ms":3216,"route":"Réception","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":4,"command":"new_career","elapsed_ms":11047,"error":"","route":"Réception","stage":"guard_cases_begin","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":13,"command":"new_career","context":"Rendez-vous obligatoire","elapsed_ms":15693,"error":"","route":"Réception","stage":"guard_begin","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":13,"command":"new_career","elapsed_ms":15693,"error":"","payload_keys":[],"request":"export","route":"Réception","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":15,"command":"export","elapsed_ms":21052,"error":"","ok":true,"request":"export","request_ms":5359,"route":"Réception","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":19,"command":"export","elapsed_ms":24250,"error":"","payload_keys":[],"request":"export","route":"Réception","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":21,"command":"export","elapsed_ms":28716,"error":"","ok":true,"request":"export","request_ms":4466,"route":"Réception","stage":"command_end","waiting":false}
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-07" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-08" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-09" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-10" }
+SDK_CALENDAR_COMMAND advance_day { "fromDate": "2026-09-11" }
+NIGHT_PROGRESS {"case":"guards","checks":50,"command":"advance_day","elapsed_ms":43172,"error":"","payload_keys":[],"request":"auto_lineup","route":"Réception","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":52,"command":"auto_lineup","elapsed_ms":44817,"error":"","ok":true,"request":"auto_lineup","request_ms":1645,"route":"Réception","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":52,"command":"auto_lineup","elapsed_ms":44817,"error":"","payload_keys":[],"request":"begin_match","route":"Réception","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":54,"command":"begin_match","elapsed_ms":52392,"error":"","ok":true,"request":"begin_match","request_ms":7575,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":55,"command":"begin_match","context":"Causerie obligatoire","elapsed_ms":52393,"error":"","route":"Match","stage":"guard_begin","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":55,"command":"begin_match","elapsed_ms":52393,"error":"","payload_keys":[],"request":"export","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":57,"command":"export","elapsed_ms":59494,"error":"","ok":true,"request":"export","request_ms":7101,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":61,"command":"export","elapsed_ms":64905,"error":"","payload_keys":[],"request":"export","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":63,"command":"export","elapsed_ms":72255,"error":"","ok":true,"request":"export","request_ms":7350,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":69,"command":"match_talk_continue","elapsed_ms":74383,"error":"","payload_keys":["paused"],"request":"pause","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":71,"command":"pause","elapsed_ms":80201,"error":"","ok":true,"request":"pause","request_ms":5818,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":72,"command":"pause","context":"Match immersif","elapsed_ms":80202,"error":"","route":"Match","stage":"guard_begin","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":72,"command":"pause","elapsed_ms":80202,"error":"","payload_keys":[],"request":"export","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":74,"command":"export","elapsed_ms":87786,"error":"","ok":true,"request":"export","request_ms":7584,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":78,"command":"export","elapsed_ms":92745,"error":"","payload_keys":[],"request":"export","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":80,"command":"export","elapsed_ms":99382,"error":"","ok":true,"request":"export","request_ms":6637,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"capture":"navigation-refusee-match-2560","case":"guards","checks":82,"command":"export","elapsed_ms":99728,"error":"","route":"Match","stage":"capture_begin","waiting":false}
+NIGHT_PROGRESS {"capture":"navigation-refusee-match-2560","case":"guards","checks":84,"command":"export","elapsed_ms":101828,"error":"","route":"Match","stage":"capture_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":84,"command":"export","elapsed_ms":101828,"error":"","payload_keys":[],"request":"delegate","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":86,"command":"delegate","elapsed_ms":108931,"error":"","ok":true,"request":"delegate","request_ms":7103,"route":"Match","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":86,"command":"delegate","elapsed_ms":108932,"error":"","payload_keys":[],"request":"finish_round","route":"Match","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":88,"command":"finish_round","elapsed_ms":111681,"error":"","ok":true,"request":"finish_round","request_ms":2749,"route":"Réception","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":89,"command":"finish_round","elapsed_ms":111750,"error":"","payload_keys":[],"request":"export","route":"Réception","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":91,"command":"export","elapsed_ms":113427,"error":"","ok":true,"request":"export","request_ms":1677,"route":"Réception","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"capture":"rencontre-historique-2560","case":"guards","checks":93,"command":"export","elapsed_ms":113965,"error":"","route":"Réception","stage":"capture_begin","waiting":false}
+NIGHT_PROGRESS {"capture":"rencontre-historique-2560","case":"guards","checks":95,"command":"export","elapsed_ms":114211,"error":"","route":"Réception","stage":"capture_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":97,"command":"export","elapsed_ms":114231,"error":"","payload_keys":[],"request":"export","route":"Réception","stage":"command_begin","waiting":false}
+NIGHT_PROGRESS {"accepted":true,"case":"guards","checks":99,"command":"export","elapsed_ms":116182,"error":"","ok":true,"request":"export","request_ms":1951,"route":"Réception","stage":"command_end","waiting":false}
+NIGHT_PROGRESS {"case":"guards","checks":101,"command":"export","elapsed_ms":116412,"error":"","failures":[],"route":"Réception","stage":"finish","waiting":false}
+NAVIGATION NOCTURNE guards : 103 contrôles ; 0 échec(s)
