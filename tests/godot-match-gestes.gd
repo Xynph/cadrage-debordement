@@ -6,7 +6,7 @@ const View = preload("res://match_view.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Gestes = preload("res://match_gestes.gd")
 const STEP := 1.0 / 30.0
-const TV_OFFSET := Vector3(0, 55, 75)
+const TV_OFFSET := View.TV_OFFSET  # caméra TV de la vue (plus haute depuis le 12 novembre 2026)
 const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
 const TICK := 0.32
 

@@ -31,6 +31,12 @@ const POSES := {
 ## Sauteur de touche : levé et redescendu vite (les leveurs le portent), le reste à vitesse bornée.
 const LEVEE := 3.0
 const SOL := ["plaquage", "plaquage_rate", "plaque", "au_sol", "aplati"]
+## États dont la fin du geste est tenue tant qu'ils durent (au sol, lié).
+const TENUS := ["au_sol", "melee", "ruck", "maul"]
+## Plaquage : l'impact au sol du plaqueur et celui du porteur tombent ensemble, 0,45 s après le
+## contact (le plongeon du plaqueur part un peu avant, il va chercher la taille).
+const PLONGEON_IMPACT := 0.55
+const CHUTE_IMPACT := 0.45
 
 var view: Node3D
 var actif := false
@@ -45,6 +51,22 @@ var aplati_a := -1.0
 var _pistes: Dictionary = {}
 var _ballon: Dictionary = {}
 var _porteurs: Array = []
+## Passes des pistes : [{t (lâcher), de, vers}], pour armer la passe avant le lâcher.
+var _passes: Array = []
+## Plaquages réussis des pistes : [{t, plaqueur, porteur, cote, releve}] (présentation du contact).
+var _plaquages: Array = []
+## Décalage affiché du plaqueur par rapport à sa piste, et instant de sa dernière mise à jour.
+var _decalages: Dictionary = {}
+## Plaquage (12 novembre 2026, retours de Léo) : le plaqueur rejoint la taille du porteur, à son
+## côté et un peu en retrait, juste avant le contact, et tombe avec lui dans le sens de sa course,
+## au lieu de le traverser sur sa propre trajectoire.
+const PLAQUAGE_APPROCHE := 0.8
+## Le rapprochement est borné en allure (m/s) : jamais de glissade visible ; au sol, l'écart
+## restant avec la taille du porteur se résorbe à PLAQUAGE_RESORPTION m/s.
+const PLAQUAGE_RAPPROCHE := 3.0
+const PLAQUAGE_RESORPTION := 2.0
+const PLAQUAGE_ECART := 0.42
+const PLAQUAGE_RETRAIT := 0.3
 var _raccord: Dictionary = {}
 var _etat_vu: Dictionary = {}
 var _chute: Dictionary = {}
@@ -102,9 +124,27 @@ func charger(donnees: Dictionary) -> bool:
 	fige = false
 	marqueur = str(donnees.get("marqueur", ""))
 	aplati_a = -1.0
+	_passes = []
+	_plaquages = []
+	_decalages = {}
 	for e: Variant in donnees.get("evenements", []):
 		if e is Dictionary and str(e.get("type", "")) == "aplati":
 			aplati_a = float(e.get("t", -1.0))
+		if e is Dictionary and str(e.get("type", "")) == "passe":
+			_passes.append({"t": float(e.get("t", 0.0)), "de": str(e.get("de", "")), "vers": str(e.get("vers", ""))})
+		if e is Dictionary and str(e.get("type", "")) == "plaquage" and pistes.has(str(e.get("plaqueur", ""))) and pistes.has(str(e.get("porteur", ""))):
+			_plaquages.append({"t": float(e.get("t", 0.0)), "plaqueur": str(e.get("plaqueur", "")), "porteur": str(e.get("porteur", ""))})
+	for k: Dictionary in _plaquages:
+		var porteur_ := _point(k.porteur, k.t)
+		var cap := _angle(_pistes[k.porteur].cap, k.t)
+		var avant := Vector3(cos(cap), 0.0, sin(cap))
+		k["cap"] = cap
+		k["cote"] = 1.0 if (_point(k.plaqueur, k.t) - porteur_).dot(Vector3(-avant.z, 0.0, avant.x)) >= 0.0 else -1.0
+		k["releve"] = k.t + 3.0
+		for paire: Variant in _pistes[k.plaqueur].etats:
+			if paire is Array and paire.size() >= 2 and float(paire[0]) > k.t + 0.05 and str(paire[1]) not in SOL:
+				k.releve = float(paire[0])
+				break
 	# Écart entre la place réelle de chaque joueur et le début de sa piste (aucun sur une coupe).
 	for id: String in _pistes:
 		if view._actors.has(id) and not coupe:
@@ -192,6 +232,24 @@ func porteur(t: float = -1.0) -> String:
 	return courant
 
 
+## Passe de `id` dont le lâcher tombe entre `avant` secondes avant maintenant et `apres` après.
+func passe_de(id: String, avant: float = 0.0, apres: float = 0.45) -> Dictionary:
+	for p: Dictionary in _passes:
+		if p.de == id and float(p.t) >= temps - avant and float(p.t) <= temps + apres:
+			return p
+	return {}
+
+
+## Instant où `id` reçoit le ballon dans les `horizon` prochaines secondes (négatif sinon).
+func reception_de(id: String, horizon: float = 0.5) -> float:
+	var avant := porteur()
+	for paire: Variant in _porteurs:
+		if paire is Array and paire.size() >= 2 and float(paire[0]) > temps + 0.0001 and float(paire[0]) <= temps + horizon:
+			if paire[1] != null and str(paire[1]) == id and avant != id:
+				return float(paire[0])
+	return -1.0
+
+
 ## Position du ballon d'après sa piste (hauteur comprise).
 func ballon_piste(t: float = -1.0) -> Vector3:
 	var instant := temps if t < 0.0 else t
@@ -207,8 +265,40 @@ func place(id: String, actor: Node3D) -> void:
 	var p := _point(id, temps)
 	if _raccord.has(id):
 		p += (_raccord[id] as Vector3) * (1.0 - smoothstep(0.0, RACCORD, temps))
-	actor.position = p
 	var cap := _angle(_pistes[id].cap, temps)
+	# Plaqueur : il rejoint la taille du porteur (allure de rapprochement bornée), tombe avec lui
+	# dans le sens de sa course (attaché au porteur, l'écart restant se résorbe), puis rejoint sa piste.
+	var voulu := Vector3.ZERO
+	var attache := false
+	var cible := Vector3.ZERO
+	for k: Dictionary in _plaquages:
+		if k.plaqueur != id or temps < float(k.t) - PLAQUAGE_APPROCHE or temps > float(k.releve) + 1.5:
+			continue
+		var avant := Vector3(cos(float(k.cap)), 0.0, sin(float(k.cap)))
+		cible = _point(k.porteur, temps) + Vector3(-avant.z, 0.0, avant.x) * float(k.cote) * PLAQUAGE_ECART - avant * PLAQUAGE_RETRAIT
+		if _raccord.has(k.porteur):
+			cible += (_raccord[k.porteur] as Vector3) * (1.0 - smoothstep(0.0, RACCORD, temps))
+		if temps < float(k.t):
+			voulu = (cible - p) * smoothstep(float(k.t) - PLAQUAGE_APPROCHE, float(k.t), temps)
+		elif temps <= float(k.releve):
+			attache = true
+		if temps <= float(k.releve) + 0.3:
+			cap = lerp_angle(cap, float(k.cap), smoothstep(float(k.t) - PLAQUAGE_APPROCHE, float(k.t), temps))
+	var vu: Array = _decalages.get(id, [Vector3.ZERO, temps, null])
+	var dt := clampf(temps - float(vu[1]), 0.0, 0.1)
+	if attache:
+		# Résidu entre la place affichée au contact et la taille du porteur : il se résorbe.
+		var residu: Vector3 = vu[2] if vu[2] is Vector3 else (p + (vu[0] as Vector3)) - cible
+		residu = residu.move_toward(Vector3.ZERO, PLAQUAGE_RESORPTION * dt)
+		_decalages[id] = [cible + residu - p, temps, residu]
+		p = cible + residu
+	elif _decalages.has(id) or voulu != Vector3.ZERO:
+		var decalage := (vu[0] as Vector3).move_toward(voulu, PLAQUAGE_RAPPROCHE * dt)
+		_decalages[id] = [decalage, temps, null]
+		p += decalage
+		if decalage == Vector3.ZERO and voulu == Vector3.ZERO:
+			_decalages.erase(id)
+	actor.position = p
 	# Cap du moteur (angle sur le terrain, depuis l'axe des x) vers le lacet de la vue.
 	actor.rotation.y = atan2(cos(cap), sin(cap))
 	_gestes_de_l_etat(id)
@@ -220,8 +310,8 @@ func _gestes_de_l_etat(id: String) -> void:
 	var nom := etat(id)
 	var avant := str(_etat_vu.get(id, "course"))
 	if nom == avant:
-		# Au sol : la fin du clip de chute est tenue tant que la piste dit « au sol ».
-		if nom == "au_sol" and _chute.has(id) and view.has_method("geste_adapte") and not view.geste_adapte(id):
+		# Au sol, ou lié (mêlée, ruck, ballon porté) : la fin du clip est tenue tant que la piste le dit.
+		if nom in TENUS and _chute.has(id) and view.has_method("geste_adapte") and not view.geste_adapte(id):
 			var clip := str(_chute[id])
 			var fin: float = view._animations_adaptees.duree(clip) if view._animations_adaptees != null else 0.0
 			if fin > 0.0:
@@ -232,15 +322,37 @@ func _gestes_de_l_etat(id: String) -> void:
 		return
 	match nom:
 		"plaquage", "plaquage_rate":
-			if view.jouer_geste(id, "plaquage", maxf(0.0, view.instant_geste("plaquage") - 0.3)):
+			# Plaqueur : plongeon bras tendus vers la taille du porteur, puis à plat ventre
+			# (12 novembre 2026) ; sinon l'ancien geste.
+			if view.jouer_geste(id, "plongeon_avant", maxf(0.0, view.instant_geste("plongeon_avant") - PLONGEON_IMPACT), view.instant_geste("plongeon_avant"),
+					false, [["plaque_avant", view.instant_geste("plaque_avant") + 0.1, -1.0]]):
+				_chute[id] = "plaque_avant"
+			elif view.jouer_geste(id, "plaquage", maxf(0.0, view.instant_geste("plaquage") - 0.3)):
 				_chute[id] = "plaquage"
-		"plaque", "aplati":
-			var clip := "plaque_jambes" if nom == "aplati" or id.hash() % 2 == 1 else "plaque_cote"
-			if view.jouer_geste(id, clip, maxf(0.0, view.instant_geste(clip) - 0.35)):
-				_chute[id] = clip
+		"plaque":
+			# Porteur plaqué : il tombe vers l'avant, dans le sens de sa course, avec le plaqueur.
+			if view.jouer_geste(id, "plaque_avant", maxf(0.0, view.instant_geste("plaque_avant") - CHUTE_IMPACT)):
+				_chute[id] = "plaque_avant"
+			else:
+				var clip := "plaque_jambes" if id.hash() % 2 == 1 else "plaque_cote"
+				if view.jouer_geste(id, clip, maxf(0.0, view.instant_geste(clip) - 0.35)):
+					_chute[id] = clip
+		"aplati":
+			# Aplati : plongeon vers l'avant, ballon posé au sol, puis à plat ventre.
+			if view.jouer_geste(id, "plongeon_avant", maxf(0.0, view.instant_geste("plongeon_avant") - 0.6), view.instant_geste("plongeon_avant"),
+					false, [["plaque_avant", view.instant_geste("plaque_avant") + 0.1, -1.0]]):
+				_chute[id] = "plaque_avant"
+			elif view.jouer_geste(id, "plaque_jambes", maxf(0.0, view.instant_geste("plaque_jambes") - 0.35)):
+				_chute[id] = "plaque_jambes"
 		"se_relever":
+			var ventre := str(_chute.get(id, "")) == "plaque_avant"
 			_chute.erase(id)
-			view.jouer_geste(id, "se_relever", 0.2)
+			if not (ventre and view.jouer_geste(id, "se_relever_ventre", view.instant_geste("se_relever_ventre") - 1.5)):
+				view.jouer_geste(id, "se_relever", 0.2)
+		"melee", "ruck", "maul":
+			# Liaison : mise en poussée, buste penché et bras tendus, tenue tant que la piste le dit.
+			if view.jouer_geste(id, "poussee", maxf(0.0, view.instant_geste("poussee") - 1.2), view.instant_geste("poussee")):
+				_chute[id] = "poussee"
 		"reception":
 			view.jouer_geste(id, "reception", maxf(0.0, view.instant_geste("reception") - 0.3), view.instant_geste("reception") + 0.25)
 		"saut":
@@ -254,6 +366,8 @@ func _gestes_de_l_etat(id: String) -> void:
 		"deception":
 			view.jouer_geste(id, "deception", 0.3, 2.6)
 		"course":
+			if _chute.has(id) and str(_chute[id]) == "poussee":
+				view.arreter_geste(id)
 			_chute.erase(id)
 
 

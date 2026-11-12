@@ -1,8 +1,9 @@
 extends RefCounted
 ## Cadrage des temps forts (mode de base du match ; repli CD_MATCH_TEMPS_FORTS=0). Pendant un temps fort, la caméra
 ## du jeu (TV ou contact) se rapproche de l'action : le ballon, son porteur et les
-## joueurs proches, à une hauteur visible de 12 à 18 m, plus large pour un jeu au pied
-## ou une longue course. Le ballon ne sort jamais du champ. Présentation seulement :
+## joueurs proches, à une hauteur visible de 16 à 24 m en TV (12 novembre 2026 : plus
+## loin qu'avant, 12 à 18 m, pour masquer appuis et contacts approximatifs), plus large
+## pour un jeu au pied ou une longue course. Le ballon ne sort jamais du champ. Présentation seulement :
 ## même amortissement que le recadrage des gestes (match_gestes.gd), qui s'applique
 ## par-dessus quand un geste est en cours. La vue tactique n'est jamais recadrée.
 const Gestes = preload("res://match_gestes.gd")
@@ -10,8 +11,9 @@ const Gestes = preload("res://match_gestes.gd")
 const ENTREE := 1.0        # rapprochement, en secondes
 const SORTIE := 1.5        # retour au cadrage large
 ## Hauteur visible minimale et maximale, en mètres.
-const HAUTEUR := {"tv": [12.0, 18.0], "action": [10.0, 16.0]}
-const LARGE := 26.0        # jeu au pied, longue course
+const HAUTEUR := {"tv": [16.0, 24.0], "action": [10.0, 16.0]}
+## Jeu au pied, longue course : hauteur visible maximale.
+const LARGE := {"tv": 32.0, "action": 26.0}
 const MARGE := 1.25
 const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
 const SUR := 0.8           # part du demi-champ où le ballon doit rester
@@ -139,7 +141,7 @@ func _but(basis: Basis, aspect: float, mode: String, base: float, focus: Vector3
 		bas = Vector2(minf(bas.x, local.x), minf(bas.y, local.y))
 		haut = Vector2(maxf(haut.x, local.x), maxf(haut.y, local.y))
 	var bornes: Array = HAUTEUR[mode]
-	var plus_large := LARGE if large else float(bornes[1])
+	var plus_large := float(LARGE[mode]) if large else float(bornes[1])
 	# Un geste de la vue choisit son propre cadrage, jamais plus large que celui-ci : on lui laisse la place.
 	var gestes: Variant = view.get("_gestes")
 	var plus_serre := float(bornes[1]) if gestes != null and gestes.active() else float(bornes[0])
