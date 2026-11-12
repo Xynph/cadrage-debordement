@@ -1,0 +1,142 @@
+[
+ {
+  "nom": "mx_repos",
+  "fbx": "Soccer Game Pack/offensive idle.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_repos_souffle",
+  "fbx": "Breathing Idle.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_marche",
+  "fbx": "Locomotion Pack/walking.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_trot",
+  "fbx": "Soccer Game Pack/jog forward.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_course",
+  "fbx": "Standard Run.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_course_rapide",
+  "fbx": "Fast Run.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_sprint",
+  "fbx": "Sprint.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_recul",
+  "fbx": "Running Backward.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_pas_chasse_g",
+  "fbx": "Soccer Game Pack/jog strafe left.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_pas_chasse_d",
+  "fbx": "Soccer Game Pack/jog strafe right.fbx",
+  "sur_place": true
+ },
+ {
+  "nom": "mx_depart",
+  "fbx": "Idle To Sprint.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_arret",
+  "fbx": "Run To Stop.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_crochet_g",
+  "fbx": "Standing Dodge Left.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_crochet_d",
+  "fbx": "Standing Dodge Right.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_lancer_touche",
+  "fbx": "Throw In.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_reception",
+  "fbx": "Football Catch.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_reception_haute",
+  "fbx": "Football Catch (1).fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_plaquage",
+  "fbx": "Soccer Game Pack/soccer tackle.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_plaque_cote",
+  "fbx": "Hit To Side Of Body.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_plaque_jambes",
+  "fbx": "Hit To The Legs.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_se_relever",
+  "fbx": "Getting Up (3).fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_coup_de_pied",
+  "fbx": "Soccer Game Pack/soccer penalty kick.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_drop",
+  "fbx": "Soccer Game Pack/goalkeeper drop kick.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_poussee",
+  "fbx": "Pushing.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_joie",
+  "fbx": "Victory.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_joie_poing",
+  "fbx": "Fist Pump.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_deception",
+  "fbx": "Defeat.fbx",
+  "sur_place": false
+ },
+ {
+  "nom": "mx_plongeon",
+  "fbx": "Soccer Game Pack/goalkeeper diving save.fbx",
+  "sur_place": false
+ }
+]

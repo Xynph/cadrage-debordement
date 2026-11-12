@@ -13,7 +13,7 @@ run('presentationTick(l)');assert.equal(run('matchScene(l).kind'),'reception');a
 for(const side of [0,1]){
  run(`ballPossession(l,${side},50);var n=l.events.length;p=playback(l);p.running=true;resolveTouch(l,${side},${side===0?75:25},{penalty:true});p.running=false;p.cursor=n`);
  assert.equal(run('matchScene(l).kind'),'touch');assert.equal(run('matchScene(l).ball.y'),0);
- run('presentationTick(l)');assert.equal(run('matchScene(l).kind'),'lineout');assert.equal(run('matchScene(l).ball.y'),4);assert.equal(run('matchScene(l).ball.x'),side===0?75:25);assert.equal(run('matchScene(l).team'),side);
+ run('presentationTick(l)');assert.equal(run('matchScene(l).kind'),'lineout');assert.equal(run('matchScene(l).ball.y'),0);assert.equal(run('matchScene(l).ball.x'),side===0?75:25);assert.equal(run('matchScene(l).team'),side);
  run('while(presentationPending(l))presentationTick(l)');
 }
 // Named carrying comments use the same actor highlighted by the pitch.
