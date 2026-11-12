@@ -39,9 +39,14 @@ func run() -> void:
 	app.timer.stop()
 	app._navigate("Match")
 	await settle()
-	app.match_screen._select_tab("Journal")
+	# Le direct est la vue contextuelle du match : le journal s'ouvre dans son tiroir.
+	var director: Node = app.contextual_director
+	var surface: Node = director.view if is_instance_valid(director) and director.active() and director.kind == "live" else null
+	check(surface != null and surface.has_method("_toggle_drawer"), "Direct contextuel ouvert")
+	if surface != null and surface.drawer_tab != "Journal":
+		surface._toggle_drawer("Journal")
 	await settle()
-	journal=app.body.find_child("MatchJournal",true,false)
+	journal=surface.journal if surface != null else null
 	check(journal!=null,"Journal présent")
 	var model_before := JSON.stringify(app.model)
 	var disk_path := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
@@ -105,9 +110,15 @@ func run() -> void:
 	check(not is_instance_valid(dialog),"Changement de contexte ferme les faits de l’ancienne carrière")
 	await key(journal.review)
 	dialog=journal.find_child("MatchActionReview",true,false)
+	# Pendant le direct, le match garde la main (immersion) : la navigation est refusée et la
+	# relecture reste celle du match en cours, jusqu'à sa fermeture.
 	app._navigate("Bureau")
 	await settle()
-	check(not is_instance_valid(dialog),"Navigation abandonne la relecture locale")
+	check(app.route == "Match" and is_instance_valid(dialog) and dialog.events == original.events, "Navigation refusée pendant le direct, relecture du match conservée")
+	if is_instance_valid(dialog):
+		await key(dialog.get_ok_button())
+		await settle()
+	check(not is_instance_valid(dialog),"Fermeture libère la relecture")
 	FileAccess.open(proof.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures},"  "))
 	print("Action review: %d checks, %d failures" % [checks,failures.size()])
 	app.bridge.stop()

@@ -61,6 +61,10 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 	var talk := _talk()
 	var live := _live()
 	var invitation: Variant = app.model.get("clubLife", {}).get("sceneInvitations", {}).get("active")
+	# Match en temps forts : le dernier temps fort de la période se regarde avant la
+	# causerie ou le débrief. La régie rappelle `sync` quand il est fini.
+	if not talk.is_empty() and kind == "live" and active() and not live.is_empty() and view.has_method("retient_la_causerie") and view.retient_la_causerie(live):
+		talk = {}
 	if not talk.is_empty():
 		next = "locker"
 		data = talk

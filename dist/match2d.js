@@ -27,7 +27,7 @@ function matchScene(l){
    if(attack&&slot<8){x=formation.x-dir*(attackPlan==='conquete'?3+slot%3*1.5:6+slot%3*3);y=ball.y+(Math.floor(slot/3)-1)*(attackPlan==='conquete'?3:5)+(slot%3-1)*2}
    if(!attack){x=formation.x+dir*(defencePlan==='pression'?4:defencePlan==='prudente'?14:9)+(slot%3);y=slot<8?10+slot*6.5:5+(slot-8)*10;if(slot===14)x+=dir*(defencePlan==='prudente'?15:10)}
   }
-  if(record?.move==='maul'&&side===team&&slot<8){x=ball.x+(side===0?-1:1)*(2+slot%3*1.3);y=ball.y+(Math.floor(slot/3)-1)*2.5}
+  if((record?.move==='maul'||record?.porte===true)&&side===team&&slot<8){x=ball.x+(side===0?-1:1)*(2+slot%3*1.3);y=ball.y+(Math.floor(slot/3)-1)*2.5}
   if(lineoutNext&&slot<8){const spot=lineoutSpot(side,slot,clamp(lineoutNext.to.x,5,95),lineoutNext.team,y);x+=(spot.x-x)*.5;y+=(spot.y-y)*.5} // à mi-chemin, pas encore alignés
   const featured=id===record?.actor;
   if(featured&&['carry','turnover','reception','try','setpiece-win','setpiece-loss','kick','goal','miss'].includes(kind)){x=['kick','goal','miss'].includes(kind)?origin.x:ball.x;y=['kick','goal','miss'].includes(kind)?origin.y:ball.y}

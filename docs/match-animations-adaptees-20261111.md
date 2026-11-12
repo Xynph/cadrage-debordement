@@ -7,9 +7,28 @@ Le joueur du match 3D (`assets/match3d/quaternius-rugby-athlete.glb`, 31 os) n'a
 - **Éteint par défaut.** Sans la variable `CD_MATCH_ANIMATIONS`, rien n'est chargé et le match est identique.
 - Sans variable, le jeu cherche aussi `animations/mixamo-match.res` à côté de son exécutable (voir `docs/gabi-mixamo-20261111.md`).
 - `CD_MATCH_ANIMATIONS=<chemin absolu d'un .glb>` : la bibliothèque est lue au lancement du match et ajoutée au lecteur d'animation de chaque joueur (bibliothèque `mx`).
-- **Première étape : les déplacements seulement.** Repos, puis quatre paliers selon la vitesse au sol (marche, trot, course, sprint) au lieu de deux, avec hystérésis. L'animation avance toujours à la distance parcourue.
-- Les gestes (touche, passe, plaquage, essai) restent ceux de `match_gestes.gd`. Les autres clips de la bibliothèque (lancer, réception, plaqué, relevé, coup de pied, joie…) sont chargés mais pas encore joués : c'est l'étape suivante.
+- **Déplacements.** Repos, puis quatre paliers selon la vitesse au sol (marche, trot, course, sprint) au lieu de deux, avec hystérésis. L'animation avance toujours à la distance parcourue.
+- **Gestes (ajout du 11 novembre au soir, voir plus bas).** Lancer en touche, réception, plaqué puis relevé, plaquage, coup de pied et drop, joie et déception sont joués une fois sur les faits du moteur ; les poses procédurales de `match_gestes.gd` restent le repli quand un clip manque.
 - Fichier introuvable, illisible ou incomplète (un palier manquant) : avertissement, clips d'origine conservés.
+
+## Gestes joués avec la bibliothèque (11 novembre au soir)
+
+Toujours sans effet sans `CD_MATCH_ANIMATIONS`. Interface de la vue : `NativeMatchView.jouer_geste(id, nom, début, fin, ancré, suite)` joue un clip une fois, au temps (et non à la distance), puis rend la main au déplacement ; `geste_adapte(id)` dit si un geste adapté est en cours (le geste procédural correspondant ne s'applique pas). Faux sans bibliothèque ou sans le clip : l'appelant garde sa pose procédurale.
+
+| Fait du moteur | Qui | Clip | Calage |
+| --- | --- | --- | --- |
+| Touche (geste de `match_gestes.gd`) | lanceur | `mx_lancer_touche` | lâcher du clip (1,55 s) à l'instant du lancer du geste ; le ballon reste entre les paumes du clip jusque-là |
+| `goal`, `miss` (pénalité, transformation), `kick` | joueur mis en avant | `mx_coup_de_pied` | contact du pied (0,75 s) au départ du ballon ; la course d'élan est coupée |
+| `kickoff`, `drop22`, `goalLine` | botteur, seulement s'il est au ballon | `mx_drop` | contact (2,05 s) au départ du ballon |
+| `reception` | receveur | `mx_reception_haute` après un jeu au pied, sinon `mx_reception` | prise ; le clip est coupé juste après (sa suite d'origine est une chute) |
+| fin de course `carry` (régie des temps forts) | porteur, adversaire le plus proche à 4 m | `mx_plaque_cote` ou `mx_plaque_jambes`, puis `mx_se_relever` ; `mx_plaquage` | impact au sol 0,35 s après le contact ; le joueur au sol garde sa place, puis rejoint celle de la scène ; pas de plaquage avant l'essai du même temps fort, ni sans adversaire à 4 m dans la scène (le porteur ne tombe pas seul) |
+| essai aplati | marqueur ; partenaires proches ; trois adversaires les plus proches | `mx_se_relever` puis `mx_joie_poing` ; `mx_joie` / `mx_joie_poing` ; `mx_deception` | 0,3 s après l'aplatissement ; le geste tient l'image 2,6 s au lieu de 1,6 s |
+
+Les clips qui se déplacent (élan du lancer et du coup de pied, chute du plaqué) sont ramenés sur place au chargement (`_retirer_deplacement` : déplacement horizontal du bassin retiré, verticale gardée) : le joueur reste où la scène le place.
+
+Ballon porté : la défense engage aussi les deux autres avants de son alignement, liés sur les flancs (cinq défenseurs liés au lieu de trois, les deux autres restaient debout à côté). Mesuré sur la séquence témoin : défenseurs liés penchés de 44 à 46° avec la bibliothèque, 28 à 43° sans (inclinaison tête-bassin). Le repos Mixamo n'écrase pas la pose de liaison : les liés gardent leur posture ; c'étaient les défenseurs non liés qui restaient droits.
+
+Test : `tests/godot-match-gestes-adaptes.cjs` (bibliothèque fabriquée à partir des clips d'origine du joueur : contrôle de l'enchaînement, pas de l'allure des clips). Contrôle visuel avec la vraie bibliothèque : séquence témoin (Xvfb, rendu logiciel) et vidéos de la PR.
 
 ## Pourquoi la bibliothèque n'est pas dans le dépôt
 
@@ -59,6 +78,7 @@ Méthode : les deux squelettes sont en pose T au repos. Pour chaque os, on prend
 - **Aucune image du match réel avec la bibliothèque** au moment de ce commit (ni Linux, ni Windows). L'interaction avec les couches existantes n'a pas été regardée : appuis au sol (`Presentation.support_feet`), crochets (`match_cut.gd`), tenue du ballon, gestes. C'est la première chose à capturer sur le PC.
 - Les proportions diffèrent (cuisse courte du joueur) : les pieds flottent de quelques centimètres en course. La correction d'appuis du jeu devrait l'absorber, à constater.
 - Les fondus entre paliers ne sont pas synchronisés sur la foulée (fondu simple de 0,18 s).
-- « Run To Dive » de Mixamo est un plongeon vers le bas (dans l'eau) : inutilisable pour un essai. Le clip `mx_plongeon` vient d'un arrêt de gardien, à remplacer.
+- « Run To Dive » de Mixamo est un plongeon vers le bas (dans l'eau) : inutilisable pour un essai. Le clip `mx_plongeon` vient d'un arrêt de gardien, à remplacer ; il n'est pas joué (le plongeon de l'essai reste procédural).
+- Les clips de réception d'origine finissent par une chute : seule la prise est jouée. Le lancer de touche Mixamo est une remise en jeu de football (deux mains au-dessus de la tête), sans élan une fois ramené sur place.
 - Mixamo n'a aucun geste propre au rugby (passe à deux mains, mêlée, ruck, ascenseur) : à produire autrement.
 - Cette branche part de #570 (rendu moderne), qui contient #554 (gestes).

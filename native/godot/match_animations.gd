@@ -13,10 +13,11 @@ extends RefCounted
 ## les animations d'origine viennent de Mixamo, dont la licence interdit de
 ## redistribuer les fichiers. Voir docs/match-animations-adaptees-20261111.md.
 ##
-## Première étape : seuls les déplacements changent (repos, marche, trot,
-## course, sprint). Les gestes (touche, passe, plaquage) restent ceux de
-## match_gestes.gd ; les autres clips de la bibliothèque sont chargés mais pas
-## encore joués.
+## Déplacements : repos, marche, trot, course, sprint selon la vitesse au sol.
+## Gestes (11 novembre 2026, suite) : lancer en touche, réception, plaqué et
+## relevé, plaquage, coup de pied et drop, joie et déception, joués une fois par
+## la vue (NativeMatchView.jouer_geste) sur les faits du moteur ; sans le clip,
+## la pose procédurale de match_gestes.gd reste le repli.
 
 const DonneesPrivees = preload("res://donnees_privees.gd")
 const FICHIER := "mixamo-match.res"
@@ -32,6 +33,27 @@ const PALIERS := [
 ## Marge sous le seuil avant de redescendre d'un palier (évite l'alternance).
 const HYSTERESIS := 0.45
 const REPOS := "mx_repos_souffle"
+## Gestes joués une fois : nom du geste -> clip, et instant clé du clip (secondes) :
+## lâcher du ballon, prise, impact au sol, contact du pied, bras levés.
+const GESTES := {
+	"lancer": {"clip": "mx_lancer_touche", "cle": 1.55},
+	"reception": {"clip": "mx_reception", "cle": 1.45},
+	"reception_haute": {"clip": "mx_reception_haute", "cle": 1.5},
+	"plaque_cote": {"clip": "mx_plaque_cote", "cle": 1.45},
+	"plaque_jambes": {"clip": "mx_plaque_jambes", "cle": 1.0},
+	"plaquage": {"clip": "mx_plaquage", "cle": 1.1},
+	"se_relever": {"clip": "mx_se_relever", "cle": 1.6},
+	"coup_de_pied": {"clip": "mx_coup_de_pied", "cle": 0.75},
+	"drop": {"clip": "mx_drop", "cle": 2.05},
+	"joie": {"clip": "mx_joie", "cle": 0.8},
+	"joie_poing": {"clip": "mx_joie_poing", "cle": 0.8},
+	"deception": {"clip": "mx_deception", "cle": 0.8},
+}
+## Ces clips d'origine se déplacent (élan, chute, pas de course) : le joueur du match
+## garde sa place, décidée par la scène. Leur déplacement horizontal est retiré au
+## chargement ; seuls le corps et les appuis bougent sur place.
+const SUR_PLACE := ["mx_lancer_touche", "mx_coup_de_pied", "mx_drop", "mx_plaque_cote", "mx_plaque_jambes",
+	"mx_plaquage", "mx_reception", "mx_reception_haute", "mx_se_relever", "mx_joie_poing", "mx_deception", "mx_joie"]
 
 var _bibliotheque: AnimationLibrary
 var _chemin_squelette := ""
@@ -111,9 +133,82 @@ func equiper(lecteur: AnimationPlayer) -> bool:
 		for palier: Dictionary in PALIERS:
 			_bibliotheque.get_animation(palier.clip).loop_mode = Animation.LOOP_LINEAR
 		_bibliotheque.get_animation(REPOS).loop_mode = Animation.LOOP_LINEAR
+		if squelette:
+			_retirer_deplacement(squelette, lecteur)
 	if not lecteur.has_animation_library(PREFIXE):
 		lecteur.add_animation_library(PREFIXE, _bibliotheque)
 	return true
+
+
+## Retire le déplacement horizontal du bassin (os « Body ») des clips SUR_PLACE ; les
+## autres pistes de position (pieds libres de ce modèle, sous la même racine) suivent le
+## même décalage. La verticale (saut, chute) est gardée.
+func _retirer_deplacement(squelette: Skeleton3D, lecteur: AnimationPlayer) -> void:
+	var corps := squelette.find_bone("Body")
+	if corps < 0:
+		return
+	var parent := squelette.get_bone_parent(corps)
+	# Verticale du terrain exprimée dans l'espace de l'os parent du bassin.
+	var chaine := Transform3D.IDENTITY
+	var noeud: Node = squelette
+	var racine := lecteur.get_node_or_null(lecteur.root_node)
+	while noeud != null and noeud != racine and noeud is Node3D:
+		chaine = (noeud as Node3D).transform * chaine
+		noeud = noeud.get_parent()
+	var haut := chaine.basis.inverse() * Vector3.UP
+	if parent >= 0:
+		haut = squelette.get_bone_global_rest(parent).basis.inverse() * haut
+	haut = haut.normalized()
+	for nom: String in SUR_PLACE:
+		if not _bibliotheque.has_animation(nom):
+			continue
+		var animation := _bibliotheque.get_animation(nom)
+		var piste_corps := -1
+		var positions: Array[int] = []
+		for piste in animation.get_track_count():
+			if animation.track_get_type(piste) != Animation.TYPE_POSITION_3D:
+				continue
+			var chemin := animation.track_get_path(piste)
+			if chemin.get_subname_count() == 0:
+				continue
+			var os := squelette.find_bone(str(chemin.get_subname(0)))
+			if os < 0 or squelette.get_bone_parent(os) != parent:
+				continue
+			positions.append(piste)
+			if os == corps:
+				piste_corps = piste
+		if piste_corps < 0 or animation.track_get_key_count(piste_corps) == 0:
+			continue
+		var depart: Vector3 = animation.position_track_interpolate(piste_corps, 0.0)
+		var decalages: Dictionary = {}
+		for piste: int in positions:
+			for cle in animation.track_get_key_count(piste):
+				var instant := animation.track_get_key_time(piste, cle)
+				if not decalages.has(instant):
+					var ecart: Vector3 = animation.position_track_interpolate(piste_corps, instant) - depart
+					decalages[instant] = ecart - haut * ecart.dot(haut)
+		for piste: int in positions:
+			for cle in animation.track_get_key_count(piste):
+				var valeur: Vector3 = animation.track_get_key_value(piste, cle)
+				animation.track_set_key_value(piste, cle, valeur - decalages[animation.track_get_key_time(piste, cle)])
+
+
+## Clip d'un geste joué une fois (nom de GESTES), vide s'il manque à la bibliothèque.
+func geste(nom: String) -> StringName:
+	if _bibliotheque == null or not GESTES.has(nom) or not _bibliotheque.has_animation(GESTES[nom].clip):
+		return StringName()
+	return StringName("%s/%s" % [PREFIXE, GESTES[nom].clip])
+
+
+## Instant clé d'un geste dans son clip (lâcher, prise, impact, contact du pied).
+func instant_cle(nom: String) -> float:
+	return float(GESTES[nom].cle) if GESTES.has(nom) else 0.0
+
+
+func duree(nom: String) -> float:
+	if geste(nom).is_empty():
+		return 0.0
+	return _bibliotheque.get_animation(GESTES[nom].clip).length
 
 
 func repos() -> StringName:
