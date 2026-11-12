@@ -15,7 +15,7 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id, payload)
 	var until := Time.get_ticks_msec() + 45000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
-	check(not app.waiting and app.bridge.last_response_ok, "Commande native " + id)
+	check(not app.waiting and app.bridge.last_response_ok, "Commande native " + id + " · " + str(app.last_error))
 	await settle()
 func capture(id: String) -> void:
 	if DisplayServer.get_name() == "headless": return
@@ -106,7 +106,9 @@ func run() -> void:
 		await capture("staff-" + str(size.x))
 		app._navigate("Formation"); await settle(); menu_geometry()
 		check(app.body.find_child("CarnetDevelopment", true, false) != null or app.body.find_child("ImmersiveAcademy", true, false) != null, "Écran formation natif")
-		check(contains_text(app.body, "15"), "Quinze espoirs réels au centre de simulation")
+		# Le centre n'a plus un effectif fixe de quinze : l'écran doit afficher le nombre réel d'espoirs du modèle.
+		var academy_count: int = app.model.decisions.development.academy.size()
+		check(academy_count > 0 and contains_text(app.body, "espoirs au centre") and contains_text(app.body, str(academy_count)), "Espoirs réels au centre de simulation (%d)" % academy_count)
 		await capture("formation-" + str(size.x))
 		app._navigate("Préparation"); await settle()
 		check(await click(app.body.find_child("PreparationTabConsignes", true, false) as Button), "Ouvrir les consignes")
@@ -172,7 +174,12 @@ func run() -> void:
 	await capture("formation-promue")
 	await command("auto_lineup")
 	if not app.model.selection.valid: await command("promote_cover", {"confirmed":true})
-	await command("begin_match"); await command("delegate"); await command("finish_round")
+	# Calendrier quotidien : le coup d'envoi n'est ouvert que le jour du match, après les rendez-vous du club.
+	if not await ContextualFlow.prepare_match_day(app, self, check): quit(1); return
+	await command("begin_match"); await ContextualFlow.skip_talk(app, self, "pre", check)
+	await command("delegate")
+	var previous_week: int = app.model.get("meta", {}).get("week", -1)
+	await command("finish_round"); await ContextualFlow.finish_match_week(app, self, check, previous_week)
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.decisions.report is Dictionary and not app.model.decisions.report.notes.is_empty(), "Rapport réel conservé après validation")
 	app._navigate("Match"); await settle()

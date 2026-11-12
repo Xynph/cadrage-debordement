@@ -359,10 +359,14 @@ func _check_mixamo_profile(packed: PackedScene) -> void:
 	# Regard : saccades autour du joueur, carnet consulté, puis retour.
 	player.advance(1.2)
 	check(player.current_animation == "repos", "Repos avant le contrôle du regard")
+	# Les saccades sont tirées au hasard (attente 0,7 à 2,6 s, 30 % pile dans les yeux, sinon petit décalage) :
+	# une fenêtre fixe de 3 s pouvait ne contenir aucun décalage mesurable. On observe jusqu'à 12 s, sans rien
+	# relâcher sur le contrat : un décalage > 0,05 apparaît, et le regard reste petit (< 0,5) vers le joueur.
 	var moved := false
-	for i in 60:
+	for i in 240:
 		visage._process(0.05)
 		moved = moved or visage.gaze.length() > 0.05
+		if moved: break
 	check(moved and visage.gaze.length() < 0.5 and visage.look == "joueur", "Petites saccades autour du joueur")
 	portrait._play_gesture(&"regarde_bas")
 	for i in 20: visage._process(0.05)

@@ -183,6 +183,8 @@ func _run() -> void:
 	app.bridge.stop()
 	deadline = Time.get_ticks_msec() + 2500
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
-	_check(app.bridge.child_pid <= 0 and not OS.is_process_running(pid), "Owned worker closes")
+	# Sous Unix, interroger un enfant déjà récolté fait journaliser une ERREUR au moteur : on lit /proc.
+	var worker_gone: bool = not DirAccess.dir_exists_absolute("/proc/%d" % pid) if OS.has_feature("linux") else not OS.is_process_running(pid)
+	_check(app.bridge.child_pid <= 0 and worker_gone, "Owned worker closes")
 	print(JSON.stringify({"checks":checks,"failures":failures,"passed":failures.is_empty()}))
 	quit(0 if failures.is_empty() else 1)

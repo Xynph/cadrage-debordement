@@ -189,13 +189,18 @@ func _model(model: Dictionary):
  else:
   push_error("Contenu, ordre ou identifiant de réponse incorrect")
   quit(1)
+# Sous Unix, le moteur Godot journalise une ERREUR quand on interroge un enfant déjà récolté par le pont ;
+# la disparition se lit alors dans /proc (une entrée zombie resterait visible, donc un enfant non récolté échoue).
+func _gone(process_id: int) -> bool:
+ if OS.has_feature("linux"): return not DirAccess.dir_exists_absolute("/proc/%d" % process_id)
+ return not OS.is_process_running(process_id)
 func _process(_delta):
  if Time.get_ticks_msec() > deadline:
   quit(1)
  if bridge.child_pid == -1 and not failure.is_empty():
   exited_frames += 1
   if exited_frames >= 3:
-   if pid <= 0 or OS.is_process_running(pid) or (MODE == "fragments" and (stage != 2 or not failure.contains("identifiant inattendu"))):
+   if pid <= 0 or not _gone(pid) or (MODE == "fragments" and (stage != 2 or not failure.contains("identifiant inattendu"))):
     quit(1)
    else:
     print("GODOT_TRANSPORT_PASS ",MODE)
@@ -255,12 +260,17 @@ func _initialize():
 func _begin():
  bridge.start(${JSON.stringify(temp.replaceAll('\\','/')+'/profile')})
  pid = bridge.child_pid
+# Sous Unix, le moteur Godot journalise une ERREUR quand on interroge un enfant déjà récolté par le pont ;
+# la disparition se lit alors dans /proc (une entrée zombie resterait visible, donc un enfant non récolté échoue).
+func _gone(process_id: int) -> bool:
+ if OS.has_feature("linux"): return not DirAccess.dir_exists_absolute("/proc/%d" % process_id)
+ return not OS.is_process_running(process_id)
 func _process(_delta):
  frames += 1
  if frames > 6000:
   _failed("Timeout runtime")
  if stage == 5 and bridge.child_pid == -1:
-  if frames < 3 or OS.is_process_running(pid):
+  if frames < 3 or not _gone(pid):
    _failed("Pont bloquant ou enfant encore actif")
   else:
    print("GODOT_BRIDGE_PASS frames=", frames)

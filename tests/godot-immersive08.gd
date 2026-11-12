@@ -1115,19 +1115,23 @@ func run() -> void:
 				"SelectedPlayerCard":Rect2(2000,207,528,432), "OpenPlayerFull":Rect2(2019,587,489,36)})
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)
-			check(row_buttons.size() == mini(24,app.model.squad.size()), "24 lignes du gabarit approuvé, pagination des joueurs supplémentaires")
+			# La pagination à 24 lignes a été remplacée par une table complète à défilement interne
+			# (voir godot-squad-column-sort : « au-delà de l'ancienne limite ») : chaque joueur du groupe a sa ligne.
+			check(row_buttons.size() == app.model.squad.size(), "Une ligne par joueur du groupe dans la table à défilement interne")
 			var all_ids: Array = row_buttons.map(func(node:Node):return str(node.get_meta("player_id")))
-			var next_page: Button = app.find_child("RosterPaginationNext",true,false)
-			check(next_page != null, "Pagination conservée depuis natif07")
-			while next_page != null and not next_page.disabled:
-				next_page.pressed.emit()
+			check(app.find_child("RosterPaginationNext",true,false) == null, "Plus de pagination : le groupe entier défile dans la table")
+			check(all_ids.size()==app.model.squad.size(), "Tout le groupe consultable sans changer de page")
+			check(all_ids.all(func(id):return all_ids.count(id)==1), "Aucun joueur omis ou dupliqué dans la table")
+			var roster_scroll := app.find_child("SquadScroll",true,false) as ScrollContainer
+			check(roster_scroll != null, "Conteneur de défilement interne de la table")
+			var saved_scroll: int = 0
+			if roster_scroll != null:
+				roster_scroll.scroll_vertical = 120
 				await settle()
-				all_ids.append_array(list.get_children().filter(func(node:Node):return node is Button).map(func(node:Node):return str(node.get_meta("player_id"))))
-			check(all_ids.size()==app.model.squad.size(), "Tout le groupe consultable à travers les pages")
-			check(all_ids.all(func(id):return all_ids.count(id)==1), "Aucun joueur omis ou dupliqué dans la pagination")
-			var saved_page: int = app.management_ui.roster.page
+				saved_scroll = roster_scroll.scroll_vertical
 			app._navigate("Bureau");app._navigate("Effectif");await settle()
-			check(int(app.management_ui.roster.page)==saved_page,"Retour respecte la page volontaire sans révéler à nouveau le dossier")
+			roster_scroll = app.find_child("SquadScroll",true,false) as ScrollContainer
+			check(roster_scroll != null and roster_scroll.scroll_vertical == saved_scroll, "Retour respecte le défilement volontaire sans révéler à nouveau le dossier")
 			list=app.find_child("ImmersiveRosterRows",true,false)
 			for id in ["RosterColumnSalary", "RosterColumnFatigue", "RosterColumnPotential", "PlayerDossier", "OpenPlayerFull", "OfferRenewal", "OpenComparison"]:
 				check(app.find_child(id, true, false) != null, "Fonction Effectif : " + id)
@@ -1147,7 +1151,7 @@ func run() -> void:
 			search.text = ""
 			search.text_changed.emit("")
 			await settle()
-			check(list.get_children().filter(func(node:Node):return node is Button).size() == mini(24,app.model.squad.size()), "Effacer la recherche retrouve le groupe paginé")
+			check(list.get_children().filter(func(node:Node):return node is Button).size() == app.model.squad.size(), "Effacer la recherche retrouve le groupe entier")
 			await capture("02-effectif-2560x1440")
 			app.find_child("OpenPlayerFull",true,false).pressed.emit()
 			await settle()

@@ -22,13 +22,19 @@ work="$(mktemp -d)"
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 # Motifs des sauts « faute de moteur » écrits par les suites (node:test TAP ou console).
 engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absent|SDK et worker knowledge requis|Set CD_GODOT_EXECUTABLE|NON EXÉCUTÉ \(CD_GODOT'
+# Suites de rendu volontairement longues (parcours complets en rendu logiciel llvmpipe) : plafond relevé
+# au cas par cas, jamais pour l'ensemble. Les assertions elles-mêmes ne changent pas.
+declare -A suite_limits=(
+  [tests/godot-art-direction.cjs]=600
+  [tests/godot-match-temps-forts.cjs]=600
+)
 failures=0; executed=0; other_skips=0
 : > "$work/results.md"
 for test in "${suites[@]}"; do
   executed=$((executed+1))
   echo "::group::$test"
   start=$SECONDS
-  limit="${CD_GODOT_SUITE_LIMIT:-300}s"
+  limit="${CD_GODOT_SUITE_LIMIT:-${suite_limits[$test]:-300}}s"
   log="$work/$(basename "$test").log"
   t0="$(date +%s%N)"
   if [[ -x /usr/bin/time ]]; then

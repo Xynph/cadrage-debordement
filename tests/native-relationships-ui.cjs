@@ -3,7 +3,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 if(!godot){console.log('SKIP native-relationships-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-relationships-ui-')),script=path.join(root,'relations.gd');
+const flow=path.resolve(__dirname,'helpers/contextual_flow.gd').replace(/\\/g,'/');
 fs.writeFileSync(script,`extends SceneTree
+const ContextualFlow = preload("${flow}")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -49,6 +51,8 @@ func run() -> void:
  await wait_model()
  app.timer.stop()
  await command("new_career", {"mode":"common", "club":29})
+ # Une carrière neuve ouvre d'abord son rendez-vous de direction : tant qu'il n'est pas traité, le moteur refuse les décisions.
+ await ContextualFlow.settle_club_meetings(app, self, check)
  if not failures.is_empty():
   print("RELATIONS UI : démarrage refusé ; contrôles de vues non exécutés")
   app.bridge.stop()
@@ -64,7 +68,7 @@ func run() -> void:
    if page != null:
     check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Bornes " + route + " " + str(resolution))
     for b in page.find_children("*", "Button", true, false):
-     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= 40, "Action clavier et taille " + b.name)
+     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= 40, "Action clavier et taille " + b.name + " · focus " + str(b.focus_mode) + " · taille " + str(b.size) + " · " + str(resolution))
    await capture(route + "-" + str(resolution.x))
  await render("Vestiaire")
  var id: String = str(app.model.clubLife.relationships.event.playerId)
@@ -83,9 +87,17 @@ func run() -> void:
  await press("DuoAction_duo")
  check(app.model.clubLife.relationships.pairs.size() == 1, "Duo réel")
  await command("auto_lineup")
+ # Calendrier quotidien : coup d'envoi le jour du match seulement, causerie d'avant-match, puis clôture de la semaine.
+ if not await ContextualFlow.prepare_match_day(app, self, check):
+  app.bridge.stop()
+  quit(1)
+  return
+ var previous_week: int = int(app.model.meta.week)
  await command("begin_match")
+ await ContextualFlow.skip_talk(app, self, "pre", check)
  await command("delegate")
  await command("finish_round")
+ await ContextualFlow.finish_match_week(app, self, check, previous_week)
  await render("Rivalités")
  check(app.model.clubLife.clubWorld.events.size() == 15, "Quinze résultats réellement observés")
  for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:

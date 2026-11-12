@@ -18,7 +18,7 @@ func wait_model() -> void:
 func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id, payload)
 	await wait_model()
-	check(app.bridge.last_response_ok, "Commande native " + id)
+	check(app.bridge.last_response_ok, "Commande native " + id + " · " + str(app.last_error))
 func named(node: Node, id: String) -> Node:
 	if str(node.name) == id: return node
 	for child in node.get_children():
@@ -313,6 +313,9 @@ func run() -> void:
 	check(not guide.expanded and not guide.speech.speaking, "Dialogue : aucune parole ou focus pris par le guide")
 	check(dialog_focus != null and dialog.gui_get_focus_owner() == dialog_focus, "Focus de confirmation conservé")
 	dialog.hide(); dialog.queue_free(); await process_frame
+	# Calendrier quotidien : le coup d'envoi n'est ouvert que le jour du match, après les rendez-vous du club.
+	if not await ContextualFlow.prepare_match_day(app, self, check): quit(1); return
+	var previous_week: int = int(app.model.get("meta", {}).get("week", -1))
 	app._navigate("Match")
 	app.coach = guide
 	await command("begin_match")
@@ -329,6 +332,7 @@ func run() -> void:
 	await process_frame
 	check(app.model.live.finished and not guide.is_visible_in_tree() and not app.root_content.is_visible_in_tree(), "Résultat délégué : immersion conservée jusqu’à validation")
 	await command("finish_round")
+	await ContextualFlow.finish_match_week(app, self, check, previous_week)
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	app.coach = null
 	app._navigate("Bureau"); guide.refresh(); guide.open_help()

@@ -17,7 +17,7 @@ func settle() -> void:
 func wait_command() -> void:
  var deadline := Time.get_ticks_msec() + 45000
  while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
- check(not app.waiting and app.bridge.last_response_ok, "Commande réelle acceptée")
+ check(not app.waiting and app.bridge.last_response_ok, "Commande réelle acceptée · " + str(app.last_error))
  await settle()
 func command(id: String, payload: Dictionary = {}) -> void:
  app._command(id, payload); await wait_command()
@@ -68,11 +68,19 @@ func run() -> void:
  page.find_child("SupportBriefing_pack",true,false).pressed.emit(); await wait_command()
  check(app.model.clubLife.clubSupport.briefing.selected == "pack", "Briefing réel enregistré")
  page = await open_tab(1)
- var injured: Dictionary = app.model.clubLife.clubSupport.medical.players[0]
- var picker: OptionButton = page.find_child("MedicalProtocol_"+str(injured.id).replace(":","_"),true,false)
- picker.select(0)
- page.find_child("MedicalChoose_"+str(injured.id).replace(":","_"),true,false).pressed.emit(); await wait_command()
- check(app.model.clubLife.clubSupport.medical.players[0].protocol == "prudent", "Protocole du contrôle médical")
+ # La liste médicale contient aussi les joueurs en reprise (sans blessure) : le choix de protocole ne concerne que les blessés.
+ var injured: Dictionary = {}
+ for candidate: Dictionary in app.model.clubLife.clubSupport.medical.players:
+  if int(candidate.injury) > 0: injured = candidate; break
+ check(not injured.is_empty(), "Joueur blessé à suivre (liste : " + str(app.model.clubLife.clubSupport.medical.players.size()) + ")")
+ if not injured.is_empty():
+  var picker: OptionButton = page.find_child("MedicalProtocol_"+str(injured.id).replace(":","_"),true,false)
+  check(picker != null, "Sélecteur de protocole du blessé")
+  if picker != null:
+   picker.select(0)
+   page.find_child("MedicalChoose_"+str(injured.id).replace(":","_"),true,false).pressed.emit(); await wait_command()
+   var followed: Array = app.model.clubLife.clubSupport.medical.players.filter(func(x: Dictionary): return x.id == injured.id)
+   check(not followed.is_empty() and followed[0].protocol == "prudent", "Protocole du contrôle médical")
  page = await open_tab(2)
  var selected: Dictionary = app.model.clubLife.clubSupport.agents.players[0]
  var q: Dictionary = selected.quotes.filter(func(x:Dictionary):return x.policy=="equilibre")[0]
