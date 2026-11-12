@@ -510,8 +510,12 @@ func reception() -> void:
 	if list == null: return
 	# Les courriers d'une même rencontre ou conférence sont groupés sous un en-tête repliable : on déplie chaque
 	# groupe pour que tous les messages du moteur soient consultables, puis on ne compte que les lignes de message.
+	# La boîte regroupe les messages du moteur, les avis du calendrier et les invitations de presse : le total attendu est
+	# celui que la Réception construit elle-même, et il couvre au moins chaque message du moteur.
+	var expected_total: int = preload("res://ui/immersive08/reception_canvas.gd")._messages(app).size()
+	check(expected_total >= app.model.messages.size(), "La boîte contient au moins chaque message du moteur")
 	list = await expand_threads()
-	check(message_rows(list).size() == app.model.messages.size(), "Chaque message reçu du moteur est consultable")
+	check(message_rows(list).size() == expected_total, "Chaque message reçu du moteur est consultable")
 	var portrait := app.find_child("Art_mail_staff", true, false) as TextureRect
 	check(portrait != null, "Illustration de la Réception chargée en jeu")
 	if portrait != null:
@@ -534,7 +538,7 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
-	check(message_rows(list).size() == app.model.messages.size()-1, "Le marquage explicite retire le message des non lus")
+	check(message_rows(list).size() == expected_total-1, "Le marquage explicite retire le message des non lus")
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
@@ -557,7 +561,7 @@ func reception() -> void:
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
 	list = await expand_threads()
-	check(message_rows(list).size() == app.model.messages.size(), "Réouvrir restaure le message dans la boîte")
+	check(message_rows(list).size() == expected_total, "Réouvrir restaure le message dans la boîte")
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")

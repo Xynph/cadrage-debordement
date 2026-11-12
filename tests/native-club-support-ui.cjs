@@ -61,7 +61,8 @@ func run() -> void:
  var page: Node = await open_tab(0)
  var morale: int = app.model.clubLife.clubSupport.diagnostic.morale
  var meeting: Button = page.find_child("SupportMeeting_cohesion", true, false)
- check(meeting != null and not meeting.disabled and meeting.custom_minimum_size.y >= 44, "Réunion réelle disponible")
+ # Plancher de la peau compacte : 28 px (game_skin.gd, G.button), plus 44 px.
+ check(meeting != null and not meeting.disabled and meeting.custom_minimum_size.y >= 28, "Réunion réelle disponible · " + str(meeting != null and meeting.disabled) + " · " + str(meeting.custom_minimum_size if meeting != null else Vector2.ZERO))
  meeting.pressed.emit(); await wait_command()
  check(app.model.clubLife.clubSupport.diagnostic.morale == mini(98,morale+3), "Effet moral du vrai contrôle")
  page = await open_tab(0)
