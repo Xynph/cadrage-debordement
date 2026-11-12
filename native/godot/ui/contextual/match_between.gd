@@ -503,12 +503,15 @@ func _fil_defilant(parent: Control) -> void:
 	defilant.add_child(fil)
 
 ## Barre de commandes sur une ligne.
-func _barre(parent: Control, avec_etat: bool) -> HBoxContainer:
+func _barre(parent: Control, avec_reglages: bool = true) -> HBoxContainer:
 	var barre := S.G.h(px(12))
 	barre.alignment = BoxContainer.ALIGNMENT_END
 	parent.add_child(barre)
-	if avec_etat: barre.add_child(etat)
-	for noeud: Control in [entracte, passer, tactique, banc, vitesse, niveau, mise_en_page, plus]: barre.add_child(noeud)
+	barre.add_child(etat)
+	for noeud: Control in [entracte, passer, tactique, banc]: barre.add_child(noeud)
+	if avec_reglages:
+		for noeud: Control in [vitesse, niveau, mise_en_page]: barre.add_child(noeud)
+	barre.add_child(plus)
 	return barre
 
 ## Carte de Gabi (portrait, une phrase, l'action proposée) dans un panneau en relief.
@@ -523,7 +526,7 @@ func _page_staff() -> void:
 	var page := S.G.v(px(16))
 	S.full(page)
 	add_child(page)
-	_barre(page, true)
+	_barre(page)
 	var corps := S.G.h(px(20))
 	S.G.fill(corps, true)
 	page.add_child(corps)
@@ -589,7 +592,7 @@ func _page_mix() -> void:
 	var gauche := S.G.v(px(12))
 	S.G.fill(gauche, true, 1.0)
 	page.add_child(gauche)
-	_barre(gauche, true)
+	_barre(gauche, false)
 	var scene := _scene(gauche)
 	scene.custom_minimum_size.y = px(400)
 	var cadre_frise := _panneau(gauche, px(12))
@@ -616,6 +619,10 @@ func _page_mix() -> void:
 		colonne_repliee = not colonne_repliee
 		languette.text = "‹" if colonne_repliee else "›"
 		droite.visible = not colonne_repliee)
+	# Réglages de l'entracte en tête de colonne : la barre du terrain garde l'essentiel.
+	for noeud: Control in [mise_en_page, niveau, vitesse]:
+		noeud.custom_minimum_size.x = 0
+		droite.add_child(noeud)
 	var cadre_xv := _panneau(droite, px(16))
 	cadre_xv.add_child(_titre("Mon XV", "énergie"))
 	cadre_xv.add_child(xv)
@@ -630,7 +637,7 @@ func _page_tele() -> void:
 	var page := S.G.v(px(12))
 	S.full(page)
 	add_child(page)
-	var barre := _barre(page, true)
+	var barre := _barre(page)
 	var bouton_xv := _bouton("MON XV", func(): _basculer_tiroir_xv())
 	bouton_xv.name = "MatchBetweenSquadToggle"
 	bouton_xv.tooltip_text = "Énergie et notes de vos quinze joueurs."
@@ -642,7 +649,7 @@ func _page_tele() -> void:
 	# Tiers bas, sous le terrain : frise, chiffres clés, Gabi.
 	var bas := S.G.h(px(18))
 	bas.name = "MatchBetweenLowerThird"
-	bas.custom_minimum_size.y = px(270)
+	bas.custom_minimum_size.y = px(250)
 	page.add_child(bas)
 	var cadre_frise := _panneau(bas, px(12))
 	S.G.fill(cadre_frise.get_parent().get_parent(), true, 1.3)
@@ -893,7 +900,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var anneau := px(96 if disposition == "staff" else 84)
+	var anneau := px(96 if disposition == "staff" else (64 if disposition == "mix" else 84))
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -902,8 +909,14 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.focus_mode = Control.FOCUS_ALL
 		case.set_meta("contextual_enabled", true)
 		case.pressed.connect(func(): joueur_choisi.emit(poste))
-		case.add_theme_stylebox_override("hover", S.G.T.box(SURVOL, maxi(4, px(10))))
-		case.add_theme_stylebox_override("focus", S.G.T.box(Color.TRANSPARENT, maxi(4, px(10)), OR))
+		var vide := StyleBoxEmpty.new()
+		case.add_theme_stylebox_override("normal", vide)
+		case.add_theme_stylebox_override("pressed", vide)
+		var survol := S.G.T.box(SURVOL, maxi(4, px(10)))
+		var focus := S.G.T.box(Color.TRANSPARENT, maxi(4, px(10)), OR)
+		for style: StyleBox in [vide, survol, focus]: style.set_content_margin_all(0)
+		case.add_theme_stylebox_override("hover", survol)
+		case.add_theme_stylebox_override("focus", focus)
 		S.G.fill(case)
 		var colonne := S.G.v(px(2))
 		colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
