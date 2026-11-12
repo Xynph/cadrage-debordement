@@ -564,15 +564,8 @@ func _page() -> void:
 	barre.alignment = BoxContainer.ALIGNMENT_END
 	gauche.add_child(barre)
 	for noeud: Control in [etat, tactique, banc, parametres, plus]: barre.add_child(noeud)
-	# Terrain habillé : le dernier fait en bandeau, en haut à gauche, comme à la télévision.
-	var scene := Control.new()
-	scene.name = "MatchBetweenScene"
-	scene.clip_contents = true
-	S.G.fill(scene, true)
-	scene.custom_minimum_size.y = px(420)
-	gauche.add_child(scene)
-	S.full(terrain)
-	scene.add_child(terrain)
+	# Le dernier fait en bandeau, comme à la télévision, au-dessus du terrain (il ne cache
+	# aucun joueur).
 	bandeau = PanelContainer.new()
 	bandeau.name = "MatchBetweenBanner"
 	var style := S.G.T.box(Color(FOND, 0.88), maxi(4, px(8)))
@@ -586,13 +579,18 @@ func _page() -> void:
 	style.shadow_size = maxi(3, px(14))
 	style.shadow_offset = Vector2(0, maxf(1.0, px(4)))
 	bandeau.add_theme_stylebox_override("panel", style)
-	bandeau.position = Vector2(px(24), px(20))
 	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scene.add_child(bandeau)
+	gauche.add_child(bandeau)
 	bandeau.add_child(fil)
-	scene.resized.connect(func():
-		fil.custom_minimum_size.x = minf(px(1150), scene.size.x * 0.66)
-		bandeau.size = Vector2.ZERO)
+	S.G.fill(fil)
+	var scene := Control.new()
+	scene.name = "MatchBetweenScene"
+	scene.clip_contents = true
+	S.G.fill(scene, true)
+	scene.custom_minimum_size.y = px(400)
+	gauche.add_child(scene)
+	S.full(terrain)
+	scene.add_child(terrain)
 	var cadre_frise := _panneau(gauche, px(12))
 	cadre_frise.add_child(domination)
 	domination.size_flags_vertical = Control.SIZE_FILL
