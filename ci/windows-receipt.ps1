@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory=$true)][ValidatePattern('^[0-9a-f]{40}$')][string]$SourceCommit,
     [Parameter(Mandatory=$true)][string]$EvidenceRoot,
     [Parameter(Mandatory=$true)][string]$MesaRoot,
-    [switch]$GraphicsSmoke
+    [switch]$GraphicsSmoke,
+    [ValidateNotNullOrEmpty()][string]$HardwareAnimations
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -25,21 +26,26 @@ $game = $null; $archive = $null; $extrasPath = $null; $manifestPath = $null
 function Read-Json([string]$Path) { return Get-Content -LiteralPath $Path -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable }
 function Write-Json($Value,[string]$Path) { $Value | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM }
 function Hash([string]$Path) { return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
-function Set-QA-Mode([string]$Game,[ValidateSet('graphics','resume')][string]$Mode,[hashtable]$Extras) {
+function Set-QA-Mode([string]$Game,[ValidateSet('graphics','resume','hardware')][string]$Mode,[hashtable]$Extras) {
     $path = Join-Path $Game 'override.cfg'
     if (Test-Path -LiteralPath $path) {
         if (-not $Extras.ContainsKey('override.cfg') -or (Hash $path) -cne $Extras['override.cfg'].sha256) { throw 'Refuse an undeclared or modified QA override.cfg.' }
     }
-    $class = if ($Mode -eq 'graphics') { 'WindowsGraphicsSmoke' } else { 'WindowsReceiptResume' }
+    $class = switch ($Mode) {
+        'graphics' { 'WindowsGraphicsSmoke' }
+        'hardware' { 'WindowsHardwareReceipt' }
+        'resume' { 'WindowsReceiptResume' }
+    }
     $config = "[application]`nrun/main_loop_type=`"$class`"`nrun/main_scene=`"res://windows_qa/entry.tscn`"`n"
     [IO.File]::WriteAllText($path,$config,[Text.UTF8Encoding]::new($false))
     $Extras['override.cfg'] = @{sha256=(Hash $path);bytes=(Get-Item -LiteralPath $path).Length;source='Explicit QA-only embedded main loop selection'}
 }
 function Read-Driver-Ack([string]$Path,[string]$Mode,[int]$ExpectedPid,[string]$Exe,[string]$CareerProfile) {
     $ack = Read-Json $Path
-    $expectedMode = if ($Mode -eq 'graphics') { 'graphics-smoke' } else { 'resume' }
+    $expectedMode = if ($Mode -eq 'graphics') { 'graphics-smoke' } else { $Mode }
     $chain = @('res://windows_qa/windows-resume.gd')
     if ($Mode -eq 'graphics') { $chain = @('res://windows_qa/windows-graphics-smoke.gd') + $chain }
+    if ($Mode -eq 'hardware') { $chain = @('res://windows_qa/windows-hardware-receipt.gd') + $chain }
     foreach ($key in @('schema','mode','pid','executable','data_dir','exported','entry_scene','script_chain')) {
         if (-not $ack.ContainsKey($key)) { throw "Embedded driver ACK omitted $key." }
     }
@@ -78,13 +84,17 @@ function Game-Environment([string]$Mode,[string]$CareerProfile,[string]$Output) 
         GALLIUM_DRIVER='llvmpipe'
     }
 }
-function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe,[int]$TimeoutSeconds=7200,[int]$AckTimeoutSeconds=15) {
+function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[string]$Output,[string]$Exe,[string]$NodeExe,[int]$TimeoutSeconds=7200,[int]$AckTimeoutSeconds=15,[hashtable]$HardwareEnvironment=@{}) {
     New-Item -ItemType Directory -Path $Output | Out-Null
     $info = [Diagnostics.ProcessStartInfo]::new()
     $info.FileName = $Exe; $info.WorkingDirectory = Split-Path $Exe
     $info.UseShellExecute = $false; $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
     $info.Environment.Clear()
     $environment = Game-Environment $Mode $CareerProfile $Output
+    if ($Mode -eq 'hardware') {
+        $environment.Remove('GALLIUM_DRIVER')
+        foreach ($item in $HardwareEnvironment.GetEnumerator()) { $environment[$item.Key] = $item.Value }
+    }
     foreach ($item in $environment.GetEnumerator()) { $info.Environment[$item.Key] = [string]$item.Value }
     foreach ($argument in $Arguments) { $info.ArgumentList.Add($argument) }
     $process = [Diagnostics.Process]::new(); $process.StartInfo = $info
@@ -95,7 +105,7 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
     $lastLogCheck = $started; $lastHeartbeat = $started
     $runtimeError = '(?m)^(?:\x1b\[[0-9;]*m)*(?:SCRIPT ERROR:|ERROR:)|Parse Error:'
     $loadedModules = @{}; $moduleError = $null
-    $needsAck = $Mode -in @('graphics','resume'); $driverAck = $null
+    $needsAck = $Mode -in @('graphics','resume','hardware'); $driverAck = $null
     $ackPath = Join-Path $Output 'driver-ack.json'
     try {
         # Stream the complete bytes to disk while the EXE runs. A script error
@@ -183,6 +193,80 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
     }
 }
 
+function Copy-HardwareEvidence([string]$Source,[string]$Destination,[string[]]$Names,[string]$PrivateRoot) {
+    New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+    foreach ($name in $Names) {
+        $path = Join-Path $Source $name
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+        $file = Get-Item -LiteralPath $path
+        if ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Refuse linked receipt evidence.' }
+        $target = Join-Path $Destination $name
+        if ($file.Extension -eq '.png') {
+            Copy-Item -LiteralPath $path -Destination $target
+        } else {
+            $content = Get-Content -LiteralPath $path -Raw
+            if ($null -eq $content) { $content = '' }
+            if ($PrivateRoot) { $content = $content.Replace($PrivateRoot, '[private-animations]', [StringComparison]::OrdinalIgnoreCase) }
+            Set-Content -LiteralPath $target -Value $content -Encoding utf8NoBOM
+        }
+    }
+}
+
+function Invoke-HardwareReceipt([string]$Game,[string]$Exe,[string]$NodeExe,[string]$Animations,[string]$ArtifactRoot) {
+    $Report.scope = 'native-hardware'
+    $Report.qaExtras = @{}
+    Set-QA-Mode $Game 'hardware' $Report.qaExtras
+    $assets = @{}
+    foreach ($name in @('gabi-mixamo.scn','mixamo-match.res')) {
+        $path = Join-Path $Animations $name
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Required private animation is missing: $name." }
+        $assets[$name] = @{path=$path;sha256=(Hash $path)}
+    }
+    $Report.hardware = @{passes=@();animations=@{}}
+    foreach ($name in $assets.Keys) { $Report.hardware.animations[$name] = $assets[$name].sha256 }
+    $environment = @{
+        CD_GABI_MIXAMO=$assets['gabi-mixamo.scn'].path
+        CD_MATCH_ANIMATIONS=$assets['mixamo-match.res'].path
+        CD_MATCH_TEMPS_FORTS_ENTRACTE='0'
+    }
+    $failures = [Collections.Generic.List[string]]::new()
+    foreach ($variant in @(@{method='forward_plus';driver='vulkan'}, @{method='gl_compatibility';driver='opengl3'})) {
+        $environment.CD_WINDOWS_HARDWARE_METHOD = $variant.method
+        $environment.CD_WINDOWS_HARDWARE_DRIVER = $variant.driver
+        $profile = Join-Path $EvidenceRoot "private-profiles/$($variant.method)"
+        $arguments = @('--verbose','--audio-driver','Dummy','--rendering-method',$variant.method,'--rendering-driver',$variant.driver,
+            '--windowed','--resolution','2560x1440','--disable-vsync','--max-fps','60')
+        $save = Join-Path $profile 'donnees.json'
+        foreach ($phase in @('play','resume')) {
+            $label = "$($variant.method)-$phase"
+            $output = Join-Path $EvidenceRoot $label
+            $environment.CD_WINDOWS_HARDWARE_PHASE = $phase
+            try {
+                if ($phase -eq 'resume') { $environment.CD_WINDOWS_HARDWARE_SAVE_SHA = Hash $save }
+                $process = Run-Game 'hardware' $arguments $profile $output $Exe $NodeExe 900 45 $environment
+                $qa = Read-Json (Join-Path $output 'report.json')
+                if (-not $qa.passed -or $qa.phase -cne $phase -or $qa.pid -ne $process.pid -or $qa.engine_pid -ne $process.nodePid -or
+                    $qa.runtime_info.renderer -cne $variant.method -or $qa.runtime_info.driver -cne $variant.driver -or
+                    $qa.runtime_info.adapter -notmatch '(?i)GeForce RTX 4080 SUPER') { throw 'Hardware receipt identity or renderer evidence is incomplete.' }
+                $Report.hardware.passes += @{label=$label;passed=$true;adapter=$qa.runtime_info.adapter;driver=$qa.runtime_info.driver;graphics=$qa.graphics;match=$qa.match}
+            } catch {
+                $failures.Add("$label failed: $($_.Exception.Message)")
+                $Report.hardware.passes += @{label=$label;passed=$false}
+                break
+            } finally {
+                Copy-HardwareEvidence $output (Join-Path $ArtifactRoot $label) @('report.json','process.json','driver-ack.json',
+                    'graphics-progress.json','loaded-modules.json','stdout.log','stderr.log','01-accueil.png',
+                    '02-gabi.png','03-match-temps-forts.png','04-resultat.png','05-reprise.png') $Animations
+            }
+        }
+        $environment.Remove('CD_WINDOWS_HARDWARE_SAVE_SHA')
+    }
+    foreach ($asset in $assets.Values) {
+        if ((Hash $asset.path) -cne $asset.sha256) { throw 'Private animation bytes changed during the receipt.' }
+    }
+    if ($failures.Count) { throw ($failures -join ' ') }
+}
+
 try {
     $repo = Split-Path $PSScriptRoot
     $head = (& git -C $repo rev-parse HEAD).Trim()
@@ -201,6 +285,19 @@ try {
     if ((Hash $tools.nodeExe) -cne $nodePin -or $archive.manifest.files['runtime/node.exe'].sha256 -cne $nodePin) { throw 'Packaged Node does not match the prepared official runtime pin.' }
     $Report.package = @{path=$PackageZip;shaBefore=$archive.zipSha256;shaAfter=$null;manifestSha256=$archive.manifestSha256;files=$archive.files}
     $manifestPath = Join-Path $game 'manifest-build.json'
+    if ($HardwareAnimations) {
+        $HardwareAnimations = (Resolve-Path -LiteralPath $HardwareAnimations).Path
+        $artifactRoot = Join-Path $EvidenceRoot 'hardware-evidence'
+        Invoke-HardwareReceipt $game $exe $nodeExe $HardwareAnimations $artifactRoot
+        $extrasPath = Join-Path $EvidenceRoot 'qa-extras.json'
+        Write-Json $Report.qaExtras $extrasPath
+        $afterPath = Join-Path $EvidenceRoot 'manifest-after.json'
+        Python-Check @('tree','--root',$game,'--manifest',$manifestPath,'--extras',$extrasPath,'--output',$afterPath)
+        $Report.package.shaAfter = Hash $PackageZip
+        if ($Report.package.shaAfter -cne $Report.package.shaBefore) { throw 'The original game ZIP changed.' }
+        $Report.passed = $true
+        return
+    }
     if ($GraphicsSmoke) {
         $Report.scope = 'graphics-smoke-only'
         $Report.attempts = @()
@@ -289,4 +386,7 @@ try {
     throw
 } finally {
     Write-Json $Report $ReportPath
+    if ($HardwareAnimations) {
+        Copy-HardwareEvidence $EvidenceRoot (Join-Path $EvidenceRoot 'hardware-evidence') @('windows-report.json') $HardwareAnimations
+    }
 }

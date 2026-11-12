@@ -140,7 +140,7 @@ def stage_windows_qa(project):
         raise ValueError("Un override.cfg de recette ne doit jamais être livré")
     qa = project / "windows_qa"
     qa.mkdir()
-    for name in ("windows-resume.gd", "windows-graphics-smoke.gd"):
+    for name in ("windows-resume.gd", "windows-graphics-smoke.gd", "windows-hardware-receipt.gd"):
         shutil.copy2(ROOT / "ci" / name, qa / name)
     (qa / "entry.tscn").write_text('[gd_scene format=3]\n[node name="WindowsReceiptEntry" type="Node"]\n', encoding="utf-8")
 
