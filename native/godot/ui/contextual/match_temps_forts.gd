@@ -38,19 +38,12 @@ const ECHEANCE_ERREUR := 5.0
 ## Pistes du chorégraphe (CD_MATCH_CHOREGRAPHE=1) : marge au-delà de leur durée avant de
 ## reprendre la main (la vue ne les lit plus, par exemple).
 const ECHEANCE_CHOREGRAPHIE := 5.0
-## Entracte entre deux temps forts (demande de Léo, 12 novembre 2026) : après un temps fort,
-## l'écran intermédiaire reste au moins ENTRACTE secondes réelles ; l'horloge y défile
-## (minutes du moteur, secondes qui roulent), le score et le fil restent ceux d'avant le
-## prochain temps fort. Un temps fort reçu pendant l'entracte attend sa fin (une suite de
-## l'action en cours part tout de suite). « Passer » l'abrège, la pause le fige, ouvrir la
-## tactique ou le banc met le match en pause le temps des changements.
-## CD_MATCH_TEMPS_FORTS_ENTRACTE (secondes, 0 à 30) le règle pour les essais. Le match
-## complet (« integral ») reste continu : pas d'entracte.
-const ENTRACTE := 8.0
-## Bascule 2D → 3D (déclenchement par l'importance, 12 novembre 2026) : le moteur ouvre le temps
-## fort au début de l'action qui monte ; le terrain 2D finit d'abord de dérouler ce qui précède
-## (jusqu'à la borne), au plus BASCULE secondes (à vitesse ×1, divisées par la vitesse de lecture), puis la 3D prend le relais à cet endroit.
-const BASCULE := 3.0
+## Entre deux temps forts (décision de Léo, 12 novembre 2026, après le déclenchement par
+## l'importance) : plus de pause minimale ni de retenue, plus de « Passer ». Le match défile en 2D
+## à l'horloge choisie (secondes qui roulent) ; dès que le moteur déclenche un temps fort, il part
+## au début de l'action, même juste après le précédent. Le manager règle en pause, ou en ouvrant
+## Tactique ou Banc (pause posée le temps des changements). Le match complet reste continu.
+const ENTRACTE := 0.0
 
 var view: Control
 var app: Control
@@ -148,8 +141,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	horloge = cadence if HORLOGES.has(cadence) else "normale"
 	var allure := OS.get_environment("CD_MATCH_TEMPS_FORTS_VITESSE")
 	vitesse = clampf(float(allure), 0.5, 4.0) if allure.is_valid_float() else 1.0
-	var pause_voulue := OS.get_environment("CD_MATCH_TEMPS_FORTS_ENTRACTE")
-	entracte = clampf(float(pause_voulue), 0.0, 30.0) if pause_voulue.is_valid_float() else ENTRACTE
+	entracte = ENTRACTE
 	voile = ColorRect.new()
 	voile.name = "MatchBetweenVeil"
 	voile.color = Color(S.PANEL, 1.0)
@@ -327,7 +319,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		if _retenu.is_empty() or str(_retenu.get("cle", "")) != str(candidat.get("cle", "")):
 			_retenu_vus = connus
 			_retenu_depuis = 0.0
-			_retenu_reste = maxf(0.5, _duree_entracte() - _entracte) if _entracte >= 0.0 else _bascule()
+			_retenu_reste = maxf(0.5, _duree_entracte() - _entracte)
 			_retenu_part = _part_minute()
 			suivi.append({"evenement": "entracte_retenu", "cle": str(candidat.get("cle", "")), "horloge": str(candidat.get("horlogeDebut", "")),
 				"ecoule": _entracte, "debut_ms": Time.get_ticks_msec()})
@@ -403,17 +395,9 @@ func _process(delta: float) -> void:
 func _duree_entracte() -> float:
 	return 0.0 if niveau == "integral" else entracte / maxf(vitesse, 0.01)
 
-## Un temps fort qui n'est pas la suite de l'action attend la fin de l'entracte.
-func _doit_retenir(candidat: Dictionary) -> bool:
-	if _passer or candidat.get("suite", false) or niveau == "integral" or _causerie_attend(): return false
-	return (_entracte >= 0.0 and _entracte < _duree_entracte()) or _terrain_en_retard()
-
-func _bascule() -> float:
-	return BASCULE / maxf(vitesse, 0.01)
-
-## Le terrain 2D n'a pas fini de dérouler le jeu d'avant le temps fort (bascule au bon endroit).
-func _terrain_en_retard() -> bool:
-	return etat != JEU and between != null and between.visible and between.terrain.en_retard()
+## Aucun temps fort n'est retenu : il part dès que le moteur le déclenche (décision de Léo).
+func _doit_retenir(_candidat: Dictionary) -> bool:
+	return false
 
 ## Une causerie (mi-temps, débrief) attend le temps fort : il se montre sans finir l'entracte
 ## (en pause, l'horloge de l'entracte est figée et la causerie n'ouvrirait jamais).
@@ -467,8 +451,6 @@ func _entracte_et_horloge(delta: float) -> bool:
 	if (fige and not _causerie_attend()) or _tiroir or app.waiting: return true
 	# Entracte en cours seulement (_entracte < 0 : retenu pour le terrain 2D, pas pour l'entracte).
 	if not _passer and _entracte >= 0.0 and _entracte < _duree_entracte() and not _causerie_attend(): return true
-	# Bascule 2D → 3D : le terrain finit de dérouler le jeu d'avant (3 s au plus, jamais devant une causerie).
-	if not _passer and _terrain_en_retard() and _retenu_depuis < _bascule() and not _causerie_attend(): return true
 	_lancer_retenu()
 	return true
 
@@ -480,7 +462,7 @@ func _lancer_retenu() -> void:
 	gel = false
 	_pause_au_depart = _live.get("paused", false)
 	_vus = _retenu_vus
-	suivi.append({"evenement": "entracte_fin", "ecoule": _entracte, "passe": _passer, "attente_terrain": _retenu_depuis, "debut_ms": Time.get_ticks_msec()})
+	suivi.append({"evenement": "entracte_fin", "ecoule": _entracte, "passe": _passer, "debut_ms": Time.get_ticks_msec()})
 	_demarrer(candidat)
 	stage._process(0.0)
 	_habiller()
