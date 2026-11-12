@@ -75,12 +75,13 @@ module.exports=function clubTransfers(){
  }
  // Joueurs non proposés qu'un club plus réputé peut obtenir en payant une fois et
  // demie leur valeur : jamais l'un des trois meilleurs du vendeur.
- function poachable(buyer,c,plans,reports){
+ function poachable(buyer,c,plans,reports,ranked){
   if(c.id===buyer.id||plans.get(c.id)==='vedettes'||(reports.get(c.id)?.sold||0)>=MAX_SALES)return [];
   const rb=worldClub(buyer.id)?.reputation??buyer.base,rs=worldClub(c.id)?.reputation??c.base;
   if(rs>rb-5||c.players.length<=aiRosterTarget(c)-3)return [];
-  const ranked=c.players.slice().sort((a,b)=>estimate(c.id,b)-estimate(c.id,a)||a.id.localeCompare(b.id)),best=new Set(ranked.slice(0,3).map(p=>p.id));
-  return ranked.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&p.contractEnd!=null&&p.contractEnd>=S.season&&p.age<=29&&p.age<p.dev.retireAge-1&&
+  if(!ranked.has(c.id))ranked.set(c.id,c.players.slice().sort((a,b)=>estimate(c.id,b)-estimate(c.id,a)||a.id.localeCompare(b.id)));
+  const order=ranked.get(c.id),best=new Set(order.slice(0,3).map(p=>p.id));
+  return order.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&p.contractEnd!=null&&p.contractEnd>=S.season&&p.age<=29&&p.age<p.dev.retireAge-1&&
    covered(c,primarySlot(p),p.id)>=Math.max(2,slotGoal(c,primarySlot(p))-1)).slice(0,4)
    .map(p=>({p,seller:c,fee:Math.round(value(p)*1.5/10000)*10000,listed:false}));
  }
@@ -91,16 +92,23 @@ module.exports=function clubTransfers(){
   const gap=(worldClub(seller.id)?.reputation??seller.base)-(worldClub(buyer.id)?.reputation??buyer.base);
   return p.salary*(1+Math.max(-.08,Math.min(.25,gap*.008)));
  }
- function wanted(buyer,plan,offer){
+ // Ce que l'acheteur sait de lui-même, calculé une fois par tour : besoins et
+ // niveau estimé du dernier titulaire à chaque poste.
+ function profile(buyer){
+  const needs=aiRosterMarketNeeds(buyer),starters=POS.map((pos,slot)=>{
+   const mates=buyer.players.filter(q=>slotEligible(q,slot)).map(q=>estimate(buyer.id,q)).sort((a,b)=>b-a);
+   return mates[Math.max(0,Math.min(mates.length-1,POS.filter(x=>x===pos).length-1))]??0;
+  });
+  return {needs,starters};
+ }
+ function wanted(buyer,plan,offer,known){
   const p=offer.p,est=estimate(buyer.id,p);
   if(p.age>=p.dev.retireAge-1)return null;
   if(plan==='vente'&&buyer.players.length>=aiRosterTarget(buyer)-2)return null;
   if(plan==='formateur'&&(p.age>23||offer.fee>buyer.cash*.1))return null;
   if(plan==='rajeunissement'&&p.age>25)return null;
-  const needs=aiRosterMarketNeeds(buyer),need=needs.find(n=>slotEligible(p,n.slot));
-  const slot=primarySlot(p),mates=buyer.players.filter(q=>slotEligible(q,slot)).map(q=>estimate(buyer.id,q)).sort((a,b)=>b-a);
-  const starter=mates[Math.max(0,Math.min(mates.length-1,POS.filter(x=>x===POS[slot]).length-1))]??0;
-  const upgrade=est-starter;
+  const need=known.needs.find(n=>slotEligible(p,n.slot)),slot=primarySlot(p);
+  const upgrade=est-known.starters[slot];
   if(!need&&!(plan==='vedettes'&&upgrade>=3)&&!(plan==='rajeunissement'&&upgrade>=0&&p.age<=24))return null;
   if(est<buyer.base-14)return null;
   return {score:(need?need.score:0)+upgrade*4+(plan==='vedettes'?est:0)-(offer.listed?0:10)-Math.round(offer.fee/200000),need:need?.pos||POS[slot],upgrade};
@@ -134,16 +142,21 @@ module.exports=function clubTransfers(){
   for(let round=0;round<ROUNDS;round++){
    const busy=new Set();let signed=0;
    const offers=clubs.flatMap(c=>listed(c,plans.get(c.id),reports));
-   const buyers=clubs.filter(c=>(reports.get(c.id).bought||0)<MAX_BUYS&&aiRosterMayRecruit(c))
+   // Un club « vedettes » ou qui rajeunit peut dépasser sa cible de deux places
+   // pour un renfort : il cédera ensuite son surplus.
+   const room=c=>aiRosterMayRecruit(c)||['vedettes','rajeunissement'].includes(plans.get(c.id))&&c.players.length<aiRosterTarget(c)+2&&professionalPlaces(c)>0;
+   const ranked=new Map();
+   const buyers=clubs.filter(c=>(reports.get(c.id).bought||0)<MAX_BUYS&&room(c))
     .sort((a,b)=>order(plans.get(a.id))-order(plans.get(b.id))||(worldClub(b.id)?.reputation??0)-(worldClub(a.id)?.reputation??0)||a.id-b.id);
    for(const buyer of buyers){
     if(busy.has(buyer.id))continue;
     const plan=plans.get(buyer.id);
-    const pool=offers.concat(plan==='vedettes'?clubs.flatMap(c=>poachable(buyer,c,plans,reports)):[])
+    const known=profile(buyer);
+    const pool=offers.concat(plan==='vedettes'?clubs.flatMap(c=>poachable(buyer,c,plans,reports,ranked)):[])
      .filter(o=>o.seller.id!==buyer.id&&!busy.has(o.seller.id)&&o.seller.players.some(x=>x.id===o.p.id)&&(!japanese(buyer.id)||japanese(o.seller.id)));
     let best=null;
     for(const offer of pool){
-     const w=wanted(buyer,plan,offer);if(!w)continue;
+     const w=wanted(buyer,plan,offer,known);if(!w)continue;
      const salary=clamp(Math.round(Math.max(offer.p.salary,demand(offer.p,offer.seller,buyer))*(plan==='vedettes'?1.08:1.03)/100)*100,270,100000);
      if(!affordable(buyer,offer,salary))continue;
      if(!best||w.score>best.w.score||w.score===best.w.score&&offer.p.id<best.offer.p.id)best={offer,w,salary};
