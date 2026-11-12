@@ -174,6 +174,14 @@ func _ready() -> void:
 	drawer.offset_left = -450
 	drawer.offset_right = -18
 	drawer.offset_top = 100
+	# En temps forts, le tiroir s'ouvre sous la bande de commandes : Tactique, Banc, Paramètres
+	# et Plus restent cliquables tiroir ouvert.
+	if bande_temps_forts != null:
+		var caler := func():
+			if is_instance_valid(drawer) and bande_temps_forts.is_inside_tree():
+				drawer.offset_top = maxf(100.0, bande_temps_forts.get_global_rect().end.y - get_global_rect().position.y + 8.0)
+		bande_temps_forts.resized.connect(caler)
+		bande_temps_forts.item_rect_changed.connect(caler)
 	drawer.anchor_bottom = 1
 	drawer.offset_bottom = -90
 	drawer.add_theme_stylebox_override("panel", S.G.T.box(S.PANEL, 5, Color("68785a")))
