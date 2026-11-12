@@ -157,3 +157,96 @@ Limites :
 - Maillage du visage grossier (≈ 5 mm entre sommets) : pattes d'oie seulement suggérées ; le bas de la paupière inférieure garde ses bords dentelés d'origine ; à SourireYeux 1, quelques points blancs du globe au coin externe inférieur (invisibles à 0,65 et au format du portrait).
 - Vérification en rendu Blender, pas dans le jeu réel.
 
+
+
+## Retouches du 12 novembre : paupières, carnet, bouche
+
+Demandes de Léo : « Fais en sorte que Gabi ait les paupières plus relevées, on dirait qu'il plisse les yeux. Et fais aussi en sorte qu'il garde plus son carnet contre lui », puis « ouvre encore plus ses paupières » (validé : « les yeux c'est nickel ») et « maintenant retravaille sa bouche ».
+
+### Paupières (`ajouter-expressions-gabi.py`, `gabi_visage.gd`)
+
+- Le bord de la paupière supérieure couvrait le tiers haut de l'iris (abaissement de 10° du 11 novembre). Il est remonté de `RELEVE` = 10,5° au milieu de l'œil, 0 aux coins (`profil_releve` : plein sur la largeur de l'iris, nul aux commissures), en glissant sur le globe. Le bord dégage l'iris, avec une fine bande de blanc côté tempe. Essais : 7° (bord au ras de l'iris), 9°, 10,5° (retenu), 12° (regard qui s'écarquille).
+- Le tableau des bords (`HAUT`) reste la mesure d'avant ; le bord effectif est `bord_haut(lat)`. Clignement, SourireYeux et SourcilsDoux sont recalculés sur ce bord : l'œil se ferme toujours entièrement, la cornée ne traverse pas, la paupière reste couleur peau.
+- Dans un `.blend`, le relèvement déjà appliqué est mémorisé (`releve_paupiere` sur les paupières) : relancer le script n'applique que l'écart. Le `.glb` du dépôt se refait depuis le `.glb` sans formes d'expression (`git show edc903a2:native/godot/guide/assets/gabi.glb`).
+- Regard vers le bas : la paupière supérieure suit (`LID_FOLLOW` = 0,12 de Clignement à RegardBas 1). Sans cela, l'iris descendait sous une paupière immobile et le blanc apparaissait au-dessus. `GAZE_ANGLES` inchangé (14°, 5°, 5°). SourireYeux (jusqu'à 0,65) et le sourire ne referment pas trop l'œil (vérifié en rendu).
+
+### Carnet tenu contre lui (`tenir-carnet-gabi.py`, `gabi_moments.gd`)
+
+Le carnet est attaché à `mixamorig:LeftHand` (export). Dans les gestes Mixamo, le bras gauche gesticulait : carnet tendu, levé à l'oreille (parle_5), balancé. Le script réécrit, dans chaque geste du `.blend`, le bras, l'avant-bras, la main et les doigts gauches :
+
+- tenue : carnet à plat contre le ventre, côté gauche, haut penché comme le ventre, main posée dessus ; définie par rapport à `Spine1` (il suit le buste), cinématique inverse à deux os par image (coude dehors et en arrière), torsion de l'avant-bras qui plie le moins le poignet, doigts en prise ;
+- vie : la main suit en petit (12 %, 2,5 cm au plus, jamais vers le corps) le mouvement du bras d'origine ;
+- peau : la peau du ventre est recalculée par image (pondérations des os) et le carnet s'en écarte s'il s'en approche à moins de 6 mm (buste plié) ;
+- lecture : pendant `regarde_bas` (mauvaise nouvelle, regret, attente), il lève le carnet devant la poitrine et le consulte (le regard suit déjà le carnet) ;
+- `tablette` (rare) garde le geste d'origine au milieu, avec passage progressif depuis et vers la tenue.
+
+Contrôle à la fin du script (distance carnet-corps, bras compris, sur six images par geste) : tous les gestes joués sont propres ; la main droite traverse le carnet dans `decu`, `baille`, `applaudit` (et dans des gestes jamais joués : `rit`, `assis_*`, `debout_assis`). Ces trois-là ne sont plus joués : mauvaise nouvelle = regarde_bas, reflechit ; bonne nouvelle = content, approuve_fort, pouce ; attente rare = tablette.
+
+Chaîne complète (après les étapes de la section « Expressions ») :
+```
+python3 scripts/animations/ajouter-expressions-gabi.py /hors-depot/gabi.blend
+python3 scripts/animations/tenir-carnet-gabi.py -- /hors-depot/gabi.blend native/godot/guide/assets/gabi.glb
+python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2>
+```
+`tenir-carnet-gabi.py` est à lancer une fois, sur des gestes d'origine : relancé sur des gestes déjà tenus, la tenue est la même mais la petite part de mouvement d'origine (« vie ») disparaît. Pour changer la tenue, repartir d'un `.blend` d'avant (sortie d'`adapter-animations-gabi.py` puis des étapes précédentes).
+
+### Bouche (`ajouter-sourire-gabi.py`, `gabi_visage.gd`, `coach_portrait_3d.gd`, `coach_guide.gd`)
+
+Constat : les lèvres sont une coque séparée (primitive `M_Gabi_V3_Levres` de `Mesh_0`, 110 sommets) posée sur le visage, au contour en dents de scie, avec une texture presque couleur de peau (sRGB moyen 155/99/96 contre 144/96/93 pour la peau voisine) ; la lèvre supérieure disparaissait sous la moustache ; le sourire (MouthWide 0,75 + MouthPress 0,3) ne bougeait les commissures que de 3 mm.
+
+- Lèvres redessinées dans leur texture (projection de face : u suit x, v suit y) selon un contour lisse (`contour_levres` : fente, lèvre supérieure ≈ 13 mm avec arc de Cupidon, inférieure ≈ 15 mm) : rose soutenu, plus foncé près de la fente, liseré clair au bord de la lèvre supérieure. Hors du contour, la coque prend texel par texel la couleur de la peau qu'elle couvre et, au bord, ses normales : plus de dents de scie ni de halo rectangulaire. (Essai d'un bord transparent écarté : le visage est troué sous la coque.)
+- Volume : chaque lèvre avance en arrondi (3,4 et 3,8 mm au milieu de sa hauteur) et s'étire de 1,5 mm depuis la fente ; même champ pour le visage, les lèvres et la cavité (rien ne se décolle). Dans un `.blend`, une seule fois (propriété `volume_levres` sur `Mesh_0`).
+- Forme « Sourire » (indice 7 de `Mesh_0`, après Clignement) : commissures +7,5 mm vers le haut, 2,5 mm vers l'arrière, 2,4 mm vers l'extérieur ; joues qui montent et avancent ; lèvre supérieure à peine relevée ; côté gauche de Gabi 12 % plus haut (asymétrie légère). Le jeu la pilote si elle existe : `Sourire` = 0,12 au repos (et pendant la parole), jusqu'à 1 au sourire franc, 0 au ton négatif ; MouthWide n'ajoute plus que 0,25 × sourire, MouthPress plus rien. Sans la forme (modèles plus anciens) : comportement d'avant.
+- Repos : lèvres entrouvertes (MouthOpen 0,06 ± 0,03 au rythme d'une respiration de 4,2 s), seulement avec la forme « Sourire ».
+- Bulle sans voix (muet, mode texte, voix désactivée) : `coach_guide.gd` appelle `portrait.mime(texte)` quand aucune voix ne démarre ; la bouche s'ouvre légèrement (MouthOpen 0,16 à 0,40, parfois un peu arrondie) au rythme d'environ 4,5 syllabes par seconde, pendant 1,2 à 4 s selon la longueur du texte (16 caractères par seconde), puis se referme. Une vraie voix, le guide masqué ou le mouvement réduit l'arrêtent ; une nouvelle bulle relance.
+
+Chaîne : `python3 scripts/animations/ajouter-sourire-gabi.py <gabi.glb sans « Sourire »> <sortie.glb>` pour le Gabi d'origine (le Gabi Mixamo reprend matériaux et texture à l'export), et `python3 scripts/animations/ajouter-sourire-gabi.py /hors-depot/gabi.blend` avant `regenerer-gabi.py`.
+
+Retouches finales du 12 novembre (avis de Léo et du coordinateur) : lèvres v3 (modelé peint : supérieure épaisse au centre et effilée, philtrum et arc de Cupidon, inférieure charnue, bord fondu, reflet sur la lèvre inférieure, creux d'ombre aux commissures ; rose chaud un peu terne, sRGB 150/76/76, 104/44/48 près de la fente ; texture 512×256), sourire franc plus marqué (commissures +8,8 mm, joues +4,8 mm, lèvre supérieure qui s'amincit), intérieur de la bouche rouge sombre.
+
+### Teint, paupières, dents (`retoucher-teint-gabi.py`)
+
+- Peau : tons chair (teinte 0-40°) à 80 % de leur saturation (un peu moins encore pour les plus saturés), nez et joues glissés de 5° vers le rose ; chemise, jean, barbe inchangés.
+- Paupières : couleur remesurée sur la nouvelle peau autour des yeux, assombrie de 10 % (plus de liseré clair).
+- Dents : ivoire plus sombre (0,24 ; 0,19 ; 0,15).
+- Material_0 affiché des deux côtés (faces intérieures entre les doigts).
+- Le script compacte le tampon du `.glb` (anciennes textures retirées) : `gabi.glb` passe de 8,5 à 7,8 Mo.
+
+### Pouces (`reparer-pouces-gabi.py`)
+
+Demande de Léo : « y'a un souci avec les pouces qui ne sont pas complets ». `ajouter-pouces-gabi.py` pondérait chaque sommet du pouce à 100 % sur une phalange : le pouce se cassait en morceaux dès qu'il pliait. Le script (sur le `.blend`, une seule fois) : fondus entre phalanges (±9 mm) et vers la main ; pièces non soudées rattachées au pouce ; poids des sommets confondus mis en commun ; rotations des phalanges réduites (pouce droit 60 % / 50 % / 0) ; pouce gauche solidaire de la main (son bout, fait de pièces non soudées, se déchirait même à 25 % de flexion ; il tient le carnet presque tout le temps). Essai écarté : remplacer la main gauche par le miroir de la droite (elle ne raccorde pas à l'avant-bras de Mesh_0).
+
+Chaîne complète du Gabi Mixamo au 12 novembre :
+```
+python3 scripts/animations/ajouter-expressions-gabi.py /hors-depot/gabi.blend
+python3 scripts/animations/tenir-carnet-gabi.py -- /hors-depot/gabi.blend native/godot/guide/assets/gabi.glb
+python3 scripts/animations/ajouter-sourire-gabi.py /hors-depot/gabi.blend
+python3 scripts/animations/reparer-pouces-gabi.py -- /hors-depot/gabi.blend
+python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2>
+```
+Gabi d'origine (`gabi.glb`) : depuis `git show edc903a2:native/godot/guide/assets/gabi.glb`, `ajouter-expressions-gabi.py`, puis `ajouter-sourire-gabi.py`, puis `retoucher-teint-gabi.py`.
+
+Reste à faire : fentes sombres entre les doigts (maillage des doigts collés, visibles de près) ; pouce gauche sans flexion ; quelques dents de scie au bord haut de la coque des lèvres, visibles seulement en très gros plan ; cassure de la lèvre inférieure dans la forme MouthOpen d'origine ; netteté des textures du visage et de la barbe : voir la section suivante.
+
+## Netteté de la tête (12 novembre, après-midi) : `nettete-tete-gabi.py`
+
+Demande de Léo : visage et barbe flous de près. Constat : la tête n'occupait qu'une petite zone de la texture 2K du corps (≈ 0,7 texel/mm au visage).
+
+- **Texture dédiée** : les triangles de la tête (y > 1,30 m, hors chemise ; visage, barbe, moustache, sourcils, cheveux, oreilles) passent dans une nouvelle primitive de `Mesh_0`, matériau `Gabi_Tete` (mêmes sommets, poids et formes d'expression). Dépliage à part dans Blender (projection intelligente, 1,4 rad), îlots du visage agrandis de 80 % : ≈ 2,8 texels/mm au visage, 1,5 ailleurs, anisotropie 1,2. Couleur actuelle re-cuite texel par texel (yeux, bouche et teint validés inchangés).
+- **Détail réel** (procédural, dans `cuire`) :
+  - mèches directionnelles (bruit 3D étiré le long de la pousse, ±22 % de luminosité, plus marquées sur la moustache) : sourcils vers la tempe, moustache vers le bas et l'extérieur, barbe vers le bas, cheveux suivant les bandes de la texture d'origine ;
+  - barbe continue sous la lèvre inférieure et au centre du menton (zone claire et rosée d'origine teintée vers la couleur de la barbe) ;
+  - front et tempes lisses : pas de mèches hors de la chevelure et des sourcils (sourcils = zone sombre seulement) ;
+  - peau : grain léger (pores) et variations de teinte douces ;
+  - carte de normales 2K : relief des mèches et du grain, composé avec la carte d'origine ; occlusion 1K.
+- **Coque des lèvres** : hors du contour des lèvres, elle prend la peau de la nouvelle texture (mèches de barbe jusqu'au bord, plus de plaque claire polygonale) ; texture 1024×512.
+- **Poids** : textures en JPEG (couleur q90, normales q92, occlusion q88, lèvres q92) ; `gabi.glb` passe de 7,9 à 10,9 Mo. Scène Mixamo privée : 45 Mo (textures non compressées avec mipmaps, comme avant).
+- **Contrôles** (`tests/godot-gabi-mixamo.gd`) : matériau `Gabi_Tete` présent, couleur et normales 2K, formes d'expression conservées.
+
+Chaîne (le dossier de travail est hors dépôt ; `preparer` demande environ 2,7 Go de mémoire et 2 min 30) :
+```
+python3 scripts/animations/nettete-tete-gabi.py preparer <gabi.glb sans tête dédiée> /hors-depot/tete
+python3 scripts/animations/nettete-tete-gabi.py appliquer /hors-depot/tete <gabi.glb sans tête dédiée> native/godot/guide/assets/gabi.glb
+python3 scripts/animations/regenerer-gabi.py /hors-depot/gabi.blend /hors-depot/sortie --godot <Godot 4.7.2> --tete /hors-depot/tete
+```
+`<gabi.glb sans tête dédiée>` : `git show 6f395b6f:native/godot/guide/assets/gabi.glb` (sortie de `retoucher-teint-gabi.py`). Pour `regenerer-gabi.py`, `--origine` peut rester le `gabi.glb` du dépôt (matériaux repris) : `appliquer` refuse un `.glb` déjà traité. Le résultat est reproductible à l'octet près.

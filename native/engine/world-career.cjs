@@ -382,7 +382,17 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   // Build next year's entrants before clearing the results they are based on.
   S.season++;newSeason(S);S.history=[];S.lastReport=null;S.ending=null;S.trained=false;
   for(const c of S.clubs){c.points=c.played=c.won=c.drawn=c.lost=c.pf=c.pa=c.bonus=0;c.form=[];c.morale=75;for(const p of c.players){p.condition=100;p.injury=0;p.managerLoad={minutes:0,streak:0};if(p.physicalLoad)p.physicalLoad.fatigue=0;}}
-  ledgerEntry('Financement de début de saison',2500000);worldNewSeason(true);S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();managerMobilityOnSeasonStart();news('Une nouvelle saison commence. Le prochain objectif est devant nous.');save();
+  ledgerEntry('Financement de début de saison',2500000);worldNewSeason(true);S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();managerMobilityOnSeasonStart();trimHistories(S);news('Une nouvelle saison commence. Le prochain objectif est devant nous.');save();
+ }
+ // Fiches de progression : plusieurs milliers de joueurs gérés gagnent une ligne par
+ // saison (environ 1,7 Mo et 100 000 nœuds par an pour 116 clubs, jusqu'à douze
+ // lignes). Hors du club du manager et de son centre, seules les quatre dernières
+ // saisons sont gardées : la sauvegarde reste sous ses limites de taille et de nœuds.
+ const OTHER_HISTORY=4;
+ function trimHistories(s){
+  const own=new Set([...s.clubs[s.club].players,...(s.development?.academy||[])].map(p=>p.id));
+  const others=[...s.clubs.filter(c=>c.id!==s.club).flatMap(c=>c.players),...(s.aiRoster?.academies||[]).flatMap(a=>a.players),...(s.economy?.freeAgents||[]),...(s.market||[])];
+  for(const p of others)if(!own.has(p.id)&&Array.isArray(p.dev?.history)&&p.dev.history.length>OTHER_HISTORY)p.dev.history=p.dev.history.slice(-OTHER_HISTORY);
  }
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;

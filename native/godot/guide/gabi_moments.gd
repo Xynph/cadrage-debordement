@@ -15,30 +15,32 @@ const NEGATIF := "negatif"
 ## Gestes jamais joués : bras_croises (jugé raté), assis_* / debout_assis / assis_debout (aucune
 ## chaise dans le portrait), marche, tourne_g, tourne_d, telephone, telephone_marche (il sortirait du
 ## cadre ou téléphonerait pendant qu'il parle au coach), rit (le personnage sourit plutôt que de rire),
-## surpris, remercie (aucun moment du jeu ne les appelle encore).
+## surpris, remercie (aucun moment du jeu ne les appelle encore), et depuis le 12 novembre decu, baille,
+## applaudit : Gabi garde son carnet contre lui (demande de Léo) et, dans ces trois gestes, la main droite
+## rejoint la gauche et traverse le carnet.
 const CATEGORIES := {
 	"accueil": {"mixamo": [&"salut"], "origine": [&"Salut"], "ton": POSITIF},
 	"consigne": {"mixamo": [&"explique", &"montre", &"insiste", &"argumente"], "origine": [&"Explication"], "ton": NEUTRE},
 	"mise_en_garde": {"mixamo": [&"insiste", &"refuse", &"argumente"], "origine": [&"Explication"], "ton": NEUTRE},
 	"question": {"mixamo": [&"sceptique", &"hausse"], "origine": [&"Ecoute"], "ton": NEUTRE},
 	"approbation": {"mixamo": [&"approuve", &"approuve_fort", &"pouce"], "origine": [&"Approbation"], "ton": POSITIF},
-	"bonne_nouvelle": {"mixamo": [&"content", &"approuve_fort", &"pouce", &"applaudit"], "origine": [&"Approbation"], "ton": POSITIF},
-	"mauvaise_nouvelle": {"mixamo": [&"decu", &"reflechit", &"regarde_bas"], "origine": [&"RegardCarnet"], "ton": NEGATIF},
+	"bonne_nouvelle": {"mixamo": [&"content", &"approuve_fort", &"pouce"], "origine": [&"Approbation"], "ton": POSITIF},
+	"mauvaise_nouvelle": {"mixamo": [&"regarde_bas", &"reflechit"], "origine": [&"RegardCarnet"], "ton": NEGATIF},
 	"souvenir": {"mixamo": [&"reflechit", &"hausse"], "origine": [&"Ecoute"], "ton": NEUTRE},
 	"regret": {"mixamo": [&"reflechit", &"regarde_bas"], "origine": [&"RegardCarnet"], "ton": NEGATIF},
 }
 
 ## Attente (le coach lit ou choisit) : petits gestes selon le ton. « rares » : au plus un sur six,
-## jamais pendant une mauvaise nouvelle.
+## jamais pendant une mauvaise nouvelle. regarde_bas : il lève son carnet et le consulte.
 const ATTENTE := {
 	"mixamo": [&"repos_respire", &"appui", &"regarde_bas", &"reflechit"],
-	"mixamo_rares": [&"tablette", &"baille"],
+	"mixamo_rares": [&"tablette"],
 	"mixamo_negatif": [&"repos_respire", &"appui", &"regarde_bas", &"reflechit"],
 	"origine": [&"Ecoute", &"RegardCarnet"],
 }
 
 ## Gestes pendant lesquels Gabi regarde son carnet (ou la tablette) : le regard suit.
-const REGARD_CARNET := [&"regarde_bas", &"tablette", &"decu", &"RegardCarnet"]
+const REGARD_CARNET := [&"regarde_bas", &"tablette", &"RegardCarnet"]
 ## Gestes de réflexion : le regard part sur le côté, un peu en haut.
 const REGARD_PENSIF := [&"reflechit", &"sceptique", &"Ecoute"]
 
