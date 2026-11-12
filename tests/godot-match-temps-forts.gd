@@ -9,9 +9,9 @@ extends SceneTree
 ## Mode « actif » : coup d'envoi en 3D, écran intermédiaire, nouveau temps fort, arrêt
 ## sur carton, lisibilité en 1280×720 et 1920×1080. Mode « gestes » : vingt minutes
 ## avec les gestes. Mode « inactif » (CD_MATCH_TEMPS_FORTS=0) : direct d'origine inchangé.
-## Mode « entracte » : entre deux temps forts, l'horloge défile, le temps fort suivant attend
-## la fin de l'entracte, la tactique ouverte met en pause et ses changements passent, « Passer »
-## abrège ; aucun anneau au sol sous les joueurs.
+## Mode « entracte » : entre deux temps forts, le match défile en 2D (horloge qui défile), aucun
+## temps fort n'est retenu, plus de « Passer » (décision de Léo, 12 novembre 2026) ; la tactique
+## ouverte met en pause et ses changements passent ; aucun anneau au sol sous les joueurs.
 ## Mode « terrain2d » : pendant l'entracte, le match continue sur le terrain 2D (pastilles qui
 ## rejouent les faits du moteur, possession suivie, pause qui fige, rien d'inventé) et le
 ## tableau de bord (domination, chiffres, Mon XV, adjoint) est alimenté par les vraies données.
@@ -282,37 +282,30 @@ func interval(view: Control) -> void:
 	await settle(2)
 	check(view.stage._ball_marker.visible, "Vue de dessus : le repère du ballon reste, le ballon y est minuscule")
 	view.stage.set_camera("tv")
-	check(regie.entracte >= 6.0 and regie.entracte <= 10.0, "Entracte par défaut entre 6 et 10 s : %.1f s" % regie.entracte)
-	# Fin du coup d'envoi (le match importé est en pause) : l'entracte commence.
+	# Décision de Léo (12 novembre 2026) : pas de pause minimale entre deux temps forts, aucune
+	# retenue, plus de « Passer ». Le match défile en 2D à l'horloge choisie et le temps fort part
+	# dès que le moteur le déclenche, même juste après le précédent.
+	check(regie.entracte == 0.0, "Pas de pause minimale entre deux temps forts : %.1f s" % regie.entracte)
 	check(await until(func(): return regie.etat == regie.INTER, 60000), "Le coup d'envoi se termine")
 	if app.model.live.paused: await command("pause", {"paused": false})
-	# Entracte avec un temps fort retenu (pas la suite d'une action) : l'horloge défile, rien ne
-	# part avant la fin de l'entracte.
 	var horloges := {}
-	var retenu := func(): return regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_retenu")
+	var passer_vu := false
 	var debut := Time.get_ticks_msec()
-	while not retenu.call() and Time.get_ticks_msec() - debut < 240000:
-		await process_frame
-		if regie.etat == regie.INTER and regie.entracte_en_cours(): horloges[view.clock.text] = true
-	check(retenu.call(), "Un temps fort arrive pendant un entracte et y est retenu")
-	var score_retenu: String = view.score.text
-	var t_retenu := Time.get_ticks_msec()
-	while regie.etat != regie.JEU and Time.get_ticks_msec() - t_retenu < 60000:
+	var depart_tf: int = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size()
+	while regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() < depart_tf + 2 and Time.get_ticks_msec() - debut < 240000:
 		await process_frame
 		if regie.etat != regie.JEU:
 			horloges[view.clock.text] = true
-			if view.score.text != score_retenu: score_retenu = "changé"
-	var fins: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "entracte_fin")
-	var inters: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "intermediaire")
-	var tfs: Array = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort")
-	var attendu: float = (float(tfs[-1].debut_ms) - float(inters[-1].debut_ms)) / 1000.0 if not tfs.is_empty() and not inters.is_empty() else 0.0
-	check(regie.etat == regie.JEU and not fins.is_empty(), "Le temps fort retenu part")
-	check(horloges.size() >= 6 and horloges.keys().all(func(h: String): return ":" in h), "L'horloge défile pendant l'entracte (%d valeurs, ex. %s)" % [horloges.size(), str(horloges.keys().slice(0, 4))])
-	check(not fins.is_empty() and float(fins[-1].ecoule) >= regie.entracte - 0.05, "Rien ne part avant la fin de l'entracte : %s" % str(fins.slice(-1)))
-	check(attendu >= regie.entracte - 0.5, "Écran intermédiaire montré %.1f s avant le temps fort retenu (entracte %.1f s)" % [attendu, regie.entracte])
-	check(score_retenu != "changé", "Le score ne bouge pas pendant la retenue (rien n'annonce l'action)")
+			if between.find_children("*", "Button", true, false).any(func(b: Button): return b.is_visible_in_tree() and ("Passer" in b.text or "Skip" in b.name)): passer_vu = true
+	var attendu: float = (Time.get_ticks_msec() - debut) / 1000.0
+	check(regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() >= depart_tf + 2, "Le match enchaîne 2D et temps forts")
+	check(not regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_retenu"), "Aucun temps fort n'est retenu : il part dès qu'il est déclenché")
+	check(not passer_vu, "Plus de bouton « Passer »")
+	# Secondes qui roulent (« 12:41 ») ; l'horloge sans secondes du bandeau 3D peut apparaître à la bascule.
+	var roulantes: Array = horloges.keys().filter(func(h: String): return ":" in h)
+	check(roulantes.size() >= 3, "L'horloge défile en 2D entre deux temps forts (%d valeurs, ex. %s)" % [roulantes.size(), str(horloges.keys().filter(func(h: String): return not ":" in h).slice(0, 4))])
 	# Deuxième entracte : la tactique ouverte met le match en pause, la consigne passe, rien ne part.
-	check(await until(func(): return regie.etat == regie.INTER and regie.entracte_en_cours(), 120000), "Deuxième entracte")
+	check(await until(func(): return regie.etat == regie.INTER, 120000), "Retour en 2D")
 	await until(func(): return not app.waiting, 30000)
 	var avant: Dictionary = app.model.get("tactics", {}).duplicate()
 	view._toggle_drawer("Tactique")
@@ -330,23 +323,15 @@ func interval(view: Control) -> void:
 	check(str(app.model.get("tactics", {}).get("attack", "")) == autre, "La consigne choisie pendant l'entracte est prise en compte : " + autre)
 	var temps_forts: int = regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size()
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < int((regie.entracte + 2.0) * 1000.0): await process_frame
+	while Time.get_ticks_msec() - t0 < 4000: await process_frame
 	check(regie.etat != regie.JEU and regie.suivi.filter(func(e: Dictionary): return e.evenement == "temps_fort").size() == temps_forts, "Tiroir ouvert : aucun temps fort ne part")
 	check(view.clock.text == horloge_figee, "Pause : l'horloge est figée (%s → %s)" % [horloge_figee, view.clock.text])
 	view._toggle_drawer("Tactique")
 	check(await until(func(): return not app.model.live.paused and not app.waiting, 30000), "Tactique fermée : le match reprend")
 	# La consigne vaut pour la suite du match, comme une consigne donnée en pause aujourd'hui.
 	check(await until(func(): return app.model.live.minute > 0 and str(app.model.get("tactics", {}).get("attack", "")) == autre, 30000), "La consigne reste en place après la reprise")
-	# « Passer » : le prochain temps fort part sans attendre la fin de l'entracte.
 	check(await until(func(): return regie.etat == regie.JEU, 180000), "Temps fort suivant")
-	check(await until(func(): return regie.etat == regie.INTER and regie.entracte_en_cours(), 180000), "Troisième entracte")
-	check(between.find_child("MatchBetweenSkip", true, false) == null, "Pas de bouton « Passer » : le match défile à la vitesse de l’horloge (choix de Léo)")
-	var passe_a := Time.get_ticks_msec()
-	between.passer_demande.emit()
-	check(await until(func(): return regie.etat == regie.JEU, 120000), "« Passer » mène au prochain temps fort")
-	var passe_s: float = (Time.get_ticks_msec() - passe_a) / 1000.0
-	check(regie.suivi.any(func(e: Dictionary): return e.evenement == "entracte_passe") and passe_s < regie.entracte, "Le temps fort part sur « Passer », sans attendre la fin de l'entracte (%.1f s)" % passe_s)
-	print("ENTRACTE ", JSON.stringify({"premier_s": attendu, "horloges": horloges.size(), "passer_s": (Time.get_ticks_msec() - passe_a) / 1000.0}))
+	print("ENTRACTE ", JSON.stringify({"premier_s": attendu, "horloges": horloges.size()}))
 	app._command("pause", {"paused": true})
 	await wait_command()
 
