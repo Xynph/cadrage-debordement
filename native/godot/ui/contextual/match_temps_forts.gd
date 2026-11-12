@@ -155,6 +155,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	view.move_child(voile, container.get_index() + 1)
 	between = Between.new()
 	between.horloge = horloge
+	between.hote_barre = view.get("bande_temps_forts")
 	space.add_child(between)
 	between.niveau_choisi.connect(choisir_niveau)
 	between.reprise_demandee.connect(func(): app._command("pause", {"paused": false}))
@@ -162,6 +163,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.passer_demande.connect(passer)
 	between.horloge_choisie.connect(choisir_horloge)
 	between.delegation_demandee.connect(view.confier_fin)
+	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
 	# Une seule barre de commandes : celle de l'écran intermédiaire, pendant qu'il est affiché.
 	between.visibility_changed.connect(_barre_unique)
 	# Mon XV : un joueur choisi ouvre le banc sur lui (le match se met en pause).
@@ -176,9 +178,25 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	if preferences != null: between.terrain.calme = bool(preferences.data.get("reduced_motion", false))
 	between.terrain.recaler(-1)
 
-## Une seule barre de commandes pendant l'entracte ; le match fini la rend (« Valider la journée » y est).
+## Une seule barre de commandes, la même en 3D et pendant l'entracte : la bande sous le score
+## (Tactique, Banc, Paramètres, Plus) ; le match fini rend la barre du bas (« Valider la journée »).
 func _barre_unique() -> void:
-	if view != null and view.barre_commandes != null: view.barre_commandes.visible = not between.visible or bool(_live.get("finished", false))
+	if view == null: return
+	var fini := bool(_live.get("finished", false))
+	var bande: Control = view.get("bande_temps_forts")
+	if bande != null:
+		bande.visible = not fini
+		if view.barre_commandes != null: view.barre_commandes.visible = fini
+	elif view.barre_commandes != null: view.barre_commandes.visible = not between.visible or fini
+
+## Bande sous le score : seulement quand la régie cadence le match (projection présente) ;
+## sinon (repli) et à la fin du match, la barre du bas du direct.
+func _bande(live: Dictionary) -> void:
+	var bande: Control = view.get("bande_temps_forts") if view != null else null
+	if bande == null: return
+	var active := live.get("direct") is Dictionary and not bool(live.get("finished", false))
+	bande.visible = active
+	if view.barre_commandes != null: view.barre_commandes.visible = not active
 
 func choisir_horloge(valeur: String) -> void:
 	if not HORLOGES.has(valeur): return
@@ -258,6 +276,7 @@ func retient(live: Dictionary) -> bool:
 ## Appelée par la vue à chaque modèle reçu, après la mise à jour du bandeau.
 func receive(model: Dictionary, live: Dictionary) -> void:
 	var direct: Variant = live.get("direct")
+	_bande(live)
 	if not direct is Dictionary:
 		# Moteur sans projection (repli, ou projection indisponible) : le direct d'origine
 		# garde la main, et un temps fort en cours s'efface devant lui.

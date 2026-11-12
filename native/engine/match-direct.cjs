@@ -176,18 +176,40 @@ function chiffresRugby(lignes,events){
  }
  return t;
 }
-// Note de match des joueurs du manager : 6 au coup d'envoi, puis ce que le journal leur
-// attribue (courses et mètres, franchissements, essais, ballons récupérés, tirs, cartons, fautes).
+// Place défensive de chaque poste (1 à 15) en largeur (0 à 70) : sert à désigner le plaqueur
+// d'une course adverse, que le moteur ne nomme pas. Les avants plaquent au contact (petits gains),
+// les trois-quarts dans leur couloir. Lecture pure du journal : aucun tirage, rien ne change au match.
+const COULOIR_DEFENSE=[33,35,37,30,40,24,46,35,35,28,6,20,50,64,35];
+function plaqueur(on,gain,y){
+ if(!Array.isArray(on)||!on.length)return null;
+ let choisi=null,meilleur=Infinity;
+ on.forEach((id,poste)=>{
+  if(id==null||poste>14)return;
+  const avant=poste<8,cible=Number.isFinite(y)?y:35;
+  // Petit gain : un avant ; course plus longue : le couloir compte d'abord.
+  const ecart=Math.abs(COULOIR_DEFENSE[poste]-cible)+(gain<6?(avant?0:18):(avant?8:0))+(poste===5||poste===6?-4:0);
+  if(ecart<meilleur){meilleur=ecart;choisi=String(id)}
+ });
+ return choisi;
+}
+// Note de match des joueurs d'une équipe (le manager, ou l'adversaire pour « à surveiller ») :
+// 6 au coup d'envoi, puis ce que le journal leur attribue (courses et mètres, franchissements,
+// essais, ballons récupérés, plaquages, tirs, cartons, fautes). Plaquages : chaque course
+// adverse stoppée (moins de 22 m) et chaque ballon récupéré, comme le chiffre d'équipe.
 function notesDuMatch(lignes,events,camp){
  const notes={};if(camp!==0&&camp!==1)return notes;
- const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=notes[id]||(notes[id]={note:6,faits:0,essais:0,metres:0});n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(typeof fait==='number')n.metres+=fait};
+ const fiche=id=>notes[id]||(notes[id]={note:6,faits:0,essais:0,metres:0,plaquages:0});
+ const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=fiche(id);n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(fait==='plaquage')n.plaquages++;if(typeof fait==='number')n.metres+=fait};
  for(const l of lignes){
-  const s=events[l.i]?.scene;if(!s||s.actor==null)continue;
-  const id=String(s.actor),nous=Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(id);if(!nous)continue;
+  const s=events[l.i]?.scene;if(!s)continue;
   const gain=Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?Math.abs(s.to.x-s.from.x):0;
+  // Course adverse stoppée : plaqueur déduit de la place défensive (voir `plaqueur`).
+  if(l.kind==='carry'&&l.equipe===1-camp&&l.x!==null&&l.depuis!==null&&Math.abs(l.x-l.depuis)<22){ajoute(plaqueur(s.on?.[camp],gain,s.to?.y),.03,'plaquage');continue}
+  if(s.actor==null)continue;
+  const id=String(s.actor),nous=Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(id);if(!nous)continue;
   if(l.kind==='carry')ajoute(id,.04+Math.min(.5,gain/45)+(gain>=22?.25:0),Math.round(gain));
   else if(l.kind==='try')ajoute(id,1,'essai');
-  else if(l.kind==='turnover')ajoute(id,.45);
+  else if(l.kind==='turnover'){ajoute(id,.45);if(l.equipe===camp)notes[id].plaquages++}
   else if(l.kind==='reception')ajoute(id,.08);
   else if(l.kind==='kick')ajoute(id,.05);
   else if(l.kind==='goal')ajoute(id,.3);
@@ -197,6 +219,15 @@ function notesDuMatch(lignes,events,camp){
  }
  for(const n of Object.values(notes))n.note=Math.round(Math.max(3,Math.min(9.9,n.note))*10)/10;
  return notes;
+}
+// Adversaires à surveiller : les deux meilleures notes adverses de ce qui a été montré, par
+// numéro (le poste sur la feuille au moment du dernier fait), sans nom.
+function aSurveiller(lignes,events,camp){
+ if(camp!==0&&camp!==1)return [];
+ const eux=1-camp,notes=notesDuMatch(lignes,events,eux),numeros={};
+ for(const l of lignes){const on=events[l.i]?.scene?.on?.[eux];if(Array.isArray(on))on.forEach((id,poste)=>{if(id!=null)numeros[String(id)]=poste+1})}
+ return Object.entries(notes).filter(([id,n])=>numeros[id]&&n.faits>=2).sort((a,b)=>b[1].note-a[1].note||b[1].faits-a[1].faits).slice(0,2)
+  .map(([id,n])=>({numero:numeros[id],note:n.note,faits:n.faits,essais:n.essais,metres:Math.round(n.metres),plaquages:n.plaquages}));
 }
 
 // Entracte sans rien dévoiler (demande de Léo, 12 novembre 2026 : « on découvre l'action en la
@@ -312,7 +343,7 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
+  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),surveiller:aSurveiller(vues,events,etat.camp??-1),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null};
  const tf=bilan.courant;
  if(tf){
@@ -356,4 +387,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,DEROULE_MAX});
+module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,aSurveiller,plaqueur,DEROULE_MAX});

@@ -229,6 +229,11 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       // Notes : joueurs du manager seulement, bornées.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
       for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
+      // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
+      const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
+      assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
+      // Adversaires à surveiller : deux au plus, par numéro, bornés comme les notes.
+      assert.ok(Array.isArray(direct.surveiller) && direct.surveiller.length <= 2 && direct.surveiller.every(a => a.numero >= 1 && a.numero <= 23 && a.note >= 3 && !('nom' in a)));
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
     assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);

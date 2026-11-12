@@ -6,11 +6,14 @@ extends Control
 ## un tableau de bord inspiré des écrans « match overview » des jeux de management de football,
 ## adapté au rugby : domination minute par minute, chiffres clés comparés, fil, Mon XV (note,
 ## énergie, alertes), regard de l'adjoint et accès direct à la tactique et aux remplacements.
-## Une seule mise en page (choix de Léo) : grand terrain habillé, frise dessous, colonne
-## repliable à droite. Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
+## Une seule mise en page (choix de Léo, 12 novembre 2026, rendu 1) : un tableau de bord en
+## tuiles façon FM, terrain 2D petit en haut au centre ; Mon XV en tableau complet est la tuile
+## principale (à gauche, en relief) ; momentum et faits marquants au centre ; Gabi et douze stats
+## comparées à droite. Il n'affiche que la projection `live.direct` du moteur et le modèle : aucun calcul sportif.
 const S = preload("res://ui/contextual/skin.gd")
 const T = preload("res://theme.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
+const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 
 signal niveau_choisi(id: String)
 signal reprise_demandee
@@ -25,11 +28,15 @@ signal delegation_demandee
 signal joueur_choisi(poste: int)
 ## Score du dernier fait joué sur le terrain (le moteur a parfois une minute d'avance).
 signal score_joue(score: Array)
+## Caméra du direct 3D choisie dans le menu Plus (« tv », « tactical », « action »).
+signal camera_demandee(mode: String)
+## Bande de la vue du match (sous le score) qui porte la barre de commandes, la même en 3D et
+## pendant l'entracte ; sans elle, la barre reste en haut de l'écran intermédiaire.
+var hote_barre: Control
 
-## Chiffres clés (le reste dans le tiroir Statistiques).
-const CLES := ["possession", "occupation", "plaquages"]
-## Chiffres qui prennent la place d'un chiffre clé encore vide.
-const RELAIS := ["franchissements", "metres", "penalites", "melees", "touches"]
+## Les douze stats comparées de la tuile Statistiques (le reste dans le tiroir, menu Plus).
+const STATS := ["possession", "occupation", "metres", "franchissements", "plaquages", "plaquages_manques",
+	"recuperations", "melees", "touches", "penalites", "en_avant", "pieds"]
 const FATIGUE := 55
 const EPUISE := 40
 var terrain: Terrain2D
@@ -56,8 +63,6 @@ var domination: Domination
 var arret: PanelContainer
 var arret_titre: Label
 var arret_texte: Label
-## Colonne de droite repliée (le terrain prend la place).
-var colonne_repliee := false
 var _niveaux: Array = []
 var _cle := ""
 var _densite := 0.5
@@ -67,11 +72,11 @@ var _dernier: Array = []
 var _lignes: Array = []
 var _dernier_fait := -1
 var _rangs: Array = []
-var details: VBoxContainer
-var theme_stats := "Attaque"
-## Stats détaillées par thème (tout est borné à ce qui a été montré, comme les chiffres clés).
-const THEMES := {"Attaque": ["metres", "franchissements", "temps_de_jeu", "pieds"], "Défense": ["plaquages", "plaquages_manques", "recuperations"],
-	"Conquête": ["melees", "touches"], "Discipline": ["penalites", "en_avant", "cartons"]}
+## Faits marquants (les derniers faits joués) et adversaires à surveiller.
+var faits: VBoxContainer
+var surveiller: VBoxContainer
+## Tuile principale (Mon XV) : l'œil commence par elle.
+var tuile_principale: PanelContainer
 ## Alertes de Mon XV (fatigue, blessure, carton) : pour l'adjoint et les tests.
 var alertes_xv: Array[Dictionary] = []
 
@@ -335,10 +340,10 @@ func _panneau(parent: Node, marge: int, fond: Color = Color(PANNEAU, 0.94)) -> V
 	bord.add_child(colonne)
 	return colonne
 
-## Titre de panneau : une ligne en ivoire, et à droite une précision atténuée.
-func _titre(texte: String, precision: String = "") -> Control:
+## Titre de tuile discret (petites capitales atténuées) ; la tuile principale a un vrai titre.
+func _titre(texte: String, precision: String = "", principal: bool = false) -> Control:
 	var ligne := S.G.h(px(10))
-	var etiquette := _texte(texte, 28, IVOIRE, false, true)
+	var etiquette := _texte(texte if principal else texte.to_upper(), 34 if principal else 22, IVOIRE if principal else FAIBLE, false, true)
 	S.G.fill(etiquette)
 	ligne.add_child(etiquette)
 	if not precision.is_empty(): ligne.add_child(_texte(precision, 24, FAIBLE))
@@ -432,10 +437,18 @@ func _commandes() -> void:
 	var menu := plus.get_popup()
 	menu.add_theme_font_size_override("font_size", px(26))
 	for libelle: String in ["Statistiques", "Journal du match", "Confier la fin à l’adjoint"]: menu.add_item(libelle)
+	# Caméras du direct 3D (la barre du bas est masquée en temps forts).
+	menu.add_separator("Caméra des temps forts")
+	for paire: Array in [["Vue TV", "tv"], ["Vue de dessus", "tactical"], ["Vue contact", "action"]]:
+		menu.add_item(str(paire[0]))
+		menu.set_item_metadata(menu.item_count - 1, paire[1])
 	menu.id_pressed.connect(func(id: int):
 		if id == 0: tiroir_demande.emit("Stats")
 		elif id == 1: tiroir_demande.emit("Journal")
-		else: delegation_demandee.emit())
+		elif id == 2: delegation_demandee.emit()
+		else:
+			var index := menu.get_item_index(id)
+			if index >= 0 and menu.get_item_metadata(index) is String: camera_demandee.emit(str(menu.get_item_metadata(index))))
 	# Paramètres (engrenage) : vitesse de l'horloge et temps forts montrés, dans un petit panneau.
 	parametres = _bouton("PARAMÈTRES", func(): _ouvrir_parametres())
 	parametres.name = "MatchBetweenSettings"
@@ -541,10 +554,13 @@ func _composants() -> void:
 	fil.name = "MatchBetweenFeed"
 	xv = GridContainer.new()
 	xv.name = "MatchBetweenSquad"
-	xv.columns = 3
-	xv.add_theme_constant_override("h_separation", px(8))
+	xv.columns = 1
 	xv.add_theme_constant_override("v_separation", px(2))
 	S.G.fill(xv)
+	faits = S.G.v(px(4))
+	faits.name = "MatchBetweenHighlights"
+	surveiller = S.G.v(px(6))
+	surveiller.name = "MatchBetweenWatch"
 	adjoint = S.G.v(px(10))
 	adjoint.name = "MatchBetweenAdvice"
 
@@ -554,77 +570,110 @@ func _carte_gabi(parent: Control) -> void:
 	adjoint_cadre = cadre.get_parent().get_parent()
 	cadre.add_child(adjoint)
 
+## Colonnes de Mon XV (largeurs à l'échelle 2560) : numéro, nom, poste, note, énergie,
+## plaquages, mètres, essais.
+const COLONNES_XV := [["", 52], ["Joueur", 0], ["Poste", 70], ["Note", 84], ["Énergie", 230], ["Plaq.", 70], ["Mètres", 86], ["Essais", 70]]
+
+func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, chiffre: bool = false) -> Label:
+	var etiquette := _texte(texte, taille, couleur, false, not chiffre)
+	if chiffre: etiquette.add_theme_font_override("font", CHIFFRES_GRAS)
+	etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	etiquette.clip_text = true
+	etiquette.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if largeur > 0:
+		etiquette.custom_minimum_size.x = px(largeur)
+		etiquette.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if chiffre else HORIZONTAL_ALIGNMENT_LEFT
+	else: S.G.fill(etiquette)
+	return etiquette
+
+## Tableau de bord en tuiles (rendu 1 choisi par Léo) : barre de commandes, puis trois colonnes.
+## Gauche : Mon XV, tuile principale en relief, et les adversaires à surveiller. Centre : terrain
+## 2D petit (dernier fait en bandeau au-dessus), momentum, faits marquants. Droite : Gabi, stats.
 func _page() -> void:
-	var page := S.G.h(px(16))
+	var page := S.G.v(px(18))
 	S.full(page)
 	add_child(page)
-	var gauche := S.G.v(px(12))
-	S.G.fill(gauche, true, 1.0)
-	page.add_child(gauche)
-	var barre := S.G.h(px(12))
-	barre.alignment = BoxContainer.ALIGNMENT_END
-	gauche.add_child(barre)
+	var barre: Control
+	if is_instance_valid(hote_barre):
+		S.clear(hote_barre)
+		barre = hote_barre
+	else:
+		barre = S.G.h(px(12))
+		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
+		page.add_child(barre)
 	for noeud: Control in [etat, tactique, banc, parametres, plus]: barre.add_child(noeud)
-	# Le dernier fait en bandeau, comme à la télévision, au-dessus du terrain (il ne cache
-	# aucun joueur).
+	var grille := S.G.h(px(20))
+	grille.name = "MatchBetweenTiles"
+	S.G.fill(grille, true)
+	page.add_child(grille)
+	# Gauche : Mon XV (tuile principale).
+	var gauche := S.G.v(px(20))
+	gauche.custom_minimum_size.x = px(860)
+	grille.add_child(gauche)
+	var cadre_xv := _panneau(gauche, px(22), Color(RELIEF, 0.98))
+	tuile_principale = cadre_xv.get_parent().get_parent()
+	tuile_principale.name = "MatchBetweenMain"
+	S.G.fill(tuile_principale, true)
+	var bord := tuile_principale.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+	bord.border_width_left = maxi(2, px(5))
+	bord.border_color = Color(OR, 0.85)
+	tuile_principale.add_theme_stylebox_override("panel", bord)
+	cadre_xv.add_child(_titre("Mon XV", "note · énergie · plaquages · mètres", true))
+	var entete := S.G.h(px(8))
+	for colonne: Array in COLONNES_XV:
+		entete.add_child(_cellule(str(colonne[0]).to_upper(), int(colonne[1]), FAIBLE, 20, int(colonne[1]) > 0 and colonne[0] != "Poste" and colonne[0] != "Énergie"))
+	cadre_xv.add_child(entete)
+	cadre_xv.add_child(xv)
+	var espace := Control.new()
+	S.G.fill(espace, true)
+	cadre_xv.add_child(espace)
+	cadre_xv.add_child(_titre("Adversaires à surveiller", "ce qu’ils ont montré"))
+	cadre_xv.add_child(surveiller)
+	# Centre : terrain petit, momentum, faits marquants.
+	var centre := S.G.v(px(20))
+	S.G.fill(centre, false, 1.0)
+	grille.add_child(centre)
+	var cadre_terrain := _panneau(centre, px(14))
+	cadre_terrain.get_parent().get_parent().name = "MatchBetweenPitchTile"
 	bandeau = PanelContainer.new()
 	bandeau.name = "MatchBetweenBanner"
-	var style := S.G.T.box(Color(FOND, 0.88), maxi(4, px(8)))
-	style.border_width_left = maxi(2, px(6))
+	var style := S.G.T.box(Color(FOND, 0.6), maxi(4, px(8)))
+	style.border_width_left = maxi(2, px(5))
 	style.border_color = OR
-	style.content_margin_left = px(14)
-	style.content_margin_right = px(18)
-	style.content_margin_top = px(8)
-	style.content_margin_bottom = px(8)
-	style.shadow_color = Color(0, 0, 0, 0.45)
-	style.shadow_size = maxi(3, px(14))
-	style.shadow_offset = Vector2(0, maxf(1.0, px(4)))
+	style.content_margin_left = px(10)
+	style.content_margin_right = px(10)
+	style.content_margin_top = px(4)
+	style.content_margin_bottom = px(4)
 	bandeau.add_theme_stylebox_override("panel", style)
 	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	gauche.add_child(bandeau)
+	cadre_terrain.add_child(bandeau)
 	bandeau.add_child(fil)
 	S.G.fill(fil)
 	var scene := Control.new()
 	scene.name = "MatchBetweenScene"
 	scene.clip_contents = true
-	S.G.fill(scene, true)
-	scene.custom_minimum_size.y = px(400)
-	gauche.add_child(scene)
+	scene.custom_minimum_size = Vector2(px(660), px(400))
+	cadre_terrain.add_child(scene)
 	S.full(terrain)
 	scene.add_child(terrain)
-	var cadre_frise := _panneau(gauche, px(12))
+	var cadre_frise := _panneau(centre, px(14))
+	cadre_frise.add_child(_titre("Momentum", "points marqués et cartons"))
 	cadre_frise.add_child(domination)
 	domination.size_flags_vertical = Control.SIZE_FILL
-	# Languette : replie ou déplie la colonne de droite (le terrain prend la place).
-	var languette := Button.new()
-	languette.name = "MatchBetweenFold"
-	languette.text = "‹" if colonne_repliee else "›"
-	languette.custom_minimum_size = Vector2(px(44), px(120))
-	languette.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	languette.add_theme_font_size_override("font_size", px(34))
-	languette.tooltip_text = "Replier ou déplier la colonne Mon XV et Gabi."
-	languette.set_meta("contextual_enabled", true)
-	_habiller(languette)
-	page.add_child(languette)
-	var droite := S.G.v(px(14))
+	var cadre_faits := _panneau(centre, px(14))
+	S.G.fill(cadre_faits.get_parent().get_parent(), true)
+	cadre_faits.add_child(_titre("Faits marquants"))
+	cadre_faits.add_child(faits)
+	# Droite : Gabi, puis les douze stats comparées.
+	var droite := S.G.v(px(20))
 	droite.name = "MatchBetweenColumn"
 	droite.custom_minimum_size.x = px(640)
-	droite.visible = not colonne_repliee
-	page.add_child(droite)
-	languette.pressed.connect(func():
-		colonne_repliee = not colonne_repliee
-		languette.text = "‹" if colonne_repliee else "›"
-		droite.visible = not colonne_repliee)
-	var cadre_xv := _panneau(droite, px(16))
-	cadre_xv.add_child(_titre("Mon XV", "énergie · note"))
-	cadre_xv.add_child(xv)
-	var cadre_chiffres := _panneau(droite, px(16))
-	cadre_chiffres.add_child(chiffres)
-	details = S.G.v(px(2))
-	details.name = "MatchBetweenDetails"
-	cadre_chiffres.add_child(details)
+	grille.add_child(droite)
 	_carte_gabi(droite)
-	S.G.fill(adjoint_cadre, true)
+	var cadre_chiffres := _panneau(droite, px(16))
+	S.G.fill(cadre_chiffres.get_parent().get_parent(), true)
+	cadre_chiffres.add_child(_titre("Statistiques", "comparées"))
+	cadre_chiffres.add_child(chiffres)
 
 ## Arrêt-décision : le match attend le manager.
 func _arret_decision() -> void:
@@ -698,6 +747,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_remplir_fil()
 	_remplir_chiffres(direct, live)
 	_remplir_xv(passe.lineup, direct)
+	_remplir_surveiller(direct)
 	_remplir_adjoint(conseil, live, direct, appliquer)
 
 func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
@@ -747,6 +797,14 @@ func _remplir_fil() -> void:
 			create_tween().tween_property(ligne, "modulate:a", 1.0, 0.3).set_trans(Tween.TRANS_SINE)
 		_dernier_fait = i
 	else: fil.add_child(_texte("Le coup d’envoi approche.", 26, DOUX))
+	# Faits marquants : les derniers faits joués, le plus récent en haut.
+	if is_instance_valid(faits):
+		S.clear(faits)
+		var nombre := 4 if _densite < 0.6 else 6
+		var recents := visibles.slice(maxi(0, visibles.size() - nombre))
+		recents.reverse()
+		for n in recents.size(): faits.add_child(_ligne_fil(recents[n], n == 0, false))
+		if recents.is_empty(): faits.add_child(_texte("Aucun fait marquant pour l’instant.", 24, FAIBLE))
 
 func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	var kind := str(entree.get("kind", ""))
@@ -795,99 +853,43 @@ func _valeur(rang: Dictionary, cote: int) -> String:
 ## Chiffre clé : libellé, valeur de l'équipe qui reçoit, barre comparée, valeur de l'autre.
 func _ligne_chiffre(parent: Control, rang: Dictionary) -> void:
 	var ligne := S.G.h(px(12))
-	ligne.custom_minimum_size.y = px(50)
-	var titre := _texte(str(rang.get("label", "")), 26, DOUX)
+	ligne.custom_minimum_size.y = px(44)
+	var titre := _texte(str(rang.get("label", "")), 24, DOUX)
 	titre.clip_text = true
 	titre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	titre.custom_minimum_size.x = px(120)
 	S.G.fill(titre, false, 1.6)
 	ligne.add_child(titre)
-	var a := _texte(_valeur(rang, 0), 40, IVOIRE)
+	var a := _texte(_valeur(rang, 0), 30, IVOIRE)
 	a.add_theme_font_override("font", CHIFFRES_GRAS)
 	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	a.custom_minimum_size.x = px(84)
+	a.custom_minimum_size.x = px(78)
 	ligne.add_child(a)
 	var barre := Barre.new()
 	barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
 	barre.couleurs = terrain.couleurs.duplicate()
 	barre.densite = _densite
-	barre.custom_minimum_size = Vector2(px(80), px(30))
-	S.G.fill(barre, false, 1.0)
+	barre.custom_minimum_size = Vector2(px(80), px(24))
+	S.G.fill(barre, false, 1.2)
 	ligne.add_child(barre)
-	var b := _texte(_valeur(rang, 1), 40, IVOIRE)
+	var b := _texte(_valeur(rang, 1), 30, IVOIRE)
 	b.add_theme_font_override("font", CHIFFRES_GRAS)
-	b.custom_minimum_size.x = px(84)
+	b.custom_minimum_size.x = px(78)
 	ligne.add_child(b)
 	parent.add_child(ligne)
 
 func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	S.clear(chiffres)
 	var rangs: Array = direct.get("tableau", [])
-	# Trois chiffres clés : d'abord ceux qui disent déjà quelque chose (une stat encore vide en
-	# début de match cède sa place), sinon les libellés sans valeur (« — »). Les autres sont dans
-	# le tiroir Statistiques (menu Plus).
 	var par_cle := {}
 	for rang: Dictionary in rangs: par_cle[str(rang.get("cle", ""))] = rang
-	var choisis: Array = []
-	for cle: String in CLES + RELAIS:
-		if par_cle.has(cle) and not par_cle[cle].get("vide", false) and choisis.size() < CLES.size(): choisis.append(par_cle[cle])
-	for cle: String in CLES:
-		if par_cle.has(cle) and par_cle[cle].get("vide", false) and choisis.size() < CLES.size(): choisis.append(par_cle[cle])
-	for rang: Dictionary in choisis: _ligne_chiffre(chiffres, rang)
+	# Douze stats comparées, toujours dans le même ordre (« — » tant qu'une stat est vide).
+	for cle: String in STATS:
+		if par_cle.has(cle): _ligne_chiffre(chiffres, par_cle[cle])
 	_rangs = rangs
-	_remplir_details()
 
-## Stats détaillées par thème (onglets compacts) : barres fines bicolores, chiffres lisibles.
-func _remplir_details() -> void:
-	if not is_instance_valid(details): return
-	S.clear(details)
-	var onglets := S.G.h(px(6))
-	details.add_child(onglets)
-	var groupe := ButtonGroup.new()
-	for nom: String in THEMES:
-		var bouton := _segment(nom, groupe, nom == theme_stats)
-		bouton.name = "MatchBetweenTheme" + nom
-		bouton.custom_minimum_size = Vector2(0, px(48))
-		bouton.add_theme_font_size_override("font_size", px(24))
-		S.G.fill(bouton)
-		bouton.pressed.connect(func():
-			theme_stats = nom
-			_remplir_details.call_deferred())
-		onglets.add_child(bouton)
-	var par_cle := {}
-	for rang: Dictionary in _rangs: par_cle[str(rang.get("cle", ""))] = rang
-	for cle: String in THEMES[theme_stats]:
-		if not par_cle.has(cle): continue
-		var rang: Dictionary = par_cle[cle]
-		var ligne := S.G.h(px(10))
-		ligne.custom_minimum_size.y = px(48)
-		var a := _texte(_valeur(rang, 0), 28, IVOIRE)
-		a.add_theme_font_override("font", CHIFFRES_GRAS)
-		a.custom_minimum_size.x = px(70)
-		ligne.add_child(a)
-		var milieu := S.G.v(px(6))
-		milieu.alignment = BoxContainer.ALIGNMENT_CENTER
-		S.G.fill(milieu)
-		var titre := _texte(str(rang.get("label", "")), 22, DOUX)
-		titre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		titre.clip_text = true
-		milieu.add_child(titre)
-		var barre := Barre.new()
-		barre.valeurs = rang.get("valeurs", [0, 0]) if not rang.get("vide", false) else [0, 0]
-		barre.couleurs = terrain.couleurs.duplicate()
-		barre.densite = _densite * 1.3
-		barre.custom_minimum_size = Vector2(px(60), px(14))
-		milieu.add_child(barre)
-		ligne.add_child(milieu)
-		var b := _texte(_valeur(rang, 1), 28, IVOIRE)
-		b.add_theme_font_override("font", CHIFFRES_GRAS)
-		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		b.custom_minimum_size.x = px(70)
-		ligne.add_child(b)
-		details.add_child(ligne)
-
-## Mon XV : quinze anneaux d'énergie autour des numéros, la note du match dessous ; nom, poste
-## et alertes en infobulle ; un clic ouvre le banc sur le joueur.
+## Mon XV : tableau complet, une ligne par joueur (numéro, nom, poste, note colorée, jauge
+## d'énergie, plaquages, mètres, essais) ; alertes en infobulle ; un clic ouvre le banc sur lui.
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	S.clear(xv)
 	alertes_xv.clear()
@@ -898,7 +900,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	if joueurs.is_empty():
 		xv.add_child(_texte("Composition indisponible.", 26, DOUX, true))
 		return
-	var anneau := px(54)
+	var hauteur := px(50)
 	for poste in joueurs.size():
 		var joueur: Variant = joueurs[poste]
 		var case := Button.new()
@@ -907,69 +909,103 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		case.focus_mode = Control.FOCUS_ALL
 		case.set_meta("contextual_enabled", true)
 		case.pressed.connect(func(): joueur_choisi.emit(poste))
-		var vide := StyleBoxEmpty.new()
+		# Une ligne sur deux très légèrement teintée : l'œil suit la ligne d'un bout à l'autre.
+		var vide := S.G.T.box(Color(1, 1, 1, 0.03 if poste % 2 == 0 else 0.0), maxi(3, px(8)))
 		case.add_theme_stylebox_override("normal", vide)
 		case.add_theme_stylebox_override("pressed", vide)
-		var survol := S.G.T.box(SURVOL, maxi(4, px(10)))
-		var focus := S.G.T.box(Color.TRANSPARENT, maxi(4, px(10)), OR)
+		var survol := S.G.T.box(SURVOL, maxi(3, px(8)))
+		var focus := S.G.T.box(Color.TRANSPARENT, maxi(3, px(8)), OR)
 		for style: StyleBox in [vide, survol, focus]: style.set_content_margin_all(0)
 		case.add_theme_stylebox_override("hover", survol)
 		case.add_theme_stylebox_override("focus", focus)
 		S.G.fill(case)
-		# Ligne du joueur : anneau d'énergie et numéro, nom de famille, note du match à droite.
-		var colonne := S.G.h(px(6))
-		colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		S.full(colonne)
-		case.add_child(colonne)
-		var energie := Energie.new()
-		energie.numero = str(poste + 1)
-		energie.densite = _densite
-		energie.custom_minimum_size = Vector2(anneau, anneau)
-		energie.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		energie.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		colonne.add_child(energie)
+		case.custom_minimum_size.y = hauteur
+		var ligne := S.G.h(px(8))
+		ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		S.full(ligne)
+		case.add_child(ligne)
+		var pastille := W.Numero.new()
+		pastille.numero = str(poste + 1)
+		pastille.densite = _densite
+		pastille.teinte = terrain.couleurs[terrain.camp] if terrain.camp in [0, 1] else W.VERT
+		pastille.custom_minimum_size = Vector2(px(int(COLONNES_XV[0][1])), hauteur)
+		ligne.add_child(pastille)
 		if not joueur is Dictionary:
-			energie.valeur = 0.0
+			ligne.add_child(_cellule("Poste vacant", 0, FAIBLE))
 			case.tooltip_text = "%d · poste vacant" % (poste + 1)
-			case.custom_minimum_size.y = anneau + px(4)
 			xv.add_child(case)
 			continue
-		var id := str(joueur.get("id", ""))
+		var d := W.donnees_joueur(joueur, notes, cartons)
+		var id: String = d.id
 		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
-		var note := float(fiche.get("note", 6.0))
-		var condition := float(joueur.get("condition", 100))
-		energie.valeur = condition
-		var nom_court := _nom_court(str(joueur.get("name", "")))
-		var etiquette_nom := _texte(nom_court, 28, IVOIRE, false, true)
-		etiquette_nom.clip_text = true
-		etiquette_nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		etiquette_nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		S.G.fill(etiquette_nom)
-		colonne.add_child(etiquette_nom)
-		var etiquette_note := _texte("%.1f" % note, 28, _teinte_note(note), false, true)
-		etiquette_note.add_theme_font_override("font", CHIFFRES_GRAS)
-		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		etiquette_note.custom_minimum_size.x = px(38)
-		etiquette_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		colonne.add_child(etiquette_note)
-		# Nom gardé pour les lecteurs d'écran et les tests, montré en infobulle.
+		var note: float = d.note
+		var condition: float = d.energie
+		ligne.add_child(_cellule(_nom_court(str(d.nom)), 0, IVOIRE, 28))
+		ligne.add_child(_cellule(str(d.poste), int(COLONNES_XV[2][1]), FAIBLE, 22))
+		# Note dans une pastille teintée, énergie en jauge, puis les chiffres du joueur.
+		var cadre_note := PanelContainer.new()
+		cadre_note.add_theme_stylebox_override("panel", S.G.T.box(Color(_teinte_note(note), 0.16), maxi(3, px(8))))
+		cadre_note.custom_minimum_size = Vector2(px(int(COLONNES_XV[3][1])), 0)
+		cadre_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cadre_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var etiquette_note := _cellule("%.1f" % note, 0, _teinte_note(note), 28, true)
+		etiquette_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cadre_note.add_child(etiquette_note)
+		ligne.add_child(cadre_note)
+		var jauge := W.Jauge.new()
+		jauge.valeur = condition
+		jauge.densite = _densite
+		jauge.custom_minimum_size = Vector2(px(int(COLONNES_XV[4][1])), hauteur)
+		ligne.add_child(jauge)
+		ligne.add_child(_cellule(str(d.get("plaquages", 0)), int(COLONNES_XV[5][1]), IVOIRE, 28, true))
+		ligne.add_child(_cellule(str(d.metres), int(COLONNES_XV[6][1]), IVOIRE, 28, true))
+		ligne.add_child(_cellule(str(d.essais) if int(d.essais) > 0 else "–", int(COLONNES_XV[7][1]), OR if int(d.essais) > 0 else FAIBLE, 28, true))
+		# Nom complet gardé pour les lecteurs d'écran et les tests, montré en infobulle.
 		var nom := _texte(str(joueur.get("name", "")), 20, FAIBLE)
 		nom.visible = false
-		colonne.add_child(nom)
+		ligne.add_child(nom)
 		var alerte := ""
-		if int(joueur.get("injury", 0)) > 0: alerte = "blessé"
+		if d.blesse: alerte = "blessé"
 		elif cartons.has(id): alerte = "carton jaune, retour %s′" % str(cartons[id].get("retour", "")) if cartons[id].get("retour") != null else "exclu"
 		elif condition < EPUISE: alerte = "épuisé"
 		elif condition < FATIGUE: alerte = "fatigué"
-		if alerte == "blessé": energie.marque = ALERTE
-		elif alerte.begins_with("carton") or alerte == "exclu": energie.marque = Color("e8c24a")
-		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match)" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else ""]
+		if alerte == "blessé": pastille.marque = ALERTE
+		elif alerte.begins_with("carton") or alerte == "exclu": pastille.marque = Color("e8c24a")
+		var plaq := int(d.get("plaquages", 0))
+		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match), %d plaquage%s" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else "", plaq, "s" if plaq > 1 else ""]
 		if not alerte.is_empty():
 			alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
 			detail += "\n" + alerte.capitalize()
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
-		case.custom_minimum_size.y = anneau + px(4)
 		xv.add_child(case)
+
+## Adversaires à surveiller (`direct.surveiller`) : numéro, note, ce qu'ils ont montré.
+func _remplir_surveiller(direct: Dictionary) -> void:
+	if not is_instance_valid(surveiller): return
+	S.clear(surveiller)
+	var liste: Array = direct.get("surveiller", []) if direct.get("surveiller") is Array else []
+	var camp := int(direct.get("camp", -1))
+	if liste.is_empty():
+		surveiller.add_child(_texte("Rien de marquant chez l’adversaire pour l’instant.", 24, FAIBLE))
+		return
+	for item: Variant in liste:
+		if not item is Dictionary: continue
+		var ligne := S.G.h(px(10))
+		var pastille := W.Numero.new()
+		pastille.numero = str(int(item.get("numero", 0)))
+		pastille.densite = _densite
+		pastille.teinte = terrain.couleurs[1 - camp] if camp in [0, 1] else ALERTE
+		pastille.custom_minimum_size = Vector2(px(52), px(44))
+		ligne.add_child(pastille)
+		var note := float(item.get("note", 6.0))
+		ligne.add_child(_cellule("%.1f" % note, 60, _teinte_note(note), 28, true))
+		var morceaux: PackedStringArray = []
+		if int(item.get("essais", 0)) > 0: morceaux.append("%d essai%s" % [int(item.essais), "s" if int(item.essais) > 1 else ""])
+		if int(item.get("metres", 0)) > 0: morceaux.append("%d m portés" % int(item.metres))
+		if int(item.get("plaquages", 0)) > 0: morceaux.append("%d plaquages" % int(item.plaquages))
+		morceaux.append("%d actions" % int(item.get("faits", 0)))
+		ligne.add_child(_cellule(" · ".join(morceaux), 0, DOUX, 24))
+		surveiller.add_child(ligne)
 
 ## Couleur de la note du match : vert au-dessus de 6,5, ivoire autour de 6, jaune sous 6,
 ## alerte sous 5,5 (6 au coup d'envoi).

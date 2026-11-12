@@ -63,7 +63,7 @@ class Note extends Control:
 		draw_style_box(T.box(Color(teinte, 0.22), maxi(3, roundi(8.0 * densite))), Rect2(Vector2.ZERO, size))
 		var corps := roundi(maxf(12.0, 26.0 * densite))
 		var texte := ("%.1f" % valeur).replace(".", ",")
-		var largeur := CHIFFRES.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
+		var largeur: float = CHIFFRES.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
 		draw_string(CHIFFRES, Vector2((size.x - largeur) * 0.5, size.y * 0.5 + corps * 0.36), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, teinte)
 
 ## Données d'un joueur pour une ligne de Mon XV, bornées à l'entracte : énergie (condition),
@@ -84,6 +84,29 @@ static func donnees_joueur(joueur: Variant, notes: Dictionary, cartons: Dictiona
 		"faits": int(note.get("faits", 0)),
 		"essais": int(note.get("essais", 0)),
 		"metres": roundi(float(note.get("metres", 0))),
+		"plaquages": int(note.get("plaquages", 0)),
 		"carton": not carton.is_empty(),
 		"retour": carton.get("retour"),
 	}
+
+## Numéro d'un joueur dans un disque aux couleurs du club (comme sur le terrain), avec une
+## pastille en haut à droite pour une blessure ou un carton.
+class Numero extends Control:
+	var numero := ""
+	var teinte := VERT
+	var densite := 0.5
+	var marque := Color.TRANSPARENT
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.5 - 1.0
+		r = minf(r, 20.0 * densite * 1.15)
+		draw_circle(c, r + maxf(1.0, 2.0 * densite), FOND)
+		draw_circle(c, r, teinte)
+		var corps := roundi(maxf(11.0, r * 1.15))
+		var largeur: float = CHIFFRES.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
+		draw_string(CHIFFRES, c + Vector2(-largeur * 0.5, corps * 0.36), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, IVOIRE)
+		if marque.a > 0.0: draw_circle(c + Vector2(r, -r) * 0.75, maxf(3.0, 6.0 * densite), marque)
