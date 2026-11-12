@@ -3,7 +3,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 if(!godot){console.log('SKIP native-relationships-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-relationships-ui-')),script=path.join(root,'relations.gd');
+const flow=path.resolve(__dirname,'helpers/contextual_flow.gd').replace(/\\/g,'/');
 fs.writeFileSync(script,`extends SceneTree
+const ContextualFlow = preload("${flow}")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -49,6 +51,8 @@ func run() -> void:
  await wait_model()
  app.timer.stop()
  await command("new_career", {"mode":"common", "club":29})
+ # Une carrière neuve ouvre d'abord son rendez-vous de direction : tant qu'il n'est pas traité, le moteur refuse les décisions.
+ await ContextualFlow.settle_club_meetings(app, self, check)
  if not failures.is_empty():
   print("RELATIONS UI : démarrage refusé ; contrôles de vues non exécutés")
   app.bridge.stop()
@@ -60,12 +64,20 @@ func run() -> void:
   for route in ["Vestiaire", "Rivalités"]:
    await render(route)
    var page: Control = named(app, "CarnetRelations" if route == "Vestiaire" else "CarnetMonde")
+   # À partir de 1920 x 1080, le Vestiaire est la scène dédiée « ImmersiveLockerRoom » (locker_canvas.gd).
+   if page == null and route == "Vestiaire": page = named(app, "ImmersiveLockerRoom")
    check(page != null, "Vue composée " + route)
    if page != null:
     check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Bornes " + route + " " + str(resolution))
+    # Plancher proportionnel : 28 px (peau compacte) ou 36 px de référence à 2560 de large, réduit avec la scène dédiée.
+    var minimum_height: float = minf(26.0, 36.0 * app.size.x / 2560.0)
     for b in page.find_children("*", "Button", true, false):
-     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= 40, "Action clavier et taille " + b.name)
+     # Seuil proportionnel plafonné à 26 px (et non 40) : la peau compacte impose 28 px (game_skin.gd) et les pages dédiées sont des
+     # canevas mis à l'échelle (206 x 39,75 à 1920 ; 137 x 26,5 à 1280), jamais plus petits que ce plancher.
+     if not b.disabled: check(b.focus_mode == Control.FOCUS_ALL and b.size.y >= minimum_height, "Action clavier et taille " + b.name + " · focus " + str(b.focus_mode) + " · taille " + str(b.size) + " · " + str(resolution))
    await capture(route + "-" + str(resolution.x))
+ # Les actions interactives ci-dessous vivent dans la page compacte (la scène dédiée 1920 x 1080 n'a pas ces contrôles nommés).
+ root.size = Vector2i(1280,720)
  await render("Vestiaire")
  var id: String = str(app.model.clubLife.relationships.event.playerId)
  var before: int = int(app.model.clubLife.relationships.players.filter(func(p): return p.id == id)[0].score)
@@ -83,9 +95,17 @@ func run() -> void:
  await press("DuoAction_duo")
  check(app.model.clubLife.relationships.pairs.size() == 1, "Duo réel")
  await command("auto_lineup")
+ # Calendrier quotidien : coup d'envoi le jour du match seulement, causerie d'avant-match, puis clôture de la semaine.
+ if not await ContextualFlow.prepare_match_day(app, self, check):
+  app.bridge.stop()
+  quit(1)
+  return
+ var previous_week: int = int(app.model.meta.week)
  await command("begin_match")
+ await ContextualFlow.skip_talk(app, self, "pre", check)
  await command("delegate")
  await command("finish_round")
+ await ContextualFlow.finish_match_week(app, self, check, previous_week)
  await render("Rivalités")
  check(app.model.clubLife.clubWorld.events.size() == 15, "Quinze résultats réellement observés")
  for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:

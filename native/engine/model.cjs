@@ -56,7 +56,7 @@ module.exports=function nativeModel(){
   const slots=vacantMatchSlots(sheet.lineup,sheet.bench);
   if(slots.length){
    const places=professionalPlaces(own);
-   const quote={slots,places,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary:slots.length*COVER_WEEKLY_SALARY};
+   const coverSalary=typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():COVER_WEEKLY_SALARY,quote={slots,places,weeklySalary:coverSalary,totalWeeklySalary:slots.length*coverSalary};
    if(!S.trained&&team.players.some(p=>p.injury===1)){
     const recovered={...team,players:team.players.map(p=>p.injury===1?{...p,injury:0}:p)};
     const after=buildSheet(recovered,S.lineup,S.reserves);
@@ -85,7 +85,7 @@ module.exports=function nativeModel(){
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
   ['Transformations',a.conversions+' / '+a.conversionAttempts,b.conversions+' / '+b.conversionAttempts]
  ].map(([label,home,away])=>({label,home,away}));}
- return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:chooseScorer(own,S.lineup)?.id||null,selection,tactics,calendar,leagues,market,finance:{cash:own.cash,wage:own.players.reduce((n,p)=>n+p.salary,0),ledger:S.ledger,notice:'Montants fictifs. '+(france?'34 semaines payées par saison. Monde fermé sans Nationale.':'29 semaines payées par saison.')},club:summary(own),league:sorted.map(c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form})),squad,
+ return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:chooseScorer(own,S.lineup)?.id||null,selection,tactics,calendar,leagues,market,finance:{cash:own.cash,wage:own.players.reduce((n,p)=>n+p.salary,0),ledger:S.ledger,...(typeof budgetActif==='function'&&budgetActif()?{notice:'Salaires dus sur 52 semaines, payés sur les '+wageForecastWeeks()+' semaines de la saison.',salaryFloor:budgetPlancherHebdo()}:{notice:'Montants fictifs. '+(france?'34 semaines payées par saison. Monde fermé sans Nationale.':'29 semaines payées par saison.')})},club:summary(own),league:sorted.map(c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form})),squad,
   next:pair?{pair,home:summary(S.clubs[pair[0]]),away:summary(S.clubs[pair[1]]),label:label(),round:S.round,week:meta.week,neutral:fixture?.neutral??['semi','final'].includes(S.phase),phase:fixture?.phase??S.phase}:null,
   archives,history:S.history,messages:S.news,ledger:S.ledger,
   live:l?{lineup:l.sheets[l.userSide].on.map(livePlayer),reserves:l.sheets[l.userSide].bench.map(livePlayer),substitutions:l.sheets[l.userSide].on.map((outId,i)=>({slot:i,label:POS[i],outId,inIds:l.paused&&!l.finished&&!presentationPending(l)?eligibleChanges(l,l.userSide,i).map(p=>p.id):[]})),tactics:{attack:l.tactics[l.userSide],defense:l.defences?.[l.userSide]||'equilibre'},decision:resultDecision,neutral:fixture?.neutral??false,minute:l.minute,period:l.flow?.period??(l.minute>40?2:1),score:l.score,tries:l.tries,paused:l.paused,finished:l.finished,halftime:l.halftime,atBreak:atHalftime(l),weather:l.weather,pair:l.pair,teams:l.pair.map(id=>summary(S.clubs[id])),events:l.events,stats:l.stats,statsRows,scene:CDMatch3DAdapter.normalize(matchScene(l))}:null,meta};

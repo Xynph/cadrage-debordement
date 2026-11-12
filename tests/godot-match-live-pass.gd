@@ -77,7 +77,13 @@ func run() -> void:
 		return
 	var sender: Dictionary = view._actors[scene.pass.fromId]
 	var receiver: Dictionary = view._actors[scene.pass.toId]
-	check(view._actors.size() == 30, "Le XV reste complet des deux côtés.")
+	# Un joueur exclu temporairement (carton jaune) n'est plus dans la scène du moteur : le XV est complet
+	# des deux côtés sauf exclusion déclarée, et chaque joueur projeté a exactement un acteur.
+	var projected_ids: Dictionary = {}
+	for projected_player: Dictionary in scene.players:
+		if int(projected_player.get("side", -1)) in [0, 1]: projected_ids[str(projected_player.get("id", ""))] = true
+	var every_actor: bool = projected_ids.keys().all(func(id): return view._actors.has(id))
+	check(projected_ids.size() >= 28 and projected_ids.size() <= 30 and every_actor and view._actors.size() <= 30, "Le XV reste complet des deux côtés (hors exclusion temporaire).")
 	check(view._carrier_id == scene.pass.toId, "Le porteur canonique reste le receveur.")
 	check(sender.node.position.is_equal_approx(previous_passer)
 		and receiver.node.position.is_equal_approx(previous_receiver)

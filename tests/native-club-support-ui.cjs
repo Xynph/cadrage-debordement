@@ -17,7 +17,7 @@ func settle() -> void:
 func wait_command() -> void:
  var deadline := Time.get_ticks_msec() + 45000
  while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
- check(not app.waiting and app.bridge.last_response_ok, "Commande réelle acceptée")
+ check(not app.waiting and app.bridge.last_response_ok, "Commande réelle acceptée · " + str(app.last_error))
  await settle()
 func command(id: String, payload: Dictionary = {}) -> void:
  app._command(id, payload); await wait_command()
@@ -40,6 +40,9 @@ func run() -> void:
  var startup_deadline := Time.get_ticks_msec() + 45000
  while app.model.is_empty() and Time.get_ticks_msec() < startup_deadline: await process_frame
  await settle()
+ # Le rendez-vous de direction d'une carrière neuve doit être traité : sinon le moteur refuse réunions, plans et briefings.
+ await command("new_career", {"mode":"common", "club":29})
+ await preload("res://qa_runner.gd").settle_club_meetings(app, self, check)
  await command("export")
  var before: String = app.model.meta.exportText
  var disk: String = str(app.model.meta.dataDir).path_join("donnees.json")
@@ -58,7 +61,8 @@ func run() -> void:
  var page: Node = await open_tab(0)
  var morale: int = app.model.clubLife.clubSupport.diagnostic.morale
  var meeting: Button = page.find_child("SupportMeeting_cohesion", true, false)
- check(meeting != null and not meeting.disabled and meeting.custom_minimum_size.y >= 44, "Réunion réelle disponible")
+ # Plancher de la peau compacte : 28 px (game_skin.gd, G.button), plus 44 px.
+ check(meeting != null and not meeting.disabled and meeting.custom_minimum_size.y >= 28, "Réunion réelle disponible · " + str(meeting != null and meeting.disabled) + " · " + str(meeting.custom_minimum_size if meeting != null else Vector2.ZERO))
  meeting.pressed.emit(); await wait_command()
  check(app.model.clubLife.clubSupport.diagnostic.morale == mini(98,morale+3), "Effet moral du vrai contrôle")
  page = await open_tab(0)
@@ -68,11 +72,21 @@ func run() -> void:
  page.find_child("SupportBriefing_pack",true,false).pressed.emit(); await wait_command()
  check(app.model.clubLife.clubSupport.briefing.selected == "pack", "Briefing réel enregistré")
  page = await open_tab(1)
- var injured: Dictionary = app.model.clubLife.clubSupport.medical.players[0]
- var picker: OptionButton = page.find_child("MedicalProtocol_"+str(injured.id).replace(":","_"),true,false)
- picker.select(0)
- page.find_child("MedicalChoose_"+str(injured.id).replace(":","_"),true,false).pressed.emit(); await wait_command()
- check(app.model.clubLife.clubSupport.medical.players[0].protocol == "prudent", "Protocole du contrôle médical")
+ # La liste médicale contient aussi les joueurs en reprise (sans blessure) : le choix de protocole ne concerne que les blessés.
+ var injured: Dictionary = {}
+ for candidate: Dictionary in app.model.clubLife.clubSupport.medical.players:
+  if int(candidate.injury) > 0: injured = candidate; break
+ # Carrière neuve : un blessé n'est pas garanti. Sans blessé, aucun sélecteur de protocole ne doit être proposé.
+ if injured.is_empty():
+  check(page.find_children("MedicalProtocol_*", "OptionButton", true, false).is_empty(), "Aucun sélecteur de protocole sans joueur blessé")
+ else:
+  var picker: OptionButton = page.find_child("MedicalProtocol_"+str(injured.id).replace(":","_"),true,false)
+  check(picker != null, "Sélecteur de protocole du blessé")
+  if picker != null:
+   picker.select(0)
+   page.find_child("MedicalChoose_"+str(injured.id).replace(":","_"),true,false).pressed.emit(); await wait_command()
+   var followed: Array = app.model.clubLife.clubSupport.medical.players.filter(func(x: Dictionary): return x.id == injured.id)
+   check(not followed.is_empty() and followed[0].protocol == "prudent", "Protocole du contrôle médical")
  page = await open_tab(2)
  var selected: Dictionary = app.model.clubLife.clubSupport.agents.players[0]
  var q: Dictionary = selected.quotes.filter(func(x:Dictionary):return x.policy=="equilibre")[0]
