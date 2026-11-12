@@ -842,6 +842,14 @@ func terrain2d(view: Control) -> void:
 	between.update_frame(copie, copie.live, direct_complet, func(_c: Dictionary): pass)
 	var adjoint_textes: Array = between.adjoint.find_children("*", "Label", true, false).map(func(l: Label): return l.text)
 	check(adjoint_textes.any(func(t: String): return t.begins_with("N° 7") and "31" in t), "L'adjoint signale le joueur à bout : " + str(adjoint_textes.slice(0, 3)))
+	var phrases := {}
+	var redites := 0
+	for t: String in adjoint_textes:
+		for phrase: String in t.split(". ", false):
+			var cle := phrase.strip_edges().trim_suffix(".")
+			if cle.length() > 12 and phrases.has(cle): redites += 1
+			phrases[cle] = true
+	check(redites == 0, "L'adjoint ne répète pas une phrase : " + str(adjoint_textes))
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
 	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
 	var banc: Button = between.find_child("MatchBetweenBench", true, false)

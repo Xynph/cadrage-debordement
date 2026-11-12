@@ -576,6 +576,21 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		ligne.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
 		xv.add_child(ligne)
 
+## Une phrase répétée d'une raison à l'autre (« Conservez la consigne en place. ») n'est dite
+## qu'une fois, à la dernière raison qui la contient.
+static func _sans_redites(raisons: Array) -> Array:
+	var dites := {}
+	var sortie: Array = []
+	for n in range(raisons.size() - 1, -1, -1):
+		var gardees: PackedStringArray = []
+		for phrase: String in str(raisons[n]).split(". ", false):
+			var cle := phrase.strip_edges().trim_suffix(".")
+			if cle.is_empty() or dites.has(cle): continue
+			dites[cle] = true
+			gardees.append(cle)
+		if not gardees.is_empty(): sortie.push_front(". ".join(gardees) + ".")
+	return sortie
+
 ## L'adjoint : alertes de Mon XV d'abord, puis son regard sur les consignes, et les accès directs.
 func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	S.clear(adjoint)
@@ -601,7 +616,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 			if not str(raison).is_empty(): raisons.append(str(raison))
 	var lecture := _lecture(direct)
 	if not lecture.is_empty(): raisons.push_front(lecture)
-	for raison: String in raisons.slice(0, maxi(1, (2 if _densite < 0.7 else 3) - lignes)):
+	for raison: String in _sans_redites(raisons.slice(0, maxi(1, (2 if _densite < 0.7 else 3) - lignes))):
 		var texte := _texte(raison, 26, S.TEXT, true)
 		# Retour à la ligne (deux lignes, trois sur grand écran) ; le texte entier reste en infobulle.
 		texte.max_lines_visible = 2 if _densite < 0.7 else 3

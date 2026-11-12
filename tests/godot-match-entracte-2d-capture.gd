@@ -29,7 +29,14 @@ func run() -> void:
 	app.timer.stop()
 	for forced: Signal in [root.size_changed, root.focus_entered]:
 		if forced.is_connected(app._keep_filled_display): forced.disconnect(app._keep_filled_display)
+	# Le projet s'ouvre en plein écran 1440×900 : fenêtre 1280×720 imposée, sinon le film
+	# (--write-movie, taille de la fenêtre) est rogné.
+	root.mode = Window.MODE_WINDOWED
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_size(size)
 	root.size = size
+	root.content_scale_size = size
+	for i in 6: await process_frame
 	if not app._command("import", {"text": FileAccess.get_file_as_string(OS.get_environment("CD_ENTRACTE_2D_SAVE"))}):
 		push_error("Import refusé")
 		fin(2)
@@ -50,9 +57,12 @@ func run() -> void:
 	var apres := 0.0
 	var image := 0
 	var capture_faite := 0
+	# Images du film : la vue racine elle-même (1280×720 exactes), une par image de jeu.
+	var images_dossier := OS.get_environment("CD_ENTRACTE_2D_IMAGES")
 	while image < 30 * 600:
 		await process_frame
 		image += 1
+		if not images_dossier.is_empty(): root.get_texture().get_image().save_jpg(images_dossier.path_join("%05d.jpg" % image), 0.92)
 		var live: Dictionary = app.model.get("live", {}) if app.model.get("live") is Dictionary else {}
 		# Le match importé est en pause : on le relance une fois le coup d'envoi joué.
 		if regie.etat != regie.JEU and live.get("paused", false) and not app.waiting and not live.get("finished", false) and regie.arret.is_empty():

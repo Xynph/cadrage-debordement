@@ -1,10 +1,10 @@
 'use strict';
 // Film de contrôle de l'entracte 2D, dans la vraie interface et avec le vrai moteur, à vitesse
-// réelle (Godot --write-movie, 30 images/s, 1280×720). Outil manuel : sans CD_ENTRACTE_2D_FILM,
+// réelle (--fixed-fps 30, 1280×720). Outil manuel : sans CD_ENTRACTE_2D_FILM,
 // il ne fait rien (la CI le saute). Sous Linux sans écran, lancer dans xvfb-run.
 //
 //   CD_GODOT_EXE           exécutable Godot 4.7.2 (ou CD_GODOT_EXECUTABLE)
-//   CD_ENTRACTE_2D_FILM    fichier .avi absolu du film (MJPEG ; ffmpeg le convertit ensuite)
+//   CD_ENTRACTE_2D_FILM    fichier .mp4 absolu du film (images de la vue racine montées par ffmpeg)
 //   CD_ENTRACTE_2D_PNG     capture PNG à 5 s du dernier entracte filmé (facultatif)
 //   CD_ENTRACTE_2D_NOMBRE  entractes filmés (défaut 2)
 //   CD_ENTRACTE_2D_SEED    graine du moteur (défaut 7)
@@ -24,8 +24,12 @@ const save=path.join(work,'live.json');
 fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(work,'PrototypeGodot'),CD_GODOT_SEED:seed,CD_ENTRACTE_2D_SAVE:save};
 for(const nom of ['CD_MATCH_TEMPS_FORTS','CD_MATCH_TEMPS_FORTS_NIVEAU','CD_MATCH_TEMPS_FORTS_HORLOGE','CD_MATCH_TEMPS_FORTS_VITESSE','CD_MATCH_TEMPS_FORTS_ENTRACTE'])delete env[nom];
-const result=spawnSync(godot,['--rendering-method','gl_compatibility','--resolution','1280x720','--fixed-fps','30','--write-movie',film,'--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-entracte-2d-capture.gd')],{env,encoding:'utf8',timeout:3600000,maxBuffer:64*1024*1024});
+// Le projet s'ouvre en plein écran 1440×900 et --write-movie filme la fenêtre (image rognée) :
+// on enregistre la vue racine image par image (1280×720), puis ffmpeg monte le film MP4.
+const images=path.join(work,'images');fs.mkdirSync(images);env.CD_ENTRACTE_2D_IMAGES=images;
+const result=spawnSync(godot,['--rendering-method','gl_compatibility','--windowed','--resolution','1280x720','--fixed-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-entracte-2d-capture.gd')],{env,encoding:'utf8',timeout:3600000,maxBuffer:64*1024*1024});
 const output=(result.stdout||'')+(result.stderr||'');
+if(result.status===0){const f=spawnSync('ffmpeg',['-y','-v','error','-framerate','30','-i',path.join(images,'%05d.jpg'),'-c:v','libx264','-crf','20','-preset','fast','-pix_fmt','yuv420p','-movflags','+faststart',film],{encoding:'utf8'});if(f.status!==0)console.error('ffmpeg : '+(f.stderr||f.error));}
 fs.rmSync(work,{recursive:true,force:true});
 console.log(output.split('\n').filter(l=>/FILM|CAPTURE|ERROR|SCRIPT/.test(l)).join('\n'));
 if(result.error)throw result.error;
