@@ -142,8 +142,11 @@ function Run-Game([string]$Mode,[string[]]$Arguments,[string]$CareerProfile,[str
             foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($process.Id)")) {
                 if ($child.Name -ieq 'node.exe' -and $child.CommandLine -like '*worker.cjs*') {
                     $sample = @{pid=[int]$child.ProcessId;parentPid=[int]$child.ParentProcessId;executable=[string]$child.ExecutablePath;commandLine=[string]$child.CommandLine}
-                    if ($null -eq $node) { $node = $sample; $observations.Add($sample) }
+                    # A CIM observation during startup can have a command line
+                    # before Windows makes ExecutablePath available.
+                    if ([string]::IsNullOrWhiteSpace($sample.executable)) { continue }
                     if (-not [string]::Equals([IO.Path]::GetFullPath($sample.executable),[IO.Path]::GetFullPath($NodeExe),[StringComparison]::OrdinalIgnoreCase)) { throw 'CIM observed a host/unexpected Node executable.' }
+                    if ($null -eq $node) { $node = $sample; $observations.Add($sample) }
                 }
             }
             if (([DateTime]::UtcNow-$lastLogCheck).TotalSeconds -ge 1) {
@@ -214,7 +217,11 @@ function Copy-HardwareEvidence([string]$Source,[string]$Destination,[string[]]$N
         } else {
             $content = Get-Content -LiteralPath $path -Raw
             if ($null -eq $content) { $content = '' }
-            if ($PrivateRoot) { $content = $content.Replace($PrivateRoot, '[private-animations]', [StringComparison]::OrdinalIgnoreCase) }
+            if ($PrivateRoot) {
+                foreach ($spelling in @($PrivateRoot, $PrivateRoot.Replace('\','/'), $PrivateRoot.Replace('\','\\'))) {
+                    $content = $content.Replace($spelling, '[private-animations]', [StringComparison]::OrdinalIgnoreCase)
+                }
+            }
             Set-Content -LiteralPath $target -Value $content -Encoding utf8NoBOM
         }
     }
@@ -236,13 +243,14 @@ function Invoke-HardwareReceipt([string]$Game,[string]$Exe,[string]$NodeExe,[str
         CD_GABI_MIXAMO=$assets['gabi-mixamo.scn'].path
         CD_MATCH_ANIMATIONS=$assets['mixamo-match.res'].path
         CD_MATCH_TEMPS_FORTS_ENTRACTE='0'
+        CD_MATCH_TEMPS_FORTS_HORLOGE='eclair'
     }
     $failures = [Collections.Generic.List[string]]::new()
     foreach ($variant in @(@{method='forward_plus';driver='vulkan'}, @{method='gl_compatibility';driver='opengl3'})) {
         $environment.CD_WINDOWS_HARDWARE_METHOD = $variant.method
         $environment.CD_WINDOWS_HARDWARE_DRIVER = $variant.driver
-        $profile = Join-Path $EvidenceRoot "private-profiles/$($variant.method)"
-        $arguments = @('--verbose','--audio-driver','Dummy','--rendering-method',$variant.method,'--rendering-driver',$variant.driver,
+        $profile = Join-Path $EvidenceRoot "private-profiles/$($variant.method)/PrototypeGodot"
+        $arguments = @('--audio-driver','Dummy','--rendering-method',$variant.method,'--rendering-driver',$variant.driver,
             '--windowed','--resolution','2560x1440','--disable-vsync','--max-fps','60')
         $save = Join-Path $profile 'donnees.json'
         foreach ($phase in @('play','resume')) {
