@@ -396,7 +396,13 @@ func _duree_entracte() -> float:
 
 ## Un temps fort qui n'est pas la suite de l'action attend la fin de l'entracte.
 func _doit_retenir(candidat: Dictionary) -> bool:
-	return _entracte >= 0.0 and not _passer and not candidat.get("suite", false) and _entracte < _duree_entracte()
+	return _entracte >= 0.0 and not _passer and not candidat.get("suite", false) and _entracte < _duree_entracte() and not _causerie_attend()
+
+## Une causerie (mi-temps, débrief) attend le temps fort : il se montre sans finir l'entracte
+## (en pause, l'horloge de l'entracte est figée et la causerie n'ouvrirait jamais).
+func _causerie_attend() -> bool:
+	var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	return scene is Dictionary and not scene.is_empty()
 
 ## Vrai pendant l'entracte, temps fort reçu ou non (la commande « Passer » est proposée).
 func entracte_en_cours() -> bool:
@@ -441,8 +447,8 @@ func _entracte_et_horloge(delta: float) -> bool:
 	_habiller_horloge()
 	if _retenu.is_empty():
 		return false
-	if fige or _tiroir or app.waiting: return true
-	if not _passer and _entracte < _duree_entracte(): return true
+	if (fige and not _causerie_attend()) or _tiroir or app.waiting: return true
+	if not _passer and _entracte < _duree_entracte() and not _causerie_attend(): return true
 	_lancer_retenu()
 	return true
 
