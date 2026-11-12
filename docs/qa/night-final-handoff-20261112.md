@@ -1,6 +1,6 @@
 # Passation Cloud — Rugby Legacy 27, nuit du 12 novembre 2026
 
-État intermédiaire à 05:20 UTC (06:20 Paris). Échéance de travail : 07:30 UTC,
+État intermédiaire à 05:42 UTC (06:42 Paris). Échéance de travail : 07:30 UTC,
 08:30 Paris. **Aucune fusion Cloud dans main avant 08:00 UTC / 09:00 Paris.**
 Les PR restent en brouillon. Claude garde le ZIP Windows et la recette PC.
 
@@ -145,7 +145,7 @@ conservent id/name et les entrées de lecture ; les garde-fous de sauvegarde par
 ID restent présents. Ce constat statique ne qualifie pas les migrations runtime.
 Le JavaScript de main 44c est reçu vert par le moniteur :
 [43150131282](https://github.com/Xynph/cadrage-debordement/actions/runs/43150131282),
-sept jobs dont gate `130975227686` ; ce vert est historique depuis c39 et reste distinct des branches Cloud. Le JavaScript c39 [43157056905](https://github.com/Xynph/cadrage-debordement/actions/runs/43157056905) est encore en cours au présent état ; les trois validations natives dédiées ont été observées vertes par le moniteur. Aucune API consommée par les lecteurs/gardes ou le cycle guide/speech n’est retirée dans le delta 44→c39. Le nouveau mode temps forts enrichit live et peut retarder une causerie : cette cadence doit être reçue sur le cumul réel, sans déduire de sûreté runtime de la lecture statique.
+sept jobs dont gate `130975227686` ; ce vert est historique depuis c39 et reste distinct des branches Cloud. Le JavaScript c39 [43157056905](https://github.com/Xynph/cadrage-debordement/actions/runs/43157056905) est terminé vert : sept jobs dont gate `130994653407` ; les trois validations natives dédiées sont aussi observées vertes par le moniteur. Ces contrôles observés ne constituent pas la recette du cumul avec Cloud. Aucune API consommée par les lecteurs/gardes ou le cycle guide/speech n’est retirée dans le delta 44→c39. Le nouveau mode temps forts enrichit live et peut retarder une causerie : cette cadence doit être reçue sur le cumul réel, sans déduire de sûreté runtime de la lecture statique.
 
 `git merge-tree --write-tree 1a7b083b… 44c7ebef…` reçoit le 12 novembre un arbre
 virtuel propre `5f08188bd7c0c3c11e15bfef13b47b7f54e9a048`, code 0. Aucune
@@ -183,8 +183,12 @@ La proposition de délai parent 120 s aurait été ignorée par le runner : elle
 n'a pas été ajoutée ; superviseur existant 180 s conservé. L'estimation de marge
 famille 15,978 s reste une estimation, pas une promesse de durée CI.
 
-Après 09 h Paris seulement : prendre le dernier main effectivement intégré par
-Claude, vérifier les interfaces et conflits, construire le cumul en branche,
-recevoir ses tests et gates exacts, puis intégrer en série. Les verts de sources
-antérieures ne qualifient pas ce futur cumul. Ne retirer/clore les PR familiales
-qu'après intégration réelle et reçu. La recette PC et le ZIP restent à Claude.
+Après 09 h Paris seulement :
+
+1. Relever le dernier main effectivement intégré par Claude et créer une branche de cumul depuis ce SHA. Garder les sources reçues 37/7607/1a7/ec intactes.
+2. Y intégrer le contenu cumulé de #584, déjà descendant de #572/#576/#582/#583, puis les seuls compléments documentaires de #581. Ne pas reprendre #566 ni le patch Art #577 séparément.
+3. Vérifier interfaces et conflits puis dériver les inventaires depuis les objets Git du nouveau SHA résultant. **76 SDK et 646 CJS appartiennent à ec ; le cumul peut contenir davantage de cas issus du nouveau main.** Recevoir une campagne complète SDK et JavaScript sur ce même nouveau SHA et leurs gates, sans emprunter les verts d'ec ou de main.
+4. Recevoir les gardes réelles avec les temps forts par défaut et leur repli `CD_MATCH_TEMPS_FORTS=0` : invitation exacte, causerie retenue par le dernier temps fort, match immersif et retour historique. Adapter seulement les points communs ou la recette si nécessaire ; laisser moteur, animations et assets réservés à Claude. Ne relever ni délais existants ni limite VM 15 s.
+5. Intégrer après ces réceptions, puis seulement retirer/clore les PR familiales comme incorporées. Claude conserve la recette PC, le ZIP et les assets privés ; aucune livraison Windows ni asset Mixamo public n'est produite par Cloud.
+
+Aucun futur cumul n'est qualifié par les verts des sources antérieures.
