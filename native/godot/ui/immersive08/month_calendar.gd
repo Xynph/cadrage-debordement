@@ -42,6 +42,7 @@ var month := ""
 var selected := ""
 var filter := "all"
 var view_mode := "month"
+var selected_session := ""
 
 static func build(owner_app: Control, table_callback: Callable = Callable()) -> Control:
 	var view: VBoxContainer = load("res://ui/immersive08/month_calendar.gd").new()
@@ -85,6 +86,7 @@ func _setup(owner_app: Control, table_callback: Callable) -> void:
 		initial = remembered
 	month = initial.left(7)
 	selected = initial
+	selected_session = str(reading.get("selected_session", ""))
 	_refresh()
 	var focus_id := str(reading.get("focus",""))
 	if not focus_id.is_empty():
@@ -135,6 +137,7 @@ func _shift_month(amount: int) -> void:
 		number = 1
 	if year < 2 or year > 9998: return
 	month = "%04d-%02d" % [year,number]
+	_invalidate_session()
 	selected = today if today.begins_with(month) else month + "-01"
 	_refresh()
 	var target := find_child("MonthPrevious" if amount < 0 else "MonthNext", true, false) as Control
@@ -142,6 +145,7 @@ func _shift_month(amount: int) -> void:
 
 func _select(date: String) -> void:
 	if _date(date).is_empty(): return
+	if date != selected: _invalidate_session()
 	month = date.left(7)
 	selected = date
 	_refresh()
@@ -150,6 +154,7 @@ func _select(date: String) -> void:
 
 func _filter_by(value: String) -> void:
 	if value not in Agenda.FILTERS: return
+	if value != filter: _invalidate_session()
 	filter = value
 	_refresh()
 	var target := find_child("MonthFilter_" + value, true, false) as Control
@@ -165,8 +170,18 @@ func _view_as(value: String) -> void:
 func _remember_focus(id: String) -> void:
 	app.management_ui["calendar_reading"]["focus"] = id
 
+func _invalidate_session() -> void:
+	selected_session = ""
+	if app.management_ui.get("navigation_target", {}).get("kind", "") == "session":
+		app.management_ui.erase("navigation_target")
+
 func _refresh() -> void:
+	if not selected_session.is_empty():
+		var valid := Competition.target_available(app, "session", selected_session) and filter in ["all", "training"]
+		valid = valid and sessions.any(func(session: Dictionary): return session.get("id") == selected_session and session.get("date") == selected)
+		if not valid: _invalidate_session()
 	app.management_ui["calendar_reading"] = {"today":today, "selected":selected, "filter":filter,"view":view_mode}
+	if not selected_session.is_empty(): app.management_ui.calendar_reading.selected_session = selected_session
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
@@ -513,8 +528,8 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
 	var label := str(session.get("label","Entraînement"))
-	var caption := C.label(label, 18, C.MUTED if past else Color("d8eee7"), true, 700)
-	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var caption := _session_caption(session, "CalendarSessionDetail_" if expanded else "CalendarSessionGridLink_", label, C.MUTED if past else Color("d8eee7"), 700)
+	caption.set("text_overrun_behavior", TextServer.OVERRUN_TRIM_ELLIPSIS)
 	text.add_child(caption)
 	var forwards := _caption(session.get("forwards"))
 	var backs := _caption(session.get("backs"))
@@ -532,6 +547,27 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(clock)
 	return panel
+
+func _session_caption(session: Dictionary, prefix: String, caption: String, color: Color, weight: int) -> Control:
+	var id: Variant = session.get("id")
+	if not Competition.target_available(app, "session", id): return C.label(caption, 18, color, true, weight)
+	var link := Button.new()
+	link.name = prefix + str(id).sha256_text()
+	link.flat = true
+	link.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	link.custom_minimum_size.y = 18
+	link.add_theme_font_override("font", C.font(weight))
+	link.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+	for state_name in ["normal", "hover", "pressed", "focus"]:
+		link.add_theme_color_override("font_color" if state_name == "normal" else "font_" + state_name + "_color", color)
+	for state_name in ["normal", "hover", "pressed", "disabled"]:
+		link.add_theme_stylebox_override(state_name, StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.MINT, 2, 0))
+	link.set_meta("immersive_style_applied", true)
+	link.text = caption
+	Link.bind(link, app, {"kind":"session", "id":id}, caption)
+	link.focus_entered.connect(_remember_focus.bind(str(link.name)))
+	return link
 
 static func _caption(value: Variant) -> String:
 	return value if value is String else ""
@@ -661,8 +697,8 @@ func _week_sessions(parent: Node) -> void:
 		body.add_child(line)
 		var fields := [[str(session.date).right(2)+"/"+str(session.date).substr(5,2),.6],[str(session.get("label","Entraînement")),1.4],[str(session.get("forwards","—")),1.0],[str(session.get("backs","—")),1.0]]
 		for index in fields.size():
-			var label := C.label(fields[index][0],18,C.GOLD if index == 0 else C.IVORY)
-			label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			var label := _session_caption(session, "CalendarWeekSessionLink_", fields[index][0], C.IVORY, 600) if index == 1 else C.label(fields[index][0],18,C.GOLD if index == 0 else C.IVORY)
+			label.set("text_overrun_behavior", TextServer.OVERRUN_TRIM_ELLIPSIS)
 			label.tooltip_text = str(fields[index][0])
 			line.add_child(C.fill(label,false,fields[index][1]))
 	body.add_child(C.wrap("Les tirets signalent des ateliers non précisés dans la séance publiée. Ce contexte reste visible quel que soit le filtre de la grille.",16,C.FAINT))

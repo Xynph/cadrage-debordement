@@ -49,8 +49,36 @@ static func target_available(owner_app: Control, kind: String, id: Variant) -> b
 		"club": return not _target_club(owner_app, str(id)).is_empty()
 		"fixture": return not _target_fixture(owner_app, str(id)).is_empty()
 		"competition": return owner_app.model.get("leagues", []).any(func(item: Dictionary): return str(item.get("id", "")) == str(id))
+		"session": return not _target_session(owner_app, id).is_empty()
 		"date": return preload("res://ui/immersive08/calendar_agenda.gd").valid_date(id)
 	return false
+
+static func _target_session(owner_app: Control, id: Variant) -> Dictionary:
+	if not id is String or id.is_empty(): return {}
+	var planning: Variant = owner_app.model.get("calendarPlanning", {})
+	if not planning is Dictionary: return {}
+	var source: Variant = planning.get("sessions", [])
+	if not source is Array: return {}
+	var selected: Dictionary = {}
+	for item: Variant in source:
+		if not item is Dictionary or item.get("id") != id: continue
+		if not selected.is_empty(): return {}
+		selected = item
+	if selected.is_empty() or not preload("res://ui/immersive08/calendar_agenda.gd").valid_date(selected.get("date")): return {}
+	return selected
+
+static func session_focus_name(id: String) -> String:
+	return "CalendarSessionDetail_" + id.sha256_text()
+
+static func session_context_matches(owner_app: Control, id: Variant) -> bool:
+	var session := _target_session(owner_app, id)
+	if session.is_empty() or owner_app.route != "Calendrier" or owner_app.get_meta("calendar_table", false): return false
+	var reading: Dictionary = owner_app.management_ui.get("calendar_reading", {})
+	if reading.get("selected_session", "") != id or reading.get("selected", "") != session.date or reading.get("filter", "all") not in ["all", "training"]: return false
+	var program := owner_app.find_child("CarnetCalendar", true, false) as Control
+	if program == null or not program.is_visible_in_tree(): return false
+	var focus := program.find_child(session_focus_name(id), true, false) as Button
+	return focus != null and focus.is_visible_in_tree() and focus.get_meta("entity_kind", "") == "session" and focus.get_meta("entity_id", "") == id
 
 static func _target_club(owner_app: Control, id: String) -> Dictionary:
 	if id.is_empty(): return {}
@@ -100,11 +128,18 @@ static func open_target(owner_app: Control, kind: String, id: Variant) -> bool:
 		owner_app.management_ui.competition.club_league = str(owner_app.model.get("meta", {}).get("leagueId", ""))
 		owner_app._navigate("Classements", false)
 		return true
-	if kind == "date":
+	if kind in ["date", "session"]:
 		var reading: Dictionary = owner_app.management_ui.get("calendar_reading", {}).duplicate(true)
-		reading.selected = str(id)
+		reading.erase("selected_session")
+		if kind == "session":
+			var session := _target_session(owner_app, id)
+			reading.selected = session.date
+			reading.filter = "all"
+			reading.selected_session = id
+			owner_app.set_meta("calendar_table", false)
+		else: reading.selected = str(id)
 		reading.today = str(owner_app.model.get("calendarPlanning", {}).get("today", owner_app.model.get("meta", {}).get("date", "")))
-		reading.focus = "MonthDay_" + str(id)
+		reading.focus = session_focus_name(id) if kind == "session" else "MonthDay_" + str(id)
 		owner_app.management_ui.calendar_reading = reading
 		owner_app._navigate("Calendrier", false)
 		return true
