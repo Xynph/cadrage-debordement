@@ -33,8 +33,9 @@ func command(id:String,payload:Dictionary={}) -> void:
 	await settle()
 	trace("command.settled",{"command":id})
 func finish() -> void:
-	check(speech_requests==0 and speech_starts==0,"Silence : aucune demande ni démarrage de parole")
-	trace("finish",{"failures":failures,"speech_requests":speech_requests,"speech_starts":speech_starts})
+	var speech_id:=int(app.coach.speech._id) if is_instance_valid(app.coach) else 0
+	check(speech_requests==0 and speech_starts==0 and speech_id==0,"Silence : aucune demande, aucun démarrage et identifiant zéro")
+	trace("finish",{"failures":failures,"speech_requests":speech_requests,"speech_starts":speech_starts,"speech_id":speech_id})
 	print("GESTION CARNET : ",checks," contrôles ; ",failures.size()," échec(s)")
 	if is_instance_valid(app) and app.bridge!=null:app.bridge.stop()
 	quit(0 if failures.is_empty() else 1)

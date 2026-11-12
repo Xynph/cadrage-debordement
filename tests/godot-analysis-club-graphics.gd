@@ -85,13 +85,15 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(output)
 	root.size=Vector2i(2560,1440); DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate(); root.add_child(app)
+	if is_instance_valid(app.coach):
+		app.coach.speech.set_muted(true)
+		app.coach.speech.requested.connect(func(_text: String): requested+=1)
+		app.coach.speech.started.connect(func(_id: int): started+=1)
 	var until:=Time.get_ticks_msec()+30000
 	while app.model.is_empty() and Time.get_ticks_msec()<until: await process_frame
 	check(not app.model.is_empty(),"Projection réelle reçue")
 	if app.model.is_empty(): finish(); return
-	app.timer.stop(); app.coach.speech.set_muted(true)
-	app.coach.speech.requested.connect(func(_text: String): requested+=1)
-	app.coach.speech.started.connect(func(_id: int): started+=1)
+	app.timer.stop()
 	nav=app.navigation_controller
 	if OS.get_environment("CD_ANALYSIS_CLUB_GRAPHICS_COPIED")!="1":
 		if not await prepare_public_checkpoint(): finish(); return
@@ -178,7 +180,7 @@ func run() -> void:
 	check(before==JSON.parse_string(app.model.meta.exportText).state,"État sportif, registre, RNG inchangés après consultation")
 	finish()
 func finish() -> void:
-	check(requested==0 and started==0 and (app==null or int(app.coach.speech._id)==0),"Silence : compteurs de parole à zéro")
+	check(requested==0 and started==0 and (app==null or not is_instance_valid(app.coach) or int(app.coach.speech._id)==0),"Silence : compteurs de parole à zéro")
 	var file:=FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"captures":captures,"visits":visits,"sha":OS.get_environment("CD_ANALYSIS_CLUB_GRAPHICS_SHA"),"expected_fixture":OS.get_environment("CD_ANALYSIS_CLUB_GRAPHICS_EXPECTED_FIXTURE")})); file.close()
 	print("ANALYSIS CLUB GRAPHICS : ",checks," contrôles ; ",failures.size()," échec(s)")

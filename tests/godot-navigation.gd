@@ -4,6 +4,8 @@ var app: Control
 var nav: Node
 var failures: Array[String] = []
 var checks := 0
+var speech_requests := 0
+var speech_starts := 0
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -86,6 +88,10 @@ func state() -> Dictionary:
 	return JSON.parse_string(app.model.meta.exportText).state
 
 func finish() -> void:
+	var speech_id := 0
+	if is_instance_valid(app) and is_instance_valid(app.coach): speech_id = int(app.coach.speech._id)
+	check(speech_requests == 0 and speech_starts == 0 and speech_id == 0, "Silence : zéro demande, zéro début et identifiant zéro")
+	print("NAVIGATION_SPEECH ", JSON.stringify({"requests":speech_requests,"starts":speech_starts,"id":speech_id}))
 	print("NAVIGATION : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	if app != null: app.bridge.stop()
 	quit(0 if failures.is_empty() else 1)
@@ -97,6 +103,10 @@ func run() -> void:
 		finish(); return
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	if is_instance_valid(app.coach):
+		app.coach.speech.set_muted(true)
+		app.coach.speech.requested.connect(func(_line: String): speech_requests += 1)
+		app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Projection initiale du vrai worker")

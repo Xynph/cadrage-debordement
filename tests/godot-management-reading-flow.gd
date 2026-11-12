@@ -74,6 +74,7 @@ func run() -> void:
 	root.size=Vector2i(2560,1440)
 	if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app)
+	app.coach.speech.set_muted(true)
 	app.coach.speech.requested.connect(func(_text: String):speech_requests+=1)
 	app.coach.speech.started.connect(func(_id: int):speech_starts+=1)
 	var until:=Time.get_ticks_msec()+30000
@@ -174,10 +175,11 @@ func run() -> void:
 	check(JSON.parse_string(app.model.meta.exportText).state==before,"État sportif réellement exporté identique après consultation")
 	stored=JSON.parse_string(FileAccess.get_file_as_string(profile))
 	check(stored.seed==seed and stored.clock==clock and FileAccess.get_sha256(profile)==profile_hash,"Export de contrôle sans RNG ni écriture")
-	check(speech_requests==0 and speech_starts==0,"Compteurs Gabi : aucune demande ni démarrage de parole")
 	await finish()
 func finish() -> void:
-	var report: Dictionary={"checks":checks,"failures":failures,"captures":captures,"speech_requests":speech_requests,"speech_starts":speech_starts,"scope":"Real game client/worker; requires common read-only window suspension before running."}
+	var speech_id:=int(app.coach.speech._id) if is_instance_valid(app.coach) else 0
+	check(speech_requests==0 and speech_starts==0 and speech_id==0,"Compteurs Gabi : aucune demande, aucun démarrage et identifiant zéro")
+	var report: Dictionary={"checks":checks,"failures":failures,"captures":captures,"speech_requests":speech_requests,"speech_starts":speech_starts,"speech_id":speech_id,"scope":"Real game client/worker; requires common read-only window suspension before running."}
 	var file:=FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"  "));file.close()
 	if is_instance_valid(app):app.bridge.stop();app.queue_free();await settle()

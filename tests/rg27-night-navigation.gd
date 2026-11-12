@@ -617,26 +617,27 @@ func guard_cases() -> void:
 		await capture("rencontre-historique-2560")
 		await unchanged(before, "Consultation du résultat historique")
 func finish() -> void:
+	var speech_id := int(app.coach.speech._id) if is_instance_valid(app.coach) else 0
 	progress("finish",{"failures":failures})
 	if is_instance_valid(app.coach):
 		check(app.coach.speech.muted and not app.coach.speech.speaking and app.coach.speech.player == null, "Gabi silencieux, aucun lecteur audio")
-	check(speech_requests == 0 and speech_starts == 0, "Compteurs de parole : zéro demande et zéro début")
+	check(speech_requests == 0 and speech_starts == 0 and speech_id == 0, "Compteurs de parole : zéro demande, zéro début et identifiant zéro")
 	var report := FileAccess.open(output.path_join("report.json"), FileAccess.WRITE)
-	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"case":group,"display":DisplayServer.get_name(),"engine":Engine.get_version_info(),"captures":captures,"visits":visits,"receipts":receipts,"speech_requests":speech_requests,"speech_starts":speech_starts}, "  ")); report.close()
+	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"case":group,"display":DisplayServer.get_name(),"engine":Engine.get_version_info(),"captures":captures,"visits":visits,"receipts":receipts,"speech_requests":speech_requests,"speech_starts":speech_starts,"speech_id":speech_id}, "  ")); report.close()
 	print("NAVIGATION NOCTURNE ", group, " : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	await app._close(0 if failures.is_empty() else 1)
 func run() -> void:
 	progress("run")
 	root.size = Vector2i(2560,1440)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
-	var deadline := Time.get_ticks_msec() + 30000
-	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
-	check(not app.model.is_empty(), "Projection initiale du vrai worker reçue")
-	app.timer.stop()
 	if is_instance_valid(app.coach):
 		app.coach.speech.set_muted(true)
 		app.coach.speech.requested.connect(func(_line: String): speech_requests += 1)
 		app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
+	var deadline := Time.get_ticks_msec() + 30000
+	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.model.is_empty(), "Projection initiale du vrai worker reçue")
+	app.timer.stop()
 	nav = app.navigation_controller
 	check(nav.has_method("open_entity"), "API commune d’entité raccordée au vrai main")
 	if not nav.has_method("open_entity") or not await setup_career(): await finish(); return
