@@ -9,7 +9,7 @@ const positionAptitudes=require('./position-aptitudes.cjs');
 const careerVariation=require('./career-variation.cjs');
 const potentialEvolution=require('./potential-evolution.cjs'),potentialEvolutionValidation=potentialEvolution();
 const inSeasonDevelopment=require('./in-season-development.cjs');
-const clubTransfers=require('./club-transfers.cjs');
+const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makeNational=require('./international-native.cjs');
@@ -166,6 +166,9 @@ function createBridge(options={}){
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
   run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
   run(`const nativeClubTransfers=(${clubTransfers.toString()})();nativeClubTransfers.installHooks();`);
+  // Directions des clubs gérés (carrières mondiales créées avec elles) ; validation de leur état.
+  run(`const nativeClubDirections=(${clubDirections.toString()})(nativeClubTransfers);
+   const nativeClubDirectionsValidator=validateCareer;validateCareer=state=>{const result=nativeClubDirectionsValidator(state);nativeClubDirections.validate(state);return result;};`);
   run(`const nativeInSeasonDevelopment=(${inSeasonDevelopment.toString()})();nativeInSeasonDevelopment.installHooks();const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
   run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();
    const nativeKnowledgeValidator=validateCareer;validateCareer=state=>{const result=nativeKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
@@ -483,6 +486,8 @@ function createBridge(options={}){
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
       if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
       run('autoLineup();');
+      // Directions des clubs gérés : carrières mondiales nouvelles seulement ; CD_DIRECTIONS_CLUBS=0 les coupe.
+      if(process.env.CD_DIRECTIONS_CLUBS!=='0')run('nativeClubDirections.create(S,nativeCreationVariation.seed)');
       delete ctx.nativeCreationVariation;
      }
      else if(command==='next_season')run('CDNativeAcademyGroups.afterSeason(S,'+previousAcademyClub+');');

@@ -56,7 +56,7 @@ function directions(s){
  for(const [id,x] of Object.entries(d.clubs||{})){
   const lg=leagueOf(s,s.clubs[Number(id)]||{id:Number(id)}),st=x.strategy||'aucune';
   strategies[st]=(strategies[st]||0)+1;(byLeague[lg]??={})[st]=(byLeague[lg][st]||0)+1;
-  for(const [k,v] of Object.entries(x.traits||{}))if(typeof v==='number')(traits[k]??=[]).push(v);
+  for(const role of ['president','director','coach'])for(const [k,v] of Object.entries(x[role]?.traits||{}))if(typeof v==='number')(traits[role+'.'+k]??=[]).push(v);
  }
  return {strategies,byLeague,traits:Object.fromEntries(Object.entries(traits).map(([k,v])=>[k,{median:median(v),min:Math.min(...v),max:Math.max(...v)}])),
   tally:d.tally||null,news:(d.feed||[]).slice(0,25)};

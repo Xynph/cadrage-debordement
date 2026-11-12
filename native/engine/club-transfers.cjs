@@ -196,10 +196,15 @@ module.exports=function clubTransfers(){
   aiRosterRecruitmentWeek=function(){
    const week=S?.franceMode?.week??S?.round,windows=S?.franceMode?[0,15]:[0,13];
    const open=S&&aiRosterActive()&&!S.live&&S.phase==='league'&&windows.includes(week)&&!(S.season===1&&week===0)&&S.economy.aiRecruitmentWindow!==S.season+':'+week;
-   const moves=open?transferWindow():[];
+   // Carrières créées avec des directions de club : stratégie émergente (club-directions.cjs).
+   const directed=typeof nativeClubDirections!=='undefined'&&nativeClubDirections.active();
+   let moves=[];
+   if(directed){memo={};try{nativeClubDirections.weekly();if(open)moves=nativeClubDirections.openWindow();}finally{memo={};}}
+   else if(open)moves=transferWindow();
    const count=previous.apply(this,arguments);
+   if(directed&&open&&count)S.clubDirections.tally[S.season+'|monde|libre']=(S.clubDirections.tally[S.season+'|monde|libre']||0)+count;
    return count+moves.length;
   };
  }
- return {installHooks,transferWindow,strategy,value,STRATEGIES};
+ return {installHooks,transferWindow,strategy,value,demand,memoOf:()=>memo,STRATEGIES};
 };
