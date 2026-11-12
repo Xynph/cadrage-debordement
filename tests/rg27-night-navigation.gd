@@ -13,6 +13,10 @@ var speech_starts := 0
 var output := OS.get_environment("CD_NIGHT_NAV_OUTPUT")
 var group := OS.get_environment("CD_NIGHT_NAV_CASE")
 var progress_started: int = Time.get_ticks_msec()
+var cache_enabled: bool = false
+var cached_3d_sizes: Dictionary = {}
+var pending_3d_checks: int = 0
+var rendered_3d: Array[Dictionary] = []
 
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(output)
@@ -38,6 +42,41 @@ func check(value: bool, message: String) -> void:
 	if not value: failures.append(message); printerr("FAIL: ", message)
 func settle() -> void:
 	for frame in 8: await process_frame
+# This recipe qualifies layout, input and real captured frames, not animation
+# or frame rate. Keep the root 2D viewport active and cache only camera-backed
+# SubViewports between creation/resize redraws and mandatory fresh captures.
+func cache_3d_frames() -> void:
+	if not is_instance_valid(app): return
+	for viewport: SubViewport in app.find_children("*","SubViewport",true,false):
+		if viewport.get_camera_3d() == null: continue
+		var id := viewport.get_instance_id()
+		if cached_3d_sizes.get(id) != viewport.size:
+			cached_3d_sizes[id] = viewport.size
+			pending_3d_checks += 1
+			verify_created_3d.call_deferred(weakref(viewport))
+		if viewport.render_target_update_mode not in [SubViewport.UPDATE_DISABLED,SubViewport.UPDATE_ONCE]:
+			viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+func verify_created_3d(reference: WeakRef) -> void:
+	# Container sizing and deferred scene setup each get a real layout frame.
+	await process_frame
+	await process_frame
+	var viewport := reference.get_ref() as SubViewport
+	if is_instance_valid(viewport): await redraw_3d([viewport],"creation/resize")
+	pending_3d_checks -= 1
+func redraw_3d(viewports: Array, reason: String) -> void:
+	for viewport: SubViewport in viewports:
+		if is_instance_valid(viewport): viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await RenderingServer.frame_post_draw
+	for viewport: SubViewport in viewports:
+		if not is_instance_valid(viewport): continue
+		var pixels := viewport.get_texture().get_image()
+		check(pixels != null and not pixels.is_empty() and pixels.get_size() == viewport.size,"Vraie texture 3D rendue et dimensionnée : "+reason+" / "+str(viewport.size))
+		rendered_3d.append({"reason":reason,"size":str(viewport.size),"path":str(viewport.get_path())})
+func fresh_3d_capture(label: String) -> void:
+	var viewports: Array = []
+	for viewport: SubViewport in app.find_children("*","SubViewport",true,false):
+		if viewport.get_camera_3d() != null: viewports.append(viewport)
+	await redraw_3d(viewports,"capture "+label)
 func named(id: String) -> Node: return app.find_child(id, true, false)
 func command(id: String, payload: Dictionary = {}) -> bool:
 	var request_started: int = Time.get_ticks_msec()
@@ -75,6 +114,7 @@ func open_entity(kind: String, id: Variant, section: String = "") -> bool:
 func capture(id: String) -> void:
 	progress("capture_begin",{"capture":id})
 	if DisplayServer.get_name() == "headless": return
+	if cache_enabled: await fresh_3d_capture(id)
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
 	check(image.get_size() == root.size, "Pixels natifs de la fenêtre : " + id)
@@ -631,17 +671,30 @@ func guard_cases() -> void:
 		await capture("rencontre-historique-2560")
 		await unchanged(before, "Consultation du résultat historique")
 func finish() -> void:
+	if cache_enabled:
+		# Drain deferred creation/resize checks before serializing the result.
+		# The existing outer deadline remains the only overall time budget.
+		while pending_3d_checks > 0: await process_frame
+		process_frame.disconnect(cache_3d_frames)
+		check(pending_3d_checks == 0, "Toutes les nouvelles scènes 3D ont terminé leur vrai redraw")
 	var speech_id := int(app.coach.speech._id) if is_instance_valid(app.coach) else 0
 	progress("finish",{"failures":failures})
 	if is_instance_valid(app.coach):
 		check(app.coach.speech.muted and not app.coach.speech.speaking and app.coach.speech.player == null, "Gabi silencieux, aucun lecteur audio")
 	check(speech_requests == 0 and speech_starts == 0 and speech_id == 0, "Compteurs de parole : zéro demande, zéro début et identifiant zéro")
 	var report := FileAccess.open(output.path_join("report.json"), FileAccess.WRITE)
-	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"case":group,"display":DisplayServer.get_name(),"engine":Engine.get_version_info(),"captures":captures,"visits":visits,"receipts":receipts,"speech_requests":speech_requests,"speech_starts":speech_starts,"speech_id":speech_id}, "  ")); report.close()
+	var result: Dictionary = {"checks":checks,"failures":failures,"case":group,"display":DisplayServer.get_name(),"engine":Engine.get_version_info(),"captures":captures,"visits":visits,"receipts":receipts,"speech_requests":speech_requests,"speech_starts":speech_starts,"speech_id":speech_id}
+	if group == "guards":
+		result.cache_enabled = cache_enabled
+		result.render_scope = "Layout/input recipe; default quality unchanged. Only camera-backed 3D SubViewports are cached between real creation/resize/capture redraws. Root 2D remains active. No animation or frame-rate qualification." if cache_enabled else "Headless guards; original rendering behavior unchanged, no 3D cache or texture assertions."
+		result.rendered_3d = rendered_3d
+	report.store_string(JSON.stringify(result, "  ")); report.close()
 	print("NAVIGATION NOCTURNE ", group, " : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	await app._close(0 if failures.is_empty() else 1)
 func run() -> void:
 	progress("run")
+	cache_enabled = group == "guards" and DisplayServer.get_name() != "headless"
+	if cache_enabled: process_frame.connect(cache_3d_frames)
 	root.size = Vector2i(2560,1440)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	if is_instance_valid(app.coach):
