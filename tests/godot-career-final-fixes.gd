@@ -105,7 +105,7 @@ func _bench() -> void:
 		_check(app.last_error.is_empty() and app.model.live.lineup[5] == null and app.model.live.lineup[6] is Dictionary and app.model.live.lineup[6].id == incoming, "Second vacancy is filled through the UI without changing the first")
 
 func _clocks() -> void:
-	for pair in [["halftime","MI-TEMPS",true],["resumed","67 min",false],["tactical","67 min",true],["extraStart",str(int(fixtures.extraStart.model.live.minute)) + " min",false],["extraPause",str(int(fixtures.extraPause.model.live.minute)) + " min",true],["extraSecond",str(int(fixtures.extraSecond.model.live.minute)) + " min",false],["finished","TERMINÉ",true]]:
+	for pair in [["halftime","MI-TEMPS",true],["resumed","66 min",false],["tactical","66 min",true],["extraStart",str(int(fixtures.extraStart.model.live.minute)) + " min",false],["extraPause",str(int(fixtures.extraPause.model.live.minute)) + " min",true],["extraSecond",str(int(fixtures.extraSecond.model.live.minute)) + " min",false],["finished","TERMINÉ",true]]:
 		app.match_screen.update_frame(fixtures[pair[0]].model)
 		_check(app.match_screen.clock.text == pair[1], "Actual native clock state " + pair[0] + " displays " + pair[1])
 		_check(app.match_screen.stage._paused == pair[2], "Actual renderer motion follows current pause state: " + pair[0])
