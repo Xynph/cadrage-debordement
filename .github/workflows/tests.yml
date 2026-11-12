@@ -89,7 +89,7 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 55
     env:
       # Version exacte épinglée : archive officielle godotengine/godot-builds, somme
       # SHA-256 vérifiée à chaque exécution (y compris depuis le cache). Concorde avec
@@ -147,6 +147,11 @@ jobs:
             native/godot/**/*.uid
           key: godot-import-4.7.2-${{ hashFiles('native/godot/**') }}
           restore-keys: godot-import-4.7.2-
+      - name: Préparer le projet Godot (staging des ressources)
+        shell: bash
+        # Comme en local : registres anonymisés, photos, portraits et modèle CC0 copiés
+        # dans native/godot/assets (ignoré par Git), requis par les suites natives.
+        run: python3 scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
       - name: Importer le projet Godot
         shell: bash
         run: |
@@ -158,6 +163,9 @@ jobs:
           echo "Import Godot : $((SECONDS-start)) s"
       - name: Suites Godot (SDK obligatoire, xvfb, rendu logiciel)
         shell: bash
+        # Délai d'étape (échec) plus court que celui du job (annulation) : un
+        # dépassement ne doit pas faire passer le run entier à « cancelled ».
+        timeout-minutes: 40
         env:
           SHARD: ${{ matrix.shard }}
           LIBGL_ALWAYS_SOFTWARE: '1'
