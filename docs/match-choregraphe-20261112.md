@@ -137,9 +137,34 @@ pas les fautes listées.
 - **Repli** : pistes absentes, d'une autre version ou incomplètes → refusées, le plan se joue
   par l'interpolation et les gestes actuels (`choregraphie_refusee` dans le suivi de la régie).
 
-## 7. Exécuté (12 novembre 2026, Linux, 2 cœurs, Godot 4.7.2)
+## 7. Exécuté (12 novembre 2026, Linux, 2 cœurs, Godot 4.7.2, une suite à la fois)
 
-Voir la section « Résultats » de la PR et le § 9 ci-dessous.
+| Suite | Résultat |
+| --- | --- |
+| `tests/match-choregraphe.cjs` (nouveau) | 9 sur 9, 40 s : neuf essais du moteur (durées 15,4 à 22 s, 0 à 2 rucks) ; match natif graine 7 avec et sans drapeau : même journal, même score, mêmes temps forts hors pistes |
+| `tests/godot-match-choregraphie.cjs` (nouveau) | 14 520 contrôles, 0 échec : la vue suit chaque piste (écart ≤ 0,76 m, soit un demi-échantillon à 7,6 m/s), allure à l'écran ≤ 7,7 m/s, ballon ≤ 11,9 m/s, dans les mains du porteur, aplati au point d'essai ; repli (pistes absentes, autre version, incomplètes), fin des pistes sans saut |
+| `tests/godot-match-temps-forts.cjs` | 6 modes, 296 contrôles, 0 échec, dont le nouveau mode `choregraphie` (13 contrôles : essai de la 14e minute joué par les pistes, ni légende ni journal avant l'aplati, pause qui fige, ni échéance ni refus, le temps fort continue) |
+| Relancés sans échec | `match-direct`, `match-highlights`, `match-essai-visible`, `match-structured-facts`, `match-actions`, `godot-match-essai`, `godot-match-gestes`, `godot-match-gestes-adaptes`, `godot-match-cadrage-arret`, `godot-match-animations`, `godot-match-framing`, `godot-match-cut`, `godot-match-presentation`, `godot-match-journal` (351) |
+
+Vidéo de contrôle (hors dépôt) : capture Xvfb, rendu logiciel `llvmpipe`, `--fixed-fps 30`
+(une image par 1/30 s de jeu, quelle que soit la lenteur du rendu), 1280×720, graine 7,
+club 0, bibliothèque Mixamo `CD_MATCH_ANIMATIONS` : l'essai de la 14e minute **sans** le
+drapeau (≈ 9 s de temps fort, gros plan des gestes) puis **avec** (pistes de 14,4 s jouées en
+14,47 s : récupération du ballon, ruck, percée du demi, plaquages ratés, aplati, joie).
+
+Commande (depuis la racine, après staging et import) :
+
+```
+CD_MATCH_CHOREGRAPHE=1 CD_MATCH_ANIMATIONS=/chemin/mixamo-match.res \
+CD_GODOT_EXE=/chemin/Godot_v4.7.2-stable_linux.x86_64 \
+CD_MATCH_TEMPS_FORTS_PROOF=/chemin/captures CD_MATCH_TEMPS_FORTS_SEED=7 \
+CD_MATCH_TEMPS_FORTS_MINUTES=15 CD_MATCH_TEMPS_FORTS_HORLOGE=eclair \
+CD_MATCH_TEMPS_FORTS_EVERY=1 CD_MATCH_TEMPS_FORTS_MAX=5000 \
+CD_MATCH_TEMPS_FORTS_GODOT_ARGS="--fixed-fps 30" \
+xvfb-run -a -s "-screen 0 1280x720x24" node tests/godot-match-temps-forts-capture.cjs
+```
+
+Sous Windows : mêmes variables (`set …`), sans `xvfb-run`.
 
 ## 8. Limites et suite conseillée
 
@@ -156,6 +181,11 @@ Voir la section « Résultats » de la PR et le § 9 ci-dessous.
   sur `record.plans.defence`.
 - Le calcul (≈ 0,3 s) se fait dans le pas « minute » du moteur, une fois par essai.
 
-## 9. Résultats
+## 9. Non vérifié
 
-(complété en fin de session)
+- Rien sous Windows ni avec une carte graphique ; fluidité réelle inconnue (rendu logiciel).
+- Un seul essai vu à l'œil dans la vraie interface (graine 7, 14e minute) ; les huit autres
+  essais du jeu d'entrées ne sont contrôlés que par les tests.
+- Gestes Mixamo pendant les pistes jugés sur cette seule capture.
+- Crédibilité rugbystique (placements, timing des rucks, nombre de plaquages ratés) : à juger
+  par Léo sur la vidéo ; les valeurs (profils, écarts, durées) sont des choix, non des mesures.
