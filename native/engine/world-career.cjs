@@ -505,7 +505,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   const players=[...owned,...market];
   for(const p of players){
    const source=SOURCES.get(p.id),profile=REG.worldProfiles[p.id]||LEGACY[p.id]?.worldProfile;
-   if(source)check(p.name===source.name,'identité de présentation écrite dans la carrière.');
+   // The saved display name belongs to the career: one started on an earlier table of base names keeps its names.
    if(String(p.id).startsWith('world:')||p.worldRatingsVersion!==undefined){
     check(source&&profile&&p.worldRatingsVersion===1&&p.lnrRatingsVersion===undefined,'identité de joueur mondiale inconnue.');
     check(eq(p.worldProfile,profile),'référence initiale mondiale modifiée.');

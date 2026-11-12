@@ -78,7 +78,7 @@ function advanceFlowPlay(l){
  const expired=l.minute>=periodBoundary(l),margin=l.score[l.possession]-l.score[1-l.possession];
  // A coach may legally kick the ball out to close a period; this is a tactical
  // decision, not an automatic referee whistle while the ball remains in play.
- if(expired&&!l.flow.advantage&&(l.minute>=periodBoundary(l)+4||l.flow.period===2&&margin>=0&&l.minute>periodBoundary(l))){addEvent(l,`${S.clubs[l.pair[l.possession]].abbr} envoie le ballon en touche pour terminer la période.`,'play',{kind:'touch',team:l.possession,to:{x:l.territory,y:0}});endFlowPeriod(l);return}
+ if(expired&&!l.flow.advantage&&(l.minute>=periodBoundary(l)+4||l.flow.period===2&&margin>=0&&l.minute>periodBoundary(l))){addEvent(l,`${S.clubs[l.pair[l.possession]].abbr} envoie le ballon en touche pour terminer la période.`,'play',{kind:'touch',team:l.possession,cause:'period-end',to:{x:l.territory,y:0}});endFlowPeriod(l);return}
  advanceCausalPlay(l);settleAdvantage(l);
 }
 function finishRugbyMatch(l){

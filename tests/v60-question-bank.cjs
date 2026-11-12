@@ -7,10 +7,9 @@ assert.equal(bank.questions.length,500);
 assert.equal(bank.journalists.length,30);
 assert.ok(bank.journalists.every(j=>j.name&&j.outlet&&(j.fictional===true||j.source?.startsWith('https://'))));
 assert.equal(new Set(bank.journalists.map(j=>j.outlet)).size,10);
-assert.equal(bank.journalists.filter(j=>j.fictional).length,20);
-assert.ok(bank.journalists.some(j=>j.name==='Nicolas Zanardi'&&j.outlet.includes('Rugbyrama')));
-assert.ok(bank.journalists.some(j=>j.name==='Renaud Bourel'&&j.outlet==='L\'Équipe'));
-assert.ok(bank.journalists.some(j=>j.name==='Arnaud Beurdeley'));
+assert.equal(bank.journalists.filter(j=>j.fictional).length,30);
+assert.ok(bank.journalists.every(j=>j.source===undefined),'aucune page d’auteur réelle dans la base');
+assert.equal(Object.keys(bank.legacyJournalistIds).length,10);
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
 assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
 for(const q of bank.questions){assert.equal(q.answers.length,5);assert.equal(new Set(q.answers.map(a=>a.text)).size,5);}

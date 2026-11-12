@@ -104,7 +104,7 @@ def voice_notice(coverage):
 
 
 def stage(node):
-    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs", "build-world-registry.cjs"):
+    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs", "base-names.cjs", "build-world-registry.cjs"):
         subprocess.run([str(node), str(ROOT / "scripts" / compiler), "--check"], cwd=ROOT, check=True)
     voice_coverage = validate_voice_assets(PROJECT)
     assets = PROJECT / "assets"

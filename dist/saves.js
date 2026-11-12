@@ -169,6 +169,7 @@ function validateActionScenes(l,s){
   if(e.scene===undefined)continue;const a=e.scene;
   saveCheck(saveObject(a)&&a.v===1&&ACTION_KINDS.includes(a.kind)&&saveInt(a.team,0,1)&&saveInt(a.possession,0,1)&&(a.incident===undefined||typeof a.incident==='boolean')&&[1,2].includes(a.period));
   if(e.period!==undefined)saveCheck(a.period===e.period);if(a.move!==undefined)saveCheck([...Object.keys(SCRUM_MOVES),...Object.keys(LINEOUT_MOVES),...Object.keys(KICKOFF_MOVES)].includes(a.move));if(a.plans!==undefined){saveCheck(saveObject(a.plans));for(const [key,allowed] of [['attack',TACTICS],['defence',DEFENCES]])saveCheck(saveArray(a.plans[key],2)&&a.plans[key].length===2&&a.plans[key].every(value=>Object.keys(allowed).includes(value)))}saveCheck(a.style===undefined||Object.keys(TACTICS).includes(a.style));
+  saveCheck(a.cause===undefined||ACTION_CAUSES[a.kind]?.includes(a.cause));saveCheck(a.card===undefined||a.kind==='card'&&a.incident===true&&ACTION_CARDS.includes(a.card));saveCheck(a.porte===undefined||a.kind==='setpiece-win'&&a.porte===true);saveCheck(a.origin===undefined&&a.conversion===undefined||a.kind==='try'&&ACTION_TRY_ORIGINS.includes(a.origin)&&typeof a.conversion==='boolean');
   for(const point of [a.from,a.to])saveCheck(saveObject(point)&&saveNumber(point.x,0,100)&&saveNumber(point.y,0,70));
   for(const key of ['score','tries'])saveCheck(saveArray(a[key],2)&&a[key].length===2&&a[key].every((n,i)=>saveInt(n,0,l[key][i])));
   saveCheck(saveArray(a.on,2)&&a.on.length===2);
@@ -430,8 +431,12 @@ function parseSaveDocument(text){
  saveCheck(doc.exportVersion===1||compact,'Cette version d’export n’est pas prise en charge.');
  saveCheck(typeof doc.exportedAt==='string'&&Number.isFinite(Date.parse(doc.exportedAt))&&typeof doc.checksum==='string');
  if(compact)doc.state.market=expandChampMarket(doc.state);
+ // L'empreinte porte sur le fichier tel qu'exporté : la validation peut migrer
+ // une ancienne carrière (identifiants de journalistes renommés, par exemple).
+ const exportedChecksum=saveChecksum(doc.state);
  validateCareer(doc.state);
- saveCheck(saveChecksum(doc.state)===doc.checksum,'Le fichier a été modifié ou endommagé depuis son export.');
+ saveCheck(exportedChecksum===doc.checksum,'Le fichier a été modifié ou endommagé depuis son export.');
+ doc.checksum=saveChecksum(doc.state);// empreinte de l'état vérifié, contrôlée à la confirmation
  return doc;
 }
 function saveFileName(doc){return `Cadrage-Debordement-${doc.state.clubs[doc.state.club].abbr}-S${doc.state.season}-${doc.state.phase==='league'?'J'+(doc.state.round+1):doc.state.phase.toUpperCase()}-${doc.exportedAt.replace(/[-:]/g,'').slice(0,15)}.json`}

@@ -70,12 +70,19 @@ if(require.main===module)test('Sauvegarde mondiale réelle : profil étranger et
   assert.ok(selected,'Le club choisi a un profil étranger lié au registre réel');
   const player=s=>s.clubs[30].players.find(p=>p.id===selected.id);
   for(const [label,change,expected] of [
-   ['nom',p=>{p.name+=' Test';},/joueur|identité|nom|profil/i],
+   // A saved name belongs to the career (docs/noms-inventes-branchement-20261111.md); markup is still refused.
+   ['nom balisé',p=>{p.name='<b>'+p.name+'</b>';},/texte non autorisé|joueur|identité|nom|profil/i],
    ['preuve de référence',p=>{p.worldProfile={...p.worldProfile,preuveFabriquée:true};},/référence|profil/i],
    ['preuve manquante',p=>{delete p.worldProfile;},/référence|profil|identité/i],
    ['date de naissance',p=>{p.birthDate=p.birthDate==='1999-01-01'?'1999-01-02':'1999-01-01';},/joueur|naissance|profil|âge/i],
    ['trait initial',p=>{const key=Object.keys(p.hiddenTraitsV2)[0];p.hiddenTraitsV2[key]=p.hiddenTraitsV2[key]===1?2:1;},/traits/i],
   ])await t.test(label,()=>rejectedImport(handle,original,s=>change(player(s)),expected));
+  await t.test('nom renommé conservé',()=>{
+   const doc=JSON.parse(original);player(doc.state).name+=' Test';doc.checksum=checksum(doc.state);
+   accepted(handle,'import',{text:JSON.stringify(doc)});
+   assert.equal(player(JSON.parse(exportText(handle)).state).name,selected.name+' Test');
+   accepted(handle,'import',{text:original});assert.equal(JSON.parse(exportText(handle)).checksum,originalDoc.checksum);
+  });
   await t.test('qualification de première ligne',()=>rejectedImport(handle,original,s=>{
    const prop=s.clubs[30].players.find(p=>p.pos==='Pilier gauche'&&!s.lineup.includes(p.id)&&!s.reserves.includes(p.id));assert.ok(prop);prop.pos='Pilier droit';
   },/profil|position|qualification/i));

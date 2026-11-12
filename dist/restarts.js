@@ -44,18 +44,18 @@ function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false}={}
  const gain=penalty||!direct||own22(actor,origin)&&context?.team===actor&&context.twentyTwoEligible;
  const mark=gain?exit:(actor===0?Math.min(origin,exit):Math.max(origin,exit));
  const team=penalty||fifty?actor:1-actor,cause=penalty?'penalty-touch':fifty?'50-22':carried?'carry-touch':direct?'direct-touch':'indirect-touch';
- addEvent(l,`${S.clubs[l.pair[actor]].abbr} ${penalty?'trouve la pénaltouche et conserve le lancer':fifty?'réussit un 50:22 et conserve le lancer':carried?'est poussé en touche':direct&&!gain?'botte directement en touche sans gain de terrain':'envoie le ballon en touche'}.`,'play',{kind:'touch',team:actor,from:{x:origin,y:35},to:{x:exit,y:0}});
+ addEvent(l,`${S.clubs[l.pair[actor]].abbr} ${penalty?'trouve la pénaltouche et conserve le lancer':fifty?'réussit un 50:22 et conserve le lancer':carried?'est poussé en touche':direct&&!gain?'botte directement en touche sans gain de terrain':'envoie le ballon en touche'}.`,'play',{kind:'touch',team:actor,cause,from:{x:origin,y:35},to:{x:exit,y:0}});
  return grantSetPiece(l,'lineout',team,mark,cause,actor,origin);
 }
 function resolveInGoal(l,actor,scenario,kickOrigin=l.territory){
  const defender=1-actor;
- if(scenario==='defender-grounded'){addEvent(l,`${S.clubs[l.pair[actor]].abbr} a rentré le ballon dans son propre en-but et l’y rend mort : mêlée adverse à cinq mètres.`,'play',{kind:'ingoal',team:actor,to:{x:ownGoal(actor),y:35}});return grantSetPiece(l,'scrum',1-actor,ownGoal(actor)+(actor===0?5:-5),'defender-grounded',actor,kickOrigin)}
+ if(scenario==='defender-grounded'){addEvent(l,`${S.clubs[l.pair[actor]].abbr} a rentré le ballon dans son propre en-but et l’y rend mort : mêlée adverse à cinq mètres.`,'play',{kind:'ingoal',team:actor,cause:scenario,to:{x:ownGoal(actor),y:35}});return grantSetPiece(l,'scrum',1-actor,ownGoal(actor)+(actor===0?5:-5),'defender-grounded',actor,kickOrigin)}
  if(['held-up','attacking-kick-grounded','ingoal-knock-on'].includes(scenario)){
-  addEvent(l,scenario==='held-up'?'Le porteur attaquant est tenu dans l’en-but sans pouvoir aplatir.':scenario==='ingoal-knock-on'?'En-avant de l’attaque dans l’en-but.':'Le coup de pied de l’attaque est aplati par la défense dans son en-but.','play',{kind:'ingoal',team:actor,to:{x:attackingGoal(actor),y:35}});
+  addEvent(l,scenario==='held-up'?'Le porteur attaquant est tenu dans l’en-but sans pouvoir aplatir.':scenario==='ingoal-knock-on'?'En-avant de l’attaque dans l’en-but.':'Le coup de pied de l’attaque est aplati par la défense dans son en-but.','play',{kind:'ingoal',team:actor,cause:scenario,to:{x:attackingGoal(actor),y:35}});
   return performKickRestart(l,'goalLine',defender,scenario,actor);
  }
  if(scenario==='kick-dead'){
-  addEvent(l,`${S.clubs[l.pair[actor]].abbr} botte le ballon au-delà de l’en-but adverse.`,'play',{kind:'ingoal',team:actor,from:{x:kickOrigin,y:35},to:{x:attackingGoal(actor),y:35}});
+  addEvent(l,`${S.clubs[l.pair[actor]].abbr} botte le ballon au-delà de l’en-but adverse.`,'play',{kind:'ingoal',team:actor,cause:scenario,from:{x:kickOrigin,y:35},to:{x:attackingGoal(actor),y:35}});
   const distanceFromOwnGoal=Math.abs(kickOrigin-ownGoal(defender));
   if(distanceFromOwnGoal>=30){addEvent(l,`${S.clubs[l.pair[defender]].abbr} choisit la mêlée à l’endroit du coup de pied.`);return grantSetPiece(l,'scrum',defender,kickOrigin,'kick-dead-option',actor,kickOrigin)}
   return performKickRestart(l,'drop22',defender,'kick-dead',actor);
@@ -65,7 +65,7 @@ function resolveInGoal(l,actor,scenario,kickOrigin=l.territory){
 function missedGoal(l,side){
  const outcome=Math.random();
  if(outcome<.6){addEvent(l,'Le tir au but manqué devient mort au-delà de la ligne d’essai.','play',{kind:'miss',team:side,to:{x:attackingGoal(side),y:35}});return performKickRestart(l,'drop22',1-side,'missed-goal-dead',side)}
- if(outcome<.8){const at=side===0?95:5;addEvent(l,'Le tir au but manqué sort en touche : lancer à la défense.','play',{kind:'touch',team:side,to:{x:at,y:0}});return grantSetPiece(l,'lineout',1-side,at,'missed-goal-touch',side)}
+ if(outcome<.8){const at=side===0?95:5;addEvent(l,'Le tir au but manqué sort en touche : lancer à la défense.','play',{kind:'touch',team:side,cause:'missed-goal-touch',to:{x:at,y:0}});return grantSetPiece(l,'lineout',1-side,at,'missed-goal-touch',side)}
  const landing=side===0?rand(82,97):rand(3,18);ballPossession(l,1-side,landing);addEvent(l,`${S.clubs[l.pair[1-side]].abbr} récupère le tir manqué resté dans le champ de jeu.`,'play',{kind:'reception',team:1-side,actor:actionPlayer(l,1-side,'receiver')?.id||null,to:{x:landing,y:35}});return true;
 }
 function kickOpenPlay(l,side){
