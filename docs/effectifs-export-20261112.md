@@ -359,3 +359,29 @@ quatre saisons). Les autres carrières et la carrière France gardent les cinq
 stratégies fixes, sans migration. Tous les tirages sont des empreintes (graine
 de la carrière, club, joueur, saison, semaine), jamais le générateur des matchs.
 `CD_DIRECTIONS_CLUBS=0` coupe la création (preuve d'origine des valeurs).
+
+### Correctif du 12 novembre (sauvegarde refusée en saison 1)
+
+`tests/world-roster-stability.cjs` échouait sur 60eeaf64 (« données de carrière
+incohérentes » à `finish_round`, saison 1) : la clé de compteur
+`bascule:a>b` contenait « > », refusé par l'arbre de sauvegarde (`safeTree`) ;
+et les rapports de l'effectif (`aiRoster.reports[].strategy`) n'acceptaient
+que les cinq stratégies fixes, pas `reconstruction` ni `maintien`. Correction
+(115659ec) : clé `bascule:a-vers-b` comptée tous championnats confondus, au
+plus 1 900 clés de compteur (l'arbre refuse un objet de plus de 2 000 clés),
+validation des rapports élargie aux sept stratégies pour les carrières qui ont
+des directions. Vérifié en local : carrière mondiale 58 clubs, une saison et
+intersaison, 14 transferts entre clubs gérés, export 12,8 Mio réimporté à
+l'identique.
+
+### Mesures (avant / après)
+
+Carrière France (base commune, 30 clubs, 3 saisons, graine 27) : résultats
+identiques avant (3dcc4f80) et après (60eeaf64) ; c'est attendu, les
+directions ne concernent que les carrières mondiales nouvelles. 1re division
+57,5 → 55,0 → 54,4 → 54,4 ; 2e division 49,4 → 48,6 → 48,8 → 48,8 (drapeau
+éteint) ; drapeau allumé : 1re division 57,5 → 55,2 → 55,1 → 54,5, masse
+médiane 9,45-9,81 M€ pour un plafond de 10,7 M€, aucun club au-dessus.
+Drapeau éteint, les 14 clubs de 1re division ont une masse de 15,6 à 21,8 M€
+« au-dessus » du plafond : l'ancienne échelle de salaires ne connaît pas le
+plafond (le drapeau allumé est la cible).
