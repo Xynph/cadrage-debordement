@@ -131,7 +131,7 @@ func _ready() -> void:
 	drawer.add_child(drawer_margin)
 	var drawer_column := S.G.v(8)
 	drawer_margin.add_child(drawer_column)
-	drawer_column.add_child(S.button("FERMER  ×", func(): drawer_tab = ""; drawer.hide()))
+	drawer_column.add_child(S.button("FERMER  ×", _fermer_tiroir))
 	_bench_feedback = S.G.v(2)
 	_bench_context = S.wrap("", 14, S.TEXT)
 	_bench_context.name = "MatchBenchContext"
@@ -268,13 +268,22 @@ func _toggle_drawer(title: String) -> void:
 		if focused != null and drawer_body.is_ancestor_of(focused):
 			_bench_focus_key = str(focused.get_meta("match_bench_focus", ""))
 	if title == drawer_tab and drawer.visible:
-		drawer_tab = ""
-		drawer.hide()
+		_fermer_tiroir()
 		return
 	drawer_tab = title
 	drawer.show()
 	_drawer_key = ""
 	_update_drawer()
+	# Entre deux temps forts : la tactique ou le banc ouverts mettent le match en pause (les
+	# changements ne se font qu'en pause) ; le prochain temps fort attend leur fermeture.
+	if regie != null:
+		if title in ["Tactique", "Banc"]: regie.tiroir_ouvert()
+		else: regie.tiroir_ferme()
+
+func _fermer_tiroir() -> void:
+	drawer_tab = ""
+	drawer.hide()
+	if regie != null: regie.tiroir_ferme()
 
 func _update_drawer() -> void:
 	_bench_feedback.visible = drawer_tab == "Banc" and drawer.visible

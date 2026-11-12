@@ -10,7 +10,6 @@ const ClubPresentation = preload("res://ui/game_skin.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
-const MarkerOutline = preload("res://shaders/team_marker_outline.gdshader")
 const Athlete = preload("res://match_athlete.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
@@ -20,6 +19,11 @@ const Rendu = preload("res://match_rendu.gd")
 const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const CUT_SECONDS := 0.30
+## Caméra de retransmission (TV) : décalage depuis le point visé. Plus haute et plus en
+## surplomb qu'à l'origine ((0, 55, 75), 36°) : environ 41° au-dessus de l'horizon, ce qui
+## montre l'action d'un peu plus loin et cache mieux appuis et contacts approximatifs.
+const TV_OFFSET := Vector3(0, 60, 69)
+const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
 var _ball: Node3D
@@ -30,7 +34,6 @@ var _animations_adaptees: RefCounted
 var _actors: Dictionary = {}
 var _team_colors: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
 var _kits: Array[Dictionary] = []
-var _team_marker_materials: Array[Material] = []
 var _camera_focus := Vector3.ZERO
 var _camera_framed := false
 var _camera_cut := true
@@ -594,6 +597,9 @@ func _process(delta: float) -> void:
 			Presentation.hold_ball(actor, rig, center, entry.grip)
 	if not _pass_plan.is_empty() and _pass_elapsed >= _pass_plan.duration:
 		_stop_live_pass(true)
+	# Repère au sol du ballon : seulement dans la vue de dessus, où le ballon est minuscule ;
+	# jamais dans les vues de retransmission (pas de cercle aux pieds du porteur).
+	_ball_marker.visible = _camera_mode == "tactical"
 	if _ball.visible:
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
 		_ball_marker.global_basis = Basis.IDENTITY
@@ -783,7 +789,7 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			# stay in the comfortable middle area even at the in-goal corners.
 			var lag := _camera_focus - desired
 			_camera_focus = desired + lag.limit_length(3.0 if _camera_mode == "action" else 8.0)
-		var offset := Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
+		var offset := ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
 		var look := _camera_focus
 		var size := 16.0 if _camera_mode == "action" else 42.0
 		var wide := size
@@ -807,7 +813,7 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
 			look = _camera_focus
 			size = wide
-			offset = Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
+			offset = ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
 		_camera.position = look + offset
 		_camera.look_at(look)
 		_camera.size = size
@@ -858,19 +864,8 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	_players.add_child(actor)
 	actor.position = target
 	actor.rotation.y = PI * 0.5 if side == 0 else -PI * 0.5
-	# Discreet team-colour footprint remains readable in the fullfield UI viewport.
-	var marker := MeshInstance3D.new()
-	marker.name = "TeamMarker"
-	var ring := TorusMesh.new()
-	ring.inner_radius = 0.36
-	ring.outer_radius = 0.5
-	ring.rings = 16
-	ring.ring_segments = 6
-	marker.mesh = ring
-	marker.position.y = 0.025
-	marker.scale.y = 0.12
-	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	actor.add_child(marker)
+	# Aucun repère au sol (anneau aux couleurs de l'équipe) : retiré à la demande de Léo
+	# (12 novembre 2026), « ça fait pas réaliste ». Les maillots suffisent à distinguer les équipes.
 	var model := _athlete_scene.instantiate() as Node3D
 	actor.add_child(model)
 	model.set_meta("athlete_id", id)
@@ -937,16 +932,6 @@ func _find_animation(node: Node) -> AnimationPlayer:
 
 func _refresh_kits() -> void:
 	_kits = Kit.resolve(_team_colors)
-	_team_marker_materials.clear()
-	for kit: Dictionary in _kits:
-		if kit.get("outlined_marker", false):
-			var marker := ShaderMaterial.new()
-			marker.shader = MarkerOutline
-			marker.set_shader_parameter("marker_color", kit.marker)
-			marker.set_shader_parameter("outline_color", Kit.IVORY.darkened(0.18))
-			_team_marker_materials.append(marker)
-		else:
-			_team_marker_materials.append(_material(kit.marker, true))
 
 
 func alternative_kit_colors() -> Array[Color]:
@@ -956,11 +941,6 @@ func alternative_kit_colors() -> Array[Color]:
 
 
 func _recolor(model: Node3D, side: int) -> void:
-	var marker := model.get_parent().get_node_or_null("TeamMarker") as MeshInstance3D
-	if marker:
-		marker.material_override = _team_marker_materials[side]
-		var width := 1.18 if _kits[side].get("outlined_marker", false) else 1.0
-		marker.scale = Vector3(width, 0.12, width)
 	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 func _build_environment() -> void:
