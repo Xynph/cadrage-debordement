@@ -1,7 +1,11 @@
 {
   "files": {
     "node-run.log": "63ae8d0ad4840f2ad049289c17888fad88d03590ae4de0b46296a67b5419fa38",
-    "public-worker-observations.json": "46a4e2dae2dc5ebcf79b4c1e25fe42b6d00be1c56f0c2a8730454964726f694e"
+    "public-worker-observations.json": "46a4e2dae2dc5ebcf79b4c1e25fe42b6d00be1c56f0c2a8730454964726f694e",
+    "sdk-5fd450b3/godot-report.json": "42a5ebaa0cf597f2003ad4d686f3793d6c7cd120fbec7df703f0666f11c9ed2e",
+    "sdk-5fd450b3/godot.log": "b23b5e6fee348342f71d00087ca6b8031ccec17abfeb0d092f21041efcc696d9",
+    "sdk-5fd450b3/wrapper.log": "9ae34d9e7fc50dd88a08e5ffef87b476e7f4fda29d342ab9c5fae36537dcf120",
+    "sdk-5fd450b3/receipt.json": "ade25e621777056d6052540b8961eb80d7fbe36479353352150cd8563ca0e69a"
   },
   "scope": "Public owned-squad numeric observations, exact profile/seed/clock and command provenance. No full saved profile, raw game export, opponent ability or potential included."
 }

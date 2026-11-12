@@ -32,7 +32,13 @@ Aucune position, photo, police, charge, mode, seuil 55 ou statut de séance chan
 Les métadonnées communes `entity_kind` et `entity_id` portent les vrais IDs ;
 les suffixes de noms de contrôles sont uniquement normalisés pour Godot.
 
-## Recette préparée, pas encore exécutée
+## Recette préparée — état historique du 11 novembre 2026
+
+Le texte ci-dessous décrit la préparation dans ce worktree. La réception
+ultérieure commune est de 55/0 sur `dbe6a7e2`, test corrigé sans changement de
+produit, comme consigné dans l’[inventaire de nuit](night-links-inventory-20261112.md).
+La branche Vigilance reste une fixture de composant, pas une vraie alerte
+physique reçue ni une nouvelle capture de carrière.
 
 `tests/godot-training-identity-links.cjs` prépare une carrière réelle et utilise
 son effectif, ses professionnels et son staff projetés. Le scénario sépare

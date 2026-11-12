@@ -62,7 +62,13 @@ scroll et à son focus dépend de la tranche commune de suspension des lecteurs,
 possédée par `navigation_core`. Aucun mécanisme concurrent de suspension ou de
 scroll n’est ajouté ici.
 
-## Recette prévue, à recevoir sur l’assemblage commun
+## Recette prévue — état historique du 11 novembre 2026
+
+La préparation ci-dessous a été suivie du module 43/0 sur `fbc642e1`,
+consigné dans l’[inventaire](night-links-inventory-20261112.md), puis du
+[parcours graphique réel 61/0 sur `d40311c0`](evidence/night-management-reading-20261111/README.md).
+Ce dernier conserve la même fenêtre de reçus, le focus et les défilements.
+Les trois tentatives rouges précédentes restent séparées dans ses preuves.
 
 - `tests/godot-management-reading-links.cjs` : vraie construction des composants
   Godot dans un host isolé ; homonymes et départ, identifiants d’envoi/événement/

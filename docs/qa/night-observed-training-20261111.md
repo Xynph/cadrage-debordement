@@ -104,7 +104,7 @@ consultation.
 [empreintes](evidence/night-observed-training-20261111/SHA256SUMS.json).
 Le profil complet et la fixture privée du SDK ne sont pas ajoutés au dépôt.
 
-## Validation et limites
+## Préparation historique de la recette (11 novembre 2026)
 
 Les wrappers Node passent la vérification syntaxique ; `git diff --check` passe.
 La comparaison au commit de base ne montre aucun changement dans `native/engine`,
@@ -118,6 +118,29 @@ doublons, nombres invalides, contexte différent, manque de connaissance,
 stabilité d’affichage et conservation des préfixes financiers. La fixture Node
 déjà obtenue peut être réutilisée avec `CD_OBSERVED_TRAINING_REUSE_CASES`.
 
-**Le reçu Godot de cette nouvelle tranche reste à obtenir.** Aucun lancement
+**Statut historique avant réception : le reçu Godot restait à obtenir.**
+Ce statut est remplacé par le reçu ciblé du 12 novembre ci-dessous. Aucun lancement
 Godot ou nouvel import du worktree, recette Windows, nouveau graphique, campagne
 CI globale ou verdict d’équilibrage n’est revendiqué ici.
+
+
+## Réception Godot ciblée du 12 novembre 2026
+
+Sur `5fd450b31f36a28cc14fe7eee586021ffa06d10f`, root a exécuté le wrapper
+`tests/godot-observed-training-consequences.cjs` : **50 contrôles, zéro échec,
+sortie 0**, Godot 4.7.2 headless et audio Dummy. La même fixture de vraies
+alternatives publiques a été réutilisée, sans rejouer les commandes métier.
+Son SHA-256 et les empreintes du test, du composant et du worker sur ce SHA
+sont dans le reçu ; la fixture complète n’est pas publiée.
+
+[Reçu exact et provenance légère](evidence/night-observed-training-20261111/sdk-5fd450b3/receipt.json),
+[rapport Godot](evidence/night-observed-training-20261111/sdk-5fd450b3/godot-report.json),
+[journal Godot](evidence/night-observed-training-20261111/sdk-5fd450b3/godot.log),
+[journal wrapper](evidence/night-observed-training-20261111/sdk-5fd450b3/wrapper.log).
+
+La portée reste celle du composant de reçu : quatre vraies alternatives de
+séance et répétition, complétées par les contre-exemples synthétiques de
+confidentialité et de protocole décrits plus haut. Ce n’est pas un parcours
+graphique du client ni une campagne globale. Aucune durée n’est instrumentée
+et aucun compteur de parole n’est mesuré dans ce rapport. Les anciens SHA de
+production et de données restent ceux des sections historiques.

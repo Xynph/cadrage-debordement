@@ -58,7 +58,7 @@ Cet inventaire ne prétend pas avoir reçu graphiquement ces fenêtres.
 | Information | Destination déjà présente | Limite ou lien manquant |
 | --- | --- | --- |
 | Piste du marché | Ligne `MarketPlayer_ID` → `_profile` dans `recruitment_canvas.gd` | La fiche existe ; le nom ou portrait d’une alerte doit cibler son ID. |
-| Rapport conservé | `OpenScoutReport` → `RecruitmentReport` → `Decisions.scout_report` | Le rapport possède son propre ID. Le contrôleur commun ne propose pas encore de cible `report` ; ouvrir le joueur ne remplace pas l’archive datée. |
+| Rapport conservé | `OpenScoutReport` → `RecruitmentReport` → `Decisions.scout_report` | Le rapport possède son propre ID. État historique de cet inventaire initial : la cible `report` manquait. Elle est ensuite reçue 47/0 sur `d896d631` dans « Rapport réel archivé et retour au lecteur » ci-dessous ; ouvrir le joueur ne remplace pas l’archive datée. |
 | Rapport d’un joueur parti | Même détail du rapport conservé, affichage `assessment` | `_market_player` peut être vide ; ne pas inventer une disponibilité actuelle ou un dossier joueur caché. |
 | Besoin d’un poste | `RecruitmentNeeds` → « Voir les pistes » → filtre de poste | Navigation déjà réelle, sans démarrer de mission. |
 | Relève, candidat projeté | Carte de `RegenScouting`, filtrable et paginée | Nom et portrait statiques ; aucune fiche distincte existante. Un candidat absent de `model.market` n’est pas une cible `market` valide. |
@@ -180,8 +180,9 @@ Précision sur la réception `prospects` précédente : le champ `negotiation`
 des conditions, pas encore la conservation d’un devis non vide émis par le
 moteur. Un groupe `quote` séparé est préparé pour soumettre le vrai bouton
 `InterclubNegotiate` avant sa baseline de consultation, conserver sa réponse
-exacte et inspecter le dossier sans aucune clôture de transfert. Son résultat
-reste à renseigner après exécution.
+exacte et inspecter le dossier sans aucune clôture de transfert. Ce statut de
+préparation est historique ; son résultat réel 66/0 sur
+`dbe6a7e2` figure dans « Conservation d’un vrai devis non vide » ci-dessous.
 
 ## Conservation d’un vrai devis non vide
 

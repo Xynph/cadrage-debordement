@@ -133,5 +133,8 @@ Ce reçu qualifie le composant de reçu dans Godot avec les deux vraies données
 publiques et les contre-exemples synthétiques. Il ne constitue pas un parcours
 graphique complet du client. Aucun nouveau Godot ou import de ce worktree,
 recette Windows, nouveau calcul sportif, campagne CI globale ou nouvelle
-certitude causale n’est revendiqué. Les 50 contrôles de la tranche précédente
-d’observations appartiennent à leur reçu sur `1910f03f`, sans substitution de SHA.
+certitude causale n’est revendiqué. La tranche d’observations possède désormais un
+[reçu Godot distinct de 50 contrôles sur `5fd450b3`](night-observed-training-20261111.md#réception-godot-ciblée-du-12-novembre-2026).
+L’ancienne attribution à `1910f03f` n’était pas étayée par une pièce SDK publiée ;
+elle n’est pas réutilisée comme preuve. Les 45 contrôles du présent lot gardent
+leur SHA `096f3d8f`, sans addition des deux portées.

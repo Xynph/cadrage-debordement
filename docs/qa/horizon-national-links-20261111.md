@@ -42,7 +42,15 @@ commune appartient au propriétaire du contrôleur et doit être assemblée avan
 la recette de cette tranche. Elle permet aussi au bouton natif Retour à
 l'effectif de retrouver les échéances, au-delà du retour Alt+gauche.
 
-## Vérification préparée, résultats encore à recevoir
+## Vérification préparée — état historique du 11 novembre 2026
+
+La préparation ci-dessous précède les réceptions communes. La revue contrats
+a ensuite reçu 270/0 sur `096f3d8f`, avec captures réelles et nom long synthétique
+explicitement distingué dans le [reçu phase 9](evidence/night-phase9-20261111/README.md).
+La lecture nationale 13/0 sur `d896d631` est consignée dans l’[inventaire](night-links-inventory-20261112.md) ;
+le vrai parcours France depuis mandat anglais, 23/0 sur `8ad4b023`, est conservé
+dans le [reçu navigation](evidence/night-navigation-20261111/README.md).
+Ces portées ne sont pas additionnées comme une campagne unique.
 
 - `godot-contract-review.gd` garde ses vérifications existantes de tri,
   géométrie, molette, filtres, prolongation sans signature et sauvegarde. Il

@@ -46,7 +46,12 @@ Fonctions touchées : nouvelles fonctions de lookup, `target_available`,
 Les fonctions économiques et les fonctions de présentation réservées à #552
 (`_weekly`, `_due`, `_footer`, `_season_budget`, `_budget`) restent intactes.
 
-## Recette ciblée préparée
+## Préparation historique de la recette (11 novembre 2026)
+
+Statut de préparation conservé ci-dessous. La réception ultérieure de 40
+contrôles sans échec est consignée dans l’[inventaire de nuit](night-links-inventory-20261112.md),
+ligne « Barre ou point financier ». Cette note ne lui attribue pas de nouveau
+SHA ni de nouvelle capture ; les fixtures d’empreinte restent synthétiques.
 
 `tests/godot-finance-ledger-links.cjs` lance le vrai SDK et importe la carrière
 S2 déjà conservée dans `tests/fixtures/roster-foundation-v1-s2.json.gz`, comme

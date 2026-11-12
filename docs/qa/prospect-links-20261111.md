@@ -53,3 +53,13 @@ duplication. Aucun Godot lourd ni import n'est lancé dans ce worktree.
 La recette du contrôleur réel, les captures et les contrôles sauvegarde/RNG
 seront reçus sur le candidat commun assemblé, avec son SHA exact. Ce document
 ne revendique pas encore ces résultats ni une recette Windows.
+
+
+## Réceptions ultérieures du candidat commun
+
+Les annonces « seront reçus » ci-dessus décrivent la passation historique du
+11 novembre, avant assemblage. Les [preuves navigation](evidence/night-navigation-20261111/README.md)
+consignent ensuite prospects 70/0 sur `37ede657` et vrai devis non vide 66/0 sur
+`dbe6a7e2`. Le premier cas conserve un brouillon dont le devis moteur est vide ;
+le second reçoit et préserve un devis public non vide. Les portées restent
+distinctes, avec consultation sans commande et même fenêtre source conservée.

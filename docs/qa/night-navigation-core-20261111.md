@@ -109,7 +109,14 @@ Les champs dont l’écran conserve déjà les valeurs dans `management_ui` sont
 restaurés. Les brouillons internes à une fenêtre métier ne sont pas migrés :
 la navigation depuis cette fenêtre est refusée.
 
-## Vérifications
+## Vérifications — état historique de la copie initiale (11 novembre 2026)
+
+Les attentes décrites dans cette section concernent cette copie initiale. Les
+[sept reçus communs de navigation](evidence/night-navigation-20261111/README.md)
+et le [parcours management 61/0 sur `d40311c0`](evidence/night-management-reading-20261111/README.md)
+qualifient ensuite leurs cas précis et SHA respectifs. Ils ne constituent pas
+un verdict global ni un reçu autonome ajouté pour les deux suites citées
+ci-dessous.
 
 - Import réel SDK Godot 4.7.2 sur cette copie : aucune erreur de parsing observée.
 - `tests/godot-navigation.cjs` : premier lancement de cette copie interrompu,
