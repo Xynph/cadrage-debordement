@@ -55,10 +55,16 @@ var _porteurs: Array = []
 var _passes: Array = []
 ## Plaquages réussis des pistes : [{t, plaqueur, porteur, cote, releve}] (présentation du contact).
 var _plaquages: Array = []
+## Décalage affiché du plaqueur par rapport à sa piste, et instant de sa dernière mise à jour.
+var _decalages: Dictionary = {}
 ## Plaquage (12 novembre 2026, retours de Léo) : le plaqueur rejoint la taille du porteur, à son
 ## côté et un peu en retrait, juste avant le contact, et tombe avec lui dans le sens de sa course,
 ## au lieu de le traverser sur sa propre trajectoire.
-const PLAQUAGE_APPROCHE := 0.35
+const PLAQUAGE_APPROCHE := 0.8
+## Le rapprochement est borné en allure (m/s) : jamais de glissade visible ; au sol, l'écart
+## restant avec la taille du porteur se résorbe à PLAQUAGE_RESORPTION m/s.
+const PLAQUAGE_RAPPROCHE := 3.0
+const PLAQUAGE_RESORPTION := 2.0
 const PLAQUAGE_ECART := 0.42
 const PLAQUAGE_RETRAIT := 0.3
 var _raccord: Dictionary = {}
@@ -120,6 +126,7 @@ func charger(donnees: Dictionary) -> bool:
 	aplati_a = -1.0
 	_passes = []
 	_plaquages = []
+	_decalages = {}
 	for e: Variant in donnees.get("evenements", []):
 		if e is Dictionary and str(e.get("type", "")) == "aplati":
 			aplati_a = float(e.get("t", -1.0))
@@ -259,17 +266,38 @@ func place(id: String, actor: Node3D) -> void:
 	if _raccord.has(id):
 		p += (_raccord[id] as Vector3) * (1.0 - smoothstep(0.0, RACCORD, temps))
 	var cap := _angle(_pistes[id].cap, temps)
-	# Plaqueur : il rejoint la taille du porteur et tombe avec lui, dans le sens de sa course.
+	# Plaqueur : il rejoint la taille du porteur (allure de rapprochement bornée), tombe avec lui
+	# dans le sens de sa course (attaché au porteur, l'écart restant se résorbe), puis rejoint sa piste.
+	var voulu := Vector3.ZERO
+	var attache := false
+	var cible := Vector3.ZERO
 	for k: Dictionary in _plaquages:
-		if k.plaqueur != id or temps < float(k.t) - PLAQUAGE_APPROCHE or temps > float(k.releve) + 0.5:
+		if k.plaqueur != id or temps < float(k.t) - PLAQUAGE_APPROCHE or temps > float(k.releve) + 1.5:
 			continue
-		var w := smoothstep(float(k.t) - PLAQUAGE_APPROCHE, float(k.t), temps) * (1.0 - smoothstep(float(k.releve), float(k.releve) + 0.5, temps))
 		var avant := Vector3(cos(float(k.cap)), 0.0, sin(float(k.cap)))
-		var cible := _point(k.porteur, temps) + Vector3(-avant.z, 0.0, avant.x) * float(k.cote) * PLAQUAGE_ECART - avant * PLAQUAGE_RETRAIT
+		cible = _point(k.porteur, temps) + Vector3(-avant.z, 0.0, avant.x) * float(k.cote) * PLAQUAGE_ECART - avant * PLAQUAGE_RETRAIT
 		if _raccord.has(k.porteur):
 			cible += (_raccord[k.porteur] as Vector3) * (1.0 - smoothstep(0.0, RACCORD, temps))
-		p = p.lerp(cible, w)
-		cap = lerp_angle(cap, float(k.cap), w)
+		if temps < float(k.t):
+			voulu = (cible - p) * smoothstep(float(k.t) - PLAQUAGE_APPROCHE, float(k.t), temps)
+		elif temps <= float(k.releve):
+			attache = true
+		if temps <= float(k.releve) + 0.3:
+			cap = lerp_angle(cap, float(k.cap), smoothstep(float(k.t) - PLAQUAGE_APPROCHE, float(k.t), temps))
+	var vu: Array = _decalages.get(id, [Vector3.ZERO, temps, null])
+	var dt := clampf(temps - float(vu[1]), 0.0, 0.1)
+	if attache:
+		# Résidu entre la place affichée au contact et la taille du porteur : il se résorbe.
+		var residu: Vector3 = vu[2] if vu[2] is Vector3 else (p + (vu[0] as Vector3)) - cible
+		residu = residu.move_toward(Vector3.ZERO, PLAQUAGE_RESORPTION * dt)
+		_decalages[id] = [cible + residu - p, temps, residu]
+		p = cible + residu
+	elif _decalages.has(id) or voulu != Vector3.ZERO:
+		var decalage := (vu[0] as Vector3).move_toward(voulu, PLAQUAGE_RAPPROCHE * dt)
+		_decalages[id] = [decalage, temps, null]
+		p += decalage
+		if decalage == Vector3.ZERO and voulu == Vector3.ZERO:
+			_decalages.erase(id)
 	actor.position = p
 	# Cap du moteur (angle sur le terrain, depuis l'axe des x) vers le lacet de la vue.
 	actor.rotation.y = atan2(cos(cap), sin(cap))

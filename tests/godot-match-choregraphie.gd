@@ -188,7 +188,7 @@ func lire(view, cas: Dictionary) -> void:
 			# 2026), pas sur sa piste ; contrôlé à part ci-dessous.
 			var lie := false
 			for k: Dictionary in view._choregraphie._plaquages:
-				if k.plaqueur == id and t >= float(k.t) - 0.4 and t <= float(k.releve) + 0.55: lie = true
+				if k.plaqueur == id and t >= float(k.t) - view._choregraphie.PLAQUAGE_APPROCHE - 0.05 and t <= float(k.releve) + 1.5: lie = true
 			if t > raccord and not lie:
 				var piste := track_point(pistes, id, t)
 				# Échantillon le plus proche : 0,1 s d'avance ou de retard au plus, soit < 1 m à 9,4 m/s.
@@ -211,7 +211,7 @@ func lire(view, cas: Dictionary) -> void:
 				mains_max = maxf(mains_max, plus_pres)
 		# Plaqueur au contact : à la taille du porteur, sans le traverser.
 		for k: Dictionary in view._choregraphie._plaquages:
-			if t >= float(k.t) + 0.1 and t <= float(k.t) + 0.6 and view._actors.has(k.plaqueur) and view._actors.has(k.porteur):
+			if t >= float(k.t) + 0.2 and t <= float(k.t) + 0.6 and view._actors.has(k.plaqueur) and view._actors.has(k.porteur):
 				var d := Vector2((view._actors[k.plaqueur].node as Node3D).position.x - (view._actors[k.porteur].node as Node3D).position.x,
 					(view._actors[k.plaqueur].node as Node3D).position.z - (view._actors[k.porteur].node as Node3D).position.z).length()
 				plaquage_min = minf(plaquage_min, d)
