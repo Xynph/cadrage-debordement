@@ -69,8 +69,15 @@ def champ(P):
 #   - géométrie : chaque lèvre avance en arrondi (VOLUME_*), au plus au milieu de sa hauteur, rien au bord, et
 #     s'étire en hauteur depuis la fente (ETIRE ; la peau au-delà du bord se resserre).
 # Même champ pour le visage, les lèvres et la cavité : rien ne se décolle.
-VOLUME_SUP, VOLUME_INF = 0.0034, 0.0038
-ETIRE = 0.0015                    # les lèvres s'étirent en hauteur depuis la fente (bord éloigné de 1,5 mm)
+# Versions des lèvres : v3 (12 novembre, validée en couleur et en sourire), v4 (Léo, 12 novembre après-midi :
+# « rends ses lèvres un peu plus en volume et un peu plus épaisses ») : supérieure 22 % plus haute, inférieure 28 %,
+# avancée 4,6 et 5,8 mm au lieu de 3,4 et 3,8, étirement 2,2 mm au lieu de 1,5. Le .blend garde la version appliquée
+# (propriété « volume_levres ») : on n'y ajoute que la différence.
+VERSIONS = {
+    3: dict(sup=1.00, inf=1.00, volume_sup=0.0034, volume_inf=0.0038, etire=0.0015),
+    4: dict(sup=1.22, inf=1.28, volume_sup=0.0046, volume_inf=0.0058, etire=0.0022, portee_inf=1.3),
+}
+VERSION = 4
 COIN = 0.066
 LEVRE_COEUR = (104, 44, 48)       # sRGB près de la fente
 LEVRE = (150, 76, 76)             # sRGB, milieu des lèvres : rose chaud un peu terne (vers rose-brun), proche de la peau
@@ -80,68 +87,119 @@ LEVRES_RUGOSITE = 0.6
 # La coque des lèvres, plus en avant que la peau, reçoit plus de lumière : sa partie hors contour est assombrie
 # d'autant pour se fondre dans le visage.
 PEAU_COQUE = 0.965
+OMBRE_MOUSTACHE = 0.42           # assombrissement de la coque sous la moustache (au-delà du bord de la lèvre supérieure)
 
 
-def contour_levres(x):
+def contour_levres(x, version=VERSION):
     """Fente, hauteur de la lèvre supérieure et de la lèvre inférieure (m) en fonction de x (repère glTF, avant
     toute déformation)."""
+    V = VERSIONS[version]
     t = np.clip(np.abs(x) / COIN, 0, 1)
     fente = 1.4685 + 0.0045 * t ** 2
     # supérieure : épaisse au centre, effilée vers les commissures ; creux du philtrum au milieu, arc de Cupidon
     h_sup = 0.0128 * (1 - t ** 1.25) ** 1.1 - 0.0019 * gauss(x, 0.0050) + 0.0011 * gauss(np.abs(x) - 0.0115, 0.0050)
     # inférieure : charnue au centre
     h_inf = 0.0160 * (1 - t ** 2.2) ** 1.2
-    return fente, np.maximum(h_sup, 0), np.maximum(h_inf, 0)
+    return fente, V['sup'] * np.maximum(h_sup, 0), V['inf'] * np.maximum(h_inf, 0)
 
 
-def position_levre(P):
+def position_levre(P, version=VERSION):
     """Pour chaque point : côté (+1 lèvre supérieure, -1 inférieure) et fraction de hauteur (0 à la fente,
     1 au bord, > 1 au-delà)."""
-    fente, hs, hi = contour_levres(P[:, 0])
+    fente, hs, hi = contour_levres(P[:, 0], version)
     h = P[:, 1] - fente
     cote = np.where(h >= 0, 1.0, -1.0)
     frac = np.where(h >= 0, h / np.maximum(hs, 1e-4), -h / np.maximum(hi, 1e-4))
     return cote, frac
 
 
-def volume(P):
+def volume(P, version=VERSION):
+    V = VERSIONS[version]
     z = P[:, 2]; avant = ss(0.09, 0.125, z)
-    cote, frac = position_levre(P)
+    cote, frac = position_levre(P, version)
+    # lèvre inférieure (v4) : l'avancée s'éteint plus bas que le bord peint, sur le premier rang de la barbe. Le bord
+    # de la coque descend de 11,5 à 21 mm sous la fente : avec une avancée qui s'éteint au bord peint, ses sommets
+    # avançaient inégalement (pointe en V au bas de la lèvre).
+    frac = np.where(cote < 0, frac / V.get('portee_inf', 1.0), frac)
     bombe = np.sin(np.pi * np.clip(frac, 0, 1)) ** 0.8 * (1 - ss(0.80, 1.0, np.abs(P[:, 0]) / COIN))
     D = np.zeros_like(P)
-    D[:, 2] += np.where(cote > 0, VOLUME_SUP, VOLUME_INF) * bombe * avant
-    etire = ETIRE * np.clip(frac, 0, 1) * (1 - ss(1.0, 1.8, frac)) * (1 - ss(0.85, 1.05, np.abs(P[:, 0]) / COIN))
+    D[:, 2] += np.where(cote > 0, V['volume_sup'], V['volume_inf']) * bombe * avant
+    etire = V['etire'] * np.clip(frac, 0, 1) * (1 - ss(1.0, 1.8, frac)) * (1 - ss(0.85, 1.05, np.abs(P[:, 0]) / COIN))
     D[:, 1] += cote * etire * avant
     return D
 
 
 def peindre_levres(u2x, v2y, taille, peau):
     """Texture des lèvres (sRGB, uint8). u2x, v2y : coefficients (a, b) tels que x = a u + b, y = a v + b.
-    peau : couleur (3,) ou fonction (X, Y) -> couleurs (h, w, 3) de la peau du visage sous chaque texel.
-    Modelé peint : plus sombre près de la fente, lèvre supérieure (tournée vers le bas) un peu plus sombre que
-    l'inférieure, reflet doux sur la lèvre inférieure seulement, bord fondu dans la peau (pas de trait), bas de la
-    lèvre inférieure un peu ombré et petit creux d'ombre aux commissures."""
+    peau : couleur (3,) ou fonction (X, Y) -> couleurs (h, w, 3) de la peau du visage sous chaque texel."""
     W, H = taille
     u = (np.arange(W) + 0.5) / W; v = (np.arange(H) + 0.5) / H
     U, V = np.meshgrid(u, v)
     X = u2x[0] * U + u2x[1]; Y = v2y[0] * V + v2y[1]
+    fond = peau(X, Y) if callable(peau) else np.array(peau, dtype=np.float64)[None, None, :] * np.ones(X.shape + (1,))
+    out = teinte_levres(X, Y, fond)
+    # au-dessus de la lèvre supérieure, la coque passe sous la moustache : la peau y est dans l'ombre (sur les côtés,
+    # le visage y est rendu vers 105/75/70). Sans cela, bande claire polygonale entre la moustache et la lèvre (v4).
+    P = np.stack([X.ravel(), Y.ravel(), np.zeros(X.size)], 1)
+    cote, frac = position_levre(P); cote = cote.reshape(X.shape); frac = frac.reshape(X.shape)
+    ombre = OMBRE_MOUSTACHE * ss(1.0, 1.35, frac) * (cote > 0) * (1 - ss(0.65, 0.9, np.abs(X) / COIN))   # pas aux coins
+    out = out * (1 - ombre)[..., None]
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
+def teinte_levres(X, Y, fond):
+    """Couleur (sRGB, réels) des lèvres aux points (X, Y) du contour (repère glTF), fondue dans fond (couleur de la
+    peau sous chaque point, même forme que X + (3,)). Sert à la coque des lèvres et, depuis la v4, à la texture de
+    la tête autour de la coque (nettete-tete-gabi.py) : les lèvres ne s'arrêtent plus au bord de la coque.
+    Modelé peint : plus sombre près de la fente, lèvre supérieure (tournée vers le bas) un peu plus sombre que
+    l'inférieure, reflet doux sur la lèvre inférieure seulement, bord fondu dans la peau (pas de trait), bas de la
+    lèvre inférieure un peu ombré et petit creux d'ombre aux commissures."""
+    X = np.asarray(X, dtype=np.float64); Y = np.asarray(Y, dtype=np.float64)
     P = np.stack([X.ravel(), Y.ravel(), np.zeros(X.size)], 1)
     cote, frac = position_levre(P); cote = cote.reshape(X.shape); frac = frac.reshape(X.shape)
     lateral = np.abs(X) / COIN
     dedans = (1 - ss(0.72, 1.06, frac)) * (1 - ss(0.86, 1.0, lateral))
     c = lambda t: np.array(t, dtype=np.float64)
-    coul = c(LEVRE)[None, None, :] + (c(LEVRE_COEUR) - c(LEVRE))[None, None, :] * (1 - ss(0.0, 0.55, frac))[..., None]
+    coul = c(LEVRE)[None, :] + (c(LEVRE_COEUR) - c(LEVRE))[None, :] * (1 - ss(0.0, 0.55, frac))[..., None]
     coul = coul * np.where(cote > 0, 0.92, 1.0)[..., None]
     reflet = REFLET * gauss(frac - 0.42, 0.16) * gauss(X / COIN, 0.35) * (cote < 0)
     coul = coul + reflet[..., None]
-    fond = peau(X, Y) if callable(peau) else c(peau)[None, None, :]
     out = fond + (coul - fond) * dedans[..., None]
-    # ombres douces, à l'intérieur du contour (au-delà, le bord de la coque dessinait une zone polygonale) : bas de
-    # la lèvre inférieure, et un creux à chaque commissure
+    # ombres douces, à l'intérieur du contour : bas de la lèvre inférieure, et un creux à chaque commissure
     sous = ss(0.70, 0.95, frac) * (1 - ss(0.95, 1.05, frac)) * (cote < 0) * (1 - ss(0.5, 0.95, lateral))
     coin = gauss(np.hypot((lateral - 0.97) * COIN, (Y - contour_levres(X)[0])), 0.0035)
-    out = out * (1 - 0.10 * sous - 0.30 * coin)[..., None]
-    return np.clip(out, 0, 255).astype(np.uint8)
+    return out * (1 - 0.10 * sous - 0.30 * coin)[..., None]
+
+
+# Lèvre inférieure dans la forme MouthOpen d'origine : un sommet du bord de la coque (x ≈ +1 cm, 11,5 mm sous la
+# fente, là où le contour de la coque remonte en dent de scie) ne descend que de 8,3 mm quand ses voisins descendent
+# de 11 à 13 mm : la lèvre se pince et casse en parole. On lisse le déplacement de MouthOpen sur la lèvre
+# inférieure et le haut du menton (moyenne gaussienne, surtout le long de la lèvre), sans toucher la fente ni la
+# lèvre supérieure. Fonction des seules positions : le visage et la coque, qui partagent leurs sommets de bord,
+# restent collés.
+def lisser_ouverture(P, D):
+    """P : positions au repos (glTF), D : déplacements de MouthOpen. Renvoie D lissé sur la lèvre inférieure."""
+    from scipy.spatial import cKDTree
+    fente = contour_levres(P[:, 0], 3)[0]; rel = P[:, 1] - fente
+    devant = P[:, 2] > 0.12
+    voisins = np.where(devant & (rel < -0.0025) & (rel > -0.032) & (np.abs(P[:, 0]) < 0.07))[0]
+    w = (1 - ss(-0.0065, -0.0045, rel)) * ss(-0.028, -0.021, rel) * (1 - ss(0.050, 0.060, np.abs(P[:, 0]))) * devant
+    zone = np.where(w > 0)[0]
+    if not len(zone) or not len(voisins): return D
+    # régression linéaire locale pondérée (gaussienne 12 mm le long de la lèvre, 4 mm en hauteur) : garde la
+    # pente naturelle (la lèvre descend plus près de la fente qu'au menton) ; chaque sommet est estimé d'après les
+    # colonnes de sommets voisines : la colonne qui traîne est effacée
+    S = np.array([1 / 0.012, 1 / 0.004])
+    arbre = cKDTree(P[voisins][:, :2] * S)
+    out = D.copy()
+    for i in zone:
+        q = voisins[arbre.query_ball_point(P[i, :2] * S, 3.0)]
+        d = (P[q, :2] - P[i, :2]) * S; a = np.exp(-0.5 * (d ** 2).sum(1))
+        a = a * (np.abs(P[q, 0] - P[i, 0]) > 0.004)       # estimé d'après les colonnes voisines, pas la sienne
+        A = np.column_stack([np.ones(len(q)), d]) * np.sqrt(a)[:, None]
+        coef = np.linalg.lstsq(A, D[q] * np.sqrt(a)[:, None], rcond=None)[0]
+        out[i] = D[i] + (coef[0] - D[i]) * w[i]
+    return out
 
 
 def normales(P, F):
@@ -224,9 +282,31 @@ def traiter_glb(src, dst):
                 values=pygltflib.AccessorSparseValues(bufferView=ecrire(np.ascontiguousarray(D[idx]))))
         g.accessors.append(a); return len(g.accessors) - 1
 
+    def lire_cible(i):
+        a = g.accessors[i]
+        D = lire(i).astype(np.float64).copy() if a.bufferView is not None else np.zeros((a.count, 3))
+        if a.sparse:
+            sp = a.sparse; bi = g.bufferViews[sp.indices.bufferView]; bv = g.bufferViews[sp.values.bufferView]
+            idx = np.frombuffer(blob, dtype=TYPES[sp.indices.componentType], count=sp.count, offset=(bi.byteOffset or 0) + (sp.indices.byteOffset or 0))
+            val = np.frombuffer(blob, dtype=np.float32, count=sp.count * 3, offset=(bv.byteOffset or 0) + (sp.values.byteOffset or 0)).reshape(-1, 3)
+            D[idx] = val
+        return D
+
     me = next(m for m in g.meshes if m.name == 'Mesh_0')
     noms = list((me.extras or {}).get('targetNames') or [])
     if FORME in noms: sys.exit(f'{src} : Mesh_0 a déjà la forme {FORME}')
+    # MouthOpen : lèvre inférieure lissée (visage et coque ensemble, avant le volume)
+    if 'MouthOpen' in noms:
+        k_o = noms.index('MouthOpen')
+        prs = [pr for pr in me.primitives if pr is me.primitives[0] or g.materials[pr.material].name == 'M_Gabi_V3_Levres']
+        Ps = [lire(pr.attributes.POSITION).astype(np.float64) for pr in prs]
+        Ds = [lire_cible(pr.targets[k_o]['POSITION']) for pr in prs]
+        L = lisser_ouverture(np.concatenate(Ps), np.concatenate(Ds)); debut = 0; ecart = 0.0
+        for pr, P_, D_ in zip(prs, Ps, Ds):
+            Dn = L[debut:debut + len(P_)]; debut += len(P_)
+            ecart = max(ecart, float(np.abs(Dn - D_).max()))
+            pr.targets[k_o] = dict(pr.targets[k_o], POSITION=accesseur(Dn))
+        print('MouthOpen : lèvre inférieure lissée, correction max', round(ecart * 1000, 1), 'mm')
     total = 0.0
     for k_pr, pr in enumerate(me.primitives):
         P0 = lire(pr.attributes.POSITION).astype(np.float64)
@@ -285,14 +365,36 @@ def traiter_blend(chemin):
     Minv = np.linalg.inv(M[:3, :3])
     base = np.empty(len(me.vertices) * 3); me.shape_keys.key_blocks[0].data.foreach_get('co', base); base = base.reshape(-1, 3)
     Pw = base @ M[:3, :3].T + M[:3, 3]
-    if not o.get('volume_levres'):
-        Dv = (volume(Pw @ b2g.T) @ b2g) @ Minv.T        # ajouté à la base et à toutes les formes
+    deja = int(o.get('volume_levres') or 0)
+    deja = 3 if deja in (1, 3) else deja                # 1 : ancienne marque de la v3
+    if not o.get('ouverture_lissee') and 'MouthOpen' in me.shape_keys.key_blocks:
+        # MouthOpen : lèvre inférieure lissée, avant le volume (repère du calcul : celui d'origine)
+        Pg = Pw @ b2g.T
+        if deja: Pg = Pg - volume(Pg, deja)           # à peu près la position d'origine
+        kb = me.shape_keys.key_blocks['MouthOpen']
+        c = np.empty(len(me.vertices) * 3); kb.data.foreach_get('co', c); c = c.reshape(-1, 3)
+        D = ((c - base) @ M[:3, :3].T) @ b2g.T
+        mat = np.empty(len(me.polygons), dtype=np.int64); me.polygons.foreach_get('material_index', mat)
+        cav = next((i for i, m in enumerate(me.materials) if m and m.name.startswith('M_Gabi_V3_Cavite')), -1)
+        hors_cavite = np.zeros(len(me.vertices), bool)
+        for poly, mi in zip(me.polygons, mat):
+            if mi != cav: hors_cavite[list(poly.vertices)] = True
+        Dn = D.copy(); idx = np.where(hors_cavite)[0]
+        Dn[idx] = lisser_ouverture(Pg[idx], D[idx])
+        kb.data.foreach_set('co', (base + ((Dn @ b2g) @ Minv.T)).astype(np.float32).ravel())
+        o['ouverture_lissee'] = 1
+        print('MouthOpen : lèvre inférieure lissée, correction max', round(float(np.abs(Dn - D).max()) * 1000, 1), 'mm')
+    if deja != VERSION:
+        Pg = Pw @ b2g.T
+        if deja: Pg0 = Pg - volume(Pg, deja); Dg = volume(Pg0, VERSION) - volume(Pg0, deja)
+        else: Dg = volume(Pg, VERSION)
+        Dv = (Dg @ b2g) @ Minv.T                        # ajouté à la base et à toutes les formes
         for kb in me.shape_keys.key_blocks:
             c = np.empty(len(me.vertices) * 3); kb.data.foreach_get('co', c)
             kb.data.foreach_set('co', (c.reshape(-1, 3) + Dv).astype(np.float32).ravel())
         me.vertices.foreach_set('co', (base + Dv).astype(np.float32).ravel()); me.update()
-        o['volume_levres'] = 1; base = base + Dv; Pw = base @ M[:3, :3].T + M[:3, 3]
-        print('lèvres : volume au repos ajouté')
+        o['volume_levres'] = VERSION; base = base + Dv; Pw = base @ M[:3, :3].T + M[:3, 3]
+        print(f'lèvres : volume au repos v{VERSION} (avant : v{deja or "aucune"})')
     D = champ(Pw @ b2g.T) @ b2g                      # glTF -> Blender (b2g orthogonale)
     kb = o.shape_key_add(name=FORME, from_mix=False)
     kb.data.foreach_set('co', (base + D @ Minv.T).astype(np.float32).ravel())
