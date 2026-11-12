@@ -75,10 +75,13 @@ est conservé. Les nouvelles inscriptions rejoignent les familles existantes,
 sans modifier workflows, paramètres, permissions ou limites. Une seule campagne
 SDK full et une campagne JavaScript du HEAD publié sont à recevoir après gel.
 
-Main observé `eb2b1833` a intégré #550 ; sa CI JavaScript
+Main observé `f05708e2` a intégré #550 puis #549 (documentation uniquement).
+Le dernier vert JavaScript reçu reste celui de `eb2b1833`,
 [43120082969](https://github.com/Xynph/cadrage-debordement/actions/runs/43120082969)
-est verte sept jobs. Cela ne qualifie pas le lot commun SDK ou Windows. Une
-fusion virtuelle Git du lot commun avec ce main ne présente pas de conflit ;
+avec sept jobs verts. La CI du nouveau main
+[43128362425](https://github.com/Xynph/cadrage-debordement/actions/runs/43128362425)
+est en cours au relevé. Cela ne qualifie pas le lot commun SDK ou Windows. Une
+fusion virtuelle Git du lot commun avec `f05708e2` ne présente pas de conflit ;
 ce n’est ni une intégration réelle ni une recette du cumul futur de Claude.
 
 Aucun diff moteur, données, économie, calendrier, workflow, project.godot,
