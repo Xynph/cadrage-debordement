@@ -442,6 +442,7 @@ func _commandes() -> void:
 	plus.add_theme_font_size_override("font_size", px(28))
 	plus.add_theme_font_override("font", TITRES)
 	plus.tooltip_text = "Statistiques complètes, journal du match, confier la fin à l’adjoint."
+	plus.focus_mode = Control.FOCUS_ALL
 	plus.set_meta("contextual_enabled", true)
 	_habiller(plus)
 	var menu := plus.get_popup()
@@ -543,6 +544,12 @@ func _libelle_niveau(id: Variant) -> String:
 		if item.get("id") == id: return str(item.get("label", ""))
 	return ""
 
+## Niveau tenu par la régie (préférence du joueur, reprise comprise) : coché dans Paramètres.
+var niveau_regie := ""
+func montrer_niveau(id: String) -> void:
+	niveau_regie = id
+	if not _niveaux.is_empty() and niveau_libelle() != _libelle_niveau(id): _remplir_niveaux(id)
+
 ## Libellé du niveau de temps forts choisi dans les paramètres (vide s'il n'y en a pas).
 func niveau_libelle() -> String:
 	if groupe_niveaux == null: return ""
@@ -604,7 +611,7 @@ func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 26, c
 	else: S.G.fill(etiquette)
 	return etiquette
 
-## Tableau de bord en tuiles (rendu 1 choisi par Léo) : barre de commandes, puis trois colonnes.
+## Tableau de bord en tuiles (rendu 1 retenu) : la barre de commandes, puis trois colonnes.
 ## Gauche : Mon XV (onglet : le XV adverse), tuile principale en relief. Centre : terrain
 ## 2D petit (dernier fait en bandeau au-dessus), momentum, faits marquants. Droite : Gabi, stats.
 func _page() -> void:
@@ -765,7 +772,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_niveaux = direct.get("niveaux", [])
-	if niveau_libelle() != _libelle_niveau(direct.get("niveau")) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(str(direct.get("niveau", "")))
+	var voulu := niveau_regie if not niveau_regie.is_empty() else str(direct.get("niveau", ""))
+	if niveau_libelle() != _libelle_niveau(voulu) or grille_niveaux.get_child_count() != _niveaux.size(): _remplir_niveaux(voulu)
 	var dom: Dictionary = direct.get("domination", {}) if direct.get("domination") is Dictionary else {}
 	domination.minutes = dom.get("minutes", [])
 	domination.mi_temps = dom.get("miTemps")

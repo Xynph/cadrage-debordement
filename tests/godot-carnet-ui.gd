@@ -86,6 +86,21 @@ func activate_bench(control: Button, key: String) -> void:
 func press_match_drawer(caption: String, expected: String) -> void:
 	var screen := page_for("Match")
 	var matches := screen.find_children("*","Button",true,false).filter(func(control): return control.text == caption and control.is_visible_in_tree() and not control.disabled)
+	# Direct en temps forts : la bande sous le score (Tactique, Banc, Paramètres, Plus) range
+	# Statistiques et Journal dans le menu Plus (demande de Léo, 12 novembre 2026).
+	var plus: MenuButton = screen.find_child("MatchBetweenMore", true, false) as MenuButton
+	if matches.is_empty() and plus != null and plus.is_visible_in_tree():
+		var menu := plus.get_popup()
+		var libelle := {"STATS": "Statistiques", "JOURNAL": "Journal du match"}.get(caption, "")
+		var index := -1
+		for n in menu.item_count:
+			if menu.get_item_text(n) == libelle: index = n
+		check(index >= 0, "Action du vrai direct dans le menu Plus : "+caption)
+		if index < 0: return
+		menu.id_pressed.emit(menu.get_item_id(index))
+		await settle()
+		check(screen.drawer_tab==expected and screen.drawer.visible,"Le menu Plus ouvre le tiroir contextuel : "+expected)
+		return
 	check(matches.size()==1,"Action visible unique du vrai direct : "+caption)
 	if matches.size()!=1: return
 	var control := matches[0] as Button

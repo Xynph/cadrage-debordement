@@ -285,6 +285,7 @@ func montrer_reglages_temps_forts(direct: Dictionary, source: Node) -> void:
 	for index in _niveaux.size():
 		if _niveaux[index].get("id") == source.niveau and _niveau.selected != index: _niveau.select(index)
 	_niveau.visible = not _niveaux.is_empty()
+	if source.get("between") != null: source.between.montrer_niveau(str(source.niveau))
 
 ## Vrai tant qu'un temps fort reste à montrer : la causerie attend la fin de l'action.
 func retient_la_causerie(live: Dictionary) -> bool:
