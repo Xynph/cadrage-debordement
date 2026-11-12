@@ -1,4 +1,4 @@
-# Chorégraphe de temps forts — conception, trois tranches (12 novembre 2026)
+# Chorégraphe de temps forts — conception, quatre tranches (12 novembre 2026)
 
 Branche `claude/match-choregraphe-20261112`, partie de `claude/match-nuit-20261111`
 (PR 578 : temps forts #560, animations adaptées #571). Drapeau **`CD_MATCH_CHOREGRAPHE=1`**,
@@ -26,6 +26,10 @@ change ni le score, ni le marqueur, ni le point d'essai. Il met en scène ce qui
 > tentée au but et pénalité jouée en touche ; la défense lit l'attaque (côté fort, couverture
 > du pied) ; correction du premier temps fort du match (joueurs absents de l'écran) ; capture
 > dans l'interface complète.
+>
+> **Quatrième tranche (§ 12)** : la pénalité jouée vite à la main devient un vrai choix du
+> moteur, puis elle est mise en scène ; fautes de main, cartons (arbitre, joueur qui sort),
+> contestation au sol, rebonds du ballon, et une défense qui monte sur le receveur probable.
 
 Première tranche : **un seul type d'action, l'essai en jeu courant** (fait `origin:'open'`
 de `scoreTry`). Les essais sur ballon porté et sur mêlée gardent les gestes actuels.
@@ -325,11 +329,11 @@ son receveur avance de 5 m au plus pour fixer (il reculait sans fin).
 ### 10.7 Choix faits sans Léo (12 novembre, nuit)
 
 - Gains du moteur montrés « à 6 m près » : la course du porteur et l'arrivée du plaqueur sont
-  simulées, le point exact varie.
+  simulées, le point exact varie. **Validé par Léo le 12 novembre.**
 - Un temps de jeu d'au moins 10 m est montré comme une percée (plaquages ratés, couverture).
 - Tolérance de 0,35 m près d'un joueur au sol (on l'enjambe), au lieu de 0,6 m.
 - Durée jusqu'à 50 s pour un temps fort de quatre ou cinq faits (mêlée, trois temps de jeu,
-  essai) : un tel temps fort dure ce qu'il dure. À juger sur la vidéo.
+  essai) : un tel temps fort dure ce qu'il dure. **Validé par Léo le 12 novembre.**
 - Botteur d'un coup de pied en touche non nommé par le moteur : l'ouvreur.
 - Largeur des coups de pied (le moteur ne donne que `x`) : près d'un receveur possible.
 - Option d'essai `matchChoreography:'entrees'` du pont : joint l'entrée du chorégraphe au temps
@@ -338,11 +342,13 @@ son receveur avance de 5 m au plus pour fixer (il reculait sans fin).
 ### 10.8 Limites
 
 - Ballon porté, pénalité, faute de main et touche sur ballon porté restent aux gestes
-  (ballon porté et pénalités : couverts par la troisième tranche, § 11).
+  (ballon porté et pénalités : couverts par la troisième tranche, § 11 ; faute de main par la
+  quatrième, § 12).
 - Pas de contestation au sol, de jeu au pied rasant ni de rebond simulé (un ballon non pris
-  tombe et le receveur le ramasse) ; pas de 50:22 vu dans le jeu d'entrées.
+  tombe et le receveur le ramasse) ; pas de 50:22 vu dans le jeu d'entrées. *(Contestation et
+  rebonds : quatrième tranche, § 12.)*
 - La défense ne lit toujours pas l'attaque ; la consigne ne change que la profondeur et la
-  vitesse de montée.
+  vitesse de montée. *(Lecture : troisième et quatrième tranches.)*
 - Gestes manquants dans la bibliothèque : aplati, passe, liaison au ruck et en mêlée (poses
   procédurales).
 - Au niveau dynamique, les jeux au pied de jeu courant sont rares dans les temps forts (seuil
@@ -402,7 +408,8 @@ pistes par temps fort).
 **Pénalité « jouée à la main » : non montrée.** Le moteur (`executePenaltyChoice`) ne connaît
 que le tir au but et la pénaltouche ; une pénalité jouée vite à la main n'existe pas dans ses
 faits. La montrer inventerait une décision : le moteur reste la source de vérité. À ajouter au
-moteur d'abord si Léo la veut (choix tactique, risque, gain).
+moteur d'abord si Léo la veut (choix tactique, risque, gain). *(Fait dans la quatrième tranche,
+§ 12 : le moteur la décide, le chorégraphe la montre.)*
 
 Au niveau « dynamique », la sélection des temps forts retire la pénaltouche de ses plans
 (`match-highlights.cjs`) : `penalite_en_touche` ne se voit qu'au niveau « match complet ».
@@ -581,3 +588,224 @@ Le rendu logiciel est lent (environ 0,5 s par image) : une capture de ce type pr
 3. Enchaîner pénaltouche, touche et ballon porté dans une même série de pistes.
 4. Faute de main, ballon porté qui s'écroule ou sort, contestation au sol.
 5. Clips Mixamo de liaison (ruck, mêlée, ballon porté), de pose du ballon et d'aplati.
+
+## 12. Quatrième tranche (12 novembre 2026, journée)
+
+Branche `claude/match-limites-20261112`. Pistes toujours en **version 2** : l'arbitre (`arbitre`),
+les nouveaux états et événements sont des ajouts ; une vue d'avant lit les pistes sans eux.
+
+### 12.1 Pénalité jouée vite à la main : un vrai choix du moteur
+
+Avant, `executePenaltyChoice` ne connaissait que le tir au but et la pénaltouche. Elle a maintenant
+un troisième choix (`dist/matchflow.js`, `wantsQuickTap`, `playQuickTap`), pour les rencontres
+créées avec `quickTapVersion: 1` (toutes les nouvelles ; un match commencé avant garde ses règles).
+
+**Décision** (aucun tirage : sans pénalité jouée à la main, la suite des tirages est celle d'avant) :
+
+- consigne du manager `penaltyPolicies` : « Jouer vite à la main » (nouvelle) → toujours ;
+  « Chercher les points » ou « Chercher la pénaltouche » → jamais ; « Selon le contexte » → poids
+  ci-dessous comparé à un repère déterministe (minute, pénalités, score), comme le choix de la faute ;
+- poids de base selon la distance de la ligne adverse : 30 % à 6 m, 22 % à 12 m, 12 % à 22 m,
+  10 % jusqu'à 50 m, 5 % au-delà ;
+- score et minute : mené, ×1,25 ; mené de plus de 3 points après la 60e, ×2,6 près de la ligne
+  (×1,9 ailleurs) ; devant après la 60e, ×0,5 (×0,3 à plus de 7 points) ;
+- pénalité facile à trois points (moins de 30 m, à 3 points au plus) que le choix au but retiendrait :
+  ×0,4 (×0,7 près de la ligne quand on est mené) ;
+- consigne tactique : jeu au large ×1,45, au près ×0,65, occupation ×0,5 ;
+- profil : vivacité (vitesse et mental, forme comprise) du demi de mêlée qui la joue et sang-froid
+  (mental) de l'ouvreur, entre ×0,55 et ×1,5 ; pluie ×0,75 ; supériorité numérique +15 % par joueur ;
+- jamais juste après un carton (le jeu est arrêté).
+
+**Effet** (tirages seulement quand elle est jouée) : fait `quick-tap` (équipe, demi qui la joue,
+point de la faute), puis jeu courant contre une défense mal replacée. Près de la ligne (12 m) :
+essai 16 à 55 % (avantage collectif, vivacité du demi contre l'organisation adverse, puissance des
+avants contre plaquage), ballon perdu 14 à 40 % (gratté, tenu dans l'en-but, en-avant), sinon 1 à
+4 m gagnés. Ailleurs : percée de 22 à 38 m (7 à 32 %, parfois l'essai), ballon perdu (10 à 33 %),
+sinon 5 à 14 m. Les faits suivants sont ceux du moteur (`carry`, `try`, `turnover`, `hand-fault`,
+`ingoal`). Valeurs choisies, non mesurées.
+
+**Choix du manager** : l'interface web proposait déjà « Sur pénalité » ; l'option « Jouer vite à la
+main » s'y ajoute. Côté Godot, la commande `set_penalty_policy` (match en pause) et un groupe « Sur
+pénalité » dans le tiroir Tactique du direct (`live_view.gd`) ; le modèle expose `tactics.penalty`
+et `tactics.penalties`.
+
+**Faits structurés ajoutés** (sans tirage) : `quick-tap` ; la nature de la faute sur le coup de
+sifflet (`penalty.cause` : `offside`, `ruck`, `holding`, `obstruction`, `dangerous`, règles
+professionnelles révisées) ; la nature et le joueur d'une faute de main (`hand-fault.cause`
+`knock-on`/`forward-pass`, `actor`). La sauvegarde les valide.
+
+**Temps forts** : `quick-tap` a un intérêt de 50 (68 près de la ligne) ; le coup de sifflet qui la
+précède entre dans le temps fort (`penalite_jouee_a_la_main`).
+
+### 12.2 Statistiques (IA contre IA, avant / après)
+
+Matchs IA contre IA du harnais (`tests/harness.cjs`, carrière de 14 clubs), cinq graines × 600
+matchs (3 000 matchs par colonne), avec l'option et sans (`QUICK_TAP_RULES=0`, règles d'avant) :
+
+| Par match | Avec | Sans |
+| --- | --- | --- |
+| Pénalités exécutées (hors avantage joué) | 10,60 | 10,59 |
+| Pénalités jouées à la main | 0,45 (4,3 % ; 11 % à 12 m de la ligne ; 18 % à 12 m en étant mené) | 0 |
+| Essais | 3,52 | 3,55 |
+| Points (deux équipes) | 26,7 | 27,1 |
+| Écart final moyen | 7,67 | 7,68 |
+| Tentatives de pénalité au but | 4,34 | 4,60 |
+| Pénalités réussies | 1,92 | 2,01 |
+| Pénaltouches | 5,80 | 5,99 |
+
+Issues des 1 270 pénalités jouées à la main : gain conservé 56 %, percée 11 %, essai 11 %, ballon
+gratté 12 %, en-avant 9 %, tenu dans l'en-but 1 %. Répartition par match : 0 (66 %), 1 (27 %),
+2 (6 %), 3 (1 %). Les écarts d'essais et de points d'une graine à l'autre (± 0,3 essai) sont plus
+grands que l'écart entre les deux colonnes : l'équilibre du jeu tient. Moins de tirs au but et de
+pénaltouches, puisque certaines pénalités sont jouées vite.
+
+Le test `tests/match-penalite-main.cjs` refait la mesure sur 1 500 matchs à chaque passage (part
+entre 2 et 10 % ; près de la ligne au moins 1,8 fois plus ; mené près de la ligne plus encore ;
+ballon perdu entre 10 et 35 % ; essais et points à moins de 8 % de l'existant).
+
+**Valeurs figées** : `tests/france-legacy-parity.json` (dix empreintes et curseurs RNG) et
+`tests/fixtures/france-long-career-s6.json.gz` (checkpoint S6, S11, curseurs RNG) régénérés par le
+parcours exact de leurs suites. Preuve : avec `QUICK_TAP_RULES=0`, les deux parcours redonnent
+exactement les anciennes valeurs (parité : 0 écart sur 10 étapes ; carrière : S6 `fe529ead…`, RNG
+3 319 205 001, S11 `8c972489…`, RNG 1 777 073 640, identiques). Avec l'option : S6 `3c7bc691…`,
+S11 `55b6eaf3…`. Base commune recompilée : seule l'empreinte de `dist/rugby.js` change.
+
+### 12.3 Ce que le chorégraphe montre de nouveau
+
+| Type (`type`) | Faits du moteur | Mise en scène |
+| --- | --- | --- |
+| `penalite_a_la_main` | coup de sifflet, `quick-tap`, puis la suite (temps de jeu, percée, essai, ballon gratté, en-avant) | sifflet ; le demi court au point, ramasse, tape du pied (état `tape`) ; défense qui recule en trottinant (mal replacée) ; puis la suite du moteur sans temps de jeu ajouté |
+| `faute_de_main` | `hand-fault` (joueur, cause) et les plans qui l'amènent | le joueur nommé reçoit ou garde le ballon, court, le laisse échapper vers l'avant (état `en_avant`), le ballon tombe et rebondit ; passe en avant : passe vers un partenaire devant ; l'arbitre siffle et signale la mêlée pour l'adversaire |
+| `contestation_au_sol` | `turnover` (ballon gratté), ou `penalty` de cause `holding`/`ruck` | porteur plaqué, gratteur au-dessus du ballon (état `grattage`), les soutiens du plaqué arrivent sur lui (état `nettoyage`) ; ballon arraché après 1,3 s au moins, ou coup de sifflet après 1,5 s (le ballon reste au sol) |
+
+Ordre du fait clé : pénalité jouée à la main (elle couvre sa suite, essai compris), essai, franchissement,
+ballon porté, pénalité au but, jeu au pied, contestation au sol, faute de main, pénaltouche.
+
+Et dans toutes les pistes :
+
+- **Arbitre** (`arbitre` : `x`, `y`, `v`, `cap`, `etats` au pas des pistes) : il suit le jeu sur le
+  côté du ballon (vers le milieu), au ruck à 5,5 m, en mêlée à 3 m, en touche à 17 m de la ligne,
+  derrière le point d'une pénalité ; il évite les joueurs (2,4 m), 6,8 m/s et 3,6 m/s² au plus.
+  États `sifflet` (pénalité, en-avant, faute au sol) et `carton`.
+- **Cartons** (pénalités au but, en touche) : l'arbitre va au joueur sanctionné par le moteur,
+  montre le carton (couleur du moteur) : jalon du carton à cet instant ; le joueur sort par la
+  touche la plus proche (état `sortie`, 2,2 m/s, seul joueur hors du terrain) ; le jeu reprend
+  1,4 s après.
+- **Rebonds** : un ballon qui touche le sol rebondit (trois arcs de plus en plus bas et courts,
+  direction qui dévie à chaque rebond, puis il roule). Coup de pied de jeu courant de 24 m et plus :
+  laissé au rebond 4 fois sur 10 (le receveur arrive après la chute), premier rebond au point du
+  moteur ; touche indirecte et 50:22 : le ballon rebondit dans le champ avant de sortir au point du
+  moteur (loi 18).
+- **La défense lit l'attaque** (en plus du côté fort et de l'ailier en second rideau, § 11.3) :
+  chacun prend un attaquant en face, dans l'ordre de la largeur, épaule intérieure (38 % de la
+  place, le reste vient de la ligne régulière) ; le défenseur en face du receveur probable (celui à
+  qui la passe va, ou le prochain receveur quand le ballon sort du ruck) sort de la ligne et monte
+  sur lui, jamais devant la ligne de hors-jeu tant que le ballon est au ruck (événement `montee`) ;
+  quand l'ouvreur ou l'arrière a le ballon, ou qu'un botteur arme, l'arrière recule à 25 m (au lieu
+  de 18) et l'ailier en couverture à 16 m (événement `couverture_pied`).
+- **Correction** : sur un franchissement, le porteur freine pour s'arrêter au point du moteur au
+  lieu de courir vers son couvreur ; un franchissement pouvait finir dans l'en-but (graine 42, 53′,
+  apparu avec la nouvelle défense).
+
+États ajoutés : `tape`, `en_avant`, `grattage`, `nettoyage`, `sortie`. Événements ajoutés :
+`sifflet` (raison, équipe), `carton`, `tape`, `en_avant`, `rebond`, `grattage`, `montee`,
+`couverture_pied` ; `passe.enAvant` pour une passe en avant du moteur.
+
+### 12.4 Côté Godot
+
+- `match_choregraphie.gd` : poses `tape`, `en_avant`, `grattage` (penché au-dessus du ballon),
+  `nettoyage` ; gestes `coup_de_pied` court pour la tape, `reception` pour l'en-avant ; **arbitre**
+  créé par la classe à la première piste qui en porte un (même modèle que les joueurs, tenue sombre à
+  liseré vif, animations de la vue par palier d'allure), placé sur sa piste, carton levé (jaune ou
+  rouge) pendant l'état `carton`, caché hors des pistes. `match_view.gd` n'est pas modifié.
+- Régie (`match_temps_forts.gd`) : la pénalité jouée à la main prend le cadrage de jeu courant (une
+  ligne).
+- `match_journal.gd` : libellé et filtre « Discipline » du fait `quick-tap`.
+- `live_view.gd` : groupe « Sur pénalité » du tiroir Tactique.
+
+### 12.5 Garanties ajoutées et contrôles
+
+`tests/match-penalite-main.cjs` (nouveau, moteur) :
+
+| Garantie | Contrôle |
+| --- | --- |
+| Nouvelles rencontres seulement | `quickTapVersion` posé à la création ; match sans la version ou option coupée : aucune pénalité jouée à la main |
+| Décision | consigne « Jouer vite à la main » → toujours, « points » ou « pénaltouche » → jamais, jamais après un carton ; poids plus fort près de la ligne, mené en fin de match, au large qu'au près ; aucun tirage consommé par la décision |
+| Effets et faits | essai, gain sans franchir la ligne, ballon gratté, tenu dans l'en-but, en-avant près de la ligne ; percée (22 m et plus), gain de 5 à 14 m, ballon perdu au milieu ; fait `quick-tap` du demi au point de la faute ; sauvegarde valide |
+| Fréquence et équilibre | 1 500 matchs avec et sans : voir § 12.2 |
+| Temps forts | coup de sifflet, pénalité jouée et essai dans le même temps fort (niveaux clés et dynamique) ; montrée seule au niveau étendu |
+
+`tests/match-structured-facts.cjs` : la cause d'une faute de main dit la même chose que le texte, la
+faute est nommée ; la cause du coup de sifflet est l'une des cinq et `holding` correspond à « ballon
+conservé au sol ».
+
+`tests/match-choregraphe.cjs` (25 tests) ajoute `tests/fixtures/match-choregraphe-tranche4.json` :
+49 temps forts entiers du moteur natif (graines 3, 5, 11, 13, 17, 21, 23, 57, 99) — **à régénérer** (brouillon).
+
+| Garantie | Contrôle |
+| --- | --- |
+| Chaque type, chaque fait montré | jalons = plans couverts, dans l'ordre ; piste de l'arbitre complète |
+| Pénalité jouée à la main (loi 20) | coup de sifflet à 0 s ; le joueur du moteur tape au point de la faute, ballon en main ; jalon à la tape ; au moins un adversaire à moins de 10 m à la tape dans la moitié des cas au moins ; aucun adversaire ne s'avance vers le point avant la tape ; suite du moteur (plaqué au gain du moteur à 6 m près, ballon perdu, essai du marqueur) ; au moins deux issues différentes |
+| Faute de main (loi 11) | en-avant (ou passe en avant) du joueur nommé ; le ballon part vers l'avant de l'équipe fautive, rebondit, reste au sol ; coup de sifflet après la faute, signal de mêlée pour l'adversaire ; jalon à la faute |
+| Contestation au sol | chaque ballon récupéré au ruck a un gratteur ; gratteur de l'équipe qui récupère, qui arrache le ballon après 1,2 s de contestation au moins ; faute au sol : coup de sifflet pour l'équipe du moteur, ballon resté au sol jusque-là, jalon au coup de sifflet ; soutiens qui nettoient dans la moitié des cas au moins |
+| Cartons | carton du moteur (joueur, couleur), arbitre à moins de 3,3 m du joueur, carton levé, jalon à cet instant ; le joueur sort (état `sortie`) vers la touche ; le jeu reprend après |
+| Rebonds | après chaque rebond, le ballon remonte (plus de 0,3 m) et personne ne le tient ; touche indirecte : rebond dans le champ, sortie au point du moteur ; coup de pied laissé au rebond : premier rebond à 0,5 m du point du moteur, ramassé à 12 m au plus |
+| Arbitre | allure ≤ 7,2 m/s et accélération ≤ 4,2 m/s² ; jamais à moins de 0,5 m d'un joueur (après 1,5 s) ; aucun coup de sifflet sans fait du moteur (pénalité, faute de main, faute au sol) |
+| Défense qui lit l'attaque | défenseur qui monte plus près du receveur à la réception qu'à sa montée dans 60 % des cas au moins ; arrière qui recule (ou déjà à 15 m) quand un botteur possible a le ballon, dans 70 % des cas au moins |
+| Communes (toutes tranches) | vitesses et accélérations, chevauchements, ballon continu, déterminisme, passes (sauf la passe en avant du moteur), hors-jeu au ruck, pénalités (le joueur exclu qui sort n'a pas à être à 10 m) ; adversaires à 10 m d'une pénalité au but ou en touche |
+
+Évolutions du moteur de mouvement : la durée permise est de 25 s + 7 s par fait montré (au lieu de
+6 s), plafond 50 s inchangé ; au-delà de la durée visée, une mise en scène sous le plafond est
+gardée en dernier recours (au lieu d'abandonner les pistes) ; le plaqueur désigné ne cède plus sa
+course à ses partenaires ; l'arrière reste derrière la ligne de hors-jeu d'un ruck près de sa ligne ;
+pas de crochet dans les huit derniers mètres d'un essai.
+
+`tests/godot-match-choregraphie` lit en plus un temps fort par type et par issue de la quatrième
+tranche (pénalité jouée à la main, faute de main, contestation, carton, rebond) : tape, en-avant,
+gratteur montrés ; arbitre à l'écran sur sa piste (moins de 1 m) ; carton levé à l'écran quand les
+pistes le disent.
+
+### 12.6 Exécuté
+
+**Brouillon : travail interrompu le 12 novembre vers 12 h ; rien de cette section n'est vérifié dans Godot. Voir la PR 590, « Reste à faire ».**
+
+### 12.7 Choix faits sans Léo
+
+- Pénalité jouée à la main : coefficients de décision et d'issue choisis (§ 12.1), pour une
+  minorité des pénalités, plus fréquente près de la ligne quand on est mené ; jamais après un
+  carton ; le demi de mêlée la joue (à défaut un troisième ligne).
+- Une décision sans tirage (repère déterministe) pour que les matchs sans pénalité jouée à la main
+  gardent exactement leurs tirages.
+- Pénalité jouée à la main montrée sans temps de jeu ajouté : la suite est celle du moteur.
+- Faute de main : le joueur fautif nommé par le moteur est le porteur désigné de la minute
+  (`actionPlayer`, sans tirage), comme pour les temps de jeu.
+- Contestation : porteur plaqué non nommé par le moteur = joueur mis en avant par la scène, sinon
+  l'avant le plus proche du ballon ; gratteur d'une faute au sol = défenseur debout le plus proche.
+- Long coup de pied laissé au rebond 4 fois sur 10 (choix de mise en scène, le moteur ne dit pas si
+  le ballon est pris de volée).
+- Arbitre : tenue sombre à liseré jaune-vert ; trajectoire et distances choisies.
+- Valeurs de la défense (38 % vers le vis-à-vis, montée sur le receveur, recul de 25 m et 16 m) :
+  choisies, non mesurées.
+
+### 12.8 Limites
+
+- Le moteur ne décide pas qui joue la pénalité au-delà du demi ; pas de « tap and go » d'un avant
+  isolé, ni de pénalité jouée à la main et plaquée dans l'en-but (`held-up` après la tape : la suite
+  n'est pas montrée).
+- La décision ne voit pas la position de la défense : « mal replacée » est un avantage moyen.
+- Le carton n'est mis en scène que dans les pénalités au but ou en touche (un carton suivi d'une
+  pénalité jouée vite est impossible dans le moteur) ; les pistes enregistrées avant cette tranche
+  ne portent pas les cartons (`ouverture.cartons`).
+- Pas de geste d'arbitre (bras, sifflet) : il s'arrête, le carton est un rectangle levé au-dessus
+  de la tête ; pas de clip Mixamo de grattage ni d'en-avant (poses procédurales).
+- La mêlée sifflée après un en-avant n'est pas formée dans les mêmes pistes : la suite est jouée
+  par les gestes existants.
+- Un gratteur du moteur loin du ruck met du temps à arriver (jusqu'à 8 s de ruck).
+
+### 12.9 Non vérifié
+
+- Rien sous Windows ni avec une carte graphique ; fluidité réelle inconnue (rendu logiciel).
+- Crédibilité rugbystique de la décision de jouer vite, du grattage et des rebonds : à juger par
+  Léo sur la vidéo ; valeurs choisies, non mesurées.
+- Le groupe « Sur pénalité » du tiroir Tactique de Godot n'a été contrôlé que par la commande du
+  moteur, pas à l'écran.

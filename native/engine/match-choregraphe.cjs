@@ -28,14 +28,18 @@ const APLATI=12;            // décélération du plongeon d'aplati (glissade co
 const CONTACT=1.0;          // distance du plaquage
 const RATE=1.35;            // distance où un défenseur tente (et rate) le plaquage d'un porteur en percée
 const CLOTURE=1.8;          // après le dernier fait (ruck formé, ballon sorti), la scène dure encore ce temps
-const TYPES=Object.freeze(['essai_jeu_courant','franchissement','jeu_au_pied','ballon_porte','penalite_au_but','penalite_en_touche']);
+const TYPES=Object.freeze(['essai_jeu_courant','franchissement','jeu_au_pied','ballon_porte','penalite_au_but','penalite_en_touche',
+ 'penalite_a_la_main','faute_de_main','contestation_au_sol']);
 const ETATS=Object.freeze(['course','passe','reception','plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','ramassage','aplati','joie','deception',
- 'melee','lancer','saut','soutien_saut','jeu_au_pied','maul','placement']);
+ 'melee','lancer','saut','soutien_saut','jeu_au_pied','maul','placement',
+ // Quatrième tranche : pénalité jouée à la main (le demi tape le ballon), en-avant, gratteur au sol et
+ // soutiens qui le nettoient, joueur exclu qui quitte le terrain.
+ 'tape','en_avant','grattage','nettoyage','sortie']);
 // États de contact : la décélération y est celle d'une chute, pas celle d'une course.
 const CHUTES=new Set(['plaquage','plaque','plaquage_rate','aplati','au_sol']);
 // Allure plafond par état (m/s) ; null = plafond du profil.
 const PLAFOND=Object.freeze({course:null,passe:null,reception:null,plaquage:null,plaque:null,plaquage_rate:null,au_sol:0,se_relever:0.4,ruck:0.6,ramassage:1.5,aplati:null,joie:2.5,deception:1.5,
- melee:0.6,lancer:0.3,saut:0.3,soutien_saut:0.3,jeu_au_pied:null,maul:2.4,placement:0.3});
+ melee:0.6,lancer:0.3,saut:0.3,soutien_saut:0.3,jeu_au_pied:null,maul:2.4,placement:0.3,tape:2.5,en_avant:null,grattage:0.5,nettoyage:1.2,sortie:2.2});
 // Coups de pied qui finissent en touche (cause du fait « touch » du moteur).
 const TOUCHES_AU_PIED=Object.freeze(['direct-touch','indirect-touch','50-22']);
 // Gain du moteur à partir duquel un temps de jeu est montré comme une percée (plaquages ratés, couverture).
@@ -74,7 +78,7 @@ function valider(e){
  const vedette=joueurs.find(p=>String(p.id)===String(cle));
  if(!vedette||vedette.side!==e.equipe)throw new RangeError(e.type==='essai_jeu_courant'?'Chorégraphe : marqueur absent de son équipe':'Chorégraphe : joueur clé absent de son équipe');
  // Essai sur ballon porté : marqueur et point d'essai du moteur, comme en jeu courant.
- const essaiPorte=e.type==='ballon_porte'&&e.marqueur!=null;
+ const essaiPorte=(e.type==='ballon_porte'||e.type==='penalite_a_la_main')&&e.marqueur!=null;
  if(essaiPorte){const m=joueurs.find(p=>String(p.id)===String(e.marqueur));if(!m||m.side!==e.equipe)throw new RangeError('Chorégraphe : marqueur absent de son équipe')}
  if((e.type==='essai_jeu_courant'||essaiPorte)&&(!e.essai||![0,100].includes(e.essai.x)||!fini(e.essai.y)))throw new RangeError('Chorégraphe : point d’essai invalide');
  if(e.type==='ballon_porte'&&e.ouverture?.k!=='touche')throw new RangeError('Chorégraphe : un ballon porté part d’une touche');
@@ -84,12 +88,14 @@ function valider(e){
  const etapes=Array.isArray(e.etapes)?e.etapes:null;
  if(etapes){
   for(const s of etapes){
-   if(!s||!['porte','franchi','essai','pied','recup'].includes(s.k))throw new RangeError('Chorégraphe : étape invalide');
+   if(!s||!['porte','franchi','essai','pied','recup','faute','penal'].includes(s.k))throw new RangeError('Chorégraphe : étape invalide');
    if(s.joueur!=null&&!ids.has(String(s.joueur)))throw new RangeError('Chorégraphe : joueur d’étape absent');
   }
   const der=etapes.at(-1);
-  if(e.type==='essai_jeu_courant'&&der?.k!=='essai')throw new RangeError('Chorégraphe : l’essai doit finir la mise en scène');
-  if(e.type!=='essai_jeu_courant'&&etapes.some(s=>s.k==='essai'))throw new RangeError('Chorégraphe : essai hors d’un temps fort d’essai');
+  const essaiMain=e.type==='penalite_a_la_main'&&e.marqueur!=null;
+  if((e.type==='essai_jeu_courant'||essaiMain)&&der?.k!=='essai')throw new RangeError('Chorégraphe : l’essai doit finir la mise en scène');
+  if(e.type!=='essai_jeu_courant'&&!essaiMain&&etapes.some(s=>s.k==='essai'))throw new RangeError('Chorégraphe : essai hors d’un temps fort d’essai');
+  if(e.type==='faute_de_main'&&der?.k!=='faute')throw new RangeError('Chorégraphe : la faute de main finit la mise en scène');
  }
  const o=e.ouverture;
  if(o&&!['jeu','melee','touche','envoi','penalite'].includes(o.k))throw new RangeError('Chorégraphe : ouverture invalide');
@@ -102,7 +108,7 @@ function valider(e){
 // avant le fait clé. Rend null si la mise en scène n'aboutit pas.
 function simuler(e,phases,graine){
  const alea=tirage(graine);
- const T=e.equipe,essai=e.type==='essai_jeu_courant'||e.type==='ballon_porte'&&e.marqueur!=null;
+ const T=e.equipe,essai=e.type==='essai_jeu_courant'||(e.type==='ballon_porte'||e.type==='penalite_a_la_main')&&e.marqueur!=null;
  const sens=essai?(e.essai.x===100?1:-1):(e.sens===1||e.sens===-1?e.sens:T===0?1:-1);
  const ligne=sens>0?100:0;
  const G=essai?{x:ligne+sens*EN_BUT,y:borne(e.essai.y,5,65)}:null;
@@ -134,17 +140,30 @@ function simuler(e,phases,graine){
  const libre=j=>debout(j)&&j.etat!=='ramassage';
  const enContact=(a,b)=>{if(libre(a)&&libre(b))return false;const l=paires.get(cle(a,b));return !!l&&l.some(c=>t>=c.t0-0.05&&t<=c.t1+0.05)};
  const etat=(j,nom,suite=[])=>{if(!ETATS.includes(nom))throw Error(nom);j.etat=nom;j.depuis=t;j.suite=suite;const l=etatsJ.get(j.id);if(l.at(-1)[1]!==nom)l.push([r1(t),nom])};
- const tenir=j=>{ballon.porteur=j.id;ballon.vol=null;ballon.sol=false;ballon.depose=null;if(porteurs.at(-1)?.[1]!==j.id)porteurs.push([r1(t),j.id])};
+ const tenir=j=>{ballon.porteur=j.id;ballon.vol=null;ballon.sol=false;ballon.depose=null;ballon.rebond=null;if(porteurs.at(-1)?.[1]!==j.id)porteurs.push([r1(t),j.id])};
  const lacher=()=>{ballon.porteur=null;if(porteurs.at(-1)?.[1]!==null)porteurs.push([r1(t),null])};
- const debout=j=>!['plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','aplati','melee','saut','soutien_saut','maul','placement'].includes(j.etat);
+ const debout=j=>!['plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','aplati','melee','saut','soutien_saut','maul','placement','grattage','nettoyage'].includes(j.etat);
+ // États liés (au ruck, en mêlée, au ballon porté, gratteur et nettoyeurs) : ils suivent leur place.
+ const LIES=['ruck','melee','maul','placement','grattage','nettoyage'];
  const vers=(j,x,y,allure,arrive=true)=>{j.cible={x:borne(x,-3,103),y:borne(y,1.5,68.5)};j.allure=Math.min(allure,j.vmax);j.arrive=arrive};
  const jalon=plan=>{if(Number.isInteger(plan)&&!jalons.some(([,k])=>k===plan))jalons.push([r1(t),plan])};
+
+ // --- Arbitre (quatrième tranche) ------------------------------------------------
+ // Il suit le jeu à distance (sur le côté du ballon, vers le milieu du terrain), siffle et signale
+ // ce que le moteur a décidé (pénalité, en-avant, faute au sol) et montre les cartons du moteur.
+ // Il n'est pas un des trente : il évite les joueurs, aucun ne le heurte.
+ const A={id:'arbitre',side:-1,x:borne(e.ballon.x,1,99),y:borne(e.ballon.y+(e.ballon.y<35?9:-9),2,68),vx:0,vy:0,vmax:7.2,amax:4.2,cap:0,etat:'course',depuis:0,cible:null};
+ const etatsA=[[0,'course']],pisteA=[];
+ const etatA=(nom)=>{A.etat=nom;A.depuis=t;if(etatsA.at(-1)[1]!==nom)etatsA.push([r1(t),nom])};
+ // Coup de sifflet : raison (penalite, en_avant, passe_en_avant, faute_au_sol), équipe qui en bénéficie.
+ const siffler=(raison,pour,extra={})=>{etatA('sifflet');evenements.push({t:r1(t),type:'sifflet',raison,pour,...extra})};
 
  // --- Script du metteur en scène : étapes du moteur, puis temps de jeu ajoutés avant le fait clé.
  const file=[];
  if(Array.isArray(e.etapes))for(const s of e.etapes)file.push({...s,joueur:s.joueur==null?null:String(s.joueur)});
  else file.push({k:'essai',joueur:S.id,plan:e.plan,cle:true});
  if(phases>0&&!file.some(s=>s.k!=='recup'))return null; // coup d'envoi seul : aucun temps de jeu à ajouter
+ if(phases>0&&e.type==='penalite_a_la_main')return null; // pénalité jouée vite : la suite du moteur, rien d'ajouté
  if(file.length&&!file.some(s=>s.cle))file.at(-1).cle=true;
  const iCle=Math.max(0,file.findIndex(s=>s.cle));
  // Temps de jeu ajoutés : courts hors essai, pour ne pas manger le gain que le moteur a donné.
@@ -154,7 +173,7 @@ function simuler(e,phases,graine){
  if(ouverture.k==='jeu'&&pos0!==T&&file[0]?.k!=='recup')file.unshift({k:'recup',joueur:null});
 
  // Direction du jeu (machine à états du metteur en scène).
- const d={phase:'porte',porteur:null,ruck:null,passe:null,chaine:[],apres:null,etape:null,soutiens:[],plaqueur:null,objectif:null,fin:null,aplati:null,ouvreur:null,attente:0,
+ const d={montees:new Set(),couvertures:new Set(),phase:'porte',porteur:null,ruck:null,passe:null,chaine:[],apres:null,etape:null,soutiens:[],plaqueur:null,objectif:null,fin:null,aplati:null,ouvreur:null,attente:0,
   but:G,couvreur:null,coup:null,horsJeuPied:new Set(),apresPied:false,cloture:null,sp:null};
 
  function choisirSoutiens(p){
@@ -188,6 +207,8 @@ function simuler(e,phases,graine){
   const B={x:p.x-s*0.7,y:p.y};
   lacher();ballon.sol=true;ballon.depose={x:ballon.x,y:ballon.y,h:ballon.h,t0:t,B};
   const recup=file[0]?.k==='recup'?file[0]:null;
+  // Faute au sol sifflée par le moteur juste après ce plaquage (ballon conservé au sol, entrée irrégulière).
+  const penal=file[0]?.k==='penal'?file[0]:null;
   const gagnant=recup?(recup.side??T):p.side;
   // Repère du ruck : l'équipe du fait clé, sauf un ruck adverse qu'elle ne dispute pas (après un coup de pied).
   const camp=p.side===T||gagnant===T?T:1-T,rs=dirDe(camp);
@@ -199,10 +220,16 @@ function simuler(e,phases,graine){
    J.filter(j=>j.side===gagnant&&debout(j)&&j!==p&&j!==pl&&j!==S).sort((a,b)=>dist(a,B)-dist(b,B)||a.slot-b.slot)[0]||dm;
   const lier=(j,c)=>{lies.push(j);j.lie={x:B.x+rs*(c>0?0.2:1.0),y:B.y+(lies.length%2?0.45:-0.45)}};
   const arrivants=(side,n,exclus)=>J.filter(j=>j.side===side&&debout(j)&&!exclus.includes(j)&&j!==S&&j!==demiDe(side)&&j!==ramasseur&&j!==d.ouvreur).sort((a,b)=>dist(a,B)-dist(b,B)||a.slot-b.slot).slice(0,n);
-  const nCamp=arrivants(camp,2,[p,pl]),nAutre=arrivants(1-camp,1,[p,pl]);
-  d.ruck={B,forme:t,camp,s:rs,gagnant,recupere:gagnant!==p.side,ramasseur,lies,att:nCamp,def:nAutre,recup};
+  // Gratteur : celui du moteur (ballon récupéré) ou, sur une faute au sol, le défenseur debout le plus proche.
+  const gratteur=recup&&gagnant!==p.side?ramasseur:penal?J.filter(j=>j.side!==p.side&&debout(j)&&j!==pl&&j!==arriereDe(j.side)).sort((a,b)=>dist(a,B)-dist(b,B)||a.slot-b.slot)[0]||null:null;
+  // Nettoyeurs : deux soutiens du plaqué viennent déloger le gratteur (épaule sur lui, côté gratteur).
+  const nett=gratteur?arrivants(p.side,2,[p,pl,gratteur]):[];
+  const pris=[p,pl,gratteur,...nett];
+  const nCamp=arrivants(camp,gratteur&&p.side===camp?0:2,pris),nAutre=arrivants(1-camp,gratteur?0:1,pris);
+  d.ruck={B,forme:t,camp,s:rs,gagnant,recupere:gagnant!==p.side,ramasseur,lies,att:[...nCamp,...nett],def:nAutre,recup,penal,nett,conteste:gratteur?{gratteur,depuis:null}:null};
   nCamp.forEach(j=>lier(j,1));
   nAutre.forEach(j=>lier(j,-1));
+  nett.forEach((j,k)=>{lies.push(j);j.lie={x:B.x-dirDe(gratteur.side)*1.05,y:B.y+(k?0.5:-0.5)}});
   d.phase='ruck';
   evenements.push({t:r1(t),type:'ruck',x:r2(B.x),y:r2(B.y),recupere:gagnant!==p.side,gagnant});
  }
@@ -253,6 +280,11 @@ function simuler(e,phases,graine){
     d.chaine=d.ouvreur?[d.ouvreur,v]:[v];
    }
    d.apres=st.k==='essai'?'percee':'franchi';
+  }else if(st.k==='faute'){
+   // En-avant ou passe en avant : le joueur que le moteur nomme reçoit (ou garde) le ballon.
+   const r=st.joueur?parId.get(st.joueur):null;
+   const f=r&&r.side===h.side?r:(h.slot>8&&h.side===T?h:choisirCoureur(h)||h);
+   d.chaine=f===h?[]:[f];d.apres='faute';
   }else if(st.k==='pied'){
    const k=parId.get(st.joueur)||h;
    d.chaine=k===h?[]:[k];d.apres='pied';
@@ -263,6 +295,7 @@ function simuler(e,phases,graine){
   const st=file.shift();
   if(!st||!d.apres){cloturer();return}
   if(d.apres==='porte')lancerPorte(h,st);
+  else if(d.apres==='faute')lancerFaute(h,st);
   else if(d.apres==='percee')lancerPercee(st);
   else if(d.apres==='franchi')lancerPercee(st);
   else if(d.apres==='pied'){
@@ -288,6 +321,72 @@ function simuler(e,phases,graine){
  }
  function cloturer(){if(d.phase!=='cloture'){d.phase='cloture';d.cloture=t+CLOTURE}}
 
+ // --- Rebonds (quatrième tranche) -----------------------------------------------
+ // Un ballon qui touche le sol rebondit : arcs de plus en plus bas et courts, direction qui dévie à
+ // chaque rebond (ballon ovale), puis il roule et s'arrête. `chute` : le premier arc part des mains.
+ function rebondir(de,angle,v0,{h0=0.15,chute=false,n=3}={}){
+  const arcs=[];let p={x:de.x,y:de.y},tt=t,v=v0,a=angle;
+  for(let i=0;i<n+(chute?1:0);i++){
+   const premier=chute&&i===0,rang=chute?i-1:i;
+   const dur=premier?Math.max(0.28,Math.sqrt(2*Math.max(h0,0.2)/9.8)+0.05):0.52*Math.pow(0.66,rang);
+   const apex=premier?0:1.05*Math.pow(0.42,rang);
+   a+=(alea()-0.5)*(premier?0.25:0.95);
+   const L=v*dur,q={x:borne(p.x+Math.cos(a)*L,-4,104),y:borne(p.y+Math.sin(a)*L,0.6,69.4)};
+   arcs.push({t0:tt,t1:tt+dur,de:p,vers:q,h0:premier?h0:0.15,h1:0.15,apex});
+   p=q;tt+=dur;v*=0.62;
+  }
+  const L=v*0.6,q={x:borne(p.x+Math.cos(a)*L,-4,104),y:borne(p.y+Math.sin(a)*L,0.6,69.4)};
+  arcs.push({t0:tt,t1:tt+0.8,de:p,vers:q,h0:0.15,h1:0.15,apex:0});
+  lacher();ballon.vol=null;ballon.sol=false;ballon.depose=null;ballon.rebond={arcs,t0:t,fin:tt+0.8};
+  evenements.push({t:r1(t),type:'rebond',x:r2(de.x),y:r2(de.y),arcs:arcs.length});
+ }
+
+ // --- Faute de main (quatrième tranche) -------------------------------------------
+ // En-avant (loi 11) : le joueur que le moteur nomme laisse échapper le ballon vers l'avant, il
+ // rebondit ; l'arbitre siffle et signale la mêlée pour l'adversaire. Passe en avant : la passe va
+ // vers l'avant, l'arbitre siffle à la réception.
+ function lancerFaute(h,st){
+  tenir(h);d.phase='faute';
+  d.faute={st,joueur:h,t0:t,lache:null,siffle:null,quand:0.45+alea()*0.45,passe:st.cause==='forward-pass'};
+  evenements.push({t:r1(t),type:'course',joueur:h.id});
+ }
+ function fauteAvance(){
+  const f=d.faute,h=f.joueur,s=dirDe(h.side);
+  if(!f.lache&&t-f.t0>=f.quand){
+   f.lache=t;
+   if(f.passe){
+    // Passe vers l'avant : à un partenaire debout devant ou à hauteur du passeur.
+    const r=J.filter(j=>j.side===h.side&&j!==h&&debout(j)&&dist(j,h)>2.5&&dist(j,h)<13).sort((a,b)=>(b.x-a.x)*s-(a.x-b.x)*s||dist(a,h)-dist(b,h))[0];
+    if(r){
+     lacher();const vol=Math.max(0.4,dist(h,r)/11);
+     ballon.vol={de:{x:h.x,y:h.y},a:r.id,t0:t,t1:t+vol,depuis:h.id,h0:1.0,h1:1.0};
+     f.receveur=r;f.arrivee=t+vol;etat(h,'passe');
+     evenements.push({t:r1(t),type:'passe',de:h.id,vers:r.id,lache:{x:r2(h.x),y:r2(h.y)},enAvant:true});
+     jalon(f.st.plan);
+     return;
+    }
+   }
+   // En-avant : le ballon lui échappe vers l'avant, tombe et rebondit.
+   etat(h,'en_avant');jalon(f.st.plan);
+   evenements.push({t:r1(t),type:'en_avant',joueur:h.id,x:r2(h.x),y:r2(h.y)});
+   rebondir({x:h.x+Math.cos(h.cap)*0.3,y:h.y+Math.sin(h.cap)*0.3},s>0?(alea()-0.5)*0.5:Math.PI+(alea()-0.5)*0.5,3.2+alea()*1.5,{h0:1.0,chute:true,n:2});
+  }
+  if(f.receveur&&ballon.vol&&t>=f.arrivee){tenir(f.receveur);etat(f.receveur,'reception')}
+  if(f.lache&&!f.siffle&&t-f.lache>=(f.passe&&f.receveur?0.9:1.0)){
+   f.siffle=t;siffler(f.passe&&f.receveur?'passe_en_avant':'en_avant',1-h.side,{signal:'melee'});
+   cloturer();
+  }
+ }
+ // Le porteur qui va commettre la faute court encore un peu.
+ function comportementFaute(j){
+  const f=d.faute;if(!f||j!==f.joueur||f.lache)return false;
+  vers(j,j.x+dirDe(j.side)*6,j.y,j.vmax*0.7,false);return true;
+ }
+
+ // --- Contestation au sol (quatrième tranche) -------------------------------------
+ // Le gratteur se place au-dessus du ballon, de son côté ; les soutiens du plaqué arrivent sur lui.
+ const pointGrattage=j=>d.ruck?{x:d.ruck.B.x-dirDe(j.side)*0.55,y:d.ruck.B.y+(j.y>=d.ruck.B.y?0.15:-0.15)}:{x:j.x,y:j.y};
+
  function lancerPercee(st){
   d.phase='percee';
   const v=parId.get(st.joueur)||S;
@@ -312,14 +411,19 @@ function simuler(e,phases,graine){
   // Point de chute : x du moteur ; en largeur (le moteur ne la donne pas), près d'un receveur possible.
   const candidat=issue==='reception'?(st.receveur?parId.get(String(st.receveur)):J.filter(j=>j.side!==k.side&&[10,13,14].includes(j.slot)).sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x)||a.slot-b.slot)[0]):null;
   const y=issue==='touche'?(yT===0?-1.2:71.2):borne(fini(st.y)?st.y:(candidat?candidat.y:de.y)+(alea()-0.5)*8,8,62);
-  const D=Math.hypot(x-de.x,y-de.y);
+  // Touche indirecte et 50:22 (loi 18) : le ballon rebondit dans le champ avant de sortir.
+  const rebondTouche=issue==='touche'&&(st.cause==='indirect-touch'||st.cause==='50-22');
+  const sol=rebondTouche?{x:borne(x-sens*(4+alea()*3),2,98),y:yT===0?3.5+alea()*3:66.5-alea()*3}:{x,y};
+  const D=Math.hypot(sol.x-de.x,sol.y-de.y);
   const vol=borne(1.4+D/15,1.9,4.2),apex=issue==='touche'?borne(D*0.16,5,11):borne(D*0.3,8,17);
   etat(k,'jeu_au_pied');lacher();
-  ballon.vol={de:{x:de.x,y:de.y},vers:{x,y},t0:t,t1:t+vol,depuis:k.id,h0:0.5,h1:issue==='touche'?0.6:1.6,apex};
+  ballon.vol={de:{x:de.x,y:de.y},vers:sol,t0:t,t1:t+vol,depuis:k.id,h0:0.5,h1:issue==='touche'?(rebondTouche?0.15:0.6):1.6,apex};
   const kp=k.side;
   // Hors-jeu sur un coup de pied (loi 10) : les partenaires devant le botteur attendent d'être remis en jeu.
   d.horsJeuPied=new Set(J.filter(j=>j.side===kp&&j!==k&&(j.x-k.x)*dirDe(kp)>0).map(j=>j.id));
-  d.coup={botteur:k,camp:kp,issue,x,y,t0:t,t1:t+vol,etape:st,receveur:null,horsJeu0:[...d.horsJeuPied].map(id=>({id,x:parId.get(id).x}))};
+  d.coup={botteur:k,camp:kp,issue,x,y,t0:t,t1:t+vol,etape:st,receveur:null,horsJeu0:[...d.horsJeuPied].map(id=>({id,x:parId.get(id).x})),rebondTouche,sol,
+   // Long coup de pied de jeu courant : parfois laissé au rebond (le receveur arrive après la chute).
+   laisse:issue==='reception'&&!depart&&D>=24&&alea()<0.4};
   if(issue==='reception'){
    const r=st.receveur?parId.get(String(st.receveur)):null;
    d.coup.receveur=r&&r.side!==kp?r:J.filter(j=>j.side!==kp&&debout(j)&&[10,13,14,9].includes(j.slot)).sort((a,b)=>dist(a,{x,y})-dist(b,{x,y})||a.slot-b.slot)[0]||J.filter(j=>j.side!==kp).sort((a,b)=>dist(a,{x,y})-dist(b,{x,y}))[0];
@@ -459,8 +563,29 @@ function simuler(e,phases,graine){
   const u=(()=>{const dx=ligneBut-Pm.x,dy=POTEAUX.y-Pm.y,l=Math.hypot(dx,dy)||1;return {x:dx/l,y:dy/l}})();
   d.sp={k:'penalite',P:Pm,botteur:k,etape:0,u,elan:{x:Pm.x-u.x*4.2-u.y*1.8,y:Pm.y-u.y*4.2+u.x*1.8}};
   d.pen=true;d.phase='penalite';
+  if(ouverture.issue==='main'){
+   // Pénalité jouée vite : coupe sur le demi déjà au ballon (la scène générique du moteur le place loin) ;
+   // les défenseurs les plus proches sont encore à quelques mètres, de dos, en train de reculer.
+   placer(k,Pm.x-sens*1.4,borne(Pm.y+(Pm.y<35?1:-1)*0.9,1,69));
+   const proches=J.filter(j=>j.side!==T&&Math.abs(j.y-Pm.y)<16&&(j.x-Pm.x)*sens>3&&(j.x-Pm.x)*sens<12).sort((a,b)=>Math.abs(a.y-Pm.y)-Math.abs(b.y-Pm.y)||a.slot-b.slot).slice(0,5);
+   proches.forEach((j,i)=>placer(j,Pm.x+sens*(5.2+i*0.8+(j.slot%3)*0.4),j.y));
+   d.coupeMain=true;
+  }
   jalon(ouverture.plan);
   evenements.push({t:0,type:'penalite',x:r2(Pm.x),y:r2(Pm.y),botteur:k.id,issue:ouverture.issue});
+  // Coup de sifflet de l'arbitre au point de la faute (le moteur l'a sifflé).
+  siffler('penalite',T,{cause:ouverture.cause||null});
+  // Cartons du moteur : l'arbitre va au joueur sanctionné, montre le carton, le joueur sort.
+  const cartons=(ouverture.cartons||[]).filter(c=>parId.has(String(c.joueur)));
+  if(cartons.length){const c=cartons[0];d.carton={joueur:parId.get(String(c.joueur)),couleur:c.couleur||'yellow',plans:(ouverture.autres||[]).slice(),montre:null}}
+ }
+ // Le joueur sanctionné attend l'arbitre, puis quitte le terrain par la touche la plus proche.
+ function comportementCarton(j){
+  const c=d.carton;
+  if(j.etat==='sortie'){const y=j.y<35?-4:74;j.cible={x:j.x+(j.x<50?-1:1)*0.8,y};j.allure=Math.min(j.vmax,2.2);j.arrive=false;return true}
+  // L'arbitre l'appelle : il vient vers lui en marchant.
+  if(c&&j===c.joueur&&!c.montre){if(dist(j,A)>2.0)vers(j,A.x,A.y,dist(j,A)>10?3.5:1.8);else vers(j,j.x,j.y,0.5);return true}
+  return false;
  }
  function tirerAuBut(k){
   const sp=d.sp,Pm=sp.P,reussi=!!ouverture.reussi;
@@ -483,15 +608,18 @@ function simuler(e,phases,graine){
   if(j===k){
    if(d.phase==='armer'){vers(j,j.x+sens*1.5,j.y,2.5,false);return}
    if(d.phase==='but'){vers(j,j.x+sp.u.x*1.5,j.y+sp.u.y*1.5,1.5);return}
-   if(sp.etape===0){vers(j,Pm.x-sp.u.x*0.5,Pm.y-sp.u.y*0.5,dist(j,Pm)>12?Math.min(j.vmax,6):4);return}
+   // Pénalité jouée vite : il court au point sans attendre.
+   if(sp.etape===0){vers(j,Pm.x-sp.u.x*0.5,Pm.y-sp.u.y*0.5,ouverture.issue==='main'?j.vmax*0.9:dist(j,Pm)>12?Math.min(j.vmax,6):4);return}
    if(sp.etape<=2){vers(j,Pm.x-sp.u.x*0.5,Pm.y-sp.u.y*0.5,1);return}
+   if(sp.etape>=10){vers(j,j.x+sens*0.6,j.y,1.2);return} // pénalité jouée vite : il tape et repart
    if(sp.etape===3){vers(j,sp.elan.x,sp.elan.y,1.2);return} // il recule en regardant le ballon
    vers(j,Pm.x-sp.u.x*0.3,Pm.y-sp.u.y*0.3,5.2,false);return; // course d'élan
   }
   const ds=dirDe(j.side),devant=(j.x-Pm.x)*ds;
   if(j.side!==T){
    // Adversaires : à 10 m au moins du point, vers leur ligne (loi 20) ; puis immobiles pendant le tir.
-   if(-devant<10.5){vers(j,Pm.x+sens*(10.8+(j.slot%4)*1.3),borne(j.y,2,68),4);return}
+   // Pénalité jouée vite : la défense recule en trottinant, mal replacée quand le ballon est tapé.
+   if(-devant<10.5){vers(j,Pm.x+sens*(10.8+(j.slot%4)*1.3),borne(j.y,2,68),ouverture.issue==='main'?1.3:4);return}
    vers(j,j.x,j.y,0.8);return;
   }
   // Partenaires : derrière le ballon ; en touche, les avants se rapprochent de la touche à venir.
@@ -569,6 +697,10 @@ function simuler(e,phases,graine){
    vers(j,cible.x+ux*recul,cible.y+uy*recul+((j.slot%3)-1)*2.5,j===c.botteur?j.vmax*0.55:j.vmax*0.9);return;
   }
   // Équipe qui reçoit.
+  if(j===c.receveur&&ballon.vol&&c.laisse){
+   // Ballon laissé au rebond : le receveur arrive après la chute, à quelques mètres du point.
+   const l=dist(j,c)||1;vers(j,c.x+(j.x-c.x)/l*4.5,c.y+(j.y-c.y)/l*4.5,j.vmax*0.8);return;
+  }
   if(j===c.receveur&&(ballon.vol||d.phase==='rebond')){vers(j,ballon.vol?c.x:ballon.x,ballon.vol?c.y:ballon.y,j.vmax*0.9);return}
   const ref=porteur||chute,dr=dirDe(j.side);
   if(c.issue==='touche'){vers(j,j.x-dr*0.5,borne(j.y+(c.y<35?-1:1)*1.5,3,67),3);return}
@@ -578,12 +710,15 @@ function simuler(e,phases,graine){
  function comportement(j){
   // Liés d'un ballon porté fini : ils tiennent leur place jusqu'à se délier.
   if(j.etat==='maul'&&d.phase!=='maul'){vers(j,j.x,j.y,0.5);return}
-  if(!debout(j)&&!['ruck','melee','maul','placement'].includes(j.etat))return; // chute, sol, relevé, sauteur levé : géré par l'état
-  if(j.etat==='ruck'){vers(j,j.lie.x,j.lie.y,3);return}
+  if(comportementCarton(j))return;
+  if(!debout(j)&&!LIES.includes(j.etat))return; // chute, sol, relevé, sauteur levé : géré par l'état
+  if(j.etat==='ruck'||j.etat==='nettoyage'){vers(j,j.lie.x,j.lie.y,3);return}
+  if(j.etat==='grattage'){const q=pointGrattage(j);vers(j,q.x,q.y,0.5);return}
   if(['joie','deception'].includes(j.etat)){j.cible=null;return}
   // Joueur appelé au ruck : il y court, puis se lie.
   if(j.lie&&d.ruck&&d.ruck.lies.includes(j)&&(d.phase==='ruck'||d.phase==='plaquage'||d.phase==='cloture')){
-   if(dist(j,j.lie)<0.6)etat(j,'ruck');else vers(j,j.lie.x,j.lie.y,j.vmax*0.9);
+   // Contestation : les soutiens du plaqué arrivent sur le gratteur et le nettoient.
+   if(dist(j,j.lie)<0.6)etat(j,d.ruck.nett?.includes(j)?'nettoyage':'ruck');else vers(j,j.lie.x,j.lie.y,j.vmax*0.9);
    return;
   }
   if(d.phase==='cloture'||d.phase==='fin'&&!G){vers(j,borne(j.x+j.vx*0.6,1,99),j.y+j.vy*0.6,2);return}
@@ -609,10 +744,44 @@ function simuler(e,phases,graine){
   d.lu={k,glisse,faible:-fort,couverture,fort};
   return d.lu;
  }
+ // Botteur possible (lecture du jeu au pied) : l'ouvreur ou l'arrière qui tient le ballon, ou le botteur qui arme.
+ function lecturePied(pv){
+  if(!pv)return false;
+  const oui=d.phase==='armer'&&d.armer?.k===pv||[9,14].includes(pv.slot)&&d.phase!=='percee';
+  if(oui&&!d.couvertures.has(pv.id)){d.couvertures.add(pv.id);evenements.push({t:r1(t),type:'couverture_pied',botteur:pv.id})}
+  return oui;
+ }
+ // Receveur probable : celui à qui la passe va, ou le prochain receveur de la chaîne pendant que le ballon sort.
+ function receveurProbable(){
+  const r=d.phase==='passe'?d.passe.a:['tenu','ramassage'].includes(d.phase)?d.chaine[0]:null;
+  return r&&r.side===T&&debout(r)?r:null;
+ }
+ function monteurSur(rec,ligneDef){
+  const k=r1(t)+'|'+rec.id;if(d.monteur?.k===k)return d.monteur.j;
+  const j=ligneDef.slice().sort((a,b)=>Math.abs(a.y-rec.y)-Math.abs(b.y-rec.y)||a.slot-b.slot)[0]||null;
+  d.monteur={k,j};return j;
+ }
+ // Vis-à-vis : défenseurs de la ligne et attaquants debout près du ballon, appariés dans l'ordre de la largeur.
+ function visAVis(side,ref,ligneDef){
+  const k=r1(t)+'|'+side;if(d.vis?.k===k)return d.vis.m;
+  const att=J.filter(q=>q.side!==side&&debout(q)&&Math.abs(q.x-ref.x)<25).sort((a,b)=>a.y-b.y||a.slot-b.slot);
+  const m=new Map(),n=ligneDef.length,na=att.length;
+  if(n&&na)ligneDef.forEach((q,i)=>m.set(q,att[Math.round(n>1?i*(na-1)/(n-1):(na-1)/2)]));
+  d.vis={k,m};return m;
+ }
  function comportementJeu(j){
   // Ramasseur du ruck (demi ou gratteur), quelle que soit l'équipe.
+  // Gratteur : il fonce au-dessus du ballon, de son côté, et s'y installe (état « grattage »).
+  if(d.phase==='ruck'&&d.ruck?.conteste&&j===d.ruck.conteste.gratteur&&debout(j)&&j.etat!=='ramassage'){
+   const q=pointGrattage(j);
+   // Arrivé au ruck (le ruck le gêne parfois pour les derniers pas) : il se penche et finit de s'y placer, lié.
+   if((dist(j,q)<0.6||dist(j,q)<2.2&&t-d.ruck.forme>=0.8)&&t-d.ruck.forme>=0.3){etat(j,'grattage');if(d.ruck.conteste.depuis==null){d.ruck.conteste.depuis=t;evenements.push({t:r1(t),type:'grattage',joueur:j.id,x:r2(j.x),y:r2(j.y)})}}
+   else vers(j,q.x,q.y,j.vmax*0.95);
+   return;
+  }
   if(d.phase==='ruck'&&d.ruck&&j===d.ruck.ramasseur){const q=pointRamassage(d.ruck);vers(j,q.x,q.y,j.vmax*0.9);return}
   // Porteur et plaqueur d'un temps de jeu, quelle que soit l'équipe (ballon récupéré compris).
+  if(d.phase==='faute'&&comportementFaute(j))return;
   if(d.phase==='porte'&&j===d.porteur){
    const s=dirDe(j.side),o=d.objectif,reste=(o.x-j.x)*s;
    // Il court au point du moteur ; si le plaqueur n'y est pas encore, il ralentit au contact de la ligne.
@@ -702,7 +871,12 @@ function simuler(e,phases,graine){
     const but=d.but;
     vers(j,pv.x+sens*Math.max(2,(but.x-pv.x)*sens*0.35),pv.y+(but.y-pv.y)*0.35,j.vmax*0.95,false);return;
    }
-   vers(j,sens>0?Math.min(bx+18,ligne-3):Math.max(bx-18,ligne+3),by*0.7+35*0.3,5);return;
+   // Couverture du pied : un botteur possible a le ballon (ouvreur, arrière, ou botteur qui arme) : il recule.
+   const pied=lecturePied(pv),prof=pied?25:18;
+   let xa=sens>0?Math.min(bx+prof,ligne-3):Math.max(bx-prof,ligne+3);
+   // Ruck près de sa ligne : il reste derrière la ligne de hors-jeu (dans son en-but au besoin).
+   if(d.phase==='ruck'&&d.ruck){const hj=horsJeu(j.side);xa=sens>0?Math.max(xa,hj+1):Math.min(xa,hj-1)}
+   vers(j,xa,by*0.7+35*0.3,pied?6:5);return;
   }
   if(d.phase==='percee'&&pv){
    const vS=Math.hypot(pv.vx,pv.vy);
@@ -726,12 +900,25 @@ function simuler(e,phases,graine){
   const m=montee(j.side);
   const ref=d.ruck&&d.phase==='ruck'?d.ruck.B:{x:bx,y:by};
   const lu=lecture(j.side,ref);
-  if(j===lu.couverture){vers(j,ref.x+sens*(m.fond+11),borne(ref.y+lu.faible*17,8,62),Math.min(j.vmax,5.5));return}
+  if(j===lu.couverture){const pied=lecturePied(pv);vers(j,ref.x+sens*(m.fond+(pied?16:11)),borne(ref.y+lu.faible*17,8,62),Math.min(j.vmax,pied?6.5:5.5));return}
   const ligneDef=def.filter(x=>x!==arriere&&x!==lu.couverture&&debout(x)).sort((a,b)=>a.y-b.y||a.slot-b.slot);
   const k=ligneDef.indexOf(j),n=ligneDef.length,ecart=n>1?Math.min(6.2,(EPAULE*(n-1)>64?64/(n-1):EPAULE)):0;
   const centre=borne(ref.y+lu.glisse,2+((n-1)/2)*ecart,68-((n-1)/2)*ecart);
   const voulu=centre+(k-(n-1)/2)*ecart;
   let y=borne(voulu+(by-ref.y)*0.5,2,68),x;
+  // Chacun prend un attaquant en face (dans l'ordre de la largeur), épaule intérieure : la ligne se
+  // cale sur l'attaque au lieu de rester régulière.
+  // (Pendant que l'attaque s'organise : ruck, ballon qui sort, passes ; pas pendant la course d'un porteur.)
+  const vis=['ruck','ramassage','tenu','passe'].includes(d.phase)?visAVis(j.side,ref,ligneDef):new Map();
+  if(vis.has(j)){const a=vis.get(j);y=borne(0.62*y+0.38*(a.y+Math.sign((ref.y-a.y)||1)*0.8),2,68)}
+  // Montée sur le receveur probable : le défenseur en face de lui sort de la ligne (hors-jeu respecté).
+  const rec=receveurProbable();
+  if(rec&&j===monteurSur(rec,ligneDef)){
+   let mx=rec.x+sens*1.4;
+   if(d.ruck&&['ruck','ramassage'].includes(d.phase)){const hj=horsJeu(j.side);mx=sens>0?Math.max(mx,hj+0.3):Math.min(mx,hj-0.3)}
+   if(!d.montees.has(j.id+'>'+rec.id)){d.montees.add(j.id+'>'+rec.id);evenements.push({t:r1(t),type:'montee',defenseur:j.id,receveur:rec.id})}
+   vers(j,mx,borne(rec.y+Math.sign((by-rec.y)||1)*0.7,2,68),Math.min(j.vmax,m.allure+1.6),false);return;
+  }
   if(d.phase==='ruck'){x=horsJeu(j.side)+sens*m.ruck}
   else{const monte=Math.min(m.haut-m.fond,(t-(d.debutJeu??t))*m.vitesse);x=ref.x+sens*Math.max(m.fond,m.haut-monte)}
   // Jamais devant la ligne de hors-jeu pendant un ruck.
@@ -757,8 +944,10 @@ function simuler(e,phases,graine){
   if(G&&j===S&&(d.phase==='aplati'||d.phase==='fin')){j.cible={x:j.x,y:j.y};j.allure=0}
   else if(debout(j)&&j.etat!=='ruck'){
    const fonce=d.phase==='percee'&&j===d.vedette; // le porteur en percée ne dévie pas devant un adversaire
+   // Le plaqueur désigné ne cède pas sa course à ses partenaires (ils s'écartent ; la séparation reste garantie).
+   const plaqueur_=d.phase==='porte'&&j===d.plaqueur;
    for(const o of J){
-    if(o===j||enContact(j,o)||veutContact(j,o)||fonce&&o.side!==j.side)continue;
+    if(o===j||enContact(j,o)||veutContact(j,o)||fonce&&o.side!==j.side||plaqueur_&&o.side===j.side)continue;
     const px=o.x-j.x,py=o.y-j.y,l=Math.hypot(px,py);
     if(l>8)continue;
     // Un joueur au sol occupe sa longueur : on le contourne plus large.
@@ -772,9 +961,18 @@ function simuler(e,phases,graine){
     if(dc<seuil){const f=(seuil-dc)/seuil*(3+j.allure)/(1+tc),ux=dc>1e-6?cx/dc:-ry/Math.sqrt(rr),uy=dc>1e-6?cy/dc:rx/Math.sqrt(rr);ex-=ux*f;ey-=uy*f;danger=Math.max(danger,(seuil-dc)/seuil/(1+tc))}
    }
   }
+  // L'arbitre (quatrième tranche) : c'est surtout lui qui s'écarte ; un joueur sans rôle dans l'action
+  // (ni porteur, ni plaqueur, ni couvreur) dévie un peu s'il va le heurter.
+  if(debout(j)&&j.etat!=='ruck'&&j.id!==ballon.porteur&&j!==d.plaqueur&&j!==d.couvreur&&!(d.tentatives&&d.tentatives.has(j))&&!(d.coup&&j===d.coup.receveur)){
+   const px=A.x-j.x,py=A.y-j.y,l=Math.hypot(px,py);
+   if(l<1.2&&l>1e-6){const f=(1.2-l)/1.2*(3+j.allure);ex-=px/l*f;ey-=py/l*f}
+   const rx=A.vx-j.vx,ry=A.vy-j.vy,rr=rx*rx+ry*ry;
+   if(rr>1e-6&&l<6){const tc=borne(-(px*rx+py*ry)/rr,0,0.8),cx=px+rx*tc,cy=py+ry*tc,dc=Math.hypot(cx,cy);
+    if(dc<0.9){const f=(0.9-dc)/0.9*(2+j.allure)/(1+tc),ux=dc>1e-6?cx/dc:-ry/Math.sqrt(rr),uy=dc>1e-6?cy/dc:rx/Math.sqrt(rr);ex-=ux*f;ey-=uy*f}}
+  }
   // Plus le risque de heurt est grand, plus l'attrait de la cible cède devant l'évitement.
   if(j.plonge){wx=j.plonge.x;wy=j.plonge.y}
-  else if(j.cible&&(debout(j)||j.etat==='ruck'||['melee','saut','soutien_saut','maul','placement'].includes(j.etat))){
+  else if(j.cible&&(debout(j)||LIES.includes(j.etat)||['saut','soutien_saut'].includes(j.etat))){
    const dx=j.cible.x-j.x,dy=j.cible.y-j.y,l=Math.hypot(dx,dy);
    if(l>0.05){let a=j.allure*(1-0.8*Math.min(1,danger));if(j.arrive)a=Math.min(a,Math.sqrt(2*j.amax*0.7*Math.max(0,l-0.1)));wx=dx/l*a;wy=dy/l*a}
   }
@@ -833,7 +1031,61 @@ function simuler(e,phases,graine){
  const garder=()=>{
   echantillons.push(J.map(j=>[j.x,j.y,Math.hypot(j.vx,j.vy),j.cap]));
   ballonPiste.push([ballon.x,ballon.y,ballon.h]);
+  pisteA.push([A.x,A.y,Math.hypot(A.vx,A.vy),A.cap]);
  };
+ // Arbitre : place voulue selon la phase, évitement des joueurs, allure et accélération plafonnées.
+ function arbitrer(){
+  if(['sifflet','carton'].includes(A.etat)&&t-A.depuis>=(A.etat==='carton'?1.6:1.1))etatA('course');
+  const p=ballon.porteur?parId.get(ballon.porteur):null,b=p||ballon;
+  let cx,cy,allure=5.5;
+  const cote_=b.y<35?1:-1;
+  if(d.carton&&!d.carton.montre){const o=d.carton.joueur;cx=o.x+(A.x>=o.x?1.6:-1.6);cy=o.y;allure=6.5}
+  else if(d.phase==='melee'&&d.sp){cx=d.sp.M.x;cy=d.sp.M.y+(d.sp.M.y<35?3.2:-3.2)}
+  else if(['touche','maul'].includes(d.phase)&&d.sp?.L){cx=(d.maul?d.maul.M.x:d.sp.L.x)+sens*4;cy=d.sp.yT+d.sp.ty*(d.maul?9:17)}
+  else if(d.pen&&d.sp?.P){cx=d.sp.P.x-sens*3;cy=d.sp.P.y+(d.sp.P.y<35?6:-6)}
+  else if(d.ruck){cx=d.ruck.B.x-dirDe(d.ruck.gagnant)*2.5;cy=d.ruck.B.y+cote_*5.5;allure=6}
+  else{const s=dirDe(p?p.side:T);cx=b.x-s*5;cy=b.y+cote_*8;allure=p&&Math.hypot(p.vx,p.vy)>6?6.8:5.5}
+  cx=borne(cx,-2,102);cy=borne(cy,1.5,68.5);
+  // Place dégagée : parmi la place voulue et huit voisines (3 m), celle qui laisse le plus d'espace
+  // autour de lui (préférence à la place voulue).
+  {let best=null;for(const [ox,oy] of [[0,0],[3,0],[-3,0],[0,3],[0,-3],[2.2,2.2],[-2.2,2.2],[2.2,-2.2],[-2.2,-2.2]]){
+    const qx=borne(cx+ox,-2,102),qy=borne(cy+oy,1.5,68.5);let m=99;for(const o of J){const dd=Math.hypot(o.x+o.vx*0.8-qx,o.y+o.vy*0.8-qy);if(dd<m)m=dd}
+    const score=Math.min(m,5)-(ox||oy?0.8:0);if(!best||score>best.s)best={x:qx,y:qy,s:score}}
+   cx=best.x;cy=best.y}
+  let wx=0,wy=0,ex=0,ey=0,danger=0;const dx=cx-A.x,dy=cy-A.y,l=Math.hypot(dx,dy);
+  // Évitement : distance actuelle et plus courte approche sur 1,5 s. Les joueurs ne le voient pas :
+  // c'est lui qui s'écarte de leur course, et qui ralentit vers sa place quand quelqu'un est proche.
+  // (Le joueur qu'il appelle pour un carton vient à lui : il ne s'en écarte pas.)
+  const appele=d.carton&&!d.carton.montre?d.carton.joueur:null;
+  for(const o of J){
+   if(o===appele)continue;
+   const px=A.x-o.x,py=A.y-o.y,q=Math.hypot(px,py);
+   if(q<3.6&&q>1e-6){const k=(3.6-q)/3.6,f=k*k*16+k*4;ex+=px/q*f;ey+=py/q*f;danger=Math.max(danger,k)}
+   const rx=A.vx-o.vx,ry=A.vy-o.vy,rr=rx*rx+ry*ry;if(rr<1e-6||q>16)continue;
+   const tc=borne(-(px*rx+py*ry)/rr,0,1.5),cx2=px+rx*tc,cy2=py+ry*tc,dc=Math.hypot(cx2,cy2);
+   if(dc<3.0){const f=(3.0-dc)/3.0*10/(1+tc),ux=dc>1e-6?cx2/dc:-ry/Math.sqrt(rr),uy=dc>1e-6?cy2/dc:rx/Math.sqrt(rr);ex+=ux*f;ey+=uy*f;danger=Math.max(danger,(3.0-dc)/3.0/(1+tc))}
+  }
+  if(l>0.3){const a=Math.min(allure,Math.sqrt(2*A.amax*0.7*Math.max(0,l-0.3)))*(1-0.85*Math.min(1,danger));wx=dx/l*a;wy=dy/l*a}
+  wx+=ex;wy+=ey;
+  // Lignes de touche et de ballon mort : il ne s'y laisse pas pousser (freinage à temps).
+  const frein=v=>v*v/(2*A.amax*0.6);
+  if(A.vy<0&&A.y-frein(A.vy)<2.5||A.y<2.5)wy=Math.max(wy,0.5);if(A.vy>0&&A.y+frein(A.vy)>67.5||A.y>67.5)wy=Math.min(wy,-0.5);
+  if(A.vx<0&&A.x-frein(A.vx)<-3||A.x<-3)wx=Math.max(wx,0.5);if(A.vx>0&&A.x+frein(A.vx)>103||A.x>103)wx=Math.min(wx,-0.5);
+  // Il ralentit en approchant des joueurs (il ne traverse pas un groupe en courant).
+  let proche=99;for(const o of J){if(o===appele)continue;const dd=Math.hypot(o.x-A.x,o.y-A.y);if(dd<proche)proche=dd}
+  const vlim=Math.min(A.vmax,1.4+0.62*proche);
+  const w=Math.hypot(wx,wy);if(w>vlim){wx*=vlim/w;wy*=vlim/w}
+  let ax=wx-A.vx,ay=wy-A.vy;const a=Math.hypot(ax,ay),lim=A.amax*PAS;if(a>lim){ax*=lim/a;ay*=lim/a}
+  // Garde-fou : si la course prévue (0,8 s, vitesses actuelles) le mène à moins de 1,2 m d'un joueur,
+  // il prend parmi seize changements d'allure possibles celui qui laisse le plus d'espace.
+  const marge_=(dvx,dvy)=>{let vx=A.vx+dvx,vy=A.vy+dvy;const v=Math.hypot(vx,vy);if(v>A.vmax){vx*=A.vmax/v;vy*=A.vmax/v}let m=99;
+   for(const o of J){if(o===appele&&Math.hypot(o.x-A.x,o.y-A.y)>1.6||Math.abs(o.x-A.x)>14||Math.abs(o.y-A.y)>14)continue;for(let k=1;k<=8;k++){const h=k*PAS,dd=Math.hypot(A.x+vx*h-o.x-o.vx*h,A.y+vy*h-o.y-o.vy*h);if(dd<m)m=dd}}return m};
+  const voulu_=marge_(ax,ay);
+  if(voulu_<1.2){let best={ax,ay,m:voulu_};for(let k=0;k<16;k++){const th=k*Math.PI/8,cax=Math.cos(th)*lim,cay=Math.sin(th)*lim,m=marge_(cax,cay);if(m>best.m+0.05)best={ax:cax,ay:cay,m}}ax=best.ax;ay=best.ay}
+  A.vx+=ax;A.vy+=ay;{const v=Math.hypot(A.vx,A.vy);if(v>A.vmax){A.vx*=A.vmax/v;A.vy*=A.vmax/v}}A.x=borne(A.x+A.vx*PAS,-6,106);A.y=borne(A.y+A.vy*PAS,0.3,69.7);
+  const v=Math.hypot(A.vx,A.vy),voulu=v>1.5?Math.atan2(A.vy,A.vx):Math.atan2(b.y-A.y,b.x-A.x),diff=Math.atan2(Math.sin(voulu-A.cap),Math.cos(voulu-A.cap));
+  A.cap+=borne(diff,-5*PAS,5*PAS);
+ }
  const capDe=j=>{
   const v=Math.hypot(j.vx,j.vy);
   let voulu=j.cap;
@@ -848,6 +1100,8 @@ function simuler(e,phases,graine){
   if(ballon.porteur){
    const p=parId.get(ballon.porteur);const c=Math.cos(p.cap),s=Math.sin(p.cap);ballon.x=p.x+c*0.3;ballon.y=p.y+s*0.3;
    ballon.h=p.etat==='saut'?2.9:p===d.sp?.lanceur&&d.phase==='touche'?2.0:1.0;
+   // Pénalité jouée vite : le ballon descend au pied et remonte dans les mains.
+   if(p.etat==='tape'){const k=borne((t-p.depuis)/0.45,0,1);ballon.h=1.0-0.75*Math.sin(Math.PI*k);ballon.x+=Math.cos(p.cap)*0.25*Math.sin(Math.PI*k);ballon.y+=Math.sin(p.cap)*0.25*Math.sin(Math.PI*k)}
    // Aplati : le ballon va des mains au point d'essai, sans saut.
    if(p.etat==='aplati'){const k=Math.min(1,(t-p.depuis)/0.45);ballon.x+=(G.x-ballon.x)*k;ballon.y+=(G.y-ballon.y)*k;ballon.h=1.0-0.88*k}
   }
@@ -858,6 +1112,11 @@ function simuler(e,phases,graine){
   }
   else if(ballon.vol){const v=ballon.vol,a=parId.get(v.a),k=borne((t-v.t0)/(v.t1-v.t0),0,1);ballon.x=v.de.x+(a.x-v.de.x)*k;ballon.y=v.de.y+(a.y-v.de.y)*k;
    const ha=a.etat==='saut'?2.9:1.0;ballon.h=(v.h0??1)+(ha-(v.h0??1))*k+Math.sin(k*Math.PI)*(v.cloche??0.35)}
+  else if(ballon.rebond){
+   // Rebonds d'un ballon ovale : arcs de plus en plus bas, direction qui dévie, puis il roule.
+   const arcs=ballon.rebond.arcs,a=arcs.find(q=>t<q.t1)||arcs.at(-1),k=borne((t-a.t0)/(a.t1-a.t0),0,1);
+   ballon.x=a.de.x+(a.vers.x-a.de.x)*k;ballon.y=a.de.y+(a.vers.y-a.de.y)*k;ballon.h=a.h0+(a.h1-a.h0)*k+4*a.apex*k*(1-k);
+  }
   else if(ballon.sol&&ballon.depose){const v=ballon.depose,k=borne((t-v.t0)/(v.dur??0.3),0,1);ballon.x=v.x+(v.B.x-v.x)*k;ballon.y=v.y+(v.B.y-v.y)*k;ballon.h=v.h+(0.15-v.h)*k}
   else if(ballon.sol){ballon.h=0.15}
  };
@@ -871,6 +1130,9 @@ function simuler(e,phases,graine){
    if(j.etat==='lancer'&&age>=0.6)etat(j,'course');
    if(j.etat==='jeu_au_pied'&&age>=0.7)etat(j,'course');
    if(j.etat==='reception'&&age>=0.3)etat(j,'course');
+   if(j.etat==='en_avant'&&age>=0.6)etat(j,'course');
+   if(j.etat==='tape'&&age>=0.5)etat(j,'course');
+   if((j.etat==='grattage'||j.etat==='nettoyage')&&!['ruck','cloture','fin'].includes(d.phase)&&age>0.3)etat(j,'course');
    if(j.etat==='ramassage'&&age>=0.4&&d.phase!=='ramassage')etat(j,'course');
    if(j.etat==='plaquage'&&age>=0.7){etat(j,'au_sol');j.plonge=null}
    if(j.etat==='plaquage_rate'&&age>=0.55){etat(j,'au_sol');j.plonge=null}
@@ -991,10 +1253,23 @@ function simuler(e,phases,graine){
     }
    }
   }else if(d.phase==='penalite'){
-   const sp=d.sp,k=sp.botteur,Pm=sp.P,but=ouverture.issue==='but';
+   const sp=d.sp,k=sp.botteur,Pm=sp.P,but=ouverture.issue==='but',main=ouverture.issue==='main';
+   // Carton : montré quand l'arbitre arrive au joueur ; le jeu ne reprend qu'après (jalon du carton à cet instant).
+   const c=d.carton;
+   if(c&&!c.montre&&(t>=1.2&&dist(A,c.joueur)<3.0||t>10)){
+    c.montre=t;etatA('carton');for(const p of c.plans)jalon(p);
+    evenements.push({t:r1(t),type:'carton',joueur:c.joueur.id,couleur:c.couleur});
+    c.sortie=t+0.8;
+   }
+   if(c&&c.montre&&c.sortie!=null&&t>=c.sortie){etat(c.joueur,'sortie');c.sortie=null}
+   const attendre=c&&(!c.montre||t-c.montre<1.4);
    if(sp.etape===0){
-    if(t>=1.0)for(const p of ouverture.autres||[])jalon(p);
-    if(dist(k,Pm)<0.9&&t>=1.4){sp.etape=1;sp.t1=t;etat(k,'ramassage');tenir(k);ballon.sol=false;
+    if(t>=1.0&&!c)for(const p of ouverture.autres||[])jalon(p);
+    if(main&&!attendre&&dist(k,Pm)<0.9&&t>=0.8){
+     // Pénalité jouée vite (loi 20) : le demi prend le ballon au point et le tape du pied.
+     sp.etape=10;sp.t1=t;etat(k,'ramassage');tenir(k);ballon.sol=false;
+     evenements.push({t:r1(t),type:'ramassage',joueur:k.id,horsJeuRespecte:true});
+    }else if(!main&&!attendre&&dist(k,Pm)<0.9&&t>=1.4){sp.etape=1;sp.t1=t;etat(k,'ramassage');tenir(k);ballon.sol=false;
      for(const p of ouverture.autres||[])jalon(p);
      evenements.push({t:r1(t),type:'ramassage',joueur:k.id,horsJeuRespecte:true})}
     else if(t>16)return null;
@@ -1007,6 +1282,16 @@ function simuler(e,phases,graine){
      // Pénaltouche : il tape en touche, de volée, au point du moteur.
      sp.etape=5;d.phase='armer';d.armer={k,st:{k:'pied',issue:'touche',x:ouverture.cible?.x,cote:ouverture.cible?.y>35?70:0,plan:ouverture.planTir},t0:t};
     }
+   }else if(sp.etape===10&&t-sp.t1>=0.3){
+    sp.etape=11;sp.t1=t;etat(k,'tape');sp.tape=t;jalon(ouverture.planTir);
+    evenements.push({t:r1(t),type:'tape',joueur:k.id,x:r2(Pm.x),y:r2(Pm.y)});
+   }else if(sp.etape===11&&t-sp.t1>=0.45){
+    // Le jeu reprend : la suite que le moteur a décidée (course, passe, essai, ballon perdu).
+    sp.etape=12;d.pen=false;d.debutJeu=t;etat(k,'course');
+    preparer(k);
+    if(!d.etape)cloturer();
+    else if(d.chaine.length===0)agir(k);
+    else{d.phase='tenu';d.tenuDepuis=t;d.tenuDe=null}
    }else if(sp.etape===2&&t-sp.t2>=1.3){sp.etape=3;sp.t3=t}
    else if(sp.etape===3&&(t-sp.t3>=3.4||t-sp.t3>=1.6&&dist(k,sp.elan)<0.3)){sp.etape=4;sp.t4=t}
    else if(sp.etape===4&&(dist(k,{x:Pm.x-sp.u.x*0.3,y:Pm.y-sp.u.y*0.3})<0.5||t-sp.t4>3.5))tirerAuBut(k);
@@ -1019,7 +1304,14 @@ function simuler(e,phases,graine){
   }else if(d.phase==='vol'){
    const c=d.coup;
    if(t>=c.t1){
-    if(c.issue==='touche'){
+    if(c.issue==='touche'&&c.rebondTouche){
+     // Il rebondit dans le champ puis sort au point du moteur : deux arcs jusqu'à la ligne de touche.
+     const de={x:ballon.x,y:ballon.y},m={x:(de.x+c.x)/2,y:(de.y+c.y)/2},D=Math.hypot(c.x-de.x,c.y-de.y),v=Math.max(3,D/1.1);
+     ballon.vol=null;ballon.sol=false;ballon.depose=null;
+     ballon.rebond={arcs:[{t0:t,t1:t+Math.hypot(m.x-de.x,m.y-de.y)/v,de,vers:m,h0:0.15,h1:0.15,apex:0.9},{t0:t+Math.hypot(m.x-de.x,m.y-de.y)/v,t1:t+D/v,de:m,vers:{x:c.x,y:c.y},h0:0.15,h1:0.15,apex:0.35}],t0:t,fin:t+D/v};
+     evenements.push({t:r1(t),type:'rebond',x:r2(de.x),y:r2(de.y),arcs:2});
+     d.phase='rebondTouche';
+    }else if(c.issue==='touche'){
      // Ballon sorti en touche au point du moteur.
      ballon.vol=null;ballon.sol=true;ballon.h=0.15;ballon.x=c.x;ballon.y=c.y;
      jalon(c.etape.plan);evenements.push({t:r1(t),type:'touche',x:r2(c.x)});
@@ -1027,15 +1319,21 @@ function simuler(e,phases,graine){
     }else{
      const r=c.receveur;
      if(dist(r,c)>1.3){
-      // Receveur pas encore sous le ballon : il tombe au point du moteur, le receveur le ramasse.
-      ballon.vol=null;ballon.sol=true;ballon.depose={x:c.x,y:c.y,h:ballon.h,t0:t,B:{x:c.x,y:c.y},dur:0.35};d.phase='rebond';
+      // Receveur pas sous le ballon : il touche le sol au point du moteur et rebondit ; le receveur le ramasse.
+      const v=ballon.vol,ang=Math.atan2(v.vers.y-v.de.y,v.vers.x-v.de.x),vh=Math.hypot(v.vers.x-v.de.x,v.vers.y-v.de.y)/Math.max(0.5,v.t1-v.t0);
+      rebondir({x:c.x,y:c.y},ang,Math.min(7,vh*0.45),{n:3});d.phase='rebond';
      }else recevoir(r,'reception');
     }
    }
   }else if(d.phase==='rebond'){
    const r=d.coup.receveur;
-   if(t-d.coup.t1>=0.35&&dist(r,ballon)<0.9)recevoir(r,'ramassage');
+   if(t-d.coup.t1>=0.35&&dist(r,ballon)<0.9&&ballon.h<0.8)recevoir(r,'ramassage');
    else if(t-d.coup.t1>8)return null;
+  }else if(d.phase==='faute'){
+   fauteAvance();
+  }else if(d.phase==='rebondTouche'){
+   // Ballon qui rebondit dans le champ avant de sortir en touche (touche indirecte, 50:22).
+   if(t>=ballon.rebond.fin){const c=d.coup;ballon.rebond=null;ballon.sol=true;ballon.h=0.15;ballon.x=c.x;ballon.y=c.y;jalon(c.etape.plan);evenements.push({t:r1(t),type:'touche',x:r2(c.x)});cloturer()}
   }else if(d.phase==='porte'){
    const p=d.porteur;
    // Plaqueur désigné hors d'état ou distancé : le défenseur debout le plus proche prend le relais.
@@ -1056,20 +1354,30 @@ function simuler(e,phases,graine){
   }else if(d.phase==='plaquage'&&t>=d.attente){
    formerRuck(d.plaque.p,d.plaque.pl);
    // Membres du ruck, plaqueur, plaqué et ramasseur : au contact jusqu'à ce que le ballon soit joué.
-   const groupe=[d.plaque.p,d.plaque.pl,...d.ruck.att,...d.ruck.def,d.ruck.ramasseur].filter((j,i,l)=>j&&l.indexOf(j)===i);
+   const groupe=[d.plaque.p,d.plaque.pl,...d.ruck.att,...d.ruck.def,d.ruck.ramasseur,d.ruck.conteste?.gratteur].filter((j,i,l)=>j&&l.indexOf(j)===i);
    d.ruck.groupe=groupe;d.ruck.contacts=groupeContact(groupe,30);
    const recup=d.ruck.recup;
    if(recup){file.shift();d.ruck.recupPlan=recup.plan}
+   if(d.ruck.penal){file.shift();d.etape=null;d.chaine=[];d.apres=null}
    const gagneT=d.ruck.gagnant===T;
    // Ballon adverse après un coup de pied, ou plus rien à jouer : la scène se clôt sur le ruck formé.
-   if(d.apresPied&&!gagneT||!file.length&&!recup){cloturer();d.ruck.final=true}
+   if(d.ruck.penal){/* le ruck se dispute jusqu'au coup de sifflet */}
+   else if(d.apresPied&&!gagneT||!file.length&&!recup){cloturer();d.ruck.final=true}
    // Ballon récupéré par l'adversaire (le moteur l'a décidé) : il est joué, puis la scène se clôt.
    else if(!gagneT){d.etape=null;d.chaine=[];d.apres=null}
    else{d.apresPied=false;preparer(d.ruck.ramasseur)}
+  }else if(d.phase==='ruck'&&d.ruck.penal){
+   // Faute au sol : l'arbitre siffle après la contestation (le moteur a donné la pénalité).
+   const r=d.ruck,c=r.conteste;
+   if(c&&c.depuis!=null&&t-c.depuis>=1.5||t-r.forme>5){
+    siffler('faute_au_sol',r.penal.side,{cause:r.penal.cause||null,gratteur:c?.gratteur.id??null});
+    jalon(r.penal.plan);r.penal=null;r.final=true;cloturer();
+   }
   }else if(d.phase==='ruck'){
    const r=d.ruck,ram=r.ramasseur;
    const tousEnJeu=J.every(j=>!debout(j)||r.lies.includes(j)||j===ram||enJeu(j));
-   const pret_=t-r.forme>=1.4&&dist(ram,pointRamassage(r))<1.0;
+   // Ballon gratté : le gratteur le tient au moins 1,3 s avant de l'arracher.
+   const pret_=t-r.forme>=1.4&&dist(ram,pointRamassage(r))<1.0&&(!r.conteste||r.conteste.depuis!=null&&t-r.conteste.depuis>=1.3||t-r.forme>6);
    const prochain=d.chaine[0];
    const prochainPret=!prochain||(ram.x-prochain.x)*dirDe(ram.side)>=1.5;
    // Au-delà de six secondes, le ballon est joué dès que le ramasseur y est (jamais de loin).
@@ -1119,14 +1427,17 @@ function simuler(e,phases,graine){
     d.ecart={cote:Math.sign((V.y-j.y)||1),jusque:t+0.7};
     evenements.push({t:r1(t),type:'plaquage_rate',plaqueur:j.id,porteur:V.id});
    }
-   const ecart=d.ecart&&t<d.ecart.jusque?d.ecart.cote*2.5:0;
+   // (Pas de crochet dans les huit derniers mètres : il plonge dans l'axe du point d'essai.)
+   const ecart=d.ecart&&t<d.ecart.jusque&&(d.franchi||Math.abs(ligne-V.x)>8)?d.ecart.cote*2.5:0;
    if(d.franchi){
     // Franchissement : le porteur file vers le point du moteur ; le couvreur l'y attend et le plaque.
     let cv=d.couvreur;const reste=(o.x-V.x)*sens;
     // Couvreur dépassé : le défenseur debout le plus proche devient le couvreur.
     if(cv&&debout(cv)&&(cv.x-V.x)*sens<-1.5&&reste<6){cv=d.couvreur=def.filter(j=>debout(j)&&!j.rate&&j!==cv).sort((a,b)=>dist(a,V)-dist(b,V)||a.slot-b.slot)[0]||cv}
-    if(cv&&debout(cv)&&reste<6&&(cv.x-V.x)*sens>=-1.5)vers(V,cv.x,cv.y,V.vmax*0.85,false);
-    else vers(V,borne(o.x+sens*3,2,98),o.y+ecart,V.vmax*(reste<0?0.6:reste<10?0.82:0.95),false);
+    // Il va au contact du couvreur tout proche ; sinon il file au point du moteur, en freinant pour s'y
+    // arrêter quand ce point est à moins de 15 m de l'en-but (jamais d'en-but suggéré sur un franchissement).
+    if(cv&&debout(cv)&&reste<6&&(cv.x-V.x)*sens>=-1.5&&dist(cv,V)<3.5)vers(V,sens>0?Math.min(cv.x,o.x+1.5):Math.max(cv.x,o.x-1.5),cv.y,V.vmax*0.85,(cv.x-o.x)*sens>1.5);
+    else vers(V,borne(o.x+sens*1.2,2,98),o.y+ecart,V.vmax*(reste<0?0.6:reste<10?0.82:0.95),Math.abs(ligne-o.x)<15?reste<14:reste<1);
     if(cv&&debout(cv)&&dist(V,cv)<CONTACT){
      etat(cv,'plaquage');etat(V,'plaque');cv.plonge={x:cv.vx,y:cv.vy};contact(V,cv,6);
      evenements.push({t:r1(t),type:'plaquage',plaqueur:cv.id,porteur:V.id,x:r2(V.x),y:r2(V.y),cible:r2(o.x)});
@@ -1165,10 +1476,12 @@ function simuler(e,phases,graine){
   }
   // Fin sur un pas de sortie : la dernière image des pistes tombe sur la durée annoncée.
   if(d.phase==='fin'&&n%Math.round(PAS_SORTIE/PAS)===0)break;
-  for(const j of J){if(j.etat==='ruck'||debout(j)||['melee','saut','soutien_saut','maul','placement'].includes(j.etat))comportement(j)}
+  for(const j of J){if(debout(j)||LIES.includes(j.etat)||['saut','soutien_saut'].includes(j.etat))comportement(j)}
   for(const j of J)integrer(j);
   separer();
-  for(const j of J){j.x+=j.vx*PAS;j.y+=j.vy*PAS;j.x=borne(j.x,-7,107);j.y=borne(j.y,0.3,69.7);capDe(j)}
+  // Un joueur exclu quitte le terrain : lui seul franchit la ligne de touche.
+  for(const j of J){j.x+=j.vx*PAS;j.y+=j.vy*PAS;j.x=borne(j.x,-7,107);j.y=j.etat==='sortie'?borne(j.y,-6,76):borne(j.y,0.3,69.7);capDe(j)}
+  arbitrer();
   t=r2(t+PAS);n++;
   ballonSuit();
   if(n%Math.round(PAS_SORTIE/PAS)===0)garder();
@@ -1177,7 +1490,7 @@ function simuler(e,phases,graine){
  // Chaque fait du moteur couvert par les pistes doit avoir été montré.
  if((e.jalonsAttendus||[]).some(k=>!jalons.some(([,p])=>p===k)))return null;
  jalons.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
- return {J,echantillons,ballonPiste,porteurs,etatsJ,evenements,contacts,jalons,duree:r1(t),G,sens,S};
+ return {J,echantillons,ballonPiste,porteurs,etatsJ,evenements,contacts,jalons,duree:r1(t),G,sens,S,pisteA,etatsA};
 }
 
 // Pistes envoyées à la vue : positions, cap, vitesse par joueur ; ballon ; états.
@@ -1188,8 +1501,9 @@ function sortie(r,e,graine,phases){
   etats:r.etatsJ.get(j.id)}));
  const o={version:VERSION,type:e.type,graine,phases,pas:PAS_SORTIE,duree:r.duree,equipe:e.equipe,sens:r.sens,vedette:r.S.id,
   joueurs,ballon:{x:r.ballonPiste.map(b=>r2(b[0])),y:r.ballonPiste.map(b=>r2(b[1])),h:r.ballonPiste.map(b=>r2(b[2])),porteurs:r.porteurs},
+  arbitre:{x:r.pisteA.map(a=>r2(a[0])),y:r.pisteA.map(a=>r2(a[1])),v:r.pisteA.map(a=>r2(a[2])),cap:r.pisteA.map(a=>r2(a[3])),etats:r.etatsA},
   evenements:r.evenements,contacts:r.contacts.map(c=>[r1(c.t0),r1(c.t1),c.a,c.b]),jalons:r.jalons,
-  ouverture:(e.ouverture||{k:'jeu'}).k,coupe:!!(e.ouverture&&['melee','touche','envoi'].includes(e.ouverture.k))};
+  ouverture:(e.ouverture||{k:'jeu'}).k,coupe:!!(e.ouverture&&(['melee','touche','envoi'].includes(e.ouverture.k)||e.ouverture.k==='penalite'&&e.ouverture.issue==='main'))};
  if(r.G){o.marqueur=r.S.id;o.essai={x:r2(r.G.x),y:r2(r.G.y)}}
  if(Number.isInteger(e.premier))o.premier=e.premier;
  if(Number.isInteger(e.dernier))o.dernier=e.dernier;
@@ -1204,14 +1518,15 @@ function composer(entree){
  const graine=(Number.isInteger(e.graine)?e.graine:hacher(JSON.stringify([e.marqueur,e.vedette,e.essai,e.ballon])))>>>0;
  const alea=tirage(graine);
  const faits=Array.isArray(e.etapes)?e.etapes.filter(s=>!s.cle&&s.k!=='recup').length+(e.ouverture&&e.ouverture.k!=='jeu'?1:0)+(e.type==='ballon_porte'&&e.marqueur!=null?1:0):0;
- const max=Math.min(DUREE_PLAFOND,DUREE_MAX+6*faits);
+ const max=Math.min(DUREE_PLAFOND,DUREE_MAX+7*faits); // 7 s par fait du moteur montré (6 s jusqu’à la troisième tranche)
  const cible=fini(e.duree_cible)?borne(e.duree_cible,DUREE_MIN,max):Math.min(max,14+alea()*8+4*faits);
  const essais=[];
  // Deux passes au plus : la seconde (autre tirage, même graine) seulement si la première n'a rien donné de juste.
- for(let passe=0;passe<2&&!essais.some(x=>x.ecart<1000);passe++){
+ for(let passe=0;passe<2&&!essais.some(x=>x.ecart<500);passe++){
   for(let phases=0;phases<=4;phases++){
    const r=simuler(e,phases,(graine^Math.imul(phases+1+passe*5,0x9E3779B1))>>>0);
-   if(r)essais.push({r,phases,ecart:Math.abs(r.duree-cible)+(r.duree<DUREE_MIN||r.duree>max?1000:0)});
+   // Hors de la durée voulue mais sous le plafond (50 s, validé par Léo) : gardée en dernier recours.
+   if(r)essais.push({r,phases,ecart:Math.abs(r.duree-cible)+(r.duree<DUREE_MIN||r.duree>DUREE_PLAFOND?1000:r.duree>max?500:0)});
    // Chaque ruck ajoute plusieurs secondes : inutile d'aller au-delà d'une mise en scène trop longue.
    if(r&&r.duree>Math.max(cible,max))break;
   }
@@ -1220,7 +1535,7 @@ function composer(entree){
  const meilleur=essais[0];
  if(!meilleur||meilleur.ecart>=1000)throw new RangeError('Chorégraphe : aucune mise en scène dans la durée voulue');
  const o=sortie(meilleur.r,e,graine,meilleur.phases);
- o.dureeMax=max;
+ o.dureeMax=Math.max(max,o.duree);
  return o;
 }
 
@@ -1295,11 +1610,70 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
    if(!pick)return null;botteur=String(pick.id);
   }
   const ouverture={k:'penalite',x:depart.ball.x,y:fini(depart.ball.y)?depart.ball.y:35,botteur,issue:but?'but':'touche',reussi:plans[g].kind==='goal',
-   cible:r.to?{x:r.to.x,y:r.to.y}:null,plan:p,autres,planTir:g};
+   cible:r.to?{x:r.to.x,y:r.to.y}:null,plan:p,autres,planTir:g,cause:rec(p)?.cause??null,cartons:cartonsDe(autres,depart)};
   const sens=but?(fini(r.to?.x)?(r.to.x>=50?1:-1):T===0?1:-1):(fini(r.to?.x)&&fini(depart.ball.x)&&Math.abs(r.to.x-depart.ball.x)>1?Math.sign(r.to.x-depart.ball.x):T===0?1:-1);
   return finir({type:but?'penalite_au_but':'penalite_en_touche',equipe:T,vedette:botteur,sens,ouverture,etapes:[],premier:p,dernier:g,tf,plans,rec,profils,avant,cle});
  }
+ // Cartons du moteur entre le coup de sifflet et la suite : joueur sanctionné et couleur.
+ function cartonsDe(autres,depart){
+  return autres.map(c=>({plan:c,joueur:rec(c)?.actor!=null?String(rec(c).actor):null,couleur:rec(c)?.card||'yellow'}))
+   .filter(c=>c.joueur&&depart.players.some(q=>String(q.id)===c.joueur));
+ }
+ // Pénalité jouée vite à la main : le coup de sifflet (plan `g - 1`), la pénalité tapée (`g`), puis la
+ // suite que le moteur a décidée : course (gain ou percée), essai, ballon gratté, en-avant.
+ function entreePenaliteMain(g){
+  const r=rec(g),T=r?.team;if(![0,1].includes(T)||g<1)return null;
+  const p=g-1;if(plans[p].kind!=='penalty'||rec(p)?.team!==T)return null;
+  const depart=plans[p].scene;if(!depart||!Array.isArray(depart.players)||!fini(depart.ball?.x))return null;
+  const tapeur=r.actor!=null&&depart.players.some(q=>String(q.id)===String(r.actor)&&q.side===T)?String(r.actor):null;
+  if(!tapeur)return null;
+  const etapes=[];let dernier=g,marqueur=null;
+  for(let i=g+1;i<plans.length;i++){
+   const q=plans[i],s=rec(i);if(!s)break;
+   if(q.kind==='carry'&&s.team===T&&s.actor!=null){etapes.push({k:gain(s)>=GAIN_PERCEE?'franchi':'porte',joueur:String(s.actor),x:xDe(s.to),depuis:xDe(s.from),plan:i});dernier=i;continue}
+   if(q.kind==='try'&&s.team===T&&s.actor!=null&&s.origin==='open'){etapes.push({k:'essai',joueur:String(s.actor),plan:i,cle:true});marqueur=String(s.actor);dernier=i;break}
+   if(q.kind==='turnover'&&s.team!==T){if(etapes.at(-1)?.k!=='porte')etapes.push({k:'porte',joueur:tapeur,x:null,plan:null});etapes.push({k:'recup',joueur:s.actor!=null?String(s.actor):null,side:s.team,plan:i});dernier=i;break}
+   if(q.kind==='hand-fault'&&s.team===T){etapes.push({k:'faute',joueur:s.actor!=null?String(s.actor):null,cause:s.cause||'knock-on',plan:i,cle:true});dernier=i;break}
+   break;
+  }
+  const ouverture={k:'penalite',x:depart.ball.x,y:fini(depart.ball.y)?depart.ball.y:35,botteur:tapeur,issue:'main',plan:p,autres:[],planTir:g,cause:rec(p)?.cause??null,cartons:[]};
+  const e=finir({type:'penalite_a_la_main',equipe:T,vedette:tapeur,sens:T===0?1:-1,ouverture,etapes,premier:p,dernier,tf,plans,rec,profils,avant,cle,marqueur});
+  return e;
+ }
+ // Faute de main : les plans qui l'amènent, puis l'en-avant (ou la passe en avant) du joueur nommé.
+ function entreeFaute(k){
+  const r=rec(k),T=r?.team;if(![0,1].includes(T))return null;
+  const amont=remonter(plans,rec,k,T);
+  const depart=amont.ouverture&&amont.ouverture.k!=='jeu'?plans[amont.premier].scene:amont.premier>0?plans[amont.premier-1].scene:(avant||tf.depart);
+  if(!depart||!Array.isArray(depart.players))return null;
+  let joueur=r.actor!=null&&depart.players.some(q=>String(q.id)===String(r.actor)&&q.side===T)?String(r.actor):null;
+  if(!joueur){const pick=[11,12,10,13].map(s=>depart.players.find(q=>q.side===T&&q.slot===s)).find(Boolean);if(!pick)return null;joueur=String(pick.id)}
+  return finir({type:'faute_de_main',equipe:T,vedette:joueur,sens:T===0?1:-1,ouverture:amont.ouverture,etapes:[...amont.etapes,{k:'faute',joueur,cause:r.cause||'knock-on',plan:k,cle:true}],
+   premier:amont.premier,dernier:k,tf,plans,rec,profils,avant,cle});
+ }
+ // Contestation au sol (plan `i`) : le ballon gratté par l'adversaire après un plaquage (`turnover`), ou
+ // la pénalité sifflée au sol (ballon conservé au sol, entrée irrégulière : le moteur la donne à
+ // l'équipe qui porte le ballon). Le porteur est plaqué, un gratteur vient au-dessus du ballon, les
+ // soutiens le nettoient ; puis le ballon est arraché, ou l'arbitre siffle.
+ function entreeContestation(i){
+  const n=rec(i);if(!n||![0,1].includes(n.team))return null;
+  const kind=plans[i].kind;
+  const T=kind==='turnover'?1-n.team:n.team;
+  const fin=kind==='turnover'?{k:'recup',joueur:n.actor!=null?String(n.actor):null,side:n.team,plan:i}:
+   kind==='penalty'&&['holding','ruck'].includes(n.cause)?{k:'penal',side:n.team,cause:n.cause,plan:i}:null;
+  if(!fin)return null;
+  // Le porteur plaqué : celui du temps de jeu précédent du moteur s'il est dans le temps fort, sinon choisi
+  // au ruck. Les plans plus anciens restent aux gestes (la contestation est le cœur du temps fort).
+  const q=i>0&&plans[i-1].kind==='carry'?rec(i-1):null,prev=q&&q.team===T&&q.actor!=null?i-1:null;
+  const etapes=prev!=null?[{k:gain(q)>=GAIN_PERCEE?'franchi':'porte',joueur:String(q.actor),x:xDe(q.to),depuis:xDe(q.from),plan:prev,cle:true}]:[{k:'porte',joueur:null,x:null,plan:null,cle:true}];
+  const amont={premier:prev??i,ouverture:null};
+  etapes.push(fin);
+  return finir({type:'contestation_au_sol',equipe:T,vedette:null,sens:T===0?1:-1,ouverture:amont.ouverture,etapes,premier:Math.min(amont.premier,i),dernier:i,tf,plans,rec,profils,avant,cle,choisirPorteur:true});
+ }
  let type=null,k=-1;
+ // Pénalité jouée vite à la main : elle couvre sa suite (y compris l'essai qu'elle amène).
+ const nTape=plans.findIndex(p=>p.kind==='quick-tap');
+ if(nTape>=0){const e=entreePenaliteMain(nTape);if(e)return e}
  const nEssai=plans.findIndex(p=>p.kind==='try');
  // Ballon porté depuis une touche gagnée (combinaison « maul », ou ballon porté formé avant un essai).
  const porte=i=>{const r=rec(i);return i>0&&plans[i].kind==='setpiece-win'&&plans[i-1].kind==='lineout'&&r&&(r.move==='maul'||r.porte)&&[0,1].includes(r.team)&&!!rec(i-1)};
@@ -1319,6 +1693,9 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
    if(plans[i].kind==='kick'&&r.actor!=null||plans[i].kind==='touch'&&TOUCHES_AU_PIED.includes(r.cause)){type='jeu_au_pied';k=i;break}
    if(plans[i].kind==='reception'&&i>0&&['kickoff','drop22'].includes(plans[i-1].kind)){type='jeu_au_pied';k=i;break}
   }
+  // Contestation au sol (ballon gratté ou faute au sol sifflée), puis faute de main.
+  if(!type)for(let i=plans.length-1;i>=0;i--)if(['turnover','penalty'].includes(plans[i].kind)){const e=entreeContestation(i);if(e)return e}
+  if(!type)for(let i=plans.length-1;i>=0;i--)if(plans[i].kind==='hand-fault'){const e=entreeFaute(i);if(e)return e}
   if(!type)for(let i=plans.length-1;i>=0;i--)if(plans[i].kind==='touch'&&rec(i)?.cause==='penalty-touch'){const e=entreePenalite(i);if(e)return e}
  }
  if(!type)return null;
@@ -1359,14 +1736,14 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
   const amont=remonter(plans,rec,k,T);
   ({premier,ouverture}=amont);
   vedette=r.actor!=null?String(r.actor):null;
-  etapes=[...amont.etapes,{k:'pied',joueur:vedette,x:vers_,issue:touche?'touche':'reception',depuis:de,plan:k,cle:true}];
+  etapes=[...amont.etapes,{k:'pied',joueur:vedette,x:vers_,issue:touche?'touche':'reception',cause:touche?r.cause:null,depuis:de,plan:k,cle:true}];
   const n=plans[k+1],rn=rec(k+1);
   if(!touche&&n&&rn&&n.kind==='turnover'&&rn.team===T){etapes.push({k:'recup',joueur:rn.actor!=null?String(rn.actor):null,side:T,plan:k+1});dernier=k+1}
   return finir({type,equipe:T,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur:vedette==null});
  }
  return finir({type,equipe:T,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle});
 }
-function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur,marqueur}){
+function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur,marqueur,choisirPorteur}){
  // Scène de départ : la remise en jeu formée, sinon la scène affichée juste avant le premier plan.
  const depart=ouverture&&ouverture.k!=='jeu'?plans[premier].scene:premier>0?plans[premier-1].scene:(avant||tf.depart);
  if(!depart||!Array.isArray(depart.players))return null;
@@ -1377,6 +1754,17 @@ function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,pla
   const pick=[9,14,8].map(s=>joueurs.find(p=>p.side===equipe&&p.slot===s)).find(Boolean);
   if(!pick)return null;
   vedette=String(pick.id);etapes.at(-1).joueur=vedette;
+ }
+ if(choisirPorteur){
+  // Porteur plaqué non nommé par le moteur : le joueur mis en avant par la scène s'il est de l'équipe, sinon
+  // un avant de l'équipe proche du ballon (choix de mise en scène).
+  const st=etapes.find(s=>s.cle);
+  if(st&&!st.joueur){
+   const b=depart.ball||{x:50,y:35};
+   const pick=joueurs.find(p=>p.side===equipe&&String(p.id)===String(mis?.id))||joueurs.filter(p=>p.side===equipe&&p.slot<8).sort((a,c)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(c.x-b.x,c.y-b.y))[0];
+   if(!pick)return null;st.joueur=String(pick.id);
+  }
+  vedette=st?.joueur??vedette;
  }
  // Consigne défensive de chaque équipe (plans.defence du fait clé), pour la ligne défensive.
  const r=rec(dernier)||rec(premier);

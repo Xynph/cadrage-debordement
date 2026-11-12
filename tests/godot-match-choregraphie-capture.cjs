@@ -16,9 +16,11 @@ if(!dossier){console.log('SKIP godot-match-choregraphie-capture : outil manuel (
 const godot=process.env.CD_GODOT_EXE;
 if(!godot||!fs.existsSync(godot)){console.error('CD_GODOT_EXE doit désigner l’exécutable Godot.');process.exit(2);}
 fs.mkdirSync(dossier,{recursive:true});
-const TITRES={essai_jeu_courant:'Essai',franchissement:'Franchissement plaqué',jeu_au_pied:'Jeu au pied et chasse'};
-const OUVERTURES={melee:'depuis la mêlée',touche:'depuis la touche',envoi:'depuis le coup d’envoi',jeu:'en jeu courant'};
-const toutes=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','match-choregraphe-tranche2.json'),'utf8'));
+const TITRES={essai_jeu_courant:'Essai',franchissement:'Franchissement plaqué',jeu_au_pied:'Jeu au pied et chasse',ballon_porte:'Ballon porté',
+ penalite_au_but:'Pénalité au but',penalite_en_touche:'Pénaltouche',penalite_a_la_main:'Pénalité jouée à la main',faute_de_main:'Faute de main',contestation_au_sol:'Contestation au sol'};
+const OUVERTURES={melee:'depuis la mêlée',touche:'depuis la touche',envoi:'depuis le coup d’envoi',jeu:'en jeu courant',penalite:'sur pénalité'};
+// Sources : jeux d'entrées des tranches 2 à 4 (CD_CHOREGRAPHIE_SOURCES choisit parmi eux, dans l'ordre donné).
+const toutes=['tranche2','tranche3','tranche4'].flatMap(n=>JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','match-choregraphe-'+n+'.json'),'utf8')));
 const voulues=(process.env.CD_CHOREGRAPHIE_SOURCES||'').split(';').map(s=>s.trim()).filter(Boolean);
 const vus=new Set(),cas=[];
 for(const f of toutes){

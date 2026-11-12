@@ -21,6 +21,12 @@ test('Vue 3D : suit les pistes du chorégraphe (joueurs, ballon, porteur) pour c
   const o=f.entree.ouverture,cle=f.entree.type+'|'+(f.entree.marqueur!=null)+'|'+(o.reussi??'');
   if(!vus.has(cle)){vus.add(cle);cas.push(f)}
  }
+ // Quatrième tranche : pénalité jouée à la main (par issue), faute de main, contestation au sol
+ // (ballon arraché, pénalité), carton, coup de pied qui rebondit.
+ for(const f of JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','match-choregraphe-tranche4.json'),'utf8'))){
+  const e=f.entree,der=(e.etapes||[]).at(-1)?.k,cle=e.type+'|'+der+'|'+((e.ouverture?.cartons||[]).length>0);
+  if(!vus.has(cle)){vus.add(cle);cas.push(f)}
+ }
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-choregraphie-godot-'));
  try{
   const fichier=path.join(dir,'pistes.json');

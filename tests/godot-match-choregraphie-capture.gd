@@ -43,7 +43,7 @@ func run() -> void:
 		var pistes: Dictionary = cas.pistes
 		view.apply_frame(start_frame(cas.entree))
 		var genre := str(pistes.get("type", ""))
-		cadrage.regler(true, "kick" if genre == "jeu_au_pied" or genre.begins_with("penalite") else "carry", genre == "franchissement")
+		cadrage.regler(true, "kick" if genre in ["jeu_au_pied", "penalite_au_but", "penalite_en_touche"] else "carry", genre == "franchissement")
 		cadrage.couper()
 		# Une seconde d'image posée avant la séquence (sans pistes : la vue s'installe).
 		for i in 2:

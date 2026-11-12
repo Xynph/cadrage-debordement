@@ -12,7 +12,10 @@
 //   sans essai, jeu au pied et chasse ;
 // - tests/fixtures/match-choregraphe-tranche3.json : troisième tranche, temps forts entiers du
 //   moteur natif : ballons portés depuis la touche (essai ou arrêt), pénalités tentées au but
-//   (réussies, manquées, après un carton) et pénalités jouées en touche.
+//   (réussies, manquées, après un carton) et pénalités jouées en touche ;
+// - tests/fixtures/match-choregraphe-tranche4.json : quatrième tranche, temps forts entiers du
+//   moteur natif : pénalités jouées vite à la main, fautes de main, contestation au sol, cartons,
+//   rebonds ; l'arbitre et la défense qui lit l'attaque sont contrôlés sur tous les jeux d'entrées.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -23,12 +26,14 @@ const C = require('../native/engine/match-choregraphe.cjs');
 const ENTREES = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-essais.json'), 'utf8'));
 const TRANCHE2 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche2.json'), 'utf8'));
 const TRANCHE3 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche3.json'), 'utf8'));
+const TRANCHE4 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche4.json'), 'utf8'));
 const ETATS_CHUTE = new Set(['plaquage', 'plaque', 'plaquage_rate', 'aplati', 'au_sol']);
 const SOL = new Set(['plaque', 'au_sol', 'aplati', 'se_relever']);
 const COMPOSES = ENTREES.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
 const COMPOSES2 = TRANCHE2.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
 const COMPOSES3 = TRANCHE3.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
-const TOUS = [...COMPOSES, ...COMPOSES2, ...COMPOSES3];
+const COMPOSES4 = TRANCHE4.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
+const TOUS = [...COMPOSES, ...COMPOSES2, ...COMPOSES3, ...COMPOSES4];
 
 const etatA = (j, t) => { let s = 'course'; for (const [u, x] of j.etats) if (u <= t + 1e-6) s = x; return s; };
 const enContact = (c, t, a, b) => c.contacts.some(([t0, t1, x, y]) => t >= t0 - 0.25 && t <= t1 + 0.25 && (x === a && y === b || x === b && y === a));
@@ -37,7 +42,8 @@ const indice = (c, t) => Math.round(t / c.pas);
 test('Neuf essais en jeu courant du moteur : une mise en scène de 12 à 25 s chacun', () => {
   assert.equal(ENTREES.length, 9);
   for (const { source, c } of COMPOSES) {
-    assert.ok(c.duree >= C.DUREE_MIN && c.duree <= C.DUREE_MAX, `${source} : durée ${c.duree}`);
+    // Au-delà de 25 s seulement en dernier recours (aucune mise en scène dans la cible), sous le plafond.
+    assert.ok(c.duree >= C.DUREE_MIN && (c.duree <= C.DUREE_MAX || c.duree <= c.dureeMax && c.dureeMax <= C.DUREE_PLAFOND), `${source} : durée ${c.duree}`);
     const n = Math.round(c.duree / c.pas) + 1;
     assert.equal(c.ballon.x.length, n, `${source} : un échantillon de ballon par pas`);
     for (const j of c.joueurs) for (const k of ['x', 'y', 'v', 'cap']) {
@@ -51,7 +57,7 @@ test('Neuf essais en jeu courant du moteur : une mise en scène de 12 à 25 s ch
 
 test('Temps forts entiers : chaque type mis en scène, de 12 s à la durée permise, chaque fait du moteur montré à son jalon', () => {
   const types = new Set(COMPOSES2.map(({ c }) => c.type)), ouvertures = new Set(COMPOSES2.map(({ c }) => c.ouverture));
-  for (const t of C.TYPES) assert.ok(types.has(t) || COMPOSES3.some(({ c }) => c.type === t), `type ${t} couvert par le jeu d’entrées`);
+  for (const t of C.TYPES) assert.ok(types.has(t) || [...COMPOSES3, ...COMPOSES4].some(({ c }) => c.type === t), `type ${t} couvert par le jeu d’entrées`);
   for (const o of ['jeu', 'melee', 'touche', 'envoi']) assert.ok(ouvertures.has(o), `ouverture ${o} couverte`);
   for (const { source, entree, c } of COMPOSES2) {
     assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax && c.dureeMax <= C.DUREE_PLAFOND, `${source} : durée ${c.duree} (plafond ${c.dureeMax})`);
@@ -111,7 +117,13 @@ test('Issue du moteur, temps forts entiers : porteurs, gains, plaquages, récept
       } else {
         const r = c.evenements.find(e => e.type === 'reception' && e.cible != null);
         assert.ok(r, `${source} : réception`);
-        assert.ok(Math.abs(r.x - r.cible) <= 2, `${source} : réception à ${r.x} pour une chute du moteur à ${r.cible}`);
+        // Ballon pris de volée près du point du moteur, ou (quatrième tranche) qui y touche le sol et rebondit
+        // avant d'être ramassé : premier rebond au point du moteur, ramassage à quelques mètres.
+        const rebond = c.evenements.find(e => e.type === 'rebond' && e.t <= r.t);
+        if (rebond) {
+          assert.ok(Math.abs(rebond.x - r.cible) <= 0.5, `${source} : premier rebond à ${rebond.x} pour une chute du moteur à ${r.cible}`);
+          assert.ok(Math.abs(r.x - r.cible) <= 12, `${source} : ramassé à ${r.x}, chute du moteur à ${r.cible}`);
+        } else assert.ok(Math.abs(r.x - r.cible) <= 2, `${source} : réception à ${r.x} pour une chute du moteur à ${r.cible}`);
         if (entree.ouverture.k === 'envoi') assert.equal(r.joueur, String(entree.ouverture.receveur), `${source} : receveur du moteur`);
       }
     }
@@ -154,7 +166,8 @@ test('Issue du moteur : le marqueur désigné aplatit au point d’essai, dans l
     // Aucun ballon perdu ni aplati par un autre : les seuls changements de porteur sont des passes,
     // un ramassage au ruck ou un ballon posé au sol par le plaqué.
     const types = new Set(c.evenements.map(e => e.type));
-    for (const t of types) assert.ok(['course', 'plaquage', 'ruck', 'ramassage', 'passe', 'reception', 'percee', 'plaquage_rate', 'aplati'].includes(t), t);
+    // (Quatrième tranche : lecture de la défense et arbitre, sans effet sur le ballon.)
+    for (const t of types) assert.ok(['course', 'plaquage', 'ruck', 'ramassage', 'passe', 'reception', 'percee', 'plaquage_rate', 'aplati', 'montee', 'couverture_pied', 'grattage'].includes(t), t);
     // Le plaquage du marqueur pendant sa percée est toujours raté.
     const percee = c.evenements.find(e => e.type === 'percee');
     assert.ok(percee, `${source} : percée`);
@@ -205,7 +218,9 @@ test('Lois du jeu mises en scène : passes en retrait, hors-jeu au ruck, plaqué
     const parSide = side => side === c.equipe ? c.sens : -c.sens;
     const parId = new Map(c.joueurs.map(j => [j.id, j]));
     const passes = c.evenements.filter(e => e.type === 'passe');
-    for (const p of passes) {
+    // Une passe en avant décidée par le moteur (faute de main) est montrée comme telle, puis sifflée.
+    for (const p of passes.filter(p => p.enAvant)) assert.ok(c.evenements.some(e => e.type === 'sifflet' && e.raison === 'passe_en_avant' && e.t > p.t), `${source} : passe en avant sifflée`);
+    for (const p of passes.filter(p => !p.enAvant)) {
       const r = c.evenements.find(e => e.type === 'reception' && e.joueur === p.vers && e.t >= p.t);
       assert.ok(r, `${source} : passe reçue`);
       const j = parId.get(p.vers), i = indice(c, r.t), sens = parSide(j.side);
@@ -411,7 +426,7 @@ test('Pénalités (loi 20) : botteur du moteur, ballon posé au point, adversair
     assert.ok(tir && tir.joueur === String(o.botteur), `${source} : frappe du botteur`);
     const i = Math.floor(tir.t / c.pas + 1e-6); // dernier échantillon avant la frappe
     // Loi 20 : adversaires à 10 m au moins du point, vers leur ligne, au moment de la frappe.
-    for (const j of c.joueurs.filter(j => j.side !== c.equipe)) assert.ok((j.x[i] - o.x) * dir(c.equipe) >= 9.5, `${source} : ${j.id} à ${((j.x[i] - o.x) * dir(c.equipe)).toFixed(1)} m du point à la frappe`);
+    for (const j of c.joueurs.filter(j => j.side !== c.equipe && etatA(j, tir.t) !== 'sortie')) assert.ok((j.x[i] - o.x) * dir(c.equipe) >= 9.5, `${source} : ${j.id} à ${((j.x[i] - o.x) * dir(c.equipe)).toFixed(1)} m du point à la frappe`);
     if (o.issue === 'but') {
       // Ballon posé au point de la faute (placement), frappé de là.
       assert.ok(ev('placement').length === 1 && ev('placement')[0].t < tir.t, `${source} : ballon posé`);
@@ -437,6 +452,204 @@ test('Pénalités (loi 20) : botteur du moteur, ballon posé au point, adversair
   assert.ok(buts >= 2 && manques >= 1 && touches >= 2, `pénalités : ${buts} réussies, ${manques} manquées, ${touches} en touche`);
 });
 
+// --- Quatrième tranche ---------------------------------------------------------------
+const ev = (c, type) => c.evenements.filter(e => e.type === type);
+const porteurA = (c, t) => { let id = null; for (const [u, x] of c.ballon.porteurs) if (u <= t + 1e-6) id = x; return id; };
+
+test('Quatrième tranche : chaque temps fort mis en scène dans la durée permise, chaque fait du moteur montré à son jalon', () => {
+  const types = new Set(COMPOSES4.map(({ c }) => c.type));
+  for (const t of ['penalite_a_la_main', 'faute_de_main', 'contestation_au_sol']) assert.ok(types.has(t), `type ${t} couvert`);
+  for (const { source, entree, c } of COMPOSES4) {
+    assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax, `${source} : durée ${c.duree} (plafond ${c.dureeMax})`);
+    assert.deepEqual(c.jalons.map(([, k]) => k), entree.jalonsAttendus, `${source} : un jalon par plan, dans l’ordre`);
+    for (let i = 1; i < c.jalons.length; i++) assert.ok(c.jalons[i][0] >= c.jalons[i - 1][0], `${source} : jalons croissants`);
+    assert.equal(c.arbitre.x.length, c.ballon.x.length, `${source} : piste de l’arbitre complète`);
+  }
+});
+
+test('Pénalité jouée vite à la main (loi 20) : coup de sifflet, le demi tape au point, défense mal replacée, suite du moteur', () => {
+  let n = 0, malReplacee = 0;
+  const issues = new Set();
+  for (const { source, entree, c } of COMPOSES4.filter(({ c }) => c.type === 'penalite_a_la_main')) {
+    n++;
+    const o = entree.ouverture, dir = c.sens;
+    assert.ok(ev(c, 'sifflet').some(e => e.raison === 'penalite' && e.t === 0), `${source} : coup de sifflet au départ`);
+    const tape = ev(c, 'tape')[0];
+    assert.ok(tape && tape.joueur === String(o.botteur), `${source} : le joueur du moteur tape la pénalité`);
+    assert.ok(Math.hypot(tape.x - o.x, tape.y - Math.max(5, Math.min(65, o.y))) < 0.01, `${source} : au point de la faute`);
+    const tapeur = c.joueurs.find(j => j.id === String(o.botteur)), i = indice(c, tape.t);
+    assert.ok(Math.hypot(tapeur.x[i] - o.x, tapeur.y[i] - Math.max(5, Math.min(65, o.y))) < 1.6, `${source} : tapeur au point`);
+    assert.equal(porteurA(c, tape.t), String(o.botteur), `${source} : il a le ballon en main`);
+    // Le jalon de la pénalité jouée tombe à la tape, jamais avant.
+    assert.ok(Math.abs(c.jalons.find(([, k]) => k === o.planTir)[0] - tape.t) < 0.11, `${source} : jalon à la tape`);
+    // Défense mal replacée : au moins un adversaire encore à moins de 10 m du point quand le ballon est joué.
+    if (c.joueurs.some(j => j.side !== c.equipe && (j.x[i] - o.x) * dir < 9.5)) malReplacee++;
+    // Personne ne s'avance vers le point avant la tape (les adversaires reculent ou restent).
+    for (const j of c.joueurs.filter(j => j.side !== c.equipe)) {
+      const a = indice(c, 0.6), b = Math.max(a, i - 1);
+      if ((j.x[a] - o.x) * dir < 10) assert.ok((j.x[b] - j.x[a]) * dir >= -0.3, `${source} : ${j.id} ne s’avance pas avant la tape`);
+    }
+    const der = entree.etapes.at(-1);
+    issues.add(der ? der.k : 'rien');
+    if (der?.k === 'essai') {
+      assert.equal(ev(c, 'aplati')[0]?.joueur, c.marqueur, `${source} : essai du marqueur du moteur`);
+    } else if (der?.k === 'recup') {
+      assert.equal(c.joueurs.find(j => j.id === c.ballon.porteurs.filter(([, id]) => id).at(-1)[1]).side, der.side, `${source} : ballon perdu`);
+    } else if (der?.k === 'faute') {
+      assert.ok(ev(c, 'en_avant').length || ev(c, 'passe').some(p => p.enAvant), `${source} : faute de main montrée`);
+    } else if (der?.k === 'porte' || der?.k === 'franchi') {
+      const p = ev(c, 'plaquage').at(-1);
+      assert.ok(p && p.porteur === String(der.joueur) && Math.abs(p.x - der.x) <= 6, `${source} : plaqué au gain du moteur`);
+    }
+  }
+  assert.ok(n >= 3, `pénalités jouées à la main : ${n}`);
+  assert.ok(malReplacee >= Math.ceil(n / 2), `défense mal replacée à la tape : ${malReplacee}/${n}`);
+  assert.ok(issues.size >= 2, `issues variées : ${[...issues]}`);
+});
+
+test('Faute de main (loi 11) : le joueur du moteur laisse échapper le ballon vers l’avant, il rebondit, l’arbitre siffle la mêlée', () => {
+  let n = 0;
+  for (const { source, entree, c } of COMPOSES4.filter(({ c, entree }) => c.type === 'faute_de_main' || c.type === 'penalite_a_la_main' && entree.etapes.at(-1)?.k === 'faute')) {
+    n++;
+    const f = entree.etapes.at(-1), en = ev(c, 'en_avant')[0], passe = ev(c, 'passe').find(p => p.enAvant);
+    assert.ok(en || passe, `${source} : en-avant ou passe en avant montré`);
+    const t0 = (en || passe).t, qui = en ? en.joueur : passe.de;
+    if (f.joueur) assert.equal(qui, String(f.joueur), `${source} : joueur du moteur`);
+    const dirT = c.sens;
+    if (en) {
+      // Le ballon part vers l'avant de l'équipe fautive, touche le sol et rebondit ; plus personne ne le tient.
+      const i = indice(c, t0), k = indice(c, t0 + 0.8);
+      assert.ok((c.ballon.x[k] - c.ballon.x[i]) * dirT > 0.8, `${source} : ballon vers l’avant (${c.ballon.x[i]} → ${c.ballon.x[k]})`);
+      assert.ok(ev(c, 'rebond').some(e => e.t >= t0 - 0.01), `${source} : rebond`);
+      assert.equal(porteurA(c, c.duree), null, `${source} : ballon laissé au sol`);
+    }
+    const s = ev(c, 'sifflet').find(e => ['en_avant', 'passe_en_avant'].includes(e.raison));
+    assert.ok(s && s.t > t0 && s.pour === 1 - c.equipe && s.signal === 'melee', `${source} : mêlée sifflée pour l’adversaire`);
+    assert.ok(Math.abs(c.jalons.find(([, k]) => k === f.plan)[0] - t0) < 0.11, `${source} : jalon à la faute`);
+  }
+  assert.ok(n >= 3, `fautes de main : ${n}`);
+});
+
+test('Contestation au sol : gratteur au-dessus du ballon, soutiens qui le nettoient, ballon arraché ou pénalité sifflée', () => {
+  let recup = 0, penal = 0, nettoyes = 0;
+  for (const { source, entree, c } of TOUS) {
+    const parId = new Map(c.joueurs.map(j => [j.id, j]));
+    for (const g of ev(c, 'grattage')) {
+      const ruck = ev(c, 'ruck').filter(r => r.t <= g.t).at(-1), gr = parId.get(g.joueur);
+      assert.ok(ruck, `${source} : grattage au ruck`);
+      const s = ev(c, 'sifflet').find(e => e.raison === 'faute_au_sol' && e.t >= g.t && !ev(c, 'grattage').some(h => h.t > g.t && h.t <= e.t));
+      if (s) {
+        // Faute au sol sifflée par le moteur : pour l'équipe qu'il désigne, le ballon reste au sol jusque-là.
+        const fin = entree.etapes.find(x => x.k === 'penal');
+        assert.ok(fin && s.pour === fin.side, `${source} : pénalité sifflée pour ${fin?.side}`);
+        assert.ok(Math.abs(c.jalons.find(([, k]) => k === fin.plan)[0] - s.t) < 0.11, `${source} : jalon au coup de sifflet`);
+        assert.ok(!ev(c, 'ramassage').some(e => e.t > g.t && e.t < s.t), `${source} : le ballon reste au sol jusqu’au coup de sifflet`);
+        assert.ok(s.t - g.t >= 1.4 || s.t - ruck.t > 4.9, `${source} : contestation avant le coup de sifflet`);
+        penal++;
+      } else {
+        // Ballon gratté (récupération du moteur) : le gratteur est de l'équipe qui gagne le ruck et l'arrache.
+        assert.ok(ruck.recupere && gr.side === ruck.gagnant, `${source} : gratteur de l’équipe qui récupère`);
+        const ram = ev(c, 'ramassage').find(e => e.t > g.t);
+        assert.ok(ram && ram.joueur === g.joueur, `${source} : le gratteur arrache le ballon`);
+        assert.ok(ram.t - g.t >= 1.2 || ram.t - ruck.t > 6, `${source} : contestation d’au moins 1,2 s (${(ram.t - g.t).toFixed(1)} s)`);
+        recup++;
+      }
+      if (c.joueurs.some(j => j.side !== gr.side && j.etats.some(([u, x]) => x === 'nettoyage' && u >= ruck.t))) nettoyes++;
+    }
+    // Chaque ballon récupéré au ruck est contesté par un gratteur.
+    for (const r of ev(c, 'ruck').filter(r => r.recupere)) assert.ok(ev(c, 'grattage').some(g => g.t >= r.t), `${source} : gratteur au ruck de ${r.t} s`);
+  }
+  assert.ok(recup >= 3 && penal >= 1, `contestations : ${recup} ballons arrachés, ${penal} pénalités`);
+  assert.ok(nettoyes >= Math.ceil((recup + penal) * 0.5), `soutiens qui nettoient : ${nettoyes}/${recup + penal}`);
+});
+
+test('Cartons : l’arbitre va au joueur du moteur, montre le carton, le joueur sort ; le jeu reprend après', () => {
+  let n = 0;
+  for (const { source, entree, c } of COMPOSES4.filter(({ entree }) => (entree.ouverture?.cartons || []).length)) {
+    n++;
+    const k = entree.ouverture.cartons[0], e = ev(c, 'carton')[0];
+    assert.ok(e && e.joueur === k.joueur && e.couleur === k.couleur, `${source} : carton du moteur`);
+    const i = indice(c, e.t), j = c.joueurs.find(q => q.id === k.joueur);
+    assert.ok(Math.hypot(c.arbitre.x[i] - j.x[i], c.arbitre.y[i] - j.y[i]) < 3.3, `${source} : l’arbitre est au joueur`);
+    assert.ok(c.arbitre.etats.some(([t, x]) => x === 'carton' && Math.abs(t - e.t) < 0.11), `${source} : carton levé`);
+    assert.ok(Math.abs(c.jalons.find(([, p]) => p === k.plan)[0] - e.t) < 0.11, `${source} : jalon du carton à cet instant`);
+    // Il sort par la touche la plus proche : il s'en rapproche jusqu'à la fin.
+    const s = j.etats.find(([, x]) => x === 'sortie');
+    assert.ok(s && s[0] > e.t, `${source} : le joueur quitte le terrain`);
+    const a = indice(c, s[0]), b = j.y.length - 1, bord = y => Math.min(Math.abs(y), Math.abs(70 - y));
+    assert.ok(bord(j.y[b]) < bord(j.y[a]) || j.y[b] < 0 || j.y[b] > 70, `${source} : vers la touche`);
+    const tir = ev(c, 'tir_au_but')[0] || ev(c, 'jeu_au_pied')[0] || ev(c, 'tape')[0];
+    if (tir) assert.ok(tir.t > e.t, `${source} : jeu repris après le carton`);
+  }
+  assert.ok(n >= 2, `cartons montrés : ${n}`);
+});
+
+test('Rebonds : coup de pied laissé au rebond ou en touche indirecte, ballon qui rebondit puis ramassé ou sorti', () => {
+  let n = 0, touches = 0;
+  for (const { source, entree, c } of TOUS.filter(({ c }) => ev(c, 'rebond').length)) {
+    for (const r of ev(c, 'rebond')) {
+      n++;
+      const i = indice(c, r.t) + 1, fin = Math.min(c.ballon.h.length - 1, indice(c, r.t + 1.6));
+      const h = c.ballon.h.slice(i, fin + 1);
+      assert.ok(Math.max(...h) > 0.3, `${source} : le ballon rebondit (${Math.max(...h)} m)`);
+      // Tant qu'il rebondit, personne ne le tient (puis un joueur le ramasse, ou il sort en touche).
+      assert.equal(porteurA(c, r.t + 0.15), null, `${source} : ballon libre au rebond`);
+    }
+    const pied = (entree.etapes || []).find(s => s.k === 'pied' && s.issue === 'touche' && ['indirect-touch', '50-22'].includes(s.cause));
+    if (pied) {
+      touches++;
+      const r = ev(c, 'rebond')[0], i = indice(c, r.t);
+      assert.ok(c.ballon.y[i] > 0 && c.ballon.y[i] < 70, `${source} : rebond dans le champ avant la touche`);
+      const n2 = c.ballon.x.length - 1;
+      assert.ok(Math.abs(c.ballon.x[n2] - pied.x) < 0.5 && (c.ballon.y[n2] < 0 || c.ballon.y[n2] > 70), `${source} : sorti au point du moteur`);
+    }
+  }
+  assert.ok(n >= 3, `rebonds : ${n}`);
+});
+
+test('Arbitre : il suit le jeu sans heurter personne, allure et accélération d’un homme, siffle ce que le moteur a sifflé', () => {
+  for (const { source, entree, c } of TOUS) {
+    const A = c.arbitre, P = c.pas, n = A.x.length;
+    for (let i = 1; i < n; i++) assert.ok(Math.hypot(A.x[i] - A.x[i - 1], A.y[i] - A.y[i - 1]) / P <= 7.2 + 0.06, `${source} : arbitre à ${(i * P).toFixed(1)} s`);
+    for (let i = 1; i < n - 1; i++) {
+      const ax = (A.x[i + 1] - 2 * A.x[i] + A.x[i - 1]) / (P * P), ay = (A.y[i + 1] - 2 * A.y[i] + A.y[i - 1]) / (P * P);
+      assert.ok(Math.hypot(ax, ay) <= 4.2 + 0.6, `${source} : arbitre accélère à ${Math.hypot(ax, ay).toFixed(2)} m/s²`);
+    }
+    for (let i = Math.round(1.5 / P); i < n; i++) for (const j of c.joueurs) {
+      const d = Math.hypot(A.x[i] - j.x[i], A.y[i] - j.y[i]);
+      assert.ok(d >= 0.5, `${source} : arbitre à ${d.toFixed(2)} m de ${j.id} à ${(i * P).toFixed(1)} s`);
+    }
+    if (entree.ouverture?.k === 'penalite') assert.ok(ev(c, 'sifflet').some(e => e.raison === 'penalite'), `${source} : coup de sifflet de la pénalité`);
+    // Aucun coup de sifflet sans fait du moteur : pénalité, faute de main, faute au sol.
+    for (const s of ev(c, 'sifflet')) assert.ok(s.raison === 'penalite' && entree.ouverture?.k === 'penalite' || ['en_avant', 'passe_en_avant'].includes(s.raison) && entree.etapes.some(x => x.k === 'faute') || s.raison === 'faute_au_sol' && entree.etapes.some(x => x.k === 'penal'), `${source} : coup de sifflet ${s.raison} sans fait du moteur`);
+  }
+});
+
+test('La défense lit l’attaque (quatrième tranche) : montée sur le receveur probable, couverture du jeu au pied', () => {
+  let montees = 0, gagne = 0, couvertures = 0, recul = 0;
+  for (const { source, c } of TOUS) {
+    const parId = new Map(c.joueurs.map(j => [j.id, j]));
+    for (const m of ev(c, 'montee')) {
+      const r = ev(c, 'reception').find(e => e.joueur === m.receveur && e.t >= m.t);
+      if (!r) continue;
+      montees++;
+      const d = parId.get(m.defenseur), q = parId.get(m.receveur), a = indice(c, m.t), b = indice(c, r.t);
+      const avant = Math.hypot(d.x[a] - q.x[a], d.y[a] - q.y[a]), apres = Math.hypot(d.x[b] - q.x[b], d.y[b] - q.y[b]);
+      if (apres < avant) gagne++;
+    }
+    for (const e of ev(c, 'couverture_pied')) {
+      const arr = c.joueurs.find(j => j.side !== parId.get(e.botteur).side && j.slot === 14);
+      if (!arr) continue;
+      couvertures++;
+      const a = indice(c, e.t), b = Math.min(arr.x.length - 1, indice(c, e.t + 1.5)), s = parId.get(e.botteur).side === c.equipe ? c.sens : -c.sens;
+      // L'arrière recule (s'éloigne du botteur vers son en-but) ou est déjà à 15 m au moins.
+      if ((arr.x[b] - arr.x[a]) * s >= -0.2 || Math.abs(arr.x[b] - parId.get(e.botteur).x[b]) >= 15) recul++;
+    }
+  }
+  assert.ok(montees >= 20 && gagne / montees >= 0.6, `montée sur le receveur : ${gagne}/${montees} défenseurs plus près à la réception`);
+  assert.ok(couvertures >= 10 && recul / couvertures >= 0.7, `couverture du pied : ${recul}/${couvertures}`);
+});
+
 test('Entrées invalides refusées ; essai sur ballon porté ou mêlée non mis en scène', () => {
   const { entree } = COMPOSES[0];
   assert.throws(() => C.composer({ ...entree, type: 'melee' }), /type non pris en charge/);
@@ -457,7 +670,7 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
   const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
   const jouer = drapeau => {
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-choregraphe-'));
-    const bridge = createBridge({ dataDir, seed: 7, now: 1700000000000, matchHighlights: 'dynamique', matchChoreography: drapeau });
+    const bridge = createBridge({ dataDir, seed: 3, now: 1700000000000, matchHighlights: 'dynamique', matchChoreography: drapeau });
     let id = 0;
     const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, r.error); return r.model; };
     try {
@@ -501,6 +714,6 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
     // Profils lus dans le moteur : un ailier n'a pas l'allure d'un pilier.
     assert.ok(new Set(c.joueurs.map(j => j.vmax)).size > 5, 'profils individuels');
   }
-  assert.ok(essais >= 2, 'graine 7 : au moins deux essais en jeu courant');
+  assert.ok(essais >= 2, 'graine 3 : au moins deux essais en jeu courant');
   assert.ok(autres >= essais, 'temps forts mis en scène : ' + autres);
 });

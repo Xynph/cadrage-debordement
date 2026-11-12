@@ -168,6 +168,9 @@ func lire(view, cas: Dictionary) -> void:
 	for id: String in view._actors:
 		avant[id] = view._actors[id].node.position
 	var ballon_avant: Vector3 = view._ball.global_position
+	var arbitre_ecart := 0.0
+	var arbitre_vu := false
+	var carton_vu := false
 	var t := 0.0
 	var images := 0
 	var raccord := 0.05 if coupe else 0.7
@@ -189,6 +192,15 @@ func lire(view, cas: Dictionary) -> void:
 			if view._actors[id].running:
 				course_vue = true
 			etats_vus[view._choregraphie.etat(id)] = true
+		# Arbitre (quatrième tranche) : à sa place des pistes, carton levé quand les pistes le disent.
+		if pistes.has("arbitre"):
+			var pa: Variant = view._choregraphie.arbitre_position()
+			if pa != null:
+				arbitre_vu = true
+				var ia := clampi(int(round(t / float(pistes.pas))), 0, pistes.arbitre.x.size() - 1)
+				arbitre_ecart = maxf(arbitre_ecart, Vector2((pa as Vector3).x - (float(pistes.arbitre.x[ia]) - 50.0), (pa as Vector3).z - (float(pistes.arbitre.y[ia]) - 35.0)).length())
+			if view._choregraphie.arbitre_carton_visible():
+				carton_vu = true
 		var porteur: String = view._choregraphie.porteur()
 		if not porteur.is_empty():
 			porteurs_vus[porteur] = true
@@ -231,11 +243,25 @@ func lire(view, cas: Dictionary) -> void:
 		check(etats_vus.has("jeu_au_pied"), "%s : coup de pied montré" % nom)
 	if str(pistes.type) == "ballon_porte":
 		check(etats_vus.has("maul") and etats_vus.has("saut"), "%s : sauteur levé puis avants liés du ballon porté montrés" % nom)
-	if str(pistes.type).begins_with("penalite"):
+	if str(pistes.type) in ["penalite_au_but", "penalite_en_touche"]:
 		check(etats_vus.has("jeu_au_pied"), "%s : frappe du botteur montrée" % nom)
+	if str(pistes.type) == "penalite_a_la_main":
+		check(etats_vus.has("tape"), "%s : pénalité tapée du pied montrée" % nom)
+	if str(pistes.type) == "faute_de_main":
+		check(etats_vus.has("en_avant") or etats_vus.has("passe"), "%s : faute de main montrée" % nom)
+	if str(pistes.type) == "contestation_au_sol":
+		check(etats_vus.has("grattage"), "%s : gratteur au-dessus du ballon montré" % nom)
+	if pistes.has("arbitre"):
+		check(arbitre_vu, "%s : arbitre à l'écran" % nom)
+		check(arbitre_ecart < 1.0, "%s : l'arbitre suit sa piste (écart %.2f m)" % [nom, arbitre_ecart])
+		var carton_attendu := false
+		for e: Variant in pistes.evenements:
+			if e is Dictionary and str(e.get("type", "")) == "carton":
+				carton_attendu = true
+		check(carton_vu == carton_attendu, "%s : carton levé à l'écran quand l'arbitre le montre (%s)" % [nom, str(carton_vu)])
 	if str(pistes.type) == "penalite_au_but":
 		check(etats_vus.has("placement"), "%s : ballon posé montré" % nom)
-	results[nom] = {"duree": duree, "images": images, "ecart_max": snappedf(ecart_max, 0.01), "allure_max": snappedf(allure_max, 0.1),
+	results[nom] = {"duree": duree, "images": images, "ecart_max": snappedf(ecart_max, 0.01), "allure_max": snappedf(allure_max, 0.1), "arbitre": snappedf(arbitre_ecart, 0.01),
 		"ballon_max": snappedf(ballon_max, 0.1), "mains_max": snappedf(mains_max, 0.001), "porteurs": porteurs_vus.size()}
 
 
