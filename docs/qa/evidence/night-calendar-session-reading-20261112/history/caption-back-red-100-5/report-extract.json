@@ -1,0 +1,20 @@
+{
+  "checks": 100,
+  "failures": [
+    "Origine : vraie vue tableau du Calendrier",
+    "Back restaure la vraie vue tableau",
+    "Back clavier restitue date, mois, vue, filtre, scrolls et focus exacts",
+    "Libellé optionnel vide ou blanc : texte et nom accessible utiles",
+    "Libellé optionnel vide ou blanc : texte et nom accessible utiles"
+  ],
+  "product_sha": "f571a1618ee5b94f74a326412f3fad6d0db5869b",
+  "test_sha": "f571a1618ee5b94f74a326412f3fad6d0db5869b",
+  "display": "headless",
+  "speech": {
+    "id": 0,
+    "requested": 0,
+    "started": 0
+  },
+  "raw_report_sha256": "a1013e408859a6e5caea9e68652243b7096bbfdad50939d1bf3eb4d91145c736",
+  "extract_kind": "Top-level whitelist; no history snapshots."
+}

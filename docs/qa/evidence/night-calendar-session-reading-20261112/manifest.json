@@ -1,0 +1,212 @@
+{
+  "format": 1,
+  "product_sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+  "test_sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+  "documentation_base": "3fc1548334984458714245d823aa0875482d0a6e",
+  "checks": 132,
+  "failures": [],
+  "wrapper_exit_code": 0,
+  "subtest_ms": "50309.563883",
+  "tap_total_ms": "50359.099146",
+  "input_scope": "SDK viewport key/mouse injection while rendered on X11; not native OS XTest.",
+  "resolutions_checked": [
+    [
+      1280,
+      720
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "capture_count": 1,
+  "session_id": "weekly:1:0:league:0:13:2026-09-08:team:1",
+  "selected_date": "2026-09-08",
+  "today": "2026-09-07",
+  "speech": {
+    "id": 0,
+    "requested": 0,
+    "started": 0
+  },
+  "sporting_invariants_evidence": "Assertions in exact test passed: whole model, saved bytes, bridge_next_id, last_command, waiting and timer. Before/after state hashes are not serialized and none are invented.",
+  "files": [
+    {
+      "path": "qualified/run.log",
+      "source_path": "/workspace/work/night-followup-receipts/session-green-round1.log",
+      "bytes": 1295,
+      "sha256": "44a005e699ff4273a5ab48d25401153dca46f2e34f4dfe2b5a13138e396b3d19"
+    },
+    {
+      "path": "qualified/engine.log",
+      "source_path": "/tmp/cd-session-links-5H7hqh/engine.log",
+      "bytes": 760,
+      "sha256": "4e09604adcfc9a0c2262add59ceeaa13c0fe2319197cb694d1dd9f48150ce9ef"
+    },
+    {
+      "path": "qualified/provenance.json",
+      "source_path": "/tmp/cd-session-links-5H7hqh/provenance.json",
+      "bytes": 241,
+      "sha256": "a32a2ca4fd4235bd645beb61e2c3ba66bd2bb332f24416f2804438e755077dcb"
+    },
+    {
+      "path": "images/session-1440.png",
+      "source_path": "/tmp/cd-session-links-5H7hqh/session-1440.png",
+      "bytes": 508612,
+      "sha256": "f3ec95da2349036ef880f70509ab9ecea8a8f55fe827147b30cc9efe78d57347"
+    },
+    {
+      "path": "regressions/results.json",
+      "source_path": "/workspace/work/night-followup-receipts/session-regressions/results.json",
+      "bytes": 420,
+      "sha256": "b96b954ab2a997ae6b0fd04ef25500f385de9b2d104cc8c339029a3384c87031"
+    }
+  ],
+  "history": [
+    {
+      "label": "expected-red-42-3",
+      "qualified": false,
+      "excerpt": {
+        "path": "history/expected-red-42-3/excerpt.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-red-round1.log",
+        "raw_log_bytes": 1736,
+        "raw_log_sha256": "7aa70fef22ec1c01b29995c8c95cd1e22529b0b560d13a5c885205ec870c2e80",
+        "excerpt_sha256": "e071ec7b4a7084f3bb6075ae47671f93997655487a9d51e6c6e356b75e977590",
+        "original_line_numbers": true
+      },
+      "checks": 42,
+      "failures": [
+        "ID réel résolvable indépendamment de la garde obligatoire",
+        "Adaptateur session accepte l’ID réel après préparation",
+        "Adaptateur session manquant : le vrai ID doit sélectionner 2026-09-08"
+      ],
+      "product_sha": "c517b0643adf4ce8368caa76fce77608dd94dc77",
+      "test_sha": "11534446b659551b5b099b067b79937048361b34",
+      "report_extract": {
+        "path": "history/expected-red-42-3/report-extract.json",
+        "sha256": "3ca916ab1353fd94ab9cadd5faeedab04b7a099c4ab3e30dae28801cf48e6c43"
+      }
+    },
+    {
+      "label": "first-green-named-timeout",
+      "qualified": false,
+      "excerpt": {
+        "path": "history/first-green-named-timeout/excerpt.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-green-first.log",
+        "raw_log_bytes": 3180,
+        "raw_log_sha256": "aa20bec3f96d2781f8269da83315697e8f1c5402605d1b0c372e74cce979f6de",
+        "excerpt_sha256": "cb5a56fe519b067e83e9b91c2b5b0db474d05ab1e649fd18109a7e3577f168ee",
+        "original_line_numbers": true
+      },
+      "final_report": null,
+      "failure": "Script property errors and child timeout90000ms. No completed check count invented.",
+      "provenance": {
+        "path": "history/first-green-named-timeout/provenance.json",
+        "source_path": "/tmp/cd-session-links-XQ6mOf/provenance.json",
+        "bytes": 241,
+        "sha256": "40a878944c05b379bd463cb3d4cd4b778f4d77c644cc57c0d1752f6659868dc1"
+      }
+    },
+    {
+      "label": "caption-back-red-100-5",
+      "qualified": false,
+      "excerpt": {
+        "path": "history/caption-back-red-100-5/excerpt.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-caption-red.log",
+        "raw_log_bytes": 2928,
+        "raw_log_sha256": "c426317cc7e2feae4b680cc078f6835f1c7aed796efc436c1d0dae561a66e9a2",
+        "excerpt_sha256": "58f8db6a2a392603bfb4c83572b3f0e603864d89476250c2580da5d9024d5718",
+        "original_line_numbers": true
+      },
+      "checks": 100,
+      "failures": [
+        "Origine : vraie vue tableau du Calendrier",
+        "Back restaure la vraie vue tableau",
+        "Back clavier restitue date, mois, vue, filtre, scrolls et focus exacts",
+        "Libellé optionnel vide ou blanc : texte et nom accessible utiles",
+        "Libellé optionnel vide ou blanc : texte et nom accessible utiles"
+      ],
+      "product_sha": "f571a1618ee5b94f74a326412f3fad6d0db5869b",
+      "test_sha": "f571a1618ee5b94f74a326412f3fad6d0db5869b",
+      "report_extract": {
+        "path": "history/caption-back-red-100-5/report-extract.json",
+        "sha256": "d03e6450a4c439d4ff2609258b2185406d20a3598b4d3d2fe514e2ddf509433b"
+      }
+    }
+  ],
+  "regressions": [
+    {
+      "suite": "calendar-agenda",
+      "sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+      "exit_code": 0,
+      "elapsed_ms": 16072,
+      "checks": 61,
+      "subtest_ms": "15932.709926",
+      "tap_total_ms": "16010.449385",
+      "log": {
+        "path": "regressions/calendar-agenda.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-regressions/calendar-agenda.log",
+        "bytes": 546,
+        "sha256": "5092813d13c0e1faea7442b4e0cd0307babd3c929065b00fb5ea9dedc741cf7a"
+      }
+    },
+    {
+      "suite": "entity-navigation",
+      "sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+      "exit_code": 0,
+      "elapsed_ms": 16751,
+      "checks": 51,
+      "subtest_ms": "16662.826437",
+      "tap_total_ms": "16711.988085",
+      "log": {
+        "path": "regressions/entity-navigation.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-regressions/entity-navigation.log",
+        "bytes": 587,
+        "sha256": "02f6c91e361395c47f2a7c9e89c4862a2e958cb1dcc0cf25cc342a101484f0aa"
+      }
+    },
+    {
+      "suite": "navigation",
+      "sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+      "exit_code": 0,
+      "elapsed_ms": 49140,
+      "checks": 156,
+      "subtest_ms": "49050.275679",
+      "tap_total_ms": "49101.223488",
+      "log": {
+        "path": "regressions/navigation.log",
+        "source_path": "/workspace/work/night-followup-receipts/session-regressions/navigation.log",
+        "bytes": 574,
+        "sha256": "b002c3df7aa6c17344ec53b28d0301e51f2e15dd79a218f07f64ffacf7f82e81"
+      }
+    }
+  ],
+  "image": {
+    "path": "images/session-1440.png",
+    "sha256": "f3ec95da2349036ef880f70509ab9ecea8a8f55fe827147b30cc9efe78d57347",
+    "bytes": 508612,
+    "width": 2560,
+    "height": 1440,
+    "edited": false,
+    "classification": "Real published session/date selection; captured before synthetic projection cases and before keyboard/mouse matches-filter diagnostics."
+  },
+  "source_files_sha256": {
+    "tests/godot-calendar-session-links.cjs": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307",
+    "tests/godot-calendar-session-links.gd": "3fc6ae055bee08c10cf69d61298436c4c05a148b8651e32aba054cce14e51540",
+    "native/godot/ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "native/godot/ui/immersive08/calendar_agenda.gd": "a57aadbef62944faeffedf37b2dd84ab7c7b894a9c0e77ada9b328f1a8cc15d6",
+    "native/godot/ui/immersive08/month_calendar.gd": "aee1e07373b86ef85850b15a60e76b3e35014c5b8a36d51c1928bf22298d7e87"
+  },
+  "report_extract": {
+    "path": "report-extract.json",
+    "sha256": "c7dc0823ef174cfdf156f2eff20bdff71593f501c3cdf5804781a5c0147ba921",
+    "bytes": 10410,
+    "raw_report_source": "/tmp/cd-session-links-5H7hqh/report.json",
+    "raw_report_sha256": "d6a26802d00346dcaebd5abf85725ca809e2b2e74ab254cc7e383290cd680c47",
+    "raw_report_bytes": 214685,
+    "derivation": "Whitelisted top-level result, session ID and small observed reading diagnostics. Full navigation history and repeated management_ui omitted."
+  }
+}

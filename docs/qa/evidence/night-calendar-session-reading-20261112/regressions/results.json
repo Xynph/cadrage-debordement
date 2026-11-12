@@ -1,0 +1,20 @@
+[
+  {
+    "suite": "calendar-agenda",
+    "sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+    "exit_code": 0,
+    "elapsed_ms": 16072
+  },
+  {
+    "suite": "entity-navigation",
+    "sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+    "exit_code": 0,
+    "elapsed_ms": 16751
+  },
+  {
+    "suite": "navigation",
+    "sha": "aa8caaf523f96f4da0ac389c20f99ceb17037b6f",
+    "exit_code": 0,
+    "elapsed_ms": 49140
+  }
+]
