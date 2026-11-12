@@ -20,7 +20,7 @@ Mesure : `node tools/qa/match-importance-mesure.cjs 200`. Code : `native/engine/
 | Un essai n'est annoncé que s'il est vu | Filet : un essai (ou un rouge) que l'importance n'a pas fait monter est montré depuis le début de son action (`rattrapage`). Tous les essais sont montrés. |
 | On coupe le trajet, pas la phase | Le temps fort s'ouvre sur la touche ou la mêlée déjà formée, le ballon récupéré, le coup de sifflet d'un tir au but ; le coup de pied de pénaltouche n'est pas montré. |
 | Temps forts jusqu'à 50 s | `DUREE_MAX = 50` s d'action, suites comprises (sauf pour ne pas couper un essai). |
-| Le chrono défile entre deux temps forts | L'entracte reste d'au moins 8 s réelles (inchangé) : c'est le temps de réglage du manager. |
+| Le chrono défile entre deux temps forts ; pas de pause minimale (décision de Léo : « que le match défile en 2D et qu'on choisisse cette vitesse ») | Plus de pause minimale de 8 s, aucune retenue, plus de « Passer » : le match défile en 2D à l'horloge choisie, le temps fort part dès que le moteur le déclenche, même juste après le précédent. Le manager règle en pause ou en ouvrant Tactique / Banc (pause posée). |
 | Des temps forts aléatoires (retour de Léo sur la note : « parfois 2 à la suite, parfois très peu ») | Ni période de calme après un temps fort, ni régulateur de rythme : les temps forts suivent le match (dispersion mesurée au § 7). |
 
 ## 2. Signaux de l'importance (0 à 100)
@@ -72,13 +72,12 @@ fait, minute, bonus, phase finale.
 - L'entracte 2D déroule tout le jeu terminé sans avoir monté ; il s'arrête au début de l'action
   en cours (même règle `debutAction`). Il ne montre jamais le début d'un temps fort à venir
   (test sur toutes les rafales de trois matchs, trois niveaux).
-- Quand le moteur déclenche : si l'entracte minimal (8 s) n'est pas écoulé, le temps fort
-  attend (**courte retenue**, déjà en place : le moteur ne simule plus, l'action reste figée à
-  son début, rien n'est révélé). Puis, si le terrain 2D n'a pas fini de dérouler ce qui précède
-  la borne, la 3D attend encore au plus `BASCULE` = 3 s : la 3D reprend là où la 2D s'arrête.
-- Pourquoi pas « attendre la séquence suivante » : ce serait jeter une action jugée importante
-  (et c'est impossible pour un essai). Deux temps forts à la suite sont donc séparés par
-  l'entracte de 8 s, ou s'enchaînent sans entracte quand c'est la même séquence (suite).
+- Quand le moteur déclenche, la 3D part aussitôt au début de l'action (décision de Léo, 12
+  novembre 2026, après la note de 16 h) : plus de pause minimale de 8 s, plus de retenue, plus de
+  « Passer ». Deux temps forts peuvent s'enchaîner directement si l'action suivante est chaude ;
+  s'il ne se passe rien, le match défile en 2D à la vitesse de l'horloge choisie (Paramètres).
+- Une suite de la même séquence part sans transition ; une causerie (mi-temps, débrief) attend
+  la fin du temps fort, comme avant.
 
 ## 6. Exemples
 
@@ -93,16 +92,23 @@ fait, minute, bonus, phase finale.
 
 Corpus : 200 journaux du harnais (`tests/harness.cjs`, graine `k × 7919`, club `k mod 10`,
 k = 0 à 199), mêmes journaux avant et après. « Avant » : `en_direct` précédent (option
-`retrospectif`). Entracte : max(8 s, minutes sautées × 1,5 s) en horloge normale.
+`retrospectif`).
 
-| Niveau | | Temps forts / match | Avec point | Sans point | Quarts 0-20 / 20-40 / 40-60 / 60-80 | Action / match | Entracte moyen | Retenus par l'entracte | Essais montrés |
+Entracte : minutes de jeu sautées × 1,5 s (horloge normale), sans minimum ; « enchaînés » : le
+temps fort part à la minute qui suit le précédent, sans minute en 2D.
+
+| Niveau | | Temps forts / match | Avec point | Sans point | Quarts 0-20 / 20-40 / 40-60 / 60-80 | Action / match | Entracte moyen (médiane ; p90) | Enchaînés | Essais montrés |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Clés | avant | 13,5 | 47,2 % | 52,8 % | 28 / 22 / 21 / 29 % | 131 s | 11,2 s | 65,5 % | 856 / 856 |
-| Clés | après | 13,6 | 44,6 % | 55,4 % | 26 / 23 / 24 / 27 % | 134 s | 10,7 s | 69,2 % | 856 / 856 |
-| Dynamique | avant | 17,5 | 33,7 % | 66,3 % | 29 / 23 / 22 / 27 % | 180 s | 9,5 s | 78,2 % | 856 / 856 |
-| Dynamique | après | 15,5 | 38,3 % | 61,7 % | 28 / 23 / 23 / 26 % | 156 s | 10,0 s | 72,8 % | 856 / 856 |
-| Étendus | avant | 22,0 | 26,0 % | 74,0 % | 24 / 23 / 25 / 28 % | 216 s | 8,7 s | 86,1 % | 856 / 856 |
-| Étendus | après | 21,5 | 26,2 % | 73,8 % | 27 / 24 / 24 / 25 % | 205 s | 8,7 s | 86,6 % | 856 / 856 |
+| Clés | avant | 13,5 | 47,2 % | 52,8 % | 28 / 22 / 21 / 29 % | 131 s | 8,0 s (4,5 ; 19,5) | 11,9 % | 856 / 856 |
+| Clés | après | 13,6 | 44,6 % | 55,4 % | 26 / 23 / 24 / 27 % | 134 s | 7,2 s (4,5 ; 18) | 12,8 % | 856 / 856 |
+| Dynamique | avant | 17,5 | 33,7 % | 66,3 % | 29 / 23 / 22 / 27 % | 180 s | 5,4 s (3 ; 13,5) | 18,5 % | 856 / 856 |
+| Dynamique | après | 15,5 | 38,3 % | 61,7 % | 28 / 23 / 23 / 26 % | 156 s | 6,3 s (4,5 ; 15) | 14,5 % | 856 / 856 |
+| Étendus | avant | 22,0 | 26,0 % | 74,0 % | 24 / 23 / 25 / 28 % | 216 s | 4,0 s (3 ; 10,5) | 22,8 % | 856 / 856 |
+| Étendus | après | 21,5 | 26,2 % | 73,8 % | 27 / 24 / 24 / 25 % | 205 s | 3,9 s (3 ; 9) | 19,9 % | 856 / 856 |
+
+À l'horloge normale (1,5 s par minute), la 2D dure en moyenne 6 s entre deux temps forts en
+dynamique ; l'horloge « lente » (3 s par minute) la double. C'est désormais ce réglage, et la
+pause, qui donnent au manager le temps d'ajuster.
 
 **Dispersion** (demande de Léo : des temps forts aléatoires). Écart : minutes de jeu entre la
 fin d'un temps fort et le début du suivant, dans la même période ; « consécutifs » : écart

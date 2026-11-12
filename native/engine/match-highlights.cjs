@@ -525,9 +525,9 @@ const IMPORTANCE=Object.freeze({
 const DUREE_MAX=50;
 // Ni période de calme après un temps fort, ni régulateur de rythme (retour de Léo, 12 novembre
 // 2026 : « faut que ce soit aléatoire les temps forts, parfois 2 à la suite, parfois très peu ») :
-// les temps forts suivent le match. Deux à la suite si le jeu le justifie (l'entracte de 8 s
-// les sépare, ou la suite directe si c'est la même séquence), de longues périodes sans rien
-// quand le match est fermé. Le temps de réglage du manager vient de l'entracte minimal.
+// les temps forts suivent le match. Deux à la suite si le jeu le justifie (la vue n'impose plus de
+// pause entre eux), de longues périodes sans rien quand le match est fermé. Le manager règle
+// en pause, à l'horloge de son choix.
 // Régulateur d'issue (dynamique), aveugle à l'issue de l'action en cours : il ne lit que les
 // temps forts déjà montrés. Plus de la moitié ont marqué : le seuil baisse (on montre plus de
 // danger sans point) ; moins de 30 % : il remonte.
