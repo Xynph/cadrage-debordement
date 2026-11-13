@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Suivi du centre dans une vraie carrière : projection native (niveau exact, potentiel en
 // fourchette), alertes après les journées, sauvegarde, réouverture et import refusé si altéré.
 const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
@@ -38,7 +37,7 @@ test('Suivi du centre · carrière', t => {
     return go('finish_round');
   };
 
-  let model = go('new_career', { mode: 'common', club: 29 });
+  let model = go('new_career', { mode: 'world-champ', club: 29 });
   let view = model.clubLife.academyFollowUp;
   assert.equal(view.available, true);
   assert.ok(view.crabos.count > 0 && view.espoirs.count > 0);

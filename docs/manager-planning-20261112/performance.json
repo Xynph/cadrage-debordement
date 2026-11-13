@@ -1,0 +1,60 @@
+[
+  {
+    "cacheProjections": false,
+    "runs": [
+      {
+        "computeMs": 428,
+        "fullBytes": 5515185,
+        "wireBytes": 5515248,
+        "totalMs": 586
+      },
+      {
+        "computeMs": 512,
+        "fullBytes": 5515185,
+        "wireBytes": 115,
+        "totalMs": 609
+      },
+      {
+        "computeMs": 549,
+        "fullBytes": 5515185,
+        "wireBytes": 115,
+        "totalMs": 652
+      },
+      {
+        "computeMs": 519,
+        "fullBytes": 5515185,
+        "wireBytes": 115,
+        "totalMs": 652
+      }
+    ]
+  },
+  {
+    "cacheProjections": true,
+    "runs": [
+      {
+        "computeMs": 519,
+        "fullBytes": 5515185,
+        "wireBytes": 5515248,
+        "totalMs": 745
+      },
+      {
+        "computeMs": 271,
+        "fullBytes": 5515185,
+        "wireBytes": 115,
+        "totalMs": 362
+      },
+      {
+        "computeMs": 228,
+        "fullBytes": 5515185,
+        "wireBytes": 115,
+        "totalMs": 302
+      },
+      {
+        "computeMs": 234,
+        "fullBytes": 5515185,
+        "wireBytes": 115,
+        "totalMs": 337
+      }
+    ]
+  }
+]
