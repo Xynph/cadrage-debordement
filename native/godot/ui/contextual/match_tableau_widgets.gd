@@ -52,7 +52,7 @@ class Jauge extends Control:
 
 ## Note du match dans une pastille teintée (fond à 25 %, chiffre plein).
 class Note extends Control:
-	var valeur := 6.0
+	var valeur := 6.5
 	var densite := 0.5
 
 	func _init() -> void:
@@ -80,7 +80,7 @@ static func donnees_joueur(joueur: Variant, notes: Dictionary, cartons: Dictiona
 		"poste": str(joueur.get("pos", "")),
 		"blesse": int(joueur.get("injury", 0)) > 0,
 		"energie": float(joueur.get("condition", 100)),
-		"note": float(note.get("note", 6.0)),
+		"note": float(note.get("note", 6.5)),
 		"faits": int(note.get("faits", 0)),
 		"essais": int(note.get("essais", 0)),
 		"metres": roundi(float(note.get("metres", 0))),
