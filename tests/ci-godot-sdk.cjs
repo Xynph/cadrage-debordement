@@ -4,8 +4,8 @@ const fs = require('node:fs'), vm = require('node:vm');
 const path = require('node:path'), assert = require('node:assert/strict');
 const source = fs.readFileSync(path.join(__dirname, '../ci/run-godot-sdk.cjs'), 'utf8');
 function run({missing = false, version = '4.7.2.stable.official.ed1daf0bf',
-  output = 'PASS fixture\n', status = 0, error = null, variants, scope = 'full'} = {}) {
-  const config = {version: '4.7.2-stable', suites: ['tests/probe.cjs']};
+  output = 'PASS fixture\n', status = 0, error = null, variants, scope = 'full', suites = ['tests/probe.cjs']} = {}) {
+  const config = {version: '4.7.2-stable', suites};
   if (variants) config.suiteCases = {'tests/probe.cjs': variants};
   let calls = 0, thrown = null;
   const processStub = {env: missing ? {} : {CD_GODOT_EXECUTABLE: '/qa/godot', CD_GODOT_SDK_SCOPE: scope},
@@ -16,6 +16,7 @@ function run({missing = false, version = '4.7.2.stable.official.ed1daf0bf',
       console: {log() {}}, require(id) {
         if (id === 'node:fs') return {statSync: () => ({isFile: () => true}), existsSync: () => true};
         if (id === 'node:path') return path;
+        if (id === './legacy-modes.cjs') return require('../ci/legacy-modes.cjs');
         if (id === './godot-sdk.json') return config;
         if (id === './godot-sdk-followup.json') return {suites: ['tests/new-a.cjs', 'tests/new-b.cjs'], suiteCases: {}, suiteEnvironment: {}};
         if (id === 'node:child_process') return {spawnSync(_executable, args) {
@@ -44,5 +45,9 @@ assert.deepEqual(run({variants: [
   {id: 'dock', env: {CD_GUIDE_LAYOUT_CASE: 'dock'}},
 ]}), {failed: false, calls: 2}, 'Every explicit case must be executed');
 assert.deepEqual(run({scope: 'followup'}), {failed: false, calls: 2}, 'Followup executes its manifest without default suites');
-console.log(JSON.stringify({controllerUnit: true, cases: rejected.length + 3,
+// Mode Monde uniquement : une recette qui porte le drapeau des anciens modes n'est jamais lancée, et le lanceur
+// ne l'exporte pas par défaut.
+assert.deepEqual(run({suites: ['tests/godot-engine.cjs', 'tests/probe.cjs']}), {failed: false, calls: 1}, 'Legacy-mode suite is excluded');
+assert.ok(!new RegExp('CD_MODES_' + 'HERITES\\s*:').test(source), 'No default legacy-modes flag for the suites');
+console.log(JSON.stringify({controllerUnit: true, cases: rejected.length + 4,
   passed: true, realGodotExecuted: false}));

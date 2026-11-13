@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {spawnSync}=require('node:child_process'),{test}=require('node:test'),assert=require('node:assert/strict');
 for(const scenario of process.env.CD_GUIDE_LAYOUT_CASE?[process.env.CD_GUIDE_LAYOUT_CASE]:['layout','dock'])
