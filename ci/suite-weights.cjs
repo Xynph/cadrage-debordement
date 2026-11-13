@@ -11,6 +11,7 @@
 // Le dossier contient les journaux bruts des jobs (gh api .../actions/jobs/<id>/logs),
 // nommés job-<run>-<job>.log. Le fichier JSON est réécrit en place, section par section.
 const fs = require('node:fs');
+const { legacySuites } = require('./legacy-modes.cjs');
 const path = require('node:path');
 
 const FILE = path.join(__dirname, 'suite-weights.json');
@@ -41,8 +42,8 @@ function parseLogs(dir, pattern = PROFILE) {
   return { samples, runs: [...runs].sort() };
 }
 // Seules les suites présentes dans tests/ sont gardées (des runs de PR peuvent en mesurer
-// d'autres, pas encore fusionnées).
-function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f))) {
+// d'autres, pas encore fusionnées), hors suites à ancien mode de carrière (exclues de la CI).
+function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f)) {
   const weights = {};
   for (const file of Object.keys(samples).sort().filter(exists)) {
     const value = Math.max(1, Math.round(median(Object.values(samples[file])) * (1 + MARGIN)));
@@ -52,7 +53,7 @@ function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '
 }
 // Mémoire de pointe en Mo : maximum observé (et non médiane) × (1 + marge), arrondi au
 // multiple de 64 Mo supérieur ; suites sous le défaut omises (elles prennent le défaut).
-function memoryFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f))) {
+function memoryFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f)) {
   const suites = {};
   for (const file of Object.keys(samples).sort().filter(exists)) {
     const mb = Math.ceil(Math.max(...Object.values(samples[file])) / 1024 * (1 + MEMORY_MARGIN) / 64) * 64;

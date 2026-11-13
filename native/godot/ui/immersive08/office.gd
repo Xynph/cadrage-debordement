@@ -539,6 +539,7 @@ static func open_priority(app: Control, item: Dictionary) -> void:
 			app._navigate("Sélections")
 		"squad": app.navigation_controller.open_roster_group()
 		"contract": _open_player(app,str(item.player))
+		"youth_review": preload("res://ui/youth_development_view.gd").open(app,str(item.player))
 		"preparation": app._navigate("Préparation")
 		"training": app.Immersive.open_training(app)
 		"recruitment": app._navigate("Recrutement")
@@ -777,6 +778,9 @@ static func timeline_period(fixture: Dictionary) -> String:
 	return date if not date.is_empty() else "SEM. %02d" % (int(fixture.get("week", 0))+1)
 
 static func _timeline(parent: VBoxContainer, app: Control) -> void:
+	var planning := C.button("Préparer la suite du club", func(): load("res://ui/manager_planning.gd").open(app))
+	planning.name = "OfficeManagerPlanning"
+	parent.add_child(planning)
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
 	parent.add_child(row)

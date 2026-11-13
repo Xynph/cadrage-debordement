@@ -130,10 +130,37 @@ const ACADEMY_TRAINING_WEIGHT={
  LCX:2,MGX:2,BNR:2,MLX:2,BOX:2,CCX:2,
  LNX:4,MIX:4,BAV:2
 };
+// Qualité des fournées (décision de Léo du 12/11/2026) : en plus de la stature et de la
+// tradition formatrice du club, la note « jeunesse » du pays, les installations du centre
+// et le responsable de la formation déplacent les paliers de potentiel. Valeurs inventées,
+// la France sert de référence neutre pour ne pas changer l'équilibre déjà validé.
+const ACADEMY_COUNTRY_YOUTH={FR:0,NZ:0,ZA:0,IE:-.5,ENG:-.5,GB:-1,AU:-1,FJ:-1,JP:-1.5,IT:-1.5,GE:-1.5};
+function academyClubLeague(club){
+ const leagues=S?.worldMode?.leagues;if(!leagues||!Number.isInteger(club?.id))return null;
+ return Object.keys(leagues).find(id=>leagues[id]?.members?.includes(club.id))??null;
+}
+function academyCountryBonus(club){
+ if(!club?.country)return 0;
+ const league=academyClubLeague(club);
+ const key=club.country==='GB'&&(league==='prem'||league==='champ')?'ENG':club.country;
+ return ACADEMY_COUNTRY_YOUTH[key]??-1;
+}
+function academyFacilitiesBonus(club){
+ const world=typeof worldClub==='function'&&S?.worldManagement&&Number.isInteger(club?.id)?worldClub(club.id):null;
+ const shared=Number.isFinite(world?.facilities)?clamp(world.facilities-2,-2,2):0;
+ const own=club?.id===S?.club&&Number.isInteger(S?.v78to81?.facilities)?clamp(S.v78to81.facilities,0,3)*.5:0;
+ return shared+own;
+}
+function academyFormationStaffBonus(club){
+ const people=S?.staffCareer?.version===1&&Array.isArray(S.staffCareer.people)?S.staffCareer.people.flat():[];
+ const levels=people.filter(p=>p?.clubId===club?.id&&p.role==='formation'&&Number.isFinite(p.level)).map(p=>p.level);
+ return levels.length?clamp((Math.max(...levels)-60)/10,-1.5,1.5):0;
+}
 function academyRecruitmentWeight(club){
  const stature=clamp(Math.floor((club.base-65)/7),0,2);
  const training=S?.commonDatabase?(ACADEMY_TRAINING_WEIGHT[club.abbr]??0):0;
- return Math.min(5,stature+training);
+ const extra=academyCountryBonus(club)+academyFacilitiesBonus(club)+academyFormationStaffBonus(club);
+ return clamp(Math.round((Math.min(5,stature+training)+extra)*2)/2,0,6);
 }
 function academyPotential(p,club=null){
  // The interface shows the potential at the player's position, including the role profile.
@@ -225,7 +252,59 @@ function youthName(id,h,club){
  if(!pool)return FIRST[h%FIRST.length]+' '+LAST[Math.floor(h/31)%LAST.length];
  return pool.first[h%pool.first.length]+' '+pool.last[Math.floor(h/31)%pool.last.length];
 }
-function academyPlayer(ci,slot,season,index,emergency=false,formationClub=null){const id=`youth-${ci}-${season}-${index}`,h=seedHash(id);let p={appearanceBankVersion:2,id,name:youthName(id,h,formationClub??(Number.isInteger(ci)?S?.clubs?.[ci]:null)),pos:POS[slot],fam:FAMILIES[slot],age:17+h%3,rating:emergency?55+h%8:52+h%15,condition:100,injury:0,salary:2000};ensureSkills(p);ensureDevelopment(p);p.dev.potential=emergency?68+h%10:academyPotential(p,formationClub);p.academy=true;return p}
+// Noms déjà portés dans un club : effectif pro et centre(s) du club. Un nom de jeune ne doit jamais
+// doubler un nom du même club (#610, décision de Léo du 13/11/2026). Les centres invités n'ont pas de club.
+function youthTakenNames(club){
+ if(!club||!youthWorldOnly()||typeof S==='undefined'||!S||!Number.isInteger(club.id)||!S.clubs?.[club.id])return null;
+ const real=S.clubs[club.id],names=new Set(real.players.map(p=>p.name));
+ const lists=[club.id===S.club?S.development?.academy:null,...(S.aiRoster?.academies||[]).filter(a=>a.clubId===club.id).map(a=>a.players),...(S.nativeAcademy?.centers||[]).filter(c=>c.clubId===club.id).map(c=>c.players)];
+ for(const list of lists)for(const p of list||[])names.add(p.name);
+ return names;
+}
+// Premier nom libre : tirages successifs, puis prénoms composés quand les listes du pays sont épuisées.
+function youthUniqueName(id,h,club,taken){
+ const first=youthName(id,h,club);
+ if(!taken||!taken.has(first))return first;
+ for(let k=1;k<=80;k++){const name=youthName(id,seedHash(id+':nom'+k),club);if(!taken.has(name))return name}
+ const world=typeof worldActive==='function'&&worldActive(),nation=world?youthHeritage(id,youthClubNation(club)):null,pool=nation&&nation!=='FRA'&&YOUTH_NAMES[nation]?YOUTH_NAMES[nation]:{first:FIRST,last:LAST};
+ for(let k=0;k<4000;k++){
+  const g=seedHash(id+':compose'+k),a=pool.first[g%pool.first.length],b=pool.first[Math.floor(g/7)%pool.first.length],last=pool.last[Math.floor(g/31)%pool.last.length],name=(a===b?a:a+'-'+b)+' '+last;
+  if(!taken.has(name))return name;
+ }
+ return first+' '+(taken.size+1);
+}
+// Portraits cohérents avec l'origine (#610). La banque v2 décrit la teinte de peau observée de
+// ses 160 bases joueurs (catalogue.json, observedTraits.skinTone : L = fair ou light, T = tan,
+// B = brown, D = deep ; les 32 anciennes bases ont été étiquetées à leur tour le 13/11/2026).
+// Ce n'est pas une mesure d'origine : les tirages ci-dessous donnent seulement une répartition plausible
+// des teintes par pays d'origine et gardent de la variété dans chaque pays. Aucune donnée de morphologie
+// ou de traits du visage n'existe dans la banque.
+const PORTRAIT_TONES='LDTBLLDLBTLDLDBLLBLTLLDLTLTLBLBTLTBLBDLTLLBLTDLBLBTTBLLDLBLTDLBDTDLTLBDTLBLTLTDLTLTBLTLTBLTBLTLTLTBLTDLTLLBLTDLBLBLBBLTDLBLTDLTDBDLTLLDLLBLTLTDLBLLBLTLLBLTDLBLL';
+const YOUTH_LOOK_EUROPE=[['L',66],['T',27],['B',5],['D',2]],YOUTH_LOOK_PACIFIC=[['T',20],['B',45],['D',35]],YOUTH_LOOK_ASIA=[['L',62],['T',38]],YOUTH_LOOK_AFRICA=[['T',10],['B',45],['D',45]];
+const YOUTH_LOOKS={FRA:YOUTH_LOOK_EUROPE,ENG:YOUTH_LOOK_EUROPE,SCO:YOUTH_LOOK_EUROPE,WAL:YOUTH_LOOK_EUROPE,IRE:YOUTH_LOOK_EUROPE,ITA:YOUTH_LOOK_EUROPE,POR:YOUTH_LOOK_EUROPE,ROU:YOUTH_LOOK_EUROPE,
+ GEO:[['L',55],['T',40],['B',5]],ARG:[['L',58],['T',37],['B',5]],RSA:[['L',38],['T',14],['B',26],['D',22]],NAM:YOUTH_LOOK_AFRICA,ZIM:YOUTH_LOOK_AFRICA,
+ NZL:[['L',45],['T',25],['B',20],['D',10]],AUS:[['L',58],['T',24],['B',12],['D',6]],FIJ:YOUTH_LOOK_PACIFIC,TGA:YOUTH_LOOK_PACIFIC,SAM:YOUTH_LOOK_PACIFIC,JPN:YOUTH_LOOK_ASIA,KOR:YOUTH_LOOK_ASIA};
+// Pays du club formateur pour le portrait : le champ country quand il existe (base mondiale), sinon la
+// France pour les 30 clubs de la base commune et du mode France (même découpage que clubCountry() du worker).
+function youthPortraitNation(club){
+ if(!club||!youthWorldOnly())return null;
+ const direct=youthClubNation(club);if(direct||club.country)return direct;
+ return Number.isInteger(club.id)&&club.id<30&&!!S?.commonDatabase?'FRA':null;
+}
+// Portraits orientés et noms uniques : carrière monde uniquement. Les modes historiques (France, base commune
+// classique) restent identiques à l'octet près (campagnes de référence, RNG compris).
+function youthWorldOnly(){return typeof CDWorldCareer!=='undefined'&&typeof S!=='undefined'&&!!S&&CDWorldCareer.active(S)}
+// Teinte cible tirée par empreinte, puis premier identifiant d'apparence (l'identifiant du joueur, sinon
+// une variante salée) dont la cellule de la banque a cette teinte. Renvoie undefined quand l'identifiant
+// du joueur convient déjà : le portrait garde alors le comportement historique.
+function youthLookId(id,nation){
+ const table=YOUTH_LOOKS[nation];if(!table)return undefined;
+ let roll=youthHash(id+':look')%100,want=table[table.length-1][0];
+ for(const [tone,weight] of table){if(roll<weight){want=tone;break}roll-=weight}
+ for(let k=0;k<160;k++){const key=k===0?id:id+':look'+k;if(PORTRAIT_TONES[youthHash(key)%160]===want)return k===0?undefined:key}
+ return undefined;
+}
+function academyPlayer(ci,slot,season,index,emergency=false,formationClub=null){const id=`youth-${ci}-${season}-${index}`,h=seedHash(id),home=formationClub??(Number.isInteger(ci)?S?.clubs?.[ci]:null),anchor=youthPortraitNation(home),look=anchor?youthLookId(id,youthHeritage(id,anchor)):undefined;let p={appearanceBankVersion:2,...(look===undefined?{}:{appearanceId:look}),id,name:youthUniqueName(id,h,home,youthTakenNames(home)),pos:POS[slot],fam:FAMILIES[slot],age:17+h%3,rating:emergency?55+h%8:52+h%15,condition:100,injury:0,salary:2000};ensureSkills(p);ensureDevelopment(p);p.dev.potential=emergency?68+h%10:academyPotential(p,formationClub);p.academy=true;return p}
 function intakeYouth(){const d=S.development;if(d.intakeSeason===S.season)return;d.intakeSeason=S.season;for(let i=0;i<15;i++){const slot=(S.season*3+i)%15;d.academy.push(academyPlayer(S.club,slot,S.season,i,false,club()))}/* Jusqu'a cinq promotions coexistent selon les ages et les promotions en pros. */d.academy=d.academy.slice(-75);news(`Quinze nouveaux Espoirs rejoignent le centre de formation, avec une couverture des quinze postes. Evaluez leur potentiel et preparez leur promotion.`)}
 function setupDevelopment(backup=false){if(!S)return;const fresh=!S.development;if(fresh&&backup){try{if(!gameStorage.getItem('bdt-backup-development'))gameStorage.setItem('bdt-backup-development',JSON.stringify(S))}catch(e){}}
 S.development=S.development||{version:1,academyPotentialVersion:1,academy:[],intakeSeason:0,rolledSeason:0,retired:[]};normalizeAcademyPotential(S);S.clubs.forEach(c=>c.players.forEach(ensureDevelopment));S.market.forEach(ensureDevelopment);S.economy.freeAgents.forEach(ensureDevelopment);if(fresh&&S.live)S.live.devBaseline=S.live.sheets.map(s=>({...s.minutes}));intakeYouth();if(fresh&&backup)news('Formation et carrières activées : niveaux, contrats et résultats conservés. Le suivi des minutes commence maintenant.')}

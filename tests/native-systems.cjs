@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const systems=require('../native/engine/native-systems.cjs');
 const {createBridge,CORE_FILES}=require('../native/engine/worker.cjs');
@@ -9,7 +8,7 @@ try{
  assert.ok(systems.files.includes('press-relations.js'));
  assert.ok(CORE_FILES.indexOf('press-relations.js')<CORE_FILES.indexOf('game.js'));
  bridge=createBridge({dataDir:root,seed:27,now:1700000000000});
- let m=call('new_career',{mode:'common',club:29});
+ let m=call('new_career',{mode:'world-champ',club:29});
  assert.ok(m.clubLife.press,'La presse doit être raccordée au vrai worker.');
  const before=call('export').meta.exportText,profile=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(profile);
  for(let i=0;i<3;i++)call('snapshot');

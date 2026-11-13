@@ -5,35 +5,11 @@
   "bytes": 77860424,
   "executable": "Godot_v4.7.2-stable_linux.x86_64",
   "suites": [
-    "tests/godot-match-journal.cjs",
     "tests/godot-immersion-copy.cjs",
     "tests/godot-regen-portraits.cjs",
-    "tests/godot-club-memory.cjs",
-    "tests/godot-squad-column-sort.cjs",
     "tests/godot-epcr-preparation.cjs",
-    "tests/godot-immersive-reception.cjs",
-    "tests/godot-native06-integration.cjs",
-    "tests/godot-art-direction07.cjs",
-    "tests/godot-guide-layout.cjs",
-    "tests/godot-contextual.cjs"
+    "tests/godot-immersive-reception.cjs"
   ],
-  "suiteEnvironment": {
-    "tests/godot-art-direction07.cjs": {
-      "CD_ART07_GRAPHICS": "1"
-    },
-    "tests/godot-guide-layout.cjs": {
-      "CD_GUIDE_GRAPHICS": "1"
-    }
-  },
-  "suiteCases": {
-    "tests/godot-guide-layout.cjs": [
-      {
-        "id": "layout-native",
-        "env": {
-          "CD_GUIDE_LAYOUT_CASE": "layout",
-          "CD_GUIDE_LAYOUT_MODE": "native"
-        }
-      }
-    ]
-  }
+  "suiteEnvironment": {},
+  "suiteCases": {}
 }
