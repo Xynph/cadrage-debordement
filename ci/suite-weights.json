@@ -147,6 +147,7 @@
     "budget_mb": 12288,
     "suites": {
       "tests/native-professional-depth.cjs": 2624,
+      "tests/native-relationships.cjs": 2048,
       "tests/performance-analysis.cjs": 2048,
       "tests/world-catalogue-dedup.cjs": 3264,
       "tests/world-domestic-venues.cjs": 1344,
