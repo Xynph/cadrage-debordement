@@ -5,7 +5,7 @@ const repo='Xynph/cadrage-debordement',owner={id:350229047,login:'Xynph',type:'U
 const a='a'.repeat(40),b='b'.repeat(40),c='c'.repeat(40);
 const event=()=>({action:'created',repository:{full_name:repo,id:1439603196},issue:{number:73},sender:{...owner},comment:{id:123,user:{...owner},body:'/cd-merge 198 '+b}});
 const env={GITHUB_EVENT_NAME:'issue_comment',GITHUB_REPOSITORY:repo,GITHUB_ACTOR:'Xynph',GITHUB_TRIGGERING_ACTOR:'Xynph',GITHUB_SHA:a};
-const names=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+const names=require('../ci/ci-jobs.cjs').OFFICIAL_JOBS;
 const jobs=()=>names.map(name=>({name,status:'completed',conclusion:'success'}));
 const run=(sha,id,event='push')=>({id,workflow_id:10,head_branch:'main',head_sha:sha,event,name:'Tests JavaScript',status:'completed',conclusion:'success'});
 test('commande du propriétaire liée au dépôt, issue et SHA exacts',()=>{
@@ -126,9 +126,9 @@ function repairFixture(options={}){
  const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+REPAIR_RUN;
  const cmd=validateEvent(e,env);
  const failed=jobs().map(j=>({...j}));
- for(const name of ['Suites 1/5','Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
+ for(const name of ['Suites 1/'+require('../ci/ci-jobs.cjs').SHARD_COUNT,'Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
  if(options.wrongFailure)failed.find(x=>x.name==='classification').conclusion='failure';
- if(options.skippedShard)failed.find(x=>x.name==='Suites 2/5').conclusion='skipped';
+ if(options.skippedShard)failed.find(x=>x.name==='Suites 2/'+require('../ci/ci-jobs.cjs').SHARD_COUNT).conclusion='skipped';
  if(options.extraJob)failed.push({name:'extra',status:'completed',conclusion:'success'});
  const badRun={...run(REPAIR_MAIN,options.wrongRun?REPAIR_RUN-1:REPAIR_RUN,'workflow_dispatch'),conclusion:'failure'};
  const api=(url)=>{

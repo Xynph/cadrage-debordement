@@ -308,6 +308,22 @@ static func player_load_unavailable_reason(app: Control) -> String:
 	if meta.get("trained", false): return "Séance effectuée. La charge se règle avant la prochaine séance."
 	return ""
 
+static func _profile_reading_link(app: Control, content: Control, player_id: String, caption: String, id: String) -> Button:
+	var link := Button.new()
+	link.name = id
+	link.custom_minimum_size = content.get_combined_minimum_size()
+	link.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", G.T.box(Color.TRANSPARENT, 2, G.GOLD))
+	link.accessibility_name = "Consulter la fiche · " + caption
+	link.tooltip_text = link.accessibility_name
+	link.set_meta("entity_kind", "player")
+	link.set_meta("entity_id", player_id)
+	link.pressed.connect(func(): app.navigation_controller.open_entity({"kind":"player", "id":player_id}))
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	link.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return link
+
 static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	parent.get_parent().size_flags_vertical=Control.SIZE_SHRINK_BEGIN
 	var list:=G.scroll(parent)
@@ -318,7 +334,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	var top:=G.h(8)
 	list.add_child(top)
 	var portrait := G.portrait(int(p.get("portraitIndex",0)),48,p)
-	top.add_child(portrait)
+	top.add_child(_profile_reading_link(app,portrait,str(p.id),str(p.name),"ProfileOpenPlayerPortrait"))
 	var identity:=G.v(3)
 	G.fill(identity)
 	top.add_child(identity)
@@ -327,10 +343,10 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	name.add_theme_font_size_override("font_size",18)
 	name.add_theme_font_override("font",G.T.DISPLAY)
 	name.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	identity.add_child(name)
+	identity.add_child(_profile_reading_link(app,name,str(p.id),str(p.name),"ProfileOpenPlayerName"))
 	identity.add_child(G.wrap("%s · %s ans"%[p.pos,G.n(p.age)],12))
 	var facts: Dictionary = p.get("playerFacts", {})
-	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.INK))
+	if not facts.is_empty(): identity.add_child(preload("res://ui/player_identity.gd").row(facts,15,G.INK,app))
 	list.add_child(G.separator())
 	var tabs:=TabContainer.new()
 	tabs.name="ProfileTabs"
@@ -618,6 +634,19 @@ static func lineup(app:Control) -> Control:
 		var note: Dictionary = licences.get("notice", {})
 		bloc.tooltip_text = str(note.get("summary", "")) + "\n" + str(note.get("detail", ""))
 		side.add_child(bloc)
+	var jiff: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+	if bool(jiff.get("applies", false)):
+		var current := int(jiff.get("currentSheet", 0))
+		var target := int(jiff.get("target", 16))
+		var line := "JIFF  ·  %d sur cette feuille  ·  %d exigés en moyenne" % [current, target]
+		if jiff.get("average") != null:
+			line += "  ·  moyenne de la saison %s" % String.num(float(jiff.average), 2)
+		if int(jiff.get("deduction", 0)) > 0:
+			line += "  ·  retrait de %d point(s) cette saison" % int(jiff.deduction)
+		var jiff_bloc := G.wrap(line, 11, G.ALERT if current < target else G.MUTED)
+		jiff_bloc.name = "LineupJiffNotice"
+		jiff_bloc.tooltip_text = "Joueurs issus des filières de formation : 3 saisons en centre de formation français ou 5 saisons de licence en France avant 22 ans. Sous la moyenne de %d par feuille sur la saison, le club perd des points la saison suivante ; à partir de %d, le fonds JIFF verse une prime." % [target, int(jiff.get("bonusFrom", 17))]
+		side.add_child(jiff_bloc)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()

@@ -1,328 +1,193 @@
 extends SceneTree
 const ContextualFlow = preload("helpers/contextual_flow.gd")
-# Réception de présentation ; les cas « projection » sont des copies, jamais des sauvegardes importées.
-const Office = preload("res://ui/office_view.gd")
+const Office = preload("res://ui/immersive08/office.gd")
+const P = preload("res://ui/immersive08/projection.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const Legacy = preload("res://ui/office_view.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
 func _initialize() -> void:
 	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty(): quit(2); return
 	call_deferred("run")
-func check(value: bool, text: String) -> void:
+func check(value: bool, message: String) -> void:
 	checks += 1
-	if not value:
-		failures.append(text)
-		printerr("FAIL: ", text)
-func named(node: Node, id: String) -> Node:
-	if str(node.name) == id: return node
-	for child in node.get_children():
-		var found := named(child, id)
-		if found != null: return found
-	return null
+	if not value: failures.append(message); printerr("FAIL: ",message)
+func settle() -> void:
+	for frame in 8: await process_frame
+func wait_model(id: String) -> void:
+	var deadline := Time.get_ticks_msec()+30000
+	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline: await process_frame
+	app.timer.stop()
+	check(not app.waiting and not app.model.is_empty() and app.bridge.last_response_ok,"Réponse du vrai moteur " + id + " · " + app.last_error)
+	await settle()
+func command(id: String, payload: Dictionary = {}) -> void:
+	print("SDK_COMMAND ",Time.get_ticks_msec()," godot-office-ui ",id)
+	var accepted: bool=app._command(id,payload)
+	check(accepted,"Commande publique " + id)
+	if not accepted:return
+	await wait_model(id)
+func named(id: String) -> Node: return app.find_child(id,true,false)
 func texts(node: Node) -> String:
-	var result: String = node.text + "\n" if node is Label or node is Button else ""
+	if node == null: return ""
+	var result: String = str(node.text)+"\n" if node is Label or node is Button else ""
 	for child in node.get_children(): result += texts(child)
 	return result
-func scroller(node: Node) -> ScrollContainer:
-	var parent:=node.get_parent()
-	while parent!=null:
-		if parent is ScrollContainer:return parent
-		parent=parent.get_parent()
-	return null
-func buttons(node: Node) -> Array[Button]:
-	var result: Array[Button] = []
-	if node is Button: result.append(node)
-	for child in node.get_children(): result.append_array(buttons(child))
-	return result
-func wait_model() -> void:
-	var until := Time.get_ticks_msec() + 30000
-	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
-	check(not app.waiting and not app.model.is_empty(), "Réponse native terminée")
-func command(id: String, payload: Dictionary = {}) -> void:
-	app._command(id, payload)
-	await wait_model()
-	check(app.bridge.last_response_ok, "Commande native " + id + " : " + app.last_error)
-func capture(id: String) -> void:
-	if DisplayServer.get_name() == "headless": return
-	for i in 3: await process_frame
-	await RenderingServer.frame_post_draw
-	var path := OS.get_environment("CD_OFFICE_CAPTURES")
-	DirAccess.make_dir_recursive_absolute(path)
-	check(root.get_texture().get_image().save_png(path.path_join(id + ".png")) == OK, "Capture " + id)
 func render() -> void:
-	app._navigate("Bureau")
-	for i in 4: await process_frame
+	app._navigate("Bureau"); await settle()
+func capture(label: String) -> void:
+	if DisplayServer.get_name()=="headless": return
+	await RenderingServer.frame_post_draw
+	check(root.get_texture().get_image().save_png(OS.get_environment("CD_OFFICE_CAPTURES").path_join(label+".png"))==OK,"Capture "+label)
 func press(id: String, route: String) -> void:
-	var control: Button = named(app, id)
-	check(control != null and not control.disabled, "Bouton réel disponible : " + id)
-	if control == null: return
-	control.grab_focus()
-	await process_frame
-	check(control.has_focus(), "Focus clavier : " + id)
-	control.pressed.emit()
-	await process_frame
-	check(app.route == route, "Navigation réelle " + id + " → " + route)
-func state_export() -> Dictionary:
-	await command("export")
-	return JSON.parse_string(app.model.meta.exportText).state
+	var control := named(id) as Button
+	check(control!=null and not control.disabled and control.is_visible_in_tree(),"Action réelle disponible : "+id)
+	if control==null or control.disabled: return
+	control.grab_focus(); await settle()
+	check(control.has_focus(),"Focus clavier : "+id)
+	for down in [true,false]:
+		var event:=InputEventKey.new();event.keycode=KEY_ENTER;event.pressed=down;Input.parse_input_event(event);await process_frame
+	await settle()
+	check(app.route==route,"Navigation réelle "+id+" → "+route)
+func export_state() -> String:
+	await command("export"); return app.model.meta.exportText
 func sections() -> void:
-	for id in ["OfficeCarnet", "OfficeDecisions", "OfficeJournal", "OfficeFixture", "OfficeTimeline", "OfficeGroup", "OfficeResults", "OfficeStandings", "OfficeMeans", "OfficePreparation"]:
-		check(named(app, id) != null, "Section carnet disponible : " + id)
-	for id in ["OfficeDecisionsHeader", "OfficeJournalCard", "OfficeStandingsCard", "OfficePreparationCard", "OfficeIdentity"]:
-		var card: Control=named(app,id)
-		check(card!=null,"Tuile éditoriale distincte : " + id)
-		if card!=null:check(card.size.y<=card.get_combined_minimum_size().y+2,"Surface de lecture limitée à son contenu : " + id)
-	var identity: Control=named(app,"OfficeIdentity")
-	if identity!=null:
-		var presentation: Dictionary=Office.G.identity(app.model.club)
-		for pair in [["OfficeCityPreview","city"],["OfficeStadiumPreview","stadium"]]:
-			var tile: Control=named(identity,pair[0])
-			check(tile!=null,"Vignette identitaire disponible : " + pair[0])
-			if tile!=null:
-				check(tile.custom_minimum_size.y<=120,"Vignette compacte")
-				var raw: Variant=presentation.get(pair[1])
-				var expected: String="—" if raw==null or str(raw).strip_edges().is_empty() else str(raw)
-				check(tile.tooltip_text==expected,"Libellé identitaire public exact")
-func navigation() -> void:
-	var before: Dictionary = await state_export()
-	var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
-	var bytes := FileAccess.get_file_as_bytes(filename)
-	for pair in [["OfficeCalendarAction", "Calendrier"], ["OfficeSquadAction", "Effectif"], ["OfficeStandingsAction", "Classements"], ["OfficeFinanceAction", "Finances"], ["OfficePreparationAction", "Préparation"]]:
-		await render()
-		await press(pair[0], pair[1])
-	await render()
-	for i in 5:
-		var profile: Button = named(app, "OfficePlayer" + str(i))
-		var id: String = str(profile.get_meta("player_id"))
-		await press(str(profile.name), "Effectif")
-		check(app.selected_player == id, "Fiche du joueur par ID : " + id)
-		check(texts(app.body).contains(id) or texts(app.body).contains(str(app.model.squad.filter(func(p):return p.id == id)[0].name)), "La fiche affiche le joueur choisi")
-		await render()
-	if named(app, "OfficeContractsAction") != null:
-		await press("OfficeContractsAction", "Effectif")
-		check(not app.selected_player.is_empty(), "Contrat : fiche sélectionnée")
-		await render()
-	var contract_ids: Array=[]
-	for player: Dictionary in app.model.squad:
-		if player.contractEnd!=null and int(player.contractEnd)<=int(app.model.meta.season)+1:contract_ids.append(str(player.id))
-	for i in mini(3,contract_ids.size()):
-		var link: Button=named(app,"OfficeContractPlayer"+str(i))
-		check(link!=null and str(link.get_meta("player_id")) in contract_ids,"Échéance issue d'un vrai ID")
-		if link!=null:
-			var id:=str(link.get_meta("player_id"))
-			await press(str(link.name),"Effectif")
-			check(app.selected_player==id,"Échéance ouvre la bonne fiche par ID")
-			await render()
-	var after_buttons: Dictionary = await state_export()
-	check(before == after_buttons, "Boutons et fiches préservent intégralement S/RNG")
-	check(bytes == FileAccess.get_file_as_bytes(filename), "Boutons et fiches : aucun octet de sauvegarde modifié")
-	await command("set_lineup", {"slot":0,"playerId":null})
-	await render()
-	check(texts(named(app, "OfficeSelection")).contains("1 poste à couvrir"), "Priorité réelle : poste vacant")
-	var after_clear: Dictionary = await state_export()
-	var cleared_bytes := FileAccess.get_file_as_bytes(filename)
-	await render()
-	await press("OfficeSelectionAction", "Composition")
-	var after_navigation: Dictionary = await state_export()
-	check(after_clear == after_navigation, "Composition : aucun changement S/RNG")
-	check(cleared_bytes == FileAccess.get_file_as_bytes(filename), "Composition : aucun octet écrit par navigation")
-	await command("auto_lineup")
-	# Recheck the full route sequence after the explicit selection command.
-	await render()
-	var navigation_before: Dictionary = await state_export()
-	var navigation_bytes := FileAccess.get_file_as_bytes(filename)
-	for route in ["Bureau", "Effectif", "Composition", "Préparation", "Calendrier", "Classements", "Finances"]:
-		app._navigate(route)
-		await process_frame
-	var after: Dictionary = await state_export()
-	check(navigation_before == after, "Toutes les navigations préservent intégralement S et le RNG")
-	check(navigation_bytes == FileAccess.get_file_as_bytes(filename), "Toutes les navigations préservent les octets de sauvegarde")
-	check(not bytes.is_empty() and not before.is_empty(), "Vraie carrière exportée et stockée dans le profil temporaire")
+	check(named("ImmersiveOffice")!=null,"Le Bureau utilise le canevas de carrière actuel")
+	for id in ["OfficeFixture","OfficeDecisions","OfficeGroup","OfficeStandings","OfficeJournal","OfficeRecruitment","OfficeTimeline"]:
+		check(named(id)!=null,"Section réelle disponible : "+id)
+	var tasks:=Office.priorities(app.model)
+	for index in tasks.size():
+		var action:=named(tasks[index].id) as Button
+		check(action!=null and action.get_meta("priority_number",0)==index+1,"Priorité issue du modèle et numérotée")
+		if action!=null: check(action.tooltip_text.contains(Office.priority_description(tasks[index])),"Conditions utiles conservées dans la priorité")
+	var standings: Array=P.standings(app.model)
+	check(not standings.is_empty() and standings.any(func(row: Dictionary):return row.id==app.model.club.id),"Le classement visible inclut le vrai club")
+	var market: Dictionary=Office.recruitment_spotlight(app.model).player
+	if not market.is_empty(): check(texts(named("OfficeRecruitment")).contains(str(market.name).to_upper()),"Le profil à suivre est issu du marché publié")
+	var next: Variant=app.model.get("next")
+	if next is Dictionary:
+		check(texts(named("OfficeFixture")).contains(str(next.home.presentation.name).to_upper()) and texts(named("OfficeFixture")).contains(str(next.away.presentation.name).to_upper()),"Les deux vrais clubs figurent dans la rencontre")
+		var venue:=named("OfficeFixtureVenue") as Label
+		var expected:=P.fixture_venue(next,false)
+		check((venue==null if expected.is_empty() else venue!=null and venue.text==expected),"Lieu issu de la rencontre, sans enceinte inventée")
 func ranking_edges() -> void:
-	var base: Dictionary = app.model.duplicate(true)
-	var rows: Array = []
+	# The retained classic projection is pure and still covered independently.
+	var base: Dictionary=app.model.duplicate(true)
+	var rows: Array=[]
 	for league: Dictionary in base.leagues:
-		if league.id == base.meta.leagueId: rows = league.rows
-	for i in [0, rows.size()/2, rows.size()-1]:
-		var model: Dictionary = base.duplicate(true)
-		model.club = rows[int(i)].duplicate(true)
-		var window := Office.standings_window(model)
-		check(window.size() == mini(8, rows.size()), "Fenêtre de classement : huit lignes")
-		check(window.any(func(row):return row.id == model.club.id), "Fenêtre inclut le club au premier/milieu/dernier rang")
-		var start := rows.find(window[0])
-		check(window == rows.slice(start, start + window.size()), "Ordre de classement natif conservé sans nouveau départage")
+		if league.id==base.meta.leagueId: rows=league.rows
+	for index in [0,rows.size()/2,rows.size()-1]:
+		var model:=base.duplicate(true);model.club=rows[int(index)].duplicate(true)
+		var window:=Legacy.standings_window(model)
+		check(window.size()==mini(8,rows.size()) and window.any(func(row):return row.id==model.club.id),"Projection classique : club premier, milieu et dernier conservé")
+		var start:=rows.find(window[0]);check(window==rows.slice(start,start+window.size()),"Projection classique : ordre du classement conservé")
 func bounds() -> void:
-	var page: Control = named(app, "OfficeCarnet")
-	check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Bureau dans la fenêtre")
-	for id in ["OfficeDecisions", "OfficeStandings"]:
-		var node: Control = named(app, id)
-		check(node.size.x > 180, "Colonne lisible : " + id)
-	for control in buttons(page):
-		check(control.focus_mode == Control.FOCUS_ALL, "Bouton accessible au clavier : " + str(control.name))
-		check(control.size.x > 0 and control.size.y >= 25, "Cible interactive lisible : " + str(control.name))
-func contrast(first: Color, second: Color) -> float:
-	var a := first.srgb_to_linear().get_luminance()
-	var b := second.srgb_to_linear().get_luminance()
-	return (maxf(a,b)+.05)/(minf(a,b)+.05)
-func palette() -> void:
-	var original: Color = app.accent
-	for color in [Color("cad0d3"), Color("ffdf00"), Color("050505")]:
-		app.accent = color
-		await render()
-		var standings: Node = named(app, "OfficeStandings")
-		var chapter: Label = standings.get_child(0).get_child(0)
-		var objective: Label = standings.get_child(2).get_child(1)
-		for label in [chapter, objective]:
-			check(contrast(label.get_theme_color("font_color"), Office.PAPER) >= 4.5, "Encre Bureau lisible " + color.to_html() + " " + label.text)
-		var grid: GridContainer = standings.get_child(3)
-		var rows := Office.standings_window(app.model)
-		for index in rows.size():
-			if rows[index].id != app.model.club.id: continue
-			check(grid.columns == 7, "Classement Bureau : sept colonnes dont D")
-			for column in grid.columns:
-				var cell: PanelContainer = grid.get_child(grid.columns + index * grid.columns + column)
-				var content: Control = cell.get_child(0)
-				var label: Label = content.get_node("Value") if content is PanelContainer else content as Label
-				check(label != null, "Valeur de classement disponible : " + str(column))
-				if label == null: continue
-				var surface: Color = content.get_theme_stylebox("panel").bg_color if content is PanelContainer else cell.get_theme_stylebox("panel").bg_color
-				check(contrast(label.get_theme_color("font_color"), surface) >= 4.5, "Classement sélectionné lisible " + color.to_html())
-		for id in ["OfficeStandingsAction", "OfficePreparationAction", "OfficeFinanceAction"]:
-			var button: Button = named(app, id)
-			var background := Office.CHARCOAL if id == "OfficeFinanceAction" else Office.PAPER
-			for state in [["normal", "font_color"], ["hover", "font_hover_color"], ["pressed", "font_pressed_color"]]:
-				var surface: Color = background.blend(button.get_theme_stylebox(state[0]).bg_color)
-				check(contrast(button.get_theme_color(state[1]), surface) >= 4.5, "Lien Bureau lisible " + color.to_html() + " " + id + " " + state[0])
-			check(contrast(button.get_theme_color("font_focus_color"), background) >= 4.5, "Texte focus Bureau " + id)
-			check(contrast(button.get_theme_stylebox("focus").border_color, background) >= 3, "Bordure focus Bureau " + color.to_html() + " " + id)
-		await capture("bureau-palette-" + color.to_html())
-	app.accent = original
+	var page:=named("ImmersiveOffice") as Control
+	var workspace:=named("CareerWorkspace") as ScrollContainer
+	check(page!=null and workspace!=null,"Canevas et défilement réels raccordés")
+	if page==null or workspace==null:return
+	check(workspace.get_global_rect().end.x<=app.size.x+1 and workspace.get_global_rect().end.y<=app.size.y+1,"Viewport du Bureau contenu dans la fenêtre")
+	check(page.get_global_rect().end.x<=workspace.get_global_rect().end.x+1,"Bureau sans débordement horizontal")
+	for control: Button in page.find_children("*","Button",true,false):
+		if not control.is_visible_in_tree() or control.disabled:continue
+		# The immersive surface scales desktop targets through C.density. Keep
+		# the original 25px contract in that coordinate system and also require
+		# enough clickable height for every displayed glyph, including row labels.
+		var text_height := control.get_theme_font("font").get_height(control.get_theme_font_size("font_size")) if not control.text.is_empty() else 0.0
+		for label: Label in control.find_children("*","Label",true,false):
+			if label.is_visible_in_tree() and not label.text.is_empty(): text_height=maxf(text_height,label.get_theme_font("font").get_height(label.get_theme_font_size("font_size")))
+		var minimum := maxf(C.px(25),text_height)
+		check(control.focus_mode==Control.FOCUS_ALL and control.size.x>0 and control.size.y+1>=minimum,"Cible clavier et souris lisible : "+str(control.name)+" · rectangle="+str(control.get_global_rect())+" · hauteur requise="+str(minimum)+" · densité="+str(C.density))
+		control.grab_focus(); workspace.ensure_control_visible(control); await settle()
+		check(control.has_focus() and workspace.get_global_rect().grow(2).encloses(control.get_global_rect()),"Défilement révèle la commande entière : "+str(control.name))
+func navigation() -> void:
+	var before:=await export_state()
+	var filename:=str(app.model.meta.dataDir).path_join("donnees.json")
+	var bytes:=FileAccess.get_file_as_bytes(filename)
+	for pair in [["OfficeCalendarAction","Calendrier"],["OfficeSquadAction","Effectif"],["OfficeStandingsAction","Classements"],["OfficePreparationAction","Préparation"],["OfficeInboxAction","Réception"],["OfficeMarketAction","Recrutement"]]:
+		await render();await press(pair[0],pair[1])
+	for route in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Finances"]:
+		app._navigate(route);await settle()
+	check(await export_state()==before and FileAccess.get_file_as_bytes(filename)==bytes,"Liens, navigation, fiches et défilement préservent état, RNG et profil")
 	await render()
-func money_lines() -> void:
-	var metrics: Node = named(app, "OfficeMeans").get_child(1)
-	for metric in metrics.get_children():
-		var value: Label = metric.get_child(0)
-		check(value.get_line_count() == 1, "Indicateur et unité sur une ligne : " + value.text + " / " + str(root.size.x))
-	check(texts(metrics).contains(Office.G.euros(app.model.finance.cash)), "Trésorerie exacte et unité conservées")
+	var spotlight: Dictionary=Office.recruitment_spotlight(app.model).player
+	if not spotlight.is_empty():
+		await press("OfficeMarketAction","Recrutement")
+		check(app.management_ui.market.navigation_id==str(spotlight.id),"Le lien de recrutement ouvre le bon identifiant")
 func projections() -> void:
-	var base: Dictionary = app.model.duplicate(true)
-	var projected: Dictionary = base.duplicate(true)
-	projected.messages = ["Message long de réception. ".repeat(35)]
-	projected.club.presentation.name = "Club de réception au nom particulièrement long pour éprouver la mise en page"
-	projected.next.home.presentation.name = "Une équipe au nom particulièrement long pour la réception"
-	projected.next.neutral = true
-	projected.next.phase = "final"
-	projected.packs = {"missing":["Pack de carrière absent : réception"]}
-	app.model = projected
+	var base: Dictionary=app.model.duplicate(true)
+	var projected:=base.duplicate(true)
+	projected.messages=["Message long de réception. ".repeat(35)]
+	projected.next.neutral=true;projected.next.phase="final";projected.next.erase("venue")
+	projected.packs={"missing":["Pack de carrière absent : réception"]}
+	app.model=projected;await render()
+	check(texts(named("OfficeFixture")).contains("NEUTRE"),"Terrain neutre présenté explicitement")
+	check(named("OfficeFixtureVenue")==null,"Aucune enceinte du club hôte substituée au terrain neutre inconnu")
+	check(texts(app.root_content).contains("Pack de carrière absent"),"Avertissement du vrai pack manquant conservé")
+	await capture("bureau-projection-neutre-pack")
+	projected=base.duplicate(true);projected.next=null;projected.calendar=[];projected.messages=[];projected.meta.canAdvanceSeason=true
+	app.model=projected;await render()
+	check(texts(named("OfficeFixture")).contains("La saison se termine"),"Intersaison sans rencontre inventée")
+	check(texts(named("OfficeTimeline")).contains("Aucune rencontre"),"Chronologie vide honnête")
+	check(texts(named("OfficeJournal")).contains("journal s’ouvrira"),"Journal vide honnête")
+	projected.meta.canAdvanceSeason=false;app.model=projected;await render()
+	check(texts(named("OfficeFixture")).contains("Le travail continue"),"Semaine sans rencontre distincte de l’intersaison")
+	app.model=base;await render()
+func palette() -> void:
+	var original: Color=app.accent
+	for color in [Color("cad0d3"),Color("ffdf00"),Color("050505")]:
+		app.accent=color;await render()
+		var card:=named("OfficeStandings")
+		for label: Label in card.find_children("*","Label",true,false):
+			if label.text.is_empty():continue
+			var ink:=label.get_theme_color("font_color")
+			var a:=ink.srgb_to_linear().get_luminance();var b:=Color("151b1e").srgb_to_linear().get_luminance()
+			check((maxf(a,b)+.05)/(minf(a,b)+.05)>=4.5,"Classement lisible avec la couleur identitaire "+color.to_html())
+		await capture("bureau-palette-"+color.to_html())
+	app.accent=original;await render()
+func live_round() -> void:
+	await command("new_career",{"club":29,"mode":"france"})
+	await ContextualFlow.settle_club_meetings(app,self,check)
+	if not await ContextualFlow.prepare_match_day(app,self,check): return
+	var previous_week: int=app.model.meta.week
+	await command("auto_lineup");await command("begin_match")
+	await ContextualFlow.skip_talk(app,self,"pre",check)
+	await command("pause",{"paused":true})
+	var before:=await export_state()
 	await render()
-	check(texts(named(app,"OfficeFixture")).contains("Terrain neutre · enceinte générique"), "Neutre : aucune fausse enceinte du club hôte")
-	check(texts(app.root_content).contains("Pack de carrière absent"), "Avertissement pack manquant conservé")
-	bounds()
-	await capture("bureau-projection-long-neutre-pack-absent")
-	projected = base.duplicate(true)
-	projected.next = null
-	projected.calendar = []
-	projected.messages = []
-	projected.meta.canAdvanceSeason = true
-	app.model = projected
-	await render()
-	check(texts(named(app,"OfficeFixture")).contains("La saison se termine"), "Intersaison sans rencontre")
-	check(texts(named(app,"OfficeTimeline")).contains("Aucune rencontre programmée"), "Chronologie vide honnête")
-	check(texts(named(app,"OfficeJournal")).contains("Le carnet s'ouvre"), "Journal vide honnête")
-	check(named(app,"OfficeTraining") == null, "Aucune priorité entraînement en intersaison")
-	await capture("bureau-projection-intersaison")
-	projected.meta.canAdvanceSeason = false
-	app.model = projected
-	await render()
-	check(texts(named(app,"OfficeFixture")).contains("Le travail continue"), "Semaine sans rencontre")
-	projected=base.duplicate(true)
-	projected.club.presentation.city=null
-	projected.club.presentation.stadium=null
-	projected.club.presentation.slug=""
-	app.model=projected
-	await render()
-	for id in ["OfficeCityPreview","OfficeStadiumPreview"]:
-		var tile: Control=named(app,id)
-		check(tile.tooltip_text=="—","Identité absente : aucune ville/enceinte inventée")
-		check(tile.find_children("*","TextureRect",true,false).is_empty(),"Identité absente : aucune photo d'un autre club substituée")
-	app.model = base
-	await render()
-func run() -> void:
-	app = load("res://main.tscn").instantiate()
-	root.add_child(app)
-	await wait_model()
-	app.timer.stop()
-	await command("new_career", {"club":0,"mode":"common"})
-	await ContextualFlow.settle_club_meetings(app, self, check)
-	await render()
-	sections()
-	if failures.size() > 0:
-		print("BUREAU RED : ", checks, " contrôles ; ", failures.size(), " sections manquantes")
-		app.bridge.stop(); quit(1); return
-	check(texts(named(app, "OfficeResults")).contains("Aucun match joué"), "Première semaine : aucun faux résultat")
-	check(texts(named(app, "OfficeDecisions")).contains("Échéances d’ici la saison 2"), "Échéances de contrats honnêtes")
-	var real_contracts: int = app.model.squad.filter(func(p):return p.contractEnd != null and int(p.contractEnd) <= int(app.model.meta.season) + 1).size()
-	check(texts(named(app, "OfficeContracts")).contains(str(real_contracts) + " contrat"), "Nombre de contrats issu du modèle réel")
-	ranking_edges()
-	await navigation()
-	for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
-		root.size = resolution
-		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
-		for i in 5: await process_frame
-		await render()
-		bounds()
-		money_lines()
-		await capture("bureau-" + str(resolution.x))
-		var center: ScrollContainer = named(app, "OfficeFixture").get_parent().get_parent()
-		center.scroll_vertical = 10000
-		await capture("bureau-" + str(resolution.x) + "-bas")
-		if resolution.x == 1440:
-			named(app, "OfficeDecisions").get_parent().scroll_vertical = 10000
-			scroller(named(app,"OfficeStandings")).scroll_vertical = 10000
-			await capture("bureau-1440-journal-preparation")
-	await projections()
-	for setup in [[29, "common"], [0, "france"], [0, "fiction"]]:
-		await command("new_career", {"club":setup[0],"mode":setup[1]})
-		await ContextualFlow.settle_club_meetings(app, self, check)
-		await render()
-		check(int(app.model.club.id) == setup[0], "Vraie carrière : " + setup[1])
-		money_lines()
-		if setup[0] == 29:
-			check(app.accent == Color("cad0d3"), "Couleur identitaire réelle de Valence Romans conservée")
-			for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
-				root.size = resolution
-				if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
-				for i in 5: await process_frame
-				await render()
-				bounds()
-				money_lines()
-				scroller(named(app,"OfficeStandings")).scroll_vertical = 10000
-				await capture("bureau-club29-moyens-" + str(resolution.x))
-			await palette()
-		sections()
-		ranking_edges()
-		await capture("bureau-" + str(setup[1]) + "-" + str(setup[0]))
-		check(app.model.leagues.size() == (1 if setup[1] == "fiction" else 2), "Divisions natives : " + setup[1])
-	await command("new_career", {"club":29,"mode":"france"})
-	await ContextualFlow.settle_club_meetings(app, self, check)
-	await command("begin_match")
-	await command("pause", {"paused":true})
-	await render()
-	check(texts(named(app, "OfficeFixture")).contains("RETOUR AU DIRECT"), "Action de match en cours conservée")
-	check(app.minibar.text.contains("min"), "Horloge du direct conservée")
-	var live_before: Dictionary = await state_export()
-	await render()
-	await press("OfficePrimaryAction", "Match")
-	var live_after: Dictionary = await state_export()
-	check(live_before == live_after, "Retour au direct sans modifier S/RNG")
+	check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"Le vrai direct conserve la priorité sur le Bureau")
+	check(await export_state()==before,"Tenter le Bureau ne modifie ni état, ni RNG du direct")
+	check(Office.live_match(app.model).heading=="MATCH EN COURS","Projection du Bureau identifie le vrai match en cours")
 	await command("delegate")
+	check(Office.live_match(app.model).finished and Office.live_match(app.model).heading=="MATCH TERMINÉ","Projection du Bureau distingue résultat à valider")
+	await command("finish_round");await ContextualFlow.finish_match_week(app,self,check,previous_week)
 	await render()
-	check(texts(named(app,"OfficeFixture")).contains("VALIDER LE RÉSULTAT"), "Match terminé : validation existante conservée")
-	await command("finish_round")
-	await ContextualFlow.settle_club_meetings(app, self, check)
-	await render()
-	check(not texts(named(app,"OfficeResults")).contains("Aucun match joué"), "Résultat issu du vrai match")
+	check(not app.contextual_director.active() and app.route=="Bureau","Le Bureau revient après validation et rendez-vous")
+	check(named("OfficeRecentResults")!=null,"Le résultat réellement joué apparaît dans le Bureau")
 	await capture("bureau-resultat-reel")
-	print("BUREAU GREEN : ", checks, " contrôles ; ", failures.size(), " échec(s)")
-	app.bridge.stop()
-	quit(0 if failures.is_empty() else 1)
+func run() -> void:
+	root.size=Vector2i(1920,1080)
+	app=load("res://main.tscn").instantiate();root.add_child(app)
+	await wait_model("snapshot initial");await command("new_career",{"club":0,"mode":"common"})
+	# QA controls the actual client area; production normally maximizes it.
+	var maximize:=Callable(app,"_keep_filled_display")
+	if root.size_changed.is_connected(maximize):root.size_changed.disconnect(maximize)
+	if root.focus_entered.is_connected(maximize):root.focus_entered.disconnect(maximize)
+	root.mode=Window.MODE_WINDOWED
+
+	await ContextualFlow.settle_club_meetings(app,self,check);await render()
+	sections();ranking_edges();await navigation()
+	for resolution in [Vector2i(1280,720),Vector2i(1440,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+		root.size=resolution
+		if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(resolution)
+		await render();await bounds();await capture("bureau-"+str(resolution.x))
+	await projections()
+	for setup in [[29,"common"],[0,"france"],[0,"fiction"]]:
+		await command("new_career",{"club":setup[0],"mode":setup[1]})
+		await ContextualFlow.settle_club_meetings(app,self,check);await render()
+		check(int(app.model.club.id)==setup[0] and app.model.leagues.size()==(1 if setup[1]=="fiction" else 2),"Vraie carrière et divisions : "+setup[1])
+		sections();ranking_edges();await capture("bureau-"+setup[1]+"-"+str(setup[0]))
+		if setup[0]==29: await palette()
+	await live_round()
+	print("BUREAU GREEN : ",checks," contrôles ; ",failures.size()," échec(s)")
+	app.bridge.stop();app.queue_free();await settle();quit(0 if failures.is_empty() else 1)

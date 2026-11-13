@@ -1,0 +1,7941 @@
+{
+  "base_commit": "96f537040bf9f2e37bf10b0a9b09518b732244a2",
+  "fix_commit": "e2ded6a8d4f2964ec5b22b68ec84a64b06463569",
+  "date": "2026-11-11",
+  "toolchain": {
+    "godot": "4.7.2.stable.official.ed1daf0bf",
+    "node": "22.23.4",
+    "display": "X11 on Xvfb :101",
+    "renderer": "OpenGL Compatibility Mesa 25.0.7 llvmpipe",
+    "audio": "Dummy"
+  },
+  "scope": "Real dialog constructors on a minimal presentation host, without EngineBridge or Gabi. No career/sports-engine acceptance claimed.",
+  "coordinates": {
+    "dialog": "client surface in host-window pixels, [x,y,width,height]",
+    "controls.rect": "dialog-local pixels, [x,y,width,height]",
+    "controls.global_rect": "host-window pixels, [x,y,width,height]",
+    "overflow": "pixels [left,top,right,bottom] after intersecting host, dialog and scroll bounds; scroll controls measured after ensure_control_visible",
+    "frame": "client surface plus title band; excludes stylebox expansion margins"
+  },
+  "files_sha256": {
+    "tests/small-window-contracts.gd": "e61e1d6aa9ac7be96a3fcdae29822ead5cd9ac82f89d72823078752bdc1c827b",
+    "tests/small-window-contracts.cjs": "74a345ff2cd88d21bdb88bbc2227ccce2724c8c9976c40abc678446f5b9e4c74",
+    "tests/small-window-contracts-before-1280x720.png": "7b8c858e0aa1caf09a3b1a696bbd2f90a4443797e4984de698d041be2eb88986",
+    "tests/small-window-contracts-after-1280x720.png": "658bca45becda63d3b24bd32029216457295cdf4d017d855711422267ff76e0f"
+  },
+  "before": {
+    "display": "X11",
+    "failures": [
+      "dialog (1280, 720) true",
+      "OfferSalary (1280, 720) true",
+      "OfferYears (1280, 720) true",
+      "ContractUseCounteroffer (1280, 720) true",
+      "OfferSummary (1280, 720) true",
+      "ContractNextAction (1280, 720) true",
+      "dialog (1280, 720) false",
+      "OfferSalary (1280, 720) false",
+      "OfferYears (1280, 720) false",
+      "ContractUseCounteroffer (1280, 720) false",
+      "OfferSummary (1280, 720) false",
+      "ContractNextAction (1280, 720) false",
+      "dialog (1366, 768) true",
+      "OfferSalary (1366, 768) true",
+      "OfferYears (1366, 768) true",
+      "ContractUseCounteroffer (1366, 768) true",
+      "OfferSummary (1366, 768) true",
+      "ContractNextAction (1366, 768) true",
+      "dialog (1366, 768) false",
+      "OfferSalary (1366, 768) false",
+      "OfferYears (1366, 768) false",
+      "ContractUseCounteroffer (1366, 768) false",
+      "OfferSummary (1366, 768) false",
+      "ContractNextAction (1366, 768) false",
+      "dialog (1440, 900) true",
+      "OfferSalary (1440, 900) true",
+      "OfferYears (1440, 900) true",
+      "ContractUseCounteroffer (1440, 900) true",
+      "OfferSummary (1440, 900) true",
+      "ContractNextAction (1440, 900) true",
+      "dialog (1440, 900) false",
+      "OfferSalary (1440, 900) false",
+      "OfferYears (1440, 900) false",
+      "ContractUseCounteroffer (1440, 900) false",
+      "OfferSummary (1440, 900) false",
+      "ContractNextAction (1440, 900) false"
+    ],
+    "reports": [
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1037.0,
+              198.0,
+              491.0,
+              22.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              1037.0,
+              162.0,
+              491.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              1037.0,
+              243.0,
+              491.0,
+              22.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              1037.0,
+              207.0,
+              491.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              1037.0,
+              308.0,
+              491.0,
+              23.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              1037.0,
+              272.0,
+              491.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              12.0,
+              351.0,
+              1516.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              315.0,
+              1516.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              5.0,
+              437.0,
+              1530.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              255.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              401.0,
+              1530.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              953.0,
+              660.0,
+              130.0,
+              23.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              624.0,
+              130.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1280.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              456.0,
+              660.0,
+              38.0,
+              23.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              456.0,
+              624.0,
+              38.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1280.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          652.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          260.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1037.0,
+              198.0,
+              491.0,
+              22.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              1037.0,
+              162.0,
+              491.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              1037.0,
+              243.0,
+              491.0,
+              22.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              1037.0,
+              207.0,
+              491.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              1037.0,
+              308.0,
+              491.0,
+              23.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              1037.0,
+              272.0,
+              491.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              12.0,
+              351.0,
+              1516.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              248.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              315.0,
+              1516.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              5.0,
+              437.0,
+              1530.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              255.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              401.0,
+              1530.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1275.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              953.0,
+              660.0,
+              130.0,
+              23.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              624.0,
+              130.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1280.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              456.0,
+              660.0,
+              38.0,
+              23.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              456.0,
+              624.0,
+              38.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1280.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          652.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          260.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1038.0,
+              198.0,
+              490.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              162.0,
+              490.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              244.0,
+              490.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              208.0,
+              490.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              310.0,
+              490.0,
+              25.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              274.0,
+              490.0,
+              25.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              12.0,
+              355.0,
+              1516.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              319.0,
+              1516.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              5.0,
+              441.0,
+              1530.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              169.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              405.0,
+              1530.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              946.0,
+              707.0,
+              143.0,
+              24.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              946.0,
+              671.0,
+              143.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1366.0,
+              700.0
+            ]
+          },
+          {
+            "global_rect": [
+              451.0,
+              707.0,
+              41.0,
+              24.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              451.0,
+              671.0,
+              41.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1366.0,
+              700.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          700.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          174.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1038.0,
+              198.0,
+              490.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              162.0,
+              490.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              244.0,
+              490.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              208.0,
+              490.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              310.0,
+              490.0,
+              25.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              274.0,
+              490.0,
+              25.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              12.0,
+              355.0,
+              1516.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              162.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              319.0,
+              1516.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              5.0,
+              441.0,
+              1530.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              169.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              405.0,
+              1530.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1361.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              946.0,
+              707.0,
+              143.0,
+              24.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              946.0,
+              671.0,
+              143.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1366.0,
+              700.0
+            ]
+          },
+          {
+            "global_rect": [
+              451.0,
+              707.0,
+              41.0,
+              24.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              451.0,
+              671.0,
+              41.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1366.0,
+              700.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          700.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          174.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1038.0,
+              205.0,
+              488.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              169.0,
+              488.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              253.0,
+              488.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              217.0,
+              488.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              321.0,
+              488.0,
+              26.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              285.0,
+              488.0,
+              26.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              14.0,
+              370.0,
+              1512.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              334.0,
+              1512.0,
+              73.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              6.0,
+              458.0,
+              1528.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              94.0,
+              0.0
+            ],
+            "rect": [
+              6.0,
+              422.0,
+              1528.0,
+              16.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              945.0,
+              836.0,
+              145.0,
+              26.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              945.0,
+              800.0,
+              145.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1440.0,
+              832.0
+            ]
+          },
+          {
+            "global_rect": [
+              450.0,
+              836.0,
+              43.0,
+              26.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              450.0,
+              800.0,
+              43.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1440.0,
+              832.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          832.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          100.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1038.0,
+              205.0,
+              488.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              169.0,
+              488.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              253.0,
+              488.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              217.0,
+              488.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1038.0,
+              321.0,
+              488.0,
+              26.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              1038.0,
+              285.0,
+              488.0,
+              26.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              14.0,
+              370.0,
+              1512.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              86.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              334.0,
+              1512.0,
+              73.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              6.0,
+              458.0,
+              1528.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              94.0,
+              0.0
+            ],
+            "rect": [
+              6.0,
+              422.0,
+              1528.0,
+              16.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1434.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              945.0,
+              836.0,
+              145.0,
+              26.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              945.0,
+              800.0,
+              145.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1440.0,
+              832.0
+            ]
+          },
+          {
+            "global_rect": [
+              450.0,
+              836.0,
+              43.0,
+              26.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              450.0,
+              800.0,
+              43.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1440.0,
+              832.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          832.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          100.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1233.0,
+              313.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              185.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              370.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              242.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              447.0,
+              478.0,
+              35.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              319.0,
+              478.0,
+              35.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              209.0,
+              513.0,
+              1502.0,
+              85.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              19.0,
+              385.0,
+              1502.0,
+              85.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              198.0,
+              618.0,
+              1524.0,
+              19.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              8.0,
+              490.0,
+              1524.0,
+              19.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1101.0,
+              945.0,
+              202.0,
+              35.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              911.0,
+              817.0,
+              202.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              616.0,
+              945.0,
+              58.0,
+              35.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              426.0,
+              817.0,
+              58.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          190.0,
+          128.0,
+          1540.0,
+          860.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1233.0,
+              313.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              185.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              370.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              242.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              447.0,
+              478.0,
+              35.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              319.0,
+              478.0,
+              35.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              209.0,
+              513.0,
+              1502.0,
+              85.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              19.0,
+              385.0,
+              1502.0,
+              85.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              198.0,
+              618.0,
+              1524.0,
+              19.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              8.0,
+              490.0,
+              1524.0,
+              19.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1101.0,
+              945.0,
+              202.0,
+              35.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              911.0,
+              817.0,
+              202.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              616.0,
+              945.0,
+              58.0,
+              35.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              426.0,
+              817.0,
+              58.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          190.0,
+          128.0,
+          1540.0,
+          860.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1558.0,
+              532.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              224.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              607.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              299.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              707.0,
+              468.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              399.0,
+              468.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              534.0,
+              793.0,
+              1492.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              485.0,
+              1492.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              520.0,
+              924.0,
+              1520.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              616.0,
+              1520.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1387.0,
+              1112.0,
+              260.0,
+              46.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              877.0,
+              804.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              912.0,
+              1112.0,
+              75.0,
+              46.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              804.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1558.0,
+              532.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              224.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              607.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              299.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              707.0,
+              468.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              399.0,
+              468.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              534.0,
+              793.0,
+              1492.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              485.0,
+              1492.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              520.0,
+              924.0,
+              1520.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              616.0,
+              1520.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1387.0,
+              1112.0,
+              260.0,
+              46.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              877.0,
+              804.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              912.0,
+              1112.0,
+              75.0,
+              46.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              804.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          2560,
+          1440
+        ]
+      }
+    ],
+    "shared_reports": []
+  },
+  "after": {
+    "display": "X11",
+    "failures": [],
+    "reports": [
+      {
+        "controls": [
+          {
+            "global_rect": [
+              859.0,
+              214.0,
+              395.0,
+              22.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              845.0,
+              162.0,
+              395.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              859.0,
+              259.0,
+              395.0,
+              22.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              845.0,
+              207.0,
+              395.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              859.0,
+              324.0,
+              395.0,
+              23.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              845.0,
+              272.0,
+              395.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              26.0,
+              367.0,
+              1228.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              315.0,
+              1228.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              19.0,
+              453.0,
+              1242.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              401.0,
+              1242.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              775.0,
+              676.0,
+              130.0,
+              23.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              761.0,
+              624.0,
+              130.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              374.0,
+              676.0,
+              38.0,
+              23.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              360.0,
+              624.0,
+              38.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1252.0,
+          652.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1252.0,
+          688.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              859.0,
+              214.0,
+              395.0,
+              22.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              845.0,
+              162.0,
+              395.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              859.0,
+              259.0,
+              395.0,
+              22.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              845.0,
+              207.0,
+              395.0,
+              22.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              859.0,
+              324.0,
+              395.0,
+              23.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              845.0,
+              272.0,
+              395.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              26.0,
+              367.0,
+              1228.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              315.0,
+              1228.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              19.0,
+              453.0,
+              1242.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              401.0,
+              1242.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1242.0,
+              609.0
+            ]
+          },
+          {
+            "global_rect": [
+              775.0,
+              676.0,
+              130.0,
+              23.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              761.0,
+              624.0,
+              130.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              374.0,
+              676.0,
+              38.0,
+              23.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              360.0,
+              624.0,
+              38.0,
+              23.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1252.0,
+          652.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1252.0,
+          688.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              917.0,
+              214.0,
+              423.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              903.0,
+              162.0,
+              423.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              917.0,
+              260.0,
+              423.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              903.0,
+              208.0,
+              423.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              917.0,
+              326.0,
+              423.0,
+              25.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              903.0,
+              274.0,
+              423.0,
+              25.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              26.0,
+              371.0,
+              1314.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              319.0,
+              1314.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              19.0,
+              457.0,
+              1328.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              405.0,
+              1328.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              825.0,
+              723.0,
+              143.0,
+              24.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              811.0,
+              671.0,
+              143.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1338.0,
+              700.0
+            ]
+          },
+          {
+            "global_rect": [
+              397.0,
+              723.0,
+              41.0,
+              24.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              383.0,
+              671.0,
+              41.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1338.0,
+              700.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1338.0,
+          700.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1338.0,
+          736.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              917.0,
+              214.0,
+              423.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              903.0,
+              162.0,
+              423.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              917.0,
+              260.0,
+              423.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              903.0,
+              208.0,
+              423.0,
+              23.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              917.0,
+              326.0,
+              423.0,
+              25.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              903.0,
+              274.0,
+              423.0,
+              25.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              26.0,
+              371.0,
+              1314.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              12.0,
+              319.0,
+              1314.0,
+              73.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              19.0,
+              457.0,
+              1328.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              5.0,
+              405.0,
+              1328.0,
+              16.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              1328.0,
+              656.0
+            ]
+          },
+          {
+            "global_rect": [
+              825.0,
+              723.0,
+              143.0,
+              24.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              811.0,
+              671.0,
+              143.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1338.0,
+              700.0
+            ]
+          },
+          {
+            "global_rect": [
+              397.0,
+              723.0,
+              41.0,
+              24.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              383.0,
+              671.0,
+              41.0,
+              24.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1338.0,
+              700.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1338.0,
+          700.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1338.0,
+          736.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              967.0,
+              221.0,
+              445.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              169.0,
+              445.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              967.0,
+              269.0,
+              445.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              217.0,
+              445.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              967.0,
+              337.0,
+              445.0,
+              26.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              285.0,
+              445.0,
+              26.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              28.0,
+              386.0,
+              1384.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              334.0,
+              1384.0,
+              73.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              20.0,
+              474.0,
+              1400.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              6.0,
+              422.0,
+              1400.0,
+              16.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              873.0,
+              852.0,
+              145.0,
+              26.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              859.0,
+              800.0,
+              145.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1412.0,
+              832.0
+            ]
+          },
+          {
+            "global_rect": [
+              421.0,
+              852.0,
+              43.0,
+              26.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              407.0,
+              800.0,
+              43.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1412.0,
+              832.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1412.0,
+          832.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1412.0,
+          868.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              967.0,
+              221.0,
+              445.0,
+              23.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              169.0,
+              445.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              967.0,
+              269.0,
+              445.0,
+              23.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              217.0,
+              445.0,
+              23.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              967.0,
+              337.0,
+              445.0,
+              26.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              953.0,
+              285.0,
+              445.0,
+              26.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              28.0,
+              386.0,
+              1384.0,
+              73.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              334.0,
+              1384.0,
+              73.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              20.0,
+              474.0,
+              1400.0,
+              16.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              6.0,
+              422.0,
+              1400.0,
+              16.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              1400.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              873.0,
+              852.0,
+              145.0,
+              26.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              859.0,
+              800.0,
+              145.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1412.0,
+              832.0
+            ]
+          },
+          {
+            "global_rect": [
+              421.0,
+              852.0,
+              43.0,
+              26.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              407.0,
+              800.0,
+              43.0,
+              26.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1412.0,
+              832.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1412.0,
+          832.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1412.0,
+          868.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1233.0,
+              313.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              185.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              370.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              242.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              447.0,
+              478.0,
+              35.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              319.0,
+              478.0,
+              35.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              209.0,
+              513.0,
+              1502.0,
+              85.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              19.0,
+              385.0,
+              1502.0,
+              85.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              198.0,
+              618.0,
+              1524.0,
+              19.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              8.0,
+              490.0,
+              1524.0,
+              19.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1101.0,
+              945.0,
+              202.0,
+              35.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              911.0,
+              817.0,
+              202.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              616.0,
+              945.0,
+              58.0,
+              35.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              426.0,
+              817.0,
+              58.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          190.0,
+          128.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          190.0,
+          92.0,
+          1540.0,
+          896.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1233.0,
+              313.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              185.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              370.0,
+              478.0,
+              30.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              242.0,
+              478.0,
+              30.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1233.0,
+              447.0,
+              478.0,
+              35.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1043.0,
+              319.0,
+              478.0,
+              35.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              209.0,
+              513.0,
+              1502.0,
+              85.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              19.0,
+              385.0,
+              1502.0,
+              85.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              198.0,
+              618.0,
+              1524.0,
+              19.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              8.0,
+              490.0,
+              1524.0,
+              19.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              1524.0,
+              799.0
+            ]
+          },
+          {
+            "global_rect": [
+              1101.0,
+              945.0,
+              202.0,
+              35.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              911.0,
+              817.0,
+              202.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              616.0,
+              945.0,
+              58.0,
+              35.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              426.0,
+              817.0,
+              58.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          190.0,
+          128.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          190.0,
+          92.0,
+          1540.0,
+          896.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1558.0,
+              532.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              224.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              607.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              299.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              707.0,
+              468.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              399.0,
+              468.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              534.0,
+              793.0,
+              1492.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              485.0,
+              1492.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              520.0,
+              924.0,
+              1520.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              616.0,
+              1520.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1387.0,
+              1112.0,
+              260.0,
+              46.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              877.0,
+              804.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              912.0,
+              1112.0,
+              75.0,
+              46.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              804.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          510.0,
+          272.0,
+          1540.0,
+          896.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": true,
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1558.0,
+              532.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferSalary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              224.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              607.0,
+              468.0,
+              39.0
+            ],
+            "name": "OfferYears",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              299.0,
+              468.0,
+              39.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1558.0,
+              707.0,
+              468.0,
+              46.0
+            ],
+            "name": "ContractUseCounteroffer",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1048.0,
+              399.0,
+              468.0,
+              46.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              534.0,
+              793.0,
+              1492.0,
+              105.0
+            ],
+            "name": "OfferSummary",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              24.0,
+              485.0,
+              1492.0,
+              105.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              520.0,
+              924.0,
+              1520.0,
+              24.0
+            ],
+            "name": "ContractNextAction",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              10.0,
+              616.0,
+              1520.0,
+              24.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              1520.0,
+              784.0
+            ]
+          },
+          {
+            "global_rect": [
+              1387.0,
+              1112.0,
+              260.0,
+              46.0
+            ],
+            "name": "ok",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              877.0,
+              804.0,
+              260.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              912.0,
+              1112.0,
+              75.0,
+              46.0
+            ],
+            "name": "cancel",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              804.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          510.0,
+          272.0,
+          1540.0,
+          896.0
+        ],
+        "frame_overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recruiting": false,
+        "resolution": [
+          2560,
+          1440
+        ]
+      }
+    ],
+    "shared_reports": []
+  },
+  "shared": {
+    "display": "X11",
+    "failures": [],
+    "reports": [],
+    "shared_reports": [
+      {
+        "controls": [
+          {
+            "global_rect": [
+              846.0,
+              670.0,
+              26.0,
+              29.0
+            ],
+            "name": "@Button@7",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              832.0,
+              618.0,
+              26.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              407.0,
+              670.0,
+              42.0,
+              29.0
+            ],
+            "name": "@Button@9",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              393.0,
+              618.0,
+              42.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1252.0,
+          652.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1252.0,
+          688.0
+        ],
+        "has_requested_size": true,
+        "label": "confirmation",
+        "minimum": [
+          1252,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              782.0,
+              600.0,
+              33.0,
+              25.0
+            ],
+            "name": "@Button@16",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              590.0,
+              474.0,
+              33.0,
+              25.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              896.0,
+              504.0
+            ]
+          },
+          {
+            "global_rect": [
+              464.0,
+              600.0,
+              42.0,
+              25.0
+            ],
+            "name": "@Button@18",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              272.0,
+              474.0,
+              42.0,
+              25.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              896.0,
+              504.0
+            ]
+          }
+        ],
+        "dialog": [
+          192.0,
+          126.0,
+          896.0,
+          504.0
+        ],
+        "frame": [
+          192.0,
+          90.0,
+          896.0,
+          540.0
+        ],
+        "has_requested_size": false,
+        "label": "file-picker",
+        "minimum": [
+          200,
+          70
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              614.0,
+              644.0,
+              51.0,
+              29.0
+            ],
+            "name": "@Button@165",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              344.0,
+              566.0,
+              51.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              847.0,
+              221.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              577.0,
+              143.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              283.0,
+              265.0,
+              714.0,
+              36.0
+            ],
+            "name": "PreferencesMotion",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              13.0,
+              187.0,
+              714.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              777.0,
+              333.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesCamera",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              255.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              777.0,
+              377.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesQuality",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              299.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              283.0,
+              421.0,
+              714.0,
+              28.0
+            ],
+            "name": "PreferencesReset",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              13.0,
+              343.0,
+              714.0,
+              28.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          }
+        ],
+        "dialog": [
+          270.0,
+          78.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          270.0,
+          42.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-0",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              614.0,
+              644.0,
+              51.0,
+              29.0
+            ],
+            "name": "@Button@165",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              344.0,
+              566.0,
+              51.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              847.0,
+              245.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesInterfaceVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              577.0,
+              167.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              847.0,
+              289.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              577.0,
+              211.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          }
+        ],
+        "dialog": [
+          270.0,
+          78.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          270.0,
+          42.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-1",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              614.0,
+              644.0,
+              51.0,
+              29.0
+            ],
+            "name": "@Button@165",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              344.0,
+              566.0,
+              51.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              748.0,
+              221.0,
+              249.0,
+              36.0
+            ],
+            "name": "PreferencesDisplayScreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              478.0,
+              143.0,
+              249.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              777.0,
+              265.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesSalaryPeriod",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              187.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              777.0,
+              352.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumLighting",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              274.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              283.0,
+              420.0,
+              353.0,
+              28.0
+            ],
+            "name": "PreferencesFullscreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              13.0,
+              342.0,
+              353.0,
+              28.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              644.0,
+              420.0,
+              353.0,
+              28.0
+            ],
+            "name": "PreferencesWindowed",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              374.0,
+              342.0,
+              353.0,
+              28.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          }
+        ],
+        "dialog": [
+          270.0,
+          78.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          270.0,
+          42.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-2",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              903.0,
+              718.0,
+              26.0,
+              29.0
+            ],
+            "name": "@Button@269",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              889.0,
+              666.0,
+              26.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1338.0,
+              700.0
+            ]
+          },
+          {
+            "global_rect": [
+              436.0,
+              718.0,
+              42.0,
+              29.0
+            ],
+            "name": "@Button@271",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              422.0,
+              666.0,
+              42.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1338.0,
+              700.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1338.0,
+          700.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1338.0,
+          736.0
+        ],
+        "has_requested_size": true,
+        "label": "confirmation",
+        "minimum": [
+          1338,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              835.0,
+              641.0,
+              33.0,
+              25.0
+            ],
+            "name": "@Button@278",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              630.0,
+              508.0,
+              33.0,
+              25.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              956.0,
+              538.0
+            ]
+          },
+          {
+            "global_rect": [
+              497.0,
+              641.0,
+              42.0,
+              25.0
+            ],
+            "name": "@Button@280",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              292.0,
+              508.0,
+              42.0,
+              25.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              956.0,
+              538.0
+            ]
+          }
+        ],
+        "dialog": [
+          205.0,
+          133.0,
+          956.0,
+          538.0
+        ],
+        "frame": [
+          205.0,
+          97.0,
+          956.0,
+          574.0
+        ],
+        "has_requested_size": false,
+        "label": "file-picker",
+        "minimum": [
+          200,
+          70
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              657.0,
+              668.0,
+              51.0,
+              29.0
+            ],
+            "name": "@Button@427",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              344.0,
+              566.0,
+              51.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              890.0,
+              248.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              577.0,
+              146.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              326.0,
+              292.0,
+              714.0,
+              36.0
+            ],
+            "name": "PreferencesMotion",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              13.0,
+              190.0,
+              714.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              820.0,
+              360.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesCamera",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              258.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              820.0,
+              404.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesQuality",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              302.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              326.0,
+              448.0,
+              714.0,
+              28.0
+            ],
+            "name": "PreferencesReset",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              13.0,
+              346.0,
+              714.0,
+              28.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          }
+        ],
+        "dialog": [
+          313.0,
+          102.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          313.0,
+          66.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-0",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              657.0,
+              668.0,
+              51.0,
+              29.0
+            ],
+            "name": "@Button@427",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              344.0,
+              566.0,
+              51.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              890.0,
+              272.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesInterfaceVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              577.0,
+              170.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              890.0,
+              316.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              577.0,
+              214.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          }
+        ],
+        "dialog": [
+          313.0,
+          102.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          313.0,
+          66.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-1",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              657.0,
+              668.0,
+              51.0,
+              29.0
+            ],
+            "name": "@Button@427",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              344.0,
+              566.0,
+              51.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              791.0,
+              248.0,
+              249.0,
+              36.0
+            ],
+            "name": "PreferencesDisplayScreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              478.0,
+              146.0,
+              249.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              820.0,
+              292.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesSalaryPeriod",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              190.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              820.0,
+              379.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumLighting",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              507.0,
+              277.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              326.0,
+              447.0,
+              353.0,
+              28.0
+            ],
+            "name": "PreferencesFullscreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              13.0,
+              345.0,
+              353.0,
+              28.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          },
+          {
+            "global_rect": [
+              687.0,
+              447.0,
+              353.0,
+              28.0
+            ],
+            "name": "PreferencesWindowed",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              374.0,
+              345.0,
+              353.0,
+              28.0
+            ],
+            "visible_bounds": [
+              5.0,
+              5.0,
+              730.0,
+              551.0
+            ]
+          }
+        ],
+        "dialog": [
+          313.0,
+          102.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          313.0,
+          66.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-2",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1366,
+          768
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              952.0,
+              847.0,
+              28.0,
+              31.0
+            ],
+            "name": "@Button@531",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              938.0,
+              795.0,
+              28.0,
+              31.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1412.0,
+              832.0
+            ]
+          },
+          {
+            "global_rect": [
+              460.0,
+              847.0,
+              44.0,
+              31.0
+            ],
+            "name": "@Button@533",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              446.0,
+              795.0,
+              44.0,
+              31.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1412.0,
+              832.0
+            ]
+          }
+        ],
+        "dialog": [
+          14.0,
+          52.0,
+          1412.0,
+          832.0
+        ],
+        "frame": [
+          14.0,
+          16.0,
+          1412.0,
+          868.0
+        ],
+        "has_requested_size": true,
+        "label": "confirmation",
+        "minimum": [
+          1412,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              880.0,
+              750.0,
+              35.0,
+              27.0
+            ],
+            "name": "@Button@540",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              664.0,
+              597.0,
+              35.0,
+              27.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1008.0,
+              630.0
+            ]
+          },
+          {
+            "global_rect": [
+              525.0,
+              750.0,
+              44.0,
+              27.0
+            ],
+            "name": "@Button@542",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              309.0,
+              597.0,
+              44.0,
+              27.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1008.0,
+              630.0
+            ]
+          }
+        ],
+        "dialog": [
+          216.0,
+          153.0,
+          1008.0,
+          630.0
+        ],
+        "frame": [
+          216.0,
+          117.0,
+          1008.0,
+          666.0
+        ],
+        "has_requested_size": false,
+        "label": "file-picker",
+        "minimum": [
+          200,
+          70
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              693.0,
+              731.0,
+              53.0,
+              31.0
+            ],
+            "name": "@Button@689",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              343.0,
+              563.0,
+              53.0,
+              31.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              926.0,
+              318.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              576.0,
+              150.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              364.0,
+              362.0,
+              712.0,
+              36.0
+            ],
+            "name": "PreferencesMotion",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              194.0,
+              712.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              856.0,
+              430.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesCamera",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              506.0,
+              262.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              856.0,
+              474.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesQuality",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              506.0,
+              306.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              364.0,
+              518.0,
+              712.0,
+              28.0
+            ],
+            "name": "PreferencesReset",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              350.0,
+              712.0,
+              28.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          }
+        ],
+        "dialog": [
+          350.0,
+          168.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          350.0,
+          132.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-0",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              693.0,
+              731.0,
+              53.0,
+              31.0
+            ],
+            "name": "@Button@689",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              343.0,
+              563.0,
+              53.0,
+              31.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              926.0,
+              342.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesInterfaceVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              576.0,
+              174.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              926.0,
+              386.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              576.0,
+              218.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          }
+        ],
+        "dialog": [
+          350.0,
+          168.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          350.0,
+          132.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-1",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              693.0,
+              731.0,
+              53.0,
+              31.0
+            ],
+            "name": "@Button@689",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              343.0,
+              563.0,
+              53.0,
+              31.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              740.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              825.0,
+              318.0,
+              251.0,
+              36.0
+            ],
+            "name": "PreferencesDisplayScreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              475.0,
+              150.0,
+              251.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              856.0,
+              362.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesSalaryPeriod",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              506.0,
+              194.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              856.0,
+              449.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumLighting",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              506.0,
+              281.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              364.0,
+              517.0,
+              352.0,
+              28.0
+            ],
+            "name": "PreferencesFullscreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              14.0,
+              349.0,
+              352.0,
+              28.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          },
+          {
+            "global_rect": [
+              724.0,
+              517.0,
+              352.0,
+              28.0
+            ],
+            "name": "PreferencesWindowed",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              374.0,
+              349.0,
+              352.0,
+              28.0
+            ],
+            "visible_bounds": [
+              6.0,
+              6.0,
+              728.0,
+              547.0
+            ]
+          }
+        ],
+        "dialog": [
+          350.0,
+          168.0,
+          740.0,
+          600.0
+        ],
+        "frame": [
+          350.0,
+          132.0,
+          740.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-2",
+        "minimum": [
+          740,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1440,
+          900
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1210.0,
+              945.0,
+              32.0,
+              35.0
+            ],
+            "name": "@Button@793",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1020.0,
+              817.0,
+              32.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              677.0,
+              945.0,
+              46.0,
+              35.0
+            ],
+            "name": "@Button@795",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              487.0,
+              817.0,
+              46.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          190.0,
+          128.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          190.0,
+          92.0,
+          1540.0,
+          896.0
+        ],
+        "has_requested_size": true,
+        "label": "confirmation",
+        "minimum": [
+          1540,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1174.0,
+              899.0,
+              37.0,
+              29.0
+            ],
+            "name": "@Button@802",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              886.0,
+              719.0,
+              37.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1344.0,
+              756.0
+            ]
+          },
+          {
+            "global_rect": [
+              708.0,
+              899.0,
+              46.0,
+              29.0
+            ],
+            "name": "@Button@804",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              420.0,
+              719.0,
+              46.0,
+              29.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1344.0,
+              756.0
+            ]
+          }
+        ],
+        "dialog": [
+          288.0,
+          180.0,
+          1344.0,
+          756.0
+        ],
+        "frame": [
+          288.0,
+          144.0,
+          1344.0,
+          792.0
+        ],
+        "has_requested_size": false,
+        "label": "file-picker",
+        "minimum": [
+          200,
+          70
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              931.0,
+              815.0,
+              57.0,
+              35.0
+            ],
+            "name": "@Button@951",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              411.0,
+              557.0,
+              57.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              880.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              1234.0,
+              443.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              714.0,
+              185.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              536.0,
+              487.0,
+              848.0,
+              36.0
+            ],
+            "name": "PreferencesMotion",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              16.0,
+              229.0,
+              848.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              1164.0,
+              557.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesCamera",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              644.0,
+              299.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              1164.0,
+              601.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesQuality",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              644.0,
+              343.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              536.0,
+              645.0,
+              848.0,
+              28.0
+            ],
+            "name": "PreferencesReset",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              16.0,
+              387.0,
+              848.0,
+              28.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          }
+        ],
+        "dialog": [
+          520.0,
+          258.0,
+          880.0,
+          600.0
+        ],
+        "frame": [
+          520.0,
+          222.0,
+          880.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-0",
+        "minimum": [
+          880,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              931.0,
+              815.0,
+              57.0,
+              35.0
+            ],
+            "name": "@Button@951",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              411.0,
+              557.0,
+              57.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              880.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              1234.0,
+              470.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesInterfaceVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              714.0,
+              212.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              1234.0,
+              514.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              714.0,
+              256.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          }
+        ],
+        "dialog": [
+          520.0,
+          258.0,
+          880.0,
+          600.0
+        ],
+        "frame": [
+          520.0,
+          222.0,
+          880.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-1",
+        "minimum": [
+          880,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              931.0,
+              815.0,
+              57.0,
+              35.0
+            ],
+            "name": "@Button@951",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              411.0,
+              557.0,
+              57.0,
+              35.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              880.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              1131.0,
+              443.0,
+              253.0,
+              36.0
+            ],
+            "name": "PreferencesDisplayScreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              611.0,
+              185.0,
+              253.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              1164.0,
+              487.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesSalaryPeriod",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              644.0,
+              229.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              1164.0,
+              578.0,
+              220.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumLighting",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              644.0,
+              320.0,
+              220.0,
+              36.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              536.0,
+              649.0,
+              420.0,
+              28.0
+            ],
+            "name": "PreferencesFullscreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              16.0,
+              391.0,
+              420.0,
+              28.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          },
+          {
+            "global_rect": [
+              964.0,
+              649.0,
+              420.0,
+              28.0
+            ],
+            "name": "PreferencesWindowed",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              444.0,
+              391.0,
+              420.0,
+              28.0
+            ],
+            "visible_bounds": [
+              8.0,
+              8.0,
+              864.0,
+              539.0
+            ]
+          }
+        ],
+        "dialog": [
+          520.0,
+          258.0,
+          880.0,
+          600.0
+        ],
+        "frame": [
+          520.0,
+          222.0,
+          880.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-2",
+        "minimum": [
+          880,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1527.0,
+              1112.0,
+              42.0,
+              46.0
+            ],
+            "name": "@Button@1055",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1017.0,
+              804.0,
+              42.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          },
+          {
+            "global_rect": [
+              990.0,
+              1112.0,
+              59.0,
+              46.0
+            ],
+            "name": "@Button@1057",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              480.0,
+              804.0,
+              59.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              860.0
+            ]
+          }
+        ],
+        "dialog": [
+          510.0,
+          308.0,
+          1540.0,
+          860.0
+        ],
+        "frame": [
+          510.0,
+          272.0,
+          1540.0,
+          896.0
+        ],
+        "has_requested_size": true,
+        "label": "confirmation",
+        "minimum": [
+          1540,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1565.0,
+              1194.0,
+              48.0,
+              38.0
+            ],
+            "name": "@Button@1064",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1181.0,
+              960.0,
+              48.0,
+              38.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1792.0,
+              1008.0
+            ]
+          },
+          {
+            "global_rect": [
+              946.0,
+              1194.0,
+              59.0,
+              38.0
+            ],
+            "name": "@Button@1066",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              562.0,
+              960.0,
+              59.0,
+              38.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1792.0,
+              1008.0
+            ]
+          }
+        ],
+        "dialog": [
+          384.0,
+          234.0,
+          1792.0,
+          1008.0
+        ],
+        "frame": [
+          384.0,
+          198.0,
+          1792.0,
+          1044.0
+        ],
+        "has_requested_size": false,
+        "label": "file-picker",
+        "minimum": [
+          200,
+          70
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1242.0,
+              982.0,
+              75.0,
+              46.0
+            ],
+            "name": "@Button@1213",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              544.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              880.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              1552.0,
+              674.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              712.0,
+              236.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              858.0,
+              718.0,
+              844.0,
+              40.0
+            ],
+            "name": "PreferencesMotion",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              18.0,
+              280.0,
+              844.0,
+              40.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              1482.0,
+              797.0,
+              220.0,
+              40.0
+            ],
+            "name": "PreferencesCamera",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              642.0,
+              359.0,
+              220.0,
+              40.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              1482.0,
+              845.0,
+              220.0,
+              40.0
+            ],
+            "name": "PreferencesQuality",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              642.0,
+              407.0,
+              220.0,
+              40.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              858.0,
+              893.0,
+              844.0,
+              36.0
+            ],
+            "name": "PreferencesReset",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              18.0,
+              455.0,
+              844.0,
+              36.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          }
+        ],
+        "dialog": [
+          840.0,
+          438.0,
+          880.0,
+          600.0
+        ],
+        "frame": [
+          840.0,
+          402.0,
+          880.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-0",
+        "minimum": [
+          880,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1242.0,
+              982.0,
+              75.0,
+              46.0
+            ],
+            "name": "@Button@1213",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              544.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              880.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              1552.0,
+              706.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesInterfaceVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              712.0,
+              268.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              1552.0,
+              750.0,
+              150.0,
+              36.0
+            ],
+            "name": "PreferencesStadiumVolume",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              712.0,
+              312.0,
+              150.0,
+              36.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          }
+        ],
+        "dialog": [
+          840.0,
+          438.0,
+          880.0,
+          600.0
+        ],
+        "frame": [
+          840.0,
+          402.0,
+          880.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-1",
+        "minimum": [
+          880,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1242.0,
+              982.0,
+              75.0,
+              46.0
+            ],
+            "name": "@Button@1213",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              402.0,
+              544.0,
+              75.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              880.0,
+              600.0
+            ]
+          },
+          {
+            "global_rect": [
+              1378.0,
+              674.0,
+              316.0,
+              40.0
+            ],
+            "name": "PreferencesDisplayScreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              538.0,
+              236.0,
+              316.0,
+              40.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              1474.0,
+              722.0,
+              220.0,
+              40.0
+            ],
+            "name": "PreferencesSalaryPeriod",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              634.0,
+              284.0,
+              220.0,
+              40.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              1474.0,
+              827.0,
+              220.0,
+              40.0
+            ],
+            "name": "PreferencesStadiumLighting",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              634.0,
+              389.0,
+              220.0,
+              40.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              858.0,
+              907.0,
+              414.0,
+              36.0
+            ],
+            "name": "PreferencesFullscreen",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              18.0,
+              469.0,
+              414.0,
+              36.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          },
+          {
+            "global_rect": [
+              1280.0,
+              907.0,
+              414.0,
+              36.0
+            ],
+            "name": "PreferencesWindowed",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              440.0,
+              469.0,
+              414.0,
+              36.0
+            ],
+            "visible_bounds": [
+              10.0,
+              10.0,
+              860.0,
+              524.0
+            ]
+          }
+        ],
+        "dialog": [
+          840.0,
+          438.0,
+          880.0,
+          600.0
+        ],
+        "frame": [
+          840.0,
+          402.0,
+          880.0,
+          636.0
+        ],
+        "has_requested_size": true,
+        "label": "preferences-2",
+        "minimum": [
+          880,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              825.0,
+              632.0,
+              42.0,
+              46.0
+            ],
+            "name": "@Button@1317",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              825.0,
+              596.0,
+              42.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              384.0,
+              632.0,
+              59.0,
+              46.0
+            ],
+            "name": "@Button@1319",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              384.0,
+              596.0,
+              59.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1252.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1252.0,
+          652.0
+        ],
+        "frame": [
+          0.0,
+          0.0,
+          1252.0,
+          688.0
+        ],
+        "has_requested_size": false,
+        "label": "resize",
+        "minimum": [
+          1252,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          1280,
+          720
+        ]
+      },
+      {
+        "controls": [
+          {
+            "global_rect": [
+              1017.0,
+              632.0,
+              42.0,
+              46.0
+            ],
+            "name": "@Button@1317",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              1017.0,
+              596.0,
+              42.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              652.0
+            ]
+          },
+          {
+            "global_rect": [
+              480.0,
+              632.0,
+              59.0,
+              46.0
+            ],
+            "name": "@Button@1319",
+            "overflow": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rect": [
+              480.0,
+              596.0,
+              59.0,
+              46.0
+            ],
+            "visible_bounds": [
+              0.0,
+              0.0,
+              1540.0,
+              652.0
+            ]
+          }
+        ],
+        "dialog": [
+          0.0,
+          36.0,
+          1540.0,
+          652.0
+        ],
+        "frame": [
+          0.0,
+          0.0,
+          1540.0,
+          688.0
+        ],
+        "has_requested_size": false,
+        "label": "resize",
+        "minimum": [
+          1540,
+          0
+        ],
+        "overflow": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "resolution": [
+          2560,
+          1440
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+TAP version 13
+# Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+# ENTITY_SPEECH {"id":0,"requests":0,"starts":0}
+# ENTITY NAVIGATION : 51 contrôles ; 0 échec(s)
+# Preuves liens natifs : /tmp/cd-entity-navigation-DiBxV2
+# Subtest: Liens natifs : identifiants projetés, refus sans effet et historique de lecture
+ok 1 - Liens natifs : identifiants projetés, refus sans effet et historique de lecture
+  ---
+  duration_ms: 16662.826437
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16711.988085

@@ -7,6 +7,7 @@ const CONFIRM_SIZE := Vector2i(1080, 480)
 const REASONS := {"import":"Avant un import", "nouvelle-carriere":"Avant une nouvelle carrière", "restauration":"Avant une restauration", "adaptation-reprise":"Avant adaptation à la reprise"}
 var _app: Control
 var _body: VBoxContainer
+var _surface: ScrollContainer
 var _status: Label
 var _pending: Dictionary = {}
 var _buttons: Array[Button] = []
@@ -64,6 +65,7 @@ func _setup(app: Control) -> void:
 	confirmed.connect(queue_free)
 	canceled.connect(queue_free)
 	var surface := ScrollContainer.new()
+	_surface = surface
 	surface.name = "ProfileSafetyScroll"
 	surface.set_meta("immersive_style_applied", true)
 	surface.custom_minimum_size = Vector2(1360, 900)
@@ -82,9 +84,18 @@ func _setup(app: Control) -> void:
 	_body.custom_minimum_size.x = 1240
 	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margins.add_child(_body)
+	_fit_reading()
+	app.get_window().size_changed.connect(_fit_reading)
 	_render()
 	app.bridge.model_changed.connect(_on_model)
 	app.bridge.command_failed.connect(_on_failure)
+
+func _fit_reading() -> void:
+	if not is_instance_valid(_surface) or not is_instance_valid(_body): return
+	var available := _app.get_window().size - Vector2i(28, 68)
+	var width := minf(1360, maxf(1, available.x - 60))
+	_surface.custom_minimum_size = Vector2(width, minf(900, maxf(1, available.y - 140)))
+	_body.custom_minimum_size.x = minf(1240, maxf(1, width - 56))
 
 func _render() -> void:
 	for child in _body.get_children():

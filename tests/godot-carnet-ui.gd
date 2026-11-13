@@ -1,6 +1,8 @@
 extends SceneTree
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
+var speech_requests := 0
+var speech_starts := 0
 var checks := 0
 var failures: Array[String] = []
 const ROUTES = {"Effectif":"CarnetSquad", "Composition":"CarnetLineup", "Préparation":"CarnetPreparation", "Recrutement":"CarnetMarket", "Finances":"CarnetFinance", "Club":"CarnetClub", "Calendrier":"CarnetCalendar", "Classements":"CarnetStandings", "Match":"CarnetMatch", "Accueil":"CarnetHome", "Création":"CarnetCreation", "Packs":"CarnetPacks"}
@@ -23,6 +25,7 @@ func button(node: Node, text: String) -> Button:
 		if result != null: return result
 	return null
 func page_for(route: String) -> Control:
+	if route == "Match" and app.contextual_director.active() and app.contextual_director.kind == "live": return app.match_screen
 	var page := named(app,ROUTES[route]) as Control
 	if page!=null:return page
 	var alternatives := {
@@ -38,6 +41,7 @@ func wait_model() -> void:
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
 	check(not app.waiting and not app.model.is_empty(), "Réponse native bornée")
 func command(id: String, payload: Dictionary = {}) -> void:
+	print("SDK_COMMAND godot-carnet-ui ",id)
 	app._command(id, payload)
 	await wait_model()
 	check(app.bridge.last_response_ok, "Commande réelle " + id + " / " + app.last_error)
@@ -61,6 +65,54 @@ func press(text: String) -> void:
 		check(b.has_focus(), "Focus réel " + text)
 		b.pressed.emit()
 		await settle()
+func bench_control(screen: Control, key: String) -> Button:
+	var controls: Array = screen.drawer_body.find_children("*","Button",true,false).filter(func(control): return control.get_meta("match_bench_focus","") == key)
+	check(controls.size() == 1,"Contrôle du banc lié à une identité unique : "+key)
+	return controls[0] as Button if controls.size() == 1 else null
+func activate_bench(control: Button, key: String) -> void:
+	check(control != null and control.is_visible_in_tree() and not control.disabled,"Action réelle du banc disponible : "+key)
+	if control == null or control.disabled: return
+	control.grab_focus()
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer: ancestor.ensure_control_visible(control)
+		ancestor=ancestor.get_parent()
+	await settle()
+	check(control.has_focus(),"Focus réel du banc : "+key)
+	check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(2).encloses(control.get_global_rect()),"Commande du banc entière dans la fenêtre : "+key)
+	for down in [true,false]:
+		var event:=InputEventKey.new();event.keycode=KEY_ENTER;event.pressed=down;Input.parse_input_event(event);await process_frame
+	await settle()
+func press_match_drawer(caption: String, expected: String) -> void:
+	var screen := page_for("Match")
+	var matches := screen.find_children("*","Button",true,false).filter(func(control): return control.text == caption and control.is_visible_in_tree() and not control.disabled)
+	# Direct en temps forts : la bande sous le score (Tactique, Banc, Paramètres, Plus) range
+	# Statistiques et Journal dans le menu Plus (demande de Léo, 12 novembre 2026).
+	var plus: MenuButton = screen.find_child("MatchBetweenMore", true, false) as MenuButton
+	if matches.is_empty() and plus != null and plus.is_visible_in_tree():
+		var menu := plus.get_popup()
+		var libelle: String = str({"STATS": "Statistiques", "JOURNAL": "Journal du match"}.get(caption, ""))
+		var index := -1
+		for n in menu.item_count:
+			if menu.get_item_text(n) == libelle: index = n
+		check(index >= 0, "Action du vrai direct dans le menu Plus : "+caption)
+		if index < 0: return
+		menu.id_pressed.emit(menu.get_item_id(index))
+		await settle()
+		check(screen.drawer_tab==expected and screen.drawer.visible,"Le menu Plus ouvre le tiroir contextuel : "+expected)
+		return
+	check(matches.size()==1,"Action visible unique du vrai direct : "+caption)
+	if matches.size()!=1: return
+	var control := matches[0] as Button
+	var point := control.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new();motion.position=point;motion.global_position=point
+	root.push_input(motion,true);await process_frame
+	for down in [true,false]:
+		var event:=InputEventMouseButton.new();event.button_index=MOUSE_BUTTON_LEFT;event.position=point;event.global_position=point;event.pressed=down
+		root.push_input(event,true);await process_frame
+	await settle()
+	check(control.has_focus(),"Focus réel du bouton du direct : "+caption)
+	check(screen.drawer_tab==expected and screen.drawer.visible,"Le vrai clic ouvre le tiroir contextuel : "+expected)
 func bounds(route: String) -> void:
 	var page := page_for(route)
 	check(page != null, "Vue carnet " + route)
@@ -90,6 +142,9 @@ func bounds(route: String) -> void:
 			var font_size := b.get_theme_font_size("font_size")
 			var text_height := b.get_theme_font("font").get_height(font_size)*scale
 			check(hit.size.x>=20 and hit.size.y>=maxf(18,text_height), "Cible et texte utilisables " + route + " " + str(b.name))
+			if b.name == "CompetitionNextDateLink":
+				var date_caption := named(page,"CompetitionNextDate") as Label
+				check(date_caption != null and not date_caption.text.strip_edges().is_empty() and b.accessibility_name.contains(date_caption.text),"Lien de date : libellé visible et nom accessible concordants")
 func contrast(first: Color, second: Color) -> float:
 	var a:=first.srgb_to_linear().get_luminance()
 	var b:=second.srgb_to_linear().get_luminance()
@@ -324,19 +379,19 @@ func decisions() -> void:
 		app._clear_dialogs()
 		await settle()
 	await command("auto_lineup")
+	if not await ContextualFlow.prepare_match_day(app,self,check): return
 	await render("Match")
-	await press("COUP D'ENVOI")
-	await wait_model()
-	check(not app._live().is_empty(),"Coup d’envoi réel")
+	var previous_week: int=app.model.meta.week
+	await press("COUP D'ENVOI");await wait_model()
+	await ContextualFlow.skip_talk(app,self,"pre",check)
+	check(not app._live().is_empty() and app.contextual_director.kind=="live","Coup d’envoi et vraie entrée dans le direct")
 	await command("pause",{"paused":true})
-	await render("Effectif")
-	check(named(app,"PlayerLoad").disabled,"Charge verrouillée pendant le direct")
-	check(button(app,"PROPOSER UNE PROLONGATION").disabled,"Prolongation verrouillée pendant le direct")
-	await render("Composition")
-	check(button(app,"SÉLECTION AUTOMATIQUE DU STAFF").disabled,"Sélection verrouillée pendant le direct")
-	await render("Préparation")
-	await press("ENTRAÎNEMENT")
-	check(button(app,"CHARGE NORMALE").disabled,"Séance verrouillée pendant le direct")
+	var live_before:=await state()
+	var live_bytes:=FileAccess.get_file_as_bytes(str(app.model.meta.dataDir).path_join("donnees.json"))
+	for route in ["Effectif","Composition","Préparation","Recrutement"]:
+		await render(route)
+		check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"Le direct verrouille la gestion : "+route)
+	check(await state()==live_before and FileAccess.get_file_as_bytes(str(app.model.meta.dataDir).path_join("donnees.json"))==live_bytes,"Tenter une navigation du direct ne modifie ni état ni disque")
 	await render("Match")
 	await capture("match-pause-1440")
 	var actual: Dictionary=app.model
@@ -346,38 +401,38 @@ func decisions() -> void:
 			if p is Dictionary:p.name="Joueur de réception au nom particulièrement long pour éprouver le banc et les remplacements"
 	app.model=long_names
 	await render("Match")
-	await press("BANC")
+	await press_match_drawer("BANC","Banc")
 	bounds("Match")
 	await capture("match-banc-projection-long")
 	app.model=actual
 	await render("Match")
-	await press("STATS")
+	await press_match_drawer("STATS","Stats")
 	await capture("match-statistiques-1440")
-	await press("BANC")
+	await press_match_drawer("BANC","Banc")
 	await capture("match-banc-1440")
 	var screen: Control=app.match_screen
 	var incoming: Dictionary={}
 	for sub: Dictionary in app.model.live.get("substitutions",[]):
 		if not sub.get("inIds",[]).is_empty(): incoming=sub;break
 	if not incoming.is_empty():
-		screen.selected_slot=int(incoming.slot)
-		screen.presence_key=""
-		screen._side()
+		check(app.model.live.lineup[int(incoming.slot)].id == incoming.outId,"Le poste publié désigne le vrai joueur sortant")
+		await activate_bench(bench_control(screen,"sortant:"+str(int(incoming.slot))),"sortant:"+str(int(incoming.slot)))
+		for player: Dictionary in app.model.live.reserves:
+			var candidate := bench_control(screen,"entrant:"+str(player.id))
+			check(candidate != null and candidate.disabled == (not player.id in incoming.inIds),"Le banc respecte les aptitudes publiées et refuse les positions interdites : "+str(player.id))
 		var reserve: Dictionary=app.model.live.reserves.filter(func(p):return p is Dictionary and p.id==incoming.inIds[0])[0]
-		await press(str(reserve.name))
+		await activate_bench(bench_control(screen,"entrant:"+str(reserve.id)),"entrant:"+str(reserve.id))
 		await wait_model()
-		check(app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
+		check(app.bridge.last_response_ok and app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
 	await command("delegate")
 	await render("Effectif")
-	var finished_load := named(app,"PlayerLoad") as OptionButton
-	var finished_reason := named(app,"PlayerLoadUnavailableReason") as Label
-	check(finished_load != null and finished_load.disabled,"Charge verrouillée avant validation du résultat")
-	check(finished_reason != null and "validation" in finished_reason.text,"Motif de charge adapté après le sifflet final")
+	check(app.route=="Match" and app.contextual_director.kind=="live" and not app.root_content.is_visible_in_tree(),"La gestion reste verrouillée avant validation du résultat")
 	await render("Match")
 	await capture("match-resultat-1440")
 	await press("VALIDER LA JOURNÉE  →")
 	await wait_model()
-	check(int(app.model.meta.week)==1,"Résultat validé une fois")
+	await ContextualFlow.finish_match_week(app,self,check,previous_week)
+	check(int(app.model.meta.week)==previous_week+1,"Résultat validé une fois")
 	app.selected_player = player_id
 	await render("Effectif")
 	(named(app,"ProfileTabs") as TabContainer).current_tab = 2
@@ -418,6 +473,10 @@ func projections() -> void:
 	app.accent=Color(app.G.identity(saved.club).get("color","#d43e47"))
 	await render("Bureau")
 func finish() -> void:
+	check(is_instance_valid(app.coach) and is_instance_valid(app.coach.speech), "Voix du client disponible pour le contrôle final")
+	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
+		check(speech_requests == 0 and speech_starts == 0 and app.coach.speech._id == 0, "Client Carnet : aucune parole demandée ni démarrée, identifiant vocal nul")
+		print("CARNET_SPEECH requested=", speech_requests, " started=", speech_starts, " id=", app.coach.speech._id)
 	print("CARNET : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	app.closing=true
 	if is_instance_valid(app.coach):app.coach.destroy()
@@ -430,6 +489,13 @@ func finish() -> void:
 func run() -> void:
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	# The single client is muted synchronously after _ready, before any awaited frame.
+	check(is_instance_valid(app.coach) and is_instance_valid(app.coach.speech), "Voix du client disponible dès son instanciation")
+	if is_instance_valid(app.coach) and is_instance_valid(app.coach.speech):
+		app.coach.speech.requested.connect(func(_text: String): speech_requests += 1)
+		app.coach.speech.started.connect(func(_id: int): speech_starts += 1)
+		app.coach.speech.set_muted(true)
+		check(app.coach.speech._id == 0, "Client Carnet : aucune parole avant la mise en sourdine précoce")
 	await wait_model()
 	app.timer.stop()
 	await command("new_career", {"club":0,"mode":"common"})

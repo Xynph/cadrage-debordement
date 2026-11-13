@@ -10,7 +10,6 @@ const ClubPresentation = preload("res://ui/game_skin.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
-const MarkerOutline = preload("res://shaders/team_marker_outline.gdshader")
 const Athlete = preload("res://match_athlete.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
@@ -20,6 +19,14 @@ const Rendu = preload("res://match_rendu.gd")
 const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const CUT_SECONDS := 0.30
+## Caméra de retransmission (TV) : décalage depuis le point visé. Plus haute et plus en
+## surplomb qu'à l'origine ((0, 55, 75), 36°) : environ 41° au-dessus de l'horizon, ce qui
+## montre l'action d'un peu plus loin et cache mieux appuis et contacts approximatifs.
+const TV_OFFSET := Vector3(0, 60, 69)
+const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
+## Hauteur visible (m) de la caméra de base. 12 novembre 2026 (soir) : TV 42 -> 64, action 16 -> 24 (vue retransmission large).
+const TV_TAILLE := 64.0
+const ACTION_TAILLE := 24.0
 const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
 var _ball: Node3D
@@ -30,7 +37,6 @@ var _animations_adaptees: RefCounted
 var _actors: Dictionary = {}
 var _team_colors: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
 var _kits: Array[Dictionary] = []
-var _team_marker_materials: Array[Material] = []
 var _camera_focus := Vector3.ZERO
 var _camera_framed := false
 var _camera_cut := true
@@ -501,6 +507,9 @@ func _process(delta: float) -> void:
 				else Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, BLEND_SECONDS))
 		var movement := actor.position - previous
 		var speed := movement.length() / maxf(delta, 0.001)
+		# Allure lissée : elle décide du port du ballon (deux mains ou sous le bras).
+		if delta > 0.0 and not _paused:
+			entry.allure = lerpf(float(entry.get("allure", 0.0)), minf(speed, 12.0), 1.0 - exp(-6.0 * delta))
 		var moving := speed > 0.035 and not _paused
 		if moving and not in_pass and not staged:
 			var change := angle_difference(actor.rotation.y, atan2(movement.x, movement.z))
@@ -588,17 +597,85 @@ func _process(delta: float) -> void:
 		var approaching: bool = entry.holding and _ball.visible and center.distance_to(_ball.global_position) < 0.38
 		var can_grip: bool = entry.holding and (_ball_attached or approaching)
 		entry.grip = move_toward(float(entry.grip), 1.0 if can_grip else 0.0, delta * 6.0)
+		if not entry.holding:
+			entry.tenu = 0.0
+			entry.cote_ballon = 0.0
+			entry.porte = 0.0
+		elif not _paused:
+			entry.tenu = float(entry.get("tenu", 0.0)) + delta
 		if rig and entry.grip > 0.0:
 			if approaching and not _ball_attached:
 				center = _ball.global_position
-			Presentation.hold_ball(actor, rig, center, entry.grip)
+				Presentation.hold_ball(actor, rig, center, entry.grip)
+			else:
+				_porter_ballon(id, entry, delta)
+		elif rig:
+			_bras_hors_ballon(id, entry)
 	if not _pass_plan.is_empty() and _pass_elapsed >= _pass_plan.duration:
 		_stop_live_pass(true)
+	# Repère au sol du ballon : seulement dans la vue de dessus, où le ballon est minuscule ;
+	# jamais dans les vues de retransmission (pas de cercle aux pieds du porteur).
+	_ball_marker.visible = _camera_mode == "tactical"
 	if _ball.visible:
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
 		_ball_marker.global_basis = Basis.IDENTITY
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+
+## Port du ballon par le porteur : deux mains (prise, passe proche, allure modérée) ou calé sous
+## le bras tourné vers la caméra (course lancée). Le ballon suit les poignets.
+const PORT_SOUS_LE_BRAS := 4.3     # allure (m/s) à partir de laquelle le ballon est calé sous le bras
+const PORT_APRES_PRISE := 0.5      # deux mains au moins pendant ce temps après la prise
+const PASSE_ARMEE := 0.42          # armé de la passe avant le lâcher, en secondes
+const PASSE_FIN := 0.3             # fin du geste de passe après le lâcher
+
+func _porter_ballon(id: String, entry: Dictionary, delta: float) -> void:
+	var actor: Node3D = entry.node
+	var swing := -1.0
+	var toward := 1.0
+	if choregraphie_active():
+		var passe: Dictionary = _choregraphie.passe_de(id, 0.0, PASSE_ARMEE)
+		if not passe.is_empty():
+			swing = 1.0 - clampf((float(passe.t) - _choregraphie.temps) / PASSE_ARMEE, 0.0, 1.0)
+			toward = _cote_de(actor, str(passe.vers))
+	var voulu := 1.0 if swing < 0.0 and float(entry.get("allure", 0.0)) >= PORT_SOUS_LE_BRAS and float(entry.get("tenu", 0.0)) >= PORT_APRES_PRISE else 0.0
+	entry.tuck = move_toward(float(entry.get("tuck", 0.0)), voulu, delta * 3.0)
+	if float(entry.get("cote_ballon", 0.0)) == 0.0:
+		# Calé sous le bras tourné vers la caméra, choisi à la prise : le ballon reste visible.
+		var vers_camera := _camera.global_position - actor.global_position if is_instance_valid(_camera) else Vector3.BACK
+		entry.cote_ballon = 1.0 if actor.global_basis.x.dot(Vector3(vers_camera.x, 0.0, vers_camera.z)) >= 0.0 else -1.0
+	var tenue: Array = Presentation.carry_ball(actor, entry.rig, float(entry.grip), float(entry.tuck), float(entry.cote_ballon), swing, toward)
+	var possede: bool = _ball_attached and _carrier_id == id and not (_gestes != null and _gestes.owns_ball())
+	# Raccord en 0,2 s depuis la place donnée par la trajectoire (prise, passe reçue).
+	entry.porte = move_toward(float(entry.get("porte", 0.0)), 1.0 if possede else 0.0, delta * 5.0)
+	if possede and not _paused:
+		var w := smoothstep(0.0, 1.0, float(entry.porte))
+		_ball.global_position = _ball.global_position.lerp(tenue[0], w)
+		_ball.global_basis = _ball.global_basis.orthonormalized().slerp((tenue[1] as Basis).orthonormalized(), w)
+
+
+## Bras sans ballon : fin du geste de passe, ou mains tendues vers le ballon qui arrive.
+func _bras_hors_ballon(id: String, entry: Dictionary) -> void:
+	if not choregraphie_active():
+		return
+	var actor: Node3D = entry.node
+	var passe: Dictionary = _choregraphie.passe_de(id, PASSE_FIN, 0.0)
+	if not passe.is_empty():
+		var age: float = _choregraphie.temps - float(passe.t)
+		Presentation.pass_follow(actor, entry.rig, _cote_de(actor, str(passe.vers)), 1.0 - clampf(age / PASSE_FIN, 0.0, 1.0))
+		return
+	var prise: float = _choregraphie.reception_de(id, 0.45)
+	if prise > 0.0 and _ball.visible:
+		Presentation.reach_ball(actor, entry.rig, _ball.global_position, 1.0 - clampf((prise - _choregraphie.temps) / 0.45, 0.0, 1.0))
+
+
+## Côté (1 gauche, -1 droite, repère du joueur) où se trouve `autre`.
+func _cote_de(actor: Node3D, autre: String) -> float:
+	if not _actors.has(autre):
+		return 1.0
+	var local := actor.global_basis.inverse() * ((_actors[autre].node as Node3D).global_position - actor.global_position)
+	return 1.0 if local.x >= 0.0 else -1.0
 
 
 func _is_pass_player(id: String) -> bool:
@@ -783,9 +860,9 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 			# stay in the comfortable middle area even at the in-goal corners.
 			var lag := _camera_focus - desired
 			_camera_focus = desired + lag.limit_length(3.0 if _camera_mode == "action" else 8.0)
-		var offset := Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
+		var offset := ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
 		var look := _camera_focus
-		var size := 16.0 if _camera_mode == "action" else 42.0
+		var size := ACTION_TAILLE if _camera_mode == "action" else TV_TAILLE
 		var wide := size
 		var screen := get_viewport().get_visible_rect().size
 		if _cadrage:
@@ -807,7 +884,7 @@ func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 		if not is_finite(size) or size < 2.0 or not look.is_finite() or not offset.is_finite():
 			look = _camera_focus
 			size = wide
-			offset = Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
+			offset = ACTION_OFFSET if _camera_mode == "action" else TV_OFFSET
 		_camera.position = look + offset
 		_camera.look_at(look)
 		_camera.size = size
@@ -858,19 +935,8 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	_players.add_child(actor)
 	actor.position = target
 	actor.rotation.y = PI * 0.5 if side == 0 else -PI * 0.5
-	# Discreet team-colour footprint remains readable in the fullfield UI viewport.
-	var marker := MeshInstance3D.new()
-	marker.name = "TeamMarker"
-	var ring := TorusMesh.new()
-	ring.inner_radius = 0.36
-	ring.outer_radius = 0.5
-	ring.rings = 16
-	ring.ring_segments = 6
-	marker.mesh = ring
-	marker.position.y = 0.025
-	marker.scale.y = 0.12
-	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	actor.add_child(marker)
+	# Aucun repère au sol (anneau aux couleurs de l'équipe) : retiré à la demande de Léo
+	# (12 novembre 2026), « ça fait pas réaliste ». Les maillots suffisent à distinguer les équipes.
 	var model := _athlete_scene.instantiate() as Node3D
 	actor.add_child(model)
 	model.set_meta("athlete_id", id)
@@ -884,6 +950,9 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	_recolor(model, side)
 	if _rendu:
 		_rendu.equiper_joueur(actor)
+	var squelette := Presentation.rig_for(model)
+	if squelette:
+		squelette.set_meta("repos_relatif", actor.global_basis.inverse() * squelette.global_basis)
 	var animation := _find_animation(model)
 	var idle := StringName()
 	var run := StringName()
@@ -910,7 +979,8 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_beat": -1.0, "cut_normal_speed": false, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
-		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "geste": {}, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
+		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "geste": {}, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0,
+		"allure": 0.0, "tenu": 0.0, "tuck": 0.0, "cote_ballon": 0.0, "porte": 0.0}
 
 
 func _model_bounds(node: Node3D, origin: Node3D) -> AABB:
@@ -937,16 +1007,6 @@ func _find_animation(node: Node) -> AnimationPlayer:
 
 func _refresh_kits() -> void:
 	_kits = Kit.resolve(_team_colors)
-	_team_marker_materials.clear()
-	for kit: Dictionary in _kits:
-		if kit.get("outlined_marker", false):
-			var marker := ShaderMaterial.new()
-			marker.shader = MarkerOutline
-			marker.set_shader_parameter("marker_color", kit.marker)
-			marker.set_shader_parameter("outline_color", Kit.IVORY.darkened(0.18))
-			_team_marker_materials.append(marker)
-		else:
-			_team_marker_materials.append(_material(kit.marker, true))
 
 
 func alternative_kit_colors() -> Array[Color]:
@@ -956,11 +1016,6 @@ func alternative_kit_colors() -> Array[Color]:
 
 
 func _recolor(model: Node3D, side: int) -> void:
-	var marker := model.get_parent().get_node_or_null("TeamMarker") as MeshInstance3D
-	if marker:
-		marker.material_override = _team_marker_materials[side]
-		var width := 1.18 if _kits[side].get("outlined_marker", false) else 1.0
-		marker.scale = Vector3(width, 0.12, width)
 	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 func _build_environment() -> void:

@@ -1,14 +1,7 @@
 name: LNR-01 - Carriere optionnelle et Chromium
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/game.js'
-      - 'dist/saves.js'
-      - 'dist/index.html'
-      - 'dist/lnr-*'
-      - 'tests/lnr-career*'
-      - '.github/workflows/lnr-career-browser.yml'
   workflow_dispatch:
 permissions:
   contents: read

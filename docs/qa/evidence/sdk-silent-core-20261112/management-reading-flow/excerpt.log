@@ -1,0 +1,17 @@
+L1: TAP version 13
+L2: # Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+L3: # OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+L15: # MANAGEMENT READING FLOW : 61 contrôles ; 0 échec(s)
+L20: # Subtest: tests/godot-management-reading-flow.cjs
+L21: ok 1 - tests/godot-management-reading-flow.cjs
+L23:   duration_ms: 35630.770516
+L24:   type: 'test'
+L26: 1..1
+L27: # tests 1
+L28: # suites 0
+L29: # pass 1
+L30: # fail 0
+L31: # cancelled 0
+L32: # skipped 0
+L33: # todo 0
+L34: # duration_ms 35638.895579

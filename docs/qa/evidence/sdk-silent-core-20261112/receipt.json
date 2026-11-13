@@ -1,0 +1,231 @@
+{
+  "format": 1,
+  "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+  "scope": "Six réceptions ciblées distinctes : cinq wrappers verts et un wrapper rouge ; pas une campagne globale.",
+  "raw_results_source": "/workspace/work/night-followup-receipts/silent-core/results.json",
+  "raw_results_sha256": "572ba18a882790ad2e03765183fb3c5a2cda3b9f42a21f14f8b2e6dee3bba6ae",
+  "cases": [
+    {
+      "suite": "tests/godot-gestion-carnet.cjs",
+      "case": "gestion-carnet",
+      "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+      "wrapper_exit_code": 1,
+      "qualified": false,
+      "checks_in_godot_summary": 273,
+      "godot_reported_failures": 0,
+      "subtest_ms": "48808.036157",
+      "tap_total_ms": "48876.375921",
+      "node_wrapper_ms": 48980,
+      "raw_log_source": "/workspace/work/night-followup-receipts/silent-core/gestion-carnet.log",
+      "raw_log_bytes": 66648,
+      "raw_log_sha256": "57f28612af9169a302d1f88cb8c52bd83d90d4584ecb3d2af52065b02df89263",
+      "excerpt": {
+        "path": "gestion-carnet/excerpt.log",
+        "sha256": "637326bba010ab8f22f2c9af3595da17d07197eec0be1d079c873b47d84f201e",
+        "original_line_numbers": true
+      },
+      "source_files_sha256": {
+        "tests/godot-gestion-carnet.cjs": "7157d0e5f6b1cccd7441866c3565e1f3be55f9b3668dc6b43c875c181558d216",
+        "tests/godot-gestion-carnet.gd": "8e840aaf7a67b55b419850bc035d7f2565503f4d4e7e94b4c1c85b4d59df1a60"
+      },
+      "reports": [],
+      "speech": {
+        "requests": 0,
+        "starts": 0,
+        "id": 0,
+        "evidence": "Original GESTION_PROGRESS finish line; wrapper remains RED."
+      },
+      "blocking_error": "ERROR: Window 0 spawned at invalid position: (-738, -398).",
+      "status": "RED despite Godot summary273/0 and speech0/0/id0."
+    },
+    {
+      "suite": "tests/godot-entity-navigation.cjs",
+      "case": "entity-navigation",
+      "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+      "wrapper_exit_code": 0,
+      "qualified": true,
+      "checks_in_godot_summary": 51,
+      "godot_reported_failures": 0,
+      "subtest_ms": "17405.866398",
+      "tap_total_ms": "17458.911456",
+      "node_wrapper_ms": 17522,
+      "raw_log_source": "/workspace/work/night-followup-receipts/silent-core/entity-navigation.log",
+      "raw_log_bytes": 587,
+      "raw_log_sha256": "52d1919214acd0c2bb529a3a08cadc5019809dc45a94f037e7b470fded6b8c49",
+      "excerpt": {
+        "path": "entity-navigation/excerpt.log",
+        "sha256": "165be39121238711ad4e4940a36a1a7bfb4f09376bb8b4215a1f17978dd40aa5",
+        "original_line_numbers": true
+      },
+      "source_files_sha256": {
+        "tests/godot-entity-navigation.cjs": "751a4a3b67034e76c293bbf714e0ca2db323e301309b93d9d6ccaac8b2589200",
+        "tests/godot-entity-navigation.gd": "a58360e62eb4a55e376a2d79b17754645d006e66ba8ae2f02a872447da61bf22"
+      },
+      "reports": [],
+      "speech": {
+        "requests": 0,
+        "starts": 0,
+        "id": 0,
+        "evidence": "Original printed ENTITY_SPEECH in excerpt, not an invented JSON report."
+      }
+    },
+    {
+      "suite": "tests/godot-navigation.cjs",
+      "case": "navigation",
+      "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+      "wrapper_exit_code": 0,
+      "qualified": true,
+      "checks_in_godot_summary": 156,
+      "godot_reported_failures": 0,
+      "subtest_ms": "49783.732715",
+      "tap_total_ms": "49832.13426",
+      "node_wrapper_ms": 49883,
+      "raw_log_source": "/workspace/work/night-followup-receipts/silent-core/navigation.log",
+      "raw_log_bytes": 573,
+      "raw_log_sha256": "041c9f79806060748b8108348f38be3615102bfbfc474bb0cbd3269644ec511b",
+      "excerpt": {
+        "path": "navigation/excerpt.log",
+        "sha256": "fa796b702bf884e51f8dd8812884def636c8daee551d23fa78c81feea433365b",
+        "original_line_numbers": true
+      },
+      "source_files_sha256": {
+        "tests/godot-navigation.cjs": "0ee71265f130fa9442a4ef66f31cd3e0e74c5c6874a5aac34845eba4c74a0cbf",
+        "tests/godot-navigation.gd": "191c8eb29be21f34f1ddeae79da55641e22098ab901533880a3fd14591ed45f3"
+      },
+      "reports": [],
+      "speech": {
+        "requests": 0,
+        "starts": 0,
+        "id": 0,
+        "evidence": "Original printed NAVIGATION_SPEECH in excerpt, not an invented JSON report."
+      }
+    },
+    {
+      "suite": "tests/godot-management-reading-flow.cjs",
+      "case": "management-reading-flow",
+      "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+      "wrapper_exit_code": 0,
+      "qualified": true,
+      "checks_in_godot_summary": 61,
+      "godot_reported_failures": 0,
+      "subtest_ms": "35630.770516",
+      "tap_total_ms": "35638.895579",
+      "node_wrapper_ms": 35720,
+      "raw_log_source": "/workspace/work/night-followup-receipts/silent-core/management-reading-flow.log",
+      "raw_log_bytes": 11533,
+      "raw_log_sha256": "c5b6b5f5f8bb1b09eb4a98e016f5b575f102f1db432f8393e8d1cca1f1dc849b",
+      "excerpt": {
+        "path": "management-reading-flow/excerpt.log",
+        "sha256": "bed0c86d41605564e3cc92b218dd462b2ad7c276f5107423f5edb1a22b8ab456",
+        "original_line_numbers": true
+      },
+      "source_files_sha256": {
+        "tests/godot-management-reading-flow.cjs": "77442048cd8bbc3580f3394af6108eeda3a8bbbe0c8a654b11158b5bca9d3731",
+        "tests/godot-management-reading-flow.gd": "fa73f04ced3f26bd97b8989a23bade35a95cefa952c137f970cc1160a82c288e"
+      },
+      "reports": [
+        {
+          "path": "management-reading-flow/report.json",
+          "source_path": "/workspace/work/night-followup-receipts/silent-core/management/report.json",
+          "sha256": "6305a2e5be4e859b289abec03b88bc272d64413e6978e48b5ea0d05eb68a3aeb"
+        }
+      ],
+      "speech": {
+        "requests": 0,
+        "starts": 0,
+        "id": 0,
+        "evidence": "All three counters serialized in raw report.json."
+      }
+    },
+    {
+      "suite": "tests/godot-analysis-club-graphics.cjs",
+      "case": "analysis-club-graphics",
+      "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+      "wrapper_exit_code": 0,
+      "qualified": true,
+      "checks_in_godot_summary": 72,
+      "godot_reported_failures": 0,
+      "subtest_ms": "73548.18434",
+      "tap_total_ms": "73591.90691",
+      "node_wrapper_ms": 73655,
+      "raw_log_source": "/workspace/work/night-followup-receipts/silent-core/analysis-club-graphics.log",
+      "raw_log_bytes": 983,
+      "raw_log_sha256": "0dba13b5b97a342872fc7aa8bc58c509e7c5141cf4a92fbd59c12c1fae515d38",
+      "excerpt": {
+        "path": "analysis-club-graphics/excerpt.log",
+        "sha256": "7b7fa77a981b8dc1637e0529bed0945bdd3d5f8522c5fcfe9cecc1be21f1abbc",
+        "original_line_numbers": true
+      },
+      "source_files_sha256": {
+        "tests/godot-analysis-club-graphics.cjs": "c546384bc0bbbf4359e322c936a84d0f2ff2b7adb684c1cd263b1c73d8f43f66",
+        "tests/godot-analysis-club-graphics.gd": "7ea3ff396f35c9c37a823d597976d83732d196d9c780e3f990156c5ece3b80dd"
+      },
+      "reports": [
+        {
+          "path": "analysis-club-graphics/report.json",
+          "source_path": "/workspace/work/night-followup-receipts/silent-core/analysis/report.json",
+          "sha256": "f1d3a10ad0b002cd674bae26ea30918244804ac7337e766057bb63620068d6df"
+        },
+        {
+          "path": "analysis-club-graphics/source-copy.json",
+          "source_path": "/workspace/work/night-followup-receipts/silent-core/analysis/source-copy.json",
+          "sha256": "4d5d15fb244336017982d4ab3ea6a3133e8cf0b86c15c176d4f6866ecbe12131"
+        },
+        {
+          "path": "analysis-club-graphics/public-preparation.json",
+          "source_path": "/workspace/work/night-followup-receipts/silent-core/analysis/public-preparation.json",
+          "sha256": "82c7b2510c925a36c1ed68e2b35ddc16e5b1e32dfd7024eee73f816045b0c342"
+        }
+      ],
+      "speech": {
+        "requests": 0,
+        "starts": 0,
+        "id": 0,
+        "evidence": "Three-counter finish assertion passed among72 checks, verified in exact hashed GDScript. Not serialized by report.json."
+      }
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "case": "night-guards",
+      "source_sha": "d8f8a12470442caa8f00561990e43aa511fbfaba",
+      "wrapper_exit_code": 0,
+      "qualified": true,
+      "checks_in_godot_summary": 103,
+      "godot_reported_failures": 0,
+      "subtest_ms": "121014.397013",
+      "tap_total_ms": "121062.557466",
+      "node_wrapper_ms": 121102,
+      "raw_log_source": "/workspace/work/night-followup-receipts/silent-core/night-guards.log",
+      "raw_log_bytes": 8928,
+      "raw_log_sha256": "21464ea88072fc3c7cd4e98e3b4fecb36bffe70a102341ac28ba2aa7b3799018",
+      "excerpt": {
+        "path": "night-guards/excerpt.log",
+        "sha256": "cbfa8f626a52721c44bfe8cb00e75fc9270bb4ddc6c17b30e91be1b6886aead3",
+        "original_line_numbers": true
+      },
+      "source_files_sha256": {
+        "tests/rg27-night-navigation.cjs": "d229f7cdac93da2659e198028d6cdfc8eebfc5f87637efc159445f9870fd4899",
+        "tests/rg27-night-navigation.gd": "7c43efb78f7180ad4e770163cde65e95f0fc665b5bcdd08d3c206c1c9ab04021"
+      },
+      "reports": [
+        {
+          "path": "night-guards/report.json",
+          "source_path": "/workspace/work/night-followup-receipts/silent-core/guards/report.json",
+          "sha256": "90c9d5c17bfe7c11ececde4b17ab30495a2cb260af4ab6df6ea2edabeb1fd5b7"
+        },
+        {
+          "path": "night-guards/provenance.json",
+          "source_path": "/workspace/work/night-followup-receipts/silent-core/guards/provenance.json",
+          "sha256": "06916ca5ef2855933fa40d3bb8106b9b7b17b2622e705be459962767872a3904"
+        }
+      ],
+      "speech": {
+        "requests": 0,
+        "starts": 0,
+        "id": 0,
+        "evidence": "All three counters serialized in raw report.json."
+      }
+    }
+  ],
+  "images_published": false
+}

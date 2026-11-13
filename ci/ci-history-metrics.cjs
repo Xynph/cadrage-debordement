@@ -1,6 +1,8 @@
 'use strict';
 // Analyse historique CI : aucune écriture GitHub, aucun effet sur les gates.
 const {percentile, extractSuites, duration}=require('./ci-run-metrics.cjs');
+const {officialJobs, shardSeries}=require('./ci-jobs.cjs');
+const SHARD_NAME=/^Suites [1-9][0-9]*\/[1-9][0-9]*$/;
 function analyze(samples) {
  if(!Array.isArray(samples)||samples.length<2) throw Error('Au moins deux runs requis');
  const seen=new Set(), bySuite=new Map(), durations=[];
@@ -8,13 +10,15 @@ function analyze(samples) {
   if(!Number.isSafeInteger(s.id)||seen.has(s.id))throw Error('Run ID absent ou dupliqué');
   seen.add(s.id);
   if(s.name!=='Tests JavaScript'||s.status!=='completed'||s.conclusion!=='success'||!s.sha)throw Error('Run incomplet, rouge ou workflow inattendu');
-  if(!Array.isArray(s.jobs)||s.jobs.length!==7||s.jobs.some(j=>j.status!=='completed'||j.conclusion!=='success'))throw Error('7 jobs SUCCESS obligatoires');
-  if(s.jobs.filter(j=>/^Suites [1-5]\/5$/.test(j.name)).length!==5)throw Error('Cinq shards obligatoires');
+  // Nombre de shards libre (5 avant novembre 2026, 10 ensuite) ; jobs Godot informatifs ignorés.
+  const jobs=officialJobs(s.jobs),series=Array.isArray(jobs)?shardSeries(jobs):null;
+  if(!Array.isArray(jobs)||jobs.some(j=>j.status!=='completed'||j.conclusion!=='success'))throw Error('Jobs officiels SUCCESS obligatoires');
+  if(!series||jobs.length!==series.count+2)throw Error('Série complète de shards obligatoire');
   const elapsed=duration(s.started_at,s.completed_at);
   if(elapsed===null)throw Error('Horodatages run invalides');
   durations.push(elapsed);
   const names=new Set();
-  for(const j of s.jobs.filter(j=>/^Suites [1-5]\/5$/.test(j.name))){
+  for(const j of series.jobs){
    if(typeof j.log!=='string')throw Error('Log shard manquant');
    for(const suite of extractSuites(j.log)){
     if(names.has(suite.name))throw Error('Suite dupliquée dans un run');
@@ -36,8 +40,8 @@ async function get(url,token,raw=false){
 async function read(id,token){
  const base='https://api.github.com/repos/Xynph/cadrage-debordement/actions';
  const [r,page]=await Promise.all([get(base+'/runs/'+id,token),get(base+'/runs/'+id+'/jobs?per_page=100',token)]);
- if(page.total_count!==7||page.jobs.length!==7)throw Error('Pagination ou nombre de jobs invalide');
- const jobs=await Promise.all(page.jobs.map(async j=>({name:j.name,status:j.status,conclusion:j.conclusion,log:/^Suites [1-5]\/5$/.test(j.name)?await get(base+'/jobs/'+j.id+'/logs',token,true):''})));
+ if(page.total_count!==page.jobs.length)throw Error('Pagination ou nombre de jobs invalide');
+ const jobs=await Promise.all(page.jobs.map(async j=>({name:j.name,status:j.status,conclusion:j.conclusion,log:SHARD_NAME.test(j.name)?await get(base+'/jobs/'+j.id+'/logs',token,true):''})));
  return {id:r.id,name:r.name,status:r.status,conclusion:r.conclusion,sha:r.head_sha,started_at:r.run_started_at||r.created_at,completed_at:r.updated_at,jobs};
 }
 async function main(){

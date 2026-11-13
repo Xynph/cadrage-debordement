@@ -1,22 +1,7 @@
 name: Matchday Chromium regroupé
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/game.js'
-      - 'dist/matchday-center.*'
-      - 'dist/matchday-lineup.*'
-      - 'dist/matchday-matchplan.*'
-      - 'tests/matchday-center*'
-      - 'tests/matchday-lineup*'
-      - 'tests/matchday-matchplan*'
-      - 'ci/matchday-browser-selector.cjs'
-      - 'tests/ci-matchday-browser-selector.cjs'
-      - '.github/workflows/matchday-browser.yml'
-      - '.github/workflows/matchday-center-browser.yml'
-      - '.github/workflows/matchday-lineup-browser.yml'
-      - '.github/workflows/matchday-matchplan-browser.yml'
   workflow_dispatch:
 
 permissions:

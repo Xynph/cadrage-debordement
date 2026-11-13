@@ -60,7 +60,6 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	dialog.title = "Offre à " + str(player.name)
 	dialog.dialog_text = ""
 	var content := C.v(10)
-	content.custom_minimum_size.x = 1460
 	content.set_meta("immersive_style_applied",true)
 	dialog.add_child(content)
 	var scroll := ScrollContainer.new()
@@ -112,8 +111,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool) -> void:
 	counter.add_child(counter_text)
 	counter.add_child(C.wrap("Les conditions affichées sont celles de la discussion enregistrée. Aucun accord n’est garanti.",16,C.MUTED))
 	var proposal := _card(columns,"VOTRE NOUVELLE PROPOSITION","ContractProposal",C.BLUE)
-	var salary := _spin(proposal,"OfferSalary",Salary.field_label(),1000,100000,float(quote.get("salary",player.get("salary",5000))),100,"€ / semaine")
-	Salary.bind_input(salary,float(quote.get("salary",player.get("salary",5000))),1000,100000)
+	# Le plus petit salaire qu’un contrat peut porter vient du moteur quand il le fournit.
+	var floor_salary := float(app.model.get("finance",{}).get("salaryFloor",1000))
+	var salary := _spin(proposal,"OfferSalary",Salary.field_label(),floor_salary,100000,float(quote.get("salary",player.get("salary",5000))),100,"€ / semaine")
+	Salary.bind_input(salary,float(quote.get("salary",player.get("salary",5000))),floor_salary,100000)
 	var years := _spin(proposal,"OfferYears","Durée du contrat",float(quote.get("minYears",1)),float(quote.get("maxYears",3)),maxf(float(quote.get("minYears",1)),2),1,"saison(s)")
 	var difference := C.wrap("",16,C.GOLD)
 	difference.name = "ContractOfferDifference"

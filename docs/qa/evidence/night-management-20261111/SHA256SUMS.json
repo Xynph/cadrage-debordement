@@ -1,0 +1,19 @@
+{
+  "files": {
+    "management-rival-results.json": "1e2165edbb2ed0408ba762bb14e17b47299dd9ec4f0deb1770b4235c0b9ec7a8",
+    "management-rival-run.log": "daf16f2d7fcbc11d5b9c97e7192b2a8d2ba2a4a8c04e6155d9fa05370c3fed56",
+    "management-seed731-diagnostic.log": "de0c541cc83e449c1e947037d1dd4cfbaa0312e065fb46b7007e4fde3a1aff33",
+    "management-seed731-refusal.json": "3a5a2b939512e939be6d83d9d8a448cfb176c43ee2874f51635c20b51656ca24",
+    "management-strategy-1299.json": "2c2fd2d8388c573e22e141c67e410e7b8892a71510ab75633d821ca5bb730794",
+    "management-strategy-1299.log": "fddb1ecb6f7235094796ad223b61e39b41080c770c8d3305dba564bd15c60df1",
+    "management-strategy-731.json": "050430ebff2a937808e566be8bf7882a0a4903ba7d869118a2cc379ae0f77d4a",
+    "management-strategy-731.log": "4f2f55d9cbe6fd1de1a0d28df2a6b35c3282ffe4db050908b6561ae63e3bed95",
+    "management-strategy-initial-attempt.json": "600688d0c1e432e15b9ae1e995c564c6847f162c709fe9f3d5c11b51435907af",
+    "management-strategy-run.log": "d807e605b5d83c8225e3352bc4a041e56a78739b6e805b0ff576a145153b4c46",
+    "management-strategy-summary.json": "6df7216e90550e20437b72e7f52e3f4c3838a3ae21e2efab4317cc084885e1e1",
+    "relationships-memory-2560.png": "d17b02cf6a18a92e45994834d66f2fa1c7b883b55b561066bc7aaf7bc5604f38",
+    "relationships-memory-manifest.json": "1aeffb1908249bafeaf2639631c64071289c96af205fb2d592ff2a862bd6297a",
+    "relationships-memory-report.json": "c8e178da6a14e406e8851dc85922295cef455231c15e271923ea367b91842d2a",
+    "relationships-memory-run.log": "82966b4ccafecf9d42feedce8ed0ead3d69b59a7f6c7474b35a973ec82fd1ff1"
+  }
+}

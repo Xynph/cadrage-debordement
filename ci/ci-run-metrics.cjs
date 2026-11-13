@@ -1,19 +1,23 @@
 'use strict';
 // Métriques CI en lecture seule, sur deux runs verts du même workflow.
 const fs=require('node:fs');
+const {officialJobs,shardSeries}=require('./ci-jobs.cjs');
 function percentile(values,q){if(!values.length||values.some(x=>!Number.isFinite(x)||x<0))return null;const s=[...values].sort((a,b)=>a-b);return s[Math.max(0,Math.ceil(q*s.length)-1)];}
 function duration(a,b){const x=Date.parse(a),y=Date.parse(b);return Number.isFinite(x)&&Number.isFinite(y)&&y>=x?(y-x)/1000:null;}
 function extractSuites(log){return [...String(log).matchAll(/\bPASS (tests\/[A-Za-z0-9._-]+\.cjs) \((\d+) s\)/g)].map(m=>({name:m[1],seconds:Number(m[2])}));}
 function summarize(run,jobs,logs={}){
  if(run.status!=='completed'||run.conclusion!=='success'||run.name!=='Tests JavaScript')throw Error('Run non terminal, rouge ou workflow inattendu');
+ // Jobs Godot informatifs (non bloquants) exclus ; nombre de shards libre (5 puis 10).
+ jobs=officialJobs(jobs);
  if(!jobs.length||jobs.some(j=>j.status!=='completed'||j.conclusion!=='success'))throw Error('Job non terminal ou rouge');
- const shards=jobs.filter(j=>/^Suites [1-5]\/5$/.test(j.name));
- if(shards.length!==5||jobs.length!==7)throw Error('Les 7 jobs sont obligatoires');
+ const series=shardSeries(jobs);
+ if(!series||jobs.length!==series.count+2||!jobs.some(j=>j.name==='classification')||!jobs.some(j=>j.name==='Validation CI'))throw Error('Série complète des jobs officiels obligatoire');
+ const shards=series.jobs;
  const times=jobs.map(j=>duration(j.started_at,j.completed_at));
  if(times.some(x=>x===null))throw Error('Horodatages incomplets');
  const shardTimes=shards.map(j=>duration(j.started_at,j.completed_at));
  const suites=shards.flatMap(j=>extractSuites(logs[j.id]||''));
- return {run:run.id,sha:run.head_sha,wallSeconds:duration(run.run_started_at||run.created_at,run.updated_at),runnerSeconds:times.reduce((a,b)=>a+b,0),shardPeakSeconds:Math.max(...shardTimes),shardP90Seconds:percentile(shardTimes,.9),suiteCount:suites.length,suiteP90Seconds:percentile(suites.map(x=>x.seconds),.9)};
+ return {run:run.id,sha:run.head_sha,shardCount:series.count,wallSeconds:duration(run.run_started_at||run.created_at,run.updated_at),runnerSeconds:times.reduce((a,b)=>a+b,0),shardPeakSeconds:Math.max(...shardTimes),shardP90Seconds:percentile(shardTimes,.9),suiteCount:suites.length,suiteP90Seconds:percentile(suites.map(x=>x.seconds),.9)};
 }
 function delta(b,a,k){return b[k]===null||a[k]===null||!b[k]?null:Math.round((a[k]-b[k])*1000/b[k])/10;}
 function report(b,a){
@@ -29,7 +33,7 @@ async function read(id,token){
  const [run,page]=await Promise.all([get('/actions/runs/'+id,token),get('/actions/runs/'+id+'/jobs?per_page=100',token)]);
  if(page.total_count>page.jobs.length)throw Error('Pagination incomplète : refus');
  const logs={};
- for(const job of page.jobs.filter(j=>/^Suites [1-5]\/5$/.test(j.name)))logs[job.id]=await get('/actions/jobs/'+job.id+'/logs',token,true);
+ for(const job of page.jobs.filter(j=>/^Suites [1-9][0-9]*\/[1-9][0-9]*$/.test(j.name)))logs[job.id]=await get('/actions/jobs/'+job.id+'/logs',token,true);
  return summarize(run,page.jobs,logs);
 }
 async function main(){

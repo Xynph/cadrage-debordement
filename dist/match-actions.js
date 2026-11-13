@@ -1,7 +1,7 @@
 'use strict';
 // Structured action facts are recorded by the engine, never inferred from prose.
 // Optional facts already known to the caller (no draw, no state change): why the ball left play
-// or was made dead, the colour of a card, the try's origin and whether it was converted.
+// or was made dead, the colour of a card, the try's origin and whether it was converted, the tackler of a carry.
 const ACTION_CAUSES={touch:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch','period-end'],ingoal:['held-up','attacking-kick-grounded','ingoal-knock-on','kick-dead','defender-grounded'],'hand-fault':['knock-on','forward-pass'],penalty:['offside','ruck','holding','obstruction','dangerous']};
 const ACTION_CARDS=['yellow','red20','red'],ACTION_TRY_ORIGINS=['open','maul','scrum'];
 const ACTION_KINDS=['message','carry','turnover','scrum','lineout','setpiece-win','setpiece-loss','kick','kickoff','drop22','goalLine','reception','touch','hand-fault','quick-tap','try','goal','miss','penalty','advantage','card','sub','tactic','break','end','ingoal'];
@@ -13,6 +13,29 @@ function actionPlayer(l,side,role='carrier'){
  const players=activePlayers(l,side),preferred=players.filter(p=>role==='kicker'?p.fam>=4:role==='receiver'?p.fam>=6:role==='defender'?p.fam>=2&&p.fam<=3:effectiveAttack(l,side)==='conquete'?p.fam<=3:p.fam>=3);
  const pool=preferred.length?preferred:players;return pool.length?pool[(l.minute+side)%pool.length]:null;
 }
+// Plaqueur d'un temps de jeu (fait `tackler` du journal) : choisi sans tirage, d'après l'état du match.
+// Couloir défensif de chaque poste (slot 0 = n° 1) en largeur (0 à 70), celui où court le porteur
+// (même table), le gain (court : un avant au contact ; de 10 à 21 m : le couloir, l'arrière garde la
+// profondeur ; franchissement de 22 m et plus : la couverture, l'arrière d'abord), les troisièmes
+// lignes (plus souvent au plaquage), le demi de mêlée (moins) et la fatigue (un joueur entamé plaque moins).
+const DEFENCE_LANES=[33,35,37,30,40,24,46,35,35,28,6,20,50,64,35];
+function carryTackler(l,side,carrierId,gain){
+ const opp=1-side,on=l.sheets[opp]?.on;if(!Array.isArray(on))return null;
+ const active=new Set(activePlayers(l,opp).map(p=>p.id)),at=l.sheets[side].on.indexOf(carrierId),lane=DEFENCE_LANES[at]??35;
+ let best=null,score=Infinity;
+ on.forEach((id,slot)=>{
+  if(id==null||!active.has(id)||slot>14)return;
+  const forward=slot<8,condition=Number(matchPlayer(l,opp,id)?.condition);
+  let s=Math.abs(DEFENCE_LANES[slot]-lane);
+  if(gain>=22)s+=slot===14?-40:slot===10||slot===13?-8:10;
+  else if(gain>=10)s+=slot===14?12:forward?4:0;
+  else s+=forward?0:14;
+  if(slot===5||slot===6)s-=3;else if(slot===8)s+=6;
+  if(Number.isFinite(condition))s+=Math.max(0,100-condition)*.2;
+  if(s<score){score=s;best=id}
+ });
+ return best;
+}
 function actionName(l,side,role){return actionPlayer(l,side,role)?.name||S.clubs[l.pair[side]].abbr}
 function captureMatchAction(l,type,meta={}){
  if(l.userSide<0)return undefined;
@@ -21,7 +44,7 @@ function captureMatchAction(l,type,meta={}){
  const neutral=['message','card','sub','tactic','break','end','advantage'].includes(kind);
  const base={x:neutral&&prior?prior.to.x:l.territory,y:prior?.to.y??35};
  const from={...(meta.from||base)},to={...(meta.to||from)};
- return {v:1,kind,team,...(meta.move?{move:meta.move}:{}),...(ACTION_CAUSES[kind]?.includes(meta.cause)?{cause:meta.cause}:{}),...(kind==='card'&&ACTION_CARDS.includes(meta.card)?{card:meta.card}:{}),...(kind==='try'&&ACTION_TRY_ORIGINS.includes(meta.origin)&&typeof meta.conversion==='boolean'?{origin:meta.origin,conversion:meta.conversion}:{}),style:effectiveAttack(l,team),...(tacticalRules(l)?{plans:{attack:[0,1].map(side=>effectiveAttack(l,side)),defence:[0,1].map(side=>effectiveDefence(l,side))}}:{}),incident:meta.incident===true,possession:meta.possession??l.possession,actor:meta.actor??null,from,to,score:[...l.score],tries:[...l.tries],on:l.sheets.map((sh,side)=>{const active=new Set(activePlayers(l,side).map(p=>p.id));return sh.on.map(id=>active.has(id)?id:null)}),period:l.flow?.period||(l.minute>40?2:1)};
+ return {v:1,kind,team,...(meta.move?{move:meta.move}:{}),...(ACTION_CAUSES[kind]?.includes(meta.cause)?{cause:meta.cause}:{}),...(kind==='card'&&ACTION_CARDS.includes(meta.card)?{card:meta.card}:{}),...(kind==='try'&&ACTION_TRY_ORIGINS.includes(meta.origin)&&typeof meta.conversion==='boolean'?{origin:meta.origin,conversion:meta.conversion}:{}),...(kind==='carry'&&meta.tackler!=null?{tackler:meta.tackler}:{}),style:effectiveAttack(l,team),...(tacticalRules(l)?{plans:{attack:[0,1].map(side=>effectiveAttack(l,side)),defence:[0,1].map(side=>effectiveDefence(l,side))}}:{}),incident:meta.incident===true,possession:meta.possession??l.possession,actor:meta.actor??null,from,to,score:[...l.score],tries:[...l.tries],on:l.sheets.map((sh,side)=>{const active=new Set(activePlayers(l,side).map(p=>p.id));return sh.on.map(id=>active.has(id)?id:null)}),period:l.flow?.period||(l.minute>40?2:1)};
 }
 function playback(l){l=l.visualSource||l;let p=MATCH_PLAYBACK.get(l);if(!p){p={cursor:l.events.length-1,stop:false};MATCH_PLAYBACK.set(l,p)}return p}
 function presentationPending(l){l=l.visualSource||l;return playback(l).cursor<l.events.length-1}

@@ -1,15 +1,8 @@
 name: Finances V2 — réception jouable native
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (réception Chromium de la version web historique ; tests Node repris par tests.yml, interface web partagée couverte par ui-browser-consolidated.yml).
+# Anciens déclencheurs : pull_request. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/finance-v2.js'
-      - 'dist/finance-v2.css'
-      - 'dist/index.html'
-      - 'dist/game.js'
-      - 'tests/finance-v2-playable.cjs'
-      - 'tests/finance-v2-browser.py'
-      - '.github/workflows/finance-v2-playable.yml'
+  workflow_dispatch:
 jobs:
   native-finance-v2:
     runs-on: ubuntu-latest

@@ -161,6 +161,8 @@ func lire(view, cas: Dictionary) -> void:
 	var allure_max := 0.0
 	var ballon_max := 0.0
 	var mains_max := 0.0
+	var plaquage_min := INF
+	var plaquage_max := 0.0
 	var course_vue := false
 	var porteurs_vus: Dictionary = {}
 	var etats_vus: Dictionary = {}
@@ -182,7 +184,12 @@ func lire(view, cas: Dictionary) -> void:
 			if images > 1 or not coupe:
 				allure_max = maxf(allure_max, Vector2(at.x - avant[id].x, at.z - avant[id].z).length() / STEP)
 			avant[id] = at
-			if t > raccord:
+			# Plaqueur pendant son plaquage : la vue le place à la taille du porteur (12 novembre
+			# 2026), pas sur sa piste ; contrôlé à part ci-dessous.
+			var lie := false
+			for k: Dictionary in view._choregraphie._plaquages:
+				if k.plaqueur == id and t >= float(k.t) - view._choregraphie.PLAQUAGE_APPROCHE - 0.05 and t <= float(k.releve) + 1.5: lie = true
+			if t > raccord and not lie:
 				var piste := track_point(pistes, id, t)
 				# Échantillon le plus proche : 0,1 s d'avance ou de retard au plus, soit < 1 m à 9,4 m/s.
 				ecart_max = maxf(ecart_max, Vector2(at.x - piste.x, at.z - piste.z).length())
@@ -194,9 +201,21 @@ func lire(view, cas: Dictionary) -> void:
 			porteurs_vus[porteur] = true
 			check(view._actors[porteur].holding and view._carrier_id == porteur, "%s : le porteur des pistes tient le ballon (%.1f s)" % [nom, t])
 			# Après le raccord de prise (0,2 s), le ballon est dans ses mains.
-			if view._choregraphie.etat(porteur) != "aplati" and t - view._choregraphie.source_depuis > 0.25:
+			# Ballon tenu (12 novembre 2026) : à deux mains ou calé sous le bras, il est contre un poignet.
+			if view._choregraphie.etat(porteur) != "aplati" and t - view._choregraphie.source_depuis > 0.45:
 				var entry: Dictionary = view._actors[porteur]
-				mains_max = maxf(mains_max, view._ball.global_position.distance_to(Presentation.ball_anchor(entry.node, entry.rig)))
+				var rig: Skeleton3D = entry.rig
+				var plus_pres := INF
+				for main in ["Palm.L", "Palm.R"]:
+					plus_pres = minf(plus_pres, rig.to_global(rig.get_bone_global_pose(rig.find_bone(main)).origin).distance_to(view._ball.global_position))
+				mains_max = maxf(mains_max, plus_pres)
+		# Plaqueur au contact : à la taille du porteur, sans le traverser.
+		for k: Dictionary in view._choregraphie._plaquages:
+			if t >= float(k.t) + 0.2 and t <= float(k.t) + 0.6 and view._actors.has(k.plaqueur) and view._actors.has(k.porteur):
+				var d := Vector2((view._actors[k.plaqueur].node as Node3D).position.x - (view._actors[k.porteur].node as Node3D).position.x,
+					(view._actors[k.plaqueur].node as Node3D).position.z - (view._actors[k.porteur].node as Node3D).position.z).length()
+				plaquage_min = minf(plaquage_min, d)
+				plaquage_max = maxf(plaquage_max, d)
 		var b: Vector3 = view._ball.global_position
 		if t > raccord and (images > 1 or not coupe):
 			ballon_max = maxf(ballon_max, b.distance_to(ballon_avant) / STEP)
@@ -207,7 +226,9 @@ func lire(view, cas: Dictionary) -> void:
 	check(allure_max < 10.5, "%s : aucune allure surhumaine à l'écran (%.1f m/s)" % [nom, allure_max])
 	# Lancer en touche et coup de pied compris (vitesse en trois dimensions, hauteur comprise).
 	check(ballon_max < 30.0, "%s : ballon jamais téléporté (%.1f m/s)" % [nom, ballon_max])
-	check(mains_max < 0.05, "%s : ballon dans les mains du porteur (%.3f m)" % [nom, mains_max])
+	check(mains_max < 0.26, "%s : ballon dans les mains du porteur (poignet le plus proche à %.3f m au plus)" % [nom, mains_max])
+	if plaquage_max > 0.0:
+		check(plaquage_min >= 0.25 and plaquage_max <= 1.0, "%s : plaqueur à la taille du porteur, sans le traverser (%.2f à %.2f m)" % [nom, plaquage_min, plaquage_max])
 	check(course_vue, "%s : animation de course pendant les pistes" % nom)
 	# Chaque porteur des pistes a eu le ballon à l'écran.
 	for paire: Variant in pistes.ballon.porteurs:

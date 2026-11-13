@@ -175,6 +175,7 @@ function validateActionScenes(l,s){
   saveCheck(saveArray(a.on,2)&&a.on.length===2);
   a.on.forEach((ids,side)=>{const sh=l.sheets[side],eligible=new Set(sh.nominated||[...sh.initial,...sh.bench,...sh.used,...sh.sentOff]);saveCheck(saveArray(ids,15)&&ids.length===15&&new Set(ids.filter(Boolean)).size===ids.filter(Boolean).length);ids.forEach((id,slot)=>saveCheck(id===null||saveId(id)&&eligible.has(id)&&slotEligible(s.clubs[l.pair[side]].players.find(p=>p.id===id),slot)))});
   saveCheck(a.actor===null||saveId(a.actor)&&s.clubs[l.pair[a.team]].players.some(p=>p.id===a.actor));
+  saveCheck(a.tackler===undefined||a.kind==='carry'&&saveId(a.tackler)&&a.on[1-a.team].includes(a.tackler)); // plaqueur : un adversaire sur le terrain
  }
 }
 function validateTacticalStats(values){saveCheck(saveArray(values,2)&&values.length===2);for(const a of values){saveCheck(saveObject(a)&&TACTICAL_STAT_KEYS.every(key=>key==='metres'?saveNumber(a[key],0,80000):saveInt(a[key],0,2000)));saveCheck(a.advances<=a.carries&&a.longGains<=a.advances&&a.metres<=a.advances*40)}}
@@ -309,11 +310,14 @@ if(s.aiRoster!==undefined){
   reportKeys.add(key);
   for(const key of ['renewed','released','retired','recruited','promoted','emergency'])
    saveCheck(saveInt(r[key],0,100));
+  // Transferts entre clubs gérés (carrières mondiales) : compteurs et stratégie de la saison.
+  for(const key of ['bought','sold'])saveCheck(r[key]===undefined||world&&saveInt(r[key],0,100),'Transferts de club invalides.');
+  saveCheck(r.strategy===undefined||world&&['vedettes','formateur','rajeunissement','vente','equilibre',...(s.clubDirections!==undefined?['reconstruction','maintien']:[])].includes(r.strategy),'Stratégie de club invalide.');
   saveCheck(saveNumber(r.fees,0,1e10));
  }
  for(const e of a.events)saveCheck(saveObject(e)&&saveInt(e.clubId,0,maxClub)&&
   (e.clubId!==s.club||s.managerMobilityVersion===1&&e.season<=s.managerMobility?.currentFrom)&&saveInt(e.season,1,s.season)&&
-  ['renew','release','retire','recruit','promote','emergency'].includes(e.kind)&&
+  (['renew','release','retire','recruit','promote','emergency'].includes(e.kind)||world&&e.kind==='sell')&&
   saveId(e.playerId)&&typeof e.name==='string'&&e.name.length>0&&e.name.length<120&&
   saveInt(e.salary,0,100000)&&saveNumber(e.fee,0,1e9));
  const seenClubs=new Set(),academyIds=new Set();
@@ -399,6 +403,55 @@ function expandChampMarket(s){
   return ref?JSON.parse(JSON.stringify(agents.get(id))):p;
  });
 }
+// Export v3 (carrières mondiales) : les champs de référence copiés tels quels
+// depuis les registres du jeu (profil mondial, traits initiaux, fiche d'effectif)
+// sont remplacés par la marque `true`, à leur place ; la lecture les reconstruit
+// avant l'empreinte et la validation. Un champ modifié reste écrit : la
+// réduction est sans perte, et une marque sans référence est refusée.
+const SAVE_REFERENCE_FIELDS=Object.freeze(['worldProfile','hiddenTraitsV2','rosterProfile']);
+function saveReferencePlayers(s){
+ return [...(s.clubs||[]).flatMap(c=>Array.isArray(c?.players)?c.players:[]),...(Array.isArray(s.development?.academy)?s.development.academy:[]),
+  ...(Array.isArray(s.aiRoster?.academies)?s.aiRoster.academies:[]).flatMap(a=>Array.isArray(a?.players)?a.players:[]),
+  ...(Array.isArray(s.economy?.freeAgents)?s.economy.freeAgents:[]),...(Array.isArray(s.market)?s.market:[])].filter(p=>saveObject(p)&&typeof p.id==='string');
+}
+function saveReferenceValue(s,p,field){
+ if(field==='rosterProfile')return rosterFoundationRegistry(s)?.players?.[p.id];
+ const registry=typeof CDWorldCareer.edition==='function'?CDWorldCareer.edition(s)?.registry:null;
+ if(!registry)return undefined;
+ if(field==='worldProfile')return registry.worldProfiles?.[p.id]??registry.compatibilityAliases?.[p.id]?.worldProfile;
+ if(p.id.startsWith('world:')||p.worldRatingsVersion!==undefined)return typeof CDWorldCareer.sourcePlayer==='function'?CDWorldCareer.sourcePlayer(s,p.id)?.hiddenTraitsV2:undefined;
+}
+function compactSaveReferences(s){
+ let removed=0;const cache=new Map();
+ const text=(field,p,ref)=>{const key=field+'\u0001'+p.id;if(!cache.has(key))cache.set(key,JSON.stringify(ref));return cache.get(key);};
+ for(const p of saveReferencePlayers(s))for(const field of SAVE_REFERENCE_FIELDS){
+  if(p[field]===undefined)continue;
+  const ref=saveReferenceValue(s,p,field);
+  if(ref!==undefined&&JSON.stringify(p[field])===text(field,p,ref)){p[field]=true;removed++;}
+ }
+ return removed;
+}
+function expandSaveReferences(s){
+ for(const p of saveReferencePlayers(s))for(const field of SAVE_REFERENCE_FIELDS){
+  if(p[field]!==true)continue;
+  const ref=saveReferenceValue(s,p,field);
+  saveCheck(ref!==undefined,'Référence de joueur absente des registres du jeu.');
+  p[field]=JSON.parse(JSON.stringify(ref));
+ }
+ return s;
+}
+function compactSaveDocument(doc){
+ if(!worldCareerActive(doc.state))return null;
+ // Le marché visible renvoie au vivier par identifiant, pour toutes les éditions mondiales en v3.
+ const base=compactChampDocument(doc)??doc;
+ const state=JSON.parse(JSON.stringify(base.state));
+ if(!compactSaveReferences(state)&&base===doc)return null;
+ // Contrôle aller-retour : la lecture doit retrouver exactement l'état exporté.
+ const check=JSON.parse(JSON.stringify(state));expandSaveReferences(check);
+ if(check.market.some(p=>typeof p==='string'))check.market=expandChampMarket(check);
+ if(saveChecksum(check)!==doc.checksum)return null;
+ return {...doc,exportVersion:3,state};
+}
 function createSaveDocument(state=S){
  saveCheck(!!state,'Aucune carrière à exporter.');
  const snapshot=JSON.parse(JSON.stringify(state));
@@ -412,6 +465,8 @@ function createSaveDocument(state=S){
   const compact=compactChampDocument(doc);
   if(compact&&saveDocumentFits(compact,cap))return compact;
  }
+ const reduced=compactSaveDocument(doc);
+ if(reduced&&saveDocumentFits(reduced,cap))return reduced;
  saveError('Le fichier est trop volumineux ('+(cap/1048576)+' Mio UTF-8 maximum pour cette édition).');
 }
 function parseSaveDocument(text){
@@ -428,8 +483,13 @@ function parseSaveDocument(text){
  saveCheck(bytes<=cap,'Le fichier est trop volumineux ('+(cap/1048576)+' Mio UTF-8 maximum pour cette édition).');
  saveCheck(saveObject(doc)&&doc.format===SAVE_FORMAT,'Ce fichier n’est pas un export Cadrage Débordement.');
  const compact=doc.exportVersion===2&&champPortableSave(doc.state);
- saveCheck(doc.exportVersion===1||compact,'Cette version d’export n’est pas prise en charge.');
+ const reduced=doc.exportVersion===3&&saveObject(doc.state)&&worldCareerActive(doc.state);
+ saveCheck(doc.exportVersion===1||compact||reduced,'Cette version d’export n’est pas prise en charge.');
  saveCheck(typeof doc.exportedAt==='string'&&Number.isFinite(Date.parse(doc.exportedAt))&&typeof doc.checksum==='string');
+ if(reduced){
+  expandSaveReferences(doc.state);
+  if(Array.isArray(doc.state.market)&&doc.state.market.some(p=>typeof p==='string'))doc.state.market=expandChampMarket(doc.state);
+ }
  if(compact)doc.state.market=expandChampMarket(doc.state);
  // L'empreinte porte sur le fichier tel qu'exporté : la validation peut migrer
  // une ancienne carrière (identifiants de journalistes renommés, par exemple).
@@ -440,7 +500,7 @@ function parseSaveDocument(text){
  return doc;
 }
 function saveFileName(doc){return `Cadrage-Debordement-${doc.state.clubs[doc.state.club].abbr}-S${doc.state.season}-${doc.state.phase==='league'?'J'+(doc.state.round+1):doc.state.phase.toUpperCase()}-${doc.exportedAt.replace(/[-:]/g,'').slice(0,15)}.json`}
-function downloadSaveDocument(doc){const text=JSON.stringify(doc,null,doc.exportVersion===2?0:2),blob=new Blob([text],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=saveFileName(doc);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function downloadSaveDocument(doc){const text=JSON.stringify(doc,null,doc.exportVersion===1?2:0),blob=new Blob([text],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=saveFileName(doc);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function exportCareer(){try{const doc=createSaveDocument();downloadSaveDocument(doc);try{gameStorage.setItem('bdt-exported-at',doc.exportedAt)}catch(e){}if(view==='saves')render();toast('Export créé. Conservez le fichier JSON pour reprendre sur un autre ordinateur.')}catch(e){toast('Export impossible : '+e.message)}}
 function openImportPicker(){mainMenuPendingSlotId=null;const input=$('#save-import');input.value='';input.click()}
 async function chooseImportFile(input){const file=input.files?.[0],token=++saveReadToken;if(!file)return;try{saveCheck(file.size<=SAVE_LIMIT,'Le fichier est trop volumineux (8 Mio UTF-8 maximum).');const doc=parseSaveDocument(await file.text());if(token!==saveReadToken)return;pendingSave=doc;showImportReview(false)}catch(e){if(token===saveReadToken)toast(e.message)}finally{input.value=''}}
@@ -449,7 +509,7 @@ function cancelSaveImport(){pendingSave=null;mainMenuPendingSlotId=null;modal=nu
 function confirmSaveImport(){if(!pendingSave)return false;let incoming;try{saveCheck(saveChecksum(pendingSave.state)===pendingSave.checksum,'Le fichier a été modifié depuis sa vérification.');validateCareer(pendingSave.state);incoming=JSON.parse(JSON.stringify(pendingSave.state));normalizeOppositionSnapshot(incoming);if(incoming.live&&!incoming.live.finished)incoming.live.paused=true;if(S)gameStorage.setItem('bdt-before-import',JSON.stringify(createSaveDocument(S)));gameStorage.setItem('bdt-v1',JSON.stringify(incoming))}catch(e){lastSaveError=true;toast('Restauration annulée. La carrière ouverte est conservée. Vérifiez le fichier et l’espace de stockage du navigateur.');return false}clearInterval(timer);S=incoming;let slotFailure=false;try{if(typeof CDMenuSlots!=='undefined')CDMenuSlots.setActive(mainMenuPendingSlotId||null)}catch(e){slotFailure=true}mainMenuPendingSlotId=null;setupManager();pendingSave=null;modal=null;loadSaveFailure='';lastSaveError=slotFailure;view=S.live?'match':'dashboard';entryScreen='game';render();toast('Carrière restaurée. Les matchs en cours reprennent en pause.');return true}
 function backupDocument(){try{const text=gameStorage.getItem('bdt-before-import');return text?parseSaveDocument(text):null}catch(e){return null}}
 function reviewBackup(){pendingSave=backupDocument();if(!pendingSave){toast('Aucune copie de secours valide disponible sur ce navigateur.');return}showImportReview(true)}
-function exportBackup(){try{const doc=backupDocument();saveCheck(!!doc,'Aucune copie de secours disponible.');downloadSaveDocument(doc.exportVersion===2?compactChampDocument(doc):doc)}catch(e){toast(e.message)}}
+function exportBackup(){try{const doc=backupDocument();saveCheck(!!doc,'Aucune copie de secours disponible.');downloadSaveDocument(doc.exportVersion===3?compactSaveDocument(doc)||doc:doc.exportVersion===2?compactChampDocument(doc):doc)}catch(e){toast(e.message)}}
 function savesView(){const backup=backupDocument();let date=gameStorage.offline?'Aucun export enregistré sur cet ordinateur':'Aucun export enregistré sur ce navigateur';try{const last=gameStorage.getItem('bdt-exported-at');if(last&&Number.isFinite(Date.parse(last)))date=new Date(last).toLocaleString('fr-FR')}catch(e){}return heading('EMPORTER SA CARRIÈRE','Vos sauvegardes.','Un fichier JSON pour changer d’ordinateur ou conserver un point de retour.')+`${offlineStorageInfo()}<div class="grid"><div class="stack"><div class="card"><h2>Exporter la carrière</h2><p>${club().name} · Saison ${S.season} · ${label()}. L’export contient les joueurs, contrats, finances, jeunes, résultats et le match en cours.</p><button class="primary" onclick="exportCareer()">Télécharger la sauvegarde JSON ↓</button><p class="help">Dernier export : ${date}. Si un match est en cours, le fichier permettra de le reprendre en pause.</p></div><div class="card"><h2>Importer une carrière</h2><p>Choisissez un fichier exporté depuis Cadrage Débordement. Son contenu est vérifié avant de vous présenter la carrière à restaurer.</p><button class="dark" onclick="openImportPicker()">Choisir un fichier JSON ↑</button><p class="help">8 Mio UTF-8 maximum. La carrière actuelle reste ouverte tant que vous n’avez pas confirmé le remplacement.</p></div></div><div class="stack"><div class="card"><h2>Revenir après un import</h2><p>${backup?`Copie disponible : ${backup.state.clubs[backup.state.club].name} · saison ${backup.state.season}.`:'Une copie de la carrière remplacée sera créée ici lors du prochain import.'}</p><div class="contractactions"><button onclick="reviewBackup()" ${backup?'':'disabled'}>Examiner et restaurer la copie</button><button class="small" onclick="exportBackup()" ${backup?'':'disabled'}>Télécharger la copie ↓</button></div></div><div class="card"><h2>À conserver de votre côté</h2><p>${gameStorage.offline?'La sauvegarde automatique et la copie de secours restent dans le dossier de données de cette application.':'La sauvegarde automatique et la copie de secours restent dans ce navigateur.'} Leur effacement supprime ces copies locales : gardez un fichier exporté pour protéger votre progression.</p><p>Le fichier importé est traité sur votre appareil. Il n’y a pas de synchronisation automatique entre ordinateurs.</p>${lastSaveError?'<div class="notice danger">La sauvegarde locale a échoué. Exportez votre carrière avant de quitter le jeu.</div>':''}</div></div></div>`}
 function bootSavedCareer(){if(loadSaveFailure&&loadedSaveText){try{gameStorage.setItem('bdt-recovery-invalid',loadedSaveText)}catch(e){}}try{migrateGame();if(S)validateCareer(S)}catch(e){if(loadedSaveText){try{gameStorage.setItem('bdt-recovery-invalid',loadedSaveText)}catch(ignore){}}S=null;loadSaveFailure='La sauvegarde locale est illisible. Vous pouvez importer un fichier exporté pour retrouver votre carrière.'}validatingStartup=false;if(S)save();if(S?.live)view='match';render()}
 

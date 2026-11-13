@@ -1,0 +1,668 @@
+{
+  "source_sha": "1a7b083b8a090d735ef1b08245b5f4faf430f76b",
+  "run_id": 43152464850,
+  "result_count": 76,
+  "passed": 74,
+  "failed": 2,
+  "distinct_suites": 57,
+  "distinct_suite_cases": 75,
+  "exact_registry_multiset_match": true,
+  "jobs": [
+    {
+      "job": "sdk-parcours",
+      "id": 130964651924,
+      "results": 21,
+      "passed": 20,
+      "conclusion": "failure"
+    },
+    {
+      "job": "sdk-portraits-staff",
+      "id": 130964652175,
+      "results": 21,
+      "passed": 20,
+      "conclusion": "failure"
+    },
+    {
+      "job": "sdk-layouts",
+      "id": 130964652205,
+      "results": 22,
+      "passed": 22,
+      "conclusion": "success"
+    },
+    {
+      "job": "sdk",
+      "id": 130964652270,
+      "results": 12,
+      "passed": 12,
+      "conclusion": "success"
+    }
+  ],
+  "failures": [
+    {
+      "suite": "tests/godot-carnet-ui.cjs",
+      "variant": "default",
+      "passed": false,
+      "status": 1,
+      "milliseconds": 75128,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "guards",
+      "passed": false,
+      "status": null,
+      "milliseconds": 180007,
+      "error": "spawnSync /opt/hostedtoolcache/node/22.23.4/x64/bin/node ETIMEDOUT"
+    }
+  ],
+  "results": [
+    {
+      "suite": "tests/native-press-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 66207,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-office-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 69433,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-pack-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 48894,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-reception-decisions.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 19481,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-youth-draft.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 54094,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-youth-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 118099,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-youth-scout-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 49543,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-fatigue-overview.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 32232,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-carnet-ui.cjs",
+      "variant": "default",
+      "passed": false,
+      "status": 1,
+      "milliseconds": 75128,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-review-regressions.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 150619,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-integration.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 117396,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "routes-1280",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 68806,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "routes-1600",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 76686,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "routes-1920",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 91031,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction.cjs",
+      "variant": "progression",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 119262,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-entity-navigation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 17067,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-management-reading-flow.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 19551,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-gestion-carnet.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 43141,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-observed-training-consequences.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 26679,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-effective-training-receipt.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 17560,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-office-entity-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 678,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-academy-portraits.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 20334,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-portrait-continuity.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 29617,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-contract-negotiation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 28780,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-staff-real-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 40238,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-staff-hire-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 27290,
+      "error": null
+    },
+    {
+      "suite": "tests/deepen-match.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 16495,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-career-final-fixes.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 65646,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-playbook-watch-ui.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 29398,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-entity-projections.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 772,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-prospect-profile.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 862,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-staff-fictional-labels.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 493,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "reading",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 142166,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "nation",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 45622,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "guards",
+      "passed": false,
+      "status": null,
+      "milliseconds": 180007,
+      "error": "spawnSync /opt/hostedtoolcache/node/22.23.4/x64/bin/node ETIMEDOUT"
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "prospects",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 53378,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "staff",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 59393,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "quote",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 52911,
+      "error": null
+    },
+    {
+      "suite": "tests/rg27-night-navigation.cjs",
+      "variant": "report",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 75247,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-world-entity-targets.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 674,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-analysis-club-graphics.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 105516,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-calendar-session-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 75798,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "layout-native",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 44750,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "layout-stretch",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 37438,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "dock-native",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 47745,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "dock-stretch",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 47391,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-lineup-layout.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 39387,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-interface-layout.cjs",
+      "variant": "management",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 108918,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-interface-layout.cjs",
+      "variant": "journal",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 105839,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "variant": "reading720",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 84360,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "variant": "reading900",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 53694,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "variant": "reading1080",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 59993,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "variant": "reading1440",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 69359,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "variant": "responsive",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 45655,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "variant": "drafts",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 52919,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-finance-ledger-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 10295,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-reader-history.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 121511,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-training-identity-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 16606,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-navigation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 48239,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-relationships-memory.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 9304,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-management-reading-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 659,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-national-reading-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 673,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-profile-reading.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 18282,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-analysis-club-links.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 26193,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-match-journal.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 36000,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-immersion-copy.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 1616,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-regen-portraits.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 1708,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-club-memory.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 18742,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-squad-column-sort.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 17171,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-epcr-preparation.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 41797,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-immersive-reception.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 60996,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-native06-integration.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 44554,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-art-direction07.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 106739,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-competition-editor.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 68627,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "variant": "layout-native",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 39409,
+      "error": null
+    },
+    {
+      "suite": "tests/godot-contextual.cjs",
+      "variant": "default",
+      "passed": true,
+      "status": 0,
+      "milliseconds": 60557,
+      "error": null
+    }
+  ]
+}

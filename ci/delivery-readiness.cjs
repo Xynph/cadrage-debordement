@@ -6,9 +6,10 @@ const {decide} = require('./release-gate.cjs');
 const {fullCI} = require('./chat-release.cjs');
 const REPO = 'Xynph/cadrage-debordement';
 const SHA = /^[0-9a-f]{40}$/;
-const JOBS = ['classification', ...[1,2,3,4,5].map(i => `Suites ${i}/5`), 'Validation CI'];
+const {OFFICIAL_JOBS: JOBS, officialJobs} = require('./ci-jobs.cjs');
 function need(value, message) { if (!value) throw Error(message); }
 function completeJobs(jobs) {
+  jobs = officialJobs(jobs);
   return Array.isArray(jobs) && jobs.length === JOBS.length && JOBS.every(name =>
     jobs.filter(j => j.name === name && j.status === 'completed' && j.conclusion === 'success').length === 1);
 }
@@ -50,11 +51,12 @@ function aggregate(s) {
   const official = runs.find(r => r.workflow_id === s.workflow.id && r.path === '.github/workflows/tests.yml');
   const gate = decide(s.pr, official ? [official] : [], official ? s.jobs[official.id] : []);
   reject(gate.ready, 'Gate officiel : ' + gate.reason);
-  reject(!!official && completeJobs(s.jobs[official.id]), 'CI PR complète 7/7 absente');
-  reject(fullCI(s.mainRun, s.mainJobs, s.main, s.workflow.id), 'CI main complète 7/7 absente');
+  reject(!!official && completeJobs(s.jobs[official.id]), `CI PR complète ${JOBS.length}/${JOBS.length} absente`);
+  reject(fullCI(s.mainRun, s.mainJobs, s.main, s.workflow.id), `CI main complète ${JOBS.length}/${JOBS.length} absente`);
   for (const r of runs) {
     reject(r.pull_requests?.some(p => p.number === s.pr.number), 'Association CI/PR absente ou incertaine');
-    const jobs = s.jobs[r.id] || [];
+    // Jobs Godot informatifs (non bloquants) exclus : seul le verdict officiel compte.
+    const jobs = officialJobs(s.jobs[r.id] || []);
     reject(r.status === 'completed' && r.conclusion === 'success' && jobs.length > 0 &&
       jobs.every(j => j.status === 'completed' && j.conclusion === 'success'), `CI ${r.workflow_id} non entièrement verte`);
   }

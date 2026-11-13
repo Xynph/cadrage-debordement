@@ -13,6 +13,8 @@ static func enable(app: Control, parent: Container, data: Dictionary) -> void:
 	parent.add_child(button)
 
 static func build(app: Control, parent: Container, data: Dictionary) -> void:
+	if not app.management_ui.get("staff") is Dictionary: app.management_ui.staff = {}
+	var reading: Dictionary = app.management_ui.staff
 	var overview := G.v(8)
 	overview.name = "StaffCareerOverview"
 	parent.add_child(overview)
@@ -33,20 +35,25 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	var tabs := OptionButton.new()
 	tabs.name = "StaffCareerTab"
 	for title in ["Équipe du club", "Candidats disponibles", "Retraites et archives"]: tabs.add_item(title)
+	tabs.select(clampi(int(reading.get("tab", 0)), 0, tabs.item_count - 1))
 	overview.add_child(tabs)
 	var search := LineEdit.new()
 	search.name = "StaffSearch"
 	search.placeholder_text = "Rechercher un nom ou un rôle…"
 	search.custom_minimum_size.y = 38
+	search.text = str(reading.get("search", ""))
 	overview.add_child(search)
 	var count := G.label("", 12, G.MUTED)
 	count.name = "StaffCount"
 	overview.add_child(count)
 	var list := G.scroll(parent)
 	list.get_parent().name = "StaffList"
+	list.get_parent().set_deferred("scroll_vertical", int(reading.get("scroll", 0)))
+	list.get_parent().get_v_scroll_bar().value_changed.connect(func(value: float): reading.scroll = value)
 	var paging := G.h(8)
 	parent.add_child(paging)
-	var local := {"page":0}
+	var local := reading
+	if not local.has("page"): local.page = 0
 	var previous := G.button("← PRÉCÉDENT", func(): pass)
 	var next := G.button("SUIVANT →", func(): pass)
 	var page_label := G.label("", 12, G.MUTED)
@@ -71,8 +78,8 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 		page_label.text = "Page %d / %d" % [int(local.page) + 1, maxi(1, ceili(float(filtered.size()) / PAGE_SIZE))]
 	previous.pressed.connect(func(): local.page -= 1; redraw.call())
 	next.pressed.connect(func(): local.page += 1; redraw.call())
-	tabs.item_selected.connect(func(_i: int): local.page = 0; redraw.call())
-	search.text_changed.connect(func(_q: String): local.page = 0; redraw.call())
+	tabs.item_selected.connect(func(index: int): reading.tab = index; local.page = 0; redraw.call())
+	search.text_changed.connect(func(query: String): reading.search = query; local.page = 0; redraw.call())
 	redraw.call()
 	parent.add_child(G.wrap("Les âges et contrats sont ceux de la carrière simulée. Les identités n’accordent aucun bonus de match. Les engagements rémunérés sont indiqués séparément ; les autres contrats restent descriptifs.", 12))
 
@@ -83,10 +90,11 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	card.add_child(row)
 	var appearance := person.duplicate(true)
 	appearance.portraitRole = "staff"
-	row.add_child(G.portrait(0, 68, appearance))
+	var staff_view = load("res://ui/staff_view.gd")
+	row.add_child(staff_view.portrait_link(app, G.portrait(0, 68, appearance), person))
 	var text := G.v(4)
 	G.fill(text); row.add_child(text)
-	text.add_child(G.wrap(person.name, 21, G.INK))
+	text.add_child(staff_view.name_link(app, person, 21))
 	text.add_child(G.wrap(person.get("roleLabel", data.get("roles", {}).get(person.get("role", ""), person.get("role", "Staff"))), 14, G.GOLD))
 	text.add_child(G.wrap("%s ans" % G.n(person.get("age", 0)), 12))
 	if person.get("contractEnd") != null: text.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 12))

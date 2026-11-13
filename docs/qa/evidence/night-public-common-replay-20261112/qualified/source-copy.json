@@ -1,0 +1,24 @@
+{
+  "source": null,
+  "source_sha256_before": null,
+  "source_sha256_after": null,
+  "copied_profile": "/tmp/cd-analysis-club-graphics-UK7pUD",
+  "expected_fixture": "s1-elite-league-0-0",
+  "setup": "public-career-node",
+  "sha": "0e644e61ef3f78a6df4346f8d14d5ea33515c097",
+  "archived_result": {
+    "fixtureId": "s1-elite-league-0-0",
+    "season": 1,
+    "pair": [
+      0,
+      13
+    ],
+    "score": [
+      15,
+      20
+    ],
+    "phase": "league",
+    "week": 0
+  },
+  "public_preparation": "public-preparation.json"
+}

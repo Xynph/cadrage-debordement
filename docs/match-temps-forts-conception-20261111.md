@@ -1157,6 +1157,94 @@ défaut). Pour un essai en jeu courant, le moteur joint au temps fort des pistes
 de 12 à 25 s (trente joueurs et ballon, pas de 0,2 s) ; la vue les suit à la place du plan
 d'essai. Conception, garanties, tests et limites : [match-choregraphe-20261112.md](match-choregraphe-20261112.md).
 
+## 13. Retours de Léo sur les vidéos du chorégraphe (12 novembre 2026)
+
+Demandes : « plus de temps entre chaque temps fort, il faut que le chrono défile, afin qu'on
+ait un peu de temps pour faire des ajustements » ; « que les temps forts soient choisis de
+manière cohérente. Pas que des essais ou des transformations […] des grosses actions sans
+point marqué, pour qu'on ne sache pas à l'avance ce qu'il va se passer ». Branche
+`claude/match-retours-leo-20261112`. Caméra, anneaux, plaquages et ballon tenu : voir
+[match-choregraphe-20261112.md](match-choregraphe-20261112.md), § 12.
+
+### 13.1 Entracte entre deux temps forts
+
+> **Remplacé le 12 novembre 2026** (décision de Léo) : plus de pause minimale de 8 s, plus de
+> retenue ni de « Passer » ; le temps fort part dès que le moteur le déclenche. Voir
+> [match-importance-20261112.md](match-importance-20261112.md).
+
+- Après chaque temps fort, l'écran intermédiaire reste au moins **8 s réelles** (constante
+  `ENTRACTE` de `match_temps_forts.gd` ; `CD_MATCH_TEMPS_FORTS_ENTRACTE`, 0 à 30 s, pour les
+  essais). Valeur choisie dans la fourchette 6 à 10 s : le temps de lire le fil et d'ouvrir la
+  tactique, sans casser le rythme (un match dynamique compte environ 17 temps forts, soit
+  2 min 15 d'entractes au plus).
+- L'**horloge défile** pendant l'entracte : la minute du moteur et des secondes qui roulent
+  (« 23:41 », « 40+2:15 ») au rythme de l'horloge choisie (1,5 s par minute en « normale »).
+- Un temps fort reçu pendant l'entracte est **retenu** : le moteur ne simule plus rien,
+  l'écran garde le score, le fil et les repères d'avant lui (rien n'annonce l'action), les
+  secondes finissent la minute au rythme de l'entracte, « Prochaine action dans 5 s »
+  s'affiche ; il part à la fin de l'entracte. La suite d'une action en cours (`suite`) part
+  tout de suite : on ne coupe pas une action en deux. Un carton signalé pendant l'entracte
+  attend la fin du temps fort retenu (jamais avant l'image).
+- **« Passer »** (écran intermédiaire) abrège l'entracte ; sans temps fort reçu, les minutes
+  s'enchaînent sans attendre l'horloge jusqu'au prochain.
+- **Pause** : l'entracte et l'horloge se figent.
+- **Tactique ou Banc** ouverts depuis l'écran intermédiaire : le match se met en pause (le
+  moteur n'accepte les changements qu'en pause, comme avant), rien ne part tant que le tiroir
+  est ouvert ; à sa fermeture le match reprend (sauf si le manager a déjà repris lui-même). Les
+  changements passent par les mêmes commandes qu'avant (`set_tactics`, `substitute`) et valent
+  pour les minutes simulées ensuite.
+- Match complet (`integral`) : pas d'entracte, il reste continu par conception.
+- Le moteur reste la source de vérité : rien de ce qu'il décide ne change, seul le moment où
+  la régie lance le temps fort suivant change.
+
+### 13.2 Choix des temps forts : des grosses actions sans point
+
+Sélection en direct (`en_direct`, niveau dynamique surtout), `native/engine/match-highlights.cjs` :
+
+- Grosses actions sans point mieux cotées : franchissement (62, 70 s'il entre dans les 22,
+  au lieu de 50 et 60), ballon récupéré dans ses 22 (62 et 70 près de la ligne, au lieu de 54
+  et 62), action près de la ligne (60 au lieu de 54), pénalité manquée (70 au lieu de 64) ;
+  nouveaux : **contre-attaque** (12 m gagnés au moins depuis son camp, 54) et **jeu au pied
+  dangereux** (ballon dans les 22 adverses, 56). Le ballon gratté dans le camp adverse, souvent
+  anodin, descend à 40 (au lieu de 50).
+- **Régulateur d'issue** (dynamique) : après quatre temps forts, si plus de la moitié ont
+  marqué, le seuil des grosses actions sans point baisse de 10 ; s'il y en a plus de la moitié,
+  il remonte de 10.
+- **Pas deux temps forts quasi identiques d'affilée** : même type à moins de 8 minutes, le
+  second (non forcé) doit passer un seuil relevé de 12.
+- Inchangé : tous les essais sont montrés (règle « on ne dit essai que si on le voit ») ; une
+  transformation n'est jamais un temps fort seule (plan déduit qui suit son essai) ; la
+  légende de l'essai ne dit pas s'il est transformé ; le score avance au plan montré.
+- Présentation qui ne trahit pas l'issue : un essai en jeu courant et un franchissement ont
+  désormais le même cadrage (le chorégraphe cadrait plus large le franchissement) ; l'écran
+  intermédiaire ne montre rien du temps fort retenu (§ 13.1).
+
+Mesure (120 matchs du harnais, clubs 0 à 9, même tirage pour avant et après ; « avec point » :
+le temps fort contient un essai ou un tir réussi ; « grosses actions » : ensemble `GROSSES`) :
+
+| Niveau | | Temps forts / match | Avec point | Grosses actions sans point | Autres sans point | Durée d'action / match | Répartition 0-20 / 20-40 / 40-60 / 60-80 | Même type et issue d'affilée |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| dynamique | avant | 17,3 (9 à 29) | 38,1 % | 33,5 % | 28,4 % | 166 s | 28 / 23 / 22 / 26 % | 16,7 % |
+| dynamique | après | 17,5 (10 à 28) | 37,6 % | **49,9 %** | 12,4 % | 178 s | 29 / 22 / 22 / 27 % | 11,8 % |
+| clés | avant | 11,9 | 55,7 % | 20,0 % | 24,2 % | 113 s | 26 / 22 / 22 / 30 % | 23,6 % |
+| clés | après | 13,5 | 49,0 % | 32,1 % | 18,9 % | 130 s | 28 / 21 / 21 / 30 % | 20,6 % |
+| étendus | avant | 21,2 | 31,3 % | 35,5 % | 33,3 % | 197 s | 24 / 22 / 26 / 28 % | 12,6 % |
+| étendus | après | 22,2 | 29,9 % | 51,8 % | 18,3 % | 215 s | 24 / 23 / 26 / 27 % | 11,7 % |
+
+479 essais sur 479 montrés avant comme après, à chaque niveau. En dynamique, les types les plus
+fréquents passent de « essai 21,5 %, ballon gratté haut 14,6 %, pénalité réussie 11,8 %,
+franchissement 10,7 % » à « essai 21 %, contre-attaque 12,2 %, pénalité réussie 11,5 %,
+franchissement 11,4 %, ballon sauvé 8,8 % ». **Pourquoi viser 35 à 50 % de grosses actions
+sans point** : en dessous du tiers, deux temps forts sur trois qui comptent finissent au score
+et l'issue se devine ; au-delà de la moitié, le match en temps forts montrerait surtout des
+actions sans suite et s'allongerait. L'ordre de grandeur est un choix, non une mesure.
+
+Test : `tests/match-highlights.cjs`, « Niveau dynamique : une vraie part de grosses actions
+sans point » (16 matchs du harnais : tous les essais montrés, aucune transformation seule,
+au plus 50 % de temps forts qui marquent, 35 à 60 % de grosses actions sans point, au moins
+15 % des temps forts dans chaque quart du match, au plus 8 % de choix libres identiques
+d'affilée). Il échoue sur la sélection d'avant (32 % de grosses actions).
+
 ## 8. Sources
 
 Consultées le 11 novembre 2026. « Officiel » = Sports Interactive ou l'éditeur du jeu.

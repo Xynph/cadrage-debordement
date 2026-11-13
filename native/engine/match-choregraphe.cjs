@@ -157,6 +157,11 @@ function simuler(e,phases,graine){
  const d={phase:'porte',porteur:null,ruck:null,passe:null,chaine:[],apres:null,etape:null,soutiens:[],plaqueur:null,objectif:null,fin:null,aplati:null,ouvreur:null,attente:0,
   but:G,couvreur:null,coup:null,horsJeuPied:new Set(),apresPied:false,cloture:null,sp:null};
 
+ // Défenseur que le moteur a nommé plaqueur d'une étape, s'il est sur le terrain et debout.
+ function defenseurNomme(etape,cote){
+  const j=etape?.plaqueur!=null?parId.get(String(etape.plaqueur)):null;
+  return j&&j.side!==cote&&debout(j)?j:null;
+ }
  function choisirSoutiens(p){
   return J.filter(j=>j.side===p.side&&j!==p&&j!==S&&j!==demiDe(p.side)&&debout(j)).sort((a,b)=>dist(a,p)-dist(b,p)||a.slot-b.slot).slice(0,2);
  }
@@ -175,9 +180,11 @@ function simuler(e,phases,graine){
   }
   d.objectif={x:borne(x,2.5,97.5),y:borne(p.y+(alea()-0.5)*3,4,66)};
   d.soutiens=choisirSoutiens(p);
-  // Plaqueur : le défenseur debout le plus proche du point visé (l'arrière garde la profondeur).
-  const arr=arriereDe(1-p.side);
-  d.plaqueur=J.filter(j=>j.side!==p.side&&debout(j)&&j!==arr).sort((a,b)=>dist(a,d.objectif)-dist(b,d.objectif)||a.slot-b.slot)[0];
+  // Plaqueur : celui que le moteur nomme (fait `tackler`, le même que la colonne Plaq. de l'entracte),
+  // sinon le défenseur debout le plus proche du point visé (l'arrière garde la profondeur).
+  // Allure plafonnée par le profil : un plaqueur nommé loin du point arrive en retard et le relais prévu plus bas s'applique.
+  const arr=arriereDe(1-p.side),nomme=defenseurNomme(etape,p.side);
+  d.plaqueur=nomme||J.filter(j=>j.side!==p.side&&debout(j)&&j!==arr).sort((a,b)=>dist(a,d.objectif)-dist(b,d.objectif)||a.slot-b.slot)[0];
   d.debutJeu=t;
   evenements.push({t:r1(t),type:'course',joueur:p.id});
  }
@@ -296,7 +303,7 @@ function simuler(e,phases,graine){
    // Franchissement : le porteur perce puis l'arrière (ou le défenseur le plus en profondeur) le plaque au point du moteur.
    const x=borne(fini(st.x)?st.x:v.x+sens*22,4,96);
    d.but={x,y:borne(v.y+(alea()-0.5)*8,6,64)};
-   d.couvreur=(arriere&&debout(arriere)?arriere:null)||def.filter(debout).sort((a,b)=>(b.x-a.x)*sens-(a.x-b.x)*sens||a.slot-b.slot)[0];
+   d.couvreur=defenseurNomme(st,v.side)||(arriere&&debout(arriere)?arriere:null)||def.filter(debout).sort((a,b)=>(b.x-a.x)*sens-(a.x-b.x)*sens||a.slot-b.slot)[0];
   }else d.but=G;
   // Tentatives de plaquage (toutes ratées) : les deux défenseurs debout les plus proches, et l'arrière sur un essai.
   d.tentatives=new Set(def.filter(j=>debout(j)&&j!==arriere&&j!==d.couvreur).sort((a,b)=>dist(a,v)-dist(b,v)||a.slot-b.slot).slice(0,2));
@@ -384,10 +391,17 @@ function simuler(e,phases,graine){
   const k=parId.get(String(ouverture.botteur)),r=parId.get(String(ouverture.receveur));
   const dk=dirDe(k.side);
   // Partenaires du botteur derrière le ballon au coup d'envoi (loi 12) ; adversaires à 10 m au moins.
+  // Équipe qui reçoit (12 novembre 2026, retours de Léo : « placements irréalistes ») : non plus
+  // en file à la même distance, mais avants en groupes entre 11 et 17 m, demis à 19 et 24 m,
+  // trois-quarts étagés de 27 à 33 m, arrière à 38 m ; positions par numéro (slot), symétrisées
+  // du côté où tombe le ballon. Valeurs choisies, non mesurées.
+  const RECOIT=[[14,18],[13,24],[14,30],[11.5,40],[11.5,52],[15,46],[16,58],[17,35],[19,38],[24,30],[30,8],[27,22],[31,48],[33,62],[38,35]];
+  const cote=(ouverture.chute?.y??ouverture.y)>35?-1:1;
   for(const j of J){
    if(j===k){placer(j,ouverture.x-dk*2.2,ouverture.y-1.2);continue}
    const ds=dirDe(j.side);
    if(j.side===k.side&&(j.x-ouverture.x)*ds>-0.8)placer(j,ouverture.x-ds*(1+(j.slot%4)*0.6),j.y);
+   else if(j.side!==k.side&&j!==r&&RECOIT[j.slot]){const [p,y]=RECOIT[j.slot];placer(j,borne(ouverture.x+dk*p,-2,102),borne(cote>0?y:70-y,3,67))}
    else if(j.side!==k.side&&(ouverture.x-j.x)*dk<10.5&&(j.x-ouverture.x)*dk<10.5)placer(j,ouverture.x+dk*(11+(j.slot%5)*1.5),j.y);
   }
   ballon.x=ouverture.x;ballon.y=ouverture.y;ballon.h=0.15;ballon.sol=true;
@@ -1226,6 +1240,8 @@ function composer(entree){
 
 // --- Entrée depuis un temps fort projeté (match-direct.cjs) et le journal --------------
 const xDe=p=>p&&fini(p.x)?p.x:null;
+// Plaqueur nommé par le moteur pour un temps de jeu (fait `tackler`), repris par l'étape.
+const plaqueurDe=r=>r?.tackler!=null?{plaqueur:String(r.tackler)}:{};
 // Plans que les pistes savent montrer avant le fait clé, en remontant le temps fort.
 function remonter(plans,rec,k,T){
  let premier=k;
@@ -1235,7 +1251,7 @@ function remonter(plans,rec,k,T){
   if(p.kind==='carry'&&r.team===T&&r.actor!=null){
    // Un long gain (dix mètres et plus) se montre comme une percée, plaquée au bout par la couverture.
    const long=fini(r.to?.x)&&fini(r.from?.x)&&Math.abs(r.to.x-r.from.x)>=GAIN_PERCEE;
-   etapes.unshift({k:long?'franchi':'porte',joueur:String(r.actor),x:xDe(r.to),depuis:xDe(r.from),plan:i});premier=i;continue;
+   etapes.unshift({k:long?'franchi':'porte',joueur:String(r.actor),x:xDe(r.to),depuis:xDe(r.from),plan:i,...plaqueurDe(r)});premier=i;continue;
   }
   if(p.kind==='turnover'&&r.team===T){etapes.unshift({k:'recup',joueur:r.actor!=null?String(r.actor):null,side:T,plan:i});premier=i;break}
   if((p.kind==='setpiece-win'||p.kind==='setpiece-loss')&&r.team===T&&i>0&&['lineout','scrum'].includes(plans[i-1].kind)&&r.move!=='maul'&&!r.porte){
@@ -1335,7 +1351,7 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
   ({premier,ouverture}=amont);etapes=[...amont.etapes,{k:'franchi',joueur:vedette,x:r.to.x,depuis:r.from.x,plan:k,cle:true}];
   // La suite que le moteur a décidée : un temps de jeu de la même équipe, ou le ballon récupéré par l'adversaire.
   const n=plans[k+1],rn=rec(k+1);
-  if(n&&rn&&n.kind==='carry'&&rn.team===T&&rn.actor!=null&&gain(rn)<22){etapes.push({k:gain(rn)>=GAIN_PERCEE?'franchi':'porte',joueur:String(rn.actor),x:xDe(rn.to),depuis:xDe(rn.from),plan:k+1});dernier=k+1}
+  if(n&&rn&&n.kind==='carry'&&rn.team===T&&rn.actor!=null&&gain(rn)<22){etapes.push({k:gain(rn)>=GAIN_PERCEE?'franchi':'porte',joueur:String(rn.actor),x:xDe(rn.to),depuis:xDe(rn.from),plan:k+1,...plaqueurDe(rn)});dernier=k+1}
   else if(n&&rn&&n.kind==='turnover'&&rn.team!==T){etapes.push({k:'recup',joueur:rn.actor!=null?String(rn.actor):null,side:rn.team,plan:k+1});dernier=k+1}
  }else{
   const kind=plans[k].kind;

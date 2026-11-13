@@ -1,0 +1,57 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+SDK_COMMAND 7567 art-direction new_career
+SDK_CAPTURE 12142 Presse
+SDK_COMMAND 18079 art-direction academy_activate
+SDK_CAPTURE 19736 Accueil
+SDK_CAPTURE 20640 Création
+SDK_CAPTURE 21768 Bureau
+SDK_CAPTURE 23665 Effectif
+SDK_CAPTURE 24565 Composition
+SDK_CAPTURE 25431 Préparation
+SDK_CAPTURE 26201 Plan de jeu
+SDK_CAPTURE 26645 Plan de jeu-Phases arrêtées
+SDK_CAPTURE 27017 Plan de jeu-Lecture du match
+SDK_CAPTURE 27870 Recrutement
+SDK_CAPTURE 28273 Recrutement-Travail du staff
+SDK_CAPTURE 29255 Formation
+SDK_CAPTURE 30017 Formation-professionnels
+SDK_CAPTURE 31295 Centre
+SDK_CAPTURE 33198 Centre-Parcours
+SDK_CAPTURE 33701 Centre-Parcours-detail
+SDK_CAPTURE 34141 Centre-Centres
+SDK_CAPTURE 34538 Centre-Filières
+SDK_CAPTURE 35054 Centre-Passerelle pro
+SDK_CAPTURE 35487 Centre-Générations
+SDK_CAPTURE 37013 Staff
+SDK_CAPTURE 38142 Travail du club
+SDK_CAPTURE 38623 Travail du club-Médical
+SDK_CAPTURE 39041 Travail du club-Agents
+SDK_CAPTURE 40030 Vestiaire
+SDK_CAPTURE 40987 Finances
+SDK_CAPTURE 42306 Stratégie
+SDK_CAPTURE 42804 Stratégie-Projet sportif
+SDK_CAPTURE 43303 Stratégie-Supporters
+SDK_CAPTURE 44393 Club
+SDK_CAPTURE 45075 Club-Histoire
+SDK_CAPTURE 45978 Carrière
+SDK_CAPTURE 47110 Calendrier
+SDK_CAPTURE 48392 Classements
+SDK_CAPTURE 48974 Classements-accession
+SDK_CAPTURE 50038 Rivalités
+SDK_CAPTURE 51468 Match
+SDK_CAPTURE 52037 Packs
+SDK_CAPTURE 54146 Comparaison
+SDK_CAPTURE 54764 Contrat
+SDK_CAPTURE 55346 Archives
+SDK_CAPTURE 55897 Menu-sauvegardes
+SDK_CAPTURE 56399 Crédits
+SDK_CAPTURE 57254 Dossier-adverse
+SDK_CAPTURE 57824 Paramètres
+ART DIRECTION : 217 contrôles ; 46 captures ; 0 échecs
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+
+Réception artistique : /tmp/cd-art-direction-iQdZBn

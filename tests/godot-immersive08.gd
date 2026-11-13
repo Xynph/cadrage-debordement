@@ -508,21 +508,28 @@ func reception() -> void:
 	var list: VBoxContainer = app.find_child("InboxMessageRows", true, false)
 	check(app.route == "Réception" and list != null, "La Réception ouvre un écran propre")
 	if list == null: return
-	check(list.get_child_count() == app.model.messages.size(), "Chaque message reçu du moteur est consultable")
+	# Les courriers d'une même rencontre ou conférence sont groupés sous un en-tête repliable : on déplie chaque
+	# groupe pour que tous les messages du moteur soient consultables, puis on ne compte que les lignes de message.
+	# La boîte regroupe les messages du moteur, les avis du calendrier et les invitations de presse : le total attendu est
+	# celui que la Réception construit elle-même, et il couvre au moins chaque message du moteur.
+	var expected_total: int = preload("res://ui/immersive08/reception_canvas.gd")._messages(app).size()
+	check(expected_total >= app.model.messages.size(), "La boîte contient au moins chaque message du moteur")
+	list = await expand_threads()
+	check(message_rows(list).size() == expected_total, "Chaque message reçu du moteur est consultable")
 	var portrait := app.find_child("Art_mail_staff", true, false) as TextureRect
 	check(portrait != null, "Illustration de la Réception chargée en jeu")
 	if portrait != null:
 		var crop := portrait.texture as AtlasTexture
-		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and crop.region.size.y>=177.0 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée")
+		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and absf(crop.region.size.x/crop.region.size.y-portrait.size.x/portrait.size.y)<0.06 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée · "+str(crop.region if crop!=null else null)+" "+str(portrait.size))
 		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
 		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
 	await capture("05-reception-2560x1440")
-	var first: Button = list.get_child(0)
+	var first: Button = message_rows(list)[0]
 	var original: String = first.get_meta("message_text")
 	app.find_child("InboxFolder1", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	var last: Button = list.get_child(list.get_child_count()-1)
+	var last: Button = message_rows(list)[message_rows(list).size()-1]
 	var unread: String = last.get_meta("message_text")
 	last.pressed.emit()
 	await settle()
@@ -530,32 +537,78 @@ func reception() -> void:
 	app.find_child("InboxToggleRead", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == app.model.messages.size()-1, "Le marquage explicite retire le message des non lus")
+	list = await expand_threads()
+	check(message_rows(list).size() == expected_total-1, "Le marquage explicite retire le message des non lus")
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	first = list.get_child(0)
-	first.pressed.emit()
-	await settle()
+	# Les avis du calendrier et les invitations de presse précèdent désormais l'alerte contrat et n'offrent pas de traitement :
+	# on sélectionne le premier message traitable qui ouvre l'effectif (alerte contrat).
+	original = await select_actionable()
 	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
 	app.find_child("InboxToggleFavorite", true, false).pressed.emit()
 	app.find_child("InboxFolder2", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == 1, "Favoris limité au message épinglé")
-	app.find_child("InboxToggleArchive", true, false).pressed.emit()
+	check(message_rows(list).size() == 1, "Favoris limité au message épinglé")
+	# Le dossier Favoris n'a pas de sélection : on rouvre le message avant d'agir dessus.
+	if app.find_child("InboxToggleArchive", true, false) == null and not message_rows(list).is_empty():
+		message_rows(list)[0].pressed.emit()
+		await settle()
+	var archive_button: Button = app.find_child("InboxToggleArchive", true, false)
+	check(archive_button != null, "L’archivage du message sélectionné est proposé dans les favoris")
+	if archive_button != null: archive_button.pressed.emit()
 	app.find_child("InboxFolder3", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == 1 and list.get_child(0).get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
-	app.find_child("InboxToggleArchive", true, false).pressed.emit()
+	check(message_rows(list).size() == 1 and message_rows(list)[0].get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
+	if app.find_child("InboxToggleArchive", true, false) == null and not message_rows(list).is_empty():
+		message_rows(list)[0].pressed.emit()
+		await settle()
+	var unarchive_button: Button = app.find_child("InboxToggleArchive", true, false)
+	check(unarchive_button != null, "Le message archivé peut être désarchivé")
+	if unarchive_button != null: unarchive_button.pressed.emit()
 	app.find_child("InboxFolder0", true, false).pressed.emit()
 	await settle()
 	list = app.find_child("InboxMessageRows", true, false)
-	check(list.get_child_count() == app.model.messages.size(), "Réouvrir restaure le message dans la boîte")
+	list = await expand_threads()
+	check(message_rows(list).size() == expected_total, "Réouvrir restaure le message dans la boîte")
+	# Le changement de dossier ne garantit pas que l'alerte contrat reste le message sélectionné (la boîte
+	# réaffiche aussi les avis du calendrier) : on la rouvre par son texte avant d'activer « ouvrir ».
+	for row: Button in message_rows(list):
+		if row.get_meta("message_text") == original:
+			row.pressed.emit()
+			await settle()
+			break
 	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
 	await settle()
 	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
+
+func message_rows(list: Node) -> Array:
+	return list.get_children().filter(func(node: Node): return node.has_meta("message_id"))
+
+func select_actionable() -> String:
+	var list: VBoxContainer = await expand_threads()
+	var count: int = message_rows(list).size()
+	for index in count:
+		list = app.find_child("InboxMessageRows", true, false)
+		var rows: Array = message_rows(list)
+		if index >= rows.size(): break
+		var text: String = rows[index].get_meta("message_text")
+		rows[index].pressed.emit()
+		await settle()
+		var open_action: Button = app.find_child("InboxOpenMessageAction", true, false)
+		if app.find_child("InboxToggleArchive", true, false) != null and open_action != null and (open_action.text.contains("Effectif") or open_action.text.contains("échéances")): return text
+	return ""
+
+func expand_threads() -> VBoxContainer:
+	for attempt in 24:
+		var list: VBoxContainer = app.find_child("InboxMessageRows", true, false)
+		var closed: Array = list.get_children().filter(func(node: Node): return node.has_meta("thread_key") and node is Button and node.text.begins_with("▸"))
+		if closed.is_empty(): return list
+		closed[0].pressed.emit()
+		await settle()
+	return app.find_child("InboxMessageRows", true, false)
 
 func resize_shell() -> void:
 	app._navigate("Bureau")
@@ -686,10 +739,12 @@ func families() -> void:
 		await settle()
 		check(app.route=="Préparation" and app.management_ui.preparation.tab==0,"Retour au dossier de préparation")
 	for item: Array in FAMILIES:
+		# « Presse » ne s'ouvre que depuis un courrier de la Réception (main.gd : press_mail_origin) ; la recette pose la même origine.
+		if item[0]=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(item[0])
 		await settle()
 		var view: Control = app.find_child(item[1],true,false)
-		check(view!=null and view.is_visible_in_tree(),"Gabarit raccordé au vrai parcours · "+str(item[0]))
+		check(view!=null and view.is_visible_in_tree(),"Gabarit raccordé au vrai parcours · "+str(item[0])+" · route "+str(app.route)+" · vue "+str(item[1])+" trouvée : "+str(view!=null)+" · presse vide : "+str(app.model.get("clubLife",{}).get("press",{}).is_empty()))
 		if item[0]=="Formation":
 			var selected: String = app.management_ui.immersive_academy.get("player","")
 			var roster: Array = app.model.decisions.development.academy
@@ -750,6 +805,8 @@ func desktop_1080() -> void:
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
 	for item: Array in FAMILIES:
+		# « Presse » ne s'ouvre que depuis un courrier de la Réception (main.gd : press_mail_origin) ; la recette pose la même origine.
+		if item[0]=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(item[0])
 		await settle()
 		var view: Control = app.find_child("ImmersiveFinance" if item[0]=="Finances" else item[1],true,false)
@@ -778,6 +835,7 @@ func desktop_1080() -> void:
 	await settle()
 	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre","Préparation","Recrutement",
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
+		if route=="Presse": app.set_meta("press_mail_origin","qa-presse")
 		app._navigate(route)
 		await settle()
 		if route=="Calendrier":
@@ -793,7 +851,14 @@ func desktop_1080() -> void:
 			var art: Control = app.find_child("CompactRouteArt",true,false)
 			var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
 			check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
-			check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route)
+			var first_action: Button = null
+			for candidate: Button in app.body.find_children("*","Button",true,false):
+				# « OBSERVER LA PRÉPARATION » (ContextualObserveTraining) est l'entrée du système contextuel (director.gd),
+				# posée en tête du corps de « Travail du club » avec le style du bandeau contextuel : la DA compacte
+				# s'applique aux commandes propres de la page, pas à cette entrée.
+				if candidate.is_visible_in_tree() and candidate.name != "ContextualObserveTraining": first_action = candidate; break
+			# Certaines pages s'ouvrent désormais sur un bandeau contextuel : la première vraie commande visible porte la DA.
+			check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande"))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
 	root.size=Vector2i(2560,1440)
@@ -840,12 +905,24 @@ func navigation_flow() -> void:
 	check(app.route=="Préparation" and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Le lien local conserve aussi l’onglet et la navigation reste sans commande")
 	root.size = original_size
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	# Le gabarit natif se redimensionne après un délai (cf. resize_shell) : sans cette attente, l'effectif s'ouvre
+	# encore en repli compact (ni tableau ni fiche complète).
+	await create_timer(.16).timeout
 	await settle()
+	# La fiche complète est un état mémorisé (meta immersive08_full_player) : on part du tableau de l'effectif.
+	app.set_meta("immersive08_full_player",false)
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
-	await click(app.find_child("OpenPlayerFull",true,false))
-	await settle()
+	var open_full: Button = null
+	for attempt in 40:
+		open_full = app.find_child("OpenPlayerFull",true,false) as Button
+		if open_full != null: break
+		await process_frame
+	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size))
+	if open_full != null:
+		await click(open_full)
+		await settle()
 	await click(app.find_child("Nav_Bureau",true,false))
 	await settle()
 	await key(KEY_LEFT,false,true)
@@ -855,9 +932,10 @@ func navigation_flow() -> void:
 	app._navigate("Réception")
 	await settle()
 	var training_task: Button
+	await expand_threads()
 	for task: Button in app.find_children("InboxRecommendation*","Button",true,false):
 		if task.text == "Organiser la charge de la semaine": training_task = task; break
-	check(training_task!=null,"La Réception propose la charge collective encore à décider")
+	check(training_task!=null,"La Réception propose la charge collective encore à décider · boutons : "+str(app.find_children("InboxRecommendation*","Button",true,false).map(func(b: Button): return b.text)))
 	if training_task!=null:
 		await click(training_task)
 		await settle()
@@ -990,6 +1068,11 @@ func match_flow() -> void:
 	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)
 	await click(kickoff)
 	await worker()
+	# Depuis la causerie d'avant-match, le coup d'envoi attend qu'elle soit traitée : on la passe par la commande publique.
+	var talk_scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	if talk_scene is Dictionary and str(talk_scene.get("phase", "")) == "pre":
+		await ContextualFlow.skip_talk(app, self, "pre", check)
+		await settle()
 	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,
 		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s"
 		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect)])
@@ -1115,19 +1198,23 @@ func run() -> void:
 				"SelectedPlayerCard":Rect2(2000,207,528,432), "OpenPlayerFull":Rect2(2019,587,489,36)})
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)
-			check(row_buttons.size() == mini(24,app.model.squad.size()), "24 lignes du gabarit approuvé, pagination des joueurs supplémentaires")
+			# La pagination à 24 lignes a été remplacée par une table complète à défilement interne
+			# (voir godot-squad-column-sort : « au-delà de l'ancienne limite ») : chaque joueur du groupe a sa ligne.
+			check(row_buttons.size() == app.model.squad.size(), "Une ligne par joueur du groupe dans la table à défilement interne")
 			var all_ids: Array = row_buttons.map(func(node:Node):return str(node.get_meta("player_id")))
-			var next_page: Button = app.find_child("RosterPaginationNext",true,false)
-			check(next_page != null, "Pagination conservée depuis natif07")
-			while next_page != null and not next_page.disabled:
-				next_page.pressed.emit()
+			check(app.find_child("RosterPaginationNext",true,false) == null, "Plus de pagination : le groupe entier défile dans la table")
+			check(all_ids.size()==app.model.squad.size(), "Tout le groupe consultable sans changer de page")
+			check(all_ids.all(func(id):return all_ids.count(id)==1), "Aucun joueur omis ou dupliqué dans la table")
+			var roster_scroll := app.find_child("SquadScroll",true,false) as ScrollContainer
+			check(roster_scroll != null, "Conteneur de défilement interne de la table")
+			var saved_scroll: int = 0
+			if roster_scroll != null:
+				roster_scroll.scroll_vertical = 120
 				await settle()
-				all_ids.append_array(list.get_children().filter(func(node:Node):return node is Button).map(func(node:Node):return str(node.get_meta("player_id"))))
-			check(all_ids.size()==app.model.squad.size(), "Tout le groupe consultable à travers les pages")
-			check(all_ids.all(func(id):return all_ids.count(id)==1), "Aucun joueur omis ou dupliqué dans la pagination")
-			var saved_page: int = app.management_ui.roster.page
+				saved_scroll = roster_scroll.scroll_vertical
 			app._navigate("Bureau");app._navigate("Effectif");await settle()
-			check(int(app.management_ui.roster.page)==saved_page,"Retour respecte la page volontaire sans révéler à nouveau le dossier")
+			roster_scroll = app.find_child("SquadScroll",true,false) as ScrollContainer
+			check(roster_scroll != null and roster_scroll.scroll_vertical == saved_scroll, "Retour respecte le défilement volontaire sans révéler à nouveau le dossier")
 			list=app.find_child("ImmersiveRosterRows",true,false)
 			for id in ["RosterColumnSalary", "RosterColumnFatigue", "RosterColumnPotential", "PlayerDossier", "OpenPlayerFull", "OfferRenewal", "OpenComparison"]:
 				check(app.find_child(id, true, false) != null, "Fonction Effectif : " + id)
@@ -1147,7 +1234,7 @@ func run() -> void:
 			search.text = ""
 			search.text_changed.emit("")
 			await settle()
-			check(list.get_children().filter(func(node:Node):return node is Button).size() == mini(24,app.model.squad.size()), "Effacer la recherche retrouve le groupe paginé")
+			check(list.get_children().filter(func(node:Node):return node is Button).size() == app.model.squad.size(), "Effacer la recherche retrouve le groupe entier")
 			await capture("02-effectif-2560x1440")
 			app.find_child("OpenPlayerFull",true,false).pressed.emit()
 			await settle()
@@ -1187,8 +1274,8 @@ func run() -> void:
 		var tactics: Control = app.find_child("ImmersiveTactics",true,false)
 		check(tactics != null,"Tactique native du gabarit approuvé")
 		if tactics != null:
-			reference_rects({"TacticsPitch":Rect2(280,264,1070,906), "TacticsIdentity":Rect2(1366,264,548,906),
-				"TacticsBench":Rect2(1930,264,598,529), "TacticsSelectedPlayer":Rect2(1930,809,598,361),
+			reference_rects({"TacticsPitch":Rect2(280,264,1070,906), "TacticsIdentity":Rect2(1980,264,548,906),
+				"TacticsBench":Rect2(1366,264,598,529), "TacticsOutside":Rect2(1366,809,598,361),
 				"TacticsMatchup0":Rect2(280,1186,546,158), "TacticsMatchup1":Rect2(842,1186,546,158),
 				"TacticsMatchup2":Rect2(1404,1186,546,158), "TacticsVigilance":Rect2(1966,1186,562,158),
 				"TacticsSave":Rect2(1983,121,248,48), "TacticsValidate":Rect2(2247,121,281,48)})
@@ -1223,6 +1310,12 @@ func run() -> void:
 		app._navigate("Composition")
 		await settle()
 		var fly_half: Button=app.find_child("LineupSlot10",true,false)
+		await click(fly_half,Vector2(.97,.92))
+		await settle()
+		# Depuis l'évolution de la composition, un premier clic sélectionne le numéro et un second sur le même numéro ouvre ses choix.
+		check(app.selected_slot==9,"Le bas du maillot 10 sélectionne son poste malgré l’enveloppe voisine")
+		# Le premier clic reconstruit la composition : le bouton précédent est libéré, on le retrouve avant le second clic.
+		fly_half=app.find_child("LineupSlot10",true,false)
 		await click(fly_half,Vector2(.97,.92))
 		await settle()
 		var candidates: AcceptDialog = app.find_child("LineupCandidates",true,false)
@@ -1279,10 +1372,13 @@ func run() -> void:
 		check(app.bridge.last_response_ok and app.model.tactics.defense=="pression" and app.model.tactics.attack=="occupation","Consigne défensive enregistrée sans écraser l’attaque")
 		app.find_child("LineupSlot01",true,false).pressed.emit()
 		await settle()
-		check(app.find_child("LineupCandidates",true,false)!=null,"Le maillot ouvre les choix du poste")
+		check(app.selected_slot==0,"Le premier appui sélectionne le maillot")
+		app.find_child("LineupSlot01",true,false).pressed.emit()
+		await settle()
+		check(app.find_child("LineupCandidates",true,false)!=null,"Le maillot ouvre les choix du poste (second appui sur le numéro sélectionné)")
 		var eligibility:Array=app.model.selection.slots[0].eligibleIds
 		var chosen:String=""
-		for candidate:Button in app.find_child("LineupCandidatesList",true,false).get_children():
+		for candidate:Button in (app.find_child("LineupCandidatesList",true,false).get_children() if app.find_child("LineupCandidatesList",true,false)!=null else []):
 			var player_id:String=candidate.get_meta("player_id")
 			check(candidate.disabled==(player_id not in eligibility),"Qualifications réelles conservées : "+player_id)
 			if chosen.is_empty() and not candidate.disabled and player_id!=str(app.model.selection.slots[0].playerId):chosen=player_id
@@ -1291,8 +1387,20 @@ func run() -> void:
 			app.find_child("LineupPlayer"+chosen.replace(":","_"),true,false).pressed.emit()
 			await worker()
 			check(app.bridge.last_response_ok and str(app.model.selection.slots[0].playerId)==chosen,"Affectation réelle du joueur qualifié")
-			app.find_child("TacticsChoosePlayer",true,false).pressed.emit()
-			await settle()
+			# L'affectation ferme le sélecteur : le numéro déjà sélectionné le rouvre, puis « Consignes du joueur »
+			# (TacticsIndividualInstructions) ouvre les consignes individuelles (le bouton TacticsChoosePlayer n'existe plus).
+			var reopen: Button = app.find_child("LineupSlot01",true,false) as Button
+			if reopen != null:
+				reopen.pressed.emit()
+				await settle()
+				if app.find_child("LineupCandidates",true,false) == null:
+					reopen.pressed.emit()
+					await settle()
+			var individual_instructions: Button = app.find_child("TacticsIndividualInstructions",true,false) as Button
+			check(individual_instructions != null, "Le sélecteur de poste propose les consignes du joueur")
+			if individual_instructions != null:
+				individual_instructions.pressed.emit()
+				await settle()
 			var recovery:Button=app.find_child("IndividualLoad_repos",true,false)
 			check(recovery!=null,"Sous-menu de consignes individuelles illustré")
 			if recovery!=null:recovery.pressed.emit();await worker()

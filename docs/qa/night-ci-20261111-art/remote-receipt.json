@@ -1,0 +1,128 @@
+{
+  "ref": "cloud/rg27-night-ci-20261111",
+  "expected_sha": "c8a5a61d1dd708f662592bf971fe8d5a25ad1742",
+  "workflow_id": 414839585,
+  "scope": "Four explicit targeted Art cases, sequential. Not a global SDK campaign.",
+  "records": [
+    {
+      "case": "routes-1280",
+      "request": {
+        "ref": "cloud/rg27-night-ci-20261111",
+        "inputs": {
+          "scope": "targeted",
+          "suite": "tests/godot-art-direction.cjs",
+          "case": "routes-1280"
+        }
+      },
+      "requested_at": "2026-11-11T22:23:29.627669+00:00",
+      "dispatch_response": null,
+      "run_id": 43111365722,
+      "head_sha": "c8a5a61d1dd708f662592bf971fe8d5a25ad1742",
+      "event": "workflow_dispatch",
+      "head_branch": "cloud/rg27-night-ci-20261111",
+      "workflow_id": 414839585,
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43111365722",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_observed_at": "2026-11-11T22:40:26.265823+00:00",
+      "jobs": [
+        {
+          "id": 130827953274,
+          "name": "sdk-targeted",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "case": "routes-1600",
+      "request": {
+        "ref": "cloud/rg27-night-ci-20261111",
+        "inputs": {
+          "scope": "targeted",
+          "suite": "tests/godot-art-direction.cjs",
+          "case": "routes-1600"
+        }
+      },
+      "requested_at": "2026-11-11T22:40:28.147713+00:00",
+      "dispatch_response": null,
+      "run_id": 43113727750,
+      "head_sha": "c8a5a61d1dd708f662592bf971fe8d5a25ad1742",
+      "event": "workflow_dispatch",
+      "head_branch": "cloud/rg27-night-ci-20261111",
+      "workflow_id": 414839585,
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43113727750",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_observed_at": "2026-11-11T22:43:24.539382+00:00",
+      "jobs": [
+        {
+          "id": 130836190935,
+          "name": "sdk-targeted",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "case": "routes-1920",
+      "request": {
+        "ref": "cloud/rg27-night-ci-20261111",
+        "inputs": {
+          "scope": "targeted",
+          "suite": "tests/godot-art-direction.cjs",
+          "case": "routes-1920"
+        }
+      },
+      "requested_at": "2026-11-11T22:43:26.291973+00:00",
+      "dispatch_response": null,
+      "run_id": 43114128613,
+      "head_sha": "c8a5a61d1dd708f662592bf971fe8d5a25ad1742",
+      "event": "workflow_dispatch",
+      "head_branch": "cloud/rg27-night-ci-20261111",
+      "workflow_id": 414839585,
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43114128613",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_observed_at": "2026-11-11T22:46:22.861054+00:00",
+      "jobs": [
+        {
+          "id": 130837575270,
+          "name": "sdk-targeted",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "case": "progression",
+      "request": {
+        "ref": "cloud/rg27-night-ci-20261111",
+        "inputs": {
+          "scope": "targeted",
+          "suite": "tests/godot-art-direction.cjs",
+          "case": "progression"
+        }
+      },
+      "requested_at": "2026-11-11T22:46:25.011145+00:00",
+      "dispatch_response": null,
+      "run_id": 43114541546,
+      "head_sha": "c8a5a61d1dd708f662592bf971fe8d5a25ad1742",
+      "event": "workflow_dispatch",
+      "head_branch": "cloud/rg27-night-ci-20261111",
+      "workflow_id": 414839585,
+      "html_url": "https://github.com/Xynph/cadrage-debordement/actions/runs/43114541546",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_observed_at": "2026-11-11T22:50:02.558232+00:00",
+      "jobs": [
+        {
+          "id": 130838989867,
+          "name": "sdk-targeted",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+2026-11-11T21:01:36.6636545Z # fail 0
+2026-11-11T21:01:38.0646574Z # fail 0
+2026-11-11T21:02:05.9405566Z # fail 0
+2026-11-11T21:02:38.9399495Z # fail 0
+2026-11-11T21:03:27.1858256Z # fail 0
+2026-11-11T21:04:03.2658794Z # fail 0
+2026-11-11T21:06:19.0654713Z # fail 0
+2026-11-11T21:06:47.8544558Z # fail 0
+2026-11-11T21:07:35.1054915Z # fail 0
+2026-11-11T21:11:00.5106755Z SMALL WINDOW GEOMETRY 4337 checks 0 failures; output=/home/runner/work/_temp/geometry-main
+2026-11-11T21:16:02.5368665Z SMALL WINDOW GEOMETRY 1660 checks 0 failures; output=/home/runner/work/_temp/geometry-extra
+2026-11-11T21:17:10.6489866Z ok 1 - Contract dialogs fit supported windows and essential controls remain reachable
+2026-11-11T21:17:10.6494356Z ok 2 - Shared dialog fitting preserves confirmations, file pickers, preferences and resizing
+2026-11-11T21:17:10.6500030Z ok 3 - Open contract preserves typed terms and keyboard access through live resizing
+2026-11-11T21:17:10.6506226Z # tests 3
+2026-11-11T21:17:10.6507641Z # pass 3
+2026-11-11T21:17:10.6507897Z # fail 0

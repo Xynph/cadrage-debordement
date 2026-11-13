@@ -1,0 +1,50 @@
+{
+  "1a7b083b8a090d735ef1b08245b5f4faf430f76b": {
+    "tests/rg27-night-navigation.cjs": "d229f7cdac93da2659e198028d6cdfc8eebfc5f87637efc159445f9870fd4899",
+    "tests/rg27-night-navigation.gd": "7c43efb78f7180ad4e770163cde65e95f0fc665b5bcdd08d3c206c1c9ab04021",
+    "tests/godot-art-direction.gd": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f",
+    "tests/godot-carnet-ui.cjs": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d",
+    "tests/godot-carnet-ui.gd": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf",
+    "tests/godot-calendar-session-links.cjs": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307",
+    "tests/godot-calendar-session-links.gd": "72bd37c4f43439787a60df32742b5696700f10f3f28fa1f8febf64db64431ad7",
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "native/godot/ui/immersive08/month_calendar.gd": "cd3488546d14393145a0241a080428fd3d3c73539759df4ebaad902311187738"
+  },
+  "340aa4ea61e7321545051f5890b486ea66806673": {
+    "tests/rg27-night-navigation.cjs": "d229f7cdac93da2659e198028d6cdfc8eebfc5f87637efc159445f9870fd4899",
+    "tests/rg27-night-navigation.gd": "7c43efb78f7180ad4e770163cde65e95f0fc665b5bcdd08d3c206c1c9ab04021",
+    "tests/godot-art-direction.gd": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f",
+    "tests/godot-carnet-ui.cjs": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d",
+    "tests/godot-carnet-ui.gd": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf",
+    "tests/godot-calendar-session-links.cjs": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307",
+    "tests/godot-calendar-session-links.gd": "72bd37c4f43439787a60df32742b5696700f10f3f28fa1f8febf64db64431ad7",
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "native/godot/ui/immersive08/month_calendar.gd": "a5464cbdced4f55cce38f1218967bf5d2f5598c9c9ec0f3b274166e739a80001"
+  },
+  "4d5b0df8d218c0c1e6d64459603db91b18cc05c4": {
+    "tests/rg27-night-navigation.cjs": "c17e1f4f6164a908340af01c657de3a62729ff7dd10b4c7346caf47fb0e11681",
+    "tests/rg27-night-navigation.gd": "3f08a9d3d2c028777b73445aab0257dd7bd2b0a0dafd0b68295ea1ff1e481a38",
+    "tests/godot-art-direction.gd": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f",
+    "tests/godot-carnet-ui.cjs": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d",
+    "tests/godot-carnet-ui.gd": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf",
+    "tests/godot-calendar-session-links.cjs": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307",
+    "tests/godot-calendar-session-links.gd": "72bd37c4f43439787a60df32742b5696700f10f3f28fa1f8febf64db64431ad7",
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "native/godot/ui/immersive08/month_calendar.gd": "a5464cbdced4f55cce38f1218967bf5d2f5598c9c9ec0f3b274166e739a80001"
+  },
+  "70305d1137be5779758472fcc9a4e8eec10f2e95": {
+    "tests/rg27-night-navigation.cjs": "c17e1f4f6164a908340af01c657de3a62729ff7dd10b4c7346caf47fb0e11681",
+    "tests/rg27-night-navigation.gd": "806e10400496e4eaa32259736fc3104dbd9ca8a6b560573635035ae544963d5e",
+    "tests/godot-art-direction.gd": "129e2c0d7e0e8e6554d9c2195355cb153413c06153ee01a7c76c09ad8e45d03f",
+    "tests/godot-carnet-ui.cjs": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d",
+    "tests/godot-carnet-ui.gd": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf",
+    "tests/godot-calendar-session-links.cjs": "78d4f161c32c68028941da764f365055dd2e8c3f8b781c03bfbf44734620b307",
+    "tests/godot-calendar-session-links.gd": "72bd37c4f43439787a60df32742b5696700f10f3f28fa1f8febf64db64431ad7",
+    "native/godot/main.gd": "83375bc65c68b1e7f1e7092e22dec3cea55592991aa0ca6b7e1fc0c9a7c5b020",
+    "native/godot/ui/navigation_controller.gd": "2e10cb40a03b3a27c0aef9202bf6ee93ad6d546c331d12aedec3a69dffcccd6a",
+    "native/godot/ui/immersive08/month_calendar.gd": "a5464cbdced4f55cce38f1218967bf5d2f5598c9c9ec0f3b274166e739a80001"
+  }
+}

@@ -45,10 +45,40 @@ func run() -> void:
 	var bytes := FileAccess.get_file_as_bytes(save)
 	for resolution in [Vector2i(1280,800),Vector2i(1920,1080)]:
 		root.size = resolution; await settle(); app._navigate("Formation"); await settle()
-		var found := false
-		for photo: TextureRect in app.body.find_children("*","TextureRect",true,false):
-			if photo.texture == Regen.texture(source) and photo.material != null: found = true
-		check(found, "Visage du vrai académicien dans Formation " + str(resolution.x))
+		# The immersive academy opens on U21; select each real group explicitly.
+		for group in ["u21", "u18"]:
+			var members := people.filter(func(p: Dictionary): return (int(p.age) <= 18 if group == "u18" else int(p.age) > 18 and int(p.age) <= 21))
+			check(not members.is_empty(), "Vrais académiciens du groupe " + group)
+			var tab := app.find_child("AcademyImmersiveTab" + ("0" if group == "u21" else "1"),true,false) as Button
+			if tab != null:
+				tab.pressed.emit(); await settle()
+			elif not members.is_empty():
+				# Compact Formation pages six players at a time, rather than
+				# exposing the immersive age-group tabs.
+				var target_page := int(people.find(members[0]) / app.DevelopmentViews.PAGE_SIZE)
+				for turn in people.size():
+					var current_page: int=app.management_ui.get("development_academy",{}).get("page",0)
+					if current_page==target_page: break
+					var paging:=app.find_child("DevelopmentPagination",true,false)
+					check(paging!=null,"Pagination compacte réelle du centre")
+					if paging==null:break
+					var step:=paging.get_child(2 if current_page<target_page else 0) as Button
+					check(not step.disabled,"Page du vrai groupe accessible")
+					if step.disabled:break
+					step.pressed.emit();await settle()
+			var found := false
+			if not members.is_empty():
+				var person: Dictionary=members[0]
+				var target_rows: Array=app.body.find_children("*","Control",true,false).filter(func(node):return node.get_meta("development_id","")==person.id)
+				check(not target_rows.is_empty(),"Vraie ligne par ID dans le groupe "+group+" / "+str(resolution.x))
+				var expected:=Regen.texture(person)
+				for target in target_rows:
+					for photo: TextureRect in target.find_children("*","TextureRect",true,false):
+						# Rendering all academy rows can evict the first face from the
+						# bounded texture cache. Its regenerated pixels remain identical.
+						var same_pixels: bool=photo.texture!=null and expected!=null and photo.texture.get_image().get_size()==expected.get_image().get_size() and photo.texture.get_image().get_data()==expected.get_image().get_data()
+						if same_pixels and photo.material!=null:found=true
+			check(found,"Visage du vrai académicien "+group+" dans Formation "+str(resolution.x))
 		check((app.body.find_child("ImmersiveAcademy",true,false) != null) == (resolution.x == 1920), "Branches compact/immersif réellement exercées")
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw

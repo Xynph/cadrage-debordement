@@ -11,6 +11,24 @@ const Cadrage = preload("res://match_cadrage.gd")
 var report := {"sequences": [], "images": 0}
 
 
+## Gros plan (CD_CHOREGRAPHIE_GROS_PLAN=1) : plan serré sur le ballon et son porteur, pour juger
+## la tenue du ballon et les plaquages (planche d'images). Même interface que match_cadrage.gd.
+class GrosPlan extends RefCounted:
+	var view
+	var centre := Vector3.ZERO
+	var pose := false
+	func _init(owner) -> void: view = owner
+	func regler(_on: bool, _kind: String = "", _longue: bool = false) -> void: pass
+	func couper() -> void: pose = true
+	func frame_camera(focus: Vector3, size: float, offset: Vector3, _aspect: float, _mode: String, delta: float, _cut: bool = false) -> Array:
+		var ballon: Vector3 = view._ball.global_position if view._ball.visible else focus
+		var but := Vector3(ballon.x, 0.0, ballon.z)
+		centre = but if pose else centre.lerp(but, 1.0 - exp(-4.0 * delta))
+		pose = false
+		return [centre, 6.5, offset]
+	func garder_ballon(look: Vector3, _size: float, _offset: Vector3, _aspect: float) -> Vector3: return look
+
+
 func _initialize() -> void:
 	call_deferred("run")
 
@@ -36,8 +54,11 @@ func run() -> void:
 	root.add_child(view)
 	view.set_gestes(true)
 	view.set_live_cadence(1)
-	var cadrage = Cadrage.new(view)
+	var gros_plan := OS.get_environment("CD_CHOREGRAPHIE_GROS_PLAN") == "1"
+	var cadrage = GrosPlan.new(view) if gros_plan else Cadrage.new(view)
 	view.set_cadrage(cadrage)
+	# Gros plan : sans le recadrage des gestes, qui choisirait son propre plan.
+	if gros_plan: view.set_gestes(false)
 	await process_frame
 	for cas: Dictionary in donnees.cas:
 		var pistes: Dictionary = cas.pistes

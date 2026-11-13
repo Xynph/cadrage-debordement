@@ -1,0 +1,126 @@
+{
+  "captures": [
+    {
+      "file": "/workspace/work/night-phase6-quote/devis-interclub-recu-2560.png",
+      "height": 1440,
+      "route": "Recrutement",
+      "sha256": "e22e16b86fb5e73755a665bf772a6d58125ae7106e34ae533cac6f2da6a0c826",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-phase6-quote/prospect-interclub-2560.png",
+      "height": 1440,
+      "route": "Recrutement",
+      "sha256": "322764ae53fce096f2f9c91103f15f57e63609b324ec91c01c405cf90c6b1409",
+      "width": 2560
+    },
+    {
+      "file": "/workspace/work/night-phase6-quote/devis-interclub-retour-2560.png",
+      "height": 1440,
+      "route": "Recrutement",
+      "sha256": "522f0851db996cbcc879b9ebad93640cd520831fa7c39e5fd98d13830d2255fc",
+      "width": 2560
+    }
+  ],
+  "case": "quote",
+  "checks": 66,
+  "display": "X11",
+  "engine": {
+    "build": "official",
+    "hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "hex": 263938,
+    "major": 4,
+    "minor": 7,
+    "patch": 2,
+    "status": "stable",
+    "string": "4.7.2-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "receipts": [
+    {
+      "context": "Inspection d’un vrai devis interclubs non vide",
+      "link_commands": 0,
+      "profile_sha256_after": "38f57c2f67d9a151ca6c1c6c0495bf3f42f769766e925a3ce32fdc800223cb40",
+      "profile_sha256_before": "38f57c2f67d9a151ca6c1c6c0495bf3f42f769766e925a3ce32fdc800223cb40",
+      "saved_clock_after": 1794437797442.0,
+      "saved_clock_before": 1794437797442.0,
+      "saved_seed_after": 1211322335.0,
+      "saved_seed_before": 1211322335.0,
+      "state_unchanged": true
+    }
+  ],
+  "speech_requests": 0,
+  "speech_starts": 0,
+  "visits": [
+    {
+      "available_interclub": 1422,
+      "preparation": "catalogues réels de common0",
+      "regen_candidates": 9
+    },
+    {
+      "activation": "Enter",
+      "control": "OpenInterclubMarket",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "InterclubOffer",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "InterclubNegotiate",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    },
+    {
+      "offer_count": 1,
+      "payload": {
+        "context": {
+          "club": 0.0,
+          "season": 1.0,
+          "week": 0.0
+        },
+        "contractEnd": 1,
+        "fee": 142000,
+        "playerId": "lnr:9642",
+        "salary": 8700,
+        "sellerId": 1,
+        "sourceSalary": 8120
+      },
+      "preparation": "interclub_negotiate reçu avant baseline de consultation",
+      "quote_sha256": "43c2e4f063927421fc4c56396792c1f13e628223521ad5e4091cbc71fe8bdba1",
+      "request_number": 7
+    },
+    {
+      "preparation": "contrôle avant/après devis réel",
+      "profile_sha256_after": "38f57c2f67d9a151ca6c1c6c0495bf3f42f769766e925a3ce32fdc800223cb40",
+      "profile_sha256_before": "38f57c2f67d9a151ca6c1c6c0495bf3f42f769766e925a3ce32fdc800223cb40",
+      "saved_clock_after": 1794437797442.0,
+      "saved_clock_before": 1794437797442.0,
+      "saved_seed_after": 1211322335.0,
+      "saved_seed_before": 1211322335.0,
+      "state_unchanged": true
+    },
+    {
+      "activation": "Enter",
+      "control": "InterclubProfile_lnr_9642",
+      "id": "lnr:9642",
+      "kind": "prospect",
+      "route_before": "Recrutement"
+    },
+    {
+      "activation": "Enter",
+      "control": "ProspectProfileClose",
+      "id": "",
+      "kind": "",
+      "route_before": "Recrutement"
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+name: Godot — suites ciblées avec SDK réel
+on:
+  # PR : uniquement sur demande, par l'étiquette `godot-sdk` (pose de l'étiquette ou
+  # passage en prête d'une PR qui la porte). Mesure du 13/11 : 26 % des minutes de
+  # runner, sdk-parcours rouge 41 % du temps, aucun job requis ; ces échecs facultatifs
+  # rendaient les PR « unstable » et bloquaient le gate officiel (état clean exigé).
+  # main garde la recette complète après chaque fusion (seule la dernière compte).
+  pull_request:
+    branches: [main]
+    types: [labeled, ready_for_review]
+  push:
+    branches: [main]
+    paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'full = recette complète ; followup = nouveaux cas SDK sans P1 inchangé'
+        type: choice
+        required: true
+        default: full
+        options: [full, followup, targeted]
+      suite:
+        description: 'Ciblé seulement : chemin exact du wrapper dans le manifeste de suivi'
+        type: string
+        required: false
+        default: ''
+      case:
+        description: 'Ciblé seulement : identifiant exact du cas, default pour une suite simple'
+        type: string
+        required: false
+        default: default
+
+permissions:
+  contents: read
+
+# PR et main : seule la dernière exécution compte ; workflow_dispatch jamais annulé.
+concurrency:
+  group: godot-sdk-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'godot-sdk' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+jobs:
+  sdk:
+    name: ${{ matrix.family == 'full' && 'sdk' || format('sdk-{0}', matrix.family) }}
+    if: >-
+      ${{ github.event_name != 'pull_request' || (!github.event.pull_request.draft &&
+      contains(github.event.pull_request.labels.*.name, 'godot-sdk') &&
+      (github.event.action == 'ready_for_review' || github.event.label.name == 'godot-sdk')) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'targeted' && '["targeted"]' || github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","parcours","layouts"]' || '["full","portraits-staff","parcours","layouts"]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CD_GODOT_SDK_SCOPE: ${{ matrix.family == 'full' && 'full' || 'followup' }}
+      CD_GODOT_SDK_FAMILY: ${{ matrix.family }}
+      CD_GODOT_SDK_REQUEST: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'full' }}
+      CD_GODOT_SDK_TARGET_SUITE: ${{ inputs.suite }}
+      CD_GODOT_SDK_TARGET_CASE: ${{ inputs.case }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Valider le scope et sélectionner les cas SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          import json, os, pathlib
+          request = os.environ['CD_GODOT_SDK_REQUEST']
+          family = os.environ['CD_GODOT_SDK_FAMILY']
+          assert request in ['full', 'followup', 'targeted'], 'Unknown SDK request'
+          path = pathlib.Path('ci/godot-sdk-followup.json')
+          config = json.loads(path.read_text())
+          groups = config['groups']
+          union = [suite for suites in groups.values() for suite in suites]
+          assert len(union) == len(set(union)), 'Duplicated SDK group'
+          assert set(union) == set(config['suites']), 'SDK groups must cover the complete followup manifest'
+          if family == 'full':
+              assert request == 'full', 'Full SDK group requires full scope'
+              print('SDK full: historical manifest and P1 retained')
+          else:
+              if family == 'targeted':
+                  assert request == 'targeted', 'Targeted SDK requires explicit scope'
+                  suite = os.environ['CD_GODOT_SDK_TARGET_SUITE']
+                  case = os.environ['CD_GODOT_SDK_TARGET_CASE']
+                  assert suite in config['suites'], 'Unknown targeted SDK suite'
+                  variants = config.get('suiteCases', {}).get(suite, [{'id': 'default', 'env': {}}])
+                  chosen = [entry for entry in variants if entry['id'] == case]
+                  assert len(chosen) == 1, 'Unknown or duplicated targeted SDK case'
+                  config['suites'] = [suite]
+                  config['suiteCases'] = {suite: chosen}
+                  print('SDK TARGETED ONLY:', suite, '/', case)
+                  summary = os.environ.get('GITHUB_STEP_SUMMARY')
+                  if summary:
+                      with open(summary, 'a') as out:
+                          out.write('## Recette ciblée uniquement : ' + suite + ' / ' + case + '\n\nCe job ne qualifie aucune autre suite ni une campagne globale.\n\n')
+              else:
+                  assert request in ['full', 'followup'], 'Invalid grouped SDK request'
+                  selected = groups[family]
+                  assert selected, 'Empty SDK group'
+                  config['suites'] = selected
+                  print('SDK group:', family, 'suites:', len(selected))
+              path.write_text(json.dumps(config))
+          PYCODE
+      - name: Préparer le rendu logiciel gratuit sous X11
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+      - name: Cache de l'archive du SDK Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cd-godot-sdk
+          key: godot-sdk-${{ hashFiles('ci/godot-sdk.json') }}
+      - name: Installer le SDK officiel épinglé et vérifier son archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib, shutil, urllib.request, zipfile
+          config = json.loads(pathlib.Path('ci/godot-sdk.json').read_text())
+          tools = pathlib.Path(os.environ['RUNNER_TEMP']) / 'godot-sdk'
+          tools.mkdir()
+          archive = tools / 'godot.zip'
+          # Archive en cache (clé = hash de ci/godot-sdk.json) : taille et SHA-256
+          # revérifiées ci-dessous comme pour un téléchargement neuf.
+          cached = pathlib.Path.home() / '.cache' / 'cd-godot-sdk' / 'godot.zip'
+          if cached.is_file() and cached.stat().st_size == config['bytes'] and hashlib.sha256(cached.read_bytes()).hexdigest() == config['sha256']:
+              shutil.copyfile(cached, archive)
+              print('SDK Godot : archive restaurée du cache')
+          else:
+              urllib.request.urlretrieve(config['url'], archive)
+              cached.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(archive, cached)
+          assert archive.stat().st_size == config['bytes'], 'Unexpected SDK archive size'
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == config['sha256'], 'SDK checksum mismatch'
+          with zipfile.ZipFile(archive) as z:
+              names = z.namelist()
+              assert names == [config['executable']], 'Unexpected SDK archive member'
+              z.extractall(tools)
+          executable = tools / config['executable']
+          executable.chmod(0o755)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('CD_GODOT_EXECUTABLE=' + str(executable) + '\n')
+              env.write('CD_GODOT_EXE=' + str(executable) + '\n')
+          PY
+      - name: Préparer et importer le vrai projet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
+          timeout --kill-after=10s 180s "$CD_GODOT_EXECUTABLE" --headless --audio-driver Dummy --path native/godot --import 2>&1 | tee "$RUNNER_TEMP/godot-import.log"
+          if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$RUNNER_TEMP/godot-import.log"; then
+            exit 1
+          fi
+      - name: Exécuter les suites qualifiées sans repli SKIP
+        shell: bash
+        env:
+          SDL_AUDIODRIVER: dummy
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a -s '-screen 0 2560x1440x24' node ci/run-godot-sdk.cjs
+      - name: Mesurer les petites fenêtres avec le vrai rendu X11
+        if: ${{ matrix.family == 'full' }}
+        shell: bash
+        env:
+          SDL_AUDIODRIVER: dummy
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          CD_SMALL_CONTRACT_GRAPHICS: '1'
+        run: |
+          set -euo pipefail
+          # Nouvelles matrices dédiées : leurs budgets ne changent pas ceux
+          # des anciennes suites SDK (180 s) ni ceux de la VM Node (15 s).
+          xvfb-run -a -s '-screen 0 2560x1440x24' bash -euo pipefail <<'SH'
+          CD_GEOMETRY_TIMEOUT=480 CD_GEOMETRY_OUTPUT="$RUNNER_TEMP/geometry-main" node tests/small-window-geometry.cjs
+          CD_GEOMETRY_ROUTES=Bureau CD_GEOMETRY_TIMEOUT=720 CD_GEOMETRY_SCRIPT=small-window-geometry-extra-dialogs.gd CD_GEOMETRY_OUTPUT="$RUNNER_TEMP/geometry-extra" node tests/small-window-geometry.cjs
+          CD_SMALL_CONTRACT_OUTPUT="$RUNNER_TEMP/geometry-contracts" node tests/small-window-contracts.cjs
+          SH

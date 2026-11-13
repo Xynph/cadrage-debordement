@@ -8,6 +8,8 @@ const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
+const EntityLink = preload("res://ui/entity_link.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
 
@@ -102,6 +104,100 @@ static func _link(parent: Node, id: String, text: String, app: Control, route: S
 	parent.add_child(action)
 	return action
 
+# Old visual hosts intentionally have no controller. Keep their original
+# controls instead of turning a missing destination into an inert button.
+static func _reading_navigation(app: Control) -> Node:
+	for field: Dictionary in app.get_property_list():
+		if field.name != "navigation_controller": continue
+		var navigation: Variant = app.get("navigation_controller")
+		if navigation is Node and is_instance_valid(navigation) and navigation.has_method("entity_available") and navigation.has_method("open_entity"): return navigation
+	return null
+
+static func reading_available(app: Control, target: Dictionary) -> bool:
+	if target.is_empty(): return false
+	var navigation := _reading_navigation(app)
+	return navigation != null and navigation.entity_available(target)
+
+static func club_reading_target(app: Control, club: Dictionary) -> Dictionary:
+	if club.get("id") == null: return {}
+	var target := {"kind":"club", "id":str(club.id)}
+	return target if reading_available(app, target) else {}
+
+static func date_reading_target(app: Control, fixture: Dictionary) -> Dictionary:
+	var date: Variant = fixture.get("date")
+	if not Agenda.valid_date(date): return {}
+	var target := {"kind":"date", "id":date}
+	return target if reading_available(app, target) else {}
+
+static func score_reading_target(app: Control, fixture: Dictionary) -> Dictionary:
+	var id: Variant = fixture.get("id")
+	var score: Variant = fixture.get("score")
+	if not id is String or id.is_empty() or not score is Array or score.size() != 2: return {}
+	if S.count_text(score[0]) == "—" or S.count_text(score[1]) == "—": return {}
+	var target := {"kind":"fixture", "id":id}
+	if not reading_available(app, target): return {}
+	# Runtime load avoids CompetitionCanvas -> Office's existing preload cycle.
+	var competition = load("res://ui/immersive08/competition_canvas.gd")
+	var found: Dictionary = competition._target_fixture(app, id)
+	if found.is_empty() or found.get("score") != score: return {}
+	for side: String in ["home", "away"]:
+		var shown: Variant = fixture.get(side)
+		var resolved: Variant = found.get(side)
+		if not shown is Dictionary or not resolved is Dictionary or shown.get("id") == null or resolved.get("id") == null: return {}
+		if str(shown.id) != str(resolved.id): return {}
+	if fixture.has("date") and fixture.get("date") != found.get("date"): return {}
+	if fixture.has("winner") and fixture.get("winner") != found.get("winner"): return {}
+	# The common lookup rejects conflicting identities/dates. Also reject two
+	# published scores for the same ID, rather than trusting the first row.
+	for source: Array in [app.model.get("calendar", []), app.model.get("calendarPlanning", {}).get("fixtures", [])]:
+		for candidate: Dictionary in source:
+			if candidate.get("id") == id and candidate.has("score") and candidate.get("score") != score: return {}
+	for result: Dictionary in app.model.get("history", []):
+		if result.get("fixtureId") == id and result.has("score") and result.get("score") != score: return {}
+	return target
+
+static func fixture_opponent(model: Dictionary, fixture: Dictionary) -> Dictionary:
+	var own: Variant = model.get("club", {}).get("id")
+	if own == null: return {}
+	var home: Dictionary = fixture.get("home", {})
+	var away: Dictionary = fixture.get("away", {})
+	if home.get("id") == own: return away
+	if away.get("id") == own: return home
+	return {}
+
+static func _reading_button(app: Control, target: Dictionary, id: String, caption: String) -> Button:
+	if not reading_available(app, target): return null
+	var link := Button.new()
+	link.name = id
+	link.set_meta("immersive_style_applied", true)
+	for style: String in ["normal", "hover", "pressed", "disabled"]: link.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 3, 0))
+	EntityLink.bind(link, app, target, caption)
+	return link
+
+static func reading_control(app: Control, content: Control, target: Dictionary, id: String, caption: String) -> Control:
+	var link := _reading_button(app, target, id, caption)
+	if link == null: return content
+	link.custom_minimum_size = content.get_combined_minimum_size()
+	link.size_flags_horizontal = content.size_flags_horizontal
+	link.size_flags_vertical = content.size_flags_vertical
+	link.size_flags_stretch_ratio = content.size_flags_stretch_ratio
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	link.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.minimum_size_changed.connect(func():
+		if is_instance_valid(link): link.custom_minimum_size.y = content.get_combined_minimum_size().y)
+	return link
+
+static func reading_overlay(app: Control, parent: Node, rectangle: Rect2, target: Dictionary, id: String, caption: String) -> Button:
+	var link := _reading_button(app, target, id, caption)
+	if link == null: return null
+	link.custom_minimum_size = Vector2.ZERO
+	parent.add_child(link)
+	link.position = rectangle.position * C.density
+	link.size = rectangle.size * C.density
+	return link
+
 static func recruitment_availability(market: Array) -> String:
 	var offers := market.filter(func(player: Dictionary): return player.get("available", false)).size()
 	var summary := "%d piste%s · %d offre%s possible%s" % [
@@ -178,15 +274,26 @@ static func build(app: Control) -> Control:
 	_fixture(hero, app)
 	var priorities := _card(top, "OfficeDecisions", "▦  Vos trois priorités", 418)
 	_priorities(C.content(priorities), app)
+	# Keep the next decision visible while the secondary cards share the
+	# remaining workspace. Their natural minima can exceed a small window.
+	var scroll := ScrollContainer.new()
+	scroll.name = "OfficeReadingScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	C.fill(scroll, true)
+	page.add_child(scroll)
+	var reading := C.v(16)
+	C.fill(reading, true)
+	scroll.add_child(reading)
 	var middle := C.h(16)
-	page.add_child(middle)
+	reading.add_child(middle)
 	_group(C.content(_card(middle, "OfficeGroup", "♡  État du groupe", 448, .77)), app)
 	_standings(C.content(_card(middle, "OfficeStandings", "♜  Classement · " + P.league_name(app.model), 448, 1.25)), app)
 	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans votre Bureau", 448)), app)
 	_recruitment(C.content(_card(middle, "OfficeRecruitment", "⌕  Le profil à suivre", 448)), app)
-	_timeline(C.content(_card(page, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
+	_timeline(C.content(_card(reading, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
 	var results := recent_results(app)
-	if results != null: page.add_child(results)
+	if results != null: reading.add_child(results)
 	return page
 
 static func recent_results(app: Control) -> PanelContainer:
@@ -233,15 +340,16 @@ static func recent_results(app: Control) -> PanelContainer:
 		score_card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		score_card.add_theme_stylebox_override("panel",C.box(Color("101a23").lerp(tint,.12),tint,5,4))
 		score_card.add_child(points)
-		matchup.add_child(score_card)
+		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
+		matchup.add_child(reading_control(app, score_card, score_reading_target(app, fixture), "OfficeRecentFixture_" + fixture_key, "Rencontre · " + points.text))
 		var crest := opponent_crest(opponent,48)
 		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		matchup.add_child(crest)
+		matchup.add_child(reading_control(app, crest, club_reading_target(app, opponent), "OfficeRecentClubCrest_" + fixture_key, G.club_name(opponent)))
 		var details := C.v(0)
 		matchup.add_child(C.fill(details))
 		var name := C.label(G.club_name(opponent),23)
 		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		details.add_child(name)
+		details.add_child(reading_control(app, name, club_reading_target(app, opponent), "OfficeRecentClubName_" + fixture_key, name.text))
 		var description := C.label(result + (" · " + place if not place.is_empty() else ""),19,C.MUTED)
 		description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		details.add_child(description)
@@ -298,16 +406,16 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			left.add_child(C.label("SEMAINE EXEMPTE",21,C.GOLD,true,700))
 			var opponent := C.wrap(scheduled_opponent(app,upcoming),42,C.IVORY,true,800)
 			opponent.name = "UpcomingOpponent"
-			left.add_child(opponent)
+			left.add_child(reading_control(app, opponent, club_reading_target(app, fixture_opponent(app.model, upcoming)), "OfficeScheduledOpponent", opponent.text))
 			var kickoff := C.wrap("Prochain match · " + scheduled_when(app,upcoming),25,C.IVORY,true)
 			kickoff.name = "UpcomingWhen"
-			left.add_child(kickoff)
+			left.add_child(reading_control(app, kickoff, date_reading_target(app, upcoming), "OfficeScheduledDate", kickoff.text))
 			var venue := scheduled_venue(app,upcoming)
 			if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
 		elif preparation.is_empty() and not scheduled.is_empty():
 			left.add_child(C.label("PROCHAINE RENCONTRE",22,C.GOLD,true,700))
-			left.add_child(C.wrap(scheduled_opponent(app,scheduled),39,C.IVORY,true,800))
-			left.add_child(C.wrap(scheduled_when(app,scheduled),25,C.IVORY,true))
+			left.add_child(reading_control(app, C.wrap(scheduled_opponent(app,scheduled),39,C.IVORY,true,800), club_reading_target(app, fixture_opponent(app.model, scheduled)), "OfficeScheduledOpponent", scheduled_opponent(app,scheduled)))
+			left.add_child(reading_control(app, C.wrap(scheduled_when(app,scheduled),25,C.IVORY,true), date_reading_target(app, scheduled), "OfficeScheduledDate", scheduled_when(app,scheduled)))
 			left.add_child(C.wrap(P.fixture_venue(scheduled),20))
 		elif preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
@@ -322,10 +430,10 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 				left.add_child(C.label("PRÉPARATION",21,C.GOLD,true,700))
 				var opponent := C.wrap(scheduled_opponent(app,fixture),42,C.IVORY,true,800)
 				opponent.name = "UpcomingOpponent"
-				left.add_child(opponent)
+				left.add_child(reading_control(app, opponent, club_reading_target(app, fixture_opponent(app.model, fixture)), "OfficeScheduledOpponent", opponent.text))
 				var kickoff := C.wrap(scheduled_when(app,fixture),25,C.IVORY,true)
 				kickoff.name = "UpcomingWhen"
-				left.add_child(kickoff)
+				left.add_child(reading_control(app, kickoff, date_reading_target(app, fixture), "OfficeScheduledDate", kickoff.text))
 				var venue := scheduled_venue(app,fixture)
 				if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
 
@@ -345,19 +453,19 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		tags.add_child(C.chip(location, C.GOLD))
 		var teams := C.h(16)
 		left.add_child(teams)
-		teams.add_child(G.crest(next.get("home", {}), C.px(82)))
+		teams.add_child(reading_control(app, G.crest(next.get("home", {}), C.px(82)), club_reading_target(app, next.get("home", {})), "OfficeNextHomeClubCrest", G.club_name(next.get("home", {}))))
 		teams.add_child(C.label("VS", 23, C.GOLD))
-		teams.add_child(G.crest(next.get("away", {}), C.px(82)))
+		teams.add_child(reading_control(app, G.crest(next.get("away", {}), C.px(82)), club_reading_target(app, next.get("away", {})), "OfficeNextAwayClubCrest", G.club_name(next.get("away", {}))))
 		var names := C.v(2)
 		C.fill(names)
 		teams.add_child(names)
-		names.add_child(C.wrap(G.club_name(next.get("home", {})), 32, C.IVORY, true))
-		names.add_child(C.wrap(G.club_name(next.get("away", {})), 30, C.IVORY, true))
+		names.add_child(reading_control(app, C.wrap(G.club_name(next.get("home", {})), 32, C.IVORY, true), club_reading_target(app, next.get("home", {})), "OfficeNextHomeClubName", G.club_name(next.get("home", {}))))
+		names.add_child(reading_control(app, C.wrap(G.club_name(next.get("away", {})), 30, C.IVORY, true), club_reading_target(app, next.get("away", {})), "OfficeNextAwayClubName", G.club_name(next.get("away", {}))))
 		var date := P.fixture_date(next, true)
 		if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
 		var timing := C.wrap(date+" · "+fixture_competition(app.model,next),25,C.IVORY,true)
 		timing.name="OfficeFixtureDate"
-		left.add_child(timing)
+		left.add_child(reading_control(app, timing, date_reading_target(app, next), "OfficeNextDate", timing.text))
 		var venue_name := P.fixture_venue(next,false)
 		if not venue_name.is_empty():
 			var venue := C.wrap(venue_name,18)
@@ -687,7 +795,8 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		period.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): describe_fixture(period, local_date)
-		list.add_child(period)
+		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
+		list.add_child(reading_control(app, period, date_reading_target(app, fixture), "OfficeTimelineDateLink_" + fixture_key, period.text))
 		list.add_child(C.rule())
 		var opponent: Dictionary = fixture.get("away", {}) if fixture.get("home", {}).get("id") == app.model.club.id else fixture.get("home", {})
 		var name := C.label(G.club_name(opponent), 24)
@@ -696,8 +805,8 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		list.add_child(matchup)
 		var crest := opponent_crest(opponent,36)
 		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		matchup.add_child(crest)
-		matchup.add_child(C.fill(name))
+		matchup.add_child(reading_control(app, crest, club_reading_target(app, opponent), "OfficeTimelineClubCrest_" + fixture_key, G.club_name(opponent)))
+		matchup.add_child(C.fill(reading_control(app, name, club_reading_target(app, opponent), "OfficeTimelineClubName_" + fixture_key, name.text)))
 		var location := P.fixture_location_kind(fixture, app.model.club.id)
 		var marker := C.icon(C.fixture_location_icon(location,true),46,C.GOLD)
 		marker.name = "OfficeVenueIcon"

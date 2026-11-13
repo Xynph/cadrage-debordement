@@ -1,0 +1,32 @@
+{
+  "source_sha": "f9c55a92939a4699f08c3bbce78fb69e07d81aee",
+  "interface": "media-packs.createStore → inspect → install → project",
+  "fixture_scope": "representative projected history; not a validated career or observed stock-bank occurrence",
+  "pack_accepted": true,
+  "source_archive_unchanged": true,
+  "projection_input_unchanged": true,
+  "input": {
+    "season": 1,
+    "week": 0,
+    "club": 0,
+    "journalist": {
+      "id": "presse-0",
+      "name": "Nathan Delcourt",
+      "outlet": "Mêlée Hebdo"
+    },
+    "question": "Nathan Delcourt vous interroge sur le groupe.",
+    "answer": "Je réponds à Nathan Delcourt : le groupe garde ma confiance."
+  },
+  "output": {
+    "season": 1,
+    "week": 0,
+    "club": 0,
+    "journalist": {
+      "id": "presse-0",
+      "name": "Journaliste Test Zéro",
+      "outlet": "Mêlée Hebdo"
+    },
+    "question": "Journaliste Test Zéro vous interroge sur le groupe.",
+    "answer": "Je réponds à Journaliste Test Zéro : le groupe garde ma confiance."
+  }
+}

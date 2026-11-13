@@ -71,7 +71,7 @@ const OUTRO := 0.45
 const FRAME_IN := 1.5      # rapprochement, en secondes
 const FRAME_OUT := 1.8     # retour au cadrage normal
 const FRAME_SMOOTH := 0.6  # amortissement du centre et de la taille entre deux temps du geste
-const FRAME_MIN := {"tv": 11.0, "action": 9.0}  # hauteur visible minimale, en mètres
+const FRAME_MIN := {"tv": 26.0, "action": 14.0}  # hauteur visible minimale, en mètres (TV : 15 m, 11 m avant le 12 novembre 2026)
 const FRAME_MARGIN := 1.2
 # Pendant le retour, si le suivi d'origine part en panoramique rapide (ballon
 # renvoyé au centre après un essai : 100 m/s), le recadrage cède aussitôt la place
@@ -153,6 +153,10 @@ var zoom := 0.0
 var _zoom_mode := ""
 var _zoom_center := Vector3.ZERO
 var _zoom_center_speed := Vector3.ZERO
+# Point visé amorti en deux étages : un saut du cadrage voulu (changement de temps du geste)
+# ne fait varier ni la vitesse ni l'accélération du point visé d'une image à l'autre.
+var _zoom_goal := Vector3.ZERO
+var _zoom_goal_speed := Vector3.ZERO
 var _zoom_size := 0.0
 var _zoom_size_speed := 0.0
 var _zoom_focus := Vector3.ZERO
@@ -454,11 +458,16 @@ func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, m
 			# Début du geste, ou changement de caméra demandé par le joueur (déjà une coupe).
 			_zoom_mode = mode
 			_zoom_center = goal[0]
+			_zoom_goal = goal[0]
 			_zoom_size = goal[1]
 			_zoom_center_speed = Vector3.ZERO
+			_zoom_goal_speed = Vector3.ZERO
 			_zoom_size_speed = 0.0
 		elif delta > 0.0:
-			var center_step := _damp3(_zoom_center, goal[0], _zoom_center_speed, delta)
+			var goal_step := _damp3(_zoom_goal, goal[0], _zoom_goal_speed, delta)
+			_zoom_goal = goal_step[0]
+			_zoom_goal_speed = goal_step[1]
+			var center_step := _damp3(_zoom_center, _zoom_goal, _zoom_center_speed, delta, FRAME_SMOOTH * 0.5)
 			_zoom_center = center_step[0]
 			_zoom_center_speed = center_step[1]
 			var size_step := _damp1(_zoom_size, goal[1], _zoom_size_speed, delta)
@@ -540,8 +549,8 @@ func _frame_points() -> Array[Vector3]:
 
 
 ## Amortissement critique (vitesse continue, aucun dépassement).
-static func _damp3(current: Vector3, goal: Vector3, speed: Vector3, delta: float) -> Array:
-	var omega := 2.0 / FRAME_SMOOTH
+static func _damp3(current: Vector3, goal: Vector3, speed: Vector3, delta: float, smooth: float = FRAME_SMOOTH) -> Array:
+	var omega := 2.0 / smooth
 	var x := omega * delta
 	var decay := 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
 	var change := current - goal

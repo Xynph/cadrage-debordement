@@ -1,5 +1,7 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Negotiation = preload("res://ui/contract_negotiation.gd")
+const Salary = preload("res://ui/salary_display.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -16,7 +18,10 @@ func wait_response() -> void:
 	await settle()
 	check(not app.waiting and app.bridge.last_response_ok,"Réponse réelle du moteur : "+str(app.last_error))
 func command(id: String, payload: Dictionary = {}) -> void:
-	app._command(id,payload)
+	print("SDK_COMMAND ",Time.get_ticks_msec()," godot-contract-negotiation ",id)
+	var accepted: bool=app._command(id,payload)
+	check(accepted,"Commande publique acceptée : "+id)
+	if not accepted:return
 	await wait_response()
 func current(id: String, recruiting: bool) -> Dictionary:
 	for player: Dictionary in app.model.get("market" if recruiting else "squad",[]):
@@ -50,6 +55,7 @@ func run() -> void:
 	app.timer.stop()
 	check(not app.model.is_empty(),"Application reliée au vrai moteur")
 	await command("new_career",{"mode":"common","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Recrutement");await settle()
 	var target: Dictionary={}
 	for player: Dictionary in app.model.market:
@@ -85,13 +91,13 @@ func run() -> void:
 	var counter: Dictionary=current(id,true).negotiation.duplicate(true)
 	var counter_disk := FileAccess.get_sha256(profile)
 	dialog=await open(id,true)
-	check(dialog.find_child("ContractCurrentNegotiation",true,false).text.contains(str(int(counter.salary))) or dialog.find_child("ContractCurrentNegotiation",true,false).text.contains(Negotiation.money(counter.salary)),"Contre-offre retrouvée après snapshot")
+	check(dialog.find_child("ContractCurrentNegotiation",true,false).text.contains(Salary.amount(counter.salary)),"Contre-offre retrouvée après snapshot")
 	check(dialog.find_child("ContractNegotiationProgress",true,false).text.contains("1/3"),"Numéro réellement enregistré")
 	check(dialog.find_child("ContractNextAction",true,false).text.contains("2/3"),"Prochaine tentative2/3")
 	var reuse := dialog.find_child("ContractUseCounteroffer",true,false) as Button
 	reuse.pressed.emit();await settle()
 	salary=dialog.find_child("OfferSalary",true,false);years=dialog.find_child("OfferYears",true,false)
-	check(int(salary.value)==int(counter.salary) and int(years.value)==int(counter.years),"Reprendre contre-offre copie conditions exactes")
+	check(Salary.input_weekly(salary)==roundi(counter.salary) and salary.value==snappedf(float(counter.salary)*Salary.factor(),100.0) and int(years.value)==int(counter.years),"Reprendre contre-offre copie conditions exactes")
 	check(FileAccess.get_sha256(profile)==counter_disk and app.model.finance.cash==cash,"Reprendre conditions ne transmet pas l'offre")
 	await capture("contrat-recrutement-contreoffre-1440")
 	dialog.canceled.emit();await settle()
@@ -124,7 +130,7 @@ func run() -> void:
 	await capture("contrat-prolongation-contreoffre-1440")
 	var renewal_quote: Dictionary=current(renewal_id,false).renewal.duplicate(true)
 	dialog.find_child("ContractUseCounteroffer",true,false).pressed.emit();await settle()
-	var agreed_salary := int(dialog.find_child("OfferSalary",true,false).value)
+	var agreed_salary := Salary.input_weekly(dialog.find_child("OfferSalary",true,false) as SpinBox)
 	var pre_signature_cash: Variant=app.model.finance.cash
 	dialog.confirmed.emit();await wait_response()
 	check(app.model.meta.negotiation.status=="signed","Signature réelle après autorisation explicite")

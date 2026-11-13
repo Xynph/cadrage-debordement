@@ -1,0 +1,24 @@
+{
+  "source": "/tmp/cd-reader-history-tZu0GW/PrototypeGodot/donnees.json",
+  "source_sha256_before": "989fabbd101c29417c39d280d29152b84384e7be5dad4529ec450d85f70c59a1",
+  "source_sha256_after": "989fabbd101c29417c39d280d29152b84384e7be5dad4529ec450d85f70c59a1",
+  "copied_profile": "/tmp/cd-analysis-club-graphics-vp1qTN",
+  "expected_fixture": "accession:2026:league:0:4",
+  "setup": "copied-checkpoint",
+  "archived_result": {
+    "fixtureId": "accession:2026:league:0:4",
+    "season": 1,
+    "pair": [
+      16,
+      29
+    ],
+    "score": [
+      19,
+      10
+    ],
+    "phase": "league",
+    "week": 1
+  },
+  "sha": "8c2f8d157d48c95ba6b675fc462615b0dcb6655e",
+  "source_unchanged": true
+}

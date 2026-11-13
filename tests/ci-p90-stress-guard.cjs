@@ -1,7 +1,9 @@
 'use strict';
 // Garde de répartition CI : données historiques réelles, pas un benchmark causal.
 const assert = require('node:assert/strict');
-const { allTestFiles, planShards, WEIGHTS_SECONDS } = require('../ci/shard-tests.cjs');
+const { allTestFiles, planShards } = require('../ci/shard-tests.cjs');
+// Garde du régime à cinq shards (poids figés au 11 novembre 2026) : rejeu historique.
+const WEIGHTS_SECONDS = require('./fixtures/ci/weights-5-shards-20261111.json').weights;
 const HISTORICAL = require('./fixtures/ci/p90-stress-41720921522.json');
 const STRESS = 'tests/v63-2-stress-native.cjs';
 // Runs SUCCESS chronologiques : 41708215803, 41709297149, 41715682628,
@@ -56,9 +58,9 @@ assert.deepEqual(historicalFiles.slice().sort(), historicalFiles);
 for (const file of Object.keys(LATEST_SECONDS))
   assert.ok(historicalFiles.includes(file), 'Mesure hors cohorte : ' + file);
 const oldWeights = { ...WEIGHTS_SECONDS, [STRESS]: 126 };
-const oldPlan = planShards(historicalFiles, oldWeights);
-const newPlan = planShards(historicalFiles);
-assert.deepEqual(planShards(historicalFiles.slice().reverse()), newPlan,
+const oldPlan = planShards(historicalFiles, oldWeights, 5);
+const newPlan = planShards(historicalFiles, WEIGHTS_SECONDS, 5);
+assert.deepEqual(planShards(historicalFiles.slice().reverse(), WEIGHTS_SECONDS, 5), newPlan,
   'Déterminisme historique');
 // Contrat courant indépendant : aucune nouvelle suite ne sort du plan, même si
 // sa durée ne figure pas dans la trace de novembre. Aucun gain CI actuel inféré.

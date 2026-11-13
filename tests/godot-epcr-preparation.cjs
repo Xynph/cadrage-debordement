@@ -14,6 +14,9 @@ test('Préparation EPCR : vrai worker, choix clavier, refus, redimensionnement e
  }
  fs.symlinkSync(path.resolve(source,'../engine'),path.join(dir,'engine'),'junction');
  fs.copyFileSync(path.join(__dirname,'godot-epcr-preparation.gd'),path.join(project,'epcr-preparation-test.gd'));
+ // The copied harness resolves its relative preload beside itself.
+ fs.mkdirSync(path.join(project, 'helpers'), { recursive: true });
+ fs.copyFileSync(path.join(__dirname, 'helpers/contextual_flow.gd'), path.join(project, 'helpers/contextual_flow.gd'));
  const env={...process.env,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_DATA_DIR:path.join(dir,'profile'),CD_EPCR_UI_ARTIFACTS:dir};
  // A source checkout may have no imported assets yet. Import only the disposable project.
  if(!fs.existsSync(path.join(project,'.godot'))){

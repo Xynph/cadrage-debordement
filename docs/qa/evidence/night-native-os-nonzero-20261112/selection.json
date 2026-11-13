@@ -1,0 +1,31 @@
+{
+  "inspected_profiles_count": 57,
+  "method": "Read-only saved JSON metadata only; no worker/simulation/projection write.",
+  "strategy_profiles_found": "Existing Fiction13 strategy profiles did not have usable own fixtureId values. No history ID invented.",
+  "primary": "two-matches",
+  "primary_reason": "Existing public two-match checkpoint, now received by root with actual scroll45px / limit45px before and after native OS Return/AltLeft.",
+  "fallback": "common-fallback",
+  "fallback_reason": "Exact profile used by previous native47/0 reception, real15–20. Known scroll0 limit explicitly retained.",
+  "runtime_rule": "Primary requires real scroll extent>0 and visible focused target. If unavailable, report red/unavailable then root may run fallback separately; no fake state or automatic substitution.",
+  "historical_primary_reason_before_root_run": "Existing exact public mission checkpoint has two current-season own matches with real fixtureId; scroll extent must still be measured by root runtime.",
+  "status": "root-received",
+  "agent_preparation": {
+    "sdk_import_input_capture_run": false
+  },
+  "root_reception": {
+    "source_sha": "76077ed3f2af0ff029c8a413fc26451a25ac647f",
+    "selected_variant": "two-matches",
+    "checks": 59,
+    "failures": [],
+    "exit_code": 0,
+    "elapsed_ms": 67632,
+    "scroll_y_before": 45,
+    "scroll_y_after": 45,
+    "scroll_limit": 45,
+    "report_sha256": "dcc54d44646828564420cf4221da63142029276cd7d9fc9b652fcfbe98df88da"
+  },
+  "not_executed": [
+    "common-fallback on7607",
+    "longer Node preparation8–12 matches"
+  ]
+}

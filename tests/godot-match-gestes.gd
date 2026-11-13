@@ -6,7 +6,7 @@ const View = preload("res://match_view.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Gestes = preload("res://match_gestes.gd")
 const STEP := 1.0 / 30.0
-const TV_OFFSET := Vector3(0, 55, 75)
+const TV_OFFSET := View.TV_OFFSET  # caméra TV de la vue (plus haute depuis le 12 novembre 2026)
 const ACTION_OFFSET := Vector3(5.0, 12.0, 18.0)
 const TICK := 0.32
 
@@ -82,7 +82,7 @@ func run() -> void:
 		plain.apply_frame(live(frames, index))
 		for frame in 12:
 			plain._process(STEP)
-			plain_camera = plain_camera and camera_plain(plain, TV_OFFSET, 42.0)
+			plain_camera = plain_camera and camera_plain(plain, TV_OFFSET, View.TV_TAILLE)
 		check(not plain.is_presenting_extended_pass(), "Sans gestes le match n'attend jamais : " + str(kinds[index]))
 	check(plain_camera, "Sans gestes la caméra TV garde sa formule d'origine à chaque image")
 	for id: String in plain._actors:
@@ -121,12 +121,12 @@ func run() -> void:
 	var cheering := 0
 	# Caméra TV par défaut : recadrage pendant le geste, retour ensuite.
 	var camera: Camera3D = view._camera
-	check(camera_plain(view, TV_OFFSET, 42.0), "Avant le geste la caméra TV est celle d'origine")
+	check(camera_plain(view, TV_OFFSET, View.TV_TAILLE), "Avant le geste la caméra TV est celle d'origine")
 	var zoom_before_geste := false
 	var zoom_started_at := -1.0
 	var geste_started_at := -1.0
-	var smallest := 42.0
-	var smallest_in := {"touche": 42.0, "maul": 42.0, "essai_maul": 42.0}
+	var smallest := View.TV_TAILLE
+	var smallest_in := {"touche": View.TV_TAILLE, "maul": View.TV_TAILLE, "essai_maul": View.TV_TAILLE}
 	var size_step := 0.0
 	var yaw_step := 0.0
 	var aim_step := 0.0
@@ -329,7 +329,7 @@ func run() -> void:
 	check(waited > 6.0, "Le match attend la fin des gestes : " + str(waited))
 	check(kinds[index] == kinds[frames.size() - 1] and not gestes.active() and gestes.cast.is_empty(), "La scène suivante libère tous les joueurs")
 	check(not zoom_before_geste and geste_started_at > 0.0 and is_equal_approx(zoom_started_at, geste_started_at), "Le recadrage commence avec le geste : %s / %s" % [zoom_started_at, geste_started_at])
-	check(smallest_in.touche < 25.0 and smallest_in.maul < 16.0 and smallest_in.essai_maul < 20.0, "La caméra TV se rapproche pendant chaque geste : " + str(smallest_in))
+	check(smallest_in.touche < 42.0 and smallest_in.maul < 27.0 and smallest_in.essai_maul < 34.0, "La caméra TV se rapproche pendant chaque geste : " + str(smallest_in))
 	check(smallest >= Gestes.FRAME_MIN.tv - 0.001, "Jamais plus près que le minimum prévu : " + str(smallest))
 	check(size_step < 0.06, "Rapprochement progressif, sans coupe : %.4f par image" % size_step)
 	check(yaw_step < 0.02, "Pivot lent, sans rotation rapide : %.4f rad par image" % yaw_step)
@@ -338,7 +338,7 @@ func run() -> void:
 	print("MATCH_GESTES_CAMERA ", JSON.stringify({"tv_min_size": smallest_in, "size_log_step": size_step, "yaw_step_rad": yaw_step, "aim_step_m": aim_step}))
 	# Le renvoi au centre est à 50 m : la caméra d'origine y coupe, le recadrage aussi (pas de panoramique rapide).
 	check(cuts.size() == 1 and cuts[0][1] == "kickoff", "Une seule coupe, au renvoi lointain, comme la caméra d'origine : " + str(cuts))
-	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, 42.0), "Le recadrage finit avec le geste : caméra TV rendue à l'identique")
+	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, View.TV_TAILLE), "Le recadrage finit avec le geste : caméra TV rendue à l'identique")
 	for frame in 40: view._process(STEP)
 	for id: String in view._actors:
 		var model: Node3D = view._actors[id].model
@@ -361,43 +361,43 @@ func run() -> void:
 	view.apply_frame(live(frames, at_lineout))
 	check(gestes.active(), "L'alignement reprend sur une nouvelle scène de touche")
 	for frame in 30: view._process(STEP)
-	check(gestes.zoom > 0.0 and camera.size < 42.0, "Le recadrage accompagne le nouvel alignement")
+	check(gestes.zoom > 0.0 and camera.size < View.TV_TAILLE, "Le recadrage accompagne le nouvel alignement")
 	view.apply_frame(live(frames, at_lineout, true))
 	check(not gestes.active(), "La pause annule le geste en cours")
 	for frame in 15: view._process(STEP)
-	check(gestes.zoom > 0.0 and gestes.zoom < 1.0 and camera.size < 42.0, "Sur place, le retour au cadrage normal est progressif : " + str(gestes.zoom))
+	check(gestes.zoom > 0.0 and gestes.zoom < 1.0 and camera.size < View.TV_TAILLE, "Sur place, le retour au cadrage normal est progressif : " + str(gestes.zoom))
 	for frame in int(ceil(Gestes.FRAME_OUT / STEP)) + 1: view._process(STEP)
-	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, 42.0), "Pause : la caméra revient à l'identique")
+	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, View.TV_TAILLE), "Pause : la caméra revient à l'identique")
 	view.set_live_cadence(4)
 	view.apply_frame(live(frames, at_lineout - 1))
 	view.apply_frame(live(frames, at_lineout))
 	check(not gestes.active(), "Cadence accélérée : pas de geste")
 	for frame in 20: view._process(STEP)
-	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, 42.0), "Cadence accélérée : pas de recadrage")
+	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, View.TV_TAILLE), "Cadence accélérée : pas de recadrage")
 	view.set_live_cadence(1)
 	view.set_action_motion(false)
 	view.apply_frame(live(frames, at_lineout - 1))
 	view.apply_frame(live(frames, at_lineout))
 	check(not gestes.active(), "Mode calme : pas de geste")
 	for frame in 20: view._process(STEP)
-	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, 42.0), "Mode calme : pas de recadrage")
+	check(gestes.zoom == 0.0 and camera_plain(view, TV_OFFSET, View.TV_TAILLE), "Mode calme : pas de recadrage")
 	view.set_action_motion(true)
 
 	# Caméra « action » : même recadrage, sans pivot ; vue tactique : aucun recadrage.
 	view.set_camera("action")
 	view.apply_frame(live(frames, at_lineout - 1))
 	for frame in 30: view._process(STEP)
-	check(camera_plain(view, ACTION_OFFSET, 16.0), "Caméra action d'origine hors geste")
+	check(camera_plain(view, ACTION_OFFSET, View.ACTION_TAILLE), "Caméra action d'origine hors geste")
 	view.apply_frame(live(frames, at_lineout))
 	for frame in int(ceil(Gestes.FRAME_IN / STEP)) + 2: view._process(STEP)
-	check(gestes.zoom == 1.0 and camera.size < 16.0 and camera.global_basis.is_equal_approx(Basis.looking_at(-ACTION_OFFSET, Vector3.UP)), "Caméra action : rapprochée, angle inchangé : " + str(camera.size))
+	check(gestes.zoom == 1.0 and camera.size < View.ACTION_TAILLE and camera.global_basis.is_equal_approx(Basis.looking_at(-ACTION_OFFSET, Vector3.UP)), "Caméra action : rapprochée, angle inchangé : " + str(camera.size))
 	print("MATCH_GESTES_ACTION_TOUCHE_SIZE ", camera.size)
 	view.set_camera("tactical")
 	check(gestes.zoom == 0.0, "Vue tactique : aucun recadrage")
 	view.set_camera("action")
 	view.apply_frame(live(frames, at_lineout - 1))
 	for frame in int(ceil(Gestes.FRAME_OUT / STEP)) + 1: view._process(STEP)
-	check(gestes.phase in ["", "approche"] and camera_plain(view, ACTION_OFFSET, 16.0), "Caméra action rendue à l'identique")
+	check(gestes.phase in ["", "approche"] and camera_plain(view, ACTION_OFFSET, View.ACTION_TAILLE), "Caméra action rendue à l'identique")
 	view.set_camera("tv")
 
 	# Essai hors ballon porté : le marqueur désigné plonge seul.

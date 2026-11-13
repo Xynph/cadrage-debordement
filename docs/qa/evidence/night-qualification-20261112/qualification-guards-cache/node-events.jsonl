@@ -1,0 +1,2 @@
+{"stage":"begin","case":"guards","elapsed_ms":1,"timeout_ms":180000}
+{"stage":"exit","case":"guards","elapsed_ms":61694,"status":0,"signal":null,"stdout_bytes":10299,"stderr_bytes":246}

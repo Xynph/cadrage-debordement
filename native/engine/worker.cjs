@@ -9,6 +9,7 @@ const positionAptitudes=require('./position-aptitudes.cjs');
 const careerVariation=require('./career-variation.cjs');
 const potentialEvolution=require('./potential-evolution.cjs'),potentialEvolutionValidation=potentialEvolution();
 const inSeasonDevelopment=require('./in-season-development.cjs');
+const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs'),boardNames=require('./staff-completion.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makeNational=require('./international-native.cjs');
@@ -145,6 +146,11 @@ function createBridge(options={}){
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
+  // Découpage des longues courses du moteur (présentation du journal, docs/match-courses-20261112.md) :
+  // CD_MATCH_COURSES=0 (ou l'option matchCourses:false) rend l'ancien journal, un seul fait jusqu'à la ligne.
+  if(options.matchCourses===false||process.env.CD_MATCH_COURSES==='0')ctx.MATCH_COURSES_DECOUPEES=false;
+  // Carrières aux salaires liés au niveau : plancher des discussions de contrat, avant tout habillage de la validation.
+  run(require('./club-budget.cjs').VALIDATION);
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);
   if(pacificRegistry)ctx.nativeWorldPacificRegistryText=JSON.stringify(pacificRegistry);
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
@@ -162,6 +168,10 @@ function createBridge(options={}){
    const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
   run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+  run(`const nativeClubTransfers=(${clubTransfers.toString()})();nativeClubTransfers.installHooks();`);
+  // Directions des clubs gérés (carrières mondiales créées avec elles) ; validation de leur état.
+  run(`const nativeClubDirections=(${clubDirections.toString()})(nativeClubTransfers,(${boardNames.factory.toString()})());
+   const nativeClubDirectionsValidator=validateCareer;validateCareer=state=>{const result=nativeClubDirectionsValidator(state);nativeClubDirections.validate(state);return result;};`);
   run(`const nativeInSeasonDevelopment=(${inSeasonDevelopment.toString()})();nativeInSeasonDevelopment.installHooks();const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
   run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();
    const nativeKnowledgeValidator=validateCareer;validateCareer=state=>{const result=nativeKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
@@ -256,7 +266,13 @@ function createBridge(options={}){
    for(const p of model.squad||[])if(p.knowledge?.owned&&trends[p.id])p.potentialDevelopment=trends[p.id];
    return model;
   };
-  const snapshotRaw=operation=>{updatePressPolicy();const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...JSON.parse(run('JSON.stringify(nativeKnowledge.reports(S))')));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+  // Une projection lit l'état sans le modifier : le dossier d'avant-match (feuille adverse
+  // complète) y est calculé une seule fois puis partagé. Hors projection, chaque appel
+  // recalcule comme avant. CD_ENGINE_MEMO=0 coupe ce partage (contrôle d'identité).
+  const projectionMemo=process.env.CD_ENGINE_MEMO!=='0';
+  if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
+  const snapshotRaw=operation=>{if(!projectionMemo)return snapshotProjection(operation);run('nativeProjectionMemo(true)');try{return snapshotProjection(operation);}finally{run('nativeProjectionMemo(false)');}};
+  const snapshotProjection=operation=>{updatePressPolicy();const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...JSON.parse(run('JSON.stringify(nativeKnowledge.reports(S))')));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
@@ -294,7 +310,16 @@ function createBridge(options={}){
    if(stashed){try{fs.unlinkSync(rollback);}catch{}}
    committedFiles=profileFilesVersion();resumeCheckpoint=null;
   };
+  // Instrumentation des allers-retours (CD_ENGINE_TIMING=1) : durées par phase, sans effet sur la simulation.
+  const timing=options.timing===true||process.env.CD_ENGINE_TIMING==='1';let phases=null,phaseAt=0;
+  const mark=label=>{if(!phases)return;const now=performance.now();phases[label]=Math.round(((phases[label]||0)+now-phaseAt)*10)/10;phaseAt=now;};
   function handle(request){
+   if(!timing)return handleCommand(request);
+   phases={};phaseAt=performance.now();const started=phaseAt;
+   const response=handleCommand(request);mark('reste');phases.total=Math.round((performance.now()-started)*10)/10;
+   if(response&&typeof response==='object')response.timing=phases;phases=null;return response;
+  }
+  function handleCommand(request){
    let id=null;
    try{
     if(!request||typeof request!=='object'||Array.isArray(request))throw Error('Message JSON invalide.');
@@ -319,13 +344,15 @@ function createBridge(options={}){
     updatePressPolicy();
     if(national.isNationalOnly()&&!NATIONAL_ONLY_COMMANDS.has(command))throw Error('Cette décision est réservée au manager d’un club.');
     if(ctx.nativeMandatoryPress&&advancesCareer)run('nativeSystems.domain("press").guardProgress()');
-    const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;
+    mark('garde');const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     try{
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(payload.varyCurrent!==undefined&&typeof payload.varyCurrent!=='boolean')throw Error('Option de variation du niveau actuel invalide.');
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
      }
+     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande, y compris la première après une reprise.
+     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativeCommand=command;
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
@@ -474,7 +501,11 @@ function createBridge(options={}){
      if(command==='new_career'){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
-      run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);autoLineup();');
+      run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
+      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
+      run('autoLineup();');
+      // Directions des clubs gérés : carrières mondiales nouvelles seulement ; CD_DIRECTIONS_CLUBS=0 les coupe.
+      if(process.env.CD_DIRECTIONS_CLUBS!=='0')run('nativeClubDirections.create(S,nativeCreationVariation.seed)');
       delete ctx.nativeCreationVariation;
      }
      else if(command==='next_season')run('CDNativeAcademyGroups.afterSeason(S,'+previousAcademyClub+');');
@@ -483,15 +514,16 @@ function createBridge(options={}){
      if(advancesCareer||command==='new_career'||command==='import')run('nativeSystems.domain("press").observeInvitation(nativePressPrevious,'+(command==='new_career')+');');
      run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     mark('commande');
      if(advancesWithinWeek)run('save()');
-     else run('nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
-     const model=snapshotRaw({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
+     mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
      if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;
      else persist();
-     model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
-     return {id,ok:true,model:projectKnowledge(model)};
+     mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
+     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
@@ -507,10 +539,11 @@ if(require.main===module){
  let bridge;
  try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
- const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
+ const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity}),delta=require('./model-delta.cjs').createEncoder();
  input.on('line',line=>{
-  let result;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
-  process.stdout.write(JSON.stringify(result)+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
+  // L'interface Godot annonce la révision du modèle qu'elle détient : réponse différentielle.
+  let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  process.stdout.write((base===null?JSON.stringify(result):delta.encode(result,base))+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());
 }

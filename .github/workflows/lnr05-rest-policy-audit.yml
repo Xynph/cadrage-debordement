@@ -1,10 +1,7 @@
 name: LNR-05 - Audit repos persistant et ponctuel
+# Ménage CI du 12 novembre 2026 : déclenchement automatique retiré (suites Node déjà exécutées par tests.yml).
+# Anciens déclencheurs : pull_request, workflow_dispatch. Relance manuelle : Actions > ce workflow > Run workflow.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'tests/lnr05-rest-policy-audit.cjs'
-      - '.github/workflows/lnr05-rest-policy-audit.yml'
   workflow_dispatch:
 permissions:
   contents: read

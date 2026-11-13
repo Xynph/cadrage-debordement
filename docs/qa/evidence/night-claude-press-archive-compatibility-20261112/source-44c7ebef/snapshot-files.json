@@ -1,0 +1,17 @@
+{
+  "sha": "44c7ebef0edb8a04310a4c6fe9b4a221ce630e83",
+  "files": [
+    "native/engine/media-packs.cjs",
+    "native/engine/staff.cjs",
+    "native/engine/staff-registry.json",
+    "native/engine/world-staff-registry.json",
+    "native/engine/staff-completion.cjs",
+    "native/engine/world-registry.json",
+    "native/engine/venue-media.cjs",
+    "native/engine/competition-identities.cjs",
+    "native/engine/press-identities.cjs",
+    "native/engine/world-legacy-aliases.json",
+    "dist/rugby-common-rosters.js",
+    "dist/press-question-bank.js"
+  ]
+}

@@ -8,7 +8,7 @@ func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
 	if not value: failures.append(message); printerr(message)
 func words(node: Node) -> String:
-	var result := str(node.text) + "\n" if node is Label else ""
+	var result := str(node.text) + "\n" if node is Label or node is Button else ""
 	for child in node.get_children(): result += words(child)
 	return result
 func run() -> void:
@@ -17,14 +17,14 @@ func run() -> void:
 	var host := Host.new(); root.add_child(host)
 	var initial := VBoxContainer.new(); host.add_child(initial)
 	var before := generated.duplicate(true)
-	Staff._person(initial, generated)
+	Staff._person(host, initial, generated)
 	check(words(initial).contains(generated.name) and words(initial).contains(generated.role), "Staff directory shows the character normally")
 	check(not words(initial).contains("RÉFÉRENCE") and not words(initial).contains("Relevé le"), "No false source citation for generated identity")
 	var career := VBoxContainer.new(); host.add_child(career)
 	Career._person(host, career, generated, {"available":false,"roles":{}}, true)
 	check(words(career).contains(generated.name) and not words(career).to_lower().contains("fictif"), "Staff career has no character-origin warning")
 	var original := VBoxContainer.new(); host.add_child(original)
-	Staff._person(original, reference)
+	Staff._person(host, original, reference)
 	check(words(original).contains(reference.name) and not words(original).to_lower().contains("fictif"), "Existing staff also appears normally")
 	check(generated == before, "Rendering does not mutate the staff identity")
 	check(not words(initial).to_lower().contains("fictif") and not words(initial).contains("généré"), "Staff directory has no origin warning")

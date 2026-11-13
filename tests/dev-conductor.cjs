@@ -27,19 +27,19 @@ assert.throws(()=>lane([null]),/Chemin invalide/);
 const sha='a'.repeat(40), old='b'.repeat(40);
 const run=(head_sha,id=101)=>({id,head_sha,event:'pull_request',name:'Tests JavaScript',
   path:'.github/workflows/tests.yml',status:'completed',conclusion:'success',created_at:'2026-11-03T12:00:00Z'});
-const green=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI']
+const green=require('../ci/ci-jobs.cjs').OFFICIAL_JOBS
   .map(name=>({name,status:'completed',conclusion:'success'}));
 assert.equal(statusCI(sha,[run(old)],{101:green}),'CI absente sur HEAD');
-assert.equal(statusCI(sha,[run(sha)],{101:green}),'7/7 SUCCESS (gate non exécuté)');
+assert.equal(statusCI(sha,[run(sha)],{101:green}),(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+'/'+(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+' SUCCESS (gate non exécuté)');
 assert.equal(statusCI(sha,[run(sha)],{}),'Jobs CI non vérifiés');
 assert.equal(statusCI(sha,[{...run(sha),status:'in_progress'}],{}),'CI en cours');
 assert.equal(statusCI(sha,[{...run(sha),conclusion:'failure'}],{}),'CI échouée ou annulée');
-assert.equal(statusCI(sha,[run(sha)],{101:green.slice(0,6)}),'CI incomplète ou non conforme');
+assert.equal(statusCI(sha,[run(sha)],{101:green.slice(0,-1)}),'CI incomplète ou non conforme');
 assert.equal(statusCI(sha,[run(sha)],{101:[...green,green[0]]}),'CI incomplète ou non conforme');
 assert.equal(statusCI('bad',[],{}),'SHA invalide');
 const rich=attachCI(select([base(7,['docs/readme.md'])]),[run(sha)],()=>green);
-assert.match(rich[0].ci,/7\/7 SUCCESS/);
-assert.match(report(rich),/7\/7 SUCCESS/);
+assert.match(rich[0].ci,new RegExp((require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+'/'+(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+' SUCCESS'));
+assert.match(report(rich),new RegExp((require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+'/'+(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+' SUCCESS'));
 
 assert.equal(gateNumber('259'),259);
 assert.throws(()=>gateNumber('0'),/invalide/);

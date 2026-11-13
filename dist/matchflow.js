@@ -170,5 +170,5 @@ function playQuickTap(l,side){
  const metres=Math.abs(l.territory-origin);tacticalCount(l,side,'advances');tacticalCount(l,side,'metres',metres);if(metres>=22)tacticalCount(l,side,'longGains');
  l.kickContext={team:side,halfEligible:ownHalf(side,l.territory),twentyTwoEligible:own22(side,l.territory)};
  const carrier=quickTapCarrier(l,side,near),gain=Math.round(metres),danger=side===0?l.territory>74:l.territory<26;
- addEvent(l,`${carrier?.name||abbr} prend la défense de vitesse et gagne ${gain} mètre${gain>1?'s':''}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,from:{x:origin,y},to:{x:l.territory,y},possession:side});
+ addEvent(l,`${carrier?.name||abbr} prend la défense de vitesse et gagne ${gain} mètre${gain>1?'s':''}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,gain):null,from:{x:origin,y},to:{x:l.territory,y},possession:side});
 }

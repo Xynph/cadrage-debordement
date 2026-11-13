@@ -1,0 +1,9 @@
+{
+  "main.gd": "7630a7b5a5559bf03aaa2aac7b6ade705012c623047202e89096b1686c6c9d7f",
+  "guide/coach_guide.gd": "0c0f3856e3604ce40ebcc453fc88c467a4063bbe0f4079047f7876f763e6a065",
+  "guide/dialogues.json": "c7860c059075b9149057c20dd3144d9c7672c7f27c8721f9506d0ec97edd80eb",
+  "guide/guide_speech.gd": "34371645739a6d60ccd22b13ee473544e552663842a9db36fffaf1efb94d29cb",
+  "project.godot": "bfdea6c40d9189c6f09cbd498c10c3ca814911b2b88793184120583c164778f0",
+  "harness.gd": "54333cdb925ee43aa6778c6feaf76e52ec899705a7a67fc79cafaa1150caf948",
+  "helpers/contextual_flow.gd": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d"
+}

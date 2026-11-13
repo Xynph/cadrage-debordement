@@ -1,0 +1,193 @@
+{
+  "format": 1,
+  "source_sha": "303e8a4698bad50066580f06429fa74f7d8da0dd",
+  "source_attribution": "SHA source de la recette graphique communiqué par root ; scripts et produit hachés depuis git sur ce SHA.",
+  "scope": "Revue visuelle ciblée des captures Classements et projections ; suite graphique Carnet reçue, pas campagne SDK globale.",
+  "suite_checks": 4346,
+  "suite_failures": 0,
+  "duration_ms": 154819.474056,
+  "tap_total_ms": 154875.506123,
+  "speech": {
+    "requested": 0,
+    "started": 0,
+    "id": 0,
+    "evidence": "CARNET_SPEECH dans le journal brut"
+  },
+  "resolutions": [
+    [
+      1280,
+      800
+    ],
+    [
+      1440,
+      900
+    ],
+    [
+      1920,
+      1080
+    ]
+  ],
+  "date_target_passages": {
+    "count": 5,
+    "attribution": "Relevé intégrateur ; pas cinq résolutions, ni cinq cas indépendants. Le journal fourni ne sérialise pas chaque rectangle."
+  },
+  "files": [
+    {
+      "path": "run.log",
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics.log",
+      "bytes": 1862,
+      "sha256": "48232afb36fcb5462f6d67ac9734076264971cd8e027316193fb4e797f0d2056"
+    },
+    {
+      "path": "godot.log",
+      "source_path": "/tmp/cd-carnet-ui-VW46rd/godot.log",
+      "bytes": 1403,
+      "sha256": "b033e33612a16d54de9680f64bff826befe0f1ed7426ecc99e6bd6c316e46219"
+    }
+  ],
+  "selected_images": [
+    {
+      "path": "images/classements-1280.png",
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-1280.png",
+      "bytes": 186571,
+      "sha256": "cf237a65db34db2d4d651c62f62802e2032c6923c265f87e9914c2505da95655",
+      "width": 1280,
+      "height": 800,
+      "source_sha": "303e8a4698bad50066580f06429fa74f7d8da0dd",
+      "edited": false,
+      "projection_synthetic": false
+    },
+    {
+      "path": "images/classements-1920.png",
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-1920.png",
+      "bytes": 877292,
+      "sha256": "8af1317f16e89d014942b07c56d959ab00afda9bcaa73fa5e99124bcd302959e",
+      "width": 1920,
+      "height": 1080,
+      "source_sha": "303e8a4698bad50066580f06429fa74f7d8da0dd",
+      "edited": false,
+      "projection_synthetic": false
+    },
+    {
+      "path": "images/classements-projection-long-jaune-pack-absent.png",
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-projection-long-jaune-pack-absent.png",
+      "bytes": 218963,
+      "sha256": "869d830097ae2abf21ab0a2b1b4cced284bd5777e84dd768a82858a856364854",
+      "width": 1440,
+      "height": 900,
+      "source_sha": "303e8a4698bad50066580f06429fa74f7d8da0dd",
+      "edited": false,
+      "projection_synthetic": true
+    }
+  ],
+  "reviewed_images": [
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/calendrier-projection-long-jaune-pack-absent.png",
+      "bytes": 281017,
+      "sha256": "f1ddaf097685742f7a3167081c85ca7b8e49d76e5f406b75dade95c4d17adf27",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": true,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-1280.png",
+      "bytes": 186571,
+      "sha256": "cf237a65db34db2d4d651c62f62802e2032c6923c265f87e9914c2505da95655",
+      "width": 1280,
+      "height": 800,
+      "projection_synthetic": false,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-1440.png",
+      "bytes": 217977,
+      "sha256": "68c4beda7bc2a2e5695d533eb2479e0a9fab81cea6f25280cd3a1811dd75f861",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": false,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-1920.png",
+      "bytes": 877292,
+      "sha256": "8af1317f16e89d014942b07c56d959ab00afda9bcaa73fa5e99124bcd302959e",
+      "width": 1920,
+      "height": 1080,
+      "projection_synthetic": false,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-common-29.png",
+      "bytes": 217404,
+      "sha256": "69ceea41d19fe09d8b0e273e7cac095b9679a2dabaae031ac0f0948bf0e63610",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": false,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-fiction-0.png",
+      "bytes": 215612,
+      "sha256": "4a9bbcc68ae8431bbd251ee9834734742d3722c9c6ff80f7329d64a07f777943",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": false,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-france-0.png",
+      "bytes": 217977,
+      "sha256": "68c4beda7bc2a2e5695d533eb2479e0a9fab81cea6f25280cd3a1811dd75f861",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": false,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/classements-projection-long-jaune-pack-absent.png",
+      "bytes": 218963,
+      "sha256": "869d830097ae2abf21ab0a2b1b4cced284bd5777e84dd768a82858a856364854",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": true,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/club-projection-long-jaune-pack-absent.png",
+      "bytes": 820900,
+      "sha256": "8fe8d5df2d365ea6dc3d104d53fc110519b0a4456d515179be9f79162469aa72",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": true,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/composition-projection-long-jaune-pack-absent.png",
+      "bytes": 285244,
+      "sha256": "3a196b32cf7112c2596e6408f9011c948b8ccd354a6af4078128aea120e574c6",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": true,
+      "reviewed": true
+    },
+    {
+      "source_path": "/workspace/work/night-followup-receipts/carnet-graphics/effectif-projection-long-jaune-pack-absent.png",
+      "bytes": 297116,
+      "sha256": "93a81eca659ffcc83888ff3aa84d9c3e7752cb6e5818aefae36b498d33ff17e7",
+      "width": 1440,
+      "height": 900,
+      "projection_synthetic": true,
+      "reviewed": true
+    }
+  ],
+  "source_files_sha256": {
+    "tests/godot-carnet-ui.gd": "1bfbd20f7d4212f6ac1e3c8c3eba5b9af97c870d4506d65c0da24484884d23cf",
+    "tests/godot-carnet-ui.cjs": "789b524bd2f7ce9125b7498f407803068807ecd8bba54b73082b32436966585d",
+    "native/godot/ui/immersive08/competition_canvas.gd": "71e086850c5139ccd59eea66c05ee2b8fdd1d0caa524cd55293d2366586d1cba"
+  },
+  "documentation": {
+    "path": "README.md",
+    "sha256": "b34cb7c9b2b0b6c4542623ddaaff9c997cc1749d51752d8b2e40122dcf462ba2"
+  }
+}

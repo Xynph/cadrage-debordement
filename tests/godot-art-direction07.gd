@@ -30,6 +30,34 @@ func capture(id: String) -> void:
 	var image := root.get_texture().get_image()
 	check(image.get_size()==root.size,"Capture physique "+id)
 	check(image.save_png(proof.path_join(id+".png"))==OK,"Capture enregistrée "+id)
+func current_chrome(page: String) -> void:
+	var viewport := Rect2(Vector2.ZERO,Vector2(root.size)).grow(1)
+	var rail := app.find_child("ImmersiveSidebar",true,false) as Control
+	check(rail != null and viewport.encloses(rail.get_global_rect()) and rail.get_global_rect().size.x <= root.size.x*.2,"Navigation latérale contenue "+page)
+	var header := app.find_child("ImmersiveTopbar",true,false) as Control
+	check(header != null and viewport.encloses(header.get_global_rect()),"Bandeau entièrement contenu "+page)
+	var caption := "Tactique" if page == "Composition" else page
+	var breadcrumb := false
+	if header != null:
+		for label: Label in header.find_children("*","Label",true,false):
+			if label.text == caption:
+				var size := label.get_theme_font_size("font_size")
+				breadcrumb = label.is_visible_in_tree() and size >= 12 and viewport.encloses(label.get_global_rect()) and label.get_theme_font("font").get_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x <= label.size.x
+	check(breadcrumb,"Page identifiée et texte lisible dans le bandeau "+page)
+	var selected: String = {"Bureau":"Bureau","Effectif":"Effectif","Composition":"Tactique","Préparation":"Tactique","Plan de jeu":"Tactique","Club":"Club","Finances":"Finances","Classements":"Compétitions","Calendrier":"Compétitions"}.get(page,"")
+	for name in ["Réception","Bureau","Effectif","Tactique","Entraînement","Recrutement","Club","Finances","Compétitions","Formation"]:
+		var button := app.find_child("Nav_"+name,true,false) as Button
+		check(button != null and button.is_visible_in_tree() and button.focus_mode == Control.FOCUS_ALL and viewport.encloses(button.get_global_rect()),"Navigation entière et accessible au clavier "+name+" / "+page)
+		if button == null: continue
+		var style := button.get_theme_stylebox("normal") as StyleBoxFlat
+		var background := style.bg_color if style != null and style.bg_color.a > 0 else Color("11191e")
+		check(button.get_theme_font_size("font_size") >= 12 and contrast(button.get_theme_color("font_color"),background) >= 4.5,"Contraste du chapitre "+name+" / "+page)
+		var icon_visible := false
+		if rail != null:
+			for child in rail.get_children():
+				if child is TextureRect and child.is_visible_in_tree() and button.get_global_rect().has_point(child.get_global_rect().get_center()): icon_visible = true
+		check(icon_visible,"Pictogramme du chapitre "+name+" / "+page)
+		if name == selected: check(style != null and style.bg_color.a > 0 and style.border_color.a > 0,"Sélection persistante "+page)
 func run() -> void:
 	root.size=Vector2i(2560,1440);DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()
@@ -60,22 +88,7 @@ func run() -> void:
 		for page in ["Bureau","Effectif","Composition","Préparation","Plan de jeu","Club","Finances","Classements","Calendrier","Carrière"]:
 			app._navigate(page);await settle();app.coach.close();await settle()
 			check(root.content_scale_size==resolution and app.size==Vector2(resolution),"Canvas natif "+page+" "+str(resolution))
-			check(app.heading.get_theme_font_size("font_size")<=20,"Titre dense "+page)
-			if page=="Effectif":
-				var choice:OptionButton=app.find_child("RosterFamily",true,false)
-				var choice_style:StyleBoxFlat=choice.get_theme_stylebox("normal")
-				check(choice_style.bg_color.get_luminance()>.75 and contrast(choice.get_theme_color("font_color"),choice_style.bg_color)>=4.5,"Sélecteur réel habillé avant son insertion dans le carnet")
-			var rail:Control=app.find_child("CareerRail",true,false)
-			check(rail!=null and rail.size.x<=196,"Rail compact "+page)
-			for chapter:Dictionary in app.NAV_CHAPTERS:
-				var button:Button=app.find_child("Chapter_"+str(chapter.label),true,false)
-				check(button!=null and button.size.y<=30 and button.get_global_rect().end.x<=200,"Navigation compacte "+str(chapter.label))
-				if button!=null:
-					check(button.has_meta("art_icon"),"Pictogramme de chapitre "+str(chapter.label))
-					var style:StyleBoxFlat=button.get_theme_stylebox("normal")
-					if page in chapter.routes: check(style.border_width_left>=3,"Sélection géométrique persistante "+page)
-			var header:Control=app.find_child("CareerHeader",true,false)
-			check(header!=null and header.size.y<=80,"Bandeau éditorial compact "+page)
+			current_chrome(page)
 			await capture(page.to_lower().replace("é","e").replace("è","e").replace(" ","-")+"-"+str(resolution.x))
 	await command("export")
 	check(app.model.meta.exportText==before,"Navigation et habillage conservent export/RNG/horloge")

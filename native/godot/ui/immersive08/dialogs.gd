@@ -8,6 +8,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 static func prepare(dialog: AcceptDialog, width: int, accent: Color) -> void:
 	dialog.theme = Legacy.theme(accent)
 	dialog.min_size = Vector2i(width,0)
+	dialog.set_meta("immersive_dialog_minimum",dialog.min_size)
 	dialog.dialog_autowrap = true
 	dialog.visibility_changed.connect(_dress.bind(dialog,accent))
 	dialog.tree_entered.connect(_watch_host.bind(dialog))
@@ -19,7 +20,18 @@ static func watch_file_picker(dialog: FileDialog) -> void:
 
 static func show_centered(dialog: AcceptDialog, requested: Vector2i) -> void:
 	dialog.set_meta("immersive_dialog_size",requested)
-	dialog.popup_centered(requested)
+	# Une fenêtre intégrée plus grande que son hôte serait centrée à une position négative (le moteur journalise
+	# « Window spawned at invalid position ») avant le recadrage différé de _fit : on la borne d'abord à l'hôte.
+	var popup_size := requested
+	var host := dialog.get_parent()
+	if host != null and host.get_viewport() != null:
+		var visible_size := Vector2i(host.get_viewport().get_visible_rect().size)
+		# Mêmes marges et même garde que _fit : en dessous de 720 x 520, le recadrage différé ne s'applique pas.
+		if visible_size.x >= 720 and visible_size.y >= 520:
+			var preferred_minimum: Vector2i = dialog.get_meta("immersive_dialog_minimum",dialog.min_size)
+			dialog.min_size = Vector2i(mini(preferred_minimum.x,visible_size.x-28),mini(preferred_minimum.y,visible_size.y-68))
+			popup_size = Vector2i(mini(requested.x,visible_size.x-28),mini(requested.y,visible_size.y-68))
+	dialog.popup_centered(popup_size)
 	_fit.call_deferred(dialog)
 
 static func _dress(dialog: AcceptDialog, accent: Color) -> void:
@@ -59,6 +71,10 @@ static func _fit(dialog: AcceptDialog) -> void:
 	var target: Vector2i = dialog.get_meta("immersive_dialog_size",dialog.size)
 	# Les sélecteurs peuvent se replier à leur minimum avant le layout de leur liste.
 	if file_picker: target = Vector2i((Vector2(screen) * .7).round())
+	# A requested width is a preferred minimum, not a reason to escape the host.
+	# Restore it when the host grows again; content controls retain their own minima.
+	var preferred_minimum: Vector2i = dialog.get_meta("immersive_dialog_minimum",dialog.min_size)
+	dialog.min_size = Vector2i(mini(preferred_minimum.x,screen.x-28),mini(preferred_minimum.y,screen.y-68))
 	target.x=min(target.x,screen.x-28)
 	target.y=min(target.y,screen.y-68)
 	if target!=dialog.size: dialog.size=target

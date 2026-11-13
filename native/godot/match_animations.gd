@@ -48,12 +48,20 @@ const GESTES := {
 	"joie": {"clip": "mx_joie", "cle": 0.8},
 	"joie_poing": {"clip": "mx_joie_poing", "cle": 0.8},
 	"deception": {"clip": "mx_deception", "cle": 0.8},
+	# 12 novembre 2026 (retours de Léo : plaquages, aplati, mêlée) : chute vers l'avant à plat
+	# ventre (impact), plongeon bras tendus (mains au sol), relevé depuis le ventre (debout),
+	# mise en poussée (buste penché, bras tendus, tenue en fin de clip).
+	"plaque_avant": {"clip": "mx_plaque_avant", "cle": 0.95},
+	"plongeon_avant": {"clip": "mx_aplati", "cle": 0.95},
+	"se_relever_ventre": {"clip": "mx_se_relever_ventre", "cle": 4.4},
+	"poussee": {"clip": "mx_poussee_melee", "cle": 3.8},
 }
 ## Ces clips d'origine se déplacent (élan, chute, pas de course) : le joueur du match
 ## garde sa place, décidée par la scène. Leur déplacement horizontal est retiré au
 ## chargement ; seuls le corps et les appuis bougent sur place.
 const SUR_PLACE := ["mx_lancer_touche", "mx_coup_de_pied", "mx_drop", "mx_plaque_cote", "mx_plaque_jambes",
-	"mx_plaquage", "mx_reception", "mx_reception_haute", "mx_se_relever", "mx_joie_poing", "mx_deception", "mx_joie"]
+	"mx_plaquage", "mx_reception", "mx_reception_haute", "mx_se_relever", "mx_joie_poing", "mx_deception", "mx_joie",
+	"mx_plaque_avant", "mx_aplati", "mx_se_relever_ventre", "mx_poussee_melee"]
 
 var _bibliotheque: AnimationLibrary
 var _chemin_squelette := ""

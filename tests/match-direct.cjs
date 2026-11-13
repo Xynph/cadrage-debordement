@@ -43,7 +43,8 @@ test('Sans l’option du pont, rien ne change : pas de projection, pas de pas «
 
 test('Avec la variable, le moteur projette chaque temps fort au moment où il est décidé', () => {
   assert.throws(() => createBridge({ dataDir: path.join(os.tmpdir(), 'oval-direct-refus'), matchHighlights: 'tout' }), /Niveau de temps forts inconnu/);
-  const jeu = ouvrir({ matchHighlights: 'dynamique' });
+  // Graine 1001 : avec le calendrier alterné, la graine 1000 ne marque aucun essai avant la 36e minute.
+  const jeu = ouvrir({ seed: 1001, matchHighlights: 'dynamique' });
   try {
     let model = demarrer(jeu);
     const vus = [];
@@ -55,7 +56,7 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
       assert.ok(direct.fil.length > 0 && direct.fil.every(l => typeof l.texte === 'string' && l.kind !== 'advantage'), 'fil sans messages d’avantage');
       assert.ok(direct.chiffres.length >= 5 && direct.chiffres.every(c => typeof c.home === 'string' && typeof c.away === 'string'));
       assert.ok(direct.zone.x >= 0 && direct.zone.x <= 100 && [0, 1].includes(direct.possession));
-      const attendu = H.en_direct(live.events, { niveau: 'dynamique' }).courant;
+      const attendu = H.en_direct(live.events, { niveau: 'dynamique', camp: direct.camp }).courant;
       assert.equal(direct.tempsFort?.cle ?? null, attendu?.cle ?? null, 'la projection suit la sélection en direct');
       const tf = direct.tempsFort;
       if (!tf || vus.some(v => v.cle === tf.cle)) return;
@@ -161,4 +162,109 @@ test('Sans aucune variable, le moteur du jeu projette les temps forts ; CD_MATCH
     assert.equal(pas[2].ok, true, pas[2].error);
     assert.ok(pas[2].model.live.events.length > pas[0].model.live.events.length, 'le pas d’origine avance');
   }
+});
+
+test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes, lus dans le journal', () => {
+  const D = require('../native/engine/match-direct.cjs');
+  const jeu = ouvrir({ matchHighlights: 'dynamique' });
+  try {
+    let model = demarrer(jeu);
+    let deroules = 0;
+    const bornes = [], vus = new Set();
+    let verifies = 0, sigles = 0;
+    for (let k = 0; k < 60 && !model.live.finished && !model.live.atBreak && !(k > 0 && model.live.paused); k++) {
+      model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
+      const live = model.live, direct = live.direct, events = live.events;
+      // Rien d'un temps fort à venir avant qu'il soit joué : tout ce que l'entracte a montré
+      // (borne des minutes précédentes) précède le début de chaque nouveau temps fort.
+      const tf = direct.tempsFort;
+      if (tf && !vus.has(tf.cle)) {
+        vus.add(tf.cle);
+        for (const b of bornes) assert.ok(b <= tf.debut, `borne ${b} au-delà du début ${tf.debut} du temps fort ${tf.type} (${tf.horlogeDebut})`);
+        verifies++;
+      }
+      bornes.push(direct.borne);
+      assert.ok(direct.borne <= events.length && direct.fil.every(l => l.i < direct.borne) && direct.deroule.every(d => d.i < direct.borne) && direct.reperes.every(r => r.i < direct.borne), 'fil, déroulé et repères bornés');
+      // Sigles : le fil nomme les clubs comme l'écran (identité affichée), pas par le sigle interne.
+      for (const equipe of live.teams) {
+        const affiche = equipe.presentation?.abbr;
+        if (affiche && affiche !== equipe.abbr) {
+          const interne = new RegExp(`\\b${equipe.abbr}\\b`);
+          assert.ok([...direct.fil, ...direct.deroule].every(l => !interne.test(l.texte)), `sigle interne ${equipe.abbr} absent du fil (affiché : ${affiche})`);
+          sigles++;
+        }
+      }
+      const vues = H.normaliser(events).slice(0, direct.borne);
+      assert.deepEqual(direct.score, vues.length ? vues.at(-1).scoreApres : [0, 0], 'score de ce qui a été montré');
+      // Déroulé : derniers faits jouables, dans l'ordre, jamais au-delà du journal.
+      assert.ok(direct.deroule.length <= D.DEROULE_MAX);
+      let avant = -1;
+      for (const item of direct.deroule) {
+        assert.ok(item.i > avant && item.i < events.length, 'ordre et journal');
+        avant = item.i;
+        const s = events[item.i].scene;
+        assert.ok(s, 'chaque fait a sa scène dans le journal');
+        assert.equal(item.kind, s.kind);
+        assert.equal(item.scene.possession, s.possession, 'possession du moteur');
+        assert.ok(item.scene.joueurs.length >= 26 && item.scene.joueurs.length <= 30, 'trente joueurs au plus');
+        for (const [cote, poste, x, y] of item.scene.joueurs) assert.ok([0, 1].includes(cote) && poste >= 0 && poste <= 14 && x >= 0 && x <= 100 && y >= -1 && y <= 71);
+        if (s.kind === 'carry') assert.ok(Math.abs(item.scene.ballon[0] - s.to.x) < 0.11 && Math.abs(item.scene.origine[0] - s.from.x) < 0.11, 'ballon au point du moteur');
+        assert.deepEqual(item.score, H.normaliser(events)[item.i].scoreApres);
+      }
+      deroules += direct.deroule.length;
+      // Domination : une valeur par minute jouée, bornée.
+      const d = direct.domination;
+      assert.ok(Array.isArray(d.minutes) && d.minutes.every(v => Number.isInteger(v) && v >= -100 && v <= 100));
+      assert.deepEqual(d, D.domination(vues));
+      // Chiffres : possession sur 100, plaquages tirés des courses adverses.
+      const t = Object.fromEntries(direct.tableau.map(r => [r.cle, r]));
+      assert.equal(t.possession.valeurs[0] + t.possession.valeurs[1], 100);
+      const lignes = vues;
+      for (const cote of [0, 1]) {
+        const courses = lignes.filter(l => l.kind === 'carry' && l.equipe === 1 - cote && Math.abs(l.x - l.depuis) < 22).length;
+        const recup = lignes.filter(l => l.kind === 'turnover' && l.equipe === cote).length;
+        assert.equal(t.plaquages.valeurs[cote], courses + recup, 'plaquages réussis = courses adverses stoppées + ballons récupérés');
+        assert.equal(t.en_avant.valeurs[cote], lignes.filter(l => l.kind === 'hand-fault' && l.equipe === cote).length);
+      }
+      // Notes : joueurs du manager seulement, bornées.
+      const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
+      for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
+      // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
+      const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
+      assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
+      // XV adverse : la feuille actuelle (remplacements visibles tout de suite), notes bornées ;
+      // ses plaquages ne dépassent pas le chiffre d'équipe (un remplacé emporte les siens).
+      const eux = 1 - camp;
+      if (vues.length) {
+        assert.equal(direct.adversaire.length, 15, 'XV adverse complet');
+        assert.ok(direct.adversaire.every(j => !j || (j.nom && j.note >= 3 && j.note <= 9.9)), 'noms et notes adverses');
+        assert.ok(direct.adversaire.reduce((n, j) => n + (j ? j.plaquages : 0), 0) <= t.plaquages.valeurs[eux], 'plaquages adverses bornés par le chiffre d\'équipe');
+      }
+    }
+    assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
+    assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
+    assert.ok(sigles > 0, 'sigles affichés vérifiés');
+  } finally { jeu.fermer(); }
+});
+
+test('Note de départ : 6,5 au coup d’entrée (titulaire comme remplaçant), puis ce que le journal attribue', () => {
+  const D = require('../native/engine/match-direct.cjs');
+  assert.equal(D.NOTE_DEPART, 6.5);
+  const on = [['a', 'b', ...Array(13).fill(null)], ['x', ...Array(14).fill(null)]];
+  const events = [{ scene: { actor: 'a', on, from: { x: 50 }, to: { x: 50 } } }, { scene: { actor: 'b', on, from: { x: 50 }, to: { x: 50 } } }];
+  const notes = D.notesDuMatch([{ i: 0, kind: 'reception', equipe: 0 }, { i: 1, kind: 'miss', equipe: 0 }], events, 0);
+  assert.equal(notes.a.note, 6.6, 'une réception : 6,5 + 0,08');
+  assert.equal(notes.b.note, 6.4, 'un tir manqué : 6,5 − 0,15');
+});
+
+test('Plaquages de l’entracte : le plaqueur nommé par le moteur (fait `tackler`), repli sur la place défensive', () => {
+  const D = require('../native/engine/match-direct.cjs');
+  const on = [['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'], ['x', ...Array(14).fill(null)]];
+  const course = tackler => ({ scene: { actor: 'x', team: 1, on, from: { x: 50, y: 35 }, to: { x: 46, y: 35 }, ...(tackler ? { tackler } : {}) } });
+  const ligne = { i: 0, kind: 'carry', equipe: 1, x: 46, depuis: 50 };
+  const nomme = D.notesDuMatch([ligne], [course('m')], 0);
+  assert.equal(nomme.m.plaquages, 1, 'le joueur que le moteur nomme');
+  const deduit = D.notesDuMatch([ligne], [course(null)], 0), attendu = D.plaqueur(on[0], 4, 35);
+  assert.equal(deduit[attendu].plaquages, 1, 'sans le fait : déduction par la place défensive');
+  assert.equal(D.notesDuMatch([ligne], [course('zz')], 0)[attendu].plaquages, 1, 'fait inconnu de la feuille : repli');
 });

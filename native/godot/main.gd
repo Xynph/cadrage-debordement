@@ -19,15 +19,39 @@ const COMMAND_WAIT_MESSAGES := {
 	"delegate": "Simulation de la rencontre…",
 	"finish_round": "Mise à jour de la journée…",
 	"advance_day": "Passage au jour suivant…",
-	"train": "Application de la séance…",
 	"next_season": "Préparation de la nouvelle saison…",
 	"advance_pacific_preparation": "Avance de la préparation…",
 	"advance_japan_preparation": "Avance de la préparation…",
 	"advance_champ_preparation": "Avance de la préparation…",
 	"population_enable": "Mise à jour de la base de joueurs…",
 	"academy_groups_enable": "Mise à jour des centres de formation…",
-	"promote_cover": "Enregistrement des renforts…"
+	"promote_cover": "Enregistrement des renforts…",
+	"national_play_match": "Simulation de la rencontre internationale…"
 }
+## Titre du panneau d’attente par commande (les autres : « En coulisses »).
+const COMMAND_WAIT_KICKERS := {
+	"advance_day": "Passage au jour suivant",
+	"finish_round": "Fin de journée",
+	"delegate": "Le match se joue",
+	"begin_match": "Avant le coup d’envoi",
+	"next_season": "Intersaison",
+	"new_career": "Nouvelle carrière",
+	"import": "Reprise de carrière",
+	"restore_checkpoint": "Reprise de carrière",
+	"save": "Sauvegarde",
+	"national_play_match": "Sélection nationale"
+}
+## Conseils de Gabi affichés pendant une attente (fonctions réelles du jeu).
+const GABI_TIPS := [
+	"Avant un match, passez par la Préparation : les consignes d’attaque et de défense se règlent en un clic.",
+	"Un joueur lourdement chargé peut souffler : passez sa charge en « repos » depuis le suivi de fatigue.",
+	"La composition automatique propose un XV cohérent ; vous gardez la main poste par poste ensuite.",
+	"Une observation ciblée affine la fourchette de niveau d’un joueur avant de lui faire une offre.",
+	"Le centre de formation récompense la patience : suivez la progression des jeunes semaine après semaine.",
+	"En conférence de presse, vos réponses pèsent sur le moral du vestiaire et sur la confiance de la direction.",
+	"Le calendrier signale les jours de match : avancez jour par jour pour ne rien manquer du courrier.",
+	"Les contrats qui arrivent à échéance apparaissent au Bureau : anticipez les prolongations."
+]
 const Immersive = preload("res://ui/immersive08/shell.gd")
 const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
 const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -114,6 +138,10 @@ var entry_scroll: ScrollContainer
 var interface_layout: Node
 var _startup_trace := OS.get_environment("CD_GODOT_STARTUP_TRACE") == "1"
 var _startup_model_seen := false
+## Mesure des allers-retours UI→moteur (CD_GODOT_TIMING=1) : imprime une ligne CD_TIMING par réponse.
+var _timing_trace := OS.get_environment("CD_GODOT_TIMING") == "1"
+var _command_sent_us := 0
+var timing_log: Array[Dictionary] = []
 
 func _init() -> void:
 	_trace_startup("main.init")
@@ -228,6 +256,8 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	var receive_us := Time.get_ticks_usec()
+	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
 	if _startup_trace and not _startup_model_seen:
 		_startup_model_seen = true
 		_trace_startup("model.first")
@@ -237,8 +267,9 @@ func _receive_model(value: Dictionary) -> void:
 	var reception_id := ""
 	if response_ok and (received_command in ["advance_day", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
 		reception_id = Immersive.Reception.new_priority(model, value)
-	# Keep one uninterrupted wait when the player's action follows an automatic tick.
-	if not response_ok or received_command != "tick" or queued_action.is_empty():
+	# Keep one uninterrupted wait when the player's action follows an automatic tick
+	# or a light decision: the queued command keeps the same panel.
+	if not response_ok or queued_action.is_empty() or not (received_command == "tick" or shows_wait_panel(str(queued_action.get("command", "")))):
 		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
@@ -304,18 +335,33 @@ func _receive_model(value: Dictionary) -> void:
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
 	call_deferred("_refresh_coach")
 	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
+	_record_timing(received_command, receive_us)
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
 		_command(next.command, next.payload, next.get("target_route", ""))
 
+func _record_timing(command: String, receive_us: int) -> void:
+	if not _timing_trace: return
+	var now := Time.get_ticks_usec()
+	var bridge_timing: Dictionary = bridge.last_timing
+	var entry := {"command": command, "rendu_ms": (now - receive_us) / 1000.0, "moteur_ms": bridge_timing.get("moteur_ms", 0.0), "analyse_ms": bridge_timing.get("analyse_ms", 0.0), "file_ms": bridge_timing.get("file_ms", 0.0), "octets": bridge_timing.get("octets", 0), "total_ms": (now - _command_sent_us) / 1000.0 if _command_sent_us > 0 else 0.0, "route": route}
+	_command_sent_us = 0
+	timing_log.append(entry)
+	print("CD_TIMING ", JSON.stringify(entry))
+
+## Commandes légères : jamais de panneau, l’interface reste disponible et une
+## décision supplémentaire attend son tour au lieu d’être refusée.
+static func shows_wait_panel(command: String) -> bool:
+	return COMMAND_WAIT_MESSAGES.has(command) or SeasonPreparation.is_advance(command)
+
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
 	if closing: return false
 	if waiting:
 		if command == "tick": return false
-		if last_command == "tick" and queued_action.is_empty():
+		# Après un tick ou une décision légère, la décision suivante attend son tour.
+		if (last_command == "tick" or not shows_wait_panel(last_command)) and last_command != "snapshot" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
-			if is_instance_valid(status): status.text = "Votre décision est en attente de traitement…"
 			_present_command_wait(command)
 			return true
 		if last_command == "snapshot": return false
@@ -323,10 +369,11 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 		if not command_wait_overlay.visible or command != active_command:
 			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
+	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
 	waiting = true
 	last_command = command
+	if _timing_trace: _command_sent_us = Time.get_ticks_usec()
 	pending_route = target_route
-	if is_instance_valid(status): status.text = "Traitement de votre décision…"
 	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
 	if decision_feedback != null: decision_feedback.begin(command, payload, model)
 	_present_command_wait(command)
@@ -335,8 +382,44 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 
 func _present_command_wait(command: String) -> void:
 	var message: String = COMMAND_WAIT_MESSAGES.get(command, "")
+	if message.is_empty() and SeasonPreparation.is_advance(command): message = "Avance de la préparation…"
 	if not message.is_empty():
+		command_wait_overlay.set_context(_command_wait_context(command))
 		command_wait_overlay.present(message, not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
+
+## Contexte du panneau d’attente : date du jour, club et faits réels du modèle.
+func _command_wait_context(command: String) -> Dictionary:
+	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
+	var club: Dictionary = model.get("club", {}) if model.get("club") is Dictionary else {}
+	var tips: Array = []
+	for tip: String in GABI_TIPS: tips.append({"kind":"tip", "title":"Le conseil de Gabi", "text":tip})
+	var facts: Array = []
+	if not club.is_empty():
+		var rank := int(club.get("rank", 0))
+		var points := int(club.get("points", 0))
+		if rank > 0 and not str(meta.get("roundLabel", "")).is_empty():
+			facts.append("%s pointe à la %s place avec %d point%s · %s." % [str(club.get("name", "")), ("1re" if rank == 1 else str(rank) + "e"), points, "" if points <= 1 else "s", str(meta.roundLabel)])
+		var next: Variant = model.get("next")
+		if next is Dictionary and next.get("home") is Dictionary and next.get("away") is Dictionary:
+			facts.append("Prochaine rencontre : %s – %s." % [str(next.home.get("name", "")), str(next.away.get("name", ""))])
+		if meta.get("morale") is float or meta.get("morale") is int:
+			facts.append("Moral du groupe : %d / 100." % int(meta.morale))
+		if not str(club.get("goal", "")).is_empty():
+			facts.append("Objectif fixé par la direction : %s." % str(club.goal).to_lower())
+	# Les faits du club alternent avec les conseils de Gabi.
+	var notes: Array = []
+	for index in maxi(tips.size(), facts.size()):
+		if index < facts.size(): notes.append({"kind":"fact", "title":"Au club", "text":facts[index]})
+		if index < tips.size(): notes.append(tips[index])
+	return {
+		"kicker": COMMAND_WAIT_KICKERS.get(command, "En coulisses"),
+		"date": str(meta.get("calendarToday", "")),
+		"flip": command == "advance_day",
+		"accent": accent if _has_career() else Color("d43e47"),
+		"club": str(club.get("abbr", "")),
+		"notes": notes,
+		"note_seed": Time.get_ticks_msec() / 4600
+	}
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
@@ -420,6 +503,7 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 	if target == "Presse" and not has_meta("press_mail_origin"): return
 	if target == "Sélections" and not model.get("international") is Dictionary: return
 	if not Immersive.Selections.navigation_allowed(model, target): return
+	if is_instance_valid(navigation_controller): navigation_controller.capture_current()
 	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
@@ -1010,6 +1094,7 @@ func notice(title:String,text:String) -> void:
 func _clear_dialogs() -> void:
 	for child in get_children():
 		if child is AcceptDialog and child!=file_dialog:
+			if is_instance_valid(navigation_controller) and navigation_controller.is_suspended_reader(child): continue
 			child.hide()
 			child.queue_free()
 
@@ -1052,6 +1137,7 @@ func request_quit() -> void:
 func _close(exit_code: int = 0) -> void:
 	if closing: return
 	closing = true
+	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
 	command_wait_overlay.dismiss()
 	if is_instance_valid(soundscape): soundscape.dispose()
 	if is_instance_valid(coach): coach.destroy()

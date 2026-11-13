@@ -30,8 +30,11 @@ const clubPlayers=(s,id)=>{
 };
 const clubName=(s,id)=>{if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.name(s,'elite',id);if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.roster(s,'elite',id);
  const base=id>=14?extraName(s,id):s.clubs[id]?.name||('Club '+id);return root.CDEspoirsMovementV75?.name(s,'elite',id,base)||base};
-function roundRobin(ids){const a=ids.slice();if(a.length%2)a.push(-1);const out=[];for(let r=0;r<2*(a.length-1);r++){const pairs=[];for(let i=0;i<a.length/2;i++){const x=a[i],y=a[a.length-1-i];if(x>=0&&y>=0)pairs.push((r+i)%2?[y,x]:[x,y])}out.push(pairs);a.splice(1,0,a.pop())}return out}
-function groupRounds(groups){const rounds=groups.map(g=>roundRobin(g));return Array.from({length:Math.max(...rounds.map(x=>x.length))},(_,i)=>rounds.flatMap(r=>r[i]||[]))}
+// Tables de Berger avec alternance, retour en miroir inversé (docs/calendrier-alternance-20261111.md).
+function roundRobin(ids){const n=ids.length+ids.length%2,m=n-1,out=[];for(let q=0;q<m;q++){const r=(q+2)%m,pairs=[r%2?[m,r]:[r,m]];for(let k=1;k<n/2;k++){const a=(r+k)%m,b=(r-k+m)%m;pairs.push(k%2?[a,b]:[b,a])}out.push(pairs.filter(p=>p[0]<ids.length&&p[1]<ids.length).map(p=>[ids[p[0]],ids[p[1]]]))}return out.concat(out.map(r=>r.map(([h,a])=>[a,h])))}
+// Calendrier antérieur au 11 novembre 2026, conservé pour relire les saisons déjà commencées.
+function legacyRoundRobin(ids){const a=ids.slice();if(a.length%2)a.push(-1);const out=[];for(let r=0;r<2*(a.length-1);r++){const pairs=[];for(let i=0;i<a.length/2;i++){const x=a[i],y=a[a.length-1-i];if(x>=0&&y>=0)pairs.push((r+i)%2?[y,x]:[x,y])}out.push(pairs);a.splice(1,0,a.pop())}return out}
+function groupRounds(groups,legacy=false){const rounds=groups.map(g=>(legacy?legacyRoundRobin:roundRobin)(g));return Array.from({length:Math.max(...rounds.map(x=>x.length))},(_,i)=>rounds.flatMap(r=>r[i]||[]))}
 function setup(s){if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.setupLeague(s);if(!s?.development||!s.aiRoster?.academies||s.clubs?.length!==14)return null;
  if(s.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season)return s.v73Espoirs;
  const old=s.v73Espoirs,groups=realGroups()||Array.from({length:4},(_,i)=>Array.from({length:6},(_,j)=>i*6+j));
@@ -42,7 +45,9 @@ function standing(s,ids,results=read(s)?.results||[]){const rows=ids.map(id=>({i
  for(const m of results){const h=rows.find(x=>x.id===m.pair[0]),a=rows.find(x=>x.id===m.pair[1]);if(!h||!a)continue;
  for(const [x,y,tries,otherTries] of [[h,a,m.tries[0],m.tries[1]],[a,h,m.tries[1],m.tries[0]]]){x.played++;x.for+=m.score[x===h?0:1];x.against+=m.score[x===h?1:0];if(x===h?m.score[0]>m.score[1]:m.score[1]>m.score[0]){x.win++;x.points+=4}else if(m.score[0]===m.score[1]){x.draw++;x.points+=2}else x.loss++;const bp=tries-otherTries>=3?1:0,bd=(x===h?m.score[1]-m.score[0]:m.score[0]-m.score[1]);x.bonus+=bp+(bd>0&&bd<=5?1:0);x.points+=bp+(bd>0&&bd<=5?1:0)}}
  return rows.sort((a,b)=>b.points-a.points||(b.for-b.against)-(a.for-a.against)||b.for-a.for||a.id-b.id)}
-function chosen(s,id,st=read(s)){const players=clubPlayers(s,id),used=new Set(),manual=(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).division==='elite'&&root.CDNativeAcademy.own(s).slot===id:id===s.club)?st?.lineup||[]:[],slots=typeof POS!=='undefined'?POS:Array.from({length:15},(_,i)=>i);
+// Décision de Léo du 12/11/2026 : les matchs des jeunes sont simulés, sans composition
+// manuelle. L'entraîneur des Espoirs aligne toujours le meilleur joueur valide du poste.
+function chosen(s,id,st=read(s)){const players=clubPlayers(s,id),used=new Set(),manual=[],slots=typeof POS!=='undefined'?POS:Array.from({length:15},(_,i)=>i);
  return slots.map((pos,i)=>{const forced=players.find(p=>p.id===manual[i]&&p.pos===pos&&!used.has(p.id));
  const pool=players.filter(p=>p.pos===pos&&!used.has(p.id)&&!p.injury);const mode=(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).division==='elite'&&root.CDNativeAcademy.own(s).slot===id:id===s.club)?st?.mode:'equilibre';
  pool.sort((a,b)=>{const value=p=>p.rating+(mode==='developpement'?(p.dev?.potential-p.rating)*.6:0)+(mode==='repos'?(p.condition-100)*.8:0)-(st?.fatigue[p.id]||0)*.24;return value(b)-value(a)||a.id.localeCompare(b.id)});
@@ -109,5 +114,5 @@ function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSe
   }return result};
  g.v73Mode=mode=>{const ok=setMode(get(),mode,save);if(ok)g.render();return ok};
  g.v73Select=(slot,id)=>{const ok=setPlayer(get(),slot,id,save);if(ok)g.render();return ok};return true}
-const api={groupRounds,roundRobin,setup,read,clubPlayers,clubName,standing,chosen,scoreMatch,applyRound,advance,closeSeason,setMode,setPlayer,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsV73=api;if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root)
+const api={groupRounds,roundRobin,legacyRoundRobin,setup,read,clubPlayers,clubName,standing,chosen,scoreMatch,applyRound,advance,closeSeason,setMode,setPlayer,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsV73=api;if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root)
 })(typeof globalThis==='object'?globalThis:this);

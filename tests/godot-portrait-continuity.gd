@@ -3,6 +3,7 @@ const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Portrait = preload("res://ui/regen_portrait.gd")
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
+const Office = preload("res://ui/immersive08/office.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -59,11 +60,25 @@ func run() -> void:
 	if not slots.is_empty():
 		app.selected_slot=int(slots[0].slot);app._navigate("Composition");await settle()
 		check(has_portrait(app.body,promoted),"Composition utilise le même portrait du vrai joueur")
-	var market: Array=app.model.market.duplicate();market.sort_custom(func(a: Dictionary,b: Dictionary):return float(a.rating)>float(b.rating))
+	# Only published knowledge may rank the market; exact ratings can be null.
+	var market: Array=app.model.market.duplicate()
+	market.sort_custom(func(a: Dictionary,b: Dictionary):
+		var left: Variant=Recruitment.G.knowledge_sort_value(a,"rating")
+		var right: Variant=Recruitment.G.knowledge_sort_value(b,"rating")
+		if left==null or right==null:
+			if left!=right:return left!=null
+		elif left!=right:return left>right
+		return str(a.id)<str(b.id))
+	check(market.any(func(p: Dictionary):return p.get("rating")==null),"Marché réellement reçu avec niveaux inconnus")
 	check(not market.is_empty(),"Vrai marché disponible")
 	if not market.is_empty():
+		var spotlight: Dictionary=Office.recruitment_spotlight(app.model)
 		app._navigate("Bureau");await settle()
-		check(has_portrait(app.body,market[0]),"Piste réelle du bureau conserve sa banque")
+		if not spotlight.player.is_empty():
+			check(has_portrait(app.body,spotlight.player),"La piste réellement publiée au Bureau conserve sa banque")
+		else:
+			var panel:=app.find_child("OfficeRecruitment",true,false)
+			check(panel!=null and panel.find_children("*","Label",true,false).any(func(label):return label.text.contains(spotlight.empty)),"Sans piste au poste suivi, le Bureau affiche le vrai motif")
 		for full_size in [false,true]:
 			var parent:=Control.new();root.add_child(parent)
 			Recruitment._portrait(parent,Rect2(0,0,80,80),market[0],str(market[0].id),full_size)

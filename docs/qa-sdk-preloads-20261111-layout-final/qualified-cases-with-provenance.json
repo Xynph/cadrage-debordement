@@ -1,0 +1,179 @@
+{
+  "allCasesHavePassingReceipt": true,
+  "singleFinalGithubRunQualified": false,
+  "originalGithubPassed": 11,
+  "originalGithubTotal": 13,
+  "finalReadabilityPatchScopes": [
+    "reading720",
+    "reading1080"
+  ],
+  "cases": [
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "scenario": "layout-native",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 260,
+      "failures": 0,
+      "nodeSeconds": 46.737,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "scenario": "layout-stretch",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 256,
+      "failures": 0,
+      "nodeSeconds": 38.489,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "scenario": "dock-native",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 160,
+      "failures": 0,
+      "nodeSeconds": 48.082,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-guide-layout.cjs",
+      "scenario": "dock-stretch",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 160,
+      "failures": 0,
+      "nodeSeconds": 48.263,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-lineup-layout.cjs",
+      "scenario": "default",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 867,
+      "failures": 0,
+      "nodeSeconds": 40.146,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-interface-layout.cjs",
+      "scenario": "management",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 857,
+      "failures": 0,
+      "nodeSeconds": 111.891,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-interface-layout.cjs",
+      "scenario": "journal",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 33,
+      "failures": 0,
+      "nodeSeconds": 106.704,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "scenario": "reading720",
+      "origin": "local-final-patch",
+      "passed": true,
+      "checks": 254,
+      "failures": 0,
+      "nodeSeconds": 126.095,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d",
+      "gdSha256": "894365e4ce171c3e013670e7bb1729bae81941d3d53dce9dc72ebd66cfc85f71",
+      "receipt": "readability-reading720-receipt.json",
+      "previousGithubAttempt": {
+        "suite": "tests/godot-readability06.cjs",
+        "variant": "reading720",
+        "passed": false,
+        "status": 1,
+        "milliseconds": 47481,
+        "error": null,
+        "checks": 249,
+        "assertionFailures": 6
+      }
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "scenario": "reading900",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 260,
+      "failures": 0,
+      "nodeSeconds": 54.734,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "scenario": "reading1080",
+      "origin": "local-final-patch",
+      "passed": true,
+      "checks": 275,
+      "failures": 0,
+      "nodeSeconds": 87.915,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "d9c2c5792f93e2c5f7d19980b046286f9b9208869ddc1fd15a5af4bdd86c625d",
+      "gdSha256": "894365e4ce171c3e013670e7bb1729bae81941d3d53dce9dc72ebd66cfc85f71",
+      "receipt": "readability-reading1080-receipt.json",
+      "previousGithubAttempt": {
+        "suite": "tests/godot-readability06.cjs",
+        "variant": "reading1080",
+        "passed": false,
+        "status": 1,
+        "milliseconds": 60015,
+        "error": null,
+        "checks": 251,
+        "assertionFailures": 1
+      }
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "scenario": "reading1440",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 259,
+      "failures": 0,
+      "nodeSeconds": 70.621,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "scenario": "responsive",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 124,
+      "failures": 0,
+      "nodeSeconds": 46.243,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    },
+    {
+      "suite": "tests/godot-readability06.cjs",
+      "scenario": "drafts",
+      "origin": "github-561",
+      "passed": true,
+      "checks": 101,
+      "failures": 0,
+      "nodeSeconds": 53.213,
+      "head": "561f898a3cc1229878ce709a1996a8fcf5e209af",
+      "helperSha256": "2f1c4d117e9a641d36a65038c864e56591edefd701587cd6033cd3e5b645c145"
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+[
+  {
+    "file": "final-guards-1a7/report.json",
+    "source": "/workspace/work/night-followup-receipts/final-guards-1a7/report.json",
+    "source_sha256": "506154605dc2c1b4cad0b380e75c244b2b11ce1b6f0013f09c028f56b7af5f2e",
+    "original_bytes": 3930,
+    "transformation": "none"
+  },
+  {
+    "file": "final-guards-1a7/progress.jsonl",
+    "source": "/workspace/work/night-followup-receipts/final-guards-1a7/progress.jsonl",
+    "source_sha256": "cbc4b044f1f784626dea9d05e5a9bfcd2bbf71f4ea8db5ff3ed36ae066963a09",
+    "original_bytes": 6986,
+    "transformation": "none"
+  },
+  {
+    "file": "final-guards-1a7/provenance.json",
+    "source": "/workspace/work/night-followup-receipts/final-guards-1a7/provenance.json",
+    "source_sha256": "3defaec40aad8f7fe518c61ec97f92ecadb878c8b00bd2a563eda85ba63c697a",
+    "original_bytes": 1066,
+    "transformation": "none"
+  },
+  {
+    "file": "final-guards-1a7/engine.log",
+    "source": "/workspace/work/night-followup-receipts/final-guards-1a7/engine.log",
+    "source_sha256": "c2b64226c43a59c18045e173ca94472aa8d8e84abf3a0202189b86870d639621",
+    "original_bytes": 8305,
+    "transformation": "none"
+  },
+  {
+    "file": "final-guards-1a7/godot.log",
+    "source": "/workspace/work/night-followup-receipts/final-guards-1a7/godot.log",
+    "source_sha256": "bacee2d2ba4f2bc0d882a682ea8b6679acb415b31582839cca9d5131e0e1150e",
+    "original_bytes": 8382,
+    "transformation": "none"
+  },
+  {
+    "file": "final-guards-1a7/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/final-guards-1a7.log",
+    "source_sha256": "fd1f51b5109412be3a089c7234a0b95395cfc3f3d79b402c09c7a4033e3da5d3",
+    "original_bytes": 8924,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/report.json",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible/report.json",
+    "source_sha256": "c8bfb588a39d503df723be9bbe07e2abb77ad115a948202ce2188f609a3bd3da",
+    "original_bytes": 3952,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/progress.jsonl",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible/progress.jsonl",
+    "source_sha256": "1f69afa32f3436f01d6a0a539e6c3cdf0642deac325ad2cf6f8b8b4672a182cc",
+    "original_bytes": 8992,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/node-events.jsonl",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible/node-events.jsonl",
+    "source_sha256": "6739bfef28ca0992f8727ca2072fb6810be4a9625af4c6bdfeb91e2e6786d2f9",
+    "original_bytes": 187,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/provenance.json",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible/provenance.json",
+    "source_sha256": "5b28b3e5f850d2d942840633016b830392f327af77a6b1adc3d1d5f30e758620",
+    "original_bytes": 1066,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/engine.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible/engine.log",
+    "source_sha256": "097e88dabbef836476c76d305337595c697a130aba3168644e0725f29164631b",
+    "original_bytes": 10476,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/godot.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible/godot.log",
+    "source_sha256": "72604b96e94d4b556aef1258f92913d06e6daef26c543e0ed69526e5c46f4c13",
+    "original_bytes": 10553,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-visible/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-visible.log",
+    "source_sha256": "dbaf33e46f19108e4cc909ae304a609980821d424b89813b1dce7742202409c1",
+    "original_bytes": 11343,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/report.json",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/report.json",
+    "source_sha256": "6b69273b1a1c58bb193825cb6b5d02b3ec6bcb75f1689363dec0c7202d85734d",
+    "original_bytes": 5865,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/progress.jsonl",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/progress.jsonl",
+    "source_sha256": "b6dc20be535ef87a4216e3759d7f700e630c3d1eae5bccf3f12beb65e62b72c6",
+    "original_bytes": 8984,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/node-events.jsonl",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/node-events.jsonl",
+    "source_sha256": "122348c576dd910dc8d32e750ab6435408a186a66e8228b737af1ce422616969",
+    "original_bytes": 186,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/provenance.json",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/provenance.json",
+    "source_sha256": "7a05f553d1d97602572288808803feefb2e0dd0421d38bab75e93a391d6b7d1b",
+    "original_bytes": 1066,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/engine.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/engine.log",
+    "source_sha256": "2f5ea7cfabd0e48f3da32ec875880f8d946664fe078feb9d9377118b99ebaed9",
+    "original_bytes": 10468,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/godot.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/godot.log",
+    "source_sha256": "e1b129cc4e572de1fe9416a2041f6b550743dd3a66b21240b4a7197006ba136e",
+    "original_bytes": 10545,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache.log",
+    "source_sha256": "5783d3107deb7516d214a96d262f1c00a3923c315498a7346b6f876cac3abb63",
+    "original_bytes": 11330,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/report.json",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless/report.json",
+    "source_sha256": "b1d8f7d8c0dae4aff34944b240b47b4f9316872c2ac4eaeb07d1dc7297148634",
+    "original_bytes": 3548,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/progress.jsonl",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless/progress.jsonl",
+    "source_sha256": "9338dc3d13cb7e02f3b7189adf7d2bb5734b57fddf093ac15a4e1d654203dbcb",
+    "original_bytes": 8622,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/node-events.jsonl",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless/node-events.jsonl",
+    "source_sha256": "169c6263806df416f2da61097a64d87d019027df18ab388f05c3e3426d6fca4b",
+    "original_bytes": 183,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/provenance.json",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless/provenance.json",
+    "source_sha256": "9e701fa8a8a245fd3a9f500718c079b4acc9a364393f0b443af94745b22f4c32",
+    "original_bytes": 1067,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/engine.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless/engine.log",
+    "source_sha256": "44e7a38c52274480b450112bb6398bfb48703154bfc41a4345ab1340dc306c71",
+    "original_bytes": 9782,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/godot.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless/godot.log",
+    "source_sha256": "44e7a38c52274480b450112bb6398bfb48703154bfc41a4345ab1340dc306c71",
+    "original_bytes": 9782,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-headless/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-headless.log",
+    "source_sha256": "0fe14927ad34b6515422bdaa3566bd1d6f251762a2696b01535b8a3cf509b95b",
+    "original_bytes": 10555,
+    "transformation": "none"
+  },
+  {
+    "file": "final-carnet-1a7-red/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/final-carnet-1a7-red.log",
+    "source_sha256": "61c7128f9d35ed962776fe229b0508ff13ffd8a41b2eb71c578da9d746e9f4a2",
+    "original_bytes": 10538,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-carnet-green/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-carnet-green.log",
+    "source_sha256": "f271a71895e51eff9b02c7c34b1452da670644d4d9d0988b730947bd0acc39bd",
+    "original_bytes": 1482,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-carnet-graphics/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-carnet-graphics.log",
+    "source_sha256": "3a7f83e324349f91eb255a20538cd2fbc3dcea1781d6a4cad6e4ca8fed4278dd",
+    "original_bytes": 1861,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-session/wrapper.log",
+    "source": "/workspace/work/night-followup-receipts/qualification-session.log",
+    "source_sha256": "f2987d6d011b8a24d1c5828eed051e97d99abdfbaa65c63faa8e7ec39bbcd1ee",
+    "original_bytes": 1369,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-carnet-graphics/calendrier-1280.png",
+    "source": "/tmp/cd-carnet-ui-ABI28r/calendrier-1280.png",
+    "source_sha256": "52e80974930cf0b9c993aabbb00fabb87be3e3d71bc5e908ea430e754a565e5d",
+    "original_bytes": 233108,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-carnet-graphics/calendrier-1440.png",
+    "source": "/tmp/cd-carnet-ui-ABI28r/calendrier-1440.png",
+    "source_sha256": "7601b8daeb3f6b83cb4d5107b12f85d2bd3f71e0b915578f7ca371540299b7b8",
+    "original_bytes": 256713,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-carnet-graphics/calendrier-1920.png",
+    "source": "/tmp/cd-carnet-ui-ABI28r/calendrier-1920.png",
+    "source_sha256": "0f7376fa7abd5bcd0a47d050007d9f3063c9131dcee1a112bcc9c0cb3f937aec",
+    "original_bytes": 456865,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/navigation-refusee-match-2560.png",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/navigation-refusee-match-2560.png",
+    "source_sha256": "982c7b5c03b77e03d3dedb17f3c8e5efe92e5e09f65030c4d7f52d7c35d13978",
+    "original_bytes": 3404146,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-guards-cache/rencontre-historique-2560.png",
+    "source": "/workspace/work/night-followup-receipts/qualification-guards-cache/rencontre-historique-2560.png",
+    "source_sha256": "6e586d3fcee55e8b544f318c36a9beed3545220d1bfff480df38d778b6e32cb6",
+    "original_bytes": 596552,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-session/session-1440.png",
+    "source": "/tmp/cd-session-links-WsxI3M/session-1440.png",
+    "source_sha256": "f3ec95da2349036ef880f70509ab9ecea8a8f55fe827147b30cc9efe78d57347",
+    "original_bytes": 508612,
+    "transformation": "none"
+  },
+  {
+    "file": "qualification-session/report-filtered.json",
+    "source": "/tmp/cd-session-links-WsxI3M/report.json",
+    "source_sha256": "27575406f6837d2ad36a1d0a8af08737c64dbdd5bd74572577d9a0de6b2d6d5b",
+    "original_bytes": 292606,
+    "transformation": "whitelist: top-level counts/display/source/speech/captures; diagnostics stage/ticks/route/target/extra; excludes history and whole reading/model blobs"
+  },
+  {
+    "file": "qualification-session/provenance.json",
+    "source": "/tmp/cd-session-links-WsxI3M/provenance.json",
+    "source_sha256": "9058abd31b6187fe44877cc8de208f6b01cfa99a92b0460cf91840d3ef2bc8bb",
+    "original_bytes": 241,
+    "transformation": "none"
+  },
+  {
+    "file": "history-ci-guards-1a7/guards-timeout-original.log",
+    "source": "/workspace/work/closeout-ci-receipts/docs/qa/evidence/night-closeout-sdk-full-20261112/guards-timeout-original.log",
+    "source_sha256": "bb45ccb0a1dd9f56d3d5e2faac91961dff7d88078349afa61b39ab0fbde5ad9f",
+    "original_bytes": 362,
+    "transformation": "none"
+  }
+]

@@ -6,15 +6,38 @@ GitHub est la référence pour le code et l’avancement. À chaque reprise,
 vérifier le `main` de [Xynph/cadrage-debordement](https://github.com/Xynph/cadrage-debordement)
 et les PR pertinentes avant de modifier une copie locale.
 
+**Coordination Claude / Codex (obligatoire depuis le 12 novembre 2026, demande
+de Léo)** : le ticket [#591](https://github.com/Xynph/cadrage-debordement/issues/591)
+est le tableau commun des chantiers. Avant de commencer, le lire pour éviter
+tout doublon ; en commençant, réserver le chantier (ligne du tableau et
+commentaire `RÉSERVÉ`) ; signaler `PRÊT`, `FUSION EN COURS` et `FUSIONNÉ`, ainsi
+que tout changement de données figées que les autres branches devront
+régénérer. Les règles détaillées sont en tête du ticket.
+
 Les producteurs travaillent sur des branches distinctes et des périmètres
 compatibles. La description de la PR est la passation. Le
 [cycle court](docs/developpement-parallele.md) précise quand signaler une
 collision, quels tests consigner et comment préparer la reprise.
 
+**Débit CI** ([détail](docs/ci-debit-20261112.md)) : ouvrir chaque PR en
+brouillon et pousser librement (CI légère : classification et syntaxe, verdict
+« Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
+prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
+rouge de brouillon : il signifie seulement « batterie non lancée ».
+Depuis le 13/11, les suites Godot ne tournent plus sur les PR (seulement après
+fusion sur `main`) ; pour une recette Godot d'une PR prête, poser l'étiquette
+`godot-sdk`. Une PR prête dont « Validation CI » est vert se fusionne sans attendre.
+
 Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre
 2026. Un seul intégrateur arbitre et applique les protections serveur et le
 [gate officiel déployé](docs/chat-release-gate.md), avec toute autorisation
 qu’il exige. Aucun push direct sur `main`.
+
+Le 11 novembre 2026, Léo a confirmé son autorisation permanente de fusionner
+dans le périmètre demandé. Ne pas redemander cet accord déjà fourni : appliquer
+le gate officiel, les protections serveur et la coordination des responsabilités.
+Une réservation non résolue ou un contrôle rouge reste un blocage à traiter,
+sans contourner les contrôles ni élargir le périmètre autorisé.
 
 Expliquer brièvement chaque phase à Léo en français, puis avancer dans le
 périmètre autorisé. Rendre le résultat, le lien de la PR et la prochaine étape

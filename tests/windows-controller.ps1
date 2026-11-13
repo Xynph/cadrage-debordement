@@ -19,6 +19,7 @@ $script:mockWorker = $false
 function Get-CimInstance {
     param([string]$ClassName,[string]$Filter)
     if ($script:mockWorker -and $Filter -match '^ParentProcessId = ([0-9]+)$') {
+        [pscustomobject]@{Name='node.exe';CommandLine='unit-worker.cjs';ProcessId=99999998;ParentProcessId=[int]$Matches[1];ExecutablePath=$null}
         return [pscustomobject]@{Name='node.exe';CommandLine='unit-worker.cjs';ProcessId=99999999;ParentProcessId=[int]$Matches[1];ExecutablePath=$childExe}
     }
     return @()

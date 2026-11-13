@@ -122,7 +122,8 @@ test('Temps forts : la pénalité jouée à la main est montrée avec son coup d
   assert.ok(tf,niveau+' : temps fort de la pénalité jouée');
   assert.deepEqual(tf.plans.map(p=>p.kind).filter(k=>k!=='transformation').slice(-3),['penalty','quick-tap','try'],niveau+' : coup de sifflet, pénalité jouée, essai');
  }
- // Seule (sans essai), au milieu du terrain, elle reste assez intéressante pour le niveau dynamique serré.
- const seule=[events[0],{...events[1],scene:sc('penalty',50)},{...events[2],scene:sc('quick-tap',50)},{min:21,type:'play',scene:sc('carry',50,{to:{x:62,y:30}})}];
+ // Seule (sans essai), dans les 22 adverses, elle reste assez intéressante pour le niveau étendu
+ // (au milieu du terrain, c'est le moteur qui juge : depuis la sélection de main du 13/11, elle n'y suffit plus seule).
+ const seule=[{...events[0],scene:sc('carry',60,{to:{x:75,y:30}})},{...events[1],scene:sc('penalty',80)},{...events[2],scene:sc('quick-tap',80)},{min:21,type:'play',scene:sc('carry',80,{to:{x:92,y:30}})}];
  assert.ok(H.en_direct(seule,{niveau:'etendus'}).tempsForts.some(t=>t.plans.some(p=>p.kind==='quick-tap')),'étendus : montrée');
 });
