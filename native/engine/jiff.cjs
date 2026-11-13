@@ -115,7 +115,7 @@ function factory(){
    }
    for(const p of c.players){
     const e=getStatus(s,p.id)||[0,0,0];
-    if(!e[0]&&(p.age|0)<=23){e[2]=Math.min(9,e[2]+1);if(e[2]>=5)e[0]=1;}
+    if(!e[0]&&(p.age|0)<=23){e[2]=Math.min(9,e[2]+1);if(e[2]>=5){e[0]=1;if(c.id===s.club&&typeof news==='function')news(`${p.name} obtient le statut JIFF après cinq saisons de licence en France.`);}}
     setStatus(s,p.id,e);
    }
   }
