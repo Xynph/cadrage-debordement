@@ -776,7 +776,7 @@ func _systems_reception() -> void:
 		_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
 	else:
 		await _settle()
-		var activation := app.root_content.find_children("*", "Button", true, false).filter(func(b: Button): return b.text == "ACTIVER LES PARCOURS")
+		var activation: Array = app.root_content.find_children("*", "Button", true, false).filter(func(b: Button): return b.text == "ACTIVER LES PARCOURS")
 		_check(activation.is_empty() and not app.model.clubLife.academyPathways.get("active", false), "Monde Centre keeps Espoirs pathways closed without an activation button")
 	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
 	await _capture("centre-parcours-s2")
