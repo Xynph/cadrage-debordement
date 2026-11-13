@@ -188,8 +188,8 @@ func _display_reception() -> void:
 	_dismiss()
 	await _settle()
 
-func _wait() -> bool:
-	var deadline:=Time.get_ticks_msec()+20000
+func _wait(limit_ms:int=20000) -> bool:
+	var deadline:=Time.get_ticks_msec()+limit_ms
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(not app.waiting and not app.model.is_empty(),"Engine response is bounded")
 	return not app.waiting and not app.model.is_empty()
@@ -483,16 +483,15 @@ func _run() -> void:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
-		app.pack_manager.creation_mode = "common"
+		app.pack_manager.creation_mode = "world-champ"
 		app._navigate("Création")
-		_press_named("CreationDivision_accession")
-		app.selected_club=29
+		app.selected_club=103
 		app._render()
 		await _capture("creation-"+str(resolution.x))
-	_press("PRENDRE LES RÊNES DE VDX  →")
-	await _wait()
-	_check(app.model.get("meta",{}).get("mode")=="common" and int(app.model.club.id)==29,"Actual common30-club career created through UI")
-	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
+	_press_named("CreationStart")
+	await _wait(180000) # la base Monde (5 962 joueurs) se génère plus lentement que l'ancienne base à 30 clubs
+	_check(app.model.get("meta",{}).get("mode")=="world-champ" and int(app.model.club.id)==103,"Actual Monde career created through UI")
+	_check(int(app.model.get("meta",{}).get("database",{}).get("playerCount",0))>=1592,"Monde database keeps its player base")
 	_check(app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Shipped registry initializes new careers in v2")
 	if not app._has_career():await _finish();return
 	await _settle_required_meetings()
