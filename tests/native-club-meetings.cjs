@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const target=path.join(__dirname,'../native/engine/club-meetings.cjs');
 assert.ok(fs.existsSync(target),'Mandatory club meetings must have a persisted native domain');
@@ -65,13 +64,16 @@ let bridge,sequence=0,model;
 const call=(command,payload={})=>bridge.handle({id:++sequence,command,payload});
 function good(command,payload={}){const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);model=r.model;return model;}
 function bad(command,payload={}){const r=call(command,payload);assert.equal(r.ok,false,command+' must reject');return r;}
+// Une sauvegarde Monde pèse plusieurs Mio : chaque import garde une copie de sécurité et la limite (256 Mio) est vite atteinte.
+// Ce banc libère explicitement la plus ancienne copie par l'API confirmée, sans contourner le quota.
+function importGood(payload){for(let i=0;i<12;i++){const r=call('import',payload);if(r.ok){model=r.model;return model;}if(!/Copie de sécurité : limite/.test(r.error))assert.fail('import: '+r.error);const entries=good('snapshot').meta.profileSafety.entries;good('remove_checkpoint',{id:entries.at(-1).id,confirmed:true});}assert.fail('import : limite de copies');}
 const exported=()=>good('export').meta.exportText;
 const room=()=>model.clubLife.clubMeetings.scene;
 function signed(doc){let h=2166136261;for(const ch of JSON.stringify(doc.state))h=Math.imul(h^ch.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
 function conference(){const p=model.clubLife.press;return {context:p.context,answers:p.conference.questions.map(q=>({questionId:q.id,answerId:q.answers[0].id}))};}
 function settle(){let count=0;while(room()){assert.ok(++count<85,'The bounded queue must terminate');const e=room();if(!e.completed){if(e.kind==='press')good('press_conference',conference());else if(e.kind==='medical'&&!e.ackAllowed)good('medical_protocol',{context:e.context,id:e.playerId,protocol:'standard'});else good('club_meeting_ack',{meetingId:e.id});}good('club_meeting_continue',{meetingId:e.id});}}
 try{
- bridge=createBridge({dataDir:root,seed:13,now:1700000000000});good('new_career',{mode:'common',club:29});
+ bridge=createBridge({dataDir:root,seed:13,now:1700000000000});good('new_career',{mode:'world-champ',club:29});
  assert.equal(room().kind,'press');assert.deepEqual(model.clubLife.clubMeetings.queue.map(e=>e.kind),['board']);
  const file=path.join(model.meta.dataDir,'donnees.json'),pending=exported(),pendingDisk=fs.readFileSync(file);
  for(let i=0;i<3;i++)good('snapshot');good('save');assert.equal(exported(),pending,'Snapshot, export and explicit save preserve obligations exactly');
@@ -90,17 +92,17 @@ try{
  bad('club_board_project',{context:room().context,kind:'video',confirmed:false});assert.equal(room().completed,false);assert.equal(model.clubLife.clubStrategy.finance.cash,cash);
  good('club_meeting_ack',{meetingId:boardId});assert.equal(room().completed,true);assert.equal(model.clubLife.clubStrategy.finance.cash,cash);assert.equal(room().decision.value,model.clubLife.clubStrategy.board.priority);good('club_meeting_continue',{meetingId:boardId});assert.equal(room(),null);
  // Optional legacy namespaces stay absent throughout import, snapshot and saving.
- const legacy=JSON.parse(exported());delete legacy.state.clubMeetings;good('import',{text:signed(legacy)});const imported=exported();good('snapshot');good('save');assert.equal(JSON.parse(exported()).state.clubMeetings,undefined);
+ const legacy=JSON.parse(exported());delete legacy.state.clubMeetings;importGood({text:signed(legacy)});const imported=exported();good('snapshot');good('save');assert.equal(JSON.parse(exported()).state.clubMeetings,undefined);
  // A real injured roster member is the source of the first legacy medical room.
  const injured=JSON.parse(imported),person=injured.state.clubs[29].players[0];person.injury=2;person.medicalV68={version:1,protocol:'standard',stage:'blesse'};
- good('import',{text:signed(injured)});assert.equal(room(),null);good('auto_lineup');assert.equal(room().kind,'medical');assert.equal(room().playerId,person.id);assert.equal(room().ackAllowed,false);
+ importGood({text:signed(injured)});assert.equal(room(),null);good('auto_lineup');assert.equal(room().kind,'medical');assert.equal(room().playerId,person.id);assert.equal(room().ackAllowed,false);
  const medicalId=room().id,medicalContext=room().context,other=model.squad.find(p=>p.id!==person.id).id;
  bad('medical_protocol',{context:medicalContext,id:other,protocol:'prudent'});bad('medical_protocol',{context:medicalContext,id:person.id,protocol:'HIA'});bad('club_meeting_ack',{meetingId:medicalId});bad('set_player_load',{playerId:person.id,mode:'repos'});
  const medicalBefore=exported(),medicalDisk=fs.readFileSync(file);
  refuseSavePublication(file,()=>bad('medical_protocol',{context:medicalContext,id:person.id,protocol:'prudent'}));assert.equal(exported(),medicalBefore);assert.deepEqual(fs.readFileSync(file),medicalDisk);
  good('medical_protocol',{context:medicalContext,id:person.id,protocol:'prudent'});assert.equal(room().completed,true);good('club_meeting_continue',{meetingId:medicalId});good('auto_lineup');assert.equal(room(),null,'The unchanged injury does not summon another room');
- const countdown=JSON.parse(exported()),patient=countdown.state.clubs[29].players.find(p=>p.id===person.id);patient.injury=1;good('import',{text:signed(countdown)});good('auto_lineup');assert.equal(room(),null,'An ongoing injury countdown is not a new episode');
- const repriseDoc=JSON.parse(exported()),recovering=repriseDoc.state.clubs[29].players.find(p=>p.id===person.id);recovering.injury=0;recovering.medicalV68.stage='reprise';good('import',{text:signed(repriseDoc)});good('auto_lineup');assert.equal(room().kind,'medical');assert.equal(room().ackAllowed,true);
+ const countdown=JSON.parse(exported()),patient=countdown.state.clubs[29].players.find(p=>p.id===person.id);patient.injury=1;importGood({text:signed(countdown)});good('auto_lineup');assert.equal(room(),null,'An ongoing injury countdown is not a new episode');
+ const repriseDoc=JSON.parse(exported()),recovering=repriseDoc.state.clubs[29].players.find(p=>p.id===person.id);recovering.injury=0;recovering.medicalV68.stage='reprise';importGood({text:signed(repriseDoc)});good('auto_lineup');assert.equal(room().kind,'medical');assert.equal(room().ackAllowed,true);
  good('set_player_load',{playerId:person.id,mode:'repos'});assert.equal(room().completed,false,'A reprise load adjustment is real, but does not close the meeting');bad('set_player_load',{playerId:other,mode:'repos'});
  const recoveryBefore=JSON.stringify(JSON.parse(exported()).state.clubs[29].players.find(p=>p.id===person.id)),recoveryId=room().id;
  good('club_meeting_ack',{meetingId:recoveryId});assert.equal(room().decision.value,'maintain');assert.equal(JSON.stringify(JSON.parse(exported()).state.clubs[29].players.find(p=>p.id===person.id)),recoveryBefore,'Acknowledging the existing recovery plan has no invented healing effect');good('club_meeting_continue',{meetingId:recoveryId});
@@ -108,11 +110,14 @@ try{
  const finishedPress=JSON.parse(completed);finishedPress.state.clubMeetings.current.completed=false;finishedPress.state.clubMeetings.current.decision=null;bad('import',{text:signed(finishedPress)});
  const clean=exported();for(const mutate of [s=>s.clubMeetings.version=2,s=>s.clubMeetings.extra=true,s=>s.clubMeetings.receipts[0].decision.command='client_completed',s=>s.clubMeetings.receipts[0].id='forged']){const doc=JSON.parse(clean);mutate(doc.state);bad('import',{text:signed(doc)});assert.equal(exported(),clean);}
  // The real final post-match continue (not just finish_round) advances and schedules press.
- good('auto_lineup');good('begin_match');good('delegate');good('finish_round');assert.equal(room()?.kind,'press');assert.equal(room().context.week,1);settle();
+ // Monde : les deux premières semaines sont de la préparation sans rencontre du club ; on les clôt par les vraies commandes jusqu'à la première rencontre.
+ for(let weeks=0;!model.next;weeks++){assert.ok(weeks<8,'Une rencontre du club doit arriver');settle();if(!model.meta.trained){good('train',{mode:'repos'});settle();}if(model.next)break;good('finish_round');}
+ settle();const legacyMatchday=JSON.parse(exported()),matchWeek=model.meta.week;delete legacyMatchday.state.clubMeetings;
+ good('auto_lineup');good('begin_match');good('delegate');good('finish_round');assert.equal(room()?.kind,'press');assert.equal(room().context.week,matchWeek+1);settle();
  assert.equal(room(),null);const final=exported();good('shutdown');bridge=createBridge({dataDir:root});good('snapshot');assert.equal(exported(),final);
  // A legacy save can proceed straight into a match without a baseline mutation.
- good('import',{text:signed(legacy)});assert.equal(JSON.parse(exported()).state.clubMeetings,undefined);good('begin_match');good('delegate');
+ importGood({text:signed(legacyMatchday)});assert.equal(JSON.parse(exported()).state.clubMeetings,undefined);settle();good('auto_lineup');settle();good('begin_match');settle();good('delegate');
  const postDoc=JSON.parse(exported()),talk=postDoc.state.contextualMatch.current,post=talk.phases.at(-1);assert.equal(post.phase,'post');assert.equal(postDoc.state.live.finished,true);post.closed=false;post.status=null;post.decision=null;postDoc.state.contextualMatch.receipts=postDoc.state.contextualMatch.receipts.filter(r=>r.key!==talk.key||r.phase!=='post');
- good('import',{text:signed(postDoc)});good('match_talk_continue',{key:talk.key,phase:'post',skip:true});assert.equal(room()?.kind,'press','The first real legacy post-match continuation must also schedule press');settle();
+ importGood({text:signed(postDoc)});good('match_talk_continue',{key:talk.key,phase:'post',skip:true});assert.equal(room()?.kind,'press','The first real legacy post-match continuation must also schedule press');settle();
  console.log('Native club meetings production worker: mandatory queue, restart pending/completed, authoritative press/medical, strict import, no repeat, real advancement and atomic rollback PASS.');
 }finally{bridge?.close();fs.rmSync(root,{recursive:true,force:true});}

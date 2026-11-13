@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -33,7 +32,7 @@ const roster = state => state.clubs[state.club].players;
 const plan = (model, key) => support(model).training.plans.find(option => option.key === key);
 const player = (state, id) => roster(state).find(p => p.id === id);
 function staged(w, {condition=70, delegated=true, highLoad=false}={}) {
-  settleClubMeetings(w.call('new_career', { mode: 'common', club: 29 }),(command,payload)=>w.call(command,payload));
+  settleClubMeetings(w.call('new_career', { mode:'world-champ', club: 29 }),(command,payload)=>w.call(command,payload));
   const doc = w.read();
   const state = doc.state;
   state.training = 'intense';
