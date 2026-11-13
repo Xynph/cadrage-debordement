@@ -144,11 +144,11 @@ func _person(person: Dictionary,data: Dictionary) -> void:
 	if person.has("age"):
 		info.add_child(G.wrap("%s · %d ans · %s" % [str(person.get("pos","")),int(person.age),Copy.notice("scouting", person.get("origin",{}).get("label","Origine non précisée"))],13))
 		var origin: Dictionary = person.get("origin",{})
-		if origin.get("season") != null: info.add_child(G.wrap("Origine en saison %s · disponible depuis la saison %s" % [G.n(origin.season),G.n(origin.get("availableSince","—"))],12))
+		if origin.get("season") != null: info.add_child(G.wrap("Origine en saison %s · disponible depuis la saison %s" % [G.season_label(origin.season),G.season_label(origin.get("availableSince","—"))],12))
 		var evidence: Dictionary = person.get("evidence",{})
 		info.add_child(G.wrap(str(evidence.get("label","Pas encore observé")),13))
 		info.add_child(G.wrap("Niveau : %s · potentiel : %s" % [G.rating_text(person),G.potential_text(person)],13))
-		if evidence.get("seen",false): info.add_child(G.wrap("Rapport S%s · semaine %s%s" % [G.n(evidence.get("season","—")),G.n(evidence.get("week","—"))," · ancien : à actualiser" if evidence.get("stale",false) else ""],12))
+		if evidence.get("seen",false): info.add_child(G.wrap("Rapport %s · semaine %s%s" % [G.season_label(evidence.get("season","—")),G.n(evidence.get("week","—"))," · ancien : à actualiser" if evidence.get("stale",false) else ""],12))
 		info.add_child(G.wrap("Prime %s · salaire demandé %s · %d besoin(s) compatible(s)" % [G.euros(person.get("fee",0)),G.salary(person.get("salary",0)),person.get("matchingSlots",[]).size()],12))
 		for term: Dictionary in person.get("terms",[]):
 			info.add_child(G.wrap("%d saison(s) · %d échéances · engagement connu %s" % [int(term.years),int(term.payments),G.euros(term.knownCommitment)],12))

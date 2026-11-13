@@ -65,7 +65,7 @@ func _hero() -> void:
 	D.text(hero, 26, 49, "LES TERRITOIRES DU RUGBY", 32, C.GOLD, 800, 364)
 	D.line(hero, Vector2(404, 37), Vector2(547, 37), C.GOLD, 2)
 	D.text(hero, 22, 127, "La mémoire des duels.", 86, C.IVORY, 800, 1125)
-	D.text(hero, 28, 168, G.club_name(own) + "  ·  Saison " + S.count_text(app.model.meta.get("season")), 31, C.IVORY, 600, 1046)
+	D.text(hero, 28, 168, G.club_name(own) + "  ·  Saison " + G.season_label(app.model.meta.get("season")), 31, C.IVORY, 600, 1046)
 	D.text(hero, 28, 205, "Les confrontations et les réactions enregistrées au fil de votre carrière.", 26, C.MUTED, 500, 1088)
 	var pairs: Array = data.get("pairs", [])
 	var club_pairs := pairs.filter(func(pair: Dictionary): return own.get("id") in [pair.get("a"), pair.get("b")])
@@ -190,7 +190,7 @@ func _duel(pair: Dictionary) -> void:
 		var tile := D.rect(panel, Rect2(x, 410, 251, 110), Color("152522"), 7, C.LINE)
 		D.text(tile, 125, 41, entries[i][0], 26, C.MUTED, 600, 223, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(tile, 125, 87, S.count_text(pair.get(entries[i][1])), 47, entries[i][2], 800, 225, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 23, 564, "%s rencontre(s) · Dernière saison %s" % [S.count_text(pair.get("games")), S.count_text(pair.get("lastSeason"))], 28, C.IVORY, 600, RIGHT - 45)
+	D.text(panel, 23, 564, "%s rencontre(s) · Dernière saison %s" % [S.count_text(pair.get("games")), G.season_label(pair.get("lastSeason"))], 28, C.IVORY, 600, RIGHT - 45)
 	if pair.get("lastWinner") != null:
 		D.text(panel, 23, 604, "Dernier vainqueur · " + _club(pair.lastWinner), 28, C.MINT, 700, RIGHT - 45)
 	D.text(panel, 23, 648, "Intensité du duel · " + S.count_text(pair.get("tension")) + " / 100", 27, C.GOLD, 700, RIGHT - 45)
@@ -209,7 +209,7 @@ func _echoes() -> void:
 		card.accessibility_name = "Lire l’écho du match " + _club(event.get("a")) + " – " + _club(event.get("b"))
 		card.add_theme_stylebox_override("normal", C.box(Color("152221"), C.LINE, 7, 0))
 		var week: Variant = event.get("week", event.get("round"))
-		var timing := "Saison " + S.count_text(event.get("season"))
+		var timing := "Saison " + G.season_label(event.get("season"))
 		if S.count_text(week) != "—": timing += " · Semaine " + G.n(int(week) + 1)
 		if app.model.meta.get("mode") == "world" and event.has("leagueId"): timing += " · " + _division(event.leagueId)
 		D.text(card, 19, 28, timing + "  ·  " + str(PHASES.get(event.get("phase"), "Compétition")), 24, C.GOLD, 600, LEFT - 70)
@@ -257,7 +257,7 @@ func _archives() -> void:
 	var years: Array = data.get("years", [])
 	if archives.is_empty() and years.is_empty(): list.add_child(C.wrap("Aucun palmarès enregistré dans cette carrière.", 29, C.MUTED, true))
 	for archive: Dictionary in archives:
-		var card := C.card("Saison " + S.count_text(archive.get("season")))
+		var card := C.card("Saison " + G.season_label(archive.get("season")))
 		list.add_child(card)
 		var body := C.content(card)
 		var titles := World.titles(archive)
@@ -268,7 +268,7 @@ func _archives() -> void:
 		elif archive.get("champion") != null:
 			body.add_child(C.wrap(_club(archive.champion), 29, C.IVORY, true, 700))
 	for year: Dictionary in years:
-		list.add_child(C.wrap("Saison %s · %s rencontre(s) suivie(s) · %s rivalité(s) intense(s)" % [S.count_text(year.get("season")), S.count_text(year.get("matches")), S.count_text(year.get("rivalries"))], 26, C.MUTED, true))
+		list.add_child(C.wrap("Saison %s · %s rencontre(s) suivie(s) · %s rivalité(s) intense(s)" % [G.season_label(year.get("season")), S.count_text(year.get("matches")), S.count_text(year.get("rivalries"))], 26, C.MUTED, true))
 	var context := D.panel(workspace, Rect2(LEFT + 16, 0, RIGHT, 828), "Les saisons de la carrière", "calendar", "", "RivalryArchiveContext")
 	D.photo(context, "trophy", Rect2(17, 69, RIGHT - 34, 302))
 	D.text(context, 24, 425, "%d saison(s) suivie(s)" % years.size(), 37, C.IVORY, 800, RIGHT - 49)

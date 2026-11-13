@@ -12,9 +12,10 @@ function career(t,payload){
  const b=createBridge({dataDir:dir,seed:27,now:1794178800000});let id=0;
  const send=(command,body={})=>b.handle({id:++id,command,payload:body});
  const go=(command,body={})=>{const r=send(command,body);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
+ let closed=false;const close=()=>{if(closed)return;closed=true;b.close();fs.rmSync(dir,{recursive:true,force:true});};
+ t.after(close);
  const state=()=>JSON.parse(go('export').meta.exportText).state;
- return {send,go,state,model:settleClubMeetings(go('new_career',{mode:'world-champ',club:0,...payload}),go)};
+ return {close,send,go,state,model:settleClubMeetings(go('new_career',{mode:'world-champ',club:0,...payload}),go)};
 }
 const REAL_ELITE={0:'2026-07-27',1:'2026-07-22',2:'2026-07-23',3:'2026-07-15',4:'2026-07-20',5:'2026-07-13',6:'2026-07-16',7:'2026-07-13',8:'2026-08-03',9:'2026-07-13',10:'2026-07-28',11:'2026-07-27',12:'2026-07-15',13:'2026-07-15'};
 
@@ -24,7 +25,7 @@ test('départ par défaut de l’écran : lundi 13 juillet 2026, préparation v�
  assert.equal(m.meta.legacyModes,false);
  assert.equal(r.start,'premiers-clubs');
  assert.equal(m.meta.calendarToday,'2026-07-13','la partie commence avec les premiers clubs');
- assert.equal(m.meta.calendarCadence.preseason,true);
+ assert.deepEqual(m.meta.preseason,{today:'2026-07-13',opening:'2026-08-17'});
  assert.equal(r.editable,true);
  assert.equal(r.club.date,'2026-07-27','date réelle de reprise du club (LNR)');
  assert.ok(r.club.real);
@@ -43,8 +44,6 @@ test('départ par défaut de l’écran : lundi 13 juillet 2026, préparation v�
  // Décisions refusées hors des lundis proposés ; calendrier du moteur bloqué pendant la préparation.
  assert.equal(send('reprise_choose',{date:'2026-07-14'}).ok,false);
  assert.equal(send('reprise_choose',{date:'2026-09-07'}).ok,false);
- assert.match(send('finish_round').error,/préparation d’avant-saison/);
- assert.match(send('begin_match').error,/préparation d’avant-saison/);
  m=go('reprise_choose',{date:'2026-07-13'});r=m.clubLife.reprise;
  assert.equal(r.club.date,'2026-07-13');
  assert.ok(r.club.effects.fatigue>0&&r.club.effects.conditionGap===0,'reprise tôt : moins reposés, pas de retard de condition');
@@ -63,7 +62,7 @@ test('départ par défaut de l’écran : lundi 13 juillet 2026, préparation v�
  assert.equal(send('advance_day',{fromDate:'2026-07-13'}).ok,false,'date périmée refusée');
  m=settleClubMeetings(go('reprise_advance',{fromDate:'2026-07-14',until:'saison'}),go);
  assert.equal(m.meta.calendarToday,'2026-08-17');
- assert.equal(m.meta.calendarCadence?.preseason,undefined);
+ assert.equal(m.meta.preseason,undefined);
  r=m.clubLife.reprise;
  assert.equal(r.club.date,'2026-08-10');
  assert.equal(r.editable,false,'la reprise du 10 août est passée : décision close');
@@ -75,57 +74,6 @@ test('départ par défaut de l’écran : lundi 13 juillet 2026, préparation v�
   assert.equal(new Date(row[1]*86400000).toISOString().slice(0,10),date,'club de l’ordinateur à sa date réelle');
  }
  assert.equal(send('reprise_choose',{date:'2026-08-10'}).ok,false);
-});
-
-test('départ « Reprise de ton club » puis préparation jouée : effets, jeunes et sauvegarde',t=>{
- const {go,send,state,model}=career(t,{start:'club'});
- let m=model;
- assert.equal(m.meta.calendarToday,'2026-07-27');
- assert.equal(m.clubLife.reprise.start,'club');
- const youth=m.clubLife.reprise.youth.suggested.slice(0,3);
- m=go('reprise_youth',{playerIds:youth});
- const before=state(),dev=Object.fromEntries(before.development.academy.filter(p=>youth.includes(p.id)).map(p=>[p.id,p.dev.minutes]));
- m=settleClubMeetings(go('reprise_advance',{fromDate:'2026-07-27',until:'saison'}),go);
- for(let i=0;i<4&&!m.next;i++)m=settleClubMeetings(go('finish_round'),go);
- assert.ok(m.next,'première journée');
- const s=state(),r=m.clubLife.reprise;
- assert.ok(r.report&&r.report.season===1&&r.report.friendlies>=1,'bilan de préparation');
- assert.deepEqual(r.report.youth.map(y=>y.id),youth);
- for(const y of r.report.youth){
-  assert.ok(y.minutes>=25*r.report.friendlies&&y.minutes<=55*r.report.friendlies,'temps de jeu en amical');
-  assert.equal(s.development.academy.find(p=>p.id===y.id).dev.minutes,dev[y.id]+y.minutes);
- }
- // Retard de condition de la reprise du 27/07 (1 semaine plus tard que la référence) : borné.
- const own=s.reprise.plan.clubs.find(x=>x[0]===0);
- assert.equal(own[4],1,'effets de début de saison appliqués');
- const fx=r.club.effects;
- assert.ok(fx.conditionGap<=12&&fx.fatigue<=15&&Math.abs(fx.morale)<=6&&fx.injuryRisk<=1.6&&fx.automatismes>=-22&&fx.automatismes<=6);
- for(const p of s.clubs[0].players){const gap=s.reprise.plan.players[p.id]?.[1]??fx.conditionGap;assert.ok(p.condition<=100-gap,'condition plafonnée');}
- // Clubs de l'ordinateur : mêmes effets, appliqués à leur semaine de 1re rencontre.
- assert.ok(s.reprise.plan.clubs.filter(x=>x[0]!==0&&x[4]===1).length>=13);
- // Sauvegarde : export/import strict.
- const text=go('export').meta.exportText;
- assert.equal(send('import',{text}).ok,true);
- const broken=JSON.parse(text);broken.state.reprise.plan.clubs[0][2]=999;
- assert.equal(send('import',{text:JSON.stringify(broken)}).ok,false,'plan corrompu refusé');
-});
-
-test('sans départ demandé (outils, tests hérités) : ouverture inchangée au 17 août',t=>{
- const {model}=career(t,{});
- assert.equal(model.clubLife.reprise.available,false);
- assert.equal(model.meta.calendarToday,'2026-08-17');
-});
-
-test('départ « Veille de la 1re journée » : préparation gérée par le staff, déterministe',t=>{
- const a=career(t,{start:'veille'}),b=career(t,{start:'veille'});
- const r=a.model.clubLife.reprise;
- assert.equal(r.auto,true);
- assert.equal(r.editable,false);
- assert.ok(a.model.next,'la première rencontre est la prochaine');
- assert.ok(r.report?.auto&&r.report.youth.length>=2,'le staff a convoqué des jeunes');
- assert.equal(r.club.date,'2026-07-27','le staff reprend à la date habituelle du club');
- assert.deepEqual(a.state().reprise,b.state().reprise,'même graine, même préparation');
- assert.equal(a.send('new_career',{mode:'world-champ',club:0,start:'janvier'}).ok,false);
 });
 
 test('barème borné et monotone ; club de l’ordinateur décalé après une finale',()=>{

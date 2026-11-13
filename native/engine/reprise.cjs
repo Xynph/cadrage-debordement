@@ -91,7 +91,7 @@ function factory(){
  const factsOf=id=>typeof nativeFacts!=='undefined'?nativeFacts.source(id):null;
  let tourMemo=null;
  function tourists(s){
-  const key=s.season+':'+s.round+':'+(s.reprise?.today||'');
+  const key=s.season+':'+s.round+':'+(s.preseason?.today||'');
   if(tourMemo&&tourMemo.s===s&&tourMemo.key===key)return tourMemo.map;
   const map=touristsNow(s);tourMemo={s,key,map};return map;
  }
@@ -169,17 +169,27 @@ function factory(){
  const planClub=(st,id)=>st?.plan?.clubs.find(r=>r[0]===id)||null;
 
  // ------------------------------------------------------------ état
- function blank(s,start){return {version:1,start,season:s.season,today:null,choice:null,youth:null,auto:start==='veille',plan:null,report:null,history:[]};}
+ function blank(s,start){return {version:1,start,season:s.season,choice:null,youth:null,auto:start==='veille',plan:null,report:null,history:[]};}
+ // L'avant-saison (avant-saison.cjs, S.preseason) porte la date de juillet-août ; la reprise en
+ // choisit seulement le point de départ.
+ const P=()=>typeof CDPreseason!=='undefined'?CDPreseason:null;
  function create(s,start='premiers-clubs'){
   if(!active(s))return null;
   if(!STARTS.includes(start))throw Error('Départ de partie inconnu.');
-  const st=s.reprise=blank(s,start),opening=engineStart(s);
-  const own=clubDefault(s,s.club);
-  const startDay=start==='premiers-clubs'?dayOf('2026-07-13'):start==='club'?(own?.day??opening):opening;
-  if(start==='veille')handover(s);
-  else if(startDay<opening)st.today=iso(startDay);
-  else handover(s);
+  const st=s.reprise=blank(s,start),opening=engineStart(s),own=clubDefault(s,s.club);
+  if(start==='club'&&P()?.pending(s)){
+   if(own&&own.day<opening){if(own.day>dayOf(s.preseason.today))s.preseason.today=iso(own.day);}
+   else P().open(s);
+  }
+  if(start==='veille'&&P()?.pending(s))P().open(s);
+  sync(s);
   return st;
+ }
+ // Ouverture du calendrier constatée (commande, entraînement de la semaine) : plan figé.
+ function sync(s){
+  const st=s?.reprise;if(!active(s)||!st||pending(s))return false;
+  if(st.plan===null||st.plan&&st.season!==s.season&&s.phase!=='ended'){handover(s);return true;}
+  return false;
  }
  function suggestYouth(s,id,tour){
   const def=decide(s,id,s.reprise);
@@ -189,10 +199,10 @@ function factory(){
  // Passage de la préparation au calendrier du moteur (17 août en 2026) : le plan de toute la
  // planète est figé ; les effets tombent à la semaine de la 1re rencontre de chaque club.
  function handover(s){
-  const st=s.reprise;st.today=null;st.season=s.season;st.plan=build(s,st);st.report=null;
+  const st=s.reprise;st.season=s.season;st.plan=build(s,st);st.report=null;
   applyDue(s);
  }
- function pending(s){return active(s)&&s.reprise?.today?s.reprise:null;}
+ function pending(s){return active(s)&&s.reprise&&P()?.pending(s)?s.preseason:null;}
  function today(s){const p=pending(s);return p?dayOf(p.today):dayOf(W().calendarToday(s));}
 
  // ------------------------------------------------------------ application des effets
@@ -343,20 +353,13 @@ function factory(){
   if(!ids.every(id=>allowed.has(id)))throw Error('Jeune non convocable (Espoirs et -18 de 17 ans, valides).');
   st.youth=ids.slice();return {reprise:{youth:st.youth.length}};
  }
- function advanceDay(s,from){
-  const st=pending(s);if(!st)throw Error('Aucune préparation en cours.');
-  if(from!==st.today)throw Error('La date de carrière a changé.');
-  const next=dayOf(st.today)+1;
-  if(next>=engineStart(s))handover(s);else st.today=iso(next);
-  return true;
- }
  function advanceTo(s,payload){
-  const st=pending(s);if(!st)throw Error('Aucune préparation en cours.');
-  if(payload?.fromDate!==st.today)throw Error('La date de carrière a changé.');
-  const opening=engineStart(s),goal=payload.until==='saison'?opening:payload.until==='reprise'?decide(s,s.club,st):dayOf(st.today)+7;
+  const st=pending(s);if(!st)throw Error('Aucune avant-saison en cours.');
+  if(payload?.fromDate!==st.today||!['semaine','reprise','saison'].includes(payload?.until))throw Error('La date de carrière a changé.');
+  const opening=engineStart(s),goal=payload.until==='saison'?opening:payload.until==='reprise'?decide(s,s.club,s.reprise):dayOf(st.today)+7;
   if(!(goal>dayOf(st.today)))throw Error('Date déjà atteinte.');
-  if(goal>=opening)handover(s);else st.today=iso(goal);
-  return {reprise:{today:st.today}};
+  if(goal>=opening){P().open(s);sync(s);}else st.today=iso(goal);
+  return {repriseAdvance:{today:pending(s)?.today??null}};
  }
  function execute(command,payload){
   const s=S;
@@ -389,7 +392,7 @@ function factory(){
   const candidates=youthCandidates(s,s.club),suggested=suggestYouth(s,s.club,tour).map(p=>p.id);
   const row=rowFor(own.choice),selected=(own.season===st.season&&!next||st.season===t)&&st.youth!==null?st.youth:suggested;
   const opts=targetOptions(s);
-  return {available:true,start:st.start,season:t??st.season,nextSeason:next,today:st.today,calendarToday:iso(now),auto:st.auto,editable:t!==null,
+  return {available:true,start:st.start,season:t??st.season,nextSeason:next,today:pending(s)?.today??null,calendarToday:iso(now),auto:st.auto,editable:t!==null,
    club:{date:chosen===null?null:iso(chosen+shift),habitual:def?iso(def.day+shift):null,real:!!def?.real&&!next,finalShift:!!def?.finalShift,firstMatch:fm===null?null:iso(fm+shift),reference:ref,weeks:row?.weeks??null,friendlies:row?friendlyDates(row).map(d=>iso(d+shift)):[],effects:row?.fx??null},
    options:opts.map(describe),internationals:away,
    group:{total:club.players.length,atReprise:club.players.length-away.length,youth:selected.length},
@@ -405,8 +408,8 @@ function factory(){
  function validate(s){
   const st=s?.reprise;if(st===undefined)return true;
   const fail=m=>{throw Error('Reprise : '+m+'.');},check=(ok,m)=>{if(!ok)fail(m);};
-  check(object(st)&&Object.keys(st).length===10&&st.version===1&&STARTS.includes(st.start)&&(int(st.season,1,s.season)||s.phase==='ended'&&st.season===s.season+1)&&typeof st.auto==='boolean','état invalide');
-  check(st.today===null||date(st.today)&&st.season===s.season&&s.round===0&&st.plan===null,'date de préparation invalide');
+  check(object(st)&&Object.keys(st).length===9&&st.version===1&&STARTS.includes(st.start)&&(int(st.season,1,s.season)||s.phase==='ended'&&st.season===s.season+1)&&typeof st.auto==='boolean','état invalide');
+  check(st.plan!==null||st.season===s.season&&s.round===0,'plan de reprise absent');
   check(st.choice===null||int(st.choice,1,18),'date choisie invalide');
   check(st.youth===null||Array.isArray(st.youth)&&st.youth.length<=YOUTH_MAX&&st.youth.every(x=>typeof x==='string'&&x.length<=180)&&new Set(st.youth).size===st.youth.length,'jeunes convoqués invalides');
   check(Array.isArray(st.history)&&st.history.length<=HISTORY&&st.history.every(h=>object(h)&&int(h.season,1,s.season)&&date(h.date)&&Number.isFinite(h.weeks)&&int(h.friendlies,0,4)&&int(h.youth,0,YOUTH_MAX)&&int(h.minutes,0,10000)),'historique invalide');
@@ -426,8 +429,8 @@ function factory(){
   if(installed)return true;installed=true;
   const wrap=(name,after,before)=>{const original=g[name];if(typeof original!=='function')return;const wrapped=function(){if(before)before.apply(this,arguments);const result=original.apply(this,arguments);after.apply(this,[result,...arguments]);return result;};Object.assign(wrapped,original);g[name]=wrapped;};
   const live=()=>{const s=typeof S==='undefined'?null:S;return active(s)&&s.reprise?s:null;};
-  wrap('trainWeek',()=>{const s=live();if(s)capConditions(s);});
-  wrap('finishRound',()=>{const s=live();if(s&&s.phase!=='ended'){applyDue(s);capConditions(s);}});
+  wrap('trainWeek',()=>{const s=live();if(s){sync(s);capConditions(s);}});
+  wrap('finishRound',()=>{const s=live();if(s&&s.phase!=='ended'){sync(s);applyDue(s);capConditions(s);}});
   wrap('applyMatchInjuries',(result,l)=>extraInjuries(l),null);
   wrap('initializeCollectivePreparation',(result,l)=>scaleCollective(l));
   // Nouvelle saison : la décision prise en fin de saison s'applique, sinon la date habituelle.
@@ -436,8 +439,8 @@ function factory(){
    handover(s);});
   return true;
  }
- const api=Object.freeze({create,pending,advanceDay,today,project,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS});
+ const api=Object.freeze({create,sync,pending,today,project,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS});
  g.CDReprise=api;
- return {project,validate,execute,installHooks,create,pending,advanceDay,creation};
+ return {project,validate,execute,installHooks,create,sync,pending,creation};
 }
 module.exports={files,commands,factory,STARTS};

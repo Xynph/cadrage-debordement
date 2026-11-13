@@ -16,15 +16,17 @@ var counter: Label
 var previous: Button
 var next: Button
 var page_label: Label
+var focused_player_id := ""
+var show_all: Button
 
 static func entry(owner_app: Control,parent: Container) -> Button:
 	var button := G.button("SUIVRE LES JEUNES →",func(): open(owner_app))
 	button.name = "OpenYouthDevelopment"; parent.add_child(button); return button
 
-static func open(owner_app: Control) -> AcceptDialog:
+static func open(owner_app: Control, player_id: String = "") -> AcceptDialog:
 	owner_app._clear_dialogs()
 	var view: AcceptDialog = load("res://ui/youth_development_view.gd").new()
-	view.app = owner_app; view._build(); return view
+	view.app = owner_app; view.focused_player_id = player_id; view._build(); return view
 
 func _data() -> Dictionary:
 	return app.model.get("clubLife",{}).get("youthDevelopment",{})
@@ -33,6 +35,8 @@ func _build() -> void:
 	name = "YouthDevelopment"; title = "Accompagner les jeunes"; get_ok_button().text = "FERMER"
 	app._prepare_dialog(self,360)
 	_sync_drafts()
+	if not focused_player_id.is_empty():
+		state.page = 0; state.query = ""; state.stage = 0; state.review = false
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
 	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
@@ -41,15 +45,17 @@ func _build() -> void:
 	if not str(data.get("reason","")).is_empty(): body.add_child(G.wrap(str(data.reason),13))
 	if data.get("canEnable",false):
 		var enable := G.button("DÉMARRER LE SUIVI DES JEUNES",_enable); enable.name = "YouthDevelopmentEnable"; enable.disabled = app.waiting; body.add_child(enable)
+	show_all = G.button("REVENIR À TOUS LES JEUNES",func(): focused_player_id = ""; _redraw())
+	show_all.name = "YouthDevelopmentShowAll"; body.add_child(show_all)
 	var filters := HFlowContainer.new(); body.add_child(filters)
 	var search := LineEdit.new(); search.name = "YouthDevelopmentSearch"; search.placeholder_text = "Nom ou poste…"; search.text = str(state.query); search.custom_minimum_size = Vector2(230,36); filters.add_child(search)
-	search.text_changed.connect(func(value: String): state.query = value; state.page = 0; _redraw())
+	search.text_changed.connect(func(value: String): focused_player_id = ""; state.query = value; state.page = 0; _redraw())
 	var stage := OptionButton.new(); stage.name = "YouthDevelopmentStage"
 	for label in ["Tous les jeunes","Académie","Jeunes professionnels"]: stage.add_item(label)
 	stage.select(int(state.stage)); filters.add_child(stage)
-	stage.item_selected.connect(func(index: int): state.stage = index; state.page = 0; _redraw())
+	stage.item_selected.connect(func(index: int): focused_player_id = ""; state.stage = index; state.page = 0; _redraw())
 	var review_filter := CheckButton.new(); review_filter.name = "YouthReviewFilter"; review_filter.text = "PARCOURS À REVOIR"; review_filter.button_pressed = bool(state.get("review",false)); filters.add_child(review_filter)
-	review_filter.toggled.connect(func(value: bool): state.review = value; state.page = 0; _redraw())
+	review_filter.toggled.connect(func(value: bool): focused_player_id = ""; state.review = value; state.page = 0; _redraw())
 	counter = G.wrap("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
 	list = G.v(8); list.name = "YouthDevelopmentRows"; body.add_child(list)
 	var paging := G.h(8); body.add_child(paging)
@@ -100,6 +106,8 @@ func _redraw() -> void:
 	for child in list.get_children(): list.remove_child(child); child.queue_free()
 	var query := U.fold(str(state.query)).strip_edges()
 	var source: Array = _data().get("players",[])
+	show_all.visible = not focused_player_id.is_empty()
+	if not focused_player_id.is_empty(): source = source.filter(func(p: Dictionary): return str(p.id) == focused_player_id)
 	var people := source.filter(func(p: Dictionary): return (query.is_empty() or U.fold(str(p.name)+" "+str(p.pos)).contains(query)) and (int(state.stage)==0 or str(p.stage)==["","academy","professional"][int(state.stage)]))
 	if state.get("review",false): people = people.filter(func(p: Dictionary): return str(p.get("review",{}).get("status","")) in ["review","context"])
 	state.page = clampi(int(state.page),0,maxi(0,ceili(float(people.size())/PAGE_SIZE)-1))
@@ -129,7 +137,7 @@ func _person(person: Dictionary) -> void:
 	if not baseline is Dictionary or not deltas is Dictionary:
 		info.add_child(G.wrap("Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif.",13))
 	else:
-		info.add_child(G.wrap("Depuis S%s · semaine %s : niveau %s · minutes %s" % [G.n(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
+		info.add_child(G.wrap("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
 		var changes: Array[String] = []
 		for key in ATTRIBUTES:
 			var delta: float = float(deltas.get("attributes",{}).get(key,0))
@@ -137,7 +145,7 @@ func _person(person: Dictionary) -> void:
 		info.add_child(G.wrap(" · ".join(changes) if not changes.is_empty() else "Aucun changement de qualité observé depuis cette référence.",12))
 	_review(info,person)
 	for observation: Dictionary in person.get("observations",[]):
-		info.add_child(G.wrap("S%s · semaine %s · %s · niveau %s · minutes %s" % [G.n(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
+		info.add_child(G.wrap("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]): info.add_child(G.wrap(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+Copy.notice("youth", step.get("detail","")),12))
 	if not str(person.get("planReason","")).is_empty(): info.add_child(G.wrap(str(person.planReason),13,G.ALERT))
 	var draft: Dictionary = state.drafts.get(str(person.id),{})
@@ -199,7 +207,7 @@ func _review(parent: Container,person: Dictionary) -> void:
 	var recent_line := G.wrap("",13)
 	recent_line.name = "YouthRecentReview"
 	if recent.get("available",false):
-		recent_line.text = "Période récente observée · S%s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées." % [G.n(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_signed(recent.ratingDelta)]
+		recent_line.text = "Période récente observée · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées." % [G.season_label(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_signed(recent.ratingDelta)]
 	else:
 		var reasons := {"untracked":"Démarrer le suivi.","insufficient":"Attendre deux mesures comparables de cette saison et de ce stade.","club":"Référence provenant d’un autre club.","counter":"Continuité du compteur à vérifier.","context":"Continuité du parcours à vérifier."}
 		recent_line.text = "Bilan récent indisponible · "+str(reasons.get(str(recent.get("reason","insufficient")),"Observations comparables insuffisantes."))
@@ -213,8 +221,8 @@ func _review(parent: Container,person: Dictionary) -> void:
 
 	var short: Variant = review.get("shortTermObjective")
 	if short is Dictionary:
-		var line := "Décision S%s semaine %s · %s · " % [G.n(short.from.season),G.n(short.from.week),str(short.label)]
-		line += "réexamen au bilan annuel S%s" % G.n(short.due.season) if short.due.week == null else "réexamen S%s semaine %s" % [G.n(short.due.season),G.n(short.due.week)]
+		var line := "Décision %s semaine %s · %s · " % [G.season_label(short.from.season),G.n(short.from.week),str(short.label)]
+		line += "réexamen au bilan annuel %s" % G.season_label(short.due.season) if short.due.week == null else "réexamen %s semaine %s" % [G.season_label(short.due.season),G.n(short.due.week)]
 		if short.get("value") != null and short.get("target") != null: line += " · %s / %s %s depuis cette décision" % [_decimal(short.value),_decimal(short.target),str(short.unit)]
 		elif short.get("coverage")=="unavailable": line += " · mesure depuis cette décision indisponible : son observation n’est plus conservée ou son contexte a changé"
 		if short.get("expired",false): line += " · échéance de réexamen atteinte"

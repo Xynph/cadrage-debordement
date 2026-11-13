@@ -49,7 +49,7 @@ static func build(app: Control) -> Control:
 	for p: Dictionary in pairs:
 		duels.add_child(G.wrap(_club(app, p.a) + " / " + _club(app, p.b), 24, G.INK))
 		duels.add_child(G.wrap("%s rencontre(s) · %s / %s victoires · %s nul(s)" % [int(p.games), int(p.winsA), int(p.winsB), int(p.draws)], 16, G.INK))
-		duels.add_child(G.wrap("Intensité de la rivalité %s / 100 · dernière rencontre saison %s" % [int(p.tension), int(p.lastSeason)], 13))
+		duels.add_child(G.wrap("Intensité de la rivalité %s / 100 · dernière rencontre saison %s" % [int(p.tension), G.season_label(p.lastSeason)], 13))
 		G.gauge(duels, "Victoires de " + _club(app, p.a), float(p.winsA), maxf(1, float(p.games)), G.GOLD)
 		duels.add_child(G.separator())
 	duels.add_child(G.section("Palmarès conservé"))
@@ -57,11 +57,11 @@ static func build(app: Control) -> Control:
 		var champions := ClubViews.archive_titles(archive)
 		if not champions.is_empty():
 			for champion: Dictionary in champions:
-				duels.add_child(G.wrap("S%s · %s : %s" % [int(archive.season), ClubViews.competition_name(champion.leagueId, app.model), _club(app, champion.clubId)], 15))
+				duels.add_child(G.wrap("%s · %s : %s" % [G.season_label(archive.season), ClubViews.competition_name(champion.leagueId, app.model), _club(app, champion.clubId)], 15))
 		elif archive.get("champion") != null:
-			duels.add_child(G.wrap("S%s · %s" % [int(archive.season), _club(app, archive.champion)], 15))
+			duels.add_child(G.wrap("%s · %s" % [G.season_label(archive.season), _club(app, archive.champion)], 15))
 	for year: Dictionary in data.get("years", []):
-		duels.add_child(G.wrap("S%s · %s rencontres suivies · %s rivalité(s) intenses" % [int(year.season), int(year.matches), int(year.rivalries)], 13))
+		duels.add_child(G.wrap("%s · %s rencontres suivies · %s rivalité(s) intenses" % [G.season_label(year.season), int(year.matches), int(year.rivalries)], 13))
 	var right := G.panel(page, 1.25)
 	G.chapter(right, "14", "Les échos des clubs", "Les résultats qui agitent les vestiaires.", app.accent)
 	var events := G.scroll(right)
@@ -71,7 +71,7 @@ static func build(app: Control) -> Control:
 		var stage := ClubViews.phase_name(e.phase) if international else str({"league":"Championnat", "barrage":"Barrage", "semi":"Demi-finale", "final":"Finale", "access":"Accession"}.get(e.phase, e.phase))
 		var competition := ClubViews.competition_name(e.get("leagueId", ""), app.model) + " · " if international else ""
 		var unit := "semaine" if international else "journée"
-		card.add_child(G.label("S%s · %s%s · %s %s" % [int(e.season), competition, stage, unit, int(e.round) + 1], 13, G.GOLD))
+		card.add_child(G.label("%s · %s%s · %s %s" % [G.season_label(e.season), competition, stage, unit, int(e.round) + 1], 13, G.GOLD))
 		card.add_child(G.wrap("%s  %s – %s  %s" % [_club(app, e.a), int(e.home), int(e.away), _club(app, e.b)], 24, G.INK))
 		if e.winner != null and int(e.home) == int(e.away): events.add_child(G.wrap("Vainqueur après départage : " + _club(app, e.winner), 14))
 		events.add_child(G.wrap("Écho du vestiaire · " + _club(app, e.clubId) + "\n« " + str(e.reaction) + " »", 15))
