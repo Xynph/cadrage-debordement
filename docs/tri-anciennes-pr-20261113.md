@@ -76,7 +76,7 @@ Le constat est net : presque tout l'ancien lot est déjà passé dans `main` (pa
 
 - Le classement FAIT repose sur la comparaison des lignes ajoutées et sur une lecture des écarts ; il n'a pas été rejoué par l'exécution de chaque ancienne recette sur `main`.
 - Le logo est une image : sa version « Rugby Legacy 27 » reste à produire par la direction artistique (voir #666).
-- L'exécutable `OvalLegacy27.exe` et l'archive gardent leur nom : la chaîne Windows (`ci/`) l'attend ; à faire avec une recette Windows.
+- L'exécutable et l'archive ont été renommés `RugbyLegacy27…` ensuite (PR logo et exécutable du 13/11, avec recette Windows).
 - #546 (logo provisoire), #545 (caméra TV sur rail, AgX) et #548 (maquettes) restent consultables sur leurs branches, conservées.
 
 - Environnement de test Linux (Godot 4.7.2 headless) : `godot-immersive08` échoue à l'identique sur `main` et sur les branches de reprise (16 contrôles de l'Effectif et du direct) ; `godot-pack-ui` dépasse son délai ici. Les suites ciblées de chaque reprise sont vertes (voir leurs descriptions).
