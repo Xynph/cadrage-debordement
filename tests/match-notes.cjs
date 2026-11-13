@@ -194,6 +194,8 @@ test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinz
       const x = l.journee;
       assert.ok(x, l.nom + ' : équipe de la journée');
       assert.equal(x.joueurs.length, 15);
+      assert.equal(x.libelleSaison, require('../dist/season-label.js').libelleSaison(x.saison), 'libellé de saison du jeu (2026-2027), pas « Saison 1 »');
+      assert.match(x.libelleSaison, /^\d{4}-\d{4}$/);
       assert.equal(new Set(x.joueurs.map(j => j.id)).size, 15, 'quinze joueurs distincts');
       assert.deepEqual(x.joueurs.map(j => j.numero), Array.from({ length: 15 }, (_, k) => k + 1));
       x.joueurs.forEach((j, k) => assert.equal(groupeDe(j.poste), GROUPES[k], 'poste du maillot ' + (k + 1)));
@@ -215,8 +217,10 @@ test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinz
   assert.deepEqual(b.etat.matchNotes.equipes, a.etat.matchNotes.equipes);
   assert.equal(a.etat.matchNotes.version, 2);
   // Meilleur de chaque poste : personne de mieux noté au même poste n'a été écarté.
+  // Un jeune appelé pour le match peut être reparti en centre de formation depuis (aiRoster.academies, development.academy).
   const noms = new Set(); for (const c of a.etat.clubs) for (const p of c.players) noms.add(p.id);
-  for (const e of Object.values(a.etat.matchNotes.equipes)) { assert.equal(e.ids.length, 15); for (const id of e.ids) assert.ok(noms.has(id)); }
+  for (const p of [...(a.etat.development?.academy || []), ...(a.etat.aiRoster?.academies || []).flatMap(x => x.players || [])]) noms.add(p.id);
+  for (const e of Object.values(a.etat.matchNotes.equipes)) { assert.equal(e.ids.length, 15); for (const id of e.ids) assert.ok(noms.has(id), 'joueur inconnu des effectifs : ' + id); }
 });
 
 test('Équipe de la saison : seuil de matchs, départage, migration depuis la version 1', () => {

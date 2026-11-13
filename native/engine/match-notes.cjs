@@ -521,7 +521,7 @@ function factory(){
  }
  function libelle(s,id){return PHASES[id]||COUPES[id]||nomLigue(id)||String(id).replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());}
 
- function saisonLabel(s,n){const d=s.franceMode?.startSeason??s.worldMode?.startSeason;return Number.isInteger(d)?(d+n-1)+'-'+(d+n):'Saison '+n;}
+ function saisonLabel(s,n){return (typeof libelleSaison==='function'?libelleSaison:String)(n);}
  // Projection pour l'interface : équipe-type de la dernière journée et équipe de la saison de chaque championnat.
  function projeterEquipes(s,st){
   const ids=new Set(),courantes=Object.entries(st.equipes||{}).filter(([,e])=>e.saison===s.season),derniere={};
@@ -530,6 +530,8 @@ function factory(){
   for(const f of Object.values(derniere))f.ids.forEach(id=>ids.add(id));
   if(!ids.size)return {ligues:[],defaut:null};
   const joueurs=new Map();for(const c of s.clubs)for(const p of c.players)if(ids.has(p.id))joueurs.set(p.id,p);
+  // Un jeune appelé pour le match peut être reparti en centre de formation depuis : on le retrouve là aussi.
+  for(const p of [...(s.development?.academy||[]),...(s.aiRoster?.academies||[]).flatMap(x=>x.players||[])])if(ids.has(p.id)&&!joueurs.has(p.id))joueurs.set(p.id,p);
   const identite=id=>{
    const p=joueurs.get(id);if(!p)return {id,name:nomHorsClub(id),pos:'',age:0,portraitIndex:0};
    const natif=/^p\d+-(\d+)-\d+$/.exec(p.id);let h=2166136261;for(const ch of p.id){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
