@@ -19,7 +19,7 @@ test('Déterministe : même rencontre et même journal, même feuille ; aucun ti
   // Autre graine : la routine change, les faits du journal non.
   const c = MS.feuilleStatistiques(m.events, { cle: m.cle + ':autre', joueurs: m.joueurs });
   assert.notDeepEqual(a.joueurs, c.joueurs);
-  for (const s of [0, 1]) for (const champ of ['essais', 'points', 'franchissements', 'enAvant', 'penalitesConcedees', 'cartonsJaunes', 'recuperations'])
+  for (const s of [0, 1]) for (const champ of ['essais', 'points', 'enAvant', 'penalitesConcedees', 'cartonsJaunes', 'recuperations', 'conquetesVolees'])
     assert.equal(a.equipes[s][champ], c.equipes[s][champ], champ);
   // Le module ne lit ni ne modifie le générateur du moteur (Math.random) : le match reste le même.
   const source = fs.readFileSync(path.join(__dirname, '../native/engine/match-stats.cjs'), 'utf8');
@@ -57,7 +57,9 @@ test('Cohérence : équipe = somme des joueurs, faits du journal et chiffres du 
       assert.equal(e.transformations, m.stats[s].conversions, 'transformations = moteur');
       assert.equal(e.penalitesReussies, m.stats[s].goals, 'pénalités réussies = moteur');
       const carries = scenes.filter(x => x.kind === 'carry' && x.team === s && Number.isFinite(x.from?.x) && Number.isFinite(x.to?.x));
-      assert.equal(e.franchissements, carries.filter(x => Math.abs(x.to.x - x.from.x) >= 22).length, 'franchissements = courses de 22 m et plus');
+      assert.ok(e.franchissements >= carries.filter(x => Math.abs(x.to.x - x.from.x) >= 22).length, 'franchissements : au moins les courses racontées de 22 m et plus');
+      assert.equal(e.conquetesVolees, scenes.filter(x => x.kind === 'setpiece-loss' && x.team === s && x.actor != null).length, 'conquêtes volées = pertes de mise en jeu adverses du journal');
+      assert.equal(e.recuperations, scenes.filter(x => x.kind === 'turnover' && x.team === s).length, 'ballons récupérés = turnovers du journal');
       assert.equal(e.enAvant, scenes.filter(x => x.kind === 'hand-fault' && x.team === s).length, 'en-avant = journal');
       assert.equal(e.cartonsJaunes, scenes.filter(x => x.kind === 'card' && x.incident === true && x.team === s && x.card !== 'red').length);
       // Défense : plaquages ≈ courses adverses (plaquages à deux compris), au moins un par course racontée stoppée.
@@ -80,9 +82,12 @@ test('Fourchettes réalistes par poste et par équipe (40 matchs)', () => {
   const p = Object.fromEntries(r.poste.map(x => [x.poste, x]));
   const dans = (v, a, b, quoi) => assert.ok(v >= a && v <= b, `${quoi} : ${v} hors [${a}, ${b}]`);
   dans(r.equipe.plaquages, 115, 160, 'plaquages par équipe');
-  dans(r.equipe.plaquagesManques, 12, 26, 'plaquages manqués par équipe');
+  dans(r.equipe.plaquagesManques, 14, 23, 'plaquages manqués par équipe');
   dans(r.equipe.courses, 100, 140, 'courses par équipe');
-  dans(r.equipe.metres, 350, 600, 'mètres par équipe');
+  dans(r.equipe.metres, 370, 650, 'mètres par équipe');
+  dans(r.equipe.franchissements, 4, 10, 'franchissements par équipe');
+  dans(r.equipe.recuperations, 4, 9, 'ballons récupérés par équipe');
+  dans(r.equipe.reussitePlaquage, 84, 91, 'réussite au plaquage');
   dans(r.equipe.passes, 120, 180, 'passes par équipe');
   dans(r.equipe.rucks, 70, 110, 'rucks par équipe');
   dans(r.equipe.coupsDePied, 17, 32, 'coups de pied par équipe');
@@ -109,4 +114,7 @@ test('Entrées dégradées : journal vide, sans attributs, ancienne sauvegarde s
   for (const f of [sansAttributs, sansTackler]) for (const s of [0, 1]) assert.equal(f.equipes[s].points, m.score[s]);
   assert.ok(MS.lignesEquipe(sansAttributs).some(l => l.label === 'Plaquages réussis'));
   assert.equal(MS.resumeJoueur(sansAttributs, 'inconnu'), null);
+  // Point d'entrée de la fiche joueur / de l'historique (#621) : une ligne par joueur de la feuille, mêmes valeurs.
+  const [id, ligne] = Object.entries(sansAttributs.joueurs)[0];
+  assert.deepEqual(MS.resumeJoueur(sansAttributs, id), { camp: ligne.camp, numero: ligne.numero, poste: ligne.poste, ...Object.fromEntries(MS.CHAMPS_JOUEUR.map(c => [c, ligne[c]])) });
 });

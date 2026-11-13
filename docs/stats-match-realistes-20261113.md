@@ -92,7 +92,7 @@ const { feuilleStatistiques } = require('./native/engine/match-stats.cjs');
 const feuille = feuilleStatistiques(live.events, { cle: 'saison:journée:phase:paire', joueurs, borne });
 // feuille.joueurs[id] : camp, numero, poste, minutes, essais, points, transformations(Tentees),
 //   penalitesReussies/Tentees, courses, metres, franchissements, defenseursBattus, offloads, passes,
-//   plaquages, plaquagesManques, soutiensRuck, recuperations, ballonsPerdus, enAvant,
+//   plaquages, plaquagesManques, soutiensRuck, recuperations, conquetesVolees, ballonsPerdus, enAvant,
 //   penalitesConcedees, touchesGagnees, touchesVolees, lancers, coupsDePied, metresAuPied,
 //   cartonsJaunes, cartonsRouges
 // feuille.equipes[0|1] : somme de ces champs + rucks, touches, melees, reussitePlaquage, possession
@@ -131,7 +131,12 @@ const feuille = feuilleStatistiques(live.events, { cle: 'saison:journée:phase:p
   chiffre d'équipe. Le tiroir « Stats » reçoit les lignes de `lignesEquipe`. Possession, occupation,
   mêlées, touches et pénalités restent ceux du moteur ; les tests vérifient qu'ils coïncident avec la
   feuille.
-- **Fin de match** : le même écran (« Match terminé »), avec la feuille complète.
+- **Ligne « Équipe »** sous chaque XV (Mon XV et XV adverse) : plaquages, mètres et essais de toute
+  l'équipe, remplaçants sortis compris ; c'est la somme des joueurs de la feuille et le chiffre du
+  tableau de bord. L'infobulle dit la part des joueurs déjà remplacés (qui ne figurent plus parmi les
+  quinze lignes).
+- **Fin de match** : le même écran (« Match terminé »), avec la feuille complète ; la feuille du
+  journal entier est la feuille finale (propriété de préfixe, vérifiée par les tests).
 - **Fiche joueur / historique** : point d'entrée `resumeJoueur(feuille, id)` (voir « Notes de match »).
   Les fiches de `main` n'ont pas encore de statistiques par match : l'historique arrive avec la PR #621.
 - **Attributs** : le pont lit `skills` des joueurs de la rencontre (`lire.attributs()` dans
@@ -151,51 +156,70 @@ Le calcul des notes de #621 n'est pas modifié. Pour qu'il s'appuie sur la feuil
 
 ## Validation (150 matchs simulés, `node scripts/stats-match-validation.cjs 150`)
 
-Joueurs ayant joué au moins 40 minutes, valeurs ramenées à 80 minutes ; P10–P90 = plaquages des
-titulaires restés 70 minutes ou plus.
+Matchs joués par le vrai moteur (club 0 contre les 13 autres, domicile et extérieur en alternance),
+joueurs ayant joué au moins 40 minutes, valeurs ramenées à 80 minutes ; P10–P90 = plaquages des
+titulaires restés 70 minutes ou plus. Les tests (`tests/match-stats-realistes.cjs`) refont ce
+contrôle sur 40 matchs avec des bornes volontairement plus larges que les fourchettes réelles.
 
 | Poste | Plaquages réel → jeu (P10–P90) | Courses réel → jeu | Mètres réel → jeu | Passes réel → jeu | Pied réel → jeu |
 |---|---|---|---|---|---|
-| Pilier | 6–9 → 6,6 (3–11) | 6–8 → 6,7 | 10–20 → 14 | 2–3 → 2,2 | 0 → 0 |
-| Talonneur | 9–12 → 10,8 (6–18) | 6–8 → 6,2 | 12–20 → 14 | 3–4 → 3,1 | 0 → 0 |
-| Deuxième ligne | 9–13 → 9,6 (5–16) | 7–9 → 7,4 | 12–25 → 16 | 3–4 → 2,8 | 0 → 0 |
-| Flanker | 12–17 → 14,9 (9–22) | 8–10 → 8,8 | 20–35 → 32 | 3–5 → 3,5 | 0 → 0 |
-| Numéro 8 | 10–13 → 11,0 (6–18) | 11–14 → 11,2 | 30–50 → 38 | 4–6 → 4,4 | 0 → 0 |
-| Demi de mêlée | 4–7 → 4,9 (1–9) | 3–5 → 4,5 | 10–25 → 23 | 50–70 → 60 | 5–8 → 5,4 |
-| Demi d'ouverture | 5–8 → 6,2 (3–11) | 5–7 → 6,0 | 15–30 → 27 | 20–30 → 30 | 9–13 → 10,5 |
-| Centre | 7–10 → 8,4 (4–14) | 8–10 → 8,6 | 35–55 → 41 | 6–9 → 7,3 | 0–1 → 0,5 |
-| Ailier | 3–7 → 4,9 (2–9) | 7–10 → 7,9 | 45–80 → 50 | 3–6 → 4,3 | 0–2 → 0,8 |
-| Arrière | 3–6 → 4,8 (2–9) | 8–11 → 8,4 | 45–80 → 49 | 5–8 → 6,8 | 3–6 → 3,3 |
+| Pilier | 6–9 → 6,6 (3–11) | 6–8 → 6,6 | 10–20 → 14 | 2–3 → 2,2 | 0 → 0 |
+| Talonneur | 9–12 → 10,7 (5–17) | 6–8 → 6,2 | 12–20 → 13 | 3–4 → 3,1 | 0 → 0 |
+| Deuxième ligne | 9–13 → 9,9 (5–16) | 7–9 → 7,3 | 12–25 → 17 | 3–4 → 2,8 | 0 → 0 |
+| Flanker | 12–17 → 14,4 (8–22) | 8–10 → 9,1 | 20–35 → 36 | 3–5 → 3,6 | 0 → 0 |
+| Numéro 8 | 10–13 → 11,2 (7–17) | 11–14 → 11,4 | 30–50 → 48 | 4–6 → 4,6 | 0 → 0 |
+| Demi de mêlée | 4–7 → 5,0 (2–9) | 3–5 → 4,4 | 10–25 → 25 | 50–70 → 61 | 5–8 → 5,4 |
+| Demi d'ouverture | 5–8 → 6,4 (3–11) | 5–7 → 6,0 | 15–30 → 31 | 20–30 → 30 | 9–13 → 10,5 |
+| Centre | 7–10 → 8,7 (4–14) | 8–10 → 8,5 | 35–55 → 53 | 6–9 → 7,4 | 0–1 → 0,6 |
+| Ailier | 3–7 → 5,1 (2–9) | 7–10 → 7,9 | 45–80 → 59 | 3–6 → 4,3 | 0–2 → 0,8 |
+| Arrière | 3–6 → 4,7 (2–8) | 8–11 → 8,8 | 45–80 → 64 | 5–8 → 7,3 | 3–6 → 3,2 |
 
-| Équipe (par match) | Réel | Jeu avant (journal seul) | Jeu (feuille) |
-|---|---|---|---|
-| Plaquages réussis | 120–156 | 17,4 | 131 |
-| Plaquages manqués | 15–20 | 2,7 | 16,8 |
-| Réussite au plaquage | 86–90 % | — | 88,7 % |
-| Courses | 102–122 | 12,0 | 119 |
-| Mètres gagnés | 370–650 | 171 | 473 |
-| Défenseurs battus | 13–21 | — | 16,8 |
-| Passes | 140–148 | — | 149 |
-| Offloads | 4,5–9 | — | 6,3 |
-| Rucks joués | 80–116 | — | 85 |
-| Coups de pied dans le jeu | 23,5–29,7 | 11,4 (touches comprises) | 22,8 |
-| Mètres au pied | 700–1 000 (est.) | — | 724 |
-| Franchissements | 5–9 (est.) | 1,2 | 1,2 (journal) |
-| Ballons récupérés | 4,9–6,4 | 6,6 | 9,4 (journal, conquêtes volées comprises) |
-| Pénalités concédées | 9–12 (est.) | 6,3 | 6,3 (journal) |
-| En-avant | 5–7 (est.) | 3,7 | 3,7 (journal) |
+Aucun poste ne sort des fourchettes, sauf les mètres du flanker (36 pour 20–35, à la limite). Le premier
+calibrage (commit 3d9f3986) laissait les ailiers à 49 m (bas de la fourchette) et 1,4 franchissement par
+équipe : une part des courses non racontées perce maintenant la ligne (22 à 40 m, surtout les
+trois-quarts rapides), et l'échelle des mètres des courses ordinaires a été ramenée à 0,8.
 
-Points des joueurs = score des 300 feuilles d'équipe (aucun écart). Durée : 8 s pour 150 matchs.
+| Équipe (par match) | Réel | Jeu avant (journal seul) | Jeu (feuille) | Écart |
+|---|---|---|---|---|
+| Plaquages réussis | 120–156 | 17,4 | 132,5 | dans la fourchette |
+| Plaquages manqués | 15–20 | 2,7 | 19,0 | dans la fourchette |
+| Réussite au plaquage | 86–90 % | — | 87,5 % | dans la fourchette |
+| Courses | 102–122 | 12,0 | 119,8 | dans la fourchette |
+| Mètres gagnés | 370–650 | 171 | 554 | dans la fourchette (entre les deux définitions) |
+| Défenseurs battus | 13–21 | — | 19,0 | dans la fourchette |
+| Franchissements | 5–9 (est.) | 1,2 | 6,3 | dans la fourchette (avant : 1,2) |
+| Passes | 140–148 | — | 151,1 | à peine au-dessus |
+| Offloads | 4,5–9 | — | 6,5 | dans la fourchette |
+| Rucks joués | 80–116 | — | 85,1 | dans la fourchette |
+| Coups de pied dans le jeu | 23,5–29,7 | 11,4 (touches comprises) | 22,7 | légèrement sous la fourchette |
+| Mètres au pied | 700–1 000 (est.) | — | 724 | dans la fourchette |
+| Ballons récupérés (turnovers gagnés) | 4,9–6,4 | 6,6 | 7,1 | un peu au-dessus (journal) |
+| Ballons perdus | 12–15 (est.) | — | 10,7 | sous la fourchette (journal) |
+| Pénalités concédées | 9–12 (est.) | 6,3 | 6,2 | sous la fourchette (journal) |
+| En-avant | 5–7 (est.) | 3,7 | 3,7 | sous la fourchette (journal) |
+
+« Ballons récupérés » ne compte plus que les turnovers du journal (même définition que le tableau de bord
+d'origine et que les sources) ; les conquêtes volées sur touche ou mêlée adverse sont un champ à part,
+`conquetesVolees` (avant : 9,4 en les mélangeant, hors des références).
+
+Points des joueurs = score des 300 feuilles d'équipe (aucun écart). Durée : 19 s pour 150 matchs sur la
+machine partagée de la nuit.
 
 ## Limites
 
-- Les **franchissements**, **ballons récupérés**, **pénalités**, **en-avant** et **touches** sont ceux
-  du moteur (faits du journal, vérité du match) : moins de franchissements et de pénalités, un peu
-  plus de ballons récupérés que dans la réalité. Les corriger relève du moteur de match (règles,
-  résultats, séquences figées), hors de ce chantier, qui ne change aucun résultat.
-- Les mètres gagnés (473) se situent entre les deux définitions des sources (370 « gained » en URC,
-  614–656 « carry metres » au Tournoi).
+- Les **pénalités concédées**, **en-avant**, **ballons perdus**, **ballons récupérés** et **touches**
+  restent ceux du moteur (faits du journal, vérité du match) : 6,2 pénalités et 3,7 en-avant par équipe
+  pour 9–12 et 5–7 estimés dans la réalité. Inventer des pénalités non racontées créerait des coups
+  de pied de pénalité et des touches sans suite dans le jeu ; les corriger relève des règles du moteur
+  de match (résultats, séquences figées), hors de ce chantier, qui ne change aucun résultat.
+  Les **franchissements** ne sont plus dans ce cas : les courses non racontées en produisent.
+- Les mètres gagnés (554) se situent entre les deux définitions des sources (370 « gained » en URC,
+  614–656 « carry metres » au Tournoi). Les passes (151) dépassent de peu la fourchette (140–148) et
+  les coups de pied dans le jeu (22,7) sont à peine sous la leur (23,5–29,7).
 - Les moyennes par poste sont des estimations : aucune source ouverte ne publie de moyenne par poste
   pour le Top 14.
-- Les matchs sans direct (matchs IA, mode `CD_MATCH_TEMPS_FORTS=0`) n'ont pas de feuille affichée.
-  La fonction marche sur tout journal ; #621 tient un journal transitoire pour tous les matchs.
+- Les matchs sans direct (matchs IA, mode `CD_MATCH_TEMPS_FORTS=0`) n'ont pas de feuille affichée,
+  hors de l'onglet « Stats » du tiroir qui reste celui du moteur. La fonction marche sur tout journal ;
+  #621 tient un journal transitoire pour tous les matchs.
+- La feuille est recalculée à chaque projection du direct (environ 50 ms pour un match complet) ; rien
+  n'est écrit dans la sauvegarde.

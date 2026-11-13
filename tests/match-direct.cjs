@@ -228,7 +228,8 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
         assert.equal(t.plaquages.valeurs[cote], direct.feuille.equipes[cote].plaquages, 'plaquages réussis = feuille de l\'équipe');
         assert.ok(t.plaquages.valeurs[cote] >= courses, 'au moins un plaquage par course adverse stoppée');
         assert.equal(t.en_avant.valeurs[cote], lignes.filter(l => l.kind === 'hand-fault' && l.equipe === cote).length);
-        assert.equal(t.franchissements.valeurs[cote], lignes.filter(l => l.kind === 'carry' && l.equipe === cote && Math.abs(l.x - l.depuis) >= 22).length);
+        assert.equal(t.franchissements.valeurs[cote], direct.feuille.equipes[cote].franchissements);
+        assert.ok(t.franchissements.valeurs[cote] >= lignes.filter(l => l.kind === 'carry' && l.equipe === cote && Math.abs(l.x - l.depuis) >= 22).length, 'au moins les franchissements racontés');
       }
       // Notes : joueurs du manager seulement, bornées.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));

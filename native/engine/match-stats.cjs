@@ -29,11 +29,12 @@ const LIBELLES_POSTES=Object.freeze(['Pilier gauche','Talonneur','Pilier droit',
 const POIDS=Object.freeze({
  plaquages:[7.5,10,7.5,11,11,15,15,12,6,7,5.2,9,9,5.2,5.5],
  courses:  [7,7,7,8,8,9,9,12,4,6,8,9,9,8,9],
- metres:   [.9,1,.9,1.1,1.1,1.4,1.4,1.6,2.2,2.2,4.6,3,3,4.6,4.4],
+ metres:   [.9,1,.9,1.1,1.1,1.2,1.2,1.5,2.2,2.2,4.6,3,3,4.6,4.4],
  passes:   [2.5,3.5,2.5,3,3,3.5,3.5,4.5,0,30,4,7,7,4,7],
  rucks:    [15,14,15,16,16,13,13,11,1,1.5,2,4,4,2,2],
  pieds:    [0,0,0,0,0,0,0,0,7,10,1,1,0.3,1,4],
  fautes:   [1.6,1.2,1.6,1.3,1.3,1.5,1.5,1.2,.7,.5,.4,.7,.7,.4,.4],
+ cassure:  [.3,.3,.3,.4,.4,.7,.7,1,.4,1,1.8,1.6,1.6,1.8,1.8],
  enAvant:  [.6,.6,.6,.7,.7,.8,.8,.9,.6,.8,1.1,1.1,1.1,1.1,1],
  offloads: [.4,.5,.4,.7,.7,.9,.9,1,.2,.6,1.2,1.4,1.4,1.2,1.1]
 });
@@ -41,7 +42,9 @@ const POIDS=Object.freeze({
 const REGLAGES=Object.freeze({
  coursesParMinute:2.95,     // courses non racontées des deux équipes par minute pleinement jouée
  piedsParMinute:.55,        // coups de pied courants des deux équipes par minute
- manque:.165,               // part des courses avec un plaquage manqué (défense équilibrée)
+ cassure:.036,            // part des courses non racontées qui percent la ligne (franchissement, 22 à 40 m)
+ gain:.8,                 // échelle des mètres d'une course ordinaire
+ manque:.13,               // part des courses avec un plaquage manqué (défense équilibrée)
  aide:.2,                   // second plaqueur (plaquage à deux)
  passeDuDemi:.58,           // course servie par le demi de mêlée
  passesEnPlus:.8,           // autres passes par course (jeu équilibré)
@@ -60,7 +63,7 @@ const STYLES_DEFENSE=Object.freeze({equilibre:{manque:1,gain:1},pression:{manque
 const ARRETS=new Set(['scrum','lineout','penalty','kickoff','try','goal','miss','card','sub','break','touch','drop22','goalLine']);
 const NEUTRES=new Set(['message','card','sub','tactic','break','end','advantage']);
 const CHAMPS_JOUEUR=Object.freeze(['minutes','essais','points','transformations','transformationsTentees','penalitesReussies','penalitesTentees',
- 'courses','metres','franchissements','defenseursBattus','offloads','passes','plaquages','plaquagesManques','soutiensRuck','recuperations',
+ 'courses','metres','franchissements','defenseursBattus','offloads','passes','plaquages','plaquagesManques','soutiensRuck','recuperations','conquetesVolees',
  'ballonsPerdus','enAvant','penalitesConcedees','touchesGagnees','touchesVolees','lancers','coupsDePied','metresAuPied','cartonsJaunes','cartonsRouges']);
 
 // --- Tirage déterministe -------------------------------------------------------------------
@@ -94,7 +97,7 @@ function vide(){const o={};for(const c of CHAMPS_JOUEUR)o[c]=0;return o}
  * @returns {{version:number,cle:string,minute:number,fini:boolean,faits:number,equipes:Array<Object>,joueurs:Object<string,Object>}}
  *   `joueurs[id]` : camp (0/1), numero (1-15, poste de sa première entrée), poste (libellé), minutes, essais, points,
  *   transformations(Tentees), penalitesReussies/Tentees, courses, metres, franchissements, defenseursBattus, offloads,
- *   passes, plaquages, plaquagesManques, soutiensRuck, recuperations, ballonsPerdus, enAvant, penalitesConcedees,
+ *   passes, plaquages, plaquagesManques, soutiensRuck, recuperations (turnovers), conquetesVolees, ballonsPerdus, enAvant, penalitesConcedees,
  *   touchesGagnees, touchesVolees, lancers, coupsDePied, metresAuPied, cartonsJaunes, cartonsRouges.
  *   `equipes[s]` : la somme de ces champs sur les joueurs du camp, plus rucks (rucks joués), touches {lancers, gagnees},
  *   melees {introductions, gagnees}, reussitePlaquage (%), possession (part des faits joués, %).
@@ -145,15 +148,17 @@ function feuilleStatistiques(journal,options={}){
    const demi=att.find(c=>c.poste===8);
    for(let k=0;k<nombre;k++){
     let porteur=choisir(att,poidsCourse(m),r);
-    let gain=POIDS.metres[porteur.poste]*(.2+1.6*r())*style.gain*defense.gain;
-    if(r()<pManque){
+    let gain=REGLAGES.gain*POIDS.metres[porteur.poste]*(.2+1.6*r())*style.gain*defense.gain;
+    const cassure=r()<REGLAGES.cassure*POIDS.cassure[porteur.poste]*(.6+.8*attribut(infos[porteur.id],'speed')/100)*style.gain*defense.gain;
+    if(cassure){gain=22+r()*16;porteur.j.franchissements++}
+    if(cassure||r()<pManque){
      const rate=choisir(def,c=>POIDS.plaquages[c.poste]*(1.65-attribut(infos[c.id],'tackle')/100)*(c.poste>=10?1.3:1),r);
-     rate.j.plaquagesManques++;porteur.j.defenseursBattus++;gain+=1+r()*5;
+     rate.j.plaquagesManques++;porteur.j.defenseursBattus++;if(!cassure)gain+=1+r()*5;
     }
     if(demi&&porteur!==demi&&r()<REGLAGES.passeDuDemi)demi.j.passes++;
     const autres=poisson(REGLAGES.passesEnPlus*style.passes,r);
     for(let p=0;p<autres;p++){const passeur=choisir(att,c=>POIDS.passes[c.poste]*(.6+.8*attribut(infos[c.id],'pass')/100),r);passeur.j.passes++}
-    porteur.j.courses++;porteur.j.metres+=Math.min(19,gain);
+    porteur.j.courses++;porteur.j.metres+=cassure?gain:Math.min(19,gain);
     if(r()<REGLAGES.offload*style.offload*POIDS.offloads[porteur.poste]){
      porteur.j.offloads++;porteur.j.passes++;
      const soutien=choisir(att.filter(c=>c!==porteur),poidsCourse(m),r);
@@ -243,7 +248,7 @@ function feuilleStatistiques(journal,options={}){
    const mp=derniereMiseEnPlace;derniereMiseEnPlace=null;
    if(mp?.kind==='lineout'){if(kind==='setpiece-win'&&mp.team===team)equipes[team].touches.gagnees++;if(acteur){acteur.j.touchesGagnees++;if(kind==='setpiece-loss')acteur.j.touchesVolees++}}
    else if(mp?.kind==='scrum'&&kind==='setpiece-win'&&mp.team===team)equipes[team].melees.gagnees++;
-   if(kind==='setpiece-loss'&&acteur)acteur.j.recuperations++;
+   if(kind==='setpiece-loss'&&acteur)acteur.j.conquetesVolees++;
    continue;
   }
   if(kind==='hand-fault'&&team!==null){
