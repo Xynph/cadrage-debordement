@@ -57,20 +57,49 @@ Node24.22.1 sur une carrière commune club29/graine27, comparait un modèle de
 5 515 185 octets à une réponse négociée inchangée de115 octets ; calcul moteur
 chaud228–271 ms contre512–549 ms sans cache. Ce relevé décrit le prototype
 précédent et **ne mesure pas le transport de main #613**, ni le cumul actuel.
-Il ne constitue pas une recette Windows. Aucun nouveau gain chiffré n'est
-revendiqué après convergence ; le comportement du cache est vérifié sur le
-worker courant (lectures pures, copies indépendantes et invalidation).
+Il ne constitue pas une recette Windows.
+
+### Mesure du cumul en mode Monde
+
+Le [relevé Monde du 13 novembre](manager-planning-20261112/performance-world-20261113.json)
+mesure le worker `ec33f87d`, Node22.23.4, `world-champ`, club0/graine27,
+avec le transport #613 et le cache du présent lot. Première réponse :
+18 499 939 octets pour le modèle complet ; consultations inchangées :
+2 011 octets transmis. Chaque reconstruction différentielle est comparée
+intégralement au modèle complet et reste identique.
+
+Sur quatre lectures chaudes, le calcul médian est de897,5 ms sans cache et
+701 ms avec cache, soit environ22% de moins. Cet essai Cloud reste indicatif ;
+il ne mesure pas Windows, le premier chargement Godot ni toutes les commandes.
+La première réponse complète reste nécessaire.
 
 ## Réception
 
 ### Convergence avec main le 13 novembre
 
-Après le passage au mode Monde unique (#637), un test de carrière `world-champ`
-avec les anciens modes désactivés vérifie les trois intentions et l'invariance
-du reste de la sauvegarde. Les fixtures historiques déclarent explicitement
-`CD_MODES_HERITES=1` ; ce réglage reste réservé aux tests. Le registre des domaines
-de main est conservé, puis `managerPlanning` est enregistré séparément pour éviter
-les conflits récurrents lors de l'ajout de domaines par les autres branches.
+Toutes les créations de carrière propres à ce lot utilisent désormais
+`world-champ`, club0. Aucun marqueur d'activation des anciens modes ne reste
+dans ces suites. Les trois tests natifs Monde (intentions, cache, export/import
+et reprise) et les deux parcours Godot réels passent sans saut. Le retrait
+final du marqueur a été reçu avec le test Monde par défaut :
+`meta.legacyModes=false`, trois intentions et reste de la sauvegarde inchangé.
+Le scanner de la politique #639 ne signale aucune création héritée et conserve
+les cinq suites concernées dans la sélection exécutée.
+
+Le registre des domaines de main est conservé ; `managerPlanning` est enregistré
+après ses définitions, avec exports et contrôle des doublons mis à jour, pour
+éviter les conflits récurrents lors des ajouts de domaines par les autres branches.
+
+Un devis réel de prolongation indisponible peut publier un minimum de4 saisons
+pour un maximum de3. Le contrôle d'une hypothèse reste borné à1–3 saisons,
+indépendamment de ce devis. Test Godot rouge avant correction, puis vert, et
+enregistrement par le vrai worker vérifié ; aucune règle de contrat n'est changée.
+
+La CI complète et l'intégration restent des réceptions distinctes. Le13 novembre,
+les CI utilisant encore la sélection historique ont été annulées à la demande
+de Léo ; la prochaine batterie doit utiliser la sélection Monde de #639.
+
+### Historique de la convergence initiale
 
 Le cumul avec main `204eaabf`, dont #613, passe 10 tests moteur/cache et
 3 tests Godot (deux parcours de l'atelier et le vrai pont de main), sans saut.
