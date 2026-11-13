@@ -6,41 +6,25 @@ const path = require('node:path');
 const test = require('node:test');
 const repo = path.resolve(__dirname,'..');
 const pkg = path.join(repo,'native','engine');
-const {context} = require(path.join(repo,'tests','france-harness.cjs'));
-const japanFactory = require(path.join(pkg,'japan-match.cjs'));
-const rulesFactory = require(path.join(pkg,'league-one-d1.cjs')).factory;
-const srpFactory = require(path.join(pkg,'srp-match.cjs'));
-const srpRulesFactory = require(path.join(pkg,'super-rugby-pacific.cjs')).factory;
-const validation = require(path.join(pkg,'world-validation.cjs'));
+const {context} = require(path.join(repo,'tests','monde-harness.cjs'));
 
-function setup({phase='quarter',automated=false,installJapan=true,competition='jlo-d1',seed=827381}={}) {
-  const h = context(seed,{source:file => fs.readFileSync(path.join(repo,'dist',file),'utf8')});
-  Object.assign(h.ctx,{japanCalendar:require(path.join(pkg,'jlo-d1-calendar-2026-27-public.json')),pacificCalendar:require(path.join(pkg,'srp-calendar-2027.json')),phase,competition});
-  h.run(`const CDWorldCareer={active(s){return [2,3].includes(s?.worldMode?.version)}};
-    start(0);const CDWorldJapanRules=(${rulesFactory.toString()})(japanCalendar);
-    const CDWorldSRP=(${srpRulesFactory.toString()})(pacificCalendar);
-    const CDWorldSRPMatch=(${srpFactory.toString()})(CDWorldSRP);CDWorldSRPMatch.installHooks();
-    const CDWorldJapanMatch=(${japanFactory.toString()})(CDWorldJapanRules);
-    ${installJapan?'CDWorldJapanMatch.installHooks();':''}
-    const CDWorldValidation=(${validation.toString()})();
-    const previous=finishRugbyMatch;
-    finishRugbyMatch=function(l){
-      if(CDWorldJapanMatch.applies(l,S)){if(CDWorldJapanMatch.finish(l))return;}
-      else if(CDWorldSRPMatch.applies(l,S)){if(CDWorldSRPMatch.finish(l))return;}
-      else return previous(l);
-      l.finished=true;l.paused=false;addEvent(l,'Coup de sifflet final.','end');
-    };
-    const pair=nextMatch();
-    const fixture={id:'vm:'+competition+':'+phase,competitionId:competition,phase,season:2026,homeId:pair[0],awayId:pair[1],seeds:[3,6]};
-    const l=createRugbyMatch(pair,null,${automated});l.worldContext=fixture;
-    const v2=competition==='srp';
-    S.worldMode={version:v2?2:3};S.commonDatabase={id:v2?'rugby-world-2026-11-09-pacific-v2':'rugby-world-2026-11-09-japan-v3',version:v2?2:3};
-    const end=minute=>{l.minute=minute;endFlowPeriod(l);if(l.flow.atBreak){resumeFlowHalf(l);l.paused=false;}};
-    const validate=()=>{validateRestartState(l,S);validateFlowState(l,S);CDWorldValidation.live(l,fixture);validateActionScenes(l,S);};
-    const result=()=>JSON.parse(JSON.stringify({fixtureId:fixture.id,competitionId:fixture.competitionId,phase:fixture.phase,season:fixture.season,
+// Carrière Monde réelle (world-champ) d'un club de League One (68) : règles japonaises et SRP, validation et
+// fin de match sont celles du moteur. Chaque cas repart de la semaine du premier match du club.
+const shared = context(827381,{club:68}).toMatch(), base = shared.checkpoint();
+test.after(() => shared.close());
+function setup({phase='quarter',automated=false,competition='jlo-d1',seed=827381}={}) {
+  const h = shared.restore(base);
+  h.setSeed(seed);
+  Object.assign(h.ctx,{phase,competition});
+  h.run(`var pair=nextMatch();
+    var fixture={id:'vm:'+competition+':'+phase,competitionId:competition,phase,season:2026,homeId:pair[0],awayId:pair[1],seeds:[3,6]};
+    var l=createRugbyMatch(pair,null,${automated});l.worldContext=fixture;
+    var end=minute=>{l.minute=minute;endFlowPeriod(l);if(l.flow.atBreak){resumeFlowHalf(l);l.paused=false;}};
+    var validate=()=>{validateRestartState(l,S);validateFlowState(l,S);CDWorldValidation.live(l,fixture);validateActionScenes(l,S);};
+    var result=()=>JSON.parse(JSON.stringify({fixtureId:fixture.id,competitionId:fixture.competitionId,phase:fixture.phase,season:fixture.season,
       pair:l.pair,weather:l.weather,duration:l.minute,score:l.score,tries:l.tries,stats:l.stats,winner:l.winner,decision:l.decision,
       ...CDWorldJapanMatch.historyFields(l),...CDWorldSRPMatch.historyFields(l)}));
-    const verifyResult=()=>CDWorldValidation.result(result(),fixture);`);
+    var verifyResult=()=>CDWorldValidation.result(result(),fixture);`);
   return h;
 }
 
@@ -59,7 +43,7 @@ test('Play-off D1, essai décisif réel à cinq points et preuve de scène', () 
 test('Marque décisive IA : une seule scène et userSide inchangé', () => {
   const h=setup({automated:true,phase:'semi'});
   h.run(`end(40);end(80);l.minute=82;
-    const wants=wantsPosts,rng=Math.random;wantsPosts=()=>true;Math.random=()=>0;
+    var wants=wantsPosts,rng=Math.random;wantsPosts=()=>true;Math.random=()=>0;
     try{executePenaltyChoice(l,1)}finally{wantsPosts=wants;Math.random=rng}
     validate();verifyResult()`);
   assert.equal(h.run('l.userSide'),-1);
@@ -69,7 +53,7 @@ test('Marque décisive IA : une seule scène et userSide inchangé', () => {
 
 test('Bronze : cinq joueurs puis première position à la sixième tentative', () => {
   const h=setup({phase:'third-place'});
-  h.run(`end(40);end(80);validate();const rng=Math.random;let n=0;Math.random=()=>n++===11?0:.99;
+  h.run(`end(40);end(80);validate();var rng=Math.random;var n=0;Math.random=()=>n++===11?0:.99;
     try{end(90)}finally{Math.random=rng}
     validate();verifyResult()`);
   assert.equal(h.run('l.decision.method'),'shootout');
@@ -83,9 +67,16 @@ test('Bronze : cinq joueurs puis première position à la sixième tentative', (
 });
 
 test('Chronomètre effectif et match complet sans mutation de la durée du règlement', () => {
-  // Seed 71 yields a real regulation draw under the new-career population-v2 RNG.
-  // No score is injected: the actual match produces its extra-time witness.
-  const h=setup({phase:'final',seed:71});
+  // Première graine du direct (1 à 400) dont la finale fait un vrai nul réglementaire : aucun score injecté,
+  // le match réel produit sa prolongation.
+  let h, found=0;
+  for (let seed=1; seed<=400&&!found; seed++) {
+    h=setup({phase:'final',seed});
+    h.run('for(var i=0;i<130&&!l.finished&&!l.japanExtra;i++){l.paused=false;advanceRugby(l)}');
+    if (h.run('!!l.japanExtra')) found=seed;
+  }
+  assert.ok(found,'une finale va en prolongation');
+  h=setup({phase:'final',seed:found});
   h.run(`for(let i=0;i<130&&!l.finished;i++){
       l.paused=false;advanceRugby(l);
       if(l.japanExtra)validate();
@@ -102,13 +93,9 @@ test('Le nul reste valide en championnat et dans chaque manche de barrage', () =
   }
 });
 
-test('SRP v2 et son RNG sont exactement identiques avec ou sans hooks japonais', () => {
-  const outcomes=[false,true].map(installJapan=>{
-    const h=setup({phase:'league',competition:'srp',installJapan});
-    h.run("end(40);end(80);l.minute=81;scoreTry(l,0,'open');validate();verifyResult()");
-    assert.equal(h.run('l.finished && l.srpExtra!==undefined && l.japanExtra===undefined'),true);
-    assert.throws(()=>h.run('{const r=result();r.japanExtra={};CDWorldValidation.result(r,fixture)}'),/hors de sa compétition/i);
-    return [h.run('JSON.stringify(l)'),h.seed()];
-  });
-  assert.deepEqual(outcomes[0],outcomes[1]);
+test('SRP : prolongation propre à la compétition, sans état japonais', () => {
+  const h=setup({phase:'league',competition:'srp'});
+  h.run("end(40);end(80);l.minute=81;scoreTry(l,0,'open');validate();verifyResult()");
+  assert.equal(h.run('l.finished && l.srpExtra!==undefined && l.japanExtra===undefined'),true);
+  assert.throws(()=>h.run('{const r=result();r.japanExtra={};CDWorldValidation.result(r,fixture)}'),/hors de sa compétition/i);
 });

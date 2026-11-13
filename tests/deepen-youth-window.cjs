@@ -1,9 +1,12 @@
 'use strict';
-const { test } = require('node:test'), assert = require('node:assert/strict');
-const { context } = require('./harness.cjs');
+const { test, after } = require('node:test'), assert = require('node:assert/strict');
+const { context } = require('./monde-harness.cjs');
+// Carrière Monde (world-champ) partagée : chaque cas repart du même état et du même curseur RNG.
+const world=context(),base=world.checkpoint();
+after(()=>world.close());
 const { factory } = require('../native/engine/youth-development.cjs');
 function setup(pro=true) {
- const h=context(); h.run('start(0);var Y=('+factory.toString()+')();var p=S.development.academy.find(p=>p.fam===0);p.age=19;p.dev.potential=94;'+(pro?'promoteYouth(p.id);':'')+'Y.enable(S);Y.setPlan(S,p.id,"integration","scrum");var get=()=>Y.project(S).players.find(x=>x.id===p.id).review;'); return h;
+ const h=world.restore(base); h.run('var Y=('+factory.toString()+')();var p=S.development.academy.find(p=>p.fam===0);p.age=19;p.dev.potential=94;'+(pro?'promoteYouth(p.id);':'')+'Y.enable(S);Y.setPlan(S,p.id,"integration","scrum");var get=()=>Y.project(S).players.find(x=>x.id===p.id).review;'); return h;
 }
 const review=h=>JSON.parse(h.run('JSON.stringify(get())'));
 test('a recent observed window replaces lifetime surplus as evidence for a playing-time review',()=>{
@@ -14,7 +17,7 @@ test('window computes measured changes only and survives the six-observation cap
  const h=setup();h.run('for(let w=1;w<=10;w++){S.round=w;p.dev.careerMinutes+=20;p.condition=90-w;if(w===8)p.rating+=1;Y.observe(S,"recordDevelopmentMatch")}Y.validate(S)');
  const v=review(h);assert.equal(v.recent.from.week,6);assert.equal(v.recent.minutesDelta,80);assert.equal(v.recent.ratingDelta,1);assert.equal(v.recent.observations,4);assert.equal(v.recent.to.week,10);
  const before=h.run('JSON.stringify(S)');h.run('Y.project(S);Y.project(S);Y.validate(S)');assert.equal(h.run('JSON.stringify(S)'),before);
- const reload=context(JSON.parse(before));reload.run('var Y=('+factory.toString()+')();Y.validate(S)');assert.equal(reload.run('JSON.stringify(Y.project(S))'),h.run('JSON.stringify(Y.project(S))'));
+ const projected=h.run('JSON.stringify(Y.project(S))');const reload=world.restore({text:before,seed:h.seed()});reload.run('var Y=('+factory.toString()+')();Y.validate(S)');assert.equal(reload.run('JSON.stringify(Y.project(S))'),projected);
 });
 test('a revised plan gets a dated objective and excludes gains before the decision',()=>{
  const h=setup();h.run('S.round=3;p.dev.careerMinutes+=120;Y.observe(S,"recordDevelopmentMatch");Y.setPlan(S,p.id,"general",null);p.rating+=1;S.round=4;Y.observe(S,"trainWeek")');
@@ -38,9 +41,11 @@ test('mobility and promotion never mix contexts in recent evidence',()=>{
  const h=setup(false);h.run('S.round=2;p.dev.careerMinutes=80;Y.observe(S,"recordDevelopmentMatch");promoteYouth(p.id);Y.observe(S,"promoteYouth")');assert.equal(review(h).recent.available,false);
  h.run('S.youthDevelopment.rows.find(x=>x.id===p.id).baseline.clubId=1');assert.equal(review(h).recent.reason,'club');
 });
-test('annual profiles retain their annual horizon without any invented weekly growth',()=>{
- const h=require('./france-harness.cjs').context();h.run('var C=('+require('../native/engine/common-rosters.cjs').toString()+')();C.start(0);var Y=('+factory.toString()+')();var p=club().players.find(p=>p.lnrRatingsVersion===1&&p.age<=23);Y.enable(S);Y.setPlan(S,p.id,"general",null);var get=()=>Y.project(S).players.find(x=>x.id===p.id).review');
- const v=review(h).shortTermObjective;assert.equal(v.measurement,'annual-v11');assert.equal(v.due.week,null);assert.equal(v.due.season,1);
+// Moteur natif Monde : les profils officiels de l'édition progressent en cours de saison
+// (nativeInSeasonDevelopment) ; le modèle annuel « annual-v11 » n'existe que hors moteur natif.
+test('official edition profiles follow in-season growth in the native world engine',()=>{
+ const h=world.restore(base);h.run('var Y=('+factory.toString()+')();var p=club().players.find(p=>p.lnrRatingsVersion===1&&p.age<=23);Y.enable(S);Y.setPlan(S,p.id,"general",null)');
+ assert.equal(h.run('Y.project(S).players.find(x=>x.id===p.id).model'),'xp');
 });
 
 test('reconfirming the same plan in a later week creates a fresh dated objective without spending XP',()=>{

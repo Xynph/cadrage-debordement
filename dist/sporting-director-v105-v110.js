@@ -148,7 +148,7 @@
    '<h3>V109 · Indicateurs de semaine</h3><p>'+r.available+' joueurs disponibles · '+r.coverage+
    '% condition ≥70 · trésorerie '+esc(r.cashSignal)+' · '+r.pending+' projets en cours</p>'+
    '<ul>'+r.warnings.map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul>'+
-   '<h3>V110 · Revues annuelles</h3><ul>'+st.history.map(h=>'<li>S'+h.season+
+   '<h3>V110 · Revues annuelles</h3><ul>'+st.history.map(h=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+
    ' · score '+h.score+'/100 · confiance '+h.confidence+'/100 · '+h.jobs+
    ' missions · '+h.completed.length+' equipements acheves</li>').join('')+'</ul>'+
    '<p class="help">Effets bornés au bureau : budget fictif et indices internes. Pas de bonus caché en match, pas de modification du calendrier.</p></section>';

@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const press = require('../native/engine/press.cjs');
 
 const context = vm.createContext({
+  libelleSaison: require('../dist/season-label.js').libelleSaison,
   CDNativeHeadless: true,
   save() {},
   render() {},

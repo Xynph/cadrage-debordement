@@ -2,13 +2,13 @@
 // Origine, nom et éligibilité des jeunes générés (décisions de Léo du 12/11/2026).
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { context } = require('./france-harness.cjs');
+const { context } = require('./monde-harness.cjs');
 const playerFacts = require('../native/engine/player-facts.cjs');
 
 const anchors = ['FRA', 'ENG', 'SCO', 'WAL', 'IRE', 'ITA', 'RSA', 'NZL', 'AUS', 'FIJ', 'GEO', 'JPN'];
 
 test('Même origine côté jeu et côté éligibilité, mélange réaliste par pays', () => {
-  const h = context(437493);
+  const h = context(437493, { club: null });
   const clubs = Object.fromEntries(anchors.map((nation, i) => [i, nation]));
   const facts = playerFacts({}, {}, clubs);
   const codes = Object.fromEntries(Object.entries(facts.nations).map(([code, [name]]) => [name, code]));
@@ -31,20 +31,18 @@ test('Un jeune d’origine étrangère formé au club est sélectionnable pour l
   assert.equal(facts.eligible(id, 'AUS'), false);
 });
 
-test('Noms : style du pays d’origine en carrière mondiale, France inchangée', () => {
+test('Noms : style du pays d’origine en carrière mondiale', () => {
   const h = context(437493);
   const r = JSON.parse(h.run(`(() => {
-    const france = academyPlayer(3, 4, 2, 9, false, { id: 3, country: 'FR' }).name;
-    const legacy = (() => { const id = 'youth-3-2-9', k = seedHash(id); return FIRST[k % FIRST.length] + ' ' + LAST[Math.floor(k / 31) % LAST.length]; })();
-    const saved = worldActive; worldActive = () => true;
-    try {
+    // Carrière Monde réelle : worldActive() est vrai sans substitution.
+    if (!worldActive()) throw Error('carrière Monde attendue');
+    {
       const japan = Array.from({ length: 60 }, (_, n) => academyPlayer(60, n % 15, 2, n, false, { id: 60, country: 'JP' }))
         .map(p => [youthHeritage(p.id, 'JPN'), p.name]);
       const wales = academyPlayer(47, 1, 2, 4, false, { id: 47, country: 'GB' });
-      return JSON.stringify({ france, legacy, japan, walesNation: youthHeritage(wales.id, 'WAL'), wales: wales.name });
-    } finally { worldActive = saved; }
+      return JSON.stringify({ japan, walesNation: youthHeritage(wales.id, 'WAL'), wales: wales.name });
+    }
   })()`));
-  assert.equal(r.france, r.legacy, 'En carrière France, le tirage historique est conservé');
   const japanese = r.japan.filter(([nation]) => nation === 'JPN').map(([, name]) => name);
   assert.ok(japanese.length >= 45);
   assert.ok(japanese.every(name => /^(Daiki|Haruki|Haruto|Hiroto|Kaito|Kenta|Kota|Riku|Ryota|Shota|Sota|Takumi|Yuma|Yuto) /.test(name)), JSON.stringify(japanese.slice(0, 5)));

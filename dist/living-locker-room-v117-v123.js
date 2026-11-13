@@ -119,7 +119,7 @@
     '<p>Votre entretien de cette semaine a ete traite. Les consequences restent dans la sauvegarde.</p>')+
    '<details><summary>Suivi des engagements ('+pending.length+') et decisions ('+latest.length+')</summary><ul>'+
    pending.slice(-5).map(x=>'<li>Engagement : '+esc(roster(s).find(p=>p.id===x.playerId)?.name||'Joueur parti')+' · '+x.target+' minutes avant semaine '+x.dueWeek+'</li>').join('')+
-   latest.map(x=>'<li>S'+x.season+' / semaine '+x.week+' : '+esc(x.title)+' — '+esc(CHOICES[x.choice]?.label||x.choice)+'</li>').join('')+
+   latest.map(x=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' / semaine '+x.week+' : '+esc(x.title)+' — '+esc(CHOICES[x.choice]?.label||x.choice)+'</li>').join('')+
    '</ul></details><p class="help">Les decisions ajustent la satisfaction V36/V64, le moral collectif utilise par le moteur et la confiance de direction. Les engagements sont controles deux semaines plus tard.</p></section>';
  }
  function install(root){

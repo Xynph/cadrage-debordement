@@ -4,13 +4,13 @@
 // B : jeune étranger avant ses 48 mois). Origine = youthHeritage() de dist/development.js.
 const { test } = require('node:test');
 const a = require('node:assert/strict');
-const { context } = require('./france-harness.cjs');
+const { context } = require('./monde-harness.cjs');
 const Q = require('../native/engine/japan-quota-runtime.cjs');
 const eligibility = require('../native/engine/japan-eligibility.cjs');
 
 function setup() {
   const h = context(437493);
-  h.run(`start(0, 'france'); var Q = (${Q.factory.toString()})({categories: ['A-1', 'A-2', 'B', 'C']});`);
+  h.run(`var Q = (${Q.factory.toString()})({categories: ['A-1', 'A-2', 'B', 'C']});`);
   return h;
 }
 

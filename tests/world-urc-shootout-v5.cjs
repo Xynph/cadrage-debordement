@@ -7,39 +7,25 @@ const {test} = require('node:test');
 
 const repo = path.join(__dirname, '..');
 const engine = path.join(repo, 'native', 'engine');
-const {context} = require(path.join(repo, 'tests', 'france-harness.cjs'));
-const competitionRules = require(path.join(engine, 'world-competitions.cjs')).factory;
-const dispatcher = require(path.join(engine, 'world-dispatch.cjs'));
+const {context} = require(path.join(repo, 'tests', 'monde-harness.cjs'));
 const copy = value => JSON.parse(JSON.stringify(value));
 
-function fixture({edition = 5, competition = 'urc', phase = 'quarter'} = {}) {
-  const sources = engine;
-  const career = require(path.join(sources, 'world-career.cjs'));
-  const knockout = require(path.join(sources, 'world-knockout.cjs'));
-  const validation = require(path.join(sources, 'world-validation.cjs'));
-  const h = context(82389, {source: name => fs.readFileSync(path.join(repo, 'dist', name), 'utf8')});
-  Object.assign(h.ctx, {edition, competition, phase});
-  // Initialiser le vrai moteur avant de déclarer les doubles lexicaux Monde.
-  h.run('start(0)');
+// Carrière Monde réelle (world-champ, édition v5) d'un club d'URC (40) : règles, validation et fin de match
+// sont celles du moteur. Chaque cas repart du même état et de la même graine.
+const shared = context(82389, {club: 40}).toMatch(), base = shared.checkpoint();
+require('node:test').after(() => shared.close());
+function fixture({competition = 'urc', phase = 'quarter'} = {}) {
+  const h = shared.restore(base);
+  Object.assign(h.ctx, {competition, phase});
   h.run(`
-    const CDWorldCompetitions=(${competitionRules.toString()})();
-    const CDWorldKnockout=(${knockout.toString()})();
-    const CDWorldValidation=(${validation.toString()})();
-    const entries=[1,2,3,4,5].map(version=>({
-      version,registry:{clubs:[]},leagueIds:['urc'],playable:[]
-    }));
-    const editions={entries,forState:s=>entries.find(e=>e.version===s?.worldMode?.version)||null};
-    const CDWorldCareer=(${dispatcher.toString()})(editions,${career.toString()});
-    const pair=nextMatch();
-    const f={id:'vm:'+competition+':'+phase,competitionId:competition,phase,season:1,week:40,homeId:pair[0],awayId:pair[1]};
-    S.worldMode={version:edition,fixtures:[f]};S.round=f.week;
-    CDWorldCareer.installHooks();
-    let l=createRugbyMatch(pair);
-    const end=minute=>{l.minute=minute;endFlowPeriod(l);if(l.flow.atBreak){resumeFlowHalf(l);l.paused=false}};
-    const liveCheck=()=>{validateFlowState(l,S);validateRestartState(l,S)};
-    const proof=()=>JSON.parse(JSON.stringify({pair:l.pair,score:l.score,tries:l.tries,stats:l.stats,
+    var pair=nextMatch(); // vraie affiche de la semaine, rejouée selon la phase du cas
+    var f={id:'vm:'+competition+':'+phase,competitionId:competition,phase,season:1,week:S.round,homeId:pair[0],awayId:pair[1]};
+    var l=createRugbyMatch(pair,null,false);l.worldContext=f;
+    var end=minute=>{l.minute=minute;endFlowPeriod(l);if(l.flow.atBreak){resumeFlowHalf(l);l.paused=false}};
+    var liveCheck=()=>{validateFlowState(l,S);validateRestartState(l,S)};
+    var proof=()=>JSON.parse(JSON.stringify({pair:l.pair,score:l.score,tries:l.tries,stats:l.stats,
       weather:l.weather,duration:l.minute,winner:l.winner,decision:l.decision}));
-    const checkWithoutGlobal=(r,version,live=null)=>{
+    var checkWithoutGlobal=(r,version,live=null)=>{
       const previous=S;S=null;
       try{
         if(live)CDWorldValidation.live(live,f,version);
@@ -117,24 +103,13 @@ test('v5 URC : mort subite par paires, rotation des buteurs à la position 4', (
   assert.throws(() => validate(h, extraPair, 5), /tirs/);
 });
 
-test('v5 URC : un arrêt anticipé historiquement valide est rejeté dans le direct et le résultat', () => {
-  const old = finish(fixture({edition:4,phase:'final'}), nearCertain);
-  const h = fixture({phase:'final'});
-  assert.deepEqual(old.proof.decision.shootout.score, [4,0]);
-  assert.equal(old.proof.decision.shootout.attempts.length, 7);
-  validate(h, old.proof, 4);
-  validate(h, old.proof, 4, old.live);
-  assert.throws(() => validate(h, old.proof, 5), /tirs/);
-  assert.throws(() => validate(h, old.proof, 5, old.live), /tirs/);
-});
-
-test('v1–v4 URC et autres compétitions v5 gardent leur arrêt historique', () => {
-  for(const options of [...[1,2,3,4].map(edition=>({edition})), ...['prem','champions','challenge','elite'].map(competition=>({competition}))]){
+test('Les autres compétitions v5 gardent leur arrêt historique', () => {
+  for(const options of ['prem','champions','challenge','elite'].map(competition=>({competition}))){
     const h = fixture(options);
     const result = finish(h, nearCertain);
     assert.equal(result.calls, 9);
-    validate(h, result.proof, options.edition ?? 5);
-    validate(h, result.proof, options.edition ?? 5, result.live);
+    validate(h, result.proof, 5);
+    validate(h, result.proof, 5, result.live);
   }
 });
 

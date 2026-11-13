@@ -1,8 +1,11 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {test,after}=require('node:test'),assert=require('node:assert/strict');
+const {context}=require('./monde-harness.cjs');
+// Carrière Monde (world-champ) partagée : chaque cas repart du même état et du même curseur RNG.
+const world=context(),base=world.checkpoint();
+after(()=>world.close());
 const {factory}=require('../native/engine/youth-development.cjs');
-function setup(){const h=context();h.run('start(0);var Y=('+factory.toString()+')();var p=S.development.academy.find(p=>p.fam===0);p.age=19;p.dev.potential=94;var get=()=>Y.project(S).players.find(x=>x.id===p.id).review;');return h;}
+function setup(){const h=world.restore(base);h.run('var Y=('+factory.toString()+')();var p=S.development.academy.find(p=>p.fam===0);p.age=19;p.dev.potential=94;var get=()=>Y.project(S).players.find(x=>x.id===p.id).review;');return h;}
 function review(h){assert.equal(h.run('typeof get()'),'object','each young player must expose a factual interim review');return JSON.parse(h.run('JSON.stringify(get())'));}
 test('untracked young player has no fabricated assessment or minute delta',()=>{
  const h=setup(),v=review(h);assert.equal(v.status,'untracked');assert.equal(v.evidence,null);assert.equal(v.objective,null);assert.equal(v.recommendation.key,'start');
@@ -31,14 +34,16 @@ test('specialist objective changes after reorientation but never reattributes th
  const h=setup();h.run('Y.enable(S);Y.setPlan(S,p.id,"specialist","scrum");p.skills.scrum+=1');assert.equal(review(h).objective.key,'quality');assert.equal(review(h).objective.achieved,true);
  h.run('Y.setPlan(S,p.id,"integration","scrum")');const v=review(h);assert.equal(v.objective.key,'integration');assert.match(v.basis,/ne prouvent pas/i);
 });
-test('annual model uses the real annual review and does not infer stagnation',()=>{
- const h=require('./france-harness.cjs').context();h.run('var C=('+require('../native/engine/common-rosters.cjs').toString()+')();C.start(0);var Y=('+factory.toString()+')();var p=club().players.find(p=>p.lnrRatingsVersion===1&&p.age<=23);Y.enable(S);Y.setPlan(S,p.id,"general",null);S.round=5;var get=()=>Y.project(S).players.find(x=>x.id===p.id).review');
- const v=review(h);assert.equal(v.objective.measurement,'annual-v11');assert.match(v.basis,/annuel/);assert.equal(v.evidence.ratingDelta,0);
+// Moteur natif Monde : les profils officiels de l'édition progressent en cours de saison
+// (nativeInSeasonDevelopment) ; le modèle annuel « annual-v11 » n'existe que hors moteur natif.
+test('official edition profiles follow in-season growth in the native world engine',()=>{
+ const h=world.restore(base);h.run('var Y=('+factory.toString()+')();var p=club().players.find(p=>p.lnrRatingsVersion===1&&p.age<=23);Y.enable(S);Y.setPlan(S,p.id,"general",null)');
+ assert.equal(h.run('Y.project(S).players.find(x=>x.id===p.id).model'),'xp');
 });
 test('old-club reference cannot assess new-club playing time and projection is immutable across reload',()=>{
  const h=setup();h.run('Y.enable(S);S.youthDevelopment.rows.find(x=>x.id===p.id).baseline.clubId=1;S.round=5');assert.equal(review(h).status,'context');assert.equal(review(h).evidence,null);
  const before=h.run('JSON.stringify(S)');h.run('Y.project(S);Y.project(S);Y.validate(S)');assert.equal(h.run('JSON.stringify(S)'),before);
- const reload=context(JSON.parse(before));reload.run('var Y=('+factory.toString()+')();Y.validate(S)');assert.equal(reload.run('JSON.stringify(S)'),before);assert.equal(reload.run('JSON.stringify(Y.project(S))'),h.run('JSON.stringify(Y.project(S))'));
+ const projected=h.run('JSON.stringify(Y.project(S))');const reload=world.restore({text:before,seed:h.seed()});reload.run('var Y=('+factory.toString()+')();Y.validate(S)');assert.equal(reload.run('JSON.stringify(S)'),before);assert.equal(reload.run('JSON.stringify(Y.project(S))'),projected);
 });
 test('players above the tracked age remain outside the review list',()=>{
  const h=setup();h.run('p.age=25');assert.equal(h.run('Y.project(S).players.some(x=>x.id===p.id)'),false);
