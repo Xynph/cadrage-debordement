@@ -24,6 +24,9 @@ brouillon et pousser librement (CI légère : classification et syntaxe, verdict
 « Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
 prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
 rouge de brouillon : il signifie seulement « batterie non lancée ».
+Depuis le 13/11, les suites Godot ne tournent plus sur les PR (seulement après
+fusion sur `main`) ; pour une recette Godot d'une PR prête, poser l'étiquette
+`godot-sdk`. Une PR prête dont « Validation CI » est vert se fusionne sans attendre.
 
 Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre
 2026. Un seul intégrateur arbitre et applique les protections serveur et le

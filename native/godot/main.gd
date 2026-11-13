@@ -3,7 +3,8 @@ extends Control
 const G = preload("res://ui/game_skin.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
-const COMMAND_WAIT_REVEAL_SECONDS := 0.25
+## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
+const COMMAND_WAIT_REVEAL_SECONDS := 0.5
 const COMMAND_WAIT_MESSAGES := {
 	"new_career": "Création de la carrière…",
 	"import": "Importation de la carrière…",
@@ -360,7 +361,9 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if waiting:
 		if command == "tick": return false
 		# Après un tick ou une décision légère, la décision suivante attend son tour.
-		if (last_command == "tick" or not shows_wait_panel(last_command)) and last_command != "snapshot" and queued_action.is_empty():
+		# La même décision répétée n’attend pas : sa charge utile a été lue sur le
+		# modèle d’avant la réponse en cours et écraserait celle-ci (ex. set_tactics).
+		if (last_command == "tick" or (not shows_wait_panel(last_command) and command != last_command)) and last_command != "snapshot" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			_present_command_wait(command)
 			return true
@@ -1149,7 +1152,8 @@ func _close(exit_code: int = 0) -> void:
 
 func _input(event: InputEvent) -> void:
 	# Prevent the focused control and shortcuts from bypassing the pointer veil.
-	if is_instance_valid(command_wait_overlay) and command_wait_overlay.visible and (event is InputEventKey or event is InputEventJoypadButton):
+	# The fade-out after a response no longer holds input (like the pointer).
+	if is_instance_valid(command_wait_overlay) and command_wait_overlay.blocks_input() and (event is InputEventKey or event is InputEventJoypadButton):
 		get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
