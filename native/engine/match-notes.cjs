@@ -304,7 +304,12 @@ function factory(){
  }
  // Libellé d'une compétition enregistrée (phase France ou identifiant de compétition mondiale).
  const PHASES={league:'Championnat',barrage:'Barrage',semi:'Demi-finale',final:'Finale',playoff:'Phase finale'};
- function libelle(s,id){return PHASES[id]||s.worldMode?.leagues?.[id]?.name||String(id).replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());}
+ const COUPES={champions:'Coupe des champions',challenge:'Challenge européen'};let ligues=null;
+ function nomLigue(id){
+  if(!ligues){ligues={};try{for(const t of [typeof nativeWorldRegistryText==='string'?nativeWorldRegistryText:null,typeof nativeWorldChampRegistryText==='string'?nativeWorldChampRegistryText:null])if(t)for(const l of JSON.parse(t).leagues||[])ligues[l.id]=l.name;}catch(e){}}
+  return ligues[id]||null;
+ }
+ function libelle(s,id){return PHASES[id]||COUPES[id]||nomLigue(id)||String(id).replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());}
  // Projection (clubLife.matchNotes) : effectif du manager, détail, distinctions, dernier match.
  function project(){
   const s=state(),st=s?.matchNotes;
