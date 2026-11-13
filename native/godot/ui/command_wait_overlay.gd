@@ -146,6 +146,12 @@ func panel_visible() -> bool:
 	return visible and _frame.visible and not _closing
 
 
+## Vrai tant que le voile retient clics et clavier (attente ou panneau affiché).
+## Pendant le fondu de sortie, la réponse est déjà reçue : rien n’est retenu.
+func blocks_input() -> bool:
+	return visible and not _closing
+
+
 func _finish_dismiss() -> void:
 	_kill_tween()
 	_closing = false
