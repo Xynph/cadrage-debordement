@@ -61,6 +61,10 @@ budget() {
     tests/native-club-support-season.cjs) echo 1200s ;;
     tests/native-club-world-worker.cjs) echo 900s ;;
     tests/native-club-strategy.cjs) echo 600s ;;
+    # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
+    tests/performance-analysis.cjs) echo 600s ;;
+    # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
+    tests/match-notes.cjs) echo 900s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
@@ -68,7 +72,6 @@ budget() {
     tests/starting-salaries.cjs) echo 600s ;;
     tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) echo 900s ;;
     tests/deepen-staff-native.cjs) echo 1200s ;;
-    tests/custom-competition-worker.cjs) echo 900s ;;
     # Réception locale complète 233 s ; conserve créations, Rooms et refus.
     tests/youth-scout-native.cjs) echo 600s ;;
     tests/youth-matches-worker.cjs) echo 420s ;;
@@ -76,10 +79,15 @@ budget() {
     tests/world-catalogue-dedup.cjs|tests/world-venue-media.cjs) echo 300s ;;
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
     # PASS CI 42909005768 : 179,80/159,68 s, marge finie avant le cap 180.
-    tests/france-career.cjs|tests/world-worker.cjs) echo 300s ;;
+    tests/world-worker.cjs) echo 300s ;;
     # native-fiction-sheet : délai de 180 s atteint sous charge (Suites 6/10, run 43262510105) ; marge doublée, assertions inchangées.
     tests/native-fiction-sheet.cjs) echo 420s ;;
+    # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
+    tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
+    tests/deepen-analytics.cjs) echo 900s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
+    # Tests migrés en carrière Monde : dépassent le délai par défaut (native-relationships 273 s en local).
+    tests/performance-analysis.cjs|tests/native-relationships.cjs|tests/player-population-capacity.cjs) echo 600s ;;
     *) echo 180s ;;
   esac
 }

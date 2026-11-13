@@ -22,6 +22,8 @@
 //                                 seul le premier temps fort de chaque type est enregistré, à vitesse réelle, les autres
 //                                 passent à vitesse 6 sans image ; la capture s'arrête quand tous ont été vus
 //   CD_MATCH_TEMPS_FORTS_TOUCHE   combinaison de touche du club dirigé avant le coup d'envoi (ex. maul : ballons portés)
+//   CD_MATCH_TEMPS_FORTS_EXPORT   export d'une carrière Monde arrêtée au match (à la place de l'ancien harnais)
+//   CD_MATCH_TEMPS_FORTS_LIAISONS=1  liaisons seulement (pré-roll, liaison, suite) ; _LIAISONS_MAX : arrêt après N liaisons
 //   CD_MATCH_TEMPS_FORTS_DEPUIS   minute à partir de laquelle les temps forts sont joués (avant : commentaire seul)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
@@ -37,13 +39,21 @@ if(!Number.isInteger(club)||club<0){console.error('CD_MATCH_TEMPS_FORTS_CLUB inv
 const seed=process.env.CD_MATCH_TEMPS_FORTS_SEED||'7';
 if(!/^(0|[1-9]\d*)$/.test(seed)){console.error('CD_MATCH_TEMPS_FORTS_SEED invalide.');process.exit(2);}
 const work=fs.mkdtempSync(path.join(os.tmpdir(),'cd-temps-forts-capture-'));
-const {context}=require('./harness.cjs');
-const source=context();
-const touche=process.env.CD_MATCH_TEMPS_FORTS_TOUCHE||'';
-if(touche&&!/^[a-z]+$/.test(touche)){console.error('CD_MATCH_TEMPS_FORTS_TOUCHE invalide.');process.exit(2);}
-source.run(`start(${club});${touche?`setPlaybookChoice('lineout','${touche}');`:''}beginMatch()`);
 const save=path.join(work,'live.json');
-fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
+// CD_MATCH_TEMPS_FORTS_EXPORT : export d'une carrière Monde arrêtée au match (seul mode de carrière
+// depuis le 13/11/2026) ; sans lui, l'ancien harnais (à migrer).
+const exporte=process.env.CD_MATCH_TEMPS_FORTS_EXPORT||'';
+if(exporte){
+ if(!path.isAbsolute(exporte)||!fs.existsSync(exporte)){console.error('CD_MATCH_TEMPS_FORTS_EXPORT doit désigner un export existant.');process.exit(2);}
+ fs.copyFileSync(exporte,save);
+}else{
+ const {context}=require('./harness.cjs');
+ const source=context();
+ const touche=process.env.CD_MATCH_TEMPS_FORTS_TOUCHE||'';
+ if(touche&&!/^[a-z]+$/.test(touche)){console.error('CD_MATCH_TEMPS_FORTS_TOUCHE invalide.');process.exit(2);}
+ source.run(`start(${club});${touche?`setPlaybookChoice('lineout','${touche}');`:''}beginMatch()`);
+ fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
+}
 const extra=(process.env.CD_MATCH_TEMPS_FORTS_GODOT_ARGS||'').split(/\s+/).filter(Boolean);
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(work,'PrototypeGodot'),
  CD_GODOT_SEED:seed,CD_MATCH_TEMPS_FORTS_NIVEAU:process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique',CD_MATCH_TEMPS_FORTS_SIZE:size,CD_MATCH_TEMPS_FORTS_SAVE:save};

@@ -27,7 +27,20 @@ const POSES := {
 	"melee": [1.1, -0.3], "soutien_saut": [0.3, -0.08], "saut": [0.0, 1.0],
 	# Ballon porté : liés debout, buste penché vers l'avant ; botteur accroupi qui pose le ballon.
 	"maul": [0.7, -0.15], "placement": [0.85, -0.35],
+	# Liaison entre deux temps forts (match_liaison.gd) : piliers en flexion avant la liaison,
+	# joueur qui renoue un strap, joueur essoufflé mains sur les genoux.
+	"flexion": [0.62, -0.24], "strap": [1.0, -0.5], "souffle": [0.55, -0.06],
 }
+## Bras posés par l'état (liaison) : mains sur les hanches, bras tendu qui indique, main
+## qui accompagne la parole, avants liés. Cibles des mains dans le repère du joueur
+## (x : gauche, y : haut, z : avant) ; l'autre bras suit l'animation.
+const BRAS := {
+	"mains_hanches": {"L": Vector3(0.21, 1.0, -0.02), "R": Vector3(-0.21, 1.0, -0.02), "coude": Vector3(1.0, 0.0, -0.6)},
+	"montre": {"R": Vector3(-0.2, 1.95, 0.62), "coude": Vector3(-0.6, -1.0, 0.0)},
+	"explique": {"R": Vector3(-0.12, 1.3, 0.42), "coude": Vector3(-0.8, -0.8, 0.0)},
+	"flexion": {"L": Vector3(0.3, 1.0, 0.5), "R": Vector3(-0.3, 1.0, 0.5), "coude": Vector3(0.9, -0.6, 0.0)},
+}
+const Presentation = preload("res://match_presentation.gd")
 ## Sauteur de touche : levé et redescendu vite (les leveurs le portent), le reste à vitesse bornée.
 const LEVEE := 3.0
 const SOL := ["plaquage", "plaquage_rate", "plaque", "au_sol", "aplati"]
@@ -73,6 +86,8 @@ var _chute: Dictionary = {}
 var _modeles: Dictionary = {}
 ## Pose procédurale affichée par joueur (inclinaison, abaissement, instant) : elle change en douceur.
 var _poses: Dictionary = {}
+## Poids des bras posés par joueur : [état, poids] (entrée et sortie en douceur).
+var _bras: Dictionary = {}
 var _ballon_depart := Vector3.ZERO
 ## Raccord du ballon entre deux sources (mains d'un porteur, trajectoire des pistes).
 var source_ballon := ""
@@ -173,6 +188,7 @@ func arreter() -> void:
 	_chute.clear()
 	_modeles.clear()
 	_poses.clear()
+	_bras.clear()
 
 
 func stages(id: String) -> bool:
@@ -402,3 +418,31 @@ func pose() -> void:
 		_poses[id] = [pitch, lift, temps]
 		modele.rotation.x = pitch
 		modele.position.y += lift
+		_poser_bras(id, entry, nom, dt)
+
+
+## Bras d'un état de liaison (mains sur les hanches, bras qui indique) : entrée et sortie en
+## 0,3 s, jamais pendant un geste adapté ni quand le joueur tient le ballon.
+func _poser_bras(id: String, entry: Dictionary, nom: String, dt: float) -> void:
+	var vu: Array = _bras.get(id, ["", 0.0])
+	var voulu := nom if BRAS.has(nom) and not entry.get("holding", false) and not (view.has_method("geste_adapte") and view.geste_adapte(id)) else ""
+	var bras := str(vu[0])
+	var poids := float(vu[1])
+	if voulu == bras or poids <= 0.0:
+		bras = voulu if not voulu.is_empty() else bras
+		poids = move_toward(poids, 1.0 if not voulu.is_empty() else 0.0, dt / 0.3)
+	else:
+		poids = move_toward(poids, 0.0, dt / 0.3)
+	_bras[id] = [bras, poids]
+	if bras.is_empty() or poids <= 0.0 or not entry.get("rig") is Skeleton3D:
+		return
+	var actor: Node3D = entry.node
+	var repere: Basis = actor.global_basis
+	var cibles: Dictionary = BRAS[bras]
+	var w := smoothstep(0.0, 1.0, poids)
+	for cote in ["L", "R"]:
+		if cibles.has(cote):
+			var coude: Vector3 = cibles.coude
+			if cote == "L": coude.x = absf(coude.x)
+			else: coude.x = -absf(coude.x)
+			Presentation._solve_arm(entry.rig, cote, actor.global_position + repere * (cibles[cote] as Vector3), actor.global_position + repere * coude, w)

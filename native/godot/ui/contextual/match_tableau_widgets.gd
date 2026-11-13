@@ -67,12 +67,22 @@ class Note extends Control:
 		draw_string(CHIFFRES, Vector2((size.x - largeur) * 0.5, size.y * 0.5 + corps * 0.36), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, teinte)
 
 ## Données d'un joueur pour une ligne de Mon XV, bornées à l'entracte : énergie (condition),
-## note, faits, essais et mètres du moteur, carton et blessure montrés. Rien sur l'action à venir.
-static func donnees_joueur(joueur: Variant, notes: Dictionary, cartons: Dictionary) -> Dictionary:
+## note et faits du moteur, carton et blessure montrés. Plaquages, mètres, essais, courses et passes
+## viennent de la feuille de statistiques (`direct.feuille`, match-stats.cjs) quand elle est là,
+## sinon des faits de la note. Rien sur l'action à venir.
+static func donnees_joueur(joueur: Variant, notes: Dictionary, cartons: Dictionary, feuille: Dictionary = {}) -> Dictionary:
 	if not joueur is Dictionary: return {"vacant": true}
 	var id := str(joueur.get("id", ""))
 	var note: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
 	var carton: Dictionary = cartons.get(id, {}) if cartons.get(id) is Dictionary else {}
+	var lignes: Dictionary = feuille.get("joueurs", {}) if feuille.get("joueurs") is Dictionary else {}
+	if not lignes.is_empty():
+		var f: Dictionary = lignes.get(id, {}) if lignes.get(id) is Dictionary else {}
+		note = note.duplicate()
+		for cle: String in ["essais", "metres", "plaquages"]: note[cle] = f.get(cle, 0)
+		note["courses"] = f.get("courses", 0)
+		note["passes"] = f.get("passes", 0)
+		note["plaquages_manques"] = f.get("plaquagesManques", 0)
 	return {
 		"vacant": false,
 		"id": id,
@@ -85,6 +95,9 @@ static func donnees_joueur(joueur: Variant, notes: Dictionary, cartons: Dictiona
 		"essais": int(note.get("essais", 0)),
 		"metres": roundi(float(note.get("metres", 0))),
 		"plaquages": int(note.get("plaquages", 0)),
+		"plaquages_manques": int(note.get("plaquages_manques", 0)),
+		"courses": int(note.get("courses", 0)),
+		"passes": int(note.get("passes", 0)),
 		"carton": not carton.is_empty(),
 		"retour": carton.get("retour"),
 	}

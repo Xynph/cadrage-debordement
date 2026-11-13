@@ -317,7 +317,9 @@ module.exports=function clubDirections(T,N){
   const amp=2+(100-ev)*.08+(known?0:4);
   const noise=(roll('eval',c.id,p.id,S.season)-.5)*2*amp;
   const glamour=clamp(p.salary/9000-1,0,2)*(100-ev)/40;
-  return roleNote(p)+noise+glamour;
+  // Notes de match de la saison (match-notes.cjs) : −2 à +3 points.
+  const notes=typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.interet(p.id):0;
+  return roleNote(p)+noise+glamour+notes;
  }
  // Besoins par poste : profondeur, âge, blessures, fins de contrat.
  function needs(c){
