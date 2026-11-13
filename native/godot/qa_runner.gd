@@ -296,7 +296,7 @@ func _publish_press_invitation(restore_route: bool = true, minimize_impact: bool
 		if not _press_named("PressReturn", scope): return false
 		await _wait()
 		success = app.bridge.last_response_ok
-	_check(success, "Publishing and leaving the conference releases the press appointment")
+	_check(success, "Publishing and leaving the conference releases the press appointment" + ("" if success else " · " + str(app.last_error) + " · ok=" + str(app.bridge.last_response_ok) + " requis=" + str(app.model.clubLife.press.conference.get("required")) + " scene=" + JSON.stringify(app.model.get("clubLife",{}).get("clubMeetings",{}).get("scene")) + " route=" + app.route + " immersif=" + str(immersive)))
 	if restore_route: app._navigate(prior_route)
 	return success
 
