@@ -628,9 +628,20 @@ func _preparer_liaison(candidat: Dictionary) -> Dictionary:
 	var lien := Liaison.construire(info, joueurs, ballon, pos_arbitre, Liaison.graine(rencontre, str(candidat.get("cle", ""))), _detail_precedent)
 	if lien.is_empty(): return {}
 	lien["arret"] = int(info.get("arret", -1))
+	lien["texte"] = _nommer(str(lien.get("texte", "")))
 	lien["plan_kind"] = str(info.get("plan_kind", ""))
 	_detail_precedent = str(lien.get("detail", ""))
 	return lien
+
+## Sigles du journal remplacés par ceux affichés (même règle que le moteur, match-direct.cjs `renommeur`).
+func _nommer(texte: String) -> String:
+	for equipe: Variant in _teams:
+		if not equipe is Dictionary: continue
+		var sigle := str(equipe.get("abbr", ""))
+		var montre := str((equipe.get("presentation", {}) as Dictionary).get("abbr", "")) if equipe.get("presentation") is Dictionary else ""
+		if montre.is_empty() or sigle == montre or not RegEx.create_from_string("^[A-Z0-9]{2,5}$").search(sigle): continue
+		texte = RegEx.create_from_string("(?<![\\p{L}\\p{N}])" + sigle + "(?![\\p{L}\\p{N}])").sub(texte, montre, true)
+	return texte
 
 func _demarrer(candidat: Dictionary, lien: Dictionary = {}) -> void:
 	# Une suite peut arriver après un retour à l'écran intermédiaire (pause, arrêt) : la 3D
