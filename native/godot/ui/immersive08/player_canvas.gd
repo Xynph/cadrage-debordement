@@ -332,7 +332,7 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		var rang := Control.new()
 		rang.custom_minimum_size = Vector2(C.px(1630),C.px(34))
 		liste.add_child(rang)
-		D.text(rang,4,25,"Saison %s · %s · %d matchs · moyenne %s · %d essai%s%s" % [G.n(saison.get("saison",0)),str(saison.get("club","")),int(saison.get("matchs",0)),NotesMatch.texte_note(saison.get("moyenne")),int(saison.get("essais",0)),"s" if int(saison.get("essais",0))>1 else "",(" · %d× homme du match" % int(saison.hommeDuMatch)) if int(saison.get("hommeDuMatch",0))>0 else ""],19,C.GOLD,500,1600)
+		D.text(rang,4,25,"Saison %s · %s · %d matchs · moyenne %s · %d essai%s%s" % [G.season_label(saison.get("saison",0)),str(saison.get("club","")),int(saison.get("matchs",0)),NotesMatch.texte_note(saison.get("moyenne")),int(saison.get("essais",0)),"s" if int(saison.get("essais",0))>1 else "",(" · %d× homme du match" % int(saison.hommeDuMatch)) if int(saison.get("hommeDuMatch",0))>0 else ""],19,C.GOLD,500,1600)
 
 ## Matchs internationaux notés (même calcul que le club) : moyenne, forme, dernières rencontres.
 static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
