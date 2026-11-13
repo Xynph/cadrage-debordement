@@ -14,7 +14,6 @@
     "tests/godot-immersive-reception.cjs",
     "tests/godot-native06-integration.cjs",
     "tests/godot-art-direction07.cjs",
-    "tests/godot-competition-editor.cjs",
     "tests/godot-guide-layout.cjs",
     "tests/godot-contextual.cjs"
   ],

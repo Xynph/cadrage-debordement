@@ -59,16 +59,17 @@ budget() {
     tests/starting-salaries.cjs) echo 600s ;;
     tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) echo 900s ;;
     tests/deepen-staff-native.cjs) echo 1200s ;;
-    tests/custom-competition-worker.cjs) echo 900s ;;
     # Réception locale complète 233 s ; conserve créations, Rooms et refus.
     tests/youth-scout-native.cjs) echo 600s ;;
     # Fixtures complètes PASS locales 142/126 s, sans refus précoce.
     tests/world-catalogue-dedup.cjs|tests/world-venue-media.cjs) echo 300s ;;
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
     # PASS CI 42909005768 : 179,80/159,68 s, marge finie avant le cap 180.
-    tests/france-career.cjs|tests/world-worker.cjs) echo 300s ;;
+    tests/world-worker.cjs) echo 300s ;;
     # native-fiction-sheet : délai de 180 s atteint sous charge (Suites 6/10, run 43262510105) ; marge doublée, assertions inchangées.
     tests/native-fiction-sheet.cjs) echo 420s ;;
+    # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
+    tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     *) echo 180s ;;
   esac

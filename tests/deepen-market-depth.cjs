@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{context}=require('./native-reference-harness.cjs'),d=require('../native/engine/interclub-market.cjs');
 function fixture(start='start(0)'){const h=context();h.run(start+';var depthMarket=('+d.factory.toString()+')();');return {...h,project:()=>JSON.parse(h.run('JSON.stringify(depthMarket.project())'))};}
@@ -12,15 +11,15 @@ function worker(t){
  if(coordinator!==source){fs.copyFileSync(path.join(coordinator,'worker.cjs'),path.join(engine,'worker.cjs'));fs.copyFileSync(path.join(coordinator,'custom-competition.cjs'),path.join(engine,'custom-competition.cjs'));let manifest=fs.readFileSync(path.join(engine,'native-systems.cjs'),'utf8');if(!manifest.includes('customCompetition:'))manifest=manifest.replace('const domains={',"const domains={customCompetition:require('./custom-competition.cjs'),");fs.writeFileSync(path.join(engine,'native-systems.cjs'),manifest);}
  const b=require(path.join(engine,'worker.cjs')).createBridge({dataDir:path.join(root,'profile'),distDir:coordinator!==source?path.resolve(coordinator,'../../dist'):path.resolve(__dirname,'../dist'),seed:827381,now:1794178800000});let n=0;t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});const go=(command,payload={})=>{const x=b.handle({id:++n,command,payload});a.equal(x.ok,true,command+':'+x.error);return x.model;};return {go};
 }
-test('départs natifs fiction/custom et référence Monde: vrais achats sans injection de roster',t=>{
- const h=worker(t),document=require('../native/engine/competition-editor.cjs').generate({name:'Ma ligue',clubs:Array.from({length:14},(_,i)=>'Club '+i),doubleRound:true});
- for(const mode of ['fiction','custom','world']){
-  let model=settleClubMeetings(h.go('new_career',{mode,club:0,...(mode==='custom'?{document,confirmed:true}:{})}),(command,payload)=>h.go(command,payload)),market=model.clubLife.interclubMarket;
-  a.equal(market.releasePolicy.minimum,mode==='world'?37:28);
+test('départ natif Monde (Top 14 et Champ): vrais achats sans injection de roster',t=>{
+ const h=worker(t);
+ for(const club of [0,102]){
+  const mode='world-champ#'+club;
+  let model=settleClubMeetings(h.go('new_career',{mode:'world-champ',club}),(command,payload)=>h.go(command,payload)),market=model.clubLife.interclubMarket;
+  a.equal(market.releasePolicy.minimum,37);
   const p=market.candidates.find(p=>p.available);a(p,mode+' a une vraie cible');
   const before=JSON.parse(h.go('export').meta.exportText).state;
   a(before.clubs.every(club=>club.players.length>=40),mode+' compte au moins 40 professionnels par club');
-  if(mode!=='world')a.equal(before.clubs[p.clubId].players.length,40);
   const bid={playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:market.context},q=h.go('interclub_negotiate',bid).meta.interclubNegotiation;a(q.winner);
   model=h.go('interclub_auction',{...bid,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true});
   const state=JSON.parse(h.go('export').meta.exportText).state;
