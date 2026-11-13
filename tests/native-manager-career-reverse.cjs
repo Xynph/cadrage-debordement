@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -10,10 +9,10 @@ const doc=b=>JSON.parse(good(b,'export').meta.exportText),data=b=>good(b,'snapsh
 function act(b,command,p={}){return good(b,command,{context:data(b).context,...p});}
 function signed(state){const s={format:'cadrage-debordement-save',exportVersion:1,exportedAt:'2026-11-08T12:00:00.000Z',state};let h=2166136261;for(const ch of JSON.stringify(state)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}s.checksum=(h>>>0).toString(16).padStart(8,'0');return s;}
 try{
- const b=open('accession');settleClubMeetings(good(b,'new_career',{mode:'common',club:29}),(command,payload)=>good(b,command,payload));act(b,'manager_career_activate');
+ const b=open('accession');settleClubMeetings(good(b,'new_career',{mode:'world-champ',club:29}),(command,payload)=>good(b,command,payload));act(b,'manager_career_activate');
  if(process.env.CD_MANAGER_REVERSE_PROFILE){const profile=JSON.parse(fs.readFileSync(process.env.CD_MANAGER_REVERSE_PROFILE,'utf8')),state=JSON.parse(profile.store['bdt-v1']),carrier=doc(b),fixture=signed(state);fixture.format=carrier.format;good(b,'import',{text:JSON.stringify(fixture)});}
- else for(let i=0;i<34;i++){
-  let model=good(b,'snapshot');
+ else{let model=good(b,'snapshot');for(let i=0;i<80&&!model.clubLife.managerCareer.window;i++){
+  // Le modèle de chaque clôture de semaine sert de lecture suivante (une saison Monde compte plus de quarante semaines).
   if(model.next){
    if(!model.selection.valid)model=good(b,'auto_lineup');
    if(!model.selection.valid){
@@ -24,8 +23,8 @@ try{
    assert.equal(model.selection.valid,true,'Feuille qualifiée avant chaque rencontre de la campagne réelle');
    good(b,'begin_match');good(b,'delegate');
   }
-  settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));
- }
+  model=settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));
+ }assert.equal(model.clubLife.managerCareer.window,true,'La saison s’achève et ouvre la fenêtre de mobilité');}
  let target=data(b).opportunities.find(x=>x.leagueId==='elite'&&x.accepted);
  if(!target){
   // Actual club29's first season can correctly receive only refusals. Qualify

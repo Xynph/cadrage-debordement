@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert = require('node:assert/strict');
@@ -17,7 +16,7 @@ const activePlayers = state => [
   ...((state.aiRoster?.academies ?? []).flatMap(center => center.players))
 ];
 
-for (const mode of ['common', 'world-champ', 'fiction']) {
+for (const mode of ['world-champ']) {
   test(`Fiche joueur native · ${mode}`, () => {
     const temporaryRoot = path.resolve(os.tmpdir());
     const dataDir = fs.mkdtempSync(path.join(temporaryRoot, 'cd-player-attributes-'));
@@ -31,7 +30,7 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
 
     try {
       const created = request('new_career', { mode, club: 0 });
-      if (mode === 'fiction') settleClubMeetings(created, request);
+      settleClubMeetings(created, request);
       const file = path.join(created.meta.dataDir, 'donnees.json');
       const before = fs.readFileSync(file);
       const saved = JSON.parse(JSON.parse(before).store['bdt-v1']);
@@ -58,7 +57,7 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
         }
       }
       assert.equal(referenceKeys.length, 36);
-      assert.equal(detailed, mode === 'fiction' ? 0 : model.squad.length);
+      assert.equal(detailed, model.squad.length);
       assert.deepEqual(fs.readFileSync(file), before);
       const academy = model.decisions.development.academy;
       assert.ok(academy.length > 0);
@@ -83,7 +82,7 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
       assert.deepEqual(reopened.squad.map(detail), model.squad.map(detail));
       assert.deepEqual(reopened.decisions.development.academy.map(detail), academy.map(detail));
       assert.deepEqual(fs.readFileSync(file), before);
-      if (mode === 'fiction') {
+      {
         bridge.close();
         // Variation can cap the first prospect: exercise growth on a player with room.
         const developing = saved.development.academy.find(player => player.dev.potential > player.rating + 1);
