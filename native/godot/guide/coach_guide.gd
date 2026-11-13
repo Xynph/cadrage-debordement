@@ -396,7 +396,7 @@ func _avoid_primary_controls() -> void:
 	var left := _left_edge()
 	var right := app.size.x - size.x - 18
 	var bottom := (_footer_top() - 8.0 if _dock_ready(dock) else app.size.y - 18.0) - size.y
-	var key := str(app.route) + ":" + str(app.size) + ":" + str(size) + ":" + str(_corner_left) + ":" + str(bottom)
+	var key := str(app.route) + ":" + str(app.size) + ":" + str(size) + ":" + str(_corner_left) + ":" + str(bottom) + ":" + str(app.root_content.get_instance_id() if is_instance_valid(app.root_content) else 0)
 	# Reuse the chosen horizontal position through snapshots and layout refreshes.
 	# Never climb into page titles merely to avoid a secondary command.
 	if key == _placement_key and _placed_x >= 0:
@@ -412,14 +412,84 @@ func _avoid_primary_controls() -> void:
 		var above := rect.position.y - size.y - 8.0
 		if above >= app.size.y * .55 and above < bottom and above not in alternatives: alternatives.append(above)
 	alternatives.sort(); alternatives.reverse(); rows.append_array(alternatives)
-	for y in rows:
+	# Le texte et les boutons de la page ne doivent pas être masqués : on prend la première place basse
+	# qui ne couvre rien, sinon la meilleure place de l'écran (recouvrement minimal, jamais les titres).
+	var content := _content_rects()
+	var painted := _painted_offsets()
+	var best := Vector2(-1.0,-1.0)
+	var best_score := INF
+	var scan_rows: Array[float] = rows.duplicate()
+	var y_scan := bottom - 40.0
+	while y_scan >= app.size.y * .25:
+		scan_rows.append(y_scan); y_scan -= 40.0
+	for y in scan_rows:
 		for x in candidates:
 			global_position = Vector2(x,y)
-			if not _covers_priority(rects):
+			if _covers_priority(rects): continue
+			var overlap := _content_overlap(painted,Vector2(x,y),content)
+			if overlap <= 0.0 and y in rows:
 				_placement_key = key; _placed_x = x; _placed_y = y
 				return
+			var score := overlap * 1000.0 + (bottom - y) * 0.5 + absf(x - candidates[0]) * 0.1
+			if score < best_score: best_score = score; best = Vector2(x,y)
+	# Conseil automatique : jamais au-dessus du contenu, l'invitation compacte reste disponible.
+	if best.x >= 0.0 and (mode != "context" or best_score < 1000.0):
+		global_position = best
+		_placement_key = key; _placed_x = best.x; _placed_y = best.y
+		return
 	# Crowded windows keep the compact manual invitation, never a floating title cover.
 	if expanded: close()
+
+## Rectangles de texte et de boutons de la page (globaux), au plus près de ce qui est peint : un libellé
+## n'occupe que la largeur de son texte, un panneau sans texte ne compte pas.
+func _content_rects() -> Array[Rect2]:
+	var result: Array[Rect2] = []
+	if not is_instance_valid(app) or not is_instance_valid(app.root_content): return result
+	var screen := Rect2(Vector2.ZERO, app.size)
+	for node in app.root_content.find_children("*", "Control", true, false):
+		var control: Control = node
+		if not control.is_visible_in_tree() or control.modulate.a < .05: continue
+		var rect: Rect2 = control.get_global_rect()
+		if control is Label:
+			var label: Label = control
+			if label.text.strip_edges().is_empty() or label.get_theme_color("font_color").a < .05: continue
+			if label.autowrap_mode == TextServer.AUTOWRAP_OFF:
+				var font: Font = label.get_theme_font("font")
+				var font_size: int = label.get_theme_font_size("font_size")
+				var width := minf(rect.size.x, font.get_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x)
+				var height := minf(rect.size.y, font.get_height(font_size) * 1.4)
+				var left_x := rect.position.x
+				if label.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER: left_x += (rect.size.x - width) / 2.0
+				elif label.horizontal_alignment == HORIZONTAL_ALIGNMENT_RIGHT: left_x = rect.end.x - width
+				rect = Rect2(left_x, rect.position.y, width, height)
+		elif control is Button:
+			if (control as Button).text.strip_edges().is_empty(): continue
+		else:
+			continue
+		var ancestor: Node = control.get_parent()
+		while ancestor is Control:
+			if ancestor.clip_contents: rect = rect.intersection(ancestor.get_global_rect())
+			ancestor = ancestor.get_parent()
+		rect = rect.intersection(screen)
+		if rect.has_area(): result.append(rect)
+	return result
+
+## Rectangles peints du guide, relatifs à sa position actuelle.
+func _painted_offsets() -> Array[Rect2]:
+	var result: Array[Rect2] = []
+	var origin := global_position
+	for control in _painted_controls():
+		var rect := control.get_global_rect()
+		if rect.has_area(): result.append(Rect2(rect.position - origin, rect.size))
+	return result
+
+func _content_overlap(painted: Array[Rect2], at: Vector2, content: Array[Rect2]) -> float:
+	var total := 0.0
+	for offset in painted:
+		var rect := Rect2(offset.position + at, offset.size)
+		for item in content:
+			if rect.intersects(item): total += rect.intersection(item).get_area()
+	return total
 
 func refresh() -> void:
 	if not is_instance_valid(app): return

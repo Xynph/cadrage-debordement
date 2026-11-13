@@ -641,7 +641,7 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 		var row := C.h(8)
 		row.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		tile.add_child(row)
-		var values: Array = [G.n(club.get("rank", "—")), G.club_name(club), G.n(club.get("played", 0)), "%+d" % (int(club.get("pf", 0))-int(club.get("pa", 0))), G.n(club.get("points", 0))]
+		var values: Array = [G.n(club.get("rank", "—")) if P.standings_open(club) else "–", G.club_name(club), G.n(club.get("played", 0)), "%+d" % (int(club.get("pf", 0))-int(club.get("pa", 0))), G.n(club.get("points", 0))]
 		for i in values.size():
 			var cell := C.label(values[i], 23, C.MINT if own else C.IVORY)
 			if i == 1:
