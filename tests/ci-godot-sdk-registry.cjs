@@ -25,7 +25,7 @@ const required = [
 ].map(name => 'tests/' + name + '.cjs');
 
 test('SDK registry groups cover every declared wrapper exactly once', () => {
-  assert.deepEqual(Object.keys(config.groups).sort(), ['layouts', 'parcours', 'portraits-staff']);
+  assert.deepEqual(Object.keys(config.groups).sort(), ['layouts', 'portraits-staff']);
   assert.equal(new Set(config.suites).size, config.suites.length);
   const grouped = Object.values(config.groups).flat();
   assert.equal(new Set(grouped).size, grouped.length);

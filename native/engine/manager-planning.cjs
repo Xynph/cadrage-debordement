@@ -58,7 +58,9 @@ function factory(){
 const finite=x=>typeof x==='number'&&Number.isFinite(x);
 const copy=x=>JSON.parse(JSON.stringify(x));
 const publicPlayer=p=>Object.fromEntries(['id','name','pos','age','salary','fee','contractEnd','condition','injury','suspension','rating','ratingRange','potential','potentialRange','knowledge'].filter(k=>p[k]!==undefined).map(k=>[k,copy(p[k])]));
-const candidatesOf=model=>[...(model.market||[]),...(model.clubLife?.interclubMarket?.candidates||[])].filter((p,i,a)=>a.findIndex(q=>q.id===p.id)===i);
+// Première occurrence de chaque identifiant (même résultat que findIndex, en temps linéaire :
+// le vivier mondial compte plusieurs milliers de joueurs et la projection tourne à chaque commande).
+const candidatesOf=model=>{const seen=new Set();return [...(model.market||[]),...(model.clubLife?.interclubMarket?.candidates||[])].filter(p=>{const id=p.id;if(seen.has(id))return false;seen.add(id);return true;});};
 function project(model){
  const domain=model.clubLife?.managerPlanning||{},settings=domain.settings||{},own=model.squad||[],club=model.club?.id;
  const byId=new Map(own.map(p=>[p.id,p]));

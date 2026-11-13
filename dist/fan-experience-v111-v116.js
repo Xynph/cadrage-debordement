@@ -43,7 +43,8 @@
       const st=s.v111to116;
       if(!valid(st)||st.season>s.season)return null;
       // Sauvegarde antérieure : état jamais touché (0 abonné, rien joué ni acheté) -> socle initial.
-      if(st.subscribers===0&&st.campaign===null&&!st.ledger.length&&!st.history.length)st.subscribers=initialSubscribers(s);
+      // (Recalculé tant que rien n'a été joué ni acheté : la capacité du stade a pu être renseignée depuis.)
+      if(st.campaign===null&&!st.ledger.length&&!st.history.length&&st.season===s.season)st.subscribers=initialSubscribers(s);
       return st;
     }
     s.v111to116={version:1,season:s.season,sentiment:50,price:'equilibree',subscribers:initialSubscribers(s),

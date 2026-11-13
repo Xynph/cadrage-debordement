@@ -1,6 +1,6 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
 const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 const domain=require('../native/engine/match-talks.cjs');
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -76,8 +76,9 @@ function workerTests(){
  const restart=()=>{b.close();b=createBridge({dataDir:root});good('snapshot');};
  const checksum=doc=>{let hash=2166136261;for(const ch of JSON.stringify(doc.state))hash=Math.imul(hash^ch.charCodeAt(0),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);};
  try{
-  settleClubMeetings(good('new_career',{mode:'common',club:29}),(command,payload)=>good(command,payload));assert.ok(m.clubLife.matchTalks);assert.equal(scene(),null);
+  settleClubMeetings(good('new_career',{mode:'world-champ',club:29}),(command,payload)=>good(command,payload));assert.ok(m.clubLife.matchTalks);assert.equal(scene(),null);
   let before=exported();good('snapshot');assert.equal(exported(),before,'fresh reads do not initialize the domain');
+  advanceToNextMatch(m,good);// Monde : première rencontre du club après les semaines de préparation.
   settleClubMeetings(good('train'),(command,payload)=>good(command,payload));good('auto_lineup');good('begin_match');assert.equal(scene().phase,'pre');assert.equal(scene().participants.length,23);
   assert.equal(scene().options.length,6);before=exported();const profile=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(profile);
   good('snapshot');good('snapshot');assert.equal(exported(),before);assert.deepEqual(fs.readFileSync(profile),disk);
