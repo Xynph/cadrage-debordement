@@ -826,9 +826,17 @@ func _advance_world_day() -> bool:
 	var next_day := Time.get_date_string_from_unix_time(int(Time.get_unix_time_from_datetime_string(today)) + 86400)
 	# Une fois la saison du club terminée (phase ended), la semaine du calendrier ne bouge plus :
 	# seuls les jours défilent jusqu'à l'ouverture de la saison suivante.
+	# Après la fin de saison du club (phase ended), le moteur peut encore tourner la semaine le dimanche
+	# (vu sur Windows : 2027-07-04, semaine 45 -> 46) ou la laisser fixe : les deux sont admis, seule la
+	# date doit avancer d'exactement un jour.
 	var season_over: bool = str(app.model.meta.get("phase", "")) == "ended"
-	var week_step := 1 if int(cadence.day) == 6 and not season_over else 0
-	var advanced: bool = app.model.meta.calendarToday == next_day and int(app.model.meta.week) == previous_week + week_step
+	var week_now: int = int(app.model.meta.week)
+	var week_ok: bool
+	if season_over:
+		week_ok = week_now == previous_week or (int(cadence.day) == 6 and week_now == previous_week + 1)
+	else:
+		week_ok = week_now == previous_week + (1 if int(cadence.day) == 6 else 0)
+	var advanced: bool = app.model.meta.calendarToday == next_day and week_ok
 	if not advanced: printerr("DIAG jour: avant=%s semaine=%d jour=%d -> apres=%s semaine=%d attendu=%s phase=%s" % [today, previous_week, int(cadence.day), app.model.meta.calendarToday, int(app.model.meta.week), next_day, str(app.model.meta.get("phase",""))])
 	_check(advanced, "Calendar advances exactly one day from " + today)
 	if advanced: journey.day_advances += 1
