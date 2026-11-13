@@ -38,7 +38,7 @@ func ecussons(vue: Node) -> Dictionary:
 	var jeu := 0
 	for t: Node in vue.find_children("*", "TextureRect", true, false):
 		if t.tooltip_text == "Blason fourni par le pack": pack += 1
-		elif t.tooltip_text == "Blason d’Oval Legacy 27": jeu += 1
+		elif t.tooltip_text == "Blason de Rugby Legacy 27": jeu += 1
 	# Écusson original dessiné par le jeu (sigle et couleur du club) quand aucune image n'est fournie.
 	for n: Node in vue.find_children("*", "Control", true, false):
 		if "initials" in n: jeu += 1
