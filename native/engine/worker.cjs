@@ -566,6 +566,9 @@ function createBridge(options={}){
     }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
    }catch(error){return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
+  // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
+  // Jamais exposé par le protocole stdio (options fixées par le code appelant).
+  if(options.testVm===true)return {handle,close,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
   return {handle,close};
  }catch(e){close();throw e;}
 }

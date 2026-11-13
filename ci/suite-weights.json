@@ -143,6 +143,7 @@
   "default_mb": 1024,
   "budget_mb": 12288,
   "suites": {
+   "tests/monde-harness.cjs": 1830,
    "tests/native-professional-depth.cjs": 2240,
    "tests/world-catalogue-dedup.cjs": 3200,
    "tests/world-domestic-venues.cjs": 1216,

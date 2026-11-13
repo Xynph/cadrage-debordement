@@ -4,8 +4,8 @@ const {test}=require('node:test');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 test('Recrutement et presse : présentations natives des rapports et relances', {skip:!godot&&'SDK Godot absent : réception non exécutée'},()=>{
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-recruitment06-'));
-const {context}=require('./france-harness.cjs'),h=context(10606),decisions=require('../native/engine/decisions.cjs'),press=require('../native/engine/press.cjs');
-h.run(`start(0,'fiction');const nativeDecisions=${decisions.toString()};const nativePress=(${press.factory.toString()})();`);
+const {context}=require('./monde-harness.cjs'),h=context(10606),decisions=require('../native/engine/decisions.cjs'),press=require('../native/engine/press.cjs');
+h.run(`const nativePress=(${press.factory.toString()})();`);
 h.run(`{const p=managerPool()[0];S.manager.reports=[{id:'report-ui',playerId:p.id,name:'Émile D’Ávila — profil à comparer à nos solutions',pos:p.pos,family:p.fam,age:25,note:72,potential:81,salary:p.salary,price:p.price,grade:'B',season:1,week:0}];S.round=2;var nativeMandatoryPress=true;nativePress.observeInvitation();const q=nativePress.project().conference.questions[0],source=CDPressQuestionBank.questions.find(source=>source.theme===q.theme&&source.id!==q.id);S.pressConference={version:1,history:[{id:source.id,season:1,week:0,club:0,answerId:'r4',questionText:'Comment voyez-vous le projet ?',answerText:'Nous avançons ensemble, sans promesse de victoire.',journalist:{id:q.journalist.id,name:q.journalist.name,outlet:q.journalist.outlet}}]};}`);
 h.run("S.manager.reports.push({...S.manager.reports[0],id:'report-ui2',name:'Zoé — autre rapport daté',note:61,grade:'C'});");
 h.prepareNativeProjection();
