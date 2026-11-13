@@ -34,7 +34,7 @@ test('départ « Reprise de ton club » puis préparation jouée : effets, jeune
  assert.deepEqual(r.report.youth.map(y=>y.id),youth);
  for(const y of r.report.youth){
   assert.ok(y.minutes>=25*r.report.friendlies&&y.minutes<=55*r.report.friendlies,'temps de jeu en amical');
-  assert.equal(s.development.academy.find(p=>p.id===y.id).dev.minutes,dev[y.id]+y.minutes);
+  assert.ok(s.development.academy.find(p=>p.id===y.id).dev.minutes>=dev[y.id]+y.minutes,'minutes d’amical versées (plus les matchs de jeunes)');
  }
  // Retard de condition de la reprise du 27/07 (1 semaine plus tard que la référence) : borné.
  const own=s.reprise.plan.clubs.find(x=>x[0]===0);

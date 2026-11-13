@@ -14,19 +14,19 @@ Décisions de Léo du 13 novembre 2026 (14h42, précisées à 14h44 et 14h45). M
 | Reprise de ton club | date du club (réelle pour l’Élite 2026, sinon habituelle) | la date est fixée ; le groupe et les jeunes restent à décider jusqu’à la reprise |
 | Veille de la 1re journée | veille du premier match officiel | préparation gérée par le staff (date habituelle, jeunes proposés), simulée |
 
-L’écran de création envoie toujours `start` (défaut : `premiers-clubs`). Une commande
-`new_career` **sans** `start` (outils, tests hérités, intégrations) ouvre la carrière comme
-avant, le 17 août, sans préparation choisie ni effet de reprise : les séquences figées des
-autres suites restent identiques.
+La date de juillet-août est portée par l’avant-saison commune (`avant-saison.cjs`, PR #674 :
+toute carrière Monde commence le 13/07/2026). La reprise choisie s’y branche :
+« Reprise de ton club » avance le premier jour à la date du club, « Veille » ouvre tout de suite
+le calendrier et enchaîne les semaines sans match du club. L’écran de création envoie toujours
+`start` (défaut `premiers-clubs`) ; une commande `new_career` **sans** `start` (outils, tests
+hérités) garde l’avant-saison du 13 juillet mais **sans** reprise choisie ni effet : les
+séquences figées des autres suites restent identiques.
 
-Entre le départ et l’ouverture du calendrier du moteur (lundi 17 août 2026, semaine 0), la
-carrière vit dans une **préparation d’avant-saison** : `meta.calendarToday` affiche la date de
-juillet-août, « Jour suivant » avance d’un jour (`advance_day`), et `reprise_advance`
-(`until` : `semaine`, `reprise`, `saison`) avance plus vite. Jouer, finir une semaine,
-s’entraîner ou changer de saison sont refusés pendant cette période. À l’ouverture, le plan de
-toute la planète est figé et chaque club reçoit ses effets à la semaine de sa première
-rencontre officielle. Le départ « Veille » enchaîne les semaines sans match du club jusqu’à la
-première rencontre (et, en calendrier jour par jour, jusqu’à la veille).
+Pendant l’avant-saison, « Jour suivant » / « Semaine suivante » et `reprise_advance`
+(`until` : `semaine`, `reprise`, `saison`) avancent la date. Une commande qui avance le
+calendrier du moteur ouvre la semaine 0. Dès l’ouverture, le plan de toute la planète est figé
+(`CDReprise.sync`, après chaque commande et à l’entraînement de la semaine) et chaque club
+reçoit ses effets à la semaine de sa première rencontre officielle.
 
 ## 2. Dates de reprise
 
@@ -104,7 +104,18 @@ viennent d’empreintes (saison, semaine, rencontre, joueur).
 Voir la section « Mesure » de la PR (tableau début de saison / fin de saison, reprise tôt
 13/07 contre reprise tard 10/08, club 0, graine 27), reproduite ci-dessous.
 
-<!-- MESURE -->
+| Reprise | Prépa | Charge / retard / risque / automatismes / moral | Début (4 sem.) : condition, blessures, bilan, écart | Fin (sem. 30+) : condition, blessures, bilan, écart | Jeunes : minutes |
+| --- | --- | --- | --- | --- | --- |
+| 2026-07-13 | 7.7 sem. | +5 / −0 / +0 % / -3 % / -1 | 73.6 ; 4 ; DDDV ; -6 | 78 ; 5 ; DDNDDD ; -52 | 994 (8) |
+| 2026-08-10 | 3.7 sem. | +0 / −9 / +1.2 % / -17 % / +6 | 69.4 ; 0 ; VDDD ; -54 | 74.7 ; 5 ; DDDNDDV ; -41 | 82 (2) |
+
+Lecture : condition = moyenne des 23 meilleurs joueurs du club ; blessures = nouvelles blessures
+sur la période ; bilan V/N/D et écart de points des matchs du club (délégués). Une seule graine :
+les résultats sportifs sont dominés par le bruit des matchs (le club perd dans les deux cas, pour
+d’autres raisons) ; seuls les leviers (colonne 3) et la condition de début de saison
+(73,6 contre 69,4) reflètent le barème. Les blessures en plus de la reprise tardive (+1,2 % par
+match au départ) ne sont pas sorties sur ces quatre semaines ; il faudrait plusieurs graines pour
+les mesurer (environ 25 minutes par saison simulée sur la machine partagée).
 
 ## 6. Limites
 
