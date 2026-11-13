@@ -98,7 +98,7 @@ test('le lanceur de shard exécute en parallèle, garde chaque journal et compte
     assert.ok(r.stdout.indexOf('PASS ' + quick) < r.stdout.indexOf('PASS ' + slow), r.stdout);
     assert.match(r.stdout, /::group::.*lente\.cjs\nfin lente\n/);
     assert.match(r.stdout, /CD_CPU_PROFILE suite=.*rapide\.cjs .*wall_s=/);
-    assert.match(r.summary, /Essai : 2 suites sur \d+ \(2 en parallèle\)/);
+    assert.match(r.summary, /Essai : 2 suites sur \d+ \(2 en parallèle, 2 si exclusive, mémoire réservée max \d+\/\d+ Mo, délais 100 %\)/);
     r = run([slow, red, quick], 2);
     assert.equal(r.status, 1);
     assert.match(r.summary, /rouge\.cjs \| ECHEC \(4\)/);
