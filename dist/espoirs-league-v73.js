@@ -45,7 +45,9 @@ function standing(s,ids,results=read(s)?.results||[]){const rows=ids.map(id=>({i
  for(const m of results){const h=rows.find(x=>x.id===m.pair[0]),a=rows.find(x=>x.id===m.pair[1]);if(!h||!a)continue;
  for(const [x,y,tries,otherTries] of [[h,a,m.tries[0],m.tries[1]],[a,h,m.tries[1],m.tries[0]]]){x.played++;x.for+=m.score[x===h?0:1];x.against+=m.score[x===h?1:0];if(x===h?m.score[0]>m.score[1]:m.score[1]>m.score[0]){x.win++;x.points+=4}else if(m.score[0]===m.score[1]){x.draw++;x.points+=2}else x.loss++;const bp=tries-otherTries>=3?1:0,bd=(x===h?m.score[1]-m.score[0]:m.score[0]-m.score[1]);x.bonus+=bp+(bd>0&&bd<=5?1:0);x.points+=bp+(bd>0&&bd<=5?1:0)}}
  return rows.sort((a,b)=>b.points-a.points||(b.for-b.against)-(a.for-a.against)||b.for-a.for||a.id-b.id)}
-function chosen(s,id,st=read(s)){const players=clubPlayers(s,id),used=new Set(),manual=(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).division==='elite'&&root.CDNativeAcademy.own(s).slot===id:id===s.club)?st?.lineup||[]:[],slots=typeof POS!=='undefined'?POS:Array.from({length:15},(_,i)=>i);
+// Décision de Léo du 12/11/2026 : les matchs des jeunes sont simulés, sans composition
+// manuelle. L'entraîneur des Espoirs aligne toujours le meilleur joueur valide du poste.
+function chosen(s,id,st=read(s)){const players=clubPlayers(s,id),used=new Set(),manual=[],slots=typeof POS!=='undefined'?POS:Array.from({length:15},(_,i)=>i);
  return slots.map((pos,i)=>{const forced=players.find(p=>p.id===manual[i]&&p.pos===pos&&!used.has(p.id));
  const pool=players.filter(p=>p.pos===pos&&!used.has(p.id)&&!p.injury);const mode=(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).division==='elite'&&root.CDNativeAcademy.own(s).slot===id:id===s.club)?st?.mode:'equilibre';
  pool.sort((a,b)=>{const value=p=>p.rating+(mode==='developpement'?(p.dev?.potential-p.rating)*.6:0)+(mode==='repos'?(p.condition-100)*.8:0)-(st?.fatigue[p.id]||0)*.24;return value(b)-value(a)||a.id.localeCompare(b.id)});
