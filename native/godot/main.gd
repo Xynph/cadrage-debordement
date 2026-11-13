@@ -681,7 +681,7 @@ func _render(remember_ui: bool = true) -> void:
 	if decision_feedback != null: footer.add_child(decision_feedback.control())
 	var coach_dock := Control.new()
 	coach_dock.name = "CoachCompactDock"
-	coach_dock.custom_minimum_size = Vector2(144,34)
+	coach_dock.custom_minimum_size = Vector2(330,34)
 	coach_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coach_dock.visible = is_instance_valid(coach)
 	footer.add_child(coach_dock)

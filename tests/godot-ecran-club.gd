@@ -48,6 +48,7 @@ func run() -> void:
 		print("GABI ", route, " position=", coach.global_position, " recouvrement_px2=", overlap)
 		var rect: Rect2 = coach.get_global_rect()
 		check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(rect), "Gabi entière dans l'application : " + route)
+		check(overlap >= 0.0, "Recouvrement mesuré (scène assombrie) : " + route)
 		var all := texts(app.root_content, [])
 		check(not all.any(func(t): return str(t).contains("1er · 0 pts") or str(t) == "1er / 14"), "Aucun « 1er » sans match joué : " + route)
 		if route == "Club":
@@ -61,18 +62,20 @@ func run() -> void:
 			check(all.has(attendu), "Club : Académie « " + attendu + " » (même état que la page Formation)")
 			check(all.has("%d / %d" % [int(suivi.total), int(suivi.capacity)]), "Club : Académie « " + str(suivi.total) + " / " + str(suivi.capacity) + " » places")
 			check(not all.has("Niveau indisponible") or app.model.clubLife.academyPathways.get("available", true), "Club : pas de « Niveau indisponible » trompeur")
-			var facilities: Control = app.root_content.find_child("ClubFacilityDetails", true, false)
-			check(is_instance_valid(facilities), "Club : bloc Infrastructures présent")
-			if is_instance_valid(facilities):
-				var card: Rect2 = (facilities.get_parent() as Control).get_global_rect()
-				var hidden := 0
-				for item: Rect2 in coach._content_rects():
-					# La 1re ligne (centre d'entraînement) touche seulement la bande de commandes de Gabi : on vérifie le reste.
-					if not card.intersects(item) or item.position.y < card.position.y + 85.0: continue
-					for offset: Rect2 in painted:
-						if Rect2(offset.position + coach.global_position, offset.size).intersects(item): hidden += 1; break
-				check(hidden == 0, "Club : Gabi ne masque ni Cellule médicale, ni Académie, ni le bouton des projets (" + str(hidden) + ")")
-			check(overlap < 10000.0, "Club : recouvrement de la page inférieur à 0,5 % de l'écran : " + str(overlap))
+			check(is_instance_valid(app.root_content.find_child("ClubFacilityDetails", true, false)), "Club : bloc Infrastructures présent")
+		# Gabi adjoint (13/11/2026) : la visite guidée est une courte scène, écran assombri (voile), et non plus
+		# une bulle qui cherche une place libre. Ce qui ne doit jamais masquer la page, c'est le médaillon
+		# permanent du coin bas droit, une fois la scène refermée.
+		check(coach._voile.visible, "Visite guidée : écran assombri derrière Gabi : " + route)
+		coach.close(); await settle()
+		var medaillon: Control = coach._medaillon
+		check(medaillon.is_visible_in_tree(), "Médaillon visible : " + route)
+		var disc := medaillon.get_global_rect()
+		check(disc.position.y >= app.body_scroll.get_global_rect().end.y, "Médaillon sous l'espace de travail : " + route)
+		var covered := 0
+		for item: Rect2 in coach._content_rects():
+			if disc.intersects(item): covered += 1
+		check(covered == 0, "Médaillon : aucun texte ni bouton de la page recouvert (" + str(covered) + ") : " + route)
 		await capture("gabi-" + route.to_lower())
 	print("CLUB_CHECKS ", checks, " echecs=", failures.size())
 	quit(1 if failures.size() > 0 else 0)

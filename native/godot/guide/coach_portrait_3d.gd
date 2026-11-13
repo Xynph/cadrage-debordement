@@ -54,6 +54,9 @@ const LIGHTS := [
 ]
 
 var model: PackedScene
+## Cadrage : « portrait » (bulle du mode grand) ou « medaillon » (buste serré, rendu plus petit).
+var framing := "portrait"
+const MEDAILLON := {"size": 0.70, "target": Vector3(0, 1.56, 0), "render": Vector2i(320, 320), "offset": 0.07}
 var reduced_motion := false
 var _context := ""
 var _profile := "origine"
@@ -185,6 +188,7 @@ func _ready() -> void:
 	_camera.position = target + Vector3(-0.55, 0.04, 3.45)
 	_camera.look_at(target)
 	_camera.make_current()
+	if framing != "portrait": _apply_framing()
 
 	visibility_changed.connect(_sync_visibility)
 	_sync_visibility()
@@ -420,9 +424,27 @@ func _play_idle() -> void:
 	_microgesture_wait = _gesture_random.randf_range(_microgesture_delay.x, _microgesture_delay.y)
 	set_process(true)
 
+## Médaillon permanent (coach_canvas.gd) : buste serré, caméra fixe, rendu 320 px ; mode grand : portrait.
+func set_framing(value: String) -> void:
+	if value == framing: return
+	framing = value
+	if _camera != null: _apply_framing()
+
+func _apply_framing() -> void:
+	var medaillon := framing == "medaillon"
+	_viewport.size = MEDAILLON.render if medaillon else RENDER_SIZE
+	var target: Vector3 = MEDAILLON.target if medaillon else Vector3(0, 1.39, 0)
+	_camera.position = target + Vector3(-0.32 if medaillon else -0.55, 0.02 if medaillon else 0.04, 3.45)
+	_camera.look_at(target)
+	_frame_clip(StringName(_animations.current_animation) if _animations != null and _animations.is_playing() else _idle, false)
+
 func _frame_clip(clip: StringName, transition := true) -> void:
 	var target_size := GREETING_SIZE if clip in _greetings else PORTRAIT_SIZE
 	var target_offset := GREETING_OFFSET if clip in _greetings else 0.0
+	if framing == "medaillon":
+		# Le buste reste cadré même pendant un salut : le médaillon ne zoome pas.
+		target_size = MEDAILLON.size
+		target_offset = MEDAILLON.offset
 	if _camera_tween != null: _camera_tween.kill()
 	if not transition:
 		_camera.size = target_size

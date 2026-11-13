@@ -47,7 +47,7 @@ func _valid(value: Variant) -> bool:
 	if not value.get("events", []) is Array or value.get("events", []).size() > EVENT_LIMIT: return false
 	seen.clear()
 	var pattern := RegEx.new()
-	pattern.compile("^(cash|signed|season):[0-9]{1,4}:[0-9]{1,6}:[0-9]{1,4}:[a-f0-9]{0,16}$")
+	pattern.compile("^(cash|signed|season|debut|finale|crise):[0-9]{1,4}:[0-9]{1,6}:[0-9]{1,4}:[a-f0-9]{0,16}$")
 	for id in value.get("events", []):
 		if not id is String or id.length() > 64 or pattern.search(id) == null or seen.has(id): return false
 		seen[id] = true

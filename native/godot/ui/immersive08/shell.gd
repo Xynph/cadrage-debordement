@@ -32,6 +32,12 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const TACTICS_CANVAS_MIN_WIDTH := 1600
 
 const FOOTER_RISE := 14
+## Coin de Gabi (pixels physiques) : bouton « Ton avis, Gabi ? » et médaillon, au bout du pied de page.
+## Le médaillon déborde au-dessus du pied de page ; les écrans laissent ce coin libre (GABI_CORNER).
+const GABI_DOCK_WIDTH := 330.0
+## Bande basse réservée au médaillon (pixels de référence 2560×1440) : le pied de page grandit d'autant et
+## la mise en page se réduit d'environ 3 % pour la loger, sans toucher au dessin des écrans.
+const GABI_BAND := 48
 const TOPBAR_ACTION_LEFT := 2067
 const TOPBAR_MATCH_ACTION_LEFT := 2008
 
@@ -91,7 +97,7 @@ static func render(app: Control) -> bool:
 	layout.name = "ImmersiveLayout"
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	app.root_content.add_child(layout)
-	var reference := Vector2(2560,1440)*C.density
+	var reference := Vector2(2560,1440+GABI_BAND)*C.density
 	_fit_layout(app.root_content,layout,reference)
 	app.root_content.resized.connect(_fit_layout.bind(app.root_content,layout,reference))
 	var shell := C.h(0)
@@ -158,7 +164,7 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 	layout.size = root.size/factor
 	if layout.has_meta("immersive_footer"):
 		var footer: Control = layout.get_meta("immersive_footer")
-		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)
+		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)+C.px(GABI_BAND)
 		_position_footer(footer)
 	if layout.has_meta("immersive_topbar"):
 		_position_topbar(layout)
@@ -513,7 +519,7 @@ static func _subnavigation(parent: Node, app: Control) -> void:
 static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	var row := Control.new()
 	row.name = "ImmersiveFooter"
-	row.custom_minimum_size.y = maxf(C.px(44),38.0/layout.scale.y)
+	row.custom_minimum_size.y = maxf(C.px(44),38.0/layout.scale.y)+C.px(GABI_BAND)
 	C.fill(row)
 	parent.add_child(row)
 	layout.set_meta("immersive_footer",row)
@@ -540,7 +546,7 @@ static func _position_footer(row: Control) -> void:
 	if factor<=0 or row.size.x<=0: return
 	var dock: Control = row.get_node_or_null("CoachCompactDock")
 	if dock==null: return
-	dock.size=Vector2(144,34)/factor
+	dock.size=Vector2(GABI_DOCK_WIDTH,34)/factor
 	dock.position=Vector2(row.size.x-dock.size.x,row.size.y-dock.size.y-1.0/factor)
 	var feedback: Button = row.get_node_or_null("DecisionFeedbackButton")
 	if feedback!=null:
