@@ -1,8 +1,12 @@
 name: Godot — suites ciblées avec SDK réel
 on:
+  # PR : seulement quand des fichiers Godot ou les suites SDK du manifeste changent, et
+  # jamais sur un brouillon (job sauté) : la recette part au passage en prête.
+  # main garde le filtre large d'origine.
   pull_request:
     branches: [main]
-    paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths: ['native/godot/**', 'tests/godot-*', 'tests/*.gd', 'tests/small-window-*', 'tests/deepen-*-ui.cjs', 'tests/deepen-staff-*-ui.cjs', 'tests/deepen-match.cjs', 'tests/deepen-youth-draft.cjs', 'tests/native-press-ui.cjs', 'tests/rg27-night-navigation.cjs', 'ci/godot-sdk*.json', 'ci/run-godot-sdk.cjs', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
   push:
     branches: [main]
     paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
@@ -28,18 +32,20 @@ on:
 permissions:
   contents: read
 
+# PR et main : seule la dernière exécution compte ; workflow_dispatch jamais annulé.
 concurrency:
-  group: godot-sdk-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: godot-sdk-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   sdk:
     name: ${{ matrix.family == 'full' && 'sdk' || format('sdk-{0}', matrix.family) }}
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
       matrix:
         family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'targeted' && '["targeted"]' || github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","parcours","layouts"]' || '["full","portraits-staff","parcours","layouts"]') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       CD_GODOT_SDK_SCOPE: ${{ matrix.family == 'full' && 'full' || 'followup' }}
@@ -105,17 +111,31 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+      - name: Cache de l'archive du SDK Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/cd-godot-sdk
+          key: godot-sdk-${{ hashFiles('ci/godot-sdk.json') }}
       - name: Installer le SDK officiel épinglé et vérifier son archive
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import hashlib, json, os, pathlib, urllib.request, zipfile
+          import hashlib, json, os, pathlib, shutil, urllib.request, zipfile
           config = json.loads(pathlib.Path('ci/godot-sdk.json').read_text())
           tools = pathlib.Path(os.environ['RUNNER_TEMP']) / 'godot-sdk'
           tools.mkdir()
           archive = tools / 'godot.zip'
-          urllib.request.urlretrieve(config['url'], archive)
+          # Archive en cache (clé = hash de ci/godot-sdk.json) : taille et SHA-256
+          # revérifiées ci-dessous comme pour un téléchargement neuf.
+          cached = pathlib.Path.home() / '.cache' / 'cd-godot-sdk' / 'godot.zip'
+          if cached.is_file() and cached.stat().st_size == config['bytes'] and hashlib.sha256(cached.read_bytes()).hexdigest() == config['sha256']:
+              shutil.copyfile(cached, archive)
+              print('SDK Godot : archive restaurée du cache')
+          else:
+              urllib.request.urlretrieve(config['url'], archive)
+              cached.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(archive, cached)
           assert archive.stat().st_size == config['bytes'], 'Unexpected SDK archive size'
           assert hashlib.sha256(archive.read_bytes()).hexdigest() == config['sha256'], 'SDK checksum mismatch'
           with zipfile.ZipFile(archive) as z:

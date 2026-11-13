@@ -15,15 +15,23 @@ assert.match(yaml,/CLASSIFICATION: \$\{\{ needs\.classification\.result \}\}/);
 assert.match(yaml,/SHARDS: \$\{\{ needs\.shards\.result \}\}/);
 assert.match(yaml,/COVERAGE: \$\{\{ needs\.classification\.outputs\.coverage \}\}/);
 assert.match(yaml,/if: \$\{\{ always\(\) \}\}/);
+// Débit : brouillons en CI légère, batterie complète au passage en prête, annulation sur main.
+assert.match(yaml,/types: \[opened, synchronize, reopened, ready_for_review\]/);
+assert.match(yaml,/draft: \$\{\{ github\.event\.pull_request\.draft == true \}\}/);
+assert.match(yaml,/DRAFT: \$\{\{ needs\.classification\.outputs\.draft \}\}/);
+assert.match(yaml,/cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| github\.event_name == 'push' \}\}/);
+const shardJob=yaml.split('\n  shards:\n')[1].split('\n  godot:\n')[0];
+assert.match(shardJob,/needs\.classification\.outputs\.draft != 'true'/);
 // Nombre de shards : une seule source (ci/ci-jobs.cjs) que la matrice doit refléter.
-const {SHARD_COUNT,GODOT_SHARD_COUNT,OFFICIAL_JOBS}=require('../ci/ci-jobs.cjs');
+const {SHARD_COUNT,SHARD_PARALLEL,GODOT_SHARD_COUNT,OFFICIAL_JOBS}=require('../ci/ci-jobs.cjs');
 const range=n=>Array.from({length:n},(_,i)=>i+1).join(', ');
-assert.equal(SHARD_COUNT,10);
+assert.equal(SHARD_COUNT,7);
+assert.equal(SHARD_PARALLEL,3);
 assert.equal(OFFICIAL_JOBS.length,SHARD_COUNT+2);
 assert.ok(yaml.includes('    name: Suites ${{ matrix.shard }}/'+SHARD_COUNT+'\n'));
 assert.ok(yaml.includes('        shard: ['+range(SHARD_COUNT)+']\n'));
 assert.ok(yaml.includes('node ci/shard-tests.cjs "$SHARD" "$COVERAGE" '+SHARD_COUNT+' '));
-assert.ok(yaml.includes('bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE)" 2\n'));
+assert.ok(yaml.includes('bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE)" '+SHARD_PARALLEL+'\n'));
 assert.ok(yaml.includes('### Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE) : aucune suite attribuée'));
 // Jobs Godot : SDK épinglé et vérifié, SDK obligatoire, non bloquants pour l'instant.
 const godot=yaml.split('\n  godot:\n')[1].split('\n  validation:\n')[0];
@@ -31,6 +39,7 @@ assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUN
 assert.ok(godot.includes('        shard: ['+range(GODOT_SHARD_COUNT)+']\n'));
 assert.ok(godot.includes('node ci/shard-tests.cjs "$SHARD" godot '+GODOT_SHARD_COUNT+' '));
 assert.match(godot,/continue-on-error: true/);
+assert.match(godot,/needs\.classification\.outputs\.draft != 'true'/);
 assert.match(godot,/GODOT_VERSION: 4\.7\.2-stable\n/);
 assert.match(godot,/GODOT_SHA256: [0-9a-f]{64}\n/);
 assert.match(godot,/sha256sum -c -/);
@@ -51,7 +60,7 @@ const script=yaml.split('- name: Publier le verdict natif')[1].split('run: |')[1
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-ci-verdict-'));
 try {
  const summary=path.join(dir,'summary.md');
- for (const [event,coverage,shards,classification,expected] of [
+ for (const [event,coverage,shards,classification,expected,draft='false'] of [
   ['pull_request','documentation','skipped','success',0],
   ['pull_request','web','success','success',0],
   ['pull_request','native-art','success','success',0],
@@ -66,19 +75,26 @@ try {
   ['pull_request','','success','success',1],
   ['pull_request','unknown','success','success',1],
   ['push','documentation','skipped','success',1],
-  ['workflow_dispatch','web','success','success',1]
+  ['workflow_dispatch','web','success','success',1],
+  // Brouillon : jamais vert tant que la batterie complète n'a pas tourné.
+  ['pull_request','full','skipped','success',1,'true'],
+  ['pull_request','web','skipped','success',1,'true'],
+  ['pull_request','full','success','success',1,'true'],
+  ['pull_request','documentation','skipped','success',0,'true'],
+  ['pull_request','full','success','success',0,'']
  ]) {
   fs.writeFileSync(summary,'');
   const result=spawnSync(process.env.CD_BASH_EXECUTABLE||'bash',['-c',script],{
-   encoding:'utf8',env:{...process.env,EVENT_NAME:event,COVERAGE:coverage,SHARDS:shards,
+   encoding:'utf8',env:{...process.env,DRAFT:draft,EVENT_NAME:event,COVERAGE:coverage,SHARDS:shards,
     CLASSIFICATION:classification,HEAD_SHA:'pr-head',GITHUB_SHA:'merge-commit',
     GITHUB_REPOSITORY:'owner/repo',GITHUB_RUN_ID:'123',GITHUB_STEP_SUMMARY:summary.replaceAll('\\','/')}
   });
   assert.ifError(result.error);
   assert.equal(result.status,expected,result.stderr+' '+[event,coverage,shards,classification]);
   assert.match(fs.readFileSync(summary,'utf8'),expected===0?/Verdict CI : SUCCÈS/:/Verdict CI : ÉCHEC/);
+  if(draft==='true'&&coverage!=='documentation')assert.match(fs.readFileSync(summary,'utf8'),/Brouillon : batterie complète non lancée/);
  }
 } finally {
  fs.rmSync(dir,{recursive:true,force:true});
 }
-console.log('ci-report : contrat des jobs et 15 verdicts natifs vérifiés');
+console.log('ci-report : contrat des jobs et 20 verdicts natifs vérifiés');

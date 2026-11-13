@@ -209,7 +209,7 @@ def validate_qa_report(report, expected_executable, expected_mode):
     require(expected_mode in ("fresh", "resume") and report.get("mode") == expected_mode, "Wrong QA mode")
     require(report.get("passed") is True and report.get("failures") == [] and type(report.get("checks")) is int and report["checks"] > 0, "QA failed or omitted checks")
     require(same_windows_path(report.get("executable"), expected_executable), "Wrong QA executable")
-    require(ntpath.isabs(str(report.get("data_dir", ""))) and report.get("season", 0) >= 2, "QA profile or season two missing")
+    require(windows_absolute(report.get("data_dir", "")) and report.get("season", 0) >= 2, "QA profile or season two missing")
     require(type(report.get("pid")) is int and report["pid"] > 0 and type(report.get("engine_pid")) is int and report["engine_pid"] > 0, "QA process identity missing")
     coach = report.get("coach", {})
     require(coach.get("starts") == 0 and coach.get("ends") == 0 and coach.get("voice_available") is False and coach.get("player_present") is False, "Guide audio must remain unallocated and silent")
@@ -308,6 +308,23 @@ def validate_graphics_installation(report, pins):
     return driver
 
 
+def windows_absolute(path):
+    """Chemin Windows absolu : lecteur + racine (C:\\…, C:/…) ou UNC (\\\\serveur\\partage\\…).
+    Règle explicite et identique sous toutes les versions de Python : depuis Python 3.13,
+    ntpath.isabs refuse « /x » ou « \\x » (racine sans lecteur), que 3.12 acceptait."""
+    text = str(path)
+    drive, rest = ntpath.splitdrive(text)
+    return bool(drive) and rest[:1] in ("\\", "/")
+
+
+def evidence_module_path(path, verify_files):
+    """Module chargé : chemin Windows absolu ; avec vérification des octets sur un hôte
+    POSIX (tests et contrôles hors Windows), un chemin POSIX absolu vers le vrai fichier
+    est aussi accepté, comme le faisait ntpath.isabs avant Python 3.13."""
+    text = str(path)
+    return windows_absolute(text) or (verify_files and os.name != "nt" and os.path.isabs(text))
+
+
 def validate_graphics_runtime(report, process, expected_executable, driver, verify_files=True):
     require(driver in ("opengl3", "opengl3_angle"), "Unsupported Windows graphics driver")
     require(report.get("platform") == "Windows" and report.get("native_display") == "Windows", "Native Windows graphics runtime required")
@@ -324,7 +341,7 @@ def validate_graphics_runtime(report, process, expected_executable, driver, veri
     modules = {}
     for row in process.get("loadedModules", []):
         name = str(row.get("name", "")).casefold()
-        require(name and name not in modules and ntpath.isabs(str(row.get("path", ""))) and ntpath.basename(row["path"]).casefold() == name and SHA.fullmatch(str(row.get("sha256", ""))), "Actually loaded graphics module paths/hashes missing or invalid")
+        require(name and name not in modules and evidence_module_path(row.get("path", ""), verify_files) and ntpath.basename(row["path"]).casefold() == name and SHA.fullmatch(str(row.get("sha256", ""))), "Actually loaded graphics module paths/hashes missing or invalid")
         if verify_files:
             require(digest(row["path"]) == row["sha256"], "Loaded graphics module hash differs from actual file bytes")
         modules[name] = row
@@ -332,7 +349,7 @@ def validate_graphics_runtime(report, process, expected_executable, driver, veri
         require({"d3d11.dll", "dxgi.dll"} <= modules.keys(), "ANGLE D3D11/DXGI module evidence missing")
         require(not any(re.match(r"^(opengl32|libgallium_wgl|libegl.*|libgles.*)\.dll$", name) for name in modules), "Mesa/native OpenGL module mixed into clean ANGLE")
         system_root = process.get("systemRoot", "")
-        require(ntpath.isabs(str(system_root)), "Observed Windows SystemRoot required")
+        require(evidence_module_path(system_root, verify_files), "Observed Windows SystemRoot required")
         for name in ("d3d11.dll", "dxgi.dll", "d3d10warp.dll"):
             if name in modules:
                 require(same_windows_path(modules[name]["path"], ntpath.join(system_root, "System32", name)), "ANGLE must load the observed Windows system graphics modules")
