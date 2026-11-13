@@ -77,6 +77,13 @@ vérifient séparément.
 
 ## Recette Windows
 
+### Export macOS — relevé du 13 novembre 2026
+
+- [Export macOS Godot 4.7](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_macos.html) : documentation officielle lue par recherche documentaire ; bundle Universal 2 et permissions des exécutables. Code MIT et notices tierces à conserver. **Retenu** pour les bundles séparés arm64/Intel avec Node embarqué ; preuve d’exécution à suivre dans la PR Mac.
+- [Exporteur macOS Godot 4.7.2](https://github.com/godotengine/godot/blob/4.7.2-stable/platform/macos/export/export_plugin.cpp) : source officielle lue après le refus d’export Apple Silicon ; confirme les formats de textures à activer dans les paramètres du projet, les noms de presets et les versions minimales par architecture. MIT. **Retenu**, configuration dans le staging Mac seulement.
+- [Runners GitHub hébergés](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/runners/github-hosted-runners) : documentation officielle consultée ; `macos-15` arm64 et `macos-15-intel` x64. Gratuits en dépôt public ; les dépôts privés consomment des minutes incluses puis facturables. **Retenu** pour la recette fictive publique, privé soumis à l’autorisation de budget existante.
+- [Godot 4.7.2](https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable) et [Node 22.23.4](https://nodejs.org/dist/v22.23.4/) : digest du SDK Mac contrôlé dans l’API de Release, empreintes des archives Node Darwin lues dans SHASUMS256 le 13 novembre 2026. MIT et notices tierces ; pins dans `ci/macos-toolchain.json`. **Retenus**, réception native séparée sur chaque architecture.
+
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
 | [Reverse Engineer Anything (REA)](https://github.com/morluto/rea) | Outil demandé par Léo. Échange sur un candidat Windows relu le 10 novembre 2026. | Inventorier le contenu d’un paquet Godot déjà construit et comparer les ressources embarquées aux fichiers attendus. | Code MIT à la version examinée. | **Évalué**. Inventaire du PCK réalisé sur un candidat. Compléter le contrôle du contenu par un lancement natif et la vérification du manifeste. |

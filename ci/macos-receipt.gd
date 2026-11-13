@@ -60,6 +60,7 @@ func run() -> void:
 	if phase == "fresh":
 		check(not app._has_career(), "Empty first launch")
 		if not await ask("new_career", {"mode":"world-champ", "club":3}): await finish(); return
+		if not await load("res://qa_runner.gd").settle_club_meetings(app, self, check): await finish(); return
 		var before: Dictionary = await exported_state()
 		app.pack_manager.scope = "career"
 		app.pack_manager.open("career")
@@ -95,8 +96,9 @@ func run() -> void:
 		check(await exported_state() == original, "Saved simulation resumes identically")
 		var people: Variant = JSON.parse_string(FileAccess.get_file_as_string(output.path_join("saved-press.json")))
 		check(app.model.clubLife.press.people == people, "Pack press identities survive restart")
-	app._navigate("Presse")
-	await capture(phase + "-press")
+	app.pack_manager.open("career")
+	check(app.route == "Packs", "Installed pack page is reachable")
+	await capture(phase + "-packs")
 	await finish()
 
 func finish() -> void:

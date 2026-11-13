@@ -43,8 +43,26 @@ jobs:
         run: python ci/build-macos.py --source-commit "$SOURCE_COMMIT" --output "$BUILD_DIR"
       - name: Démarrer, importer la presse fictive, sauvegarder et reprendre
         run: python ci/receive-macos.py --build "$BUILD_DIR"
+      - name: Conserver le jeu et ses preuves fictives
+        id: artifacts
+        continue-on-error: true # Storage availability is distinct from native validation.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: OvalLegacy27-macOS-${{ matrix.architecture }}-${{ env.SOURCE_COMMIT }}
+          path: |
+            ${{ env.BUILD_DIR }}/OvalLegacy27-macOS-*.zip
+            ${{ env.BUILD_DIR }}/build.json
+            ${{ env.BUILD_DIR }}/receipt/receipt.json
+            ${{ env.BUILD_DIR }}/receipt/*-report.json
+            ${{ env.BUILD_DIR }}/receipt/*.png
+            ${{ env.BUILD_DIR }}/receipt/*.log
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
       - name: Rapports et diagnostics publics (données fictives seulement)
         if: always()
+        env:
+          ARCHIVE_STATUS: ${{ steps.artifacts.outcome }}
         run: |
           python - <<'PY'
           import os
@@ -58,6 +76,7 @@ jobs:
                   print('::endgroup::')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as file:
               file.write('macOS natif : ' + os.environ['SOURCE_COMMIT'] + '\n')
+              file.write('Archivage Actions : ' + os.environ['ARCHIVE_STATUS'] + '\n')
               report = root / 'receipt/receipt.json'
               file.write(report.read_text() if report.exists() else 'Recette interrompue ; consulter les journaux.')
           PY

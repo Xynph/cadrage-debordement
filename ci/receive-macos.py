@@ -8,7 +8,6 @@ import hashlib
 import json
 import os
 import platform
-import shutil
 import subprocess
 import zipfile
 from pathlib import Path
@@ -48,6 +47,8 @@ def receive(args):
         pack = evidence / "Presse fictive — réception.zip"
         fictional_pack(pack)
     pack_sha = digest(pack)
+    with zipfile.ZipFile(pack) as archive:
+        expected_press = json.loads(archive.read("pack.json"))["press"]
     extracted = evidence / "extracted"
     subprocess.run(["ditto", "-x", "-k", str(package), str(extracted)], check=True)
     app = extracted / "Oval Legacy 27.app"
@@ -76,6 +77,11 @@ def receive(args):
     assert digest(package) == meta["sha256"], "Delivery ZIP must remain unchanged"
     reports = [json.loads((evidence / (p + "-report.json")).read_text()) for p in ("fresh", "resume")]
     assert reports[0]["pid"] != reports[1]["pid"], "Independent application processes"
+    people = {p["id"]: p for p in json.loads((evidence / "saved-press.json").read_text())}
+    for journalist in expected_press["journalists"]:
+        assert people[journalist["id"]]["name"] == journalist["name"], "Imported journalist projection differs"
+    projected_outlets = {p["outlet"] for p in people.values()}
+    assert all(o["name"] in projected_outlets for o in expected_press["outlets"]), "Imported outlet projection differs"
     (evidence / "receipt.json").write_text(json.dumps({"passed": True, "sourceCommit": meta["sourceCommit"], "architecture": meta["architecture"],
         "packageSha256": meta["sha256"], "packSha256": pack_sha, "packUnmodified": True, "fictional": not bool(args.pack),
         "qaOverrideSha256": digest(override), "reports": reports}, indent=2))

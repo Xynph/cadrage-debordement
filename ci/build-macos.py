@@ -59,6 +59,9 @@ def build(args):
     base.stage(node)
     source = out / "project"
     shutil.copytree(base.PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
+    project_file = source / "project.godot"
+    project_file.write_text(project_file.read_text().replace(
+        "[rendering]\n", "[rendering]\ntextures/vram_compression/import_s3tc_bptc=true\ntextures/vram_compression/import_etc2_astc=true\n"))
     qa = source / "macos_qa"
     qa.mkdir()
     shutil.copy2(ROOT / "ci/macos-receipt.gd", qa / "receipt.gd")
