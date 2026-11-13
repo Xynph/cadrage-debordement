@@ -18,6 +18,13 @@ for (const base of catalogue.bases.filter(b => b.kind === 'player')) {
   const tone = base.observedTraits?.skinTone;
   if (tone) tones[Number(base.id.split(':')[1])] = TONE[tone];
 }
+function world() {
+  const h = context(437493);
+  h.ctx.nativeWorldRegistryText = JSON.stringify(registry);
+  h.run(worldVm.bootstrap());
+  h.run("CDWorldCareer.start(0, 'world', true);");
+  return h;
+}
 const toneOf = player => tones[portraits.describe(player).cell];
 
 test('La table de teintes embarquée suit le catalogue de la banque v2', () => {
@@ -61,8 +68,8 @@ test('Teintes par origine : pays du Pacifique et d’Afrique australe orientés,
 });
 
 test('Un jeune formé en France : la teinte suit son origine tirée par youthHeritage', () => {
-  const h = context(437493);
-  const r = JSON.parse(h.run(`start(0, 'france'); (function () {
+  const h = world();
+  const r = JSON.parse(h.run(`S.clubs[3].country = 'FR'; (function () {
     const club = S.clubs[3], rows = [];
     for (let i = 0; i < 400; i++) {
       const p = academyPlayer(3, i % 15, 7, 5000 + i, false, club);
@@ -107,8 +114,25 @@ test('Aucun doublon de nom dans un même club (effectif et centre), même quand 
   assert.ok(r.compound > 0, 'les prénoms composés servent quand la liste est épuisée');
 });
 
-test('Le même identifiant donne toujours le même nom et le même portrait quand le club n’a rien changé', () => {
+test('Hors carrière monde : aucun changement (ni portrait salé, ni nom modifié)', () => {
   const h = context(437493);
-  const r = JSON.parse(h.run(`start(0, 'france'); JSON.stringify([academyPlayer(2, 4, 3, 77, false, S.clubs[2]), academyPlayer(2, 4, 3, 77, false, S.clubs[2])].map(p => [p.name, p.appearanceId ?? null]))`));
+  const r = JSON.parse(h.run(`start(0, 'france'); JSON.stringify(Array.from({ length: 60 }, (_, i) => academyPlayer(2, i % 15, 3, 100 + i, false, S.clubs[2]).appearanceId ?? null))`));
+  assert.ok(r.every(x => x === null));
+});
+
+test('Le même identifiant donne toujours le même nom et le même portrait quand le club n’a rien changé', () => {
+  const h = world();
+  const r = JSON.parse(h.run(`JSON.stringify([academyPlayer(2, 4, 3, 77, false, S.clubs[2]), academyPlayer(2, 4, 3, 77, false, S.clubs[2])].map(p => [p.name, p.appearanceId ?? null]))`));
   assert.deepEqual(r[0], r[1]);
+});
+
+test('Un identifiant renommé après la création garde son portrait : l’appearanceId salé reste la racine stable', () => {
+  const h = world();
+  const rows = JSON.parse(h.run(`S.clubs[3].country = 'FIJ'.slice(0, 2); S.clubs[3].country = 'FJ';
+    JSON.stringify(Array.from({ length: 40 }, (_, i) => { const p = academyPlayer(3, i % 15, 4, 700 + i, false, S.clubs[3]); const before = p.appearanceId ?? null; p.id = 'p3-' + i + '-renomme'; return [before, p.appearanceId ?? null]; }))`));
+  assert.ok(rows.some(([a]) => a !== null), 'des jeunes ont un identifiant d’apparence salé');
+  for (const [before, after] of rows) assert.equal(before, after);
+  const salted = rows.find(([a]) => a !== null)[0];
+  assert.match(salted, /^[A-Za-z0-9:_.-]{1,180}$/);
+  assert.equal(portraits.describe({ appearanceBankVersion: 2, id: 'p3-0-renomme', appearanceId: salted }).appearanceId, salted);
 });

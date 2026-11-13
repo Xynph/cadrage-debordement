@@ -228,7 +228,7 @@ function youthName(id,h,club){
 // Noms déjà portés dans un club : effectif pro et centre(s) du club. Un nom de jeune ne doit jamais
 // doubler un nom du même club (#610, décision de Léo du 13/11/2026). Les centres invités n'ont pas de club.
 function youthTakenNames(club){
- if(!club||typeof S==='undefined'||!S||!Number.isInteger(club.id)||!S.clubs?.[club.id])return null;
+ if(!club||!youthWorldOnly()||typeof S==='undefined'||!S||!Number.isInteger(club.id)||!S.clubs?.[club.id])return null;
  const real=S.clubs[club.id],names=new Set(real.players.map(p=>p.name));
  const lists=[club.id===S.club?S.development?.academy:null,...(S.aiRoster?.academies||[]).filter(a=>a.clubId===club.id).map(a=>a.players),...(S.nativeAcademy?.centers||[]).filter(c=>c.clubId===club.id).map(c=>c.players)];
  for(const list of lists)for(const p of list||[])names.add(p.name);
@@ -260,11 +260,13 @@ const YOUTH_LOOKS={FRA:YOUTH_LOOK_EUROPE,ENG:YOUTH_LOOK_EUROPE,SCO:YOUTH_LOOK_EU
 // Pays du club formateur pour le portrait : le champ country quand il existe (base mondiale), sinon la
 // France pour les 30 clubs de la base commune et du mode France (même découpage que clubCountry() du worker).
 function youthPortraitNation(club){
- if(!club)return null;
+ if(!club||!youthWorldOnly())return null;
  const direct=youthClubNation(club);if(direct||club.country)return direct;
- const french=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)||!!S?.commonDatabase;
- return french&&Number.isInteger(club.id)&&club.id<30?'FRA':null;
+ return Number.isInteger(club.id)&&club.id<30&&!!S?.commonDatabase?'FRA':null;
 }
+// Portraits orientés et noms uniques : carrière monde uniquement. Les modes historiques (France, base commune
+// classique) restent identiques à l'octet près (campagnes de référence, RNG compris).
+function youthWorldOnly(){return typeof CDWorldCareer!=='undefined'&&typeof S!=='undefined'&&!!S&&CDWorldCareer.active(S)}
 // Teinte cible tirée par empreinte, puis premier identifiant d'apparence (l'identifiant du joueur, sinon
 // une variante salée) dont la cellule de la banque a cette teinte. Renvoie undefined quand l'identifiant
 // du joueur convient déjà : le portrait garde alors le comportement historique.
