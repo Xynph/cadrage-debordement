@@ -15,15 +15,20 @@ function describe(person={}){
  const band=origin==='staff'?(ref===null?(seed>>>8)%4:Math.max(0,Math.min(3,Math.floor((ref-40)/10)))):null;
  const bank=p.appearanceBankVersion===2?2:1;
  const cell=origin==='staff'?band*(bank===2?10:4)+seed%(bank===2?10:4):seed%(bank===2?160:32);
- const faceWidth=.965+next()*.07,eyeSpacing=-.010+next()*.020,noseWidth=-.012+next()*.024,jawWidth=-.012+next()*.024;
- const zoom=1.005+next()*.025,cropX=-.008+next()*.016,cropY=-.006+next()*.012;
+ let faceWidth=.965+next()*.07,eyeSpacing=-.010+next()*.020,noseWidth=-.012+next()*.024,jawWidth=-.012+next()*.024;
+ let zoom=1.005+next()*.025;const cropX=-.008+next()*.016,cropY=-.006+next()*.012;
  const saturation=.94+next()*.12,exposure=.97+next()*.06,shirt=next(),mirror=next()>=.5;
+ // Carrure (écart entre la carrure attendue et celle de la base choisie, de -1 à 1) : le visage s'élargit ou s'affine
+ // un peu plus que le seul aléa (largeurs > 1 = visage plus étroit dans le shader) ; l'aléa propre au joueur est gardé.
+ const build=typeof p.appearanceBuild==='number'&&Number.isFinite(p.appearanceBuild)&&Math.abs(p.appearanceBuild)<=1?p.appearanceBuild:null;
+ if(build!==null){faceWidth=1-.05*build+(faceWidth-1)*.45;jawWidth=-.024*build+jawWidth*.6;zoom=1.005+(zoom-1.005)*.6+.012*(1-build)/2;}
  const illustrativeAge=origin==='staff'?45+band*10:25;
  const visualAge=current??ref??illustrativeAge;
  const result={version:VERSION,appearanceId,seed,origin,atlas:origin==='staff'?'staff':'players',cell,
   ageBasis:current!==null?'current-age':ref!==null?'appearance-reference':'illustrative',referenceAge:ref,
   ageBand:band,maturity:Math.max(0,Math.min(1,(visualAge-30)/50)),
   faceWidth,eyeSpacing,noseWidth,jawWidth,zoom,cropX,cropY,saturation,exposure,shirt,mirror};
+ if(build!==null)result.build=build;
  if(bank===2){
   const within=cell%10,newStaff=origin==='staff'&&within>=4;
   Object.assign(result,{version:2,bankVersion:2,baseId:result.atlas+':'+String(cell).padStart(3,'0'),
