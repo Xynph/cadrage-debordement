@@ -272,9 +272,9 @@ func run() -> void:
 		check(branding != null and branding.visible == (expected_texture != null), "Missing active crest leaves neutral stadium fascia")
 		if branding != null: check(branding.material_override.albedo_texture == expected_texture, "Stadium fascia uses the active club identity")
 		var advertisements := stage.find_children("*", "Label3D", true, false)
-		check(advertisements.size() == 16, "All sixteen Oval Legacy advertising boards remain present")
+		check(advertisements.size() == 16, "All sixteen Rugby Legacy advertising boards remain present")
 		for label in advertisements:
-			check(str(label.text) == "OVAL LEGACY 27", "Advertising boards retain Oval Legacy 27")
+			check(str(label.text) == "RUGBY LEGACY 27", "Advertising boards retain Rugby Legacy 27")
 		club_crest.free()
 	var original_scene := JSON.stringify(app.model.live.scene)
 	var original_positions: Array[Vector3] = actor_positions(stage) if stage != null else []

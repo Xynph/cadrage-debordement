@@ -15,6 +15,18 @@ assert.equal(PROFILE.runs.length, 7, 'Sept runs de référence');
 assert.deepEqual(weights.js.runs, PROFILE.runs, 'Les poids viennent des runs rejoués');
 for (const [file, seconds] of Object.entries(WEIGHTS_SECONDS))
   assert.ok(Number.isInteger(seconds) && seconds > 1, 'poids invalide : ' + file);
+// Une suite réintégrée (migrée en carrière Monde) prend au moins le poids mesuré dans ces mêmes
+// runs (médiane +15 %, à l'arrondi près des durées du fixture) : sans lui elle pèse 1 s, est
+// mal placée, et le rejeu (qui, lui, connaît sa durée) ne compare plus des plans cohérents.
+// Un poids plus élevé reste permis s'il vient d'une mesure de la version migrée (plus lente).
+{
+  const { median: exactMedian, MARGIN } = require('../ci/suite-weights.cjs');
+  // Le fixture ne garde que les durées d'au moins 5 s (0 sinon) : on ne vérifie que celles-là.
+  const stale = files.filter(f => PROFILE.suites[f] && exactMedian(PROFILE.suites[f]) >= 5).map(f => [f, WEIGHTS_SECONDS[f], Math.round(exactMedian(PROFILE.suites[f]) * (1 + MARGIN))])
+    .filter(([, w, m]) => !((w || 1) >= m - 1));
+  assert.deepEqual(stale, [], 'Poids absents ou sous la mesure des runs de référence [suite, poids, mesuré] ; ' +
+    'relancer node ci/suite-weights.cjs js <journaux des runs js.runs> --garder');
+}
 for (const [file, seconds] of Object.entries(GODOT_WEIGHTS_SECONDS))
   assert.ok(Number.isInteger(seconds) && seconds > 1, 'poids Godot invalide : ' + file);
 
@@ -108,8 +120,10 @@ for (const name of ['godot-match-rendu', 'godot-match-animations', 'native-relat
 // Mode Monde uniquement : les suites Godot à ancien mode de carrière (CD_MODES_HERITES) sont exclues des jobs Godot.
 const godotExcluded = godotTestFiles(testFilesOnDisk()).filter(f => !godot.includes(f));
 assert.ok(godotExcluded.length > 0 && godotExcluded.every(f => legacyTestFiles().includes(f)));
-for (const name of ['godot-engine', 'deepen-match', 'godot-immersive08'])
+for (const name of ['godot-engine', 'deepen-match'])
   assert.ok(godotExcluded.includes('tests/' + name + '.cjs'), name + ' est exclue (ancien mode)');
+for (const name of ['godot-immersive08', 'deepen-analytics-real-ui'])
+  assert.ok(godot.includes('tests/' + name + '.cjs'), name + ' tourne en mode Monde');
 for (const name of ['godot-assets', 'godot-common-rosters', 'saves'])
   assert.ok(!godot.includes('tests/' + name + '.cjs'), name + ' est du JavaScript pur');
 const godotPlan = Array.from({ length: GODOT_SHARD_COUNT }, (_, i) => suitesForShard(i + 1, 'godot'));

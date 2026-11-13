@@ -5,6 +5,18 @@ const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 
+## Classement ouvert = au moins un match joué dans la division. Avant la 1re journée, tous les clubs sont à 0 point
+## et leur « rang » n'est qu'un ordre d'identifiant : l'interface n'en fait pas un classement.
+static func standings_open(club: Dictionary) -> bool:
+	if club.has("standingsOpen"): return bool(club.get("standingsOpen"))
+	if club.has("played"): return int(club.get("played", 0)) > 0
+	return true
+
+static func rank_ordinal(club: Dictionary) -> String:
+	var rank: Variant = club.get("rank")
+	if not standings_open(club) or not (rank is int or rank is float) or rank < 1: return "—"
+	return "1er" if int(rank) == 1 else "%de" % int(rank)
+
 static func fixture_date(fixture: Dictionary, show_timezone: bool = false) -> String:
 	var date: Variant = fixture.get("date")
 	if not date is String or date.is_empty(): return ""

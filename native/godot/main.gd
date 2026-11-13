@@ -21,6 +21,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"delegate": "Simulation de la rencontre…",
 	"finish_round": "Mise à jour de la journée…",
 	"advance_day": "Passage au jour suivant…",
+	"preseason_advance": "Avance de l’avant-saison…",
 	"next_season": "Préparation de la nouvelle saison…",
 	"advance_pacific_preparation": "Avance de la préparation…",
 	"advance_japan_preparation": "Avance de la préparation…",
@@ -184,7 +185,7 @@ func _ready() -> void:
 	file_dialog = FileDialog.new()
 	file_dialog.theme=ImmersiveStyle.theme(accent)
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
+	file_dialog.filters = PackedStringArray(["*.json ; Carrière Rugby Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
 	ImmersiveDialogs.watch_file_picker(file_dialog)
@@ -268,7 +269,7 @@ func _receive_model(value: Dictionary) -> void:
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
 	var reception_id := ""
-	if response_ok and (received_command in ["advance_day", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
+	if response_ok and (received_command in ["advance_day", "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
 		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick
 	# or a light decision: the queued command keeps the same panel.
@@ -824,9 +825,9 @@ func _build_sidebar(parent: Node) -> void:
 	var left := G.v(4)
 	margin.add_child(left)
 	var logo := G.button("", pause_menu)
-	logo.tooltip_text = "Oval Legacy 27 — Menu et sauvegardes"
+	logo.tooltip_text = "Rugby Legacy 27 — Menu et sauvegardes"
 	var bitmap := TextureRect.new()
-	bitmap.texture = load("res://branding/oval-legacy-27-logo.png")
+	bitmap.texture = load("res://branding/rugby-legacy-27-logo.png")
 	bitmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bitmap.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	bitmap.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1038,7 +1039,7 @@ func open_file(importing: bool) -> void:
 	import_mode = importing
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE if importing else FileDialog.FILE_MODE_SAVE_FILE
 	file_dialog.title = "Importer une carrière · 8 à 24 Mio selon l’édition" if importing else "Exporter une carrière"
-	file_dialog.current_file = "" if importing else "Oval-Legacy-27.json"
+	file_dialog.current_file = "" if importing else "Rugby-Legacy-27.json"
 	file_dialog.popup_centered_ratio(0.7)
 
 func _file_selected(path: String) -> void:
@@ -1132,7 +1133,7 @@ func _credits() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
-	d.title = "Oval Legacy 27 · Crédits"
+	d.title = "Rugby Legacy 27 · Crédits"
 	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
 	add_child(d)
 	d.popup_centered(Vector2i(760,260))
