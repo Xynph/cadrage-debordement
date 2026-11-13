@@ -177,6 +177,7 @@ func _heading() -> void:
 				button.accept_event()
 				_choose(posmod(i + (1 if event.keycode == KEY_RIGHT else -1), TABS.size())))
 	var show_match := MatchContext.match_available(app.model)
+	_button(tabbar, Rect2(830, 0, 300, 53), "Préparer la suite", func(): load("res://ui/manager_planning.gd").open(app), false, "calendar", "PreparationManagerPlanning")
 	var match_space := 385 if show_match else 0
 	_button(tabbar, Rect2(1528 - match_space, 0, 337, 53), "Revoir la composition", func(): app._navigate("Composition"), false, "people", "PreparationComposition")
 	_button(tabbar, Rect2(1883 - match_space, 0, 365, 53), "Carnet de jeu", func(): app._navigate("Plan de jeu"), not show_match, "arrow", "PreparationOpenPlaybook")
