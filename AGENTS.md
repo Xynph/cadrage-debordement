@@ -19,6 +19,12 @@ compatibles. La description de la PR est la passation. Le
 [cycle court](docs/developpement-parallele.md) précise quand signaler une
 collision, quels tests consigner et comment préparer la reprise.
 
+**Débit CI** ([détail](docs/ci-debit-20261112.md)) : ouvrir chaque PR en
+brouillon et pousser librement (CI légère : classification et syntaxe, verdict
+« Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
+prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
+rouge de brouillon : il signifie seulement « batterie non lancée ».
+
 Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre
 2026. Un seul intégrateur arbitre et applique les protections serveur et le
 [gate officiel déployé](docs/chat-release-gate.md), avec toute autorisation

@@ -503,4 +503,16 @@ test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (e
   }
   assert.ok(essais >= 2, 'graine 7 : au moins deux essais en jeu courant');
   assert.ok(autres >= essais, 'temps forts mis en scène : ' + autres);
+  // Plaqueur nommé par le moteur (fait `tackler`) : c'est lui qui plaque à l'écran au bout du gain
+  // (sauf relais s'il est distancé), le même joueur que la colonne Plaq. de l'entracte.
+  let plaquages = 0, nommes = 0;
+  for (const tf of avec.tempsForts) {
+    const c = tf.choregraphie;if (!c) continue;
+    for (const p of tf.plans) {
+      const s = avec.live.events[p.index]?.scene;if (s?.kind !== 'carry' || s.tackler == null) continue;
+      const e = c.evenements.find(x => x.type === 'plaquage' && x.porteur === String(s.actor) && x.cible != null && Math.abs(x.cible - s.to.x) < 0.6);
+      if (!e) continue;plaquages++;if (e.plaqueur === String(s.tackler)) nommes++;
+    }
+  }
+  assert.ok(plaquages >= 1 && nommes / plaquages >= 0.75, `plaqueur du moteur à l'écran : ${nommes}/${plaquages}`);
 });

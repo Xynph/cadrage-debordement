@@ -3,6 +3,7 @@ extends Node
 # Fixed, in-process reception of the exact shipped app; no external UI inputs.
 # It refuses existing data and only runs with an explicit disposable profile.
 var app:Control
+var auto_start := true
 var failures:Array[String]=[]
 var checks:=0
 var captures:=""
@@ -100,6 +101,7 @@ static func _club_meeting_command(application: Control, tree: SceneTree, verify:
 	return ok
 
 func _ready() -> void:
+	if not auto_start: return
 	_observe_coach_voice()
 	call_deferred("_run")
 

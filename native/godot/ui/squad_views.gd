@@ -634,6 +634,19 @@ static func lineup(app:Control) -> Control:
 		var note: Dictionary = licences.get("notice", {})
 		bloc.tooltip_text = str(note.get("summary", "")) + "\n" + str(note.get("detail", ""))
 		side.add_child(bloc)
+	var jiff: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
+	if bool(jiff.get("applies", false)):
+		var current := int(jiff.get("currentSheet", 0))
+		var target := int(jiff.get("target", 16))
+		var line := "JIFF  ·  %d sur cette feuille  ·  %d exigés en moyenne" % [current, target]
+		if jiff.get("average") != null:
+			line += "  ·  moyenne de la saison %s" % String.num(float(jiff.average), 2)
+		if int(jiff.get("deduction", 0)) > 0:
+			line += "  ·  retrait de %d point(s) cette saison" % int(jiff.deduction)
+		var jiff_bloc := G.wrap(line, 11, G.ALERT if current < target else G.MUTED)
+		jiff_bloc.name = "LineupJiffNotice"
+		jiff_bloc.tooltip_text = "Joueurs issus des filières de formation : 3 saisons en centre de formation français ou 5 saisons de licence en France avant 22 ans. Sous la moyenne de %d par feuille sur la saison, le club perd des points la saison suivante ; à partir de %d, le fonds JIFF verse une prime." % [target, int(jiff.get("bonusFrom", 17))]
+		side.add_child(jiff_bloc)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()

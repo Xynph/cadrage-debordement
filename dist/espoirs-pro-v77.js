@@ -6,10 +6,10 @@
   const safe=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function valid(st){
     return !!st&&st.version===1&&Number.isInteger(st.season)&&st.season>=1&&
-      Array.isArray(st.promotions)&&st.promotions.length<=3&&
+      Array.isArray(st.promotions)&&st.promotions.length<=60&&
       Array.isArray(st.history)&&st.history.length<=4&&
       st.promotions.every(e=>e&&typeof e.playerId==='string'&&Number.isInteger(e.years)&&e.years>=1&&e.years<=3)&&
-      st.history.every(h=>h&&Number.isInteger(h.season)&&Array.isArray(h.promotions)&&h.promotions.length<=3);
+      st.history.every(h=>h&&Number.isInteger(h.season)&&Array.isArray(h.promotions)&&h.promotions.length<=60);
   }
   function ensure(s){
     if(!s||!Number.isInteger(s.season)||!scout()?.own(s))return null;
@@ -39,7 +39,7 @@
     const st=ensure(s),team=s?.clubs?.[s.club]?.players,p=academy(s).find(x=>x.id===id);
     if(!st||!Array.isArray(team)||!p||s.live||s.phase==='ended'||
        !Number.isInteger(years)||years<1||years>3||
-       st.promotions.length>=3||(typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s)<=0:team.length>=42)||
+       (typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s)<=0:team.length>=42)||
        st.promotions.some(x=>x.playerId===id)||!Number.isFinite(p.rating)||
        !Number.isFinite(p.dev?.potential)||!Number.isInteger(p.fam)||
        s.development.academy.filter(x=>x.id===id).length!==1)return false;
@@ -97,7 +97,7 @@
   }
   function panel(s){
     const st=ensure(s);if(!st)return '';
-    const locked=!!s.live||s.phase==='ended'||st.promotions.length>=3||(typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s)<=0:s.clubs[s.club].players.length>=42);
+    const locked=!!s.live||s.phase==='ended'||(typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s)<=0:s.clubs[s.club].players.length>=42);
     const youths=academy(s).sort((a,b)=>(b.dev?.potential||0)-(a.dev?.potential||0)||b.rating-a.rating).slice(0,12);
     const rows=youths.map(p=>{
       const allow=!locked&&canPromote(s,p.id,1);
@@ -113,7 +113,7 @@
       '<button type="button" onclick="nav(\'team\')">Composer la feuille de 23 →</button>'+
       '<h3>Historique des passages professionnels</h3><ul>'+
       (history.map(p=>'<li>S'+p.season+' : '+safe(p.name)+' · '+safe(p.pos)+' · '+p.years+' an(s) · '+Number(p.salary).toLocaleString('fr-FR')+' €/semaine</li>').join('')||'<li>Aucune promotion à ce jour.</li>')+
-      '</ul><p class="help">Au maximum trois promotions par saison. Le XV Espoirs conserve ses postes, avec un remplaçant formé en cas de manque. Les nouveaux contrats utilisent la masse salariale professionnelle existante.</p></section>';
+      '</ul><p class="help">Pas de limite de promotions : il faut une place dans l’effectif professionnel. Le XV Espoirs conserve ses postes, avec un remplaçant formé en cas de manque. Les nouveaux contrats utilisent la masse salariale professionnelle existante.</p></section>';
   }
   function install(g){
     if(!g||typeof g.start!=='function'||typeof g.advanceSeason!=='function'||typeof g.render!=='function'||!scout()||!movement())return false;

@@ -67,8 +67,8 @@ func observe_framing() -> void:
 	framing.largest = maxf(framing.largest, camera.size)
 	# Sous le voile du fondu d'entrée, l'image 3D n'est pas encore visible.
 	var veiled: bool = view.regie.voile.visible and view.regie.voile.modulate.a > 0.85
-	# Plan large : au-delà du cadrage le plus large d'un temps fort (32 m en TV depuis le 12 novembre 2026).
-	if camera.size > 32.5 and not veiled:
+	# Plan large : au-delà du cadrage le plus large d'un temps fort (54 m en TV depuis le soir du 12 novembre 2026).
+	if camera.size > 54.5 and not veiled:
 		framing.wide += 1
 		var gestes: RefCounted = view.stage.get("_gestes")
 		if framing.where.size() < 12: framing.where.append("large %.1f m : plan %d %s à %.2f s, %s, suite %s, poids %.2f, geste %s zoom %.2f, voile %.2f" % [camera.size, view.regie.index, view.regie.phase, view.regie.temps, str(view.regie.tf.plans[view.regie.index].get("kind", "")) if view.regie.index >= 0 else "", str(view.regie.tf.get("suite", false)), float(view.regie.cadrage.poids), str(gestes.phase) if gestes != null else "-", float(gestes.zoom) if gestes != null else 0.0, view.regie.voile.modulate.a if view.regie.voile.visible else 0.0])
@@ -86,8 +86,8 @@ func check_framing(label: String, highlights: int) -> void:
 	print(label, " — cadrage : ", framing.frames, " images, hauteur visible de ", snappedf(framing.smallest, 0.1), " à ", snappedf(framing.largest, 0.1), " m, ballon hors champ ", framing.outside, " (", framing.hidden, " sous le voile d'entrée), images larges visibles ", framing.wide, " ", framing.where)
 	check(framing.frames >= 60, label + " : cadrage observé pendant les temps forts (%d images)" % framing.frames)
 	check(framing.outside == 0, label + " : le ballon ne sort jamais du champ visible (%d images : %s)" % [framing.outside, str(framing.where)])
-	# Caméra reculée (12 novembre 2026) : 15 à 16 m au plus serré en TV, jamais plus près que 9 m (contact).
-	check(framing.smallest >= 9.0 and framing.smallest <= 24.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
+	# Caméra reculée (12 novembre 2026, soir) : 26 à 28 m au plus serré en TV, jamais plus près que 9 m (contact).
+	check(framing.smallest >= 9.0 and framing.smallest <= 42.5, label + " : l'action est cadrée, ni trop près ni trop loin (%.1f m au plus serré)" % framing.smallest)
 	check(framing.wide == 0 and highlights > 0, label + " : jamais de plan large visible pendant un temps fort (%d images)" % framing.wide)
 
 func inside(outer: Rect2, inner: Rect2) -> bool:
@@ -102,7 +102,9 @@ func layout(view: Control, size: Vector2i) -> void:
 	var screen := Rect2(Vector2.ZERO, Vector2(size))
 	check(between.is_visible_in_tree() and inside(screen, between.get_global_rect()), label + " : l'écran intermédiaire tient dans la fenêtre")
 	var pitch: Control = between.terrain
-	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 300, label + " : terrain lisible (%s)" % str(pitch.size))
+	check(pitch.size.x >= 320 and pitch.size.y >= 180 and pitch.champ().size.x >= 260, label + " : terrain lisible (%s)" % str(pitch.size))
+	# Pastilles entières dans le cadre : la marge intérieure couvre une pastille sur la touche.
+	check(pitch.point(0.0, -2.0).y - pitch.rayon() >= 0.0 and pitch.point(100.0, 72.0).y + pitch.rayon() <= pitch.size.y, label + " : pastilles du bord entières dans le terrain")
 	var controls: Control = view.finish.get_parent().get_parent().get_parent()
 	check(not controls.is_visible_in_tree() or between.get_global_rect().end.y <= controls.get_global_rect().position.y + 1.0, label + " : rien sous la barre de commandes")
 	check(not controls.is_visible_in_tree(), label + " : une seule barre de commandes (celle de l'écran intermédiaire)")
@@ -111,34 +113,31 @@ func layout(view: Control, size: Vector2i) -> void:
 	for node: Control in between.find_children("*", "Control", true, false):
 		# Le fil défile : ses lignes anciennes sont atteignables, pas coupées.
 		if not node.is_visible_in_tree() or node == between.arret or between.arret.is_ancestor_of(node) or feed.is_ancestor_of(node): continue
-		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé")
+		check(inside(between.get_global_rect(), node.get_global_rect()), label + " : " + str(node.name) + " n'est pas coupé" + ("" if inside(between.get_global_rect(), node.get_global_rect()) else " (%s hors de %s)" % [str(node.get_global_rect()), str(between.get_global_rect())]))
 	check(between.chiffres.get_child_count() >= 3 and between.fil.get_child_count() >= 1, label + " : fil et chiffres remplis")
 	# Mise à l'échelle : texte de 13 points au moins en 720p, doublé en 1440p.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).get_child(0)
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == roundi(26 * density), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	check(figure.get_theme_font_size("font_size") >= 13 and between.etat.get_theme_font_size("font_size") == roundi(34 * density), label + " : texte lisible")
-	# Les commandes communes sont là dans chaque mise en page.
+	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
+	var bande: Control = view.get("bande_temps_forts")
+	check(bande != null and bande.is_visible_in_tree() and bande.get_global_rect().position.y >= view.clock.get_global_rect().end.y - 1.0 and bande.get_global_rect().end.y <= between.get_global_rect().position.y + 1.0, label + " : bande de commandes sous le score, au-dessus de l'entracte")
 	for nom in ["MatchBetweenTactics", "MatchBetweenBench", "MatchBetweenSettings", "MatchBetweenMore"]:
-		var noeud: Control = between.find_child(nom, true, false)
-		check(noeud != null and noeud.is_visible_in_tree(), label + " : commande " + nom)
+		var noeud: Control = view.find_child(nom, true, false)
+		check(noeud != null and noeud.is_visible_in_tree() and bande != null and bande.is_ancestor_of(noeud) and inside(screen, noeud.get_global_rect()), label + " : commande " + nom)
+	check(not view.find_children("*", "OptionButton", true, false).any(func(o: OptionButton): return o.is_visible_in_tree()), label + " : pas de sélecteur « Horloge … » dans la bande (vitesse dans Paramètres)")
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise du match visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
-	check(between.xv.is_visible_in_tree() and between.xv.columns == 3, label + " : Mon XV visible, nom et numéro par joueur")
-	check(between.details.is_visible_in_tree() and between.details.get_child_count() >= 2, label + " : stats détaillées par thème")
+	check(between.xv.is_visible_in_tree() and between.xv.columns == 1 and between.tuile_principale.is_ancestor_of(between.xv), label + " : Mon XV en tableau, tuile principale")
+	check(between.faits.is_visible_in_tree() and between.faits.get_child_count() >= 1, label + " : faits marquants")
+	# Terrain 2D petit (rendu 1) : moins de 45 % de la largeur et de la hauteur de l'écran.
+	check(pitch.size.x <= size.x * 0.45 and pitch.size.y <= size.y * 0.45, label + " : terrain 2D petit (%s)" % str(pitch.size))
 	var column: Control = between.adjoint_cadre.get_parent()
 	var used := 0.0
 	for panel: Control in column.get_children():
 		if panel.visible: used += panel.size.y
 	check(used >= column.size.y * 0.9, label + " : la colonne de droite est occupée (%d sur %d px)" % [int(used), int(column.size.y)])
-	# Colonne repliable : le terrain prend la place, puis la colonne revient.
-	var largeur := pitch.size.x
-	var languette: Button = between.find_child("MatchBetweenFold", true, false)
-	languette.pressed.emit()
-	await settle(4)
-	check(not column.is_visible_in_tree() and pitch.size.x > largeur + 50.0, label + " : colonne repliée, terrain agrandi (%d → %d px)" % [int(largeur), int(pitch.size.x)])
-	languette.pressed.emit()
-	await settle(4)
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
 			check(cell.get_minimum_size().x <= cell.size.x + 1.0 or cell.clip_text, label + " : chiffre entier : " + cell.text)
@@ -536,15 +535,22 @@ func player_path() -> Array:
 	check(regie.niveau == "dynamique", "Niveau par défaut : dynamique (" + regie.niveau + ")")
 	check(view.stage.get("_gestes") != null and view.stage.get("_cadrage") == regie.cadrage and regie.cadrage != null, "Gestes et cadrage font partie du mode de base")
 	check(regie.etat == regie.JEU and not regie.between.visible, "Le coup d'envoi est joué en 3D")
-	var level: OptionButton = view.find_child("MatchLevel", true, false)
-	check(level != null and level.is_visible_in_tree() and level.item_count == 6 and level.get_item_text(level.selected) == "Dynamique", "Le niveau se choisit dans la barre du match")
-	var labels: Array = []
-	if level != null:
-		for index in level.item_count: labels.append(level.get_item_text(index))
+	# Bande de commandes sous le score, la même en 3D et pendant l'entracte (demande de Léo) ;
+	# niveau de temps forts et vitesse de l'horloge dans Paramètres, aucun sélecteur dans la bande.
+	await settle(4)
+	var grille: Control = regie.between.grille_niveaux
+	var labels: Array = grille.get_children().map(func(b: Button): return b.text)
+	check(labels.size() == 6 and regie.between.niveau_libelle() == "Dynamique", "Le niveau se choisit dans Paramètres : " + regie.between.niveau_libelle())
 	check("Match complet" in labels, "Le choix « Match complet » est proposé : " + str(labels))
-	check(view.find_children("*", "OptionButton", true, false).any(func(option: OptionButton): return option.is_visible_in_tree() and option.item_count == 4 and option.get_item_text(1) == "Horloge normale"), "L'horloge de l'écran intermédiaire remplace la cadence")
+	check(not view.find_children("*", "OptionButton", true, false).any(func(option: OptionButton): return option.is_visible_in_tree()), "Pas de sélecteur « Horloge normale » dans la barre, en 3D")
 	var screen := Rect2(Vector2.ZERO, Vector2(root.size))
-	var bar: Control = level.get_parent() if level != null else null
+	var bar: Control = view.get("bande_temps_forts")
+	check(bar != null and bar.is_visible_in_tree() and not view.barre_commandes.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false).is_visible_in_tree(), "En 3D : la bande Tactique / Banc / Paramètres / Plus est là, seule")
+	var plus_3d: MenuButton = view.find_child("MatchBetweenMore", true, false)
+	var entrees: Array = []
+	for n in plus_3d.get_popup().item_count: entrees.append(plus_3d.get_popup().get_item_text(n))
+	check(["Statistiques", "Journal du match", "Confier la fin à l’adjoint", "Vue TV", "Vue de dessus", "Vue contact"].all(func(t: String): return t in entrees), "Commandes du direct 3D dans Plus : " + str(entrees))
+	if bar != null: regie.set_meta("bande_3d", bar.get_global_rect())
 	if bar != null:
 		for child in bar.get_children():
 			if child is Control and child.is_visible_in_tree(): check(screen.grow(1.0).encloses(child.get_global_rect()), "Barre du match dans l'écran en 1280×720 : %s %s" % [child.name, str(child.get_global_rect())])
@@ -596,9 +602,10 @@ func player_path() -> Array:
 	check(await until(func(): return app.model.live.minute > minute, 60000), "Le match reprend après la pause")
 	# Le niveau choisi dans la barre vaut tout de suite et pour les prochains matchs.
 	var extended := labels.find("Temps forts étendus")
-	if level != null and extended >= 0:
-		level.select(extended)
-		level.item_selected.emit(extended)
+	# Le niveau se choisit dans Paramètres (bouton du panneau, comme le joueur).
+	if extended >= 0:
+		(grille.get_child(extended) as Button).pressed.emit()
+		await settle(2)
 		check(regie.niveau == "etendus" and app.user_preferences.data.get("match_highlights") == "etendus", "Le niveau choisi est appliqué et enregistré : " + str(app.user_preferences.last_error))
 		check(FileAccess.get_file_as_string(str(app.model.meta.dataDir).path_join("interface.json")).contains("etendus"), "Le niveau est écrit dans les réglages du profil")
 	# Mi-temps : le dernier temps fort de la période passe avant la causerie.
@@ -824,9 +831,10 @@ func terrain2d(view: Control) -> void:
 	check(minutes.size() >= 1 and between.domination.minutes == minutes, "Domination : la courbe du moteur, minute par minute (%d minutes)" % minutes.size())
 	check(minutes.all(func(v: Variant): return absf(float(v)) <= 100.0), "Domination bornée")
 	var rangs: Array = direct.get("tableau", [])
-	check(rangs.size() >= 10 and between.chiffres.get_child_count() == 3, "Chiffres clés : trois en grand, %d dans l'onglet" % rangs.size())
+	check(rangs.size() >= 10 and between.chiffres.get_child_count() == between.STATS.filter(func(c: String): return rangs.any(func(r: Dictionary): return str(r.cle) == c)).size() and between.chiffres.get_child_count() >= 10, "Statistiques : %d comparées sur %d" % [between.chiffres.get_child_count(), rangs.size()])
 	for ligne: Node in between.chiffres.get_children():
-		var titre := (ligne.get_child(0) as Label).text
+		# Libellé court à l'écran, libellé du moteur en infobulle.
+		var titre := (ligne.get_child(0) as Label).tooltip_text
 		var rang: Array = rangs.filter(func(r: Dictionary): return str(r.label) == titre)
 		check(rang.size() == 1 and (ligne.get_child(1) as Label).text.begins_with(str(int(rang[0].valeurs[0]))) and (ligne.get_child(3) as Label).text.begins_with(str(int(rang[0].valeurs[1]))) or rang.size() == 1 and rang[0].get("vide", false), "Chiffre « %s » repris du moteur" % titre)
 	var lineup: Array = between._passe(app.model, app.model.live, direct).lineup
@@ -838,7 +846,7 @@ func terrain2d(view: Control) -> void:
 		if not joueur is Dictionary: continue
 		var textes: Array = lignes_xv[poste].find_children("*", "Label", true, false).map(func(l: Label): return l.text)
 		var energie: Array = lignes_xv[poste].find_children("*", "Control", true, false).filter(func(c: Control): return c.get("valeur") != null)
-		var note := float(direct.get("notes", {}).get(str(joueur.id), {}).get("note", 6.0))
+		var note := float(direct.get("notes", {}).get(str(joueur.id), {}).get("note", 6.5))
 		if str(joueur.name) in textes and "%.1f" % note in textes and not energie.is_empty() and is_equal_approx(float(energie[0].valeur), float(joueur.condition)): conformes += 1
 	check(conformes == lineup.size(), "Mon XV : nom, note et énergie du moteur pour chaque joueur (%d/%d)" % [conformes, lineup.size()])
 	var alertes_attendues := lineup.filter(func(j: Variant): return j is Dictionary and (int(j.get("injury", 0)) > 0 or float(j.get("condition", 100)) < between.FATIGUE)).size()
@@ -861,13 +869,29 @@ func terrain2d(view: Control) -> void:
 	check(redites == 0, "L'adjoint ne répète pas une phrase : " + str(adjoint_textes))
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
 	# Accès directs : remplacements depuis l'adjoint, et un joueur de Mon XV ouvre le banc sur lui.
-	var banc: Button = between.find_child("MatchBetweenBench", true, false)
-	check(banc != null and banc.is_visible_in_tree() and between.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
+	var banc: Button = view.find_child("MatchBetweenBench", true, false)
+	check(banc != null and banc.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
+	if regie.has_meta("bande_3d"): check(view.bande_temps_forts.get_global_rect().is_equal_approx(regie.get_meta("bande_3d")), "La bande de commandes ne bouge pas entre la 3D et l'entracte")
+	# Colonne « Plaq. » : les plaquages du moteur pour chaque joueur.
+	var plaques := 0
+	for joueur: Variant in lineup:
+		if joueur is Dictionary: plaques += int(direct.get("notes", {}).get(str(joueur.id), {}).get("plaquages", 0))
+	check(plaques > 0 or rangs.filter(func(r: Dictionary): return str(r.cle) == "plaquages").all(func(r: Dictionary): return int(r.valeurs[int(direct.camp)]) == 0), "Plaquages par joueur repris du moteur (%d)" % plaques)
 	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Mon XV et le dernier fait affichés ensemble")
 	var noms_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button).map(func(b: Button): return b.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text))
 	check(noms_xv.size() == 15 and noms_xv.all(func(t: Array): return t.size() >= 2 and not str(t[0]).is_empty()), "Mon XV : nom de famille et note visibles pour chaque joueur : " + str(noms_xv.slice(0, 3)))
+	# Onglet adverse : le même tableau pour le XV adverse du dernier fait montré, puis retour à Mon XV.
+	var adverse: Array = direct.get("adversaire", [])
+	between.find_child("MatchBetweenTabOpponent", true, false).pressed.emit()
+	await settle(2)
+	var lignes_adverses: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
+	var noms_adverses: Array = lignes_adverses.map(func(b: Button): return b.find_children("*", "Label", true, false).map(func(l: Label): return l.text))
+	check(adverse.size() == 15 and lignes_adverses.size() == 15 and range(15).all(func(k: int): return adverse[k] == null or str(adverse[k].nom) in noms_adverses[k]), "Onglet adverse : le XV adverse, nom et note de chaque joueur (%d lignes)" % lignes_adverses.size())
+	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
+	await settle(2)
+	check(between.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer")).size() == 15, "Retour à Mon XV")
 	# Paramètres : vitesse de l'horloge et temps forts montrés dans un petit panneau.
-	between.find_child("MatchBetweenSettings", true, false).pressed.emit()
+	view.find_child("MatchBetweenSettings", true, false).pressed.emit()
 	await settle(4)
 	check(between.panneau_parametres.visible and between.grille_niveaux.get_child_count() == 6, "Paramètres : le panneau s'ouvre avec les six niveaux de temps forts")
 	between.panneau_parametres.hide()
@@ -876,7 +900,7 @@ func terrain2d(view: Control) -> void:
 	await settle(4)
 	check(view.drawer.visible and view.drawer_tab == "Banc" and view.selected_slot == 9, "Un joueur de Mon XV ouvre le banc sur lui (poste %d)" % view.selected_slot)
 	view._fermer_tiroir()
-	var menu: MenuButton = between.find_child("MatchBetweenMore", true, false)
+	var menu: MenuButton = view.find_child("MatchBetweenMore", true, false)
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
 	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
