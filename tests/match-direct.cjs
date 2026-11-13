@@ -252,20 +252,24 @@ test('Note de départ : 6,5 au coup d’entrée (titulaire comme remplaçant), p
   const D = require('../native/engine/match-direct.cjs');
   assert.equal(D.NOTE_DEPART, 6.5);
   const on = [['a', 'b', ...Array(13).fill(null)], ['x', ...Array(14).fill(null)]];
-  const events = [{ scene: { actor: 'a', on, from: { x: 50 }, to: { x: 50 } } }, { scene: { actor: 'b', on, from: { x: 50 }, to: { x: 50 } } }];
-  const notes = D.notesDuMatch([{ i: 0, kind: 'reception', equipe: 0 }, { i: 1, kind: 'miss', equipe: 0 }], events, 0);
-  assert.equal(notes.a.note, 6.6, 'une réception : 6,5 + 0,08');
-  assert.equal(notes.b.note, 6.4, 'un tir manqué : 6,5 − 0,15');
+  // Barème partagé avec la note enregistrée (match-notes.cjs) : sans minute jouée connue, seuls les
+  // faits comptent (0,72 × valeur du fait autour de 6,5).
+  const events = [{ scene: { kind: 'turnover', team: 0, actor: 'a', on, from: { x: 50 }, to: { x: 50 } } }, { scene: { kind: 'miss', team: 0, actor: 'b', on, from: { x: 50 }, to: { x: 50 } } }];
+  const notes = D.notesDuMatch([{ i: 0, kind: 'turnover', equipe: 0, scoreApres: [0, 0] }, { i: 1, kind: 'miss', equipe: 0, scoreApres: [0, 0] }], events, 0);
+  assert.ok(notes.a.note > 6.5 && notes.a.note <= 6.8, 'un ballon récupéré : au-dessus de 6,5 (' + notes.a.note + ')');
+  assert.equal(notes.a.plaquages, 1, 'le ballon récupéré compte comme plaquage');
+  assert.ok(notes.b.note < 6.5 && notes.b.note >= 6.3, 'un tir manqué : sous 6,5 (' + notes.b.note + ')');
+  assert.equal(notes.x, undefined, 'l’autre équipe n’est pas notée ici');
 });
 
 test('Plaquages de l’entracte : le plaqueur nommé par le moteur (fait `tackler`), repli sur la place défensive', () => {
   const D = require('../native/engine/match-direct.cjs');
   const on = [['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'], ['x', ...Array(14).fill(null)]];
-  const course = tackler => ({ scene: { actor: 'x', team: 1, on, from: { x: 50, y: 35 }, to: { x: 46, y: 35 }, ...(tackler ? { tackler } : {}) } });
-  const ligne = { i: 0, kind: 'carry', equipe: 1, x: 46, depuis: 50 };
+  const course = tackler => ({ scene: { kind: 'carry', actor: 'x', team: 1, on, from: { x: 50, y: 35 }, to: { x: 46, y: 35 }, ...(tackler ? { tackler } : {}) } });
+  const ligne = { i: 0, kind: 'carry', equipe: 1, x: 46, depuis: 50, scoreApres: [0, 0] };
   const nomme = D.notesDuMatch([ligne], [course('m')], 0);
   assert.equal(nomme.m.plaquages, 1, 'le joueur que le moteur nomme');
-  const deduit = D.notesDuMatch([ligne], [course(null)], 0), attendu = D.plaqueur(on[0], 4, 35);
+  const deduit = D.notesDuMatch([ligne], [course(null)], 0), attendu = D.plaqueur(on[0], 4, 35, 0);
   assert.equal(deduit[attendu].plaquages, 1, 'sans le fait : déduction par la place défensive');
   assert.equal(D.notesDuMatch([ligne], [course('zz')], 0)[attendu].plaquages, 1, 'fait inconnu de la feuille : repli');
 });
