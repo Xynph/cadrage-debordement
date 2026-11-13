@@ -25,8 +25,17 @@ parallel="${3:-1}"
 [[ "$parallel" =~ ^[1-8]$ ]] || { echo "Parallélisme invalide : $parallel (1 à 8)" >&2; exit 2; }
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
-mapfile -t suites < "$list"
-[[ "${#suites[@]}" -gt 0 ]] || { echo "Aucune suite dans $list" >&2; exit 1; }
+# Mode Monde uniquement : les suites à ancien mode de carrière (CD_MODES_HERITES) ne tournent jamais.
+mapfile -t suites < <(node "$root/ci/legacy-modes.cjs" filter "$list")
+if [[ "${#suites[@]}" -eq 0 ]]; then
+  [[ -s "$list" ]] || { echo "Aucune suite dans $list" >&2; exit 1; }
+  echo "Toutes les suites de $list sont exclues (ancien mode de carrière) : rien à exécuter." >&2
+  exit 0
+fi
+# La liste filtrée devient la liste de référence (réservations mémoire, ordre d'exécution).
+filtered_list="$(mktemp)"
+printf '%s\n' "${suites[@]}" > "$filtered_list"
+list="$filtered_list"
 work="$(mktemp -d)"
 mkdir -p "$work/logs" "$work/running"
 : > "$work/results.md"
@@ -62,6 +71,7 @@ budget() {
     tests/custom-competition-worker.cjs) echo 900s ;;
     # Réception locale complète 233 s ; conserve créations, Rooms et refus.
     tests/youth-scout-native.cjs) echo 600s ;;
+    tests/youth-matches-worker.cjs) echo 420s ;;
     # Fixtures complètes PASS locales 142/126 s, sans refus précoce.
     tests/world-catalogue-dedup.cjs|tests/world-venue-media.cjs) echo 300s ;;
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
