@@ -27,7 +27,9 @@ const COMMAND_WAIT_MESSAGES := {
 	"population_enable": "Mise à jour de la base de joueurs…",
 	"academy_groups_enable": "Mise à jour des centres de formation…",
 	"promote_cover": "Enregistrement des renforts…",
-	"national_play_match": "Simulation de la rencontre internationale…"
+	"national_play_match": "Simulation de la rencontre internationale…",
+	"league_benchmark": "Mesure de votre machine…",
+	"league_detail_set": "Enregistrement des championnats simulés…"
 }
 ## Titre du panneau d’attente par commande (les autres : « En coulisses »).
 const COMMAND_WAIT_KICKERS := {

@@ -5,6 +5,7 @@ const Packs = preload("res://ui/pack_views.gd")
 const Club = preload("res://ui/club_views.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
+const LeagueDetail = preload("res://ui/league_detail_view.gd")
 const CREATION_SELECTION := "creation_selection"
 const TROPHIES := ["elite", "accession", "nationale", "prem", "champ", "champions", "challenge", "urc", "srp", "jlo-d1", "jlo-d2", "jlo-d3"]
 const ARCHIVE_TROPHIES := ["eng-third", "jp-national", "jp-top-league", "jp-company", "sr-au", "sr-nz", "sr-trans-tasman", "other"]
@@ -566,6 +567,9 @@ static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var role: String = app.management_ui.get("creation_role", "club") if mode == "world-champ" else "club"
 	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
 	if role != "nation": payload.club = int(selected.id)
+	# Championnats simulés en détail (les autres en résultats rapides) : carrière Monde seulement.
+	if mode.begins_with("world"):
+		payload.detailedLeagues = LeagueDetail.payload(app, str(selected.get("division", "")) if role != "nation" else "", app.pack_manager.creation_catalogue())
 	if role in ["dual", "nation"]:
 		payload.nationalRole = role
 		payload.nation = app.management_ui.get("creation_nation", "")
@@ -962,6 +966,7 @@ static func creation(app: Control) -> Control:
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
+	if mode.begins_with("world"): LeagueDetail.summary(app, dossier if modern else list, str(selected.get("division", division)), candidates)
 	_career_variation_controls(app,dossier if modern else list,modern)
 	var can_start := not selected.is_empty() and (role == "club" or not nation.is_empty())
 	var start := G.button(caption, func():
