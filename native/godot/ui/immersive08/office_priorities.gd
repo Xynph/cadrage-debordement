@@ -31,8 +31,8 @@ static func _youth_review(model: Dictionary) -> Dictionary:
 	var detail := str(player.name) + " · " + str(objective.label)
 	if objective.get("value") != null and objective.get("target") != null:
 		detail += " · %s / %s %s observés" % [str(objective.value),str(objective.target),str(objective.unit)]
-	detail += " depuis S%s semaine %s." % [str(objective.from.season),str(objective.from.week)]
-	var deadline := "Réexamen S%s" % str(objective.due.season)
+	detail += " depuis %s semaine %s." % [G.season_label(objective.from.season),str(objective.from.week)]
+	var deadline := "Réexamen %s" % G.season_label(objective.due.season)
 	if objective.due.week != null: deadline += " · semaine %s" % str(objective.due.week)
 	return _item("OfficeYouthReviewAction","Réexaminer un objectif individuel",detail,deadline,"people","youth_review","normal",str(player.id))
 
@@ -56,7 +56,7 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 			"Avant de continuer","mail","press","urgent"))
 	if ended:
 		result.append(_item("OfficeFinalStandingsAction","Consulter le classement final",
-			"La saison %d est clôturée. Faites le bilan avant de préparer la suivante." % season,
+			"La saison %s est clôturée. Faites le bilan avant de préparer la suivante." % G.season_label(season),
 			"Avant la saison suivante","trophy","standings","important"))
 	elif not next.is_empty() and not bool(model.get("selection",{}).get("valid",false)) and live.is_empty():
 		var errors: Array = model.get("selection",{}).get("errors",[])

@@ -52,7 +52,7 @@ func run() -> void:
 	view = await open_youth()
 	await search(view,"YouthDevelopmentSearch",person.name)
 	var objective := view.find_child("YouthShortTermObjective",true,false) as Label
-	check(objective!=null and objective.text.contains("Décision S1 semaine 0") and objective.text.contains("réexamen S1 semaine 4"),"Objectif court terme daté reçu du worker")
+	check(objective!=null and objective.text.contains("Décision 2026-2027 semaine 0") and objective.text.contains("réexamen 2026-2027 semaine 4"),"Objectif court terme daté reçu du worker")
 	await command("export")
 	var before_promotion: String = app.model.meta.exportText
 	await press(button("YouthReviewPromotion"))

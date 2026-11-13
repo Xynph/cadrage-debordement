@@ -186,7 +186,7 @@ func _scenario() -> void:
 		_refresh(), "PlannerHorizonPlayers")
 	if show_horizon_players:
 		for player: Dictionary in horizon.players:
-			_text("%s · %s · %s €/semaine · contrat %s%s" % [player.name, player.pos, str(player.get("salary", "inconnu")), "échéance inconnue" if player.get("contractEnd") == null else "S" + str(player.contractEnd), " · retour de prêt" if player.get("loanReturn", false) else ""])
+			_text("%s · %s · %s €/semaine · contrat %s%s" % [player.name, player.pos, str(player.get("salary", "inconnu")), "échéance inconnue" if player.get("contractEnd") == null else "fin " + G.season_label(player.contractEnd), " · retour de prêt" if player.get("loanReturn", false) else ""])
 	for operation: Dictionary in scenario.operations:
 		_text("%s · %s · %d €/semaine · %d saison(s)%s" % [{"renew":"Prolongation","recruit":"Recrutement","promote":"Promotion"}.get(operation.kind, operation.kind), operation.player.name if operation.player is Dictionary else operation.playerId, operation.salary, operation.years, " · source absente, exclue des totaux" if not operation.available else ""])
 		_button("Retirer cette hypothèse", func():

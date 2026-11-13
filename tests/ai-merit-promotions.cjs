@@ -2,11 +2,10 @@
 // Promotions au mérite des clubs de l'ordinateur (décision de Léo du 12/11/2026).
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { context } = require('./france-harness.cjs');
+const { context } = require('./monde-harness.cjs');
 
 function setup() {
   const h = context(437493);
-  h.run("start(0, 'france');");
   return h;
 }
 

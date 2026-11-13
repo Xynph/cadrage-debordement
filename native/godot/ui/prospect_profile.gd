@@ -120,7 +120,7 @@ static func _profile(parent: Container, person: Dictionary, source: String) -> v
 	else:
 		var origin: Dictionary = person.get("origin", {})
 		parent.add_child(G.section("Parcours", Copy.notice("scouting", origin.get("label", "Origine non précisée"))))
-		if origin.get("season") != null: parent.add_child(G.wrap("Origine en saison %s · disponible depuis la saison %s" % [G.n(origin.season), G.n(origin.get("availableSince", "—"))], 14))
+		if origin.get("season") != null: parent.add_child(G.wrap("Origine en saison %s · disponible depuis la saison %s" % [G.season_label(origin.season), G.season_label(origin.get("availableSince", "—"))], 14))
 		if person.has("matchingSlots"): parent.add_child(G.wrap("%d besoin(s) du club compatible(s) avec ce profil." % person.matchingSlots.size(), 14))
 	var reason := str(person.get("reason", ""))
 	if not reason.is_empty(): parent.add_child(G.wrap(Copy.notice("interclub" if source == "interclub" else "scouting", reason), 14, G.ALERT))
@@ -132,7 +132,7 @@ static func _observation(parent: Container, person: Dictionary) -> void:
 	parent.add_child(G.wrap("Le potentiel est une fourchette évolutive, sans garantie de l’atteindre.", 13))
 	var observed: Variant = person.get("knowledge", {}).get("observedAt")
 	if observed is Dictionary and observed.get("season") != null:
-		parent.add_child(G.wrap("Dernière observation · saison %s · semaine %s" % [G.n(observed.season), G.n(observed.get("week", "—"))], 14))
+		parent.add_child(G.wrap("Dernière observation · saison %s · semaine %s" % [G.season_label(observed.season), G.n(observed.get("week", "—"))], 14))
 	var evidence: Dictionary = person.get("evidence", {})
 	if evidence.get("stale", false): parent.add_child(G.wrap("Rapport ancien : les qualités actuelles restent à vérifier.", 14, G.GOLD))
 	var assessment: Dictionary = person.get("assessment", {})
@@ -153,7 +153,7 @@ static func _contract(parent: Container, person: Dictionary, source: String) -> 
 	parent.add_child(G.wrap(("Indemnité au club : " if source == "interclub" else "Prime à la signature : ") + _money(person.get("fee")), 15, G.INK))
 	parent.add_child(G.wrap(("Salaire proposé : " if source == "interclub" else "Salaire demandé : ") + _salary(person.get("salary")), 15, G.INK))
 	if source == "interclub":
-		parent.add_child(G.wrap("Échéance conservée : saison %s" % G.n(person.get("contractEnd", "—")), 15, G.INK))
+		parent.add_child(G.wrap("Échéance conservée : saison %s" % G.season_label(person.get("contractEnd", "—")), 15, G.INK))
 	else:
 		for term: Dictionary in person.get("terms", []):
 			parent.add_child(G.section("%s saison(s) · %s échéances" % [G.n(term.get("years", "—")), G.n(term.get("payments", "—"))]))
@@ -166,4 +166,4 @@ static func _squad(parent: Container, squad: Array, person: Dictionary) -> void:
 	if peers.is_empty(): parent.add_child(G.wrap("Aucun joueur de votre effectif n’occupe ce poste principal.", 14))
 	for member: Dictionary in peers:
 		parent.add_child(G.section(str(member.get("name", "")), "%s ans · niveau %s" % [G.n(member.get("age", "—")), G.rating_text(member, true)]))
-		parent.add_child(G.wrap("Contrat jusqu’à la saison %s · %s" % [G.n(member.get("contractEnd", "—")), _salary(member.get("salary"))], 14))
+		parent.add_child(G.wrap("Contrat jusqu’à la saison %s · %s" % [G.season_label(member.get("contractEnd", "—")), _salary(member.get("salary"))], 14))

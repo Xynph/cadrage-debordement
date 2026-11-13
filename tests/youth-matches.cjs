@@ -35,13 +35,15 @@ test('Une saison mondiale : 116 centres, vraies compétitions, ~20 matchs par é
  assert.ok(st.own.C.length>0&&st.own.C.length<=12&&st.own.E.length<=12,'résultats du club purgés');
  h.run(`nativeSystems.domain('youthMatches').validate(S)`);
  // Déterminisme : même carrière, même saison des jeunes.
+ const result=h.run('JSON.stringify(S.youthMatches)');h.close();
  const again=worldYouth();again.run(`CDYouthMatches.process(S,${END})`);
- assert.equal(again.run('JSON.stringify(S.youthMatches)'),h.run('JSON.stringify(S.youthMatches)'));
+ assert.equal(again.run('JSON.stringify(S.youthMatches)'),result);
  // Projection lisible du club joué (Toulouse) sans écriture.
- const before=h.run('JSON.stringify(S)'),view=json(h,`nativeSystems.domain('youthMatches').project()`);
- assert.equal(h.run('JSON.stringify(S)'),before);
+ const before=again.run('JSON.stringify(S)'),view=json(again,`nativeSystems.domain('youthMatches').project()`);
+ assert.equal(again.run('JSON.stringify(S)'),before);
  assert.equal(view.available,true);assert.ok(view.competitions.some(c=>c.name==='Élite Crabos'&&c.tables.length));
- assert.ok(view.results.crabos.length&&view.players.length===json(h,'S.development.academy.length'));
+ assert.ok(view.results.crabos.length&&view.players.length===json(again,'S.development.academy.length'));
+ again.close();
 });
 
 test('Plafond de 30 avec les sélections, risque accru, reprise progressive et validation',()=>{

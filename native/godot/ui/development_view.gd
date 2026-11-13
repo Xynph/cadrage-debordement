@@ -67,7 +67,7 @@ static func build(app: Control) -> Control:
 		G.trend(card, levels, "Niveau en fin de saison · historique conservé", app.accent)
 		if history.is_empty(): card.add_child(G.wrap("L'historique annuel apparaîtra à l'intersaison.", 12))
 		for year: Dictionary in history.slice(maxi(0, history.size() - 3)):
-			card.add_child(G.wrap("S%s · niveau %s → %s · %s minutes / %s apparitions" % [G.n(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0)), G.n(year.get("appearances", 0))], 13))
+			card.add_child(G.wrap("%s · niveau %s → %s · %s minutes / %s apparitions" % [G.season_label(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0)), G.n(year.get("appearances", 0))], 13))
 		var controls := G.h(12)
 		card.add_child(controls)
 		var focus := OptionButton.new()
@@ -98,7 +98,7 @@ static func build(app: Control) -> Control:
 
 # Same action as the Formation cards, narrowed to the reviewed player.
 static func _promotion(parent: Node, app: Control, data: Dictionary, person: Dictionary) -> Button:
-	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.salary(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
+	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire. Son contrat court jusqu'à la fin de la saison %s. Confirmer ?" % [person.name, G.salary(person.salary), G.season_label(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
 	promote.name = "PromoteAcademy" + str(person.id).replace(":","_")
 	promote.set_meta("promote_id",person.id)
 	promote.disabled = app.waiting or not data.get("promotionAvailable",false)
@@ -115,7 +115,7 @@ static func contract_preview(model: Dictionary, person: Dictionary) -> Dictionar
 	if salary is int or salary is float:
 		terms.append("Salaire proposé · %s" % G.salary(salary))
 	if available:
-		terms.append("Fin du contrat si signature · saison %s" % G.n(season + 1))
+		terms.append("Fin du contrat si signature · saison %s" % G.season_label(season + 1))
 	var capacity := ""
 	if roster.has("places") and roster.has("occupied") and roster.has("capacity"):
 		var places := "%s places libres" % G.n(roster.places) if int(roster.places) > 1 else "%s place libre" % G.n(roster.places)

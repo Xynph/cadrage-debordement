@@ -1,8 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./france-harness.cjs'),factory=require('../native/engine/position-aptitudes.cjs');
-const h=context(827381),start=performance.now();
-h.run(`const aptitude=(${factory.toString()})();aptitude.installHooks();start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side];`);
+const {context}=require('./monde-harness.cjs'),factory=require('../native/engine/position-aptitudes.cjs');
+const h=context(827381).toMatch(),start=performance.now();
+h.run(`beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side];`);
 assert.equal(h.run('sheetErrors().length'),0);
 h.run(`var incoming=sh.bench.map(id=>player(id)).find(p=>p.fam===2);var originalMain=incoming.pos;`);
 assert.equal(h.run('eligibleChanges(l,side,7).some(p=>p.id===incoming.id)'),true,'lock selectable for number eight replacement');

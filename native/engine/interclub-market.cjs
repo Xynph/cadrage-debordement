@@ -103,7 +103,7 @@ function factory(){
   player.salary=p.salary;player.joinedSeason=S.season;player.joinedRound=S.round;
   delete S.economy.listings[player.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==player.id);
   S.market=S.market.filter(x=>x.id!==player.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==player.id);
-  transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord de '+money(p.fee)+', fin de contrat S'+player.contractEnd+'.');
+  transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord de '+money(p.fee)+', fin de contrat '+(typeof libelleSaison==='function'?libelleSaison:String)(player.contractEnd)+'.');
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:p.fee,salary:player.salary,contractEnd:player.contractEnd}};
  }
  return {project,execute,validate:()=>true,installHooks:()=>true};

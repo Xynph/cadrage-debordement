@@ -127,7 +127,7 @@ func _render() -> void:
 		card.add_child(_reading_label(str(entry.get("club", "Copie indisponible")), 28, G.INK, true))
 		var date := str(entry.get("createdAt", "Date inconnue")).replace("T", " · ").replace("Z", " UTC")
 		if date.contains("."): date = date.get_slice(".", 0) + " UTC"
-		card.add_child(_reading_wrap("%s · Saison %s · Journée %s" % [date, G.n(entry.get("season", "?")), str(int(entry.get("round", 0)) + 1)], 20))
+		card.add_child(_reading_wrap("%s · Saison %s · Journée %s" % [date, G.season_label(entry.get("season", "?")), str(int(entry.get("round", 0)) + 1)], 20))
 		card.add_child(_reading_wrap("%s · %.1f Mio" % [str(REASONS.get(str(entry.get("reason", "")), "Origine non vérifiable")), float(entry.get("bytes", 0)) / 1048576.0], 20))
 		if not bool(entry.get("available", false)):
 			card.add_child(_reading_wrap(str(entry.get("error", "Cette copie ne peut pas être reprise.")), 22, G.ALERT))
@@ -153,7 +153,7 @@ func _render() -> void:
 	_body.add_child(_status)
 
 func _confirm_restore(entry: Dictionary) -> void:
-	_confirm("Reprendre cette copie ?", "La carrière actuelle sera conservée dans une nouvelle copie avant remplacement.\n\nVous reprendrez %s, saison %d. Les matchs en cours seront remis en pause. Si les vérifications ou l'écriture échouent, votre carrière actuelle restera intacte." % [str(entry.get("club", "cette carrière")), int(entry.get("season", 0))], "REPRENDRE", "restore_checkpoint", str(entry.id))
+	_confirm("Reprendre cette copie ?", "La carrière actuelle sera conservée dans une nouvelle copie avant remplacement.\n\nVous reprendrez %s, saison %s. Les matchs en cours seront remis en pause. Si les vérifications ou l'écriture échouent, votre carrière actuelle restera intacte." % [str(entry.get("club", "cette carrière")), G.season_label(entry.get("season", 0))], "REPRENDRE", "restore_checkpoint", str(entry.id))
 
 func _confirm_remove(entry: Dictionary) -> void:
 	_confirm("Supprimer cette copie ?", "Seule la copie sélectionnée sera supprimée : %s.\n\nLa carrière actuelle et les autres copies seront conservées. Cette suppression est définitive." % str(entry.get("club", "copie indisponible")), "SUPPRIMER", "remove_checkpoint", str(entry.id))

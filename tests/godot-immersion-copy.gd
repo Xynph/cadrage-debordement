@@ -16,6 +16,8 @@ func run() -> void:
 	var plain := "Le capitaine fictif dit : accord fictif de prudence, fin de contrat Sincertaine."
 	check(Copy.news(first) == "Émile fictif rejoint Généré Rugby après concurrence entre 3 club(s), pour 80 000 €.", "competition template, player and club names preserved")
 	check(Copy.news(second) == "Mathis généré rejoint Les Fictifs depuis Le Club fictif : accord de 250 000 €, fin de contrat S3.", "direct template, amount and contract preserved")
+	var third := "Mathis généré rejoint Les Fictifs depuis Le Club fictif : accord fictif de 250 000 €, fin de contrat 2028-2029."
+	check(Copy.news(third) == "Mathis généré rejoint Les Fictifs depuis Le Club fictif : accord de 250 000 €, fin de contrat 2028-2029.", "direct template with season years preserved")
 	check(Copy.news(plain) == plain, "ordinary quote not rewritten")
 	check(Copy.news("« " + first + " »") == "« " + first + " »", "quoted template not rewritten")
 	check(Copy.news(first.replace("80 000 €", "une somme")) == first.replace("80 000 €", "une somme"), "non canonical amount left untouched")
