@@ -3,7 +3,8 @@ extends Control
 const G = preload("res://ui/game_skin.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
-const COMMAND_WAIT_REVEAL_SECONDS := 0.25
+## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
+const COMMAND_WAIT_REVEAL_SECONDS := 0.5
 const COMMAND_WAIT_MESSAGES := {
 	"new_career": "Création de la carrière…",
 	"import": "Importation de la carrière…",

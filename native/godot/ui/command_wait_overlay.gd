@@ -39,6 +39,9 @@ var _frame := Control.new()
 var _status := Label.new()
 var _tip := Label.new()
 var _reveal := Timer.new()
+# Échéance réelle de l’apparition (horloge murale) : une image longue juste avant
+# l’envoi ne doit pas avancer le minuteur et montrer le panneau trop tôt.
+var _reveal_at_ms := 0
 var _scale := 1.0
 var _origin := Vector2.ZERO
 var _elapsed := 0.0
@@ -79,7 +82,7 @@ func _ready() -> void:
 
 	_reveal.one_shot = true
 	add_child(_reveal)
-	_reveal.timeout.connect(_show_frame)
+	_reveal.timeout.connect(_on_reveal)
 	resized.connect(_layout)
 	_layout()
 	dismiss()
@@ -122,6 +125,7 @@ func present(message: String, animate: bool = true, delay_seconds: float = 0.0) 
 	_elapsed = 0.0
 	_shown_for = 0.0
 	if delay_seconds > 0.0:
+		_reveal_at_ms = Time.get_ticks_msec() + roundi(delay_seconds * 1000.0)
 		_reveal.start(delay_seconds)
 	else:
 		_show_frame()
@@ -171,6 +175,14 @@ func _set_alpha(value: float) -> void:
 	_alpha = value
 	_frame.modulate.a = value
 	queue_redraw()
+
+
+func _on_reveal() -> void:
+	var remaining := _reveal_at_ms - Time.get_ticks_msec()
+	if remaining > 0:
+		_reveal.start(remaining / 1000.0)
+		return
+	_show_frame()
 
 
 func _show_frame() -> void:
