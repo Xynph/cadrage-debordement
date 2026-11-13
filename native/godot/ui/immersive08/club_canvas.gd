@@ -8,6 +8,8 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
 const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
@@ -372,10 +374,21 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	for i in mini(2,news.size()):
 		var y := 284 + i * 54
 		D.rect(card, Rect2(22,y,4,43), C.BLUE if i == 0 else C.MINT, 2)
-		var lines := D.words(Copy.news(str(news[i])), 85, 2)
+		# Les actualités « XV de la journée / de la saison » portent une vignette cliquable.
+		var equipe_type := str(news[i]).begins_with("XV de ")
+		var lines := D.words(Copy.news(str(news[i])), 70 if equipe_type else 85, 2)
 		for j in lines.size():
-			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 727)
+			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 640 if equipe_type else 727)
 			label.tooltip_text = Copy.news(str(news[i]))
+		if equipe_type and EquipeType.disponible(app.model):
+			var saison := str(news[i]).begins_with("XV de la saison")
+			var ligues: Array = NotesMatch.bilan(app.model).get("equipeType", {}).get("ligues", [])
+			var cible: Dictionary = ligues[0] if not ligues.is_empty() else {}
+			var equipe: Variant = cible.get("saison" if saison else "journee")
+			if equipe is Dictionary:
+				var vignette := EquipeType.vignette(equipe, Rect2(0, 0, 38, 44), func(): EquipeType.ouvrir(app, str(cible.get("id", "")), "saison" if saison else "journee"))
+				card.add_child(vignette)
+				D.place(vignette, Rect2(704, y - 1, 48, 45))
 	if news.is_empty(): D.text(card, 23, 320, "Aucun message enregistré.", 23, C.MUTED, 500, 739)
 
 static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dictionary) -> void:

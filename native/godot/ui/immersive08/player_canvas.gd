@@ -287,7 +287,8 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	legende.tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
 	NotesMatch.pastilles(card,Vector2(600,96),NotesMatch.forme(notes),Vector2(54,50),7.0,0.7).name = "FullPlayerForm"
 	var titres := int(notes.get("hommeDuMatch",0))
-	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else ""),22,C.GOLD if titres>0 else C.MUTED,600,300)
+	var xv := int(notes.get("selections",0))
+	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else "") + (" · %d× XV DE LA JOURNÉE" % xv if xv>0 else ""),22,C.GOLD if titres>0 or xv>0 else C.MUTED,600,300)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
 	var note := _note(app,player)
@@ -305,7 +306,8 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 	for colonne: Array in colonnes:
 		D.text(card,colonne[1],98,colonne[0],18,C.MUTED,600,colonne[2])
 	D.line(card,Vector2(20,110),Vector2(1650,110))
-	if lignes.is_empty() and saisons.is_empty():
+	var distinctions: Array = notes.get("distinctions",[]) if notes.get("distinctions") is Array else []
+	if lignes.is_empty() and saisons.is_empty() and distinctions.is_empty():
 		D.text(card,24,160,"Aucun match noté cette saison. Chaque rencontre jouée est notée de 1 à 10 (6,5 au coup d’envoi).",22,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerMatchHistoryEmpty"
 		return
 	var liste := _scroll(card,Rect2(20,118,1630,286))
@@ -327,6 +329,14 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		D.text(rang,1114,26,G.n(ligne.get("plaquages",0)),20,C.MUTED,500,90)
 		D.text(rang,1214,26,G.n(ligne.get("metres",0))+" m",20,C.MUTED,500,110)
 		if ligne.get("hommeDuMatch",false): D.chip(rang,Rect2(1334,4,200,28),"Homme du match",C.GOLD)
+	# Repères de carrière : équipes de la saison (XV type du championnat, saison régulière).
+	for d: Variant in distinctions:
+		if not d is Dictionary: continue
+		var repere := Control.new()
+		repere.custom_minimum_size = Vector2(C.px(1630),C.px(34))
+		repere.name = "PlayerSeasonXV"
+		liste.add_child(repere)
+		D.text(repere,4,25,"XV de la saison %s · %s · moyenne %s sur %d matchs" % [str(d.get("libelleSaison","")),str(d.get("championnat","")),NotesMatch.texte_note(d.get("moyenne")),int(d.get("matchs",0))],19,C.GOLD,700,1600)
 	for saison: Variant in saisons:
 		if not saison is Dictionary: continue
 		var rang := Control.new()
