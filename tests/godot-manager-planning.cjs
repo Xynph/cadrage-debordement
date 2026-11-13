@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='0'; // Exercise the production World-only mode.
 const {test}=require('node:test'),assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),os=require('node:os'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXECUTABLE;
 test('atelier manager : trois parcours Godot réels et intentions seules',{skip:!godot&&'SDK Godot requis'},()=>{

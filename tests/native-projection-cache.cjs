@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='0'; // Exercise the production World-only mode.
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 test('deux lectures réutilisent les projections VM sans partager les objets ni garder un reçu',()=>{
