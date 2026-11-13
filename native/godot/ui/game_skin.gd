@@ -4,6 +4,7 @@ const T = preload("res://theme.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const POTENTIAL_COLOR = Knowledge.POTENTIAL_COLOR
 const W = preload("res://visual_widgets.gd")
+const SeasonLabel = preload("res://ui/season_label.gd")
 const Art = preload("res://ui/art_widgets.gd")
 const BG = Color("151b1f")
 const PANEL = Color("1d262b")
@@ -345,6 +346,8 @@ static func salary_period(short: bool = false) -> String:
 
 # Native calendars start season n in 2025+n; contracts end the following year.
 # Year only: the model supplies no exact expiry day.
+static func season_label(season: Variant) -> String: return SeasonLabel.label(season)
+
 static func contract_year(end_season: Variant) -> String:
 	if not (end_season is int or end_season is float) or not is_finite(float(end_season)) or float(end_season) != floorf(float(end_season)) or end_season < 0 or end_season > 7973: return "—"
 	return str(2026 + int(end_season))

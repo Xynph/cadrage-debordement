@@ -35,7 +35,7 @@ assert.match(g.app.innerHTML,/menu-difficulty/);
 g.run("menuNewDifficulty='expert';start(0)");
 assert.equal(g.run('S.difficulty'),'expert');assert.equal(g.run('CDMenuSlots.restore(CDMenuSlots.list().active).difficulty'),'expert');
 g.run('returnToMainMenu()');
-assert.match(g.app.innerHTML,/Stade des Brumes/);assert.match(g.app.innerHTML,/Saison 1/);assert.match(g.app.innerHTML,/0 \/ 26 journées/);assert.match(g.app.innerHTML,/cd3-card-scene/);assert.match(g.app.innerHTML,/Dernière sauvegarde/);
+assert.match(g.app.innerHTML,/Stade des Brumes/);assert.match(g.app.innerHTML,/Saison 2026-2027/);assert.match(g.app.innerHTML,/0 \/ 26 journées/);assert.match(g.app.innerHTML,/cd3-card-scene/);assert.match(g.app.innerHTML,/Dernière sauvegarde/);
 const state=g.run('JSON.stringify(S)'),disk=g.store['bdt-v1'];
 g.run("CDMenuV3.setPreference('contrast','high');CDMenuV3.setPreference('text','large')");
 assert.equal(g.run('JSON.stringify(S)'),state);assert.equal(g.store['bdt-v1'],disk);assert.equal(g.store['cd-menu-contrast-v3'],'high');

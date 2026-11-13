@@ -76,7 +76,7 @@ static func _mandate(card: Panel, app: Control, data: Dictionary) -> void:
 	var window: bool = data.get("window",false)
 	D.text(card,23,108,"VOTRE CLUB",25,C.GOLD,700,804)
 	D.text(card,23,162,G.club_name(app.model.club),46,C.IVORY,700,803)
-	D.text(card,23,198,"Mandat depuis la saison "+G.n(data.get("currentFrom",app.model.meta.get("season",1))),26,C.MUTED,500,804)
+	D.text(card,23,198,"Mandat depuis la saison "+G.season_label(data.get("currentFrom",app.model.meta.get("season",1))),26,C.MUTED,500,804)
 	D.line(card,Vector2(23,221),Vector2(832,221))
 	var caption := "Candidatures ouvertes" if window else "Candidatures en fin de saison" if active else "Suivi des candidatures à activer"
 	var subtitle := "La prise de poste est effective au passage à la saison suivante."
@@ -96,7 +96,7 @@ static func _seasons(card: Panel, app: Control, data: Dictionary) -> void:
 	for i in mini(3,plans.size()):
 		var entry: Dictionary = plans[i]
 		var tile := D.panel(card,Rect2(23+i*446,78,434,318),"","","","CareerYear"+G.n(entry.year))
-		D.text(tile,22,58,"SAISON "+G.n(entry.year),34,C.IVORY,700,384)
+		D.text(tile,22,58,"SAISON "+G.season_label(entry.year),34,C.IVORY,700,384)
 		D.line(tile,Vector2(22,76),Vector2(412,76))
 		var covered := int(entry.get("covered",0))
 		D.text(tile,22,139,"%d / 15" % covered,50,C.MINT if covered==15 else C.AMBER,800,388)
@@ -117,7 +117,7 @@ static func _history(card: Panel, app: Control, data: Dictionary) -> void:
 		var origin := Manager._club(app,move.get("fromClub"))
 		var destination := Manager._club(app,move.get("toClub"))
 		D.text(card,23,123,origin+"  →  "+destination,34,C.IVORY,700,1249)
-		D.text(card,23,160,"Prise de poste en saison "+G.n(move.get("arrivalSeason","—")),25,C.GOLD,600,1249)
+		D.text(card,23,160,"Prise de poste en saison "+G.season_label(move.get("arrivalSeason","—")),25,C.GOLD,600,1249)
 	D.button(card,Rect2(23,186,1254,48),"Consulter le parcours et les archives",func(): U.select(app,KEY,"details","CareerTab_details"),false,"arrow",true,U.GREEN,"CareerOpenHistory")
 
 static func _recruitment(card: Panel, app: Control, data: Dictionary) -> void:
@@ -137,7 +137,7 @@ static func _plan(app: Control, canvas: Control, data: Dictionary) -> void:
 	var entry: Dictionary = plans[index]
 	for i in plans.size():
 		var id := "CareerPlanYear"+str(i)
-		D.button(grid,Rect2(701+i*243,10,230,36),"Saison "+G.n(plans[i].year),func():
+		D.button(grid,Rect2(701+i*243,10,230,36),"Saison "+G.season_label(plans[i].year),func():
 			app.management_ui[PLAN_KEY] = i
 			app._render()
 			U.focus(app,id),i==index,"",true,U.GREEN,id)
@@ -158,7 +158,7 @@ static func _plan(app: Control, canvas: Control, data: Dictionary) -> void:
 		var badge := "À couvrir" if gap else "Un candidat" if count == 1 else "Couvert"
 		D.chip(grid,Rect2(1123,y+6,295,30),badge,C.ALERT if gap else C.AMBER if count == 1 else C.MINT)
 	var side := D.panel(canvas,Rect2(1472,441,776,803),"Engagements connus","money","","CareerCoverageContext")
-	D.text(side,23,115,"SAISON "+G.n(entry.year),31,C.GOLD,700,726)
+	D.text(side,23,115,"SAISON "+G.season_label(entry.year),31,C.GOLD,700,726)
 	D.text(side,23,174,U.amount(entry.get("payroll")),55,C.IVORY,800,726)
 	D.text(side,23,211,"Masse salariale connue sur %s semaine(s)" % G.n(entry.get("payments","—")),25,C.MUTED,500,726)
 	D.line(side,Vector2(23,233),Vector2(753,233))

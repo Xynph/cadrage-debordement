@@ -265,6 +265,7 @@ static func salary(weekly: Variant) -> String: return Base.salary(weekly)
 static func salary_amount(weekly: Variant) -> String: return Base.salary_amount(weekly)
 static func salary_period(short: bool = false) -> String: return Base.salary_period(short)
 static func contract_year(end_season: Variant) -> String: return Base.contract_year(end_season)
+static func season_label(season: Variant) -> String: return Base.season_label(season)
 
 static func rating_text(person: Dictionary, own_context: bool = false) -> String: return Base.rating_text(person,own_context)
 static func potential_text(person: Dictionary) -> String: return Base.potential_text(person)

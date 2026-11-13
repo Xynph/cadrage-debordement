@@ -111,7 +111,7 @@ static func build(app: Control) -> Control:
 		follow.add_child(G.wrap("%s · %s\nObjectif %s minutes · échéance semaine de carrière %s" % [_name(app, c.playerId), status, int(c.target), int(c.dueWeek) + 1], 14))
 	for e: Dictionary in data.get("history", []).slice(0, 6):
 		_person_link(app,follow,e.playerId,"RelationshipHistoryPlayerLink")
-		follow.add_child(G.wrap("S%s · semaine %s — %s\n%s · %s" % [int(e.season), int(e.week) + 1, _name(app, e.playerId), e.title, {"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}.get(e.choice, e.choice)], 13))
+		follow.add_child(G.wrap("%s · semaine %s — %s\n%s · %s" % [G.season_label(e.season), int(e.week) + 1, _name(app, e.playerId), e.title, {"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}.get(e.choice, e.choice)], 13))
 	var right := G.panel(page, 1.3)
 	G.chapter(right, "12", "Les personnes et les liens", "Un entretien par personne ; une intervention de groupe par semaine.", app.accent)
 	var list := G.scroll(right)
@@ -188,14 +188,14 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 		parent.add_child(button)
 	for history: Dictionary in data.get("conversationHistory", []).filter(func(h): return h.playerId == p.id).slice(0, 3):
 		var choice := str({"ecouter":"Écouter", "rassurer":"Rassurer", "clarifier":"Clarifier"}.get(history.get("choice", ""), "Entretien individuel"))
-		var memory := G.wrap("S%s J%s · %s\nSatisfaction %s → %s" % [int(history.season), int(history.round) + 1, choice, _number(history.get("before")), _number(history.get("after"))], 13)
+		var memory := G.wrap("%s J%s · %s\nSatisfaction %s → %s" % [G.season_label(history.season), int(history.round) + 1, choice, _number(history.get("before")), _number(history.get("after"))], 13)
 		memory.name = "RelationshipConversationMemory"
 		parent.add_child(memory)
 	var personal_events: Array = data.get("history", []).filter(func(h): return h.get("playerId") == p.id).slice(0, 3)
 	if not personal_events.is_empty(): parent.add_child(G.section("Nos derniers échanges"))
 	for history: Dictionary in personal_events:
 		var choice := str({"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}.get(history.get("choice", ""), "Décision prise"))
-		var memory := G.wrap("S%s · semaine %s — %s\n%s" % [int(history.season), int(history.week) + 1, str(history.get("title", "")), choice], 13)
+		var memory := G.wrap("%s · semaine %s — %s\n%s" % [G.season_label(history.season), int(history.week) + 1, str(history.get("title", "")), choice], 13)
 		memory.name = "RelationshipEventMemory"
 		parent.add_child(memory)
 	var promise: Variant = p.get("promise")
@@ -209,4 +209,4 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 			button.name = "Promise_" + str(option.id)
 			parent.add_child(button)
 	for h: Dictionary in p.get("promiseHistory", []).slice(-3):
-		parent.add_child(G.wrap("S%s J%s · %s · %s min" % [int(h.season), int(h.round) + 1, {"promise":"Engagement pris", "kept":"Promesse tenue", "broken":"Promesse rompue"}.get(h.status, h.status), int(h.minutes)], 13))
+		parent.add_child(G.wrap("%s J%s · %s · %s min" % [G.season_label(h.season), int(h.round) + 1, {"promise":"Engagement pris", "kept":"Promesse tenue", "broken":"Promesse rompue"}.get(h.status, h.status), int(h.minutes)], 13))

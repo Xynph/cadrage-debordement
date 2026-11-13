@@ -106,7 +106,7 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 		row.add_child(name)
 		name.add_child(C.label("CARRIÈRE EN COURS",21,C.GOLD,true,700))
 		name.add_child(C.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club),34,C.IVORY,true,700))
-		name.add_child(C.wrap("Saison %s · %s" % [G.n(meta.get("season",1)),str(meta.get("roundLabel","Début de saison"))],20,C.MUTED))
+		name.add_child(C.wrap("Saison %s · %s" % [G.season_label(meta.get("season",1)),str(meta.get("roundLabel","Début de saison"))],20,C.MUTED))
 		_action(choices,"Reprendre la carrière",func():app._navigate("Réception"),"EntryResume",accent,true)
 	var locked: bool = app.model.is_empty() or meta.get("recoveryRequired",false)
 	var create := _action(choices,"Nouvelle carrière",func():Entry.begin_creation(app),"EntryNewCareer",accent,club.is_empty())

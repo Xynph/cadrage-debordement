@@ -98,12 +98,12 @@
   const talk=s.economy.talks[talkKey];
   const blocked=!q||!q.affordable||q.attempts>=3||!!s.live;
   const fmt=n=>Number.isFinite(n)?new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n):'—';
-  const log=history(s).slice(0,5).map(x=>'<li>S'+x.season+' J'+(x.week+1)+' · '+escape(player(s,x.id)?.name||x.id)+
+  const log=history(s).slice(0,5).map(x=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' J'+(x.week+1)+' · '+escape(player(s,x.id)?.name||x.id)+
    ' · '+escape(POLICY[x.policy]?.label||x.policy)+' · '+fmt(x.wage)+'/sem. · '+escape(x.status)+'</li>').join('');
   return '<section class="card" aria-label="Agents V71"><div class="cardtitle"><h2>Bureau des agents · V71</h2><span class="tag">NEGOCIATION ACTIVE</span></div>'+
    '<p class="help">Choisissez comment aborder un representant fictif. Le moteur de contrats applique toujours les memes regles de salaire, de retrait, de prime, de confirmation et de retraite. Aucun salaire n’est verse avant signature.</p>'+
    '<div class="row budgetline"><label>Joueur<select id="v71-player" onchange="v71Select(\'id\',this.value)">'+
-   players.map(p=>'<option value="'+escape(p.id)+'"'+(p.id===selected.id?' selected':'')+'>'+escape(p.name)+' · fin S'+p.contractEnd+'</option>').join('')+'</select></label>'+
+   players.map(p=>'<option value="'+escape(p.id)+'"'+(p.id===selected.id?' selected':'')+'>'+escape(p.name)+' · fin '+(typeof libelleSaison==='function'?libelleSaison:String)(p.contractEnd)+'</option>').join('')+'</select></label>'+
    '<label>Duree<select id="v71-years" onchange="v71Select(\'years\',this.value)">'+
    validYears.map(y=>'<option value="'+y+'"'+(y===years?' selected':'')+'>'+y+' saison(s)</option>').join('')+'</select></label>'+
    '<label>Approche<select id="v71-policy" onchange="v71Select(\'policy\',this.value)">'+

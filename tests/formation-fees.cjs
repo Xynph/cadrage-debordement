@@ -2,12 +2,12 @@
 // Indemnités de formation à la sortie du centre (décision de Léo du 12/11/2026).
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { context } = require('./france-harness.cjs');
+const { context } = require('./monde-harness.cjs');
 const { factory } = require('../native/engine/formation-fees.cjs');
 
 function setup(install = false) {
   const h = context(437493);
-  h.run(`start(0, 'france'); var CDFormationFees = (${factory.toString()})();${install ? 'CDFormationFees.installHooks();' : ''}`);
+  h.run(`var CDFormationFees = (${factory.toString()})();${install ? 'CDFormationFees.installHooks();' : ''}`);
   return h;
 }
 
@@ -69,7 +69,7 @@ test('Fenêtre de deux saisons et validation stricte', () => {
   assert.equal(r.expired, 0);
   for (const breakage of [
     'S.formationFees.extra = 1',
-    '(b => b[Object.keys(b)[0]] = [99, 1, 0, 70])(Object.values(S.formationFees.graduates)[0])',
+    '(b => b[Object.keys(b)[0]] = [S.clubs.length, 1, 0, 70])(Object.values(S.formationFees.graduates)[0])',
     'S.formationFees.payments.push({ season: 1, playerId: "x", from: 2, to: 2, amount: 1, contracted: 0 })',
   ]) {
     assert.throws(() => h.run(`(() => { const saved = JSON.parse(JSON.stringify(S.formationFees)); try { ${breakage}; CDFormationFees.validate(S); } finally { S.formationFees = saved; } })()`), /Indemnités de formation/);
