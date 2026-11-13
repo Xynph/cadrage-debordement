@@ -15,6 +15,8 @@ extends Node
 const S = preload("res://ui/contextual/skin.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
 const Cadrage = preload("res://match_cadrage.gd")
+const Liaison = preload("res://match_liaison.gd")
+const Arbitre = preload("res://match_arbitre.gd")
 
 enum { INTER, JEU, ATTENTE }
 const NIVEAUX := ["aucun", "resume", "cles", "etendus", "dynamique", "integral"]
@@ -44,6 +46,9 @@ const ECHEANCE_CHOREGRAPHIE := 5.0
 ## au début de l'action, même juste après le précédent. Le manager règle en pause, ou en ouvrant
 ## Tactique ou Banc (pause posée le temps des changements). Le match complet reste continu.
 const ENTRACTE := 0.0
+## Liaison entre deux temps forts contigus (match_liaison.gd) : toujours à vitesse réelle ;
+## marge au-delà de sa durée avant de reprendre la main.
+const ECHEANCE_LIAISON := 3.0
 
 var view: Control
 var app: Control
@@ -113,6 +118,19 @@ var _horloge_montree := ""
 var _minute_inter := -1
 var _roule := 0.0
 var _live_inter: Dictionary = {}
+## Liaison en cours (plans, programme de l'arbitre, légende), plan joué et temps écoulé dans ce plan.
+var liaison: Dictionary = {}
+var _liaison_plan := 0
+var _liaison_t := 0.0
+var _liaison_total := 0.0
+var _detail_precedent := ""
+## Premier plan joué après une liaison : pas de coupe d'entrée (la liaison y a amené les joueurs).
+var _sans_coupe := false
+## Arbitre des temps forts (présentation) et vitesse mesurée des joueurs (départ d'une liaison).
+var arbitre: Node3D
+var _vitesses: Dictionary = {}
+var _places: Dictionary = {}
+var _saut_max := 0.0
 
 static func enabled() -> bool:
 	return OS.get_environment("CD_MATCH_TEMPS_FORTS") != "0"
@@ -222,6 +240,17 @@ func _activer(direct: Dictionary) -> void:
 	# Gestes et coupes vers les remises en jeu font partie du mode de base.
 	if OS.get_environment("CD_MATCH_GESTES") != "0" and stage.has_method("set_gestes"): stage.set_gestes(true)
 	if view.has_method("montrer_reglages_temps_forts"): view.montrer_reglages_temps_forts(direct, self)
+	# Arbitre : seulement dans le mode temps forts (le direct d'origine reste tel quel).
+	if liaisons_actives() and stage.get("_athlete_scene") != null:
+		arbitre = Arbitre.new(stage)
+		stage.add_child(arbitre)
+		if not arbitre.preparer():
+			arbitre.queue_free()
+			arbitre = null
+
+## Liaisons et arbitre actifs (repli : CD_MATCH_LIAISON=0, comportement d'avant).
+static func liaisons_actives() -> bool:
+	return OS.get_environment("CD_MATCH_LIAISON") != "0"
 
 func _exit_tree() -> void:
 	_presenter(false)
@@ -252,6 +281,13 @@ func montre(live: Dictionary) -> Dictionary:
 		vue["events"] = live.get("events", []).slice(0, borne)
 		return vue
 	if etat != JEU or index < 0 or index >= tf.get("plans", []).size(): return live
+	# Liaison : le journal s'arrête au fait d'arrêt de jeu (rien du temps fort à venir).
+	if phase == "liaison":
+		var borne_liaison: int = maxi(int(liaison.get("arret", -1)) + 1, _vus)
+		if borne_liaison >= _events.size(): return live
+		var avant := live.duplicate()
+		avant["events"] = _events.slice(0, borne_liaison)
+		return avant
 	# Pendant les pistes du chorégraphe, chaque fait n'entre au journal qu'une fois montré.
 	var avance := 0 if phase == "choregraphie" and not _jalon_montre else 1
 	var jusque: int = maxi(int(tf.plans[index].index) + avance, _vus)
@@ -361,7 +397,9 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		# Un match déjà en pause (reprise d'une sauvegarde) joue tout de même son temps fort.
 		_pause_au_depart = live.get("paused", false)
 		_vus = connus
-		_demarrer(candidat)
+		# Temps fort contigu au précédent (la 3D est encore à l'écran) : liaison plutôt qu'une coupe sèche.
+		var lien: Dictionary = _preparer_liaison(candidat) if etat == ATTENTE else {}
+		_demarrer(candidat, lien)
 		# Le modèle arrive après la mise à jour de la vue 3D : on la rejoue sans faire avancer
 		# le temps, pour que la première image du temps fort soit déjà placée et cadrée.
 		stage._process(0.0)
@@ -371,7 +409,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		if fige != gel:
 			gel = fige
 			_presenter(not gel)
-			if phase == "choregraphie": stage.figer_choregraphie(gel)
+			if phase == "choregraphie" or phase == "liaison": stage.figer_choregraphie(gel)
 			elif index >= 0 and index < tf.plans.size(): stage.apply_frame(_image(tf.plans[index].scene, gel, int(tf.plans[index].index)))
 	elif etat == ATTENTE:
 		_vers_inter()
@@ -384,6 +422,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	if view == null or not is_instance_valid(stage): return
+	if etat == JEU or etat == ATTENTE: _mesurer(delta)
 	if etat == JEU:
 		between.terrain.gel = true
 		_lire(delta * vitesse, delta)
@@ -552,7 +591,47 @@ func _gestes_actifs() -> bool:
 	# La vue 3D sait couper elle-même vers une remise en jeu quand ses gestes sont actifs.
 	return stage.get("_gestes") != null
 
-func _demarrer(candidat: Dictionary) -> void:
+## Vitesse de chaque joueur à l'écran (départ d'une liaison : personne ne se fige) et plus grand
+## déplacement d'une image à l'autre pendant un plan de liaison (contrôle : aucun saut).
+func _mesurer(delta: float) -> void:
+	if delta <= 0.0: return
+	var coupe := phase == "liaison" and _liaison_t <= 0.0001
+	for id: String in stage._actors:
+		var at: Vector3 = (stage._actors[id].node as Node3D).position
+		if _places.has(id):
+			var pas: Vector3 = at - _places[id]
+			_vitesses[id] = (_vitesses.get(id, Vector3.ZERO) as Vector3).lerp(pas / delta, 0.5)
+			if phase == "liaison" and not coupe and not gel:
+				_saut_max = maxf(_saut_max, Vector2(pas.x, pas.z).length())
+		_places[id] = at
+
+## Liaison vers le temps fort `candidat` s'il part là où le précédent s'est arrêté ; {} sinon.
+func _preparer_liaison(candidat: Dictionary) -> Dictionary:
+	if not liaisons_actives() or not stage.has_method("jouer_choregraphie") or tf.is_empty():
+		return {}
+	# Pistes du chorégraphe dès le premier plan : elles ont leur propre entrée.
+	if choregraphe_demande() and candidat.get("choregraphie") is Dictionary and int(candidat.choregraphie.get("premier", -1)) == 0:
+		return {}
+	var info := Liaison.analyser(tf, candidat, _events)
+	if info.is_empty(): return {}
+	var joueurs: Dictionary = {}
+	for id: String in stage._actors:
+		var at: Vector3 = (stage._actors[id].node as Node3D).position
+		var v: Vector3 = _vitesses.get(id, Vector3.ZERO)
+		joueurs[id] = {"p": Vector2(at.x + 50.0, at.z + 35.0), "v": Vector2(v.x, v.z)}
+	var porteur: String = str(stage._carrier_id) if bool(stage._ball_attached) else ""
+	var marque: Vector2 = info.marque
+	var ballon := {"p": (stage._ball as Node3D).global_position if stage._ball.visible else Vector3(marque.x - 50.0, 0.1, marque.y - 35.0), "porteur": porteur}
+	var pos_arbitre := Vector2(arbitre.position.x + 50.0, arbitre.position.z + 35.0) if arbitre != null else Vector2(50, 35)
+	var rencontre := str(_live.get("direct", {}).get("rencontre", ""))
+	var lien := Liaison.construire(info, joueurs, ballon, pos_arbitre, Liaison.graine(rencontre, str(candidat.get("cle", ""))), _detail_precedent)
+	if lien.is_empty(): return {}
+	lien["arret"] = int(info.get("arret", -1))
+	lien["plan_kind"] = str(info.get("plan_kind", ""))
+	_detail_precedent = str(lien.get("detail", ""))
+	return lien
+
+func _demarrer(candidat: Dictionary, lien: Dictionary = {}) -> void:
 	# Une suite peut arriver après un retour à l'écran intermédiaire (pause, arrêt) : la 3D
 	# sort alors du fondu et le cadrage, relâché entre-temps, doit être reposé d'emblée.
 	var depuis_inter := etat == INTER
@@ -568,16 +647,108 @@ func _demarrer(candidat: Dictionary) -> void:
 	_presenter(true)
 	stage.set_live_cadence(1)
 	# Entrée dans un temps fort : le cadrage rapproché est posé d'emblée (la 3D sort du fondu).
-	if cadrage != null and (depuis_inter or not tf.get("suite", false)): cadrage.couper()
+	if cadrage != null and (depuis_inter or not tf.get("suite", false)) and lien.is_empty(): cadrage.couper()
+	if arbitre != null: arbitre.habiller()
 	var depart: Variant = tf.get("depart")
-	if not tf.get("suite", false) and depart is Dictionary:
+	if not tf.get("suite", false) and depart is Dictionary and lien.is_empty():
 		# Coupe d'entrée : l'action reprend d'où elle se trouvait une minute plus tôt.
 		stage.apply_frame(_image(depart, true, int(tf.get("debut", 0)) - 1))
 		stage.apply_frame(_image(depart, false, int(tf.get("debut", 0)) - 1))
 		_derniers = _positions(depart)
 	suivi.append({"evenement": "temps_fort", "cle": str(tf.get("cle", "")), "type": str(tf.get("type", "")), "suite": bool(tf.get("suite", false)),
-		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "declenchement": tf.get("declenchement"), "debut_ms": _debut_ms})
+		"horloge": str(tf.get("horlogeDebut", "")), "plans": tf.plans.size(), "debut": int(tf.get("debut", -1)), "premier_plan": int(tf.plans[0].get("index", -1)) if not tf.plans.is_empty() else -1, "duree_prevue": float(tf.get("duree", 0.0)), "declenchement": tf.get("declenchement"), "debut_ms": _debut_ms,
+		"contigu": not depuis_inter, "liaison": str(lien.get("type", ""))})
+	if not lien.is_empty() and _jouer_liaison(lien):
+		return
 	_commencer_plan()
+	# Entrée coupée : l'arbitre est déjà près de l'action.
+	if arbitre != null and (depuis_inter or not tf.get("suite", false)):
+		arbitre.dirige = false
+		arbitre.placer(arbitre.place_de_jeu(stage._ball_target), stage._ball_target)
+
+# --- Liaison entre deux temps forts contigus ------------------------------------
+
+func _jouer_liaison(lien: Dictionary) -> bool:
+	liaison = lien
+	_liaison_plan = 0
+	_liaison_total = 0.0
+	_saut_max = 0.0
+	if not _lancer_plan_liaison(0):
+		liaison = {}
+		phase = "jeu"
+		suivi.append({"evenement": "liaison_refusee", "debut_ms": Time.get_ticks_msec()})
+		return false
+	suivi.append({"evenement": "liaison", "type": str(lien.type), "choix": str(lien.get("choix", "")), "coupe": bool(lien.coupe), "plans": (lien.plans as Array).size(),
+		"duree_prevue": float(lien.duree), "duree_plans": (lien.plans as Array).map(func(p: Dictionary) -> float: return float(p.duree)),
+		"detail": str(lien.get("detail", "")), "cle": str(tf.get("cle", "")), "debut_ms": Time.get_ticks_msec()})
+	return true
+
+## Un plan de la liaison, toujours à vitesse réelle ; le plan B part d'une coupe franche.
+func _lancer_plan_liaison(k: int) -> bool:
+	var pistes: Dictionary = liaison.plans[k]
+	if not stage.jouer_choregraphie(pistes, 1.0):
+		return false
+	phase = "liaison"
+	_liaison_plan = k
+	_liaison_t = 0.0
+	if cadrage != null:
+		# Plan A : large (le ballon qui sort, les joueurs autour) ; plan B : cadrage de la remise en jeu.
+		cadrage.regler(true, "touch" if k == 0 else str(liaison.get("plan_kind", "")), k == 0)
+		if k > 0:
+			cadrage.couper()
+			stage._camera_cut = true
+	_programme_arbitre(true)
+	_habiller()
+	return true
+
+func _programme_arbitre(debut_plan: bool) -> void:
+	if arbitre == null: return
+	arbitre.dirige = true
+	var courant: Dictionary = {}
+	for etape: Dictionary in liaison.get("arbitre", []):
+		if int(etape.plan) == _liaison_plan and float(etape.t) <= _liaison_t + 0.0001: courant = etape
+	if courant.is_empty(): return
+	var lieu: Vector2 = courant.lieu
+	var monde := Vector3(lieu.x - 50.0, 0.0, lieu.y - 35.0)
+	if debut_plan and _liaison_plan > 0: arbitre.placer(monde, stage._ball.global_position)
+	arbitre.cible = monde
+	arbitre.signal_bras = str(courant.get("signal", ""))
+	var d: Vector2 = courant.get("direction", Vector2.ZERO)
+	arbitre.direction_bras = Vector3(d.x, 0.0, d.y)
+	arbitre.hauteur_bras = float(courant.get("hauteur", 0.0))
+
+func _lire_liaison(reel: float) -> void:
+	_liaison_t += reel
+	_liaison_total += reel
+	_programme_arbitre(false)
+	var pistes: Dictionary = liaison.plans[_liaison_plan]
+	var duree := float(pistes.duree)
+	# Liaison continue : la caméra glisse du plan large vers le cadrage de la remise en jeu.
+	if cadrage != null and _liaison_plan == 0 and not bool(liaison.coupe) and _liaison_t >= duree * 0.55 and cadrage.kind == "touch":
+		cadrage.regler(true, str(liaison.get("plan_kind", "")), false)
+	var echue := _liaison_t > duree + ECHEANCE_LIAISON
+	if stage.choregraphie_active() and not stage.choregraphie_finie() and not echue:
+		return
+	if echue: suivi.append({"evenement": "echeance", "cause": "liaison", "debut_ms": Time.get_ticks_msec()})
+	if _liaison_plan + 1 < (liaison.plans as Array).size() and _lancer_plan_liaison(_liaison_plan + 1):
+		return
+	for i in range(suivi.size() - 1, -1, -1):
+		if str(suivi[i].get("evenement", "")) == "liaison":
+			suivi[i]["duree_reelle"] = _liaison_total
+			suivi[i]["saut_max"] = _saut_max
+			break
+	stage.arreter_choregraphie()
+	_derniers = {}
+	for id: String in stage._actors:
+		var at: Vector3 = (stage._actors[id].node as Node3D).position
+		_derniers[id] = Vector2(at.x + 50.0, at.z + 35.0)
+	var tenue: Dictionary = liaison.get("tenue", {})
+	if arbitre != null: arbitre.dirige = false
+	phase = "jeu"
+	_sans_coupe = true
+	liaison = {}
+	_commencer_plan()
+	if not tenue.is_empty() and stage.has_method("tenir_poses"): stage.tenir_poses(tenue)
 
 func _commencer_plan() -> void:
 	var plan: Dictionary = tf.plans[index]
@@ -592,7 +763,8 @@ func _commencer_plan() -> void:
 		var hauteur := maxf(1.0, view.size.y)
 		var legende: Control = view.events.get_parent().get_parent().get_parent()
 		cadrage.couvrir(view.clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
-		if plan.get("coupe", false): cadrage.couper()
+		if plan.get("coupe", false) and not _sans_coupe: cadrage.couper()
+	_sans_coupe = false
 	if _jouer_choregraphie(plan):
 		return
 	if plan.get("coupe", false) and not _gestes_actifs():
@@ -712,6 +884,9 @@ func _jouer(plan: Dictionary) -> void:
 
 func _lire(delta: float, reel: float) -> void:
 	if gel or index < 0 or index >= tf.plans.size(): return
+	if phase == "liaison":
+		_lire_liaison(reel)
+		return
 	if phase == "choregraphie":
 		_lire_choregraphie(reel)
 		return
@@ -875,6 +1050,14 @@ func _habiller() -> void:
 	var plan: Dictionary = tf.plans[index]
 	# Le dernier temps fort se regarde avant de valider la journée.
 	_valider(false)
+	if phase == "liaison":
+		# Liaison : le fait d'arrêt de jeu (touche, en-avant, pénalité), rien de l'action à venir ;
+		# l'horloge reste celle du temps fort précédent (arrêt de jeu).
+		if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
+		view.events.text = str(liaison.get("texte", ""))
+		view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
+		legende.visible = not view.events.text.is_empty()
+		return
 	view.clock.text = str(plan.get("horloge", ""))
 	if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
 	# Pistes : un plan n'est courant qu'à son jalon (passage du ballon pour un tir) : le résultat est montré.

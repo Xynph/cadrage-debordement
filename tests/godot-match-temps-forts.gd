@@ -172,6 +172,7 @@ func run() -> void:
 			elif mode == "terrain2d": await terrain2d(view)
 			else: await inactive(view)
 			if view.regie != null: followed = view.regie.suivi
+	check_liaisons(followed)
 	var report := FileAccess.open(proof.path_join("report-" + mode + ".json"), FileAccess.WRITE)
 	report.store_string(JSON.stringify({"checks": checks, "failures": failures, "suivi": followed}, "  "))
 	report.close()
@@ -179,6 +180,31 @@ func run() -> void:
 	app.bridge.stop()
 	print("Temps forts (", mode, ") : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	quit(0 if failures.is_empty() else 1)
+
+## Liaisons entre deux temps forts contigus (match_liaison.gd), dans tous les modes : toujours à
+## vitesse réelle (jamais d'accéléré, même quand les temps forts sont accélérés pour le test),
+## coupe franche en deux plans quand la mise en place est longue, aucun saut de position dans un
+## plan, et seulement entre deux temps forts contigus (jamais après l'écran intermédiaire 2D).
+func check_liaisons(followed: Array) -> void:
+	var liaisons: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison")
+	for e: Dictionary in liaisons:
+		var nom := "Liaison %s (%s)" % [str(e.type), str(e.cle)]
+		if not e.has("duree_reelle"): continue
+		check(float(e.duree_reelle) >= float(e.duree_prevue) - 0.2 and float(e.duree_reelle) <= float(e.duree_prevue) + 1.5,
+			"%s : jouée à vitesse réelle (%.2f s pour %.2f s prévues)" % [nom, float(e.duree_reelle), float(e.duree_prevue)])
+		check(float(e.get("saut_max", 0.0)) <= 0.5, "%s : aucun saut de position dans un plan (%.2f m d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
+		var durees: Array = e.get("duree_plans", [])
+		if bool(e.coupe):
+			check(int(e.plans) == 2 and durees.size() == 2 and float(durees[0]) <= 3.4 and float(durees[1]) >= 1.0 and float(durees[1]) <= 2.1,
+				"%s : plan en temps réel puis coupe franche vers la remise en jeu formée (%s)" % [nom, str(durees)])
+		else:
+			check(int(e.plans) == 1 and float(e.duree_prevue) <= 4.7, "%s : liaison continue de 4,6 s au plus (%s)" % [nom, str(durees)])
+	for e: Dictionary in followed:
+		if e.evenement == "temps_fort" and not str(e.get("liaison", "")).is_empty():
+			check(bool(e.get("contigu", false)) and not bool(e.get("suite", false)), "Liaison seulement entre deux temps forts contigus : " + str(e.get("cle", "")))
+	var refusees: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison_refusee" or (e.evenement == "echeance" and str(e.get("cause", "")) == "liaison"))
+	check(refusees.is_empty(), "Aucune liaison refusée ni interrompue : " + str(refusees))
+	if not liaisons.is_empty(): print("Liaisons jouées : ", liaisons.map(func(e: Dictionary) -> String: return "%s%s %.1f s" % [str(e.type), " (coupe)" if bool(e.coupe) else "", float(e.get("duree_reelle", 0.0))]))
 
 func inactive(view: Control) -> void:
 	check(view.regie == null and not view.temps_forts_actifs(), "Repli (CD_MATCH_TEMPS_FORTS=0) : aucune régie")
