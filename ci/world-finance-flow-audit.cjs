@@ -1,5 +1,7 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
+// DÉSACTIVÉ : mode Monde uniquement (décision de Léo, 13/11/2026). Cet audit charge encore le harnais des anciens modes
+// (tests/france-harness.cjs, drapeau CD_MODES_HERITES) : à migrer vers world-champ avant de le rétablir.
+if(require.main===module){console.error('world-finance-flow-audit : audit désactivé (ancien mode de carrière, à migrer vers le mode Monde world-champ).');process.exit(2);}
 const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual audit: short real weeks, no coefficients or production state changed.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
