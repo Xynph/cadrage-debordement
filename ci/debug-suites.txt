@@ -1,4 +1,0 @@
-tests/native-club-support-ui.cjs
-tests/deepen-analytics-real-ui.cjs
-tests/godot-immersive08.cjs
-tests/godot-match-temps-forts.cjs

@@ -6,6 +6,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { allTests } = require('../ci/select-tests.cjs');
 const config = require('../ci/godot-sdk-followup.json');
+const sdk = require('../ci/godot-sdk.json');
+const { legacySuites } = require('../ci/legacy-modes.cjs');
+// Mode Monde uniquement : une recette qui porte le drapeau des anciens modes est retirée des manifestes SDK jusqu'à sa migration.
+const legacy = legacySuites();
 const root = path.resolve(__dirname, '..');
 const required = [
   'godot-entity-navigation', 'godot-entity-projections', 'godot-finance-ledger-links',
@@ -30,7 +34,13 @@ test('SDK registry groups cover every declared wrapper exactly once', () => {
     assert.match(suite, /^tests\/[a-z0-9-]+\.cjs$/);
     assert.ok(fs.statSync(path.join(root, suite)).isFile(), suite);
   }
-  for (const suite of required) assert.ok(config.suites.includes(suite), suite);
+  for (const suite of required) assert.ok(config.suites.includes(suite) || legacy.has(suite), suite);
+  for (const suite of [...config.suites, ...sdk.suites]) assert.ok(!legacy.has(suite), 'recette à ancien mode : ' + suite);
+  for (const manifest of [config, sdk]) {
+    for (const key of ['suiteEnvironment', 'suiteCases']) {
+      for (const suite of Object.keys(manifest[key] || {})) assert.ok(!legacy.has(suite), key + ' : ' + suite);
+    }
+  }
 });
 
 test('All declared SDK variants have explicit, unique selectors', () => {
@@ -50,6 +60,7 @@ test('All declared SDK variants have explicit, unique selectors', () => {
 
 test('Night navigation includes all seven rendered cases', () => {
   const suite = 'tests/rg27-night-navigation.cjs';
+  if (legacy.has(suite)) return; // Exclue (ancien mode de carrière) : rétablir ces contrôles à sa migration.
   const cases = ['reading', 'nation', 'guards', 'prospects', 'staff', 'quote', 'report'];
   assert.deepEqual(config.suiteCases[suite], cases.map(id => ({ id, env: { CD_NIGHT_NAV_CASE: id } })));
   assert.equal(config.suiteEnvironment[suite].CD_NIGHT_NAV_GRAPHICS, '1');
@@ -65,6 +76,7 @@ test('The report checkpoint preparer is a helper, never an automatic suite', () 
 test('Effective training cases are collected through public commands in SDK qualification', () => {
   const suite = 'tests/godot-effective-training-receipt.cjs';
   const reuse = 'CD_EFFECTIVE_TRAINING_REUSE_CASES';
+  if (legacy.has(suite)) return; // Exclue (ancien mode de carrière) : rétablir ces contrôles à sa migration.
   assert.ok(config.groups.parcours.includes(suite));
   assert.equal(config.suiteEnvironment[suite][reuse], '');
   for (const variant of config.suiteCases[suite] || []) assert.ok(!variant.env[reuse]);

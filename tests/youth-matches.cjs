@@ -87,10 +87,12 @@ test('Page de suivi du centre branchée (#626) et compteur des sélections jeune
  const id=JSON.stringify(row.id);
  assert.equal(h.run(`CDYouthCompetitions.appearances(S,${id})`),row.matchCap.count);
  // Compteur des sélections de #636 : pris en compte sans double compte avec recordSelection.
- h.run(`globalThis.CDYouthNational={matches:(s,pid,season)=>pid===${id}&&season===s.season?30:0};`);
+ // Vrai domaine youthNational : trente matchs inscrits dans son état (format documenté), puis validation.
+ h.run(`{const yn=nativeSystems.domain('youthNational');if(!S.youthNational)yn.initialize(S);yn.recordAppearances(S,${id},'FRA',Array.from({length:30},(_,i)=>'2026-'+String(9+Math.floor(i/28)).padStart(2,'0')+'-'+String(1+i%28).padStart(2,'0')));yn.validate(S);}`);
+ assert.equal(h.run(`nativeSystems.domain('youthNational').matches(S,${id})`),30);
  assert.equal(h.run(`CDYouthCompetitions.appearances(S,${id})`),row.matchCap.count+30);
  assert.equal(json(h,`CDYouthMatches.matches(S,S.development.academy.find(p=>p.id===${id}))`).available,false);
  const alerts=json(h,`nativeSystems.domain('academyFollowUp').alerts(S)`);
  assert.ok(alerts.some(t=>t.includes('plafond de 30')),'alerte du plafond');
- h.run(`delete globalThis.CDYouthNational`);
+ h.run(`delete S.youthNational`);
 });
