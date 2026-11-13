@@ -1,0 +1,72 @@
+name: Nettoyage des branches
+# Manuel uniquement : supprime les branches listées dans ci/branches-a-supprimer.txt
+# (anciennes PR fermées, tri du 13/11). Par défaut en essai : rien n'est supprimé.
+on:
+  workflow_dispatch:
+    inputs:
+      essai:
+        description: "Essai : n'écrit que ce qui serait supprimé"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  nettoyage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ESSAI: ${{ inputs.essai }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Supprimer les branches listées
+        shell: bash
+        run: |
+          set -u
+          repo="${{ github.repository }}"
+          owner="${repo%%/*}"
+          supprimees=(); sautees=(); absentes=()
+          while IFS= read -r ligne || [ -n "$ligne" ]; do
+            b="$(printf '%s' "$ligne" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            case "$b" in ''|'#'*) continue;; esac
+            if [ "$b" = "main" ]; then
+              sautees+=("$b (refusée : main)"); continue
+            fi
+            enc="$(printf '%s' "$b" | jq -sRr @uri)"
+            if ! info="$(gh api "repos/$repo/branches/$enc" 2>/dev/null)"; then
+              absentes+=("$b"); continue
+            fi
+            if [ "$(printf '%s' "$info" | jq -r '.protected')" = "true" ]; then
+              sautees+=("$b (refusée : protégée)"); continue
+            fi
+            ouvertes="$(gh api "repos/$repo/pulls?state=open&head=$owner:$enc&per_page=100" --jq 'length')"
+            if [ "$ouvertes" != "0" ]; then
+              echo "Saute $b : PR ouverte"
+              sautees+=("$b (PR ouverte)"); continue
+            fi
+            if [ "$ESSAI" = "true" ]; then
+              echo "Essai : serait supprimée $b"
+              supprimees+=("$b (essai)"); continue
+            fi
+            if gh api -X DELETE "repos/$repo/git/refs/heads/$b" >/dev/null 2>&1; then
+              echo "Supprimée $b"; supprimees+=("$b")
+            else
+              st="$(gh api "repos/$repo/branches/$enc" >/dev/null 2>&1 && echo oui || echo non)"
+              if [ "$st" = "non" ]; then absentes+=("$b"); else sautees+=("$b (échec de suppression)"); fi
+            fi
+          done < ci/branches-a-supprimer.txt
+          {
+            echo "## Nettoyage des branches ($([ "$ESSAI" = "true" ] && echo essai || echo réel))"
+            echo "- Supprimées : ${#supprimees[@]}"
+            echo "- Sautées : ${#sautees[@]}"
+            echo "- Déjà absentes : ${#absentes[@]}"
+            for t in supprimees sautees absentes; do
+              declare -n arr=$t
+              [ "${#arr[@]}" -gt 0 ] || continue
+              echo; echo "### $t"
+              for x in "${arr[@]}"; do echo "- \`$x\`"; done
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
