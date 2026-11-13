@@ -485,8 +485,9 @@ function createSaveDocument(state=S){
  if(snapshot.live&&!snapshot.live.finished)snapshot.live.paused=true;
  validateCareer(snapshot);
  const doc={format:SAVE_FORMAT,exportVersion:1,exportedAt:new Date().toISOString(),checksum:saveChecksum(snapshot),state:snapshot};
+ if(typeof nativeSaveProof==='function')nativeSaveProof(JSON.stringify(snapshot));// recettes : texte de l'état avant réduction
  if(!worldCareerActive(snapshot))return doc;
- const cap=worldSaveLimits(snapshot)?.saveBytes??WORLD_SAVE_LIMIT;
+ const cap=(typeof nativeSaveBytes==='number'?nativeSaveBytes:worldSaveLimits(snapshot)?.saveBytes)??WORLD_SAVE_LIMIT;
  if(saveDocumentFits(doc,cap))return doc;
  if(champPortableSave(snapshot)){
   const compact=compactChampDocument(doc);
