@@ -19,6 +19,9 @@ const advance = (game, state, to, overrides = {}) => game.advance(state, {
   from: state.date, to, players, clubPlayerIds: ['lnr:hook'], managedNation: 'FRA', ...overrides,
 });
 const project = (game, state, managedNation = 'FRA') => game.project(state, { date: state.date, players, managedNation });
+const core = id => !competitions.EXTRA_FAMILIES.some(family => id.startsWith(family + '-'));
+const coreResults = results => Object.fromEntries(Object.entries(results).filter(([id]) => core(id)));
+const coreCount = state => Object.values(state.results).reduce((count, season) => count + Object.keys(season).filter(core).length, 0);
 const resultCount = state => Object.values(state.results).reduce((count, season) => count + Object.keys(season).length, 0);
 
 test('opens camp once, warns only for the managed nation and own club and blocks skipping its match', () => {
@@ -61,14 +64,14 @@ test('plays an exact national fixture with real IDs and restores appearances wit
   assert.equal(game.validate(reopened), true);
   assert.deepEqual(game.play(reopened, payload), { state: reopened, mail: [] });
   const end = advance(game, reopened, '2027-02-07').state;
-  assert.equal(end.appearances.length, 6);
+  assert.equal(end.appearances.filter(row => core(row.fixtureId)).length, 6);
   assert.equal(game.validate(end), true);
 });
 
 test('replays history without backdated mail or caps and resumes inside a live camp', () => {
   const game = create();
   const historical = game.initial('2027-11-14', 42);
-  assert.equal(resultCount(historical), 121);
+  assert.equal(coreCount(historical), 121);
   assert.deepEqual(historical.appearances, []);
   assert.deepEqual(historical.callups, []);
   assert.equal(game.validate(historical), true);
@@ -91,8 +94,8 @@ test('simulates all editions identically across one long advance and calendar bo
   const dates = ['2027-01-30', '2027-02-06', '2027-03-01', '2027-03-16', '2027-08-26', '2027-10-17', '2027-10-19', '2027-11-15'];
   const progressive = dates.reduce((state, date) => advance(game, state, date, options).state, initial);
   assert.deepEqual(progressive, end);
-  assert.equal(resultCount(end), 121);
-  assert.equal(end.appearances.length, 242);
+  assert.equal(coreCount(end), 121);
+  assert.equal(end.appearances.filter(row => core(row.fixtureId)).length, 242);
   assert.equal(game.validate(end), true);
   const cup = project(game, end).competitions.find(edition => edition.id === 'rugby-world-cup-2027');
   const champion = cup.outcome.winnerIds[0];
@@ -122,11 +125,12 @@ test('restores a version 1 career beyond the World Cup and starts the next Six N
   const historical = game.initial('2027-11-14', 42);
   const legacy = {
     version: 1, date: '2028-01-01', historyBefore: '2027-11-14', seed: 42,
-    results: Object.fromEntries(project(game, historical).fixtures.filter(fixture => fixture.result).map(fixture => [fixture.id, fixture.result])),
+    results: Object.fromEntries(project(game, historical).fixtures.filter(fixture => fixture.result && core(fixture.id)).map(fixture => [fixture.id, fixture.result])),
     appearances: [], callups: [],
   };
   const upgraded = game.upgrade(legacy);
-  assert.equal(upgraded.version, 2);
+  assert.equal(upgraded.version, 3);
+  assert.equal(upgraded.extendedFrom, '2028-01-01');
   assert.equal(game.validate(JSON.parse(JSON.stringify(upgraded))), true);
   const next = project(game, upgraded).nextFixture;
   assert.match(next.id, /^six-nations-2028-/);
@@ -144,7 +148,7 @@ test('upgrades a legacy career already far beyond the old schedule without retro
   const legacy = game.initial('2027-11-14', 42);
   const state = game.upgrade({
     version: 1, date: '2057-02-20', historyBefore: legacy.historyBefore, seed: legacy.seed,
-    results: Object.assign({}, ...Object.values(legacy.results)), appearances: [], callups: [],
+    results: coreResults(Object.assign({}, ...Object.values(legacy.results))), appearances: [], callups: [],
   });
   assert.equal(state.recurringFrom, '2057-02-20');
   assert.ok(Object.keys(state.results['2057']).length > 0);
@@ -175,5 +179,6 @@ test('keeps seasons playable and retains cumulative caps while bounding the deta
   const caps = callups.internationalStatus(reopened).caps.get('lnr:hook');
   assert.ok(caps.career > 150);
   assert.equal(caps.nation, 'FRA');
-  assert.ok(project(game, reopened, 'GEO').nextFixture.date.startsWith('2059-'));
+  // La Géorgie joue désormais chaque année (Rugby Europe Championship, tests).
+  assert.ok(project(game, reopened, 'GEO').nextFixture.date.startsWith('2057-'));
 });
