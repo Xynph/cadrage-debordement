@@ -18,7 +18,10 @@ assert.match(yaml,/COVERAGE: \$\{\{ needs\.classification\.outputs\.coverage \}\
 assert.match(yaml,/if: \$\{\{ always\(\) && github\.event_name != 'schedule' \}\}/);
 // Débit : brouillons en CI légère, batterie complète au passage en prête, annulation sur main.
 assert.match(yaml,/types: \[opened, synchronize, reopened, ready_for_review\]/);
-assert.match(yaml,/draft: \$\{\{ github\.event\.pull_request\.draft == true \}\}/);
+// État brouillon lu en direct (course push + passage en prête, #590).
+assert.match(yaml,/draft: \$\{\{ steps\.draft\.outputs\.draft == 'true' \}\}/);
+assert.match(yaml,/gh api "repos\/\$GITHUB_REPOSITORY\/pulls\/\$PR" --jq \.draft/);
+assert.match(yaml,/pull-requests: read/);
 assert.match(yaml,/DRAFT: \$\{\{ needs\.classification\.outputs\.draft \}\}/);
 assert.match(yaml,/cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| github\.event_name == 'push' \}\}/);
 const shardJob=yaml.split('\n  shards:\n')[1].split('\n  godot:\n')[0];
