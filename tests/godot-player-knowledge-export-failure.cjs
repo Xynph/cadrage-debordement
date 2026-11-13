@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {test}=require('node:test'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const realWorker=process.env.CD_KNOWLEDGE_WORKER||path.resolve(__dirname,'../native/engine/worker.cjs');
 const hasKnowledge=!!process.env.CD_KNOWLEDGE_WORKER||fs.existsSync(path.resolve(__dirname,'../native/engine/player-knowledge.cjs'));

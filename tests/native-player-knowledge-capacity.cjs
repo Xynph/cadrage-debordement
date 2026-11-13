@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {context}=require('./france-harness.cjs'),{factory}=require('../native/engine/player-knowledge.cjs'),{createBridge}=require('../native/engine/worker.cjs');
 test('32 000 strictly valid knowledge records export and resume inside a dedicated finite node budget',t=>{

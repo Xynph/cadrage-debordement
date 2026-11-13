@@ -83,16 +83,16 @@ func play_career(save_path: String) -> void:
 	check(FileAccess.file_exists(save_path), "Match career was saved to the disposable profile")
 
 func create_career() -> bool:
-	app.pack_manager.creation_mode = "common"
+	# Mode unique Monde (13/11/2026) : la recette crée la carrière comme le joueur, dans le Monde complet.
+	app.pack_manager.creation_mode = "auto"
 	app._navigate("Création")
 	await helper._settle()
 	if not helper._press_named("CreationDivision_accession"): return false
 	await helper._settle()
-	app.selected_club = 29
-	app._render()
+	if not helper._press_named("CreationClub29"): return false
 	await helper._settle()
 	if not helper._press_named("CreationStart") or not await wait_ready(): return false
-	return app._has_career() and int(app.model.get("club", {}).get("id", -1)) == 29 and app.model.get("meta", {}).get("mode") == "common"
+	return app._has_career() and int(app.model.get("club", {}).get("id", -1)) == 29 and app.model.get("meta", {}).get("edition") == "world-champ"
 
 func active_highlights() -> Node:
 	var director: Node = app.contextual_director

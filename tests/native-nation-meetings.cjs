@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),test=require('node:test'),vm=require('node:vm');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const definition=require('../native/engine/club-meetings.cjs');
