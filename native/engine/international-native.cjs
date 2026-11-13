@@ -29,7 +29,8 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const isNationalOnly = () => run('S?.national?.role?.club===false');
   const roster = () => JSON.parse(run(`JSON.stringify(S.clubs.flatMap(club=>club.players.map(p=>({
     id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),condition:p.condition,
-    ...nativePositionAptitudes.project(p),injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id
+    ...nativePositionAptitudes.project(p),injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id,
+    formeMatch:typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.selection(p.id):0
   }))))`));
 
   function write(profile) {

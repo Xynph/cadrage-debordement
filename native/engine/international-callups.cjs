@@ -16,7 +16,8 @@ function factory() {
  const compareText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
  const unique = values => new Set(values).size === values.length;
  const fit = p => Number.isFinite(p.rating) && (p.age === undefined || p.age >= 18) && !p.injury && !p.suspension;
- const formScore = p => p.rating * (0.5 + (p.condition ?? 100) * 0.005);
+ // Forme en club (notes de match, match-notes.cjs) : −1,5 à +2 points au score du sélectionneur.
+ const formScore = p => p.rating * (0.5 + (p.condition ?? 100) * 0.005) + (Number.isFinite(p.formeMatch) ? p.formeMatch : 0);
  const byForm = (a, b) => Number(!!a.nationalReserve) - Number(!!b.nationalReserve) ||
   formScore(b) - formScore(a) || compareText(a.id, b.id);
 

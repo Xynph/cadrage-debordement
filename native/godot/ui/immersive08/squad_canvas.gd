@@ -8,6 +8,7 @@ const POTENTIAL_COLOR := Color("ffb454")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 29
 const Training = preload("res://ui/immersive08/training_canvas.gd")
+const Notes = preload("res://ui/notes_match.gd")
 var app: Control
 var state: Dictionary
 var rows: VBoxContainer
@@ -88,12 +89,12 @@ func _build() -> void:
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",210],["FIN DE CONTRAT",1216,"Échéance",160],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",130],["FIN DE CONTRAT",1132,"Échéance",124],["NOTE",1262,"Note",56],["FORME",1326,"Forme",140],["MIN.",1472,"Minutes",58],["STATUT",1538,"Statut",128]]
 	if state.family==U.WATCH_FILTER:
-		columns = columns.slice(0,9) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(11)
+		columns = columns.slice(0,9) + [["MOTIF DE SURVEILLANCE",994,"Motif",262]] + columns.slice(11)
 	for column: Array in columns:
 		var caption := D.text(header,column[1],26,column[0],18,C.MUTED,600,column[3])
-		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential","Poste":"RosterColumn_POSTE","Autres postes":"RosterColumnSecondaryPositions"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
+		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential","Poste":"RosterColumn_POSTE","Autres postes":"RosterColumnSecondaryPositions","Note":"RosterColumnNote","Forme":"RosterColumnForm"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
 		var key := str(column[2])
 		var sort := Button.new()
 		sort.name = "Sort_"+key
@@ -214,6 +215,16 @@ static func sort_value(player: Dictionary, key: String) -> Variant:
 		if _known_number(player.get("injury")) and float(player.injury) > 0: return U.fold("Blessé")
 		var status: Variant = player.get("status")
 		return U.fold(status.strip_edges()) if status is String and not status.strip_edges().is_empty() and status != "—" else null
+	if key in ["Note","Forme"]:
+		var notes: Variant = player.get("matchNotes")
+		if notes is Dictionary:
+			if key == "Note": return notes.get("moyenne")
+			var forme: Array = notes.get("forme", [])
+			if forme.is_empty(): return null
+			var somme := 0.0
+			for v: Variant in forme: somme += float(v)
+			return somme / forme.size()
+		return null
 	if key == "Motif":
 		var source := player.duplicate()
 		if not _known_number(source.get("condition")): source.condition = 100
@@ -253,10 +264,17 @@ static func ordered_players(source: Array, reading: Dictionary, season: int) -> 
 	return result
 
 func _players() -> Array:
-	return ordered_players(app.model.get("squad",[]),state,int(app.model.meta.get("season",1)))
+	# Les notes de match (clubLife.matchNotes) accompagnent chaque joueur pour le tri.
+	var source: Array = []
+	for player: Variant in app.model.get("squad",[]):
+		if player is Dictionary:
+			var copie: Dictionary = player.duplicate()
+			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
+			source.append(copie)
+	return ordered_players(source,state,int(app.model.meta.get("season",1)))
 
 func _toggle_sort(key: String) -> void:
-	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes"]
+	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Note","Forme"]
 	state.sort = key
 	app.roster_sort = key
 	state.scroll = 0
@@ -365,17 +383,28 @@ func _row(player:Dictionary,index:int) -> void:
 	var fatigue:float=player.get("physicalLoad",0)
 	D.text(row,942,24,G.n(fatigue),21,C.AMBER if fatigue>50 else C.MUTED,500,48,HORIZONTAL_ALIGNMENT_CENTER)
 	if state.family==U.WATCH_FILTER:
-		D.text(row,1002,24,reason,22,C.AMBER,600,354).name="RosterWatchReason"
+		D.text(row,1002,24,reason,22,C.AMBER,600,252).name="RosterWatchReason"
 	else:
-		D.text(row,1203,24,G.salary_amount(player.get("salary",0)),23,C.IVORY,500,210,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(row,1120,24,G.salary_amount(player.get("salary",0)),23,C.IVORY,500,126,HORIZONTAL_ALIGNMENT_RIGHT)
 		var contract_end: Variant = player.get("contractEnd")
 		var expiring: bool = contract_end != null and int(contract_end) <= int(app.model.meta.get("season",1))
-		D.text(row,1296,24,G.contract_year(contract_end),22,C.AMBER if expiring else C.MUTED,500,150,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterContractEnd"
-		_reading_link(row, Rect2(993,2,210,30), player, "contract", "SquadOpenSalary_")
-		_reading_link(row, Rect2(1221,2,150,30), player, "contract", "SquadOpenContract_")
-	D.text(row,1407,24,G.n(player.get("minutes",0)),22,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(row,1194,24,G.contract_year(contract_end),22,C.AMBER if expiring else C.MUTED,500,118,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterContractEnd"
+		_reading_link(row, Rect2(993,2,130,30), player, "contract", "SquadOpenSalary_")
+		_reading_link(row, Rect2(1132,2,124,30), player, "contract", "SquadOpenContract_")
+	# Notes de match : moyenne de la saison et forme (5 dernières notes, la plus récente à droite).
+	var notes := Notes.joueur(app.model,str(player.id))
+	var moyenne: Variant = notes.get("moyenne")
+	if moyenne != null:
+		var pastille := Notes.pastille(row,Rect2(1264,5,52,24),float(moyenne),0.42)
+		pastille.name = "RosterNoteAverage"
+		pastille.tooltip_text = "Moyenne de la saison : %s sur %d match%s" % [Notes.texte_note(moyenne),int(notes.get("matchs",0)),"s" if int(notes.get("matchs",0))>1 else ""]
+		pastille.mouse_filter = Control.MOUSE_FILTER_PASS
+	else:
+		D.text(row,1290,24,"—",21,C.MUTED,500,52,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterNoteAverage"
+	Notes.pastilles(row,Vector2(1326,5),Notes.forme(notes),Vector2(25,24),3.5,0.36).name = "RosterForm"
+	D.text(row,1528,24,G.n(player.get("minutes",0)),22,C.MUTED,500,56,HORIZONTAL_ALIGNMENT_RIGHT)
 	var status:String="Blessé" if float(player.get("injury",0))>0 else str(player.get("status","Disponible"))
-	D.chip(row,Rect2(1477,3,170,26),status,C.ALERT if status=="Blessé" else C.GOLD if status.contains("clé") else C.MINT)
+	D.chip(row,Rect2(1538,3,128,26),status,C.ALERT if status=="Blessé" else C.GOLD if status.contains("clé") else C.MINT)
 	row.pressed.connect(func():
 		app.selected_player=str(player.id);app.management_ui.profile_scroll=0;state.visible_player=app.selected_player
 		for button:Node in rows.get_children():
@@ -484,7 +513,7 @@ func _advanced() -> void:
 	var fields:=C.v(12)
 	dialog.add_child(fields)
 	_choice(fields,Rect2(0,0,500,40),"RosterAvailability",["Tous","Disponibles","Blessés"],str(state.available),"Disponibilité",func(value:String):state.available=value;_refresh(false))
-	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
+	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Note","Forme","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
 	var direction:=C.button("Changer le sens du tri",func():state.descending=not state.descending;_refresh(false))
 	direction.name="RosterDirection"
 	fields.add_child(direction)
