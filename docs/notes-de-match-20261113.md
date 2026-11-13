@@ -41,11 +41,9 @@ Homme du match (30 minutes au moins) : meilleure performance relative à son pos
 rapporté à l'écart-type du poste (mêlé à 25 % d'un écart commun pour ne pas sur-récompenser
 les postes à faible dispersion) ; à égalité : la note, le vainqueur, le plus de faits, l'identifiant.
 
-Étalonnage (6 142 notes, 20 journées simulées) : moyenne 6,62, écart-type 1,02, 11,5 % ≥ 8,
-2,0 % ≥ 9, 10,3 % < 5,5 ; écart-type d'un même joueur sur ses matchs : 1,05. Hommes du match
-(140) : avants 50 %, arrières 50 % ; troisième ligne aile 21 % (deux postes), ailier 17 % (deux
-postes), centre 14 % (deux postes), deuxième ligne 9 %, demi de mêlée 9 %, numéro 8 6 %,
-pilier gauche 6 %, arrière 5 %, ouvreur 5 %, pilier droit 5 %, talonneur 3 %.
+Étalonnage : voir « Équilibre » (mesure en mode Monde du 13 novembre). Le décalage `POSTE` a été
+mesuré par l'agent précédent sur 20 journées de l'ancien mode France (3 000 notes) et n'a pas été
+re-mesuré en mode Monde.
 
 ## Enregistrement (`S.matchNotes`, version 1)
 
@@ -105,24 +103,44 @@ niveau et le poste (dispersion plus faible qu'en club).
 
 ## Équilibre
 
-Deux saisons simulées par le vrai worker (mode commun, club 29, graine 4242, matchs délégués,
-conférences et rendez-vous réglés automatiquement) : `main` (avant), cette branche avec
-`CD_NOTES_EFFETS=0` (notes sans effet) et cette branche (effets actifs). Notes = 5 dernières
-notes de tous les joueurs ayant joué (≈ 6 000).
+Mesure du 13 novembre (barème recalibré), **mode Monde** (`world-champ`, club 102, graine 4242,
+matchs délégués, conférences et rendez-vous réglés automatiquement), vrai worker, effets actifs.
+La mesure ne couvre que **5 semaines de la première saison** (17 août – 21 septembre 2026 :
+2 035 matchs notés tous championnats du monde confondus, 60 923 notes de joueurs ayant joué
+40 minutes ou plus) : le harnais de mesure est resté bloqué ensuite sur un match du manager en
+cours (« Aucun nouveau match disponible »), puis a été arrêté à l'échéance. Les deux saisons demandées n'ont pas été simulées ; la colonne « sans effet » a été
+interrompue par manque de mémoire. Les chiffres de l'ancien mode France (ancien barème) ne sont
+plus comparables et ont été retirés.
 
-| Fin de saison 2 | main | notes sans effet | effets actifs |
-|---|---|---|---|
-| Moyenne des notes | — | 6,64 | 6,63 |
-| Écart-type | — | 0,67 | 0,65 |
-| Part ≥ 8 / ≥ 9 | — | 4,6 % / 0,15 % | 3,9 % / 0,17 % |
-| Part entre 5,5 et 8 | — | 93 % | 94 % |
-| Satisfaction moyenne (club) | 72,85 | 72,85 | 72,26 |
-| Valeur marchande moyenne (tous clubs) | 602 810 € | 602 810 € | 608 424 € (+0,9 %) |
-| Salaire moyen / club du manager (€/sem.) | 5 987 / 5 409 | 5 987 / 5 409 | 5 985 / 5 340 |
-| Niveau moyen | 71,85 | 71,85 | 71,83 |
+| Notes (≥ 40 min) | Cible | Mesure Monde |
+|---|---|---|
+| Moyenne | 6,5–6,7 | 6,55 |
+| Écart-type global | — | 1,16 |
+| Part ≥ 8 | 10–15 % | 13,5 % |
+| Part ≥ 9 | 2–4 % | 2,7 % |
+| Part < 5,5 | ~10 % | **16,5 %** (trop) |
+| Écart-type d'un même joueur (4 matchs et plus) | 0,8–1,0 | **0,66** (fenêtre courte : 4 à 5 matchs, biais vers le bas) |
 
-Sans effet, l'état sportif est identique à `main` (scores, historique, effectifs, salaires,
-satisfaction) : seules l'actualité et la boîte du manager diffèrent (distinctions). Les écarts
-de la dernière colonne viennent donc des effets voulus, et restent faibles (pas de dérive en
-deux saisons). Taille : 95 Ko (saison 1) puis 133 Ko (saison 2, avec résumés) dans une
-sauvegarde de 5,7 à 7 Mo.
+Toutes minutes confondues (remplaçants compris) : moyenne 6,54, écart-type 1,01, ≥ 8 : 10 %,
+≥ 9 : 1,9 %, < 5,5 : 12,5 %.
+
+Hommes du match (2 035) : avants 46 %, arrières 54 %. Par famille : troisième ligne 27,2 % (trois
+places, ≈ 9 % chacune), ailier 22,4 % (deux places, ≈ 11 %), centre 12,5 % (≈ 6 %), deuxième ligne
+12 % (≈ 6 %), demi de mêlée 9,4 %, ouvreur 6 %, pilier 5,1 % (≈ 2,5 %), arrière 3,6 %,
+talonneur 1,7 %. Aucune place au-dessus de 20 % ; talonneur et arrière sont sous-représentés.
+
+Fin de mesure (21 septembre, saison 1, effets actifs) : satisfaction moyenne du club 65,4 ; valeur
+marchande moyenne (tous clubs) 486 612 € ; salaire moyen 4 769 €/sem. (club du manager 3 687) ;
+niveau moyen 68,9 ; taille de `S.matchNotes` 140 Ko. Les effets restent dans leurs bornes par
+construction (tests « Effets bornés ») ; sur 5 semaines, aucun écart notable ne peut être établi
+sans la colonne de référence.
+
+Limites et suite :
+- la queue basse est trop épaisse (16,5 % < 5,5) : réduire le poids du plaquage manqué
+  (−0,45) et de la pénalité concédée (−0,45), ou rapprocher le décalage `POSTE` des avants, puis
+  re-mesurer ;
+- re-mesurer `POSTE` en mode Monde (mesuré en mode France) ;
+- les matchs internationaux (WIP) reçoivent `familles` : le décalage de poste (jusqu'à −2 pour
+  une troisième ligne) s'applique alors à un journal réduit aux essais et fait baisser fortement
+  les avants ; à neutraliser pour les sélections ;
+- deux saisons complètes avec et sans effets restent à simuler.
