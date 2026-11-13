@@ -46,8 +46,15 @@ test('Calcul : déterministe, sans tirage, base 6,5, bornes 1–10, remplaçant 
   assert.ok(r1.joueurs.a14.note > r1.joueurs.a1.note, 'le marqueur passe devant');
   assert.ok(r1.joueurs.b3.note < 6.5, 'carton : note en baisse');
   assert.equal(r1.joueurs.a14.essais, 1);
+  // Homme du match : performance relative au poste (sans famille connue : la meilleure note).
   const meilleure = Math.max(...Object.values(r1.joueurs).filter(n => n.minutes >= 30).map(n => n.note));
-  assert.equal(r1.joueurs[r1.hommeDuMatch].note, meilleure, 'homme du match : meilleure note');
+  assert.equal(r1.joueurs[r1.hommeDuMatch].note, meilleure, 'homme du match : meilleure note à poste inconnu');
+  // Avec les postes : un pilier au-dessus de la moyenne des piliers passe devant un troisième
+  // ligne à note égale (normalisation par poste).
+  const familles = {}; for (let k = 1; k <= 15; k++) { familles['a' + k] = 6; familles['b' + k] = 6; }
+  familles.a1 = 0; familles.a14 = 3;
+  const tete = N.noter([sc('carry', 0, 'a1', { to: { x: 75, y: 40 } }), sc('carry', 0, 'a14', { to: { x: 75, y: 40 } })], { cotes, minutes, familles, score: [0, 0], fini: true });
+  assert.equal(tete.hommeDuMatch, 'a1', 'normalisation par poste');
   // Le direct (match-direct.cjs) appelle le même calcul.
   const D = require('../native/engine/match-direct.cjs');
   const lignes = H.normaliser(journal);

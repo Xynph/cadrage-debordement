@@ -17,23 +17,35 @@ journal (test dédié).
 
 Échelle 1–10 à une décimale, base 6,5 au coup d'envoi (remplaçant : 6,5 à l'entrée) :
 
-- faits individuels : course (0,03 + mètres/32, plafond 1,1 ; +0,3 pour un franchissement de
-  22 m et plus), essai (+1,05), ballon récupéré (+0,28, compte comme plaquage), plaquage (+0,05 ;
-  plaqueur nommé par le moteur — fait `tackler` —, sinon déduit de la place défensive, réparti
-  entre les avants au contact), plaquage manqué (−0,16 ; −0,15 sur un essai en jeu courant subi),
-  réception (+0,06), jeu au pied (+0,04, +0,12 au-delà de 30 m), pénalité réussie (+0,3) ou
-  manquée (−0,18), conquête (touche : talonneur et deuxième ligne ; mêlée : première ligne, et
-  deuxième ligne à 40 % ; gagnée +0,045 à +0,06, volée +0,07 à +0,08, perdue −0,06 à −0,07),
-  carton (jaune −0,8, rouge −2), pénalité concédée (−0,03 avants, −0,012 arrières), faute de main
-  (−0,012 collectif) ;
-- collectif au prorata des minutes : écart au score (±0,45 au plus) et résultat final (±0,2) ;
-- influence : niveau au poste du joueur par rapport à son équipe du jour (±0,35 au plus), pour
-  que la note suive aussi la qualité (le moteur désigne une partie des porteurs par rotation) ;
-- étalonnage : `note = 6,5 + 3,2 × tanh((0,72 × faits − 0,28 × part + (collectif + influence) × part) / 3,2)`,
-  `part` = minutes jouées / 80.
+Barème recalibré le 13 novembre (demande de Léo : notes trop serrées, homme du match trop
+souvent troisième ligne). Valeurs dans `B` (match-notes.cjs) :
 
-Homme du match : meilleure note parmi ceux qui ont joué 30 minutes ou plus (à égalité : le
-vainqueur, puis le plus de faits).
+- grosses performances : essai +1,5 ; course 0,03 + mètres/24 (plafond 1,5) et +0,6 pour un
+  franchissement de 22 m et plus ; ballon récupéré +0,65 (compte comme plaquage) ; plaquage
+  +0,08 (+0,05 s'il stoppe net, gain < 2 m) ; jeu au pied de 30 m et plus +0,3 ; 50:22 +0,5 ;
+  pénalité réussie +0,4 ; conquête volée +0,35 au voleur ;
+- ratés : plaquage manqué −0,45 (franchissement subi) et −0,45 sur un essai en jeu courant subi ;
+  ballon perdu −0,3 (dernier porteur de l'équipe qui perd le ballon) ; en-avant −0,45 (dernier
+  porteur) ; pénalité concédée −0,45 (fautif déduit de la place défensive au contact, sans tirage)
+  plus −0,02 avants / −0,008 arrières ; carton jaune −1,4, rouge −2,8 ; tir manqué −0,3 ;
+- conquête collective : touche (talonneur, deuxième ligne) et mêlée (première ligne, deuxième
+  ligne à 40 %) : +0,045 à +0,06 gagnée, +0,1 à +0,12 volée, −0,09 à −0,1 perdue ;
+- collectif au prorata des minutes : écart au score (±0,45) et résultat final (±0,2) ;
+- influence : niveau au poste par rapport à l'équipe du jour (±0,35) ;
+- poste : décalage par famille de poste (`POSTE`, mesuré sur 3 000 notes) pour que chaque poste
+  ait la même moyenne attendue (les troisième ligne ont beaucoup plus de faits que les piliers) ;
+- `impact = 1,08 × faits + (collectif + influence − décalage du poste) × part`,
+  `note = 6,5 + 3,2 × tanh(impact / 3,2)`, `part` = minutes jouées / 80.
+
+Homme du match (30 minutes au moins) : meilleure performance relative à son poste, impact
+rapporté à l'écart-type du poste (mêlé à 25 % d'un écart commun pour ne pas sur-récompenser
+les postes à faible dispersion) ; à égalité : la note, le vainqueur, le plus de faits, l'identifiant.
+
+Étalonnage (6 142 notes, 20 journées simulées) : moyenne 6,62, écart-type 1,02, 11,5 % ≥ 8,
+2,0 % ≥ 9, 10,3 % < 5,5 ; écart-type d'un même joueur sur ses matchs : 1,05. Hommes du match
+(140) : avants 50 %, arrières 50 % ; troisième ligne aile 21 % (deux postes), ailier 17 % (deux
+postes), centre 14 % (deux postes), deuxième ligne 9 %, demi de mêlée 9 %, numéro 8 6 %,
+pilier gauche 6 %, arrière 5 %, ouvreur 5 %, pilier droit 5 %, talonneur 3 %.
 
 ## Enregistrement (`S.matchNotes`, version 1)
 

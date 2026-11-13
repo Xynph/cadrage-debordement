@@ -253,12 +253,12 @@ test('Note de départ : 6,5 au coup d’entrée (titulaire comme remplaçant), p
   assert.equal(D.NOTE_DEPART, 6.5);
   const on = [['a', 'b', ...Array(13).fill(null)], ['x', ...Array(14).fill(null)]];
   // Barème partagé avec la note enregistrée (match-notes.cjs) : sans minute jouée connue, seuls les
-  // faits comptent (0,72 × valeur du fait autour de 6,5).
+  // faits comptent (barème de match-notes.cjs, autour de 6,5).
   const events = [{ scene: { kind: 'turnover', team: 0, actor: 'a', on, from: { x: 50 }, to: { x: 50 } } }, { scene: { kind: 'miss', team: 0, actor: 'b', on, from: { x: 50 }, to: { x: 50 } } }];
   const notes = D.notesDuMatch([{ i: 0, kind: 'turnover', equipe: 0, scoreApres: [0, 0] }, { i: 1, kind: 'miss', equipe: 0, scoreApres: [0, 0] }], events, 0);
-  assert.ok(notes.a.note > 6.5 && notes.a.note <= 6.8, 'un ballon récupéré : au-dessus de 6,5 (' + notes.a.note + ')');
+  assert.ok(notes.a.note > 6.5 && notes.a.note <= 7.4, 'un ballon récupéré : au-dessus de 6,5 (' + notes.a.note + ')');
   assert.equal(notes.a.plaquages, 1, 'le ballon récupéré compte comme plaquage');
-  assert.ok(notes.b.note < 6.5 && notes.b.note >= 6.3, 'un tir manqué : sous 6,5 (' + notes.b.note + ')');
+  assert.ok(notes.b.note < 6.5 && notes.b.note >= 6, 'un tir manqué : sous 6,5 (' + notes.b.note + ')');
   assert.equal(notes.x, undefined, 'l’autre équipe n’est pas notée ici');
 });
 
