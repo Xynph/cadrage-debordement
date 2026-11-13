@@ -444,7 +444,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	var values := P.group(app.model)
 	var injury_count: int = values.injured
 	var injury_caption := "%d blessé%s" % [injury_count, "s" if injury_count > 1 else ""]
-	var metrics: Array = [[(P.rank_ordinal(app.model.club) if P.standings_open(app.model.club) else "Sans classement")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
+	var metrics: Array = [[(P.rank_ordinal(app.model.club) if P.standings_open(app.model.club) else "Pas classé")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
 	if app.route=="Effectif": metrics=[[str(values.total)+" joueurs","people",C.GOLD],metrics[1],metrics[2],["Niveau moyen "+str(values.rating),"star",C.GOLD]]
 	elif app.route not in ["Bureau","Composition"]: metrics=[]
 	if app.route=="Composition":

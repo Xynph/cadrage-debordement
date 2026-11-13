@@ -419,11 +419,14 @@ func _avoid_primary_controls() -> void:
 	var best := Vector2(-1.0,-1.0)
 	var best_score := INF
 	var scan_rows: Array[float] = rows.duplicate()
-	var y_scan := bottom - 40.0
-	while y_scan >= app.size.y * .25:
-		scan_rows.append(y_scan); y_scan -= 40.0
+	var y_scan := bottom - 56.0
+	while y_scan >= app.size.y * .2:
+		scan_rows.append(y_scan); y_scan -= 56.0
 	for y in scan_rows:
-		for x in candidates:
+		for x_index in candidates.size():
+			# Hors rangée basse : grille grossière (un pas sur deux), l'affinage ci-dessous précise la place.
+			if y not in rows and x_index >= 2 and x_index % 2 == 1: continue
+			var x: float = candidates[x_index]
 			global_position = Vector2(x,y)
 			if _covers_priority(rects): continue
 			var overlap := _content_overlap(painted,Vector2(x,y),content)
@@ -432,6 +435,16 @@ func _avoid_primary_controls() -> void:
 				return
 			var score := overlap * 1000.0 + (bottom - y) * 0.5 + absf(x - candidates[0]) * 0.1
 			if score < best_score: best_score = score; best = Vector2(x,y)
+	# Affinage local autour de la meilleure place de la grille grossière (pas de 8 px).
+	if best.x >= 0.0 and best_score >= 1.0:
+		var coarse := best
+		for dy in range(-40,41,8):
+			for dx in range(-40,41,8):
+				var at := Vector2(clampf(coarse.x + dx,left,right),clampf(coarse.y + dy,app.size.y * .2,bottom))
+				global_position = at
+				if _covers_priority(rects): continue
+				var fine := _content_overlap(painted,at,content) * 1000.0 + (bottom - at.y) * 0.5 + absf(at.x - candidates[0]) * 0.1
+				if fine < best_score: best_score = fine; best = at
 	# Conseil automatique : jamais au-dessus du contenu, l'invitation compacte reste disponible.
 	if best.x >= 0.0 and (mode != "context" or best_score < 1000.0):
 		global_position = best
