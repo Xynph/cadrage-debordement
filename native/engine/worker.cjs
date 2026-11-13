@@ -56,6 +56,7 @@ const portraitLooks=makePortraitLooks(nationalFacts);
 const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
+const PRESEASON_OPENERS=new Set(['finish_round','begin_match','train','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
 const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024,EXTENDED_IMPORT_LIMIT_BYTES=20*1024*1024,EXTENDED_REQUEST_LIMIT_BYTES=42*1024*1024,CHAMP_IMPORT_LIMIT_BYTES=24*1024*1024,CHAMP_REQUEST_LIMIT_BYTES=50*1024*1024;
 // Mode unique « Monde » (décision de Léo, 13/11/2026) : le joueur ne crée et ne charge que des
 // carrières du Monde complet. Les anciens modes (fiction 14 clubs, France 30 clubs « common »/« france »,
@@ -415,6 +416,8 @@ function createBridge(options={}){
      if(managerPlanning.commands.includes(command))managerPlanning.validateRequest(snapshot(),command,payload);
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
      if(command==='next_season')national.checkSeason();
+     // Avant-saison : avancer le calendrier du moteur ouvre d'abord la semaine 0 (17 août 2026).
+     if(PRESEASON_OPENERS.has(command)&&run('!!CDPreseason.pending(S)'))run('CDPreseason.open(S)');
      if(BLOCKED_AFTER_RESULT.has(command)&&run('nativeDailyStatus()?.resultConfirmed===true'))throw Error('Résultat confirmé. Continuez jusqu’à la clôture de la semaine.');
      if(command==='interclub_negotiate'||command==='academy_groups_preview'){
       ctx.nativeCommand=command;
@@ -458,6 +461,8 @@ function createBridge(options={}){
       if(!run('S.trained')){ctx.nativeMode=mode;run('S.training=nativeMode;trainWeek()');}
      }else if(command==='auto_lineup'){
       if(run('!!S.live'))throw Error('Composition indisponible pendant un match.');run('autoLineup()');
+     }else if(command==='advance_day'&&run('!!CDPreseason.pending(S)')){
+      run('CDPreseason.advanceDay(S,nativePayload.fromDate)');
      }else if(command==='advance_day'){
       const offSeason=national.advance(payload.fromDate);
       if(offSeason){
@@ -565,6 +570,8 @@ function createBridge(options={}){
       // Directions des clubs gérés : carrières mondiales nouvelles seulement ; CD_DIRECTIONS_CLUBS=0 les coupe.
       if(process.env.CD_DIRECTIONS_CLUBS!=='0')run('nativeClubDirections.create(S,nativeCreationVariation.seed)');
       delete ctx.nativeCreationVariation;
+      // Début de carrière Monde : lundi 13 juillet 2026 (club seul ; les rôles de sélection gardent leur agenda).
+      if(payload.nationalRole===undefined||payload.nationalRole==='club')run('CDPreseason.create(S)');
      }
      else if(command==='next_season')run('CDNativeAcademyGroups.afterSeason(S,'+previousAcademyClub+');');
      if(command==='new_career'||command==='import')national.initialize(seed,command==='new_career'?payload:null);
