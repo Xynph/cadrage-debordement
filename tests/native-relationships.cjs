@@ -1,6 +1,6 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -10,7 +10,7 @@ const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});a
 const bad=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,false,command+' doit être refusé');return r;};
 try{
  b=createBridge({dataDir:root,seed:371,now:1700000000000});
- let m=settleClubMeetings(good('new_career',{mode:'common',club:29}),good);
+ let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:29}),good);
  assert.ok(m.clubLife?.relationships,'Le vrai worker doit exposer les relations du club 29.');
  const rel=()=>m.clubLife.relationships,ctx=()=>rel().context;
  const before=good('export').meta.exportText,bytes=fs.readFileSync(path.join(m.meta.dataDir,'donnees.json'));
@@ -40,8 +40,8 @@ try{
  const rollback=good('export').meta.exportText;
  refuseSavePublication(profileFile,()=>bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'}));
  assert.equal(good('export').meta.exportText,rollback);assert.deepEqual(fs.readFileSync(profileFile),disk);
- settleClubMeetings(good('train'),good);bad('relationship_duo',{context:ctx(),mode:'duo',a:a.id,b:bb.id});good('auto_lineup');good('begin_match');bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'});good('delegate');m=settleClubMeetings(good('finish_round'),good);
- assert.ok(m.clubLife.clubWorld.events.length>=15,'France30 : observation des quinze vraies rencontres.');
+ settleClubMeetings(good('train'),good);bad('relationship_duo',{context:ctx(),mode:'duo',a:a.id,b:bb.id});m=advanceToNextMatch(good('snapshot'),good);good('auto_lineup');good('begin_match');bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'});good('delegate');m=settleClubMeetings(good('finish_round'),good);
+ assert.ok(m.clubLife.clubWorld.events.length>=15,'Monde : observation d’au moins quinze vraies rencontres.');
  const afterMatch=good('export').meta.exportText;
  for(const alter of [s=>s.interclubWorld.version=999,s=>s.interclubWorld.pairs[Object.keys(s.interclubWorld.pairs)[0]].games++,s=>s.interclubWorld.events[0].winner=999,s=>s.interclubWorld.seen.push(s.interclubWorld.seen[0])]){
   const doc=JSON.parse(afterMatch);alter(doc.state);const r=bad('import',{text:JSON.stringify(doc)});assert.match(r.error,/interclubs/i);assert.equal(good('export').meta.exportText,afterMatch);
@@ -49,7 +49,7 @@ try{
  const source=JSON.parse(fs.readFileSync(path.join(m.meta.dataDir,'donnees.json'),'utf8')),state=JSON.parse(source.store['bdt-v1']);state.livingLockerRoom.version=999;source.store['bdt-v1']=JSON.stringify(state);
  const hostile=path.join(root,'hostile','PrototypeGodot');fs.mkdirSync(hostile,{recursive:true});const hostileFile=path.join(hostile,'donnees.json'),hostileBytes=JSON.stringify(source);fs.writeFileSync(hostileFile,hostileBytes);
  good('shutdown');b=createBridge({dataDir:hostile});m=good('snapshot');assert.match(m.meta.profileError,/vestiaire/i);assert.equal(m.meta.hasCareer,false);assert.equal(fs.readFileSync(hostileFile,'utf8'),hostileBytes,'Le profil refusé reste intact.');
- good('shutdown');b=createBridge({dataDir:path.join(root,'legacy'),seed:371,now:1700000000000});settleClubMeetings(good('new_career',{mode:'fiction',club:0}),good);
+ good('shutdown');b=createBridge({dataDir:path.join(root,'legacy'),seed:371,now:1700000000000});settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good);
  const old=JSON.parse(good('export').meta.exportText);delete old.state.satisfactionVersion;delete old.state.relationsVersion;delete old.state.objectivesVersion;delete old.state.economy.objectives;delete old.state.economy.objectiveHistory;delete old.state.economy.relationLog;delete old.state.economy.moodLog;for(const c of old.state.clubs)for(const p of c.players)delete p.satisfaction;
  let hash=2166136261;for(const ch of JSON.stringify(old.state))hash=Math.imul(hash^ch.charCodeAt(0),16777619);old.checksum=(hash>>>0).toString(16).padStart(8,'0');
  m=good('import',{text:JSON.stringify(old)});assert.equal(rel().active,false);assert.equal(JSON.parse(good('export').meta.exportText).state.satisfactionVersion,undefined);
