@@ -82,6 +82,8 @@ budget() {
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
+    # Tests migrés en carrière Monde : dépassent le délai par défaut (native-relationships 273 s en local).
+    tests/performance-analysis.cjs|tests/native-relationships.cjs|tests/player-population-capacity.cjs) echo 600s ;;
     *) echo 180s ;;
   esac
 }
