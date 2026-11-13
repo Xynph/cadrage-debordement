@@ -11,6 +11,9 @@ const looks = require('../native/engine/portrait-looks.cjs');
 const portraits = require('../native/engine/portraits.cjs');
 const { createBridge } = require('../native/engine/worker.cjs');
 const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
+const crypto = require('node:crypto');
+const media = require('../native/engine/media-packs.cjs');
+const world = require('../native/engine/world-registry.json');
 
 const catalogue = require('../native/godot/art/regen-bank-v2/catalogue.json');
 const bases = catalogue.bases.filter(b => b.kind === 'player');
@@ -164,5 +167,72 @@ test('Moteur réel : le portrait projeté est cohérent, la sauvegarde n’est n
     assert.ok(score === null || looks.fits(score, portraits.describe(p).cell), p.pos);
   }
   assert.ok(!saved.includes('appearanceBuild'), 'la carrure n’est jamais enregistrée');
+  go('snapshot'); assert.equal(go('export').meta.exportText, saved); assert.deepEqual(fs.readFileSync(file), bytes);
+});
+
+test('Photos réelles du pack d’identité : prioritaires et intactes, jamais masquées par la banque (carrière Monde)', t => {
+  // Mécanisme : le pack installé (identityPack) pose portraitPath sur le joueur projeté (media-packs.cjs) et l'interface
+  // (game_skin.gd) l'affiche avant toute banque ; la banque ne sert qu'aux joueurs sans photo réelle.
+  assert.equal(instance.hasRealPhoto({ id: 'x', portraitPath: '/tmp/photo.png' }), true);
+  assert.equal(instance.hasRealPhoto({ id: 'x', identity: { portraitPath: '/tmp/photo.png' } }), true);
+  assert.equal(instance.hasRealPhoto({ id: 'x', portraitPath: '' }), false);
+  const withPhoto = { ...player('photo-1', 'Pilier gauche', { appearanceBankVersion: undefined }), portraitPath: '/tmp/photo.png', portraitStatus: 'official' };
+  const snapshot = JSON.stringify(withPhoto);
+  const model = { meta: { mode: 'world' }, squad: [withPhoto, player('nophoto-1', 'Pilier gauche', { appearanceBankVersion: undefined })] };
+  instance.apply(model);
+  assert.equal(JSON.stringify(model.squad[0]), snapshot, 'le joueur avec photo réelle n’est pas modifié du tout');
+  assert.equal(model.squad[1].appearanceBankVersion, 2, 'sans photo, la banque v2 sert');
+  // Chaîne réelle : pack installé avec la photo d'un joueur du monde.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-carrure-photo-'));
+  const b = createBridge({ dataDir: path.join(root, 'profile'), seed: 741, now: 1794178800000 });
+  t.after(() => { b.close(); fs.rmSync(root, { recursive: true, force: true }); });
+  let seq = 0;
+  const go = (command, payload = {}) => { const r = b.handle({ id: ++seq, command, payload }); assert.equal(r.ok, true, command + ': ' + r.error); return r.model; };
+  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
+  const sha256 = crypto.createHash('sha256').update(pixel).digest('hex'), p = world.clubs[30].players[0];
+  const manifest = { schema: 'cd-identity-pack-v2', id: 'world-test', name: 'Pack de réception', version: '1', databaseId: world.id, rightsStatus: 'test-local',
+    clubs: [{ id: 30, name: 'Nom privé du club', abbr: 'NPC', logo: 'pixel' }], players: [{ id: p.id, name: 'Nom privé du joueur', portrait: 'pixel', synthetic: true }], staff: [], assets: [{ id: 'pixel', path: 'image.png', sha256, bytes: pixel.length }] };
+  const items = [['pack.json', JSON.stringify(manifest)], ['image.png', pixel]];
+  let offset = 0; const local = [], central = [];
+  for (const [name, data] of items) {
+    const n = Buffer.from(name), a = Buffer.from(data), head = Buffer.alloc(30), entry = Buffer.alloc(46);
+    head.writeUInt32LE(0x04034b50); head.writeUInt16LE(20, 4); head.writeUInt32LE(media.crc32(a), 14); head.writeUInt32LE(a.length, 18); head.writeUInt32LE(a.length, 22); head.writeUInt16LE(n.length, 26);
+    entry.writeUInt32LE(0x02014b50); entry.writeUInt16LE(20, 6); entry.writeUInt32LE(media.crc32(a), 16); entry.writeUInt32LE(a.length, 20); entry.writeUInt32LE(a.length, 24); entry.writeUInt16LE(n.length, 28); entry.writeUInt32LE(offset, 42);
+    local.push(head, n, a); central.push(entry, n); offset += 30 + n.length + a.length;
+  }
+  const dir = Buffer.concat(central), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(items.length, 8); end.writeUInt16LE(items.length, 10); end.writeUInt32LE(dir.length, 12); end.writeUInt32LE(offset, 16);
+  const file = path.join(root, 'world.zip'); fs.writeFileSync(file, Buffer.concat([...local, dir, end]));
+  const preview = go('pack_inspect', { path: file, mode: 'world' }).packs.preview;
+  go('pack_install', { path: file, digest: preview.digest });
+  settleClubMeetings(go('pack_select', { scope: 'creation', mode: 'world', id: preview.id }), go);
+  const career = settleClubMeetings(go('new_career', { mode: 'world', club: 30 }), go);
+  const photo = career.squad.find(x => x.id === p.id);
+  assert.ok(photo.portraitPath && fs.existsSync(photo.portraitPath), 'la photo du pack reste exposée');
+  assert.equal(photo.appearanceId, undefined); assert.equal(photo.appearanceBankVersion, undefined); assert.equal(photo.appearanceBuild, undefined);
+  const others = career.squad.filter(x => x.id !== p.id && !x.portraitPath);
+  assert.ok(others.length > 10);
+  for (const o of others) assert.equal(o.appearanceBankVersion, 2, 'sans photo réelle : banque v2 (décision de Léo du 13/11/2026)');
+});
+
+test('Carrière Monde : les pros historiques passent de la banque 1 (32 visages) à la banque v2 (160), sans toucher à la sauvegarde', t => {
+  // Décision de Léo du 13/11/2026 : adapte la règle « jamais de mise à niveau des historiques » pour la carrière Monde seulement.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-carrure-monde-'));
+  const b = createBridge({ dataDir: dir, seed: 827381, now: 1700000000000 });
+  t.after(() => { b.close(); fs.rmSync(dir, { recursive: true, force: true }); });
+  let serial = 0;
+  const go = (command, payload = {}) => { const r = b.handle({ id: ++serial, command, payload }); assert.equal(r.ok, true, r.error); return r.model; };
+  const m = settleClubMeetings(go('new_career', { mode: 'world', club: 0 }), go);
+  const saved = go('export').meta.exportText, file = path.join(dir, 'PrototypeGodot/donnees.json'), bytes = fs.readFileSync(file);
+  const state = JSON.parse(saved).state;
+  assert.ok(state.clubs[0].players.every(p => p.appearanceBankVersion === undefined), 'la sauvegarde garde les joueurs historiques sans marqueur');
+  const cells = new Set();
+  for (const p of m.squad) {
+    assert.equal(p.appearanceBankVersion, 2, p.name);
+    const d = portraits.describe(p); assert.equal(d.bankVersion, 2);
+    cells.add(d.cell);
+    const score = looks.expectedScore({ pos: p.pos, ...(p.playerFacts ?? {}) });
+    assert.ok(score === null || looks.fits(score, d.cell));
+  }
+  assert.ok([...cells].some(c => c >= 32), 'des visages hors des 32 historiques');
   go('snapshot'); assert.equal(go('export').meta.exportText, saved); assert.deepEqual(fs.readFileSync(file), bytes);
 });

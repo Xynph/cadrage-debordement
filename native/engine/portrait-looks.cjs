@@ -45,8 +45,10 @@ function wantedTone(id, nation) {
 // facts : player-facts.cjs (mensurations et nation). Renvoie le portrait à utiliser pour un joueur projeté.
 function createLooks(facts) {
   const memo = new Map();
-  function resolve(player) {
-    const bank = player.appearanceBankVersion === 2 ? 2 : 1, cells = bank === 2 ? 160 : 32;
+  // upgrade : carrière Monde (décision de Léo du 13/11/2026), les joueurs historiques sans marqueur de banque (32 visages)
+  // passent sur la banque v2 (160 visages) ; ailleurs la banque historique reste celle du joueur.
+  function resolve(player, upgrade = false) {
+    const bank = player.appearanceBankVersion === 2 || upgrade ? 2 : 1, cells = bank === 2 ? 160 : 32;
     const physical = facts.project(player.id, null, player), fromModel = player.playerFacts;
     const dims = fromModel && Number.isFinite(fromModel.heightCm) ? fromModel : physical;
     const score = expectedScore({ pos: player.pos, ...dims });
@@ -69,25 +71,32 @@ function createLooks(facts) {
     }
     const c = cell(id);
     const build = score === null ? null : Math.round(clamp((score - CENTRES[CARRURES[c] - 1]) / WINDOW, -1, 1) * 100) / 100;
-    return { appearanceId: id, appearanceBuild: build, cell: c, score, tone: TONES[c], want };
+    return { appearanceId: id, appearanceBuild: build, cell: c, score, tone: TONES[c], want, bank };
   }
+  // Un joueur qui a une photo réelle (pack d'identité « Rugby Réel » : portraitPath posé par la projection du pack) garde
+  // son image : la banque ne sert qu'aux joueurs sans photo réelle, et on ne touche à aucun de leurs champs de portrait.
+  const hasRealPhoto = o => (typeof o.portraitPath === 'string' && o.portraitPath !== '') || (typeof o.identity?.portraitPath === 'string' && o.identity.portraitPath !== '');
   const isPlayer = o => o && typeof o === 'object' && typeof o.id === 'string' && typeof o.pos === 'string' && typeof o.name === 'string' && Number.isFinite(o.age) && typeof o.role !== 'string' && o.sourcePlayerId === undefined;
-  function patch(player) {
-    const key = [player.id, player.pos, player.age, player.appearanceId ?? '', player.appearanceBankVersion ?? 1, player.playerFacts?.weightKg ?? '', player.playerFacts?.heightCm ?? ''].join('|');
+  function patch(player, upgrade = false) {
+    if (hasRealPhoto(player)) return;
+    upgrade = upgrade && player.appearanceBankVersion === undefined;
+    const key = [upgrade, player.id, player.pos, player.age, player.appearanceId ?? '', player.appearanceBankVersion ?? 1, player.playerFacts?.weightKg ?? '', player.playerFacts?.heightCm ?? ''].join('|');
     let r = memo.get(key);
-    if (!r) { r = resolve(player); if (memo.size > 50000) memo.clear(); memo.set(key, r); }
+    if (!r) { r = resolve(player, upgrade); if (memo.size > 50000) memo.clear(); memo.set(key, r); }
     if (r.appearanceId !== (player.appearanceId ?? player.id)) player.appearanceId = r.appearanceId;
     if (r.appearanceBuild !== null) player.appearanceBuild = r.appearanceBuild;
+    if (upgrade) player.appearanceBankVersion = 2;
   }
   // Parcourt un modèle projeté (lecture seule de l'état : on ne modifie que la copie envoyée à l'interface).
-  function apply(node, seen = new Set()) {
+  function walk(node, seen, upgrade) {
     if (!node || typeof node !== 'object' || seen.has(node)) return node;
     seen.add(node);
-    if (Array.isArray(node)) { for (const x of node) apply(x, seen); return node; }
-    if (isPlayer(node)) patch(node);
-    for (const key of Object.keys(node)) { const v = node[key]; if (v && typeof v === 'object') apply(v, seen); }
+    if (Array.isArray(node)) { for (const x of node) walk(x, seen, upgrade); return node; }
+    if (isPlayer(node)) patch(node, upgrade);
+    for (const key of Object.keys(node)) { const v = node[key]; if (v && typeof v === 'object') walk(v, seen, upgrade); }
     return node;
   }
-  return { resolve, apply, patch };
+  const apply = (model, upgrade = /^world/.test(String(model?.meta?.mode ?? ''))) => walk(model, new Set(), upgrade);
+  return { resolve, apply, patch, hasRealPhoto };
 }
 module.exports = { createLooks, expectedScore, postScore, fits, far, wantedTone, TONES, CARRURES, CENTRES, WINDOW, LOOKS };
