@@ -95,6 +95,9 @@ static func analyser(tf1: Dictionary, tf2: Dictionary, events: Array) -> Diction
 	var arret_index := int(dernier.get("index", -1)) if fin_kind in ARRETS or fin_kind in POINTS else -1
 	var sortie: Dictionary = {}
 	var avantage := false
+	## Du jeu entre les deux (renvoi reçu, mêlée jouée…) : liaison possible seulement par une coupe,
+	## si le premier finit sur un arrêt de jeu et que le second s'ouvre sur une remise en jeu formée.
+	var jeu_entre := false
 	for i in range(a, b):
 		var k := _kind(events[i])
 		entre.append(k)
@@ -110,9 +113,16 @@ static func analyser(tf1: Dictionary, tf2: Dictionary, events: Array) -> Diction
 				sortie = {"de": _v2(f.get("from")), "vers": _v2(f.get("to")), "cause": str(f.get("cause", ""))}
 			continue
 		if k in NEUTRES: continue
-		# Du jeu entre les deux (renvoi, réception, mêlée, touche jouée) : pas contigus.
-		return {}
+		jeu_entre = true
+	if jeu_entre:
+		if not (fin_kind in ARRETS or fin_kind in POINTS) or kind not in ["lineout", "scrum", "goal", "miss"]:
+			return {}
+		# Dernier arrêt avant la remise en jeu (la légende dit pourquoi elle a lieu) ; rien d'animé entre.
+		sortie = {}
 	var penalite := fin_kind == "penalty" or "penalty" in entre
+	if jeu_entre:
+		# Pénalité jouée entre deux : seule compte celle qui précède la remise en jeu.
+		penalite = entre.size() > 0 and entre[-1] in ["penalty", "advantage"] and "penalty" in entre
 	var points := fin_kind in POINTS or entre.any(func(k: String) -> bool: return k in POINTS)
 	var type := ""
 	var choix := ""
@@ -152,7 +162,8 @@ static func analyser(tf1: Dictionary, tf2: Dictionary, events: Array) -> Diction
 		texte = str(events[arret_index].get("text", ""))
 	return {"type": type, "choix": choix, "equipe": equipe, "marque": marque, "sortie": sortie, "arret": arret_index,
 		"arret_kind": _kind(events[arret_index]) if arret_index >= 0 and arret_index < events.size() else fin_kind,
-		"texte": texte, "scene": scene, "cible": cible, "plan_kind": kind, "points": points}
+		"texte": texte, "scene": scene, "cible": cible, "plan_kind": kind, "points": fin_kind in POINTS or points, "coupe_forcee": jeu_entre,
+		"marqueur": int((dernier.get("scene", {}) as Dictionary).get("possession", 1 - equipe)) if dernier.get("scene") is Dictionary else 1 - equipe}
 
 
 # --- Construction -----------------------------------------------------------------
@@ -277,7 +288,15 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	for id: String in cibles:
 		if int(sides[id]) != equipe: continue
 		if type == "touche" and int(slots[id]) == 1: ramasseur = id
-		if type == "melee" and int(slots[id]) == 8: ramasseur = id
+	# Mêlée : le ballon finit au sol, à la marque de la mêlée (scène du moteur) ; l'avant de l'équipe
+	# qui introduit le plus proche de cette marque le ramasse et l'y apporte.
+	var ballon_melee := _v2(scene.get("ball"), marque)
+	if type == "melee":
+		var proche := INF
+		for id: String in cibles:
+			if int(sides[id]) == equipe and int(slots[id]) < 8 and (cibles[id] as Vector2).distance_to(ballon_melee) < proche:
+				proche = (cibles[id] as Vector2).distance_to(ballon_melee)
+				ramasseur = id
 	if ramasseur.is_empty() and not vedette.is_empty(): ramasseur = vedette
 	var ballon_vue: Vector3 = ballon.get("p", Vector3(marque.x - 50.0, 0.1, marque.y - 35.0))
 	var porteur := str(ballon.get("porteur", ""))
@@ -351,7 +370,7 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	for id: String in trajets:
 		retards[id] = rng.randf_range(0.0, 0.5)
 	var arrivee_ballon := repos
-	var continue_ok := type != "renvoi" and _faisable(trajets, cibles, CONTINUE_MAX, ramasseur, arrivee_ballon, retards)
+	var continue_ok := type != "renvoi" and not bool(info.get("coupe_forcee", false)) and _faisable(trajets, cibles, CONTINUE_MAX, ramasseur, arrivee_ballon, retards)
 	var coupe := not continue_ok
 	var duree_continue := CONTINUE_MAX
 	if continue_ok:
@@ -386,6 +405,16 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 			j.etats.append([prise + 0.35, "course"])
 			porteurs.append([prise + 0.1, id])
 			_courir(j, but, prise + 0.4, fin_course, allure)
+			if type == "melee":
+				# Il pose le ballon à la marque une fois à sa place.
+				porteurs.append([fin_course + 0.05, null])
+				# Au sol jusqu'à la prise (le tracé du ballon ne compte plus tant qu'il est porté).
+				bal.t.append(prise + 0.1)
+				bal.p.append(Vector3(arrivee_ballon.x, arrivee_ballon.y, 0.12))
+				bal.t.append(fin_course + 0.05)
+				bal.p.append(Vector3(but.x, but.y, 1.0))
+				bal.t.append(fin_course + 0.3)
+				bal.p.append(Vector3(ballon_melee.x, ballon_melee.y, 0.12))
 		elif continue_ok:
 			_courir(j, but, t0, duree_plan_a - 0.35 - rng.randf_range(0.0, 0.3), trot)
 		else:
@@ -420,8 +449,10 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	var figurants: Array = trajets.keys().filter(func(id: String) -> bool: return id != ramasseur and id != capitaine and id != porteur and id != botteur)
 	figurants.sort()
 	_details(detail, trajets, figurants, duree_plan_a, rng, equipe, type, info)
-	if type == "renvoi":
-		_celebration(trajets, figurants, equipe, rng)
+	if bool(info.get("points", false)) and (type == "renvoi" or bool(info.get("coupe_forcee", false))):
+		# Points marqués à la fin du temps fort précédent : l'équipe qui a marqué se félicite.
+		var marqueur := 1 - equipe if type == "renvoi" else int(info.get("marqueur", 1 - equipe))
+		_celebration(trajets, figurants, 1 - marqueur, rng)
 	# --- Pistes du plan A.
 	var regard_a := marque if type in ["touche", "melee", "penalite", "renvoi_22"] else Vector2(50, 35)
 	var pistes_a := _pistes(trajets, duree_plan_a, regard_a, bal, porteurs, type, false)
@@ -454,6 +485,9 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 			j.arret = cibles[tenant]
 			j.etats = [[0.0, "placement"], [0.9, "course"]]
 			bal_b.p.append(Vector3(marque.x, marque.y, 0.12))
+			porteurs_b.append([0.0, null])
+		elif type == "melee":
+			bal_b.p.append(Vector3(ballon_melee.x, ballon_melee.y, 0.12))
 			porteurs_b.append([0.0, null])
 		else:
 			var tient: Vector2 = cibles.get(tenant, marque)

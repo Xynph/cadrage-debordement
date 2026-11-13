@@ -591,8 +591,8 @@ func _gestes_actifs() -> bool:
 	# La vue 3D sait couper elle-même vers une remise en jeu quand ses gestes sont actifs.
 	return stage.get("_gestes") != null
 
-## Vitesse de chaque joueur à l'écran (départ d'une liaison : personne ne se fige) et plus grand
-## déplacement d'une image à l'autre pendant un plan de liaison (contrôle : aucun saut).
+## Vitesse de chaque joueur à l'écran (départ d'une liaison : personne ne se fige) et plus grande
+## allure d'une image à l'autre pendant un plan de liaison, en m/s (contrôle : aucun saut).
 func _mesurer(delta: float) -> void:
 	if delta <= 0.0: return
 	var coupe := phase == "liaison" and _liaison_t <= 0.0001
@@ -602,7 +602,8 @@ func _mesurer(delta: float) -> void:
 			var pas: Vector3 = at - _places[id]
 			_vitesses[id] = (_vitesses.get(id, Vector3.ZERO) as Vector3).lerp(pas / delta, 0.5)
 			if phase == "liaison" and not coupe and not gel:
-				_saut_max = maxf(_saut_max, Vector2(pas.x, pas.z).length())
+				# Allure d'une image à l'autre (m/s) : au-delà d'un sprint, ce serait un saut.
+				_saut_max = maxf(_saut_max, Vector2(pas.x, pas.z).length() / delta)
 		_places[id] = at
 
 ## Liaison vers le temps fort `candidat` s'il part là où le précédent s'est arrêté ; {} sinon.
@@ -693,7 +694,8 @@ func _lancer_plan_liaison(k: int) -> bool:
 	_liaison_t = 0.0
 	if cadrage != null:
 		# Plan A : large (le ballon qui sort, les joueurs autour) ; plan B : cadrage de la remise en jeu.
-		cadrage.regler(true, "touch" if k == 0 else str(liaison.get("plan_kind", "")), k == 0)
+		# (« penalty » : plan d'arrêt de jeu, large, sans les extrémités d'un vol de ballon déjà fini.)
+		cadrage.regler(true, "penalty" if k == 0 else str(liaison.get("plan_kind", "")), k == 0)
 		if k > 0:
 			cadrage.couper()
 			stage._camera_cut = true
@@ -724,7 +726,7 @@ func _lire_liaison(reel: float) -> void:
 	var pistes: Dictionary = liaison.plans[_liaison_plan]
 	var duree := float(pistes.duree)
 	# Liaison continue : la caméra glisse du plan large vers le cadrage de la remise en jeu.
-	if cadrage != null and _liaison_plan == 0 and not bool(liaison.coupe) and _liaison_t >= duree * 0.55 and cadrage.kind == "touch":
+	if cadrage != null and _liaison_plan == 0 and not bool(liaison.coupe) and _liaison_t >= duree * 0.55 and cadrage.kind == "penalty":
 		cadrage.regler(true, str(liaison.get("plan_kind", "")), false)
 	var echue := _liaison_t > duree + ECHEANCE_LIAISON
 	if stage.choregraphie_active() and not stage.choregraphie_finie() and not echue:

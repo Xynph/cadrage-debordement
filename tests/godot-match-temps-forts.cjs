@@ -37,6 +37,8 @@ function run(mode,dossier=mode){
  // Chorégraphe de temps forts (éteint par défaut) : l'essai en jeu courant de la 14e minute.
  if(mode==='choregraphie')Object.assign(env,{CD_MATCH_CHOREGRAPHE:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'2',CD_GODOT_SEED:'7'});
  else delete env.CD_MATCH_CHOREGRAPHE;
+ // Liaisons entre temps forts contigus : graine 27 (mêlée, touche, essai puis mêlée en onze minutes), temps forts accélérés.
+ if(mode==='liaison')Object.assign(env,{CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:'27'});
  // Entracte entre deux temps forts, à sa durée par défaut et à vitesse réelle (horloge rapide pour la durée du test).
  delete env.CD_MATCH_TEMPS_FORTS_ENTRACTE;
  // « gestes » compte les temps forts de vingt minutes de match : entracte court (le test porte sur les gestes, pas sur l'entracte de 8 s).
@@ -95,6 +97,12 @@ if(veut('terrain2d')){
  const terrain=run('terrain2d');
  assert.deepEqual(terrain.failures,[]);assert.ok(terrain.checks>=25,'contrôles du terrain 2D : '+terrain.checks);
  bilan.push('terrain 2D '+terrain.checks);
+}
+if(veut('liaison')){
+ const lie=run('liaison');
+ assert.deepEqual(lie.failures,[]);assert.ok(lie.checks>=8,'contrôles des liaisons : '+lie.checks);
+ assert.ok(lie.suivi.filter(e=>e.evenement==='liaison').length>=2,'liaisons : '+JSON.stringify(lie.suivi.map(e=>e.evenement)));
+ bilan.push('liaison '+lie.checks);
 }
 if(veut('entracte')){
  const entracte=run('entracte');

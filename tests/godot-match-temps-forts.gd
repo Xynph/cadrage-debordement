@@ -169,6 +169,7 @@ func run() -> void:
 			elif mode == "gestes": await gestures(view)
 			elif mode == "choregraphie": await choreography(view)
 			elif mode == "entracte": await interval(view)
+			elif mode == "liaison": await linked(view)
 			elif mode == "terrain2d": await terrain2d(view)
 			else: await inactive(view)
 			if view.regie != null: followed = view.regie.suivi
@@ -192,7 +193,7 @@ func check_liaisons(followed: Array) -> void:
 		if not e.has("duree_reelle"): continue
 		check(float(e.duree_reelle) >= float(e.duree_prevue) - 0.2 and float(e.duree_reelle) <= float(e.duree_prevue) + 1.5,
 			"%s : jouée à vitesse réelle (%.2f s pour %.2f s prévues)" % [nom, float(e.duree_reelle), float(e.duree_prevue)])
-		check(float(e.get("saut_max", 0.0)) <= 0.5, "%s : aucun saut de position dans un plan (%.2f m d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
+		check(float(e.get("saut_max", 0.0)) <= 10.0, "%s : aucun saut de position dans un plan (pointe %.1f m/s d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
 		var durees: Array = e.get("duree_plans", [])
 		if bool(e.coupe):
 			check(int(e.plans) == 2 and durees.size() == 2 and float(durees[0]) <= 3.4 and float(durees[1]) >= 1.0 and float(durees[1]) <= 2.1,
@@ -357,6 +358,35 @@ func interval(view: Control) -> void:
 	check(await until(func(): return app.model.live.minute > 0 and str(app.model.get("tactics", {}).get("attack", "")) == autre, 30000), "La consigne reste en place après la reprise")
 	check(await until(func(): return regie.etat == regie.JEU, 180000), "Temps fort suivant")
 	print("ENTRACTE ", JSON.stringify({"premier_s": attendu, "horloges": horloges.size()}))
+	app._command("pause", {"paused": true})
+	await wait_command()
+
+## Liaisons (graine 27 : mêlée à la 1re minute, touche à la 9e, essai puis mêlée à la 10e) : les
+## temps forts contigus sont reliés en 3D, à vitesse réelle même quand les temps forts sont
+## accélérés pour le test ; les autres gardent l'écran intermédiaire. Contrôles détaillés : check_liaisons.
+func linked(view: Control) -> void:
+	var regie: Node = view.regie
+	check(regie != null, "Régie présente")
+	if regie == null: return
+	check(regie.arbitre != null and regie.arbitre.is_inside_tree(), "Arbitre présent dans la vue 3D")
+	var deadline := Time.get_ticks_msec() + 500000
+	var reprise := false
+	var images_liaison := 0
+	var accelere := 0
+	while int(app.model.live.minute) < 11 and Time.get_ticks_msec() < deadline:
+		await process_frame
+		if not reprise and not app.waiting and regie.etat != regie.JEU:
+			reprise = true
+			if app.model.live.paused: app._command("pause", {"paused": false})
+		if regie.phase == "liaison" and regie.etat == regie.JEU:
+			images_liaison += 1
+			if not (regie.vitesse > 1.0 and view.stage._choregraphie.vitesse == 1.0): accelere += 1
+	check(images_liaison > 0 and accelere == 0, "Liaisons à vitesse réelle alors que les temps forts sont accélérés (%d images, %d accélérées)" % [images_liaison, accelere])
+	var liaisons: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison" and e.has("duree_reelle"))
+	check(liaisons.size() >= 2, "Au moins deux liaisons en onze minutes : " + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))
+	var sans: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "temps_fort" and not bool(e.get("contigu", false)))
+	check(not sans.is_empty() and sans.all(func(e: Dictionary) -> bool: return str(e.get("liaison", "")).is_empty()), "Temps forts après l'écran intermédiaire : aucune liaison")
+	check(regie.suivi.any(func(e: Dictionary) -> bool: return e.evenement == "intermediaire"), "L'écran intermédiaire reste entre deux temps forts non contigus")
 	app._command("pause", {"paused": true})
 	await wait_command()
 

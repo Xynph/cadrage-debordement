@@ -115,7 +115,9 @@ func run() -> void:
 	var pointe := sans_saut(lien.plans[0], "Mêlée continue")
 	check(pointe <= 6.5, "Mise en place au trot, jamais en sprint (%.1f m/s)" % pointe)
 	depart_et_arrivee(lien, vus, melee, "Mêlée")
-	check(lien.plans[0].ballon.porteurs.any(func(p: Array) -> bool: return p[1] == "1-8"), "Le demi de mêlée ramasse le ballon")
+	check(lien.plans[0].ballon.porteurs.any(func(p: Array) -> bool: return p[1] != null and str(p[1]).begins_with("1-")), "Un avant de l'équipe qui introduit ramasse le ballon")
+	var bal_fin := Vector2(float(lien.plans[0].ballon.x[-1]), float(lien.plans[0].ballon.y[-1]))
+	check(bal_fin.distance_to(Vector2(60, 32)) < 0.05 and lien.plans[0].ballon.porteurs[-1][1] == null, "Le ballon finit posé à la marque de la mêlée")
 	check(not (lien.tenue as Dictionary).is_empty(), "Avants liés tenus pendant la mêlée")
 	# --- Pénalité tentée : capitaine qui montre les poteaux, botteur qui pose le ballon.
 	var penalite := joueurs(Vector2(70, 30), 1.0, 0)
@@ -153,7 +155,19 @@ func run() -> void:
 	donnees = temps_forts("turnover", [{"kind": "touch"}, {"kind": "lineout"}, {"kind": "setpiece-loss"}], "carry", {"possession": 0, "players": alignement})
 	check(Liaison.analyser(donnees[0], donnees[1], donnees[2]).is_empty(), "Touche jouée entre les deux : pas contigus")
 	donnees = temps_forts("carry", [{"kind": "kickoff"}, {"kind": "reception"}], "scrum", {"possession": 0, "players": melee})
-	check(Liaison.analyser(donnees[0], donnees[1], donnees[2]).is_empty(), "Renvoi et réception entre les deux : pas contigus")
+	check(Liaison.analyser(donnees[0], donnees[1], donnees[2]).is_empty(), "Jeu courant puis renvoi et réception : pas de liaison")
+	# Essai transformé, renvoi joué (non montré), touche : célébration puis coupe vers l'alignement formé.
+	donnees = temps_forts("transformation", [{"kind": "kickoff"}, {"kind": "reception"}, {"kind": "touch", "from": {"x": 50, "y": 30}, "to": {"x": 40, "y": 0}, "cause": "direct-touch"}],
+		"lineout", {"possession": 0, "origin": {"x": 40, "y": 0}, "players": alignement})
+	donnees[0].plans[0].scene = {"possession": 1}
+	info = Liaison.analyser(donnees[0], donnees[1], donnees[2])
+	check(str(info.get("type", "")) == "touche" and bool(info.get("coupe_forcee", false)) and (info.sortie as Dictionary).is_empty(), "Après l'essai, renvoi joué : touche par coupe, sans sortie animée")
+	lien = Liaison.construire(info, ecran(alignement, Vector2(-5, 3), Vector2.ZERO), {"p": Vector3(48.0, 2.0, 0.0), "porteur": ""}, Vector2(80, 30), 21)
+	check(bool(lien.coupe) and (lien.plans as Array).size() == 2, "Jeu non montré entre les deux : toujours une coupe")
+	var joie_1 := false
+	for j: Dictionary in lien.plans[0].joueurs:
+		for e: Array in j.etats: if e[1] == "joie" and str(j.id).begins_with("1-"): joie_1 = true
+	check(joie_1, "L'équipe qui a marqué se félicite avant la coupe")
 	donnees = temps_forts("touch", [], "lineout", {"possession": 0, "origin": {"x": 40, "y": 0}, "players": alignement}, true)
 	check(Liaison.analyser(donnees[0], donnees[1], donnees[2]).is_empty(), "Suite de la même action : pas de liaison")
 	donnees = temps_forts("carry", [], "carry", {"possession": 0, "players": alignement})

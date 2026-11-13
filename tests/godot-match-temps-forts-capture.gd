@@ -200,7 +200,13 @@ func run() -> void:
 			if not en_liaison and dans_liaison: apres_liaison = 4.5
 			dans_liaison = en_liaison
 			garder = en_liaison or apres_liaison > 0.0
-			if apres_liaison > 0.0 and not en_liaison: apres_liaison -= delta
+			# Temps de jeu (--fixed-fps 30 : une image vaut 1/30 s, quelle que soit la machine).
+			if apres_liaison > 0.0 and not en_liaison: apres_liaison -= 1.0 / 30.0
+			# Hors liaison, le temps fort défile vite (rien n'est enregistré) ; son dernier plan (l'arrêt
+			# de jeu, pré-roll possible) et la liaison se jouent à vitesse réelle.
+			if regie != null:
+				var dernier_plan: bool = regie.etat == regie.JEU and regie.index >= regie.tf.get("plans", []).size() - 1
+				regie.vitesse = 1.0 if en_liaison or apres_liaison > 0.0 or dernier_plan or regie.etat == regie.ATTENTE else float(number("CD_MATCH_TEMPS_FORTS_RAPIDE", 4))
 			if not garder and frame % every == 0 and regie != null and regie.etat != regie.INTER:
 				var im := root.get_texture().get_image()
 				if im != null:
