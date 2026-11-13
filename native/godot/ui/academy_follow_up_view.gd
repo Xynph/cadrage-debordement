@@ -127,7 +127,7 @@ static func _card(parent: Node, app: Control, person: Dictionary, index: int, da
 	var contract_end: Variant = person.get("contractEnd")
 	var season := int(data.get("season", 0))
 	if contract_end != null:
-		flags.append("CONTRAT ESPOIR · FIN DE SAISON" if int(contract_end) <= season else "CONTRAT ESPOIR · SAISON %s" % G.n(contract_end))
+		flags.append("CONTRAT ESPOIR · FIN DE SAISON" if int(contract_end) <= season else "CONTRAT ESPOIR · SAISON %s" % G.season_label(contract_end))
 	if person.get("lastSeason", false): flags.append("DERNIÈRE SAISON AU CENTRE")
 	var cap: Variant = person.get("matchCap")
 	if cap is Dictionary:

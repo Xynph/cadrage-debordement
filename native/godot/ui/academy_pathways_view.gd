@@ -220,7 +220,7 @@ static func _history(list: VBoxContainer, data: Dictionary) -> void:
 	list.add_child(G.section("La mémoire des générations", "Quinze saisons maximum, archivées une seule fois. Retrouvez les résultats des générations précédentes."))
 	if data.generations.is_empty(): list.add_child(G.wrap("La première génération sera archivée à la fin de cette saison.",18))
 	for generation: Dictionary in data.generations:
-		list.add_child(G.section("Saison %d" % generation.season, "%d joueurs suivis · %d promotions · réputation %d" % [generation.players.size(),generation.graduates,generation.reputation]))
+		list.add_child(G.section("Saison %s" % G.season_label(generation.season), "%d joueurs suivis · %d promotions · réputation %d" % [generation.players.size(),generation.graduates,generation.reputation]))
 		for p: Dictionary in generation.players:
 			list.add_child(G.wrap("%s · %s · %s/%s · %d minutes · %s" % [p.name,p.pos,G.rating_text(p,true),G.potential_text(p),p.minutes,p.strategy],14))
 		list.add_child(G.separator())

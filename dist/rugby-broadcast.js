@@ -37,7 +37,7 @@ function generate(s){
 }
 function render(s){
  const ep=generate(s);if(!ep)return '';
- return '<section class="card" id="cd-rugby-broadcast" aria-label="Magazine rugby fictif"><h3>'+SHOW+' — magazine rugby</h3><p>Saison '+ep.season+', semaine '+ep.week+' · édition fictive générée à partir de votre carrière</p>'+
+ return '<section class="card" id="cd-rugby-broadcast" aria-label="Magazine rugby fictif"><h3>'+SHOW+' — magazine rugby</h3><p>Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(ep.season)+', semaine '+ep.week+' · édition fictive générée à partir de votre carrière</p>'+
  ep.segments.map(g=>'<article><h4>'+esc(g.type)+' · '+esc(g.title)+'</h4><p>'+esc(g.body)+'</p><small>Chronique fictive'+(g.journalist?' · '+esc(g.journalist.name)+' ('+esc(g.journalist.outlet)+')':'')+'</small></article>').join('')+
  '<p><small>Émission originale du jeu, indépendante des médias cités. Les propos, analyses et interviews sont simulés et ne reflètent pas les opinions réelles des journalistes.</small></p></section>';
 }

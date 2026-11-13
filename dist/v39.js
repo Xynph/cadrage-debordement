@@ -91,11 +91,11 @@ function v39Panel(){
  const tired=club().players.filter(p=>!p.injury&&physicalLoadValue(p)>=30)
   .sort((a,b)=>physicalLoadValue(b)-physicalLoadValue(a)).slice(0,5);
  const audit=v.audits[0];
- const auditText=audit?'S'+audit.season+' J'+(audit.round+1)+' : '+audit.players.length+
+ const auditText=audit?''+(typeof libelleSaison==='function'?libelleSaison:String)(audit.season)+' J'+(audit.round+1)+' : '+audit.players.length+
   ' joueurs · '+(audit.ok?'minutes concordantes':'écarts de minutes'):'Aucun match contrôlé depuis activation.';
  const auditRows=audit?.players.slice(0,8).map(x=>'<div class="row"><span>'+visualEscape(player(x.id)?.name||x.id)+
   '</span><strong>'+Math.round(x.minutes)+' min terrain / '+Math.round(x.credited)+' min créditées</strong></div>').join('')||'';
- const medical=v.medical.slice(0,8).map(x=>'<div class="news">S'+x.season+' J'+(x.round+1)+' · '+
+ const medical=v.medical.slice(0,8).map(x=>'<div class="news">'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' J'+(x.round+1)+' · '+
   visualEscape(player(x.id)?.name||x.id)+' · '+
   ({training:'Blessure à l’entraînement',match:'Blessure après match',recovery:'Récupération'})[x.kind]+
   ' · '+x.weeks+' semaine(s)</div>').join('')||'<p>Aucun événement récent.</p>';

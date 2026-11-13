@@ -132,7 +132,7 @@
     return '<section class="cd03" aria-label="Centre de recrutement">'+
       '<header class="cd03-header"><div><p class="cd03-overline">CADRAGE DÉBORDEMENT · RECRUTEMENT</p><h2>La cellule de recrutement</h2>'+
       '<p>Suivre vos besoins, explorer le marché et analyser les rapports sans inventer de données cachées.</p></div>'+
-      '<div class="cd03-season">Saison '+number(model.season)+' <span>·</span> Semaine '+number(model.week)+'</div></header>'+
+      '<div class="cd03-season">Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(model.season)+' <span>·</span> Semaine '+number(model.week)+'</div></header>'+
       insight(model)+tabButtons(view,model)+
       '<div class="cd03-content">'+
       (view==='overview'?overview(model):view==='candidates'?candidateTable(filtered,opts):

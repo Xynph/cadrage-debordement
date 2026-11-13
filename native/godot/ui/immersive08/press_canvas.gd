@@ -50,7 +50,7 @@ func _hero() -> void:
 	D.line(hero, Vector2(263, 34), Vector2(412, 34), C.GOLD, 2)
 	D.text(hero, 22, 125, "Troisième Mi-Temps.", 86, C.IVORY, 800, 1130)
 	var context: Dictionary = data.get("context", {})
-	var subhead := G.club_name(app.model.club) + "  ·  Saison " + S.count_text(context.get("season"))
+	var subhead := G.club_name(app.model.club) + "  ·  Saison " + G.season_label(context.get("season"))
 	if S.count_text(context.get("week")) != "—": subhead += "  ·  Semaine " + G.n(int(context.week) + 1)
 	D.text(hero, 29, 166, subhead, 30, C.IVORY, 500, 1130)
 	D.text(hero, 29, 202, "Le journal de la compétition et les échanges avec les médias.", 26, C.MUTED, 500, 1110)

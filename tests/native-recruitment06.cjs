@@ -8,7 +8,7 @@ h.run(`{const p=managerPool()[0];S.manager.reports=[{id:'report-fixture',mission
 const project=()=>JSON.parse(h.run('JSON.stringify(nativeDecisions().recruitment)'));
 const prior=h.run('JSON.stringify(S)'),seed=h.seed(),data=project(),report=data.reports[0];
 assert.ok(report.assessment,'Carte de rapport argumentée');
-assert.match(report.assessment.source,/Saison 1/);assert.ok(report.assessment.source.endsWith('suivi '+report.week));assert.equal(report.assessment.available,true);
+assert.match(report.assessment.source,/Saison 2026-2027/);assert.ok(report.assessment.source.endsWith('suivi '+report.week));assert.equal(report.assessment.available,true);
 assert.ok(report.assessment.observed.some(x=>x.includes('72')));assert.ok(report.assessment.estimates.some(x=>x.includes('81')));
 assert.ok(report.assessment.limits.some(x=>/attributs|qualités/i.test(x)));assert.ok(report.assessment.fit.includes(report.pos)||/famille|besoin/i.test(report.assessment.fit));
 for(let i=0;i<3;i++)assert.deepEqual(project(),data);assert.equal(h.run('JSON.stringify(S)'),prior);assert.equal(h.seed(),seed);

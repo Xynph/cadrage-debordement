@@ -175,7 +175,7 @@ static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	list.add_child(G.section("Les derniers mandats", "Historique persistant limité à 24 entrées."))
 	for h: Dictionary in data.agents.history:
 		var status: String = {"ready":"accord de principe", "counter":"contre-offre", "withdrawn":"retrait", "signed":"signé"}.get(str(h.status), str(h.status))
-		list.add_child(G.wrap("S%d · semaine %d · %s · %s · %s" % [h.season, int(h.week) + 1, _name(app, h.id), G.salary(h.wage), status], 14))
+		list.add_child(G.wrap("%s · semaine %d · %s · %s · %s" % [G.season_label(h.season), int(h.week) + 1, _name(app, h.id), G.salary(h.wage), status], 14))
 
 static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
 	var dialog := ConfirmationDialog.new()

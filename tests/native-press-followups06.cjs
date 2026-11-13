@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const press=require('../native/engine/press.cjs'),bank=require('../dist/press-question-bank.js');
-const ctx=vm.createContext({CDNativeHeadless:true,console,save(){},render(){},Math:Object.assign(Object.create(Math),{random(){throw Error('RNG interdit en consultation');}})});
+const ctx=vm.createContext({libelleSaison:require('../dist/season-label.js').libelleSaison,CDNativeHeadless:true,console,save(){},render(){},Math:Object.assign(Object.create(Math),{random(){throw Error('RNG interdit en consultation');}})});
 const run=s=>vm.runInContext(s,ctx),read=s=>JSON.parse(run('JSON.stringify('+s+')'));
 for(const f of press.files)run(fs.readFileSync(path.join(__dirname,'../dist',f),'utf8'));
 run(`S={season:2,round:5,club:0,morale:65,trust:65,live:null,clubs:Array.from({length:30},(_,id)=>({id,name:'Club '+id,players:[]})),history:[],franceMode:{version:1,week:5,leagues:{elite:{members:[0]},accession:{members:[29]}}}};const p=(${press.factory.toString()})();`);
@@ -11,7 +11,7 @@ ctx.archive=source;run('S.pressConference={version:1,history:[JSON.parse(JSON.st
 const saved=run('JSON.stringify(S)'),projected=read('p.project()'),follow=projected.conference.questions.find(q=>q.id===question.id);
 assert.ok(follow.followUp,'Le journaliste relance sa déclaration réellement archivée');
 assert.equal(follow.followUp.quote,source.answerText);assert.deepEqual(follow.followUp.context,{season:2,week:1,club:0});
-assert.ok(follow.question.includes(source.answerText));assert.match(follow.question,/saison 2, semaine 2/);assert.ok(follow.question.endsWith(question.question));
+assert.ok(follow.question.includes(source.answerText));assert.match(follow.question,/saison 2027-2028, semaine 2/);assert.ok(follow.question.endsWith(question.question));
 assert.equal(follow.answers.length,5);assert.deepEqual(follow.answers,question.answers,'Choix et effets inchangés');
 for(let i=0;i<4;i++)assert.deepEqual(read('p.project()'),projected);assert.equal(run('JSON.stringify(S)'),saved);
 for(const alteration of ['S.pressConference.history[0].club=29','S.pressConference.history[0].season=1','S.pressConference.history[0].week=6',"S.pressConference.history[0].journalist.id='fiction-19'",'delete S.pressConference.history[0].answerText','delete S.pressConference.history[0].questionText']){
