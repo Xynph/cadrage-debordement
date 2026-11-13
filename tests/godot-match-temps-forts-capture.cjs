@@ -74,4 +74,5 @@ if(result.status!==0){
  console.error('Capture interrompue (code '+result.status+'). Journal : '+path.join(proof,'godot.log'));process.exit(result.status||1);
 }
 const report=JSON.parse(fs.readFileSync(reportPath,'utf8'));
+if(/SCRIPT ERROR|Parse Error/.test(output)){console.error('Erreurs GDScript pendant la capture ; rapport conservé : '+reportPath+' ; journal : '+logPath);process.exit(1);}
 console.log(`Capture terminée en ${Math.round((Date.now()-started)/1000)} s : ${report.images.length} images de ${report.image_size.join('×')} (${Math.round(report.octets_par_image/1024)} Ko en moyenne, ${Math.round(report.octets_image_la_plus_lourde/1024)} Ko au plus${report.resized?', redimensionnées':''}), ${report.temps_forts} temps forts, ${report.echeances} échéance(s), score ${report.score.join(' – ')}, dossier ${proof}`);

@@ -258,7 +258,10 @@ func run() -> void:
 		render_usec += Time.get_ticks_usec() - before
 		report.images.append({"file": name, "ms": now - started, "etat": state, "horloge": view.clock.text if view != null else "", "score": view.score.text if view != null else "", "type": type_garde})
 	report.suivi = suivi.collect()
+	report["regies_collectees"] = suivi.traces.size()
+	report["scene_live_liberee"] = surface() == null
 	var final_live: Dictionary = app.model.live if app.model.get("live") is Dictionary else last_live
+	if final_live.is_empty(): final_live = last_live
 	report["score"] = final_live.get("score", [0, 0])
 	report["termine"] = final_live.get("finished", false)
 	report["minute"] = final_live.get("minute", 0)
