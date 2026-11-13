@@ -826,7 +826,7 @@ func _build_sidebar(parent: Node) -> void:
 	var logo := G.button("", pause_menu)
 	logo.tooltip_text = "Rugby Legacy 27 — Menu et sauvegardes"
 	var bitmap := TextureRect.new()
-	bitmap.texture = load("res://branding/oval-legacy-27-logo.png")
+	bitmap.texture = load("res://branding/rugby-legacy-27-logo.png")
 	bitmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bitmap.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	bitmap.mouse_filter = Control.MOUSE_FILTER_IGNORE

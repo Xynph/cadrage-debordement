@@ -42,7 +42,7 @@ def evidence_files(root):
         add(root / "official-build/build" / name, "build/" + name)
     for name in ("windows-report.json", "archive.json", "mesa-qa.json", "qa-extras.json", "manifest-before.json", "manifest-after.json"):
         add(root / "evidence" / name, name)
-    add(root / "official-build/OvalLegacy27-PrototypeGodot/manifest-build.json", "manifest-build.json")
+    add(root / "official-build/RugbyLegacy27-PrototypeGodot/manifest-build.json", "manifest-build.json")
     add(root / "tools/toolchain-receipt.json", "tools/toolchain-receipt.json")
     add(root / "tools/mesa/mesa-receipt.json", "tools/mesa-receipt.json")
     # Include actual inspected component notices (paths come from the verified receipt).
@@ -126,10 +126,10 @@ def received_report(root, source_commit):
     path = Path(root) / "evidence/windows-report.json"
     report = module.json_document(path.read_text(encoding="utf-8-sig"))
     require(report.get("passed") is True, "A failed receipt cannot publish a received game ZIP")
-    expected_zip = Path(root) / "official-build/OvalLegacy27-PrototypeGodot-Windows-x64.zip"
+    expected_zip = Path(root) / "official-build/RugbyLegacy27-PrototypeGodot-Windows-x64.zip"
     require(Path(report["package"]["path"]).resolve() == expected_zip.resolve(), "Unexpected package outside official build")
     # Re-run all independent ZIP, process, PNG, source and native-host guards.
-    actual_exe = Path(root) / "evidence/Relocated QA with spaces/OvalLegacy27-PrototypeGodot/OvalLegacy27.exe"
+    actual_exe = Path(root) / "evidence/Relocated QA with spaces/RugbyLegacy27-PrototypeGodot/RugbyLegacy27.exe"
     module.validate_windows_report(report, source_commit, str(actual_exe))
     return report, expected_zip
 
@@ -204,7 +204,7 @@ def publish(root, source_commit, repo, run_id, attempt, diagnostic=False):
     notes.write_text(f"Source: `{source_commit}`\n\nCI and native receipt: {metadata['run']}\n\n"
                      + ("**Diagnostic draft: build/QA failed. No received game ZIP.**\n" if diagnostic else
                         f"**Received Windows package; draft awaiting final integration verification.**\n\nZIP SHA256: `{metadata['package']['sha256']}`\n\n"
-                        "Extract the whole ZIP to a writable folder and launch `OvalLegacy27.exe`. Saves remain outside the game folder. No Node/Python/Godot installation is required. Gabi remains silent.\n"), encoding="utf-8")
+                        "Extract the whole ZIP to a writable folder and launch `RugbyLegacy27.exe`. Saves remain outside the game folder. No Node/Python/Godot installation is required. Gabi remains silent.\n"), encoding="utf-8")
     title = f"Windows {'diagnostics' if diagnostic else 'received'} · {source_commit[:12]} · {run_id}/{attempt}"
     gh("release", "create", tag, "--repo", repo, "--target", source_commit, "--draft", "--prerelease", "--title", title, "--notes-file", str(notes))
     gh("release", "upload", tag, *(str(path) for path in assets), "--repo", repo)

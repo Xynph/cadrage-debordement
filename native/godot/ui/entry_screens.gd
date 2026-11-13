@@ -77,7 +77,7 @@ static func home(app: Control) -> Control:
 	G.fill(intro)
 	row.add_child(intro)
 	var logo := TextureRect.new()
-	logo.texture = load("res://branding/oval-legacy-27-logo.png")
+	logo.texture = load("res://branding/rugby-legacy-27-logo.png")
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.custom_minimum_size = Vector2(360, 180)
