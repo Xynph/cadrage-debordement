@@ -47,6 +47,7 @@
       "tests/native-save-hotpaths06.cjs": 2,
       "tests/native-systems.cjs": 16,
       "tests/opposition.cjs": 32,
+      "tests/player-population-capacity.cjs": 250,
       "tests/player-population-seasons.cjs": 68,
       "tests/premium-editorial-matchday.cjs": 3,
       "tests/preparation.cjs": 2,
@@ -148,6 +149,7 @@
     "suites": {
       "tests/native-professional-depth.cjs": 2624,
       "tests/performance-analysis.cjs": 2048,
+      "tests/player-population-capacity.cjs": 2048,
       "tests/world-catalogue-dedup.cjs": 3264,
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048
