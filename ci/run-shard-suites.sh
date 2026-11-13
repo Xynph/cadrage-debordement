@@ -101,6 +101,8 @@ budget() {
     tests/native-club-support-training-forecast.cjs) echo 900s ;;
     # Passé au Monde (lot 00), 364 s en CI sous charge (run 43483, Suites 5/7) ; délai de 420 s dépassé sur deux runs de PR, 900 s, assertions inchangées.
     tests/integration-cloud-complete.cjs) echo 900s ;;
+    # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
+    tests/native-press-followups06-worker.cjs) echo 420s ;;
     *) echo 180s ;;
   esac
 }

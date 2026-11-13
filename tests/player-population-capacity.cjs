@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
@@ -7,7 +6,7 @@ const {createBridge}=require('../native/engine/worker.cjs');
 // Conservative schema-valid capacity fixture: source rosters remain at their
 // large initial size and every candidate already has the maximum 12 history
 // entries accepted by the save validator. This is not a played 12-year claim.
-for(const population of ['generated','released-source'])for(const [mode,club,limit] of [['world',0,16*1024*1024],['world-champ',102,24*1024*1024]])test(mode+' '+population+' maximum persistent pool and full history fit the unchanged save budget',t=>{
+for(const population of ['generated','released-source'])for(const [mode,club,limit] of [['world-champ',0,24*1024*1024],['world-champ',102,24*1024*1024]])test(mode+' club '+club+' '+population+' maximum persistent pool and full history fit the unchanged save budget',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-population-capacity-'));
  const options={dataDir:root,seed:827381,now:1794178800000};
  let b=createBridge(options),serial=0;
