@@ -37,6 +37,40 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     ctx.nativeNationalWrite = profile;
     try { run('S.national=JSON.parse(JSON.stringify(nativeNationalWrite))'); }
     finally { delete ctx.nativeNationalWrite; }
+    noterSelections(profile);
+  }
+
+  // Notes des matchs internationaux joués (match-notes.cjs, même calcul que les clubs) : les deux
+  // feuilles d'une rencontre et son score, transmis au moteur qui ignore les rencontres déjà notées.
+  // Lecture seule de la carrière internationale : aucun tirage, aucun résultat changé.
+  function noterSelections(profile) {
+    const state = profile?.career;
+    if (!state || !Array.isArray(state.appearances) || !run("typeof CDMatchNotes!=='undefined'&&!!S")) return;
+    const results = {};
+    for (const year of Object.values(state.results || {})) if (year && typeof year === 'object') Object.assign(results, year);
+    // Seules les rencontres depuis la dernière notée sont transmises (le moteur ignore les doublons).
+    const depuis = JSON.parse(run("JSON.stringify(Object.values(S.matchNotes?.selection?.vus||{}).sort().at(-1)||'')"));
+    const parFixture = new Map();
+    for (const row of state.appearances) (parFixture.get(row.fixtureId) || parFixture.set(row.fixtureId, []).get(row.fixtureId)).push(row);
+    const matchs = [];
+    for (const [fixtureId, rows] of parFixture) {
+      const result = results[fixtureId];
+      if (rows.length !== 2 || !result || rows[0].date < depuis) continue;
+      // Côté vainqueur : le score le plus haut (égalité : ordre indifférent).
+      const haut = result.home >= result.away ? ['home', 'away'] : ['away', 'home'];
+      const gagnant = result.winnerId ?? null;
+      const ordre = gagnant && rows[1].nation === gagnant ? [rows[1], rows[0]] : rows;
+      const cote = k => (gagnant ? haut[k] : (k === 0 ? 'home' : 'away'));
+      const edition = /^(.*?-\d{4})(?:-|$)/.exec(fixtureId)?.[1] || fixtureId;
+      const nomCompetition = competitionName(edition);
+      matchs.push({ cle: fixtureId, date: rows[0].date, competition: nomCompetition === 'la fenêtre internationale' ? 'Test-match' : nomCompetition,
+        equipes: ordre.map((row, k) => ({ nation: row.nation, nom: teamNames[row.nation] || row.nation, ids: row.playedIds,
+          points: result[cote(k)], essais: result[cote(k) + 'Tries'] })) });
+    }
+    if (!matchs.length) return;
+    ctx.nativeNotesSelection = matchs;
+    try { run('CDMatchNotes.enregistrerSelection(nativeNotesSelection)'); }
+    finally { delete ctx.nativeNotesSelection; }
   }
 
   function append(profile, messages) {

@@ -65,6 +65,32 @@ c'est la mesure d'équilibre ci-dessous.
 | Progression | jeune de 21 ans au plus, 40 minutes et note ≥ 7,5 : `growPlayer` reçoit (note − 7,3) × 0,02 d'expérience | 0,03 au plus par match (un match ordinaire en donne ~0,12) |
 | Distinctions | homme du match (actualité), équipe type de la journée de la compétition du manager, joueur du mois (toutes les 4 journées) et de la saison du club | — |
 
+## Matchs internationaux (sélections)
+
+Le moteur international (`international-competitions.cjs`) simule le score seul, sans journal.
+Après chaque écriture de la carrière internationale (`international-native.cjs`, `write`), les
+rencontres jouées (deux feuilles `appearances` et le score) sont transmises au domaine, qui les
+note avec **le même calcul** : un journal réduit aux faits connus — chaque essai du score
+attribué à un joueur de façon déterministe (empreinte de la rencontre ; arrières ×3, troisième
+ligne ×2, autres ×1) —, le résultat, le niveau au poste et le poste ; titulaires 80 minutes,
+remplaçants entrés 25 minutes. Aucun tirage, aucun résultat modifié (tests). Homme du match
+désigné de la même façon.
+
+Enregistrement à part du club : `S.matchNotes.selection` = `lignes` (par joueur du monde du jeu,
+20 derniers matchs : date, adversaire, compétition, minutes, note ×10, essais, homme du match) et
+`vus` (rencontres déjà notées, 400 au plus). Bloc absent = aucun match international noté
+(anciennes sauvegardes). Fiche joueur, onglet Performances : bloc « Sélection » (moyenne, forme,
+trois dernières rencontres).
+
+Effets, dans les bornes existantes et coupés par `CD_NOTES_EFFETS=0` :
+- sélections suivantes : forme en club (3 notes au moins) et forme internationale (5 dernières,
+  3 au moins), la sélection pesant 40 % quand les deux existent ; toujours −1,5 à +2 points ;
+- valeur marchande : moyenne de saison et moyenne internationale (20 dernières, 3 au moins) à
+  25 % ; toujours −8 % à +12 %.
+
+Limite : faute de journal, une note internationale ne reflète que les essais, le résultat, le
+niveau et le poste (dispersion plus faible qu'en club).
+
 ## Équilibre
 
 Deux saisons simulées par le vrai worker (mode commun, club 29, graine 4242, matchs délégués,

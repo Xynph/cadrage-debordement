@@ -155,6 +155,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_history(D.panel(page,Rect2(0,716,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
 			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			_selection(D.panel(page,Rect2(1686,966,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
 		3:
 			_contract(D.panel(page,Rect2(0,430,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
 			_health(D.panel(page,Rect2(866,430,562,520),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
@@ -281,7 +282,8 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	else:
 		D.text(card,478,145,"—",64,C.MUTED,700,124,HORIZONTAL_ALIGNMENT_CENTER).name = "FullPlayerNoteAverage"
 	var matchs := int(notes.get("matchs",0))
-	D.text(card,416,182,"MOYENNE" + (" · %d M." % matchs if matchs>0 else ""),22,C.MUTED,600,176).tooltip_text = "Note moyenne de la saison sur %d match%s (1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
+	D.text(card,416,182,"MOYENNE SAISON",22,C.MUTED,600,176).tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
+	if matchs>0: D.text(card,416,208,"%d match%s" % [matchs,"s" if matchs>1 else ""],19,C.MUTED,500,176).name = "FullPlayerNoteMatches"
 	NotesMatch.pastilles(card,Vector2(600,96),NotesMatch.forme(notes),Vector2(54,50),7.0,0.7).name = "FullPlayerForm"
 	var titres := int(notes.get("hommeDuMatch",0))
 	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else ""),22,C.GOLD if titres>0 else C.MUTED,600,300)
@@ -330,6 +332,28 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		rang.custom_minimum_size = Vector2(C.px(1630),C.px(34))
 		liste.add_child(rang)
 		D.text(rang,4,25,"Saison %s · %s · %d matchs · moyenne %s · %d essai%s%s" % [G.n(saison.get("saison",0)),str(saison.get("club","")),int(saison.get("matchs",0)),NotesMatch.texte_note(saison.get("moyenne")),int(saison.get("essais",0)),"s" if int(saison.get("essais",0))>1 else "",(" · %d× homme du match" % int(saison.hommeDuMatch)) if int(saison.get("hommeDuMatch",0))>0 else ""],19,C.GOLD,500,1600)
+
+## Matchs internationaux notés (même calcul que le club) : moyenne, forme, dernières rencontres.
+static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
+	var notes := NotesMatch.joueur(app.model,str(player.id))
+	var sel: Variant = notes.get("selection")
+	if not sel is Dictionary:
+		D.text(card,24,110,"Aucun match international noté.",21,C.MUTED,400,510,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerSelectionEmpty"
+		return
+	NotesMatch.pastille(card,Rect2(24,70,86,44),float(sel.get("moyenne",6.5)),0.7).name = "PlayerSelectionAverage"
+	var n := int(sel.get("matchs",0))
+	D.text(card,122,90,"MOYENNE · %d sélection%s" % [n,"s" if n>1 else ""],17,C.MUTED,600,170)
+	var titres := int(sel.get("hommeDuMatch",0))
+	if titres>0: D.text(card,122,112,"%d× HOMME DU MATCH" % titres,17,C.GOLD,600,170)
+	NotesMatch.pastilles(card,Vector2(300,74),sel.get("forme",[]) if sel.get("forme") is Array else [],Vector2(42,36),5.0,0.5).name = "PlayerSelectionForm"
+	var lignes: Array = sel.get("historique",[]) if sel.get("historique") is Array else []
+	for i in mini(lignes.size(),3):
+		var ligne: Dictionary = lignes[i]
+		var y := 128 + i*40
+		D.text(card,24,y+24,str(ligne.get("date","")).substr(5,5).replace("-","/"),18,C.MUTED,500,60)
+		D.text(card,90,y+24,str(ligne.get("adversaire","")),19,C.IVORY,600,230)
+		D.text(card,324,y+24,str(ligne.get("competition","")),16,C.MUTED,500,130)
+		NotesMatch.pastille(card,Rect2(470,y+4,68,28),float(ligne.get("note",6.5)),0.6).name = "PlayerSelectionRow"+str(i)
 
 static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var renewal: Dictionary = player.get("renewal", {})

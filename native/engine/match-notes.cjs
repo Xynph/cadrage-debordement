@@ -160,6 +160,7 @@ function factory(){
   }
   for(const id of Object.keys(st.passees)){if(!clubDe.has(id))delete st.passees[id];else st.passees[id]=st.passees[id].slice(-MAX_PASSEES);}
   for(const id of Object.keys(st.joueurs))if(!clubDe.has(id))delete st.joueurs[id];
+  if(st.selection)for(const id of Object.keys(st.selection.lignes))if(!clubDe.has(id))delete st.selection.lignes[id];
   st.detail={};st.confiance={};st.semaine=null;st.saison=s.season;
  }
  // Contexte d'un match pour le calcul : minutes, côtés, niveau au poste relatif à l'équipe.
@@ -193,15 +194,60 @@ function factory(){
  const effets={
   // Composition des entraîneurs IA : forme récente (2 notes au moins), ±3 à 4 % du score de choix.
   composition(id){if(!actifs())return 1;const f=forme(id);return f===null||formeN(id)<2?1:1+Math.max(-.03,Math.min(.04,(f-6.5)*.03));},
-  // Valeur marchande (indemnité) : moyenne de saison, −8 % à +12 %.
-  valeur(id){if(!actifs())return 1;const m=moyenne(id);return m===null?1:1+Math.max(-.08,Math.min(.12,(m-6.5)*.08));},
+  // Valeur marchande (indemnité) : moyenne de saison (et, à 25 %, moyenne internationale sur
+  // 3 sélections au moins), −8 % à +12 %.
+  valeur(id){if(!actifs())return 1;const m=melange(moyenne(id),intl(id,20),.25);return m===null?1:1+Math.max(-.08,Math.min(.12,(m-6.5)*.08));},
   // Intérêt des clubs IA : note estimée du joueur, −2 à +3 points.
   interet(id){if(!actifs())return 0;const m=moyenne(id);return m===null?0:Math.max(-2,Math.min(3,(m-6.5)*2));},
   // Exigence salariale en négociation : −4 % à +6 %.
   salaire(id){if(!actifs())return 1;const m=moyenne(id);return m===null?1:1+Math.max(-.04,Math.min(.06,(m-6.5)*.04));},
   // Sélections nationales : bonus au score de forme du sélectionneur, −1,5 à +2 points.
-  selection(id){if(!actifs())return 0;const f=forme(id);return f===null||formeN(id)<3?0:Math.max(-1.5,Math.min(2,(f-6.5)*1.2));}
+  // Forme en club (3 notes au moins) et forme internationale (5 dernières sélections, 3 au
+  // moins) : moyenne pondérée, la sélection compte pour 40 % quand les deux existent.
+  selection(id){if(!actifs())return 0;const f=melange(formeN(id)>=3?forme(id):null,intl(id,5),.4);return f===null?0:Math.max(-1.5,Math.min(2,(f-6.5)*1.2));}
  };
+ // Moyenne des n dernières notes internationales (3 sélections au moins), sinon null.
+ function intl(id,n){const d=state()?.matchNotes?.selection?.lignes?.[id];if(!d||d.length<3)return null;const r=d.slice(-n);return r.reduce((a,x)=>a+x[4],0)/r.length/10;}
+ function melange(club,inter,poids){return club===null?inter:inter===null?club:club*(1-poids)+inter*poids;}
+ // ---- Matchs internationaux -----------------------------------------------------------
+ // Le moteur international simule le score seul (essais et points, sans journal) : le même
+ // calcul reçoit un journal réduit à ces faits — chaque essai attribué de façon déterministe
+ // (empreinte de la rencontre, arrières et troisième ligne favorisés) —, le résultat, le
+ // niveau au poste et le poste. Titulaires 80 minutes, remplaçants entrés 25 minutes.
+ // matchs : [{cle, date, competition, equipes:[{nation, nom, ids, points, essais}] ×2}].
+ const MAX_SELECTION=20,MAX_VUS=400;
+ const empreinte=t=>{let h=2166136261;for(let i=0;i<t.length;i++)h=Math.imul(h^t.charCodeAt(i),16777619);return h>>>0;};
+ function enregistrerSelection(matchs){
+  const s=state();if(!s||!Array.isArray(matchs)||!matchs.length)return 0;
+  const st=etat(s),sel=st.selection||(st.selection={lignes:{},vus:{}});
+  const joueurs=new Map();for(const c of s.clubs)for(const p of c.players)joueurs.set(p.id,p);
+  let n=0;
+  for(const m of matchs){
+   if(!m||typeof m.cle!=='string'||sel.vus[m.cle]||!Array.isArray(m.equipes)||m.equipes.length!==2)continue;
+   const cotes={},minutes={},niveaux={},familles={},journal=[],on=m.equipes.map(e=>e.ids.slice(0,15));
+   m.equipes.forEach((e,side)=>{
+    const notes=[];
+    e.ids.forEach((id,k)=>{cotes[id]=side;minutes[id]=k<15?80:25;const p=joueurs.get(id);if(p){notes.push([id,roleNote(p)]);if(Number.isInteger(p.fam))familles[id]=p.fam;}});
+    const moy=notes.length?notes.reduce((a,[,r])=>a+r,0)/notes.length:0;for(const [id,r] of notes)niveaux[id]=Math.max(-1,Math.min(1,(r-moy)/10));
+    const poids=on[side].map((id,slot)=>id==null?0:slot>=8?3:slot>=5?2:1),total=poids.reduce((a,b)=>a+b,0);
+    for(let k=0;k<(e.essais|0)&&total>0;k++){let x=empreinte(m.cle+'|'+e.nation+'|'+k)%total,slot=0;while(x>=poids[slot]){x-=poids[slot];slot++;}
+     journal.push({min:0,type:'try',scene:{kind:'try',team:side,actor:on[side][slot],on,score:[0,0]}});}
+   });
+   const r=calc.noter(journal,{cotes,minutes,niveaux,familles,score:[m.equipes[0].points|0,m.equipes[1].points|0],fini:true});
+   m.equipes.forEach((e,side)=>{
+    const adverse=String(m.equipes[1-side].nom||m.equipes[1-side].nation).slice(0,60);
+    for(const id of e.ids){
+     const x=r.joueurs[id];if(!x||!joueurs.has(id))continue;
+     const d=sel.lignes[id]||(sel.lignes[id]=[]);
+     d.push([String(m.date).slice(0,10),adverse,String(m.competition||'').slice(0,60),x.minutes,Math.round(x.note*10),x.essais,r.hommeDuMatch===id?1:0]);
+     if(d.length>MAX_SELECTION)d.shift();
+    }
+   });
+   sel.vus[m.cle]=String(m.date).slice(0,10);n++;
+  }
+  const cles=Object.keys(sel.vus);if(cles.length>MAX_VUS){cles.sort((a,b)=>sel.vus[a]<sel.vus[b]?-1:sel.vus[a]>sel.vus[b]?1:a<b?-1:1);for(const k of cles.slice(0,cles.length-MAX_VUS))delete sel.vus[k];}
+  return n;
+ }
  function clubIdDe(l,side){return l.pair[side];}
  function competition(l){const c=l.worldContext||l.franceContext;return String(c?.competitionId||c?.competition||c?.phase||state()?.phase||'championnat').slice(0,40);}
  function enregistrer(l){
@@ -300,6 +346,11 @@ function factory(){
   for(const v of Object.values(st.confiance))check(int(v,-CONFIANCE_MAX,CONFIANCE_MAX),'confiance invalide');
   for(const r of st.recompenses)check(obj(r)&&['hdm','equipe','mois','saison'].includes(r.type)&&typeof r.id==='string'&&int(r.note,10,100),'distinction invalide');
   check(st.semaine===null||obj(st.semaine)&&Array.isArray(st.semaine.notes)&&st.semaine.notes.length<=2000,'journée invalide');
+  if(st.selection!==undefined){
+   const sel=st.selection,date=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);
+   check(obj(sel)&&obj(sel.lignes)&&obj(sel.vus)&&Object.keys(sel.vus).length<=MAX_VUS&&Object.values(sel.vus).every(date),'sélection invalide');
+   for(const d of Object.values(sel.lignes))check(Array.isArray(d)&&d.length<=MAX_SELECTION&&d.every(r=>Array.isArray(r)&&r.length===7&&date(r[0])&&typeof r[1]==='string'&&r[1].length<=60&&typeof r[2]==='string'&&r[2].length<=60&&int(r[3],0,120)&&int(r[4],10,100)&&int(r[5],0,50)&&(r[6]===0||r[6]===1)),'match international invalide');
+  }
   return true;
  }
  // Libellé d'une compétition enregistrée (phase France ou identifiant de compétition mondiale).
@@ -317,13 +368,15 @@ function factory(){
   if(!s||!st)return base;
   const courant=st.saison===s.season;
   for(const p of s.clubs[s.club]?.players||[]){
-   const j=st.joueurs[p.id],d=courant?st.detail[p.id]||[]:[],passe=st.passees[p.id]||[];
-   if(!j&&!passe.length)continue;
+   const j=st.joueurs[p.id],d=courant?st.detail[p.id]||[]:[],passe=st.passees[p.id]||[],inter=st.selection?.lignes?.[p.id]||[];
+   if(!j&&!passe.length&&!inter.length)continue;
    const n=courant&&j?j.s[0]:0;
    base.joueurs[p.id]={matchs:n,moyenne:n?Math.round(j.s[1]/n)/10:null,minutes:n?j.s[2]:0,essais:n?j.s[3]:0,plaquages:n?j.s[4]:0,metres:n?j.s[5]:0,hommeDuMatch:n?j.s[6]:0,
     forme:(j?.f||[]).map(x=>x/10),
     historique:d.slice().reverse().map(r=>({semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1})),
-    saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5]}))};
+    saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5]})),
+    selection:inter.length?{matchs:inter.length,moyenne:Math.round(inter.reduce((a,r)=>a+r[4],0)/inter.length)/10,forme:inter.slice(-5).map(r=>r[4]/10),hommeDuMatch:inter.filter(r=>r[6]).length,
+     historique:inter.slice().reverse().map(r=>({date:r[0],adversaire:r[1],competition:r[2],minutes:r[3],note:r[4]/10,essais:r[5],hommeDuMatch:r[6]===1}))}:null};
   }
   base.recompenses=st.recompenses.slice(-12).reverse();
   base.dernier=st.dernier?JSON.parse(JSON.stringify(st.dernier)):null;
@@ -380,6 +433,6 @@ function factory(){
    growPlayer(p,Math.min(.03,(n.note-7.3)*.02),false);
   }
  }
- return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,forme,moyenne,effets,rollover};
+ return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,enregistrerSelection,forme,moyenne,effets,rollover};
 }
 module.exports={files,commands,factory,moteur,...moteur()};
