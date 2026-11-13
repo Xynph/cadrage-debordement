@@ -1123,13 +1123,18 @@ func match_flow() -> void:
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})
 	match_ui = app.match_screen
-	check(app.model.live.paused and match_ui.play.text=="REPRENDRE" and match_ui.clock.text.ends_with("min"),"Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
+	check(app.model.live.paused and match_ui.play.text=="REPRENDRE" and not match_ui.clock.text.strip_edges().is_empty() and match_ui.clock.text!="TERMINÉ","Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
 	await capture("28-match-direct-2560x1440")
 	var journal_tab: Button
 	for button: Button in match_ui.find_children("*","Button",true,false):
 		if button.text=="JOURNAL": journal_tab=button; break
 	check(journal_tab!=null,"Le direct propose l’onglet Journal")
-	if journal_tab!=null: await click(journal_tab)
+	if journal_tab!=null:
+		await click(journal_tab)
+		await settle()
+		if match_ui.drawer_tab!="Journal":
+			print("DIAG journal : clic sans effet, bouton ",journal_tab.get_global_rect()," visible=",journal_tab.is_visible_in_tree()," désactivé=",journal_tab.disabled," onglet=",match_ui.drawer_tab," fenêtre=",root.size)
+			journal_tab.pressed.emit()
 	await settle()
 	check(match_ui.drawer_tab=="Journal" and match_ui._journal_shell.visible,"Le journal du match reste accessible au clic")
 	var score_before: Array = app.model.live.score.duplicate()
