@@ -226,9 +226,10 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
         assert.equal(t.plaquages.valeurs[cote], courses + recup, 'plaquages réussis = courses adverses stoppées + ballons récupérés');
         assert.equal(t.en_avant.valeurs[cote], lignes.filter(l => l.kind === 'hand-fault' && l.equipe === cote).length);
       }
-      // Notes : joueurs du manager seulement, bornées.
+      // Notes (match-notes.cjs) : toute la feuille du manager, échelle 1–10 ; seuls les joueurs
+      // déjà entrés ont des faits.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
-      for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
+      for (const [id, n] of Object.entries(direct.notes)) assert.ok(n.cote === camp && n.note >= 1 && n.note <= 10 && (n.faits === 0 || nous.has(id)), id);
       // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
       const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
       assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
@@ -237,7 +238,7 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       const eux = 1 - camp;
       if (vues.length) {
         assert.equal(direct.adversaire.length, 15, 'XV adverse complet');
-        assert.ok(direct.adversaire.every(j => !j || (j.nom && j.note >= 3 && j.note <= 9.9)), 'noms et notes adverses');
+        assert.ok(direct.adversaire.every(j => !j || (j.nom && j.note >= 1 && j.note <= 10)), 'noms et notes adverses');
         assert.ok(direct.adversaire.reduce((n, j) => n + (j ? j.plaquages : 0), 0) <= t.plaquages.valeurs[eux], 'plaquages adverses bornés par le chiffre d\'équipe');
       }
     }

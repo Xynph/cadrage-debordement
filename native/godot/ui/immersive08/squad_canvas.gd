@@ -89,12 +89,12 @@ func _build() -> void:
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",130],["FIN DE CONTRAT",1132,"Échéance",124],["NOTE",1262,"Note",56],["FORME",1326,"Forme",140],["MIN.",1472,"Minutes",58],["STATUT",1538,"Statut",128]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",130],["FIN DE CONTRAT",1132,"Échéance",124],["NOTE",1262,"Moyenne",56],["FORME",1326,"Forme",140],["MIN.",1472,"Minutes",58],["STATUT",1538,"Statut",128]]
 	if state.family==U.WATCH_FILTER:
 		columns = columns.slice(0,9) + [["MOTIF DE SURVEILLANCE",994,"Motif",262]] + columns.slice(11)
 	for column: Array in columns:
 		var caption := D.text(header,column[1],26,column[0],18,C.MUTED,600,column[3])
-		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential","Poste":"RosterColumn_POSTE","Autres postes":"RosterColumnSecondaryPositions","Note":"RosterColumnNote","Forme":"RosterColumnForm"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
+		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential","Poste":"RosterColumn_POSTE","Autres postes":"RosterColumnSecondaryPositions","Moyenne":"RosterColumnNote","Forme":"RosterColumnForm"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
 		var key := str(column[2])
 		var sort := Button.new()
 		sort.name = "Sort_"+key
@@ -215,10 +215,10 @@ static func sort_value(player: Dictionary, key: String) -> Variant:
 		if _known_number(player.get("injury")) and float(player.injury) > 0: return U.fold("Blessé")
 		var status: Variant = player.get("status")
 		return U.fold(status.strip_edges()) if status is String and not status.strip_edges().is_empty() and status != "—" else null
-	if key in ["Note","Forme"]:
+	if key in ["Moyenne","Forme"]:
 		var notes: Variant = player.get("matchNotes")
 		if notes is Dictionary:
-			if key == "Note": return notes.get("moyenne")
+			if key == "Moyenne": return notes.get("moyenne")
 			var forme: Array = notes.get("forme", [])
 			if forme.is_empty(): return null
 			var somme := 0.0
@@ -274,7 +274,7 @@ func _players() -> Array:
 	return ordered_players(source,state,int(app.model.meta.get("season",1)))
 
 func _toggle_sort(key: String) -> void:
-	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Note","Forme"]
+	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme"]
 	state.sort = key
 	app.roster_sort = key
 	state.scroll = 0
@@ -295,6 +295,8 @@ func _sort_header_state() -> void:
 		var detail := "par famille puis poste" if key == "Poste" else "par "+key
 		header.button.tooltip_text = "Tri "+direction+" "+detail+" · cliquer pour inverser" if active else "Trier "+detail+" · valeurs inconnues en dernier"
 		if key == "Niveau": header.button.tooltip_text += "\nNiveau global du joueur / 100."
+		if key == "Moyenne": header.button.tooltip_text += "\nNote de match moyenne de la saison (1 à 10, 6,5 au coup d’envoi)."
+		if key == "Forme": header.button.tooltip_text += "\nCinq dernières notes de match, la plus récente à droite."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
 
 func _refresh(reveal: bool) -> void:
@@ -513,7 +515,7 @@ func _advanced() -> void:
 	var fields:=C.v(12)
 	dialog.add_child(fields)
 	_choice(fields,Rect2(0,0,500,40),"RosterAvailability",["Tous","Disponibles","Blessés"],str(state.available),"Disponibilité",func(value:String):state.available=value;_refresh(false))
-	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Note","Forme","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
+	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
 	var direction:=C.button("Changer le sens du tri",func():state.descending=not state.descending;_refresh(false))
 	direction.name="RosterDirection"
 	fields.add_child(direction)

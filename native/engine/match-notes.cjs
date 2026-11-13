@@ -217,7 +217,8 @@ function factory(){
   }
   // Rencontres de la journée (équipe type) : on ne garde que la semaine en cours.
   const cle=s.season+':'+w;
-  if(st.semaine?.cle!==cle)st.semaine={cle,comp:null,notes:[]};
+  // Nouvelle journée : la précédente est d'abord close (carrières sans `finishRound`, calendrier quotidien).
+  if(st.semaine?.cle!==cle){if(st.semaine&&!st.semaine.annoncee){try{finJournee();}catch(e){}}st.semaine={cle,comp:null,notes:[]};}
   for(const [id,n] of Object.entries(r.joueurs)){
    if(n.minutes<40)continue;
    const c=clubIdDe(l,n.cote),p=matchPlayer(l,n.cote,id);
