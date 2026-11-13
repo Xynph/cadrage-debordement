@@ -1,6 +1,7 @@
 extends SceneTree
 ## Gabi adjoint (guide/gabi_avis.gd) sur de vrais modèles de carrière Monde écrits par godot-gabi-adjoint.cjs.
 const Avis = preload("res://guide/gabi_avis.gd")
+const Semaine = preload("res://guide/gabi_semaine.gd")
 const ROUTES := ["Réception", "Bureau", "Effectif", "Composition", "Préparation", "Recrutement", "Club", "Finances", "Classements", "Formation"]
 var checks := 0
 var failures := 0
@@ -42,6 +43,7 @@ func _run() -> void:
 	_composition()
 	_recrutement()
 	_humeur()
+	_semaine()
 	print("GABI_ADJOINT %d controles, %d echec%s" % [checks, failures, "s" if failures > 1 else ""])
 	quit(1 if failures > 0 else 0)
 
@@ -190,3 +192,37 @@ func _humeur() -> void:
 		_check(Avis.finale(final), "Finale : prochain match « Finale »")
 		final.next.label = "Demi-finale"
 		_check(not Avis.finale(final), "Finale : une demi-finale n'est pas une finale")
+
+## Au Bureau, Gabi commente la semaine (gabi_semaine.gd) : prochain match, groupe, alerte, conseil avec action.
+func _semaine() -> void:
+	for name in ["creation.json", "apres-match.json"]:
+		var model := _model(name)
+		if model.is_empty(): continue
+		var synthese := Semaine.synthese(model)
+		var lignes: Array = synthese.get("lignes", [])
+		_check(lignes.map(func(l: Dictionary) -> String: return str(l.cle)) == ["match", "groupe", "alerte"], "%s · semaine : trois lignes (match, groupe, alerte)" % name)
+		for ligne: Dictionary in lignes:
+			var text := str(ligne.get("texte", ""))
+			_check(not text.is_empty() and not text.contains("%d") and not text.contains("%s"), "%s · semaine %s : texte complet : %s" % [name, ligne.cle, text])
+			_check(_sentences(text) >= 1 and _sentences(text) <= 2, "%s · semaine %s : une ou deux phrases" % [name, ligne.cle])
+			print("SEMAINE ", name, " ", ligne.cle, " : ", text)
+		var conseil: Dictionary = synthese.get("conseil", {})
+		_check(not str(conseil.get("texte", "")).is_empty() and str(conseil.get("action", {}).get("libelle", "")) == "Suivre le conseil", "%s · semaine : conseil avec « Suivre le conseil »" % name)
+		print("SEMAINE ", name, " conseil : ", conseil.get("texte", ""), " -> ", conseil.get("action", {}).get("route", conseil.get("action", {}).get("type", "")))
+		_check(Semaine.synthese(model) == synthese, "%s · semaine : déterministe" % name)
+		_check(str(conseil.get("texte", "")).length() <= 220, "%s · semaine : conseil assez court pour le carnet (%d)" % [name, str(conseil.get("texte", "")).length()])
+		var fixture := Semaine.prochain_match(model)
+		if not fixture.is_empty():
+			var own: Variant = model.club.id
+			var opponent: Dictionary = fixture.away if fixture.get("home", {}).get("id") == own else fixture.home
+			_check(str(lignes[0].texte).contains(Avis.G.club_name(opponent)), "%s · semaine : l'adversaire réel est nommé : %s" % [name, lignes[0].texte])
+	var model := _model("apres-match.json")
+	if model.is_empty(): return
+	var broke := model.duplicate(true)
+	broke.finance.cash = -250000
+	broke.meta.calendarCadence = {"matchReady": false}
+	var rouge := Semaine.synthese(broke)
+	_check(str(rouge.lignes[2].texte).contains("rouge") and str(rouge.conseil.action.get("route", "")) == "Finances", "Semaine : trésorerie négative -> alerte et conseil vers les finances")
+	var infirmerie := model.duplicate(true)
+	for i in 4: infirmerie.squad[i].injury = 3
+	_check(str(Semaine.synthese(infirmerie).lignes[2].texte).contains("blessés"), "Semaine : infirmerie pleine -> alerte")
