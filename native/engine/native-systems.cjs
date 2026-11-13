@@ -56,4 +56,9 @@ function bootstrap(){
   Object.assign(observed,original);globalThis[name]=observed;
  }`;
 }
-module.exports={files,commands,bootstrap};
+// Extend the closed registry after its definitions, away from the shared domain list.
+domains.managerPlanning=require('./manager-planning.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands]);
+if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
+module.exports={files:allFiles,commands:allCommands,bootstrap};
