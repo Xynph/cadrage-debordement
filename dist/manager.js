@@ -383,7 +383,7 @@ function setSuccessionChoice(field,value){
 }
 function successionSelect(label,field,items,selected){
  const content=items.length?items.map(p=>'<option value="'+p.id+'"'+(selected?.id===p.id?' selected':'')+'>'+
-  visualEscape(p.name)+' · '+p.age+' ans'+(field==='renew'?' · fin S'+p.contractEnd:
+  visualEscape(p.name)+' · '+p.age+' ans'+(field==='renew'?' · fin '+(typeof libelleSaison==='function'?libelleSaison:String)(p.contractEnd):
    field==='youth'?' · potentiel '+p.dev.potential:' · prime '+money(p.price))+'</option>').join(''):
   '<option value="">Aucun joueur adapté</option>';
  return '<label>'+label+'<select aria-label="'+label+'" onchange="setSuccessionChoice(\''+field+'\',this.value)" '+
@@ -413,7 +413,7 @@ function successionPlanningPanel(){
    '</select></label>').join('')+
   successionSelect('Cadre','renew',poss.renew,r)+successionSelect('Espoir','youth',poss.youth,selected.youth)+
   successionSelect('Agent libre','recruit',poss.recruit,selected.recruit)+'</div>';
- const tableHead='<thead><tr><th>Plan</th>'+Array.from({length:h},(_,i)=>'<th>Fin S'+(S.season+i)+'</th>').join('')+
+ const tableHead='<thead><tr><th>Plan</th>'+Array.from({length:h},(_,i)=>'<th>Fin '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season+i)+'</th>').join('')+
   '<th>Trésorerie V31</th><th>Écart au statu quo</th><th>Faisabilité</th></tr></thead>';
  const rows=plans.map(p=>{
   const x=p.result;

@@ -451,7 +451,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var squad := P.contracts(app.model) if due_only else all_players.duplicate()
 	if due_only:
 		var horizon := int(app.model.meta.get("season", 1)) + 1
-		var scope := "%d échéance%s jusqu’à la fin de S%d" % [squad.size(), "s" if squad.size() > 1 else "", horizon]
+		var scope := "%d échéance%s jusqu’à la fin de %s" % [squad.size(), "s" if squad.size() > 1 else "", G.season_label(horizon)]
 		D.text(wages, 345, 37, scope, 22, C.GOLD, 600, 390).name = "FinanceWagesScope"
 		D.button(wages, Rect2(750,12,230,36), "Tous les %d joueurs" % all_players.size(),
 			func(): _open_wages(app, false), false, "", true, U.GREEN, "FinanceWagesAll")

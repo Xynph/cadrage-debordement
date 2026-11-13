@@ -81,7 +81,7 @@ static func build(app: Control) -> Control:
 		career.add_child(G.wrap("%s · %s → %s" % [G.season_label(h.arrivalSeason), _club(app, h.fromClub), _club(app, h.toClub)], 15))
 	career.add_child(G.section("Les archives des clubs"))
 	for archive: Dictionary in data.get("archives", []):
-		career.add_child(G.wrap("%s · S%s · %s écritures conservées · %s bilans du conseil" % [_club(app, archive.clubId), int(archive.season), archive.ledger.size(), archive.boardHistory.size()], 14))
+		career.add_child(G.wrap("%s · %s · %s écritures conservées · %s bilans du conseil" % [_club(app, archive.clubId), G.season_label(archive.season), archive.ledger.size(), archive.boardHistory.size()], 14))
 	var seasons: Array = app.model.get("archives",{}).get("seasons",[])
 	if seasons.any(func(year: Dictionary): return year.get("japan") is Dictionary and not year.japan.get("pairs",[]).is_empty()):
 		var archives := G.button("Archives des saisons · barrages du Japon",func(): app.ClubViews.season_archives(app))
@@ -124,6 +124,6 @@ static func build(app: Control) -> Control:
 		draw.call(0)
 	recruitment.add_child(G.section("Rapports datés"))
 	for report: Dictionary in data.get("reports", []).slice(-8):
-		recruitment.add_child(G.wrap("%s · S%s semaine %s · rapport %s" % [_player(app, report.playerId), int(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
+		recruitment.add_child(G.wrap("%s · %s semaine %s · rapport %s" % [_player(app, report.playerId), G.season_label(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
 	return page
 

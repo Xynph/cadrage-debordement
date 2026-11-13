@@ -562,7 +562,7 @@ function forecastFinancialScenario(s,request={kind:'baseline'},horizon=3){
    for(const key of ['low','central','high'])minima[key]=Math.min(minima[key],cash[key]);
   }
   annual.push({season:year,payments:calendar.entries.length,calendarPolicy:calendar.policy,homes,matchDays,payroll:grossPayroll,partners:calendar.entries.length*FORECAST_PARTNERS,low:cash.low,central:cash.central,high:cash.high});
-  points.push({label:'Fin S'+year,season:year,week:calendar.weeks,...cash});
+  points.push({label:'Fin '+(typeof libelleSaison==='function'?libelleSaison:String)(year),season:year,week:calendar.weeks,...cash});
   for(let i=players.length-1;i>=0;i--)if(players[i].contractEnd!=null&&players[i].contractEnd<=year)players.splice(i,1);
  }
  const risk=quote.executable===false?'Non exécutable à ce jour':minima.low<0?'Trésorerie négative en scénario prudent':minima.central<0?'Trésorerie fragile en scénario médian':'Aucun déficit projeté dans ces hypothèses';
@@ -656,7 +656,7 @@ function renewalPriorities(s=S,horizon=3,desiredYears=2){
   const score=clamp(urgency+scarcity+impact+strength+upside+mature-retiredSoon-financialPenalty,0,100);
   const youth=s.development.academy.filter(y=>slotEligible(y,primary.slot)&&y.dev?.potential>=y.rating+5).length;
   const reasons=[
-   p.contractEnd<=s.season?'Contrat expirant cette saison':'Contrat fin S'+p.contractEnd,
+   p.contractEnd<=s.season?'Contrat expirant cette saison':'Contrat fin '+(typeof libelleSaison==='function'?libelleSaison:String)(p.contractEnd),
    primary.pos+' : besoin V30 '+primary.score+'/100',
    'Note au poste '+here+' contre '+backup+' pour la meilleure alternative disponible',
    'Relève V32 : '+futureDelta+' poste-saison(s) sécurisés sur '+horizon,
@@ -757,7 +757,7 @@ function renewalAdvisorPanel(){
    '<small>'+visualEscape(c.risk)+'</small></td></tr>').join(''):
   '<tr><td colspan="'+(o.horizon+5)+'>'+visualEscape(analysis.error)+'</td></tr>';
  const table='<div class="tablewrap"><table class="renewal-comparison"><thead><tr><th>Option</th>'+
-  Array.from({length:o.horizon},(_,i)=>'<th>Fin S'+(S.season+i)+'</th>').join('')+
+  Array.from({length:o.horizon},(_,i)=>'<th>Fin '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season+i)+'</th>').join('')+
   '<th>Prime totale</th><th>Trésorerie finale V31</th><th>Écart au statu quo</th>'+
   '<th>Faisabilité</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
  return '<section class="card renewal-advisor"><div class="cardtitle"><h2>Prioriser les prolongations</h2>'+

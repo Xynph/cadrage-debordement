@@ -414,7 +414,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 			var notice: Dictionary = linked[0].get("calendar_notice",{})
 			if not str(notice.get("opponent","")).is_empty(): title += " · " + str(notice.opponent)
 			var context: Dictionary = linked[0].get("press_invitation",{}).get("context",{})
-			if context.has_all(["season","week"]): title += " · S%d / sem. %d" % [context.season,int(context.week)+1]
+			if context.has_all(["season","week"]): title += " · %s / sem. %d" % [SeasonLabel.label(context.season),int(context.week)+1]
 			list_entries.append({"thread_header":true,"key":group.key,"opened":opened,"count":linked.size(),"title":title})
 			if not opened: continue
 		for item: Dictionary in linked: list_entries.append(item)
