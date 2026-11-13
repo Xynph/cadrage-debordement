@@ -13,7 +13,6 @@
   ],
   "weights": {
    "tests/academy-follow-up-career.cjs": 70,
-   "tests/academy-intake-career.cjs": 320,
    "tests/ai-roster-cycle.cjs": 65,
    "tests/animation-live-cut.cjs": 11,
    "tests/animation-pipeline-runner.cjs": 4,
@@ -386,7 +385,6 @@
   "budget_mb": 12288,
   "suites": {
    "tests/academy-follow-up-career.cjs": 2048,
-   "tests/academy-intake-career.cjs": 2560,
    "tests/base-names-worker.cjs": 1664,
    "tests/base-names-world-worker.cjs": 1984,
    "tests/calendar-worker.cjs": 2368,
