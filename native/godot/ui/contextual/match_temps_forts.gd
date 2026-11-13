@@ -283,7 +283,9 @@ func montre(live: Dictionary) -> Dictionary:
 	if etat != JEU or index < 0 or index >= tf.get("plans", []).size(): return live
 	# Liaison : le journal s'arrête au fait d'arrêt de jeu (rien du temps fort à venir).
 	if phase == "liaison":
-		var borne_liaison: int = maxi(int(liaison.get("arret", -1)) + 1, _vus)
+		var arrets: Array = liaison.get("arrets", [])
+		var arret_plan: int = int(arrets[_liaison_plan]) if _liaison_plan < arrets.size() else int(liaison.get("arret", -1))
+		var borne_liaison: int = maxi(arret_plan + 1, _vus)
 		if borne_liaison >= _events.size(): return live
 		var avant := live.duplicate()
 		avant["events"] = _events.slice(0, borne_liaison)
@@ -629,6 +631,7 @@ func _preparer_liaison(candidat: Dictionary) -> Dictionary:
 	if lien.is_empty(): return {}
 	lien["arret"] = int(info.get("arret", -1))
 	lien["texte"] = _nommer(str(lien.get("texte", "")))
+	lien["textes"] = (lien.get("textes", []) as Array).map(func(t: Variant) -> String: return _nommer(str(t)))
 	lien["plan_kind"] = str(info.get("plan_kind", ""))
 	_detail_precedent = str(lien.get("detail", ""))
 	return lien
@@ -688,12 +691,24 @@ func _jouer_liaison(lien: Dictionary) -> bool:
 	if not _lancer_plan_liaison(0):
 		liaison = {}
 		phase = "jeu"
+		between.forcer_etat("")
 		suivi.append({"evenement": "liaison_refusee", "debut_ms": Time.get_ticks_msec()})
 		return false
 	suivi.append({"evenement": "liaison", "type": str(lien.type), "choix": str(lien.get("choix", "")), "coupe": bool(lien.coupe), "plans": (lien.plans as Array).size(),
 		"duree_prevue": float(lien.duree), "duree_plans": (lien.plans as Array).map(func(p: Dictionary) -> float: return float(p.duree)),
-		"detail": str(lien.get("detail", "")), "cle": str(tf.get("cle", "")), "debut_ms": Time.get_ticks_msec()})
+		"detail": str(lien.get("detail", "")), "cle": str(tf.get("cle", "")), "debut_ms": Time.get_ticks_msec(), "bandeaux": (lien.get("bandeaux", []) as Array).map(func(b: Variant) -> String: return str(b.get("libelle", "")) if b is Dictionary else "")})
 	return true
+
+## Bandeau du haut pendant le plan de liaison en cours : l'arrêt de jeu et l'équipe qu'il nomme.
+func bandeau_liaison() -> String:
+	var bandeaux: Array = liaison.get("bandeaux", [])
+	if _liaison_plan >= bandeaux.size() or not bandeaux[_liaison_plan] is Dictionary: return ""
+	var b: Dictionary = bandeaux[_liaison_plan]
+	var libelle := str(b.get("libelle", ""))
+	var camp := int(b.get("equipe", -1))
+	if libelle.is_empty(): return ""
+	if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary: return "%s %s" % [libelle, S.G.club_name(_teams[camp])]
+	return libelle
 
 ## Un plan de la liaison, toujours à vitesse réelle ; le plan B part d'une coupe franche.
 func _lancer_plan_liaison(k: int) -> bool:
@@ -760,6 +775,7 @@ func _lire_liaison(reel: float) -> void:
 	phase = "jeu"
 	_sans_coupe = true
 	liaison = {}
+	between.forcer_etat("")
 	_commencer_plan()
 	if not tenue.is_empty() and stage.has_method("tenir_poses"): stage.tenir_poses(tenue)
 
@@ -1035,6 +1051,8 @@ func _habiller() -> void:
 	if view.drawer.visible and view.drawer_tab == "Journal": view._update_drawer()
 	# Pendant un temps fort, le bandeau montre l'instant rejoué, pas l'état du moteur.
 	var legende: Control = view.events.get_parent().get_parent().get_parent()
+	# Hors liaison, le bandeau du haut revient à l'état du moteur.
+	if phase != "liaison" or etat != JEU: between.forcer_etat("")
 	if etat == INTER:
 		legende.hide()
 		# Retour à l'état du moteur, avec la même écriture de l'horloge que pendant un
@@ -1067,7 +1085,11 @@ func _habiller() -> void:
 		# Liaison : le fait d'arrêt de jeu (touche, en-avant, pénalité), rien de l'action à venir ;
 		# l'horloge reste celle du temps fort précédent (arrêt de jeu).
 		if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
-		view.events.text = str(liaison.get("texte", ""))
+		var textes: Array = liaison.get("textes", [])
+		view.events.text = str(textes[_liaison_plan]) if _liaison_plan < textes.size() else str(liaison.get("texte", ""))
+		# Bandeau du haut : l'arrêt de jeu en cours (« Touche Toulouse Capitole XV »), pas la
+		# situation du moteur (ballon dans les 22…) ni ce qui va suivre.
+		between.forcer_etat(bandeau_liaison())
 		view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
 		legende.visible = not view.events.text.is_empty()
 		return

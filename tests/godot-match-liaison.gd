@@ -168,6 +168,26 @@ func run() -> void:
 	for j: Dictionary in lien.plans[0].joueurs:
 		for e: Array in j.etats: if e[1] == "joie" and str(j.id).begins_with("1-"): joie_1 = true
 	check(joie_1, "L'équipe qui a marqué se félicite avant la coupe")
+	# En-avant, puis mêlée et jeu non montrés, puis touche : le plan A reste sur l'en-avant (aucun pas vers
+	# l'alignement qui se formera ailleurs), légende et bandeau de cet arrêt ; la coupe mène à la touche.
+	donnees = temps_forts("hand-fault", [{"kind": "scrum"}, {"kind": "carry"}, {"kind": "touch", "from": {"x": 45, "y": 20}, "to": {"x": 40, "y": 0}, "cause": "carry-touch"}],
+		"lineout", {"possession": 0, "origin": {"x": 40, "y": 0}, "players": alignement})
+	donnees[0].plans[0].scene = {"possession": 0}
+	donnees[2][1].scene["team"] = 0
+	info = Liaison.analyser(donnees[0], donnees[1], donnees[2])
+	check(str(info.get("type", "")) == "touche" and bool(info.get("coupe_forcee", false)), "En-avant puis jeu puis touche : touche par coupe")
+	vus = ecran(joueurs(Vector2(15, 35), 1.0, 0), Vector2.ZERO, Vector2.ZERO)
+	lien = Liaison.construire(info, vus, {"p": Vector3(-35.0, 0.1, 0.0), "porteur": ""}, Vector2(20, 30), 31)
+	check(bool(lien.coupe) and (lien.plans as Array).size() == 2 and float(lien.plans[0].duree) <= 2.0, "Plan A court sur l'en-avant, puis coupe (%s)" % str((lien.plans as Array).map(func(p: Dictionary) -> float: return float(p.duree))))
+	var derive := 0.0
+	for j: Dictionary in lien.plans[0].joueurs:
+		derive = maxf(derive, Vector2(float(j.x[-1]) - float(j.x[0]), float(j.y[-1]) - float(j.y[0])).length())
+	check(derive < 0.5, "Plan A : personne ne part vers l'alignement à venir (%.1f m au plus)" % derive)
+	check(str(lien.bandeaux[0].libelle) == "En-avant" and int(lien.bandeaux[0].equipe) == 0 and str(lien.bandeaux[1].libelle) == "Touche" and int(lien.bandeaux[1].equipe) == 0,
+		"Bandeau : l'en-avant, puis la touche (%s)" % str(lien.bandeaux))
+	check(str(lien.textes[0]) == "Fin du temps fort." and str(lien.textes[1]).contains("touch") and int(lien.arrets[0]) == 1, "Légende et journal : l'arrêt montré dans chaque plan (%s)" % str(lien.textes))
+	var arbitre_a: Vector2 = lien.arbitre[0].lieu
+	check(arbitre_a.distance_to(Vector2(15, 35)) < 8.0, "Plan A : l'arbitre est près de l'en-avant, pas à la touche (%s)" % str(arbitre_a))
 	donnees = temps_forts("touch", [], "lineout", {"possession": 0, "origin": {"x": 40, "y": 0}, "players": alignement}, true)
 	check(Liaison.analyser(donnees[0], donnees[1], donnees[2]).is_empty(), "Suite de la même action : pas de liaison")
 	donnees = temps_forts("carry", [], "carry", {"possession": 0, "players": alignement})

@@ -387,6 +387,10 @@ func linked(view: Control) -> void:
 	var reprise := false
 	var images_liaison := 0
 	var accelere := 0
+	var bandeaux_faux: Array = []
+	var touches_vues := 0
+	var touches_mal_placees: Array = []
+	var derniere_liaison := {}
 	var fin := int(OS.get_environment("CD_LIAISON_MINUTES")) if OS.get_environment("CD_LIAISON_MINUTES").is_valid_int() else 11
 	var attendues := int(OS.get_environment("CD_LIAISON_ATTENDUES")) if OS.get_environment("CD_LIAISON_ATTENDUES").is_valid_int() else 2
 	while app.model.get("live") is Dictionary and int(app.model.live.minute) < fin and Time.get_ticks_msec() < deadline:
@@ -397,6 +401,27 @@ func linked(view: Control) -> void:
 		if regie.phase == "liaison" and regie.etat == regie.JEU:
 			images_liaison += 1
 			if not (regie.vitesse > 1.0 and view.stage._choregraphie.vitesse == 1.0): accelere += 1
+			# Bandeau du haut : l'arrêt de jeu en cours, jamais la situation du moteur.
+			var bandeau: String = regie.between.etat.text
+			if bandeau != regie.bandeau_liaison() or bandeau.is_empty() or bandeau.contains("a le ballon"):
+				if bandeaux_faux.size() < 4: bandeaux_faux.append("%s ≠ %s" % [bandeau, regie.bandeau_liaison()])
+			if not is_same(regie.liaison, derniere_liaison):
+				derniere_liaison = regie.liaison
+				if str(regie.liaison.get("type", "")) == "touche":
+					# Alignement formé à la place du moteur : lanceur sur la ligne de touche, avants entre 5 et 15 m.
+					touches_vues += 1
+					var fin_b: Dictionary = (regie.liaison.plans as Array)[-1]
+					var lanceur := str(regie.liaison.get("ramasseur", ""))
+					var cote := 0.0
+					var alignes := 0
+					for j: Dictionary in fin_b.joueurs:
+						if str(j.id) == lanceur: cote = float(j.y[-1])
+					var ligne := 0.0 if cote < 35.0 else 70.0
+					for j: Dictionary in fin_b.joueurs:
+						if absf(float(j.y[-1]) - ligne) >= 4.5 and absf(float(j.y[-1]) - ligne) <= 15.5: alignes += 1
+					if absf(cote - ligne) > 1.5 or alignes < 12: touches_mal_placees.append("lanceur à %.1f m de la touche, %d joueurs entre 5 et 15 m" % [absf(cote - ligne), alignes])
+	check(bandeaux_faux.is_empty(), "Pendant une liaison, le bandeau du haut dit l'arrêt de jeu en cours : " + str(bandeaux_faux))
+	check(touches_mal_placees.is_empty(), "Touches formées à leur place (%d vues) : %s" % [touches_vues, str(touches_mal_placees)])
 	check(images_liaison > 0 and accelere == 0, "Liaisons à vitesse réelle alors que les temps forts sont accélérés (%d images, %d accélérées)" % [images_liaison, accelere])
 	var liaisons: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison" and e.has("duree_reelle"))
 	check(liaisons.size() >= attendues, "Au moins %d liaisons en %d minutes : " % [attendues, fin] + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))

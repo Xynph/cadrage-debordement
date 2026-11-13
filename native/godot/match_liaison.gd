@@ -42,6 +42,10 @@ const RAMPE := 0.25
 const POINTE := 1.0 / (1.0 - RAMPE)
 ## Plan A (temps réel avant une éventuelle coupe), par type de liaison.
 const PLAN_A := {"touche": 2.6, "melee": 2.3, "penalite": 2.5, "penalite_main": 1.9, "renvoi": 3.0, "renvoi_22": 2.2}
+## Plan A quand du jeu non montré sépare les deux temps forts : l'arrêt du premier, seul (sifflet,
+## joueurs qui s'arrêtent), ou la joie après des points.
+const PLAN_A_ARRET := 1.7
+const PLAN_A_POINTS := 2.6
 ## Plan B, après la coupe : remise en jeu formée, derniers pas.
 const PLAN_B := 1.6
 ## Liaison continue (sans coupe) : au plus cette durée.
@@ -160,7 +164,13 @@ static func analyser(tf1: Dictionary, tf2: Dictionary, events: Array) -> Diction
 	var texte := ""
 	if arret_index >= 0 and arret_index < events.size() and events[arret_index] is Dictionary:
 		texte = str(events[arret_index].get("text", ""))
+	# Du jeu non montré entre les deux : le plan A reste sur l'arrêt qui clôt le premier temps fort (légende
+	# et bandeau de cet arrêt), la coupe mène ensuite à la remise en jeu, à l'endroit du moteur.
+	var fin_index := int(dernier.get("index", -1))
+	var fin_fait := _fait(events[fin_index]) if fin_index >= 0 and fin_index < events.size() else {}
+	var fin_texte := str(events[fin_index].get("text", "")) if fin_index >= 0 and fin_index < events.size() and events[fin_index] is Dictionary else ""
 	return {"type": type, "choix": choix, "equipe": equipe, "marque": marque, "sortie": sortie, "arret": arret_index,
+		"fin": {"index": fin_index, "kind": fin_kind, "cause": str(fin_fait.get("cause", "")), "equipe": int(fin_fait.get("team", -1)), "texte": fin_texte},
 		"arret_kind": _kind(events[arret_index]) if arret_index >= 0 and arret_index < events.size() else fin_kind,
 		"texte": texte, "scene": scene, "cible": cible, "plan_kind": kind, "points": fin_kind in POINTS or points, "coupe_forcee": jeu_entre,
 		"marqueur": int((dernier.get("scene", {}) as Dictionary).get("possession", 1 - equipe)) if dernier.get("scene") is Dictionary else 1 - equipe}
@@ -309,6 +319,12 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	var botteur := ""
 	var t_ballon := 0.0
 	var duree_a := float(PLAN_A[type])
+	# Jeu non montré entre les deux temps forts : le plan A reste sur l'arrêt du premier (sifflet,
+	# joueurs qui s'arrêtent, joie après des points), sans marcher vers une remise en jeu qui se
+	# formera ailleurs ; la coupe mène ensuite à la remise en jeu formée, à la place du moteur.
+	var forcee := bool(info.get("coupe_forcee", false))
+	var fin_tf: Dictionary = info.get("fin", {})
+	if forcee: duree_a = PLAN_A_POINTS if bool(info.get("points", false)) else PLAN_A_ARRET
 	if not sortie.is_empty():
 		var vers: Vector2 = sortie.vers
 		var dehors := vers + Vector2(0.0, -2.0 if vers.y < 35.0 else 2.0)
@@ -417,7 +433,7 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 				bal.p.append(Vector3(ballon_melee.x, ballon_melee.y, 0.12))
 		elif continue_ok:
 			_courir(j, but, t0, duree_plan_a - 0.35 - rng.randf_range(0.0, 0.3), trot)
-		else:
+		elif not forcee:
 			# Premiers pas vers la remise en jeu, au trot ou en marchant, jusqu'à la coupe.
 			var reste := maxf(0.0, duree_plan_a - t0)
 			var pas := minf(j.arret.distance_to(but), trot * 0.75 * reste)
@@ -425,14 +441,26 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 				j.courses.append({"t0": t0, "t1": duree_plan_a + 0.5, "a": j.arret, "b": j.arret + (but - j.arret).normalized() * pas * (duree_plan_a + 0.5 - t0) / maxf(0.1, reste)})
 	# --- Gestes du plan A : arbitre, capitaine, détails.
 	var arbitre_a := _place_arbitre(type, marque, dir)
+	var bras := _direction_bras(type, info, dir)
+	var bras_haut := 1.0 if type.begins_with("penalite") else 0.0
+	if forcee:
+		# Arbitre près de l'arrêt montré, bras pour la décision de cet arrêt (mêlée, pénalité).
+		arbitre_a = Vector2(clampf(repos.x - dir * 4.0, 1.0, 99.0), repos.y - 4.0 if repos.y > 10.0 else repos.y + 4.0)
+		var camp := int(fin_tf.get("equipe", -1))
+		match str(fin_tf.get("kind", "")):
+			"hand-fault": bras = Vector2(1.0 if camp == 1 else -1.0, 0.0) if camp in [0, 1] else Vector2.ZERO
+			"penalty":
+				bras = Vector2(1.0 if camp == 0 else -1.0, 0.0) if camp in [0, 1] else Vector2.ZERO
+				bras_haut = 1.0
+			_: bras = Vector2.ZERO
 	var programme: Array = [{"plan": 0, "t": 0.0, "lieu": arbitre_a, "signal": "sifflet"},
-		{"plan": 0, "t": 0.5, "lieu": arbitre_a, "signal": "bras", "direction": _direction_bras(type, info, dir), "hauteur": 1.0 if type.begins_with("penalite") else 0.0},
+		{"plan": 0, "t": 0.5, "lieu": arbitre_a, "signal": "bras", "direction": bras, "hauteur": bras_haut},
 		{"plan": 0, "t": 2.1, "lieu": arbitre_a, "signal": ""}]
 	if not botteur.is_empty():
 		trajets[botteur].etats.append([0.0, "jeu_au_pied"])
 		trajets[botteur].etats.append([0.8, "course"])
 	var capitaine := ""
-	if not str(info.choix).is_empty() and str(info.choix) != "main":
+	if not forcee and not str(info.choix).is_empty() and str(info.choix) != "main":
 		capitaine = _capitaine(trajets, equipe, ramasseur, arbitre_a, rng)
 		if not capitaine.is_empty():
 			var j: Trajet = trajets[capitaine]
@@ -454,7 +482,8 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 		var marqueur := 1 - equipe if type == "renvoi" else int(info.get("marqueur", 1 - equipe))
 		_celebration(trajets, figurants, 1 - marqueur, rng)
 	# --- Pistes du plan A.
-	var regard_a := marque if type in ["touche", "melee", "penalite", "renvoi_22"] else Vector2(50, 35)
+	var regard_b := marque if type in ["touche", "melee", "penalite", "renvoi_22"] else Vector2(50, 35)
+	var regard_a := repos if forcee else regard_b
 	var pistes_a := _pistes(trajets, duree_plan_a, regard_a, bal, porteurs, type, false)
 	pistes_a["liaison"] = type
 	var plans: Array = [pistes_a]
@@ -495,7 +524,7 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 			porteurs_b.append([0.0, tenant if not tenant.is_empty() else null])
 		if type == "melee":
 			tenue = _melee(b, equipe)
-		var pistes_b := _pistes(b, PLAN_B, regard_a, bal_b, porteurs_b, type, true)
+		var pistes_b := _pistes(b, PLAN_B, regard_b, bal_b, porteurs_b, type, true)
 		pistes_b["liaison"] = type
 		plans.append(pistes_b)
 		programme_b = [{"plan": 1, "t": 0.0, "lieu": _place_arbitre_formee(type, marque, dir, equipe), "signal": ""}]
@@ -515,8 +544,47 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	programme.append_array(programme_b)
 	var total := 0.0
 	for p: Dictionary in plans: total += float(p.duree)
+	# Par plan : légende, borne du journal et bandeau (l'arrêt de jeu en cours, jamais la suite).
+	var remise := {"libelle": libelle_remise(type, str(info.get("plan_kind", ""))), "equipe": equipe}
+	var arret_a := remise
+	if forcee: arret_a = libelle_arret(fin_tf)
+	elif not str(info.choix).is_empty(): arret_a = {"libelle": "Pénalité", "equipe": equipe}
+	var textes: Array = [str(fin_tf.get("texte", "")) if forcee else str(info.get("texte", ""))]
+	var arrets: Array = [int(fin_tf.get("index", -1)) if forcee else int(info.get("arret", -1))]
+	var bandeaux: Array = [arret_a]
+	if coupe:
+		textes.append(str(info.get("texte", "")))
+		arrets.append(int(info.get("arret", -1)))
+		bandeaux.append(remise)
 	return {"type": type, "choix": info.choix, "coupe": coupe, "plans": plans, "duree": total, "arbitre": programme,
-		"detail": detail, "tenue": tenue, "texte": str(info.get("texte", "")), "ramasseur": ramasseur, "capitaine": capitaine}
+		"detail": detail, "tenue": tenue, "texte": str(info.get("texte", "")), "textes": textes, "arrets": arrets, "bandeaux": bandeaux,
+		"ramasseur": ramasseur, "capitaine": capitaine}
+
+
+## Nom de la remise en jeu qui se forme (bandeau pendant la liaison).
+static func libelle_remise(type: String, plan_kind: String) -> String:
+	match type:
+		"touche": return "Touche"
+		"melee": return "Mêlée"
+		"penalite", "penalite_main": return "Pénalité"
+		"renvoi": return "Renvoi"
+		"renvoi_22": return "Renvoi d'en-but" if plan_kind == "goalLine" else "Renvoi aux 22"
+	return ""
+
+
+## Nom de l'arrêt de jeu qui clôt un temps fort, et l'équipe qu'il nomme (-1 : aucune).
+static func libelle_arret(fin: Dictionary) -> Dictionary:
+	var camp := int(fin.get("equipe", -1))
+	match str(fin.get("kind", "")):
+		"hand-fault": return {"libelle": "Passe en avant" if str(fin.get("cause", "")) == "forward-pass" else "En-avant", "equipe": camp}
+		"penalty": return {"libelle": "Pénalité", "equipe": camp}
+		"try": return {"libelle": "Essai", "equipe": camp}
+		"transformation": return {"libelle": "Transformation", "equipe": camp}
+		"goal": return {"libelle": "Pénalité réussie", "equipe": camp}
+		"miss": return {"libelle": "Pénalité manquée", "equipe": camp}
+		"touch": return {"libelle": "Ballon en touche", "equipe": -1}
+		"ingoal": return {"libelle": "Ballon mort", "equipe": -1}
+	return {"libelle": "Arrêt de jeu", "equipe": -1}
 
 
 static func _reajuster(j: Trajet) -> void:
