@@ -40,10 +40,17 @@ test('le drapeau, direct ou hérité par un module chargé, exclut la suite de l
     else if (excluded.includes(file)) assert.match(legacyFiles().get(file), /^via /, file);
   }
   for (const file of executed) assert.ok(!read(file).includes(FLAG), file);
-  // Chargé par chemin construit : tests/japan-match.cjs charge le harnais des anciens modes sans le nommer en dur.
+  // Chargé par chemin construit (path.join) : un module qui charge le harnais des anciens modes sans le
+  // nommer en dur hérite du drapeau. Les suites migrées chargent tests/monde-harness.cjs de la même façon.
   assert.equal(legacyFiles().get('tests/france-harness.cjs'), 'drapeau');
-  assert.equal(legacyFiles().get('tests/japan-match.cjs'), 'via tests/france-harness.cjs');
-  assert.ok(!executed.includes('tests/japan-match.cjs'));
+  const constructed = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-legacy-path-'));
+  try {
+    // Chemin assemblé ici pour que cette suite ne charge pas elle-même le harnais.
+    const parts = ['tests', 'france-harness.cjs'].map(part => JSON.stringify(part)).join(',');
+    fs.writeFileSync(path.join(constructed, 'construit.cjs'), "const path=require('node:path');require(path.join(repo," + parts + '));');
+    assert.deepEqual([...legacyFiles(constructed).values()], ['via tests/france-harness.cjs']);
+  } finally { fs.rmSync(constructed, { recursive: true, force: true }); }
+  assert.ok(!legacy.has('tests/monde-harness.cjs') && executed.includes('tests/japan-match.cjs'));
   // Le moteur et les outils de CI parlent du drapeau sans tourner dans un ancien mode : jamais « hérités ».
   for (const file of ['ci/legacy-modes.cjs', 'ci/shard-tests.cjs', 'ci/select-tests.cjs', 'native/engine/worker.cjs'])
     assert.ok(!legacy.has(file), file);

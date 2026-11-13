@@ -46,10 +46,13 @@ test('Monde : historique européen et contexte live reconnus, validation spécia
 test('Monde : préparation et instantanés utilisent la borne mondiale de semaine',()=>{
  const f=fixture();f.h.ctx.candidate=f.s;assert.doesNotThrow(()=>f.h.run('validateCollectiveSnapshot({v:1,season:1,round:46,focus:[Object.keys(COLLECTIVE_FOCI)[0],Object.keys(COLLECTIVE_FOCI)[0]],power:[.8,.8]},candidate)'));
 });
-test('France : un contexte mondial injecté ne peut pas détourner la fin de match',()=>{
- const h=require('./france-harness.cjs').context();
- h.run("start(0,'france');S.live=createRugbyMatch(nextMatch());validateCareer(S)");
- assert.throws(()=>h.run("S.live.worldContext={fixtureId:'forged',phase:'final',competitionId:'champions',week:0};validateCareer(S)"),/Contexte de compétition incompatible/);
+test('Monde : un contexte de compétition forgé ne peut pas détourner la fin de match',()=>{
+ // Carrière Monde réelle (world-champ) : le direct de la semaine, puis une finale européenne inventée.
+ const h=require('./monde-harness.cjs').context().toMatch();
+ try{
+  h.run("S.live=createRugbyMatch(nextMatch());validateCareer(S)");
+  assert.throws(()=>h.run("S.live.worldContext={...S.live.worldContext,id:'forged',fixtureId:'forged',phase:'final',competitionId:'champions'};validateCareer(S)"));
+ }finally{h.close();}
 });
 test('Monde : capacité de 1,5 million de nœuds isolée, tailles et anciennes VMs conservées',()=>{
  const f=fixture(),shape=total=>{const tree={worldMode:{version:1,catalogue:f.registry.id},commonDatabase:clone(f.s.commonDatabase),items:[]};let remaining=total-8;while(remaining>1001){tree.items.push(Array(1000).fill(false));remaining-=1001;}if(remaining)tree.items.push(Array(remaining-1).fill(false));return tree;};

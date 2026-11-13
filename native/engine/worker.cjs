@@ -595,6 +595,9 @@ function createBridge(options={}){
    allowProjectionCache=reading;
    try{return handleMeasured(request);}finally{allowProjectionCache=false;if(!reading)projectionCache.clear();}
   }
+  // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
+  // Jamais exposé par le protocole stdio (options fixées par le code appelant).
+  if(options.testVm===true)return {handle,close,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
   return {handle,close};
  }catch(e){close();throw e;}
 }
