@@ -16,7 +16,7 @@ const TYPES=Object.freeze({
  cinquante_22:'50:22',touche_5m:'Touche près de la ligne',melee_5m:'Mêlée près de la ligne',ballon_porte:'Ballon porté',franchissement:'Franchissement',
  pres_de_la_ligne:'Près de la ligne',entree_dans_les_22:'Entrée dans les 22',jeu_dans_les_22:'Jeu dans les 22',progression:'Progression',pression_dans_les_22:'Pression dans les 22',
  ballon_sauve:'Ballon sauvé',ballon_gratte_haut:'Ballon gratté',conquete_volee:'Conquête volée',ballon_recupere:'Ballon récupéré',coup_d_envoi:'Coup d’envoi',reprise:'Reprise',
- fin_de_match_serree:'Fin de match',long_jeu_au_pied:'Jeu au pied',penalite_sifflee:'Pénalité sifflée',faute_de_main:'Faute de main',sortie_en_touche:'Sortie en touche',
+ fin_de_match_serree:'Fin de match',long_jeu_au_pied:'Jeu au pied',penalite_sifflee:'Pénalité sifflée',penalite_jouee_a_la_main:'Pénalité jouée à la main',faute_de_main:'Faute de main',sortie_en_touche:'Sortie en touche',
  jeu_courant:'Jeu courant',suite_de_l_action:'L’action continue',jeu:'Le match'
 });
 
