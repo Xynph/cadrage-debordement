@@ -67,7 +67,9 @@ def build(args):
     shutil.copy2(ROOT / "ci/macos-receipt.gd", qa / "receipt.gd")
     (qa / "entry.tscn").write_text('[gd_scene format=3]\n[node name="MacReceipt" type="Node"]\n')
     preset = (source / "macos-release.cfg").read_text().replace("{{RELEASE_TEMPLATE}}", (sdk / "macos.zip").as_posix())
-    (source / "export_presets.cfg").write_text(preset.replace("{{ARCH}}", "arm64" if arch == "arm64" else "x86_64"))
+    # Official macOS templates contain the Universal 2 executable only. Node is
+    # architecture-specific; macOS selects Godot's native slice on each runner.
+    (source / "export_presets.cfg").write_text(preset.replace("{{ARCH}}", "universal"))
     editor = sdk / "editor/Godot.app/Contents/MacOS/Godot"
     app = out / "Oval Legacy 27.app"
     for name, tail in (("import", ["--import"]), ("export", ["--export-release", "macOS", str(app)])):

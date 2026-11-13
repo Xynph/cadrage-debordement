@@ -49,6 +49,7 @@ func capture(name_: String) -> void:
 
 func run() -> void:
 	check(OS.get_name() == "macOS" and not OS.has_feature("editor"), "Real exported macOS application")
+	check(OS.has_feature(OS.get_environment("OVAL_MAC_ARCH")), "Native application architecture")
 	check(output.is_absolute_path(), "Explicit disposable evidence directory")
 	if not failures.is_empty(): await finish(); return
 	if current_scene != null: current_scene.free()

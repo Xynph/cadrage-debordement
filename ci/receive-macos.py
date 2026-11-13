@@ -63,12 +63,13 @@ def receive(args):
     override.write_text('[application]\nrun/main_loop_type="MacOSReceipt"\nrun/main_scene="res://macos_qa/entry.tscn"\n')
     subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(app)], check=True)
     env = dict(os.environ, CD_GODOT_DATA_DIR=str(evidence / "private-profile"),
-               OVAL_MAC_RECEIPT=str(evidence), OVAL_MAC_PACK=str(pack), OVAL_MAC_FIXTURE="0" if args.pack else "1")
+               OVAL_MAC_RECEIPT=str(evidence), OVAL_MAC_PACK=str(pack), OVAL_MAC_FIXTURE="0" if args.pack else "1",
+               OVAL_MAC_ARCH="arm64" if meta["architecture"] == "arm64" else "x86_64")
     env.pop("CD_MODES_HERITES", None)
     for phase in ("fresh", "resume"):
         env["OVAL_MAC_PHASE"] = phase
         with (evidence / (phase + ".log")).open("w") as log:
-            subprocess.run([str(executable), "--max-fps", "10", "--windowed", "--resolution", "1440x900", "--audio-driver", "Dummy"],
+            subprocess.run(["/usr/bin/arch", "-" + env["OVAL_MAC_ARCH"], str(executable), "--max-fps", "10", "--windowed", "--resolution", "1440x900", "--audio-driver", "Dummy"],
                            env=env, cwd=app / "Contents/Resources", check=True, stdout=log, stderr=subprocess.STDOUT, timeout=900)
         report = json.loads((evidence / (phase + "-report.json")).read_text())
         assert report["passed"] and report["platform"] == "macOS" and report["display"] != "headless", "Native receipt required"

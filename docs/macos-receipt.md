@@ -2,6 +2,8 @@
 
 Le constructeur `ci/build-macos.py` exporte une application autonome par
 architecture : Apple Silicon (`arm64`, macOS 13+) et Intel (`x86_64`, macOS 12+).
+L’exécutable Godot est Universal 2, le runtime Node est propre à l’architecture.
+La recette force la tranche native au lancement, sans Rosetta.
 Godot 4.7.2 et Node 22.23.4 sont téléchargés depuis leurs distributions
 officielles, avec vérification SHA-256. Le runtime Node est livré dans
 `Contents/Helpers/node`, le moteur et ses seuls modules actifs dans
