@@ -60,9 +60,11 @@ const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.exec
 // Le mode de base, tel que le joueur le lance : aucune variable de mode n'est posée.
 delete env.CD_MATCH_TEMPS_FORTS;if(env.CD_MATCH_GESTES!=='0')delete env.CD_MATCH_GESTES;
 const started=Date.now();
-const result=spawnSync(godot,[...extra,'--windowed','--resolution',size,'--max-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts-capture.gd')],{env,encoding:'utf8',windowsHide:false,timeout:Math.max(3600000,(Number(process.env.CD_MATCH_TEMPS_FORTS_LIMITE)||2400)*1000+600000),maxBuffer:64*1024*1024});
-const output=(result.stdout||'')+(result.stderr||'');
-fs.writeFileSync(path.join(proof,'godot.log'),output);
+const logPath=path.join(proof,'godot.log');
+const logFd=fs.openSync(logPath,'w');
+let result;
+try{result=spawnSync(godot,[...extra,'--windowed','--resolution',size,'--max-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts-capture.gd')],{env,stdio:['ignore',logFd,logFd],windowsHide:false,timeout:Math.max(3600000,(Number(process.env.CD_MATCH_TEMPS_FORTS_LIMITE)||2400)*1000+600000),maxBuffer:64*1024*1024});}finally{fs.closeSync(logFd);}
+const output=fs.readFileSync(logPath,'utf8');
 fs.rmSync(work,{recursive:true,force:true});
 if(result.error){console.error(output);throw result.error;}
 const reportPath=path.join(proof,'report.json');
