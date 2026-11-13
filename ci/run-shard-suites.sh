@@ -86,7 +86,7 @@ budget() {
     # native-fiction-sheet : délai de 180 s atteint sous charge (Suites 6/10, run 43262510105) ; marge doublée, assertions inchangées.
     tests/native-fiction-sheet.cjs) echo 420s ;;
     # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
-    tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
+    tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     # JIFF en carrière Monde : une carrière world-champ jusqu'aux premières journées de Top 14, ~320 s en local sous charge.
@@ -96,6 +96,8 @@ budget() {
     # Lot 01 (Monde) : mesures locales sous charge, 2 créneaux partagés, 86 à 413 s ; délais doublés, assertions inchangées.
     tests/native-club-meetings.cjs|tests/native-club-meetings-packs.cjs|tests/native-club-support.cjs|tests/native-club-support-medical.cjs|tests/native-club-support-effects.cjs|tests/native-playbook.cjs|tests/native-coach-notes06-pack.cjs|tests/native-manager-career-pack.cjs|tests/native-player-knowledge-worker.cjs|tests/native-position-integration.cjs|tests/native-position-editions.cjs) echo 600s ;;
     tests/native-club-support-training-forecast.cjs) echo 900s ;;
+    # Passé au Monde (lot 00), 364 s en CI sous charge (run 43483, Suites 5/7) ; délai de 420 s dépassé sur deux runs de PR, 900 s, assertions inchangées.
+    tests/integration-cloud-complete.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }
