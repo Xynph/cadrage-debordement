@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Rubrique facultative `press` des packs d'identités : journalistes et
 // rédactions par identifiant stable. Identités de test manifestement inventées.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');

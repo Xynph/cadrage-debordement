@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const {createBridge}=require('../native/engine/worker.cjs');const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-academy-decisions-'));const b=createBridge({dataDir:root,seed:19,now:1700000000000});let id=0;
 function good(command,payload={}){const x=b.handle({id:++id,command,payload});assert.equal(x.ok,true,command+': '+x.error);return x.model;}

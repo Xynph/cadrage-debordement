@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),press=require('../native/engine/press.cjs');
 const ctx=vm.createContext({CDNativeHeadless:true,console,save(){},render(){}}),run=s=>vm.runInContext(s,ctx);
 run(fs.readFileSync(path.join(__dirname,'../dist/france-competition.js'),'utf8'));

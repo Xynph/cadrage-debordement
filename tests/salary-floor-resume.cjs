@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Régression (réception Cloud de #552) : après fermeture puis reprise du profil, le tout
 // premier snapshot (lecture seule) doit déjà exposer le budget réaliste — plancher salarial
 // et préavis 52 semaines — sans attendre une commande mutante. Profil et export inchangés.

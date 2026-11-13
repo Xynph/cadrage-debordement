@@ -1,0 +1,36 @@
+name: Chien de garde CI
+# Relance les exécutions restées « queued » plus de 45 min alors que des places sont
+# libres (bug GitHub constaté le 13/11 : PR figées 2 h 30). Voir ci/runs-watchdog.cjs.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Simulation sans annulation ni relance
+        type: boolean
+        default: false
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: runs-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          sparse-checkout: ci/runs-watchdog.cjs
+          sparse-checkout-cone-mode: false
+      - name: Relancer les exécutions bloquées
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY: ${{ inputs.dry_run == true && '--dry-run' || '' }}
+        run: node ci/runs-watchdog.cjs $DRY
