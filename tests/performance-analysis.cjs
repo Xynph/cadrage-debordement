@@ -1,6 +1,6 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {playNextMatch}=require('./helpers/monde-matchs.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const file=path.join(__dirname,'../native/engine/performance-analysis.cjs');
 assert.ok(fs.existsSync(file),'Le domaine consultatif des analyses doit exister.');
@@ -34,8 +34,8 @@ const {createBridge}=require('../native/engine/worker.cjs'),os=require('node:os'
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-performance-')),bridge=createBridge({dataDir:root,seed:827381,now:1700000000000});let serial=0;
 const good=(command,payload={})=>{const result=bridge.handle({id:++serial,command,payload});assert.equal(result.ok,true,command+': '+result.error);return result.model;};
 try{
- settleClubMeetings(good('new_career',{mode:'fiction',club:0}),(command,payload)=>good(command,payload));
- for(let i=0;i<5;i++){good('begin_match');good('delegate');settleClubMeetings(good('finish_round'),(command,payload)=>good(command,payload));}
+ let model=settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),(command,payload)=>good(command,payload));
+ for(let i=0;i<5;i++)model=playNextMatch(model,good);
  const text=good('export').meta.exportText,saved=JSON.parse(text).state,disk=path.join(root,'PrototypeGodot','donnees.json'),bytes=fs.readFileSync(disk);
  const real=project(saved);assert.equal(real.summary.played,5);assert.equal(real.metrics.lineouts.matches,5);assert.equal(real.metrics.penalties.matches,5);
  const own=saved.history.filter(r=>r.pair.includes(saved.club)).slice(-5);
