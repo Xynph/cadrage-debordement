@@ -57,7 +57,9 @@ budget() {
     tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
-    tests/native-nationale-reduced-bench.cjs|tests/native-match-talks.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
+    tests/native-nationale-reduced-bench.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
+    # Lot 01 (Monde) : native-match-talks 779 s sous forte charge locale (deux carrières, plusieurs semaines).
+    tests/native-match-talks.cjs) echo 900s ;;
     tests/native-club-support-season.cjs) echo 1200s ;;
     tests/native-club-world-worker.cjs) echo 900s ;;
     tests/native-club-strategy.cjs) echo 600s ;;
@@ -89,6 +91,9 @@ budget() {
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     # Tests migrés en carrière Monde : dépassent le délai par défaut (native-relationships 273 s en local).
     tests/performance-analysis.cjs|tests/native-relationships.cjs|tests/player-population-capacity.cjs) echo 600s ;;
+    # Lot 01 (Monde) : mesures locales sous charge, 2 créneaux partagés, 86 à 413 s ; délais doublés, assertions inchangées.
+    tests/native-club-meetings.cjs|tests/native-club-meetings-packs.cjs|tests/native-club-support.cjs|tests/native-club-support-medical.cjs|tests/native-club-support-effects.cjs|tests/native-playbook.cjs|tests/native-coach-notes06-pack.cjs|tests/native-manager-career-pack.cjs|tests/native-player-knowledge-worker.cjs|tests/native-position-integration.cjs|tests/native-position-editions.cjs) echo 600s ;;
+    tests/native-club-support-training-forecast.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }
