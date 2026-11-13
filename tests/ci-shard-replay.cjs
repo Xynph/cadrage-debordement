@@ -15,6 +15,17 @@ assert.equal(PROFILE.runs.length, 7, 'Sept runs de référence');
 assert.deepEqual(weights.js.runs, PROFILE.runs, 'Les poids viennent des runs rejoués');
 for (const [file, seconds] of Object.entries(WEIGHTS_SECONDS))
   assert.ok(Number.isInteger(seconds) && seconds > 1, 'poids invalide : ' + file);
+// Une suite réintégrée (migrée en carrière Monde) reprend le poids mesuré dans ces mêmes runs
+// (médiane +15 %, à l'arrondi près des durées du fixture) : sans lui elle pèse 1 s, est
+// mal placée, et le rejeu (qui, lui, connaît sa durée) ne compare plus des plans cohérents.
+{
+  const { median: exactMedian, MARGIN } = require('../ci/suite-weights.cjs');
+  // Le fixture ne garde que les durées d'au moins 5 s (0 sinon) : on ne vérifie que celles-là.
+  const stale = files.filter(f => PROFILE.suites[f] && exactMedian(PROFILE.suites[f]) >= 5).map(f => [f, WEIGHTS_SECONDS[f], Math.round(exactMedian(PROFILE.suites[f]) * (1 + MARGIN))])
+    .filter(([, w, m]) => !(Math.abs((w || 1) - m) <= 1));
+  assert.deepEqual(stale, [], 'Poids absents ou non issus des runs de référence [suite, poids, mesuré] ; ' +
+    'relancer node ci/suite-weights.cjs js <journaux des runs js.runs> --garder');
+}
 for (const [file, seconds] of Object.entries(GODOT_WEIGHTS_SECONDS))
   assert.ok(Number.isInteger(seconds) && seconds > 1, 'poids Godot invalide : ' + file);
 
