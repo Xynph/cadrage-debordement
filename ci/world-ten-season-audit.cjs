@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual, deliberately outside tests/: genuine worker commands, no result injection.
 const assert = require('node:assert/strict');

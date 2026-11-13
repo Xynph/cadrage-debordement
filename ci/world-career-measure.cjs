@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Mesure manuelle ou en CI (workflow « Mesure des clubs gérés ») : effectifs, mouvements, masses salariales et taille
 // persistée d'une carrière mondiale, saison par saison, par l'API publique du worker.
 // node ci/world-career-measure.cjs --seed 27 --mode world-champ --club 30 --seasons 3 --out /chemin/rapport.json [--keep /dossier]

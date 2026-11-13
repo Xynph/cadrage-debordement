@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{context}=require('./native-reference-harness.cjs'),d=require('../native/engine/interclub-market.cjs');
 function fixture(start='start(0)'){const h=context();h.run(start+';var depthMarket=('+d.factory.toString()+')();');return {...h,project:()=>JSON.parse(h.run('JSON.stringify(depthMarket.project())'))};}

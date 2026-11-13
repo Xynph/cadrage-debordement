@@ -6,9 +6,11 @@ on:
   # reposer l'étiquette.
   pull_request:
     types: [labeled, ready_for_review]
-  # Recette automatique non bloquante de l'EXE à chaque fusion sur main.
-  push:
-    branches: [main]
+  # Après fusion : plus à chaque fusion (rafales de fusions automatiques), mais sur
+  # créneau régulier sur le dernier main (toutes les 4 h). Mesure du 13/11 : chaque fusion
+  # relançait ~20 jobs non bloquants. Relance immédiate : workflow_dispatch.
+  schedule:
+    - cron: '53 */4 * * *'
   workflow_dispatch:
     inputs:
       source_sha:
@@ -113,7 +115,7 @@ jobs:
     name: Recette Windows EXE (non bloquante)
     if: >-
       github.event.repository.private == false && (
-        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'schedule' && github.ref == 'refs/heads/main') ||
         (github.event_name == 'workflow_dispatch' && inputs.source_sha == ''))
     runs-on: windows-2022
     timeout-minutes: 90

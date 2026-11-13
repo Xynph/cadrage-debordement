@@ -42,7 +42,8 @@ for (const {suite, variant, env} of entries) {
   const started = Date.now();
   const result = spawnSync(process.execPath, [suite], {
     cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 32 * 1024 * 1024,
-    env: {...process.env, ...(config.suiteEnvironment?.[suite] || {}), ...env,
+    // Recettes pas encore migrées vers le mode Monde : anciens modes ouverts au moteur (tests seulement).
+    env: {CD_MODES_HERITES: '1', ...process.env, ...(config.suiteEnvironment?.[suite] || {}), ...env,
       CD_GODOT_EXECUTABLE: executable, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.execPath},
   });
   const output = (result.stdout || '') + (result.stderr || '');

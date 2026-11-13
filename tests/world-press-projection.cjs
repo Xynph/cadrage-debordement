@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),a=require('node:assert/strict');
 const {test}=require('node:test'),{createBridge}=require('../native/engine/worker.cjs');
 const {createHash}=require('node:crypto');

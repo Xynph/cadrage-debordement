@@ -146,6 +146,18 @@ function createStore(dataDir) {
     fs.rmSync(target, { recursive: true });
     return { command: 'remove_checkpoint', id };
   }
-  return { project, load, checkpoint, remove, readProfile: file => read(file, LIMITS.profile) };
+  // Mode unique Monde : retire les copies dont la carrière vient d'un ancien mode (tests seulement).
+  // Seules les copies publiées et lisibles sont examinées ; une copie illisible reste en place.
+  function purge(obsolete) {
+    const removed = [];
+    for (const entry of scan().entries) {
+      if (!entry.available) continue;
+      let state;
+      try { state = JSON.parse(read(path.join(location(entry.id), 'carriere.json'), LIMITS.save).toString('utf8')).state; } catch { continue; }
+      if (obsolete(state)) { remove(entry.id, true); removed.push(entry.id); }
+    }
+    return removed;
+  }
+  return { project, load, checkpoint, remove, purge, readProfile: file => read(file, LIMITS.profile) };
 }
 module.exports = { createStore, LIMITS };

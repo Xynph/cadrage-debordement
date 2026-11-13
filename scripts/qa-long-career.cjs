@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Executes the native engine, never substitutes match scores or injects cash.
 const fs = require('node:fs');
 const os = require('node:os');

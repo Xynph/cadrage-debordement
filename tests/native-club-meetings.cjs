@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const target=path.join(__dirname,'../native/engine/club-meetings.cjs');
 assert.ok(fs.existsSync(target),'Mandatory club meetings must have a persisted native domain');
