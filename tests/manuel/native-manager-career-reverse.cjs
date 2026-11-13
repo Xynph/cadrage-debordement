@@ -1,7 +1,13 @@
 'use strict';
-const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+// HORS CI (décision d'intégration du 13/11/2026) : la saison Monde jusqu'à l'ouverture de la fenêtre de mobilité
+// (phase 'ended', une quarantaine de semaines à 6-10 s chacune) coûte à elle seule ~850 s en local, puis ~90 s par
+// next_season (deux carrières) : ~1050 s au total et plus de 2 Go de tas (JSON.parse des trois états). Le test ne se
+// découpe pas en fichiers < 600 s sans rejouer cette saison dans chacun (aucun état partagé entre suites/shards).
+// Lancement à la main : NODE_OPTIONS=--max-old-space-size=8192 node tests/manuel/native-manager-career-reverse.cjs
+// Il reste en Monde (world-champ), sans drapeau CD_MODES_HERITES ; ce répertoire n'est pas planifié par la CI.
+const {settleClubMeetings}=require('../helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {createBridge}=require('../native/engine/worker.cjs');
+const {createBridge}=require('../../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-manager-career-reverse-'));let request=0;const bridges=[];
 function open(name){const b=createBridge({dataDir:path.join(root,name),seed:13,now:1700000000000});bridges.push(b);return b;}
 const good=(b,command,payload={})=>{const r=b.handle({id:++request,command,payload});assert.equal(r.ok,true,r.error);return r.model;};

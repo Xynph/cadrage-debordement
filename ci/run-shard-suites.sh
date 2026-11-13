@@ -56,7 +56,6 @@ budget() {
     tests/world-worker-season.cjs) echo 1200s ;;
     tests/native-manager-career-worker.cjs) echo 900s ;;
     # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
-    tests/native-manager-career-reverse.cjs) echo 1800s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
     # Décisions natives et sauvegardes du direct en carrière Monde (une carrière pèse ~20 Mo de sauvegarde) : 314 s et 152 s en local sous charge.
