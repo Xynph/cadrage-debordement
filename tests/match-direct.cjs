@@ -217,21 +217,25 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       const d = direct.domination;
       assert.ok(Array.isArray(d.minutes) && d.minutes.every(v => Number.isInteger(v) && v >= -100 && v <= 100));
       assert.deepEqual(d, D.domination(vues));
-      // Chiffres : possession sur 100, plaquages tirés des courses adverses.
+      // Chiffres : possession sur 100 ; plaquages, mètres… de la feuille de statistiques
+      // (match-stats.cjs) bornée à ce qui a été montré : chaque course adverse racontée et stoppée
+      // compte au moins un plaquage, les faits du journal (en-avant, franchissements) sont repris tels quels.
       const t = Object.fromEntries(direct.tableau.map(r => [r.cle, r]));
       assert.equal(t.possession.valeurs[0] + t.possession.valeurs[1], 100);
       const lignes = vues;
       for (const cote of [0, 1]) {
         const courses = lignes.filter(l => l.kind === 'carry' && l.equipe === 1 - cote && Math.abs(l.x - l.depuis) < 22).length;
-        const recup = lignes.filter(l => l.kind === 'turnover' && l.equipe === cote).length;
-        assert.equal(t.plaquages.valeurs[cote], courses + recup, 'plaquages réussis = courses adverses stoppées + ballons récupérés');
+        assert.equal(t.plaquages.valeurs[cote], direct.feuille.equipes[cote].plaquages, 'plaquages réussis = feuille de l\'équipe');
+        assert.ok(t.plaquages.valeurs[cote] >= courses, 'au moins un plaquage par course adverse stoppée');
         assert.equal(t.en_avant.valeurs[cote], lignes.filter(l => l.kind === 'hand-fault' && l.equipe === cote).length);
+        assert.equal(t.franchissements.valeurs[cote], direct.feuille.equipes[cote].franchissements);
+        assert.ok(t.franchissements.valeurs[cote] >= lignes.filter(l => l.kind === 'carry' && l.equipe === cote && Math.abs(l.x - l.depuis) >= 22).length, 'au moins les franchissements racontés');
       }
       // Notes : joueurs du manager seulement, bornées.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
       for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
-      // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
-      const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
+      // Plaquages par joueur (colonne « Plaq. » de Mon XV, lue dans la feuille) : la somme refait le chiffre d'équipe.
+      const plaquesJoueurs = Object.values(direct.feuille.joueurs).filter(j => j.camp === camp).reduce((n, f) => n + f.plaquages, 0);
       assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
       // XV adverse : la feuille actuelle (remplacements visibles tout de suite), notes bornées ;
       // ses plaquages ne dépassent pas le chiffre d'équipe (un remplacé emporte les siens).
