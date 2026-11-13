@@ -6,12 +6,16 @@ import json
 import platform
 import shutil
 import subprocess
+import sys
 import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# This repository contains tracked bytecode from earlier builds. Importing the
+# shared builder must not rewrite it before the clean-source provenance check.
+sys.dont_write_bytecode = True
 
 
 def run(*args, **kwargs):
