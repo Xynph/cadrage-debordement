@@ -121,9 +121,22 @@ et `saisons`. Une sauvegarde en version 1 reste valide : `migrer` ajoute les cha
 le passé. `semaine.notes` est vidé à la publication (transitoire). Ordre de grandeur : +40 Ko par saison complète (mode commun).
 Rien n'est tiré au hasard et les résultats de match sont inchangés.
 
-**Vue XV type** (`native/godot/ui/equipe_type_view.gd`) : terrain vu de dessus, vertical, quinze cartes en formation (avants en haut,
-arrière au fond), joueur mis en avant (cadre or, carte détaillée à gauche), entraîneur en bas, liseré vert sur les joueurs du
-manager, compteur de sélections ; pour l'équipe de la saison, moyenne et nombre de matchs. Ouverte depuis l'actualité (vignette
-cliquable du fil « Vie du club ») et depuis Compétitions (bouton « XV type »). Écussons et portraits passent par le mécanisme des
-packs d'identité comme les autres écrans (`logoPath`, `portraitPath` projetés par identifiant), avec repli sur l'écusson et le
-portrait originaux du jeu ; aucune image réelle dans le dépôt.
+**Vue XV type** (`native/godot/ui/equipe_type_view.gd`), façon visuel « XV de la journée » publié chaque semaine pour le Top 14,
+en carte à partager 1920×1080 opaque (le jeu ne transparaît pas) :
+- en-tête « XV DE LA 7E JOURNÉE · TOP 14 » ou « XV DE LA SAISON 2026-2027 · TOP 14 », saison, critère, nombre de clubs représentés ;
+- terrain vu de dessus, vertical (en-buts, poteaux, 22 m, 10 m, médiane, tirets des 5 et 15 m), quinze cartes en formation :
+  piliers et talonneur devant, deuxième ligne, troisième ligne (6, 8, 7), charnière 9-10, ailiers 11 et 14 sur les côtés,
+  centres 12-13, arrière au fond ;
+- chaque carte : fenêtre aux couleurs du club (dégradé et bandes obliques), portrait, numéro dans un disque aux couleurs du club,
+  pastille de note (barème de couleur partagé : vert 7 et plus, or 6 à 7, rouge sous 6), écusson, nom, puis « 3e sélection »
+  (journée, en or à partir de la 3e) ou « 17 matchs » (saison) et sigle du club ; infobulle détaillée ;
+- joueur de la journée (meilleure moyenne pour la saison) : carte agrandie (×1,15), cadre et halo or, bandeau « ★ JOUEUR DE LA
+  JOURNÉE », et grande fiche à gauche (portrait 250 px sur les couleurs du club, note, compteur de sélections) ;
+- entraîneur de la journée sous la fiche (écusson, nom, club, écart) ; liseré et halo verts sur les joueurs du club du manager,
+  rappelés par leur nom ; légende de lecture à droite.
+Ouverte depuis l'actualité (vignette cliquable du fil « Vie du club ») et depuis Compétitions (bouton « XV type »). Écussons et
+portraits passent par le mécanisme des packs d'identité comme les autres écrans (`G.crest` / `G.portrait` : `logoPath`, `portraitPath`
+projetés par identifiant), avec repli sur l'écusson et le portrait originaux du jeu ; aucune image réelle dans le dépôt.
+Test : `tests/godot-equipe-type.cjs` (ouverture par les deux entrées, 15 cartes avec portrait, écusson et note, aucune carte qui
+en chevauche une autre en tenant compte de l'agrandissement, une seule vedette, écusson du jeu sans pack, logo du pack avec un pack
+de test).
