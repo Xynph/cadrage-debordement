@@ -72,6 +72,13 @@ func run() -> void:
 	deadline = Time.get_ticks_msec() + 120000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	for i in 8: await process_frame
+	# Carrière Monde arrêtée à la causerie d'avant-match : elle est passée, comme le ferait un joueur.
+	deadline = Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < deadline and (surface() == null or surface().regie == null):
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if causerie is Dictionary and not app.waiting and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		for i in 10: await process_frame
 	var view := surface()
 	if view == null or view.regie == null or not view.temps_forts_actifs():
 		fail("Le direct en temps forts ne s'est pas ouvert : " + str(app.last_error))
