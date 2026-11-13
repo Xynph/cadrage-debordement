@@ -41,12 +41,16 @@ for (const suite of config.suites) {
     entries.push({suite, variant: variant.id, env: variant.env});
   }
 }
+// Plafond par suite (ms) : 300 s par défaut ; les recettes qui préparent d'abord une carrière Monde par les
+// commandes publiques (≈46 jours avant le premier match, 100 à 170 s selon le runner) disposent de 600 s.
+// Leurs wrappers gardent un budget interne plus court (540 s) et échouent avec un message clair.
+const suiteTimeouts = {'tests/godot-reader-history.cjs': 600000, 'tests/godot-analysis-club-graphics.cjs': 600000};
 const results = [];
 for (const {suite, variant, env} of entries) {
   console.log('::group::Real SDK: ' + suite + ' / ' + variant);
   const started = Date.now();
   const result = spawnSync(process.execPath, [suite], {
-    cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 32 * 1024 * 1024,
+    cwd: root, encoding: 'utf8', timeout: suiteTimeouts[suite] || 300000, maxBuffer: 32 * 1024 * 1024,
     // Mode Monde uniquement : pas de CD_MODES_HERITES par défaut (les suites qui le portent sont exclues).
     env: {...process.env, ...(config.suiteEnvironment?.[suite] || {}), ...env,
       CD_GODOT_EXECUTABLE: executable, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.execPath},

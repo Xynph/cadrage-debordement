@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 if(!godot){console.log('SKIP native-relationships-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}

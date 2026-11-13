@@ -119,7 +119,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   if(!W.active(S))return m;
   const edition=W.edition(S),R=edition.registry,years=[2026+S.season-1,2027+S.season-1];
   const tables=Object.fromEntries([...edition.leagueIds,'guest'].map(id=>[id,W.ranked(S,id)])),summaries=new Map();
-  const clubSummary=id=>{if(!summaries.has(id)){const c=S.clubs[id],{players,...source}=R.clubs[id],table=tables[W.leagueId(S,id)];summaries.set(id,{id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points,rank:table.findIndex(x=>x.id===id)+1,presentation:source});}return summaries.get(id);};
+  const clubSummary=id=>{if(!summaries.has(id)){const c=S.clubs[id],{players,...source}=R.clubs[id],table=tables[W.leagueId(S,id)];summaries.set(id,{id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points,rank:table.findIndex(x=>x.id===id)+1,standingsOpen:table.some(x=>x.played>0),presentation:source});}return summaries.get(id);};
   const names={'jlo-d1-d2':'Barrage Japon D1 / D2','access-nationale':'Barrage Pro D2 / Nationale'},phaseLabels={'third-place':'Petite finale',promotion:'Barrage'},champPhases={quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale'};
   const dateProof=f=>scheduleProof(f,R);
   const tableRow=r=>({...clubSummary(r.id),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,pf:r.pf,pa:r.pa,bonus:r.bonus,points:r.points,form:r.form,unresolvedTie:!!(r.unresolvedTie||r.sportingTie)});
@@ -128,6 +128,8 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const confirmedResult=S.worldMode.resultConfirmed?S.live:null;
   const cadence=W.dailyStatus(S);
   if(cadence)m.meta.calendarCadence=cadence;
+  // Avant-saison (avant-saison.cjs) : la carrière commence le 13 juillet 2026, avant la semaine 0.
+  if(typeof CDPreseason!=='undefined'&&CDPreseason.pending(S)){CDPreseason.decorate(S,m);m.meta.roundLabel='Avant-saison';}
   if(confirmedResult)m.live=null;
   m.club=clubSummary(S.club);m.league=tables[W.leagueId(S)].map(tableRow);
   if(edition.version>=2)m.meta.edition=edition.mode;

@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'targeted' && '["targeted"]' || github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","parcours","layouts"]' || '["full","portraits-staff","parcours","layouts"]') }}
+        family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'targeted' && '["targeted"]' || github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","layouts"]' || '["full","portraits-staff","layouts"]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
