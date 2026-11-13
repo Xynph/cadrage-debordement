@@ -59,7 +59,7 @@
       "tests/opposition.cjs": 32,
       "tests/parallel-six-integration.cjs": 27,
       "tests/performance-analysis.cjs": 27,
-      "tests/player-population-capacity.cjs": 145,
+      "tests/player-population-capacity.cjs": 250,
       "tests/player-population-seasons.cjs": 68,
       "tests/player-population-worker.cjs": 48,
       "tests/portrait-adverse-projection.cjs": 9,
