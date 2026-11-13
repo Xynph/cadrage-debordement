@@ -2,6 +2,8 @@ name: UI Chromium mutualise - CI V3
 on:
   pull_request:
     branches: [main]
+    # Brouillons sautés (13/11) : la recette part au passage en prête.
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'dist/**'
       - 'tests/main-menu*'
@@ -47,6 +49,7 @@ concurrency:
 jobs:
   chromium:
     name: UI — Chromium mutualisé (7 parcours)
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
