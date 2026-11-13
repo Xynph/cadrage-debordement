@@ -36,11 +36,12 @@ function moteur(){
   });
   return choisi;
  }
- // Barème (étalonné sur des matchs simulés, docs/notes-de-match-20261113.md).
+ // Barème (étalonné sur des matchs simulés, docs/notes-de-match-20261113.md). `negatif` : poids d'un impact
+ // négatif avant la compression (plancher relevé : moins de notes sous 5,5).
  const B={course:.03,metresPar:24,metresMax:1.5,franchissement:.6,essai:1.5,essaiEquipe:.05,essaiSubi:-.45,
-  plaquage:.08,plaquageDomine:.05,plaquageManque:-.45,recuperation:.65,ballonPerdu:-.3,reception:.06,pied:.04,piedLong:.3,cinquante22:.5,
+  plaquage:.08,plaquageDomine:.05,plaquageManque:-.32,recuperation:.65,ballonPerdu:-.3,reception:.06,pied:.04,piedLong:.3,cinquante22:.5,
   but:.4,butManque:-.3,toucheGagnee:.045,meleeGagnee:.06,toucheVolee:.1,meleeVolee:.12,touchePerdue:-.09,meleePerdue:-.1,volee:.35,
-  jaune:-1.4,rouge:-2.8,penalite:-.45,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,base:0,reference:0};
+  jaune:-1.4,rouge:-2.8,penalite:-.32,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,negatif:.8,base:0,reference:0};
  // Décalage attendu et écart-type de l'impact par famille de poste (FAMILIES : 0 pilier,
  // 1 talonneur, 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier,
  // 7 centre, 8 arrière), mesurés sur un match complet.
@@ -48,7 +49,7 @@ function moteur(){
  const arrondi=n=>Math.round(n*10)/10;
  const borne=(n,a,b)=>Math.max(a,Math.min(b,n));
  // Note affichée d'un total brut (impact) : compression douce autour de la base.
- function echelle(brut){return arrondi(borne(NOTE_DEPART+COMPRESSION*Math.tanh(brut/COMPRESSION),NOTE_MIN,NOTE_MAX));}
+ function echelle(brut){if(brut<0)brut*=B.negatif;return arrondi(borne(NOTE_DEPART+COMPRESSION*Math.tanh(brut/COMPRESSION),NOTE_MIN,NOTE_MAX));}
  // journal : [{min,type,scene}] (l.events du direct, ou journal transitoire d'un match simulé).
  // contexte : {minutes:{id:minutes jouées}, cotes:{id:0|1}, niveaux:{id:-1..1}, score:[a,b],
  //             duree, fini, camp (0|1 : seulement cette équipe ; sinon les deux)}.
@@ -130,7 +131,7 @@ function moteur(){
    const niveau=Number.isFinite(niveaux[id])?borne(niveaux[id],-1,1)*.35:0;
    // Poste : décalage par famille (les postes n'ont pas les mêmes occasions de faits dans le
    // journal), pour que chaque poste ait la même moyenne attendue (étalonnage, voir la doc).
-   const f=familles[id],decalage=Number.isInteger(f)&&POSTE[f]?POSTE[f][0]:0;
+   const f=contexte.journalReduit?null:familles[id],decalage=Number.isInteger(f)&&POSTE[f]?POSTE[f][0]:0;
    n.impact=B.echelle*n.brut+(B.base-decalage)*part+(collectif+niveau)*part;
    n.famille=Number.isInteger(f)?f:null;
    n.note=echelle(n.impact);
@@ -221,7 +222,7 @@ function factory(){
   composition(id){if(!actifs())return 1;const f=forme(id);return f===null||formeN(id)<2?1:1+Math.max(-.03,Math.min(.04,(f-6.5)*.03));},
   // Valeur marchande (indemnité) : moyenne de saison (et, à 25 %, moyenne internationale sur
   // 3 sélections au moins), −8 % à +12 %.
-  valeur(id){if(!actifs())return 1;const m=melange(moyenne(id),intl(id,20),.25);return m===null?1:1+Math.max(-.08,Math.min(.12,(m-6.5)*.08));},
+  valeur(id){if(!actifs())return 1;const m=melange(moyenne(id),intl(id,10),.25);return m===null?1:1+Math.max(-.08,Math.min(.12,(m-6.5)*.08));},
   // Intérêt des clubs IA : note estimée du joueur, −2 à +3 points.
   interet(id){if(!actifs())return 0;const m=moyenne(id);return m===null?0:Math.max(-2,Math.min(3,(m-6.5)*2));},
   // Exigence salariale en négociation : −4 % à +6 %.
@@ -240,25 +241,26 @@ function factory(){
  // (empreinte de la rencontre, arrières et troisième ligne favorisés) —, le résultat, le
  // niveau au poste et le poste. Titulaires 80 minutes, remplaçants entrés 25 minutes.
  // matchs : [{cle, date, competition, equipes:[{nation, nom, ids, points, essais}] ×2}].
- const MAX_SELECTION=20,MAX_VUS=400;
+ const MAX_SELECTION=10,MAX_VUS=400;
  const empreinte=t=>{let h=2166136261;for(let i=0;i<t.length;i++)h=Math.imul(h^t.charCodeAt(i),16777619);return h>>>0;};
  function enregistrerSelection(matchs){
   const s=state();if(!s||!Array.isArray(matchs)||!matchs.length)return 0;
+  if(typeof CDNotesAbsentes!=='undefined'&&CDNotesAbsentes===true)return 0;
   const st=etat(s),sel=st.selection||(st.selection={lignes:{},vus:{}});
   const joueurs=new Map();for(const c of s.clubs)for(const p of c.players)joueurs.set(p.id,p);
   let n=0;
   for(const m of matchs){
    if(!m||typeof m.cle!=='string'||sel.vus[m.cle]||!Array.isArray(m.equipes)||m.equipes.length!==2)continue;
-   const cotes={},minutes={},niveaux={},familles={},journal=[],on=m.equipes.map(e=>e.ids.slice(0,15));
+   const cotes={},minutes={},niveaux={},journal=[],on=m.equipes.map(e=>e.ids.slice(0,15));
    m.equipes.forEach((e,side)=>{
     const notes=[];
-    e.ids.forEach((id,k)=>{cotes[id]=side;minutes[id]=k<15?80:25;const p=joueurs.get(id);if(p){notes.push([id,roleNote(p)]);if(Number.isInteger(p.fam))familles[id]=p.fam;}});
+    e.ids.forEach((id,k)=>{cotes[id]=side;minutes[id]=k<15?80:25;const p=joueurs.get(id);if(p){notes.push([id,roleNote(p)]);}});
     const moy=notes.length?notes.reduce((a,[,r])=>a+r,0)/notes.length:0;for(const [id,r] of notes)niveaux[id]=Math.max(-1,Math.min(1,(r-moy)/10));
     const poids=on[side].map((id,slot)=>id==null?0:slot>=8?3:slot>=5?2:1),total=poids.reduce((a,b)=>a+b,0);
     for(let k=0;k<(e.essais|0)&&total>0;k++){let x=empreinte(m.cle+'|'+e.nation+'|'+k)%total,slot=0;while(x>=poids[slot]){x-=poids[slot];slot++;}
      journal.push({min:0,type:'try',scene:{kind:'try',team:side,actor:on[side][slot],on,score:[0,0]}});}
    });
-   const r=calc.noter(journal,{cotes,minutes,niveaux,familles,score:[m.equipes[0].points|0,m.equipes[1].points|0],fini:true});
+   const r=calc.noter(journal,{cotes,minutes,niveaux,journalReduit:true,score:[m.equipes[0].points|0,m.equipes[1].points|0],fini:true});
    m.equipes.forEach((e,side)=>{
     const adverse=String(m.equipes[1-side].nom||m.equipes[1-side].nation).slice(0,60);
     for(const id of e.ids){
@@ -409,6 +411,7 @@ function factory(){
  }
  function execute(){throw Error('Notes de match : aucune commande.');}
  function installHooks(){
+  if(typeof CDNotesAbsentes!=='undefined'&&CDNotesAbsentes===true)return true;
   if(typeof captureMatchAction!=='function'||captureMatchAction.__matchNotes)return true;
   // Journal des faits des matchs simulés : la même scène que le direct, gardée sur le match
   // (transitoire, jamais sauvegardée : un match simulé ne reste pas dans l'état).

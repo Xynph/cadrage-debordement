@@ -1,38 +1,23 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde (préparation Monde à écrire, voir #621).
 // Notes de match dans le vrai jeu Godot : effectif (moyenne, forme) et fiche joueur (moyenne,
-// forme, historique). Le profil est préparé par le vrai moteur (quelques journées déléguées).
+// forme, historique, panneau « Sélection »). Le profil est une carrière Monde (`world-champ`) préparée par
+// le vrai moteur : le calendrier avance jour par jour jusqu'au jour de chaque match, déjà délégué
+// (tests/helpers/carriere-monde.cjs).
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const { test } = require('node:test');
-const { createBridge } = require('../native/engine/worker.cjs');
-const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
-const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
+const M = require('./helpers/carriere-monde.cjs');
 const godot = process.env.CD_GODOT_EXECUTABLE;
 const racine = path.resolve(__dirname, '..');
 
-function preparer(profil, journees = 5) {
-  const bridge = createBridge({ dataDir: profil, seed: 4242, now: 1794315600000 });
-  let id = 0, model;
-  const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, command + ' : ' + r.error); model = r.model; return model; };
+function preparer(profil, matchs = 3) {
+  const jeu = M.ouvrir({ dataDir: profil });
   try {
-    call('new_career', { mode: 'common', club: 29 });
-    for (let j = 0, garde = 0; j < journees && garde < 40; garde++) {
-      model = settleClubMeetings(model, call) || model;
-      if (model.next) {
-        if (!model.selection.valid) call('auto_lineup');
-        model = skipMatchTalk(call('begin_match'), call);
-        call('delegate'); j++;
-        model = skipMatchTalk(model, call);
-        model = settleClubMeetings(model, call) || model;
-      }
-      const r = bridge.handle({ id: ++id, command: 'finish_round', payload: {} });
-      if (r.ok) model = r.model;
-    }
-    call('save');
+    const model = M.jouer(jeu, M.creer(jeu), matchs);
+    jeu.call('save');
     return model;
-  } finally { bridge.close(); }
+  } finally { jeu.fermer(); }
 }
 
 test('Notes de match : effectif et fiche joueur dans le vrai jeu', { skip: !godot && 'SDK Godot requis' }, () => {
@@ -44,7 +29,7 @@ test('Notes de match : effectif et fiche joueur dans le vrai jeu', { skip: !godo
     assert.ok(Object.keys(model.clubLife.matchNotes.joueurs).length >= 15, 'notes préparées');
     const graphique = process.env.CD_NOTES_GRAPHICS === '1';
     const resultat = spawnSync(godot, [...(graphique ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1920x1080'] : ['--headless']), '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-notes-match.gd')],
-      { cwd: racine, encoding: 'utf8', timeout: 240000, env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_NOTES_OUTPUT: sortie } });
+      { cwd: racine, encoding: 'utf8', timeout: 420000, env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_NOTES_OUTPUT: sortie } });
     const journal = (resultat.stdout || '') + (resultat.stderr || '');
     if (resultat.error) throw resultat.error;
     assert.doesNotMatch(journal, /SCRIPT ERROR|Parse Error/, journal.slice(-3000));

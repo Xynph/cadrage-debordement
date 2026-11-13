@@ -184,6 +184,8 @@ function createBridge(options={}){
   if(options.matchCourses===false||process.env.CD_MATCH_COURSES==='0')ctx.MATCH_COURSES_DECOUPEES=false;
   // Notes de match : CD_NOTES_EFFETS=0 (ou l'option notesEffets:false) garde les notes sans leurs effets (mesure d'équilibre).
   if(options.notesEffets===false||process.env.CD_NOTES_EFFETS==='0')ctx.CDNotesEffets=false;
+  // Pas de domaine des notes du tout (option notes:false) : référence des tests « aucun résultat changé ».
+  if(options.notes===false)ctx.CDNotesAbsentes=true;
   // Carrières aux salaires liés au niveau : plancher des discussions de contrat, avant tout habillage de la validation.
   run(require('./club-budget.cjs').VALIDATION);
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);

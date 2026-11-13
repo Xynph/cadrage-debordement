@@ -282,8 +282,9 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	else:
 		D.text(card,478,145,"—",64,C.MUTED,700,124,HORIZONTAL_ALIGNMENT_CENTER).name = "FullPlayerNoteAverage"
 	var matchs := int(notes.get("matchs",0))
-	D.text(card,416,182,"MOYENNE SAISON",22,C.MUTED,600,176).tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
-	if matchs>0: D.text(card,416,208,"%d match%s" % [matchs,"s" if matchs>1 else ""],19,C.MUTED,500,176).name = "FullPlayerNoteMatches"
+	var legende := D.text(card,416,182,"MOYENNE SAISON" + (" · %d match%s" % [matchs,"s" if matchs>1 else ""] if matchs>0 else ""),20,C.MUTED,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
+	legende.name = "FullPlayerNoteMatches"
+	legende.tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
 	NotesMatch.pastilles(card,Vector2(600,96),NotesMatch.forme(notes),Vector2(54,50),7.0,0.7).name = "FullPlayerForm"
 	var titres := int(notes.get("hommeDuMatch",0))
 	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else ""),22,C.GOLD if titres>0 else C.MUTED,600,300)
@@ -342,7 +343,7 @@ static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
 		return
 	NotesMatch.pastille(card,Rect2(24,70,86,44),float(sel.get("moyenne",6.5)),0.7).name = "PlayerSelectionAverage"
 	var n := int(sel.get("matchs",0))
-	D.text(card,122,90,"MOYENNE · %d sélection%s" % [n,"s" if n>1 else ""],17,C.MUTED,600,170)
+	D.text(card,122,90,("MOYENNE · %d DERNIÈRES" % n) if n>=10 else ("MOYENNE · %d sélection%s" % [n,"s" if n>1 else ""]),17,C.MUTED,600,170).tooltip_text = "Moyenne des notes des %d dernières sélections (notes de 1 à 10)." % n
 	var titres := int(sel.get("hommeDuMatch",0))
 	if titres>0: D.text(card,122,112,"%d× HOMME DU MATCH" % titres,17,C.GOLD,600,170)
 	NotesMatch.pastilles(card,Vector2(300,74),sel.get("forme",[]) if sel.get("forme") is Array else [],Vector2(42,36),5.0,0.5).name = "PlayerSelectionForm"
