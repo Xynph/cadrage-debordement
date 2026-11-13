@@ -47,6 +47,8 @@ budget() {
     tests/world-worker-season.cjs) echo 1200s ;;
     tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
+    # Saison France complète puis choix de la génération (~270 s en local).
+    tests/academy-intake-career.cjs) echo 600s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
     tests/native-nationale-reduced-bench.cjs|tests/native-match-talks.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
     tests/native-club-support-season.cjs) echo 1200s ;;
