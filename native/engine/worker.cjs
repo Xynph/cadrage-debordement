@@ -561,8 +561,10 @@ function createBridge(options={}){
       if(process.env.CD_DIRECTIONS_CLUBS!=='0')run('nativeClubDirections.create(S,nativeCreationVariation.seed)');
       delete ctx.nativeCreationVariation;
       // Départ de la partie (reprise.cjs) : juillet par défaut, date du club, ou veille de la 1re journée.
-      ctx.nativeRepriseStart=payload.start??'premiers-clubs';
-      if(run("CDWorldCareer.active(S)&&!!CDReprise.create(S,nativeRepriseStart)&&nativeRepriseStart==='veille'")){
+      // Sans « start » (outils, tests hérités, intégrations), la carrière s'ouvre comme avant, le 17 août,
+      // sans préparation choisie : les séquences figées restent identiques. L'écran de création l'envoie toujours.
+      ctx.nativeRepriseStart=payload.start??null;
+      if(ctx.nativeRepriseStart&&run("CDWorldCareer.active(S)&&!!CDReprise.create(S,nativeRepriseStart)&&nativeRepriseStart==='veille'")){
        // Préparation gérée par le staff : semaines simulées jusqu'à la veille de la 1re rencontre.
        for(let i=0;i<12&&run("S.phase!=='ended'&&!S.live&&!nextMatch()");i++){run('finishRound();nativeSystems.domain("press").observeInvitation();');}
        run(`if(S.worldMode.day!==undefined){const f=CDWorldCareer.userFixture(S);for(let i=0;f&&i<7;i++){const d=CDWorldCareer.dailyStatus(S),today=CDWorldCareer.calendarToday(S);if(!d.canAdvance||new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10)>=f.date)break;CDWorldCareer.advanceDay(S,today);}}`);

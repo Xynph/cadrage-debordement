@@ -18,8 +18,8 @@ function career(t,payload){
 }
 const REAL_ELITE={0:'2026-07-27',1:'2026-07-22',2:'2026-07-23',3:'2026-07-15',4:'2026-07-20',5:'2026-07-13',6:'2026-07-16',7:'2026-07-13',8:'2026-08-03',9:'2026-07-13',10:'2026-07-28',11:'2026-07-27',12:'2026-07-15',13:'2026-07-15'};
 
-test('départ par défaut : lundi 13 juillet 2026, préparation vécue, décision et internationaux',t=>{
- const {go,send,state,model}=career(t,{});
+test('départ par défaut de l’écran : lundi 13 juillet 2026, préparation vécue, décision et internationaux',t=>{
+ const {go,send,state,model}=career(t,{start:'premiers-clubs'});
  let m=model,r=m.clubLife.reprise;
  assert.equal(m.meta.legacyModes,false);
  assert.equal(r.start,'premiers-clubs');
@@ -108,6 +108,12 @@ test('départ « Reprise de ton club » puis préparation jouée : effets, jeune
  assert.equal(send('import',{text}).ok,true);
  const broken=JSON.parse(text);broken.state.reprise.plan.clubs[0][2]=999;
  assert.equal(send('import',{text:JSON.stringify(broken)}).ok,false,'plan corrompu refusé');
+});
+
+test('sans départ demandé (outils, tests hérités) : ouverture inchangée au 17 août',t=>{
+ const {model}=career(t,{});
+ assert.equal(model.clubLife.reprise.available,false);
+ assert.equal(model.meta.calendarToday,'2026-08-17');
 });
 
 test('départ « Veille de la 1re journée » : préparation gérée par le staff, déterministe',t=>{

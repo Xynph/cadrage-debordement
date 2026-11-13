@@ -14,6 +14,11 @@ Décisions de Léo du 13 novembre 2026 (14h42, précisées à 14h44 et 14h45). M
 | Reprise de ton club | date du club (réelle pour l’Élite 2026, sinon habituelle) | la date est fixée ; le groupe et les jeunes restent à décider jusqu’à la reprise |
 | Veille de la 1re journée | veille du premier match officiel | préparation gérée par le staff (date habituelle, jeunes proposés), simulée |
 
+L’écran de création envoie toujours `start` (défaut : `premiers-clubs`). Une commande
+`new_career` **sans** `start` (outils, tests hérités, intégrations) ouvre la carrière comme
+avant, le 17 août, sans préparation choisie ni effet de reprise : les séquences figées des
+autres suites restent identiques.
+
 Entre le départ et l’ouverture du calendrier du moteur (lundi 17 août 2026, semaine 0), la
 carrière vit dans une **préparation d’avant-saison** : `meta.calendarToday` affiche la date de
 juillet-août, « Jour suivant » avance d’un jour (`advance_day`), et `reprise_advance`

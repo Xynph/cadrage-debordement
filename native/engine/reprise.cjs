@@ -287,7 +287,7 @@ function factory(){
   const s=typeof S==='undefined'?null:S;if(!active(s)||!l?.collectivePreparation?.power)return;
   l.collectivePreparation.power=l.collectivePreparation.power.map((v,side)=>{
    const w=windowFactor(s,l.pair[side]);if(!w)return v;
-   const row=buildFromPlan(s,w.r);return Math.round(clamp(v*(1+row.fx.automatismes/100*w.f),.4,1.1)*100)/100;
+   const row=buildFromPlan(s,w.r);return Math.round(clamp(v*(1+row.fx.automatismes/100*w.f),.55,1)*100)/100; // bornes de la sauvegarde
   });
  }
 
