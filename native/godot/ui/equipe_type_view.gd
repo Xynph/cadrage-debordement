@@ -231,7 +231,8 @@ func _entete(equipe: Dictionary) -> void:
 	var sous := ""
 	if mode == "journee":
 		titre = "XV DE LA %s JOURNÉE" % _ordinal(int(equipe.get("numero", 1))).to_upper()
-		sous = "Saison %s · note du match · %d clubs représentés" % [str(equipe.get("libelleSaison", "")), _nombre_clubs(joueurs)]
+		var libelle := str(equipe.get("libelleSaison", ""))
+		sous = "%s · note du match · %d clubs représentés" % [libelle if libelle.begins_with("Saison") else "Saison " + libelle, _nombre_clubs(joueurs)]
 	else:
 		titre = "XV DE LA SAISON %s" % str(equipe.get("libelleSaison", ""))
 		sous = "Moyenne de la saison régulière · %d journées · %d clubs représentés" % [int(equipe.get("journees", 0)), _nombre_clubs(joueurs)]
@@ -366,7 +367,7 @@ func _carte(j: Dictionary, taille: Vector2) -> Control:
 	_ajuste(_texte(corps, Rect2(8, HAUT_PORTRAIT + 1, taille.x - 14, 25), _court(str(j.get("name", ""))), 21, Tableau.IVOIRE, HORIZONTAL_ALIGNMENT_LEFT, Tableau.CHIFFRES, "Nom"), 15)
 	if etoile:
 		_boite(corps, Rect2(0, taille.y - 20, taille.x, 20), Tableau.OR, 0)
-		_ajuste(_texte(corps, Rect2(4, taille.y - 20, taille.x - 8, 20), "★ JOUEUR DE LA JOURNÉE" if mode == "journee" else "★ MEILLEURE MOYENNE", 13, Tableau.FOND, HORIZONTAL_ALIGNMENT_CENTER, Tableau.CHIFFRES, "Legende"), 11)
+		_ajuste(_texte(corps, Rect2(4, taille.y - 20, taille.x - 8, 20), "★ JOUEUR DE LA JOURNÉE" if mode == "journee" else "★ MEILLEURE MOYENNE", 12, Tableau.FOND, HORIZONTAL_ALIGNMENT_CENTER, Tableau.CHIFFRES, "Legende"), 11)
 	else:
 		var selections := int(j.get("selections", 0))
 		var legende := ("%s sélection" % _ordinal(selections)) if mode == "journee" else "%d matchs" % int(j.get("matchs", 0))
@@ -420,7 +421,7 @@ func _gauche(equipe: Dictionary) -> void:
 	_entraineur(equipe)
 	var mien := _boite(scene, Rect2(28, 880, 408, 84), Color("0f1d17"), 12, Tableau.VERT if not nous.is_empty() else TRAIT, 3 if not nous.is_empty() else 2)
 	mien.name = "EquipeTypeManager"
-	var phrase := "Aucun joueur de votre club cette fois." if nous.is_empty() else "%d joueur%s de %s : %s" % [nous.size(), "s" if nous.size() > 1 else "", club_manager, ", ".join(nous)]
+	var phrase := "Aucun joueur de votre club cette fois." if nous.is_empty() else "%d joueur%s de %s : %s" % [nous.size(), "s" if nous.size() > 1 else "", club_manager, ", ".join(nous.slice(0, 3)) + (" et %d autre%s" % [nous.size() - 3, "s" if nous.size() > 4 else ""] if nous.size() > 3 else "")]
 	if mode == "saison" and nous.is_empty(): phrase = "Aucun joueur de votre club dans le XV de la saison."
 	_paragraphe(mien, Rect2(16, 6, 376, 72), phrase, 20, Tableau.VERT if not nous.is_empty() else Tableau.FAIBLE).name = "ManagerTexte"
 	var regle := "Un joueur par poste, sur la note du match (40 minutes jouées au moins) ; à égalité : minutes, essais." if mode == "journee" else "Moyenne de la saison régulière, la moitié des journées au moins ; à égalité : sélections en XV de la journée, puis matchs."

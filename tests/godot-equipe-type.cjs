@@ -1,7 +1,8 @@
 'use strict';
 // XV type dans le vrai jeu Godot : « XV de la journée » et « XV de la saison », quinze cartes, entrées
 // depuis l'actualité (vignette) et Compétitions ; écusson du jeu sans pack, logo du pack avec pack.
-// Le profil est préparé par le vrai moteur (quelques journées déléguées) ; l'équipe de la saison
+// Le profil est préparé par le vrai moteur en carrière Monde (mode unique, consigne de Léo du 13/11 : aucun
+// test dans l'ancien mode France), club de l'élite française, quelques journées déléguées ; l'équipe de la saison
 // (une saison complète prend plus d'un quart d'heure) est posée par un import signé à partir de l'équipe
 // de la journée, et deux joueurs du club du manager sont glissés dans le XV pour contrôler le liseré.
 const assert = require('node:assert/strict');
@@ -17,14 +18,17 @@ const POSTES = ['Pilier gauche', 'Talonneur', 'Pilier droit', 'Deuxième ligne',
 
 function signe(document, change) { const doc = structuredClone(document); change(doc.state); const text = JSON.stringify(doc.state); let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); doc.checksum = (h >>> 0).toString(16).padStart(8, '0'); return JSON.stringify(doc); }
 
-function preparer(profil, { journees = 4, fixture = null, pack = false } = {}) {
+// Club de l'élite française dans la carrière Monde (championnat « elite » : le Top 14 avec le pack Rugby Réel).
+const CLUB = Number(process.env.CD_EQUIPE_CLUB || 0);
+
+function preparer(profil, { journees = 3, fixture = null, pack = false } = {}) {
   const bridge = createBridge({ dataDir: profil, seed: 4242, now: 1794315600000 });
   let id = 0, model;
   const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, command + ' : ' + r.error); model = r.model; return model; };
   try {
-    if (fixture) call('new_career', { mode: 'common', club: 29 });
+    if (fixture) call('new_career', { mode: 'world-champ', club: CLUB });
     else {
-      call('new_career', { mode: 'common', club: 29 });
+      call('new_career', { mode: 'world-champ', club: CLUB });
       for (let j = 0, garde = 0; j < journees && garde < 40; garde++) {
         model = settleClubMeetings(model, call) || model;
         if (model.next) {
@@ -39,30 +43,32 @@ function preparer(profil, { journees = 4, fixture = null, pack = false } = {}) {
       }
     }
     const doc = JSON.parse(fixture ? fs.readFileSync(fixture, 'utf8') : call('export').meta.exportText);
+    const maLigue = (model.clubLife.matchNotes.equipeType.ligues.find(l => l.manager) || {}).id;
+    assert.equal(maLigue, 'elite', 'club du manager en élite française');
     const texte = signe(doc, s => {
       const st = s.matchNotes, mon = s.club;
       const choisir = (pos, sauf) => s.clubs[mon].players.find(p => p.pos === pos && !sauf.includes(p.id));
       for (const [lg, eq] of Object.entries(st.equipes)) {
-        if (lg !== 'accession') continue;
+        if (lg !== maLigue) continue;
         const pris = [...eq.ids];
         for (const k of [3, 10, 8]) { const p = choisir(POSTES[k], pris); if (p) { eq.ids[k] = p.id; eq.clubs[k] = mon; } }
       }
       if (!fixture) for (const [lg, eq] of Object.entries(st.equipes)) {
         st.saisons.push({ saison: s.season, ligue: lg, ids: eq.ids.slice(), moy: eq.notes.map(n => Math.max(55, n - 6)), matchs: eq.ids.map((_, k) => 14 + (k % 5)), sel: eq.ids.map((_, k) => k % 4), clubs: eq.clubs.slice(), journees: 20 });
-      } else for (const f of st.saisons) if (f.ligue === 'accession') { const pris = [...f.ids]; for (const k of [3, 10]) { const p = choisir(POSTES[k], pris); if (p) { f.ids[k] = p.id; f.clubs[k] = mon; } } }
+      } else for (const f of st.saisons) if (f.ligue === maLigue) { const pris = [...f.ids]; for (const k of [3, 10]) { const p = choisir(POSTES[k], pris); if (p) { f.ids[k] = p.id; f.clubs[k] = mon; } } }
     });
     call('import', { text: texte });
     if (pack) {
-      const media = require('../native/engine/media-packs.cjs'), db = require('../dist/rugby-common-rosters.js'), zlib = require('node:zlib');
+      const media = require('../native/engine/media-packs.cjs'), zlib = require('node:zlib');
       const morceau = (type, data) => { const t = Buffer.from(type), l = Buffer.alloc(4), c = Buffer.alloc(4); l.writeUInt32BE(data.length); c.writeUInt32BE(media.crc32(Buffer.concat([t, data])) >>> 0); return Buffer.concat([l, t, data, c]); };
       const entete = Buffer.alloc(13); entete.writeUInt32BE(8, 0); entete.writeUInt32BE(8, 4); entete[8] = 8; entete[9] = 2;
       const lignes = Buffer.concat(Array.from({ length: 8 }, () => Buffer.concat([Buffer.from([0]), Buffer.alloc(24, 0xc8)])));
       const pixel = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), morceau('IHDR', entete), morceau('IDAT', zlib.deflateSync(lignes)), morceau('IEND', Buffer.alloc(0))]);
       const zip = items => { let offset = 0; const locals = [], centrals = []; for (const item of items) { const n = Buffer.from(item.name), data = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data || ''), crc = media.crc32(data), local = Buffer.alloc(30), central = Buffer.alloc(46); local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6); local.writeUInt32LE(crc, 14); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(n.length, 26); central.writeUInt32LE(0x02014b50); central.writeUInt16LE(0x314, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(0x800, 8); central.writeUInt32LE(crc, 16); central.writeUInt32LE(data.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(n.length, 28); central.writeUInt32LE((0x81a4 * 65536) >>> 0, 38); central.writeUInt32LE(offset, 42); locals.push(local, n, data); centrals.push(central, n); offset += local.length + n.length + data.length; } const cd = Buffer.concat(centrals), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(items.length, 8); end.writeUInt16LE(items.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16); return Buffer.concat([...locals, cd, end]); };
-      const manifest = { schema: 'cd-identity-pack-v1', id: 'essai-xv', name: 'Identités test', version: '1', databaseId: db.id, rightsStatus: 'test-local', clubs: Array.from({ length: 30 }, (_, i) => ({ id: i, logo: 'image' })), players: [], assets: [{ id: 'image', path: 'médias/image.png', sha256: crypto.createHash('sha256').update(pixel).digest('hex'), bytes: pixel.length }] };
+      const manifest = { schema: 'cd-identity-pack-v1', id: 'essai-xv', name: 'Identités test', version: '1', databaseId: model.meta.champDatabase.id, rightsStatus: 'test-local', clubs: model.clubLife.matchNotes.equipeType.ligues.flatMap(l => [...(l.journee?.joueurs || []), ...(l.saison?.joueurs || [])].map(j => j.club.id)).concat(model.club?.id ?? []).filter((v, i, t) => t.indexOf(v) === i).map(id => ({ id, logo: 'image' })), players: [], assets: [{ id: 'image', path: 'médias/image.png', sha256: crypto.createHash('sha256').update(pixel).digest('hex'), bytes: pixel.length }] };
       const fichier = path.join(os.tmpdir(), 'rl27-xv-godot-pack-' + process.pid + '.zip');
       fs.writeFileSync(fichier, zip([{ name: 'pack.json', data: JSON.stringify(manifest) }, { name: 'médias/image.png', data: pixel }]));
-      try { const apercu = call('pack_inspect', { path: fichier }).packs.preview; call('pack_install', { path: fichier, digest: apercu.digest }); call('pack_select', { id: apercu.id, scope: 'career' }); } finally { fs.rmSync(fichier, { force: true }); }
+      try { const apercu = call('pack_inspect', { path: fichier, mode: 'world-champ' }).packs.preview; call('pack_install', { path: fichier, digest: apercu.digest }); call('pack_select', { id: apercu.id, scope: 'career', mode: 'world-champ' }); } finally { fs.rmSync(fichier, { force: true }); }
     }
     call('save');
     return model;

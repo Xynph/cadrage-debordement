@@ -54,12 +54,21 @@ func verifier_equipe(vue: Control, mode: String) -> void:
 	verifier(vue.find_children("Note", "", true, false).size() >= 15, mode + " : pastilles de note")
 	var titre: Label = vue.find_child("EquipeTypeTitre", true, false)
 	verifier(titre != null and (titre.text.begins_with("XV DE LA") ), mode + " : en-tête « %s »" % (titre.text if titre else ""))
-	for c: Node in cartes:
-		var nom: Label = c.get_node_or_null("Nom")
+	verifier(vue.find_child("EquipeTypeFond", true, false) != null, mode + " : fond opaque de la carte à partager")
+	var agrandies := 0
+	for c: Control in cartes:
+		var nom: Label = c.find_child("Nom", true, false)
 		verifier(nom != null and not nom.text.is_empty(), "nom du joueur sur la carte " + str(c.name))
-		var zone := Rect2(c.position, c.size)
-		for autre: Node in cartes:
-			if autre != c and zone.intersects(Rect2(autre.position, autre.size)): verifier(false, "cartes qui se chevauchent : %s / %s" % [c.name, autre.name])
+		verifier(c.find_child("Portrait", true, false) != null, "portrait sur la carte " + str(c.name))
+		verifier(c.get_node_or_null("Ecusson") != null, "écusson sur la carte " + str(c.name))
+		verifier(c.get_node_or_null("Note") != null, "pastille de note sur la carte " + str(c.name))
+		if c.scale.x > 1.01: agrandies += 1
+		# Rectangle visible (la carte de la vedette est agrandie autour de son centre).
+		var zone := Rect2(c.position + c.size * 0.5 - c.size * c.scale * 0.5, c.size * c.scale)
+		for autre: Control in cartes:
+			var z2 := Rect2(autre.position + autre.size * 0.5 - autre.size * autre.scale * 0.5, autre.size * autre.scale)
+			if autre != c and zone.intersects(z2): verifier(false, "cartes qui se chevauchent : %s / %s" % [c.name, autre.name])
+	verifier(agrandies == 1, "%s : une seule carte agrandie (vedette) : %d" % [mode, agrandies])
 	var ec := ecussons(vue)
 	if avec_pack:
 		verifier(int(ec.pack) >= 15, "%s : logo du pack sur les cartes (%s)" % [mode, str(ec)])

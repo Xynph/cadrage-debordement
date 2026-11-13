@@ -460,7 +460,7 @@ function factory(){
    return r;
   };
   const nomHorsClub=id=>st.recompenses.find(r=>r.id===id)?.nom||'';
-  const club=i=>{const c=s.clubs[i];if(!c)return {id:i,name:'',abbr:'XV',color:'#b94850'};let pres=null;try{pres=typeof CDFranceClubs!=='undefined'&&!s.customCompetition?CDFranceClubs.forCareer(s,i):c;}catch(e){pres=c;}
+  const club=i=>{const c=s.clubs[i];if(!c)return {id:i,name:'',abbr:'XV',color:'#b94850'};let pres=null;try{pres=(typeof CDFranceClubs!=='undefined'&&!s.customCompetition?CDFranceClubs.forCareer(s,i):c)||c;}catch(e){pres=c;}
    return {id:c.id,name:c.name,abbr:c.abbr,color:c.color,presentation:pres?{id:pres.id,slug:pres.slug,city:pres.city,name:pres.name,abbr:pres.abbr,color:pres.color,logoPath:pres.logoPath}:null};};
   const ligues=[];
   const cles=[...new Set([...courantes.map(([k])=>k),...Object.keys(derniere)])];
