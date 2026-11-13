@@ -3,8 +3,11 @@
 // journaux GitHub Actions de runs verts. Chaque suite y écrit
 //   CD_CPU_PROFILE suite=tests/x.cjs ... wall_s=12.34 ...
 // Poids = médiane des durées murales observées × (1 + marge), arrondi, au moins 1 s.
+// Section « memory » : mémoire de pointe (max_rss_kb) maximale observée × (1 + marge), en Mo,
+// pour les suites d'au moins MEMORY_DEFAULT_MB ; ci/run-shard-suites.sh s'en sert pour ne
+// jamais dépasser le budget mémoire d'un runner (16 Go) en lançant 4 suites à la fois.
 // Usage :
-//   node ci/suite-weights.cjs <js|godot> <dossier-de-logs> [run-id...]
+//   node ci/suite-weights.cjs <js|godot|memory> <dossier-de-logs> [run-id...]
 // Le dossier contient les journaux bruts des jobs (gh api .../actions/jobs/<id>/logs),
 // nommés job-<run>-<job>.log. Le fichier JSON est réécrit en place, section par section.
 const fs = require('node:fs');
@@ -13,12 +16,16 @@ const path = require('node:path');
 const FILE = path.join(__dirname, 'suite-weights.json');
 const MARGIN = 0.15;
 const PROFILE = /CD_CPU_PROFILE suite=(tests\/[A-Za-z0-9._-]+\.cjs) .*\bwall_s=([0-9]+(?:\.[0-9]+)?)/;
+const RSS = /CD_CPU_PROFILE suite=(tests\/[A-Za-z0-9._-]+\.cjs) .*\bmax_rss_kb=([0-9]+)/;
+const MEMORY_MARGIN = 0.10;
+const MEMORY_DEFAULT_MB = 1024;
+const MEMORY_BUDGET_MB = 12288;
 
 function median(values) {
   const s = values.slice().sort((a, b) => a - b), m = s.length >> 1;
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
-function parseLogs(dir) {
+function parseLogs(dir, pattern = PROFILE) {
   const samples = {}, runs = new Set();
   for (const name of fs.readdirSync(dir).sort()) {
     const match = /^job-([0-9]+)-[0-9]+\.log$/.exec(name);
@@ -27,7 +34,7 @@ function parseLogs(dir) {
     for (const line of fs.readFileSync(path.join(dir, name), 'utf8').split('\n')) {
       // La ligne de commande /usr/bin/time contient aussi le motif : on l'ignore.
       if (line.includes('/usr/bin/time')) continue;
-      const m = PROFILE.exec(line);
+      const m = pattern.exec(line);
       if (m) ((samples[m[1]] ??= {})[match[1]] = Number(m[2]));
     }
   }
@@ -43,20 +50,37 @@ function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '
   }
   return weights;
 }
+// Mémoire de pointe en Mo : maximum observé (et non médiane) × (1 + marge), arrondi au
+// multiple de 64 Mo supérieur ; suites sous le défaut omises (elles prennent le défaut).
+function memoryFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f))) {
+  const suites = {};
+  for (const file of Object.keys(samples).sort().filter(exists)) {
+    const mb = Math.ceil(Math.max(...Object.values(samples[file])) / 1024 * (1 + MEMORY_MARGIN) / 64) * 64;
+    if (mb > MEMORY_DEFAULT_MB) suites[file] = mb;
+  }
+  return suites;
+}
 
 if (require.main === module) {
   const [kind, dir] = process.argv.slice(2);
-  if (!['js', 'godot'].includes(kind) || !dir || !fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory()) {
-    console.error('Usage : node ci/suite-weights.cjs <js|godot> <dossier-de-logs>');
+  if (!['js', 'godot', 'memory'].includes(kind) || !dir || !fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory()) {
+    console.error('Usage : node ci/suite-weights.cjs <js|godot|memory> <dossier-de-logs>');
     process.exit(2);
   }
-  const { samples, runs } = parseLogs(dir);
+  const { samples, runs } = parseLogs(dir, kind === 'memory' ? RSS : PROFILE);
   if (!runs.length || !Object.keys(samples).length) {
     console.error('Aucune mesure CD_CPU_PROFILE dans ' + dir);
     process.exit(1);
   }
   const data = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-  data[kind] = {
+  if (kind === 'memory') data.memory = {
+    source: 'maximum des max_rss_kb CD_CPU_PROFILE de runs GitHub, +' + Math.round(MEMORY_MARGIN * 100) + ' %, en Mo',
+    runs: runs.map(Number),
+    default_mb: MEMORY_DEFAULT_MB,
+    budget_mb: MEMORY_BUDGET_MB,
+    suites: memoryFrom(samples)
+  };
+  else data[kind] = {
     source: 'médiane des wall_s CD_CPU_PROFILE de runs GitHub verts, +' + Math.round(MARGIN * 100) + ' %',
     runs: runs.map(Number),
     weights: weightsFrom(samples)
@@ -65,4 +89,4 @@ if (require.main === module) {
   console.log(kind + ' : ' + Object.keys(samples).length + ' suites mesurées sur ' + runs.length + ' runs');
 }
 
-module.exports = { median, parseLogs, weightsFrom, MARGIN };
+module.exports = { median, parseLogs, weightsFrom, memoryFrom, MARGIN, RSS, MEMORY_DEFAULT_MB, MEMORY_BUDGET_MB };

@@ -18,8 +18,8 @@ const file=(filename='docs/ui-presentation-exemple.md',status='added')=>({filena
 const jobs=(css=false)=>[
  {name:'classification',status:'completed',conclusion:'success'},
  {name:'Validation CI',status:'completed',conclusion:'success'},
- ...(css?Array.from({length:10},(_,i)=>({name:'Suites '+(i+1)+'/10',status:'completed',conclusion:'success'})):
- [{name:'Suites ${{ matrix.shard }}/10',status:'completed',conclusion:'skipped'}]),
+ ...(css?require('../ci/ci-jobs.cjs').SHARD_JOBS.map(name=>({name,status:'completed',conclusion:'success'})):
+ [{name:require('../ci/ci-jobs.cjs').SHARD_JOB_SKIPPED,status:'completed',conclusion:'skipped'}]),
  // Jobs Godot informatifs (continue-on-error) : ignorés par le décompte officiel.
  {name:'Godot 1/3',status:'completed',conclusion:'failure'}
 ];
