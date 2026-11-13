@@ -76,6 +76,7 @@ COMMANDS.add('calendar_mail_decide');
 const NATIONAL_COMMANDS=['national_take_job','national_leave_job','national_play_match'];
 NATIONAL_COMMANDS.forEach(command=>COMMANDS.add(command));
 const NATIONAL_ONLY_COMMANDS=new Set(['new_career','import','save','advance_day','next_season',...NATIONAL_COMMANDS]);
+const FULL_VALIDATION=new Set(['new_career','import','finish_round','next_season']);
 const BLOCKED_AFTER_RESULT=new Set(['begin_match','tick','pause','delegate','train','auto_lineup','substitute','next_season']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
@@ -177,6 +178,7 @@ function createBridge(options={}){
    if(calendarPlanning.validateState(state.planning)===false||calendarMail.validate(state.mail)===false)throw Error('Planification du calendrier invalide.');
   }
   ctx.nativeKnowledgeValidate=knowledgeProjection.validate;
+  ctx.nativeVerifySections=options.verifyCleanCopy===true||process.env.CD_VERIFIER_COPIE==='1';
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
@@ -190,7 +192,24 @@ function createBridge(options={}){
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
   if(nationaleRegistry)ctx.nativeWorldNationaleRegistryText=JSON.stringify(nationaleRegistry);
   if(champRegistry)ctx.nativeWorldChampRegistryText=JSON.stringify(champRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
+   /* Sauvegarde incrémentale : le texte de la carrière est assemblé section par section (premier niveau de S),
+      identique à JSON.stringify(S) ; ces textes servent ensuite à la validation (sections inchangées) et à
+      l'écriture du profil (encodage des seules sections modifiées). */
+   var nativeSaveSections=null,nativeSafeTreeArmed=null,nativeSafeTreeCache=new Map();
+   function nativeSaveText(state){
+    const texts=new Map(),parts=[];
+    for(const key of Object.keys(state)){const text=JSON.stringify(state[key]);if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
+    const whole='{'+parts.join(',')+'}';
+    if(nativeVerifySections&&whole!==JSON.stringify(state))throw Error('Sauvegarde par sections différente du texte complet.');
+    nativeSaveSections={state,texts,keys:[...texts.keys()],whole};return whole;
+   }
+   function nativeSafeTreeSections(root){
+    if(!root||root!==nativeSafeTreeArmed||nativeSaveSections?.state!==root)return null;
+    if(nativeVerifySections&&JSON.stringify(root)!==nativeSaveSections.whole)throw Error('Sections de sauvegarde périmées avant la validation.');
+    return {texts:nativeSaveSections.texts,cache:nativeSafeTreeCache};
+   }
+   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
    const nativeCallups=(${internationalCallups.toString()})();
    const nativeInternationalStatus=new WeakMap();
    const nativePlayerAttributes=p=>{
@@ -339,7 +358,20 @@ function createBridge(options={}){
   };
   // Texte du profil : identique octet pour octet à JSON.stringify({protocol:1,seed,clock,store}), mais
   // chaque valeur du magasin (la carrière fait ~22 Mo) n'est réencodée que si elle a changé.
-  const storeEncoding=new Map();
+  const storeEncoding=new Map(),sectionEscapes=new Map();
+  // Encodage JSON (chaîne dans la chaîne) de la carrière à partir de ses sections : l'échappement d'un texte
+  // se fait caractère par caractère et les coupures tombent sur des virgules, donc la concaténation des
+  // sections encodées est exactement JSON.stringify(texte complet).
+  const encodeSections=sections=>{
+   const parts=[];
+   for(const key of sections.keys){
+    const text=sections.texts.get(key);let hit=sectionEscapes.get(key);
+    if(!hit||hit.text!==text){hit={text,escaped:JSON.stringify(JSON.stringify(key)+':'+text).slice(1,-1)};sectionEscapes.set(key,hit);}
+    parts.push(hit.escaped);
+   }
+   for(const key of [...sectionEscapes.keys()])if(!sections.texts.has(key))sectionEscapes.delete(key);
+   return '"{'+parts.join(',')+'}"';
+  };
   const profileText=()=>{
    const entries=[];
    for(const key of Object.keys(store)){
@@ -347,7 +379,12 @@ function createBridge(options={}){
     if(typeof value==='string'){
      const cached=storeEncoding.get(key);
      if(cached&&cached.value===value)encoded=cached.encoded;
-     else{encoded=JSON.stringify(value);storeEncoding.set(key,{value,encoded});}
+     else{
+      const sections=key==='bdt-v1'?ctx.nativeSaveSections:null;
+      encoded=sections&&sections.whole===value?encodeSections(sections):JSON.stringify(value);
+      if(ctx.nativeVerifySections&&encoded!==JSON.stringify(value))throw Error('Encodage par sections différent du texte complet.');
+      storeEncoding.set(key,{value,encoded});
+     }
     }else encoded=JSON.stringify(value);
     if(encoded!==undefined)entries.push(JSON.stringify(key)+':'+encoded);
    }
@@ -414,7 +451,7 @@ function createBridge(options={}){
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
-    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
+    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
     if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
@@ -608,7 +645,9 @@ function createBridge(options={}){
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
      mark('commande');
      if(advancesWithinWeek)run('save()');
-     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
+     // Validation complète (sans reprise des sections) à la création, à l'import et à chaque fin de semaine ou
+     // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
+     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();nativeValidateSaved('+FULL_VALIDATION.has(command)+')');
      mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
@@ -620,7 +659,7 @@ function createBridge(options={}){
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
-     run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
+     run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');
      throw error;
     }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
    }catch(error){projectionCache.clear();return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
