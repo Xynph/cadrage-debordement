@@ -684,7 +684,10 @@ func _run() -> void:
 	app._file_selected(exported)
 	await _wait()
 	_check(FileAccess.file_exists(exported),"Native UI export written")
-	await _ask("new_career",{"club":0,"mode":"france"})
+	# Le mode France n'existe plus pour une nouvelle carrière : la seconde carrière est une carrière Monde
+	# sur un autre club que celui de la carrière exportée, que l'import doit ensuite restaurer.
+	var career_club := int(app.model.club.id)
+	await _ask("new_career",{"club":1 if career_club == 0 else 0,"mode":"world-champ"})
 	await _settle_required_meetings()
 	app._navigate("Bureau")
 	await _capture("bureau-toulouse")
@@ -692,7 +695,7 @@ func _run() -> void:
 	app._file_selected(exported)
 	_confirm()
 	await _wait()
-	_check(int(app.model.club.id)==29 and int(app.model.meta.season)==2,"UI import restores exact club and season")
+	_check(int(app.model.club.id)==career_club and int(app.model.meta.season)==2,"UI import restores exact club and season")
 	_dismiss()
 	var legacy_fixture := OS.get_environment("CD_GODOT_QA_V1_FIXTURE")
 	if not legacy_fixture.is_empty():
