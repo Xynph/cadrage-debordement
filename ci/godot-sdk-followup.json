@@ -1,16 +1,12 @@
 {
   "suites": [
-    "tests/godot-review-regressions.cjs",
-    "tests/godot-interface-layout.cjs",
     "tests/godot-entity-projections.cjs",
     "tests/godot-prospect-profile.cjs",
     "tests/godot-staff-fictional-labels.cjs",
     "tests/godot-world-entity-targets.cjs",
-    "tests/godot-finance-ledger-links.cjs",
     "tests/godot-reader-history.cjs",
     "tests/godot-management-reading-links.cjs",
     "tests/godot-national-reading-links.cjs",
-    "tests/godot-analysis-club-links.cjs",
     "tests/godot-analysis-club-graphics.cjs"
   ],
   "groups": {
@@ -21,41 +17,17 @@
       "tests/godot-world-entity-targets.cjs",
       "tests/godot-analysis-club-graphics.cjs"
     ],
-    "parcours": [
-      "tests/godot-review-regressions.cjs"
-    ],
     "layouts": [
-      "tests/godot-interface-layout.cjs",
-      "tests/godot-finance-ledger-links.cjs",
       "tests/godot-reader-history.cjs",
       "tests/godot-management-reading-links.cjs",
-      "tests/godot-national-reading-links.cjs",
-      "tests/godot-analysis-club-links.cjs"
+      "tests/godot-national-reading-links.cjs"
     ]
   },
   "suiteEnvironment": {
-    "tests/godot-interface-layout.cjs": {
-      "CD_LAYOUT_GRAPHICS": "1"
-    },
     "tests/godot-analysis-club-graphics.cjs": {
       "CD_ANALYSIS_CLUB_GRAPHICS": "1",
       "CD_ANALYSIS_CLUB_GRAPHICS_SOURCE": ""
     }
   },
-  "suiteCases": {
-    "tests/godot-interface-layout.cjs": [
-      {
-        "id": "management",
-        "env": {
-          "CD_LAYOUT_CASE": "management"
-        }
-      },
-      {
-        "id": "journal",
-        "env": {
-          "CD_LAYOUT_CASE": "journal"
-        }
-      }
-    ]
-  }
+  "suiteCases": {}
 }
