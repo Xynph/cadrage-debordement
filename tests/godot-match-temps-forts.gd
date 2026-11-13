@@ -155,6 +155,20 @@ func run() -> void:
 		# Aucune importation : la carrière et son match en cours viennent du dossier de données.
 		await settle()
 		followed = await resumed()
+	elif mode == "liaison":
+		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-liaison-monde.cjs).
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+		await settle()
+		var limite := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite and (surface() == null or surface().regie == null):
+			var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+			await settle(2)
+		var vue := surface()
+		check(vue != null and vue.regie != null, "Carrière Monde : le direct en temps forts s'ouvre")
+		if vue != null and vue.regie != null:
+			await linked(vue)
+			followed = vue.regie.suivi
 	elif mode == "defaut":
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("causerie.json"))})
 		await settle()
@@ -361,7 +375,7 @@ func interval(view: Control) -> void:
 	app._command("pause", {"paused": true})
 	await wait_command()
 
-## Liaisons (graine 27 : mêlée à la 1re minute, touche à la 9e, essai puis mêlée à la 10e) : les
+## Liaisons (carrière Monde, graine choisie par godot-match-liaison-monde.cjs) : les
 ## temps forts contigus sont reliés en 3D, à vitesse réelle même quand les temps forts sont
 ## accélérés pour le test ; les autres gardent l'écran intermédiaire. Contrôles détaillés : check_liaisons.
 func linked(view: Control) -> void:
@@ -369,11 +383,13 @@ func linked(view: Control) -> void:
 	check(regie != null, "Régie présente")
 	if regie == null: return
 	check(regie.arbitre != null and regie.arbitre.is_inside_tree(), "Arbitre présent dans la vue 3D")
-	var deadline := Time.get_ticks_msec() + 500000
+	var deadline := Time.get_ticks_msec() + 900000
 	var reprise := false
 	var images_liaison := 0
 	var accelere := 0
-	while int(app.model.live.minute) < 11 and Time.get_ticks_msec() < deadline:
+	var fin := int(OS.get_environment("CD_LIAISON_MINUTES")) if OS.get_environment("CD_LIAISON_MINUTES").is_valid_int() else 11
+	var attendues := int(OS.get_environment("CD_LIAISON_ATTENDUES")) if OS.get_environment("CD_LIAISON_ATTENDUES").is_valid_int() else 2
+	while app.model.get("live") is Dictionary and int(app.model.live.minute) < fin and Time.get_ticks_msec() < deadline:
 		await process_frame
 		if not reprise and not app.waiting and regie.etat != regie.JEU:
 			reprise = true
@@ -383,7 +399,7 @@ func linked(view: Control) -> void:
 			if not (regie.vitesse > 1.0 and view.stage._choregraphie.vitesse == 1.0): accelere += 1
 	check(images_liaison > 0 and accelere == 0, "Liaisons à vitesse réelle alors que les temps forts sont accélérés (%d images, %d accélérées)" % [images_liaison, accelere])
 	var liaisons: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison" and e.has("duree_reelle"))
-	check(liaisons.size() >= 2, "Au moins deux liaisons en onze minutes : " + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))
+	check(liaisons.size() >= attendues, "Au moins %d liaisons en %d minutes : " % [attendues, fin] + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))
 	var sans: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "temps_fort" and not bool(e.get("contigu", false)))
 	check(not sans.is_empty() and sans.all(func(e: Dictionary) -> bool: return str(e.get("liaison", "")).is_empty()), "Temps forts après l'écran intermédiaire : aucune liaison")
 	check(regie.suivi.any(func(e: Dictionary) -> bool: return e.evenement == "intermediaire"), "L'écran intermédiaire reste entre deux temps forts non contigus")
