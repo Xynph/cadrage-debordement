@@ -374,8 +374,8 @@ function factory(){
   const share=away.length/Math.max(1,s.clubs[s.club].players.length),ref=profile(s,s.club).ref,fm=fmMonday(s,s.club);
   const weeks=d=>(fm-d)/WEEK;let pick=def,text='La date habituelle du club laisse une préparation équilibrée.';
   if(finalist(s,s.club)&&!shift||shift&&s.worldMode.leagues[leagueOf(s,s.club)]?.finalist!==undefined&&[s.worldMode.leagues[leagueOf(s,s.club)].champion,s.worldMode.leagues[leagueOf(s,s.club)].finalist].includes(s.club)){
-   pick=options.find(d=>weeks(d)<=ref)??def;text='Après une saison allée jusqu’en finale, les organismes ont besoin d’une semaine de plus : reprenons un peu plus tard.';}
-  else if(share>=.2){pick=options.find(d=>weeks(d)<=ref+1)??def;text=`${away.length} internationaux rentrent de tournée plus tard : inutile de reprendre très tôt sans eux. Complétons le groupe avec des jeunes du centre, ils joueront les amicaux.`;}
+   pick=options.find(d=>weeks(d)<=ref-1)??def;text='Après une saison allée jusqu’en finale, les organismes ont besoin d’une semaine de plus : reprenons un peu plus tard.';}
+  else if(share>=.2){pick=options.find(d=>weeks(d)<=ref-1)??def;text=`${away.length} internationaux rentrent de tournée plus tard : inutile de reprendre très tôt sans eux. Complétons le groupe avec des jeunes du centre, ils joueront les amicaux.`;}
   else if(share<.08){pick=options.find(d=>weeks(d)<=ref+2)??def;text='Peu d’internationaux en tournée : reprendre tôt construit les automatismes sans priver le groupe de ses cadres. Attention à la fraîcheur en fin de saison.';}
   return {date:iso(pick+shift),weeks:weeks(pick),text};
  }

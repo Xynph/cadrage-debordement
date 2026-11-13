@@ -2,6 +2,7 @@ extends SceneTree
 # Reprise choisie (reprise.cjs) : départ de la partie à la création, puis décision de reprise
 # dans la Préparation, avec le vrai moteur Monde (world-champ).
 const Entry = preload("res://ui/entry_screens.gd")
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -50,7 +51,11 @@ func run() -> void:
 	await press(start); await response()
 	check(app.model.get("clubLife",{}).get("reprise",{}).get("start","")=="premiers-clubs","Départ transmis au moteur")
 	check(str(app.model.meta.get("calendarToday",""))=="2026-07-13","La carrière commence le 13 juillet 2026")
+	check(await ContextualFlow.settle_club_meetings(app, self, check),"Rendez-vous d’accueil traités")
 	app._navigate("Préparation"); await settle()
+	var open_button := app.find_child("PreparationReprise",true,false) as Button
+	check(open_button!=null,"Accès à la reprise depuis la Préparation")
+	if open_button != null: await press(open_button)
 	var panel := app.find_child("RepriseDecision",true,false)
 	check(panel!=null,"Décision de reprise dans la Préparation")
 	check(app.find_child("RepriseGabi",true,false)!=null,"Conseil de Gabi")
@@ -60,7 +65,8 @@ func run() -> void:
 	if option != null:
 		await press(option); await response()
 		check(str(app.model.clubLife.reprise.club.date)=="2026-07-20","Choix de reprise appliqué par le moteur")
-	app._navigate("Préparation"); await settle()
+	await settle()
+	check(app.find_child("RepriseDialog",true,false)!=null,"La fenêtre de reprise reste ouverte après le choix")
 	await capture("reprise-decision")
 	var result := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
 	result.store_string(JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name()},"  ")); result.close()
