@@ -1105,9 +1105,6 @@ func _clear_dialogs() -> void:
 			child.queue_free()
 
 func recover_profile() -> void:
-	if model.get("meta", {}).get("legacyCareer", false):
-		confirm("Mettre l’ancienne carrière de côté", "Cette carrière vient d’un ancien mode de jeu. Son fichier sera conservé tel quel ; vous pourrez ensuite commencer une nouvelle carrière Monde.",func(): _command("recover_profile",{"confirmed":true}))
-		return
 	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Vous pourrez ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
 
 func reconnect() -> void:

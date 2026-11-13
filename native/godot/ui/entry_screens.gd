@@ -119,11 +119,12 @@ static func home(app: Control) -> Control:
 	choices.add_child(G.button("QUITTER", app.request_quit))
 	Packs.missing_warning(app, choices, "all",true)
 	var meta: Dictionary = app.model.get("meta", {})
+	# Mode unique Monde : les carrières des anciens modes ont été retirées au lancement (information seule).
+	if not str(meta.get("legacyPurgeNotice", "")).is_empty():
+		choices.add_child(G.wrap(str(meta.legacyPurgeNotice), 13, G.MUTED))
 	if meta.get("recoveryRequired", false):
-		# Ancienne carrière (mode France ou autre variante disparue) : seul le mode Monde existe.
-		var legacy: bool = meta.get("legacyCareer", false)
-		choices.add_child(G.wrap(str(meta.get("profileError", "")) if legacy else "Le profil ne peut pas être chargé. Sa copie sera conservée avant toute récupération.", 13, G.ALERT))
-		choices.add_child(G.button("METTRE CETTE CARRIÈRE DE CÔTÉ" if legacy else "RÉCUPÉRER LE PROFIL", app.recover_profile))
+		choices.add_child(G.wrap("Le profil ne peut pas être chargé. Sa copie sera conservée avant toute récupération.", 13, G.ALERT))
+		choices.add_child(G.button("RÉCUPÉRER LE PROFIL", app.recover_profile))
 	elif app.connection_error or not app.last_error.is_empty():
 		choices.add_child(G.wrap(app.last_error, 13, G.ALERT))
 		choices.add_child(G.button("RÉESSAYER LA CONNEXION", app.reconnect) if app.connection_error else G.button("CHOISIR À NOUVEAU UN CLUB",func():app._navigate("Création")))
