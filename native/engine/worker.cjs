@@ -413,7 +413,8 @@ function createBridge(options={}){
    const s=fs.lstatSync(source);
    if(s.nlink===1){
     try{fs.linkSync(source,target);}catch{write(target,fs.readFileSync(source));return;}
-    const fd=fs.openSync(target,'r');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
+    // Windows refuse fsync (EPERM) sur un descripteur ouvert en lecture seule : ouverture en 'r+'. Le lien partage l'inode déjà écrit, donc un refus de fsync n'enlève aucune donnée.
+    try{const fd=fs.openSync(target,'r+');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}}catch{}
     return;
    }
    write(target,fs.readFileSync(source));
