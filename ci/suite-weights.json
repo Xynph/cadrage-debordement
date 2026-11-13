@@ -130,7 +130,7 @@
       "tests/godot-prospect-profile.cjs": 2,
       "tests/godot-staff-fictional-labels.cjs": 2,
       "tests/small-window-contracts.cjs": 75,
-      "tests/deepen-analytics-real-ui.cjs": 100,
+      "tests/deepen-analytics-real-ui.cjs": 140,
       "tests/godot-immersive08.cjs": 420
     }
   },
