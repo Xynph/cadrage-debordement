@@ -7,7 +7,7 @@
 // Le pic simulé ne constitue pas une mesure de gain réel ; reprofiler régulièrement.
 const fs = require('node:fs');
 const path = require('node:path');
-const { SHARD_COUNT, GODOT_SHARD_COUNT } = require('./ci-jobs.cjs');
+const { SHARD_COUNT, GODOT_SHARD_COUNT, PHYSICAL_CORES, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT } = require('./ci-jobs.cjs');
 
 const PROFILE = JSON.parse(fs.readFileSync(path.join(__dirname, 'suite-weights.json'), 'utf8'));
 const WEIGHTS_SECONDS = Object.freeze({ ...PROFILE.js.weights });
@@ -89,30 +89,54 @@ const MEMORY = Object.freeze({
   suites: Object.freeze({ ...(PROFILE.memory?.suites || {}) })
 });
 const memoryOf = f => MEMORY.suites[f] ?? MEMORY.defaultMb;
-// Simulation de l'ordonnanceur de ci/run-shard-suites.sh pour une liste de suites : au plus
-// « parallel » suites, somme des réservations ≤ budget (une suite trop grosse tourne seule),
-// la première suite de la liste (poids décroissant) qui tient démarre. Renvoie la durée
-// murale et le pic de mémoire réservée. Estimation : la contention CPU n'est pas modélisée.
-function simulateShard(files, duration, parallel, { memory = memoryOf, budget = MEMORY.budgetMb, weights = WEIGHTS_SECONDS } = {}) {
+// Suite « exclusive » : longue (poids ≥ EXCLUSIVE_WEIGHT s) ou pilotant une machine virtuelle
+// node:vm à délai interne (finish_round…). Elle garde un cœur physique : tant qu'une suite
+// exclusive tourne, le runner n'en exécute pas plus de EXCLUSIVE_CAP au total.
+const VM = /\bfinish_?[rR]ound\b|require\(['"](?:node:)?vm['"]\)|\bvm\.(?:Script|createContext|runInContext|runInNewContext)\b/;
+function isExclusive(file, weights = WEIGHTS_SECONDS, read = f => fs.readFileSync(path.join(testsDir(), path.basename(f)), 'utf8')) {
+  const w = Object.prototype.hasOwnProperty.call(weights, file) ? weights[file] : DEFAULT_WEIGHT;
+  if (w >= EXCLUSIVE_WEIGHT) return true;
+  try { return VM.test(read(file)); } catch { return true; }
+}
+// Règle de démarrage commune à ci/run-shard-suites.sh et à la simulation.
+function canStart(running, candidate, parallel, cap = EXCLUSIVE_CAP) {
+  if (running.length >= parallel) return false;
+  const exclusive = candidate.exclusive || running.some(r => r.exclusive);
+  return !exclusive || running.length + 1 <= cap;
+}
+// Simulation de l'ordonnanceur de ci/run-shard-suites.sh : au plus « parallel » suites,
+// règle des exclusives, somme des réservations ≤ budget (une suite trop grosse tourne
+// seule) ; la première suite de la liste (poids décroissant) qui peut démarrer démarre.
+// Contention : « cores » cœurs physiques partagés, chaque suite avance à min(1, cores/n)
+// (mesure SMT du run 43326802384). Renvoie la durée murale, le pic de mémoire réservée
+// et la vitesse minimale subie par une suite exclusive.
+function simulateShard(files, duration, parallel, { memory = memoryOf, budget = MEMORY.budgetMb, weights = WEIGHTS_SECONDS,
+  exclusive = f => isExclusive(f, weights), cores = PHYSICAL_CORES, cap = EXCLUSIVE_CAP } = {}) {
   const weight = f => Object.prototype.hasOwnProperty.call(weights, f) ? weights[f] : DEFAULT_WEIGHT;
-  const pending = files.slice().sort((a, b) => weight(b) - weight(a) || lexical(a, b));
-  let now = 0, used = 0, peak = 0;
+  const pending = files.slice().sort((a, b) => weight(b) - weight(a) || lexical(a, b))
+    .map(f => ({ file: f, left: duration(f), mb: memory(f), exclusive: exclusive(f) }));
+  let now = 0, used = 0, peak = 0, slowestExclusive = 1;
   const running = [];
   while (pending.length || running.length) {
-    while (pending.length && running.length < parallel) {
-      const k = pending.findIndex(f => used + memory(f) <= budget || running.length === 0);
+    for (;;) {
+      const k = pending.findIndex(c => canStart(running, c, parallel, cap) &&
+        (used + c.mb <= budget || running.length === 0));
       if (k < 0) break;
-      const [f] = pending.splice(k, 1);
-      running.push({ end: now + duration(f), mb: memory(f) });
-      used += memory(f);
+      const [c] = pending.splice(k, 1);
+      running.push(c);
+      used += c.mb;
       peak = Math.max(peak, used);
     }
-    running.sort((a, b) => a.end - b.end);
-    const done = running.shift();
-    now = done.end;
-    used -= done.mb;
+    const rate = Math.min(1, cores / running.length);
+    if (running.some(r => r.exclusive)) slowestExclusive = Math.min(slowestExclusive, rate);
+    const step = Math.min(...running.map(r => r.left / rate));
+    now += step;
+    for (const r of running) r.left -= step * rate;
+    for (let i = running.length - 1; i >= 0; i--) {
+      if (running[i].left <= 1e-9) { used -= running[i].mb; running.splice(i, 1); }
+    }
   }
-  return { wall: now, peakMb: peak };
+  return { wall: now, peakMb: peak, slowestExclusive };
 }
 
 const USAGE = 'Usage : node ci/shard-tests.cjs <shard> [full|web|native-art|godot] [nombre-de-shards]\n' +
@@ -139,6 +163,6 @@ if (require.main === module) {
   }
 }
 module.exports = {
-  allTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY,
+  allTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY, isExclusive, canStart,
   WEIGHTS_SECONDS, GODOT_WEIGHTS_SECONDS, DEFAULT_WEIGHT, GODOT_DEFAULT_WEIGHT, MAX_SHARDS
 };

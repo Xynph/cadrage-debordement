@@ -22,7 +22,7 @@ collision, quels tests consigner et comment préparer la reprise.
 **Débit CI** ([détail](docs/ci-debit-20261112.md)) : ouvrir chaque PR en
 brouillon et pousser librement (CI légère : classification et syntaxe, verdict
 « Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
-prête, ce qui lance la batterie complète (5 runners). Ne pas « réparer » un
+prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
 rouge de brouillon : il signifie seulement « batterie non lancée ».
 
 Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre

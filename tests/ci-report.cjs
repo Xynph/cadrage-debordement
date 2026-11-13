@@ -25,8 +25,8 @@ assert.match(shardJob,/needs\.classification\.outputs\.draft != 'true'/);
 // Nombre de shards : une seule source (ci/ci-jobs.cjs) que la matrice doit refléter.
 const {SHARD_COUNT,SHARD_PARALLEL,GODOT_SHARD_COUNT,OFFICIAL_JOBS}=require('../ci/ci-jobs.cjs');
 const range=n=>Array.from({length:n},(_,i)=>i+1).join(', ');
-assert.equal(SHARD_COUNT,5);
-assert.equal(SHARD_PARALLEL,4);
+assert.equal(SHARD_COUNT,7);
+assert.equal(SHARD_PARALLEL,3);
 assert.equal(OFFICIAL_JOBS.length,SHARD_COUNT+2);
 assert.ok(yaml.includes('    name: Suites ${{ matrix.shard }}/'+SHARD_COUNT+'\n'));
 assert.ok(yaml.includes('        shard: ['+range(SHARD_COUNT)+']\n'));

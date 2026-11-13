@@ -18,7 +18,7 @@ test('jobs officiels SUCCESS exacts, skipped ou duplicata bloquants ; Godot info
  assert.equal(completedSeven([...jobs,{...jobs[0]}]),false);
  assert.equal(completedSeven([...jobs,{name:'Godot 1/3',status:'completed',conclusion:'failure'}]),true);
  assert.equal(completedSeven(jobs.slice(1)),false);
- assert.equal(completedSeven([...jobs,{name:'Suites 6/5',status:'completed',conclusion:'success'}]),false);
+ assert.equal(completedSeven([...jobs,{name:'Suites 8/7',status:'completed',conclusion:'success'}]),false);
  assert.equal(completedSeven(jobs.map((j,i)=>i===2?{...j,conclusion:'skipped'}:j)),false);
 });
 test('CI main respecte SHA et événement exacts',()=>{

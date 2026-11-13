@@ -45,16 +45,17 @@ jobs:
         run: node ci/test-coverage.cjs
 
   shards:
-    name: Suites ${{ matrix.shard }}/5
+    name: Suites ${{ matrix.shard }}/7
     needs: classification
     if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6, 7]
     runs-on: ubuntu-latest
-    # Cinq lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
-    # les suites conservées, quatre à la fois par runner sous budget mémoire.
+    # Sept lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
+    # les suites conservées, trois au plus par runner (deux dès qu'une suite exclusive
+    # tourne : 2 cœurs physiques) sous budget mémoire.
     # Nombre de shards et parallélisme : ci/ci-jobs.cjs (SHARD_COUNT, SHARD_PARALLEL).
     # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
     timeout-minutes: 50
@@ -72,19 +73,19 @@ jobs:
           COVERAGE: ${{ needs.classification.outputs.coverage }}
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 5 > "$RUNNER_TEMP/shard-suites.txt"
+          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 7 > "$RUNNER_TEMP/shard-suites.txt"
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
           if [[ "${#suites[@]}" -eq 0 ]]; then
             # Couverture ciblée (web, native-art) : moins de suites que de shards.
             # En couverture complète, un shard vide est une erreur de planification.
             [[ "$COVERAGE" != full ]] || exit 1
-            echo "### Shard $SHARD/5 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Shard $SHARD/7 ($COVERAGE) : aucune suite attribuée" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          # Quatre suites à la fois (runner à 4 cœurs), sous budget mémoire de 12 Go :
-          # les suites lourdes ne tournent jamais à quatre. Budgets par suite, journaux
-          # groupés et résumé : ci/run-shard-suites.sh.
-          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/5 ($COVERAGE)" 4
+          # Trois suites au plus (4 vCPU = 2 cœurs physiques) : deux dès qu'une suite
+          # exclusive (longue ou machine virtuelle à délai interne) tourne ; budget mémoire
+          # de 12 Go. Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
+          bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/7 ($COVERAGE)" 3
   godot:
     name: Godot ${{ matrix.shard }}/3
     needs: classification

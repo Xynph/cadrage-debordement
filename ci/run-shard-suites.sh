@@ -2,7 +2,10 @@
 # Exécute les suites d'un shard « Suites i/N » (liste produite par ci/shard-tests.cjs).
 # Usage : bash ci/run-shard-suites.sh <liste> <titre> [suites-en-parallèle]
 #   - suites-en-parallèle (défaut 1) : les suites sont quasi mono-cœur (cpu_pct ≈ 110-120 %)
-#     et les machines GitHub en ont 4 ; la CI en lance 4 (ci/ci-jobs.cjs SHARD_PARALLEL).
+#     et les 4 vCPU d'un runner GitHub sont 2 cœurs physiques (SMT) ; la CI en lance au plus 3
+#     (ci/ci-jobs.cjs SHARD_PARALLEL). Suites « exclusives » (ci/shard-tests.cjs isExclusive :
+#     longues ou machine virtuelle node:vm à délai interne) : tant qu'une d'elles tourne, au
+#     plus EXCLUSIVE_CAP (2) suites au total, pour qu'elle garde un cœur physique entier.
 #     La liste arrive par poids décroissant : les plus longues démarrent en premier.
 #   - budget mémoire : chaque suite réserve sa mémoire de pointe mesurée (ci/suite-weights.json,
 #     section « memory », défaut default_mb) et une suite ne démarre que si la somme des
@@ -10,8 +13,8 @@
 #     possible par CD_SHARD_MEMORY_MB). Les suites lourdes (≈ 3,5-4 Go) ne tournent donc
 #     jamais à quatre ensemble ; une suite plus grosse que le budget tourne seule. Si la
 #     suivante ne tient pas, une plus légère de la liste passe devant.
-#   - chaque suite garde son délai maximal propre (budgets ci-dessous), multiplié par 1,5
-#     à partir de 3 suites en parallèle (contention CPU : 4 × 115 % sur 4 cœurs) ;
+#   - chaque suite garde son délai maximal propre (budgets ci-dessous, 100 % ; surcharge
+#     possible par CD_SHARD_BUDGET_PCT, jamais transmise aux suites) ;
 #   - journal groupé par suite, ligne CD_CPU_PROFILE (poids des shards, ci/suite-weights.cjs),
 #     ligne « PASS tests/x.cjs (N s) » (ci/ci-run-metrics.cjs), tableau Markdown dans
 #     $GITHUB_STEP_SUMMARY (sortie standard hors CI). Code de sortie 1 si une suite échoue.
@@ -29,10 +32,11 @@ mkdir -p "$work/logs" "$work/running"
 : > "$work/results.md"
 export CD_SHARD_WORK="$work"
 
-# Délais : ×1,5 à partir de 3 suites en parallèle (surcharge : CD_SHARD_BUDGET_PCT).
-budget_pct="${CD_SHARD_BUDGET_PCT:-$([[ "$parallel" -ge 3 ]] && echo 150 || echo 100)}"
+# Délais : budgets ci-dessous tels quels (surcharge : CD_SHARD_BUDGET_PCT). Variable non
+# exportée : les suites lancées (dont tests/ci-godot-runner.cjs) n'en héritent pas.
+budget_pct="${CD_SHARD_BUDGET_PCT:-100}"
 [[ "$budget_pct" =~ ^[1-9][0-9]{1,2}$ ]] || { echo "Pourcentage de délai invalide : $budget_pct" >&2; exit 2; }
-export CD_SHARD_BUDGET_PCT="$budget_pct"
+unset CD_SHARD_BUDGET_PCT
 
 budget() {
   # Budgets ciblés de réception cumulative, distincts des poids de planification.
@@ -75,7 +79,7 @@ run_one() {
   name="$(basename "$test")"
   log="$work/logs/$name.log"
   limit="$(budget "$test")"
-  limit="$(( ${limit%s} * CD_SHARD_BUDGET_PCT / 100 ))s"
+  limit="$(( ${limit%s} * budget_pct / 100 ))s"
   touch "$work/running/$name"
   start=$SECONDS
   local t0 timer=()
@@ -119,20 +123,23 @@ interrupted() {
 trap 'interrupted SIGTERM 143' TERM
 trap 'interrupted SIGINT 130' INT
 
-# Mémoire réservée par suite (Mo), dans l'ordre de la liste.
-mapfile -t mems < <(node -e '
+# Mémoire réservée (Mo) et exclusivité (1/0) par suite, dans l'ordre de la liste.
+mapfile -t plan < <(node -e '
   const fs = require("node:fs");
-  const m = JSON.parse(fs.readFileSync(process.argv[1], "utf8")).memory || {};
-  const def = m.default_mb || 1024;
+  const { memoryOf, isExclusive } = require(process.argv[1] + "/ci/shard-tests.cjs");
   for (const f of fs.readFileSync(process.argv[2], "utf8").split("\n").filter(Boolean))
-    console.log((m.suites || {})[f] || def);
-' "$root/ci/suite-weights.json" "$list")
+    console.log(memoryOf(f) + " " + (isExclusive(f) ? 1 : 0));
+' "$root" "$list")
+mems=(); excl=()
+for line in "${plan[@]}"; do mems+=("${line% *}"); excl+=("${line#* }"); done
+excl_cap="$(node -p 'require(process.argv[1]).EXCLUSIVE_CAP' "$root/ci/ci-jobs.cjs")"
 mem_budget="${CD_SHARD_MEMORY_MB:-$(node -p 'require(process.argv[1]).memory?.budget_mb || 12288' "$root/ci/suite-weights.json")}"
-[[ "$mem_budget" =~ ^[1-9][0-9]*$ && "${#mems[@]}" -eq "${#suites[@]}" ]] ||
+[[ "$mem_budget" =~ ^[1-9][0-9]*$ && "$excl_cap" =~ ^[1-9]$ && "${#mems[@]}" -eq "${#suites[@]}" ]] ||
   { echo "Budget mémoire ou réservations invalides" >&2; exit 2; }
 
-# Ordonnanceur : au plus $parallel suites, somme des réservations ≤ $mem_budget.
-declare -A pid_mem=()
+# Ordonnanceur : au plus $parallel suites, au plus $excl_cap dès qu'une exclusive tourne,
+# somme des réservations ≤ $mem_budget.
+declare -A pid_mem=() pid_excl=()
 declare -a pending=("${!suites[@]}")
 used=0
 peak=0
@@ -141,6 +148,9 @@ while (( ${#pending[@]} > 0 || ${#pid_mem[@]} > 0 )); do
     pick=-1
     for k in "${!pending[@]}"; do
       i="${pending[$k]}"
+      running_excl=0
+      for p in "${!pid_excl[@]}"; do (( pid_excl[$p] )) && running_excl=1; done
+      if (( excl[i] || running_excl )) && (( ${#pid_mem[@]} + 1 > excl_cap )); then continue; fi
       if (( used + mems[i] <= mem_budget || ${#pid_mem[@]} == 0 )); then pick=$k; break; fi
     done
     (( pick >= 0 )) || break
@@ -149,6 +159,7 @@ while (( ${#pending[@]} > 0 || ${#pid_mem[@]} > 0 )); do
     pending=("${pending[@]}")
     run_one "${suites[$i]}" &
     pid_mem[$!]="${mems[$i]}"
+    pid_excl[$!]="${excl[$i]}"
     used=$(( used + mems[i] ))
     (( used > peak )) && peak=$used
   done
@@ -157,11 +168,11 @@ while (( ${#pending[@]} > 0 || ${#pid_mem[@]} > 0 )); do
   wait -n -p done_pid "${!pid_mem[@]}" || true
   if [[ -n "$done_pid" && -n "${pid_mem[$done_pid]:-}" ]]; then
     used=$(( used - pid_mem[$done_pid] ))
-    unset "pid_mem[$done_pid]"
+    unset "pid_mem[$done_pid]" "pid_excl[$done_pid]"
   else
     # Sécurité : retirer toute suite déjà terminée.
     for p in "${!pid_mem[@]}"; do
-      kill -0 "$p" 2>/dev/null || { used=$(( used - pid_mem[$p] )); unset "pid_mem[$p]"; }
+      kill -0 "$p" 2>/dev/null || { used=$(( used - pid_mem[$p] )); unset "pid_mem[$p]" "pid_excl[$p]"; }
     done
   fi
 done
@@ -169,7 +180,7 @@ executed="$(wc -l < "$work/results.md")"
 failures="$(grep -c '| ECHEC' "$work/results.md" || true)"
 total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
 {
-  echo "### $title : $executed suites sur $total ($parallel en parallèle, mémoire réservée max $peak/$mem_budget Mo, délais $budget_pct %)"
+  echo "### $title : $executed suites sur $total ($parallel en parallèle, $excl_cap si exclusive, mémoire réservée max $peak/$mem_budget Mo, délais $budget_pct %)"
   echo "| Suite | Résultat | Durée |"
   echo "| --- | --- | --- |"
   cat "$work/results.md"

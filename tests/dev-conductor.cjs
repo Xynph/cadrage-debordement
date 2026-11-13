@@ -38,8 +38,8 @@ assert.equal(statusCI(sha,[run(sha)],{101:green.slice(0,-1)}),'CI incomplète ou
 assert.equal(statusCI(sha,[run(sha)],{101:[...green,green[0]]}),'CI incomplète ou non conforme');
 assert.equal(statusCI('bad',[],{}),'SHA invalide');
 const rich=attachCI(select([base(7,['docs/readme.md'])]),[run(sha)],()=>green);
-assert.match(rich[0].ci,/7\/7 SUCCESS/);
-assert.match(report(rich),/7\/7 SUCCESS/);
+assert.match(rich[0].ci,new RegExp((require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+'/'+(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+' SUCCESS'));
+assert.match(report(rich),new RegExp((require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+'/'+(require('../ci/ci-jobs.cjs').SHARD_COUNT+2)+' SUCCESS'));
 
 assert.equal(gateNumber('259'),259);
 assert.throws(()=>gateNumber('0'),/invalide/);
