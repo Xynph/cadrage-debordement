@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Disposable setup only. Use the same production API/options as the Godot worker
 // CLI; never edit a saved state, manufacture a fixture or access engine globals.
 const fs = require('node:fs');
@@ -13,7 +12,7 @@ assert.ok(profile && output, 'Profil jetable et preuves requis');
 fs.mkdirSync(output, { recursive: true });
 const started = Date.now();
 const actions = [];
-const receipt = { method: 'production createBridge/public commands', mode: 'common', club: 0,
+const receipt = { method: 'production createBridge/public commands', mode: 'world-champ', club: 29,
   node: process.version, worker_sha256: sha(path.resolve(__dirname, '../../native/engine/worker.cjs')),
   flags: { dailyCalendar: true, mandatoryPress: true, internationalCareer: true }, actions };
 function sha(file) { return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'); }
@@ -55,13 +54,14 @@ try {
   settle();
   // advance_day performs the real scheduled training. No extra train command:
   // the graphical setup being replaced never issued one either.
-  for (let day = 0; day < 40; day++) {
+  // La saison Monde compte plusieurs semaines de préparation : on avance jusqu'au jour de match (garde : 150 jours).
+  for (let day = 0; day < 150; day++) {
     settle();
     if (model.meta.calendarCadence?.matchReady) break;
     assert.equal(model.meta.calendarCadence?.canAdvance, true, 'Journée réellement autorisée');
     go('advance_day', { fromDate: model.meta.calendarToday });
   }
-  assert.equal(model.meta.calendarCadence?.matchReady, true, 'Jour de match atteint en quarante journées maximum');
+  assert.equal(model.meta.calendarCadence?.matchReady, true, 'Jour de match atteint dans les 150 journées de préparation');
   assert.ok(model.next, 'Rencontre réellement projetée');
   go('auto_lineup');
   go('begin_match');

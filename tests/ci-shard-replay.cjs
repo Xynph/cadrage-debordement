@@ -115,7 +115,7 @@ assert.ok(Math.max(...Object.values(WEIGHTS_SECONDS)) <= Math.max(...loads));
 // Jobs Godot : suites qui lisent CD_GODOT_EXE ou CD_GODOT_EXECUTABLE, réparties sans perte.
 const godot = godotTestFiles(files);
 assert.ok(godot.length >= 40, 'Suites Godot découvertes : ' + godot.length);
-for (const name of ['godot-match-rendu', 'godot-match-animations', 'native-relationships-ui', 'small-window-contracts'])
+for (const name of ['godot-match-rendu', 'godot-match-animations', 'godot-match-pass', 'small-window-contracts'])
   assert.ok(godot.includes('tests/' + name + '.cjs'), name);
 // Mode Monde uniquement : les suites Godot à ancien mode de carrière (CD_MODES_HERITES) sont exclues des jobs Godot.
 const godotExcluded = godotTestFiles(testFilesOnDisk()).filter(f => !godot.includes(f));

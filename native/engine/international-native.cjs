@@ -269,6 +269,21 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       availability:projectAvailability({date,clubManaged:managed.club,clubId,players,callups:overview.callups,
         releaseWindows:overview.releaseWindows,editions:overview.competitions,teams:[...teams,lionsTeam]}),
     };
+    // Tournée d'été (reprise.cjs) : mêmes internationaux et mêmes dates de retour que « La reprise ».
+    if (model.international.availability.clubManaged && run("typeof CDReprise!=='undefined'")) {
+      const tour = JSON.parse(run('JSON.stringify(CDReprise.absentees(S))'));
+      const availability = model.international.availability, known = new Map(availability.players.map(item => [item.id, item]));
+      for (const item of tour) {
+        const camp = known.get(item.id);
+        if (camp) { if (camp.returnDate < item.returnDate) camp.returnDate = item.returnDate; continue; }
+        availability.players.push({ ...item, nationName: teamNames[item.nation] ?? item.nation, competitionId: 'tournee-ete', competitionName: 'Tournée d’été' });
+      }
+      if (tour.length) {
+        availability.players.sort((a, b) => (a.returnDate < b.returnDate ? -1 : a.returnDate > b.returnDate ? 1 : a.name < b.name ? -1 : 1));
+        availability.absentCount = availability.players.length;
+        availability.nextReturn = availability.players[0].returnDate;
+      }
+    }
     if (ended()) {
       const waiting = date < nextOpening();
       if (waiting) model.meta.canAdvanceSeason=false;
