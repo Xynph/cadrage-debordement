@@ -10,7 +10,7 @@ module.exports=function nativeDecisions(){
   const known=n=>Number.isFinite(n),date=Number.isInteger(r.season)&&Number.isInteger(r.week),age=date&&known(S.economy?.week)&&r.week<=S.economy.week?S.economy.week-r.week:null;
   const available=availableIds.has(r.playerId),stale=age===null?null:age>13;
   const need=Number.isInteger(r.family)?needs.find(n=>n.family===r.family):null;
-  const source=date?'Saison '+r.season+' · semaine de suivi '+r.week:'Date du rapport non conservée';
+  const source=date?'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(r.season)+' · semaine de suivi '+r.week:'Date du rapport non conservée';
   const observed=[],estimates=[],limits=['Qualités détaillées non archivées : aucune force technique précise ne peut être affirmée.'];
   if(known(r.age))observed.push(r.age+' ans à la date du rapport.');
   if(known(r.note))observed.push('Niveau au poste relevé : '+r.note+' / 100 à cette date.');else limits.push('Niveau au poste non conservé.');

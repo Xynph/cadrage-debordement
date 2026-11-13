@@ -130,7 +130,7 @@
   return '<section class="cd04" aria-label="Centre de formation">'+
    '<header class="cd04-header"><div><p class="cd04-kicker">CADRAGE DÉBORDEMENT · FORMATION</p>'+
    '<h2>Le centre de formation</h2><p>Préparer la relève et accompagner les jeunes talents du club.</p></div>'+
-   '<span class="cd04-season">Saison '+number(model.season)+'</span></header>'+
+   '<span class="cd04-season">Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(model.season)+'</span></header>'+
    '<div class="cd04-kpis">'+
    kpi('Espoirs',model.totals.academy,'Au centre de formation')+
    kpi('Jeunes pros',model.totals.young,'23 ans ou moins')+

@@ -1,25 +1,31 @@
 'use strict';
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { context } = require('./france-harness.cjs');
-const worldVm = require('../native/engine/world-vm.cjs');
-const registry = require('../native/engine/world-registry.json');
+const { context } = require('./monde-harness.cjs');
 
+// Carrière Monde réelle (world-champ, club 0) au calendrier journalier ; chaque cas repart du même point :
+// veille... jour du premier match du club.
+let shared = null, base = null;
+test.after(() => shared?.close());
 function world() {
- const h = context();
- h.ctx.nativeWorldRegistryText = JSON.stringify(registry);
- h.run(worldVm.bootstrap());
- h.run(`CDWorldCareer.start(0, 'world', true);
-  while (!CDWorldCareer.userFixture(S)) CDWorldCareer.finishWeek();
-  const fixture = CDWorldCareer.userFixture(S);
-  while (CDWorldCareer.calendarToday(S) < fixture.date) CDWorldCareer.advanceDay(S, CDWorldCareer.calendarToday(S));`);
- return h;
+ if (!shared) {
+  shared = context(827381, {bridge: {dailyCalendar: true}});
+  shared.run(`while (!CDWorldCareer.userFixture(S)) CDWorldCareer.finishWeek();
+   var fixture = CDWorldCareer.userFixture(S);
+   while (CDWorldCareer.calendarToday(S) < fixture.date) CDWorldCareer.advanceDay(S, CDWorldCareer.calendarToday(S));`);
+  shared.run('var pristineAdvanceRugby = advanceRugby;');
+  base = shared.checkpoint();
+ }
+ shared.restore(base);
+ // Chaque cas espionne advanceRugby : on repart du moteur d’origine.
+ shared.run('advanceRugby = pristineAdvanceRugby; var fixture = CDWorldCareer.userFixture(S);');
+ return shared;
 }
 
 test('the club match keeps the selected club and opposition players released to their unions', () => {
  const h = world();
- h.run(`const opposition = S.clubs[fixture.homeId === S.club ? fixture.awayId : fixture.homeId];
-  const called = [S.lineup[5], buildSheet(opposition).lineup[5]];
+ h.run(`var opposition = S.clubs[fixture.homeId === S.club ? fixture.awayId : fixture.homeId];
+  var called = [S.lineup[5], buildSheet(opposition).lineup[5]];
   S.national = {role:{club:true,nation:'FRA'},career:{callups:[{nation:'FRA',from:fixture.date,through:fixture.date,playerIds:called}]}};
   beginMatch();`);
  assert.equal(h.run('S.live.sheets.every(sheet=>sheet.nominated.length===23)'), true);
@@ -36,9 +42,9 @@ test('selection-only career advances over the anchor match and records its AI re
  h.run(`S.national = {role:{club:false,nation:'FRA'},career:{callups:[]}};`);
  assert.equal(h.run('CDWorldCareer.dailyStatus(S).canAdvance'), true);
  assert.equal(h.run('nextMatch()'), undefined);
- assert.equal(h.run('CDWorldCareer.nextOpening(S)'), '2027-08-30');
- h.run(`let anchorMatch;
-  const nativeAdvance = advanceRugby;
+ assert.equal(h.run('CDWorldCareer.nextOpening(S)'), '2027-08-16', 'reprise de la saison 2027-28 du Monde');
+ h.run(`var anchorMatch;
+  var nativeAdvance = advanceRugby;
   advanceRugby = l => {
    if (l.worldContext?.id === fixture.id && !anchorMatch) anchorMatch = l;
    nativeAdvance(l);
@@ -53,10 +59,10 @@ test('selection-only career advances over the anchor match and records its AI re
 test('the technical anchor can add injury cover without leaving invalid AI roster reports', () => {
  const h = world();
  h.run(`S.national = {role:{club:false,nation:'FRA'},career:{callups:[]}};
-  const rosterBefore = new Set(S.clubs[S.club].players.map(p => p.id));
+  var rosterBefore = new Set(S.clubs[S.club].players.map(p => p.id));
   for (const p of S.clubs[S.club].players) if (p.pos === 'Pilier gauche') p.injury = 3;
-  let anchorSheet;
-  const nativeAdvance = advanceRugby;
+  var anchorSheet;
+  var nativeAdvance = advanceRugby;
   advanceRugby = l => {
    if (l.worldContext?.id === fixture.id && !anchorSheet) anchorSheet = l.sheets[l.pair.indexOf(S.club)].nominated;
    nativeAdvance(l);

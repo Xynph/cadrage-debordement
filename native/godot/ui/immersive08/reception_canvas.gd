@@ -2,6 +2,7 @@ extends RefCounted
 ## Le journal du moteur, accompagné de repères et d'actions réellement disponibles.
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const SeasonLabel = preload("res://ui/season_label.gd")
 const Portraits = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -100,7 +101,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"arrival":"Présentation à la presse", "knockout":"Conférence de phase finale",
 			"season_review":"Conférence de bilan", "weekly":"Conférence de la semaine"
 		}.get(invitation.kind, "Invitation de presse")
-		var detail := "%s · Saison %d · Semaine %d." % [Press._club(app, context.club), context.season, int(context.week) + 1]
+		var detail := "%s · Saison %s · Semaine %d." % [Press._club(app, context.club), SeasonLabel.label(context.season), int(context.week) + 1]
 		match invitation.status:
 			"pending": detail += "\n\nLes journalistes vous attendent. Publiez vos réponses pour poursuivre."
 			"published": detail += "\n\nVos réponses ont été publiées."
@@ -413,7 +414,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 			var notice: Dictionary = linked[0].get("calendar_notice",{})
 			if not str(notice.get("opponent","")).is_empty(): title += " · " + str(notice.opponent)
 			var context: Dictionary = linked[0].get("press_invitation",{}).get("context",{})
-			if context.has_all(["season","week"]): title += " · S%d / sem. %d" % [context.season,int(context.week)+1]
+			if context.has_all(["season","week"]): title += " · %s / sem. %d" % [SeasonLabel.label(context.season),int(context.week)+1]
 			list_entries.append({"thread_header":true,"key":group.key,"opened":opened,"count":linked.size(),"title":title})
 			if not opened: continue
 		for item: Dictionary in linked: list_entries.append(item)

@@ -71,7 +71,7 @@ static func _profile(app: Control, parent: Container, person: Dictionary) -> voi
 		if team.get("members", []).any(func(member: Dictionary): return str(member.get("id", "")) == str(person.id)):
 			words.add_child(G.wrap(str(team.get("name", "")), 14))
 			break
-	if person.get("contractEnd") != null: list.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 14))
+	if person.get("contractEnd") != null: list.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.season_label(person.contractEnd), 14))
 	var employment := Career._employment_person(app, str(person.id))
 	if employment.get("employed", false):
 		list.add_child(G.wrap("Contrat rémunéré · %s · %s paies restantes" % [G.salary(employment.get("paidSalary", 0)), G.n(employment.get("remainingPayments", 0))], 14))
@@ -81,7 +81,7 @@ static func _profile(app: Control, parent: Container, person: Dictionary) -> voi
 		list.add_child(G.section("Parcours dans votre carrière"))
 		var labels := {"reference-already-retired":"Retraite", "player-conversion":"Reconversion dans le staff", "retirement":"Retraite", "voluntary-retirement":"Départ à la retraite", "contract-ended":"Fin de contrat", "ai-renewal":"Prolongation", "ai-hire":"Arrivée au club", "hire":"Arrivée au club", "renew":"Prolongation", "release":"Départ du club"}
 		for event: Dictionary in events:
-			list.add_child(G.wrap("Saison %s · %s" % [G.n(event.get("season", "—")), str(labels.get(event.get("kind", ""), "Évolution du parcours"))], 14))
+			list.add_child(G.wrap("Saison %s · %s" % [G.season_label(event.get("season", "—")), str(labels.get(event.get("kind", ""), "Évolution du parcours"))], 14))
 	var back := G.button("Retour à l’annuaire", func():
 		reading(app).navigation_id = ""
 		app._render(false))

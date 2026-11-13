@@ -108,7 +108,7 @@ static func build(app: Control) -> Control:
 		var where: String = "Lieu non conservé"
 		if match.get("neutral") != null:
 			where = "Terrain neutre" if bool(match.neutral) else ("Domicile" if bool(match.get("home",false)) else "Extérieur")
-		var date: String = "Saison %d · %s" % [int(match.season), _phase(str(match.get("phase","")))]
+		var date: String = "Saison %s · %s" % [G.season_label(match.season), _phase(str(match.get("phase","")))]
 		if match.get("competitionRound") != null: date += " · J%d" % (int(match.competitionRound)+1)
 		elif match.get("week") != null: date += " · Semaine %d" % (int(match.week)+1)
 		elif match.get("round") != null: date += " · J%d" % (int(match.round)+1)
@@ -180,7 +180,7 @@ static func _individual(app: Control, panel: Container) -> void:
 			if m.get("per80") != null: ratio = ("%.2f" % float(m.per80)).replace(".", ",")
 			details.add_child(G.wrap("%s · total connu %s sur %d / %d feuilles · par 80 min : %s (%d feuilles, %s minutes)" % [str(metric[1]), _value(m.get("total")), int(m.get("matches",0)), matches.size(), ratio, int(m.get("ratioMatches",0)), _value(m.get("minutes"))], 14))
 		for appearance: Dictionary in matches:
-			details.add_child(G.wrap("Saison %d · semaine %d · club #%d contre #%d · %s minutes · essais %s · pénalités réussies %s / manquées %s" % [int(appearance.season), int(appearance.week)+1, int(appearance.clubId), int(appearance.opponent), _value(appearance.get("minutes")), _value(appearance.get("tries")), _value(appearance.get("penaltyGoals")), _value(appearance.get("penaltyMisses"))], 13))
+			details.add_child(G.wrap("Saison %s · semaine %d · club #%d contre #%d · %s minutes · essais %s · pénalités réussies %s / manquées %s" % [G.season_label(appearance.season), int(appearance.week)+1, int(appearance.clubId), int(appearance.opponent), _value(appearance.get("minutes")), _value(appearance.get("tries")), _value(appearance.get("penaltyGoals")), _value(appearance.get("penaltyMisses"))], 13))
 			var links := G.h(6)
 			_club_link(app,links,appearance.get("clubId"),"","PerformanceAppearanceClub_"+str(appearance.get("key",details.get_child_count())).validate_node_name())
 			_club_link(app,links,appearance.get("opponent"),"","PerformanceAppearanceOpponent_"+str(appearance.get("key",details.get_child_count())).validate_node_name())

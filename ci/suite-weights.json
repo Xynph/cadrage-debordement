@@ -171,6 +171,7 @@
     "default_mb": 1024,
     "budget_mb": 12288,
     "suites": {
+      "tests/monde-harness.cjs": 1830,
       "tests/native-club-meetings-packs.cjs": 1664,
       "tests/native-club-meetings.cjs": 2688,
       "tests/native-club-support-training-forecast.cjs": 2304,
@@ -178,10 +179,12 @@
       "tests/native-nation-meetings.cjs": 3008,
       "tests/native-playbook.cjs": 1600,
       "tests/native-professional-depth.cjs": 2624,
+      "tests/native-relationships.cjs": 2048,
       "tests/performance-analysis.cjs": 2048,
       "tests/world-catalogue-dedup.cjs": 3264,
       "tests/world-domestic-venues.cjs": 1344,
-      "tests/youth-matches-worker.cjs": 2048
+      "tests/youth-matches-worker.cjs": 2048,
+      "tests/youth-matches.cjs": 1880
     }
   }
 }

@@ -336,7 +336,7 @@ func real_market_and_archives() -> void:
 	app._navigate("Classements");await settle()
 	await activate(named(app,"OpenArchives"))
 	var names:String=texts(named(app,"SeasonArchives"))
-	check(names.contains("SAISON 1") and names.contains("rang") and names.contains("Montée(s)"),"Archive réelle S2 : saison, rang et mouvements visibles")
+	check(names.contains("SAISON 2026-2027") and names.contains("rang") and names.contains("Montée(s)"),"Archive réelle S2 : saison, rang et mouvements visibles")
 	await capture("archives-reelles-s2")
 	app._clear_dialogs();await settle()
 	var original:Dictionary=app.model.duplicate(true)
