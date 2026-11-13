@@ -4,7 +4,7 @@ const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('no
 const {createBridge}=require('../native/engine/worker.cjs'),{describe}=require('../native/engine/portraits.cjs');
 const vm=require('node:vm'),{factory}=require('../native/engine/staff-career.cjs');
 function rewrite(text,edit){const doc=JSON.parse(text);edit(doc.state);const s=JSON.stringify(doc.state);let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
-test('Real worker persists new academy portraits through promotion/reopen and never upgrades legacy on consultation',t=>{
+test('Real worker persists new academy portraits through promotion/reopen and never writes a legacy upgrade on consultation (Monde projects bank v2, decision of 2026-11-13)',t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-portrait-bank-')),opts={dataDir:dir,seed:827381,now:1700000000000};let b=createBridge(opts),serial=0;
  t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
  const call=(command,payload={})=>b.handle({id:++serial,command,payload}),go=(command,payload={})=>{const r=call(command,payload);a.equal(r.ok,true,r.error);return r.model;};
@@ -14,7 +14,10 @@ test('Real worker persists new academy portraits through promotion/reopen and ne
  const saved=go('export').meta.exportText;b.close();b=createBridge(opts);a.equal(go('export').meta.exportText,saved);
  const old=rewrite(saved,s=>{const visit=o=>{if(!o||typeof o!=='object')return;if(o.generation?.policy!=='staff-completion-v1')delete o.appearanceBankVersion;for(const v of Object.values(o))visit(v);};visit(s);});
  go('import',{text:old});const legacy=go('export').meta.exportText,file=path.join(dir,'PrototypeGodot/donnees.json'),bytes=fs.readFileSync(file);
- for(let i=0;i<3;i++){m=go('snapshot');a.equal(m.squad.find(q=>q.id===p.id).appearanceBankVersion,undefined);a.equal(describe(m.squad.find(q=>q.id===p.id)).version,1);}
+ // Décision de Léo du 13/11/2026 : en carrière Monde la projection montre la banque v2 (160 visages) aux historiques,
+ // mais la SAUVEGARDE n'est jamais modifiée par une consultation (export et fichier identiques, marqueur toujours absent).
+ for(let i=0;i<3;i++){m=go('snapshot');a.equal(m.squad.find(q=>q.id===p.id).appearanceBankVersion,2);a.equal(describe(m.squad.find(q=>q.id===p.id)).version,2);}
+ a.equal(Object.hasOwn(JSON.parse(legacy).state.clubs[0].players[0],'appearanceBankVersion'),false);
  a.equal(go('export').meta.exportText,legacy);a.deepEqual(fs.readFileSync(file),bytes);
  for(const bad of [0,3,'2',null]){const forged=rewrite(legacy,s=>{s.development.academy[0].appearanceBankVersion=bad;});a.equal(call('import',{text:forged}).ok,false);a.equal(go('export').meta.exportText,legacy);a.deepEqual(fs.readFileSync(file),bytes);}
 });

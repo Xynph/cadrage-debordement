@@ -1,6 +1,7 @@
 extends RefCounted
 ## Lecture des seules informations publiées. Aucune fourchette n'est construite ici.
 const POTENTIAL_COLOR := Color("ffb454")
+const SeasonLabel = preload("res://ui/season_label.gd")
 
 static func number(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
@@ -47,7 +48,7 @@ static func potential_tooltip(person: Dictionary) -> String:
 	var result := "Potentiel évolutif : un plafond possible, sans garantie de l’atteindre. Réévaluation à l’intersaison selon le travail, les performances, la progression et la personnalité."
 	var review: Variant = person.get("potentialDevelopment")
 	if owned(person) and review is Dictionary and review.get("label") is String:
-		result += "\nBilan de la saison %s · %s" % [str(review.get("season","—")),str(review.label)]
+		result += "\nBilan de la saison %s · %s" % [SeasonLabel.label(review.get("season","—")),str(review.label)]
 	return result
 
 static func sort_value(person: Dictionary, field: String, own_context: bool = false) -> Variant:

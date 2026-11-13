@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const SeasonLabel = preload("res://ui/season_label.gd")
 const Press = preload("res://ui/press_view.gd")
 const People = preload("res://ui/press_people_view.gd")
 var director: Node
@@ -75,7 +76,7 @@ func _render_ui() -> void:
 	_draft_status = null
 	var column := S.frame(ui, 20)
 	var context: Dictionary = data.get("context", {})
-	S.heading(column, model.get("club", {}), "La conférence de presse", "Saison %d · semaine %d" % [int(context.get("season", 0)), int(context.get("week", 0)) + 1])
+	S.heading(column, model.get("club", {}), "La conférence de presse", "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
 	if _available(): _render_conference(column)
 	elif not _current_outcome().is_empty(): _render_outcome(column, _current_outcome())
 	else:

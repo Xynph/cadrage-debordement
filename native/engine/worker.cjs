@@ -13,6 +13,7 @@ const inSeasonDevelopment=require('./in-season-development.cjs');
 const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs'),boardNames=require('./staff-completion.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
+const makePortraitLooks=require('./portrait-looks.cjs').createLooks;
 const makeNational=require('./international-native.cjs');
 const {factory:internationalCallups}=require('./international-callups.cjs');
 const factsFile=path.join(__dirname,'player-real-facts.json');
@@ -51,7 +52,8 @@ function clubCountry(club){
 const factClubs=Object.fromEntries(referenceClubs.map(club=>[club.id,clubCountry(club)]));
 const factOrigins=Object.fromEntries(referenceClubs.flatMap(club=>club.players.map(player=>[player.id,factClubs[club.id]])));
 const nationalFacts=makePlayerFacts(playerFactsCatalogue,factOrigins,factClubs);
-const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
+const portraitLooks=makePortraitLooks(nationalFacts);
+const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
 const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024,EXTENDED_IMPORT_LIMIT_BYTES=20*1024*1024,EXTENDED_REQUEST_LIMIT_BYTES=42*1024*1024,CHAMP_IMPORT_LIMIT_BYTES=24*1024*1024,CHAMP_REQUEST_LIMIT_BYTES=50*1024*1024;
@@ -179,6 +181,8 @@ function createBridge(options={}){
   ctx.nativeKnowledgeValidate=knowledgeProjection.validate;
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
+  // Libellé de saison : la même fonction (dist/season-label.js) sert au processus Node (projection du modèle) et à la VM.
+  if(typeof globalThis.libelleSaison!=='function')globalThis.libelleSaison=require(path.join(dist,'season-label.js')).libelleSaison;
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
   // Découpage des longues courses du moteur (présentation du journal, docs/match-courses-20261112.md) :
   // CD_MATCH_COURSES=0 (ou l'option matchCourses:false) rend l'ancien journal, un seul fait jusqu'à la ligne.
@@ -309,6 +313,8 @@ function createBridge(options={}){
    return JSON.parse(projectionCache.get(source));
   };
   const projectKnowledge=model=>{
+   // Portraits cohérents avec la carrure et l'origine (copie projetée seulement : la sauvegarde n'est pas touchée).
+   if(process.env.CD_PORTRAIT_CARRURE!=='0')portraitLooks.apply(model);
    knowledgeProjection.project(model,readProjection('nativeKnowledge.visibility(S)'));
    const trends=readProjection('Object.fromEntries((S?.clubs[S.club]?.players||[]).map(p=>[p.id,nativePotentialEvolution.project(S,p.id)]))');
    for(const p of model.squad||[])if(p.knowledge?.owned&&trends[p.id])p.potentialDevelopment=trends[p.id];
@@ -589,6 +595,9 @@ function createBridge(options={}){
    allowProjectionCache=reading;
    try{return handleMeasured(request);}finally{allowProjectionCache=false;if(!reading)projectionCache.clear();}
   }
+  // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
+  // Jamais exposé par le protocole stdio (options fixées par le code appelant).
+  if(options.testVm===true)return {handle,close,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
   return {handle,close};
  }catch(e){close();throw e;}
 }

@@ -69,7 +69,7 @@ static func home(app: Control) -> Control:
 	page.add_child(veil)
 	page.move_child(veil, page.get_child_count() - 2)
 	var over: VBoxContainer = page.get_meta("content")
-	over.add_child(G.label("OVAL LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
+	over.add_child(G.label("RUGBY LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
 	over.add_child(G.spacer())
 	var row := G.h(28)
 	over.add_child(row)
@@ -82,7 +82,7 @@ static func home(app: Control) -> Control:
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.custom_minimum_size = Vector2(360, 180)
 	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	logo.tooltip_text = "Oval Legacy 27 — Rugby Manager"
+	logo.tooltip_text = "Rugby Legacy 27"
 	var composite := ShaderMaterial.new()
 	composite.shader = load("res://branding/black_key.gdshader")
 	logo.material = composite
@@ -106,7 +106,7 @@ static func home(app: Control) -> Control:
 		current.add_child(G.wrap("Sélection nationale" if national else str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
 		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
 		choices.add_child(G.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club), 26, G.INK))
-		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
+		choices.add_child(G.label("Saison %s · %s" % [G.season_label(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
 		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Réception"), true))
 	var locked:bool=app.model.is_empty() or app.model.get("meta",{}).get("recoveryRequired",false)
 	var new_career:=G.button("NOUVELLE CARRIÈRE", func(): begin_creation(app), club.is_empty())
@@ -226,7 +226,7 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 	parent.add_child(facts)
 	Editorial.fact(facts, club_count, "Clubs du championnat")
 	Editorial.divider(facts)
-	Editorial.fact(facts, "2027" if division == "srp" else "2026–27", "Saison de départ")
+	Editorial.fact(facts, "2027" if division == "srp" else "2026-2027", "Saison de départ")
 	var format: Array = CREATION_FORMATS.get(division, [])
 	if not format.is_empty():
 		parent.add_child(C.rule())
@@ -716,9 +716,9 @@ static func creation(app: Control) -> Control:
 		var over: VBoxContainer = photo.get_meta("content")
 		over.add_child(G.label("VOTRE FUTUR CLUB", 14, G.WHITE))
 		if is_champ:
-			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026–27", 22, G.WHITE, true))
+			over.add_child(G.label(str(_competition_identity(app, division).get("name", Club.competition_name(division))).to_upper() + "  /  SAISON 2026-2027", 22, G.WHITE, true))
 		if is_nationale:
-			over.add_child(G.label("NATIONALE  /  SAISON 2026–27", 22, G.WHITE, true))
+			over.add_child(G.label("NATIONALE  /  SAISON 2026-2027", 22, G.WHITE, true))
 		if is_srp:
 			over.add_child(G.label("PACIFIQUE  /  SAISON 2027", 22, G.WHITE, true))
 			over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
@@ -880,11 +880,11 @@ static func creation(app: Control) -> Control:
 		list.add_child(facts)
 		var fact_data := [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]
 		if is_japan:
-			fact_data = [["18", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["DÉC.–JUIN", "SAISON 2026–27"]] if division == "jlo-d1" else [["14", "MATCHS PAR CLUB"], ["2", "PLACES EN BARRAGES"], ["DÉC.–MAI", "SAISON 2026–27"]]
+			fact_data = [["18", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["DÉC.–JUIN", "SAISON 2026-2027"]] if division == "jlo-d1" else [["14", "MATCHS PAR CLUB"], ["2", "PLACES EN BARRAGES"], ["DÉC.–MAI", "SAISON 2026–27"]]
 		if is_nationale:
 			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["PRO D2", "ACCESSION SPORTIVE"]]
 		if is_champ:
-			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["SEPT.–MAI", "SAISON 2026–27"]]
+			fact_data = [["26", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["SEPT.–MAI", "SAISON 2026-2027"]]
 		for fact in fact_data:
 			var tile := G.panel(facts, 1.0)
 			tile.add_child(G.label(fact[0], 20, G.INK, true))

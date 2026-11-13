@@ -408,6 +408,10 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 		load_hint.name = "PlayerLoadUnavailableReason"
 		contracts.add_child(load_hint)
 	references_tab.add_child(G.section("Repères de départ","Situation du joueur au début de la carrière"))
+	if PlayerAttributes.is_generated(p):
+		var generated := G.wrap(PlayerAttributes.GENERATED_TITLE + ".",13,G.MUTED)
+		generated.name = "ProfileGeneratedPlayer"
+		references_tab.add_child(generated)
 	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile")!=null else {}
 	if not roster.is_empty():
 		var position:Dictionary=roster.get("position",{})
@@ -416,8 +420,8 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 		references_tab.add_child(G.wrap("Poste principal : %s"%position.get("primary",p.pos),13,G.MUTED))
 		references_tab.add_child(G.wrap("Qualification initiale de jeu : %s"%", ".join(position.get("qualifications",[])),13,G.MUTED))
 		references_tab.add_child(G.wrap("Statut initial : %s"%str(status.get("value","inconnu")).capitalize(),13,G.MUTED))
-		if status.get("professionalFromSeason")!=null: references_tab.add_child(G.wrap("Référence initiale : passage professionnel prévu en saison %s."%G.n(status.professionalFromSeason),12,G.MUTED))
-		references_tab.add_child(G.wrap("Échéance initiale : %s (fin saison %s)."%[G.n(initial.get("endYear",0)),G.n(initial.get("endSeason",0))],13,G.MUTED))
+		if status.get("professionalFromSeason")!=null: references_tab.add_child(G.wrap("Référence initiale : passage professionnel prévu en saison %s."%G.season_label(status.professionalFromSeason),12,G.MUTED))
+		references_tab.add_child(G.wrap("Échéance initiale : %s (fin saison %s)."%[G.n(initial.get("endYear",0)),G.season_label(initial.get("endSeason",0))],13,G.MUTED))
 	references_tab.add_child(G.wrap(portrait.tooltip_text,12,G.MUTED))
 	var academy := preload("res://ui/immersive08/academy_canvas.gd")
 	var player_id := str(p.id)
@@ -521,7 +525,7 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 		if str(entry.get("target",""))!=str(p.id):continue
 		var note_content:=G.v(3);note_content.name="ProfileNoteContent";note_home.add_child(note_content)
 		note_content.add_child(G.separator())
-		note_content.add_child(G.label("MA NOTE · S%s / SEMAINE %s"%[G.n(entry.get("season",1)),G.n(int(entry.get("week",0))+1)],11,G.MUTED))
+		note_content.add_child(G.label("MA NOTE · %s / SEMAINE %s"%[G.season_label(entry.get("season",1)),G.n(int(entry.get("week",0))+1)],11,G.MUTED))
 		var preview:=G.wrap(str(entry.get("text","")),12,G.INK)
 		preview.name="ProfileNotePreview";preview.max_lines_visible=4
 		preview.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -986,7 +990,7 @@ static func _profile_contexts(parent:VBoxContainer,p:Dictionary,app:Control) -> 
 			_profile_fact(development,"ProfileDevelopmentDelta","Évolution du niveau",("+" if delta>=0 else "")+G.n(delta))
 		var history:Array=data.get("history",[])
 		if history.is_empty():_context_text(development,"Premier bilan annuel à venir.","AnnualEmpty")
-		for year:Dictionary in history.slice(maxi(0,history.size()-2)):_context_text(development,"S%s · %s → %s · %s min / %s app."%[G.n(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—")),G.n(year.get("appearances","—"))],"Annual")
+		for year:Dictionary in history.slice(maxi(0,history.size()-2)):_context_text(development,"%s · %s → %s · %s min / %s app."%[G.season_label(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—")),G.n(year.get("appearances","—"))],"Annual")
 		var reason:=str(data.get("reason",""))
 		if not reason.is_empty():_context_text(development,"Progression annuelle." if reason.begins_with("Évolution annuelle") else reason,"DevelopmentReason")
 	var form:=_profile_tile(grid,"Form","Forme & prestations","ProfileContext")

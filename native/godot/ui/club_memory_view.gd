@@ -87,7 +87,7 @@ static func _rank(year: Dictionary) -> String:
 static func _season(parent: Node, year: Dictionary, app: Control) -> void:
 	var card := G.card(parent, G.accent_ink(app.accent))
 	G.fill(card.get_parent())
-	card.add_child(G.section("Saison " + str(int(year.season))))
+	card.add_child(G.section("Saison " + G.season_label(year.season)))
 	card.add_child(G.wrap(_rank(year), 17, G.INK))
 	card.add_child(G.wrap(_titles(year), 15, G.GOLD))
 	var barrages: Array = year.get("japan_barrages",[])
@@ -111,7 +111,7 @@ static func _choice(parent: Node, app: Control, seasons: Array, key: String, lab
 	var chosen: int = int(app.management_ui.get(key, fallback))
 	var selected := -1
 	for year: Dictionary in seasons:
-		selector.add_item("Saison %d · %s" % [int(year.season), _division(year.league_id)], int(year.season))
+		selector.add_item("Saison %s · %s" % [G.season_label(year.season), _division(year.league_id)], int(year.season))
 		if int(year.season) == chosen: selected = selector.item_count - 1
 	if selected < 0: selected = 0; chosen = int(seasons[0].season)
 	selector.select(selected)
@@ -147,7 +147,7 @@ static func _comparison(parent: Node, app: Control, seasons: Array) -> void:
 
 static func _date(event: Dictionary) -> String:
 	var parts: Array[String] = []
-	if event.has("season"): parts.append("Saison " + str(int(event.season)))
+	if event.has("season"): parts.append("Saison " + G.season_label(event.season))
 	parts.append({"league":"Championnat", "barrage":"Barrage", "semi":"Demi-finale", "final":"Finale", "access":"Barrage d’accession"}.get(event.get("phase", ""), "Rencontre"))
 	if event.get("phase") == "league" and event.has("round"): parts.append("Journée " + str(int(event.round) + 1))
 	elif event.has("week"): parts.append("Semaine " + str(int(event.week) + 1))
@@ -194,8 +194,8 @@ static func build(app: Control) -> Control:
 	list.add_child(G.wrap("Retrouvez le résultat, les réactions des bancs et l’évolution de la rivalité pour chaque rencontre.", 12))
 	list.add_child(G.separator())
 	list.add_child(G.section("Le parcours du coach, à part", "Les prises de poste concernent le manager ; elles ne constituent pas le palmarès du club actuel."))
-	if data.manager_current_from != null: list.add_child(G.wrap("Mandat actuel depuis la saison " + str(int(data.manager_current_from)), 15, G.INK))
+	if data.manager_current_from != null: list.add_child(G.wrap("Mandat actuel depuis la saison " + G.season_label(data.manager_current_from), 15, G.INK))
 	if data.manager_history.is_empty(): list.add_child(G.wrap("Aucune prise de poste antérieure enregistrée.", 14))
 	for move: Dictionary in data.manager_history:
-		list.add_child(G.wrap("Saison %s · %s → %s" % [str(int(move.arrivalSeason)) if move.has("arrivalSeason") else "non conservée", move.from_name, move.to_name], 15))
+		list.add_child(G.wrap("Saison %s · %s → %s" % [G.season_label(move.arrivalSeason) if move.has("arrivalSeason") else "non conservée", move.from_name, move.to_name], 15))
 	return page

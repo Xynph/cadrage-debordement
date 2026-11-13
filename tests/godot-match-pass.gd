@@ -159,7 +159,7 @@ func run() -> void:
 	if capture:
 		check(DirAccess.make_dir_recursive_absolute(folder) == OK, "Dossier de captures accessible")
 	if capture or demo:
-		root.title = "Oval Legacy 27 · Démonstration de passe"
+		root.title = "Rugby Legacy 27 · Démonstration de passe"
 		view.set_camera("action")
 	var displacement_at_catch := 0.0
 	var largest_hold_gap := 0.0

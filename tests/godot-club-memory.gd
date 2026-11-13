@@ -96,7 +96,7 @@ func run() -> void:
 		app._render()
 		await settle()
 		check(app.view.find_child("ClubMemoryComparison",true,false).get_child_count() == 2, "Deux saisons réelles côte à côte")
-		check(all_text(app.view.find_child("ClubMemoryComparison",true,false)).contains("Saison 5") and all_text(app.view.find_child("ClubMemoryComparison",true,false)).contains("Saison 4"), "Deux années réelles sélectionnées par défaut")
+		check(all_text(app.view.find_child("ClubMemoryComparison",true,false)).contains("Saison 2030-2031") and all_text(app.view.find_child("ClubMemoryComparison",true,false)).contains("Saison 2029-2030"), "Deux années réelles sélectionnées par défaut")
 		await capture("histoire-reelle-%d" % resolution.x)
 		app.model = sample
 		app.management_ui.clear()

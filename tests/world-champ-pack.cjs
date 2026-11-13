@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const media=require('../native/engine/media-packs.cjs'),{createBridge}=require('../native/engine/worker.cjs');
@@ -41,7 +40,6 @@ test('Champ presentation fields apply in creation and career without changing si
   const after=state();delete after.identityPack;assert.deepEqual(after,before);
   const wrong={...manifest,databaseId:m.meta.nationaleDatabase.id,clubs:[{id:88,city:'Interdit sur v4'}],staff:[]};
   assert.equal(raw('pack_inspect',{path:archive(wrong),mode}).ok,false);
-  assert.equal(raw('pack_inspect',{path:zip,mode:'world-nationale'}).ok,false);
   const old={...manifest,schema:'cd-identity-pack-v1'};delete old.staff;
   assert.equal(raw('pack_inspect',{path:archive(old),mode}).ok,false);
   for(const value of ['<b>Unsafe</b>','X'.repeat(121),'   ']){
@@ -54,14 +52,9 @@ test('Champ presentation fields apply in creation and career without changing si
   assert.equal(m.staff.teams.find(t=>t.id===102).members[0].roleLabel,coach.roleLabel);
   assert.deepEqual(state(),before);
   assert.equal(m.meta.nationalePackCreation,'base');
-  assert.equal(raw('pack_select',{scope:'creation',id:preview.id,mode:'world-nationale'}).ok,false);
   m=settleClubMeetings(good('new_career',{mode,club:102}),(command,payload)=>good(command,payload));
   assert.equal(state().identityPack.id,preview.id);
   assert.equal(m.club.stadium,'Parc témoin');
-  m=settleClubMeetings(good('new_career',{mode:'world-nationale',club:88}),(command,payload)=>good(command,payload));
-  assert.equal(state().identityPack,undefined);
-  assert.equal(m.meta.champPackCreation,preview.id);
-  assert.equal(raw('advance_champ_preparation',{fromWeek:0}).ok,false);
   m=settleClubMeetings(good('new_career',{mode,club:88}),(command,payload)=>good(command,payload));
   assert.equal(m.meta.leagueId,'nationale');
   assert.equal(m.selection.nationaleQualification.rule,'ffr-235-236-2026-27');

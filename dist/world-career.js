@@ -243,11 +243,11 @@ function worldYearbookPanel(){
  if(!worldActive())return '';
  const w=S.worldManagement;
  return '<section class="card"><h2>Archives du championnat · '+w.yearbook.length+' saison(s)</h2>'+
- w.yearbook.slice().reverse().map(y=>'<div class="row"><span>Saison '+y.season+
+ w.yearbook.slice().reverse().map(y=>'<div class="row"><span>Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(y.season)+
  ' · '+visualEscape(S.clubs[y.champion]?.abbr||'Champion inconnu')+'</span><strong>'+
  y.standings.find(r=>r.id===S.club)?.position+'e · réputation '+
  y.standings.find(r=>r.id===S.club)?.reputation+'/100</strong></div>').join('')+
  (w.awards.length?'<h3>Distinctions internes</h3>'+w.awards.slice().reverse().map(x=>
- '<p>S'+x.season+' · '+visualEscape(x.name)+'</p>').join(''):'')+
+ '<p>'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' · '+visualEscape(x.name)+'</p>').join(''):'')+
  '<p class="help">Le palmarès reprend les finales vraiment disputées dans la carrière. Les récompenses internes reposent sur notes et minutes réellement enregistrées ; aucun essai individuel inventé.</p></section>';
 }

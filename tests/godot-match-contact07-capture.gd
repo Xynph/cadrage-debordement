@@ -45,7 +45,7 @@ func run() -> void:
 		push_error("Fragments réels issus du worker requis, sans reconstruction.")
 		quit(1)
 		return
-	root.title = "Oval Legacy 27 — réception contact native07"
+	root.title = "Rugby Legacy 27 — réception contact native07"
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	var base := ColorRect.new()

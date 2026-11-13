@@ -64,7 +64,7 @@ static func news(source: String) -> String:
 		_legacy_competition = RegEx.new()
 		_legacy_competition.compile("^.+ rejoint .+ après concurrence entre [1-9][0-9]* club\\(s\\), pour " + amount + " \\(accord fictif\\)\\.$")
 		_legacy_direct = RegEx.new()
-		_legacy_direct.compile("^.+ rejoint .+ depuis .+ : accord fictif de " + amount + ", fin de contrat S[1-9][0-9]*\\.$")
+		_legacy_direct.compile("^.+ rejoint .+ depuis .+ : accord fictif de " + amount + ", fin de contrat (?:S[1-9][0-9]*|[0-9]{4}-[0-9]{4})\\.$")
 	if _legacy_competition.search(source) != null:
 		return source.trim_suffix(" (accord fictif).") + "."
 	if _legacy_direct.search(source) != null:
