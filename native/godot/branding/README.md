@@ -1,5 +1,7 @@
 # Identité Oval Legacy 27
 
+> Le jeu s’appelle désormais **Rugby Legacy 27** (renommage du 13 novembre 2026, voir `docs/renommage-rugby-legacy-27.md`). Le lettrage des deux images ci-dessous dit encore « OVAL LEGACY 27 » : c’est une image, à refaire avec la direction artistique. Les noms de fichiers restent inchangés jusque-là.
+
 Logo complet et icône créés par génération d’images au cours de la session du 7 novembre 2026, avec les indications de direction artistique du projet. Aucun logo tiers n’a été fourni comme référence : les itérations utilisent exclusivement nos propres propositions.
 
 Léo a retenu le symbole ovale de la première proposition, validé le logo complet sur fond noir avec le lettrage corrigé, puis choisi l’icône transparente. Le logo principal conserve son master noir intact ; le shader de présentation le compose dans l’accueil. Les essais de détourage défectueux ne sont pas utilisés.
