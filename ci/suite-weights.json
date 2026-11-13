@@ -69,6 +69,7 @@
       "tests/native-manager-career-reverse.cjs": 347,
       "tests/native-match-talks.cjs": 125,
       "tests/native-nation-meetings.cjs": 62,
+      "tests/native-nationale-reduced-bench.cjs": 180,
       "tests/native-playbook.cjs": 34,
       "tests/native-player-attributes.cjs": 57,
       "tests/native-player-knowledge-capacity.cjs": 7,
