@@ -24,8 +24,9 @@ brouillon et pousser librement (CI légère : classification et syntaxe, verdict
 « Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
 prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
 rouge de brouillon : il signifie seulement « batterie non lancée ».
-Depuis le 13/11, les suites Godot ne tournent plus sur les PR (seulement après
-fusion sur `main`) ; pour une recette Godot d'une PR prête, poser l'étiquette
+Depuis le 13/11, les suites Godot ne tournent plus sur les PR ; les vérifications
+lourdes d'après fusion (Godot, SDK, économie, résilience, recette Windows) tournent sur
+créneau régulier (2 à 4 h) sur le dernier `main`, la batterie JS à chaque fusion ; pour une recette Godot d'une PR prête, poser l'étiquette
 `godot-sdk`. Une PR prête dont « Validation CI » est vert se fusionne sans attendre.
 
 Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre
@@ -87,6 +88,11 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
   Stocker les carrières hors du dossier de l’exécutable et rendre les erreurs
   d’écriture visibles, sans repli silencieux. Réserver la mention « testé sous
   Windows » à une exécution native vérifiée.
+- Mode Monde uniquement (décision de Léo, 13/11/2026) : aucun test ne doit
+  tourner dans l'ancien mode de carrière France ni dans les autres anciens
+  modes ; tout nouveau test crée une carrière world-champ. Les tests encore
+  marqués CD_MODES_HERITES sont exclus de la CI jusqu'à leur migration ou
+  suppression.
 
 ## Immersion et textes du jeu
 

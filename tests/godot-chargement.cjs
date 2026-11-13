@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Panneau d’attente et réponses différentielles : Godot réel + worker réel.
 const fs = require('node:fs');
 const os = require('node:os');
@@ -31,7 +32,7 @@ test('Réponses différentielles : reconstruction exacte, ordre des clés compri
   assert.equal(encoder.encode({ id: null, ok: false, model: null, error: 'x' }, revision), '{"id":null,"ok":false,"model":null,"error":"x"}');
 });
 
-test('Panneau d’attente : absent sous 250 ms, présent au passage de jour', {
+test('Panneau d’attente : absent sous 500 ms, présent pour une attente longue', {
   skip: !process.env.CD_GODOT_EXECUTABLE && 'SDK Godot requis : CD_GODOT_EXECUTABLE absent',
 }, () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-chargement-'));

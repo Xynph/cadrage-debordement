@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Shared by the base-names worker suites: new careers carry the base names; an identity
 // pack still applies by identifier; a career started on an earlier table of names loads
 // and keeps its names.

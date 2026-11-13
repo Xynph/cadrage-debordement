@@ -1,3 +1,4 @@
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Lecture seule : les déclarations de presse sont-elles archivées mot pour mot et stables ?
 const fs=require('fs'),os=require('os'),path=require('path');
 const root=process.argv[2],weeks=+(process.argv[3]||3);

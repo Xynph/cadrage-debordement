@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Référence directe du moteur natif : même manifeste et hooks, sans protocole,
 // createBridge, profil disque ni projection de sauvegarde.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');

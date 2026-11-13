@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {test}=require('node:test'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 test('bilans et réorientation dans le vrai dialogue Godot',{skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot requis'},()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-youth-review-'));

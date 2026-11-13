@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict');
 const {context}=require('./harness.cjs'),domain=require('../native/engine/custom-competition.cjs'),editor=require('../native/engine/competition-editor.cjs');
 const document=editor.generate({name:'Ligue des vallées',clubs:Array.from({length:14},(_,i)=>'Club des vallées '+(i+1)),doubleRound:true});

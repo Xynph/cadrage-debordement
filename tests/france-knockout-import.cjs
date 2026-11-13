@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{context}=require('./france-harness.cjs'),{createBridge}=require('../native/engine/worker.cjs');const h=context();
 const bridge=createBridge({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'cd-france-ko-import-')),seed:827381,now:1700000000000});let serial=0;const call=(command,payload={})=>bridge.handle({id:++serial,command,payload});
 function install(text){const r=call('import',{text});assert.equal(r.ok,true,r.error);}

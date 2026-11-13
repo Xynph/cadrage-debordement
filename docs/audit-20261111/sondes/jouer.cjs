@@ -1,3 +1,4 @@
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Pilote en lecture seule : joue une carrière jour par jour par l'API publique du worker.
 const fs=require('fs'),os=require('os'),path=require('path');
 const root=process.argv[2],weeks=+(process.argv[3]||2),club=+(process.argv[4]||29),mode=process.argv[5]||'common';
