@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Disposable setup only. Use the same production API/options as the Godot worker
 // CLI; never edit a saved state, manufacture a fixture or access engine globals.
 const fs = require('node:fs');

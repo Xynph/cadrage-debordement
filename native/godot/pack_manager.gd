@@ -21,6 +21,9 @@ func mode(target_scope: String = "") -> String:
 	var meta: Dictionary = app.model.get("meta", {})
 	if effective_scope == "career":
 		return str(meta.get("edition", "world")) if meta.get("mode") == "world" else "common"
+	# Mode unique Monde : le joueur crée toujours une carrière du Monde complet. Les autres éditions
+	# ne servent qu'aux recettes, avec un moteur lancé en anciens modes (CD_MODES_HERITES=1).
+	if creation_mode == "auto" and not meta.get("legacyModes", false): return "world-champ"
 	if creation_mode in ["auto", "world-champ"] and not meta.get("champCatalogue", []).is_empty(): return "world-champ"
 	if creation_mode in ["auto", "world-nationale", "world-champ"] and not meta.get("nationaleCatalogue", []).is_empty(): return "world-nationale"
 	if creation_mode in ["auto", "world-japan", "world-nationale", "world-champ"] and not meta.get("japanCatalogue", []).is_empty(): return "world-japan"

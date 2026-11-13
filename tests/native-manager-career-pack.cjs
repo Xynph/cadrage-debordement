@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const {createBridge}=require('../native/engine/worker.cjs'),media=require('../native/engine/media-packs.cjs'),db=require('../dist/rugby-common-rosters.js');
 // Optional fixture is produced by native-manager-career-worker's real season.
