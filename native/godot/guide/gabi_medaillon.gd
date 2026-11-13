@@ -103,6 +103,7 @@ func _fit_portrait() -> void:
 		portrait.size = zoomed
 		queue_redraw()
 		return
+	if portrait.has_method("set_render_side"): portrait.set_render_side(size.x)
 	var inset := maxf(3.0, size.x * 0.045)
 	portrait.position = Vector2(inset, inset)
 	portrait.size = size - Vector2(inset, inset) * 2.0

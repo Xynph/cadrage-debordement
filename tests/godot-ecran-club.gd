@@ -71,6 +71,10 @@ func run() -> void:
 		var medaillon: Control = coach._medaillon
 		check(medaillon.is_visible_in_tree(), "Médaillon visible : " + route)
 		var disc := medaillon.get_global_rect()
+		# Médaillon de Gabi : 120 px de haut en 1920×1080, proportionnel à la fenêtre, rendu 3D en proportion.
+		check(absf(disc.size.y - 120.0 * app.size.y / 1080.0) <= 1.5 and absf(disc.size.x - disc.size.y) < 0.5, "Médaillon d'environ 120 px en 1080p (%.1f px) : %s" % [disc.size.y, route])
+		var rendu: Variant = medaillon.portrait.get("_viewport")
+		if rendu is SubViewport: check(rendu.size.x >= disc.size.x * 3.0, "Médaillon : rendu 3D net (%d px pour %.0f px)" % [rendu.size.x, disc.size.x])
 		check(disc.position.y >= app.body_scroll.get_global_rect().end.y, "Médaillon sous l'espace de travail : " + route)
 		var covered := 0
 		for item: Rect2 in coach._content_rects():

@@ -424,15 +424,27 @@ func _play_idle() -> void:
 	_microgesture_wait = _gesture_random.randf_range(_microgesture_delay.x, _microgesture_delay.y)
 	set_process(true)
 
-## Médaillon permanent (coach_canvas.gd) : buste serré, caméra fixe, rendu 320 px ; mode grand : portrait.
+## Médaillon permanent (coach_canvas.gd) : buste serré, caméra fixe, rendu proportionnel à sa taille (set_render_side) ; mode grand : portrait.
 func set_framing(value: String) -> void:
 	if value == framing: return
 	framing = value
 	if _camera != null: _apply_framing()
 
+## Le rendu du médaillon suit sa taille à l'écran (4 px de rendu par pixel affiché, par paliers de 64) :
+## agrandir le médaillon agrandit la résolution du SubViewport 3D, jamais l'image.
+const MEDAILLON_SURECH := 4.0
+const MEDAILLON_PALIER := 64
+var _medaillon_render: Vector2i = MEDAILLON.render
+
+func set_render_side(side: float) -> void:
+	var px := clampi(ceili(side * MEDAILLON_SURECH / MEDAILLON_PALIER) * MEDAILLON_PALIER, 256, 1024)
+	if Vector2i(px, px) == _medaillon_render: return
+	_medaillon_render = Vector2i(px, px)
+	if framing == "medaillon": _viewport.size = _medaillon_render
+
 func _apply_framing() -> void:
 	var medaillon := framing == "medaillon"
-	_viewport.size = MEDAILLON.render if medaillon else RENDER_SIZE
+	_viewport.size = _medaillon_render if medaillon else RENDER_SIZE
 	var target: Vector3 = MEDAILLON.target if medaillon else Vector3(0, 1.39, 0)
 	_camera.position = target + Vector3(-0.32 if medaillon else -0.55, 0.02 if medaillon else 0.04, 3.45)
 	_camera.look_at(target)

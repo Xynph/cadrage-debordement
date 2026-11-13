@@ -36,8 +36,8 @@ const FOOTER_RISE := 14
 ## Le médaillon déborde au-dessus du pied de page ; les écrans laissent ce coin libre (GABI_CORNER).
 const GABI_DOCK_WIDTH := 330.0
 ## Bande basse réservée au médaillon (pixels de référence 2560×1440) : le pied de page grandit d'autant et
-## la mise en page se réduit d'environ 3 % pour la loger, sans toucher au dessin des écrans.
-const GABI_BAND := 48
+## la mise en page se réduit d'environ 6 % pour la loger (médaillon de 120 px en 1920×1080), sans toucher au dessin des écrans.
+const GABI_BAND := 130
 const TOPBAR_ACTION_LEFT := 2067
 const TOPBAR_MATCH_ACTION_LEFT := 2008
 

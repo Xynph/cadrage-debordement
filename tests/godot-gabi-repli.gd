@@ -31,6 +31,15 @@ func _run() -> void:
 	for i in 3: await process_frame
 	_check(medaillon.portrait == original and original.material is ShaderMaterial, "Buste 3D : masque rond conservé")
 	_check(medaillon._disque == null, "Buste 3D : pas de repli 2D")
+	# Médaillon de 120 px : le SubViewport 3D est rendu en proportion (4 px par pixel affiché), pas agrandi.
+	var rendu: Vector2i = original._viewport.size
+	_check(rendu.x >= 120 * 3 and rendu.x <= 120 * 5 and rendu.x == rendu.y, "Buste 3D : rendu proportionnel au médaillon de 120 px (%d px)" % rendu.x)
+	medaillon.size = Vector2(60, 60)
+	await process_frame
+	_check(original._viewport.size.x < rendu.x, "Buste 3D : un médaillon plus petit se rend plus petit (%d px)" % original._viewport.size.x)
+	medaillon.size = Vector2(120, 120)
+	await process_frame
+	_check(original._viewport.size == rendu, "Buste 3D : retour à la même résolution à 120 px")
 	original.set_process(false)
 	medaillon.release()
 	original.free()

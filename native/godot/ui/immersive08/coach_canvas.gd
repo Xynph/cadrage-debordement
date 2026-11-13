@@ -13,6 +13,9 @@ const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GabiPortrait = preload("res://guide/coach_portrait_3d.gd")
 const Avis = preload("res://guide/gabi_avis.gd")
 const Medaillon = preload("res://guide/gabi_medaillon.gd")
+## Hauteur du médaillon : 120 px en 1920×1080, proportionnelle à la fenêtre (la bande du pied de page, shell.gd
+## GABI_BAND, la réserve).
+const MEDAILLON_RATIO := 120.0 / 1080.0
 const ACCENT = Color("176e49")
 ## Bulle spontanée (première visite d'un écran, conseil de composition) : au plus une par jour de jeu.
 ## Les autres attendent sous l'indice du médaillon (point or et carnet).
@@ -212,10 +215,10 @@ func _layout() -> void:
 	var dock := _compact_dock().get_global_rect()
 	# Le médaillon occupe la bande basse réservée (shell.gd, GABI_BAND) : jamais au-dessus de l'espace de
 	# travail, quelle que soit la page.
-	var top := dock.end.y - clampf(app.size.y * 0.09, 64.0, 150.0)
+	var top := dock.end.y - clampf(app.size.y * MEDAILLON_RATIO, 48.0, 240.0)
 	if is_instance_valid(app.body_scroll) and app.body_scroll.is_visible_in_tree():
 		top = maxf(top, app.body_scroll.get_global_rect().end.y + 4.0)
-	var side := clampf(dock.end.y - top, 48.0, 150.0)
+	var side := clampf(dock.end.y - top, 48.0, 240.0)
 	_medaillon.size = Vector2(side, side)
 	_medaillon.global_position = Vector2(dock.end.x - side, dock.end.y - side)
 	_medaillon.reduced_motion = is_instance_valid(app.user_preferences) and bool(app.user_preferences.data.get("reduced_motion", false))
@@ -223,7 +226,8 @@ func _layout() -> void:
 	_avis_bouton.add_theme_font_size_override("font_size", font_px)
 	var pill := _avis_bouton.get_combined_minimum_size()
 	_avis_bouton.size = Vector2(pill.x, dock.size.y)
-	_avis_bouton.global_position = Vector2(_medaillon.global_position.x - pill.x - side * 0.12, dock.position.y)
+	# Centré sur le médaillon : la pastille accompagne Gabi, elle ne reste pas collée au bas du pied de page.
+	_avis_bouton.global_position = Vector2(_medaillon.global_position.x - pill.x - side * 0.12, _medaillon.global_position.y + (side - dock.size.y) * 0.5)
 	if _bulle.visible: _layout_bulle()
 
 func _layout_voile() -> void:
