@@ -197,7 +197,62 @@ function normalizeAcademyPotential(s){
  development.academyPotentialVersion=1;
  return true;
 }
-function academyPlayer(ci,slot,season,index,emergency=false,formationClub=null){const id=`youth-${ci}-${season}-${index}`,h=seedHash(id);let p={appearanceBankVersion:2,id,name:FIRST[h%FIRST.length]+' '+LAST[Math.floor(h/31)%LAST.length],pos:POS[slot],fam:FAMILIES[slot],age:17+h%3,rating:emergency?55+h%8:52+h%15,condition:100,injury:0,salary:2000};ensureSkills(p);ensureDevelopment(p);p.dev.potential=emergency?68+h%10:academyPotential(p,formationClub);p.academy=true;return p}
+// Identité des jeunes générés en carrière mondiale (décision de Léo du 12/11/2026) : origine
+// tirée selon le pays du club, avec un mélange réaliste, et nom dans le style de cette origine.
+// Noms inventés par combinaison ; même table que native/engine/player-facts.cjs (éligibilité).
+const YOUTH_HERITAGE={
+ FRA:[['FRA',84],['FIJ',3],['GEO',3],['TGA',2],['RSA',2],['POR',2],['SAM',1],['ENG',1],['ARG',1],['NZL',1]],
+ ENG:[['ENG',80],['RSA',4],['SAM',3],['TGA',3],['IRE',3],['FIJ',2],['SCO',2],['NZL',2],['WAL',1]],
+ SCO:[['SCO',82],['ENG',8],['RSA',4],['NZL',3],['IRE',3]],
+ WAL:[['WAL',85],['ENG',7],['SAM',3],['RSA',3],['IRE',2]],
+ IRE:[['IRE',88],['ENG',4],['NZL',3],['RSA',3],['SAM',2]],
+ ITA:[['ITA',84],['ARG',8],['RSA',4],['NZL',2],['ROU',2]],
+ RSA:[['RSA',94],['NAM',3],['ZIM',3]],
+ NZL:[['NZL',72],['SAM',12],['TGA',9],['FIJ',5],['ENG',2]],
+ AUS:[['AUS',72],['TGA',8],['SAM',8],['FIJ',6],['NZL',6]],
+ FIJ:[['FIJ',100]],GEO:[['GEO',100]],
+ JPN:[['JPN',86],['TGA',6],['NZL',4],['SAM',2],['KOR',2]],
+};
+const YOUTH_NAMES={
+ ENG:{first:['Alfie','Archie','Ben','Callum','Charlie','Dan','Ethan','Fraser','George','Harry','Jack','Jamie','Joe','Josh','Kieran','Luke','Max','Oscar','Sam','Toby','Will'],last:['Ashworth','Barnes','Bradley','Carter','Clarke','Davies','Ellis','Fletcher','Hadley','Hughes','Kemp','Lawson','Marsh','Norris','Pearce','Rowe','Shaw','Thornton','Walker','Whitfield','Yates']},
+ SCO:{first:['Alasdair','Callum','Cameron','Craig','Euan','Fergus','Fraser','Hamish','Iain','Jamie','Lewis','Lachlan','Murray','Rory','Ross','Ruaridh','Scott','Stuart'],last:['Baird','Cameron','Dunbar','Ferguson','Forsyth','Gillies','Henderson','Kerr','MacLean','MacLeod','Munro','Paterson','Ritchie','Sinclair','Strachan','Urquhart']},
+ WAL:{first:['Aled','Cai','Dafydd','Dewi','Dylan','Emyr','Gethin','Gruffydd','Huw','Iestyn','Ioan','Owain','Rhodri','Rhys','Sion','Steffan','Tomos'],last:['Bevan','Davies','Edwards','Evans','Griffiths','Howells','Hughes','Jenkins','Lewis','Lloyd','Morgan','Parry','Powell','Price','Pritchard','Rees','Thomas','Williams']},
+ IRE:{first:['Cian','Ciarán','Conor','Darragh','Dylan','Eoin','Fionn','Jack','Luke','Niall','Oisín','Rónán','Ruairí','Seán','Tadhg'],last:['Brennan','Byrne','Carroll','Doherty','Doyle','Fitzgerald','Gallagher','Kavanagh','Keane','Lynch','McCarthy','Murphy','Nolan','O’Brien','O’Connor','Quinlan','Walsh']},
+ ITA:{first:['Alessandro','Andrea','Davide','Edoardo','Federico','Filippo','Giacomo','Lorenzo','Luca','Marco','Matteo','Niccolò','Pietro','Riccardo','Simone','Tommaso'],last:['Benedetti','Bianchi','Cattaneo','Colombo','Conti','De Santis','Ferrari','Galli','Lombardi','Mancini','Marchetti','Moretti','Rinaldi','Romano','Russo','Vitale']},
+ ARG:{first:['Agustín','Bautista','Facundo','Felipe','Franco','Gonzalo','Ignacio','Joaquín','Juan Cruz','Lautaro','Mateo','Nicolás','Santiago','Santino','Tomás'],last:['Acosta','Benítez','Castro','Domínguez','Fernández','Giménez','Herrera','Ledesma','Medina','Ortiz','Paz','Quiroga','Ríos','Sosa','Vázquez']},
+ RSA:{first:['Andile','Bongi','Cobus','Dewald','Ethan','Francois','Hanro','Jaco','Jandré','Kwagga','Lwazi','Morné','Ruan','Sibusiso','Thando','Wian','Zander'],last:['Botha','Coetzee','Dlamini','du Plessis','du Toit','Fourie','Jansen','Khumalo','Le Roux','Mahlangu','Marais','Mostert','Nel','Ndlovu','Pretorius','Steyn','van der Merwe','Venter']},
+ NZL:{first:['Aidan','Blake','Caleb','Finn','Hamish','Harrison','Jordan','Kahu','Liam','Manaia','Nikau','Rangi','Riley','Tama','Wiremu','Zac'],last:['Anderson','Brown','Campbell','Harawira','Hohaia','Kereama','Matiu','McKenzie','Ngata','Paewai','Ruatapu','Smith','Taylor','Te Kani','Walker','Wilson']},
+ AUS:{first:['Bailey','Brodie','Cooper','Darcy','Fletcher','Harrison','Hayden','Jake','Kurtis','Lachlan','Mitchell','Nathan','Ryan','Tate','Zane'],last:['Bennett','Collins','Cooke','Edmonds','Fraser','Gallagher','Hartley','Kingston','Mason','Palmer','Reid','Simmons','Turner','Waldron','Whitlock']},
+ SAM:{first:['Afa','Faitala','Iosefa','Leilua','Losi','Malo','Pele','Sione','Talalelei','Tasi','Tavita','Tusi'],last:['Afoa','Fa’asavalu','Faleolo','Leiataua','Lemalu','Mataia','Paepae','Sapolu','Seiuli','Tuilagi','Tupou','Va’a']},
+ TGA:{first:['Ahoia','Fifita','Hufanga','Lisiate','Lotu','Mosese','Paula','Sione','Siosaia','Tevita','Viliami'],last:['Fifita','Halaifonua','Havili','Kioa','Lolohea','Ma’afu','Moala','Taufa','Tonga’uiha','Vainikolo','Vaipulu']},
+ FIJ:{first:['Apisalome','Eroni','Isoa','Jone','Josua','Kini','Leone','Mesake','Peceli','Ratu','Semi','Tevita','Viliame'],last:['Botia','Cavubati','Dakuwaqa','Masilevu','Nakarawa','Radradra','Ratuniyarawa','Seniloli','Tuisova','Vakatawa','Volavola','Waqaniburotu']},
+ GEO:{first:['Beka','Davit','Giorgi','Irakli','Lasha','Levan','Luka','Mamuka','Nika','Otar','Sandro','Tornike','Vano'],last:['Abashidze','Bregvadze','Chikvaidze','Gelashvili','Gogichashvili','Japaridze','Kakhiani','Lomidze','Mamukashvili','Natroshvili','Tsiklauri','Zhvania']},
+ JPN:{first:['Daiki','Haruki','Haruto','Hiroto','Kaito','Kenta','Kota','Riku','Ryota','Shota','Sota','Takumi','Yuma','Yuto'],last:['Fujita','Hayashi','Inoue','Kato','Kimura','Kobayashi','Matsumoto','Mori','Nakamura','Saito','Sato','Shimizu','Takahashi','Yamada','Yamamoto']},
+ POR:{first:['Afonso','Diogo','Duarte','Gonçalo','João','Martim','Rodrigo','Tiago','Tomás'],last:['Almeida','Carvalho','Costa','Ferreira','Gomes','Martins','Pereira','Rodrigues','Santos']},
+ ROU:{first:['Andrei','Alexandru','Ionuț','Mihai','Radu','Ștefan','Vlad'],last:['Ionescu','Lungu','Mocanu','Popa','Radulescu','Stan','Tudor']},
+ KOR:{first:['Ji-hoon','Min-jun','Seo-jun','Do-yun','Ha-jun'],last:['Kim','Lee','Park','Choi','Jung']},
+};
+YOUTH_NAMES.NAM=YOUTH_NAMES.RSA;YOUTH_NAMES.ZIM=YOUTH_NAMES.RSA;
+function youthHash(text){return Array.from(String(text)).reduce((n,letter)=>Math.imul(n^letter.charCodeAt(0),16777619),2166136261)>>>0}
+// Même découpage que clubCountry() du worker (identifiants de la base mondiale).
+function youthClubNation(club){
+ if(!club)return null;
+ if(club.country==='GB'){if(club.id===42)return 'IRE';if(club.id===44||club.id===45)return 'SCO';if(club.id>=46&&club.id<=49)return 'WAL';return 'ENG'}
+ return {FR:'FRA',IE:'IRE',IT:'ITA',ZA:'RSA',GE:'GEO',NZ:'NZL',AU:'AUS',FJ:'FIJ',JP:'JPN'}[club.country]??null;
+}
+function youthHeritage(id,anchor){
+ const table=YOUTH_HERITAGE[anchor];if(!table)return anchor;
+ let roll=youthHash(id+':rugby-origin')%100;
+ for(const [nation,weight] of table){if(roll<weight)return nation;roll-=weight}
+ return anchor;
+}
+function youthName(id,h,club){
+ const world=typeof worldActive==='function'&&worldActive();
+ const nation=world?youthHeritage(id,youthClubNation(club)):null,pool=nation&&nation!=='FRA'?YOUTH_NAMES[nation]:null;
+ if(!pool)return FIRST[h%FIRST.length]+' '+LAST[Math.floor(h/31)%LAST.length];
+ return pool.first[h%pool.first.length]+' '+pool.last[Math.floor(h/31)%pool.last.length];
+}
+function academyPlayer(ci,slot,season,index,emergency=false,formationClub=null){const id=`youth-${ci}-${season}-${index}`,h=seedHash(id);let p={appearanceBankVersion:2,id,name:youthName(id,h,formationClub??(Number.isInteger(ci)?S?.clubs?.[ci]:null)),pos:POS[slot],fam:FAMILIES[slot],age:17+h%3,rating:emergency?55+h%8:52+h%15,condition:100,injury:0,salary:2000};ensureSkills(p);ensureDevelopment(p);p.dev.potential=emergency?68+h%10:academyPotential(p,formationClub);p.academy=true;return p}
 function intakeYouth(){const d=S.development;if(d.intakeSeason===S.season)return;d.intakeSeason=S.season;for(let i=0;i<15;i++){const slot=(S.season*3+i)%15;d.academy.push(academyPlayer(S.club,slot,S.season,i,false,club()))}/* Jusqu'a cinq promotions coexistent selon les ages et les promotions en pros. */d.academy=d.academy.slice(-75);news(`Quinze nouveaux Espoirs rejoignent le centre de formation, avec une couverture des quinze postes. Evaluez leur potentiel et preparez leur promotion.`)}
 function setupDevelopment(backup=false){if(!S)return;const fresh=!S.development;if(fresh&&backup){try{if(!gameStorage.getItem('bdt-backup-development'))gameStorage.setItem('bdt-backup-development',JSON.stringify(S))}catch(e){}}
 S.development=S.development||{version:1,academyPotentialVersion:1,academy:[],intakeSeason:0,rolledSeason:0,retired:[]};normalizeAcademyPotential(S);S.clubs.forEach(c=>c.players.forEach(ensureDevelopment));S.market.forEach(ensureDevelopment);S.economy.freeAgents.forEach(ensureDevelopment);if(fresh&&S.live)S.live.devBaseline=S.live.sheets.map(s=>({...s.minutes}));intakeYouth();if(fresh&&backup)news('Formation et carrières activées : niveaux, contrats et résultats conservés. Le suivi des minutes commence maintenant.')}
