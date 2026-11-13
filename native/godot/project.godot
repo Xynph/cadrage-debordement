@@ -2,9 +2,9 @@
 config_version=5
 
 [application]
-config/name="Oval Legacy 27 — Rugby Manager"
+config/name="Rugby Legacy 27"
 config/version="0.7.8"
-config/icon="res://branding/oval-legacy-27-icon.png"
+config/icon="res://branding/rugby-legacy-27-icon.png"
 boot_splash/show_image=false
 boot_splash/bg_color=Color(0.051, 0.075, 0.094, 1)
 run/main_scene="res://main.tscn"

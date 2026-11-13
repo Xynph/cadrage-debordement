@@ -49,7 +49,6 @@
       "tests/matchflow.cjs": 2,
       "tests/native-capacity.cjs": 3,
       "tests/native-position-benchmark.cjs": 14,
-      "tests/native-press-followups06-worker.cjs": 26,
       "tests/native-press-review.cjs": 27,
       "tests/native-press-worker.cjs": 39,
       "tests/native-professional-depth.cjs": 32,
@@ -59,7 +58,6 @@
       "tests/opposition.cjs": 32,
       "tests/parallel-six-integration.cjs": 27,
       "tests/performance-analysis.cjs": 27,
-      "tests/player-population-capacity.cjs": 250,
       "tests/player-population-seasons.cjs": 68,
       "tests/player-population-worker.cjs": 48,
       "tests/portrait-adverse-projection.cjs": 9,
@@ -103,8 +101,10 @@
       "tests/world-urc-shootout-v5.cjs": 3,
       "tests/world-venue-media.cjs": 97,
       "tests/world-wage-forecast.cjs": 20,
-      "tests/world-worker-atomic.cjs": 40,
-      "tests/youth-matches-worker.cjs": 200
+      "tests/youth-matches-worker.cjs": 200,
+      "tests/native-press-followups06-worker.cjs": 26,
+      "tests/player-population-capacity.cjs": 250,
+      "tests/world-worker-atomic.cjs": 40
     }
   },
   "godot": {
@@ -164,7 +164,9 @@
       "tests/godot-player-knowledge-text.cjs": 2,
       "tests/godot-prospect-profile.cjs": 2,
       "tests/godot-staff-fictional-labels.cjs": 2,
-      "tests/small-window-contracts.cjs": 75
+      "tests/small-window-contracts.cjs": 75,
+      "tests/deepen-analytics-real-ui.cjs": 140,
+      "tests/godot-immersive08.cjs": 500
     }
   },
   "memory": {
@@ -185,11 +187,11 @@
       "tests/native-professional-depth.cjs": 2624,
       "tests/native-relationships.cjs": 2048,
       "tests/performance-analysis.cjs": 2048,
-      "tests/player-population-capacity.cjs": 2048,
       "tests/world-catalogue-dedup.cjs": 3264,
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048,
-      "tests/youth-matches.cjs": 1880
+      "tests/youth-matches.cjs": 1880,
+      "tests/player-population-capacity.cjs": 2048
     }
   }
 }

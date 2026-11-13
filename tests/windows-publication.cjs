@@ -24,7 +24,7 @@ class Publication(unittest.TestCase):
   required=('controller-unit.log','prepare.log','build.log','official-build/build/import.log',
    'official-build/build/export.log','evidence/archive.json','evidence/mesa-qa.json',
    'evidence/qa-extras.json','evidence/manifest-before.json','evidence/manifest-after.json',
-   'official-build/OvalLegacy27-PrototypeGodot/manifest-build.json','tools/toolchain-receipt.json',
+   'official-build/RugbyLegacy27-PrototypeGodot/manifest-build.json','tools/toolchain-receipt.json',
    'tools/mesa/mesa-receipt.json','tools/mesa/notices/Mesa.txt')
   for name in required:self.put(name,'{}')
   self.put('tools/mesa/mesa-receipt.json',json.dumps({'licenses':[{'path':'notices/Mesa.txt'}]}))
@@ -63,9 +63,9 @@ class Publication(unittest.TestCase):
   self.put('evidence/windows-report.json','{"passed":false}')
   with self.assertRaises(ValueError):p.received_report(self.root,self.source)
  def test_publication_revalidates_the_extracted_exe_that_actually_ran(self):
-  package=self.root/'official-build/OvalLegacy27-PrototypeGodot-Windows-x64.zip'
+  package=self.root/'official-build/RugbyLegacy27-PrototypeGodot-Windows-x64.zip'
   self.put('evidence/windows-report.json',json.dumps({'passed':True,'package':{'path':str(package)}}))
-  actual=self.root/'evidence/Relocated QA with spaces/OvalLegacy27-PrototypeGodot/OvalLegacy27.exe'
+  actual=self.root/'evidence/Relocated QA with spaces/RugbyLegacy27-PrototypeGodot/RugbyLegacy27.exe'
   module=p.verifier()
   with patch.object(module,'validate_windows_report') as validate,patch.object(p,'verifier',return_value=module):
    p.received_report(self.root,self.source)
@@ -108,7 +108,7 @@ class Publication(unittest.TestCase):
   missing=('controller-unit.log','prepare.log','build.log','official-build/build/import.log',
    'official-build/build/export.log','evidence/windows-report.json','evidence/archive.json',
    'evidence/mesa-qa.json','evidence/qa-extras.json','evidence/manifest-before.json',
-   'evidence/manifest-after.json','official-build/OvalLegacy27-PrototypeGodot/manifest-build.json',
+   'evidence/manifest-after.json','official-build/RugbyLegacy27-PrototypeGodot/manifest-build.json',
    'tools/toolchain-receipt.json','tools/mesa/mesa-receipt.json','tools/mesa/notices/Mesa.txt',
    'evidence/fresh/report.json','evidence/fresh/process.json','evidence/fresh/loaded-modules.json',
    'evidence/fresh/stdout.log','evidence/fresh/stderr.log','evidence/resume/report.json',
@@ -213,7 +213,7 @@ class Publication(unittest.TestCase):
    self.assertEqual(json.loads(archive.read('resume/driver-ack.json')),ack)
  def test_received_publication_uploads_original_report_and_verified_png_bytes_with_sums(self):
   report=self.complete_evidence();module=p.verifier()
-  package=self.put('official-build/OvalLegacy27-PrototypeGodot-Windows-x64.zip','unit game ZIP')
+  package=self.put('official-build/RugbyLegacy27-PrototypeGodot-Windows-x64.zip','unit game ZIP')
   report.update({'sourceTree':'b'*40,'package':{'path':str(package)}})
   captures=[];originals={}
   for index,name in enumerate(('01 Reception.png','01-Reception.png')):
@@ -233,7 +233,7 @@ class Publication(unittest.TestCase):
    return ''
   with patch.object(p.subprocess,'check_output',return_value=self.source),patch.object(p,'gh',side_effect=github),patch.object(module,'validate_windows_report'),patch.object(p,'verifier',return_value=module):
    result=p.publish(self.root,self.source,'unit/test','456','1')
-  expected={'OvalLegacy27-PrototypeGodot-Windows-x64.zip','windows-received-aaaaaaaaaaaa-456-1-proofs.zip',
+  expected={'RugbyLegacy27-PrototypeGodot-Windows-x64.zip','windows-received-aaaaaaaaaaaa-456-1-proofs.zip',
    'delivery.json','SHA256SUMS.txt','windows-report.json','windows-resume-01-01-Reception.png','windows-resume-02-01-Reception.png'}
   self.assertEqual(set(result['assets']),expected);self.assertEqual(set(uploaded),expected)
   for name,content in originals.items():self.assertEqual(uploaded[name],content)

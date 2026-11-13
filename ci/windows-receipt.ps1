@@ -298,7 +298,7 @@ try {
     $archiveReceipt = Join-Path $EvidenceRoot 'archive.json'
     Python-Check @('extract','--zip',$PackageZip,'--source-commit',$SourceCommit,'--source-tree',$Report.sourceTree,'--destination',(Join-Path $EvidenceRoot 'Relocated QA with spaces'),'--receipt',$archiveReceipt)
     $archive = Read-Json $archiveReceipt
-    $game = $archive.gameRoot; $exe = Join-Path $game 'OvalLegacy27.exe'; $nodeExe = Join-Path $game 'runtime/node.exe'
+    $game = $archive.gameRoot; $exe = Join-Path $game 'RugbyLegacy27.exe'; $nodeExe = Join-Path $game 'runtime/node.exe'
     $nodePin = $tools.pins['node-runtime'].sha256
     if ((Hash $tools.nodeExe) -cne $nodePin -or $archive.manifest.files['runtime/node.exe'].sha256 -cne $nodePin) { throw 'Packaged Node does not match the prepared official runtime pin.' }
     $Report.package = @{path=$PackageZip;shaBefore=$archive.zipSha256;shaAfter=$null;manifestSha256=$archive.manifestSha256;files=$archive.files}
@@ -331,10 +331,10 @@ try {
                 foreach ($extra in $Report.mesa.extras.GetEnumerator()) { $Report.qaExtras[$extra.Key] = $extra.Value }
             }
             if ($variant -eq 'mesa-local') {
-                $marker = Join-Path $game 'OvalLegacy27.exe.local'
+                $marker = Join-Path $game 'RugbyLegacy27.exe.local'
                 if (Test-Path -LiteralPath $marker) { throw 'QA marker cannot overwrite a game file.' }
                 [IO.File]::WriteAllBytes($marker,[Text.Encoding]::ASCII.GetBytes("dummy`r`n"))
-                $Report.qaExtras['OvalLegacy27.exe.local'] = @{sha256=(Hash $marker);bytes=(Get-Item $marker).Length;source='Documented Mesa per-app QA marker'}
+                $Report.qaExtras['RugbyLegacy27.exe.local'] = @{sha256=(Hash $marker);bytes=(Get-Item $marker).Length;source='Documented Mesa per-app QA marker'}
             }
             Write-Json $Report.qaExtras $extrasPath
             $output = Join-Path $EvidenceRoot $variant

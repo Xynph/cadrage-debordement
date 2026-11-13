@@ -1,6 +1,6 @@
 # Application Windows portable
 
-> Cette page décrit le lanceur historique utilisant un navigateur. Le jeu natif actuel **Oval Legacy 27** utilise Godot et son moteur embarqué, sans fenêtre Chrome ou Edge. Voir le [README principal](../README.md) et la [réception du carnet et du coach](../docs/oval-legacy-27-carnet-coach-20261108.md). Les limites de test Linux mentionnées ci-dessous concernent uniquement cette ancienne distribution.
+> Cette page décrit le lanceur historique utilisant un navigateur. Le jeu natif actuel **Rugby Legacy 27** utilise Godot et son moteur embarqué, sans fenêtre Chrome ou Edge. Voir le [README principal](../README.md) et la [réception du carnet et du coach](../docs/oval-legacy-27-carnet-coach-20261108.md). Les limites de test Linux mentionnées ci-dessous concernent uniquement cette ancienne distribution.
 
 Cette distribution embarque le même jeu que `dist/`, ses polices et un petit
 lanceur local. Elle ne requiert ni Python, ni Node.js, ni Go sur l’ordinateur du

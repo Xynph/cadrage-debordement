@@ -78,8 +78,7 @@ function readDiffs({ event, base, head, before }, git = runGit) {
 
 function suitesForCoverage(coverage, all) {
   if (coverage === 'full') return all;
-  // godot-immersive08 est exclue (ancien mode de carrière, CD_MODES_HERITES) : à rétablir ici une fois migrée.
-  const artwork = ['godot-assets', 'offline', 'premium-editorial'];
+  const artwork = ['godot-assets', 'godot-immersive08', 'offline', 'premium-editorial'];
   let suites = ['ci-test-coverage', ...artwork].map(name => 'tests/' + name + '.cjs');
   if (coverage === 'web') {
     suites = [...suites, ...selectTests(['dist/style.css'], all), ...[
