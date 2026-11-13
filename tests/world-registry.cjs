@@ -61,9 +61,21 @@ assert.equal(JSON.stringify(api.build({inputs:reversed})),first,'Indépendant de
 const random=Math.random,now=Date.now;try{Math.random=()=>{throw Error('RNG de carrière interdit')};Date.now=()=>{throw Error('Horloge ambiante interdite')};assert.equal(JSON.stringify(api.build()),first,'Pas de RNG/horloge ambiante');}finally{Math.random=random;Date.now=now;}
 const normal=api.normalizeExposure({minutes:0,matches:0,status:'unusable_zero_placeholder'});assert.equal(normal.minutes,null);assert.equal(normal.matches,null);assert.equal(normal.per80Allowed,false);
 const hook=Object.fromEntries(attr.map(k=>[k,60]));hook.lineoutThrow=90;assert.equal(api.projectSkills(hook,'Talonneur').lineout,79.5);assert.equal(api.projectSkills(hook,'Deuxième ligne').lineout,61.5);
+// Garde-fous de calibration génériques (sans donnée nominative) : élite > accession
+// à chaque poste, écart borné avec recouvrement des meilleurs joueurs d'accession,
+// et potentiel jamais inférieur à la note sur toute la base Monde.
+{
+  const mean=a=>a.reduce((n,v)=>n+v,0)/a.length,byRole=new Map();
+  for(const c of world.clubs){if(c.id>=30)continue;for(const p of c.players){const role=p.gameplayPosition||p.pos;if(!byRole.has(role))byRole.set(role,{elite:[],accession:[]});byRole.get(role)[c.id<14?'elite':'accession'].push(p.rating);}}
+  assert.equal(byRole.size,11,'Onze postes dans les deux divisions françaises');
+  for(const [role,g] of byRole){assert.ok(g.elite.length>=30&&g.accession.length>=30,role+' : effectif trop faible');const gap=mean(g.elite)-mean(g.accession);assert.ok(gap>=3&&gap<12,`${role} : écart élite/accession ${gap.toFixed(2)} hors de [3 ; 12[`);}
+  const elite=[...byRole.values()].flatMap(g=>g.elite),accession=[...byRole.values()].flatMap(g=>g.accession);
+  assert.ok(Math.max(...accession)>mean(elite),'Les meilleurs joueurs d’accession restent compétitifs en élite');
+  for(const p of all){const potential=p.dev?.potential??p.potential;assert.ok(Number.isFinite(potential)&&potential>=p.rating&&potential<=99,p.id+' : potentiel incohérent avec la note');}
+}
 const malicious=clone(world);malicious.clubs[30].players[0].skills.tackle=NaN;assert.throws(()=>api.validate(malicious),/profil|compétence|fini|nombre|qualité/i);
 const bad=clone(world);bad.clubs[31].players[0].id=bad.clubs[30].players[0].id;assert.throws(()=>api.validate(bad),/dupliqué|unique|identifiant/i);
 const collision=clone(world);const conflicting=collision.initialFixtures.champions.find(x=>x.homeId>=40||x.awayId>=40);const overlap=conflicting.homeId>=40?conflicting.homeId:conflicting.awayId;conflicting.date=urc.find(x=>x.homeId===overlap||x.awayId===overlap).date;assert.throws(()=>api.validate(collision),/Collision de calendrier/);
 const importedResult=clone(world);importedResult.initialFixtures.challenge[0].score=[15,3];assert.throws(()=>api.validate(importedResult),/Rencontre européenne invalide/);
 api.write(true);assert.equal(fs.readFileSync(path.join(root,'native/engine/world-registry.json'),'utf8'),api.serialize(world));
-console.log(JSON.stringify({passed:true,clubs:world.clubs.length,players:all.length,frenchProfiles:old.size,foreignProfiles:foreign.length,distinctForeignProfiles:newVectors.size,bytes:Buffer.byteLength(first),checks:['France1592 exact global','58 fixed club IDs','28 initial match sheets 23/23','318 source fixtures, no score or collision','schema, estimates and contracts','36→11 exact projection','no profile clones','input order + ambient seed/time independence','placeholder exposure unknown','duplicate/NaN refusal','compiled JSON current']}));
+console.log(JSON.stringify({passed:true,clubs:world.clubs.length,players:all.length,frenchProfiles:old.size,foreignProfiles:foreign.length,distinctForeignProfiles:newVectors.size,bytes:Buffer.byteLength(first),checks:['France1592 exact global','58 fixed club IDs','28 initial match sheets 23/23','318 source fixtures, no score or collision','schema, estimates and contracts','36→11 exact projection','no profile clones','input order + ambient seed/time independence','placeholder exposure unknown','duplicate/NaN refusal','compiled JSON current','elite>accession per role, potential>=rating']}));

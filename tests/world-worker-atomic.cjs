@@ -1,11 +1,10 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.CD_WORLD_TEST_ROOT||os.tmpdir(),'cd-atomic-save-'));
 try{
- for(const [mode,club]of [['common',0],['world',30]]){
+ for(const [mode,club]of [['world-champ',0],['world-champ',30]]){
   const b=createBridge({dataDir:path.join(root,mode),seed:441,now:1794178800000});let id=0;
   const call=(command,payload={})=>b.handle({id:++id,command,payload});
   const good=(command,payload)=>{const r=call(command,payload);assert.equal(r.ok,true,r.error);return r.model;};

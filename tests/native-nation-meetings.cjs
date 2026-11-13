@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),test=require('node:test'),vm=require('node:vm');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const definition=require('../native/engine/club-meetings.cjs');
@@ -109,8 +108,8 @@ test('public worker: selector creation, role exit with queued club work, legacy 
  const reopen=()=>{good('shutdown');bridge=createBridge(options);good('snapshot');};
  try{
   bridge=createBridge(options);
-  // The base world edition uses the same public nationalRole API as world-champ.
-  good('new_career',{mode:'world',nationalRole:'nation',nation:'FRA'});
+  // The world-champ edition exposes the public nationalRole API.
+  good('new_career',{mode:'world-champ',nationalRole:'nation',nation:'FRA'});
   assert.equal(model.international.role,'nation');noRooms();
   const initial=exported(),initialDisk=disk();good('snapshot');good('save');sameExport(exported(),initial,'Reads/save do not create obligations or effects');
   assert.deepEqual(disk(),initialDisk,'Reads/save also preserve the persisted RNG and full profile');
@@ -121,7 +120,7 @@ test('public worker: selector creation, role exit with queued club work, legacy 
   good('save');assert.deepEqual(disk(),advancedDisk,'Restart/read/save consumes no RNG and replaces no career values');
   good('advance_day',{fromDate:model.meta.calendarToday});noRooms();
 
-  good('new_career',{mode:'world',club:0});assert.equal(room().scene.kind,'press');
+  good('new_career',{mode:'world-champ',club:0});assert.equal(room().scene.kind,'press');
   const press=model.clubLife.press;
   good('press_conference',{context:press.context,invitationId:press.conference.invitationId,answers:press.conference.questions.map(q=>({questionId:q.id,answerId:q.answers[0].id}))});
   good('club_meeting_continue',{meetingId:room().scene.id});

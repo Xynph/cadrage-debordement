@@ -1,6 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
-
 const assert = require('node:assert/strict');
 const {test} = require('node:test');
 const fs = require('node:fs');
@@ -9,6 +7,7 @@ const path = require('node:path');
 const {createBridge} = require('../native/engine/worker.cjs');
 const {settleClubMeetings} = require('./helpers/club-meetings.cjs');
 const {skipMatchTalk} = require('./helpers/scene-match-talks.cjs');
+const {advanceToNextMatch} = require('./helpers/monde-matchs.cjs');
 
 function profile(t, dailyCalendar = true) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-management-day-'));
@@ -46,15 +45,15 @@ function profile(t, dailyCalendar = true) {
 test('le pas journalier conserve le calendrier, la semaine et le RNG entre deux jours', t => {
   const game = profile(t);
   const start = game.settle(game.good('new_career', {mode: 'world-champ', club: 102}));
-  assert.deepEqual(start.meta.calendarCadence, {day: 0, matchReady: false, canAdvance: true});
-  assert.equal(start.meta.calendarToday, '2026-08-17');
+  assert.deepEqual(start.meta.calendarCadence, {day: 0, matchReady: false, canAdvance: true, preseason: true});
+  assert.equal(start.meta.calendarToday, '2026-07-13');
   assert.equal(start.calendarPlanning.today, start.meta.calendarToday);
   assert.equal(start.next, null);
   const opening = game.disk();
   assert.equal(game.request('begin_match').ok, false);
   assert.equal(game.request('finish_round').ok, false);
   const after = game.advance(start);
-  assert.equal(after.meta.calendarToday, '2026-08-18');
+  assert.equal(after.meta.calendarToday, '2026-07-14');
   assert.equal(after.calendarPlanning.today, after.meta.calendarToday);
   assert.equal(after.meta.week, start.meta.week);
   assert.equal(after.finance.cash, start.finance.cash);
@@ -66,13 +65,13 @@ test('le pas journalier conserve le calendrier, la semaine et le RNG entre deux 
   assert.equal(game.restart().meta.calendarToday, after.meta.calendarToday);
   let next = after;
   while (next.meta.week === start.meta.week) next = game.advance(next);
-  assert.equal(next.meta.calendarToday, '2026-08-24');
+  assert.equal(next.meta.calendarToday, '2026-08-24', 'la semaine 0 couvre toute l’avant-saison');
   assert.equal(next.meta.calendarCadence.day, 0);
 });
 
 test('le jour du match bloque le calendrier et le résultat confirmé reste disponible le lendemain', t => {
   const game = profile(t);
-  let model = game.settle(game.good('new_career', {mode: 'world-nationale', club: 92}));
+  let model = game.settle(game.good('new_career', {mode: 'world-champ', club: 92}));
   const first = model.calendar[0];
   assert.deepEqual(
     [first.date, first.kickoffLocal, first.home.id, first.away.id],
@@ -120,7 +119,8 @@ test('le jour du match bloque le calendrier et le résultat confirmé reste disp
 
 test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de match', t => {
   const game = profile(t, false);
-  const legacy = game.settle(game.good('new_career', {mode: 'world', club: 0}));
+  // Cadence hebdomadaire (sans calendrier journalier) : la carrière avance jusqu'au premier match du club.
+  const legacy = advanceToNextMatch(game.settle(game.good('new_career', {mode: 'world-champ', club: 0})), game.good);
   assert.equal(legacy.meta.calendarCadence, undefined);
   const stored = game.disk();
   const upgraded = game.restart({dailyCalendar: true});
@@ -140,14 +140,14 @@ test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de 
   assert.equal(imported.meta.calendarToday, legacy.next.date);
   assert.deepEqual(imported.calendar, upgraded.calendar);
 });
-test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans collision', async t => {
-  for (const mode of ['world', 'world-pacific', 'world-japan', 'world-nationale', 'world-champ']) {
+test('l’édition Monde charge les 422 affiches LNR de 2026–27 sans collision', async t => {
+  for (const mode of ['world-champ']) {
     await t.test(mode, t => {
       // Each edition is an independent import round trip. Keep its durable
       // checkpoints and profile lifetime independent from the other editions.
       const game = profile(t);
       const model = game.good('new_career', {mode, club: 26});
-      assert.equal(model.meta.calendarToday, '2026-08-17', mode);
+      assert.equal(model.meta.calendarToday, '2026-07-13', mode);
       const first = model.calendar[0];
       assert.deepEqual(
         [first.date, first.kickoffLocal, first.kickoffSource, first.home.id, first.away.id],
@@ -176,13 +176,13 @@ test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans c
 
 test('les heures publiées du Pacifique restent locales et les autres créneaux sont signalés', t => {
   const game = profile(t);
-  const pacific = game.good('new_career', {mode: 'world-pacific', club: 61});
+  const pacific = game.good('new_career', {mode: 'world-champ', club: 61});
   const first = pacific.calendar.find(f => f.date === '2027-02-12');
   assert.equal(first.kickoffUtc, '2027-02-12T06:35:00Z');
   assert.equal(first.kickoffLocal, '19:35');
   assert.equal(first.timezone, 'Pacific/Auckland');
   assert.equal(first.kickoffSource, 'published');
-  const prem = game.good('new_career', {mode: 'world', club: 30});
+  const prem = game.good('new_career', {mode: 'world-champ', club: 30});
   assert.equal(prem.calendar[0].date, '2026-09-25');
   assert.equal(prem.calendar[0].kickoffSource, 'simulated-not-official');
   assert.match(prem.calendar[0].kickoffLocal, /^\d{2}:\d{2}$/);
