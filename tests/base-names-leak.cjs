@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Without a pack, no real name reaches the game: the 116 clubs of the player and staff
 // registries carry base names only, and no file shipped with the game quotes a real person
 // of the French base. The real names are read from the research sources still in the repository
