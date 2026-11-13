@@ -69,7 +69,7 @@ static func home(app: Control) -> Control:
 	page.add_child(veil)
 	page.move_child(veil, page.get_child_count() - 2)
 	var over: VBoxContainer = page.get_meta("content")
-	over.add_child(G.label("OVAL LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
+	over.add_child(G.label("RUGBY LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
 	over.add_child(G.spacer())
 	var row := G.h(28)
 	over.add_child(row)
@@ -77,12 +77,12 @@ static func home(app: Control) -> Control:
 	G.fill(intro)
 	row.add_child(intro)
 	var logo := TextureRect.new()
-	logo.texture = load("res://branding/oval-legacy-27-logo.png")
+	logo.texture = load("res://branding/rugby-legacy-27-logo.png")
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.custom_minimum_size = Vector2(360, 180)
 	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	logo.tooltip_text = "Oval Legacy 27 — Rugby Manager"
+	logo.tooltip_text = "Rugby Legacy 27"
 	var composite := ShaderMaterial.new()
 	composite.shader = load("res://branding/black_key.gdshader")
 	logo.material = composite
@@ -168,6 +168,7 @@ static func begin_creation(app: Control) -> void:
 	app.management_ui.erase("creation_role")
 	app.management_ui.erase("creation_nation")
 	app.management_ui.erase("creation_vary_current")
+	app.management_ui.erase("creation_start")
 	app._navigate("Création")
 
 static func _creation_country(club: Dictionary) -> String:
@@ -568,6 +569,7 @@ static func _show_creation_waiting(app: Control, workspace: Control) -> void:
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var role: String = app.management_ui.get("creation_role", "club") if mode == "world-champ" else "club"
 	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
+	if mode == "world-champ" and role != "nation": payload.start = str(app.management_ui.get("creation_start", "premiers-clubs"))
 	if role != "nation": payload.club = int(selected.id)
 	if role in ["dual", "nation"]:
 		payload.nationalRole = role
@@ -966,6 +968,7 @@ static func creation(app: Control) -> Control:
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
 	_career_variation_controls(app,dossier if modern else list,modern)
+	if mode == "world-champ" and role != "nation": _career_start_controls(app,dossier if modern else list,modern,selected)
 	var can_start := not selected.is_empty() and (role == "club" or not nation.is_empty())
 	var start := G.button(caption, func():
 		if can_start: _create(app, selected, mode), true)
@@ -1028,3 +1031,38 @@ static func _career_variation_controls(app: Control, parent: Node, modern: bool)
 	option.toggled.connect(func(value: bool): app.management_ui.creation_vary_current = value)
 	group.add_child(option)
 	group.add_child(C.wrap("Le potentiel varie à chaque nouvelle carrière (jusqu’à ±5), même lorsque cette case est décochée.",17,C.MUTED))
+
+const CAREER_STARTS := ["premiers-clubs", "club", "veille"]
+
+# Départ de la partie (reprise.cjs) : trois portes d'entrée dans la saison 2026-2027.
+static func _career_start_controls(app: Control, parent: Node, modern: bool, selected: Dictionary) -> void:
+	var group := C.v(4)
+	group.name = "CreationCareerStart"
+	parent.add_child(group)
+	var title := C.label("Départ de la partie", 20 if modern else 16, C.IVORY, true, 700)
+	group.add_child(title)
+	var option := OptionButton.new()
+	option.name = "CreationStartChoice"
+	for text: String in ["Reprise des premiers clubs · lundi 13 juillet", "Reprise de ton club", "Veille de la 1re journée · début septembre"]: option.add_item(text)
+	var current := str(app.management_ui.get("creation_start", "premiers-clubs"))
+	option.select(maxi(0, CAREER_STARTS.find(current)))
+	option.add_theme_font_size_override("font_size", C.px(20) if modern else 16)
+	group.add_child(option)
+	var sentence := C.wrap(_career_start_sentence(app, current, selected), 17, C.MUTED)
+	sentence.name = "CreationStartSentence"
+	group.add_child(sentence)
+	option.item_selected.connect(func(index: int):
+		app.management_ui.creation_start = CAREER_STARTS[index]
+		sentence.text = _career_start_sentence(app, CAREER_STARTS[index], selected))
+
+static func _career_start_sentence(app: Control, start: String, selected: Dictionary) -> String:
+	var dates: Dictionary = app.model.get("meta", {}).get("repriseCreation", {}).get("elite", {})
+	var known := "" if selected.is_empty() else str(dates.get(str(int(selected.get("id", -1))), ""))
+	var club_day := preload("res://ui/reprise_view.gd").day_text(known) if known != "" else "à la date habituelle du club"
+	match start:
+		"club":
+			return "Vous arrivez le jour de la reprise de votre club (%s) : la date est fixée, vous gérez le groupe, les jeunes convoqués et les amicaux." % club_day
+		"veille":
+			return "Vous arrivez la veille de la 1re journée : le staff a mené la préparation à la date habituelle du club, amicaux et jeunes compris."
+		_:
+			return "Vous arrivez le lundi 13 juillet 2026, avec les premiers clubs : vous choisissez la date de reprise, les jeunes à convoquer, et vivez toute la préparation."

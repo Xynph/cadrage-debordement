@@ -130,7 +130,7 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var team: Dictionary = next.get(side,{})
 		if not team.has("rank") or not team.has("points"): continue
 		var rank := G.n(team.rank)
-		var standing := "%s%s · %s pts" % [rank,"er" if rank=="1" else "e",G.n(team.points)]
+		var standing := "%s%s · %s pts" % [rank,"er" if rank=="1" else "e",G.n(team.points)] if P.standings_open(team) else "Pas encore classé · %s pts" % G.n(team.points)
 		var tint := C.MINT if team.get("id")==app.model.club.id else C.MUTED
 		D.text(card,111,135 if side=="home" else 213,standing,20,tint,600,420)
 	var calendar := C.icon("calendar",25,C.GOLD)
@@ -239,7 +239,7 @@ static func _standings(card: Panel, app: Control) -> void:
 		var hit := Office.standing_action(app,club)
 		card.add_child(hit)
 		D.place(hit,Rect2(17,y-4,650,40))
-		D.text(card,36,y+23,G.n(club.get("rank","—")),25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(card,36,y+23,G.n(club.get("rank","—")) if P.standings_open(club) else "–",25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(card,80,y+23,G.club_name(club),23,C.IVORY,600,357)
 		D.text(card,461,y+23,G.n(club.get("played",0)),22,C.MUTED,500,32,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(card,554,y+23,"%+d" % (int(club.get("pf",0))-int(club.get("pa",0))),23,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)

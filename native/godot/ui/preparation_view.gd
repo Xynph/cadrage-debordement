@@ -3,6 +3,7 @@ extends VBoxContainer
 const G = preload("res://ui/carnet_skin.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const MatchContext = preload("res://ui/preparation_match_context.gd")
+const Reprise = preload("res://ui/reprise_view.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 var app: Control
 var state: Dictionary
@@ -52,6 +53,7 @@ func _build() -> void:
 		G.fill(section, true)
 		add_child(section)
 		sections.append(section)
+	if Reprise.relevant(app.model): Reprise.build(app, sections[0])
 	Decisions.dossier_summary(app, sections[0])
 	_consigne(sections[1])
 	_training(sections[2])

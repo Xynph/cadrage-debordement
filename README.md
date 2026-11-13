@@ -1,4 +1,4 @@
-# Oval Legacy 27 — Rugby Manager
+# Rugby Legacy 27
 
 **Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.7 et version web historique.**
 
@@ -28,7 +28,7 @@ La Formation expose les quinze espoirs du club et la progression des professionn
 
 Les trente staffs disposent de 428 références anonymisées. Un pack v2 peut présenter leurs identités et portraits sans modifier la simulation ; les packs v1 restent compatibles. Le relevé distingue les dates et références historiques. Le pack privé enrichi contient 324 photos officielles et reste séparé de la distribution de base. Voir la [couverture des staffs](docs/staff-20261108.md).
 
-Décompressez l'archive complète puis lancez `OvalLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
+Décompressez l'archive complète puis lancez `RugbyLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
 
 Depuis la création d'une carrière ou ses paramètres : **Importez un pack personnalisé**. L'analyse annonce la couverture et distingue photos officielles et illustrations IA ; l'installation et la sélection sont explicites. Les images du pack privé restent séparées du jeu de base. Deux exemples de packs de noms, dont un avec staff, sont livrés dans `Packs/`.
 

@@ -179,6 +179,9 @@ func _heading() -> void:
 	var show_match := MatchContext.match_available(app.model)
 	_button(tabbar, Rect2(830, 0, 300, 53), "Préparer la suite", func(): load("res://ui/manager_planning.gd").open(app), false, "calendar", "PreparationManagerPlanning")
 	var match_space := 385 if show_match else 0
+	# Reprise (reprise.cjs) : date de reprise, groupe et jeunes, tant que la décision est ouverte.
+	if not show_match and preload("res://ui/reprise_view.gd").relevant(app.model):
+		_button(tabbar, Rect2(1140, 0, 378, 53), "La reprise", func(): load("res://ui/reprise_dialog.gd").open(app), false, "calendar", "PreparationReprise")
 	_button(tabbar, Rect2(1528 - match_space, 0, 337, 53), "Revoir la composition", func(): app._navigate("Composition"), false, "people", "PreparationComposition")
 	_button(tabbar, Rect2(1883 - match_space, 0, 365, 53), "Carnet de jeu", func(): app._navigate("Plan de jeu"), not show_match, "arrow", "PreparationOpenPlaybook")
 	if show_match:
