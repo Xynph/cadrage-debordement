@@ -1,6 +1,7 @@
 extends Control
 
 const G = preload("res://ui/game_skin.gd")
+const SeasonLabel = preload("res://ui/season_label.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
 ## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
@@ -275,6 +276,7 @@ func _receive_model(value: Dictionary) -> void:
 		command_wait_overlay.dismiss()
 	SquadViews.U.remember(self)
 	model = value
+	if model.get("meta", {}).has("seasonStartYear"): SeasonLabel.start_year = int(model.meta.seasonStartYear)
 	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
 	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
 		preferences_loaded = true
@@ -797,7 +799,7 @@ func _update_header_date() -> void:
 	else:
 		var short_round := round_label.get_slice(" · ",0) if round_label.begins_with("Semaine ") else round_label
 		if round_label == "Saison terminée": short_round = "Terminée"
-		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),short_round]).to_upper()
+		header_date.text = ("SAISON %s  /  %s" % [G.season_label(meta.get("season", 1)),short_round]).to_upper()
 		header_date.tooltip_text = round_label if short_round!=round_label else ""
 	var calendar := header_date.get_parent() as Button
 	if calendar != null:

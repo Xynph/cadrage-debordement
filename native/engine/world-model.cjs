@@ -123,7 +123,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const names={'jlo-d1-d2':'Barrage Japon D1 / D2','access-nationale':'Barrage Pro D2 / Nationale'},phaseLabels={'third-place':'Petite finale',promotion:'Barrage'},champPhases={quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale'};
   const dateProof=f=>scheduleProof(f,R);
   const tableRow=r=>({...clubSummary(r.id),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,pf:r.pf,pa:r.pa,bonus:r.bonus,points:r.points,form:r.form,unresolvedTie:!!(r.unresolvedTie||r.sportingTie)});
-  m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),competitionRules:edition.version===1?'Saison 2026–2027':'Saison '+years.join('–')+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
+  m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),seasonStartYear:SEASON_START_YEAR,seasonLabel:(typeof libelleSaison==='function'?libelleSaison:String)(S.season),competitionRules:edition.version===1?'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season):'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season)+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
   m.meta.calendarToday=W.calendarToday(S);
   const confirmedResult=S.worldMode.resultConfirmed?S.live:null;
   const cadence=W.dailyStatus(S);
@@ -134,7 +134,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   if(confirmedResult)m.live=null;
   m.club=clubSummary(S.club);m.league=tables[W.leagueId(S)].map(tableRow);
   if(edition.version>=2)m.meta.edition=edition.mode;
-  if(edition.version>=3){m.meta.competitionRules+=' · Japon D1/D2 '+years.join('–');m.japanPromotion=copy(S.worldMode.japan);CDWorldJapanQuota.project(S,m);}
+  if(edition.version>=3){m.meta.competitionRules+=' · Japon D1/D2 '+years.join('-');m.japanPromotion=copy(S.worldMode.japan);CDWorldJapanQuota.project(S,m);}
   m.leagues=edition.leagueIds.map(id=>{const l=S.worldMode.leagues[id];return{id,name:R.leagues.find(x=>x.id===id).name,phase:l.phase,champion:l.champion===null?null:clubSummary(l.champion),finalist:l.finalist===null?null:clubSummary(l.finalist),rows:tables[id].map(tableRow)};});
   for(const [id,cup]of Object.entries(S.worldMode.europe)){const pools=W.cupTables(S,id).map((rows,i)=>({id:i,label:'Poule '+(i+1),rows:rows.map(r=>({...tableRow({...r,id:r.clubId,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}),rank:r.rank,poolId:i}))}));m.leagues.push({id,name:id==='champions'?'Coupe des champions':'Challenge européen',phase:cup.phase,champion:cup.champion===null?null:clubSummary(cup.champion),finalist:cup.finalist===null?null:clubSummary(cup.finalist),pools,rows:pools.flatMap(p=>p.rows),seeds:cup.seeds||[],transfers:cup.transfers||[]});}
   const venue=f=>publishedVenue(f,S.season)??(f.venuePolicy==='centralised-super-round'?'Super Round · terrain commun':f.venueRegion==='Europe'?'Terrain désigné en Europe':f.venueDesignationPending||f.neutral?'Terrain désigné':S.clubs[f.homeId].stadium);

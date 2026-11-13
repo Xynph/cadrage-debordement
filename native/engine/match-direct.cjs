@@ -7,6 +7,7 @@
 // n'est consommé : avec ou sans cette projection, le match simulé est le même.
 const selection=require('./match-highlights.cjs');
 const choregraphe=require('./match-choregraphe.cjs');
+const notesMatch=require('./match-notes.cjs');
 const feuilleStats=require('./match-stats.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
@@ -56,7 +57,9 @@ function lecteur(){
    const effectifAdverse=feuille?[...feuille.on,...(feuille.bench||[])].filter(Boolean).map(id=>{const p=matchPlayer(l,eux,id);return p?{id:String(p.id),name:p.name,pos:p.pos,condition:Math.round(p.condition??100)}:null}).filter(Boolean):[];
    // XV adverse actuel (demande de Léo : ses remplacements se voient tout de suite).
    const xvAdverseActuel=feuille?feuille.on.map(id=>id==null?null:String(id)):[];
-   return {rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,xvAdverseActuel,
+   // Contexte de la note de match (feuille, minutes, niveau au poste), même calcul qu'en fin de match.
+   const notes=typeof CDMatchNotes!=='undefined'?CDMatchNotes.contexte(l):null;
+   return {notes,rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,xvAdverseActuel,
     tactique:l.tacticalStats?l.tacticalStats.map(s=>({longGains:s.longGains,handErrors:s.handErrors,metres:Math.round(s.metres)})):null};
   }
  };
@@ -182,65 +185,29 @@ function chiffresRugby(lignes,events){
  }
  return t;
 }
-// Note de départ (demande de Léo, 12 novembre 2026) : 6,5 pour un titulaire au coup d'envoi comme pour
-// un remplaçant à son entrée ; seule base des notes de match (aucune moyenne de saison n'en dépend).
-const NOTE_DEPART=6.5;
-// Place défensive de chaque poste (1 à 15) en largeur (0 à 70) : sert à désigner le plaqueur
-// d'une course adverse dans un journal sans fait `tackler` (anciennes sauvegardes) ; sinon le moteur le nomme. Les avants plaquent au contact (petits gains),
-// les trois-quarts dans leur couloir. Lecture pure du journal : aucun tirage, rien ne change au match.
-const COULOIR_DEFENSE=[33,35,37,30,40,24,46,35,35,28,6,20,50,64,35];
-function plaqueur(on,gain,y){
- if(!Array.isArray(on)||!on.length)return null;
- let choisi=null,meilleur=Infinity;
- on.forEach((id,poste)=>{
-  if(id==null||poste>14)return;
-  const avant=poste<8,cible=Number.isFinite(y)?y:35;
-  // Petit gain : un avant ; course plus longue : le couloir compte d'abord.
-  const ecart=Math.abs(COULOIR_DEFENSE[poste]-cible)+(gain<6?(avant?0:18):(avant?8:0))+(poste===5||poste===6?-4:0);
-  if(ecart<meilleur){meilleur=ecart;choisi=String(id)}
- });
- return choisi;
-}
-// Note de match des joueurs d'une équipe (le manager, ou l'adversaire pour « à surveiller ») :
-// NOTE_DEPART au coup d'envoi, puis ce que le journal leur attribue (courses et mètres, franchissements,
-// essais, ballons récupérés, plaquages, tirs, cartons, fautes). Plaquages : chaque course
-// adverse stoppée (moins de 22 m) et chaque ballon récupéré, comme le chiffre d'équipe.
-function notesDuMatch(lignes,events,camp){
- const notes={};if(camp!==0&&camp!==1)return notes;
- const fiche=id=>notes[id]||(notes[id]={note:NOTE_DEPART,faits:0,essais:0,metres:0,plaquages:0});
- const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=fiche(id);n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(fait==='plaquage')n.plaquages++;if(typeof fait==='number')n.metres+=fait};
- for(const l of lignes){
-  const s=events[l.i]?.scene;if(!s)continue;
-  const gain=Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?Math.abs(s.to.x-s.from.x):0;
-  // Course adverse stoppée : plaqueur nommé par le moteur (fait `tackler`, le même que la 3D),
-  // sinon déduit de la place défensive (voir `plaqueur`).
-  if(l.kind==='carry'&&l.equipe===1-camp&&l.x!==null&&l.depuis!==null&&Math.abs(l.x-l.depuis)<22){const nomme=s.tackler!=null&&Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(String(s.tackler))?String(s.tackler):null;ajoute(nomme??plaqueur(s.on?.[camp],gain,s.to?.y),.03,'plaquage');continue}
-  if(s.actor==null)continue;
-  const id=String(s.actor),nous=Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(id);if(!nous)continue;
-  if(l.kind==='carry')ajoute(id,.04+Math.min(.5,gain/45)+(gain>=22?.25:0),Math.round(gain));
-  else if(l.kind==='try')ajoute(id,1,'essai');
-  else if(l.kind==='turnover'){ajoute(id,.45);if(l.equipe===camp)notes[id].plaquages++}
-  else if(l.kind==='reception')ajoute(id,.08);
-  else if(l.kind==='kick')ajoute(id,.05);
-  else if(l.kind==='goal')ajoute(id,.3);
-  else if(l.kind==='miss')ajoute(id,-.15);
-  else if(l.kind==='card')ajoute(id,s.card==='red'||l.cause==='red'?-2:-1);
-  else if((l.kind==='hand-fault'||l.kind==='penalty')&&s.team!==camp)ajoute(id,-.35);
- }
- for(const n of Object.values(notes))n.note=Math.round(Math.max(3,Math.min(9.9,n.note))*10)/10;
- return notes;
+// Note de match (match-notes.cjs, un seul calcul pour le direct et la note enregistrée) :
+// 6,5 au coup d'envoi (remplaçant : 6,5 à l'entrée), puis ce que le journal montré leur
+// attribue. Plaquages : chaque course adverse stoppée (moins de 22 m) et chaque ballon
+// récupéré, comme le chiffre d'équipe ; le plaqueur est déduit de la place défensive.
+// `contexte` (lecteur.etat().notes) : minutes, équipes et niveau au poste de la feuille.
+const plaqueur=notesMatch.plaqueur,NOTE_DEPART=notesMatch.NOTE_DEPART;
+function notesDuMatch(lignes,events,camp,contexte={}){
+ if(camp!==0&&camp!==1)return {};
+ const n=lignes.length?lignes[lignes.length-1].i+1:0;
+ const score=lignes.length?lignes[lignes.length-1].scoreApres:[0,0];
+ return notesMatch.noter(events.slice(0,n),{...(contexte||{}),camp,score,fini:contexte?.fini===true&&n>=events.length}).joueurs;
 }
 // XV adverse (onglet de la tuile principale) : la feuille adverse actuelle (un remplacement se
 // voit tout de suite, demande de Léo), sinon celle du dernier fait montré ; notes et chiffres
 // bornés à ce qui a été montré.
-function xvAdverse(lignes,events,camp,effectif,actuel){
+function xvAdverse(lignes,events,camp,effectif,actuel,contexte){
  if(camp!==0&&camp!==1)return [];
- const eux=1-camp,notes=notesDuMatch(lignes,events,eux),fiches=new Map((effectif||[]).map(p=>[String(p.id),p]));
+ const eux=1-camp,notes=notesDuMatch(lignes,events,eux,contexte),fiches=new Map((effectif||[]).map(p=>[String(p.id),p]));
  let on=Array.isArray(actuel)&&actuel.length?actuel:null;
  for(let k=lignes.length-1;k>=0&&!on;k--){const o=events[lignes[k].i]?.scene?.on?.[eux];if(Array.isArray(o)&&o.length)on=o}
  if(!on)return [];
  return on.slice(0,15).map(id=>{
-  if(id==null)return null;const f=fiches.get(String(id)),n=notes[String(id)]||{note:NOTE_DEPART,faits:0,essais:0,metres:0,plaquages:0};
+  if(id==null)return null;const f=fiches.get(String(id)),n=notes[String(id)]||{note:notesMatch.NOTE_DEPART,faits:0,essais:0,metres:0,plaquages:0};
   // Clés propres à l'entracte (pas id/name : la couche « connaissance des joueurs » du modèle
   // habille ces objets-là et masque la note d'un joueur adverse non observé).
   return {joueur:String(id),nom:f?.name||'',poste:f?.pos||'',energie:f?.condition??null,note:n.note,faits:n.faits,essais:n.essais,metres:Math.round(n.metres),plaquages:n.plaquages};
@@ -376,8 +343,16 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
-  bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null};
+  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1,etat.notes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,etat.notes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
+  bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
+ // Homme du match (résumé d'après-match) : désigné quand tout le journal a été montré, par le
+ // calcul de la note enregistrée (match-notes.cjs).
+ if(live.finished&&borne>=events.length&&etat.notes){
+  const r=notesMatch.noter(events,{...etat.notes,fini:true}),h=r.hommeDuMatch,n=h!=null?r.joueurs[h]:null;
+  if(n){const fiche=(etat.effectifAdverse||[]).find(p=>String(p.id)===h);
+   // Clé `joueur` (pas id/name), comme le XV adverse : la couche « connaissance » ne la masque pas.
+   direct.hommeDuMatch={joueur:h,camp:n.cote,nom:etat.notes.noms?.[h]||fiche?.name||'',note:n.note,essais:n.essais,plaquages:n.plaquages,metres:n.metres};}
+ }
  direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
  direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];
  const tf=bilan.courant;

@@ -167,7 +167,7 @@ static func _contracts_preview(parent: VBoxContainer, app: Control, contracts: A
 		profile.add_theme_font_size_override("font_size",13)
 		G.fill(profile)
 		row.add_child(profile)
-		row.add_child(G.label("Saison "+G.n(player.contractEnd),12,MUTED))
+		row.add_child(G.label("Saison "+G.season_label(player.contractEnd),12,MUTED))
 
 static func _journal(parent: Node, app: Control) -> void:
 	var block := _card(parent,"OfficeJournalCard")
@@ -201,7 +201,7 @@ static func _decisions(parent: Node, app: Control) -> void:
 	contracts.sort_custom(func(a: Dictionary,b: Dictionary):return int(a.contractEnd)<int(b.contractEnd) if int(a.contractEnd)!=int(b.contractEnd) else str(a.id)<str(b.id))
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
-		var card := _decision(parent, "%d contrat%s" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.n(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
+		var card := _decision(parent, "%d contrat%s" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.season_label(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
 		_contracts_preview(card,app,contracts)
 	var selection: Dictionary = model.get("selection", {})
 	var vacant := 0

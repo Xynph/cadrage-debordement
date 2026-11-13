@@ -149,7 +149,7 @@ static func _recent(card: Panel, app: Control, data: Dictionary) -> void:
 		D.text(card,23,117,"Aucune décision archivée.",28,C.MUTED,600,850)
 		return
 	var entry: Dictionary = events[0]
-	D.text(card,23,100,"SAISON %s  ·  SEMAINE %s" % [G.n(entry.get("season","—")),G.n(int(entry.get("week",0))+1)],22,C.GOLD,700,846)
+	D.text(card,23,100,"SAISON %s  ·  SEMAINE %s" % [G.season_label(entry.get("season","—")),G.n(int(entry.get("week",0))+1)],22,C.GOLD,700,846)
 	D.text(card,23,145,_name(app.model,entry.get("playerId")),32,C.IVORY,700,846)
 	D.text(card,23,183,entry.get("title","Entretien"),24,C.MUTED,500,846)
 	D.text(card,23,221,CHOICES.get(entry.get("choice"),"Décision consignée"),25,C.MINT,600,846)
@@ -162,7 +162,7 @@ static func _history(app: Control, canvas: Control, data: Dictionary) -> void:
 	for i in mini(8,events.size()):
 		var entry: Dictionary = events[i]
 		var y := 68+i*88
-		D.text(card,23,y+22,"SAISON %s  ·  SEMAINE %s" % [G.n(entry.get("season","—")),G.n(int(entry.get("week",0))+1)],21,C.GOLD,700,850)
+		D.text(card,23,y+22,"SAISON %s  ·  SEMAINE %s" % [G.season_label(entry.get("season","—")),G.n(int(entry.get("week",0))+1)],21,C.GOLD,700,850)
 		D.text(card,23,y+48,_name(app.model,entry.get("playerId"))+"  ·  "+str(CHOICES.get(entry.get("choice"),"Décision consignée")),25,C.IVORY,600,850)
 		D.text(card,23,y+73,entry.get("title","Entretien"),21,C.MUTED,500,850)
 		D.line(card,Vector2(23,y+81),Vector2(881,y+81),Color(C.LINE,.55))

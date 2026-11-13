@@ -1,19 +1,19 @@
 'use strict';
 const assert=require('node:assert/strict'),{test}=require('node:test');
-const {context}=require('./france-harness.cjs');
+const {context}=require('./monde-harness.cjs');
 
-function finance(fixture,world=true){
- const h=context(52602);
- Object.assign(h.ctx,{fixture,world});
- // L'initialisation réelle précède le double lexical de carrière Monde.
- h.run('start(0);S.worldVersion=1;worldSetup();');
+// Carrière Monde réelle (world-champ) : une seule carrière, chaque mesure repart du même état et RNG.
+const h=context(52602),base=h.checkpoint();
+require('node:test').after(()=>h.close());
+function finance(fixture){
+ h.restore(base);
+ h.ctx.fixture=fixture;
  h.run([
-  'const CDWorldCareer={active:()=>world};',
-  'const ids=fixture.pair, initial=ids.map(id=>S.clubs[id].cash);',
+  'var ids=fixture.pair, initial=ids.map(id=>S.clubs[id].cash);',
   'worldWeeklyEconomy([fixture]);',
-  'const delta=ids.map((id,i)=>S.clubs[id].cash-initial[i]);',
-  'const repeat=worldWeeklyEconomy([fixture]);',
-  'const final=ids.map((id,i)=>S.clubs[id].cash-initial[i]);'
+  'var delta=ids.map((id,i)=>S.clubs[id].cash-initial[i]);',
+  'var repeat=worldWeeklyEconomy([fixture]);',
+  'var final=ids.map((id,i)=>S.clubs[id].cash-initial[i]);'
  ].join('\n'));
  return {delta:Array.from(h.run('delta')),final:Array.from(h.run('final')),repeat:h.run('repeat'),seed:h.seed()};
 }
@@ -29,7 +29,6 @@ test('Monde : la prime d’un KO départagé au même score va au vrai vainqueur
   assert.equal(actual.repeat,false);
   assert.deepEqual(actual.final,actual.delta);
   assert.equal(actual.seed,reference.seed);
-  assert.deepEqual(finance(record,false),finance(draw,false));
  }
 });
 

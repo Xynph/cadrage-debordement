@@ -63,6 +63,8 @@ budget() {
     tests/native-club-strategy.cjs) echo 600s ;;
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
+    # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
+    tests/match-notes.cjs) echo 900s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
@@ -84,6 +86,8 @@ budget() {
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
+    # Tests migrés en carrière Monde : dépassent le délai par défaut (native-relationships 273 s en local).
+    tests/performance-analysis.cjs|tests/native-relationships.cjs|tests/player-population-capacity.cjs) echo 600s ;;
     *) echo 180s ;;
   esac
 }

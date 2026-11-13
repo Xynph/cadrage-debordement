@@ -13,7 +13,7 @@ static func build(app: Control) -> Control:
 	var paper := G.panel(page)
 	G.fill(paper.get_parent(), true)
 	G.fill(paper, true)
-	G.chapter(paper, "18", "Troisième Mi-Temps", "Journal et conférences · saison %d · semaine %d" % [data.context.season, int(data.context.week) + 1], app.accent)
+	G.chapter(paper, "18", "Troisième Mi-Temps", "Journal et conférences · saison %s · semaine %d" % [G.season_label(data.context.season), int(data.context.week) + 1], app.accent)
 	var metrics: Dictionary = data.metrics
 	var indicators := G.h(20)
 	paper.add_child(indicators)
@@ -74,7 +74,7 @@ static func _journal(app: Control, data: Dictionary) -> Control:
 		for result: Dictionary in division.results:
 			news.add_child(G.wrap("%s   %d – %d   %s" % [_club(app, result.clubIds[0]), result.score[0], result.score[1], _club(app, result.clubIds[1])], 15, G.INK))
 			var phase: String = {"league":"championnat", "barrage":"barrage", "semi":"demi-finale", "final":"finale", "access":"barrage d’accession"}.get(str(result.phase), "compétition")
-			news.add_child(G.label("Saison %d · semaine %d · %s" % [result.season, int(result.week) + 1, phase], 12, G.MUTED))
+			news.add_child(G.label("Saison %s · semaine %d · %s" % [G.season_label(result.season), int(result.week) + 1, phase], 12, G.MUTED))
 			news.add_child(G.separator())
 		ranking.add_child(G.section("Le classement actuel"))
 		for standing: Dictionary in division.standings:
@@ -120,7 +120,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 		list.add_child(G.section("Retour de la dernière conférence"))
 		var delta: Dictionary = outcome.delta
 		list.add_child(G.wrap("Moral %+.0f · confiance %+.0f · opinion médias %+.0f · supporters %+.0f · pression %+.0f" % [delta.morale, delta.trust, delta.mediaTrust, delta.fanTrust, delta.boardPressure], 13, G.GOOD))
-		list.add_child(G.label("Saison %d · semaine %d" % [outcome.context.season, int(outcome.context.week) + 1], 12))
+		list.add_child(G.label("Saison %s · semaine %d" % [G.season_label(outcome.context.season), int(outcome.context.week) + 1], 12))
 		var exchanges: Array = outcome.get("exchanges", [])
 		if not exchanges.is_empty():
 			var feedback := G.v(4)
@@ -210,7 +210,7 @@ static func _history(app: Control, data: Dictionary) -> Control:
 	var rows: Array = data.history.duplicate()
 	rows.reverse()
 	for row: Dictionary in rows:
-		list.add_child(G.label("Saison %d · semaine %d%s" % [row.season, int(row.week) + 1, " · " + _club(app, row.club) if row.has("club") else ""], 12, G.GOLD))
+		list.add_child(G.label("Saison %s · semaine %d%s" % [G.season_label(row.season), int(row.week) + 1, " · " + _club(app, row.club) if row.has("club") else ""], 12, G.GOLD))
 		if row.has("journalist"):
 			list.add_child(G.wrap("%s · %s" % [row.journalist.name, row.journalist.outlet], 12, G.GOLD))
 		else:

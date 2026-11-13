@@ -25,7 +25,8 @@ module.exports=function clubTransfers(){
  const annual=c=>aiRosterPayroll(c)*52;
  // Estimation par la cellule de recrutement du club : note de rôle à ±3 points près,
  // stable pour un couple club-joueur.
- const estimate=(clubId,p)=>roleNote(p)+(seedHash('scout|'+clubId+'|'+p.id)%7)-3;
+ // Les notes de match de la saison se voient : −2 à +3 points (match-notes.cjs).
+ const estimate=(clubId,p)=>roleNote(p)+(seedHash('scout|'+clubId+'|'+p.id)%7)-3+(typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.interet(p.id):0);
  const primarySlot=p=>Math.max(0,POS.indexOf(p.pos));
  const slotGoal=(c,slot)=>{const row=AI_POPULATION_DEPTH.find(([s])=>s===slot);return row?Math.max(2,Math.round(row[1]*aiRosterTarget(c)/37)):2;};
  const covered=(c,slot,without)=>c.players.filter(p=>p.id!==without&&p.age<p.dev.retireAge&&slotEligible(p,slot)).length;
@@ -52,7 +53,9 @@ module.exports=function clubTransfers(){
  function value(p){
   const years=clamp((p.contractEnd??S.season)-S.season+1,1,2);
   const age=p.age<=23?1.6:p.age<=26?1.3:p.age<=29?1:p.age<=31?.6:.3;
-  return Math.max(10000,Math.round(p.salary*52*years*age/10000)*10000);
+  // Notes de match (match-notes.cjs) : la moyenne de saison pèse sur la valeur, −8 % à +12 %.
+  const forme=typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.valeur(p.id):1;
+  return Math.max(10000,Math.round(p.salary*52*years*age*forme/10000)*10000);
  }
  function listed(c,plan,reports){
   if((reports.get(c.id)?.sold||0)>=MAX_SALES)return [];
