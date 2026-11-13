@@ -57,6 +57,9 @@ budget() {
     tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
+    # Décisions natives et sauvegardes du direct en carrière Monde (une carrière pèse ~20 Mo de sauvegarde) : 314 s et 152 s en local sous charge.
+    tests/native-decisions.cjs) echo 600s ;;
+    tests/native-presentation-persistence.cjs) echo 420s ;;
     tests/native-nationale-reduced-bench.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
     # Lot 01 (Monde) : native-match-talks 779 s sous forte charge locale (deux carrières, plusieurs semaines).
     tests/native-match-talks.cjs) echo 900s ;;

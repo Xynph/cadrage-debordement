@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 
@@ -18,7 +17,7 @@ test('Les images seules ne réécrivent ni la carrière ni son secours', () => {
  const current = path.join(dataDir, 'PrototypeGodot', 'donnees.json');
  const backup = path.join(path.dirname(current), 'donnees-precedentes.json');
  const realNow = Date.now;
- let now = 1700000000000;
+ let now = 1794315600000;
  let bridge;
  let id = 0;
  const request = (command, payload = {}) => {
@@ -32,8 +31,15 @@ test('Les images seules ne réécrivent ni la carrière ni son secours', () => {
  };
  try {
   Date.now = () => now;
-  bridge = createBridge({dataDir, seed: 411});
-  settleClubMeetings(good('new_career', {mode: 'common', club: 0}), good);
+  // Carrière Monde, réglée comme le vrai jeu (calendrier journalier, presse obligatoire) ; le direct
+  // s'ouvre le jour de la première rencontre du club.
+  bridge = createBridge({dataDir, seed: 411, dailyCalendar: true, mandatoryPress: true, internationalCareer: true});
+  let career = settleClubMeetings(good('new_career', {mode: 'world-champ', club: 0}), good);
+  for (let day = 0; !(career.meta.calendarCadence?.matchReady && career.next); day++) {
+   assert.ok(day < 150, 'Aucun jour de match en 150 journées');
+   career = settleClubMeetings(good('advance_day', {fromDate: career.meta.calendarToday}), good);
+  }
+  if (!career.selection.valid) good('auto_lineup');
   let model = skipMatchTalk(good('begin_match'), good);
   let presentation = 0, simulation = 0;
   for (let step = 0; step < 12; step++) {
