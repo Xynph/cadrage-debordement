@@ -397,13 +397,13 @@ func _row(player:Dictionary,index:int) -> void:
 	var notes := Notes.joueur(app.model,str(player.id))
 	var moyenne: Variant = notes.get("moyenne")
 	if moyenne != null:
-		var pastille := Notes.pastille(row,Rect2(1264,5,52,24),float(moyenne),0.42)
+		var pastille := Notes.pastille(row,Rect2(1264,5,52,24),float(moyenne),0.52)
 		pastille.name = "RosterNoteAverage"
 		pastille.tooltip_text = "Moyenne de la saison : %s sur %d match%s" % [Notes.texte_note(moyenne),int(notes.get("matchs",0)),"s" if int(notes.get("matchs",0))>1 else ""]
 		pastille.mouse_filter = Control.MOUSE_FILTER_PASS
 	else:
 		D.text(row,1290,24,"—",21,C.MUTED,500,52,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterNoteAverage"
-	Notes.pastilles(row,Vector2(1326,5),Notes.forme(notes),Vector2(25,24),3.5,0.36).name = "RosterForm"
+	Notes.pastilles(row,Vector2(1326,5),Notes.forme(notes),Vector2(25,24),3.5,0.5).name = "RosterForm"
 	D.text(row,1528,24,G.n(player.get("minutes",0)),22,C.MUTED,500,56,HORIZONTAL_ALIGNMENT_RIGHT)
 	var status:String="Blessé" if float(player.get("injury",0))>0 else str(player.get("status","Disponible"))
 	D.chip(row,Rect2(1538,3,128,26),status,C.ALERT if status=="Blessé" else C.GOLD if status.contains("clé") else C.MINT)

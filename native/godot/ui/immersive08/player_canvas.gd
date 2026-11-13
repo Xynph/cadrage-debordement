@@ -319,7 +319,7 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		D.text(rang,84,26,str(ligne.get("adversaire","")),21,C.IVORY,600,420)
 		D.text(rang,514,26,str(ligne.get("competition","")),19,C.MUTED,500,300)
 		D.text(rang,824,26,G.n(ligne.get("minutes",0))+"′",20,C.IVORY,500,80)
-		NotesMatch.pastille(rang,Rect2(914,5,64,26),float(ligne.get("note",6.5)),0.45)
+		NotesMatch.pastille(rang,Rect2(910,3,72,30),float(ligne.get("note",6.5)),0.62)
 		D.text(rang,1014,26,G.n(ligne.get("essais",0)),20,C.IVORY if int(ligne.get("essais",0))>0 else C.MUTED,500,90)
 		D.text(rang,1114,26,G.n(ligne.get("plaquages",0)),20,C.MUTED,500,90)
 		D.text(rang,1214,26,G.n(ligne.get("metres",0))+" m",20,C.MUTED,500,110)

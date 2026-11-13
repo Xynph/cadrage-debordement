@@ -41,9 +41,12 @@ func executer() -> void:
 	# Joueur le plus utilisé : historique le plus long.
 	var choisi := ""
 	var plus := -1
+	var meilleure := -1.0
 	for id: String in joueurs:
-		if int(joueurs[id].get("matchs", 0)) > plus:
-			plus = int(joueurs[id].get("matchs", 0)); choisi = id
+		var n := int(joueurs[id].get("matchs", 0))
+		var m: float = float(joueurs[id].get("moyenne")) if joueurs[id].get("moyenne") != null else 0.0
+		if n > plus or n == plus and m > meilleure:
+			plus = n; meilleure = m; choisi = id
 	mesures["joueur"] = choisi
 	mesures["matchs"] = plus
 	app._navigate("Effectif"); await poser(30)
