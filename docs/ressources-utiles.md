@@ -1,4 +1,4 @@
-# Ressources utiles pour Oval Legacy
+# Ressources utiles pour Rugby Legacy
 
 Registre partagé des liens transmis par Léo ou retenus pendant le développement.
 À consulter à chaque reprise avec AGENTS.md, côté PC comme Cloud. Une nouvelle
@@ -140,7 +140,7 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
 
 - **Titre et URL pérenne :**
 - **Fourni par / contexte :**
-- **Utilité pour Oval Legacy :**
+- **Utilité pour Rugby Legacy :**
 - **Coût et licence :** connus ou à vérifier.
 - **Statut :** À explorer / Évalué / Retenu / Intégré / Écarté.
 - **Date et vérification effectuée :** distinguer lecture, essai et intégration.

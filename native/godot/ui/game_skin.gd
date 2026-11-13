@@ -176,7 +176,7 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		image.custom_minimum_size = Vector2(width, width)
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		image.tooltip_text = "Blason fourni par le pack" if provided else "Blason d’Oval Legacy 27"
+		image.tooltip_text = "Blason fourni par le pack" if provided else "Blason de Rugby Legacy 27"
 		return image
 	var w := W.new()
 	w.initials = str(c.get("abbr", "XV"))
