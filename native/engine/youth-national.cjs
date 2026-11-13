@@ -136,6 +136,8 @@ function factory(){
  function defaultDivisions(){return {jwc:JWC_2026.map(p=>p.slice()),trophy:TROPHY_DEFAULT.slice()};}
 
  const calendarCache=new Map();
+ // L'éligibilité d'un joueur ne dépend que de son identité : mise en cache entre les journées.
+ const eligibility=new Map();
  function seasonCalendar(season,divisions=defaultDivisions()){
   const key=season+JSON.stringify(divisions);
   if(!calendarCache.has(key)){if(calendarCache.size>8)calendarCache.clear();calendarCache.set(key,buildCalendar(season,divisions));}
@@ -210,6 +212,7 @@ function factory(){
   return s.youthNational;
  }
  const active=s=>s?.youthNational?.version===VERSION;
+ const worldCareer=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)&&typeof nativeFacts!=='undefined';
 
  function today(s){
   if(typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)&&s.worldMode?.day!==undefined)return CDWorldCareer.calendarToday(s);
@@ -232,7 +235,7 @@ function factory(){
   if(!due.length)return 0;
   const pool=youthPool(s),seed=String(s.seed??s.worldMode?.seed??'rl27')+':'+season;
   const nationOf=pid=>{const r=getCount(st,season,pid);return r?NATIONS[r[1]]:null;};
-  const eligibility=new Map();
+  if(eligibility.size>200000)eligibility.clear();
   const eligible=(p,n)=>{const k=p.id+'/'+n;if(!eligibility.has(k))eligibility.set(k,eligibleFor(p,n));return eligibility.get(k);};
   const medians={};
   for(const cat of ['U20','U18']){const r=pool.filter(p=>p.age<=MAX_AGE[cat]&&p.age>=MIN_AGE[cat]).map(p=>p.rating).sort((a,b)=>a-b);medians[cat]=r.length>=30?r[Math.floor(r.length/2)]:null;}
@@ -327,9 +330,17 @@ function factory(){
  function installHooks(){
   if(typeof finishRound==='function'&&!finishRound.__youthNational){
    const original=finishRound,wrapped=function(){const result=original.apply(this,arguments);const s=state();
-    if(s&&!s.live){if(!active(s))initialize(s);playUntil(s,today(s));}
+    // Mode Monde uniquement (décision de Léo du 13/11/2026) : les autres carrières restent inchangées.
+    if(s&&!s.live&&(active(s)||worldCareer(s))){if(!active(s))initialize(s);playUntil(s,today(s));}
     return result;};
    Object.assign(wrapped,original);wrapped.__youthNational=true;finishRound=wrapped;
+  }
+  // En carrière Monde, la fin de semaine passe par finishWeek() qui commence par trainWeek().
+  if(typeof trainWeek==='function'&&!trainWeek.__youthNational){
+   const original=trainWeek,wrapped=function(){const result=original.apply(this,arguments);const s=state();
+    if(s&&!(s.live&&!s.live.finished)&&(active(s)||worldCareer(s))){if(!active(s))initialize(s);playUntil(s,today(s));}
+    return result;};
+   Object.assign(wrapped,original);wrapped.__youthNational=true;trainWeek=wrapped;
   }
   if(typeof advanceSeason==='function'&&!advanceSeason.__youthNational){
    const original=advanceSeason,wrapped=function(){const s=state(),completed=s?.season,snapshot=s&&active(s)?JSON.stringify(s.youthNational):null;
