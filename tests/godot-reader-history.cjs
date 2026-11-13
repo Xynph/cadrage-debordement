@@ -9,13 +9,13 @@ const { test } = require('node:test');
 test('Lecteurs natifs : fenêtres exactes, chaîne modale et retour sans mutation', {
   skip: !process.env.CD_GODOT_EXECUTABLE && 'SDK Godot requis : CD_GODOT_EXECUTABLE absent',
 }, () => {
-  // Budget global 270 s (la recette SDK coupe une suite à 300 s) : la saison Monde compte ~46 jours de
+  // Budget global 540 s (la recette SDK coupe cette suite à 600 s, cf. ci/run-godot-sdk.cjs) : la saison Monde compte ~46 jours de
   // préparation avant le premier match du club ; ils sont joués par les commandes publiques du moteur
   // côté Node (même helper que la recette graphique Analyse/Club), puis Godot ouvre la carrière préparée.
-  const deadline = Date.now() + 270000;
+  const deadline = Date.now() + 540000;
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-reader-history-'));
   const preparation = spawnSync(process.execPath, [path.resolve(__dirname, 'helpers/analysis-club-public-prepare.cjs'), profile, path.join(profile, 'preparation')], {
-    env: process.env, encoding: 'utf8', windowsHide: true, timeout: 150000,
+    env: process.env, encoding: 'utf8', windowsHide: true, timeout: 300000,
   });
   const prepared = (preparation.stdout || '') + (preparation.stderr || '');
   if (preparation.error) throw preparation.error;

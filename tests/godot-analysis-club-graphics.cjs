@@ -11,7 +11,7 @@ const sha = file => crypto.createHash('sha256').update(fs.readFileSync(file)).di
 test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours exacts en 1440p', {
   skip: !process.env.CD_GODOT_EXECUTABLE ? 'SDK Godot requis' : process.env.CD_ANALYSIS_CLUB_GRAPHICS !== '1' && 'Recette graphique opt-in : CD_ANALYSIS_CLUB_GRAPHICS=1',
 }, () => {
-  const deadline = Date.now() + 270000; // la recette SDK coupe une suite à 300 s ; préparation Monde (~46 jours) incluse
+  const deadline = Date.now() + 540000; // la recette SDK coupe cette suite à 600 s (ci/run-godot-sdk.cjs) ; préparation Monde (~46 jours) incluse
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-analysis-club-graphics-'));
   const output = process.env.CD_ANALYSIS_CLUB_GRAPHICS_OUTPUT || path.join(profile, 'proofs');
   fs.mkdirSync(output, { recursive: true });
@@ -49,7 +49,7 @@ test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours 
     if (!selected) {
       const prepared = spawnSync(process.execPath, [path.resolve(__dirname, 'helpers/analysis-club-public-prepare.cjs'), profile, output], {
         env: process.env, encoding: 'utf8', windowsHide: true,
-        timeout: Math.min(150000, Math.max(1, deadline - Date.now() - 1000)),
+        timeout: Math.min(300000, Math.max(1, deadline - Date.now() - 1000)),
       });
       fs.writeFileSync(path.join(output, 'public-preparation.log'), (prepared.stdout || '') + (prepared.stderr || ''));
       if (prepared.error) throw prepared.error;
@@ -63,7 +63,7 @@ test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours 
       receipt.public_preparation = 'public-preparation.json';
     }
     const remaining = deadline - Date.now() - 1000;
-    assert.ok(remaining > 0, 'Budget global de 270 s épuisé avant le replay');
+    assert.ok(remaining > 0, 'Budget global de 540 s épuisé avant le replay');
     result = spawnSync(process.env.CD_GODOT_EXECUTABLE, [
       '--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '2560x1440',
       '--audio-driver', 'Dummy', '--max-fps', '120', '--path', 'native/godot',
@@ -72,7 +72,7 @@ test('Analyse, Club et Bureau graphiques : résultat réel, lecteurs et retours 
       env: { ...process.env, CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: profile,
         CD_ANALYSIS_CLUB_GRAPHICS_COPIED: '1', CD_ANALYSIS_CLUB_GRAPHICS_EXPECTED_FIXTURE: receipt.expected_fixture,
         CD_ANALYSIS_CLUB_GRAPHICS_OUTPUT: output, CD_ANALYSIS_CLUB_GRAPHICS_SHA: receipt.sha },
-      encoding: 'utf8', windowsHide: true, timeout: Math.min(180000, remaining),
+      encoding: 'utf8', windowsHide: true, timeout: Math.min(240000, remaining),
     });
   } finally {
     if (sourceFile) {
