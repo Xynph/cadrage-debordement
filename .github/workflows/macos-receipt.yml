@@ -25,7 +25,6 @@ jobs:
     timeout-minutes: 35
     env:
       SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
-      BUILD_DIR: ${{ runner.temp }}/oval-macos
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -39,6 +38,7 @@ jobs:
           EXPECTED: ${{ matrix.architecture }}
         run: |
           python -c 'import os,platform; assert platform.system()=="Darwin"; assert platform.machine()=={"x64":"x86_64","arm64":"arm64"}[os.environ["EXPECTED"]]'
+          echo "BUILD_DIR=$RUNNER_TEMP/oval-macos" >> "$GITHUB_ENV"
       - name: Construire le bundle avec Node embarqué
         run: python ci/build-macos.py --source-commit "$SOURCE_COMMIT" --output "$BUILD_DIR"
       - name: Démarrer, importer la presse fictive, sauvegarder et reprendre
