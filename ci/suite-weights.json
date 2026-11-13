@@ -47,6 +47,8 @@
       "tests/match-pass-live.cjs": 2,
       "tests/match-structured-facts.cjs": 6,
       "tests/matchflow.cjs": 2,
+      "tests/native-academy-appearance-bank.cjs": 190,
+      "tests/native-academy-potential.cjs": 65,
       "tests/native-capacity.cjs": 3,
       "tests/native-position-benchmark.cjs": 14,
       "tests/native-press-review.cjs": 27,

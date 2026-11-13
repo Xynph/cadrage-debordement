@@ -94,6 +94,8 @@ budget() {
     # Lot 01 (Monde) : mesures locales sous charge, 2 créneaux partagés, 86 à 413 s ; délais doublés, assertions inchangées.
     tests/native-club-meetings.cjs|tests/native-club-meetings-packs.cjs|tests/native-club-support.cjs|tests/native-club-support-medical.cjs|tests/native-club-support-effects.cjs|tests/native-playbook.cjs|tests/native-coach-notes06-pack.cjs|tests/native-manager-career-pack.cjs|tests/native-player-knowledge-worker.cjs|tests/native-position-integration.cjs|tests/native-position-editions.cjs) echo 600s ;;
     tests/native-club-support-training-forecast.cjs) echo 900s ;;
+    # Lot 03 (Monde) : 3 tests de 40 à 76 s chacun (3 carrières), 190 s en tout en local sous charge ; délai élargi, assertions inchangées.
+    tests/native-academy-appearance-bank.cjs) echo 420s ;;
     *) echo 180s ;;
   esac
 }
