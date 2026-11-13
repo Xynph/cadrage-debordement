@@ -83,8 +83,8 @@ budget() {
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
     # PASS CI 42909005768 : 179,80/159,68 s, marge finie avant le cap 180.
     tests/world-worker.cjs) echo 300s ;;
-    # native-fiction-sheet : délai de 180 s atteint sous charge (Suites 6/10, run 43262510105) ; marge doublée, assertions inchangées.
-    tests/native-fiction-sheet.cjs) echo 420s ;;
+    # Lot 03 (Monde) : lifecycle-native, 8 tests dont 2 carrières Monde de ~1 Go de tas chacune : 214 s en local sous charge.
+    tests/lifecycle-native.cjs) echo 420s ;;
     # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
