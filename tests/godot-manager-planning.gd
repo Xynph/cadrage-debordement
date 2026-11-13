@@ -21,6 +21,7 @@ func run() -> void:
 	host.bridge = host
 	root.add_child(host)
 	root.size = Vector2i(1280, 720)
+	host.model.squad[0]["renewal"] = {"salary":9000,"fee":18000,"minYears":4,"maxYears":3,"available":false}
 	var before := JSON.stringify(host.model)
 	var panel = load("res://ui/manager_planning.gd").open(host)
 	await process_frame
@@ -37,6 +38,13 @@ func run() -> void:
 	await process_frame
 	assert(panel.find_child("PlannerScenarioAdd", true, false) != null)
 	assert(panel.find_child("PlannerHorizon", true, false) != null)
+	if panel.years.min_value != 1 or panel.years.max_value != 3 or panel.years.value > 3:
+		push_error("Une hypothèse reste bornée à trois saisons malgré une prolongation réelle indisponible")
+		quit(1)
+		return
+	(panel.find_child("PlannerScenarioAdd", true, false) as Button).pressed.emit()
+	assert(host.calls[-1].command == "manager_plan_scenario")
+	assert(host.calls[-1].payload.operations[0].years >= 1 and host.calls[-1].payload.operations[0].years <= 3)
 	panel.tabs.current_tab = 2
 	await process_frame
 	await process_frame

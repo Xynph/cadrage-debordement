@@ -242,8 +242,11 @@ func _quote_candidate() -> void:
 	var quote: Dictionary = player.get("renewal", {}) if kind_index == 0 else player
 	salary.value = float(quote.get("salary", 1000))
 	fee.value = float(quote.get("fee", 0))
-	years.min_value = float(quote.get("minYears", 1)) if kind_index == 0 else 1.0
-	years.value = maxf(years.value, years.min_value)
+	# A planning hypothesis is bounded to three seasons. An unavailable real
+	# renewal quote can require four years; it must not expand this control.
+	years.min_value = 1.0
+	years.max_value = 3.0
+	years.value = clampf(years.value, 1.0, 3.0)
 
 func _goal() -> void:
 	var goal: Variant = data.get("goal")

@@ -38,11 +38,12 @@ func run() -> void:
 	root.size = Vector2i(1280, 720)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	app.bridge.command_failed.connect(func(message: String): printerr("REFUS MOTEUR : ", message))
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Vrai worker prêt")
 	app.timer.stop()
-	app._command("new_career", {"mode":"common","club":29})
+	app._command("new_career", {"mode":"world-champ","club":0})
 	await wait_command()
 	await Flow.settle_club_meetings(app, self, check)
 	var before := await state()
@@ -70,6 +71,10 @@ func run() -> void:
 	(panel.find_child("PlannerScenarioAdd", true, false) as Button).pressed.emit()
 	await wait_command()
 	check(app.model.managerPlanning.scenario.operations.size() == 1, "Hypothèse enregistrée sans signature")
+	if not app.bridge.last_response_ok or not is_instance_valid(panel):
+		app.bridge.stop()
+		quit(1)
+		return
 	await shot("02-effectif-futur-1280")
 	panel.tabs.current_tab = 2
 	await settle()

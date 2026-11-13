@@ -1,5 +1,5 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Legacy fixtures; production keeps World-only mode.
+process.env.CD_MODES_HERITES='0'; // Exercise the production World-only mode.
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 test('deux lectures réutilisent les projections VM sans partager les objets ni garder un reçu',()=>{
@@ -8,7 +8,7 @@ test('deux lectures réutilisent les projections VM sans partager les objets ni 
  try{
   b=createBridge({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'oval-cache-')),seed:27,now:1700000000000});
   const call=(command,payload={})=>b.handle({id:++n,command,payload});
-  assert.equal(call('new_career',{mode:'common',club:29}).ok,true);
+  assert.equal(call('new_career',{mode:'world-champ',club:0}).ok,true);
   const one=call('snapshot');count=0;const two=call('snapshot');assert.equal(count,0,'pas de nouvelle projection identique');assert.deepEqual(two.model,one.model);
   two.model.club.name='altéré par lecteur';assert.notEqual(call('snapshot').model.club.name,two.model.club.name);
   const exp=call('export');assert.equal(typeof exp.model.meta.exportText,'string');assert.equal(call('snapshot').model.meta.exportText,undefined);
