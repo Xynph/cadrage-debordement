@@ -21,6 +21,7 @@ const playerFactsCatalogue=fs.existsSync(factsFile)?JSON.parse(fs.readFileSync(f
 const professionalDepth=require('./professional-depth.cjs');
 const epcrPreparation=require('./epcr-preparation.cjs');
 const competitionEditor=require('./competition-editor.cjs');
+const leagueDetail=require('./league-detail.cjs');
 const {calendarContext}=require('./calendar-clock.cjs');
 const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
@@ -73,6 +74,7 @@ const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-match
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
 const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 COMMANDS.add('observe_player');
+COMMANDS.add('league_benchmark');
 COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
@@ -433,6 +435,18 @@ function createBridge(options={}){
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
     if(command==='pack_select'&&payload.scope==='creation'){const mode=payload.mode??'common',databaseId=edition(mode),key=creationKey(mode),selected=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!selected)throw Error('Pack non installé.');if(selected&&selected.meta.databaseId!==databaseId)throw Error('Pack incompatible avec cette édition.');const prior=store[key];try{store[key]=payload.id;persist();}catch(e){if(prior===undefined)delete store[key];else store[key]=prior;throw e;}return {id,ok:true,model:snapshot()};}
+    if(command==='league_benchmark'){
+     // Banc d'essai de la machine pour la jauge de fluidité : lecture seule, sans carrière requise.
+     // Résultat mis en cache dans un petit fichier du profil ; `refresh` relance la mesure.
+     const machine={cores:payload.cores,memoryGb:payload.memoryGb};
+     if(Object.keys(payload).some(k=>!['cores','memoryGb','refresh'].includes(k))||(payload.refresh!==undefined&&typeof payload.refresh!=='boolean')||Object.values(machine).some(x=>x!==undefined&&!(Number.isFinite(x)&&x>=0&&x<=4096)))throw Error('Paramètres de banc d’essai invalides.');
+     const cacheFile=path.join(dataDir,'banc-essai.json');let bench=null;
+     if(payload.refresh!==true){try{const cached=JSON.parse(fs.readFileSync(cacheFile,'utf8'));if(cached?.version===1&&cached.runtime===process.version&&cached.serialMs>0&&cached.computeMs>0)bench={...cached,cached:true};}catch{}}
+     if(!bench){bench={...leagueDetail.benchmark(),runtime:process.version,measuredAt:new Date(clock).toISOString()};try{const temp=cacheFile+'.tmp-'+randomUUID();fs.writeFileSync(temp,JSON.stringify(bench));fs.renameSync(temp,cacheFile);}catch{}bench.cached=false;}
+     const model=snapshotRaw();
+     model.meta.leagueBenchmark={...bench,...machine,costs:leagueDetail.costTable({...machine,serialMs:bench.serialMs,computeMs:bench.computeMs})};
+     return {id,ok:true,model:projectKnowledge(model)};
+    }
     if(command==='export'){const model=snapshotRaw();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='shutdown'){const model=snapshotRaw();close();return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshotRaw();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model:projectKnowledge(model)};}
@@ -498,7 +512,7 @@ function createBridge(options={}){
       run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
-       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
+       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='train'){

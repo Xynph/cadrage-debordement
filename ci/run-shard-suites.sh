@@ -74,6 +74,9 @@ budget() {
     tests/world-roster-stability.cjs) echo 900s ;;
     tests/starting-salaries.cjs) echo 600s ;;
     tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) echo 900s ;;
+    # Mesurés aussi sur main (indépendants de la branche) : native-press-worker 220-240 s, potential-evolution-worker 166 s en CI / 196-255 s sous charge locale.
+    tests/native-press-worker.cjs) echo 420s ;;
+    tests/potential-evolution-worker.cjs) echo 360s ;;
     tests/deepen-staff-native.cjs) echo 1200s ;;
     # Réception locale complète 233 s ; conserve créations, Rooms et refus.
     tests/youth-scout-native.cjs) echo 600s ;;
