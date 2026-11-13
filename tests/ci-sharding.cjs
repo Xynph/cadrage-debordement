@@ -53,7 +53,7 @@ for (const args of [[], ['0'], ['x'], ['1', 'full', '0'], ['1', 'full', '2', 'ex
 assert.equal(cli('1', 'inconnue').status, 1);
 assert.equal(cli('9', 'native-art', '10').stdout, '', 'Shard vide autorisé en couverture ciblée');
 const snapshot = Object.keys(WEIGHTS_SECONDS);
-for (let i = 0; i < 58; i++) snapshot.push('tests/synthetic-' + i + '.cjs');
+for (let i = 0; i < 258; i++) snapshot.push('tests/synthetic-' + i + '.cjs');
 const scores = planShards(snapshot).map(group =>
   group.reduce((sum, f) => sum + (WEIGHTS_SECONDS[f] || 1), 0));
 assert.ok(Math.max(...scores) - Math.min(...scores) <= 3,

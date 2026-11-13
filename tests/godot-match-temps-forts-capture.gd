@@ -72,6 +72,13 @@ func run() -> void:
 	deadline = Time.get_ticks_msec() + 120000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	for i in 8: await process_frame
+	# Carrière Monde arrêtée à la causerie d'avant-match : elle est passée, comme le ferait un joueur.
+	deadline = Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < deadline and (surface() == null or surface().regie == null):
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if causerie is Dictionary and not app.waiting and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		for i in 10: await process_frame
 	var view := surface()
 	if view == null or view.regie == null or not view.temps_forts_actifs():
 		fail("Le direct en temps forts ne s'est pas ouvert : " + str(app.last_error))
@@ -103,6 +110,15 @@ func run() -> void:
 	# Avant cette minute, commentaire seul (aucun temps fort) ; ensuite, le niveau demandé.
 	var depuis := number("CD_MATCH_TEMPS_FORTS_DEPUIS", 0)
 	var niveau_voulu := OS.get_environment("CD_MATCH_TEMPS_FORTS_NIVEAU")
+	# Liaisons seulement (CD_MATCH_TEMPS_FORTS_LIAISONS=1) : les PREROLL dernières secondes avant
+	# chaque liaison (gardées en mémoire), la liaison, puis APRES secondes du temps fort suivant.
+	var liaisons_seules := OS.get_environment("CD_MATCH_TEMPS_FORTS_LIAISONS") == "1"
+	var preroll: Array = []
+	var apres_liaison := 0.0
+	var dans_liaison := false
+	var liaisons_vues := 0
+	var liaisons_max := number("CD_MATCH_TEMPS_FORTS_LIAISONS_MAX", 0)
+	report["liaisons"] = []
 	while true:
 		await process_frame
 		frame += 1
@@ -173,7 +189,41 @@ func run() -> void:
 				regie.vitesse = 1.0 if garder else 6.0
 				# Pistes déjà lancées (même image que le début du temps fort) : même vitesse.
 				if view.stage.choregraphie_active(): view.stage._choregraphie.vitesse = regie.vitesse
-		var over: bool = live.is_empty() or live.get("finished", false) or (last_minute > 0 and int(live.get("minute", 0)) >= last_minute)
+		if liaisons_seules:
+			var en_liaison: bool = regie != null and regie.etat == regie.JEU and regie.phase == "liaison"
+			if en_liaison and not dans_liaison:
+				liaisons_vues += 1
+				report.liaisons.append({"type": str(regie.liaison.get("type", "")), "coupe": bool(regie.liaison.get("coupe", false)), "horloge": view.clock.text, "premiere": report.images.size() + 1})
+				# Pré-roll : la fin du temps fort précédent.
+				for tampon: Array in preroll:
+					var nom_pre := "tf-%05d.jpg" % (report.images.size() + 1)
+					var f := FileAccess.open(proof.path_join(nom_pre), FileAccess.WRITE)
+					f.store_buffer(tampon[0])
+					f.close()
+					var meta: Dictionary = (tampon[1] as Dictionary).duplicate()
+					meta["file"] = nom_pre
+					report.images.append(meta)
+				preroll.clear()
+			if not en_liaison and dans_liaison: apres_liaison = 4.5
+			dans_liaison = en_liaison
+			garder = en_liaison or apres_liaison > 0.0
+			# Temps de jeu (--fixed-fps 30 : une image vaut 1/30 s, quelle que soit la machine).
+			if apres_liaison > 0.0 and not en_liaison: apres_liaison -= 1.0 / 30.0
+			# Hors liaison, le temps fort défile vite (rien n'est enregistré) ; son dernier plan (l'arrêt
+			# de jeu, pré-roll possible) et la liaison se jouent à vitesse réelle.
+			if regie != null:
+				var dernier_plan: bool = regie.etat == regie.JEU and regie.index >= regie.tf.get("plans", []).size() - 1
+				regie.vitesse = 1.0 if en_liaison or apres_liaison > 0.0 or dernier_plan or regie.etat == regie.ATTENTE else float(number("CD_MATCH_TEMPS_FORTS_RAPIDE", 4))
+			if not garder and frame % every == 0 and regie != null and regie.etat != regie.INTER:
+				var im := root.get_texture().get_image()
+				if im != null:
+					preroll.append([im.save_jpg_to_buffer(quality), {"file": "tf-pre.jpg", "ms": now - started, "etat": state, "horloge": view.clock.text, "score": view.score.text, "type": "preroll"}])
+					while preroll.size() > int(3.0 * 30.0 / every): preroll.pop_front()
+			elif regie != null and regie.etat == regie.INTER:
+				preroll.clear()
+			if not report.liaisons.is_empty(): report.liaisons[-1]["derniere"] = report.images.size()
+		var over: bool = live.is_empty()
+		if liaisons_seules and liaisons_max > 0 and liaisons_vues >= liaisons_max and not dans_liaison and apres_liaison <= 0.0: over = true or live.get("finished", false) or (last_minute > 0 and int(live.get("minute", 0)) >= last_minute)
 		if not types_voulus.is_empty() and types_vus.size() >= types_voulus.size() and queue <= 0.0: over = true
 		if over and (regie == null or regie.etat != regie.JEU): ending += delta
 		if ending >= 3.0 or now - started > limit_ms: break

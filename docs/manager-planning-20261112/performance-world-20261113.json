@@ -1,0 +1,68 @@
+{
+  "head": "ec33f87d066be60bbd7e5d8ae8b3f1fb273e7743",
+  "node": "v22.23.4",
+  "mode": "world-champ",
+  "localOnly": true,
+  "results": [
+    {
+      "cacheProjections": false,
+      "runs": [
+        {
+          "computeMs": 990,
+          "fullBytes": 18499939,
+          "wireBytes": 18501870
+        },
+        {
+          "computeMs": 1020,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        },
+        {
+          "computeMs": 911,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        },
+        {
+          "computeMs": 863,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        },
+        {
+          "computeMs": 884,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        }
+      ]
+    },
+    {
+      "cacheProjections": true,
+      "runs": [
+        {
+          "computeMs": 926,
+          "fullBytes": 18499939,
+          "wireBytes": 18501870
+        },
+        {
+          "computeMs": 678,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        },
+        {
+          "computeMs": 682,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        },
+        {
+          "computeMs": 721,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        },
+        {
+          "computeMs": 720,
+          "fullBytes": 18499939,
+          "wireBytes": 2011
+        }
+      ]
+    }
+  ]
+}

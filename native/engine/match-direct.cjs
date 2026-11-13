@@ -8,6 +8,7 @@
 const selection=require('./match-highlights.cjs');
 const choregraphe=require('./match-choregraphe.cjs');
 const notesMatch=require('./match-notes.cjs');
+const feuilleStats=require('./match-stats.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
@@ -332,6 +333,10 @@ function project(model,niveau,lire,options={}){
   compte({cle:'pieds',label:'Coups de pied',valeurs:rugby.map(e=>e.pieds)}),
   compte({cle:'cartons',label:'Cartons',valeurs:rugby.map(e=>e.cartons),inverse:true})
  ];
+ // Feuille de statistiques (match-stats.cjs) de ce qui a été montré : chiffres d'équipe du tableau
+ // = somme des joueurs ; plaquages, mètres… réalistes (le journal seul en donnait 0 ou 1 par ailier).
+ const feuille=feuilleStats.feuilleMontree(events,borne<lignes.length?lignes[borne].i:events.length,String(etat.rencontre||''),lire);
+ feuilleStats.completerTableau(tableau,feuille);
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
   // Minute du dernier fait montré (borne) : l'horloge de l'entracte ne court pas devant ce qui a été vu.
   horlogeMontree:derniere?horloge(derniere):etat.horloge||'',camp:etat.camp??-1,
@@ -348,6 +353,8 @@ function project(model,niveau,lire,options={}){
    // Clé `joueur` (pas id/name), comme le XV adverse : la couche « connaissance » ne la masque pas.
    direct.hommeDuMatch={joueur:h,camp:n.cote,nom:etat.notes.noms?.[h]||fiche?.name||'',note:n.note,essais:n.essais,plaquages:n.plaquages,metres:n.metres};}
  }
+ direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
+ direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];
  const tf=bilan.courant;
  if(tf){
   const indices=tf.plans.filter(p=>p.kind!=='transformation').map(p=>p.i),scenes=lire.scenes(indices),parIndex=new Map(indices.map((i,n)=>[i,scenes[n]]));

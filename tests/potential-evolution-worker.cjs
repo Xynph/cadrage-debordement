@@ -1,13 +1,13 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 test('real training and completed match persist development evidence without revealing ceilings',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'oval-potential-worker-'));let bridge=createBridge({dataDir:root,seed:917,now:1794310000000}),serial=0;
  t.after(()=>{bridge.close();fs.rmSync(root,{recursive:true,force:true});});
  const go=(command,payload={})=>{const r=bridge.handle({id:++serial,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- let model=settleClubMeetings(go('new_career',{mode:'common',club:0}),go),file=path.join(model.meta.dataDir,'donnees.json');
+ let model=settleClubMeetings(go('new_career',{mode:'world-champ',club:0}),go),file=path.join(model.meta.dataDir,'donnees.json');
  const raw=()=>JSON.parse(JSON.parse(fs.readFileSync(file)).store['bdt-v1']);
  const first=fs.readFileSync(file);go('snapshot');assert.deepEqual(fs.readFileSync(file),first);assert.equal(raw().potentialEvolution,undefined);
  const source=raw().clubs[0].players.find(p=>p.lnrRatingsVersion===1&&p.age<=22&&p.dev.potential>=p.rating+2);assert.ok(source);
@@ -25,8 +25,8 @@ test('real training and completed match persist development evidence without rev
  assert.ok(Object.keys(source.attributesV2).some(k=>learned.attributesV2[k]>source.attributesV2[k]));
  assert.equal(model.squad.find(p=>p.id===source.id).rating,learned.rating);
  go('train',{mode:'normal'});assert.deepEqual(raw().potentialEvolution,evidence,'weekly training cannot be repeated');
- go('auto_lineup');go('begin_match');model=go('delegate');assert.equal(model.live.finished,true);
- go('finish_round');
+ advanceToNextMatch(go('snapshot'),go);go('auto_lineup');go('begin_match');model=go('delegate');assert.equal(model.live.finished,true);
+ settleClubMeetings(go('finish_round'),go);
  const played=raw().potentialEvolution.records.flat().filter(r=>r[7]>0);assert.ok(played.length>0);assert.ok(played.every(r=>r[8]>0));
  const state=raw(),before=fs.readFileSync(file),text=go('export').meta.exportText;go('snapshot');assert.deepEqual(fs.readFileSync(file),before);
  model=go('import',{text});assert.deepEqual(raw().potentialEvolution,state.potentialEvolution);

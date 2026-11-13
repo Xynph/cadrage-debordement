@@ -7,21 +7,28 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const { createBridge } = require('../native/engine/worker.cjs');
-const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
-const { context } = require('./france-harness.cjs');
+const vm = require('node:vm');
+const M = require('./helpers/carriere-monde.cjs');
 const N = require('../native/engine/match-notes.cjs');
 const H = require('../native/engine/match-highlights.cjs');
 
+// Carrière Monde (`world-champ`, seul mode autorisé) : mêmes options que le jeu, voir tests/helpers/carriere-monde.cjs.
 function ouvrir(options = {}) {
-  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-notes-'));
-  const bridge = createBridge({ dataDir, seed: 2024, now: 1700000000000, ...options });
-  let id = 0;
-  const brut = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
-  const call = (command, payload = {}) => { const r = brut(command, payload); assert.equal(r.ok, true, command + ' : ' + r.error); return r.model; };
-  const etat = () => JSON.parse(call('export').meta.exportText).state;
-  return { brut, call, etat, fermer: () => { try { bridge.close(); } catch (e) { /* déjà fermé */ } fs.rmSync(dataDir, { recursive: true, force: true }); } };
+  const jeu = M.ouvrir(options);
+  const etat = () => JSON.parse(jeu.call('export').meta.exportText).state;
+  const disque = () => JSON.parse(fs.readFileSync(path.join(jeu.dataDir, 'PrototypeGodot', 'donnees.json'), 'utf8'));
+  return { ...jeu, etat, disque };
+}
+
+// Domaine des notes dans une VM minimale (deux clubs de 22 joueurs, familles variées) : aucun mode de carrière.
+function domaine() {
+  const familles = [0, 1, 0, 3, 2, 2, 3, 3, 4, 5, 7, 7, 6, 6, 8];
+  const joueurs = c => Array.from({ length: 22 }, (_, k) => ({ id: `c${c}p${k}`, name: `Joueur ${c}-${k}`, fam: familles[k % 15], rating: 60 + ((k * 7 + c * 3) % 25), age: 25 }));
+  const ctx = vm.createContext({ S: { club: 0, season: 1, phase: 'league', clubs: [{ id: 0, players: joueurs(0) }, { id: 1, players: joueurs(1) }] }, roleNote: p => p.rating });
+  const run = source => vm.runInContext(source, ctx);
+  run(`var CDMatchNotesMoteur=(${N.moteur.toString()})();var dom=(${N.factory.toString()})();`);
+  return { run };
 }
 
 // Journal synthétique : un porteur, un plaqueur, un essai.
@@ -62,28 +69,34 @@ test('Calcul : déterministe, sans tirage, base 6,5, bornes 1–10, remplaçant 
   assert.equal(direct.a14.note, r1.joueurs.a14.note);
 });
 
-test('Matchs simulés : même score et même tirage avec le journal des notes', () => {
-  const jouer = avecNotes => {
-    const c = context(77);
-    c.run("start(0,'fiction')");
-    if (avecNotes) c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const CDNotesEffets=false;const dom=(${N.factory.toString()})();dom.installHooks();`);
-    const out = JSON.parse(c.run('JSON.stringify([0,1,2,3].map(k=>{const r=rugbySimulate([k,k+5]);return {score:r.score,tries:r.tries}}))'));
-    return { out, tirage: c.seed(), notes: avecNotes ? JSON.parse(c.run('JSON.stringify(S.matchNotes)')) : null };
+test('Matchs simulés (Monde) : mêmes résultats et même tirage avec et sans le journal des notes', () => {
+  // Référence : domaine des notes absent (option notes:false) ; effets coupés dans les deux cas
+  // (les effets, eux, orientent légitimement les choix des entraîneurs IA).
+  const jouer = notes => {
+    const jeu = ouvrir({ notes, notesEffets: false, hebdomadaire: true });
+    try {
+      let model = M.creer(jeu);
+      model = M.jouer(jeu, model, 2);
+      const etat = jeu.etat();
+      const resultats = etat.history.map(r => [r.fixtureId ?? null, r.score, r.pair, r.competitionId ?? null]);
+      return { resultats, seed: jeu.disque().seed, notes: etat.matchNotes ?? null };
+    } finally { jeu.fermer(); if (global.gc) global.gc(); }
   };
   const sans = jouer(false), avec = jouer(true);
-  assert.deepEqual(avec.out, sans.out, 'scores et essais identiques');
-  assert.equal(avec.tirage, sans.tirage, 'curseur du générateur identique');
+  assert.ok(sans.resultats.length >= 100, 'matchs de toute la journée simulés : ' + sans.resultats.length);
+  assert.deepEqual(avec.resultats, sans.resultats, 'scores identiques');
+  assert.equal(avec.seed, sans.seed, 'curseur du générateur identique');
+  assert.equal(sans.notes, null, 'référence sans domaine des notes (ni club, ni sélections)');
   const notes = Object.values(avec.notes.joueurs);
-  assert.ok(notes.length >= 4 * 2 * 15, 'chaque joueur ayant joué a sa note : ' + notes.length);
-  assert.ok(notes.every(j => j.s[0] === 1 && j.f.length === 1 && j.f[0] >= 10 && j.f[0] <= 100));
+  assert.ok(notes.length >= 2 * 15 * 7, 'chaque joueur ayant joué a sa note : ' + notes.length);
+  assert.ok(notes.every(j => j.s[0] >= 1 && j.f.length >= 1 && j.f.every(x => x >= 10 && x <= 100)));
 });
 
-test('Direct : la note affichée en fin de match est la note enregistrée ; homme du match ; autres matchs notés', () => {
-  const jeu = ouvrir({ matchHighlights: 'dynamique' });
+test('Direct (Monde) : la note affichée en fin de match est la note enregistrée ; homme du match ; autres matchs notés', () => {
+  const jeu = ouvrir({ hebdomadaire: true });
   try {
-    let model = jeu.call('new_career', { club: 0 });
-    settleClubMeetings(model, jeu.call);
-    model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+    let model = M.jusquAuMatch(jeu, M.creer(jeu));
+    model = M.jouerLeMatch(jeu, model, { delegue: false });
     let dernier = null;
     for (let k = 0; k < 400 && !model.live.finished; k++) {
       if (model.clubLife?.matchTalks?.scene) { model = skipMatchTalk(model, jeu.call); continue; }
@@ -97,6 +110,8 @@ test('Direct : la note affichée en fin de match est la note enregistrée ; homm
     for (const n of Object.values(directNotes)) assert.ok(n.note >= 1 && n.note <= 10);
     // Le débrief clôt la journée (le résultat est confirmé).
     model = skipMatchTalk(model, jeu.call);
+    if (model.live) model = jeu.call('finish_round');
+    model = jeu.regler(model);
     const notes = model.clubLife.matchNotes;
     assert.ok(notes.dernier, 'dernier match enregistré');
     assert.ok(notes.dernier.hommeDuMatch && notes.dernier.hommeDuMatch.nom, 'homme du match désigné');
@@ -115,14 +130,10 @@ test('Direct : la note affichée en fin de match est la note enregistrée ; homm
   } finally { jeu.fermer(); }
 });
 
-test('Sauvegarde : aller-retour, migration d’une ancienne sauvegarde sans notes, validation', () => {
-  const jeu = ouvrir();
+test('Sauvegarde (Monde) : aller-retour, migration d’une ancienne sauvegarde sans notes, validation', () => {
+  const jeu = ouvrir({ hebdomadaire: true });
   try {
-    let model = jeu.call('new_career', { club: 0 });
-    settleClubMeetings(model, jeu.call);
-    model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-    jeu.call('delegate');
-    jeu.call('finish_round');
+    let model = M.jouer(jeu, M.creer(jeu), 1);
     const texte = jeu.call('export').meta.exportText;
     const doc = JSON.parse(texte);
     assert.equal(doc.state.matchNotes.version, 2);
@@ -132,6 +143,12 @@ test('Sauvegarde : aller-retour, migration d’une ancienne sauvegarde sans note
     const sansNotes = jeu.call('import', { text: signe(doc, state => { delete state.matchNotes; }) });
     assert.deepEqual(sansNotes.clubLife.matchNotes.joueurs, {}, 'ancienne sauvegarde : historique vide');
     assert.equal(jeu.etat().matchNotes, undefined, 'rien n’est inventé pour le passé');
+    // Monde : plus de 2 000 joueurs notés (limite générique des tables de la sauvegarde) acceptés
+    // jusqu'au nombre de joueurs du monde, refusés au-delà.
+    const plus = (n, base) => signe(doc, state => { for (let k = 0; k < n; k++) state.matchNotes.joueurs['x' + base + k] = { s: [1, 65, 80, 0, 0, 0, 0], f: [65] }; });
+    assert.equal(jeu.brut('import', { text: plus(2100, 'a') }).ok, true, 'plus de 2 000 joueurs notés : accepté');
+    const trop = jeu.brut('import', { text: plus(40000, 'b') });
+    assert.equal(trop.ok, false, 'table démesurée refusée');
     // Un état corrompu est refusé.
     const id = Object.keys(doc.state.matchNotes.joueurs)[0];
     const casse = jeu.brut('import', { text: signe(doc, state => { state.matchNotes.joueurs[id].f = [999]; }) });
@@ -141,9 +158,7 @@ test('Sauvegarde : aller-retour, migration d’une ancienne sauvegarde sans note
 });
 
 test('Effets bornés : composition, valeur, intérêt, salaire, sélection, moral', () => {
-  const c = context(5);
-  c.run("start(0,'fiction')");
-  c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  const c = domaine();
   const extremes = JSON.parse(c.run(`(()=>{S.matchNotes={version:1,saison:S.season,joueurs:{haut:{s:[20,2000,1600,9,99,999,9],f:[100,100,100,100,100]},bas:{s:[20,200,1600,0,0,0,0],f:[10,10,10,10,10]},neutre:{s:[20,1300,1600,0,0,0,0],f:[65,65,65,65,65]}},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null};
     const e=dom.effets,r={};for(const id of ['haut','bas','neutre','inconnu'])r[id]={composition:e.composition(id),valeur:e.valeur(id),interet:e.interet(id),salaire:e.salaire(id),selection:e.selection(id)};dom.validate(S);return JSON.stringify(r)})()`));
   assert.deepEqual(extremes.neutre, { composition: 1, valeur: 1, interet: 0, salaire: 1, selection: 0 }, '6,5 de moyenne : aucun effet');
@@ -297,9 +312,7 @@ test('Équipe-type : pack absent = identités du jeu ; pack installé = logos du
 });
 
 test('Matchs internationaux : même calcul, sans tirage, enregistrés à part, sans doublon, effets bornés', () => {
-  const c = context(11);
-  c.run("start(0,'fiction')");
-  c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  const c = domaine();
   const r = JSON.parse(c.run(`(()=>{const ids=k=>S.clubs[k].players.slice(0,20).map(p=>p.id);
     const m=[{cle:'six-nations-2027-r1-1',date:'2027-02-05',competition:'Tournoi des Six Nations 2027',equipes:[{nation:'FRA',nom:'France',ids:ids(0),points:27,essais:3},{nation:'ENG',nom:'Angleterre',ids:ids(1),points:13,essais:1}]}];
     const avant=Math.random;let tirages=0;Math.random=()=>{tirages++;return avant()};
@@ -314,10 +327,23 @@ test('Matchs internationaux : même calcul, sans tirage, enregistrés à part, s
   assert.equal(r.hdm, 1, 'un homme du match');
   assert.ok(r.selection >= -1.5 && r.selection <= 2 && r.valeur >= 0.92 && r.valeur <= 1.12, 'effets dans les bornes');
   assert.equal(r.vus, 4);
+  // Le décalage de poste (étalonné sur un journal complet) ne s'applique pas à ce journal réduit aux essais :
+  // à niveau égal et sans essai, un troisième ligne, un talonneur et un ailier reçoivent la même note.
+  const nul = domaine();
+  const egal = JSON.parse(nul.run(`(()=>{S.clubs.forEach(c=>c.players.forEach(p=>{p.rating=70}));const ids=k=>S.clubs[k].players.slice(0,20).map(p=>p.id);
+    dom.enregistrerSelection([{cle:'nul',date:'2027-02-05',competition:'Test-match',equipes:[{nation:'FRA',nom:'France',ids:ids(0),points:10,essais:0},{nation:'ENG',nom:'Angleterre',ids:ids(1),points:10,essais:0}]}]);
+    const L=S.matchNotes.selection.lignes;return JSON.stringify(Object.fromEntries(Object.entries(L).map(([id,d])=>[id,d[0][4]])))})()`));
+  assert.ok(Object.keys(egal).length >= 30 && Object.values(egal).every(note => note === 65), 'avants non sous-notés : ' + JSON.stringify([...new Set(Object.values(egal))]));
+  // Homme du match aussi pour les matchs internationaux : le marqueur d'un seul essai l'emporte à niveau égal.
+  const essai = JSON.parse(nul.run(`(()=>{const ids=k=>S.clubs[k].players.slice(0,20).map(p=>p.id);
+    dom.enregistrerSelection([{cle:'un-essai',date:'2027-02-12',competition:'Test-match',equipes:[{nation:'FRA',nom:'France',ids:ids(0),points:7,essais:1},{nation:'ENG',nom:'Angleterre',ids:ids(1),points:0,essais:0}]}]);
+    const L=S.matchNotes.selection.lignes,hdm=Object.entries(L).filter(([,d])=>d.at(-1)[0]==='2027-02-12'&&d.at(-1)[6]).map(([id,d])=>[id,d.at(-1)[4],d.at(-1)[5]]);return JSON.stringify(hdm)})()`));
+  assert.equal(essai.length, 1, 'un homme du match');
+  assert.equal(essai[0][2], 1, 'le marqueur de l’essai');
   // Déterminisme : même entrée, mêmes notes dans une autre carrière identique.
-  const d = context(11); d.run("start(0,'fiction')"); d.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  const d = domaine();
   const une = k => JSON.parse(k.run(`(()=>{const ids=k=>S.clubs[k].players.slice(0,20).map(p=>p.id);dom.enregistrerSelection([{cle:'x',date:'2027-02-05',competition:'Test-match',equipes:[{nation:'FRA',nom:'France',ids:ids(0),points:20,essais:2},{nation:'ENG',nom:'Angleterre',ids:ids(1),points:20,essais:2}]}]);return JSON.stringify(S.matchNotes.selection.lignes)})()`));
-  const e = context(11); e.run("start(0,'fiction')"); e.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  const e = domaine();
   assert.deepEqual(une(d), une(e));
   // Sauvegarde sans bloc Sélection : valide.
   c.run('delete S.matchNotes.selection;dom.validate(S)');

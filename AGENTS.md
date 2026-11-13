@@ -44,6 +44,30 @@ Expliquer brièvement chaque phase à Léo en français, puis avancer dans le
 périmètre autorisé. Rendre le résultat, le lien de la PR et la prochaine étape
 concrète.
 
+## Modèles, effort et quota
+
+Règle permanente de Léo, transmise le 12 novembre 2026 :
+
+- Partir du modèle courant avec un effort moyen lorsque le réglage est
+  accessible. Le modèle **et** l'effort choisis par Léo pour la session sont
+  un plafond : ne jamais les dépasser, y compris pour les sous-tâches.
+- Réserver les modèles légers au travail cadré dont une erreur se vérifie
+  facilement : recherche, lecture de logs, exécution de tests, régénération,
+  renommage ou conflit simple. Garder les décisions et modifications
+  importantes au modèle principal.
+- Pour une difficulté de conception, d'interface, de moteur, d'économie,
+  d'architecture ou un bug inexpliqué, commencer par un moyen de vérifier
+  (test, build, script), puis augmenter l'effort dans le plafond autorisé,
+  avant d'envisager un modèle plus puissant dans ce même plafond.
+- Aucun sous-agent ni aucune session supplémentaire en parallèle sans
+  l'accord de Léo. Une recommandation de skill ne vaut pas cet accord.
+- Garder les lectures et comptes rendus ciblés ; changer de réglage à une
+  fin d'étape avec passation, jamais au milieu d'un raisonnement.
+- Dans les comptes rendus, préciser pour chaque tâche lancée le modèle et
+  l'effort réellement utilisés. Si le runtime n'expose pas ces informations
+  ou ne permet pas de les changer, le dire ; distinguer ce constat de la
+  recommandation GPT-6.1 Sol et ne pas inventer un changement de réglage.
+
 ## Registre partagé des ressources
 
 À chaque reprise d’Oval Legacy, consulter le [registre des ressources utiles](docs/ressources-utiles.md)
@@ -88,6 +112,11 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
   Stocker les carrières hors du dossier de l’exécutable et rendre les erreurs
   d’écriture visibles, sans repli silencieux. Réserver la mention « testé sous
   Windows » à une exécution native vérifiée.
+- Mode Monde uniquement (décision de Léo, 13/11/2026) : aucun test ne doit
+  tourner dans l'ancien mode de carrière France ni dans les autres anciens
+  modes ; tout nouveau test crée une carrière world-champ. Les tests encore
+  marqués CD_MODES_HERITES sont exclus de la CI jusqu'à leur migration ou
+  suppression.
 
 ## Immersion et textes du jeu
 
