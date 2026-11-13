@@ -21,6 +21,16 @@ var portrait: TextureRect
 var _pulse := 0.0
 var _hover := false
 var _mask := ShaderMaterial.new()
+## Repli sans buste 3D (GLB du guide absent) : le portrait 2D (coach_portrait.gd) est zoomé sur la tête et les
+## épaules, découpé en disque (clip_children) ; le détourage du portrait est conservé et un souffle léger
+## (respiration) l'anime en code. Le masque 3D, fait pour des UV de 0 à 1, ne convient pas à une planche de poses.
+const FLAT_ZOOM := 1.5
+const FLAT_CENTER := Vector2(0.52, 0.42)
+const BREATH_PERIOD := 4.2
+const BREATH_DEPTH := 0.014
+var _disque: Control
+var _souffle: Control
+var _breath := 0.0
 
 func _init() -> void:
 	name = "GabiMedaillon"
@@ -36,6 +46,9 @@ func _init() -> void:
 ## Accueille le portrait 3D (il est rendu par sa propre SubViewport) et le masque en disque.
 func adopt(display: TextureRect) -> void:
 	portrait = display
+	if not display.has_method("set_framing"):
+		_adopt_flat(display)
+		return
 	if display.get_parent() != self:
 		if display.get_parent() != null: display.get_parent().remove_child(display)
 		add_child(display)
@@ -49,21 +62,60 @@ func adopt(display: TextureRect) -> void:
 func release() -> TextureRect:
 	var display := portrait
 	if display == null: return null
+	if _disque != null:
+		if display.get_parent() != null: display.get_parent().remove_child(display)
+		_disque.queue_free()
+		_disque = null
+		_souffle = null
+		portrait = null
+		return display
 	display.material = null
 	if display.has_method("set_framing"): display.set_framing("portrait")
 	if display.get_parent() == self: remove_child(display)
 	portrait = null
 	return display
 
+func _adopt_flat(display: TextureRect) -> void:
+	if display.get_parent() != null: display.get_parent().remove_child(display)
+	_disque = Disque.new()
+	add_child(_disque)
+	move_child(_disque, 0)
+	_souffle = Control.new()
+	_souffle.name = "GabiSouffle"
+	_souffle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_disque.add_child(_souffle)
+	_souffle.add_child(display)
+	display.position = Vector2.ZERO
+	display.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fit_portrait()
+
 func _fit_portrait() -> void:
 	if portrait == null: return
+	if _disque != null:
+		var gap := maxf(3.0, size.x * 0.045)
+		_disque.position = Vector2(gap, gap)
+		_disque.size = size - Vector2(gap, gap) * 2.0
+		var zoomed := _disque.size * FLAT_ZOOM
+		_souffle.size = zoomed
+		_souffle.position = _disque.size / 2.0 - FLAT_CENTER * zoomed
+		_souffle.pivot_offset = Vector2(zoomed.x * 0.5, zoomed.y * 0.9)
+		portrait.position = Vector2.ZERO
+		portrait.size = zoomed
+		queue_redraw()
+		return
 	var inset := maxf(3.0, size.x * 0.045)
 	portrait.position = Vector2(inset, inset)
 	portrait.size = size - Vector2(inset, inset) * 2.0
 	queue_redraw()
 
 func _process(delta: float) -> void:
-	if not indice or reduced_motion: return
+	if reduced_motion:
+		if _souffle != null: _souffle.scale = Vector2.ONE
+		return
+	if _souffle != null:
+		_breath = fmod(_breath + delta, BREATH_PERIOD)
+		_souffle.scale = Vector2(1.0, 1.0 + BREATH_DEPTH * (sin(_breath / BREATH_PERIOD * TAU) + 1.0) * 0.5)
+	if not indice: return
 	_pulse = fmod(_pulse + delta, 2.4)
 	queue_redraw()
 
@@ -86,6 +138,17 @@ func _draw() -> void:
 	# Lumière chaude derrière la tête : le buste se détache du fond.
 	for i in 6:
 		draw_circle(center + Vector2(0, -radius * 0.18), radius * (0.78 - i * 0.1), Color(GOLD, 0.035))
+
+## Disque qui découpe ses enfants (repli 2D) : seul son canal alpha compte.
+class Disque extends Control:
+	func _init() -> void:
+		name = "GabiDisque"
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+	func _draw() -> void:
+		draw_circle(size / 2.0, minf(size.x, size.y) / 2.0, Color.WHITE)
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_RESIZED: queue_redraw()
 
 ## Cadre et indice dessinés au-dessus du portrait (enfant ajouté après lui).
 class Cadre extends Control:

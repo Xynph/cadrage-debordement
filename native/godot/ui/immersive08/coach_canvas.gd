@@ -185,11 +185,11 @@ func _adjoint_actif() -> bool:
 func _place_portrait() -> void:
 	if not is_instance_valid(portrait) or not is_instance_valid(_medaillon): return
 	var grand := expanded or not _adjoint_actif()
-	if grand and portrait.get_parent() == _medaillon:
+	if grand and _medaillon.portrait == portrait:
 		_medaillon.release()
 		_body.add_child(portrait); _body.move_child(portrait, 0)
 		_balloon.speaker = portrait
-	elif not grand and portrait.get_parent() != _medaillon:
+	elif not grand and _medaillon.portrait != portrait:
 		portrait.get_parent().remove_child(portrait)
 		_medaillon.adopt(portrait)
 
@@ -208,7 +208,7 @@ func _layout() -> void:
 	if not actif or expanded: _bulle.hide()
 	_layout_voile()
 	if not actif: return
-	if portrait.get_parent() == _medaillon: _medaillon._fit_portrait()
+	if _medaillon.portrait == portrait: _medaillon._fit_portrait()
 	var dock := _compact_dock().get_global_rect()
 	# Le médaillon occupe la bande basse réservée (shell.gd, GABI_BAND) : jamais au-dessus de l'espace de
 	# travail, quelle que soit la page.
