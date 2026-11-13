@@ -75,6 +75,9 @@ var _cadrage: RefCounted
 # Rendu moderne (Forward+ seulement, voir match_rendu.gd) ; null sous gl_compatibility.
 var _rendu: RefCounted
 var _ground_meshes: Array[MeshInstance3D] = []
+## Poses tenues après une liaison (mêlée liée) : id -> {pitch, lift, poids, base, lache}.
+var _tenues: Dictionary = {}
+var _tenue_cle := ""
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -244,6 +247,34 @@ func figer_choregraphie(fige: bool) -> void:
 		_paused = fige
 
 
+## Poses tenues après une liaison (match_liaison.gd) : les avants liés d'une mêlée restent
+## penchés pendant le plan de la mêlée, puis se relèvent en 0,35 s au fait suivant.
+func tenir_poses(poses: Dictionary) -> void:
+	for id: String in poses:
+		if not _actors.has(id) or not poses[id] is Array or (poses[id] as Array).size() < 2:
+			continue
+		var model: Node3D = _actors[id].model
+		_tenues[id] = {"pitch": float(poses[id][0]), "lift": float(poses[id][1]), "poids": 1.0, "base": model.transform, "lache": false}
+	_tenue_cle = _action_key
+
+
+func _poser_tenues(delta: float) -> void:
+	for id: String in _tenues.keys():
+		var tenue: Dictionary = _tenues[id]
+		if not _actors.has(id) or (_choregraphie != null and _choregraphie.stages(id)):
+			_tenues.erase(id)
+			continue
+		var model: Node3D = _actors[id].model
+		if tenue.lache and not _paused:
+			tenue.poids = maxf(0.0, float(tenue.poids) - delta / 0.35)
+		model.transform = tenue.base
+		var w := smoothstep(0.0, 1.0, float(tenue.poids))
+		model.rotation.x = float(tenue.pitch) * w
+		model.position.y += float(tenue.lift) * w
+		if float(tenue.poids) <= 0.0:
+			_tenues.erase(id)
+
+
 ## Fin des pistes : chaque joueur reste où il est et reprend l'interpolation de la vue.
 func arreter_choregraphie() -> void:
 	if not choregraphie_active():
@@ -307,6 +338,10 @@ func apply_frame(live: Dictionary) -> void:
 			_recolor(entry.model, entry.side)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
 	var key := str(scene.get("key", ""))
+	# Pose tenue d'une liaison (mêlée liée) : relâchée au fait suivant (le ballon sort).
+	if not _tenues.is_empty() and key != _tenue_cle:
+		for tenue: Dictionary in _tenues.values():
+			tenue.lache = true
 	var new_action := key != _action_key
 	var play_action := (_action_motion and not _paused and has_ball and _ball.visible
 		and not _action_key.is_empty() and not key.is_empty())
@@ -585,6 +620,7 @@ func _process(delta: float) -> void:
 	_update_ball(delta)
 	if _gestes:
 		_gestes.pose()
+	_poser_tenues(delta)
 	# Resolve upper-body contact after every source-animation update and after the
 	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
 	for id: String in _actors:
