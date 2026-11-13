@@ -38,7 +38,8 @@ function creer(jeu, club = 102) {
 }
 
 // Avance jour par jour jusqu'au jour du prochain match du manager (`matchReady`).
-function jusquAuMatch(jeu, model, garde = 60) {
+// Garde : la saison Monde compte jusqu'à ~70 jours de préparation avant le premier match (club 102 : 68 jours).
+function jusquAuMatch(jeu, model, garde = 150) {
   if (!model.meta.calendarCadence) { // cadence hebdomadaire : semaine sans match = on la clôt
     for (let w = 0; w < garde; w++) { model = jeu.regler(model); if (model.next) return model; model = jeu.call('finish_round'); }
     assert.fail('aucun match en ' + garde + ' semaines');

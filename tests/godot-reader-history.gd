@@ -48,6 +48,24 @@ func finish() -> void:
 	print("READER HISTORY : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	if app != null and app.bridge != null: app.bridge.stop()
 	quit(0 if failures.is_empty() else 1)
+func prepare_public_checkpoint() -> bool:
+	if not await command("new_career", {"mode":"world-champ", "club":29}): return false
+	if not await Flow.settle_club_meetings(app, self, check): return false
+	if not await Flow.prepare_match_day(app, self, check): return false
+	await command("auto_lineup")
+	await command("begin_match")
+	await Flow.skip_talk(app, self, "pre", check)
+	await command("delegate")
+	if app.model.get("clubLife", {}).get("matchTalks", {}).get("scene") is Dictionary:
+		await Flow.skip_talk(app, self, "post", check)
+	elif app.model.get("live") is Dictionary:
+		await command("finish_round")
+	if not await Flow.settle_club_meetings(app, self, check): return false
+	# A confirmed result is visible in the calendar before weekly archival.
+	# Finish the real public week before requiring a ClubResult archive link.
+	var completed_week: int = app.model.meta.week
+	if not await Flow.finish_match_week(app, self, check, completed_week): return false
+	return true
 func run() -> void:
 	root.size = Vector2i(2560, 1440)
 	app = load("res://main.tscn").instantiate()
@@ -61,22 +79,13 @@ func run() -> void:
 	if app.model.is_empty(): await finish(); return
 	app.timer.stop()
 	nav = app.navigation_controller
-	if not await command("new_career", {"mode":"world-champ", "club":29}): await finish(); return
-	if not await Flow.settle_club_meetings(app, self, check): await finish(); return
-	if not await Flow.prepare_match_day(app, self, check): await finish(); return
-	await command("auto_lineup")
-	await command("begin_match")
-	await Flow.skip_talk(app, self, "pre", check)
-	await command("delegate")
-	if app.model.get("clubLife", {}).get("matchTalks", {}).get("scene") is Dictionary:
-		await Flow.skip_talk(app, self, "post", check)
-	elif app.model.get("live") is Dictionary:
-		await command("finish_round")
-	if not await Flow.settle_club_meetings(app, self, check): await finish(); return
-	# A confirmed result is visible in the calendar before weekly archival.
-	# Finish the real public week before requiring a ClubResult archive link.
-	var completed_week: int = app.model.meta.week
-	if not await Flow.finish_match_week(app, self, check, completed_week): await finish(); return
+	if OS.get_environment("CD_READER_HISTORY_COPIED") != "1":
+		if not await prepare_public_checkpoint(): await finish(); return
+	else:
+		# Carrière Monde préparée par les commandes publiques du moteur (Node, tests/helpers/analysis-club-public-prepare.cjs) :
+		# la préparation jour par jour est trop longue en rendu logiciel dans le budget de la suite.
+		check(app.model.get("club") is Dictionary, "Carrière préparée chargée sans créer une autre carrière")
+		if not await Flow.settle_club_meetings(app, self, check): await finish(); return
 	app._navigate("Bureau")
 	await settle()
 	var historical: Dictionary = {}

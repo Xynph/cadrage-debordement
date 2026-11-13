@@ -20,8 +20,11 @@ static func settle_club_meetings(app: Control, tree: SceneTree, check: Callable,
 
 # Setup boundaries for careers using the public daily calendar. These helpers
 # never manufacture a fixture/date or bypass a meeting/match guard.
+# La saison Monde compte plusieurs semaines de préparation avant le premier match du club : la boucle
+# s'arrête au jour de match (`matchReady`) ; le plafond n'est qu'une garde contre une boucle sans fin.
+const MAX_PREPARATION_DAYS := 150
 static func prepare_match_day(app: Control, tree: SceneTree, check: Callable) -> bool:
-	for day in 40:
+	for day in MAX_PREPARATION_DAYS:
 		if not await settle_club_meetings(app, tree, check): return false
 		var cadence: Dictionary = app.model.get("meta", {}).get("calendarCadence", {})
 		if cadence.is_empty() or cadence.get("matchReady", false):
@@ -32,7 +35,7 @@ static func prepare_match_day(app: Control, tree: SceneTree, check: Callable) ->
 		check.call(can_advance, "Calendrier réel : prochaine journée de préparation autorisée")
 		if not can_advance: return false
 		if not await _progression_command(app, tree, check, "advance_day", {"fromDate":app.model.meta.calendarToday}): return false
-	check.call(false, "Calendrier réel : coup d’envoi non atteint dans les quarante jours de préparation")
+	check.call(false, "Calendrier réel : coup d’envoi non atteint dans les " + str(MAX_PREPARATION_DAYS) + " jours de préparation")
 	return false
 
 # Result confirmation and weekly closure are distinct. Supply the week captured
