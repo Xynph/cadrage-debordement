@@ -1155,17 +1155,10 @@ func run() -> void:
 	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()
 	await command("new_career", {"club":0, "mode":"world-champ"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
-	# Une carrière Monde s'ouvre sur la préparation d'avant-saison (aucune rencontre « next ») : on avance jusqu'à la
-	# première rencontre publiée, avec la vraie action principale du Bureau, pour retrouver le Bureau d'une rencontre à préparer.
-	var advances := 0
-	while app.model.get("next") == null and advances < 6:
-		advances += 1
-		app._navigate("Bureau")
-		await settle()
-		app.primary_action()
-		await worker()
-		await ContextualFlow.settle_club_meetings(app, self, check)
-	check(app.model.get("next") is Dictionary, "La carrière Monde est avancée jusqu'à sa première rencontre publiée")
+	# Une carrière Monde s'ouvre sur la préparation d'avant-saison (aucune rencontre « next ») : on avance, jour après jour
+	# par la vraie commande publique du calendrier, jusqu'au coup d'envoi de la première rencontre publiée, pour retrouver
+	# un Bureau avec une rencontre à préparer.
+	if not await ContextualFlow.prepare_match_day(app, self, check): return
 	app._navigate("Bureau")
 	await settle()
 	check(app.find_child("ImmersiveShell", true, false) != null, "Raccordement dans le vrai rendu du jeu")

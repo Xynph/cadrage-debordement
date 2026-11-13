@@ -35,7 +35,7 @@ engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absen
 declare -A suite_limits=(
   [tests/godot-art-direction.cjs]=600
   [tests/godot-match-temps-forts.cjs]=600
-  [tests/godot-immersive08.cjs]=420
+  [tests/godot-immersive08.cjs]=600
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). godot-immersive08 : parcours de 400 s de l'interface entière (Réception, effectif,

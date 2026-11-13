@@ -131,7 +131,7 @@
       "tests/godot-staff-fictional-labels.cjs": 2,
       "tests/small-window-contracts.cjs": 75,
       "tests/deepen-analytics-real-ui.cjs": 140,
-      "tests/godot-immersive08.cjs": 420
+      "tests/godot-immersive08.cjs": 500
     }
   },
   "memory": {
