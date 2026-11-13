@@ -133,8 +133,9 @@ périodes sans temps fort dépassent 9 minutes de jeu une fois sur dix.
 **Limite constatée** : dans le journal du moteur, un essai est souvent un seul fait qui part de
 20 à 40 m (la course entière) ; le danger n'a donc pas le temps de monter avant lui. Ces essais
 restent montrés depuis le début de leur action (le joueur ne voit pas la différence), mais ils
-pèsent dans la part « avec point ». Pour aller plus loin : un moteur qui découpe davantage les
-courses (hors de ce chantier).
+pèsent dans la part « avec point ». Levée par le découpage des longues courses
+(`docs/match-courses-20261112.md`) : rattrapages ramenés à 14 % des essais en dynamique, 21 % en
+clés, 2 % en étendus, sans changer l'issue ni le nombre de temps forts.
 
 ## 8. Vérifications non faites
 
