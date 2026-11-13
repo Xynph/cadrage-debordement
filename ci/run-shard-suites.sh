@@ -88,6 +88,9 @@ budget() {
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     # Tests migrés en carrière Monde : dépassent le délai par défaut (native-relationships 273 s en local).
     tests/performance-analysis.cjs|tests/native-relationships.cjs|tests/player-population-capacity.cjs) echo 600s ;;
+    # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.
+    tests/match-essai-visible.cjs|tests/native-coach-notes06-worker.cjs) echo 900s ;;
+    tests/native-player-knowledge-capacity.cjs) echo 300s ;;
     *) echo 180s ;;
   esac
 }
