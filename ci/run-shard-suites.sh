@@ -106,6 +106,8 @@ budget() {
     # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.
     tests/match-essai-visible.cjs|tests/native-coach-notes06-worker.cjs) echo 900s ;;
     tests/native-player-knowledge-capacity.cjs) echo 300s ;;
+    # Lot 03 (Monde) : 3 tests de 40 à 76 s chacun (3 carrières), 190 s en tout en local sous charge ; délai élargi, assertions inchangées.
+    tests/native-academy-appearance-bank.cjs) echo 420s ;;
     *) echo 180s ;;
   esac
 }
