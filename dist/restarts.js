@@ -47,11 +47,11 @@ function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false}={}
  addEvent(l,`${S.clubs[l.pair[actor]].abbr} ${penalty?'trouve la pénaltouche et conserve le lancer':fifty?'réussit un 50:22 et conserve le lancer':carried?'est poussé en touche':direct&&!gain?'botte directement en touche sans gain de terrain':'envoie le ballon en touche'}.`,'play',{kind:'touch',team:actor,cause,from:{x:origin,y:35},to:{x:exit,y:0}});
  return grantSetPiece(l,'lineout',team,mark,cause,actor,origin);
 }
-function resolveInGoal(l,actor,scenario,kickOrigin=l.territory){
+function resolveInGoal(l,actor,scenario,kickOrigin=l.territory,depuis=null){
  const defender=1-actor;
  if(scenario==='defender-grounded'){addEvent(l,`${S.clubs[l.pair[actor]].abbr} a rentré le ballon dans son propre en-but et l’y rend mort : mêlée adverse à cinq mètres.`,'play',{kind:'ingoal',team:actor,cause:scenario,to:{x:ownGoal(actor),y:35}});return grantSetPiece(l,'scrum',1-actor,ownGoal(actor)+(actor===0?5:-5),'defender-grounded',actor,kickOrigin)}
  if(['held-up','attacking-kick-grounded','ingoal-knock-on'].includes(scenario)){
-  addEvent(l,scenario==='held-up'?'Le porteur attaquant est tenu dans l’en-but sans pouvoir aplatir.':scenario==='ingoal-knock-on'?'En-avant de l’attaque dans l’en-but.':'Le coup de pied de l’attaque est aplati par la défense dans son en-but.','play',{kind:'ingoal',team:actor,cause:scenario,to:{x:attackingGoal(actor),y:35}});
+  addEvent(l,scenario==='held-up'?'Le porteur attaquant est tenu dans l’en-but sans pouvoir aplatir.':scenario==='ingoal-knock-on'?'En-avant de l’attaque dans l’en-but.':'Le coup de pied de l’attaque est aplati par la défense dans son en-but.','play',{kind:'ingoal',team:actor,cause:scenario,...(depuis===null?{}:{from:{x:depuis,y:35}}),to:{x:attackingGoal(actor),y:35}});
   return performKickRestart(l,'goalLine',defender,scenario,actor);
  }
  if(scenario==='kick-dead'){
@@ -77,6 +77,32 @@ function kickOpenPlay(l,side){
  if(outcome<.58)return resolveTouch(l,side,landing);
  ballPossession(l,1-side,landing);addEvent(l,`${actionName(l,side,'kicker')} (${S.clubs[l.pair[side]].abbr}) gagne ${Math.round(distance)} mètres au pied ; ${actionName(l,1-side,'receiver')} réceptionne pour ${S.clubs[l.pair[1-side]].abbr}.`,'play',{kind:'kick',team:side,actor:actionPlayer(l,side,'kicker')?.id||null,from:{x:origin,y:35},to:{x:landing,y:35}});return true;
 }
+// Découpage des longues courses (docs/match-courses-20261112.md) : quand une course réussie
+// mène à un essai (ou à un ballon tenu ou échappé dans l'en-but), le journal écrit la course
+// telle que le moteur l'écrit quand elle n'aboutit pas (origine → point atteint, porteur
+// `actionPlayer`), puis 0 à 2 temps de jeu de soutien jusqu'à quelques mètres de la ligne,
+// avant le fait final. Présentation seule : aucun tirage, issue, score, essais et statistiques
+// du moteur inchangés. `MATCH_COURSES_DECOUPEES=false` (CD_MATCH_COURSES=0 dans le worker)
+// rend l'ancien journal (un seul fait de l'origine à la ligne).
+var MATCH_COURSES_DECOUPEES=true;
+function courseDecoupee(l,side,origin,finisseur){
+ const dir=side===0?1:-1,club=S.clubs[l.pair[side]].abbr,arrivee=l.territory;
+ const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';
+ const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(arrivee-origin));
+ const phrases=[`${carrier?.name||club} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||club} avance de ${gain} mètres avant le plaquage`,`${club} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];
+ if(gain>=1)addEvent(l,`${phrases[l.minute%phrases.length]}${plan} dans les 22 adverses.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,from:{x:origin,y:35},to:{x:arrivee,y:35}});
+ const reste=Math.abs(attackingGoal(side)-arrivee),n=reste>18?2:reste>9?1:0,pas=reste/(n+1);
+ const pool=activePlayers(l,side).filter(p=>p.id!==finisseur?.id&&p.id!==carrier?.id);
+ let x=arrivee,precedent=carrier;
+ for(let k=0;k<n;k++){
+  const options=pool.filter(p=>p.id!==precedent?.id),sup=options.length?options[(l.minute+side+2*k+1)%options.length]:null;
+  const nx=Math.round(x+dir*pas),m=Math.round(Math.abs(nx-x)),nom=sup?.name||club;
+  const textes=[`Soutien de ${nom}, qui relance et gagne ${m} mètres`,`${nom} prend le relais après le regroupement et gagne ${m} mètres`,`Passe pour ${nom}, qui avance de ${m} mètres`];
+  addEvent(l,`${textes[(l.minute+k)%textes.length]}${Math.abs(attackingGoal(side)-nx)<=10?' : la ligne est tout près':''}.`,'play',{kind:'carry',team:side,actor:sup?.id||null,from:{x,y:35},to:{x:nx,y:35}});
+  x=nx;precedent=sup;
+ }
+ return x;
+}
 function advanceCausalPlay(l){
  const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penaltyProb=clamp(.12+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23),handProb=handFaultProbability(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
@@ -90,7 +116,12 @@ function advanceCausalPlay(l){
   l.kickContext={team:side,halfEligible:ownHalf(side,l.territory),twentyTwoEligible:own22(side,l.territory)};
   const danger=side===0?l.territory>74:l.territory<26;
   if(danger&&Math.random()<clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75)){
-   const finish=Math.random();if(finish<.08)return resolveInGoal(l,side,'held-up');if(finish<.12)return resolveInGoal(l,side,'ingoal-knock-on');
+   const finish=Math.random();
+   if(MATCH_COURSES_DECOUPEES){
+    if(finish<.12)return resolveInGoal(l,side,finish<.08?'held-up':'ingoal-knock-on',l.territory,courseDecoupee(l,side,origin,null));
+    return scoreTry(l,side,'open',origin,scorer=>courseDecoupee(l,side,origin,scorer));
+   }
+   if(finish<.08)return resolveInGoal(l,side,'held-up');if(finish<.12)return resolveInGoal(l,side,'ingoal-knock-on');
    return scoreTry(l,side,'open',origin);
   }
   const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(l.territory-origin));const phrases=[`${carrier?.name||S.clubs[l.pair[side]].abbr} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||S.clubs[l.pair[side]].abbr} avance de ${gain} mètres avant le plaquage`,`${S.clubs[l.pair[side]].abbr} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];addEvent(l,`${phrases[l.minute%phrases.length]}${plan}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,from:{x:origin,y:35},to:{x:l.territory,y:35}});

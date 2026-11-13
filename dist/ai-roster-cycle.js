@@ -143,6 +143,28 @@ function aiRosterPromote(c,slot,emergency=false){
  c.players.push(p);aiRosterEvent(c.id,'promote',p);
  return true;
 }
+// Promotions au mérite (décision de Léo du 12/11/2026) : comme un vrai club, l'ordinateur
+// promeut un espoir de 18 ans ou plus quand son niveau approche celui du moins bon pro de sa
+// famille de postes, ou quand c'est un crack de 19 ans ou plus, s'il reste une place pro
+// et de la masse salariale. Pas de quota par saison : seules les places limitent.
+function aiRosterMeritPromotions(c){
+ if(!aiRosterPopulationActive())return 0;
+ const a=aiRosterAcademy(c);if(!a)return 0;
+ let count=0;
+ const ranked=a.players.filter(p=>p.age>=18&&!p.injury).sort((x,y)=>(y.rating-x.rating)||x.id.localeCompare(y.id));
+ for(const p of ranked){
+  if(professionalPlaces(c)<=0||c.players.length>=Math.max(40,aiRosterTarget(c)))break;
+  const peers=c.players.filter(q=>q.fam===p.fam).map(q=>q.rating);
+  const weakest=peers.length?Math.min(...peers):0;
+  const crack=p.age>=19&&(p.dev?.potential??0)>=88;
+  if(!(p.rating>=weakest-2||crack))continue;
+  if(aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))continue;
+  a.players=a.players.filter(x=>x.id!==p.id);
+  p.academy=false;p.contractEnd=S.season+2;p.joinedSeason=S.season;p.joinedRound=S.round;
+  c.players.push(p);aiRosterEvent(c.id,'promote',p);count++;
+ }
+ return count;
+}
 function aiRosterYouthIntake(){
  if(aiRosterPopulationActive())return aiRosterPopulationYouthIntake();
  if(!aiRosterActive()||S.aiRoster.lastIntake===S.season)return false;
@@ -502,6 +524,7 @@ function aiRosterPopulationYouthIntake(){
    for(const need of needs)if(aiRosterPromote(c,need.slot,false)){promoted=true;break}
    if(!promoted)break;
   }
+  aiRosterMeritPromotions(c);
   const candidates=c.players.slice().sort((x,y)=>y.rating-x.rating).slice(0,23);
   const average=candidates.reduce((sum,p)=>sum+p.rating,0)/Math.max(1,candidates.length);
   const target=clamp(Math.round(average*.75+(info?.reputation??c.base)*.25),57,95);

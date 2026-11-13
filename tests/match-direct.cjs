@@ -229,6 +229,17 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       // Notes : joueurs du manager seulement, bornées.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
       for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
+      // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
+      const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
+      assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
+      // XV adverse : la feuille actuelle (remplacements visibles tout de suite), notes bornées ;
+      // ses plaquages ne dépassent pas le chiffre d'équipe (un remplacé emporte les siens).
+      const eux = 1 - camp;
+      if (vues.length) {
+        assert.equal(direct.adversaire.length, 15, 'XV adverse complet');
+        assert.ok(direct.adversaire.every(j => !j || (j.nom && j.note >= 3 && j.note <= 9.9)), 'noms et notes adverses');
+        assert.ok(direct.adversaire.reduce((n, j) => n + (j ? j.plaquages : 0), 0) <= t.plaquages.valeurs[eux], 'plaquages adverses bornés par le chiffre d\'équipe');
+      }
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
     assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);

@@ -157,8 +157,10 @@ func run_main() -> void:
 	var before: Dictionary = app.model.finance.duplicate(true)
 	var context: Dictionary = app.model.clubLife.clubSupport.context
 	app._command("staff_meeting",{"context":context,"plan":"cohesion"})
-	check(not app._command("train",{"mode":"normal"}),"Refus local d’une deuxième action en vol")
-	while app.waiting: await process_frame
+	# Une décision courante en vol laisse la suivante attendre son tour ; au-delà, refus local.
+	check(app._command("set_tactics",{"attack":app.model.tactics.attack,"defense":app.model.tactics.defense}),"Deuxième décision mise en file")
+	check(not app._command("train",{"mode":"normal"}),"Refus local d’une troisième action en vol")
+	while app.waiting or not app.queued_action.is_empty(): await process_frame
 	await settle(); await close_dialogs()
 	check(app.decision_feedback.receipts().size() == meeting_receipts + 1 and app.decision_feedback.receipts().back().command == "staff_meeting","Refus local ne consomme pas la capture staff")
 	check(app.decision_feedback.receipts().back().before.cash == before.cash,"Avant financier du main exact")
