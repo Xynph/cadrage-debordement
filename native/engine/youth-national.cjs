@@ -297,6 +297,13 @@ function factory(){
  }
 
  // ---------------------------------------------------------------- API publique
+ // Inscrit des matchs en sélection déjà joués (reprise d'historique, outils de test).
+ function recordAppearances(s,playerId,nationId,dates,season=s.season){
+  check(active(s)&&validId(playerId)&&NATIONS.includes(nationId)&&Array.isArray(dates)&&dates.every(d=>typeof d==='string'&&/^\d{4}-\d\d-\d\d$/.test(d)),'inscription invalide');
+  const prior=nation(s,playerId,season);check(!prior||prior===nationId,'un jeune ne joue que pour une nation par saison');
+  for(const d of dates)addCount(s.youthNational,season,playerId,nationId,d);
+  return matches(s,playerId,season);
+ }
  function matches(s,playerId,season=s?.season){return active(s)?(getCount(s.youthNational,season,playerId)?.[0]||0):0;}
  function dates(s,playerId,season=s?.season){const r=active(s)?getCount(s.youthNational,season,playerId):null;return r?r[2].map(md=>(md>='08'?startYear(season):startYear(season)+1)+'-'+md):[];}
  function nation(s,playerId,season=s?.season){const r=active(s)?getCount(s.youthNational,season,playerId):null;return r?NATIONS[r[1]]:null;}
@@ -353,6 +360,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,initialize,playUntil,closeSeason,openSeason,seasonCalendar,matches,dates,nation,NATIONS,TARGET};
+ return {project,validate,execute,installHooks,initialize,recordAppearances,playUntil,closeSeason,openSeason,seasonCalendar,matches,dates,nation,NATIONS,TARGET};
 }
 module.exports={files,commands,factory};
