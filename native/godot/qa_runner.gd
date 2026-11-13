@@ -765,11 +765,19 @@ func _systems_reception() -> void:
 	await _native06_reception()
 	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
 	app._navigate("Centre")
-	_press("ACTIVER LES PARCOURS")
-	await _settle()
-	_confirm()
-	await _wait()
-	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+	# En carrière Monde les parcours Espoirs ne sont pas encore ouverts : le Centre en donne la raison et
+	# n'offre pas d'activation (même contrôle que tests/world-native-ui.gd). Sinon l'activation reste exigée.
+	var pathways_open: bool = app.model.clubLife.academyPathways.get("available", false)
+	if pathways_open:
+		_press("ACTIVER LES PARCOURS")
+		await _settle()
+		_confirm()
+		await _wait()
+		_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+	else:
+		await _settle()
+		var activation := app.root_content.find_children("*", "Button", true, false).filter(func(b: Button): return b.text == "ACTIVER LES PARCOURS")
+		_check(activation.is_empty() and not app.model.clubLife.academyPathways.get("active", false), "Monde Centre keeps Espoirs pathways closed without an activation button")
 	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
 	await _capture("centre-parcours-s2")
 	if not await _open_press_mail(str(app.model.clubLife.press.lastOutcome.invitationId)): return
@@ -812,7 +820,7 @@ func _systems_reception() -> void:
 	# In the actual application, import advances the wall clock. Only the export
 	# envelope date changes; compare every career field and its checksum exactly.
 	var exact_import: bool = after_document.state == before_document.state and after_document.checksum == before_document.checksum and after_document.format == before_document.format and after_document.exportVersion == before_document.exportVersion
-	_check(exact_import and app.model.clubLife.academyPathways.active, "New native domains survive exact import in the executable")
+	_check(exact_import and app.model.clubLife.academyPathways.get("active", false) == pathways_open, "New native domains survive exact import in the executable")
 	var private_after: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile_path))
 	_check(private_after.seed == private_before.seed, "Executable import preserves the actual private RNG cursor")
 	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
