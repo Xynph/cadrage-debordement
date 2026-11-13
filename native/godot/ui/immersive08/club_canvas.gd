@@ -229,8 +229,11 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 		objective.position.y = C.px(64)
 		objective.size.y = C.px(65)
 		offset = 20
-	D.text(card, 72, 139 + offset, "Classement actuel", 23, C.MUTED, 500, 279)
-	if rank != null:
+	var table_open := P.standings_open(app.model.club)
+	D.text(card, 72, 139 + offset, "Classement actuel" if table_open else "Pas encore de classement", 23, C.MUTED, 500, 279)
+	if rank != null and not table_open:
+		D.chip(card, Rect2(355,111 + offset,120,33), "0 match", C.AMBER)
+	elif rank != null:
 		var position := "%s%s" % [G.n(rank),"er" if int(rank) == 1 else "e"]
 		if division_size > 0:
 			position += " / %d" % division_size
@@ -291,12 +294,14 @@ static func _academy(model: Dictionary) -> Dictionary:
 static func _installations(card: Panel, app: Control, finance: Dictionary) -> void:
 	var facility: Variant = finance.get("facility")
 	var academy_level: Variant = _academy(app.model).get("facilities")
+	# Hors Espoirs (carrière Monde), le niveau n'existe pas : c'est voulu, on le dit au lieu d'un « indisponible » d'erreur.
+	var academy_open: bool = _academy(app.model).get("available", true) != false
 	var support: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
 	var medical: Array = support.get("medical", {}).get("players", [])
 	var rows := [
 		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "Niveau indisponible"],
 		["heart","Cellule médicale","Dossiers suivis",str(medical.size()) if not support.is_empty() else "—"],
-		["school","Académie","Installations du centre",G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"]
+		["school","Académie","Installations du centre" if academy_level != null or academy_open else "Espoirs à venir en carrière Monde",G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible" if academy_open else "Non ouverte"]
 	]
 	for i in rows.size():
 		var row: Array = rows[i]
@@ -357,7 +362,7 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	D.text(card, 78, 130, G.n(fans.sentiment)+" / 100" if fans.has("sentiment") else "—", 41, C.IVORY, 700, 315)
 	D.line(card, Vector2(397,73), Vector2(397,134))
 	D.text(card, 476, 91, "Abonnés", 22, C.MUTED, 500, 291)
-	D.text(card, 476, 130, fans.get("subscribers","—"), 41, C.IVORY, 700, 290)
+	D.text(card, 476, 130, G.n(fans.subscribers) if fans.has("subscribers") else "—", 41, C.IVORY, 700, 290)
 	D.line(card, Vector2(19,151), Vector2(777,151), Color(C.LINE,.7))
 	U.icon(card, "money", Vector2(23,175), C.GOLD, 35)
 	D.text(card, 78, 181, "Partenaire principal", 22, C.MUTED, 500, 518)

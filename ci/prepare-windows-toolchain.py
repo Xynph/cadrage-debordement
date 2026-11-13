@@ -52,7 +52,7 @@ def download_verified(spec, destination, opener=urlopen):
     temporary = Path(filename)
     try:
         with os.fdopen(descriptor, "wb") as output:
-            with opener(Request(spec["url"], headers={"User-Agent": "OvalLegacy-Windows-toolchain/1"}), timeout=60) as response:
+            with opener(Request(spec["url"], headers={"User-Agent": "RugbyLegacy-Windows-toolchain/1"}), timeout=60) as response:
                 if getattr(response, "status", 200) != 200:
                     raise ValueError("Download did not return HTTP 200")
                 while block := response.read(1024 * 1024):

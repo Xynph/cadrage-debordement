@@ -7,7 +7,11 @@
 // pour les suites d'au moins MEMORY_DEFAULT_MB ; ci/run-shard-suites.sh s'en sert pour ne
 // jamais dépasser le budget mémoire d'un runner (16 Go) en lançant 4 suites à la fois.
 // Usage :
-//   node ci/suite-weights.cjs <js|godot|memory> <dossier-de-logs> [run-id...]
+//   node ci/suite-weights.cjs <js|godot|memory> <dossier-de-logs> [--garder]
+// --garder : conserve le poids existant des suites que ces journaux ne mesurent pas (budget
+// d'une suite ajoutée depuis, sans durée dans les runs de référence) ; sert à réintégrer une
+// suite migrée en carrière Monde : après migration, relancer avec les journaux des runs de
+// référence (js.runs) pour lui donner son poids mesuré au lieu du défaut de 1 s.
 // Le dossier contient les journaux bruts des jobs (gh api .../actions/jobs/<id>/logs),
 // nommés job-<run>-<job>.log. Le fichier JSON est réécrit en place, section par section.
 const fs = require('node:fs');
@@ -22,6 +26,12 @@ const MEMORY_MARGIN = 0.10;
 const MEMORY_DEFAULT_MB = 1024;
 const MEMORY_BUDGET_MB = 12288;
 
+// Suite présente dans tests/ et hors ancien mode de carrière (ensemble calculé une seule fois).
+let legacyCache;
+function ciSuite(f) {
+  legacyCache ??= legacySuites();
+  return fs.existsSync(path.join(__dirname, '..', f)) && !legacyCache.has(f);
+}
 function median(values) {
   const s = values.slice().sort((a, b) => a - b), m = s.length >> 1;
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
@@ -43,7 +53,7 @@ function parseLogs(dir, pattern = PROFILE) {
 }
 // Seules les suites présentes dans tests/ sont gardées (des runs de PR peuvent en mesurer
 // d'autres, pas encore fusionnées), hors suites à ancien mode de carrière (exclues de la CI).
-function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f)) {
+function weightsFrom(samples, exists = ciSuite) {
   const weights = {};
   for (const file of Object.keys(samples).sort().filter(exists)) {
     const value = Math.max(1, Math.round(median(Object.values(samples[file])) * (1 + MARGIN)));
@@ -53,7 +63,7 @@ function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '
 }
 // Mémoire de pointe en Mo : maximum observé (et non médiane) × (1 + marge), arrondi au
 // multiple de 64 Mo supérieur ; suites sous le défaut omises (elles prennent le défaut).
-function memoryFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f)) {
+function memoryFrom(samples, exists = ciSuite) {
   const suites = {};
   for (const file of Object.keys(samples).sort().filter(exists)) {
     const mb = Math.ceil(Math.max(...Object.values(samples[file])) / 1024 * (1 + MEMORY_MARGIN) / 64) * 64;
@@ -63,9 +73,10 @@ function memoryFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '.
 }
 
 if (require.main === module) {
-  const [kind, dir] = process.argv.slice(2);
+  const [kind, dir, option] = process.argv.slice(2);
+  const keep = option === '--garder';
   if (!['js', 'godot', 'memory'].includes(kind) || !dir || !fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory()) {
-    console.error('Usage : node ci/suite-weights.cjs <js|godot|memory> <dossier-de-logs>');
+    console.error('Usage : node ci/suite-weights.cjs <js|godot|memory> <dossier-de-logs> [--garder]');
     process.exit(2);
   }
   const { samples, runs } = parseLogs(dir, kind === 'memory' ? RSS : PROFILE);
@@ -81,12 +92,17 @@ if (require.main === module) {
     budget_mb: MEMORY_BUDGET_MB,
     suites: memoryFrom(samples)
   };
-  else data[kind] = {
-    source: 'médiane des wall_s CD_CPU_PROFILE de runs GitHub verts, +' + Math.round(MARGIN * 100) + ' %',
-    runs: runs.map(Number),
-    weights: weightsFrom(samples)
-  };
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 1) + '\n');
+  else {
+    const weights = weightsFrom(samples);
+    if (keep) for (const [file, seconds] of Object.entries(data[kind]?.weights || {}))
+      if (!(file in samples) && ciSuite(file)) weights[file] = seconds;
+    data[kind] = {
+      source: keep && data[kind]?.source || 'médiane des wall_s CD_CPU_PROFILE de runs GitHub verts, +' + Math.round(MARGIN * 100) + ' %',
+      runs: runs.map(Number),
+      weights: Object.fromEntries(Object.keys(weights).sort().map(f => [f, weights[f]]))
+    };
+  }
+  fs.writeFileSync(FILE, JSON.stringify(data, null, 2) + '\n');
   console.log(kind + ' : ' + Object.keys(samples).length + ' suites mesurées sur ' + runs.length + ' runs');
 }
 

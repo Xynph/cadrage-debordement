@@ -18,7 +18,7 @@ import unicodedata
 import zipfile
 import zlib
 
-APP = "OvalLegacy27-PrototypeGodot"
+APP = "RugbyLegacy27-PrototypeGodot"
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 COMMIT = re.compile(r"[0-9a-f]{40}\Z")
 
@@ -70,7 +70,7 @@ def manifest_files(manifest):
         keys.add(key)
         require(isinstance(row, dict) and SHA.fullmatch(str(row.get("sha256", ""))) and
                 type(row.get("bytes")) is int and row["bytes"] >= 0, "Invalid manifest SHA or size")
-    for mandatory in ("OvalLegacy27.exe", "runtime/node.exe", "engine/worker.cjs"):
+    for mandatory in ("RugbyLegacy27.exe", "runtime/node.exe", "engine/worker.cjs"):
         require(mandatory in files, "Required packaged executable/runtime absent")
     return files
 
@@ -380,7 +380,7 @@ def validate_windows_report(report, expected_commit, expected_executable, requir
         validate_qa_report(qa, expected_executable, mode)
         process = report["process"][mode]
         validate_process(process, expected_executable, node, node_sha)
-        require(process.get("exeSha256") == receipt["manifest"]["files"]["OvalLegacy27.exe"]["sha256"], "Wrong EXE SHA in process receipt")
+        require(process.get("exeSha256") == receipt["manifest"]["files"]["RugbyLegacy27.exe"]["sha256"], "Wrong EXE SHA in process receipt")
         require(qa["pid"] == process["pid"] and qa["engine_pid"] == process["nodePid"], "QA/process PID mismatch")
         if mode == "resume":
             require(qa["driver_ack"] == process.get("driverAck"), "Resume report/process driver ACK mismatch")
@@ -419,7 +419,7 @@ def validate_graphics_probe(report, process, manifest, expected_executable, driv
     require(report["driver_ack"] == process.get("driverAck"), "Graphics report/process driver ACK mismatch")
     node = str(Path(expected_executable).parent / "runtime/node.exe")
     validate_process(process, expected_executable, node, manifest_files(manifest)["runtime/node.exe"]["sha256"])
-    require(process.get("exeSha256") == manifest["files"]["OvalLegacy27.exe"]["sha256"] and report.get("pid") == process.get("pid") and report.get("engine_pid") == process.get("nodePid"), "Graphics executable/process identity mismatch")
+    require(process.get("exeSha256") == manifest["files"]["RugbyLegacy27.exe"]["sha256"] and report.get("pid") == process.get("pid") and report.get("engine_pid") == process.get("nodePid"), "Graphics executable/process identity mismatch")
     validate_graphics_runtime(report, process, expected_executable, driver, verify_files=require_native)
     coach = report.get("coach", {})
     require(coach.get("starts") == coach.get("ends") == 0 and coach.get("player_present") is False, "Gabi audio activity invalidates graphics probe")

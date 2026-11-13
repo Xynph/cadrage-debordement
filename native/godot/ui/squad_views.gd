@@ -218,6 +218,10 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 	state.visible_player=app.selected_player
 	if players.is_empty():list.add_child(G.wrap("Aucun joueur ne correspond. Modifiez la recherche ou réinitialisez les filtres.",15))
 	var revealed: Button = null
+	# Reprise : internationaux encore en congés après leur tournée d'été (reprise.cjs).
+	var on_leave := {}
+	for away: Dictionary in app.model.get("clubLife", {}).get("reprise", {}).get("internationals", []):
+		if str(away.get("status", "")).begins_with("en congés"): on_leave[str(away.get("id", ""))] = str(away.get("returnDate", ""))
 	for p in players:
 		var b := G.button("",func():
 			list.set_meta("reveal_id", "")
@@ -232,6 +236,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		b.set_meta("player_id",str(p.id))
 		if str(p.id)==str(list.get_meta("reveal_id","")):revealed=b
 		b.tooltip_text=str(p.name)+" · "+str(p.pos)
+		if on_leave.has(str(p.id)): b.tooltip_text += "\nEn congés · retour le " + preload("res://ui/reprise_view.gd").day_text(on_leave[str(p.id)])
 		if state.family==U.WATCH_FILTER:
 			b.tooltip_text += "\n" + U.watch_reason(p)
 			b.accessibility_name = b.tooltip_text
@@ -251,6 +256,9 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 			if state.family==U.WATCH_FILTER and column[0]=="condition" and float(p.get("injury",0))>0:
 				value="Blessé"
 				color=G.ALERT
+			if column[0]=="condition" and on_leave.has(str(p.id)):
+				value="Congés"
+				color=G.GOLD
 			var label:=G.cell(value,column[2],color,column[0]=="name")
 			label.name="RosterValue_"+str(column[0])
 			label.tooltip_text=value
