@@ -109,6 +109,13 @@ class Toolchain(unittest.TestCase):
   self.assertEqual(report['sdkRoot'],str(tools/'sdk'));self.assertEqual(report['nodeExe'],str(tools/'runtime/node.exe'));self.assertEqual(report['nodeNotices'],str(tools/'sdk/licenses'));self.assertEqual(report['mesaRoot'],str(tools/'mesa'))
   self.assertEqual((tools/'sdk/templates/4.7.2-stable/windows_release_x86_64.exe').read_bytes(),b'unit template');self.assertFalse(list((tools/'sdk').rglob('other.exe')))
   self.assertEqual(json.loads((tools/'toolchain-receipt.json').read_text()),report);self.assertTrue((tools/'mesa/mesa-receipt.json').is_file());self.assertTrue(report['notices'])
+  del config['mesaQaOnly'];config_path.write_text(json.dumps(config))
+  hardware=self.root/'hardware'
+  with patch.object(p,'find_sevenzip',side_effect=AssertionError('hardware must not require 7-Zip')):
+   report=p.prepare(hardware,config_path,opener=lambda request,**kwargs:io.BytesIO(payloads[request.full_url]),hardware=True)
+  self.assertFalse(report['mesaQaOnly']);self.assertFalse((hardware/'mesa').exists())
+  self.assertEqual(report['pins']['node-runtime']['sha256'],runtime['sha256'])
+  self.assertTrue((hardware/'toolchain-receipt.json').is_file())
   with self.assertRaises(ValueError):p.prepare(tools,config_path)
  def test_wrong_source_commit_or_dirty_tree_is_refused(self):
   with patch.object(b.subprocess,'check_output',side_effect=['a'*40+'\n','b'*40+'\n','','']):

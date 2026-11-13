@@ -9,7 +9,7 @@ module.exports=function nativeModel(){
  if(S){const active=typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S);meta.population={version:S.aiRosterVersion??null,active,canEnable:typeof enablePopulationPolicy==='function'&&typeof aiRosterActive==='function'&&aiRosterActive()&&!active&&!S.live&&S.phase==='league'&&!Object.keys(S.economy?.talks||{}).length,requiresConfirmation:true,referenceAccessible:S.aiRoster?.population?.referenceAccessible??null,knownAccessible:typeof aiRosterAccessibleCount==='function'?aiRosterAccessibleCount(S):null,history:JSON.parse(JSON.stringify(S.aiRoster?.population?.history||[]))};}
  if(!S)return {protocol:1,club:null,league:[],squad:[],next:null,history:[],messages:[],ledger:[],live:null,meta};
  const sorted=ranked(),divisionRankings=france?Object.fromEntries(['elite','accession'].map(id=>[id,CDFranceCompetition.ranked(S,id)])):null;
- const summary=c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points,rank:rankedFor(c).findIndex(x=>x.id===c.id)+1,presentation:presentation(S.customCompetition?c:CDFranceClubs.forCareer(S,c.id))});
+ const summary=c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points-(typeof CDJiff!=='undefined'?CDJiff.deduction(S,c.id):0),rank:rankedFor(c).findIndex(x=>x.id===c.id)+1,presentation:presentation(S.customCompetition?c:CDFranceClubs.forCareer(S,c.id))});
  const own=club();
  const withdrawnReason='Négociation close jusqu’à la prochaine journée.';
  const currentNegotiation=(id,kind)=>{

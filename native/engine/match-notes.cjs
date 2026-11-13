@@ -67,8 +67,9 @@ function moteur(){
    const gain=fx!==null&&tx!==null?Math.abs(tx-fx):0;
    if(kind==='carry'&&equipe!==null){
     // Course stoppée (moins de 22 m) : plaquage réussi ; franchissement : plaquage manqué
-    // (même règle que les chiffres d'équipe de l'entracte).
-    if(tx!==null){const tacle=plaqueur(s.on?.[1-equipe],gain,s.to?.y,i);if(gain<22)ajoute(tacle,.05,'plaquages');else ajoute(tacle,-.16,'manques');}
+    // (même règle que les chiffres d'équipe de l'entracte). Plaqueur nommé par le moteur (fait
+    // `tackler`, le même que la 3D), sinon déduit de la place défensive (anciens journaux).
+    if(tx!==null){const def=(s.on?.[1-equipe]||[]).map(String),nomme=s.tackler!=null&&def.includes(String(s.tackler))?String(s.tackler):null;const tacle=nomme??plaqueur(s.on?.[1-equipe],gain,s.to?.y,i);if(gain<22)ajoute(tacle,.05,'plaquages');else ajoute(tacle,-.16,'manques');}
     const n=ajoute(s.actor,.03+Math.min(1.1,gain/32)+(gain>=22?.3:0),'courses');
     if(n){n.metres+=gain;if(gain>=22)n.franchissements++;}
     continue;

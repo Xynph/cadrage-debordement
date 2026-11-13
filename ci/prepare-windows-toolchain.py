@@ -246,7 +246,26 @@ def find_sevenzip():
     raise ValueError("Standard Windows runner 7-Zip is required to inspect the pinned Mesa .7z; no installer was run")
 
 
-def prepare(root, config_path, opener=urlopen):
+def prepare_mesa(root, mesa, acquire, pins):
+    sevenzip = find_sevenzip()
+    mesa_root = root / "mesa"
+    extract_sevenzip(acquire("mesa-archive", mesa["archive"]), mesa_root, sevenzip)
+    for index, spec in enumerate(mesa["notices"] + [mesa["documentation"]]):
+        destination = relative_name(spec["destination"])
+        if not destination.startswith("qa-notices/"):
+            raise ValueError("Mesa notice must be placed in qa-notices/")
+        target = mesa_root / destination
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            raise ValueError("Mesa notice destination already exists")
+        shutil.copyfile(acquire("mesa-notice-" + str(index), spec), target)
+    mesa_receipt = write_mesa_receipt(mesa_root, mesa["version"], pins["mesa-archive"],
+                                     [spec for spec in mesa["notices"] if spec.get("component")])
+    return {"mesaRoot": str(mesa_root), "mesaQaOnly": True, "mesaComponentNotices": mesa_receipt["licenses"],
+            "sevenZip": {"executable": str(sevenzip), **file_record(sevenzip, sevenzip.parent)}}
+
+
+def prepare(root, config_path, opener=urlopen, *, hardware=False):
     config_path = Path(config_path).resolve()
     config_bytes = config_path.read_bytes()
     config = json.loads(config_bytes)
@@ -264,7 +283,7 @@ def prepare(root, config_path, opener=urlopen):
         path = download_verified(spec, downloads / (label + Path(urlsplit(spec["url"]).path).suffix), opener=opener)
         pins[label] = {key: spec[key] for key in ("url", "sha256", "bytes", "sha512") if key in spec}
         return path
-    godot, node, mesa = config["godot"], config["node"], config["mesaQaOnly"]
+    godot, node = config["godot"], config["node"]
     editor = acquire("godot-editor", godot["editor"])
     templates = acquire("godot-templates", godot["templates"])
     sums = acquire("godot-sums", godot["checksumManifest"])
@@ -293,26 +312,17 @@ def prepare(root, config_path, opener=urlopen):
     name = "Godot_v" + version + "_win64"
     extract_zip_members(editor, sdk / "editor" / version, {name + ".exe": name + ".exe", name + "_console.exe": name + "_console.exe"})
     extract_zip_members(templates, sdk / "templates" / version, {"templates/windows_release_x86_64.exe": "windows_release_x86_64.exe"})
-    sevenzip = find_sevenzip()
-    mesa_root = root / "mesa"
-    extract_sevenzip(acquire("mesa-archive", mesa["archive"]), mesa_root, sevenzip)
-    for index, spec in enumerate(mesa["notices"] + [mesa["documentation"]]):
-        destination = relative_name(spec["destination"])
-        if not destination.startswith("qa-notices/"):
-            raise ValueError("Mesa notice must be placed in qa-notices/")
-        target = mesa_root / destination
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if target.exists():
-            raise ValueError("Mesa notice destination already exists")
-        shutil.copyfile(acquire("mesa-notice-" + str(index), spec), target)
-    mesa_receipt = write_mesa_receipt(mesa_root, mesa["version"], pins["mesa-archive"],
-                                     [spec for spec in mesa["notices"] if spec.get("component")])
-    receipt = {"schemaVersion": 1, "sdkRoot": str(sdk), "nodeExe": str(node_path), "nodeNotices": str(sdk / "licenses"), "mesaRoot": str(mesa_root),
+    notice_dirs = [sdk / "licenses"]
+    mesa_data = {"mesaQaOnly": False}
+    if not hardware:
+        mesa_data = prepare_mesa(root, config["mesaQaOnly"], acquire, pins)
+        notice_dirs.append(Path(mesa_data["mesaRoot"]) / "qa-notices")
+    receipt = {"schemaVersion": 1, "sdkRoot": str(sdk), "nodeExe": str(node_path), "nodeNotices": str(sdk / "licenses"),
                "configSha256": hashlib.sha256(config_bytes).hexdigest(), "pins": pins,
-               "notices": [file_record(path, root) for directory in [sdk / "licenses", mesa_root / "qa-notices"] for path in sorted(directory.rglob("*")) if path.is_file()],
-               "mesaComponentNotices": mesa_receipt["licenses"], "mesaQaOnly": True,
-               "sevenZip": {"executable": str(sevenzip), **file_record(sevenzip, sevenzip.parent)},
-               "limits": ["Tools prepared and hashes verified; not a Windows game reception", "Mesa is QA-only, never part of the delivered game ZIP"]}
+               "notices": [file_record(path, root) for directory in notice_dirs for path in sorted(directory.rglob("*")) if path.is_file()],
+               "limits": ["Tools prepared and hashes verified; not a Windows game reception"], **mesa_data}
+    if not hardware:
+        receipt["limits"].append("Mesa is QA-only, never part of the delivered game ZIP")
     (root / "toolchain-receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
     return receipt
 
@@ -321,9 +331,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--hardware", action="store_true", help="prepare the pinned Godot and Node tools without Mesa")
     arguments = parser.parse_args()
     try:
-        result = prepare(arguments.root, arguments.config)
+        result = prepare(arguments.root, arguments.config, hardware=arguments.hardware)
     except (ValueError, OSError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
         parser.exit(1, str(error) + "\n")
     print(json.dumps(result, indent=2))

@@ -90,7 +90,7 @@ function courseDecoupee(l,side,origin,finisseur){
  const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';
  const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(arrivee-origin));
  const phrases=[`${carrier?.name||club} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||club} avance de ${gain} mètres avant le plaquage`,`${club} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];
- if(gain>=1)addEvent(l,`${phrases[l.minute%phrases.length]}${plan} dans les 22 adverses.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,from:{x:origin,y:35},to:{x:arrivee,y:35}});
+ if(gain>=1)addEvent(l,`${phrases[l.minute%phrases.length]}${plan} dans les 22 adverses.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,gain):null,from:{x:origin,y:35},to:{x:arrivee,y:35}});
  const reste=Math.abs(attackingGoal(side)-arrivee),n=reste>18?2:reste>9?1:0,pas=reste/(n+1);
  const pool=activePlayers(l,side).filter(p=>p.id!==finisseur?.id&&p.id!==carrier?.id);
  let x=arrivee,precedent=carrier;
@@ -98,7 +98,7 @@ function courseDecoupee(l,side,origin,finisseur){
   const options=pool.filter(p=>p.id!==precedent?.id),sup=options.length?options[(l.minute+side+2*k+1)%options.length]:null;
   const nx=Math.round(x+dir*pas),m=Math.round(Math.abs(nx-x)),nom=sup?.name||club;
   const textes=[`Soutien de ${nom}, qui relance et gagne ${m} mètres`,`${nom} prend le relais après le regroupement et gagne ${m} mètres`,`Passe pour ${nom}, qui avance de ${m} mètres`];
-  addEvent(l,`${textes[(l.minute+k)%textes.length]}${Math.abs(attackingGoal(side)-nx)<=10?' : la ligne est tout près':''}.`,'play',{kind:'carry',team:side,actor:sup?.id||null,from:{x,y:35},to:{x:nx,y:35}});
+  addEvent(l,`${textes[(l.minute+k)%textes.length]}${Math.abs(attackingGoal(side)-nx)<=10?' : la ligne est tout près':''}.`,'play',{kind:'carry',team:side,actor:sup?.id||null,tackler:sup?carryTackler(l,side,sup.id,m):null,from:{x,y:35},to:{x:nx,y:35}});
   x=nx;precedent=sup;
  }
  return x;
@@ -124,7 +124,7 @@ function advanceCausalPlay(l){
    if(finish<.08)return resolveInGoal(l,side,'held-up');if(finish<.12)return resolveInGoal(l,side,'ingoal-knock-on');
    return scoreTry(l,side,'open',origin);
   }
-  const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(l.territory-origin));const phrases=[`${carrier?.name||S.clubs[l.pair[side]].abbr} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||S.clubs[l.pair[side]].abbr} avance de ${gain} mètres avant le plaquage`,`${S.clubs[l.pair[side]].abbr} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];addEvent(l,`${phrases[l.minute%phrases.length]}${plan}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,from:{x:origin,y:35},to:{x:l.territory,y:35}});
+  const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(l.territory-origin));const phrases=[`${carrier?.name||S.clubs[l.pair[side]].abbr} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||S.clubs[l.pair[side]].abbr} avance de ${gain} mètres avant le plaquage`,`${S.clubs[l.pair[side]].abbr} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];addEvent(l,`${phrases[l.minute%phrases.length]}${plan}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,gain):null,from:{x:origin,y:35},to:{x:l.territory,y:35}});
  }else if(Math.random()<failedCarryError(l,side))return handFault(l,side);
  else{tacticalCount(l,opp,'recoveries');ballPossession(l,opp);addEvent(l,`${actionName(l,opp,'defender')} récupère le ballon après le plaquage pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null})}
 }

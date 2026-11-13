@@ -189,7 +189,7 @@ function chiffresRugby(lignes,events){
 // attribue. Plaquages : chaque course adverse stoppée (moins de 22 m) et chaque ballon
 // récupéré, comme le chiffre d'équipe ; le plaqueur est déduit de la place défensive.
 // `contexte` (lecteur.etat().notes) : minutes, équipes et niveau au poste de la feuille.
-const plaqueur=notesMatch.plaqueur;
+const plaqueur=notesMatch.plaqueur,NOTE_DEPART=notesMatch.NOTE_DEPART;
 function notesDuMatch(lignes,events,camp,contexte={}){
  if(camp!==0&&camp!==1)return {};
  const n=lignes.length?lignes[lignes.length-1].i+1:0;
@@ -391,4 +391,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX});
+module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX});

@@ -38,6 +38,7 @@ try{
  const offer=m.clubLife.clubSupport.agents.players.flatMap(p=>p.quotes).find(q=>q.affordable&&q.policy==='equilibre');assert.ok(offer,'Une prolongation doit rester négociable en deuxième saison.');
  m=good('agent_negotiate',{context:secondContext,id:offer.id,years:offer.years,policy:offer.policy});
  const secondText=good('export').meta.exportText;good('import',{text:secondText});restart(secondText,'S2w0 réunion et agent importés');
- assert.deepEqual(checkpoints,['S1w0 live','S1w16 live','S1w26 live','S1w27 live','S1w29 live','S1w31 sans match','S1w33 sans match','S1w34 fin de saison','S2w0 réunion et agent importés']);
+ // La semaine 31 dépend du classement (phase finale ou non), que le JIFF peut modifier.
+ assert.deepEqual(checkpoints.map(c=>c.startsWith('S1w31 ')?'S1w31':c),['S1w0 live','S1w16 live','S1w26 live','S1w27 live','S1w29 live','S1w31','S1w33 sans match','S1w34 fin de saison','S2w0 réunion et agent importés']);
  console.log('Support saison réelle club29 : '+weeks.length+' semaines, '+briefed+' briefings figés/vérifiés et '+delegated+' matchs délégués, '+pureWeeks.length+' projections pures (27–34), '+checkpoints.length+' reprises exactes dont finS1 et import S2, reset contexte saison2 PASS. '+root);
 }finally{b.close();if(profile)console.log('SUPPORT_SEASON_PROFILE '+JSON.stringify({requests:n,commands:[...costs.values()].sort((a,b)=>b.ms-a.ms).map(r=>({...r,ms:Math.round(r.ms)}))}));}
