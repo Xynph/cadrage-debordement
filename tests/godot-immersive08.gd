@@ -943,6 +943,7 @@ func navigation_flow() -> void:
 	# Sans fenêtre native (headless), le rendu doit être relancé explicitement à la nouvelle taille (cf. les parcours champ()).
 	app._render()
 	await settle()
+	print("DIAG effectif avant navigation : fenêtre=",app.get_window().size," app=",app.size," racine=",root.size," route=",app.route," socle=",app.get_meta("socle_effectif",false)," fiche=",app.get_meta("immersive08_full_player",false))
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
@@ -951,6 +952,18 @@ func navigation_flow() -> void:
 		open_full = app.find_child("OpenPlayerFull",true,false) as Button
 		if open_full != null: break
 		await process_frame
+	if open_full == null:
+		print("DIAG effectif sans fiche : fenêtre=",app.get_window().size," app=",app.size," corps=",app.body.get_children().map(func(node: Node): return node.name)," carnet=",app.find_child("CarnetSquad",true,false))
+		await create_timer(.6).timeout
+		app._navigate("Bureau")
+		await settle()
+		app._navigate("Effectif")
+		await settle()
+		for attempt in 40:
+			open_full = app.find_child("OpenPlayerFull",true,false) as Button
+			if open_full != null: break
+			await process_frame
+		print("DIAG effectif seconde tentative : bouton=",open_full," corps=",app.body.get_children().map(func(node: Node): return node.name))
 	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size)+" · app "+str(app.size)+" · fenêtre "+str(app.get_window().size)+" · joueurs="+str(app.model.get("squad",[]).size())+" · corps="+str(app.body.get_child_count() if app.body!=null else -1)+" · enfants="+str(app.body.get_children().map(func(node: Node): return node.name) if app.body!=null else []))
 	if open_full != null:
 		await click(open_full)
