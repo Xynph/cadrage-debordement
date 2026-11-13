@@ -55,7 +55,7 @@ def receive(args):
     assert {str(p.relative_to(app)): digest(p) for p in app.rglob("*") if p.is_file()} == meta["files"], "ZIP extraction preserves every shipped file"
     subprocess.run(["codesign", "--verify", "--deep", "--strict", str(app)], check=True)
     executable = next((app / "Contents/MacOS").iterdir())
-    subprocess.run(["lipo", "-verify_arch", "arm64" if meta["architecture"] == "arm64" else "x86_64", str(executable)], check=True)
+    subprocess.run(["lipo", str(executable), "-verify_arch", "arm64" if meta["architecture"] == "arm64" else "x86_64"], check=True)
     # Only the disposable copy gets a declared override; the downloadable ZIP
     # stays byte-identical. The same override is used for fresh and resumed runs.
     override = app / "Contents/Resources/override.cfg"

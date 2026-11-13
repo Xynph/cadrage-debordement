@@ -113,7 +113,7 @@ def build(args):
         "Crédits et licences : Contents/Resources/Licences.\n", encoding="utf-8")
     for binary in (helpers / "node", *list((app / "Contents/MacOS").iterdir())):
         binary.chmod(0o755)
-        run("lipo", "-verify_arch", "arm64" if arch == "arm64" else "x86_64", binary)
+        run("lipo", binary, "-verify_arch", "arm64" if arch == "arm64" else "x86_64")
     run("codesign", "--force", "--sign", "-", helpers / "node")
     run("codesign", "--force", "--deep", "--sign", "-", app)
     run("codesign", "--verify", "--deep", "--strict", app)
