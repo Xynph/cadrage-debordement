@@ -387,7 +387,8 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
-		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,686)
+		var heading := PlayerAttributes.GENERATED_TITLE if PlayerAttributes.is_generated(player) else "Repères du joueur dans votre carrière"
+		D.text(card,24,120,heading,31,C.IVORY,700,686).name = "PlayerSourcesHeading"
 		D.text(card,24,179,str(player.get("pos","—"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var pos:Dictionary=profile.get("position",{})
