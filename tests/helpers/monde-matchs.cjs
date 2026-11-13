@@ -15,10 +15,12 @@ function advanceToNextMatch(model,send,{maxWeeks=60}={}){
 }
 
 // Joue (délégué) le prochain match du club puis clôt la journée ; retourne le modèle après les rendez-vous.
-function playNextMatch(model,send,options){
+// {settle:false} laisse les rendez-vous de la nouvelle semaine en attente (conférence de presse disponible).
+function playNextMatch(model,send,options={}){
  model=advanceToNextMatch(model,send,options);
  send('begin_match');send('delegate');
- return settleClubMeetings(send('finish_round'),send);
+ const next=send('finish_round');
+ return options.settle===false?next:settleClubMeetings(next,send);
 }
 
 module.exports={advanceToNextMatch,playNextMatch};

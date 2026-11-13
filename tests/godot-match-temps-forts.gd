@@ -155,6 +155,20 @@ func run() -> void:
 		# Aucune importation : la carrière et son match en cours viennent du dossier de données.
 		await settle()
 		followed = await resumed()
+	elif mode == "liaison":
+		# Carrière Monde arrêtée à la causerie d'avant-match (godot-match-liaison-monde.cjs).
+		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("monde.json"))})
+		await settle()
+		var limite := Time.get_ticks_msec() + 120000
+		while Time.get_ticks_msec() < limite and (surface() == null or surface().regie == null):
+			var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+			await settle(2)
+		var vue := surface()
+		check(vue != null and vue.regie != null, "Carrière Monde : le direct en temps forts s'ouvre")
+		if vue != null and vue.regie != null:
+			await linked(vue)
+			followed = vue.regie.suivi
 	elif mode == "defaut":
 		await command("import", {"text": FileAccess.get_file_as_string(proof.path_join("causerie.json"))})
 		await settle()
@@ -169,9 +183,11 @@ func run() -> void:
 			elif mode == "gestes": await gestures(view)
 			elif mode == "choregraphie": await choreography(view)
 			elif mode == "entracte": await interval(view)
+			elif mode == "liaison": await linked(view)
 			elif mode == "terrain2d": await terrain2d(view)
 			else: await inactive(view)
 			if view.regie != null: followed = view.regie.suivi
+	check_liaisons(followed)
 	var report := FileAccess.open(proof.path_join("report-" + mode + ".json"), FileAccess.WRITE)
 	report.store_string(JSON.stringify({"checks": checks, "failures": failures, "suivi": followed}, "  "))
 	report.close()
@@ -179,6 +195,31 @@ func run() -> void:
 	app.bridge.stop()
 	print("Temps forts (", mode, ") : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	quit(0 if failures.is_empty() else 1)
+
+## Liaisons entre deux temps forts contigus (match_liaison.gd), dans tous les modes : toujours à
+## vitesse réelle (jamais d'accéléré, même quand les temps forts sont accélérés pour le test),
+## coupe franche en deux plans quand la mise en place est longue, aucun saut de position dans un
+## plan, et seulement entre deux temps forts contigus (jamais après l'écran intermédiaire 2D).
+func check_liaisons(followed: Array) -> void:
+	var liaisons: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison")
+	for e: Dictionary in liaisons:
+		var nom := "Liaison %s (%s)" % [str(e.type), str(e.cle)]
+		if not e.has("duree_reelle"): continue
+		check(float(e.duree_reelle) >= float(e.duree_prevue) - 0.2 and float(e.duree_reelle) <= float(e.duree_prevue) + 1.5,
+			"%s : jouée à vitesse réelle (%.2f s pour %.2f s prévues)" % [nom, float(e.duree_reelle), float(e.duree_prevue)])
+		check(float(e.get("saut_max", 0.0)) <= 10.0, "%s : aucun saut de position dans un plan (pointe %.1f m/s d'une image à l'autre)" % [nom, float(e.get("saut_max", 0.0))])
+		var durees: Array = e.get("duree_plans", [])
+		if bool(e.coupe):
+			check(int(e.plans) == 2 and durees.size() == 2 and float(durees[0]) <= 3.4 and float(durees[1]) >= 1.0 and float(durees[1]) <= 2.1,
+				"%s : plan en temps réel puis coupe franche vers la remise en jeu formée (%s)" % [nom, str(durees)])
+		else:
+			check(int(e.plans) == 1 and float(e.duree_prevue) <= 4.7, "%s : liaison continue de 4,6 s au plus (%s)" % [nom, str(durees)])
+	for e: Dictionary in followed:
+		if e.evenement == "temps_fort" and not str(e.get("liaison", "")).is_empty():
+			check(bool(e.get("contigu", false)) and not bool(e.get("suite", false)), "Liaison seulement entre deux temps forts contigus : " + str(e.get("cle", "")))
+	var refusees: Array = followed.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison_refusee" or (e.evenement == "echeance" and str(e.get("cause", "")) == "liaison"))
+	check(refusees.is_empty(), "Aucune liaison refusée ni interrompue : " + str(refusees))
+	if not liaisons.is_empty(): print("Liaisons jouées : ", liaisons.map(func(e: Dictionary) -> String: return "%s%s %.1f s" % [str(e.type), " (coupe)" if bool(e.coupe) else "", float(e.get("duree_reelle", 0.0))]))
 
 func inactive(view: Control) -> void:
 	check(view.regie == null and not view.temps_forts_actifs(), "Repli (CD_MATCH_TEMPS_FORTS=0) : aucune régie")
@@ -331,6 +372,62 @@ func interval(view: Control) -> void:
 	check(await until(func(): return app.model.live.minute > 0 and str(app.model.get("tactics", {}).get("attack", "")) == autre, 30000), "La consigne reste en place après la reprise")
 	check(await until(func(): return regie.etat == regie.JEU, 180000), "Temps fort suivant")
 	print("ENTRACTE ", JSON.stringify({"premier_s": attendu, "horloges": horloges.size()}))
+	app._command("pause", {"paused": true})
+	await wait_command()
+
+## Liaisons (carrière Monde, graine choisie par godot-match-liaison-monde.cjs) : les
+## temps forts contigus sont reliés en 3D, à vitesse réelle même quand les temps forts sont
+## accélérés pour le test ; les autres gardent l'écran intermédiaire. Contrôles détaillés : check_liaisons.
+func linked(view: Control) -> void:
+	var regie: Node = view.regie
+	check(regie != null, "Régie présente")
+	if regie == null: return
+	check(regie.arbitre != null and regie.arbitre.is_inside_tree(), "Arbitre présent dans la vue 3D")
+	var deadline := Time.get_ticks_msec() + 900000
+	var reprise := false
+	var images_liaison := 0
+	var accelere := 0
+	var bandeaux_faux: Array = []
+	var touches_vues := 0
+	var touches_mal_placees: Array = []
+	var derniere_liaison := {}
+	var fin := int(OS.get_environment("CD_LIAISON_MINUTES")) if OS.get_environment("CD_LIAISON_MINUTES").is_valid_int() else 11
+	var attendues := int(OS.get_environment("CD_LIAISON_ATTENDUES")) if OS.get_environment("CD_LIAISON_ATTENDUES").is_valid_int() else 2
+	while app.model.get("live") is Dictionary and int(app.model.live.minute) < fin and Time.get_ticks_msec() < deadline:
+		await process_frame
+		if not reprise and not app.waiting and regie.etat != regie.JEU:
+			reprise = true
+			if app.model.live.paused: app._command("pause", {"paused": false})
+		if regie.phase == "liaison" and regie.etat == regie.JEU:
+			images_liaison += 1
+			if not (regie.vitesse > 1.0 and view.stage._choregraphie.vitesse == 1.0): accelere += 1
+			# Bandeau du haut : l'arrêt de jeu en cours, jamais la situation du moteur.
+			var bandeau: String = regie.between.etat.text
+			if bandeau != regie.bandeau_liaison() or bandeau.is_empty() or bandeau.contains("a le ballon"):
+				if bandeaux_faux.size() < 4: bandeaux_faux.append("%s ≠ %s" % [bandeau, regie.bandeau_liaison()])
+			if not is_same(regie.liaison, derniere_liaison):
+				derniere_liaison = regie.liaison
+				if str(regie.liaison.get("type", "")) == "touche":
+					# Alignement formé à la place du moteur : lanceur sur la ligne de touche, avants entre 5 et 15 m.
+					touches_vues += 1
+					var fin_b: Dictionary = (regie.liaison.plans as Array)[-1]
+					var lanceur := str(regie.liaison.get("ramasseur", ""))
+					var cote := 0.0
+					var alignes := 0
+					for j: Dictionary in fin_b.joueurs:
+						if str(j.id) == lanceur: cote = float(j.y[-1])
+					var ligne := 0.0 if cote < 35.0 else 70.0
+					for j: Dictionary in fin_b.joueurs:
+						if absf(float(j.y[-1]) - ligne) >= 4.5 and absf(float(j.y[-1]) - ligne) <= 15.5: alignes += 1
+					if absf(cote - ligne) > 1.5 or alignes < 12: touches_mal_placees.append("lanceur à %.1f m de la touche, %d joueurs entre 5 et 15 m" % [absf(cote - ligne), alignes])
+	check(bandeaux_faux.is_empty(), "Pendant une liaison, le bandeau du haut dit l'arrêt de jeu en cours : " + str(bandeaux_faux))
+	check(touches_mal_placees.is_empty(), "Touches formées à leur place (%d vues) : %s" % [touches_vues, str(touches_mal_placees)])
+	check(images_liaison > 0 and accelere == 0, "Liaisons à vitesse réelle alors que les temps forts sont accélérés (%d images, %d accélérées)" % [images_liaison, accelere])
+	var liaisons: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison" and e.has("duree_reelle"))
+	check(liaisons.size() >= attendues, "Au moins %d liaisons en %d minutes : " % [attendues, fin] + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))
+	var sans: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "temps_fort" and not bool(e.get("contigu", false)))
+	check(not sans.is_empty() and sans.all(func(e: Dictionary) -> bool: return str(e.get("liaison", "")).is_empty()), "Temps forts après l'écran intermédiaire : aucune liaison")
+	check(regie.suivi.any(func(e: Dictionary) -> bool: return e.evenement == "intermediaire"), "L'écran intermédiaire reste entre deux temps forts non contigus")
 	app._command("pause", {"paused": true})
 	await wait_command()
 
@@ -872,11 +969,26 @@ func terrain2d(view: Control) -> void:
 	var banc: Button = view.find_child("MatchBetweenBench", true, false)
 	check(banc != null and banc.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
 	if regie.has_meta("bande_3d"): check(view.bande_temps_forts.get_global_rect().is_equal_approx(regie.get_meta("bande_3d")), "La bande de commandes ne bouge pas entre la 3D et l'entracte")
-	# Colonne « Plaq. » : les plaquages du moteur pour chaque joueur.
-	var plaques := 0
+	# Colonnes « Plaq. » et « Mètres » : la feuille de statistiques (match-stats.cjs) ; le total d'équipe est la
+	# somme des joueurs de la feuille et le chiffre du tableau de bord.
+	var feuille: Dictionary = direct.get("feuille", {})
+	check(feuille.get("joueurs") is Dictionary and not feuille.joueurs.is_empty(), "Feuille de statistiques jointe au direct")
+	var camp_xv := int(direct.camp)
+	var somme := {"plaquages": 0, "metres": 0}
+	for fj: Dictionary in feuille.get("joueurs", {}).values():
+		if int(fj.camp) == camp_xv:
+			for cle: String in somme: somme[cle] += int(fj.get(cle, 0))
+	for cle: String in somme:
+		var rang_cle := rangs.filter(func(r: Dictionary): return str(r.cle) == cle)
+		check(rang_cle.size() == 1 and int(rang_cle[0].valeurs[camp_xv]) == int(somme[cle]), "Tableau : %s de l'équipe = somme des joueurs de la feuille (%d)" % [cle, somme[cle]])
+		check(int(feuille.equipes[camp_xv][cle]) == int(somme[cle]), "Feuille : total d'équipe = somme des joueurs (%s)" % cle)
+	var colonne := func(zone: Node) -> Array: return zone.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text)
+	var total_xv: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	check(total_xv != null and colonne.call(total_xv).has(str(somme.plaquages)) and colonne.call(total_xv).has(str(somme.metres)), "Ligne Équipe de Mon XV : plaquages %d, mètres %d" % [somme.plaquages, somme.metres])
+	var plaquages_visibles := 0
 	for joueur: Variant in lineup:
-		if joueur is Dictionary: plaques += int(direct.get("notes", {}).get(str(joueur.id), {}).get("plaquages", 0))
-	check(plaques > 0 or rangs.filter(func(r: Dictionary): return str(r.cle) == "plaquages").all(func(r: Dictionary): return int(r.valeurs[int(direct.camp)]) == 0), "Plaquages par joueur repris du moteur (%d)" % plaques)
+		if joueur is Dictionary: plaquages_visibles += int(feuille.joueurs.get(str(joueur.id), {}).get("plaquages", 0))
+	check(plaquages_visibles >= 5 or int(somme.plaquages) < 10, "Plaquages des quinze titulaires de la feuille : %d" % plaquages_visibles)
 	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Mon XV et le dernier fait affichés ensemble")
 	var noms_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button).map(func(b: Button): return b.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text))
 	check(noms_xv.size() == 15 and noms_xv.all(func(t: Array): return t.size() >= 2 and not str(t[0]).is_empty()), "Mon XV : nom de famille et note visibles pour chaque joueur : " + str(noms_xv.slice(0, 3)))
@@ -887,6 +999,12 @@ func terrain2d(view: Control) -> void:
 	var lignes_adverses: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	var noms_adverses: Array = lignes_adverses.map(func(b: Button): return b.find_children("*", "Label", true, false).map(func(l: Label): return l.text))
 	check(adverse.size() == 15 and lignes_adverses.size() == 15 and range(15).all(func(k: int): return adverse[k] == null or str(adverse[k].nom) in noms_adverses[k]), "Onglet adverse : le XV adverse, nom et note de chaque joueur (%d lignes)" % lignes_adverses.size())
+	var somme_adverse := {"plaquages": 0, "metres": 0}
+	for fj: Dictionary in feuille.get("joueurs", {}).values():
+		if int(fj.camp) == 1 - camp_xv:
+			for cle: String in somme_adverse: somme_adverse[cle] += int(fj.get(cle, 0))
+	var total_adverse: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	check(total_adverse != null and colonne.call(total_adverse).has(str(somme_adverse.plaquages)) and int(feuille.equipes[1 - camp_xv].plaquages) == int(somme_adverse.plaquages), "Ligne Équipe du XV adverse : plaquages %d = somme des joueurs" % somme_adverse.plaquages)
 	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
 	await settle(2)
 	check(between.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer")).size() == 15, "Retour à Mon XV")
