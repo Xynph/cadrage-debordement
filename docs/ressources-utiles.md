@@ -75,6 +75,17 @@ vérifient séparément.
 | [Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app), [Ara 3D Gen](https://github.com/olatunde85/3d-gen) et [Rigger](https://github.com/asu37/Rigger) | Pistes demandées par Léo. Dépôts relevés le 10 novembre 2026. | Comparer l’animation d’un personnage existant, la création d’un mannequin et son rig. | Code MIT pour Mesh2Motion et Ara 3D Gen, GPL-3.0-or-later pour Rigger. Vérifier les licences des ressources tierces séparément. | **À explorer** pour un usage dans le jeu. Comparer d’abord leurs résultats sur le même modèle de référence. |
 | [Tripo, image vers 3D](https://www.tripo3d.ai/product-doc) et [TripoSG](https://github.com/VAST-AI-Research/TripoSG) | Piste demandée par Léo. Documentation du service et dépôt de recherche relevés le 10 novembre 2026. | Tester un accessoire du club à partir d’une image, puis contrôler géométrie, textures et import Godot. | Tarifs et droits de sortie du service à vérifier. Code TripoSG sous MIT. La [fiche des poids](https://huggingface.co/VAST-AI/TripoSG) indique aussi MIT. | **À explorer**. Première recette à faire sur un accessoire isolé. |
 
+## Compétences des agents
+
+Copies épinglées dans `.claude/skills` et `.agents/skills`, identiques dans les
+deux dossiers. Le [manifeste](../tools/agent-skills/manifest.json) liste chaque
+fichier avec son empreinte ; `node tools/agent-skills/update.cjs --check` les
+vérifie hors ligne et `--commit <sha>` met le kit à jour depuis la source.
+
+| Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
+| --- | --- | --- | --- | --- |
+| [awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/tree/dcf3bbbb83f365632402c086bf595048aa24aaa8) | Dépôt demandé par Léo. Cloné le 11 novembre 2026 au commit `dcf3bbbb83f3` ; les 14 compétences retenues ont été relues (31 fichiers Markdown, aucun script). | Godot 4.7 : `godot-gdscript`, `godot-ui-control`, `godot-gdscript-headless-testing`, `godot-export`, `godot-3d-essentials`, `godot-shaders`, `godot-audio`, `godot-animation`. Transversal : `save-systems`, `game-ui-ux`, `game-feel`, `game-ai`, `procedural-gen`, `performance-optimization`. | Gratuit. Apache-2.0 ; licence et notice copiées dans `_licences/` de chaque dossier. | **Intégré** comme aide aux agents, hors du jeu distribué. Relire le diff à chaque mise à jour : une compétence est une consigne donnée aux agents. Les 63 autres compétences du dépôt (Unity, Unreal, Roblox, genres) ne sont pas copiées. |
+
 ## Recette Windows
 
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
