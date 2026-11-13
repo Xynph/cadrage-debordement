@@ -74,7 +74,7 @@ func run() -> void:
 	if not failures.is_empty(): print("Bureau suivi : %d contrôles, %d échecs" % [checks,failures.size()]);quit(1);return
 	app=load("res://main.tscn").instantiate();root.add_child(app)
 	await wait_engine()
-	app._command("new_career",{"mode":"common","club":29})
+	app._command("new_career",{"mode":"world-champ","club":0})
 	await wait_engine()
 	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var players: Array=app.model.clubLife.youthDevelopment.players

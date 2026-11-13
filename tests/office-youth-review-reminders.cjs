@@ -1,5 +1,5 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Legacy fixture only; production remains World-only.
+process.env.CD_MODES_HERITES='0'; // Exercise the production World-only mode.
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {spawnSync}=require('node:child_process');
