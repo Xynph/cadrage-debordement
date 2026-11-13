@@ -16,6 +16,11 @@ const version = spawnSync(executable, ['--version'], {encoding: 'utf8', timeout:
 if (version.status !== 0 || !version.stdout.startsWith('4.7.2.stable.')) {
   throw Error('Unexpected Godot SDK version: ' + version.stdout);
 }
+// Mode Monde uniquement : une recette qui porte CD_MODES_HERITES (ancien mode de carrière) n'est jamais lancée.
+const {legacySuites} = require('./legacy-modes.cjs');
+const legacy = legacySuites();
+for (const suite of config.suites.filter(suite => legacy.has(suite))) console.log('::notice::Recette exclue (ancien mode de carrière) : ' + suite);
+config.suites = config.suites.filter(suite => !legacy.has(suite));
 if (!config.suites.length || new Set(config.suites).size !== config.suites.length) {
   throw Error('The SDK qualification list must be nonempty and unique.');
 }
@@ -42,6 +47,7 @@ for (const {suite, variant, env} of entries) {
   const started = Date.now();
   const result = spawnSync(process.execPath, [suite], {
     cwd: root, encoding: 'utf8', timeout: 300000, maxBuffer: 32 * 1024 * 1024,
+    // Mode Monde uniquement : pas de CD_MODES_HERITES par défaut (les suites qui le portent sont exclues).
     env: {...process.env, ...(config.suiteEnvironment?.[suite] || {}), ...env,
       CD_GODOT_EXECUTABLE: executable, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.execPath},
   });

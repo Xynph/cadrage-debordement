@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Panneau d’attente et réponses différentielles : Godot réel + worker réel.
 const fs = require('node:fs');
 const os = require('node:os');

@@ -8,7 +8,7 @@ try{
  assert.ok(systems.files.includes('press-relations.js'));
  assert.ok(CORE_FILES.indexOf('press-relations.js')<CORE_FILES.indexOf('game.js'));
  bridge=createBridge({dataDir:root,seed:27,now:1700000000000});
- let m=call('new_career',{mode:'common',club:29});
+ let m=call('new_career',{mode:'world-champ',club:29});
  assert.ok(m.clubLife.press,'La presse doit être raccordée au vrai worker.');
  const before=call('export').meta.exportText,profile=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(profile);
  for(let i=0;i<3;i++)call('snapshot');

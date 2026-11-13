@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Packs d'identités et rendez-vous du club : la gestion des packs reste possible pendant un rendez-vous
 // obligatoire (réglage de présentation), sans toucher au rendez-vous ni à la carrière ; l'action sportive reste refusée.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');

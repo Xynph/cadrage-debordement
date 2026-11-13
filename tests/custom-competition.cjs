@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 assert.ok(fs.existsSync(path.join(__dirname,'../native/engine/custom-competition.cjs')),'Le domaine de compétition personnalisée existe');
 const domain=require('../native/engine/custom-competition.cjs'),editor=require('../native/engine/competition-editor.cjs');

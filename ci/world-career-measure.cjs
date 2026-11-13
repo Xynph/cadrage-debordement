@@ -18,7 +18,7 @@ function argumentsFor(argv){
   assert(key&&argv[i+1]!==undefined,'argument inconnu : '+argv[i]);
   o[key]=['mode','out','keep'].includes(key)?argv[i+1]:Number(argv[i+1]);
  }
- assert(o.out,'--out requis');return o;
+ assert(o.out,'--out requis');assert(o.mode==='world-champ','mode Monde (world-champ) uniquement');return o;
 }
 const median=v=>{const s=v.slice().sort((a,b)=>a-b);return s.length?s[s.length>>1]:null;};
 const round=(x,d=2)=>Math.round(x*10**d)/10**d;

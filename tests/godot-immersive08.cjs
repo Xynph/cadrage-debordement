@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),art=path.join(root,'native/godot/art/immersive08');
 assert.ok(fs.existsSync(path.join(art,'manifest.json')),'Les illustrations approuvées doivent être intégrées comme assets indépendants');

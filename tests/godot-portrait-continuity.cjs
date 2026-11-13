@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 test('Native academy promotion keeps bank2 portraits in small/large squad and training views after reopening',{skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot requis'},()=>{
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-portrait-continuity-')),graphics=process.env.CD_REGEN_UI_GRAPHICS==='1';

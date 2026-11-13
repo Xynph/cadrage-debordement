@@ -8,7 +8,7 @@ const {createBridge}=require('../native/engine/worker.cjs');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'salary-floor-resume-'));let id=0;
 function call(bridge,command,payload={}){const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;}
 let bridge=createBridge({dataDir:dir,seed:27,now:1700000000000});
-const created=call(bridge,'new_career',{mode:'common',club:29});
+const created=call(bridge,'new_career',{mode:'world-champ',club:29});
 const floor=created.finance.salaryFloor,notice=created.finance.notice;
 assert.ok(Number.isFinite(floor)&&floor>0,'Plancher salarial à la création');
 const exported=call(bridge,'export').meta.exportText;call(bridge,'shutdown');

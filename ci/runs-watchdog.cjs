@@ -24,6 +24,11 @@ function decide(runs, jobsInProgress, now, options = {}) {
     .map(r => r.id);
 }
 
+function newerExists(runs, run) {
+  return runs.some(r => r.id !== run.id && r.workflow_id === run.workflow_id && r.head_branch === run.head_branch &&
+    Date.parse(r.created_at) > Date.parse(run.created_at));
+}
+
 function gh(args) {
   return execFileSync('gh', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']});
 }
@@ -43,6 +48,7 @@ function main() {
       .filter(j => j.status === 'in_progress').length;
   const queued = list('queued').map(r => ({...r,
     jobCount: api(`repos/${repo}/actions/runs/${r.id}/jobs?per_page=1`).total_count || 0}));
+  const pending = list('pending');
   const ids = decide(queued, inProgress, Date.now());
   console.log(`Jobs en cours : ${inProgress}/${CAPACITY} ; exécutions en file : ${queued.length} ; bloquées : ${ids.length}`);
   const summary = [`## Chien de garde CI`, ``, `- Jobs en cours : ${inProgress}/${CAPACITY}`, `- En file : ${queued.length}`, `- Relancées : ${ids.length}${dry ? ' (simulation)' : ''}`];
@@ -51,8 +57,15 @@ function main() {
     summary.push(`- ${run.name} · ${run.event} · ${run.head_branch} · créée ${run.created_at} · [${id}](${run.html_url})`);
     if (dry) continue;
     try {
+      // Annulation normale, puis forcée : les exécutions bloquées refusent souvent la première
+      // (constat 13/11 : 11 jobs terminés, 1 resté « queued », annulation sans effet).
+      const done = () => api(`repos/${repo}/actions/runs/${id}`).status === 'completed';
       api(`repos/${repo}/actions/runs/${id}/cancel`, 'POST');
-      for (let i = 0; i < 24 && api(`repos/${repo}/actions/runs/${id}`).status !== 'completed'; i++) sleep(5000);
+      for (let i = 0; i < 4 && !done(); i++) sleep(5000);
+      if (!done()) { api(`repos/${repo}/actions/runs/${id}/force-cancel`, 'POST'); for (let i = 0; i < 4 && !done(); i++) sleep(5000); }
+      // Relance seulement si aucune exécution plus récente du même workflow n'attend déjà
+      // sur la même branche (elle prend le relais dès que le groupe est libéré).
+      if (newerExists(queued.concat(pending), run)) { console.log(`Annulée (une exécution plus récente prend le relais) : ${id}`); continue; }
       api(`repos/${repo}/actions/runs/${id}/rerun`, 'POST');
       console.log(`Relancée : ${id} (${run.name}, ${run.head_branch})`);
     } catch (e) {
@@ -62,5 +75,5 @@ function main() {
   if (process.env.GITHUB_STEP_SUMMARY) require('node:fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
 }
 
-module.exports = {decide, STUCK_MINUTES, CAPACITY, FREE_SLOTS};
+module.exports = {decide, newerExists, STUCK_MINUTES, CAPACITY, FREE_SLOTS};
 if (require.main === module) main();

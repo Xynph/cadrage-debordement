@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process'),{test}=require('node:test'),assert=require('node:assert/strict');
 test('Coach intégré : espace réservé, toutes routes et commandes accessibles sans mutation', {skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot requis'},()=>{

@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const { assertLegacyProfessionals } = require('./helpers/assert-legacy-professionals.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),{make}=require('./native-academy.cjs');

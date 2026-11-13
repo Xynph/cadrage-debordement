@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process'),{test}=require('node:test'),assert=require('node:assert/strict');
 test('Staff, formation et décisions : interactions Windows natives et trois tailles',{skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot requis'},()=>{
  const directory=fs.mkdtempSync(path.join(process.env.CD_STAFF_UI_ROOT||os.tmpdir(),'cd-staff-ui-'));
