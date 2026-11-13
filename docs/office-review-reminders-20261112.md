@@ -21,6 +21,15 @@ de sauvegarde. Aucun nouveau champ persistant. Aucune donnée figée régénér�
 
 Cloud Linux, Node 22.23.4 et Godot 4.7.2 officiels déjà disponibles :
 
+- Réception Monde du13 novembre : vraie carrière `world-champ`, club0,
+  environnement de production par défaut sans marqueur historique ;
+  **38 contrôles, 0 échec**, wrapper1/1 vert sans saut. Le scanner de la
+  politique #639 conserve cette suite et ne signale aucune création héritée.
+- Les anciens échecs de démarrage décrits plus bas ont été levés par les
+  corrections de main ; le parcours Bureau passe sur le cumul reçu.
+
+### Historique des premières recettes
+
 - Nouvelle recette `office-youth-review-reminders` : **38 contrôles, 0 échec**
   en headless ; **40 contrôles, 0 échec** avec rendu X11/Mesa à 1280×720,
   dont deux captures techniques d'un scénario de projection contrôlé.
@@ -37,25 +46,26 @@ Cloud Linux, Node 22.23.4 et Godot 4.7.2 officiels déjà disponibles :
   attente du menu vide, puis recherche non récursive des cartes) ont été
   corrigées dans la recette, sans modifier le produit pour les contourner.
 
-## Échec voisin conservé et signalé
+## Historique de l'échec voisin
 
-`tests/godot-youth-development-review.cjs` échoue : commandes `snapshot` et
+La première recette `tests/godot-youth-development-review.cjs` échouait : commandes `snapshot` et
 `new_career` refusées, puis dialogue absent. Le helper démarre ses commandes
 immédiatement après l'instanciation, pendant le snapshot initial ; la garde du
 produit refuse alors cette requête. Les trois fichiers de produit de ce lot ont
 été temporairement restaurés depuis main `664867a1` pour comparer : **mêmes
 quatre assertions en échec**, puis modifications de la branche restaurées.
 
-Les tests et helpers existants n'ont pas été modifiés. Réparation réservée à
-Claude dans #594, signalée dans #591. Ne pas annoncer une validation globale
-verte. La CI distante reste à recevoir sur le HEAD publié ; aucune preuve
+Les tests et helpers existants n'ont pas été modifiés par ce lot. La réparation,
+réservée à Claude dans #594 et signalée dans #591, a depuis été reçue par main.
+La CI distante actuelle reste à recevoir ; aucune preuve
 Windows ni recette de carrière réellement avancée jusqu'au réexamen.
 
 ## Modèle et quota
 
 Conception, implémentation, exécution des tests et auto-revue : modèle principal
 de cette session ; identifiant et effort effectif non exposés par le runtime.
-Aucun sous-agent ni session de modèle supplémentaire. Recommandation
+Un sous-agent GPT-6 Luna, effort faible, a ensuite effectué uniquement des
+lectures ponctuelles de CI, de logs et de PR, sans modification. Recommandation
 GPT-6.1 Sol : moyen. La règle permanente de Léo est consignée dans AGENTS et
 dans les décisions du tableau #591 ; le lien de référence est enregistré sans
 prétendre avoir consulté l'article.
@@ -66,3 +76,9 @@ Branche `codex/office-review-reminders-20261112`, distincte de #588. Ne pas
 reprendre l'économie, les tests réservés ni les autres PR de Claude. Attendre
 la CI et le créneau d'intégration, appliquer le gate officiel et vérifier la
 CI du commit fusionné avant de signaler FUSIONNÉ/validé. Pas d'auto-merge.
+
+Le13 novembre, Léo confirme qu'aucun test ne doit tourner dans un ancien mode.
+Les CI propres encore fondées sur l'ancienne sélection ont été annulées ;
+reprendre la batterie complète après réception de la politique Monde #639
+et du correctif du test amont `youth-matches-worker`. Une CI annulée ne valide
+pas une intégration.
