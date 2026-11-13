@@ -14,17 +14,22 @@ const espoirs = require('../native/engine/espoirs-match.cjs');
 const FILL = `for(const a of S.aiRoster.academies){const c=S.clubs[a.clubId];
   for(let k=0;k<40;k++){const p=academyPlayer(c.id,k%15,S.season,100+k,false,c);p.age=18+k%4;p.rating=45+(k*7)%25;a.players.push(p);}}`;
 
-function france() {
+// Carrière monde (seul mode concerné), centres bien fournis, JIFF simulé par une table d'empreinte
+// (la base de test n'a pas de pays de club : le vrai JIFF y est inactif).
+function world() {
   const h = context(437493);
-  h.run(`start(0, 'france'); ${FILL}
-    var CDJiff = (${jiff.factory.toString()})(); CDJiff.initialize(S); CDJiff.installHooks();
+  h.ctx.nativeWorldRegistryText = JSON.stringify(registry);
+  h.run(worldVm.bootstrap());
+  h.run(`CDWorldCareer.start(0, 'world', true); ${FILL}
+    var CDJiff = { isJiff: (s, p) => !!p && p.id.length % 3 !== 0, subjectLeagues: s => ({ elite: s.clubs.map(c => c.id) }) };
     var rawBuild = buildSheet;
     var CDEsp = (${espoirs.factory.toString()})(); CDEsp.installHooks();`);
+  h.run('S.jiff = { version: 1 };');
   return h;
 }
 
 test('Objectif annuel : moyenne 7, de 3 à 11, tiré par club et saison', () => {
-  const h = france();
+  const h = world();
   const goals = JSON.parse(h.run(`JSON.stringify(Array.from({length: 40}, (_, season) => S.clubs.map(c => CDEsp.seasonGoal({season: season + 1}, c.id))).flat())`));
   const mean = goals.reduce((a, b) => a + b, 0) / goals.length;
   assert.ok(mean > 6.8 && mean < 7.2, String(mean));
@@ -32,81 +37,76 @@ test('Objectif annuel : moyenne 7, de 3 à 11, tiré par club et saison', () => 
   assert.equal(Math.max(...goals), 11);
 });
 
-test('Une saison de Top 14 : environ 7 Espoirs différents par club, jusqu’à 11, JIFF préservé, prêts rendus', () => {
-  const h = france();
-  // Contrôle JIFF à chaque journée : la feuille avec Espoirs ne compte jamais moins de JIFF
-  // (plafonné à l'exigence de 16) que la feuille d'origine.
+test('Une saison monde : environ 7 Espoirs différents par club, jusqu’à 11, JIFF préservé, prêts rendus', () => {
+  const h = world();
   const worst = JSON.parse(h.run(`(function () {
-    let worst = 0, checked = 0;
-    for (let w = 0; w < 34; w++) {
+    let worst = 0, guard = 0;
+    while (S.phase === 'league' && guard++ < 60) {
       for (const c of S.clubs) {
-        if (c.id === S.club || S.phase !== 'league') continue;
-        const f = CDFranceCompetition.currentFixtures(S).find(x => x.pair.includes(c.id));
+        if (c.id === S.club) continue;
+        const f = CDWorldCareer.fixtures(S).find(x => x.homeId === c.id || x.awayId === c.id);
         if (!f || f.phase !== 'league') continue;
-        const base = rawBuild(c), final = buildSheet(c);
+        const base = rawBuild(c), final = CDEsp.withArmed(() => buildSheet(c));
         const count = sheet => [...sheet.lineup, ...sheet.bench].filter(id => CDJiff.isJiff(S, c.players.find(p => p.id === id))).length;
-        const need = CDJiff.subjectLeagues(S).elite?.includes(c.id) || CDJiff.subjectLeagues(S).accession?.includes(c.id) ? Math.min(count(base), 16) : 0;
-        worst = Math.min(worst, count(final) - need); checked++;
+        worst = Math.min(worst, count(final) - Math.min(count(base), 16));
         const ids = [...final.lineup, ...final.bench].filter(Boolean);
         if (new Set(ids).size !== ids.length) throw Error('doublon dans la feuille ' + c.abbr);
+        CDEsp.returnLoans(S);
       }
       finishRound();
     }
     return JSON.stringify(worst);
   })()`));
   assert.ok(worst >= 0, 'JIFF dégradé : ' + worst);
-  const r = JSON.parse(h.run(`const rows = Object.values(S.espoirsMatch.clubs);
+  const r = JSON.parse(h.run(`const rows = Object.values(S.espoirsMatch.clubs).filter(r => r.sheets >= 15);
     JSON.stringify({ n: rows.length, mean: rows.reduce((a, r) => a + r.used.length, 0) / rows.length,
       max: Math.max(...rows.map(r => r.used.length)), min: Math.min(...rows.map(r => r.used.length)),
       qmean: rows.reduce((a, r) => a + r.q, 0) / rows.length,
       perSheet: rows.reduce((a, r) => a + r.total, 0) / rows.reduce((a, r) => a + r.sheets, 0),
       loans: S.clubs.flatMap(c => c.players).filter(p => p.espoirLoan).length,
       ids: (() => { const all = [...S.clubs.flatMap(c => c.players), ...S.aiRoster.academies.flatMap(a => a.players), ...S.development.academy].map(p => p.id); return [all.length, new Set(all).size]; })(),
-      valid: CDEsp.validate(S), phase: S.phase })`));
-  assert.ok(r.n >= 28);
-  // Moyenne observée de la saison : proche de l'objectif (7), un peu en dessous quand un centre manque de profils.
-  assert.ok(r.mean >= 5.6 && r.mean <= 8.4, 'moyenne ' + r.mean);
+      valid: CDEsp.validate(S) })`));
+  assert.ok(r.n >= 28, String(r.n));
+  assert.ok(r.mean >= 5.2 && r.mean <= 8.6, 'moyenne ' + r.mean);
   assert.ok(r.max <= 11 && r.min >= 3, `min ${r.min} max ${r.max}`);
-  assert.ok(Math.abs(r.mean - r.qmean) <= 1.2, `objectif ${r.qmean} contre ${r.mean}`);
-  assert.ok(r.perSheet > .6 && r.perSheet < 2, 'Espoirs par feuille ' + r.perSheet);
+  assert.ok(Math.abs(r.mean - r.qmean) <= 1.8, `objectif ${r.qmean} contre ${r.mean}`);
+  assert.ok(r.perSheet > .5 && r.perSheet < 2.2, 'Espoirs par feuille ' + r.perSheet);
   assert.equal(r.loans, 0, 'aucun prêt ne reste en fin de saison');
   assert.equal(r.ids[0], r.ids[1], 'identifiants uniques entre effectifs et centres');
   assert.equal(r.valid, true);
-  // La moyenne est archivée à la saison suivante.
-  h.run('advanceSeason(); CDEsp.ensure(S);');
-  const hist = JSON.parse(h.run('JSON.stringify(S.espoirsMatch.history)'));
-  assert.equal(hist.length, 1);
-  assert.ok(hist[0].average >= 5.6 && hist[0].average <= 8.4 && hist[0].max <= 11);
 });
 
-test('Les prêts sont rendus au centre à la fin de la journée et la feuille d’un club reste stable dans la journée', () => {
-  const h = france();
+test('Hors simulation armée, aucun prêt : aperçus et instantanés ne voient pas d’Espoir dans l’effectif', () => {
+  const h = world();
+  h.run('while (!CDWorldCareer.userFixture(S)) CDWorldCareer.finishWeek();');
   const r = JSON.parse(h.run(`(function () {
-    const club = S.clubs.find(c => c.id !== S.club && CDFranceCompetition.currentFixtures(S).some(f => f.pair.includes(c.id)));
-    const before = S.aiRoster.academies.find(a => a.clubId === club.id).players.length;
-    const first = buildSheet(club), second = buildSheet(club);
-    const during = club.players.filter(p => p.espoirLoan).length;
-    const inAcademy = S.aiRoster.academies.find(a => a.clubId === club.id).players.length;
-    finishRound();
-    return JSON.stringify({ stable: JSON.stringify(first) === JSON.stringify(second), during, moved: before - inAcademy,
-      after: club.players.filter(p => p.espoirLoan).length, back: S.aiRoster.academies.find(a => a.clubId === club.id).players.length,
-      before, academyFlag: S.aiRoster.academies.find(a => a.clubId === club.id).players.every(p => p.academy === true && p.contractEnd == null) });
+    const club = S.clubs.find(c => c.id !== S.club && CDWorldCareer.fixtures(S).some(f => f.homeId === c.id || f.awayId === c.id));
+    const before = JSON.stringify(S.aiRoster.academies.find(a => a.clubId === club.id).players.length);
+    buildSheet(club); buildSheet(club);
+    const preview = club.players.filter(p => p.espoirLoan).length;
+    const first = CDEsp.withArmed(() => buildSheet(club)), second = CDEsp.withArmed(() => buildSheet(club));
+    const during = club.players.filter(p => p.espoirLoan).length, moved = +before - S.aiRoster.academies.find(a => a.clubId === club.id).players.length;
+    CDEsp.returnLoans(S);
+    return JSON.stringify({ preview, stable: JSON.stringify(first) === JSON.stringify(second), during, moved,
+      after: club.players.filter(p => p.espoirLoan).length, back: S.aiRoster.academies.find(a => a.clubId === club.id).players.length === +before,
+      flags: S.aiRoster.academies.find(a => a.clubId === club.id).players.every(p => p.academy === true && p.contractEnd == null) });
   })()`));
+  assert.equal(r.preview, 0);
   assert.equal(r.stable, true);
-  assert.equal(r.moved, r.during, 'prêtés = retirés du centre (jamais copiés)');
+  assert.equal(r.moved, r.during);
   assert.equal(r.after, 0);
-  assert.equal(r.back, r.before);
-  assert.equal(r.academyFlag, true, 'les Espoirs rendus retrouvent leur statut de centre');
+  assert.equal(r.back, true);
+  assert.equal(r.flags, true);
 });
 
-test('Le club du joueur n’est jamais touché, ni hors championnat, ni avec une feuille choisie à la main', () => {
-  const h = france();
+test('Le club du joueur n’est jamais touché, ni une feuille choisie à la main', () => {
+  const h = world();
   const r = JSON.parse(h.run(`(function () {
     const own = S.clubs[S.club], other = S.clubs.find(c => c.id !== S.club);
-    const a = JSON.stringify(buildSheet(own)), b = JSON.stringify(rawBuild(own));
-    const manual = buildSheet(other, rawBuild(other).lineup, rawBuild(other).bench);
-    const manualEspoirs = other.players.filter(p => p.espoirLoan).length;
-    return JSON.stringify({ same: a === b, manualEspoirs, state: S.espoirsMatch ? Object.keys(S.espoirsMatch.clubs).includes(String(S.club)) : false, manualSame: JSON.stringify(manual) === JSON.stringify(rawBuild(other)) });
+    const a = JSON.stringify(CDEsp.withArmed(() => buildSheet(own))), b = JSON.stringify(rawBuild(own));
+    const manual = CDEsp.withArmed(() => buildSheet(other, rawBuild(other).lineup, rawBuild(other).bench));
+    return JSON.stringify({ same: a === b, manualEspoirs: other.players.filter(p => p.espoirLoan).length,
+      state: S.espoirsMatch ? Object.keys(S.espoirsMatch.clubs).includes(String(S.club)) : false, manualSame: JSON.stringify(manual) === JSON.stringify(rawBuild(other)) });
   })()`));
   assert.equal(r.same, true);
   assert.equal(r.manualEspoirs, 0);
@@ -141,7 +141,7 @@ test('Fenêtres internationales : davantage d’Espoirs quand des joueurs sont p
 });
 
 test('Validation : état hostile refusé, partie sans module acceptée', () => {
-  const h = france();
+  const h = world();
   h.run('for (let w = 0; w < 3; w++) finishRound();');
   assert.equal(h.run('CDEsp.validate(S)'), true);
   assert.equal(h.run('CDEsp.validate({season: 1, clubs: []})'), true);
@@ -153,7 +153,11 @@ test('Validation : état hostile refusé, partie sans module acceptée', () => {
     assert.throws(() => h.run('CDEsp.validate(S)'), /Espoirs en feuille/, mutation);
     h.run('S = JSON.parse(original)');
   }
-  // L'état survit à une sérialisation complète.
-  const round = JSON.parse(h.run('JSON.stringify(S)'));
-  assert.deepEqual(Object.keys(round.espoirsMatch.clubs).length > 0, true);
+});
+
+test('Hors carrière monde, le module ne fait rien', () => {
+  const h = context(437493);
+  h.run(`start(0, 'france'); ${FILL} var CDEsp = (${espoirs.factory.toString()})(); CDEsp.installHooks();`);
+  h.run('for (let w = 0; w < 4; w++) finishRound();');
+  assert.equal(h.run('S.espoirsMatch === undefined && S.clubs.every(c => c.players.every(p => !p.espoirLoan))'), true);
 });

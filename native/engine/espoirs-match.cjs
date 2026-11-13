@@ -128,10 +128,10 @@ function factory(){
   }
   return out;
  }
- function returnLoans(s,keepKeyFor=null){
+ function returnLoans(s,keepKeyFor=null,only=null){
   let n=0;
   for(const c of s.clubs){
-   if(c.id===s.club)continue;
+   if(c.id===s.club||only&&!only.includes(c.id))continue;
    const loaned=c.players.filter(p=>p.espoirLoan);if(!loaned.length)continue;
    const live=s.live&&!s.live.finished&&s.live.pair?.includes(c.id);
    if(live)continue;
@@ -214,16 +214,35 @@ function factory(){
   const rows=Object.entries(s.espoirsMatch.clubs).map(([k,r])=>({club:+k,distinct:r.used.length,sheets:r.sheets,perSheet:r.sheets?r.total/r.sheets:0,windowSheets:r.window,windowPerSheet:r.window?r.windowTotal/r.window:0,lowSheets:r.low,lowPerSheet:r.low?r.lowTotal/r.low:0}));
   return rows;
  }
+ // Armé uniquement pendant la création d'un match simulé de l'ordinateur : les prêts n'existent alors
+// que le temps de la simulation et sont rendus dès la fin de ce match (applyMatchInjuries).
+ let armed=0;
+ const worldOn=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
+ function withArmed(fn){armed++;try{return fn();}finally{armed--;}}
  function installHooks(){
   if(typeof buildSheet==='function'&&!buildSheet.__espoirsMatch){
    const original=buildSheet,wrapped=function(c,preferred=[],preferredBench=[]){
     const sheet=original.apply(this,arguments);const s=state();
-    if(!s||!c||c.id===s.club||preferred.length||preferredBench.length||s.phase!=='league'||!s.aiRoster?.academies?.length||!Array.isArray(s.clubs))return sheet;
-    // Les clubs de l'ordinateur seulement, et jamais pendant une reprise ou une validation.
+    if(!armed||!s||!c||c.id===s.club||preferred.length||preferredBench.length||s.phase!=='league'||!worldOn(s)||!s.aiRoster?.academies?.length||!Array.isArray(s.clubs))return sheet;
     if(typeof validatingStartup!=='undefined'&&validatingStartup)return sheet;
     return sheetFor(s,c,sheet);
    };
    Object.assign(wrapped,original);wrapped.__espoirsMatch=true;buildSheet=wrapped;
+  }
+  if(typeof createRugbyMatch==='function'&&!createRugbyMatch.__espoirsMatch){
+   const original=createRugbyMatch,wrapped=function(pair,legacy,automated){
+    if(automated!==true)return original.apply(this,arguments);
+    const args=arguments,self=this;
+    return withArmed(()=>original.apply(self,args));
+   };
+   Object.assign(wrapped,original);wrapped.__espoirsMatch=true;createRugbyMatch=wrapped;
+  }
+  if(typeof applyMatchInjuries==='function'&&!applyMatchInjuries.__espoirsMatch){
+   const original=applyMatchInjuries,wrapped=function(l){
+    try{return original.apply(this,arguments);}
+    finally{const s=state();if(s&&active(s)&&l?.pair)returnLoans(s,null,l.pair);}
+   };
+   Object.assign(wrapped,original);wrapped.__espoirsMatch=true;applyMatchInjuries=wrapped;
   }
   if(typeof finishRound==='function'&&!finishRound.__espoirsMatch){
    const original=finishRound,wrapped=function(){
@@ -239,6 +258,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences};
+ return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences};
 }
 module.exports={files,commands,factory};
