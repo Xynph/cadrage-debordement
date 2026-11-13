@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');

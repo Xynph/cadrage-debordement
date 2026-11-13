@@ -89,7 +89,7 @@ func _build() -> void:
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",130],["FIN DE CONTRAT",1132,"Échéance",124],["NOTE",1262,"Moyenne",56],["FORME",1326,"Forme",140],["MIN.",1472,"Minutes",58],["STATUT",1538,"Statut",128]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",130],["FIN DE CONTRAT",1132,"Échéance",124],["MOY.",1262,"Moyenne",56],["FORME",1326,"Forme",140],["MIN.",1472,"Minutes",58],["STATUT",1538,"Statut",128]]
 	if state.family==U.WATCH_FILTER:
 		columns = columns.slice(0,9) + [["MOTIF DE SURVEILLANCE",994,"Motif",262]] + columns.slice(11)
 	for column: Array in columns:
@@ -295,7 +295,7 @@ func _sort_header_state() -> void:
 		var detail := "par famille puis poste" if key == "Poste" else "par "+key
 		header.button.tooltip_text = "Tri "+direction+" "+detail+" · cliquer pour inverser" if active else "Trier "+detail+" · valeurs inconnues en dernier"
 		if key == "Niveau": header.button.tooltip_text += "\nNiveau global du joueur / 100."
-		if key == "Moyenne": header.button.tooltip_text += "\nNote de match moyenne de la saison (1 à 10, 6,5 au coup d’envoi)."
+		if key == "Moyenne": header.button.tooltip_text += "\nMoyenne de la saison en cours (notes de match de 1 à 10)."
 		if key == "Forme": header.button.tooltip_text += "\nCinq dernières notes de match, la plus récente à droite."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
 
@@ -399,7 +399,7 @@ func _row(player:Dictionary,index:int) -> void:
 	if moyenne != null:
 		var pastille := Notes.pastille(row,Rect2(1264,5,52,24),float(moyenne),0.52)
 		pastille.name = "RosterNoteAverage"
-		pastille.tooltip_text = "Moyenne de la saison : %s sur %d match%s" % [Notes.texte_note(moyenne),int(notes.get("matchs",0)),"s" if int(notes.get("matchs",0))>1 else ""]
+		pastille.tooltip_text = "Moyenne de la saison en cours : %s sur %d match%s" % [Notes.texte_note(moyenne),int(notes.get("matchs",0)),"s" if int(notes.get("matchs",0))>1 else ""]
 		pastille.mouse_filter = Control.MOUSE_FILTER_PASS
 	else:
 		D.text(row,1290,24,"—",21,C.MUTED,500,52,HORIZONTAL_ALIGNMENT_CENTER).name = "RosterNoteAverage"

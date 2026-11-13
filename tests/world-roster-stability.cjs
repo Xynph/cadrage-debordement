@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Carrière mondiale (58 clubs) sur trois saisons par l'API publique du worker :
 // les effectifs des clubs gérés restent autour de leur cible, des transferts ont
 // lieu entre clubs gérés dans des bornes raisonnables, et la carrière s'exporte et

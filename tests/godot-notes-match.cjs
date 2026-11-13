@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde (préparation Monde à écrire, voir #621).
 // Notes de match dans le vrai jeu Godot : effectif (moyenne, forme) et fiche joueur (moyenne,
 // forme, historique). Le profil est préparé par le vrai moteur (quelques journées déléguées).
 const assert = require('node:assert/strict');

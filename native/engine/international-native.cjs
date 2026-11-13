@@ -19,7 +19,9 @@ const limit = 45;
 module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const career = createInternationalCareer(competitions, callups, facts);
   const teams = teamIds.map(id => ({ id, name: facts.nations[id]?.[0] ?? id, flagCode: facts.nations[id]?.[1] ?? null }));
-  const teamNames = Object.fromEntries(teams.map(team => [team.id, team.name]));
+  // Les Lions jouent des tests sans être une sélection que l'on peut diriger.
+  const teamNames = { [competitions.LIONS]: competitions.TEAM_NAMES[competitions.LIONS], ...Object.fromEntries(teams.map(team => [team.id, team.name])) };
+  const lionsTeam = { id: competitions.LIONS, name: teamNames[competitions.LIONS], flagCode: null };
   const read = (source = 'S') => JSON.parse(run(`JSON.stringify(${source}?.national??null)`));
   const supported = () => !!run('CDWorldCareer.active(S)&&S.worldMode.day!==undefined');
   const worldDay = () => run('CDWorldCareer.calendarToday(S)');
@@ -37,6 +39,40 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     ctx.nativeNationalWrite = profile;
     try { run('S.national=JSON.parse(JSON.stringify(nativeNationalWrite))'); }
     finally { delete ctx.nativeNationalWrite; }
+    noterSelections(profile);
+  }
+
+  // Notes des matchs internationaux joués (match-notes.cjs, même calcul que les clubs) : les deux
+  // feuilles d'une rencontre et son score, transmis au moteur qui ignore les rencontres déjà notées.
+  // Lecture seule de la carrière internationale : aucun tirage, aucun résultat changé.
+  function noterSelections(profile) {
+    const state = profile?.career;
+    if (!state || !Array.isArray(state.appearances) || !run("typeof CDMatchNotes!=='undefined'&&!!S")) return;
+    const results = {};
+    for (const year of Object.values(state.results || {})) if (year && typeof year === 'object') Object.assign(results, year);
+    // Seules les rencontres depuis la dernière notée sont transmises (le moteur ignore les doublons).
+    const depuis = JSON.parse(run("JSON.stringify(Object.values(S.matchNotes?.selection?.vus||{}).sort().at(-1)||'')"));
+    const parFixture = new Map();
+    for (const row of state.appearances) (parFixture.get(row.fixtureId) || parFixture.set(row.fixtureId, []).get(row.fixtureId)).push(row);
+    const matchs = [];
+    for (const [fixtureId, rows] of parFixture) {
+      const result = results[fixtureId];
+      if (rows.length !== 2 || !result || rows[0].date < depuis) continue;
+      // Côté vainqueur : le score le plus haut (égalité : ordre indifférent).
+      const haut = result.home >= result.away ? ['home', 'away'] : ['away', 'home'];
+      const gagnant = result.winnerId ?? null;
+      const ordre = gagnant && rows[1].nation === gagnant ? [rows[1], rows[0]] : rows;
+      const cote = k => (gagnant ? haut[k] : (k === 0 ? 'home' : 'away'));
+      const edition = /^(.*?-\d{4})(?:-|$)/.exec(fixtureId)?.[1] || fixtureId;
+      const nomCompetition = competitionName(edition);
+      matchs.push({ cle: fixtureId, date: rows[0].date, competition: nomCompetition === 'la fenêtre internationale' ? 'Test-match' : nomCompetition,
+        equipes: ordre.map((row, k) => ({ nation: row.nation, nom: teamNames[row.nation] || row.nation, ids: row.playedIds,
+          points: result[cote(k)], essais: result[cote(k) + 'Tries'] })) });
+    }
+    if (!matchs.length) return;
+    ctx.nativeNotesSelection = matchs;
+    try { run('CDMatchNotes.enregistrerSelection(nativeNotesSelection)'); }
+    finally { delete ctx.nativeNotesSelection; }
   }
 
   function append(profile, messages) {
@@ -46,6 +82,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
   }
 
   function competitionName(id) {
+    if (competitions.isExtraEdition(id)) return competitions.familyName(id);
     const family = editionsByFamily.get(id.replace(/-\d{4}$/, ''));
     if (!family) return 'la fenêtre internationale';
     const year = /-(\d{4})$/.exec(id)?.[1];
@@ -221,7 +258,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const relevant = new Map(players.filter(p => managed.club && p.clubId === clubId).concat(overview.squad).map(p => [p.id,p]));
     const current = overview.currentFixture?.result === null ? overview.currentFixture : null;
     model.international = {
-      role:managed.mode,nation:managed.nation,teams,mail:profile.mail.slice().reverse(),
+      role:managed.mode,nation:managed.nation,teams,teamNames,mail:profile.mail.slice().reverse(),
       jobs:manager.nationalOffers(profile.role,teamIds).map(nation => ({nation,name:teamNames[nation]})),
       editions:overview.competitions.map(item=>({...item,tables:item.standings})),
       callups:overview.callups.filter(camp=>camp.from<=date&&date<=camp.through).map(camp=>({...camp,
@@ -230,7 +267,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       currentManagedFixture:current,nextManagedFixture:current??overview.nextFixture,squad:overview.squad,sheet:overview.sheet,
       choicesBySlot:overview.choicesBySlot,
       availability:projectAvailability({date,clubManaged:managed.club,clubId,players,callups:overview.callups,
-        releaseWindows:overview.releaseWindows,editions:overview.competitions,teams}),
+        releaseWindows:overview.releaseWindows,editions:overview.competitions,teams:[...teams,lionsTeam]}),
     };
     if (ended()) {
       const waiting = date < nextOpening();

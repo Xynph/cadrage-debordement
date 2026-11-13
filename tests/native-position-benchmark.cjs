@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 // Sequential, bounded worker benchmark. Optional baseline must be a local checkout.
 const fs=require('node:fs'),path=require('node:path');

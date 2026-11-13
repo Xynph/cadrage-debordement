@@ -51,7 +51,7 @@ const PART_POINTS=0.5,PART_GROSSES=0.5,BONUS_GROSSES=10,MEME_TYPE=8,REPETITION=1
 const DUREES=Object.freeze({
  kickoff:2.5,drop22:2.5,goalLine:2.5,reception:2,carry:1,kick:2.5,touch:1.5,
  lineout:1.5,scrum:1.5,'setpiece-win-touche':2,'setpiece-win-melee':3,'setpiece-loss':2.5,maul:5,
- turnover:2,'hand-fault':1.8,penalty:1.5,card:2.5,goal:4.5,miss:4,try:3.5,transformation:4,ingoal:3,
+ turnover:2,'hand-fault':1.8,'quick-tap':2,penalty:1.5,card:2.5,goal:4.5,miss:4,try:3.5,transformation:4,ingoal:3,
  break:1.5,end:2.5
 });
 const COURSE=6.5,ENTREE=0.6,SORTIE=0.8,COUPE=0.3,RALENTI=6;
@@ -181,6 +181,8 @@ function action(l,lignes){
  if(k==='kick'&&l.depuis!==null&&d!==null&&d<=22&&Math.abs(l.x-l.depuis)>=20)return {type:'jeu_au_pied_dangereux',base:56};
  if(k==='kick'&&l.depuis!==null&&Math.abs(l.x-l.depuis)>=35)return {type:'long_jeu_au_pied',base:26};
  if(k==='penalty')return {type:'penalite_sifflee',base:d!==null&&d<=45?30:18};
+ // Pénalité jouée vite à la main : un choix du moteur qui relance le jeu, surtout près de la ligne.
+ if(k==='quick-tap')return {type:'penalite_jouee_a_la_main',base:d!==null&&d<=12?68:d!==null&&d<=40?58:50};
  if(k==='hand-fault')return {type:'faute_de_main',base:d!==null&&d<=22?38:12};
  if(k==='touch')return {type:'sortie_en_touche',base:8};
  if(k==='reception'||k==='setpiece-win'||k==='lineout'||k==='scrum'||k==='drop22'||k==='goalLine')return {type:'jeu_courant',base:10,lancement:LANCEMENTS.has(k)};
@@ -249,7 +251,9 @@ function fenetre(lignes,ancre,avant,apres,plancher=0,plafond=lignes.length-1){
  if(ancre.debut===undefined&&!ancre.lancement)for(let j=ancre.i-1;j>=plancher&&vus<avant;j--){
   const l=lignes[j];if(l.bandeau)continue;
   // La pénalité qui précède un tir au but ou un carton appartient à l'action.
-  const chaine=l.kind==='penalty'&&['penalite_reussie','penalite_manquee','carton_jaune','carton_rouge'].includes(ancre.type)||l.kind==='card'&&l.incident;
+  // Le coup de sifflet qui précède une pénalité jouée à la main aussi (la pénalité est jouée vite).
+  const tape=l.kind==='penalty'&&lignes.slice(j+1).find(q=>!q.bandeau)?.kind==='quick-tap';
+  const chaine=l.kind==='penalty'&&['penalite_reussie','penalite_manquee','carton_jaune','carton_rouge','penalite_jouee_a_la_main'].includes(ancre.type)||l.kind==='card'&&l.incident||tape;
   if(FINS.has(l.kind)&&!chaine||lignes[debut].minute-l.minute>1)break; // jamais plus d'une minute d'écart entre deux plans
   debut=j;if(!chaine)vus++; // le coup de sifflet et le carton ne consomment pas l'amorce
   if(LANCEMENTS.has(l.kind)||l.kind==='turnover'||l.kind==='setpiece-loss'||l.kind==='penalty')break;

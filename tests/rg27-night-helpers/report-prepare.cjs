@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Build an actual disposable report checkpoint with the production bridge only.
 // No harness VM globals, rewritten projection, handcrafted save or hidden ID.
 const fs = require('node:fs');

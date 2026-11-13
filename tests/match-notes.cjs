@@ -46,8 +46,15 @@ test('Calcul : déterministe, sans tirage, base 6,5, bornes 1–10, remplaçant 
   assert.ok(r1.joueurs.a14.note > r1.joueurs.a1.note, 'le marqueur passe devant');
   assert.ok(r1.joueurs.b3.note < 6.5, 'carton : note en baisse');
   assert.equal(r1.joueurs.a14.essais, 1);
+  // Homme du match : performance relative au poste (sans famille connue : la meilleure note).
   const meilleure = Math.max(...Object.values(r1.joueurs).filter(n => n.minutes >= 30).map(n => n.note));
-  assert.equal(r1.joueurs[r1.hommeDuMatch].note, meilleure, 'homme du match : meilleure note');
+  assert.equal(r1.joueurs[r1.hommeDuMatch].note, meilleure, 'homme du match : meilleure note à poste inconnu');
+  // Avec les postes : un pilier au-dessus de la moyenne des piliers passe devant un troisième
+  // ligne à note égale (normalisation par poste).
+  const familles = {}; for (let k = 1; k <= 15; k++) { familles['a' + k] = 6; familles['b' + k] = 6; }
+  familles.a1 = 0; familles.a14 = 3;
+  const tete = N.noter([sc('carry', 0, 'a1', { to: { x: 75, y: 40 } }), sc('carry', 0, 'a14', { to: { x: 75, y: 40 } })], { cotes, minutes, familles, score: [0, 0], fini: true });
+  assert.equal(tete.hommeDuMatch, 'a1', 'normalisation par poste');
   // Le direct (match-direct.cjs) appelle le même calcul.
   const D = require('../native/engine/match-direct.cjs');
   const lignes = H.normaliser(journal);
@@ -287,4 +294,68 @@ test('Équipe-type : pack absent = identités du jeu ; pack installé = logos du
       assert.equal(retour.clubLife.matchNotes.equipeType.ligues[0].journee.joueurs[0].club.presentation.logoPath, undefined, 'retour au jeu de base : écusson original');
     } finally { fs.rmSync(fichier, { force: true }); }
   } finally { jeu.fermer(); }
+});
+
+test('Matchs internationaux : même calcul, sans tirage, enregistrés à part, sans doublon, effets bornés', () => {
+  const c = context(11);
+  c.run("start(0,'fiction')");
+  c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  const r = JSON.parse(c.run(`(()=>{const ids=k=>S.clubs[k].players.slice(0,20).map(p=>p.id);
+    const m=[{cle:'six-nations-2027-r1-1',date:'2027-02-05',competition:'Tournoi des Six Nations 2027',equipes:[{nation:'FRA',nom:'France',ids:ids(0),points:27,essais:3},{nation:'ENG',nom:'Angleterre',ids:ids(1),points:13,essais:1}]}];
+    const avant=Math.random;let tirages=0;Math.random=()=>{tirages++;return avant()};
+    const n1=dom.enregistrerSelection(m),n2=dom.enregistrerSelection(m);Math.random=avant;
+    for(let k=2;k<=4;k++)dom.enregistrerSelection([{...m[0],cle:'test-'+k,date:'2027-0'+(k+2)+'-01'}]);
+    dom.validate(S);const id=ids(0)[0],p=dom.project();
+    return JSON.stringify({n1,n2,tirages,lignes:S.matchNotes.selection.lignes[id].length,essais:Object.values(S.matchNotes.selection.lignes).reduce((a,d)=>a+d[0][5],0),hdm:Object.values(S.matchNotes.selection.lignes).reduce((a,d)=>a+d[0][6],0),selection:dom.effets.selection(id),valeur:dom.effets.valeur(id),vus:Object.keys(S.matchNotes.selection.vus).length,proj:p.joueurs[id]?.selection?.matchs??null})})()`));
+  assert.equal(r.n1, 1); assert.equal(r.n2, 0, 'une rencontre déjà notée est ignorée');
+  assert.equal(r.tirages, 0, 'aucun tirage');
+  assert.equal(r.lignes, 4, 'historique « Sélection » du joueur');
+  assert.equal(r.essais, 4, 'essais attribués = essais du score (3 + 1)');
+  assert.equal(r.hdm, 1, 'un homme du match');
+  assert.ok(r.selection >= -1.5 && r.selection <= 2 && r.valeur >= 0.92 && r.valeur <= 1.12, 'effets dans les bornes');
+  assert.equal(r.vus, 4);
+  // Déterminisme : même entrée, mêmes notes dans une autre carrière identique.
+  const d = context(11); d.run("start(0,'fiction')"); d.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  const une = k => JSON.parse(k.run(`(()=>{const ids=k=>S.clubs[k].players.slice(0,20).map(p=>p.id);dom.enregistrerSelection([{cle:'x',date:'2027-02-05',competition:'Test-match',equipes:[{nation:'FRA',nom:'France',ids:ids(0),points:20,essais:2},{nation:'ENG',nom:'Angleterre',ids:ids(1),points:20,essais:2}]}]);return JSON.stringify(S.matchNotes.selection.lignes)})()`));
+  const e = context(11); e.run("start(0,'fiction')"); e.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const dom=(${N.factory.toString()})();`);
+  assert.deepEqual(une(d), une(e));
+  // Sauvegarde sans bloc Sélection : valide.
+  c.run('delete S.matchNotes.selection;dom.validate(S)');
+});
+
+test('Carrière internationale : le match joué par la sélection est noté et rangé dans « Sélection »', () => {
+  const vm = require('node:vm');
+  const createNativeInternational = require('../native/engine/international-native.cjs');
+  const joueur = { id: 'lnr:hook', name: 'Joueur de référence', pos: 'Talonneur', fam: 1, age: 29, rating: 85, condition: 100, injury: 0,
+    primaryPosition: 2, primaryPositions: [2], secondaryPositions: [], positionRatings: { 2: 85 }, qualifiedFrontRowPositions: [2] };
+  const facts = { nations: { FRA: ['France', 'fr'] }, players: { [joueur.id]: { seniorNation: 'FRA', seniorCaps: 5 } } };
+  let date = '2027-01-30';
+  const ctx = vm.createContext({
+    S: { club: 0, season: 1, clubs: [{ id: 0, players: [joueur] }], phase: 'league', worldMode: { day: 0 } },
+    CDWorldCareer: { active: () => true, calendarToday: () => date, nextOpening: () => '2027-08-16' },
+    roleNote: p => p.rating,
+    nativePositionAptitudes: { project: p => Object.fromEntries(['primaryPosition', 'primaryPositions', 'secondaryPositions', 'positionRatings', 'qualifiedFrontRowPositions'].map(k => [k, p[k]])) },
+  });
+  const run = source => vm.runInContext(source, ctx);
+  run(`var CDMatchNotesMoteur=(${N.moteur.toString()})();var CDMatchNotes=(${N.factory.toString()})();`);
+  const international = createNativeInternational(run, ctx, facts, true);
+  international.initialize(42, { nationalRole: 'dual', nation: 'FRA' });
+  const avance = () => { international.advance(international.read().career.date); date = new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10); };
+  while (international.read().career.date < '2027-02-06') avance();
+  const modele = { club: { id: 0 }, meta: { calendarToday: date, canAdvanceSeason: false } };
+  international.project(modele);
+  const match = modele.international.currentManagedFixture;
+  const resultat = () => JSON.stringify(Object.values(international.read().career.results).map(an => an[match.id]).find(Boolean));
+  international.command('national_play_match', { fromDate: match.date, fixtureId: match.id });
+  const lignes = JSON.parse(run('JSON.stringify(S.matchNotes.selection.lignes["lnr:hook"]||[])'));
+  assert.equal(lignes.length, 1, 'le joueur du club a sa note de sélection');
+  assert.equal(lignes[0][0], '2027-02-06');
+  assert.ok(lignes[0][4] >= 10 && lignes[0][4] <= 100);
+  assert.match(lignes[0][2], /Six Nations/);
+  // Notes enregistrées sans toucher au résultat ni à la carrière internationale.
+  const apres = resultat();
+  run('CDMatchNotes.validate(S)');
+  avance();
+  assert.equal(JSON.parse(run('JSON.stringify(S.matchNotes.selection.lignes["lnr:hook"])')).length, 1, 'pas de doublon au jour suivant');
+  assert.equal(resultat(), apres, 'résultat du match international inchangé');
 });

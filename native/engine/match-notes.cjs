@@ -36,6 +36,15 @@ function moteur(){
   });
   return choisi;
  }
+ // Barème (étalonné sur des matchs simulés, docs/notes-de-match-20261113.md).
+ const B={course:.03,metresPar:24,metresMax:1.5,franchissement:.6,essai:1.5,essaiEquipe:.05,essaiSubi:-.45,
+  plaquage:.08,plaquageDomine:.05,plaquageManque:-.45,recuperation:.65,ballonPerdu:-.3,reception:.06,pied:.04,piedLong:.3,cinquante22:.5,
+  but:.4,butManque:-.3,toucheGagnee:.045,meleeGagnee:.06,toucheVolee:.1,meleeVolee:.12,touchePerdue:-.09,meleePerdue:-.1,volee:.35,
+  jaune:-1.4,rouge:-2.8,penalite:-.45,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,base:0,reference:0};
+ // Décalage attendu et écart-type de l'impact par famille de poste (FAMILIES : 0 pilier,
+ // 1 talonneur, 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier,
+ // 7 centre, 8 arrière), mesurés sur un match complet.
+ const POSTE={0:[0.27,0.97],1:[-0.72,1.59],2:[1.57,1.51],3:[2.03,1.69],4:[0.09,1.38],5:[0.99,1.34],6:[0.47,1.17],7:[0.39,1.3],8:[-0.01,1.74]};
  const arrondi=n=>Math.round(n*10)/10;
  const borne=(n,a,b)=>Math.max(a,Math.min(b,n));
  // Note affichée d'un total brut (impact) : compression douce autour de la base.
@@ -47,7 +56,7 @@ function moteur(){
   const cotes=contexte.cotes||{},minutes=contexte.minutes||{},niveaux=contexte.niveaux||{};
   const camp=contexte.camp===0||contexte.camp===1?contexte.camp:null;
   const joueurs={};
-  const fiche=(id,cote)=>joueurs[id]||(joueurs[id]={cote,brut:0,faits:0,essais:0,metres:0,plaquages:0,manques:0,courses:0,franchissements:0,recuperations:0,buts:0,cartons:0,minutes:0,note:NOTE_DEPART});
+  const fiche=(id,cote)=>joueurs[id]||(joueurs[id]={cote,brut:0,faits:0,essais:0,metres:0,plaquages:0,manques:0,courses:0,franchissements:0,recuperations:0,pertes:0,penalites:0,buts:0,cartons:0,minutes:0,note:NOTE_DEPART});
   for(const [id,cote] of Object.entries(cotes))if(cote===0||cote===1)fiche(String(id),cote);
   const surLeTerrain=(s,c)=>Array.isArray(s?.on?.[c])?s.on[c].filter(x=>x!=null).map(String):[];
   // Joueur nommé par un fait : son équipe est celle de la feuille, sinon celle du terrain.
@@ -57,7 +66,7 @@ function moteur(){
    if(!joueurs[id]){const c=[0,1].find(c=>surLeTerrain(sceneCourante,c).includes(id));if(c===undefined)return null;fiche(id,c);}
    const n=joueurs[id];n.brut+=valeur;n.faits++;if(fait)n[fait]++;return n;
   };
-  let score=[0,0],dernierScore=null;
+  let score=[0,0],dernierScore=null;const porteur=[null,null],buteurPied=[null,null];
   for(let i=0;i<(journal||[]).length;i++){
    const e=journal[i]||{},s=e.scene;if(!s||typeof s!=='object')continue;
    if(Array.isArray(s.score)&&s.score.length===2)dernierScore=[s.score[0],s.score[1]];
@@ -69,61 +78,77 @@ function moteur(){
     // Course stoppée (moins de 22 m) : plaquage réussi ; franchissement : plaquage manqué
     // (même règle que les chiffres d'équipe de l'entracte). Plaqueur nommé par le moteur (fait
     // `tackler`, le même que la 3D), sinon déduit de la place défensive (anciens journaux).
-    if(tx!==null){const def=(s.on?.[1-equipe]||[]).map(String),nomme=s.tackler!=null&&def.includes(String(s.tackler))?String(s.tackler):null;const tacle=nomme??plaqueur(s.on?.[1-equipe],gain,s.to?.y,i);if(gain<22)ajoute(tacle,.05,'plaquages');else ajoute(tacle,-.16,'manques');}
-    const n=ajoute(s.actor,.03+Math.min(1.1,gain/32)+(gain>=22?.3:0),'courses');
+    if(tx!==null){const def=(s.on?.[1-equipe]||[]).map(String),nomme=s.tackler!=null&&def.includes(String(s.tackler))?String(s.tackler):null;const tacle=nomme??plaqueur(s.on?.[1-equipe],gain,s.to?.y,i);if(gain<22)ajoute(tacle,B.plaquage+(gain<2?B.plaquageDomine:0),'plaquages');else ajoute(tacle,B.plaquageManque,'manques');}
+    const n=ajoute(s.actor,B.course+Math.min(B.metresMax,gain/B.metresPar)+(gain>=22?B.franchissement:0),'courses');
     if(n){n.metres+=gain;if(gain>=22)n.franchissements++;}
+    if(s.actor!=null)porteur[equipe]=String(s.actor);
     continue;
    }
    if(kind==='try'&&equipe!==null){
-    ajoute(s.actor,1.05,'essais');
-    for(const id of surLeTerrain(s,equipe))if(joueurs[id])joueurs[id].brut+=.05;
-    if(s.origin==='open')ajoute(plaqueur(s.on?.[1-equipe],30,s.to?.y),-.15,'manques');
+    ajoute(s.actor,B.essai,'essais');
+    for(const id of surLeTerrain(s,equipe))if(joueurs[id])joueurs[id].brut+=B.essaiEquipe;
+    if(s.origin==='open')ajoute(plaqueur(s.on?.[1-equipe],30,s.to?.y),B.essaiSubi,'manques');
     continue;
    }
-   if(kind==='turnover'){ajoute(s.actor,.28,'recuperations');const n=joueurs[String(s.actor)];if(n&&(equipe===null||n.cote===equipe))n.plaquages++;continue;}
-   if(kind==='reception'){ajoute(s.actor,.06);continue;}
-   if(kind==='kick'){ajoute(s.actor,.04+(gain>=30?.12:0));continue;}
+   if(kind==='turnover'){ajoute(s.actor,B.recuperation,'recuperations');const n=joueurs[String(s.actor)];if(n&&(equipe===null||n.cote===equipe))n.plaquages++;
+    // Ballon perdu : le dernier porteur de l'équipe qui le perd.
+    if(equipe!==null&&porteur[1-equipe])ajoute(porteur[1-equipe],B.ballonPerdu,'pertes');continue;}
+   if(kind==='reception'){ajoute(s.actor,B.reception);continue;}
+   if(kind==='kick'){ajoute(s.actor,B.pied+(gain>=30?B.piedLong:0));if(equipe!==null&&s.actor!=null)buteurPied[equipe]=String(s.actor);continue;}
+   if(kind==='touch'&&s.cause==='50-22'&&equipe!==null){ajoute(s.actor??buteurPied[equipe],B.cinquante22);continue;}
    if(kind==='kickoff'||kind==='drop22'||kind==='goalLine'){ajoute(s.actor,.02);continue;}
-   if(kind==='goal'){ajoute(s.actor,.3,'buts');continue;}
-   if(kind==='miss'){if(s.actor!=null)ajoute(s.actor,-.18);continue;}
+   if(kind==='goal'){ajoute(s.actor,B.but,'buts');continue;}
+   if(kind==='miss'){if(s.actor!=null)ajoute(s.actor,B.butManque);continue;}
    // Conquête : la touche (départ au bord, y ≤ 4) crédite talonneur et sauteurs, la mêlée la
    // première ligne et les deuxième ligne ; un ballon perdu pèse sur les mêmes postes adverses.
    if((kind==='setpiece-win'||kind==='setpiece-loss')&&equipe!==null){
     const touche=Number.isFinite(s.from?.y)&&s.from.y<=4,postes=touche?{1:1,3:1,4:1}:{0:1,1:1,2:1,3:.4,4:.4};
     const credit=(c,valeur)=>(s.on?.[c]||[]).forEach((id,poste)=>{if(id!=null&&postes[poste]){const n=joueurs[String(id)];if(n)n.brut+=valeur*postes[poste];}});
-    if(kind==='setpiece-win'){credit(equipe,touche?.045:.06);ajoute(s.actor,.03);}
-    else{credit(equipe,touche?.07:.08);credit(1-equipe,touche?-.06:-.07);ajoute(s.actor,.15);}
+    if(kind==='setpiece-win'){credit(equipe,touche?B.toucheGagnee:B.meleeGagnee);ajoute(s.actor,.03);}
+    else{credit(equipe,touche?B.toucheVolee:B.meleeVolee);credit(1-equipe,touche?B.touchePerdue:B.meleePerdue);ajoute(s.actor,B.volee);}
     continue;
    }
-   if(kind==='card'&&s.incident){ajoute(s.actor,s.card==='red'||s.card==='red20'||s.cause==='red'?-2:-.8,'cartons');continue;}
-   // Pénalité ou faute de main : fautif non nommé, léger poids collectif (avants pour la pénalité).
-   if(kind==='penalty'&&equipe!==null){const fautifs=surLeTerrain(s,1-equipe);fautifs.forEach((id,k)=>{if(joueurs[id])joueurs[id].brut-=(s.on?.[1-equipe]?.indexOf(id)??9)<8?.03:.012;});continue;}
-   if(kind==='hand-fault'&&equipe!==null){for(const id of surLeTerrain(s,equipe))if(joueurs[id])joueurs[id].brut-=.012;continue;}
+   if(kind==='card'&&s.incident){ajoute(s.actor,s.card==='red'||s.card==='red20'||s.cause==='red'?B.rouge:B.jaune,'cartons');continue;}
+   // Pénalité concédée : fautif déduit de la place défensive (au contact, sans tirage), petit
+   // poids collectif pour les avants ; faute de main : le dernier porteur, poids collectif léger.
+   if(kind==='penalty'&&equipe!==null){
+    const fautif=plaqueur(s.on?.[1-equipe],3,s.to?.y,i);ajoute(fautif,B.penalite,'penalites');
+    for(const id of surLeTerrain(s,1-equipe))if(joueurs[id])joueurs[id].brut-=(s.on?.[1-equipe]?.indexOf(id)??9)<8?.02:.008;
+    continue;
+   }
+   if(kind==='hand-fault'&&equipe!==null){if(porteur[equipe])ajoute(porteur[equipe],B.enAvant,'pertes');for(const id of surLeTerrain(s,equipe))if(joueurs[id])joueurs[id].brut-=.01;continue;}
   }
   if(Array.isArray(contexte.score)&&contexte.score.length===2)score=contexte.score;else if(dernierScore)score=dernierScore;
   const duree=Math.max(1,Number.isFinite(contexte.duree)?contexte.duree:80);
+  const familles=contexte.familles||{};
   for(const [id,n] of Object.entries(joueurs)){
    const m=Number.isFinite(minutes[id])?Math.max(0,minutes[id]):0;n.minutes=Math.round(m);
    const part=Math.min(1,m/Math.max(80,duree));
    const ecart=(score[n.cote]||0)-(score[1-n.cote]||0);
    // Collectif : écart au score (borné) et résultat, une fois le match fini.
-   const collectif=borne(ecart/32,-.45,.45)+(contexte.fini?(ecart>0?.2:ecart<0?-.2:0):0);
+   const collectif=borne(ecart/32,-B.ecartMax,B.ecartMax)+(contexte.fini?(ecart>0?B.resultat:ecart<0?-B.resultat:0):0);
    const niveau=Number.isFinite(niveaux[id])?borne(niveaux[id],-1,1)*.35:0;
-   // Étalonnage (saison simulée, docs/notes-de-match-20261113.md) : moyenne ≈ 6,6, écart-type ≈ 0,75.
-   n.note=echelle(.72*n.brut-.28*part+(collectif+niveau)*part);
+   // Poste : décalage par famille (les postes n'ont pas les mêmes occasions de faits dans le
+   // journal), pour que chaque poste ait la même moyenne attendue (étalonnage, voir la doc).
+   const f=familles[id],decalage=Number.isInteger(f)&&POSTE[f]?POSTE[f][0]:0;
+   n.impact=B.echelle*n.brut+(B.base-decalage)*part+(collectif+niveau)*part;
+   n.famille=Number.isInteger(f)?f:null;
+   n.note=echelle(n.impact);
    n.metres=Math.round(n.metres);
   }
-  // Homme du match (fin de match) : meilleure note parmi ceux qui ont joué 30 minutes ou plus ;
-  // à égalité, le vainqueur, puis le plus de faits, puis l'identifiant.
+  // Homme du match (fin de match), au moins 30 minutes : meilleure performance relative à son
+  // poste (écart à la moyenne attendue du poste, rapporté à son écart-type) ; à égalité, la
+  // meilleure note, le vainqueur, le plus de faits, puis l'identifiant.
+  const relatif=n=>{const r=Number.isInteger(n.famille)&&POSTE[n.famille]?POSTE[n.famille]:[0,1];return (n.impact-B.reference*Math.min(1,n.minutes/80))/(r[1]*.75+1.45*.25);};
   let hommeDuMatch=null;
   const candidats=Object.entries(joueurs).filter(([,n])=>n.minutes>=30);
-  candidats.sort(([a,x],[b,y])=>y.note-x.note||((score[y.cote]-score[1-y.cote])-(score[x.cote]-score[1-x.cote]))||y.faits-x.faits||(a<b?-1:a>b?1:0));
+  candidats.sort(([a,x],[b,y])=>relatif(y)-relatif(x)||y.note-x.note||((score[y.cote]-score[1-y.cote])-(score[x.cote]-score[1-x.cote]))||y.faits-x.faits||(a<b?-1:a>b?1:0));
   if(candidats.length)hommeDuMatch=candidats[0][0];
   if(camp!==null)for(const id of Object.keys(joueurs))if(joueurs[id].cote!==camp)delete joueurs[id];
-  for(const n of Object.values(joueurs))delete n.brut;
+  for(const n of Object.values(joueurs)){delete n.brut;delete n.impact;delete n.famille;}
   return {joueurs,hommeDuMatch,score:score.slice()};
  }
- return {NOTE_DEPART,noter,plaqueur,echelle};
+ return {NOTE_DEPART,noter,plaqueur,echelle,B,POSTE};
 }
 
 // ---- Domaine natif (installé dans la VM du moteur, voir native-systems.cjs) ----------------
@@ -167,20 +192,21 @@ function factory(){
   }
   for(const id of Object.keys(st.passees)){if(!clubDe.has(id))delete st.passees[id];else st.passees[id]=st.passees[id].slice(-MAX_PASSEES);}
   for(const id of Object.keys(st.joueurs))if(!clubDe.has(id))delete st.joueurs[id];
+  if(st.selection)for(const id of Object.keys(st.selection.lignes))if(!clubDe.has(id))delete st.selection.lignes[id];
   st.detail={};st.confiance={};st.semaine=null;st.reg={};st.regJ={};st.equipes={};st.saison=s.season;
  }
  // Contexte d'un match pour le calcul : minutes, côtés, niveau au poste relatif à l'équipe.
  function contexte(l){
-  const cotes={},minutes={},niveaux={},noms={};
+  const cotes={},minutes={},niveaux={},noms={},familles={};
   for(let side=0;side<2;side++){
    const sh=l.sheets?.[side];if(!sh)continue;
    const ids=[...new Set([...(sh.used||[]),...(sh.on||[]).filter(Boolean)])];
    const notes=[];
-   for(const id of ids){const p=typeof matchPlayer==='function'?matchPlayer(l,side,id):null;cotes[id]=side;minutes[id]=Number(sh.minutes?.[id])||0;if(p){const r=roleNote(p);notes.push([id,r]);noms[id]=p.name;}}
+   for(const id of ids){const p=typeof matchPlayer==='function'?matchPlayer(l,side,id):null;cotes[id]=side;minutes[id]=Number(sh.minutes?.[id])||0;if(p){const r=roleNote(p);notes.push([id,r]);noms[id]=p.name;if(Number.isInteger(p.fam))familles[id]=p.fam;}}
    const moyenne=notes.length?notes.reduce((n,[,r])=>n+r,0)/notes.length:0;
    for(const [id,r] of notes)niveaux[id]=Math.max(-1,Math.min(1,(r-moyenne)/10));
   }
-  return {cotes,minutes,niveaux,noms,score:l.score.slice(),duree:l.minute,fini:!!l.finished};
+  return {cotes,minutes,niveaux,noms,familles,score:l.score.slice(),duree:l.minute,fini:!!l.finished};
  }
  const journalDe=l=>l.userSide>=0?l.events:(l.notesJournal||[]);
  function noterMatch(l){return calc.noter(journalDe(l),contexte(l));}
@@ -202,15 +228,60 @@ function factory(){
  const effets={
   // Composition des entraîneurs IA : forme récente (2 notes au moins), ±3 à 4 % du score de choix.
   composition(id){if(!actifs())return 1;const f=forme(id);return f===null||formeN(id)<2?1:1+Math.max(-.03,Math.min(.04,(f-6.5)*.03));},
-  // Valeur marchande (indemnité) : moyenne de saison, −8 % à +12 %.
-  valeur(id){if(!actifs())return 1;const m=moyenne(id),d=laureat(id)*.03;return m===null&&!d?1:1+Math.max(-.08,Math.min(.12,(m===null?0:(m-6.5)*.08)+d));},
+  // Valeur marchande (indemnité) : moyenne de saison (et, à 25 %, moyenne internationale sur
+  // 3 sélections au moins), −8 % à +12 % ; +3 % pour un lauréat de l'équipe de la saison (mêmes bornes).
+  valeur(id){if(!actifs())return 1;const m=melange(moyenne(id),intl(id,20),.25),d=laureat(id)*.03;return m===null&&!d?1:1+Math.max(-.08,Math.min(.12,(m===null?0:(m-6.5)*.08)+d));},
   // Intérêt des clubs IA : note estimée du joueur, −2 à +3 points.
   interet(id){if(!actifs())return 0;const m=moyenne(id),d=laureat(id)*.5;return m===null&&!d?0:Math.max(-2,Math.min(3,(m===null?0:(m-6.5)*2)+d));},
   // Exigence salariale en négociation : −4 % à +6 %.
   salaire(id){if(!actifs())return 1;const m=moyenne(id);return m===null?1:1+Math.max(-.04,Math.min(.06,(m-6.5)*.04));},
   // Sélections nationales : bonus au score de forme du sélectionneur, −1,5 à +2 points.
-  selection(id){if(!actifs())return 0;const f=forme(id);return f===null||formeN(id)<3?0:Math.max(-1.5,Math.min(2,(f-6.5)*1.2));}
+  // Forme en club (3 notes au moins) et forme internationale (5 dernières sélections, 3 au
+  // moins) : moyenne pondérée, la sélection compte pour 40 % quand les deux existent.
+  selection(id){if(!actifs())return 0;const f=melange(formeN(id)>=3?forme(id):null,intl(id,5),.4);return f===null?0:Math.max(-1.5,Math.min(2,(f-6.5)*1.2));}
  };
+ // Moyenne des n dernières notes internationales (3 sélections au moins), sinon null.
+ function intl(id,n){const d=state()?.matchNotes?.selection?.lignes?.[id];if(!d||d.length<3)return null;const r=d.slice(-n);return r.reduce((a,x)=>a+x[4],0)/r.length/10;}
+ function melange(club,inter,poids){return club===null?inter:inter===null?club:club*(1-poids)+inter*poids;}
+ // ---- Matchs internationaux -----------------------------------------------------------
+ // Le moteur international simule le score seul (essais et points, sans journal) : le même
+ // calcul reçoit un journal réduit à ces faits — chaque essai attribué de façon déterministe
+ // (empreinte de la rencontre, arrières et troisième ligne favorisés) —, le résultat, le
+ // niveau au poste et le poste. Titulaires 80 minutes, remplaçants entrés 25 minutes.
+ // matchs : [{cle, date, competition, equipes:[{nation, nom, ids, points, essais}] ×2}].
+ const MAX_SELECTION=20,MAX_VUS=400;
+ const empreinte=t=>{let h=2166136261;for(let i=0;i<t.length;i++)h=Math.imul(h^t.charCodeAt(i),16777619);return h>>>0;};
+ function enregistrerSelection(matchs){
+  const s=state();if(!s||!Array.isArray(matchs)||!matchs.length)return 0;
+  const st=etat(s),sel=st.selection||(st.selection={lignes:{},vus:{}});
+  const joueurs=new Map();for(const c of s.clubs)for(const p of c.players)joueurs.set(p.id,p);
+  let n=0;
+  for(const m of matchs){
+   if(!m||typeof m.cle!=='string'||sel.vus[m.cle]||!Array.isArray(m.equipes)||m.equipes.length!==2)continue;
+   const cotes={},minutes={},niveaux={},familles={},journal=[],on=m.equipes.map(e=>e.ids.slice(0,15));
+   m.equipes.forEach((e,side)=>{
+    const notes=[];
+    e.ids.forEach((id,k)=>{cotes[id]=side;minutes[id]=k<15?80:25;const p=joueurs.get(id);if(p){notes.push([id,roleNote(p)]);if(Number.isInteger(p.fam))familles[id]=p.fam;}});
+    const moy=notes.length?notes.reduce((a,[,r])=>a+r,0)/notes.length:0;for(const [id,r] of notes)niveaux[id]=Math.max(-1,Math.min(1,(r-moy)/10));
+    const poids=on[side].map((id,slot)=>id==null?0:slot>=8?3:slot>=5?2:1),total=poids.reduce((a,b)=>a+b,0);
+    for(let k=0;k<(e.essais|0)&&total>0;k++){let x=empreinte(m.cle+'|'+e.nation+'|'+k)%total,slot=0;while(x>=poids[slot]){x-=poids[slot];slot++;}
+     journal.push({min:0,type:'try',scene:{kind:'try',team:side,actor:on[side][slot],on,score:[0,0]}});}
+   });
+   const r=calc.noter(journal,{cotes,minutes,niveaux,familles,score:[m.equipes[0].points|0,m.equipes[1].points|0],fini:true});
+   m.equipes.forEach((e,side)=>{
+    const adverse=String(m.equipes[1-side].nom||m.equipes[1-side].nation).slice(0,60);
+    for(const id of e.ids){
+     const x=r.joueurs[id];if(!x||!joueurs.has(id))continue;
+     const d=sel.lignes[id]||(sel.lignes[id]=[]);
+     d.push([String(m.date).slice(0,10),adverse,String(m.competition||'').slice(0,60),x.minutes,Math.round(x.note*10),x.essais,r.hommeDuMatch===id?1:0]);
+     if(d.length>MAX_SELECTION)d.shift();
+    }
+   });
+   sel.vus[m.cle]=String(m.date).slice(0,10);n++;
+  }
+  const cles=Object.keys(sel.vus);if(cles.length>MAX_VUS){cles.sort((a,b)=>sel.vus[a]<sel.vus[b]?-1:sel.vus[a]>sel.vus[b]?1:a<b?-1:1);for(const k of cles.slice(0,cles.length-MAX_VUS))delete sel.vus[k];}
+  return n;
+ }
  function clubIdDe(l,side){return l.pair[side];}
  function competition(l){const c=l.worldContext||l.franceContext;return String(c?.competitionId||c?.competition||c?.phase||state()?.phase||'championnat').slice(0,40);}
  function enregistrer(l){
@@ -424,6 +495,11 @@ function factory(){
   for(const v of Object.values(st.confiance))check(int(v,-CONFIANCE_MAX,CONFIANCE_MAX),'confiance invalide');
   for(const r of st.recompenses)check(obj(r)&&['hdm','equipe','mois','saison','xvsaison'].includes(r.type)&&typeof r.id==='string'&&int(r.note,10,100),'distinction invalide');
   check(st.semaine===null||obj(st.semaine)&&Array.isArray(st.semaine.notes)&&st.semaine.notes.length<=MAX_SEMAINE,'journée invalide');
+  if(st.selection!==undefined){
+   const sel=st.selection,date=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);
+   check(obj(sel)&&obj(sel.lignes)&&obj(sel.vus)&&Object.keys(sel.vus).length<=MAX_VUS&&Object.values(sel.vus).every(date),'sélection invalide');
+   for(const d of Object.values(sel.lignes))check(Array.isArray(d)&&d.length<=MAX_SELECTION&&d.every(r=>Array.isArray(r)&&r.length===7&&date(r[0])&&typeof r[1]==='string'&&r[1].length<=60&&typeof r[2]==='string'&&r[2].length<=60&&int(r[3],0,120)&&int(r[4],10,100)&&int(r[5],0,50)&&(r[6]===0||r[6]===1)),'match international invalide');
+  }
   if(st.version===1)return true;
   const cle=x=>typeof x==='string'&&x.length>0&&x.length<=40;
   check(obj(st.reg)&&obj(st.regJ)&&obj(st.equipes)&&Array.isArray(st.saisons)&&st.saisons.length<=MAX_SAISONS,'équipe-type invalide');
@@ -485,8 +561,8 @@ function factory(){
   if(!s||!st)return base;
   const courant=st.saison===s.season;
   for(const p of s.clubs[s.club]?.players||[]){
-   const j=st.joueurs[p.id],d=courant?st.detail[p.id]||[]:[],passe=st.passees[p.id]||[];
-   if(!j&&!passe.length)continue;
+   const j=st.joueurs[p.id],d=courant?st.detail[p.id]||[]:[],passe=st.passees[p.id]||[],inter=st.selection?.lignes?.[p.id]||[];
+   if(!j&&!passe.length&&!inter.length)continue;
    const n=courant&&j?j.s[0]:0;
    base.joueurs[p.id]={matchs:n,moyenne:n?Math.round(j.s[1]/n)/10:null,minutes:n?j.s[2]:0,essais:n?j.s[3]:0,plaquages:n?j.s[4]:0,metres:n?j.s[5]:0,hommeDuMatch:n?j.s[6]:0,
     forme:(j?.f||[]).map(x=>x/10),
@@ -494,7 +570,9 @@ function factory(){
     saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5]})),
     // Équipe-type de la saison en cours (sélections) et équipes de la saison (repères de carrière).
     selections:courant?Object.values(st.reg||{}).reduce((n,reg)=>n+(reg[p.id]?.[4]||0),0):0,
-    distinctions:(st.saisons||[]).filter(f=>f.ids.includes(p.id)).map(f=>({type:'xv-saison',saison:f.saison,libelleSaison:saisonLabel(s,f.saison),championnat:nomLigueAffiche(s,f.ligue),moyenne:f.moy[f.ids.indexOf(p.id)]/10,matchs:f.matchs[f.ids.indexOf(p.id)]})).reverse()};
+    distinctions:(st.saisons||[]).filter(f=>f.ids.includes(p.id)).map(f=>({type:'xv-saison',saison:f.saison,libelleSaison:saisonLabel(s,f.saison),championnat:nomLigueAffiche(s,f.ligue),moyenne:f.moy[f.ids.indexOf(p.id)]/10,matchs:f.matchs[f.ids.indexOf(p.id)]})).reverse(),
+    selection:inter.length?{matchs:inter.length,moyenne:Math.round(inter.reduce((a,r)=>a+r[4],0)/inter.length)/10,forme:inter.slice(-5).map(r=>r[4]/10),hommeDuMatch:inter.filter(r=>r[6]).length,
+     historique:inter.slice().reverse().map(r=>({date:r[0],adversaire:r[1],competition:r[2],minutes:r[3],note:r[4]/10,essais:r[5],hommeDuMatch:r[6]===1}))}:null};
   }
   base.equipeType=projeterEquipes(s,st);
   base.recompenses=st.recompenses.slice(-12).reverse();
@@ -552,6 +630,6 @@ function factory(){
    growPlayer(p,Math.min(.03,(n.note-7.3)*.02),false);
   }
  }
- return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,forme,moyenne,effets,rollover,migrer,finSaison,finJournee,composer,groupeDe};
+ return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,enregistrerSelection,forme,moyenne,effets,rollover,migrer,finSaison,finJournee,composer,groupeDe};
 }
 module.exports={files,commands,factory,moteur,...moteur()};

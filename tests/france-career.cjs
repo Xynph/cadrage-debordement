@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-france-career-'));let n=0;
@@ -12,7 +13,7 @@ for(let club=0;club<30;club++){
   const doc=JSON.parse(request(b,'export').meta.exportText),state=doc.state;
   assert.equal(state.clubs.length,30);assert.equal(state.aiRoster.academies.length,29);
   assert.equal(state.aiRosterVersion,2);assert.equal(state.aiRoster.version,2);assert.equal(state.aiRoster.lastIntake,1);
-  assert.equal(state.academyGroupPolicy,2);
+  assert.equal(state.academyGroupPolicy,3);
   for(const academy of state.aiRoster.academies){
    assert.equal(academy.intakeSeason,1);assert.equal(academy.players.length,60);
    const promoted=state.aiRoster.events.filter(e=>e.season===1&&e.clubId===academy.clubId&&e.kind==='promote').map(e=>e.playerId);

@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 const {CORE_FILES}=require('../native/engine/worker.cjs');
 const playerAttributes=require('../native/engine/player-attributes.cjs');
