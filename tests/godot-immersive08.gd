@@ -1107,38 +1107,45 @@ func match_flow() -> void:
 	if talk_scene is Dictionary and str(talk_scene.get("phase", "")) == "pre":
 		await ContextualFlow.skip_talk(app, self, "pre", check)
 		await settle()
-	# La causerie d'avant-match reconstruit l'écran du match une fois traitée : on relit alors la scène et l'écran réellement affichés.
-	scene = app.match_view
+	# Une fois la rencontre lancée, le direct est tenu par l'écran contextuel (ContextualLiveMatch, ui/contextual/live_view.gd) qui
+	# remplace l'écran de l'avant-match : on relit l'écran réellement affiché et on contrôle ses vrais éléments.
 	match_ui = app.match_screen
-	frame = app.find_child("ImmersiveMatchPitch",true,false)
-	check(app.model.live is Dictionary and scene!=null and match_ui!=null and not match_ui.opening.visible,
-		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s, direct=%s, causerie=%s, sélection=%s, route=%s, écran=%s"
-		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect), str(typeof(app.model.get("live"))), str(app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")), str(app.model.get("selection",{}).get("valid")), str(app.route), str(match_ui!=null and match_ui.opening.visible)+" · scène conservée au clic="+str(scene_kept_at_kickoff)])
-	if not app.model.live is Dictionary: return
+	var live_ready: bool = app.model.get("live") is Dictionary and match_ui!=null and is_instance_valid(match_ui)
+	var contextual: bool = live_ready and match_ui.name == "ContextualLiveMatch"
+	check(live_ready and (contextual or not match_ui.opening.visible),
+		"Coup d’envoi réel ouvre le direct et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s, direct=%s, causerie=%s, sélection=%s, route=%s, écran=%s, scène conservée au clic=%s"
+		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect), str(typeof(app.model.get("live"))), str(app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")), str(app.model.get("selection",{}).get("valid")), str(app.route), str(match_ui.name if match_ui!=null else null), str(scene_kept_at_kickoff)])
+	if not live_ready: return
+	check(contextual,"Le direct est tenu par l’écran contextuel du match")
+	if not contextual: return
+	var live_stage: Node3D = match_ui.stage
+	check(live_stage!=null and live_stage.is_inside_tree(),"Le direct porte sa scène de match")
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})
-	check(match_ui.broadcast.visible and app.model.live.paused,"Bandeau du direct reflète la vraie pause")
+	match_ui = app.match_screen
+	check(app.model.live.paused and match_ui.play.text=="REPRENDRE" and match_ui.clock.text.ends_with("min"),"Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
 	await capture("28-match-direct-2560x1440")
 	var journal_tab: Button
-	for button: Button in match_ui._tab_controls:
-		if button.get_meta("match_tab")=="Journal": journal_tab=button; break
+	for button: Button in match_ui.find_children("*","Button",true,false):
+		if button.text=="JOURNAL": journal_tab=button; break
+	check(journal_tab!=null,"Le direct propose l’onglet Journal")
 	if journal_tab!=null: await click(journal_tab)
 	await settle()
-	check(match_ui.journal.visible,"Le journal du match reste accessible au clic")
+	check(match_ui.drawer_tab=="Journal" and match_ui._journal_shell.visible,"Le journal du match reste accessible au clic")
 	var score_before: Array = app.model.live.score.duplicate()
 	root.size=Vector2i(1280,720)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await create_timer(.16).timeout
 	await settle()
-	check(app.match_screen==match_ui and app.match_view==scene and match_ui.journal.visible and app.model.live.score==score_before,"Resize du direct préserve scène, onglet et score · écran conservé=%s · scène conservée=%s · journal=%s" % [str(app.match_screen==match_ui),str(app.match_view==scene),str(is_instance_valid(match_ui) and match_ui.journal.visible)])
-	check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(frame.get_global_transform()*Rect2(Vector2.ZERO,frame.size)),"Terrain visible en 720p après resize")
+	check(app.match_screen==match_ui and match_ui.stage==live_stage and match_ui.drawer_tab=="Journal" and match_ui._journal_shell.visible and app.model.live.score==score_before,"Resize du direct préserve scène, onglet et score · écran conservé=%s · scène conservée=%s · onglet=%s" % [str(app.match_screen==match_ui),str(is_instance_valid(match_ui) and match_ui.stage==live_stage),str(match_ui.drawer_tab if is_instance_valid(match_ui) else "")])
+	check(is_instance_valid(match_ui) and Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(match_ui.get_global_rect()),"Le direct tient dans la fenêtre en 720p après resize")
 	await capture("29-journal-direct-1280x720")
 	root.size=Vector2i(2560,1440)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
 	await command("delegate")
 	match_ui = app.match_screen
-	check(app.model.live.finished and match_ui!=null and match_ui.result_strip.visible and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
+	check(app.model.live.finished and match_ui!=null and match_ui.finish.visible and match_ui.clock.text=="TERMINÉ" and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
 	await capture("30-resultat-2560x1440")
 	await click(app.match_finish)
 	await worker()
