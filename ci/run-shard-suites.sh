@@ -91,6 +91,10 @@ budget() {
     # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
+    # Lot 03 (Monde) : mesures locales sous charge (créneaux partagés) : lifecycle-native 214 s (8 tests, carrières de ~1 Go de tas),
+    # match-direct 370 s (5 tests, 3 carrières), management-france-day-worker 200 s (avant-saison jouée jour par jour) ; assertions inchangées.
+    tests/lifecycle-native.cjs|tests/management-france-day-worker.cjs) echo 420s ;;
+    tests/match-direct.cjs) echo 600s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     # JIFF en carrière Monde : une carrière world-champ jusqu'aux premières journées de Top 14, ~320 s en local sous charge.
     tests/jiff.cjs) echo 600s ;;
