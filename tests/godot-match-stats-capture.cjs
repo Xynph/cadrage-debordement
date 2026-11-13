@@ -7,7 +7,8 @@
 //   CD_GODOT_EXE (ou CD_GODOT_EXECUTABLE)  exécutable Godot 4.7.2
 //   CD_STATS_PNG_ENTRACTE  PNG absolu de l'entracte
 //   CD_STATS_PNG_FIN       PNG absolu de l'écran de fin de match
-//   CD_STATS_ENTRACTE      numéro de l'entracte capturé (défaut 3)
+//   CD_STATS_ENTRACTE      numéro de l'entracte capturé (défaut 2)
+//   CD_STATS_SAVE_FILE     sauvegarde Monde exportée à la causerie d'avant-match (sinon générée : environ 3 Go de mémoire)
 //   CD_STATS_SEED          graine du moteur (défaut 7)
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
@@ -20,7 +21,8 @@ const seed=/^\d+$/.test(process.env.CD_STATS_SEED||'')?process.env.CD_STATS_SEED
 const work=fs.mkdtempSync(path.join(os.tmpdir(),'cd-stats-capture-'));
 // Carrière Monde (le seul mode), avancée jusqu'au jour du premier match, arrêtée à la causerie d'avant-match.
 // Dans un processus à part : le moteur de la carrière libère sa mémoire avant le lancement de Godot.
-const save=path.join(work,'live.json');
+const fourni=process.env.CD_STATS_SAVE_FILE;
+const save=fourni||path.join(work,'live.json');
 const generation=`
 const fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require(${JSON.stringify(path.resolve(__dirname,'../native/engine/worker.cjs'))}),{settleClubMeetings}=require(${JSON.stringify(path.resolve(__dirname,'helpers/club-meetings.cjs'))});
@@ -39,7 +41,7 @@ for(let jour=0;jour<120&&!live;jour++){
 if(!live)throw Error('Aucun match joué en 120 jours.');
 fs.writeFileSync(${JSON.stringify(save)},send('export').model.meta.exportText);
 process.exit(0);`;
-const prepare=spawnSync(process.execPath,['--max-old-space-size=3000','-e',generation],{encoding:'utf8',maxBuffer:64*1024*1024});
+const prepare=fourni?{status:0}:spawnSync(process.execPath,['--max-old-space-size=3000','-e',generation],{encoding:'utf8',maxBuffer:64*1024*1024});
 if(prepare.status!==0||!fs.existsSync(save)){console.error('Carrière : statut '+prepare.status+' signal '+prepare.signal+' '+(prepare.stdout||'')+(prepare.stderr||''));process.exit(2);}
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(work,'PrototypeGodot'),CD_GODOT_SEED:seed,CD_STATS_SAVE:save,
  CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4'};
@@ -47,6 +49,6 @@ for(const nom of ['CD_MATCH_TEMPS_FORTS','CD_MATCH_TEMPS_FORTS_NIVEAU'])delete e
 const result=spawnSync(godot,['--rendering-method','gl_compatibility','--windowed','--resolution','1280x720','--fixed-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-stats-capture.gd')],{env,encoding:'utf8',timeout:3000000,maxBuffer:64*1024*1024});
 const output=(result.stdout||'')+(result.stderr||'');
 fs.rmSync(work,{recursive:true,force:true});
-console.log(output.split('\n').filter(l=>/FIN|CAPTURE|ERROR|SCRIPT/.test(l)).join('\n'));if(result.status)console.log(output.slice(-3000));
+console.log(output.split('\n').filter(l=>/FIN|CAPTURE|ERROR|SCRIPT/.test(l)).join('\n'));console.log('statut',result.status,'signal',result.signal);if(result.status)console.log(output.slice(-3000));
 if(result.error)throw result.error;
 process.exit(result.status||0);

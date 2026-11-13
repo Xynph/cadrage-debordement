@@ -2,7 +2,8 @@ extends SceneTree
 ## Captures de l'écran entre les temps forts avec la feuille de statistiques (outil manuel, lancé par
 ## tests/godot-match-stats-capture.cjs) : un entracte en cours de match, puis l'écran « Match terminé ».
 ## La vraie interface et le vrai moteur. Variables : CD_STATS_SAVE (match exporté), CD_STATS_PNG_ENTRACTE,
-## CD_STATS_PNG_FIN (captures PNG 1280×720), CD_STATS_ENTRACTE (numéro de l'entracte capturé, 3 par défaut).
+## CD_STATS_PNG_FIN (captures PNG 1280×720), CD_STATS_ENTRACTE (numéro de l'entracte capturé, 3 par défaut) ;
+## la fin du match est ensuite confiée à l'adjoint pour atteindre l'écran « Match terminé ».
 
 var app: Control
 
@@ -40,7 +41,7 @@ func run() -> void:
 	while app.waiting: await process_frame
 	for i in 8: await process_frame
 	var view := surface()
-	var voulu := int(OS.get_environment("CD_STATS_ENTRACTE")) if OS.get_environment("CD_STATS_ENTRACTE").is_valid_int() else 3
+	var voulu := int(OS.get_environment("CD_STATS_ENTRACTE")) if OS.get_environment("CD_STATS_ENTRACTE").is_valid_int() else 2
 	var png_entracte := OS.get_environment("CD_STATS_PNG_ENTRACTE")
 	var png_fin := OS.get_environment("CD_STATS_PNG_FIN")
 	var entractes := 0
@@ -91,6 +92,8 @@ func run() -> void:
 				entracte_fait = true
 				if not png_entracte.is_empty(): root.get_texture().get_image().save_png(png_entracte)
 				print("CAPTURE entracte ", png_entracte, " ", view.clock.text)
+				# La fin du match est confiée à l'adjoint (comme un joueur pressé) : l'écran « Match terminé » suit.
+				app._command("delegate", {})
 		else: dans_entracte = 0.0
 	print("FIN ", JSON.stringify({"images": image, "entractes": entractes, "entracte_fait": entracte_fait, "fin_faite": fin_faite}))
 	fin(0 if fin_faite and entracte_fait else 3)
