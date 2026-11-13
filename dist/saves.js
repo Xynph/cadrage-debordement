@@ -67,11 +67,34 @@ function safeTree(root){
     check(keys<=clubs*(clubs-1)/2);
    }
    for(const [k,x] of Object.entries(v)){
+    if(depth===0&&sections&&sectionKnown(k,x))continue;
     check(!['__proto__','constructor','prototype'].includes(k),'Le fichier contient une structure non autorisée.');
     check(k.length<200&&!/[<>"`&]/.test(k));
+    const before=depth===0&&sections?[count,knowledgeCount,evolutionCount]:null;
     visit(x,depth+1,inKnowledge||knowledgeBudget&&x===knowledge,inEvolution||evolutionBudget&&x===evolution);
+    if(before)sectionVisited(k,x,before);
    }
   }else check(v===null||typeof v==='boolean');
+ }
+ // Sauvegarde incrémentale (moteur natif) : juste après une sauvegarde, les sections de premier niveau
+ // dont le texte enregistré est identique à une section déjà parcourue avec succès, dans le même
+ // contexte, reprennent leur décompte de nœuds au lieu d'être reparcourues ; les autres sont visitées
+ // comme avant. Sans sections fournies (import, chargement, export, contrôle complet), parcours entier.
+ const sections=world&&typeof nativeSafeTreeSections==='function'?nativeSafeTreeSections(root):null;
+ const sectionContext=(k,x)=>maxNodes+'|'+(knowledgeBudget&&x===knowledge?'K':'')+(evolutionBudget&&x===evolution?'E':'')+'|'+(pairs!==undefined&&x===root.interclubWorld?'P'+worldSaveSizing(root).clubCount:'');
+ function sectionKnown(k,x){
+  const text=sections.texts.get(k),hit=sections.cache.get(k);
+  if(text===undefined||!hit||hit.text!==text||hit.context!==sectionContext(k,x))return false;
+  check(!['__proto__','constructor','prototype'].includes(k),'Le fichier contient une structure non autorisée.');
+  check(k.length<200&&!/[<>"`&]/.test(k));
+  count+=hit.nodes[0];knowledgeCount+=hit.nodes[1];evolutionCount+=hit.nodes[2];
+  check(count<maxNodes&&knowledgeCount<460000&&evolutionCount<600000,'Le fichier est trop complexe.');
+  return true;
+ }
+ function sectionVisited(k,x,before){
+  const text=sections.texts.get(k);
+  if(text===undefined){sections.cache.delete(k);return;}
+  sections.cache.set(k,{text,context:sectionContext(k,x),nodes:[count-before[0],knowledgeCount-before[1],evolutionCount-before[2]]});
  }
  visit(root,0);
 }
