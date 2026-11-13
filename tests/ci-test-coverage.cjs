@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -129,7 +128,7 @@ test('chaque profil utile est réparti sans perte et le complet découvre toutes
   assert.ok(all.includes('tests/v61-board-calendar.cjs'));
   for (const [profile, mandatory] of [
     ['web', ['offline', 'main-menu-v3', 'godot-assets', 'ui01-integration']],
-    ['native-art', ['godot-immersive08', 'godot-assets']]
+    ['native-art', ['godot-assets', 'premium-editorial']]
   ]) {
     const selected = suitesForCoverage(profile, all);
     assert.ok(selected.length < all.length / 4, profile);
