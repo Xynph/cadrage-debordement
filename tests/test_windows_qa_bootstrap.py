@@ -21,11 +21,11 @@ class WindowsQaBootstrap(unittest.TestCase):
         self.config = 'config_version=5\n[application]\nrun/main_scene="res://main.tscn"\n'
         (self.project / 'project.godot').write_text(self.config)
 
-    def test_staging_preserves_normal_entry_and_copies_both_inherited_scripts(self):
+    def test_staging_preserves_normal_entry_and_copies_embedded_drivers(self):
         builder.stage_windows_qa(self.project)
         self.assertEqual((self.project / 'project.godot').read_text(), self.config)
         self.assertFalse((self.project / 'override.cfg').exists())
-        for name in ('windows-resume.gd', 'windows-graphics-smoke.gd'):
+        for name in ('windows-resume.gd', 'windows-graphics-smoke.gd', 'windows-hardware-receipt.gd'):
             self.assertEqual((self.project / 'windows_qa' / name).read_bytes(), (ROOT / 'ci' / name).read_bytes())
         self.assertEqual((self.project / 'windows_qa/entry.tscn').read_text(), '[gd_scene format=3]\n[node name="WindowsReceiptEntry" type="Node"]\n')
 
@@ -99,14 +99,21 @@ func run() -> void:
         builder.stage_windows_qa(self.project)
         (self.project / 'main.tscn').write_text('[gd_scene load_steps=2 format=3]\n[ext_resource type="Script" path="res://trap.gd" id="1"]\n[node name="ProductTrap" type="Control"]\nscript=ExtResource("1")\n')
         (self.project / 'trap.gd').write_text('extends Control\nfunc _ready() -> void:\n\tprinterr("PRODUCT_SCENE_LOADED_BEFORE_QA")\n\tget_tree().quit(4)\n')
+        (self.project / 'qa_runner.gd').write_text('extends Node\nstatic func continue_match_phase(_app, _tree, _check, _phase): return false\n')
+        (self.project / 'guide').mkdir()
+        (self.project / 'guide/coach_portrait_3d.gd').write_text('extends TextureRect\nvar _profile := ""\nvar _animations: AnimationPlayer\n')
+        (self.project / 'ui/contextual').mkdir(parents=True)
+        (self.project / 'ui/contextual/match_temps_forts.gd').write_text('extends Node\nenum { INTER, JEU, ATTENTE }\n')
         godot = os.environ['CD_GODOT_EXE']
         imported = subprocess.run([godot, '--headless', '--editor', '--import', '--path', str(self.project)], capture_output=True, text=True, timeout=60)
         self.assertEqual(imported.returncode, 0, imported.stdout + imported.stderr)
         cache = (self.project / '.godot/global_script_class_cache.cfg').read_text()
         self.assertIn('WindowsReceiptResume', cache)
         self.assertIn('WindowsGraphicsSmoke', cache)
+        self.assertIn('WindowsHardwareReceipt', cache)
         for mode, class_name, chain in (
             ('graphics-smoke', 'WindowsGraphicsSmoke', ['res://windows_qa/windows-graphics-smoke.gd', 'res://windows_qa/windows-resume.gd']),
+            ('hardware', 'WindowsHardwareReceipt', ['res://windows_qa/windows-hardware-receipt.gd', 'res://windows_qa/windows-resume.gd']),
             ('resume', 'WindowsReceiptResume', ['res://windows_qa/windows-resume.gd']),
         ):
             output = self.project / mode
