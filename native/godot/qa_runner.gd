@@ -588,6 +588,7 @@ func _run() -> void:
 	_check(app.model.meta.trained,"Training performed via real control")
 	if not await _publish_press_invitation(): await _finish(); return
 	if not await _reach_world_match_day(): await _finish(); return
+	var first_match_week: int = int(app.model.meta.week)
 	app._navigate("Match")
 	_press("COUP D'ENVOI")
 	await _wait()
@@ -600,9 +601,24 @@ func _run() -> void:
 	_check(app.model.live.paused,"Real pause")
 	await _capture("match-live")
 	var live_view: Control = app.contextual_director.view
-	var tactical: Button = live_view._camera_controls[1]
-	_check(tactical.is_visible_in_tree() and not tactical.disabled, "Actual immersive tactical camera control is enabled")
-	if not tactical.disabled: tactical.pressed.emit()
+	# En temps forts (régie du direct), la barre du bas est masquée : la caméra se choisit dans le
+	# menu « PLUS » de l'écran intermédiaire. Sans régie (repli), c'est la barre du bas.
+	var more := live_view.find_child("MatchBetweenMore", true, false) as MenuButton
+	var tactical_ready := false
+	var tactical_id := -1
+	var more_menu: PopupMenu = null
+	if more != null and more.is_visible_in_tree():
+		more_menu = more.get_popup()
+		for index in more_menu.item_count:
+			if more_menu.get_item_metadata(index) == "tactical":
+				tactical_ready = not more.disabled and not more_menu.is_item_disabled(index)
+				tactical_id = more_menu.get_item_id(index)
+	else:
+		var tactical: Button = live_view._camera_controls[1]
+		tactical_ready = tactical.is_visible_in_tree() and not tactical.disabled
+		if tactical_ready: tactical.pressed.emit()
+	_check(tactical_ready, "Actual immersive tactical camera control is enabled")
+	if tactical_ready and more_menu != null: more_menu.id_pressed.emit(tactical_id)
 	_check(app.user_preferences.effective_camera() == "tactical" and live_view.stage._camera_mode == "tactical", "Actual immersive camera control applies and preserves the tactical view")
 	await _capture("match-tactical")
 	var changes:Array=app.model.live.get("substitutions",[])
@@ -619,7 +635,7 @@ func _run() -> void:
 	await _wait()
 	_check(app.route=="Réception","Validating the result returns to the reception")
 	if not await _close_world_match_week(): await _finish(); return
-	_check(int(app.model.meta.week)==1,"Both competitions advance once")
+	_check(int(app.model.meta.week)==first_match_week+1,"The competitions played by the chosen club advance one week after its first match")
 	await _settle_required_meetings()
 	if not await _reach_world_match_day(): await _finish(); return
 	await _coverage()
@@ -808,13 +824,28 @@ func _advance_world_day() -> bool:
 		return false
 	if not await _ask("advance_day", {"fromDate":today}): return false
 	var next_day := Time.get_date_string_from_unix_time(int(Time.get_unix_time_from_datetime_string(today)) + 86400)
-	var week_step := 1 if int(cadence.day) == 6 else 0
+	# Une fois la saison du club terminée (phase ended), la semaine du calendrier ne bouge plus :
+	# seuls les jours défilent jusqu'à l'ouverture de la saison suivante.
+	var season_over: bool = str(app.model.meta.get("phase", "")) == "ended"
+	var week_step := 1 if int(cadence.day) == 6 and not season_over else 0
 	var advanced: bool = app.model.meta.calendarToday == next_day and int(app.model.meta.week) == previous_week + week_step
+	if not advanced: printerr("DIAG jour: avant=%s semaine=%d jour=%d -> apres=%s semaine=%d attendu=%s phase=%s" % [today, previous_week, int(cadence.day), app.model.meta.calendarToday, int(app.model.meta.week), next_day, str(app.model.meta.get("phase",""))])
 	_check(advanced, "Calendar advances exactly one day from " + today)
 	if advanced: journey.day_advances += 1
 	return advanced
 
+func _advance_preseason() -> bool:
+	# Début de carrière Monde en avant-saison (13/07) : un seul pas jusqu'à l'ouverture du calendrier.
+	var preseason: Variant = app.model.meta.get("preseason")
+	if not preseason is Dictionary: return true
+	var opening: String = str(preseason.get("opening", ""))
+	if not await _ask("preseason_advance", {"fromDate":str(preseason.get("today", "")),"until":"saison"}): return false
+	var done: bool = not app.model.meta.get("preseason") is Dictionary and (opening.is_empty() or app.model.meta.calendarToday == opening)
+	_check(done, "The preseason advances to the opening of the calendar")
+	return done
+
 func _reach_world_match_day() -> bool:
+	if not await _advance_preseason(): return false
 	# The longest preparation includes the 23 weeks before the Pacific opener.
 	for day in range(197):
 		if not await _settle_required_meetings(): return false
