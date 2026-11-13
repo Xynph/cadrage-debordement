@@ -12,11 +12,11 @@ test('native population state survives import/reopen and rejects corruption or f
  const call=(command,payload={})=>b.handle({id:++serial,command,payload});
  const ok=(command,payload)=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  const archive=()=>ok('export').meta.exportText;
- const model=settleClubMeetings(ok('new_career',{mode:'world',club:0}),(command,payload)=>ok(command,payload)),before=archive(),doc=JSON.parse(before),s=doc.state;
+ const model=settleClubMeetings(ok('new_career',{mode:'world-champ',club:0}),(command,payload)=>ok(command,payload)),before=archive(),doc=JSON.parse(before),s=doc.state;
  assert.equal(s.aiRosterVersion,2);
  assert.equal(s.aiRoster.population.referenceAccessible,s.clubs.reduce((n,c)=>n+c.players.length,0)+s.economy.freeAgents.length);
  assert.equal(s.market.length,s.economy.freeAgents.length);
- assert.ok(Buffer.byteLength(before)<16*1024*1024);
+ assert.ok(Buffer.byteLength(before)<24*1024*1024); // limite d'import du Monde (CHAMP_IMPORT_LIMIT_BYTES)
  ok('import',{text:before});assert.equal(archive(),before);
  const bad=JSON.parse(before);bad.state.aiRoster.population.lastPoolSeason=2;bad.checksum=checksum(bad.state);
  assert.equal(call('import',{text:JSON.stringify(bad)}).ok,false);assert.equal(archive(),before);

@@ -28,7 +28,7 @@ module.exports=function nativeModel(){
   const renewal={available:!S.live&&!withdrawn&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),
    salary:askingWage(p,'renew'),fee:contractFee(p,'renew'),minYears:Math.max(1,p.contractEnd-contractBase()+2),maxYears:Math.min(3,careerContractYears(p)),
    ...(negotiation?{negotiation}:{}),...(withdrawn?{reason:withdrawnReason}:{})};
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),rosterProfile:p.rosterProfile??null,id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,renewal,contractLabel:p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),rosterProfile:p.rosterProfile??null,id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,renewal,contractLabel:p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
  });
  const places=professionalPlaces(own),cash=own.cash;
  const market=S.market.map(source=>{
@@ -37,7 +37,7 @@ module.exports=function nativeModel(){
   const withdrawn=negotiation?.status==='withdrawn';
   const reason=S.live?'Match en cours':places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
   const available=!S.live&&places>0&&cash>=p.price&&maxYears>=1&&!withdrawn;
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
    salary:askingWage(p,'recruit'),fee:contractFee(p,'recruit'),minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{})};
  });
  const pair=nextMatch(),l=S.live;
@@ -65,7 +65,7 @@ module.exports=function nativeModel(){
    selection.coverage=quote;
   }
  }
- const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description}))};
+ const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description})),penalty:S.live&&S.live.userSide>=0?(S.live.penaltyPolicies?.[S.live.userSide]||'auto'):'auto',penalties:Object.entries(PENALTY_POLICIES).map(([id,label])=>({id,label}))};
  const row=c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form});
  const leagues=france?['elite','accession'].map(id=>({id,name:id==='elite'?'Élite — 14 clubs':'Accession — 16 clubs',phase:S.franceMode.leagues[id].phase,champion:S.franceMode.leagues[id].champion===null?null:summary(S.clubs[S.franceMode.leagues[id].champion]),finalist:S.franceMode.leagues[id].finalist===null?null:summary(S.clubs[S.franceMode.leagues[id].finalist]),rows:divisionRankings[id].map(row)})):[{id:'elite',name:'Ligue Première',rows:sorted.map(row)}];
  const leagueId=france?CDFranceCompetition.leagueId(S):'elite';
@@ -73,7 +73,7 @@ module.exports=function nativeModel(){
  for(const r of S.history.filter(x=>x.phase!=='league'&&x.pair.includes(S.club)))calendar.push({id:r.fixtureId||r.phase,label:r.phase,week:r.week??S.round,home:summary(S.clubs[r.pair[0]]),away:summary(S.clubs[r.pair[1]]),score:r.score,played:true,phase:r.phase,leagueId:r.leagueId||leagueId,neutral:r.neutral??['semi','final'].includes(r.phase)});
  if(fixture&&fixture.phase!=='league')calendar.push({id:fixture.fixtureId,label:label(),week:fixture.week,home:summary(S.clubs[fixture.pair[0]]),away:summary(S.clubs[fixture.pair[1]]),score:null,played:false,phase:fixture.phase,leagueId:fixture.leagueId,neutral:fixture.neutral});
  const resultDecision=l?.finished?(()=>{const winner=l.winner??(l.score[0]===l.score[1]?null:l.pair[l.score[0]>l.score[1]?0:1]),kind=l.decision?.method||(winner===null?'draw':'score'),reason={tries:'au nombre d’essais',penalties:'au nombre de pénalités réussies',drops:'au nombre de drops',redCards:'au nombre d’exclusions',shootout:'aux tirs au but'}[kind];return {...(l.decision||{}),kind,winner,label:winner===null?'Match nul.':(reason?'Qualification de ':'Victoire de ')+S.clubs[winner].name+(reason?' '+reason:'')+'.'};})():null;
- const livePlayer=id=>{const p=own.players.find(x=>x.id===id);return p?{...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),id:p.id,name:p.name,pos:p.pos,condition:p.condition,injury:p.injury}:null;};
+ const livePlayer=id=>{const p=own.players.find(x=>x.id===id);return p?{...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,condition:p.condition,injury:p.injury}:null;};
  let statsRows=[];
  if(l){const [a,b]=l.stats,total=a.possession+b.possession;statsRows=[
   ['Possession',total?Math.round(a.possession/total*100)+'%':'—',total?Math.round(b.possession/total*100)+'%':'—'],

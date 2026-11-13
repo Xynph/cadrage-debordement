@@ -10,7 +10,7 @@ try{
  bridge=createBridge({dataDir:root,seed:27,now:1700000000000});
  const calendar={action:'generate',name:'Coupe fictive',clubs:['A','B','C'],doubleRound:true};
  assert.equal(call('competition_editor_preview',calendar).competitionEditor.summary.matches,6,'editor available before creating a career');
- let m=settleClubMeetings(call('new_career',{mode:'common',club:0}),call);
+ let m=settleClubMeetings(call('new_career',{mode:'world-champ',club:0}),call);
  for(const key of ['interclubMarket','staffMentoring','performanceAnalysis'])assert.ok(m.clubLife[key],key+' must be wired into production snapshot');
  const exported=call('export').meta.exportText,profile=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(profile);
  for(let n=0;n<2;n++)call('snapshot');

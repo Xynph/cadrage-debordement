@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Real UI + worker: browsing must leave the export, RNG and profile bytes intact.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict');
 const {spawnSync}=require('node:child_process'),{context}=require('./harness.cjs');

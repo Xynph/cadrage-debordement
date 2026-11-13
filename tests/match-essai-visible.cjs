@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 
 // « On ne dit essai que si on voit l'essai » (décision de Léo, 11 novembre 2026).
 // En temps forts, mode de base du match, chaque essai du score fait partie d'un temps

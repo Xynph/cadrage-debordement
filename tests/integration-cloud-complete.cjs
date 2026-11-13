@@ -36,15 +36,15 @@ function playToPost(f,model){
  assert.fail('Real match did not reach the post-match scene');
 }
 
-for(const [mode,club] of [['common',0],['world',14]]){
- test(mode+': debrief confirms the result, preserves its day and closes the week only on Sunday',t=>{
+for(const [mode,club] of [['Top 14',0],['Pro D2',14]]){
+ test(mode+' (Monde): debrief confirms the result, preserves its day and closes the week only on Sunday',t=>{
   const f=fixture(t,{dailyCalendar:true});
-  let model=settleClubMeetings(f.good('new_career',{mode,club}),f.good);
+  let model=settleClubMeetings(f.good('new_career',{mode:'world-champ',club}),f.good);
   while(!model.meta.calendarCadence.matchReady)model=settleClubMeetings(f.good('advance_day',{fromDate:model.meta.calendarToday}),f.good);
   model=playToPost(f,model);
   const day=model.meta.calendarToday,week=model.meta.week,score=model.live.score;
   const post=talk(model),payload={key:post.key,phase:post.phase};
-  if(mode==='common'){
+  if(club===0){
    const before=fs.readFileSync(f.file);
    const refused=refuseSavePublication(f.file,()=>f.send('match_talk_continue',payload));
    assert.equal(refused.ok,false);assert.deepEqual(fs.readFileSync(f.file),before);
@@ -57,7 +57,7 @@ for(const [mode,club] of [['common',0],['world',14]]){
   assert.equal(model.live,null);assert.equal(talk(model),null);
   assert.equal(f.raw().contextualMatch.current,null);
   assert.deepEqual(f.raw().live.score,score);
-  if(mode==='common'){
+  if(club===0){
    const receipt=f.good('export').meta.exportText;
    model=f.restart();assert.equal(f.good('export').meta.exportText,receipt);
    const stable=fs.readFileSync(f.file);

@@ -10,13 +10,17 @@ function archive(manifest){
  const cd=Buffer.concat(central),end=Buffer.alloc(22);end.writeUInt32LE(0x06054b50);end.writeUInt16LE(items.length,8);end.writeUInt16LE(items.length,10);end.writeUInt32LE(cd.length,12);end.writeUInt32LE(offset,16);
  const file=path.join(root,'pack-'+(++seq)+'.zip');fs.writeFileSync(file,Buffer.concat([...blocks,cd,end]));return file;
 }
-const sid=staff.registry.clubs[1].members[0].id,pid=db.clubs[1].players[0].id,png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');
-const manifest={schema:'cd-identity-pack-v2',id:'staff-test',name:'Encadrement personnalisé',version:'1',databaseId:db.id,rightsStatus:'test-local',clubs:[],players:[{id:pid,name:'Joueur test'}],staff:[{id:sid,name:'Coach test',portrait:'photo',synthetic:false}],assets:[{id:'photo',path:'portrait.png',sha256:crypto.createHash('sha256').update(png).digest('hex'),bytes:png.length}]};
+const ext=require('../native/engine/world-pacific-registry.cjs'),readJson=f=>JSON.parse(fs.readFileSync(path.join(__dirname,'../native/engine',f),'utf8'));
+// Base de données du Monde (édition complète) : mêmes clubs 0 à 29 que l'ancienne base commune, 116 équipes.
+const champ=ext.extendChampRegistry(ext.extendNationaleRegistry(ext.extendJapanRegistry(ext.extendWorldRegistry(require('../native/engine/world-registry.json'),readJson('world-pacific-extension.json')),readJson('world-japan-extension.json')),readJson('world-nationale-extension.json')),readJson('world-champ-extension.json'));
+const sid=staff.forDatabase(champ.id).registry.clubs[1].members[0].id,pid=champ.clubs[1].players[0].id,png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');
+const manifest={schema:'cd-identity-pack-v2',id:'staff-test',name:'Encadrement personnalisé',version:'1',databaseId:champ.id,rightsStatus:'test-local',clubs:[],players:[{id:pid,name:'Joueur test'}],staff:[{id:sid,name:'Coach test',portrait:'photo',synthetic:false}],assets:[{id:'photo',path:'portrait.png',sha256:crypto.createHash('sha256').update(png).digest('hex'),bytes:png.length}]};
 let b=createBridge({dataDir:profile,seed:321,now:1700000000000});
-const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
+const withMode=(command,payload)=>command.startsWith('pack_')?{mode:'world-champ',...payload}:payload;
+const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload:withMode(command,payload)});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const state=()=>JSON.parse(good('export').meta.exportText).state,withoutPack=s=>{const v=structuredClone(s);delete v.identityPack;return v;};
 try{
- let m=settleClubMeetings(good('new_career',{mode:'common',club:1}),(command,payload)=>good(command,payload));assert.ok(m.staff?.teams?.length===30,'Staff projeté dans le jeu natif.');
+ let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:1}),(command,payload)=>good(command,payload));assert.ok(m.staff?.teams?.length===116,'Staff projeté dans le jeu natif.');
  const before=state(),file=path.join(m.meta.dataDir,'donnees.json'),raw=fs.readFileSync(file),seed=JSON.parse(raw).seed;
  for(let i=0;i<3;i++)good('snapshot');assert.deepEqual(fs.readFileSync(file),raw);
  const zip=archive(manifest),preview=good('pack_inspect',{path:zip}).packs.preview;assert.equal(preview.counts.staff,1);assert.equal(preview.counts.staffOfficial,1);
@@ -31,7 +35,7 @@ try{
  settleClubMeetings(good('pack_select',{id:'base',scope:'career'}),(command,payload)=>good(command,payload));assert.notEqual(good('snapshot').staff.teams[1].members.find(p=>p.id===sid||p.sourceStaffId===sid).name,'Coach test');assert.deepEqual(withoutPack(state()),withoutPack(before));
  const v1={...manifest,schema:'cd-identity-pack-v1',assets:[]};delete v1.staff;const legacy=archive(v1),lp=good('pack_inspect',{path:legacy}).packs.preview;good('pack_install',{path:legacy,digest:lp.digest});settleClubMeetings(good('pack_select',{id:lp.id,scope:'career'}),(command,payload)=>good(command,payload));assert.equal(good('snapshot').staff.teams[1].members.find(p=>p.id===sid||p.sourceStaffId===sid).portraitStatus,'anonymous');
  for(const mutate of [x=>x.staff.push({...x.staff[0]}),x=>x.staff[0].id=pid,x=>x.staff[0].id='staff:99:0000000000000000',x=>x.staff[0].rating=100,x=>x.staff[0].portrait='../escape',x=>delete x.staff[0].synthetic,x=>x.schema='cd-identity-pack-v1']){
-  const bad=structuredClone(manifest);mutate(bad);const result=b.handle({id:++seq,command:'pack_inspect',payload:{path:archive(bad)}});assert.equal(result.ok,false,'Pack hostile ou staff invalide refusé.');assert.deepEqual(withoutPack(state()),withoutPack(before));
+  const bad=structuredClone(manifest);mutate(bad);const result=b.handle({id:++seq,command:'pack_inspect',payload:withMode('pack_inspect',{path:archive(bad)})});assert.equal(result.ok,false,'Pack hostile ou staff invalide refusé.');assert.deepEqual(withoutPack(state()),withoutPack(before));
  }
  console.log('Staff packs : v1/v2, portraits, changement/reprise, état/RNG et refus stricts PASS.');
 }finally{b.close();}

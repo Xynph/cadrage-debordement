@@ -2,7 +2,7 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),preparation=require('../native/engine/epcr-preparation.cjs');
-function fixture(t,mode='world',club=0){
+function fixture(t,mode='world-champ',club=0){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-epcr-preparation-'));
  let b=createBridge({dataDir:dir,seed:827381,now:1794178800000}),serial=0;
  t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
@@ -11,8 +11,8 @@ function fixture(t,mode='world',club=0){
  settleClubMeetings(good('new_career',{mode,club}),(command,payload)=>good(command,payload));
  return {dir,send,good,disk:()=>fs.readFileSync(path.join(dir,'PrototypeGodot','donnees.json')),restart:()=>{b.close();b=createBridge({dataDir:dir,seed:1,now:10});}};
 }
-test('Monde et Champ : préparation EPCR consultative, pas une inscription officielle',t=>{
- for(const mode of ['world','world-champ']){
+test('Monde : préparation EPCR consultative, pas une inscription officielle',t=>{
+ for(const mode of ['world-champ']){
   const f=fixture(t,mode),m=f.good('snapshot'),p=m.epcrPreparation;
   assert.equal(p.season,'2026/27');assert.equal(p.competitionId,'champions');assert.equal(p.supported,true);
   assert.equal(p.candidates.length,m.squad.length);assert.deepEqual(p.registeredIds,m.squad.map(x=>x.id));
@@ -54,10 +54,9 @@ test('La préparation conserve l’ancien document, son import et la reprise du 
  f.good('import',{text:before});assert.deepEqual(JSON.parse(f.good('export').meta.exportText).state,JSON.parse(before).state);
  assert.ok(!Object.hasOwn(JSON.parse(before).state.worldMode,'epcrPreparation'));
 });
-test('Fiction et clubs non européens n’exposent pas de faux dossier EPCR',t=>{
- const f=fixture(t,'fiction'),before=f.disk();
+test('Les clubs non européens n’exposent pas de faux dossier EPCR',t=>{
+ const f=fixture(t,'world-champ',14),before=f.disk();
  assert.equal(f.good('snapshot').epcrPreparation,null);assert.equal(f.send('epcr_preview',{registeredIds:[],competitionId:'champions'}).ok,false);assert.deepEqual(f.disk(),before);
- const world=fixture(t,'world',14);assert.equal(world.good('snapshot').epcrPreparation,null);
 });
 test('La coupe Challenge et les saisons ultérieures restent explicitement distinctes',t=>{
  const f=fixture(t),base=f.good('snapshot');

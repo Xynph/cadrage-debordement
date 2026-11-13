@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Four real weekly commands/matches; no injected career state or projected model.
 const assert=require('node:assert/strict');
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');

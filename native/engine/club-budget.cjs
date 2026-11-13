@@ -57,6 +57,49 @@ const PROPRIETAIRES = Object.freeze({
 });
 const TOLERANCE_DEFICIT = 0.02;   // en part des recettes : en dessous, personne ne s'en émeut
 
+// Centre de formation (demande de Léo du 13 novembre : cohérent entre les pays).
+// Le coût fait partie du fonctionnement : un centre de référence (30 Crabos, 30 Espoirs) coûte
+// PART_FORMATION des recettes, ce qui est déjà dans les 58 % de fonctionnement. Ce montant est
+// sorti de la ligne « Staff et fonctionnement » et montré à part ; un centre plus garni coûte plus,
+// un centre réduit coûte moins. Un Espoir coûte plus qu'un Crabos (indemnité, hébergement, staff).
+// Repères : Stade Toulousain, Cour des comptes 2024 (OCR2024-29) : environ 19 000 € par jeune et par
+//   an facturés pour 35 jeunes, hors indemnités ; reversement LNR selon le classement des centres
+//   (~180 000 à 260 000 €) et aide régionale de 100 000 €. Les autres pays sont estimés à partir de
+//   leur organisation : académies anglaises cofinancées par la RFU, académies des fédérations
+//   celtes, italienne, sud-africaine et du Pacifique financées surtout par la fédération, clubs
+//   japonais d'entreprise sans aide publique.
+const PART_FORMATION = 0.055;
+const POIDS_CRABOS = 0.6, POIDS_ESPOIR = 1.4, REFERENCE_CRABOS = 30, REFERENCE_ESPOIRS = 30;
+const FORMATION = Object.freeze({
+  france: Object.freeze({ aide: 0.25, libelle: 'Aides LNR et région à la formation' }),
+  angleterre: Object.freeze({ aide: 0.4, libelle: 'Fonds des académies de la fédération' }),
+  celte: Object.freeze({ aide: 0.7, libelle: 'Prise en charge de l’académie par la fédération' }),
+  pacifique: Object.freeze({ aide: 0.7, libelle: 'Prise en charge de l’académie par la fédération' }),
+  japon: Object.freeze({ aide: 0, libelle: '' }),
+  autre: Object.freeze({ aide: 0.3, libelle: 'Aides à la formation' }),
+});
+// Crédit académie du plafond salarial anglais : par joueur formé au club (arrivé avant 18 ans, moins
+// de 24 ans, salaire annuel au-dessus de 50 000 £), au plus 6 joueurs. 100 000 £ ≈ 115 000 €.
+const CREDIT_ACADEMIE = Object.freeze({ divisions: Object.freeze(['prem']), montant: 115000, seuil: 57500, maximum: 6, ageMax: 23 });
+function reglesFormation(division) {
+  return FORMATION[ECONOMIE.CHAMPIONNATS[division]?.pays] ?? FORMATION.autre;
+}
+// formation : {crabos, espoirs} présents au centre ; renvoie les montants annuels.
+function centreFormation(annuel, division, formation) {
+  const regle = reglesFormation(division);
+  const reference = annuel * PART_FORMATION;
+  const parPoids = reference / (REFERENCE_CRABOS * POIDS_CRABOS + REFERENCE_ESPOIRS * POIDS_ESPOIR);
+  const crabos = Math.max(0, formation?.crabos ?? REFERENCE_CRABOS), espoirs = Math.max(0, formation?.espoirs ?? REFERENCE_ESPOIRS);
+  const cout = parPoids * (crabos * POIDS_CRABOS + espoirs * POIDS_ESPOIR);
+  return { reference, referenceNette: reference * (1 - regle.aide), cout, aide: cout * regle.aide, libelleAide: regle.libelle };
+}
+function creditAcademie(division, joueurs, clubId) {
+  if (!CREDIT_ACADEMIE.divisions.includes(division)) return 0;
+  const formes = (joueurs ?? []).filter(p => typeof p?.id === 'string' && p.id.startsWith('youth-' + clubId + '-') &&
+    Number.isFinite(p.age) && p.age <= CREDIT_ACADEMIE.ageMax && Number.isFinite(p.salary) && p.salary * 52 > CREDIT_ACADEMIE.seuil).length;
+  return Math.min(CREDIT_ACADEMIE.maximum, formes) * CREDIT_ACADEMIE.montant;
+}
+
 const rond = montant => Math.round(montant / 100) * 100;
 // Tirage stable dans [0;1[ à partir d'un texte : le même club a toujours le même propriétaire.
 function unite(texte) {
@@ -112,21 +155,22 @@ function ajustement(annuel, masseAnnuelle, enveloppe) {
 // de temps en temps, un club de mécène choisit de dépasser un peu la borne des recettes et de payer
 // l'amende, jamais le plafond de la ligue.
 // À la création, personne ne dépasse.
-function limites(forces, saison, { creation = false, types = null } = {}) {
+function limites(forces, saison, { creation = false, types = null, credits = null } = {}) {
   const annuels = recettes(forces), resultat = new Map();
   for (const force of forces) {
     const regle = ECONOMIE.CHAMPIONNATS[force.division];
     if (!regle) continue;
     const annuel = annuels.get(force.id), p = proprietaire(forces, force.id, types?.[force.id]);
     const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) + p.enveloppe + 0.15 * annuel) / (1 + COTISATIONS)]];
-    if (regle.plafond !== null) bornes.push(['plafond', regle.plafond]);
+    const credit = credits?.[force.id] ?? 0;
+    if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
     bornes.sort((x, y) => x[1] - y[1]);
     const rigueur = unite('rigueur|' + force.id + '|' + saison), audace = !creation && p.type === 'mecene' && unite('audace|' + force.id + '|' + saison) < 0.12;
     const tolerance = audace ? 1.01 + 0.04 * rigueur : 0.93 + 0.065 * rigueur;
     // Le plafond salarial d'une ligue n'est jamais dépassé volontairement, même par un mécène
     // audacieux (décision de Léo du 12 novembre) : l'audace ne joue que sous les autres bornes.
-    const limite = regle.plafond !== null ? Math.min(regle.plafond, bornes[0][1] * tolerance) : bornes[0][1] * tolerance;
+    const limite = regle.plafond !== null ? Math.min(regle.plafond + credit, bornes[0][1] * tolerance) : bornes[0][1] * tolerance;
     resultat.set(force.id, { limite: rond(limite), regle: bornes[0][0], tolerance, audace });
   }
   return resultat;
@@ -136,8 +180,8 @@ function limites(forces, saison, { creation = false, types = null } = {}) {
 //   domicile : le club reçoit ; neutre : match sur terrain neutre ; phase : 'league' ou une phase finale ;
 //   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
 //   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '' }) {
-  const { regle, annuel } = regleDe(forces, clubId);
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null }) {
+  const { force, regle, annuel } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
   const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard);
@@ -159,7 +203,10 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   const fonctionnement = annuel * FONCTIONNEMENT + (gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe) : 0);
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   ecritures.push({ title: libelle + ' · Cotisations', amount: -rond(salaires * COTISATIONS) });
-  ecritures.push({ title: libelle + ' · Staff et fonctionnement', amount: -rond(fonctionnement / semaines) });
+  const centre = centreFormation(annuel, force.division, formation);
+  ecritures.push({ title: libelle + ' · Staff et fonctionnement', amount: -rond((fonctionnement - centre.referenceNette) / semaines) });
+  ecritures.push({ title: libelle + ' · Centre de formation', amount: -rond(centre.cout / semaines) });
+  if (centre.aide > 0) ecritures.push({ title: libelle + ' · ' + centre.libelleAide, amount: rond(centre.aide / semaines) });
   return ecritures;
 }
 
@@ -286,6 +333,10 @@ const budgetLigue=id=>budgetFrance()?CDFranceCompetition.leagueId(S,id):CDWorldC
 const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>({id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base}));
 const budgetSemaineNo=()=>S.franceMode?S.franceMode.week:S.worldMode.week;
 const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
+// Effectif du centre d'un club : celui du club joué, sinon celui que l'ordinateur gère pour lui.
+const budgetCentre=c=>{const jeunes=c.id===S.club?S.development?.academy:S.aiRoster?.academies?.find(a=>a.clubId===c.id)?.players;
+ if(!Array.isArray(jeunes))return null;let crabos=0,espoirs=0;for(const p of jeunes)if(p.age<=17)crabos++;else espoirs++;return {crabos,espoirs};};
+const budgetCredits=()=>{const credits={};for(const c of S.clubs){const v=nativeClubBudget.creditAcademie(budgetLigue(c.id),c.players,c.id);if(v)credits[c.id]=v;}return credits;};
 const budgetTypes=()=>budgetLisible(S.clubBudget)?S.clubBudget.clubs.map(c=>c.type):null;
 // Demandées à chaque joueur étudié par un club géré : gardées tant que la carrière, la saison et la force des clubs ne changent pas.
 let budgetLimitesMemo=null;
@@ -293,7 +344,7 @@ const budgetLimites=creation=>{
  let bases=0;for(const c of S.clubs)bases+=c.base;
  const m=budgetLimitesMemo,premiere=creation===true;
  if(m&&m.etat===S&&m.saison===S.season&&m.creation===premiere&&m.bases===bases&&m.club===S.club)return m.valeur;
- budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(budgetForces(),S.season,{creation:premiere,types:budgetTypes()})};
+ budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(budgetForces(),S.season,{creation:premiere,types:budgetTypes(),credits:budgetCredits()})};
  return budgetLimitesMemo.valeur;
 };
 const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
@@ -349,7 +400,7 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // Même train de vie pour le club joué que pour les clubs gérés (décision de Léo du 12 novembre) :
   // l'excédent de l'exercice est réinvesti à 70 % dans le staff et le fonctionnement, un déficit
   // au-delà de l'enveloppe du propriétaire est réduit par des économies.
-  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle}));
+  repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c)}));
  nativeClubBudget.compter(b.clubs[c.id],ecritures,masse*52,repere.classement[c.id]||null);
  return ecritures;
 }
@@ -524,8 +575,8 @@ function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  const b=S.clubBudget;
  if(!budgetActif()||!budgetLisible(b)||b.saison!==S.season||!b.prevision)return null;
  const forces=budgetForces(),c=club(),masse=budgetMasse(c),semaines=wageForecastWeeks();
- const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
- const salaires=-somme(e=>/Salaires des joueurs|Cotisations/.test(e.title)),fonctionnement=-somme(e=>/fonctionnement/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
+ const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true,formation:budgetCentre(c)})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
+ const salaires=-somme(e=>/Salaires des joueurs|Cotisations/.test(e.title)),fonctionnement=-somme(e=>/fonctionnement|Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
  return {weeklyWages:salaires,weeklyIncome:recettes,weeklyCosts:salaires+fonctionnement+hebdoFormation+entretien,baseForecast:b.prevision.tresoreriePrevue,
   notice:'Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.',
   budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
@@ -544,5 +595,5 @@ const VALIDATION = `{
  }
 }`;
 
-module.exports = Object.freeze({ ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
+module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, euros });

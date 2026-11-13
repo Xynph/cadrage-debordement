@@ -30,7 +30,7 @@ try{
  settleClubMeetings(good('train',{mode:'normal'}),(command,payload)=>good(command,payload));const continued=state();assert.equal(continued.rosterFoundation.version,1);for(const c of continued.clubs)for(const p of c.players)if(p.rosterProfile)assert.deepEqual(p.rosterProfile,v1.players[p.id]);
  const continuation=good('export').meta.exportText;good('import',{text:continuation});assert.equal(good('export').meta.exportText,continuation);
  const persisted=fs.readFileSync(disk);bridge.close();bridge=createBridge({dataDir:root,seed:1,now:1700000000000});assert.deepEqual(state(),continued,'v1 reload after restart preserves state');assert.deepEqual(fs.readFileSync(disk),persisted,'reload does not rewrite save');
- settleClubMeetings(good('new_career',{mode:'common',club:6}),(command,payload)=>good(command,payload));assert.equal(state().rosterFoundation.version,2);assert.deepEqual(good('snapshot').meta.rosterSources,data.sources);
+ settleClubMeetings(good('new_career',{mode:'world-champ',club:6}),(command,payload)=>good(command,payload));assert.equal(state().rosterFoundation.version,2);assert.deepEqual(good('snapshot').meta.rosterSources,data.sources);
  const current=good('export').meta.exportText;good('import',{text:current});assert.equal(good('export').meta.exportText,current);
  console.log(JSON.stringify({passed:true,fixtureSha256:crypto.createHash('sha256').update(fixture).digest('hex'),fixtureBytes:Buffer.byteLength(text),checks:['real v1 S2 import','v1 provenance','rejection without disk/state writes','continuation','export/import','restart','new v2']}));
 }finally{bridge.close();fs.rmSync(root,{recursive:true,force:true});}

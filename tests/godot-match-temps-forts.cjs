@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Vraie interface + vrai moteur. Le match en temps forts est le mode de base : sans
 // aucune variable, le match enchaîne temps fort → écran intermédiaire → temps fort.
 // CD_MATCH_TEMPS_FORTS=0 rend le direct d'origine, sans régie.

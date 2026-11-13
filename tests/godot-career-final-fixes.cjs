@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 // Controlled incidents use the actual native rules; the worker receives valid saves.

@@ -1,5 +1,5 @@
-
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -19,14 +19,14 @@ test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds et le
   const result = bridge.handle({ id: 1, command: 'new_career', payload: { mode: 'common', club: 0 } });
   assert.equal(result.ok, true, result.error);
   const academy = result.model.decisions.development.academy;
-  const u21 = academy.filter(player => player.age >= 19 && player.age <= 21);
+  const u21 = academy.filter(player => player.age >= 18 && player.age <= 21);
   const saved = JSON.parse(JSON.parse(fs.readFileSync(path.join(result.model.meta.dataDir, 'donnees.json'))).store['bdt-v1']);
   const source = new Map(saved.development.academy.map(player => [player.id, player]));
   const potentials = u21.map(player => source.get(player.id).dev.potential);
   console.log(JSON.stringify({ u21: potentials, publicRanges: u21.map(p => p.potentialRange) }));
   assert.equal(u21.length, 30);
   const originalU21 = u21.filter(player => /^youth-0-1-\d{1,2}$/.test(player.id));
-  assert.equal(originalU21.length, 5);
+  assert.equal(originalU21.length, 10);
   assert.ok(originalU21.filter(player => source.get(player.id).dev.potential > 90).length <= 1);
   assert.ok(potentials.filter(potential => potential > 90).length <= 3, String(potentials));
   assert.ok(new Set(potentials).size >= 3);
@@ -111,4 +111,31 @@ test('Migration : les points acquis, la majoration historique et les profils doc
   assert.deepEqual(after[2], before[2], 'Un dossier source conserve son plafond');
   assert.equal(h.run('normalizeAcademyPotential(S)'), false);
   assert.deepEqual(h.state().development.academy, after);
+});
+
+test('Qualité des fournées : pays, installations et responsable de la formation déplacent le potentiel', () => {
+  const h = context(437493);
+  const result = JSON.parse(h.run(`start(0, 'france');
+    const base = {id:3, base:72, abbr:'ZZZ'};
+    const sample = club => Array.from({length:60}, (_, year) => POS.map((_, slot) =>
+      potentialAtRole(academyPlayer(club.id, slot, year+1, slot, false, club)))).flat();
+    const stats = club => { const scores = sample(club); return {
+      weight:academyRecruitmentWeight(club), mean:scores.reduce((a,b)=>a+b,0)/scores.length,
+      prospects:scores.filter(score => score >= 83).length }; };
+    const france = stats({...base, country:'FR'});
+    const japan = stats({...base, country:'JP'});
+    S.staffCareer = {version:1, people:[[{id:'f1', clubId:3, role:'formation', level:75}]]};
+    const goodStaff = stats({...base, country:'FR'});
+    S.staffCareer.people = [[{id:'f2', clubId:3, role:'formation', level:45}]];
+    const weakStaff = stats({...base, country:'FR'});
+    delete S.staffCareer;
+    JSON.stringify({france, japan, goodStaff, weakStaff,
+      bounded:[academyRecruitmentWeight({id:9, base:99, abbr:'TCX', country:'FR'}), academyRecruitmentWeight({id:9, base:40, abbr:'X', country:'GE'})]});`));
+  console.log(JSON.stringify(result));
+  assert.ok(result.japan.weight < result.france.weight);
+  assert.ok(result.japan.mean < result.france.mean);
+  assert.ok(result.goodStaff.weight > result.france.weight && result.goodStaff.prospects > result.france.prospects);
+  assert.ok(result.weakStaff.weight < result.france.weight && result.weakStaff.prospects < result.france.prospects);
+  assert.ok(result.japan.prospects > 0, 'Un petit pays de rugby garde des surprises');
+  assert.ok(result.bounded.every(weight => weight >= 0 && weight <= 6));
 });
