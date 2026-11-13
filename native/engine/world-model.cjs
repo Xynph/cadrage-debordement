@@ -128,6 +128,9 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const confirmedResult=S.worldMode.resultConfirmed?S.live:null;
   const cadence=W.dailyStatus(S);
   if(cadence)m.meta.calendarCadence=cadence;
+  // Préparation d'avant-saison (reprise.cjs) : la carrière vit en juillet-août avant la semaine 0.
+  const preseason=typeof CDReprise!=='undefined'?CDReprise.pending(S):null;
+  if(preseason){m.meta.calendarToday=preseason.today;m.meta.calendarCadence={day:(new Date(preseason.today+'T00:00:00Z').getUTCDay()+6)%7,matchReady:false,canAdvance:true,preseason:true};m.meta.roundLabel='Préparation d’avant-saison';}
   if(confirmedResult)m.live=null;
   m.club=clubSummary(S.club);m.league=tables[W.leagueId(S)].map(tableRow);
   if(edition.version>=2)m.meta.edition=edition.mode;
