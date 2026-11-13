@@ -7,6 +7,7 @@ const career=require('./world-career.cjs');
 const seniorCalibration=require('./senior-calibration.cjs');
 const roleAttributePriors=require('./role-attribute-priors.json');
 const initialContracts=require('./world-initial-contracts.json');
+const stadiumCapacities=require('./world-stadium-capacities.json');
 const lnrCalendar=require('./lnr-calendar-2026-27.json');
 const dispatch=require('./world-dispatch.cjs');
 const pacificRules=require('./super-rugby-pacific.cjs');
@@ -42,6 +43,7 @@ function bootstrap(){
   `const CDWorldValidation=(${validation.toString()})();`,
   `const CDWorldKnockout=(${knockout.toString()})();`,
   `const CDWorldInitialContracts=${JSON.stringify(initialContracts)};`,
+  `const CDWorldStadiumCapacities=${JSON.stringify(stadiumCapacities.capacities)};`,
   `const CDWorldLnrCalendar=${JSON.stringify(lnrCalendar)};`,
   `const CDWorldSeniorCalibration=(${seniorCalibration.toString()})(lnrProjectV12,roleNote,ROLE_WEIGHTS,${JSON.stringify(roleAttributePriors.roles)});`,
   `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts,CDWorldLnrCalendar,CDWorldSeniorCalibration));`,

@@ -294,14 +294,21 @@ static func _academy(model: Dictionary) -> Dictionary:
 static func _installations(card: Panel, app: Control, finance: Dictionary) -> void:
 	var facility: Variant = finance.get("facility")
 	var academy_level: Variant = _academy(app.model).get("facilities")
-	# Hors Espoirs (carrière Monde), le niveau n'existe pas : c'est voulu, on le dit au lieu d'un « indisponible » d'erreur.
-	var academy_open: bool = _academy(app.model).get("available", true) != false
+	# Carrière Monde : pas de niveau 0-3 (pas de compétitions Espoirs), mais le centre existe : on montre son état réel
+	# (Crabos, Espoirs, places), les mêmes chiffres que la page Formation (academyFollowUp), jamais « non ouverte ».
+	var follow: Dictionary = app.model.get("clubLife", {}).get("academyFollowUp", {})
+	var centre_open: bool = follow.get("available", false) == true
 	var support: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
 	var medical: Array = support.get("medical", {}).get("players", [])
+	var academy_sub := "Installations du centre"
+	var academy_value := G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"
+	if academy_level == null and centre_open:
+		academy_sub = "%s Crabos · %s Espoirs" % [G.n(follow.get("crabos",{}).get("count",0)), G.n(follow.get("espoirs",{}).get("count",0))]
+		academy_value = "%s / %s" % [G.n(follow.get("total",0)), G.n(follow.get("capacity",75))]
 	var rows := [
 		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "Niveau indisponible"],
 		["heart","Cellule médicale","Dossiers suivis",str(medical.size()) if not support.is_empty() else "—"],
-		["school","Académie","Installations du centre" if academy_level != null or academy_open else "Espoirs à venir en carrière Monde",G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible" if academy_open else "Non ouverte"]
+		["school","Académie",academy_sub,academy_value]
 	]
 	for i in rows.size():
 		var row: Array = rows[i]
@@ -309,9 +316,9 @@ static func _installations(card: Panel, app: Control, finance: Dictionary) -> vo
 		U.icon(card, row[0], Vector2(23,y+13), C.IVORY, 37)
 		D.text(card, 82, y+32, row[1], 28, C.IVORY, 700, 480)
 		D.text(card, 82, y+62, row[2], 22, C.MUTED, 500, 400)
-		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null
+		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null and not centre_open
 		D.text(card, 686, y+37, row[3], 23 if level_unavailable else 29, C.MUTED if level_unavailable else C.MINT, 700, 210, HORIZONTAL_ALIGNMENT_RIGHT)
-		if i != 1 and not level_unavailable:
+		if i != 1 and not level_unavailable and not (i == 2 and academy_level == null):
 			var total := 10 if i == 0 else 3
 			var value := int(academy_level) if i == 2 else int(facility.level)
 			for segment in total:

@@ -14,8 +14,10 @@ function factory(){
  const services={simple:{label:'Accueil simple',cost:0},confort:{label:'Accueil confort',cost:2500},premium:{label:'Accueil premium',cost:6000}};
  const prices={accessible:12,equilibree:20,premium:30};
  const own=s=>s.clubs[s.club];
+ // Capacité du stade : celle de la carrière, sinon (ancienne sauvegarde du Monde) la table des capacités par identifiant de club.
+ const knownCapacity=s=>{const c=own(s);return c.stadiumCapacity??(world(s)&&typeof CDWorldStadiumCapacities!=='undefined'?CDWorldStadiumCapacities[c.id]:undefined)};
  // Only the tiny optional namespace is copied. API.ensure cannot mutate S here.
- const previewState=()=>({season:S.season,club:0,clubs:[{id:own(S).id,name:own(S).name,abbr:own(S).abbr,base:own(S).base,players:own(S).players,cash:own(S).cash,stadium:own(S).stadium,stadiumCapacity:own(S).stadiumCapacity}],v105to110:S.v105to110?copy(S.v105to110):undefined,v111to116:S.v111to116?copy(S.v111to116):undefined});
+ const previewState=()=>({season:S.season,club:0,clubs:[{id:own(S).id,name:own(S).name,abbr:own(S).abbr,base:own(S).base,players:own(S).players,cash:own(S).cash,stadium:own(S).stadium,stadiumCapacity:knownCapacity(S)}],v105to110:S.v105to110?copy(S.v105to110):undefined,v111to116:S.v111to116?copy(S.v111to116):undefined});
  function validate(s,timeline={season:s.season,week:week(s)},archived=false){
   if(s.nativeStrategyOffices!==undefined){const a=s.nativeStrategyOffices;requireThat(a&&a.version===1&&a.clubs&&typeof a.clubs==='object'&&!Array.isArray(a.clubs)&&Object.keys(a).length===2&&Object.keys(a.clubs).length<=s.clubs.length,'Archives des bureaux invalides.');for(const [key,office] of Object.entries(a.clubs)){requireThat(/^(0|[1-9]\d*)$/.test(key)&&Number(key)<s.clubs.length&&office&&typeof office==='object'&&!Array.isArray(office)&&Object.keys(office).every(k=>['v105to110','v111to116','nativeBoardCalendar'].includes(k)),'Bureau archivé invalide.');validate({season:s.season,club:Number(key),clubs:s.clubs,franceMode:s.franceMode,worldMode:s.worldMode,commonDatabase:s.commonDatabase,economy:s.economy,...office},timeline,true);}}
   if(s.nativeBoardReports!==undefined){requireThat(Array.isArray(s.nativeBoardReports)&&s.nativeBoardReports.length<=15,'Archives des objectifs invalides.');const keys=new Set();for(const r of s.nativeBoardReports){const key=r.season+':'+r.clubId;requireThat(r&&isInt(r.season,1,s.season)&&isInt(r.clubId,0,s.clubs.length-1)&&!keys.has(key)&&Array.isArray(r.objectives)&&r.objectives.length<=8,'Bilan des objectifs invalide.');keys.add(key);validate({season:s.season,club:r.clubId,clubs:s.clubs,franceMode:s.franceMode,worldMode:s.worldMode,commonDatabase:s.commonDatabase,economy:s.economy,nativeBoardCalendar:{version:1,clubId:'club-'+r.clubId,season:r.season,week:0,trust:60,objectives:r.objectives,meetings:[],history:[]}},timeline,true);}}
@@ -45,6 +47,7 @@ function factory(){
  }
  function receipt(label,before){const delta=own(S).cash-before;if(delta){S.ledger.unshift({title:label,amount:delta});S.ledger=S.ledger.slice(0,100);}}
  function execute(command,p){
+  if(world(S)&&own(S).stadiumCapacity===undefined&&knownCapacity(S)!==undefined)own(S).stadiumCapacity=knownCapacity(S);
   requireThat(p&&p.context&&p.context.season===S.season&&p.context.week===week(S)&&p.context.club===S.club,'Cette décision est périmée : actualisez le carnet.');
   requireThat(!S.live&&S.phase!=='ended','Décision indisponible pendant le match ou en fin de saison.');
   const save=()=>true,before=own(S).cash;let ok=false,label='Décision du club';
