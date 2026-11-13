@@ -330,10 +330,10 @@ function factory(){
    const q=contextualQuestion(base,facts);
    const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix));
    for(const h of sources.slice().reverse()){
-    const reminder=prefix+libelleSaison(h.season)+', semaine '+(h.week+1)+', pour ce club, vous aviez répondu : « '+h.answerText+' ». ';
+    const reminder=prefix+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+', semaine '+(h.week+1)+', pour ce club, vous aviez répondu : « '+h.answerText+' ». ';
     if(history.some(p=>p.journalist?.id===q.journalist.id&&p.club===s.club&&p.season===s.season&&p.questionText?.startsWith(reminder)))continue;
     const question=reminder+q.question;if(!text(question))continue;
-    return {...q,question,followUp:{context:{season:h.season,week:h.week,club:h.club},quote:h.answerText,question:h.questionText,label:'Déclaration archivée · saison '+libelleSaison(h.season)+' · semaine '+(h.week+1)+' · même club et même journaliste'}};
+    return {...q,question,followUp:{context:{season:h.season,week:h.week,club:h.club},quote:h.answerText,question:h.questionText,label:'Déclaration archivée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+' · semaine '+(h.week+1)+' · même club et même journaliste'}};
    }
    return q;
   });

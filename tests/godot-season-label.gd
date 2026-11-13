@@ -1,14 +1,16 @@
 extends SceneTree
 # Libellé de saison côté Godot : même formule que libelleSaison() du moteur (dist/season-label.js).
-const G = preload("res://ui/game_skin.gd")
-const C = preload("res://ui/carnet_skin.gd")
-const SeasonLabel = preload("res://ui/season_label.gd")
 var failures: Array[String] = []
 
 func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message); printerr("FAIL: ", message)
 
-func _initialize() -> void:
+func _initialize() -> void: call_deferred("run")
+
+func run() -> void:
+	var G = load("res://ui/game_skin.gd")
+	var C = load("res://ui/carnet_skin.gd")
+	var SeasonLabel = load("res://ui/season_label.gd")
 	SeasonLabel.start_year = 2026
 	check(G.season_label(1) == "2026-2027", "saison interne 1 → 2026-2027")
 	check(G.season_label(2) == "2027-2028", "saison interne 2 → 2027-2028")

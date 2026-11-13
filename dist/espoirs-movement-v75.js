@@ -148,7 +148,7 @@
   function panel(s){
     const st=ensure(s);if(!st)return '';
     const escape=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const items=st.history.flatMap(h=>h.swaps.map(sw=>'<li>Saison '+libelleSaison(h.season)+' : '+escape(st.names[sw.up]||sw.up)+' monte en Élite ; '+escape(st.names[sw.down]||sw.down)+' descend en Accession</li>')).join('');
+    const items=st.history.flatMap(h=>h.swaps.map(sw=>'<li>Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+' : '+escape(st.names[sw.up]||sw.up)+' monte en Élite ; '+escape(st.names[sw.down]||sw.down)+' descend en Accession</li>')).join('');
     return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V75 · Montées et descentes Espoirs</h2><p>Deux finalistes Accession montent contre les deux derniers représentants des poules initiales Élite les moins bien classés. Mouvement appliqué à la saison suivante, avec conservation des effectifs et des identités.</p><ul>'+(items||'<li>Première saison en cours : aucun mouvement.</li>')+'</ul></section>';
   }
   function install(g){

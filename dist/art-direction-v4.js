@@ -83,7 +83,7 @@
   const signals=decisionSignals(m),match=signals[0],other=signals.slice(1);
   const timeline=(m.fixtures||[]).slice(0,3);
   return '<section class="da42-board da42-command" aria-label="Centre de décisions du manager">'+
-   '<div class="da42-command-lead"><div class="da42-command-overline">LE POSTE DE COMMANDE <span>SAISON '+libelleSaison(m.season)+'</span></div>'+
+   '<div class="da42-command-lead"><div class="da42-command-overline">LE POSTE DE COMMANDE <span>SAISON '+(typeof libelleSaison==='function'?libelleSaison:String)(m.season)+'</span></div>'+
    '<div class="da42-command-content"><div><span class="da42-command-kicker">PROCHAIN DÉFI</span><h2>'+esc(m.next?m.next.opponent.name:'Le prochain chapitre')+'</h2>'+
    '<p>'+esc(m.roundTitle||'Saison en cours')+' · '+esc(match.detail)+' · '+esc(m.competition)+'</p>'+
    '<button class="da42-command-cta" type="button" onclick="nav(\'tactics\')">Préparer ce rendez-vous <span>↗</span></button></div>'+
@@ -442,7 +442,7 @@
   const supported=['dashboard','team','finance','recruitment','formation','league','tactics'];if(!supported.includes(route))return;
   main.dataset.da4=route;main.classList.add('da4-workspace');const m=snapshot();
   if(route==='dashboard'){
-   main.classList.add('da4-desk');const heading=main.querySelector('.heading');if(heading){heading.querySelector('h1').textContent=m.club.name;heading.querySelector('.eyebrow').textContent='LE BUREAU · SAISON '+libelleSaison(m.season);}
+   main.classList.add('da4-desk');const heading=main.querySelector('.heading');if(heading){heading.querySelector('h1').textContent=m.club.name;heading.querySelector('.eyebrow').textContent='LE BUREAU · SAISON '+(typeof libelleSaison==='function'?libelleSaison:String)(m.season);}
    const summary=main.querySelector(':scope>.office-summary');if(summary){const stage=node('<div class="da4-desk-stage">'+fixture(m)+'<section class="da4-panel da4-condition">'+head('LE GROUPE','Prêts à entrer en jeu')+ring(m.availability,'Disponibilité du groupe')+'<button class="da4-text-action" onclick="nav(\'team\')">Voir l’effectif →</button></section></div>');summary.after(stage);stage.after(node(runway(m)));stage.before(node(decisionBoard(m)));}
    const office=main.querySelector(':scope>.office-grid');if(office){const calendar=office.querySelector('aside');if(calendar)fold(calendar,'Calendrier détaillé & projet sportif');}
    const season=main.querySelector(':scope>[aria-label="Pilotage de saison"]');if(season){const mini=season.querySelector('.office-summary');if(mini)fold(mini,'Les indicateurs de la relève');const links=season.querySelector('.office-links');if(links)links.classList.add('da4-quicklinks');}

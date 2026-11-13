@@ -123,7 +123,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const names={'jlo-d1-d2':'Barrage Japon D1 / D2','access-nationale':'Barrage Pro D2 / Nationale'},phaseLabels={'third-place':'Petite finale',promotion:'Barrage'},champPhases={quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale'};
   const dateProof=f=>scheduleProof(f,R);
   const tableRow=r=>({...clubSummary(r.id),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,pf:r.pf,pa:r.pa,bonus:r.bonus,points:r.points,form:r.form,unresolvedTie:!!(r.unresolvedTie||r.sportingTie)});
-  m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),seasonStartYear:SEASON_START_YEAR,seasonLabel:libelleSaison(S.season),competitionRules:edition.version===1?'Saison '+libelleSaison(S.season):'Saison '+libelleSaison(S.season)+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
+  m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),seasonStartYear:SEASON_START_YEAR,seasonLabel:(typeof libelleSaison==='function'?libelleSaison:String)(S.season),competitionRules:edition.version===1?'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season):'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season)+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
   m.meta.calendarToday=W.calendarToday(S);
   const confirmedResult=S.worldMode.resultConfirmed?S.live:null;
   const cadence=W.dailyStatus(S);

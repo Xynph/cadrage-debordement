@@ -156,7 +156,7 @@
       'pas de simulation de match ni de prétention à des statistiques officielles.</p>'+
       '<h3>V116 · Fidélité et bilans</h3><p>Satisfaction : '+st.sentiment+'/100 · recettes de saison '+
       st.ledger.reduce((n,x)=>n+x.revenue,0)+' € fictifs</p><ul>'+
-      st.history.map(h=>'<li>'+libelleSaison(h.season)+' · '+h.totalAttendance+' spectateurs simulés · '+
+      st.history.map(h=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+' · '+h.totalAttendance+' spectateurs simulés · '+
         h.totalRevenue+' € · satisfaction '+h.sentiment+'/100</li>').join('')+
       '</ul></section>';
   }

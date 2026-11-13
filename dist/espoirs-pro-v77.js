@@ -112,7 +112,7 @@
       '<div class="tablewrap"><table><thead><tr><th>Espoir</th><th>Poste</th><th>Niveau</th><th>Potentiel</th><th>Signer un premier contrat</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<button type="button" onclick="nav(\'team\')">Composer la feuille de 23 →</button>'+
       '<h3>Historique des passages professionnels</h3><ul>'+
-      (history.map(p=>'<li>'+libelleSaison(p.season)+' : '+safe(p.name)+' · '+safe(p.pos)+' · '+p.years+' an(s) · '+Number(p.salary).toLocaleString('fr-FR')+' €/semaine</li>').join('')||'<li>Aucune promotion à ce jour.</li>')+
+      (history.map(p=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(p.season)+' : '+safe(p.name)+' · '+safe(p.pos)+' · '+p.years+' an(s) · '+Number(p.salary).toLocaleString('fr-FR')+' €/semaine</li>').join('')||'<li>Aucune promotion à ce jour.</li>')+
       '</ul><p class="help">Pas de limite de promotions : il faut une place dans l’effectif professionnel. Le XV Espoirs conserve ses postes, avec un remplaçant formé en cas de manque. Les nouveaux contrats utilisent la masse salariale professionnelle existante.</p></section>';
   }
   function install(g){

@@ -202,7 +202,7 @@ module.exports = function academyGroups() {
     if (remaining.length + keep.length > capacity) throw Error(`Le centre est plein : ${capacity} jeunes au plus.`);
     s.development.academy = remaining.concat(intake.players.filter(p => keep.includes(p.id)));
     delete s.academyIntake;
-    news(`Génération ${libelleSaison(s.season)} : ${keep.length} jeune(s) rejoignent les Crabos${release.length ? `, ${release.length} quittent le centre` : ''}.`);
+    news(`Génération ${(typeof libelleSaison==='function'?libelleSaison:String)(s.season)} : ${keep.length} jeune(s) rejoignent les Crabos${release.length ? `, ${release.length} quittent le centre` : ''}.`);
     return { kept: keep.length, released: release.length };
   }
   // Sans décision avant la première journée, le responsable de la formation choisit.

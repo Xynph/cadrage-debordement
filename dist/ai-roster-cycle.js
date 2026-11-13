@@ -327,7 +327,7 @@ function aiRosterPanel(){
    (r?.renewed||0)+' / '+(r?.released||0)+'</td><td>'+
    (r?.recruited||0)+' / '+(r?.promoted||0)+'</td></tr>';
  }).join('');
- const history=st.events.slice(0,15).map(x=>'<div class="news"><small>'+libelleSaison(x.season)+' · '+
+ const history=st.events.slice(0,15).map(x=>'<div class="news"><small>'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' · '+
   visualEscape(S.clubs[x.clubId]?.abbr||'Club')+' · '+
   ({renew:'Prolongation',release:'Départ libre',retire:'Retraite',recruit:'Recrutement',
    promote:'Promotion formation',emergency:'Renfort d’urgence',sell:'Vente à un club'})[x.kind]+'</small>'+
@@ -335,7 +335,7 @@ function aiRosterPanel(){
  return '<section class="card"><h2>Observatoire des effectifs IA</h2>'+
  '<p class="help">Simulation fictive : les clubs prennent des décisions de contrats, recrutent dans le marché existant, développent des espoirs et conservent une réserve financière. Les salaires sont hebdomadaires ; une seule fenêtre de recrutement par demi-saison. La formation d’urgence intervient uniquement si la feuille de match manque de joueurs qualifiés.</p>'+
  population+'<div class="tablewrap"><table><thead><tr><th>Club</th><th>Pros</th><th>Espoirs</th>'+
- '<th>Salaires / plafond indicatif</th><th>Prolongations / départs '+libelleSaison(season)+'</th>'+
+ '<th>Salaires / plafond indicatif</th><th>Prolongations / départs '+(typeof libelleSaison==='function'?libelleSaison:String)(season)+'</th>'+
  '<th>Recrues / jeunes promus</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<h3>Mouvements vérifiables</h3>'+(history||'<p>Les mouvements apparaîtront après les prochaines journées et l’intersaison.</p>')+
  '</section>';

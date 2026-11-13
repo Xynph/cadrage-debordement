@@ -172,7 +172,7 @@ function factory(){
   return (s?.playerKnowledge?.jobs||[]).filter(j=>j.status==='done').slice(-20).reverse().flatMap(j=>{
    const p=people.get(j.playerId);if(!p)return [];
    return [{id:'target-report:'+j.id,mission:j.id,playerId:p.id,name:p.name,pos:p.pos,family:p.family,age:p.age,rating:p.rating,note:p.rating,potential:p.potential,salary:null,price:null,grade:null,season:j.completedSeason,week:j.completedWeek,
-    assessment:{source:'Observation ciblée · saison '+libelleSaison(j.completedSeason)+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de votre staff.'}}];
+    assessment:{source:'Observation ciblée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(j.completedSeason)+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de votre staff.'}}];
   });
  }
  function visibility(s){

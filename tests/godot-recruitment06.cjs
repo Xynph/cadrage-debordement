@@ -69,7 +69,7 @@ func run() -> void:
  for q: Dictionary in questions:
   if q.has("followUp"):
    var source: Label = page.find_child("PressFollowUp_" + str(q.id),true,false)
-   check(source != null and source.text.contains("saison 1"),"Source de relance datée visible")
+   check(source != null and source.text.contains("saison 2026-2027"),"Source de relance datée visible")
   for answer: Dictionary in q.answers:
    var option: Button = page.find_child("PressAnswer_"+str(q.id)+"_"+str(answer.id),true,false)
    check(option != null,"Les cinq réponses restent présentes")

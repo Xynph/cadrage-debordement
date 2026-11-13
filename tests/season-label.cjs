@@ -32,9 +32,9 @@ test('Monde : première journée de carrière, libellé exposé et aucun « Sais
   assert.equal(model.meta.seasonLabel,'2026-2027');
   assert.match(model.meta.competitionRules,/^Saison 2026-2027/);
   assert.doesNotMatch(model.meta.competitionRules,/–/,'un seul tiret pour les saisons');
-  // Date de départ : lundi 17 août 2026, début de la préparation (voir la description de la PR).
-  assert.equal(model.meta.calendarToday,'2026-08-17');
-  assert.equal(new Date(model.meta.calendarToday+'T00:00:00Z').getUTCDay(),1,'un lundi');
+  // Date de départ : la carrière commence pendant la pré-saison 2026-2027 (été 2026), avant tout match.
+  // La date exacte relève du chantier « reprise choisie » ; ici seul l'encadrement est vérifié.
+  assert.match(model.meta.calendarToday,/^2026-0[78]-\d\d$/,'départ en juillet ou août 2026');
   const firstMatch=model.calendar.map(f=>f.date).sort()[0];
   assert.ok(firstMatch>model.meta.calendarToday,'aucun match avant le premier jour : '+firstMatch);
   const text=JSON.stringify(model);

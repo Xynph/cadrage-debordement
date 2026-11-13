@@ -34,7 +34,7 @@
    const main=doc.querySelector('.main[data-ed-route="team"]');if(!main||typeof S==='undefined'||!S||S.live){mode=null;return;}
    if(career!==S){career=S;selected=null;mode=null;}main.classList.add('sq-main');
    const title=main.querySelector('.heading h1');if(title)title.textContent='Les hommes du projet.';
-   const desc=main.querySelector('.heading p');if(desc)desc.textContent=club().players.length+' joueurs · Saison '+libelleSaison(S.season)+' · '+club().name;
+   const desc=main.querySelector('.heading p');if(desc)desc.textContent=club().players.length+' joueurs · Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season)+' · '+club().name;
    const roster=main.querySelector('.cd02-roster'),profile=main.querySelector('[data-cd02-player]');
    if(profile){
     const p=project(profile.dataset.cd02Player);if(!p)return;main.classList.add('sq-profile-main');

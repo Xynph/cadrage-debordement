@@ -8,7 +8,7 @@ const CDMenuV3=(()=>{
  function applyPreferences(){for(const k of Object.keys(prefs))document.documentElement?.setAttribute?.('data-menu-'+k,preference(k))}
  function setPreference(key,value){if(!prefs[key]?.includes(value))return false;try{gameStorage.setItem('cd-menu-'+key+'-v3',value)}catch(e){toast('Réglage non enregistré : stockage indisponible.');return false}applyPreferences();render();return true}
  function date(value){const d=new Date(value);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeStyle:'short'}).format(d):'Date indisponible'}
- function summary(s){return 'Saison '+libelleSaison(s.season)+' · '+(s.phase==='league'?'Journée '+(s.round+1):s.phase==='ended'?'Saison terminée':'Phases finales')}
+ function summary(s){return 'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(s.season)+' · '+(s.phase==='league'?'Journée '+(s.round+1):s.phase==='ended'?'Saison terminée':'Phases finales')}
  function crest(c){return '<span class="cd3-crest" aria-hidden="true">'+escape(c.abbr)+'</span>'}
  function cards(){
   let d;try{d=CDMenuSlots.list()}catch(e){return '<div class="cd3-alert" role="alert">'+escape(e.message)+'</div>'}

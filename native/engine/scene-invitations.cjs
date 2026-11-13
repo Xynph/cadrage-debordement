@@ -102,7 +102,7 @@ module.exports={
    const unseen=(topic,p)=>!st?.seen.includes(topic+':'+S.season+':'+S.club+':'+p.id);
    const candidate=roster().find(p=>Number.isFinite(p.satisfaction?.score)&&p.satisfaction.score<=40&&unseen('role',p));
    if(candidate){st=state();add(st,'private_player','role',candidate.id,'La satisfaction enregistrée du joueur est de '+candidate.satisfaction.score+'/100 : faire le point sur son rôle.','role:'+S.season+':'+S.club+':'+candidate.id);}
-   else if(S.round>=20){const p=roster().find(p=>p.contractEnd===S.season&&unseen('contract',p));if(p){st=state();add(st,'private_player','contract',p.id,'Le contrat actuel du joueur se termine à la fin de la saison '+libelleSaison(S.season)+'. Un entretien ne vaut pas prolongation.','contract:'+S.season+':'+S.club+':'+p.id);}}
+   else if(S.round>=20){const p=roster().find(p=>p.contractEnd===S.season&&unseen('contract',p));if(p){st=state();add(st,'private_player','contract',p.id,'Le contrat actuel du joueur se termine à la fin de la saison '+(typeof libelleSaison==='function'?libelleSaison:String)(S.season)+'. Un entretien ne vaut pas prolongation.','contract:'+S.season+':'+S.club+':'+p.id);}}
    else {
     const games=(S.history||[]).filter(r=>r.pair?.includes(S.club)&&Array.isArray(r.score)&&(!r.season||r.season===S.season)).length;
     const p=games>=4&&roster().find(p=>integer(p.dev?.minutes,0,59)&&!p.injury&&unseen('playtime',p));

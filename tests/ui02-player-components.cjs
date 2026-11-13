@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
+globalThis.libelleSaison=require('../dist/season-label.js').libelleSaison; // libellé de saison du jeu (chargé avant l'interface)
 const ui=require('../dist/ui02-player-components.js');
 const css=fs.readFileSync(path.join(__dirname,'..','dist','ui02-player-components.css'),'utf8');
 

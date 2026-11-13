@@ -144,7 +144,7 @@
       const info=career(s,p.id);
       const events=info?.events||[];
       return '<li><strong>'+escape(p.name)+'</strong> · '+escape(p.pos)+' · '+
-        (events.map(e=>''+libelleSaison(e.season)+' '+escape(e.text||e.type)).join(' → ')||'En formation')+'</li>';
+        (events.map(e=>''+(typeof libelleSaison==='function'?libelleSaison:String)(e.season)+' '+escape(e.text||e.type)).join(' → ')||'En formation')+'</li>';
     }).join('');
     return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V86–V89 · Suivi des talents</h2>'+
       '<h3>V86 · Fixer les objectifs de minutes</h3><div class="tablewrap"><table><thead><tr><th>Espoir</th><th>Poste</th><th>Déjà jouées</th><th>Objectif annuel</th></tr></thead><tbody>'+

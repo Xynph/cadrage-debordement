@@ -108,7 +108,7 @@
   const stories=events.map(e=>{
    const label=e.type==='surprise'?'Surprise sportive':e.type==='rivalite'?'Duel sous tension':
     e.type==='large_ecart'?'Large écart':e.type==='nul'?'Match nul':'Résultat du championnat';
-   return '<article class="office-message"><small>'+libelleSaison(e.season)+' · Journée '+(e.round+1)+' · '+safe(label)+'</small>'+
+   return '<article class="office-message"><small>'+(typeof libelleSaison==='function'?libelleSaison:String)(e.season)+' · Journée '+(e.round+1)+' · '+safe(label)+'</small>'+
     '<p><strong>'+safe(club(e.a)?.abbr||'Club '+e.a)+' '+e.home+' – '+e.away+' '+
     safe(club(e.b)?.abbr||'Club '+e.b)+'</strong></p>'+
     '<p>Réaction simulée du banc de '+safe(club(e.clubId)?.name||'club '+e.clubId)+
