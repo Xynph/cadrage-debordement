@@ -62,7 +62,7 @@ budget() {
     tests/native-match-talks.cjs) echo 900s ;;
     tests/native-club-support-season.cjs) echo 1200s ;;
     tests/native-club-world-worker.cjs) echo 900s ;;
-    tests/native-club-strategy.cjs) echo 600s ;;
+    tests/native-club-strategy.cjs) echo 1800s ;; # Monde : saison de 46 semaines jouée jusqu'à next_season (1512 s sous charge locale)
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
     # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
