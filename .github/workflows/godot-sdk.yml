@@ -1,12 +1,13 @@
 name: Godot — suites ciblées avec SDK réel
 on:
-  # PR : seulement quand des fichiers Godot ou les suites SDK du manifeste changent, et
-  # jamais sur un brouillon (job sauté) : la recette part au passage en prête.
-  # main garde le filtre large d'origine.
+  # PR : uniquement sur demande, par l'étiquette `godot-sdk` (pose de l'étiquette ou
+  # passage en prête d'une PR qui la porte). Mesure du 13/11 : 26 % des minutes de
+  # runner, sdk-parcours rouge 41 % du temps, aucun job requis ; ces échecs facultatifs
+  # rendaient les PR « unstable » et bloquaient le gate officiel (état clean exigé).
+  # main garde la recette complète après chaque fusion (seule la dernière compte).
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths: ['native/godot/**', 'tests/godot-*', 'tests/*.gd', 'tests/small-window-*', 'tests/deepen-*-ui.cjs', 'tests/deepen-staff-*-ui.cjs', 'tests/deepen-match.cjs', 'tests/deepen-youth-draft.cjs', 'tests/native-press-ui.cjs', 'tests/rg27-night-navigation.cjs', 'ci/godot-sdk*.json', 'ci/run-godot-sdk.cjs', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
+    types: [labeled, ready_for_review]
   push:
     branches: [main]
     paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
@@ -34,13 +35,16 @@ permissions:
 
 # PR et main : seule la dernière exécution compte ; workflow_dispatch jamais annulé.
 concurrency:
-  group: godot-sdk-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: godot-sdk-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'godot-sdk' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   sdk:
     name: ${{ matrix.family == 'full' && 'sdk' || format('sdk-{0}', matrix.family) }}
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    if: >-
+      ${{ github.event_name != 'pull_request' || (!github.event.pull_request.draft &&
+      contains(github.event.pull_request.labels.*.name, 'godot-sdk') &&
+      (github.event.action == 'ready_for_review' || github.event.label.name == 'godot-sdk')) }}
     strategy:
       fail-fast: false
       matrix:
