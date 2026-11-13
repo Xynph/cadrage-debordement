@@ -360,7 +360,9 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if waiting:
 		if command == "tick": return false
 		# Après un tick ou une décision légère, la décision suivante attend son tour.
-		if (last_command == "tick" or not shows_wait_panel(last_command)) and last_command != "snapshot" and queued_action.is_empty():
+		# La même décision répétée n’attend pas : sa charge utile a été lue sur le
+		# modèle d’avant la réponse en cours et écraserait celle-ci (ex. set_tactics).
+		if (last_command == "tick" or (not shows_wait_panel(last_command) and command != last_command)) and last_command != "snapshot" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			_present_command_wait(command)
 			return true
