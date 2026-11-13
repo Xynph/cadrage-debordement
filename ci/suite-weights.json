@@ -23,7 +23,7 @@
       "tests/economy-audit.cjs": 4,
       "tests/epcr-preparation-worker.cjs": 155,
       "tests/frontrow.cjs": 2,
-      "tests/integration-cloud-complete.cjs": 82,
+      "tests/integration-cloud-complete.cjs": 420,
       "tests/international-career.cjs": 5,
       "tests/japan-match.cjs": 2,
       "tests/lineout-approach.cjs": 13,
@@ -47,8 +47,17 @@
       "tests/match-pass-live.cjs": 2,
       "tests/match-structured-facts.cjs": 6,
       "tests/matchflow.cjs": 2,
+      "tests/native-academy-groups.cjs": 101,
       "tests/native-capacity.cjs": 3,
+      "tests/native-club-strategy.cjs": 197,
+      "tests/native-coach-notes06-pack.cjs": 13,
+      "tests/native-manager-career-pack.cjs": 15,
+      "tests/native-match-talks.cjs": 125,
+      "tests/native-player-knowledge-worker.cjs": 48,
       "tests/native-position-benchmark.cjs": 14,
+      "tests/native-position-editions.cjs": 63,
+      "tests/native-position-integration.cjs": 17,
+      "tests/native-press-followups06-worker.cjs": 200,
       "tests/native-press-review.cjs": 27,
       "tests/native-press-worker.cjs": 39,
       "tests/native-professional-depth.cjs": 32,
@@ -58,6 +67,7 @@
       "tests/opposition.cjs": 32,
       "tests/parallel-six-integration.cjs": 27,
       "tests/performance-analysis.cjs": 27,
+      "tests/player-population-capacity.cjs": 250,
       "tests/player-population-seasons.cjs": 68,
       "tests/player-population-worker.cjs": 48,
       "tests/portrait-adverse-projection.cjs": 9,
@@ -101,10 +111,8 @@
       "tests/world-urc-shootout-v5.cjs": 3,
       "tests/world-venue-media.cjs": 97,
       "tests/world-wage-forecast.cjs": 20,
-      "tests/youth-matches-worker.cjs": 200,
-      "tests/native-press-followups06-worker.cjs": 26,
-      "tests/player-population-capacity.cjs": 250,
-      "tests/world-worker-atomic.cjs": 40
+      "tests/world-worker-atomic.cjs": 40,
+      "tests/youth-matches-worker.cjs": 200
     }
   },
   "godot": {
@@ -175,15 +183,16 @@
     "default_mb": 1024,
     "budget_mb": 12288,
     "suites": {
+      "tests/integration-cloud-complete.cjs": 3337,
       "tests/monde-harness.cjs": 1830,
       "tests/native-professional-depth.cjs": 2624,
       "tests/native-relationships.cjs": 2048,
       "tests/performance-analysis.cjs": 2048,
+      "tests/player-population-capacity.cjs": 2048,
       "tests/world-catalogue-dedup.cjs": 3264,
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048,
-      "tests/youth-matches.cjs": 1880,
-      "tests/player-population-capacity.cjs": 2048
+      "tests/youth-matches.cjs": 1880
     }
   }
 }
