@@ -1,0 +1,63 @@
+name: macOS — application et presse fictive
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+concurrency:
+  group: macos-receipt-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
+  cancel-in-progress: false
+jobs:
+  receive:
+    if: >-
+      github.event.label.name == 'macos-receipt' &&
+      github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    env:
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
+      BUILD_DIR: ${{ runner.temp }}/oval-macos
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Vérifier la machine native
+        env:
+          EXPECTED: ${{ matrix.architecture }}
+        run: |
+          python -c 'import os,platform; assert platform.system()=="Darwin"; assert platform.machine()=={"x64":"x86_64","arm64":"arm64"}[os.environ["EXPECTED"]]'
+      - name: Construire le bundle avec Node embarqué
+        run: python ci/build-macos.py --source-commit "$SOURCE_COMMIT" --output "$BUILD_DIR"
+      - name: Démarrer, importer la presse fictive, sauvegarder et reprendre
+        run: python ci/receive-macos.py --build "$BUILD_DIR"
+      - name: Rapports et diagnostics publics (données fictives seulement)
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ['BUILD_DIR'])
+          for name in ('import.log','export.log','receipt/fresh.log','receipt/resume.log','receipt/receipt.json'):
+              path = root / name
+              if path.is_file():
+                  print('::group::' + name)
+                  print(path.read_text(errors='replace')[-18000:])
+                  print('::endgroup::')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as file:
+              file.write('macOS natif : ' + os.environ['SOURCE_COMMIT'] + '\n')
+              report = root / 'receipt/receipt.json'
+              file.write(report.read_text() if report.exists() else 'Recette interrompue ; consulter les journaux.')
+          PY
