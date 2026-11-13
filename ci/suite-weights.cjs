@@ -26,6 +26,12 @@ const MEMORY_MARGIN = 0.10;
 const MEMORY_DEFAULT_MB = 1024;
 const MEMORY_BUDGET_MB = 12288;
 
+// Suite présente dans tests/ et hors ancien mode de carrière (ensemble calculé une seule fois).
+let legacyCache;
+function ciSuite(f) {
+  legacyCache ??= legacySuites();
+  return fs.existsSync(path.join(__dirname, '..', f)) && !legacyCache.has(f);
+}
 function median(values) {
   const s = values.slice().sort((a, b) => a - b), m = s.length >> 1;
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
@@ -47,7 +53,7 @@ function parseLogs(dir, pattern = PROFILE) {
 }
 // Seules les suites présentes dans tests/ sont gardées (des runs de PR peuvent en mesurer
 // d'autres, pas encore fusionnées), hors suites à ancien mode de carrière (exclues de la CI).
-function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f)) {
+function weightsFrom(samples, exists = ciSuite) {
   const weights = {};
   for (const file of Object.keys(samples).sort().filter(exists)) {
     const value = Math.max(1, Math.round(median(Object.values(samples[file])) * (1 + MARGIN)));
@@ -57,7 +63,7 @@ function weightsFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '
 }
 // Mémoire de pointe en Mo : maximum observé (et non médiane) × (1 + marge), arrondi au
 // multiple de 64 Mo supérieur ; suites sous le défaut omises (elles prennent le défaut).
-function memoryFrom(samples, exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f)) {
+function memoryFrom(samples, exists = ciSuite) {
   const suites = {};
   for (const file of Object.keys(samples).sort().filter(exists)) {
     const mb = Math.ceil(Math.max(...Object.values(samples[file])) / 1024 * (1 + MEMORY_MARGIN) / 64) * 64;
@@ -88,9 +94,8 @@ if (require.main === module) {
   };
   else {
     const weights = weightsFrom(samples);
-    const exists = f => fs.existsSync(path.join(__dirname, '..', f)) && !legacySuites().has(f);
     if (keep) for (const [file, seconds] of Object.entries(data[kind]?.weights || {}))
-      if (!(file in samples) && exists(file)) weights[file] = seconds;
+      if (!(file in samples) && ciSuite(file)) weights[file] = seconds;
     data[kind] = {
       source: keep && data[kind]?.source || 'médiane des wall_s CD_CPU_PROFILE de runs GitHub verts, +' + Math.round(MARGIN * 100) + ' %',
       runs: runs.map(Number),
