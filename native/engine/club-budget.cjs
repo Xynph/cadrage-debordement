@@ -320,6 +320,54 @@ function cloture({ division, compte, tresorerie, rang, taille, joue = false }) {
   return { ecritures, messages, confiance, prime, amende: ligue.amende, resultat, apport, decouvert: rond(decouvert) };
 }
 
+// Leviers de redressement (reprise de l'étude économie V2, PR #352/#353) : ce que le manager peut
+// réellement changer d'ici la fin de saison, et ce que chaque choix rapporte à la prévision. Purement
+// consultatif : rien n'est débité, et rien n'est inventé — ni prêt, ni recette nouvelle, ni pénalité.
+//   solde : marge prévue en fin de saison (négative = manque) ; objectif : 'tresorerie' (la caisse
+//     doit rester positive) ou 'proprietaire' (les pertes ne doivent pas dépasser ce qu'il comble) ;
+//   reste : semaines restantes ; formationHebdo : formation payée chaque semaine ; devis : prochaines
+//     installations (null sans devis) ; masseHebdo : salaires des joueurs par semaine ;
+//   coutSalaire : ce que coûte, sur une semaine restante, 1 € de salaire hebdomadaire (cotisations et
+//     paie sur 52 semaines comprises) ; amende, depassement : amende de la ligue encourue et
+//     dépassement annuel de la masse salariale qui la provoque.
+const PART_MASSE_GRAVE = 0.25; // au-delà d'un quart des salaires à libérer, la saison ne se sauve plus
+function leviers({ solde, objectif = 'tresorerie', reste, formationHebdo = 0, devis = null, masseHebdo = 0, coutSalaire = 1, amende = 0, depassement = 0 }) {
+  if (![solde, reste, formationHebdo, masseHebdo, coutSalaire, amende, depassement].every(Number.isFinite) || reste < 0 || coutSalaire <= 0 || !['tresorerie', 'proprietaire'].includes(objectif)) throw Error('Leviers de redressement : entrées invalides.');
+  const manque = rond(Math.max(0, -solde)), liste = [];
+  let restant = manque;
+  if (amende > 0) {
+    liste.push({ cle: 'amende', titre: `Repasser sous la limite salariale de la ligue : ${euros(depassement)} de masse annuelle en moins`, effet: rond(amende),
+      contrepartie: 'Un ou plusieurs départs avant la dernière journée ; l’amende tombe entièrement.' });
+    restant = Math.max(0, restant - amende);
+  }
+  if (manque > 0 && formationHebdo > 0 && reste > 0) {
+    const effet = rond(formationHebdo * reste);
+    liste.push({ cle: 'formation', titre: `Suspendre la formation payée (${euros(formationHebdo)} par semaine)`, effet, commande: { command: 'club_academy_investment', amount: 0 },
+      contrepartie: 'Les jeunes du centre progressent moins vite jusqu’à la reprise de l’investissement.' });
+    restant = Math.max(0, restant - effet);
+  }
+  const travaux = Number.isFinite(devis) && devis > 0 && solde - devis < 0;
+  if (travaux) liste.push({ cle: 'installations', titre: `Différer les travaux d’installations (${euros(devis)})`, effet: 0, risque: rond(devis),
+    contrepartie: 'La prévision ne les compte pas : les engager maintenant creuserait d’autant le résultat de la saison.' });
+  let salaires = 0;
+  if (restant > 0 && reste > 0) {
+    salaires = Math.ceil(restant / (reste * coutSalaire) / 100) * 100;
+    liste.push({ cle: 'salaires', titre: `Libérer environ ${euros(salaires)} de salaires par semaine`, effet: rond(restant),
+      contrepartie: 'Vente, prêt ou fin de contrat négociée : un effectif plus court pour finir la saison.' });
+  }
+  const etat = manque === 0 ? (travaux ? 'vigilance' : 'serein') : reste === 0 ? 'tard' : restant === 0 ? 'facultatif' : salaires > masseHebdo * PART_MASSE_GRAVE ? 'grave' : 'effectif';
+  const cible = objectif === 'proprietaire' ? 'les pertes dépasseront de ' + euros(manque) + ' ce que le propriétaire comblera' : 'la caisse finira la saison à ' + euros(manque) + ' sous zéro';
+  const conclusion = {
+    serein: 'La saison est financée : aucun levier n’est nécessaire.',
+    vigilance: 'La saison est financée, mais les travaux d’installations la feraient basculer dans le rouge.',
+    facultatif: `À ce rythme, ${cible}. Renoncer aux dépenses facultatives suffit à redresser la barre.`,
+    effectif: `À ce rythme, ${cible}. Les dépenses facultatives ne suffisent pas : il faudra alléger la masse salariale.`,
+    grave: `À ce rythme, ${cible}. Il faudrait libérer plus d’un quart des salaires : la saison se terminera probablement sur une perte que le propriétaire vous reprochera.`,
+    tard: `La saison s’achève : ${cible}. Il est trop tard pour la redresser ; la prochaine se prépare dès l’intersaison.`,
+  }[etat];
+  return { etat, objectif, manque, solde: rond(solde), salairesALiberer: salaires, leviers: liste, conclusion };
+}
+
 // Code exécuté dans le moteur du jeu : il branche ce budget sur les carrières marquées
 // (state.startingSalaries), en France comme dans les carrières mondiales, et laisse les autres intactes.
 // Attend dans le moteur : nativeClubBudget (ce module), nativeStartingSalaries, nativeLeagueEconomy.
@@ -596,4 +644,4 @@ const VALIDATION = `{
 }`;
 
 module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
-  recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, euros });
+  recettes, semaine, proprietaire, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });

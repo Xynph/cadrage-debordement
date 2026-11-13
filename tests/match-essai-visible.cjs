@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 
 // « On ne dit essai que si on voit l'essai » (décision de Léo, 11 novembre 2026).
 // En temps forts, mode de base du match, chaque essai du score fait partie d'un temps
@@ -123,6 +122,7 @@ test('Sauvegarde : le fait « porte » est accepté sur une conquête, refusé a
 test('Moteur natif, minute par minute : chaque essai du score a été projeté dans un temps fort', { timeout: 600000 }, () => {
   const { createBridge } = require('../native/engine/worker.cjs');
   const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
+  const { advanceToNextMatch } = require('./helpers/monde-matchs.cjs');
   const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
   for (const seed of [7, 1000]) {
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-essai-visible-'));
@@ -130,7 +130,8 @@ test('Moteur natif, minute par minute : chaque essai du score a été projeté d
     let id = 0;
     const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, r.error); return r.model; };
     try {
-      settleClubMeetings(call('new_career', { club: 0 }), call);
+      // Monde : première rencontre du club après les semaines de préparation.
+      advanceToNextMatch(call('new_career', { mode: 'world-champ', club: 0 }), call);
       let model = skipMatchTalk(call('begin_match'), call);
       const montres = new Map();
       for (let n = 0; n < 400 && model.live && !model.live.finished; n++) {

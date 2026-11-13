@@ -366,6 +366,27 @@ static func _footer(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.text(card, 1086, 72, "Prime de classement et soutien du propriétaire compris" if finance.has("budget") else "Hors billetterie aléatoire, primes et transferts futurs", 22, C.MUTED, 500, 650)
 	D.button(card, Rect2(1758,21,467,58), "Ajuster les engagements", func(): _strategy(app), true, "arrow", false, U.GREEN, "FinanceAdjustBudget")
 
+# Leviers de redressement (consultatifs) : le verdict du directeur financier, puis les leviers réels et ce
+# que chacun rapporte à la prévision ; le détail complet de chaque levier est dans l'infobulle.
+static func _levers(card: Panel, levers: Dictionary) -> void:
+	var state := str(levers.get("etat",""))
+	var calm := state == "serein"
+	var verdict := D.text(card, 25, 488, str(levers.get("conclusion","")), 26, C.MINT if calm else C.GOLD if state in ["vigilance","facultatif"] else C.ALERT, 600, 1348)
+	verdict.name = "FinanceLeversVerdict"
+	var items: Array = levers.get("leviers", [])
+	if items.is_empty():
+		D.text(card, 25, 529, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 26, C.MUTED, 500, 1348).name = "FinanceLeversList"
+		return
+	var parts := PackedStringArray()
+	var details := PackedStringArray()
+	for item: Dictionary in items:
+		var gain := float(item.get("effet",0))
+		parts.append("%s%s" % [str(item.get("titre","")), " (+%s)" % G.euros(gain) if gain > 0.0 else ""])
+		details.append("%s : %s" % [str(item.get("titre","")), str(item.get("contrepartie",""))])
+	var line := D.text(card, 25, 529, "Leviers : " + " · ".join(parts), 24, C.IVORY, 500, 1348)
+	line.name = "FinanceLeversList"
+	line.tooltip_text = "\n".join(details)
+
 # Budget de saison : propriétaire, règles de la ligue et prévision, en lignes de texte sous les décisions.
 static func _season_budget(card: Panel, budget: Dictionary) -> void:
 	var owner: Dictionary = budget.get("proprietaire", {})
@@ -532,7 +553,11 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 		else:
 			D.text(tile, 22, 116, U.amount(item[3]), 47, C.MINT, 700, 392)
 		D.text(tile, 22, 158, item[2], 23, C.MUTED, 500, 392)
-	D.text(decisions, 25, 488, "Les montants reprennent les engagements du club.", 26, C.MUTED, 500, 1348)
-	D.text(decisions, 25, 529, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 26, C.MUTED, 500, 1348)
+	var levers: Variant = finance.get("levers")
+	if levers is Dictionary:
+		_levers(decisions, levers)
+	else:
+		D.text(decisions, 25, 488, "Les montants reprennent les engagements du club.", 26, C.MUTED, 500, 1348)
+		D.text(decisions, 25, 529, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 26, C.MUTED, 500, 1348)
 	D.button(decisions, Rect2(25,575,550,58), "Ouvrir les décisions financières", func(): _strategy(app), true, "arrow", false, U.GREEN, "FinanceBudgetDecisions")
 	if finance.get("budget") is Dictionary: _season_budget(decisions, finance.budget)

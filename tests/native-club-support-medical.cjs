@@ -33,6 +33,6 @@ try{
  // Release one QA checkpoint through the confirmed API; never bypass the player quota.
  const safety=good('snapshot').meta.profileSafety;
  if(safety.entries.length>=safety.maxEntries)good('remove_checkpoint',{id:safety.entries.at(-1).id,confirmed:true});
- settleClubMeetings(good('new_career',{mode:'fiction',club:0}),good);m=good('snapshot');const quote=m.clubLife.clubSupport.agents.players.flatMap(p=>p.quotes)[0];assert.ok(quote);assert.equal(quote.paidWeeks,29);assert.equal(quote.totalCommitment,quote.wage*29*quote.years+quote.fee);
- console.log('Support médical : trois protocoles réels, séance unique, deux retours bornés, reprise, reçu non contournable, historique24 et devis historique29 PASS. '+root);
+ settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good);m=good('snapshot');const quote=m.clubLife.clubSupport.agents.players.flatMap(p=>p.quotes)[0];assert.ok(quote);assert.ok(quote.paidWeeks>0&&quote.paidWeeks<=m.clubLife.clubStrategy.finance.weeksPerSeason,'Semaines payées du devis : celles de la saison du club Monde');assert.equal(quote.totalCommitment,quote.wage*quote.paidWeeks*quote.years+quote.fee);
+ console.log('Support médical : trois protocoles réels, séance unique, deux retours bornés, reprise, reçu non contournable, historique24 et devis semaines payées du devis du club Monde PASS. '+root);
 }finally{b.close();}
