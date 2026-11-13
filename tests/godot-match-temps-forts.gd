@@ -872,11 +872,26 @@ func terrain2d(view: Control) -> void:
 	var banc: Button = view.find_child("MatchBetweenBench", true, false)
 	check(banc != null and banc.is_visible_in_tree() and view.find_child("MatchBetweenTactics", true, false) != null, "Tactique et remplacements accessibles depuis l'écran")
 	if regie.has_meta("bande_3d"): check(view.bande_temps_forts.get_global_rect().is_equal_approx(regie.get_meta("bande_3d")), "La bande de commandes ne bouge pas entre la 3D et l'entracte")
-	# Colonne « Plaq. » : les plaquages du moteur pour chaque joueur.
-	var plaques := 0
+	# Colonnes « Plaq. » et « Mètres » : la feuille de statistiques (match-stats.cjs) ; le total d'équipe est la
+	# somme des joueurs de la feuille et le chiffre du tableau de bord.
+	var feuille: Dictionary = direct.get("feuille", {})
+	check(feuille.get("joueurs") is Dictionary and not feuille.joueurs.is_empty(), "Feuille de statistiques jointe au direct")
+	var camp_xv := int(direct.camp)
+	var somme := {"plaquages": 0, "metres": 0}
+	for fj: Dictionary in feuille.get("joueurs", {}).values():
+		if int(fj.camp) == camp_xv:
+			for cle: String in somme: somme[cle] += int(fj.get(cle, 0))
+	for cle: String in somme:
+		var rang_cle := rangs.filter(func(r: Dictionary): return str(r.cle) == cle)
+		check(rang_cle.size() == 1 and int(rang_cle[0].valeurs[camp_xv]) == int(somme[cle]), "Tableau : %s de l'équipe = somme des joueurs de la feuille (%d)" % [cle, somme[cle]])
+		check(int(feuille.equipes[camp_xv][cle]) == int(somme[cle]), "Feuille : total d'équipe = somme des joueurs (%s)" % cle)
+	var colonne := func(zone: Node) -> Array: return zone.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text)
+	var total_xv: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	check(total_xv != null and colonne.call(total_xv).has(str(somme.plaquages)) and colonne.call(total_xv).has(str(somme.metres)), "Ligne Équipe de Mon XV : plaquages %d, mètres %d" % [somme.plaquages, somme.metres])
+	var plaquages_visibles := 0
 	for joueur: Variant in lineup:
-		if joueur is Dictionary: plaques += int(direct.get("notes", {}).get(str(joueur.id), {}).get("plaquages", 0))
-	check(plaques > 0 or rangs.filter(func(r: Dictionary): return str(r.cle) == "plaquages").all(func(r: Dictionary): return int(r.valeurs[int(direct.camp)]) == 0), "Plaquages par joueur repris du moteur (%d)" % plaques)
+		if joueur is Dictionary: plaquages_visibles += int(feuille.joueurs.get(str(joueur.id), {}).get("plaquages", 0))
+	check(plaquages_visibles >= 5 or int(somme.plaquages) < 10, "Plaquages des quinze titulaires de la feuille : %d" % plaquages_visibles)
 	check(between.xv.is_visible_in_tree() and between.fil.is_visible_in_tree(), "Mon XV et le dernier fait affichés ensemble")
 	var noms_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button).map(func(b: Button): return b.find_children("*", "Label", true, false).filter(func(l: Label): return l.visible).map(func(l: Label): return l.text))
 	check(noms_xv.size() == 15 and noms_xv.all(func(t: Array): return t.size() >= 2 and not str(t[0]).is_empty()), "Mon XV : nom de famille et note visibles pour chaque joueur : " + str(noms_xv.slice(0, 3)))
@@ -887,6 +902,12 @@ func terrain2d(view: Control) -> void:
 	var lignes_adverses: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	var noms_adverses: Array = lignes_adverses.map(func(b: Button): return b.find_children("*", "Label", true, false).map(func(l: Label): return l.text))
 	check(adverse.size() == 15 and lignes_adverses.size() == 15 and range(15).all(func(k: int): return adverse[k] == null or str(adverse[k].nom) in noms_adverses[k]), "Onglet adverse : le XV adverse, nom et note de chaque joueur (%d lignes)" % lignes_adverses.size())
+	var somme_adverse := {"plaquages": 0, "metres": 0}
+	for fj: Dictionary in feuille.get("joueurs", {}).values():
+		if int(fj.camp) == 1 - camp_xv:
+			for cle: String in somme_adverse: somme_adverse[cle] += int(fj.get(cle, 0))
+	var total_adverse: Node = between.xv.find_child("MatchBetweenTeamTotal", true, false)
+	check(total_adverse != null and colonne.call(total_adverse).has(str(somme_adverse.plaquages)) and int(feuille.equipes[1 - camp_xv].plaquages) == int(somme_adverse.plaquages), "Ligne Équipe du XV adverse : plaquages %d = somme des joueurs" % somme_adverse.plaquages)
 	between.find_child("MatchBetweenTabOwn", true, false).pressed.emit()
 	await settle(2)
 	check(between.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer")).size() == 15, "Retour à Mon XV")

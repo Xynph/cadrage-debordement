@@ -784,7 +784,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	# Conseil de l'adjoint et composition tels qu'ils étaient avant la borne : rien d'un temps fort à venir.
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
-	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []),
+	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
 		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs])
 	if cle == _cle: return
 	_cle = cle
@@ -947,6 +947,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		return
 	alertes_xv.clear()
 	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
+	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}
 	var cartons: Dictionary = {}
 	for carton: Variant in direct.get("cartons", []):
 		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
@@ -988,7 +989,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 			case.tooltip_text = "%d · poste vacant" % (poste + 1)
 			xv.add_child(case)
 			continue
-		var d := W.donnees_joueur(joueur, notes, cartons)
+		var d := W.donnees_joueur(joueur, notes, cartons, feuille)
 		var id: String = d.id
 		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
 		var note: float = d.note
@@ -1026,11 +1027,49 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		elif alerte.begins_with("carton") or alerte == "exclu": pastille.marque = Color("e8c24a")
 		var plaq := int(d.get("plaquages", 0))
 		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match), %d plaquage%s" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else "", plaq, "s" if plaq > 1 else ""]
+		if not feuille.is_empty(): detail += " (%d manqué%s), %d course%s, %d passe%s" % [int(d.plaquages_manques), "s" if int(d.plaquages_manques) > 1 else "", int(d.courses), "s" if int(d.courses) > 1 else "", int(d.passes), "s" if int(d.passes) > 1 else ""]
 		if not alerte.is_empty():
 			alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
 			detail += "\n" + alerte.capitalize()
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
 		xv.add_child(case)
+	_ligne_equipe(feuille, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
+
+## Ligne « Équipe » sous un XV : plaquages, mètres et essais de toute l'équipe (feuille de statistiques),
+## remplaçants sortis compris. Le total est la somme des joueurs de la feuille ; l'écart avec la somme
+## des quinze lignes au-dessus est le travail des joueurs déjà remplacés, dit dans l'infobulle.
+func _ligne_equipe(feuille: Dictionary, camp: int, visibles: Array) -> void:
+	var joueurs: Dictionary = feuille.get("joueurs", {}) if feuille.get("joueurs") is Dictionary else {}
+	if joueurs.is_empty() or not camp in [0, 1]: return
+	var total := {"plaquages": 0, "metres": 0, "essais": 0}
+	var sortis := {"plaquages": 0, "metres": 0, "essais": 0}
+	for id: String in joueurs:
+		var f: Dictionary = joueurs[id]
+		if int(f.get("camp", -1)) != camp: continue
+		for cle: String in total:
+			total[cle] += int(f.get(cle, 0))
+			if not visibles.has(id): sortis[cle] += int(f.get(cle, 0))
+	var ligne := S.G.h(px(8))
+	ligne.custom_minimum_size.y = px(52)
+	ligne.name = "MatchBetweenTeamTotal"
+	ligne.tooltip_text = "Total de l'équipe, remplaçants sortis compris (%d plaquage%s, %d m, %d essai%s déjà aux joueurs remplacés)." % [sortis.plaquages, "s" if sortis.plaquages > 1 else "", sortis.metres, sortis.essais, "s" if sortis.essais > 1 else ""]
+	ligne.mouse_filter = Control.MOUSE_FILTER_STOP
+	var trait_haut := ColorRect.new()
+	trait_haut.color = Color(OR, 0.35)
+	trait_haut.custom_minimum_size = Vector2(0, maxi(1, px(2)))
+	trait_haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	xv.add_child(trait_haut)
+	var vide := Control.new()
+	vide.custom_minimum_size = Vector2(px(int(COLONNES_XV[0][1])), 0)
+	ligne.add_child(vide)
+	ligne.add_child(_cellule("ÉQUIPE", 0, OR, 24))
+	ligne.add_child(_cellule("", int(COLONNES_XV[2][1]), FAIBLE, 22))
+	ligne.add_child(_cellule("", int(COLONNES_XV[3][1]), FAIBLE, 22))
+	ligne.add_child(_cellule("", int(COLONNES_XV[4][1]), FAIBLE, 22))
+	ligne.add_child(_cellule(str(total.plaquages), int(COLONNES_XV[5][1]), OR, 28, true))
+	ligne.add_child(_cellule(str(total.metres), int(COLONNES_XV[6][1]), OR, 28, true))
+	ligne.add_child(_cellule(str(total.essais) if total.essais > 0 else "–", int(COLONNES_XV[7][1]), OR, 28, true))
+	xv.add_child(ligne)
 
 ## XV adverse (`direct.adversaire`) : le même tableau, aux couleurs adverses ; la feuille actuelle
 ## (ses remplacements se voient tout de suite), notes bornées aux faits montrés.
@@ -1095,6 +1134,8 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 		ligne.add_child(nom)
 		case.tooltip_text = "%d · %s · %s\nNote %.1f (%d action%s montrée%s)" % [poste + 1, str(j.get("poste", "")), str(j.get("nom", "")), note, int(j.get("faits", 0)), "s" if int(j.get("faits", 0)) > 1 else "", "s" if int(j.get("faits", 0)) > 1 else ""]
 		xv.add_child(case)
+	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}
+	_ligne_equipe(feuille, 1 - camp, liste.map(func(j: Variant) -> String: return str(j.get("joueur", "")) if j is Dictionary else ""))
 
 ## Alertes de Mon XV sans le tableau (onglet adverse ouvert) : Gabi les garde.
 func _alertes_seules(joueurs: Array, direct: Dictionary) -> void:
