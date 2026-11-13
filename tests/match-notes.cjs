@@ -22,11 +22,12 @@ function ouvrir(options = {}) {
 }
 
 // Domaine des notes dans une VM minimale (deux clubs de 22 joueurs, familles variées) : aucun mode de carrière.
-function domaine() {
+function domaine(effets) {
   const familles = [0, 1, 0, 3, 2, 2, 3, 3, 4, 5, 7, 7, 6, 6, 8];
   const joueurs = c => Array.from({ length: 22 }, (_, k) => ({ id: `c${c}p${k}`, name: `Joueur ${c}-${k}`, fam: familles[k % 15], rating: 60 + ((k * 7 + c * 3) % 25), age: 25 }));
   const ctx = vm.createContext({ S: { club: 0, season: 1, phase: 'league', clubs: [{ id: 0, players: joueurs(0) }, { id: 1, players: joueurs(1) }] }, roleNote: p => p.rating });
   const run = source => vm.runInContext(source, ctx);
+  if (effets !== undefined) run(`var CDNotesEffets=${effets};`);
   run(`var CDMatchNotesMoteur=(${N.moteur.toString()})();var dom=(${N.factory.toString()})();`);
   return { run };
 }
@@ -175,25 +176,14 @@ const groupeDe = pos => GROUPES[POSTES.indexOf(pos === 'Numéro 8' ? 'Numéro 8'
 // Quelques journées déléguées en carrière Monde (mode unique, consigne de Léo du 13/11 : plus aucun test en
 // ancien mode France), club de l'élite française : renvoie les modèles de chaque journée.
 function jouerJournees(jeu, journees) {
-  let model = jeu.call('new_career', { mode: 'world-champ', club: 0 });
+  let model = M.creer(jeu, 0);
   const vus = [];
-  for (let j = 0, garde = 0; j < journees && garde < 40; garde++) {
-    model = settleClubMeetings(model, jeu.call) || model;
-    if (model.next) {
-      if (!model.selection.valid) jeu.call('auto_lineup');
-      model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-      jeu.call('delegate'); j++;
-      model = skipMatchTalk(model, jeu.call);
-      model = settleClubMeetings(model, jeu.call) || model;
-    }
-    const r = jeu.brut('finish_round');
-    if (r.ok) { model = r.model; vus.push(model); }
-  }
+  for (let j = 0; j < journees; j++) { model = M.jouer(jeu, model, 1); vus.push(model); }
   return vus;
 }
 
 test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinze postes distincts, déterministe', () => {
-  const lancer = () => { const jeu = ouvrir(); try { const vus = jouerJournees(jeu, 4); return { vus, etat: jeu.etat() }; } finally { jeu.fermer(); } };
+  const lancer = () => { const jeu = ouvrir({ hebdomadaire: true }); try { const vus = jouerJournees(jeu, 4); return { vus, etat: jeu.etat() }; } finally { jeu.fermer(); } };
   const a = lancer();
   assert.ok(a.vus.length >= 4);
   let precedent = 0;
@@ -230,9 +220,7 @@ test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinz
 });
 
 test('Équipe de la saison : seuil de matchs, départage, migration depuis la version 1', () => {
-  const c = context(5);
-  c.run("start(0,'fiction')");
-  c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const CDNotesEffets=false;const dom=(${N.factory.toString()})();`);
+  const c = domaine(false);
   const out = JSON.parse(c.run(`(()=>{
     const reg={};let n=0;
     // 10 joueurs par poste : moyenne 6,0 à 7,5, tous 8 matchs ; sauf « fantome » (2 matchs, 9,9) et « egal » (même moyenne que le meilleur)
@@ -262,8 +250,7 @@ test('Équipe de la saison : seuil de matchs, départage, migration depuis la ve
 
 test('Équipe de la saison : bonus de valeur borné, coupé par CD_NOTES_EFFETS=0', () => {
   const lire = actifs => {
-    const c = context(5); c.run("start(0,'fiction')");
-    c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const CDNotesEffets=${actifs};const dom=(${N.factory.toString()})();`);
+    const c = domaine(actifs);
     return JSON.parse(c.run(`(()=>{const ids=Array.from({length:15},(_,k)=>'l'+k);S.matchNotes={version:2,saison:S.season,joueurs:{l0:{s:[20,1300,1600,0,0,0,0],f:[65,65,65,65,65]}},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null,reg:{},regJ:{},equipes:{},saisons:[{saison:S.season,ligue:'elite',ids,moy:ids.map(()=>70),matchs:ids.map(()=>20),sel:ids.map(()=>1),clubs:ids.map(()=>0),journees:26}]};dom.validate(S);const e=dom.effets;return JSON.stringify({v:e.valeur('l0'),i:e.interet('l0'),autre:e.valeur('zz')})})()`));
   };
   const on = lire(true), off = lire(false);
@@ -277,7 +264,7 @@ test('Équipe-type : pack absent = identités du jeu ; pack installé = logos du
   const media = require('../native/engine/media-packs.cjs'), crypto = require('node:crypto'), zlib = require('node:zlib');
   const zip = items => { let offset = 0; const locals = [], centrals = []; for (const item of items) { const n = Buffer.from(item.name), data = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data || ''), crc = media.crc32(data), local = Buffer.alloc(30), central = Buffer.alloc(46); local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6); local.writeUInt32LE(crc, 14); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(n.length, 26); central.writeUInt32LE(0x02014b50); central.writeUInt16LE(0x314, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(0x800, 8); central.writeUInt32LE(crc, 16); central.writeUInt32LE(data.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(n.length, 28); central.writeUInt32LE((0x81a4 * 65536) >>> 0, 38); central.writeUInt32LE(offset, 42); locals.push(local, n, data); centrals.push(central, n); offset += local.length + n.length + data.length; } const cd = Buffer.concat(centrals), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(items.length, 8); end.writeUInt16LE(items.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16); return Buffer.concat([...locals, cd, end]); };
   const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
-  const jeu = ouvrir();
+  const jeu = ouvrir({ hebdomadaire: true });
   try {
     const vus = jouerJournees(jeu, 2);
     const avant = vus.at(-1).clubLife.matchNotes.equipeType;
