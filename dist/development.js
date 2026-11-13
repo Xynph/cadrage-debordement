@@ -146,7 +146,7 @@ function academyCountryBonus(club){
  return ACADEMY_COUNTRY_YOUTH[key]??-1;
 }
 function academyFacilitiesBonus(club){
- const world=typeof worldClub==='function'&&Number.isInteger(club?.id)?worldClub(club.id):null;
+ const world=typeof worldClub==='function'&&S?.worldManagement&&Number.isInteger(club?.id)?worldClub(club.id):null;
  const shared=Number.isFinite(world?.facilities)?clamp(world.facilities-2,-2,2):0;
  const own=club?.id===S?.club&&Number.isInteger(S?.v78to81?.facilities)?clamp(S.v78to81.facilities,0,3)*.5:0;
  return shared+own;
