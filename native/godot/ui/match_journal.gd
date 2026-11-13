@@ -9,7 +9,7 @@ const KINDS = {
 	"scrum":"Mêlée", "lineout":"Touche", "setpiece-win":"Ballon conservé",
 	"setpiece-loss":"Ballon récupéré", "kick":"Jeu au pied", "kickoff":"Renvoi au centre",
 	"drop22":"Renvoi aux 22", "goalLine":"Renvoi sur la ligne", "reception":"Réception",
-	"touch":"Sortie en touche", "hand-fault":"Faute de main", "try":"Essai",
+	"touch":"Sortie en touche", "hand-fault":"Faute de main", "quick-tap":"Pénalité jouée à la main", "try":"Essai",
 	"goal":"Pénalité réussie", "miss":"Tir manqué", "penalty":"Pénalité",
 	"advantage":"Avantage", "card":"Discipline", "sub":"Remplacement",
 	"tactic":"Consigne", "break":"Mi-temps", "end":"Fin du match", "ingoal":"En-but"
@@ -221,7 +221,7 @@ func _matches(event: Variant) -> bool:
 		1:
 			if kind not in ["try", "goal"]: return false
 		2:
-			if kind not in ["card", "penalty", "advantage", "hand-fault"]: return false
+			if kind not in ["card", "penalty", "quick-tap", "advantage", "hand-fault"]: return false
 		3:
 			if kind != "sub": return false
 		4:

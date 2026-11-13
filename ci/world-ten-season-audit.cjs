@@ -1,4 +1,8 @@
 'use strict';
+// DÉSACTIVÉ : mode Monde uniquement (décision de Léo, 13/11/2026). Cet audit joue l'ancienne édition « world » (limite
+// d'export « world v1 » : refusée par le mode world-champ) : à migrer vers world-champ avant de le rétablir (CD_MODES_HERITES).
+process.env.CD_MODES_HERITES='1';
+if(require.main===module){console.error('world-ten-season-audit : audit désactivé (ancien mode de carrière, à migrer vers le mode Monde world-champ).');process.exit(2);}
 const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual, deliberately outside tests/: genuine worker commands, no result injection.
 const assert = require('node:assert/strict');

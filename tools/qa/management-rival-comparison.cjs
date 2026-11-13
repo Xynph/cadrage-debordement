@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Bounded public-worker observations. Never edits engine, rosters, money, RNG,
 // schedules or saved careers. Temporary profiles are copied then deleted; the
 // live worker's process lock is excluded, never its saved data or RNG/clock.

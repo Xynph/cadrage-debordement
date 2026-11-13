@@ -65,7 +65,7 @@ module.exports=function nativeModel(){
    selection.coverage=quote;
   }
  }
- const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description}))};
+ const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description})),penalty:S.live&&S.live.userSide>=0?(S.live.penaltyPolicies?.[S.live.userSide]||'auto'):'auto',penalties:Object.entries(PENALTY_POLICIES).map(([id,label])=>({id,label}))};
  const row=c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form});
  const leagues=france?['elite','accession'].map(id=>({id,name:id==='elite'?'Élite — 14 clubs':'Accession — 16 clubs',phase:S.franceMode.leagues[id].phase,champion:S.franceMode.leagues[id].champion===null?null:summary(S.clubs[S.franceMode.leagues[id].champion]),finalist:S.franceMode.leagues[id].finalist===null?null:summary(S.clubs[S.franceMode.leagues[id].finalist]),rows:divisionRankings[id].map(row)})):[{id:'elite',name:'Ligue Première',rows:sorted.map(row)}];
  const leagueId=france?CDFranceCompetition.leagueId(S):'elite';

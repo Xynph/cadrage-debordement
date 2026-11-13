@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {reconcile,upkeep}=require('../native/engine/world-finance-flow-audit.cjs');
 // Historical coverage fixtures predate specialist depth, academy groups and

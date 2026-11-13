@@ -9,7 +9,7 @@ const {checkpointToRemove} = require('../scripts/qa-long-career.cjs');
 const root = process.env.OVAL_QA_SOURCE_ROOT || path.resolve(__dirname, '..');
 const protectedEngine = fs.existsSync(path.join(root, 'native/engine/profile-safety.cjs'));
 
-test('le pilote respecte le quota réel : neuf imports, suppression QA confirmée et état conservé', {
+test('le pilote respecte le quota réel (copies et octets) : neuf imports, suppressions QA confirmées et état conservé', {
  skip: !protectedEngine && 'Moteur avec copies de sécurité requis', timeout:150000,
 }, () => {
  const {createBridge} = require(path.join(root, 'native/engine/worker.cjs'));
@@ -23,7 +23,7 @@ test('le pilote respecte le quota réel : neuf imports, suppression QA confirmé
   return model;
  };
  try {
-  settleClubMeetings(good('new_career',{mode:'common',club:29}),good);
+  settleClubMeetings(good('new_career',{mode:'world-champ',club:29}),good);
   for (let i=0; i<9; i++) {
    good('coach_note_save',{context:model.clubLife.coachNotebook.context,target:'career',text:'Recette du quota : état ' + i});
    const text = good('export').meta.exportText;
@@ -32,15 +32,18 @@ test('le pilote respecte le quota réel : neuf imports, suppression QA confirmé
    assert.ok(safety,'La vraie projection de sécurité est disponible');
    const old = checkpointToRemove(safety,Buffer.byteLength(text)*2+4096);
    if (old) {
-    assert.equal(i,8,'Aucune copie supprimée prématurément');
+    // Une sauvegarde Monde (116 clubs) pèse plusieurs fois l'ancienne France 30 : le quota d'octets
+    // peut jouer avant celui du nombre de copies. On vérifie donc la règle, pas un rang figé.
+    assert.ok(i>0&&(safety.entries.length>=safety.maxEntries||safety.usedBytes+Buffer.byteLength(text)*2+4096>safety.maxBytes),'Aucune copie supprimée prématurément : un quota doit l’exiger');
     good('remove_checkpoint',{id:old.id,confirmed:true}); removed++;
    }
    good('import',{text});
-   assert.equal(model.meta.profileSafety.entries.length,Math.min(i+1,8));
+   assert.ok(model.meta.profileSafety.entries.length>=1&&model.meta.profileSafety.entries.length<=Math.min(i+1,model.meta.profileSafety.maxEntries),'Copies présentes et dans le quota');
+   assert.ok(model.meta.profileSafety.usedBytes<=model.meta.profileSafety.maxBytes,'Octets dans le quota');
    assert.equal(JSON.stringify(JSON.parse(good('export').meta.exportText).state),JSON.stringify(before));
   }
-  assert.equal(removed,1,'Une seule suppression QA explicitement confirmée');
-  assert.equal(model.meta.profileSafety.entries.length,8,'Quota de huit copies conservé');
-  console.log('Quota réel : neuf imports, une suppression confirmée, huit copies ; profil QA ' + profile);
+  assert.ok(removed>=1,'Au moins une suppression QA explicitement confirmée (neuf copies > huit autorisées)');
+  assert.ok(model.meta.profileSafety.entries.length<=model.meta.profileSafety.maxEntries,'Quota de copies conservé');
+  console.log('Quota réel : neuf imports, '+removed+' suppression(s) confirmée(s) ; profil QA ' + profile);
  } finally {bridge.close();}
 });

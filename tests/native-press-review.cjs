@@ -24,7 +24,7 @@ for(const [club,variant] of [[1,1],[8,2]]){
  const root=fs.mkdtempSync(path.join(process.env.CD_PRESS_TEST_ROOT||require('node:os').tmpdir(),'cd-press-review-'));let b=createBridge({dataDir:root,seed:398,now:1700000000000}),n=0;
  const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  try{
-  let m=good('new_career',{mode:'common',club}),p=m.clubLife.press;assert.ok(p.conference.questions.some(q=>q.variant===variant));
+  let m=good('new_career',{mode:'world-champ',club}),p=m.clubLife.press;assert.ok(p.conference.questions.some(q=>q.variant===variant));
   const asked=p.conference.questions;m=good('press_conference',{context:p.context,answers:asked.map(q=>({questionId:q.id,answerId:'r1'}))});
   const expected=asked.map(q=>({id:q.id,question:q.question,answer:q.answers[1].text})),quotes=model=>model.clubLife.press.history.map(({id,question,answer})=>({id,question,answer}));assert.deepEqual(quotes(m),expected);
   const text=good('export').meta.exportText;assert.deepEqual(quotes(good('import',{text})),expected);

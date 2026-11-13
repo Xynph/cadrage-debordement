@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process'),{test}=require('node:test'),assert=require('node:assert/strict');
 test('Contrats de l’effectif : échéances, filtres, bonne fiche et prolongation sans écriture', {skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot requis'},()=>{
