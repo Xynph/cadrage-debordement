@@ -38,11 +38,9 @@ declare -A suite_limits=(
   [tests/godot-immersive08.cjs]=600
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
-# « informatif » dans le résumé). godot-immersive08 : parcours de 400 s de l'interface entière (Réception, effectif,
-# composition, direct) en rendu logiciel llvmpipe sans GPU ; ses étapes d'effectif et de direct restent rouges en CI
-# (12 novembre 2026, runs de la PR #602) et ne se corrigent pas à l'aveugle sans machine Godot libre. À reprendre
-# avec un Godot local, puis à retirer de cette liste (ci/ci-jobs.cjs n'en dépend pas).
-informative_suites=(tests/godot-immersive08.cjs)
+# « informatif » dans le résumé). Aucune pour l'instant : godot-immersive08, longtemps informative, tourne désormais
+# en mode Monde (carrière world-champ) et est bloquante comme les autres.
+informative_suites=()
 failures=0; informative_failures=0; executed=0; other_skips=0
 : > "$work/results.md"
 for test in "${suites[@]}"; do
