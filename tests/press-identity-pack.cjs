@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Rubrique facultative `press` des packs d'identités : journalistes et
 // rédactions par identifiant stable. Identités de test manifestement inventées.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
@@ -45,10 +44,11 @@ const withPress={...base,press:pressRubric};
  const onlyOutlet=media.analyse(archive({...base,press:{outlets:[{id:'redaction-2',name:'Rédaction Test Seule'}]}}),db).meta;
  assert.equal(onlyOutlet.counts.journalists,0);assert.equal(onlyOutlet.counts.outlets,1);
 }
+const ext=require('../native/engine/world-pacific-registry.cjs'),engineDir=path.join(__dirname,'../native/engine'),readJson=f=>{const file=path.join(engineDir,f);return fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;};
+const pacific=ext.extendWorldRegistry(require('../native/engine/world-registry.json'),readJson('world-pacific-extension.json'));
+const champ=ext.extendChampRegistry(ext.extendNationaleRegistry(ext.extendJapanRegistry(pacific,readJson('world-japan-extension.json')),readJson('world-nationale-extension.json')),readJson('world-champ-extension.json'));
 // Schéma v4 (édition Monde + Champ) : rubrique facultative, pack v4 existant inchangé.
 {const engine=path.join(__dirname,'../native/engine'),json=f=>{const file=path.join(engine,f);return fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;};
- const ext=require('../native/engine/world-pacific-registry.cjs'),pacific=ext.extendWorldRegistry(require('../native/engine/world-registry.json'),json('world-pacific-extension.json'));
- const champ=ext.extendChampRegistry(ext.extendNationaleRegistry(ext.extendJapanRegistry(pacific,json('world-japan-extension.json')),json('world-nationale-extension.json')),json('world-champ-extension.json'));
  const taken=new Set([...champ.clubs.map(c=>c.name),...champ.clubs.flatMap(c=>c.players.map(p=>p.name)),...staff.forDatabase(champ.id).registry.clubs.flatMap(c=>c.members.map(p=>p.name))]);
  for(const n of [...[...bank.journalists.values()].map(j=>j.name),...bank.outlets.values()])assert.ok(!taken.has(n),'nom de presse distinct dans l’édition Monde');
  const v4={schema:'cd-identity-pack-v4',id:'ligue-presse',name:'Presse Monde',version:'1',databaseId:champ.id,rightsStatus:'test-local',clubs:[],players:[],staff:[],competitions:[{id:'prem',name:'Championnat Test'}],assets:[]};
@@ -102,20 +102,21 @@ const expectPack=(m,why)=>{const t=JSON.stringify(m);assert.ok(baseNames.every(n
 try{
  writeBank('presse-0');
  b=createBridge({dataDir:profile,seed:4242,now:1700000000000,distDir});
- let m=good('new_career',{mode:'common',club:3});
+ let m=good('new_career',{mode:'world-champ',club:3});
  if(m.clubLife.press.conference.available)m=good('press_conference',{context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r0'}))});
  m=settle(m);assert.ok(m.clubLife.press.history.length>0,'au moins une conférence archivée');
  expectBase(m,'jeu de base');
  const before=state();assert.ok(!JSON.stringify(before).includes('Journaliste Test'));
 
  // Pack sans rubrique : la presse reste celle de la base.
- const plainZip=archive({...base,id:'sans-presse',players:[{id:db.clubs[3].players[0].id,name:'Joueur Test'}]}),plain=good('pack_inspect',{path:plainZip}).packs.preview;
- good('pack_install',{path:plainZip,digest:plain.digest});m=settle(good('pack_select',{id:plain.id,scope:'career'}));
- expectBase(m,'pack sans rubrique');assert.equal(m.squad.find(p=>p.id===db.clubs[3].players[0].id).name,'Joueur Test');
+ const worldBase={...base,databaseId:champ.id},worldPress={...worldBase,press:pressRubric},mode='world-champ';
+ const plainZip=archive({...worldBase,id:'sans-presse',players:[{id:champ.clubs[3].players[0].id,name:'Joueur Test'}]}),plain=good('pack_inspect',{path:plainZip,mode}).packs.preview;
+ good('pack_install',{path:plainZip,digest:plain.digest,mode});m=settle(good('pack_select',{id:plain.id,scope:'career',mode}));
+ expectBase(m,'pack sans rubrique');assert.equal(m.squad.find(p=>p.id===champ.clubs[3].players[0].id).name,'Joueur Test');
 
  // Pack avec rubrique : journalistes, rédactions, questions et archives.
- const zip=archive(withPress),preview=good('pack_inspect',{path:zip}).packs.preview;assert.equal(preview.counts.journalists,10);
- good('pack_install',{path:zip,digest:preview.digest});m=settle(good('pack_select',{id:preview.id,scope:'career'}));
+ const zip=archive(worldPress),preview=good('pack_inspect',{path:zip,mode}).packs.preview;assert.equal(preview.counts.journalists,10);
+ good('pack_install',{path:zip,digest:preview.digest,mode});m=settle(good('pack_select',{id:preview.id,scope:'career',mode}));
  expectPack(m,'pack actif');
  for(const q of m.clubLife.press.conference.questions)if(renamed.includes(q.journalist.id))assert.equal(q.journalist.name,pressRubric.journalists.find(j=>j.id===q.journalist.id).name,'question signée');
  for(const h of m.clubLife.press.history)if(renamed.includes(h.journalist?.id))assert.ok(h.journalist.name.startsWith('Journaliste Test '),'archive présentée avec le pack');
@@ -125,8 +126,8 @@ try{
  if(m.clubLife.press.conference.available){m=good('press_conference',{context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r1'}))});expectPack(m,'après conférence sous pack');assert.ok(!good('export').meta.exportText.includes('Journaliste Test'));}
 
  // Bascule pack → base → pack, puis reprise du worker.
- m=settle(good('pack_select',{id:'base',scope:'career'}));expectBase(m,'retour à la base');
- m=settle(good('pack_select',{id:preview.id,scope:'career'}));expectPack(m,'pack rétabli');
+ m=settle(good('pack_select',{id:'base',scope:'career',mode}));expectBase(m,'retour à la base');
+ m=settle(good('pack_select',{id:preview.id,scope:'career',mode}));expectPack(m,'pack rétabli');
  good('shutdown');b=createBridge({dataDir:profile,now:1700000000000,distDir});m=settle(good('snapshot'));expectPack(m,'reprise avec pack');
  // Manifeste installé altéré : le pack devient indisponible, la base s'affiche.
  {const installed=path.join(fs.realpathSync(m.meta.dataDir),'packs',preview.id,'manifest.json'),original=fs.readFileSync(installed);
@@ -151,7 +152,7 @@ try{
  const shown=(model)=>model.clubLife.press.history.filter(h=>h.journalist?.id===target);
  const expected=pressRubric.journalists.find(j=>j.id===target)?.name;
  assert.ok(shown(m).length>0&&shown(m).every(h=>h.journalist.name===(expected||bank.journalists.get(target).name)),'archive présentée avec l’identité actuelle du journaliste');
- m=settle(good('pack_select',{id:'base',scope:'career'}));
+ m=settle(good('pack_select',{id:'base',scope:'career',mode}));
  assert.ok(shown(m).every(h=>h.journalist.name===bank.journalists.get(target).name&&h.journalist.outlet===bank.journalists.get(target).outlet),'base : identité de base, sans signature d’époque');
  assert.ok(!pressText(m).includes('Signature Test Ancienne'),'aucune ancienne signature à l’écran');
  console.log('Presse et packs : rubrique facultative, refus stricts, projection, bascule pack/base/pack, reprise et ancienne sauvegarde PASS.');

@@ -1,6 +1,6 @@
 'use strict';
 // Portraits des jeunes cohérents avec leur origine (#610) et noms uniques par club.
-// La banque v2 n'étiquette que la teinte de peau (128 bases sur 160) : seule cette dimension est orientée.
+// La banque v2 étiquette la teinte de peau de ses 160 bases joueurs (les 32 historiques l'ont été le 13/11/2026).
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -28,7 +28,7 @@ const toneOf = player => tones[portraits.describe(player).cell];
 test('La table de teintes embarquée suit le catalogue de la banque v2', () => {
   const h = context(437493, { club: null });
   assert.equal(h.run('PORTRAIT_TONES'), tones.join(''));
-  assert.equal(tones.filter(t => t !== '.').length, 128, '128 bases étiquetées ; les 32 anciennes ne le sont pas');
+  assert.equal(tones.filter(t => t !== '.').length, 160, 'les 160 bases sont étiquetées');
 });
 
 test('Teintes par origine : pays du Pacifique et d’Afrique australe orientés, Europe majoritairement claire, variété gardée', () => {

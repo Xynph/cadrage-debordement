@@ -95,8 +95,18 @@ static func describe(person: Dictionary = {}) -> Dictionary:
 	var exposure := .97+_next(state)*.06
 	var shirt := _next(state)
 	var mirror := _next(state)>=.5
+	# Carrure (appearanceBuild, de -1 à 1 : écart entre la carrure attendue et celle de la base choisie) : même formule que
+	# portraits.cjs ; l'aléa propre au joueur est gardé. Sans appearanceBuild, rien ne change.
+	var requested_build: Variant = person.get("appearanceBuild")
+	var has_build: bool = (requested_build is int or requested_build is float) and is_finite(float(requested_build)) and absf(float(requested_build))<=1.0
+	var build: float = float(requested_build) if has_build else 0.0
+	if has_build:
+		face_width = 1.0-.05*build+(face_width-1.0)*.45
+		jaw_width = -.024*build+jaw_width*.6
+		zoom = 1.005+(zoom-1.005)*.6+.012*(1.0-build)/2.0
 	var visual_age := current if current>=0 else reference if reference>=0 else 45+band*10 if origin=="staff" else 25
 	var result := {"version":VERSION,"appearanceId":appearance_id,"seed":seed,"origin":origin,"atlas":"staff" if origin=="staff" else "players","cell":cell,"ageBasis":"current-age" if current>=0 else "appearance-reference" if reference>=0 else "illustrative","referenceAge":reference if reference>=0 else null,"ageBand":band if band>=0 else null,"maturity":clampf((visual_age-30)/50.0,0,1),"faceWidth":face_width,"eyeSpacing":eye_spacing,"noseWidth":nose_width,"jawWidth":jaw_width,"zoom":zoom,"cropX":crop_x,"cropY":crop_y,"saturation":saturation,"exposure":exposure,"shirt":shirt,"mirror":mirror}
+	if has_build: result["build"] = build
 	if bank==2:
 		var within := cell%10
 		var new_staff := origin=="staff" and within>=4

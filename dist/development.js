@@ -130,10 +130,37 @@ const ACADEMY_TRAINING_WEIGHT={
  LCX:2,MGX:2,BNR:2,MLX:2,BOX:2,CCX:2,
  LNX:4,MIX:4,BAV:2
 };
+// Qualité des fournées (décision de Léo du 12/11/2026) : en plus de la stature et de la
+// tradition formatrice du club, la note « jeunesse » du pays, les installations du centre
+// et le responsable de la formation déplacent les paliers de potentiel. Valeurs inventées,
+// la France sert de référence neutre pour ne pas changer l'équilibre déjà validé.
+const ACADEMY_COUNTRY_YOUTH={FR:0,NZ:0,ZA:0,IE:-.5,ENG:-.5,GB:-1,AU:-1,FJ:-1,JP:-1.5,IT:-1.5,GE:-1.5};
+function academyClubLeague(club){
+ const leagues=S?.worldMode?.leagues;if(!leagues||!Number.isInteger(club?.id))return null;
+ return Object.keys(leagues).find(id=>leagues[id]?.members?.includes(club.id))??null;
+}
+function academyCountryBonus(club){
+ if(!club?.country)return 0;
+ const league=academyClubLeague(club);
+ const key=club.country==='GB'&&(league==='prem'||league==='champ')?'ENG':club.country;
+ return ACADEMY_COUNTRY_YOUTH[key]??-1;
+}
+function academyFacilitiesBonus(club){
+ const world=typeof worldClub==='function'&&S?.worldManagement&&Number.isInteger(club?.id)?worldClub(club.id):null;
+ const shared=Number.isFinite(world?.facilities)?clamp(world.facilities-2,-2,2):0;
+ const own=club?.id===S?.club&&Number.isInteger(S?.v78to81?.facilities)?clamp(S.v78to81.facilities,0,3)*.5:0;
+ return shared+own;
+}
+function academyFormationStaffBonus(club){
+ const people=S?.staffCareer?.version===1&&Array.isArray(S.staffCareer.people)?S.staffCareer.people.flat():[];
+ const levels=people.filter(p=>p?.clubId===club?.id&&p.role==='formation'&&Number.isFinite(p.level)).map(p=>p.level);
+ return levels.length?clamp((Math.max(...levels)-60)/10,-1.5,1.5):0;
+}
 function academyRecruitmentWeight(club){
  const stature=clamp(Math.floor((club.base-65)/7),0,2);
  const training=S?.commonDatabase?(ACADEMY_TRAINING_WEIGHT[club.abbr]??0):0;
- return Math.min(5,stature+training);
+ const extra=academyCountryBonus(club)+academyFacilitiesBonus(club)+academyFormationStaffBonus(club);
+ return clamp(Math.round((Math.min(5,stature+training)+extra)*2)/2,0,6);
 }
 function academyPotential(p,club=null){
  // The interface shows the potential at the player's position, including the role profile.
@@ -246,13 +273,13 @@ function youthUniqueName(id,h,club,taken){
  }
  return first+' '+(taken.size+1);
 }
-// Portraits cohérents avec l'origine (#610). La banque v2 ne décrit que la teinte de peau observée de
-// 128 de ses 160 bases joueurs (catalogue.json, observedTraits.skinTone : L = fair ou light, T = tan,
-// B = brown, D = deep ; « . » = 32 anciennes bases sans étiquette, jamais choisies pour un jeune orienté).
+// Portraits cohérents avec l'origine (#610). La banque v2 décrit la teinte de peau observée de
+// ses 160 bases joueurs (catalogue.json, observedTraits.skinTone : L = fair ou light, T = tan,
+// B = brown, D = deep ; les 32 anciennes bases ont été étiquetées à leur tour le 13/11/2026).
 // Ce n'est pas une mesure d'origine : les tirages ci-dessous donnent seulement une répartition plausible
 // des teintes par pays d'origine et gardent de la variété dans chaque pays. Aucune donnée de morphologie
 // ou de traits du visage n'existe dans la banque.
-const PORTRAIT_TONES='................................LTBLBDLTLLBLTDLBLBTTBLLDLBLTDLBDTDLTLBDTLBLTLTDLTLTBLTLTBLTBLTLTLTBLTDLTLLBLTDLBLBLBBLTDLBLTDLTDBDLTLLDLLBLTLTDLBLLBLTLLBLTDLBLL';
+const PORTRAIT_TONES='LDTBLLDLBTLDLDBLLBLTLLDLTLTLBLBTLTBLBDLTLLBLTDLBLBTTBLLDLBLTDLBDTDLTLBDTLBLTLTDLTLTBLTLTBLTBLTLTLTBLTDLTLLBLTDLBLBLBBLTDLBLTDLTDBDLTLLDLLBLTLTDLBLLBLTLLBLTDLBLL';
 const YOUTH_LOOK_EUROPE=[['L',66],['T',27],['B',5],['D',2]],YOUTH_LOOK_PACIFIC=[['T',20],['B',45],['D',35]],YOUTH_LOOK_ASIA=[['L',62],['T',38]],YOUTH_LOOK_AFRICA=[['T',10],['B',45],['D',45]];
 const YOUTH_LOOKS={FRA:YOUTH_LOOK_EUROPE,ENG:YOUTH_LOOK_EUROPE,SCO:YOUTH_LOOK_EUROPE,WAL:YOUTH_LOOK_EUROPE,IRE:YOUTH_LOOK_EUROPE,ITA:YOUTH_LOOK_EUROPE,POR:YOUTH_LOOK_EUROPE,ROU:YOUTH_LOOK_EUROPE,
  GEO:[['L',55],['T',40],['B',5]],ARG:[['L',58],['T',37],['B',5]],RSA:[['L',38],['T',14],['B',26],['D',22]],NAM:YOUTH_LOOK_AFRICA,ZIM:YOUTH_LOOK_AFRICA,

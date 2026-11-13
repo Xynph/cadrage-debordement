@@ -16,15 +16,17 @@ var counter: Label
 var previous: Button
 var next: Button
 var page_label: Label
+var focused_player_id := ""
+var show_all: Button
 
 static func entry(owner_app: Control,parent: Container) -> Button:
 	var button := G.button("SUIVRE LES JEUNES →",func(): open(owner_app))
 	button.name = "OpenYouthDevelopment"; parent.add_child(button); return button
 
-static func open(owner_app: Control) -> AcceptDialog:
+static func open(owner_app: Control, player_id: String = "") -> AcceptDialog:
 	owner_app._clear_dialogs()
 	var view: AcceptDialog = load("res://ui/youth_development_view.gd").new()
-	view.app = owner_app; view._build(); return view
+	view.app = owner_app; view.focused_player_id = player_id; view._build(); return view
 
 func _data() -> Dictionary:
 	return app.model.get("clubLife",{}).get("youthDevelopment",{})
@@ -33,6 +35,8 @@ func _build() -> void:
 	name = "YouthDevelopment"; title = "Accompagner les jeunes"; get_ok_button().text = "FERMER"
 	app._prepare_dialog(self,360)
 	_sync_drafts()
+	if not focused_player_id.is_empty():
+		state.page = 0; state.query = ""; state.stage = 0; state.review = false
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
 	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
@@ -41,15 +45,17 @@ func _build() -> void:
 	if not str(data.get("reason","")).is_empty(): body.add_child(G.wrap(str(data.reason),13))
 	if data.get("canEnable",false):
 		var enable := G.button("DÉMARRER LE SUIVI DES JEUNES",_enable); enable.name = "YouthDevelopmentEnable"; enable.disabled = app.waiting; body.add_child(enable)
+	show_all = G.button("REVENIR À TOUS LES JEUNES",func(): focused_player_id = ""; _redraw())
+	show_all.name = "YouthDevelopmentShowAll"; body.add_child(show_all)
 	var filters := HFlowContainer.new(); body.add_child(filters)
 	var search := LineEdit.new(); search.name = "YouthDevelopmentSearch"; search.placeholder_text = "Nom ou poste…"; search.text = str(state.query); search.custom_minimum_size = Vector2(230,36); filters.add_child(search)
-	search.text_changed.connect(func(value: String): state.query = value; state.page = 0; _redraw())
+	search.text_changed.connect(func(value: String): focused_player_id = ""; state.query = value; state.page = 0; _redraw())
 	var stage := OptionButton.new(); stage.name = "YouthDevelopmentStage"
 	for label in ["Tous les jeunes","Académie","Jeunes professionnels"]: stage.add_item(label)
 	stage.select(int(state.stage)); filters.add_child(stage)
-	stage.item_selected.connect(func(index: int): state.stage = index; state.page = 0; _redraw())
+	stage.item_selected.connect(func(index: int): focused_player_id = ""; state.stage = index; state.page = 0; _redraw())
 	var review_filter := CheckButton.new(); review_filter.name = "YouthReviewFilter"; review_filter.text = "PARCOURS À REVOIR"; review_filter.button_pressed = bool(state.get("review",false)); filters.add_child(review_filter)
-	review_filter.toggled.connect(func(value: bool): state.review = value; state.page = 0; _redraw())
+	review_filter.toggled.connect(func(value: bool): focused_player_id = ""; state.review = value; state.page = 0; _redraw())
 	counter = G.wrap("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
 	list = G.v(8); list.name = "YouthDevelopmentRows"; body.add_child(list)
 	var paging := G.h(8); body.add_child(paging)
@@ -100,6 +106,8 @@ func _redraw() -> void:
 	for child in list.get_children(): list.remove_child(child); child.queue_free()
 	var query := U.fold(str(state.query)).strip_edges()
 	var source: Array = _data().get("players",[])
+	show_all.visible = not focused_player_id.is_empty()
+	if not focused_player_id.is_empty(): source = source.filter(func(p: Dictionary): return str(p.id) == focused_player_id)
 	var people := source.filter(func(p: Dictionary): return (query.is_empty() or U.fold(str(p.name)+" "+str(p.pos)).contains(query)) and (int(state.stage)==0 or str(p.stage)==["","academy","professional"][int(state.stage)]))
 	if state.get("review",false): people = people.filter(func(p: Dictionary): return str(p.get("review",{}).get("status","")) in ["review","context"])
 	state.page = clampi(int(state.page),0,maxi(0,ceili(float(people.size())/PAGE_SIZE)-1))
