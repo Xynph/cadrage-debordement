@@ -9,6 +9,8 @@ function factory() {
  const families = [0, 1, 0, 2, 2, 3, 3, 3, 4, 5, 6, 7, 7, 6, 8];
  const cover = [1, 0, 2, 3, 5, 8, 9, 10];
  const day = 86400000;
+ // Les Lions britanniques et irlandais ne comptent pas comme sélection nationale.
+ const lions = 'BIL';
  const validNation = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
  const validId = value => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/.test(value);
  const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
@@ -204,7 +206,7 @@ function factory() {
   let career = 0;
   let latest = null;
   for (const row of appearances) {
-   if (!row.playedIds.includes(playerId)) continue;
+   if (row.nation === lions || !row.playedIds.includes(playerId)) continue;
    career++;
    if (!latest || row.date > latest.date) latest = row;
   }
@@ -225,11 +227,12 @@ function factory() {
  function internationalStatus(career) {
   const caps = new Map(), released = new Set();
   for (const [nation, buckets] of Object.entries(career.archivedCaps ?? {})) {
+   if (nation === lions) continue;
    for (const bucket of Object.values(buckets)) for (const [id, count] of Object.entries(bucket)) {
     caps.set(id, { career: count, nation });
    }
   }
-  for (const row of career.appearances) for (const id of row.playedIds) {
+  for (const row of career.appearances) if (row.nation !== lions) for (const id of row.playedIds) {
    caps.set(id, { career: (caps.get(id)?.career ?? 0) + 1, nation: row.nation });
   }
   for (const camp of career.callups) {

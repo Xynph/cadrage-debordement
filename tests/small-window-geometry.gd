@@ -1,7 +1,7 @@
 extends SceneTree
 const Rooms = preload("res://qa_runner.gd")
 const RESOLUTIONS = [Vector2i(1280,720),Vector2i(1366,768),Vector2i(1440,900),Vector2i(1920,1080),Vector2i(2560,1440)]
-const ROUTES = ["Réception","Bureau","Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match","Recrutement","Formation","Centre","Club","Staff","Travail du club","Stratégie","Finances","Calendrier","Classements","Rivalités","Carrière","Sélections","Presse","Accueil","Création","Packs"]
+const ROUTES = ["Réception","Bureau","Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match","Recrutement","Formation","Centre","Suivi des jeunes","Club","Staff","Travail du club","Stratégie","Finances","Calendrier","Classements","Rivalités","Carrière","Sélections","Presse","Accueil","Création","Packs"]
 var app: Control
 var output := OS.get_environment("CD_GEOMETRY_OUTPUT")
 var failures: Array[String] = []

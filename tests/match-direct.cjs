@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 
 // Match en temps forts, par le vrai moteur natif : projection `live.direct` minute par
 // minute, sans effet sur le match. C'est le mode de base du moteur lancé par le jeu

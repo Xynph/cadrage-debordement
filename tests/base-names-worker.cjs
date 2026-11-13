@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Base commune : noms de la table, pack factice par identifiant, carrière aux noms antérieurs.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs'),{scenario}=require('./helpers/base-names-scenario.cjs');

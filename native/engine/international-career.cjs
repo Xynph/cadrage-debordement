@@ -8,7 +8,11 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  const templateCache = new Map(historic.map(edition => [edition.id, edition]));
  const hostCache = new Map();
  const ranking = historic.find(edition => edition.id === 'rugby-world-cup-2027')?.rankings ?? [];
- const nations = new Map(historic.flatMap(edition => edition.teams.map(team => [team.id, team.name])));
+ const nations = new Map(Object.entries(competitions.TEAM_NAMES ?? {}));
+ for (const edition of historic) for (const team of edition.teams) nations.set(team.id, team.name);
+ const lions = competitions.LIONS ?? null;
+ const homeUnions = competitions.HOME_UNIONS ?? [];
+ const extraFamily = id => typeof competitions.isExtraEdition === 'function' && competitions.isExtraEdition(id);
  const firstRecurringYear = 2028;
  const lastYear = 2201; // World mode supports up to 175 seasons from 2026.
  const day = 86400000;
@@ -38,13 +42,18 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  function calendar(state, fromYear, throughYear) {
   const editions = historic.filter(edition => edition.year >= fromYear && edition.year <= throughYear);
   if (state.version === 1) return editions;
-  const firstYear = Math.max(fromYear, firstRecurringYear, yearOf(state.recurringFrom));
-  if (firstYear > throughYear) return editions;
-  for (const id of competitions.editionIds(firstYear, Math.min(throughYear, lastYear))) {
+  const add = id => {
    if (!templateCache.has(id)) templateCache.set(id, competitions.createEdition(id));
    editions.push(templateCache.get(id));
+  };
+  const firstYear = Math.max(fromYear, firstRecurringYear, yearOf(state.recurringFrom));
+  if (firstYear <= throughYear) for (const id of competitions.editionIds(firstYear, Math.min(throughYear, lastYear))) add(id);
+  // Calendrier complémentaire (tests, Nations Cup, PNC, Rugby Europe, Lions) : versions 3 et suivantes.
+  if (state.extendedFrom && competitions.extraEditionIds) {
+   const from = Math.max(fromYear, 2026, yearOf(state.extendedFrom));
+   if (from <= throughYear) for (const id of competitions.extraEditionIds(from, Math.min(throughYear, lastYear))) add(id);
   }
-  return editions;
+  return editions.sort((a, b) => a.year - b.year);
  }
 
  function resultsFor(state, template) {
@@ -54,7 +63,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  }
 
  function hostFor(edition) {
-  if (!hostCache.has(edition.id)) hostCache.set(edition.id, hostDossier(edition));
+  if (!hostCache.has(edition.id)) hostCache.set(edition.id, extraFamily(edition.id) ? null : hostDossier(edition));
   return hostCache.get(edition.id);
  }
 
@@ -109,6 +118,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  }
 
  function pastThreshold(state, edition) {
+  if (extraFamily(edition.id)) return state.extendedFrom;
   return edition.year < firstRecurringYear ? state.historyBefore : state.recurringFrom;
  }
 
@@ -157,19 +167,27 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  }
 
  function knownEligibility(id, nation) {
+  if (nation === lions) return homeUnions.some(union => knownEligibility(id, union));
   if (typeof playerFacts.eligible === 'function') return playerFacts.eligible(id, nation);
   const documented = Object.hasOwn(facts, id) ? facts[id] : null;
   return documented?.seniorNation ? documented.seniorNation === nation :
    documented?.eligibilityNations?.includes(nation) === true;
  }
 
+ // Les sélections avec les Lions n'attachent pas un joueur à une nation (règle 8).
  function representedNations(state) {
   const represented = new Map();
   for (const [nation, buckets] of Object.entries(state.archivedCaps ?? {})) {
+   if (nation === lions) continue;
    for (const bucket of Object.values(buckets)) for (const id of Object.keys(bucket)) represented.set(id, nation);
   }
-  for (const row of state.appearances) for (const id of row.playedIds) represented.set(id, row.nation);
+  for (const row of state.appearances) if (row.nation !== lions) for (const id of row.playedIds) represented.set(id, row.nation);
   return represented;
+ }
+
+ function mayRepresent(represented, id, nation) {
+  if (!represented.has(id)) return true;
+  return nation === lions ? homeUnions.includes(represented.get(id)) : represented.get(id) === nation;
  }
 
  function message(id, kind, title, body, date, nation) {
@@ -178,7 +196,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
 
  function openCamps(state, editions, date, players, managedNation, clubPlayerIds, mail, notifyActive = false) {
   const active = windows(editions).filter(camp => isActive(camp, date));
-  const priority = camp => Number(camp.nation !== managedNation);
+  const priority = camp => camp.nation === lions ? -1 : Number(camp.nation !== managedNation);
   active.sort((a, b) => compare(a.from, b.from) || priority(a) - priority(b) || compare(campKey(a), campKey(b)));
   let represented;
   for (const camp of active) {
@@ -188,8 +206,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
    const playerIds = callups.selectCallups({
     players: [...players, ...pool(camp.nation)], nation: camp.nation, date,
     size: campSize(camp.competitionId), unavailableIds,
-    isEligible: (player, nation) => knownEligibility(player.id, nation) &&
-     (!represented.has(player.id) || represented.get(player.id) === nation),
+    isEligible: (player, nation) => knownEligibility(player.id, nation) && mayRepresent(represented, player.id, nation),
    });
    state.callups.push({ ...camp, playerIds });
    if (date !== camp.from && !notifyActive) continue;
@@ -261,13 +278,22 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
 
  function initial(today, seed = 0) {
   check(validDate(today) && Number.isSafeInteger(seed), 'Date ou graine internationale invalide.');
-  const state = { version: 2, date: today, historyBefore: today, recurringFrom: today, seed, results: {}, appearances: [], callups: [], archivedCaps: {} };
+  const state = { version: 3, date: today, historyBefore: today, recurringFrom: today, extendedFrom: today, seed, results: {}, appearances: [], callups: [], archivedCaps: {} };
   seedHistory(state, calendar(state, 2026, yearOf(today)), today);
   return state;
  }
 
  function upgrade(state) {
-  if (state.version === 2) return state;
+  if (state.version === 3) return state;
+  if (state.version === 2) {
+   validate(state);
+   // Calendrier complémentaire ajouté le 13/11/2026 : l'historique de l'année en
+   // cours est rejoué sans participation, comme pour les éditions récurrentes.
+   const next = { ...copy(state), version: 3, extendedFrom: state.date };
+   const year = yearOf(state.date);
+   seedHistory(next, calendar(next, year, year).filter(edition => extraFamily(edition.id)), state.date);
+   return next;
+  }
   validate(state);
   const next = { ...copy(state), version: 2, recurringFrom: state.date, results: {}, archivedCaps: {} };
   for (const template of historic) for (const [id, result] of Object.entries(resultsFor(state, template))) {
@@ -276,14 +302,16 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const year = yearOf(state.date);
   if (year >= firstRecurringYear) seedHistory(next, calendar(next, year, year), state.date);
   archiveHistory(next, state.date);
-  return next;
+  return upgrade(next);
  }
 
  function validate(state, { date } = {}) {
   const legacy = state?.version === 1;
+  const extended = state?.version === 3;
   const keys = ['version', 'date', 'historyBefore', 'seed', 'results', 'appearances', 'callups'];
-  check(shape(state, legacy ? keys : keys.concat('recurringFrom', 'archivedCaps')) &&
-   (legacy || state.version === 2 && validDate(state.recurringFrom) &&
+  check(shape(state, legacy ? keys : keys.concat('recurringFrom', 'archivedCaps', ...(extended ? ['extendedFrom'] : []))) &&
+   (!extended || validDate(state.extendedFrom) && state.historyBefore <= state.extendedFrom && state.extendedFrom <= state.date) &&
+   (legacy || [2, 3].includes(state.version) && validDate(state.recurringFrom) &&
     state.historyBefore <= state.recurringFrom && state.recurringFrom <= state.date && object(state.archivedCaps)) &&
    validDate(state.date) && validDate(state.historyBefore) &&
    state.historyBefore <= state.date && (date === undefined || state.date === date) &&
@@ -302,8 +330,10 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const all = editions.flatMap(edition => edition.fixtures);
   const byId = new Map(all.map(fixture => [fixture.id, fixture]));
   const expectedHistory = { seed: state.seed, results: {} };
-  seedHistory(expectedHistory, templates.filter(edition => edition.year < firstRecurringYear), state.historyBefore);
-  if (!legacy) seedHistory(expectedHistory, templates.filter(edition => edition.year >= firstRecurringYear), state.recurringFrom);
+  const core = templates.filter(edition => !extraFamily(edition.id));
+  seedHistory(expectedHistory, core.filter(edition => edition.year < firstRecurringYear), state.historyBefore);
+  if (!legacy) seedHistory(expectedHistory, core.filter(edition => edition.year >= firstRecurringYear), state.recurringFrom);
+  if (extended) seedHistory(expectedHistory, templates.filter(edition => extraFamily(edition.id)), state.extendedFrom);
   const cutoff = legacy ? '2026-01-01' : archiveDate(state.date);
   const archiveMatches = new Map();
   for (const edition of editions) for (const fixture of edition.fixtures) {
@@ -350,9 +380,9 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
     check(object(bucket), 'Archives des sélections invalides.');
     for (const [id, count] of Object.entries(bucket)) {
      check(validId(id) && group === callups.capBucket(id) && Number.isInteger(count) && count >= 1 && count <= matches &&
-      !represented.has(id) && (isReserve(id, nation) || knownEligibility(id, nation)), 'Archives des sélections invalides.');
+      (nation === lions || !represented.has(id)) && (isReserve(id, nation) || knownEligibility(id, nation)), 'Archives des sélections invalides.');
      total += count;
-     represented.set(id, nation);
+     if (nation !== lions) represented.set(id, nation);
     }
    }
    check(total >= matches * 15 && total <= matches * 23, 'Archives des sélections invalides.');
@@ -365,9 +395,9 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
    const camp = (campsBySide.get(fixture?.competitionId + '/' + row.nation) ?? []).find(camp => isActive(camp, row.date));
    check(fixture?.result && fixture.date === row.date && row.date >= cutoff && row.date >= pastThreshold(state, template) &&
     involves(fixture, row.nation) && camp && row.playedIds.every(id => isReserve(id, row.nation) ||
-    camp.playerIds.includes(id) && (!represented.has(id) || represented.get(id) === row.nation)),
+    camp.playerIds.includes(id) && mayRepresent(represented, id, row.nation)),
    'Participation internationale invalide.');
-   for (const id of row.playedIds) represented.set(id, row.nation);
+   if (row.nation !== lions) for (const id of row.playedIds) represented.set(id, row.nation);
    recordedSides.add(row.fixtureId + '/' + row.nation);
   }
   for (const fixture of all) {

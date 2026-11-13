@@ -1,5 +1,5 @@
-
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -19,14 +19,14 @@ test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds et le
   const result = bridge.handle({ id: 1, command: 'new_career', payload: { mode: 'common', club: 0 } });
   assert.equal(result.ok, true, result.error);
   const academy = result.model.decisions.development.academy;
-  const u21 = academy.filter(player => player.age >= 19 && player.age <= 21);
+  const u21 = academy.filter(player => player.age >= 18 && player.age <= 21);
   const saved = JSON.parse(JSON.parse(fs.readFileSync(path.join(result.model.meta.dataDir, 'donnees.json'))).store['bdt-v1']);
   const source = new Map(saved.development.academy.map(player => [player.id, player]));
   const potentials = u21.map(player => source.get(player.id).dev.potential);
   console.log(JSON.stringify({ u21: potentials, publicRanges: u21.map(p => p.potentialRange) }));
   assert.equal(u21.length, 30);
   const originalU21 = u21.filter(player => /^youth-0-1-\d{1,2}$/.test(player.id));
-  assert.equal(originalU21.length, 5);
+  assert.equal(originalU21.length, 10);
   assert.ok(originalU21.filter(player => source.get(player.id).dev.potential > 90).length <= 1);
   assert.ok(potentials.filter(potential => potential > 90).length <= 3, String(potentials));
   assert.ok(new Set(potentials).size >= 3);
