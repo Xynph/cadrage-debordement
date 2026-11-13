@@ -55,7 +55,11 @@ func run() -> void:
 			check(not all.has("Classement actuel"), "Club : pas de classement actuel")
 			var digits := str(int(fans.subscribers))
 			check(all.any(func(t): return str(t).strip_edges().length() > 0 and not RegEx.create_from_string("[^0-9\\s\u00a0\u202f]").search(str(t)) and RegEx.create_from_string("[^0-9]").sub(str(t), "", true) == digits), "Club : abonnés affichés (" + digits + ")")
-			check(all.has("Non ouverte"), "Club : Académie « Non ouverte » (Espoirs hors Monde)")
+			var suivi: Dictionary = app.model.clubLife.academyFollowUp
+			check(not all.has("Non ouverte") and not all.any(func(t): return str(t).contains("à venir en carrière Monde")), "Club : jamais « Non ouverte » : le centre existe en Monde")
+			var attendu := "%d Crabos · %d Espoirs" % [int(suivi.crabos.count), int(suivi.espoirs.count)]
+			check(all.has(attendu), "Club : Académie « " + attendu + " » (même état que la page Formation)")
+			check(all.has("%d / %d" % [int(suivi.total), int(suivi.capacity)]), "Club : Académie « " + str(suivi.total) + " / " + str(suivi.capacity) + " » places")
 			check(not all.has("Niveau indisponible") or app.model.clubLife.academyPathways.get("available", true), "Club : pas de « Niveau indisponible » trompeur")
 			var facilities: Control = app.root_content.find_child("ClubFacilityDetails", true, false)
 			check(is_instance_valid(facilities), "Club : bloc Infrastructures présent")

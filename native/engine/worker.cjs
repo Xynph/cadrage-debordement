@@ -335,6 +335,13 @@ function createBridge(options={}){
   const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
   const backup=path.join(dataDir,'donnees-precedentes.json');
   let committedFiles='';
+  // Texte de la dernière sauvegarde publiée tant que la carrière en mémoire n'a pas changé depuis ;
+  // null sinon (démarrage, annulation d'origine inconnue, récupération). CD_VERIFIER_COPIE=1 (tests)
+  // recalcule l'état pour vérifier cette égalité à chaque commande.
+  let cleanSave=null;
+  const verifyCleanCopy=options.verifyCleanCopy===true||process.env.CD_VERIFIER_COPIE==='1';
+  const copyStore=source=>{const out={};for(const key of Object.keys(source)){const value=source[key];if(typeof value==='string'){out[key]=value;continue;}const text=JSON.stringify(value);if(text!==undefined)out[key]=JSON.parse(text);}return out;};
+  const sameStore=(a,b)=>{const keys=Object.keys(a);if(keys.length!==Object.keys(b).length)return false;for(const key of keys)if(!Object.hasOwn(b,key)||(typeof a[key]==='string'?a[key]!==b[key]:JSON.stringify(a[key])!==JSON.stringify(b[key])))return false;return true;};
   const profileFilesVersion=()=>{
    try{
     const entries=[file,backup].map(target=>fs.lstatSync(target,{bigint:true}));
@@ -342,17 +349,47 @@ function createBridge(options={}){
     return entries.map(entry=>[entry.dev,entry.ino,entry.size,entry.mtimeNs,entry.ctimeNs].join(':')).join('|');
    }catch{return '';}
   };
+  // Texte du profil : identique octet pour octet à JSON.stringify({protocol:1,seed,clock,store}), mais
+  // chaque valeur du magasin (la carrière fait ~22 Mo) n'est réencodée que si elle a changé.
+  const storeEncoding=new Map();
+  const profileText=()=>{
+   const entries=[];
+   for(const key of Object.keys(store)){
+    const value=store[key];let encoded;
+    if(typeof value==='string'){
+     const cached=storeEncoding.get(key);
+     if(cached&&cached.value===value)encoded=cached.encoded;
+     else{encoded=JSON.stringify(value);storeEncoding.set(key,{value,encoded});}
+    }else encoded=JSON.stringify(value);
+    if(encoded!==undefined)entries.push(JSON.stringify(key)+':'+encoded);
+   }
+   for(const key of storeEncoding.keys())if(!Object.hasOwn(store,key)||typeof store[key]!=='string')storeEncoding.delete(key);
+   return '{"protocol":1,"seed":'+JSON.stringify(seed)+',"clock":'+JSON.stringify(clock)+',"store":{'+entries.join(',')+'}}';
+  };
+  // Copie de secours du fichier courant : un lien physique vers le fichier déjà écrit (et forcé sur
+  // disque) remplace la relecture et la réécriture de ~25 Mo ; le renommage atomique qui suit est
+  // inchangé, si bien que la copie garde seule l'ancien contenu. Sans lien possible (FAT, partage
+  // réseau, fichier déjà lié ailleurs), copie complète comme avant.
+  const backupFrom=(source,target,write)=>{
+   const s=fs.lstatSync(source);
+   if(s.nlink===1){
+    try{fs.linkSync(source,target);}catch{write(target,fs.readFileSync(source));return;}
+    const fd=fs.openSync(target,'r');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
+    return;
+   }
+   write(target,fs.readFileSync(source));
+  };
   const persist=()=>{
    committedFiles='';
    if(resumeCheckpoint)profileSafety.checkpoint({...resumeCheckpoint,reason:'adaptation-reprise'});
-   const token=randomUUID(),text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
+   const token=randomUUID(),text=profileText(),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
    const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
    const ordinary=target=>{const s=fs.lstatSync(target);if(!s.isFile()||s.isSymbolicLink())throw Error('Fichier de sauvegarde ou de secours non ordinaire.');};
    let stashed=false,published=false;
    try{
     write(temp,text);
     if(fs.existsSync(file)){
-     ordinary(file);write(backupTemp,fs.readFileSync(file));
+     ordinary(file);backupFrom(file,backupTemp,write);
      if(fs.existsSync(backup)){ordinary(backup);fs.renameSync(backup,rollback);stashed=true;}
      fs.renameSync(backupTemp,backup);published=true;
     }
@@ -389,7 +426,7 @@ function createBridge(options={}){
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
-    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
+    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
     if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
@@ -404,7 +441,14 @@ function createBridge(options={}){
     updatePressPolicy();
     if(national.isNationalOnly()&&!NATIONAL_ONLY_COMMANDS.has(command))throw Error('Cette décision est réservée au manager d’un club.');
     if(ctx.nativeMandatoryPress&&advancesCareer)run('nativeSystems.domain("press").guardProgress()');
-    mark('garde');const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
+    mark('garde');
+    // Copie d'annulation : le magasin ne contient que des chaînes (immuables), une copie superficielle
+    // suffit ; l'état reprend le texte de la dernière sauvegarde quand la carrière n'a pas bougé depuis.
+    const priorFromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
+    if(priorFromSave&&verifyCleanCopy&&run('JSON.stringify(S)')!==cleanSave)throw Error('Copie d’annulation : la carrière a changé hors commande.');
+    const priorStateText=priorFromSave?cleanSave:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
+    const priorState=()=>({state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra});
+    const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     try{
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
@@ -424,7 +468,7 @@ function createBridge(options={}){
      if(command==='interclub_negotiate'||command==='academy_groups_preview'){
       ctx.nativeCommand=command;
       const extra=command==='academy_groups_preview'?{academyGroups:run('CDNativeAcademyGroups.preview(S)')}:run('nativeSystems.execute(nativeCommand,nativePayload)');
-      if(run('JSON.stringify(S)')!==JSON.stringify(JSON.parse(prior).state)||seed!==priorSeed||JSON.stringify(store)!==priorStore)throw Error('Une consultation ne peut pas modifier la carrière.');
+      if(run('JSON.stringify(S)')!==priorStateText||seed!==priorSeed||!sameStore(store,priorStore))throw Error('Une consultation ne peut pas modifier la carrière.');
       const model=snapshotRaw();Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));return {id,ok:true,model:projectKnowledge(model)};
      }
      ctx.nativeKnowledgeBefore=run('nativeKnowledge.before(S)');ctx.nativeKnowledgeCommand=command;
@@ -527,7 +571,7 @@ function createBridge(options={}){
       try{run(delegateLoop);}catch(error){if(!deferredDelegateRead)throw error;}
       finally{ctx.save=historicalSave;deferredDelegateActive=false;}
       if(deferredDelegateRead){
-       deferredDelegateRead=false;seed=priorSeed;clock=delegateClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);
+       deferredDelegateRead=false;seed=priorSeed;clock=delegateClock;store=copyStore(priorStore);ctx.nativePrior=priorState();
        run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
        run(delegateLoop);
       }
@@ -599,12 +643,14 @@ function createBridge(options={}){
      mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
-     if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;
+     if(command==='tick'&&committedFiles&&seed===priorSeed&&sameStore(store,priorStore)&&profileFilesVersion()===committedFiles)clock=priorClock;
      else persist();
+     // La sauvegarde vient d'être publiée : le texte enregistré décrit exactement la carrière en mémoire.
+     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
      mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
-     seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
+     seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
      throw error;
     }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}

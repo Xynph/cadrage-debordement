@@ -57,14 +57,17 @@ budget() {
     tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
-    tests/native-nationale-reduced-bench.cjs|tests/native-match-talks.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
+    tests/native-nationale-reduced-bench.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
+    # Lot 01 (Monde) : native-match-talks 779 s sous forte charge locale (deux carrières, plusieurs semaines).
+    tests/native-match-talks.cjs) echo 900s ;;
     tests/native-club-support-season.cjs) echo 1200s ;;
     tests/native-club-world-worker.cjs) echo 900s ;;
-    tests/native-club-strategy.cjs) echo 600s ;;
+    tests/native-club-strategy.cjs) echo 1800s ;; # Monde : saison de 46 semaines jouée jusqu'à next_season (1512 s sous charge locale)
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
     # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
-    tests/match-notes.cjs) echo 900s ;;
+    # Notes de match + XV type (journées et saison en carrière Monde) : ~15 min en CI.
+    tests/match-notes.cjs) echo 1800s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
@@ -90,6 +93,9 @@ budget() {
     tests/jiff.cjs) echo 600s ;;
     # Tests migrés en carrière Monde : dépassent le délai par défaut (native-relationships 273 s en local).
     tests/performance-analysis.cjs|tests/native-relationships.cjs|tests/player-population-capacity.cjs) echo 600s ;;
+    # Lot 01 (Monde) : mesures locales sous charge, 2 créneaux partagés, 86 à 413 s ; délais doublés, assertions inchangées.
+    tests/native-club-meetings.cjs|tests/native-club-meetings-packs.cjs|tests/native-club-support.cjs|tests/native-club-support-medical.cjs|tests/native-club-support-effects.cjs|tests/native-playbook.cjs|tests/native-coach-notes06-pack.cjs|tests/native-manager-career-pack.cjs|tests/native-player-knowledge-worker.cjs|tests/native-position-integration.cjs|tests/native-position-editions.cjs) echo 600s ;;
+    tests/native-club-support-training-forecast.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }
