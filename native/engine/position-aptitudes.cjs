@@ -166,6 +166,33 @@ module.exports=function positionAptitudes(){
    if(new Set(lineup.filter(Boolean)).size!==lineup.filter(Boolean).length)return sheet;
    return {...sheet,lineup};
   }
+  // Règle JIFF (CDJiff.target joueurs formés en France sur les 23) intégrée à l'attribution : on
+  // remplace un non-JIFF par un JIFF disponible en minimisant la perte de note au poste (banc
+  // pondéré à moitié, donc sacrifié en premier), jamais en dessous de 40 au poste tant qu'une
+  // autre option existe. Cas limite : sans JIFF jouable au poste, le quota prime (meilleure option).
+  function jiffFit(team,sheet){
+   if(typeof CDJiff==='undefined'||!CDJiff.isJiff||!CDJiff.target||typeof S==='undefined'||S?.jiff?.version!==1||team.id===undefined)return sheet;
+   const leagues=CDJiff.subjectLeagues(S);if(!leagues||!Object.values(leagues).some(l=>l.includes(team.id)))return sheet;
+   const pool=availablePool(team),byId=new Map(team.players.map(p=>[p.id,p]));
+   const slots=sheet.lineup.concat(sheet.bench),used=new Set(slots.filter(Boolean));
+   let count=slots.filter(id=>id&&CDJiff.isJiff(S,byId.get(id))).length;
+   const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
+   const jiffs=pool.filter(p=>CDJiff.isJiff(S,p)).sort(compareId);
+   while(count<CDJiff.target){
+    let best=null;
+    for(let k=0;k<slots.length;k++){
+     const cur=byId.get(slots[k]);if(!cur||CDJiff.isJiff(S,cur))continue;
+     for(const p of jiffs){
+      if(used.has(p.id)||!eligible(p,k))continue;
+      const loss=(value(cur,k)-value(p,k))*(k>=15?.5:1)+(rating(p,k)<40?1000:0);
+      if(!best||loss<best.loss-1e-9)best={k,p,loss};
+     }
+    }
+    if(!best)break;
+    used.delete(slots[best.k]);used.add(best.p.id);slots[best.k]=best.p.id;count++;
+   }
+   return {...sheet,lineup:slots.slice(0,15),bench:slots.slice(15)};
+  }
   function reservedBuild(fn,team,preferred=[],bench=[],...args){
    if(reservations)return fn(team,preferred,bench,...args);
    reservations=reserveFront(team,preferred,bench);
@@ -174,16 +201,16 @@ module.exports=function positionAptitudes(){
     // Une feuille choisie à la main (postes préférés) n'est jamais réattribuée.
     if(!preferred.some(Boolean)&&!bench.some(Boolean)){
      sheet=optimiseBack(team,sheet);
-     // Règle JIFF des clubs concernés : même autorité qu'avant, appliquée après l'attribution.
-     if(typeof CDJiff!=='undefined'&&CDJiff.comply&&typeof S!=='undefined'&&team.id!==undefined)sheet=CDJiff.comply(S,team,sheet);
     }
-    return improveBench(team,sheet,bench);
+    sheet=improveBench(team,sheet,bench);
+    // Règle JIFF : appliquée en dernier, sur la feuille définitive, en tenant compte des postes.
+    return !preferred.some(Boolean)&&!bench.some(Boolean)?jiffFit(team,sheet):sheet;
    }finally{reservations=null;}
   }
   buildSheet=(team,preferred=[],bench=[])=>reservedBuild(oldBuild,team,preferred,bench);
   managerSheet=(team,...args)=>{
    if(reservations)return oldManager(team,...args);
-   reservations=reserveFront(team,[],[]);try{return improveBench(team,oldManager(team,...args));}finally{reservations=null;}
+   reservations=reserveFront(team,[],[]);try{return jiffFit(team,improveBench(team,oldManager(team,...args)));}finally{reservations=null;}
   };
   unit=(live,side,key,filter)=>{
    const on=live.sheets[side].on,players=activePlayers(live,side);

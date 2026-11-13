@@ -104,6 +104,8 @@ test('Monde : après l\'attribution optimale des postes, un club français respe
   assert.equal(h.run('typeof CDJiff!=="undefined"&&typeof CDJiff.comply==="function"'),true,'CDJiff.comply est accessible depuis le moteur');
   // Les statuts s'initialisent à la 1re journée validée ; on les pose ici pour auditer toutes les feuilles.
   h.run('CDJiff.initialize(S)');
+  // La feuille du manager date d'avant ces statuts : « Sélection du staff » la recompose.
+  h.run('autoLineup()');
   assert.equal(h.run('!!S.jiff&&S.jiff.version===1'),true,'la règle JIFF est active en carrière Monde');
   const rows=JSON.parse(h.run(`JSON.stringify(Object.values(CDJiff.subjectLeagues(S)).flat().map(ci=>{
    const c=S.clubs[ci],sheet=ci===S.club?{lineup:S.lineup,bench:S.reserves}:buildSheet(c);
