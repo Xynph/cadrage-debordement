@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 // Validation des feuilles de statistiques (native/engine/match-stats.cjs) sur N matchs simulés par le
-// vrai moteur (dist/, même harnais que les tests) : moyennes par poste (ramenées à 80 minutes, joueurs
+// vrai moteur (carrière Monde, harnais world-champ des tests) : moyennes par poste (ramenées à 80 minutes, joueurs
 // ayant joué au moins 40 minutes) et par équipe, comparées aux références réelles de
 // docs/stats-match-realistes-20261113.md.
 // Usage : node scripts/stats-match-validation.cjs [nombre=120] [--json]
-const { context } = require('../tests/harness.cjs');
+const { worldYouth } = require('../tests/helpers/youth-world-harness.cjs');
 const MS = require('../native/engine/match-stats.cjs');
 
 const GROUPES = [
@@ -15,18 +15,23 @@ const GROUPES = [
 const CHAMPS = ['plaquages', 'plaquagesManques', 'courses', 'metres', 'defenseursBattus', 'passes', 'offloads', 'soutiensRuck', 'coupsDePied', 'metresAuPied'];
 const EQUIPE = ['plaquages', 'plaquagesManques', 'reussitePlaquage', 'courses', 'metres', 'franchissements', 'defenseursBattus', 'passes', 'offloads', 'rucks', 'recuperations', 'ballonsPerdus', 'penalitesConcedees', 'enAvant', 'coupsDePied', 'metresAuPied'];
 
+// Carrière Monde (116 clubs, édition world-champ) : seul mode de jeu. Rencontres du calendrier
+// mondial de la première semaine, jouées avec journal (comme le direct du joueur : un match
+// « automatisé » n'a pas de journal détaillé, et le journal n'est tenu que pour le club du joueur :
+// le club à domicile devient le club dirigé de la carrière jetable). Une carrière par tranche de 42 matchs (autre graine,
+// autres clubs) ; le générateur du moteur avance d'un match à l'autre.
 function simuler(nombre) {
- const t = context();
- t.run('start(0)');
- const clubs = t.run('S.clubs.length');
  const matchs = [];
- for (let k = 0; k < nombre; k++) {
-  const adversaire = 1 + (k % (clubs - 1));
-  const domicile = k % 2 === 0;
-  const res = JSON.parse(t.run(`(()=>{const pair=${domicile ? `[S.club,${adversaire}]` : `[${adversaire},S.club]`};const l=createRugbyMatch(pair);for(let n=0;!l.finished;n++){if(n>4000)throw Error('boucle');l.paused=false;advanceRugby(l)}
+ for (let monde = 0; matchs.length < nombre; monde++) {
+  const t = worldYouth({ seed: 827381 + monde * 101, club: monde * 7 });
+  const total = Number(t.run('CDWorldCareer.fixtures(S).length'));
+  for (let i = 0; i < 42 && matchs.length < nombre; i++) {
+   const k = matchs.length;
+   matchs.push(JSON.parse(t.run(`(()=>{const f=CDWorldCareer.fixtures(S)[${i % total}];const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);
+   S.club=pair[0];const l=createRugbyMatch(pair,null,false);for(let n=0;!l.finished;n++){if(n>4000)throw Error('boucle');l.paused=false;advanceRugby(l)}
    const joueurs={};for(const ci of pair)for(const p of S.clubs[ci].players)joueurs[p.id]={skills:p.skills};
-   return JSON.stringify({cle:'validation:${k}:'+pair.join('-'),events:l.events,score:l.score,tries:l.tries,stats:l.stats,tactical:l.tacticalStats,joueurs});})()`));
-  matchs.push(res);
+   return JSON.stringify({cle:'validation:${k}:'+pair.join('-'),events:l.events,score:l.score,tries:l.tries,stats:l.stats,tactical:l.tacticalStats,joueurs});})()`)));
+  }
  }
  return matchs;
 }

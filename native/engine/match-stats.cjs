@@ -41,7 +41,7 @@ const POIDS=Object.freeze({
 // Calibrage (validé sur 120 matchs : tests/match-stats-realistes.cjs, tableau de la doc).
 const REGLAGES=Object.freeze({
  coursesParMinute:2.95,     // courses non racontées des deux équipes par minute pleinement jouée
- piedsParMinute:.55,        // coups de pied courants des deux équipes par minute
+ piedsParMinute:.62,        // coups de pied courants des deux équipes par minute
  cassure:.036,            // part des courses non racontées qui percent la ligne (franchissement, 22 à 40 m)
  gain:.8,                 // échelle des mètres d'une course ordinaire
  manque:.13,               // part des courses avec un plaquage manqué (défense équilibrée)

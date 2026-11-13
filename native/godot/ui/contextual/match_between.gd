@@ -1033,6 +1033,43 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 			detail += "\n" + alerte.capitalize()
 		case.tooltip_text = detail + "\nCliquer : ouvrir le banc sur ce joueur."
 		xv.add_child(case)
+	_ligne_equipe(feuille, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
+
+## Ligne « Équipe » sous un XV : plaquages, mètres et essais de toute l'équipe (feuille de statistiques),
+## remplaçants sortis compris. Le total est la somme des joueurs de la feuille ; l'écart avec la somme
+## des quinze lignes au-dessus est le travail des joueurs déjà remplacés, dit dans l'infobulle.
+func _ligne_equipe(feuille: Dictionary, camp: int, visibles: Array) -> void:
+	var joueurs: Dictionary = feuille.get("joueurs", {}) if feuille.get("joueurs") is Dictionary else {}
+	if joueurs.is_empty() or not camp in [0, 1]: return
+	var total := {"plaquages": 0, "metres": 0, "essais": 0}
+	var sortis := {"plaquages": 0, "metres": 0, "essais": 0}
+	for id: String in joueurs:
+		var f: Dictionary = joueurs[id]
+		if int(f.get("camp", -1)) != camp: continue
+		for cle: String in total:
+			total[cle] += int(f.get(cle, 0))
+			if not visibles.has(id): sortis[cle] += int(f.get(cle, 0))
+	var ligne := S.G.h(px(8))
+	ligne.custom_minimum_size.y = px(52)
+	ligne.name = "MatchBetweenTeamTotal"
+	ligne.tooltip_text = "Total de l'équipe, remplaçants sortis compris (%d plaquage%s, %d m, %d essai%s déjà aux joueurs remplacés)." % [sortis.plaquages, "s" if sortis.plaquages > 1 else "", sortis.metres, sortis.essais, "s" if sortis.essais > 1 else ""]
+	ligne.mouse_filter = Control.MOUSE_FILTER_STOP
+	var trait_haut := ColorRect.new()
+	trait_haut.color = Color(OR, 0.35)
+	trait_haut.custom_minimum_size = Vector2(0, maxi(1, px(2)))
+	trait_haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	xv.add_child(trait_haut)
+	var vide := Control.new()
+	vide.custom_minimum_size = Vector2(px(int(COLONNES_XV[0][1])), 0)
+	ligne.add_child(vide)
+	ligne.add_child(_cellule("ÉQUIPE", 0, OR, 24))
+	ligne.add_child(_cellule("", int(COLONNES_XV[2][1]), FAIBLE, 22))
+	ligne.add_child(_cellule("", int(COLONNES_XV[3][1]), FAIBLE, 22))
+	ligne.add_child(_cellule("", int(COLONNES_XV[4][1]), FAIBLE, 22))
+	ligne.add_child(_cellule(str(total.plaquages), int(COLONNES_XV[5][1]), OR, 28, true))
+	ligne.add_child(_cellule(str(total.metres), int(COLONNES_XV[6][1]), OR, 28, true))
+	ligne.add_child(_cellule(str(total.essais) if total.essais > 0 else "–", int(COLONNES_XV[7][1]), OR, 28, true))
+	xv.add_child(ligne)
 
 ## XV adverse (`direct.adversaire`) : le même tableau, aux couleurs adverses ; la feuille actuelle
 ## (ses remplacements se voient tout de suite), notes bornées aux faits montrés.
@@ -1097,6 +1134,8 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 		ligne.add_child(nom)
 		case.tooltip_text = "%d · %s · %s\nNote %.1f (%d action%s montrée%s)" % [poste + 1, str(j.get("poste", "")), str(j.get("nom", "")), note, int(j.get("faits", 0)), "s" if int(j.get("faits", 0)) > 1 else "", "s" if int(j.get("faits", 0)) > 1 else ""]
 		xv.add_child(case)
+	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}
+	_ligne_equipe(feuille, 1 - camp, liste.map(func(j: Variant) -> String: return str(j.get("joueur", "")) if j is Dictionary else ""))
 
 ## Alertes de Mon XV sans le tableau (onglet adverse ouvert) : Gabi les garde.
 func _alertes_seules(joueurs: Array, direct: Dictionary) -> void:

@@ -154,56 +154,68 @@ Le calcul des notes de #621 n'est pas modifié. Pour qu'il s'appuie sur la feuil
 3. pour la note elle-même, les compteurs de routine peuvent peser peu (ex. +0,01 par plaquage,
    −0,05 par plaquage manqué) pour ne pas noyer les faits marquants.
 
-## Validation (150 matchs simulés, `node scripts/stats-match-validation.cjs 150`)
+## Validation (126 matchs simulés en carrière Monde, `node scripts/stats-match-validation.cjs 126`)
 
-Matchs joués par le vrai moteur (club 0 contre les 13 autres, domicile et extérieur en alternance),
-joueurs ayant joué au moins 40 minutes, valeurs ramenées à 80 minutes ; P10–P90 = plaquages des
-titulaires restés 70 minutes ou plus. Les tests (`tests/match-stats-realistes.cjs`) refont ce
-contrôle sur 40 matchs avec des bornes volontairement plus larges que les fourchettes réelles.
+Matchs joués par le vrai moteur dans une carrière Monde (116 clubs, édition world-champ, harnais
+`worldYouth` des tests), trois carrières de graines différentes, 42 rencontres chacune, avec le journal
+détaillé (le moteur ne le tient que pour le club dirigé : le club à domicile devient le club dirigé de
+la carrière jetable). Joueurs ayant joué au moins 40 minutes, valeurs ramenées à 80 minutes ;
+P10–P90 = plaquages des titulaires restés 70 minutes ou plus. Les tests
+(`tests/match-stats-realistes.cjs`) refont ce contrôle sur 40 matchs avec des bornes volontairement
+plus larges que les fourchettes réelles.
 
 | Poste | Plaquages réel → jeu (P10–P90) | Courses réel → jeu | Mètres réel → jeu | Passes réel → jeu | Pied réel → jeu |
 |---|---|---|---|---|---|
-| Pilier | 6–9 → 6,6 (3–11) | 6–8 → 6,6 | 10–20 → 14 | 2–3 → 2,2 | 0 → 0 |
-| Talonneur | 9–12 → 10,7 (5–17) | 6–8 → 6,2 | 12–20 → 13 | 3–4 → 3,1 | 0 → 0 |
-| Deuxième ligne | 9–13 → 9,9 (5–16) | 7–9 → 7,3 | 12–25 → 17 | 3–4 → 2,8 | 0 → 0 |
-| Flanker | 12–17 → 14,4 (8–22) | 8–10 → 9,1 | 20–35 → 36 | 3–5 → 3,6 | 0 → 0 |
-| Numéro 8 | 10–13 → 11,2 (7–17) | 11–14 → 11,4 | 30–50 → 48 | 4–6 → 4,6 | 0 → 0 |
-| Demi de mêlée | 4–7 → 5,0 (2–9) | 3–5 → 4,4 | 10–25 → 25 | 50–70 → 61 | 5–8 → 5,4 |
-| Demi d'ouverture | 5–8 → 6,4 (3–11) | 5–7 → 6,0 | 15–30 → 31 | 20–30 → 30 | 9–13 → 10,5 |
-| Centre | 7–10 → 8,7 (4–14) | 8–10 → 8,5 | 35–55 → 53 | 6–9 → 7,4 | 0–1 → 0,6 |
-| Ailier | 3–7 → 5,1 (2–9) | 7–10 → 7,9 | 45–80 → 59 | 3–6 → 4,3 | 0–2 → 0,8 |
-| Arrière | 3–6 → 4,7 (2–8) | 8–11 → 8,8 | 45–80 → 64 | 5–8 → 7,3 | 3–6 → 3,2 |
+| Pilier | 6–9 → 6,6 (3–12) | 6–8 → 6,2 | 10–20 → 12,5 | 2–3 → 2,2 | 0 → 0 |
+| Talonneur | 9–12 → 9,9 (5–15) | 6–8 → 6,4 | 12–20 → 13 | 3–4 → 3,3 | 0 → 0 |
+| Deuxième ligne | 9–13 → 9,7 (5–15) | 7–9 → 7,1 | 12–25 → 17 | 3–4 → 2,9 | 0 → 0 |
+| Flanker | 12–17 → 14,6 (9–22) | 8–10 → 8,9 | 20–35 → 34 | 3–5 → 3,6 | 0 → 0 |
+| Numéro 8 | 10–13 → 11,5 (7–18) | 11–14 → 11,7 | 30–50 → 47 | 4–6 → 4,8 | 0 → 0 |
+| Demi de mêlée | 4–7 → 5,2 (1–9) | 3–5 → 4,4 | 10–25 → 24 | 50–70 → 60 | 5–8 → 5,7 |
+| Demi d'ouverture | 5–8 → 6,8 (3–10) | 5–7 → 6,0 | 15–30 → 32 | 20–30 → 29 | 9–13 → 11,2 |
+| Centre | 7–10 → 8,3 (5–14) | 8–10 → 8,7 | 35–55 → 50 | 6–9 → 7,2 | 0–1 → 0,7 |
+| Ailier | 3–7 → 4,9 (2–8) | 7–10 → 8,1 | 45–80 → 58 | 3–6 → 4,2 | 0–2 → 0,7 |
+| Arrière | 3–6 → 4,7 (2–8) | 8–11 → 8,5 | 45–80 → 60 | 5–8 → 7,0 | 3–6 → 3,5 |
 
-Aucun poste ne sort des fourchettes, sauf les mètres du flanker (36 pour 20–35, à la limite). Le premier
+Aucun poste ne sort des fourchettes (le deuxième ligne et le demi d'ouverture frôlent la limite basse et haute de leurs plaquages et mètres). Le premier
 calibrage (commit 3d9f3986) laissait les ailiers à 49 m (bas de la fourchette) et 1,4 franchissement par
 équipe : une part des courses non racontées perce maintenant la ligne (22 à 40 m, surtout les
-trois-quarts rapides), et l'échelle des mètres des courses ordinaires a été ramenée à 0,8.
+trois-quarts rapides), et l'échelle des mètres des courses ordinaires a été ramenée à 0,8 et le jeu au pied courant relevé d'un neuvième (coups de pied par équipe 22 → 24).
 
 | Équipe (par match) | Réel | Jeu avant (journal seul) | Jeu (feuille) | Écart |
 |---|---|---|---|---|
-| Plaquages réussis | 120–156 | 17,4 | 132,5 | dans la fourchette |
-| Plaquages manqués | 15–20 | 2,7 | 19,0 | dans la fourchette |
-| Réussite au plaquage | 86–90 % | — | 87,5 % | dans la fourchette |
-| Courses | 102–122 | 12,0 | 119,8 | dans la fourchette |
-| Mètres gagnés | 370–650 | 171 | 554 | dans la fourchette (entre les deux définitions) |
-| Défenseurs battus | 13–21 | — | 19,0 | dans la fourchette |
-| Franchissements | 5–9 (est.) | 1,2 | 6,3 | dans la fourchette (avant : 1,2) |
-| Passes | 140–148 | — | 151,1 | à peine au-dessus |
-| Offloads | 4,5–9 | — | 6,5 | dans la fourchette |
-| Rucks joués | 80–116 | — | 85,1 | dans la fourchette |
-| Coups de pied dans le jeu | 23,5–29,7 | 11,4 (touches comprises) | 22,7 | légèrement sous la fourchette |
-| Mètres au pied | 700–1 000 (est.) | — | 724 | dans la fourchette |
-| Ballons récupérés (turnovers gagnés) | 4,9–6,4 | 6,6 | 7,1 | un peu au-dessus (journal) |
-| Ballons perdus | 12–15 (est.) | — | 10,7 | sous la fourchette (journal) |
+| Plaquages réussis | 120–156 | 17,4 | 131,3 | dans la fourchette |
+| Plaquages manqués | 15–20 | 2,7 | 19,7 | à peine au-dessus |
+| Réussite au plaquage | 86–90 % | — | 87,0 % | dans la fourchette |
+| Courses | 102–122 | 12,0 | 119,0 | dans la fourchette |
+| Mètres gagnés | 370–650 | 171 | 539 | dans la fourchette (entre les deux définitions) |
+| Défenseurs battus | 13–21 | — | 19,7 | à peine au-dessus |
+| Franchissements | 5–9 (est.) | 1,2 | 5,7 | dans la fourchette (avant : 1,2) |
+| Passes | 140–148 | — | 150,6 | à peine au-dessus |
+| Offloads | 4,5–9 | — | 6,2 | dans la fourchette |
+| Rucks joués | 80–116 | — | 84,7 | dans la fourchette |
+| Coups de pied dans le jeu | 23,5–29,7 | 11,4 (touches comprises) | 24,0 | dans la fourchette |
+| Mètres au pied | 700–1 000 (est.) | — | 767 | dans la fourchette |
+| Ballons récupérés (turnovers gagnés) | 4,9–6,4 | 6,6 | 6,7 | un peu au-dessus (journal) |
+| Ballons perdus | 12–15 (est.) | — | 10,6 | sous la fourchette (journal) |
 | Pénalités concédées | 9–12 (est.) | 6,3 | 6,2 | sous la fourchette (journal) |
-| En-avant | 5–7 (est.) | 3,7 | 3,7 | sous la fourchette (journal) |
+| En-avant | 5–7 (est.) | 3,7 | 3,9 | sous la fourchette (journal) |
 
 « Ballons récupérés » ne compte plus que les turnovers du journal (même définition que le tableau de bord
 d'origine et que les sources) ; les conquêtes volées sur touche ou mêlée adverse sont un champ à part,
 `conquetesVolees` (avant : 9,4 en les mélangeant, hors des références).
 
-Points des joueurs = score des 300 feuilles d'équipe (aucun écart). Durée : 19 s pour 150 matchs sur la
-machine partagée de la nuit.
+Points des joueurs = score des 252 feuilles d'équipe (aucun écart). Durée : une trentaine de secondes pour 126 matchs
+sur la machine partagée de la nuit.
+
+## Aucun résultat de match ne change
+
+Le module ne lit jamais le générateur du moteur (test : aucune occurrence de `Math.random`, tirages
+dérivés de la clé de la rencontre) et ne modifie rien : lecture seule du journal. Le contrôle de
+non-régression est fait en carrière Monde uniquement (consigne du 13 novembre, 12 h 07 : plus aucun test
+dans l'ancien mode France) : `tests/world-champ-match.cjs` passe, et la validation ci-dessus vérifie
+que les points des feuilles égalent le score de chacun des 126 matchs. `france-parity` n'a pas été relancé
+après la fusion de #637.
 
 ## Limites
 
@@ -213,9 +225,9 @@ machine partagée de la nuit.
   de pied de pénalité et des touches sans suite dans le jeu ; les corriger relève des règles du moteur
   de match (résultats, séquences figées), hors de ce chantier, qui ne change aucun résultat.
   Les **franchissements** ne sont plus dans ce cas : les courses non racontées en produisent.
-- Les mètres gagnés (554) se situent entre les deux définitions des sources (370 « gained » en URC,
-  614–656 « carry metres » au Tournoi). Les passes (151) dépassent de peu la fourchette (140–148) et
-  les coups de pied dans le jeu (22,7) sont à peine sous la leur (23,5–29,7).
+- Les mètres gagnés (539) se situent entre les deux définitions des sources (370 « gained » en URC,
+  614–656 « carry metres » au Tournoi). Les passes (151) dépassent de peu la fourchette (140–148) ; les plaquages
+  manqués (19,7) et les défenseurs battus (19,7) sont à peine au-dessus de la leur.
 - Les moyennes par poste sont des estimations : aucune source ouverte ne publie de moyenne par poste
   pour le Top 14.
 - Les matchs sans direct (matchs IA, mode `CD_MATCH_TEMPS_FORTS=0`) n'ont pas de feuille affichée,
