@@ -784,7 +784,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	# Conseil de l'adjoint et composition tels qu'ils étaient avant la borne : rien d'un temps fort à venir.
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
-	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []),
+	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
 		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs])
 	if cle == _cle: return
 	_cle = cle
@@ -947,6 +947,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		return
 	alertes_xv.clear()
 	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
+	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}
 	var cartons: Dictionary = {}
 	for carton: Variant in direct.get("cartons", []):
 		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
@@ -988,7 +989,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 			case.tooltip_text = "%d · poste vacant" % (poste + 1)
 			xv.add_child(case)
 			continue
-		var d := W.donnees_joueur(joueur, notes, cartons)
+		var d := W.donnees_joueur(joueur, notes, cartons, feuille)
 		var id: String = d.id
 		var fiche: Dictionary = notes.get(id, {}) if notes.get(id) is Dictionary else {}
 		var note: float = d.note
@@ -1026,6 +1027,7 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		elif alerte.begins_with("carton") or alerte == "exclu": pastille.marque = Color("e8c24a")
 		var plaq := int(d.get("plaquages", 0))
 		var detail := "%d · %s · %s\nÉnergie %d %%, note %.1f (%d action%s du match), %d plaquage%s" % [poste + 1, str(joueur.get("pos", "")), str(joueur.get("name", "")), roundi(condition), note, int(fiche.get("faits", 0)), "s" if int(fiche.get("faits", 0)) > 1 else "", plaq, "s" if plaq > 1 else ""]
+		if not feuille.is_empty(): detail += " (%d manqué%s), %d course%s, %d passe%s" % [int(d.plaquages_manques), "s" if int(d.plaquages_manques) > 1 else "", int(d.courses), "s" if int(d.courses) > 1 else "", int(d.passes), "s" if int(d.passes) > 1 else ""]
 		if not alerte.is_empty():
 			alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
 			detail += "\n" + alerte.capitalize()
