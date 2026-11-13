@@ -175,6 +175,7 @@ function validateActionScenes(l,s){
   saveCheck(saveArray(a.on,2)&&a.on.length===2);
   a.on.forEach((ids,side)=>{const sh=l.sheets[side],eligible=new Set(sh.nominated||[...sh.initial,...sh.bench,...sh.used,...sh.sentOff]);saveCheck(saveArray(ids,15)&&ids.length===15&&new Set(ids.filter(Boolean)).size===ids.filter(Boolean).length);ids.forEach((id,slot)=>saveCheck(id===null||saveId(id)&&eligible.has(id)&&slotEligible(s.clubs[l.pair[side]].players.find(p=>p.id===id),slot)))});
   saveCheck(a.actor===null||saveId(a.actor)&&s.clubs[l.pair[a.team]].players.some(p=>p.id===a.actor));
+  saveCheck(a.tackler===undefined||a.kind==='carry'&&saveId(a.tackler)&&a.on[1-a.team].includes(a.tackler)); // plaqueur : un adversaire sur le terrain
  }
 }
 function validateTacticalStats(values){saveCheck(saveArray(values,2)&&values.length===2);for(const a of values){saveCheck(saveObject(a)&&TACTICAL_STAT_KEYS.every(key=>key==='metres'?saveNumber(a[key],0,80000):saveInt(a[key],0,2000)));saveCheck(a.advances<=a.carries&&a.longGains<=a.advances&&a.metres<=a.advances*40)}}

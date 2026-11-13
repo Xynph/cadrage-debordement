@@ -1067,7 +1067,7 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 			ligne.add_child(_cellule("Poste vacant", 0, FAIBLE))
 			xv.add_child(case)
 			continue
-		var note := float(j.get("note", 6.0))
+		var note := float(j.get("note", NOTE_DEPART))
 		ligne.add_child(_cellule(_nom_court(str(j.get("nom", ""))), 0, IVOIRE, 28))
 		ligne.add_child(_cellule(poste_court(str(j.get("poste", ""))), int(COLONNES_XV[2][1]), FAIBLE, 22))
 		var cadre_note := PanelContainer.new()
@@ -1114,13 +1114,15 @@ func _alertes_seules(joueurs: Array, direct: Dictionary) -> void:
 		elif condition < FATIGUE: alerte = "fatigué"
 		if not alerte.is_empty(): alertes_xv.append({"poste": poste, "id": id, "nom": str(joueur.get("name", "")), "alerte": alerte, "condition": condition})
 
-## Couleur de la note du match : vert au-dessus de 6,5, ivoire autour de 6, jaune sous 6,
-## alerte sous 5,5 (6 au coup d'envoi).
+## Note de départ du moteur (match-direct.cjs, NOTE_DEPART) : titulaire au coup d'envoi, remplaçant à son entrée.
+const NOTE_DEPART := 6.5
+## Couleur de la note du match : vert au-dessus de 7, ivoire autour de 6,5, jaune sous 6,5,
+## alerte sous 6 (6,5 au coup d'envoi).
 static func _teinte_note(note: float) -> Color:
-	if note >= 7.0: return Color("82e3a3")
-	if note >= 6.5: return Color("65b081")
-	if note >= 6.0: return IVOIRE
-	if note >= 5.5: return Color("c9c46a")
+	if note >= 7.5: return Color("82e3a3")
+	if note >= 7.0: return Color("65b081")
+	if note >= 6.5: return IVOIRE
+	if note >= 6.0: return Color("c9c46a")
 	return ALERTE
 
 ## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 9 lettres.

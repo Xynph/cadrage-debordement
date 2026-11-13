@@ -36,7 +36,38 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     return { heightCm, weightKg, dimensionsSource: record.heightCm != null && record.weightKg != null ? 'documented' : 'estimated' };
   }
 
+  // Jeunes générés (décision de Léo du 12/11/2026) : origine tirée selon le pays du club
+  // formateur, avec la même table que youthHeritage() de dist/development.js. Un jeune
+  // formé dans le pays de son club y a grandi : il est aussi sélectionnable pour ce pays
+  // (naissance ou résidence de 60 mois), comme le prévoit la règle 8 de World Rugby.
+  const heritage = {
+    FRA:[['FRA',84],['FIJ',3],['GEO',3],['TGA',2],['RSA',2],['POR',2],['SAM',1],['ENG',1],['ARG',1],['NZL',1]],
+    ENG:[['ENG',80],['RSA',4],['SAM',3],['TGA',3],['IRE',3],['FIJ',2],['SCO',2],['NZL',2],['WAL',1]],
+    SCO:[['SCO',82],['ENG',8],['RSA',4],['NZL',3],['IRE',3]],
+    WAL:[['WAL',85],['ENG',7],['SAM',3],['RSA',3],['IRE',2]],
+    IRE:[['IRE',88],['ENG',4],['NZL',3],['RSA',3],['SAM',2]],
+    ITA:[['ITA',84],['ARG',8],['RSA',4],['NZL',2],['ROU',2]],
+    RSA:[['RSA',94],['NAM',3],['ZIM',3]],
+    NZL:[['NZL',72],['SAM',12],['TGA',9],['FIJ',5],['ENG',2]],
+    AUS:[['AUS',72],['TGA',8],['SAM',8],['FIJ',6],['NZL',6]],
+    FIJ:[['FIJ',100]], GEO:[['GEO',100]],
+    JPN:[['JPN',86],['TGA',6],['NZL',4],['SAM',2],['KOR',2]],
+  };
+  const youthAnchor = id => {
+    const generated = /^youth-(\d+)-/.exec(id);
+    return generated && !Object.hasOwn(origins, id) && Object.hasOwn(nations, clubs[generated[1]]) ? clubs[generated[1]] : null;
+  };
+  function youthHeritage(id, anchor) {
+    const table = heritage[anchor];
+    if (!table) return anchor;
+    let roll = hashId(id + ':rugby-origin') % 100;
+    for (const [nation, weight] of table) { if (roll < weight) return nation; roll -= weight; }
+    return anchor;
+  }
+
   function estimate(id) {
+    const anchorYouth = youthAnchor(id);
+    if (anchorYouth && heritage[anchorYouth]) return youthHeritage(id, anchorYouth);
     const generated = /^(?:depth-|youth-|p)(\d+)-/.exec(id);
     const anchor = origins[id] ?? (generated ? clubs[generated[1]] : null);
     const hash = hashId(id + ':rugby-origin');
@@ -50,6 +81,8 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     if (record.eligibilityNations?.length) return record.eligibilityNations.includes(nation);
     const documented = byFlag.get(record.flagCode);
     if (documented) return nation === documented;
+    const anchorYouth = youthAnchor(id);
+    if (anchorYouth && heritage[anchorYouth]) return nation === anchorYouth || nation === youthHeritage(id, anchorYouth);
     return !Object.hasOwn(origins, id) && nation === estimate(id);
   }
 
