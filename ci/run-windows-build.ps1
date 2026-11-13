@@ -19,7 +19,7 @@ New-Item -ItemType Directory -Path $root | Out-Null
 $tools = Join-Path $root 'tools'
 $build = Join-Path $root 'official-build'
 $evidence = Join-Path $root 'evidence'
-$zip = Join-Path $build 'OvalLegacy27-PrototypeGodot-Windows-x64.zip'
+$zip = Join-Path $build 'RugbyLegacy27-PrototypeGodot-Windows-x64.zip'
 foreach ($pair in @(@('root',$root),@('package',$zip),@('evidence',$evidence))) {
     "$($pair[0])=$($pair[1])" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 }

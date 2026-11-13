@@ -9,8 +9,8 @@ spec=importlib.util.spec_from_file_location('windows_package', ${JSON.stringify(
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 tmp=pathlib.Path(tempfile.mkdtemp(prefix='windows-package-unit-'))
 atexit.register(shutil.rmtree,tmp,ignore_errors=True)
-commit='a'*40; tree='b'*40; prefix='OvalLegacy27-PrototypeGodot'
-files={'OvalLegacy27.exe':b'MZ-unit-fixture-not-an-executable','runtime/node.exe':b'unit-runtime', 'engine/worker.cjs':b'unit-worker','Licences/notice.txt':b'unit-notice'}
+commit='a'*40; tree='b'*40; prefix='RugbyLegacy27-PrototypeGodot'
+files={'RugbyLegacy27.exe':b'MZ-unit-fixture-not-an-executable','runtime/node.exe':b'unit-runtime', 'engine/worker.cjs':b'unit-worker','Licences/notice.txt':b'unit-notice'}
 manifest={'sourceCommit':commit,'sourceTree':tree,'files':{p:{'sha256':hashlib.sha256(v).hexdigest(),'bytes':len(v)} for p,v in files.items()}}
 def archive(entries=None, doc=None):
     dest=tmp/'fixture.zip'
@@ -23,7 +23,7 @@ def refused(fn, reason=None):
     except (ValueError, OSError, KeyError) as error:
         if reason:assert reason.lower() in str(error).lower(),str(error)
     else:raise AssertionError('Hostile or partial fixture was accepted')
-exe='C:/QA Relocated/game/OvalLegacy27.exe'
+exe='C:/QA Relocated/game/RugbyLegacy27.exe'
 qa={'passed':True,'mode':'fresh','checks':50,'failures':[],'native_display':'headless','executable':exe,'data_dir':'C:/QA Evidence/private/PrototypeGodot','season':2,'pid':10,'engine_pid':11,'coach':{'starts':0,'ends':0,'voice_available':False,'player_present':False},'layout':[]}
 literal={'id':'unit-question','season':1,'week':1,'club':29,'answerId':'r4','questionText':'Exact unit question?','answerText':'Exact selected unit reply.','journalist':{'id':'unit-journalist','name':'Unit Reporter','outlet':'Unit Paper'}}
 qa['coach']['observation']='From QA startup through coach destruction'
@@ -143,10 +143,10 @@ for row in p['loadedModules']:
 m.validate_graphics_runtime(r,p,exe,'opengl3_angle');p['loadedModules'][0]['sha256']='0'*64;refused(lambda:m.validate_graphics_runtime(r,p,exe,'opengl3_angle'),'hash')`);
 check('Windows absolute paths follow one explicit rule under Python 3.12 and 3.13',`assert m.windows_absolute('C:/QA Evidence/x') and m.windows_absolute('C:\\\\Windows\\\\System32') and m.windows_absolute('\\\\\\\\srv\\\\share\\\\x');assert not m.windows_absolute('/tmp/x') and not m.windows_absolute('\\\\x') and not m.windows_absolute('C:') and not m.windows_absolute('C:rel') and not m.windows_absolute('rel/x');import os;assert m.evidence_module_path('C:/x/d3d11.dll',False);assert not m.evidence_module_path('/tmp/d3d11.dll',False);assert m.evidence_module_path('/tmp/d3d11.dll',True)==(os.name!='nt')`);
 check('full diagnostic receipt applies ANGLE and module guards while retaining pure profile checks',`from unittest.mock import patch
-receipt=m.verify_archive(archive(),commit);root=m.extract_archive(tmp/'fixture.zip',tmp/'full-game',commit);exe=str(root/'OvalLegacy27.exe');node=str(root/'runtime/node.exe');node_sha=manifest['files']['runtime/node.exe']['sha256']
+receipt=m.verify_archive(archive(),commit);root=m.extract_archive(tmp/'fixture.zip',tmp/'full-game',commit);exe=str(root/'RugbyLegacy27.exe');node=str(root/'runtime/node.exe');node_sha=manifest['files']['runtime/node.exe']['sha256']
 override=root/'override.cfg';override.write_text('[application]\\nrun/main_loop_type="WindowsReceiptResume"\\n');extras={'override.cfg':{'sha256':m.digest(override),'bytes':override.stat().st_size}}
 tree_receipt=m.verify_tree(root,manifest,extras);fresh=copy.deepcopy(qa);fresh['executable']=exe;resume=resume_report();resume['executable']=exe;resume['runtime_info']['engine']={'major':4,'minor':7,'patch':2}
-identity={'executable':exe,'exeSha256':manifest['files']['OvalLegacy27.exe']['sha256'],'pid':10,'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':node_sha,'exitCode':0,'shutdown':True}
+identity={'executable':exe,'exeSha256':manifest['files']['RugbyLegacy27.exe']['sha256'],'pid':10,'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':node_sha,'exitCode':0,'shutdown':True}
 graphical={**identity,**graphics_process(),'driverAck':driver_ack('resume')}
 full={'platform':'Windows','sourceCommit':commit,'sourceTree':tree,'selectedGraphicsDriver':'opengl3_angle','package':{'path':str(tmp/'fixture.zip'),'shaBefore':receipt['zipSha256'],'shaAfter':receipt['zipSha256'],'manifestSha256':receipt['manifestSha256']},'qaExtras':extras,'manifestBefore':tree_receipt,'manifestAfter':tree_receipt,'tools':{'receipt':{'pins':{'node-runtime':{'sha256':node_sha},'mesa-archive':{'sha256':'a'*64}}}},'fresh':fresh,'resume':resume,'process':{'fresh':identity,'resume':graphical}}
 with patch.object(m,'png_proof',side_effect=lambda path:{'path':path,'sha256':'e'*64,'width':2560,'height':1440,'variance':10}):
@@ -161,7 +161,7 @@ with patch.object(m,'png_proof',side_effect=lambda path:{'path':path,'sha256':'e
 check('graphics scope requires actual driver, modules and PNG proof without promoting unit fixtures',`from unittest.mock import patch
 node='C:/QA Relocated/game/runtime/node.exe';sha=manifest['files']['runtime/node.exe']['sha256'];image={'path':'unit-image','sha256':'e'*64}
 r={'mode':'graphics-smoke','scope':'graphics-smoke-only','driver_ack':driver_ack('graphics-smoke'),'data_dir':qa['data_dir'],'passed':True,'exported':True,'checks':10,'failures':[],'platform':'Windows','native_display':'Windows','audio_driver':'Dummy','executable':exe,'pid':10,'engine_pid':11,'coach':{'starts':0,'ends':0,'player_present':False},'runtime_info':graphics_runtime(),'graphics':{'passed':True,'window':[2560,1440],'captures':[image,image]}}
-p={**graphics_process(),'executable':exe,'pid':10,'driverAck':driver_ack('graphics-smoke'),'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':sha,'exeSha256':manifest['files']['OvalLegacy27.exe']['sha256'],'exitCode':0,'shutdown':True}
+p={**graphics_process(),'executable':exe,'pid':10,'driverAck':driver_ack('graphics-smoke'),'nodeExecutable':node,'nodePid':11,'nodeParentPid':10,'nodeSha256':sha,'exeSha256':manifest['files']['RugbyLegacy27.exe']['sha256'],'exitCode':0,'shutdown':True}
 with patch.object(m,'png_proof',return_value=image):
  result=m.validate_graphics_probe(copy.deepcopy(r),p,manifest,exe,'opengl3_angle',require_native=False);assert result['proof']=='diagnostic' and result['passed'] is False
  for change in ['headless','driver','modules','pixels','unexpected-angle-fallback','ack']:

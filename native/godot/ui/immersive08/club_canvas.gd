@@ -8,6 +8,8 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
 const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
@@ -227,8 +229,11 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 		objective.position.y = C.px(64)
 		objective.size.y = C.px(65)
 		offset = 20
-	D.text(card, 72, 139 + offset, "Classement actuel", 23, C.MUTED, 500, 279)
-	if rank != null:
+	var table_open := P.standings_open(app.model.club)
+	D.text(card, 72, 139 + offset, "Classement actuel" if table_open else "Pas encore de classement", 23, C.MUTED, 500, 279)
+	if rank != null and not table_open:
+		D.chip(card, Rect2(355,111 + offset,120,33), "0 match", C.AMBER)
+	elif rank != null:
 		var position := "%s%s" % [G.n(rank),"er" if int(rank) == 1 else "e"]
 		if division_size > 0:
 			position += " / %d" % division_size
@@ -289,12 +294,21 @@ static func _academy(model: Dictionary) -> Dictionary:
 static func _installations(card: Panel, app: Control, finance: Dictionary) -> void:
 	var facility: Variant = finance.get("facility")
 	var academy_level: Variant = _academy(app.model).get("facilities")
+	# Carrière Monde : pas de niveau 0-3 (pas de compétitions Espoirs), mais le centre existe : on montre son état réel
+	# (Crabos, Espoirs, places), les mêmes chiffres que la page Formation (academyFollowUp), jamais « non ouverte ».
+	var follow: Dictionary = app.model.get("clubLife", {}).get("academyFollowUp", {})
+	var centre_open: bool = follow.get("available", false) == true
 	var support: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
 	var medical: Array = support.get("medical", {}).get("players", [])
+	var academy_sub := "Installations du centre"
+	var academy_value := G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"
+	if academy_level == null and centre_open:
+		academy_sub = "%s Crabos · %s Espoirs" % [G.n(follow.get("crabos",{}).get("count",0)), G.n(follow.get("espoirs",{}).get("count",0))]
+		academy_value = "%s / %s" % [G.n(follow.get("total",0)), G.n(follow.get("capacity",75))]
 	var rows := [
 		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "Niveau indisponible"],
 		["heart","Cellule médicale","Dossiers suivis",str(medical.size()) if not support.is_empty() else "—"],
-		["school","Académie","Installations du centre",G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"]
+		["school","Académie",academy_sub,academy_value]
 	]
 	for i in rows.size():
 		var row: Array = rows[i]
@@ -302,9 +316,9 @@ static func _installations(card: Panel, app: Control, finance: Dictionary) -> vo
 		U.icon(card, row[0], Vector2(23,y+13), C.IVORY, 37)
 		D.text(card, 82, y+32, row[1], 28, C.IVORY, 700, 480)
 		D.text(card, 82, y+62, row[2], 22, C.MUTED, 500, 400)
-		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null
+		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null and not centre_open
 		D.text(card, 686, y+37, row[3], 23 if level_unavailable else 29, C.MUTED if level_unavailable else C.MINT, 700, 210, HORIZONTAL_ALIGNMENT_RIGHT)
-		if i != 1 and not level_unavailable:
+		if i != 1 and not level_unavailable and not (i == 2 and academy_level == null):
 			var total := 10 if i == 0 else 3
 			var value := int(academy_level) if i == 2 else int(facility.level)
 			for segment in total:
@@ -355,7 +369,7 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	D.text(card, 78, 130, G.n(fans.sentiment)+" / 100" if fans.has("sentiment") else "—", 41, C.IVORY, 700, 315)
 	D.line(card, Vector2(397,73), Vector2(397,134))
 	D.text(card, 476, 91, "Abonnés", 22, C.MUTED, 500, 291)
-	D.text(card, 476, 130, fans.get("subscribers","—"), 41, C.IVORY, 700, 290)
+	D.text(card, 476, 130, G.n(fans.subscribers) if fans.has("subscribers") else "—", 41, C.IVORY, 700, 290)
 	D.line(card, Vector2(19,151), Vector2(777,151), Color(C.LINE,.7))
 	U.icon(card, "money", Vector2(23,175), C.GOLD, 35)
 	D.text(card, 78, 181, "Partenaire principal", 22, C.MUTED, 500, 518)
@@ -367,10 +381,21 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	for i in mini(2,news.size()):
 		var y := 284 + i * 54
 		D.rect(card, Rect2(22,y,4,43), C.BLUE if i == 0 else C.MINT, 2)
-		var lines := D.words(Copy.news(str(news[i])), 85, 2)
+		# Les actualités « XV de la journée / de la saison » portent une vignette cliquable.
+		var equipe_type := str(news[i]).begins_with("XV de ")
+		var lines := D.words(Copy.news(str(news[i])), 70 if equipe_type else 85, 2)
 		for j in lines.size():
-			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 727)
+			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 640 if equipe_type else 727)
 			label.tooltip_text = Copy.news(str(news[i]))
+		if equipe_type and EquipeType.disponible(app.model):
+			var saison := str(news[i]).begins_with("XV de la saison")
+			var ligues: Array = NotesMatch.bilan(app.model).get("equipeType", {}).get("ligues", [])
+			var cible: Dictionary = ligues[0] if not ligues.is_empty() else {}
+			var equipe: Variant = cible.get("saison" if saison else "journee")
+			if equipe is Dictionary:
+				var vignette := EquipeType.vignette(equipe, Rect2(0, 0, 38, 44), func(): EquipeType.ouvrir(app, str(cible.get("id", "")), "saison" if saison else "journee"))
+				card.add_child(vignette)
+				D.place(vignette, Rect2(704, y - 1, 48, 45))
 	if news.is_empty(): D.text(card, 23, 320, "Aucun message enregistré.", 23, C.MUTED, 500, 739)
 
 static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dictionary) -> void:

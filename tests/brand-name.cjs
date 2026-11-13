@@ -22,7 +22,7 @@ assert.equal(brand.transform('OVAL LEGACY 27'), 'RUGBY LEGACY 27');
 assert.equal(brand.transform('Oval Legacy 27 — Rugby Manager'), 'Rugby Legacy 27');
 assert.equal(brand.transform(brand.transform('Oval Legacy')), 'Rugby Legacy');
 // Les identifiants de compatibilité ne sont jamais réécrits.
-for (const kept of ['OvalLegacy27.exe', 'OvalLegacy27-PrototypeGodot-Windows-x64.zip', 'oval-legacy-27-logo.png', 'oval-legacy-fictional-calendar', 'cadrage-debordement-save', 'CadrageDebordement/PrototypeGodot', 'Xynph/cadrage-debordement'])
+for (const kept of ['oval-legacy-fictional-calendar', 'cadrage-debordement-save', 'CadrageDebordement/PrototypeGodot', 'Xynph/cadrage-debordement'])
   assert.equal(brand.transform(kept), kept);
 for (const outside of ['native/engine/worker.cjs', 'dist/saves.js', 'DEVELOPPEMENT.md', 'native/godot/art/immersive08/PROVENANCE.txt', 'native/godot/guide/assets/voice/CREDITS.txt', 'scripts/build-native-sounds.cjs'])
   assert.equal(brand.inScope(outside), false, outside + ' doit rester hors périmètre');
@@ -30,12 +30,23 @@ for (const outside of ['native/engine/worker.cjs', 'dist/saves.js', 'DEVELOPPEME
 // 2. Nom affiché, exécutable et identité.
 const project = read('native/godot/project.godot');
 assert.match(project, /^config\/name="Rugby Legacy 27"$/m);
-assert.match(project, /^config\/icon="res:\/\/branding\/oval-legacy-27-icon\.png"$/m, 'Les images du logo et de l’icône gardent leur nom jusqu’à la refonte par la DA');
-for (const asset of ['oval-legacy-27-logo.png', 'oval-legacy-27-icon.png'])
+assert.match(project, /^config\/icon="res:\/\/branding\/rugby-legacy-27-icon\.png"$/m, 'L’icône porte le nouveau nom');
+for (const asset of ['rugby-legacy-27-logo.png', 'rugby-legacy-27-icon.png'])
   assert.ok(fs.statSync(path.join(root, 'native/godot/branding', asset)).size > 10000, asset);
+for (const old of ['oval-legacy-27-logo.png', 'oval-legacy-27-icon.png'])
+  assert.ok(!fs.existsSync(path.join(root, 'native/godot/branding', old)), old + ' doit avoir disparu');
+for (const file of ['native/godot/main.gd', 'native/godot/ui/entry_screens.gd', 'native/godot/windows-release.cfg'])
+  assert.ok(!/oval-legacy-27-(logo|icon)/.test(read(file)), file + ' ne doit plus citer l’ancienne image');
+assert.match(read('native/godot/windows-release.cfg'), /^application\/product_name="Rugby Legacy 27"$/m);
 const build = read('scripts/build-godot-prototype.py');
-assert.match(build, /app \/ "OvalLegacy27\.exe"/, 'L’exécutable garde son nom : la chaîne Windows (ci/) l’attend');
-assert.match(build, /"OvalLegacy27-PrototypeGodot-Windows-x64\.zip"/);
+assert.match(build, /app \/ "RugbyLegacy27\.exe"/, 'L’exécutable porte le nouveau nom');
+assert.match(build, /"RugbyLegacy27-PrototypeGodot-Windows-x64\.zip"/);
+// Aucun ancien nom d’exécutable ou d’archive ne subsiste dans la chaîne Windows.
+for (const file of ['ci/windows-package.py', 'ci/windows-receipt.ps1', 'ci/publish-windows-release.py', 'ci/run-windows-build.ps1', 'scripts/build-godot-prototype.py', 'README.md'])
+  assert.ok(!/OvalLegacy27/.test(read(file)), file + ' cite encore OvalLegacy27');
+assert.match(read('ci/windows-package.py'), /APP = "RugbyLegacy27-PrototypeGodot"/);
+assert.match(read('ci/windows-receipt.ps1'), /RugbyLegacy27\.exe/);
+assert.match(read('ci/run-windows-build.ps1'), /RugbyLegacy27-PrototypeGodot-Windows-x64\.zip/);
 assert.match(build, /RUGBY LEGACY 27 — PRÉALPHA/);
 const scene = read('native/godot/ui/immersive08/entry_canvas.gd');
 assert.ok(scene.includes('"RUGBY LEGACY 27"') && !/OVAL LEGACY/.test(scene), 'L’accueil affiche le nouveau nom');

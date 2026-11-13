@@ -21,6 +21,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"delegate": "Simulation de la rencontre…",
 	"finish_round": "Mise à jour de la journée…",
 	"advance_day": "Passage au jour suivant…",
+	"preseason_advance": "Avance de l’avant-saison…",
 	"next_season": "Préparation de la nouvelle saison…",
 	"advance_pacific_preparation": "Avance de la préparation…",
 	"advance_japan_preparation": "Avance de la préparation…",
@@ -268,7 +269,7 @@ func _receive_model(value: Dictionary) -> void:
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
 	var reception_id := ""
-	if response_ok and (received_command in ["advance_day", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
+	if response_ok and (received_command in ["advance_day", "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
 		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick
 	# or a light decision: the queued command keeps the same panel.
@@ -826,7 +827,7 @@ func _build_sidebar(parent: Node) -> void:
 	var logo := G.button("", pause_menu)
 	logo.tooltip_text = "Rugby Legacy 27 — Menu et sauvegardes"
 	var bitmap := TextureRect.new()
-	bitmap.texture = load("res://branding/oval-legacy-27-logo.png")
+	bitmap.texture = load("res://branding/rugby-legacy-27-logo.png")
 	bitmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bitmap.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	bitmap.mouse_filter = Control.MOUSE_FILTER_IGNORE

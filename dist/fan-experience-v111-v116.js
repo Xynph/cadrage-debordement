@@ -25,10 +25,29 @@
     const n=Number(club(s)?.stadium?.capacity??club(s)?.stadiumCapacity);
     return Number.isInteger(n)&&n>=500&&n<=100000?n:12000;
   }
+  // Abonnés de départ : déterministes (aucun hasard, aucune horloge), tirés de la capacité du stade et de la
+  // popularité du club (`base`, 60 à 86 dans le monde). Petit club : environ 25 % de la capacité ; gros club :
+  // environ 75 % ; écart propre au club de +/-3 points (hachage de son identité). Valeur d'affichage et socle
+  // des renouvellements : elle n'entre dans aucune recette (la prévision de billetterie ne lit que le moral).
+  function initialSubscribers(s){
+    const c=club(s),seats=capacity(s),base=Number.isFinite(Number(c?.base))?Number(c.base):70;
+    const t=clamp((base-60)/26,0,1);
+    let h=2166136261;const key=String(c?.abbr??c?.name??c?.id??'');
+    for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+    const jitter=((h%7)-3)/100;
+    return clamp(Math.round(seats*clamp(0.25+0.5*t+jitter,0.2,0.78)),0,Math.min(seats,100000));
+  }
   function ensure(s){
     if(!s||!integer(s.season,1,10000)||!club(s))return null;
-    if(s.v111to116!==undefined)return valid(s.v111to116)&&s.v111to116.season<=s.season?s.v111to116:null;
-    s.v111to116={version:1,season:s.season,sentiment:50,price:'equilibree',subscribers:0,
+    if(s.v111to116!==undefined){
+      const st=s.v111to116;
+      if(!valid(st)||st.season>s.season)return null;
+      // Sauvegarde antérieure : état jamais touché (0 abonné, rien joué ni acheté) -> socle initial.
+      // (Recalculé tant que rien n'a été joué ni acheté : la capacité du stade a pu être renseignée depuis.)
+      if(st.campaign===null&&!st.ledger.length&&!st.history.length&&st.season===s.season)st.subscribers=initialSubscribers(s);
+      return st;
+    }
+    s.v111to116={version:1,season:s.season,sentiment:50,price:'equilibree',subscribers:initialSubscribers(s),
       campaign:null,service:null,community:[],ledger:[],history:[],commercialCash:0};
     return s.v111to116;
   }
@@ -124,7 +143,7 @@
     if(!st||st.season===s.season||st.season>s.season)return false;
     return transact(s,()=>{
       st.season=s.season;st.ledger=[];st.campaign=null;st.service=null;st.community=[];
-      st.commercialCash=0;st.subscribers=Math.floor(st.subscribers*0.85);
+      st.commercialCash=0;st.subscribers=Math.max(Math.floor(st.subscribers*0.85),Math.min(st.subscribers,initialSubscribers(s)));
       return true;
     },save);
   }
@@ -197,7 +216,7 @@
     }
     return true;
   }
-  const api={valid,ensure,capacity,forecast,setPrice,campaign,community,service,record,closeSeason,rotate,panel,install};
+  const api={valid,ensure,capacity,initialSubscribers,forecast,setPrice,campaign,community,service,record,closeSeason,rotate,panel,install};
   root.CDFanExperienceV111V116=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
   if(typeof document!=='undefined'&&!root.CDNativeHeadless)install(root);

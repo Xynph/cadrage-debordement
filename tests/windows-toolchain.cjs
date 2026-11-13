@@ -125,7 +125,7 @@ class Toolchain(unittest.TestCase):
   with self.assertRaises(ValueError):b.source_provenance('main',self.root)
   with patch.object(b.subprocess,'check_output',side_effect=['a'*40+'\n','b'*40+'\n','','native/godot/private.png\n']),self.assertRaises(ValueError):b.source_provenance('a'*40,self.root)
  def test_manifest_preserves_file_schema_and_links_exact_source(self):
-  app=self.root/'app';(app/'runtime').mkdir(parents=True);(app/'runtime/node.exe').write_bytes(b'unit node fixture');(app/'OvalLegacy27.exe').write_bytes(b'unit exe fixture')
+  app=self.root/'app';(app/'runtime').mkdir(parents=True);(app/'runtime/node.exe').write_bytes(b'unit node fixture');(app/'RugbyLegacy27.exe').write_bytes(b'unit exe fixture')
   result=b.write_build_manifest(app,{'sourceCommit':'a'*40,'sourceTree':'b'*40},'unit-database',12,['legacy'])
   self.assertEqual(result['sourceCommit'],'a'*40);self.assertEqual(result['sourceTree'],'b'*40)
   self.assertEqual(result['files']['runtime/node.exe'],{'sha256':hashlib.sha256(b'unit node fixture').hexdigest(),'bytes':17})
