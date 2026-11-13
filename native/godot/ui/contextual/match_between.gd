@@ -794,9 +794,19 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_remplir_xv(passe.lineup, direct)
 	_remplir_adjoint(conseil, live, direct, appliquer)
 
+## Texte imposé par la régie (liaison entre deux temps forts : l'arrêt de jeu en cours) ; vide : l'état du moteur.
+var etat_force := ""
+
+func forcer_etat(texte: String) -> void:
+	if texte == etat_force: return
+	etat_force = texte
+	if not texte.is_empty() and is_instance_valid(etat): etat.text = texte
+	elif not _dernier.is_empty() and is_instance_valid(etat): _etat(_dernier[1], _dernier[2], _equipes)
+
 func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	var possession: Variant = direct.get("possession")
-	if live.get("finished", false): etat.text = "Match terminé"
+	if not etat_force.is_empty(): etat.text = etat_force
+	elif live.get("finished", false): etat.text = "Match terminé"
 	elif live.get("atBreak", false): etat.text = "Mi-temps"
 	elif (possession is float or possession is int) and equipes.size() >= 2:
 		var cote := clampi(int(possession), 0, 1)
