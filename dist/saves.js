@@ -38,6 +38,9 @@ function safeTree(root){
  const maxNodes=world?(typeof CDWorldCareer.edition==='function'?CDWorldCareer.edition(root)?.limits?.maxSaveNodes??1500000:1500000):
   commonDatabaseActive(root)?650000:typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(root)?400000:200000;
  const pairs=world?root.interclubWorld?.pairs:null;
+ // Notes de match : tables par joueur (joueurs, passees, detail, selection.lignes), bornées par le nombre de joueurs du monde.
+ const notes=root?.matchNotes,notesMaps=new Set(notes&&typeof notes==='object'?[notes.joueurs,notes.passees,notes.detail,notes.selection?.lignes].filter(x=>x&&typeof x==='object'&&!Array.isArray(x)):[]);
+ const notesCap=notesMaps.size&&Array.isArray(root.clubs)?root.clubs.reduce((n,c)=>n+(Array.isArray(c?.players)?c.players.length:0),0)+2000:0;
  // Player knowledge has an independent, finite schema and node allowance.
  // Validate it before granting any allowance, including during initial loading.
  const knowledge=root?.playerKnowledge,knowledgeBudget=knowledge!==undefined&&typeof nativeKnowledgeValidate==='function';
@@ -56,7 +59,8 @@ function safeTree(root){
    v.forEach(x=>visit(x,depth+1,inKnowledge,inEvolution));
   }else if(object(v)){
    const keys=Object.keys(v).length;
-   if(keys>2000){
+   if(keys>2000&&notesMaps.has(v))check(keys<=notesCap,'Notes de match : trop de joueurs.');
+   else if(keys>2000){
     // This map accumulates distinct club pairs across seasons.
     check(v===pairs);
     const clubs=worldSaveSizing(root).clubCount;

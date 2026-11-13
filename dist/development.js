@@ -273,13 +273,13 @@ function youthUniqueName(id,h,club,taken){
  }
  return first+' '+(taken.size+1);
 }
-// Portraits cohérents avec l'origine (#610). La banque v2 ne décrit que la teinte de peau observée de
-// 128 de ses 160 bases joueurs (catalogue.json, observedTraits.skinTone : L = fair ou light, T = tan,
-// B = brown, D = deep ; « . » = 32 anciennes bases sans étiquette, jamais choisies pour un jeune orienté).
+// Portraits cohérents avec l'origine (#610). La banque v2 décrit la teinte de peau observée de
+// ses 160 bases joueurs (catalogue.json, observedTraits.skinTone : L = fair ou light, T = tan,
+// B = brown, D = deep ; les 32 anciennes bases ont été étiquetées à leur tour le 13/11/2026).
 // Ce n'est pas une mesure d'origine : les tirages ci-dessous donnent seulement une répartition plausible
 // des teintes par pays d'origine et gardent de la variété dans chaque pays. Aucune donnée de morphologie
 // ou de traits du visage n'existe dans la banque.
-const PORTRAIT_TONES='................................LTBLBDLTLLBLTDLBLBTTBLLDLBLTDLBDTDLTLBDTLBLTLTDLTLTBLTLTBLTBLTLTLTBLTDLTLLBLTDLBLBLBBLTDLBLTDLTDBDLTLLDLLBLTLTDLBLLBLTLLBLTDLBLL';
+const PORTRAIT_TONES='LDTBLLDLBTLDLDBLLBLTLLDLTLTLBLBTLTBLBDLTLLBLTDLBLBTTBLLDLBLTDLBDTDLTLBDTLBLTLTDLTLTBLTLTBLTBLTLTLTBLTDLTLLBLTDLBLBLBBLTDLBLTDLTDBDLTLLDLLBLTLTDLBLLBLTLLBLTDLBLL';
 const YOUTH_LOOK_EUROPE=[['L',66],['T',27],['B',5],['D',2]],YOUTH_LOOK_PACIFIC=[['T',20],['B',45],['D',35]],YOUTH_LOOK_ASIA=[['L',62],['T',38]],YOUTH_LOOK_AFRICA=[['T',10],['B',45],['D',45]];
 const YOUTH_LOOKS={FRA:YOUTH_LOOK_EUROPE,ENG:YOUTH_LOOK_EUROPE,SCO:YOUTH_LOOK_EUROPE,WAL:YOUTH_LOOK_EUROPE,IRE:YOUTH_LOOK_EUROPE,ITA:YOUTH_LOOK_EUROPE,POR:YOUTH_LOOK_EUROPE,ROU:YOUTH_LOOK_EUROPE,
  GEO:[['L',55],['T',40],['B',5]],ARG:[['L',58],['T',37],['B',5]],RSA:[['L',38],['T',14],['B',26],['D',22]],NAM:YOUTH_LOOK_AFRICA,ZIM:YOUTH_LOOK_AFRICA,
