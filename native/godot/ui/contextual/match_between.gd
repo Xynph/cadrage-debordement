@@ -1198,7 +1198,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	if fini and homme is Dictionary:
 		var equipes: Array = live.get("teams", [])
 		var club := S.G.club_name(equipes[int(homme.get("camp", 0))]) if equipes.size() >= 2 else ""
-		var detail := "Homme du match : %s%s, %s." % [str(homme.get("nom", "")), (" (" + club + ")") if not club.is_empty() else "", ("%.1f" % float(homme.get("note", 6.5))).replace(".", ",")]
+		var detail := "Homme du match : %s%s, %s." % [str(homme.get("nom", "")), (" (" + club + ")") if not club.is_empty() else "", ("%.1f" % float(homme.get("note", 6.5) if homme.get("note") is float or homme.get("note") is int else 6.5)).replace(".", ",")]
 		phrases.append([detail, OR])
 		var chiffres: Array = []
 		if int(homme.get("essais", 0)) > 0: chiffres.append("%d essai%s" % [int(homme.essais), "s" if int(homme.essais) > 1 else ""])

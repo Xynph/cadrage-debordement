@@ -345,7 +345,8 @@ function project(model,niveau,lire,options={}){
  if(live.finished&&borne>=events.length&&etat.notes){
   const r=notesMatch.noter(events,{...etat.notes,fini:true}),h=r.hommeDuMatch,n=h!=null?r.joueurs[h]:null;
   if(n){const fiche=(etat.effectifAdverse||[]).find(p=>String(p.id)===h);
-   direct.hommeDuMatch={id:h,camp:n.cote,nom:etat.notes.noms?.[h]||fiche?.name||'',note:n.note,essais:n.essais,plaquages:n.plaquages,metres:n.metres};}
+   // Clé `joueur` (pas id/name), comme le XV adverse : la couche « connaissance » ne la masque pas.
+   direct.hommeDuMatch={joueur:h,camp:n.cote,nom:etat.notes.noms?.[h]||fiche?.name||'',note:n.note,essais:n.essais,plaquages:n.plaquages,metres:n.metres};}
  }
  const tf=bilan.courant;
  if(tf){

@@ -263,14 +263,17 @@ function factory(){
   const lignes=sem.notes.filter(x=>x[4]===sem.comp).sort((a,b)=>b[2]-a[2]||(a[0]<b[0]?-1:1));
   if(lignes.length<15)return;
   const pris=new Set(),xv=[];
-  const postes=typeof POS!=='undefined'?POS:[],besoins={};for(const p of postes)besoins[p]=(besoins[p]||0)+1;
+  // Postes de l'équipe type : 3 troisième ligne (aile, centre, numéro 8 confondus).
+  const poste=p=>/^Troisième ligne|^Numéro 8/.test(String(p))?'Troisième ligne':String(p);
+  const postes=typeof POS!=='undefined'?POS:[],besoins={};for(const p of postes)besoins[poste(p)]=(besoins[poste(p)]||0)+1;
   const nomDe=id=>{for(const c of s.clubs){const p=c.players.find(q=>q.id===id);if(p)return p.name;}return '';};
-  for(const x of lignes){if(pris.has(x[0]))continue;const poste=x[3];if(!besoins[poste])continue;besoins[poste]--;pris.add(x[0]);xv.push(x);}
+  for(const x of lignes){if(pris.has(x[0]))continue;const ici=poste(x[3]);if(!besoins[ici])continue;besoins[ici]--;pris.add(x[0]);xv.push(x);}
   if(xv.length<15)return;
   const nous=xv.filter(x=>x[1]===s.club);
   sem.equipeType=xv.map(x=>x[0]);
   for(const x of nous)distinction(s,'equipe',x[0],nomDe(x[0]),x[1],x[2]);
-  if(typeof news==='function')news('Équipe type de la journée : '+(nous.length?nous.length+' joueur'+(nous.length>1?'s':'')+' de '+s.clubs[s.club].name+' ('+nous.map(x=>nomDe(x[0])).join(', ')+')':'aucun joueur de '+s.clubs[s.club].name)+'. Meilleure note : '+nomDe(xv[0][0])+' ('+String(xv[0][2]/10).replace('.',',')+').');
+  // Actualité seulement quand le club y figure (le fil d'actualités est court).
+  if(nous.length&&typeof news==='function')news('Équipe type de la journée : '+(nous.length?nous.length+' joueur'+(nous.length>1?'s':'')+' de '+s.clubs[s.club].name+' ('+nous.map(x=>nomDe(x[0])).join(', ')+')':'aucun joueur de '+s.clubs[s.club].name)+'. Meilleure note : '+nomDe(xv[0][0])+' ('+String(xv[0][2]/10).replace('.',',')+').');
   // Meilleur joueur du mois (toutes les 4 journées du manager) : moyenne des 4 dernières notes, 3 matchs au moins.
   st.journees=(st.journees||0)+1;
   if(st.journees%4===0){
