@@ -567,7 +567,7 @@ static func _direction_bras(type: String, _info: Dictionary, dir: float) -> Vect
 static func _place_arbitre(type: String, marque: Vector2, dir: float) -> Vector2:
 	match type:
 		"touche": return Vector2(marque.x - dir * 4.0, 9.0 if marque.y < 35.0 else 61.0)
-		"melee": return Vector2(marque.x, marque.y - 5.0 if marque.y > 12.0 else marque.y + 5.0)
+		"melee": return Vector2(marque.x, marque.y - 7.0 if marque.y > 12.0 else marque.y + 7.0)
 		"renvoi": return Vector2(50.0 + 6.0, 27.0)
 		_: return Vector2(marque.x - dir * 3.0, marque.y - 4.0 if marque.y > 10.0 else marque.y + 4.0)
 
@@ -575,7 +575,8 @@ static func _place_arbitre(type: String, marque: Vector2, dir: float) -> Vector2
 static func _place_arbitre_formee(type: String, marque: Vector2, dir: float, _equipe: int) -> Vector2:
 	match type:
 		"touche": return Vector2(marque.x - dir * 3.0, 17.0 if marque.y < 35.0 else 53.0)
-		"melee": return Vector2(marque.x + 1.5, marque.y - 3.5 if marque.y > 10.0 else marque.y + 3.5)
+		# À côté de la mêlée, hors des deux paquets (les avants s'étendent à 3 m de part et d'autre de la marque).
+		"melee": return Vector2(marque.x + 1.0, marque.y - 6.5 if marque.y > 10.0 else marque.y + 6.5)
 		"renvoi": return Vector2(50.0 + 10.0, 22.0)
 		_: return Vector2(marque.x - dir * 5.0, marque.y - 6.0 if marque.y > 10.0 else marque.y + 6.0)
 
