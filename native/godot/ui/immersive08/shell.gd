@@ -43,13 +43,13 @@ const GROUPS = [
 	["Club", "Club", ["Club", "Staff", "Travail du club", "Stratégie"]],
 	["Finances", "Finances", ["Finances"]],
 	["Compétitions", "Classements", ["Classements", "Calendrier", "Rivalités"]],
-	["Formation", "Formation", ["Formation", "Centre"]],
+	["Formation", "Formation", ["Formation", "Centre", "Suivi des jeunes"]],
 	["Carrière", "Carrière", ["Carrière"]]
 ]
-const TITLES = {"Bureau":"Votre semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Votre identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de votre saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Votre place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match."}
+const TITLES = {"Bureau":"Votre semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Votre identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de votre saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Suivi des jeunes":"Ils grandissent sous nos couleurs.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Votre place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match."}
 const COMPACT_ART = {
 	"Finances":"finance-hospitality", "Calendrier":"stadium", "Formation":"academy-training",
-	"Plan de jeu":"lineout-analysis", "Centre":"academy-training", "Préparation":"analysis-room",
+	"Plan de jeu":"lineout-analysis", "Centre":"academy-training", "Suivi des jeunes":"academy-training", "Préparation":"analysis-room",
 	"Recrutement":"scouting", "Classements":"trophy", "Club":"club-forest", "Staff":"mail-staff",
 	"Travail du club":"analysis-room", "Stratégie":"club-forest", "Presse":"press-room",
 	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
@@ -273,7 +273,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
 		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités"]
-		if i==9:selected=app.route in ["Formation","Centre"]
+		if i==9:selected=app.route in ["Formation","Centre","Suivi des jeunes"]
 		var y:=394+i*57
 		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():
 			if destination=="Préparation": open_training(app)
@@ -637,6 +637,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Rivalités": app.body.add_child(app.WorldViews.build(app))
 		"Stratégie": app.body.add_child(app.StrategyViews.build(app))
 		"Centre": app.body.add_child(app.AcademyViews.build(app))
+		"Suivi des jeunes": app.body.add_child(app.AcademyFollowUpViews.build(app))
 		"Travail du club": app.body.add_child(app.SupportViews.build(app))
 		"Carrière": app.body.add_child(app.ManagerCareerViews.build(app))
 		"Match":

@@ -34,3 +34,11 @@ La passation vit dans la PR du brouillon à la livraison. L’[issue #73](https:
 et le [journal de développement](../DEVELOPPEMENT.md) restent des archives de
 coordination. Mettre à jour le journal seulement si une décision durable ou
 une information de référence change.
+
+## Conflit sur les valeurs figées France
+
+Si `tests/france-legacy-parity.json` ou `tests/fixtures/france-long-career-s6.json.gz`
+est en conflit : prendre la version de main (`git checkout --theirs` sur ces deux
+fichiers), puis lancer `node scripts/regenerer-donnees-figees.cjs`, puis relancer
+les suites France. `--check` recalcule sans écrire (code 1 si obsolète) ;
+`--parity` et `--s6` limitent à un seul fichier.

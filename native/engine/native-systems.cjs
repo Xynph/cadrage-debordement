@@ -2,7 +2,7 @@
 const academyGroups=require('./academy-groups.cjs');
 // Closed production manifest. Each domain owns its rules and strict validator;
 // the worker remains the only disk transaction and save authority.
-const domains={managerPlanning:require('./manager-planning.cjs'),clubMeetings:require('./club-meetings.cjs'),matchTalks:require('./match-talks.cjs'),sceneInvitations:require('./scene-invitations.cjs'),playerMatchHistory:require('./player-match-history.cjs'),staffEmployment:require('./staff-employment.cjs'),customCompetition:require('./custom-competition.cjs'),interclubMarket:require('./interclub-market.cjs'),staffMentoring:require('./staff-mentoring.cjs'),performanceAnalysis:require('./performance-analysis.cjs'),press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs'),jiff:require('./jiff.cjs'),formationFees:require('./formation-fees.cjs')};
+const domains={managerPlanning:require('./manager-planning.cjs'),clubMeetings:require('./club-meetings.cjs'),matchTalks:require('./match-talks.cjs'),sceneInvitations:require('./scene-invitations.cjs'),playerMatchHistory:require('./player-match-history.cjs'),staffEmployment:require('./staff-employment.cjs'),customCompetition:require('./custom-competition.cjs'),interclubMarket:require('./interclub-market.cjs'),staffMentoring:require('./staff-mentoring.cjs'),performanceAnalysis:require('./performance-analysis.cjs'),press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs'),academyIntake:require('./academy-intake.cjs'),jiff:require('./jiff.cjs'),formationFees:require('./formation-fees.cjs'),academyFollowUp:require('./academy-follow-up.cjs')};
 const files=Object.freeze([...new Set(Object.values(domains).flatMap(d=>d.files))]);
 const commands=Object.freeze(Object.values(domains).flatMap(d=>d.commands));
 if(new Set(commands).size!==commands.length)throw Error('Commandes natives de domaine en double.');
@@ -30,6 +30,8 @@ function bootstrap(){
  const CDStaffCareer=nativeSystems.domain('staffCareer');
  const CDYouthDevelopment=nativeSystems.domain('youthDevelopment');
  const CDJiff=nativeSystems.domain('jiff');
+ // Suivi du centre : le chantier des compétitions de jeunes s'y branche par CDAcademyFollowUp.connect().
+ const CDAcademyFollowUp=nativeSystems.domain('academyFollowUp');
  const CDNativeAcademyGroups=(${academyGroups.toString()})();
  const nativeBaseValidator=validateCareer;
  validateCareer=state=>{const result=nativeBaseValidator(state);nativeSystems.validate(state);if(state)CDNativeAcademyGroups.validate(state);return result;};
