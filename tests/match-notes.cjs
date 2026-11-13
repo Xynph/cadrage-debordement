@@ -118,7 +118,7 @@ test('Sauvegarde : aller-retour, migration d’une ancienne sauvegarde sans note
     jeu.call('finish_round');
     const texte = jeu.call('export').meta.exportText;
     const doc = JSON.parse(texte);
-    assert.equal(doc.state.matchNotes.version, 1);
+    assert.equal(doc.state.matchNotes.version, 2);
     jeu.call('import', { text: texte });
     assert.deepEqual(jeu.etat().matchNotes, doc.state.matchNotes, 'aller-retour exact');
     // Ancienne sauvegarde : pas de notes, historique vide puis rempli au match suivant.
@@ -143,4 +143,141 @@ test('Effets bornés : composition, valeur, intérêt, salaire, sélection, mora
   assert.deepEqual(extremes.inconnu, { composition: 1, valeur: 1, interet: 0, salaire: 1, selection: 0 }, 'sans note : aucun effet');
   assert.deepEqual(extremes.haut, { composition: 1.04, valeur: 1.12, interet: 3, salaire: 1.06, selection: 2 }, 'plafonds');
   assert.deepEqual(extremes.bas, { composition: 0.97, valeur: 0.92, interet: -2, salaire: 0.96, selection: -1.5 }, 'planchers');
+});
+
+// ---- Équipe-type de la journée, équipe de la saison (demande de Léo, 13 novembre 2026) ----------
+const POSTES = ['Pilier gauche', 'Talonneur', 'Pilier droit', 'Deuxième ligne', 'Deuxième ligne', 'Troisième ligne', 'Troisième ligne', 'Numéro 8', 'Demi de mêlée', 'Demi d’ouverture', 'Ailier', 'Centre', 'Centre', 'Ailier', 'Arrière'];
+const GROUPES = [0, 1, 2, 3, 3, 4, 4, 4, 5, 6, 7, 8, 8, 7, 9];
+const groupeDe = pos => GROUPES[POSTES.indexOf(pos === 'Numéro 8' ? 'Numéro 8' : pos)];
+
+// Quelques journées déléguées en mode commun (Top 14 et Pro D2) : renvoie les modèles de chaque journée.
+function jouerJournees(jeu, journees) {
+  let model = jeu.call('new_career', { mode: 'common', club: 29 });
+  const vus = [];
+  for (let j = 0, garde = 0; j < journees && garde < 40; garde++) {
+    model = settleClubMeetings(model, jeu.call) || model;
+    if (model.next) {
+      if (!model.selection.valid) jeu.call('auto_lineup');
+      model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+      jeu.call('delegate'); j++;
+      model = skipMatchTalk(model, jeu.call);
+      model = settleClubMeetings(model, jeu.call) || model;
+    }
+    const r = jeu.brut('finish_round');
+    if (r.ok) { model = r.model; vus.push(model); }
+  }
+  return vus;
+}
+
+test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinze postes distincts, déterministe', () => {
+  const lancer = () => { const jeu = ouvrir(); try { const vus = jouerJournees(jeu, 4); return { vus, etat: jeu.etat() }; } finally { jeu.fermer(); } };
+  const a = lancer();
+  assert.ok(a.vus.length >= 4);
+  let precedent = 0;
+  for (const model of a.vus) {
+    const eq = model.clubLife.matchNotes.equipeType;
+    assert.deepEqual(eq.ligues.map(l => l.nom).sort(), ['Pro D2', 'Top 14'], 'les deux championnats suivis');
+    for (const l of eq.ligues) {
+      const x = l.journee;
+      assert.ok(x, l.nom + ' : équipe de la journée');
+      assert.equal(x.joueurs.length, 15);
+      assert.equal(new Set(x.joueurs.map(j => j.id)).size, 15, 'quinze joueurs distincts');
+      assert.deepEqual(x.joueurs.map(j => j.numero), Array.from({ length: 15 }, (_, k) => k + 1));
+      x.joueurs.forEach((j, k) => assert.equal(groupeDe(j.poste), GROUPES[k], 'poste du maillot ' + (k + 1)));
+      for (const j of x.joueurs) { assert.ok(j.noteMatch >= 1 && j.noteMatch <= 10); assert.ok(j.club && j.club.presentation, 'club avec présentation'); assert.ok(j.selections >= 1); }
+      assert.equal(x.joueurs.filter(j => j.etoile).length, 1, 'un joueur de la journée');
+      assert.ok(x.entraineur === null || x.entraineur.marge >= 1);
+      if (l.manager) assert.ok(x.numero >= precedent, 'journée suivante'), precedent = x.numero;
+    }
+    const mine = eq.ligues[0];
+    assert.equal(mine.manager, true, 'le championnat du manager passe en premier');
+    assert.ok((model.messages || []).some(t => /^XV de la \d+(re|e) journée · Pro D2/.test(String(t))), 'actualité publiée à chaque journée, club du manager présent ou non');
+  }
+  // Même graine, même équipe : aucun tirage dans le choix.
+  const b = lancer();
+  assert.deepEqual(b.etat.matchNotes.equipes, a.etat.matchNotes.equipes);
+  assert.equal(a.etat.matchNotes.version, 2);
+  // Meilleur de chaque poste : personne de mieux noté au même poste n'a été écarté.
+  const noms = new Set(); for (const c of a.etat.clubs) for (const p of c.players) noms.add(p.id);
+  for (const e of Object.values(a.etat.matchNotes.equipes)) { assert.equal(e.ids.length, 15); for (const id of e.ids) assert.ok(noms.has(id)); }
+});
+
+test('Équipe de la saison : seuil de matchs, départage, migration depuis la version 1', () => {
+  const c = context(5);
+  c.run("start(0,'fiction')");
+  c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const CDNotesEffets=false;const dom=(${N.factory.toString()})();`);
+  const out = JSON.parse(c.run(`(()=>{
+    const reg={};let n=0;
+    // 10 joueurs par poste : moyenne 6,0 à 7,5, tous 8 matchs ; sauf « fantome » (2 matchs, 9,9) et « egal » (même moyenne que le meilleur)
+    const capacite=[1,1,1,2,3,1,1,2,2,1];
+    for(let g=0;g<10;g++)for(let k=0;k<6;k++){const id='p'+g+'_'+k;reg[id]=[8,(60+k*5+g)*8,640,0,k===5?3:0,g,k%2];}
+    reg.fantome=[2,99*2,160,2,0,0,0];
+    reg.egal=[8,(60+25+0)*8,640,0,5,0,1];   // même moyenne que p0_5, davantage de sélections
+    S.matchNotes={version:2,saison:S.season,joueurs:{},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null,reg:{elite:reg},regJ:{elite:10},equipes:{},saisons:[]};
+    dom.validate(S);dom.finSaison();dom.finSaison();
+    const s=S.matchNotes.saisons;dom.validate(S);
+    return JSON.stringify({saisons:s,n:s.length});})()`));
+  assert.equal(out.n, 1, 'une seule équipe de la saison par championnat (appel répété sans effet)');
+  const f = out.saisons[0];
+  assert.equal(f.ids.length, 15);
+  assert.ok(!f.ids.includes('fantome'), 'sous le seuil de matchs (50 % de 10 journées) : écarté malgré 9,9 de moyenne');
+  assert.equal(f.ids[0], 'egal', 'à moyenne égale : le plus de sélections en équipe-type');
+  assert.equal(f.journees, 10);
+  f.ids.forEach((id, k) => assert.ok(f.matchs[k] >= 5));
+  assert.ok(f.moy.every(x => x >= 10 && x <= 100));
+  // Migration : une version 1 reste valide et se complète sans rien inventer.
+  const migre = JSON.parse(c.run(`(()=>{S.matchNotes={version:1,saison:S.season,joueurs:{},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null};dom.validate(S);dom.migrer(S.matchNotes);dom.validate(S);return JSON.stringify(S.matchNotes)})()`));
+  assert.equal(migre.version, 2);
+  assert.deepEqual([migre.reg, migre.regJ, migre.equipes, migre.saisons], [{}, {}, {}, []]);
+  // Un état v2 incohérent est refusé.
+  assert.throws(() => c.run(`(()=>{S.matchNotes.saisons=[{saison:1,ligue:'elite',ids:['a'],moy:[70],matchs:[3],sel:[0],clubs:[0],journees:3}];dom.validate(S)})()`), /Notes de match/);
+});
+
+test('Équipe de la saison : bonus de valeur borné, coupé par CD_NOTES_EFFETS=0', () => {
+  const lire = actifs => {
+    const c = context(5); c.run("start(0,'fiction')");
+    c.run(`const CDMatchNotesMoteur=(${N.moteur.toString()})();const CDNotesEffets=${actifs};const dom=(${N.factory.toString()})();`);
+    return JSON.parse(c.run(`(()=>{const ids=Array.from({length:15},(_,k)=>'l'+k);S.matchNotes={version:2,saison:S.season,joueurs:{l0:{s:[20,1300,1600,0,0,0,0],f:[65,65,65,65,65]}},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null,reg:{},regJ:{},equipes:{},saisons:[{saison:S.season,ligue:'elite',ids,moy:ids.map(()=>70),matchs:ids.map(()=>20),sel:ids.map(()=>1),clubs:ids.map(()=>0),journees:26}]};dom.validate(S);const e=dom.effets;return JSON.stringify({v:e.valeur('l0'),i:e.interet('l0'),autre:e.valeur('zz')})})()`));
+  };
+  const on = lire(true), off = lire(false);
+  assert.equal(on.v, 1.03); assert.equal(on.i, 0.5); assert.equal(on.autre, 1, 'non lauréat : aucun effet');
+  assert.deepEqual(off, { v: 1, i: 0, autre: 1 }, 'effets coupés');
+});
+
+// Packs d'identité : même mécanisme que l'effectif et la fiche club (logoPath, portraitPath par identifiant),
+// repli sur l'écusson et le portrait originaux du jeu. Aucune image réelle : pixel de test.
+test('Équipe-type : pack absent = identités du jeu ; pack installé = logos et portraits du pack', () => {
+  const media = require('../native/engine/media-packs.cjs'), db = require('../dist/rugby-common-rosters.js'), crypto = require('node:crypto'), zlib = require('node:zlib');
+  const zip = items => { let offset = 0; const locals = [], centrals = []; for (const item of items) { const n = Buffer.from(item.name), data = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data || ''), crc = media.crc32(data), local = Buffer.alloc(30), central = Buffer.alloc(46); local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6); local.writeUInt32LE(crc, 14); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(n.length, 26); central.writeUInt32LE(0x02014b50); central.writeUInt16LE(0x314, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(0x800, 8); central.writeUInt32LE(crc, 16); central.writeUInt32LE(data.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(n.length, 28); central.writeUInt32LE((0x81a4 * 65536) >>> 0, 38); central.writeUInt32LE(offset, 42); locals.push(local, n, data); centrals.push(central, n); offset += local.length + n.length + data.length; } const cd = Buffer.concat(centrals), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(items.length, 8); end.writeUInt16LE(items.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16); return Buffer.concat([...locals, cd, end]); };
+  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
+  const jeu = ouvrir();
+  try {
+    const vus = jouerJournees(jeu, 2);
+    const avant = vus.at(-1).clubLife.matchNotes.equipeType;
+    const joueursXV = l => [...l.journee.joueurs, ...(l.saison?.joueurs || [])];
+    for (const l of avant.ligues) for (const j of joueursXV(l)) {
+      assert.equal(j.club.presentation.logoPath, undefined, 'pack absent : pas de logo du pack');
+      assert.equal(j.portraitPath, undefined, 'pack absent : pas de portrait du pack');
+      assert.ok(Number.isInteger(j.portraitIndex), 'portrait original du jeu');
+    }
+    const ids = [...new Set(avant.ligues.flatMap(l => joueursXV(l).map(j => j.id)))];
+    const manifest = { schema: 'cd-identity-pack-v1', id: 'essai-xv', name: 'Identités test', version: '1', databaseId: db.id, rightsStatus: 'test-local',
+      clubs: Array.from({ length: 30 }, (_, id) => ({ id, logo: 'image' })), players: ids.map(id => ({ id, name: 'Nom du pack ' + id.slice(4), portrait: 'image', synthetic: true })),
+      assets: [{ id: 'image', path: 'médias/image.png', sha256: crypto.createHash('sha256').update(pixel).digest('hex'), bytes: pixel.length }] };
+    const fichier = path.join(os.tmpdir(), 'rl27-xv-pack-' + process.pid + '.zip');
+    fs.writeFileSync(fichier, zip([{ name: 'pack.json', data: JSON.stringify(manifest) }, { name: 'médias/image.png', data: pixel }]));
+    try {
+      const apercu = jeu.call('pack_inspect', { path: fichier }).packs.preview;
+      jeu.call('pack_install', { path: fichier, digest: apercu.digest });
+      const model = jeu.call('pack_select', { id: apercu.id, scope: 'career' });
+      const apres = model.clubLife.matchNotes.equipeType;
+      for (const l of apres.ligues) for (const j of joueursXV(l)) {
+        assert.ok(String(j.club.presentation.logoPath || '').endsWith('.png'), 'pack : logo du club par identifiant');
+        assert.ok(String(j.portraitPath || '').endsWith('.png'), 'pack : portrait du joueur par identifiant');
+        assert.match(j.name, /^Nom du pack /, 'pack : nom du joueur');
+      }
+      const retour = jeu.call('pack_select', { id: 'base', scope: 'career' });
+      assert.equal(retour.clubLife.matchNotes.equipeType.ligues[0].journee.joueurs[0].club.presentation.logoPath, undefined, 'retour au jeu de base : écusson original');
+    } finally { fs.rmSync(fichier, { force: true }); }
+  } finally { jeu.fermer(); }
 });

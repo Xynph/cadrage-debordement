@@ -35,7 +35,7 @@ journal (test dédié).
 Homme du match : meilleure note parmi ceux qui ont joué 30 minutes ou plus (à égalité : le
 vainqueur, puis le plus de faits).
 
-## Enregistrement (`S.matchNotes`, version 1)
+## Enregistrement (`S.matchNotes`, version 2 ; voir aussi « XV type » plus bas)
 
 | Champ | Contenu | Taille |
 |---|---|---|
@@ -88,3 +88,42 @@ satisfaction) : seules l'actualité et la boîte du manager diffèrent (distinct
 de la dernière colonne viennent donc des effets voulus, et restent faibles (pas de dérive en
 deux saisons). Taille : 95 Ko (saison 1) puis 133 Ko (saison 2, avec résumés) dans une
 sauvegarde de 5,7 à 7 Mo.
+
+## XV type : équipe-type de la journée et équipe de la saison (demande de Léo, 13 novembre 2026)
+
+« Équipe de la saison aussi, comme en vrai dans le Top 14 (ils font aussi l'équipe-type de la journée de championnat). »
+
+**Équipe-type de la journée.** À la clôture de chaque journée (`finJournee`), pour chaque championnat dont une rencontre de
+saison régulière a été jouée (France : Top 14 « elite » et Pro D2 « accession » ; monde : chaque ligue), que le club du manager y
+figure ou non. Quinze joueurs, un par poste : pilier gauche, talonneur, pilier droit, 2 deuxièmes lignes, 3 troisièmes lignes
+(ailes et numéro 8), 9, 10, 2 ailiers, 2 centres, arrière, numérotés de 1 à 15 (le numéro 8 revient au joueur inscrit à ce poste). Choix sur la
+note du match (joueurs ayant joué 40 minutes ou plus) ; départage déterministe : minutes, essais, puis identifiant. Le joueur de la
+journée est la meilleure note du XV. L'entraîneur de la journée est celui du club à la plus large victoire (puis le plus de points
+marqués, puis l'identifiant du club) ; son nom vient du personnel de carrière s'il existe, sinon l'écran affiche « Staff du club ».
+Actualité : une ligne « XV de la 7e journée · Top 14 » pour le championnat du manager (nombre et noms de ses joueurs présents, sinon
+« aucun joueur de … »), plus la distinction `equipe` pour chacun de ses joueurs. Les autres championnats sont enregistrés
+(`equipes`) et consultables dans la vue XV type, sans surcharger le fil d'actualité.
+
+**Équipe de la saison.** Choisie à la fin de la saison régulière de chaque championnat (`regulierFini` : plus de journée de
+championnat à jouer), donc **avant les phases finales**, sur les seules rencontres de saison régulière (`reg`) : moyenne de saison
+avec un minimum de la moitié des journées jouées, puis nombre de sélections en équipe-type de la journée, puis matchs, puis
+identifiant. Même composition (un joueur par poste). Un championnat dont la fin de saison régulière n'a pas été vue (reprise d'une
+sauvegarde) est rattrapé à `advanceSeason` (`finSaison`). Publiée dans l'actualité (« XV de la saison · Top 14 »), enregistrée dans
+`S.matchNotes.saisons` (6 saisons au plus, 40 fiches), distinction `xvsaison` pour les joueurs du manager, et affichée dans la fiche du joueur
+(repère de carrière « XV de la saison 2026-2027 · Top 14 », nombre de sélections en XV de la journée).
+
+**Effets** (bornés, coupés par `CD_NOTES_EFFETS=0`) : un lauréat de l'équipe de la saison de l'an dernier ou de la saison en cours gagne
++3 % de valeur marchande et +0,5 point d'intérêt des clubs, dans les mêmes bornes qu'avant (−8 % à +12 % ; −2 à +3 points).
+
+**Sauvegarde.** `S.matchNotes.version` passe à 2 : `reg` {championnat: {joueur: [matchs, somme des notes ×10, minutes, essais,
+sélections, groupe de poste, club]}}, `regJ` (journées jouées par championnat), `equipes` (dernière équipe-type de chaque championnat)
+et `saisons`. Une sauvegarde en version 1 reste valide : `migrer` ajoute les champs vides au premier usage, rien n'est inventé pour
+le passé. `semaine.notes` est vidé à la publication (transitoire). Ordre de grandeur : +40 Ko par saison complète (mode commun).
+Rien n'est tiré au hasard et les résultats de match sont inchangés.
+
+**Vue XV type** (`native/godot/ui/equipe_type_view.gd`) : terrain vu de dessus, vertical, quinze cartes en formation (avants en haut,
+arrière au fond), joueur mis en avant (cadre or, carte détaillée à gauche), entraîneur en bas, liseré vert sur les joueurs du
+manager, compteur de sélections ; pour l'équipe de la saison, moyenne et nombre de matchs. Ouverte depuis l'actualité (vignette
+cliquable du fil « Vie du club ») et depuis Compétitions (bouton « XV type »). Écussons et portraits passent par le mécanisme des
+packs d'identité comme les autres écrans (`logoPath`, `portraitPath` projetés par identifiant), avec repli sur l'écusson et le
+portrait originaux du jeu ; aucune image réelle dans le dépôt.

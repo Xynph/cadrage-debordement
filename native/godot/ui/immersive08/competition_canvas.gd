@@ -12,6 +12,7 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Link = preload("res://ui/entity_link.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
 const WIDTH := 2248
 const LEFT := 1310
 const RIGHT := 922
@@ -263,6 +264,8 @@ func _header() -> void:
 		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3], app.accent))
 	D.button(self, Rect2(1383, 203, 179, 45), "Rivalités", func(): app._navigate("Rivalités"), false, "shield", true, app.accent, "Section_Rivalités")
 	D.button(self, Rect2(1578, 203, 264, 45), "Archives des saisons", func(): Club.season_archives(app), false, "save", true, app.accent, "OpenArchives")
+	if EquipeType.disponible(app.model):
+		D.button(self, Rect2(1858, 203, 200, 45), "XV type", func(): EquipeType.ouvrir(app, league.id if league.get("id") else "", "journee"), false, "trophy", true, app.accent, "CompetitionEquipeType")
 	D.line(self, Vector2(0, 254), Vector2(WIDTH, 254), Color(WARM, .55))
 
 func _switch(tab_id: String) -> void:
