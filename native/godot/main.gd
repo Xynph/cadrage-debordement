@@ -70,13 +70,14 @@ const RelationshipsViews = preload("res://ui/relationships_view.gd")
 const WorldViews = preload("res://ui/world_view.gd")
 const StrategyViews = preload("res://ui/strategy_view.gd")
 const AcademyViews = preload("res://ui/academy_pathways_view.gd")
+const AcademyFollowUpViews = preload("res://ui/academy_follow_up_view.gd")
 const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
 const NAV_CHAPTERS = [
 	{"label":"Bureau", "routes":["Réception","Bureau"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
-	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
+	{"label":"Développement", "routes":["Recrutement","Formation","Centre","Suivi des jeunes"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
 	{"label":"Compétitions", "routes":["Calendrier","Classements","Rivalités"]},
 	{"label":"Carrière", "routes":["Carrière"]}
@@ -699,6 +700,7 @@ func _render(remember_ui: bool = true) -> void:
 		"Rivalités": body.add_child(WorldViews.build(self))
 		"Stratégie": body.add_child(StrategyViews.build(self))
 		"Centre": body.add_child(AcademyViews.build(self))
+		"Suivi des jeunes": body.add_child(AcademyFollowUpViews.build(self))
 		"Travail du club": body.add_child(SupportViews.build(self))
 		"Carrière": body.add_child(ManagerCareerViews.build(self))
 		"Match":
@@ -965,6 +967,7 @@ func primary_action() -> void:
 	elif model.get("next") == null: _command("finish_round")
 	else: _navigate("Match" if route == "Préparation" else "Préparation")
 
+# Recettes Godot seulement (ancien mode France 30, moteur lancé avec CD_MODES_HERITES=1).
 func create_career(id: int) -> void:
 	var action := func(): _command("new_career",{"club":id,"mode":"common"})
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement. Si cette copie ne peut pas être écrite, le remplacement sera refusé. Prendre les rênes de %s ?" % catalogue[id].name, action)
