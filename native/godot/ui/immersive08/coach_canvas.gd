@@ -45,6 +45,8 @@ var _spontanes := 0
 var _ecartes: Dictionary = {}
 ## Contexte de carrière déjà examiné une fois le coin de Gabi en place (moment clé au premier écran).
 var _contexte_examine := ""
+## Moment clé affiché (clé du profil) : rendu s'il est interrompu par une fenêtre ou un écran bloquant.
+var _moment_courant := ""
 
 func _make_portrait() -> TextureRect:
 	var model := GabiPortrait.load_model()
@@ -198,6 +200,9 @@ func _layout() -> void:
 	if not is_instance_valid(_medaillon): return
 	var actif := _adjoint_actif()
 	_compact.visible = not expanded and not actif
+	# Mode grand : une scène au-dessus du coin de Gabi ; changer de coin n'a plus de sens.
+	var move: Control = find_child("GuideMove", true, false)
+	if is_instance_valid(move): move.visible = not actif
 	_medaillon.visible = actif and not expanded
 	_avis_bouton.visible = actif and not expanded and not Avis.ecran(str(app.route), app.model).is_empty()
 	if not actif or expanded: _bulle.hide()
@@ -378,14 +383,21 @@ func _process(delta: float) -> void:
 	# le médaillon en place (début de carrière, première visite).
 	if not app.waiting and not expanded and _adjoint_actif():
 		var context := _career_context(app.model)
-		if not context.is_empty() and context != _contexte_examine:
-			_contexte_examine = context
+		if not context.is_empty() and context + "|" + str(app.route) != _contexte_examine:
+			_contexte_examine = context + "|" + str(app.route)
 			consider_context(str(app.route), app.model, "", true)
 	if is_instance_valid(_bulle_suivre) and _bulle.visible: _bulle_suivre.disabled = app.waiting or not app._live().is_empty()
 
 # --- Contexte : moments clés, première visite, humeur, indice ----------------------------------------
 
 func consider_context(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
+	if is_instance_valid(_medaillon) and is_instance_valid(app) and app._has_career() and profile.data.enabled and route not in ["Accueil", "Création", "Packs"] and not _adjoint_actif():
+		# Écran de carrière dont le coin de Gabi n'est pas encore placé (tri des conteneurs) : on attend
+		# qu'il le soit (_process) plutôt que d'ouvrir l'ancienne bulle flottante.
+		var live: Dictionary = app._live()
+		if live.is_empty() or live.get("finished", false):
+			_contexte_examine = ""
+			return
 	if not is_instance_valid(_medaillon) or not _adjoint_actif():
 		super.consider_context(route, model, command, response_ok)
 		return
@@ -415,6 +427,7 @@ func _moment_cle(model: Dictionary) -> bool:
 	if due.is_empty(): return false
 	var moment: Array = MOMENTS_CLES[due]
 	super._deliver_context(moment[0], {"id": "moment-" + due, "text": moment[1]}, "", keys[due])
+	_moment_courant = keys[due] if expanded else ""
 	return true
 
 ## Première visite d'un écran, contrat signé, fin de saison, trésorerie : la fin de saison et un compte
@@ -495,7 +508,14 @@ func _maj_indice() -> void:
 	_medaillon.indice = not _attente.is_empty() and not _bulle.visible
 
 func refresh() -> void:
+	var moment := _moment_courant if expanded and mode == "context" else ""
 	super.refresh()
+	if not moment.is_empty() and not expanded and moment in profile.data.events:
+		# Fermé par une fenêtre ou un blocage, pas par le coach : le moment reviendra.
+		profile.data.events.erase(moment)
+		profile.save_profile(profile.data)
+		_contexte_examine = ""
+	if not expanded: _moment_courant = ""
 	if is_instance_valid(_medaillon):
 		_avis_bouton.disabled = not _safe
 		_maj_indice()
