@@ -355,7 +355,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   }
  }
  function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
- function simulate(f){const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);}applyMatchInjuries(l);return result(l);}
+ function simulate(f){if(typeof CDLeagueDetail!=='undefined'&&CDLeagueDetail.quickFixture(S,f))return CDLeagueDetail.simulate(S,f);const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);}applyMatchInjuries(l);return result(l);}
  function finishWeek(){
   check(active(S)&&S.round<WEEKS&&!(S.live&&!S.live.finished),'semaine indisponible.');
   trainWeek();captureReport();const results=[],ownFixture=userFixture(S);
