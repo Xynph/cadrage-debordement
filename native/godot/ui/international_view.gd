@@ -217,6 +217,9 @@ static func _today(model: Dictionary) -> String:
 
 static func _team_names(international: Dictionary) -> Dictionary:
 	var names := {}
+	var extra: Variant = international.get("teamNames")
+	if extra is Dictionary:
+		for id: Variant in extra: names[id] = extra[id]
 	for team: Dictionary in international.get("teams", []):
 		names[team.id] = team.name
 	return names

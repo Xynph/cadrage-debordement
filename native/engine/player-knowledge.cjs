@@ -38,6 +38,7 @@ function factory(){
   const ownedLoans=new Set([s?.v78to81,...Object.values(s?.nativeAcademy?.offices||{}).map(o=>o.v78to81)].flatMap(o=>o?.loans||[]).filter(l=>l.from===s.club&&l.season===s.season).map(l=>l.id));
   for(const c of s?.clubs||[])for(const p of c.players||[])add(p,clubOwned&&(c.id===s.club||ownedLoans.has(p.id)));
   for(const p of s?.development?.academy||[])add(p,clubOwned);
+  for(const p of s?.academyIntake?.players||[])add(p,clubOwned);
   for(const a of s?.aiRoster?.academies||[])for(const p of a.players||[])add(p,clubOwned&&a.clubId===s.club);
   for(const p of s?.market||[])add(p);
   for(const p of s?.economy?.freeAgents||[])add(p);

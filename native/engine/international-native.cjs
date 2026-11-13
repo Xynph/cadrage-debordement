@@ -19,7 +19,9 @@ const limit = 45;
 module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const career = createInternationalCareer(competitions, callups, facts);
   const teams = teamIds.map(id => ({ id, name: facts.nations[id]?.[0] ?? id, flagCode: facts.nations[id]?.[1] ?? null }));
-  const teamNames = Object.fromEntries(teams.map(team => [team.id, team.name]));
+  // Les Lions jouent des tests sans être une sélection que l'on peut diriger.
+  const teamNames = { [competitions.LIONS]: competitions.TEAM_NAMES[competitions.LIONS], ...Object.fromEntries(teams.map(team => [team.id, team.name])) };
+  const lionsTeam = { id: competitions.LIONS, name: teamNames[competitions.LIONS], flagCode: null };
   const read = (source = 'S') => JSON.parse(run(`JSON.stringify(${source}?.national??null)`));
   const supported = () => !!run('CDWorldCareer.active(S)&&S.worldMode.day!==undefined');
   const worldDay = () => run('CDWorldCareer.calendarToday(S)');
@@ -45,6 +47,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
   }
 
   function competitionName(id) {
+    if (competitions.isExtraEdition(id)) return competitions.familyName(id);
     const family = editionsByFamily.get(id.replace(/-\d{4}$/, ''));
     if (!family) return 'la fenêtre internationale';
     const year = /-(\d{4})$/.exec(id)?.[1];
@@ -220,7 +223,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const relevant = new Map(players.filter(p => managed.club && p.clubId === clubId).concat(overview.squad).map(p => [p.id,p]));
     const current = overview.currentFixture?.result === null ? overview.currentFixture : null;
     model.international = {
-      role:managed.mode,nation:managed.nation,teams,mail:profile.mail.slice().reverse(),
+      role:managed.mode,nation:managed.nation,teams,teamNames,mail:profile.mail.slice().reverse(),
       jobs:manager.nationalOffers(profile.role,teamIds).map(nation => ({nation,name:teamNames[nation]})),
       editions:overview.competitions.map(item=>({...item,tables:item.standings})),
       callups:overview.callups.filter(camp=>camp.from<=date&&date<=camp.through).map(camp=>({...camp,
@@ -229,7 +232,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       currentManagedFixture:current,nextManagedFixture:current??overview.nextFixture,squad:overview.squad,sheet:overview.sheet,
       choicesBySlot:overview.choicesBySlot,
       availability:projectAvailability({date,clubManaged:managed.club,clubId,players,callups:overview.callups,
-        releaseWindows:overview.releaseWindows,editions:overview.competitions,teams}),
+        releaseWindows:overview.releaseWindows,editions:overview.competitions,teams:[...teams,lionsTeam]}),
     };
     if (ended()) {
       const waiting = date < nextOpening();

@@ -39,6 +39,7 @@ function factory(){
   if(r.counts.C>3)violations.push('sheet-c');
   if(xv.counts['A-1']<8||special(xv.counts)>7)violations.push('field-a1');
   if(xv.counts.C>3)violations.push('field-c');
+  if(xv.counts.B>4)violations.push('field-b');
   return report(violations,counts);
  }
  function substitution(active,out,incoming,{forcedAbsence=false}={}){
@@ -52,6 +53,7 @@ function factory(){
   const minimum=forcedAbsence&&active.length<15?Math.min(8,previous.counts['A-1']):8;
   if(next.counts['A-1']<minimum||special(next.counts)>7)violations.push('field-a1');
   if(next.counts.C>3)violations.push('field-c');
+  if(next.counts.B>4)violations.push('field-b');
   return report(violations,next.counts);
  }
  function planSheet(slots,{frontRow=6,searchLimit=30000}={}){
@@ -78,7 +80,7 @@ function factory(){
   function permits(p,starter){
    const cat=p.category;
    if(cat==='A-1')return true;
-   return special(sheet)<9&&(cat==='A-2'||bc(sheet)<6)&&(cat!=='C'||sheet.C<3)&&(!starter||special(field)<7&&(cat!=='C'||field.C<3));
+   return special(sheet)<9&&(cat==='A-2'||bc(sheet)<6)&&(cat!=='C'||sheet.C<3)&&(!starter||special(field)<7&&(cat!=='C'||field.C<3)&&(cat!=='B'||field.B<4));
   }
   function visit(remaining){
    if(!remaining.length)return true;
