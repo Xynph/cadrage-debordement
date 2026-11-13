@@ -4,6 +4,7 @@ extends SceneTree
 var app: Control
 var failures: Array[String] = []
 var checks := 0
+var captures: Array[Dictionary] = []
 var output := OS.get_environment("OVAL_MAC_RECEIPT")
 var phase := OS.get_environment("OVAL_MAC_PHASE")
 
@@ -44,7 +45,16 @@ func capture(name_: String) -> void:
 	await process_frame
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
-	check(not image.is_empty() and image.get_width() >= 1280, "Rendered viewport")
+	check(not image.is_empty() and image.get_width() > 0 and image.get_height() > 0, "Rendered viewport")
+	if image.is_empty(): return
+	# Hosted Macs can constrain the native window to their virtual display.
+	# Validate actual rendered content instead of assuming a 1280-pixel display.
+	var colors: Dictionary = {}
+	for y in 16:
+		for x in 16:
+			colors[image.get_pixel(int(float(x) * (image.get_width() - 1) / 15), int(float(y) * (image.get_height() - 1) / 15)).to_html()] = true
+	check(colors.size() > 8, "Rendered interface has visible content")
+	captures.append({"name":name_, "width":image.get_width(), "height":image.get_height(), "sampled_colors":colors.size(), "window":[root.size.x, root.size.y]})
 	check(image.save_png(output.path_join(name_ + ".png")) == OK, "Viewport capture saved")
 
 func run() -> void:
@@ -112,7 +122,7 @@ func finish() -> void:
 		var deadline := Time.get_ticks_msec() + 5000
 		while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
 		check(app.bridge.child_pid <= 0, "Owned Node stops cleanly")
-	var report := {"passed":failures.is_empty(), "phase":phase, "checks":checks, "failures":failures, "platform":OS.get_name(), "display":DisplayServer.get_name(), "executable":OS.get_executable_path(), "pid":OS.get_process_id()}
+	var report := {"passed":failures.is_empty(), "phase":phase, "checks":checks, "failures":failures, "platform":OS.get_name(), "display":DisplayServer.get_name(), "executable":OS.get_executable_path(), "pid":OS.get_process_id(), "captures":captures}
 	if output.is_absolute_path(): write_json(phase + "-report.json", report)
 	print(JSON.stringify(report))
 	quit(0 if failures.is_empty() else 1)
