@@ -1,6 +1,6 @@
 # Mesurer la progression avant de changer ses coefficients
 
-Ce banc manuel compare deux politiques déterministes de gestion, avec **trois graines annoncées avant les résultats : 827381, 318 et 52602**, club 0 en mode `world`, deux saisons jouées par bras. Chaque paire commence avec la même graine, la même horloge de carrière et le même état initial. Cela ne signifie pas que les trajectoires sportives ou le curseur RNG doivent rester identiques après des décisions différentes.
+Ce banc manuel compare deux politiques déterministes de gestion, avec **trois graines annoncées avant les résultats : 827381, 318 et 52602**, club 0 en mode `world-champ`, deux saisons jouées par bras. Chaque paire commence avec la même graine, la même horloge de carrière et le même état initial. Cela ne signifie pas que les trajectoires sportives ou le curseur RNG doivent rester identiques après des décisions différentes.
 
 ## Reproduction et portée
 

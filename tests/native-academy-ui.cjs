@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process');
 const exe=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;if(!exe){console.log('SKIP native-academy-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}const folder=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-academy-ui-')),script=path.join(folder,'academy-ui.gd');
 fs.writeFileSync(script,`extends SceneTree

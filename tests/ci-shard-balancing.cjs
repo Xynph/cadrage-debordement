@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { allTestFiles, planShards, WEIGHTS_SECONDS } = require('../ci/shard-tests.cjs');
+const { allTestFiles, legacyTestFiles, planShards, WEIGHTS_SECONDS } = require('../ci/shard-tests.cjs');
 const { SHARD_COUNT } = require('../ci/ci-jobs.cjs');
 
 const files = allTestFiles();
@@ -14,6 +14,7 @@ for (const [file, seconds] of Object.entries(WEIGHTS_SECONDS)) {
   assert.ok(files.includes(file), 'poids obsolète : ' + file);
   assert.ok(Number.isInteger(seconds) && seconds > 0, 'poids invalide : ' + file);
 }
+const legacy = legacyTestFiles();
 // Poids mesurés (ci/suite-weights.json) : les campagnes longues restent les plus lourdes.
 for (const file of [
   'tests/native-academy-integrated-long.cjs',
@@ -21,7 +22,10 @@ for (const file of [
   'tests/deepen-staff-native.cjs',
   'tests/native-club-support-season.cjs'
 ]) {
-  assert.ok(WEIGHTS_SECONDS[file] >= 300, 'campagne longue sous-pondérée : ' + file);
+  // Mode Monde uniquement : une campagne qui porte CD_MODES_HERITES est exclue (ni planifiée ni pondérée) ;
+  // migrée, elle revient dans les shards avec son poids mesuré.
+  if (files.includes(file)) assert.ok(WEIGHTS_SECONDS[file] >= 300, 'campagne longue sous-pondérée : ' + file);
+  else assert.ok(legacy.includes(file) && !(file in WEIGHTS_SECONDS), 'campagne longue absente sans être exclue : ' + file);
 }
 // Aucune suite ne dépasse à elle seule la charge visée d'un shard.
 const heaviest = Math.max(...Object.values(WEIGHTS_SECONDS));

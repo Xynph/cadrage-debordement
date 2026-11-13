@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Mesure manuelle ou en CI (workflow « Mesure des clubs gérés ») : effectifs, mouvements, masses salariales et taille
 // persistée d'une carrière mondiale, saison par saison, par l'API publique du worker.
 // node ci/world-career-measure.cjs --seed 27 --mode world-champ --club 30 --seasons 3 --out /chemin/rapport.json [--keep /dossier]
@@ -19,7 +18,7 @@ function argumentsFor(argv){
   assert(key&&argv[i+1]!==undefined,'argument inconnu : '+argv[i]);
   o[key]=['mode','out','keep'].includes(key)?argv[i+1]:Number(argv[i+1]);
  }
- assert(o.out,'--out requis');return o;
+ assert(o.out,'--out requis');assert(o.mode==='world-champ','mode Monde (world-champ) uniquement');return o;
 }
 const median=v=>{const s=v.slice().sort((a,b)=>a-b);return s.length?s[s.length>>1]:null;};
 const round=(x,d=2)=>Math.round(x*10**d)/10**d;
