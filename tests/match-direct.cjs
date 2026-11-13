@@ -229,6 +229,17 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
       // Notes : joueurs du manager seulement, bornées.
       const camp = direct.camp, nous = new Set(events.flatMap(e => e.scene?.on?.[camp] || []).filter(Boolean).map(String));
       for (const [id, n] of Object.entries(direct.notes)) assert.ok(nous.has(id) && n.note >= 3 && n.note <= 9.9 && n.faits > 0, id);
+      // Plaquages par joueur (colonne « Plaq. » de Mon XV) : la somme refait le chiffre d'équipe.
+      const plaquesJoueurs = Object.values(direct.notes).reduce((n, f) => n + f.plaquages, 0);
+      assert.equal(plaquesJoueurs, t.plaquages.valeurs[camp], 'plaquages des joueurs = plaquages réussis de l\'équipe');
+      // XV adverse : la feuille actuelle (remplacements visibles tout de suite), notes bornées ;
+      // ses plaquages ne dépassent pas le chiffre d'équipe (un remplacé emporte les siens).
+      const eux = 1 - camp;
+      if (vues.length) {
+        assert.equal(direct.adversaire.length, 15, 'XV adverse complet');
+        assert.ok(direct.adversaire.every(j => !j || (j.nom && j.note >= 3 && j.note <= 9.9)), 'noms et notes adverses');
+        assert.ok(direct.adversaire.reduce((n, j) => n + (j ? j.plaquages : 0), 0) <= t.plaquages.valeurs[eux], 'plaquages adverses bornés par le chiffre d\'équipe');
+      }
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
     assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
@@ -244,4 +255,16 @@ test('Note de départ : 6,5 au coup d’entrée (titulaire comme remplaçant), p
   const notes = D.notesDuMatch([{ i: 0, kind: 'reception', equipe: 0 }, { i: 1, kind: 'miss', equipe: 0 }], events, 0);
   assert.equal(notes.a.note, 6.6, 'une réception : 6,5 + 0,08');
   assert.equal(notes.b.note, 6.4, 'un tir manqué : 6,5 − 0,15');
+});
+
+test('Plaquages de l’entracte : le plaqueur nommé par le moteur (fait `tackler`), repli sur la place défensive', () => {
+  const D = require('../native/engine/match-direct.cjs');
+  const on = [['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'], ['x', ...Array(14).fill(null)]];
+  const course = tackler => ({ scene: { actor: 'x', team: 1, on, from: { x: 50, y: 35 }, to: { x: 46, y: 35 }, ...(tackler ? { tackler } : {}) } });
+  const ligne = { i: 0, kind: 'carry', equipe: 1, x: 46, depuis: 50 };
+  const nomme = D.notesDuMatch([ligne], [course('m')], 0);
+  assert.equal(nomme.m.plaquages, 1, 'le joueur que le moteur nomme');
+  const deduit = D.notesDuMatch([ligne], [course(null)], 0), attendu = D.plaqueur(on[0], 4, 35);
+  assert.equal(deduit[attendu].plaquages, 1, 'sans le fait : déduction par la place défensive');
+  assert.equal(D.notesDuMatch([ligne], [course('zz')], 0)[attendu].plaquages, 1, 'fait inconnu de la feuille : repli');
 });

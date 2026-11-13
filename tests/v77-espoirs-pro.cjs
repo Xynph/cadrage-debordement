@@ -37,7 +37,8 @@ const third=run('S.development.academy[0].id');
 assert.equal(run(api+'.promote(S,'+JSON.stringify(third)+',3,()=>true)'),true,'third youth');
 assert.equal(run('S.v77Promotions.promotions.length'),3,'three per season');
 const fourth=run('S.development.academy[0].id');
-assert.equal(run(api+'.canPromote(S,'+JSON.stringify(fourth)+',1)'),false,'annual cap');
+// Décision de Léo du 12/11/2026 : plus de plafond annuel, seules les places pro comptent.
+assert.equal(run(api+'.canPromote(S,'+JSON.stringify(fourth)+',1)'),run('professionalPlaces(S.clubs[S.club],S)>0'),'no annual cap');
 assert.equal(run('S.clubs[S.club].players.length'),startTeam+3);
 assert.equal(run('S.development.academy.length>=15'),true,'complete academy');
 assert.equal(run('CDEspoirsV73.chosen(S,S.club).filter(Boolean).length'),15,'XV remains playable');

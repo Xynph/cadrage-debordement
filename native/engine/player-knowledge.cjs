@@ -190,16 +190,19 @@ function factory(){
   const attrs=['attributes','attributesV2','skills','nativeAttributesV1','rosterProfile','worldProfile','lnrProfile','skillBase'];
   const levels=['note','roleNote','overall','quality','level','currentAbility','seasonStart','seasonEnd','startRating','endRating','ratingBefore','ratingAfter'];
   const ceilings=['potential','potentialAtRole','ceiling','potentialRating','potentialNote','potentialBefore','potentialAfter'];
-  function visit(value,person=null,path=''){
-   if(Array.isArray(value)){for(const row of value)visit(row,person,path);return;}
+  // Listes figées une fois par projection (même ordre, même contenu qu'avant).
+  const aliasesWithLevels=['rating',...levels,...ceilings,'attributesV2','positionRatings'];
+  const aliasesWithoutLevels=['rating',...levels.filter(k=>!['level','quality'].includes(k)),...ceilings,'attributesV2','positionRatings'];
+  const ceilingSet=new Set(ceilings),levelSet=new Set(levels),boundKeys=new Set(['noteMin','noteMax','potentialMin','potentialMax']);
+  function visit(value,person=null){
+   if(Array.isArray(value)){for(const row of value)visit(row,person);return;}
    if(!object(value))return;
    const pid=typeof value.playerId==='string'&&Object.hasOwn(visible,value.playerId)?value.playerId:typeof value.id==='string'&&Object.hasOwn(visible,value.id)?value.id:null;
    const unknownId=typeof value.playerId==='string'?value.playerId:value.id;
-   const aliases=['rating',...levels.filter(k=>typeof value.playerId==='string'||typeof value.pos==='string'||!['level','quality'].includes(k)),...ceilings,'attributesV2','positionRatings'];
+   const aliases=typeof value.playerId==='string'||typeof value.pos==='string'?aliasesWithLevels:aliasesWithoutLevels;
    const hasPlayerData=aliases.some(k=>Object.hasOwn(value,k))||typeof value.name==='string'&&typeof value.pos==='string';
    const looksLikePlayer=!pid&&id(unknownId)&&(typeof value.playerId==='string'||typeof value.pos==='string'||typeof value.name==='string')&&aliases.some(k=>Object.hasOwn(value,k));
-   const unknown={rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}};
-   const ownPerson=pid?visible[pid]:looksLikePlayer?unknown:person;
+   const ownPerson=pid?visible[pid]:looksLikePlayer?{rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}}:person;
    if(pid&&hasPlayerData||looksLikePlayer){
     Object.assign(value,copy(ownPerson));
     for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
@@ -218,14 +221,14 @@ function factory(){
    }
    for(const [key,child]of Object.entries(value)){
     if(key==='knowledge'||key==='ratingRange'||key==='potentialRange')continue;
-    if(ceilings.includes(key)){value[key]=null;continue;}
-    if(ownPerson&&['noteMin','noteMax','potentialMin','potentialMax'].includes(key)){value[key]=key==='noteMin'?ownPerson.ratingRange?.min??null:key==='noteMax'?ownPerson.ratingRange?.max??null:key==='potentialMin'?ownPerson.potentialRange?.min??null:ownPerson.potentialRange?.max??null;continue;}
-    if(ownPerson&&!ownPerson.knowledge.owned&&(levels.includes(key)||key==='rating')){value[key]=null;continue;}
+    if(ceilingSet.has(key)){value[key]=null;continue;}
+    if(ownPerson&&boundKeys.has(key)){value[key]=key==='noteMin'?ownPerson.ratingRange?.min??null:key==='noteMax'?ownPerson.ratingRange?.max??null:key==='potentialMin'?ownPerson.potentialRange?.min??null:ownPerson.potentialRange?.max??null;continue;}
+    if(ownPerson&&!ownPerson.knowledge.owned&&(levelSet.has(key)||key==='rating')){value[key]=null;continue;}
     if(ownPerson&&key==='evidence'&&object(child)){
      child.seen=ownPerson.knowledge.stage!=='unobserved';child.noteMin=ownPerson.ratingRange?.min??null;child.noteMax=ownPerson.ratingRange?.max??null;child.potentialMin=ownPerson.potentialRange?.min??null;child.potentialMax=ownPerson.potentialRange?.max??null;
      child.label=child.seen?'Observé':'Non observé';
     }
-    visit(child,ownPerson,path+'.'+key);
+    visit(child,ownPerson);
    }
   }
   visit(model);return model;
