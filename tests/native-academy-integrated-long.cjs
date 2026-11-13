@@ -13,6 +13,7 @@ if(mobility){source=source.replace("new Set([...SYSTEM_COMMANDS,","new Set(['aca
 fs.writeFileSync(path.join(folder,'worker-test-copy.cjs'),source);
 const resume=process.env.CD_ACADEMY_RESUME;if(resume)fs.cpSync(path.join(resume,'profile'),path.join(folder,'profile'),{recursive:true});
 const loaded=new Module(sourcePath,module);loaded.filename=sourcePath;loaded.paths=Module._nodeModulePaths(path.dirname(sourcePath));loaded._compile(source,sourcePath);const {createBridge,IMPORT_LIMIT_BYTES}=loaded.exports;
+let intakes=0;
 let bridge=createBridge({dataDir:path.join(folder,'profile'),seed:13,now:1700000000000}),sequence=0,maxBytes=0,maxNodes=0,playedMatches=0,resumedLiveMatches=0;let model;
 function good(command,payload={}){const r=bridge.handle({id:++sequence,command,payload});assert.equal(r.ok,true,command+': '+r.error);model=r.model;return model;}
 function press(){const p=model.clubLife.press;if(p.conference.available)good('press_conference',{context:p.context,answers:p.conference.questions.map(q=>({questionId:q.id,answerId:'r1'}))});}
@@ -49,9 +50,17 @@ try{if(resume)settleClubMeetings(good('snapshot'),(command,payload)=>good(comman
    finishWeek();if([10,20,34].includes(w+1))checkpoint();
   }
   assert.equal(model.meta.phase,'ended','Saison entièrement terminée avant intersaison');
-  if(mobility)good('academy_test_move');settleClubMeetings(good('next_season',{confirmed:true}),(command,payload)=>good(command,payload));assert.equal(model.meta.season,year+1);if(mobility)assert.equal(model.club.id,(29+year)%30);completedSeasons++;
+  if(mobility)good('academy_test_move');settleClubMeetings(good('next_season',{confirmed:true}),(command,payload)=>good(command,payload));assert.equal(model.meta.season,year+1);if(mobility)assert.equal(model.club.id,(29+year)%30);
+  // Génération du 1er juillet (politique 3) : proposition à l'intersaison, choix du club joué.
+  {const view=model.clubLife.academyIntake;if(view?.available){assert.ok(view.players.length>=12,'génération de 12 à 20 jeunes');
+   assert.ok(view.players.every(p=>Number.isFinite(p.rating)&&p.potentialRange&&p.potential===null),'niveau exact, potentiel en fourchette');
+   const room=Math.max(0,Math.min(view.crabosCap-view.crabos,view.capacity-view.academy)),keep=view.players.slice(0,room).map(p=>p.id);
+   assert.equal(bridge.handle({id:++sequence,command:'academy_intake_confirm',payload:{context:view.context,confirmed:true,keep:view.players.map(p=>p.id),release:[]}}).ok,view.players.length<=room);
+   if(view.players.length>room)good('academy_intake_confirm',{context:view.context,confirmed:true,keep,release:[]});else good('snapshot');
+   assert.equal(model.clubLife.academyIntake.available,false);intakes++;}}
+  completedSeasons++;
  }
- assert.equal(completedSeasons,years-firstYear+1,'Toutes les saisons demandées réellement terminées');assert.equal(model.meta.season,years+1);assert.ok(maxBytes>0&&maxNodes>0,'Checkpoints réels exécutés');if(!resume||years>firstYear)assert.ok(playedMatches>=30,'Rencontres et causeries réelles exécutées sur une saison complète');
+ assert.equal(completedSeasons,years-firstYear+1,'Toutes les saisons demandées réellement terminées');if(!resume)assert.equal(intakes,years-firstYear+1,'Une génération choisie à chaque intersaison');assert.equal(model.meta.season,years+1);assert.ok(maxBytes>0&&maxNodes>0,'Checkpoints réels exécutés');if(!resume||years>firstYear)assert.ok(playedMatches>=30,'Rencontres et causeries réelles exécutées sur une saison complète');
  console.log(JSON.stringify({passed:true,completedSeasons,firstYear,years,playedMatches,resumedLiveMatches,mobility,resumedFrom:resume||null,maximumBytes:maxBytes,maximumNodes:maxNodes,profile:folder,proof:'Vrai worker copié : calendriers/moteur réels, rencontres déléguées et trois causeries vérifiées par match, domaines natifs actifs, conférences hebdomadaires, décisions vestiaire, objectifs/conseil/supporters, import/export/reprise aux checkpoints10/20/34.'}));
 }finally{bridge.close();}
 

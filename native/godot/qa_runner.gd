@@ -518,7 +518,7 @@ func _run() -> void:
 			palette.hide()
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for page: String in chapter.routes: pages.append(page)
-		_check(pages.size() == 20 and pages.has("Réception") and not pages.has("Presse"), "Every native career route is included, with press entered through its inbox mail")
+		_check(pages.size() == 21 and pages.has("Réception") and not pages.has("Presse"), "Every native career route is included, with press entered through its inbox mail")
 		for page in pages:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
