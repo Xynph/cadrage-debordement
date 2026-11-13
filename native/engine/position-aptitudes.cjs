@@ -78,18 +78,39 @@ module.exports=function positionAptitudes(){
   }
   return pool;
  }
+ // Les six maillots de première ligne sont attribués par ordre de priorité (n°1, 2, 3 puis les
+ // trois places de banc), chacun au meilleur joueur qui laisse un jumelage complet possible aux
+ // places suivantes. Un joueur n'est donc jamais déplacé du XV vers le banc pour servir une place
+ // de banc : le meilleur pilier gauche, talonneur ou pilier droit dispo ouvre le match.
  function reserveFront(team,preferred,bench){
-  const prefs=Array.from({length:23},(_,i)=>i<15?preferred[i]:bench[i-15]),frontSlots=[0,1,2,15,16,17],taken=new Map(),assigned=new Map();
+  const prefs=Array.from({length:23},(_,i)=>i<15?preferred[i]:bench[i-15]),frontSlots=[0,1,2,15,16,17],assigned=new Map();
   const pool=availablePool(team);
   const fixedOther=new Set(prefs.filter((id,i)=>id&&!frontSlots.includes(i)));
-  function place(slot,seen){
-   const options=pool.filter(p=>!fixedOther.has(p.id)&&(slot<15?baseSlot(p,slot):baseBench(p,slot-15)))
-    .sort((a,b)=>Number(b.id===prefs[slot])-Number(a.id===prefs[slot])||baseNote(b)-baseNote(a)||compareId(a,b));
-   for(const p of options){if(seen.has(p.id))continue;seen.add(p.id);const previous=taken.get(p.id);
-    if(previous===undefined||place(previous,seen)){taken.set(p.id,slot);assigned.set(slot,p.id);return true;}
-   }return false;
+  // Même pondération par la condition que fitScore : un pilier épuisé ne passe pas devant un pilier frais.
+  const weighted=p=>baseNote(p)*(.5+p.condition*.005);
+  const options=new Map(frontSlots.map(slot=>[slot,pool.filter(p=>!fixedOther.has(p.id)&&(slot<15?baseSlot(p,slot):baseBench(p,slot-15)))
+   .sort((a,b)=>Number(b.id===prefs[slot])-Number(a.id===prefs[slot])||weighted(b)-weighted(a)||compareId(a,b))]));
+  // Taille du plus grand jumelage places/joueurs sur ces places, sans les joueurs déjà retenus.
+  function maxMatch(slots,used){
+   const owner=new Map();
+   function place(slot,seen){
+    for(const p of options.get(slot)){
+     if(used.has(p.id)||seen.has(p.id))continue;seen.add(p.id);
+     if(!owner.has(p.id)||place(owner.get(p.id),seen)){owner.set(p.id,slot);return true;}
+    }return false;
+   }
+   let size=0;for(const slot of slots)if(place(slot,new Set()))size++;return size;
   }
-  for(const slot of frontSlots)place(slot,new Set());
+  const used=new Set();
+  frontSlots.forEach((slot,index)=>{
+   const rest=frontSlots.slice(index+1),best=maxMatch(frontSlots.slice(index),used);
+   for(const p of options.get(slot)){
+    if(used.has(p.id))continue;
+    used.add(p.id);
+    if(1+maxMatch(rest,used)===best){assigned.set(slot,p.id);return;}
+    used.delete(p.id);
+   }
+  });
   return new Map([...assigned].map(([slot,id])=>[id,slot]));
  }
  function installHooks(){
@@ -113,10 +134,51 @@ module.exports=function positionAptitudes(){
    // Existing registration/quota hooks remain the final authority.
    return oldBuild(team,sheet.lineup,wanted);
   }
+  // Attribution optimale des postes 4 à 15 : la boucle d'origine remplit les maillots dans l'ordre et
+  // peut priver un poste de son spécialiste (un arrière pris à l'aile, un ouvreur au centre, un
+  // troisième ligne à l'ouverture). On maximise ici la somme des notes au poste, pondérées par la
+  // condition (algorithme hongrois, déterministe), sur les joueurs valides du groupe.
+  function optimiseBack(team,sheet){
+   const slots=[];for(let i=3;i<15;i++)slots.push(i);
+   const fixed=new Set([...sheet.lineup.slice(0,3),...sheet.bench.slice(0,3)].filter(Boolean));
+   const cols=availablePool(team).filter(p=>!fixed.has(p.id)&&slots.some(i=>eligible(p,i))).sort(compareId);
+   if(cols.length<slots.length)return sheet;
+   const n=slots.length,m=cols.length,BIG=1e6;
+   const cost=slots.map(i=>cols.map(p=>eligible(p,i)?-rating(p,i)*(.5+p.condition*.005):BIG));
+   // Hongrois rectangulaire (n lignes <= m colonnes), lignes et colonnes numérotées à partir de 1.
+   const u=new Array(n+1).fill(0),v=new Array(m+1).fill(0),way=new Array(m+1).fill(0),match=new Array(m+1).fill(0);
+   for(let i=1;i<=n;i++){
+    match[0]=i;let j0=0;const minv=new Array(m+1).fill(Infinity),used=new Array(m+1).fill(false);
+    do{
+     used[j0]=true;const i0=match[j0];let delta=Infinity,j1=0;
+     for(let j=1;j<=m;j++)if(!used[j]){
+      const cur=cost[i0-1][j-1]-u[i0]-v[j];
+      if(cur<minv[j]){minv[j]=cur;way[j]=j0;}
+      if(minv[j]<delta){delta=minv[j];j1=j;}
+     }
+     for(let j=0;j<=m;j++){if(used[j]){u[match[j]]+=delta;v[j]-=delta;}else minv[j]-=delta;}
+     j0=j1;
+    }while(match[j0]!==0);
+    do{const j1=way[j0];match[j0]=match[j1];j0=j1;}while(j0);
+   }
+   const lineup=sheet.lineup.slice();
+   for(let j=1;j<=m;j++)if(match[j]&&cost[match[j]-1][j-1]<BIG)lineup[slots[match[j]-1]]=cols[j-1].id;
+   if(new Set(lineup.filter(Boolean)).size!==lineup.filter(Boolean).length)return sheet;
+   return {...sheet,lineup};
+  }
   function reservedBuild(fn,team,preferred=[],bench=[],...args){
    if(reservations)return fn(team,preferred,bench,...args);
    reservations=reserveFront(team,preferred,bench);
-   try{return improveBench(team,fn(team,preferred,bench,...args),bench);}finally{reservations=null;}
+   try{
+    let sheet=fn(team,preferred,bench,...args);
+    // Une feuille choisie à la main (postes préférés) n'est jamais réattribuée.
+    if(!preferred.some(Boolean)&&!bench.some(Boolean)){
+     sheet=optimiseBack(team,sheet);
+     // Règle JIFF des clubs concernés : même autorité qu'avant, appliquée après l'attribution.
+     if(typeof CDJiff!=='undefined'&&CDJiff.comply&&typeof S!=='undefined'&&team.id!==undefined)sheet=CDJiff.comply(S,team,sheet);
+    }
+    return improveBench(team,sheet,bench);
+   }finally{reservations=null;}
   }
   buildSheet=(team,preferred=[],bench=[])=>reservedBuild(oldBuild,team,preferred,bench);
   managerSheet=(team,...args)=>{
