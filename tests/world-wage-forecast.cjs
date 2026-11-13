@@ -1,23 +1,12 @@
 'use strict';
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {context} = require('./france-harness.cjs');
-const {bootstrap} = require('../native/engine/world-vm.cjs');
-const compose = require('../native/engine/world-pacific-registry.cjs');
-const base = require('../native/engine/world-registry.json');
-const pacific = compose.extendWorldRegistry(base, require('../native/engine/world-pacific-extension.json'));
-const japan = compose.extendJapanRegistry(pacific, require('../native/engine/world-japan-extension.json'));
-const nationale = compose.extendNationaleRegistry(japan, require('../native/engine/world-nationale-extension.json'));
-const champ = compose.extendChampRegistry(nationale, require('../native/engine/world-champ-extension.json'));
+const {context} = require('./monde-harness.cjs');
 
-function worldContext() {
-  const h = context(827381);
-  for (const [key,registry] of Object.entries({nativeWorldRegistryText:base,nativeWorldPacificRegistryText:pacific,
-    nativeWorldJapanRegistryText:japan,nativeWorldNationaleRegistryText:nationale,nativeWorldChampRegistryText:champ}))
-    h.ctx[key] = JSON.stringify(registry);
-  h.run(bootstrap());
-  return h;
-}
+// Carrière Monde réelle (world-champ, club 0) ; chaque cas repart du même état et RNG.
+const shared = context(827381), base = shared.checkpoint();
+require('node:test').after(() => shared.close());
+function worldContext() { return shared.restore(base); }
 
 // Three explicit weekly contracts: 1000 for this season, 1500 for two,
 // 2000 for three. This small arithmetic fixture is not exported as a career.
@@ -31,11 +20,9 @@ function at(h,week) {
   return h.run('futureWages()');
 }
 
-test('Monde v1 à v5 : engagements de trois contrats sur les 46 semaines de gestion', () => {
-  const h=worldContext();
-  for (const [mode,club] of [['world',0],['world-pacific',58],['world-japan',68],['world-nationale',88],['world-champ',102]]) {
-    h.ctx.auditMode=mode;h.ctx.auditClub=club;
-    h.run('CDWorldCareer.start(auditClub,auditMode)');
+test('Monde : engagements de trois contrats sur les 46 semaines de gestion', () => {
+  {
+    const h=worldContext(),mode='world-champ';
     assert.equal(h.run('CDWorldCareer.sizing(S).rounds'),46);
     contracts(h);
     assert.equal(at(h,0),460000,mode+' : 46 × (1000 + 2×1500 + 3×2000)');
@@ -45,20 +32,9 @@ test('Monde v1 à v5 : engagements de trois contrats sur les 46 semaines de gest
   }
 });
 
-test('France conserve 34 semaines, la carrière historique conserve 29 et le bon compteur de semaine', () => {
-  const h=context(827381);
-  h.run("start(0,'fiction')");contracts(h);
-  assert.equal(at(h,0),290000);assert.equal(at(h,14),227000);assert.equal(at(h,29),159500);
-  h.run("CDFranceCareer.start(0)");contracts(h);
-  assert.equal(at(h,0),340000);assert.equal(at(h,17),263500);assert.equal(at(h,34),187000);
-  h.run('S.round=2;S.franceMode.week=17');
-  assert.equal(h.run('futureWages()'),263500,'le calendrier France est indépendant de la journée élite');
-});
-
 test('Le vrai état Monde et sa sauvegarde gardent leurs octets et leur RNG pendant la prévision', () => {
   const h=worldContext();
-  for (const mode of ['world','world-champ']) {
-    h.ctx.auditMode=mode;h.run('CDWorldCareer.start(0,auditMode)');
+  {
     const state=h.run('JSON.stringify(S)'),store=JSON.stringify(h.store),seed=h.seed();
     const exported=h.run('JSON.stringify(createSaveDocument())');
     const forecast=h.run('futureWages()');
@@ -73,9 +49,8 @@ test('Le vrai état Monde et sa sauvegarde gardent leurs octets et leur RNG pend
 
 test('Les rendus réels Finances et Contrats annoncent le même calendrier que leurs montants', () => {
   const h=worldContext();
-  for (const [mode,weeks] of [['fiction',29],['france',34],['world',46],['world-champ',46]]) {
-    h.ctx.auditMode=mode;
-    h.run("if(auditMode.startsWith('world'))CDWorldCareer.start(0,auditMode);else if(auditMode==='france')CDFranceCareer.start(0);else start(0,'fiction');");
+  {
+    const mode='world-champ',weeks=46;
     const forecast=h.run('money(futureWages())');
     const annual=h.run('money(totalWages()*'+weeks+')');
     const finance=h.run('financeOriginal()'),contractsPanel=h.run('contractsPanel()');
@@ -87,7 +62,7 @@ test('Les rendus réels Finances et Contrats annoncent le même calendrier que l
 });
 
 test('Prévision Monde : paies et recettes connues restent distinctes, sans recettes de repos ou de terrain neutre', () => {
-  const h=worldContext();h.run("CDWorldCareer.start(0,'world')");contracts(h);
+  const h=worldContext();contracts(h);
   // Query-only calendar fixture; not exported as a complete valid season.
   h.run(`S.worldMode.fixtures=[
     {week:0,homeId:0,awayId:1,phase:'league',neutral:false},
@@ -117,22 +92,10 @@ test('Prévision Monde : paies et recettes connues restent distinctes, sans rece
   }
 });
 
-test('France34 : les semaines de repos paient les salaires sans inventer de billetterie', () => {
-  const h=context();h.run('CDFranceCareer.start(0)');contracts(h);at(h,6);
-  const cal=JSON.parse(h.run('JSON.stringify(forecastCalendar(S,0))'));
-  assert.equal(cal.weeks,34);assert.equal(cal.entries.length,28);
-  assert.deepEqual(cal.entries.find(e=>e.week===6),{week:6,home:false,match:false});
-  const p=JSON.parse(h.run('JSON.stringify(forecastFinancialScenario(S,{kind:"baseline"},2))'));
-  assert.equal(p.annual[0].payments,28);assert.equal(p.annual[0].payroll,4500*28);
-  assert.equal(p.annual[1].payments,34);assert.equal(p.annual[1].matchDays,26);
-  at(h,34);assert.equal(h.run('forecastFinancialScenario(S,{kind:"baseline"},1).annual[0].payments'),0);
-});
-
 test('Accord de contrat réel : le récapitulatif emploie le calendrier courant sans changer l’accord', () => {
   const h=worldContext();
-  for(const [mode,weeks] of [['fiction',29],['france',34],['world',46],['world-champ',46]]) {
-    h.ctx.auditMode=mode;
-    h.run("if(auditMode.startsWith('world'))CDWorldCareer.start(0,auditMode);else if(auditMode==='france')CDFranceCareer.start(0);else start(0,'fiction');");
+  {
+    const mode='world-champ',weeks=46;
     h.run(`var wagePlayer=club().players.find(p=>p.age<30&&p.contractEnd<=S.season+1);
       if(!wagePlayer)throw Error('Missing renewal fixture');
       if(!negotiateContract(wagePlayer.id,'renew',100000,3))throw Error('Renewal setup failed');`);

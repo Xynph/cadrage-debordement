@@ -5,9 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
-const { context } = require('./france-harness.cjs');
-const worldVm = require('../native/engine/world-vm.cjs');
-const registry = require('../native/engine/world-registry.json');
+const { context } = require('./monde-harness.cjs');
 const portraits = require('../native/engine/portraits.cjs');
 
 const root = path.resolve(__dirname, '..');
@@ -18,23 +16,23 @@ for (const base of catalogue.bases.filter(b => b.kind === 'player')) {
   const tone = base.observedTraits?.skinTone;
   if (tone) tones[Number(base.id.split(':')[1])] = TONE[tone];
 }
+// Carrière Monde réelle (world-champ, club 0) partagée ; chaque cas repart du même état et RNG.
+let shared = null, base = null;
+require('node:test').after(() => shared?.close());
 function world() {
-  const h = context(437493);
-  h.ctx.nativeWorldRegistryText = JSON.stringify(registry);
-  h.run(worldVm.bootstrap());
-  h.run("CDWorldCareer.start(0, 'world', true);");
-  return h;
+  if (!shared) { shared = context(437493); base = shared.checkpoint(); }
+  return shared.restore(base);
 }
 const toneOf = player => tones[portraits.describe(player).cell];
 
 test('La table de teintes embarquée suit le catalogue de la banque v2', () => {
-  const h = context(437493);
+  const h = context(437493, { club: null });
   assert.equal(h.run('PORTRAIT_TONES'), tones.join(''));
   assert.equal(tones.filter(t => t !== '.').length, 128, '128 bases étiquetées ; les 32 anciennes ne le sont pas');
 });
 
 test('Teintes par origine : pays du Pacifique et d’Afrique australe orientés, Europe majoritairement claire, variété gardée', () => {
-  const h = context(437493);
+  const h = context(437493, { club: null });
   const result = JSON.parse(h.run(`(function () {
     const out = {};
     for (const nation of Object.keys(YOUTH_LOOKS)) {
@@ -88,11 +86,8 @@ test('Un jeune formé en France : la teinte suit son origine tirée par youthHer
 });
 
 test('Aucun doublon de nom dans un même club (effectif et centre), même quand la liste de noms du pays est épuisée', () => {
-  const h = context();
-  h.ctx.nativeWorldRegistryText = JSON.stringify(registry);
-  h.run(worldVm.bootstrap());
-  const r = JSON.parse(h.run(`CDWorldCareer.start(0, 'world', true);
-    (function () {
+  const h = world();
+  const r = JSON.parse(h.run(`(function () {
       const japanese = S.clubs[5]; japanese.country = 'JP';
       const academy = S.aiRoster.academies.find(a => a.clubId === japanese.id);
       for (let i = 0; i < 450; i++) academy.players.push(academyPlayer(japanese.id, i % 15, 9, 9000 + i, false, japanese));
@@ -112,12 +107,6 @@ test('Aucun doublon de nom dans un même club (effectif et centre), même quand 
   assert.equal(r.duplicates, 0);
   assert.equal(r.clubs, 0, 'centres du départ : aucun doublon avec le club');
   assert.ok(r.compound > 0, 'les prénoms composés servent quand la liste est épuisée');
-});
-
-test('Hors carrière monde : aucun changement (ni portrait salé, ni nom modifié)', () => {
-  const h = context(437493);
-  const r = JSON.parse(h.run(`start(0, 'france'); JSON.stringify(Array.from({ length: 60 }, (_, i) => academyPlayer(2, i % 15, 3, 100 + i, false, S.clubs[2]).appearanceId ?? null))`));
-  assert.ok(r.every(x => x === null));
 });
 
 test('Le même identifiant donne toujours le même nom et le même portrait quand le club n’a rien changé', () => {

@@ -17,6 +17,7 @@ function context(seed=827381,options={}){
  const vm=bridge.vm,ctx=vm.ctx;
  if(options.console!==false)ctx.console=console;
  const run=(source,timeout)=>vm.run(source,timeout);
+ const seededRandom=ctx.Math.random; // un cas qui remplace Math.random est réparé par restore()
  let requests=0,closed=false;
  function command(name,payload={}){
   const r=bridge.handle({id:++requests,command:name,payload});
@@ -45,11 +46,11 @@ function context(seed=827381,options={}){
   return h;
  }
  // Avance jusqu'à la prochaine semaine où le club joue (le calendrier Monde a des semaines sans match).
- function toMatch(max=12){for(let i=0;i<max&&!run('!!nextMatch()');i++)week(1);if(!run('!!nextMatch()'))throw Error('Aucun match du club à venir.');return h;}
+ function toMatch(max=46){for(let i=0;i<max&&!run('!!nextMatch()');i++)week(1);if(!run('!!nextMatch()'))throw Error('Aucun match du club à venir.');return h;}
  function season({validate=false}={}){let guard=0;while(run("S.phase!=='ended'")){if(++guard>80)throw Error('Saison Monde sans fin.');week(1,{validate});}return h;}
  // Point de reprise en mémoire (état et curseur RNG) : plusieurs cas d'une suite partagent une carrière.
  function checkpoint(){return {text:run('JSON.stringify(S)'),seed:vm.seed()};}
- function restore(cp){ctx.harnessCheckpoint=cp.text;run('S=JSON.parse(harnessCheckpoint);delete globalThis.harnessCheckpoint');vm.setSeed(cp.seed);return h;}
+ function restore(cp){ctx.Math.random=seededRandom;ctx.harnessCheckpoint=cp.text;run('S=JSON.parse(harnessCheckpoint);delete globalThis.harnessCheckpoint');vm.setSeed(cp.seed);return h;}
  function close(){if(closed)return;closed=true;live.delete(h);try{bridge.close();}finally{fs.rmSync(dataDir,{recursive:true,force:true});}}
  const h={ctx,run,command,start,week,toMatch,season,checkpoint,restore,close,dataDir,
   prepareNativeProjection(){run('nativeAttributeStore.complete(S)');},
