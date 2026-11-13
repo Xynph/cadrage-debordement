@@ -14,7 +14,8 @@ assert.match(yaml,/EVENT_NAME: \$\{\{ github\.event_name \}\}/);
 assert.match(yaml,/CLASSIFICATION: \$\{\{ needs\.classification\.result \}\}/);
 assert.match(yaml,/SHARDS: \$\{\{ needs\.shards\.result \}\}/);
 assert.match(yaml,/COVERAGE: \$\{\{ needs\.classification\.outputs\.coverage \}\}/);
-assert.match(yaml,/if: \$\{\{ always\(\) \}\}/);
+// Verdict toujours publié, sauf sur créneau régulier (Godot seul, ignoré par les gates).
+assert.match(yaml,/if: \$\{\{ always\(\) && github\.event_name != 'schedule' \}\}/);
 // Débit : brouillons en CI légère, batterie complète au passage en prête, annulation sur main.
 assert.match(yaml,/types: \[opened, synchronize, reopened, ready_for_review\]/);
 assert.match(yaml,/draft: \$\{\{ github\.event\.pull_request\.draft == true \}\}/);
@@ -39,8 +40,9 @@ assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUN
 assert.ok(godot.includes('        shard: ['+range(GODOT_SHARD_COUNT)+']\n'));
 assert.ok(godot.includes('node ci/shard-tests.cjs "$SHARD" godot '+GODOT_SHARD_COUNT+' '));
 assert.match(godot,/continue-on-error: true/);
-// Plus lancés sur les PR (13/11) : main et workflow_dispatch seulement.
-assert.match(godot,/github\.event_name != 'pull_request'/);
+// Plus lancés sur les PR ni à chaque fusion (13/11) : créneau régulier et workflow_dispatch.
+assert.match(godot,/github\.event_name == 'workflow_dispatch' \|\| github\.event_name == 'schedule'/);
+assert.match(shardJob,/github\.event_name != 'schedule'/);
 assert.match(godot,/GODOT_VERSION: 4\.7\.2-stable\n/);
 assert.match(godot,/GODOT_SHA256: [0-9a-f]{64}\n/);
 assert.match(godot,/sha256sum -c -/);
