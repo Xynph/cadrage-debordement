@@ -40,7 +40,7 @@ assert.match(attrs,/Conquête/);
 assert.match(attrs,/Mental et endurance/);
 assert.equal((attrs.match(/cd02-attribute-number/g)||[]).length,11);
 const contract=ui.renderPlayer(p,{tab:'contrat'});
-assert.match(contract,/Saison 4/);
+assert.match(contract,/Saison 2029-2030/);
 assert.match(contract,/Salaire hebdomadaire/);
 const history=ui.renderPlayer(p,{tab:'progression'});
 assert.match(history,/1 660|1.660|1660/);
@@ -51,7 +51,7 @@ const unknown=ui.renderPlayer({...p,condition:null,note:null,attributes:{evil:{l
 assert.ok(!unknown.includes('<img src=x'));
 assert.ok(unknown.includes('&lt;img'));
 assert.equal(ui.formatValue('salary',null),'—');
-assert.equal(ui.formatValue('contract',4),'Saison 4');
+assert.equal(ui.formatValue('contract',4),'Saison 2029-2030');
 assert.equal(ui.formatValue('injury',0),'Aucune');
 assert.equal(ui.formatValue('condition',89),'89 %');
 assert.equal(ui.formatValue('note',NaN),'—');

@@ -373,7 +373,7 @@ func _trend(parent: Node, p: Dictionary) -> void:
 	for i in 4:
 		var amount := lerpf(chart.maximum, chart.minimum, float(i) / 3.0)
 		D.text(parent, 62, 397 + i * 32, G.n(amount), 17, C.IVORY, 500, 35, HORIZONTAL_ALIGNMENT_RIGHT)
-	if not history.is_empty(): D.text(parent, 77, 507, "SAISON " + G.n(history[0].get("season","—")), 16, C.MUTED, 500, 190)
+	if not history.is_empty(): D.text(parent, 77, 507, "SAISON " + G.season_label(history[0].get("season","—")), 16, C.MUTED, 500, 190)
 	D.text(parent, 686, 507, "CETTE SAISON", 16, C.MUTED, 500, 180, HORIZONTAL_ALIGNMENT_RIGHT)
 	_number_card(parent, Rect2(704, 382, 114, 119), _change(p), "Cette saison", GREEN)
 
@@ -533,7 +533,7 @@ func _integration_dialog() -> void:
 	if not preview.terms.is_empty(): body.add_child(C.wrap(preview.terms, 22, C.IVORY, true))
 	var standard := C.button("Premier contrat pro", func():
 		var end_season := int(app.model.meta.get("season", 0)) + (2 if app.model.meta.get("phase") == "ended" else 1)
-		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.salary(p.salary), G.n(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
+		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.salary(p.salary), G.season_label(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
 	standard.name = "AcademyPromoteSelected"
 	standard.set_meta("promote_id", p.id)
 	standard.disabled = not development.get("promotionAvailable", false)
@@ -583,7 +583,7 @@ static func _show_progress(app: Control, p: Dictionary, minutes: Variant, captio
 	var detail: Dictionary = p.get("development", {})
 	body.add_child(C.wrap("%s minutes · %s apparition(s) · %s de progression cette saison" % [G.n(minutes), G.n(p.get("appearances", 0)), _change(p)], 24, C.IVORY, true))
 	for year: Dictionary in detail.get("history", []):
-		body.add_child(C.label("S%s · %s → %s · %s min" % [G.n(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0))], 21))
+		body.add_child(C.label("%s · %s → %s · %s min" % [G.season_label(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0))], 21))
 	if detail.get("history", []).is_empty(): body.add_child(C.wrap("Historique annuel disponible après l’intersaison.", 19, C.MUTED, true))
 	var options := {}
 	for option: Dictionary in detail.get("options", []): options[option.id] = option.label

@@ -127,7 +127,7 @@ const talks=players(s).filter(p=>p.age<=24).slice(0,10).map(p=>'<li>'+esc(p.name
 (st.profiles.find(x=>x.id===p.id)?.morale??65)+' · '+ANSWERS.map(a=>
 '<button type="button" onclick="v93Interview('+arg(p.id)+',\''+a+'\')"'+
 (locked||st.promises.some(x=>x.id===p.id&&x.deadline>=s.season)?' disabled':'')+'>'+a+'</button>').join(' ')+'</li>').join('');
-const heritage=tally(s).map(x=>'<li>S'+x.season+' · '+x.count+' diplômé(s), potentiel moyen '+x.averagePotential+'</li>').join('');
+const heritage=tally(s).map(x=>'<li>'+libelleSaison(x.season)+' · '+x.count+' diplômé(s), potentiel moyen '+x.averagePotential+'</li>').join('');
 return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V90–V94 · Vie du centre de formation</h2>'+
 '<h3>V90 · Révélations et stagnation</h3><div class="tablewrap"><table><thead><tr><th>Espoir</th><th>Détection</th><th>Progression</th><th>Minutes</th><th>V92 · Programme</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
 '<h3>V91 · Concurrence pour les talents</h3><ul>'+(rivals||'<li>Pas de convoitise détectée</li>')+'</ul>'+

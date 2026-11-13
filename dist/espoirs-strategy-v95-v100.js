@@ -352,7 +352,7 @@
    '<h3>V99 · Identité de jeu</h3><p>'+IDENTITIES.map(x=>'<button onclick="v99Identity(\''+x+'\')"'+
    (locked?' disabled':'')+'>'+x+(st.identity===x?' (actif)':'')+'</button>').join(' ')+'</p>'+
    '<h3>V100 · Réputation du centre</h3><p>'+st.reputation+'/100 · '+safe(rankings(s).tier)+
-   '</p><ul>'+st.history.slice(0,10).map(h=>'<li>S'+h.season+' · '+h.graduates+' promus · réputation '+
+   '</p><ul>'+st.history.slice(0,10).map(h=>'<li>'+libelleSaison(h.season)+' · '+h.graduates+' promus · réputation '+
    h.reputation+' · cohésion '+h.cohesion+'</li>').join('')+'</ul>'+
    networkPanel(s)+'<p class="help">Candidats et réputation entièrement fictifs. Les promesses ne déclenchent pas de transfert ni de promotion automatique. Développement physique soldé à la fin de saison.</p></section>';
  }

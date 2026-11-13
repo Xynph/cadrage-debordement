@@ -154,7 +154,7 @@ module.exports=function clubDirections(T,N){
  }
  const userLeague=()=>leagueOf(S.club);
  function say(text,clubIds,toManager=false){
-  const d=state();d.feed.unshift('S'+S.season+' · '+text);d.feed=d.feed.slice(0,FEED);
+  const d=state();d.feed.unshift(''+libelleSaison(S.season)+' · '+text);d.feed=d.feed.slice(0,FEED);
   // Seuls les faits du championnat du manager deviennent des nouvelles du jeu.
   if(toManager&&clubIds.some(id=>leagueOf(id)===userLeague())){
    const key=S.season+':'+week();d.marks.news??={};

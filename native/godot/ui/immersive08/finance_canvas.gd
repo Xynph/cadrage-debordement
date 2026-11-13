@@ -134,7 +134,7 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	U.icon(period, "calendar", Vector2(18,19), C.GOLD, 28)
 	var week := int(app.model.meta.get("week",0)) + 1
 	var stage := "BILAN" if app.model.meta.get("phase","") == "ended" else "SEM. %d" % week
-	D.text(period, 57, 37, "SAISON %s  ·  %s" % [G.n(app.model.meta.get("season",1)),stage], 31, C.IVORY, 700, 329)
+	D.text(period, 57, 37, "SAISON %s  ·  %s" % [G.season_label(app.model.meta.get("season",1)),stage], 31, C.IVORY, 700, 329)
 	D.text(period, 57, 63, P.league_name(app.model), 22, C.MUTED, 500, 322)
 	for i in TABS.size():
 		var key: String = TABS[i][0]

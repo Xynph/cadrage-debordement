@@ -88,7 +88,7 @@
   st.history=[{season:s.season,goal:st.goal,completed:target,planned:st.plans.length,
    achieved,mentorshipBonuses:bonuses,loans:copy(loans),promotions,reward},...st.history].slice(0,4);
   if(!Array.isArray(s.news))s.news=[];
-  s.news.unshift('Bilan formation S'+s.season+' : '+achieved+' objectif(s) individuels, '+
+  s.news.unshift('Bilan formation '+libelleSaison(s.season)+' : '+achieved+' objectif(s) individuels, '+
    bonuses+' mentorat(s), '+loans.length+' pret(s), objectif du centre '+(target?'atteint.':'non atteint.'));
   s.news=s.news.slice(0,100);
   return true;
@@ -116,7 +116,7 @@
    '<div class="row">'+GOALS.map(k=>'<button type="button" onclick="v85Goal(\''+k+'\')"'+(locked?' disabled':'')+'>'+
      (k==='promotions'?'Promouvoir deux Espoirs':k==='formation'?'Atteindre deux objectifs individuels':'Un prêt à 200 minutes')+
      (st.goal===k?' · actif':'')+'</button>').join('')+'</div>'+
-   '<h3>Bilans annuels</h3><ul>'+st.history.map(h=>'<li>S'+h.season+' · '+(h.completed?'objectif atteint':'objectif manqué')+
+   '<h3>Bilans annuels</h3><ul>'+st.history.map(h=>'<li>'+libelleSaison(h.season)+' · '+(h.completed?'objectif atteint':'objectif manqué')+
     ' · '+h.achieved+' plans réussis · '+h.mentorshipBonuses+' bonus mentorat</li>').join('')+'</ul></section>';
  }
  function install(g){

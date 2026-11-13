@@ -103,7 +103,7 @@ function careerRecordChampion(id){
 function careerSeasonEnd(){
  if(!careerIntegrated())return false;
  const pos=ranked().findIndex(c=>c.id===S.club)+1;
- careerRecord('manager','Saison '+S.season+' · '+pos+'e place · '+club().won+' victoire(s)',S.club,'season-end');
+ careerRecord('manager','Saison '+libelleSaison(S.season)+' · '+pos+'e place · '+club().won+' victoire(s)',S.club,'season-end');
  return true;
 }
 function careerSeasonStart(){
@@ -159,7 +159,7 @@ function careerBoardPanel(){
  return '<section class="card career-integration-card"><div class="cardtitle"><h2>Direction : engagements de saison</h2><span class="tag">'+S.trust+'/100 CONFIANCE</span></div>'+
  '<p class="help">Objectifs fictifs, vérifiés tous les cinq matchs de championnat. Correction de confiance plafonnée à ±2 lors du bilan, en complément de l’effet déjà lié au résultat de chaque match.</p>'+
  goals.map(([name,done,current])=>'<div class="row"><span>'+name+'</span><strong>'+current+' · '+(done.met?'Atteint':'En cours')+'</strong></div>').join('')+
- (last?'<p class="help">Dernier bilan S'+last.season+' J'+(last.round+1)+' : confiance '+last.previous+
+ (last?'<p class="help">Dernier bilan '+libelleSaison(last.season)+' J'+(last.round+1)+' : confiance '+last.previous+
  ' → '+last.after+'. Évaluation : résultats '+last.results+'/100, finances '+last.finances+'/100, jeunes '+last.youth+'/100.</p>':
  '<p class="help">Premier bilan après cinq rencontres de championnat.</p>')+
  '<button class="small" onclick="nav(\'finance\')">Décisions financières et sponsors</button></section>';
@@ -168,7 +168,7 @@ function careerAcademyPanel(){
  if(!careerIntegrated())return '';
  const c=S.careerManagement,academy=S.development.academy,remaining=Math.max(1,26-S.round);
  const ranked=CDAcademyPlanning.shortlist(academy.map(p=>({id:p.id,age:p.age,pos:p.pos,potential:p.dev.potential})));
- return '<section class="card career-integration-card"><div class="cardtitle"><h2>Budget du centre de formation</h2><span class="tag">'+money(c.academySpent)+' investis S'+S.season+'</span></div>'+
+ return '<section class="card career-integration-card"><div class="cardtitle"><h2>Budget du centre de formation</h2><span class="tag">'+money(c.academySpent)+' investis '+libelleSaison(S.season)+'</span></div>'+
  '<p class="help">Décision hebdomadaire avant entraînement. Les fonds sont débités de la trésorerie fictive à la prochaine séance ; ils donnent un petit supplément d’expérience aux espoirs, sans relever leur potentiel maximum. Aucun effet si la trésorerie est insuffisante.</p>'+
  CAREER_ACADEMY_LEVELS.map(amount=>{
  const estimate=CDAcademyPlanning.developmentPlan({budget:Math.max(0,club().cash),weeklyInvestment:amount,weeks:remaining,academySize:academy.length});
@@ -222,7 +222,7 @@ function careerHistoryView(){
  }).join('')||'<p>Les champions seront consignés à l’issue des finales futures.</p>')+
  '<h2 style="margin-top:22px">Journal persistant · '+c.history.length+' événement(s)</h2>'+
  (c.history.slice().reverse().slice(0,45).map(x=>
- '<div class="news"><small>Saison '+x.season+' · '+visualEscape(S.clubs[Number(x.clubId.slice(5))]?.abbr||x.clubId)+
+ '<div class="news"><small>Saison '+libelleSaison(x.season)+' · '+visualEscape(S.clubs[Number(x.clubId.slice(5))]?.abbr||x.clubId)+
  '</small><p>'+visualEscape(x.label)+'</p></div>').join('')||'<p>Les recrutements, partenariats, promotions et bilans saisonniers apparaîtront ici.</p>')+
  '</section>');
 }

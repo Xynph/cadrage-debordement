@@ -70,7 +70,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 				for league: Dictionary in app.model.get("leagues", []):
 					for club: Dictionary in league.get("rows", []):
 						if int(club.id) == int(exchange.club): club_name = str(club.name)
-				detail.add_child(G.wrap("Saison %d · semaine %d · %s\n%s · relation %+.0f" % [exchange.season, int(exchange.week) + 1, club_name, exchange.toneLabel, exchange.delta], 12, G.GOLD))
+				detail.add_child(G.wrap("Saison %s · semaine %d · %s\n%s · relation %+.0f" % [G.season_label(exchange.season), int(exchange.week) + 1, club_name, exchange.toneLabel, exchange.delta], 12, G.GOLD))
 				detail.add_child(G.wrap(str(exchange.question) if exchange.question != null else "Question d’origine non conservée.", 13, G.INK))
 				detail.add_child(G.wrap(str(exchange.answer) if exchange.answer != null else "Réponse d’origine non conservée · choix " + str(exchange.answerId), 12))
 				detail.add_child(G.separator())

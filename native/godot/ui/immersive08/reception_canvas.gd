@@ -2,6 +2,7 @@ extends RefCounted
 ## Le journal du moteur, accompagné de repères et d'actions réellement disponibles.
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const SeasonLabel = preload("res://ui/season_label.gd")
 const Portraits = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -100,7 +101,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"arrival":"Présentation à la presse", "knockout":"Conférence de phase finale",
 			"season_review":"Conférence de bilan", "weekly":"Conférence de la semaine"
 		}.get(invitation.kind, "Invitation de presse")
-		var detail := "%s · Saison %d · Semaine %d." % [Press._club(app, context.club), context.season, int(context.week) + 1]
+		var detail := "%s · Saison %s · Semaine %d." % [Press._club(app, context.club), SeasonLabel.label(context.season), int(context.week) + 1]
 		match invitation.status:
 			"pending": detail += "\n\nLes journalistes vous attendent. Publiez vos réponses pour poursuivre."
 			"published": detail += "\n\nVos réponses ont été publiées."

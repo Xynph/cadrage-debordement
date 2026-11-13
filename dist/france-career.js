@@ -54,7 +54,7 @@ const CDFranceCareer=(()=>{
   if(S.franceMode.week!==34||S.live)throw Error('Terminez la saison avant l’intersaison.');
   worldEndSeason();careerSeasonEnd();closeIndividualObjectivesSeason();rollDevelopmentYear();settleContracts();S.season++;CDFranceCompetition.beginSeason(S);S.history=[];S.lastReport=null;S.ending=null;S.trained=false;
   for(const c of S.clubs){c.points=c.played=c.won=c.drawn=c.lost=c.pf=c.pa=c.bonus=0;c.form=[];c.morale=75;for(const p of c.players){p.condition=100;p.injury=0;p.managerLoad={minutes:0,streak:0};if(p.physicalLoad)p.physicalLoad.fatigue=0;}}
-  ledgerEntry('Financement de début de saison',2500000);worldNewSeason();S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();managerMobilityOnSeasonStart();CDFranceCompetition.project(S);news(`Saison ${S.season} : les promotions et relégations ont été appliquées. Monde fermé sans Nationale.`);save();
+  ledgerEntry('Financement de début de saison',2500000);worldNewSeason();S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();managerMobilityOnSeasonStart();CDFranceCompetition.project(S);news(`Saison ${libelleSaison(S.season)} : les promotions et relégations ont été appliquées. Monde fermé sans Nationale.`);save();
  }
  return Object.freeze({start:startFrance,context,ensureAISheet,result,simulate,recordOwnOutcome,finishWeek,advance});
 })();

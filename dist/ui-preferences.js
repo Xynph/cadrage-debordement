@@ -85,7 +85,7 @@ function ui01Navigation(view,state,rank){
   '<div class="ui01-utilities"><label for="ui01-theme">Thème</label><select id="ui01-theme" aria-label="Apparence du jeu" onchange="ui01SetTheme(this.value)">'+preferences+'</select>'+
   '<button type="button" class="ui01-help" onclick="nav(\'help\')" title="Comment jouer" aria-label="Comment jouer">?</button></div></div>'+
   '<div class="ui01-appbar-bottom"><nav class="ui01-secondary-nav" aria-label="Sous-rubriques">'+subNav+'</nav>'+
-  '<div class="ui01-season"><strong>'+ui01Escape(club?.abbr||'CLUB')+'</strong><span>TOP 14 · Saison '+ui01Escape(state.season)+' · '+ui01Escape(rank)+'e</span>'+
+  '<div class="ui01-season"><strong>'+ui01Escape(club?.abbr||'CLUB')+'</strong><span>TOP 14 · Saison '+libelleSaison(state.season)+' · '+ui01Escape(rank)+'e</span>'+
   '</div></div>'+ui01SessionTools()+
   '</header>';
 }

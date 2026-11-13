@@ -110,7 +110,7 @@
     '</td><td>'+STRATEGIES.map(x=>'<button type="button" onclick="v102Path('+arg+',\''+x+'\')"'+
     (locked?' disabled':'')+'>'+esc(x)+'</button>').join(' ')+'</td></tr>';
   }).join('');
-  const hist=generations(s).map(h=>'<li>S'+h.season+' · '+h.count+
+  const hist=generations(s).map(h=>'<li>'+libelleSaison(h.season)+' · '+h.count+
    ' Espoirs · '+h.graduates+' promotions · note moyenne '+h.averageRating+
    ' · reputation '+h.reputation+'</li>').join('');
   return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V101–V104 · Pilotage des generations</h2>'+

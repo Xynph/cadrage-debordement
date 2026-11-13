@@ -222,7 +222,7 @@ function factory(){
    const loanCandidate=p.age<=23&&(p.id.startsWith('youth-')||p.joinedSeason!==undefined)&&p.contractEnd>=s.season&&!s.lineup.includes(p.id)&&!s.reserves.includes(p.id);
    result.status='review';result.label='Parcours récent à revoir';
    result.recommendation={key:loanCandidate?'loan':'minutes',label:loanCandidate?'Examiner un prêt pour jouer':'Réexaminer les occasions de jouer',
-    detail:Math.round(recent.minutesDelta)+' minutes réellement nouvelles entre S'+recent.from.season+' semaine '+recent.from.week+' et semaine '+recent.to.week+' ('+recent.weeks+' semaines observées). Vérifier les possibilités et l’éligibilité dans le parcours existant ; aucun temps de jeu n’est garanti.',destination:loanCandidate?'Centre':'Effectif',suggestedPlan:'integration'};
+    detail:Math.round(recent.minutesDelta)+' minutes réellement nouvelles entre '+libelleSaison(recent.from.season)+' semaine '+recent.from.week+' et semaine '+recent.to.week+' ('+recent.weeks+' semaines observées). Vérifier les possibilités et l’éligibilité dans le parcours existant ; aucun temps de jeu n’est garanti.',destination:loanCandidate?'Centre':'Effectif',suggestedPlan:'integration'};
   }else if(['loan','minutes'].includes(result.recommendation.key)){
    result.status='observing';result.label='Bilan récent intermédiaire';
    result.recommendation={key:'observe',label:'Poursuivre l’observation récente',detail:Math.round(recent.minutesDelta)+' nouvelles minutes sur '+recent.weeks+' semaines réellement observées. Le bilan historique est conservé séparément.',destination:'Effectif',suggestedPlan:null};

@@ -48,7 +48,7 @@ func run() -> void:
   for section in ["ScoutObserved", "ScoutEstimates", "ScoutLimits", "ScoutSource", "ScoutFit"]:
    check(card.find_child(section,true,false) != null,"Section de rapport : " + section)
   var source: Label = card.find_child("ScoutSource",true,false)
-  check(source.text.contains("Saison 1") and source.text.contains("suivi 0"),"Source du rapport datée sans inventer une semaine de calendrier")
+  check(source.text.contains("Saison 2026-2027") and source.text.contains("suivi 0"),"Source du rapport datée sans inventer une semaine de calendrier")
   var evidence: TabContainer = card.find_child("ScoutEvidenceTabs",true,false)
   check(evidence != null and evidence.get_tab_count() == 3,"Faits, avis et réserves consultables sans empilement")
   for dimensions in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
