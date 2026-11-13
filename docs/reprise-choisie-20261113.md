@@ -83,7 +83,7 @@ championnat ; positif = reprise tôt. Pour un international, `e` part de son ret
 | Levier existant | Reprise tôt (`e` > 0) | Reprise tard (`e` < 0) | Durée |
 | --- | --- | --- | --- |
 | Charge physique (`physicalLoad.fatigue`) | +5 par semaine, 15 au plus (moins reposés) | — | décroît avec l’entraînement |
-| Condition (`condition`) | plafond −2 par semaine (6 au plus) à partir de la semaine 30 | plafond −3 par semaine (12 au plus) | fin de saison / 4 premières semaines, décroissant |
+| Condition (`condition`) | plafond −2 par semaine (6 au plus) en fin de saison (semaine 30 et 24 semaines après la 1re journée) | plafond −3 par semaine (12 au plus) | fin de saison / 4 premières semaines, décroissant |
 | Blessures (`injury`) | — | +0,4 % par semaine de retard (1,6 % au plus) par match de 80 min | 4 premières semaines, décroissant |
 | Préparation collective (`collectivePreparation.power`) | +2 % par semaine (6 % au plus) | −4 % par semaine (12 % au plus) ; −10 % × part des 15 meilleurs absents | 4 premières semaines, décroissant |
 | Cohésion du vestiaire (`v39.cohesion`, club du manager) | 65 + moitié du pourcentage d’automatismes | idem | début de saison |

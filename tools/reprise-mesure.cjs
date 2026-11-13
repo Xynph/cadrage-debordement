@@ -5,6 +5,19 @@
 // (matchs du club délégués). Relevés hebdomadaires du club : condition moyenne des 23 meilleurs,
 // nouvelles blessures, résultats, moral ; et minutes des jeunes en préparation.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+// Tableau : node tools/reprise-mesure.cjs --tableau tot.json tard.json [...] (Markdown, début / fin de saison).
+if(process.argv[2]==='--tableau'){
+ const runs=process.argv.slice(3).map(f=>JSON.parse(fs.readFileSync(f,'utf8')));
+ const mean=a=>a.length?Math.round(a.reduce((n,x)=>n+x,0)/a.length*10)/10:'—';
+ const sum=a=>a.reduce((n,x)=>n+x,0);
+ const part=(rows)=>{const played=rows.filter(r=>r.played);return {condition:mean(rows.map(r=>r.condition)),injuries:sum(rows.map(r=>r.injuries)),injured:mean(rows.map(r=>r.injured)),record:played.map(r=>r.result).join(''),diff:sum(played.map(r=>r.diff)),morale:mean(rows.map(r=>r.morale))};};
+ const lines=['| Reprise | Prépa | Charge / retard / risque / automatismes / moral | Début (4 sem.) : condition, blessures, bilan, écart | Fin (sem. 30+) : condition, blessures, bilan, écart | Jeunes : minutes |','| --- | --- | --- | --- | --- | --- |'];
+ for(const r of runs){
+  const fx=r.plan.effects,start=part(r.rows.filter(x=>x.k>=0&&x.k<4)),end=part(r.rows.filter(x=>x.week>=30));
+  lines.push(`| ${r.plan.date} | ${r.plan.weeks} sem. | +${fx.fatigue} / −${fx.conditionGap} / +${fx.injuryRisk} % / ${fx.automatismes} % / ${fx.morale>0?'+':''}${fx.morale} | ${start.condition} ; ${start.injuries} ; ${start.record} ; ${start.diff>0?'+':''}${start.diff} | ${end.condition} ; ${end.injuries} ; ${end.record} ; ${end.diff>0?'+':''}${end.diff} | ${sum(r.youth.map(y=>y.minutes))} (${r.youth.length}) |`);
+ }
+ console.log(lines.join('\n'));process.exit(0);
+}
 const {createBridge}=require('../native/engine/worker.cjs');
 const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 const [choice='habitual',clubArg='0',seedArg='27',out]=process.argv.slice(2);

@@ -263,7 +263,8 @@ function factory(){
     const gap=st.plan.players[p.id]?.[1]??fx.conditionGap;
     if(gap>0)p.condition=Math.min(p.condition,100-Math.round(gap*(1-k/WINDOW)));
    }
-   if(s.round>=LATE_FROM&&fx.lateCondition>0)for(const p of c.players)p.condition=Math.min(p.condition,100-fx.lateCondition);
+   // Fin de saison : à partir de la semaine 30, et au moins 24 semaines après la 1re journée du club.
+   if(s.round>=Math.max(LATE_FROM,r[2]+24)&&fx.lateCondition>0)for(const p of c.players)p.condition=Math.min(p.condition,100-fx.lateCondition);
   }
  }
  function windowFactor(s,id){const r=planClub(s.reprise,id);if(!r||!r[4])return null;const k=s.round-r[2];return k>=0&&k<WINDOW?{r,k,f:1-k/WINDOW}:null;}
