@@ -62,7 +62,7 @@ func run() -> void:
 	root.add_child(app)
 	app.bridge.model_changed.connect(func(_model: Dictionary): model_revisions+=1)
 	await response()
-	await command("new_career",{"mode":"fiction","club":0})
+	await command("new_career",{"mode":"world-champ","club":29})
 	# Une carrière neuve ouvre d'abord son rendez-vous de direction : le moteur refuse l'activation tant qu'il n'est pas traité.
 	await ContextualFlow.settle_club_meetings(app,self,check)
 	await history()
@@ -106,7 +106,7 @@ func run() -> void:
 	var measured_index := 0
 	for index in picker.item_count:
 		if not picker.get_item_text(index).ends_with(" · 0 feuille(s)"): measured_index=index; break
-	# La fiche affichée à l'ouverture est celle du joueur sélectionné par la vue (« Alexandre Colin », sans feuille en CI),
+	# La fiche affichée à l'ouverture est celle du joueur sélectionné par la vue (sans feuille en CI),
 	# qui n'est pas forcément l'entrée 0 du sélecteur : on sélectionne toujours explicitement le joueur mesuré.
 	picker.select(measured_index)
 	picker.item_selected.emit(measured_index)

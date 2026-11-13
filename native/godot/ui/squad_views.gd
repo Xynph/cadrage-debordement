@@ -408,6 +408,10 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 		load_hint.name = "PlayerLoadUnavailableReason"
 		contracts.add_child(load_hint)
 	references_tab.add_child(G.section("Repères de départ","Situation du joueur au début de la carrière"))
+	if PlayerAttributes.is_generated(p):
+		var generated := G.wrap(PlayerAttributes.GENERATED_TITLE + ".",13,G.MUTED)
+		generated.name = "ProfileGeneratedPlayer"
+		references_tab.add_child(generated)
 	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile")!=null else {}
 	if not roster.is_empty():
 		var position:Dictionary=roster.get("position",{})

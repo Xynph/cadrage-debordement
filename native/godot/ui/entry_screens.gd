@@ -69,7 +69,7 @@ static func home(app: Control) -> Control:
 	page.add_child(veil)
 	page.move_child(veil, page.get_child_count() - 2)
 	var over: VBoxContainer = page.get_meta("content")
-	over.add_child(G.label("OVAL LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
+	over.add_child(G.label("RUGBY LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
 	over.add_child(G.spacer())
 	var row := G.h(28)
 	over.add_child(row)
@@ -82,7 +82,7 @@ static func home(app: Control) -> Control:
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.custom_minimum_size = Vector2(360, 180)
 	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	logo.tooltip_text = "Oval Legacy 27 — Rugby Manager"
+	logo.tooltip_text = "Rugby Legacy 27"
 	var composite := ShaderMaterial.new()
 	composite.shader = load("res://branding/black_key.gdshader")
 	logo.material = composite
