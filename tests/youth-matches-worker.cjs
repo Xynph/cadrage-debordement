@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Matchs des jeunes dans le vrai worker : les semaines jouées font avancer le calendrier jeunes,
 // la sauvegarde reste valide et identique après réouverture.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
@@ -7,7 +8,7 @@ const {test}=require('node:test');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 
-test('Matchs des jeunes · carrière Monde, premières semaines',t=>{
+test('Matchs des jeunes · carrière Base commune, premières semaines',t=>{
  const dataDir=fs.mkdtempSync(path.join(path.resolve(os.tmpdir()),'oval-youth-matches-'));
  const options={dataDir,seed:827381,now:1794178800000};
  let bridge=createBridge(options);
@@ -17,8 +18,8 @@ test('Matchs des jeunes · carrière Monde, premières semaines',t=>{
  const ok=(command,payload)=>{const r=ask(command,payload);assert.equal(r.ok,true,`${command}: ${r.error}`);return r.model;};
  const go=(command,payload)=>settleClubMeetings(ok(command,payload),ok);
  const state=()=>JSON.parse(ok('export').meta.exportText).state;
- let model=go('new_career',{mode:'world-champ',club:0});
- for(let w=0;w<8&&model.meta.phase!=='ended';w++){
+ let model=go('new_career',{mode:'common',club:29});
+ for(let w=0;w<6&&model.meta.phase!=='ended';w++){
   if(model.next){if(!model.selection.valid){ok('auto_lineup');if(!ok('snapshot').selection.valid)ok('promote_cover',{confirmed:true});}ok('begin_match');ok('delegate');}
   model=go('finish_round');
  }

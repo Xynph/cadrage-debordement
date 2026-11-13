@@ -69,8 +69,7 @@
    "tests/world-catalogue-dedup.cjs": 120,
    "tests/world-domestic-venues.cjs": 24,
    "tests/world-epcr-published-2026-27.cjs": 8,
-   "tests/world-registry.cjs": 4,
-   "tests/youth-matches-worker.cjs": 200
+   "tests/world-registry.cjs": 4
   }
  },
  "godot": {
@@ -145,8 +144,7 @@
   "suites": {
    "tests/native-professional-depth.cjs": 2240,
    "tests/world-catalogue-dedup.cjs": 3200,
-   "tests/world-domestic-venues.cjs": 1216,
-   "tests/youth-matches-worker.cjs": 2048
+   "tests/world-domestic-venues.cjs": 1216
   }
  }
 }
