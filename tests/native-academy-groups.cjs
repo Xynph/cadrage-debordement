@@ -71,14 +71,14 @@ for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
     const saved = archive();
     const document = JSON.parse(saved);
     const academy = document.state.development.academy;
-    assert.equal(document.state.academyGroupPolicy, 2);
-    const groups = [academy.filter(p => p.age <= 18), academy.filter(p => p.age >= 19 && p.age <= 21)];
+    assert.equal(document.state.academyGroupPolicy, 3);
+    const groups = [academy.filter(p => p.age <= 17), academy.filter(p => p.age >= 18 && p.age <= 21)];
     const centers = [{ clubId: club, players: academy }, ...document.state.aiRoster.academies];
     assert.deepEqual(centers.map(center => center.clubId).sort((a, b) => a - b), document.state.clubs.map(c => c.id));
     const ids = new Set([...document.state.clubs.flatMap(c => c.players), ...document.state.economy.freeAgents].map(p => p.id));
     for (const { clubId, players } of centers) {
       assert.equal(players.length, 60, `centre ${clubId}`);
-      for (const group of [players.filter(p => p.age <= 18), players.filter(p => p.age >= 19 && p.age <= 21)]) {
+      for (const group of [players.filter(p => p.age <= 17), players.filter(p => p.age >= 18 && p.age <= 21)]) {
         assert.equal(group.length, 30);
         for (const [position, slots] of Object.entries(depth)) {
           assert.equal(group.filter(p => p.pos === position).length, slots, `${clubId} ${position}`);
@@ -101,7 +101,7 @@ for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
 
     const idToPromote = groups[1][0].id;
     const promoted = ok('promote_academy', { playerId: idToPromote, confirmed: true });
-    assert.equal(promoted.decisions.development.academy.filter(p => p.age >= 19).length, 29, 'la prochaine arrivée est annuelle');
+    assert.equal(promoted.decisions.development.academy.filter(p => p.age >= 18).length, 29, 'la prochaine arrivée est annuelle');
     assert.ok(promoted.squad.some(p => p.id === idToPromote));
 
     document.state.academyGroupPolicy = 1;
@@ -136,7 +136,7 @@ for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
       ok('academy_groups_enable', { confirmed: true, context: preview.context });
       const converted = archive();
       const final = JSON.parse(converted).state;
-      assert.equal(final.academyGroupPolicy, 2);
+      assert.equal(final.academyGroupPolicy, 3);
       assert.equal(final.development.academy.length, 60);
       for (const prior of document.state.development.academy) {
         assert.deepEqual(final.development.academy.find(p => p.id === prior.id), prior);
