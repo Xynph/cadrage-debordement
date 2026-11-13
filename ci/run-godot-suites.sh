@@ -16,6 +16,8 @@ cd "$root"
 mapfile -t suites < "$list"
 [[ "${#suites[@]}" -gt 0 ]] || { echo "Aucune suite dans $list" >&2; exit 1; }
 export CD_GODOT_REQUIRED=1
+# Recettes Godot pas encore migrées vers le mode Monde : anciens modes ouverts au moteur (tests seulement).
+export CD_MODES_HERITES=1
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require=$root/ci/godot-env.cjs"
 node "$root/ci/godot-env.cjs" --check || exit 1
 work="$(mktemp -d)"
