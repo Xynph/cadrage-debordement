@@ -21,9 +21,11 @@ const CDFranceCompetition=(()=>{
   const history=s.history.filter(r=>r.leagueId===id&&r.phase==='league');
   const sums=(club,group,kind)=>history.filter(r=>r.pair.includes(club)&&(!group||r.pair.every(x=>group.includes(x)))).reduce((n,r)=>{const i=r.pair.indexOf(club),j=1-i;return n+(kind==='points'?points(r,i):kind==='diff'?r.score[i]-r.score[j]:kind==='triesDiff'?r.tries[i]-r.tries[j]:kind==='tries'?r.tries[i]:r.score[i]);},0);
   // Re-evaluate the remaining subgroup at each successive criterion (2034 footnote).
+  // Retrait de points JIFF de la saison : il s'applique au total avant les départages.
+  const jiffDeduction=c=>typeof CDJiff!=='undefined'?CDJiff.deduction(s,c.id):0;
   const keys=[(c,g)=>sums(c.id,g,'points'),c=>c.pf-c.pa,(c,g)=>sums(c.id,g,'diff'),(c,g)=>sums(c.id,g,'triesDiff'),c=>sums(c.id,null,'triesDiff'),c=>c.pf,c=>sums(c.id,null,'tries'),()=>0,c=>-(s.franceMode.previousRanks?.[c.id]??c.id+1)];
   function split(group,index){if(group.length<2||index>=keys.length)return group.slice().sort((a,b)=>a.id-b.id);const ids=group.map(c=>c.id),map=new Map();for(const c of group){const v=keys[index](c,ids);if(!map.has(v))map.set(v,[]);map.get(v).push(c);}return [...map.keys()].sort((a,b)=>b-a).flatMap(v=>split(map.get(v),index+1));}
-  const groups=new Map();for(const c of members(s,id).map(i=>s.clubs[i])){if(!groups.has(c.points))groups.set(c.points,[]);groups.get(c.points).push(c);}return [...groups.keys()].sort((a,b)=>b-a).flatMap(p=>split(groups.get(p),0));
+  const groups=new Map();for(const c of members(s,id).map(i=>s.clubs[i])){const total=c.points-jiffDeduction(c);if(!groups.has(total))groups.set(total,[]);groups.get(total).push(c);}return [...groups.keys()].sort((a,b)=>b-a).flatMap(p=>split(groups.get(p),0));
  }
  function fixture(s,id,phase,round,index,pair,week){return {fixtureId:`s${s.season}-${id}-${phase}-${round}-${index}`,season:s.season,week,leagueId:id,round,phase,neutral:phase==='final'||phase==='semi'&&id==='elite',pair:pair.slice()};}
  function currentFixtures(s){const f=s.franceMode,w=f.week;if(w>=34)return [];if(w===33)return f.accessMatch?[fixture(s,'access','access',0,0,f.accessMatch.pair,w)]:[];return IDS.flatMap(id=>{const l=f.leagues[id];if(w<30){if(id==='elite'&&REST.includes(w))return [];return (l.schedule[l.round]||[]).map((p,i)=>fixture(s,id,'league',l.round,i,p,w));}return (l.playoff?.pairs||[]).map((p,i)=>fixture(s,id,l.phase,l.round,i,p,w));});}

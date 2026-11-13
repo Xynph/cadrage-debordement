@@ -2,7 +2,7 @@
 
 Lot du 12 novembre 2026, depuis main `3cc02a337c4bf02153b6c2401ed847ffcdee060b`.
 Autorisation de Léo : réduire les réponses du moteur et réaliser les trois
-ajouts proposés dans l'audit. L'économie est réservée au chantier Claude #552.
+ajouts proposés dans l'audit. L'économie #552/#589, désormais intégrée, reste hors des modifications de ce lot.
 
 ## Ce que le manager peut faire
 
@@ -35,37 +35,45 @@ saison suivante les retire, sauf hypothèse qui les couvre encore. Prolonger
 un joueur en prêt entrant ne constitue pas un transfert de propriété et n'est
 pas proposé. Les prix et durées saisis restent des hypothèses à revalider.
 
-## Fluidité : protocole négocié et cache de lecture
+## Fluidité : transport de main et cache de lecture
 
-Le premier modèle reste complet. Godot demande ensuite un transport versionné
-avec sa révision : le worker ne renvoie que les branches modifiées et les
-chemins retirés. Un lecteur sans cette option reçoit toujours le protocole
-historique. Une base absente ou incorrecte redonne un modèle complet.
-Le réassemblage s'effectue sur le thread du pont ; l'interface reçoit toujours
-un dictionnaire complet détaché. Aucun champ supprimé ou reçu transitoire ne
-doit survivre par fusion implicite.
+Le transport différentiel est déjà livré dans main par #613 : `model-delta.cjs`
+et son récepteur dans `engine_bridge.gd` utilisent `base/patch`. La convergence
+avec main du 13 novembre conserve intégralement ce protocole, son instrumentation
+et les optimisations de projection de Claude. L'encodeur/récepteur non livré
+initialement proposé dans #588 est retiré ; il n'y a pas deux transports empilés.
+Les trois outils manager utilisent le pont public courant.
 
-Le transport travaille après la présentation des packs et la frontière des
-connaissances. Il ne consulte pas les notes cachées. Seules les consultations
-`snapshot` réutilisent les projections VM pures ; toutes les autres commandes,
-y compris refusées, invalident le cache. Les copies de lecture restent
-indépendantes. Sauvegarde, fichiers externes de sécurité et packs ne sont pas
-mis en cache comme des objets d'interface.
+L'ajout propre à ce lot est le cache des projections VM pour les seules lectures
+`snapshot`. Chaque lecteur reçoit une copie indépendante. Toutes les autres
+commandes, y compris refusées, invalident le cache ; les reçus transitoires ne
+survivent pas à leur commande. La présentation des packs et la frontière des
+connaissances restent appliquées avant de publier le modèle.
 
-### Mesure Cloud
+### Mesures historiques du prototype
 
-Carrière commune, club29, graine27, Node24.22.1 ; un essai local, sans garantie
-de durée sur Windows. Avec les nouvelles projections, le modèle complet fait
-5 515 185 octets. Une consultation inchangée négociée fait **115 octets**.
-Les trois lectures chaudes mesurées avec cache prennent **228 à 271 ms** de
-calcul moteur ; les trois lectures sans cache de cet essai, **512 à 549 ms**.
-Le premier chargement, l'interface et les commandes qui modifient l'état ne
-sont pas assimilés à ces lectures chaudes. Le temps total du banc inclut aussi
-la sérialisation complète utilisée pour la comparaison des tailles.
-
-[Mesures brutes](manager-planning-20261112/performance.json).
+Le [relevé initial](manager-planning-20261112/performance.json), effectué avec
+Node24.22.1 sur une carrière commune club29/graine27, comparait un modèle de
+5 515 185 octets à une réponse négociée inchangée de115 octets ; calcul moteur
+chaud228–271 ms contre512–549 ms sans cache. Ce relevé décrit le prototype
+précédent et **ne mesure pas le transport de main #613**, ni le cumul actuel.
+Il ne constitue pas une recette Windows. Aucun nouveau gain chiffré n'est
+revendiqué après convergence ; le comportement du cache est vérifié sur le
+worker courant (lectures pures, copies indépendantes et invalidation).
 
 ## Réception
+
+### Convergence avec main le 13 novembre
+
+Le cumul avec main `204eaabf`, dont #613, passe 10 tests moteur/cache et
+3 tests Godot (deux parcours de l'atelier et le vrai pont de main), sans saut.
+Le test du cache échoue sur main avant ajout, puis passe après raccordement.
+Le protocole, le panneau de chargement, l'instrumentation et la mémorisation
+par projection de #613 restent ceux de main. Les domaines JIFF et indemnités
+de formation sont conservés dans le manifeste. Aucun champ économique,
+profil de joueur, règle de match ou donnée figée n'est modifié par ce lot.
+
+### Historique des recettes initiales
 
 - Régressions moteur ciblées : **26 contrôles réussis**, aucun ignoré :
   décisions, délégation transactionnelle, connaissances des joueurs, copies
@@ -77,7 +85,7 @@ la sérialisation complète utilisée pour la comparaison des tailles.
 - Atelier complet, vrais menus → vrai pont → vrai worker : **34/0**, avec
   commandes d'intention, comparaison de l'état canonique et géométrie à
   1280×720 et1920×1080. Captures X11/llvmpipe ci-dessous.
-- Deux recettes de composants Godot : réassemblage et parcours du dialogue,
+- Recettes initiales de composants Godot : réassemblage du prototype retiré et parcours du dialogue,
   sans erreur de script ; la fixture du dialogue est une vraie carrière.
 - Stage des ressources et contrôles de données existants exécutés ; aucune
   donnée du jeu ou ressource de Gabi n'est versionnée dans ce lot.

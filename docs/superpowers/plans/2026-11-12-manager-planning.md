@@ -1,3 +1,8 @@
+> Historique du plan initial. Convergence du 13 novembre : conserver le
+> transport base/patch de main (#613), retirer le transport non livré proposé
+> ici, garder les trois outils manager et le cache de consultations. Les
+> chemins model-transport/model_transport ci-dessous ne sont plus à implémenter.
+
 # Fluidité et préparation du manager — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.

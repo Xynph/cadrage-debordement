@@ -156,7 +156,7 @@ async function godotTransportTest(mode = 'eof'){
  });`;
  fs.writeFileSync(fake,writer);
  fs.writeFileSync(path.join(temp,'project.godot'),'config_version=5\n[application]\nconfig/name="Transport test"\n[native_engine]\nworker_path='+JSON.stringify(fake.replaceAll('\\','/'))+'\n');
- for(const name of ['engine_bridge.gd','model_transport.gd'])fs.copyFileSync(path.resolve(__dirname,'../native/godot',name),path.join(temp,name));
+ fs.copyFileSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd'),path.join(temp,'engine_bridge.gd'));
  fs.writeFileSync(path.join(temp,'test.gd'),`extends SceneTree
 var bridge: Node
 var failure := ""
@@ -219,7 +219,7 @@ func _process(_delta):
 async function godotTest(){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-runtime-'));
  const settings='config_version=5\n[application]\nconfig/name="Bridge test"\n[native_engine]\nworker_path='+JSON.stringify(workerPath.replaceAll('\\','/'))+'\n';
- fs.writeFileSync(path.join(temp,'project.godot'),settings);for(const name of ['engine_bridge.gd','model_transport.gd'])fs.copyFileSync(path.resolve(__dirname,'../native/godot',name),path.join(temp,name));
+ fs.writeFileSync(path.join(temp,'project.godot'),settings);fs.copyFileSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd'),path.join(temp,'engine_bridge.gd'));
  fs.writeFileSync(path.join(temp,'test.gd'),`extends SceneTree
 var bridge: Node
 var frames := 0

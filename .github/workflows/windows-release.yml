@@ -1,7 +1,11 @@
 name: Windows — constructeur officiel et recette EXE
 on:
+  # PR : jamais à chaque push. Les jobs PR exigent une étiquette dédiée
+  # (windows-graphics-smoke, windows-receipt) ; ils partent quand on la pose ou quand
+  # la PR étiquetée passe de brouillon à prête. Relancer après un push : retirer puis
+  # reposer l'étiquette.
   pull_request:
-    types: [opened, synchronize, reopened, labeled, ready_for_review]
+    types: [labeled, ready_for_review]
   # Recette automatique non bloquante de l'EXE à chaque fusion sur main.
   push:
     branches: [main]
@@ -19,9 +23,12 @@ on:
 permissions:
   contents: read
 
+# PR : la nouvelle demande annule la précédente de la même PR. Une étiquette sans
+# rapport (ni windows-*) reçoit un groupe unique pour ne rien annuler. main : seul le
+# dernier commit est recetté. workflow_dispatch (Release brouillon) jamais annulé.
 concurrency:
-  group: windows-receipt-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  group: windows-receipt-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && !startsWith(github.event.label.name, 'windows-') && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   qualify-graphics:
@@ -29,7 +36,8 @@ jobs:
     if: >-
       github.event_name == 'pull_request' && github.event.repository.private == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke')
+      contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke') &&
+      (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-graphics-smoke')
     runs-on: windows-2022
     timeout-minutes: 15
     permissions:
@@ -65,7 +73,8 @@ jobs:
     if: >-
       github.event_name == 'pull_request' && github.event.repository.private == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'windows-receipt')
+      contains(github.event.pull_request.labels.*.name, 'windows-receipt') &&
+      (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-receipt')
     runs-on: windows-2022
     timeout-minutes: 120
     permissions:

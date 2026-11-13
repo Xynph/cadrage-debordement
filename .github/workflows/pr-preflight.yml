@@ -13,7 +13,7 @@ permissions:
 jobs:
   preflight:
     if: github.event_name == 'issue_comment' && github.event.issue.number == 73 && github.event.sender.id == 350229047 && startsWith(github.event.comment.body, '/cd-preflight ')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: read
@@ -33,7 +33,7 @@ jobs:
         run: node ci/pr-preflight.cjs
   tests:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     timeout-minutes: 5

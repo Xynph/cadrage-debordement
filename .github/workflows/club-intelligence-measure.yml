@@ -37,7 +37,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.m.outputs.matrix }}
@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v5
@@ -95,7 +95,7 @@ jobs:
   long-tests:
     name: Suites longues
     if: ${{ inputs.tests != 'aucune' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v5

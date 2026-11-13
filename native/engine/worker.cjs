@@ -5,7 +5,6 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),read
 const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),pressIdentities=require('./press-identities.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs'),systems=require('./native-systems.cjs');
 const playerAttributes=require('./player-attributes.cjs');
 const managerPlanning=require('./manager-planning.cjs');
-const {createTransport}=require('./model-transport.cjs');
 const playerKnowledge=require('./player-knowledge.cjs'),knowledgeProjection=playerKnowledge.factory();
 const positionAptitudes=require('./position-aptitudes.cjs');
 const careerVariation=require('./career-variation.cjs');
@@ -148,6 +147,9 @@ function createBridge(options={}){
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
+  // Découpage des longues courses du moteur (présentation du journal, docs/match-courses-20261112.md) :
+  // CD_MATCH_COURSES=0 (ou l'option matchCourses:false) rend l'ancien journal, un seul fait jusqu'à la ligne.
+  if(options.matchCourses===false||process.env.CD_MATCH_COURSES==='0')ctx.MATCH_COURSES_DECOUPEES=false;
   // Carrières aux salaires liés au niveau : plancher des discussions de contrat, avant tout habillage de la validation.
   run(require('./club-budget.cjs').VALIDATION);
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);
@@ -274,7 +276,13 @@ function createBridge(options={}){
    model.managerPlanning=managerPlanning.project(model);
    return model;
   };
-  const snapshotRaw=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+  // Une projection lit l'état sans le modifier : le dossier d'avant-match (feuille adverse
+  // complète) y est calculé une seule fois puis partagé. Hors projection, chaque appel
+  // recalcule comme avant. CD_ENGINE_MEMO=0 coupe ce partage (contrôle d'identité).
+  const projectionMemo=process.env.CD_ENGINE_MEMO!=='0';
+  if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
+  const snapshotRaw=operation=>{if(!projectionMemo)return snapshotProjection(operation);run('nativeProjectionMemo(true)');try{return snapshotProjection(operation);}finally{run('nativeProjectionMemo(false)');}};
+  const snapshotProjection=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
@@ -312,7 +320,16 @@ function createBridge(options={}){
    if(stashed){try{fs.unlinkSync(rollback);}catch{}}
    committedFiles=profileFilesVersion();resumeCheckpoint=null;
   };
-  function handleCore(request){
+  // Instrumentation des allers-retours (CD_ENGINE_TIMING=1) : durées par phase, sans effet sur la simulation.
+  const timing=options.timing===true||process.env.CD_ENGINE_TIMING==='1';let phases=null,phaseAt=0;
+  const mark=label=>{if(!phases)return;const now=performance.now();phases[label]=Math.round(((phases[label]||0)+now-phaseAt)*10)/10;phaseAt=now;};
+  function handleMeasured(request){
+   if(!timing)return handleCommand(request);
+   phases={};phaseAt=performance.now();const started=phaseAt;
+   const response=handleCommand(request);mark('reste');phases.total=Math.round((performance.now()-started)*10)/10;
+   if(response&&typeof response==='object')response.timing=phases;phases=null;return response;
+  }
+  function handleCommand(request){
    let id=null;
    try{
     if(!request||typeof request!=='object'||Array.isArray(request))throw Error('Message JSON invalide.');
@@ -337,7 +354,7 @@ function createBridge(options={}){
     updatePressPolicy();
     if(national.isNationalOnly()&&!NATIONAL_ONLY_COMMANDS.has(command))throw Error('Cette décision est réservée au manager d’un club.');
     if(ctx.nativeMandatoryPress&&advancesCareer)run('nativeSystems.domain("press").guardProgress()');
-    const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;
+    mark('garde');const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     try{
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
@@ -508,15 +525,16 @@ function createBridge(options={}){
      if(advancesCareer||command==='new_career'||command==='import')run('nativeSystems.domain("press").observeInvitation(nativePressPrevious,'+(command==='new_career')+');');
      run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     mark('commande');
      if(advancesWithinWeek)run('save()');
      else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
-     const model=snapshotRaw({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
      if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;
      else persist();
-     model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
-     return {id,ok:true,model:projectKnowledge(model)};
+     mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
+     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
@@ -528,7 +546,7 @@ function createBridge(options={}){
    const reading=request?.command==='snapshot';
    if(!reading)projectionCache.clear();
    allowProjectionCache=reading;
-   try{return handleCore(request);}finally{allowProjectionCache=false;if(!reading)projectionCache.clear();}
+   try{return handleMeasured(request);}finally{allowProjectionCache=false;if(!reading)projectionCache.clear();}
   }
   return {handle,close};
  }catch(e){close();throw e;}
@@ -538,12 +556,11 @@ if(require.main===module){
  let bridge;
  try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
- const transport=createTransport();
- const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
+ const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity}),delta=require('./model-delta.cjs').createEncoder();
  input.on('line',line=>{
-  let result;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
-  let transportRequest;try{transportRequest=JSON.parse(line).transport;}catch{}
-  process.stdout.write(JSON.stringify(transport.encode(result,transportRequest))+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
+  // L'interface Godot annonce la révision du modèle qu'elle détient : réponse différentielle.
+  let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  process.stdout.write((base===null?JSON.stringify(result):delta.encode(result,base))+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());
 }

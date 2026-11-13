@@ -16,6 +16,8 @@ const RESPONSE_BLOCK_BYTES := 64 * 1024
 const LINE_FEED := 10
 var model: Dictionary = {}
 var last_response_ok := false
+## Dernière mesure du pont (commande, moteur_ms, analyse_ms, file_ms, octets).
+var last_timing: Dictionary = {}
 var child_pid: int = -1
 var _stdio: FileAccess
 var _stderr: FileAccess
@@ -27,6 +29,9 @@ var _queue: Array[Dictionary] = []
 var _next_id: int = 0
 var _stopping: bool = false
 var _stop_deadline_ms: int = 0
+# Modèle de référence des réponses différentielles : propriété exclusive du fil d’E/S.
+var _base_model: Dictionary = {}
+var _base_revision: int = -1
 
 static func import_preflight(text: String, byte_count: int) -> String:
 	if byte_count <= IMPORT_LIMIT_BYTES: return ""
@@ -76,6 +81,8 @@ func start(data_dir: String) -> void:
 	_stopping = false
 	_stop_deadline_ms = 0
 	_wake = Semaphore.new()
+	_base_model = {}
+	_base_revision = -1
 	_thread = Thread.new()
 	var error := _thread.start(_io_loop)
 	if error != OK:
@@ -124,7 +131,6 @@ func stop() -> void:
 
 func _io_loop() -> void:
 	var pending := PackedByteArray()
-	var receiver = preload("res://model_transport.gd").new()
 	while true:
 		_wake.wait()
 		_mutex.lock()
@@ -133,8 +139,11 @@ func _io_loop() -> void:
 			return
 		var request: Dictionary = _queue.pop_front()
 		_mutex.unlock()
-		request["transport"] = {"version":1, "base":receiver.revision}
-		_stdio.store_buffer((JSON.stringify(request) + "\n").to_utf8_buffer())
+		var sent_us := Time.get_ticks_usec()
+		# Annonce la révision détenue : le moteur ne renvoie alors que les parties modifiées.
+		var envelope := request.duplicate()
+		envelope["base"] = _base_revision
+		_stdio.store_buffer((JSON.stringify(envelope) + "\n").to_utf8_buffer())
 		if _stdio.get_error() != OK:
 			call_deferred("_transport_error", "Écriture impossible vers le moteur local.")
 			return
@@ -153,8 +162,10 @@ func _io_loop() -> void:
 		pending.resize(end)
 		var line := pending.get_string_from_utf8()
 		pending = remainder
+		var received_us := Time.get_ticks_usec()
 		var parser := JSON.new()
-		if line.is_empty() or parser.parse(line) != OK:
+		var parse_error := parser.parse(line) if not line.is_empty() else ERR_PARSE_ERROR
+		if line.is_empty() or parse_error != OK:
 			call_deferred("_transport_error", "Réponse du moteur local illisible ou processus arrêté.")
 			return
 		var response: Variant = parser.data
@@ -169,15 +180,50 @@ func _io_loop() -> void:
 			# Terminate our child rather than leaving a live worker with no reader.
 			call_deferred("_transport_error", str(response.get("error", "Réponse sans identifiant : moteur fermé.")))
 			return
-		response = receiver.accept(response)
-		if response.is_empty():
-			call_deferred("_transport_error", "Révision du modèle incohérente : relancez le moteur local.")
-			return
+		if response.get("patch") is Dictionary:
+			var rebuilt := _apply_patch(response.patch)
+			if rebuilt.is_empty() and not response.patch.get("keys", []).is_empty():
+				call_deferred("_transport_error", "Réponse différentielle du moteur illisible.")
+				return
+			response.erase("patch")
+			# Copie profonde : l’interface reçoit un modèle neuf, comme une réponse complète.
+			response["model"] = rebuilt.duplicate(true)
+		# Mesure du pont : moteur + transfert, puis analyse JSON (fil d’E/S).
+		response["_pont"] = {"command": str(request.command), "moteur_ms": (received_us - sent_us) / 1000.0, "analyse_ms": (Time.get_ticks_usec() - received_us) / 1000.0, "octets": line.length(), "recu_us": Time.get_ticks_usec()}
 		call_deferred("_accept", response)
 		if request.command == "shutdown":
 			return
 
+## Reconstruit le modèle complet (mêmes clés, même ordre) à partir de la référence.
+func _apply_patch(patch: Dictionary) -> Dictionary:
+	var keys: Variant = patch.get("keys")
+	var changed: Variant = patch.get("set")
+	var nested: Variant = patch.get("sub")
+	if not (keys is Array and changed is Dictionary and nested is Dictionary): return {}
+	var full := bool(patch.get("full", true))
+	var next: Dictionary = {}
+	for key: Variant in keys:
+		if nested.has(key):
+			var part: Variant = nested[key]
+			if not (part is Dictionary and part.get("keys") is Array and part.get("set") is Dictionary): return {}
+			var previous: Variant = {} if full else _base_model.get(key)
+			var before: Dictionary = previous if previous is Dictionary else {}
+			var inner: Dictionary = {}
+			for name: Variant in part.keys:
+				if part.set.has(name): inner[name] = part.set[name]
+				elif before.has(name): inner[name] = before[name]
+				else: return {}
+			next[key] = inner
+		elif changed.has(key): next[key] = changed[key]
+		elif not full and _base_model.has(key): next[key] = _base_model[key]
+		else: return {}
+	_base_model = next
+	_base_revision = int(patch.get("rev", -1))
+	return next
+
 func _accept(response: Dictionary) -> void:
+	last_timing = response.get("_pont", {})
+	last_timing["file_ms"] = (Time.get_ticks_usec() - int(last_timing.get("recu_us", Time.get_ticks_usec()))) / 1000.0
 	last_response_ok = bool(response.get("ok", false))
 	if response.get("model") is Dictionary:
 		model = response.model

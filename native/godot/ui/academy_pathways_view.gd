@@ -108,13 +108,7 @@ static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void
 	list.add_child(G.wrap("Cette campagne augmente de 3 le potentiel, au maximum 99, des 15 nouveaux Espoirs de la prochaine saison. Une seule campagne par année.", 14))
 	_choice(list, "Plan des rencontres juniors · " + str(data.mode), [["equilibre","Équilibré"],["performance","Performance"],["developpement","Développement"],["repos","Repos"]], func(value): _send(app, data, "academy_mode", {"mode":value})).disabled = data.locked
 	if data.division == "elite":
-		list.add_child(G.section("Le XV junior", "La sélection est distincte de la feuille professionnelle."))
-		for slot in data.positions.size():
-			var choices: Array = [["", "Choisir un Espoir"]]
-			for player: Dictionary in data.players:
-				if player.pos == data.positions[slot]: choices.append([player.id, player.name])
-			_choice(list, "%d · %s" % [slot + 1, data.positions[slot]], choices, func(value):
-				if value != "": _send(app, data, "academy_lineup", {"slot":slot, "playerId":value})).disabled = data.locked
+		list.add_child(G.section("Le XV junior", "Composé automatiquement par l’entraîneur des Espoirs : les matchs des jeunes sont simulés."))
 	list.add_child(G.separator())
 	list.add_child(G.section("Investir dans le centre", "Ces dépenses sont prélevées sur la trésorerie du club."))
 	for kind in ["facilities", "coaches"]:
