@@ -1,6 +1,7 @@
 'use strict';
 // Mode unique « Monde » (décision de Léo, 13/11/2026) : création, import et reprise de profil
-// n'acceptent que le Monde complet, sauf drapeau explicite de test legacyModes.
+// n'acceptent que le Monde complet, sauf drapeau explicite de test legacyModes ; les anciennes
+// carrières sont supprimées au lancement.
 const assert=require('node:assert/strict'),test=require('node:test');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -12,7 +13,7 @@ function fixture(t,options={}){
  open();
  t.after(()=>{bridge?.close();bridge=null;fs.rmSync(directory,{recursive:true,force:true});});
  const send=(command,payload={})=>bridge.handle({id:++serial,command,payload});
- return {send,open,close(){bridge?.close();bridge=null;}};
+ return {send,open,directory,close(){bridge?.close();bridge=null;}};
 }
 const REFUSAL='Seul le mode Monde est disponible pour une nouvelle carrière.';
 
@@ -32,26 +33,38 @@ test('le drapeau de test est explicite et typé',()=>{
  finally{fs.rmSync(directory,{recursive:true,force:true});}
 });
 
-test('une ancienne carrière (France 30) : import refusé et profil repris avec un message clair, sans plantage',t=>{
+test('anciennes carrières (France 30) : supprimées sans rien demander au lancement, réglages conservés, import refusé',t=>{
  const f=fixture(t,{legacyModes:true});
- const created=f.send('new_career',{mode:'common',club:0});
- assert.equal(created.ok,true,created.error);
+ const profile=path.join(f.directory,'PrototypeGodot');
+ const read=()=>JSON.parse(fs.readFileSync(path.join(profile,'donnees.json'),'utf8'));
+ assert.equal(f.send('pack_select',{scope:'creation',mode:'world-champ',id:'base'}).ok,true,'réglage de pack du joueur');
+ assert.equal(f.send('new_career',{mode:'common',club:0}).ok,true);
+ const second=f.send('new_career',{mode:'common',club:29});
+ assert.equal(second.ok,true,second.error);
  const text=f.send('export').model.meta.exportText;
- // Reprise du même profil par le jeu (sans drapeau) : message clair, récupération proposée.
+ assert.ok(second.model.meta.profileSafety.entries.length>=1,'une copie de sécurité de l’ancien mode existe');
+ assert.ok(fs.existsSync(path.join(profile,'donnees-precedentes.json')));
+ // Le jeu (sans drapeau) reprend le profil : tout ce qui porte une ancienne carrière disparaît.
  f.open({legacyModes:false});
  const resumed=f.send('snapshot');
  assert.equal(resumed.ok,true,resumed.error);
- assert.equal(resumed.model.meta.recoveryRequired,true);
- assert.match(resumed.model.meta.profileError,/ancien mode de jeu.*seul le mode Monde est disponible/);
- assert.doesNotMatch(resumed.model.meta.profileError,/illisible/);
- const recovered=f.send('recover_profile',{confirmed:true});
- assert.equal(recovered.ok,true,recovered.error);
- assert.equal(recovered.model.meta.recoveryRequired,false);
- assert.ok(fs.existsSync(recovered.model.meta.recoveryBackup),'le fichier de l’ancienne carrière est conservé');
- // Import du même document : refus explicite, aucune carrière chargée.
+ assert.equal(resumed.model.meta.recoveryRequired,false,'aucun écran de récupération');
+ assert.equal(resumed.model.meta.profileError,'');
+ assert.equal(resumed.model.club??null,null);
+ assert.match(resumed.model.meta.legacyPurgeNotice,/anciens modes de jeu ont été retirées/);
+ assert.deepEqual(resumed.model.meta.profileSafety.entries,[]);
+ assert.equal(fs.existsSync(path.join(profile,'donnees-precedentes.json')),false);
+ const stored=read().store;
+ assert.equal(stored['bdt-v1'],undefined);
+ assert.equal(stored['identity-pack-champ-creation'],'base','les réglages du joueur restent');
+ assert.deepEqual(fs.readdirSync(profile).filter(name=>/endommagees|tmp-/.test(name)),[],'aucun fichier conservé ni temporaire');
+ // Lancement suivant : plus d'information, rien à retirer.
+ f.open({legacyModes:false});
+ assert.equal(f.send('snapshot').model.meta.legacyPurgeNotice,'');
+ // Import d'un ancien fichier : refus explicite, aucune carrière chargée.
  const imported=f.send('import',{text});
  assert.equal(imported.ok,false);
- assert.match(imported.error,/ancien mode de jeu/);
+ assert.match(imported.error,/ancien mode de jeu.*seul le mode Monde/);
  assert.equal(imported.model.club??null,null);
 });
 
