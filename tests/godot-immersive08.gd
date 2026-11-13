@@ -1153,7 +1153,7 @@ func run() -> void:
 		quit(0 if failures.is_empty() else 1)
 		return
 	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()
-	await command("new_career", {"club":0, "mode":"fiction"})
+	await command("new_career", {"club":0, "mode":"world-champ"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Bureau")
 	await settle()

@@ -108,8 +108,10 @@ for (const name of ['godot-match-rendu', 'godot-match-animations', 'native-relat
 // Mode Monde uniquement : les suites Godot à ancien mode de carrière (CD_MODES_HERITES) sont exclues des jobs Godot.
 const godotExcluded = godotTestFiles(testFilesOnDisk()).filter(f => !godot.includes(f));
 assert.ok(godotExcluded.length > 0 && godotExcluded.every(f => legacyTestFiles().includes(f)));
-for (const name of ['godot-engine', 'deepen-match', 'godot-immersive08'])
+for (const name of ['godot-engine', 'deepen-match'])
   assert.ok(godotExcluded.includes('tests/' + name + '.cjs'), name + ' est exclue (ancien mode)');
+for (const name of ['godot-immersive08', 'deepen-analytics-real-ui'])
+  assert.ok(godot.includes('tests/' + name + '.cjs'), name + ' tourne en mode Monde');
 for (const name of ['godot-assets', 'godot-common-rosters', 'saves'])
   assert.ok(!godot.includes('tests/' + name + '.cjs'), name + ' est du JavaScript pur');
 const godotPlan = Array.from({ length: GODOT_SHARD_COUNT }, (_, i) => suitesForShard(i + 1, 'godot'));
