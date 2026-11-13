@@ -162,3 +162,30 @@ test('Sur vingt saisons, les centres gardent des Crabos à chaque poste sans dé
     }
   }
 });
+
+test('Rapport mensuel du responsable : progrès, jeunes au niveau pro, blessures longues', () => {
+  const { S, groups, notes, context } = world();
+  groups.start(S);
+  S.clubs[0].players = [{ id: 'pro-1', fam: 4, rating: 60 }, { id: 'pro-2', fam: 4, rating: 75 }];
+  const domain = vm.runInContext(`(${intakeDomain.factory.toString()})()`, context);
+  S.round = 3;
+  assert.equal(domain.report(S), false);
+  S.round = 4;
+  assert.equal(domain.report(S), true);
+  assert.equal(S.academyReport.week, 4);
+  const espoir = S.development.academy.find(p => p.age >= 18 && p.fam === 4);
+  const crabe = S.development.academy.find(p => p.age <= 17 && p.fam !== 4);
+  espoir.rating = 59; espoir.injury = 0;
+  crabe.rating += 3; crabe.injury = 6;
+  S.round = 8;
+  assert.equal(domain.report(S), true);
+  const text = notes.at(-1);
+  assert.match(text, /^Rapport du responsable de la formation/);
+  assert.ok(text.includes(`${crabe.name} (+3)`), text);
+  assert.ok(text.includes(espoir.name), text);
+  assert.match(text, /blessés longue durée/);
+  assert.equal(domain.report(S), false, 'un seul rapport par semaine');
+  domain.validate(S);
+  S.academyReport.week = 0;
+  assert.throws(() => domain.validate(S), /rapport/);
+});
