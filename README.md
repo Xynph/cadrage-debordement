@@ -1,4 +1,4 @@
-# Oval Legacy 27 — Rugby Manager
+# Rugby Legacy 27
 
 **Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.7 et version web historique.**
 

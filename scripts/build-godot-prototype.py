@@ -226,7 +226,7 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        f"OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA {BUILD_VERSION}\n\n"
+        f"RUGBY LEGACY 27 — PRÉALPHA {BUILD_VERSION}\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
         "Monde + Champ : 116 clubs, dont 114 jouables. Chaque club démarre avec au moins 40 pros, 30 U18 et 30 U21.\n"
@@ -353,7 +353,7 @@ def build(args):
     with zipfile.ZipFile(modding / "Exemple-identites-champ.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
         example_zip.writestr("pack.json", json.dumps(example_champ, ensure_ascii=False, indent=2))
     (modding / "LIRE-MOI.txt").write_text(
-        "PACKS OVAL LEGACY 27\n\nÀ la création, « Importer une autre réalité » ouvre le sélecteur de fichiers ZIP.\n"
+        "PACKS RUGBY LEGACY 27\n\nÀ la création, « Importer une autre réalité » ouvre le sélecteur de fichiers ZIP.\n"
         "En carrière : Menu → Paramètres → Importez un pack personnalisé.\n"
         "Après analyse, installer puis sélectionner le pack. La base anonymisée reste disponible.\n\n"
         "Exemple-identites-champ.zip cible la création d’une carrière dans le Monde complet.\n"
@@ -393,7 +393,7 @@ def build(args):
 def write_build_manifest(app, provenance, database, player_count, compatible_editions):
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file() and p != app / "manifest-build.json"}
-    manifest = {**provenance, "prototype": True, "version": BUILD_VERSION, "name": "Oval Legacy 27", "edition": 27, "mode": "world-champ", "database": database, "clubs": 116, "players": player_count, "compatibleEditions": compatible_editions, "files": files}
+    manifest = {**provenance, "prototype": True, "version": BUILD_VERSION, "name": "Rugby Legacy 27", "edition": 27, "mode": "world-champ", "database": database, "clubs": 116, "players": player_count, "compatibleEditions": compatible_editions, "files": files}
     (app / "manifest-build.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 

@@ -328,7 +328,7 @@ func _run() -> void:
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Moteur natif connecté")
 	app.timer.stop()
-	await capture("accueil-oval-legacy")
+	await capture("accueil-rugby-legacy")
 	app._navigate("Création")
 	await process_frame
 	var import_button := button(app, "PACKS ET IDENTITÉS")

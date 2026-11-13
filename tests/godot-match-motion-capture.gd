@@ -47,7 +47,7 @@ func run() -> void:
 		push_error("Dossier de preuve inaccessible : " + proof)
 		quit(1)
 		return
-	root.title = "Oval Legacy 27 — fixture Match3D native0.6"
+	root.title = "Rugby Legacy 27 — fixture Match3D native0.6"
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	var script := OS.get_environment("CD_MATCH_VIEW_SCRIPT")
