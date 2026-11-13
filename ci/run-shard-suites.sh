@@ -81,6 +81,8 @@ budget() {
     # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
+    # JIFF en carrière Monde : une carrière world-champ jusqu'aux premières journées de Top 14, ~320 s en local sous charge.
+    tests/jiff.cjs) echo 600s ;;
     *) echo 180s ;;
   esac
 }

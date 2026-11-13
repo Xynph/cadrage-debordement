@@ -12,6 +12,7 @@
    43180190444
   ],
   "weights": {
+   "tests/jiff.cjs": 240,
    "tests/ai-roster-cycle.cjs": 65,
    "tests/animation-pipeline-runner.cjs": 4,
    "tests/animation-pipeline.cjs": 2,
@@ -146,7 +147,8 @@
    "tests/native-professional-depth.cjs": 2240,
    "tests/world-catalogue-dedup.cjs": 3200,
    "tests/world-domestic-venues.cjs": 1216,
-   "tests/youth-matches-worker.cjs": 2048
+   "tests/youth-matches-worker.cjs": 2048,
+   "tests/jiff.cjs": 2048
   }
  }
 }
