@@ -1,7 +1,7 @@
 name: Debug Godot
 on:
   push:
-    branches: [claude/godot-ci-vert-20261112]
+    branches: [claude/godot-ci-vert-20261112, claude/godot-debug-feedback-20261113]
     paths: ['ci/debug-suites.txt', '.github/workflows/godot-debug.yml']
 permissions:
   contents: read

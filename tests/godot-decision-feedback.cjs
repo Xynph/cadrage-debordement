@@ -69,7 +69,7 @@ try{
  }
  const importLog=(imported.stdout||'')+(imported.stderr||'');fs.writeFileSync(path.join(root,'import.log'),importLog);if(imported.error)throw imported.error;assert.equal(imported.status,0,importLog);assert.doesNotMatch(require('./helpers/godot-import-log.cjs').importLogErrors(importLog),/SCRIPT ERROR|Parse Error|ERROR:/);
  const run=spawnSync(godot,[...(process.env.CD_FEEDBACK_GRAPHICS==='1'?[]:['--headless']),'--max-fps','120','--path',project,'--script',path.resolve(__dirname,'godot-decision-feedback.gd')],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_FEEDBACK_CASES:fixture,CD_FEEDBACK_ARTIFACTS:root,CD_GODOT_SELF_TEST:'0',CD_GODOT_GUIDE_MODULE_TEST:'1',CD_NODE_EXECUTABLE:process.execPath,CD_FEEDBACK_WORKER:path.resolve(__dirname,'../native/engine/worker.cjs'),CD_GODOT_DATA_DIR:path.join(root,'main-profile')}});
- const log=(run.stdout||'')+(run.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);console.log(log);console.log('Preuves décisions : '+root);if(run.error)throw run.error;
+ const log=(run.stdout||'')+(run.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);console.log('STATUT',run.status,run.signal,run.error&&run.error.code);try{console.log(require('node:child_process').execSync('free -m; dmesg 2>/dev/null | tail -5 || true',{encoding:'utf8'}))}catch{}console.log(log);console.log('Preuves décisions : '+root);if(run.error)throw run.error;
  assert.equal(run.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
  assert.equal(bridge.handle({id:++id,command:'export'}).model.meta.exportText,exportBefore,'Consultation sans modification S/RNG');assert.deepEqual(fs.readFileSync(disk),bytes,'Consultation sans écriture de carrière');
 }finally{bridge.close();}
