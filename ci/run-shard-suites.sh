@@ -54,7 +54,9 @@ budget() {
   # 42891746395, sans retirer de contrôle.
   case "$1" in
     tests/world-worker-season.cjs) echo 1200s ;;
-    tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
+    tests/native-manager-career-worker.cjs) echo 900s ;;
+    # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
+    tests/native-manager-career-reverse.cjs) echo 1800s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
     tests/native-nationale-reduced-bench.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
@@ -83,8 +85,6 @@ budget() {
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
     # PASS CI 42909005768 : 179,80/159,68 s, marge finie avant le cap 180.
     tests/world-worker.cjs) echo 300s ;;
-    # Lot 03 (Monde) : lifecycle-native, 8 tests dont 2 carrières Monde de ~1 Go de tas chacune : 214 s en local sous charge.
-    tests/lifecycle-native.cjs) echo 420s ;;
     # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/integration-cloud-complete.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
