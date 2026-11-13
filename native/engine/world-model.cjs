@@ -128,6 +128,8 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const confirmedResult=S.worldMode.resultConfirmed?S.live:null;
   const cadence=W.dailyStatus(S);
   if(cadence)m.meta.calendarCadence=cadence;
+  // Avant-saison (avant-saison.cjs) : la carrière commence le 13 juillet 2026, avant la semaine 0.
+  if(typeof CDPreseason!=='undefined'&&CDPreseason.pending(S)){CDPreseason.decorate(S,m);m.meta.roundLabel='Avant-saison';}
   if(confirmedResult)m.live=null;
   m.club=clubSummary(S.club);m.league=tables[W.leagueId(S)].map(tableRow);
   if(edition.version>=2)m.meta.edition=edition.mode;

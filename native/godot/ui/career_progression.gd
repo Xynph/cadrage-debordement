@@ -17,4 +17,7 @@ static func daily(meta: Dictionary, fixture: Variant, route: String) -> Dictiona
 	var today := str(meta.get("calendarToday", ""))
 	if today.is_empty() or not bool(cadence.get("canAdvance", false)):
 		return {"disabled": true, "label": str(cadence.get("reason", "L’avance est indisponible.")), "short": "Continuer"}
+	# Avant-saison (13 juillet → 17 août 2026) : rien ne se joue, on avance par semaine.
+	if bool(cadence.get("preseason", false)):
+		return {"command": "preseason_advance", "payload": {"fromDate": today, "until": "semaine"}, "label": "SEMAINE SUIVANTE  →", "short": "Semaine suivante"}
 	return {"command": "advance_day", "payload": {"fromDate": today}, "label": "JOUR SUIVANT  →", "short": "Jour suivant"}
