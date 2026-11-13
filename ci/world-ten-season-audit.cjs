@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual, deliberately outside tests/: genuine worker commands, no result injection.
 const assert = require('node:assert/strict');
@@ -36,7 +35,7 @@ function run(options) {
   const profile=path.join(root,'PrototypeGodot'),file=path.join(profile,'donnees.json');
   const currentHarnessSha=crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex');
   const report={schema:'world-ten-season-audit-v1',seed:options.seed,club:options.club,requestedSeasons:options.seasons,
-    mode:'world',node:process.version,harnessSha256:currentHarnessSha,source:execFileSync('git',['rev-parse','HEAD'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
+    mode:'world-champ',node:process.version,harnessSha256:currentHarnessSha,source:execFileSync('git',['rev-parse','HEAD'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     budgetMs:options.budgetMs,startedAt:new Date(started).toISOString(),status:'running',commands:0,annual:[],restarts:[],promotions:[],
     policy:'No training, recruitment, investment or contract changes; actual mandatory club meetings and auto_lineup/promote_cover needed to play; deterministic now; fictional money.'};
   let previousElapsed=0;
@@ -45,7 +44,7 @@ function run(options) {
     const prior=JSON.parse(fs.readFileSync(options.priorReport,'utf8'));
     assert.equal(prior.seed,options.seed,'resume seed differs from original experiment');
     assert.equal(prior.club,options.club,'resume club differs');
-    assert.equal(prior.mode,'world');
+    assert.equal(prior.mode,'world-champ');
     assert.equal(prior.requestedSeasons,options.seasons,'requested season count changed during audit');
     assert.equal(prior.source,report.source,'source revision changed during audit');
     const rawProfile=fs.readFileSync(options.resumeProfile);
@@ -145,7 +144,7 @@ function run(options) {
       assert.deepEqual(JSON.parse(fs.readFileSync(file)),source,'resume exact private RNG/clock/profile');
       report.resumptions=(report.resumptions||[]).concat({season:sourceState.season,week:sourceState.round,stateIdentical:true,privateProfileIdentical:true,exportSha256:resumed.sha256});
     } else {
-      settleClubMeetings(go('new_career',{mode:'world',club:options.club}),go);
+      settleClubMeetings(go('new_career',{mode:'world-champ',club:options.club}),go);
       report.initial=summary(exported(),'initial');
     }
     // Exact resume assertions above precede the real mandatory decisions.

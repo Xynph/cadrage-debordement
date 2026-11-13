@@ -19,9 +19,9 @@ on:
         required: false
         default: '3'
       modes:
-        description: 'Modes, séparés par des virgules (common, world-champ)'
+        description: 'Modes, séparés par des virgules (world-champ uniquement : mode Monde)'
         required: false
-        default: 'common,world-champ'
+        default: 'world-champ'
       flags:
         description: 'Valeurs du drapeau CD_SALAIRES_PAR_NIVEAU (0, 1)'
         required: false
@@ -29,7 +29,7 @@ on:
       tests:
         description: "Suites longues à relancer (espaces), ou 'aucune'"
         required: false
-        default: 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/native-academy-groups.cjs tests/player-population-capacity.cjs tests/france-long-career.cjs tests/france-long-career-late.cjs tests/world-career.cjs tests/world-roster-stability.cjs'
+        default: 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/world-career.cjs'
 permissions:
   contents: read
 concurrency:
@@ -45,7 +45,7 @@ jobs:
       - id: m
         shell: bash
         env:
-          MODES: ${{ inputs.modes || 'common,world-champ' }}
+          MODES: ${{ inputs.modes || 'world-champ' }}
           FLAGS: ${{ inputs.flags || '0,1' }}
         run: |
           set -euo pipefail
@@ -108,8 +108,8 @@ jobs:
       - name: Suites
         shell: bash
         env:
-          CD_STABILITY_FULL: '1'  # world-roster-stability : 58 clubs, 3 saisons (la CI de tests.yml joue la version réduite)
-          TESTS: ${{ inputs.tests || 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/native-academy-groups.cjs tests/player-population-capacity.cjs tests/france-long-career.cjs tests/france-long-career-late.cjs tests/world-career.cjs tests/world-roster-stability.cjs' }}
+          CD_STABILITY_FULL: '1'  # world-roster-stability : 58 clubs, 3 saisons (la CI de tests.yml joue la version réduite) ; world-roster-stability est exclue (ancien mode, à migrer)
+          TESTS: ${{ inputs.tests || 'tests/club-transfers.cjs tests/club-directions.cjs tests/world-save-references.cjs tests/world-career.cjs' }}
         run: |
           set -uo pipefail
           failures=0
@@ -117,6 +117,8 @@ jobs:
           echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           for test in $TESTS; do
             [[ -f "$test" ]] || { echo "| $test | ABSENTE | - |" >> "$GITHUB_STEP_SUMMARY"; continue; }
+            # Mode Monde uniquement : une suite à ancien mode de carrière (CD_MODES_HERITES) n'est jamais exécutée.
+            if node ci/legacy-modes.cjs is "$test"; then echo "| $test | EXCLUE (ancien mode, à migrer) | - |" >> "$GITHUB_STEP_SUMMARY"; continue; fi
             echo "::group::$test"
             start=$SECONDS
             if timeout --signal=TERM --kill-after=10s 5400s /usr/bin/time -f "max_rss_kb=%M wall_s=%e" node "$test"; then

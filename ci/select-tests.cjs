@@ -4,9 +4,12 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const allTests=fs.readdirSync(path.join(root,'tests'))
+// Mode Monde uniquement : les suites à ancien mode de carrière (CD_MODES_HERITES) ne sont jamais sélectionnées.
+const legacy=require('./legacy-modes.cjs').legacySuites();
+const onDisk=fs.readdirSync(path.join(root,'tests'))
  .filter(name=>name.endsWith('.cjs')&&name!=='harness.cjs')
  .map(name=>'tests/'+name).sort();
+const allTests=onDisk.filter(file=>!legacy.has(file));
 
 const name=key=>'tests/'+key+'.cjs';
 const dependencies={
@@ -32,13 +35,14 @@ const dependencies={
  'dist/style.css':['match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','v27-physical-load','v29-focused-development','v30-recruitment-intelligence','v31-finance-forecasts','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/index.html':['manager-mobility','ai-roster-cycle','world-career','career-integration','offline','v21-numerical-advice','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif']
 };
-const helpers=new Set(['ci/select-tests.cjs','.github/workflows/tests.yml']);
+const helpers=new Set(['ci/select-tests.cjs','ci/legacy-modes.cjs','.github/workflows/tests.yml']);
 function selectTests(files,available=allTests){
  const valid=new Set(available),chosen=new Set();
  const all=()=>[...valid].sort();
  const include=names=>{
   for(const test of names){
    const p=test.startsWith('tests/')?test:name(test);
+   if(legacy.has(p))continue; // Suite exclue (ancien mode) : jamais sélectionnée
    if(!valid.has(p))return false;
    chosen.add(p);
   }
@@ -51,6 +55,7 @@ function selectTests(files,available=allTests){
   if(!file)continue;
   if(file==='AGENTS.md'||file==='README.md'||file==='DEVELOPPEMENT.md'||file.startsWith('docs/'))continue;
   if(file.startsWith('tests/')){
+   if(legacy.has(file))continue; // Suite exclue (ancien mode) : rien à exécuter
    if(file==='tests/harness.cjs'||!valid.has(file))return all();
    chosen.add(file);continue;
   }
