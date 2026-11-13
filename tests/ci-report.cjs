@@ -39,7 +39,8 @@ assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUN
 assert.ok(godot.includes('        shard: ['+range(GODOT_SHARD_COUNT)+']\n'));
 assert.ok(godot.includes('node ci/shard-tests.cjs "$SHARD" godot '+GODOT_SHARD_COUNT+' '));
 assert.match(godot,/continue-on-error: true/);
-assert.match(godot,/needs\.classification\.outputs\.draft != 'true'/);
+// Plus lancés sur les PR (13/11) : main et workflow_dispatch seulement.
+assert.match(godot,/github\.event_name != 'pull_request'/);
 assert.match(godot,/GODOT_VERSION: 4\.7\.2-stable\n/);
 assert.match(godot,/GODOT_SHA256: [0-9a-f]{64}\n/);
 assert.match(godot,/sha256sum -c -/);

@@ -92,7 +92,11 @@ jobs:
     # Suites qui pilotent le SDK (source lisant CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
     # NON BLOQUANT pour commencer : hors des dépendances de « Validation CI » et
     # continue-on-error, tant que ces suites ne sont pas fiables et rapides en CI.
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.draft != 'true' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
+    # Plus lancé sur les PR (13/11) : 25 % des minutes de runner, rouge 41 % du temps,
+    # non bloquant, et ses échecs rendaient les PR « unstable » (gate officiel refusé).
+    # Tourne après fusion sur main et à la demande (workflow_dispatch) ; recette Godot
+    # d'une PR : étiquette `godot-sdk` (godot-sdk.yml).
+    if: ${{ github.event_name != 'pull_request' && needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
     continue-on-error: true
     strategy:
       fail-fast: false
