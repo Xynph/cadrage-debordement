@@ -88,6 +88,11 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
   Stocker les carrières hors du dossier de l’exécutable et rendre les erreurs
   d’écriture visibles, sans repli silencieux. Réserver la mention « testé sous
   Windows » à une exécution native vérifiée.
+- Mode Monde uniquement (décision de Léo, 13/11/2026) : aucun test ne doit
+  tourner dans l'ancien mode de carrière France ni dans les autres anciens
+  modes ; tout nouveau test crée une carrière world-champ. Les tests encore
+  marqués CD_MODES_HERITES sont exclus de la CI jusqu'à leur migration ou
+  suppression.
 
 ## Immersion et textes du jeu
 

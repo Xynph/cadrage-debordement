@@ -7,6 +7,7 @@
 // Le pic simulé ne constitue pas une mesure de gain réel ; reprofiler régulièrement.
 const fs = require('node:fs');
 const path = require('node:path');
+const { legacySuites } = require('./legacy-modes.cjs');
 const { SHARD_COUNT, GODOT_SHARD_COUNT, PHYSICAL_CORES, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT } = require('./ci-jobs.cjs');
 
 const PROFILE = JSON.parse(fs.readFileSync(path.join(__dirname, 'suite-weights.json'), 'utf8'));
@@ -20,10 +21,22 @@ const GODOT_SDK = /\bprocess\.env\.CD_GODOT_EXE(?:CUTABLE)?\b/;
 
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function testsDir() { return path.resolve(__dirname, '..', 'tests'); }
-function allTestFiles() {
+// Toutes les suites présentes dans tests/, y compris celles qui portent CD_MODES_HERITES.
+function testFilesOnDisk() {
   return fs.readdirSync(testsDir(), { withFileTypes: true })
     .filter(e => e.isFile() && e.name.endsWith('.cjs') && e.name !== 'harness.cjs')
     .map(e => 'tests/' + e.name).sort(lexical);
+}
+// Suites exclues de toute exécution : mode Monde uniquement (décision de Léo, 13/11/2026). Une suite qui porte
+// CD_MODES_HERITES, ou qui charge un module de tests qui le porte, tourne dans un ancien mode de carrière.
+function legacyTestFiles() {
+  const legacy = legacySuites();
+  return testFilesOnDisk().filter(f => legacy.has(f));
+}
+// Suites exécutées par la CI : toutes celles de tests/ sauf les suites à ancien mode de carrière.
+function allTestFiles() {
+  const legacy = legacySuites();
+  return testFilesOnDisk().filter(f => !legacy.has(f));
 }
 // Suites qui lancent réellement le moteur : leur source lit process.env.CD_GODOT_EXE ou
 // process.env.CD_GODOT_EXECUTABLE. Les autres tests/godot-*.cjs (manifestes, effectifs, imports)
@@ -163,6 +176,6 @@ if (require.main === module) {
   }
 }
 module.exports = {
-  allTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY, isExclusive, canStart,
+  allTestFiles, testFilesOnDisk, legacyTestFiles, godotTestFiles, planShards, planLoads, suitesForShard, shardCount, simulateShard, memoryOf, MEMORY, isExclusive, canStart,
   WEIGHTS_SECONDS, GODOT_WEIGHTS_SECONDS, DEFAULT_WEIGHT, GODOT_DEFAULT_WEIGHT, MAX_SHARDS
 };
