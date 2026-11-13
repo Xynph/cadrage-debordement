@@ -12,6 +12,7 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Link = preload("res://ui/entity_link.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
 const WIDTH := 2248
 const LEFT := 1310
 const RIGHT := 922
@@ -234,7 +235,7 @@ func _header() -> void:
 	D.text(self, 21, 116, title, 77, C.IVORY, 800, 1240)
 	var round_label := str(app.model.meta.get("roundLabel", "")) if league.id == state.club_league else "Phase régulière" if league.get("phase", "league") == "league" else _phase(league)
 	var short_round := round_label.trim_prefix(str(league.get("name","")) + " · ")
-	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.n(app.model.meta.get("season", "—")), short_round.to_upper()]
+	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.season_label(app.model.meta.get("season", "—")), short_round.to_upper()]
 	D.rect(self, Rect2(24, 132, 735, 43), Color("142122"), 5, C.LINE)
 	D.text(self, 44, 161, subhead, 25, C.IVORY, 600, 691)
 	var crest := D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)
@@ -263,6 +264,8 @@ func _header() -> void:
 		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3], app.accent))
 	D.button(self, Rect2(1383, 203, 179, 45), "Rivalités", func(): app._navigate("Rivalités"), false, "shield", true, app.accent, "Section_Rivalités")
 	D.button(self, Rect2(1578, 203, 264, 45), "Archives des saisons", func(): Club.season_archives(app), false, "save", true, app.accent, "OpenArchives")
+	if EquipeType.disponible(app.model):
+		D.button(self, Rect2(1858, 203, 200, 45), "XV type", func(): EquipeType.ouvrir(app, league.id if league.get("id") else "", "journee"), false, "trophy", true, app.accent, "CompetitionEquipeType")
 	D.line(self, Vector2(0, 254), Vector2(WIDTH, 254), Color(WARM, .55))
 
 func _switch(tab_id: String) -> void:
@@ -337,7 +340,7 @@ func _select_pool(panel: Panel, pools: Array) -> Dictionary:
 
 func _standings_row(parent: Node, club: Dictionary, index: int, stride: int) -> void:
 	var mine: bool = club.id == own.id
-	var rank := int(club.get("rank", 0))
+	var rank := int(club.get("rank", 0)) if P.standings_open(club) else 0
 	var france: bool = str(app.model.meta.get("mode")) in ["common", "france30"]
 	var zone := Color.TRANSPARENT
 	# Les tableaux Monde exposent leurs rangs sans déduire des qualifications de coupe.
@@ -348,7 +351,7 @@ func _standings_row(parent: Node, club: Dictionary, index: int, stride: int) -> 
 	var row := Button.new()
 	row.name = "StandingsRow_" + str(club.id)
 	row.set_meta("club_id", club.id)
-	row.accessibility_name = G.club_name(club) + " · " + S.count_text(club.get("rank")) + " au classement"
+	row.accessibility_name = G.club_name(club) + (" · " + S.count_text(club.get("rank")) + " au classement" if P.standings_open(club) else " · pas encore classé")
 	row.add_theme_stylebox_override("normal", C.box(fill, Color.TRANSPARENT, 1, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("234538"), WIN, 3, 0))
 	row.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, WARM, 3, 0))
@@ -375,6 +378,7 @@ func _standing_text(club: Dictionary, key: String) -> String:
 	if key == "difference":
 		var difference := S.difference_text(club.get("pf"), club.get("pa"))
 		return "+" + difference if difference != "—" and int(difference) > 0 else difference
+	if key == "rank" and not P.standings_open(club): return "–"
 	if key == "points": return S.number_text(club.get(key))
 	return S.count_text(club.get(key))
 
@@ -628,7 +632,7 @@ func _stats() -> void:
 	_crest(summary, own, Rect2(18, 67, 93, 93))
 	var club_label := D.text(summary, 132, 104, G.club_name(own), 37, C.IVORY, 800, 1100)
 	club_label.name = "StandingsContextClubName"
-	D.text(summary, 135, 142, "Rang " + S.count_text(own_row.get("rank")) + "  ·  " + S.number_text(own_row.get("points")) + " point(s)  ·  " + S.count_text(own_row.get("played")) + " match(s)", 26, C.MUTED, 500, 1080)
+	D.text(summary, 135, 142, ("Rang " + S.count_text(own_row.get("rank")) if P.standings_open(own_row) else "Pas encore de classement") + "  ·  " + S.number_text(own_row.get("points")) + " point(s)  ·  " + S.count_text(own_row.get("played")) + " match(s)", 26, C.MUTED, 500, 1080)
 	for i in 3:
 		var code: String = ["V", "N", "D"][i]
 		var quantity := S.count_text(own_row.get(["won", "drawn", "lost"][i]))
@@ -777,7 +781,7 @@ func _club_detail(club: Dictionary) -> void:
 	for division: Dictionary in leagues:
 		if division.get("rows", []).any(func(item: Dictionary): return item.get("id") == club.id): club_division = division; break
 	var division_name := _league_short(club_division) if not club_division.is_empty() else "Club"
-	content.add_child(C.label("%s · Rang %s · %s points" % [division_name, S.count_text(club.get("rank")), S.number_text(club.get("points"))], 28, C.IVORY, true, 700))
+	content.add_child(C.label("%s · %s · %s points" % [division_name, "Rang " + S.count_text(club.get("rank")) if P.standings_open(club) else "Pas encore de classement", S.number_text(club.get("points"))], 28, C.IVORY, true, 700))
 	var summary := "%s V  ·  %s N  ·  %s D  ·  %s points marqués  ·  %s encaissés" % [S.count_text(club.get("won")), S.count_text(club.get("drawn")), S.count_text(club.get("lost")), S.count_text(club.get("pf")), S.count_text(club.get("pa"))]
 	content.add_child(C.wrap(summary, 22, C.MUTED, true))
 	var recent: Array = season_results.filter(func(item: Dictionary): return club.id in item.get("pair", [])).slice(0, 10)

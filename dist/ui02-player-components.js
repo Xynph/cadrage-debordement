@@ -30,7 +30,7 @@
   function formatValue(key,v) {
     if (v == null || v === '') return '—';
     if (key === 'salary') return money(v);
-    if (key === 'contract') return finite(v) ? 'Saison '+number(v) : '—';
+    if (key === 'contract') return finite(v) ? 'Saison '+(typeof libelleSaison==='function'?libelleSaison:String)(v) : '—';
     if (key === 'condition') return finite(v) ? number(v)+' %' : '—';
     if (key === 'physical') return finite(v) ? number(v)+'/100' : '—';
     if (key === 'injury') return finite(v) ? (v>0?number(v)+' sem.':'Aucune') : '—';

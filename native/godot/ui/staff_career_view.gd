@@ -97,7 +97,7 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	text.add_child(staff_view.name_link(app, person, 21))
 	text.add_child(G.wrap(person.get("roleLabel", data.get("roles", {}).get(person.get("role", ""), person.get("role", "Staff"))), 14, G.GOLD))
 	text.add_child(G.wrap("%s ans" % G.n(person.get("age", 0)), 12))
-	if person.get("contractEnd") != null: text.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 12))
+	if person.get("contractEnd") != null: text.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.season_label(person.contractEnd), 12))
 	if person.get("sourcePlayerId") != null: text.add_child(G.wrap("Ancien joueur · reconversion dans l’encadrement", 12, G.GOOD))
 	var employment := _employment_person(app, str(person.id))
 	if employment.get("employed", false): text.add_child(G.wrap("Contrat rémunéré · %s · %s paies restantes · rupture %s €" % [G.salary(employment.paidSalary), G.n(employment.remainingPayments), G.n(employment.severance)], 12, G.GOLD))

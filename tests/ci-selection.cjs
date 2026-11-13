@@ -3,6 +3,8 @@ const {selectTests,allTests}=require('../ci/select-tests.cjs');
 const equals=(changed,expected)=>assert.deepEqual(selectTests(changed),expected.sort());
 assert.ok(allTests.length>=21,'La suite complète doit rester disponible');
 assert.ok(allTests.includes('tests/saves.cjs'));
+// La scène de match (matchScene) porte la loi 18 : ses régressions d'alignement suivent toute modification de dist/match2d.js.
+for(const suite of ['lineout-side','lineout-geometry','lineout-approach'])assert.ok(selectTests(['dist/match2d.js']).includes('tests/'+suite+'.cjs'),'dist/match2d.js doit sélectionner '+suite);
 assert.ok(allTests.includes('tests/v21-numerical-advice.cjs'));
 assert.ok(allTests.includes('tests/v22-tactical-comparison.cjs'));
 assert.ok(allTests.includes('tests/v23-local-zones.cjs'));

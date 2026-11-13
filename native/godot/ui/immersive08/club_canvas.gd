@@ -8,6 +8,8 @@ const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
 const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
@@ -82,7 +84,7 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	D.line(canvas, Vector2(614,31), Vector2(917,31), Color(C.GOLD,.65))
 	D.text(canvas, 220, 131, G.club_name(app.model.club)+".", 84, C.IVORY, 800, 1950)
 	var identity := G.identity(app.model.club)
-	D.text(canvas, 225, 174, "%s  ·  Saison %s" % [identity.get("stadium", "Stade"), G.n(app.model.meta.get("season", 1))], 28, C.IVORY, 500, 850)
+	D.text(canvas, 225, 174, "%s  ·  Saison %s" % [identity.get("stadium", "Stade"), G.season_label(app.model.meta.get("season", 1))], 28, C.IVORY, 500, 850)
 	var tabs := [["overview","Vue d’ensemble",291],["direction","Direction",216],["infrastructure","Infrastructures",269],["staff","Staff",172],["history","Histoire",195]]
 	var x := 1081
 	for entry: Array in tabs:
@@ -204,7 +206,7 @@ static func _trust(card: Panel, app: Control, finance: Dictionary) -> void:
 	D.line(card, Vector2(20,291), Vector2(width-20,291))
 	U.icon(card, "info", Vector2(22,306), C.GOLD, 23)
 	D.text(card, 57, 328, "Confiance du président", 23, C.IVORY, 600, width-88)
-	var source := "Saison %s · journée %s" % [G.n(recent.season), G.n(recent.round)] if not recent.is_empty() else "Le conseil suit les résultats du club."
+	var source := "Saison %s · journée %s" % [G.season_label(recent.season), G.n(recent.round)] if not recent.is_empty() else "Le conseil suit les résultats du club."
 	D.text(card, 57, 363, source, 22, C.MUTED, 500, width-93)
 
 static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
@@ -227,8 +229,11 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 		objective.position.y = C.px(64)
 		objective.size.y = C.px(65)
 		offset = 20
-	D.text(card, 72, 139 + offset, "Classement actuel", 23, C.MUTED, 500, 279)
-	if rank != null:
+	var table_open := P.standings_open(app.model.club)
+	D.text(card, 72, 139 + offset, "Classement actuel" if table_open else "Pas encore de classement", 23, C.MUTED, 500, 279)
+	if rank != null and not table_open:
+		D.chip(card, Rect2(355,111 + offset,120,33), "0 match", C.AMBER)
+	elif rank != null:
 		var position := "%s%s" % [G.n(rank),"er" if int(rank) == 1 else "e"]
 		if division_size > 0:
 			position += " / %d" % division_size
@@ -289,12 +294,21 @@ static func _academy(model: Dictionary) -> Dictionary:
 static func _installations(card: Panel, app: Control, finance: Dictionary) -> void:
 	var facility: Variant = finance.get("facility")
 	var academy_level: Variant = _academy(app.model).get("facilities")
+	# Carrière Monde : pas de niveau 0-3 (pas de compétitions Espoirs), mais le centre existe : on montre son état réel
+	# (Crabos, Espoirs, places), les mêmes chiffres que la page Formation (academyFollowUp), jamais « non ouverte ».
+	var follow: Dictionary = app.model.get("clubLife", {}).get("academyFollowUp", {})
+	var centre_open: bool = follow.get("available", false) == true
 	var support: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
 	var medical: Array = support.get("medical", {}).get("players", [])
+	var academy_sub := "Installations du centre"
+	var academy_value := G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"
+	if academy_level == null and centre_open:
+		academy_sub = "%s Crabos · %s Espoirs" % [G.n(follow.get("crabos",{}).get("count",0)), G.n(follow.get("espoirs",{}).get("count",0))]
+		academy_value = "%s / %s" % [G.n(follow.get("total",0)), G.n(follow.get("capacity",75))]
 	var rows := [
 		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "Niveau indisponible"],
 		["heart","Cellule médicale","Dossiers suivis",str(medical.size()) if not support.is_empty() else "—"],
-		["school","Académie","Installations du centre",G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"]
+		["school","Académie",academy_sub,academy_value]
 	]
 	for i in rows.size():
 		var row: Array = rows[i]
@@ -302,9 +316,9 @@ static func _installations(card: Panel, app: Control, finance: Dictionary) -> vo
 		U.icon(card, row[0], Vector2(23,y+13), C.IVORY, 37)
 		D.text(card, 82, y+32, row[1], 28, C.IVORY, 700, 480)
 		D.text(card, 82, y+62, row[2], 22, C.MUTED, 500, 400)
-		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null
+		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null and not centre_open
 		D.text(card, 686, y+37, row[3], 23 if level_unavailable else 29, C.MUTED if level_unavailable else C.MINT, 700, 210, HORIZONTAL_ALIGNMENT_RIGHT)
-		if i != 1 and not level_unavailable:
+		if i != 1 and not level_unavailable and not (i == 2 and academy_level == null):
 			var total := 10 if i == 0 else 3
 			var value := int(academy_level) if i == 2 else int(facility.level)
 			for segment in total:
@@ -355,7 +369,7 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	D.text(card, 78, 130, G.n(fans.sentiment)+" / 100" if fans.has("sentiment") else "—", 41, C.IVORY, 700, 315)
 	D.line(card, Vector2(397,73), Vector2(397,134))
 	D.text(card, 476, 91, "Abonnés", 22, C.MUTED, 500, 291)
-	D.text(card, 476, 130, fans.get("subscribers","—"), 41, C.IVORY, 700, 290)
+	D.text(card, 476, 130, G.n(fans.subscribers) if fans.has("subscribers") else "—", 41, C.IVORY, 700, 290)
 	D.line(card, Vector2(19,151), Vector2(777,151), Color(C.LINE,.7))
 	U.icon(card, "money", Vector2(23,175), C.GOLD, 35)
 	D.text(card, 78, 181, "Partenaire principal", 22, C.MUTED, 500, 518)
@@ -367,10 +381,21 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	for i in mini(2,news.size()):
 		var y := 284 + i * 54
 		D.rect(card, Rect2(22,y,4,43), C.BLUE if i == 0 else C.MINT, 2)
-		var lines := D.words(Copy.news(str(news[i])), 85, 2)
+		# Les actualités « XV de la journée / de la saison » portent une vignette cliquable.
+		var equipe_type := str(news[i]).begins_with("XV de ")
+		var lines := D.words(Copy.news(str(news[i])), 70 if equipe_type else 85, 2)
 		for j in lines.size():
-			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 727)
+			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 640 if equipe_type else 727)
 			label.tooltip_text = Copy.news(str(news[i]))
+		if equipe_type and EquipeType.disponible(app.model):
+			var saison := str(news[i]).begins_with("XV de la saison")
+			var ligues: Array = NotesMatch.bilan(app.model).get("equipeType", {}).get("ligues", [])
+			var cible: Dictionary = ligues[0] if not ligues.is_empty() else {}
+			var equipe: Variant = cible.get("saison" if saison else "journee")
+			if equipe is Dictionary:
+				var vignette := EquipeType.vignette(equipe, Rect2(0, 0, 38, 44), func(): EquipeType.ouvrir(app, str(cible.get("id", "")), "saison" if saison else "journee"))
+				card.add_child(vignette)
+				D.place(vignette, Rect2(704, y - 1, 48, 45))
 	if news.is_empty(): D.text(card, 23, 320, "Aucun message enregistré.", 23, C.MUTED, 500, 739)
 
 static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dictionary) -> void:
@@ -492,7 +517,7 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	list.add_child(C.label("LES RENCONTRES CONSERVÉES",27,C.GOLD,true,700))
 	if data.events.is_empty(): list.add_child(C.wrap("Aucun résultat de ce club dans le registre récent.",22,C.MUTED,true))
 	for event: Dictionary in data.events:
-		var result := C.card("Saison %s · %s" % [G.n(event.get("season","—")),World.name_for(app.model,str(event.get("leagueId","")))])
+		var result := C.card("Saison %s · %s" % [G.season_label(event.get("season","—")),World.name_for(app.model,str(event.get("leagueId","")))])
 		list.add_child(result)
 		var notes := C.content(result)
 		notes.add_child(C.wrap("%s  %s – %s  %s" % [event.home_name,G.n(event.get("home","—")),G.n(event.get("away","—")),event.away_name],27,C.IVORY,true,700))
@@ -502,13 +527,13 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 			notes.add_child(C.wrap("Réaction du banc · %s  « %s »" % [event.get("reaction_club_name","Banc"),event.reaction],21,C.MUTED,true))
 	list.add_child(C.rule())
 	list.add_child(C.label("LE PARCOURS DU COACH",27,C.GOLD,true,700))
-	if data.manager_current_from != null: list.add_child(C.label("Mandat actuel depuis la saison "+G.n(data.manager_current_from),24))
+	if data.manager_current_from != null: list.add_child(C.label("Mandat actuel depuis la saison "+G.season_label(data.manager_current_from),24))
 	if data.manager_history.is_empty(): list.add_child(C.wrap("Aucune prise de poste antérieure enregistrée.",22,C.MUTED,true))
 	for move: Dictionary in data.manager_history:
-		list.add_child(C.wrap("Saison %s · %s  →  %s" % [G.n(move.get("arrivalSeason","—")),move.from_name,move.to_name],23,C.IVORY,true))
+		list.add_child(C.wrap("Saison %s · %s  →  %s" % [G.season_label(move.get("arrivalSeason","—")),move.from_name,move.to_name],23,C.IVORY,true))
 
 static func _world_year(app: Control, year: Dictionary) -> PanelContainer:
-	var card := C.card("Saison "+G.n(year.season))
+	var card := C.card("Saison "+G.season_label(year.season))
 	C.fill(card)
 	var content := C.content(card)
 	var rank := "%s · rang %s / %s" % [World.name_for(app.model,str(year.league_id)),G.n(year.rank),G.n(year.division_size)] if year.rank != null else "Rang de phase régulière indisponible"
@@ -544,7 +569,7 @@ static func _world_comparison(app: Control, list: VBoxContainer, years: Array) -
 		C.fill(selector)
 		var chosen := int(app.management_ui.get(key,years[i].season))
 		for year: Dictionary in years:
-			selector.add_item("Saison "+G.n(year.season),int(year.season))
+			selector.add_item("Saison "+G.season_label(year.season),int(year.season))
 			if int(year.season) == chosen: indexes[i] = selector.item_count-1
 		selector.select(indexes[i])
 		selectors.add_child(selector)

@@ -1217,7 +1217,10 @@ static func _sans_redites(raisons: Array) -> Array:
 ## match, sinon sa première raison), le reste en infobulle, et l'action qui va avec.
 func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	S.clear(adjoint)
-	adjoint_cadre.visible = not live.get("finished", false)
+	# Coup de sifflet final : Gabi annonce l'homme du match (note enregistrée, match-notes.cjs).
+	var fini: bool = live.get("finished", false)
+	var homme: Variant = direct.get("hommeDuMatch")
+	adjoint_cadre.visible = not fini or homme is Dictionary
 	var carte := S.G.h(px(18))
 	adjoint.add_child(carte)
 	var portrait := TextureRect.new()
@@ -1243,7 +1246,17 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	var fatigues := alertes_xv.filter(func(a: Dictionary): return a.alerte == "fatigué")
 	var phrases: Array = []
 	var remplacer := -1
-	for alerte: Dictionary in (graves + fatigues).slice(0, 1):
+	if fini and homme is Dictionary:
+		var equipes: Array = live.get("teams", [])
+		var club := S.G.club_name(equipes[int(homme.get("camp", 0))]) if equipes.size() >= 2 else ""
+		var detail := "Homme du match : %s%s, %s." % [str(homme.get("nom", "")), (" (" + club + ")") if not club.is_empty() else "", ("%.1f" % float(homme.get("note", 6.5) if homme.get("note") is float or homme.get("note") is int else 6.5)).replace(".", ",")]
+		phrases.append([detail, OR])
+		var chiffres: Array = []
+		if int(homme.get("essais", 0)) > 0: chiffres.append("%d essai%s" % [int(homme.essais), "s" if int(homme.essais) > 1 else ""])
+		if int(homme.get("plaquages", 0)) > 0: chiffres.append("%d plaquages" % int(homme.plaquages))
+		if int(homme.get("metres", 0)) > 0: chiffres.append("%d m gagnés" % int(homme.metres))
+		if not chiffres.is_empty(): phrases.append([" · ".join(chiffres), IVOIRE])
+	for alerte: Dictionary in ([] if fini else (graves + fatigues).slice(0, 1)):
 		var texte := "N° %d %s : %s." % [int(alerte.poste) + 1, str(alerte.nom), str(alerte.alerte)]
 		if str(alerte.alerte) in ["épuisé", "fatigué"]: texte = "N° %d %s : %d %% d’énergie, à surveiller." % [int(alerte.poste) + 1, str(alerte.nom), roundi(float(alerte.condition))]
 		if str(alerte.alerte) == "épuisé": texte = "N° %d %s est à bout (%d %%) : un remplacement s’impose." % [int(alerte.poste) + 1, str(alerte.nom), roundi(float(alerte.condition))]
@@ -1278,7 +1291,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		bouton_remplacer.tooltip_text = "Ouvrir le banc sur ce joueur."
 		bouton_remplacer.set_meta("contextual_enabled", true)
 		actions.add_child(bouton_remplacer)
-	elif conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):
+	elif not fini and conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):
 		var possible: bool = conseil.get("canAct", false) and conseil.get("defenceAvailable", false)
 		var bouton := _bouton("Appliquer", func(): appliquer.call(conseil), possible, true)
 		bouton.name = "MatchBetweenApplyAdvice"

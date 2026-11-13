@@ -1,9 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const {context}=require('./france-harness.cjs');
+const {context}=require('./monde-harness.cjs');
 const file=require('node:path').join(__dirname,'../native/engine/position-aptitudes.cjs');
 assert.ok(fs.existsSync(file),'canonical positional aptitude module exists');
-const factory=require(file),h=context();
+const factory=require(file),h=context(827381,{club:null});
 h.run(`const apt=(${factory.toString()})(); const fixture=(pos,fam,skills)=>({id:'fixture-'+pos,name:pos,pos,fam,rating:80,skillBase:80,condition:100,skills}); const excellent=Object.fromEntries(Object.keys(ATTR).map(k=>[k,80])); const prop=fixture(POS[0],0,{...excellent,pass:30,kick:25,goal:20,mental:40,speed:30}); const centre=fixture(POS[11],7,excellent); const lock=fixture(POS[3],2,excellent);`);
 const value=source=>JSON.parse(h.run(`JSON.stringify(${source})`));
 assert.equal(value('apt.project(prop).primaryPosition'),1);

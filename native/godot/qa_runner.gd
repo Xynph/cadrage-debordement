@@ -188,8 +188,8 @@ func _display_reception() -> void:
 	_dismiss()
 	await _settle()
 
-func _wait() -> bool:
-	var deadline:=Time.get_ticks_msec()+20000
+func _wait(limit_ms:int=20000) -> bool:
+	var deadline:=Time.get_ticks_msec()+limit_ms
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(not app.waiting and not app.model.is_empty(),"Engine response is bounded")
 	return not app.waiting and not app.model.is_empty()
@@ -483,21 +483,29 @@ func _run() -> void:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
-		app.pack_manager.creation_mode = "common"
+		app.pack_manager.creation_mode = "auto"
 		app._navigate("Création")
-		_press_named("CreationDivision_accession")
-		app.selected_club=29
-		app._render()
+		await _settle()
 		await _capture("creation-"+str(resolution.x))
-	_press("PRENDRE LES RÊNES DE VDX  →")
-	await _wait()
-	_check(app.model.get("meta",{}).get("mode")=="common" and int(app.model.club.id)==29,"Actual common30-club career created through UI")
-	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
+	# Comme un joueur : choisir le premier club proposé dans la liste, puis prendre les rênes.
+	var chosen_club := -1
+	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	var club_buttons: Array = choices.find_children("CreationClub*","Button",true,false) if choices != null else []
+	_check(not club_buttons.is_empty(),"Creation lists Monde clubs")
+	if not club_buttons.is_empty():
+		var picked: Button = club_buttons[0]
+		chosen_club = int(str(picked.name).trim_prefix("CreationClub"))
+		picked.pressed.emit()
+		await _settle()
+	_press_named("CreationStart")
+	await _wait(180000) # la base Monde (5 962 joueurs) se génère plus lentement que l'ancienne base à 30 clubs
+	_check(str(app.model.get("meta",{}).get("mode","")).begins_with("world") and int(app.model.club.id)==chosen_club,"Actual Monde career created through UI")
+	_check(int(app.model.get("meta",{}).get("database",{}).get("playerCount",0))>=1592,"Monde database keeps its player base")
 	_check(app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Shipped registry initializes new careers in v2")
 	if not app._has_career():await _finish();return
 	await _settle_required_meetings()
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
-	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
+	_check(app.model.get("leagues",[]).size()>=2,"Several divisions projected")
 	await _coach_reception()
 	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]):
 		await _resize_window(resolution)

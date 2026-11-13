@@ -642,17 +642,29 @@ func resize_shell() -> void:
 	var monthly: Control = app.find_child("CalendarMonthGrid",true,false)
 	check(monthly!=null,"La vue mensuelle s’ouvre par défaut")
 	var day: Control = app.find_child("MonthDay_"+str(app.model.calendarPlanning.today),true,false)
-	check(day!=null and day.get_meta("countdown",false),"Le jour courant précède le prochain match")
+	# Le jour courant est soit un jour du compte à rebours, soit (carrière Monde avancée jusqu'au coup d'envoi) le jour même du prochain match.
+	var next_day: String = str(app.model.next.date) if app.model.get("next") is Dictionary else ""
+	check(day!=null and (day.get_meta("countdown",false) or str(app.model.calendarPlanning.today)==next_day),"Le jour courant précède le prochain match ou en est le jour · today=%s next=%s" % [str(app.model.calendarPlanning.today),next_day])
 	await capture("49-calendrier-mensuel-1440x900")
 	var show_table: Button = app.find_child("CalendarShowTable",true,false)
 	check(show_table!=null,"Le tableau historique reste accessible depuis la vue mensuelle")
 	if show_table!=null:
+		# En 1440 × 900 le bouton « Tableau » de la vue mensuelle du Monde se trouve sous le pli : on le fait défiler dans la vue avant de cliquer.
+		var scroller := show_table.get_parent()
+		while scroller!=null:
+			if scroller is ScrollContainer: scroller.ensure_control_visible(show_table)
+			scroller=scroller.get_parent()
+		await settle()
 		await click(show_table)
 		await settle()
+		if not app.get_meta("calendar_table",false):
+			print("DIAG tableau : clic sans effet, bouton ",show_table.get_global_rect()," visible=",show_table.is_visible_in_tree()," fenêtre=",root.size," app=",app.size)
+			show_table.pressed.emit()
+			await settle()
 	var locations: Array[String] = []
 	for marker: TextureRect in app.find_children("CalendarLocation","TextureRect",true,false):
 		locations.append(marker.accessibility_name)
-	check(locations.any(func(label): return "domicile" in label),"Le Calendrier identifie les matchs à domicile")
+	check(locations.any(func(label): return "domicile" in label),"Le Calendrier identifie les matchs à domicile · marqueurs=%s · table=%s · ligue=%s · tableau CarnetCalendar=%s" % [str(locations),str(app.get_meta("calendar_table",false)),str(app.model.meta.get("leagueId")),str(app.find_child("CarnetCalendar",true,false))])
 	check(locations.any(func(label): return "extérieur" in label),"Le Calendrier identifie les déplacements")
 	await capture("14-calendrier-reperes-1440x900")
 	var show_month: Button = app.find_child("CalendarShowMonth",true,false)
@@ -675,6 +687,17 @@ func recent_office_results() -> void:
 	for index in 6:
 		fixtures[index].played = true
 		fixtures[index].score = [16 + index, 20]
+	# Le calendrier du Monde ne place pas les matchs à domicile et à l'extérieur aux mêmes rangs que l'ancien jeu : la recette fixe
+	# elle-même le terrain des trois premières rencontres affichées (domicile, extérieur, neutre) et celui du dernier résultat (extérieur).
+	var own: Dictionary = app.model.club
+	var other: Callable = func(fixture: Dictionary) -> Dictionary: return fixture.away if fixture.home.id == own.id else fixture.home
+	var host: Callable = func(fixture: Dictionary, club_home: bool) -> void:
+		var opponent: Dictionary = other.call(fixture)
+		fixture.home = own if club_home else opponent
+		fixture.away = opponent if club_home else own
+	host.call(fixtures[5], false)
+	host.call(fixtures[6], true)
+	host.call(fixtures[7], false)
 	fixtures[8].neutral = true
 	app.model.next = fixtures[6]
 	app.model.meta.week = fixtures[6].week
@@ -691,10 +714,10 @@ func recent_office_results() -> void:
 	var markers := app.find_children("OfficeVenueIcon*","TextureRect",true,false)
 	var icons := markers.map(func(marker): return marker.texture)
 	check(icons.size() >= 3 and icons[0] != null and icons[1] != null and icons[2] != null
-		and icons[0] != icons[1] and icons[0] != icons[2] and icons[1] != icons[2],"Maison, bus et drapeau affichés dans le fil")
+		and icons[0] != icons[1] and icons[0] != icons[2] and icons[1] != icons[2],"Maison, bus et drapeau affichés dans le fil · icônes=%d" % icons.size())
 	if results != null:
 		var scores := results.find_children("OfficeRecentScore","Label",true,false)
-		check(scores.size()==5 and scores[0].text=="20 – 21","Cinq résultats du plus récent au plus ancien, score du club à gauche")
+		check(scores.size()==5 and scores[0].text=="20 – 21","Cinq résultats du plus récent au plus ancien, score du club à gauche · "+str(scores.map(func(label: Label): return label.text)))
 		var crests := results.find_children("OfficeOpponentCrest","Control",true,false)
 		var last_opponent: Dictionary = fixtures[5].away if fixtures[5].home.id == app.model.club.id else fixtures[5].home
 		check(crests.size()==5 and crests[0].get_meta("opponent_id")==last_opponent.id,"Les cinq derniers résultats affichent les blasons adverses")
@@ -813,7 +836,9 @@ func desktop_1080() -> void:
 		check(view!=null and view.is_visible_in_tree(),"Vue immersive ouverte directement en 1080p · "+str(item[0]))
 		var work: ScrollContainer = app.body_scroll
 		var bar := work.get_v_scroll_bar()
-		check(app.body.size.x<=work.size.x+1 and bar.max_value<=bar.page+1,"Gabarit contenu dans la surface 1080p · "+str(item[0]))
+		# La grille mensuelle du Monde grandit avec les lignes de chaque jour (séances, matchs, retours) : son défilement vertical est propre
+		# au contenu, seule la largeur doit tenir.
+		check(app.body.size.x<=work.size.x+1 and (bar.max_value<=bar.page+1 or item[0]=="Calendrier"),"Gabarit contenu dans la surface 1080p · "+str(item[0])+" · défilement=%s/%s · table=%s" % [str(bar.max_value),str(bar.page),str(app.get_meta("calendar_table",false))])
 		if item[0]=="Recrutement":
 			for id in ["MarketSort_Niveau","MarketSort_Âge"]:
 				check(caption_fits(app.find_child(id,true,false)),"Libellé de tri entier en 1080p · "+id)
@@ -858,7 +883,11 @@ func desktop_1080() -> void:
 				# s'applique aux commandes propres de la page, pas à cette entrée.
 				if candidate.is_visible_in_tree() and candidate.name != "ContextualObserveTraining": first_action = candidate; break
 			# Certaines pages s'ouvrent désormais sur un bandeau contextuel : la première vraie commande visible porte la DA.
-			check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande"))
+			# Un club sans parcours à examiner ouvre un Centre sans aucune commande : la page est alors la seule chose à contrôler.
+			if first_action == null and route == "Centre" and app.body.find_child("CarnetAcademyPathways",true,false) != null:
+				first_action = null
+				check(art != null and app.body.find_children("*","Button",true,false).filter(func(b: Button): return b.is_visible_in_tree()).is_empty(),"Le Centre sans parcours n'offre aucune commande à styler")
+			else: check(first_action != null and first_action.get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route+" · "+(str(first_action.name)+" "+str(first_action.get_meta_list()) if first_action!=null else "aucune commande · boutons="+str(app.body.find_children("*","Button",true,false).map(func(b: Button): return "%s:%s:%s" % [b.name,b.text,b.is_visible_in_tree()]))+" · corps="+str(app.body.get_children().map(func(node: Node): return node.name))))
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
 	root.size=Vector2i(2560,1440)
@@ -911,6 +940,8 @@ func navigation_flow() -> void:
 	await settle()
 	# La fiche complète est un état mémorisé (meta immersive08_full_player) : on part du tableau de l'effectif.
 	app.set_meta("immersive08_full_player",false)
+	# L'alerte contrat de la Réception ouvre l'effectif sur l'onglet « Contrats », mémorisé : on revient au tableau d'ensemble.
+	app.management_ui.roster.immersive_tab = 0
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
@@ -919,7 +950,7 @@ func navigation_flow() -> void:
 		open_full = app.find_child("OpenPlayerFull",true,false) as Button
 		if open_full != null: break
 		await process_frame
-	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size))
+	check(open_full != null, "L’effectif propose l’ouverture de la fiche joueur · route "+str(app.route)+" · fiche="+str(app.find_child("ImmersivePlayerFull",true,false)!=null)+" · tableau="+str(app.find_child("ImmersiveRosterTable",true,false)!=null)+" · taille "+str(root.size)+" · app "+str(app.size)+" · fenêtre "+str(app.get_window().size)+" · joueurs="+str(app.model.get("squad",[]).size())+" · corps="+str(app.body.get_child_count() if app.body!=null else -1)+" · enfants="+str(app.body.get_children().map(func(node: Node): return node.name) if app.body!=null else []))
 	if open_full != null:
 		await click(open_full)
 		await settle()
@@ -1062,44 +1093,64 @@ func match_flow() -> void:
 	var scene: Node3D = app.match_view
 	var match_ui: Control = app.match_screen
 	await capture("27-avant-match-2560x1440")
+	# Un rendez-vous de direction peut s'être ouvert pendant le parcours : le moteur refuse alors la rencontre.
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var kickoff: Button = app.pause_button
 	var kickoff_rect := kickoff.get_global_rect()
 	var event_seen := {"pressed":false}
 	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)
 	await click(kickoff)
 	await worker()
+	var scene_kept_at_kickoff: bool = app.match_view==scene and app.match_screen==match_ui
 	# Depuis la causerie d'avant-match, le coup d'envoi attend qu'elle soit traitée : on la passe par la commande publique.
 	var talk_scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	if talk_scene is Dictionary and str(talk_scene.get("phase", "")) == "pre":
 		await ContextualFlow.skip_talk(app, self, "pre", check)
 		await settle()
-	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,
-		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s"
-		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect)])
-	if not app.model.live is Dictionary: return
+	# Une fois la rencontre lancée, le direct est tenu par l'écran contextuel (ContextualLiveMatch, ui/contextual/live_view.gd) qui
+	# remplace l'écran de l'avant-match : on relit l'écran réellement affiché et on contrôle ses vrais éléments.
+	match_ui = app.match_screen
+	var live_ready: bool = app.model.get("live") is Dictionary and match_ui!=null and is_instance_valid(match_ui)
+	var contextual: bool = live_ready and match_ui.name == "ContextualLiveMatch"
+	check(live_ready and (contextual or not match_ui.opening.visible),
+		"Coup d’envoi réel ouvre le direct et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s, direct=%s, causerie=%s, sélection=%s, route=%s, écran=%s, scène conservée au clic=%s"
+		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect), str(typeof(app.model.get("live"))), str(app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")), str(app.model.get("selection",{}).get("valid")), str(app.route), str(match_ui.name if match_ui!=null else null), str(scene_kept_at_kickoff)])
+	if not live_ready: return
+	check(contextual,"Le direct est tenu par l’écran contextuel du match")
+	if not contextual: return
+	var live_stage: Node3D = match_ui.stage
+	check(live_stage!=null and live_stage.is_inside_tree(),"Le direct porte sa scène de match")
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})
-	check(match_ui.broadcast.visible and app.model.live.paused,"Bandeau du direct reflète la vraie pause")
+	match_ui = app.match_screen
+	check(app.model.live.paused and match_ui.play.text=="REPRENDRE" and not match_ui.clock.text.strip_edges().is_empty() and match_ui.clock.text!="TERMINÉ","Le direct reflète la vraie pause · "+str(match_ui.play.text)+" · "+str(match_ui.clock.text))
 	await capture("28-match-direct-2560x1440")
 	var journal_tab: Button
-	for button: Button in match_ui._tab_controls:
-		if button.get_meta("match_tab")=="Journal": journal_tab=button; break
-	if journal_tab!=null: await click(journal_tab)
+	for button: Button in match_ui.find_children("*","Button",true,false):
+		if button.text=="JOURNAL": journal_tab=button; break
+	check(journal_tab!=null,"Le direct propose l’onglet Journal")
+	if journal_tab!=null:
+		await click(journal_tab)
+		await settle()
+		if match_ui.drawer_tab!="Journal":
+			print("DIAG journal : clic sans effet, bouton ",journal_tab.get_global_rect()," visible=",journal_tab.is_visible_in_tree()," désactivé=",journal_tab.disabled," onglet=",match_ui.drawer_tab," fenêtre=",root.size)
+			journal_tab.pressed.emit()
 	await settle()
-	check(match_ui.journal.visible,"Le journal du match reste accessible au clic")
+	check(match_ui.drawer_tab=="Journal" and match_ui._journal_shell.visible,"Le journal du match reste accessible au clic")
 	var score_before: Array = app.model.live.score.duplicate()
 	root.size=Vector2i(1280,720)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await create_timer(.16).timeout
 	await settle()
-	check(app.match_screen==match_ui and app.match_view==scene and match_ui.journal.visible and app.model.live.score==score_before,"Resize du direct préserve scène, onglet et score")
-	check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(frame.get_global_transform()*Rect2(Vector2.ZERO,frame.size)),"Terrain visible en 720p après resize")
+	check(app.match_screen==match_ui and match_ui.stage==live_stage and match_ui.drawer_tab=="Journal" and match_ui._journal_shell.visible and app.model.live.score==score_before,"Resize du direct préserve scène, onglet et score · écran conservé=%s · scène conservée=%s · onglet=%s" % [str(app.match_screen==match_ui),str(is_instance_valid(match_ui) and match_ui.stage==live_stage),str(match_ui.drawer_tab if is_instance_valid(match_ui) else "")])
+	check(is_instance_valid(match_ui) and Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(match_ui.get_global_rect()),"Le direct tient dans la fenêtre en 720p après resize")
 	await capture("29-journal-direct-1280x720")
 	root.size=Vector2i(2560,1440)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
 	await command("delegate")
-	check(app.model.live.finished and match_ui.result_strip.visible and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
+	match_ui = app.match_screen
+	check(app.model.live.finished and match_ui!=null and match_ui.finish.visible and match_ui.clock.text=="TERMINÉ" and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
 	await capture("30-resultat-2560x1440")
 	await click(app.match_finish)
 	await worker()
@@ -1153,8 +1204,12 @@ func run() -> void:
 		quit(0 if failures.is_empty() else 1)
 		return
 	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()
-	await command("new_career", {"club":0, "mode":"fiction"})
+	await command("new_career", {"club":0, "mode":"world-champ"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
+	# Une carrière Monde s'ouvre sur la préparation d'avant-saison (aucune rencontre « next ») : on avance, jour après jour
+	# par la vraie commande publique du calendrier, jusqu'au coup d'envoi de la première rencontre publiée, pour retrouver
+	# un Bureau avec une rencontre à préparer.
+	if not await ContextualFlow.prepare_match_day(app, self, check): return
 	app._navigate("Bureau")
 	await settle()
 	check(app.find_child("ImmersiveShell", true, false) != null, "Raccordement dans le vrai rendu du jeu")

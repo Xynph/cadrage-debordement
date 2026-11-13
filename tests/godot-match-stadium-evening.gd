@@ -81,7 +81,7 @@ func run() -> void:
 	if not failures.is_empty() or DisplayServer.get_name() == "headless":
 		quit(0 if failures.is_empty() else 1)
 		return
-	root.title = "Oval Legacy 27 · Stade · J jour / S soirée · 1 TV / 2 tactique / 3 action"
+	root.title = "Rugby Legacy 27 · Stade · J jour / S soirée · 1 TV / 2 tactique / 3 action"
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	view.set_process(true)

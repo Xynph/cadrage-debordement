@@ -11,6 +11,7 @@ const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Roster = preload("res://ui/immersive08/squad_canvas.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -88,7 +89,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 	heading.name="ProfilePlayerName"
 	D.text(hero,671,180,Roster.primary_caption(player).to_upper(),39,C.GOLD,700,1020)
 	var facts: Dictionary = player.get("playerFacts", {})
-	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
+	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.season_label(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
 	if not facts.is_empty():
 		var identity := preload("res://ui/player_identity.gd").row(facts,22,C.IVORY,app)
 		hero.add_child(identity)
@@ -152,8 +153,9 @@ static func build(app:Control,player:Dictionary) -> Control:
 				_detailed_attributes(D.panel(page,Rect2(0,430,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),detailed)
 		2:
 			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
-			_development(D.panel(page,Rect2(0,716,1670,420),"BILANS DU JOUEUR","calendar"),app,player)
+			_history(D.panel(page,Rect2(0,716,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
 			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			_selection(D.panel(page,Rect2(1686,966,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
 		3:
 			_contract(D.panel(page,Rect2(0,430,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
 			_health(D.panel(page,Rect2(866,430,562,520),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
@@ -268,15 +270,101 @@ static func _health_fact(card: Panel, y: int, width: int, caption: String, value
 static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	var stats:Array=[[G.n(player.get("appearances",0)),"APPARITIONS"],[G.n(player.get("minutes",0)),"MINUTES"]]
 	for i in stats.size():
-		var x:=24+i*440
-		D.text(card,x,145,stats[i][0],64,C.IVORY,700,400)
-		D.text(card,x,182,stats[i][1],22,C.MUTED,600,260)
+		var x:=24+i*196
+		D.text(card,x,145,stats[i][0],64,C.IVORY,700,180)
+		D.text(card,x,182,stats[i][1],22,C.MUTED,600,180)
+	# Notes de match (match-notes.cjs) : moyenne de la saison et forme des 5 derniers matchs.
+	var notes := NotesMatch.joueur(app.model,str(player.id))
+	var moyenne: Variant = notes.get("moyenne")
+	if moyenne != null:
+		var pastille := NotesMatch.pastille(card,Rect2(416,88,124,66),float(moyenne),0.95)
+		pastille.name = "FullPlayerNoteAverage"
+	else:
+		D.text(card,478,145,"—",64,C.MUTED,700,124,HORIZONTAL_ALIGNMENT_CENTER).name = "FullPlayerNoteAverage"
+	var matchs := int(notes.get("matchs",0))
+	var legende := D.text(card,416,182,"MOYENNE SAISON" + (" · %d match%s" % [matchs,"s" if matchs>1 else ""] if matchs>0 else ""),20,C.MUTED,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
+	legende.name = "FullPlayerNoteMatches"
+	legende.tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
+	NotesMatch.pastilles(card,Vector2(600,96),NotesMatch.forme(notes),Vector2(54,50),7.0,0.7).name = "FullPlayerForm"
+	var titres := int(notes.get("hommeDuMatch",0))
+	var xv := int(notes.get("selections",0))
+	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else "") + (" · %d× XV DE LA JOURNÉE" % xv if xv>0 else ""),22,C.GOLD if titres>0 or xv>0 else C.MUTED,600,300)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
 	var note := _note(app,player)
 	var preview := "Conservez vos observations sur ce joueur." if note.is_empty() else str(note.get("text","")).replace("\n"," ")
 	D.text(card,946,151,preview,19,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true).name="FullPlayerNotePreview"
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
+
+## Historique des matchs de la saison (note enregistrée, minutes, essais, plaquages, mètres),
+## puis le résumé des saisons passées.
+static func _history(card:Panel,app:Control,player:Dictionary) -> void:
+	var notes := NotesMatch.joueur(app.model,str(player.id))
+	var lignes: Array = notes.get("historique",[]) if notes.get("historique") is Array else []
+	var saisons: Array = notes.get("saisons",[]) if notes.get("saisons") is Array else []
+	var colonnes := [["SEM.",24,70],["ADVERSAIRE",104,420],["COMPÉTITION",534,300],["MIN.",844,80],["NOTE",934,90],["ESSAIS",1034,90],["PLAQ.",1134,90],["MÈTRES",1234,110],["",1354,280]]
+	for colonne: Array in colonnes:
+		D.text(card,colonne[1],98,colonne[0],18,C.MUTED,600,colonne[2])
+	D.line(card,Vector2(20,110),Vector2(1650,110))
+	var distinctions: Array = notes.get("distinctions",[]) if notes.get("distinctions") is Array else []
+	if lignes.is_empty() and saisons.is_empty() and distinctions.is_empty():
+		D.text(card,24,160,"Aucun match noté cette saison. Chaque rencontre jouée est notée de 1 à 10 (6,5 au coup d’envoi).",22,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerMatchHistoryEmpty"
+		return
+	var liste := _scroll(card,Rect2(20,118,1630,286))
+	liste.add_theme_constant_override("separation",C.px(2))
+	liste.name = "PlayerMatchHistoryRows"
+	for i in lignes.size():
+		var ligne: Dictionary = lignes[i]
+		var rang := Control.new()
+		rang.custom_minimum_size = Vector2(C.px(1630),C.px(36))
+		rang.name = "PlayerMatchRow"+str(i)
+		liste.add_child(rang)
+		if i%2==0: D.rect(rang,Rect2(0,0,1630,36),Color("141d1f"),3)
+		D.text(rang,4,26,"S"+G.n(int(ligne.get("semaine",0))+1),20,C.MUTED,500,70)
+		D.text(rang,84,26,str(ligne.get("adversaire","")),21,C.IVORY,600,420)
+		D.text(rang,514,26,str(ligne.get("competition","")),19,C.MUTED,500,300)
+		D.text(rang,824,26,G.n(ligne.get("minutes",0))+"′",20,C.IVORY,500,80)
+		NotesMatch.pastille(rang,Rect2(910,3,72,30),float(ligne.get("note",6.5)),0.62)
+		D.text(rang,1014,26,G.n(ligne.get("essais",0)),20,C.IVORY if int(ligne.get("essais",0))>0 else C.MUTED,500,90)
+		D.text(rang,1114,26,G.n(ligne.get("plaquages",0)),20,C.MUTED,500,90)
+		D.text(rang,1214,26,G.n(ligne.get("metres",0))+" m",20,C.MUTED,500,110)
+		if ligne.get("hommeDuMatch",false): D.chip(rang,Rect2(1334,4,200,28),"Homme du match",C.GOLD)
+	# Repères de carrière : équipes de la saison (XV type du championnat, saison régulière).
+	for d: Variant in distinctions:
+		if not d is Dictionary: continue
+		var repere := Control.new()
+		repere.custom_minimum_size = Vector2(C.px(1630),C.px(34))
+		repere.name = "PlayerSeasonXV"
+		liste.add_child(repere)
+		D.text(repere,4,25,"XV de la saison %s · %s · moyenne %s sur %d matchs" % [str(d.get("libelleSaison","")),str(d.get("championnat","")),NotesMatch.texte_note(d.get("moyenne")),int(d.get("matchs",0))],19,C.GOLD,700,1600)
+	for saison: Variant in saisons:
+		if not saison is Dictionary: continue
+		var rang := Control.new()
+		rang.custom_minimum_size = Vector2(C.px(1630),C.px(34))
+		liste.add_child(rang)
+		D.text(rang,4,25,"Saison %s · %s · %d matchs · moyenne %s · %d essai%s%s" % [G.season_label(saison.get("saison",0)),str(saison.get("club","")),int(saison.get("matchs",0)),NotesMatch.texte_note(saison.get("moyenne")),int(saison.get("essais",0)),"s" if int(saison.get("essais",0))>1 else "",(" · %d× homme du match" % int(saison.hommeDuMatch)) if int(saison.get("hommeDuMatch",0))>0 else ""],19,C.GOLD,500,1600)
+
+## Matchs internationaux notés (même calcul que le club) : moyenne, forme, dernières rencontres.
+static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
+	var notes := NotesMatch.joueur(app.model,str(player.id))
+	var sel: Variant = notes.get("selection")
+	if not sel is Dictionary:
+		D.text(card,24,110,"Aucun match international noté.",21,C.MUTED,400,510,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerSelectionEmpty"
+		return
+	NotesMatch.pastille(card,Rect2(24,70,86,44),float(sel.get("moyenne",6.5)),0.7).name = "PlayerSelectionAverage"
+	var n := int(sel.get("matchs",0))
+	D.text(card,122,90,("MOYENNE · %d DERNIÈRES" % n) if n>=10 else ("MOYENNE · %d sélection%s" % [n,"s" if n>1 else ""]),17,C.MUTED,600,170).tooltip_text = "Moyenne des notes des %d dernières sélections (notes de 1 à 10)." % n
+	var titres := int(sel.get("hommeDuMatch",0))
+	if titres>0: D.text(card,122,112,"%d× HOMME DU MATCH" % titres,17,C.GOLD,600,170)
+	NotesMatch.pastilles(card,Vector2(300,74),sel.get("forme",[]) if sel.get("forme") is Array else [],Vector2(42,36),5.0,0.5).name = "PlayerSelectionForm"
+	var lignes: Array = sel.get("historique",[]) if sel.get("historique") is Array else []
+	for i in mini(lignes.size(),3):
+		var ligne: Dictionary = lignes[i]
+		var y := 128 + i*40
+		D.text(card,24,y+24,str(ligne.get("date","")).substr(5,5).replace("-","/"),18,C.MUTED,500,60)
+		D.text(card,90,y+24,str(ligne.get("adversaire","")),19,C.IVORY,600,230)
+		D.text(card,324,y+24,str(ligne.get("competition","")),16,C.MUTED,500,130)
+		NotesMatch.pastille(card,Rect2(470,y+4,68,28),float(ligne.get("note",6.5)),0.6).name = "PlayerSelectionRow"+str(i)
 
 static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var renewal: Dictionary = player.get("renewal", {})
@@ -302,14 +390,15 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 	if history.is_empty():D.text(card,24,223,"Premier bilan annuel à venir.",25,C.MUTED,500,1550)
 	for i in mini(4,history.size()):
 		var year:Dictionary=history[history.size()-1-i]
-		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.n(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
+		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.season_label(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
 	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi individuel",func():
 		Academy.open_professional_progress(app, player_id, "PlayerDevelopmentAction"),false,"school",true,app.accent,"PlayerDevelopmentAction")
 
 static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
-		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,686)
+		var heading := PlayerAttributes.GENERATED_TITLE if PlayerAttributes.is_generated(player) else "Repères du joueur dans votre carrière"
+		D.text(card,24,120,heading,31,C.IVORY,700,686).name = "PlayerSourcesHeading"
 		D.text(card,24,179,str(player.get("pos","—"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var pos:Dictionary=profile.get("position",{})
@@ -327,7 +416,7 @@ static func _contexts(card: Panel, app: Control, player: Dictionary) -> void:
 	if not entry.is_empty():
 		note=C.v(4)
 		note.name="ProfileNoteContent"
-		note.add_child(C.label("MA NOTE · S%s / SEMAINE %s" % [G.n(entry.get("season",1)),G.n(int(entry.get("week",0))+1)],19,C.GOLD))
+		note.add_child(C.label("MA NOTE · %s / SEMAINE %s" % [G.season_label(entry.get("season",1)),G.n(int(entry.get("week",0))+1)],19,C.GOLD))
 		var preview := C.wrap(entry.get("text",""),19,C.IVORY)
 		preview.name="ProfileNotePreview"
 		preview.max_lines_visible=4
