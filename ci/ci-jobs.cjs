@@ -3,7 +3,20 @@
 // Les outils de livraison (gates, diagnostics, métriques) importent ces constantes au lieu
 // de recopier la liste : changer le nombre de shards ne demande qu'une modification ici et
 // dans la matrice du workflow (tests/ci-report.cjs vérifie que les deux concordent).
-const SHARD_COUNT = 10;
+// Sept runners × trois suites au plus (ci/run-shard-suites.sh, budget mémoire
+// ci/suite-weights.json « memory ») : même couverture qu'avec dix runners × deux suites,
+// sept places au lieu de dix sur les 20 jobs simultanés du dépôt public.
+// Les 4 vCPU d'un runner GitHub sont 2 cœurs physiques (SMT) : mesuré sur le run
+// 43326802384, quatre suites à la fois doublent la durée murale (médiane × 2,07) et font
+// expirer les délais vm internes (finish_round 15 s). Les suites « exclusives »
+// (ci/shard-tests.cjs isExclusive : ≥ EXCLUSIVE_WEIGHT s ou machine virtuelle node:vm)
+// gardent donc un cœur physique : tant qu'une d'elles tourne, au plus EXCLUSIVE_CAP
+// suites au total. La troisième place ne sert qu'aux suites légères.
+const SHARD_COUNT = 7;
+const SHARD_PARALLEL = 3;
+const PHYSICAL_CORES = 2;
+const EXCLUSIVE_CAP = PHYSICAL_CORES;
+const EXCLUSIVE_WEIGHT = 30;
 // Jobs Godot : SDK 4.7.2 installé en CI, suites natives sous xvfb. Non bloquants pour
 // l'instant (continue-on-error, hors des dépendances de « Validation CI »).
 const GODOT_SHARD_COUNT = 3;
@@ -40,6 +53,6 @@ function shardSeries(jobs) {
 }
 
 module.exports = {
-  SHARD_COUNT, GODOT_SHARD_COUNT, SHARD_JOBS, SHARD_JOB_SKIPPED, OFFICIAL_JOBS,
+  SHARD_COUNT, SHARD_PARALLEL, PHYSICAL_CORES, EXCLUSIVE_CAP, EXCLUSIVE_WEIGHT, GODOT_SHARD_COUNT, SHARD_JOBS, SHARD_JOB_SKIPPED, OFFICIAL_JOBS,
   GODOT_JOBS, GODOT_JOB_SKIPPED, isInformativeJob, officialJobs, shardSeries, shardJob
 };
