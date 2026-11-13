@@ -181,8 +181,11 @@ function chiffresRugby(lignes,events){
  }
  return t;
 }
+// Note de départ (demande de Léo, 12 novembre 2026) : 6,5 pour un titulaire au coup d'envoi comme pour
+// un remplaçant à son entrée ; seule base des notes de match (aucune moyenne de saison n'en dépend).
+const NOTE_DEPART=6.5;
 // Place défensive de chaque poste (1 à 15) en largeur (0 à 70) : sert à désigner le plaqueur
-// d'une course adverse, que le moteur ne nomme pas. Les avants plaquent au contact (petits gains),
+// d'une course adverse dans un journal sans fait `tackler` (anciennes sauvegardes) ; sinon le moteur le nomme. Les avants plaquent au contact (petits gains),
 // les trois-quarts dans leur couloir. Lecture pure du journal : aucun tirage, rien ne change au match.
 const COULOIR_DEFENSE=[33,35,37,30,40,24,46,35,35,28,6,20,50,64,35];
 function plaqueur(on,gain,y){
@@ -198,18 +201,19 @@ function plaqueur(on,gain,y){
  return choisi;
 }
 // Note de match des joueurs d'une équipe (le manager, ou l'adversaire pour « à surveiller ») :
-// 6 au coup d'envoi, puis ce que le journal leur attribue (courses et mètres, franchissements,
+// NOTE_DEPART au coup d'envoi, puis ce que le journal leur attribue (courses et mètres, franchissements,
 // essais, ballons récupérés, plaquages, tirs, cartons, fautes). Plaquages : chaque course
 // adverse stoppée (moins de 22 m) et chaque ballon récupéré, comme le chiffre d'équipe.
 function notesDuMatch(lignes,events,camp){
  const notes={};if(camp!==0&&camp!==1)return notes;
- const fiche=id=>notes[id]||(notes[id]={note:6,faits:0,essais:0,metres:0,plaquages:0});
+ const fiche=id=>notes[id]||(notes[id]={note:NOTE_DEPART,faits:0,essais:0,metres:0,plaquages:0});
  const ajoute=(id,valeur,fait)=>{if(id==null)return;const n=fiche(id);n.note+=valeur;n.faits++;if(fait==='essai')n.essais++;if(fait==='plaquage')n.plaquages++;if(typeof fait==='number')n.metres+=fait};
  for(const l of lignes){
   const s=events[l.i]?.scene;if(!s)continue;
   const gain=Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?Math.abs(s.to.x-s.from.x):0;
-  // Course adverse stoppée : plaqueur déduit de la place défensive (voir `plaqueur`).
-  if(l.kind==='carry'&&l.equipe===1-camp&&l.x!==null&&l.depuis!==null&&Math.abs(l.x-l.depuis)<22){ajoute(plaqueur(s.on?.[camp],gain,s.to?.y),.03,'plaquage');continue}
+  // Course adverse stoppée : plaqueur nommé par le moteur (fait `tackler`, le même que la 3D),
+  // sinon déduit de la place défensive (voir `plaqueur`).
+  if(l.kind==='carry'&&l.equipe===1-camp&&l.x!==null&&l.depuis!==null&&Math.abs(l.x-l.depuis)<22){const nomme=s.tackler!=null&&Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(String(s.tackler))?String(s.tackler):null;ajoute(nomme??plaqueur(s.on?.[camp],gain,s.to?.y),.03,'plaquage');continue}
   if(s.actor==null)continue;
   const id=String(s.actor),nous=Array.isArray(s.on?.[camp])&&s.on[camp].map(String).includes(id);if(!nous)continue;
   if(l.kind==='carry')ajoute(id,.04+Math.min(.5,gain/45)+(gain>=22?.25:0),Math.round(gain));
@@ -235,7 +239,7 @@ function xvAdverse(lignes,events,camp,effectif,actuel){
  for(let k=lignes.length-1;k>=0&&!on;k--){const o=events[lignes[k].i]?.scene?.on?.[eux];if(Array.isArray(o)&&o.length)on=o}
  if(!on)return [];
  return on.slice(0,15).map(id=>{
-  if(id==null)return null;const f=fiches.get(String(id)),n=notes[String(id)]||{note:6,faits:0,essais:0,metres:0,plaquages:0};
+  if(id==null)return null;const f=fiches.get(String(id)),n=notes[String(id)]||{note:NOTE_DEPART,faits:0,essais:0,metres:0,plaquages:0};
   // Clés propres à l'entracte (pas id/name : la couche « connaissance des joueurs » du modèle
   // habille ces objets-là et masque la note d'un joueur adverse non observé).
   return {joueur:String(id),nom:f?.name||'',poste:f?.pos||'',energie:f?.condition??null,note:n.note,faits:n.faits,essais:n.essais,metres:Math.round(n.metres),plaquages:n.plaquages};
@@ -413,4 +417,4 @@ function project(model,niveau,lire,options={}){
  return direct;
 }
 
-module.exports=Object.freeze({NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX});
+module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX});
