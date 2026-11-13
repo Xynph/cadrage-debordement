@@ -54,7 +54,12 @@ budget() {
   # 42891746395, sans retirer de contrôle.
   case "$1" in
     tests/world-worker-season.cjs) echo 1200s ;;
-    tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
+    tests/native-manager-career-worker.cjs) echo 900s ;;
+    # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
+    tests/native-manager-career-reverse.cjs) echo 1800s ;;
+    # Lot 03 (Monde) : mesures locales sous charge : match-direct 370 s (5 tests, 3 carrières), management-france-day-worker 200 s (avant-saison jouée jour par jour).
+    tests/match-direct.cjs) echo 600s ;;
+    tests/management-france-day-worker.cjs) echo 420s ;;
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
     tests/native-nationale-reduced-bench.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
