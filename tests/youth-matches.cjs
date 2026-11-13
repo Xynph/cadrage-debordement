@@ -75,3 +75,22 @@ test('Nouvelle saison : détail purgé, palmarès borné, retour progressif au p
  assert.ok(y[1]>=1&&y[3]<=50*Math.min(y[1],3)+80*Math.max(0,y[1]-3),'reprise progressive');
  assert.throws(()=>h.run(`S.youthMatches.history=Array(600).fill([1,'fr-crabos',0]);nativeSystems.domain('youthMatches').validate(S)`),/palmarès/);
 });
+
+test('Page de suivi du centre branchée (#626) et compteur des sélections jeunes (#636)',()=>{
+ const h=worldYouth();
+ h.run(`CDYouthMatches.process(S,Math.floor(Date.UTC(2026,11,31)/86400000))`);
+ const page=json(h,`nativeSystems.domain('academyFollowUp').project()`);
+ assert.equal(page.matchCap.connected,true);
+ assert.equal(page.competitions.available,true);
+ assert.ok(page.competitions.competitions.some(c=>c.name==='Élite Crabos'&&c.standings.length&&c.results.length));
+ const row=page.players.find(p=>p.matchCap&&p.matchCap.count>0);assert.ok(row,'charge affichée');
+ const id=JSON.stringify(row.id);
+ assert.equal(h.run(`CDYouthCompetitions.appearances(S,${id})`),row.matchCap.count);
+ // Compteur des sélections de #636 : pris en compte sans double compte avec recordSelection.
+ h.run(`globalThis.CDYouthNational={matches:(s,pid,season)=>pid===${id}&&season===s.season?30:0};`);
+ assert.equal(h.run(`CDYouthCompetitions.appearances(S,${id})`),row.matchCap.count+30);
+ assert.equal(json(h,`CDYouthMatches.matches(S,S.development.academy.find(p=>p.id===${id}))`).available,false);
+ const alerts=json(h,`nativeSystems.domain('academyFollowUp').alerts(S)`);
+ assert.ok(alerts.some(t=>t.includes('plafond de 30')),'alerte du plafond');
+ h.run(`delete globalThis.CDYouthNational`);
+});

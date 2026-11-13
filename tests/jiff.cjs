@@ -106,3 +106,14 @@ test('Validation stricte : un état JIFF altéré est refusé', () => {
     assert.throws(() => h.run(`(() => { const saved = JSON.parse(JSON.stringify(S.jiff)); try { ${breakage}; CDJiff.validate(S); } finally { S.jiff = saved; } })()`), /JIFF/);
   }
 });
+
+test('Fin de saison : un jeune pro du club devient JIFF par la licence, annoncé dans le fil', () => {
+  const h = setup();
+  const r = JSON.parse(h.run(`CDJiff.initialize(S);
+    const young = S.clubs[S.club].players.find(p => p.age <= 23) || Object.assign(S.clubs[S.club].players[0], { age: 22 });
+    CDJiff.setStatus(S, young.id, [0, 0, 4]);
+    CDJiff.closeSeason(S, S.season);
+    JSON.stringify({ jiff: CDJiff.isJiff(S, young), news: S.news.filter(t => String(t).includes(young.name) && String(t).includes('cinq saisons de licence')).length });`));
+  assert.equal(r.jiff, true);
+  assert.equal(r.news, 1);
+});

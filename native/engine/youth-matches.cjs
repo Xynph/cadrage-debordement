@@ -142,7 +142,13 @@ function factory(){
   else if(p.injury>0){y[5]=Math.max(0,p.injury*7-gap);p.injury=Math.ceil(y[5]/7);}
   return y;
  }
- const total=y=>y[1]+y[7];
+ // Sélections : compteur du chantier des sélections jeunes (CDYouthNational, #636) quand il est
+ // chargé, sinon celui alimenté par recordSelection. Le plus grand des deux évite un double compte.
+ function national(s,p){
+  try{if(typeof CDYouthNational==='undefined'||!CDYouthNational||typeof CDYouthNational.matches!=='function')return null;const n=CDYouthNational.matches(s,p.id,s.season);return Number.isSafeInteger(n)&&n>=0?n:null;}catch(e){return null;}
+ }
+ const selections=(s,p,y)=>{const n=national(s,p);return n===null?y[7]:Math.max(y[7],n);};
+ const total=(y,s,p)=>y[1]+(s&&p?selections(s,p,y):y[7]);
 
  // ---------------------------------------------------------------- calendrier de la saison
  function strength(players){const r=players.map(p=>p.rating).sort((a,b)=>b-a).slice(0,23);return r.length?r.reduce((a,b)=>a+b,0)/r.length:0;}
@@ -228,9 +234,9 @@ function factory(){
  function select(s,clubId,cat,day,used,r){
   const all=academy(s,clubId)||[];let pool=all.filter(p=>inCat(p,cat)&&!used.has(p.id));
   for(const p of pool)refresh(s,p,day);
-  pool=pool.filter(p=>!(load(s,p)[5]>0)&&total(load(s,p))<CAP);
+  pool=pool.filter(p=>!(load(s,p)[5]>0)&&total(load(s,p),s,p)<CAP);
   // Surclassement : des Crabos de 17 ans complètent un groupe Espoirs trop court.
-  if(cat==='E'&&pool.length<23)pool=pool.concat(all.filter(p=>p.age===17&&!used.has(p.id)).filter(p=>{refresh(s,p,day);const y=load(s,p);return !(y[5]>0)&&total(y)<CAP;}).sort((a,b)=>b.rating-a.rating).slice(0,23-pool.length));
+  if(cat==='E'&&pool.length<23)pool=pool.concat(all.filter(p=>p.age===17&&!used.has(p.id)).filter(p=>{refresh(s,p,day);const y=load(s,p);return !(y[5]>0)&&total(y,s,p)<CAP;}).sort((a,b)=>b.rating-a.rating).slice(0,23-pool.length));
   // Valeur du jour : niveau, fatigue, charge de la saison et petit aléa de rotation (une fois par joueur).
   const base=new Map(),ramp=new Set();
   for(const p of pool){const y=load(s,p);base.set(p,p.rating-Math.max(0,y[4]-35)*.5-Math.max(0,y[1]-18)*2.5-(y[1]>=RISK_FROM?6:0)+r()*2.5);if(y[6]>0)ramp.add(p);}
@@ -279,7 +285,7 @@ function factory(){
    if(typeof growPlayer==='function'&&p.dev){
     p.dev.minutes+=m;p.dev.careerMinutes=(p.dev.careerMinutes||0)+m;p.dev.appearances++;
     const fit=typeof growthFitnessFactor==='function'?growthFitnessFactor(p):1,age=typeof ageGrowth==='function'?ageGrowth(p):1;
-    growPlayer(p,m/80*.12*level*age*Math.max(.5,condition/100)*fit,false);
+    growPlayer(p,m/80*.12*level*age*Math.max(.5,condition/100)*fit,true);
    }
    out.push([p,m]);
   }
@@ -400,13 +406,22 @@ function factory(){
  function findYouth(s,id){for(const a of [s.development.academy,...s.aiRoster.academies.map(x=>x.players)]){const p=a.find(x=>x.id===id);if(p)return p;}return null;}
  function recordSelection(s,playerId,mins=80){
   const p=findYouth(s,playerId);if(!p||!int(mins,0,80))return false;
-  const y=load(s,p);if(total(y)>=CAP)return false;y[7]++;y[4]=Math.min(100,Math.round(y[4]+mins*.4));return true;
+  const y=load(s,p);if(total(y,s,p)>=CAP)return false;y[7]++;y[4]=Math.min(100,Math.round(y[4]+mins*.4));return true;
  }
- function matches(s,p){const y=Array.isArray(p?.youthLoad)&&p.youthLoad[0]===s.season?p.youthLoad:null;return {club:y?y[1]:0,selection:y?y[7]:0,total:y?total(y):0,cap:CAP,available:!y||(total(y)<CAP&&!(y[5]>0))};}
+ function matches(s,p){const y=Array.isArray(p?.youthLoad)&&p.youthLoad[0]===s.season?p.youthLoad:[s.season,0,0,0,0,0,0,0,0,0],sel=selections(s,p,y),all=y[1]+sel;return {club:y[1],selection:sel,total:all,cap:CAP,available:all<CAP&&!(y[5]>0)};}
+ // Branchement de la page de suivi du centre (#626, academy-follow-up.cjs) : nombre de matchs
+ // comptés pour le plafond (club + sélection) et résumé des compétitions du club joué.
+ function appearances(s,playerId){const p=s?.development?.academy?.find(x=>x.id===playerId)||(s?findYouth(s,playerId):null);return p?matches(s,p).total:null;}
+ function summary(s){
+  if(!active(s)||!s.youthMatches)return null;const view=projectFor(s);
+  return {season:view.season,date:view.date,competitions:view.competitions.map(c=>({id:c.id,name:c.name,category:c.category,champion:c.champion,standings:c.tables.flatMap(t=>t.rows.map(r=>({...r,phase:t.phase}))),
+   results:(c.category==='Crabos'?view.results.crabos:view.results.espoirs).filter(r=>r.competition===c.name)})),results:view.results,upcoming:view.upcoming};
+ }
 
  // ---------------------------------------------------------------- projection, validation, crochets
- function project(){
-  const s=typeof S==='undefined'?null:S;if(!active(s)||!s.youthMatches)return {available:false};
+ function project(){return projectFor(typeof S==='undefined'?null:S);}
+ function projectFor(s){
+  if(!active(s)||!s.youthMatches)return {available:false};
   const st=s.youthMatches,name=id=>id<0?null:s.clubs[id]?.name||null,mine=[];
   for(const [id,comp]of Object.entries(st.comps)){
    if(!comp.m.includes(s.club))continue;const spec=specOf(id);
@@ -415,7 +430,7 @@ function factory(){
   }
   const results=cat=>st.own[cat].map(([day,comp,opp,home,pf,pa])=>({date:iso(day),competition:specOf(comp)?.name||'Match de club ou d’école',opponent:opp<0?(FILL[region(s,s.clubs[s.club])]?.[cat]||'Club local'):name(opp),home:!!home,for:pf,against:pa}));
   const plan=schedule(s),upcoming=plan.days.filter(d=>d>st.day).slice(0,40).flatMap(day=>plan.events.get(day).filter(e=>e.fill===s.club||e.comp&&st.comps[e.comp].m.includes(s.club)).map(e=>({date:iso(day),competition:e.fill!==undefined?'Match de club ou d’école':specOf(e.comp).name,category:(e.cat||specOf(e.comp).cat)==='C'?'Crabos':'Espoirs'}))).slice(0,6);
-  const players=s.development.academy.map(p=>{const y=Array.isArray(p.youthLoad)&&p.youthLoad[0]===s.season?p.youthLoad:[0,0,0,0,0,0,0,0,0,0];return {id:p.id,matches:y[1],starts:y[2],minutes:y[3],tries:y[8],selection:y[7],cap:CAP,fatigue:y[4],injuredWeeks:Math.ceil(y[5]/7),returning:y[6]>0?y[6]:0};});
+  const players=s.development.academy.map(p=>{const y=Array.isArray(p.youthLoad)&&p.youthLoad[0]===s.season?p.youthLoad:[0,0,0,0,0,0,0,0,0,0];return {id:p.id,matches:y[1],starts:y[2],minutes:y[3],tries:y[8],selection:selections(s,p,y),cap:CAP,fatigue:y[4],injuredWeeks:Math.ceil(y[5]/7),returning:y[6]>0?y[6]:0};});
   return {available:true,season:st.season,date:iso(st.day),competitions:mine,results:{crabos:results('C'),espoirs:results('E')},upcoming,players,titles:st.history.filter(r=>r[2]===s.club).map(([season,comp])=>({season,competition:specOf(comp)?.name||comp}))};
  }
  function validate(s){
@@ -448,6 +463,7 @@ function factory(){
  }
  const api=Object.freeze({process,setup,today,recordSelection,matches,project,validate,CATALOG,CAP});
  g.CDYouthMatches=api;
+ g.CDYouthCompetitions=Object.freeze({appearances,summary});
  return {project,validate,execute,installHooks,process,recordSelection,matches};
 }
 module.exports={files,commands,factory};

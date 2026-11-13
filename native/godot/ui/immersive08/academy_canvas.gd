@@ -410,8 +410,9 @@ func _staff_page() -> void:
 		var tile := D.panel(panel, Rect2(23 + i * 454, 136, 435, 178), item[0], item[2])
 		D.text(tile, 25, 140, item[1], 65, GREEN, 700, 380)
 	D.text(panel, 25, 376, "Les décisions du centre restent accessibles depuis son carnet.", 25, C.MUTED, 500, 1348)
-	_action(panel, Rect2(23, 428, 660, 63), "Gérer le centre", func(): app._navigate("Centre"), true, "arrow", "AcademyManageCentre")
-	_action(panel, Rect2(707, 428, 661, 63), "Ouvrir le staff", func(): app._navigate("Staff"), false, "arrow", "AcademyOpenStaff")
+	_action(panel, Rect2(23, 428, 437, 63), "Gérer le centre", func(): app._navigate("Centre"), true, "arrow", "AcademyManageCentre")
+	_action(panel, Rect2(477, 428, 437, 63), "Suivi des jeunes", func(): app._navigate("Suivi des jeunes"), false, "arrow", "AcademyFollowUp")
+	_action(panel, Rect2(931, 428, 437, 63), "Ouvrir le staff", func(): app._navigate("Staff"), false, "arrow", "AcademyOpenStaff")
 
 func _inactive_pathway_status() -> String:
 	return "Parcours à activer" if pathway.get("available", false) else "Parcours indisponibles"
