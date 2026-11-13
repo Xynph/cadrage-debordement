@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // These synthetic fixtures exercise validation only. They are never Windows proof.
 const test=require('node:test'),assert=require('node:assert/strict'),path=require('node:path');
 const {spawnSync}=require('node:child_process');

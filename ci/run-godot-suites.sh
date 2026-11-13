@@ -13,11 +13,16 @@ list="${1:?Usage : ci/run-godot-suites.sh <liste> [titre]}"
 title="${2:-Suites Godot}"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
-mapfile -t suites < "$list"
-[[ "${#suites[@]}" -gt 0 ]] || { echo "Aucune suite dans $list" >&2; exit 1; }
+# Mode Monde uniquement : les suites à ancien mode de carrière (CD_MODES_HERITES) ne tournent jamais.
+mapfile -t suites < <(node "$root/ci/legacy-modes.cjs" filter "$list")
+if [[ "${#suites[@]}" -eq 0 ]]; then
+  [[ -s "$list" ]] || { echo "Aucune suite dans $list" >&2; exit 1; }
+  echo "Toutes les suites de $list sont exclues (ancien mode de carrière) : rien à exécuter." >&2
+  exit 0
+fi
 export CD_GODOT_REQUIRED=1
-# Recettes Godot pas encore migrées vers le mode Monde : anciens modes ouverts au moteur (tests seulement).
-export CD_MODES_HERITES=1
+# Aucun export de CD_MODES_HERITES : les suites tournent en mode Monde ; celles qui portent le drapeau sont exclues.
+unset CD_MODES_HERITES
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--require=$root/ci/godot-env.cjs"
 node "$root/ci/godot-env.cjs" --check || exit 1
 work="$(mktemp -d)"
@@ -26,6 +31,7 @@ summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 engine_skip='SDK Godot (requis|absent)|Godot SDK required|SKIP [^ ]+ : SDK absent|SDK et worker knowledge requis|Set CD_GODOT_EXECUTABLE|NON EXÉCUTÉ \(CD_GODOT'
 # Suites de rendu volontairement longues (parcours complets en rendu logiciel llvmpipe) : plafond relevé
 # au cas par cas, jamais pour l'ensemble. Les assertions elles-mêmes ne changent pas.
+# (Les plafonds et suites informatives ci-dessous des suites exclues — CD_MODES_HERITES — sont conservés pour leur retour.)
 declare -A suite_limits=(
   [tests/godot-art-direction.cjs]=600
   [tests/godot-match-temps-forts.cjs]=600
