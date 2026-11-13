@@ -39,5 +39,8 @@ test('Notes de match : effectif et fiche joueur dans le vrai jeu', { skip: !godo
     const rapport = JSON.parse(ligne.slice('NOTES_MATCH '.length));
     assert.deepEqual(rapport.failures, []);
     console.log('Notes de match (Godot) : ' + JSON.stringify(rapport.mesures) + ' · captures : ' + sortie);
-  } finally { fs.rmSync(profil, { recursive: true, force: true }); }
+  } finally {
+    fs.rmSync(profil, { recursive: true, force: true });
+    if (!process.env.CD_NOTES_OUTPUT && process.env.CD_NOTES_GRAPHICS !== '1') fs.rmSync(sortie, { recursive: true, force: true });
+  }
 });
