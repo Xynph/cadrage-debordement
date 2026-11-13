@@ -8,6 +8,11 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+  # Créneau régulier : seulement les suites Godot (non bloquantes) sur le dernier main,
+  # au lieu de les relancer à chaque fusion. Ni suites JS ni verdict (les gates ignorent
+  # l'événement schedule).
+  schedule:
+    - cron: '23 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -47,7 +52,7 @@ jobs:
   shards:
     name: Suites ${{ matrix.shard }}/7
     needs: classification
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' }}
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' && github.event_name != 'schedule' }}
     strategy:
       fail-fast: false
       matrix:
@@ -94,9 +99,9 @@ jobs:
     # continue-on-error, tant que ces suites ne sont pas fiables et rapides en CI.
     # Plus lancé sur les PR (13/11) : 25 % des minutes de runner, rouge 41 % du temps,
     # non bloquant, et ses échecs rendaient les PR « unstable » (gate officiel refusé).
-    # Tourne après fusion sur main et à la demande (workflow_dispatch) ; recette Godot
+    # Tourne sur créneau régulier (schedule) et à la demande (workflow_dispatch) ; recette Godot
     # d'une PR : étiquette `godot-sdk` (godot-sdk.yml).
-    if: ${{ github.event_name != 'pull_request' && needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
     continue-on-error: true
     strategy:
       fail-fast: false
@@ -191,7 +196,7 @@ jobs:
             bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/3"
   validation:
     name: Validation CI
-    if: ${{ always() }}
+    if: ${{ always() && github.event_name != 'schedule' }}
     needs: [classification, shards]
     runs-on: ubuntu-24.04
     timeout-minutes: 5

@@ -4,13 +4,14 @@ on:
   # passage en prête d'une PR qui la porte). Mesure du 13/11 : 26 % des minutes de
   # runner, sdk-parcours rouge 41 % du temps, aucun job requis ; ces échecs facultatifs
   # rendaient les PR « unstable » et bloquaient le gate officiel (état clean exigé).
-  # main garde la recette complète après chaque fusion (seule la dernière compte).
   pull_request:
     branches: [main]
     types: [labeled, ready_for_review]
-  push:
-    branches: [main]
-    paths: ['native/**', 'dist/**', 'tests/**', 'ci/**', 'scripts/build-godot-prototype.py', '.github/workflows/godot-sdk.yml']
+  # Après fusion : plus à chaque fusion (rafales de fusions automatiques), mais sur
+  # créneau régulier sur le dernier main (toutes les 2 h). Mesure du 13/11 : chaque fusion
+  # relançait ~20 jobs non bloquants. Relance immédiate : workflow_dispatch.
+  schedule:
+    - cron: '41 */2 * * *'
   workflow_dispatch:
     inputs:
       scope:
