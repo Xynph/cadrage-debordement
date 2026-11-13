@@ -2,6 +2,13 @@ extends RefCounted
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 
 const SUBTITLE := "Notes de simulation sur 100"
+const GENERATED_ID_PREFIX := "depth-"
+const GENERATED_TITLE := "Joueur généré pour compléter l’effectif"
+
+## Les joueurs « depth-… » sont créés par le moteur pour tenir le plancher de
+## quarante professionnels ; ils n’ont aucun dossier de référence externe.
+static func is_generated(player: Dictionary) -> bool:
+	return str(player.get("id", "")).begins_with(GENERATED_ID_PREFIX)
 
 # Clés du registre attributesV2. Ces groupes organisent seulement la lecture.
 const GROUPS = [
