@@ -19,24 +19,43 @@ function factory(eligibility){
  function partialSheet(starters,bench){
   const all=[...starters,...bench];
   return valid(all)&&starters.length<=15&&bench.length<=8&&count(all,'B')+count(all,'C')<=6&&count(all,'C')<=3
-    &&all.length-count(all,'A-1')<=9&&starters.length-count(starters,'A-1')<=7&&count(starters,'C')<=3;
+    &&all.length-count(all,'A-1')<=9&&starters.length-count(starters,'A-1')<=7&&count(starters,'C')<=3&&count(starters,'B')<=4;
  }
  function changeAllowed(active,out,incoming){
   if(!valid(active)||active.length>15||out!==null&&!active.some(p=>p.id===out)||incoming&&active.some(p=>p.id===incoming.id))return false;
   const next=active.filter(p=>p.id!==out).concat(incoming?[incoming]:[]),a=count(next,'A-1');
-  if(!valid(next)||next.length>15||next.length-a>7||count(next,'C')>3)return false;
+  if(!valid(next)||next.length>15||next.length-a>7||count(next,'C')>3||count(next,'B')>4)return false;
   const before=count(active,'A-1'),minimum=next.length===15?8:incoming&&out!==null?Math.min(8,before):Math.max(0,next.length-7);
   return a>=minimum;
  }
  const edition=s=>typeof CDWorldCareer!=='undefined'&&[3,4,5].includes(CDWorldCareer.edition(s)?.version)?CDWorldCareer.edition(s):null;
  const activeClub=(s,id)=>edition(s)&&leagueIds.some(k=>s.worldMode.leagues[k].members.includes(id));
  const activeMatch=(s,l)=>edition(s)&&['jlo-d1','jlo-d2','jlo-d1-d2'].includes(l?.worldContext?.competitionId);
+ // Jeunes des centres japonais (youth-<club japonais>-<saison>-<n>), règlement 2026-27 :
+ // - A-1 : au moins 6 des 9 années de scolarité obligatoire au Japon (le jeune d'origine japonaise a
+ //   grandi au Japon : sa formation scolaire y est supposée) ;
+ // - A-2 : sans passé en sélection d'une autre union et 48 mois d'enregistrement continu auprès de la
+ //   fédération japonaise (le jeune d'origine étrangère n'a pas fait sa scolarité obligatoire au Japon) ;
+ // - B : le même jeune étranger avant ses 48 mois (il pourra devenir A-2 puis sélectionnable).
+ // L'enregistrement commence à l'arrivée au centre (saison du numéro d'identifiant) ; les jeunes de la
+ // génération initiale (saison 1) sont supposés arrivés à 16 ans. Valeurs estimées, jamais « officielles ».
+ const JP_FIRST=68,JP_LAST=87,A2_MONTHS=48,ENTRY_AGE=16;
+ function youthCategory(s,p){
+  const youth=/^youth-(\d+)-(\d+)-\d+$/.exec(p.id);
+  if(youth&&Number(youth[1])>=JP_FIRST&&Number(youth[1])<=JP_LAST){
+   const origin=typeof youthHeritage==='function'?youthHeritage(p.id,'JPN'):'JPN';
+   if(origin==='JPN')return {category:'A-1',reason:'local-game-academy'};
+   const intake=Number(youth[2]),age=Number.isFinite(p.age)?p.age:ENTRY_AGE;
+   const months=12*(intake<=1?Math.max(0,age-ENTRY_AGE):Math.max(0,s.season-intake));
+   return months>=A2_MONTHS?{category:'A-2',reason:'registration-48-months'}:{category:'B',reason:'foreign-origin-centre-under-48-months'};
+  }
+  if(/^jlo-academy-(6[89]|7\d|8[0-7])-\d+-\d+-\d+$/.test(p.id))return {category:'A-1',reason:'local-game-academy'};
+  return {category:'C',reason:'unverified-recruit-registration'};
+ }
  function classified(s,p){
   const e=edition(s),initial=e?.registry.japanCategories?.[p.id];
   if(initial)return {id:p.id,...initial,rank:CDWorldCareer.sourcePlayer(s,p.id)?.rating||0};
-  const youth=/^youth-(\d+)-\d+-\d+$/.exec(p.id);
-  const trained=!!youth&&Number(youth[1])>=68&&Number(youth[1])<=87||/^jlo-academy-(6[89]|7\d|8[0-7])-\d+-\d+-\d+$/.test(p.id);
-  return {id:p.id,category:trained?'A-1':'C',basis:'estimated',reason:trained?'local-game-academy':'unverified-recruit-registration',rank:0};
+  return {...youthCategory(s,p),id:p.id,basis:'estimated',rank:0};
  }
  const registered=(s,club)=>selectRegistration(club.players.map(p=>classified(s,p)));
  const registrationIds=(s,club)=>new Set(registered(s,club).map(p=>p.id));
@@ -72,7 +91,7 @@ function factory(eligibility){
   return list(s,s.clubs[l.pair[side]],on);
  }
  function validField(field){
-  return valid(field)&&field.length<=15&&field.length-count(field,'A-1')<=7&&count(field,'C')<=3;
+  return valid(field)&&field.length<=15&&field.length-count(field,'A-1')<=7&&count(field,'C')<=3&&count(field,'B')<=4;
  }
  function matchChange(s,l,side,out,incoming,target=-1){
   if(!activeMatch(s,l))return true;
@@ -167,6 +186,6 @@ function factory(eligibility){
   const rows=registered(s,c),selected=list(s,c,[...s.lineup,...s.reserves]);
   m.japanEligibility={registered:rows.length,notRegistered:c.players.length-rows.length,counts:Object.fromEntries(eligibility.categories.map(cat=>[cat,count(selected,cat)])),valid:nominations(s,c,s.lineup,s.reserves),minimumA1:14,maximumBC:6,maximumC:3};
  }
- return Object.freeze({selectRegistration,partialSheet,changeAllowed,activeClub,classified,registrationIds,nominations,matchChange,validate,installHooks,project});
+ return Object.freeze({youthCategory,selectRegistration,partialSheet,changeAllowed,activeClub,classified,registrationIds,nominations,matchChange,validate,installHooks,project});
 }
 module.exports={factory,...factory(require('./japan-eligibility.cjs'))};

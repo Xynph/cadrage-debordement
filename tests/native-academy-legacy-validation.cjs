@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const { assertLegacyProfessionals } = require('./helpers/assert-legacy-professionals.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const {createBridge}=require('../native/engine/worker.cjs');const {make}=require('./native-academy.cjs');const folder=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-academy-legacy-schema-'));let seq=0;
 for(const mode of ['historical','france']){const t=make(0,mode==='historical'?'fiction':'france'),r=t.run;const b=createBridge({dataDir:path.join(folder,mode),seed:13,now:1700000000000});function good(command,payload={}){const x=b.handle({id:++seq,command,payload});assert.equal(x.ok,true,x.error);return x.model}try{
