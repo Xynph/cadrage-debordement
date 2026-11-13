@@ -493,6 +493,8 @@
    "tests/world-worker-atomic.cjs": 1408,
    "tests/world-worker-season.cjs": 3136,
    "tests/world-worker.cjs": 3392,
+   "tests/youth-matches-worker.cjs": 2560,
+   "tests/youth-matches.cjs": 2048,
    "tests/youth-scout-native.cjs": 3328
   }
  }

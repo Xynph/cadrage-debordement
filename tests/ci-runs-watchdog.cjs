@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {decide}=require('../ci/runs-watchdog.cjs');
+const now=Date.parse('2026-11-13T10:00:00Z'),at=m=>new Date(now-m*60000).toISOString();
+const run=(id,minutes,extra={})=>({id,status:'queued',event:'pull_request',jobCount:12,created_at:at(minutes),...extra});
+const runs=[run(1,150),run(2,30),run(3,60,{jobCount:0}),run(4,90,{event:'workflow_dispatch'}),run(5,70),run(6,200,{status:'in_progress'})];
+assert.deepEqual(decide(runs,20,now),[1,5],'bloquées : anciennes, avec jobs, hors dispatch, plus vieilles d’abord');
+assert.deepEqual(decide(runs,35,now),[],'file pleine : attente normale, rien relancé');
+assert.deepEqual(decide(runs,0,now,{maxActions:1}),[1],'nombre de relances borné');
+assert.deepEqual(decide([run(7,44)],0,now),[],'sous le seuil de 45 min');
+console.log('ci-runs-watchdog : bloquées relancées, fantômes, dispatch et file pleine épargnés');
