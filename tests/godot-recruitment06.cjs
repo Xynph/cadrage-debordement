@@ -4,8 +4,8 @@ const {test}=require('node:test');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 test('Recrutement et presse : présentations natives des rapports et relances', {skip:!godot&&'SDK Godot absent : réception non exécutée'},()=>{
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-recruitment06-'));
-const {context}=require('./france-harness.cjs'),h=context(10606),decisions=require('../native/engine/decisions.cjs'),press=require('../native/engine/press.cjs');
-h.run(`start(0,'fiction');const nativeDecisions=${decisions.toString()};const nativePress=(${press.factory.toString()})();`);
+const {context}=require('./monde-harness.cjs'),h=context(10606),decisions=require('../native/engine/decisions.cjs'),press=require('../native/engine/press.cjs');
+h.run(`const nativePress=(${press.factory.toString()})();`);
 h.run(`{const p=managerPool()[0];S.manager.reports=[{id:'report-ui',playerId:p.id,name:'Émile D’Ávila — profil à comparer à nos solutions',pos:p.pos,family:p.fam,age:25,note:72,potential:81,salary:p.salary,price:p.price,grade:'B',season:1,week:0}];S.round=2;var nativeMandatoryPress=true;nativePress.observeInvitation();const q=nativePress.project().conference.questions[0],source=CDPressQuestionBank.questions.find(source=>source.theme===q.theme&&source.id!==q.id);S.pressConference={version:1,history:[{id:source.id,season:1,week:0,club:0,answerId:'r4',questionText:'Comment voyez-vous le projet ?',answerText:'Nous avançons ensemble, sans promesse de victoire.',journalist:{id:q.journalist.id,name:q.journalist.name,outlet:q.journalist.outlet}}]};}`);
 h.run("S.manager.reports.push({...S.manager.reports[0],id:'report-ui2',name:'Zoé — autre rapport daté',note:61,grade:'C'});");
 h.prepareNativeProjection();
@@ -48,7 +48,7 @@ func run() -> void:
   for section in ["ScoutObserved", "ScoutEstimates", "ScoutLimits", "ScoutSource", "ScoutFit"]:
    check(card.find_child(section,true,false) != null,"Section de rapport : " + section)
   var source: Label = card.find_child("ScoutSource",true,false)
-  check(source.text.contains("Saison 1") and source.text.contains("suivi 0"),"Source du rapport datée sans inventer une semaine de calendrier")
+  check(source.text.contains("Saison 2026-2027") and source.text.contains("suivi 0"),"Source du rapport datée sans inventer une semaine de calendrier")
   var evidence: TabContainer = card.find_child("ScoutEvidenceTabs",true,false)
   check(evidence != null and evidence.get_tab_count() == 3,"Faits, avis et réserves consultables sans empilement")
   for dimensions in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
@@ -69,7 +69,7 @@ func run() -> void:
  for q: Dictionary in questions:
   if q.has("followUp"):
    var source: Label = page.find_child("PressFollowUp_" + str(q.id),true,false)
-   check(source != null and source.text.contains("saison 1"),"Source de relance datée visible")
+   check(source != null and source.text.contains("saison 2026-2027"),"Source de relance datée visible")
   for answer: Dictionary in q.answers:
    var option: Button = page.find_child("PressAnswer_"+str(q.id)+"_"+str(answer.id),true,false)
    check(option != null,"Les cinq réponses restent présentes")

@@ -1375,7 +1375,8 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle=''}={}){
   const amont=remonter(plans,rec,k,T);
   ({premier,ouverture}=amont);
   vedette=r.actor!=null?String(r.actor):null;
-  etapes=[...amont.etapes,{k:'pied',joueur:vedette,x:vers_,issue:touche?'touche':'reception',depuis:de,plan:k,cle:true}];
+  // Touche : la ligne du moteur (celle de la touche qui suit), pas la plus proche du botteur.
+  etapes=[...amont.etapes,{k:'pied',joueur:vedette,x:vers_,issue:touche?'touche':'reception',...(touche&&fini(r.to?.y)?{cote:r.to.y>35?70:0}:{}),depuis:de,plan:k,cle:true}];
   const n=plans[k+1],rn=rec(k+1);
   if(!touche&&n&&rn&&n.kind==='turnover'&&rn.team===T){etapes.push({k:'recup',joueur:rn.actor!=null?String(rn.actor):null,side:T,plan:k+1});dernier=k+1}
   return finir({type,equipe:T,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur:vedette==null});

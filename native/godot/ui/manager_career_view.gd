@@ -15,7 +15,7 @@ static func _player(app: Control, id: String) -> String:
 static func _confirm(app: Control, context: Dictionary, offer: Dictionary) -> void:
 	var dialog := ConfirmationDialog.new()
 	dialog.title = "Confirmer la prise de poste"
-	dialog.dialog_text = "Rejoindre %s en saison %s ?\nLes comptes, joueurs et centres restent dans leur club.\nLes dossiers de recrutement actifs seront clos au changement de bureau.\nAucun salaire personnel ni indemnité de manager." % [_club(app, offer.clubId), int(context.season) + 1]
+	dialog.dialog_text = "Rejoindre %s en saison %s ?\nLes comptes, joueurs et centres restent dans leur club.\nLes dossiers de recrutement actifs seront clos au changement de bureau.\nAucun salaire personnel ni indemnité de manager." % [_club(app, offer.clubId), G.season_label(int(context.season) + 1)]
 	dialog.ok_button_text = "Confirmer la saison suivante"
 	dialog.cancel_button_text = "Rester sur le carnet"
 	dialog.confirmed.connect(func(): app._command("manager_career_accept", {"context":context,"offerId":offer.id,"confirmed":true}); dialog.queue_free())
@@ -40,7 +40,7 @@ static func build(app: Control) -> Control:
 		activate.disabled = not data.get("available", false)
 		career.add_child(activate)
 	else:
-		career.add_child(G.wrap("Mandat à %s depuis la saison %s" % [_club(app, data.clubId), int(data.currentFrom)], 20, G.INK))
+		career.add_child(G.wrap("Mandat à %s depuis la saison %s" % [_club(app, data.clubId), G.season_label(data.currentFrom)], 20, G.INK))
 		var pending: Variant = data.get("pending")
 		if pending is Dictionary:
 			career.add_child(G.section("La prochaine saison", _club(app, pending.toClub)))
@@ -68,7 +68,7 @@ static func build(app: Control) -> Control:
 		career.add_child(G.section("Offres et candidatures"))
 		if data.get("applications", []).is_empty(): career.add_child(G.wrap("Aucune candidature enregistrée.", 14))
 		for a: Dictionary in data.get("applications", []):
-			career.add_child(G.wrap("S%s · %s" % [int(a.season), _club(app, a.clubId)], 18, G.INK))
+			career.add_child(G.wrap("%s · %s" % [G.season_label(a.season), _club(app, a.clubId)], 18, G.INK))
 			career.add_child(G.wrap({"offer":"La direction accepte votre candidature.","stable":"Le club conserve son technicien.","finances":"La situation financière bloque ce changement.","reputation":"Parcours insuffisant pour les attentes du club.","declined":"Offre refusée.","cancelled":"Prise de poste annulée.","expired":"Offre expirée.","completed":"Prise de poste effectuée."}.get(a.reason, str(a.status)), 14))
 			if a.status == "offered" and data.get("window", false) and pending == null:
 				var accept := G.button("EXAMINER ET CONFIRMER L’OFFRE", func(): _confirm(app, context, a), true)
@@ -78,10 +78,10 @@ static func build(app: Control) -> Control:
 			career.add_child(G.separator())
 	career.add_child(G.section("Le parcours"))
 	for h: Dictionary in data.get("history", []):
-		career.add_child(G.wrap("S%s · %s → %s" % [int(h.arrivalSeason), _club(app, h.fromClub), _club(app, h.toClub)], 15))
+		career.add_child(G.wrap("%s · %s → %s" % [G.season_label(h.arrivalSeason), _club(app, h.fromClub), _club(app, h.toClub)], 15))
 	career.add_child(G.section("Les archives des clubs"))
 	for archive: Dictionary in data.get("archives", []):
-		career.add_child(G.wrap("%s · S%s · %s écritures conservées · %s bilans du conseil" % [_club(app, archive.clubId), int(archive.season), archive.ledger.size(), archive.boardHistory.size()], 14))
+		career.add_child(G.wrap("%s · %s · %s écritures conservées · %s bilans du conseil" % [_club(app, archive.clubId), G.season_label(archive.season), archive.ledger.size(), archive.boardHistory.size()], 14))
 	var seasons: Array = app.model.get("archives",{}).get("seasons",[])
 	if seasons.any(func(year: Dictionary): return year.get("japan") is Dictionary and not year.japan.get("pairs",[]).is_empty()):
 		var archives := G.button("Archives des saisons · barrages du Japon",func(): app.ClubViews.season_archives(app))
@@ -93,7 +93,7 @@ static func build(app: Control) -> Control:
 	recruitment.add_child(G.section("Le plan sur trois saisons"))
 	for year: Dictionary in data.get("plan", []):
 		var season := G.card(recruitment, G.accent_ink(app.accent))
-		season.add_child(G.section("Saison %s" % int(year.year), "%s poste(s) fragiles" % int(year.thin)))
+		season.add_child(G.section("Saison %s" % G.season_label(year.year), "%s poste(s) fragiles" % int(year.thin)))
 		G.gauge(season, "Postes couverts", float(year.covered), 15)
 		season.add_child(G.wrap("Masse salariale connue : %s · %s semaines payées" % [G.euros(year.payroll), int(year.payments)], 14))
 	recruitment.add_child(G.wrap(data.get("planNotice", ""), 13))
@@ -124,6 +124,6 @@ static func build(app: Control) -> Control:
 		draw.call(0)
 	recruitment.add_child(G.section("Rapports datés"))
 	for report: Dictionary in data.get("reports", []).slice(-8):
-		recruitment.add_child(G.wrap("%s · S%s semaine %s · rapport %s" % [_player(app, report.playerId), int(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
+		recruitment.add_child(G.wrap("%s · %s semaine %s · rapport %s" % [_player(app, report.playerId), G.season_label(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
 	return page
 

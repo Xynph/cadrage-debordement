@@ -101,7 +101,7 @@ static func pause_content(dialog: AcceptDialog, app: Control) -> void:
 	row.add_child(copy)
 	var meta: Dictionary = app.model.get("meta",{})
 	copy.add_child(C.wrap(G.club_name(club) if not club.is_empty() else "Profil de jeu",32,C.IVORY,true,700))
-	copy.add_child(C.wrap("Saison %s · %s" % [G.n(meta.get("season","—")),str(meta.get("roundLabel","Carrière locale"))],20,C.GOLD,true,600))
+	copy.add_child(C.wrap("Saison %s · %s" % [G.season_label(meta.get("season","—")),str(meta.get("roundLabel","Carrière locale"))],20,C.GOLD,true,600))
 	var storage := C.card("PROFIL ET SAUVEGARDES")
 	body.add_child(storage)
 	var details := C.content(storage)

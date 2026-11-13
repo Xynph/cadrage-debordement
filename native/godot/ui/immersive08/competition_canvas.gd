@@ -234,7 +234,7 @@ func _header() -> void:
 	D.text(self, 21, 116, title, 77, C.IVORY, 800, 1240)
 	var round_label := str(app.model.meta.get("roundLabel", "")) if league.id == state.club_league else "Phase régulière" if league.get("phase", "league") == "league" else _phase(league)
 	var short_round := round_label.trim_prefix(str(league.get("name","")) + " · ")
-	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.n(app.model.meta.get("season", "—")), short_round.to_upper()]
+	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.season_label(app.model.meta.get("season", "—")), short_round.to_upper()]
 	D.rect(self, Rect2(24, 132, 735, 43), Color("142122"), 5, C.LINE)
 	D.text(self, 44, 161, subhead, 25, C.IVORY, 600, 691)
 	var crest := D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)

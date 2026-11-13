@@ -106,5 +106,11 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}) 
     };
   }
 
-  return { eligible, project, source, nations };
+  // Code de la nation d'origine (documentée par le drapeau, sinon estimée) : sert à orienter les portraits.
+  function origin(id) {
+    const record = source(id);
+    return (record.flagCode && byFlag.get(record.flagCode)) || estimate(id);
+  }
+
+  return { eligible, project, source, nations, origin };
 };

@@ -258,7 +258,7 @@ func _heading(title: String, description: String, match_count: int, session_coun
 	panel.clip_contents = true
 	add_child(panel)
 	var body := C.content(panel)
-	var season := G.n(app.model.get("meta", {}).get("season", ""))
+	var season := G.season_label(app.model.get("meta", {}).get("season", ""))
 	var league := P.league_name(app.model)
 	body.add_child(C.label(("SAISON %s   /   %s" % [season, league]).to_upper(), 16, C.GOLD, true, 700))
 	var heading := title if month.is_empty() else title + " " + month.left(4)

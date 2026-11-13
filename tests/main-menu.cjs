@@ -34,7 +34,7 @@ check('main menu does not erase the current save and resumes it',()=>{
  g.run('returnToMainMenu()');
  assert.equal(g.run('entryScreen'),'menu');
  assert.equal(g.run('JSON.stringify(S)'),before);
- assert.match(g.app.innerHTML,/Saison 1/);
+ assert.match(g.app.innerHTML,/Saison 2026-2027/);
  assert.equal(g.run('mainMenuContinue()'),true);
  assert.equal(g.run('entryScreen'),'game');
  assert.ok(g.store['bdt-v1']);
