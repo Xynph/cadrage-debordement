@@ -37,6 +37,9 @@ var _ecussons: Array = [null, null]
 var _ecussons_cle := ""
 ## Barre de commandes du bas : masquée pendant l'écran intermédiaire (il a sa propre barre).
 var barre_commandes: Control
+## Bande de commandes des temps forts, sous le bandeau du score : la même pendant les temps forts
+## 3D et l'entracte 2D (demande de Léo, 12 novembre 2026). L'écran intermédiaire y pose sa barre.
+var bande_temps_forts: HBoxContainer
 
 func _ready() -> void:
 	name = "ContextualLiveMatch"
@@ -114,6 +117,11 @@ func _ready() -> void:
 	banner.add_child(away)
 	play = S.button("PAUSE", _pause)
 	banner.add_child(play)
+	if TempsForts.enabled():
+		bande_temps_forts = S.G.h(12)
+		bande_temps_forts.name = "MatchCommandBand"
+		bande_temps_forts.alignment = BoxContainer.ALIGNMENT_END
+		frame.add_child(bande_temps_forts)
 	var space := Control.new()
 	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(space, true)
@@ -166,6 +174,14 @@ func _ready() -> void:
 	drawer.offset_left = -450
 	drawer.offset_right = -18
 	drawer.offset_top = 100
+	# En temps forts, le tiroir s'ouvre sous la bande de commandes : Tactique, Banc, Paramètres
+	# et Plus restent cliquables tiroir ouvert.
+	if bande_temps_forts != null:
+		var caler := func():
+			if is_instance_valid(drawer) and bande_temps_forts.is_inside_tree():
+				drawer.offset_top = maxf(100.0, bande_temps_forts.get_global_rect().end.y - get_global_rect().position.y + 8.0)
+		bande_temps_forts.resized.connect(caler)
+		bande_temps_forts.item_rect_changed.connect(caler)
 	drawer.anchor_bottom = 1
 	drawer.offset_bottom = -90
 	drawer.add_theme_stylebox_override("panel", S.G.T.box(S.PANEL, 5, Color("68785a")))
@@ -277,6 +293,7 @@ func montrer_reglages_temps_forts(direct: Dictionary, source: Node) -> void:
 	for index in _niveaux.size():
 		if _niveaux[index].get("id") == source.niveau and _niveau.selected != index: _niveau.select(index)
 	_niveau.visible = not _niveaux.is_empty()
+	if source.get("between") != null: source.between.montrer_niveau(str(source.niveau))
 
 ## Vrai tant qu'un temps fort reste à montrer : la causerie attend la fin de l'action.
 func retient_la_causerie(live: Dictionary) -> bool:
@@ -317,6 +334,9 @@ func _poser_ecussons(teams: Array) -> void:
 func _pause() -> void:
 	var live := _live()
 	director.command("pause", {"paused":not live.get("paused", false)})
+
+func choisir_camera(mode: String) -> void:
+	_choose_camera(mode)
 
 func _choose_camera(mode: String) -> void:
 	var preferences: Variant = app.get("user_preferences")
