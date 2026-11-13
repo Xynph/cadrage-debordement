@@ -544,7 +544,7 @@ static func season_archives(app:Control) -> void:
 		jump.custom_minimum_size.x = 180
 		jump.add_item("Début des archives")
 		for year: Dictionary in seasons:
-			jump.add_item("Saison " + G.n(year.season))
+			jump.add_item("Saison " + G.season_label(year.season))
 		navigation.add_child(jump)
 	var list := G.scroll(content)
 	var scroll := list.get_parent() as ScrollContainer
@@ -559,7 +559,7 @@ static func season_archives(app:Control) -> void:
 		if japanese: empty = "Aucune saison archivée. Les manches des barrages japonais sont conservées au passage à la saison suivante."
 		list.add_child(G.wrap(empty,16))
 	for year:Dictionary in seasons:
-		var heading := G.section("SAISON " + G.n(year.season))
+		var heading := G.section("SAISON " + G.season_label(year.season))
 		heading.name = "SeasonArchiveHeading_" + G.n(year.season)
 		list.add_child(heading)
 		headings.append(heading)

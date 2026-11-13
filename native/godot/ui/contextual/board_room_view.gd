@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const SeasonLabel = preload("res://ui/season_label.gd")
 const PRIORITIES = {"performance":"Résultats","stabilite":"Stabilité","finances":"Finances","effectif":"Effectif"}
 const TYPES = {"wins":"Victoires","points":"Points","rank":"Place au classement","cash":"Trésorerie"}
 var director: Node
@@ -105,7 +106,7 @@ func _draw() -> void:
 	if not history.is_empty():
 		facts_scroll.add_child(S.label("Bilans archivés",18,S.GOLD))
 		for report: Dictionary in history.slice(maxi(0,history.size()-3)):
-			facts_scroll.add_child(S.wrap("Saison %s · organisation %s / 100"%[_display(report.get("season")),_display(report.get("score"))],14))
+			facts_scroll.add_child(S.wrap("Saison %s · organisation %s / 100"%[SeasonLabel.label(report.get("season")),_display(report.get("score"))],14))
 	var air := Control.new();air.mouse_filter=Control.MOUSE_FILTER_IGNORE;S.G.fill(air,true);body.add_child(air)
 	var actions := S.panel(body,16);actions.get_parent().custom_minimum_size.x=390;actions.get_parent().size_flags_horizontal=Control.SIZE_FILL
 	var list := S.G.scroll(actions);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)

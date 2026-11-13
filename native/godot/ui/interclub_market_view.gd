@@ -105,7 +105,7 @@ func _redraw() -> void:
 		var person: Dictionary = filtered[i]
 		var card := G.card(rows)
 		_profile_heading(card, person)
-		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance S%d conservée" % [G.euros(person.fee),G.salary(person.salary),int(person.contractEnd)],13))
+		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance %s conservée" % [G.euros(person.fee),G.salary(person.salary),G.season_label(person.contractEnd)],13))
 		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),12,G.ALERT))
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
 		offer.name = "InterclubOffer"

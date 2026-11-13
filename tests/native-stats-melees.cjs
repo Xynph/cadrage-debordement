@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { context } = require('./france-harness.cjs');
+const { context } = require('./monde-harness.cjs');
 const nativeModel = require('../native/engine/model.cjs');
 
 function statsRows(match) {
@@ -11,8 +11,8 @@ function statsRows(match) {
 }
 
 test('Native stats show non-disputed scrums under the introducing team and retain them on reload', () => {
-  const match = context();
-  match.run(`start(0, 'france'); beginMatch(); pauseMatch();
+  const match = context().toMatch();
+  match.run(`beginMatch(); pauseMatch();
     var live = S.live, affected = live.userSide, sheet = live.sheets[affected];`);
   assert.equal(statsRows(match).some(row => row.label === 'Dont non disputées'), false);
   match.run(`live.minute = 10;
@@ -26,7 +26,7 @@ test('Native stats show non-disputed scrums under the introducing team and retai
   const expected = { label: 'Dont non disputées', home: introduction === 0 ? 1 : 0, away: introduction === 1 ? 1 : 0 };
   assert.deepEqual(rows[rows.findIndex(row => row.label === 'Mêlées conservées') + 1], expected);
 
-  const resumed = context();
+  const resumed = context(827381, { club: null });
   resumed.ctx.scrumSave = match.run('JSON.stringify(createSaveDocument())');
   assert.equal(resumed.run('pendingSave = parseSaveDocument(scrumSave); confirmSaveImport()'), true);
   assert.deepEqual(statsRows(resumed).find(row => row.label === expected.label), expected);

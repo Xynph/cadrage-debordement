@@ -6,6 +6,7 @@ const make=()=>({season:1,club:0,live:false,phase:'league',clubs:[{
 }]});
 let s=make();
 assert.equal(api.ensure(s).version,1);
+assert.ok(api.initialSubscribers(s)>0&&s.v111to116.subscribers===api.initialSubscribers(s),'abonnés de départ déterministes et non nuls');
 assert.equal(api.valid(s.v111to116),true);
 assert.equal(api.capacity(s),12000);
 const first=api.forecast(s);assert.equal(first.price,20);
@@ -60,7 +61,7 @@ assert.equal(api.rotate(s,()=>true),true);
 assert.equal(api.ensure(s).ledger.length,0);
 assert.equal(api.ensure(s).community.length,0);
 assert.equal(api.ensure(s).history.length,1);
-assert.equal(api.ensure(s).subscribers,Math.floor(subs*.85));
+assert.equal(api.ensure(s).subscribers,Math.max(Math.floor(subs*.85),Math.min(subs,api.initialSubscribers(s))),'V116 : renouvellement à 85 % sans passer sous le socle initial');
 const stale=make();stale.v111to116={version:5};
 assert.equal(api.ensure(stale),null,'corrupt state never silently replaced');
 const old=make();delete old.v111to116;assert.ok(api.ensure(old),'legacy saved career accepted');

@@ -8,6 +8,16 @@ function factory(){
  const integer=(x,a,b)=>Number.isSafeInteger(x)&&x>=a&&x<=b;
  const id=x=>typeof x==='string'&&/^[A-Za-z0-9:_-]{1,180}$/.test(x);
  const copy=x=>JSON.parse(JSON.stringify(x));
+ // Copie d'une valeur déjà issue de JSON (projection détachée) : même résultat que copy, sans
+ // repasser par le texte ; toute autre valeur garde l'aller-retour JSON exact.
+ const plainCopy=x=>{
+  if(x===null||typeof x==='string'||typeof x==='boolean')return x;
+  if(typeof x==='number'&&Number.isFinite(x))return x===0?0:x;// -0 devient 0, comme en JSON
+  if(Array.isArray(x)){const out=new Array(x.length);for(let i=0;i<x.length;i++){const v=plainCopy(x[i]);out[i]=v===undefined?null:v;}return out;}
+  if(typeof x==='object'&&Object.getPrototypeOf(x)===Object.prototype&&typeof x.toJSON!=='function'){const out={};for(const k of Object.keys(x)){const v=plainCopy(x[k]);if(v!==undefined)out[k]=v;}return out;}
+  if(x===undefined||typeof x==='function'||typeof x==='symbol')return undefined;
+  return copy(x);
+ };
  const shape=(x,keys)=>object(x)&&Object.keys(x).length===keys.length&&Object.keys(x).every(k=>keys.includes(k));
  const check=(x,message)=>{if(!x)throw Error('Connaissance des joueurs : '+message+'.');};
  const week=s=>s?.worldMode?.week??s?.franceMode?.week??s?.round??s?.economy?.week??0;
@@ -172,7 +182,7 @@ function factory(){
   return (s?.playerKnowledge?.jobs||[]).filter(j=>j.status==='done').slice(-20).reverse().flatMap(j=>{
    const p=people.get(j.playerId);if(!p)return [];
    return [{id:'target-report:'+j.id,mission:j.id,playerId:p.id,name:p.name,pos:p.pos,family:p.family,age:p.age,rating:p.rating,note:p.rating,potential:p.potential,salary:null,price:null,grade:null,season:j.completedSeason,week:j.completedWeek,
-    assessment:{source:'Observation ciblée · saison '+j.completedSeason+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de votre staff.'}}];
+    assessment:{source:'Observation ciblée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(j.completedSeason)+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de votre staff.'}}];
   });
  }
  function visibility(s){
@@ -205,7 +215,7 @@ function factory(){
    const looksLikePlayer=!pid&&id(unknownId)&&(typeof value.playerId==='string'||typeof value.pos==='string'||typeof value.name==='string')&&aliases.some(k=>Object.hasOwn(value,k));
    const ownPerson=pid?visible[pid]:looksLikePlayer?{rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}}:person;
    if(pid&&hasPlayerData||looksLikePlayer){
-    Object.assign(value,copy(ownPerson));
+    Object.assign(value,plainCopy(ownPerson));
     for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
     if(!ownPerson.knowledge.owned){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
     if(!ownPerson.knowledge.owned&&ownPerson.knowledge.stage!=='deep')for(const k of attrs)if(Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};

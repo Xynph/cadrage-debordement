@@ -293,6 +293,8 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   // are consulted only when reading an existing career, never for creation.
   return c.players.map(sourcePlayer);
  }
+ // Capacité du stade (données factuelles par identifiant de club) ; absente : le module supporters retombe sur 12 000.
+ const stadiumCapacity=id=>typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[id])?CDWorldStadiumCapacities[id]:undefined;
  function previewRoster(id){
   const players=initialRoster(REG.clubs[id]);
   players.push(...nativeProfessionalDepth.additions(id,players,1));
@@ -302,7 +304,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function start(id,dailyCalendar=false){
   check(playable.has(id),'club jouable invalide.');
   S={version:2,commonDatabase:copy(REG.marker),rosterFoundation:copy(CDRosterFoundation.marker),club:id,season:1,round:0,
-   clubs:REG.clubs.map(c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,base:c.base,cash:c.cashMillions*1e6,goal:c.goal||'Développer le projet sportif',stadium:c.stadium,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[],players:initialRoster(c)})),
+   clubs:REG.clubs.map(c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,base:c.base,cash:c.cashMillions*1e6,goal:c.goal||'Développer le projet sportif',stadium:c.stadium,stadiumCapacity:stadiumCapacity(c.id),points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[],players:initialRoster(c)})),
    schedule:[],lineup:[],reserves:[],tactic:'equilibre',training:'normal',physicalLoadVersion:1,collectivePrepVersion:1,collectiveFocus:'aucune',developmentFocusVersion:1,recruitmentIntelVersion:1,salaryDemandVersion:1,satisfactionVersion:1,relationsVersion:1,objectivesVersion:1,v39Version:1,integratedManagementVersion:1,worldVersion:1,morale:75,trust:70,history:[],news:['Le vestiaire vous attend. À vous de donner le cap pour cette nouvelle saison.'],market:[],marketWeek:-1,phase:'league',playoff:null,live:null,lastReport:null,ledger:[],trained:false};
   if(startingTerms)for(const club of S.clubs){
    if(!['prem','urc','champ'].includes(REG.clubs[club.id].leagueId))continue;

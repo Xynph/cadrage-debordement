@@ -235,7 +235,7 @@ func check_competitions() -> void:
 	await settle()
 	await press(named("RivalryTab2"))
 	var rivalry_archives := named("RivalryArchives")
-	check(rivalry_archives != null and text_present(rivalry_archives, "SAISON 1") and text_present(rivalry_archives, prem + " · Bath témoin") and text_present(rivalry_archives, challenge + " ·") and not text_present(rivalry_archives, "Club 31"), "Le palmarès des rivalités distingue les titres et les identités des champions")
+	check(rivalry_archives != null and text_present(rivalry_archives, "SAISON 2026-2027") and text_present(rivalry_archives, prem + " · Bath témoin") and text_present(rivalry_archives, challenge + " ·") and not text_present(rivalry_archives, "Club 31"), "Le palmarès des rivalités distingue les titres et les identités des champions")
 	app._navigate("Centre")
 	await settle()
 	check(text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") == null, "Centre mondial · raison visible et activation absente")

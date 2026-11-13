@@ -153,7 +153,7 @@ function moteur(){
 }
 
 // ---- Domaine natif (installé dans la VM du moteur, voir native-systems.cjs) ----------------
-// État `S.matchNotes` (version 1) :
+// État `S.matchNotes` (version 2 ; la version 1 est migrée au premier usage) :
 //  saison  : saison en cours ;
 //  joueurs : {id:{s:[matchs, somme des notes ×10, minutes, essais, plaquages, mètres, hommes du match], f:[5 dernières notes ×10]}}
 //            pour chaque joueur ayant joué (tous les clubs) ;
@@ -161,24 +161,31 @@ function moteur(){
 //            détail de la saison en cours pour les joueurs du club du manager ;
 //  passees : {id:[[saison, club, matchs, moyenne×10, essais, hommes du match], …]} 8 saisons au plus ;
 //  confiance : {id:effet cumulé de la saison sur la satisfaction (borné ±6)} ;
-//  semaine : {cle, comp, notes:[[id, club, note×10, poste]]} rencontres de la journée (équipe type) ;
+//  semaine : {cle, comp, notes:[[id, club, note×10, poste, comp, minutes, essais, championnat]], matchs:[[championnat, clubA, clubB, scoreA, scoreB]]}
+//            rencontres de la journée (transitoire : vidé quand l'équipe-type est publiée) ;
+//  reg     : {championnat:{id:[matchs, somme des notes ×10, minutes, essais, sélections en équipe-type, groupe de poste, club]}}
+//            saison régulière seulement (version 2) ; regJ : {championnat: journées jouées} ;
+//  equipes : {championnat:{saison, journee, ids[15], notes[15], clubs[15], etoile, coach:{club,nom,marge}}} dernière équipe-type de chaque championnat ;
+//  saisons : équipes de la saison (6 saisons au plus) {saison, ligue, ids, moy×10, matchs, sel, clubs} ;
 //  recompenses : 40 dernières distinctions [{saison, semaine, type, id, nom, club, note×10}] ;
 //  dernier : homme du match et notes du dernier match du manager.
 // Anciennes sauvegardes : `S.matchNotes` absent = historique vide, créé au premier match.
 const files=Object.freeze([]),commands=Object.freeze([]);
 function factory(){
- const VERSION=1,MAX_DETAIL=60,MAX_PASSEES=8,MAX_RECOMPENSES=40,CONFIANCE_MAX=6;
+ const VERSION=2,MAX_DETAIL=60,MAX_PASSEES=8,MAX_RECOMPENSES=40,CONFIANCE_MAX=6,MAX_SAISONS=40,MAX_SEMAINE=4000;
  const calc=CDMatchNotesMoteur;
  const state=()=>typeof S==='undefined'?null:S;
  const obj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
  const int=(n,a,b)=>Number.isSafeInteger(n)&&n>=a&&n<=b;
  const check=(ok,message)=>{if(!ok)throw Error('Notes de match : '+message+'.');};
  const semaine=s=>s.worldMode?.week??s.franceMode?.week??s.round??0;
- const vide=s=>({version:VERSION,saison:s.season,joueurs:{},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null});
- function etat(s){if(!s.matchNotes)s.matchNotes=vide(s);if(s.matchNotes.saison!==s.season)rollover(s);return s.matchNotes;}
+ const vide=s=>({version:VERSION,saison:s.season,joueurs:{},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null,reg:{},regJ:{},equipes:{},saisons:[]});
+ // Migration v1 → v2 : les nouveaux champs sont vides (rien n'est inventé pour le passé).
+ function migrer(st){if(st&&st.version===1){st.reg={};st.regJ={};st.equipes={};st.saisons=[];st.version=VERSION;}return st;}
+ function etat(s){if(!s.matchNotes)s.matchNotes=vide(s);migrer(s.matchNotes);if(s.matchNotes.saison!==s.season)rollover(s);return s.matchNotes;}
  // Fin de saison : résumé par joueur, détail effacé ; on ne garde que les joueurs encore en jeu.
  function rollover(s){
-  const st=s.matchNotes;if(!st||st.saison===s.season)return;
+  const st=migrer(s.matchNotes);if(!st||st.saison===s.season)return;
   const clubDe=new Map();for(const c of s.clubs)for(const p of c.players)clubDe.set(p.id,c.id);
   for(const [id,j] of Object.entries(st.joueurs)){
    if(j.s[0]>0){(st.passees[id]||(st.passees[id]=[])).push([st.saison,clubDe.get(id)??-1,j.s[0],Math.round(j.s[1]/j.s[0]),j.s[3],j.s[6]]);}
@@ -187,7 +194,7 @@ function factory(){
   for(const id of Object.keys(st.passees)){if(!clubDe.has(id))delete st.passees[id];else st.passees[id]=st.passees[id].slice(-MAX_PASSEES);}
   for(const id of Object.keys(st.joueurs))if(!clubDe.has(id))delete st.joueurs[id];
   if(st.selection)for(const id of Object.keys(st.selection.lignes))if(!clubDe.has(id))delete st.selection.lignes[id];
-  st.detail={};st.confiance={};st.semaine=null;st.saison=s.season;
+  st.detail={};st.confiance={};st.semaine=null;st.reg={};st.regJ={};st.equipes={};st.saison=s.season;
  }
  // Contexte d'un match pour le calcul : minutes, côtés, niveau au poste relatif à l'équipe.
  function contexte(l){
@@ -216,15 +223,17 @@ function factory(){
  }
  // Effets bornés (voir docs/notes-de-match-20261113.md). `CDNotesEffets === false` (CD_NOTES_EFFETS=0
  // dans le worker) les coupe tous : notes calculées et enregistrées, sans conséquence (mesure d'équilibre).
+ // Lauréat de l'équipe de la saison de l'an dernier ou de la saison en cours : 1, sinon 0 (petit bonus, voir effets).
+ function laureat(id){const st=state()?.matchNotes,s=state();return st?.saisons?.some(x=>x.saison>=s.season-1&&x.ids.includes(id))?1:0;}
  const actifs=()=>typeof CDNotesEffets==='undefined'||CDNotesEffets!==false;
  const effets={
   // Composition des entraîneurs IA : forme récente (2 notes au moins), ±3 à 4 % du score de choix.
   composition(id){if(!actifs())return 1;const f=forme(id);return f===null||formeN(id)<2?1:1+Math.max(-.03,Math.min(.04,(f-6.5)*.03));},
   // Valeur marchande (indemnité) : moyenne de saison (et, à 25 %, moyenne internationale sur
-  // 3 sélections au moins), −8 % à +12 %.
-  valeur(id){if(!actifs())return 1;const m=melange(moyenne(id),intl(id,10),.25);return m===null?1:1+Math.max(-.08,Math.min(.12,(m-6.5)*.08));},
+  // 3 sélections au moins), −8 % à +12 % ; +3 % pour un lauréat de l'équipe de la saison (mêmes bornes).
+  valeur(id){if(!actifs())return 1;const m=melange(moyenne(id),intl(id,10),.25),d=laureat(id)*.03;return m===null&&!d?1:1+Math.max(-.08,Math.min(.12,(m===null?0:(m-6.5)*.08)+d));},
   // Intérêt des clubs IA : note estimée du joueur, −2 à +3 points.
-  interet(id){if(!actifs())return 0;const m=moyenne(id);return m===null?0:Math.max(-2,Math.min(3,(m-6.5)*2));},
+  interet(id){if(!actifs())return 0;const m=moyenne(id),d=laureat(id)*.5;return m===null&&!d?0:Math.max(-2,Math.min(3,(m===null?0:(m-6.5)*2)+d));},
   // Exigence salariale en négociation : −4 % à +6 %.
   salaire(id){if(!actifs())return 1;const m=moyenne(id);return m===null?1:1+Math.max(-.04,Math.min(.06,(m-6.5)*.04));},
   // Sélections nationales : bonus au score de forme du sélectionneur, −1,5 à +2 points.
@@ -281,6 +290,13 @@ function factory(){
   const s=state();if(!s||!l?.finished||l.matchNotesRecorded)return null;
   l.matchNotesRecorded=true;
   const st=etat(s),r=noterMatch(l),w=semaine(s),comp=competition(l),user=l.pair.indexOf(s.club);
+  // Nouvelle journée : la précédente est d'abord close (carrières sans `finishRound`, calendrier quotidien).
+  const cle=s.season+':'+w;
+  if(st.semaine?.cle!==cle){if(st.semaine&&!st.semaine.annoncee){try{finJournee();}catch(e){}}st.semaine={cle,comp:null,notes:[],matchs:[]};}
+  if(!Array.isArray(st.semaine.matchs))st.semaine.matchs=[];
+  // Saison régulière d'un championnat : les deux clubs en sont membres (équipe-type, équipe de la saison).
+  const lg=regulier(s,l)?ligueDe(s,l.pair[0]):null,ligue=lg&&ligueDe(s,l.pair[1])===lg?lg:null;
+  const reg=ligue?(st.reg[ligue]||(st.reg[ligue]={})):null;
   for(const [id,n] of Object.entries(r.joueurs)){
    if(n.minutes<=0)continue;
    const note10=Math.round(n.note*10),hdm=r.hommeDuMatch===id?1:0;
@@ -288,17 +304,19 @@ function factory(){
    j.s[0]++;j.s[1]+=note10;j.s[2]+=n.minutes;j.s[3]+=n.essais;j.s[4]+=n.plaquages;j.s[5]+=n.metres;j.s[6]+=hdm;
    j.f.push(note10);if(j.f.length>5)j.f.shift();
    if(n.cote===user){const d=st.detail[id]||(st.detail[id]=[]);d.push([w,clubIdDe(l,1-n.cote),comp,n.minutes,note10,n.essais,n.plaquages,n.metres,hdm]);if(d.length>MAX_DETAIL)d.shift();}
+   if(reg){
+    const g=groupeDe(matchPlayer(l,n.cote,id)?.pos),e=reg[id]||(reg[id]=[0,0,0,0,0,g<0?0:g,clubIdDe(l,n.cote)]);
+    e[0]++;e[1]+=note10;e[2]+=n.minutes;e[3]+=n.essais;if(g>=0)e[5]=g;e[6]=clubIdDe(l,n.cote);
+   }
   }
   // Rencontres de la journée (équipe type) : on ne garde que la semaine en cours.
-  const cle=s.season+':'+w;
-  // Nouvelle journée : la précédente est d'abord close (carrières sans `finishRound`, calendrier quotidien).
-  if(st.semaine?.cle!==cle){if(st.semaine&&!st.semaine.annoncee){try{finJournee();}catch(e){}}st.semaine={cle,comp:null,notes:[]};}
   for(const [id,n] of Object.entries(r.joueurs)){
    if(n.minutes<40)continue;
    const c=clubIdDe(l,n.cote),p=matchPlayer(l,n.cote,id);
-   st.semaine.notes.push([id,c,Math.round(n.note*10),p?.pos||'',comp]);
+   st.semaine.notes.push([id,c,Math.round(n.note*10),p?.pos||'',comp,n.minutes,n.essais,ligue||'']);
   }
-  if(st.semaine.notes.length>2000)st.semaine.notes=st.semaine.notes.slice(-2000);
+  if(ligue)st.semaine.matchs.push([ligue,l.pair[0],l.pair[1],l.score[0],l.score[1]]);
+  if(st.semaine.notes.length>MAX_SEMAINE)st.semaine.notes=st.semaine.notes.slice(-MAX_SEMAINE);
   if(user>=0){
    st.semaine.comp=comp;
    const h=r.hommeDuMatch,side=h!=null?r.joueurs[h].cote:-1,hp=h!=null?matchPlayer(l,side,h):null;
@@ -328,35 +346,141 @@ function factory(){
    if(sat.score!==avant)st.confiance[id]=cumul+(sat.score-avant);
   }
  }
- // Distinctions de fin de journée : équipe type (15 meilleures notes de la compétition du
- // manager, au poste), meilleur joueur du mois (toutes les 4 journées) et de la saison.
+ // ---- Équipe-type de la journée et équipe de la saison ----------------------------------
+ // Quinze postes (maillots 1 à 15) regroupés : les trois troisième ligne (aile, aile, numéro 8) forment un groupe.
+ const POSTES=['Pilier gauche','Talonneur','Pilier droit','Deuxième ligne','Deuxième ligne','Troisième ligne','Troisième ligne','Numéro 8','Demi de mêlée','Demi d’ouverture','Ailier','Centre','Centre','Ailier','Arrière'];
+ const GROUPE_DE_POSTE=[0,1,2,3,3,4,4,4,5,6,7,8,8,7,9];
+ const CAPACITE=[1,1,1,2,3,1,1,2,2,1];
+ const NUMEROS=[[1],[2],[3],[4,5],[6,7,8],[9],[10],[11,14],[12,13],[15]];
+ const NOM_GROUPE=['Pilier gauche','Talonneur','Pilier droit','Deuxième ligne','Troisième ligne','Demi de mêlée','Demi d’ouverture','Ailier','Centre','Arrière'];
+ function groupeDe(pos){
+  const nom=String(pos||'').replace(/'/g,'’'),i=POSTES.indexOf(nom);
+  if(i>=0)return GROUPE_DE_POSTE[i];
+  return /^Troisi[eè]me ligne|^Num[eé]ro 8|^Aile forward/i.test(nom)?4:-1;
+ }
+ // Championnat d'un club : France (elite/accession), monde (identifiant de ligue) ou ligue unique.
+ function ligueDe(s,club){
+  const L=s.worldMode?.leagues||s.franceMode?.leagues;
+  if(!L)return 'elite';
+  for(const k of Object.keys(L).sort())if(Array.isArray(L[k]?.members)&&L[k].members.includes(club))return k;
+  return null;
+ }
+ const regulier=(s,l)=>(l.worldContext?.phase??l.franceContext?.phase??s.phase)==='league';
+ function nomLigueAffiche(s,id){
+  if(s.franceMode?.leagues&&!s.worldMode?.leagues)return id==='elite'?'Top 14':id==='accession'?'Pro D2':libelle(s,id);
+  if(!s.worldMode?.leagues&&!s.franceMode?.leagues)return 'Ligue Première';
+  return nomLigue(id)||libelle(s,id);
+ }
+ // La saison régulière d'un championnat est terminée : plus aucune journée de championnat à jouer.
+ function regulierFini(s,lg){
+  const F=s.franceMode?.leagues?.[lg];
+  if(F&&Array.isArray(F.schedule))return F.phase!=='league'||F.round>=F.schedule.length;
+  const fixtures=s.worldMode?.fixtures;
+  if(Array.isArray(fixtures)){const f=fixtures.filter(x=>x.competitionId===lg&&x.phase==='league');return f.length>0&&f.every(x=>s.history.some(r=>r.fixtureId===x.id));}
+  return s.phase!=='league';
+ }
+ // Entraîneur d'un club (équipe de la carrière du personnel s'il existe) ; sinon, le club seul.
+ function entraineurDe(s,club){
+  const gens=s.staffCareer?.version===1&&Array.isArray(s.staffCareer.people)?s.staffCareer.people.flat():[];
+  const NON=/academy|acad[ée]mie|assistant|adjoint|junior|transition|university|skills|forwards|backs|defen|attack|scrum|kicking|lineout|line-out|s&c|avants|arri[eè]res|d[ée]fense|attaque|m[êe]l[ée]e|touche|jeu au pied|pr[ée]para|r[ée]athl|formation|espoirs/i,TETE=/head coach|entra[iî]neur principal|^entra[iî]neur$|^manager$|manager sportif|director of rugby|directeur du rugby|head of rugby|senior coach|^coach$/i;
+  const points=p=>(TETE.test(String(p.roleLabel||''))&&!NON.test(String(p.roleLabel||''))?2:0)+(p.role==='coach'&&!NON.test(String(p.roleLabel||''))?1:0);
+  const p=gens.filter(x=>x.clubId===club&&x.role==='coach').sort((a,b)=>points(b)-points(a)||(b.level||0)-(a.level||0)||(a.id<b.id?-1:1))[0];
+  return p?String(p.name).slice(0,120):'';
+ }
+ // Choix déterministe de quinze joueurs, un par poste : `lignes` triées du meilleur au moins bon.
+ // Retourne les quinze entrées dans l'ordre des maillots 1 à 15, ou null.
+ function composer(lignes,groupe,pos){
+  const restes=CAPACITE.slice(),pris=[[],[],[],[],[],[],[],[],[],[]];
+  for(const x of lignes){const g=groupe(x);if(g<0||!restes[g])continue;restes[g]--;pris[g].push(x);}
+  if(restes.some(n=>n>0))return null;
+  const sortie=[];
+  pris.forEach((liste,g)=>{
+   const numeros=NUMEROS[g].slice(),mis=new Array(numeros.length).fill(null);
+   // Le numéro 8 revient au joueur inscrit à ce poste, s'il est retenu.
+   if(g===4){const k=liste.findIndex(x=>pos(x)==='Numéro 8');if(k>=0){mis[2]=liste[k];liste.splice(k,1);}}
+   for(const x of liste){const k=mis.indexOf(null);mis[k]=x;}
+   mis.forEach((x,k)=>{sortie[numeros[k]-1]=x;});
+  });
+  return sortie.length===15&&sortie.every(Boolean)?sortie:null;
+ }
+ // Équipe-type de la journée de chaque championnat (note du match ; minutes, essais, identifiant à égalité).
+ function equipesJournee(s,st,sem){
+  const parLigue={};for(const x of sem.notes)if(x[7])(parLigue[x[7]]||(parLigue[x[7]]=[])).push(x);
+  const fermes=[];
+  for(const lg of Object.keys(parLigue).sort()){
+   st.regJ[lg]=(st.regJ[lg]||0)+1;fermes.push(lg);
+   const lignes=parLigue[lg].sort((a,b)=>b[2]-a[2]||b[5]-a[5]||b[6]-a[6]||(a[0]<b[0]?-1:a[0]>b[0]?1:0));
+   const xv=composer(lignes,x=>groupeDe(x[3]),x=>x[3]);
+   if(!xv)continue;
+   // Entraîneur de la journée : plus large victoire, puis plus de points marqués, puis identifiant du club.
+   let coach=null;
+   for(const [,a,b,pa,pb] of sem.matchs.filter(m=>m[0]===lg))for(const [club,pour,contre] of [[a,pa,pb],[b,pb,pa]]){
+    const marge=pour-contre;if(marge<=0)continue;
+    if(!coach||marge>coach.marge||marge===coach.marge&&(pour>coach.pour||pour===coach.pour&&club<coach.club))coach={club,marge,pour};
+   }
+   const meilleur=xv.reduce((m,x,k)=>lignes.indexOf(x)<lignes.indexOf(xv[m])?k:m,0);
+   for(const x of xv){const e=st.reg[lg]?.[x[0]];if(e)e[4]++;}
+   st.equipes[lg]={saison:s.season,journee:st.regJ[lg],ids:xv.map(x=>x[0]),notes:xv.map(x=>x[2]),clubs:xv.map(x=>x[1]),etoile:meilleur,
+    coach:coach?{club:coach.club,nom:entraineurDe(s,coach.club),marge:coach.marge}:null};
+  }
+  return fermes;
+ }
+ const nomDe=(s,id)=>{for(const c of s.clubs){const p=c.players.find(q=>q.id===id);if(p)return p.name;}return '';};
+ const virg=x=>String(x).replace('.',',');
+ function annonceJournee(s,st,lg){
+  const eq=st.equipes[lg];if(!eq||eq.saison!==s.season||lg!==ligueDe(s,s.club))return;
+  const nous=eq.ids.map((id,k)=>[id,k]).filter(([,k])=>eq.clubs[k]===s.club);
+  for(const [id,k] of nous)distinction(s,'equipe',id,nomDe(s,id),s.club,eq.notes[k]);
+  if(typeof news!=='function')return;
+  const tete=eq.ids[eq.etoile],tag='XV de la '+eq.journee+(eq.journee===1?'re':'e')+' journée · '+nomLigueAffiche(s,lg);
+  news(tag+' : '+(nous.length?nous.length+' joueur'+(nous.length>1?'s':'')+' de '+s.clubs[s.club].name+' ('+nous.map(([id])=>nomDe(s,id)).join(', ')+')':'aucun joueur de '+s.clubs[s.club].name)+'. Joueur de la journée : '+nomDe(s,tete)+' ('+virg(eq.notes[eq.etoile]/10)+').');
+ }
+ // Équipe de la saison : moyenne de la saison régulière (la moitié des journées jouées au moins),
+ // sélections en équipe-type de la journée, puis matchs, puis identifiant à égalité.
+ function equipeSaison(s,st,lg){
+  const reg=st.reg[lg];if(!reg||st.saisons.some(x=>x.saison===s.season&&x.ligue===lg))return null;
+  const mini=Math.max(1,Math.ceil((st.regJ[lg]||0)/2));
+  const lignes=Object.entries(reg).filter(([,e])=>e[0]>=mini).map(([id,e])=>({id,e,moy:e[1]/e[0]}))
+   .sort((a,b)=>b.moy-a.moy||b.e[4]-a.e[4]||b.e[0]-a.e[0]||(a.id<b.id?-1:a.id>b.id?1:0));
+  const xv=composer(lignes,x=>x.e[5],x=>x.pos);
+  if(!xv)return null;
+  const fiche={saison:s.season,ligue:lg,ids:xv.map(x=>x.id),moy:xv.map(x=>Math.round(x.moy)),matchs:xv.map(x=>x.e[0]),sel:xv.map(x=>x.e[4]),clubs:xv.map(x=>x.e[6]),journees:st.regJ[lg]||0};
+  st.saisons.push(fiche);if(st.saisons.length>MAX_SAISONS)st.saisons=st.saisons.slice(-MAX_SAISONS);
+  return fiche;
+ }
+ function annonceSaison(s,st,fiche){
+  if(!fiche||fiche.ligue!==ligueDe(s,s.club))return;
+  const nous=fiche.ids.map((id,k)=>[id,k]).filter(([,k])=>fiche.clubs[k]===s.club);
+  for(const [id,k] of nous)distinction(s,'xvsaison',id,nomDe(s,id),s.club,fiche.moy[k]);
+  if(typeof news!=='function')return;
+  const meilleur=fiche.moy.reduce((m,x,k)=>x>fiche.moy[m]?k:m,0);
+  news('XV de la saison · '+nomLigueAffiche(s,fiche.ligue)+' : '+(nous.length?nous.length+' joueur'+(nous.length>1?'s':'')+' de '+s.clubs[s.club].name+' ('+nous.map(([id])=>nomDe(s,id)).join(', ')+')':'aucun joueur de '+s.clubs[s.club].name)+'. Meilleure moyenne : '+nomDe(s,fiche.ids[meilleur])+' ('+virg(fiche.moy[meilleur]/10)+').');
+ }
+ // Distinctions de fin de journée : équipe-type de chaque championnat (publiée dans l'actualité pour
+ // celui du manager, qu'il y figure ou non), équipe de la saison à la fin de la saison régulière,
+ // meilleur joueur du mois (toutes les 4 journées) et de la saison.
  function finJournee(){
-  const s=state();if(!s?.matchNotes?.semaine?.comp)return;
-  const st=s.matchNotes,sem=st.semaine;if(sem.annoncee)return;sem.annoncee=true;
-  const lignes=sem.notes.filter(x=>x[4]===sem.comp).sort((a,b)=>b[2]-a[2]||(a[0]<b[0]?-1:1));
-  if(lignes.length<15)return;
-  const pris=new Set(),xv=[];
-  // Postes de l'équipe type : 3 troisième ligne (aile, centre, numéro 8 confondus).
-  const poste=p=>/^Troisième ligne|^Numéro 8/.test(String(p))?'Troisième ligne':String(p);
-  const postes=typeof POS!=='undefined'?POS:[],besoins={};for(const p of postes)besoins[poste(p)]=(besoins[poste(p)]||0)+1;
-  const nomDe=id=>{for(const c of s.clubs){const p=c.players.find(q=>q.id===id);if(p)return p.name;}return '';};
-  for(const x of lignes){if(pris.has(x[0]))continue;const ici=poste(x[3]);if(!besoins[ici])continue;besoins[ici]--;pris.add(x[0]);xv.push(x);}
-  if(xv.length<15)return;
-  const nous=xv.filter(x=>x[1]===s.club);
-  sem.equipeType=xv.map(x=>x[0]);
-  for(const x of nous)distinction(s,'equipe',x[0],nomDe(x[0]),x[1],x[2]);
-  // Actualité seulement quand le club y figure (le fil d'actualités est court).
-  if(nous.length&&typeof news==='function')news('Équipe type de la journée : '+(nous.length?nous.length+' joueur'+(nous.length>1?'s':'')+' de '+s.clubs[s.club].name+' ('+nous.map(x=>nomDe(x[0])).join(', ')+')':'aucun joueur de '+s.clubs[s.club].name)+'. Meilleure note : '+nomDe(xv[0][0])+' ('+String(xv[0][2]/10).replace('.',',')+').');
+  const s=state();if(!s?.matchNotes?.semaine)return;
+  const st=etat(s),sem=st.semaine;if(sem.annoncee)return;sem.annoncee=true;
+  if(!Array.isArray(sem.matchs))sem.matchs=[];
+  const fermes=equipesJournee(s,st,sem);
+  for(const lg of fermes)annonceJournee(s,st,lg);
+  for(const lg of fermes)if(regulierFini(s,lg))annonceSaison(s,st,equipeSaison(s,st,lg));
+  sem.notes=[];sem.matchs=[];
+  if(!sem.comp)return;
   // Meilleur joueur du mois (toutes les 4 journées du manager) : moyenne des 4 dernières notes, 3 matchs au moins.
   st.journees=(st.journees||0)+1;
   if(st.journees%4===0){
    let best=null;
    for(const [id,j] of Object.entries(st.detail)){const d=j.slice(-4);if(d.length<3)continue;const m=d.reduce((n,r)=>n+r[4],0)/d.length;if(!best||m>best[1]||m===best[1]&&id<best[0])best=[id,m];}
-   if(best){const nom=nomDe(best[0]);distinction(s,'mois',best[0],nom,s.club,Math.round(best[1]));if(typeof news==='function')news('Joueur du mois à '+s.clubs[s.club].name+' : '+nom+' ('+String(Math.round(best[1])/10).replace('.',',')+' de moyenne).');}
+   if(best){const nom=nomDe(s,best[0]);distinction(s,'mois',best[0],nom,s.club,Math.round(best[1]));if(typeof news==='function')news('Joueur du mois à '+s.clubs[s.club].name+' : '+nom+' ('+virg(Math.round(best[1])/10)+' de moyenne).');}
   }
  }
  function finSaison(){
   const s=state(),st=s?.matchNotes;if(!st||st.saison!==s.season)return;
+  migrer(st);
+  // Championnats dont la saison régulière n'a pas été close en cours de route (reprise d'une sauvegarde).
+  for(const lg of Object.keys(st.reg).sort())annonceSaison(s,st,equipeSaison(s,st,lg));
   let best=null;
   for(const p of s.clubs[s.club]?.players||[]){const j=st.joueurs[p.id];if(!j||j.s[0]<10)continue;const m=j.s[1]/j.s[0];if(!best||m>best[1]||m===best[1]&&p.id<best[0].id)best=[p,m];}
   if(best){distinction(s,'saison',best[0].id,best[0].name,s.club,Math.round(best[1]));if(typeof news==='function')news('Joueur de la saison à '+s.clubs[s.club].name+' : '+best[0].name+' ('+String(Math.round(best[1])/10).replace('.',',')+' de moyenne sur '+st.joueurs[best[0].id].s[0]+' matchs).');}
@@ -365,19 +489,27 @@ function factory(){
  function validate(s){
   if(!s||s.matchNotes===undefined)return true;
   const st=s.matchNotes;
-  check(obj(st)&&st.version===VERSION&&int(st.saison,1,s.season)&&obj(st.joueurs)&&obj(st.detail)&&obj(st.passees)&&obj(st.confiance)&&Array.isArray(st.recompenses)&&st.recompenses.length<=MAX_RECOMPENSES,'schéma invalide');
+  check(obj(st)&&(st.version===VERSION||st.version===1)&&int(st.saison,1,s.season)&&obj(st.joueurs)&&obj(st.detail)&&obj(st.passees)&&obj(st.confiance)&&Array.isArray(st.recompenses)&&st.recompenses.length<=MAX_RECOMPENSES,'schéma invalide');
   const nombres=(a,n)=>Array.isArray(a)&&a.length===n&&a.every(x=>int(x,0,1e7));
   for(const j of Object.values(st.joueurs))check(obj(j)&&nombres(j.s,7)&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100,'joueur invalide');
   for(const d of Object.values(st.detail))check(Array.isArray(d)&&d.length<=MAX_DETAIL&&d.every(r=>Array.isArray(r)&&r.length===9&&int(r[0],0,100)&&int(r[1],-1,100000)&&typeof r[2]==='string'&&r[2].length<=40&&int(r[3],0,240)&&int(r[4],10,100)&&[5,6,7].every(k=>int(r[k],0,100000))&&(r[8]===0||r[8]===1)),'détail invalide');
   for(const d of Object.values(st.passees))check(Array.isArray(d)&&d.length<=MAX_PASSEES&&d.every(r=>Array.isArray(r)&&r.length===6&&int(r[0],1,s.season)&&int(r[1],-1,100000)&&int(r[2],1,500)&&int(r[3],10,100)&&int(r[4],0,10000)&&int(r[5],0,500)),'saison passée invalide');
   for(const v of Object.values(st.confiance))check(int(v,-CONFIANCE_MAX,CONFIANCE_MAX),'confiance invalide');
-  for(const r of st.recompenses)check(obj(r)&&['hdm','equipe','mois','saison'].includes(r.type)&&typeof r.id==='string'&&int(r.note,10,100),'distinction invalide');
-  check(st.semaine===null||obj(st.semaine)&&Array.isArray(st.semaine.notes)&&st.semaine.notes.length<=2000,'journée invalide');
+  for(const r of st.recompenses)check(obj(r)&&['hdm','equipe','mois','saison','xvsaison'].includes(r.type)&&typeof r.id==='string'&&int(r.note,10,100),'distinction invalide');
+  check(st.semaine===null||obj(st.semaine)&&Array.isArray(st.semaine.notes)&&st.semaine.notes.length<=MAX_SEMAINE,'journée invalide');
   if(st.selection!==undefined){
    const sel=st.selection,date=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);
    check(obj(sel)&&obj(sel.lignes)&&obj(sel.vus)&&Object.keys(sel.vus).length<=MAX_VUS&&Object.values(sel.vus).every(date),'sélection invalide');
    for(const d of Object.values(sel.lignes))check(Array.isArray(d)&&d.length<=MAX_SELECTION&&d.every(r=>Array.isArray(r)&&r.length===7&&date(r[0])&&typeof r[1]==='string'&&r[1].length<=60&&typeof r[2]==='string'&&r[2].length<=60&&int(r[3],0,120)&&int(r[4],10,100)&&int(r[5],0,50)&&(r[6]===0||r[6]===1)),'match international invalide');
   }
+  if(st.version===1)return true;
+  const cle=x=>typeof x==='string'&&x.length>0&&x.length<=40;
+  check(obj(st.reg)&&obj(st.regJ)&&obj(st.equipes)&&Array.isArray(st.saisons)&&st.saisons.length<=MAX_SAISONS,'équipe-type invalide');
+  for(const [lg,reg] of Object.entries(st.reg)){check(cle(lg)&&obj(reg),'championnat invalide');for(const e of Object.values(reg))check(Array.isArray(e)&&e.length===7&&[0,1,2,3,4].every(k=>int(e[k],0,1e7))&&e[1]<=e[0]*100&&int(e[5],0,9)&&int(e[6],-1,100000),'saison régulière invalide');}
+  for(const [lg,n] of Object.entries(st.regJ))check(cle(lg)&&int(n,0,500),'journées invalides');
+  const quinze=(a,f)=>Array.isArray(a)&&a.length===15&&a.every(f);
+  for(const [lg,e] of Object.entries(st.equipes))check(cle(lg)&&obj(e)&&int(e.saison,1,s.season)&&int(e.journee,1,500)&&quinze(e.ids,x=>typeof x==='string')&&quinze(e.notes,x=>int(x,10,100))&&quinze(e.clubs,x=>int(x,-1,100000))&&int(e.etoile,0,14)&&(e.coach===null||obj(e.coach)&&int(e.coach.club,-1,100000)&&typeof e.coach.nom==='string'&&int(e.coach.marge,1,300)),'équipe de la journée invalide');
+  for(const e of st.saisons)check(obj(e)&&int(e.saison,1,s.season)&&cle(e.ligue)&&quinze(e.ids,x=>typeof x==='string')&&quinze(e.moy,x=>int(x,10,100))&&quinze(e.matchs,x=>int(x,1,500))&&quinze(e.sel,x=>int(x,0,500))&&quinze(e.clubs,x=>int(x,-1,100000))&&int(e.journees,0,500),'équipe de la saison invalide');
   return true;
  }
  // Libellé d'une compétition enregistrée (phase France ou identifiant de compétition mondiale).
@@ -388,10 +520,48 @@ function factory(){
   return ligues[id]||null;
  }
  function libelle(s,id){return PHASES[id]||COUPES[id]||nomLigue(id)||String(id).replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());}
+
+ function saisonLabel(s,n){return (typeof libelleSaison==='function'?libelleSaison:String)(n);}
+ // Projection pour l'interface : équipe-type de la dernière journée et équipe de la saison de chaque championnat.
+ function projeterEquipes(s,st){
+  const ids=new Set(),courantes=Object.entries(st.equipes||{}).filter(([,e])=>e.saison===s.season),derniere={};
+  for(const f of st.saisons||[])if(!derniere[f.ligue]||f.saison>derniere[f.ligue].saison)derniere[f.ligue]=f;
+  for(const [,e] of courantes)e.ids.forEach(id=>ids.add(id));
+  for(const f of Object.values(derniere))f.ids.forEach(id=>ids.add(id));
+  if(!ids.size)return {ligues:[],defaut:null};
+  const joueurs=new Map();for(const c of s.clubs)for(const p of c.players)if(ids.has(p.id))joueurs.set(p.id,p);
+  // Un jeune appelé pour le match peut être reparti en centre de formation depuis : on le retrouve là aussi.
+  for(const p of [...(s.development?.academy||[]),...(s.aiRoster?.academies||[]).flatMap(x=>x.players||[])])if(ids.has(p.id)&&!joueurs.has(p.id))joueurs.set(p.id,p);
+  const identite=id=>{
+   const p=joueurs.get(id);if(!p)return {id,name:nomHorsClub(id),pos:'',age:0,portraitIndex:0};
+   const natif=/^p\d+-(\d+)-\d+$/.exec(p.id);let h=2166136261;for(const ch of p.id){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
+   const r={id:p.id,name:p.name,pos:p.pos,age:p.age,portraitIndex:natif?Number(natif[1])%32:(h>>>0)%32};
+   for(const k of ['appearanceBankVersion','appearanceId','appearanceAge','sourcePlayerId','portraitPath'])if(p[k]!==undefined)r[k]=p[k];
+   return r;
+  };
+  const nomHorsClub=id=>st.recompenses.find(r=>r.id===id)?.nom||'';
+  const club=i=>{const c=s.clubs[i];if(!c)return {id:i,name:'',abbr:'XV',color:'#b94850'};let pres=null;try{pres=(typeof CDFranceClubs!=='undefined'&&!s.customCompetition?CDFranceClubs.forCareer(s,i):c)||c;}catch(e){pres=c;}
+   return {id:c.id,name:c.name,abbr:c.abbr,color:c.color,presentation:pres?{id:pres.id,slug:pres.slug,city:pres.city,name:pres.name,abbr:pres.abbr,color:pres.color,logoPath:pres.logoPath}:null};};
+  const ligues=[];
+  const cles=[...new Set([...courantes.map(([k])=>k),...Object.keys(derniere)])];
+  const monLigue=ligueDe(s,s.club);
+  cles.sort((a,b)=>(a===monLigue?-1:b===monLigue?1:0)||(a<b?-1:1));
+  for(const lg of cles){
+   const e=st.equipes?.[lg],ok=e&&e.saison===s.season,f=derniere[lg];
+   const fiche={id:lg,nom:nomLigueAffiche(s,lg),manager:lg===monLigue,journee:null,saison:null};
+   if(ok)fiche.journee={numero:e.journee,saison:s.season,libelleSaison:saisonLabel(s,s.season),
+    joueurs:e.ids.map((id,k)=>({...identite(id),numero:k+1,poste:POSTES[k],noteMatch:e.notes[k]/10,club:club(e.clubs[k]),manager:e.clubs[k]===s.club,etoile:k===e.etoile,selections:st.reg?.[lg]?.[id]?.[4]||0})),
+    entraineur:e.coach?{nom:e.coach.nom,club:club(e.coach.club),marge:e.coach.marge,manager:e.coach.club===s.club}:null};
+   if(f)fiche.saison={saison:f.saison,libelleSaison:saisonLabel(s,f.saison),journees:f.journees,
+    joueurs:f.ids.map((id,k)=>({...identite(id),numero:k+1,poste:POSTES[k],noteMatch:f.moy[k]/10,matchs:f.matchs[k],selections:f.sel[k],club:club(f.clubs[k]),manager:f.clubs[k]===s.club,etoile:f.moy[k]===Math.max(...f.moy)&&f.moy.indexOf(f.moy[k])===k}))};
+   ligues.push(fiche);
+  }
+  return {ligues,defaut:ligues[0]?.id??null};
+ }
  // Projection (clubLife.matchNotes) : effectif du manager, détail, distinctions, dernier match.
  function project(){
   const s=state(),st=s?.matchNotes;
-  const base={version:VERSION,noteDepart:calc.NOTE_DEPART,joueurs:{},recompenses:[],dernier:null};
+  const base={version:VERSION,noteDepart:calc.NOTE_DEPART,joueurs:{},recompenses:[],dernier:null,equipeType:{ligues:[],defaut:null}};
   if(!s||!st)return base;
   const courant=st.saison===s.season;
   for(const p of s.clubs[s.club]?.players||[]){
@@ -402,9 +572,13 @@ function factory(){
     forme:(j?.f||[]).map(x=>x/10),
     historique:d.slice().reverse().map(r=>({semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1})),
     saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5]})),
+    // Équipe-type de la saison en cours (sélections) et équipes de la saison (repères de carrière).
+    selections:courant?Object.values(st.reg||{}).reduce((n,reg)=>n+(reg[p.id]?.[4]||0),0):0,
+    distinctions:(st.saisons||[]).filter(f=>f.ids.includes(p.id)).map(f=>({type:'xv-saison',saison:f.saison,libelleSaison:saisonLabel(s,f.saison),championnat:nomLigueAffiche(s,f.ligue),moyenne:f.moy[f.ids.indexOf(p.id)]/10,matchs:f.matchs[f.ids.indexOf(p.id)]})).reverse(),
     selection:inter.length?{matchs:inter.length,moyenne:Math.round(inter.reduce((a,r)=>a+r[4],0)/inter.length)/10,forme:inter.slice(-5).map(r=>r[4]/10),hommeDuMatch:inter.filter(r=>r[6]).length,
      historique:inter.slice().reverse().map(r=>({date:r[0],adversaire:r[1],competition:r[2],minutes:r[3],note:r[4]/10,essais:r[5],hommeDuMatch:r[6]===1}))}:null};
   }
+  base.equipeType=projeterEquipes(s,st);
   base.recompenses=st.recompenses.slice(-12).reverse();
   base.dernier=st.dernier?JSON.parse(JSON.stringify(st.dernier)):null;
   return base;
@@ -461,6 +635,6 @@ function factory(){
    growPlayer(p,Math.min(.03,(n.note-7.3)*.02),false);
   }
  }
- return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,enregistrerSelection,forme,moyenne,effets,rollover};
+ return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,enregistrerSelection,forme,moyenne,effets,rollover,migrer,finSaison,finJournee,composer,groupeDe};
 }
 module.exports={files,commands,factory,moteur,...moteur()};

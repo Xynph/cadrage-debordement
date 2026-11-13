@@ -126,7 +126,7 @@ func _load_target(target: String) -> void:
 	if not entry.is_empty() and not entry.get("available", false):
 		_status.text = "Dossier indisponible dans le monde actuel. La note reste modifiable."
 	elif not entry.is_empty():
-		_status.text = "Note personnelle enregistrée · saison %d · semaine %d." % [entry.season, int(entry.week) + 1]
+		_status.text = "Note personnelle enregistrée · saison %s · semaine %d." % [G.season_label(entry.season), int(entry.week) + 1]
 	else:
 		_status.text = "Aucune note enregistrée pour ce dossier."
 	_changed()

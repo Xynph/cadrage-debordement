@@ -14,11 +14,12 @@
         220,
         96
       ],
-      "width": 220,
-      "height": 96,
-      "bytes": 33667,
-      "sha256": "7d21caae8e6ff0930aed68b918b2be3bd7fbe25bd473ba372c4817ab7c392419",
-      "synthetic": true
+      "width": 660,
+      "height": 288,
+      "bytes": 77834,
+      "sha256": "12f28a56d13156e20df23a4ceb7b56fbe5416bb4f6b5f18b95d2b785d90119af",
+      "synthetic": true,
+      "note": "Remplacé le 13/11/2026 par le logo provisoire Rugby Legacy 27 (branding/rugby-legacy-27-logo.png) ; source et recadrage d'origine conservés pour la provenance."
     },
     {
       "id": "office-hero",
