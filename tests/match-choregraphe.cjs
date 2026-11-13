@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) : garanties de la mise en scène.
 // Voir docs/match-choregraphe-20261112.md.
 //

@@ -65,6 +65,13 @@ worker courant (lectures pures, copies indépendantes et invalidation).
 
 ### Convergence avec main le 13 novembre
 
+Après le passage au mode Monde unique (#637), un test de carrière `world-champ`
+avec les anciens modes désactivés vérifie les trois intentions et l'invariance
+du reste de la sauvegarde. Les fixtures historiques déclarent explicitement
+`CD_MODES_HERITES=1` ; ce réglage reste réservé aux tests. Le registre des domaines
+de main est conservé, puis `managerPlanning` est enregistré séparément pour éviter
+les conflits récurrents lors de l'ajout de domaines par les autres branches.
+
 Le cumul avec main `204eaabf`, dont #613, passe 10 tests moteur/cache et
 3 tests Godot (deux parcours de l'atelier et le vrai pont de main), sans saut.
 Le test du cache échoue sur main avant ajout, puis passe après raccordement.

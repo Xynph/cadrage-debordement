@@ -967,6 +967,7 @@ func primary_action() -> void:
 	elif model.get("next") == null: _command("finish_round")
 	else: _navigate("Match" if route == "Préparation" else "Préparation")
 
+# Recettes Godot seulement (ancien mode France 30, moteur lancé avec CD_MODES_HERITES=1).
 func create_career(id: int) -> void:
 	var action := func(): _command("new_career",{"club":id,"mode":"common"})
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement. Si cette copie ne peut pas être écrite, le remplacement sera refusé. Prendre les rênes de %s ?" % catalogue[id].name, action)

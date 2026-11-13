@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Legacy fixtures; production keeps World-only mode.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 test('atelier raccordé : vrais menus, vrai pont et vrai worker',{skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot requis'},()=>{
  const graphics=process.env.CD_MANAGER_PLANNING_GRAPHICS==='1',profile=fs.mkdtempSync(path.join(os.tmpdir(),'oval-planner-godot-'));
