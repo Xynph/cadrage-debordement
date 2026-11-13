@@ -306,8 +306,15 @@ func journal_reading() -> void:
 	var journal_button: Button
 	for button: Button in match_surface.find_children("*","Button",true,false):
 		if button.text == "JOURNAL" and button.is_visible_in_tree(): journal_button = button; break
-	check(journal_button != null, "Le Journal s’ouvre depuis la vraie surface de match visible")
+	# Direct en temps forts : le Journal est dans le menu Plus de la bande sous le score.
+	var plus: MenuButton = match_surface.find_child("MatchBetweenMore", true, false) as MenuButton
+	var par_plus := journal_button == null and plus != null and plus.is_visible_in_tree()
+	check(journal_button != null or par_plus, "Le Journal s’ouvre depuis la vraie surface de match visible")
 	if journal_button != null: await enter(journal_button)
+	elif par_plus:
+		var menu := plus.get_popup()
+		for n in menu.item_count:
+			if menu.get_item_text(n) == "Journal du match": menu.id_pressed.emit(menu.get_item_id(n))
 	await settle()
 	await command("export")
 	var live_before:String=app.model.meta.exportText
