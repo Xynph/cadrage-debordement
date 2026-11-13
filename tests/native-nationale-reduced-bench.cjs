@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
@@ -8,7 +7,8 @@ const {createBridge}=require('../native/engine/worker.cjs');
 const temp=fs.realpathSync(os.tmpdir());
 const root=fs.mkdtempSync(path.join(temp,'oval-nationale-22-'));
 const now=Date.UTC(2026,9,16);
-const open=dir=>createBridge({dataDir:dir,seed:410,now});
+// Carrière Monde (world-champ), cadence hebdomadaire : un match = begin_match, delegate, finish_round.
+const open=dir=>createBridge({dataDir:dir,seed:410,now,dailyCalendar:false,mandatoryPress:false,internationalCareer:false});
 const issue=(b,command,payload={})=>b.handle({id:1,command,payload});
 function good(b,command,payload){
  const result=issue(b,command,payload);
@@ -16,9 +16,9 @@ function good(b,command,payload){
  return result.model;
 }
 function savePath(dir){return path.join(dir,'PrototypeGodot','donnees.json');}
-function create(mode,club){
- const dir=path.join(root,mode),b=open(dir);
- try{assert.equal(settleClubMeetings(good(b,'new_career',{mode,club}),(command,payload)=>good(b,command,payload)).selection.valid,true);}
+function create(name,club){
+ const dir=path.join(root,name),b=open(dir);
+ try{assert.equal(settleClubMeetings(good(b,'new_career',{mode:'world-champ',club}),(command,payload)=>good(b,command,payload)).selection.valid,true);}
  finally{b.close();}
  return JSON.parse(fs.readFileSync(savePath(dir),'utf8'));
 }
@@ -49,8 +49,8 @@ function rejectWithoutWrite(b,dir,payload){
 }
 
 try{
- const template=create('world-nationale',90);
- const normal=path.join(root,'world-nationale');
+ const template=create('nationale',90);
+ const normal=path.join(root,'nationale');
  let b=open(normal);
  try{
   assert.equal(good(b,'snapshot').selection.reducedBench,undefined);
@@ -107,7 +107,7 @@ try{
    rejectWithoutWrite(b,dir,{reducedBench:true});
   }finally{b.close();}
  }
- const other=fixture(create('fiction',0),'other',(s,p)=>leaveVacant(s,p,1));
+ const other=fixture(create('hors-nationale',102),'other',(s,p)=>leaveVacant(s,p,1));
  b=open(other);
  try{
   assert.equal(good(b,'snapshot').selection.reducedBench,undefined);
