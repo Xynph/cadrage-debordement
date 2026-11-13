@@ -103,12 +103,23 @@ function factory(){
    if(!byNation.has(nation))byNation.set(nation,[]);
    byNation.get(nation).push(p);
   }
+  // Une fenêtre de tests déjà convoquée (carrière internationale, « Absences internationales ») qui se
+  // termine après la date de retour des congés repousse le retour au lendemain de la fenêtre : un
+  // international ne rejoint pas son club tant que sa sélection joue. Source unique des dates de retour.
+  const lo=dayOf(year(s)+'-07-01'),hi=dayOf(year(s)+'-09-15'),campBack=new Map(),campNation=new Map();
+  for(const camp of s.national?.career?.callups||[]){
+   const through=typeof camp.through==='string'?dayOf(camp.through):NaN;
+   if(!(through>=lo&&through<=hi)||!Array.isArray(camp.playerIds))continue;
+   for(const id of camp.playerIds)if(!(campBack.get(id)>through+1)){campBack.set(id,through+1);campNation.set(id,camp.nation);}
+  }
   const out=new Map();
   for(const [nation,players]of byNation){
    players.sort((a,b)=>b.rating-a.rating||(a.id<b.id?-1:a.id>b.id?1:0));
    const back=nextMonday(dayOf(year(s)+'-'+(NC.has(nation)?TOUR_END.nc:TOUR_END.other))+REST_DAYS);
-   for(const p of players.slice(0,SQUAD))out.set(p.id,{nation,back});
+   for(const p of players.slice(0,SQUAD))out.set(p.id,{nation,back:Math.max(back,campBack.has(p.id)?nextMonday(campBack.get(p.id)):0)});
   }
+  // Convoqués hors des 32 retenus par nation : ils reviennent aussi au lendemain de leur fenêtre.
+  if(campBack.size){const known=new Set();for(const c of s.clubs)for(const p of c.players)known.add(p.id);for(const [id,day]of campBack)if(!out.has(id)&&known.has(id))out.set(id,{nation:campNation.get(id)||factsOf(id)?.seniorNation||'',back:nextMonday(day)});}
   return out;
  }
 
@@ -439,7 +450,16 @@ function factory(){
    handover(s);});
   return true;
  }
- const api=Object.freeze({create,sync,pending,today,project,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS});
+ // Internationaux du club encore en tournée ou en congés à la date de la carrière : même liste et mêmes dates
+ // de retour que le panneau « La reprise » ; le panneau « Absences internationales » de la Préparation les lit ici.
+ function absentees(s){
+  if(!active(s)||!s.reprise||!s.clubs?.[s.club])return [];
+  const now=today(s),t=target(s),shift=t!==null&&t!==s.season?364:0,tour=tourists(s);
+  return s.clubs[s.club].players.filter(p=>tour.get(p.id)&&tour.get(p.id).back+shift>now).map(p=>{const x=tour.get(p.id);
+   return {id:p.id,name:p.name,pos:p.pos,nation:x.nation,from:iso(dayOf(year(s)+'-'+(NC.has(x.nation)?'07-04':'06-27'))+shift),through:iso(x.back+shift-1),returnDate:iso(x.back+shift)};
+  }).sort((a,b)=>a.returnDate.localeCompare(b.returnDate)||(a.id<b.id?-1:1));
+ }
+ const api=Object.freeze({create,sync,pending,today,project,absentees,validate,creation,handover,tourists,clubDefault,options,effectsFor,STARTS});
  g.CDReprise=api;
  return {project,validate,execute,installHooks,create,sync,pending,creation};
 }
