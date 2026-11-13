@@ -1,8 +1,8 @@
 extends RefCounted
 ## Cadrage des temps forts (mode de base du match ; repli CD_MATCH_TEMPS_FORTS=0). Pendant un temps fort, la caméra
 ## du jeu (TV ou contact) se rapproche de l'action : le ballon, son porteur et les
-## joueurs proches, à une hauteur visible de 16 à 24 m en TV (12 novembre 2026 : plus
-## loin qu'avant, 12 à 18 m, pour masquer appuis et contacts approximatifs), plus large
+## joueurs proches, à une hauteur visible de 28 à 42 m en TV (12 novembre 2026, soir : encore plus
+## loin, 16 à 24 m avant ; 12 à 18 m le matin ; vue retransmission large), plus large
 ## pour un jeu au pied ou une longue course. Le ballon ne sort jamais du champ. Présentation seulement :
 ## même amortissement que le recadrage des gestes (match_gestes.gd), qui s'applique
 ## par-dessus quand un geste est en cours. La vue tactique n'est jamais recadrée.
@@ -11,9 +11,9 @@ const Gestes = preload("res://match_gestes.gd")
 const ENTREE := 1.0        # rapprochement, en secondes
 const SORTIE := 1.5        # retour au cadrage large
 ## Hauteur visible minimale et maximale, en mètres.
-const HAUTEUR := {"tv": [16.0, 24.0], "action": [10.0, 16.0]}
+const HAUTEUR := {"tv": [28.0, 42.0], "action": [15.0, 24.0]}
 ## Jeu au pied, longue course : hauteur visible maximale.
-const LARGE := {"tv": 32.0, "action": 26.0}
+const LARGE := {"tv": 54.0, "action": 40.0}
 const MARGE := 1.25
 const PROCHES := 9.0       # rayon des joueurs concernés autour du ballon
 const SUR := 0.8           # part du demi-champ où le ballon doit rester
