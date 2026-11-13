@@ -37,7 +37,7 @@ test('Suivi du centre · carrière', t => {
     return go('finish_round');
   };
 
-  let model = go('new_career', { mode: 'common', club: 29 });
+  let model = go('new_career', { mode: 'world-champ', club: 29 });
   let view = model.clubLife.academyFollowUp;
   assert.equal(view.available, true);
   assert.ok(view.crabos.count > 0 && view.espoirs.count > 0);

@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Scenario observer only. Every choice, minute of play and deadline is reached
 // through existing public commands; never alter a saved player or sports state.
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');

@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-management-'));let n=0;

@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXECUTABLE;
 test('Tactique existante : aptitude au numéro, effectif, clavier et glisser-déposer',{skip:!godot&&'SDK Godot requis'},()=>{

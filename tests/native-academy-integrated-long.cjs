@@ -1,4 +1,5 @@
 'use strict';
+process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 // Copy the production worker outside the repository. Weekly progression uses
 // the public match/delegation/result commands, including real match-talk receipts.

@@ -51,7 +51,9 @@ static func page(app: Control) -> Control:
 	calendar.name = "OpenCompetitionEditor"
 	_action(calendar)
 	calendar.disabled = app.waiting
-	top.add_child(calendar)
+	# L'atelier crée une compétition à 14 clubs hors du Monde : recettes seulement (CD_MODES_HERITES=1).
+	if app.model.get("meta", {}).get("legacyModes", false): top.add_child(calendar)
+	else: calendar.queue_free()
 	C.fill(heading)
 	top.add_child(heading)
 	var edition_label := C.label(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + "  /  " + edition, 18, C.MUTED)

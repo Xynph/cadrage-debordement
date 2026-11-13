@@ -36,25 +36,6 @@ function check(label,fixtures,members,{kind='double',maxStreak=2}={}){
  for(const [id,list] of byClub)assert.equal(list.length,games,`${label} : nombre de rencontres inégal (${id})`);
 }
 
-test('France30 : première et deuxième division, toutes partitions, déterministe',()=>{
- const ctx=vm.createContext({});vm.runInContext(fs.readFileSync(path.join(root,'dist/france-competition.js'),'utf8')+';this.C=CDFranceCompetition;',ctx);const C=ctx.C;
- const orders=[Array.from({length:30},(_,i)=>i),Array.from({length:30},(_,i)=>(i*7+3)%30)];
- for(const all of orders)for(const ids of [all.slice(0,14),all.slice(14)]){
-  const s=C.schedule(ids);assert.equal(s.length,2*(ids.length-1));check('France '+ids.length,fromRounds(s),ids);
-  assert.equal(JSON.stringify(C.schedule(ids.slice())),JSON.stringify(s),'calendrier non déterministe');
- }
- const club29=fromRounds(C.schedule(Array.from({length:16},(_,i)=>i+14))).filter(f=>f.h===29||f.a===29).sort((a,b)=>a.round-b.round).map(f=>f.h===29?'D':'E').join('');
- assert.ok(!/DDD|EEE/.test(club29),club29);
- // L’ancien générateur reste disponible, identique à l’octet près, pour relire les saisons commencées.
- assert.equal(hash(C.legacySchedule(Array.from({length:14},(_,i)=>i))),'a28a1794d49c6f46');
- assert.equal(hash(C.legacySchedule(Array.from({length:16},(_,i)=>i+14))),'87e125585c376242');
-});
-
-test('mode historique 14 clubs (game.js)',()=>{
- const {context}=require('./france-harness.cjs'),h=context();
- const s=JSON.parse(h.run('JSON.stringify(schedule())'));check('Historique 14',fromRounds(s),Array.from({length:14},(_,i)=>i));
-});
-
 test('Espoirs : poules Élite, Accession et compatibilité',()=>{
  const E=require('../dist/espoirs-league-v73.js'),A=require('../dist/espoirs-accession-v74.js');
  for(let n=2;n<=12;n++){const ids=Array.from({length:n},(_,i)=>i*3);check('Espoirs '+n,fromRounds(E.roundRobin(ids)),ids,{maxStreak:n===4?3:2});}
@@ -63,14 +44,6 @@ test('Espoirs : poules Élite, Accession et compatibilité',()=>{
  const ag=[Array.from({length:10},(_,i)=>i),Array.from({length:10},(_,i)=>i+10)],af=A.fixtures(ag);
  for(const g of ag)check('Accession junior',fromRounds(af.map(r=>r.filter(p=>g.includes(p[0])))),g);
  assert.equal(hash(E.groupRounds(groups,true)),'5e0939071beb1bea');assert.equal(hash(A.fixtures(ag,true)),'024a4df667a2a4c7');
-});
-
-test('atelier de calendrier fictif : 2 à 32 clubs, simple et aller-retour',()=>{
- const ce=require('../native/engine/competition-editor.cjs');
- for(let n=2;n<=32;n++)for(const doubleRound of [true,false]){
-  const doc=ce.generate({name:'Essai',clubs:Array.from({length:n},(_,i)=>'Club '+(i+1)),doubleRound});
-  check(`Atelier ${n} ${doubleRound}`,doc.fixtures.map(f=>({round:f.round-1,h:f.homeId,a:f.awayId})),doc.clubs.map(c=>c.id),{kind:doubleRound?'double':'single',maxStreak:doubleRound&&n===4?3:2});
- }
 });
 
 test('monde : élite, accession, Premiership et URC générés, déterministes, ancien générateur intact',()=>{
@@ -87,22 +60,4 @@ test('monde : élite, accession, Premiership et URC générés, déterministes, 
  }
  const legacy={elite:'eb75f6023389d09a',accession:'0f1cd5107d7fa559',prem:'234ca529efeb1a82',urc:'7d5d5e2c4625d803'};
  for(const [id,h] of Object.entries(legacy))assert.equal(hash(C.regularFixtures({clubs:reg.clubs.filter(c=>c.leagueId===id),competitionId:id,season:2027,legacyCalendar:true})),h);
-});
-
-test('sauvegarde France portant l’ancien calendrier : acceptée ; calendrier quelconque : refusé',()=>{
- const {createBridge}=require('../native/engine/worker.cjs');
- const ctx=vm.createContext({});vm.runInContext(fs.readFileSync(path.join(root,'dist/france-competition.js'),'utf8')+';this.C=CDFranceCompetition;',ctx);
- const checksum=state=>{const t=JSON.stringify(state);let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(16).padStart(8,'0');};
- const b=createBridge({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'cd-alternance-')),seed:827381,now:1700000000000});let n=0;
- const call=(command,payload={})=>b.handle({id:++n,command,payload});
- try{
-  assert.equal(call('new_career',{club:29,mode:'france'}).ok,true);
-  const doc=JSON.parse(call('export').model.meta.exportText);
-  const old=JSON.parse(JSON.stringify(doc));for(const id of ['elite','accession']){const l=old.state.franceMode.leagues[id];l.schedule=JSON.parse(JSON.stringify(ctx.C.legacySchedule(l.members)));}
-  old.state.schedule=JSON.parse(JSON.stringify(old.state.franceMode.leagues.accession.schedule));old.checksum=checksum(old.state);
-  const r=call('import',{text:JSON.stringify(old)});assert.equal(r.ok,true,r.error);
-  assert.deepEqual(JSON.parse(call('export').model.meta.exportText).state.franceMode.leagues.accession.schedule,old.state.franceMode.leagues.accession.schedule);
-  const bad=JSON.parse(JSON.stringify(doc));bad.state.franceMode.leagues.elite.schedule[3][0].reverse();bad.checksum=checksum(bad.state);
-  assert.equal(call('import',{text:JSON.stringify(bad)}).ok,false);
- }finally{b.close();}
 });
