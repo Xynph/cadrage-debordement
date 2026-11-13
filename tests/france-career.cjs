@@ -12,7 +12,7 @@ for(let club=0;club<30;club++){
   const doc=JSON.parse(request(b,'export').meta.exportText),state=doc.state;
   assert.equal(state.clubs.length,30);assert.equal(state.aiRoster.academies.length,29);
   assert.equal(state.aiRosterVersion,2);assert.equal(state.aiRoster.version,2);assert.equal(state.aiRoster.lastIntake,1);
-  assert.equal(state.academyGroupPolicy,2);
+  assert.equal(state.academyGroupPolicy,3);
   for(const academy of state.aiRoster.academies){
    assert.equal(academy.intakeSeason,1);assert.equal(academy.players.length,60);
    const promoted=state.aiRoster.events.filter(e=>e.season===1&&e.clubId===academy.clubId&&e.kind==='promote').map(e=>e.playerId);

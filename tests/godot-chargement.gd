@@ -4,6 +4,7 @@ extends SceneTree
 ## réponses différentielles du moteur reconstruites à l’identique.
 const Overlay = preload("res://ui/command_wait_overlay.gd")
 const Flow = preload("helpers/contextual_flow.gd")
+const Main = preload("res://main.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -24,17 +25,19 @@ func overlay_cases() -> void:
 	var overlay: Control = Overlay.new()
 	host.add_child(overlay)
 	overlay.set_context({"kicker": "Passage au jour suivant", "date": "2026-09-07", "flip": true, "club": "TCX", "notes": [{"kind": "tip", "title": "Le conseil de Gabi", "text": "Conseil."}]})
-	# Attente courte : rien ne s’affiche, jamais de flash.
-	overlay.present("Passage au jour suivant…", true, 0.25)
-	await wait(0.12)
-	check(overlay.visible and not overlay.panel_visible(), "Délai : le panneau n’apparaît pas avant 250 ms")
+	# Attente courte : rien ne s’affiche, jamais de flash (seuil unique du jeu : 500 ms).
+	var delay: float = Main.COMMAND_WAIT_REVEAL_SECONDS
+	check(is_equal_approx(delay, 0.5), "Seuil du panneau : 500 ms (%.2f s)" % delay)
+	overlay.present("Passage au jour suivant…", true, delay)
+	await wait(0.4)
+	check(overlay.visible and not overlay.panel_visible(), "Délai : le panneau n’apparaît pas avant 500 ms (400 ms écoulées)")
 	overlay.dismiss()
 	await wait(0.3)
-	check(not overlay.visible and not overlay.panel_visible(), "Réponse < 250 ms : aucun panneau, aucun voile")
+	check(not overlay.visible and not overlay.panel_visible(), "Réponse < 500 ms : aucun panneau, aucun voile")
 	# Attente longue : panneau centré, ≈ 40 % de la largeur, voile léger.
-	overlay.present("Passage au jour suivant…", true, 0.25)
-	await wait(0.5)
-	check(overlay.panel_visible(), "Attente > 250 ms : le panneau apparaît")
+	overlay.present("Passage au jour suivant…", true, delay)
+	await wait(delay + 0.25)
+	check(overlay.panel_visible(), "Attente > 500 ms : le panneau apparaît")
 	var frame: Control = overlay.get_node("CommandWaitFrame")
 	var ratio: float = frame.size.x / overlay.size.x
 	check(ratio > 0.36 and ratio < 0.44, "Panneau ≈ 40 %% de la largeur (%.2f)" % ratio)
@@ -64,6 +67,10 @@ func command(id: String, payload: Dictionary = {}) -> Dictionary:
 	check(app._command(id, payload), "Commande acceptée · " + id)
 	var until := Time.get_ticks_msec() + 60000
 	while app.waiting and Time.get_ticks_msec() < until:
+		if app.command_wait_overlay.panel_visible() and not seen_panel:
+			var shown_at := Time.get_ticks_msec() - started
+			print("CHARGEMENT ", id, " : panneau affiché à ", shown_at, " ms")
+			check(shown_at >= 495, "Aucun panneau avant 500 ms d’attente · %s (%d ms)" % [id, shown_at])
 		seen_panel = seen_panel or app.command_wait_overlay.panel_visible()
 		seen_blocking = seen_blocking or app.command_wait_overlay.visible
 		check(not is_instance_valid(app.status) or not str(app.status.text).contains("Traitement de votre décision"), "Plus de texte « Traitement de votre décision »")
@@ -108,11 +115,18 @@ func run() -> void:
 	var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
 	check(cadence.get("canAdvance", false), "Journée réelle disponible")
 	var day := await command("advance_day", {"fromDate": app.model.meta.calendarToday})
-	if day.elapsed >= 400:
-		check(day.panel, "Passage de jour (%d ms) : panneau affiché" % day.elapsed)
-	elif day.elapsed < 230:
-		check(not day.panel, "Passage de jour très court : aucun panneau")
+	if day.elapsed < 480: check(not day.panel, "Passage de jour < 500 ms (%d ms) : aucun panneau" % day.elapsed)
 	check(day.blocking, "Passage de jour : l’écran est protégé pendant le traitement")
+	# Attente longue simulée (le vrai passage de jour dure souvent ≈ 0,45 s) : même
+	# chemin que le jeu, sans réponse du moteur avant 0,75 s.
+	app._present_command_wait("advance_day")
+	await wait(0.4)
+	check(app.command_wait_overlay.visible and not app.command_wait_overlay.panel_visible(), "Attente longue : rien d’affiché à 400 ms")
+	await wait(0.35)
+	check(app.command_wait_overlay.panel_visible(), "Attente longue (> 500 ms) : panneau du passage de jour affiché")
+	app.command_wait_overlay.dismiss()
+	await wait(0.3)
+	check(not app.command_wait_overlay.visible, "Attente longue : panneau retiré à la réponse")
 	print("CHARGEMENT durées : décision légère %d ms (panneau %s), passage de jour %d ms (panneau %s)" % [light.elapsed, light.panel, day.elapsed, day.panel])
 	print("CHARGEMENT : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	app.bridge.stop()

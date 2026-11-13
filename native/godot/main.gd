@@ -3,7 +3,8 @@ extends Control
 const G = preload("res://ui/game_skin.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
-const COMMAND_WAIT_REVEAL_SECONDS := 0.25
+## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
+const COMMAND_WAIT_REVEAL_SECONDS := 0.5
 const COMMAND_WAIT_MESSAGES := {
 	"new_career": "Création de la carrière…",
 	"import": "Importation de la carrière…",
@@ -69,13 +70,14 @@ const RelationshipsViews = preload("res://ui/relationships_view.gd")
 const WorldViews = preload("res://ui/world_view.gd")
 const StrategyViews = preload("res://ui/strategy_view.gd")
 const AcademyViews = preload("res://ui/academy_pathways_view.gd")
+const AcademyFollowUpViews = preload("res://ui/academy_follow_up_view.gd")
 const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
 const NAV_CHAPTERS = [
 	{"label":"Bureau", "routes":["Réception","Bureau"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
-	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
+	{"label":"Développement", "routes":["Recrutement","Formation","Centre","Suivi des jeunes"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
 	{"label":"Compétitions", "routes":["Calendrier","Classements","Rivalités"]},
 	{"label":"Carrière", "routes":["Carrière"]}
@@ -360,7 +362,9 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	if waiting:
 		if command == "tick": return false
 		# Après un tick ou une décision légère, la décision suivante attend son tour.
-		if (last_command == "tick" or not shows_wait_panel(last_command)) and last_command != "snapshot" and queued_action.is_empty():
+		# La même décision répétée n’attend pas : sa charge utile a été lue sur le
+		# modèle d’avant la réponse en cours et écraserait celle-ci (ex. set_tactics).
+		if (last_command == "tick" or (not shows_wait_panel(last_command) and command != last_command)) and last_command != "snapshot" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			_present_command_wait(command)
 			return true
@@ -696,6 +700,7 @@ func _render(remember_ui: bool = true) -> void:
 		"Rivalités": body.add_child(WorldViews.build(self))
 		"Stratégie": body.add_child(StrategyViews.build(self))
 		"Centre": body.add_child(AcademyViews.build(self))
+		"Suivi des jeunes": body.add_child(AcademyFollowUpViews.build(self))
 		"Travail du club": body.add_child(SupportViews.build(self))
 		"Carrière": body.add_child(ManagerCareerViews.build(self))
 		"Match":
@@ -1149,7 +1154,8 @@ func _close(exit_code: int = 0) -> void:
 
 func _input(event: InputEvent) -> void:
 	# Prevent the focused control and shortcuts from bypassing the pointer veil.
-	if is_instance_valid(command_wait_overlay) and command_wait_overlay.visible and (event is InputEventKey or event is InputEventJoypadButton):
+	# The fade-out after a response no longer holds input (like the pointer).
+	if is_instance_valid(command_wait_overlay) and command_wait_overlay.blocks_input() and (event is InputEventKey or event is InputEventJoypadButton):
 		get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
