@@ -539,6 +539,7 @@ static func open_priority(app: Control, item: Dictionary) -> void:
 			app._navigate("Sélections")
 		"squad": app.navigation_controller.open_roster_group()
 		"contract": _open_player(app,str(item.player))
+		"youth_review": preload("res://ui/youth_development_view.gd").open(app,str(item.player))
 		"preparation": app._navigate("Préparation")
 		"training": app.Immersive.open_training(app)
 		"recruitment": app._navigate("Recrutement")
