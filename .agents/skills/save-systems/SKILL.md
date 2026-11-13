@@ -8,6 +8,8 @@ description: >
   migrating old saves to a new version.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Save systems
 
 A save file is a **serialized snapshot of game state** that survives restarts.

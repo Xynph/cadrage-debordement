@@ -8,6 +8,8 @@ description: >
   GDScript to 4.x (function signatures, yield to await, export to @export).
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Godot GDScript (4.x)
 
 Write correct, statically typed GDScript and use the node lifecycle and signal

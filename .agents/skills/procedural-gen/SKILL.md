@@ -9,6 +9,8 @@ description: >
   heightmap/terrain, or loot tables.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Procedural generation
 
 Generate levels, terrain, and loot from compact rules and a seed. The throughline

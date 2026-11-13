@@ -9,6 +9,8 @@ description: >
   batching, garbage collection/GC spikes, object pooling, or "the game runs slow".
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Performance optimization
 
 Performance work is a measurement discipline, not a bag of tricks. The method is always the

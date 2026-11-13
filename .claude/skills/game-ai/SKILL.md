@@ -9,6 +9,8 @@ description: >
   patrol/chase.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Game AI: decisions, steering, and pathfinding
 
 Build believable NPC behavior from three separable layers: **decide** (what to

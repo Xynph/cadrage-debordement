@@ -8,6 +8,8 @@ description: >
   with Control/Container nodes, anchors, themes, or focus in a .tscn.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Godot UI / Control nodes (4.x)
 
 Lay out responsive UI with `Control` anchors and `Container` nodes, style it with a

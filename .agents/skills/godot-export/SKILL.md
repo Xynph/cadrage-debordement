@@ -8,6 +8,8 @@ description: >
   for web/desktop/mobile, or automating builds from the command line.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Godot Export & Builds (4.x)
 
 Turn a project into runnable platform builds via export presets and the command line, and

@@ -22,6 +22,9 @@ for (const target of kit.TARGETS) {
   for (const name of wanted) {
     const text = fs.readFileSync(path.join(root, target, name, 'SKILL.md'), 'utf8');
     assert.match(text, new RegExp('^---\\r?\\nname: ' + name + '\\r?\\n'), target + '/' + name + ' : en-tête de compétence');
+    // Garde-fou du projet : la note suit l'en-tête YAML, sans le casser.
+    assert.ok(kit.hasNote(Buffer.from(text)), target + '/' + name + ' : note Rugby Legacy 27 absente');
+    assert.ok(text.indexOf(kit.NOTE) > text.indexOf('\n---', 4), target + '/' + name + ' : note placée après l\'en-tête');
   }
   // Apache-2.0 : la licence et la notice accompagnent les copies.
   for (const notice of ['LICENSE', 'NOTICE'])

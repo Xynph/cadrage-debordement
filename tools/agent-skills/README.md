@@ -21,3 +21,7 @@ consigne donnée aux agents. Inscrire toute nouvelle source dans
 
 Une compétence écrite pour le projet peut vivre à côté, dans un dossier dont
 le nom ne figure pas dans le manifeste : le contrôle ne la touche pas.
+
+## Note du projet
+
+Chaque `SKILL.md` porte, juste après son en-tête YAML, une note Rugby Legacy 27 (les règles du dépôt priment sur le guide générique). `update.cjs` l'ajoute lors d'une mise à jour ; le manifeste épingle le contenu amont, donc `--check` compare l'empreinte sans la note et exige sa présence. À réévaluer le 20/11 : retirer si aucun effet constaté.

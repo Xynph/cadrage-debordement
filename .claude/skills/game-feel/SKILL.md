@@ -9,6 +9,8 @@ description: >
   frames, or feedback/polish on hits, jumps, pickups, and deaths.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Game feel (juice)
 
 The difference between a mechanic that *works* and one that feels *good* is feedback: the

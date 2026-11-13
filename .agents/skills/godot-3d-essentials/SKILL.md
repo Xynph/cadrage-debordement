@@ -8,6 +8,8 @@ description: >
   post-processing, or working with Node3D/.tscn 3D content and GridMap.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Godot 3D Essentials (4.x)
 
 Assemble a working 3D scene: transforms, camera, lights, environment/post, materials, and

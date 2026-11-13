@@ -8,6 +8,8 @@ description: >
   effects, or porting 3.x shaders (SCREEN_TEXTURE, hint_color) to 4.x.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Godot Shaders (4.x)
 
 Write `canvas_item` (2D) and `spatial` (3D) shaders in the Godot Shading Language, animate

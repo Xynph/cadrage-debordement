@@ -8,6 +8,8 @@ description: >
   character states, sprite-sheet animation, or code-driven Tweens.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Godot Animation (4.x)
 
 Choose and drive the right animation tool: `AnimationPlayer` (clips), `AnimationTree`

@@ -9,6 +9,8 @@ description: >
   aspect ratio, safe area, controller/keyboard menu navigation, or wiring UI to game state.
 ---
 
+> Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois (`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.
+
 # Game UI/UX
 
 Build HUDs and menus that stay correct on a phone, an ultrawide monitor, and a TV across a

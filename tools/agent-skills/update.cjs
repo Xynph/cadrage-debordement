@@ -26,6 +26,23 @@ const LICENCE_DIR = '_licences';
 const SHA = /^[0-9a-f]{40}$/;
 const SAFE = /^(?:[A-Za-z0-9][A-Za-z0-9_-]*\/)*[A-Za-z0-9][A-Za-z0-9_-]*\.md$/;
 
+// Garde-fou propre au projet, inséré juste après l'en-tête YAML de chaque
+// SKILL.md. Le manifeste épingle le contenu amont : l'empreinte se calcule
+// donc sur le fichier sans cette note (stripNote), et --check exige qu'elle
+// soit présente.
+const NOTE = 'Projet Rugby Legacy 27 : ce guide est générique. En cas de désaccord, les règles du dépôt priment — '
+  + 'AGENTS.md, ticket #591, carrière Monde uniquement (aucun test en mode France), un seul Godot à la fois '
+  + '(`pgrep -x "Godot_v4.7.2-st"`), charte graphique du jeu.';
+const NOTE_BLOCK = '\n> ' + NOTE + '\n';
+const FRONT = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
+function addNote(buffer) {
+  const text = buffer.toString('utf8'), front = FRONT.exec(text);
+  if (!front) throw Error('En-tête YAML introuvable dans SKILL.md');
+  return Buffer.from(text.slice(0, front[0].length) + NOTE_BLOCK + text.slice(front[0].length));
+}
+const hasNote = buffer => buffer.toString('utf8').includes(NOTE_BLOCK);
+const stripNote = buffer => hasNote(buffer) ? Buffer.from(buffer.toString('utf8').replace(NOTE_BLOCK, '')) : buffer;
+
 const sha256 = buffer => crypto.createHash('sha256').update(buffer).digest('hex');
 const readManifest = () => JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
 
@@ -60,7 +77,11 @@ function check(root = ROOT) {
     for (const [file, hash] of Object.entries(wanted)) {
       const full = path.join(directory, file);
       if (!fs.existsSync(full)) problems.push(target + '/' + file + ' : absent');
-      else if (sha256(fs.readFileSync(full)) !== hash) problems.push(target + '/' + file + ' : modifié depuis le manifeste');
+      else {
+        const data = fs.readFileSync(full), skillFile = file.endsWith('/SKILL.md');
+        if (skillFile && !hasNote(data)) problems.push(target + '/' + file + ' : note Rugby Legacy 27 absente');
+        if (sha256(skillFile ? stripNote(data) : data) !== hash) problems.push(target + '/' + file + ' : modifié depuis le manifeste');
+      }
     }
     // Une compétence locale reste permise ; un fichier en trop dans une
     // compétence épinglée ne l'est pas.
@@ -105,7 +126,7 @@ function update({ commit, local }) {
         if (!SAFE.test(file)) throw Error('Fichier refusé (seuls les .md sont acceptés) : ' + skill.path + '/' + file);
         const data = fs.readFileSync(path.join(origin, file));
         skill.files[file] = sha256(data);
-        staged.push([skill.name + '/' + file, data]);
+        staged.push([skill.name + '/' + file, file === 'SKILL.md' ? addNote(data) : data]);
       }
       if (!skill.files['SKILL.md']) throw Error('SKILL.md absent : ' + skill.path);
     }
@@ -135,4 +156,4 @@ if (require.main === module) {
     process.exitCode = result.problems.length ? 1 : 0;
   } catch (error) { console.error(error.message); process.exitCode = 2; }
 }
-module.exports = { check, expected, TARGETS };
+module.exports = { check, expected, hasNote, NOTE, TARGETS };
