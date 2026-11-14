@@ -5,7 +5,9 @@
 // match (les deux équipes), part des points (essais, transformations, pénalités), marqueurs par
 // maillot, écart de score, bonus offensifs, entrées dans les 22 et leur conversion, choix sur
 // pénalité ; hiérarchie (rang final contre niveau de l'effectif). Voir docs/essais-realistes-20261114.md.
-// Usage : node --max-old-space-size=1600 scripts/mesure-essais-monde.cjs [graine=4242] [club=102] [--json fichier] [--semaines N] [--ancien]
+// Usage : node --max-old-space-size=1100 scripts/mesure-essais-monde.cjs [graine=4242] [club=102] [--json fichier] [--semaines N] [--ancien] [--regler code]
+// --regler "PENALITES_RULES=0;ESSAIS.finition=.47" : moteur d'avant les pénalités réalistes (docs/hierarchie-penalites-20261114.md).
+// Hiérarchie détaillée et pénalités sifflées par phase ajoutées le 14/11 (favori par tranche d'écart, surprises, écart 1er-dernier).
 // --ancien : coefficients d'avant (ESSAIS_RULES=0), pour le tableau avant/après sur la même graine.
 // Une seule carrière en mémoire (~1,2 Go) : ne pas lancer deux mesures à la fois sur la machine partagée.
 const fs = require('node:fs');
@@ -39,6 +41,10 @@ const CROCHETS = `globalThis.__mesure=[];(()=>{
   if(l.__mesure&&l.tries[side]>avant){const e=l.events.slice(ev).find(e=>e.type==='try');const p=e&&enJeu.find(p=>e.text.includes('Essai de '+p.name));
    (l.__mesure.essais||(l.__mesure.essais=[])).push([side,p?l.sheets[side].on.indexOf(p.id):-1,p?p.fam:-1,origin]);}
   return r;};
+ // Pénalités sifflées par phase (troisième argument d'awardPenalty, 'jeu' par défaut ; avantage compris).
+ const sanction=awardPenalty;awardPenalty=function(l,side,phase){
+  const m=l.__mesure;if(m){const k=(phase&&phase.phase)||'jeu';(m.phases||(m.phases={}))[k]=(m.phases[k]||0)+1;}
+  return sanction.apply(this,arguments);};
  const fin=finishRugbyMatch;finishRugbyMatch=function(l){
   const r=fin.apply(this,arguments);
   if(l.finished&&!l.__lu&&l.__mesure){l.__lu=true;const c=l.worldContext||{};
@@ -47,7 +53,8 @@ const CROCHETS = `globalThis.__mesure=[];(()=>{
    __mesure.push({xv:[xv(0),xv(1)],comp:c.competitionId||'?',phase:c.phase||'?',pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),
     goals:l.stats.map(s=>s.goals),goalAttempts:l.stats.map(s=>s.goalAttempts),conv:l.stats.map(s=>s.conversions),convAtt:l.stats.map(s=>s.conversionAttempts),
     pen:l.stats.map(s=>s.penalties),entrees:l.__mesure.entrees,choix:l.__mesure.penalites,pas:l.__mesure.pas,essais,
-    pertes:[l.events.filter(e=>e.type==='turnover').length,0]});}
+    pertes:[l.events.filter(e=>e.type==='turnover').length,0],phases:l.__mesure.phases||{},
+    scrums:l.stats.map(s=>s.scrums),lineouts:l.stats.map(s=>s.lineouts)});}
   return r;};
 })();`;
 
@@ -124,7 +131,10 @@ function analyser(d) {
       penalites: r1(choix[3] / ms.length), auxPoteaux: pc(choix[0] / Math.max(1, choix[3])), touche: pc(choix[1] / Math.max(1, choix[3])), aLaMain: pc(choix[2] / Math.max(1, choix[3])),
       reussiteButs: pc(sum(m => m.goals[0] + m.goals[1]) / Math.max(1, sum(m => m.goalAttempts[0] + m.goalAttempts[1]))),
       transfo: pc(sum(m => m.conv[0] + m.conv[1]) / Math.max(1, sum(m => m.convAtt[0] + m.convAtt[1]))),
-      pertes: r1(sum(m => m.pertes[0] + m.pertes[1]) / ms.length) });
+      pertes: r1(sum(m => m.pertes[0] + m.pertes[1]) / ms.length),
+      sifflees: r1(sum(m => m.pen[0] + m.pen[1]) / ms.length), ptsPenMatch: r1(ptsPen / ms.length),
+      melees: r1(sum(m => (m.scrums ? m.scrums[0] + m.scrums[1] : 0)) / ms.length),
+      parPhase: (() => { const t = {}; for (const m of ms) for (const [k, v] of Object.entries(m.phases || {})) t[k] = (t[k] || 0) + v; return Object.entries(t).map(([k, v]) => k + ' ' + r1(v / ms.length)).join(', '); })() });
   }
   // Marqueurs par maillot (1 à 15), toutes compétitions.
   const maillots = new Array(15).fill(0); let inconnus = 0, totalEssais = 0;
@@ -154,9 +164,30 @@ function analyser(d) {
   const rhoEffectif = []; for (const [comp, membres] of Object.entries(d.membres)) { const t = classement(d.histoire, comp, membres); if (t.length >= 8) rhoEffectif.push(spearman(t.map(e => -d.niveaux[e.id]), t.map((e, i) => i))); }
   const tousFav = seuil => { const f = d.matchs.filter(m => m.xv && Math.abs(m.xv[0] - m.xv[1]) >= seuil); return pc(f.filter(m => { const k = m.xv[0] > m.xv[1] ? 0 : 1; return m.score[k] > m.score[1 - k]; }).length / Math.max(1, f.length)) + ' (' + f.length + ')'; };
   hierarchie.push({ comp: 'TOUS', spearman: r2(moy(rhoEffectif)) + ' (effectif)', effectif1: parEffectif(1), effectif3: parEffectif(3), favori2: tousFav(2), favori5: tousFav(5), domicile: pc(d.matchs.filter(m => m.score[0] > m.score[1]).length / d.matchs.length), meilleurRang: '-', tete: '-', victoiresTete: '-', victoiresDernier: '-' });
+  // Hiérarchie détaillée (saison régulière des championnats) : favori selon l'effectif par tranche d'écart,
+  // à domicile et à l'extérieur, surprises, écart de points entre premier et dernier, rang du mieux armé.
+  const ligue = d.matchs.filter(m => m.phase === 'league');
+  const tranches = [[0, 1], [1, 2], [2, 3], [3, 5], [5, 99]].map(([a, b]) => {
+    const f = ligue.filter(m => { const e = Math.abs(d.niveaux[m.pair[0]] - d.niveaux[m.pair[1]]); return e >= a && e < b; });
+    const gagne = m => { const k = d.niveaux[m.pair[0]] > d.niveaux[m.pair[1]] ? 0 : 1; return m.score[k] > m.score[1 - k] ? 1 : m.score[k] === m.score[1 - k] ? .5 : 0; };
+    const dom = f.filter(m => d.niveaux[m.pair[0]] > d.niveaux[m.pair[1]]), ext = f.filter(m => d.niveaux[m.pair[0]] < d.niveaux[m.pair[1]]);
+    return { tranche: a + '-' + (b > 50 ? '+' : b), matchs: f.length, favori: pc(moy(f.map(gagne))), favoriDomicile: pc(moy(dom.map(gagne))), favoriExterieur: pc(moy(ext.map(gagne))) };
+  });
+  const tableaux = [];
+  for (const [comp, membres] of Object.entries(d.membres)) {
+    const t = classement(d.histoire, comp, membres); if (t.length < 8) continue;
+    const ordre = [...membres].sort((a, b) => d.niveaux[b] - d.niveaux[a]);
+    tableaux.push({ comp, clubs: t.length, premier: t[0].pts, dernier: t.at(-1).pts, ecartPoints: t[0].pts - t.at(-1).pts,
+      rangMieuxArme: t.findIndex(e => e.id === ordre[0]) + 1, rang2: t.findIndex(e => e.id === ordre[1]) + 1,
+      spearmanEffectif: r2(spearman(t.map(e => -d.niveaux[e.id]), t.map((e, i) => i))),
+      champion: d.noms[t[0].id] + ' (n° ' + (ordre.indexOf(t[0].id) + 1) + ' effectif)' });
+  }
+  const surprises = ligue.filter(m => Math.abs(d.niveaux[m.pair[0]] - d.niveaux[m.pair[1]]) >= 3).filter(m => { const k = d.niveaux[m.pair[0]] > d.niveaux[m.pair[1]] ? 0 : 1; return m.score[k] < m.score[1 - k]; }).length;
+  const detail = { tranches, tableaux, surprises3: surprises, matchsLigue: ligue.length,
+    favoriGlobal: pc(moy(ligue.filter(m => d.niveaux[m.pair[0]] !== d.niveaux[m.pair[1]]).map(m => { const k = d.niveaux[m.pair[0]] > d.niveaux[m.pair[1]] ? 0 : 1; return m.score[k] > m.score[1 - k] ? 1 : m.score[k] === m.score[1 - k] ? .5 : 0; }))) };
   // Ailier titulaire : essais par match des maillots 11 et 14.
   const ailier = r2((maillots[10] + maillots[13]) / d.matchs.length / 4);
-  return { graine: d.graine, club: d.club, matchs: d.matchs.length, lignes, parMaillot, parGroupe, origines, inconnus, ailierParMatch: ailier, hierarchie };
+  return { graine: d.graine, club: d.club, matchs: d.matchs.length, lignes, parMaillot, parGroupe, origines, inconnus, ailierParMatch: ailier, hierarchie, detail };
 }
 
 function tableau(rows, cols) {
@@ -174,6 +205,10 @@ if (require.main === module) {
   console.log('Marqueurs par maillot (% des essais) : ' + a.parMaillot.map(x => x.maillot + ':' + x.part).join(' '));
   console.log('Groupes : ' + JSON.stringify(a.parGroupe) + ' · origines : ' + JSON.stringify(a.origines) + ' · inconnus : ' + a.inconnus);
   console.log('Ailier titulaire : ' + a.ailierParMatch + ' essai par match');
+  console.log(tableau(a.lignes, ['comp', 'sifflees', 'parPhase', 'melees', 'ptsPenMatch']));
+  console.log(tableau(a.detail.tranches, ['tranche', 'matchs', 'favori', 'favoriDomicile', 'favoriExterieur']));
+  console.log(`Favori (effectif) toutes tranches : ${a.detail.favoriGlobal} % ; surprises (écart ≥ 3 perdu) : ${a.detail.surprises3} sur ${a.detail.matchsLigue} matchs de championnat`);
+  console.log(tableau(a.detail.tableaux, ['comp', 'clubs', 'premier', 'dernier', 'ecartPoints', 'rangMieuxArme', 'rang2', 'spearmanEffectif', 'champion']));
   console.log(tableau(a.hierarchie, ['comp', 'spearman', 'favori2', 'favori5', 'effectif1', 'effectif3', 'domicile', 'meilleurRang', 'victoiresTete', 'victoiresDernier', 'tete']));
 }
 module.exports = { mesurer, analyser, classement };
