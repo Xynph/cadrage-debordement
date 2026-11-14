@@ -104,38 +104,35 @@ func run() -> void:
 	var save_path := str(app.model.meta.dataDir).path_join("donnees.json")
 	var saved := FileAccess.get_file_as_bytes(save_path)
 	var requests: int = app.bridge._next_id
-	var club_id := str(historical.home.id)
-	check(nav.open_entity({"kind":"club", "id":club_id}), "Ouverture du club de la rencontre historique")
+	# Fiche club (14/11/2026) : un nom de club ouvre la page « Fiche club » (lecture moteur `club_sheet`,
+	# sans changement d'état) ; la chaîne de lecteurs part donc de la rencontre historique.
+	check(nav.open_entity({"kind":"fixture", "id":str(historical.id)}), "Ouverture de la rencontre historique")
 	await settle()
-	var club := named("CompetitionClubDetails") as AcceptDialog
-	check(club != null and str(club.get_meta("entity_id", "")) == club_id, "Lecteur du vrai club rendu")
-	if club == null: await finish(); return
-	var club_instance: int = club.get_instance_id()
-	var result_button := club.find_child("ClubResult_" + str(historical.id).validate_node_name(), true, false) as Button
-	check(result_button != null, "Score historique rendu comme véritable lien dans le club")
-	if result_button == null: await finish(); return
-	var club_scroll := scroll_of(club)
-	if club_scroll != null: club_scroll.ensure_control_visible(result_button)
-	await activate(result_button)
 	var detail := named("CompetitionFixtureDetails") as AcceptDialog
-	check(detail != null and detail.visible and str(detail.get_meta("entity_id", "")) == str(historical.id), "Le vrai score ouvre la bonne rencontre")
-	check(is_instance_valid(club) and not club.visible and nav.is_suspended_reader(club) and str(club.name).begins_with("_NavigationReader_"), "Club conservé caché au même endroit sous nom privé")
-	check(visible_readers() == 1, "Un seul lecteur visible, aucun doublon")
+	check(detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Lecteur de la vraie rencontre rendu")
 	if detail == null: await finish(); return
-	await activate(detail.get_ok_button())
-	check(is_instance_valid(club) and club.visible and club.get_instance_id() == club_instance and club.name == "CompetitionClubDetails", "FERMER rencontre restitue l’instance et le nom exacts du club")
-	check(result_button.has_focus(), "Le focus revient au score historique initial")
-	await activate(result_button)
-	detail = named("CompetitionFixtureDetails") as AcceptDialog
-	var return_club := detail.find_child("FixtureClub_home", true, false) as Button
-	await activate(return_club)
-	check(is_instance_valid(club) and club.visible and club.get_instance_id() == club_instance and visible_readers() == 1, "Lien vers le club ancêtre réutilise son lecteur sans doublon")
-	await activate(result_button)
-	detail = named("CompetitionFixtureDetails") as AcceptDialog
 	var detail_instance: int = detail.get_instance_id()
+	var own_home: bool = str(historical.home.id) == str(app.model.club.id)
+	var club_id := str(historical.away.id if own_home else historical.home.id)
+	var club_link := detail.find_child("FixtureClub_away" if own_home else "FixtureClub_home", true, false) as Button
+	check(club_link != null and str(club_link.get_meta("entity_id", "")) == club_id, "Club adverse rendu comme véritable lien dans la rencontre")
+	if club_link == null: await finish(); return
+	await activate(club_link)
+	var deadline_sheet := Time.get_ticks_msec() + 30000
+	while (app.waiting or named("ClubSheetLoading") != null) and Time.get_ticks_msec() < deadline_sheet: await process_frame
+	await settle()
+	check(app.route == "Fiche club" and int(app.management_ui.club_sheet.id) == int(club_id) and named("FicheClub") != null, "Le lien du club ouvre la fiche du bon club")
+	check(is_instance_valid(detail) and not detail.visible and nav.is_suspended_reader(detail), "Rencontre conservée cachée pendant la fiche du club (lecture sans invalidation)")
+	check(visible_readers() == 0, "Aucun lecteur visible par-dessus la fiche du club")
+	nav._travel(-1)
+	await settle()
+	check(is_instance_valid(detail) and detail.visible and detail.get_instance_id() == detail_instance and detail.name == "CompetitionFixtureDetails", "Précédent depuis la fiche du club restitue exactement la rencontre")
+	check(club_link.has_focus(), "Le focus revient au lien du club")
+	# La fiche est une lecture moteur : le décompte des commandes repart d'ici.
+	requests = app.bridge._next_id
+	var detail_scroll := scroll_of(detail)
 	var date_button := detail.find_child("FixtureCalendarDate", true, false) as Button
 	check(date_button != null, "La date historique est un vrai lien vers le calendrier")
-	var detail_scroll := scroll_of(detail)
 	if detail_scroll != null and date_button != null: detail_scroll.ensure_control_visible(date_button)
 	await settle()
 	var offset: int = detail_scroll.scroll_vertical if detail_scroll != null else 0
@@ -160,7 +157,7 @@ func run() -> void:
 	check(saved == FileAccess.get_file_as_bytes(save_path), "Sauvegarde strictement identique après consultations et retours")
 	await command("export")
 	check(before == JSON.parse_string(app.model.meta.exportText).state, "État sportif et RNG exportés strictement inchangés")
-	check(nav._readers.is_empty() and not is_instance_valid(club) and not is_instance_valid(detail), "Nouvelle réponse worker invalide et libère toute la chaîne de lecteurs")
+	check(nav._readers.is_empty() and not is_instance_valid(detail), "Nouvelle réponse worker invalide et libère toute la chaîne de lecteurs")
 	var contexts := 0
 	for child: Node in app.get_children():
 		if child.has_meta("reading_dialog"): contexts += 1

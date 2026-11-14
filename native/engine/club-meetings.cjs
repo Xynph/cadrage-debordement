@@ -21,7 +21,8 @@ module.exports={
   const readCommands=['snapshot','export','save','load','import','shutdown','list_profiles','profile_list'];
   // Réglages de présentation des packs d'identités : ni temps, ni effectif, ni finances, ni décision de club.
   // Ils restent possibles pendant un rendez-vous ; le pack n'est appliqué qu'à l'affichage (voir docs/packs-pendant-un-rendez-vous.md).
-  const presentationCommands=['pack_inspect','pack_install','pack_select'];
+  // Suivre un club (fiche club) : simple préférence de lecture, permise pendant un rendez-vous.
+  const presentationCommands=['pack_inspect','pack_install','pack_select','club_follow'];
   const passive=command=>readCommands.includes(command)||presentationCommands.includes(command);
   const pending='terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre';
   const stage=p=>p.medicalV68?.stage||null;

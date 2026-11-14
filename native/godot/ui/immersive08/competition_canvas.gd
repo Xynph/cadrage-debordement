@@ -87,11 +87,17 @@ static func _target_club(owner_app: Control, id: String) -> Dictionary:
 	var own_club: Dictionary = own_value if own_value is Dictionary else {}
 	for division: Dictionary in owner_app.model.get("leagues", []):
 		for club: Dictionary in division.get("rows", []):
-			if str(club.get("id", "")) == id: return club
-	if str(own_club.get("id", "")) == id: return own_club
+			if same_club_id(club.get("id"), id): return club
+	if same_club_id(own_club.get("id"), id): return own_club
 	for club: Dictionary in owner_app.catalogue:
-		if str(club.get("id", "")) == id: return club
+		if same_club_id(club.get("id"), id): return club
 	return {}
+
+## Identifiant de club : « 12 » et « 12.0 » désignent le même club (entier du moteur, flottant JSON).
+static func same_club_id(value: Variant, id: String) -> bool:
+	if value == null: return false
+	if str(value) == id: return true
+	return (value is int or value is float) and id.is_valid_float() and float(value) == float(id)
 
 static func _target_fixture(owner_app: Control, id: String) -> Dictionary:
 	if id.is_empty(): return {}

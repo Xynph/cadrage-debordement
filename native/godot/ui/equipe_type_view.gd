@@ -371,6 +371,8 @@ func _carte(j: Dictionary, taille: Vector2) -> Control:
 	else:
 		var selections := int(j.get("selections", 0))
 		var legende := ("%s sélection" % _ordinal(selections)) if mode == "journee" else "%d matchs" % int(j.get("matchs", 0))
+		# Fiche d'un club : légende fournie (titularisations), voir club_sheet_canvas.gd.
+		if j.get("legende") is String: legende = j.legende
 		var couleur := Tableau.OR if (mode == "journee" and selections >= 3) else Color("a9b5ae")
 		_texte(corps, Rect2(8, taille.y - 22, taille.x - 50, 20), legende, 15, couleur, HORIZONTAL_ALIGNMENT_LEFT, null, "Legende")
 		_texte(corps, Rect2(taille.x - 50, taille.y - 22, 42, 20), G.club_abbr(club), 15, Tableau.VERT if notre else _lisible(teinte), HORIZONTAL_ALIGNMENT_RIGHT, Tableau.CHIFFRES, "Sigle")
@@ -384,6 +386,14 @@ func _carte(j: Dictionary, taille: Vector2) -> Control:
 	disque.position = Vector2(3, 3)
 	disque.size = Vector2(38, 38)
 	racine.add_child(disque)
+	# Sans note connue (fiche d'un club avant toute note), pas de pastille trompeuse à 6,5.
+	if j.has("noteMatch") and j.noteMatch == null:
+		var ecusson_seul := G.crest(club, 36)
+		ecusson_seul.name = "Ecusson"
+		ecusson_seul.position = Vector2(taille.x - 42, HAUT_PORTRAIT - 42)
+		ecusson_seul.size = Vector2(36, 36)
+		racine.add_child(ecusson_seul)
+		return racine
 	var fond_note := _boite(racine, Rect2(taille.x - 62, 5, 57, 32), Color(0.03, 0.06, 0.05, 0.86), 7)
 	fond_note.name = "FondNote"
 	var note := Tableau.Note.new()
@@ -398,12 +408,33 @@ func _carte(j: Dictionary, taille: Vector2) -> Control:
 	ecusson.position = Vector2(taille.x - 42, HAUT_PORTRAIT - 42)
 	ecusson.size = Vector2(36, 36)
 	racine.add_child(ecusson)
+	_lien_club(racine, club, Rect2(taille.x - 50, HAUT_PORTRAIT - 4, 50, taille.y - HAUT_PORTRAIT + 4))
 	# Le joueur de la journée est plus grand que les autres (même centre).
 	if etoile:
 		racine.pivot_offset = taille * 0.5
 		racine.scale = Vector2(ECHELLE_VEDETTE, ECHELLE_VEDETTE)
 		racine.z_index = 2
 	return racine
+
+## Sigle du club cliquable : ferme la carte et ouvre la fiche du club (ou l'écran Club pour le vôtre).
+func _lien_club(racine: Control, club: Dictionary, zone: Rect2) -> void:
+	if app == null or not is_instance_valid(app.navigation_controller) or club.get("id") == null: return
+	var cible := {"kind":"club", "id":str(int(club.id))}
+	if not app.navigation_controller.entity_available(cible): return
+	var b := Button.new()
+	b.name = "EquipeTypeClub"
+	b.flat = true
+	b.position = zone.position
+	b.size = zone.size
+	b.tooltip_text = "Ouvrir la fiche · " + G.club_name(club)
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	b.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	b.pressed.connect(func():
+		var proprietaire := app
+		queue_free()
+		proprietaire.navigation_controller.open_entity(cible))
+	racine.add_child(b)
 
 # ---- Colonne gauche : joueur mis en avant, entraîneur, club du manager ------------------------------
 
