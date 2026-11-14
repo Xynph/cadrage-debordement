@@ -164,6 +164,10 @@ func handle_shortcut(event: InputEvent) -> bool:
 	if save_shortcut and app._has_career():
 		app._command("save")
 		return true
+	# « Jour suivant » : un seul jour (le bouton principal est « Continuer », jusqu'au prochain événement).
+	if code == KEY_J and event.ctrl_pressed and not event.alt_pressed and app.has_method("next_day_action") and app._has_career():
+		app.next_day_action()
+		return true
 	if code==KEY_F1 and not event.ctrl_pressed and not event.alt_pressed:
 		app._open_coach()
 		return true
