@@ -24,6 +24,15 @@ function pathCoverage(file) {
   return 'full';
 }
 
+// Fichiers Godot : jeu natif, suites Godot (tests/godot-*, leurs aides), lanceurs et plan des shards Godot,
+// préparation du projet. Un changement qui en touche un rend les jobs Godot obligatoires pour « Validation CI ».
+const GODOT_PATHS = [
+  /^native\/godot\//, /^tests\/godot-/, /^tests\/helpers\/(?:godot-[^/]*|[^/]*\.gd)$/,
+  /^ci\/(?:godot-[a-z-]+\.(?:cjs|json)|run-godot-[a-z]+\.(?:sh|cjs)|shard-tests\.cjs|suite-weights\.json|legacy-modes\.cjs)$/,
+  /^scripts\/build-godot-prototype\.py$/, /^\.github\/workflows\/tests\.yml$/
+];
+const touchesGodot = file => GODOT_PATHS.some(pattern => pattern.test(file));
+
 function classify(event, diffs) {
   if (event !== 'pull_request' || !diffs?.length || diffs.some(diff => !diff.length)) return 'full';
   const modes = new Set();
@@ -107,8 +116,9 @@ if (require.main === module) {
     execFileSync(process.execPath, ['--check', '--', file], { stdio: 'inherit' });
   }
   const coverage = classify(EVENT_NAME, diffs);
-  fs.appendFileSync(GITHUB_OUTPUT, 'coverage=' + coverage + '\n');
-  console.log('Couverture : ' + coverage);
+  const godot = files.some(touchesGodot);
+  fs.appendFileSync(GITHUB_OUTPUT, 'coverage=' + coverage + '\ngodot=' + godot + '\n');
+  console.log('Couverture : ' + coverage + ' · fichiers Godot touchés : ' + godot);
 }
 
-module.exports = { classify, readDiffs, suitesForCoverage };
+module.exports = { classify, touchesGodot, readDiffs, suitesForCoverage };

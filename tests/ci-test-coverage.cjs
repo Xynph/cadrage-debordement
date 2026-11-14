@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { allTestFiles, planShards } = require('../ci/shard-tests.cjs');
-const { classify, readDiffs, suitesForCoverage } = require('../ci/test-coverage.cjs');
+const { classify, touchesGodot, readDiffs, suitesForCoverage } = require('../ci/test-coverage.cjs');
 
 const modification = file => ({ file, status: 'M', oldMode: '100644', newMode: '100644' });
 const coverage = (files, event = 'pull_request') => classify(event, [files.map(modification)]);
@@ -107,9 +107,9 @@ test('diff Git complet des parents réels, y compris un chemin déjà corrigé d
     });
     return fs.readFileSync(output, 'utf8');
   };
-  assert.equal(classifyCheckout('pull_request', { PR_BASE: base, PR_HEAD: head }), 'coverage=full\n');
-  assert.equal(classifyCheckout('push', { BEFORE: base }), 'coverage=full\n');
-  assert.equal(classifyCheckout('workflow_dispatch', {}), 'coverage=full\n');
+  assert.equal(classifyCheckout('pull_request', { PR_BASE: base, PR_HEAD: head }), 'coverage=full\ngodot=false\n');
+  assert.equal(classifyCheckout('push', { BEFORE: base }), 'coverage=full\ngodot=false\n');
+  assert.equal(classifyCheckout('workflow_dispatch', {}), 'coverage=full\ngodot=false\n');
 
   git('switch', '-c', 'renamed', fork);
   git('mv', 'docs/réception du jeu.md', 'docs/rapport.md');
@@ -141,4 +141,17 @@ test('chaque profil utile est réparti sans perte et le complet découvre toutes
   }
   assert.throws(() => suitesForCoverage('unknown', all), /couverture/i);
   assert.throws(() => suitesForCoverage('web', all.filter(file => file !== 'tests/offline.cjs')), /absente/i);
+});
+
+test('les fichiers Godot rendent les jobs Godot obligatoires, les autres non', () => {
+  for (const file of [
+    'native/godot/main.gd', 'native/godot/ui/immersive08/coach_canvas.gd', 'native/godot/art/immersive08/stadium.png',
+    'tests/godot-immersive08.gd', 'tests/godot-guide.cjs', 'tests/helpers/contextual_flow.gd', 'tests/helpers/godot-import-log.cjs',
+    'ci/run-godot-suites.sh', 'ci/godot-env.cjs', 'ci/shard-tests.cjs', 'ci/suite-weights.json', 'ci/legacy-modes.cjs',
+    'scripts/build-godot-prototype.py', '.github/workflows/tests.yml'
+  ]) assert.equal(touchesGodot(file), true, file);
+  for (const file of [
+    'dist/game.js', 'dist/style.css', 'docs/reception.md', 'README.md', 'tests/offline.cjs', 'tests/helpers/carriere-monde.cjs',
+    'native/engine/worker.cjs', 'ci/quick-check.cjs', '.github/workflows/godot-sdk.yml'
+  ]) assert.equal(touchesGodot(file), false, file);
 });

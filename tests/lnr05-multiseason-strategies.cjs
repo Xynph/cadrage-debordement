@@ -6,7 +6,7 @@ const selectedMode=process.env.LNR_AUDIT_MODE||'temoin',selectedSeed=Number(proc
 assert(MODES.includes(selectedMode)&&SEEDS.includes(selectedSeed),'scenario reconnu');
 function boot(offset){
  const t=context();
- for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
+ for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
  t.run('for(let i=0;i<'+offset+';i++)Math.random()');t.run("start(0,'lnr')");
  return t;
 }

@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
 const g=context(),run=g.run;
-for(const f of ['lnr-rosters-data.js','lnr-career.js'])
+for(const f of ['lnr-rosters-base.js','lnr-career.js'])
  vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),g.ctx);
 run("start(0,'lnr')");
 const initial=run('S.clubs[0].players[0].id'),name=run('S.clubs[0].name');

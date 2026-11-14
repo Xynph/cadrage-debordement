@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
-function boot(){const t=context();for(const f of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);t.run("start(0,'lnr')");return t}
+function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);t.run("start(0,'lnr')");return t}
 function metrics(run){return run('({injured:club().players.filter(p=>p.injury).length,condition:club().players.reduce((a,p)=>a+p.condition,0)/club().players.length,load:club().players.reduce((a,p)=>a+physicalLoadValue(p),0)/club().players.length})')}
 test('LNR: trois strategies comparables, saisons completes et sauvegardes',()=>{
  const outcomes=[];

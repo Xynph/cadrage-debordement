@@ -1,0 +1,15 @@
+SCRIPT ERROR: Invalid access to property or key 'slot' on a base object of type 'Dictionary'.
+          at: _start_maul (res://match_gestes.gd:1185)
+          GDScript backtrace (most recent call first):
+              [0] _start_maul (res://match_gestes.gd:1185)
+              [1] advance (res://match_gestes.gd:305)
+              [2] _process (res://match_view.gd:501)
+              [3] run (/workspace/cadrage-debordement/work/repro-gestes.gd:20)
+
+SCRIPT ERROR: Invalid access to property or key 'mark' on a base object of type 'Dictionary'.
+          at: place (res://match_gestes.gd:356)
+          GDScript backtrace (most recent call first):
+              [0] place (res://match_gestes.gd:356)
+              [1] _process (res://match_view.gd:524)
+              [2] run (/workspace/cadrage-debordement/work/repro-gestes.gd:20)
+
