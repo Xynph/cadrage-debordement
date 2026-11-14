@@ -9,6 +9,10 @@ static func replace_staged(temporary: String, destination: String) -> String:
 	var root := OS.get_executable_path().get_base_dir()
 	var node_path := root.path_join("runtime/node.exe")
 	var helper_path := root.path_join("engine/atomic-replace.cjs")
+	if OS.has_feature("macos") and not OS.has_feature("editor"):
+		var contents := root.get_base_dir()
+		node_path = contents.path_join("Helpers/node")
+		helper_path = contents.path_join("Resources/engine/atomic-replace.cjs")
 	if OS.has_feature("editor"):
 		helper_path = ProjectSettings.globalize_path("res://../engine/atomic-replace.cjs")
 		node_path = str(ProjectSettings.get_setting("native_engine/node_executable", node_path))

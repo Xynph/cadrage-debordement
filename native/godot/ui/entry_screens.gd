@@ -132,7 +132,7 @@ static func home(app: Control) -> Control:
 	over.add_child(G.spacer())
 	var footer := G.h()
 	over.add_child(footer)
-	var note := G.label("VERSION DE DÉVELOPPEMENT %s  ·  APPLICATION WINDOWS NATIVE" % str(ProjectSettings.get_setting("application/config/version", "")), 12, G.WHITE)
+	var note := G.label("VERSION DE DÉVELOPPEMENT %s  ·  APPLICATION %s NATIVE" % [str(ProjectSettings.get_setting("application/config/version", "")), OS.get_name().to_upper()], 12, G.WHITE)
 	G.fill(note)
 	footer.add_child(note)
 	footer.add_child(G.button("CRÉDITS", app._credits))

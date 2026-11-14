@@ -58,6 +58,11 @@ func start(data_dir: String) -> void:
 	var root := OS.get_executable_path().get_base_dir()
 	var node_path := root.path_join("runtime/node.exe")
 	var worker_path := root.path_join("engine/worker.cjs")
+	if OS.has_feature("macos") and not OS.has_feature("editor"):
+		# Inside the .app: executable in Contents/MacOS, data in Resources.
+		var contents := root.get_base_dir()
+		node_path = contents.path_join("Helpers/node")
+		worker_path = contents.path_join("Resources/engine/worker.cjs")
 	if OS.has_feature("editor"):
 		worker_path = ProjectSettings.globalize_path("res://../engine/worker.cjs")
 		node_path = str(ProjectSettings.get_setting("native_engine/node_executable", node_path))
