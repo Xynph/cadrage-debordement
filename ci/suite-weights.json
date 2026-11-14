@@ -12,6 +12,7 @@
     ],
     "weights": {
       "tests/ai-roster-cycle.cjs": 59,
+      "tests/homme-du-match-postes.cjs": 160,
       "tests/animation-pipeline-runner.cjs": 7,
       "tests/animation-pipeline.cjs": 2,
       "tests/audit-atlas-photos.cjs": 3,

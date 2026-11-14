@@ -15,8 +15,11 @@
 //    plaquage manqué (franchissement ou essai en jeu courant subi), réception, jeu au pied,
 //    pénalité réussie ou manquée, conquête, carton ;
 //  - collectif, au prorata des minutes : essai de l'équipe, écart au score, résultat ;
-//  - influence : niveau au poste du joueur par rapport à son équipe du jour (± 0,35 au plus).
+//  - influence : niveau au poste du joueur par rapport à son équipe du jour (± 0,35 au plus) ;
+//  - poste occupé (maillots 1 à 15, 14 novembre 2026) : faits attendus du poste retirés, amplitude
+//    propre au poste (POSTES_NOTE, étalonnés en carrière Monde).
 // La somme est comprimée (tanh) autour de 6,5 : la plupart des notes entre 5,5 et 8, 9 et plus rares.
+// Homme du match : la meilleure note (30 minutes au moins).
 
 function moteur(){
  const NOTE_DEPART=6.5,NOTE_MIN=1,NOTE_MAX=10,COMPRESSION=3.2;
@@ -41,11 +44,20 @@ function moteur(){
  const B={course:.03,metresPar:24,metresMax:1.5,franchissement:.6,essai:1.5,essaiEquipe:.05,essaiSubi:-.45,
   plaquage:.08,plaquageDomine:.05,plaquageManque:-.32,recuperation:.65,ballonPerdu:-.3,reception:.06,pied:.04,piedLong:.3,cinquante22:.5,
   but:.4,butManque:-.3,toucheGagnee:.045,meleeGagnee:.06,toucheVolee:.1,meleeVolee:.12,touchePerdue:-.09,meleePerdue:-.1,volee:.35,
-  jaune:-1.4,rouge:-2.8,penalite:-.32,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,negatif:.8,base:0,reference:0};
- // Décalage attendu et écart-type de l'impact par famille de poste (FAMILIES : 0 pilier,
- // 1 talonneur, 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier,
- // 7 centre, 8 arrière), mesurés sur un match complet.
- const POSTE={0:[0.27,0.97],1:[-0.72,1.59],2:[1.57,1.51],3:[2.03,1.69],4:[0.09,1.38],5:[0.99,1.34],6:[0.47,1.17],7:[0.39,1.3],8:[-0.01,1.74]};
+  jaune:-1.4,rouge:-2.8,penalite:-.32,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,negatif:.8,poste:.25};
+ // Pondération par poste (maillots 1 à 15, poste occupé sur le terrain), étalonnée en carrière
+ // Monde (docs/homme-du-match-postes-20261114.md) : [faits attendus sur 80 minutes, dispersion].
+ // Les postes n'ont pas les mêmes occasions de faits dans le journal (un troisième ligne plaque
+ // et court bien plus qu'un pilier) : on retire l'attendu du poste (moyennes par poste proches),
+ // puis la dispersion du poste fixe l'amplitude des notes (un ouvreur fait plus souvent le match,
+ // ou le rate, qu'un pilier). L'homme du match est la meilleure note : la répartition par poste
+ // vient de ces seules pondérations (aucun tirage, aucun quota).
+ const POSTES_NOTE=[[0.57,1.06],[-0.26,1.24],[0.28,1.01],[1.59,0.86],[1.94,1.05],[2.3,0.82],[2.24,0.92],[2.2,1.01],
+  [0.37,1.26],[1.06,1.49],[0.87,1.03],[0.76,0.96],[0.7,1],[0.9,1.09],[0.21,1.05]];
+ // Repli quand seul le poste naturel du joueur est connu (FAMILIES : 0 pilier, 1 talonneur,
+ // 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière).
+ const MAILLOTS_FAMILLE=[[0,2],[1],[3,4],[5,6,7],[8],[9],[10,13],[11,12],[14]];
+ const POSTE=MAILLOTS_FAMILLE.map(m=>[0,1].map(k=>m.reduce((a,i)=>a+POSTES_NOTE[i][k],0)/m.length));
  const arrondi=n=>Math.round(n*10)/10;
  const borne=(n,a,b)=>Math.max(a,Math.min(b,n));
  // Note affichée d'un total brut (impact) : compression douce autour de la base.
@@ -142,7 +154,7 @@ function moteur(){
   if(contexte.feuille?.joueurs)feuilleDansNotes(joueurs,contexte.feuille,contexte.apports);
   if(Array.isArray(contexte.score)&&contexte.score.length===2)score=contexte.score;else if(dernierScore)score=dernierScore;
   const duree=Math.max(1,Number.isFinite(contexte.duree)?contexte.duree:80);
-  const familles=contexte.familles||{};
+  const familles=contexte.familles||{},postes=contexte.postes||{};
   for(const [id,n] of Object.entries(joueurs)){
    const m=Number.isFinite(minutes[id])?Math.max(0,minutes[id]):0;n.minutes=Math.round(m);
    const part=Math.min(1,m/Math.max(80,duree));
@@ -150,27 +162,27 @@ function moteur(){
    // Collectif : écart au score (borné) et résultat, une fois le match fini.
    const collectif=borne(ecart/32,-B.ecartMax,B.ecartMax)+(contexte.fini?(ecart>0?B.resultat:ecart<0?-B.resultat:0):0);
    const niveau=Number.isFinite(niveaux[id])?borne(niveaux[id],-1,1)*.35:0;
-   // Poste : décalage par famille (les postes n'ont pas les mêmes occasions de faits dans le
-   // journal), pour que chaque poste ait la même moyenne attendue (étalonnage, voir la doc).
-   const f=contexte.journalReduit?null:familles[id],decalage=Number.isInteger(f)&&POSTE[f]?POSTE[f][0]:0;
-   n.impact=B.echelle*n.brut+(B.base-decalage)*part+(collectif+niveau)*part;
-   n.famille=Number.isInteger(f)?f:null;
+   // Poste occupé (maillot 1 à 15), sinon poste naturel (famille) : attendu retiré, dispersion
+   // du poste, constante commune (B.poste) qui garde la moyenne générale. Journal réduit
+   // (matchs internationaux, essais seuls) : aucune pondération (voir la doc).
+   const mt=contexte.journalReduit?null:postes[id],f=contexte.journalReduit?null:familles[id];
+   const p=Number.isInteger(mt)&&POSTES_NOTE[mt]?POSTES_NOTE[mt]:Number.isInteger(f)&&POSTE[f]?POSTE[f]:null;
+   n.impact=p?p[1]*(B.echelle*n.brut-p[0]*part)+(B.poste+collectif+niveau)*part:B.echelle*n.brut+(collectif+niveau)*part;
+   n.poste=Number.isInteger(mt)&&POSTES_NOTE[mt]?mt:null;
    n.note=echelle(n.impact);
    n.metres=Math.round(n.metres);
   }
-  // Homme du match (fin de match), au moins 30 minutes : meilleure performance relative à son
-  // poste (écart à la moyenne attendue du poste, rapporté à son écart-type) ; à égalité, la
-  // meilleure note, le vainqueur, le plus de faits, puis l'identifiant.
-  const relatif=n=>{const r=Number.isInteger(n.famille)&&POSTE[n.famille]?POSTE[n.famille]:[0,1];return (n.impact-B.reference*Math.min(1,n.minutes/80))/(r[1]*.75+1.45*.25);};
+  // Homme du match (fin de match), au moins 30 minutes : la meilleure note (déjà pondérée par
+  // poste) ; à égalité, l'impact avant arrondi, le vainqueur, le plus de faits, l'identifiant.
   let hommeDuMatch=null;
   const candidats=Object.entries(joueurs).filter(([,n])=>n.minutes>=30);
-  candidats.sort(([a,x],[b,y])=>relatif(y)-relatif(x)||y.note-x.note||((score[y.cote]-score[1-y.cote])-(score[x.cote]-score[1-x.cote]))||y.faits-x.faits||(a<b?-1:a>b?1:0));
+  candidats.sort(([a,x],[b,y])=>y.note-x.note||y.impact-x.impact||((score[y.cote]-score[1-y.cote])-(score[x.cote]-score[1-x.cote]))||y.faits-x.faits||(a<b?-1:a>b?1:0));
   if(candidats.length)hommeDuMatch=candidats[0][0];
   if(camp!==null)for(const id of Object.keys(joueurs))if(joueurs[id].cote!==camp)delete joueurs[id];
-  for(const n of Object.values(joueurs)){delete n.brut;delete n.impact;delete n.famille;}
+  for(const n of Object.values(joueurs)){delete n.brut;delete n.impact;delete n.poste;}
   return {joueurs,hommeDuMatch,score:score.slice()};
  }
- return {NOTE_DEPART,noter,plaqueur,echelle,B,POSTE};
+ return {NOTE_DEPART,noter,plaqueur,echelle,B,POSTE,POSTES_NOTE,MAILLOTS_FAMILLE};
 }
 
 // ---- Domaine natif (installé dans la VM du moteur, voir native-systems.cjs) ----------------
@@ -227,16 +239,22 @@ function factory(){
  }
  // Contexte d'un match pour le calcul : minutes, côtés, niveau au poste relatif à l'équipe.
  function contexte(l){
-  const cotes={},minutes={},niveaux={},noms={},familles={};
+  const cotes={},minutes={},niveaux={},noms={},familles={},postes={};
   for(let side=0;side<2;side++){
    const sh=l.sheets?.[side];if(!sh)continue;
+   // Poste occupé : maillot de départ, puis celui du joueur remplacé (remplacements dans l'ordre),
+   // sinon la place actuelle sur le terrain.
+   (sh.initial||[]).forEach((id,i)=>{if(id!=null&&i<15&&postes[id]===undefined)postes[id]=i;});
+   for(const r of l.subs||[])if(r&&r.side===side&&r.in!=null&&postes[r.in]===undefined&&postes[r.out]!==undefined)postes[r.in]=postes[r.out];
+   (sh.on||[]).forEach((id,i)=>{if(id!=null&&i<15&&postes[id]===undefined)postes[id]=i;});
    const ids=[...new Set([...(sh.used||[]),...(sh.on||[]).filter(Boolean)])];
    const notes=[];
    for(const id of ids){const p=typeof matchPlayer==='function'?matchPlayer(l,side,id):null;cotes[id]=side;minutes[id]=Number(sh.minutes?.[id])||0;if(p){const r=roleNote(p);notes.push([id,r]);noms[id]=p.name;if(Number.isInteger(p.fam))familles[id]=p.fam;}}
    const moyenne=notes.length?notes.reduce((n,[,r])=>n+r,0)/notes.length:0;
    for(const [id,r] of notes)niveaux[id]=Math.max(-1,Math.min(1,(r-moyenne)/10));
   }
-  return {cotes,minutes,niveaux,noms,familles,score:l.score.slice(),duree:l.minute,fini:!!l.finished};
+  for(const id of Object.keys(postes))if(cotes[id]===undefined)delete postes[id];
+  return {cotes,minutes,niveaux,noms,familles,postes,score:l.score.slice(),duree:l.minute,fini:!!l.finished};
  }
  const journalDe=l=>l.userSide>=0?l.events:(l.notesJournal||[]);
  function noterMatch(l){const f=feuilleDe(l);return calc.noter(journalDe(l),f?{...contexte(l),feuille:f,apports:CDMatchStats.apportsNote(f)}:contexte(l));}
