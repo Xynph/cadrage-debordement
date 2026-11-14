@@ -1,25 +1,33 @@
 'use strict';
 // Without a pack, no real name reaches the game: the 116 clubs of the player and staff
 // registries carry base names only, and no file shipped with the game quotes a real person
-// of the French base. The real names are read from the research sources still in the repository
-// (dist/lnr-rosters-data.js, data/staff/verified.json); they are never written anywhere.
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const root=path.resolve(__dirname,'..'),{context}=require('./france-harness.cjs'),baseNames=require('../scripts/base-names.cjs');
+// of the French base. The real names are read from the research sources of the private data
+// repository rugby-reel-donnees (scripts/sources-privees.cjs: copy laid over the repository, or
+// its clone designated by CD_SOURCES_PRIVEES); they are never written anywhere. Without them,
+// the comparison with real names is announced as not done and the public checks still run.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.resolve(__dirname,'..'),baseNames=require('../scripts/base-names.cjs'),privees=require('../scripts/sources-privees.cjs');
 const json=file=>JSON.parse(fs.readFileSync(path.join(root,file),'utf8'));
-const fold=name=>String(name).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const fold=name=>String(name).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 
-// Real identities of the French base: 1 592 players and 471 staff members.
-const ref=context();
-for(const file of ['france-clubs.js','lnr-rosters-data.js','lnr-ratings-v12.js','lnr-birthyears-data.js','lnr-career.js'])ref.run(fs.readFileSync(path.join(root,'dist',file),'utf8'));
-ref.run('LNR_TOP14.splice(0,LNR_TOP14.length,...LNR_CATALOGUE.clubs)');
-const realPlayers=JSON.parse(ref.run('JSON.stringify(CDFranceClubs.clubs.flatMap(c=>lnrGamePlayers(LNR_TOP14.findIndex(x=>x[0]===c.slug),c.base).map(p=>[p.id,p.name])))'));
-const realStaff=json('data/staff/verified.json').people.map(p=>[p.id,p.name]);
-assert.equal(realPlayers.length,1592);assert.equal(realStaff.length,471);
-const real=new Map([...realPlayers,...realStaff].map(([id,name])=>[id,fold(name)]));
+// Real identities: 1 592 players of the French base, 471 staff members, the press of the pack.
+const SOURCES={players:'dist/lnr-rosters-data.js',staff:'data/staff/verified.json',press:'pack/journalistes.json'};
+const located=Object.fromEntries(Object.entries(SOURCES).map(([k,r])=>[k,privees.locate(r)]));
+function catalogue(file){const ctx=vm.createContext({});vm.runInContext(fs.readFileSync(file,'utf8').replace(/^const LNR_CATALOGUE=/m,'var LNR_CATALOGUE='),ctx);return ctx.LNR_CATALOGUE;}
+const realPlayers=located.players?catalogue(located.players).clubs.flatMap(c=>c[3].map(([id,name])=>[id,name])):[];
+const realStaff=located.staff?JSON.parse(fs.readFileSync(located.staff,'utf8')).people.map(p=>[p.id,p.name]):[];
+const realPress=located.press?JSON.parse(fs.readFileSync(located.press,'utf8')).press.journalists.map(j=>[j.id,j.name]):[];
+if(located.players)assert.equal(realPlayers.length,1592);if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.equal(realPress.length,10);
+const missing=Object.keys(SOURCES).filter(k=>!located[k]);
+if(missing.length)console.warn('Sources privées absentes ('+missing.map(k=>SOURCES[k]).join(', ')+') : comparaison avec ces vrais noms non faite.');
+const real=new Map([...realPlayers,...realStaff,...realPress].map(([id,name])=>[id,fold(name)]));
 const realNames=new Set(real.values());
 // A surname is what follows the given name; a real surname is never reused by the base.
 const surname=name=>fold(name).split(' ').slice(1).join(' ');
 const realSurnames=new Set([...realPlayers,...realStaff].map(([,name])=>surname(name)));
+// Players and staff of the base: the seeded name pools are compared with them (a pool pair that matches the
+// common name of a journalist is a coincidence of first names and surnames, not a quoted person).
+const sportNames=new Set([...realPlayers,...realStaff].map(([,name])=>fold(name)));
 
 // The 116 clubs as the engine composes them, and the 2 160 staff members of the largest edition.
 const {extendWorldRegistry,extendJapanRegistry,extendNationaleRegistry,extendChampRegistry}=require('../native/engine/world-pacific-registry.cjs');
@@ -43,7 +51,7 @@ const pool=(file,name)=>{const m=fs.readFileSync(path.join(root,'dist',file),'ut
 for(const [file,firsts,lasts,size] of [['world-data.js','FIRST','LAST',832],['espoirs-strategy-v95-v100.js','firstnames','surnames',144]]){
  const given=pool(file,firsts),family=pool(file,lasts),pairs=given.flatMap(g=>family.map(f=>fold(g+' '+f)));
  assert.equal(pairs.length,size,file+' : taille du vivier');
- assert.deepEqual(pairs.filter(pair=>realNames.has(pair)).length,0,file+' : combinaison tirée au sort égale au nom d’une personne réelle');
+ assert.deepEqual(pairs.filter(pair=>sportNames.has(pair)).length,0,file+' : combinaison tirée au sort égale au nom d’une personne réelle');
 }
 // Every displayed name of the registries comes from the tables of base names.
 const tables=new Set([...baseNames.players().values(),...baseNames.staff().values()]);
@@ -61,16 +69,11 @@ function quoted(text){
 const shipped=[];
 (function walk(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory()){if(!['.godot','node_modules'].includes(entry.name))walk(file);}else if(/\.(?:json|cjs|js|gd|tscn|tres|cfg|txt|md|csv)$/.test(entry.name))shipped.push(file);}})(path.join(root,'native'));
 for(const file of require('../native/engine/worker.cjs').CORE_FILES)shipped.push(path.join(root,'dist',file));
-// Known homonym outside the player and staff registries: the press character « fiction-1 » of the question
-// bank bears the name of a player of the French base. The press bank is reworked by PR #553.
-// Read by identifier so that the test itself quotes no name.
-const reporter=require('../dist/press-question-bank.js').journalists.find(j=>j.id==='fiction-1');
-const KNOWN={'dist/press-question-bank.js':new Set(reporter?[fold(reporter.name)]:[])};
 const leaks=[];
 for(const file of shipped){
  const relative=path.relative(root,file).split(path.sep).join('/');
- for(const name of quoted(fs.readFileSync(file,'utf8')))if(!KNOWN[relative]?.has(name))leaks.push(relative+' : '+name);
+ for(const name of quoted(fs.readFileSync(file,'utf8')))leaks.push(relative+' : '+name);
 }
 assert.deepEqual(leaks,[],'vrais noms dans les fichiers livrés');
 
-console.log(JSON.stringify({passed:true,clubs:full.clubs.length,players:players.length,staff:staff.length,realNamesChecked:realNames.size,shippedFiles:shipped.length}));
+console.log(JSON.stringify({passed:true,realSources:Object.keys(SOURCES).filter(k=>located[k]),clubs:full.clubs.length,players:players.length,staff:staff.length,realNamesChecked:realNames.size,shippedFiles:shipped.length}));
