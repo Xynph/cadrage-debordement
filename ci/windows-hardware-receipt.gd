@@ -151,10 +151,12 @@ func resume_career(save_path: String) -> void:
 	if not failures.is_empty(): return
 	var stored: Variant = JSON.parse_string(FileAccess.get_file_as_string(save_path))
 	check(stored is Dictionary and stored.get("store", {}).get("bdt-v1") is String, "Saved career document is readable")
-	if not failures.is_empty() or not await ask("export"): return
+	if not failures.is_empty() or not await ask("export",{"proof":true}): return
 	var exported: Variant = JSON.parse_string(app.model.get("meta", {}).get("exportText", ""))
 	var resumed := JSON.parse_string(stored.store["bdt-v1"]) as Dictionary
-	var exact: bool = exported is Dictionary and exported.get("state") == resumed
+	var proof := str(app.model.get("meta", {}).get("exportRoundTripSha256", ""))
+	var reduced: bool = exported is Dictionary and int(exported.get("exportVersion", 1)) != 1
+	var exact: bool = exported is Dictionary and not proof.is_empty() and proof == str(stored.store["bdt-v1"]).sha256_text() and (reduced or exported.get("state") == resumed)
 	check(exact and FileAccess.get_sha256(save_path) == expected, "Relaunch reproduces the saved state without changing its bytes")
 	report.before = {"state_matches":exact, "save_sha256":expected}
 	app._navigate("Réception")

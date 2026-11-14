@@ -1,5 +1,5 @@
 'use strict';
-// Repli du médaillon de Gabi (sans fichier Mixamo privé, sans GLB) : exécution native Godot,
+// Repli du visage de Gabi dans le bandeau (sans fichier Mixamo privé, sans GLB) : exécution native Godot,
 // ignorée sans SDK (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -8,7 +8,7 @@ const {test} = require('node:test');
 
 const godot = process.env.CD_GODOT_EXE || process.env.CD_GODOT_EXECUTABLE;
 
-test('Gabi médaillon : repli propre et vivant sans fichier privé ni GLB', {skip: !godot && 'SDK Godot requis', timeout: 300000}, () => {
+test('Gabi (bandeau) : repli propre et vivant sans fichier privé ni GLB', {skip: !godot && 'SDK Godot requis', timeout: 300000}, () => {
   const env = {...process.env};
   delete env.CD_GABI_MIXAMO;
   const result = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-gabi-repli.gd')], {

@@ -114,6 +114,8 @@ budget() {
     tests/native-player-knowledge-capacity.cjs) echo 300s ;;
     # Lot 03 (Monde) : 3 tests de 40 à 76 s chacun (3 carrières), 190 s en tout en local sous charge ; délai élargi, assertions inchangées.
     tests/native-academy-appearance-bank.cjs) echo 420s ;;
+    # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
+    tests/sauvegarde-idempotente.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }
