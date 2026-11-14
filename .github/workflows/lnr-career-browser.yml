@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '24'
       - run: |
-          node --check dist/lnr-rosters-data.js
+          node --check dist/lnr-rosters-base.js
           node --check dist/lnr-career.js
           node --check dist/game.js
           node --check dist/saves.js

@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
 function ready(snapshot){
- const g=context(snapshot);for(const f of ['lnr-rosters-data.js','lnr-career.js'])
+ const g=context(snapshot);for(const f of ['lnr-rosters-base.js','lnr-career.js'])
   vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),g.ctx);
  return g;
 }

@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const {context}=require('./harness.cjs');
-const modules=['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'];
+const modules=['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'];
 function load(saved){
  const t=context();
  for(const name of modules)vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+name,'utf8'),t.ctx);

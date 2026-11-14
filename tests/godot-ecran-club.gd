@@ -77,11 +77,16 @@ func run() -> void:
 			check(topbar != null and topbar.get_global_rect().grow(1).encloses(band), "Gabi dans le bandeau du haut, pas sur la page : " + route)
 			check(band.end.y <= app.body_scroll.get_global_rect().position.y + 1, "Gabi au-dessus de l'espace de travail : " + route)
 			var covered := 0
-			for item: Rect2 in coach._content_rects():
-				if band.intersects(item) and not band.grow(1).encloses(item): covered += 1
+			# Au Bureau, Gabi en pied tient déjà la colonne de droite : sa zone du bandeau est vide (largeur nulle).
+			var masque: bool = zone.get_meta("masque", false)
+			if not masque:
+				for item: Rect2 in coach._content_rects():
+					if band.intersects(item) and not band.grow(1).encloses(item): covered += 1
 			check(covered == 0, "Gabi : aucun texte ni bouton de la page recouvert (" + str(covered) + ") : " + route)
+			check(masque == (route == "Bureau"), "Visage du bandeau masqué seulement au Bureau (Gabi en pied) : " + route)
 		for face: Node in app.find_children("GabiMedaillon", "", true, false):
 			check(zone != null and zone.is_ancestor_of(face), "Plus de médaillon dans le coin : le visage de Gabi est dans le bandeau : " + route)
+			check(not face.is_visible_in_tree() or not zone.get_meta("masque", false), "Visage masqué au Bureau : " + route)
 		await capture("gabi-" + route.to_lower())
 	print("CLUB_CHECKS ", checks, " echecs=", failures.size())
 	quit(1 if failures.size() > 0 else 0)

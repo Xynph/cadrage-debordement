@@ -2,7 +2,8 @@ extends SceneTree
 ## Gabi dans le bandeau du haut et chez lui au Bureau (choix de Léo, 13/11/2026 : option « A + C »), sur une
 ## vraie carrière Monde (moteur réel) :
 ## - Gabi présent dans le bandeau des écrans principaux (visage, remarque), sans recouvrir aucun texte ni
-##   bouton ; un clic ouvre sa bulle (avis + menu), qui descend du bandeau et se ferme d'un clic ailleurs ;
+##   bouton ; au Bureau seulement, où Gabi est déjà en pied dans la colonne, le visage et la remarque quittent le
+##   bandeau (recherche élargie, date inchangée) ; un clic ouvre sa bulle (avis + menu), qui descend du bandeau et se ferme d'un clic ailleurs ;
 ## - zone de Gabi au Bureau sans chevauchement avec les blocs, qui restent lisibles (plus de bouton
 ##   « Préparer la suite du club » sur « Tout le calendrier ») ;
 ## - mise en page revenue à 100 % (plus de bande basse réservée ni de médaillon dans le coin) ;
@@ -122,6 +123,10 @@ func bandeau(route: String) -> void:
 	var coach: Control = app.coach
 	var zone: Control = app.root_content.find_child("GabiBandeau", true, false)
 	var topbar: Control = app.root_content.find_child("ImmersiveTopbar", true, false)
+	if route == "Bureau":
+		await bandeau_bureau(zone, topbar)
+		return
+	check(app.root_content.find_child("GabiBureau", true, false) == null, "Gabi en pied seulement au Bureau : " + route)
 	check(zone != null and zone.is_visible_in_tree(), "Gabi dans le bandeau : " + route)
 	if zone == null or topbar == null: return
 	var band := zone.get_global_rect()
@@ -144,6 +149,24 @@ func bandeau(route: String) -> void:
 	check(date != null and date.is_visible_in_tree() and not date.get_global_rect().intersects(band) and date.get_global_rect().position.x > band.end.x, "Date lisible, à droite de Gabi : " + route)
 	check(app.header_date != null and not str(app.header_date.text).is_empty(), "Date affichée : " + route)
 	await capture("bandeau-" + route.to_lower())
+
+## Bureau : Gabi en pied est affiché, donc plus de visage ni de remarque dans le bandeau (une seule Gabi à l'écran).
+func bandeau_bureau(zone: Control, topbar: Control) -> void:
+	var coach: Control = app.coach
+	check(app.root_content.find_child("GabiBureau", true, false) != null, "Bureau : Gabi en pied affiché")
+	check(zone != null and zone.get_meta("masque", false), "Bureau : bandeau de Gabi marqué comme masqué")
+	for id: String in ["GabiMedaillon", "GabiVisageImage", "GabiRemarque", "GabiBandeauTitre", "GabiPastille", "GabiFil"]:
+		var node: Node = zone.find_child(id, true, false) if zone != null else null
+		check(node == null or not (node as Control).is_visible_in_tree(), "Bureau : %s masqué dans le bandeau" % id)
+	check(zone == null or zone.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Bureau : zone masquée sans clic (ne gêne pas la recherche)")
+	check(coach._adjoint_actif(), "Bureau : Gabi reste actif (bulle, conseil) via Gabi en pied")
+	var search: Control = topbar.find_child("ImmersiveSearch", true, false)
+	var date: Control = topbar.find_child("ImmersiveCalendarDate", true, false)
+	check(search != null and search.is_visible_in_tree() and search.size.x > 440.0 * C.density * topbar.get_global_transform().get_scale().x, "Bureau : recherche élargie (%d px)" % search.size.x)
+	check(date != null and date.is_visible_in_tree() and date.get_global_rect().position.x > search.get_global_rect().end.x + 60.0, "Bureau : date lisible, à droite de la recherche")
+	check(topbar.get_global_rect().grow(1).encloses(search.get_global_rect()) and topbar.get_global_rect().grow(1).encloses(date.get_global_rect()), "Bureau : recherche et date dans le bandeau")
+	check(app.header_date != null and not str(app.header_date.text).is_empty(), "Bureau : date affichée")
+	await capture("bandeau-bureau")
 
 ## Clic sur Gabi : bulle d'avis (« Ton avis, Gabi ? » + menu), sous le bandeau ; fermée d'un clic ailleurs.
 func bulle() -> void:
@@ -265,6 +288,14 @@ func bureau() -> void:
 		var outside := card.get_global_rect().grow(2)
 		for label: Label in labels:
 			if label.autowrap_mode == TextServer.AUTOWRAP_OFF: check(outside.encloses(painted(label)) or painted(label).size.x < 1, "Texte dans son bloc %s : %s" % [id, label.text])
+	# Bulle ouverte depuis Gabi en pied (visage du bandeau masqué) : à gauche de la colonne, sans la recouvrir.
+	await click_at(figure.get_global_rect().get_center() if figure != null else rect.get_center())
+	check(coach._bulle.visible, "Bureau : clic sur Gabi en pied, sa bulle s'ouvre")
+	var colonne := zone.get_global_rect()
+	check(not coach._bulle.get_global_rect().intersects(colonne), "Bureau : la bulle ne recouvre pas la colonne de Gabi")
+	check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(coach._bulle.get_global_rect()), "Bureau : bulle entière dans l'application")
+	await capture("bureau-bulle")
+	coach.fermer_bulle(); await settle()
 	await capture("bureau")
 
 ## Réglage pour couper Gabi : bandeau vide, Bureau classique ; F1 (aide) le réactive.

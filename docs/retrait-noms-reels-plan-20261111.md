@@ -147,3 +147,74 @@ du joueur réel. Un nom inventé retire le nom, pas la ressemblance.
 
 Je ne suis pas juriste. Ce plan réduit l'exposition ; il ne remplace pas un
 avis sur le droit des données personnelles et le droit à l'image.
+
+## État d'avancement (14 novembre 2026)
+
+Décision de Léo du 14/11 : retrait du dépôt public, la copie privée étant
+vérifiée (les 85 fichiers sources sont identiques à l'octet près dans
+`Xynph/rugby-reel-donnees`).
+
+### Étape 2 — dépôt public qui se suffit : PR « retrait A »
+
+- Retirés : les 85 fichiers sources (`modding/`, `data/roster-foundation/`,
+  `data/scouting/`, `data/staff/`, `docs/rugby-real-v12/`,
+  `docs/roster-foundation-lot{1,2}.md`, `tools/rugby-real-v12/`,
+  `tools/lnr-v12-v11-preview/`). `docs/donnees-du-jeu.md` reste public : il ne
+  cite aucun nom réel.
+- Retirés avec eux : 37 suites, 12 outils (`tools/data05-*`, `tools/data06-*`),
+  5 workflows et 33 documents qui ne servaient qu'à ces sources. La liste et
+  ce qui manque au dépôt privé sont dans la description de la PR.
+- `scripts/sources-privees.cjs` : les compilateurs du registre des effectifs
+  (`build-roster-foundation.cjs`) et du staff français
+  (`build-staff-registry.cjs`) cherchent leurs sources dans le dépôt (copie
+  du dépôt privé posée par-dessus) puis dans `CD_SOURCES_PRIVEES` (clone du
+  dépôt privé). Sans elles, `--check` vérifie l'empreinte publiée du fichier
+  compilé (`data/empreintes-compilees.json`) et l'annonce : « Sources privées
+  absentes, recompilation non contrôlée ». Une recompilation sans sources
+  échoue. La construction de l'exe reste valide.
+- `tests/base-names-leak.cjs` lit les vrais noms (joueurs, staffs,
+  journalistes du pack) dans les sources privées quand elles sont là et le
+  dit quand elles n'y sont pas ; il ne dépend plus du harnais France et
+  tourne donc de nouveau dans la CI (partie publique).
+
+### Étape 3 — base du jeu à noms inventés : PR « retrait B »
+
+Les noms inventés étaient déjà branchés depuis la PR #599
+(`data/names/`, copies à l'octet près des propositions du dépôt privé ;
+voir `docs/noms-inventes-branchement-20261111.md`) : base commune, registres
+du Monde (y compris les 4 286 joueurs et 1 732 staffs hors des 30 clubs
+français), staffs. Cette PR retire ce qui portait encore les vrais noms :
+
+- `dist/lnr-rosters-data.js` (1 592 vrais noms) quitte le dépôt public ; il
+  est remplacé par `dist/lnr-rosters-base.js`, même catalogue (clubs, ordre,
+  identifiants, postes, nationalités) avec les noms de la base. La base
+  commune se recompile donc sans source privée ; quand le catalogue réel est
+  présent (`CD_SOURCES_PRIVEES`), le compilateur vérifie en plus qu'aucun nom
+  de base n'est un vrai nom.
+- `dist/lnr05-enriched-data.js` (liens vers les fiches individuelles, dont
+  le nom est dans l'adresse) devient `dist/lnr05-mesures.js` : mêmes mesures,
+  sans lien.
+- Plus aucun nom réel dans les assertions des tests.
+- Journalistes : les dix journalistes et quatre rédactions sont déjà inventés
+  (`presse-0` à `presse-9`, `redaction-0` à `redaction-3`) ; les vrais sont
+  dans la rubrique `press` du pack (`pack/journalistes.json` du dépôt privé,
+  validée par `outils/presse/rubrique-presse.cjs --verifier`).
+- Test `tests/noms-base-pack-monde.cjs` (Monde) : une carrière garde les noms
+  de sa sauvegarde, une nouvelle carrière affiche les noms de la base sur ses
+  116 clubs, un pack de test remplace joueurs et staffs par identifiant.
+- `tests/base-names-leak.cjs`, avec les sources privées : catalogue public
+  identique au réel hors des noms, et aucun nom complet réel (joueurs, staffs,
+  journalistes) dans **tout** le dépôt public.
+
+### Ce qui reste
+
+- Étrangers du Monde : noms inventés depuis #599 ; `foreign-inputs.json` ne
+  porte plus d'alias réel. Le pack « Rugby Réel Monde » du PC de Léo
+  (`docs/world-identity-pack-20261109.md`) restitue 1 616 joueurs PREM, URC et
+  invités et 380 staffs étrangers. **Non couverts** : les 2 670 joueurs et
+  1 352 staffs des extensions Pacifique, Japon, Nationale et Champ, ajoutés
+  après ce pack ; aucun vrai nom n'existe pour eux dans les dépôts.
+- Clubs : la base porte déjà des noms inventés (« Toulouse Capitole XV »…) ;
+  le pack remplace nom, sigle, logo, ville et stade par identifiant pour les
+  116 clubs du Monde. Non modifiés par cette passe.
+- Étape 4 : l'historique Git.

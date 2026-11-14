@@ -76,6 +76,8 @@ budget() {
     # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
     # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
     tests/japan-match.cjs) echo 300s ;;
+    # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
+    tests/homme-du-match-postes.cjs) echo 600s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.

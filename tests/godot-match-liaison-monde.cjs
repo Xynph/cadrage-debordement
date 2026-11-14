@@ -20,6 +20,14 @@ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-liaison-monde-'));
  fs.writeFileSync(path.join(directory,'monde.json'),call('export').meta.exportText);
  bridge.close?.();fs.rmSync(dataDir,{recursive:true,force:true});
 }
+// Préparation seule pour rejouer exactement cette carrière avec la sonde graphique.
+if(process.env.CD_LIAISON_EXPORT){
+ const target=process.env.CD_LIAISON_EXPORT;
+ assert.ok(path.isAbsolute(target),'CD_LIAISON_EXPORT : chemin absolu requis');
+ fs.copyFileSync(path.join(directory,'monde.json'),target,fs.constants.COPYFILE_EXCL);
+ fs.rmSync(directory,{recursive:true,force:true});
+ console.log('Export jetable world-champ, graine 7, club 0 : '+target);process.exit(0);
+}
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(directory,'liaison','PrototypeGodot'),CD_MATCH_TEMPS_FORTS_ARTIFACTS:directory,
  CD_MATCH_TEMPS_FORTS_MODE:'liaison',CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:process.env.CD_LIAISON_GRAINE||'3',CD_LIAISON_MINUTES:process.env.CD_LIAISON_MINUTES||'18',CD_LIAISON_ATTENDUES:process.env.CD_LIAISON_ATTENDUES||'1'};
 for(const name of ['CD_MODES_HERITES','CD_MATCH_TEMPS_FORTS_NIVEAU','CD_MATCH_GESTES','CD_MATCH_CHOREGRAPHE','CD_MATCH_TEMPS_FORTS_ENTRACTE'])delete env[name];

@@ -41,6 +41,7 @@ const TOPBAR_BREADCRUMB_END := 700
 const TOPBAR_HISTORY_LEFT := 712
 const TOPBAR_SEARCH_LEFT := 815
 const TOPBAR_SEARCH_WIDTH := 420
+const TOPBAR_SEARCH_WIDTH_PIED := 640
 const TOPBAR_GABI_LEFT := 1253
 const TOPBAR_GABI_GAP := 16
 
@@ -359,9 +360,13 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var search_caption := "Rechercher un joueur, un menu…" if app.model.get("staff",{}).get("teams",[]).is_empty() else "Rechercher un joueur, un club…"
 	if national: search_caption = "Rechercher un écran…"
 	# Petites fenêtres : la phrase complète ne tient plus dans le champ ; « Rechercher… » reste lisible.
-	var search_room := C.px(TOPBAR_SEARCH_WIDTH) - C.px(48) - C.px(70)
+	# Au Bureau, Gabi est déjà là en pied (colonne de droite) : son visage quitte le bandeau, la recherche
+	# profite d'un peu de la place libérée (le reste demeure vide, la date garde sa place).
+	var gabi_en_pied: bool = app.route=="Bureau" and not national and is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
+	var search_width := TOPBAR_SEARCH_WIDTH_PIED if gabi_en_pied else TOPBAR_SEARCH_WIDTH
+	var search_room := C.px(search_width) - C.px(48) - C.px(70)
 	var visible_caption := search_caption if C.BODY.get_string_size(search_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(18))).x <= search_room else "Rechercher…"
-	var search := D.button(panel,Rect2(TOPBAR_SEARCH_LEFT,19,TOPBAR_SEARCH_WIDTH,42),visible_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
+	var search := D.button(panel,Rect2(TOPBAR_SEARCH_LEFT,19,search_width,42),visible_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
 	search.tooltip_text = search_caption
 	search.add_theme_font_override("font",C.BODY)
 	search.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
@@ -373,7 +378,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var magnifier := C.icon("search",21,C.MUTED)
 	panel.add_child(magnifier)
 	D.place(magnifier,Rect2(TOPBAR_SEARCH_LEFT+14,30,21,21))
-	var shortcut := D.chip(panel,Rect2(TOPBAR_SEARCH_LEFT+TOPBAR_SEARCH_WIDTH-62,29,48,23),"Ctrl K",C.MUTED)
+	var shortcut := D.chip(panel,Rect2(TOPBAR_SEARCH_LEFT+search_width-62,29,48,23),"Ctrl K",C.MUTED)
 	var calendar := C.button("", _open_current_calendar.bind(app))
 	calendar.name = "ImmersiveCalendarDate"
 	calendar.accessibility_name = "Ouvrir le calendrier"
@@ -390,6 +395,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var gabi := Control.new()
 	gabi.name = "GabiBandeau"
 	gabi.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gabi.set_meta("masque", gabi_en_pied)
 	panel.add_child(gabi)
 	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi])
 	_position_topbar(layout)
@@ -436,7 +442,7 @@ static func _position_topbar(layout: Control) -> void:
 		var gabi: Control = elements[6]
 		var gabi_right := calendar_left - TOPBAR_GABI_GAP
 		gabi.position = Vector2(C.px(TOPBAR_GABI_LEFT),C.px(6))
-		gabi.size = Vector2(maxf(0.0,C.px(gabi_right-TOPBAR_GABI_LEFT)),C.px(66))
+		gabi.size = Vector2(0.0 if gabi.get_meta("masque",false) else maxf(0.0,C.px(gabi_right-TOPBAR_GABI_LEFT)),C.px(66))
 	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 	action.position.y=(79.0*C.density-height)/2.0
 	action.size.y=height

@@ -1,0 +1,24 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MATCH_CADRAGE_ARRET {"action":{"card":15,"penalty":9},"tv":{"card":18,"penalty":14}}
+MATCH_CADRAGE_ARRET_CHECKS 3 failures=0
+
+✔ Cadrage des temps forts : coup de sifflet et carton montrent les joueurs, pas l’herbe seule (1930.572332ms)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MATCH_COMPLET_REGRESSION_CHECKS 64 failures=0
+
+✔ Match complet : porteur hors alignement et rapport après libération des régies (17484.951052ms)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MATCH_GESTES_ADAPTES_CHECKS 24 failures=0
+
+✔ Gestes adaptés : enchaînés sur les faits du moteur, repli procédural sans bibliothèque (3466.372599ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17640.471171
