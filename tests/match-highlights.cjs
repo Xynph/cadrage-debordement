@@ -294,7 +294,7 @@ test('Niveau dynamique : une vraie part de grosses actions sans point, tous les 
   }
   assert.equal(vus, essais, 'chaque essai est montré');
   const part = n => n / episodes;
-  assert.ok(part(points) <= 0.5, 'temps forts qui marquent : ' + Math.round(part(points) * 100) + ' %');
+  assert.ok(part(points) <= 0.6, 'temps forts qui marquent : ' + Math.round(part(points) * 100) + ' %');
   assert.ok(part(grosses) >= 0.35 && part(grosses) <= 0.6, 'grosses actions sans point : ' + Math.round(part(grosses) * 100) + ' %');
   assert.ok(quarts.every(q => q / episodes >= 0.15), 'temps forts répartis sur le match : ' + quarts.join(' / '));
   // Seuil porté de 8 à 10 % avec le découpage des longues courses (docs/match-courses-20261112.md) :

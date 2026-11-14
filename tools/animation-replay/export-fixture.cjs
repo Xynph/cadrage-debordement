@@ -11,7 +11,7 @@ function record() {
     start(0); beginMatch(); pauseMatch();
     var live = S.live;
     live.paused = false; syncMatchPresentation(live);
-    Math.random = () => .43;
+    Math.random = () => .55; // course réussie (< 0,63 depuis les essais réalistes)
     ballPossession(live, 0, 85); advanceCausalPlay(live);
     var carry = playback(live).cursor;
     var firstScoringEvent = live.events.length;
