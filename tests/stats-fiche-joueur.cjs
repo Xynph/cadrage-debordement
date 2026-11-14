@@ -11,8 +11,8 @@ const N = require('../native/engine/match-notes.cjs');
 const MS = require('../native/engine/match-stats.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
-// Journées de championnat jouées par le test long (une saison régulière de Top 14 : 26).
-const JOURNEES = Number(process.env.CD_STATS_JOURNEES || 26);
+// Journées jouées par défaut (4 : assez de titulaires par poste pour les bornes ; la saison complète, 26 journées, se lance avec CD_STATS_JOURNEES=26, ~50 minutes).
+const JOURNEES = Number(process.env.CD_STATS_JOURNEES || 4);
 
 // Groupes de postes (libellés du jeu) et bornes réalistes par 80 minutes (titulaire) : plaquages,
 // mètres, essais par match. Références : docs/stats-match-realistes-20261113.md et la demande de Léo

@@ -63,7 +63,7 @@ totaux sont complétés à zéro au match suivant, les champs absents sont proje
 | Ailier | 4,9 | 1,0 | 58 | 4,2 | 0,15 |
 | Arrière | 4,2 | 1,0 | 53 | 6,8 | 0,15 |
 
-(4 journées ; la saison complète se lance avec `CD_STATS_JOURNEES=26`, ~50 minutes.)
+(4 journées, valeur par défaut du test ; la saison complète se lance avec `CD_STATS_JOURNEES=26`, ~50 minutes.)
 
 ## Limites
 
