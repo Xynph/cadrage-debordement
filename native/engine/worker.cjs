@@ -674,7 +674,11 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
-      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
+      // Budget de saison réaliste (salaires par niveau, budget du club, centre de formation) : activé par défaut
+      // pour les carrières créées (décision de Léo du 13 novembre). CD_SALAIRES_PAR_NIVEAU=0 le coupe (tests,
+      // comparaisons). Les carrières déjà commencées gardent leur économie : la marque S.startingSalaries ne se
+      // pose qu'ici, à la création (voir docs/salaires-par-niveau-20261111.md, « Activation par défaut »).
+      if(process.env.CD_SALAIRES_PAR_NIVEAU!=='0')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
       run('autoLineup();');
       // Directions des clubs gérés : carrières mondiales nouvelles seulement ; CD_DIRECTIONS_CLUBS=0 les coupe.
       if(process.env.CD_DIRECTIONS_CLUBS!=='0')run('nativeClubDirections.create(S,nativeCreationVariation.seed)');

@@ -54,8 +54,36 @@ test('Jamais d’argent créé ni d’entrée douteuse acceptée ; textes immers
 });
 
 // Carrière Monde (world-champ) : l'écran Finances lit les leviers dans la stratégie du club, sans rien modifier.
-test('Monde : leviers lus sur la prévision du club, sans mutation, commande de formation applicable',()=>{
+// Budget de saison réaliste (défaut des carrières Monde) : l'objectif est celui du propriétaire, la lecture ne touche à rien.
+// Hors budget de saison (CD_SALAIRES_PAR_NIVEAU=0) : l'objectif est la caisse prévue, avec la billetterie moyenne restante.
+const avecBudget=(valeur,fn)=>{const avant=process.env.CD_SALAIRES_PAR_NIVEAU;if(valeur===undefined)delete process.env.CD_SALAIRES_PAR_NIVEAU;else process.env.CD_SALAIRES_PAR_NIVEAU=valeur;
+ try{return fn();}finally{if(avant===undefined)delete process.env.CD_SALAIRES_PAR_NIVEAU;else process.env.CD_SALAIRES_PAR_NIVEAU=avant;}};
+test('Monde, budget de saison réaliste (défaut) : leviers lus sur la prévision, objectif du propriétaire, sans mutation',()=>{
  const {context}=require('./monde-harness.cjs');
+ avecBudget(undefined,()=>{
+  const h=context();
+  try{
+   h.start(0);
+   assert.ok(h.run('!!S.startingSalaries'),'carrière marquée par défaut');
+   const finance=()=>JSON.parse(h.run("JSON.stringify(nativeSystems.domain('clubStrategy').project().finance)"));
+   const avant=h.run('JSON.stringify(S)'),graine=h.seed(),f=finance();
+   assert.equal(h.run('JSON.stringify(S)'),avant,'lire les leviers ne touche pas la carrière');assert.equal(h.seed(),graine,'ni le tirage aléatoire');
+   assert.ok(f.levers&&['serein','vigilance','facultatif','effectif','grave','tard'].includes(f.levers.etat));
+   assert.equal(f.levers.objectif,'proprietaire');
+   h.run("S.careerManagement.academyInvestment=12000;club().players.forEach(p=>{p.salary*=4;});budgetPrevoir(budgetForces(),budgetRepere())");
+   const tendu=finance(),formation=tendu.levers.leviers.find(l=>l.cle==='formation');
+   assert.ok(tendu.levers.manque>0&&formation&&formation.effet===12000*tendu.remainingWeeks);
+   h.run("club().players.forEach(p=>{p.salary/=4;});budgetPrevoir(budgetForces(),budgetRepere())");
+   h.ctx.leviersPayload=JSON.stringify({...formation.commande,context:{season:h.run('S.season'),week:h.run("nativeSystems.domain('clubStrategy').project().context.week"),club:0},confirmed:true});
+   h.run("nativeSystems.domain('clubStrategy').execute('club_academy_investment',JSON.parse(leviersPayload))");
+   assert.equal(h.run('S.careerManagement.academyInvestment'),0,'le levier proposé correspond à une vraie décision du club');
+  }finally{h.close();}
+ });
+});
+
+test('Monde, hors budget de saison : leviers lus sur la prévision du club, sans mutation, commande de formation applicable',()=>{
+ const {context}=require('./monde-harness.cjs');
+ avecBudget('0',()=>{
  const h=context();
  try{
   h.start(0);
@@ -75,4 +103,5 @@ test('Monde : leviers lus sur la prévision du club, sans mutation, commande de 
   assert.equal(h.run('S.careerManagement.academyInvestment'),0,'le levier proposé correspond à une vraie décision du club');
   assert.ok(ctx.levers);
  }finally{h.close();}
+ });
 });

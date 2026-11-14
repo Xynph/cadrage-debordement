@@ -7,7 +7,7 @@ const checksum=state=>{let h=2166136261;const s=JSON.stringify(state);for(let i=
 
 test('native population state survives import/reopen and rejects corruption or failed persistence atomically',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-player-population-'));
- let b=createBridge({dataDir:root,seed:827381,now:1794178800000}),serial=0;
+ let b=createBridge({dataDir:root,seed:827381,now:1794178800000,testVm:true}),serial=0;
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});
  const call=(command,payload={})=>b.handle({id:++serial,command,payload});
  const ok=(command,payload)=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
@@ -24,11 +24,11 @@ test('native population state survives import/reopen and rejects corruption or f
  fs.renameSync=(from,to)=>{if(path.resolve(to)===primary&&path.basename(from).startsWith('donnees.tmp')){const e=Error('population persistence test');e.code='EACCES';throw e;}return rename(from,to);};
  let rejected;try{rejected=call('train',{mode:'intense'});}finally{fs.renameSync=rename;}
  assert.equal(rejected.ok,false);assert.equal(archive(),before);assert.deepEqual(fs.readFileSync(primary),profile);
- b.close();b=createBridge({dataDir:root,seed:999,now:1794178800000});
+ b.close();b=createBridge({dataDir:root,seed:999,now:1794178800000,testVm:true});
  assert.equal(archive(),before,'same player identities, pool, RNG profile and policy after reopening');
  const candidate=JSON.parse(archive()).state.market.find(p=>p.age+2<p.dev.retireAge);
  const cash=JSON.parse(archive()).state.clubs[0].cash;
- const counter=ok('recruit',{confirmed:true,playerId:candidate.id,salary:1000,years:2});
+ const counter=ok('recruit',{confirmed:true,playerId:candidate.id,salary:b.vm.run("budgetActif()?budgetPlancherHebdo():1000"),years:2});
  assert.equal(counter.meta.negotiation.status,'counter');
  const counterExport=archive();ok('import',{text:counterExport});
  const signed=ok('recruit',{confirmed:true,playerId:candidate.id,salary:counter.meta.negotiation.salary,years:2});

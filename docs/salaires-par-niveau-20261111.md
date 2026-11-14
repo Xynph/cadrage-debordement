@@ -1,8 +1,9 @@
 # Salaires de départ liés au niveau
 
 Relevé du 11 novembre 2026 sur `fe79c365` (#539). Suite du constat P1 de
-`docs/audit-priorites-cloud-20261111.md` (#549). **Éteint par défaut** : ce
-chantier n'est pas prêt à être activé, voir « Limites et points non vérifiés ».
+`docs/audit-priorites-cloud-20261111.md` (#549). **Activé par défaut depuis le
+13 novembre 2026** pour les carrières créées (décision de Léo, « oui si c'est
+jouable ») : voir « Activation par défaut ». `CD_SALAIRES_PAR_NIVEAU=0` le coupe.
 
 ## Le défaut
 
@@ -550,6 +551,107 @@ Lecture :
   existaient déjà). L'export redevient possible après l'intersaison. Défaut
   de l'édition, signalé, non traité ici ; la reprise depuis le disque n'est pas
   concernée.
+
+## Activation par défaut (13 novembre)
+
+Décision de Léo : activer le budget de saison réaliste « si c'est jouable ».
+Mesure faite **avant** tout changement de code, sur `main` f9e67093, carrière
+`world-champ` (116 clubs), graine 27, API publique du worker, une saison complète
+(46 semaines, matchs délégués), `next_season` puis deux semaines de la saison 2.
+Outil : une variante de `ci/world-career-measure.cjs` qui relit l'état chaque
+semaine (caisse, amendes au journal, effectifs, clubs à découvert).
+
+### Club joué
+
+Caisse en M€. « Résultat » : variation de caisse de la saison avant apport.
+
+| Club joué | Départ | Fin S1 | Après intersaison | Plus bas | Masse / limite | Clôture | Amende |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Toulouse (1re française), drapeau allumé | 7,50 | 7,36 | 7,68 | 7,12 | 10,40 / plafond 10,70 | +0,18 dans le vert | aucune |
+| Toulouse, drapeau éteint | 7,50 | 2,97 | 5,47 (+2,5 versés) | 2,97 | 20,52, aucune limite appliquée | — | — |
+| Valence (2e française, petit budget) | 2,30 | 1,76 | 2,30 | 1,76 | 2,63 / 52 % des recettes 4,66 | −0,42, comblé par le propriétaire (0,50) | aucune |
+| Valence, drapeau éteint | 2,30 | 4,46 | 6,96 | 2,05 | 12,69 | — | — |
+| Marcq (Nationale) | 2,60 | 2,42 | 2,60 | 2,42 | 0,91 / 1,49 | −0,15 pour 0,15 d'enveloppe : 3 700 € non couverts, sous le seuil de 2 % | aucune |
+| Bath (1re anglaise) | 4,00 | 3,83 | 4,11 | 3,23 | 6,05 / plafond 7,50 | +0,11 dans le vert | aucune |
+| Sagami (1re japonaise, association) | 4,20 | 4,11 | 4,31 | 3,69 | 3,72, pas de limite | +0,11 dans le vert | aucune |
+
+Aucune amende ni avertissement de la ligue à la création ou en semaine 1 ;
+aucune trésorerie négative du club joué ; aucune feuille de match incomplète
+hors blessures (Marcq, 40 joueurs : deux renforts d'urgence dans la saison).
+Un seul cas demande une décision : Valence, relégué en Nationale (16e), prévoit
+pour la saison 2 une perte de 0,35 M€ pour 0,30 M€ d'enveloppe ; il suffit de
+réduire de 70 000 € (formation payée, un contrat) pour rester dans la limite.
+
+Toulouse (les deux fois) et Valence (drapeau allumé seulement) finissent
+derniers en matchs délégués : effet du tirage des matchs, le budget ne touche
+pas aux forces. Non vérifié sur d'autres graines.
+
+### Clubs gérés (mesurés dans la carrière de Toulouse)
+
+| | Drapeau allumé | Drapeau éteint |
+| --- | --- | --- |
+| Clubs au-dessus de leur plafond | 0 (création, fin de saison, après intersaison) | 34 (tous ceux des trois championnats plafonnés) |
+| Caisse négative en fin de saison | 1 (club invité, −0,36 M€) | 5 (jusqu'à −1,49 M€) |
+| Clubs endettés après l'intersaison | 0 | 5 |
+| Effectif sous 30 joueurs | 0 | 0 |
+| Plus petit effectif | 40 | 40 |
+| Masse médiane fin S1 : 1re française / 1re anglaise / Nationale / 2e anglaise | 9,6 / 6,99 / 1,45 / 1,17 M€ | 18,7 / 17,0 / 4,7 / 9,2 M€ |
+| Caisse médiane fin S1 : 1re française / 2e française / Nationale | 5,66 / 1,84 / 2,48 M€ | 3,75 / 2,69 / 11,82 M€ |
+
+Les quatre autres carrières (clubs joués 29, 91, 30, 72) donnent les mêmes
+clubs gérés à un club près : un seul club à découvert en fin de saison
+(l'invité), aucun endetté après l'intersaison, aucun effectif sous 30.
+
+### Agents libres et centre de formation
+
+| | Drapeau allumé | Drapeau éteint |
+| --- | --- | --- |
+| Salaire annuel médian des joueurs libres, création | 20 800 € (90e centile 119 000 €) | 156 000 € |
+| Après l'intersaison (≈ 940 joueurs libres) | 32 800 € (90e centile 129 000 €, minimum 7 800 €) | 104 000 € |
+| Centre de formation de Toulouse | 54 900 € par semaine, aide LNR et région 13 700 € | ligne absente |
+| Valence / Marcq | 10 500 € (aide 2 600 €) / 7 800 € (aide 1 900 €) | ligne absente |
+
+Les centres restent financés partout : la ligne fait partie du fonctionnement,
+aucun club ne passe à découvert à cause d'elle, et les centres des clubs gérés
+gardent leur taille (médiane 60 joueurs, 66 après l'arrivée de la génération).
+
+### Verdict et choix pour les sauvegardes
+
+**Jouable** selon les critères de Léo : aucun club géré ne s'effondre, le club
+joué boucle la saison (dans le vert ou dans l'enveloppe du propriétaire), pas
+d'amende automatique en semaine 1, pas d'effectif incomplet.
+
+Le budget est donc activé à la création de toute carrière
+(`native/engine/worker.cjs`, `new_career`). Les carrières déjà commencées
+**gardent leur économie** : la marque `S.startingSalaries` ne se pose qu'à la
+création, et `nativeStartingSalaries.apply` refuse une carrière en cours. Une
+conversion à l'intersaison aurait réécrit d'un coup tous les contrats déjà
+signés (Toulouse passerait de 20,5 à environ 10 M€ de masse) en laissant aux
+clubs les caisses gonflées par l'ancien barème (2,5 M€ par intersaison,
+160 000 € par semaine) : c'est le choc que Léo veut éviter, sans gain de
+réalisme tant que les caisses ne sont pas recalées. Test :
+`tests/budget-realiste-defaut.cjs` (carrière neuve marquée ; drapeau à 0 ;
+carrière non marquée reprise, jouée et exportée sans conversion).
+
+### Limites
+
+- Une graine, une saison et une intersaison par club joué ; matchs délégués,
+  aucune décision du manager.
+- Les espoirs des centres sont payés 2 000 € par semaine (104 000 € par an),
+  au-dessus du salaire médian d'un professionnel (1 040 € par semaine) : une
+  promotion en cours de saison coûte cher à un club géré de petite division,
+  jusqu'au recalage de l'intersaison suivante. Non corrigé : le salaire de
+  2 000 € est une constante du centre (`academyPlayer`, validation des
+  sauvegardes pour les invités, et la promotion enregistrée exige 2 000 € au
+  moins) ; l'aligner touche au schéma des sauvegardes.
+- Joueurs libres après l'intersaison : un joueur libéré d'un club à échelle
+  réduite (Nationale, Japon) arrivait sur le marché avec son salaire de club,
+  jusqu'à 7 800 € par an, sous le plancher de la règle (14 000 €). Corrigé :
+  `aiRosterTrimFreeAgents` (club-budget) relève tout libre sous 270 € par
+  semaine à 270 € (prix suivant), carrières marquées seulement ; test dans
+  `tests/club-budget.cjs`.
+- Effectif du club joué ramené à 40 à l'intersaison (Toulouse 61 → 40, Bath
+  57 → 40) : identique drapeau éteint, défaut existant.
 
 ## Tests
 

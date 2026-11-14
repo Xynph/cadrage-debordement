@@ -213,6 +213,15 @@ test('Moteur, carrière marquée : les clubs gérés s’autorisent une masse ti
  assert.ok(avant.every(x=>x>=2000)&&libres.every(x=>x>=270&&x<2000)&&libres.length===avant.length);
  assert.equal(h.run("aiRosterSmallClubPlayer(3,77).salary<1500"),true);assert.equal(sans.run("aiRosterSmallClubPlayer(3,77).salary>=2000"),true);
 });
+test('Moteur, carrière marquée : un joueur libéré sous le plancher de la règle redemande au moins ce plancher',()=>{
+ const h=moteur(true),sans=moteur(false);
+ for(const m of [h,sans])m.run("S.economy.freeAgents.slice(0,5).forEach(p=>{p.salary=150;p.price=0;});");
+ h.run('aiRosterTrimFreeAgents()');sans.run('aiRosterTrimFreeAgents()');
+ const libres=h.lire('S.economy.freeAgents.map(p=>p.salary)'),anciens=sans.lire('S.economy.freeAgents.map(p=>p.salary)');
+ assert.ok(libres.length>=5&&libres.every(x=>x>=270),'marquée : aucun libre sous 270 € par semaine (14 000 € par an)');
+ assert.ok(h.lire('S.economy.freeAgents.filter(p=>p.salary===270).every(p=>p.price===Math.round(p.salary*2/1000)*1000)'),'le prix suit le salaire relevé');
+ assert.ok(anciens.some(x=>x===150),'non marquée : rien ne bouge');
+});
 test('Moteur, carrière marquée : données de l’écran Finances tirées du budget de la saison',()=>{
  const h=moteur(true),f=h.lire('budgetFinance(0,25000,0)'),p=h.lire('S.clubBudget.prevision');
  assert.equal(f.baseForecast,p.tresoreriePrevue);assert.equal(f.budget.resultatPrevu,p.resultatPrevu);assert.equal(f.budget.plancherSalaire,270);assert.equal(f.budget.semainesDePaie,34);

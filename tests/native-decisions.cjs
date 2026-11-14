@@ -7,7 +7,7 @@ const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-decisions-'));let seq=0,b;
 // Même réglage que le vrai jeu : calendrier journalier, presse obligatoire, carrière internationale.
-const open=()=>createBridge({dataDir:path.join(root,'monde'),seed:213,now:1794315600000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true});
+const open=()=>createBridge({dataDir:path.join(root,'monde'),seed:213,now:1794315600000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true,testVm:true});
 const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const bad=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,false,command+' doit être refusé');};
 const settle=model=>settleClubMeetings(model,(command,payload)=>good(command,payload));
@@ -33,7 +33,9 @@ try{
  for(let i=0;i<5;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes,'La lecture de tous les dossiers ne modifie ni disque ni RNG.');
  const recruit=m.market.find(p=>p.available);const cash=m.finance.cash,squadSize=m.squad.length;
  const recruitTerms={playerId:recruit.id,years:1,confirmed:true};
- m=good('recruit',{...recruitTerms,salary:1000});assert.equal(m.meta.negotiation.status,'counter');
+ // Plancher de la règle : 1 000 € dans l'ancienne économie, celui du barème de la ligue avec le budget réaliste (défaut). Une offre au plancher est sous la demande du joueur.
+ const floor=b.vm.run("budgetActif()?budgetPlancherHebdo():1000");
+ m=good('recruit',{...recruitTerms,salary:floor});assert.equal(m.meta.negotiation.status,'counter');
  const recruitCounter=m.meta.negotiation;
  m=good('snapshot');assert.equal(m.meta.negotiation,undefined);
  assert.deepEqual(m.market.find(p=>p.id===recruit.id).negotiation,{status:'counter',salary:recruitCounter.salary,years:1,attempts:1});
@@ -42,12 +44,12 @@ try{
  assert.deepEqual(m.market.find(p=>p.id===recruit.id).negotiation,{status:'counter',salary:recruitCounter.salary,years:1,attempts:1});
  m=good('recruit',{playerId:recruit.id,salary:100000,years:1,confirmed:true});assert.equal(m.meta.negotiation.status,'signed');assert.equal(m.squad.length,squadSize+1);assert.equal(m.finance.cash,cash-recruit.fee);
  m=settle(m);
- const renewal=m.squad.find(p=>p.renewal.available&&p.salary>2000);
+ const renewal=m.squad.find(p=>p.renewal.available&&p.salary>2*floor);
  assert.ok(renewal,'Le club offre un contrat renouvelable avec un salaire supérieur au plancher.');
  const renewalTerms={playerId:renewal.id,years:renewal.renewal.minYears,confirmed:true};
  const renewalCash=m.finance.cash,renewalWage=m.finance.wage;
  for(let i=1;i<=3;i++){
-  m=good('extend_contract',{...renewalTerms,salary:1000});
+  m=good('extend_contract',{...renewalTerms,salary:floor});
   const response=m.meta.negotiation;
   assert.equal(response.status,i<3?'counter':'withdrawn');
   const quote=good('snapshot').squad.find(p=>p.id===renewal.id).renewal;

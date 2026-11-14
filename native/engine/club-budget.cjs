@@ -562,6 +562,16 @@ aiRosterWageLimit=function(c){
 const budgetValeur=p=>{if(budgetActif()&&p&&typeof p.id==='string'&&Number.isFinite(p.rating)){p.salary=nativeStartingSalaries.marche(p);p.price=Math.max(0,Math.round(p.salary*2/1000)*1000);}return p;};
 aiRosterSmallClubPlayer=function(slot,index){return budgetValeur(aiRosterSmallClubPlayerV1(slot,index));};
 aiRosterPoolEntry=function(p,origin,clubId=null){if(budgetActif()&&origin!=='released')budgetValeur(p);return aiRosterPoolEntryV1(p,origin,clubId);};
+// Un joueur libéré d'un club à échelle réduite (Nationale, Japon…) arrive sur le marché libre avec son salaire de club,
+// parfois sous le plancher de la règle : libre, il redemande au moins ce plancher (14 000 € par an, 270 € par semaine).
+const aiRosterTrimFreeAgentsV1=aiRosterTrimFreeAgents;
+aiRosterTrimFreeAgents=function(){
+ if(budgetActif()&&S.economy&&Array.isArray(S.economy.freeAgents)){
+  const plancher=nativeStartingSalaries.plancherHebdo(S,null);
+  for(const p of S.economy.freeAgents)if(p&&Number.isFinite(p.salary)&&p.salary<plancher){p.salary=plancher;p.price=Math.max(p.price||0,Math.round(p.salary*2/1000)*1000);}
+ }
+ return aiRosterTrimFreeAgentsV1();
+};
 // Renforts promus pour compléter la feuille de match : un espoir au plancher de la règle, plus 2 500 € par semaine.
 const promoteCoverV1=promoteCover;
 promoteCover=function(){
