@@ -127,7 +127,7 @@ func integration() -> void:
 	for player: Dictionary in app.model.squad:
 		if str(player.id) == "lnr:14090": synthetic = player
 	check(synthetic.get("portraitStatus", "") == "synthetic", "Portrait IA réellement lié au bon joueur par ID")
-	check(str(synthetic.get("name", "")) == "Camille GERMAIN", "Identité réelle du joueur illustré")
+	check(str(synthetic.get("name", "")) == "François LECA", "Nom de base du joueur illustré")
 	app.selected_player = "lnr:12453"
 	app._render()
 	await capture("effectif-photo-officielle")

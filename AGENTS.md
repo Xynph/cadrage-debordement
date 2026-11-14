@@ -24,9 +24,12 @@ brouillon et pousser librement (CI légère : classification et syntaxe, verdict
 « Validation CI » volontairement rouge) ; passer la PR en prête quand elle est
 prête, ce qui lance la batterie complète (7 runners). Ne pas « réparer » un
 rouge de brouillon : il signifie seulement « batterie non lancée ».
-Depuis le 13/11, les suites Godot ne tournent plus sur les PR ; les vérifications
-lourdes d'après fusion (Godot, SDK, économie, résilience, recette Windows) tournent sur
-créneau régulier (2 à 4 h) sur le dernier `main`, la batterie JS à chaque fusion ; pour une recette Godot d'une PR prête, poser l'étiquette
+Depuis le 14/11, les suites Godot (jobs « Godot i/3 ») sont BLOQUANTES, intégrées à « Validation CI » dans
+le workflow : elles tournent sur une PR prête dont le diff touche des fichiers Godot (`native/godot/`, `tests/godot-*`,
+lanceurs et plan de shards Godot, ce workflow) et doivent réussir ; sur toute autre PR le job est sauté, ce qui ne fait pas
+échouer l'agrégateur. Elles restent informatives sur le créneau régulier. Les autres vérifications lourdes d'après
+fusion (SDK, économie, résilience, recette Windows) tournent sur créneau régulier (2 à 4 h) sur le dernier `main`, la
+batterie JS à chaque fusion ; pour la recette SDK ciblée d'une PR prête, poser l'étiquette
 `godot-sdk`. Une PR prête dont « Validation CI » est vert se fusionne sans attendre.
 
 Léo a donné son accord de principe aux intégrations ordinaires le 2 novembre

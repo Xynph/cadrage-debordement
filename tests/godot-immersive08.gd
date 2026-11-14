@@ -15,14 +15,24 @@ func worker() -> void:
 	app.timer.stop()
 	await settle()
 
+# L'ouverture de la création lance l'estimation de fluidité (commande league_benchmark) : tant que le moteur répond,
+# un voile d'attente absorbe les clics et la réponse reconstruit la page. On attend la fin avant d'interagir.
+func engine_idle() -> void:
+	var deadline := Time.get_ticks_msec() + 30000
+	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.waiting, "Le moteur a fini de répondre avant l’interaction")
+	await settle()
+
 func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id, payload)
 	await worker()
 	check(app.bridge.last_response_ok, "Commande native : " + id + " " + app.last_error)
 
 func capture(id: String, close_coach: bool = true) -> void:
-	if DisplayServer.get_name() == "headless": return
+	# Gabi (accueil, moment clé du début) ouvre un voile modal qui absorbe le premier clic : le fermer ici, quel que
+	# soit le mode (le rendu headless saute seulement l'image), comme le fait le joueur d'un clic sur le voile.
 	if close_coach and is_instance_valid(app.coach): app.coach.close()
+	if DisplayServer.get_name() == "headless": return
 	await settle()
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
@@ -90,6 +100,7 @@ func entry() -> void:
 	if new_career==null: return
 	await click(new_career)
 	await settle()
+	await engine_idle()
 	check(app.find_child("CreationEditionRow",true,false)==null,"La création montre un seul catalogue")
 	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
 	var summary := app.find_child("CreationCompetitionSummary",true,false) as Control

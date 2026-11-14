@@ -560,10 +560,19 @@ func _bouton(nom: String, zone: Rect2, texte: String, actif: bool, rappel: Calla
 	var b := Button.new()
 	b.name = nom
 	b.text = texte
+	# Un nom de championnat long (« Japan Rugby League One · Division 1 ») ne doit pas élargir le bouton
+	# au-delà de la colonne ni sortir de l'écran : texte tronqué (…), nom complet en infobulle.
+	b.clip_text = true
+	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	b.tooltip_text = texte
 	b.position = zone.position
 	b.size = zone.size
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 26)
+	# Police réduite jusqu'à ce que le nom tienne en entier (deux divisions japonaises se distinguent par leur fin).
+	var taille := 26
+	var police: Font = b.get_theme_font("font")
+	while taille > 17 and police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > zone.size.x - 28.0: taille -= 1
+	b.add_theme_font_size_override("font_size", taille)
 	b.add_theme_color_override("font_color", Tableau.FOND if actif else Tableau.IVOIRE)
 	b.add_theme_color_override("font_hover_color", Tableau.FOND if actif else Tableau.OR)
 	b.add_theme_color_override("font_pressed_color", Tableau.FOND)

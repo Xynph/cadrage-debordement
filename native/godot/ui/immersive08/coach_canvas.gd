@@ -47,6 +47,8 @@ const MOMENTS_CLES := {
 var _coulisse: Control
 ## Bandeau du haut (reconstruit à chaque écran par shell.gd).
 var _bandeau: Control
+## Au Bureau, Gabi en pied tient déjà la colonne : le visage et la remarque du bandeau sont masqués.
+var _bandeau_masque := false
 var _visage: Control
 var _pastille: Panel
 var _bandeau_titre: Label
@@ -236,7 +238,7 @@ func _build_adjoint() -> void:
 func _adjoint_actif() -> bool:
 	if not is_instance_valid(app) or not is_instance_valid(_bulle) or not app._has_career(): return false
 	if not profile.data.enabled: return false
-	return is_instance_valid(_bandeau) and _bandeau.is_inside_tree() and _bandeau.is_visible_in_tree() and _bandeau.size.x >= 40.0
+	return is_instance_valid(_bandeau) and _bandeau.is_inside_tree() and _bandeau.is_visible_in_tree() and (_bandeau.size.x >= 40.0 or _bandeau_masque)
 
 ## Mode grand (moments clés, aide, visite) ou écran sans bandeau : le portrait rejoint la grande bulle.
 ## Sinon il reste en coulisse, cadré sur le visage, et le bandeau affiche sa texture.
@@ -289,14 +291,15 @@ func _layout_voile() -> void:
 ## Appelé par shell.gd à chaque construction du bandeau : visage, remarque du moment, indice.
 func installer_bandeau(zone: Control) -> void:
 	_bandeau = zone
+	_bandeau_masque = bool(zone.get_meta("masque", false))
 	_visage = null
 	if not is_instance_valid(app) or not profile.data.enabled or not app._has_career():
 		zone.hide()
 		return
 	_place_portrait()
-	zone.mouse_filter = Control.MOUSE_FILTER_STOP
+	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE if _bandeau_masque else Control.MOUSE_FILTER_STOP
 	zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	zone.focus_mode = Control.FOCUS_ALL
+	zone.focus_mode = Control.FOCUS_NONE if _bandeau_masque else Control.FOCUS_ALL
 	zone.tooltip_text = "Gabi, ton adjoint · clic : son avis sur cet écran, l'aide, la visite guidée"
 	_pastille = Panel.new()
 	_pastille.name = "GabiPastille"
@@ -338,6 +341,8 @@ func installer_bandeau(zone: Control) -> void:
 	zone.mouse_exited.connect(func(): _survol = false; _style_pastille())
 	zone.resized.connect(_disposer_bandeau)
 	_remarque_cle = ""
+	if _bandeau_masque:
+		for masque: Control in [_pastille, _visage, _bandeau_titre, _fil]: masque.hide()
 	_disposer_bandeau()
 	_maj_indice()
 
@@ -379,6 +384,7 @@ func _disposer_bandeau() -> void:
 	_fil_fondu.size = Vector2(h * 0.5, line_h)
 	# Rendu net : deux fois les pixels physiques du disque, ni plus ni moins.
 	var physical := d * _bandeau.get_global_transform_with_canvas().get_scale().y
+	if _bandeau_masque: return
 	if portrait is GabiPortrait and portrait.framing == "visage": portrait.set_render_size(Vector2i.ONE * roundi(physical * 2.0))
 	_fil_regle(true)
 
@@ -523,6 +529,7 @@ func _moment_portraits(moment: Dictionary) -> void:
 ## La bulle descend du bandeau (sans animation si le mouvement est réduit).
 func _descendre() -> void:
 	if _bulle_tween != null: _bulle_tween.kill()
+	_layout_bulle()
 	var reduced: bool = is_instance_valid(app.user_preferences) and bool(app.user_preferences.data.get("reduced_motion", false))
 	if reduced:
 		_bulle.modulate.a = 1.0
@@ -560,6 +567,16 @@ func _layout_bulle() -> void:
 	_bulle.size = Vector2(width, height)
 	var x := clampf(face.position.x - 22.0, 8.0, app.size.x - width - 8.0)
 	var y := topbar.end.y + 12.0
+	if _bandeau_masque and is_instance_valid(_bureau_figure) and _bureau_figure.is_inside_tree():
+		# Visage masqué : la bulle sort de la colonne de Gabi, à sa gauche, sans pointe vers le bandeau.
+		var colonne: Rect2 = (_bureau_figure.get_parent() as Control).get_global_rect()
+		x = clampf(colonne.position.x - width - 16.0, 8.0, app.size.x - width - 8.0)
+		# À hauteur de la tête de Gabi (elle parle), pas en haut de l'écran où elle cacherait les priorités.
+		var tete := _bureau_figure.get_global_rect().position.y + _bureau_figure.get_global_rect().size.y * 0.16
+		y = clampf(tete - 56.0, y, maxf(y, app.size.y - height - 12.0))
+		_bulle.vers_droite = true
+		_bulle.pointe_y = clampf(tete - y, 24.0, height - 24.0)
+	else: _bulle.vers_droite = false
 	if _bulle_tween == null or not _bulle_tween.is_running(): _bulle.global_position = Vector2(x, y)
 	else: _bulle.global_position.x = x
 	_bulle.pointe_x = clampf(face.get_center().x - x, 24.0, width - 24.0)
@@ -663,7 +680,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(_bulle_suivre) and _bulle.visible: _bulle_suivre.disabled = app.waiting or not app._live().is_empty()
 	if _adjoint_actif():
 		_maj_remarque()
-		_defiler(delta)
+		if not _bandeau_masque: _defiler(delta)
 	_maj_pied()
 
 # --- C. Gabi chez lui, au Bureau -------------------------------------------------------------------------
@@ -840,10 +857,19 @@ class Sol extends Control:
 ## Bulle du bandeau : panneau vert sombre cerclé d'or, pointe vers le visage de Gabi (en haut).
 class Bulle extends PanelContainer:
 	var pointe_x := 40.0
+	## Au Bureau (visage du bandeau masqué), la bulle sort à gauche de Gabi en pied : pointe vers la droite.
+	var vers_droite := false
+	var pointe_y := 40.0
 	func _draw() -> void:
 		var style := get_theme_stylebox("panel") as StyleBoxFlat
 		if style == null: return
 		var w := 13.0
+		if vers_droite:
+			var cote := PackedVector2Array([Vector2(size.x - 1, pointe_y - w), Vector2(size.x + 12, pointe_y), Vector2(size.x - 1, pointe_y + w)])
+			draw_colored_polygon(cote, style.bg_color)
+			draw_polyline(cote, style.border_color, 1.0, true)
+			draw_line(cote[0] + Vector2(-0.5, 1), cote[2] + Vector2(-0.5, -1), style.bg_color, 2.0)
+			return
 		var points := PackedVector2Array([Vector2(pointe_x - w, 1), Vector2(pointe_x, -12), Vector2(pointe_x + w, 1)])
 		draw_colored_polygon(points, style.bg_color)
 		draw_polyline(points, style.border_color, 1.0, true)

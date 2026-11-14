@@ -176,3 +176,45 @@ vérifiée (les 85 fichiers sources sont identiques à l'octet près dans
   journalistes du pack) dans les sources privées quand elles sont là et le
   dit quand elles n'y sont pas ; il ne dépend plus du harnais France et
   tourne donc de nouveau dans la CI (partie publique).
+
+### Étape 3 — base du jeu à noms inventés : PR « retrait B »
+
+Les noms inventés étaient déjà branchés depuis la PR #599
+(`data/names/`, copies à l'octet près des propositions du dépôt privé ;
+voir `docs/noms-inventes-branchement-20261111.md`) : base commune, registres
+du Monde (y compris les 4 286 joueurs et 1 732 staffs hors des 30 clubs
+français), staffs. Cette PR retire ce qui portait encore les vrais noms :
+
+- `dist/lnr-rosters-data.js` (1 592 vrais noms) quitte le dépôt public ; il
+  est remplacé par `dist/lnr-rosters-base.js`, même catalogue (clubs, ordre,
+  identifiants, postes, nationalités) avec les noms de la base. La base
+  commune se recompile donc sans source privée ; quand le catalogue réel est
+  présent (`CD_SOURCES_PRIVEES`), le compilateur vérifie en plus qu'aucun nom
+  de base n'est un vrai nom.
+- `dist/lnr05-enriched-data.js` (liens vers les fiches individuelles, dont
+  le nom est dans l'adresse) devient `dist/lnr05-mesures.js` : mêmes mesures,
+  sans lien.
+- Plus aucun nom réel dans les assertions des tests.
+- Journalistes : les dix journalistes et quatre rédactions sont déjà inventés
+  (`presse-0` à `presse-9`, `redaction-0` à `redaction-3`) ; les vrais sont
+  dans la rubrique `press` du pack (`pack/journalistes.json` du dépôt privé,
+  validée par `outils/presse/rubrique-presse.cjs --verifier`).
+- Test `tests/noms-base-pack-monde.cjs` (Monde) : une carrière garde les noms
+  de sa sauvegarde, une nouvelle carrière affiche les noms de la base sur ses
+  116 clubs, un pack de test remplace joueurs et staffs par identifiant.
+- `tests/base-names-leak.cjs`, avec les sources privées : catalogue public
+  identique au réel hors des noms, et aucun nom complet réel (joueurs, staffs,
+  journalistes) dans **tout** le dépôt public.
+
+### Ce qui reste
+
+- Étrangers du Monde : noms inventés depuis #599 ; `foreign-inputs.json` ne
+  porte plus d'alias réel. Le pack « Rugby Réel Monde » du PC de Léo
+  (`docs/world-identity-pack-20261109.md`) restitue 1 616 joueurs PREM, URC et
+  invités et 380 staffs étrangers. **Non couverts** : les 2 670 joueurs et
+  1 352 staffs des extensions Pacifique, Japon, Nationale et Champ, ajoutés
+  après ce pack ; aucun vrai nom n'existe pour eux dans les dépôts.
+- Clubs : la base porte déjà des noms inventés (« Toulouse Capitole XV »…) ;
+  le pack remplace nom, sigle, logo, ville et stade par identifiant pour les
+  116 clubs du Monde. Non modifiés par cette passe.
+- Étape 4 : l'historique Git.

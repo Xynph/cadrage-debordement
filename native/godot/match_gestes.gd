@@ -1143,10 +1143,19 @@ func _start_maul() -> void:
 	# La défense engage aussi ses autres avants de l'alignement : liés sur les flancs du
 	# ballon porté, buste engagé, au lieu de rester debout à côté (loi 16 : liés, sur leurs pieds).
 	var flanks: Array[Vector2] = [Vector2(0.75, -1.15), Vector2(0.75, 1.15)]
+	# Le porteur désigné peut être un arrière hors de l’alignement. Lui réserver
+	# une place avant de distribuer les autres : un marcheur n’a pas de slot.
+	var carrier_slot: Vector2 = rear[-1]
+	if not front.has(cast[carrier].role):
+		rear.pop_back()
 	var keep: Dictionary = {}
 	for id: String in cast:
 		var member: Dictionary = cast[id]
 		var actor: Node3D = view._actors[id].node
+		if id == carrier and not front.has(member.role):
+			keep[id] = {"from": actor.position, "heading": actor.rotation.y, "staged": true,
+				"team": member.team, "peak": member.peak, "t": 0.0, "role": "pack", "slot": carrier_slot}
+			continue
 		if member.role == "walk":
 			keep[id] = member
 			continue

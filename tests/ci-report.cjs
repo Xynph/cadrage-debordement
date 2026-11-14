@@ -6,7 +6,7 @@ const path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const yaml=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/tests.yml'),'utf8');
 assert.match(yaml,/name: Validation CI/);
-assert.match(yaml,/needs: \[classification, shards\]/);
+assert.match(yaml,/needs: \[classification, shards, godot\]/);
 assert.match(yaml,/Publier le verdict natif/);
 assert.match(yaml,/GITHUB_STEP_SUMMARY/);
 assert.match(yaml,/HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
@@ -37,14 +37,17 @@ assert.ok(yaml.includes('        shard: ['+range(SHARD_COUNT)+']\n'));
 assert.ok(yaml.includes('node ci/shard-tests.cjs "$SHARD" "$COVERAGE" '+SHARD_COUNT+' '));
 assert.ok(yaml.includes('bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE)" '+SHARD_PARALLEL+'\n'));
 assert.ok(yaml.includes('### Shard $SHARD/'+SHARD_COUNT+' ($COVERAGE) : aucune suite attribuée'));
-// Jobs Godot : SDK épinglé et vérifié, SDK obligatoire, non bloquants pour l'instant.
+// Jobs Godot : SDK épinglé et vérifié, SDK obligatoire, bloquants via « Validation CI » (14/11).
 const godot=yaml.split('\n  godot:\n')[1].split('\n  validation:\n')[0];
 assert.ok(godot.includes('    name: Godot ${{ matrix.shard }}/'+GODOT_SHARD_COUNT+'\n'));
 assert.ok(godot.includes('        shard: ['+range(GODOT_SHARD_COUNT)+']\n'));
 assert.ok(godot.includes('node ci/shard-tests.cjs "$SHARD" godot '+GODOT_SHARD_COUNT+' '));
-assert.match(godot,/continue-on-error: true/);
-// Plus lancés sur les PR ni à chaque fusion (13/11) : créneau régulier et workflow_dispatch.
-assert.match(godot,/github\.event_name == 'workflow_dispatch' \|\| github\.event_name == 'schedule'/);
+// Informatifs seulement sur le créneau régulier ; bloquants sur PR et workflow_dispatch.
+assert.match(godot,/continue-on-error: \$\{\{ github\.event_name == 'schedule' \}\}/);
+assert.doesNotMatch(godot,/continue-on-error: true/);
+// PR prête dont le diff touche des fichiers Godot, workflow_dispatch et créneau régulier ; jamais à chaque fusion.
+assert.match(godot,/github\.event_name == 'workflow_dispatch' \|\| github\.event_name == 'schedule' \|\| \(github\.event_name == 'pull_request' && needs\.classification\.outputs\.draft != 'true' && needs\.classification\.outputs\.godot == 'true'\)/);
+assert.match(yaml,/godot: \$\{\{ steps\.diff\.outputs\.godot \}\}/);
 assert.match(shardJob,/github\.event_name != 'schedule'/);
 assert.match(godot,/GODOT_VERSION: 4\.7\.2-stable\n/);
 assert.match(godot,/GODOT_SHA256: [0-9a-f]{64}\n/);
@@ -56,8 +59,13 @@ assert.match(godot,/LIBGL_ALWAYS_SOFTWARE: '1'/);
 assert.match(godot,/bash ci\/run-godot-suites\.sh/);
 assert.match(godot,/CD_GODOT_EXECUTABLE=\$exe/);
 assert.match(godot,/CD_GODOT_EXE=\$exe/);
-// Tant qu'ils sont non bloquants, les jobs Godot restent hors du verdict officiel.
-assert.doesNotMatch(yaml.split('\n  validation:\n')[1],/godot/i);
+// Les jobs Godot sont dans le verdict officiel : obligatoires (success) quand ils devaient tourner, un job sauté ne bloque pas.
+const validation=yaml.split('\n  validation:\n')[1];
+assert.match(validation,/needs: \[classification, shards, godot\]/);
+assert.match(validation,/GODOT: \$\{\{ needs\.godot\.result \}\}/);
+assert.match(validation,/GODOT_CHANGED: \$\{\{ needs\.classification\.outputs\.godot \}\}/);
+assert.match(validation,/\[\[ "\$GODOT" == "success" \]\] \|\| result='ÉCHEC'/);
+assert.match(validation,/\[\[ "\$GODOT" == "success" \|\| "\$GODOT" == "skipped" \]\] \|\| result='ÉCHEC'/);
 assert.doesNotMatch(yaml,/issues: write/);
 assert.doesNotMatch(yaml,/github\.rest\.issues\.createComment/);
 assert.doesNotMatch(yaml,/workflow_run:/);
@@ -66,13 +74,13 @@ const script=yaml.split('- name: Publier le verdict natif')[1].split('run: |')[1
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-ci-verdict-'));
 try {
  const summary=path.join(dir,'summary.md');
- for (const [event,coverage,shards,classification,expected,draft='false'] of [
+ for (const [event,coverage,shards,classification,expected,draft='false',godot='skipped',godotChanged='false'] of [
   ['pull_request','documentation','skipped','success',0],
   ['pull_request','web','success','success',0],
   ['pull_request','native-art','success','success',0],
   ['pull_request','full','success','success',0],
   ['push','full','success','success',0],
-  ['workflow_dispatch','full','success','success',0],
+  ['workflow_dispatch','full','success','success',0,'false','success'],
   ['pull_request','documentation','success','success',1],
   ['pull_request','web','skipped','success',1],
   ['pull_request','full','failure','success',1],
@@ -87,20 +95,39 @@ try {
   ['pull_request','web','skipped','success',1,'true'],
   ['pull_request','full','success','success',1,'true'],
   ['pull_request','documentation','skipped','success',0,'true'],
-  ['pull_request','full','success','success',0,'']
+  ['pull_request','full','success','success',0,''],
+  // Suites Godot (14/11) : obligatoires (success) sur une PR qui touche des fichiers Godot et sur workflow_dispatch ;
+  // job sauté sans fichier Godot : sans effet ; échec ou annulation : jamais vert.
+  ['pull_request','full','success','success',0,'false','success','true'],
+  ['pull_request','native-art','success','success',0,'false','success','true'],
+  ['pull_request','full','success','success',1,'false','skipped','true'],
+  ['pull_request','native-art','success','success',1,'false','skipped','true'],
+  ['pull_request','full','success','success',1,'false','failure','true'],
+  ['pull_request','full','success','success',1,'false','cancelled','true'],
+  ['pull_request','full','success','success',0,'false','skipped','false'],
+  ['pull_request','full','success','success',0,'false','success','false'],
+  ['pull_request','full','success','success',1,'false','failure','false'],
+  ['pull_request','full','success','success',1,'false','cancelled','false'],
+  ['pull_request','documentation','skipped','success',0,'false','skipped','true'],
+  ['pull_request','full','failure','success',1,'false','success','true'],
+  ['push','full','success','success',0,'false','skipped','true'],
+  ['workflow_dispatch','full','success','success',1,'false','skipped'],
+  ['workflow_dispatch','full','success','success',1,'false','failure'],
+  ['workflow_dispatch','full','success','success',1,'false','cancelled'],
+  ['pull_request','full','success','success',1,'true','success','true']
  ]) {
   fs.writeFileSync(summary,'');
   const result=spawnSync(process.env.CD_BASH_EXECUTABLE||'bash',['-c',script],{
-   encoding:'utf8',env:{...process.env,DRAFT:draft,EVENT_NAME:event,COVERAGE:coverage,SHARDS:shards,
+   encoding:'utf8',env:{...process.env,DRAFT:draft,EVENT_NAME:event,COVERAGE:coverage,SHARDS:shards,GODOT:godot,GODOT_CHANGED:godotChanged,
     CLASSIFICATION:classification,HEAD_SHA:'pr-head',GITHUB_SHA:'merge-commit',
     GITHUB_REPOSITORY:'owner/repo',GITHUB_RUN_ID:'123',GITHUB_STEP_SUMMARY:summary.replaceAll('\\','/')}
   });
   assert.ifError(result.error);
-  assert.equal(result.status,expected,result.stderr+' '+[event,coverage,shards,classification]);
+  assert.equal(result.status,expected,result.stderr+' '+[event,coverage,shards,classification,godot,godotChanged]);
   assert.match(fs.readFileSync(summary,'utf8'),expected===0?/Verdict CI : SUCCÈS/:/Verdict CI : ÉCHEC/);
   if(draft==='true'&&coverage!=='documentation')assert.match(fs.readFileSync(summary,'utf8'),/Brouillon : batterie complète non lancée/);
  }
 } finally {
  fs.rmSync(dir,{recursive:true,force:true});
 }
-console.log('ci-report : contrat des jobs et 20 verdicts natifs vérifiés');
+console.log('ci-report : contrat des jobs et 37 verdicts natifs vérifiés');
