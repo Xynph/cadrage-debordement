@@ -337,18 +337,20 @@ function project(model,niveau,lire,options={}){
  // = somme des joueurs ; plaquages, mètres… réalistes (le journal seul en donnait 0 ou 1 par ailier).
  const feuille=feuilleStats.feuilleMontree(events,borne<lignes.length?lignes[borne].i:events.length,String(etat.rencontre||''),lire);
  feuilleStats.completerTableau(tableau,feuille);
+ // Notes du direct : chiffres et apport de cette même feuille (match-notes.cjs, une seule source).
+ const contexteNotes=etat.notes?{...etat.notes,feuille,apports:feuilleStats.apportsNote(feuille)}:etat.notes;
  const direct={version:1,rencontre:String(etat.rencontre||''),niveau,niveaux:NIVEAUX.map(id=>({id,label:LIBELLES[id]})),horloge:etat.horloge||'',
   // Minute du dernier fait montré (borne) : l'horloge de l'entracte ne court pas devant ce qui a été vu.
   horlogeMontree:derniere?horloge(derniere):etat.horloge||'',camp:etat.camp??-1,
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1,etat.notes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,etat.notes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
+  tableau,domination:domination(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
  // Homme du match (résumé d'après-match) : désigné quand tout le journal a été montré, par le
  // calcul de la note enregistrée (match-notes.cjs).
  if(live.finished&&borne>=events.length&&etat.notes){
-  const r=notesMatch.noter(events,{...etat.notes,fini:true}),h=r.hommeDuMatch,n=h!=null?r.joueurs[h]:null;
+  const r=notesMatch.noter(events,{...contexteNotes,fini:true}),h=r.hommeDuMatch,n=h!=null?r.joueurs[h]:null;
   if(n){const fiche=(etat.effectifAdverse||[]).find(p=>String(p.id)===h);
    // Clé `joueur` (pas id/name), comme le XV adverse : la couche « connaissance » ne la masque pas.
    direct.hommeDuMatch={joueur:h,camp:n.cote,nom:etat.notes.noms?.[h]||fiche?.name||'',note:n.note,essais:n.essais,plaquages:n.plaquages,metres:n.metres};}

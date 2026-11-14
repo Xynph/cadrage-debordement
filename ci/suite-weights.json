@@ -13,6 +13,7 @@
     "weights": {
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 160,
+      "tests/match-rating-curve.cjs": 129,
       "tests/animation-pipeline-runner.cjs": 7,
       "tests/animation-pipeline.cjs": 2,
       "tests/audit-atlas-photos.cjs": 3,
@@ -208,6 +209,7 @@
     "suites": {
       "tests/integration-cloud-complete.cjs": 3337,
       "tests/jiff.cjs": 2048,
+      "tests/match-rating-curve.cjs": 1465,
       "tests/monde-harness.cjs": 1830,
       "tests/native-club-meetings-packs.cjs": 1664,
       "tests/native-club-meetings.cjs": 2688,
