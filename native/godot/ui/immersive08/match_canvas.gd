@@ -201,10 +201,11 @@ func update_frame(value: Dictionary) -> void:
 		if reduced: opening_status.text="FEUILLE À 22 DISPONIBLE"
 		opening_sheet.text="Vérifier la feuille" if reduced else "Vérifier la feuille à 23"
 		opening_status.visible=not fixture.is_empty()
-		# Déléguer le match : mêmes conditions que le coup d'envoi (jour de match, presse réglée), hors feuille à 22.
+		# Déléguer le match : mêmes conditions que le coup d'envoi (jour de match, presse réglée). Feuille à 22 :
+		# la délégation reste possible, la fenêtre demande la confirmation du match à 22.
 		opening_delegate.visible=not fixture.is_empty()
-		opening_delegate.disabled=play.disabled or reduced
-		opening_delegate.tooltip_text=play.tooltip_text if play.disabled else "La feuille à 22 se confirme au coup d’envoi : jouez ce match vous-même." if reduced else "L’adjoint joue le match ; vous pouvez lui confier aussi la composition."
+		opening_delegate.disabled=play.disabled
+		opening_delegate.tooltip_text=play.tooltip_text if play.disabled else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre vous demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; vous pouvez lui confier aussi la composition."
 		opening_status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
 		return
 	if finished:
