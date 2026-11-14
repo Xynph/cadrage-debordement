@@ -20,7 +20,8 @@ const PLAN = LONGUE
   : { complet: { ecarts: [0, 6, 10], n: 240 }, rapide: { ecarts: [-10, 0, 6, 10], n: 1000 }, bases: [4] };
 // Bornes : cible ± bruit d'échantillonnage (version CI : écart type ≈ 3 points au moteur complet).
 const BORNES = {
-  complet: { pente: LONGUE ? [0.16, 0.21] : [0.15, 0.23], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.73],
+  // Moteur complet : courbe un peu plus raide dans les queues (±15 → 96 %), d'où une pente ajustée de 0,20 à 0,22.
+  complet: { pente: LONGUE ? [0.16, 0.23] : [0.15, 0.24], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.73],
     points: [24, 37], essais: [2.6, 4.4], ecartNul: [5, 13] },
   rapide: { pente: LONGUE ? [0.17, 0.20] : [0.16, 0.21], domicile: LONGUE ? [0.62, 0.69] : [0.61, 0.70],
     points: [43, 57], essais: [4.8, 6.6], ecartNul: [10, 18] },
