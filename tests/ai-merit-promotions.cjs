@@ -15,10 +15,13 @@ test('Un espoir au niveau du moins bon pro de son poste, ou un crack, est promu 
     const c = S.clubs.find(x => x.id !== S.club && aiRosterAcademy(x)?.players.length >= 3);
     const a = aiRosterAcademy(c);
     // On libère deux places pro et on prépare trois espoirs.
+    // Les deux places libérées rendent au moins deux salaires du plus bas niveau du club : les espoirs
+    // promus le sont à ce salaire, qui tient sous la limite de masse (budget réaliste par défaut ou non).
+    const floor = Math.min(...c.players.map(q => q.salary));
     c.players.sort((x, y) => x.rating - y.rating); c.players.splice(0, 2);
     const [ready, crack, plain] = a.players;
     const weakest = Math.min(...c.players.filter(q => q.fam === ready.fam).map(q => q.rating));
-    for (const p of [ready, crack, plain]) { p.age = 19; p.injury = 0; p.salary = 2000; }
+    for (const p of [ready, crack, plain]) { p.age = 19; p.injury = 0; p.salary = floor; }
     ready.rating = weakest;
     crack.rating = 40; crack.dev.potential = 92;
     plain.rating = 30; plain.dev.potential = 70;
