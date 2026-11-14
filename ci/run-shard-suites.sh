@@ -138,6 +138,8 @@ budget() {
     tests/native-academy-appearance-bank.cjs) echo 420s ;;
     # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
     tests/sauvegarde-idempotente.cjs) echo 900s ;;
+    # Finitions critiques : deux carrières Monde (création + un match, ~260 s en local sous charge) ; budget ≈ 3 fois.
+    tests/finitions-critiques.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }

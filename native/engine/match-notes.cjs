@@ -646,7 +646,7 @@ function factory(){
    base.joueurs[p.id]={matchs:n,moyenne:n?Math.round(j.s[1]/n)/10:null,minutes:n?j.s[2]:0,essais:n?j.s[3]:0,plaquages:n?j.s[4]:0,metres:n?j.s[5]:0,hommeDuMatch:n?j.s[6]:0,
     passes:total(7),franchissements:total(8),plaquagesManques:total(9),points:total(10),
     forme:(j?.f||[]).map(x=>x/10),
-    historique:d.slice().reverse().map(r=>{const o={semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1};
+    historique:d.slice().reverse().map(r=>{const o={semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),competitionId:String(r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1};
      DETAIL_PROJETE.forEach((k,i)=>{o[k]=r.length>9?r[9+i]:null;});return o;}),
     saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5],plaquages:r.length>6?r[6]:null,metres:r.length>7?r[7]:null})),
     // Équipe-type de la saison en cours (sélections) et équipes de la saison (repères de carrière).

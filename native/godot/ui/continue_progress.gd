@@ -44,6 +44,7 @@ var _sheet := PanelContainer.new()
 var _accent := RED
 var _from := ""
 var _target := ""
+var _plan: Dictionary = {}
 var _motion := true
 var _tween: Tween
 var _closing := Timer.new()
@@ -218,7 +219,9 @@ func begin(context: Dictionary, animate: bool = true) -> void:
 	_apply_style()
 	kicker.text = "CONTINUER"
 	kicker.add_theme_color_override("font_color", GOLD)
-	title.text = "Les jours défilent…"
+	_plan = {}
+	if next is Dictionary and not _target.is_empty(): _plan = {"kind": "match", "date": _target, "opponent": str(next.get("opponent", ""))}
+	title.text = _plan_title(_plan)
 	detail.text = _next_text(next)
 	hint.text = "Arrêt au prochain match, rendez-vous ou courrier important."
 	stop_button.text = "ARRÊTER"
@@ -239,6 +242,13 @@ func advance_to(progress: Dictionary) -> void:
 	var next: Variant = progress.get("next")
 	if next is Dictionary and _target.is_empty(): _target = str(next.get("date", ""))
 	if next is Dictionary: detail.text = _next_text(next)
+	# Prochain arrêt prévisible calculé par le moteur (match, reprise, rendez-vous) : le titre l'annonce et la barre
+	# mesure l'avance vers lui (jours écoulés / jours jusqu'à cet arrêt).
+	var plan: Variant = progress.get("plan")
+	if plan is Dictionary and not str(plan.get("date", "")).is_empty():
+		_plan = plan
+		_target = str(plan.date)
+		title.text = _plan_title(_plan)
 	_show_date(str(progress.get("today", _from)), int(progress.get("days", 0)))
 	if _motion:
 		_kill_tween()
@@ -313,6 +323,20 @@ func _show_date(iso: String, days: int) -> void:
 		bar.value = clampf(float(_day_number(iso) - _day_number(_from)) / maxf(1.0, float(span)), 0.0, 1.0) if span > 0 else 0.0
 	else:
 		bar.value = 0.0
+
+
+## Titre du panneau : l'arrêt attendu (« Jusqu'au match contre X », « Jusqu'au rendez-vous … ») plutôt qu'un
+## libellé générique ; sans arrêt prévisible, « Les jours défilent… ».
+func _plan_title(plan: Dictionary) -> String:
+	match str(plan.get("kind", "")):
+		"match":
+			var opponent := str(plan.get("opponent", ""))
+			return "Jusqu’au match contre %s" % opponent if not opponent.is_empty() else "Jusqu’au prochain match"
+		"rendez_vous":
+			var label := str(plan.get("detail", "")).to_lower()
+			return "Jusqu’au rendez-vous : %s" % label if not label.is_empty() else "Jusqu’au rendez-vous du club"
+		"reprise": return "Jusqu’à la reprise de l’entraînement"
+	return "Les jours défilent…"
 
 
 func _days_text(days: int) -> String:

@@ -11,6 +11,7 @@
       43375411272
     ],
     "weights": {
+      "tests/finitions-critiques.cjs": 300,
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 120,
       "tests/fiche-club-monde.cjs": 200,

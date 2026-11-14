@@ -909,7 +909,7 @@ function createBridge(options={}){
       // La décision regroupée fait partie des jours en mémoire : elle sera écrite avec eux (arrêt, fermeture ou
       // commande suivante), pas séparément entre deux tranches.
       if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}
-      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next}};}
+      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate)}};}
      stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
     }
    }
