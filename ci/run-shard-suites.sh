@@ -54,9 +54,13 @@ budget() {
   # 42891746395, sans retirer de contrôle.
   case "$1" in
     tests/world-worker-season.cjs) echo 1200s ;;
-    tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) echo 900s ;;
+    tests/native-manager-career-worker.cjs) echo 900s ;;
+    # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
+    # Décisions natives et sauvegardes du direct en carrière Monde (une carrière pèse ~20 Mo de sauvegarde) : 314 s et 152 s en local sous charge.
+    tests/native-decisions.cjs) echo 600s ;;
+    tests/native-presentation-persistence.cjs) echo 420s ;;
     tests/native-nationale-reduced-bench.cjs|tests/godot-roster-foundation.cjs) echo 300s ;;
     # Lot 01 (Monde) : native-match-talks 779 s sous forte charge locale (deux carrières, plusieurs semaines).
     tests/native-match-talks.cjs) echo 900s ;;
@@ -86,11 +90,13 @@ budget() {
     tests/career-variation-worker.cjs|tests/management-day-worker.cjs) echo 600s ;;
     # PASS CI 42909005768 : 179,80/159,68 s, marge finie avant le cap 180.
     tests/world-worker.cjs) echo 300s ;;
-    # native-fiction-sheet : délai de 180 s atteint sous charge (Suites 6/10, run 43262510105) ; marge doublée, assertions inchangées.
-    tests/native-fiction-sheet.cjs) echo 420s ;;
     # Tests passés au Monde (lot 00) : carrière de 116 clubs, mesurés 200 à 300 s sous charge.
     tests/calendar-worker.cjs|tests/epcr-preparation-worker.cjs|tests/animation-live-cut.cjs) echo 420s ;;
     tests/deepen-analytics.cjs) echo 900s ;;
+    # Lot 03 (Monde) : mesures locales sous charge (créneaux partagés) : lifecycle-native 214 s (8 tests, carrières de ~1 Go de tas),
+    # match-direct 370 s (5 tests, 3 carrières), management-france-day-worker 200 s (avant-saison jouée jour par jour) ; assertions inchangées.
+    tests/lifecycle-native.cjs|tests/management-france-day-worker.cjs) echo 420s ;;
+    tests/match-direct.cjs) echo 600s ;;
     tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) echo 420s ;;
     # JIFF en carrière Monde : une carrière world-champ jusqu'aux premières journées de Top 14, ~320 s en local sous charge.
     tests/jiff.cjs) echo 600s ;;
@@ -101,6 +107,15 @@ budget() {
     tests/native-club-support-training-forecast.cjs) echo 900s ;;
     # Passé au Monde (lot 00), 364 s en CI sous charge (run 43483, Suites 5/7) ; délai de 420 s dépassé sur deux runs de PR, 900 s, assertions inchangées.
     tests/integration-cloud-complete.cjs) echo 900s ;;
+    # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
+    tests/native-press-followups06-worker.cjs) echo 420s ;;
+    # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.
+    tests/match-essai-visible.cjs|tests/native-coach-notes06-worker.cjs) echo 900s ;;
+    tests/native-player-knowledge-capacity.cjs) echo 300s ;;
+    # Lot 03 (Monde) : 3 tests de 40 à 76 s chacun (3 carrières), 190 s en tout en local sous charge ; délai élargi, assertions inchangées.
+    tests/native-academy-appearance-bank.cjs) echo 420s ;;
+    # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
+    tests/sauvegarde-idempotente.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }

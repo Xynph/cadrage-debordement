@@ -1,7 +1,7 @@
 'use strict';
 // Prototype bridge: local private stdio only. Never load browser UI, the source
 // identity catalogue, the test harness, a network server, or protocol-supplied code.
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID,createHash}=require('node:crypto');
 const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),pressIdentities=require('./press-identities.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs'),systems=require('./native-systems.cjs');
 const playerAttributes=require('./player-attributes.cjs');
 const managerPlanning=require('./manager-planning.cjs');
@@ -178,6 +178,8 @@ function createBridge(options={}){
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=source=>vm.runInContext(source,ctx,{timeout:15000});
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
+  // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
+  if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
   ctx.nativeLegacyModes=legacyModes;ctx.nativeLegacyCareerMessage=LEGACY_CAREER_MESSAGE;
   const calendarState=(source='S')=>JSON.parse(run(`JSON.stringify({planning:${source}?.calendarPlanning,mail:${source}?.calendarMail})`));
   function validateCalendarState(state){
@@ -485,7 +487,16 @@ function createBridge(options={}){
      model.meta.leagueBenchmark={...bench,...machine,costs:leagueDetail.costTable({...machine,serialMs:bench.serialMs,computeMs:bench.computeMs})};
      return {id,ok:true,model:projectKnowledge(model)};
     }
-    if(command==='export'){const model=snapshotRaw();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='export'){
+      const model=snapshotRaw();let preuve=null;
+      // Preuve de l'aller-retour (recettes, tests) : empreinte SHA-256 du texte de l'état exporté, avant toute réduction.
+      // Un grand export est réduit sans perte (références de joueurs, marché) : son état littéral diffère alors de la
+      // sauvegarde ; cette empreinte permet de comparer le texte exact du profil à l'état restitué sans affaiblir le contrôle.
+      if(payload?.proof===true)ctx.nativeSaveProof=texte=>{preuve=createHash('sha256').update(texte,'utf8').digest('hex');};
+      try{model.meta.exportText=run('JSON.stringify(createSaveDocument())');}finally{delete ctx.nativeSaveProof;}
+      if(preuve)model.meta.exportRoundTripSha256=preuve;
+      return {id,ok:true,model:projectKnowledge(model)};
+    }
     if(command==='shutdown'){const model=snapshotRaw();close();return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshotRaw();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='restore_checkpoint'){if(payload.confirmed!==true)throw Error('Confirmation explicite requise pour reprendre cette copie.');restoring=profileSafety.load(payload.id);command='import';payload={...payload,text:restoring.text};}

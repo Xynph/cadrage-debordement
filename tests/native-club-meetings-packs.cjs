@@ -1,9 +1,8 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Packs d'identités et rendez-vous du club : la gestion des packs reste possible pendant un rendez-vous
 // obligatoire (réglage de présentation), sans toucher au rendez-vous ni à la carrière ; l'action sportive reste refusée.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
-const media=require('../native/engine/media-packs.cjs'),db=require('../dist/rugby-common-rosters.js'),{createBridge}=require('../native/engine/worker.cjs');
+const media=require('../native/engine/media-packs.cjs'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-meeting-packs-'));let seq=0,bridge,model;
 function archive(manifest){
  const data=Buffer.from(JSON.stringify(manifest)),n=Buffer.from('pack.json'),l=Buffer.alloc(30),c=Buffer.alloc(46),crc=media.crc32(data);
@@ -22,16 +21,17 @@ const names=()=>model.squad.map(p=>p.name),questions=()=>model.clubLife.press.co
 const refusal=/Rendez-vous du club : terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre\./;
 try{
  bridge=createBridge({dataDir:path.join(root,'carriere'),seed:321,now:1700000000000});
- good('new_career',{mode:'common',club:1});
+ good('new_career',{mode:'world-champ',club:1});
  // Le rendez-vous en attente est la conférence de presse, ouverte dès la création de la carrière.
  assert.equal(room().kind,'press');assert.equal(room().completed,false);
- const manifest={schema:'cd-identity-pack-v1',id:'rdv-test',name:'Rendez-vous test',version:'1',databaseId:db.id,rightsStatus:'test-local',clubs:db.clubs.map(c=>({id:c.id,name:'Club témoin '+c.id,abbr:'T'+c.id})),players:db.clubs[1].players.map((p,i)=>({id:p.id,name:'Joueur témoin '+i})),assets:[]};
+ // Pack d'identités de l'édition Monde : base de données et références de joueurs lues dans la carrière Monde créée.
+ const manifest={schema:'cd-identity-pack-v1',id:'rdv-test',name:'Rendez-vous test',version:'1',databaseId:model.meta.champDatabase.id,rightsStatus:'test-local',clubs:model.meta.champCatalogue.map(c=>({id:c.id,name:'Club témoin '+c.id,abbr:'T'+c.id})),players:model.squad.map((p,i)=>({id:p.id,name:'Joueur témoin '+i})),assets:[]};
  const before={meetings:meetings(),state:withoutPack(state()),names:names(),questions:questions(),roomId:room().id};
  const file=path.join(model.meta.dataDir,'donnees.json'),seedBefore=JSON.parse(fs.readFileSync(file)).seed;
 
  // 1. Toute la gestion des packs est acceptée pendant le rendez-vous.
- const zip=archive(manifest),preview=good('pack_inspect',{path:zip}).packs.preview;
- good('pack_install',{path:zip,digest:preview.digest});good('pack_select',{id:preview.id,scope:'creation',mode:'common'});
+ const zip=archive(manifest),preview=good('pack_inspect',{path:zip,mode:'world-champ'}).packs.preview;
+ good('pack_install',{path:zip,digest:preview.digest,mode:'world-champ'});good('pack_select',{id:preview.id,scope:'creation',mode:'world-champ'});
  good('pack_select',{id:preview.id,scope:'career'});
  assert.equal(model.packs.career,preview.id);
 

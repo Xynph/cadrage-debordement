@@ -32,14 +32,17 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const TACTICS_CANVAS_MIN_WIDTH := 1600
 
 const FOOTER_RISE := 14
-## Coin de Gabi (pixels physiques) : bouton « Ton avis, Gabi ? » et médaillon, au bout du pied de page.
-## Le médaillon déborde au-dessus du pied de page ; les écrans laissent ce coin libre (GABI_CORNER).
-const GABI_DOCK_WIDTH := 330.0
-## Bande basse réservée au médaillon (pixels de référence 2560×1440) : le pied de page grandit d'autant et
-## la mise en page se réduit d'environ 3 % pour la loger, sans toucher au dessin des écrans.
-const GABI_BAND := 48
 const TOPBAR_ACTION_LEFT := 2067
 const TOPBAR_MATCH_ACTION_LEFT := 2008
+## Bandeau du haut (pixels de référence, largeur 2312) : fil d'Ariane, historique et recherche à gauche,
+## Gabi (visage et remarque du moment) au milieu, à côté de la date et du bouton « Continuer »
+## (demande de Léo, 14/11/2026, option A). Gabi ne prend aucune place à l'écran : il vit dans le bandeau.
+const TOPBAR_BREADCRUMB_END := 700
+const TOPBAR_HISTORY_LEFT := 712
+const TOPBAR_SEARCH_LEFT := 815
+const TOPBAR_SEARCH_WIDTH := 420
+const TOPBAR_GABI_LEFT := 1253
+const TOPBAR_GABI_GAP := 16
 
 const GROUPS = [
 	["Bureau", "Bureau", ["Bureau"]],
@@ -97,7 +100,7 @@ static func render(app: Control) -> bool:
 	layout.name = "ImmersiveLayout"
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	app.root_content.add_child(layout)
-	var reference := Vector2(2560,1440+GABI_BAND)*C.density
+	var reference := Vector2(2560,1440)*C.density
 	_fit_layout(app.root_content,layout,reference)
 	app.root_content.resized.connect(_fit_layout.bind(app.root_content,layout,reference))
 	var shell := C.h(0)
@@ -164,7 +167,7 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 	layout.size = root.size/factor
 	if layout.has_meta("immersive_footer"):
 		var footer: Control = layout.get_meta("immersive_footer")
-		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)+C.px(GABI_BAND)
+		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)
 		_position_footer(footer)
 	if layout.has_meta("immersive_topbar"):
 		_position_topbar(layout)
@@ -345,15 +348,21 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var route_caption:String="Tactique" if app.route=="Composition" else app.route
 	if _is_training(app): route_caption="Entraînement"
 	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
-	D.text(panel,137+name_width,48,route_caption,25,C.IVORY,700,660)
+	var caption_left := 137+name_width
+	var caption_width := minf(C.BOLD.get_string_size(route_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(25)).x/C.density+6,TOPBAR_BREADCRUMB_END-caption_left)
+	var caption := D.text(panel,caption_left,48,route_caption,25,C.IVORY,700,caption_width)
+	caption.name = "ImmersiveRouteCaption"
 	var history: Control = app.navigation_controller.controls(false)
 	panel.add_child(history)
-	D.place(history,Rect2(1155,19,91,42))
+	D.place(history,Rect2(TOPBAR_HISTORY_LEFT,19,91,42))
 	var office_live: bool = app.route=="Bureau" and not app._live().is_empty()
 	var search_caption := "Rechercher un joueur, un menu…" if app.model.get("staff",{}).get("teams",[]).is_empty() else "Rechercher un joueur, un club…"
 	if national: search_caption = "Rechercher un écran…"
-	var search := D.button(panel,Rect2(1264,19,380 if office_live else 475,42),"Rechercher…" if office_live else search_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
-	if office_live: search.tooltip_text = search_caption
+	# Petites fenêtres : la phrase complète ne tient plus dans le champ ; « Rechercher… » reste lisible.
+	var search_room := C.px(TOPBAR_SEARCH_WIDTH) - C.px(48) - C.px(70)
+	var visible_caption := search_caption if C.BODY.get_string_size(search_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(18))).x <= search_room else "Rechercher…"
+	var search := D.button(panel,Rect2(TOPBAR_SEARCH_LEFT,19,TOPBAR_SEARCH_WIDTH,42),visible_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
+	search.tooltip_text = search_caption
 	search.add_theme_font_override("font",C.BODY)
 	search.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
 	search.add_theme_color_override("font_color",C.MUTED)
@@ -363,8 +372,8 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	search.add_theme_stylebox_override("normal",search_style)
 	var magnifier := C.icon("search",21,C.MUTED)
 	panel.add_child(magnifier)
-	D.place(magnifier,Rect2(1278,30,21,21))
-	var shortcut := D.chip(panel,Rect2(1582 if office_live else 1677,29,48,23),"Ctrl K",C.MUTED)
+	D.place(magnifier,Rect2(TOPBAR_SEARCH_LEFT+14,30,21,21))
+	var shortcut := D.chip(panel,Rect2(TOPBAR_SEARCH_LEFT+TOPBAR_SEARCH_WIDTH-62,29,48,23),"Ctrl K",C.MUTED)
 	var calendar := C.button("", _open_current_calendar.bind(app))
 	calendar.name = "ImmersiveCalendarDate"
 	calendar.accessibility_name = "Ouvrir le calendrier"
@@ -378,8 +387,13 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	app.primary_button = D.button(panel,Rect2(action_left,17,2278-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
 	app.primary_button.tooltip_text = app.primary_text()
-	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon])
+	var gabi := Control.new()
+	gabi.name = "GabiBandeau"
+	gabi.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(gabi)
+	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi])
 	_position_topbar(layout)
+	if is_instance_valid(app.coach) and app.coach.has_method("installer_bandeau"): app.coach.installer_bandeau(gabi)
 
 static func _club_button(button: Button, fill: Color, edge: Color) -> void:
 	for state in ["normal","hover","pressed"]:
@@ -417,6 +431,12 @@ static func _position_topbar(layout: Control) -> void:
 	date.add_theme_font_size_override("font_size",date_px)
 	date.position = Vector2(date_left,(height-text_height)/2.0)
 	date.set_deferred("size",Vector2(calendar.size.x-date_left-C.px(7),text_height))
+	if elements.size() > 6 and is_instance_valid(elements[6]):
+		# Zone de Gabi : de la recherche au calendrier, toute la hauteur utile du bandeau.
+		var gabi: Control = elements[6]
+		var gabi_right := calendar_left - TOPBAR_GABI_GAP
+		gabi.position = Vector2(C.px(TOPBAR_GABI_LEFT),C.px(6))
+		gabi.size = Vector2(maxf(0.0,C.px(gabi_right-TOPBAR_GABI_LEFT)),C.px(66))
 	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 	action.position.y=(79.0*C.density-height)/2.0
 	action.size.y=height
@@ -519,7 +539,7 @@ static func _subnavigation(parent: Node, app: Control) -> void:
 static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	var row := Control.new()
 	row.name = "ImmersiveFooter"
-	row.custom_minimum_size.y = maxf(C.px(44),38.0/layout.scale.y)+C.px(GABI_BAND)
+	row.custom_minimum_size.y = maxf(C.px(44),38.0/layout.scale.y)
 	C.fill(row)
 	parent.add_child(row)
 	layout.set_meta("immersive_footer",row)
@@ -533,30 +553,21 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 		var feedback: Button = app.decision_feedback.control()
 		feedback.add_theme_font_override("font",C.DISPLAY)
 		row.add_child(feedback)
-	var dock := Control.new()
-	dock.name = "CoachCompactDock"
-	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dock.visible = is_instance_valid(app.coach)
-	row.add_child(dock)
 	row.resized.connect(_position_footer.bind(row))
 	_position_footer(row)
 
 static func _position_footer(row: Control) -> void:
 	var factor := row.get_global_transform().get_scale().x
 	if factor<=0 or row.size.x<=0: return
-	var dock: Control = row.get_node_or_null("CoachCompactDock")
-	if dock==null: return
-	dock.size=Vector2(GABI_DOCK_WIDTH,34)/factor
-	dock.position=Vector2(row.size.x-dock.size.x,row.size.y-dock.size.y-1.0/factor)
 	var feedback: Button = row.get_node_or_null("DecisionFeedbackButton")
 	if feedback!=null:
 		feedback.size=Vector2(maxf(C.px(180),146.0/factor),maxf(C.px(34),30.0/factor))
-		feedback.position=Vector2(dock.position.x-feedback.size.x-maxf(C.px(24),12.0/factor),row.size.y-feedback.size.y-1.0/factor)
+		feedback.position=Vector2(row.size.x-feedback.size.x,row.size.y-feedback.size.y-1.0/factor)
 		feedback.add_theme_font_size_override("font_size",maxi(C.px(17),roundi(13.0/factor)))
 	var status: Label = row.get_node_or_null("ImmersiveSaveStatus")
 	if status==null: return
 	var gap := maxf(C.px(16),8.0/factor)
-	var right := (feedback.position.x if feedback!=null else dock.position.x)-gap
+	var right := (feedback.position.x if feedback!=null else row.size.x)-gap
 	var shortcuts: Label = row.get_node_or_null("ImmersiveShortcuts")
 	var compact := C.px(24)*factor<14.0
 	var side_by_side := shortcuts != null and not compact and row.size.x*factor>=1650
@@ -626,7 +637,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 				var lineup: Control = app.SquadViews.lineup(app)
 				var remove := lineup.find_child("LineupRemove",true,false) as Button
 				var candidates := lineup.find_child("LineupCandidatesScroll",true,false) as ScrollContainer
-				# La libération reste au-dessus de la liste, à l’écart du dock de Gabi.
+				# La libération reste au-dessus de la liste.
 				remove.get_parent().move_child(remove,candidates.get_index())
 				var selected := lineup.find_child("LineupSlot%02d" % (app.selected_slot+1),true,false) as Button
 				if selected != null: selected.set_meta("carnet_selected",true)

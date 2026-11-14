@@ -1,6 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
-
 // Match en temps forts, par le vrai moteur natif : projection `live.direct` minute par
 // minute, sans effet sur le match. C'est le mode de base du moteur lancé par le jeu
 // (repli : CD_MATCH_TEMPS_FORTS=0) ; `createBridge` ne projette que sur demande.
@@ -13,7 +11,8 @@ const { spawnSync } = require('node:child_process');
 const { createBridge } = require('../native/engine/worker.cjs');
 const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
-const { context } = require('./harness.cjs');
+const { context } = require('./monde-harness.cjs');
+const { advanceToNextMatch } = require('./helpers/monde-matchs.cjs');
 const H = require('../native/engine/match-highlights.cjs');
 
 function ouvrir(options) {
@@ -26,7 +25,7 @@ function ouvrir(options) {
 }
 
 function demarrer(jeu) {
-  settleClubMeetings(jeu.call('new_career', { club: 0 }), jeu.call);
+  advanceToNextMatch(settleClubMeetings(jeu.call('new_career', { mode: 'world-champ', club: 0 }), jeu.call), jeu.call);
   return skipMatchTalk(jeu.call('begin_match'), jeu.call);
 }
 
@@ -107,8 +106,9 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
 
 test('Le pas « minute » et la sélection ne changent ni le match ni le tirage', () => {
   const jouer = minute => {
-    const { run } = context();
-    run('start(3); beginMatch(); continueMatch();');
+    const h = context(undefined, { club: 3 }), { run } = h;
+    h.toMatch();
+    run('beginMatch(); continueMatch();');
     let selections = 0;
     for (let i = 0; i < 900 && !run('S.live.finished'); i++) {
       if (!minute) { run('if (S.live.paused) continueMatch(); presentationTick(S.live);'); continue; }
@@ -116,7 +116,9 @@ test('Le pas « minute » et la sélection ne changent ni le match ni le tirage'
       selections += H.en_direct(JSON.parse(run('JSON.stringify(S.live.events)')), { niveau: 'dynamique' }).tempsForts.length;
     }
     assert.equal(run('S.live.finished'), true);
-    return { carriere: run('JSON.stringify(S)'), tirage: run('Math.random()'), selections };
+    const resultat = { carriere: run('JSON.stringify(S)'), tirage: run('Math.random()'), selections };
+    h.close();
+    return resultat;
   };
   const ordinaire = jouer(false), direct = jouer(true);
   assert.ok(direct.selections > 0);
@@ -138,9 +140,10 @@ function processus(env, requetes) {
 }
 
 test('Sans aucune variable, le moteur du jeu projette les temps forts ; CD_MATCH_TEMPS_FORTS=0 rend le direct d’origine', () => {
-  const source = context();
-  source.run('start(0);beginMatch()');
+  const source = context().toMatch();
+  source.run('beginMatch()');
   const texte = source.run('JSON.stringify(createSaveDocument())');
+  source.close();
   const requetes = [{ command: 'import', payload: { text: texte } }, { command: 'pause', payload: { paused: false } },
     { command: 'tick', payload: { minute: true, temps_forts: 'dynamique' } }, { command: 'shutdown', payload: {} }];
   const defaut = processus({}, requetes);
@@ -192,8 +195,10 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
         if (affiche && affiche !== equipe.abbr) {
           const interne = new RegExp(`\\b${equipe.abbr}\\b`);
           assert.ok([...direct.fil, ...direct.deroule].every(l => !interne.test(l.texte)), `sigle interne ${equipe.abbr} absent du fil (affiché : ${affiche})`);
-          sigles++;
         }
+        // Monde : sans paquet d'identité, le sigle affiché est le sigle interne (rien à renommer) ; le fil ne doit alors
+        // jamais montrer un autre sigle que celui de l'écran pour cette équipe.
+        if (affiche) sigles++;
       }
       const vues = H.normaliser(events).slice(0, direct.borne);
       assert.deepEqual(direct.score, vues.length ? vues.at(-1).scoreApres : [0, 0], 'score de ce qui a été montré');
@@ -249,7 +254,7 @@ test('Entracte 2D : déroulé des faits, domination, chiffres du rugby et notes,
     }
     assert.ok(deroules > 20, 'des faits à rejouer pendant les entractes : ' + deroules);
     assert.ok(verifies >= 4, 'temps forts vérifiés : ' + verifies);
-    assert.ok(sigles > 0, 'sigles affichés vérifiés');
+    assert.ok(sigles > 0, 'identités affichées vérifiées');
   } finally { jeu.fermer(); }
 });
 

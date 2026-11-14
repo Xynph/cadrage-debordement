@@ -1,10 +1,9 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process'),{createBridge}=require('../native/engine/worker.cjs');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;if(!godot){console.log('SKIP native-club-support-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-ui-'));
 const b=createBridge({dataDir:root,seed:410,now:1700000000000});let n=0;const req=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
-try{settleClubMeetings(req('new_career',{mode:'common',club:29}),req);const doc=JSON.parse(req('export').meta.exportText),p=doc.state.clubs[29].players[25];p.injury=2;let h=2166136261;for(const c of JSON.stringify(doc.state))h=Math.imul(h^c.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');req('import',{text:JSON.stringify(doc)});}finally{b.close();}
+try{settleClubMeetings(req('new_career',{mode:'world-champ',club:29}),req);const doc=JSON.parse(req('export').meta.exportText),p=doc.state.clubs[29].players[25];p.injury=2;let h=2166136261;for(const c of JSON.stringify(doc.state))h=Math.imul(h^c.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');req('import',{text:JSON.stringify(doc)});}finally{b.close();}
 const script=path.join(root,'support-reception.gd');fs.writeFileSync(script,`extends SceneTree
 var app: Control
 var failures: Array[String] = []
