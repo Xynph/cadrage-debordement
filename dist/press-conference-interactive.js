@@ -25,7 +25,7 @@ validate(s);
 const old=snapshot(s),season=s.season,week=weekOf(s);
 if(s.pressRelations?.clubId==='club-'+s.club&&s.pressRelations.used?.some(id=>id.startsWith(season+':'+week+':')))return null;
 if(old.history.some(h=>h.season===season&&h.week===week&&(h.club===undefined||h.club===s.club)))return null;
-return bank.pick({season,week,history:old.history,context:{themes:[...new Set([...priorityThemes,...chooseThemes(s)])]},count:2+((week+season)%3),seed:s.club,seasonWeeks:s.franceMode?.version===1?34:29});
+return bank.pick({season,week,history:old.history,context:{themes:[...new Set([...priorityThemes,...chooseThemes(s)])]},count:2+((week+season)%3),seed:s.club,region:bank.regionFor(s),seasonWeeks:s.franceMode?.version===1?34:29});
 }
 function apply(s,selected,priorityThemes=[]){
 if(!s||s.live||!Array.isArray(selected)||selected.length<2||selected.length>4)throw Error('Conférence invalide');

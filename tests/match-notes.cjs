@@ -101,93 +101,6 @@ test('Poste occupé (maillots 1 à 15) : pondération de la note, homme du match
   assert.equal(postesDomaine.c1p14, 14);
 });
 
-test('Matchs simulés (Monde) : mêmes résultats et même tirage avec et sans le journal des notes', () => {
-  // Référence : domaine des notes absent (option notes:false) ; effets coupés dans les deux cas
-  // (les effets, eux, orientent légitimement les choix des entraîneurs IA).
-  const jouer = notes => {
-    const jeu = ouvrir({ notes, notesEffets: false, hebdomadaire: true });
-    try {
-      let model = M.creer(jeu);
-      model = M.jouer(jeu, model, 2);
-      const etat = jeu.etat();
-      const resultats = etat.history.map(r => [r.fixtureId ?? null, r.score, r.pair, r.competitionId ?? null]);
-      return { resultats, seed: jeu.disque().seed, notes: etat.matchNotes ?? null };
-    } finally { jeu.fermer(); if (global.gc) global.gc(); }
-  };
-  const sans = jouer(false), avec = jouer(true);
-  assert.ok(sans.resultats.length >= 100, 'matchs de toute la journée simulés : ' + sans.resultats.length);
-  assert.deepEqual(avec.resultats, sans.resultats, 'scores identiques');
-  assert.equal(avec.seed, sans.seed, 'curseur du générateur identique');
-  assert.equal(sans.notes, null, 'référence sans domaine des notes (ni club, ni sélections)');
-  const notes = Object.values(avec.notes.joueurs);
-  assert.ok(notes.length >= 2 * 15 * 7, 'chaque joueur ayant joué a sa note : ' + notes.length);
-  assert.ok(notes.every(j => j.s[0] >= 1 && j.f.length >= 1 && j.f.every(x => x >= 10 && x <= 100)));
-});
-
-test('Direct (Monde) : la note affichée en fin de match est la note enregistrée ; homme du match ; autres matchs notés', () => {
-  const jeu = ouvrir({ hebdomadaire: true });
-  try {
-    let model = M.jusquAuMatch(jeu, M.creer(jeu));
-    model = M.jouerLeMatch(jeu, model, { delegue: false });
-    let dernier = null;
-    for (let k = 0; k < 400 && !model.live.finished; k++) {
-      if (model.clubLife?.matchTalks?.scene) { model = skipMatchTalk(model, jeu.call); continue; }
-      model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
-      if (model.live.direct?.notes) dernier = model.live.direct;
-    }
-    assert.equal(model.live.finished, true, 'match terminé');
-    // Tout montrer : le direct se lit alors sur le journal complet.
-    for (let k = 0; k < 40 && dernier.borne < model.live.events.length; k++) { model = jeu.call('tick', { minute: true, temps_forts: 'aucun' }); dernier = model.live.direct; }
-    const directNotes = dernier.notes, camp = dernier.camp;
-    for (const n of Object.values(directNotes)) assert.ok(n.note >= 1 && n.note <= 10);
-    // Le débrief clôt la journée (le résultat est confirmé).
-    model = skipMatchTalk(model, jeu.call);
-    if (model.live) model = jeu.call('finish_round');
-    model = jeu.regler(model);
-    const notes = model.clubLife.matchNotes;
-    assert.ok(notes.dernier, 'dernier match enregistré');
-    assert.ok(notes.dernier.hommeDuMatch && notes.dernier.hommeDuMatch.nom, 'homme du match désigné');
-    const enregistre = Object.fromEntries(notes.dernier.notes.filter(n => n.cote === camp).map(n => [n.id, n.note]));
-    assert.ok(Object.keys(directNotes).length >= 15, 'notes du direct pour toute l’équipe');
-    for (const [id, n] of Object.entries(directNotes)) if (n.minutes > 0) assert.equal(n.note, enregistre[id], 'note du direct = note enregistrée (' + id + ')');
-    const club = model.squad.filter(p => notes.joueurs[p.id]?.matchs === 1);
-    assert.ok(club.length >= 15, 'joueurs du club notés : ' + club.length);
-    const h = notes.joueurs[club[0].id].historique[0];
-    assert.ok(h.adversaire && h.competition && h.minutes > 0 && h.note >= 1, 'historique du match');
-    // Autres matchs de la journée (simulés sans direct) : notés aussi.
-    const etat = jeu.etat();
-    const clubs = new Set(etat.clubs.flatMap(c => c.players.filter(p => etat.matchNotes.joueurs[p.id]).map(() => c.id)));
-    assert.ok(clubs.size > 2, 'joueurs d’autres clubs notés : ' + clubs.size + ' clubs');
-    assert.ok(model.news?.some?.(t => /Homme du match/.test(t)) || etat.news.some(t => /Homme du match/.test(t)), 'actualité de l’homme du match');
-  } finally { jeu.fermer(); }
-});
-
-test('Sauvegarde (Monde) : aller-retour, migration d’une ancienne sauvegarde sans notes, validation', () => {
-  const jeu = ouvrir({ hebdomadaire: true });
-  try {
-    let model = M.jouer(jeu, M.creer(jeu), 1);
-    const texte = jeu.call('export').meta.exportText;
-    const doc = JSON.parse(texte);
-    assert.equal(doc.state.matchNotes.version, 2);
-    jeu.call('import', { text: texte });
-    assert.deepEqual(jeu.etat().matchNotes, doc.state.matchNotes, 'aller-retour exact');
-    // Ancienne sauvegarde : pas de notes, historique vide puis rempli au match suivant.
-    const sansNotes = jeu.call('import', { text: signe(doc, state => { delete state.matchNotes; }) });
-    assert.deepEqual(sansNotes.clubLife.matchNotes.joueurs, {}, 'ancienne sauvegarde : historique vide');
-    assert.equal(jeu.etat().matchNotes, undefined, 'rien n’est inventé pour le passé');
-    // Monde : plus de 2 000 joueurs notés (limite générique des tables de la sauvegarde) acceptés
-    // jusqu'au nombre de joueurs du monde, refusés au-delà.
-    const plus = (n, base) => signe(doc, state => { for (let k = 0; k < n; k++) state.matchNotes.joueurs['x' + base + k] = { s: [1, 65, 80, 0, 0, 0, 0], f: [65] }; });
-    assert.equal(jeu.brut('import', { text: plus(2100, 'a') }).ok, true, 'plus de 2 000 joueurs notés : accepté');
-    const trop = jeu.brut('import', { text: plus(40000, 'b') });
-    assert.equal(trop.ok, false, 'table démesurée refusée');
-    // Un état corrompu est refusé.
-    const id = Object.keys(doc.state.matchNotes.joueurs)[0];
-    const casse = jeu.brut('import', { text: signe(doc, state => { state.matchNotes.joueurs[id].f = [999]; }) });
-    assert.equal(casse.ok, false, 'note hors échelle refusée');
-    assert.match(casse.error, /Notes de match/);
-  } finally { jeu.fermer(); }
-});
 
 test('Effets bornés : composition, valeur, intérêt, salaire, sélection, moral', () => {
   const c = domaine();
@@ -204,55 +117,6 @@ const POSTES = ['Pilier gauche', 'Talonneur', 'Pilier droit', 'Deuxième ligne',
 const GROUPES = [0, 1, 2, 3, 3, 4, 4, 4, 5, 6, 7, 8, 8, 7, 9];
 const groupeDe = pos => GROUPES[POSTES.indexOf(pos === 'Numéro 8' ? 'Numéro 8' : pos)];
 
-// Quelques journées déléguées en carrière Monde (mode unique, consigne de Léo du 13/11 : plus aucun test en
-// ancien mode France), club de l'élite française : renvoie les modèles de chaque journée.
-function jouerJournees(jeu, journees) {
-  let model = M.creer(jeu, 0);
-  const vus = [];
-  for (let j = 0; j < journees; j++) { model = M.jouer(jeu, model, 1); vus.push(model); }
-  return vus;
-}
-
-test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinze postes distincts, déterministe', () => {
-  const lancer = () => { const jeu = ouvrir({ hebdomadaire: true }); try { const vus = jouerJournees(jeu, 4); return { vus, etat: jeu.etat() }; } finally { jeu.fermer(); } };
-  const a = lancer();
-  assert.ok(a.vus.length >= 4);
-  let precedent = 0;
-  for (const model of a.vus) {
-    const eq = model.clubLife.matchNotes.equipeType;
-    assert.ok(eq.ligues.length >= 1, 'au moins un championnat publié');
-    for (const l of eq.ligues) {
-      const x = l.journee;
-      assert.ok(x, l.nom + ' : équipe de la journée');
-      assert.equal(x.joueurs.length, 15);
-      assert.equal(x.libelleSaison, require('../dist/season-label.js').libelleSaison(x.saison), 'libellé de saison du jeu (2026-2027), pas « Saison 1 »');
-      assert.match(x.libelleSaison, /^\d{4}-\d{4}$/);
-      assert.equal(new Set(x.joueurs.map(j => j.id)).size, 15, 'quinze joueurs distincts');
-      assert.deepEqual(x.joueurs.map(j => j.numero), Array.from({ length: 15 }, (_, k) => k + 1));
-      x.joueurs.forEach((j, k) => assert.equal(groupeDe(j.poste), GROUPES[k], 'poste du maillot ' + (k + 1)));
-      for (const j of x.joueurs) { assert.ok(j.noteMatch >= 1 && j.noteMatch <= 10); assert.ok(j.club && j.club.presentation, 'club avec présentation'); assert.ok(j.selections >= 1); }
-      assert.equal(x.joueurs.filter(j => j.etoile).length, 1, 'un joueur de la journée');
-      assert.ok(x.entraineur === null || x.entraineur.marge >= 1);
-      if (l.manager) assert.ok(x.numero >= precedent, 'journée suivante'), precedent = x.numero;
-    }
-    const mine = eq.ligues[0];
-    if (!eq.ligues.some(l => l.manager)) continue; // calendrier mondial : d'autres championnats commencent plus tôt
-    assert.equal(mine.manager, true, 'le championnat du manager passe en premier');
-    assert.equal(mine.id, 'elite');
-    assert.ok((model.messages || []).some(t => String(t).startsWith('XV de la ') && String(t).includes(' journée · ' + mine.nom)), 'actualité publiée à chaque journée, club du manager présent ou non');
-  }
-  const suivis = a.vus.at(-1).clubLife.matchNotes.equipeType.ligues.map(l => l.id);
-  assert.ok(['elite', 'accession'].every(id => suivis.includes(id)) && suivis.length >= 3, 'chaque championnat du monde suivi : ' + suivis);
-  // Même graine, même équipe : aucun tirage dans le choix.
-  const b = lancer();
-  assert.deepEqual(b.etat.matchNotes.equipes, a.etat.matchNotes.equipes);
-  assert.equal(a.etat.matchNotes.version, 2);
-  // Meilleur de chaque poste : personne de mieux noté au même poste n'a été écarté.
-  // Un jeune appelé pour le match peut être reparti en centre de formation depuis (aiRoster.academies, development.academy).
-  const noms = new Set(); for (const c of a.etat.clubs) for (const p of c.players) noms.add(p.id);
-  for (const p of [...(a.etat.development?.academy || []), ...(a.etat.aiRoster?.academies || []).flatMap(x => x.players || [])]) noms.add(p.id);
-  for (const e of Object.values(a.etat.matchNotes.equipes)) { assert.equal(e.ids.length, 15); for (const id of e.ids) assert.ok(noms.has(id), 'joueur inconnu des effectifs : ' + id); }
-});
 
 test('Équipe de la saison : seuil de matchs, départage, migration depuis la version 1', () => {
   const c = domaine(false);
@@ -291,46 +155,6 @@ test('Équipe de la saison : bonus de valeur borné, coupé par CD_NOTES_EFFETS=
   const on = lire(true), off = lire(false);
   assert.equal(on.v, 1.03); assert.equal(on.i, 0.5); assert.equal(on.autre, 1, 'non lauréat : aucun effet');
   assert.deepEqual(off, { v: 1, i: 0, autre: 1 }, 'effets coupés');
-});
-
-// Packs d'identité : même mécanisme que l'effectif et la fiche club (logoPath, portraitPath par identifiant),
-// repli sur l'écusson et le portrait originaux du jeu. Aucune image réelle : pixel de test.
-test('Équipe-type : pack absent = identités du jeu ; pack installé = logos du pack (carrière Monde)', () => {
-  const media = require('../native/engine/media-packs.cjs'), crypto = require('node:crypto'), zlib = require('node:zlib');
-  const zip = items => { let offset = 0; const locals = [], centrals = []; for (const item of items) { const n = Buffer.from(item.name), data = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data || ''), crc = media.crc32(data), local = Buffer.alloc(30), central = Buffer.alloc(46); local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6); local.writeUInt32LE(crc, 14); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(n.length, 26); central.writeUInt32LE(0x02014b50); central.writeUInt16LE(0x314, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(0x800, 8); central.writeUInt32LE(crc, 16); central.writeUInt32LE(data.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(n.length, 28); central.writeUInt32LE((0x81a4 * 65536) >>> 0, 38); central.writeUInt32LE(offset, 42); locals.push(local, n, data); centrals.push(central, n); offset += local.length + n.length + data.length; } const cd = Buffer.concat(centrals), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(items.length, 8); end.writeUInt16LE(items.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16); return Buffer.concat([...locals, cd, end]); };
-  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
-  const jeu = ouvrir({ hebdomadaire: true });
-  try {
-    const vus = jouerJournees(jeu, 2);
-    const avant = vus.at(-1).clubLife.matchNotes.equipeType;
-    const joueursXV = l => [...l.journee.joueurs, ...(l.saison?.joueurs || [])];
-    for (const l of avant.ligues) for (const j of joueursXV(l)) {
-      assert.equal(j.club.presentation.logoPath, undefined, 'pack absent : pas de logo du pack');
-      assert.equal(j.portraitPath, undefined, 'pack absent : pas de portrait du pack');
-      assert.ok(Number.isInteger(j.portraitIndex), 'portrait original du jeu');
-    }
-    const ids = [...new Set(avant.ligues.flatMap(l => joueursXV(l).map(j => j.id)))];
-    const base = vus.at(-1).meta.champDatabase, clubsXV = [...new Set(avant.ligues.flatMap(l => joueursXV(l).map(j => j.club.id)))];
-    const manifest = { schema: 'cd-identity-pack-v1', id: 'essai-xv', name: 'Identités test', version: '1', databaseId: base.id, rightsStatus: 'test-local',
-      clubs: clubsXV.map(id => ({ id, logo: 'image' })), players: [], // identités de joueurs Monde : couvertes par les tests des packs Monde ; ici, les logos
-      assets: [{ id: 'image', path: 'médias/image.png', sha256: crypto.createHash('sha256').update(pixel).digest('hex'), bytes: pixel.length }] };
-    const fichier = path.join(os.tmpdir(), 'rl27-xv-pack-' + process.pid + '.zip');
-    fs.writeFileSync(fichier, zip([{ name: 'pack.json', data: JSON.stringify(manifest) }, { name: 'médias/image.png', data: pixel }]));
-    try {
-      const apercu = jeu.call('pack_inspect', { path: fichier, mode: 'world-champ' }).packs.preview;
-      jeu.call('pack_install', { path: fichier, digest: apercu.digest });
-      const model = jeu.call('pack_select', { id: apercu.id, scope: 'career', mode: 'world-champ' });
-      const apres = model.clubLife.matchNotes.equipeType;
-      let couverts = 0;
-      for (const l of apres.ligues) for (const j of joueursXV(l)) {
-        couverts++;
-        assert.ok(String(j.club.presentation.logoPath || '').endsWith('.png'), 'pack : logo du club par identifiant');
-      }
-      assert.ok(couverts >= 15, 'au moins un XV complet couvert par le pack : ' + couverts);
-      const retour = jeu.call('pack_select', { id: 'base', scope: 'career', mode: 'world-champ' });
-      assert.equal(retour.clubLife.matchNotes.equipeType.ligues[0].journee.joueurs[0].club.presentation.logoPath, undefined, 'retour au jeu de base : écusson original');
-    } finally { fs.rmSync(fichier, { force: true }); }
-  } finally { jeu.fermer(); }
 });
 
 test('Matchs internationaux : même calcul, sans tirage, enregistrés à part, sans doublon, effets bornés', () => {
@@ -406,4 +230,246 @@ test('Carrière internationale : le match joué par la sélection est noté et r
   avance();
   assert.equal(JSON.parse(run('JSON.stringify(S.matchNotes.selection.lignes["lnr:hook"])')).length, 1, 'pas de doublon au jour suivant');
   assert.equal(resultat(), apres, 'résultat du match international inchangé');
+});
+
+// ---- Carrière partagée (Monde) ------------------------------------------------------------------
+// Une carrière jouée par le pont coûte ~17 s (création) + ~25 s par journée (état de 20 Mo réécrit à chaque
+// commande) : le fichier en créait 7 et jouait 16 journées. Il en joue maintenant une seule par le pont
+// (club de l'élite française, 4 journées, journée 1 en direct) pour le direct, l'équipe-type, les packs et la
+// sauvegarde ; les comparaisons de simulation (avec/sans notes, déterminisme) passent par le harnais VM du dépôt
+// (tests/monde-harness.cjs : semaines sans projection ni écriture disque, point de reprise état + curseur du
+// générateur), comme les autres suites Monde.
+const OPTIONS_PARTAGEES = { hebdomadaire: true, notesEffets: false };
+const JOURNEES = 4;
+
+function libere() { if (global.gc) global.gc(); }
+
+// Journée 1 jouée en direct (match du manager suivi minute par minute), comme dans le jeu. `notes` : la carrière
+// a le domaine des notes. Renvoie le modèle clos et, avec les notes, ce que le direct affichait.
+function journeeEnDirect(jeu, model, notes) {
+  model = M.jusquAuMatch(jeu, model);
+  model = M.jouerLeMatch(jeu, model, { delegue: false });
+  let dernier = null, minutes = 0;
+  for (let k = 0; k < 400 && !model.live.finished; k++) {
+    if (model.clubLife?.matchTalks?.scene) { model = skipMatchTalk(model, jeu.call); continue; }
+    // Trois minutes en temps forts (direct), puis des pas de 30 minutes : chaque commande réécrit les 20 Mo de la
+    // sauvegarde (~4 s) ; une minute à la fois coûtait ~230 s. Le résultat est identique (le direct se lit sur le journal).
+    model = minutes++ < 3 ? jeu.call('tick', { minute: true, temps_forts: 'dynamique' }) : jeu.call('tick', { steps: 30 });
+    if (model.live.direct?.notes) dernier = model.live.direct;
+  }
+  assert.equal(model.live.finished, true, 'match terminé');
+  if (notes) {
+    // Tout montrer : le direct se lit alors sur le journal complet.
+    for (let k = 0; k < 40 && (!dernier || dernier.borne < model.live.events.length); k++) { model = jeu.call('tick', { minute: true, temps_forts: 'aucun' }); dernier = model.live.direct; }
+  }
+  const direct = dernier && { notes: dernier.notes, camp: dernier.camp };
+  // Le débrief clôt la journée (le résultat est confirmé).
+  model = skipMatchTalk(model, jeu.call);
+  if (model.live) model = jeu.call('finish_round');
+  return { model: jeu.regler(model), direct };
+}
+
+// Parcours commun aux trois carrières : création (club 0, élite française), journée 1 en direct, puis journées déléguées.
+// `etapes(numero, model, jeu, direct)` observe la carrière après chaque journée.
+function parcoursSur(jeu, notes, journees, etapes) {
+  let model = M.creer(jeu, 0);
+  for (let j = 1; j <= journees; j++) {
+    let direct = null;
+    if (j === 1) ({ model, direct } = journeeEnDirect(jeu, model, notes));
+    else model = M.jouer(jeu, model, 1);
+    etapes(j, model, jeu, direct);
+  }
+}
+
+// Carrière partagée : construite à la première utilisation, fermée par le dernier test qui en a besoin (Sauvegarde).
+let memo = null;
+function partage() {
+  if (memo) return memo;
+  const jeu = ouvrir(OPTIONS_PARTAGEES);
+  const vus = [], obs = {};
+  parcoursSur(jeu, true, JOURNEES, (j, model, _jeu, direct) => {
+    // On ne garde que ce que lisent les tests (les modèles complets pèsent lourd : une carrière Monde tient dans ~1 Go).
+    vus.push({ meta: { champDatabase: model.meta.champDatabase }, messages: model.messages, clubLife: { matchNotes: { equipeType: model.clubLife.matchNotes.equipeType } } });
+    if (j === 1) {
+      // Journée 1 : ce qu'affichait le direct, l'enregistrement qui suit, les autres matchs de la journée.
+      const texte = jeu.call('export').meta.exportText, etat = JSON.parse(texte).state;
+      obs.texteJ1 = texte;
+      obs.direct = direct;
+      const mn = model.clubLife.matchNotes, club = model.squad.filter(p => mn.joueurs[p.id]?.matchs === 1);
+      obs.matchNotes = { dernier: mn.dernier };
+      obs.nbClub = club.length;
+      obs.historique = club.length ? mn.joueurs[club[0].id].historique[0] : undefined;
+      obs.clubsNotes = new Set(etat.clubs.flatMap(c => c.players.filter(p => etat.matchNotes.joueurs[p.id]).map(() => c.id))).size;
+      obs.actualite = !!(model.news?.some?.(t => /Homme du match/.test(t)) || etat.news.some(t => /Homme du match/.test(t)));
+    }
+    if (j === JOURNEES) {
+      const etat = jeu.etat();
+      const noms = new Set(); for (const c of etat.clubs) for (const p of c.players) noms.add(p.id);
+      // Un jeune appelé pour le match peut être reparti en centre de formation depuis (aiRoster.academies, development.academy).
+      for (const p of [...(etat.development?.academy || []), ...(etat.aiRoster?.academies || []).flatMap(x => x.players || [])]) noms.add(p.id);
+      obs.xv = { version: etat.matchNotes.version, equipes: Object.values(etat.matchNotes.equipes), noms };
+    }
+  });
+  memo = { jeu, vus, obs };
+  return memo;
+}
+function fermerPartage() { if (memo?.jeu) { memo.jeu.fermer(); memo.jeu = null; libere(); } }
+
+test('Direct (Monde) : la note affichée en fin de match est la note enregistrée ; homme du match ; autres matchs notés', () => {
+  const { obs } = partage();
+  const directNotes = obs.direct.notes, camp = obs.direct.camp;
+  for (const n of Object.values(directNotes)) assert.ok(n.note >= 1 && n.note <= 10);
+  const notes = obs.matchNotes;
+  assert.ok(notes.dernier, 'dernier match enregistré');
+  assert.ok(notes.dernier.hommeDuMatch && notes.dernier.hommeDuMatch.nom, 'homme du match désigné');
+  const enregistre = Object.fromEntries(notes.dernier.notes.filter(n => n.cote === camp).map(n => [n.id, n.note]));
+  assert.ok(Object.keys(directNotes).length >= 15, 'notes du direct pour toute l’équipe');
+  for (const [id, n] of Object.entries(directNotes)) if (n.minutes > 0) assert.equal(n.note, enregistre[id], 'note du direct = note enregistrée (' + id + ')');
+  assert.ok(obs.nbClub >= 15, 'joueurs du club notés : ' + obs.nbClub);
+  const h = obs.historique;
+  assert.ok(h.adversaire && h.competition && h.minutes > 0 && h.note >= 1, 'historique du match');
+  // Autres matchs de la journée (simulés sans direct) : notés aussi.
+  assert.ok(obs.clubsNotes > 2, 'joueurs d’autres clubs notés : ' + obs.clubsNotes + ' clubs');
+  assert.ok(obs.actualite, 'actualité de l’homme du match');
+});
+
+test('Équipe-type : publiée à chaque journée, pour chaque championnat, quinze postes distincts', () => {
+  const { vus, obs } = partage();
+  assert.ok(vus.length >= 4);
+  let precedent = 0;
+  for (const model of vus) {
+    const eq = model.clubLife.matchNotes.equipeType;
+    assert.ok(eq.ligues.length >= 1, 'au moins un championnat publié');
+    for (const l of eq.ligues) {
+      const x = l.journee;
+      assert.ok(x, l.nom + ' : équipe de la journée');
+      assert.equal(x.joueurs.length, 15);
+      assert.equal(x.libelleSaison, require('../dist/season-label.js').libelleSaison(x.saison), 'libellé de saison du jeu (2026-2027), pas « Saison 1 »');
+      assert.match(x.libelleSaison, /^\d{4}-\d{4}$/);
+      assert.equal(new Set(x.joueurs.map(j => j.id)).size, 15, 'quinze joueurs distincts');
+      assert.deepEqual(x.joueurs.map(j => j.numero), Array.from({ length: 15 }, (_, k) => k + 1));
+      x.joueurs.forEach((j, k) => assert.equal(groupeDe(j.poste), GROUPES[k], 'poste du maillot ' + (k + 1)));
+      for (const j of x.joueurs) { assert.ok(j.noteMatch >= 1 && j.noteMatch <= 10); assert.ok(j.club && j.club.presentation, 'club avec présentation'); assert.ok(j.selections >= 1); }
+      assert.equal(x.joueurs.filter(j => j.etoile).length, 1, 'un joueur de la journée');
+      assert.ok(x.entraineur === null || x.entraineur.marge >= 1);
+      if (l.manager) assert.ok(x.numero >= precedent, 'journée suivante'), precedent = x.numero;
+    }
+    const mine = eq.ligues[0];
+    if (!eq.ligues.some(l => l.manager)) continue; // calendrier mondial : d'autres championnats commencent plus tôt
+    assert.equal(mine.manager, true, 'le championnat du manager passe en premier');
+    assert.equal(mine.id, 'elite');
+    assert.ok((model.messages || []).some(t => String(t).startsWith('XV de la ') && String(t).includes(' journée · ' + mine.nom)), 'actualité publiée à chaque journée, club du manager présent ou non');
+  }
+  const suivis = vus.at(-1).clubLife.matchNotes.equipeType.ligues.map(l => l.id);
+  assert.ok(['elite', 'accession'].every(id => suivis.includes(id)) && suivis.length >= 3, 'chaque championnat du monde suivi : ' + suivis);
+  assert.equal(obs.xv.version, 2);
+  // Meilleur de chaque poste : personne de mieux noté au même poste n'a été écarté.
+  for (const e of obs.xv.equipes) { assert.equal(e.ids.length, 15); for (const id of e.ids) assert.ok(obs.xv.noms.has(id), 'joueur inconnu des effectifs : ' + id); }
+});
+
+
+// Packs d'identité : même mécanisme que l'effectif et la fiche club (logoPath, portraitPath par identifiant),
+// repli sur l'écusson et le portrait originaux du jeu. Aucune image réelle : pixel de test.
+test('Équipe-type : pack absent = identités du jeu ; pack installé = logos du pack (carrière Monde)', () => {
+  const media = require('../native/engine/media-packs.cjs'), crypto = require('node:crypto'), zlib = require('node:zlib');
+  const zip = items => { let offset = 0; const locals = [], centrals = []; for (const item of items) { const n = Buffer.from(item.name), data = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data || ''), crc = media.crc32(data), local = Buffer.alloc(30), central = Buffer.alloc(46); local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6); local.writeUInt32LE(crc, 14); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(n.length, 26); central.writeUInt32LE(0x02014b50); central.writeUInt16LE(0x314, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(0x800, 8); central.writeUInt32LE(crc, 16); central.writeUInt32LE(data.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(n.length, 28); central.writeUInt32LE((0x81a4 * 65536) >>> 0, 38); central.writeUInt32LE(offset, 42); locals.push(local, n, data); centrals.push(central, n); offset += local.length + n.length + data.length; } const cd = Buffer.concat(centrals), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(items.length, 8); end.writeUInt16LE(items.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16); return Buffer.concat([...locals, cd, end]); };
+  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
+  const { jeu, vus } = partage();
+  try {
+    const avant = vus.at(-1).clubLife.matchNotes.equipeType;
+    const joueursXV = l => [...l.journee.joueurs, ...(l.saison?.joueurs || [])];
+    for (const l of avant.ligues) for (const j of joueursXV(l)) {
+      assert.equal(j.club.presentation.logoPath, undefined, 'pack absent : pas de logo du pack');
+      assert.equal(j.portraitPath, undefined, 'pack absent : pas de portrait du pack');
+      assert.ok(Number.isInteger(j.portraitIndex), 'portrait original du jeu');
+    }
+    const ids = [...new Set(avant.ligues.flatMap(l => joueursXV(l).map(j => j.id)))];
+    const base = vus.at(-1).meta.champDatabase, clubsXV = [...new Set(avant.ligues.flatMap(l => joueursXV(l).map(j => j.club.id)))];
+    const manifest = { schema: 'cd-identity-pack-v1', id: 'essai-xv', name: 'Identités test', version: '1', databaseId: base.id, rightsStatus: 'test-local',
+      clubs: clubsXV.map(id => ({ id, logo: 'image' })), players: [], // identités de joueurs Monde : couvertes par les tests des packs Monde ; ici, les logos
+      assets: [{ id: 'image', path: 'médias/image.png', sha256: crypto.createHash('sha256').update(pixel).digest('hex'), bytes: pixel.length }] };
+    const fichier = path.join(os.tmpdir(), 'rl27-xv-pack-' + process.pid + '.zip');
+    fs.writeFileSync(fichier, zip([{ name: 'pack.json', data: JSON.stringify(manifest) }, { name: 'médias/image.png', data: pixel }]));
+    try {
+      const apercu = jeu.call('pack_inspect', { path: fichier, mode: 'world-champ' }).packs.preview;
+      jeu.call('pack_install', { path: fichier, digest: apercu.digest });
+      const model = jeu.call('pack_select', { id: apercu.id, scope: 'career', mode: 'world-champ' });
+      const apres = model.clubLife.matchNotes.equipeType;
+      let couverts = 0;
+      for (const l of apres.ligues) for (const j of joueursXV(l)) {
+        couverts++;
+        assert.ok(String(j.club.presentation.logoPath || '').endsWith('.png'), 'pack : logo du club par identifiant');
+      }
+      assert.ok(couverts >= 15, 'au moins un XV complet couvert par le pack : ' + couverts);
+      const retour = jeu.call('pack_select', { id: 'base', scope: 'career', mode: 'world-champ' });
+      assert.equal(retour.clubLife.matchNotes.equipeType.ligues[0].journee.joueurs[0].club.presentation.logoPath, undefined, 'retour au jeu de base : écusson original');
+    } finally { fs.rmSync(fichier, { force: true }); }
+  } finally { fs.rmSync(path.join(os.tmpdir(), 'rl27-xv-pack-' + process.pid + '.zip'), { force: true }); }
+});
+
+test('Sauvegarde (Monde) : aller-retour, migration d’une ancienne sauvegarde sans notes, validation', () => {
+  const { jeu, obs } = partage();
+  try {
+    // Sauvegarde de la carrière partagée à l'issue de la journée 1 (même point de départ qu'avant : un match joué).
+    const texte = obs.texteJ1;
+    const doc = JSON.parse(texte);
+    assert.equal(doc.state.matchNotes.version, 2);
+    jeu.call('import', { text: texte });
+    assert.deepEqual(jeu.etat().matchNotes, doc.state.matchNotes, 'aller-retour exact');
+    // Ancienne sauvegarde : pas de notes, historique vide puis rempli au match suivant.
+    const sansNotes = jeu.call('import', { text: signe(doc, state => { delete state.matchNotes; }) });
+    assert.deepEqual(sansNotes.clubLife.matchNotes.joueurs, {}, 'ancienne sauvegarde : historique vide');
+    assert.equal(jeu.etat().matchNotes, undefined, 'rien n’est inventé pour le passé');
+    // Monde : plus de 2 000 joueurs notés (limite générique des tables de la sauvegarde) acceptés
+    // jusqu'au nombre de joueurs du monde, refusés au-delà.
+    const plus = (n, base) => signe(doc, state => { for (let k = 0; k < n; k++) state.matchNotes.joueurs['x' + base + k] = { s: [1, 65, 80, 0, 0, 0, 0], f: [65] }; });
+    assert.equal(jeu.brut('import', { text: plus(2100, 'a') }).ok, true, 'plus de 2 000 joueurs notés : accepté');
+    const trop = jeu.brut('import', { text: plus(40000, 'b') });
+    assert.equal(trop.ok, false, 'table démesurée refusée');
+    // Un état corrompu est refusé.
+    const id = Object.keys(doc.state.matchNotes.joueurs)[0];
+    const casse = jeu.brut('import', { text: signe(doc, state => { state.matchNotes.joueurs[id].f = [999]; }) });
+    assert.equal(casse.ok, false, 'note hors échelle refusée');
+    assert.match(casse.error, /Notes de match/);
+  } finally { fermerPartage(); }
+});
+
+// Harnais VM (tests/monde-harness.cjs) : carrière Monde créée par le vrai worker, semaines jouées par finishRound()
+// du moteur (journée complète, match du club compris) sans projection ni écriture disque. `notes: false` retire
+// le domaine des notes ; les effets sont coupés dans tous les cas (ils orientent légitimement les choix des
+// entraîneurs IA). Même graine, même club (élite française) : même départ.
+const { context } = require('./monde-harness.cjs');
+const SEMAINES = 8;
+function harnais(notes) {
+  return context(4242, { club: 0, bridge: { dailyCalendar: false, mandatoryPress: false, internationalCareer: false, notesEffets: false, ...(notes ? {} : { notes: false }) } });
+}
+function releveVm(h) {
+  return JSON.parse(h.run(`JSON.stringify({ resultats: S.history.map(r => [r.fixtureId ?? null, r.score, r.pair, r.competitionId ?? null]),
+    notes: S.matchNotes ? Object.values(S.matchNotes.joueurs) : null, equipes: S.matchNotes ? S.matchNotes.equipes : null })`));
+}
+
+test('Matchs simulés (Monde) : mêmes résultats et même tirage avec et sans le journal des notes', () => {
+  // Référence : domaine des notes absent (option notes:false) ; effets coupés dans les deux cas.
+  const lire = notes => { const h = harnais(notes); try { h.week(SEMAINES); return { ...releveVm(h), seed: h.seed() }; } finally { h.close(); } };
+  const sans = lire(false), avec = lire(true);
+  assert.ok(sans.resultats.length >= 100, 'matchs de toute la journée simulés : ' + sans.resultats.length);
+  assert.deepEqual(avec.resultats, sans.resultats, 'scores identiques');
+  assert.equal(avec.seed, sans.seed, 'curseur du générateur identique');
+  assert.equal(sans.notes, null, 'référence sans domaine des notes (ni club, ni sélections)');
+  assert.ok(avec.notes.length >= 2 * 15 * 7, 'chaque joueur ayant joué a sa note : ' + avec.notes.length);
+  assert.ok(avec.notes.every(j => j.s[0] >= 1 && j.f.length >= 1 && j.f.every(x => x >= 10 && x <= 100)));
+});
+
+test('Équipe-type : déterministe (même graine, même équipe)', () => {
+  // Même carrière rejouée depuis son point de reprise (état et curseur du générateur) : mêmes équipes.
+  const h = harnais(true);
+  try {
+    const depart = h.checkpoint();
+    h.week(SEMAINES);
+    const a = releveVm(h).equipes;
+    h.restore(depart);
+    h.week(SEMAINES);
+    assert.deepEqual(releveVm(h).equipes, a);
+    assert.ok(Object.keys(a).length >= 1, 'équipes publiées');
+  } finally { h.close(); }
 });
