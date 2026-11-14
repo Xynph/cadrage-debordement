@@ -3,6 +3,7 @@ extends SceneTree
 ## vedette, entraîneur, liseré du manager, bascule journée / saison, entrées depuis Compétitions et
 ## l'actualité, écusson du jeu (sans pack) ou logo du pack (CD_EQUIPE_PACK=1). Captures 1920×1080.
 const EquipeType = preload("res://ui/equipe_type_view.gd")
+const SCENE_LARGEUR := 1920.0
 var app: Control
 var sortie := OS.get_environment("CD_EQUIPE_OUTPUT")
 var avec_pack := OS.get_environment("CD_EQUIPE_PACK") == "1"
@@ -51,6 +52,10 @@ func verifier_equipe(vue: Control, mode: String) -> void:
 	for c: Node in cartes: noms[c.name] = true
 	for n in range(1, 16): verifier(noms.has("EquipeTypeCarte%d" % n), "%s : maillot %d" % [mode, n])
 	verifier(vue.find_child("EquipeTypeVedette", true, false) != null, mode + " : joueur mis en avant")
+	# Les noms de championnats longs (Japan Rugby League One · Division 1) restent dans la colonne de droite.
+	for b: Node in vue.find_children("EquipeTypeLigue_*", "", true, false):
+		var bouton := b as Button
+		verifier(bouton.size.x <= 404.5 and bouton.position.x + bouton.size.x <= SCENE_LARGEUR + 0.5, "%s : bouton de championnat dans la colonne (%s : %d px)" % [mode, bouton.name, bouton.size.x])
 	verifier(vue.find_children("Note", "", true, false).size() >= 15, mode + " : pastilles de note")
 	var titre: Label = vue.find_child("EquipeTypeTitre", true, false)
 	verifier(titre != null and (titre.text.begins_with("XV DE LA") ), mode + " : en-tête « %s »" % (titre.text if titre else ""))
