@@ -23,12 +23,15 @@ const PENALITES_INCIDENTS={scrum:{id:'scrum',label:'faute en mêlée',weight:0,s
 function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
 // Culture du championnat sur pénalité (consigne automatique seulement) : part des tirs au but changés en
 // pénaltouche. Réel 2024-25 : les pénalités font ~25 % des points en Top 14 et en PRO D2, ~13-15 % en
-// Premiership, URC, Super Rugby, Championship et au Japon, où l'on joue la touche.
+// Premiership, URC, Super Rugby, Championship et au Japon, où l'on joue la touche. Temps réglementaire seulement
+// (en prolongation, on prend les points).
 const TOUCHE_CHAMPIONNATS={urc:.4,prem:.45,srp:.45,champ:.4,'jlo-d1':.4,'jlo-d2':.4,champions:.15,challenge:.25};
-function pretereTouche(l,side){return penalitesRules(l)&&(l.penaltyPolicies?.[side]||'auto')==='auto'&&Math.random()<(TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0)}
+function pretereTouche(l,side){return penalitesRules(l)&&l.minute<80&&(l.penaltyPolicies?.[side]||'auto')==='auto'&&Math.random()<(TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0)}
 // Pénalité de mêlée ou de touche, tirée avant la conquête : rend vrai si la phase s'arrête sur une pénalité.
 function penaliteConquete(l,side,kind,a,b){
- if(!penalitesRules(l))return false;
+ // Pas de pénalité de conquête à la minute d'un coup d'envoi : une pénalité réussie dans la même minute fermerait
+ // une prolongation à mort subite sans durée (play-offs du Japon, finales Monde).
+ if(!penalitesRules(l)||l.restartLog?.some(r=>r.kind==='kickoff'&&r.minute===l.minute))return false;
  const melee=kind==='scrum';
  if(Math.random()>=(melee?PENALITES.melee:PENALITES.touche))return false;
  const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant,.2,.9):.65;

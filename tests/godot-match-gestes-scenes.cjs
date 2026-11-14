@@ -27,8 +27,8 @@ function sequence() {
           win.scene.kind === 'setpiece-win' && win.event.scene.move === 'maul' &&
           win.event.scene.team === score.event.scene.team && frames[n - 4].scene.kind === 'lineout' &&
           // Préambule de jeu ordinaire, sans coup de sifflet (pénalités réalistes du 14/11 : une pénaltouche
-          // précède souvent la touche ; le test Godot attend une seule touche et deux coupes, sur la touche et le renvoi).
-          !frames.slice(Math.max(0, n - 7), n - 4).some(f => ['penalty', 'advantage', 'card', 'lineout'].includes(f.scene.kind))) {
+          // précède souvent la touche ; le test Godot attend une seule touche, deux coupes, sur la touche et le renvoi, et les mêmes joueurs d'une scène à l'autre : ni remplacement ni consigne).
+          !frames.slice(Math.max(0, n - 7), n - 4).some(f => ['penalty', 'advantage', 'card', 'lineout', 'sub', 'tactic'].includes(f.scene.kind))) {
         // Deux scènes de jeu avant, alignement, touche conservée en ballon porté, essai, scène suivante.
         return { club, frames: frames.slice(Math.max(0, n - 7)).map(frame => ({
           scene: frame.scene, teams: frame.teams,
