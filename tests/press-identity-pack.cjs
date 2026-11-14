@@ -16,7 +16,7 @@ function archive(manifest){
 
 // 1. Catalogue de base : identifiants stables des journalistes et des rédactions.
 const bank=pressIds.defaultCatalogue();
-assert.equal(bank.journalists.size,72);assert.equal(bank.outlets.size,32);
+assert.equal(bank.journalists.size,78);assert.equal(bank.outlets.size,35);
 for(let i=0;i<10;i++)assert.ok(bank.journalists.has('presse-'+i),'presse-'+i+' stable');
 for(let i=0;i<10;i++)assert.ok(bank.outlets.has('redaction-'+i),'redaction-'+i+' stable');
 const renamed=[...Array(10).keys()].map(i=>'presse-'+i),renamedOutlets=[...new Set(renamed.map(id=>bank.journalists.get(id).outletId))].sort();

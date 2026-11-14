@@ -1,7 +1,8 @@
 'use strict';
 // Presse locale du mode Monde : chaque club est suivi par les journalistes et les
 // rédactions de son pays. La presse française reste exactement celle d'avant pour
-// les clubs français ; les autres championnats ont leurs propres rédactions.
+// les clubs français de l'Élite (hors presse européenne) ; les autres championnats ont leurs propres
+// rédactions, la Nationale la sienne en plus, et les coupes d'Europe une presse commune.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),vm=require('node:vm');
 const bank=require('../dist/press-question-bank.js'),pressIds=require('../native/engine/press-identities.cjs'),staff=require('../native/engine/staff.cjs');
 const {createBridge}=require('../native/engine/worker.cjs'),privees=require('../scripts/sources-privees.cjs');
@@ -13,22 +14,32 @@ const fold=t=>String(t).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().r
 (function catalogue(){
  assert.equal(bank.validate(),true);
  const regions=Object.keys(bank.regions);
- assert.deepEqual(regions,['fr','en','ie','sco','wal','it','za','ge','nz','au','pac','jp']);
+ assert.deepEqual(regions,['eu','fr','en','ie','sco','wal','it','za','ge','nz','au','pac','jp']);
+ const countries=regions.filter(r=>r!=='eu');
  // Identifiants stables, compris par la rubrique `press` des packs.
  const cat=pressIds.defaultCatalogue();
  assert.equal(cat.journalists.size,bank.journalists.length);
- for(let i=10;i<=51;i++)assert.ok(cat.journalists.has('presse-'+i),'presse-'+i);
- for(let i=10;i<=31;i++)assert.ok(cat.outlets.has('redaction-'+i),'redaction-'+i);
+ for(let i=10;i<=57;i++)assert.ok(cat.journalists.has('presse-'+i),'presse-'+i);
+ for(let i=10;i<=34;i++)assert.ok(cat.outlets.has('redaction-'+i),'redaction-'+i);
  // Les 30 journalistes français et leurs 10 rédactions, dans le même ordre qu'avant.
  assert.deepEqual(bank.journalistsFor('fr').map(j=>j.id),[...Array(10).keys()].map(i=>'presse-'+i).concat([...Array(20).keys()].map(i=>'fiction-'+i)));
- for(const region of regions){
+ for(const region of countries){
   const list=bank.journalistsFor(region),outlets=new Set(list.map(j=>j.outletId));
-  assert.ok(list.length>=3&&outlets.size>=2,region+' : au moins trois journalistes et deux rédactions');
+  assert.ok(list.length>=3&&outlets.size>=2&&list.length<=bank.journalistsFor(region+':x').length,region+' : au moins trois journalistes et deux rédactions');
   assert.equal(new Set(list.flatMap(j=>j.specialties)).size,25,region+' : tous les thèmes de conférence couverts');
-  assert.ok(list.every(j=>j.region===region&&j.fictional===true&&j.source===undefined));
-  for(const other of regions)if(other!==region)assert.ok(bank.journalistsFor(other).every(j=>!outlets.has(j.outletId)),region+' : rédaction propre');
+  assert.ok(list.every(j=>j.region===region&&!j.leagues&&j.fictional===true&&j.source===undefined));
+  for(const other of countries)if(other!==region)assert.ok(bank.journalistsFor(other).every(j=>!outlets.has(j.outletId)),region+' : rédaction propre');
  }
  assert.equal(bank.journalistsFor('inconnue'),bank.journalistsFor('fr'),'région inconnue : presse française');
+ assert.equal(bank.journalistsFor('eu'),bank.journalistsFor('fr'),'la presse européenne ne remplace aucun pays');
+ // Championnats : la Nationale a sa rédaction en plus de la presse française ; les championnats
+ // qualificatifs pour les coupes d'Europe reçoivent aussi la presse européenne (rotation).
+ const extra=(key,base)=>bank.journalistsFor(key).filter(j=>!bank.journalistsFor(base).includes(j));
+ const euro=bank.journalists.filter(j=>j.region==='eu');assert.equal(euro.length,3);assert.equal(new Set(euro.map(j=>j.outletId)).size,2);
+ for(const [key,base] of [['fr:elite','fr'],['en:prem','en'],['ie:urc','ie'],['sco:urc','sco'],['wal:urc','wal'],['it:urc','it'],['za:urc','za'],['ge:guest','ge']])assert.deepEqual(extra(key,base),euro,key+' : presse européenne');
+ assert.deepEqual(extra('fr:nationale','fr').map(j=>j.id),['presse-52','presse-53','presse-54'],'Nationale : rédaction propre');
+ for(const key of ['fr:accession','en:champ','nz:srp','au:srp','pac:srp','jp:jlo-d1','jp:jlo-d2'])assert.deepEqual(extra(key,key.split(':')[0]),[],key);
+ assert.equal(bank.journalistsFor('fr:elite').slice(0,30).map(j=>j.id).join(),bank.journalistsFor('fr').map(j=>j.id).join(),'presse française en tête, dans le même ordre');
  // Le remplacement d'affichage se fait par nom : aucun nom de presse n'est celui d'un club,
  // d'un joueur ou d'un membre du staff de l'édition Monde, ni d'une autre entrée de presse.
  const taken=new Set([...champ.clubs.map(c=>c.name),...champ.clubs.flatMap(c=>c.players.map(p=>p.name)),...staff.forDatabase(champ.id).registry.clubs.flatMap(c=>c.members.map(p=>p.name))]);
@@ -61,22 +72,23 @@ const fold=t=>String(t).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().r
  const ctx=vm.createContext({CDNativeHeadless:true,console});
  ctx.CDWorldCareer={active:()=>true,edition:()=>({registry:{clubs:champ.clubs}})};
  for(const f of ['press-question-bank.js','media-world-v60.js','rugby-broadcast.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../dist',f),'utf8'),ctx);
- const local=new Map(Object.keys(bank.regions).map(r=>[r,new Set(bank.journalistsFor(r).map(j=>j.name))]));
+ const local=key=>new Set(bank.journalistsFor(key).map(j=>j.name));
  let seen=0;
  for(let week=0;week<12;week++){
   const s={season:1,round:week,club:44,morale:60,clubs:champ.clubs.map(c=>({id:c.id,name:c.name}))};
-  for(const a of ctx.CDMediaWorld.headlines(s)){assert.ok(local.get(bank.regionOf(champ.clubs[a.clubId])).has(a.byline.name),a.title);seen++;}
-  for(const g of ctx.CDRugbyBroadcast.generate(s).segments)assert.ok(local.get('sco').has(g.journalist.name),'magazine : presse du club');
+  for(const a of ctx.CDMediaWorld.headlines(s)){assert.ok(local(bank.pressKeyOf(champ.clubs[a.clubId])).has(a.byline.name),a.title);seen++;}
+  for(const g of ctx.CDRugbyBroadcast.generate(s).segments)assert.ok(local('sco:urc').has(g.journalist.name),'magazine : presse du club');
  }
  assert.ok(seen>=80);
 })();
 
+const nationale=champ.clubs.find(c=>c.leagueId==='nationale').id;
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-presse-locale-'));
 let b,seq=0;
 const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 try{
  // Club français, anglais, écossais, irlandais (Ulster), japonais, fidjien.
- for(const [club,region] of [[3,'fr'],[30,'en'],[44,'sco'],[42,'ie'],[68,'jp'],[62,'pac'],[58,'nz'],[52,'za']]){
+ for(const [club,region] of [[3,'fr:elite'],[30,'en:prem'],[44,'sco:urc'],[42,'ie:urc'],[68,'jp:jlo-d1'],[62,'pac:srp'],[58,'nz:srp'],[52,'za:urc'],[nationale,'fr:nationale'],[102,'en:champ']]){
   b?.close();b=createBridge({dataDir:fs.mkdtempSync(path.join(root,'c')),seed:4242,now:1700000000000});
   const m=good('new_career',{mode:'world-champ',club}),press=m.clubLife.press,ids=new Set(bank.journalistsFor(region).map(j=>j.id));
   assert.equal(press.conference.available,true,club+' : conférence disponible');
@@ -88,8 +100,8 @@ try{
  b.close();b=createBridge({dataDir:fs.mkdtempSync(path.join(root,'c')),seed:4242,now:1700000000000});
  let m=good('new_career',{mode:'world-champ',club:44});
  m=good('press_conference',{context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r1'}))});
- const met=m.clubLife.press.people.filter(p=>p.encounters>0);assert.ok(met.length>=2&&met.every(p=>p.region==='sco'));
- assert.ok(m.clubLife.press.history.every(h=>bank.journalistsFor('sco').some(j=>j.id===h.journalist.id&&j.name===h.journalist.name&&j.outlet===h.journalist.outlet)));
+ const met=m.clubLife.press.people.filter(p=>p.encounters>0);assert.ok(met.length>=2&&met.every(p=>['sco','eu'].includes(p.region)));
+ assert.ok(m.clubLife.press.history.every(h=>bank.journalistsFor('sco:urc').some(j=>j.id===h.journalist.id&&j.name===h.journalist.name&&j.outlet===h.journalist.outlet)));
  // Un coach qui a rencontré toute la presse du Monde garde une sauvegarde valide.
  const doc=JSON.parse(good('export').meta.exportText),s=doc.state;
  for(const j of bank.journalists)if(!s.pressPeople.contacts[j.id])s.pressPeople.contacts[j.id]={score:1,encounters:1,memory:[{season:1,week:0,club:44,questionId:'phase_finale-4-0',answerId:'r4',delta:1}]};
@@ -98,5 +110,5 @@ try{
  assert.equal(Object.keys(JSON.parse(good('export').meta.exportText).state.pressPeople.contacts).length,bank.journalists.length);
  // L'annuaire montre la presse locale et les journalistes déjà rencontrés ailleurs.
  assert.equal(m.clubLife.press.people.length,bank.journalists.length);
- console.log('Presse locale Monde : '+bank.journalists.length+' journalistes, '+Object.keys(bank.regions).length+' pays, conférences, chroniques, magazine, annuaire et mémoire PASS.');
+ console.log('Presse locale Monde : '+bank.journalists.length+' journalistes, '+Object.keys(bank.regions).length+' presses, conférences, chroniques, magazine, annuaire et mémoire PASS.');
 }finally{b?.close();fs.rmSync(root,{recursive:true,force:true});}
