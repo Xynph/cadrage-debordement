@@ -198,6 +198,7 @@
     "source": "mesure GitHub : run 43262510105 (main fd939df6, 12 novembre 2026), durées des suites +15 % ; suites en échec ou interrompues estimées",
     "runs": [],
     "weights": {
+      "tests/godot-finitions.cjs": 300,
       "tests/godot-fiche-club.cjs": 420,
       "tests/animation-pipeline-runner.cjs": 9,
       "tests/godot-atomic-file.cjs": 13,
