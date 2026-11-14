@@ -1,0 +1,117 @@
+name: Mac — conserver les ZIP déjà reçus
+on:
+  push:
+    branches: [codex/macos-preserve-20261114]
+    paths: [.github/workflows/preserve-macos.yml]
+permissions: {}
+concurrency:
+  group: preserve-macos-00be80830ef5
+  cancel-in-progress: false
+jobs:
+  preserve:
+    if: github.repository == 'Xynph/cadrage-debordement' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      # No checkout, no PR event, no build, no arbitrary source/input. This
+      # one-off job preserves the exact public builds requested on 14/11.
+      - name: Vérifier puis conserver les deux builds et les preuves en brouillon
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, shutil, subprocess, tempfile, zipfile
+          from pathlib import Path
+          repo = 'Xynph/cadrage-debordement'
+          source = '00be80830ef52850e5f35c5704bebf558e1fb162'
+          run_id = 43454734436
+          tag = 'macos-tested-00be80830ef5'
+          pins = {
+              'arm64': (14054405465, '5b8944d953774051500673efbabcfaf73fd3d80434ad7226766dabb3efa52c04'),
+              'x64': (14053359223, 'ea5a39c8b942959a5e2337b242da3b4760cb77e68b7a71241bef6290a7725398'),
+          }
+          def gh(*args):
+              return subprocess.check_output(['gh', *map(str,args)], text=True)
+          def api(path):
+              return json.loads(gh('api', f'repos/{repo}/{path}'))
+          def sha(path):
+              with path.open('rb') as file:
+                  return hashlib.file_digest(file, 'sha256').hexdigest()
+          received = api(f'actions/runs/{run_id}')
+          assert received['head_sha'] == source and received['conclusion'] == 'success'
+          assert received['status'] == 'completed'
+          with tempfile.TemporaryDirectory(dir=os.environ['RUNNER_TEMP']) as temporary:
+              root = Path(temporary)
+              assets = []
+              for arch, (artifact_id, expected_digest) in pins.items():
+                  info = api(f'actions/artifacts/{artifact_id}')
+                  assert not info['expired'] and info['workflow_run']['id'] == run_id
+                  assert info['workflow_run']['head_sha'] == source
+                  assert info['digest'] == 'sha256:' + expected_digest
+                  outer = root / (arch + '-artifact.zip')
+                  with outer.open('wb') as file:
+                      subprocess.run(['gh','api',f'repos/{repo}/actions/artifacts/{artifact_id}/zip'], stdout=file, check=True)
+                  assert sha(outer) == expected_digest
+                  extracted = root / arch
+                  extracted.mkdir()
+                  with zipfile.ZipFile(outer) as archive:
+                      for entry in archive.namelist():
+                          assert (extracted / entry).resolve().is_relative_to(extracted)
+                      archive.extractall(extracted)
+                  meta = json.loads((extracted / 'build.json').read_text())
+                  receipt = json.loads((extracted / 'receipt/receipt.json').read_text())
+                  assert meta['sourceCommit'] == source and meta['architecture'] == arch
+                  assert receipt['sourceCommit'] == source and receipt['fictional'] is True and receipt['passed'] is True
+                  assert len(receipt['reports']) == 2 and all(r['passed'] and r['platform']=='macOS' for r in receipt['reports'])
+                  assert sum(r['checks'] for r in receipt['reports']) == 65
+                  package = extracted / f'OvalLegacy27-macOS-{arch}.zip'
+                  assert meta['package'] == package.name and sha(package) == meta['sha256'] == receipt['packageSha256']
+                  with zipfile.ZipFile(package) as archive:
+                      for name, expected in meta['files'].items():
+                          assert hashlib.sha256(archive.read('Oval Legacy 27.app/' + name)).hexdigest() == expected
+                  manifest = root / f'build-{arch}.json'
+                  shutil.copyfile(extracted / 'build.json', manifest)
+                  evidence = root / f'Preuves-macOS-{arch}.zip'
+                  with zipfile.ZipFile(evidence, 'w', zipfile.ZIP_DEFLATED) as archive:
+                      for path in sorted(extracted.rglob('*')):
+                          if path.is_file() and path != package:
+                              archive.write(path, path.relative_to(extracted))
+                  assets.extend([package, manifest, evidence])
+                  print(f'{arch}: verified exact package {meta["sha256"]}; 65 native checks')
+              checksums = root / 'SHA256SUMS.txt'
+              checksums.write_text(''.join(f'{sha(p)}  {p.name}\n' for p in assets))
+              assets.append(checksums)
+              notes = root / 'notes.txt'
+              notes.write_text(
+                  'Préalpha Mac conservée à la demande de Léo le 14 novembre 2026.\n\n'
+                  'Les ZIP du jeu sont exactement ceux testés sur GitHub macOS hébergé, sans reconstruction : '
+                  '65 contrôles Apple Silicon et 65 Intel (démarrage graphique, presse fictive, sauvegarde et reprise).\n'
+                  f'Code applicatif : {source}\n'
+                  f'Preuves CI : https://github.com/{repo}/actions/runs/{run_id}\n'
+                  f'PR : https://github.com/{repo}/pull/670\n\n'
+                  'Choisir OvalLegacy27-macOS-arm64.zip pour Apple Silicon ou OvalLegacy27-macOS-x64.zip pour Intel. '
+                  'Décompresser le ZIP du jeu puis ouvrir Oval Legacy 27.app. Aucun Node/Godot à installer.\n'
+                  'Signature ad hoc, sans notarisation Apple. Si macOS bloque l’ouverture, vérifier la provenance '
+                  'puis utiliser son autorisation d’ouverture dans les réglages de sécurité ; ne pas désactiver Gatekeeper.\n'
+                  'Rugby Réel reste dans son dépôt privé. Le test de son ZIP exact sera fait par Léo sur son Mac ; '
+                  'aucune CI privée ni aucun runner PC lancés pour cette passation.\n'
+              )
+              existing = subprocess.run(['gh','release','view',tag,'--repo',repo,'--json','isDraft'], capture_output=True, text=True)
+              if existing.returncode == 0:
+                  assert json.loads(existing.stdout)['isDraft'] is True
+              else:
+                  subprocess.run(['gh','release','create',tag,'--repo',repo,'--draft','--target',source,
+                      '--title','Oval Legacy 27 — Mac Apple Silicon et Intel (builds testés)', '--notes-file',str(notes)], check=True)
+              subprocess.run(['gh','release','upload',tag,'--repo',repo,'--clobber',*map(str,assets)], check=True)
+              stored = json.loads(gh('release','view',tag,'--repo',repo,'--json','url,isDraft,assets'))
+              assert stored['isDraft'] is True
+              sizes = {a['name']:a['size'] for a in stored['assets']}
+              assert all(sizes[p.name] == p.stat().st_size for p in assets)
+              print(stored['url'])
+              with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as summary:
+                  summary.write('Builds exacts conservés sans expiration des artefacts Actions : ' + stored['url'] + '\n')
+                  summary.write('130 contrôles Mac, signatures ad hoc, aucune publication finale ni donnée Rugby Réel.\n')
+          PY
