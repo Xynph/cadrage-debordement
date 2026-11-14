@@ -1,5 +1,7 @@
 'use strict';
 process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
+// Depuis le barème senior V2 (14/11/2026), les nouvelles carrières mondiales sont au barème 2 : les notes
+// réalistes par joueur, club et championnat sont vérifiées par tests/world-rating-scale.cjs (mode Monde).
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -73,8 +75,8 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
     assert.equal(opener.attributes.goal, oldOpener.skills.goal);
     assert.ok(opener.attributes.pass > oldOpener.skills.pass);
     assert.ok(opener.attributes.kick > oldOpener.skills.kick);
-    assert.equal(created.seniorCalibrationVersion, 1);
-    assert.equal(baseline.seniorCalibrationVersion, 1);
+    assert.equal(created.seniorCalibrationVersion, 2);
+    assert.equal(baseline.seniorCalibrationVersion, 2);
 
     for (const player of players(created)) {
       const old = oldPlayers.get(player.id);
@@ -113,7 +115,7 @@ test('Les références seniors gardent le même barème dans toutes leurs éditi
         assert.equal(opener.note, 91, mode);
         assert.equal(opener.attributes.goal, 84.4, mode);
         assert.equal(created.lineup[9], opener.id, mode);
-        assert.equal(created.seniorCalibrationVersion, 1, mode);
+        assert.equal(created.seniorCalibrationVersion, mode === 'common' ? 1 : 2, mode);
         const roster = new Map(players(created).map(player => [player.id, player]));
         const centre = roster.get('world:srp:p-724f734b6caa9dbb76061ef4');
         const scrumHalf = roster.get('world:urc:193699');

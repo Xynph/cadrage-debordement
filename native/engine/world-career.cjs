@@ -300,7 +300,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function previewRoster(id){
   const players=initialRoster(REG.clubs[id]);
   players.push(...nativeProfessionalDepth.additions(id,players,1));
-  if(seniorCalibration)seniorCalibration.apply(players,SOURCES);
+  if(seniorCalibration)seniorCalibration.apply(players,SOURCES,{clubId:id,leagueId:REG.clubs[id].leagueId,registry:REG});
   return players;
  }
  function start(id,dailyCalendar=false){
@@ -322,8 +322,10 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   S.aiRoster.academyAgingVersion=1;
   setupDevelopment();
   if(seniorCalibration){
-   for(const club of S.clubs)seniorCalibration.apply(club.players,SOURCES);
-   S.seniorCalibrationVersion=seniorCalibration.version;
+   // Barème V2 (nouvelles carrières) : niveau réel du joueur, de son club et de son championnat.
+   for(const club of S.clubs)seniorCalibration.apply(club.players,SOURCES,{clubId:club.id,leagueId:REG.clubs[club.id].leagueId,registry:REG});
+   seniorCalibration.settle?.(S.clubs.flatMap(club=>club.players));
+   S.seniorCalibrationVersion=seniorCalibration.worldVersion??seniorCalibration.version;
   }
   club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
  }
@@ -400,7 +402,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  }
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;
-  if(s.seniorCalibrationVersion!==undefined)check(s.seniorCalibrationVersion===seniorCalibration?.version,'barème senior inconnu.');
+  if(s.seniorCalibrationVersion!==undefined)check((seniorCalibration?.versions??[seniorCalibration?.version]).includes(s.seniorCalibrationVersion),'barème senior inconnu.');
   check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access']),...(w.day===undefined?[]:['day']),...(w.resultConfirmed===undefined?[]:['resultConfirmed']),...(w.calendarPolicy===undefined?[]:['calendarPolicy'])]),'métadonnées de compétition non reconnues.');
   check(w.calendarPolicy===undefined||lnrOpening(s)&&s.season===1&&w.day!==undefined,'politique de calendrier inconnue.');
   if(CH)check(eq(w.champ,champBoundary()),'frontières du Champ modifiées.');

@@ -80,18 +80,25 @@ func _composition() -> void:
 	var starters := {}
 	for assignment: Dictionary in slots:
 		if int(assignment.slot) < 15 and assignment.get("playerId") is String: starters[assignment.playerId] = true
+	# Poste où la doublure est la plus proche du titulaire (les notes suivent le niveau réel depuis le barème V2).
+	var notes := {}
+	for person: Dictionary in model.squad: notes[str(person.id)] = float(person.get("rating", 0))
+	var best_gap := -INF
 	for assignment: Dictionary in slots:
 		if int(assignment.slot) >= 15 or not assignment.get("playerId") is String: continue
 		for id: Variant in assignment.get("eligibleIds", []):
-			if not starters.has(str(id)): target = int(assignment.slot); candidate = str(id); break
-		if target >= 0: break
+			if starters.has(str(id)): continue
+			var gap: float = notes.get(str(id), 0.0) - notes.get(str(assignment.playerId), 0.0)
+			if gap > best_gap: best_gap = gap; target = int(assignment.slot); candidate = str(id)
 	_check(target >= 0, "Composition : un poste a un remplaçant éligible")
 	if target < 0: return
 	var tired := model.duplicate(true)
 	var out_id := ""
 	for assignment: Dictionary in tired.selection.slots:
 		if int(assignment.slot) == target: out_id = str(assignment.playerId)
+	# Seul le titulaire visé est fatigué : les autres conseils ne lui prennent pas sa place.
 	for person: Dictionary in tired.squad:
+		person.condition = 100.0
 		if str(person.id) == out_id: person.condition = 58.0
 		if str(person.id) == candidate: person.condition = 100.0; person.injury = 0; person.age = 27
 	var advice := Avis.composition(tired)
