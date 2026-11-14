@@ -466,7 +466,7 @@ func champ(compact: bool) -> void:
 	check(app.model.get("next")==null and first.date=="2026-09-19" and first.timezone=="Europe/London" and str(first.scheduleSource).begins_with("rfu-published"),"La préparation précède le vrai premier match publié")
 	var timeline := app.find_child("OfficeTimeline", true, false)
 	var dates := timeline.find_children("OfficeTimelineDate*","Label",true,false) if timeline!=null else []
-	check(dates.size()==7 and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
+	check(dates.size()==(5 if app.find_child("GabiBureau",true,false) != null else 7) and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
 	await capture(("73" if compact else "72")+"-champ-bureau-"+dimensions)
 	app._navigate("Rivalités" if compact else "Calendrier")
 	await settle()
@@ -710,7 +710,9 @@ func recent_office_results() -> void:
 	var timeline: Control = app.find_child("OfficeTimeline",true,false)
 	var upcoming_crests := timeline.find_children("OfficeOpponentCrest*","Control",true,false)
 	var next_opponent: Dictionary = fixtures[6].away if fixtures[6].home.id == app.model.club.id else fixtures[6].home
-	check(upcoming_crests.size()==7 and upcoming_crests[0].get_meta("opponent_id")==next_opponent.id,"Les sept prochaines rencontres affichent les blasons adverses")
+	# À côté de la zone de Gabi (14/11/2026), la frise montre les cinq prochaines rencontres (sept sans Gabi).
+	var shown := 5 if app.find_child("GabiBureau",true,false) != null else 7
+	check(upcoming_crests.size()==shown and upcoming_crests[0].get_meta("opponent_id")==next_opponent.id,"Les prochaines rencontres affichent les blasons adverses (%d)" % shown)
 	var markers := app.find_children("OfficeVenueIcon*","TextureRect",true,false)
 	var icons := markers.map(func(marker): return marker.texture)
 	check(icons.size() >= 3 and icons[0] != null and icons[1] != null and icons[2] != null
@@ -1071,8 +1073,9 @@ func footer_feedback() -> void:
 	await create_timer(.26).timeout
 	await settle()
 	var button: Button = app.find_child("DecisionFeedbackButton",true,false)
-	var dock: Control = app.find_child("CoachCompactDock",true,false)
-	check(dock!=null and dock.get_global_rect().size.x>=100,"Place physique pour Gabi en 720p")
+	# Gabi vit dans le bandeau du haut (14/11/2026) : plus de dock dans le pied de page.
+	var dock: Control = app.find_child("GabiBandeau",true,false)
+	check(dock!=null and dock.is_visible_in_tree() and dock.get_global_rect().size.x>=100,"Place physique pour Gabi dans le bandeau en 720p")
 	check(button!=null and not button.disabled and not dock.get_global_rect().intersects(button.get_global_rect()),"Le reçu et le coach ont des cibles distinctes en 720p")
 	if button!=null:
 		await click(button)
@@ -1237,10 +1240,17 @@ func run() -> void:
 		var city := app.find_child("OfficeCityPreview", true, false)
 		var stadium := app.find_child("OfficeStadiumPreview", true, false)
 		check(city != null and city.get_meta("photo_kind", "") == "generated" and stadium != null and stadium.get_meta("photo_kind", "") == "generated", "Le Bureau de base affiche les illustrations de ville et de stade")
-		reference_rects({"OfficeFixture":Rect2(280,220,1360,418), "OfficeDecisions":Rect2(1656,220,872,418),
-			"OfficeGroup":Rect2(280,654,422,448), "OfficeStandings":Rect2(718,654,684,448),
-			"OfficeJournal":Rect2(1418,654,548,448), "OfficeRecruitment":Rect2(1982,654,546,448),
-			"OfficeTimeline":Rect2(280,1118,2248,226)})
+		if app.coach.bureau_disponible():
+			# Gabi chez lui (14/11/2026) : sa colonne à droite, les blocs réagencés à sa gauche.
+			reference_rects({"OfficeFixture":Rect2(280,220,1060,418), "OfficeDecisions":Rect2(1356,220,716,418),
+				"OfficeGroup":Rect2(280,654,392,448), "OfficeStandings":Rect2(688,654,540,448),
+				"OfficeJournal":Rect2(1244,654,420,448), "OfficeRecruitment":Rect2(1680,654,392,448),
+				"OfficeTimeline":Rect2(280,1118,1792,226), "GabiBureau":Rect2(2088,220,440,1124)})
+		else:
+			reference_rects({"OfficeFixture":Rect2(280,220,1360,418), "OfficeDecisions":Rect2(1656,220,872,418),
+				"OfficeGroup":Rect2(280,654,422,448), "OfficeStandings":Rect2(718,654,684,448),
+				"OfficeJournal":Rect2(1418,654,548,448), "OfficeRecruitment":Rect2(1982,654,546,448),
+				"OfficeTimeline":Rect2(280,1118,2248,226)})
 		await capture("01-bureau-2560x1440")
 		app._navigate("Effectif")
 		shell.render(app)
