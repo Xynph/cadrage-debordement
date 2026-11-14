@@ -46,6 +46,19 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	motion.name = "PreferencesMotion"; motion.text = "Mouvement réduit · mode calme"; motion.custom_minimum_size.y = 36
 	comfort.add_child(motion)
 	comfort.add_child(C.wrap("Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles.",17,C.MUTED))
+	# Carrière Monde : championnats suivis en détail, modifiables pour la saison suivante (comme FM).
+	var leagues: Variant = app.model.get("clubLife", {}).get("leagueDetail", {})
+	if leagues is Dictionary and bool(leagues.get("available", false)):
+		comfort.add_child(C.label("VITESSE DU MONDE",20,C.GOLD,true,700))
+		var detailed := 0
+		for league: Dictionary in leagues.get("leagues", []):
+			if bool(league.get("detailed", true)): detailed += 1
+		comfort.add_child(C.wrap("%d championnat%s suivi%s en détail, les autres en résultats rapides." % [detailed, "s" if detailed > 1 else "", "s" if detailed > 1 else ""],17,C.MUTED))
+		var choose := G.button("Championnats simulés…", func():
+			dialog.queue_free()
+			preload("res://ui/league_detail_view.gd").open_career(app))
+		choose.name = "PreferencesLeagueDetail"
+		comfort.add_child(choose)
 	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null

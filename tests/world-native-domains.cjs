@@ -2,7 +2,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./monde-harness.cjs');
 // Carrière Monde (world-champ, 116 clubs) avec un club de Premiership (30) ; chaque cas repart du même point.
-const shared=context(827381,{club:30}),base=shared.checkpoint();
+const shared=context(827381,{club:30});
+// La carrière Monde débute au 13/07 (S.preseason, semaine 0) ; ces cas posent une horloge de fixture (semaine 35),
+// incompatible avec l'avant-saison : on ouvre d'abord le calendrier du moteur, comme toute avance le ferait.
+shared.run('CDPreseason.open(S);validateCareer(S)');
+const base=shared.checkpoint();
 require('node:test').after(()=>shared.close());
 function world(){return shared.restore(base);}
 test('Sauvegarde mondiale : les seuls face-à-face bénéficient de la borne de leur édition',()=>{

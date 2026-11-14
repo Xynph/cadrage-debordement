@@ -3,7 +3,7 @@
 // premier snapshot (lecture seule) doit déjà exposer le budget réaliste — plancher salarial
 // et préavis 52 semaines — sans attendre une commande mutante. Profil et export inchangés.
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-process.env.CD_SALAIRES_PAR_NIVEAU='1';
+delete process.env.CD_SALAIRES_PAR_NIVEAU; // budget réaliste : activé par défaut depuis le 13/11
 const {createBridge}=require('../native/engine/worker.cjs');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'salary-floor-resume-'));let id=0;
 function call(bridge,command,payload={}){const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;}

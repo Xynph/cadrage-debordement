@@ -28,36 +28,64 @@ static func _scheduled_reading(app: Control, parent: Node, fixture: Dictionary, 
 	_label_reading(app, parent, opponent, Office.club_reading_target(app, club), "OfficeScheduledOpponent", opponent.text)
 	_label_reading(app, parent, timing, Office.date_reading_target(app, fixture), "OfficeScheduledDate", timing.text)
 
+## Zone de Gabi au Bureau (option C, choix de Léo du 13/11/2026) : une colonne à droite, sur toute la hauteur
+## des blocs (du prochain match à la frise des matchs), où Gabi est debout sous son carnet de la semaine.
+## Les blocs du Bureau sont réagencés à sa gauche ; Gabi coupé : mise en page classique, pleine largeur.
+const PAGE_WIDTH := 2248
+const GABI_WIDTH := 440
+const GAP := 16
+const ROW2_CLASSIC := [422, 684, 548, 546]
+const ROW2_GABI := [392, 540, 420, 392]
+
 static func build(app: Control) -> Control:
 	var page := Control.new()
 	page.name = "ImmersiveOffice"
-	page.custom_minimum_size = Vector2(2248,1124)*C.density
+	page.custom_minimum_size = Vector2(PAGE_WIDTH,1124)*C.density
 	C.fill(page,true)
-	_fixture(_card(page,Rect2(280,220,1360,418),"","","OfficeFixture"),app)
-	_priorities(_card(page,Rect2(1656,220,872,418),"VOS TROIS PRIORITÉS","calendar","OfficeDecisions"),app)
-	_group(_card(page,Rect2(280,654,422,448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app)
-	_standings(_card(page,Rect2(718,654,684,448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app)
-	_journal(_card(page,Rect2(1418,654,548,448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app)
-	_recruitment(_card(page,Rect2(1982,654,546,448),"LE PROFIL À SUIVRE","search","OfficeRecruitment"),app)
+	var gabi: bool = is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
+	var main_w: int = PAGE_WIDTH - GABI_WIDTH - GAP if gabi else PAGE_WIDTH
+	var fixture_w := 1060 if gabi else 1360
+	_fixture(_card(page,Rect2(280,220,fixture_w,418),"","","OfficeFixture"),app,fixture_w)
+	var priorities_w := main_w - fixture_w - GAP
+	_priorities(_card(page,Rect2(280+fixture_w+GAP,220,priorities_w,418),"VOS TROIS PRIORITÉS","calendar","OfficeDecisions"),app,priorities_w)
+	var widths: Array = ROW2_GABI if gabi else ROW2_CLASSIC
+	var x := 280
+	_group(_card(page,Rect2(x,654,widths[0],448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app,widths[0])
+	x += widths[0] + GAP
+	_standings(_card(page,Rect2(x,654,widths[1],448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app,widths[1])
+	x += widths[1] + GAP
+	_journal(_card(page,Rect2(x,654,widths[2],448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app,widths[2])
+	x += widths[2] + GAP
+	_recruitment(_card(page,Rect2(x,654,widths[3],448),"LE PROFIL À SUIVRE","search","OfficeRecruitment"),app,widths[3])
 	var recent := Office.recent_results(app)
 	if recent != null:
 		page.add_child(recent)
 		page.custom_minimum_size.y += C.px(150)
-	_timeline(_card(page,Rect2(280,1118,2248,226),"PROCHAINS MATCHS","calendar","OfficeTimeline"),app,recent)
+	var timeline := _card(page,Rect2(280,1118,main_w,226),"PROCHAINS MATCHS","calendar","OfficeTimeline")
+	_timeline(timeline,app,recent,main_w)
+	if gabi:
+		var zone := D.panel(page,Rect2(main_w+GAP,0,GABI_WIDTH,1124),"","","","GabiBureau")
+		zone.add_theme_stylebox_override("panel",D.surface(GABI_WIDTH,1124,Color("13241f"),Color("0b1512"),Color(C.GOLD,.45)))
+		zone.clip_contents = true
+		# La zone de Gabi suit la hauteur de la frise (compacte ou dépliée selon la place).
+		var follow := func(): zone.size.y = timeline.position.y + timeline.size.y
+		page.resized.connect(follow)
+		follow.call()
+		app.coach.installer_bureau(zone)
 	return page
 
-static func _fixture(card: Panel, app: Control) -> void:
+static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:
 	card.clip_contents = true
 	var signature: Color = app.accent.lightened(.36)
-	card.add_theme_stylebox_override("panel", D.surface(1360,418,Color("192524").lerp(app.accent,.18),Color("0d1517"),signature))
+	card.add_theme_stylebox_override("panel", D.surface(w,418,Color("192524").lerp(app.accent,.18),Color("0d1517"),signature))
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var territory := Office.territory_art(app.model.club)
 	if territory != null:
 		card.add_child(territory)
-		D.place(territory,Rect2(694,1,665,416))
+		D.place(territory,Rect2(694,1,w-695,416))
 	else:
 		var ground := P.fixture_ground(app.model.meta,"office-hero")
-		D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
+		D.photo(card,ground,Rect2(694,1,w-695,416),.53 if ground != "office-hero" else 0.0)
 		C.veil(card).set_offsets_preset(Control.PRESET_FULL_RECT,Control.PRESET_MODE_KEEP_SIZE,C.px(1))
 	D.rect(card,Rect2(1,22,4,374),signature,0)
 	var match_info := Office.live_match(app.model)
@@ -130,7 +158,7 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var team: Dictionary = next.get(side,{})
 		if not team.has("rank") or not team.has("points"): continue
 		var rank := G.n(team.rank)
-		var standing := "%s%s · %s pts" % [rank,"er" if rank=="1" else "e",G.n(team.points)]
+		var standing := "%s%s · %s pts" % [rank,"er" if rank=="1" else "e",G.n(team.points)] if P.standings_open(team) else "Pas encore classé · %s pts" % G.n(team.points)
 		var tint := C.MINT if team.get("id")==app.model.club.id else C.MUTED
 		D.text(card,111,135 if side=="home" else 213,standing,20,tint,600,420)
 	var calendar := C.icon("calendar",25,C.GOLD)
@@ -152,7 +180,7 @@ static func _fixture(card: Panel, app: Control) -> void:
 	D.button(card,Rect2(27,348,320,51),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
 	D.button(card,Rect2(362,348,190,51),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
 	if P.fixture_location_kind(next, app.model.club.id) == "away":
-		var bag := Rect2(1076, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
+		var bag := Rect2(w - 284, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
 		D.scenario_photo(card, "travel-bag", bag)
 
 static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> void:
@@ -173,78 +201,81 @@ static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> 
 	var review := D.button(card,Rect2(401,348,232,51),"Revoir le match",func():app._navigate("Match"),false,"",false,app.accent,"OfficeMatchReviewAction")
 	review.visible = match_info.finished
 
-static func _priorities(card: Panel, app: Control) -> void:
+static func _priorities(card: Panel, app: Control, w: int = 872) -> void:
 	var tasks := Office.priorities(app.model)
-	if tasks.is_empty(): D.text(card,26,108,"Reprenez une carrière pour retrouver les décisions du club.",21,C.MUTED,400,816,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if tasks.is_empty(): D.text(card,26,108,"Reprenez une carrière pour retrouver les décisions du club.",21,C.MUTED,400,w-56,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for i in tasks.size():
 		var y := 66+i*102
 		var item: Dictionary = tasks[i]
 		var tint := Office.priority_color(item)
-		D.rect(card,Rect2(18,y+3,836,94),Color(tint,.035),4,Color(tint,.22)).name = "OfficePriority" + str(i+1)
+		D.rect(card,Rect2(18,y+3,w-36,94),Color(tint,.035),4,Color(tint,.22)).name = "OfficePriority" + str(i+1)
 		var icon := C.icon(item.icon,25,tint)
 		card.add_child(icon)
 		D.place(icon,Rect2(29,y+12,25,25))
-		var action := D.button(card,Rect2(62,y+2,785,39),str(i+1)+". "+str(item.title),Office.open_priority.bind(app,item),false,"arrow",false,app.accent,item.id)
+		var action := D.button(card,Rect2(62,y+2,w-87,39),str(i+1)+". "+str(item.title),Office.open_priority.bind(app,item),false,"arrow",false,app.accent,item.id)
 		action.set_meta("priority_number",i+1)
 		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,12))
 		action.tooltip_text = item.title + "\n" + Office.priority_description(item)
 		action.accessibility_name = action.tooltip_text.replace("\n"," · ")
-		D.text(card,78,y+58,item.deadline,17,tint,650,747).name = "OfficePriorityDeadline" + str(i+1)
-		var reason := D.text(card,78,y+82,item.detail,18,C.MUTED,400,746,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,78,y+58,item.deadline,17,tint,650,w-125).name = "OfficePriorityDeadline" + str(i+1)
+		var reason := D.text(card,78,y+82,item.detail,18,C.MUTED,400,w-126,HORIZONTAL_ALIGNMENT_LEFT,true)
 		reason.name = "OfficePriorityReason" + str(i+1)
 		reason.tooltip_text = item.detail
 	if not tasks.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false) and app.model.meta.get("phase","") != "ended":
 		D.button(card,Rect2(24,378,249,27),"Entraînement",func():app.Immersive.open_training(app),false,"arrow",true,app.accent,"OfficeTrainingAction")
-	D.button(card,Rect2(564,378,287,27),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
+	D.button(card,Rect2(w-308,378,287,27),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
 
-static func _group(card: Panel, app: Control) -> void:
+static func _group(card: Panel, app: Control, w: int = 422) -> void:
 	var group := P.group(app.model)
+	var right := w - 25
 	D.text(card,25,108,group.available,58,C.MINT,700,65)
 	D.text(card,96,98,"disponibles",23,C.IVORY,600,130)
-	D.text(card,310,105,group.injured,47,C.ALERT,700,40)
-	D.text(card,348,98,"blessés",22,C.IVORY,500,64)
-	D.line(card,Vector2(22,131),Vector2(400,131))
+	D.text(card,w-112,105,group.injured,47,C.ALERT,700,40)
+	D.text(card,w-74,98,"blessés",22,C.IVORY,500,64)
+	D.line(card,Vector2(22,131),Vector2(w-22,131))
 	D.text(card,24,167,"Condition physique",22,C.MUTED,500,260)
-	D.text(card,397,168,str(group.condition)+" %",28,C.MINT,600,90,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.bar(card,Rect2(24,187,373,9),group.condition)
+	D.text(card,right,168,str(group.condition)+" %",28,C.MINT,600,90,HORIZONTAL_ALIGNMENT_RIGHT)
+	D.bar(card,Rect2(24,187,right-24,9),group.condition)
 	var trust: float = app.model.meta.get("trust",0)
 	D.text(card,24,236,"Confiance du conseil",22,C.MUTED,500,270)
-	D.text(card,397,236,"%d / 100" % trust,26,C.GOLD,600,110,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.bar(card,Rect2(24,255,373,8),trust,C.GOLD)
+	D.text(card,right,236,"%d / 100" % trust,26,C.GOLD,600,110,HORIZONTAL_ALIGNMENT_RIGHT)
+	D.bar(card,Rect2(24,255,right-24,8),trust,C.GOLD)
 	D.text(card,24,299,"Moral du vestiaire",22,C.MUTED,500,255)
-	D.text(card,397,299,"%d / 100" % float(app.model.meta.get("morale",0)),25,C.MINT,600,120,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.line(card,Vector2(22,321),Vector2(400,321))
+	D.text(card,right,299,"%d / 100" % float(app.model.meta.get("morale",0)),25,C.MINT,600,120,HORIZONTAL_ALIGNMENT_RIGHT)
+	D.line(card,Vector2(22,321),Vector2(w-22,321))
 	if group.watched > 0:
-		var action := D.button(card,Rect2(25,337,372,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
+		var action := D.button(card,Rect2(25,337,w-50,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
 		action.add_theme_color_override("font_color", C.AMBER)
 		for player: Dictionary in app.model.get("squad", []):
 			var reason := U.watch_reason(player)
 			if reason.is_empty(): continue
-			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,370)
+			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
 			example.tooltip_text = example.text
 			_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
 			break
 	else:
-		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,370)
-	D.button(card,Rect2(25,412,372,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
+		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,w-52)
+	D.button(card,Rect2(25,412,w-50,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
 
-static func _standings(card: Panel, app: Control) -> void:
-	for pair in [["#",26],["CLUB",78],["J",461],["DIFF.",542],["PTS",647]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
+static func _standings(card: Panel, app: Control, w: int = 684) -> void:
+	# Colonnes calées sur le bord droit : la largeur du club s'adapte au bloc.
+	var played_x := w - 223
+	for pair in [["#",26],["CLUB",78],["J",played_x],["DIFF.",w-142],["PTS",w-37]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
 	var rows := P.standings(app.model)
 	for i in rows.size():
 		var club: Dictionary = rows[i]
 		var y := 105+i*42
 		var own: bool = club.get("id")==app.model.club.id
-		if own: D.rect(card,Rect2(17,y-4,650,40),Color(app.accent,.32),4)
+		if own: D.rect(card,Rect2(17,y-4,w-34,40),Color(app.accent,.32),4)
 		var hit := Office.standing_action(app,club)
 		card.add_child(hit)
-		D.place(hit,Rect2(17,y-4,650,40))
-		D.text(card,36,y+23,G.n(club.get("rank","—")),25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(card,80,y+23,G.club_name(club),23,C.IVORY,600,357)
-		D.text(card,461,y+23,G.n(club.get("played",0)),22,C.MUTED,500,32,HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(card,554,y+23,"%+d" % (int(club.get("pf",0))-int(club.get("pa",0))),23,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
-		D.text(card,647,y+23,G.n(club.get("points",0)),25,C.IVORY,700,60,HORIZONTAL_ALIGNMENT_RIGHT)
-		if not own: D.line(card,Vector2(20,y+33),Vector2(664,y+33),Color(C.LINE,.35))
+		D.place(hit,Rect2(17,y-4,w-34,40))
+		D.text(card,36,y+23,G.n(club.get("rank","—")) if P.standings_open(club) else "–",25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(card,80,y+23,G.club_name(club),23,C.IVORY,600,played_x-104)
+		D.text(card,played_x,y+23,G.n(club.get("played",0)),22,C.MUTED,500,32,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(card,w-130,y+23,"%+d" % (int(club.get("pf",0))-int(club.get("pa",0))),23,C.MUTED,500,70,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(card,w-37,y+23,G.n(club.get("points",0)),25,C.IVORY,700,60,HORIZONTAL_ALIGNMENT_RIGHT)
+		if not own: D.line(card,Vector2(20,y+33),Vector2(w-20,y+33),Color(C.LINE,.35))
 	D.text(card,26,392,"FORME",18,C.MUTED,500,75)
 	var form: Array = []
 	for club: Dictionary in rows:
@@ -253,12 +284,15 @@ static func _standings(card: Panel, app: Control) -> void:
 	for i in mini(5,form.size()):
 		var result: String = str(form[i])
 		D.chip(card,Rect2(100+i*42,370,32,30),result,C.ALERT if result=="D" else C.GOLD if result=="N" else C.MINT)
-	var action := D.button(card,Rect2(360,403,300,32),"Classement complet",func():app._navigate("Classements"),false,"arrow",true,app.accent,"OfficeStandingsAction")
+	var action := D.button(card,Rect2(w-324,403,300,32),"Classement complet",func():app._navigate("Classements"),false,"arrow",true,app.accent,"OfficeStandingsAction")
 	action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 	action.add_theme_color_override("font_color",C.GOLD)
 
-static func _journal(card: Panel, app: Control) -> void:
-	D.button(card,Rect2(330,14,198,33),"Tout le courrier",func():app._navigate("Réception"),false,"arrow",true,app.accent,"OfficeInboxAction")
+static func _journal(card: Panel, app: Control, w: int = 548) -> void:
+	var text_w := w - 68
+	var compact := w < 500
+	# Bloc étroit (à côté de Gabi) : « Courrier », pour laisser le titre lisible.
+	D.button(card,Rect2(w-162,14,142,33) if compact else Rect2(w-218,14,198,33),"Courrier" if compact else "Tout le courrier",func():app._navigate("Réception"),false,"arrow",true,app.accent,"OfficeInboxAction")
 	var messages: Array = app.model.get("messages",[])
 	for i in mini(3,messages.size()):
 		var y := 79+i*116
@@ -266,80 +300,93 @@ static func _journal(card: Panel, app: Control) -> void:
 		var category := "DIRECTION" if message.to_lower().contains("contrat") else "FORMATION" if message.to_lower().contains("espoir") else "VIE DU CLUB"
 		var color: Color = [C.BLUE,C.ALERT,C.GOLD][i]
 		D.rect(card,Rect2(18,y,4,92),color,2)
-		D.text(card,37,y+19,category+" · JOURNAL",17,color,600,480)
-		D.text(card,37,y+49,"Les échéances du groupe" if category=="DIRECTION" else "La relève est en marche" if category=="FORMATION" else "Les nouvelles de votre carrière",23,C.IVORY,600,480)
-		var lines := D.words(message,52,2)
-		for j in lines.size(): D.text(card,37,y+75+j*24,lines[j],18,C.MUTED,400,480,HORIZONTAL_ALIGNMENT_LEFT,true)
-		if i<2: D.line(card,Vector2(36,y+105),Vector2(524,y+105),Color(C.LINE,.5))
-	if messages.is_empty(): D.text(card,37,120,"Le journal s’ouvrira avec votre carrière.",20,C.MUTED,400,480,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,37,y+19,category+" · JOURNAL",17,color,600,text_w)
+		D.text(card,37,y+49,"Les échéances du groupe" if category=="DIRECTION" else "La relève est en marche" if category=="FORMATION" else "Les nouvelles de votre carrière",22 if compact else 23,C.IVORY,600,text_w)
+		var lines := D.words(message,int(52.0*text_w/480.0),2)
+		for j in lines.size(): D.text(card,37,y+75+j*24,lines[j],18,C.MUTED,400,text_w,HORIZONTAL_ALIGNMENT_LEFT,true)
+		if i<2: D.line(card,Vector2(36,y+105),Vector2(w-24,y+105),Color(C.LINE,.5))
+	if messages.is_empty(): D.text(card,37,120,"Le journal s’ouvrira avec votre carrière.",20,C.MUTED,400,text_w,HORIZONTAL_ALIGNMENT_LEFT,true)
 
-static func _recruitment(card: Panel, app: Control) -> void:
+static func _recruitment(card: Panel, app: Control, w: int = 546) -> void:
 	var spotlight := Office.recruitment_spotlight(app.model)
 	var player: Dictionary = spotlight.player
+	var inner := w - 46
+	var compact := w < 500
 	if player.is_empty():
-		D.photo(card,"scouting",Rect2(23,74,500,116))
-		D.text(card,23,231,spotlight.empty,27,C.IVORY,700,500)
+		D.photo(card,"scouting",Rect2(23,74,inner,116))
+		D.text(card,23,231,spotlight.empty,27,C.IVORY,700,inner)
 	else:
 		var portrait := G.portrait(int(player.get("portraitIndex",0)),C.px(133),player)
 		card.add_child(portrait)
 		D.place(portrait,Rect2(22,74,133,117))
-		D.text(card,174,104,str(player.name).to_upper(),29,C.IVORY,700,350)
-		D.text(card,174,135,str(player.pos)+" · "+G.n(player.age)+" ans",22,C.MUTED,500,350)
+		var name := D.text(card,174,104,str(player.name).to_upper(),25 if compact else 29,C.IVORY,700,w-196)
+		name.name = "OfficeSpotlightName"
+		D.text(card,174,135,str(player.pos)+" · "+G.n(player.age)+" ans",22,C.MUTED,500,w-196)
 		D.chip(card,Rect2(174,154,150,32),"NIV. "+G.rating_text(player),C.MINT)
 		var available: bool = player.get("available", false)
-		D.text(card,23,230,"Offre possible" if available else "Offre indisponible",24,C.MINT if available else C.ALERT,600,500)
+		D.text(card,23,230,"Offre possible" if available else "Offre indisponible",24,C.MINT if available else C.ALERT,600,inner)
 		var reason := str(player.get("reason", ""))
-		if not reason.is_empty(): D.text(card,23,260,reason,20,C.MUTED,500,500)
-		D.text(card,23,336,G.euros(player.fee),32,C.IVORY,600,220)
-		D.text(card,253,336,G.salary(player.salary),28,C.MUTED,500,270)
+		if not reason.is_empty(): D.text(card,23,260,reason,20,C.MUTED,500,inner)
+		var fee_w := roundi(inner * 0.44)
+		D.text(card,23,336,G.euros(player.fee),28 if compact else 32,C.IVORY,600,fee_w)
+		D.text(card,23+fee_w+10,336,G.salary(player.salary),24 if compact else 28,C.MUTED,500,inner-fee_w-10)
 	if not str(spotlight.need).is_empty():
-		D.text(card,23,295,spotlight.need,20,C.IVORY,500,500,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.button(card,Rect2(23,391,500,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")
+		D.text(card,23,295,spotlight.need,20,C.IVORY,500,inner,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.button(card,Rect2(23,391,inner,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")
 
-static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void:
-	D.button(card, Rect2(1710, 10, 510, 42), "Préparer la suite du club", func(): load("res://ui/manager_planning.gd").open(app), false, "calendar", false, app.accent, "OfficeManagerPlanning")
-	var fixtures := Office.upcoming_matches(app.model)
+static func _timeline(card: Panel, app: Control, recent: PanelContainer, w: int = 2248) -> void:
+	# En-tête : « Préparer la suite du club » à gauche de « Tout le calendrier », sans chevauchement
+	# (ils se recouvraient : 1710..2220 et 1888..2223).
+	var calendar_left := w - 360
+	D.button(card, Rect2(calendar_left - 16 - 420, 10, 420, 42), "Préparer la suite du club", func(): load("res://ui/manager_planning.gd").open(app), false, "calendar", false, app.accent, "OfficeManagerPlanning")
+	var all_fixtures := Office.upcoming_matches(app.model)
+	# Autant de tuiles que la largeur en accueille (7 en pleine largeur, 5 à côté de Gabi), élargies au besoin.
+	var fit := maxi(1, int((w - 28) / 316))
+	var count := mini(all_fixtures.size(), fit)
+	var fixtures := all_fixtures.slice(0, count)
+	var step := floorf((w - 28.0) / fit) if count == fit else 316.0
+	var extra := step - 316.0
 	var tiles: Array[Panel] = []
 	var grounds: Array[Label] = []
 	for i in fixtures.size():
 		var fixture: Dictionary = fixtures[i]
-		var x := 20+i*316
+		var x := 20+i*step
 		var at_home: bool = fixture.get("home",{}).get("id")==app.model.club.id
 		var opponent: Dictionary = fixture.get("away",{}) if at_home else fixture.get("home",{})
 		var location := P.fixture_location_kind(fixture, app.model.club.id)
 		var place: String = {"neutral":"Neutre","home":"Domicile","away":"Extérieur"}.get(location,"Terrain à confirmer")
 		var is_next := i == 0
 		var border := C.GOLD if is_next else Office.UPCOMING_BORDER
-		tiles.append(D.rect(card,Rect2(x,75,304,132),Color("39301e") if is_next else Office.UPCOMING_TILE,5,border))
-		var period := D.text(card,x+16,103,Office.timeline_period(fixture),21,C.GOLD,700,174 if is_next else 244)
-		if is_next: D.chip(card,Rect2(x+199,84,89,25),"À SUIVRE",C.AMBER)
+		tiles.append(D.rect(card,Rect2(x,75,304+extra,132),Color("39301e") if is_next else Office.UPCOMING_TILE,5,border))
+		var period := D.text(card,x+16,103,Office.timeline_period(fixture),21,C.GOLD,700,(174 if is_next else 244)+extra)
+		if is_next: D.chip(card,Rect2(x+199+extra,84,89,25),"À SUIVRE",C.AMBER)
 		var marker := C.icon(C.fixture_location_icon(location,true),48,C.GOLD)
 		marker.name = "OfficeVenueIcon%d" % i
 		card.add_child(marker)
-		D.place(marker,Rect2(x+240,120,48,48))
+		D.place(marker,Rect2(x+240+extra,120,48,48))
 		period.name = "OfficeTimelineDate%d" % i
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): Office.describe_fixture(period, local_date)
 		var fixture_key := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
 		_label_reading(app,card,period,Office.date_reading_target(app,fixture),"OfficeTimelineDateLink_"+fixture_key,period.text)
-		D.line(card,Vector2(x+14,118),Vector2(x+290,118),Office.UPCOMING_BORDER)
+		D.line(card,Vector2(x+14,118),Vector2(x+290+extra,118),Office.UPCOMING_BORDER)
 		var crest := Office.opponent_crest(opponent,42)
 		crest.name += str(i)
 		card.add_child(crest)
 		D.place(crest,Rect2(x+16,122,42,42))
 		Office.reading_overlay(app,card,Rect2(x+16,122,42,42),Office.club_reading_target(app,opponent),"OfficeTimelineClubCrest_"+fixture_key,G.club_name(opponent))
-		var name := D.text(card,x+64,151,G.club_name(opponent),23,C.IVORY,600,170)
+		var name := D.text(card,x+64,151,G.club_name(opponent),23,C.IVORY,600,170+extra)
 		name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		name.max_lines_visible = 2
 		name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name.add_theme_constant_override("line_spacing",-C.px(2))
-		D.place(name,Rect2(x+64,119,170,50))
+		D.place(name,Rect2(x+64,119,170+extra,50))
 		Office.describe_fixture(name, name.text + " · " + place)
 		_label_reading(app,card,name,Office.club_reading_target(app,opponent),"OfficeTimelineClubName_"+fixture_key,name.text)
 		var label := Office.short_fixture_label(app.model,fixture)
-		D.text(card,x+16,196,label+" · "+place,20,C.MUTED,500,272)
+		D.text(card,x+16,196,label+" · "+place,20,C.MUTED,500,272+extra)
 		var venue := P.fixture_venue(fixture, false)
-		var ground := D.text(card,x+16,232,venue if not venue.is_empty() else "Terrain à confirmer",22,C.MUTED,500,272)
+		var ground := D.text(card,x+16,232,venue if not venue.is_empty() else "Terrain à confirmer",22,C.MUTED,500,272+extra)
 		ground.name = "OfficeTimelineGround%d" % i
 		ground.tooltip_text = ground.text
 		grounds.append(ground)
@@ -356,5 +403,5 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void
 	page.resized.connect(update)
 	update.call()
 	if fixtures.is_empty(): D.text(card,25,130,"Aucune rencontre programmée pour le moment.",25,C.MUTED,500,1500)
-	var action := D.button(card,Rect2(1888,15,335,32),"Tout le calendrier",func():app._navigate("Calendrier"),false,"arrow",true,app.accent,"OfficeCalendarAction")
+	var action := D.button(card,Rect2(calendar_left,15,335,32),"Tout le calendrier",func():app._navigate("Calendrier"),false,"arrow",true,app.accent,"OfficeCalendarAction")
 	action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))

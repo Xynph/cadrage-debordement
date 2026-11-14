@@ -1,7 +1,7 @@
 'use strict';
 // Prototype bridge: local private stdio only. Never load browser UI, the source
 // identity catalogue, the test harness, a network server, or protocol-supplied code.
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID,createHash}=require('node:crypto');
 const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),pressIdentities=require('./press-identities.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs'),systems=require('./native-systems.cjs');
 const playerAttributes=require('./player-attributes.cjs');
 const managerPlanning=require('./manager-planning.cjs');
@@ -21,6 +21,7 @@ const playerFactsCatalogue=fs.existsSync(factsFile)?JSON.parse(fs.readFileSync(f
 const professionalDepth=require('./professional-depth.cjs');
 const epcrPreparation=require('./epcr-preparation.cjs');
 const competitionEditor=require('./competition-editor.cjs');
+const leagueDetail=require('./league-detail.cjs');
 const {calendarContext}=require('./calendar-clock.cjs');
 const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
@@ -56,6 +57,8 @@ const portraitLooks=makePortraitLooks(nationalFacts);
 const MODULES=['season-label.js','storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
+const repriseStarts=require('./reprise.cjs').STARTS;
+const PRESEASON_OPENERS=new Set(['finish_round','begin_match','train','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
 const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024,EXTENDED_IMPORT_LIMIT_BYTES=20*1024*1024,EXTENDED_REQUEST_LIMIT_BYTES=42*1024*1024,CHAMP_IMPORT_LIMIT_BYTES=24*1024*1024,CHAMP_REQUEST_LIMIT_BYTES=50*1024*1024;
 // Mode unique « Monde » (décision de Léo, 13/11/2026) : le joueur ne crée et ne charge que des
 // carrières du Monde complet. Les anciens modes (fiction 14 clubs, France 30 clubs « common »/« france »,
@@ -71,6 +74,7 @@ const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-match
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
 const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 COMMANDS.add('observe_player');
+COMMANDS.add('league_benchmark');
 COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
@@ -78,6 +82,7 @@ COMMANDS.add('calendar_mail_decide');
 const NATIONAL_COMMANDS=['national_take_job','national_leave_job','national_play_match'];
 NATIONAL_COMMANDS.forEach(command=>COMMANDS.add(command));
 const NATIONAL_ONLY_COMMANDS=new Set(['new_career','import','save','advance_day','next_season',...NATIONAL_COMMANDS]);
+const FULL_VALIDATION=new Set(['new_career','import','finish_round','next_season']);
 const BLOCKED_AFTER_RESULT=new Set(['begin_match','tick','pause','delegate','train','auto_lineup','substitute','next_season']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
@@ -173,12 +178,15 @@ function createBridge(options={}){
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=source=>vm.runInContext(source,ctx,{timeout:15000});
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
+  // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
+  if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
   ctx.nativeLegacyModes=legacyModes;ctx.nativeLegacyCareerMessage=LEGACY_CAREER_MESSAGE;
   const calendarState=(source='S')=>JSON.parse(run(`JSON.stringify({planning:${source}?.calendarPlanning,mail:${source}?.calendarMail})`));
   function validateCalendarState(state){
    if(calendarPlanning.validateState(state.planning)===false||calendarMail.validate(state.mail)===false)throw Error('Planification du calendrier invalide.');
   }
   ctx.nativeKnowledgeValidate=knowledgeProjection.validate;
+  ctx.nativeVerifySections=options.verifyCleanCopy===true||process.env.CD_VERIFIER_COPIE==='1';
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   // Libellé de saison : la même fonction (dist/season-label.js) sert au processus Node (projection du modèle) et à la VM.
@@ -198,7 +206,24 @@ function createBridge(options={}){
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
   if(nationaleRegistry)ctx.nativeWorldNationaleRegistryText=JSON.stringify(nationaleRegistry);
   if(champRegistry)ctx.nativeWorldChampRegistryText=JSON.stringify(champRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
+   /* Sauvegarde incrémentale : le texte de la carrière est assemblé section par section (premier niveau de S),
+      identique à JSON.stringify(S) ; ces textes servent ensuite à la validation (sections inchangées) et à
+      l'écriture du profil (encodage des seules sections modifiées). */
+   var nativeSaveSections=null,nativeSafeTreeArmed=null,nativeSafeTreeCache=new Map();
+   function nativeSaveText(state){
+    const texts=new Map(),parts=[];
+    for(const key of Object.keys(state)){const text=JSON.stringify(state[key]);if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
+    const whole='{'+parts.join(',')+'}';
+    if(nativeVerifySections&&whole!==JSON.stringify(state))throw Error('Sauvegarde par sections différente du texte complet.');
+    nativeSaveSections={state,texts,keys:[...texts.keys()],whole};return whole;
+   }
+   function nativeSafeTreeSections(root){
+    if(!root||root!==nativeSafeTreeArmed||nativeSaveSections?.state!==root)return null;
+    if(nativeVerifySections&&JSON.stringify(root)!==nativeSaveSections.whole)throw Error('Sections de sauvegarde périmées avant la validation.');
+    return {texts:nativeSaveSections.texts,cache:nativeSafeTreeCache};
+   }
+   function nativeValidateSaved(full){nativeSafeTreeArmed=full?null:S;try{return validateCareer(S);}finally{nativeSafeTreeArmed=null;}}validatingStartup=false;const nativeCareerVariation=(${careerVariation.toString()})();const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
    const nativeCallups=(${internationalCallups.toString()})();
    const nativeInternationalStatus=new WeakMap();
    const nativePlayerAttributes=p=>{
@@ -327,12 +352,19 @@ function createBridge(options={}){
   const projectionMemo=process.env.CD_ENGINE_MEMO!=='0';
   if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
   const snapshotRaw=operation=>{if(!projectionMemo)return snapshotProjection(operation);run('nativeProjectionMemo(true)');try{return snapshotProjection(operation);}finally{run('nativeProjectionMemo(false)');}};
-  const snapshotProjection=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+  const snapshotProjection=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
   const backup=path.join(dataDir,'donnees-precedentes.json');
   let committedFiles='';
+  // Texte de la dernière sauvegarde publiée tant que la carrière en mémoire n'a pas changé depuis ;
+  // null sinon (démarrage, annulation d'origine inconnue, récupération). CD_VERIFIER_COPIE=1 (tests)
+  // recalcule l'état pour vérifier cette égalité à chaque commande.
+  let cleanSave=null;
+  const verifyCleanCopy=options.verifyCleanCopy===true||process.env.CD_VERIFIER_COPIE==='1';
+  const copyStore=source=>{const out={};for(const key of Object.keys(source)){const value=source[key];if(typeof value==='string'){out[key]=value;continue;}const text=JSON.stringify(value);if(text!==undefined)out[key]=JSON.parse(text);}return out;};
+  const sameStore=(a,b)=>{const keys=Object.keys(a);if(keys.length!==Object.keys(b).length)return false;for(const key of keys)if(!Object.hasOwn(b,key)||(typeof a[key]==='string'?a[key]!==b[key]:JSON.stringify(a[key])!==JSON.stringify(b[key])))return false;return true;};
   const profileFilesVersion=()=>{
    try{
     const entries=[file,backup].map(target=>fs.lstatSync(target,{bigint:true}));
@@ -340,17 +372,66 @@ function createBridge(options={}){
     return entries.map(entry=>[entry.dev,entry.ino,entry.size,entry.mtimeNs,entry.ctimeNs].join(':')).join('|');
    }catch{return '';}
   };
+  // Texte du profil : identique octet pour octet à JSON.stringify({protocol:1,seed,clock,store}), mais
+  // chaque valeur du magasin (la carrière fait ~22 Mo) n'est réencodée que si elle a changé.
+  const storeEncoding=new Map(),sectionEscapes=new Map();
+  // Encodage JSON (chaîne dans la chaîne) de la carrière à partir de ses sections : l'échappement d'un texte
+  // se fait caractère par caractère et les coupures tombent sur des virgules, donc la concaténation des
+  // sections encodées est exactement JSON.stringify(texte complet).
+  const encodeSections=sections=>{
+   const parts=[];
+   for(const key of sections.keys){
+    const text=sections.texts.get(key);let hit=sectionEscapes.get(key);
+    if(!hit||hit.text!==text){hit={text,escaped:JSON.stringify(JSON.stringify(key)+':'+text).slice(1,-1)};sectionEscapes.set(key,hit);}
+    parts.push(hit.escaped);
+   }
+   for(const key of [...sectionEscapes.keys()])if(!sections.texts.has(key))sectionEscapes.delete(key);
+   return '"{'+parts.join(',')+'}"';
+  };
+  const profileText=()=>{
+   const entries=[];
+   for(const key of Object.keys(store)){
+    const value=store[key];let encoded;
+    if(typeof value==='string'){
+     const cached=storeEncoding.get(key);
+     if(cached&&cached.value===value)encoded=cached.encoded;
+     else{
+      const sections=key==='bdt-v1'?ctx.nativeSaveSections:null;
+      encoded=sections&&sections.whole===value?encodeSections(sections):JSON.stringify(value);
+      if(ctx.nativeVerifySections&&encoded!==JSON.stringify(value))throw Error('Encodage par sections différent du texte complet.');
+      storeEncoding.set(key,{value,encoded});
+     }
+    }else encoded=JSON.stringify(value);
+    if(encoded!==undefined)entries.push(JSON.stringify(key)+':'+encoded);
+   }
+   for(const key of storeEncoding.keys())if(!Object.hasOwn(store,key)||typeof store[key]!=='string')storeEncoding.delete(key);
+   return '{"protocol":1,"seed":'+JSON.stringify(seed)+',"clock":'+JSON.stringify(clock)+',"store":{'+entries.join(',')+'}}';
+  };
+  // Copie de secours du fichier courant : un lien physique vers le fichier déjà écrit (et forcé sur
+  // disque) remplace la relecture et la réécriture de ~25 Mo ; le renommage atomique qui suit est
+  // inchangé, si bien que la copie garde seule l'ancien contenu. Sans lien possible (FAT, partage
+  // réseau, fichier déjà lié ailleurs), copie complète comme avant.
+  const backupFrom=(source,target,write)=>{
+   const s=fs.lstatSync(source);
+   if(s.nlink===1){
+    try{fs.linkSync(source,target);}catch{write(target,fs.readFileSync(source));return;}
+    // Windows refuse fsync (EPERM) sur un descripteur ouvert en lecture seule : ouverture en 'r+'. Le lien partage l'inode déjà écrit, donc un refus de fsync n'enlève aucune donnée.
+    try{const fd=fs.openSync(target,'r+');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}}catch{}
+    return;
+   }
+   write(target,fs.readFileSync(source));
+  };
   const persist=()=>{
    committedFiles='';
    if(resumeCheckpoint)profileSafety.checkpoint({...resumeCheckpoint,reason:'adaptation-reprise'});
-   const token=randomUUID(),text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
+   const token=randomUUID(),text=profileText(),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
    const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
    const ordinary=target=>{const s=fs.lstatSync(target);if(!s.isFile()||s.isSymbolicLink())throw Error('Fichier de sauvegarde ou de secours non ordinaire.');};
    let stashed=false,published=false;
    try{
     write(temp,text);
     if(fs.existsSync(file)){
-     ordinary(file);write(backupTemp,fs.readFileSync(file));
+     ordinary(file);backupFrom(file,backupTemp,write);
      if(fs.existsSync(backup)){ordinary(backup);fs.renameSync(backup,rollback);stashed=true;}
      fs.renameSync(backupTemp,backup);published=true;
     }
@@ -387,14 +468,35 @@ function createBridge(options={}){
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
-    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
+    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
     if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
     if(command==='pack_select'&&payload.scope==='creation'){const mode=payload.mode??'common',databaseId=edition(mode),key=creationKey(mode),selected=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!selected)throw Error('Pack non installé.');if(selected&&selected.meta.databaseId!==databaseId)throw Error('Pack incompatible avec cette édition.');const prior=store[key];try{store[key]=payload.id;persist();}catch(e){if(prior===undefined)delete store[key];else store[key]=prior;throw e;}return {id,ok:true,model:snapshot()};}
-    if(command==='export'){const model=snapshotRaw();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='league_benchmark'){
+     // Banc d'essai de la machine pour la jauge de fluidité : lecture seule, sans carrière requise.
+     // Résultat mis en cache dans un petit fichier du profil ; `refresh` relance la mesure.
+     const machine={cores:payload.cores,memoryGb:payload.memoryGb};
+     if(Object.keys(payload).some(k=>!['cores','memoryGb','refresh'].includes(k))||(payload.refresh!==undefined&&typeof payload.refresh!=='boolean')||Object.values(machine).some(x=>x!==undefined&&!(Number.isFinite(x)&&x>=0&&x<=4096)))throw Error('Paramètres de banc d’essai invalides.');
+     const cacheFile=path.join(dataDir,'banc-essai.json');let bench=null;
+     if(payload.refresh!==true){try{const cached=JSON.parse(fs.readFileSync(cacheFile,'utf8'));if(cached?.version===1&&cached.runtime===process.version&&cached.serialMs>0&&cached.computeMs>0)bench={...cached,cached:true};}catch{}}
+     if(!bench){bench={...leagueDetail.benchmark(),runtime:process.version,measuredAt:new Date(clock).toISOString()};try{const temp=cacheFile+'.tmp-'+randomUUID();fs.writeFileSync(temp,JSON.stringify(bench));fs.renameSync(temp,cacheFile);}catch{}bench.cached=false;}
+     const model=snapshotRaw();
+     model.meta.leagueBenchmark={...bench,...machine,costs:leagueDetail.costTable({...machine,serialMs:bench.serialMs,computeMs:bench.computeMs})};
+     return {id,ok:true,model:projectKnowledge(model)};
+    }
+    if(command==='export'){
+      const model=snapshotRaw();let preuve=null;
+      // Preuve de l'aller-retour (recettes, tests) : empreinte SHA-256 du texte de l'état exporté, avant toute réduction.
+      // Un grand export est réduit sans perte (références de joueurs, marché) : son état littéral diffère alors de la
+      // sauvegarde ; cette empreinte permet de comparer le texte exact du profil à l'état restitué sans affaiblir le contrôle.
+      if(payload?.proof===true)ctx.nativeSaveProof=texte=>{preuve=createHash('sha256').update(texte,'utf8').digest('hex');};
+      try{model.meta.exportText=run('JSON.stringify(createSaveDocument())');}finally{delete ctx.nativeSaveProof;}
+      if(preuve)model.meta.exportRoundTripSha256=preuve;
+      return {id,ok:true,model:projectKnowledge(model)};
+    }
     if(command==='shutdown'){const model=snapshotRaw();close();return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshotRaw();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='restore_checkpoint'){if(payload.confirmed!==true)throw Error('Confirmation explicite requise pour reprendre cette copie.');restoring=profileSafety.load(payload.id);command='import';payload={...payload,text:restoring.text};}
@@ -402,24 +504,34 @@ function createBridge(options={}){
     updatePressPolicy();
     if(national.isNationalOnly()&&!NATIONAL_ONLY_COMMANDS.has(command))throw Error('Cette décision est réservée au manager d’un club.');
     if(ctx.nativeMandatoryPress&&advancesCareer)run('nativeSystems.domain("press").guardProgress()');
-    mark('garde');const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
+    mark('garde');
+    // Copie d'annulation : le magasin ne contient que des chaînes (immuables), une copie superficielle
+    // suffit ; l'état reprend le texte de la dernière sauvegarde quand la carrière n'a pas bougé depuis.
+    const priorFromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
+    if(priorFromSave&&verifyCleanCopy&&run('JSON.stringify(S)')!==cleanSave)throw Error('Copie d’annulation : la carrière a changé hors commande.');
+    const priorStateText=priorFromSave?cleanSave:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
+    const priorState=()=>({state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra});
+    const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     try{
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
       if(payload.varyCurrent!==undefined&&typeof payload.varyCurrent!=='boolean')throw Error('Option de variation du niveau actuel invalide.');
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
+      if(payload.start!==undefined&&!repriseStarts.includes(payload.start))throw Error('Départ de partie invalide.');
      }
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativeCommand=command;
      if(managerPlanning.commands.includes(command))managerPlanning.validateRequest(snapshot(),command,payload);
      run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
      if(command==='next_season')national.checkSeason();
+     // Avant-saison : avancer le calendrier du moteur ouvre d'abord la semaine 0 (17 août 2026).
+     if(PRESEASON_OPENERS.has(command)&&run('!!CDPreseason.pending(S)'))run('CDPreseason.open(S)');
      if(BLOCKED_AFTER_RESULT.has(command)&&run('nativeDailyStatus()?.resultConfirmed===true'))throw Error('Résultat confirmé. Continuez jusqu’à la clôture de la semaine.');
      if(command==='interclub_negotiate'||command==='academy_groups_preview'){
       ctx.nativeCommand=command;
       const extra=command==='academy_groups_preview'?{academyGroups:run('CDNativeAcademyGroups.preview(S)')}:run('nativeSystems.execute(nativeCommand,nativePayload)');
-      if(run('JSON.stringify(S)')!==JSON.stringify(JSON.parse(prior).state)||seed!==priorSeed||JSON.stringify(store)!==priorStore)throw Error('Une consultation ne peut pas modifier la carrière.');
+      if(run('JSON.stringify(S)')!==priorStateText||seed!==priorSeed||!sameStore(store,priorStore))throw Error('Une consultation ne peut pas modifier la carrière.');
       const model=snapshotRaw();Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));return {id,ok:true,model:projectKnowledge(model)};
      }
      ctx.nativeKnowledgeBefore=run('nativeKnowledge.before(S)');ctx.nativeKnowledgeCommand=command;
@@ -449,7 +561,7 @@ function createBridge(options={}){
       run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
-       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
+       const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='train'){
@@ -458,6 +570,8 @@ function createBridge(options={}){
       if(!run('S.trained')){ctx.nativeMode=mode;run('S.training=nativeMode;trainWeek()');}
      }else if(command==='auto_lineup'){
       if(run('!!S.live'))throw Error('Composition indisponible pendant un match.');run('autoLineup()');
+     }else if(command==='advance_day'&&run('!!CDPreseason.pending(S)')){
+      run('CDPreseason.advanceDay(S,nativePayload.fromDate)');
      }else if(command==='advance_day'){
       const offSeason=national.advance(payload.fromDate);
       if(offSeason){
@@ -520,7 +634,7 @@ function createBridge(options={}){
       try{run(delegateLoop);}catch(error){if(!deferredDelegateRead)throw error;}
       finally{ctx.save=historicalSave;deferredDelegateActive=false;}
       if(deferredDelegateRead){
-       deferredDelegateRead=false;seed=priorSeed;clock=delegateClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);
+       deferredDelegateRead=false;seed=priorSeed;clock=delegateClock;store=copyStore(priorStore);ctx.nativePrior=priorState();
        run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
        run(delegateLoop);
       }
@@ -560,31 +674,53 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
-      if(process.env.CD_SALAIRES_PAR_NIVEAU==='1')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
+      // Budget de saison réaliste (salaires par niveau, budget du club, centre de formation) : activé par défaut
+      // pour les carrières créées (décision de Léo du 13 novembre). CD_SALAIRES_PAR_NIVEAU=0 le coupe (tests,
+      // comparaisons). Les carrières déjà commencées gardent leur économie : la marque S.startingSalaries ne se
+      // pose qu'ici, à la création (voir docs/salaires-par-niveau-20261111.md, « Activation par défaut »).
+      if(process.env.CD_SALAIRES_PAR_NIVEAU!=='0')run("if(budgetFrance()||budgetMonde()){nativeStartingSalaries.apply(S,budgetForces(),nativeLeagueEconomy,budgetLimites(true));[...S.economy.freeAgents,...S.market].forEach(budgetValeur);budgetOuvrir(true);}");
       run('autoLineup();');
       // Directions des clubs gérés : carrières mondiales nouvelles seulement ; CD_DIRECTIONS_CLUBS=0 les coupe.
       if(process.env.CD_DIRECTIONS_CLUBS!=='0')run('nativeClubDirections.create(S,nativeCreationVariation.seed)');
       delete ctx.nativeCreationVariation;
+      // Début de carrière Monde : lundi 13 juillet 2026 (club seul ; les rôles de sélection gardent leur agenda).
+      if(payload.nationalRole===undefined||payload.nationalRole==='club')run('CDPreseason.create(S)');
+      // Départ de la partie (reprise.cjs) : juillet par défaut, date du club, ou veille de la 1re journée.
+      // Sans « start » (outils, tests hérités, intégrations), la carrière s'ouvre comme avant, le 17 août,
+      // sans préparation choisie : les séquences figées restent identiques. L'écran de création l'envoie toujours.
+      ctx.nativeRepriseStart=payload.start??null;
+      if(ctx.nativeRepriseStart&&run("CDWorldCareer.active(S)&&!!CDReprise.create(S,nativeRepriseStart)&&nativeRepriseStart==='veille'")){
+       // Préparation gérée par le staff : semaines simulées jusqu'à la veille de la 1re rencontre.
+       for(let i=0;i<12&&run("S.phase!=='ended'&&!S.live&&!nextMatch()");i++){run('finishRound();nativeSystems.domain("press").observeInvitation();');}
+       run(`if(S.worldMode.day!==undefined){const f=CDWorldCareer.userFixture(S);for(let i=0;f&&i<7;i++){const d=CDWorldCareer.dailyStatus(S),today=CDWorldCareer.calendarToday(S);if(!d.canAdvance||new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10)>=f.date)break;CDWorldCareer.advanceDay(S,today);}}`);
+      }
+      delete ctx.nativeRepriseStart;
      }
      else if(command==='next_season')run('CDNativeAcademyGroups.afterSeason(S,'+previousAcademyClub+');');
      if(command==='new_career'||command==='import')national.initialize(seed,command==='new_career'?payload:null);
+     // Reprise choisie : le plan de la saison se fige dès que l'avant-saison s'achève (jour suivant, avance).
+     run('if(S)CDReprise.sync(S)');
      updatePressPolicy();
      if(advancesCareer||command==='new_career'||command==='import')run('nativeSystems.domain("press").observeInvitation(nativePressPrevious,'+(command==='new_career')+');');
      run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
      mark('commande');
      if(advancesWithinWeek)run('save()');
-     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
+     // Validation complète (sans reprise des sections) à la création, à l'import et à chaque fin de semaine ou
+     // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
+     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();nativeValidateSaved('+FULL_VALIDATION.has(command)+')');
      mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
-     if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;
+     if(command==='tick'&&committedFiles&&seed===priorSeed&&sameStore(store,priorStore)&&profileFilesVersion()===committedFiles)clock=priorClock;
      else persist();
+     // La sauvegarde vient d'être publiée : le texte enregistré décrit exactement la carrière en mémoire.
+     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
      mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
-     seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
-     run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
+     seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
+     run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');
      throw error;
     }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
    }catch(error){projectionCache.clear();return {id,ok:false,model:closed?null:snapshot(),error:error.message};}

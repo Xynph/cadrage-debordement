@@ -8,8 +8,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-  # Créneau régulier : seulement les suites Godot (non bloquantes) sur le dernier main,
-  # au lieu de les relancer à chaque fusion. Ni suites JS ni verdict (les gates ignorent
+  # Créneau régulier : seulement les suites Godot (informatives : un échec ne rougit pas le run) sur le
+  # dernier main, au lieu de les relancer à chaque fusion. Ni suites JS ni verdict (les gates ignorent
   # l'événement schedule).
   schedule:
     - cron: '23 */2 * * *'
@@ -36,6 +36,9 @@ jobs:
       # suivi aussitôt du passage en prête donnait deux exécutions dont la « brouillon »,
       # partie en dernier, annulait la batterie complète (#590, 13/11).
       draft: ${{ steps.draft.outputs.draft == 'true' }}
+      # Le changement touche des fichiers Godot (jeu natif, suites Godot, lanceur CI) : le job Godot
+      # devient alors obligatoire pour « Validation CI » ; sinon il est sauté (et ne bloque pas).
+      godot: ${{ steps.diff.outputs.godot }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -114,14 +117,16 @@ jobs:
     name: Godot ${{ matrix.shard }}/3
     needs: classification
     # Suites qui pilotent le SDK (source lisant CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
-    # NON BLOQUANT pour commencer : hors des dépendances de « Validation CI » et
-    # continue-on-error, tant que ces suites ne sont pas fiables et rapides en CI.
-    # Plus lancé sur les PR (13/11) : 25 % des minutes de runner, rouge 41 % du temps,
-    # non bloquant, et ses échecs rendaient les PR « unstable » (gate officiel refusé).
-    # Tourne sur créneau régulier (schedule) et à la demande (workflow_dispatch) ; recette Godot
-    # d'une PR : étiquette `godot-sdk` (godot-sdk.yml).
-    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') }}
-    continue-on-error: true
+    # BLOQUANT (14/11) : « Validation CI » dépend de ce job (voir validation ci-dessous).
+    #  - PR prête dont le diff touche des fichiers Godot (classification.outputs.godot, calculé par
+    #    ci/test-coverage.cjs) : le job tourne et doit réussir ;
+    #  - autre PR (aucun fichier Godot) : job sauté, et un job sauté ne fait pas échouer l'agrégateur ;
+    #  - workflow_dispatch : tourne et doit réussir ;
+    #  - créneau régulier (schedule) sur main : informatif (continue-on-error), ni suites JS ni verdict.
+    # Pas lancé sur chaque fusion dans main (rafales de fusions automatiques) ; recette Godot ciblée
+    # d'une PR : étiquette `godot-sdk` (godot-sdk.yml, workflow à part, non requis).
+    if: ${{ needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.classification.outputs.draft != 'true' && needs.classification.outputs.godot == 'true')) }}
+    continue-on-error: ${{ github.event_name == 'schedule' }}
     strategy:
       fail-fast: false
       matrix:
@@ -216,7 +221,7 @@ jobs:
   validation:
     name: Validation CI
     if: ${{ always() && github.event_name != 'schedule' }}
-    needs: [classification, shards]
+    needs: [classification, shards, godot]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -226,6 +231,8 @@ jobs:
           CLASSIFICATION: ${{ needs.classification.result }}
           COVERAGE: ${{ needs.classification.outputs.coverage }}
           SHARDS: ${{ needs.shards.result }}
+          GODOT: ${{ needs.godot.result }}
+          GODOT_CHANGED: ${{ needs.classification.outputs.godot }}
           DRAFT: ${{ needs.classification.outputs.draft }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           EVENT_NAME: ${{ github.event_name }}
@@ -244,6 +251,20 @@ jobs:
                 result='SUCCÈS' ;;
             esac
           fi
+          # Suites Godot : obligatoires (job réussi) sur workflow_dispatch et sur une PR qui touche des
+          # fichiers Godot ; sinon le job est sauté et ne bloque pas. Échec ou annulation : jamais vert.
+          godot_required=false
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]] ||
+             [[ "$EVENT_NAME" == "pull_request" && "${GODOT_CHANGED:-false}" == "true" && "$COVERAGE" =~ ^(full|native-art)$ ]]; then
+            godot_required=true
+          fi
+          if [[ "$result" == "SUCCÈS" ]]; then
+            if [[ "$godot_required" == "true" ]]; then
+              [[ "$GODOT" == "success" ]] || result='ÉCHEC'
+            else
+              [[ "$GODOT" == "success" || "$GODOT" == "skipped" ]] || result='ÉCHEC'
+            fi
+          fi
           url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           {
             echo "## Verdict CI : $result"
@@ -253,6 +274,7 @@ jobs:
             echo "- Événement : $EVENT_NAME"
             echo "- Classification : $CLASSIFICATION"
             echo "- Suites : $SHARDS"
+            echo "- Suites Godot : $GODOT (obligatoires : $godot_required)"
             echo "- Couverture : $COVERAGE"
             if [[ -n "$draft_wait" ]]; then echo "- $draft_wait"; fi
             echo "- [Voir les contrôles et les erreurs]($url)"

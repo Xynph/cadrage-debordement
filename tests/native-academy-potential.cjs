@@ -1,13 +1,11 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
-
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 const { createBridge } = require('../native/engine/worker.cjs');
-const { context } = require('./france-harness.cjs');
+const { context } = require('./monde-harness.cjs');
 
 test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds et les exceptions d’élite restent rares', t => {
   const dir = fs.mkdtempSync(path.join(process.env.CD_ACADEMY_POTENTIAL_TEMP || os.tmpdir(), 'academy-potential-'));
@@ -16,7 +14,7 @@ test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds et le
     bridge.close();
     if (!process.env.CD_ACADEMY_POTENTIAL_TEMP) fs.rmSync(dir, { recursive: true, force: true });
   });
-  const result = bridge.handle({ id: 1, command: 'new_career', payload: { mode: 'common', club: 0 } });
+  const result = bridge.handle({ id: 1, command: 'new_career', payload: { mode: 'world-champ', club: 0 } });
   assert.equal(result.ok, true, result.error);
   const academy = result.model.decisions.development.academy;
   const u21 = academy.filter(player => player.age >= 18 && player.age <= 21);
@@ -57,7 +55,7 @@ test('Génération : la queue supérieure est rare à travers postes, clubs et s
 
 test('Les centres formateurs et les grands clubs ont un avantage sans exclure les surprises', () => {
   const h = context(437493);
-  const result = JSON.parse(h.run(`start(0, 'france');
+  const result = JSON.parse(h.run(`
     S.commonDatabase = CDCommonRosters.marker;
     const tracked = [0, 3, 25, 26];
     const distribution = Object.fromEntries(tracked.map(id => {
@@ -73,7 +71,7 @@ test('Les centres formateurs et les grands clubs ont un avantage sans exclure le
     delete S.commonDatabase;
     JSON.stringify({distribution, baseline:baseline.dev.potential, ordinary:academyPotential(baseline),
       emergency:emergency.dev.potential, legacyEmergency:legacyEmergency.dev.potential,
-      fictional:academyRecruitmentWeight({id:0,base:60})});`));
+      fictional:academyRecruitmentWeight({id:0,base:60}), shared:academyFacilitiesBonus({id:0})+academyFormationStaffBonus({id:0})});`));
   const { distribution } = result;
   console.log(JSON.stringify({ generatedPerClub:1500, ...distribution }));
   assert.ok(distribution[0].elite > distribution[3].elite);
@@ -84,12 +82,12 @@ test('Les centres formateurs et les grands clubs ont un avantage sans exclure le
   assert.ok(Object.values(distribution).every(club => club.max <= 94 && club.elite < 150));
   assert.equal(result.baseline, result.ordinary);
   assert.equal(result.emergency, result.legacyEmergency);
-  assert.equal(result.fictional, 0);
+  assert.equal(result.fictional, result.shared, 'Un club sans repère de formation ne reçoit que les bonus des installations et du responsable de formation de la carrière');
 });
 
 test('Migration : les points acquis, la majoration historique et les profils documentés restent protégés', () => {
   const h = context(437493);
-  h.run(`start(0);
+  h.run(`
     delete S.development.academyPotentialVersion;
     const [boosted, advanced, documented] = S.development.academy;
     const legacyPotential = p => 76 + seedHash(p.id)%19;
@@ -115,8 +113,10 @@ test('Migration : les points acquis, la majoration historique et les profils doc
 
 test('Qualité des fournées : pays, installations et responsable de la formation déplacent le potentiel', () => {
   const h = context(437493);
-  const result = JSON.parse(h.run(`start(0, 'france');
+  const result = JSON.parse(h.run(`
     const base = {id:3, base:72, abbr:'ZZZ'};
+    const careerStaff = S.staffCareer;
+    delete S.staffCareer; // la mesure isole l'effet du responsable de formation : pas de staff de carrière au départ
     const sample = club => Array.from({length:60}, (_, year) => POS.map((_, slot) =>
       potentialAtRole(academyPlayer(club.id, slot, year+1, slot, false, club)))).flat();
     const stats = club => { const scores = sample(club); return {
@@ -128,7 +128,7 @@ test('Qualité des fournées : pays, installations et responsable de la formatio
     const goodStaff = stats({...base, country:'FR'});
     S.staffCareer.people = [[{id:'f2', clubId:3, role:'formation', level:45}]];
     const weakStaff = stats({...base, country:'FR'});
-    delete S.staffCareer;
+    S.staffCareer = careerStaff;
     JSON.stringify({france, japan, goodStaff, weakStaff,
       bounded:[academyRecruitmentWeight({id:9, base:99, abbr:'TCX', country:'FR'}), academyRecruitmentWeight({id:9, base:40, abbr:'X', country:'GE'})]});`));
   console.log(JSON.stringify(result));

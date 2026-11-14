@@ -27,11 +27,16 @@ function factory(){
  function leagueOf(s,clubId){for(const [k,ids]of Object.entries(subjectLeagues(s)))if(ids.includes(clubId))return k;return null;}
  const subject=(s,clubId)=>leagueOf(s,clubId)!==null;
  // Tous les clubs français (y compris Nationale) comptent pour la licence et le centre.
+ // Carrière Monde : les clubs n'ont pas de pays ; sont français les membres des ligues
+ // Top 14 (« elite »), Pro D2 (« accession ») et Nationale du Monde (promus et relégués suivent).
+ const WORLD_FRENCH=['elite','accession','nationale'];
  function frenchClubs(s){
   if(franceActive(s))return s.clubs.map(c=>c.id);
-  if(worldActive(s))return s.clubs.filter(c=>c.country==='FR').map(c=>c.id);
+  if(worldActive(s)&&s.worldMode?.leagues)return WORLD_FRENCH.flatMap(k=>s.worldMode.leagues[k]?.members||[]);
   return [];
  }
+ // Jeune formé dans un centre français (identifiant youth-<club>-<saison>-<n>).
+ function frenchYouth(p,french){const m=/^youth-(\d+)-/.exec(p?.id||'');return !!m&&french.has(+m[1]);}
  const active=s=>s?.jiff?.version===1;
  // Statuts rangés en 64 paniers : la sauvegarde refuse les objets de plus de 2000 clés.
  const bucketOf=pid=>'b'+(hash(pid)%BUCKETS);
@@ -58,7 +63,8 @@ function factory(){
    // tirés par empreinte pour que chaque effectif puisse composer une feuille conforme.
    const order=c.players.filter(p=>id(p.id)).sort((a,b)=>hash(a.id+':jiff')-hash(b.id+':jiff')||(a.id<b.id?-1:1));
    const quota=french.has(c.id)?Math.ceil(order.length*.7):0;
-   order.forEach((p,i)=>setStatus(s,p.id,i<quota?[1,0,5]:[0,0,0]));
+   // Un pro sorti d'un centre français compte ses saisons de centre d'après son âge.
+   order.forEach((p,i)=>setStatus(s,p.id,i<quota?[1,0,5]:frenchYouth(p,french)?initialEntry(p,true):[0,0,0]));
    for(const p of academyOf(s,c.id))if(id(p.id))setStatus(s,p.id,initialEntry(p,french.has(c.id)));
   }
   return true;
@@ -69,6 +75,14 @@ function factory(){
   if(c.id===s.club)return [...(s.lineup||[]),...(s.reserves||[])].filter(Boolean);
   const sheet=buildSheet(c);return [...sheet.lineup,...sheet.bench].filter(Boolean);
  }
+ // Carrière Monde : clubs qui jouent cette semaine une journée de saison régulière du Top 14
+ // ou de la Pro D2 (le calendrier Monde compte des semaines sans match, de Coupe d'Europe
+ // ou de phase finale, qui n'entrent pas dans la moyenne).
+ function worldSheetsThisWeek(s){
+  const out=[];
+  for(const f of CDWorldCareer.fixtures(s))if(f.phase==='league'&&(f.competitionId==='elite'||f.competitionId==='accession'))out.push(f.homeId,f.awayId);
+  return out;
+ }
  function countSheet(s,c,ids=sheetIds(s,c)){
   const players=new Map(c.players.map(p=>[p.id,p]));
   return ids.filter(x=>isJiff(s,players.get(x))).length;
@@ -78,7 +92,8 @@ function factory(){
  function recordWeek(s){
   if(!active(s)||s.phase!=='league')return false;
   const key=weekKey(s);if(s.jiff.lastCount===key)return false;
-  for(const ids of Object.values(subjectLeagues(s)))for(const ci of ids){
+  const playing=worldActive(s)&&!franceActive(s)?[worldSheetsThisWeek(s)]:Object.values(subjectLeagues(s));
+  for(const ids of playing)for(const ci of ids){
    const c=s.clubs[ci];if(!c)continue;
    const row=s.jiff.counts[ci]||(s.jiff.counts[ci]=[0,0]);
    row[0]++;row[1]+=countSheet(s,c);
@@ -101,7 +116,8 @@ function factory(){
    const row=s.jiff.counts[ci];if(!row||!row[0])continue;
    const average=Math.round(row[1]/row[0]*100)/100,deduction=deductionFor(average),bonus=bonusFor(league,average),c=s.clubs[ci];
    if(deduction)deductions[ci]=deduction;
-   if(bonus&&c&&Number.isFinite(c.cash))c.cash+=bonus;
+   // Prime au club ; pour le club du manager, elle passe par la comptabilité.
+   if(bonus&&c&&Number.isFinite(c.cash)){if(ci===s.club&&typeof ledgerEntry==='function'&&typeof club==='function'&&club()===c)ledgerEntry('Fonds JIFF',bonus);else c.cash+=bonus;}
    results.push({season:completed,clubId:ci,league,sheets:row[0],average,deduction,bonus});
    if(ci===s.club&&typeof news==='function')news(deduction?`JIFF : moyenne de ${average.toLocaleString('fr-FR')} par feuille, sous les ${TARGET} exigés. Retrait de ${deduction} point${deduction>1?'s':''} la saison prochaine.`:bonus?`JIFF : moyenne de ${average.toLocaleString('fr-FR')} par feuille. Le fonds JIFF verse ${bonus.toLocaleString('fr-FR')} € au club.`:`JIFF : moyenne de ${average.toLocaleString('fr-FR')} par feuille, quota respecté.`);
   }
@@ -115,6 +131,8 @@ function factory(){
    }
    for(const p of c.players){
     const e=getStatus(s,p.id)||[0,0,0];
+    // Un Espoir passé pro reste rattaché au centre de son club formateur jusqu'à 21 ans.
+    if(!e[0]&&(p.age|0)<=21&&frenchYouth(p,french)){e[1]=Math.min(9,e[1]+1);if(e[1]>=3){e[0]=1;if(c.id===s.club&&typeof news==='function')news(`${p.name} obtient le statut JIFF après trois saisons au centre de formation.`);}}
     if(!e[0]&&(p.age|0)<=23){e[2]=Math.min(9,e[2]+1);if(e[2]>=5){e[0]=1;if(c.id===s.club&&typeof news==='function')news(`${p.name} obtient le statut JIFF après cinq saisons de licence en France.`);}}
     setStatus(s,p.id,e);
    }
@@ -125,20 +143,37 @@ function factory(){
   // Les retraits ne valent que pour la saison suivante : le classement final de la saison
   // terminée (barrage, promotions, archives) n'est jamais modifié après coup. Ils sont
   // donc mis en attente puis appliqués une fois la nouvelle saison ouverte.
-  s.jiff.deductions={};s.jiff.deductionSeason=completed;s.jiff.counts={};s.jiff.lastCount=null;
+  // Les retraits de la saison terminée restent en place jusqu'à l'ouverture de la suivante
+  // (classement final, archives et départages calculés pendant le passage de saison).
+  s.jiff.counts={};s.jiff.lastCount=null;
   s.jiff.results=s.jiff.results.concat(results).slice(-HISTORY);
   return deductions;
  }
- function openSeason(s,deductions){if(!active(s))return false;s.jiff.deductions=copy(deductions||{});s.jiff.deductionSeason=s.season;return true;}
+ function openSeason(s,deductions){
+  if(!active(s))return false;s.jiff.deductions=copy(deductions||{});s.jiff.deductionSeason=s.season;
+  // Carrière Monde : le classement recopié dans les clubs intègre aussitôt le retrait.
+  if(worldActive(s)&&!franceActive(s)&&typeof CDWorldCareer.rows==='function')for(const k of ['elite','accession'])if(s.worldMode?.leagues?.[k])for(const r of CDWorldCareer.rows(s,k))if(s.clubs[r.clubId])s.clubs[r.clubId].points=r.points;
+  return true;
+ }
+ // Retraits applicables à une saison donnée : saison courante (état), sinon d'après les bilans
+ // de la saison précédente (seules les dernières saisons restent dans l'historique).
+ function deductionsFor(s,season=s?.season){
+  if(!active(s))return {};
+  if(season===s.jiff.deductionSeason)return copy(s.jiff.deductions);
+  const out={};for(const r of s.jiff.results)if(r.season===season-1&&r.deduction)out[r.clubId]=r.deduction;return out;
+ }
  // Composition automatique : on échange des remplaçants puis des titulaires non JIFF
  // contre le meilleur JIFF valide du même poste jusqu'à atteindre la moyenne exigée.
  function comply(s,c,sheet){
   if(!active(s)||!subject(s,c.id))return sheet;
   const players=new Map(c.players.map(p=>[p.id,p])),used=new Set([...sheet.lineup,...sheet.bench].filter(Boolean));
+  // Carrière Monde : un joueur retenu en sélection à la date du match n'est jamais appelé.
+  const fixture=worldActive(s)&&typeof CDWorldCareer.fixtures==='function'?CDWorldCareer.fixtures(s).find(f=>f.homeId===c.id||f.awayId===c.id):null;
+  const released=p=>!!fixture&&typeof CDWorldCareer.clubReleaseOn==='function'&&!!CDWorldCareer.clubReleaseOn(s,p.id,fixture.date);
   let count=[...used].filter(x=>isJiff(s,players.get(x))).length;
   const swap=(list,i,eligible)=>{
    const current=players.get(list[i]);if(!current||isJiff(s,current))return false;
-   const options=c.players.filter(p=>!p.injury&&!used.has(p.id)&&isJiff(s,p)&&eligible(p,i));
+   const options=c.players.filter(p=>!p.injury&&!used.has(p.id)&&isJiff(s,p)&&eligible(p,i)&&!released(p));
    if(!options.length)return false;
    const best=options.sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1))[0];
    used.delete(list[i]);used.add(best.id);list[i]=best.id;count++;return true;
@@ -200,6 +235,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,initialize,openSeason,getStatus,setStatus,recordWeek,closeSeason,comply,isJiff,deduction,deductionFor,bonusFor,subjectLeagues};
+ return {target:TARGET,project,validate,execute,installHooks,initialize,openSeason,getStatus,setStatus,recordWeek,closeSeason,comply,isJiff,deduction,deductionsFor,deductionFor,bonusFor,subjectLeagues,frenchClubs};
 }
 module.exports={files,commands,factory};

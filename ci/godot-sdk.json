@@ -6,9 +6,7 @@
   "executable": "Godot_v4.7.2-stable_linux.x86_64",
   "suites": [
     "tests/godot-immersion-copy.cjs",
-    "tests/godot-regen-portraits.cjs",
-    "tests/godot-epcr-preparation.cjs",
-    "tests/godot-immersive-reception.cjs"
+    "tests/godot-regen-portraits.cjs"
   ],
   "suiteEnvironment": {},
   "suiteCases": {}

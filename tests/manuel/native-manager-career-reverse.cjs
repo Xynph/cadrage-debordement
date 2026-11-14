@@ -1,0 +1,57 @@
+'use strict';
+// HORS CI (décision d'intégration du 13/11/2026) : la saison Monde jusqu'à l'ouverture de la fenêtre de mobilité
+// (phase 'ended', une quarantaine de semaines à 6-10 s chacune) coûte à elle seule ~850 s en local, puis ~90 s par
+// next_season (deux carrières) : ~1050 s au total et plus de 2 Go de tas (JSON.parse des trois états). Le test ne se
+// découpe pas en fichiers < 600 s sans rejouer cette saison dans chacun (aucun état partagé entre suites/shards).
+// Lancement à la main : NODE_OPTIONS=--max-old-space-size=8192 node tests/manuel/native-manager-career-reverse.cjs
+// Il reste en Monde (world-champ), sans drapeau CD_MODES_HERITES ; ce répertoire n'est pas planifié par la CI.
+const {settleClubMeetings}=require('../helpers/club-meetings.cjs');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {createBridge}=require('../../native/engine/worker.cjs');
+const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-manager-career-reverse-'));let request=0;const bridges=[];
+function open(name){const b=createBridge({dataDir:path.join(root,name),seed:13,now:1700000000000});bridges.push(b);return b;}
+const good=(b,command,payload={})=>{const r=b.handle({id:++request,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
+const doc=b=>JSON.parse(good(b,'export').meta.exportText),data=b=>good(b,'snapshot').clubLife.managerCareer;
+function act(b,command,p={}){return good(b,command,{context:data(b).context,...p});}
+function signed(state){const s={format:'cadrage-debordement-save',exportVersion:1,exportedAt:'2026-11-08T12:00:00.000Z',state};let h=2166136261;for(const ch of JSON.stringify(state)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}s.checksum=(h>>>0).toString(16).padStart(8,'0');return s;}
+try{
+ const b=open('accession');settleClubMeetings(good(b,'new_career',{mode:'world-champ',club:29}),(command,payload)=>good(b,command,payload));act(b,'manager_career_activate');
+ if(process.env.CD_MANAGER_REVERSE_PROFILE){const profile=JSON.parse(fs.readFileSync(process.env.CD_MANAGER_REVERSE_PROFILE,'utf8')),state=JSON.parse(profile.store['bdt-v1']),carrier=doc(b),fixture=signed(state);fixture.format=carrier.format;good(b,'import',{text:JSON.stringify(fixture)});}
+ else{let model=good(b,'snapshot');for(let i=0;i<80&&!model.clubLife.managerCareer.window;i++){
+  // Le modèle de chaque clôture de semaine sert de lecture suivante (une saison Monde compte plus de quarante semaines).
+  if(model.next){
+   if(!model.selection.valid)model=good(b,'auto_lineup');
+   if(!model.selection.valid){
+    const expectedSlots=model.selection.coverage?.slots;
+    assert.ok(expectedSlots?.length,`Semaine ${model.meta.week} : feuille incomplète sans renfort disponible`);
+    model=good(b,'promote_cover',{confirmed:true,expectedSlots});
+   }
+   assert.equal(model.selection.valid,true,'Feuille qualifiée avant chaque rencontre de la campagne réelle');
+   good(b,'begin_match');good(b,'delegate');
+  }
+  model=settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));
+ }assert.equal(model.clubLife.managerCareer.window,true,'La saison s’achève et ouvre la fenêtre de mobilité');}
+ let target=data(b).opportunities.find(x=>x.leagueId==='elite'&&x.accepted);
+ if(!target){
+  // Actual club29's first season can correctly receive only refusals. Qualify
+  // the inverse transition with an explicit suitable career fixture, without
+  // weakening the production offer rules or asserting an automatic promotion.
+  const carrier=doc(b),state=carrier.state,id=data(b).opportunities.find(x=>x.leagueId==='elite').clubId;
+  state.worldManagement.clubInfo[29].reputation=100;state.trust=100;
+  Object.assign(state.worldManagement.clubInfo[id],{reputation:50,coachConfidence:0,consecutiveLosses:10,debt:0});state.clubs[id].cash=Math.max(100000,state.clubs[id].cash);
+  const fixture=signed(state);fixture.format=carrier.format;good(b,'import',{text:JSON.stringify(fixture)});target=data(b).opportunities.find(x=>x.clubId===id&&x.accepted);
+ }
+ assert.ok(target,'Fixture admissible Accession vers Élite');
+ act(b,'manager_career_apply',{clubId:target.clubId});const offerId='job-1-'+target.clubId;
+ const current=good(b,'export').meta.exportText,declined=open('declined');good(declined,'import',{text:current});act(declined,'manager_career_decline',{offerId});assert.equal(data(declined).applications.find(a=>a.id===offerId).status,'declined');assert.equal(declined.handle({id:++request,command:'manager_career_accept',payload:{context:data(declined).context,offerId,confirmed:true}}).ok,false);
+ act(b,'manager_career_accept',{offerId,confirmed:true});const control=open('control');good(control,'import',{text:good(b,'export').meta.exportText});act(control,'manager_career_cancel');settleClubMeetings(good(control,'next_season',{confirmed:true}),(command,payload)=>good(control,command,payload));settleClubMeetings(good(b,'next_season',{confirmed:true}),(command,payload)=>good(b,command,payload));
+ const a=doc(b).state,z=doc(control).state;assert.equal(a.club,target.clubId);assert.equal(a.managerMobility.history[0].fromClub,29);assert.deepEqual(a.clubs.map(c=>c.cash),z.clubs.map(c=>c.cash));assert.deepEqual(a.clubs.map(c=>c.players.map(p=>p.id)),z.clubs.map(c=>c.players.map(p=>p.id)));{// Politique 3 : le club repris garde son centre ; sa nouvelle génération attend le choix du
+ // manager au lieu du choix automatique, et ses Espoirs ne sont pas réduits par le staff.
+ const mine=a.development.academy,ai=z.aiRoster.academies.find(c=>c.clubId===target.clubId).players,season=a.season;
+ const kept=ai.filter(p=>!p.id.startsWith('youth-'+target.clubId+'-'+season+'-'));
+ assert.deepEqual(mine.filter(p=>kept.some(q=>q.id===p.id)).map(p=>p.id),kept.map(p=>p.id));
+ assert.ok(mine.filter(p=>!kept.some(q=>q.id===p.id)).every(p=>p.age>=18),'seuls des Espoirs non retenus par le staff de l’ordinateur diffèrent');
+ assert.equal(a.academyIntake.season,season);assert.ok(a.academyIntake.players.length>=12);}
+ const saved=good(b,'export').meta.exportText,file=path.join(good(b,'snapshot').meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file);for(let i=0;i<3;i++)good(b,'snapshot');assert.deepEqual(fs.readFileSync(file),bytes);assert.equal(good(b,'export').meta.exportText,saved);good(b,'shutdown');const resumed=open('accession');assert.equal(good(resumed,'snapshot').meta.recoveryRequired,false);assert.equal(good(resumed,'export').meta.exportText,saved);
+ console.log('PASS vrai worker production manager : Accession29→Élite, refus, annulation témoin, comptes/effectifs/centre conservés, pureté octets, reprise exacte');
+}finally{for(const b of bridges)b.close();}

@@ -24,21 +24,20 @@ du 13/11) en la réduisant aux textes.
 Aucune carrière ne doit être perdue ni convertie. Ces identifiants sont
 techniques et restent identiques :
 
-- **Le logo (image)** : `branding/oval-legacy-27-logo.png` est une image dont le
-  lettrage dit encore « OVAL LEGACY 27 ». C'est lui qu'on voit dans la barre
-  latérale et à l'accueil : **il reste à refaire avec la direction artistique**
-  (la graphiste). Les fichiers gardent leur nom (logo et icône).
-  Une proposition provisoire (même symbole, lettrage « RUGBY LEGACY 27 /
-  CLUB MANAGER » en Barlow Condensed) existe sur la branche
-  `claude/renommage-rugby-legacy-27-20261111` (fichier
-  `native/godot/branding/rugby-legacy-27-logo.png`), non reprise ici : le
-  logo relève de la DA.
-- **Exécutable et archive** : `OvalLegacy27.exe` et
-  `OvalLegacy27-PrototypeGodot-Windows-x64.zip`. Ces noms sont codés en dur
-  dans `ci/windows-package.py`, `ci/windows-receipt.ps1`,
-  `ci/publish-windows-release.py` et `tests/windows-package.cjs` ; les changer
-  sans exécuter la chaîne Windows casserait la recette. À faire avec une
-  recette Windows complète, dans une PR dédiée.
+- **Dépôt, profil, formats** : voir ci-dessous.
+
+## Ce qui a été renommé ensuite (13 novembre, PR logo et exécutable)
+
+- **Logo** : `branding/rugby-legacy-27-logo.png` (lettrage « RUGBY LEGACY 27 /
+  CLUB MANAGER », repris de la proposition de la PR #546) remplace
+  `oval-legacy-27-logo.png` ; l'icône devient `rugby-legacy-27-icon.png`.
+  **Logo PROVISOIRE** en attendant la graphiste.
+- **Exécutable et archive** : `RugbyLegacy27.exe`, dossier
+  `RugbyLegacy27-PrototypeGodot` et archive
+  `RugbyLegacy27-PrototypeGodot-Windows-x64.zip`, dans `ci/`, `scripts/`,
+  `windows-release.cfg`, le README et les tests. Les rapports datés d'avant le
+  13/11 gardent l'ancien nom (historique).
+
 - **Profil Windows** : `%APPDATA%\CadrageDebordement\PrototypeGodot`. Le jeu
   renommé lit et écrit au même endroit. Il n'y a donc ni copie, ni second
   profil, ni écrasement possible. Le test rouvre une carrière du mode Monde

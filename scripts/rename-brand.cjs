@@ -9,8 +9,8 @@
 //
 // Invariants de compatibilité, volontairement HORS périmètre (voir
 // docs/renommage-rugby-legacy-27.md) :
-//   - exécutable OvalLegacy27.exe et archive OvalLegacy27-PrototypeGodot (chaîne Windows)
-//   - images branding/oval-legacy-27-logo.png et -icon.png (logo à refaire par la DA)
+//   (l'exécutable RugbyLegacy27.exe, l'archive RugbyLegacy27-PrototypeGodot et les images
+//   branding/rugby-legacy-27-*.png portent déjà le nouveau nom : plus d'exception)
 //   - profil Windows  %APPDATA%\CadrageDebordement\PrototypeGodot
 //   - format d'export 'cadrage-debordement-save'
 //   - format de calendrier 'oval-legacy-fictional-calendar'
@@ -51,13 +51,12 @@ const RULES = [
 ];
 // Ancien nom encore présent après remplacement = oubli. Restes autorisés dans
 // le périmètre : l'identifiant de format de calendrier, les noms de l'exécutable
-// et de l'archive (chaîne Windows, hors périmètre), les images du logo et de
-// l'icône (fichiers inchangés) et les liens vers les rapports datés, dont le
+// et de l'archive, les images du logo et de l'icône sont renommés ; reste les liens vers les rapports datés, dont le
 // nom de fichier ne change pas.
-const LEFTOVER = /oval[ -]?legacy(?!-fictional-calendar|27(?:\.exe|-PrototypeGodot)|-27-(?:logo|icon)\.png|-[a-z0-9-]+\.md)/i;
+const LEFTOVER = /oval[ -]?legacy(?!-fictional-calendar|-[a-z0-9-]+\.md)/i;
 
-// Aucun fichier n'est renommé : le logo est une image dont le lettrage dit
-// encore « Oval Legacy » (voir docs/renommage-rugby-legacy-27.md).
+// Aucun fichier à renommer par ce script (logo, icône, exécutable et archive
+// l'ont été à la main, voir docs/renommage-rugby-legacy-27.md).
 const RENAMES = [];
 
 function tracked() {

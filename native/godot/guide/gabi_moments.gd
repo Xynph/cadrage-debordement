@@ -74,6 +74,8 @@ const BULLES := {
 	"travail-club-caractere": "consigne", "travail-club-01": "consigne",
 	"strategie-caractere": "souvenir", "strategie-01": "consigne",
 	"carriere-caractere": "question", "carriere-01": "consigne",
+	# Moments clés de Gabi adjoint (mode grand, coach_canvas.gd).
+	"moment-debut": "accueil", "moment-finale": "consigne", "moment-crise": "mauvaise_nouvelle",
 }
 
 ## Écran sans bulle connue (ancien appel set_context) : catégorie par défaut de la page.

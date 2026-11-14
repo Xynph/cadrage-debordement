@@ -45,7 +45,7 @@ les postes à faible dispersion) ; à égalité : la note, le vainqueur, le plus
 Étalonnage : voir « Équilibre » (mesure en mode Monde du 13 novembre). Le décalage `POSTE` a été
 mesuré sur 20 journées de l'ancien mode France (3 000 notes) et n'a pas été re-mesuré en mode Monde.
 
-## Enregistrement (`S.matchNotes`, version 1)
+## Enregistrement (`S.matchNotes`, version 2 ; voir aussi « XV type » plus bas)
 
 | Champ | Contenu | Taille |
 |---|---|---|
@@ -228,3 +228,55 @@ Limites et suite :
   (effets coupés) ; deux saisons complètes avec et sans effets restent à simuler ;
 - fenêtre courte : début de saison seulement (6 matchs du manager), compétitions encore en
   poules ; à refaire sur une saison complète.
+
+## XV type : équipe-type de la journée et équipe de la saison (demande de Léo, 13 novembre 2026)
+
+« Équipe de la saison aussi, comme en vrai dans le Top 14 (ils font aussi l'équipe-type de la journée de championnat). »
+
+**Équipe-type de la journée.** À la clôture de chaque journée (`finJournee`), pour chaque championnat dont une rencontre de
+saison régulière a été jouée (France : Top 14 « elite » et Pro D2 « accession » ; monde : chaque ligue), que le club du manager y
+figure ou non. Quinze joueurs, un par poste : pilier gauche, talonneur, pilier droit, 2 deuxièmes lignes, 3 troisièmes lignes
+(ailes et numéro 8), 9, 10, 2 ailiers, 2 centres, arrière, numérotés de 1 à 15 (le numéro 8 revient au joueur inscrit à ce poste). Choix sur la
+note du match (joueurs ayant joué 40 minutes ou plus) ; départage déterministe : minutes, essais, puis identifiant. Le joueur de la
+journée est la meilleure note du XV. L'entraîneur de la journée est celui du club à la plus large victoire (puis le plus de points
+marqués, puis l'identifiant du club) ; son nom vient du personnel de carrière s'il existe, sinon l'écran affiche « Staff du club ».
+Actualité : une ligne « XV de la 7e journée · Top 14 » pour le championnat du manager (nombre et noms de ses joueurs présents, sinon
+« aucun joueur de … »), plus la distinction `equipe` pour chacun de ses joueurs. Les autres championnats sont enregistrés
+(`equipes`) et consultables dans la vue XV type, sans surcharger le fil d'actualité.
+
+**Équipe de la saison.** Choisie à la fin de la saison régulière de chaque championnat (`regulierFini` : plus de journée de
+championnat à jouer), donc **avant les phases finales**, sur les seules rencontres de saison régulière (`reg`) : moyenne de saison
+avec un minimum de la moitié des journées jouées, puis nombre de sélections en équipe-type de la journée, puis matchs, puis
+identifiant. Même composition (un joueur par poste). Un championnat dont la fin de saison régulière n'a pas été vue (reprise d'une
+sauvegarde) est rattrapé à `advanceSeason` (`finSaison`). Publiée dans l'actualité (« XV de la saison · Top 14 »), enregistrée dans
+`S.matchNotes.saisons` (6 saisons au plus, 40 fiches), distinction `xvsaison` pour les joueurs du manager, et affichée dans la fiche du joueur
+(repère de carrière « XV de la saison 2026-2027 · Top 14 », nombre de sélections en XV de la journée).
+
+**Effets** (bornés, coupés par `CD_NOTES_EFFETS=0`) : un lauréat de l'équipe de la saison de l'an dernier ou de la saison en cours gagne
++3 % de valeur marchande et +0,5 point d'intérêt des clubs, dans les mêmes bornes qu'avant (−8 % à +12 % ; −2 à +3 points).
+
+**Sauvegarde.** `S.matchNotes.version` passe à 2 : `reg` {championnat: {joueur: [matchs, somme des notes ×10, minutes, essais,
+sélections, groupe de poste, club]}}, `regJ` (journées jouées par championnat), `equipes` (dernière équipe-type de chaque championnat)
+et `saisons`. Une sauvegarde en version 1 reste valide : `migrer` ajoute les champs vides au premier usage, rien n'est inventé pour
+le passé. `semaine.notes` est vidé à la publication (transitoire). Ordre de grandeur : +40 Ko par saison complète (mode commun).
+Rien n'est tiré au hasard et les résultats de match sont inchangés.
+
+**Vue XV type** (`native/godot/ui/equipe_type_view.gd`), façon visuel « XV de la journée » publié chaque semaine pour le Top 14,
+en carte à partager 1920×1080 opaque (le jeu ne transparaît pas) :
+- en-tête « XV DE LA 7E JOURNÉE · TOP 14 » ou « XV DE LA SAISON 2026-2027 · TOP 14 », saison, critère, nombre de clubs représentés ;
+- terrain vu de dessus, vertical (en-buts, poteaux, 22 m, 10 m, médiane, tirets des 5 et 15 m), quinze cartes en formation :
+  piliers et talonneur devant, deuxième ligne, troisième ligne (6, 8, 7), charnière 9-10, ailiers 11 et 14 sur les côtés,
+  centres 12-13, arrière au fond ;
+- chaque carte : fenêtre aux couleurs du club (dégradé et bandes obliques), portrait, numéro dans un disque aux couleurs du club,
+  pastille de note (barème de couleur partagé : vert 7 et plus, or 6 à 7, rouge sous 6), écusson, nom, puis « 3e sélection »
+  (journée, en or à partir de la 3e) ou « 17 matchs » (saison) et sigle du club ; infobulle détaillée ;
+- joueur de la journée (meilleure moyenne pour la saison) : carte agrandie (×1,15), cadre et halo or, bandeau « ★ JOUEUR DE LA
+  JOURNÉE », et grande fiche à gauche (portrait 250 px sur les couleurs du club, note, compteur de sélections) ;
+- entraîneur de la journée sous la fiche (écusson, nom, club, écart) ; liseré et halo verts sur les joueurs du club du manager,
+  rappelés par leur nom ; légende de lecture à droite.
+Ouverte depuis l'actualité (vignette cliquable du fil « Vie du club ») et depuis Compétitions (bouton « XV type »). Écussons et
+portraits passent par le mécanisme des packs d'identité comme les autres écrans (`G.crest` / `G.portrait` : `logoPath`, `portraitPath`
+projetés par identifiant), avec repli sur l'écusson et le portrait originaux du jeu ; aucune image réelle dans le dépôt.
+Test : `tests/godot-equipe-type.cjs` (ouverture par les deux entrées, 15 cartes avec portrait, écusson et note, aucune carte qui
+en chevauche une autre en tenant compte de l'agrandissement, une seule vedette, écusson du jeu sans pack, logo du pack avec un pack
+de test).

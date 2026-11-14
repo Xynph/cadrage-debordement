@@ -37,7 +37,7 @@ function calculerParite() {
     if (qtOff) after.run('QUICK_TAP_RULES=0');
     after.run('var populationV2Setup=aiRosterSetup;aiRosterSetup=function(){var result=populationV2Setup();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result}');
     freezeFranceBirths(after);
-    if (mode === 'lnr') for (const f of ['lnr-rosters-data.js', 'lnr-career.js']) after.run(fs.readFileSync(path.join(DIST, f), 'utf8'));
+    if (mode === 'lnr') for (const f of ['lnr-rosters-base.js', 'lnr-career.js']) after.run(fs.readFileSync(path.join(DIST, f), 'utf8'));
     after.run("start(0,'" + mode + "')");
     const same = stage => { baseline.captures[mode][stage] = { hash: hash(after.run('JSON.stringify(S)')), seed: after.seed() }; };
     same('création');

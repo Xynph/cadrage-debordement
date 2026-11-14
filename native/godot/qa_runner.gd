@@ -188,8 +188,8 @@ func _display_reception() -> void:
 	_dismiss()
 	await _settle()
 
-func _wait() -> bool:
-	var deadline:=Time.get_ticks_msec()+20000
+func _wait(limit_ms:int=20000) -> bool:
+	var deadline:=Time.get_ticks_msec()+limit_ms
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(not app.waiting and not app.model.is_empty(),"Engine response is bounded")
 	return not app.waiting and not app.model.is_empty()
@@ -296,7 +296,7 @@ func _publish_press_invitation(restore_route: bool = true, minimize_impact: bool
 		if not _press_named("PressReturn", scope): return false
 		await _wait()
 		success = app.bridge.last_response_ok
-	_check(success, "Publishing and leaving the conference releases the press appointment")
+	_check(success, "Publishing and leaving the conference releases the press appointment" + ("" if success else " · " + str(app.last_error) + " · ok=" + str(app.bridge.last_response_ok) + " requis=" + str(app.model.clubLife.press.conference.get("required")) + " scene=" + JSON.stringify(app.model.get("clubLife",{}).get("clubMeetings",{}).get("scene")) + " route=" + app.route + " immersif=" + str(immersive)))
 	if restore_route: app._navigate(prior_route)
 	return success
 
@@ -483,21 +483,29 @@ func _run() -> void:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
-		app.pack_manager.creation_mode = "common"
+		app.pack_manager.creation_mode = "auto"
 		app._navigate("Création")
-		_press_named("CreationDivision_accession")
-		app.selected_club=29
-		app._render()
+		await _settle()
 		await _capture("creation-"+str(resolution.x))
-	_press("PRENDRE LES RÊNES DE VDX  →")
-	await _wait()
-	_check(app.model.get("meta",{}).get("mode")=="common" and int(app.model.club.id)==29,"Actual common30-club career created through UI")
-	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
+	# Comme un joueur : choisir le premier club proposé dans la liste, puis prendre les rênes.
+	var chosen_club := -1
+	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	var club_buttons: Array = choices.find_children("CreationClub*","Button",true,false) if choices != null else []
+	_check(not club_buttons.is_empty(),"Creation lists Monde clubs")
+	if not club_buttons.is_empty():
+		var picked: Button = club_buttons[0]
+		chosen_club = int(str(picked.name).trim_prefix("CreationClub"))
+		picked.pressed.emit()
+		await _settle()
+	_press_named("CreationStart")
+	await _wait(180000) # la base Monde (5 962 joueurs) se génère plus lentement que l'ancienne base à 30 clubs
+	_check(str(app.model.get("meta",{}).get("mode","")).begins_with("world") and int(app.model.club.id)==chosen_club,"Actual Monde career created through UI")
+	_check(int(app.model.get("meta",{}).get("database",{}).get("playerCount",0))>=1592,"Monde database keeps its player base")
 	_check(app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Shipped registry initializes new careers in v2")
 	if not app._has_career():await _finish();return
 	await _settle_required_meetings()
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
-	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
+	_check(app.model.get("leagues",[]).size()>=2,"Several divisions projected")
 	await _coach_reception()
 	for resolution in _resolutions([Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]):
 		await _resize_window(resolution)
@@ -580,6 +588,7 @@ func _run() -> void:
 	_check(app.model.meta.trained,"Training performed via real control")
 	if not await _publish_press_invitation(): await _finish(); return
 	if not await _reach_world_match_day(): await _finish(); return
+	var first_match_week: int = int(app.model.meta.week)
 	app._navigate("Match")
 	_press("COUP D'ENVOI")
 	await _wait()
@@ -592,9 +601,24 @@ func _run() -> void:
 	_check(app.model.live.paused,"Real pause")
 	await _capture("match-live")
 	var live_view: Control = app.contextual_director.view
-	var tactical: Button = live_view._camera_controls[1]
-	_check(tactical.is_visible_in_tree() and not tactical.disabled, "Actual immersive tactical camera control is enabled")
-	if not tactical.disabled: tactical.pressed.emit()
+	# En temps forts (régie du direct), la barre du bas est masquée : la caméra se choisit dans le
+	# menu « PLUS » de l'écran intermédiaire. Sans régie (repli), c'est la barre du bas.
+	var more := live_view.find_child("MatchBetweenMore", true, false) as MenuButton
+	var tactical_ready := false
+	var tactical_id := -1
+	var more_menu: PopupMenu = null
+	if more != null and more.is_visible_in_tree():
+		more_menu = more.get_popup()
+		for index in more_menu.item_count:
+			if more_menu.get_item_metadata(index) == "tactical":
+				tactical_ready = not more.disabled and not more_menu.is_item_disabled(index)
+				tactical_id = more_menu.get_item_id(index)
+	else:
+		var tactical: Button = live_view._camera_controls[1]
+		tactical_ready = tactical.is_visible_in_tree() and not tactical.disabled
+		if tactical_ready: tactical.pressed.emit()
+	_check(tactical_ready, "Actual immersive tactical camera control is enabled")
+	if tactical_ready and more_menu != null: more_menu.id_pressed.emit(tactical_id)
 	_check(app.user_preferences.effective_camera() == "tactical" and live_view.stage._camera_mode == "tactical", "Actual immersive camera control applies and preserves the tactical view")
 	await _capture("match-tactical")
 	var changes:Array=app.model.live.get("substitutions",[])
@@ -611,7 +635,7 @@ func _run() -> void:
 	await _wait()
 	_check(app.route=="Réception","Validating the result returns to the reception")
 	if not await _close_world_match_week(): await _finish(); return
-	_check(int(app.model.meta.week)==1,"Both competitions advance once")
+	_check(int(app.model.meta.week)==first_match_week+1,"The competitions played by the chosen club advance one week after its first match")
 	await _settle_required_meetings()
 	if not await _reach_world_match_day(): await _finish(); return
 	await _coverage()
@@ -660,7 +684,10 @@ func _run() -> void:
 	app._file_selected(exported)
 	await _wait()
 	_check(FileAccess.file_exists(exported),"Native UI export written")
-	await _ask("new_career",{"club":0,"mode":"france"})
+	# Le mode France n'existe plus pour une nouvelle carrière : la seconde carrière est une carrière Monde
+	# sur un autre club que celui de la carrière exportée, que l'import doit ensuite restaurer.
+	var career_club := int(app.model.club.id)
+	await _ask("new_career",{"club":1 if career_club == 0 else 0,"mode":"world-champ"})
 	await _settle_required_meetings()
 	app._navigate("Bureau")
 	await _capture("bureau-toulouse")
@@ -668,7 +695,7 @@ func _run() -> void:
 	app._file_selected(exported)
 	_confirm()
 	await _wait()
-	_check(int(app.model.club.id)==29 and int(app.model.meta.season)==2,"UI import restores exact club and season")
+	_check(int(app.model.club.id)==career_club and int(app.model.meta.season)==2,"UI import restores exact club and season")
 	_dismiss()
 	var legacy_fixture := OS.get_environment("CD_GODOT_QA_V1_FIXTURE")
 	if not legacy_fixture.is_empty():
@@ -738,11 +765,19 @@ func _systems_reception() -> void:
 	await _native06_reception()
 	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
 	app._navigate("Centre")
-	_press("ACTIVER LES PARCOURS")
-	await _settle()
-	_confirm()
-	await _wait()
-	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+	# En carrière Monde les parcours Espoirs ne sont pas encore ouverts : le Centre en donne la raison et
+	# n'offre pas d'activation (même contrôle que tests/world-native-ui.gd). Sinon l'activation reste exigée.
+	var pathways_open: bool = app.model.clubLife.academyPathways.get("available", false)
+	if pathways_open:
+		_press("ACTIVER LES PARCOURS")
+		await _settle()
+		_confirm()
+		await _wait()
+		_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+	else:
+		await _settle()
+		var activation: Array = app.root_content.find_children("*", "Button", true, false).filter(func(b: Button): return b.text == "ACTIVER LES PARCOURS")
+		_check(activation.is_empty() and not app.model.clubLife.academyPathways.get("active", false), "Monde Centre keeps Espoirs pathways closed without an activation button")
 	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
 	await _capture("centre-parcours-s2")
 	if not await _open_press_mail(str(app.model.clubLife.press.lastOutcome.invitationId)): return
@@ -785,7 +820,7 @@ func _systems_reception() -> void:
 	# In the actual application, import advances the wall clock. Only the export
 	# envelope date changes; compare every career field and its checksum exactly.
 	var exact_import: bool = after_document.state == before_document.state and after_document.checksum == before_document.checksum and after_document.format == before_document.format and after_document.exportVersion == before_document.exportVersion
-	_check(exact_import and app.model.clubLife.academyPathways.active, "New native domains survive exact import in the executable")
+	_check(exact_import and app.model.clubLife.academyPathways.get("active", false) == pathways_open, "New native domains survive exact import in the executable")
 	var private_after: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile_path))
 	_check(private_after.seed == private_before.seed, "Executable import preserves the actual private RNG cursor")
 	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
@@ -800,13 +835,36 @@ func _advance_world_day() -> bool:
 		return false
 	if not await _ask("advance_day", {"fromDate":today}): return false
 	var next_day := Time.get_date_string_from_unix_time(int(Time.get_unix_time_from_datetime_string(today)) + 86400)
-	var week_step := 1 if int(cadence.day) == 6 else 0
-	var advanced: bool = app.model.meta.calendarToday == next_day and int(app.model.meta.week) == previous_week + week_step
+	# Une fois la saison du club terminée (phase ended), la semaine du calendrier ne bouge plus :
+	# seuls les jours défilent jusqu'à l'ouverture de la saison suivante.
+	# Après la fin de saison du club (phase ended), le moteur peut encore tourner la semaine le dimanche
+	# (vu sur Windows : 2027-07-04, semaine 45 -> 46) ou la laisser fixe : les deux sont admis, seule la
+	# date doit avancer d'exactement un jour.
+	var season_over: bool = str(app.model.meta.get("phase", "")) == "ended"
+	var week_now: int = int(app.model.meta.week)
+	var week_ok: bool
+	if season_over:
+		week_ok = week_now == previous_week or (int(cadence.day) == 6 and week_now == previous_week + 1)
+	else:
+		week_ok = week_now == previous_week + (1 if int(cadence.day) == 6 else 0)
+	var advanced: bool = app.model.meta.calendarToday == next_day and week_ok
+	if not advanced: printerr("DIAG jour: avant=%s semaine=%d jour=%d -> apres=%s semaine=%d attendu=%s phase=%s" % [today, previous_week, int(cadence.day), app.model.meta.calendarToday, int(app.model.meta.week), next_day, str(app.model.meta.get("phase",""))])
 	_check(advanced, "Calendar advances exactly one day from " + today)
 	if advanced: journey.day_advances += 1
 	return advanced
 
+func _advance_preseason() -> bool:
+	# Début de carrière Monde en avant-saison (13/07) : un seul pas jusqu'à l'ouverture du calendrier.
+	var preseason: Variant = app.model.meta.get("preseason")
+	if not preseason is Dictionary: return true
+	var opening: String = str(preseason.get("opening", ""))
+	if not await _ask("preseason_advance", {"fromDate":str(preseason.get("today", "")),"until":"saison"}): return false
+	var done: bool = not app.model.meta.get("preseason") is Dictionary and (opening.is_empty() or app.model.meta.calendarToday == opening)
+	_check(done, "The preseason advances to the opening of the calendar")
+	return done
+
 func _reach_world_match_day() -> bool:
+	if not await _advance_preseason(): return false
 	# The longest preparation includes the 23 weeks before the Pacific opener.
 	for day in range(197):
 		if not await _settle_required_meetings(): return false

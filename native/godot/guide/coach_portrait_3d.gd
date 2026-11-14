@@ -54,6 +54,18 @@ const LIGHTS := [
 ]
 
 var model: PackedScene
+## Cadrage : « portrait » (bulle du mode grand), « medaillon » (buste serré), « visage » (tête et haut des
+## épaules, pour le disque du bandeau) ou « pied » (Gabi debout en entier, zone de Gabi au Bureau).
+## Hors « portrait », la caméra est fixe (pas de zoom pendant un salut) et le rendu suit la taille affichée
+## (set_render_size) : net sans calculer plus de pixels que nécessaire.
+var framing := "portrait"
+const MEDAILLON := {"size": 0.70, "target": Vector3(0, 1.56, 0), "render": Vector2i(320, 320), "offset": 0.07, "side": -0.32}
+const CADRAGES := {
+	"medaillon": MEDAILLON,
+	"visage": {"size": 0.44, "target": Vector3(0, 1.655, 0), "render": Vector2i(192, 192), "offset": 0.03, "side": -0.24},
+	"pied": {"size": 1.96, "target": Vector3(0, 0.95, 0), "render": Vector2i(420, 640), "offset": 0.0, "side": -0.62},
+}
+var _render_size := Vector2i.ZERO
 var reduced_motion := false
 var _context := ""
 var _profile := "origine"
@@ -185,6 +197,7 @@ func _ready() -> void:
 	_camera.position = target + Vector3(-0.55, 0.04, 3.45)
 	_camera.look_at(target)
 	_camera.make_current()
+	if framing != "portrait": _apply_framing()
 
 	visibility_changed.connect(_sync_visibility)
 	_sync_visibility()
@@ -420,9 +433,34 @@ func _play_idle() -> void:
 	_microgesture_wait = _gesture_random.randf_range(_microgesture_delay.x, _microgesture_delay.y)
 	set_process(true)
 
+## Cadrage (voir CADRAGES) : caméra fixe hors mode grand ; mode grand : portrait.
+func set_framing(value: String) -> void:
+	if value == framing: return
+	framing = value
+	if _camera != null: _apply_framing()
+
+## Taille de rendu demandée (pixels physiques affichés × suréchantillonnage), hors mode grand.
+func set_render_size(value: Vector2i) -> void:
+	value = value.clamp(Vector2i(64, 64), Vector2i(1024, 1400))
+	if value == _render_size: return
+	_render_size = value
+	if framing != "portrait": _viewport.size = value
+
+func _apply_framing() -> void:
+	var fixe: Dictionary = CADRAGES.get(framing, {})
+	_viewport.size = (_render_size if _render_size != Vector2i.ZERO else fixe.render) if not fixe.is_empty() else RENDER_SIZE
+	var target: Vector3 = fixe.target if not fixe.is_empty() else Vector3(0, 1.39, 0)
+	_camera.position = target + Vector3(fixe.side if not fixe.is_empty() else -0.55, 0.02 if not fixe.is_empty() else 0.04, 3.45)
+	_camera.look_at(target)
+	_frame_clip(StringName(_animations.current_animation) if _animations != null and _animations.is_playing() else _idle, false)
+
 func _frame_clip(clip: StringName, transition := true) -> void:
 	var target_size := GREETING_SIZE if clip in _greetings else PORTRAIT_SIZE
 	var target_offset := GREETING_OFFSET if clip in _greetings else 0.0
+	if CADRAGES.has(framing):
+		# Le cadrage reste fixe même pendant un salut : le disque du bandeau et le Bureau ne zooment pas.
+		target_size = CADRAGES[framing].size
+		target_offset = CADRAGES[framing].offset
 	if _camera_tween != null: _camera_tween.kill()
 	if not transition:
 		_camera.size = target_size

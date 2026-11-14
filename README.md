@@ -1,5 +1,7 @@
 # Rugby Legacy 27
 
+**© 2026 Cadrage Débordement — Tous droits réservés.** Le code et les contenus originaux de Rugby Legacy 27 ne sont pas publiés sous licence open source. Le dépôt est consultable publiquement, sous réserve des droits accordés par les conditions de GitHub (consultation et fork sur la plateforme), des exceptions légales et des licences tierces (assets CC0 et autres composants sous leur propre licence). Voir [LICENSE](LICENSE).
+
 **Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.7 et version web historique.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
@@ -28,7 +30,7 @@ La Formation expose les quinze espoirs du club et la progression des professionn
 
 Les trente staffs disposent de 428 références anonymisées. Un pack v2 peut présenter leurs identités et portraits sans modifier la simulation ; les packs v1 restent compatibles. Le relevé distingue les dates et références historiques. Le pack privé enrichi contient 324 photos officielles et reste séparé de la distribution de base. Voir la [couverture des staffs](docs/staff-20261108.md).
 
-Décompressez l'archive complète puis lancez `OvalLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
+Décompressez l'archive complète puis lancez `RugbyLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
 
 Depuis la création d'une carrière ou ses paramètres : **Importez un pack personnalisé**. L'analyse annonce la couverture et distingue photos officielles et illustrations IA ; l'installation et la sélection sont explicites. Les images du pack privé restent séparées du jeu de base. Deux exemples de packs de noms, dont un avec staff, sont livrés dans `Packs/`.
 
@@ -62,11 +64,11 @@ Le contact 3D reçoit une préparation debout et une protection du ballon lorsqu
 
 Le [récapitulatif initial des idées GitHub](docs/idees-github-20261108.md) confronte dix-huit familles au code alors chargé. Son [tableau de réception](docs/portage-natif-20261108.md) suit les 31 candidats : presse, rivalités et formation avancée sont portées ; la voix finale est complète et les contacts à deux corps restent partiels. Les branches déjà reprises ou supplantées ne sont pas refusionnées.
 
-Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Voir les [sources et limites du lot2](docs/roster-foundation-lot2.md) et le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
+Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Les sources et limites du lot2 (`docs/roster-foundation-lot2.md`) sont dans le dépôt privé de données ; voir le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
 
 ## Lot 1 effectifs — étape historique
 
-Les 1 592 joueurs disposent désormais d’une référence initiale traçable : 12 postes précis corroborés, 20 échéances officielles dans les deux divisions et un contrat mixte espoir/professionnel confirmé. Les informations restantes sont des estimations de jeu explicites ; les salaires, 36 attributs, 11 compétences, notes, potentiels et traits restent ceux de la base active. La fiche distingue la référence contractuelle initiale du contrat courant après une signature. Les anciennes carrières restent inchangées, sans migration automatique. Voir [couverture, sources et limites](docs/roster-foundation-lot1.md), notamment la contradiction officielle sur Traini conservée en quarantaine. Aucune nouvelle règle de rugby ou de recrutement n’est introduite.
+Les 1 592 joueurs disposent désormais d’une référence initiale traçable : 12 postes précis corroborés, 20 échéances officielles dans les deux divisions et un contrat mixte espoir/professionnel confirmé. Les informations restantes sont des estimations de jeu explicites ; les salaires, 36 attributs, 11 compétences, notes, potentiels et traits restent ceux de la base active. La fiche distingue la référence contractuelle initiale du contrat courant après une signature. Les anciennes carrières restent inchangées, sans migration automatique. Couverture, sources et limites : `docs/roster-foundation-lot1.md`, dans le dépôt privé de données, notamment une contradiction officielle conservée en quarantaine. Aucune nouvelle règle de rugby ou de recrutement n’est introduite.
 
 ## Vous découvrez GitHub ?
 
