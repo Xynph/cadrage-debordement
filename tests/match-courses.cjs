@@ -18,7 +18,9 @@ const but=equipe=>equipe===0?100:0;
 
 test('Courses découpées : issue, tirages et statistiques inchangés ; journal = ancien journal + temps de jeu avant l’essai',()=>{
  let ajoutes=0,essaisLongs=0,essaisCourts=0;
- for(const k of [0,1,2,3,5,8]){
+ // Mêmes tirages avec et sans découpage : le test est différentiel, donc indépendant des taux du moteur. Seule la quantité d'éléments
+ // exercés dépend du volume d'essais : on joue des matchs (graines 0, 1, 2…) jusqu'à avoir assez d'essais longs, sans nombre de matchs fixé.
+ for(let k=0;k<30&&!(k>=6&&ajoutes>20&&essaisLongs>5);k++){
   const avant=jouer(k,false),apres=jouer(k,true);
   for(const f of ['score','tries','stats','tac','sheets','suite'])assert.deepEqual(apres[f],avant[f],`match ${k} : ${f} identique`);
   let j=0;

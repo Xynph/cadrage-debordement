@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { context } = require('../../tests/harness.cjs');
+const T = require('../../tests/helpers/tirages.cjs');
 const { normalize } = require('../../dist/match3d/scene-adapter.js');
 
 function record() {
@@ -11,11 +12,18 @@ function record() {
     start(0); beginMatch(); pauseMatch();
     var live = S.live;
     live.paused = false; syncMatchPresentation(live);
-    // Tirage fixe : une course gagnante dans les 22 sans essai (fenêtre .47-.52 depuis la courbe de niveau du 14/11).
-    Math.random = () => .64; // essais réalistes : une course réussie sans essai (fenêtre étroite vers .62-.70 depuis la finition à .51, pénalités réalistes)
-    ballPossession(live, 0, 85); advanceCausalPlay(live);
+    ballPossession(live, 0, 85);
+  `);
+  // Scénario forcé : une course réussie dans les 22 sans essai (tirages injectés : faute écartée, course réussie, pas de finition),
+  // puis l'essai transformé (tirage bas : la transformation réussit). Aucun taux du moteur n'intervient dans le choix des tirages.
+  T.injecter(run, T.courseReussie(run, 0, { finit: false, live: 'live' }));
+  run(`
+    advanceCausalPlay(live);
     var carry = playback(live).cursor;
     var firstScoringEvent = live.events.length;
+  `);
+  T.constant(run, T.BAS);
+  run(`
     playback(live).running = true; scoreTry(live, 0, "open"); playback(live).running = false;
   `);
   const indices = run('var chosen = [carry, ...live.events.slice(firstScoringEvent).map((_, index) => firstScoringEvent + index)]; chosen');

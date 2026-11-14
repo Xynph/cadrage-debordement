@@ -5,20 +5,15 @@
 // passer au temps fort »). docs/match-importance-20261112.md.
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { context } = require('./harness.cjs');
+const { matchs: jouer } = require('./helpers/matchs.cjs');
+const T = require('./helpers/tirages.cjs');
 const H = require('../native/engine/match-highlights.cjs');
 const D = require('../native/engine/match-direct.cjs');
 
 const NIVEAUX = ['cles', 'dynamique', 'etendus'];
 
-function simuler(k) {
-  const { run } = context();
-  run(`for (let i = 0; i < ${k * 7919}; i++) Math.random(); start(${k % 10}); beginMatch(); continueMatch();`);
-  for (let i = 0; i < 800 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
-  assert.equal(run('S.live.finished'), true);
-  return { camp: run('S.live.userSide'), events: JSON.parse(run('JSON.stringify(S.live.events)')) };
-}
-const matchs = [0, 1, 2, 3, 4, 5].map(simuler);
+// Douze matchs complets de graines quelconques : les tests portent sur des règles (vraies à tout tirage) ou sur des moyennes d'échantillon.
+const matchs = jouer(12, { base: 3 });
 const copie = v => JSON.parse(JSON.stringify(v));
 
 test('Le temps fort s’ouvre au début de l’action, avant son issue, sur une décision prise sans la suite', () => {
@@ -117,23 +112,27 @@ test('Tous les essais montrés, 50 s au plus par temps fort, sélection détermi
     }
   }
   // Même graine, même match, mêmes temps forts.
-  const a = simuler(4), b = simuler(4);
+  const [a] = jouer(1, { base: 9 }), [b] = jouer(1, { base: 9 });
   assert.deepEqual(H.en_direct(a.events, { niveau: 'dynamique', camp: a.camp }), H.en_direct(b.events, { niveau: 'dynamique', camp: b.camp }));
 });
 
 test('Des grosses actions sans point montrées, et une issue qui ne se devine pas', () => {
-  let episodes = 0, points = 0;
-  const quarts = [0, 0, 0, 0];
-  for (const { camp, events } of matchs) for (const tf of H.en_direct(events, { niveau: 'dynamique', camp }).tempsForts) {
-    if (tf.suite) continue;
-    episodes++;
-    if (tf.plans.some(p => p.kind === 'try' || p.kind === 'goal')) points++;
-    quarts[Math.min(3, Math.floor(tf.minuteDebut / 20))]++;
+  // Part des temps forts qui marquent : estimateur par rapport sur 12 matchs, borne d'intention (« pas que des essais ») élargie de trois erreurs types.
+  // Elle suit le nombre d'essais, recalé à chaque réglage du moteur : on n'exige plus un intervalle lu sur un tirage (55 → 65 % dans l'historique).
+  const episodes = [], points = [], quarts = [[], [], [], []];
+  for (const { camp, events } of matchs) {
+    let e = 0, p = 0;
+    const q = [0, 0, 0, 0];
+    for (const tf of H.en_direct(events, { niveau: 'dynamique', camp }).tempsForts) {
+      if (tf.suite) continue;
+      e++;
+      if (tf.plans.some(x => x.kind === 'try' || x.kind === 'goal')) p++;
+      q[Math.min(3, Math.floor(tf.minuteDebut / 20))]++;
+    }
+    episodes.push(e); points.push(p); q.forEach((n, i) => quarts[i].push(n));
   }
-  const part = points / episodes;
-  // Essais réalistes (~6 essais par match) : 56 % des temps forts marquent (borne 55 → 65 %).
-  assert.ok(part >= 0.25 && part <= 0.65, 'temps forts qui marquent : ' + Math.round(part * 100) + ' %');
-  assert.ok(quarts.every(q => q / episodes >= 0.12), 'répartition : ' + quarts.join(' / '));
+  T.rapportDans('temps forts qui marquent', points, episodes, [0.3, 0.75]);
+  quarts.forEach((q, i) => T.rapportDans('temps forts du quart ' + (i + 1), q, episodes, [0.1, 0.42]));
 });
 
 test('Un exemple écrit à la main : la touche formée près de la ligne ouvre le temps fort', () => {
