@@ -53,7 +53,9 @@ func _contexte() -> void:
 	if model.is_empty(): return
 	var opponent := Avis.adversaire(model)
 	if not opponent.is_empty():
-		_check(str(Avis.avis("Bureau", model).texte).contains(opponent) or Avis.serie(model).get("nombre", 0) >= 3, "Bureau : l'adversaire réel est nommé (" + opponent + ")")
+		# Jour de match avec une feuille perfectible, la bulle dit le conseil précis du carnet (qui ne nomme pas l'adversaire).
+		var precis := Avis.conseil_jour_de_match(model)
+		_check(str(Avis.avis("Bureau", model).texte).contains(opponent) or Avis.serie(model).get("nombre", 0) >= 3 or not precis.is_empty(), "Bureau : l'adversaire réel est nommé (" + opponent + ")")
 	var tired: Dictionary = model.squad[3].duplicate(true)
 	var changed := model.duplicate(true)
 	for person: Dictionary in changed.squad:
@@ -103,6 +105,7 @@ func _composition() -> void:
 		_check(_valid_change(tired, change), "Composition : changement valide " + str(change))
 	_check(Avis.composition(tired) == advice, "Composition : conseil déterministe")
 	_check(changes.size() <= Avis.CHANGEMENTS_MAX, "Composition : deux changements au plus")
+	_bureau_jour_de_match(tired, advice)
 	# Un jeune ne remplace un titulaire que pour un écart nettement plus grand (prudence).
 	var young := tired.duplicate(true)
 	for person: Dictionary in young.squad:
@@ -117,6 +120,35 @@ func _composition() -> void:
 	for person: Dictionary in injured.squad:
 		if str(person.id) == candidate: person.injury = 3
 	_check(not Avis.composition(injured).get("action", {}).get("changements", []).any(func(c: Dictionary) -> bool: return str(c.playerId) == candidate), "Composition : jamais un blessé")
+
+## Jour de match, feuille perfectible : la bulle de Gabi au Bureau (« Ton avis, Gabi ? », fil du bandeau) donne le même
+## conseil précis que le carnet de la semaine (une seule source : Avis.conseil_jour_de_match), avec « Suivre le conseil » ;
+## feuille déjà bonne ou pas de match ce jour : la consigne générique reste de mise.
+func _bureau_jour_de_match(tired: Dictionary, advice: Dictionary) -> void:
+	var jour := tired.duplicate(true)
+	if not jour.get("next") is Dictionary: _check(false, "Bureau jour de match : le modèle a une rencontre du jour"); return
+	jour.meta.calendarCadence = {"matchReady": true}
+	jour.meta.trust = 80
+	jour.meta.erase("serie")
+	var carnet: Dictionary = Semaine.conseil(jour, Semaine.prochain_match(jour), 0)
+	var bulle := Avis.avis("Bureau", jour)
+	var changes: Array = advice.get("action", {}).get("changements", [])
+	_check(not bulle.get("action", {}).is_empty() and bulle.action.get("type") == "composition", "Bureau jour de match : la bulle propose le changement de composition : " + str(bulle.get("texte", "")))
+	_check(str(bulle.get("action", {}).get("libelle", "")) == "Suivre le conseil", "Bureau jour de match : bouton « Suivre le conseil » dans la bulle")
+	_check(bulle.get("action", {}).get("changements", []) == changes, "Bureau jour de match : mêmes changements que le conseil de composition")
+	_check(str(bulle.texte) == str(carnet.texte) and bulle.action == carnet.action, "Bureau jour de match : bulle et carnet disent la même chose : " + str(bulle.texte))
+	_check(not str(bulle.texte).contains("Vérifie la feuille"), "Bureau jour de match : plus de « vérifie la feuille » générique")
+	_check(str(bulle.texte).contains(Avis._nom(Avis.joueur(jour, str(changes[0].playerId)))), "Bureau jour de match : le joueur entrant est nommé : " + str(bulle.texte))
+	# Feuille déjà bonne (aucun remplaçant) : retour à la consigne de jour de match.
+	var bonne := jour.duplicate(true)
+	for assignment: Dictionary in bonne.selection.slots: assignment.eligibleIds = []
+	_check(Avis.composition(bonne).get("action", {}).is_empty(), "Bureau jour de match : feuille sans alternative = aucun conseil précis")
+	var generique := str(Avis.avis("Bureau", bonne).texte)
+	_check(generique.contains("jour de match") and generique.contains(Avis.adversaire(bonne)), "Bureau jour de match : feuille bonne -> consigne générique : " + generique)
+	# Pas de match prêt aujourd'hui : jamais de conseil de composition dans la bulle.
+	var veille := jour.duplicate(true)
+	veille.meta.calendarCadence = {"matchReady": false}
+	_check(Avis.avis("Bureau", veille).get("action", {}).is_empty(), "Bureau hors jour de match : pas de conseil de composition")
 
 func _player(model: Dictionary, id: String) -> Dictionary:
 	return Avis.joueur(model, id)

@@ -197,6 +197,10 @@ static func _bureau(model: Dictionary) -> Dictionary:
 	var morale := _nombre(model.get("meta", {}).get("morale"), -1.0)
 	var serie_ := serie(model)
 	var opponent := adversaire(model)
+	# Jour de match, feuille perfectible : le même conseil précis que le carnet de la semaine (avec « Suivre le
+	# conseil »), avant tout le reste, comme dans le carnet.
+	var precis := conseil_jour_de_match(model)
+	if not precis.is_empty(): return precis
 	if serie_.get("issue") == "defaite" and int(serie_.nombre) >= 3:
 		return _resultat("%d défaites d'affilée. On ne repeint pas une armoire bancale : reviens aux bases, la mêlée et la touche, et le reste suivra." % serie_.nombre, "mauvaise_nouvelle", NEGATIF)
 	if trust >= 0 and trust < 45:
@@ -388,6 +392,35 @@ static func composition(model: Dictionary) -> Dictionary:
 	for proposal: Dictionary in chosen:
 		changes.append({"slot": proposal.slot, "playerId": str(proposal.entrant.id), "sortant": str(proposal.sortant.get("id", ""))})
 	return _resultat(texte, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes, "libelle": "Suivre le conseil"})
+
+## Version courte du conseil de composition (carnet de la semaine et bulle du Bureau le jour de match : une seule source).
+static func composition_courte(model: Dictionary, action: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for change: Variant in action.get("changements", []):
+		if not change is Dictionary: continue
+		var entrant := _nom(joueur(model, str(change.get("playerId", ""))))
+		var sortant := _nom(joueur(model, str(change.get("sortant", ""))))
+		var poste := ""
+		for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
+			if assignment is Dictionary and int(_nombre(assignment.get("slot"), -1)) == int(_nombre(change.get("slot"), -2)): poste = str(assignment.get("label", "")).to_lower()
+		var morceau := entrant + (" à la place " + _de(sortant) if not sortant.is_empty() else "")
+		if not poste.is_empty(): morceau += " (" + poste + ")"
+		parts.append(morceau)
+	if parts.is_empty(): return "Je changerais la feuille avant le match."
+	return "Pour le match, je changerais %s : %s. Les gars sont plus frais." % ["une chose" if parts.size() == 1 else "deux choses", " ; ".join(parts)]
+
+## « de Smart », « d'Amos » (élision devant une voyelle).
+static func _de(nom: String) -> String:
+	return ("d'" if not nom.is_empty() and nom.left(1).to_upper() in ["A", "E", "I", "O", "U", "Y", "É", "È", "Ê", "Â", "Î", "Ô"] else "de ") + nom
+
+## Le conseil précis du jour de match (changements de composition, avec « Suivre le conseil »), ou {} si la
+## feuille est déjà bonne. Source unique : le carnet de la semaine (gabi_semaine.gd) et la bulle de Gabi au
+## Bureau (« Ton avis, Gabi ? », fil du bandeau) disent exactement la même chose ce jour-là.
+static func conseil_jour_de_match(model: Dictionary) -> Dictionary:
+	if not _jour_de_match(model): return {}
+	var compo := composition(model)
+	if compo.get("action", {}).is_empty(): return {}
+	return compo.merged({"texte": composition_courte(model, compo.action)}, true)
 
 static func _argument(model: Dictionary, proposal: Dictionary) -> String:
 	var entrant: Dictionary = proposal.entrant
