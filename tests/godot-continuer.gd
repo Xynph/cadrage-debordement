@@ -83,7 +83,7 @@ func run() -> void:
 	await settle()
 	check(today() == "2026-07-13", "Carrière au lundi 13 juillet 2026 (" + today() + ")")
 	check(button("ImmersiveNextDay") != null, "« Jour suivant » (+1 j) reste dans le bandeau")
-	if OS.get_environment("CD_CONTINUER_MESURE") == "1":
+	if OS.get_environment("CD_CONTINUER_MESURE") in ["1", "avant"]:
 		await mesure()
 		return finish()
 	# 1. Continuer jusqu'au premier événement (reprise de l'entraînement du club, le lundi 20 juillet).
@@ -143,17 +143,20 @@ func run() -> void:
 
 func mesure() -> void:
 	# Du 13/07 au jour du premier match : rendez-vous réglés par la même aide aux deux passages.
+	# CD_CONTINUER_MESURE=avant : même parcours en « Jour suivant » (un clic par jour).
+	var avant := OS.get_environment("CD_CONTINUER_MESURE") == "avant"
 	var t0 := Time.get_ticks_msec()
 	var clics := 0
-	for i in 60:
+	for i in 150:
 		await Flow.settle_club_meetings(app, self, check)
 		var cadence: Dictionary = app.model.get("meta", {}).get("calendarCadence", {})
 		if cadence.get("matchReady", false): break
 		app._navigate("Bureau")
 		await settle()
-		await continuer()
+		if avant: await command("advance_day", {"fromDate": today()})
+		else: await continuer()
 		clics += 1
-	print("CD_CONTINUER_MESURE apres ", JSON.stringify({"ms": Time.get_ticks_msec() - t0, "clics": clics, "date": today()}))
+	print("CD_CONTINUER_MESURE ", "avant " if avant else "apres ", JSON.stringify({"ms": Time.get_ticks_msec() - t0, "clics": clics, "date": today()}))
 
 func _shift(iso: String, days: int) -> String:
 	var unix := Time.get_unix_time_from_datetime_string(iso + "T12:00:00") + days * 86400
