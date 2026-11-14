@@ -126,9 +126,12 @@ function fabrique(){
    (on[camp]||[]).forEach((id,poste)=>{if(id==null||poste>14)return;const retour=exclus.get(String(id));if(retour!==undefined&&minute<retour)return;liste.push({id:String(id),poste,j:fiche(id,camp,poste)})});
    return liste;
   };
-  const fatigue=(c,minute)=>minute>50?.78+.22*attribut(infos[c.id],'stamina')/100:1;
-  const poidsPlaquage=minute=>c=>POIDS.plaquages[c.poste]*c.j._forme*(.55+.8*attribut(infos[c.id],'tackle')/100)*fatigue(c,minute);
-  const poidsCourse=minute=>c=>POIDS.courses[c.poste]*c.j._forme*(.6+.7*attribut(infos[c.id],c.poste<8?'power':'speed')/100)*fatigue(c,minute);
+  // Attributs normalisés (20-99, défaut 70) mémorisés par joueur : les poids de tirage les relisent des centaines de fois par match.
+  const cacheAtt={};
+  const attr=(id,cle)=>{const o=cacheAtt[id]||(cacheAtt[id]={});const v=o[cle];return v!==undefined?v:(o[cle]=attribut(infos[id],cle))};
+  const fatigue=(c,minute)=>minute>50?.78+.22*attr(c.id,'stamina')/100:1;
+  const poidsPlaquage=minute=>c=>POIDS.plaquages[c.poste]*c.j._forme*(.55+.8*attr(c.id,'tackle')/100)*fatigue(c,minute);
+  const poidsCourse=minute=>c=>POIDS.courses[c.poste]*c.j._forme*(.6+.7*attr(c.id,c.poste<8?'power':'speed')/100)*fatigue(c,minute);
   const camps=(s)=>[s,1-s];
   // Faits de la minute en cours (pour la répartition de la minute quand elle se ferme).
   let minute={faits:0,tenus:[0,0],arrets:0,courses:[0,0],x:[]};
@@ -147,21 +150,21 @@ function fabrique(){
     const plans=minute.plans||{},style=STYLES_ATTAQUE[plans.attack?.[s]]||STYLES_ATTAQUE.equilibre,defense=STYLES_DEFENSE[plans.defence?.[1-s]]||STYLES_DEFENSE.equilibre;
     const attendu=Math.max(0,REGLAGES.coursesParMinute*parts[s]*jeu*style.courses-.5*minute.courses[s]);
     const nombre=poisson(attendu,r);
-    const plaquageMoyen=def.reduce((a,c)=>a+attribut(infos[c.id],'tackle'),0)/def.length;
+    const plaquageMoyen=def.reduce((a,c)=>a+attr(c.id,'tackle'),0)/def.length;
     const pManque=REGLAGES.manque*defense.manque*(1.25-.35*plaquageMoyen/100);
     const demi=att.find(c=>c.poste===8);
     for(let k=0;k<nombre;k++){
      let porteur=choisir(att,poidsCourse(m),r);
      let gain=REGLAGES.gain*POIDS.metres[porteur.poste]*(.2+1.6*r())*style.gain*defense.gain;
-     const cassure=r()<REGLAGES.cassure*POIDS.cassure[porteur.poste]*(.6+.8*attribut(infos[porteur.id],'speed')/100)*style.gain*defense.gain;
+     const cassure=r()<REGLAGES.cassure*POIDS.cassure[porteur.poste]*(.6+.8*attr(porteur.id,'speed')/100)*style.gain*defense.gain;
      if(cassure){gain=22+r()*16;porteur.j.franchissements++}
      if(cassure||r()<pManque){
-      const rate=choisir(def,c=>POIDS.plaquages[c.poste]*(1.65-attribut(infos[c.id],'tackle')/100)*(c.poste>=10?1.3:1),r);
+      const rate=choisir(def,c=>POIDS.plaquages[c.poste]*(1.65-attr(c.id,'tackle')/100)*(c.poste>=10?1.3:1),r);
       rate.j.plaquagesManques++;porteur.j.defenseursBattus++;if(!cassure)gain+=1+r()*5;
      }
      if(demi&&porteur!==demi&&r()<REGLAGES.passeDuDemi)demi.j.passes++;
      const autres=poisson(REGLAGES.passesEnPlus*style.passes,r);
-     for(let p=0;p<autres;p++){const passeur=choisir(att,c=>POIDS.passes[c.poste]*(.6+.8*attribut(infos[c.id],'pass')/100),r);passeur.j.passes++}
+     for(let p=0;p<autres;p++){const passeur=choisir(att,c=>POIDS.passes[c.poste]*(.6+.8*attr(c.id,'pass')/100),r);passeur.j.passes++}
      porteur.j.courses++;porteur.j.metres+=cassure?gain:Math.min(19,gain);
      if(r()<REGLAGES.offload*style.offload*POIDS.offloads[porteur.poste]){
       porteur.j.offloads++;porteur.j.passes++;
@@ -179,7 +182,7 @@ function fabrique(){
     // Jeu au pied courant : plus fréquent depuis son propre camp.
     const camp=s===0?x:100-x;
     const pieds=poisson(REGLAGES.piedsParMinute*parts[s]*jeu*style.pieds*(camp<40?1.55:camp<60?.95:.45),r);
-    for(let k=0;k<pieds;k++){const buteur=choisir(att,c=>POIDS.pieds[c.poste]*(.5+attribut(infos[c.id],'kick')/100),r);if(!buteur)break;buteur.j.coupsDePied++;buteur.j.metresAuPied+=18+r()*30}
+    for(let k=0;k<pieds;k++){const buteur=choisir(att,c=>POIDS.pieds[c.poste]*(.5+attr(c.id,'kick')/100),r);if(!buteur)break;buteur.j.coupsDePied++;buteur.j.metresAuPied+=18+r()*30}
    }
    for(const s of [0,1])for(const c of presents(s,m))c.j.minutes++;
   }
@@ -256,12 +259,12 @@ function fabrique(){
     continue;
    }
    if(kind==='hand-fault'&&team!==null){
-    const c=choisir(presents(team,min),c=>POIDS.enAvant[c.poste]*(1.4-attribut(infos[c.id],'pass')/150),r);
+    const c=choisir(presents(team,min),c=>POIDS.enAvant[c.poste]*(1.4-attr(c.id,'pass')/150),r);
     if(c){c.j.enAvant++;c.j.ballonsPerdus++}
     continue;
    }
    if(kind==='penalty'&&team!==null){
-    const fautif=1-team,c=choisir(presents(fautif,min),c=>POIDS.fautes[c.poste]*(1.5-attribut(infos[c.id],'discipline')/110),r);
+    const fautif=1-team,c=choisir(presents(fautif,min),c=>POIDS.fautes[c.poste]*(1.5-attr(c.id,'discipline')/110),r);
     if(c){c.j.penalitesConcedees++;dernierePenalite={camp:fautif,minute:min,j:c.j}}
     continue;
    }
