@@ -1,0 +1,32 @@
+Copyright © 2026 Cadrage Débordement — Tous droits réservés.
+
+Rugby Legacy 27 est le nom du jeu ; Cadrage Débordement est le nom public du
+dépôt et du projet. Cette mention n'identifie pas une société constituée et ne
+remplace pas l'identité juridique des titulaires de droits concernés.
+
+Sauf indication expresse contraire, aucune licence de réutilisation,
+modification, redistribution ou exploitation commerciale du code et des
+contenus originaux du projet n'est accordée par le présent fichier.
+
+La mise à disposition publique du dépôt n'emporte pas à elle seule
+l'autorisation d'en réutiliser les contenus. Les droits et fonctionnalités
+accordés par les conditions d'utilisation de GitHub, notamment la
+consultation et la création de forks dans le service, ainsi que les
+exceptions légales applicables, demeurent réservés.
+
+Les logiciels, bibliothèques, polices, drapeaux, modèles et assets de tiers
+(dont des éléments sous licence CC0) conservent leurs licences respectives, et
+le présent avis ne revendique pas de droits sur ces éléments. Leurs textes se
+trouvent dans le dépôt, notamment :
+- dist/fonts, native/godot/ui/immersive08/fonts (polices Barlow Condensed, DM Sans) ;
+- dist/match3d/assets (ASSETS-V23-LICENSES.md, ATTRIBUTION.md) ;
+- native/godot/art/flags (flag-icons, MIT) ;
+- native/godot/ui/contextual/rooms (CREDITS.md, assets/athlete, assets/furniture) ;
+- native/godot/guide/assets (NOTICE.md, licences des voix) ;
+- native/godot/art/nationale, native/godot/art/champ (NOTICE.md) ;
+- offline (Go-LICENCE.txt) ;
+- .claude/skills/_licences et .agents/skills/_licences.
+
+Toute demande d'autorisation complémentaire peut être adressée au
+responsable du dépôt par les canaux de contact publiquement disponibles
+sur GitHub.
