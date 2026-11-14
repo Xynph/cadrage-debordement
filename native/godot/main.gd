@@ -1154,7 +1154,8 @@ func _close(exit_code: int = 0) -> void:
 	if is_instance_valid(coach): coach.destroy()
 	timer.stop()
 	bridge.stop()
-	var deadline := Time.get_ticks_msec()+2300
+	# Le moteur écrit d'abord une éventuelle décision en attente : attendre sa sortie (le pont le tue au-delà).
+	var deadline := Time.get_ticks_msec()+NativeEngineBridge.STOP_GRACE_MS+300
 	while bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
 	get_tree().quit(exit_code)
 

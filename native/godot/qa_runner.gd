@@ -1078,7 +1078,7 @@ func _finish() -> void:
 		_check(coach_voice_events.starts == 0 and coach_voice_events.ends == 0, "No Gabi speech event occurred during shutdown")
 	if is_instance_valid(app.soundscape): app.soundscape.dispose()
 	app.bridge.stop()
-	var deadline:=Time.get_ticks_msec()+2500
+	var deadline:=Time.get_ticks_msec()+NativeEngineBridge.STOP_GRACE_MS+500
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(app.bridge.child_pid<=0,"Owned worker stopped")
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}
