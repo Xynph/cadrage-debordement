@@ -63,12 +63,22 @@ module.exports = function academyGroups() {
     ].map(player => player.id));
   }
 
+  // Barème senior V2 (nouvelles carrières Monde) : les potentiels des jeunes générés suivent l'échelle du
+  // championnat et l'étage du club (native/engine/senior-calibration.cjs, youthPotential).
+  function scalePotential(s, club, player) {
+    if (!modern(s) || s.seniorCalibrationVersion !== 2 || typeof CDWorldSeniorCalibration === 'undefined') return;
+    const weight = typeof academyRecruitmentWeight === 'function' ? academyRecruitmentWeight(club) : 0;
+    const next = CDWorldSeniorCalibration.youthPotential(s, club, player, weight);
+    if (Number.isFinite(next)) player.dev.potential = next;
+  }
+
   function fillCenter(s, club, record, players, additions, ids) {
     const accepted = additions.slice(0, Math.max(0, capacity - players.length));
     let serial = 60000;
     for (const { slot, age } of accepted) {
       while (ids.has(`youth-${club.id}-${s.season}-${serial}`)) serial++;
       const player = academyPlayer(club.id, slot, s.season, serial++, false, club);
+      scalePotential(s, club, player);
       player.age = age;
       ids.add(player.id);
       players.push(player);
@@ -143,6 +153,7 @@ module.exports = function academyGroups() {
     let serial = 70000 + index;
     while (ids.has(`youth-${club.id}-${s.season}-${serial}`)) serial += 100;
     const player = academyPlayer(club.id, slot, s.season, serial, false, club);
+    scalePotential(s, club, player);
     player.age = 16;
     ids.add(player.id);
     return player;

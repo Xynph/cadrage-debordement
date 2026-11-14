@@ -82,6 +82,10 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var salary_period := _choice(display,"Affichage des salaires",["Hebdomadaire","Mensuel","Annuel"],"PreferencesSalaryPeriod")
 	display.add_child(C.wrap(preload("res://ui/salary_display.gd").CONVENTION,17,C.MUTED))
 	var stadium := _choice(display,"Éclairage du stade",["Jour","Soirée"],"PreferencesStadiumLighting")
+	# « Continuer » s'arrête toujours sur un match, un rendez-vous ou une décision obligatoire ; en plus :
+	var continue_messages := _choice(display,"Continuer s’arrête sur les messages",["Importants","Tous","Aucun"],"PreferencesContinueMessages")
+	continue_messages.tooltip_text = "Les matchs, rendez-vous et décisions obligatoires arrêtent toujours « Continuer »."
+	var continue_injuries := _choice(display,"Continuer s’arrête sur les blessures",["Des titulaires","De tout l’effectif"],"PreferencesContinueInjuries")
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
@@ -97,6 +101,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		quality.select(["economy","balanced","detail"].find(profile.data.quality))
 		salary_period.select(["weekly","monthly","annual"].find(profile.data.salary_period))
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
+		continue_messages.select(maxi(0,["importants","tous","aucun"].find(str(profile.data.get("continue_messages","importants")))))
+		continue_injuries.select(1 if profile.data.get("continue_injuries") == "effectif" else 0)
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
 		if saved_screen >= screen_count:
@@ -126,6 +132,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	quality.item_selected.connect(func(index: int): profile.set_value("quality",["economy","balanced","detail"][index]); refresh.call())
 	screen.item_selected.connect(func(index: int): profile.set_value("display_screen",index-1); refresh.call())
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
+	continue_messages.item_selected.connect(func(index: int): profile.set_value("continue_messages",["importants","tous","aucun"][index]); refresh.call())
+	continue_injuries.item_selected.connect(func(index: int): profile.set_value("continue_injuries",["titulaires","effectif"][index]); refresh.call())
 	interface_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("interface_volume",int(value))
 		refresh.call())

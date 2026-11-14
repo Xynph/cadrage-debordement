@@ -64,11 +64,14 @@ const hook=Object.fromEntries(attr.map(k=>[k,60]));hook.lineoutThrow=90;assert.e
 // Garde-fous de calibration génériques (sans donnée nominative) : élite > accession
 // à chaque poste, écart borné avec recouvrement des meilleurs joueurs d'accession,
 // et potentiel jamais inférieur à la note sur toute la base Monde.
+// Les notes de départ d'une nouvelle carrière Monde sont celles du barème senior V2 (niveau réel du
+// joueur, de son club et de son championnat) : l'écart se mesure après ce barème, dans [4 ; 9].
 {
   const mean=a=>a.reduce((n,v)=>n+v,0)/a.length,byRole=new Map();
-  for(const c of world.clubs){if(c.id>=30)continue;for(const p of c.players){const role=p.gameplayPosition||p.pos;if(!byRole.has(role))byRole.set(role,{elite:[],accession:[]});byRole.get(role)[c.id<14?'elite':'accession'].push(p.rating);}}
+  const calibrated=require('./helpers/senior-calibration-v2.cjs').calibrateRegistry(world,c=>c.id<30);
+  for(const c of calibrated){for(const p of c.players){const role=p.gameplayPosition||p.pos;if(!byRole.has(role))byRole.set(role,{elite:[],accession:[]});byRole.get(role)[c.id<14?'elite':'accession'].push(p.rating);}}
   assert.equal(byRole.size,11,'Onze postes dans les deux divisions françaises');
-  for(const [role,g] of byRole){assert.ok(g.elite.length>=30&&g.accession.length>=30,role+' : effectif trop faible');const gap=mean(g.elite)-mean(g.accession);assert.ok(gap>=3&&gap<12,`${role} : écart élite/accession ${gap.toFixed(2)} hors de [3 ; 12[`);}
+  for(const [role,g] of byRole){assert.ok(g.elite.length>=30&&g.accession.length>=30,role+' : effectif trop faible');const gap=mean(g.elite)-mean(g.accession);assert.ok(gap>=4&&gap<=9,`${role} : écart élite/accession après barème ${gap.toFixed(2)} hors de [4 ; 9]`);}
   const elite=[...byRole.values()].flatMap(g=>g.elite),accession=[...byRole.values()].flatMap(g=>g.accession);
   assert.ok(Math.max(...accession)>mean(elite),'Les meilleurs joueurs d’accession restent compétitifs en élite');
   for(const p of all){const potential=p.dev?.potential??p.potential;assert.ok(Number.isFinite(potential)&&potential>=p.rating&&potential<=99,p.id+' : potentiel incohérent avec la note');}

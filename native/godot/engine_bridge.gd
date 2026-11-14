@@ -3,6 +3,8 @@ extends Node
 ## Private JSON-lines worker. All blocking pipe operations run on _thread.
 ## Node already owns `ready`; model_changed is the authoritative engine-ready event.
 signal model_changed(model: Dictionary)
+## Réponse partielle sans modèle (« Continuer » : avance en tranches, native/engine/continuer.cjs).
+signal progressed(progress: Dictionary)
 signal command_failed(message: String)
 
 const IMPORT_LIMIT_BYTES := 8 * 1024 * 1024
@@ -236,6 +238,8 @@ func _accept(response: Dictionary) -> void:
 	if response.get("model") is Dictionary:
 		model = response.model
 		model_changed.emit(model)
+	elif last_response_ok and response.get("progress") is Dictionary:
+		progressed.emit(response.progress)
 	if not response.get("ok", false):
 		command_failed.emit(str(response.get("error", "Commande refusée.")))
 

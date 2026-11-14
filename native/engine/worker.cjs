@@ -15,6 +15,7 @@ const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makePortraitLooks=require('./portrait-looks.cjs').createLooks;
 const makeNational=require('./international-native.cjs');
+const continuer=require('./continuer.cjs');
 const {factory:internationalCallups}=require('./international-callups.cjs');
 const factsFile=path.join(__dirname,'player-real-facts.json');
 const playerFactsCatalogue=fs.existsSync(factsFile)?JSON.parse(fs.readFileSync(factsFile,'utf8')):{};
@@ -72,7 +73,7 @@ const LEGACY_PURGE_NOTICE='Les carrières des anciens modes de jeu ont été ret
 const CAREER_STATE_KEYS=['bdt-v1','bdt-backup-v1','bdt-before-import','bdt-recovery-invalid'];
 const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-matchday-pending','bdt-exported-at'];
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
 COMMANDS.add('observe_player');
 COMMANDS.add('league_benchmark');
 COMMANDS.add('restore_checkpoint');
@@ -480,7 +481,7 @@ function createBridge(options={}){
   // machine et la taille du profil) avant son propre travail : la nouvelle saison dépassait ainsi la borne de 20 s de
   // la recette Windows (run 43603330612). La création, l'import et les restaurations remplacent la carrière : la
   // décision est alors écrite d'abord, comme avant.
-  const COALESCING=new Set([...PRESS_PROGRESSION,'save']);
+  const COALESCING=new Set([...PRESS_PROGRESSION,'save','advance_until_event']);
   let pendingCommit=null,pendingFailure=null,coalescing=null;
   const restorePrior=prior=>{
    seed=prior.seed;clock=prior.clock;store=copyStore(prior.store);ctx.nativePrior=prior.state();cleanSave=prior.fromSave?prior.text:null;projectionCache.clear();
@@ -511,17 +512,18 @@ function createBridge(options={}){
    }
   }
   function flushCommit(){while(!flushStep());}
-  flushBeforeClose=flushCommit;
+  flushBeforeClose=()=>{if(advanceSession){const session=advanceSession;advanceSession=null;try{finishAdvance(null,session,null);}catch{}}flushCommit();};
   // Instrumentation des allers-retours (CD_ENGINE_TIMING=1) : durées par phase, sans effet sur la simulation.
   const timing=options.timing===true||process.env.CD_ENGINE_TIMING==='1';let phases=null,phaseAt=0;
   const mark=label=>{if(!phases)return;const now=performance.now();phases[label]=Math.round(((phases[label]||0)+now-phaseAt)*10)/10;phaseAt=now;};
   function handleMeasured(request){
-   if(!timing)return handleCommand(request);
+   const handler=request?.command==='advance_until_event'?advanceUntilEvent:handleCommand;
+   if(!timing)return handler(request);
    phases={};phaseAt=performance.now();const started=phaseAt;
-   const response=handleCommand(request);mark('reste');phases.total=Math.round((performance.now()-started)*10)/10;
+   const response=handler(request);mark('reste');phases.total=Math.round((performance.now()-started)*10)/10;
    if(response&&typeof response==='object')response.timing=phases;phases=null;return response;
   }
-  function handleCommand(request){
+  function handleCommand(request,light=false){
    let id=null;
    try{
     if(!request||typeof request!=='object'||Array.isArray(request))throw Error('Message JSON invalide.');
@@ -804,7 +806,11 @@ function createBridge(options={}){
       // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
       if(defer)run('if(S&&!validatingStartup)lastSaveError=false;');
       else{run('save();');mark('serialisation');run('nativeValidateSaved('+(FULL_VALIDATION.has(command)||coalescing?.full===true)+')');}}
-     mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     mark('validation_sauvegarde');
+     // Jour intermédiaire de « Continuer » (advance_until_event) : même jour, même sérialisation et même validation
+     // que « Jour suivant » ; la projection pour l'interface et l'écriture du profil sont faites une fois, à l'arrêt.
+     if(light){cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;return {id,ok:true,light:true};}
+     const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      if(defer){
       pendingCommit={command,stage:0,full:FULL_VALIDATION.has(command),tick:command==='tick',prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
       // La carrière en mémoire diffère désormais du texte enregistré : aucune copie d'annulation ne peut le reprendre.
@@ -828,7 +834,83 @@ function createBridge(options={}){
     }finally{if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
    }catch(error){projectionCache.clear();return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
+  // « Continuer » jusqu'au prochain événement (native/engine/continuer.cjs) : une commande avance N jours, chacun
+  // exactement comme « Jour suivant », et ne projette le modèle et n'écrit le profil qu'une fois, à l'arrêt.
+  // Avec `partial` et `budgetMs`, la réponse arrive au bout du budget sans modèle ({progress}) : l'interface montre
+  // la date et peut demander la suite ou l'arrêt ({stop:true}). Ces jours restent en mémoire (advanceSession) et sont
+  // écrits avant toute autre commande, à la fermeture ou à l'arrêt : jamais perdus en fonctionnement normal.
+  let advanceSession=null;
+  const advanceSignal=()=>JSON.parse(run('JSON.stringify('+continuer.SIGNAL_SOURCE+')'));
+  function finishAdvance(id,session,stop){
+   try{
+    const model=snapshotRaw({command:'advance_day',payload:{fromDate:session.lastFrom}});mark('projection');
+    persist();mark('ecriture_disque');
+    cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+    const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
+    model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null}};
+    model.meta.profileSafety=profileSafety.project();
+    const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
+   }catch(error){
+    // Écriture impossible : la carrière revient au jour de départ, comme un « Jour suivant » refusé.
+    try{restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:true})});}catch{}
+    projectionCache.clear();
+    return {id,ok:false,model:closed?null:snapshot(),error:error.message};
+   }
+  }
+  function advanceUntilEvent(request){
+   const id=request.id;let opts;
+   try{
+    if(closed)throw Error('Le moteur est fermé.');
+    opts=continuer.validate(request.payload??{});
+    if(!run('!!S'))throw Error('Créez ou importez une carrière.');
+   }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
+   const started=performance.now(),session=advanceSession;advanceSession=null;
+   if(opts.stop){
+    if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'});
+    const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
+    return {id,ok:true,model:projectKnowledge(model)};
+   }
+   const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()"),start:null};
+   if(!current.start){
+    const fromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
+    current.start={seed,clock,store:copyStore(store),text:fromSave?cleanSave:run('JSON.stringify(S)'),fromSave};
+   }
+   let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;
+   for(;;){
+    const r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
+    if(!r.ok){
+     // Premier jour refusé : même réponse que « Jour suivant ». Plus tard : arrêt, les jours déjà passés sont écrits.
+     if(current.days===0)return r;
+     stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:r.error};break;
+    }
+    current.days++;n++;current.lastFrom=today;
+    // Décision en attente regroupée : sérialisée et validée avec le premier jour ; les jours suivants de la même
+    // semaine retrouvent le chemin léger de « Jour suivant » (sans revalidation complète à chaque jour).
+    if(coalescing){current.absorbed=coalescing;coalescing=null;}
+    const after=advanceSignal();
+    stop=continuer.detect(before,after,opts,current.repriseDate);
+    before=after;today=after?.today;
+    if(stop)break;
+    if(!today){stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:'Date de carrière indisponible.'};break;}
+    if(n>=opts.maxDays||current.days>=continuer.MAX_DAYS){stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;}
+    if(opts.budgetMs>0&&performance.now()-started>=opts.budgetMs){
+     if(opts.partial){
+      // La décision regroupée fait partie des jours en mémoire : elle sera écrite avec eux (arrêt, fermeture ou
+      // commande suivante), pas séparément entre deux tranches.
+      if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}
+      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next}};}
+     stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
+    }
+   }
+   return finishAdvance(id,current,stop);
+  }
   function handle(request){
+   // « Continuer » interrompu par une autre commande : les jours déjà passés sont écrits d'abord.
+   if(advanceSession&&request?.command!=='advance_until_event'){
+    const session=advanceSession;advanceSession=null;
+    const done=finishAdvance(null,session,null);
+    if(!done.ok){const id=Number.isSafeInteger(request?.id)||typeof request?.id==='string'?request.id:null;return {id,ok:false,model:done.model,error:done.error};}
+   }
    // Décision en attente : regroupée dans une commande écrite avant sa réponse, écrite d'abord sinon. Une commande
    // regroupée refusée laisse la décision en mémoire et en attente (sérialisation reprise du début).
    coalescing=pendingCommit&&deferredCommits&&!pendingFailure&&COALESCING.has(request?.command)&&!resumeCheckpoint?pendingCommit:null;

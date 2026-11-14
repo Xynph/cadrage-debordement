@@ -35,6 +35,8 @@ const TACTICS_CANVAS_MIN_WIDTH := 1600
 const FOOTER_RISE := 14
 const TOPBAR_ACTION_LEFT := 2067
 const TOPBAR_MATCH_ACTION_LEFT := 2008
+## Petit bouton « Jour suivant » (+1 j) à droite de « Continuer ».
+const NEXT_DAY_WIDTH := 58
 ## Bandeau du haut (pixels de référence, largeur 2312) : fil d'Ariane, historique et recherche à gauche,
 ## Gabi (visage et remarque du moment) au milieu, à côté de la date et du bouton « Continuer »
 ## (demande de Léo, 14/11/2026, option A). Gabi ne prend aucune place à l'écran : il vit dans le bandeau.
@@ -393,15 +395,35 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	app.header_date = D.text(calendar,0,48,"",24,C.IVORY,600,240)
 	app._update_header_date()
 	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
-	app.primary_button = D.button(panel,Rect2(action_left,17,2278-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
+	# « Jour suivant » (+1 j) : le bouton principal garde sa largeur, la zone de la date cède la place.
+	var single_day: bool = not office_live and app.has_method("next_day_available") and app.next_day_available()
+	if single_day: action_left -= NEXT_DAY_WIDTH + 6
+	# « Jour suivant » reste à portée (petit bouton à droite de « Continuer », Ctrl+J) les jours où l'on peut avancer.
+	var action_right := 2278 - (NEXT_DAY_WIDTH + 6 if single_day else 0)
+	app.primary_button = D.button(panel,Rect2(action_left,17,action_right-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
 	app.primary_button.tooltip_text = app.primary_text()
+	var next_day: Button = null
+	if single_day:
+		next_day = D.button(panel,Rect2(2278-NEXT_DAY_WIDTH,17,NEXT_DAY_WIDTH,45),"+1 j",app.next_day_action,false,"",true,app.accent,"ImmersiveNextDay")
+		next_day.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var compact_style: StyleBox = next_day.get_theme_stylebox("normal").duplicate()
+		compact_style.content_margin_left = C.px(4)
+		compact_style.content_margin_right = C.px(4)
+		next_day.add_theme_stylebox_override("normal",compact_style)
+		for state in ["hover","pressed","disabled","focus"]:
+			var other: StyleBox = next_day.get_theme_stylebox(state).duplicate()
+			other.content_margin_left = C.px(4)
+			other.content_margin_right = C.px(4)
+			next_day.add_theme_stylebox_override(state,other)
+		next_day.tooltip_text = "Jour suivant : avancer d’un seul jour (Ctrl+J)"
+		next_day.accessibility_name = "Jour suivant"
 	var gabi := Control.new()
 	gabi.name = "GabiBandeau"
 	gabi.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gabi.set_meta("masque", gabi_en_pied)
 	panel.add_child(gabi)
-	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi])
+	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi,next_day])
 	_position_topbar(layout)
 	if is_instance_valid(app.coach) and app.coach.has_method("installer_bandeau"): app.coach.installer_bandeau(gabi)
 
@@ -450,6 +472,11 @@ static func _position_topbar(layout: Control) -> void:
 	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 	action.position.y=(79.0*C.density-height)/2.0
 	action.size.y=height
+	if elements.size() > 7 and is_instance_valid(elements[7]):
+		var next_day: Button = elements[7]
+		next_day.add_theme_font_size_override("font_size",maxi(C.px(21),ceili(13.0/factor)))
+		next_day.position.y=action.position.y
+		next_day.size.y=height
 
 static func _position_office_match_status(status: Label, factor: float) -> void:
 	if factor<=0: return
