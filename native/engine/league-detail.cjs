@@ -60,7 +60,7 @@ function factory(){
  // détaillée ni règles de première ligne ; les postes ne sont pas contrôlés.
  function squad(s,club,away){
   const pool=club.players.filter(p=>!p.injury&&!(p.suspension>0)&&!away(p.id));
-  const score=p=>(Number(p.rating)||50)*(.57+clamp(Number(p.condition)||80,0,100)*.0043);
+  const form=MATCH_LEVEL_CURVE.forme,score=p=>(Number(p.rating)||50)*(form[0]+clamp(Number(p.condition)||80,0,100)*form[1]);
   const ranked=pool.slice().sort((a,b)=>score(b)-score(a)||String(a.id).localeCompare(String(b.id))).slice(0,23);
   const starters=ranked.slice(0,15),bench=ranked.slice(15);
   const power=(starters.length?starters.reduce((n,p)=>n+score(p),0)/starters.length:40)-(15-starters.length)*4;
@@ -104,8 +104,11 @@ function factory(){
  }
  function simulate(s,f){
   const pair=[f.homeId,f.awayId],away=released(s,f),teams=pair.map(id=>squad(s,s.clubs[id],away));
-  const edge=clamp((teams[0].power-teams[1].power+2.5)/8,-2,2);
-  const tries=[poisson(clamp(2.75*Math.exp(.42*edge),.5,8)),poisson(clamp(2.75*Math.exp(-.42*edge),.5,8))];
+  // Courbe de niveau commune au moteur complet (MATCH_LEVEL_CURVE de dist/rugby.js, tests/match-rating-curve.cjs) :
+  // écart de puissance + bonus du terrain (sauf terrain neutre), ramené à l'échelle des essais.
+  const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain;
+  const edge=clamp((teams[0].power-teams[1].power+home)/curve.diviseur,-2,2);
+  const tries=[poisson(clamp(2.75*Math.exp(curve.essais*edge),.5,8)),poisson(clamp(2.75*Math.exp(-curve.essais*edge),.5,8))];
   const stats=[sideStats(tries[0],edge),sideStats(tries[1],-edge)];
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;
   let score=[points(0),points(1)];
