@@ -52,8 +52,9 @@ function moteur(){
  // puis la dispersion du poste fixe l'amplitude des notes (un ouvreur fait plus souvent le match,
  // ou le rate, qu'un pilier). L'homme du match est la meilleure note : la répartition par poste
  // vient de ces seules pondérations (aucun tirage, aucun quota).
- const POSTES_NOTE=[[0.57,1.06],[-0.26,1.24],[0.28,1.01],[1.59,0.86],[1.94,1.05],[2.3,0.82],[2.24,0.92],[2.2,1.01],
-  [0.37,1.26],[1.06,1.49],[0.87,1.03],[0.76,0.96],[0.7,1],[0.9,1.09],[0.21,1.05]];
+ // Essais réalistes (docs/essais-realistes-20261114.md) : attendus et amplitudes ré-étalonnés avec
+ // scripts/etalonner-notes-postes.cjs (441 matchs après l'apport des stats de #709 ; 795 avant, mêmes conditions que docs/homme-du-match-postes-20261114.md).
+ const POSTES_NOTE=[[0.64,0.91],[0.06,1.06],[0.4,1.06],[1.45,0.92],[1.63,1.02],[2.63,1.01],[2.66,1],[2.71,1.15],[0.54,1.24],[1.48,1.64],[1.43,1.01],[0.76,0.98],[0.75,1.04],[1.27,1.01],[0.14,0.99]];
  // Repli quand seul le poste naturel du joueur est connu (FAMILIES : 0 pilier, 1 talonneur,
  // 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière).
  const MAILLOTS_FAMILLE=[[0,2],[1],[3,4],[5,6,7],[8],[9],[10,13],[11,12],[14]];

@@ -547,11 +547,22 @@ worldNewSeason=function(fundingAlreadyPaid){
  budgetOuvrir(true);
  return actif;
 };
+// Forces des clubs pour les demandes salariales : une projection en interroge des centaines d'affilée (marché, contrats).
+// Même tableau tant que la carrière, les divisions et les forces des clubs sont inchangées (lu seulement par demande()).
+let budgetForcesDemandeMemo=null;
+const budgetForcesDemande=()=>{
+ if(budgetFrance())return budgetForces();
+ const ligues=S.worldMode.leagues;let cle=String(S.clubs.length);
+ for(const k of Object.keys(ligues))cle+='|'+k+':'+ligues[k].members.join(',');
+ for(const c of S.clubs)cle+='|'+c.id+':'+c.base;
+ const m=budgetForcesDemandeMemo;if(m&&m.etat===S&&m.cle===cle)return m.forces;
+ budgetForcesDemandeMemo={etat:S,cle,forces:budgetForces()};return budgetForcesDemandeMemo.forces;
+};
 // Salaire demandé au club joué : même règle que les salaires de départ, puis l'attrait du championnat pour une recrue.
 salaryDemandBreakdown=function(p,kind='renew',s=S){
  const r=salaryDemandBreakdownV1(p,kind,s);
  if(s!==S||!budgetActif()||!p||typeof p.id!=='string')return r;
- const juste=nativeStartingSalaries.demande(S,budgetForces(),S.club,p,nativeLeagueEconomy);
+ const juste=nativeStartingSalaries.demande(S,budgetForcesDemande(),S.club,p,nativeLeagueEconomy);
  if(kind==='renew'){const base=Math.max(p.salary,juste);return {...r,base,asked:Math.max(p.salary,Math.round(base*(1+(r.modifier||0))/10)*10)};}
  const parNom=nom=>{const c=S.clubs.find(x=>x.name===nom);return c?budgetLigue(c.id):null;};
  const a=nativeLeagueEconomy.attrait({origine:nativeLeagueEconomy.origine(p,id=>S.clubs[id]?budgetLigue(id):null,parNom),destination:budgetLigue(S.club),joueurId:p.id,age:p.age,situation:nativeLeagueEconomy.situation(p,S.season,S.club,club().name)});

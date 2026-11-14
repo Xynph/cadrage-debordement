@@ -104,8 +104,11 @@ module.exports = function academyGroups() {
   const familySlots = () => slotsByFamily ??= POS.reduce((m, _, slot) => (m[FAMILY(slot)] = (m[FAMILY(slot)] || 0) + 1, m), {});
   const hash = text => Array.from(String(text)).reduce((n, c) => Math.imul(n ^ c.charCodeAt(0), 16777619), 2166136261) >>> 0;
   const crabos = players => players.filter(p => p.age <= 17);
-  function deficit(players, family) {
-    return 2 * familySlots()[family] - crabos(players).filter(p => FAMILY(POS.indexOf(p.pos)) === family).length;
+  // Places manquantes de Crabos par famille (2 par poste de la famille, moins les Crabos présents), en un passage.
+  function deficits(players) {
+    const counts = new Map();
+    for (const p of players) if (p.age <= 17) { const family = FAMILY(POS.indexOf(p.pos)); counts.set(family, (counts.get(family) || 0) + 1); }
+    return family => 2 * familySlots()[family] - (counts.get(family) || 0);
   }
   // Proposition déterministe : aucun tirage du RNG de simulation.
   function proposal(s, club, players, ids) {
@@ -113,7 +116,8 @@ module.exports = function academyGroups() {
     const chosen = [];
     const counted = () => [...players, ...chosen];
     for (let k = 0; k < size; k++) {
-      const weights = POS.map((_, slot) => Math.max(0.3, 1 + deficit(counted(), FAMILY(slot)) / familySlots()[FAMILY(slot)]));
+      const missing = deficits(counted());
+      const weights = POS.map((_, slot) => Math.max(0.3, 1 + missing(FAMILY(slot)) / familySlots()[FAMILY(slot)]));
       const total = weights.reduce((a, b) => a + b, 0);
       let roll = (hash(`intake:${club.id}:${s.season}:${k}`) % 100000) / 100000 * total, slot = 0;
       while (slot < POS.length - 1 && roll >= weights[slot]) { roll -= weights[slot]; slot++; }
@@ -148,8 +152,9 @@ module.exports = function academyGroups() {
     const target = 14 + hash(`intake:${club.id}:${s.season}:keep`) % 4;
     const pool = candidates.slice(), kept = [];
     while (pool.length && kept.length < target && crabos([...players, ...kept]).length < CRABOS_CAP) {
+      const missing = deficits([...players, ...kept]);
       pool.sort((a, b) => {
-        const da = deficit([...players, ...kept], FAMILY(POS.indexOf(a.pos))), db = deficit([...players, ...kept], FAMILY(POS.indexOf(b.pos)));
+        const da = missing(FAMILY(POS.indexOf(a.pos))), db = missing(FAMILY(POS.indexOf(b.pos)));
         return db - da || (b.prodigy ? 1 : 0) - (a.prodigy ? 1 : 0) || b.dev.potential - a.dev.potential || (a.id < b.id ? -1 : 1);
       });
       kept.push(pool.shift());
