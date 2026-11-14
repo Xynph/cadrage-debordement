@@ -45,12 +45,17 @@ static func run(harness: SceneTree, expected_fixture: String) -> void:
 		if source == null: return
 		await harness.reveal(source)
 		var before_scroll: int = app.body_scroll.scroll_vertical
+		var source_name := str(source.name)
 		await harness.activate(source, true)
-		var detail: Window = harness.found("CompetitionClubDetails") as Window
-		harness.check(detail != null and detail.visible and str(detail.get_meta("entity_id", "")) == str(opponent.id), "Bureau · clic réel vers le club adverse du prochain match")
-		if detail == null: return
-		if not await _back_from_dialog(harness, detail, "prochain adversaire"): return
-		harness.check(is_instance_valid(source) and source.is_visible_in_tree() and source.has_focus() and app.body_scroll.scroll_vertical == before_scroll, "Bureau · retour exact au prochain adversaire, focus et défilement")
+		# Fiche du club (page « Fiche club », lecture moteur `club_sheet`), 14/11/2026.
+		var until := Time.get_ticks_msec() + 30000
+		while (app.waiting or harness.found("ClubSheetLoading") != null) and Time.get_ticks_msec() < until: await harness.process_frame
+		await harness.settle()
+		harness.check(app.route == "Fiche club" and int(app.management_ui.get("club_sheet", {}).get("id", -1)) == int(opponent.id) and harness.found("FicheClub") != null, "Bureau · clic réel vers la fiche du club adverse du prochain match")
+		await harness.key(KEY_LEFT, true)
+		harness.check(not harness.nav._blocked(), "Bureau · navigation disponible après Back · prochain adversaire")
+		source = harness.found(source_name) as Button
+		harness.check(app.route == "Bureau" and source != null and source.is_visible_in_tree() and source.has_focus() and app.body_scroll.scroll_vertical == before_scroll, "Bureau · retour exact au prochain adversaire, focus et défilement")
 	else:
 		_unavailable(harness, "OfficeNextOpponent", "Aucune fixture annoncée avec adversaire du club géré dans ce checkpoint")
 	if Agenda.valid_date(fixture.get("date")):

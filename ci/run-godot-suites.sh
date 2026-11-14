@@ -39,6 +39,8 @@ declare -A suite_limits=(
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.
   # Mesuré sur runner le 13/11 (run 43474285948) : 311 s, suite verte ; plafond 600 s = marge d'environ deux fois.
   [tests/godot-notes-match.cjs]=600
+  # Fiche club : préparation Node de la carrière Monde (3 journées) puis deux passages Godot (1080p, 720p).
+  [tests/godot-fiche-club.cjs]=1200
   # Préparation Node de la carrière Monde (~46 jours) puis Godot : 126 à 221 s mesurés selon le runner.
   [tests/godot-reader-history.cjs]=600
   [tests/godot-analysis-club-graphics.cjs]=600

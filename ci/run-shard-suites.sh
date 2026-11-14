@@ -78,6 +78,8 @@ budget() {
     tests/japan-match.cjs) echo 300s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
+    # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).
+    tests/fiche-club-monde.cjs) echo 600s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).

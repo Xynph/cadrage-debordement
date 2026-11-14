@@ -143,14 +143,19 @@ func run() -> void:
 	check(not nav._blocked(),"Back rencontre rend la navigation disponible")
 	check(is_instance_valid(score) and score.is_visible_in_tree() and score.has_focus() and scroll.scroll_vertical==source_scroll,"Retour exact au score source : même instance, focus et défilement")
 	var opponent:=found("PerformanceOpponent_"+str(target.id).validate_node_name()) as Button
+	var opponent_name:=str(opponent.name)
 	await activate(opponent,true)
-	var club:=found("CompetitionClubDetails") as Window
-	check(club!=null and club.visible and str(club.get_meta("entity_id",""))==str(result.opponent),"Adversaire ouvre le club du résultat exact")
-	check(club!=null and club.title==GameSkin.club_name(app.Immersive.Competition._target_club(app,str(result.opponent))),"Titre du club conforme à son identité publique")
+	# Fiche du club (page « Fiche club », lecture moteur `club_sheet`), 14/11/2026.
+	var until:=Time.get_ticks_msec()+30000
+	while (app.waiting or found("ClubSheetLoading")!=null) and Time.get_ticks_msec()<until: await process_frame
+	await settle()
+	check(app.route=="Fiche club" and int(app.management_ui.get("club_sheet",{}).get("id",-1))==int(result.opponent),"Adversaire ouvre la fiche du club du résultat exact")
+	var sheet_name:=found("ClubSheetName") as Label
+	check(sheet_name!=null and sheet_name.text==str(app.Immersive.Competition._target_club(app,str(result.opponent)).get("name","")),"Nom du club conforme à son identité")
 	await key(KEY_LEFT,true)
-	check(not is_instance_valid(club) or not club.visible,"Back club masque ou libère la fenêtre de lecture")
 	check(not nav._blocked(),"Back club rend la navigation disponible")
-	check(is_instance_valid(opponent) and opponent.has_focus(),"Retour exact au lien adversaire")
+	opponent=found(opponent_name) as Button
+	check(opponent!=null and opponent.has_focus(),"Retour exact au lien adversaire")
 	var choice:=found("PerformancePlayerChoice") as OptionButton
 	check(choice!=null and choice.item_count>1,"Sélecteur joueur réel disponible après préparation explicite")
 	if choice!=null and choice.item_count>1:
