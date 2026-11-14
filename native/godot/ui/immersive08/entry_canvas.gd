@@ -216,7 +216,17 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	masthead.add_child(rail)
 	var inset := C.margin(13)
 	rail.add_child(inset)
-	inset.add_child(C.photo("maquette-onglets-wordmark" if creation else "maquette-reality-wordmark", Vector2(354 if creation else 280, 48), false))
+	# Lettrage de marque : « RUGBY LEGACY 27 » (remplace les anciennes images de maquette à l ancien nom).
+	var wordmark := C.h(8)
+	wordmark.name = "EntryWordmark"
+	wordmark.custom_minimum_size = Vector2(C.px(300 if creation else 250), C.px(48))
+	var wordmark_name := C.label("RUGBY LEGACY", 36 if creation else 30, C.IVORY, true, 800)
+	wordmark_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	wordmark.add_child(wordmark_name)
+	var wordmark_year := C.label("27", 36 if creation else 30, C.GOLD, true, 800)
+	wordmark_year.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	wordmark.add_child(wordmark_year)
+	inset.add_child(wordmark)
 	Editorial.divider(rail)
 	var nation_creation := creation and page.find_child("CreationNationalDossier", true, false) != null
 	var step_names := ["01  Réalité", "02  Sélection" if nation_creation else "02  Club", "03  Carrière"]

@@ -31,7 +31,11 @@ static func calendar_summary(app: Control) -> Control:
 	if count == 0: title = "Anticiper les fenêtres internationales"
 	flow.add_child(C.label(title, 25, C.GOLD, true, 700))
 	var detail := "Convocations confirmées · retour prévu à partir du " + _date(state.get("nextReturn")) if count > 0 else "Aucun absent confirmé aujourd’hui. Les prochaines fenêtres sont consultables."
-	flow.add_child(C.wrap(detail, 18, C.MUTED))
+	# Un texte à retour automatique dans un HFlowContainer reçoit une largeur nulle (une lettre par ligne) : largeur minimale explicite.
+	var explanation := C.wrap(detail, 18, C.MUTED)
+	explanation.name = "InternationalAvailabilityDetail"
+	explanation.custom_minimum_size.x = C.px(420)
+	flow.add_child(explanation)
 	var action := C.button("Préparer les absences →", open.bind(app))
 	action.name = "InternationalAvailabilityOpen"
 	flow.add_child(action)

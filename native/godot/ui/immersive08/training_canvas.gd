@@ -79,7 +79,7 @@ func _build() -> void:
 	D.text(self, 29, 34, "PRÉPARATION DU GROUPE", 28, PALE_GOLD, 700, 320)
 	D.line(self, Vector2(335, 24), Vector2(486, 24), app.accent.lightened(.36), 2)
 	app.heading = D.text(self, 27, 103, "Plan d’entraînement", 72, C.IVORY, 800, 780)
-	var opponent: Dictionary = app.model.get("next") if app.model.get("next") is Dictionary else {}
+	var opponent: Dictionary = P.next_fixture(app.model)
 	var fixture := "Aucune rencontre annoncée"
 	if not opponent.is_empty():
 		var home: Dictionary = opponent.get("home", {})

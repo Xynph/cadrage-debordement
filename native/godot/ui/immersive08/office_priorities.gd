@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 ## Lecture seule : les urgences viennent des états publiés par le moteur.
 ## Aucun seuil nouveau ne modifie l'effectif, les contrats ou la trésorerie.
 
@@ -96,7 +97,9 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 		var first: Dictionary = contracts[0]
 		var expiry := int(first.contractEnd)
 		var deadline := "Fin de cette saison" if expiry <= season else "Fin " + G.contract_year(expiry)
-		result.append(_item("OfficeContractsAction","Préparer %d échéance%s de contrat" % [contracts.size(),"s" if contracts.size() > 1 else ""],
+		var ending: int = int(P.contract_counts(model).end_of_season)
+		result.append(_item("OfficeContractsAction","Préparer %d échéance%s de contrat%s" % [contracts.size(),"s" if contracts.size() > 1 else "",
+			" (dont %d en fin de saison)" % ending if ending > 0 and ending != contracts.size() else ""],
 			str(first.get("name","Joueur")) + " · Fin de contrat " + G.contract_year(expiry),deadline,
 			"people","contract","important" if expiry <= season else "normal",str(first.get("id",""))))
 	if not ended and live.is_empty():
