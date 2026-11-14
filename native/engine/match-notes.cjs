@@ -54,7 +54,7 @@ function moteur(){
  // vient de ces seules pondérations (aucun tirage, aucun quota).
  // Essais réalistes (docs/essais-realistes-20261114.md) : attendus et amplitudes ré-étalonnés avec
  // scripts/etalonner-notes-postes.cjs (441 matchs après l'apport des stats de #709 ; 795 avant, mêmes conditions que docs/homme-du-match-postes-20261114.md).
- const POSTES_NOTE=[[0.64,0.91],[0.06,1.06],[0.4,1.06],[1.45,0.92],[1.63,1.02],[2.63,1.01],[2.66,1],[2.71,1.15],[0.54,1.24],[1.48,1.64],[1.43,1.01],[0.76,0.98],[0.75,1.04],[1.27,1.01],[0.14,0.99]];
+ const POSTES_NOTE=[[0.29,1.32],[-0.1,0.91],[0.15,1.04],[1.29,0.93],[1.61,1.2],[2.6,1.09],[2.53,1.15],[2.6,1.08],[0.81,1.06],[1.78,1.36],[1.56,0.79],[0.85,1.03],[0.9,0.78],[1.37,0.81],[0.4,0.86]];
  // Repli quand seul le poste naturel du joueur est connu (FAMILIES : 0 pilier, 1 talonneur,
  // 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière).
  const MAILLOTS_FAMILLE=[[0,2],[1],[3,4],[5,6,7],[8],[9],[10,13],[11,12],[14]];
@@ -144,7 +144,17 @@ function moteur(){
    // Pénalité concédée : fautif déduit de la place défensive (au contact, sans tirage), petit
    // poids collectif pour les avants ; faute de main : le dernier porteur, poids collectif léger.
    if(kind==='penalty'&&equipe!==null){
-    const fautif=plaqueur(s.on?.[1-equipe],3,s.to?.y,i);ajoute(fautif,B.penalite,'penalites');
+    const def=s.on?.[1-equipe],cause=s.cause;
+    // Cause connue (pénalités réalistes, 14 novembre 2026) : mêlée = première ligne (1-2-3, en
+    // alternance sans tirage) ; ballon non libéré / scellement = dernier porteur de l'équipe fautive ;
+    // touche ou ballon porté = avant du lancer (talonneur, deuxième et troisième ligne). Jeu courant :
+    // plaqueur déduit de la place défensive, comme avant.
+    const parmi=(postes)=>{const ids=postes.map(p=>def?.[p]).filter(id=>id!=null);return ids.length?String(ids[i%ids.length]):null;};
+    const fautif=Array.isArray(def)&&cause==='scrum'?parmi([0,1,2])
+     :(cause==='not-release'||cause==='sealing')?(porteur[1-equipe]??plaqueur(def,3,s.to?.y,i))
+     :Array.isArray(def)&&cause==='maul'?parmi([1,3,4,5,6,7])
+     :plaqueur(def,3,s.to?.y,i);
+    ajoute(fautif,B.penalite,'penalites');
     for(const id of surLeTerrain(s,1-equipe))if(joueurs[id])joueurs[id].brut-=(s.on?.[1-equipe]?.indexOf(id)??9)<8?.02:.008;
     continue;
    }
