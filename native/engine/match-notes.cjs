@@ -54,7 +54,7 @@ function moteur(){
  // vient de ces seules pondérations (aucun tirage, aucun quota).
  // Essais réalistes (docs/essais-realistes-20261114.md) : attendus et amplitudes ré-étalonnés avec
  // scripts/etalonner-notes-postes.cjs (441 matchs après l'apport des stats de #709 ; 795 avant, mêmes conditions que docs/homme-du-match-postes-20261114.md).
- const POSTES_NOTE=[[0.29,1.32],[-0.1,0.91],[0.15,1.04],[1.29,0.93],[1.61,1.2],[2.6,1.09],[2.53,1.15],[2.6,1.08],[0.81,1.06],[1.78,1.36],[1.56,0.79],[0.85,1.03],[0.9,0.78],[1.37,0.81],[0.4,0.86]];
+ const POSTES_NOTE=[[0.48,1.09],[0.17,0.92],[0.26,1.01],[1.53,0.97],[1.83,1.1],[2.48,1.02],[2.57,0.99],[2.51,1.07],[0.47,1.14],[1.55,1.33],[1.44,0.86],[0.82,0.98],[0.86,0.85],[1.27,0.92],[0.34,1.02]];
  // Repli quand seul le poste naturel du joueur est connu (FAMILIES : 0 pilier, 1 talonneur,
  // 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière).
  const MAILLOTS_FAMILLE=[[0,2],[1],[3,4],[5,6,7],[8],[9],[10,13],[11,12],[14]];
