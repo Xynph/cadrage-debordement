@@ -160,8 +160,10 @@ static func _ecran(route: String, texte: String, categorie: String, ton: String,
 ## sinon l'écran où agir (finances, composition, recrutement, effectif, entraînement, préparation).
 static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dictionary:
 	# Titulaires de la feuille sous 70 % de condition : le conseil le plus actionnable, avec « Suivre le conseil ».
+	# L'argent passe d'abord (comme l'alerte de la semaine) : trésorerie négative, on regarde les comptes.
 	var fatigue := Avis.fatigue(model)
-	if not fixture.is_empty() and not fatigue.is_empty():
+	var cash_fatigue := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
+	if cash_fatigue >= 0 and not fixture.is_empty() and not fatigue.is_empty():
 		return fatigue.merged({"texte": _fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
 	if Avis._jour_de_match(model):
 		var compo := Avis.composition(model)
