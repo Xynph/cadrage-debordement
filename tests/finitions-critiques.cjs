@@ -55,3 +55,36 @@ test('Fiche joueur : l’historique expose la compétition (identifiant et libel
     assert.notEqual(ligues.champ, 'Champ Rugby', 'le modèle expose le nom lisible du championnat : ' + ligues.champ);
   } finally { jeu.fermer(); }
 });
+
+test('Espoirs appelés : note au poste cohérente avec le niveau ; inscrit sans jouer = petite expérience', () => {
+  const PILIER_GAUCHE_MANQUANT = `(()=>{const c=S.clubs[S.club],starter=S.lineup[0];for(const p of c.players)if(p.id!==starter&&(p.pos==='Pilier gauche'||p.nationaleQualifications?.includes('Pilier gauche')))p.injury=3;S.reserves[1]=null;S.trained=true;})()`;
+  const run = (jeu, code) => JSON.parse(jeu.bridge.vm.run(`JSON.stringify(${code})`));
+  const jeu = Monde.ouvrir({ testVm: true });
+  try {
+    let model = Monde.jusquAuMatch(jeu, Monde.creer(jeu, 90));
+    jeu.bridge.vm.run(PILIER_GAUCHE_MANQUANT);
+    model = jeu.call('snapshot');
+    const place = model.selection.espoirs.slots[0];
+    assert.ok(place.candidates.length > 0);
+    // (a) Pilier de son poste naturel : la note au poste proposée est son niveau, pas une note gonflée par ses qualités.
+    for (const c of place.candidates.filter(x => x.pos === 'Pilier gauche')) assert.ok(Math.abs(c.note - c.rating) <= 3, `note au poste ${c.note} pour un niveau ${c.rating}`);
+    const kid = place.proposedId;
+    model = jeu.call('auto_lineup');
+    const appele = run(jeu, `(()=>{const p=S.clubs[S.club].players.find(x=>x.id===${JSON.stringify(kid)});return {rating:p.rating,role:roleNote(p),apt:nativePositionAptitudes.rating(p,16)};})()`);
+    assert.ok(Math.abs(appele.role - appele.rating) <= 1 && Math.abs(appele.apt - appele.rating) <= 3, 'appelé : ses qualités rejoignent son niveau : ' + JSON.stringify(appele));
+    const projete = model.squad.find(p => p.id === kid);
+    assert.ok(projete && Math.abs(projete.positionRatings['1'] - projete.rating) <= 3, 'la note au poste affichée partout est celle de l’offre : ' + JSON.stringify(projete?.positionRatings));
+    // (b) Récompense : inscrit sur la feuille sans entrer < joue ; hors feuille : rien.
+    const total = `(()=>{const p=S.clubs[S.club].players.find(x=>x.id===${JSON.stringify(kid)});return p.rating+(p.dev?.xp||0);})()`;
+    const feuille = (minutes, on, bench) => `(()=>{nativeSystems.domain('espoirsMatch').rewardOwn(S,{pair:[S.club,1],userSide:0,sheets:[{minutes:${JSON.stringify(minutes)},on:${JSON.stringify(on)},bench:${JSON.stringify(bench)},used:[]},{minutes:{},on:[],bench:[],used:[]}]});return true;})()`;
+    const t0 = run(jeu, total);
+    run(jeu, feuille({}, [], []));
+    assert.equal(run(jeu, total), t0, 'hors feuille : aucune expérience');
+    run(jeu, feuille({}, [], [kid]));
+    const t1 = run(jeu, total);
+    assert.ok(t1 > t0, 'inscrit sans jouer : une petite expérience');
+    run(jeu, feuille({ [kid]: 60 }, [], [kid]));
+    const t2 = run(jeu, total);
+    assert.ok(t2 - t1 > t1 - t0, `jouer rapporte plus qu’être inscrit (${(t2 - t1).toFixed(3)} contre ${(t1 - t0).toFixed(3)})`);
+  } finally { jeu.fermer(); }
+});
