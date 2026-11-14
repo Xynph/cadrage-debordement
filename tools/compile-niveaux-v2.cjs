@@ -12,7 +12,7 @@
 //   --check        : vérifie que la table publiée est à jour, sans l'écrire.
 // Entrées : niveaux-<championnat>.csv (id, intl_nation, intl_caps_24m, intl_caps_total, statut_club, u20,
 // distinctions, etage_club, confiance…), clubs-<championnat>.csv (club_id, etage_club…), joueurs-<championnat>.csv
-// (âge seulement) et, pour le Top 14 et la PRO D2, les minutes 2025-26 de data/scouting/review-v12
+// (inutile : âge et club viennent du registre public) et, pour le Top 14 et la PRO D2, les minutes 2025-26 de data/scouting/review-v12
 // (career-evidence.json, complété par les classements de season-evidence.json).
 const fs = require('node:fs'), path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
@@ -113,8 +113,17 @@ function lnrMinutes(prive) {
   return { minutes, unknown };
 }
 
+// Registre public complet (116 clubs) : identifiant -> {age, club_id}.
+function publicRegistry() {
+  const { extendWorldRegistry, extendJapanRegistry, extendNationaleRegistry, extendChampRegistry } = require('../native/engine/world-pacific-registry.cjs');
+  const engine = f => JSON.parse(fs.readFileSync(path.join(ROOT, 'native/engine', f), 'utf8'));
+  const full = extendChampRegistry(extendNationaleRegistry(extendJapanRegistry(extendWorldRegistry(engine('world-registry.json'), engine('world-pacific-extension.json')), engine('world-japan-extension.json')), engine('world-nationale-extension.json')), engine('world-champ-extension.json'));
+  return new Map(full.clubs.flatMap(c => c.players.map(p => [p.id, { age: p.age, club_id: c.id }])));
+}
+
 function compile(prive, niveauxDir) {
   const players = {}, clubs = {}, coverage = {};
+  const registry = publicRegistry();
   const { minutes } = lnrMinutes(prive);
   const sources = {};
   for (const f of ['career-evidence.json', 'season-evidence.json']) {
@@ -122,16 +131,18 @@ function compile(prive, niveauxDir) {
     if (fs.existsSync(file)) sources['data/scouting/review-v12/' + f] = file;
   }
   for (const league of LEAGUES) {
-    const files = ['niveaux', 'clubs', 'joueurs'].map(k => path.join(niveauxDir, `${k}-${league}.csv`));
+    const files = ['niveaux', 'clubs'].map(k => path.join(niveauxDir, `${k}-${league}.csv`));
     if (!files.every(f => fs.existsSync(f))) throw Error('Collecte incomplète pour ' + league + ' dans ' + niveauxDir);
     files.forEach(f => { sources['niveaux/' + path.basename(f)] = f; });
-    const [rows, clubRows, roster] = files.map(f => csv(fs.readFileSync(f, 'utf8')));
+    const [rows, clubRows] = files.map(f => csv(fs.readFileSync(f, 'utf8')));
+    // Âge et club de chaque joueur : registre public du moteur (les fichiers de collecte n'en ont pas besoin).
+    const roster = rows.filter(r => registry.has(r.id)).map(r => ({ id: r.id, ...registry.get(r.id) }));
     for (const c of clubRows) {
       const id = int(c.club_id), etage = fold(c.etage_club).replace(/ /g, '');
       if (id === null || !ETAGES.includes(etage)) throw Error(`Étage de club invalide (${league}) : ${c.club_id}`);
       clubs[id] = etage;
     }
-    const info = new Map(roster.map(r => [r.id, { age: int(r.age), club: int(r.club_id) }]));
+    const info = new Map(roster.map(r => [r.id, { age: r.age, club: r.club_id }]));
     // Rang du joueur dans son club, aux minutes 2025-26 (Top 14 et PRO D2).
     const rankInClub = new Map();
     if (SEUIL[league]) {
@@ -192,7 +203,7 @@ function serialize(table) {
 function main(argv) {
   const args = argv.slice(2), check = args.includes('--check');
   const at = args.indexOf('--niveaux');
-  const prive = args.find((a, i) => !a.startsWith('--') && i !== at + 1);
+  const prive = args.find((a, i) => !a.startsWith('--') && !(at >= 0 && i === at + 1));
   if (!prive) throw Error('Usage : node tools/compile-niveaux-v2.cjs <dépôt privé> [--niveaux <dossier>] [--check]');
   const niveauxDir = path.resolve(at >= 0 ? args[at + 1] : path.join(prive, 'niveaux'));
   const { table, sources } = compile(path.resolve(prive), niveauxDir);

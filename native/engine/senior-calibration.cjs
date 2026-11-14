@@ -182,6 +182,12 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
         if (!Number.isFinite(p.rating)) continue;
         push(club.leagueId + '|' + p.fam + '|' + band(p.age), p.rating);
         push(club.leagueId + '|' + p.fam, p.rating);
+        // Statut connu : l'ancre est la moyenne des joueurs de ce statut, l'écart se mesure entre eux.
+        const statut = levelOf(p.id)[1];
+        if (statut !== 'inconnu') {
+          push(club.leagueId + '|' + statut + '|' + p.fam, p.rating);
+          push(club.leagueId + '|' + statut, p.rating);
+        }
       }
     }
     const stats = new Map();
@@ -194,8 +200,13 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     return stats;
   }
 
-  function deviation(player, rating, context) {
+  function deviation(player, rating, context, statut = null) {
     const stats = leagueStats(context.registry);
+    if (statut) {
+      const own = stats.get(context.leagueId + '|' + statut + '|' + player.fam);
+      const group = own && own.n >= 6 ? own : stats.get(context.leagueId + '|' + statut);
+      if (group && group.n >= 6) return (rating - group.mean) / group.sd;
+    }
     const fine = stats.get(context.leagueId + '|' + player.fam + '|' + band(player.age));
     const group = fine && fine.n >= 6 ? fine : stats.get(context.leagueId + '|' + player.fam);
     return group ? (rating - group.mean) / group.sd : 0;
@@ -213,7 +224,8 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     // alors dans son effectif (même poste), là où l'estimation de départ range déjà titulaires et doublures.
     // Un jeune se compare aux jeunes de son championnat (même poste) ; l'âge est compté à part, une fois.
     const young = player.age < A.seniorFrom;
-    const spread = known || young ? z * (known ? R.known : R.unknown) : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
+    const spread = known ? deviation(player, player.rating, context, statut) * R.known
+      : young ? z * R.unknown : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
     let value = base + (scale.etages[etageOf(context.clubId)] ?? 0) + clamp(spread, -R.limit, R.limit);
     if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' ? 0.5 : 1);
     // L'écart dans l'effectif d'un senior au statut inconnu contient déjà son âge.
@@ -310,7 +322,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
       if (international) margin += P.youngInternational;
       if (P.lowerTiers.includes(context.leagueId) && !u20 && !international) margin += P.lowerTierYoung;
     } else if (age <= 25 && (classe === 'S' || classe === 'A')) margin += P.eliteYoung;
-    if (margin > 0) margin += hashText(player.id + ':potentiel-v2') % (2 * P.spread + 1) - P.spread;
+    if (margin > 0) margin = Math.min(P.maxMargin, margin + hashText(player.id + ':potentiel-v2') % (2 * P.spread + 1) - P.spread);
     // Hors des championnats d'élite, un potentiel de 88 et plus est réservé aux internationaux U20.
     const ceiling = P.eliteLeagues.includes(context.leagueId) || u20 ? 99 : P.outsideEliteCeiling;
     return clamp(Math.min(player.rating + Math.max(0, margin), ceiling), player.rating, 99);
@@ -327,7 +339,8 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     if (worldVersion !== 2) return;
     const byAge = new Map();
     for (const p of players) {
-      if (!p.dev || p.age > 25 || p.dev.potential < 90 || p.rating >= 90) continue;
+      // Les 88-89 comptent aussi : la variation de carrière pourrait les porter à 90.
+      if (!p.dev || p.age > 25 || p.dev.potential < scale.potential.belowGeneration + 1 || p.rating >= 90) continue;
       (byAge.get(p.age) || byAge.set(p.age, []).get(p.age)).push(p);
     }
     for (const list of byAge.values()) {

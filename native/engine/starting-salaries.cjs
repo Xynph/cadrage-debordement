@@ -55,14 +55,17 @@ function facteurAge(age) {
 }
 
 // forces : [{id, division, base}]. Un club fort de sa division paie plus ; chaque club a aussi son tempérament.
-function politiques(forces) {
+// Barème senior V2 : les notes portent déjà l'écart entre clubs (étage) ; la politique salariale du club
+// pèse moitié moins, sinon les meilleurs clubs d'un championnat le paieraient deux fois.
+function politiques(forces, bareme2 = false) {
+  const [base, pente] = bareme2 ? [0.93, 0.15] : [0.86, 0.3];
   const resultat = new Map();
   for (const division of new Set(forces.map(club => club.division))) {
     const groupe = forces.filter(club => club.division === division);
     const min = Math.min(...groupe.map(club => club.base)), max = Math.max(...groupe.map(club => club.base));
     for (const club of groupe) {
       const rang = max === min ? 0.5 : (club.base - min) / (max - min);
-      resultat.set(club.id, (0.86 + 0.3 * rang) * (0.92 + 0.16 * unite('club|' + club.id)));
+      resultat.set(club.id, (base + pente * rang) * (0.92 + 0.16 * unite('club|' + club.id)));
     }
   }
   return resultat;
@@ -112,7 +115,7 @@ const facteurDe = (state, division) => { const f = state.startingSalaries?.calag
 const plancherHebdo = (state, division) => Math.round(Math.max(PLANCHER_MONDE, PLANCHER_ANNUEL * Math.min(1, facteurDe(state, division))) / 52 / 10) * 10;
 
 function brut(state, forces, economie) {
-  const politique = politiques(forces), division = new Map(forces.map(force => [force.id, force.division])), parClub = new Map();
+  const politique = politiques(forces, state.seniorCalibrationVersion === 2), division = new Map(forces.map(force => [force.id, force.division])), parClub = new Map();
   for (const equipe of state.clubs) {
     const p = politique.get(equipe.id);
     if (p) parClub.set(equipe.id, club(equipe.players ?? [], categorie(division.get(equipe.id), economie), p));
@@ -206,7 +209,7 @@ function clauses(state, clubId, sens) {
 
 // Salaire hebdomadaire qu'un joueur demande au club donné, selon la même règle que les salaires de départ.
 function demande(state, forces, clubId, joueur, economie = null) {
-  const equipe = state.clubs.find(c => c.id === clubId), force = forces.find(f => f.id === clubId), politique = politiques(forces).get(clubId);
+  const equipe = state.clubs.find(c => c.id === clubId), force = forces.find(f => f.id === clubId), politique = politiques(forces, state.seniorCalibrationVersion === 2).get(clubId);
   if (!equipe || !force || !politique) throw Error('Demande salariale : club inconnu.');
   const autres = (equipe.players ?? []).filter(x => x.id !== joueur.id);
   return hebdo(club([...autres, joueur], categorie(force.division, economie), politique).get(joueur.id).annuel, facteurDe(state, force.division));

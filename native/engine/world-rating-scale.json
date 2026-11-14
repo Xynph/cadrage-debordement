@@ -28,6 +28,7 @@
   "lowerTierYoung": -2,
   "lowerTiers": ["nationale", "champ", "jlo-d2"],
   "spread": 2,
+  "maxMargin": 12,
   "per90Generation": 5,
   "belowGeneration": 87,
   "eliteLeagues": ["elite", "prem", "urc", "srp", "jlo-d1"],
