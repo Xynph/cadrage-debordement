@@ -467,9 +467,9 @@ function aiRosterMarketPool(generated){
  return aiRosterPopulationActive()?S.economy.freeAgents.filter(p=>p.age>=18):[...S.economy.freeAgents,...generated];
 }
 function aiRosterPopulationTargets(c,pool){
- const needs=aiRosterMarketNeeds(c),out=[];
+ const needs=aiRosterMarketNeeds(c),out=[],own=new Set(c.players.map(q=>q.id));
  for(const p of pool){
-  if(c.players.some(q=>q.id===p.id)||p.age>=p.dev.retireAge-1)continue;
+  if(own.has(p.id)||p.age>=p.dev.retireAge-1)continue;
   const evidence=recruitmentEvidence(p,false);
   // Use the same public estimate for both players. A centre graduate can
   // provide succession cover at an equivalent estimated level.

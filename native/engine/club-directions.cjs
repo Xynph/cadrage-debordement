@@ -40,7 +40,14 @@ module.exports=function clubDirections(T,N){
  const active=()=>!!S&&S.clubDirections?.version===VERSION&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)&&typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive();
  const h=(...k)=>seedHash(state().seed+'|'+k.join('|'));
  const roll=(...k)=>h(...k)%10000/10000;
- const leagueOf=id=>CDWorldCareer.leagueId(S,id);
+ // Fenêtre de marché en cours : les divisions ne bougent pas pendant la fenêtre (elles changent à l'intersaison),
+ // la division de chaque club est donc lue une fois ; de même pour le tirage d'évaluation (empreinte pure) ci-dessous.
+ let leagueMemo=null,evalMemo=null;
+ const leagueOf=id=>{
+  if(!leagueMemo)return CDWorldCareer.leagueId(S,id);
+  let lg=leagueMemo.get(id);if(lg===undefined){lg=CDWorldCareer.leagueId(S,id);leagueMemo.set(id,lg);}
+  return lg;
+ };
  const economy=lg=>typeof nativeLeagueEconomy!=='undefined'?nativeLeagueEconomy.CHAMPIONNATS?.[lg]:null;
  const country=lg=>economy(lg)?.pays??LEAGUES[lg]?.[0]??'autre';
  const prestige=lg=>economy(lg)?.reputation??LEAGUES[lg]?.[1]??60;
@@ -324,7 +331,10 @@ module.exports=function clubDirections(T,N){
   const x=state().clubs[c.id],ev=x?.director.traits.evaluation??50;
   const known=!ownerLeague||x?.director.network?.includes(ownerLeague);
   const amp=2+(100-ev)*.08+(known?0:4);
-  const noise=(roll('eval',c.id,p.id,S.season)-.5)*2*amp;
+  let draw;
+  if(evalMemo){const key=c.id+'|'+p.id;draw=evalMemo.get(key);if(draw===undefined){draw=roll('eval',c.id,p.id,S.season);evalMemo.set(key,draw);}}
+  else draw=roll('eval',c.id,p.id,S.season);
+  const noise=(draw-.5)*2*amp;
   const glamour=clamp(p.salary/9000-1,0,2)*(100-ev)/40;
   // Notes de match de la saison (match-notes.cjs) : −2 à +3 points.
   const notes=typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.interet(p.id):0;
@@ -499,8 +509,8 @@ module.exports=function clubDirections(T,N){
   return plans;
  }
  function openWindow(){
-  const outer=noteMemo;noteMemo=new WeakMap();
-  try{return openWindowNotes();}finally{noteMemo=outer;}
+  const outer=[noteMemo,leagueMemo,evalMemo];noteMemo=new WeakMap();leagueMemo=new Map();evalMemo=new Map();
+  try{return openWindowNotes();}finally{[noteMemo,leagueMemo,evalMemo]=outer;}
  }
  function openWindowNotes(){
   const d=state(),done=[];
