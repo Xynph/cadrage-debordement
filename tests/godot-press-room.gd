@@ -135,9 +135,11 @@ func run() -> void:
 	var first: Dictionary = questions[0]
 	view._choose_answer(str(first.id), str(first.answers[1].id))
 	var selected: Dictionary = view.choices.duplicate(true)
+	# Conférence rapide : un clic retient la réponse et affiche la question suivante sans réponse.
+	check(view.question_index == 1, "one click answers and shows the next question")
 	var question_node: Label = view.question_label
 	view.update_frame(career.duplicate(true), metadata)
-	check(view.choices == selected and view.question_label == question_node, "snapshot preserves draft and focused question controls")
+	check(view.choices == selected and view.question_label == question_node and view.question_index == 1, "snapshot preserves draft and focused question controls")
 	check(view.room.get_instance_id() == world_id, "snapshots and question navigation preserve native 3D world")
 	check(director.commands.is_empty() and FileAccess.get_file_as_bytes(saved_path) == saved_before, "drafting changes no career facts or save")
 	view._publish()

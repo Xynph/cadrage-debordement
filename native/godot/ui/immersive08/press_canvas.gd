@@ -143,9 +143,23 @@ func _sidebar() -> void:
 	D.text(notes, 20, 65, "%d journaliste(s)" % people.size(), 25, C.MUTED, 500, RIGHT - 72)
 	var notice := C.wrap("Retrouvez les questions posées et vos réponses déjà publiées.", 21, C.MUTED)
 	memory.add_child(notice)
-	D.place(notice, Rect2(22, 167, RIGHT - 44, 100))
+	D.place(notice, Rect2(22, 162, RIGHT - 44, 40))
+	# Réglage de carrière : les conférences ordinaires tenues par le manager ou confiées à Gabi (press_policy).
+	var policy: Dictionary = data.get("policy", {})
+	if not policy.is_empty():
+		var current := str(policy.get("ordinary", "moi"))
+		var caption := D.text(memory, 22, 222, "Conférences ordinaires", 21, C.MUTED, 600, RIGHT - 44)
+		caption.tooltip_text = str(policy.get("notice", ""))
+		for option: Array in [["moi", "Y aller", 17, 335], ["adjoint", "Envoyer l’adjoint", 365, 350]]:
+			var key: String = option[0]
+			var toggle := D.button(memory, Rect2(option[2], 234, option[3], 50), option[1], func(): _set_policy(key), key == current, "people" if key == "adjoint" else "arrow", true, PRIMARY, "PressPolicy_" + key)
+			toggle.tooltip_text = str(policy.get("notice", ""))
 	D.button(memory, Rect2(17, 298, 335, 49), "Historique des conférences", func(): _select(2), false, "calendar", true, PRIMARY, "OpenPressHistory")
 	D.button(memory, Rect2(365, 298, 350, 49), "Portraits et relations", func(): _select(3), false, "people", true, PRIMARY, "OpenPressPeople")
+
+func _set_policy(key: String) -> void:
+	if app.waiting or str(data.get("policy", {}).get("ordinary", "moi")) == key: return
+	app._command("press_policy", {"ordinary":key})
 
 func _select(index: int) -> void:
 	if tabs != null: tabs.current_tab = index

@@ -796,6 +796,10 @@ function createBridge(options={}){
      if(advancesCareer||command==='new_career'||command==='import')run('nativeSystems.domain("press").observeInvitation(nativePressPrevious,'+(command==='new_career')+');');
      run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
+     // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »
+     // ne s'arrêtent donc pas sur elle. Les grands moments restent obligatoires.
+     if(advancesCareer&&ctx.nativeMandatoryPress)run('if(nativeSystems.domain("press").autoDelegate())nativeSystems.domain("clubMeetings").settleDelegatedPress();');
      if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}
      mark('commande');
      // Décision regroupée (voir COALESCING) : sa validation stricte n'est pas sautée, même un jour de semaine.
@@ -847,7 +851,7 @@ function createBridge(options={}){
     persist();mark('ecriture_disque');
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
     const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
-    model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null}};
+    model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0};
     model.meta.profileSafety=profileSafety.project();
     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
    }catch(error){
@@ -888,6 +892,7 @@ function createBridge(options={}){
     // semaine retrouvent le chemin léger de « Jour suivant » (sans revalidation complète à chaque jour).
     if(coalescing){current.absorbed=coalescing;coalescing=null;}
     const after=advanceSignal();
+    if(after&&before&&after.pressDelegated!==before.pressDelegated)current.pressDelegated=(current.pressDelegated||0)+1;
     stop=continuer.detect(before,after,opts,current.repriseDate);
     before=after;today=after?.today;
     if(stop)break;
