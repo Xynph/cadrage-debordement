@@ -250,7 +250,9 @@ function fabrique(){
     if(perdant)perdant.j.ballonsPerdus++;
     continue;
    }
-   if(kind==='scrum'||kind==='lineout'){derniereMiseEnPlace={kind,team};if(team!==null){if(kind==='lineout'){equipes[team].touches.lancers++;const talon=presents(team,min).find(c=>c.poste===1);if(talon)talon.j.lancers++}else equipes[team].melees.introductions++}continue}
+   // Mêlée non disputée : la préparation (« setup ») puis l'introduction non disputée (« play ») du même camp
+   // racontent une seule mêlée, que le moteur compte une fois (l.stats.scrums).
+   if(kind==='scrum'||kind==='lineout'){const meme=kind==='scrum'&&e.type!=='setup'&&derniereMiseEnPlace?.kind==='scrum'&&derniereMiseEnPlace.team===team&&derniereMiseEnPlace.preparee;derniereMiseEnPlace={kind,team,preparee:e.type==='setup'};if(team!==null&&!meme){if(kind==='lineout'){equipes[team].touches.lancers++;const talon=presents(team,min).find(c=>c.poste===1);if(talon)talon.j.lancers++}else equipes[team].melees.introductions++}continue}
    if((kind==='setpiece-win'||kind==='setpiece-loss')&&team!==null){
     const mp=derniereMiseEnPlace;derniereMiseEnPlace=null;
     if(mp?.kind==='lineout'){if(kind==='setpiece-win'&&mp.team===team)equipes[team].touches.gagnees++;if(acteur){acteur.j.touchesGagnees++;if(kind==='setpiece-loss')acteur.j.touchesVolees++}}

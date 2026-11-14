@@ -11,7 +11,8 @@ function record() {
     start(0); beginMatch(); pauseMatch();
     var live = S.live;
     live.paused = false; syncMatchPresentation(live);
-    Math.random = () => .55; // course réussie (< 0,63 depuis les essais réalistes)
+    // Tirage fixe : une course gagnante dans les 22 sans essai (fenêtre .47-.52 depuis la courbe de niveau du 14/11).
+    Math.random = () => .55; // essais réalistes : course réussie sous 0,63 (.47-.52 ne donne plus une course)
     ballPossession(live, 0, 85); advanceCausalPlay(live);
     var carry = playback(live).cursor;
     var firstScoringEvent = live.events.length;
