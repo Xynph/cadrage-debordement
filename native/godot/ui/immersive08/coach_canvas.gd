@@ -976,7 +976,12 @@ func _conseil_composition(route: String, model: Dictionary) -> void:
 func _alerte_fatigue(model: Dictionary) -> void:
 	var avis := Avis.fatigue(model)
 	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
-	var event := "fatigue:%s:%s" % [_career_context(model), str(meta.get("calendarToday", meta.get("date", "")))]
+	var context := _career_context(model)
+	if context.is_empty(): return
+	# Clé du profil : « fatigue:club:saison:semaine:jour » (jour = numéro de jour en hexadécimal), au format que
+	# le profil du guide accepte (guide_profile.gd) ; une clé hors format ferait refuser toute écriture du profil.
+	var jour := int(Time.get_unix_time_from_datetime_string(str(meta.get("calendarToday", meta.get("date", ""))) + "T00:00:00") / 86400.0)
+	var event := "fatigue:%s:%x" % [context, maxi(jour, 0)]
 	var attente_event := str(_attente.get("event", ""))
 	# Alerte périmée (autre jour, ou plus personne de fatigué sur la feuille) : elle disparaît du bandeau.
 	if attente_event.begins_with("fatigue:") and (avis.is_empty() or attente_event != event): _attente.clear()

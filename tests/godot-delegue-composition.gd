@@ -122,9 +122,10 @@ func bulle_et_carnet() -> void:
 	check(fatigue_bulle(), "Gabi signale les titulaires fatigués dans sa bulle (bandeau)")
 	check(coach._bulle_suivre != null and coach._bulle_suivre.text == "Suivre le conseil", "La bulle propose « Suivre le conseil »")
 	check(cles_fatigue() == 1, "Alerte consommée : une clé du jour dans le profil de Gabi (%d)" % cles_fatigue())
+	check(coach.profile.last_error.is_empty() and coach.profile._valid(coach.profile.data), "Profil de Gabi valide avec la clé du jour (écriture acceptée) : " + coach.profile.last_error)
+	await capture("gabi-alerte-fatigue-bulle")
 	app._navigate("Bureau"); await settle()
 	coach.fermer_bulle(); await settle()
-	await capture("gabi-alerte-fatigue-bulle")
 	# Pas de spam : aucune seconde alerte le même jour, ni en changeant d'écran ni en revenant.
 	var reapparitions := 0
 	for route: String in ["Composition", "Effectif", "Club", "Bureau", "Finances", "Bureau"]:

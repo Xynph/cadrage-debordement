@@ -54,7 +54,7 @@ func _build() -> void:
 	confirmed.connect(queue_free)
 	canceled.connect(queue_free)
 	app.add_child(self)
-	Dialogs.show_centered(self, Vector2i(640, 270))
+	Dialogs.show_centered(self, Vector2i(640, 210))
 	get_ok_button().call_deferred("grab_focus")
 
 func _detail() -> void:

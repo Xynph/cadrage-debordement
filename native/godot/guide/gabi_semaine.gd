@@ -194,7 +194,9 @@ static func _fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
 		var sortant := Avis.joueur(model, str(change.get("sortant", "")))
 		var entrant := Avis.joueur(model, str(change.get("playerId", "")))
 		parts.append("%s (%d %%) pour %s" % [Avis._nom(entrant), int(Avis.condition(entrant)), Avis._nom(sortant)])
-	if parts.size() > 2: return "Je ferais souffler %d titulaires fatigués : %s et %d autre%s." % [parts.size(), ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
+	var total := int(Avis.fatigue_donnees(model).get("count", parts.size()))
+	var qui := "%d des %d titulaires fatigués" % [parts.size(), total] if total > parts.size() else "%d titulaires fatigués" % parts.size()
+	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
 	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
 
 ## Version courte du conseil de composition pour le carnet (le détail reste dans « Ton avis, Gabi ? »).
