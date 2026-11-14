@@ -208,15 +208,14 @@ victoire de l'équipe qui reçoit 60,8 / 63,8 % (tous matchs) ; corrélation de 
 | League One D2 | 56-26 / 54-23 | 1er / 5e | 0,79 / -0,40 |
 
 Lecture : le favori à domicile gagne **65-76 % dès 0-3 points d'écart et 79-92 % au-delà** (cible réelle
-~70-75 %, qui mêle tous les écarts : sur le mix du calendrier on est dans la cible côté domicile). À
+~70-75 % pour le favori à domicile : atteinte à partir de 1-2 points d'écart, légèrement basse à 0-1). À
 l'extérieur, le favori gagne 36-50 % aux petits écarts, 53-83 % aux grands : l'avantage du terrain est
-encore marqué, mais proche de la réalité. Le meilleur effectif finit dans le top 3 dans 5 championnats sur 9 sur
-les deux graines, les surprises existent (champion n° 6 et n° 8 de l'effectif en Premiership et League One D2).
+encore marqué, mais proche de la réalité. Le meilleur effectif finit dans le top 3 dans 5 championnats sur 9 (graine 4242) et 6 sur 9 (graine 7), les surprises existent (champion n° 6 et n° 8 de l'effectif en Premiership et League One D2).
 
 **Écart restant (non corrigé, le moteur n'est pas modifié ici)** : la corrélation reste faible là où les effectifs
 sont resserrés ou à peu de clubs : **Premiership (0,15-0,22 ; 10 clubs)**, **Championship (0,24-0,32 ; meilleur
 effectif 5e et 9e)**, League One D2 (8 clubs, -0,40 sur la graine 7). L'écart type d'effectif entre clubs y est
-petit (Championship : têtes d'affiche à 54-55 de niveau pour un plafond de 56 ; Premiership : 68-70) alors que
+petit (effectifs de tête à 54-55 de niveau en Championship, 68-70 en Premiership : les clubs d'un même championnat se tiennent à quelques dixièmes) alors que
 la pente du moteur est correcte (0,16 par point, cible 0,183, voir §4). La piste est donc **dans le barème des
 notes (#716)** : élargir l'écart de niveau entre clubs de ces trois championnats (les tranches 3-5 et 5+
 y sont presque vides), pas dans le moteur de match. À décider.
