@@ -78,6 +78,8 @@ budget() {
     # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
     # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
     tests/japan-match.cjs) echo 300s ;;
+    # Continuer jusqu'au prochain événement et retouches de cohérence : carrières Monde, plus de 180 s sur le runner (délai dépassé en CI sur main, Suites 6/7 et 7/7, après #720 et #722) ; assertions inchangées.
+    tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).

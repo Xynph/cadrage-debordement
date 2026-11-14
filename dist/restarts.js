@@ -104,10 +104,12 @@ function courseDecoupee(l,side,origin,finisseur){
  return x;
 }
 function advanceCausalPlay(l){
- const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penaltyProb=clamp(.12+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23),handProb=handFaultProbability(l,side);
+ const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23),handProb=handFaultProbability(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
  if(roll<penaltyProb+handProb)return handFault(l,side);
  if(roll<penaltyProb+handProb+.12)return resolveTouch(l,side,l.territory,{carried:true});
+ // Pénalités réalistes : faute de l'attaquant au sol (ballon non libéré, scellement), plus rare chez les joueurs disciplinés.
+ if(penalites&&roll<penaltyProb+handProb+.12+clamp(PENALITES.attaque+(70-unit(l,side,'discipline'))*.001,.02,.08))return awardPenalty(l,opp,{phase:'attaque',incident:roll*1000%2<1?'not-release':'sealing'});
  if((tacticalRules(l)||effectiveAttack(l,side)==='occupation')&&Math.random()<openKickProbability(l,side))return kickOpenPlay(l,side);
  tacticalCount(l,side,'carries');const edge=teamEdge(l,side,'attack'),essais=essaisRules(l),niveau=essais?(ESSAIS.ecart-1)*tacticalEdge(l,side):0,success=Math.random()<(essais?clamp(ESSAIS.porte+ouvertureJeu(l)+edge+niveau,.2,.9):clamp(.49+edge,.18,.84));
  if(success){

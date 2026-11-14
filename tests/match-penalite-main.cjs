@@ -84,11 +84,11 @@ test('Effets : essai, gain, percée, ballon perdu, avec les faits du moteur', ()
 // Statistiques sur un grand nombre de matchs IA contre IA, avec et sans l'option.
 function bilan(sans,n){
  const t=context();t.run('start(0)');if(sans)t.run('QUICK_TAP_RULES=0');
- return JSON.parse(t.run(`(function(){const a={m:0,pen:0,taps:0,penPres:0,tapsPres:0,penMene:0,tapsMene:0,essais:0,points:0,buts:0,issues:{}};
+ return JSON.parse(t.run(`(function(){const a={m:0,pen:0,taps:0,tapsTotal:0,penPres:0,tapsPres:0,penMene:0,tapsMene:0,essais:0,points:0,buts:0,issues:{}};
   const base=executePenaltyChoice;
   executePenaltyChoice=function(l,side){const d=side===0?100-l.territory:l.territory,mene=l.score[side]<l.score[1-side],avant=l.quickTaps?.[side]||0;a.pen++;if(d<=12){a.penPres++;if(mene)a.penMene++}const r=base(l,side);if((l.quickTaps?.[side]||0)>avant){a.taps++;if(d<=12){a.tapsPres++;if(mene)a.tapsMene++}}return r};
   try{for(let i=0;i<${n};i++){const C=S.clubs.length,x=i%C,y=(i*5+3+Math.floor(i/C))%C;if(x===y)continue;const l=createRugbyMatch([x,y],null,true);l.quickTapLog=[];
-   while(!l.finished){l.paused=false;advanceRugby(l)}a.m++;a.essais+=l.tries[0]+l.tries[1];a.points+=l.score[0]+l.score[1];a.buts+=l.stats[0].goals+l.stats[1].goals;for(const q of l.quickTapLog)a.issues[q.issue]=(a.issues[q.issue]||0)+1}}
+   while(!l.finished){l.paused=false;advanceRugby(l)}a.m++;a.essais+=l.tries[0]+l.tries[1];a.points+=l.score[0]+l.score[1];a.buts+=l.stats[0].goals+l.stats[1].goals;a.tapsTotal+=(l.quickTaps?.[0]||0)+(l.quickTaps?.[1]||0);for(const q of l.quickTapLog)a.issues[q.issue]=(a.issues[q.issue]||0)+1}}
   finally{executePenaltyChoice=base}return JSON.stringify(a)})()`));
 }
 test('Fréquence réaliste et équilibre du jeu sur 1 500 matchs', () => {
@@ -102,7 +102,8 @@ test('Fréquence réaliste et équilibre du jeu sur 1 500 matchs', () => {
  assert.ok(partMene>partPres,'plus fréquente près de la ligne quand on est mené');
  // Issues : surtout du jeu conservé, parfois l'essai ou la percée, parfois le ballon perdu.
  const total=Object.values(avec.issues).reduce((s,n)=>s+n,0),perdu=(avec.issues.gratte||0)+(avec.issues['en-avant']||0)+(avec.issues.tenu||0);
- assert.ok(total===avec.taps&&perdu/total>0.1&&perdu/total<0.35,'ballon perdu : '+perdu+'/'+total);
+ // Total des pénalités jouées lu sur le match : une pénalité de mêlée peut suivre une pénalité jouée (en-avant, mêlée) dans le même temps de jeu.
+ assert.ok(total===avec.tapsTotal&&perdu/total>0.1&&perdu/total<0.35,'ballon perdu : '+perdu+'/'+total);
  assert.ok((avec.issues.essai||0)>0&&(avec.issues.percee||0)>0,'essais et percées');
  // Équilibre : essais et points par match à moins de 8 % de l'existant.
  for(const k of ['essais','points'])assert.ok(Math.abs(avec[k]/avec.m-sans[k]/sans.m)/(sans[k]/sans.m)<0.08,k);
