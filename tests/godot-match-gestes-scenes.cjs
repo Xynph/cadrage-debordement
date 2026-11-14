@@ -26,9 +26,11 @@ function sequence() {
       if (score.scene.kind === 'try' && score.scene.ball.y === 10 && /ballon porté/.test(score.event.text) &&
           win.scene.kind === 'setpiece-win' && win.event.scene.move === 'maul' &&
           win.event.scene.team === score.event.scene.team && frames[n - 4].scene.kind === 'lineout' &&
-          // Préambule de jeu ordinaire, sans coup de sifflet (pénalités réalistes du 14/11 : une pénaltouche
-          // précède souvent la touche ; le test Godot attend une seule touche, deux coupes, sur la touche et le renvoi, et les mêmes joueurs d'une scène à l'autre : ni remplacement ni consigne).
-          !frames.slice(Math.max(0, n - 7), n - 4).some(f => ['penalty', 'advantage', 'card', 'lineout', 'sub', 'tactic'].includes(f.scene.kind))) {
+          // Préambule de jeu ordinaire (pénalités réalistes du 14/11 : une pénaltouche
+          // précède souvent la touche, elle est admise ; le test Godot attend une seule touche, deux coupes, sur la touche et le renvoi, et les mêmes joueurs d'une scène à l'autre : ni remplacement ni consigne).
+          !frames.slice(Math.max(0, n - 7), n - 4).some(f => ['card', 'lineout', 'sub', 'tactic'].includes(f.scene.kind)) &&
+          // Quinze joueurs par camp (le test Godot désigne chacun des quinze postes comme porteur : pas d'exclusion temporaire en cours).
+          frames.slice(Math.max(0, n - 7)).every(f => f.scene.players.length === 30)) {
         // Deux scènes de jeu avant, alignement, touche conservée en ballon porté, essai, scène suivante.
         return { club, frames: frames.slice(Math.max(0, n - 7)).map(frame => ({
           scene: frame.scene, teams: frame.teams,
