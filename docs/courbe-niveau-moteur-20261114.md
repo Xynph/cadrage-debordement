@@ -15,7 +15,8 @@ au moteur complet et au résultat rapide (championnats en « résultats rapides 
   (+6 à domicile → 85 %, à l'extérieur → 62 %).
 - Moteur complet : `teamEdge` (réussite des temps de jeu et finition) reçoit
   `0,005 × (niveau du camp − niveau adverse)` (`matchLevelEdge`, recalculé chaque minute : la fatigue,
-  les cartons et les remplacements comptent) et ±0,045 à domicile (auparavant ±0,018).
+  les cartons et les remplacements comptent) et ±0,036 à domicile (auparavant ±0,018 ; ±0,045 du 14/11
+  jusqu'au recalage sur les effectifs du barème V2, voir plus bas).
 - Résultat rapide : `avantage = (Δpuissance + 3,3 à domicile) / 7,5` (auparavant `(Δ + 2,5) / 8`),
   essais tirés selon une loi de Poisson de moyenne `2,75 × e^(±0,42 × avantage)` (inchangé).
 - Terrain neutre : plus d'avantage du terrain pour une rencontre Monde marquée `neutral`
@@ -23,6 +24,38 @@ au moteur complet et au résultat rapide (championnats en « résultats rapides 
   finale sur terrain neutre du Monde donnait l'avantage au premier nommé.
 - Coefficients de jeu calés par mesure, pas des probabilités réelles. Les anciennes sauvegardes
   n'ont rien à migrer : aucun champ nouveau n'est enregistré.
+
+## Recalage du terrain sur les effectifs du barème senior V2 (#716, 14/11 au soir)
+
+Avec les effectifs plus étagés du barème V2, ±0,045 donnait au moteur complet 70 à 74 % de victoires à
+domicile à niveau égal, contre 61 à 66 % au résultat rapide : #716 avait élargi les bornes CI du banc.
+Le terrain du moteur complet passe à ±0,036 et les bornes reviennent à celles de #712 (domicile
+[0,58 ; 0,73], pente [0,15 ; 0,24], écart entre les deux moteurs ≤ 0,08). Résultat rapide inchangé.
+
+Banc, effectifs V2, 600 matchs par écart et par moteur (k = 0, +6, +10), ajustement logistique :
+
+| Club de base | Domicile complet ±0,045 (400 m., k = 0) | Domicile complet ±0,036 | Domicile rapide | +6 complet / rapide | +10 complet / rapide | Pente complet / rapide |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4 (Top 14) | 70,6 % | 65,7 % | 66,4 % | 73,1 / 72,8 % | 86,9 / 85,8 % | 0,197 / 0,191 |
+| 20 (PRO D2) | 66,9 % | 67,3 % | 65,6 % | 75,9 / 74,9 % | 88,0 / 87,4 % | 0,217 / 0,206 |
+| 44 (URC) | 73,5 % | 64,8 % | 66,5 % | 76,7 / 75,8 % | 86,6 / 86,6 % | 0,205 / 0,206 |
+
+Essais intermédiaires (k = 0, 800 matchs) : ±0,033 → 63,8-64,2 % ; ±0,030 → 59,6-64,0 %.
+Scores à niveau égal inchangés : complet 46-48 points, 5,8-6,2 essais, écart moyen 11-12 ; rapide 50 points, 5,6-5,9 essais.
+Version CI du banc après recalage : complet 64,2 %, rapide 65,4 % (pente 0,206 / 0,201).
+
+Saison Monde complète (club humain 102, Top 14 et URC au moteur complet, le reste en rapide ;
+phases de saison régulière hors terrain neutre) :
+
+| Graine | Terrain | Domicile complet | Domicile rapide | Points complet / rapide | Essais complet / rapide |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 827381 | ±0,045 | 64,1 % | 63,2 % | 53,5 / 49,1 | 7,19 / 5,55 |
+| 827381 | ±0,036 | 60,1 % | 62,3 % | 54,3 / 49,6 | 7,28 / 5,59 |
+| 4242 | ±0,036 | 62,0 % | 63,4 % | 53,8 / 49,5 | 7,19 / 5,60 |
+
+En saison, l'écart de niveau réel entre clubs dilue l'avantage du terrain (≈ 508 matchs au moteur
+complet par saison, ± 2 points d'échantillonnage) ; les deux moteurs restent à moins de 3 points.
+Fixture régénérée : `tests/fixtures/match-gestes-sequence.json` (`node tests/godot-match-gestes-scenes.cjs`).
 
 ## Banc (tests/match-rating-curve.cjs, tests/helpers/courbe-niveau.cjs)
 

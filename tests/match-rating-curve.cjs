@@ -21,10 +21,9 @@ const PLAN = LONGUE
 // Bornes : cible ± bruit d'échantillonnage (version CI : écart type ≈ 3 points au moteur complet).
 const BORNES = {
   // Moteur complet : courbe un peu plus raide dans les queues (±15 → 96 %), d'où une pente ajustée de 0,20 à 0,22.
-  // Barème senior V2 (#716) : avec les effectifs réalistes, le terrain du moteur complet mesure 69 à 74 % à niveau égal
-  // (clubs de base 4, 20, 44) et la pente 0,19 à 0,24 : borne haute de la version CI portée à 0,75 / 0,25 en attendant
-  // un recalage de l'avantage du terrain sur ces effectifs.
-  complet: { pente: LONGUE ? [0.16, 0.23] : [0.15, 0.25], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.75],
+  // Barème senior V2 (#716) : avantage du terrain du moteur complet recalé à ±0,036 (au lieu de ±0,045), 65 à 67 %
+  // à niveau égal sur les effectifs V2 (clubs de base 4, 20, 44), comme le résultat rapide ; bornes de #712.
+  complet: { pente: LONGUE ? [0.16, 0.23] : [0.15, 0.24], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.73],
     // Essais réalistes (docs/essais-realistes-20261114.md) : ~6 à 8 essais et ~48 à 60 points par match selon le championnat (avant : 2,6-4,4 essais, 24-37 points).
     points: [38, 62], essais: [4.4, 8.8], ecartNul: [5, 17] },
   rapide: { pente: LONGUE ? [0.17, 0.20] : [0.16, 0.21], domicile: LONGUE ? [0.62, 0.69] : [0.61, 0.70],
@@ -67,8 +66,7 @@ test('Courbe de niveau commune au moteur complet et au résultat rapide (carriè
     for (const base of PLAN.bases) {
       const c = pentes[base + 'complet'], r = pentes[base + 'rapide'];
       assert.ok(Math.abs(c.pente - r.pente) <= 0.05, `pentes complet ${c.pente.toFixed(3)} / rapide ${r.pente.toFixed(3)}`);
-      // Effectifs du barème V2 (#716) : 73,5 % (complet) contre 65,4 % (rapide) au club 4, écart toléré 0,09 jusqu'au recalage.
-      assert.ok(Math.abs(c.domicileNiveauEgal - r.domicileNiveauEgal) <= 0.09, 'avantage du terrain des deux moteurs');
+      assert.ok(Math.abs(c.domicileNiveauEgal - r.domicileNiveauEgal) <= 0.08, 'avantage du terrain des deux moteurs');
     }
   } finally { h.close(); }
 });
