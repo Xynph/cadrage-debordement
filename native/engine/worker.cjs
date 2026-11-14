@@ -281,9 +281,13 @@ function createBridge(options={}){
    const original=JSON.parse(loadedProfile.toString('utf8')).store['bdt-v1'];
    if(original!==run('JSON.stringify(S)'))resumeCheckpoint={profile:loadedProfile,replaySeed:seed,replayClock:clock,text:run('JSON.stringify(createSaveDocument())'),...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))};
   }
+  // Copie de reprise de la carrière ouverte avant son remplacement. Le texte du document est rendu : l'import le
+  // reprend tel quel pour sa copie « bdt-before-import » (même carrière, même document) au lieu de le recréer.
   const protectCurrent=(reason,replaySeed=seed,replayClock=clock)=>{
    if(!run('!!S')||!fs.existsSync(file))return null;
-   return profileSafety.checkpoint({profile:profileSafety.readProfile(file),replaySeed,replayClock,text:run('JSON.stringify(createSaveDocument())'),reason,...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))});
+   const text=run('JSON.stringify(createSaveDocument())');
+   profileSafety.checkpoint({profile:profileSafety.readProfile(file),replaySeed,replayClock,text,reason,...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))});
+   return text;
   };
   const legacyDatabase=JSON.parse(run('JSON.stringify(CDCommonRosters)')),packs=mediaPacks.createStore(dataDir,legacyDatabase,worldRegistry,pacificRegistry,japanRegistry,nationaleRegistry,champRegistry,pressIdentities.catalogue(JSON.parse(run('JSON.stringify(CDPressQuestionBank.journalists)'))));
   const creationKey=mode=>mode==='world-champ'?'identity-pack-champ-creation':mode==='world-nationale'?'identity-pack-nationale-creation':mode==='world-japan'?'identity-pack-japan-creation':mode==='world-pacific'?'identity-pack-pacific-creation':mode==='world'?'identity-pack-world-creation':'identity-pack-creation';
@@ -755,9 +759,11 @@ function createBridge(options={}){
       national.validate(national.read('pendingSave.state'));
       validateCalendarState(calendarState('pendingSave.state'));
       const imported=JSON.parse(run('JSON.stringify({binding:pendingSave.state.identityPack,database:pendingSave.state.commonDatabase?.id})')),bound=imported.binding&&packs.get(imported.binding.id);if(bound&&bound.meta.databaseId!==imported.database)throw Error('Pack incompatible avec cette édition.');
-      protectCurrent(restoring?'restauration':'import',priorSeed,priorClock);
+      const beforeImport=protectCurrent(restoring?'restauration':'import',priorSeed,priorClock);
       if(restoring){seed=restoring.seed;clock=restoring.clock;}
-      run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');normalizeAcademyPotential(S);");
+      if(typeof beforeImport==='string')ctx.nativeBeforeImportText=beforeImport;
+      try{run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');normalizeAcademyPotential(S);");}
+      finally{delete ctx.nativeBeforeImportText;}
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
      let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
