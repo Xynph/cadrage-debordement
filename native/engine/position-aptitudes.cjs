@@ -248,5 +248,44 @@ module.exports=function positionAptitudes(){
    return {...domains,fitness:mean(players.map(p=>p.condition)),tackle:players.length?sheetAverage(team,ids,'tackle'):0,speed:players.length?sheetAverage(team,ids,'speed'):0};
   };
  }
- return Object.freeze({project,positionNumber,rating,efficiency,contextualSkill,installHooks});
+ // Alerte de fatigue de Gabi : titulaires de la feuille sous `seuil` % de condition et, pour chacun, le
+ // meilleur remplaçant frais au poste. Même règles que la sélection du staff : joueurs disponibles
+ // (blessés, libérés en sélection nationale, inscrits League One), admissibilité au poste, note au poste
+ // pondérée par la condition, règle JIFF (jamais sous min(JIFF de la feuille, cible)). Un remplaçant du banc
+ // est préféré (la feuille garde les mêmes 23 joueurs : quota et inscriptions inchangés) ; un joueur hors
+ // groupe n'est proposé qu'en dernier recours, jamais sous quota League One. L'ancien titulaire ne doit pas
+ // laisser un poste de banc vide : il doit pouvoir y prendre la place du remplaçant.
+ function fatigueAdvice(team,lineup,bench,seuil=70){
+  if(!team||!Array.isArray(lineup)||!Array.isArray(bench))return null;
+  const byId=new Map(team.players.map(p=>[p.id,p]));
+  const tired=[];
+  for(let k=0;k<15;k++){const p=byId.get(lineup[k]);if(p&&!p.injury&&p.condition<seuil)tired.push({slot:k,p});}
+  if(!tired.length)return null;
+  tired.sort((a,b)=>a.p.condition-b.p.condition||a.slot-b.slot);
+  const pool=availablePool(team),inXV=new Set(lineup.filter(Boolean)),slots=lineup.concat(bench),inGroup=new Set(slots.filter(Boolean));
+  const jiffOn=typeof CDJiff!=='undefined'&&CDJiff.isJiff&&typeof S!=='undefined'&&S?.jiff?.version===1&&team.id!==undefined&&(()=>{const l=CDJiff.subjectLeagues(S);return !!l&&Object.values(l).some(x=>x.includes(team.id));})();
+  const isJ=p=>jiffOn&&CDJiff.isJiff(S,p);
+  let jiffCount=jiffOn?slots.map(id=>byId.get(id)).filter(p=>p&&isJ(p)).length:0;
+  const quota=typeof CDWorldJapanQuota!=='undefined'&&CDWorldJapanQuota.activeClub(S,team.id);
+  const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
+  const used=new Set(),changes=[],unresolved=[];
+  for(const {slot,p:sortant} of tired){
+   let best=null;
+   for(const q of pool){
+    if(used.has(q.id)||inXV.has(q.id)||q.condition<75||q.condition<sortant.condition+10||!eligible(q,slot)||rating(q,slot)<40)continue;
+    const bi=bench.indexOf(q.id),fromBench=bi>=0;
+    if(fromBench){if(!eligible(sortant,15+bi))continue;}
+    else if(quota)continue;
+    else if(jiffOn&&isJ(sortant)&&!isJ(q)&&jiffCount<=CDJiff.target)continue;
+    const v=value(q,slot)+(fromBench?1000:0);
+    if(!best||v>best.v+1e-9||Math.abs(v-best.v)<=1e-9&&compareId(q,best.q)<0)best={q,v,fromBench};
+   }
+   if(!best){unresolved.push(sortant.id);continue;}
+   used.add(best.q.id);
+   if(!best.fromBench&&jiffOn)jiffCount+=(isJ(best.q)?1:0)-(isJ(sortant)?1:0);
+   changes.push({slot,playerId:best.q.id,sortant:sortant.id,condition:Math.floor(sortant.condition),entrantCondition:Math.round(best.q.condition),rating:Math.round(rating(best.q,slot)),sortantRating:Math.round(rating(sortant,slot)),fromBench:best.fromBench});
+  }
+  return {threshold:seuil,count:tired.length,starters:tired.map(({slot,p})=>({slot,playerId:p.id,condition:Math.floor(p.condition)})),changes,unresolved};
+ }
+ return Object.freeze({project,positionNumber,rating,efficiency,contextualSkill,installHooks,fatigueAdvice});
 };
