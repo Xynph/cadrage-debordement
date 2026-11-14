@@ -265,7 +265,8 @@ function factory(){
  function feuilleDe(l){
   if(typeof CDMatchStats==='undefined'||!l?.pair)return null;
   const s=state(),joueurs={};
-  (l.sheets||[]).forEach((sh,side)=>{for(const id of new Set([...(sh.on||[]),...(sh.bench||[]),...(sh.used||[])])){if(id==null)continue;const p=typeof matchPlayer==='function'?matchPlayer(l,side,id):null;if(p&&p.skills)joueurs[id]={skills:p.skills};}});
+  // Attributs lus à la demande (getters) : seuls les joueurs qui agissent dans le journal en ont besoin, même valeur que la lecture directe.
+  (l.sheets||[]).forEach((sh,side)=>{for(const id of new Set([...(sh.on||[]),...(sh.bench||[]),...(sh.used||[])])){if(id==null)continue;if(typeof matchPlayer!=='function')continue;let v;Object.defineProperty(joueurs,id,{enumerable:true,configurable:true,get(){if(v===undefined){const p=matchPlayer(l,side,id);v=p&&p.skills?{skills:p.skills}:null;}return v||undefined;}});}});
   try{return CDMatchStats.feuilleStatistiques(journalDe(l),{cle:[s?.season,s?.round,s?.phase,l.pair.join('-')].join(':'),joueurs});}catch(e){return null;}
  }
  // Forme récente (5 dernières notes) et moyenne de saison d'un joueur, sans écrire.
