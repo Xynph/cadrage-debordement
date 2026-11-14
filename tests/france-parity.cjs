@@ -12,7 +12,7 @@ for(const mode of ['fiction','lnr']){
  // New-career v2 intake/pool assertions belong to their own current-policy tests.
  after.run('var populationV2Setup=aiRosterSetup;aiRosterSetup=function(){var result=populationV2Setup();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result}');
  freezeFranceBirths(after);
- if(mode==='lnr')for(const f of ['lnr-rosters-data.js','lnr-career.js'])after.run(fs.readFileSync(path.join(__dirname,'../dist',f),'utf8'));
+ if(mode==='lnr')for(const f of ['lnr-rosters-base.js','lnr-career.js'])after.run(fs.readFileSync(path.join(__dirname,'../dist',f),'utf8'));
  after.run("start(0,'"+mode+"')");
  const same=stage=>{assert.equal(hash(after.run('JSON.stringify(S)')),baseline.captures[mode][stage].hash,mode+' '+stage+' sérialisation identique');assert.equal(after.seed(),baseline.captures[mode][stage].seed,mode+' '+stage+' RNG identique');};same('création');
  after.run('beginMatch();for(let i=0;!S.live.finished;i++){if(i>5000)throw Error("limite");if(S.live.paused)continueMatch();else tick();}finishRound();validateCareer(S)');same('match délégué');

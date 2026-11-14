@@ -34,6 +34,12 @@ function verifyPublished(base=require('../dist/rugby-common-rosters.js')){
  const context=vm.createContext({module:{exports:{}}});vm.runInContext(fs.readFileSync(path.join(root,TARGET),'utf8'),context);
  const data=context.module.exports,ids=base.clubs.flatMap(c=>c.players.map(p=>p.id)).sort();
  if(data.version!==2||JSON.stringify(Object.keys(data.players).sort())!==JSON.stringify(ids)||JSON.stringify(Object.keys(data.versions[1].players).sort())!==JSON.stringify(ids))throw Error('Registre effectifs publié incohérent avec la base commune.');
+ // Estimated references derive from the public base only: they must still match it.
+ for(const c of base.clubs)for(const p of c.players){
+  const r=data.players[p.id];
+  if(r.position.basis==='estimated'&&r.position.primary!==p.pos||r.status.basis==='estimated'&&r.status.value!==(p.age<=21?'espoir':'professionnel')||r.contract.basis==='estimated'&&r.contract.endYear!==2027+hash(p.id)%3)
+   throw Error('Registre effectifs publié périmé pour '+p.id+' : relancer la compilation avec les sources privées.');
+ }
  return data;
 }
 // Returns 'compiled' (sources present) or 'verified' (fingerprint only, announced).
@@ -46,4 +52,5 @@ function write(check=false){
  return 'compiled';
 }
 if(require.main===module){const outcome=write(process.argv.includes('--check'));console.log(outcome==='compiled'?'Registre effectifs : 1592 références initiales, compilation déterministe.':'Registre effectifs : fichier publié vérifié par empreinte.');}
-module.exports={build,text,write,verifyPublished,endSeason,archivedV1,SOURCES,TARGET};
+const hasSources=()=>Boolean(located());
+module.exports={build,text,write,verifyPublished,hasSources,endSeason,archivedV1,SOURCES,TARGET};

@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
-const t=context();for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
+const t=context();for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
 const run=t.run;run("start(0,'lnr')");
 const initial=run('JSON.stringify(S)'),save=t.store['bdt-v1'];
 // Expérience contrôlée : les titulaires sont fatigués, les remplaçants non sélectionnés sont frais.

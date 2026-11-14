@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
-function boot(snapshot){const t=context(snapshot);for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);return t}
+function boot(snapshot){const t=context(snapshot);for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);return t}
 const fictive=boot();fictive.run('start(0)');
 assert.equal(fictive.run('S.lnrMode'),undefined);
 assert.equal(fictive.run('lnr05View()'),'','no real dossier in old careers');

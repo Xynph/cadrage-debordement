@@ -109,7 +109,7 @@ function lnr05View(){
   const url=proof&&/^https:\/\/(?:top14|prod2)\.lnr\.fr\/joueur\//.test(proof[4])?proof[4]:null;
   const proposal=lnr05Proposal(selected.id);
   const source=url?'<a href="'+lnr05Escape(url)+'" target="_blank" rel="noopener noreferrer">Fiche LNR individuelle</a>':
-   'Mesures individuelles non renseignées';
+   proof?'Mesures relevées sur la fiche officielle du joueur':'Mesures individuelles non renseignées';
   const status=proposal?.already?'Déjà sur la feuille, poste '+(proposal.slot+1)+'.':
    proposal?.valid?'Proposition native : '+proposal.changes+' place(s) modifiée(s), aucune sauvegarde avant confirmation.':
    'Aucune composition applicable : blessure, indisponibilité ou couverture insuffisante.';

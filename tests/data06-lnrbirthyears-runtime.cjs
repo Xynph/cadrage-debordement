@@ -15,7 +15,7 @@ test('sauvegardes LNR acceptent 15 ans, fiction reste à 16 ans',()=>{
  const {context}=require('./harness.cjs');
  for(const [mode,minimum] of [['fiction',16],['lnr',15]]){
   const g=context();
-  for(const file of ['lnr-rosters-data.js','lnr-career.js'])g.run(fs.readFileSync(path.join(root,file),'utf8'));
+  for(const file of ['lnr-rosters-base.js','lnr-career.js'])g.run(fs.readFileSync(path.join(root,file),'utf8'));
   g.run(`start(0,${JSON.stringify(mode)})`);
   const original=g.run('JSON.stringify(createSaveDocument())');
   for(const age of [minimum-1,minimum,minimum+1]){

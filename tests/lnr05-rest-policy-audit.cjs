@@ -6,7 +6,7 @@ assert(Number.isInteger(seed)&&seed>=0&&seed<10);
 assert(['persistent','weekly'].includes(mode));
 function boot(){
  const t=context();
- for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
+ for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
  t.run('for(let i=0;i<'+(seed*17)+';i++)Math.random()');t.run("start(0,'lnr')");
  return t;
 }
@@ -33,7 +33,7 @@ test('repos persistant versus repos ponctuel: suivi et veritable reprise native'
    const document=r('JSON.stringify(createSaveDocument())'),parsed=JSON.parse(document);
    assert.equal(r('!!parseSaveDocument('+JSON.stringify(document)+')'),true);
    const resumed=context(parsed.state);
-   for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),resumed.ctx);
+   for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),resumed.ctx);
    resumed.run('S=parseSaveDocument('+JSON.stringify(document)+').state');
    assert.equal(resumed.run('S.round'),r('S.round'),'vraie reprise sauvegarde meme journee');
    assert.equal(resumed.run('club().players[0].condition'),r('club().players[0].condition'),'condition reprise identique');
