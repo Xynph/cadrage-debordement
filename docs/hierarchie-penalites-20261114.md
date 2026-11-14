@@ -38,6 +38,8 @@ l'ancien moteur ; un match en cours d'une ancienne sauvegarde garde ses règles.
   des points en Top 14, ~13-15 % en Premiership et en URC.
 - **Finition** dans les 26 derniers mètres 0,47 → 0,51 (`ESSAIS.finition`) : les arrêts de jeu supplémentaires
   (fautes de l'attaquant surtout) coûtaient ~8 % des essais.
+- Pas de pénalité de conquête à la minute d'un coup d'envoi (une pénalité réussie fermerait sans durée une
+  prolongation à mort subite) ; la culture de pénaltouche ne joue qu'en temps réglementaire.
 - La pénalité donnée à l'équipe qui n'a pas le ballon lui rend la possession avant le choix (aucun avantage
   sur une faute de l'équipe en possession, comme en vrai).
 
@@ -140,6 +142,10 @@ mieux armé 1er dans 4 championnats sur 9 ; l'effet cumulé V2 + pénalités n'e
   sifflé ou une seconde touche : séquence au club 4, même forme touche → ballon porté → essai → renvoi).
 
 ## 6. Limites
+
+- **Notes par maillot à réétalonner** : `homme-du-match-postes` (CI) donne un écart type général de 1,32 (borne 1,3) et
+  un talonneur à 6,02 de moyenne : deux fois plus de pénalités concédées, attribuées par `match-notes.cjs` au
+  plaqueur déduit de la place défensive quelle que soit la cause. Voir la passation de la PR.
 
 - Deux graines en saison complète (4242, 7) ; la hiérarchie par championnat varie beaucoup d'une graine à
   l'autre (10 à 16 clubs).
