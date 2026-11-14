@@ -43,7 +43,8 @@ test('Courses découpées : issue, tirages et statistiques inchangés ; journal 
     for(const s of inseres){assert.equal(s.scene.from.x,x);assert.ok((s.scene.to.x-x)*sens>0,'avance vers la ligne');x=s.scene.to.x}
     assert.equal(f.scene.from.x,x,'l’essai part du dernier temps de jeu');
     assert.deepEqual(f.scene.to,e.scene.to);assert.equal(f.scene.actor,e.scene.actor,'même marqueur');
-    if(Math.abs(but(T)-e.scene.from.x)>=20){essaisLongs++;assert.ok(Math.abs(but(T)-f.scene.from.x)<=10,'essai long : la dernière course part à 10 m ou moins')}
+    // Un essai de pénalité jouée vite (matchflow.js, sans découpage ni temps de jeu inséré) n'est pas une course découpée.
+    if(inseres.length&&Math.abs(but(T)-e.scene.from.x)>=20){essaisLongs++;assert.ok(Math.abs(but(T)-f.scene.from.x)<=10,'essai long : la dernière course part à 10 m ou moins')}
     else essaisCourts++;
     if(inseres.length>1)assert.ok(inseres.slice(1).every(s=>s.scene.actor!==f.scene.actor),'les soutiens ne sont pas le marqueur');
    }
