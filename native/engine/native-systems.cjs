@@ -1,5 +1,7 @@
 'use strict';
 const academyGroups=require('./academy-groups.cjs'),matchNotes=require('./match-notes.cjs');
+// Feuille de statistiques réaliste (match-stats.cjs) : la même que l'écran de match, enregistrée par les notes.
+const matchStats=require('./match-stats.cjs');
 // Closed production manifest. Each domain owns its rules and strict validator;
 // the worker remains the only disk transaction and save authority.
 const domains={clubMeetings:require('./club-meetings.cjs'),matchTalks:require('./match-talks.cjs'),matchDelegation:require('./match-delegation.cjs'),sceneInvitations:require('./scene-invitations.cjs'),playerMatchHistory:require('./player-match-history.cjs'),staffEmployment:require('./staff-employment.cjs'),customCompetition:require('./custom-competition.cjs'),interclubMarket:require('./interclub-market.cjs'),staffMentoring:require('./staff-mentoring.cjs'),performanceAnalysis:require('./performance-analysis.cjs'),press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs'),academyIntake:require('./academy-intake.cjs'),jiff:require('./jiff.cjs'),youthNational:require('./youth-national.cjs'),formationFees:require('./formation-fees.cjs'),academyFollowUp:require('./academy-follow-up.cjs'),youthMatches:require('./youth-matches.cjs'),matchNotes,espoirsMatch:require('./espoirs-match.cjs'),preseason:require('./avant-saison.cjs'),reprise:require('./reprise.cjs'),leagueDetail:require('./league-detail.cjs')};
@@ -11,6 +13,7 @@ function bootstrap(){
  return `const nativeStaffCareerSources=(()=>{const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};return freeze(typeof nativeStaffCareerSourcesText==='string'?JSON.parse(nativeStaffCareerSourcesText):{});})();
  let nativeStaffTransition=null;
  const CDMatchNotesMoteur=(${matchNotes.moteur.toString()})();
+ const CDMatchStats=(${matchStats.fabrique.toString()})();
  const nativeSystems=(()=>{
   const domains={${definitions}},owners=new Map();
   ${Object.entries(domains).map(([key,d])=>d.commands.map(c=>`owners.set(${JSON.stringify(c)},domains[${JSON.stringify(key)}]);`).join('')).join('')}
