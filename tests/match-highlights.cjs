@@ -261,6 +261,8 @@ test('En direct, l’amorce d’un essai revient sur la minute précédente et l
 // ce qu'il va se passer ». Mesure sur des matchs du harnais (niveau dynamique, sélection en direct).
 const GROSSES = H.GROSSES || new Set(['franchissement', 'ballon_sauve', 'ballon_tenu_en_but', 'essai_refuse', 'penalite_manquee', 'pression_dans_les_22',
   'pres_de_la_ligne', 'cinquante_22', 'jeu_au_pied_dangereux', 'contre_attaque', 'touche_5m', 'melee_5m', 'en_but_sous_pression', 'ballon_porte']);
+// Essais réalistes (~6 essais par match) : les temps forts qui marquent passent de ~40 à ~50-55 %, les grosses actions sans point
+// de ~45 à 28-34 % : bornes 50 → 60 % (qui marquent) et 35 → 25 % (grosses sans point), toujours une vraie part des deux.
 test('Niveau dynamique : une vraie part de grosses actions sans point, tous les essais, tout le match', () => {
   const matchs = [];
   for (let k = 0; k < 16; k++) {
@@ -295,7 +297,7 @@ test('Niveau dynamique : une vraie part de grosses actions sans point, tous les 
   assert.equal(vus, essais, 'chaque essai est montré');
   const part = n => n / episodes;
   assert.ok(part(points) <= 0.6, 'temps forts qui marquent : ' + Math.round(part(points) * 100) + ' %');
-  assert.ok(part(grosses) >= 0.35 && part(grosses) <= 0.6, 'grosses actions sans point : ' + Math.round(part(grosses) * 100) + ' %');
+  assert.ok(part(grosses) >= 0.25 && part(grosses) <= 0.6, 'grosses actions sans point : ' + Math.round(part(grosses) * 100) + ' %');
   assert.ok(quarts.every(q => q / episodes >= 0.15), 'temps forts répartis sur le match : ' + quarts.join(' / '));
   // Seuil porté de 8 à 10 % avec le découpage des longues courses (docs/match-courses-20261112.md) :
   // les essais que l'importance fait monter (« franchissement », « contre-attaque ») ne sont plus des
