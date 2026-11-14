@@ -29,7 +29,7 @@ function carryTackler(l,side,carrierId,gain){
   let s=Math.abs(DEFENCE_LANES[slot]-lane);
   if(gain>=22)s+=slot===14?-40:slot===10||slot===13?-8:10;
   else if(gain>=10)s+=slot===14?12:forward?4:0;
-  else s+=forward?0:14;
+  else s+=forward?0:60; // gain court : toujours un avant (les ailiers portent plus depuis les essais réalistes : écart de couloir jusqu'à 40)
   if(slot===5||slot===6)s-=3;else if(slot===8)s+=6;
   if(Number.isFinite(condition))s+=Math.max(0,100-condition)*.2;
   if(s<score){score=s;best=id}

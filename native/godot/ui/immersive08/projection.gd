@@ -41,6 +41,54 @@ static func next_scheduled_fixture(model: Dictionary) -> Dictionary:
 		if not fixture.get("played", false) and int(fixture.get("week", 0)) > week: return fixture
 	return {}
 
+## Prochaine rencontre du club, avant-saison comprise : une seule définition pour le Bureau, la Tactique,
+## l'Entraînement, la Préparation et les Compétitions. Le moteur désigne la rencontre (figures.nextFixtureId) ;
+## à défaut, la rencontre à préparer (model.next), puis la première rencontre non jouée du calendrier.
+static func next_fixture(model: Dictionary) -> Dictionary:
+	var next: Variant = model.get("next")
+	if next is Dictionary and not next.is_empty(): return next
+	var figures: Variant = model.get("figures")
+	var wanted := str(figures.get("nextFixtureId","")) if figures is Dictionary and figures.get("nextFixtureId") != null else ""
+	if not wanted.is_empty():
+		for fixture: Dictionary in model.get("calendar", []):
+			if str(fixture.get("id","")) == wanted and not fixture.get("played", false): return fixture
+	return next_scheduled_fixture(model)
+
+## Intitulé court de la rencontre pour les bandeaux (adversaire, lieu, journée), jamais « aucune » si le calendrier en publie une.
+static func next_fixture_caption(model: Dictionary, empty_text: String) -> String:
+	var fixture := next_fixture(model)
+	if fixture.is_empty(): return empty_text
+	return G.club_name(fixture.get("home",{})) + " – " + G.club_name(fixture.get("away",{})) + " · " + str(fixture.get("label",""))
+
+static func plural(count: int, one: String, many: String) -> String:
+	return "%d %s" % [count, one if absi(count) <= 1 else many]
+
+## Masses salariales : trois mesures distinctes, lues au même endroit (engine : figures.payroll).
+##   players_weekly : salaires des contrats (base 52 semaines) ; charge_weekly : versé sur la saison, cotisations comprises.
+static func payroll(model: Dictionary) -> Dictionary:
+	var figures: Variant = model.get("figures")
+	var source: Variant = figures.get("payroll") if figures is Dictionary else null
+	if source is Dictionary and source.has("joueursHebdo"):
+		return {"players_weekly": float(source.joueursHebdo), "paid_weekly": float(source.get("verseHebdo", source.joueursHebdo)),
+			"charge_weekly": float(source.get("chargeHebdo", source.joueursHebdo)), "weeks": int(source.get("semainesDePaie", 0)),
+			"contributions": float(source.get("tauxCotisations", 0.0))}
+	var total := 0.0
+	for player: Dictionary in model.get("squad", []): total += float(player.get("salary", 0))
+	return {"players_weekly": total, "paid_weekly": total, "charge_weekly": total, "weeks": 0, "contributions": 0.0}
+
+## Échéances de contrat : fin de saison (contractEnd <= saison) et horizon (jusqu'à la fin de la saison suivante).
+static func contract_counts(model: Dictionary) -> Dictionary:
+	var season := int(model.get("meta", {}).get("season", 1))
+	var ending := contracts_ending(model)
+	return {"end_of_season": ending.size(), "by_horizon": contracts(model).size(), "horizon_season": season + 1}
+
+static func contracts_ending(model: Dictionary) -> Array:
+	var result: Array = []
+	var season := int(model.get("meta", {}).get("season", 1))
+	for player: Dictionary in model.get("squad", []):
+		if player.get("contractEnd") != null and int(player.contractEnd) <= season: result.append(player)
+	return result
+
 static func fixture_venue(fixture: Dictionary, neutral_fallback: bool = true, home_fallback: bool = true) -> String:
 	var venue: Variant = fixture.get("venue")
 	if venue is Dictionary: venue = venue.get("name")

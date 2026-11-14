@@ -148,7 +148,7 @@ func _heading() -> void:
 		app.heading.name = "PreparationContextHeading"
 		match_context.live_heading = app.heading
 	var context := _upcoming_preparation_note(app.model.meta) if fixture.is_empty() else ""
-	if context.is_empty(): context = "Aucune rencontre annoncée"
+	if context.is_empty(): context = P.next_fixture_caption(app.model, "Aucune rencontre annoncée")
 	if not fixture.is_empty():
 		context = "%s – %s  ·  %s" % [G.club_name(fixture.get("home", {})), G.club_name(fixture.get("away", {})), fixture.get("label", "")]
 	if not preparation.is_empty():

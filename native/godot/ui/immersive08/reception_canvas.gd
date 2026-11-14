@@ -17,7 +17,12 @@ const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recru
 const COLORS = {"Staff":C.MINT, "Médical":C.ALERT, "Direction":C.GOLD, "Recrutement":C.BLUE, "Formation":C.MINT, "Compétitions":C.GOLD, "Club":C.MUTED}
 const ROUTES = {"Staff":"Préparation", "Médical":"Effectif", "Direction":"Club", "Recrutement":"Recrutement", "Formation":"Formation", "Compétitions":"Calendrier", "Club":"Bureau"}
 const PORTRAITS = {"Médical":"mail-medical", "Direction":"mail-direction", "Recrutement":"mail-recruitment", "Formation":"academy-player", "Compétitions":"mail-trainer"}
-const SEASON_EXPIRY_MAIL := "%d contrat(s) expire(nt) à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs."
+# Trois formes : singulier et pluriel accordés (moteur actuel) et la forme historique « contrat(s) expire(nt) » des anciennes carrières.
+const SEASON_EXPIRY_MAILS := [
+	"%d contrat expire à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
+	"%d contrats expirent à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
+	"%d contrat(s) expire(nt) à la fin de cette saison. Consultez l'onglet Contrats pour anticiper les départs.",
+]
 
 static func _state(app: Control) -> Dictionary:
 	if not app.management_ui.has("reception"):
@@ -123,7 +128,11 @@ static func _messages(app: Control) -> Array[Dictionary]:
 static func _is_season_expiry_mail(message: String) -> bool:
 	# Les courriers historiques du moteur ne contiennent ni type ni identifiants de joueurs.
 	var count := message.get_slice(" ", 0).to_int()
-	return count > 0 and message.replace("’", "'") == (SEASON_EXPIRY_MAIL % count)
+	if count <= 0: return false
+	var normalized := message.replace("’", "'")
+	for template: String in SEASON_EXPIRY_MAILS:
+		if normalized == (template % count): return true
+	return false
 
 static func _category(message: String) -> String:
 	if "blesse" in message or "indisponibilite" in message or "medical" in message: return "Médical"
@@ -144,7 +153,7 @@ static func _tasks(app: Control) -> Array:
 	if not app.model.get("selection", {}).get("valid", false): tasks.append(["Compléter la feuille de match", "Composition"])
 	if not app.model.get("meta", {}).get("trained", false): tasks.append(["Organiser la charge de la semaine", "Entraînement"])
 	var contracts := P.contracts(app.model)
-	if not contracts.is_empty(): tasks.append(["Examiner les échéances de %d contrat(s)" % contracts.size(), "Effectif"])
+	if not contracts.is_empty(): tasks.append(["Examiner %s de contrat" % P.plural(contracts.size(), "échéance", "échéances"), "Effectif"])
 	if P.group(app.model).injured > 0: tasks.append(["Consulter les indisponibilités de l’effectif", "Effectif"])
 	var reports: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", [])
 	if not reports.is_empty(): tasks.append(["Consulter %d rapport(s) de recrutement" % reports.size(), "Recrutement"])
@@ -340,7 +349,7 @@ static func _context(card: Panel, app: Control, state: Dictionary, message: Dict
 		var expiring: Array = app.model.get("decisions", {}).get("recruitment", {}).get("expiring", [])
 		var ids: Array = expiring.map(func(player: Dictionary): return str(player.id))
 		var players: Array = app.model.get("squad", []).filter(func(player: Dictionary): return str(player.id) in ids)
-		D.text(panel,18,145,"Échéances actuelles · %d joueur(s) dans l’effectif" % players.size(),18,C.GOLD,600,1060)
+		D.text(panel,18,145,"Échéances de fin de saison · %s dans l’effectif" % P.plural(players.size(), "joueur", "joueurs"),18,C.GOLD,600,1060)
 		for index in mini(players.size(),3):
 			var player: Dictionary = players[index]
 			var open := C.button("",_open_related.bind(app,message,_open_current_player.bind(app,str(player.id))),false,app.accent)

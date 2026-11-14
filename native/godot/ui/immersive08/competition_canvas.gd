@@ -307,6 +307,8 @@ func _standings() -> void:
 	var body_y := table_y + 44
 	D.place(body, Rect2(1, body_y, LEFT - 2, 683-body_y))
 	var stride := 41 if rows.size() <= 14 else 33 if international else 36
+	# Un classement de 16 clubs ou moins tient sur une seule page : on resserre les lignes plutôt que de paginer.
+	if international and not rows.is_empty() and rows.size() <= 16: stride = mini(stride, maxi(33, floori(float(683-body_y)/rows.size())))
 	var capacity := maxi(1,mini(16,floori(float(683-body_y)/stride))) if international else 16
 	var bounds := _pager(panel, "StandingsPagination", page_key, rows.size(), capacity, 685, 832)
 	for i in range(bounds.x, bounds.y):
@@ -426,6 +428,15 @@ func _next_match() -> void:
 			D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),43,C.IVORY,800,810)
 			D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
 			D.button(panel,Rect2(166,247,589,60),"Ouvrir le dossier de préparation",func(): app.Immersive.open_preparation(app,0),true,"arrow",false,PRIMARY,"CompetitionJapanLink" if japan else "CompetitionPacificLink")
+			return
+		var scheduled := P.next_fixture(app.model)
+		if not scheduled.is_empty():
+			D.chip(panel,Rect2(36,67,210,29),"PROCHAINE RENCONTRE",C.GOLD)
+			D.text(panel,36,130,Office.scheduled_opponent(app,scheduled),43,C.IVORY,800,810).name = "UpcomingOpponent"
+			D.text(panel,37,179,Office.scheduled_when(app,scheduled),29,C.IVORY,600,802).name = "UpcomingWhen"
+			var scheduled_venue := Office.scheduled_venue(app,scheduled)
+			if not scheduled_venue.is_empty(): D.text(panel,37,219,"Lieu · " + scheduled_venue,24,C.MUTED,500,802)
+			D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionScheduledAdvance")
 			return
 		D.text(panel, 36, 130, "Aucune rencontre programmée", 39, C.IVORY, 800, 810)
 		D.text(panel, 37, 174, app.model.meta.get("roundLabel", "Consultez le calendrier du club."), 27, C.MUTED, 500, 802)
@@ -732,6 +743,25 @@ func _division_choices(parent: Node, x: float, y: float) -> void:
 					style.content_margin_left = C.px(8)
 					style.content_margin_right = C.px(8)
 				if division.id == "champ": button.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
+		_fit_caption(button, caption, C.px(width))
+
+## Un onglet n'est jamais coupé : on réduit d'abord la police (jusqu'à 14 px), puis on abrège les mots longs (« Accession anglaise » → « Accession ang. »).
+## L'intitulé complet reste dans l'infobulle.
+func _fit_caption(button: Button, caption: String, width: int) -> void:
+	var style := button.get_theme_stylebox("normal")
+	var room := float(width) - style.content_margin_left - style.content_margin_right
+	var font := button.get_theme_font("font")
+	var size := button.get_theme_font_size("font_size")
+	var minimum := maxi(10, C.px(14))
+	while size > minimum and font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > room: size -= 1
+	var words := caption.split(" ")
+	var index := words.size() - 1
+	while font.get_string_size(" ".join(words), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > room and index >= 0:
+		if words[index].length() > 5: words[index] = words[index].left(4) + "."
+		index -= 1
+	button.add_theme_font_size_override("font_size", size)
+	button.text = " ".join(words)
+	if button.text != caption and button.tooltip_text.is_empty(): button.tooltip_text = caption
 
 func _pager(parent: Node, id: String, key: String, total: int, capacity: int, y: float, x: float) -> Vector2i:
 	var paging := _page_state(key)

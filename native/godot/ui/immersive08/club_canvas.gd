@@ -414,8 +414,9 @@ static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dicti
 	var cash: Variant = finance.get("cash",app.model.club.get("cash"))
 	D.text(card, 1030, 114, U.amount(cash), 43, C.ALERT if cash != null and float(cash)<0.0 else C.MINT, 700, 330)
 	D.text(card, 1030, 144, "Trésorerie du jeu", 22, C.MUTED, 500, 315)
-	D.text(card, 1366, 107, "Salaires "+G.salary_period(), 22, C.MUTED, 500, 355)
-	D.text(card, 1366, 142, G.salary_amount(finance.get("weeklyWages",app.model.get("finance",{}).get("wage",0))), 28, C.IVORY, 600, 361)
+	# Charge salariale versée (cotisations comprises) : la valeur du moteur, comme dans la répartition de Finances.
+	D.text(card, 1366, 107, "Salaires et cotisations · par semaine de jeu", 22, C.MUTED, 500, 355)
+	D.text(card, 1366, 142, G.euros(P.payroll(app.model).charge_weekly), 28, C.IVORY, 600, 361)
 	_reading_area(app,card,Rect2(1022,77,334,72),{"kind":"finance","id":"cash"},"ClubCashLink","Trésorerie")
 	_reading_area(app,card,Rect2(1358,77,379,72),{"kind":"finance","id":"wages"},"ClubWagesLink","Salaires")
 	var action := D.button(card, Rect2(1750,77,476,73), "Présenter une demande à la direction", func(): _open_strategy(app, 1), true, "arrow", false, Color("966419"), "ClubBoardRequest")
