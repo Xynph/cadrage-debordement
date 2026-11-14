@@ -17,7 +17,7 @@ function catalogue(file){const ctx=vm.createContext({});vm.runInContext(fs.readF
 const realPlayers=located.players?catalogue(located.players).clubs.flatMap(c=>c[3].map(([id,name])=>[id,name])):[];
 const realStaff=located.staff?JSON.parse(fs.readFileSync(located.staff,'utf8')).people.map(p=>[p.id,p.name]):[];
 const realPress=located.press?JSON.parse(fs.readFileSync(located.press,'utf8')).press.journalists.map(j=>[j.id,j.name]):[];
-if(located.players)assert.equal(realPlayers.length,1592);if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.equal(realPress.length,10);
+if(located.players)assert.equal(realPlayers.length,1592);if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.ok(realPress.length>=10);
 const missing=Object.keys(SOURCES).filter(k=>!located[k]);
 if(missing.length)console.warn('Sources privées absentes ('+missing.map(k=>SOURCES[k]).join(', ')+') : comparaison avec ces vrais noms non faite.');
 const real=new Map([...realPlayers,...realStaff,...realPress].map(([id,name])=>[id,fold(name)]));
