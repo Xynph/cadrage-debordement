@@ -25,7 +25,7 @@ test('Notes de match : effectif et fiche joueur dans le vrai jeu', { skip: !godo
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-notes-profil-'));
   fs.mkdirSync(sortie, { recursive: true });
   try {
-    const model = preparer(profil);
+    const model = preparer(profil, Number(process.env.CD_NOTES_MATCHS || 3));
     assert.ok(Object.keys(model.clubLife.matchNotes.joueurs).length >= 15, 'notes préparées');
     const graphique = process.env.CD_NOTES_GRAPHICS === '1';
     const resultat = spawnSync(godot, [...(graphique ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1920x1080'] : ['--headless']), '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-notes-match.gd')],

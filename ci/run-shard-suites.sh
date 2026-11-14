@@ -80,6 +80,12 @@ budget() {
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
+    # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
+    tests/match-rating-curve.cjs) echo 420s ;;
+    # Stats réalistes de la fiche (4 journées Monde ; le défaut était 26 par erreur, d'où le dépassement de 900 s) : 285 s de CPU en local, ~5-7 min en CI.
+    tests/stats-fiche-joueur.cjs) echo 900s ;;
+    # Carrière Monde jusqu'au premier match d'un club de League One : 73-98 s en CI sur main (3x de réserve).
+    tests/japan-quota-card-return.cjs) echo 300s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
