@@ -289,6 +289,7 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	var titres := int(notes.get("hommeDuMatch",0))
 	var xv := int(notes.get("selections",0))
 	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else "") + (" · %d× XV DE LA JOURNÉE" % xv if xv>0 else ""),22,C.GOLD if titres>0 or xv>0 else C.MUTED,600,300)
+	_moyennes(card,notes)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
 	var note := _note(app,player)
@@ -311,7 +312,6 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 	if lignes.is_empty() and saisons.is_empty() and distinctions.is_empty():
 		D.text(card,24,160,"Aucun match noté cette saison. Chaque rencontre jouée est notée de 1 à 10 (6,5 au coup d’envoi).",22,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerMatchHistoryEmpty"
 		return
-	_moyennes(card,notes)
 	var liste := _scroll(card,Rect2(20,118,1630,286))
 	liste.add_theme_constant_override("separation",C.px(2))
 	liste.name = "PlayerMatchHistoryRows"
@@ -352,7 +352,7 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 static func _stat(valeur: Variant) -> String:
 	return "—" if valeur == null else G.n(valeur)
 
-## Moyennes par match de la saison (feuille réaliste) au-dessus de l'historique.
+## Moyennes par match de la saison (feuille réaliste), sous les compteurs des performances.
 static func _moyennes(card:Panel,notes:Dictionary) -> void:
 	var m := int(notes.get("matchs",0))
 	if m <= 0: return
@@ -360,8 +360,8 @@ static func _moyennes(card:Panel,notes:Dictionary) -> void:
 		var v: Variant = notes.get(cle)
 		if v == null: return "—"
 		return String.num(float(v)/m,1).replace(".",",")
-	var texte := "PAR MATCH · %s plaquages · %s m · %s passes · %s essai · %s franchissements" % [par.call("plaquages"),par.call("metres"),par.call("passes"),par.call("essais"),par.call("franchissements")]
-	D.text(card,24,62,texte,19,C.GOLD,600,1600).name = "PlayerSeasonPerMatch"
+	var texte := "PAR MATCH  ·  %s plaquages  ·  %s m  ·  %s passes  ·  %s essai  ·  %s franch." % [par.call("plaquages"),par.call("metres"),par.call("passes"),par.call("essais"),par.call("franchissements")]
+	D.text(card,24,236,texte,21,C.GOLD,600,880).name = "PlayerSeasonPerMatch"
 
 ## Matchs internationaux notés (même calcul que le club) : moyenne, forme, dernières rencontres.
 static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
