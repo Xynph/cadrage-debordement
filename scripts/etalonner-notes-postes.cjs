@@ -6,7 +6,8 @@
 //     contextes exacts reçus par `noter` (le calcul est pur : mêmes journaux, mêmes notes) ;
 //  2. ajustement : l'attendu de chaque maillot ramène sa note moyenne (≥ 40 min) à la moyenne cible commune,
 //     l'amplitude rapproche la part d'hommes du match de la cible du document ; quelques dizaines de pas.
-// Usage : node --max-old-space-size=1600 scripts/etalonner-notes-postes.cjs capture <sortie.json> [semaines=14] [club=102]
+// Usage : node --max-old-space-size=1600 scripts/etalonner-notes-postes.cjs capture <sortie.json> [semaines=14] [club=102] [depuis=0]
+//         (14 semaines dépassent la mémoire : deux captures, 0-8 puis `capture B.json.gz 15 102 8`, puis `ajuster A.json.gz B.json.gz`)
 //         node scripts/etalonner-notes-postes.cjs ajuster <capture.json>
 // Rien n'est écrit dans le dépôt : le script affiche le tableau avant/après et la ligne POSTES_NOTE proposée.
 const fs = require('node:fs');
@@ -16,16 +17,17 @@ const path = require('node:path');
 // Cible (homme du match, % par maillot 1 à 15) : docs/homme-du-match-postes-20261114.md.
 const CIBLE = [2.5, 6.5, 2.5, 4, 4, 8, 8, 8.5, 10, 13, 6.5, 6, 6, 6.5, 8];
 
-function capture(sortie, semaines = 14, club = 102) {
+function capture(sortie, semaines = 14, club = 102, depuis = 0) {
   const M = require('../tests/helpers/carriere-monde.cjs');
   const { skipMatchTalk } = require('../tests/helpers/scene-match-talks.cjs');
   const jeu = M.ouvrir({ hebdomadaire: true, testVm: true });
   try {
     let model = M.creer(jeu, club);
     jeu.bridge.vm.run(`globalThis.__notes=[];(()=>{const o=CDMatchNotesMoteur.noter;CDMatchNotesMoteur.noter=function(j,c){
-      if(c&&c.fini&&!c.journalReduit&&c.postes)__notes.push(JSON.stringify([j.filter(e=>e.scene).map(e=>({type:e.type,scene:e.scene,min:e.min})),c]));
+      if(c&&c.fini&&!c.journalReduit&&c.postes&&(globalThis.__sem||0)>=${depuis})__notes.push(JSON.stringify([j.filter(e=>e.scene).map(e=>({type:e.type,scene:e.scene,min:e.min})),c]));
       return o.apply(this,arguments);};})();`);
     for (let w = 0; w < semaines; w++) {
+      jeu.bridge.vm.run(`globalThis.__sem=${w}`);
       model = jeu.regler(model);
       if (model.next) {
         if (!model.selection.valid) model = jeu.call('auto_lineup');
@@ -56,8 +58,8 @@ function evaluer(N, matchs) {
   return { part: hdm.map(x => 100 * x / matchs.length), moyennes: notes.map(moy), generale: moy(notes.flat()) };
 }
 
-function ajuster(fichier) {
-  const matchs = JSON.parse(zlib.gunzipSync(fs.readFileSync(fichier)));
+function ajuster(...fichiers) {
+  const matchs = fichiers.flatMap(f => JSON.parse(zlib.gunzipSync(fs.readFileSync(f))));
   const N = require('../native/engine/match-notes.cjs').moteur();
   const P = N.POSTES_NOTE, depart = P.map(x => x.slice());
   const avant = evaluer(N, matchs);
@@ -82,8 +84,8 @@ function ajuster(fichier) {
 
 if (require.main === module) {
   const [mode, fichier, a, b] = process.argv.slice(2);
-  if (mode === 'capture') capture(path.resolve(fichier), Number(a || 14), Number(b || 102));
-  else if (mode === 'ajuster') ajuster(path.resolve(fichier));
+  if (mode === 'capture') capture(path.resolve(fichier), Number(a || 14), Number(b || 102), Number(process.argv[6] || 0));
+  else if (mode === 'ajuster') ajuster(...process.argv.slice(3).map(f => path.resolve(f)));
   else { console.error('Usage : capture <sortie.json.gz> [semaines] [club] | ajuster <capture.json.gz>'); process.exit(2); }
 }
 module.exports = { capture, ajuster, evaluer, CIBLE };

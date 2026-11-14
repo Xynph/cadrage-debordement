@@ -153,3 +153,87 @@ mieux armé 1er dans 4 championnats sur 9 ; l'effet cumulé V2 + pénalités n'e
 - Premiership et Super Rugby restent ~5 points au-dessus du réel.
 - Hiérarchie : la vraie correction est le barème V2 (#716) ; après sa fusion, remesurer une saison
   (et l'avantage du terrain du moteur complet, que #716 mesure à 69-74 % à niveau égal).
+
+## 7. État au 14/11 soir (main avec barème V2 #716, essais #710, stats #709, pénalités #721)
+
+Mesure du moteur complet sur `origin/main` (10b5b90e), carrière Monde, saison complète de 46 semaines
+(1 425 matchs au moteur complet), club 102, **deux graines : 4242 et 7** (`scripts/mesure-essais-monde.cjs`,
+Node `--max-old-space-size=2000`, ~8 min par graine). Aucun coefficient du moteur n'a été changé dans ce lot.
+
+### 7.1 Essais, points, pénalités (graine 4242 / graine 7)
+
+| Championnat | Essais / match | Points / match | Pénalités sifflées / match | Part des points sur pénalité (%) | Réussite au but (%) | Réel essais / points / part pén. (%) |
+|---|---|---|---|---|---|---|
+| Top 14 | 6 / 6,3 | 50,5 / 52,2 | 17,5 / 17,5 | 22,3 / 21,1 | 74,3 / 69,9 | 5,9 / 51,1 / ~25 (pénalités ~20) |
+| Pro D2 | 5,79 / 5,61 | 50 / 47,8 | 18,1 / 18,1 | 24,9 / 23,9 | 73,9 / 72,3 | ~5,2 / 50,9 / — |
+| Nationale | 5,44 / 5,85 | 48,3 / 49,8 | 19,9 / 19,9 | 27,6 / 24,8 | 70,1 / 68,8 | 5-6 plausible / ~45 / — |
+| Premiership | 8,95 / 9,06 | 65,2 / 66 | 16,3 / 16 | 9,7 / 10,3 | 75,2 / 75,5 | 8,0 / 56,3 / ~13 |
+| URC | 6,81 / 7,04 | 52,1 / 53,4 | 16,8 / 17,1 | 14,8 / 14 | 74,6 / 74,9 | 6,6 / 48,3 / ~14 |
+| Championship | 8,08 / 8,07 | 59,3 / 59,4 | 20,2 / 20,3 | 13,2 / 13,1 | 67,2 / 68,8 | 8,6 / 59,0 / — |
+| Super Rugby | 9,28 / 9,02 | 66,7 / 64,7 | 16,2 / 16,7 | 8,7 / 9,1 | 75,2 / 72,9 | 8,3 / 57,8 / — |
+| League One D1 | 9,09 / 9,13 | 65,7 / 65,9 | 17 / 17,2 | 10,4 / 10,5 | 70,7 / 73,7 | 8,6 / 61,7 / — |
+| League One D2 | 8,39 / 7,98 | 61,5 / 58,6 | 18,9 / 19,5 | 12 / 13,1 | 61,9 / 69,4 | 7-9 plausible / — / — |
+| Tous (y c. coupes) | 7,03 / 7,14 | 55,2 / 55,5 | 18 / 18,1 | 17,4 / 16,7 | 72 / — | — |
+
+Lecture : les élites françaises sont sur la cible (Top 14 6,0-6,3 essais pour 5,9 ; 50-52 points pour 51 ;
+17,5 pénalités sifflées pour ~20 avec les coups francs non modélisés ; 21-22 % des points au pied pour ~25 %).
+Premiership, Super Rugby et League One D1 restent **de 8 à 10 points au-dessus** du réel (65 contre 56-58 ;
+~9 essais contre 8-8,6), déjà noté en #721 : ce n'est pas un effet du barème V2. Marqueurs : ailiers 27-28 % des
+essais, 0,47-0,49 essai par match pour un ailier titulaire (cible 0,3-0,5), avants 37 %.
+
+### 7.2 Hiérarchie (saison régulière des championnats, 1 264 matchs ; « effectif » = moyenne des 23 meilleures notes au poste en début de saison)
+
+| Tranche d'écart d'effectif | Matchs (4242 / 7) | Favori (%) | dont à domicile (%) | dont à l'extérieur (%) |
+|---|---|---|---|---|
+| 0-1 | 368 / 381 | 52,4 / 50,1 | 65,6 / 64,8 | 38,7 / 35,9 |
+| 1-2 | 341 / 310 | 57,5 / 57,7 | 64,9 / 72,5 | 50 / 43,3 |
+| 2-3 | 259 / 254 | 62,9 / 60 | 76,1 / 72,6 | 49,2 / 47,7 |
+| 3-5 | 229 / 244 | 69 / 69,7 | 79,1 / 85 | 58,5 / 53 |
+| 5 et plus | 67 / 75 | 74,6 / 87,3 | 87,1 / 91,7 | 63,9 / 83,3 |
+
+Favori toutes tranches 60,1 / 60,1 % ; surprises (écart de 3 points ou plus perdu) 83 / 80 sur 1 264 matchs ;
+victoire de l'équipe qui reçoit 60,8 / 63,8 % (tous matchs) ; corrélation de rang final / effectif 0,58 / 0,52
+(moyenne des championnats de 8 clubs ou plus ; 0,46 avant les pénalités).
+
+| Championnat | 1er – dernier (points de classement), 4242 / 7 | Meilleur effectif : rang final | Corrélation rang / effectif |
+|---|---|---|---|
+| Top 14 | 93-31 / 102-25 | 1er / 1er | 0,75 / 0,51 |
+| Pro D2 | 103-37 / 97-27 | 4e / 4e | 0,69 / 0,79 |
+| Nationale | 86-40 / 93-20 | 5e / 3e | 0,56 / 0,81 |
+| Premiership | 71-25 / 76-22 | 1er / 2e | 0,22 / 0,15 |
+| URC | 71-29 / 72-26 | 1er / 1er | 0,62 / 0,84 |
+| Championship | 94-31 / 99-27 | 5e / 9e | 0,24 / 0,32 |
+| Super Rugby | 71-24 / 67-20 | 3e / 1er | 0,77 / 0,81 |
+| League One D1 | 74-21 / 74-11 | 4e / 2e | 0,59 / 0,83 |
+| League One D2 | 56-26 / 54-23 | 1er / 5e | 0,79 / -0,40 |
+
+Lecture : le favori à domicile gagne **65-76 % dès 0-3 points d'écart et 79-92 % au-delà** (cible réelle
+~70-75 %, qui mêle tous les écarts : sur le mix du calendrier on est dans la cible côté domicile). À
+l'extérieur, le favori gagne 36-50 % aux petits écarts, 53-83 % aux grands : l'avantage du terrain est
+encore marqué, mais proche de la réalité. Le meilleur effectif finit dans le top 3 dans 5 championnats sur 9 sur
+les deux graines, les surprises existent (champion n° 6 et n° 8 de l'effectif en Premiership et League One D2).
+
+**Écart restant (non corrigé, le moteur n'est pas modifié ici)** : la corrélation reste faible là où les effectifs
+sont resserrés ou à peu de clubs : **Premiership (0,15-0,22 ; 10 clubs)**, **Championship (0,24-0,32 ; meilleur
+effectif 5e et 9e)**, League One D2 (8 clubs, -0,40 sur la graine 7). L'écart type d'effectif entre clubs y est
+petit (Championship : têtes d'affiche à 54-55 de niveau pour un plafond de 56 ; Premiership : 68-70) alors que
+la pente du moteur est correcte (0,16 par point, cible 0,183, voir §4). La piste est donc **dans le barème des
+notes (#716)** : élargir l'écart de niveau entre clubs de ces trois championnats (les tranches 3-5 et 5+
+y sont presque vides), pas dans le moteur de match. À décider.
+
+### 7.3 Notes par maillot (POSTES_NOTE ré-étalonné)
+
+Depuis le barème V2 les moyennes par maillot s'étalaient de 6,42 à 6,83. Ré-étalonnage avec
+`scripts/etalonner-notes-postes.cjs` (capture en deux fois : semaines 1-8 puis 9-15, 399 matchs fusionnés, la capture
+de 14 semaines d'un coup dépasse la mémoire ; le script accepte désormais une semaine de départ et plusieurs captures).
+Moyennes par maillot après : 6,60 à 6,62 sur l'échantillon d'étalonnage, **6,51 à 6,69** sur les 164 premiers matchs du
+test `homme-du-match-postes` (moyenne générale inchangée, 6,61), parts d'homme du match 2,5 à 13,3 % par maillot
+(cible du document 2,5 à 13). Bornes des tests inchangées.
+
+| Maillot | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Avant | [0,29 ; 1,32] | [-0,1 ; 0,91] | [0,15 ; 1,04] | [1,29 ; 0,93] | [1,61 ; 1,2] | [2,6 ; 1,09] | [2,53 ; 1,15] | [2,6 ; 1,08] | [0,81 ; 1,06] | [1,78 ; 1,36] | [1,56 ; 0,79] | [0,85 ; 1,03] | [0,9 ; 0,78] | [1,37 ; 0,81] | [0,4 ; 0,86] |
+| Après | [0,48 ; 1,09] | [0,17 ; 0,92] | [0,26 ; 1,01] | [1,53 ; 0,97] | [1,83 ; 1,1] | [2,48 ; 1,02] | [2,57 ; 0,99] | [2,51 ; 1,07] | [0,47 ; 1,14] | [1,55 ; 1,33] | [1,44 ; 0,86] | [0,82 ; 0,98] | [0,86 ; 0,85] | [1,27 ; 0,92] | [0,34 ; 1,02] |
+
+Limites : un seul club (102) et une seule graine pour les captures (les matchs de toute la planète sont notés, pas
+seulement ceux du club) ; l'échantillon du test varie de ±0,1 sur la moyenne d'un maillot.
