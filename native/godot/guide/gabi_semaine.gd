@@ -138,6 +138,10 @@ static func _ligne_alerte(model: Dictionary, fixture: Dictionary, jours: int) ->
 	elif _feuille_a_faire(model, jours) and not fixture.is_empty():
 		ligne.texte = "La feuille de match n'est pas complète."
 		ligne.couleur = AMBRE
+	elif not fixture.is_empty() and not Avis.fatigue_donnees(model).is_empty():
+		var titulaires := int(_nombre(Avis.fatigue_donnees(model).get("count"), 0))
+		ligne.texte = "%d titulaire%s de la feuille sous 70 %% de condition. Il faut les faire souffler." % [titulaires, "s" if titulaires > 1 else ""]
+		ligne.couleur = AMBRE
 	elif _expirants(model) >= 5:
 		ligne.texte = "%d contrats s'arrêtent en fin de saison. Il faudra trancher avant l'hiver." % _expirants(model)
 		ligne.couleur = AMBRE
@@ -155,6 +159,10 @@ static func _ecran(route: String, texte: String, categorie: String, ton: String,
 ## Le conseil de la semaine, toujours avec une action : un changement de composition le jour du match,
 ## sinon l'écran où agir (finances, composition, recrutement, effectif, entraînement, préparation).
 static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dictionary:
+	# Titulaires de la feuille sous 70 % de condition : le conseil le plus actionnable, avec « Suivre le conseil ».
+	var fatigue := Avis.fatigue(model)
+	if not fixture.is_empty() and not fatigue.is_empty():
+		return fatigue.merged({"texte": _fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
 	if Avis._jour_de_match(model):
 		var compo := Avis.composition(model)
 		if not compo.get("action", {}).is_empty(): return compo.merged({"texte": _composition_courte(model, compo.action)}, true)
@@ -177,6 +185,17 @@ static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dicti
 	if fixture.is_empty():
 		return _ecran("Club", "Pas de match en vue : passe voir le club, les installations et le staff.", "consigne", Avis.NEUTRE, "Ouvrir le club")
 	return _ecran("Préparation", "Prépare le prochain match dans l'ordre : l'effectif, la composition, puis le plan de jeu.", "consigne", Avis.POSITIF, "Ouvrir la préparation")
+
+## Version courte du conseil de fatigue pour le carnet (le détail reste dans la bulle de Gabi).
+static func _fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for change: Variant in avis.get("action", {}).get("changements", []):
+		if not change is Dictionary: continue
+		var sortant := Avis.joueur(model, str(change.get("sortant", "")))
+		var entrant := Avis.joueur(model, str(change.get("playerId", "")))
+		parts.append("%s (%d %%) pour %s" % [Avis._nom(entrant), int(Avis.condition(entrant)), Avis._nom(sortant)])
+	if parts.size() > 2: return "Je ferais souffler %d titulaires fatigués : %s et %d autre%s." % [parts.size(), ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
+	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
 
 ## Version courte du conseil de composition pour le carnet (le détail reste dans « Ton avis, Gabi ? »).
 static func _composition_courte(model: Dictionary, action: Dictionary) -> String:

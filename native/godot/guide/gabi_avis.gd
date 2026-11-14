@@ -389,6 +389,62 @@ static func composition(model: Dictionary) -> Dictionary:
 		changes.append({"slot": proposal.slot, "playerId": str(proposal.entrant.id), "sortant": str(proposal.sortant.get("id", ""))})
 	return _resultat(texte, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes, "libelle": "Suivre le conseil"})
 
+## Alerte de fatigue : des titulaires de la feuille du prochain match sont sous 70 % de condition.
+## Le moteur (selection.fatigue, position-aptitudes.cjs) propose pour chacun le meilleur remplaçant frais au
+## poste, règle JIFF et admissibilité comprises ; Gabi le dit et « Suivre le conseil » les fait souffler
+## (mêmes commandes set_lineup que le conseil de composition). Vide : aucune alerte.
+const FATIGUE_CHANGEMENTS_MAX := 6
+
+static func fatigue_donnees(model: Dictionary) -> Dictionary:
+	var selection: Variant = model.get("selection")
+	var data: Variant = selection.get("fatigue") if selection is Dictionary else null
+	if not data is Dictionary or not data.get("starters") is Array or (data.starters as Array).is_empty(): return {}
+	return data
+
+static func _poste_du_slot(model: Dictionary, slot: int) -> String:
+	for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
+		if assignment is Dictionary and int(_nombre(assignment.get("slot"), -1)) == slot: return str(assignment.get("label", "")).to_lower()
+	return ""
+
+static func _liste(noms: Array) -> String:
+	if noms.size() <= 1: return "".join(noms)
+	return ", ".join(noms.slice(0, noms.size() - 1)) + " et " + str(noms[noms.size() - 1])
+
+static func fatigue(model: Dictionary) -> Dictionary:
+	var data := fatigue_donnees(model)
+	if data.is_empty(): return {}
+	var seuil := int(_nombre(data.get("threshold"), 70))
+	var changes: Array = []
+	for change: Variant in data.get("changes", []) if data.get("changes") is Array else []:
+		if change is Dictionary and change.get("playerId") is String and change.get("sortant") is String and changes.size() < FATIGUE_CHANGEMENTS_MAX:
+			changes.append(change)
+	var fatigues: Array = []
+	for starter: Variant in data.starters:
+		if starter is Dictionary: fatigues.append(starter)
+	var noms: Array = []
+	for starter: Dictionary in fatigues.slice(0, 3):
+		noms.append("%s (%d %%)" % [_nom(joueur(model, str(starter.get("playerId", "")))), int(_nombre(starter.get("condition"), 0))])
+	var reste := fatigues.size() - noms.size()
+	var qui := _liste(noms) + (" et %d autre%s" % [reste, "s" if reste > 1 else ""] if reste > 0 else "")
+	if changes.is_empty():
+		return _resultat("%s %s sous les %d %% de condition, et je n'ai personne de frais au poste : prévois de %s sortir tôt." % [qui, "est" if fatigues.size() == 1 else "sont", seuil, "le" if fatigues.size() == 1 else "les"], "mise_en_garde", NEUTRE)
+	var phrases := PackedStringArray()
+	var entrants: Array = []
+	for change: Dictionary in changes:
+		var entrant := _nom(joueur(model, str(change.playerId)))
+		var poste := _poste_du_slot(model, int(_nombre(change.get("slot"), -1)))
+		phrases.append("%s%s" % [entrant, " en " + poste if not poste.is_empty() else ""])
+		entrants.append(entrant)
+	var texte := ""
+	if fatigues.size() == 1 and changes.size() == 1:
+		var change: Dictionary = changes[0]
+		texte = "%s est à %d %% de condition : je le ferais souffler. %s est frais (%d %%) et vaut %d à ce poste." % [_nom(joueur(model, str(change.sortant))), int(_nombre(change.get("condition"), 0)), entrants[0], int(_nombre(change.get("entrantCondition"), 0)), int(_nombre(change.get("rating"), 0))]
+	else:
+		texte = "%s %s sous les %d %% de condition. Je les ferais souffler : %s." % [qui, "est" if fatigues.size() == 1 else "sont", seuil, _liste(Array(phrases))]
+	if changes.size() < fatigues.size():
+		texte += " Pour les autres, je n'ai personne de frais au poste."
+	return _resultat(texte, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes.map(func(c: Dictionary) -> Dictionary: return {"slot": int(c.slot), "playerId": str(c.playerId), "sortant": str(c.sortant)}), "libelle": "Suivre le conseil", "detail": "Fait souffler les titulaires fatigués (tu peux toujours remettre la feuille comme avant)"})
+
 static func _argument(model: Dictionary, proposal: Dictionary) -> String:
 	var entrant: Dictionary = proposal.entrant
 	var sortant: Dictionary = proposal.sortant
