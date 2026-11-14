@@ -42,15 +42,15 @@ declare -A suite_limits=(
   # Préparation Node de la carrière Monde (~46 jours) puis Godot : 126 à 221 s mesurés selon le runner.
   [tests/godot-reader-history.cjs]=600
   [tests/godot-analysis-club-graphics.cjs]=600
+  # Préparation Node de la carrière Monde jusqu'au premier match (~60 jours simulés, sauvegarde de ~50 Mo) puis Godot : ~2 à 5 min.
+  [tests/native-club-support-ui.cjs]=600
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.
-#  - native-club-support-ui (14/11) : échoue par intermittence : rouge sur le run planifié du 14/11 00:56 (145 s) et sur
-#    le workflow_dispatch du 14/11 08:02 (150 s), vert le 13/11 19:54 ; rouge 3 fois sur 4 en local. Après la première réunion de soutien, les commandes suivantes sont
-#    refusées (« terminez le rendez-vous en attente ») ou le moteur local ne répond plus, puis le script plante sur un bouton
-#    absent et le processus Godot reste en attente jusqu'au délai de 120 s. Cause non isolée (le test enchaîne sur une
-#    sauvegarde Monde de 46 Mo préparée hors Godot) ; chantier de stabilisation à part.
-informative_suites=(tests/native-club-support-ui.cjs)
+# Aucune pour l'instant : native-club-support-ui, informative le 14/11 (rouge par intermittence), est stabilisée et
+# bloquante comme les autres (causes : tests/native-club-support-ui.cjs, en tête de fichier de préparation
+# tests/helpers/support-ui-prepare.cjs).
+informative_suites=()
 failures=0; informative_failures=0; executed=0; other_skips=0
 : > "$work/results.md"
 for test in "${suites[@]}"; do
