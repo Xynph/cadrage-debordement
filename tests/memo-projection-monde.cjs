@@ -38,6 +38,8 @@ function parcours(options) {
       for (const [k, v] of Object.entries(model)) if ((k === 'clubLife' || k === 'meta') && v) { for (const [kk, vv] of Object.entries(v)) parts[k + '.' + kk] = sha(JSON.stringify(vv) ?? ''); } else parts[k] = sha(JSON.stringify(v) ?? '');
       traces.push([etiquette, sha(texte)]); details.push(parts); return texte.length;
     };
+    // Sans carrière (premier écran du jeu, recette Windows) : la lecture répond, sans section à relire.
+    note('sans carrière', jeu.call('snapshot'));
     let model = M.creer(jeu);
     note('création', model);
     note('snapshot', jeu.call('snapshot'));
