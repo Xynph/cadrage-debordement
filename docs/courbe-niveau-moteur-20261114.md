@@ -55,7 +55,12 @@ phases de saison régulière hors terrain neutre) :
 
 En saison, l'écart de niveau réel entre clubs dilue l'avantage du terrain (≈ 508 matchs au moteur
 complet par saison, ± 2 points d'échantillonnage) ; les deux moteurs restent à moins de 3 points.
+Après fusion de #721 (pénalités réalistes) : à niveau égal, complet 63,2 / 64,4 / 65,4 % (800 matchs,
+clubs 4 / 20 / 44) contre rapide 63,9 / 64,4 / 64,4 % (4 000 matchs) ; +6 ≈ 78 %, +10 ≈ 89 % (400 matchs, clubs 4 et 44).
 Fixture régénérée : `tests/fixtures/match-gestes-sequence.json` (`node tests/godot-match-gestes-scenes.cjs`).
+Effets de bord : `tests/tactical-plans.cjs` (tirage .6, fenêtre .55-.64), `tests/opposition.cjs` (800 matchs pour les
+surprises à 16 points : 29 à domicile, 2 à l'extérieur), `carryTackler` (couverture sur un franchissement même sans
+arrière sur le terrain).
 
 ## Banc (tests/match-rating-curve.cjs, tests/helpers/courbe-niveau.cjs)
 

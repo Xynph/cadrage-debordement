@@ -20,7 +20,7 @@ static func synthese(model: Dictionary) -> Dictionary:
 	if not model.get("club") is Dictionary: return {}
 	var fixture := prochain_match(model)
 	var jours := jours_avant(model, fixture)
-	var lignes: Array = [_ligne_match(model, fixture, jours), _ligne_groupe(model), _ligne_alerte(model, fixture, jours)]
+	var lignes: Array = [_ligne_match(model, fixture, jours), _ligne_groupe(model, fixture), _ligne_alerte(model, fixture, jours)]
 	return {"lignes": lignes, "conseil": conseil(model, fixture, jours)}
 
 static func _nombre(value: Variant, defaut: float = 0.0) -> float:
@@ -85,7 +85,15 @@ static func _ligne_match(model: Dictionary, fixture: Dictionary, jours: int) -> 
 	else: ligne.texte = "Prochain rendez-vous : %s." % qui
 	return ligne
 
-static func _ligne_groupe(model: Dictionary) -> Dictionary:
+## Titulaires de la feuille sous le seuil de condition : la même source que l'alerte (Avis.fatigue_donnees),
+## pour que la ligne « groupe » ne dise jamais « rien d'inquiétant » à côté d'une alerte fatigue.
+static func _titulaires_fatigues(model: Dictionary, fixture: Dictionary) -> int:
+	if fixture.is_empty(): return 0
+	var donnees := Avis.fatigue_donnees(model)
+	if donnees.is_empty(): return 0
+	return int(_nombre(donnees.get("count"), (donnees.get("starters", []) as Array).size()))
+
+static func _ligne_groupe(model: Dictionary, fixture: Dictionary = {}) -> Dictionary:
 	var ligne := {"cle": "groupe", "libelle": "LE GROUPE", "icone": "people", "couleur": MENTHE}
 	var groupe := P.group(model)
 	var dispo := int(_nombre(groupe.get("available"), 0))
@@ -95,7 +103,10 @@ static func _ligne_groupe(model: Dictionary) -> Dictionary:
 	var faits := "%d disponibles, %d blessé%s, %d %% de condition" % [dispo, blesses, "s" if blesses > 1 else "", condition]
 	if moral >= 0: faits += ", moral à %d" % moral
 	var avis := "Rien d'inquiétant."
+	var fatigues := _titulaires_fatigues(model, fixture)
+	var seuil := int(_nombre(Avis.fatigue_donnees(model).get("threshold"), 70)) if fatigues > 0 else 70
 	if condition < 80: avis = "Ça tire dans les jambes : allège."; ligne.couleur = AMBRE
+	elif fatigues > 0: avis = "Mais %d titulaire%s de la feuille sous %d %% : à ménager." % [fatigues, "s" if fatigues > 1 else "", seuil]; ligne.couleur = AMBRE
 	elif moral >= 0 and moral < 50: avis = "Le moral est bas : un mot à chacun."; ligne.couleur = AMBRE
 	elif blesses >= 3: avis = "L'infirmerie se remplit."; ligne.couleur = AMBRE
 	elif condition >= 90 and (moral < 0 or moral >= 70): avis = "Le groupe est frais."

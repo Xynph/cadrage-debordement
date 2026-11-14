@@ -129,8 +129,10 @@ function factory(){
    if(id&&!pris.has(id)){pris.add(id);completes++;return {jersey:i+1,id,starts:parJoueur.get(id)?.m[i]||0,source:'probable'};}
    completes++;return {jersey:i+1,id:null,starts:0,source:'probable'};
   });
-  const bench=[...parJoueur.entries()].filter(([,j])=>j.b>0).sort((a,b)=>b[1].b-a[1].b||b[1].total-a[1].total||(a[0]<b[0]?-1:1)).slice(0,8).map(([id,j])=>({id,entries:j.b,starts:j.total}));
-  return {matches:n,source:n===0?'probable':completes===0?'feuilles':'mixte',completed:completes,slots,bench,probableBench:n===0?prob.bench.slice(0,8):[]};
+  // Le banc ne reprend jamais un joueur du XV type affiché à côté (cohérence de la fiche).
+  const xvIds=new Set(slots.map(x=>x.id).filter(Boolean));
+  const bench=[...parJoueur.entries()].filter(([id,j])=>j.b>0&&!xvIds.has(id)).sort((a,b)=>b[1].b-a[1].b||b[1].total-a[1].total||(a[0]<b[0]?-1:1)).slice(0,8).map(([id,j])=>({id,entries:j.b,starts:j.total}));
+  return {matches:n,source:n===0?'probable':completes===0?'feuilles':'mixte',completed:completes,slots,bench,probableBench:n===0?prob.bench.filter(id=>!xvIds.has(id)).slice(0,8):[]};
  }
  function nomLigue(s,id){
   const reg=typeof CDWorldCareer!=='undefined'?CDWorldCareer.edition(s)?.registry?.leagues:null;
@@ -159,6 +161,10 @@ function factory(){
   const face=clubId===own?[]:(s.history||[]).filter(r=>Array.isArray(r.pair)&&r.pair.includes(clubId)&&r.pair.includes(own)).map(r=>({...resultat(r,own),season:r.season??saison}));
   const bilan={played:face.length,won:face.filter(x=>x.outcome==='V').length,drawn:face.filter(x=>x.outcome==='N').length,lost:face.filter(x=>x.outcome==='D').length,
    last:face.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,5)};
+  // Prochain match entre les deux clubs (calendrier du Monde), même sans confrontation passée.
+  const prochainFace=clubId===own?null:(s.worldMode?.fixtures||[]).filter(f=>!joues.has(f.id)&&f.homeId!=null&&f.awayId!=null&&((f.homeId===clubId&&f.awayId===own)||(f.homeId===own&&f.awayId===clubId)))
+   .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.id).localeCompare(String(b.id)))[0]||null;
+  bilan.upcoming=prochainFace?{fixtureId:prochainFace.id,date:prochainFace.date??null,competitionId:prochainFace.competitionId??null,phase:prochainFace.phase??null,home:prochainFace.homeId===own,stadium:s.clubs[prochainFace.homeId]?.stadium||null}:null;
   const {parJoueur}=compteurs(s,club),notes=s.matchNotes?.joueurs||{};
   const squad=club.players.map(p=>{
    const c=parJoueur.get(String(p.id)),j=notes[p.id]?.s,f=p.playerFacts||{};

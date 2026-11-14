@@ -435,6 +435,24 @@ static func _date(value: Variant) -> String:
 	var months := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 	return "%d %s %s" % [int(text.substr(8, 2)), months[clampi(int(text.substr(5, 2)) - 1, 0, 11)], text.substr(0, 4)]
 
+## Panneau « Vos confrontations » sans match passé : le prochain match entre les deux clubs (date, lieu,
+## compétition), sinon une phrase courte. Évite un cadre quasi vide.
+func _upcoming_meeting(panel: Control, upcoming: Variant) -> void:
+	D.text(panel, 24, 110, "Aucune confrontation enregistrée.", 24, C.MUTED, 500, 690)
+	D.line(panel, Vector2(24, 140), Vector2(716, 140), Color(C.LINE, .6))
+	if upcoming is Dictionary:
+		D.text(panel, 24, 190, "PROCHAINE CONFRONTATION", 22, C.GOLD, 700, 500)
+		var competition := Club.competition_name(str(upcoming.get("competitionId", "")), app.model)
+		D.text(panel, 24, 246, _date(upcoming.get("date")), 38, C.IVORY, 800, 690)
+		var venue := "À domicile" if upcoming.get("home", false) else "À l’extérieur"
+		var stadium := str(upcoming.get("stadium", "")) if upcoming.get("stadium") != null else ""
+		if not stadium.is_empty(): venue += " · " + stadium
+		D.text(panel, 24, 298, venue, 24, C.IVORY, 600, 690)
+		var detail := competition if competition != "" else "Compétition à préciser"
+		D.text(panel, 24, 340, detail, 22, C.MUTED, 500, 690)
+	else:
+		_paragraph(panel, Rect2(24, 170, 690, 120), "Aucun match prévu entre ces deux clubs cette saison : le premier bilan s’écrira à leur première rencontre.", 24, "ClubSheetHeadToHeadEmpty")
+
 func _rivalry_panel() -> void:
 	var own: Dictionary = app.model.get("club", {})
 	var panel := D.panel(workspace, Rect2(1508, 0, 740, 430), "Vos confrontations", "tactic", G.club_abbr(own), "ClubSheetHeadToHead")
@@ -442,7 +460,7 @@ func _rivalry_panel() -> void:
 	var h2h: Dictionary = data.get("headToHead", {})
 	var played := int(h2h.get("played", 0))
 	if played == 0:
-		D.text(panel, 24, 110, "Aucune confrontation enregistrée.", 26, C.MUTED, 500, 690)
+		_upcoming_meeting(panel, h2h.get("upcoming"))
 	else:
 		var cells := [["Matchs", played, C.IVORY], ["Victoires", h2h.get("won", 0), WIN], ["Nuls", h2h.get("drawn", 0), DRAW], ["Défaites", h2h.get("lost", 0), LOSS]]
 		for i in cells.size():

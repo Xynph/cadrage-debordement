@@ -48,6 +48,12 @@ Avants 44 % / arrières 56 % (Coupe du monde : 35 / 65) ; troisième ligne 24,5 
   du poste : un ouvreur (1,49) ou un demi de mêlée (1,26) fait plus souvent le match, ou le rate,
   qu'un troisième ligne aile (0,82) ou un deuxième ligne (0,86). La constante commune 0,25 garde la
   moyenne générale d'avant (les anciens décalages France étaient plus faibles que l'attendu Monde) ;
+- **pénalité concédée** (pénalités réalistes, #721) : attribuée selon la cause du coup de sifflet, plus au
+  seul plaqueur. Mêlée : première ligne (1-2-3, en alternance sans tirage) ; ballon non libéré ou
+  scellement : dernier porteur de l'équipe fautive ; touche ou ballon porté : avant du lancer ; jeu
+  courant : plaqueur déduit de la place défensive, comme avant. `POSTES_NOTE` réétalonné sur 305 matchs
+  (carrière Monde, clubs 102 et 105, graine 4242) avec une amplitude réduite de 8 % pour garder
+  l'écart type général sous 1,3 (moyennes par maillot entre 6,54 et 6,66).
 - **homme du match = meilleure note** (30 minutes au moins) ; à égalité : l'impact avant arrondi,
   le vainqueur, le plus de faits, l'identifiant.
 
