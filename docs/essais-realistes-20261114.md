@@ -164,14 +164,15 @@ League One ~61 (62). Bonus offensif Top 14 (+3 essais) ~12 % des feuilles (réel
 - `match-stats.cjs` lit le même journal : les essais, transformations et pénalités de la feuille
   restent égaux au score (contrôle de `scripts/stats-match-validation.cjs` et des suites
   `match-stats-realistes`, `stats-fiche-joueur`).
-- Notes (`match-notes.cjs`, étalonnage par maillot de #707) : plus d'essais aux ailiers, moins aux troisième ligne : la
-  part des faits « essai » par maillot change, donc l'attendu par maillot peut dériver.
-  `scripts/etalonner-notes-postes.cjs` rend la méthode de docs/homme-du-match-postes-20261114.md
-  rejouable (non encore exécuté faute de mémoire : capture des journaux reçus par `noter`, puis ajustement des attendus vers la
-  moyenne commune et des amplitudes vers la cible d'homme du match). Le test
-  `tests/homme-du-match-postes.cjs` n'a pas pu être rejoué en local (processus tué par manque de
-  mémoire de la machine partagée, deux fois) : c'est la CI de la PR qui tranche ; s'il sort des
-  bornes, ré-étalonner avec ce script.
+- Notes (`match-notes.cjs`, étalonnage par maillot de #707) : la CI de cette PR a montré la dérive
+  attendue (`homme-du-match-postes` : moyenne du talonneur 7,05 > 7,0). Correction : l'attendu de chaque
+  maillot (`POSTES_NOTE[k][0]`) est décalé de 1,08 × la variation estimée de ses faits par match
+  (essais : part par maillot × essais par équipe, 2,0 → 3,4 ; buteur : transformations et pénalités
+  réussies à ~72 % au lieu de ~55 %, surtout le n° 10), amplitudes inchangées : 1 −0,01, 2 +0,27,
+  4 +0,04, 5 +0,02, 6 −0,04, 8 +0,15, 9 +0,16, 10 +0,55, 11 et 14 +0,52, 12 +0,13, 13 +0,24,
+  15 +0,38. Estimation, pas ajustement sur journaux : `scripts/etalonner-notes-postes.cjs` (capture
+  puis ajustement, méthode du document de #707) est prêt mais n'a pas pu tourner sur la machine
+  partagée (mémoire) ; à lancer pour affiner si la répartition des hommes du match s'écarte de la cible.
 
 ## 6. Test
 
