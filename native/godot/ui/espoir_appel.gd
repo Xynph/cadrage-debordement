@@ -62,7 +62,10 @@ static func vacancy_text(model: Dictionary) -> String:
 	if not value.is_empty():
 		var parts: PackedStringArray = []
 		for slot_offer: Dictionary in value.slots: parts.append("n° %d (%s)" % [int(slot_offer.number), str(slot_offer.label).to_lower()])
-		return "Feuille incomplète : place%s %s sans joueur disponible." % ["s" if parts.size() > 1 else "", " et ".join(parts)]
+		var texte := "Feuille incomplète : place%s %s sans joueur disponible." % ["s" if parts.size() > 1 else "", " et ".join(parts)]
+		# Le match à 22 reste proposé quand la règle le permet : on dit quelle place resterait vide.
+		if vacant != 0: texte += " Appelez un espoir, ou jouez à 22 (n° %d non pourvu)." % vacant
+		return texte
 	if vacant != 0: return P.reduced_bench_vacancy(vacant)
 	return ""
 
