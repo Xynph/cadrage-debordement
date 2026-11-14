@@ -101,6 +101,14 @@ func ask(command: String, payload: Dictionary = {}, mutation := false) -> bool:
 	check(app._command(command, payload), "Public command accepted: " + command)
 	return await wait_ready()
 
+# Un grand export est réduit sans perte (références de joueurs, marché : exportVersion 2 ou 3) : son état littéral
+# n'est alors plus celui de la sauvegarde. Le moteur prouve l'aller-retour (SHA-256 de l'état que l'import restituerait) ;
+# il doit être celui du texte exact de la sauvegarde, et un export non réduit reste comparé champ par champ.
+func restored_state_matches(document: Dictionary, stored_text: String, original: Dictionary) -> bool:
+	var proof := str(app.model.meta.get("exportRoundTripSha256",""))
+	var reduced := int(document.get("exportVersion",1)) != 1
+	return proof == stored_text.sha256_text() and not proof.is_empty() and (reduced or document.get("state") == original)
+
 func citations(state: Dictionary) -> Dictionary:
 	var result := {}
 	for key: String in ["pressConference","pressPeople","pressRelations"]:
@@ -209,10 +217,11 @@ func run() -> void:
 		check(app.coach.speech.player == null and app.coach.speech.voices.is_empty(), "No Gabi audio player or system voice allocated")
 	if not await wait_ready(): await finish(); return
 	engine_pid = app.bridge.child_pid
-	if not await ask("export"): await finish(); return
+	if not await ask("export",{"proof":true}): await finish(); return
 	var exported: Dictionary = JSON.parse_string(app.model.meta.exportText)
 	var after_read: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(file))
-	report.before = {"state_matches":exported.get("state") == original_state,"citations_match":citations(exported.get("state",{})) == citations(original_state),"profile_bytes_match":FileAccess.get_file_as_bytes(file) == original_bytes,"rng_file_unchanged":after_read.get("seed") == stored.seed,"seed_loaded":stored.seed,"clock_loaded":stored.get("clock"),"profile_sha256_loaded":original_hash}
+	var round_trip_matches := restored_state_matches(exported,str(stored.store["bdt-v1"]),original_state)
+	report.before = {"state_matches":round_trip_matches,"export_version":exported.get("exportVersion"),"round_trip_sha256":str(app.model.meta.get("exportRoundTripSha256","")),"stored_state_sha256":str(stored.store["bdt-v1"]).sha256_text(),"citations_match":citations(exported.get("state",{})) == citations(original_state),"profile_bytes_match":FileAccess.get_file_as_bytes(file) == original_bytes,"rng_file_unchanged":after_read.get("seed") == stored.seed,"seed_loaded":stored.seed,"clock_loaded":stored.get("clock"),"profile_sha256_loaded":original_hash}
 	report.before.citations_sha256_loaded = JSON.stringify(citations(original_state)).sha256_text()
 	report.before.citations_sha256_exported = JSON.stringify(citations(exported.get("state",{}))).sha256_text()
 	report.before.press_literals_match = press_matches
