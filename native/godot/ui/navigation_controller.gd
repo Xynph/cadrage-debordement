@@ -277,7 +277,6 @@ func _refresh_results(query: String) -> void:
 			candidates.append({"kind":"menu", "route":"Sélections", "label":"Menu · Sélections internationales"})
 		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
 		for team: Dictionary in app.model.get("staff", {}).get("teams", []):
-			candidates.append({"kind":"club", "id":team.id, "route":"Classements", "label":"Club · %s · Détail du club" % G.club_name(team)})
 			for person: Dictionary in team.get("members", []):
 				var staff_id := str(person.get("id", ""))
 				if staff_id.is_empty(): continue
@@ -286,6 +285,33 @@ func _refresh_results(query: String) -> void:
 			candidates.append({"kind":"nation", "id":str(team.get("id", "")), "route":"Sélections", "label":"Sélection · %s" % str(team.get("name", ""))})
 		for league: Dictionary in app.model.get("leagues", []):
 			candidates.append({"kind":"competition", "id":str(league.get("id", "")), "route":"Classements", "label":"Compétition · %s" % str(league.get("name", ""))})
+		# Tous les clubs du monde (fiche du club ; le vôtre ouvre l'écran Club). Clubs suivis en tête.
+		var followed: Array = []
+		for value: Variant in app.model.get("clubLife", {}).get("clubSheet", {}).get("followed", []):
+			if value is int or value is float: followed.append(int(value))
+		var club_rows: Array[Dictionary] = []
+		var listed := {}
+		for division: Dictionary in app.model.get("leagues", []):
+			for club: Dictionary in division.get("rows", []):
+				if listed.has(int(club.get("id", -1))): continue
+				listed[int(club.get("id", -1))] = true
+				club_rows.append({"club":club, "league":str(division.get("name", ""))})
+		for club: Dictionary in app.catalogue:
+			if listed.has(int(club.get("id", -1))): continue
+			listed[int(club.get("id", -1))] = true
+			club_rows.append({"club":club, "league":""})
+		club_rows.sort_custom(func(a: Dictionary, b: Dictionary):
+			var fa: bool = int(a.club.get("id", -1)) in followed
+			var fb: bool = int(b.club.get("id", -1)) in followed
+			return fa and not fb or (fa == fb and G.club_name(a.club) < G.club_name(b.club)))
+		# Identifiants entiers (le JSON du moteur peut les livrer en flottants).
+		var own_id := str(int(app.model.get("club", {}).get("id", -1))) if app.model.get("club") is Dictionary else ""
+		for row: Dictionary in club_rows:
+			var club: Dictionary = row.club
+			if not (club.get("id") is int or club.get("id") is float): continue
+			var id := str(int(club.get("id")))
+			var detail := "Votre club" if id == own_id else ("★ Suivi · " if int(club.get("id", -1)) in followed else "") + ("Fiche du club" if str(row.league).is_empty() else str(row.league))
+			candidates.append({"kind":"club", "id":id, "route":"Club" if id == own_id else app.Immersive.ClubSheet.ROUTE, "label":"Club · %s · %s" % [G.club_name(club), detail]})
 		var seen := {}
 		for source in ["squad", "market"]:
 			var people: Variant = app.model.get(source, [])
@@ -368,6 +394,7 @@ func _allowed_route(route: String) -> bool:
 	if not app._has_career(): return false
 	if not app.Immersive.Selections.navigation_allowed(app.model, route): return false
 	if route == "Sélections": return app.model.get("international") is Dictionary
+	if route == app.Immersive.ClubSheet.ROUTE: return not app.Immersive.Selections.nation_only(app.model)
 	for chapter: Dictionary in app.NAV_CHAPTERS:
 		if route in chapter.routes: return true
 	return false
@@ -545,7 +572,17 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 		"staff":
 			destination = "Staff"
 			opened = app.StaffViews.open_target(app, id)
-		"club", "fixture", "competition", "date", "session":
+		"club":
+			# Fiche du club (club_sheet_canvas.gd) ; le club du manager ouvre son écran « Club »
+			# (décision de Léo, 14/11/2026).
+			var own: Variant = app.model.get("club")
+			if own is Dictionary and str(int(own.get("id", -1))) == str(int(float(id))): destination = "Club"
+			else:
+				var previous: Variant = app.management_ui.get("club_sheet")
+				var same: bool = previous is Dictionary and int(previous.get("id", -1)) == int(float(id))
+				app.management_ui.club_sheet = {"id":int(float(id)), "tab":int(previous.get("tab", 0)) if same else 0, "sort":str(previous.get("sort", "fam")) if same else "fam", "descending":bool(previous.get("descending", false)) if same else false}
+				destination = app.Immersive.ClubSheet.ROUTE
+		"fixture", "competition", "date", "session":
 			opened = app.Immersive.Competition.open_target(app, kind, target.get("id"))
 			if opened and kind in ["competition", "date", "session"]: destination = app.route
 		"finance":

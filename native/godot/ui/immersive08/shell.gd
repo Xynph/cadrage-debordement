@@ -22,6 +22,7 @@ const Playbook = preload("res://ui/immersive08/playbook_canvas.gd")
 const Centre = preload("res://ui/immersive08/centre_canvas.gd")
 const Press = preload("res://ui/immersive08/press_canvas.gd")
 const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
+const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
 const Selections = preload("res://ui/international_view.gd")
@@ -223,6 +224,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
+	# Fiche d'un club : gabarit à l'échelle, lisible dès 1280 × 720.
+	if app.route == ClubSheet.ROUTE: return ClubSheet
 	if app.route == "Calendrier" and Selections.nation_only(app.model): return null
 	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
@@ -282,7 +285,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
 		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
-		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités"]
+		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités",ClubSheet.ROUTE]
 		if i==9:selected=app.route in ["Formation","Centre","Suivi des jeunes"]
 		var y:=394+i*57
 		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():
@@ -349,6 +352,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var route_caption:String="Tactique" if app.route=="Composition" else app.route
 	if _is_training(app): route_caption="Entraînement"
 	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
+	if app.route==ClubSheet.ROUTE:route_caption="Fiche club : "+ClubSheet.caption(app)
 	var caption_left := 137+name_width
 	var caption_width := minf(C.BOLD.get_string_size(route_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(25)).x/C.density+6,TOPBAR_BREADCRUMB_END-caption_left)
 	var caption := D.text(panel,caption_left,48,route_caption,25,C.IVORY,700,caption_width)

@@ -62,7 +62,9 @@ function bootstrap(){
 }
 // Extend the closed registry after its definitions, away from the shared domain list.
 domains.managerPlanning=require('./manager-planning.cjs');
-const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands]);
+// Fiche d'un club (XV type, effectif, clubs suivis) : native/engine/club-sheet.cjs.
+domains.clubSheet=require('./club-sheet.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

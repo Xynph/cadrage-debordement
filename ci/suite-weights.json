@@ -13,6 +13,7 @@
     "weights": {
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 160,
+      "tests/fiche-club-monde.cjs": 200,
       "tests/animation-pipeline-runner.cjs": 7,
       "tests/animation-pipeline.cjs": 2,
       "tests/audit-atlas-photos.cjs": 3,
@@ -141,6 +142,7 @@
     "source": "mesure GitHub : run 43262510105 (main fd939df6, 12 novembre 2026), durées des suites +15 % ; suites en échec ou interrompues estimées",
     "runs": [],
     "weights": {
+      "tests/godot-fiche-club.cjs": 420,
       "tests/animation-pipeline-runner.cjs": 9,
       "tests/godot-atomic-file.cjs": 13,
       "tests/godot-default-display.cjs": 7,
@@ -206,6 +208,7 @@
     "budget_mb": 12288,
     "suites": {
       "tests/integration-cloud-complete.cjs": 3337,
+      "tests/fiche-club-monde.cjs": 2048,
       "tests/jiff.cjs": 2048,
       "tests/monde-harness.cjs": 1830,
       "tests/native-club-meetings-packs.cjs": 1664,

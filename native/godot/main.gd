@@ -31,8 +31,11 @@ const COMMAND_WAIT_MESSAGES := {
 	"promote_cover": "Enregistrement des renforts…",
 	"national_play_match": "Simulation de la rencontre internationale…",
 	"league_benchmark": "Mesure de votre machine…",
+	"club_sheet": "Préparation de la fiche du club…",
 	"league_detail_set": "Enregistrement des championnats simulés…"
 }
+## Commandes de lecture pure (aucun changement d'état de carrière).
+const READ_ONLY_COMMANDS := ["club_sheet"]
 ## Titre du panneau d’attente par commande (les autres : « En coulisses »).
 const COMMAND_WAIT_KICKERS := {
 	"advance_day": "Passage au jour suivant",
@@ -378,7 +381,9 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 		if not command_wait_overlay.visible or command != active_command:
 			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
-	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
+	# La fiche d'un club est une lecture moteur sans changement d'état : les lecteurs suspendus
+	# (rencontre ouverte avant la fiche, etc.) restent valides et le retour arrière les restitue.
+	if is_instance_valid(navigation_controller) and command not in READ_ONLY_COMMANDS: navigation_controller.invalidate_readers()
 	waiting = true
 	last_command = command
 	if _timing_trace: _command_sent_us = Time.get_ticks_usec()

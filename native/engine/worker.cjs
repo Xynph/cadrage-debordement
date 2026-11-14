@@ -72,7 +72,7 @@ const LEGACY_PURGE_NOTICE='Les carrières des anciens modes de jeu ont été ret
 const CAREER_STATE_KEYS=['bdt-v1','bdt-backup-v1','bdt-before-import','bdt-recovery-invalid'];
 const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-matchday-pending','bdt-exported-at'];
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 COMMANDS.add('observe_player');
 COMMANDS.add('league_benchmark');
 COMMANDS.add('restore_checkpoint');
@@ -471,6 +471,14 @@ function createBridge(options={}){
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
     if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
+    // Fiche d'un club (lecture seule, rien n'est écrit) : native/engine/club-sheet.cjs.
+    if(command==='club_sheet'){
+     if(!Number.isSafeInteger(payload.club)||Object.keys(payload).some(k=>k!=='club'))throw Error('Paramètres de fiche club invalides.');
+     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
+     ctx.nativePayload={club:payload.club};
+     const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));
+     return {id,ok:true,model:projectKnowledge(model)};
+    }
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}

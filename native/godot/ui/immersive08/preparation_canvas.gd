@@ -10,6 +10,7 @@ const Decisions = preload("res://ui/decision_views.gd")
 const MatchContext = preload("res://ui/preparation_match_context.gd")
 const Briefing = preload("res://ui/preparation_briefing.gd")
 const PersonName = preload("res://ui/person_name.gd")
+const Link = preload("res://ui/entity_link.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
 const GOLD = Color("ffcd69")
@@ -235,7 +236,8 @@ func _dossier() -> void:
 		var opponent := _opponent()
 		if not opponent.is_empty():
 			_crest(empty, opponent, Rect2(30, 86, 92, 94))
-			D.text(empty, 150, 127, G.club_name(opponent), 42, C.IVORY, 700, 1130).name = "PreparationKnownOpponent"
+			# Nom cliquable : fiche du club adverse.
+			Link.name_link(app, empty, Rect2(146, 92, 1130, 50), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 42, C.IVORY, "PreparationKnownOpponent")
 			D.text(empty, 150, 169, "ADVERSAIRE ANNONCÉ AU CALENDRIER", 24, GOLD, 600, 1130)
 		var lines := D.words(CHAMP_DOSSIER_PENDING if champ_preparing else "Aucun dossier disponible pour cette rencontre.", 86, 3)
 		for line in lines.size(): D.text(empty, 29, 242 + line * 35, lines[line], 28, C.IVORY, 600, 1270)
@@ -253,7 +255,9 @@ func _dossier() -> void:
 	_crest(comparison, opponent, Rect2(1245, 72, 70, 73))
 	D.text(comparison, 117, 108, G.club_name(ours), 28, C.IVORY, 700, 488)
 	D.text(comparison, 117, 138, "VOTRE XV SÉLECTIONNÉ", 17, GREEN, 700, 475)
-	D.text(comparison, 1226, 108, G.club_name(opponent), 28, C.IVORY, 700, 477, HORIZONTAL_ALIGNMENT_RIGHT)
+	var opponent_link := Link.name_link(app, comparison, Rect2(749, 82, 481, 36), "club", str(int(opponent.get("id", -1))) if opponent.get("id") != null else "", G.club_name(opponent), 28, C.IVORY, "PreparationOpponentLink")
+	if opponent_link is Button: (opponent_link as Button).alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	elif opponent_link is Label: (opponent_link as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	D.text(comparison, 1226, 138, "XV ADVERSE PROJETÉ", 17, GOLD, 700, 469, HORIZONTAL_ALIGNMENT_RIGHT)
 	D.text(comparison, 672, 117, "VS", 30, C.MUTED, 600, 70, HORIZONTAL_ALIGNMENT_CENTER)
 	D.line(comparison, Vector2(22, 163), Vector2(1322, 163))
