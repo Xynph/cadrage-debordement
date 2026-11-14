@@ -235,6 +235,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,initialize,openSeason,getStatus,setStatus,recordWeek,closeSeason,comply,isJiff,deduction,deductionsFor,deductionFor,bonusFor,subjectLeagues,frenchClubs};
+ return {target:TARGET,project,validate,execute,installHooks,initialize,openSeason,getStatus,setStatus,recordWeek,closeSeason,comply,isJiff,deduction,deductionsFor,deductionFor,bonusFor,subjectLeagues,frenchClubs};
 }
 module.exports={files,commands,factory};

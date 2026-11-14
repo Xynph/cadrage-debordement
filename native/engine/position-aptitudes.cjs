@@ -12,8 +12,11 @@ module.exports=function positionAptitudes(){
   if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
   const qualifierKey=[p.nationaleQualifications?.join('|'),p.worldProfile?.position?.qualifications?.join('|'),p.worldRatingsVersion].join(';');
   const cached=playerCache.get(p);
-  if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey&&
-   keys.every((k,i)=>cached.skills[i]===p.skills?.[k]&&cached.bonuses[i]===focusedBonus(p,k)))return cached.result;
+  if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
+   // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
+   let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
+   if(same)return cached.result;
+  }
   // Legacy missing skills are deterministically generated on a detached object.
   const q=p.skills?p:{...p};ensureSkills(q);
   const qualities=keys.map(k=>skill(q,k));
@@ -78,18 +81,39 @@ module.exports=function positionAptitudes(){
   }
   return pool;
  }
+ // Les six maillots de première ligne sont attribués par ordre de priorité (n°1, 2, 3 puis les
+ // trois places de banc), chacun au meilleur joueur qui laisse un jumelage complet possible aux
+ // places suivantes. Un joueur n'est donc jamais déplacé du XV vers le banc pour servir une place
+ // de banc : le meilleur pilier gauche, talonneur ou pilier droit dispo ouvre le match.
  function reserveFront(team,preferred,bench){
-  const prefs=Array.from({length:23},(_,i)=>i<15?preferred[i]:bench[i-15]),frontSlots=[0,1,2,15,16,17],taken=new Map(),assigned=new Map();
+  const prefs=Array.from({length:23},(_,i)=>i<15?preferred[i]:bench[i-15]),frontSlots=[0,1,2,15,16,17],assigned=new Map();
   const pool=availablePool(team);
   const fixedOther=new Set(prefs.filter((id,i)=>id&&!frontSlots.includes(i)));
-  function place(slot,seen){
-   const options=pool.filter(p=>!fixedOther.has(p.id)&&(slot<15?baseSlot(p,slot):baseBench(p,slot-15)))
-    .sort((a,b)=>Number(b.id===prefs[slot])-Number(a.id===prefs[slot])||baseNote(b)-baseNote(a)||compareId(a,b));
-   for(const p of options){if(seen.has(p.id))continue;seen.add(p.id);const previous=taken.get(p.id);
-    if(previous===undefined||place(previous,seen)){taken.set(p.id,slot);assigned.set(slot,p.id);return true;}
-   }return false;
+  // Même pondération par la condition que fitScore : un pilier épuisé ne passe pas devant un pilier frais.
+  const notes=new Map(),weighted=p=>{let w=notes.get(p);if(w===undefined){w=baseNote(p)*(.5+p.condition*.005);notes.set(p,w);}return w;};
+  const options=new Map(frontSlots.map(slot=>[slot,pool.filter(p=>!fixedOther.has(p.id)&&(slot<15?baseSlot(p,slot):baseBench(p,slot-15)))
+   .sort((a,b)=>Number(b.id===prefs[slot])-Number(a.id===prefs[slot])||weighted(b)-weighted(a)||compareId(a,b))]));
+  // Taille du plus grand jumelage places/joueurs sur ces places, sans les joueurs déjà retenus.
+  function maxMatch(slots,used){
+   const owner=new Map();
+   function place(slot,seen){
+    for(const p of options.get(slot)){
+     if(used.has(p.id)||seen.has(p.id))continue;seen.add(p.id);
+     if(!owner.has(p.id)||place(owner.get(p.id),seen)){owner.set(p.id,slot);return true;}
+    }return false;
+   }
+   let size=0;for(const slot of slots)if(place(slot,new Set()))size++;return size;
   }
-  for(const slot of frontSlots)place(slot,new Set());
+  const used=new Set();
+  frontSlots.forEach((slot,index)=>{
+   const rest=frontSlots.slice(index+1),best=maxMatch(frontSlots.slice(index),used);
+   for(const p of options.get(slot)){
+    if(used.has(p.id))continue;
+    used.add(p.id);
+    if(1+maxMatch(rest,used)===best){assigned.set(slot,p.id);return;}
+    used.delete(p.id);
+   }
+  });
   return new Map([...assigned].map(([slot,id])=>[id,slot]));
  }
  function installHooks(){
@@ -106,22 +130,105 @@ module.exports=function positionAptitudes(){
     const slot=i+15;
     let p=pool.find(p=>p.id===preferred[i]&&!p.injury&&!used.has(p.id)&&eligible(p,slot));
     if(!p&&i<3)p=pool.find(p=>p.id===sheet.bench[i]);
-    if(!p)p=pool.filter(p=>!p.injury&&!used.has(p.id)&&eligible(p,slot))
-     .sort((a,b)=>rating(b,slot)*(.5+b.condition*.005)-rating(a,slot)*(.5+a.condition*.005)||compareId(a,b))[0];
+    if(!p){
+     // Meilleur candidat (note au poste pondérée, puis identifiant) : un seul passage, notes calculées une fois.
+     let bestValue=-Infinity;
+     for(const q of pool){
+      if(q.injury||used.has(q.id)||!eligible(q,slot))continue;
+      const value=rating(q,slot)*(.5+q.condition*.005);
+      if(!p||value>bestValue||value===bestValue&&compareId(q,p)<0){p=q;bestValue=value;}
+     }
+    }
     wanted.push(p?.id??null);if(p)used.add(p.id);
    }
    // Existing registration/quota hooks remain the final authority.
    return oldBuild(team,sheet.lineup,wanted);
   }
+  // Attribution optimale des postes 4 à 15 : la boucle d'origine remplit les maillots dans l'ordre et
+  // peut priver un poste de son spécialiste (un arrière pris à l'aile, un ouvreur au centre, un
+  // troisième ligne à l'ouverture). On maximise ici la somme des notes au poste, pondérées par la
+  // condition (algorithme hongrois, déterministe), sur les joueurs valides du groupe.
+  function optimiseBack(team,sheet){
+   const slots=[];for(let i=3;i<15;i++)slots.push(i);
+   const fixed=new Set([...sheet.lineup.slice(0,3),...sheet.bench.slice(0,3)].filter(Boolean));
+   // Admissibilité et notes calculées une seule fois par joueur (même résultat que eligible/rating par case).
+   const candidates=[];
+   for(const p of availablePool(team)){
+    if(fixed.has(p.id))continue;
+    const ok=slots.map(i=>eligible(p,i));
+    if(ok.some(Boolean)){const notes=derive(p).positionRatings,weight=.5+p.condition*.005;candidates.push({p,ok,value:slots.map(i=>-(notes[positionNumber(i)]??0)*weight)});}
+   }
+   candidates.sort((a,b)=>compareId(a.p,b.p));
+   const cols=candidates.map(c=>c.p);
+   if(cols.length<slots.length)return sheet;
+   const n=slots.length,m=cols.length,BIG=1e6;
+   const cost=slots.map((i,r)=>candidates.map(c=>c.ok[r]?c.value[r]:BIG));
+   // Hongrois rectangulaire (n lignes <= m colonnes), lignes et colonnes numérotées à partir de 1.
+   const u=new Array(n+1).fill(0),v=new Array(m+1).fill(0),way=new Array(m+1).fill(0),match=new Array(m+1).fill(0);
+   for(let i=1;i<=n;i++){
+    match[0]=i;let j0=0;const minv=new Array(m+1).fill(Infinity),used=new Array(m+1).fill(false);
+    do{
+     used[j0]=true;const i0=match[j0];let delta=Infinity,j1=0;
+     for(let j=1;j<=m;j++)if(!used[j]){
+      const cur=cost[i0-1][j-1]-u[i0]-v[j];
+      if(cur<minv[j]){minv[j]=cur;way[j]=j0;}
+      if(minv[j]<delta){delta=minv[j];j1=j;}
+     }
+     for(let j=0;j<=m;j++){if(used[j]){u[match[j]]+=delta;v[j]-=delta;}else minv[j]-=delta;}
+     j0=j1;
+    }while(match[j0]!==0);
+    do{const j1=way[j0];match[j0]=match[j1];j0=j1;}while(j0);
+   }
+   const lineup=sheet.lineup.slice();
+   for(let j=1;j<=m;j++)if(match[j]&&cost[match[j]-1][j-1]<BIG)lineup[slots[match[j]-1]]=cols[j-1].id;
+   if(new Set(lineup.filter(Boolean)).size!==lineup.filter(Boolean).length)return sheet;
+   return {...sheet,lineup};
+  }
+  // Règle JIFF (CDJiff.target joueurs formés en France sur les 23) intégrée à l'attribution : on
+  // remplace un non-JIFF par un JIFF disponible en minimisant la perte de note au poste (banc
+  // pondéré à moitié, donc sacrifié en premier), jamais en dessous de 40 au poste tant qu'une
+  // autre option existe. Cas limite : sans JIFF jouable au poste, le quota prime (meilleure option).
+  function jiffFit(team,sheet){
+   if(typeof CDJiff==='undefined'||!CDJiff.isJiff||!CDJiff.target||typeof S==='undefined'||S?.jiff?.version!==1||team.id===undefined)return sheet;
+   const leagues=CDJiff.subjectLeagues(S);if(!leagues||!Object.values(leagues).some(l=>l.includes(team.id)))return sheet;
+   const pool=availablePool(team),byId=new Map(team.players.map(p=>[p.id,p]));
+   const slots=sheet.lineup.concat(sheet.bench),used=new Set(slots.filter(Boolean));
+   let count=slots.filter(id=>id&&CDJiff.isJiff(S,byId.get(id))).length;
+   const value=(p,k)=>rating(p,k)*(.5+p.condition*.005);
+   const jiffs=pool.filter(p=>CDJiff.isJiff(S,p)).sort(compareId);
+   while(count<CDJiff.target){
+    let best=null;
+    for(let k=0;k<slots.length;k++){
+     const cur=byId.get(slots[k]);if(!cur||CDJiff.isJiff(S,cur))continue;
+     for(const p of jiffs){
+      if(used.has(p.id)||!eligible(p,k))continue;
+      const loss=(value(cur,k)-value(p,k))*(k>=15?.5:1)+(rating(p,k)<40?1000:0);
+      if(!best||loss<best.loss-1e-9)best={k,p,loss};
+     }
+    }
+    if(!best)break;
+    used.delete(slots[best.k]);used.add(best.p.id);slots[best.k]=best.p.id;count++;
+   }
+   return {...sheet,lineup:slots.slice(0,15),bench:slots.slice(15)};
+  }
   function reservedBuild(fn,team,preferred=[],bench=[],...args){
    if(reservations)return fn(team,preferred,bench,...args);
    reservations=reserveFront(team,preferred,bench);
-   try{return improveBench(team,fn(team,preferred,bench,...args),bench);}finally{reservations=null;}
+   try{
+    let sheet=fn(team,preferred,bench,...args);
+    // Une feuille choisie à la main (postes préférés) n'est jamais réattribuée.
+    if(!preferred.some(Boolean)&&!bench.some(Boolean)){
+     sheet=optimiseBack(team,sheet);
+    }
+    sheet=improveBench(team,sheet,bench);
+    // Règle JIFF : appliquée en dernier, sur la feuille définitive, en tenant compte des postes.
+    return !preferred.some(Boolean)&&!bench.some(Boolean)?jiffFit(team,sheet):sheet;
+   }finally{reservations=null;}
   }
   buildSheet=(team,preferred=[],bench=[])=>reservedBuild(oldBuild,team,preferred,bench);
   managerSheet=(team,...args)=>{
    if(reservations)return oldManager(team,...args);
-   reservations=reserveFront(team,[],[]);try{return improveBench(team,oldManager(team,...args));}finally{reservations=null;}
+   reservations=reserveFront(team,[],[]);try{return jiffFit(team,improveBench(team,oldManager(team,...args)));}finally{reservations=null;}
   };
   unit=(live,side,key,filter)=>{
    const on=live.sheets[side].on,players=activePlayers(live,side);
