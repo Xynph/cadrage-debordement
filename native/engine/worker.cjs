@@ -587,6 +587,8 @@ function createBridge(options={}){
       if(run("!!S.live||S.phase==='ended'"))throw Error('Aucun nouveau match disponible.');
       if(run('nativeDailyStatus()?.matchReady===false'))throw Error('Le coup d’envoi est disponible le jour de la rencontre.');
       if(payload.reducedBench!==undefined&&typeof payload.reducedBench!=='boolean')throw Error('Confirmation de la feuille à 22 invalide.');
+      if(payload.delegated!==undefined&&typeof payload.delegated!=='boolean')throw Error('Délégation du match invalide.');
+      if(payload.composition!==undefined&&(typeof payload.composition!=='boolean'||payload.delegated!==true))throw Error('Choix de composition invalide : à joindre à un match délégué.');
       const reducedBench=payload.reducedBench===true;
       if(reducedBench&&!run('CDNationaleReducedBench?.vacancy(S)'))throw Error('La feuille à 22 n’est pas disponible pour cette rencontre.');
       const hadFixture=run('!!nextMatch()');
@@ -600,7 +602,16 @@ function createBridge(options={}){
          if(!legacy&&!automated&&pair.includes(S.club)&&typeof CDFranceCareer!=='undefined'&&typeof CDFranceCareer.ensureAISheet==='function'&&typeof aiRosterActive==='function'&&aiRosterActive()&&!(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);
          return nativeCreate(pair,legacy,automated,preparation);
         };
-        beginMatch(nativePayload.reducedBench===true);
+        // Match délégué : « Confier aussi la composition au staff » (cochée par défaut, mémorisée dans la
+        // carrière). Cochée, le staff refait la feuille du jour (sélection automatique : autoLineup avant et
+        // après l'entraînement, règle JIFF comprise) ; décochée, la feuille du joueur est inchangée.
+        const nativeDelegation=nativePayload.delegated===true&&S.manager?.delegation?S.manager.delegation:null;
+        const nativeStaffSheet=!!nativeDelegation&&(nativePayload.composition??nativeDelegation.matchLineup!==false);
+        const nativeLineupFlag=nativeDelegation?.lineup;
+        if(nativeDelegation){nativeDelegation.matchLineup=nativeStaffSheet;if(nativeStaffSheet)nativeDelegation.lineup=true;}
+        // Match délégué : pas de causerie d'avant-match (la commande delegate qui suit confie tout le match).
+        if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(true);
+        try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
        }finally{createRugbyMatch=nativeCreate;}
       }`);}finally{
        // VM timeouts skip its inner finally; restore without executing more VM code.
@@ -623,6 +634,9 @@ function createBridge(options={}){
       run(payload.paused===false?'continueMatch()':'pauseMatch()');
      }else if(command==='delegate'){
       if(!run('!!S.live'))throw Error('Aucun match à déléguer.');
+      // Mémorise le choix « Confier aussi la composition au staff » pour les prochains matchs délégués
+      // (la feuille du match en cours est déjà jouée : elle se règle au coup d'envoi, begin_match { delegated }).
+      if(payload.composition!==undefined){if(typeof payload.composition!=='boolean')throw Error('Choix de composition invalide.');run('if(S.manager?.delegation)S.manager.delegation.matchLineup=nativePayload.composition;');}
       run("nativeSystems.domain('matchTalks').setDelegating(true);nativeSystems.domain('matchTalks').observe('delegate');nativeSystems.domain('matchDelegation').setActive(true);");
       try{
       const delegateLoop="for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}";

@@ -103,11 +103,24 @@ if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)){l.fr
 if(!legacy){if(S.developmentFocusVersion===1)l.developmentFocusVersion=1;if(S.physicalLoadVersion===1)l.physicalLoadVersion=1;initializeManagers(l,automated);initializeMatchRules(l);initializeMatchFlow(l);initializeTacticalPlans(l);initializePlaybooks(l);initializeCollectivePreparation(l);initializeRestarts(l);initializePreparation(l,preparation)}
 if(legacy){l.minute=legacy.minute;l.score=[...legacy.score];l.tries=[...legacy.tries];l.events=[...legacy.events];l.finished=legacy.finished;l.halftime=l.minute>=40;l.paused=l.minute===40&&!l.finished;if(userSide>=0){l.tactics[userSide]=S.tactic;l.tactics[1-userSide]=legacy.opponentTactic||'equilibre';let s=sheets[userSide];s.used=[...new Set([...(legacy.used||[]),...s.on])];s.bench=s.bench.filter(id=>!s.used.includes(id));for(let id of s.used)s.minutes[id]=l.minute/Math.max(1,s.used.length)*15}}
 return l}
+// Courbe de niveau commune (lot 0 « notes réalistes », 14/11/2026, docs/courbe-niveau-moteur-20261114.md).
+// Niveau d'une équipe = moyenne, sur les joueurs alignés, de note × (0,57 + 0,0043 × condition) :
+// 1,00 à 100 % de condition, 0,91 à 80 %. Même définition que la puissance du résultat rapide
+// (native/engine/league-detail.cjs). Cible commune aux deux moteurs, vérifiée par
+// tests/match-rating-curve.cjs : logit P(victoire) = 0,183 × écart de niveau + 0,64 à domicile,
+// soit +3 → 63 %, +6 → 75 %, +10 → 86 %, −10 → 14 % sur terrain neutre et 65 % à domicile à niveau égal.
+// `complet` règle le moteur complet (avantage ajouté à teamEdge, par point d'écart et à domicile),
+// `rapide` le résultat rapide (écart de puissance divisé par `diviseur`, bonus du terrain en points).
+// Avant le 14/11/2026 : pas de terme de niveau, terrain ±0,018 (56 %), résultat rapide (Δ+2,5)/8.
+// Coefficients de jeu calés par mesure, pas des probabilités réelles.
+const MATCH_LEVEL_CURVE=Object.freeze({version:1,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.045}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3})});
+function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
+function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side)))}
 function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.
 if(l.advantageModel===2&&kind==='attack'&&t==='large')b+=(on.length-activePlayers(l,opp).length)*.018;
 if(kind==='attack'&&!tacticalRules(l)){if(t==='large')b+=(unit(l,side,'pass',p=>p.fam>=4)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.003:.006)+(l.balanceVersion===2?.015:.035);if(t==='conquete')b+=(unit(l,side,'power',p=>p.fam<=3)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.002:.004);if(weather==='Pluie'&&t==='large')b-=.075;if(weather==='Vent'&&t==='occupation')b-=.025}
-if(l.franceContext?!l.franceContext.neutral:S.phase!=='semi'&&S.phase!=='final')b+=side===0?.018:-.018;if(l.balanceVersion===2)b+=(clubMorale(l.pair[side])-70)*.001;else if(l.pair[side]===S.club)b+=(S.morale-70)*.001;if(kind==='attack')b-=collectivePreparationBonus(l,opp,'defence');return b}
+b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldContext?!l.worldContext.neutral:S.phase!=='semi'&&S.phase!=='final')b+=side===0?MATCH_LEVEL_CURVE.complet.terrain:-MATCH_LEVEL_CURVE.complet.terrain;if(l.balanceVersion===2)b+=(clubMorale(l.pair[side])-70)*.001;else if(l.pair[side]===S.club)b+=(S.morale-70)*.001;if(kind==='attack')b-=collectivePreparationBonus(l,opp,'defence');return b}
 function changePossession(l){if(restartRules(l))ballPossession(l,1-l.possession);else l.possession=1-l.possession}
 // The field is modelled as 70 m wide (y=0..70), with the posts at y=35.
 // These are game-balance coefficients, not measured professional kick percentages.
