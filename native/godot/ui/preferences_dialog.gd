@@ -83,9 +83,14 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	display.add_child(C.wrap(preload("res://ui/salary_display.gd").CONVENTION,17,C.MUTED))
 	var stadium := _choice(display,"Éclairage du stade",["Jour","Soirée"],"PreferencesStadiumLighting")
 	# « Continuer » s'arrête toujours sur un match, un rendez-vous ou une décision obligatoire ; en plus :
-	var continue_messages := _choice(display,"Continuer s’arrête sur les messages",["Importants","Tous","Aucun"],"PreferencesContinueMessages")
+	# Les deux arrêts de « Continuer » partagent une ligne : l'onglet tient sans défilement dans le dialogue
+	# (recette Windows : boutons de mode de fenêtre entièrement visibles en 2560 × 1440).
+	var continue_row := G.h(12); display.add_child(continue_row)
+	var continue_label := G.label("Continuer s’arrête sur",14); G.fill(continue_label); continue_row.add_child(continue_label)
+	var continue_messages := _option(continue_row,["Messages importants","Tous les messages","Aucun message"],"PreferencesContinueMessages")
 	continue_messages.tooltip_text = "Les matchs, rendez-vous et décisions obligatoires arrêtent toujours « Continuer »."
-	var continue_injuries := _choice(display,"Continuer s’arrête sur les blessures",["Des titulaires","De tout l’effectif"],"PreferencesContinueInjuries")
+	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
+	continue_injuries.tooltip_text = continue_messages.tooltip_text
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
@@ -152,14 +157,15 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	windowed.name = "PreferencesWindowed"
 	windowed.tooltip_text = "Occupe tout l’espace disponible sur l’écran choisi, avec la barre des tâches accessible."
 	display_row.add_child(windowed)
-	var links := G.v(8); display.add_child(links)
+	var links := G.h(8); display.add_child(links)
 	links.add_child(G.button("Importez un pack personnalisé",func():
 		dialog.hide(); dialog.queue_free()
 		app.pack_manager.open("career" if app._has_career() else "creation")))
 	links.add_child(G.button("Aide du coach",func():
 		dialog.hide(); dialog.queue_free()
 		app.call_deferred("_open_coach")))
-	for button in display_row.get_children(): G.fill(button)
+	links.get_child(0).name = "PreferencesPack"; links.get_child(1).name = "PreferencesCoachHelp"
+	for button in display_row.get_children() + links.get_children(): G.fill(button)
 	var initial_salary_period := str(profile.data.salary_period)
 	var close := func():
 		if initial_salary_period != str(profile.data.salary_period): app.call_deferred("_render",false)
@@ -168,7 +174,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	dialog.canceled.connect(close)
 	app.add_child(dialog)
 	refresh.call()
-	Dialogs.show_centered(dialog,Vector2i(width,600))
+	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
+	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
 	volume.get_line_edit().call_deferred("grab_focus")
 	return dialog
 
@@ -185,6 +192,9 @@ static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
 static func _choice(parent: Node, caption: String, values: Array, id: String) -> OptionButton:
 	var row := G.h(12); parent.add_child(row)
 	var label := G.label(caption,14); G.fill(label); row.add_child(label)
+	return _option(row,values,id)
+
+static func _option(row: Node, values: Array, id: String) -> OptionButton:
 	var option := OptionButton.new(); option.name = id; option.custom_minimum_size = Vector2(220,36)
 	for value in values: option.add_item(value)
 	row.add_child(option)
