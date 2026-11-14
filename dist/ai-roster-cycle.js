@@ -274,8 +274,12 @@ function aiRosterRecruitmentWeek(){
  // un autre renfort, au lieu de réserver illégitimement le même joueur.
  const windowLimit=aiRosterPopulationActive()?S.clubs.length*2:6;
  for(let turn=0;turn<6&&count<windowLimit;turn++){
+  // Joueurs sous contrat et vivier en ensembles d'identifiants (mêmes tests que les doubles boucles d'origine) ;
+  // seule la signature ci-dessous ajoute un joueur à un effectif pendant le tour.
+  const owned=new Set();for(const x of S.clubs)for(const y of x.players)owned.add(y.id);
   const pool=[...new Map([...S.market,...e.freeAgents].map(p=>[p.id,p])).values()]
-   .filter(p=>(!aiRosterPopulationActive()||p.age>=18)&&!S.clubs.some(x=>x.players.some(y=>y.id===p.id))&&p.age<p.dev.retireAge-1);
+   .filter(p=>(!aiRosterPopulationActive()||p.age>=18)&&!owned.has(p.id)&&p.age<p.dev.retireAge-1);
+  const pooled=new Set(pool.map(p=>p.id));
   if(!pool.length)break;
   const offers=aiRosterMarketProposals(others,pool);
   if(!offers.length)break;
@@ -293,12 +297,12 @@ function aiRosterRecruitmentWeek(){
    if(count>=windowLimit)break;
    const {c,best}=winner,p=best.p;
    if(aiRosterReport(c.id).recruited>=aiRosterSeasonRecruitLimit(c)||!aiRosterMayRecruit(c)||
-    !pool.some(x=>x.id===p.id)||S.clubs.some(x=>x.players.some(y=>y.id===p.id))||
+    !pooled.has(p.id)||owned.has(p.id)||
     c.cash-best.finance.fee<400000||
     aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))continue;
    c.cash-=best.finance.fee;
    p.contractEnd=S.season+Math.min(2,Math.max(1,p.dev.retireAge-p.age-1));
-   p.joinedSeason=S.season;p.joinedRound=S.round;c.players.push(p);
+   p.joinedSeason=S.season;p.joinedRound=S.round;c.players.push(p);owned.add(p.id);
    S.market=S.market.filter(x=>x.id!==p.id);
    e.freeAgents=e.freeAgents.filter(x=>x.id!==p.id);
    e.transfers.unshift({season:S.season,round:S.round,text:c.name+' recrute '+p.name+
@@ -463,9 +467,9 @@ function aiRosterMarketPool(generated){
  return aiRosterPopulationActive()?S.economy.freeAgents.filter(p=>p.age>=18):[...S.economy.freeAgents,...generated];
 }
 function aiRosterPopulationTargets(c,pool){
- const needs=aiRosterMarketNeeds(c),out=[];
+ const needs=aiRosterMarketNeeds(c),out=[],own=new Set(c.players.map(q=>q.id));
  for(const p of pool){
-  if(c.players.some(q=>q.id===p.id)||p.age>=p.dev.retireAge-1)continue;
+  if(own.has(p.id)||p.age>=p.dev.retireAge-1)continue;
   const evidence=recruitmentEvidence(p,false);
   // Use the same public estimate for both players. A centre graduate can
   // provide succession cover at an equivalent estimated level.

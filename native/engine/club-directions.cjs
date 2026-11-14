@@ -40,7 +40,14 @@ module.exports=function clubDirections(T,N){
  const active=()=>!!S&&S.clubDirections?.version===VERSION&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)&&typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive();
  const h=(...k)=>seedHash(state().seed+'|'+k.join('|'));
  const roll=(...k)=>h(...k)%10000/10000;
- const leagueOf=id=>CDWorldCareer.leagueId(S,id);
+ // Fenêtre de marché en cours : les divisions ne bougent pas pendant la fenêtre (elles changent à l'intersaison),
+ // la division de chaque club est donc lue une fois ; de même pour le tirage d'évaluation (empreinte pure) ci-dessous.
+ let leagueMemo=null,evalMemo=null;
+ const leagueOf=id=>{
+  if(!leagueMemo)return CDWorldCareer.leagueId(S,id);
+  let lg=leagueMemo.get(id);if(lg===undefined){lg=CDWorldCareer.leagueId(S,id);leagueMemo.set(id,lg);}
+  return lg;
+ };
  const economy=lg=>typeof nativeLeagueEconomy!=='undefined'?nativeLeagueEconomy.CHAMPIONNATS?.[lg]:null;
  const country=lg=>economy(lg)?.pays??LEAGUES[lg]?.[0]??'autre';
  const prestige=lg=>economy(lg)?.reputation??LEAGUES[lg]?.[1]??60;
@@ -51,6 +58,15 @@ module.exports=function clubDirections(T,N){
  const healthy=p=>!(p.injury>=3);
  const covered=(c,slot,without=null)=>c.players.filter(p=>p.id!==without&&p.age<p.dev.retireAge&&slotEligible(p,slot)).length;
  const week=()=>S.worldMode?.week??S.round;
+ // Note de poste (rugby.js) : pendant une fenêtre de marché, ni les qualités ni les postes des joueurs ne
+ // changent ; chaque note est donc calculée une fois par joueur et par famille, puis oubliée en fin de fenêtre.
+ let noteMemo=null;
+ const roleNote=(p,f=p?.fam)=>{
+  if(!noteMemo||!p)return globalThis.roleNote(p,f);
+  let byFamily=noteMemo.get(p);if(!byFamily){byFamily=new Map();noteMemo.set(p,byFamily);}
+  let n=byFamily.get(f);if(n===undefined){n=globalThis.roleNote(p,f);byFamily.set(f,n);}
+  return n;
+ };
 
  // ---- Personnes et traits -------------------------------------------------
  // Président et directeur sportif : identifiant stable par club (pres-<club>,
@@ -315,7 +331,10 @@ module.exports=function clubDirections(T,N){
   const x=state().clubs[c.id],ev=x?.director.traits.evaluation??50;
   const known=!ownerLeague||x?.director.network?.includes(ownerLeague);
   const amp=2+(100-ev)*.08+(known?0:4);
-  const noise=(roll('eval',c.id,p.id,S.season)-.5)*2*amp;
+  let draw;
+  if(evalMemo){const key=c.id+'|'+p.id;draw=evalMemo.get(key);if(draw===undefined){draw=roll('eval',c.id,p.id,S.season);evalMemo.set(key,draw);}}
+  else draw=roll('eval',c.id,p.id,S.season);
+  const noise=(draw-.5)*2*amp;
   const glamour=clamp(p.salary/9000-1,0,2)*(100-ev)/40;
   // Notes de match de la saison (match-notes.cjs) : −2 à +3 points.
   const notes=typeof CDMatchNotes!=='undefined'?CDMatchNotes.effets.interet(p.id):0;
@@ -346,16 +365,21 @@ module.exports=function clubDirections(T,N){
   const goal=aiRosterTarget(c);
   if(c.players.length<=goal-3)return [];
   const fresh=p=>p.joinedSeason===S.season||p.contractEnd==null||p.contractEnd<S.season||onLoan(p.id);
-  const keep=p=>covered(c,primarySlot(p),p.id)<Math.max(2,slotGoal(c,primarySlot(p))-1);
+  // L'effectif ne change pas pendant cette lecture : profondeur par poste et notes calculées une fois
+  // (covered(c,slot,p.id) = profondeur du poste moins p lui-même s'il y compte ; identifiants uniques).
+  const depth=new Map(),notes=new Map();
+  const slotDepth=slot=>{let n=depth.get(slot);if(n===undefined){n=covered(c,slot);depth.set(slot,n);}return n;};
+  const note=p=>{let n=notes.get(p);if(n===undefined){n=roleNote(p);notes.set(p,n);}return n;};
+  const keep=p=>{const slot=primarySlot(p);return slotDepth(slot)-(p.age<p.dev.retireAge&&slotEligible(p,slot)?1:0)<Math.max(2,slotGoal(c,slot)-1);};
   const pool=c.players.filter(p=>!fresh(p)&&!keep(p)&&p.age<p.dev.retireAge-1);
-  const byNote=(a,b)=>roleNote(b)-roleNote(a)||a.id.localeCompare(b.id),bySalary=(a,b)=>b.salary-a.salary||a.id.localeCompare(b.id);
+  const byNote=(a,b)=>note(b)-note(a)||a.id.localeCompare(b.id),bySalary=(a,b)=>b.salary-a.salary||a.id.localeCompare(b.id);
   let picks=[];
   if(plan==='vente')picks=pool.filter(p=>p.age>=23).sort(bySalary).slice(0,3);
-  else if(plan==='formateur')picks=pool.filter(p=>p.age<=24&&roleNote(p)>=c.base-5).sort(byNote).slice(0,1);
+  else if(plan==='formateur')picks=pool.filter(p=>p.age<=24&&note(p)>=c.base-5).sort(byNote).slice(0,1);
   else if(plan==='rajeunissement')picks=pool.filter(p=>p.age>=30).sort(bySalary).slice(0,3);
   else if(plan==='reconstruction')picks=pool.filter(p=>p.age>=28).sort(bySalary).slice(0,3);
   const top=new Set(pool.slice().sort(byNote).slice(0,5).map(p=>p.id));
-  const surplus=pool.filter(p=>covered(c,primarySlot(p))>slotGoal(c,primarySlot(p))+2&&!top.has(p.id)).sort((a,b)=>roleNote(a)-roleNote(b)||a.id.localeCompare(b.id))[0];
+  const surplus=pool.filter(p=>slotDepth(primarySlot(p))>slotGoal(c,primarySlot(p))+2&&!top.has(p.id)).sort((a,b)=>note(a)-note(b)||a.id.localeCompare(b.id))[0];
   if(surplus&&!picks.includes(surplus))picks.push(surplus);
   const discount=plan==='vente'?.75:plan==='reconstruction'?.9:1;
   return picks.map(p=>({p,seller:c,ask:Math.round(T.value(p)*discount/10000)*10000,listed:true}));
@@ -365,7 +389,8 @@ module.exports=function clubDirections(T,N){
  function unlisted(c,plans,reports,cache){
   if(plans.get(c.id)==='vedettes'||(reports.get(c.id)?.sold||0)>=MAX_SALES||c.players.length<=aiRosterTarget(c)-3)return [];
   if(!cache.has(c.id)){
-   const order=c.players.slice().sort((a,b)=>roleNote(b)-roleNote(a)||a.id.localeCompare(b.id)),best=new Set(order.slice(0,3).map(p=>p.id));
+   const notes=new Map(c.players.map(p=>[p,roleNote(p)]));
+   const order=c.players.slice().sort((a,b)=>notes.get(b)-notes.get(a)||a.id.localeCompare(b.id)),best=new Set(order.slice(0,3).map(p=>p.id));
    cache.set(c.id,order.filter(p=>!best.has(p.id)&&p.joinedSeason!==S.season&&!onLoan(p.id)&&p.contractEnd!=null&&p.contractEnd>=S.season&&p.age<=30&&p.age<p.dev.retireAge-1&&
     covered(c,primarySlot(p),p.id)>=Math.max(2,slotGoal(c,primarySlot(p))-1)).slice(0,4).map(p=>({p,seller:c,ask:Math.round(T.value(p)*(plans.get(c.id)==='vente'?1.1:1.5)/10000)*10000,listed:false})));
   }
@@ -484,6 +509,10 @@ module.exports=function clubDirections(T,N){
   return plans;
  }
  function openWindow(){
+  const outer=[noteMemo,leagueMemo,evalMemo];noteMemo=new WeakMap();leagueMemo=new Map();evalMemo=new Map();
+  try{return openWindowNotes();}finally{[noteMemo,leagueMemo,evalMemo]=outer;}
+ }
+ function openWindowNotes(){
   const d=state(),done=[];
   if(week()===0)returnLoans();
   seasonReview();
