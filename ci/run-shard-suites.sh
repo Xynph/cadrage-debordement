@@ -69,9 +69,13 @@ budget() {
     tests/native-club-strategy.cjs) echo 2400s ;; # Monde : saison de 46 semaines jouée jusqu'à next_season (1512 à 1581 s sous charge locale, 1062 à 1456 s en CI sur main ; le job Suites a 50 min)
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
-    # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
-    # Notes de match + XV type (journées et saison en carrière Monde) : ~15 min en CI.
-    tests/match-notes.cjs) echo 1800s ;;
+    # Notes de match + XV type (carrière Monde) : une seule carrière jouée par le pont (4 journées) + deux comparaisons
+    # dans le harnais VM, au lieu de 7 carrières et 16 journées : 17 min en CI avant (1031 s, 1074 s de CPU), ~385 s de CPU
+    # en local après (2,2 fois moins) donc ~8 min estimées en CI ; budget ≈ 3 fois.
+    tests/match-notes.cjs) echo 1400s ;;
+    # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
+    # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
+    tests/japan-match.cjs) echo 300s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.

@@ -31,7 +31,7 @@ run('S='+saved);run('S.pressConference.history=[];delete S.pressConference.lastO
 assert.ok(projection().people.flatMap(p=>p.memory).every(e=>e.question===null&&e.answer===null),'Archives expirées : absence explicite, aucune reconstruction depuis la banque');
 let allContacts;
 for(const j of bank.journalists)for(let week=0;week<3;week++)allContacts=relations.recordDialogue(allContacts,j,{season:1,week,club:29,questionId:'phase_finale-4-'+week,answerId:'r4'},2);
-assert.equal(Object.keys(allContacts.contacts).length,30);assert.ok(Buffer.byteLength(JSON.stringify(allContacts))<30000);
-console.log('Mémoire 30 contacts / 90 échanges : '+Buffer.byteLength(JSON.stringify(allContacts))+' octets.');
+assert.equal(Object.keys(allContacts.contacts).length,bank.journalists.length);assert.ok(Buffer.byteLength(JSON.stringify(allContacts))<1000*bank.journalists.length);
+console.log('Mémoire '+bank.journalists.length+' contacts / '+3*bank.journalists.length+' échanges : '+Buffer.byteLength(JSON.stringify(allContacts))+' octets.');
 run('S='+initial);run('delete S.franceMode;S.clubs=S.clubs.slice(0,14);S.season=2;S.round=0;p.validate(S)');
 m=projection();assert.equal(m.context.week,0);ctx.payload={context:m.context,answers:m.conference.questions.map(q=>({questionId:q.id,answerId:'r4'}))};run("p.execute('press_conference',payload);p.validate(S)");assert.equal(projection().lastOutcome.context.season,2,'Calendrier historique saison2 : décision et mémoire datées dans la bonne saison');

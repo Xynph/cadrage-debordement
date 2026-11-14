@@ -1,0 +1,151 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+
+WARNING: 'res://guide/assets/gabi.glb': In external resource #0, invalid UID: 'uid://6v3pr60p4we6' - using text path instead: 'res://guide/assets/gabi_Gabi_Barbe_Couvrante_2K.png'.
+     at: open (core/io/resource_format_binary.cpp:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_model (res://guide/coach_portrait_3d.gd:98)
+         [1] _make_portrait (res://ui/immersive08/coach_canvas.gd:10)
+         [2] _build (res://guide/coach_guide.gd:145)
+         [3] _build (res://ui/immersive08/coach_canvas.gd:31)
+         [4] setup (res://guide/coach_guide.gd:67)
+         [5] _ready (res://main.gd:215)
+         [6] run (/workspace/cadrage-debordement/tests/godot-match-temps-forts-capture.gd:64)
+WARNING: 'res://guide/assets/gabi.glb': In external resource #1, invalid UID: 'uid://8cihsb13i38a' - using text path instead: 'res://guide/assets/gabi_Gabi_Vermillon_Rose.jpg'.
+     at: open (core/io/resource_format_binary.cpp:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_model (res://guide/coach_portrait_3d.gd:98)
+         [1] _make_portrait (res://ui/immersive08/coach_canvas.gd:10)
+         [2] _build (res://guide/coach_guide.gd:145)
+         [3] _build (res://ui/immersive08/coach_canvas.gd:31)
+         [4] setup (res://guide/coach_guide.gd:67)
+         [5] _ready (res://main.gd:215)
+         [6] run (/workspace/cadrage-debordement/tests/godot-match-temps-forts-capture.gd:64)
+WARNING: 'res://guide/assets/gabi.glb': In external resource #2, invalid UID: 'uid://dcs8gmxxunc5h' - using text path instead: 'res://guide/assets/gabi_Gabi_V4_Cavite_Albedo.png'.
+     at: open (core/io/resource_format_binary.cpp:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_model (res://guide/coach_portrait_3d.gd:98)
+         [1] _make_portrait (res://ui/immersive08/coach_canvas.gd:10)
+         [2] _build (res://guide/coach_guide.gd:145)
+         [3] _build (res://ui/immersive08/coach_canvas.gd:31)
+         [4] setup (res://guide/coach_guide.gd:67)
+         [5] _ready (res://main.gd:215)
+         [6] run (/workspace/cadrage-debordement/tests/godot-match-temps-forts-capture.gd:64)
+WARNING: 'res://guide/assets/gabi.glb': In external resource #3, invalid UID: 'uid://btcamr3i5nvc4' - using text path instead: 'res://guide/assets/gabi_Gabi_Tete_Couleur.jpg'.
+     at: open (core/io/resource_format_binary.cpp:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_model (res://guide/coach_portrait_3d.gd:98)
+         [1] _make_portrait (res://ui/immersive08/coach_canvas.gd:10)
+         [2] _build (res://guide/coach_guide.gd:145)
+         [3] _build (res://ui/immersive08/coach_canvas.gd:31)
+         [4] setup (res://guide/coach_guide.gd:67)
+         [5] _ready (res://main.gd:215)
+         [6] run (/workspace/cadrage-debordement/tests/godot-match-temps-forts-capture.gd:64)
+WARNING: 'res://guide/assets/gabi.glb': In external resource #4, invalid UID: 'uid://bq6glsmiv156h' - using text path instead: 'res://guide/assets/gabi_Gabi_Tete_Normale.jpg'.
+     at: open (core/io/resource_format_binary.cpp:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_model (res://guide/coach_portrait_3d.gd:98)
+         [1] _make_portrait (res://ui/immersive08/coach_canvas.gd:10)
+         [2] _build (res://guide/coach_guide.gd:145)
+         [3] _build (res://ui/immersive08/coach_canvas.gd:31)
+         [4] setup (res://guide/coach_guide.gd:67)
+         [5] _ready (res://main.gd:215)
+         [6] run (/workspace/cadrage-debordement/tests/godot-match-temps-forts-capture.gd:64)
+WARNING: 'res://guide/assets/gabi.glb': In external resource #5, invalid UID: 'uid://cr1ilfo12r8vc' - using text path instead: 'res://guide/assets/gabi_Gabi_Tete_Occlusion.jpg'.
+     at: open (core/io/resource_format_binary.cpp:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_model (res://guide/coach_portrait_3d.gd:98)
+         [1] _make_portrait (res://ui/immersive08/coach_canvas.gd:10)
+         [2] _build (res://guide/coach_guide.gd:145)
+         [3] _build (res://ui/immersive08/coach_canvas.gd:31)
+         [4] setup (res://guide/coach_guide.gd:67)
+         [5] _ready (res://main.gd:215)
+         [6] run (/workspace/cadrage-debordement/tests/godot-match-temps-forts-capture.gd:64)
+MATCH_CAPTURE import
+MATCH_CAPTURE direct ouvert
+MATCH_CAPTURE minute=0 termine=false
+MATCH_CAPTURE minute=1 termine=false
+MATCH_CAPTURE minute=2 termine=false
+MATCH_CAPTURE minute=3 termine=false
+MATCH_CAPTURE minute=4 termine=false
+MATCH_CAPTURE minute=5 termine=false
+MATCH_CAPTURE minute=6 termine=false
+MATCH_CAPTURE minute=7 termine=false
+MATCH_CAPTURE minute=8 termine=false
+MATCH_CAPTURE minute=9 termine=false
+MATCH_CAPTURE minute=10 termine=false
+MATCH_CAPTURE minute=11 termine=false
+MATCH_CAPTURE minute=12 termine=false
+MATCH_CAPTURE minute=13 termine=false
+MATCH_CAPTURE minute=14 termine=false
+MATCH_CAPTURE minute=15 termine=false
+MATCH_CAPTURE minute=16 termine=false
+MATCH_CAPTURE minute=17 termine=false
+MATCH_CAPTURE minute=18 termine=false
+MATCH_CAPTURE minute=19 termine=false
+MATCH_CAPTURE minute=20 termine=false
+MATCH_CAPTURE minute=21 termine=false
+MATCH_CAPTURE minute=22 termine=false
+MATCH_CAPTURE minute=23 termine=false
+MATCH_CAPTURE minute=24 termine=false
+MATCH_CAPTURE minute=25 termine=false
+MATCH_CAPTURE minute=26 termine=false
+MATCH_CAPTURE minute=27 termine=false
+MATCH_CAPTURE minute=28 termine=false
+MATCH_CAPTURE minute=29 termine=false
+MATCH_CAPTURE minute=30 termine=false
+MATCH_CAPTURE minute=31 termine=false
+MATCH_CAPTURE minute=32 termine=false
+MATCH_CAPTURE minute=33 termine=false
+MATCH_CAPTURE minute=34 termine=false
+MATCH_CAPTURE minute=35 termine=false
+MATCH_CAPTURE minute=36 termine=false
+MATCH_CAPTURE minute=37 termine=false
+MATCH_CAPTURE minute=38 termine=false
+MATCH_CAPTURE minute=39 termine=false
+MATCH_CAPTURE minute=40 termine=false
+MATCH_CAPTURE minute=41 termine=false
+MATCH_CAPTURE minute=42 termine=false
+MATCH_CAPTURE minute=43 termine=false
+MATCH_CAPTURE minute=44 termine=false
+MATCH_CAPTURE minute=45 termine=false
+MATCH_CAPTURE minute=46 termine=false
+MATCH_CAPTURE minute=47 termine=false
+MATCH_CAPTURE minute=48 termine=false
+MATCH_CAPTURE minute=49 termine=false
+MATCH_CAPTURE minute=50 termine=false
+MATCH_CAPTURE minute=51 termine=false
+MATCH_CAPTURE minute=52 termine=false
+MATCH_CAPTURE minute=53 termine=false
+MATCH_CAPTURE minute=54 termine=false
+MATCH_CAPTURE minute=55 termine=false
+MATCH_CAPTURE minute=56 termine=false
+MATCH_CAPTURE minute=57 termine=false
+MATCH_CAPTURE minute=58 termine=false
+MATCH_CAPTURE minute=59 termine=false
+MATCH_CAPTURE minute=60 termine=false
+MATCH_CAPTURE minute=61 termine=false
+MATCH_CAPTURE minute=62 termine=false
+MATCH_CAPTURE minute=63 termine=false
+MATCH_CAPTURE minute=64 termine=false
+MATCH_CAPTURE minute=65 termine=false
+MATCH_CAPTURE minute=66 termine=false
+MATCH_CAPTURE minute=67 termine=false
+MATCH_CAPTURE minute=68 termine=false
+MATCH_CAPTURE minute=69 termine=false
+MATCH_CAPTURE minute=70 termine=false
+MATCH_CAPTURE minute=71 termine=false
+MATCH_CAPTURE minute=72 termine=false
+MATCH_CAPTURE minute=73 termine=false
+MATCH_CAPTURE minute=74 termine=false
+MATCH_CAPTURE minute=75 termine=false
+MATCH_CAPTURE minute=76 termine=false
+MATCH_CAPTURE minute=77 termine=false
+MATCH_CAPTURE minute=78 termine=false
+MATCH_CAPTURE minute=79 termine=false
+MATCH_CAPTURE minute=80 termine=false
+MATCH_CAPTURE minute=81 termine=true
+MATCH_TEMPS_FORTS_CAPTURE {"driver":"opengl3","fige":false,"images":29,"octets_par_image":61542,"secondes":478.4,"taille":[960,540],"temps_forts":14}
