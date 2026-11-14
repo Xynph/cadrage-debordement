@@ -40,6 +40,26 @@ func write_json(name_: String, value: Variant) -> void:
 	check(file != null, "Receipt file writable")
 	if file != null: file.store_string(JSON.stringify(value)); file.close()
 
+func has_text(node: Node, text: String) -> bool:
+	if node is Label and text in node.text: return true
+	for child in node.get_children():
+		if has_text(child, text): return true
+	return false
+
+func preferences() -> void:
+	check(app.coach.profile.last_error.is_empty(), "Guide starts without a persistence error")
+	if phase == "fresh":
+		var guide: Dictionary = app.coach.profile.data.duplicate(true)
+		guide.muted = true
+		guide.rate = 1.25
+		check(app.coach.profile.save_profile(guide), "Guide settings written by packaged atomic helper")
+		check(app.user_preferences.set_value("volume", 41), "Interface settings written atomically")
+		check(app.soundscape.preferences.set_value("interface_volume", 17), "Sound settings written atomically")
+	else:
+		check(app.coach.profile.data.muted and is_equal_approx(float(app.coach.profile.data.rate), 1.25), "Guide settings survive application restart")
+		check(int(app.user_preferences.data.volume) == 41, "Interface settings survive application restart")
+		check(app.soundscape.preferences.get_value("interface_volume") == 17, "Sound settings survive application restart")
+
 func capture(name_: String) -> void:
 	check(DisplayServer.get_name() != "headless", "Native macOS window")
 	await process_frame
@@ -67,6 +87,9 @@ func run() -> void:
 	root.add_child(app)
 	current_scene = app
 	if not await wait_ready(): await finish(); return
+	check(has_text(app, "Édition macOS"), "Home identifies the Mac application")
+	check(not has_text(app, "Édition Windows") and not has_text(app, "APPLICATION WINDOWS NATIVE"), "Home has no Windows-only label")
+	await preferences()
 	await capture(phase + "-startup")
 	if phase == "fresh":
 		check(not app._has_career(), "Empty first launch")
@@ -107,6 +130,16 @@ func run() -> void:
 		check(await exported_state() == original, "Saved simulation resumes identically")
 		var people: Variant = JSON.parse_string(FileAccess.get_file_as_string(output.path_join("saved-press.json")))
 		check(app.model.clubLife.press.people == people, "Pack press identities survive restart")
+	var state: Dictionary = await exported_state()
+	var exported_path := output.path_join("Carrière de réception — " + phase + ".json")
+	var old := FileAccess.open(exported_path, FileAccess.WRITE)
+	if old != null: old.store_string("previous export"); old.close()
+	check(old != null, "Existing export created for replacement probe")
+	app.export_path = exported_path
+	check(app._write_export(), "Career export replaces an existing file atomically")
+	var document: Variant = JSON.parse_string(FileAccess.get_file_as_string(exported_path))
+	check(document is Dictionary and document.get("state") == state, "Career export on disk matches the live state")
+	check(app.coach.profile.last_error.is_empty(), "Guide remains free of write errors")
 	app.pack_manager.open("career")
 	check(app.route == "Packs", "Installed pack page is reachable")
 	await capture(phase + "-packs")
