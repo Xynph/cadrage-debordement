@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),vm=requir
 const {createBridge}=require('../native/engine/worker.cjs');
 test('deux lectures réutilisent les projections VM sans partager les objets ni garder un reçu',()=>{
  const original=vm.runInContext;let count=0,b,n=0;
- vm.runInContext=function(source,...rest){if(source==='JSON.stringify(nativeSystems.project())')count++;return original.call(this,source,...rest);};
+ vm.runInContext=function(source,...rest){if(source==='JSON.stringify(nativeSystems.project())'||source==='nativeSystems.projectText(nativeCurrentSections())')count++;return original.call(this,source,...rest);};
  try{
   b=createBridge({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'oval-cache-')),seed:27,now:1700000000000});
   const call=(command,payload={})=>b.handle({id:++n,command,payload});

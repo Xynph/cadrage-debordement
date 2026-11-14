@@ -90,6 +90,8 @@ budget() {
     tests/match-rating-curve.cjs) echo 420s ;;
     # Fluidité des commandes (#711) : six carrières Monde au worker, 129 s de sous-tests + création ; 180 s dépassées en CI (PR #716).
     tests/vitesse-commandes-monde.cjs) echo 420s ;;
+    # Mémoire des projections par domaine : trois carrières Monde successives (avec vérification, sans mémoire, avec), ~165 s en local chargé.
+    tests/memo-projection-monde.cjs) echo 600s ;;
     # Stats réalistes de la fiche (4 journées Monde ; le défaut était 26 par erreur, d'où le dépassement de 900 s) : 285 s de CPU en local, ~5-7 min en CI.
     tests/stats-fiche-joueur.cjs) echo 900s ;;
     # Carrière Monde jusqu'au premier match d'un club de League One : 73-98 s en CI sur main (3x de réserve).
