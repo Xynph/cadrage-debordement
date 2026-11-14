@@ -94,11 +94,12 @@ func run() -> void:
 	root.add_child(app)
 	await wait_engine()
 	app.timer.stop()
-	# Création : la marque est « Rugby Legacy 27 », jamais « Rugby Legacy ».
+	# Création : la marque est « Rugby Legacy 27 », jamais l'ancien nom du prototype (assemblé pour ne pas déclencher le renommage automatique).
 	app._navigate("Création")
 	await settle()
 	var creation := texts(app)
-	check(not creation.to_upper().contains("RUGBY LEGACY"), "Création : aucune marque « Rugby Legacy »")
+	var ancien_nom: String = "O" + "VAL LEG" + "ACY"
+	check(not creation.to_upper().contains(ancien_nom), "Création : aucune trace de l'ancien nom")
 	var mark := app.find_child("EntryWordmark", true, false)
 	check(mark != null and texts(mark).contains("RUGBY LEGACY") and texts(mark).contains("27"), "Création : lettrage RUGBY LEGACY 27")
 	await capture("creation")
