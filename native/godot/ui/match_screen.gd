@@ -3,6 +3,7 @@ const G = preload("res://ui/carnet_skin.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const MatchProjection = preload("res://ui/immersive08/projection.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
+const Espoir = preload("res://ui/espoir_appel.gd")
 var app: Control
 var stage: Node3D
 var clock: Label
@@ -251,7 +252,7 @@ func update_frame(value:Dictionary) -> void:
 		away.text=G.club_name(next.get("away",{}))
 		score.text="— / —"
 		clock.text="AVANT-MATCH"
-		play.text="Jouer à 22" if vacant != 0 else "COUP D'ENVOI"
+		play.text="Jouer à 22" if vacant != 0 and Espoir.offer(value).is_empty() else "COUP D'ENVOI"
 		var press_due := CareerProgression.press_required(value)
 		var kickoff_today := CareerProgression.kickoff_allowed(value.meta)
 		play.disabled=next.is_empty() or press_due or not kickoff_today
@@ -359,7 +360,7 @@ func _side() -> void:
 		child.queue_free()
 	if live.is_empty():
 		side.add_child(G.section("L'AVANT-MATCH"))
-		var guidance := "Vérifiez votre feuille et vos consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi."
+		var guidance := "Feuille incomplète : appelez un espoir du centre ou jouez à 22, puis vérifiez vos consignes." if not Espoir.offer(model).is_empty() else "Vérifiez votre feuille et vos consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi."
 		side.add_child(G.wrap(guidance,14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
 		preload("res://ui/decision_views.gd").match_notes(app,side,model)
@@ -475,35 +476,12 @@ func _bench(live:Dictionary) -> void:
 		b.disabled=p.get("id") not in allowed or not live.get("paused",false) or live.get("finished",false)
 		side.add_child(b)
 
-func _confirm_reduced_bench(vacant: int) -> void:
-	if app.waiting: return
-	var fixture: Dictionary = model.next.duplicate(true)
-	app._clear_dialogs()
-	var dialog := ConfirmationDialog.new()
-	dialog.name = "MatchConfirmReducedBench"
-	dialog.title = "Coup d’envoi à 22"
-	dialog.dialog_text = "%s Vous commencez avec 15 titulaires et 7 remplaçants." % MatchProjection.reduced_bench_vacancy(vacant)
-	dialog.dialog_text += "\n\nSi la première ligne ne peut plus être complétée, les mêlées deviennent non disputées."
-	app._prepare_dialog(dialog, 520)
-	dialog.get_ok_button().text = "Jouer à 22"
-	dialog.get_cancel_button().text = "Annuler"
-	app.add_child(dialog)
-	dialog.visibility_changed.connect(func():
-		if not dialog.visible:
-			if is_instance_valid(play) and play.is_visible_in_tree(): play.grab_focus.call_deferred()
-			dialog.queue_free())
-	dialog.confirmed.connect(func():
-		if app.route == "Match" and not app.waiting and MatchProjection.reduced_bench_number(app.model) == vacant and app.model.next == fixture:
-			app._command("begin_match",{"reducedBench":true}))
-	Dialogs.show_centered(dialog,Vector2i(520,188))
-	dialog.get_cancel_button().grab_focus.call_deferred()
-
 func _act() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
 	if live.is_empty():
 		if CareerProgression.press_required(model) or not CareerProgression.kickoff_allowed(model.meta): return
-		var vacant := MatchProjection.reduced_bench_number(model)
-		if vacant != 0: _confirm_reduced_bench(vacant)
+		# Feuille incomplète : « Appeler un espoir » (défaut) ou « Jouer à 22 », au choix, avant le coup d'envoi.
+		if MatchProjection.reduced_bench_number(model) != 0 or not Espoir.offer(model).is_empty(): Espoir.ouvrir(app, true)
 		else: app._command("begin_match")
 	else:
 		app._command("pause",{"paused":not live.get("paused",false)})

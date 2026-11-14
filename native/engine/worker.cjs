@@ -666,6 +666,7 @@ function createBridge(options={}){
       if(run('nativeDailyStatus()?.matchReady===false'))throw Error('Le coup d’envoi est disponible le jour de la rencontre.');
       if(payload.reducedBench!==undefined&&typeof payload.reducedBench!=='boolean')throw Error('Confirmation de la feuille à 22 invalide.');
       if(payload.delegated!==undefined&&typeof payload.delegated!=='boolean')throw Error('Délégation du match invalide.');
+      if(payload.espoirs!==undefined&&(!Array.isArray(payload.espoirs)||payload.espoirs.length<1||payload.espoirs.length>4||payload.reducedBench===true))throw Error('Appel d’espoirs invalide : jeunes à joindre à un match à 23.');
       if(payload.composition!==undefined&&(typeof payload.composition!=='boolean'||payload.delegated!==true))throw Error('Choix de composition invalide : à joindre à un match délégué.');
       const reducedBench=payload.reducedBench===true;
       if(reducedBench&&!run('CDNationaleReducedBench?.vacancy(S)'))throw Error('La feuille à 22 n’est pas disponible pour cette rencontre.');
@@ -689,7 +690,11 @@ function createBridge(options={}){
         if(nativeDelegation){nativeDelegation.matchLineup=nativeStaffSheet;if(nativeStaffSheet)nativeDelegation.lineup=true;}
         // Match délégué : pas de causerie d'avant-match (la commande delegate qui suit confie tout le match).
         if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(true);
-        try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
+        // Feuille incomplète : « Appeler un espoir » (jeunes choisis, places vides) ou « Jouer à 22 » (le staff n'appelle alors personne).
+        const nativeEspoirs=nativeSystems.domain('espoirsMatch'),nativeAt22=nativePayload.reducedBench===true;
+        if(Array.isArray(nativePayload.espoirs))nativeEspoirs.callUp(S,nativePayload.espoirs);
+        if(nativeAt22)nativeEspoirs.setOff(true);
+        try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
        }finally{createRugbyMatch=nativeCreate;}
       }`);}finally{
        // VM timeouts skip its inner finally; restore without executing more VM code.
