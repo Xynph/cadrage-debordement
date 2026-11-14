@@ -22,7 +22,8 @@ const PLAN = LONGUE
 const BORNES = {
   // Moteur complet : courbe un peu plus raide dans les queues (±15 → 96 %), d'où une pente ajustée de 0,20 à 0,22.
   complet: { pente: LONGUE ? [0.16, 0.23] : [0.15, 0.24], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.73],
-    points: [24, 37], essais: [2.6, 4.4], ecartNul: [5, 13] },
+    // Essais réalistes (docs/essais-realistes-20261114.md) : ~6 à 8 essais et ~48 à 60 points par match selon le championnat (avant : 2,6-4,4 essais, 24-37 points).
+    points: [38, 62], essais: [4.4, 8.8], ecartNul: [5, 17] },
   rapide: { pente: LONGUE ? [0.17, 0.20] : [0.16, 0.21], domicile: LONGUE ? [0.62, 0.69] : [0.61, 0.70],
     points: [43, 57], essais: [4.8, 6.6], ecartNul: [10, 18] },
 };
