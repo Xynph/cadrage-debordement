@@ -12,6 +12,7 @@
     ],
     "weights": {
       "tests/finitions-critiques.cjs": 300,
+      "tests/feuille-espoirs.cjs": 458,
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 120,
       "tests/fiche-club-monde.cjs": 200,

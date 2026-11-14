@@ -1,5 +1,5 @@
 'use strict';
-const files=Object.freeze([]),commands=Object.freeze([]);
+const files=Object.freeze([]),commands=Object.freeze(['espoir_appeler','espoir_rendre']);
 // Espoirs (18-21 ans) en feuille de match des clubs de l'ordinateur.
 // Réel (Top 14 2025-26) : un club utilise en moyenne 7 Espoirs différents par saison, jusqu'à 11,
 // davantage pendant les fenêtres internationales (joueurs partis en sélection) et dans les
@@ -207,12 +207,174 @@ function factory(){
   const mean=rows.length?Math.round(rows.reduce((a,r)=>a+r.used.length,0)/rows.length*100)/100:null;
   return {available:true,season:s.espoirsMatch.season,averageDistinct:mean,history:s.espoirsMatch.history.slice(0,5)};
  }
- function execute(){throw Error('Espoirs en feuille : aucune commande.');}
  // Rapport de la saison en cours ou de la dernière saison pour un club.
  function summary(s){
   if(!s?.espoirsMatch)return null;
   const rows=Object.entries(s.espoirsMatch.clubs).map(([k,r])=>({club:+k,distinct:r.used.length,sheets:r.sheets,perSheet:r.sheets?r.total/r.sheets:0,windowSheets:r.window,windowPerSheet:r.window?r.windowTotal/r.window:0,lowSheets:r.low,lowPerSheet:r.low?r.lowTotal/r.low:0}));
   return rows;
+ }
+
+ // ===== Club du joueur : appel d'un Espoir pour compléter la feuille (décision de Léo du 14/11/2026) =====
+ // Quand l'effectif pro ne suffit pas à compléter la feuille de 23 (pilier de remplacement introuvable, blessés,
+ // sélections), le staff cherche d'abord le meilleur jeune du centre apte au poste : 18 ans au moins, non blessé,
+ // note au poste d'au moins 40, de préférence JIFF quand la feuille est sous l'exigence. Le jeune est prêté à
+ // l'équipe première pour ce match (même mécanique et même marqueur `espoirLoan` que les clubs de l'ordinateur :
+ // il quitte la liste du centre, `academy` passe à false), puis rendu au centre à la clôture de la journée. Aucun
+ // contrat, aucune promotion : sans jeune apte, la feuille reste incomplète (match à 22 quand la règle le permet).
+ const OWN_MIN_AGE=18,OWN_MIN_NOTE=40,OWN_MAX=4;
+ let ownOff=0;
+ const rewarded=new WeakSet();
+ const ownWorld=s=>!!s&&s===state()&&Array.isArray(s.development?.academy)&&worldOn(s)&&Array.isArray(s.lineup)&&Array.isArray(s.reserves);
+ const ownRegistered=s=>typeof CDWorldJapanQuota!=='undefined'&&CDWorldJapanQuota.activeClub&&CDWorldJapanQuota.activeClub(s,s.club);
+ const slotOk=(p,slot)=>slot<15?slotEligible(p,slot):benchEligible(p,slot-15);
+ const noteAt=(p,slot)=>typeof nativePositionAptitudes!=='undefined'?nativePositionAptitudes.rating(p,slot):(p.rating||0);
+ const slotLabel=slot=>slot<15?POS[slot]:BENCH_LABELS[slot-15];
+ const slotNumber=slot=>typeof nativePositionAptitudes!=='undefined'?nativePositionAptitudes.positionNumber(slot):slot+1;
+ // Marqueur de prêt du club du joueur : identifiant de la rencontre pour laquelle le jeune est appelé (texte compact) ;
+ // le jeune est rendu au centre dès que cette rencontre est passée. Les clubs de l'ordinateur posent simplement `true`.
+ const ownFixtureId=s=>{try{return CDWorldCareer.userFixture(s)?.id??null;}catch(e){return null;}};
+ let inReturn=false;
+ const callable=(s,p)=>!!p&&id(p.id)&&!p.espoirLoan&&p.age>=OWN_MIN_AGE&&!(p.injury>0);
+ // Places restant vides après le travail du staff sur la feuille actuelle (copie : aucun effet de bord).
+ function repairedVacancies(s){
+  const own=s.clubs[s.club],team={...own,players:own.players.map(p=>({...p}))};
+  const sheet=buildSheet(team,s.lineup,s.reserves);
+  return sheet.lineup.concat(sheet.bench).flatMap((x,i)=>x?[]:[i]);
+ }
+ function ownCandidates(s,slot,taken,wantJiff){
+  const out=[];
+  for(const p of s.development.academy){
+   if(!callable(s,p)||taken.has(p.id)||!slotOk(p,slot))continue;
+   const note=noteAt(p,slot);if(!(note>=OWN_MIN_NOTE))continue;
+   out.push({p,slot,note,jiff:isJiff(s,p),value:note*(.5+(p.condition??100)*.005)});
+  }
+  return out.sort((a,b)=>(wantJiff?Number(b.jiff)-Number(a.jiff):0)||b.value-a.value||(a.p.id<b.p.id?-1:1));
+ }
+ // Meilleur jeune par place vide (jamais le même deux fois), places rares d'abord ; la règle JIFF guide le choix.
+ function propose(s,slots){
+  const own=s.clubs[s.club],byId=new Map(own.players.map(p=>[p.id,p]));
+  const jOn=jiffOn(s,own),onSheet=s.lineup.concat(s.reserves).filter(x=>x&&byId.has(x));
+  let jiffCount=jOn?onSheet.filter(x=>isJiff(s,byId.get(x))).length:0;
+  const order=slots.slice(0,OWN_MAX).map(slot=>({slot,n:ownCandidates(s,slot,new Set(),false).length})).sort((a,b)=>a.n-b.n||a.slot-b.slot).map(x=>x.slot);
+  const taken=new Set(),picks=[],options=new Map();
+  for(const slot of order){
+   const wantJiff=jOn&&jiffCount<JIFF_TARGET,list=ownCandidates(s,slot,taken,wantJiff);
+   options.set(slot,list);
+   if(!list.length)continue;
+   taken.add(list[0].p.id);picks.push(list[0]);if(list[0].jiff)jiffCount++;
+  }
+  picks.sort((a,b)=>a.slot-b.slot);
+  return {picks,options};
+ }
+ const rowOf=(s,c)=>({id:c.p.id,name:c.p.name,age:c.p.age,pos:c.p.pos,rating:c.p.rating,note:Math.round(c.note),condition:Math.round(c.p.condition??100),jiff:c.jiff});
+ // Offre publiée dans le modèle (selection.espoirs) : places vides, jeune proposé par défaut et alternatives.
+ function offers(s){
+  if(!ownWorld(s)||s.live||s.phase==='ended'||ownRegistered(s))return null;
+  const slots=repairedVacancies(s);if(!slots.length)return null;
+  const {picks,options}=propose(s,slots);
+  const proposed=new Map(picks.map(c=>[c.slot,c.p.id]));
+  const rows=slots.slice(0,OWN_MAX).map(slot=>({slot,number:slotNumber(slot),label:slotLabel(slot),proposedId:proposed.get(slot)??null,
+   candidates:(options.get(slot)||[]).slice(0,3).map(c=>rowOf(s,c))}));
+  return picks.length?{minAge:OWN_MIN_AGE,slots:rows,available:true}:null;
+ }
+ function loanOut(s,p){
+  const pool=s.development.academy,at=pool.indexOf(p);if(at<0)throw Error('Espoir introuvable au centre.');
+  pool.splice(at,1);p.espoirLoan=ownFixtureId(s)||true;p.academy=false;p.contractEnd=s.season;s.clubs[s.club].players.push(p);
+ }
+ // Rend au centre les jeunes appelés : `which` = 'all' (tous), 'unused' (hors feuille) ou 'stale' (rencontre passée) ;
+ // jamais pendant leur match.
+ function returnOwn(s,which='unused'){
+  if(!ownWorld(s)||inReturn)return 0;
+  if(which===true)which='all';
+  const own=s.clubs[s.club],sheet=new Set(s.lineup.concat(s.reserves).filter(Boolean)),now=ownFixtureId(s);
+  const back=own.players.filter(p=>p.espoirLoan&&(which==='all'||(which==='stale'?typeof p.espoirLoan==='string'&&p.espoirLoan!==now:!sheet.has(p.id))));
+  if(!back.length)return 0;
+  if(s.live&&!s.live.finished&&s.live.pair?.includes(s.club))return 0;
+  inReturn=true;
+  try{
+   const gone=new Set(back.map(p=>p.id));
+   own.players=own.players.filter(p=>!gone.has(p.id));
+   for(const p of back){delete p.espoirLoan;p.academy=true;delete p.contractEnd;s.development.academy.push(p);}
+   let changed=false;
+   s.lineup=s.lineup.map(x=>gone.has(x)?(changed=true,null):x);s.reserves=s.reserves.map(x=>gone.has(x)?(changed=true,null):x);
+   if(changed&&!s.live&&typeof repairSheet==='function')repairSheet();
+  }finally{inReturn=false;}
+  return back.length;
+ }
+ function placeOwn(s,pairs){
+  for(const {slot,p} of pairs){
+   loanOut(s,p);
+   if(slot<15)s.lineup[slot]=p.id;else s.reserves[slot-15]=p.id;
+  }
+ }
+ // Commande : { assignments: [{ slot, playerId }] } — appelle les jeunes choisis sur les places vides de la feuille.
+ function callUp(s,assignments){
+  check(ownWorld(s)&&!s.live&&s.phase!=='ended','appel impossible pendant le match ou après la saison');
+  check(!ownRegistered(s),'ce club inscrit ses joueurs : aucun appel');
+  check(Array.isArray(assignments)&&assignments.length>=1&&assignments.length<=OWN_MAX&&assignments.every(a=>shape(a,['slot','playerId'])&&int(a.slot,0,22)&&id(a.playerId)),'places invalides');
+  returnOwn(s);
+  check(ownFixtureId(s)!==null,'aucune rencontre à préparer');
+  const vacant=new Set(repairedVacancies(s));
+  check(new Set(assignments.map(a=>a.slot)).size===assignments.length&&new Set(assignments.map(a=>a.playerId)).size===assignments.length,'doublon');
+  const pairs=assignments.map(a=>{
+   check(vacant.has(a.slot),'la place '+(a.slot+1)+' n’est pas vide');
+   const p=s.development.academy.find(x=>x.id===a.playerId);
+   check(callable(s,p)&&slotOk(p,a.slot)&&noteAt(p,a.slot)>=OWN_MIN_NOTE,'jeune indisponible ou inapte à ce poste');
+   return {slot:a.slot,p};
+  });
+  // La feuille actuelle est conservée : un titulaire déjà placé ne bouge pas ; seules les places vides se remplissent.
+  const before=s.lineup.concat(s.reserves),sheet=buildSheet(s.clubs[s.club],before.slice(0,15),before.slice(15));
+  s.lineup=sheet.lineup;s.reserves=sheet.bench;
+  placeOwn(s,pairs);
+  return {espoirAppele:pairs.map(({slot,p})=>({slot,playerId:p.id,name:p.name}))};
+ }
+ function release(s,playerId){
+  check(ownWorld(s)&&!s.live,'retour impossible pendant le match');
+  const own=s.clubs[s.club],p=own.players.find(x=>x.id===playerId&&x.espoirLoan);check(p,'jeune non appelé');
+  s.lineup=s.lineup.map(x=>x===playerId?null:x);s.reserves=s.reserves.map(x=>x===playerId?null:x);
+  return {espoirRendu:{playerId,returned:returnOwn(s)}};
+ }
+ // Composition automatique du staff : la feuille est d'abord faite avec les seuls pros (sélection habituelle, règle
+ // JIFF comprise) ; chaque place restée vide reçoit ensuite le meilleur jeune apte du centre. Le jeune ne déplace
+ // jamais un pro déjà retenu : il comble seulement le trou, comme en vrai.
+ function completeOwn(s){
+  if(!ownWorld(s)||ownOff||s.live||s.phase!=='league'||ownRegistered(s)||typeof nextMatch!=='function'||!nextMatch())return false;
+  returnOwn(s);
+  const slots=s.lineup.concat(s.reserves).flatMap((x,i)=>x?[]:[i]);if(!slots.length)return false;
+  const {picks}=propose(s,slots);if(!picks.length)return false;
+  placeOwn(s,picks.map(c=>({slot:c.slot,p:c.p})));
+  return true;
+ }
+ // Match délégué avec « Appeler un espoir » alors que la composition reste au joueur : on remplit seulement les places vides.
+ function callUpProposed(s){
+  if(!ownWorld(s)||ownOff||s.live||s.phase==='ended'||ownRegistered(s))return [];
+  returnOwn(s);
+  const slots=repairedVacancies(s);if(!slots.length)return [];
+  const {picks}=propose(s,slots);if(!picks.length)return [];
+  const before=s.lineup.concat(s.reserves),sheet=buildSheet(s.clubs[s.club],before.slice(0,15),before.slice(15));
+  s.lineup=sheet.lineup;s.reserves=sheet.bench;
+  placeOwn(s,picks.map(c=>({slot:c.slot,p:c.p})));
+  return picks.map(c=>c.p.id);
+ }
+ function setOff(on){ownOff=Math.max(0,ownOff+(on?1:-1));}
+ // Fin du match : expérience et moral du jeune appelé, puis une ligne dans le fil d'actualité.
+ function rewardOwn(s,l){
+  if(!ownWorld(s)||!l||rewarded.has(l)||!l.pair?.includes(s.club)||l.userSide===undefined||l.userSide<0)return;
+  rewarded.add(l);
+  const side=l.userSide,sh=l.sheets?.[side];if(!sh)return;
+  for(const p of s.clubs[s.club].players){
+   if(!p.espoirLoan)continue;
+   const minutes=sh.minutes?.[p.id]||0;if(!minutes)continue;
+   if(typeof growPlayer==='function'&&typeof ageGrowth==='function'){try{growPlayer(p,.1*ageGrowth(p),false);}catch(e){/* progression facultative */}}
+   if(p.satisfaction&&typeof p.satisfaction.score==='number')p.satisfaction.score=Math.min(100,p.satisfaction.score+4);
+   if(typeof news==='function')news(`${p.name}, appelé du centre de formation, a disputé ${Math.round(minutes)} minutes avec l’équipe première : de l’expérience et de la confiance.`);
+  }
+ }
+ function execute(command,payload){
+  const s=state();
+  if(command==='espoir_appeler')return callUp(s,payload?.assignments);
+  if(command==='espoir_rendre'){check(object(payload)&&id(payload.playerId),'jeune invalide');return release(s,payload.playerId);}
+  throw Error('Espoirs en feuille : commande inconnue.');
  }
  // Armé uniquement pendant la création d'un match simulé de l'ordinateur : les prêts n'existent alors
 // que le temps de la simulation et sont rendus dès la fin de ce match (applyMatchInjuries).
@@ -256,8 +418,47 @@ function factory(){
    const original=advanceSeason,wrapped=function(){const s=state();if(s&&active(s))returnLoans(s);return original.apply(this,arguments);};
    Object.assign(wrapped,original);wrapped.__espoirsMatch=true;advanceSeason=wrapped;
   }
+  if(typeof autoLineup==='function'&&!autoLineup.__espoirsOwn){
+   const original=autoLineup,wrapped=function(){
+    const s=state();
+    // Les jeunes déjà appelés pour la feuille précédente retournent au centre : la sélection repart des seuls pros.
+    if(ownWorld(s)&&!s.live)returnOwn(s,'all');
+    const result=original.apply(this,arguments);
+    try{completeOwn(s);}catch(e){returnOwn(s,'all');throw e;}
+    return result;
+   };
+   Object.assign(wrapped,original);wrapped.__espoirsOwn=true;autoLineup=wrapped;
+  }
+  if(typeof applyMatchInjuries==='function'&&!applyMatchInjuries.__espoirsOwn){
+   const original=applyMatchInjuries,wrapped=function(l){
+    const result=original.apply(this,arguments);
+    try{rewardOwn(state(),l);}catch(e){/* récompense facultative */}
+    return result;
+   };
+   Object.assign(wrapped,original);wrapped.__espoirsOwn=true;applyMatchInjuries=wrapped;
+  }
+  if(typeof finishRound==='function'&&!finishRound.__espoirsOwn){
+   const original=finishRound,wrapped=function(){
+    const s=state();
+    try{return original.apply(this,arguments);}
+    finally{if(s&&S===s&&!(s.live&&!s.live.finished))returnOwn(s,'stale');}
+   };
+   Object.assign(wrapped,original);wrapped.__espoirsOwn=true;finishRound=wrapped;
+  }
+  if(typeof advanceSeason==='function'&&!advanceSeason.__espoirsOwn){
+   const original=advanceSeason,wrapped=function(){const s=state();if(s)returnOwn(s,'all');return original.apply(this,arguments);};
+   Object.assign(wrapped,original);wrapped.__espoirsOwn=true;advanceSeason=wrapped;
+  }
+  // La clôture de la semaine (calendrier journalier) ne passe pas par finishRound : elle finit par repairSheet, hors match.
+  if(typeof repairSheet==='function'&&!repairSheet.__espoirsOwn){
+   const original=repairSheet,wrapped=function(){
+    const s=state();if(ownWorld(s)&&!s.live)returnOwn(s,'stale');
+    return original.apply(this,arguments);
+   };
+   Object.assign(wrapped,original);wrapped.__espoirsOwn=true;repairSheet=wrapped;
+  }
   return true;
  }
- return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences};
+ return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences,offers,callUp,callUpProposed,returnOwn,setOff,completeOwn};
 }
 module.exports={files,commands,factory};
