@@ -42,6 +42,8 @@ declare -A suite_limits=(
   # Préparation Node de la carrière Monde (~46 jours) puis Godot : 126 à 221 s mesurés selon le runner.
   [tests/godot-reader-history.cjs]=600
   [tests/godot-analysis-club-graphics.cjs]=600
+  # Délégation de la composition : carrière Monde hebdomadaire jouée côté Node jusqu'à l'alerte de fatigue (feuille gardée), puis le vrai jeu.
+  [tests/godot-delegue-composition.cjs]=600
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.

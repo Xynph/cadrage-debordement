@@ -50,6 +50,8 @@ module.exports=function nativeModel(){
   playerId,
   eligibleIds:own.players.filter(p=>!p.injury&&(slot<15?slotEligible(p,slot):benchEligible(p,slot-15))).map(p=>p.id)
  }))};
+ // Alerte de fatigue (Gabi) : titulaires de la feuille du prochain match sous 70 % de condition et remplaçants frais.
+ if(!errors.length&&!l&&pair&&S.phase!=='ended'&&typeof nativePositionAptitudes!=='undefined'){const advice=nativePositionAptitudes.fatigueAdvice(own,S.lineup,S.reserves,70);if(advice)selection.fatigue=advice;}
  if(errors.length&&!l&&S.phase!=='ended'){
   const team={...own,players:own.players.map(p=>({...p}))};
   const sheet=buildSheet(team,S.lineup,S.reserves);

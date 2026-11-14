@@ -13,6 +13,7 @@
     "weights": {
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 160,
+      "tests/delegue-composition-staff.cjs": 200,
       "tests/animation-pipeline-runner.cjs": 7,
       "tests/animation-pipeline.cjs": 2,
       "tests/audit-atlas-photos.cjs": 3,
@@ -162,6 +163,7 @@
       "tests/godot-match-presentation.cjs": 2,
       "tests/godot-match-silhouettes.cjs": 2,
       "tests/godot-reader-history.cjs": 141,
+      "tests/godot-delegue-composition.cjs": 150,
       "tests/godot-salary-display.cjs": 2,
       "tests/godot-staff-mentoring.cjs": 2,
       "tests/godot-world-entity-targets.cjs": 2,
