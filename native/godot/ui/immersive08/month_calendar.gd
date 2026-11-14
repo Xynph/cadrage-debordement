@@ -203,7 +203,7 @@ func _refresh() -> void:
 	if venues.away > 0: summary.append(_plural(venues.away, "déplacement", "déplacements"))
 	if venues.neutral > 0: summary.append(_plural(venues.neutral, "match sur terrain neutre", "matchs sur terrain neutre"))
 	var period := "Cette semaine" if view_mode == "week" else "Ce mois-ci"
-	var description := "Aucune rencontre programmée sur cette période." if summary.is_empty() else period + " · " + " · ".join(summary)
+	var description := _next_match_banner() if summary.is_empty() else period + " · " + " · ".join(summary)
 	_heading(month_name,description,current_fixtures.size(),current_sessions.size())
 	var availability := preload("res://ui/international_availability.gd")
 	if availability.data(app.model).get("clubManaged", false):
@@ -422,7 +422,12 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	for session: Dictionary in _day_sessions(date): lines.add_child(_session_chip(session))
 	for fixture: Dictionary in _day_fixtures(date): lines.add_child(_match_chip(fixture))
 	var absences := _absence_events(date)
-	if not absences.is_empty(): lines.add_child(_absence_chip(absences))
+	if not absences.is_empty():
+		var marker := _absence_marker(date, absences)
+		lines.add_child(marker)
+		# Détail au survol de la case entière (la bande ne capte pas la souris : un clic sélectionne le jour).
+		cell.tooltip_text = marker.tooltip_text
+		cell.accessibility_name += " · " + marker.accessibility_name
 	if view_mode == "week" and lines.get_child_count() == 1:
 		lines.add_child(C.wrap("Aucun événement publié pour ce filtre.",16,C.FAINT))
 		var next := _next_event_after(date)
@@ -439,6 +444,14 @@ func _day_key(event: InputEvent, date: String) -> void:
 	if target.is_empty(): return
 	get_viewport().set_input_as_handled()
 	_select(target)
+
+## Bandeau d'un mois ou d'une semaine sans rencontre : annonce la prochaine, jamais un simple « aucune rencontre ».
+func _next_match_banner() -> String:
+	if next_fixture.is_empty() or today.is_empty(): return "Aucune rencontre programmée sur cette période."
+	var days := maxi(0, _days_before(today, next_fixture.date))
+	var opponent := G.club_name(_opponent(next_fixture))
+	var when := "aujourd’hui" if days == 0 else "demain" if days == 1 else "dans %d jours" % days
+	return "Aucune rencontre sur cette période · prochain match %s%s." % [when, " (%s)" % opponent if not opponent.is_empty() else ""]
 
 static func _days_before(start: String, finish: String) -> int:
 	return roundi((Time.get_unix_time_from_datetime_string(finish+"T00:00:00") - Time.get_unix_time_from_datetime_string(start+"T00:00:00")) / DAY_SECONDS)
@@ -489,6 +502,45 @@ func _open_absences() -> void:
 	_remember_focus("CalendarOpenAbsences")
 	app.management_ui.international_section = "availability"
 	app._navigate("Sélections")
+
+## Signature d'une journée d'absences : qui est parti ou revient. Deux jours de suite identiques = une même période.
+func _absence_signature(date: String) -> String:
+	var parts := PackedStringArray()
+	for event: Dictionary in _absence_events(date): parts.append(str(event.kind) + "/" + str(event.player.get("id", "")))
+	return ",".join(parts)
+
+## Dans la grille : une bande discrète par jour d'absence, la légende (« 5 en sélection ») seulement au premier jour
+## de la période ou en début de semaine ; noms et dates de retour au survol. Le détail complet reste dans le panneau du jour.
+func _absence_marker(date: String, events: Array[Dictionary]) -> PanelContainer:
+	var returning := events.filter(func(event: Dictionary): return event.kind == "return")
+	var absent := events.size() - returning.size()
+	var signature := _absence_signature(date)
+	var starts := signature != _absence_signature(Agenda.shift(date, -1)) or _weekday(date) == 0
+	var panel := _tile(Color(C.BLUE, .20 if starts else .14), Color(C.BLUE, .55), 2)
+	panel.name = "CalendarAbsence_" + str(events[0].id).validate_node_name()
+	panel.set_meta("event_count", events.size())
+	panel.set_meta("period_start", starts)
+	var captions: Array[String] = []
+	if absent > 0: captions.append(_plural(absent, "en sélection", "en sélection"))
+	if not returning.is_empty(): captions.append(_plural(returning.size(), "retour", "retours"))
+	var names: Array[String] = []
+	var last := ""
+	for event: Dictionary in events:
+		var player: Dictionary = event.player
+		names.append(str(player.get("name", "Joueur")) + " · " + str(player.get("nationName", "Sélection")))
+		if event.kind == "absence" and Agenda.valid_date(player.get("through")) and str(player.through) > last: last = str(player.through)
+	var detail := " · ".join(captions) + " · " + " ; ".join(names)
+	if not last.is_empty(): detail += " · jusqu’au " + _display_date(last).to_lower()
+	panel.accessibility_name = detail
+	panel.tooltip_text = detail
+	if starts:
+		var label := C.label(" · ".join(captions), 16, C.BLUE, true, 700)
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_child(label)
+	else:
+		panel.custom_minimum_size.y = C.px(8)
+	return panel
 
 func _absence_chip(events: Array[Dictionary], expanded: bool = false) -> PanelContainer:
 	var returning := events.filter(func(event: Dictionary): return event.kind == "return")

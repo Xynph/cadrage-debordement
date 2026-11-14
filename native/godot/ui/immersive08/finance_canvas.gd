@@ -224,9 +224,18 @@ static func _chart(app: Control, card: Panel, ledger: Array) -> void:
 		D.text(card, 754, 234, "Le graphique se remplit après une journée jouée ou une décision financière.", 24, C.MUTED, 500, 1040, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(card, 134, 356, "Douze écritures au plus · n° 1 en tête du journal · cumul net de ces seules écritures", 20, C.MUTED, 500, 1228)
 
+## Formation par semaine : le centre de formation (coût réel du budget de saison, compris dans le fonctionnement du
+## moteur) plus l'investissement « formation payée » éventuel. Sans budget de saison, seul l'investissement existe.
+static func formation_weekly(finance: Dictionary) -> Variant:
+	var paid: Variant = finance.get("academyInvestment")
+	var budget: Variant = finance.get("budget")
+	if budget is Dictionary and budget.get("centreFormationHebdo") != null and paid != null:
+		return float(paid) + float(budget.centreFormationHebdo)
+	return paid
+
 static func _weekly(finance: Dictionary) -> Array:
 	var wages: Variant = finance.get("weeklyWages")
-	var academy: Variant = finance.get("academyInvestment")
+	var academy: Variant = formation_weekly(finance)
 	var maintenance: Variant = null
 	if wages != null and academy != null and finance.has("weeklyCosts"):
 		maintenance = maxf(0.0,float(finance.weeklyCosts)-float(wages)-float(academy))
@@ -349,7 +358,7 @@ static func _due(card: Panel, app: Control, finance: Dictionary) -> void:
 	if remaining <= 0:
 		D.text(card, 22, 119, "Aucun paiement hebdomadaire restant dans la projection.", 24, C.MUTED, 500, 788)
 		return
-	var rows := [["Salaires et cotisations" if finance.has("budget") else "Salaires de l’effectif","people",finance.get("weeklyWages")],["Formation à la séance","school",finance.get("academyInvestment")],["Recettes régulières hors guichet" if finance.has("budget") else "Recettes prévues au modèle","money",finance.get("weeklyIncome")]]
+	var rows := [["Salaires et cotisations" if finance.has("budget") else "Salaires de l’effectif","people",finance.get("weeklyWages")],["Centre de formation" if finance.get("budget") is Dictionary else "Formation à la séance","school",formation_weekly(finance)],["Recettes régulières hors guichet" if finance.has("budget") else "Recettes prévues au modèle","money",finance.get("weeklyIncome")]]
 	for i in rows.size():
 		var item: Array = rows[i]
 		var y := 64+i*38
@@ -556,6 +565,9 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.text(decisions, 25, 125, "Des choix pour le projet du club", 47, C.IVORY, 700, 1348)
 	D.text(decisions, 25, 173, "%d semaines restantes sur %d" % [int(finance.get("remainingWeeks",0)),int(finance.get("weeksPerSeason",0))], 28, C.GOLD, 600, 1348)
 	var cards := [["Formation","school","Investissement par séance",finance.get("academyInvestment")],["Installations","settings","Niveau indisponible",null],["Partenaires","shield","Recettes hebdomadaires du modèle",finance.get("weeklyIncome")]]
+	if finance.get("budget") is Dictionary and finance.budget.get("centreFormationHebdo") != null:
+		cards[0][2] = "Centre de formation · par semaine" + (" dont %s payés en plus" % U.amount(finance.get("academyInvestment")) if float(finance.get("academyInvestment", 0)) > 0.0 else "")
+		cards[0][3] = formation_weekly(finance)
 	if finance.get("budget") is Dictionary: cards[2] = ["Recettes régulières","shield","Partenaires, ligue, abonnements · par semaine",finance.get("weeklyIncome")]
 	var facility: Variant = finance.get("facility")
 	if facility is Dictionary:

@@ -648,10 +648,10 @@ function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  if(!budgetActif()||!budgetLisible(b)||b.saison!==S.season||!b.prevision)return null;
  const forces=budgetForces(),c=club(),masse=budgetMasse(c),semaines=wageForecastWeeks();
  const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true,formation:budgetCentre(c)})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
- const salaires=chiffresMasse().chargeHebdo,fonctionnement=-somme(e=>/fonctionnement|Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
+ const salaires=chiffresMasse().chargeHebdo,fonctionnement=-somme(e=>/fonctionnement|Centre de formation/.test(e.title)),centre=-somme(e=>/Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
  return {weeklyWages:salaires,weeklyIncome:recettes,weeklyCosts:salaires+fonctionnement+hebdoFormation+entretien,baseForecast:b.prevision.tresoreriePrevue,
   notice:'Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.',
-  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
+  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,centreFormationHebdo:centre,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
 }
 `;
 
