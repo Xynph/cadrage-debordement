@@ -268,7 +268,9 @@ func finish(info: Dictionary) -> void:
 	kicker.add_theme_color_override("font_color", IVORY)
 	title.text = str(stop.get("label", "Avance arrêtée"))
 	detail.text = str(stop.get("detail", "")) if stop.get("detail") != null else ""
-	hint.text = "Carrière sauvegardée."
+	# Conférences ordinaires tenues par Gabi pendant l'avance (réglage « envoyer l'adjoint ») : dites, sans arrêt.
+	var delegated := int(info.get("pressDelegated", 0))
+	hint.text = ("Gabi a tenu %s à votre place. " % ("la conférence de presse" if delegated == 1 else "%d conférences de presse" % delegated) if delegated > 0 else "") + "Carrière sauvegardée."
 	stop_button.visible = false
 	bar.value = 1.0
 	if not visible: show()

@@ -22,7 +22,8 @@ module.exports={
   // Réglages de présentation des packs d'identités : ni temps, ni effectif, ni finances, ni décision de club.
   // Ils restent possibles pendant un rendez-vous ; le pack n'est appliqué qu'à l'affichage (voir docs/packs-pendant-un-rendez-vous.md).
   // Suivre un club (fiche club) : simple préférence de lecture, permise pendant un rendez-vous.
-  const presentationCommands=['pack_inspect','pack_install','pack_select','club_follow'];
+  // Réglage « Conférences ordinaires : y aller / envoyer l'adjoint » (press_policy) : préférence de carrière, sans effet immédiat.
+  const presentationCommands=['pack_inspect','pack_install','pack_select','club_follow','press_policy'];
   const passive=command=>readCommands.includes(command)||presentationCommands.includes(command);
   const pending='terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre';
   const stage=p=>p.medicalV68?.stage||null;
@@ -57,7 +58,7 @@ module.exports={
     const d=e.decision;
     check(shape(d,['command','value','stage','protocol'],['command','value'])&&text(d.command,60)&&(d.value===null||text(d.value,180)),'reçu de décision');
     if(e.kind==='press'){
-     check(d.command==='press_conference'&&d.value===null&&d.stage===undefined&&d.protocol===undefined,'réponse de presse');
+     check(['press_conference','press_delegate'].includes(d.command)&&d.value===null&&d.stage===undefined&&d.protocol===undefined,'réponse de presse');
      if(live)check(same(s.pressConference?.lastOutcome?.context,e.context),'conférence non enregistrée');
     }else if(e.kind==='board'){
      check(['club_meeting_ack','club_board_priority','club_board_project','club_board_objective'].includes(d.command)&&text(d.value,180)&&d.stage===undefined&&d.protocol===undefined,'décision de direction');
@@ -126,7 +127,7 @@ module.exports={
    if(st){
     const e=st.current;
     if(e&&!e.completed&&same(e.context,context())){
-     if(e.kind==='press'&&command==='press_conference'&&same(payload.context,e.context)&&same(S.pressConference?.lastOutcome?.context,e.context))complete(e,command,null);
+     if(e.kind==='press'&&['press_conference','press_delegate'].includes(command)&&same(payload.context,e.context)&&same(S.pressConference?.lastOutcome?.context,e.context))complete(e,command,null);
      if(e.kind==='medical'&&payload.id===e.playerId&&same(payload.context,e.context)){
       const p=roster().find(p=>p.id===e.playerId);
       if(command==='medical_protocol'&&p?.medicalV68?.protocol===payload.protocol&&stage(p)==='blesse')complete(e,command,payload.protocol);
@@ -181,7 +182,7 @@ module.exports={
    if(['club_meeting_ack','club_meeting_continue'].includes(command))return true;
    if(!st.current||e.completed)check(false,pending);
    check(!S.live&&same(e.context,context()),'contexte périmé');
-   if(e.kind==='press'&&command==='press_conference'){check(same(payload.context,e.context),'contexte de presse périmé');return true;}
+   if(e.kind==='press'&&['press_conference','press_delegate'].includes(command)){check(same(payload.context,e.context),'contexte de presse périmé');return true;}
    if(e.kind==='medical'&&['medical_protocol','medical_return'].includes(command)){
     check(payload.id===e.playerId&&same(payload.context,e.context),'décision médicale pour un autre joueur ou contexte');
     const p=roster().find(p=>p.id===e.playerId);
@@ -221,7 +222,20 @@ module.exports={
    }
    return true;
   }
+  // Conférence ordinaire tenue par l'adjoint sur réglage (press.autoDelegate, après une avance) : le rendez-vous de
+  // presse de la semaine est réglé et rangé dans les reçus sans clic, puis le rendez-vous suivant est présenté.
+  function settleDelegatedPress(){
+   const st=S?.clubMeetings;if(!st||!hasClub()||S.live)return false;
+   const c=context(),done=same(S.pressConference?.lastOutcome?.context,c)&&S.pressConference.lastOutcome.delegated===true;if(!done)return false;
+   const close=e=>{complete(e,'press_delegate',null);st.receipts.push(copy(e));st.receipts=st.receipts.slice(-96);};
+   let settled=false;
+   if(st.current&&st.current.kind==='press'&&!st.current.completed&&same(st.current.context,c)){close(st.current);st.current=null;settled=true;}
+   const queued=st.queue.filter(e=>e.kind==='press'&&same(e.context,c));
+   if(queued.length){for(const e of queued)close(e);st.queue=st.queue.filter(e=>!queued.includes(e));settled=true;}
+   promote(st);
+   return settled;
+  }
   function clearTransient(){advanceFrom=null;}
-  return {project,validate,execute,observe,guard,installHooks,clearTransient};
+  return {project,validate,execute,observe,guard,installHooks,clearTransient,settleDelegatedPress};
  }
 };

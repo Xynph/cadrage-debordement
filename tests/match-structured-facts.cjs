@@ -69,7 +69,8 @@ test('Chaque fait structuré dit la même chose que le texte du journal', () => 
         assert.ok(s.actor !== null, 'faute de main nommée : ' + e.text);
       } else if (s.kind === 'penalty') {
         // Coup de sifflet : la nature de la faute (règles professionnelles révisées).
-        if (s.cause !== undefined) assert.ok(['offside', 'ruck', 'holding', 'obstruction', 'dangerous'].includes(s.cause), e.text);
+        if (s.cause !== undefined) assert.ok(['offside', 'ruck', 'holding', 'obstruction', 'dangerous', 'scrum', 'maul', 'not-release', 'sealing'].includes(s.cause), e.text);
+        assert.equal(s.cause === 'scrum', e.text.includes('faute en mêlée'), e.text);
         assert.equal(s.cause === 'holding', e.text.includes('ballon conservé au sol'), e.text);
       } else if (s.kind === 'card') {
         assert.equal(s.card !== undefined, s.incident === true, 'couleur sur le carton infligé seulement : ' + e.text);

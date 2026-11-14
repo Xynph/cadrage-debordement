@@ -20,6 +20,10 @@
 const STOPS = Object.freeze({
   match: { mandatory: true, label: 'Jour de match' },
   rendez_vous: { mandatory: true, label: 'Rendez-vous obligatoire' },
+  // Conférence de presse : avec le réglage « Conférences ordinaires : envoyer l'adjoint », Gabi tient la conférence
+  // ordinaire dans le moteur dès son ouverture (press.cjs autoDelegate, même commande que le jour avancé) : elle
+  // n'arrête donc plus l'avance, et son compte rendu (« Conférence tenue par Gabi ») est un message de routine. Les
+  // grands moments (arrivée, phase finale, bilan, derby, crise) restent un arrêt obligatoire.
   conference: { mandatory: true, label: 'Conférence de presse obligatoire' },
   conversation: { mandatory: true, label: 'Un joueur demande à vous parler' },
   calendrier: { mandatory: true, label: 'Calendrier modifié' },
@@ -41,7 +45,7 @@ const MESSAGE_MODES = ['importants', 'tous', 'aucun'];
 const INJURY_MODES = ['titulaires', 'effectif'];
 // Messages de routine : ils restent dans la Réception mais n'arrêtent pas « Continuer » en mode « importants ».
 const ROUTINE = [/^le point de la semaine/i, /^votre bureau est ouvert/i, /entra[iî]nement.*retenu/i, /^feuille pr[ée]par[ée]e/i,
-  /^r[ée]sultats? de la journ[ée]e/i, /^journ[ée]e \d+/i];
+  /^r[ée]sultats? de la journ[ée]e/i, /^journ[ée]e \d+/i, /^conf[ée]rence tenue par/i];
 
 // Lecture des signaux dans la VM : état seul, aucune écriture. Évaluée avant la boucle puis après chaque jour.
 const SIGNAL_SOURCE = `(function(){
@@ -58,7 +62,8 @@ const SIGNAL_SOURCE = `(function(){
  const name=id=>s.clubs?.[id]?.name||'';
  return {today,matchReady:!!d?.matchReady,canAdvance:d?d.canAdvance!==false:false,ended:s.phase==='ended',live:!!s.live,
   meeting:meeting&&!meeting.completed?{kind:meeting.kind,id:meeting.id}:meeting?{kind:meeting.kind,id:meeting.id,completed:true}:null,press,
-  pressIds:(s.pressInvitations?.entries||[]).map(e=>e.id),
+  pressIds:(s.pressInvitations?.entries||[]).filter(e=>e.status==='pending').map(e=>e.id),
+  pressDelegated:(()=>{const d=s.pressDelegation?.delegated||[],e=d[d.length-1];return e?e.season+':'+e.week+':'+e.club:null;})(),
   sceneActive:s.sceneInvitations?.activeId||null,
   sceneIds:(s.sceneInvitations?.invitations||[]).filter(e=>e.status==='pending').map(e=>e.id),
   serial:s.manager?.serial??0,

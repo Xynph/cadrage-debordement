@@ -268,9 +268,8 @@ func _publish_press_invitation(restore_route: bool = true, minimize_impact: bool
 	var expected: Array[Dictionary] = []
 	var context: Dictionary = app.model.clubLife.press.context.duplicate(true)
 	for index: int in conference.questions.size():
-		if immersive and index > 0:
-			if not _press_named("PressNext", scope): return false
-			await _settle()
+		# Salle de presse rapide : un clic sur une réponse affiche de lui-même la question suivante.
+		if immersive and index > 0: await _settle()
 		var question: Dictionary = conference.questions[index]
 		var chosen: Dictionary = {}
 		if minimize_impact:
