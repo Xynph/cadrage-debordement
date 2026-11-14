@@ -132,7 +132,9 @@ func _render_moment(parent: Control) -> void:
 	var words := S.G.v(0)
 	margin.add_child(words)
 	words.add_child(S.label(("GRAND MOMENT" if major else "CONFÉRENCE ORDINAIRE") + " · %d QUESTIONS" % _questions().size(), 13, S.TEXT))
-	words.add_child(S.label(str(moment.get("label", "")) if major else "Courte : environ une minute", 12, S.GOLD if major else S.MUTED))
+	var situation: Variant = conference.get("situation")
+	var tag := str(situation.get("label", "")) if situation is Dictionary else ""
+	words.add_child(S.label((str(moment.get("label", "")) if major else "Courte : environ une minute") + ((" · " + tag + " : les tons pèsent autrement") if tag != "" and not (major and tag == "Derby") else ""), 12, S.GOLD if major else S.MUTED))
 	parent.add_child(chip)
 
 func _render_conference(column: VBoxContainer) -> void:
