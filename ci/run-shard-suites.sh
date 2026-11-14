@@ -74,6 +74,8 @@ budget() {
     tests/match-notes.cjs) echo 1800s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
+    # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local (poids 190 s : contention CI ×2 estimée, pas encore mesurée).
+    tests/match-rating-curve.cjs) echo 420s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
