@@ -1,5 +1,7 @@
 # Rugby Legacy 27
 
+**© 2026 Cadrage Débordement — Tous droits réservés.** Le code et les contenus originaux de Rugby Legacy 27 ne sont pas publiés sous licence open source. Le dépôt est consultable publiquement, sous réserve des droits accordés par les conditions de GitHub (consultation et fork sur la plateforme), des exceptions légales et des licences tierces (assets CC0 et autres composants sous leur propre licence). Voir [LICENSE](LICENSE).
+
 **Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.7 et version web historique.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
