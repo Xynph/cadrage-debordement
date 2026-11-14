@@ -4,6 +4,9 @@ const G = preload("res://ui/game_skin.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
+const ContinueProgress = preload("res://ui/continue_progress.gd")
+## « Continuer » : tranche de calcul du moteur entre deux mises à jour du panneau (date qui défile, « Arrêter »).
+const CONTINUE_SLICE_MS := 700
 ## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
 const COMMAND_WAIT_REVEAL_SECONDS := 0.5
 const COMMAND_WAIT_MESSAGES := {
@@ -105,6 +108,7 @@ var management_ui: Dictionary = {}
 var accent := Color("d43e47")
 var bridge: Node
 var command_wait_overlay: CommandWaitOverlay
+var continue_progress: ContinueProgress
 var timer: Timer
 var body: VBoxContainer
 var heading: Label
@@ -205,6 +209,7 @@ func _ready() -> void:
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
 	bridge.command_failed.connect(_failed)
+	bridge.progressed.connect(_continue_progressed)
 	_trace_startup("bridge.created")
 	navigation_controller = load("res://ui/navigation_controller.gd").new()
 	add_child(navigation_controller)
@@ -239,6 +244,8 @@ func _ready() -> void:
 	command_wait_overlay = CommandWaitOverlay.new()
 	command_wait_overlay.name = "CommandWaitOverlay"
 	add_child(command_wait_overlay)
+	continue_progress = ContinueProgress.new()
+	add_child(continue_progress)
 	waiting = true
 	_trace_startup("render.begin")
 	_render()
@@ -275,7 +282,10 @@ func _receive_model(value: Dictionary) -> void:
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
 	var reception_id := ""
-	if response_ok and (received_command in ["advance_day", "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
+	if received_command == CareerProgression.CONTINUE_COMMAND and is_instance_valid(continue_progress):
+		if response_ok and value.get("meta", {}).get("advanceUntilEvent") is Dictionary: continue_progress.finish(value.meta.advanceUntilEvent)
+		else: continue_progress.dismiss()
+	if response_ok and (received_command in ["advance_day", CareerProgression.CONTINUE_COMMAND, "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
 		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick
 	# or a light decision: the queued command keeps the same panel.
@@ -364,7 +374,7 @@ func _record_timing(command: String, receive_us: int) -> void:
 ## Commandes légères : jamais de panneau, l’interface reste disponible et une
 ## décision supplémentaire attend son tour au lieu d’être refusée.
 static func shows_wait_panel(command: String) -> bool:
-	return COMMAND_WAIT_MESSAGES.has(command) or SeasonPreparation.is_advance(command)
+	return COMMAND_WAIT_MESSAGES.has(command) or SeasonPreparation.is_advance(command) or command == CareerProgression.CONTINUE_COMMAND
 
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
 	if closing: return false
@@ -391,9 +401,57 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	pending_route = target_route
 	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
 	if decision_feedback != null: decision_feedback.begin(command, payload, model)
-	_present_command_wait(command)
+	if command == CareerProgression.CONTINUE_COMMAND:
+		payload = _continue_payload(str(payload.get("fromDate", "")))
+		continue_progress.begin(_continue_context(), not user_preferences.data.reduced_motion)
+	else: _present_command_wait(command)
 	bridge.send(command, payload)
 	return waiting
+
+## « Continuer » : tranches partielles (le moteur répond au bout de CONTINUE_SLICE_MS avec la date atteinte),
+## arrêts réglés dans les préférences. Les arrêts obligatoires (match, rendez-vous, presse) ne se règlent pas.
+func _continue_payload(from_date: String) -> Dictionary:
+	return {"fromDate": from_date, "budgetMs": CONTINUE_SLICE_MS, "partial": true, "stops": CareerProgression.continue_stops(user_preferences.data)}
+
+func _continue_context() -> Dictionary:
+	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
+	var next: Variant = model.get("next")
+	var info := {}
+	if next is Dictionary and str(next.get("date", "")).length() >= 10:
+		var club_id: Variant = model.get("club", {}).get("id") if model.get("club") is Dictionary else null
+		var home: Dictionary = next.get("home", {}) if next.get("home") is Dictionary else {}
+		var away: Dictionary = next.get("away", {}) if next.get("away") is Dictionary else {}
+		var opponent: Dictionary = away if home.get("id") == club_id else home
+		info = {"date": str(next.date).substr(0, 10), "opponent": str(opponent.get("name", ""))}
+	return {"date": str(meta.get("calendarToday", "")), "accent": accent, "next": info if not info.is_empty() else null}
+
+## Tranche reçue : la date défile ; on demande la suite, ou l'arrêt si le joueur l'a demandé (les jours passés
+## sont alors écrits par le moteur avant sa réponse).
+func _continue_progressed(progress: Dictionary) -> void:
+	if not waiting or last_command != CareerProgression.CONTINUE_COMMAND or closing: return
+	continue_progress.advance_to(progress)
+	var parts := str(progress.get("today", "")).split("-")
+	if is_instance_valid(header_date) and parts.size() == 3 and int(parts[1]) in range(1, 13):
+		header_date.text = "%s %s %s" % [parts[2], ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."][int(parts[1])-1], parts[0]]
+	var today := str(progress.get("today", ""))
+	if continue_progress.stopping: bridge.send(CareerProgression.CONTINUE_COMMAND, {"fromDate": today, "stop": true})
+	else: bridge.send(CareerProgression.CONTINUE_COMMAND, _continue_payload(today))
+
+## « Jour suivant » (petit bouton du bandeau, Ctrl+J) : un seul jour, mêmes priorités que « Continuer ».
+func next_day_available() -> bool:
+	if not _has_career() or not _live().is_empty() or _press_required(): return false
+	if not Immersive.Selections.current_fixture(model).is_empty() or model.get("meta",{}).get("canAdvanceSeason",false): return false
+	var daily := _daily_progression()
+	return daily.has("command") and not bool(daily.get("disabled", false))
+
+func next_day_action() -> void:
+	if waiting: return
+	if not next_day_available():
+		primary_action()
+		return
+	var fixture: Variant = null if Immersive.Selections.nation_only(model) else model.get("next")
+	var step := CareerProgression.next_day(model.get("meta", {}), fixture)
+	if not step.is_empty(): _command(step.command, step.payload)
 
 func _present_command_wait(command: String) -> void:
 	var message: String = COMMAND_WAIT_MESSAGES.get(command, "")
@@ -448,6 +506,7 @@ func _refuse_action(message: String) -> void:
 
 func _failed(message: String) -> void:
 	command_wait_overlay.dismiss()
+	if is_instance_valid(continue_progress): continue_progress.dismiss()
 	if is_instance_valid(soundscape): soundscape.notify_error()
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
@@ -1173,6 +1232,10 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("ui_cancel") and is_instance_valid(continue_progress) and continue_progress.running:
+		continue_progress.request_stop()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel"):
