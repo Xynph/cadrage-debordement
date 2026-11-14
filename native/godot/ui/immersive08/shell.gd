@@ -395,8 +395,10 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	app.header_date = D.text(calendar,0,48,"",24,C.IVORY,600,240)
 	app._update_header_date()
 	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
-	# « Jour suivant » reste à portée (petit bouton à droite de « Continuer », Ctrl+J) les jours où l'on peut avancer.
+	# « Jour suivant » (+1 j) : le bouton principal garde sa largeur, la zone de la date cède la place.
 	var single_day: bool = not office_live and app.has_method("next_day_available") and app.next_day_available()
+	if single_day: action_left -= NEXT_DAY_WIDTH + 6
+	# « Jour suivant » reste à portée (petit bouton à droite de « Continuer », Ctrl+J) les jours où l'on peut avancer.
 	var action_right := 2278 - (NEXT_DAY_WIDTH + 6 if single_day else 0)
 	app.primary_button = D.button(panel,Rect2(action_left,17,action_right-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)

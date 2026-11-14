@@ -22,6 +22,10 @@ const BOLD_FONT = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
 const BODY_FONT = preload("res://fonts/DMSans.ttf")
 const MONTHS := ["JANV.", "FÉVR.", "MARS", "AVRIL", "MAI", "JUIN", "JUIL.", "AOÛT", "SEPT.", "OCT.", "NOV.", "DÉC."]
 const WEEKDAYS := ["DIMANCHE", "LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI"]
+## Largeurs fixes des textes à retour à la ligne (sans elles, un conteneur les écrase et la carte s'allonge).
+const CARD_WIDTH := 560.0
+const TEXT_WIDTH := 330.0
+const HINT_WIDTH := 330.0
 ## Durée d'affichage du motif d'arrêt avant l'effacement (secondes).
 const VERDICT_SECONDS := 2.4
 
@@ -87,16 +91,19 @@ func _ready() -> void:
 	sheet_box.add_child(sheet_weekday)
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.custom_minimum_size = Vector2(TEXT_WIDTH, 0)
 	text.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(text)
 	_style_label(title, "Les jours défilent…", 26, IVORY, TITLE_FONT)
 	title.name = "ContinueProgressTitle"
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.custom_minimum_size = Vector2(TEXT_WIDTH, 0)
 	title.accessibility_live = AccessibilityServer.LIVE_POLITE
 	text.add_child(title)
 	_style_label(detail, "", 15, MUTED, BODY_FONT)
 	detail.name = "ContinueProgressDetail"
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail.custom_minimum_size = Vector2(TEXT_WIDTH, 0)
 	detail.max_lines_visible = 2
 	text.add_child(detail)
 	bar.name = "ContinueProgressBar"
@@ -109,6 +116,7 @@ func _ready() -> void:
 	box.add_child(foot)
 	_style_label(hint, "Arrêt au prochain match, rendez-vous ou courrier important.", 13, FAINT, BODY_FONT)
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hint.custom_minimum_size = Vector2(HINT_WIDTH, 0)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foot.add_child(hint)
 	stop_button.name = "ContinueProgressStop"
@@ -187,15 +195,13 @@ func _apply_style() -> void:
 
 
 func _layout() -> void:
-	# Échelle douce sur la hauteur de la fenêtre (1080p = 1) ; carte d'environ 34 % de la largeur en 1080p.
-	var factor := clampf(size.y / 1080.0, 0.7, 1.6)
-	var width := minf(560.0 * factor, size.x - 32.0)
-	card.scale = Vector2.ONE
-	card.custom_minimum_size = Vector2(width, 0)
-	card.size = Vector2(width, 0)
-	card.reset_size()
-	card.size.x = width
-	card.position = Vector2((size.x - width) / 2.0, size.y * 0.5 - card.size.y / 2.0)
+	# Carte de largeur fixe, mise à l'échelle avec la hauteur de la fenêtre (1080p = 1), centrée.
+	var factor := clampf(size.y / 1080.0, 0.6, 1.6)
+	factor = minf(factor, (size.x - 32.0) / CARD_WIDTH) if size.x > 64.0 else factor
+	card.custom_minimum_size = Vector2(CARD_WIDTH, 0)
+	card.size = card.get_combined_minimum_size()
+	card.scale = Vector2(factor, factor)
+	card.position = ((size - card.size * factor) / 2.0).round()
 
 
 ## Début d'une avance. `context` : date du jour, couleur du club, prochaine rencontre ({date, opponent}).
@@ -222,6 +228,7 @@ func begin(context: Dictionary, animate: bool = true) -> void:
 	show()
 	modulate.a = 0.0
 	_layout()
+	call_deferred("_layout")
 	_tween = create_tween()
 	_tween.tween_property(self, "modulate:a", 1.0, 0.16 if animate else 0.01)
 
@@ -235,9 +242,10 @@ func advance_to(progress: Dictionary) -> void:
 	_show_date(str(progress.get("today", _from)), int(progress.get("days", 0)))
 	if _motion:
 		_kill_tween()
-		sheet_day.position.y = -6
+		# Feuille qui tourne : le nouveau jour apparaît en fondu (la position appartient au conteneur).
+		sheet_day.modulate.a = 0.25
 		_tween = create_tween()
-		_tween.tween_property(sheet_day, "position:y", 0.0, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_tween.tween_property(sheet_day, "modulate:a", 1.0, 0.22).set_ease(Tween.EASE_OUT)
 
 
 func request_stop() -> void:
@@ -265,6 +273,7 @@ func finish(info: Dictionary) -> void:
 	bar.value = 1.0
 	if not visible: show()
 	_layout()
+	call_deferred("_layout")
 	_closing.start(VERDICT_SECONDS if _motion else VERDICT_SECONDS + 0.6)
 
 
