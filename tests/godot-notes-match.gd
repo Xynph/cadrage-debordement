@@ -38,16 +38,22 @@ func executer() -> void:
 	var notes: Dictionary = app.model.get("clubLife", {}).get("matchNotes", {})
 	var joueurs: Dictionary = notes.get("joueurs", {})
 	verifier(joueurs.size() >= 15, "notes de l'effectif projetées : %d" % joueurs.size())
-	# Joueur le plus utilisé : historique le plus long.
+	# Joueur le plus utilisé : historique le plus long ; un ailier d'abord (retour de Léo du 14/11 : les
+	# stats d'un ailier titulaire doivent ressembler à de vraies stats).
+	var ailiers := {}
+	for p: Variant in app.model.get("squad", []):
+		if p is Dictionary and str(p.get("pos", "")) == "Ailier": ailiers[str(p.get("id", ""))] = true
 	var choisi := ""
 	var plus := -1
 	var meilleure := -1.0
 	for id: String in joueurs:
-		var n := int(joueurs[id].get("matchs", 0))
+		var n := int(joueurs[id].get("matchs", 0)) + (1000 if ailiers.has(id) else 0)
 		var m: float = float(joueurs[id].get("moyenne")) if joueurs[id].get("moyenne") != null else 0.0
 		if n > plus or n == plus and m > meilleure:
 			plus = n; meilleure = m; choisi = id
+	plus = int(joueurs[choisi].get("matchs", 0)) if choisi != "" else 0
 	mesures["joueur"] = choisi
+	mesures["ailier"] = ailiers.has(choisi)
 	mesures["matchs"] = plus
 	app._navigate("Effectif"); await poser(30)
 	var colonne := app.find_child("RosterColumnNote", true, false)
@@ -68,6 +74,10 @@ func executer() -> void:
 	verifier(app.find_child("PlayerMatchHistory", true, false) != null, "historique des matchs de la fiche")
 	var lignes := app.find_children("PlayerMatchRow*", "", true, false)
 	verifier(lignes.size() == plus, "une ligne par match noté : %d / %d" % [lignes.size(), plus])
+	# Stats de la feuille réaliste (match-stats.cjs) : moyennes par match et colonnes passes / franchissements.
+	verifier(app.find_child("PlayerSeasonPerMatch", true, false) != null, "moyennes par match de la saison")
+	var j: Dictionary = joueurs[choisi]
+	mesures["par_match"] = {"plaquages": float(j.get("plaquages", 0)) / maxi(1, plus), "metres": float(j.get("metres", 0)) / maxi(1, plus), "essais": float(j.get("essais", 0)) / maxi(1, plus), "passes": float(j.get("passes", 0) if j.get("passes") != null else 0) / maxi(1, plus)}
 	await capture("notes-match-fiche")
 	# Libellés demandés : « MOYENNE SAISON · N matchs » dans la fiche, « MOY. » dans l'effectif.
 	var libelle := app.find_child("FullPlayerNoteMatches", true, false)
