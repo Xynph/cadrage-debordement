@@ -1,6 +1,43 @@
 {
  "note": "Empreintes SHA-256 (fin de ligne LF) des fichiers compilés à partir des sources privées du dépôt rugby-reel-donnees. Écrites par les compilateurs quand les sources sont présentes ; vérifiées quand elles sont absentes (scripts/sources-privees.cjs).",
  "compiled": {
+  "data/world/niveaux-v2.json": {
+   "sha256": "862e21ec9508f0b36abf88fe95b097b92f1535c47285244f711e1cf8d9025b8b",
+   "sources": {
+    "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
+    "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
+    "niveaux/clubs-accession.csv": "b7cf1d9769993dd6fe9b970e093b77f4ecbb7d322034912c2b858e1d4047e4c1",
+    "niveaux/clubs-champ.csv": "301a8cf9942eb8187399b33a74da7e0f0d9ec8a1a93a73d868026678d3b8b79a",
+    "niveaux/clubs-elite.csv": "6a8dbaf9878cda660329ea1dae7217ecbddfce526be56edc16680fe1319ba4f9",
+    "niveaux/clubs-guest.csv": "9cb7631a145dd2341edbedf448b820675afeffb1d6d3d11b535c9fa6fdff794d",
+    "niveaux/clubs-jlo-d1.csv": "0630f6082c41a4b486a125c721a13efe3e8384cb0eaa950151902f0b589bcf8f",
+    "niveaux/clubs-jlo-d2.csv": "681af651602a38097cc8f5a581397a1223e2159e32792114e4cde836aa4c5f1a",
+    "niveaux/clubs-nationale.csv": "079da0c6393b872acc66e03af130c5d97a69b21b7f50d9b823e6e33089b39f1f",
+    "niveaux/clubs-prem.csv": "67d9afabc1e04d3a967bbb46031450fac9cd9aa6d49238d39b12c08d17754614",
+    "niveaux/clubs-srp.csv": "2fbb9673a4a13fe631eb3abf7e386fbc901d949fa592e008a738f01f14b10f9b",
+    "niveaux/clubs-urc.csv": "0a764a01baebbefd094e03e14b24bdfba5f8cc34f190b148653d69f3c7e6a611",
+    "niveaux/joueurs-accession.csv": "e328ba28e9220d4af8bed46ea07daa91ed00c522e6a9d73a7e1f5fe798e6ea94",
+    "niveaux/joueurs-champ.csv": "29596ed47cae1d12870e797830d0ccfe5bafb8cdb4142437852ac758ef1ab608",
+    "niveaux/joueurs-elite.csv": "d5c9d077a1e7858c7c8f341412e2a043f63205d6b466ed4bf6f044d2ce4dc708",
+    "niveaux/joueurs-guest.csv": "45094ec01676ee51ef208935a00d80fee9717f7d097b168e0e224a6b5de0c0f7",
+    "niveaux/joueurs-jlo-d1.csv": "3b921884bf2443249a9ccf8e14f530334da33d0c342933bf2fca3e8df062bba6",
+    "niveaux/joueurs-jlo-d2.csv": "7f35473c2e4b331eaec0804a3bfe70576a37c0bc50adb7e7d7c5267aa141b1c1",
+    "niveaux/joueurs-nationale.csv": "98ff823e56e469db3e4d39706a04113cacdf1bab53eb19154521303fd3a93e0c",
+    "niveaux/joueurs-prem.csv": "7658fc4ef23e5f5d31b717969b81d21919660559f4675efc5e0149c303f63e11",
+    "niveaux/joueurs-srp.csv": "d72a511b3c53a10f74a7f8feac215ca12a0f708096f429463ffc537b978e8e37",
+    "niveaux/joueurs-urc.csv": "4470192975aec85a50549baf386f8dfd5f1d6df8893253606f4b92341d4d36a8",
+    "niveaux/niveaux-accession.csv": "ebf55fa460d4f90e485a78b4a5bd8dd15c0ee382de177170765424045674a0e2",
+    "niveaux/niveaux-champ.csv": "f62eb982fa7eb2bf3d29726edaaa696d5f8324effd4417dbdb1cd90ea1175568",
+    "niveaux/niveaux-elite.csv": "49b515e106fe58894741a7f46dacb875ad4c7a44f00fb433211db4fe7c36da53",
+    "niveaux/niveaux-guest.csv": "7f6e210c044ed8488116aae0f41030c80623bc50b0cc8a7d5d62af36fc4f0504",
+    "niveaux/niveaux-jlo-d1.csv": "9a6003ea565f0102d154c30d7664fd034c1b0c3df8a12e7dc05cfcf6a55da259",
+    "niveaux/niveaux-jlo-d2.csv": "7d329e7dea40491e37bea3183fda2bdd30fc61a66dd197757451a292d76dc9a7",
+    "niveaux/niveaux-nationale.csv": "dbdef698fa121d29df570fd4e4211b82537b9c9a323bb6526b01da4d7c2025e7",
+    "niveaux/niveaux-prem.csv": "df0625738ef54a24df1e072979a7d692e0b86b48dc537f8a514425bc5e92e094",
+    "niveaux/niveaux-srp.csv": "c8558a9297781f2c6744154803b6ffdfeb7e900f79f53e62552975035fcdb67f",
+    "niveaux/niveaux-urc.csv": "4d29df202479619dd52217db05bc035260eee7a619907489c40070ad483b0728"
+   }
+  },
   "dist/rugby-roster-foundation.js": {
    "sha256": "dd4bfef723ac6ff1496721cd0df5543c8553d407231e1b2eaff3f3e3f2f29e3e",
    "sources": {

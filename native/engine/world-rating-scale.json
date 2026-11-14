@@ -1,0 +1,43 @@
+{
+ "kind": "gameplay-design-scale-not-observed-statistics",
+ "version": 2,
+ "note": "Barème senior V2 des nouvelles carrières Monde (étude notes-clubs-championnats du 14/11/2026, section Proposition). Note = ancre individuelle (classe d'international, sinon statut en club dans son championnat) + étage du club pour les non-internationaux + écart propre au joueur, mesuré dans son championnat et à son poste. Potentiel de départ = note + marge selon l'âge, modulée par la classe, le statut et le U20.",
+ "classes": { "S": [90, 94], "A": [86, 89], "B": [82, 85], "C": [79, 82] },
+ "leagues": {
+  "elite": { "titulaire": 79, "rotation": 76, "reserviste": 72 },
+  "prem": { "titulaire": 77, "rotation": 74, "reserviste": 71 },
+  "urc": { "titulaire": 76, "rotation": 73, "reserviste": 70 },
+  "srp": { "titulaire": 76, "rotation": 73, "reserviste": 70 },
+  "jlo-d1": { "titulaire": 74, "rotation": 71, "reserviste": 68 },
+  "accession": { "titulaire": 73, "rotation": 70, "reserviste": 67 },
+  "jlo-d2": { "titulaire": 69, "rotation": 66, "reserviste": 64 },
+  "nationale": { "titulaire": 66, "rotation": 63, "reserviste": 61 },
+  "champ": { "titulaire": 65, "rotation": 62, "reserviste": 60 },
+  "guest": { "titulaire": 72, "rotation": 69, "reserviste": 67 }
+ },
+ "etages": { "cador": 2, "haut": 1, "milieu": 0, "bas": -1, "releguable": -2 },
+ "residual": { "known": 1.5, "unknown": 2.2, "limit": 5, "classCenter": 0.4, "classSpread": 0.2, "youngInternational": 2 },
+ "age": { "seniorFrom": 23, "youngPerYear": 1.5, "veteranFrom": 33, "veteranPerYear": 1 },
+ "potential": {
+  "margins": [[19, 10], [22, 7], [25, 4], [28, 2], [30, 1], [99, 0]],
+  "u20": 4,
+  "youngStarter": 3,
+  "youngRotation": 1,
+  "youngInternational": 3,
+  "eliteYoung": 2,
+  "lowerTierYoung": -2,
+  "lowerTiers": ["nationale", "champ", "jlo-d2"],
+  "spread": 2,
+  "per90Generation": 5,
+  "belowGeneration": 87,
+  "eliteLeagues": ["elite", "prem", "urc", "srp", "jlo-d1"],
+  "outsideEliteCeiling": 87
+ },
+ "academy": {
+  "bands": [[-10, -4], [-3, 2], [3, 7], [8, 12]],
+  "promising": 35,
+  "strongBase": 6,
+  "elitePercent": 0.5,
+  "elitePerWeight": 0.34
+ }
+}

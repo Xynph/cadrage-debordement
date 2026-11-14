@@ -195,6 +195,8 @@ def build(args):
         raise ValueError("Le runtime Node a changé depuis la vérification des notices")
     engine = app / "engine"
     shutil.copytree(ROOT / "native/engine", engine)
+    # Niveau réel compilé, sans nom (barème senior V2 des nouvelles carrières Monde) : lu à côté du moteur.
+    shutil.copy2(ROOT / "data/world/niveaux-v2.json", engine / "world-niveaux-v2.json")
     # Only loaded core and anonymised common data; no real names/photos or web UI.
     core = engine / "core"
     core.mkdir()

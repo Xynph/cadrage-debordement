@@ -142,8 +142,11 @@ function apply(state, forces, economie = null, limites = null) {
   if (!(state.season === 1 && state.round === 0 && !state.live)) throw Error('Salaires de départ : réservé à la création.');
   const { parClub, division } = brut(state, forces, economie), calage = {};
   if (economie) {
+    // Barème senior V2 (nouvelles carrières Monde) : les notes de la deuxième division française montent
+    // d'environ deux points ; sa masse est donc recalée comme les autres. La première division reste la référence.
+    const references = state.seniorCalibrationVersion === 2 ? economie.REFERENCES.filter(nom => nom === 'elite') : economie.REFERENCES;
     for (const [nom, regle] of Object.entries(economie.CHAMPIONNATS)) {
-      if (economie.REFERENCES.includes(nom)) continue;
+      if (references.includes(nom)) continue;
       const masses = [...parClub].filter(([id]) => division.get(id) === nom).map(([, salaires]) => masseDe(salaires));
       if (masses.length) calage[nom] = Math.round(regle.masse / moyenne(masses) * 1000) / 1000;
     }

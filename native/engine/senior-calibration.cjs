@@ -1,8 +1,13 @@
 'use strict';
 
 // Serialized into the world VM and called once on the initial senior rosters.
-module.exports = function createSeniorCalibration(projectSkills, roleNote, roleWeights, rolePriors) {
+// V1 (France et carrières déjà créées) : dose qui relève les notes selon leur niveau.
+// V2 (nouvelles carrières Monde, scale + levels fournis) : note réaliste selon le niveau réel de chaque
+// joueur, de son club et de son championnat (native/engine/world-rating-scale.json, data/world/niveaux-v2.json).
+module.exports = function createSeniorCalibration(projectSkills, roleNote, roleWeights, rolePriors, scale = null, levels = null) {
   const version = 1;
+  const worldVersion = scale && levels ? 2 : 1;
+  const versions = worldVersion === 2 ? [1, 2] : [1];
   const openerId = 'lnr:2436';
   const openerProfile = {
     passing: 95, receiving: 91, offload: 77, ballHandling: 94,
@@ -152,11 +157,239 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     else player.dev.potential = Math.min(Math.max(97, player.dev.potential), player.dev.potential + growth);
   }
 
-  function apply(players, sources = null) {
-    for (const player of players) {
-      if (player.age >= 23 && player.attributesV2 && (!sources || sources.has(player.id))) calibrate(player);
+  // ---- Barème V2 -------------------------------------------------------------------------
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+  const hashText = text => {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  };
+  const NONE = Object.freeze(['aucune', 'inconnu', 0, 'basse']);
+  const levelOf = id => levels?.joueurs?.[id] || NONE;
+  const etageOf = clubId => levels?.clubs?.[clubId] ?? 'milieu';
+  const leagueScale = leagueId => scale.leagues[leagueId] || scale.leagues.guest;
+  const statsByRegistry = new WeakMap();
+  const band = age => (age < scale.age.seniorFrom ? 'jeune' : 'senior');
+
+  // Moyenne et dispersion des notes de départ par championnat, poste (famille) et tranche d'âge :
+  // l'écart propre au joueur se mesure à ce niveau, ce qui neutralise le biais des postes des estimations.
+  function leagueStats(registry) {
+    if (statsByRegistry.has(registry)) return statsByRegistry.get(registry);
+    const groups = new Map();
+    const push = (key, value) => (groups.get(key) || groups.set(key, []).get(key)).push(value);
+    for (const club of registry.clubs) {
+      for (const p of club.players) {
+        if (!Number.isFinite(p.rating)) continue;
+        push(club.leagueId + '|' + p.fam + '|' + band(p.age), p.rating);
+        push(club.leagueId + '|' + p.fam, p.rating);
+      }
+    }
+    const stats = new Map();
+    for (const [key, list] of groups) {
+      const mean = list.reduce((sum, x) => sum + x, 0) / list.length;
+      const sd = Math.sqrt(list.reduce((sum, x) => sum + (x - mean) ** 2, 0) / list.length);
+      stats.set(key, { mean, sd: Math.max(1.5, sd), n: list.length });
+    }
+    statsByRegistry.set(registry, stats);
+    return stats;
+  }
+
+  function deviation(player, rating, context) {
+    const stats = leagueStats(context.registry);
+    const fine = stats.get(context.leagueId + '|' + player.fam + '|' + band(player.age));
+    const group = fine && fine.n >= 6 ? fine : stats.get(context.leagueId + '|' + player.fam);
+    return group ? (rating - group.mean) / group.sd : 0;
+  }
+
+  // Note cible : classe d'international (quel que soit le club), sinon ancre du statut dans le
+  // championnat, étage du club et écart propre au joueur. Statut inconnu : valeur neutre (rotation).
+  function targetRating(player, context) {
+    const [classe, statut] = levelOf(player.id);
+    const L = leagueScale(context.leagueId), R = scale.residual, A = scale.age;
+    const z = deviation(player, player.rating, context);
+    const known = statut !== 'inconnu';
+    const base = statut === 'titulaire' ? L.titulaire : statut === 'rotation' || !known ? L.rotation : L.reserviste;
+    // Statut inconnu : valeur neutre (rotation) du championnat et de l'étage ; l'écart propre au joueur se lit
+    // alors dans son effectif (même poste), là où l'estimation de départ range déjà titulaires et doublures.
+    // Un jeune se compare aux jeunes de son championnat (même poste) ; l'âge est compté à part, une fois.
+    const young = player.age < A.seniorFrom;
+    const spread = known || young ? z * (known ? R.known : R.unknown) : (context.club?.get(player.fam)?.(player.rating) ?? z) * R.unknown;
+    let value = base + (scale.etages[etageOf(context.clubId)] ?? 0) + clamp(spread, -R.limit, R.limit);
+    if (young) value -= (A.seniorFrom - player.age) * A.youngPerYear * (statut === 'titulaire' ? 0.5 : 1);
+    // L'écart dans l'effectif d'un senior au statut inconnu contient déjà son âge.
+    if (known && player.age >= A.veteranFrom) value -= (player.age - A.veteranFrom + 1) * A.veteranPerYear;
+    const range = scale.classes[classe];
+    if (range) {
+      let international = range[0] + clamp(R.classCenter + z * R.classSpread, 0, 1) * (range[1] - range[0]);
+      if (player.age < A.seniorFrom) international -= (A.seniorFrom - player.age) * R.youngInternational;
+      if (player.age > A.veteranFrom) international -= player.age - A.veteranFrom;
+      value = Math.max(value, international);
+    }
+    return Math.round(clamp(value, 40, 95));
+  }
+
+  // La projection des attributs en compétences est linéaire et ne dépend que du poste : ses
+  // coefficients sont relevés une fois par poste, pour chercher vite le facteur des attributs.
+  const projections = new Map();
+  function linearProjection(position, axes) {
+    const key = position + '|' + axes.join(',');
+    if (!projections.has(key)) {
+      const zero = Object.fromEntries(axes.map(axis => [axis, 0]));
+      const origin = projectSkills({ attributesV2: zero, gameplayPosition: position });
+      const columns = axes.map(axis => projectSkills({ attributesV2: { ...zero, [axis]: 100 }, gameplayPosition: position }));
+      const weights = Object.fromEntries(Object.keys(origin).map(skill => [skill, axes.map((axis, i) => (columns[i][skill] - origin[skill]) / 100)]));
+      projections.set(key, { origin, weights });
+    }
+    return projections.get(key);
+  }
+
+  // Les 36 attributs suivent la nouvelle note : même facteur pour tous au-dessus du plancher (20),
+  // ce qui garde les proportions du profil au poste ; les compétences sont reprojetées.
+  function retarget(player, target) {
+    const position = player.gameplayPosition || player.pos;
+    const starting = player.attributesV2, axes = Object.keys(starting), values = axes.map(axis => starting[axis]);
+    const baseline = projectSkills({ attributesV2: starting, gameplayPosition: position });
+    const growth = target - player.rating, shift = player.rating - player.skillBase;
+    // Note au poste (roleNote) pour un facteur donné, calculée sur les seules compétences du poste.
+    const { origin, weights } = linearProjection(position, axes);
+    const role = Object.entries(roleWeights[player.fam] || roleWeights[7]);
+    const total = role.reduce((sum, [, w]) => sum + w, 0);
+    const scaled = new Array(values.length);
+    const noteAt = factor => {
+      for (let i = 0; i < values.length; i++) scaled[i] = clamp(Math.round(20 + (values[i] - 20) * factor), 20, 97);
+      let sum = 0;
+      for (const [skill, w] of role) {
+        const row = weights[skill];
+        let projected = origin[skill];
+        for (let i = 0; i < scaled.length; i++) projected += row[i] * scaled[i];
+        const value = round(clamp(player.skills[skill] + round(projected) - baseline[skill], 15, 99));
+        sum += w * clamp(value + shift, 15, 99);
+      }
+      return Math.round(sum / total);
+    };
+    let factor = 1;
+    const initial = noteAt(1);
+    if (initial !== target) {
+      // Encadrement du facteur, puis dichotomie courte : la note au poste est entière.
+      let low = [1, initial], high = low;
+      const step = initial < target ? 0.25 : -0.2;
+      for (let f = 1 + step; ; f += step) {
+        const bounded = clamp(f, 0.3, 2.5), next = [bounded, noteAt(bounded)];
+        if (step > 0) { if (next[1] >= target || bounded === 2.5) { high = next; break; } low = next; }
+        else { if (next[1] < target || bounded === 0.3) { low = next; break; } high = next; }
+      }
+      for (let i = 0; i < 8 && high[0] - low[0] > 0.002 && high[1] !== target; i++) {
+        const middle = [(low[0] + high[0]) / 2, 0];
+        middle[1] = noteAt(middle[0]);
+        if (middle[1] >= target) high = middle; else low = middle;
+      }
+      factor = (Math.abs(low[1] - target) < Math.abs(high[1] - target) ? low : high)[0];
+    }
+    if (factor !== 1) {
+      const attributesV2 = Object.fromEntries(axes.map((axis, i) => [axis, clamp(Math.round(20 + (values[i] - 20) * factor), 20, 97)]));
+      const projected = projectSkills({ attributesV2, gameplayPosition: position });
+      player.attributesV2 = attributesV2;
+      player.skills = Object.fromEntries(Object.entries(projected).map(([key, value]) =>
+        [key, round(clamp(player.skills[key] + value - baseline[key], 15, 99))]));
+    }
+    player.skillBase += growth;
+    player.rating = target;
+    player.dev.seasonStart = target;
+  }
+
+  // Potentiel de départ = note + marge selon l'âge, modulée par la classe, le statut, le U20 et le championnat.
+  function startingPotential(player, context) {
+    const P = scale.potential, age = player.age;
+    const [classe, statut, u20] = levelOf(player.id);
+    const international = classe !== 'aucune';
+    let margin = P.margins.find(([upTo]) => age <= upTo)[1];
+    if (age < 23) {
+      if (u20) margin += P.u20;
+      if (statut === 'titulaire') margin += P.youngStarter;
+      else if (statut === 'rotation') margin += P.youngRotation;
+      if (international) margin += P.youngInternational;
+      if (P.lowerTiers.includes(context.leagueId) && !u20 && !international) margin += P.lowerTierYoung;
+    } else if (age <= 25 && (classe === 'S' || classe === 'A')) margin += P.eliteYoung;
+    if (margin > 0) margin += hashText(player.id + ':potentiel-v2') % (2 * P.spread + 1) - P.spread;
+    // Hors des championnats d'élite, un potentiel de 88 et plus est réservé aux internationaux U20.
+    const ceiling = P.eliteLeagues.includes(context.leagueId) || u20 ? 99 : P.outsideEliteCeiling;
+    return clamp(Math.min(player.rating + Math.max(0, margin), ceiling), player.rating, 99);
+  }
+
+  function calibrateV2(player, context) {
+    if (reviewed[player.id] || elite[player.id]) calibrate(player);
+    else retarget(player, targetRating(player, context));
+    player.dev.potential = startingPotential(player, context);
+  }
+
+  // Peu de potentiels de 90 et plus par génération : au plus N par année de naissance chez les 25 ans et moins.
+  function settle(players) {
+    if (worldVersion !== 2) return;
+    const byAge = new Map();
+    for (const p of players) {
+      if (!p.dev || p.age > 25 || p.dev.potential < 90 || p.rating >= 90) continue;
+      (byAge.get(p.age) || byAge.set(p.age, []).get(p.age)).push(p);
+    }
+    for (const list of byAge.values()) {
+      list.sort((a, b) => b.dev.potential - a.dev.potential || b.rating - a.rating || compareId(a.id, b.id));
+      // Les suivants restent de très bons espoirs, assez loin de 90 pour que la variation de carrière l'atteigne rarement.
+      for (const p of list.slice(scale.potential.per90Generation)) p.dev.potential = Math.max(p.rating, scale.potential.belowGeneration);
     }
   }
 
-  return Object.freeze({ version, alignStartingRole, apply });
+  // Potentiel d'un jeune du centre de formation (politique 3) sur l'échelle du championnat de son club.
+  function youthPotential(s, club, player, weight = 0) {
+    if (worldVersion !== 2 || !s?.worldMode?.leagues || !club) return null;
+    const leagueId = Object.entries(s.worldMode.leagues).find(([, l]) => l.members?.includes(club.id))?.[0] ?? 'guest';
+    const Y = scale.academy, anchor = leagueScale(leagueId).titulaire + (scale.etages[etageOf(club.id)] ?? 0);
+    const draw = hashText(player.id + ':formation-v2'), percentile = (draw % 10000) / 100, variation = draw >>> 14;
+    const elitePercent = Y.elitePercent + Y.elitePerWeight * weight, strong = Y.strongBase + weight;
+    const index = percentile >= 100 - elitePercent ? 3 : percentile >= 100 - elitePercent - strong ? 2 : percentile >= 100 - elitePercent - strong - Y.promising ? 1 : 0;
+    const [low, high] = Y.bands[index];
+    const target = anchor + low + variation % (high - low + 1);
+    return Math.min(99, player.rating + Math.max(4, target - roleNote(player)));
+  }
+
+  // Écart de chaque joueur à son effectif, par famille de poste (notes de départ, avant barème).
+  function clubDeviation(players) {
+    const groups = new Map();
+    for (const p of players) if (Number.isFinite(p.rating) && p.age >= scale.age.seniorFrom) (groups.get(p.fam) || groups.set(p.fam, []).get(p.fam)).push(p.rating);
+    return new Map([...groups].map(([fam, list]) => {
+      const mean = list.reduce((sum, x) => sum + x, 0) / list.length;
+      const sd = Math.max(2, Math.sqrt(list.reduce((sum, x) => sum + (x - mean) ** 2, 0) / list.length));
+      return [fam, rating => (rating - mean) / sd];
+    }));
+  }
+
+  // Joueurs de complément d'effectif (« depth- », générés sans attributs détaillés) : statut inconnu, juste
+  // sous la valeur neutre du championnat et de l'étage ; leurs compétences suivent la note, leurs 36 qualités compactes aussi.
+  function calibrateDepth(player, context) {
+    const L = leagueScale(context.leagueId);
+    const value = L.rotation + (scale.etages[etageOf(context.clubId)] ?? 0) - 1;
+    const target = Math.round(clamp(value, 40, 95));
+    if (typeof player.nativeAttributesV1 === 'string' && /^\d{72}$/.test(player.nativeAttributesV1) && player.rating > 20) {
+      const factor = (target - 20) / (player.rating - 20);
+      player.nativeAttributesV1 = Array.from({ length: 36 }, (_, i) =>
+        String(clamp(Math.round(20 + (Number(player.nativeAttributesV1.slice(2 * i, 2 * i + 2)) - 20) * factor), 20, 97)).padStart(2, '0')).join('');
+    }
+    player.rating = target;
+    if (player.dev) {
+      player.dev.seasonStart = target;
+      player.dev.potential = startingPotential(player, context);
+    }
+  }
+
+  function apply(players, sources = null, context = null) {
+    if (worldVersion === 2 && context) {
+      context = { ...context, club: clubDeviation(players.filter(p => !sources || sources.has(p.id))) };
+      for (const player of players) if (/^depth-/.test(player.id) && !player.attributesV2 && Number.isFinite(player.rating)) calibrateDepth(player, context);
+    }
+    for (const player of players) {
+      if (!player.attributesV2 || sources && !sources.has(player.id)) continue;
+      if (worldVersion === 2 && context) calibrateV2(player, context);
+      else if (player.age >= 23) calibrate(player);
+    }
+  }
+
+  return Object.freeze({ version, worldVersion, versions, alignStartingRole, apply, settle, youthPotential, targetRating });
 };

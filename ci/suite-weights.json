@@ -134,7 +134,8 @@
       "tests/world-venue-media.cjs": 97,
       "tests/world-wage-forecast.cjs": 20,
       "tests/world-worker-atomic.cjs": 40,
-      "tests/youth-matches-worker.cjs": 200
+      "tests/youth-matches-worker.cjs": 200,
+      "tests/world-rating-scale.cjs": 45
     }
   },
   "godot": {
@@ -224,7 +225,8 @@
       "tests/world-catalogue-dedup.cjs": 3264,
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048,
-      "tests/youth-matches.cjs": 1880
+      "tests/youth-matches.cjs": 1880,
+      "tests/world-rating-scale.cjs": 1900
     }
   }
 }
