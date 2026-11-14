@@ -114,9 +114,11 @@ return l}
 // soit +3 → 63 %, +6 → 75 %, +10 → 86 %, −10 → 14 % sur terrain neutre et 65 % à domicile à niveau égal.
 // `complet` règle le moteur complet (avantage ajouté à teamEdge, par point d'écart et à domicile),
 // `rapide` le résultat rapide (écart de puissance divisé par `diviseur`, bonus du terrain en points).
+// Terrain du moteur complet recalé de ±0,045 à ±0,036 sur les effectifs du barème senior V2 (#716) :
+// 65-67 % à domicile à niveau égal, comme le résultat rapide (docs/courbe-niveau-moteur-20261114.md).
 // Avant le 14/11/2026 : pas de terme de niveau, terrain ±0,018 (56 %), résultat rapide (Δ+2,5)/8.
 // Coefficients de jeu calés par mesure, pas des probabilités réelles.
-const MATCH_LEVEL_CURVE=Object.freeze({version:1,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.045}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3})});
+const MATCH_LEVEL_CURVE=Object.freeze({version:1,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.036}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3})});
 function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
 function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side)))}
 function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
