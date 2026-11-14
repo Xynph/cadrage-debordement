@@ -289,6 +289,7 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	var titres := int(notes.get("hommeDuMatch",0))
 	var xv := int(notes.get("selections",0))
 	D.text(card,600,182,"FORME · 5 DERNIERS" + (" · %d× HOMME DU MATCH" % titres if titres>0 else "") + (" · %d× XV DE LA JOURNÉE" % xv if xv>0 else ""),22,C.GOLD if titres>0 or xv>0 else C.MUTED,600,300)
+	_moyennes(card,notes)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
 	var note := _note(app,player)
@@ -296,13 +297,14 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	D.text(card,946,151,preview,19,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true).name="FullPlayerNotePreview"
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
 
-## Historique des matchs de la saison (note enregistrée, minutes, essais, plaquages, mètres),
-## puis le résumé des saisons passées.
+## Historique des matchs de la saison (note enregistrée, minutes, essais, plaquages, mètres, passes,
+## franchissements : feuille réaliste du match, la même que l'écran de match), moyennes par match de la
+## saison, puis le résumé des saisons passées. « — » : match d'une ancienne sauvegarde (champ absent).
 static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 	var notes := NotesMatch.joueur(app.model,str(player.id))
 	var lignes: Array = notes.get("historique",[]) if notes.get("historique") is Array else []
 	var saisons: Array = notes.get("saisons",[]) if notes.get("saisons") is Array else []
-	var colonnes := [["SEM.",24,70],["ADVERSAIRE",104,420],["COMPÉTITION",534,300],["MIN.",844,80],["NOTE",934,90],["ESSAIS",1034,90],["PLAQ.",1134,90],["MÈTRES",1234,110],["",1354,280]]
+	var colonnes := [["SEM.",24,70],["ADVERSAIRE",104,360],["COMPÉTITION",474,280],["MIN.",764,70],["NOTE",844,90],["ESSAIS",944,80],["PLAQ.",1034,80],["MÈTRES",1124,100],["PASSES",1234,90],["FRANCH.",1334,100],["",1444,200]]
 	for colonne: Array in colonnes:
 		D.text(card,colonne[1],98,colonne[0],18,C.MUTED,600,colonne[2])
 	D.line(card,Vector2(20,110),Vector2(1650,110))
@@ -321,14 +323,16 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		liste.add_child(rang)
 		if i%2==0: D.rect(rang,Rect2(0,0,1630,36),Color("141d1f"),3)
 		D.text(rang,4,26,"S"+G.n(int(ligne.get("semaine",0))+1),20,C.MUTED,500,70)
-		D.text(rang,84,26,str(ligne.get("adversaire","")),21,C.IVORY,600,420)
-		D.text(rang,514,26,str(ligne.get("competition","")),19,C.MUTED,500,300)
-		D.text(rang,824,26,G.n(ligne.get("minutes",0))+"′",20,C.IVORY,500,80)
-		NotesMatch.pastille(rang,Rect2(910,3,72,30),float(ligne.get("note",6.5)),0.62)
-		D.text(rang,1014,26,G.n(ligne.get("essais",0)),20,C.IVORY if int(ligne.get("essais",0))>0 else C.MUTED,500,90)
-		D.text(rang,1114,26,G.n(ligne.get("plaquages",0)),20,C.MUTED,500,90)
-		D.text(rang,1214,26,G.n(ligne.get("metres",0))+" m",20,C.MUTED,500,110)
-		if ligne.get("hommeDuMatch",false): D.chip(rang,Rect2(1334,4,200,28),"Homme du match",C.GOLD)
+		D.text(rang,84,26,str(ligne.get("adversaire","")),21,C.IVORY,600,360)
+		D.text(rang,454,26,str(ligne.get("competition","")),19,C.MUTED,500,280)
+		D.text(rang,744,26,G.n(ligne.get("minutes",0))+"′",20,C.IVORY,500,70)
+		NotesMatch.pastille(rang,Rect2(820,3,72,30),float(ligne.get("note",6.5)),0.62)
+		D.text(rang,924,26,G.n(ligne.get("essais",0)),20,C.IVORY if int(ligne.get("essais",0))>0 else C.MUTED,500,80)
+		D.text(rang,1014,26,G.n(ligne.get("plaquages",0)),20,C.MUTED,500,80)
+		D.text(rang,1104,26,G.n(ligne.get("metres",0))+" m",20,C.MUTED,500,100)
+		D.text(rang,1214,26,_stat(ligne.get("passes")),20,C.MUTED,500,90)
+		D.text(rang,1314,26,_stat(ligne.get("franchissements")),20,C.IVORY if int(ligne.get("franchissements",0) if ligne.get("franchissements")!=null else 0)>0 else C.MUTED,500,100)
+		if ligne.get("hommeDuMatch",false): D.chip(rang,Rect2(1424,4,190,28),"Homme du match",C.GOLD)
 	# Repères de carrière : équipes de la saison (XV type du championnat, saison régulière).
 	for d: Variant in distinctions:
 		if not d is Dictionary: continue
@@ -342,7 +346,22 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		var rang := Control.new()
 		rang.custom_minimum_size = Vector2(C.px(1630),C.px(34))
 		liste.add_child(rang)
-		D.text(rang,4,25,"Saison %s · %s · %d matchs · moyenne %s · %d essai%s%s" % [G.season_label(saison.get("saison",0)),str(saison.get("club","")),int(saison.get("matchs",0)),NotesMatch.texte_note(saison.get("moyenne")),int(saison.get("essais",0)),"s" if int(saison.get("essais",0))>1 else "",(" · %d× homme du match" % int(saison.hommeDuMatch)) if int(saison.get("hommeDuMatch",0))>0 else ""],19,C.GOLD,500,1600)
+		D.text(rang,4,25,"Saison %s · %s · %d matchs · moyenne %s · %d essai%s%s" % [G.season_label(saison.get("saison",0)),str(saison.get("club","")),int(saison.get("matchs",0)),NotesMatch.texte_note(saison.get("moyenne")),int(saison.get("essais",0)),"s" if int(saison.get("essais",0))>1 else "",(" · %d× homme du match" % int(saison.hommeDuMatch)) if int(saison.get("hommeDuMatch",0))>0 else ""]+((" · %s plaquages · %s m" % [G.n(saison.plaquages),G.n(saison.metres)]) if saison.get("plaquages")!=null and saison.get("metres")!=null else ""),19,C.GOLD,500,1600)
+
+## Chiffre d'une ligne de feuille ; « — » quand l'ancienne sauvegarde ne l'a pas.
+static func _stat(valeur: Variant) -> String:
+	return "—" if valeur == null else G.n(valeur)
+
+## Moyennes par match de la saison (feuille réaliste), sous les compteurs des performances.
+static func _moyennes(card:Panel,notes:Dictionary) -> void:
+	var m := int(notes.get("matchs",0))
+	if m <= 0: return
+	var par := func(cle:String) -> String:
+		var v: Variant = notes.get(cle)
+		if v == null: return "—"
+		return String.num(float(v)/m,1).replace(".",",")
+	var texte := "PAR MATCH  ·  %s plaquages  ·  %s m  ·  %s passes  ·  %s essai  ·  %s franch." % [par.call("plaquages"),par.call("metres"),par.call("passes"),par.call("essais"),par.call("franchissements")]
+	D.text(card,24,236,texte,21,C.GOLD,600,880).name = "PlayerSeasonPerMatch"
 
 ## Matchs internationaux notés (même calcul que le club) : moyenne, forme, dernières rencontres.
 static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
