@@ -7,6 +7,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
+const Espoir = preload("res://ui/espoir_appel.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const PersonName = preload("res://ui/person_name.gd")
 
@@ -218,7 +219,11 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 
 static func _bench(card:Panel,app:Control) -> int:
 	var vacancy := P.reduced_bench_number(app.model)
-	if vacancy != 0:
+	if not Espoir.offer(app.model).is_empty():
+		var appel := D.button(card,Rect2(251,12,242,34),"Appeler un espoir",func():Espoir.ouvrir(app,false),false,"school",true,app.accent,"LineupCallEspoir")
+		appel.tooltip_text=Espoir.vacancy_text(app.model)+"\nLe meilleur jeune du centre apte au poste est proposé ; il est prêté pour ce match seulement."
+		appel.accessibility_name="Appeler un espoir du centre de formation pour compléter la feuille"
+	elif vacancy != 0:
 		var action := D.button(card,Rect2(251,12,242,34),"Match · Feuille à 22",func():app._navigate("Match"),false,"arrow",true,app.accent,"LineupOpenMatchAt22")
 		action.tooltip_text=P.reduced_bench_vacancy(vacancy)
 		action.accessibility_name="Ouvrir le jour de match pour une feuille à 22"
