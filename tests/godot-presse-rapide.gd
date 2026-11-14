@@ -135,6 +135,24 @@ func run() -> void:
 	if not await open_room(): return finish()
 	check(node("PressDelegate") != null and not (node("PressDelegate") as Button).disabled, "« Envoyer mon adjoint » proposé")
 	await capture("presse-apres-ordinaire")
+	# Dilemmes : les cinq tons n'affichent pas les mêmes effets, et aucun n'est meilleur sur tous les axes.
+	var shown_q: Dictionary = questions[view().question_index]
+	var rows := {}
+	for answer: Dictionary in shown_q.get("answers", []):
+		var effects := (node("PressAnswer_%s_%s" % [shown_q.id, answer.id]) as Button).find_child("PressEffects", true, false) as RichTextLabel
+		rows[str(answer.tone)] = effects.get_parsed_text() if effects != null else ""
+	check(rows.size() == 5 and rows.values().size() == 5 and rows.values().duplicate().size() == 5 and _distinct(rows.values()), "Cinq tons, cinq profils d'effets différents")
+	var best := 0
+	for answer: Dictionary in shown_q.get("answers", []):
+		var fx: Dictionary = answer.get("effects", {})
+		var better_than_all := true
+		for other: Dictionary in shown_q.get("answers", []):
+			if other == answer: continue
+			var o: Dictionary = other.get("effects", {})
+			if not (fx.morale >= o.morale and fx.media >= o.media and -fx.pressure >= -o.pressure and fx.relation >= o.relation): better_than_all = false
+		if better_than_all: best += 1
+	check(best == 0, "Aucun ton n'est meilleur ou égal sur tous les axes")
+	await capture("presse-dilemmes")
 	# Réglage de carrière depuis la salle.
 	if await click("PressPolicy_adjoint"):
 		check(press().get("policy", {}).get("ordinary") == "adjoint", "Réglage « envoyer l'adjoint » enregistré")
@@ -151,6 +169,11 @@ func run() -> void:
 	check(clicks == 2, "Adjoint : deux clics (%d)" % clicks)
 	check(view() == null, "Salle refermée")
 	finish()
+
+func _distinct(values: Array) -> bool:
+	var seen := {}
+	for value in values: seen[str(value)] = true
+	return seen.size() == values.size()
 
 func finish() -> void:
 	if failures.is_empty(): print("Presse rapide Godot · %d contrôles réussis" % checks)

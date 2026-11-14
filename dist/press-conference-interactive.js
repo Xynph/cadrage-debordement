@@ -14,6 +14,15 @@ const v=s.pressConference;if(v.version!==1||!Array.isArray(v.history)||v.history
 for(const h of v.history)if(!h||!bank.questions.some(q=>q.id===h.id)||!Number.isInteger(h.season)||!Number.isInteger(h.week)||!['r0','r1','r2','r3','r4'].includes(h.answerId))throw Error('Choix de presse invalide');
 return true;
 }
+// Contexte sportif d'une conférence : série de deux défaites (slump) ou de deux victoires (run) en cours, derby fourni
+// par l'appelant (le moteur natif connaît la rivalité). Calculé sur les deux derniers résultats du club.
+function situation(s,extra){
+const out={slump:false,run:false,derby:!!(extra&&extra.derby)};
+const results=Array.isArray(s?.history)?s.history.filter(m=>m&&Array.isArray(m.pair)&&m.pair.length===2&&m.pair.includes(s.club)&&Array.isArray(m.score)&&m.score.length===2&&m.score.every(Number.isFinite)):[];
+const last=results.slice(-2).map(m=>{const i=m.pair.indexOf(s.club),mine=m.score[i],theirs=m.score[1-i];return mine>theirs?1:mine<theirs?-1:0;});
+if(last.length===2){out.slump=last.every(r=>r===-1);out.run=last.every(r=>r===1);}
+return out;
+}
 function chooseThemes(s){const t=['avant_match','attaque','defense','joueurs','supporters','calendrier','carriere'];
 if((s.trust??50)<40)t.unshift('direction','crise');
 if((s.morale??50)<45)t.unshift('vestiaire','rotation','blessures');
@@ -29,7 +38,7 @@ if(s.pressRelations?.clubId==='club-'+s.club&&s.pressRelations.used?.some(id=>id
 if(old.history.some(h=>h.season===season&&h.week===week&&(h.club===undefined||h.club===s.club)))return null;
 return bank.pick({season,week,history:old.history,context:{themes:[...new Set([...priorityThemes,...chooseThemes(s)])]},count:Number.isInteger(count)&&count>=2&&count<=4?count:2+((week+season)%3),seed:s.club,region:bank.regionFor(s),seasonWeeks:s.franceMode?.version===1?34:29});
 }
-function apply(s,selected,priorityThemes=[],count){
+function apply(s,selected,priorityThemes=[],count,extra){
 if(!s||s.live||!Array.isArray(selected)||selected.length<2||selected.length>4)throw Error('Conférence invalide');
 validate(s);const original=JSON.stringify(s),questions=prepare(s,priorityThemes,count);
 if(!questions||questions.length!==selected.length)throw Error('Conférence déjà réalisée');
@@ -38,9 +47,9 @@ try {
 let state=s.pressRelations?JSON.parse(JSON.stringify(s.pressRelations)):root.CDPressRelations.create('club-'+s.club);
 while(state.season<s.season)state=root.CDPressRelations.nextSeason(state);
 state.clubId='club-'+s.club;state.week=weekOf(s);
-let moraleDelta=0,trustDelta=0;
+let moraleDelta=0,trustDelta=0;const sit=situation(s,extra);
 for(let i=0;i<questions.length;i++){
-const q=questions[i],choice=q.answers.find(a=>a.id===selected[i]),fx=root.CDPressRelations.dialogueEffect(q.journalist,choice.tone,q.theme,s.pressPeople?.contacts?.[q.journalist.id]?.score??0);
+const q=questions[i],choice=q.answers.find(a=>a.id===selected[i]),fx=root.CDPressRelations.dialogueEffect(q.journalist,choice.tone,q.theme,s.pressPeople?.contacts?.[q.journalist.id]?.score??0,sit);
 s.pressPeople=root.CDPressRelations.recordDialogue(s.pressPeople,q.journalist,{season:s.season,week:weekOf(s),club:s.club,questionId:q.id,answerId:choice.id},fx.relation);
 const mod=(q.theme==='crise'||q.theme==='direction')?2:1;
 state.mediaTrust=Math.max(0,Math.min(100,state.mediaTrust+fx.media*mod));
@@ -64,6 +73,6 @@ document.addEventListener('change',e=>{const el=e.target;if(!el||!el.hasAttribut
 document.addEventListener('click',e=>{if(!e.target?.matches?.('#cd-v60-rich [data-v60-submit]'))return;try{apply(current(),answers);pending=null;answers=[];}catch(error){if(typeof toast==='function')toast(error.message);}});
 }
 function install(){if(typeof root.managerOffice!=='function'||root.managerOffice.__richV60)return false;const previous=root.managerOffice;const wrapped=function(){return previous()+view();};wrapped.__richV60=true;root.managerOffice=wrapped;return true;}
-const api=Object.freeze({validate,prepare,apply,install});
+const api=Object.freeze({validate,prepare,apply,install,situation});
 root.CDV60RichPress=api;if(typeof module==='object'&&module.exports)module.exports=api;if(!root.CDNativeHeadless)install();
 })(typeof globalThis==='object'?globalThis:window);
