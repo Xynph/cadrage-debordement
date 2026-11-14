@@ -8,7 +8,8 @@ function tacticalRules(l){return l.tacticalVersion===1&&l.restartVersion===1&&l.
 // matchs commencés avant gardent leurs coefficients). Coefficients de jeu étalonnés sur la mesure d'une
 // saison Monde contre les championnats réels 2024-25, pas des probabilités mesurées du rugby.
 let ESSAIS_RULES=1;
-var ESSAIS={porte:.63,ecart:2,finition:.47,but:.6};
+// Écart de niveau : 1 = pas d'amplification supplémentaire (la courbe de niveau commune du 14/11, matchLevelEdge, la fournit désormais).
+var ESSAIS={porte:.63,ecart:1,finition:.47,but:.6};
 function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 const OUVERTURE_CHAMPIONNATS={elite:0,accession:-.03,nationale:-.015,urc:.025,champions:.02,challenge:.03,prem:.11,srp:.115,champ:.125,'jlo-d1':.125,'jlo-d2':.11};
 // Marqueur selon le poste occupé (maillot 1 à 15) et l'origine de l'essai : talonneur et troisième
