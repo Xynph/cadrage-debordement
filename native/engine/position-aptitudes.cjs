@@ -12,8 +12,11 @@ module.exports=function positionAptitudes(){
   if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
   const qualifierKey=[p.nationaleQualifications?.join('|'),p.worldProfile?.position?.qualifications?.join('|'),p.worldRatingsVersion].join(';');
   const cached=playerCache.get(p);
-  if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey&&
-   keys.every((k,i)=>cached.skills[i]===p.skills?.[k]&&cached.bonuses[i]===focusedBonus(p,k)))return cached.result;
+  if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
+   // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
+   let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
+   if(same)return cached.result;
+  }
   // Legacy missing skills are deterministically generated on a detached object.
   const q=p.skills?p:{...p};ensureSkills(q);
   const qualities=keys.map(k=>skill(q,k));
@@ -87,7 +90,7 @@ module.exports=function positionAptitudes(){
   const pool=availablePool(team);
   const fixedOther=new Set(prefs.filter((id,i)=>id&&!frontSlots.includes(i)));
   // Même pondération par la condition que fitScore : un pilier épuisé ne passe pas devant un pilier frais.
-  const weighted=p=>baseNote(p)*(.5+p.condition*.005);
+  const notes=new Map(),weighted=p=>{let w=notes.get(p);if(w===undefined){w=baseNote(p)*(.5+p.condition*.005);notes.set(p,w);}return w;};
   const options=new Map(frontSlots.map(slot=>[slot,pool.filter(p=>!fixedOther.has(p.id)&&(slot<15?baseSlot(p,slot):baseBench(p,slot-15)))
    .sort((a,b)=>Number(b.id===prefs[slot])-Number(a.id===prefs[slot])||weighted(b)-weighted(a)||compareId(a,b))]));
   // Taille du plus grand jumelage places/joueurs sur ces places, sans les joueurs déjà retenus.
@@ -127,8 +130,15 @@ module.exports=function positionAptitudes(){
     const slot=i+15;
     let p=pool.find(p=>p.id===preferred[i]&&!p.injury&&!used.has(p.id)&&eligible(p,slot));
     if(!p&&i<3)p=pool.find(p=>p.id===sheet.bench[i]);
-    if(!p)p=pool.filter(p=>!p.injury&&!used.has(p.id)&&eligible(p,slot))
-     .sort((a,b)=>rating(b,slot)*(.5+b.condition*.005)-rating(a,slot)*(.5+a.condition*.005)||compareId(a,b))[0];
+    if(!p){
+     // Meilleur candidat (note au poste pondérée, puis identifiant) : un seul passage, notes calculées une fois.
+     let bestValue=-Infinity;
+     for(const q of pool){
+      if(q.injury||used.has(q.id)||!eligible(q,slot))continue;
+      const value=rating(q,slot)*(.5+q.condition*.005);
+      if(!p||value>bestValue||value===bestValue&&compareId(q,p)<0){p=q;bestValue=value;}
+     }
+    }
     wanted.push(p?.id??null);if(p)used.add(p.id);
    }
    // Existing registration/quota hooks remain the final authority.
@@ -141,10 +151,18 @@ module.exports=function positionAptitudes(){
   function optimiseBack(team,sheet){
    const slots=[];for(let i=3;i<15;i++)slots.push(i);
    const fixed=new Set([...sheet.lineup.slice(0,3),...sheet.bench.slice(0,3)].filter(Boolean));
-   const cols=availablePool(team).filter(p=>!fixed.has(p.id)&&slots.some(i=>eligible(p,i))).sort(compareId);
+   // Admissibilité et notes calculées une seule fois par joueur (même résultat que eligible/rating par case).
+   const candidates=[];
+   for(const p of availablePool(team)){
+    if(fixed.has(p.id))continue;
+    const ok=slots.map(i=>eligible(p,i));
+    if(ok.some(Boolean)){const notes=derive(p).positionRatings,weight=.5+p.condition*.005;candidates.push({p,ok,value:slots.map(i=>-(notes[positionNumber(i)]??0)*weight)});}
+   }
+   candidates.sort((a,b)=>compareId(a.p,b.p));
+   const cols=candidates.map(c=>c.p);
    if(cols.length<slots.length)return sheet;
    const n=slots.length,m=cols.length,BIG=1e6;
-   const cost=slots.map(i=>cols.map(p=>eligible(p,i)?-rating(p,i)*(.5+p.condition*.005):BIG));
+   const cost=slots.map((i,r)=>candidates.map(c=>c.ok[r]?c.value[r]:BIG));
    // Hongrois rectangulaire (n lignes <= m colonnes), lignes et colonnes numérotées à partir de 1.
    const u=new Array(n+1).fill(0),v=new Array(m+1).fill(0),way=new Array(m+1).fill(0),match=new Array(m+1).fill(0);
    for(let i=1;i<=n;i++){
