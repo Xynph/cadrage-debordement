@@ -57,7 +57,8 @@ longue du banc, 600 matchs complets et 4 000 rapides par écart. Victoires du pl
 l'emplacement (le staff d'un club joue).
 
 Autres clubs de base (après) : PRO D2 (club 20) +6 → 75,5 %, +10 → 86,6 %, domicile 68,3 % (ajusté
-69,7 %) ; URC (club 44) : voir la PR. Le moteur complet est un peu plus raide dans les queues
+69,7 %) ; URC (club 44) +6 → 78,1 %, +10 → 85,5 %, domicile 67,2 % (ajusté 68,8 %) ; résultat rapide
+identique d'un club à l'autre (+10 → 85,6-85,7 %, domicile 64-65 %). Version longue : PASS. Le moteur complet est un peu plus raide dans les queues
 (+15 → 94-97 %) : sa pente ajustée (0,21-0,22) dépasse la cible, alors que les points +3 à +10
 sont dans la cible.
 
@@ -108,3 +109,7 @@ l'étude) est pénalisé ; d'où le choix d'un club humain hors des championnats
 - `native/engine/match-stats.cjs` : une mêlée non disputée (préparation puis introduction non
   disputée du même camp) était comptée deux fois dans la feuille de statistiques ; révélé par les
   nouveaux tirages (`tests/match-stats-realistes.cjs`).
+- `tests/fixtures/match-gestes-sequence.json` (séquence touche-ballon porté-essai rejouée par Godot)
+  régénérée par `node tests/godot-match-gestes-scenes.cjs` ; `tools/animation-replay/fixture.js`
+  régénérée, avec un tirage fixe de 0,5 au lieu de 0,43 (à 0,43, la course franchit désormais et
+  marque : la fixture veut une course sans essai, puis l'essai).
