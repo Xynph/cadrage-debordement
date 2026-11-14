@@ -3,7 +3,7 @@
 // Serialized into the world VM and called once on the initial senior rosters.
 // V1 (France et carrières déjà créées) : dose qui relève les notes selon leur niveau.
 // V2 (nouvelles carrières Monde, scale + levels fournis) : note réaliste selon le niveau réel de chaque
-// joueur, de son club et de son championnat (native/engine/world-rating-scale.json, data/world/niveaux-v2.json).
+// joueur, de son club et de son championnat (native/engine/world-rating-scale.json, native/engine/world-niveaux-v2.json).
 module.exports = function createSeniorCalibration(projectSkills, roleNote, roleWeights, rolePriors, scale = null, levels = null) {
   const version = 1;
   const worldVersion = scale && levels ? 2 : 1;
@@ -365,7 +365,12 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   // sous la valeur neutre du championnat et de l'étage ; leurs compétences suivent la note, leurs 36 qualités compactes aussi.
   function calibrateDepth(player, context) {
     const L = leagueScale(context.leagueId);
-    const value = L.rotation + (scale.etages[etageOf(context.clubId)] ?? 0) - 1;
+    // Un joueur de complément reste sous le moins bon joueur de l'effectif (règle de nativeProfessionalDepth).
+    // Au poste, sa note reste aussi sous celle du moins bon titulaire potentiel (même poste, sinon tout l'effectif).
+    const peers = context.others.filter(p => p.pos === player.pos);
+    const noteFloor = Math.min(...(peers.length ? peers : context.others).map(p => roleNote(p)));
+    const value = Math.min(L.rotation + (scale.etages[etageOf(context.clubId)] ?? 0) - 1, context.floor - 1,
+      player.rating + noteFloor - 1 - roleNote(player));
     const target = Math.round(clamp(value, 40, 95));
     if (typeof player.nativeAttributesV1 === 'string' && /^\d{72}$/.test(player.nativeAttributesV1) && player.rating > 20) {
       const factor = (target - 20) / (player.rating - 20);
@@ -380,14 +385,17 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   }
 
   function apply(players, sources = null, context = null) {
-    if (worldVersion === 2 && context) {
-      context = { ...context, club: clubDeviation(players.filter(p => !sources || sources.has(p.id))) };
-      for (const player of players) if (/^depth-/.test(player.id) && !player.attributesV2 && Number.isFinite(player.rating)) calibrateDepth(player, context);
-    }
+    if (worldVersion === 2 && context) context = { ...context, club: clubDeviation(players.filter(p => !sources || sources.has(p.id))) };
     for (const player of players) {
       if (!player.attributesV2 || sources && !sources.has(player.id)) continue;
       if (worldVersion === 2 && context) calibrateV2(player, context);
       else if (player.age >= 23) calibrate(player);
+    }
+    if (worldVersion === 2 && context) {
+      const depth = players.filter(p => /^depth-/.test(p.id) && !p.attributesV2 && Number.isFinite(p.rating));
+      const others = players.filter(p => !depth.includes(p) && Number.isFinite(p.rating));
+      const floor = others.length ? Math.min(...others.map(p => p.rating)) : 99;
+      if (others.length) for (const player of depth) calibrateDepth(player, { ...context, floor, others });
     }
   }
 

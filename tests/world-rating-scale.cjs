@@ -1,6 +1,6 @@
 'use strict';
 // Barème senior V2 (nouvelles carrières Monde) : notes et potentiels selon le niveau réel de chaque joueur,
-// de son club et de son championnat (data/world/niveaux-v2.json, native/engine/world-rating-scale.json).
+// de son club et de son championnat (native/engine/world-niveaux-v2.json, native/engine/world-rating-scale.json).
 // Une carrière world-champ neuve : ordre des championnats, étagement des clubs, stars, potentiels,
 // attributs, fournées du centre de formation et compatibilité des sauvegardes au barème V1.
 const assert = require('node:assert/strict');
@@ -169,7 +169,7 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
   });
 
   test('Table publique du niveau réel : identifiants et classes seulement', () => {
-    const file = path.join(repo, 'data/world/niveaux-v2.json');
+    const file = path.join(repo, 'native/engine/world-niveaux-v2.json');
     const published = JSON.parse(fs.readFileSync(file, 'utf8'));
     assert.deepEqual(Object.keys(published).sort(), ['champs', 'classes', 'clubs', 'couverture', 'etages', 'joueurs', 'note', 'schema', 'statuts', 'version']);
     const registry = new Set(created.clubs.flatMap(c => c.players.map(p => p.id)));

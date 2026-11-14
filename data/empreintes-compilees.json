@@ -1,7 +1,7 @@
 {
  "note": "Empreintes SHA-256 (fin de ligne LF) des fichiers compilés à partir des sources privées du dépôt rugby-reel-donnees. Écrites par les compilateurs quand les sources sont présentes ; vérifiées quand elles sont absentes (scripts/sources-privees.cjs).",
  "compiled": {
-  "data/world/niveaux-v2.json": {
+  "native/engine/world-niveaux-v2.json": {
    "sha256": "862e21ec9508f0b36abf88fe95b097b92f1535c47285244f711e1cf8d9025b8b",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 // Compile le niveau réel des joueurs (données PRIVÉES du dépôt rugby-reel-donnees) en une table
-// publique NON nominative : data/world/niveaux-v2.json. Elle ne contient que des identifiants du
+// publique NON nominative : native/engine/world-niveaux-v2.json. Elle ne contient que des identifiants du
 // registre (déjà publics), une classe d'international, un statut en club, un indicateur U20 et une
 // confiance ; et, par identifiant de club, son étage. Aucun nom, lien, date ni source n'y entre.
 // Elle alimente le barème senior V2 (native/engine/senior-calibration.cjs) des nouvelles carrières Monde.
@@ -16,7 +16,7 @@
 // (career-evidence.json, complété par les classements de season-evidence.json).
 const fs = require('node:fs'), path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
-const TARGET = 'data/world/niveaux-v2.json';
+const TARGET = 'native/engine/world-niveaux-v2.json';
 const LEAGUES = ['elite', 'accession', 'prem', 'urc', 'srp', 'jlo-d1', 'jlo-d2', 'nationale', 'champ', 'guest'];
 const ETAGES = ['cador', 'haut', 'milieu', 'bas', 'releguable'];
 const STATUTS = ['titulaire', 'rotation', 'reserviste', 'jeune', 'inconnu'];
