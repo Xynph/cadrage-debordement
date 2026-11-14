@@ -70,6 +70,37 @@ test('Calcul : déterministe, sans tirage, base 6,5, bornes 1–10, remplaçant 
   assert.equal(direct.a14.note, r1.joueurs.a14.note);
 });
 
+test('Poste occupé (maillots 1 à 15) : pondération de la note, homme du match = meilleure note', () => {
+  const cotes = {}, minutes = {}, postes = {}, familles = {};
+  for (let k = 1; k <= 15; k++) { cotes['a' + k] = 0; cotes['b' + k] = 1; minutes['a' + k] = 80; minutes['b' + k] = 80; postes['a' + k] = k - 1; postes['b' + k] = k - 1; familles['a' + k] = 6; familles['b' + k] = 6; }
+  const journal = [sc('carry', 0, 'a1', { to: { x: 70, y: 40 } }), sc('carry', 0, 'a7', { to: { x: 70, y: 40 } }), sc('carry', 0, 'a10', { to: { x: 70, y: 40 } }), sc('turnover', 1, 'b6'), sc('kick', 1, 'b10', { to: { x: 10, y: 30 } })];
+  const r = N.noter(journal, { cotes, minutes, postes, familles, score: [0, 0], fini: true });
+  // Même course : le pilier (peu de faits attendus) passe devant le troisième ligne (beaucoup).
+  assert.ok(r.joueurs.a1.note > r.joueurs.a7.note, 'attendu du poste retiré');
+  // Le poste occupé prime sur le poste naturel (familles toutes « ailier » ici).
+  const sansPoste = N.noter(journal, { cotes, minutes, familles, score: [0, 0], fini: true });
+  assert.notEqual(sansPoste.joueurs.a1.note, r.joueurs.a1.note, 'le maillot porté compte, pas seulement la famille');
+  for (const x of [r, sansPoste]) {
+    const meilleure = Math.max(...Object.values(x.joueurs).filter(n => n.minutes >= 30).map(n => n.note));
+    assert.equal(x.joueurs[x.hommeDuMatch].note, meilleure, 'homme du match : la meilleure note');
+  }
+  // Sans aucun fait, un troisième ligne (beaucoup de faits attendus) est noté sous un pilier.
+  const vide = N.noter([], { cotes, minutes, postes, score: [0, 0], fini: true });
+  assert.ok(vide.joueurs.a6.note < vide.joueurs.a1.note, 'match vide : attendu du poste non rempli');
+  assert.equal(N.POSTES_NOTE.length, 15);
+  // Domaine : poste occupé = maillot de départ, puis celui du joueur remplacé, sinon la place actuelle.
+  const { run } = domaine();
+  const postesDomaine = JSON.parse(run(`JSON.stringify(dom.contexte({pair:[0,1],score:[0,0],minute:80,finished:true,
+    subs:[{side:0,out:'c0p5',in:'c0p17'},{side:0,out:'c0p17',in:'c0p20'},{side:1,out:'c1p0',in:'c1p15'}],
+    sheets:[{initial:${JSON.stringify(Array.from({ length: 15 }, (_, k) => 'c0p' + k))},on:${JSON.stringify(Array.from({ length: 15 }, (_, k) => k === 5 ? 'c0p20' : 'c0p' + k))},used:${JSON.stringify([...Array.from({ length: 15 }, (_, k) => 'c0p' + k), 'c0p17', 'c0p20'])},minutes:{}},
+     {initial:${JSON.stringify(Array.from({ length: 15 }, (_, k) => 'c1p' + k))},on:${JSON.stringify(Array.from({ length: 15 }, (_, k) => k === 0 ? 'c1p15' : 'c1p' + k))},used:${JSON.stringify([...Array.from({ length: 15 }, (_, k) => 'c1p' + k), 'c1p15'])},minutes:{}}]}).postes)`));
+  assert.equal(postesDomaine.c0p5, 5);
+  assert.equal(postesDomaine.c0p17, 5, 'remplaçant : maillot du joueur remplacé');
+  assert.equal(postesDomaine.c0p20, 5, 'remplaçant du remplaçant');
+  assert.equal(postesDomaine.c1p15, 0);
+  assert.equal(postesDomaine.c1p14, 14);
+});
+
 test('Matchs simulés (Monde) : mêmes résultats et même tirage avec et sans le journal des notes', () => {
   // Référence : domaine des notes absent (option notes:false) ; effets coupés dans les deux cas
   // (les effets, eux, orientent légitimement les choix des entraîneurs IA).

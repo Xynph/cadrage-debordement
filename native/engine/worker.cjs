@@ -623,7 +623,7 @@ function createBridge(options={}){
       run(payload.paused===false?'continueMatch()':'pauseMatch()');
      }else if(command==='delegate'){
       if(!run('!!S.live'))throw Error('Aucun match à déléguer.');
-      run("nativeSystems.domain('matchTalks').setDelegating(true);nativeSystems.domain('matchTalks').observe('delegate');");
+      run("nativeSystems.domain('matchTalks').setDelegating(true);nativeSystems.domain('matchTalks').observe('delegate');nativeSystems.domain('matchDelegation').setActive(true);");
       try{
       const delegateLoop="for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}";
       const historicalSave=ctx.save,delegateClock=clock;
@@ -638,7 +638,7 @@ function createBridge(options={}){
        run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
        run(delegateLoop);
       }
-      }finally{run("nativeSystems.domain('matchTalks').setDelegating(false);");}
+      }finally{run("nativeSystems.domain('matchTalks').setDelegating(false);nativeSystems.domain('matchDelegation').setActive(false);");}
      }else if(command==='finish_round'){
       run('nativeConfirmMatchResult()');
      }else if(['advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation'].includes(command)){
