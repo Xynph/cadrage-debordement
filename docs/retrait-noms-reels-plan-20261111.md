@@ -147,3 +147,32 @@ du joueur réel. Un nom inventé retire le nom, pas la ressemblance.
 
 Je ne suis pas juriste. Ce plan réduit l'exposition ; il ne remplace pas un
 avis sur le droit des données personnelles et le droit à l'image.
+
+## État d'avancement (14 novembre 2026)
+
+Décision de Léo du 14/11 : retrait du dépôt public, la copie privée étant
+vérifiée (les 85 fichiers sources sont identiques à l'octet près dans
+`Xynph/rugby-reel-donnees`).
+
+### Étape 2 — dépôt public qui se suffit : PR « retrait A »
+
+- Retirés : les 85 fichiers sources (`modding/`, `data/roster-foundation/`,
+  `data/scouting/`, `data/staff/`, `docs/rugby-real-v12/`,
+  `docs/roster-foundation-lot{1,2}.md`, `tools/rugby-real-v12/`,
+  `tools/lnr-v12-v11-preview/`). `docs/donnees-du-jeu.md` reste public : il ne
+  cite aucun nom réel.
+- Retirés avec eux : 37 suites, 12 outils (`tools/data05-*`, `tools/data06-*`),
+  5 workflows et 33 documents qui ne servaient qu'à ces sources. La liste et
+  ce qui manque au dépôt privé sont dans la description de la PR.
+- `scripts/sources-privees.cjs` : les compilateurs du registre des effectifs
+  (`build-roster-foundation.cjs`) et du staff français
+  (`build-staff-registry.cjs`) cherchent leurs sources dans le dépôt (copie
+  du dépôt privé posée par-dessus) puis dans `CD_SOURCES_PRIVEES` (clone du
+  dépôt privé). Sans elles, `--check` vérifie l'empreinte publiée du fichier
+  compilé (`data/empreintes-compilees.json`) et l'annonce : « Sources privées
+  absentes, recompilation non contrôlée ». Une recompilation sans sources
+  échoue. La construction de l'exe reste valide.
+- `tests/base-names-leak.cjs` lit les vrais noms (joueurs, staffs,
+  journalistes du pack) dans les sources privées quand elles sont là et le
+  dit quand elles n'y sont pas ; il ne dépend plus du harnais France et
+  tourne donc de nouveau dans la CI (partie publique).

@@ -1,0 +1,23 @@
+{
+ "note": "Empreintes SHA-256 (fin de ligne LF) des fichiers compilés à partir des sources privées du dépôt rugby-reel-donnees. Écrites par les compilateurs quand les sources sont présentes ; vérifiées quand elles sont absentes (scripts/sources-privees.cjs).",
+ "compiled": {
+  "dist/rugby-roster-foundation.js": {
+   "sha256": "dd4bfef723ac6ff1496721cd0df5543c8553d407231e1b2eaff3f3e3f2f29e3e",
+   "sources": {
+    "data/roster-foundation/archive/v1/policy.json": "34756d4d8185086e165c4dd28a91e4cbac84d0dec578eb428c720d2e7511921a",
+    "data/roster-foundation/archive/v1/runtime.js": "8574fb78d79498f962dfaef0d1d916f536c2399ea39a8ad14703072c17675d75",
+    "data/roster-foundation/archive/v1/sha256.json": "77b2bc9f329639488acd9d4401b7e86256e4a3f58fb17f90940b650658508b5b",
+    "data/roster-foundation/archive/v1/verified.json": "4ca945e8b9d9dde16f6f53d58c265555e5f2c930de0437709a9466375d03770a",
+    "data/roster-foundation/policy.json": "918fd8f61025b43dda8fbd98f9be8aecab6d90bcdd71d32f6c0c15857e70e220",
+    "data/roster-foundation/verified.json": "129cf7c13811fd304dbfd5a9e45f1bf35289c5814e5bdb781cd7f4923f4c93ed"
+   }
+  },
+  "native/engine/staff-registry.json": {
+   "sha256": "df2298b123c4ab6dfe2d3e62d563380cb72d2c32b783183fbeb20a7094acaee1",
+   "sources": {
+    "data/names/noms-staffs-v1.json": "ec2e7fece122c6b975a0f91b42978b725ad27c662243b4bac6efc632049f631f",
+    "data/staff/verified.json": "e89d26f84ddd08e0b994f98a03b6e265be97f64936d59c73df633e5f5706c6c5"
+   }
+  }
+ }
+}

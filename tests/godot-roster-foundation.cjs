@@ -22,7 +22,7 @@ try{
  const model=settleClubMeetings(good('new_career',{mode:'common',club:6,varyCurrent:false}),(command,payload)=>good(command,payload));
  assert.equal(model.meta.rosterFoundation?.version,2,'new common careers expose roster foundation version');
  const data=require('../dist/rugby-roster-foundation.js'),base=require('../dist/rugby-common-rosters.js');
- const runtime=fs.readFileSync(path.join(__dirname,'../dist/rugby-roster-foundation.js'),'utf8');assert.ok(!runtime.includes('https://')&&!runtime.includes('Tuicuvu')&&!runtime.includes('Fourcade'),'anonymous runtime provenance');
+ const runtime=fs.readFileSync(path.join(__dirname,'../dist/rugby-roster-foundation.js'),'utf8');assert.ok(!runtime.includes('https://'),'anonymous runtime provenance');require('../scripts/sources-privees.cjs').verifyCompiled('dist/rugby-roster-foundation.js');
  const s=state(),players=sourceRosters(s.clubs).flatMap(c=>c.players);assert.equal(players.length,1592);assert.equal(Object.keys(data.players).length,1592);assert.equal(Object.keys(s.commonDatabase).length,2);
  assert.equal(players.find(p=>p.id==='lnr:184').pos,'Pilier gauche');assert.equal(players.find(p=>p.id==='lnr:657').pos,'Talonneur');
  assert.equal(players.find(p=>p.id==='lnr:13516').rosterProfile.position.basis,'estimated','conflicting Traini evidence stays quarantined');
@@ -34,7 +34,7 @@ try{
    for(const k of ['rating','skills','attributesV2'])assert.deepEqual(p[k],source[k],p.id+' '+k);
    assert.equal(p.dev.potential,Math.max(p.rating,Math.min(99,source.dev.potential+variation.deltas(s.careerVariation,p.id).potential)));
   }
-  assert.equal(p.salary,source.salary);assert.equal(p.contractEnd,profile.contract.endSeason);assert.equal(profile.wage.basis,'estimated');if(!Object.hasOwn(require('../data/roster-foundation/verified.json').statuses,p.id))assert.equal(profile.status.basis,'estimated');if(p.fam<=1)assert.deepEqual(profile.position.qualifications,[p.pos]);if(profile.contract.basis==='official')verified++;
+  assert.equal(p.salary,source.salary);assert.equal(p.contractEnd,profile.contract.endSeason);assert.equal(profile.wage.basis,'estimated');if(profile.status.basis!=='official')assert.equal(profile.status.basis,'estimated');if(p.fam<=1)assert.deepEqual(profile.position.qualifications,[p.pos]);if(profile.contract.basis==='official')verified++;
  }
  assert.equal(verified,86);assert.equal(players.find(p=>p.id==='lnr:12339').rosterProfile.status.basis,'official');assert.equal(players.find(p=>p.id==='lnr:12339').rosterProfile.status.professionalFromSeason,3);assert.equal(players.find(p=>p.id==='lnr:429').contractEnd,2);
  const initial=good('export').meta.exportText;good('import',{text:initial});assert.equal(good('export').meta.exportText,initial);
@@ -63,6 +63,6 @@ try{
  for(let week=0;week<34;week++)long.run('finishRound();validateCareer(S)');assert.equal(long.state().phase,'ended');measures.endSeason=measure(long.state());
  long.run('advanceSeason();validateCareer(S);pendingSave=parseSaveDocument(JSON.stringify(createSaveDocument()));if(!confirmSaveImport())throw Error("import");');assert.equal(long.state().season,2);measures.nextSeason=measure(long.state());
  for(const p of [...long.state().clubs.flatMap(c=>c.players),...long.state().economy.freeAgents])if(p.rosterProfile)assert.deepEqual(p.rosterProfile,data.players[p.id]);
- const builder=require('../scripts/build-roster-foundation.cjs');assert.deepEqual(builder.build(),builder.build());assert.equal(builder.endSeason(2027),1);assert.equal(builder.endSeason(2028),2);assert.throws(()=>builder.endSeason(2026));
+ const builder=require('../scripts/build-roster-foundation.cjs');if(require('../scripts/sources-privees.cjs').locateAll(builder.SOURCES))assert.deepEqual(builder.build(),builder.build());else assert.equal(builder.write(true),'verified');assert.equal(builder.endSeason(2027),1);assert.equal(builder.endSeason(2028),2);assert.throws(()=>builder.endSeason(2026));
  console.log(JSON.stringify({passed:true,players:players.length,verifiedContracts:verified,measures,bytes:Buffer.byteLength(initial),checks:['coverage','positions','youth 36/11 parity','wage parity','conservative qualifications','strict provenance imports','legacy common preserves provenance','renewal preserves initial reference','sale preserves initial reference','disk and RNG rollback','34 weeks and next season','deterministic compilation']}));
 }finally{b.close();fs.rmSync(root,{recursive:true,force:true});}

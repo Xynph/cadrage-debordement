@@ -98,8 +98,6 @@
       "tests/preparation.cjs": 2,
       "tests/press-identity-pack.cjs": 26,
       "tests/regen-portrait-persistence.cjs": 25,
-      "tests/rugby-real-full-ratings-v12.cjs": 11,
-      "tests/rugby-real-long-career-qa.cjs": 87,
       "tests/rugby.cjs": 48,
       "tests/saves.cjs": 14,
       "tests/schedule-alternance.cjs": 7,
