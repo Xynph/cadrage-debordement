@@ -17,8 +17,8 @@ const SHARD_PARALLEL = 3;
 const PHYSICAL_CORES = 2;
 const EXCLUSIVE_CAP = PHYSICAL_CORES;
 const EXCLUSIVE_WEIGHT = 30;
-// Jobs Godot : SDK 4.7.2 installé en CI, suites natives sous xvfb. Non bloquants pour
-// l'instant (continue-on-error, hors des dépendances de « Validation CI »).
+// Jobs Godot : SDK 4.7.2 installé en CI, suites natives sous xvfb. Bloquants (14/11) : « Validation CI »
+// en dépend dans le workflow ; sautés (donc sans effet) quand aucun fichier Godot ne change.
 const GODOT_SHARD_COUNT = 3;
 
 const shardJob = (shard, count = SHARD_COUNT) => 'Suites ' + shard + '/' + count;
@@ -29,7 +29,8 @@ const OFFICIAL_JOBS = Object.freeze(['classification', ...SHARD_JOBS, 'Validatio
 const GODOT_JOBS = Object.freeze(Array.from({ length: GODOT_SHARD_COUNT },
   (_, i) => 'Godot ' + (i + 1) + '/' + GODOT_SHARD_COUNT));
 const GODOT_JOB_SKIPPED = 'Godot ${{ matrix.shard }}/' + GODOT_SHARD_COUNT;
-// Jobs informatifs : jamais requis par les gates, ignorés par les décomptes officiels.
+// Jobs hors des listes exactes des gates : leur verdict est déjà porté par « Validation CI » (qui dépend d'eux),
+// et ils sont sautés sur une PR sans fichier Godot, donc absents de la liste officielle.
 const INFORMATIVE_JOB = /^Godot (?:[1-9][0-9]*|\$\{\{ matrix\.shard \}\})\/[1-9][0-9]*$/;
 
 function isInformativeJob(job) {
