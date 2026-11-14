@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
 test('LNR: une rotation valide est utilisée par rugbySimulate, pas seulement stockée',()=>{
- const t=context();for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
+ const t=context();for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
  const run=t.run;run("start(0,'lnr')");
  run("club().players.forEach(p=>{p.condition=S.lineup.includes(p.id)?5:100;p.injury=0})");
  const before=run('JSON.stringify(S.lineup)'),choices=run('lnr05AdviceCandidates(15).map(x=>({id:x.id,token:x.proposal.token}))');

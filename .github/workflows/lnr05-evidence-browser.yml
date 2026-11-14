@@ -23,7 +23,7 @@ jobs:
           node-version: '24'
       - name: Vérifier identité, composition, anciennes carrières
         run: |
-          node --check dist/lnr05-enriched-data.js
+          node --check dist/lnr05-mesures.js
           node --check dist/lnr05-evidence-center.js
           node --check dist/game.js
           node tests/lnr05-evidence.cjs

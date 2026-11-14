@@ -8,7 +8,7 @@ const {context}=require('./harness.cjs');
 const dist=path.resolve(__dirname,'../dist');
 function ready(snapshot){
  const g=context(snapshot);
- for(const f of ['lnr-rosters-data.js','lnr-birthyears-data.js','lnr-career.js'])
+ for(const f of ['lnr-rosters-base.js','lnr-birthyears-data.js','lnr-career.js'])
   vm.runInContext(fs.readFileSync(path.join(dist,f),'utf8'),g.ctx);
  return g;
 }

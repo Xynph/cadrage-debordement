@@ -17,7 +17,15 @@ function catalogue(file){const ctx=vm.createContext({});vm.runInContext(fs.readF
 const realPlayers=located.players?catalogue(located.players).clubs.flatMap(c=>c[3].map(([id,name])=>[id,name])):[];
 const realStaff=located.staff?JSON.parse(fs.readFileSync(located.staff,'utf8')).people.map(p=>[p.id,p.name]):[];
 const realPress=located.press?JSON.parse(fs.readFileSync(located.press,'utf8')).press.journalists.map(j=>[j.id,j.name]):[];
-if(located.players)assert.equal(realPlayers.length,1592);if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.equal(realPress.length,10);
+if(located.players){
+ assert.equal(realPlayers.length,1592);
+ // The public catalogue of the base is the real one with the base names: same clubs, order, positions, nationalities.
+ const strip=cat=>JSON.stringify(cat.clubs.map(([slug,league,url,players])=>[slug,league,url,players.map(([id,,group,nat])=>[id,group,nat])]));
+ const pub=catalogue(path.join(root,'dist/lnr-rosters-base.js'));
+ assert.equal(strip(pub),strip(catalogue(located.players)),'catalogue public et catalogue réel divergents hors des noms');
+ const french=baseNames.frenchPlayers();for(const c of pub.clubs)for(const [id,name] of c[3])assert.equal(name,french.get(id),'catalogue public : nom de base '+id);
+}
+if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.equal(realPress.length,10);
 const missing=Object.keys(SOURCES).filter(k=>!located[k]);
 if(missing.length)console.warn('Sources privées absentes ('+missing.map(k=>SOURCES[k]).join(', ')+') : comparaison avec ces vrais noms non faite.');
 const real=new Map([...realPlayers,...realStaff,...realPress].map(([id,name])=>[id,fold(name)]));
@@ -76,4 +84,17 @@ for(const file of shipped){
 }
 assert.deepEqual(leaks,[],'vrais noms dans les fichiers livrés');
 
-console.log(JSON.stringify({passed:true,realSources:Object.keys(SOURCES).filter(k=>located[k]),clubs:full.clubs.length,players:players.length,staff:staff.length,realNamesChecked:realNames.size,shippedFiles:shipped.length}));
+// The whole public repository, not only the shipped files: no full real name anywhere (sources, tests, docs).
+let scanned=0;
+if(realNames.size){
+ const all=[];
+ (function walk(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory()){if(!['.git','node_modules','.godot','__pycache__'].includes(entry.name))walk(file);}else if(entry.isFile())all.push(file);}})(root);
+ const repoLeaks=[];
+ for(const file of all){
+  const buffer=fs.readFileSync(file);if(buffer.length>64e6||buffer.includes(0))continue;scanned++;
+  for(const name of quoted(buffer.toString('utf8')))repoLeaks.push(path.relative(root,file).split(path.sep).join('/')+' : '+name);
+ }
+ assert.deepEqual(repoLeaks,[],'vrais noms dans le dépôt public');
+}
+
+console.log(JSON.stringify({passed:true,realSources:Object.keys(SOURCES).filter(k=>located[k]),clubs:full.clubs.length,players:players.length,staff:staff.length,realNamesChecked:realNames.size,shippedFiles:shipped.length,repositoryFilesScanned:scanned}));
