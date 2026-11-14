@@ -110,10 +110,16 @@ v2 : favori toutes tranches 59,5 % ; surprises (écart ≥ 3 perdu) 85 ; corrél
 | nationale | 86–27 (59) → 87–25 (62) | 2 → 3 | 0,47 → 0,6 | 80–38 (42), 6, 0,52 |
 | champ | 97–23 (74) → 108–33 (75) | 10 → 4 | -0,42 → -0,14 | 102–34 (68), 11, 0,33 |
 
+Seconde graine (7, même club) : favori toutes tranches 54,0 → 52,3 %, corrélation rang / effectif 0,18 → 0,23,
+mieux armé du Top 14 14e → 1er, de la Premiership 3e → 1er, mais de l'URC 6e → 14e. Pénalités identiques à la
+graine 4242 (Top 14 : 9,9 → 18,7 sifflées, 5,95 → 5,93 essais, 46,7 → 52,2 points, 16,4 → 25,9 % au pied).
+**Sur deux graines, le gain de hiérarchie est faible et en partie du bruit** (favori 53,2 → 54,7 %, corrélation
+0,17 → 0,29) : il ne remplace pas le barème V2.
+
 Comparaison au réel (Top 14, Premiership, URC) : le favori à domicile gagne ~70-75 %, le leader finit
-rarement hors du top 4, des surprises existent. Après : favori à domicile 69-91 % selon l'écart, à
-l'extérieur 39-70 % ; le mieux armé finit 1er à 6e (sauf Nationale 3e) ; corrélation rang / effectif
-0,34 en moyenne (0,64 en Top 14). Avec le barème V2, la saison d'avant ce lot donnait déjà 0,46 et le
+rarement hors du top 4, des surprises existent. Sur `main` après ce lot, le favori à domicile gagne 69-91 %
+selon l'écart (mais l'écart est presque toujours < 2 points), à l'extérieur 39-70 % ; le mieux armé du
+Top 14 finit 1er sur les deux graines ; ailleurs il reste souvent hors du top 4. Avec le barème V2, la saison d'avant ce lot donnait déjà 0,46 et le
 mieux armé 1er dans 4 championnats sur 9 ; l'effet cumulé V2 + pénalités n'est pas mesuré ici (voir limites).
 
 ## 5. Tests
@@ -135,8 +141,8 @@ mieux armé 1er dans 4 championnats sur 9 ; l'effet cumulé V2 + pénalités n'e
 
 ## 6. Limites
 
-- Une seule graine en saison complète pour l'après (la machine partagée a tué une mesure par manque de mémoire) ;
-  la hiérarchie par championnat varie beaucoup d'une graine à l'autre (10 à 16 clubs).
+- Deux graines en saison complète (4242, 7) ; la hiérarchie par championnat varie beaucoup d'une graine à
+  l'autre (10 à 16 clubs).
 - Les coups francs ne sont pas modélisés (le réel « ~20 » mêle souvent pénalités et coups francs).
 - Premiership et Super Rugby restent ~5 points au-dessus du réel.
 - Hiérarchie : la vraie correction est le barème V2 (#716) ; après sa fusion, remesurer une saison
