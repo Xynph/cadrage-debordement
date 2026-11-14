@@ -27,7 +27,7 @@ function carryTackler(l,side,carrierId,gain){
   if(id==null||!active.has(id)||slot>14)return;
   const forward=slot<8,condition=Number(matchPlayer(l,opp,id)?.condition);
   let s=Math.abs(DEFENCE_LANES[slot]-lane);
-  if(gain>=22)s+=slot===14?-40:slot===10||slot===13?-8:10;
+  if(gain>=22)s+=slot===14?-40:slot===10||slot===13?-8:60; // couverture même sans arrière sur le terrain (carton, sortie)
   else if(gain>=10)s+=slot===14?12:forward?4:0;
   else s+=forward?0:60; // gain court : toujours un avant (les ailiers portent plus depuis les essais réalistes : écart de couloir jusqu'à 40)
   if(slot===5||slot===6)s-=3;else if(slot===8)s+=6;
