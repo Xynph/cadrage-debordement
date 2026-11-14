@@ -801,11 +801,11 @@ function createBridge(options={}){
   // Écriture de la décision en attente (boucle stdio : dès que la réponse est partie). Renvoie la durée en ms.
   const flush=()=>{if(!pendingCommit)return 0;const started=performance.now();flushCommit();return performance.now()-started;};
   const pending=()=>pendingCommit?pendingCommit.command:null;
+  // Les tests réécrivent la ligne de retour ci-dessous : écriture différée exposée sur handle (handle.flush, handle.pending).
+  Object.assign(handle,{flush,pending});
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
   if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
-  // Les tests réécrivent la ligne de retour ci-dessous : écriture différée exposée sur handle (handle.flush, handle.pending).
-  Object.assign(handle,{flush,pending});
   return {handle,close};
  }catch(e){close();throw e;}
 }
