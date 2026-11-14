@@ -15,7 +15,9 @@ const COVER_WEEKLY_SALARY=2500;
 function seedHash(text){let h=2166136261;for(const ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
 function ensureSkills(p){if(p.skills)return p;let seed=seedHash(p.id||p.name),prof=PROFILES[p.fam]||PROFILES[7];p.skillBase=p.rating;p.skills={};Object.keys(ATTR).forEach((k,i)=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;p.skills[k]=clamp(p.rating+prof[i]+(seed%19)-9,20,97)});return p}
 function skill(p,k,fit=false){if(!p)return 25;ensureSkills(p);let n=clamp(p.skills[k]+p.rating-p.skillBase+focusedBonus(p,k),15,99);return fit?n*(.50+p.condition*.005):n}
-function roleNote(p,f=p?.fam){if(!p)return 0;const w=ROLE_WEIGHTS[f]||ROLE_WEIGHTS[7];return Math.round(Object.entries(w).reduce((s,[k,v])=>s+skill(p,k)*v,0)/Object.values(w).reduce((s,v)=>s+v,0))}
+// Termes de chaque grille de poids lus une fois (mêmes paires, même ordre d'addition qu'Object.entries à chaque appel).
+const ROLE_WEIGHT_TERMS=new WeakMap();
+function roleNote(p,f=p?.fam){if(!p)return 0;const w=ROLE_WEIGHTS[f]||ROLE_WEIGHTS[7];let t=ROLE_WEIGHT_TERMS.get(w);if(!t){t={entries:Object.entries(w),total:Object.values(w).reduce((s,v)=>s+v,0)};ROLE_WEIGHT_TERMS.set(w,t);}let s=0;for(const [k,v] of t.entries)s=s+skill(p,k)*v;return Math.round(s/t.total)}
 function slotEligible(p,i){if(!p)return false;if(i===0||i===2)return p.pos===POS[i];return p.fam===FAMILIES[i]}
 function benchEligible(p,i){if(!p)return false;if(i===0)return p.fam===1;if(i===1)return p.pos===POS[0];if(i===2)return p.pos===POS[2];if(i===3)return p.fam===2;if(i===4)return p.fam===3;if(i===5)return p.fam===4;if(i===6)return p.fam>=4;return p.fam>=6}
 function fitScore(p,f=p.fam){return roleNote(p,f)*(.5+p.condition*.005)}
