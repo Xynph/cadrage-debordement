@@ -120,14 +120,58 @@ mêlée à partir d'une conquête dans les 22, temps de jeu, jeu au pied, discip
 
 ## 4. Après (mêmes graines)
 
-APRES_TABLEAU
+Saisons complètes, graines 4242 et 7 (2 850 matchs). Mesurées avec la version précédant deux
+retouches finales sans effet sur le volume : l'amplification de niveau limitée à `tacticalEdge` (elle
+portait aussi sur domicile et moral, ce qui déséquilibrait deux équipes identiques : 67 % pour la
+première, test `opposition`) et la réussite au but en « échecs × 0,6 » (au lieu de +0,15, qui
+plafonnait les meilleurs buteurs : test `goalkicking`). Contrôle du code final : `tests/essais-realistes.cjs`
+(262 matchs, graine 4242) donne 6,16 essais et 47,7 points par match, ailier titulaire 0,45, ailiers 29 %,
+avants 35 %. La relance d'une saison entière avec le code final a été tuée deux fois par manque de
+mémoire de la machine partagée (autres agents) : à refaire avec `scripts/mesure-essais-monde.cjs`.
+
+| Championnat | Matchs | Essais / match | Points / match | Part essais / transfo / pénalités (%) | Écart moyen | Sans essai (%) | Bonus 4 essais (%) | Bonus +3 essais (%) | Entrées 22 / essais par entrée | Réussite pénalités / transfo (%) | Ballons perdus |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Pro D2 | 490 | 5,6 | 43,5 | 64,4 / 18 / 17,6 | 12,1 | 6,4 | 31,8 | 14 | 4,7 / 1,2 | 67,6 / 70 | 15,9 |
+| Nationale | 374 | 5,74 | 43,4 | 66,2 / 17,2 / 16,6 | 12,3 | 5,1 | 31,4 | 14,4 | 4,6 / 1,26 | 65,5 / 65,1 | 15,2 |
+| Top 14 | 374 | 5,92 | 46,8 | 63,2 / 19,5 / 17,3 | 11,6 | 4,8 | 34,4 | 11,9 | 4,6 / 1,29 | 75,5 / 76,9 | 15,2 |
+| Championship | 374 | 8,51 | 62,3 | 68,4 / 19,2 / 12,4 | 15,1 | 2,4 | 63,1 | 17 | 4,3 / 1,97 | 66,8 / 70,2 | 11,7 |
+| URC | 302 | 6,55 | 49,5 | 66,2 / 19,6 / 14,2 | 12,7 | 3,6 | 42,5 | 13,7 | 4,5 / 1,47 | 68,5 / 74,1 | 15 |
+| League One D1 | 228 | 8,32 | 61,2 | 67,9 / 20,1 / 12 | 14,5 | 1,5 | 61,6 | 17,3 | 4,7 / 1,79 | 73,3 / 73,9 | 11,9 |
+| Premiership | 186 | 7,88 | 58,7 | 67 / 19,8 / 13,2 | 15,4 | 2,4 | 54,8 | 20,4 | 5 / 1,57 | 71,4 / 73,7 | 12,2 |
+| Super Rugby | 170 | 8,17 | 60,1 | 68 / 20 / 12 | 14,8 | 0,9 | 57,9 | 20,6 | 4,3 / 1,89 | 65,2 / 73,9 | 12 |
+| Champions Cup | 126 | 6,05 | 47 | 64,3 / 19,1 / 16,6 | 13,6 | 5,6 | 34,5 | 15,1 | 4,8 / 1,25 | 72,8 / 74,3 | 14,8 |
+| League One D2 | 112 | 7,93 | 57,8 | 68,6 / 19 / 12,4 | 11,9 | 0,9 | 56,7 | 12,5 | 4,6 / 1,72 | 66,6 / 69,1 | 12,4 |
+| Challenge Cup | 102 | 7,33 | 54,8 | 66,9 / 19,2 / 13,8 | 14,9 | 2,9 | 53,4 | 16,7 | 4,7 / 1,57 | 69,7 / 71,9 | 14,5 |
+| Tous | 2850 | 6,84 | 51,6 | 66,3 / 19 / 14,6 | 13,2 | 3,9 | 44,7 | 15,3 | 4,6 / 1,49 | 69,1 / 71,8 | 14 |
+
+Choix sur pénalité (tous) : 42,2 % au but, 52,1 % en touche, 5,7 % à la main ; 8,6 pénalités jouées par match.
+
+Marqueurs par maillot (% des essais) : 1 : 1,5 · 2 : 6,5 · 3 : 1,4 · 4 : 2,5 · 5 : 2,3 · 6 : 5,4 · 7 : 5,9 · 8 : 8,9 · 9 : 7,2 · 10 : 4,1 · 11 : 14 · 12 : 7 · 13 : 8,7 · 14 : 14,1 · 15 : 10,4
+Groupes : avants 34,5 % (première ligne 9,5, troisième ligne 20,3), charnière 11,3, centres 15,7, ailiers 28, arrière 10,4. **Ailier titulaire : 0,48 essai par match.**
+
+Hiérarchie (championnats, par graine) :
+- graine 4242 : favori selon l'effectif (écart ≥ 1) 56 (491) ; écart ≥ 3 68,2 (66) ; corrélation rang / effectif 0,21 (effectif) ; victoires à domicile 60,6 % ; Top 14 : BNR 77 (67.1), PCX 77 (66.9), PBX 72 (66.8)
+- graine 7 : favori selon l'effectif (écart ≥ 1) 48,2 (471) ; écart ≥ 3 59,4 (64) ; corrélation rang / effectif 0,13 (effectif) ; victoires à domicile 60,1 % ; Top 14 : MGX 81 (67.4), PCX 77 (67.2), PDX 76 (68.5)
+
+Comparaison à la réalité : Top 14 5,9-6,2 (réel 5,9) ; Pro D2 5,6 (5,2) ; URC 6,3-6,8 (6,6) ;
+Premiership 7,9 (8,0) ; Championship 8,4-8,7 (8,6) ; League One D1 8,2-8,5 (8,6) ; Super Rugby 8,0-8,4
+(8,3). Points : Top 14 ~47 (réel 51 : pénalités encore rares, voir limites), Premiership ~59 (56),
+League One ~61 (62). Bonus offensif Top 14 (+3 essais) ~12 % des feuilles (réel 14,8 %) ; Premiership
+(4 essais) ~55 % (59 %) ; URC ~42 % (42 %).
 
 ## 5. Notes et feuille de statistiques
 
 - `match-stats.cjs` lit le même journal : les essais, transformations et pénalités de la feuille
   restent égaux au score (contrôle de `scripts/stats-match-validation.cjs` et des suites
   `match-stats-realistes`, `stats-fiche-joueur`).
-- Notes (`match-notes.cjs`, étalonnage par maillot de #707) : NOTES_RESULTAT
+- Notes (`match-notes.cjs`, étalonnage par maillot de #707) : plus d'essais aux ailiers, moins aux troisième ligne : la
+  part des faits « essai » par maillot change, donc l'attendu par maillot peut dériver.
+  `scripts/etalonner-notes-postes.cjs` rend la méthode de docs/homme-du-match-postes-20261114.md
+  rejouable (non encore exécuté faute de mémoire : capture des journaux reçus par `noter`, puis ajustement des attendus vers la
+  moyenne commune et des amplitudes vers la cible d'homme du match). Le test
+  `tests/homme-du-match-postes.cjs` n'a pas pu être rejoué en local (processus tué par manque de
+  mémoire de la machine partagée, deux fois) : c'est la CI de la PR qui tranche ; s'il sort des
+  bornes, ré-étalonner avec ce script.
 
 ## 6. Test
 
