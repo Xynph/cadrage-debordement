@@ -52,8 +52,7 @@ static func build(app:Control) -> Control:
 				app._navigate("Plan de jeu")
 				return
 			app.Immersive.open_preparation(app,0 if i==3 else 1),i==0,"",true,app.accent,"TacticsTab"+str(i))
-	var next:Dictionary=app.model.next if app.model.get("next") is Dictionary else {}
-	var fixture := "Aucun prochain match" if next.is_empty() else G.club_name(next.get("home",{}))+" – "+G.club_name(next.get("away",{}))+" · "+str(next.get("label",""))
+	var fixture := P.next_fixture_caption(app.model,"Aucun prochain match")
 	D.text(page,2248,30,fixture.to_upper(),22,C.MUTED,500,1100,HORIZONTAL_ALIGNMENT_RIGHT)
 	var preparation: Variant = app.model.get("decisions",{}).get("preparation")
 	var domains: Array = preparation.get("domains",[]) if preparation is Dictionary else []
