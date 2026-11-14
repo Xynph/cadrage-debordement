@@ -20,7 +20,7 @@ for(const variant of [1,2]){
  assert.ok(found,'Variante '+variant+' réellement préparée.');
 }
 const {createBridge}=require('../native/engine/worker.cjs');
-for(const [club,variant] of [[1,1],[8,2]]){
+for(const [club,variant] of [[1,1],[6,2]]){
  const root=fs.mkdtempSync(path.join(process.env.CD_PRESS_TEST_ROOT||require('node:os').tmpdir(),'cd-press-review-'));let b=createBridge({dataDir:root,seed:398,now:1700000000000}),n=0;
  const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  try{
