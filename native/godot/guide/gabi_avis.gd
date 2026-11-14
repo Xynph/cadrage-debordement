@@ -440,7 +440,7 @@ static func fatigue(model: Dictionary) -> Dictionary:
 		var change: Dictionary = changes[0]
 		texte = "%s est à %d %% de condition : je le ferais souffler. %s est frais (%d %%) et vaut %d à ce poste." % [_nom(joueur(model, str(change.sortant))), int(_nombre(change.get("condition"), 0)), entrants[0], int(_nombre(change.get("entrantCondition"), 0)), int(_nombre(change.get("rating"), 0))]
 	else:
-		texte = "%s %s sous les %d %% de condition. Je les ferais souffler : %s." % [qui, "est" if fatigues.size() == 1 else "sont", seuil, _liste(Array(phrases))]
+		texte = "%s %s sous les %d %% de condition. Je les ferais souffler et je mettrais à leur place : %s." % [qui, "est" if fatigues.size() == 1 else "sont", seuil, _liste(Array(phrases))]
 	if changes.size() < fatigues.size():
 		texte += " Pour les autres, je n'ai personne de frais au poste."
 	return _resultat(texte, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes.map(func(c: Dictionary) -> Dictionary: return {"slot": int(c.slot), "playerId": str(c.playerId), "sortant": str(c.sortant)}), "libelle": "Suivre le conseil", "detail": "Fait souffler les titulaires fatigués (tu peux toujours remettre la feuille comme avant)"})
