@@ -640,9 +640,16 @@ carrière non marquée reprise, jouée et exportée sans conversion).
 - Les espoirs des centres sont payés 2 000 € par semaine (104 000 € par an),
   au-dessus du salaire médian d'un professionnel (1 040 € par semaine) : une
   promotion en cours de saison coûte cher à un club géré de petite division,
-  jusqu'au recalage de l'intersaison suivante. Non corrigé ici.
-- Joueurs libres après l'intersaison : minimum 7 800 € par an, sous le
-  plancher de la règle (14 000 €).
+  jusqu'au recalage de l'intersaison suivante. Non corrigé : le salaire de
+  2 000 € est une constante du centre (`academyPlayer`, validation des
+  sauvegardes pour les invités, et la promotion enregistrée exige 2 000 € au
+  moins) ; l'aligner touche au schéma des sauvegardes.
+- Joueurs libres après l'intersaison : un joueur libéré d'un club à échelle
+  réduite (Nationale, Japon) arrivait sur le marché avec son salaire de club,
+  jusqu'à 7 800 € par an, sous le plancher de la règle (14 000 €). Corrigé :
+  `aiRosterTrimFreeAgents` (club-budget) relève tout libre sous 270 € par
+  semaine à 270 € (prix suivant), carrières marquées seulement ; test dans
+  `tests/club-budget.cjs`.
 - Effectif du club joué ramené à 40 à l'intersaison (Toulouse 61 → 40, Bath
   57 → 40) : identique drapeau éteint, défaut existant.
 
