@@ -25,7 +25,7 @@ if(located.players){
  assert.equal(strip(pub),strip(catalogue(located.players)),'catalogue public et catalogue réel divergents hors des noms');
  const french=baseNames.frenchPlayers();for(const c of pub.clubs)for(const [id,name] of c[3])assert.equal(name,french.get(id),'catalogue public : nom de base '+id);
 }
-if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.equal(realPress.length,10);
+if(located.staff)assert.equal(realStaff.length,471);if(located.press)assert.ok(realPress.length>=10);
 const missing=Object.keys(SOURCES).filter(k=>!located[k]);
 if(missing.length)console.warn('Sources privées absentes ('+missing.map(k=>SOURCES[k]).join(', ')+') : comparaison avec ces vrais noms non faite.');
 const real=new Map([...realPlayers,...realStaff,...realPress].map(([id,name])=>[id,fold(name)]));

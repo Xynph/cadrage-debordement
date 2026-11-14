@@ -9,14 +9,16 @@ function headlines(s){
  const week=s.round,season=s.season;
  const clubs=s.clubs.filter(c=>c&&typeof c.name==='string'&&Number.isInteger(c.id));
  if(!clubs.length)return [];
- const roster=globalThis.CDPressQuestionBank?.journalists||[];
+ const bank=globalThis.CDPressQuestionBank;
+ // Chaque club est couvert par la presse de son pays.
+ const roster=id=>bank?(typeof bank.journalistsFor==='function'?bank.journalistsFor(bank.regionFor(s,id)):bank.journalists):[];
  return types.map((type,i)=>{
   const club=clubs[(hash(season+':'+week+':'+i)%clubs.length)];
   const mine=club.id===s.club;
   const topic=['le prochain défi','les choix de rotation','la gestion des espoirs','les équilibres défensifs','les ambitions du groupe','le projet sportif','les points à prendre'][i];
   const title=club.name+' : '+topic;
   const line=mine&&s.morale<45?'Le club traverse une période délicate ; les prochaines décisions seront scrutées.':mine&&s.morale>75?'La dynamique est favorable, mais le calendrier impose de rester vigilant.':'Notre rédaction présente les enjeux de la semaine sans préjuger des résultats.';
-  const source=roster.length?roster[(hash(club.id+':'+season+':'+week+':'+i))%roster.length]:null;
+  const local=roster(club.id),source=local.length?local[(hash(club.id+':'+season+':'+week+':'+i))%local.length]:null;
   return {id:season+':'+week+':'+club.id+':'+i,clubId:club.id,kind:type,title,summary:line,byline:source&&{name:source.name,outlet:source.outlet},isUserClub:mine};
  });
 }

@@ -15,6 +15,9 @@ func run() -> void:
 	var base := ProjectSettings.globalize_path("res://").path_join("../../tests")
 	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(base.path_join("fixtures/match-gestes-sequence.json")))
 	# Le moteur peut désigner n'importe quel poste, dont un arrière qui était marcheur.
+	# Camp du ballon porté : celui de la touche conservée (image 4), lu dans la séquence régénérée.
+	var maul_side := int(fixture.frames[4].events[0].scene.team)
+	check(fixture.frames[4].scene.kind == "setpiece-win", "Image 4 : touche conservée en ballon porté")
 	for slot in 15:
 		var view = View.new()
 		root.add_child(view)
@@ -28,7 +31,7 @@ func run() -> void:
 			var frame: Dictionary = fixture.frames[i].duplicate(true)
 			if i == 4:
 				for player: Dictionary in frame.scene.players:
-					player.featured = player.side == 1 and player.slot == slot
+					player.featured = player.side == maul_side and player.slot == slot
 					if player.featured: designated = player.id
 			events.append_array(frame.events)
 			view.apply_frame({"scene": frame.scene, "teams": frame.teams, "events": events, "paused": false})

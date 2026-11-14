@@ -69,11 +69,21 @@ budget() {
     tests/native-club-strategy.cjs) echo 2400s ;; # Monde : saison de 46 semaines jouée jusqu'à next_season (1512 à 1581 s sous charge locale, 1062 à 1456 s en CI sur main ; le job Suites a 50 min)
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
-    # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
-    # Notes de match + XV type (journées et saison en carrière Monde) : ~15 min en CI.
-    tests/match-notes.cjs) echo 1800s ;;
+    # Notes de match + XV type (carrière Monde) : une seule carrière jouée par le pont (4 journées) + deux comparaisons
+    # dans le harnais VM, au lieu de 7 carrières et 16 journées : 17 min en CI avant (1031 s, 1074 s de CPU), ~385 s de CPU
+    # en local après (2,2 fois moins) donc ~8 min estimées en CI ; budget ≈ 3 fois.
+    tests/match-notes.cjs) echo 1400s ;;
+    # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
+    # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
+    tests/japan-match.cjs) echo 300s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
+    # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
+    tests/match-rating-curve.cjs) echo 420s ;;
+    # Stats réalistes de la fiche (4 journées Monde ; le défaut était 26 par erreur, d'où le dépassement de 900 s) : 285 s de CPU en local, ~5-7 min en CI.
+    tests/stats-fiche-joueur.cjs) echo 900s ;;
+    # Carrière Monde jusqu'au premier match d'un club de League One : 73-98 s en CI sur main (3x de réserve).
+    tests/japan-quota-card-return.cjs) echo 300s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
