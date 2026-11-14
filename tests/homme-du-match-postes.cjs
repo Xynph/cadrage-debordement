@@ -65,7 +65,8 @@ test('Homme du match par poste (Monde) : répartition plausible, meilleure note,
     console.log('moyennes des notes par maillot : ' + notes.map((a, k) => (k + 1) + ':' + moy(a).toFixed(2)).join(' '));
     const ecart = a => { const m = moy(a); return Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / a.length); };
     assert.ok(moy(toutes) >= 6.45 && moy(toutes) <= 6.9, 'moyenne générale ' + moy(toutes).toFixed(2));
-    assert.ok(ecart(toutes) >= 0.85 && ecart(toutes) <= 1.3, 'écart-type général ' + ecart(toutes).toFixed(2));
+    // Barème senior V2 (#716) : écarts de niveau réels entre clubs, matchs plus déséquilibrés, notes un peu plus dispersées (1,31 en CI).
+    assert.ok(ecart(toutes) >= 0.85 && ecart(toutes) <= 1.4, 'écart-type général ' + ecart(toutes).toFixed(2));
     // Bornes par maillot élargies (moyenne 6,3-7,0 → 6,2-7,2 ; écart-type max 1,45 → 1,65, ouvreur à 1,54 ici) : sur ~160 matchs les notes d'un maillot sont corrélées
     // (même équipe, même match) et la moyenne d'un maillot varie de ±0,2 d'un échantillon à l'autre (maillot 6 :
     // 6,88 sur les 164 premiers matchs de l'étalonnage, 7,11 ici ; 6,77 sur 795 matchs).
