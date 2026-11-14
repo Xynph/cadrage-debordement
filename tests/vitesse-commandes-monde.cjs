@@ -8,13 +8,18 @@
 //   2. les modèles renvoyés et le profil final sont identiques avec et sans écriture différée ;
 //   3. une coupure brutale avant l'écriture ne perd que cette décision, le profil reste intact ;
 //   4. un échec de l'écriture différée annule la décision et la commande suivante le dit (aucun échec silencieux) ;
-//   5. des seuils de temps larges (machines de CI partagées) contre les régressions de fluidité.
+//   5. des seuils de temps larges (machines de CI partagées) contre les régressions de fluidité ;
+//   6. une avance du calendrier envoyée juste après une décision la reprend à son compte (validée et écrite avec
+//      elle) au lieu d'attendre son écriture séparée ; refusée, elle laisse la décision en attente ;
+//   7. le vrai worker stdio : jour envoyé aussitôt après une décision (regroupé), puis « shutdown » envoyé aussitôt
+//      après une autre décision : réponse, décision écrite, sortie propre (recette Windows, run 43603330612).
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
+const readline = require('node:readline');
 const { test, before, after } = require('node:test');
 const M = require('./helpers/carriere-monde.cjs');
 
@@ -155,4 +160,83 @@ test('Échec de l\'écriture différée : décision annulée et signalée à la 
     jeu.bridge.handle.flush();
     assert.equal(tactique(dir), model.tactics.attack);
   } finally { jeu.bridge.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('Avance du calendrier juste après une décision : décision regroupée, validée et écrite avec elle', { timeout: 1500000 }, () => {
+  const dir = copie();
+  const jeu = M.ouvrir({ dataDir: dir, deferredCommits: true, testVm: true, timing: true });
+  try {
+    const vm = jeu.bridge.vm;
+    vm.run('{const o=nativeValidateSaved;globalThis.__validations=0;nativeValidateSaved=function(){__validations++;return o.apply(this,arguments);};}');
+    let model = jeu.regler(jeu.call('snapshot'));
+    // Refusée (date périmée) : la décision reste en mémoire et en attente, puis s'écrit normalement.
+    const premiere = autreAttaque(model);
+    model = jeu.call('set_tactics', { attack: premiere, defense: model.tactics.defense });
+    assert.equal(jeu.bridge.handle.pending(), 'set_tactics');
+    const refus = jeu.brut('advance_day', { fromDate: '1999-01-01' });
+    assert.equal(refus.ok, false, 'date périmée refusée');
+    assert.equal(refus.model.tactics.attack, premiere, 'la décision reste en mémoire');
+    assert.equal(jeu.bridge.handle.pending(), 'set_tactics', 'et en attente d\'écriture');
+    jeu.bridge.handle.flush();
+    assert.equal(tactique(dir), premiere, 'puis écrite');
+    // Acceptée : le jour reprend la décision (une seule validation, aucune écriture séparée avant le jour).
+    const seconde = autreAttaque(model);
+    model = jeu.call('set_tactics', { attack: seconde, defense: model.tactics.defense });
+    assert.equal(jeu.bridge.handle.pending(), 'set_tactics');
+    const jour = model.meta.calendarToday;
+    vm.run('__validations=0');
+    const r = jeu.brut('advance_day', { fromDate: jour });
+    assert.equal(r.ok, true, r.error);
+    assert.equal(r.timing.ecriture_regroupee, true, 'décision regroupée dans le jour');
+    assert.equal(r.timing.ecriture_precedente, undefined, 'aucune écriture séparée avant le jour');
+    assert.ok(vm.run('__validations') >= 1, 'la décision regroupée est validée');
+    assert.equal(jeu.bridge.handle.pending(), null);
+    assert.notEqual(r.model.meta.calendarToday, jour);
+    assert.equal(tactique(dir), seconde, 'décision écrite avec le jour');
+    assert.equal(jeu.call('export', { proof: true }).meta.exportRoundTripSha256, sha(enregistre(dir)), 'profil = carrière en mémoire');
+  } finally { jeu.bridge.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('Worker stdio réel : jour aussitôt après une décision, puis fermeture aussitôt après une décision', { timeout: 1500000 }, async () => {
+  const dir = copie();
+  const worker = path.join(__dirname, '..', 'native', 'engine', 'worker.cjs');
+  const child = spawn(process.execPath, ['--max-old-space-size=1300', worker, '--data-dir', path.join(dir, 'PrototypeGodot')], { env: { ...process.env, CD_ENGINE_TIMING: '1', CD_ECRITURE_DIFFEREE: '1' }, stdio: ['pipe', 'pipe', 'inherit'] });
+  const sortie = new Promise(resolve => child.once('exit', (code, signal) => resolve({ code, signal, at: performance.now() })));
+  const lignes = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
+  const attente = [];
+  lignes.on('line', line => { const w = attente.shift(); if (w) w(JSON.parse(line)); });
+  let id = 0;
+  const envoyer = (command, payload = {}) => new Promise(resolve => { attente.push(resolve); child.stdin.write(JSON.stringify({ id: ++id, command, payload }) + '\n'); });
+  try {
+    let r = await envoyer('snapshot');
+    assert.equal(r.ok, true, r.error);
+    r = await envoyer('set_tactics', { attack: autreAttaque(r.model), defense: r.model.tactics.defense });
+    assert.equal(r.ok, true, r.error);
+    const jour = r.model.meta.calendarToday;
+    // Comme l'interface : la commande suivante part dès la réponse reçue, pendant l'écriture différée.
+    const t = performance.now();
+    r = await envoyer('advance_day', { fromDate: jour });
+    const dureeJour = performance.now() - t;
+    assert.equal(r.ok, true, r.error);
+    assert.notEqual(r.model.meta.calendarToday, jour);
+    console.log('stdio : jour après décision', Math.round(dureeJour), 'ms ; phases', JSON.stringify(r.timing));
+    assert.equal(r.timing.ecriture_regroupee, true, 'le jour reprend la décision au lieu d\'attendre son écriture');
+    // Dernière décision puis fermeture immédiate : la réponse à shutdown suit l'écriture, puis le worker sort.
+    r = await envoyer('set_tactics', { attack: autreAttaque(r.model), defense: r.model.tactics.defense });
+    assert.equal(r.ok, true, r.error);
+    const derniere = r.model.tactics.attack;
+    const envoi = performance.now();
+    r = await envoyer('shutdown');
+    assert.equal(r.ok, true, r.error);
+    const fin = await Promise.race([sortie, new Promise(resolve => setTimeout(() => resolve(null), 60000))]);
+    assert.ok(fin, 'le worker sort de lui-même après shutdown');
+    assert.equal(fin.code, 0, 'sortie propre');
+    console.log('stdio : shutdown après décision, sortie en', Math.round(fin.at - envoi), 'ms');
+    assert.equal(tactique(dir), derniere, 'la dernière décision est écrite avant la sortie');
+    assert.ok(!fs.existsSync(path.join(dir, 'PrototypeGodot', 'profil.lock')), 'verrou rendu');
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    await sortie;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

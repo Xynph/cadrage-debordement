@@ -62,6 +62,13 @@ renommages ≈ 0,5 s) n'est plus le coût dominant. Le temps part dans la valida
    l'écran du carnet ; le modèle passe de 18,7 à 13,2 Mo (moins de parcours, d'encodage et de copie côté Godot).
    `CD_CARNET_CIBLES=complet` rétablit l'ancien modèle.
 
+## Recette Windows du vrai EXE (run 43603330612) : cause et correction
+
+- **Symptôme** : après 37 journées, `next_season` ne répond pas dans la borne de 20 s de `qa_runner.gd` (« Engine response is bounded »), d'où la cascade : saison 2 non atteinte, export non écrit, import non restauré.
+- **Cause** : l'écriture différée d'une décision (sérialisation, validation stricte, écriture atomique) démarrait dès la réponse partie et bloquait le moteur d'un seul tenant. La commande suivante, envoyée aussitôt par l'interface, attendait la fin de cette écriture **puis** faisait son propre travail, qui réécrit de toute façon toute la carrière. En fin de saison (gros profil, disque Windows), écriture + nouvelle saison > 20 s.
+- **Second défaut** : le pont Godot tuait le moteur 2 s après « shutdown » ; une décision encore en écriture (2 à 6 s) était alors perdue à chaque fermeture rapide.
+- **Correction** : (1) l'écriture en attente se fait par étapes (sérialisation, validation, écriture) entre lesquelles la boucle stdio lit les commandes arrivées ; (2) une commande déjà écrite avant sa réponse (jour, coup d'envoi, clôture, nouvelle saison, préparations, « Sauvegarder ») reprend la décision à son compte : validée (y compris un jour de semaine) et écrite avec elle ; refusée, elle la laisse en mémoire et en attente ; (3) le pont Godot attend la réponse à « shutdown » jusqu'à 20 s, puis 2 s après elle, avant de tuer le moteur ; la fermeture du jeu et les recettes attendent ce même délai.
+
 ## Sécurité de la sauvegarde
 
 - Remplacement atomique inchangé (fichier temporaire + fsync, copie de secours par lien physique ouvert en

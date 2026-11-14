@@ -474,27 +474,43 @@ function createBridge(options={}){
   // commande suivante est refusée avec la raison : aucun échec silencieux.
   const deferredCommits=options.deferredCommits===true&&process.env.CD_ECRITURE_DIFFEREE!=='0';
   const SYNC_COMMANDS=new Set(['new_career','import','restore_checkpoint','save','next_season','pack_select','population_enable','academy_groups_enable','recover_profile',...NATIONAL_COMMANDS]);
-  let pendingCommit=null,pendingFailure=null;
+  // Commandes déjà écrites avant leur réponse (sérialisation, validation, écriture atomique de toute la carrière) :
+  // une décision en attente y est regroupée au lieu d'être écrite d'abord à part. Sans ce regroupement, une avance
+  // du calendrier envoyée juste après une décision attendait l'écriture complète de celle-ci (2 à 6 s selon la
+  // machine et la taille du profil) avant son propre travail : la nouvelle saison dépassait ainsi la borne de 20 s de
+  // la recette Windows (run 43603330612). La création, l'import et les restaurations remplacent la carrière : la
+  // décision est alors écrite d'abord, comme avant.
+  const COALESCING=new Set([...PRESS_PROGRESSION,'save']);
+  let pendingCommit=null,pendingFailure=null,coalescing=null;
   const restorePrior=prior=>{
    seed=prior.seed;clock=prior.clock;store=copyStore(prior.store);ctx.nativePrior=prior.state();cleanSave=prior.fromSave?prior.text:null;projectionCache.clear();
    try{run('nativeSystems.clearTransient()');run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');}
    finally{delete ctx.nativePrior;}
   };
-  // Termine la décision en attente : sérialisation, validation, écriture. En cas d'échec, l'état d'avant la
-  // décision est rétabli et l'erreur est gardée pour la prochaine réponse.
-  function flushCommit(){
-   const pending=pendingCommit;if(!pending)return;pendingCommit=null;
+  // Termine la décision en attente par étapes : sérialisation, validation, puis écriture atomique. Entre deux étapes,
+  // la boucle stdio lit les commandes arrivées : une commande qui n'attend donc au plus que l'étape en cours, et une
+  // avance du calendrier reprend la décision à son compte (regroupement ci-dessus). Chaque étape renvoie vrai quand
+  // il n'y a plus rien à écrire. En cas d'échec, l'état d'avant la décision est rétabli et l'erreur est gardée pour
+  // la prochaine réponse.
+  function flushStep(){
+   const pending=pendingCommit;if(!pending)return true;
    try{
-    run('save();');run('nativeValidateSaved('+pending.full+')');
+    if(pending.stage===0){run('save();');pending.stage=1;return false;}
+    if(pending.stage===1){run('nativeValidateSaved('+pending.full+')');pending.stage=2;return false;}
+    pendingCommit=null;
     if(pending.tick&&committedFiles&&seed===pending.prior.seed&&sameStore(store,pending.prior.store)&&profileFilesVersion()===committedFiles)clock=pending.prior.clock;
     else persist();
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+    return true;
    }catch(error){
+    pendingCommit=null;
     const failure=Error('Votre dernière décision n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
     try{restorePrior({...pending.prior,state:()=>({...pending.prior.state(),saveError:true})});}catch(restore){failure.message+=' Restauration impossible : '+restore.message;}
     pendingFailure=failure;
+    return true;
    }
   }
+  function flushCommit(){while(!flushStep());}
   flushBeforeClose=flushCommit;
   // Instrumentation des allers-retours (CD_ENGINE_TIMING=1) : durées par phase, sans effet sur la simulation.
   const timing=options.timing===true||process.env.CD_ENGINE_TIMING==='1';let phases=null,phaseAt=0;
@@ -758,16 +774,19 @@ function createBridge(options={}){
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
      if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}
      mark('commande');
-     if(advancesWithinWeek)run('save()');
+     // Décision regroupée (voir COALESCING) : sa validation stricte n'est pas sautée, même un jour de semaine.
+     if(advancesWithinWeek){run('save()');if(coalescing)run('nativeValidateSaved('+coalescing.full+')');}
      // Validation complète (sans reprise des sections) à la création, à l'import et à chaque fin de semaine ou
      // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
      else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');');mark('completion');
       // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
       if(defer)run('if(S&&!validatingStartup)lastSaveError=false;');
-      else{run('save();');mark('serialisation');run('nativeValidateSaved('+FULL_VALIDATION.has(command)+')');}}
+      else{run('save();');mark('serialisation');run('nativeValidateSaved('+(FULL_VALIDATION.has(command)||coalescing?.full===true)+')');}}
      mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      if(defer){
-      pendingCommit={command,full:FULL_VALIDATION.has(command),tick:command==='tick',prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
+      pendingCommit={command,stage:0,full:FULL_VALIDATION.has(command),tick:command==='tick',prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
+      // La carrière en mémoire diffère désormais du texte enregistré : aucune copie d'annulation ne peut le reprendre.
+      cleanSave=null;
      }else{
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
@@ -775,6 +794,8 @@ function createBridge(options={}){
      else persist();
      // La sauvegarde vient d'être publiée : le texte enregistré décrit exactement la carrière en mémoire.
      cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+     // La décision regroupée est écrite avec cette commande.
+     if(coalescing&&pendingCommit===coalescing)pendingCommit=null;
      }
      mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
@@ -786,7 +807,11 @@ function createBridge(options={}){
    }catch(error){projectionCache.clear();return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
   function handle(request){
-   if(pendingCommit){const started=performance.now();flushCommit();lastFlushMs=performance.now()-started;}
+   // Décision en attente : regroupée dans une commande écrite avant sa réponse, écrite d'abord sinon. Une commande
+   // regroupée refusée laisse la décision en mémoire et en attente (sérialisation reprise du début).
+   coalescing=pendingCommit&&deferredCommits&&!pendingFailure&&COALESCING.has(request?.command)&&!resumeCheckpoint?pendingCommit:null;
+   if(coalescing){coalescing.stage=0;}
+   else if(pendingCommit){const started=performance.now();flushCommit();lastFlushMs=performance.now()-started;}
    if(pendingFailure&&request?.command!=='shutdown'){
     const failure=pendingFailure;pendingFailure=null;projectionCache.clear();
     const id=Number.isSafeInteger(request?.id)&&request.id>=0||typeof request?.id==='string'&&request.id.length>0&&request.id.length<=100&&!/[\r\n]/.test(request.id)?request.id:null;
@@ -796,13 +821,19 @@ function createBridge(options={}){
    const reading=request?.command==='snapshot';
    if(!reading)projectionCache.clear();
    allowProjectionCache=reading;
-   try{const response=handleMeasured(request);if(response?.timing&&lastFlushMs)response.timing.ecriture_precedente=Math.round(lastFlushMs*10)/10;return response;}finally{lastFlushMs=0;allowProjectionCache=false;if(!reading)projectionCache.clear();}
+   try{
+    const response=handleMeasured(request);
+    if(response?.timing){if(lastFlushMs)response.timing.ecriture_precedente=Math.round(lastFlushMs*10)/10;if(coalescing)response.timing.ecriture_regroupee=pendingCommit!==coalescing;}
+    return response;
+   }finally{if(coalescing&&pendingCommit===coalescing)coalescing.stage=0;coalescing=null;lastFlushMs=0;allowProjectionCache=false;if(!reading)projectionCache.clear();}
   }
   // Écriture de la décision en attente (boucle stdio : dès que la réponse est partie). Renvoie la durée en ms.
   const flush=()=>{if(!pendingCommit)return 0;const started=performance.now();flushCommit();return performance.now()-started;};
   const pending=()=>pendingCommit?pendingCommit.command:null;
+  // Une étape de l'écriture en attente (boucle stdio) : vrai quand il ne reste rien à écrire.
+  const flushNext=()=>flushStep();
   // Les tests réécrivent la ligne de retour ci-dessous : écriture différée exposée sur handle (handle.flush, handle.pending).
-  Object.assign(handle,{flush,pending});
+  Object.assign(handle,{flush,pending,flushStep:flushNext});
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
   if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
@@ -819,7 +850,9 @@ if(require.main===module){
   // L'interface Godot annonce la révision du modèle qu'elle détient : réponse différentielle.
   let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
   // La réponse part d'abord ; la décision courante en attente est écrite ensuite, pendant que l'interface affiche.
-  process.stdout.write((base===null?JSON.stringify(result):delta.encode(result,base))+'\n',()=>setImmediate(()=>{try{bridge.handle.flush();}catch{}}));if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
+  // Par étapes (voir flushStep) : une commande arrivée entre deux étapes est lue sans attendre la fin de l'écriture.
+  const step=()=>{let done=true;try{done=bridge.handle.flushStep();}catch{}if(!done)setImmediate(step);};
+  process.stdout.write((base===null?JSON.stringify(result):delta.encode(result,base))+'\n',()=>setImmediate(step));if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());
 }

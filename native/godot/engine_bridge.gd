@@ -14,6 +14,11 @@ const EXTENDED_IMPORT_LIMIT_BYTES := 24 * 1024 * 1024
 const EXTENDED_REQUEST_LIMIT_BYTES := 50 * 1024 * 1024
 const RESPONSE_BLOCK_BYTES := 64 * 1024
 const LINE_FEED := 10
+## Arrêt : le moteur écrit d'abord la dernière décision courante encore en attente (écriture différée, plusieurs
+## secondes sur un PC lent ou un gros profil) avant de répondre à « shutdown » puis de sortir. Il n'est tué qu'après
+## ce délai sans réponse, ou STOP_AFTER_REPLY_MS après sa réponse : un arrêt à 2 s perdait cette décision.
+const STOP_GRACE_MS := 20000
+const STOP_AFTER_REPLY_MS := 2000
 var model: Dictionary = {}
 var last_response_ok := false
 ## Dernière mesure du pont (commande, moteur_ms, analyse_ms, file_ms, octets).
@@ -127,7 +132,7 @@ func stop() -> void:
 		return
 	send("shutdown")
 	_stopping = true
-	_stop_deadline_ms = Time.get_ticks_msec() + 2000
+	_stop_deadline_ms = Time.get_ticks_msec() + STOP_GRACE_MS
 
 func _io_loop() -> void:
 	var pending := PackedByteArray()
@@ -223,6 +228,9 @@ func _apply_patch(patch: Dictionary) -> Dictionary:
 
 func _accept(response: Dictionary) -> void:
 	last_timing = response.get("_pont", {})
+	# Réponse à « shutdown » : la décision en attente est écrite, le moteur sort aussitôt.
+	if _stopping and str(last_timing.get("command", "")) == "shutdown" and _stop_deadline_ms > 0:
+		_stop_deadline_ms = mini(_stop_deadline_ms, Time.get_ticks_msec() + STOP_AFTER_REPLY_MS)
 	last_timing["file_ms"] = (Time.get_ticks_usec() - int(last_timing.get("recu_us", Time.get_ticks_usec()))) / 1000.0
 	last_response_ok = bool(response.get("ok", false))
 	if response.get("model") is Dictionary:
