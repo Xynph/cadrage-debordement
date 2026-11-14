@@ -64,22 +64,22 @@ test('Décision courante : réponse sans sérialisation ni écriture, profil éc
       durees.push(performance.now() - t);
       assert.equal(model.tactics.attack, attaque, 'la réponse montre la décision');
       assert.equal(vm.run('__saves'), 0, 'la réponse ne sérialise pas la carrière');
-      assert.equal(jeu.bridge.pending(), 'set_tactics', 'écriture en attente');
+      assert.equal(jeu.bridge.handle.pending(), 'set_tactics', 'écriture en attente');
       assert.ok(fs.readFileSync(fichier(dir)).equals(avant), 'le profil n\'est pas réécrit avant la réponse');
-      jeu.bridge.flush();
-      assert.equal(jeu.bridge.pending(), null);
+      jeu.bridge.handle.flush();
+      assert.equal(jeu.bridge.handle.pending(), null);
       assert.equal(tactique(dir), attaque, 'la décision est écrite après la réponse');
     }
     // Lecture seule : rien à écrire.
     jeu.call('snapshot');
-    assert.equal(jeu.bridge.pending(), null);
+    assert.equal(jeu.bridge.handle.pending(), null);
     // Avance du calendrier : écrite avant la réponse (sauvegarde garantie au changement de jour).
     model = jeu.regler(model);
     const jour = model.meta.calendarToday;
     const t = performance.now();
     model = jeu.call('advance_day', { fromDate: jour });
     const dureeJour = performance.now() - t;
-    assert.equal(jeu.bridge.pending(), null, 'un jour n\'est jamais différé');
+    assert.equal(jeu.bridge.handle.pending(), null, 'un jour n\'est jamais différé');
     assert.notEqual(model.meta.calendarToday, jour);
     // Le profil écrit est exactement la carrière en mémoire (empreinte de l'export).
     assert.equal(jeu.call('export', { proof: true }).meta.exportRoundTripSha256, sha(enregistre(dir)));
@@ -121,7 +121,7 @@ test('Coupure brutale avant l\'écriture différée : profil intact, seule la de
     const jeu=M.ouvrir({dataDir:${JSON.stringify(dir)},deferredCommits:true});
     const m=jeu.call('snapshot');
     jeu.call('set_tactics',{attack:m.tactics.attacks.find(o=>o.id!==m.tactics.attack).id,defense:m.tactics.defense});
-    if(jeu.bridge.pending()!=='set_tactics')process.exit(3);
+    if(jeu.bridge.handle.pending()!=='set_tactics')process.exit(3);
     process.kill(process.pid,'SIGKILL');`;
   const r = spawnSync(process.execPath, ['--max-old-space-size=1300', '-e', script], { encoding: 'utf8', timeout: 900000 });
   assert.equal(r.signal, 'SIGKILL', 'arrêt brutal attendu : ' + r.status + ' ' + (r.stderr || '').slice(-400));
@@ -143,7 +143,7 @@ test('Échec de l\'écriture différée : décision annulée et signalée à la 
     assert.notEqual(model.tactics.attack, tactiqueAvant);
     // Le profil devient illisible pour l'écriture (un dossier à sa place) : l'écriture différée échoue.
     fs.renameSync(profil, cache); fs.mkdirSync(profil);
-    jeu.bridge.flush();
+    jeu.bridge.handle.flush();
     fs.rmdirSync(profil); fs.renameSync(cache, profil);
     const refus = jeu.brut('snapshot');
     assert.equal(refus.ok, false, 'la commande suivante signale l\'échec');
@@ -152,7 +152,7 @@ test('Échec de l\'écriture différée : décision annulée et signalée à la 
     assert.equal(refus.model.meta.saveError, true, 'échec de sauvegarde visible');
     // Le jeu repart normalement : nouvelle décision, écrite.
     model = jeu.call('set_tactics', { attack: autreAttaque(refus.model), defense: refus.model.tactics.defense });
-    jeu.bridge.flush();
+    jeu.bridge.handle.flush();
     assert.equal(tactique(dir), model.tactics.attack);
   } finally { jeu.bridge.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
