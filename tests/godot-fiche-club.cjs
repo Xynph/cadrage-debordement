@@ -64,8 +64,15 @@ test('Fiche club (Godot, Monde) : classement et recherche, onglets, XV type, clu
   try {
     if (!reutilise) preparer(profil);
     const captures = process.env.CD_FICHE_CAPTURES === '1';
-    const a = lancer(profil, sortie, 1920, 1080, captures);
-    const b = lancer(profil, sortie, 1280, 720, false);
+    // Chaque passage part d'une copie du profil préparé : le premier suit un club et enregistre,
+    // le second doit retrouver l'état initial (sinon le clic « suivre » devient « ne plus suivre »).
+    const copie = (n) => { const d = profil + '-passage' + n; fs.rmSync(d, { recursive: true, force: true }); fs.cpSync(profil, d, { recursive: true }); return d; };
+    const p1 = copie(1), p2 = copie(2);
+    let a, b;
+    try {
+      a = lancer(p1, sortie, 1920, 1080, captures);
+      b = lancer(p2, sortie, 1280, 720, false);
+    } finally { fs.rmSync(p1, { recursive: true, force: true }); fs.rmSync(p2, { recursive: true, force: true }); }
     console.log('Fiche club (Godot) : 1080p ' + JSON.stringify(a.mesures) + ' · 720p ' + JSON.stringify(b.mesures) + (captures ? ' · captures : ' + sortie : ''));
   } finally { if (!reutilise) fs.rmSync(profil, { recursive: true, force: true }); }
 });

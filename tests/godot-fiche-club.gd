@@ -112,6 +112,12 @@ func executer() -> void:
 		if int(n.get_meta("entity_id", "-1")) == own: lien_mien = n
 		elif lien == null: lien = n
 	verifier(lien != null, "un nom de club cliquable dans le classement")
+	if lien_mien == null:
+		lien_mien = await trouver_mien(own)
+		# Le changement de page a reconstruit les lignes : reprendre un lien de la page courante.
+		lien = null
+		for n: Node in app.root_content.find_children("*", "BaseButton", true, false):
+			if n.get_meta("entity_kind", "") == "club" and (n as Control).is_visible_in_tree() and int(n.get_meta("entity_id", "-1")) != own: lien = n; break
 	verifier(lien_mien != null, "votre club cliquable dans le classement")
 	var cible := int(lien.get_meta("entity_id", "-1")) if lien else -1
 	if lien: lien.pressed.emit()
@@ -171,9 +177,7 @@ func executer() -> void:
 	await capture("fiche-club-stats")
 	# 2. Votre club dans le classement : écran « Club » (décision de Léo).
 	app._navigate("Classements"); await poser(30)
-	lien_mien = null
-	for n: Node in app.root_content.find_children("*", "BaseButton", true, false):
-		if n.get_meta("entity_kind", "") == "club" and int(n.get_meta("entity_id", "-1")) == own and (n as Control).is_visible_in_tree(): lien_mien = n
+	lien_mien = await trouver_mien(own)
 	if lien_mien: lien_mien.pressed.emit()
 	await poser(20)
 	verifier(app.route == "Club", "votre club ouvre l'écran Club (route %s)" % app.route)
@@ -207,6 +211,18 @@ func executer() -> void:
 	await attendre_moteur()
 	verifier(app.route == ClubSheet.ROUTE, "retour arrière vers la fiche (route %s)" % app.route)
 	fin()
+
+# Petite fenêtre : le classement est l'ancienne page paginée ; la ligne de votre club peut être sur une autre page.
+func trouver_mien(own: int) -> BaseButton:
+	for _page in 8:
+		for n: Node in app.root_content.find_children("*", "BaseButton", true, false):
+			if n.get_meta("entity_kind", "") == "club" and int(n.get_meta("entity_id", "-1")) == own and (n as Control).is_visible_in_tree(): return n
+		var pager: Node = app.root_content.find_child("StandingsPagination", true, false)
+		if pager == null or pager.get_child_count() < 3: return null
+		var suivant := pager.get_child(2) as BaseButton
+		if suivant == null or suivant.disabled: return null
+		suivant.pressed.emit(); await poser(6)
+	return null
 
 func fin() -> void:
 	var rapport := {"affichage": DisplayServer.get_name(), "taille": str(root.size), "controles": controles, "failures": echecs, "mesures": mesures}

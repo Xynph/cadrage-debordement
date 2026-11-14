@@ -266,7 +266,8 @@ func _live() -> Dictionary:
 
 func _receive_model(value: Dictionary) -> void:
 	var receive_us := Time.get_ticks_usec()
-	if is_instance_valid(navigation_controller): navigation_controller.invalidate_readers()
+	# Une lecture moteur sans changement d'état (fiche club) ne périme pas les lecteurs suspendus.
+	if is_instance_valid(navigation_controller) and not (bridge.last_response_ok and last_command in READ_ONLY_COMMANDS): navigation_controller.invalidate_readers()
 	if _startup_trace and not _startup_model_seen:
 		_startup_model_seen = true
 		_trace_startup("model.first")
