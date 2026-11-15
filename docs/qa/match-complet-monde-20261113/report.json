@@ -1,0 +1,674 @@
+{
+  "adapter": "llvmpipe (LLVM 19.1.7, 256 bits)",
+  "driver": "opengl3",
+  "duree_s": 478.4,
+  "echeances": 0,
+  "every": 60,
+  "gestes": true,
+  "horloge": "eclair",
+  "image_size": [
+    960,
+    540
+  ],
+  "images": [
+    {
+      "etat": "intermediaire",
+      "file": "tf-00001.jpg",
+      "horloge": "1:59",
+      "ms": 22558,
+      "score": "0 — 0",
+      "type": ""
+    },
+    {
+      "etat": "attente",
+      "file": "tf-00002.jpg",
+      "horloge": "5:59",
+      "ms": 46975,
+      "score": "0 — 0",
+      "type": ""
+    },
+    {
+      "etat": "attente",
+      "file": "tf-00003.jpg",
+      "horloge": "7:59",
+      "ms": 69736,
+      "score": "3 — 0",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00004.jpg",
+      "horloge": "12:59",
+      "ms": 93958,
+      "score": "3 — 3",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00005.jpg",
+      "horloge": "19:59",
+      "ms": 123866,
+      "score": "3 — 3",
+      "type": ""
+    },
+    {
+      "etat": "temps_fort",
+      "file": "tf-00006.jpg",
+      "horloge": "22′",
+      "ms": 148158,
+      "score": "3 — 3",
+      "type": ""
+    },
+    {
+      "etat": "temps_fort",
+      "file": "tf-00007.jpg",
+      "horloge": "24′",
+      "ms": 165840,
+      "score": "3 — 3",
+      "type": ""
+    },
+    {
+      "etat": "temps_fort",
+      "file": "tf-00008.jpg",
+      "horloge": "24′",
+      "ms": 182190,
+      "score": "3 — 3",
+      "type": ""
+    },
+    {
+      "etat": "temps_fort",
+      "file": "tf-00009.jpg",
+      "horloge": "24′",
+      "ms": 198942,
+      "score": "3 — 3",
+      "type": ""
+    },
+    {
+      "etat": "attente",
+      "file": "tf-00010.jpg",
+      "horloge": "24:59",
+      "ms": 219258,
+      "score": "3 — 10",
+      "type": ""
+    },
+    {
+      "etat": "temps_fort",
+      "file": "tf-00011.jpg",
+      "horloge": "29′",
+      "ms": 245225,
+      "score": "6 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00012.jpg",
+      "horloge": "32:59",
+      "ms": 265657,
+      "score": "6 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00013.jpg",
+      "horloge": "36:59",
+      "ms": 281580,
+      "score": "6 — 10",
+      "type": ""
+    },
+    {
+      "etat": "temps_fort",
+      "file": "tf-00014.jpg",
+      "horloge": "39′",
+      "ms": 292541,
+      "score": "6 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00015.jpg",
+      "horloge": "40:00",
+      "ms": 302244,
+      "score": "9 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00016.jpg",
+      "horloge": "42:59",
+      "ms": 316152,
+      "score": "9 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00017.jpg",
+      "horloge": "46:59",
+      "ms": 328381,
+      "score": "9 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00018.jpg",
+      "horloge": "48:59",
+      "ms": 340495,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00019.jpg",
+      "horloge": "52:29",
+      "ms": 352732,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "attente",
+      "file": "tf-00020.jpg",
+      "horloge": "52:59",
+      "ms": 364644,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00021.jpg",
+      "horloge": "58:59",
+      "ms": 380998,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "attente",
+      "file": "tf-00022.jpg",
+      "horloge": "58:59",
+      "ms": 390658,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00023.jpg",
+      "horloge": "64:59",
+      "ms": 407151,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00024.jpg",
+      "horloge": "67:32",
+      "ms": 424256,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00025.jpg",
+      "horloge": "72:59",
+      "ms": 440916,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "attente",
+      "file": "tf-00026.jpg",
+      "horloge": "75:59",
+      "ms": 454380,
+      "score": "12 — 10",
+      "type": ""
+    },
+    {
+      "etat": "intermediaire",
+      "file": "tf-00027.jpg",
+      "horloge": "77:59",
+      "ms": 467612,
+      "score": "12 — 13",
+      "type": ""
+    },
+    {
+      "etat": "fin",
+      "file": "tf-00028.jpg",
+      "horloge": "",
+      "ms": 476314,
+      "score": "",
+      "type": ""
+    },
+    {
+      "etat": "fin",
+      "file": "tf-00029.jpg",
+      "horloge": "",
+      "ms": 478314,
+      "score": "",
+      "type": ""
+    }
+  ],
+  "images_par_seconde": 0.06,
+  "jpeg_quality": 0.72,
+  "liaisons": [],
+  "minute": 81.0,
+  "niveau": "dynamique",
+  "octets_image_la_plus_lourde": 103397,
+  "octets_par_image": 61542,
+  "regies_collectees": 2,
+  "rendu_ms_par_image": 10.7,
+  "resized": false,
+  "scene_live_liberee": true,
+  "score": [
+    12.0,
+    13.0
+  ],
+  "secondes_en_temps_fort": 96.4,
+  "sequences": [],
+  "size": [
+    960,
+    540
+  ],
+  "suivi": [
+    {
+      "cle": "1-2",
+      "contigu": false,
+      "debut": 1,
+      "debut_ms": 39091,
+      "declenchement": {
+        "fait": 1.0,
+        "importance": 68.0,
+        "rattrapage": false,
+        "seuil": 64.0
+      },
+      "duree_prevue": 5.9,
+      "duree_reelle": 2.743,
+      "evenement": "temps_fort",
+      "horloge": "0′",
+      "liaison": "",
+      "plans": 2,
+      "premier_plan": 1,
+      "suite": false,
+      "type": "coup_d_envoi"
+    },
+    {
+      "cle": "3-3",
+      "contigu": true,
+      "debut": 3,
+      "debut_ms": 47552,
+      "declenchement": {
+        "fait": null,
+        "importance": null,
+        "rattrapage": false,
+        "seuil": null
+      },
+      "duree_prevue": 2.3,
+      "duree_reelle": 2.145,
+      "evenement": "temps_fort",
+      "horloge": "1′",
+      "liaison": "",
+      "plans": 1,
+      "premier_plan": 3,
+      "suite": true,
+      "type": "suite_de_l_action"
+    },
+    {
+      "debut_ms": 54632,
+      "evenement": "intermediaire",
+      "horloge": "2′"
+    },
+    {
+      "cle": "11-12",
+      "contigu": false,
+      "debut": 11,
+      "debut_ms": 82886,
+      "declenchement": {
+        "fait": 12.0,
+        "importance": 75.0,
+        "rattrapage": false,
+        "seuil": 64.0
+      },
+      "duree_prevue": 7.7,
+      "duree_reelle": 2.343,
+      "evenement": "temps_fort",
+      "horloge": "7′",
+      "liaison": "",
+      "plans": 2,
+      "premier_plan": 11,
+      "suite": false,
+      "type": "tir_au_but"
+    },
+    {
+      "debut_ms": 91309,
+      "evenement": "intermediaire",
+      "horloge": "8′"
+    },
+    {
+      "cle": "16-19",
+      "contigu": false,
+      "debut": 16,
+      "debut_ms": 105143,
+      "declenchement": {
+        "fait": 18.0,
+        "importance": 68.0,
+        "rattrapage": false,
+        "seuil": 62.0
+      },
+      "duree_prevue": 11.8,
+      "duree_reelle": 4.785,
+      "evenement": "temps_fort",
+      "horloge": "9′",
+      "liaison": "",
+      "plans": 3,
+      "premier_plan": 16,
+      "suite": false,
+      "type": "contre_attaque"
+    },
+    {
+      "debut_ms": 115078,
+      "evenement": "intermediaire",
+      "horloge": "11′"
+    },
+    {
+      "cle": "39-42",
+      "contigu": false,
+      "debut": 39,
+      "debut_ms": 185070,
+      "declenchement": {
+        "fait": 42.0,
+        "importance": 87.0,
+        "rattrapage": false,
+        "seuil": 62.0
+      },
+      "duree_prevue": 13.8,
+      "duree_reelle": 6.579,
+      "evenement": "temps_fort",
+      "horloge": "20′",
+      "liaison": "",
+      "plans": 4,
+      "premier_plan": 39,
+      "suite": false,
+      "type": "contre_attaque"
+    },
+    {
+      "cle": "46-48",
+      "contigu": true,
+      "debut": 46,
+      "debut_ms": 195974,
+      "declenchement": {
+        "fait": 46.0,
+        "importance": 68.0,
+        "rattrapage": false,
+        "seuil": 62.0
+      },
+      "duree_prevue": 17.7,
+      "duree_reelle": 47.843,
+      "evenement": "temps_fort",
+      "horloge": "24′",
+      "liaison": "touche",
+      "plans": 4,
+      "premier_plan": 46,
+      "suite": false,
+      "type": "touche_dans_les_22"
+    },
+    {
+      "bandeaux": [
+        "En-avant",
+        "Touche"
+      ],
+      "choix": "",
+      "cle": "46-48",
+      "coupe": true,
+      "debut_ms": 195974,
+      "detail": "capitaine_parle",
+      "duree_plans": [
+        1.7,
+        1.6
+      ],
+      "duree_prevue": 3.3,
+      "duree_reelle": 3.58768033333333,
+      "evenement": "liaison",
+      "plans": 2,
+      "saut_max": 2.05430768430233,
+      "type": "touche"
+    },
+    {
+      "debut_ms": 249880,
+      "evenement": "intermediaire",
+      "horloge": "25′"
+    },
+    {
+      "cle": "52-53",
+      "contigu": false,
+      "debut": 52,
+      "debut_ms": 255454,
+      "declenchement": {
+        "fait": 53.0,
+        "importance": 77.0,
+        "rattrapage": false,
+        "seuil": 57.0
+      },
+      "duree_prevue": 7.7,
+      "duree_reelle": 2.868,
+      "evenement": "temps_fort",
+      "horloge": "26′",
+      "liaison": "",
+      "plans": 2,
+      "premier_plan": 52,
+      "suite": false,
+      "type": "tir_au_but"
+    },
+    {
+      "debut_ms": 264490,
+      "evenement": "intermediaire",
+      "horloge": "27′"
+    },
+    {
+      "cle": "60-62",
+      "contigu": false,
+      "debut": 60,
+      "debut_ms": 284120,
+      "declenchement": {
+        "fait": 62.0,
+        "importance": 61.0,
+        "rattrapage": false,
+        "seuil": 57.0
+      },
+      "duree_prevue": 7.9,
+      "duree_reelle": 5.767,
+      "evenement": "temps_fort",
+      "horloge": "29′",
+      "liaison": "",
+      "plans": 3,
+      "premier_plan": 60,
+      "suite": false,
+      "type": "danger"
+    },
+    {
+      "debut_ms": 295291,
+      "evenement": "intermediaire",
+      "horloge": "31′"
+    },
+    {
+      "cle": "83-86",
+      "contigu": false,
+      "debut": 83,
+      "debut_ms": 328413,
+      "declenchement": {
+        "fait": 85.0,
+        "importance": 63.0,
+        "rattrapage": false,
+        "seuil": 57.0
+      },
+      "duree_prevue": 11.2,
+      "duree_reelle": 5.497,
+      "evenement": "temps_fort",
+      "horloge": "38′",
+      "liaison": "",
+      "plans": 4,
+      "premier_plan": 83,
+      "suite": false,
+      "type": "danger"
+    },
+    {
+      "cle": "103-103",
+      "contigu": false,
+      "debut": 103,
+      "debut_ms": 362775,
+      "declenchement": {
+        "fait": 103.0,
+        "importance": 70.0,
+        "rattrapage": false,
+        "seuil": 56.0
+      },
+      "duree_prevue": 2.9,
+      "duree_reelle": 0.297,
+      "evenement": "temps_fort",
+      "horloge": "45′",
+      "liaison": "",
+      "plans": 1,
+      "premier_plan": 103,
+      "suite": false,
+      "type": "franchissement"
+    },
+    {
+      "debut_ms": 366818,
+      "evenement": "intermediaire",
+      "horloge": "46′"
+    },
+    {
+      "cle": "110-111",
+      "contigu": false,
+      "debut": 110,
+      "debut_ms": 374163,
+      "declenchement": {
+        "fait": 111.0,
+        "importance": 79.0,
+        "rattrapage": false,
+        "seuil": 56.0
+      },
+      "duree_prevue": 7.7,
+      "duree_reelle": 1.503,
+      "evenement": "temps_fort",
+      "horloge": "48′",
+      "liaison": "",
+      "plans": 2,
+      "premier_plan": 110,
+      "suite": false,
+      "type": "tir_au_but"
+    },
+    {
+      "debut_ms": 379118,
+      "evenement": "intermediaire",
+      "horloge": "49′"
+    },
+    {
+      "cle": "120-120",
+      "contigu": false,
+      "debut": 120,
+      "debut_ms": 389905,
+      "declenchement": {
+        "fait": 120.0,
+        "importance": 56.0,
+        "rattrapage": false,
+        "seuil": 56.0
+      },
+      "duree_prevue": 3.2,
+      "duree_reelle": 0.389,
+      "evenement": "temps_fort",
+      "horloge": "52′",
+      "liaison": "",
+      "plans": 1,
+      "premier_plan": 120,
+      "suite": false,
+      "type": "ballon_recupere"
+    },
+    {
+      "debut_ms": 393795,
+      "evenement": "intermediaire",
+      "horloge": "53′"
+    },
+    {
+      "cle": "122-126",
+      "contigu": false,
+      "debut": 122,
+      "debut_ms": 400875,
+      "declenchement": {
+        "fait": 126.0,
+        "importance": 56.0,
+        "rattrapage": false,
+        "seuil": 56.0
+      },
+      "duree_prevue": 12.3,
+      "duree_reelle": 2.974,
+      "evenement": "temps_fort",
+      "horloge": "52′",
+      "liaison": "",
+      "plans": 4,
+      "premier_plan": 122,
+      "suite": false,
+      "type": "contre_attaque"
+    },
+    {
+      "debut_ms": 407452,
+      "evenement": "intermediaire",
+      "horloge": "56′"
+    },
+    {
+      "cle": "135-141",
+      "contigu": false,
+      "debut": 135,
+      "debut_ms": 423892,
+      "declenchement": {
+        "fait": 141.0,
+        "importance": 75.0,
+        "rattrapage": false,
+        "seuil": 62.0
+      },
+      "duree_prevue": 11.1,
+      "duree_reelle": 5.701,
+      "evenement": "temps_fort",
+      "horloge": "58′",
+      "liaison": "",
+      "plans": 4,
+      "premier_plan": 135,
+      "suite": false,
+      "type": "franchissement"
+    },
+    {
+      "debut_ms": 433087,
+      "evenement": "intermediaire",
+      "horloge": "61′"
+    },
+    {
+      "cle": "182-183",
+      "contigu": false,
+      "debut": 182,
+      "debut_ms": 491869,
+      "declenchement": {
+        "fait": 183.0,
+        "importance": 90.0,
+        "rattrapage": false,
+        "seuil": 62.0
+      },
+      "duree_prevue": 7.7,
+      "duree_reelle": 1.428,
+      "evenement": "temps_fort",
+      "horloge": "76′",
+      "liaison": "",
+      "plans": 2,
+      "premier_plan": 182,
+      "suite": false,
+      "type": "tir_au_but"
+    },
+    {
+      "debut_ms": 496691,
+      "evenement": "intermediaire",
+      "horloge": "77′"
+    }
+  ],
+  "temps_forts": 14,
+  "termine": true,
+  "tronque": false,
+  "vitesse": 4.0,
+  "window": [
+    960,
+    540
+  ]
+}

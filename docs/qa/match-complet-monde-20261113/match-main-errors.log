@@ -1,0 +1,26 @@
+Jeu main b187b455, sonde corrigée pour collecter malgré la libération.
+728 erreurs ciblées : slot=90, mark=638. Premières occurrences :
+
+SCRIPT ERROR: Invalid access to property or key 'slot' on a base object of type 'Dictionary'.
+          at: _start_maul (res://match_gestes.gd:1185)
+          GDScript backtrace (most recent call first):
+              [0] _start_maul (res://match_gestes.gd:1185)
+              [1] advance (res://match_gestes.gd:305)
+              [2] _process (res://match_view.gd:501)
+SCRIPT ERROR: Invalid access to property or key 'mark' on a base object of type 'Dictionary'.
+
+SCRIPT ERROR: Invalid access to property or key 'mark' on a base object of type 'Dictionary'.
+          at: place (res://match_gestes.gd:356)
+          GDScript backtrace (most recent call first):
+              [0] place (res://match_gestes.gd:356)
+              [1] _process (res://match_view.gd:524)
+SCRIPT ERROR: Invalid access to property or key 'mark' on a base object of type 'Dictionary'.
+          at: place (res://match_gestes.gd:356)
+
+SCRIPT ERROR: Invalid access to property or key 'mark' on a base object of type 'Dictionary'.
+          at: _frame_points (res://match_gestes.gd:522)
+          GDScript backtrace (most recent call first):
+              [0] _frame_points (res://match_gestes.gd:522)
+              [1] _frame_goal (res://match_gestes.gd:498)
+              [2] frame_camera (res://match_gestes.gd:456)
+              [3] _fit_camera (res://match_view.gd:912)

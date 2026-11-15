@@ -7,7 +7,7 @@ const SHOW='Troisième Mi-Temps';
 const SEGMENTS=Object.freeze(['À la une','Décryptage tactique','Le banc des experts','Face aux micros','La question des supporters']);
 function generate(s){
  if(!s||!Number.isInteger(s.season)||!Number.isInteger(s.round))return null;
- const journalists=globalThis.CDPressQuestionBank?.journalists||[];
+ const bank=globalThis.CDPressQuestionBank,journalists=bank?(typeof bank.journalistsFor==='function'?bank.journalistsFor(bank.regionFor(s)):bank.journalists):[];
  const club=s.clubs?.find(c=>c.id===s.club)?.name||'votre club';
  const key=s.season+':'+s.round+':'+s.club;
  const seed=HASH(key);

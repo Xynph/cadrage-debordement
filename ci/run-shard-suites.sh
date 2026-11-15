@@ -55,6 +55,9 @@ budget() {
   case "$1" in
     tests/world-worker-season.cjs) echo 1200s ;;
     tests/native-manager-career-worker.cjs) echo 900s ;;
+    # Mobilité du manager (ex-tests/manuel) : saison lue dans la sauvegarde générée avant les suites (étape « Générer la sauvegarde de fin de saison »,
+    # hors budget ci-contre) : 63 s et 170 s sur runner GitHub (génération : 723 et 943 s), pics 3,25 Go.
+    tests/native-manager-career-reverse-offre.cjs|tests/native-manager-career-reverse-saison.cjs) echo 300s ;;
     # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
@@ -66,12 +69,40 @@ budget() {
     tests/native-match-talks.cjs) echo 900s ;;
     tests/native-club-support-season.cjs) echo 1200s ;;
     tests/native-club-world-worker.cjs) echo 900s ;;
+    # Saison Monde complète dans le harnais VM puis next_season par le worker (borne 20 s) : 327 s en local sous charge.
+    tests/world-nouvelle-saison-rapide.cjs) echo 900s ;;
     tests/native-club-strategy.cjs) echo 2400s ;; # Monde : saison de 46 semaines jouée jusqu'à next_season (1512 à 1581 s sous charge locale, 1062 à 1456 s en CI sur main ; le job Suites a 50 min)
     # Version Monde (migration du 13/11) : ~180-200 s en local, aussi sur main ; 180 s par défaut ne suffit plus.
     tests/performance-analysis.cjs) echo 600s ;;
-    # Notes de match en carrière Monde (plusieurs semaines simulées, un test par processus).
-    # Notes de match + XV type (journées et saison en carrière Monde) : ~15 min en CI.
-    tests/match-notes.cjs) echo 1800s ;;
+    # Notes de match + XV type (carrière Monde) : une seule carrière jouée par le pont (4 journées) + deux comparaisons
+    # dans le harnais VM, au lieu de 7 carrières et 16 journées : 17 min en CI avant (1031 s, 1074 s de CPU), ~385 s de CPU
+    # en local après (2,2 fois moins) donc ~8 min estimées en CI ; budget ≈ 3 fois.
+    tests/match-notes.cjs) echo 1400s ;;
+    # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
+    # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
+    tests/japan-match.cjs) echo 300s ;;
+    # Continuer jusqu'au prochain événement et retouches de cohérence : carrières Monde, plus de 180 s sur le runner (délai dépassé en CI sur main, Suites 6/7 et 7/7, après #720 et #722) ; assertions inchangées.
+    tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
+    # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
+    tests/presse-dilemmes-monde.cjs) echo 420s ;;
+    # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
+    tests/homme-du-match-postes.cjs) echo 600s ;;
+    # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).
+    tests/fiche-club-monde.cjs) echo 600s ;;
+    # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
+    tests/delegue-composition-staff.cjs) echo 900s ;;
+    # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
+    tests/match-rating-curve.cjs) echo 420s ;;
+    # Chorégraphe (#591, 15/11) : sous-test natif passé au Monde, deux carrières world-champ jouées minute par minute (drapeau éteint puis allumé), 580 s en local sous charge.
+    tests/match-choregraphe.cjs) echo 1200s ;;
+    # Fluidité des commandes (#711) : six carrières Monde au worker, 129 s de sous-tests + création ; 180 s dépassées en CI (PR #716).
+    tests/vitesse-commandes-monde.cjs) echo 420s ;;
+    # Mémoire des projections par domaine : trois carrières Monde successives (avec vérification, sans mémoire, avec), ~165 s en local chargé.
+    tests/memo-projection-monde.cjs) echo 600s ;;
+    # Stats réalistes de la fiche (4 journées Monde ; le défaut était 26 par erreur, d'où le dépassement de 900 s) : 285 s de CPU en local, ~5-7 min en CI.
+    tests/stats-fiche-joueur.cjs) echo 900s ;;
+    # Carrière Monde jusqu'au premier match d'un club de League One : 73-98 s en CI sur main (3x de réserve).
+    tests/japan-quota-card-return.cjs) echo 300s ;;
     # Version CI : Nationale mondiale jusqu'à la semaine 14 (fenêtre de transferts de la semaine 13), ~390 s en local ;
     # la version complète (58 clubs, 3 saisons) vit dans club-intelligence-measure.yml (CD_STABILITY_FULL=1).
     # starting-salaries : quatre carrières réelles (commun et mondial, drapeau éteint et allumé), 176 s en local.
@@ -116,6 +147,14 @@ budget() {
     tests/native-academy-appearance-bank.cjs) echo 420s ;;
     # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
     tests/sauvegarde-idempotente.cjs) echo 900s ;;
+    # Promesses publiques (15/11) : six carrières Monde au worker, 170 s en local sous charge ; saison Monde complète
+    # semaine par semaine puis passage à la saison suivante, 330 s en local. Budgets ≈ 2,5 fois.
+    tests/presse-promesses-monde.cjs) echo 420s ;;
+    tests/presse-promesses-saison.cjs) echo 900s ;;
+    # Finitions critiques : deux carrières Monde (création + un match, ~260 s en local sous charge) ; budget ≈ 3 fois.
+    tests/finitions-critiques.cjs) echo 900s ;;
+    # Feuille incomplète : appel d'un espoir (#726), carrières Monde jouées sur plusieurs journées ; 398 s en local sous charge (CI : suite 7/7, 180 s dépassées) ; budget ≈ 3 fois.
+    tests/feuille-espoirs.cjs) echo 1200s ;;
     *) echo 180s ;;
   esac
 }

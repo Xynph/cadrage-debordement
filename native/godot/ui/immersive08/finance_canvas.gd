@@ -145,21 +145,28 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 
 static func _metrics(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary) -> void:
 	var cash: Variant = accounts.get("cash",app.model.club.get("cash"))
-	var wages: Variant = accounts.get("wage",finance.get("weeklyWages"))
+	# Salaires des contrats, hors cotisations : la même valeur que figures.payroll (le Club affiche la charge avec cotisations).
+	var payroll := P.payroll(app.model)
+	var wages: Variant = payroll.players_weekly if app.model.has("figures") else accounts.get("wage",finance.get("weeklyWages"))
 	var margin: Variant = float(finance.weeklyIncome)-float(finance.weeklyCosts) if finance.has("weeklyIncome") and finance.has("weeklyCosts") else null
 	var market: Array = app.model.get("market", [])
 	var available := market.filter(func(player: Dictionary): return player.get("available",false))
 	var captions := [
 		["Trésorerie", "money", U.amount(cash), "Montants de jeu", C.ALERT if cash != null and float(cash)<0.0 else C.MINT],
 		["Marché du recrutement", "search", "%d profils" % market.size(), "%d accessibles" % available.size(), C.MINT],
-		["Masse salariale", "people", G.salary_amount(wages), G.salary_period(), C.MINT],
-		["Marge hebdomadaire connue", "shield", U.amount(margin), "Recettes − charges", C.AMBER if margin != null and float(margin)<0.0 else C.MINT]
+		["Masse salariale · joueurs", "people", G.salary_amount(wages), "hors cotisations", C.MINT],
+		["Marge courante · par semaine", "shield", U.amount(margin), "hors guichet", C.AMBER if margin != null and float(margin)<0.0 else C.MINT]
 	]
 	for i in captions.size():
 		var item: Array = captions[i]
 		var card := D.panel(canvas, Rect2(i*566,195,550,135), item[0], item[1], "", "FinanceMetric"+str(i))
 		D.text(card, 23, 111, item[2], 54, item[4], 800, 323)
 		D.chip(card, Rect2(346,70,181,46), item[3], item[4])
+		var explanation := ""
+		if i == 2:
+			explanation = "Salaires des contrats %s, cotisations non comprises (somme des salaires des joueurs). Charge versée avec %s de cotisations : %s par semaine de jeu, dans la répartition ci-dessous et sur l'écran Club." % [G.salary_period(), "%d %%" % roundi(float(payroll.contributions)*100.0), G.euros(payroll.charge_weekly)]
+		elif i == 3:
+			explanation = "Recettes régulières moins charges de la semaine. Ne comprend pas les recettes de match, la prime de classement ni le soutien du propriétaire : voir la projection de fin de saison en bas de page."
 		var target := {"kind":"finance", "id":["cash","summary","wages","budget"][i]}
 		if i == 1: target = {"kind":"menu", "route":"Recrutement"}
 		var open := Button.new()
@@ -168,6 +175,7 @@ static func _metrics(app: Control, canvas: Control, accounts: Dictionary, financ
 		open.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 		open.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT,C.GOLD,4,0))
 		Link.bind(open,app,target,"Ouvrir · " + str(item[0]))
+		if not explanation.is_empty(): open.tooltip_text = explanation
 		card.add_child(open)
 		D.place(open,Rect2(0,0,550,135))
 
@@ -216,9 +224,18 @@ static func _chart(app: Control, card: Panel, ledger: Array) -> void:
 		D.text(card, 754, 234, "Le graphique se remplit après une journée jouée ou une décision financière.", 24, C.MUTED, 500, 1040, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(card, 134, 356, "Douze écritures au plus · n° 1 en tête du journal · cumul net de ces seules écritures", 20, C.MUTED, 500, 1228)
 
+## Formation par semaine : le centre de formation (coût réel du budget de saison, compris dans le fonctionnement du
+## moteur) plus l'investissement « formation payée » éventuel. Sans budget de saison, seul l'investissement existe.
+static func formation_weekly(finance: Dictionary) -> Variant:
+	var paid: Variant = finance.get("academyInvestment")
+	var budget: Variant = finance.get("budget")
+	if budget is Dictionary and budget.get("centreFormationHebdo") != null and paid != null:
+		return float(paid) + float(budget.centreFormationHebdo)
+	return paid
+
 static func _weekly(finance: Dictionary) -> Array:
 	var wages: Variant = finance.get("weeklyWages")
-	var academy: Variant = finance.get("academyInvestment")
+	var academy: Variant = formation_weekly(finance)
 	var maintenance: Variant = null
 	if wages != null and academy != null and finance.has("weeklyCosts"):
 		maintenance = maxf(0.0,float(finance.weeklyCosts)-float(wages)-float(academy))
@@ -315,11 +332,12 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 static func _watch(card: Panel, app: Control, finance: Dictionary) -> void:
 	card.add_theme_stylebox_override("panel", D.surface(834,185,Color("2c2819"),Color("151914"),Color(C.GOLD,.85)))
 	U.italic(card.get_node("CardTitle"), 700)
-	var count := P.contracts(app.model).size()
+	var counts := P.contract_counts(app.model)
+	var count := int(counts.by_horizon)
 	var quote: Variant = finance.get("facility")
-	var contracts := "%d contrat%s à anticiper" % [count, "" if count == 1 else "s"]
+	var contracts := P.plural(count, "contrat à anticiper", "contrats à anticiper")
 	var facilities := "Devis indicatif · " + G.euros(quote.cost) if quote is Dictionary else "Aucun devis disponible"
-	_watch_row(card, 65, "calendar", contracts, "Échéances d’ici la saison prochaine", func(): _open_wages(app, true), "FinanceWatchContracts")
+	_watch_row(card, 65, "calendar", contracts, "%s en fin de saison · horizon fin %s" % [counts.end_of_season, G.season_label(counts.horizon_season)], func(): _open_wages(app, true), "FinanceWatchContracts")
 	D.line(card, Vector2(19,117), Vector2(815,117), Color(C.GOLD,.28))
 	_watch_row(card, 121, "settings", "Infrastructures", facilities, func(): _strategy(app), "FinanceWatchFacilities")
 
@@ -340,7 +358,7 @@ static func _due(card: Panel, app: Control, finance: Dictionary) -> void:
 	if remaining <= 0:
 		D.text(card, 22, 119, "Aucun paiement hebdomadaire restant dans la projection.", 24, C.MUTED, 500, 788)
 		return
-	var rows := [["Salaires et cotisations" if finance.has("budget") else "Salaires de l’effectif","people",finance.get("weeklyWages")],["Formation à la séance","school",finance.get("academyInvestment")],["Recettes régulières hors guichet" if finance.has("budget") else "Recettes prévues au modèle","money",finance.get("weeklyIncome")]]
+	var rows := [["Salaires et cotisations" if finance.has("budget") else "Salaires de l’effectif","people",finance.get("weeklyWages")],["Centre de formation" if finance.get("budget") is Dictionary else "Formation à la séance","school",formation_weekly(finance)],["Recettes régulières hors guichet" if finance.has("budget") else "Recettes prévues au modèle","money",finance.get("weeklyIncome")]]
 	for i in rows.size():
 		var item: Array = rows[i]
 		var y := 64+i*38
@@ -351,6 +369,13 @@ static func _due(card: Panel, app: Control, finance: Dictionary) -> void:
 		var prefix := "−" if i < 2 else "+"
 		D.text(card, 807, y+26, prefix+G.euros(amount) if amount != null and float(amount)>0.0 else G.euros(amount) if amount != null else "—", 22, C.ALERT if i < 2 else C.MINT, 600, 172, HORIZONTAL_ALIGNMENT_RIGHT)
 		if i < rows.size()-1: D.line(card, Vector2(21,y+35), Vector2(813,y+35), Color(C.LINE,.55))
+
+## Fait le lien entre la marge courante et la trésorerie prévue : trésorerie + marge courante + autres apports = prévision.
+static func _projection_reading(finance: Dictionary) -> String:
+	var detail: Variant = finance.get("projection")
+	if not (detail is Dictionary) or not finance.has("budget"): return "Hors billetterie aléatoire, primes et transferts futurs"
+	if absf(float(detail.otherInflows)) < 1.0: return "Trésorerie + marge courante sur %d semaines" % int(detail.remainingWeeks)
+	return "Trésorerie %s · marge courante %s · guichet, primes et soutien %s" % [U.amount(detail.cash), U.amount(detail.marginTotal), ("+" if float(detail.otherInflows) > 0.0 else "") + U.amount(detail.otherInflows)]
 
 static func _footer(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var card := D.panel(canvas, Rect2(0,1145,2248,99), "", "", "", "FinanceProjection")
@@ -363,7 +388,7 @@ static func _footer(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var trend := "Indisponible" if forecast == null else "Solde négatif" if float(forecast) < 0.0 else "Solde positif" if float(forecast) > 0.0 else "À l’équilibre"
 	D.chip(card, Rect2(885,27,183,46), trend, hue)
 	D.text(card, 1086, 44, "Trésorerie prévue en fin de saison" if finance.has("budget") else "Trésorerie projetée sur les engagements connus", 25, C.IVORY, 600, 650)
-	D.text(card, 1086, 72, "Prime de classement et soutien du propriétaire compris" if finance.has("budget") else "Hors billetterie aléatoire, primes et transferts futurs", 22, C.MUTED, 500, 650)
+	D.text(card, 1086, 72, _projection_reading(finance), 22, C.MUTED, 500, 650)
 	D.button(card, Rect2(1758,21,467,58), "Ajuster les engagements", func(): _strategy(app), true, "arrow", false, U.GREEN, "FinanceAdjustBudget")
 
 # Leviers de redressement (consultatifs) : le verdict du directeur financier, puis les leviers réels et ce
@@ -472,7 +497,7 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var squad := P.contracts(app.model) if due_only else all_players.duplicate()
 	if due_only:
 		var horizon := int(app.model.meta.get("season", 1)) + 1
-		var scope := "%d échéance%s jusqu’à la fin de %s" % [squad.size(), "s" if squad.size() > 1 else "", G.season_label(horizon)]
+		var scope := "%s jusqu’à la fin de %s · dont %d en fin de saison" % [P.plural(squad.size(), "échéance", "échéances"), G.season_label(horizon), P.contract_counts(app.model).end_of_season]
 		D.text(wages, 345, 37, scope, 22, C.GOLD, 600, 390).name = "FinanceWagesScope"
 		D.button(wages, Rect2(750,12,230,36), "Tous les %d joueurs" % all_players.size(),
 			func(): _open_wages(app, false), false, "", true, U.GREEN, "FinanceWagesAll")
@@ -540,6 +565,9 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	D.text(decisions, 25, 125, "Des choix pour le projet du club", 47, C.IVORY, 700, 1348)
 	D.text(decisions, 25, 173, "%d semaines restantes sur %d" % [int(finance.get("remainingWeeks",0)),int(finance.get("weeksPerSeason",0))], 28, C.GOLD, 600, 1348)
 	var cards := [["Formation","school","Investissement par séance",finance.get("academyInvestment")],["Installations","settings","Niveau indisponible",null],["Partenaires","shield","Recettes hebdomadaires du modèle",finance.get("weeklyIncome")]]
+	if finance.get("budget") is Dictionary and finance.budget.get("centreFormationHebdo") != null:
+		cards[0][2] = "Centre de formation · par semaine" + (" dont %s payés en plus" % U.amount(finance.get("academyInvestment")) if float(finance.get("academyInvestment", 0)) > 0.0 else "")
+		cards[0][3] = formation_weekly(finance)
 	if finance.get("budget") is Dictionary: cards[2] = ["Recettes régulières","shield","Partenaires, ligue, abonnements · par semaine",finance.get("weeklyIncome")]
 	var facility: Variant = finance.get("facility")
 	if facility is Dictionary:

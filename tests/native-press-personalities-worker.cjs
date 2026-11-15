@@ -36,6 +36,6 @@ try{
  // The worst supported contact count remains compact; these are explicit test exchanges.
  const bank=require('../dist/press-question-bank.js'),relations=require('../dist/press-relations.js');let full;
  for(const j of bank.journalists)for(let week=0;week<3;week++)full=relations.recordDialogue(full,j,{season:1,week,club:0,questionId:'avant_match-0-'+week,answerId:'r4'},1);
- assert.equal(Object.keys(full.contacts).length,30);assert.ok(Buffer.byteLength(JSON.stringify(full))<30000);
+ assert.equal(Object.keys(full.contacts).length,bank.journalists.length);assert.ok(Buffer.byteLength(JSON.stringify(full))<1000*bank.journalists.length);
  console.log('Personnalités vrai worker PASS : 5 choix, archives exactes, import/reprise, legacy, état hostile, France34, vraie mobilité Élite→Accession, rollback, budget30contacts='+Buffer.byteLength(JSON.stringify(full))+' octets ; profil '+root);
 }finally{bridge?.close();}

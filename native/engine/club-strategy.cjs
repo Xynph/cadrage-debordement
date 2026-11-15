@@ -47,6 +47,11 @@ function factory(){
  const HOME_GATE=375000;
  const homeLeft=()=>world(S)?S.worldMode.fixtures.filter(x=>x.homeId===S.club&&!x.neutral&&x.week>=S.worldMode.week).length:0;
  function withLevers(f,partner,academy,upkeep,wage){
+  // Lecture de la prévision : marge courante (hors guichet, primes et soutien) et reste de la prévision, de sorte que
+  // trésorerie + marge courante + autres apports = trésorerie prévue. Une seule définition pour tous les écrans.
+  f.projection={cash:f.cash,weeklyMargin:f.weeklyIncome-f.weeklyCosts,remainingWeeks:f.remainingWeeks,
+   marginTotal:(f.weeklyIncome-f.weeklyCosts)*f.remainingWeeks,
+   otherInflows:f.baseForecast-f.cash-(f.weeklyIncome-f.weeklyCosts)*f.remainingWeeks,forecast:f.baseForecast};
   if(typeof nativeClubBudget==='undefined'||typeof nativeClubBudget.leviers!=='function')return f;
   const reste=f.remainingWeeks,q=f.facility,devis=q&&!q.used&&q.affordable!==false?q.cost:null,b=f.budget;
   const common={reste,formationHebdo:academy,devis,masseHebdo:wage};

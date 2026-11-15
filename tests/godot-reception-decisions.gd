@@ -145,8 +145,8 @@ func run() -> void:
 	check(app.contextual_director.active() and app.contextual_director.kind == "press", "Le rendez-vous requis reste ouvert après Échap et navigation")
 	var questions: Array = app.model.clubLife.press.conference.questions
 	for index in questions.size():
+		# Un clic par question : la suivante s'affiche d'elle-même (conférence rapide).
 		await activate("PressAnswer_"+str(questions[index].id)+"_r4")
-		if index < questions.size()-1: await activate("PressNext")
 	await activate("PressPublish"); await wait_worker()
 	check(app.model.clubLife.clubMeetings.scene.completed, "Publication réelle termine la décision avant de continuer")
 	await activate("PressReturn"); await wait_worker()

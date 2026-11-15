@@ -20,6 +20,9 @@ function finalFixture({legacy=false,loser=false}={}) {
   const g=context();g.run('start('+(loser?12:0)+')');
   if(legacy)g.run('delete S.worldVersion;delete S.worldManagement;delete S.integratedManagementVersion;delete S.careerManagement');
   g.run('S.phase="final";S.round=26;S.playoff={seeds:[0,1,2,3,4,5],pairs:[[0,13]],log:[]};for(let i=0;i<100;i++)ledgerEntry("History "+i,0)');
+  // Le titre ne doit pas dépendre d'un tirage du moteur de match (recalibré par docs/essais-realistes-20261114.md) :
+  // l'adversaire de la finale joue épuisé, le club 0 l'emporte.
+  g.run('S.clubs[13].players.forEach(p=>{p.condition=25})');
   valid(g);return g;
 }
 function settled(g) {

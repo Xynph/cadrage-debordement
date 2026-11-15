@@ -345,7 +345,7 @@ static func _standings_rows(app: Control, list: VBoxContainer, rows: Array, boun
 		var row := G.h(12)
 		frame.add_child(row)
 		row.add_child(G.cell(Semantics.count_text(club.get("rank")),36,G.accent_ink(app.accent) if own else G.MUTED))
-		row.add_child(G.cell(G.club_name(club),220,G.INK,true))
+		row.add_child(club_cell(app, club, 220))
 		row.add_child(G.cell(Semantics.count_text(club.get("played")),40,G.MUTED))
 		for pair in [["won","V"],["drawn","N"],["lost","D"]]:
 			var badge := Semantics.count_badge(club.get(pair[0]), pair[1], 36)
@@ -358,6 +358,33 @@ static func _standings_rows(app: Control, list: VBoxContainer, rows: Array, boun
 		var form := Semantics.recent_form(club.get("form"))
 		form.custom_minimum_size.x = 136
 		row.add_child(form)
+
+## Nom de club cliquable des tableaux en petite fenêtre (fiche du club ; le vôtre : écran Club).
+static func club_cell(app: Control, club: Dictionary, width: int) -> Control:
+	var cell := G.cell(G.club_name(club), width, G.INK, true)
+	var Link = load("res://ui/entity_link.gd")
+	var target := {"kind":"club", "id":str(club.get("id", ""))}
+	if not is_instance_valid(app.navigation_controller) or not app.navigation_controller.entity_available(target): return cell
+	var button := Button.new()
+	button.name = "StandingsClubLink"
+	button.flat = true
+	button.text = cell.text
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.clip_text = true
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.custom_minimum_size.x = width
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_override("font", cell.get_theme_font("font"))
+	button.add_theme_font_size_override("font_size", cell.get_theme_font_size("font_size"))
+	button.add_theme_color_override("font_color", G.INK)
+	button.add_theme_color_override("font_hover_color", G.GOLD)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxEmpty.new()
+		button.add_theme_stylebox_override(state, style)
+	cell.free()
+	Link.bind(button, app, target, G.club_name(club))
+	return button
 
 static func _standings_context(app: Control, page: Control) -> Control:
 	var content := G.panel(page)

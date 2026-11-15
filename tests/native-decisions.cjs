@@ -31,7 +31,8 @@ try{
  assert.equal(m.decisions.development.academy.length,60);
  const before=good('export').meta.exportText,file=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file);
  for(let i=0;i<5;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes,'La lecture de tous les dossiers ne modifie ni disque ni RNG.');
- const recruit=m.market.find(p=>p.available);const cash=m.finance.cash,squadSize=m.squad.length;
+ // Le joueur disponible le mieux noté : sa demande dépasse toujours le plancher de la ligue (notes du barème V2).
+ const recruit=m.market.filter(p=>p.available).sort((a,b)=>b.rating-a.rating||(a.id<b.id?-1:1))[0];const cash=m.finance.cash,squadSize=m.squad.length;
  const recruitTerms={playerId:recruit.id,years:1,confirmed:true};
  // Plancher de la règle : 1 000 € dans l'ancienne économie, celui du barème de la ligue avec le budget réaliste (défaut). Une offre au plancher est sous la demande du joueur.
  const floor=b.vm.run("budgetActif()?budgetPlancherHebdo():1000");

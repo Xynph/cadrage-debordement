@@ -3,7 +3,8 @@
 let officeFilter='all',squadTab='table',squadFamily='all',squadSort='note',squadDescending=true,compareIds=[],recruitView='missions';
 function setupManager(){if(!S||S.manager)return;S.manager={version:1,lastWeek:S.economy.week,serial:0,inbox:[],watch:[],missions:[],reports:[],delegation:{training:false,lineup:false},playbook:defaultPlaybook()};managerMessage('Votre bureau est ouvert.','Retrouvez ici les échéances, les rapports de votre staff et les décisions du club.','club','team')}
 function managerMessage(title,body='',kind='club',action='dashboard'){if(!S?.manager)return;const m=S.manager,id='msg-'+(++m.serial);m.inbox.unshift({id,title,body,kind,action,week:S.economy.week,season:S.season,read:false});m.inbox=m.inbox.slice(0,60)}
-function managerPool(){return [...new Map([...S.market,...S.economy.freeAgents].filter(p=>!S.clubs.some(c=>c.players.some(x=>x.id===p.id))).map(p=>[p.id,p])).values()]}
+// Joueurs sous contrat : un ensemble d'identifiants calculé une fois (même filtre que la double boucle d'origine).
+function managerPool(){const owned=new Set();for(const c of S.clubs)for(const x of c.players)owned.add(x.id);return [...new Map([...S.market,...S.economy.freeAgents].filter(p=>!owned.has(p.id)).map(p=>[p.id,p])).values()]}
 function watchPlayer(id){if(S.live)return;const m=S.manager,p=managerPool().find(p=>p.id===id);if(m.watch.includes(id))m.watch=m.watch.filter(x=>x!==id);else{if(!p||m.watch.length>=30)return;m.watch.push(id);if(!S.economy.freeAgents.some(x=>x.id===id)&&S.economy.freeAgents.length<60){p.contractEnd=null;S.economy.freeAgents.push(p)}}save();render()}
 function createScoutMission(family,maxAge,budget,maxWage){
  if(S.live)return false;const m=S.manager;family=Number(family);maxAge=Number(maxAge);budget=Number(budget);maxWage=Number(maxWage);

@@ -14,11 +14,11 @@ const allTests=onDisk.filter(file=>!legacy.has(file));
 const name=key=>'tests/'+key+'.cjs';
 const dependencies={
  'dist/manager-mobility.js':['manager-mobility','world-career','career-integration','saves','ai-roster-cycle'],
- 'dist/rugby.js':['v40-match-cockpit','v39-team-dynamics','rugby','match-penalite-main','discipline','frontrow','match-rules','matchflow','goalkicking','opposition','v19-advantage','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
+ 'dist/rugby.js':['match-regles','match-rating-curve','v40-match-cockpit','v39-team-dynamics','rugby','match-penalite-main','discipline','frontrow','match-rules','matchflow','goalkicking','opposition','v19-advantage','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/frontrow.js':['frontrow','discipline','match-rules','rugby','saves'],
- 'dist/restarts.js':['restarts','match-rules','rugby','saves','v28-collective-preparation'],
- 'dist/matchflow.js':['matchflow','match-penalite-main','rugby','saves'],
- 'dist/tactical-plans.js':['tactical-plans','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves'],
+ 'dist/restarts.js':['match-regles','restarts','match-rules','rugby','saves','v28-collective-preparation'],
+ 'dist/matchflow.js':['match-regles','matchflow','match-penalite-main','rugby','saves'],
+ 'dist/tactical-plans.js':['match-regles','tactical-plans','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves'],
  'dist/opposition.js':['opposition','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load'],
  'dist/saves.js':['manager-mobility','ai-roster-cycle','world-career','career-integration','v39-team-dynamics','v38-individual-objectives','v36-satisfaction','saves','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','frontrow','match-rules','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/match-actions.js':['match-actions','rugby','v19-advantage'],

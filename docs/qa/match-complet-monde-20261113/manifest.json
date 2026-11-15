@@ -1,0 +1,23 @@
+{
+  "sourceTeste": "1e5ce1b8c015130dbd4cf168dce0a1df1aaf5c3f",
+  "mainTemoin": "b187b455c3f57a761f91e06e0dc19a6c8d84b5a3",
+  "exportSha256": "b4082152a15c8b262473b08d9993c93c07ce1cb248de4ddf1202f8c3e5b700ca",
+  "godot": "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
+  "capturesVersionnees": [
+    "tf-00008.jpg",
+    "tf-00029.jpg"
+  ],
+  "files": {
+    "tf-00008.jpg": "2cbabf129f228af9b2a51e023e871a67e53ad520fd8f2ab41cf6740e968a3869",
+    "report.json": "e4d35d90fc15f9411d5f0cc0ad8ee8d3d79b0f71ae178694268fb9ba4d25edeb",
+    "regressions.log": "63dcc75ba4c56bc8375c648b6f67911754c2744362a1f2d4a72ab8b65507044b",
+    "gestes-before.log": "20770eda092cbafa7aa9973f5239d6cb64e17a11502be7281bfcc2c7c579af17",
+    "match-main-report.json": "c727b7fca4a626a6d2de03371ac61ea1f2407e9f761ab9b5d7c6c950f807d5b2",
+    "tf-00029.jpg": "a5ca942ffec74e79eb8b62d36cff588d84f63050afe201bd0519cd2d40fb71c0",
+    "gestes-existing.log": "7e5f7eeeef25c4b3e15a6197f48f51afca733de9ea221bebb85e21fe5f0b0cb7",
+    "match-main-errors.log": "d58803d2e3c589ee1c38a2d6637cc4fed210bb7e7a9af9d8d61eefbd1b658f60",
+    "sonde-before.log": "56dd44bc5166de215d9d95fbcfc69d78945f393641099063d177a6f1eaae2b55",
+    "godot.log": "fe828022534cd25621527143d9ebd877e427a860c3963ef8173232412a12ab2f",
+    "match-main-godot.log.gz": "cc7b8fdf096fc71461b22ae6fd195f5b5af7e25f19d2973ad8bffaa376cee242"
+  }
+}

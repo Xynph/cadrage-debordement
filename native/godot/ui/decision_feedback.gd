@@ -9,7 +9,7 @@ const TITLES := {
 	"set_tactics":"Consignes modifiées", "set_collective_focus":"Préparation collective modifiée",
 	"set_development_focus":"Objectif de développement modifié", "set_player_load":"Charge modifiée",
 	"staff_meeting":"Réunion du staff tenue", "strategic_briefing":"Briefing choisi",
-	"press_conference":"Conférence tenue", "club_academy_investment":"Investissement de formation réglé",
+	"press_conference":"Conférence tenue", "press_delegate":"Conférence confiée à Gabi", "club_academy_investment":"Investissement de formation réglé",
 	"club_facility_upgrade":"Installations améliorées", "club_sponsor_sign":"Sponsor signé",
 	"relationship_activate":"Suivi du vestiaire activé", "relationship_conversation":"Entretien tenu",
 	"relationship_promise":"Promesse enregistrée", "relationship_duo":"Travail du duo effectué",
@@ -299,7 +299,7 @@ func _evidence(command: String, payload: Dictionary, model: Dictionary) -> Varia
 			for sponsor: Dictionary in _strategy(model).get("sponsors",[]):
 				if sponsor.get("selected",false): return sponsor.get("id")
 			return ""
-		"press_conference": return model.get("clubLife",{}).get("press",{}).get("lastOutcome")
+		"press_conference","press_delegate": return model.get("clubLife",{}).get("press",{}).get("lastOutcome")
 		"relationship_activate": return model.get("clubLife",{}).get("relationships",{}).get("active")
 		"relationship_conversation","relationship_promise":
 			for p: Dictionary in model.get("clubLife",{}).get("relationships",{}).get("players",[]):

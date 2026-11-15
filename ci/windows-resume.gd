@@ -261,7 +261,7 @@ func finish() -> void:
 			check(events.starts == 0 and events.ends == 0, "Gabi produces no voice event during destruction")
 		if is_instance_valid(app.soundscape): app.soundscape.dispose()
 		app.bridge.stop()
-		var deadline := Time.get_ticks_msec() + 5000
+		var deadline := Time.get_ticks_msec() + NativeEngineBridge.STOP_GRACE_MS + 500
 		while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
 		check(app.bridge.child_pid <= 0, "Owned packaged Node shut down")
 	report.merge({"passed":failures.is_empty(),"checks":checks,"failures":failures,"platform":OS.get_name(),"native_display":DisplayServer.get_name(),"audio_driver":AudioServer.get_driver_name(),"executable":OS.get_executable_path(),"pid":OS.get_process_id(),"engine_pid":engine_pid,"data_dir":profile,"season":app.model.get("meta",{}).get("season",0) if is_instance_valid(app) else 0,"coach":{"starts":events.starts,"ends":events.ends,"voice_available":false,"player_present":player_present}},true)

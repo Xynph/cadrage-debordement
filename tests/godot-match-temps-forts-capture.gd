@@ -66,6 +66,7 @@ func run() -> void:
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < deadline: await process_frame
 	app.timer.stop()
 	var window_size := await resize(size)
+	print("MATCH_CAPTURE import")
 	if not app._command("import", {"text": FileAccess.get_file_as_string(OS.get_environment("CD_MATCH_TEMPS_FORTS_SAVE"))}):
 		fail("Import du match refusé.")
 		return
@@ -83,10 +84,11 @@ func run() -> void:
 	if view == null or view.regie == null or not view.temps_forts_actifs():
 		fail("Le direct en temps forts ne s'est pas ouvert : " + str(app.last_error))
 		return
+	print("MATCH_CAPTURE direct ouvert")
 	var report := {"driver": RenderingServer.get_current_rendering_driver_name(), "adapter": RenderingServer.get_video_adapter_name(),
 		"size": [size.x, size.y], "window": [window_size.x, window_size.y], "jpeg_quality": quality, "resized": false, "niveau": view.regie.niveau, "horloge": view.regie.horloge, "vitesse": view.regie.vitesse, "every": every,
 		"gestes": view.stage.get("_gestes") != null, "images": [], "suivi": [], "tronque": false}
-	var regies: Array = []
+	var suivi = load(ProjectSettings.globalize_path("res://").path_join("../../tests/match-capture-suivi.gd")).new()
 	var started := Time.get_ticks_msec()
 	var frame := 0
 	var hold := 0.0
@@ -119,6 +121,8 @@ func run() -> void:
 	var liaisons_vues := 0
 	var liaisons_max := number("CD_MATCH_TEMPS_FORTS_LIAISONS_MAX", 0)
 	report["liaisons"] = []
+	var last_live: Dictionary = {}
+	var logged_minute := -1
 	while true:
 		await process_frame
 		frame += 1
@@ -126,9 +130,14 @@ func run() -> void:
 		var delta := (now - previous) / 1000.0
 		previous = now
 		var live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}
+		if not live.is_empty():
+			last_live = {"score": live.get("score", [0, 0]).duplicate(), "minute": live.get("minute", 0), "finished": live.get("finished", false)}
+			if int(last_live.minute) != logged_minute:
+				logged_minute = int(last_live.minute)
+				print("MATCH_CAPTURE minute=", logged_minute, " termine=", last_live.finished)
 		view = surface()
 		var regie: Node = view.regie if view != null else null
-		if regie != null and not regies.has(regie): regies.append(regie)
+		suivi.observe(regie)
 		var talk: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 		var state := "causerie"
 		if regie != null: state = ["intermediaire", "temps_fort", "attente"][regie.etat]
@@ -248,9 +257,11 @@ func run() -> void:
 		largest = maxi(largest, written)
 		render_usec += Time.get_ticks_usec() - before
 		report.images.append({"file": name, "ms": now - started, "etat": state, "horloge": view.clock.text if view != null else "", "score": view.score.text if view != null else "", "type": type_garde})
-	for played: Node in regies:
-		if is_instance_valid(played): report.suivi.append_array(played.suivi)
-	var final_live: Dictionary = app.model.live if app.model.get("live") is Dictionary else {}
+	report.suivi = suivi.collect()
+	report["regies_collectees"] = suivi.traces.size()
+	report["scene_live_liberee"] = surface() == null
+	var final_live: Dictionary = app.model.live if app.model.get("live") is Dictionary else last_live
+	if final_live.is_empty(): final_live = last_live
 	report["score"] = final_live.get("score", [0, 0])
 	report["termine"] = final_live.get("finished", false)
 	report["minute"] = final_live.get("minute", 0)

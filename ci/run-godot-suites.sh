@@ -39,11 +39,17 @@ declare -A suite_limits=(
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.
   # Mesuré sur runner le 13/11 (run 43474285948) : 311 s, suite verte ; plafond 600 s = marge d'environ deux fois.
   [tests/godot-notes-match.cjs]=600
+  # Fiche club : préparation Node de la carrière Monde (3 journées) puis deux passages Godot (1080p, 720p).
+  [tests/godot-fiche-club.cjs]=1200
   # Préparation Node de la carrière Monde (~46 jours) puis Godot : 126 à 221 s mesurés selon le runner.
   [tests/godot-reader-history.cjs]=600
   [tests/godot-analysis-club-graphics.cjs]=600
   # Préparation Node de la carrière Monde jusqu'au premier match (~60 jours simulés, sauvegarde de ~50 Mo) puis Godot : ~2 à 5 min.
   [tests/native-club-support-ui.cjs]=600
+  # Délégation de la composition : carrière Monde hebdomadaire jouée côté Node jusqu'à l'alerte de fatigue (feuille gardée), puis le vrai jeu.
+  [tests/godot-delegue-composition.cjs]=900
+  # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
+  [tests/godot-finitions.cjs]=900
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.

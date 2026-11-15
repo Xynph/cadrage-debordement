@@ -573,6 +573,9 @@ function simuler(e,phases,graine){
   const c=d.coup,dk=dirDe(c.camp),chute={x:c.x,y:c.y};
   const porteur=ballon.porteur?parId.get(ballon.porteur):null;
   if(d.phase==='porte'&&(j===d.porteur||j===d.plaqueur))return comportementJeu(j);
+  // Receveur désigné, y compris un partenaire du botteur qui reprend le coup d'envoi : il va au ballon
+  // (avant, il suivait la chasse et s'arrêtait à distance du point de chute : mise en scène abandonnée).
+  if(j===c.receveur&&(ballon.vol||d.phase==='rebond')){vers(j,ballon.vol?c.x:ballon.x,ballon.vol?c.y:ballon.y,j.vmax*0.9);return}
   if(j.side===c.camp){
    if(d.horsJeuPied.has(j.id)){vers(j,j.x-dk*1.5,j.y,1.6);return} // en attente d'être remis en jeu
    if(c.issue==='touche'){vers(j,j.x+dk*Math.max(0,(c.x-j.x)*dk*0.5),borne(j.y+(c.y<35?-1:1)*2,3,67),Math.min(j.vmax,5));return}
@@ -583,7 +586,6 @@ function simuler(e,phases,graine){
    vers(j,cible.x+ux*recul,cible.y+uy*recul+((j.slot%3)-1)*2.5,j===c.botteur?j.vmax*0.55:j.vmax*0.9);return;
   }
   // Équipe qui reçoit.
-  if(j===c.receveur&&(ballon.vol||d.phase==='rebond')){vers(j,ballon.vol?c.x:ballon.x,ballon.vol?c.y:ballon.y,j.vmax*0.9);return}
   const ref=porteur||chute,dr=dirDe(j.side);
   if(c.issue==='touche'){vers(j,j.x-dr*0.5,borne(j.y+(c.y<35?-1:1)*1.5,3,67),3);return}
   if(j.slot<8){vers(j,ref.x-dr*(4+(j.slot%3)*1.5),borne(ref.y+((j.slot%4)-1.5)*4,3,67),4.5);return}
@@ -1230,11 +1232,18 @@ function composer(entree){
    if(r&&r.duree>Math.max(cible,max))break;
   }
  }
+ // Plusieurs franchissements enchaînés (course, plaquage, ruck à chaque fait) peuvent dépasser les
+ // 6 s accordées par fait : plutôt que de ne rien montrer, on accepte la plus proche jusqu'au plafond.
+ let dureeMax=max;
+ if(!essais.some(x=>x.ecart<1000)&&max<DUREE_PLAFOND&&essais.some(x=>x.r.duree>=DUREE_MIN&&x.r.duree<=DUREE_PLAFOND)){
+  dureeMax=DUREE_PLAFOND;
+  for(const x of essais)x.ecart=Math.abs(x.r.duree-cible)+(x.r.duree<DUREE_MIN||x.r.duree>DUREE_PLAFOND?1000:0);
+ }
  essais.sort((a,b)=>a.ecart-b.ecart||a.phases-b.phases);
  const meilleur=essais[0];
  if(!meilleur||meilleur.ecart>=1000)throw new RangeError('Chorégraphe : aucune mise en scène dans la durée voulue');
  const o=sortie(meilleur.r,e,graine,meilleur.phases);
- o.dureeMax=max;
+ o.dureeMax=dureeMax;
  return o;
 }
 

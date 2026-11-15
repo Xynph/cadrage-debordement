@@ -4,6 +4,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
 const Present = preload("res://ui/immersive08/projection.gd")
+const DelegationDialog = preload("res://ui/delegation_dialog.gd")
 const ACTION_FONT_PIXELS = 12
 const ACTION_HEIGHT_PIXELS = 28
 const JOURNAL_CATEGORY_PIXELS = 104
@@ -14,6 +15,7 @@ var opening_context: Label
 var opening_position: Label
 var opening_status: Label
 var opening_sheet: Button
+var opening_delegate: Button
 var result_strip: PanelContainer
 var result_title: Label
 var result_context: Label
@@ -141,6 +143,9 @@ func _add_pitch_overlays() -> void:
 		app._navigate("Préparation"),false,app.accent)
 	prep.name="MatchOpenPreparation"
 	actions.add_child(prep)
+	opening_delegate=C.button("Déléguer le match",func():DelegationDialog.ouvrir(app),false,app.accent)
+	opening_delegate.name="MatchOpenDelegation"
+	actions.add_child(opening_delegate)
 	broadcast=C.card("")
 	broadcast.name="ImmersiveMatchBroadcast"
 	broadcast.add_theme_stylebox_override("panel",C.box(Color(C.BG,.87),Color(C.GOLD,.7),6,9))
@@ -192,10 +197,17 @@ func update_frame(value: Dictionary) -> void:
 		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
 		var ready: bool = value.get("selection",{}).get("valid",false)
 		var reduced := Present.reduced_bench_number(value) != 0
+		var espoir := not Espoir.offer(value).is_empty()
 		opening_status.text="FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
 		if reduced: opening_status.text="FEUILLE À 22 DISPONIBLE"
-		opening_sheet.text="Vérifier la feuille" if reduced else "Vérifier la feuille à 23"
+		if espoir: opening_status.text="FEUILLE INCOMPLÈTE · UN ESPOIR PEUT ÊTRE APPELÉ"
+		opening_sheet.text="Vérifier la feuille" if reduced or espoir else "Vérifier la feuille à 23"
 		opening_status.visible=not fixture.is_empty()
+		# Déléguer le match : mêmes conditions que le coup d'envoi (jour de match, presse réglée). Feuille à 22 :
+		# la délégation reste possible, la fenêtre demande la confirmation du match à 22.
+		opening_delegate.visible=not fixture.is_empty()
+		opening_delegate.disabled=play.disabled
+		opening_delegate.tooltip_text=play.tooltip_text if play.disabled else "Feuille incomplète : la fenêtre vous propose d’appeler un espoir du centre ou, quand la règle le permet, de jouer à 22." if espoir else "L’adjoint joue le match à 22 joueurs (%s) : la fenêtre vous demande de le confirmer." % Present.reduced_bench_vacancy(Present.reduced_bench_number(value)).trim_suffix(".").to_lower() if reduced else "L’adjoint joue le match ; vous pouvez lui confier aussi la composition."
 		opening_status.add_theme_color_override("font_color",C.MINT if ready else C.AMBER)
 		return
 	if finished:

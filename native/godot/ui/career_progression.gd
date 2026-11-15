@@ -17,7 +17,20 @@ static func daily(meta: Dictionary, fixture: Variant, route: String) -> Dictiona
 	var today := str(meta.get("calendarToday", ""))
 	if today.is_empty() or not bool(cadence.get("canAdvance", false)):
 		return {"disabled": true, "label": str(cadence.get("reason", "L’avance est indisponible.")), "short": "Continuer"}
-	# Avant-saison (13 juillet → 17 août 2026) : rien ne se joue, on avance par semaine.
-	if bool(cadence.get("preseason", false)):
-		return {"command": "preseason_advance", "payload": {"fromDate": today, "until": "semaine"}, "label": "+ 7 JOURS  →", "short": "+ 7 jours"}
-	return {"command": "advance_day", "payload": {"fromDate": today}, "label": "JOUR SUIVANT  →", "short": "Jour suivant"}
+	# « Continuer » (façon Football Manager) : le moteur avance jour après jour jusqu'au prochain événement
+	# (match, rendez-vous, presse, courrier, blessure…), avant-saison comprise ; voir native/engine/continuer.cjs.
+	return {"command": CONTINUE_COMMAND, "payload": {"fromDate": today}, "label": "CONTINUER  →", "short": "Continuer"}
+
+const CONTINUE_COMMAND := "advance_until_event"
+
+## « Jour suivant » reste accessible (petit bouton du bandeau, Ctrl+J) : un seul jour, jamais un match sauté.
+static func next_day(meta: Dictionary, fixture: Variant) -> Dictionary:
+	var step := daily(meta, fixture, "")
+	if not step.has("command"): return {}
+	return {"command": "advance_day", "payload": {"fromDate": str(meta.get("calendarToday", ""))}, "label": "JOUR SUIVANT  →", "short": "Jour suivant"}
+
+## Réglages d'arrêt de « Continuer » transmis au moteur (préférences du joueur).
+static func continue_stops(preferences: Dictionary) -> Dictionary:
+	var messages := str(preferences.get("continue_messages", "importants"))
+	var blessures := str(preferences.get("continue_injuries", "titulaires"))
+	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires"}

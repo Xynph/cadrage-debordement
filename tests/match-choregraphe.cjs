@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 // Chorégraphe de temps forts (CD_MATCH_CHOREGRAPHE=1) : garanties de la mise en scène.
 // Voir docs/match-choregraphe-20261112.md.
 //
@@ -452,28 +451,44 @@ test('Entrées invalides refusées ; essai sur ballon porté ou mêlée non mis 
   assert.equal(e.plan, 1);
 });
 
+// Régressions du 15/11 (carrière Monde, club 102, graine 7) : trois franchissements enchaînés plus longs que les
+// 6 s accordées par fait (mise en scène acceptée jusqu'au plafond), et coup d'envoi repris par l'équipe qui botte
+// (le receveur désigné suivait la chasse et s'arrêtait à distance du ballon).
+test('Régressions : franchissements enchaînés jusqu’au plafond ; coup d’envoi repris par l’équipe qui botte', () => {
+  const R = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-regressions.json'), 'utf8'));
+  assert.equal(R.length, 2);
+  for (const { source, entree } of R) {
+    const c = C.composer(entree);
+    assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax && c.dureeMax <= C.DUREE_PLAFOND, `${source} : durée ${c.duree} (plafond ${c.dureeMax})`);
+    assert.deepEqual([...new Set(c.jalons.map(([, k]) => k))].sort(), [...entree.jalonsAttendus].sort(), `${source} : chaque fait montré`);
+  }
+  const envoi = R[1].entree, botteur = envoi.joueurs.find(j => j.id === envoi.ouverture.botteur);
+  for (const j of envoi.joueurs.filter(x => x.side === botteur.side && x.slot >= 10)) {
+    const c = C.composer({ ...envoi, ouverture: { ...envoi.ouverture, receveur: j.id } });
+    const prise = c.evenements.find(e => ['reception', 'ramassage'].includes(e.type) && e.joueur === j.id);
+    assert.ok(prise, `n° ${j.slot + 1} de l’équipe qui botte : il reprend le ballon`);
+  }
+});
+
 test('Moteur natif : rien sans le drapeau ; avec, chaque essai en jeu courant (et ce qui sait l’être) a sa chorégraphie et le match est le même', { timeout: 600000 }, () => {
-  const { createBridge } = require('../native/engine/worker.cjs');
-  const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
+  const M = require('./helpers/carriere-monde.cjs');
   const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
+  // Carrière Monde (club 102, cadence de la semaine), premier match du manager joué minute par minute.
   const jouer = drapeau => {
-    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-choregraphe-'));
-    const bridge = createBridge({ dataDir, seed: 7, now: 1700000000000, matchHighlights: 'dynamique', matchChoreography: drapeau });
-    let id = 0;
-    const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, r.error); return r.model; };
+    const jeu = M.ouvrir({ hebdomadaire: true, seed: 7, matchChoreography: drapeau });
     try {
-      settleClubMeetings(call('new_career', { club: 0 }), call);
-      let model = skipMatchTalk(call('begin_match'), call);
+      let model = M.jouerLeMatch(jeu, M.jusquAuMatch(jeu, M.creer(jeu, 102)), { delegue: false });
+      assert.equal(model.meta.edition, 'world-champ');
       const tempsForts = new Map();
       for (let n = 0; n < 400 && model.live && !model.live.finished; n++) {
-        if (model.clubLife?.matchTalks?.scene) { model = skipMatchTalk(model, call); continue; }
-        if (model.live.paused) model = call('pause', { paused: false });
-        model = call('tick', { minute: true, temps_forts: 'dynamique' });
+        if (model.clubLife?.matchTalks?.scene) { model = skipMatchTalk(model, jeu.call); continue; }
+        if (model.live.paused) model = jeu.call('pause', { paused: false });
+        model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
         const tf = model.live?.direct?.tempsFort;
         if (tf && !tempsForts.has(tf.cle)) tempsForts.set(tf.cle, tf);
       }
       return { live: model.live, tempsForts: [...tempsForts.values()] };
-    } finally { try { bridge.close?.(); } catch (error) { /* déjà fermé */ } fs.rmSync(dataDir, { recursive: true, force: true }); }
+    } finally { jeu.fermer(); }
   };
   const sans = jouer(false), avec = jouer(true);
   assert.ok(sans.tempsForts.every(tf => !('choregraphie' in tf) && !('choregraphieErreur' in tf)), 'sans le drapeau, rien ne change');

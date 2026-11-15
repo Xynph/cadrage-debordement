@@ -38,7 +38,7 @@ souvent troisième ligne). Valeurs dans `B` (match-notes.cjs) :
   `note = 6,5 + 3,2 × tanh(impact / 3,2)` (un impact négatif compte pour 0,8 : plancher relevé),
   `part` = minutes jouées / 80.
 
-Homme du match (30 minutes au moins) : meilleure performance relative à son poste, impact
+**Remplacé le 14 novembre 2026** (docs/homme-du-match-postes-20261114.md) : pondération par poste occupé (maillots 1 à 15) étalonnée en Monde, homme du match = meilleure note. Ancienne règle : Homme du match (30 minutes au moins) : meilleure performance relative à son poste, impact
 rapporté à l'écart-type du poste (mêlé à 25 % d'un écart commun pour ne pas sur-récompenser
 les postes à faible dispersion) ; à égalité : la note, le vainqueur, le plus de faits, l'identifiant.
 

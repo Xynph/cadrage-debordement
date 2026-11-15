@@ -4,6 +4,53 @@ const DEFENCES={equilibre:['Équilibrée','Un compromis entre pression, couvertu
 const ATTACK_EFFECTS={equilibre:{gain:[12,25],error:0,load:.40,finish:0},conquete:{gain:[8,18],error:-.045,load:.46,finish:-.015},large:{gain:[14,29],error:.065,load:.53,finish:.025},occupation:{gain:[10,21],error:0,load:.34,finish:0}};
 const TACTICAL_STAT_KEYS=['carries','advances','metres','handErrors','kicks','recoveries','longGains'];
 function tacticalRules(l){return l.tacticalVersion===1&&l.restartVersion===1&&l.balanceVersion===2}
+// Essais réalistes (docs/essais-realistes-20261114.md) : rencontres créées avec `essaisVersion` (les
+// matchs commencés avant gardent leurs coefficients). Coefficients de jeu étalonnés sur la mesure d'une
+// saison Monde contre les championnats réels 2024-25, pas des probabilités mesurées du rugby.
+let ESSAIS_RULES=1;
+// Finition 0,47 → 0,51 avec les pénalités réalistes (plus de temps de jeu arrêtés, docs/hierarchie-penalites-20261114.md).
+// Écart de niveau : 1 = pas d'amplification supplémentaire (la courbe de niveau commune du 14/11, matchLevelEdge, la fournit désormais).
+var ESSAIS={porte:.63,ecart:1,finition:.51,but:.6};
+function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
+// Pénalités réalistes (docs/hierarchie-penalites-20261114.md) : rencontres créées avec `penalitesVersion`.
+// Le moteur ne sifflait qu'une faute de défenseur dans le jeu courant (~10 par match, réel ~20) : on ajoute
+// les fautes de l'attaquant au sol (`attaque`, par temps de jeu), les pénalités de mêlée (`melee`, par
+// mêlée disputée, plutôt pour le pack dominant) et de touche ou ballon porté (`touche`, par touche).
+// `jeu` s'ajoute à la faute du défenseur dans le jeu courant. Coefficients de jeu calés sur une saison Monde.
+let PENALITES_RULES=1;
+var PENALITES={jeu:.01,attaque:.035,melee:.3,meleeDominant:.015,touche:.07};
+const PENALITES_INCIDENTS={scrum:{id:'scrum',label:'faute en mêlée',weight:0,serious:false},maul:{id:'maul',label:'faute en touche ou sur ballon porté',weight:0,serious:false},'not-release':{id:'not-release',label:'ballon non libéré au sol',weight:0,serious:false},sealing:{id:'sealing',label:'scellement du ballon dans le ruck',weight:0,serious:false}};
+function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
+// Culture du championnat sur pénalité (consigne automatique seulement) : part des tirs au but changés en
+// pénaltouche. Réel 2024-25 : les pénalités font ~25 % des points en Top 14 et en PRO D2, ~13-15 % en
+// Premiership, URC, Super Rugby, Championship et au Japon, où l'on joue la touche. Temps réglementaire seulement
+// (en prolongation, on prend les points).
+const TOUCHE_CHAMPIONNATS={urc:.4,prem:.45,srp:.45,champ:.4,'jlo-d1':.4,'jlo-d2':.4,champions:.15,challenge:.25};
+function pretereTouche(l,side){return penalitesRules(l)&&l.minute<80&&(l.penaltyPolicies?.[side]||'auto')==='auto'&&Math.random()<(TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0)}
+// Pénalité de mêlée ou de touche, tirée avant la conquête : rend vrai si la phase s'arrête sur une pénalité.
+function penaliteConquete(l,side,kind,a,b){
+ // Pas de pénalité de conquête à la minute d'un coup d'envoi : une pénalité réussie dans la même minute fermerait
+ // une prolongation à mort subite sans durée (play-offs du Japon, finales Monde).
+ if(!penalitesRules(l)||l.restartLog?.some(r=>r.kind==='kickoff'&&r.minute===l.minute))return false;
+ const melee=kind==='scrum';
+ if(Math.random()>=(melee?PENALITES.melee:PENALITES.touche))return false;
+ const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant,.2,.9):.65;
+ const beneficiaire=Math.random()<pourLanceur?side:1-side;
+ awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul'});
+ return true;
+}
+const OUVERTURE_CHAMPIONNATS={elite:0,accession:-.03,nationale:-.015,urc:.025,champions:.02,challenge:.03,prem:.11,srp:.115,champ:.125,'jlo-d1':.125,'jlo-d2':.11};
+// Marqueur selon le poste occupé (maillot 1 à 15) et l'origine de l'essai : talonneur et troisième
+// ligne sur ballon porté, numéro 8 et demi de mêlée sur mêlée, ailiers, arrière et centres dans le jeu
+// courant. Un seul tirage, comme l'ancien tirage uniforme ; le joueur doit être en jeu.
+const FINISSEURS={open:[.3,.8,.3,.5,.5,1.2,1.3,1.8,1.8,1.2,4.1,2,2.4,4.1,3],maul:[.6,6,.6,.8,.8,1.5,1.5,1.5,0,0,0,0,0,0,0],scrum:[.3,1,.3,.5,.5,1.5,1.5,4,2,0,0,0,0,0,0]};
+function finisseurEssai(l,side,origin){
+ const poids=FINISSEURS[origin]||FINISSEURS.open,sh=l.sheets[side],enJeu=new Set(activePlayers(l,side).map(p=>p.id));
+ const liste=sh.on.map((id,n)=>[id,poids[n]||0]).filter(([id,w])=>id&&w>0&&enJeu.has(id)),total=liste.reduce((a,[,w])=>a+w,0);
+ let r=Math.random()*total;for(const [id,w] of liste){r-=w;if(r<0)return matchPlayer(l,side,id)}
+ return liste.length?matchPlayer(l,side,liste.at(-1)[0]):null;
+}
+function ouvertureJeu(l){return essaisRules(l)?OUVERTURE_CHAMPIONNATS[l.worldContext?.competitionId]??0:0}
 function emptyTacticalStats(){return Object.fromEntries(TACTICAL_STAT_KEYS.map(k=>[k,0]))}
 function chooseDefence(l,side){
  const avg=mean(activePlayers(l,side).map(p=>p.condition));
@@ -11,7 +58,7 @@ function chooseDefence(l,side){
  if(avg<68)return 'prudente';
  if(difficultyLevel(l)!=='decouverte'&&unit(l,side,'speed')>76&&unit(l,side,'tackle')>74&&avg>82)return 'pression';return 'equilibre';
 }
-function initializeTacticalPlans(l){l.tacticalVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
+function initializeTacticalPlans(l){l.tacticalVersion=1;if(ESSAIS_RULES)l.essaisVersion=1;if(ESSAIS_RULES&&PENALITES_RULES)l.penalitesVersion=1;l.defences=['equilibre','equilibre'];l.tacticalStats=[emptyTacticalStats(),emptyTacticalStats()];for(let side=0;side<2;side++)l.defences[side]=side===l.userSide?(S.defence||'equilibre'):chooseDefence(l,side)}
 function defensivePlan(l,side){return tacticalRules(l)?effectiveDefence(l,side):'equilibre'}
 function tacticalEdge(l,side){
  const opp=1-side,a=effectiveAttack(l,side),d=defensivePlan(l,opp),backs=p=>p.fam>=4,forwards=p=>p.fam<=3;

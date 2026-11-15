@@ -22,6 +22,7 @@ const Playbook = preload("res://ui/immersive08/playbook_canvas.gd")
 const Centre = preload("res://ui/immersive08/centre_canvas.gd")
 const Press = preload("res://ui/immersive08/press_canvas.gd")
 const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
+const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
 const Selections = preload("res://ui/international_view.gd")
@@ -34,6 +35,8 @@ const TACTICS_CANVAS_MIN_WIDTH := 1600
 const FOOTER_RISE := 14
 const TOPBAR_ACTION_LEFT := 2067
 const TOPBAR_MATCH_ACTION_LEFT := 2008
+## Petit bouton « Jour suivant » (+1 j) à droite de « Continuer ».
+const NEXT_DAY_WIDTH := 58
 ## Bandeau du haut (pixels de référence, largeur 2312) : fil d'Ariane, historique et recherche à gauche,
 ## Gabi (visage et remarque du moment) au milieu, à côté de la date et du bouton « Continuer »
 ## (demande de Léo, 14/11/2026, option A). Gabi ne prend aucune place à l'écran : il vit dans le bandeau.
@@ -223,6 +226,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
+	# Fiche d'un club : gabarit à l'échelle, lisible dès 1280 × 720.
+	if app.route == ClubSheet.ROUTE: return ClubSheet
 	if app.route == "Calendrier" and Selections.nation_only(app.model): return null
 	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
@@ -282,7 +287,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
 		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
-		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités"]
+		if i==8:selected=app.route in ["Classements","Calendrier","Rivalités",ClubSheet.ROUTE]
 		if i==9:selected=app.route in ["Formation","Centre","Suivi des jeunes"]
 		var y:=394+i*57
 		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():
@@ -349,6 +354,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var route_caption:String="Tactique" if app.route=="Composition" else app.route
 	if _is_training(app): route_caption="Entraînement"
 	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
+	if app.route==ClubSheet.ROUTE:route_caption="Fiche club : "+ClubSheet.caption(app)
 	var caption_left := 137+name_width
 	var caption_width := minf(C.BOLD.get_string_size(route_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(25)).x/C.density+6,TOPBAR_BREADCRUMB_END-caption_left)
 	var caption := D.text(panel,caption_left,48,route_caption,25,C.IVORY,700,caption_width)
@@ -389,15 +395,35 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	app.header_date = D.text(calendar,0,48,"",24,C.IVORY,600,240)
 	app._update_header_date()
 	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
-	app.primary_button = D.button(panel,Rect2(action_left,17,2278-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
+	# « Jour suivant » (+1 j) : le bouton principal garde sa largeur, la zone de la date cède la place.
+	var single_day: bool = not office_live and app.has_method("next_day_available") and app.next_day_available()
+	if single_day: action_left -= NEXT_DAY_WIDTH + 6
+	# « Jour suivant » reste à portée (petit bouton à droite de « Continuer », Ctrl+J) les jours où l'on peut avancer.
+	var action_right := 2278 - (NEXT_DAY_WIDTH + 6 if single_day else 0)
+	app.primary_button = D.button(panel,Rect2(action_left,17,action_right-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
 	app.primary_button.tooltip_text = app.primary_text()
+	var next_day: Button = null
+	if single_day:
+		next_day = D.button(panel,Rect2(2278-NEXT_DAY_WIDTH,17,NEXT_DAY_WIDTH,45),"+1 j",app.next_day_action,false,"",true,app.accent,"ImmersiveNextDay")
+		next_day.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var compact_style: StyleBox = next_day.get_theme_stylebox("normal").duplicate()
+		compact_style.content_margin_left = C.px(4)
+		compact_style.content_margin_right = C.px(4)
+		next_day.add_theme_stylebox_override("normal",compact_style)
+		for state in ["hover","pressed","disabled","focus"]:
+			var other: StyleBox = next_day.get_theme_stylebox(state).duplicate()
+			other.content_margin_left = C.px(4)
+			other.content_margin_right = C.px(4)
+			next_day.add_theme_stylebox_override(state,other)
+		next_day.tooltip_text = "Jour suivant : avancer d’un seul jour (Ctrl+J)"
+		next_day.accessibility_name = "Jour suivant"
 	var gabi := Control.new()
 	gabi.name = "GabiBandeau"
 	gabi.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gabi.set_meta("masque", gabi_en_pied)
 	panel.add_child(gabi)
-	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi])
+	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon,gabi,next_day])
 	_position_topbar(layout)
 	if is_instance_valid(app.coach) and app.coach.has_method("installer_bandeau"): app.coach.installer_bandeau(gabi)
 
@@ -446,6 +472,11 @@ static func _position_topbar(layout: Control) -> void:
 	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 	action.position.y=(79.0*C.density-height)/2.0
 	action.size.y=height
+	if elements.size() > 7 and is_instance_valid(elements[7]):
+		var next_day: Button = elements[7]
+		next_day.add_theme_font_size_override("font_size",maxi(C.px(21),ceili(13.0/factor)))
+		next_day.position.y=action.position.y
+		next_day.size.y=height
 
 static func _position_office_match_status(status: Label, factor: float) -> void:
 	if factor<=0: return

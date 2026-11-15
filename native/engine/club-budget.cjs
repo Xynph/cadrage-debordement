@@ -381,6 +381,20 @@ const budgetLigue=id=>budgetFrance()?CDFranceCompetition.leagueId(S,id):CDWorldC
 const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>({id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base}));
 const budgetSemaineNo=()=>S.franceMode?S.franceMode.week:S.worldMode.week;
 const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
+// Source unique des masses salariales affichées (Finances, Club, Bureau) : trois mesures nommées, jamais confondues.
+//   joueursHebdo : somme des salaires des contrats (base de 52 semaines, celle des tables de contrats) ;
+//   verseHebdo : ce même salaire versé sur les semaines de gestion de la saison ; chargeHebdo : versé + cotisations.
+const chiffresMasse=()=>{
+ const joueurs=budgetMasse(club()),semaines=wageForecastWeeks(),rondCent=x=>Math.round(x/100)*100;
+ if(!budgetActif())return {joueursHebdo:joueurs,verseHebdo:joueurs,chargeHebdo:joueurs,cotisationsHebdo:0,annuelle:joueurs*52,semainesDePaie:semaines,tauxCotisations:0};
+ const verse=rondCent(joueurs*52/semaines),cotisations=rondCent(verse*nativeClubBudget.COTISATIONS);
+ return {joueursHebdo:joueurs,verseHebdo:verse,chargeHebdo:verse+cotisations,cotisationsHebdo:cotisations,annuelle:joueurs*52,semainesDePaie:semaines,tauxCotisations:nativeClubBudget.COTISATIONS};
+};
+// Échéances de contrat du club joué : fin de la saison en cours, et horizon (cette saison ou la suivante).
+const chiffresContrats=()=>{
+ const c=club(),fin=c.players.filter(p=>p.contractEnd===S.season),horizon=c.players.filter(p=>Number.isFinite(p.contractEnd)&&p.contractEnd<=S.season+1);
+ return {saison:S.season,horizonSaison:S.season+1,effectif:c.players.length,finDeSaison:fin,horizon};
+};
 // Effectif du centre d'un club : celui du club joué, sinon celui que l'ordinateur gère pour lui.
 const budgetCentre=c=>{const jeunes=c.id===S.club?S.development?.academy:S.aiRoster?.academies?.find(a=>a.clubId===c.id)?.players;
  if(!Array.isArray(jeunes))return null;let crabos=0,espoirs=0;for(const p of jeunes)if(p.age<=17)crabos++;else espoirs++;return {crabos,espoirs};};
@@ -533,11 +547,22 @@ worldNewSeason=function(fundingAlreadyPaid){
  budgetOuvrir(true);
  return actif;
 };
+// Forces des clubs pour les demandes salariales : une projection en interroge des centaines d'affilée (marché, contrats).
+// Même tableau tant que la carrière, les divisions et les forces des clubs sont inchangées (lu seulement par demande()).
+let budgetForcesDemandeMemo=null;
+const budgetForcesDemande=()=>{
+ if(budgetFrance())return budgetForces();
+ const ligues=S.worldMode.leagues;let cle=String(S.clubs.length);
+ for(const k of Object.keys(ligues))cle+='|'+k+':'+ligues[k].members.join(',');
+ for(const c of S.clubs)cle+='|'+c.id+':'+c.base;
+ const m=budgetForcesDemandeMemo;if(m&&m.etat===S&&m.cle===cle)return m.forces;
+ budgetForcesDemandeMemo={etat:S,cle,forces:budgetForces()};return budgetForcesDemandeMemo.forces;
+};
 // Salaire demandé au club joué : même règle que les salaires de départ, puis l'attrait du championnat pour une recrue.
 salaryDemandBreakdown=function(p,kind='renew',s=S){
  const r=salaryDemandBreakdownV1(p,kind,s);
  if(s!==S||!budgetActif()||!p||typeof p.id!=='string')return r;
- const juste=nativeStartingSalaries.demande(S,budgetForces(),S.club,p,nativeLeagueEconomy);
+ const juste=nativeStartingSalaries.demande(S,budgetForcesDemande(),S.club,p,nativeLeagueEconomy);
  if(kind==='renew'){const base=Math.max(p.salary,juste);return {...r,base,asked:Math.max(p.salary,Math.round(base*(1+(r.modifier||0))/10)*10)};}
  const parNom=nom=>{const c=S.clubs.find(x=>x.name===nom);return c?budgetLigue(c.id):null;};
  const a=nativeLeagueEconomy.attrait({origine:nativeLeagueEconomy.origine(p,id=>S.clubs[id]?budgetLigue(id):null,parNom),destination:budgetLigue(S.club),joueurId:p.id,age:p.age,situation:nativeLeagueEconomy.situation(p,S.season,S.club,club().name)});
@@ -634,10 +659,10 @@ function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  if(!budgetActif()||!budgetLisible(b)||b.saison!==S.season||!b.prevision)return null;
  const forces=budgetForces(),c=club(),masse=budgetMasse(c),semaines=wageForecastWeeks();
  const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true,formation:budgetCentre(c)})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
- const salaires=-somme(e=>/Salaires des joueurs|Cotisations/.test(e.title)),fonctionnement=-somme(e=>/fonctionnement|Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
+ const salaires=chiffresMasse().chargeHebdo,fonctionnement=-somme(e=>/fonctionnement|Centre de formation/.test(e.title)),centre=-somme(e=>/Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
  return {weeklyWages:salaires,weeklyIncome:recettes,weeklyCosts:salaires+fonctionnement+hebdoFormation+entretien,baseForecast:b.prevision.tresoreriePrevue,
   notice:'Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.',
-  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
+  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,centreFormationHebdo:centre,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
 }
 `;
 

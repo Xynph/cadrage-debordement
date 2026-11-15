@@ -20,7 +20,7 @@ static func synthese(model: Dictionary) -> Dictionary:
 	if not model.get("club") is Dictionary: return {}
 	var fixture := prochain_match(model)
 	var jours := jours_avant(model, fixture)
-	var lignes: Array = [_ligne_match(model, fixture, jours), _ligne_groupe(model), _ligne_alerte(model, fixture, jours)]
+	var lignes: Array = [_ligne_match(model, fixture, jours), _ligne_groupe(model, fixture), _ligne_alerte(model, fixture, jours)]
 	return {"lignes": lignes, "conseil": conseil(model, fixture, jours)}
 
 static func _nombre(value: Variant, defaut: float = 0.0) -> float:
@@ -85,7 +85,15 @@ static func _ligne_match(model: Dictionary, fixture: Dictionary, jours: int) -> 
 	else: ligne.texte = "Prochain rendez-vous : %s." % qui
 	return ligne
 
-static func _ligne_groupe(model: Dictionary) -> Dictionary:
+## Titulaires de la feuille sous le seuil de condition : la même source que l'alerte (Avis.fatigue_donnees),
+## pour que la ligne « groupe » ne dise jamais « rien d'inquiétant » à côté d'une alerte fatigue.
+static func _titulaires_fatigues(model: Dictionary, fixture: Dictionary) -> int:
+	if fixture.is_empty(): return 0
+	var donnees := Avis.fatigue_donnees(model)
+	if donnees.is_empty(): return 0
+	return int(_nombre(donnees.get("count"), (donnees.get("starters", []) as Array).size()))
+
+static func _ligne_groupe(model: Dictionary, fixture: Dictionary = {}) -> Dictionary:
 	var ligne := {"cle": "groupe", "libelle": "LE GROUPE", "icone": "people", "couleur": MENTHE}
 	var groupe := P.group(model)
 	var dispo := int(_nombre(groupe.get("available"), 0))
@@ -95,7 +103,10 @@ static func _ligne_groupe(model: Dictionary) -> Dictionary:
 	var faits := "%d disponibles, %d blessé%s, %d %% de condition" % [dispo, blesses, "s" if blesses > 1 else "", condition]
 	if moral >= 0: faits += ", moral à %d" % moral
 	var avis := "Rien d'inquiétant."
+	var fatigues := _titulaires_fatigues(model, fixture)
+	var seuil := int(_nombre(Avis.fatigue_donnees(model).get("threshold"), 70)) if fatigues > 0 else 70
 	if condition < 80: avis = "Ça tire dans les jambes : allège."; ligne.couleur = AMBRE
+	elif fatigues > 0: avis = "Mais %d titulaire%s de la feuille sous %d %% : à ménager." % [fatigues, "s" if fatigues > 1 else "", seuil]; ligne.couleur = AMBRE
 	elif moral >= 0 and moral < 50: avis = "Le moral est bas : un mot à chacun."; ligne.couleur = AMBRE
 	elif blesses >= 3: avis = "L'infirmerie se remplit."; ligne.couleur = AMBRE
 	elif condition >= 90 and (moral < 0 or moral >= 70): avis = "Le groupe est frais."
@@ -138,6 +149,10 @@ static func _ligne_alerte(model: Dictionary, fixture: Dictionary, jours: int) ->
 	elif _feuille_a_faire(model, jours) and not fixture.is_empty():
 		ligne.texte = "La feuille de match n'est pas complète."
 		ligne.couleur = AMBRE
+	elif not fixture.is_empty() and not Avis.fatigue_donnees(model).is_empty():
+		var titulaires := int(_nombre(Avis.fatigue_donnees(model).get("count"), 0))
+		ligne.texte = "%d titulaire%s de la feuille sous 70 %% de condition. Il faut les faire souffler." % [titulaires, "s" if titulaires > 1 else ""]
+		ligne.couleur = AMBRE
 	elif _expirants(model) >= 5:
 		ligne.texte = "%d contrats s'arrêtent en fin de saison. Il faudra trancher avant l'hiver." % _expirants(model)
 		ligne.couleur = AMBRE
@@ -155,6 +170,12 @@ static func _ecran(route: String, texte: String, categorie: String, ton: String,
 ## Le conseil de la semaine, toujours avec une action : un changement de composition le jour du match,
 ## sinon l'écran où agir (finances, composition, recrutement, effectif, entraînement, préparation).
 static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dictionary:
+	# Titulaires de la feuille sous 70 % de condition : le conseil le plus actionnable, avec « Suivre le conseil ».
+	# L'argent passe d'abord (comme l'alerte de la semaine) : trésorerie négative, on regarde les comptes.
+	var fatigue := Avis.fatigue(model)
+	var cash_fatigue := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
+	if cash_fatigue >= 0 and not fixture.is_empty() and not fatigue.is_empty():
+		return fatigue.merged({"texte": _fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
 	var du_jour := Avis.conseil_jour_de_match(model)
 	if not du_jour.is_empty(): return du_jour
 	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
@@ -176,4 +197,17 @@ static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dicti
 	if fixture.is_empty():
 		return _ecran("Club", "Pas de match en vue : passe voir le club, les installations et le staff.", "consigne", Avis.NEUTRE, "Ouvrir le club")
 	return _ecran("Préparation", "Prépare le prochain match dans l'ordre : l'effectif, la composition, puis le plan de jeu.", "consigne", Avis.POSITIF, "Ouvrir la préparation")
+
+## Version courte du conseil de fatigue pour le carnet (le détail reste dans la bulle de Gabi).
+static func _fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for change: Variant in avis.get("action", {}).get("changements", []):
+		if not change is Dictionary: continue
+		var sortant := Avis.joueur(model, str(change.get("sortant", "")))
+		var entrant := Avis.joueur(model, str(change.get("playerId", "")))
+		parts.append("%s (%d %%) pour %s" % [Avis._nom(entrant), int(Avis.condition(entrant)), Avis._nom(sortant)])
+	var total := int(Avis.fatigue_donnees(model).get("count", parts.size()))
+	var qui := "%d des %d titulaires fatigués" % [parts.size(), total] if total > parts.size() else "%d titulaires fatigués" % parts.size()
+	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
+	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
 

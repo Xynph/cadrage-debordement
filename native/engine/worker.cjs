@@ -15,6 +15,7 @@ const profileSafetyFactory=require('./profile-safety.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makePortraitLooks=require('./portrait-looks.cjs').createLooks;
 const makeNational=require('./international-native.cjs');
+const continuer=require('./continuer.cjs');
 const {factory:internationalCallups}=require('./international-callups.cjs');
 const factsFile=path.join(__dirname,'player-real-facts.json');
 const playerFactsCatalogue=fs.existsSync(factsFile)?JSON.parse(fs.readFileSync(factsFile,'utf8')):{};
@@ -72,7 +73,7 @@ const LEGACY_PURGE_NOTICE='Les carrières des anciens modes de jeu ont été ret
 const CAREER_STATE_KEYS=['bdt-v1','bdt-backup-v1','bdt-before-import','bdt-recovery-invalid'];
 const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-matchday-pending','bdt-exported-at'];
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
 COMMANDS.add('observe_player');
 COMMANDS.add('league_benchmark');
 COMMANDS.add('restore_checkpoint');
@@ -102,6 +103,7 @@ function createBridge(options={}){
  if(typeof options.dataDir!=='string'||!path.isAbsolute(options.dataDir))throw Error('Dossier de données absolu requis.');
  if(options.matchHighlights!==undefined&&options.matchHighlights!==null&&!matchDirect.NIVEAUX.includes(options.matchHighlights))throw Error('Niveau de temps forts inconnu.');
  if(options.legacyModes!==undefined&&typeof options.legacyModes!=='boolean')throw Error('Drapeau des anciens modes invalide.');
+ if(options.deferredCommits!==undefined&&typeof options.deferredCommits!=='boolean')throw Error('Drapeau d’écriture différée invalide.');
  const legacyModes=options.legacyModes??process.env.CD_MODES_HERITES==='1';
  const dataDir=path.resolve(options.dataDir,path.basename(options.dataDir)==='PrototypeGodot'?'':'PrototypeGodot');
  const appRoot=physicalLocation(applicationRoot());
@@ -134,8 +136,12 @@ function createBridge(options={}){
   });
  }catch(e){if(lockFd!==undefined)fs.closeSync(lockFd);throw Error('Profil déjà utilisé ou verrou indisponible : '+e.message);}
  let closed=false,store={},seed=(options.seed??Math.floor(Math.random()*0xffffffff))>>>0,clock=options.now??Date.now();
+ let flushBeforeClose=()=>{};
  const close=()=>{
-  if(closed)return;closed=true;
+  if(closed)return;
+  // Écriture différée (voir plus bas) : la dernière décision en attente est écrite avant de rendre le verrou.
+  try{flushBeforeClose();}catch{}
+  closed=true;
   try{exclusive(()=>{
    const current=fs.lstatSync(lock);
    if(current.isSymbolicLink()||current.dev!==identity.dev||current.ino!==identity.ino||fs.readFileSync(lock,'utf8')!==ownership)throw Error('Le verrou de profil n’appartient plus à ce processus.');
@@ -145,6 +151,9 @@ function createBridge(options={}){
  let ctx,profileError='',recoveryBackup=null,loadedProfile=null;
  const profileSafety=profileSafetyFactory.createStore(dataDir);
  let deferredDelegateActive=false,deferredDelegateRead=false;
+ // Décision différée : les save() internes du moteur pendant la commande ne sérialisent pas la carrière (la
+ // sauvegarde finale le fait) ; une lecture de la carrière enregistrée pendant ce temps la sérialise d'abord.
+ let savesDeferred=false,realSave=null,deferringSave=null;
  let legacyPurgeNotice='';
  // Mode unique Monde (Léo, 13/11/2026) : les carrières des anciens modes n'étaient que des essais. Au
  // chargement, elles sont supprimées sans rien demander (profil, fichier précédent, copies de sécurité) ;
@@ -173,10 +182,10 @@ function createBridge(options={}){
   if(!legacyModes&&!profileError)purgeLegacyCareers();
   const math=Object.create(Math);math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   class EngineDate extends Date{constructor(...args){super(...(args.length?args:[clock]));}static now(){return clock;}}
-  const storage={offline:true,directory:dataDir,getItem:key=>{if(deferredDelegateActive){deferredDelegateRead=true;throw deferredReadError;}return store[key]??null;},setItem:(key,value)=>{store[key]=String(value);},removeItem:key=>{delete store[key];}};
+  const storage={offline:true,directory:dataDir,getItem:key=>{if(deferredDelegateActive){deferredDelegateRead=true;throw deferredReadError;}if(savesDeferred&&key==='bdt-v1'&&realSave)realSave();return store[key]??null;},setItem:(key,value)=>{store[key]=String(value);},removeItem:key=>{delete store[key];}};
   const element={innerHTML:'',textContent:'',style:{}};
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
-  const run=source=>vm.runInContext(source,ctx,{timeout:15000});
+  const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
   // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
   if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
@@ -187,11 +196,15 @@ function createBridge(options={}){
   }
   ctx.nativeKnowledgeValidate=knowledgeProjection.validate;
   ctx.nativeVerifySections=options.verifyCleanCopy===true||process.env.CD_VERIFIER_COPIE==='1';
+  // Mémoire des projections par domaine (native-systems.cjs, projectText) : CD_MEMO_DOMAINES=0 (ou memoDomains:false)
+  // la coupe ; CD_VERIFIER_MEMO=1 (ou verifyMemo:true, tests) recalcule chaque domaine repris et exige le même texte.
+  const memoDomains=options.memoDomains!==false&&process.env.CD_MEMO_DOMAINES!=='0';
+  ctx.nativeMemoDomains=memoDomains;ctx.nativeVerifyMemo=options.verifyMemo===true||process.env.CD_VERIFIER_MEMO==='1';
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   // Libellé de saison : la même fonction (dist/season-label.js) sert au processus Node (projection du modèle) et à la VM.
   if(typeof globalThis.libelleSaison!=='function')globalThis.libelleSaison=require(path.join(dist,'season-label.js')).libelleSaison;
-  for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
+  for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'),'core/'+name);
   // Découpage des longues courses du moteur (présentation du journal, docs/match-courses-20261112.md) :
   // CD_MATCH_COURSES=0 (ou l'option matchCourses:false) rend l'ancien journal, un seul fait jusqu'à la ligne.
   if(options.matchCourses===false||process.env.CD_MATCH_COURSES==='0')ctx.MATCH_COURSES_DECOUPEES=false;
@@ -211,6 +224,27 @@ function createBridge(options={}){
       identique à JSON.stringify(S) ; ces textes servent ensuite à la validation (sections inchangées) et à
       l'écriture du profil (encodage des seules sections modifiées). */
    var nativeSaveSections=null,nativeSafeTreeArmed=null,nativeSafeTreeCache=new Map();
+   /* Sections à jour pour la projection : vrai seulement quand le moteur sait que S n'a pas changé depuis le dernier
+      nativeSaveText (projection en cours, sauvegarde suivie de la validation d'une décision). Toute commande qui peut
+      modifier la carrière le remet à faux avant de s'exécuter ; une carrière remplacée (S d'une autre identité) n'est
+      jamais reprise. */
+   var nativeSectionsFresh=false;
+   function nativeCurrentSections(){
+    if(!S)return null;
+    if(nativeSectionsFresh&&nativeSaveSections?.state===S){
+     if(nativeVerifySections&&JSON.stringify(S)!==nativeSaveSections.whole)throw Error('Sections de projection périmées.');
+     return nativeSaveSections.texts;
+    }
+    nativeSaveText(S);nativeSectionsFresh=true;return nativeSaveSections.texts;
+   }
+   /* Écriture différée d'une décision : le texte assemblé pour la projection décrit encore exactement la carrière. */
+   function nativeSaveCurrent(){
+    if(S&&!validatingStartup&&nativeSectionsFresh&&nativeSaveSections?.state===S){
+     if(nativeVerifySections&&JSON.stringify(S)!==nativeSaveSections.whole)throw Error('Sections de sauvegarde périmées.');
+     gameStorage.setItem('bdt-v1',nativeSaveSections.whole);lastSaveError=false;return;
+    }
+    save();
+   }
    function nativeSaveText(state){
     const texts=new Map(),parts=[];
     for(const key of Object.keys(state)){const text=JSON.stringify(state[key]);if(text===undefined)continue;texts.set(key,text);parts.push(JSON.stringify(key)+':'+text);}
@@ -232,9 +266,9 @@ function createBridge(options={}){
     const status=career&&nativeInternationalStatus.get(career);
     return {...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p),playerFacts:{...nativeFacts.project(p.id,status?.caps.get(p.id),p),onInternationalDuty:status?.released.has(p.id)??false}};
    };
-   const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
+   const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel,(${publishedVenue.factory.toString()})(${JSON.stringify(publishedVenue.data)}),${JSON.stringify(clubHistory)});const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`,'native-bootstrap');
   ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...worldEditions.entries.map(e=>e.id)].map(id=>[id,staff.forDatabase(id).registry.clubs])));
-  run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+  run(systems.bootstrap(),'native-systems');delete ctx.nativeStaffCareerSourcesText;
   run(`const nativeClubTransfers=(${clubTransfers.toString()})();nativeClubTransfers.installHooks();`);
   // Directions des clubs gérés (carrières mondiales créées avec elles) ; validation de leur état.
   run(`const nativeClubDirections=(${clubDirections.toString()})(nativeClubTransfers,(${boardNames.factory.toString()})());
@@ -272,9 +306,13 @@ function createBridge(options={}){
    const original=JSON.parse(loadedProfile.toString('utf8')).store['bdt-v1'];
    if(original!==run('JSON.stringify(S)'))resumeCheckpoint={profile:loadedProfile,replaySeed:seed,replayClock:clock,text:run('JSON.stringify(createSaveDocument())'),...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))};
   }
+  // Copie de reprise de la carrière ouverte avant son remplacement. Le texte du document est rendu : l'import le
+  // reprend tel quel pour sa copie « bdt-before-import » (même carrière, même document) au lieu de le recréer.
   const protectCurrent=(reason,replaySeed=seed,replayClock=clock)=>{
    if(!run('!!S')||!fs.existsSync(file))return null;
-   return profileSafety.checkpoint({profile:profileSafety.readProfile(file),replaySeed,replayClock,text:run('JSON.stringify(createSaveDocument())'),reason,...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))});
+   const text=run('JSON.stringify(createSaveDocument())');
+   profileSafety.checkpoint({profile:profileSafety.readProfile(file),replaySeed,replayClock,text,reason,...JSON.parse(run('JSON.stringify({club:S.clubs[S.club].name,season:S.season,round:S.round??0})'))});
+   return text;
   };
   const legacyDatabase=JSON.parse(run('JSON.stringify(CDCommonRosters)')),packs=mediaPacks.createStore(dataDir,legacyDatabase,worldRegistry,pacificRegistry,japanRegistry,nationaleRegistry,champRegistry,pressIdentities.catalogue(JSON.parse(run('JSON.stringify(CDPressQuestionBank.journalists)'))));
   const creationKey=mode=>mode==='world-champ'?'identity-pack-champ-creation':mode==='world-nationale'?'identity-pack-nationale-creation':mode==='world-japan'?'identity-pack-japan-creation':mode==='world-pacific'?'identity-pack-pacific-creation':mode==='world'?'identity-pack-world-creation':'identity-pack-creation';
@@ -331,16 +369,50 @@ function createBridge(options={}){
   }
   // VM projections contain state only; parse a fresh detached copy per reader.
   const projectionCache=new Map();let allowProjectionCache=false;
-  const readProjection=expression=>{
-   const source='JSON.stringify('+expression+')';
+  const readProjection=(expression,text=false)=>{
+   const source=text?expression:'JSON.stringify('+expression+')';
    if(!allowProjectionCache||options.cacheProjections===false)return JSON.parse(run(source));
    if(!projectionCache.has(source))projectionCache.set(source,run(source));
    return JSON.parse(projectionCache.get(source));
   };
+  // Mémoire de la connaissance par domaine (voir projectKnowledge) ; en vérification (CD_VERIFIER_MEMO=1), tout est
+  // reparcouru et comparé au texte mémorisé.
+  const KNOWLEDGE_MEMO=['interclubMarket','staffCareer','coachNotebook','regenScouting','managerCareer','youthDevelopment'];
+  const knowledgeMemo=new Map(),knowledgeMemoOn=memoDomains,knowledgeVerify=options.verifyMemo===true||process.env.CD_VERIFIER_MEMO==='1';
   const projectKnowledge=model=>{
+   // Cibles du carnet personnel (tous les joueurs du monde : identifiant, nom, poste, disponibilité) : elles ne
+   // portent aucune note ni aucun potentiel et l'écran du carnet n'en lit que le nom. Les tenir hors des parcours
+   // de portraits et de connaissance évite de leur greffer fiches de recrutement et fourchettes (~6 Mio de modèle
+   // en carrière Monde, recalculés, comparés et recopiés par l'interface à chaque réponse). CD_CARNET_CIBLES=complet
+   // rétablit l'ancien modèle.
+   // Gros domaines de la vie du club (marché entre clubs, staff, carnet…) : leur version vue par le joueur (portraits,
+   // fourchettes de connaissance) ne dépend que de leur texte projeté, de la frontière de connaissance et du mode.
+   // Quand ces trois textes sont ceux de la réponse précédente, elle est reprise telle quelle au lieu d'être
+   // reparcourue ; ces domaines sont mis de côté pendant le parcours du reste du modèle puis remis à leur place (même
+   // ordre des clés). En vérification (CD_VERIFIER_MEMO=1), tout est reparcouru et comparé au texte mémorisé.
+   const life=knowledgeMemoOn&&model?.clubLife&&typeof model.clubLife==='object'?model.clubLife:null;
+   const visibilityText=run('JSON.stringify(nativeKnowledge.visibility(S))'),mode=String(model?.meta?.mode??'');
+   const aside=new Map(),before=new Map();
+   if(life)for(const key of KNOWLEDGE_MEMO){
+    if(!Object.hasOwn(life,key))continue;
+    const text=JSON.stringify(life[key]);if(text===undefined)continue;before.set(key,text);
+    const hit=knowledgeMemo.get(key);
+    if(!knowledgeVerify&&hit&&hit.before===text&&hit.visibility===visibilityText&&hit.mode===mode){aside.set(key,JSON.parse(hit.text));life[key]=null;}
+   }
+   if(!life)knowledgeMemo.clear();
+   const notebook=process.env.CD_CARNET_CIBLES!=='complet'?model?.clubLife?.coachNotebook:null,targets=Array.isArray(notebook?.targets)?notebook.targets:null;
+   if(targets)notebook.targets=[];
+   try{
    // Portraits cohérents avec la carrure et l'origine (copie projetée seulement : la sauvegarde n'est pas touchée).
    if(process.env.CD_PORTRAIT_CARRURE!=='0')portraitLooks.apply(model);
-   knowledgeProjection.project(model,readProjection('nativeKnowledge.visibility(S)'));
+   knowledgeProjection.project(model,JSON.parse(visibilityText));
+   }finally{if(targets)notebook.targets=targets;for(const [key,value] of aside)life[key]=value;}
+   for(const [key,text] of before){
+    if(aside.has(key))continue;
+    const after=JSON.stringify(life[key]),hit=knowledgeMemo.get(key);
+    if(knowledgeVerify&&hit&&hit.before===text&&hit.visibility===visibilityText&&hit.mode===mode&&hit.text!==after)throw Error('Mémoire de connaissance périmée : '+key+'.');
+    knowledgeMemo.set(key,{before:text,visibility:visibilityText,mode,text:after});
+   }
    const trends=readProjection('Object.fromEntries((S?.clubs[S.club]?.players||[]).map(p=>[p.id,nativePotentialEvolution.project(S,p.id)]))');
    for(const p of model.squad||[])if(p.knowledge?.owned&&trends[p.id])p.potentialDevelopment=trends[p.id];
    model.managerPlanning=managerPlanning.project(model);
@@ -351,8 +423,14 @@ function createBridge(options={}){
   // recalcule comme avant. CD_ENGINE_MEMO=0 coupe ce partage (contrôle d'identité).
   const projectionMemo=process.env.CD_ENGINE_MEMO!=='0';
   if(projectionMemo)run(`{const original=matchDossier;let active=false,cached;globalThis.nativeProjectionMemo=on=>{active=on;cached=undefined;};matchDossier=function(){if(!active)return original();if(cached===undefined)cached=original();return cached;};}`);
+  // Vie du club avec la mémoire par domaine ; si la mémoire elle-même échoue (hors vérification), calcul complet comme
+  // avant : une réponse n'est jamais perdue à cause d'elle.
+  const projectClubLife=()=>{
+   try{return readProjection('nativeSystems.projectText(nativeCurrentSections())',true);}
+   catch(error){if(ctx.nativeVerifyMemo)throw error;run('nativeSystems.clearMemo();nativeSectionsFresh=false;');return readProjection('nativeSystems.project()');}
+  };
   const snapshotRaw=operation=>{if(!projectionMemo)return snapshotProjection(operation);run('nativeProjectionMemo(true)');try{return snapshotProjection(operation);}finally{run('nativeProjectionMemo(false)');}};
-  const snapshotProjection=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+  const snapshotProjection=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=memoDomains?projectClubLife():readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
@@ -361,7 +439,7 @@ function createBridge(options={}){
   // Texte de la dernière sauvegarde publiée tant que la carrière en mémoire n'a pas changé depuis ;
   // null sinon (démarrage, annulation d'origine inconnue, récupération). CD_VERIFIER_COPIE=1 (tests)
   // recalcule l'état pour vérifier cette égalité à chaque commande.
-  let cleanSave=null;
+  let cleanSave=null,lastFlushMs=0;
   const verifyCleanCopy=options.verifyCleanCopy===true||process.env.CD_VERIFIER_COPIE==='1';
   const copyStore=source=>{const out={};for(const key of Object.keys(source)){const value=source[key];if(typeof value==='string'){out[key]=value;continue;}const text=JSON.stringify(value);if(text!==undefined)out[key]=JSON.parse(text);}return out;};
   const sameStore=(a,b)=>{const keys=Object.keys(a);if(keys.length!==Object.keys(b).length)return false;for(const key of keys)if(!Object.hasOwn(b,key)||(typeof a[key]==='string'?a[key]!==b[key]:JSON.stringify(a[key])!==JSON.stringify(b[key])))return false;return true;};
@@ -429,9 +507,9 @@ function createBridge(options={}){
    const ordinary=target=>{const s=fs.lstatSync(target);if(!s.isFile()||s.isSymbolicLink())throw Error('Fichier de sauvegarde ou de secours non ordinaire.');};
    let stashed=false,published=false;
    try{
-    write(temp,text);
+    mark('profil_texte');write(temp,text);mark('ecriture_fsync');
     if(fs.existsSync(file)){
-     ordinary(file);backupFrom(file,backupTemp,write);
+     ordinary(file);backupFrom(file,backupTemp,write);mark('secours');
      if(fs.existsSync(backup)){ordinary(backup);fs.renameSync(backup,rollback);stashed=true;}
      fs.renameSync(backupTemp,backup);published=true;
     }
@@ -446,16 +524,68 @@ function createBridge(options={}){
    if(stashed){try{fs.unlinkSync(rollback);}catch{}}
    committedFiles=profileFilesVersion();resumeCheckpoint=null;
   };
+  // Écriture différée des décisions courantes (option deferredCommits, activée par le jeu ; CD_ECRITURE_DIFFEREE=0
+  // la coupe). Une décision qui n'avance pas le calendrier (composition, consignes, réunions, causeries, temps du
+  // match en direct…) répond d'abord à l'interface ; sa sérialisation, sa validation stricte et l'écriture atomique
+  // du profil suivent, dès que le moteur est libre (après l'envoi de la réponse) et au plus tard avant la commande
+  // suivante, la fermeture ou « Sauvegarder ». Les commandes qui avancent la carrière (jour, semaine, saison, coup
+  // d'envoi, préparation), la création, l'import, les restaurations et « Sauvegarder » restent écrites avant leur
+  // réponse. Une coupure brutale ne perd donc au pire que la dernière décision courante, jamais la sauvegarde
+  // (remplacement atomique inchangé). Si cette écriture échoue, la décision est annulée en mémoire comme avant et la
+  // commande suivante est refusée avec la raison : aucun échec silencieux.
+  const deferredCommits=options.deferredCommits===true&&process.env.CD_ECRITURE_DIFFEREE!=='0';
+  const SYNC_COMMANDS=new Set(['new_career','import','restore_checkpoint','save','next_season','pack_select','population_enable','academy_groups_enable','recover_profile',...NATIONAL_COMMANDS]);
+  // Commandes déjà écrites avant leur réponse (sérialisation, validation, écriture atomique de toute la carrière) :
+  // une décision en attente y est regroupée au lieu d'être écrite d'abord à part. Sans ce regroupement, une avance
+  // du calendrier envoyée juste après une décision attendait l'écriture complète de celle-ci (2 à 6 s selon la
+  // machine et la taille du profil) avant son propre travail : la nouvelle saison dépassait ainsi la borne de 20 s de
+  // la recette Windows (run 43603330612). La création, l'import et les restaurations remplacent la carrière : la
+  // décision est alors écrite d'abord, comme avant.
+  const COALESCING=new Set([...PRESS_PROGRESSION,'save','advance_until_event']);
+  // Lectures pures (aucune écriture de la carrière) : elles gardent le texte des sections de la projection précédente.
+  const READ_ONLY=new Set(['snapshot','club_sheet','epcr_preview','competition_editor_preview']);
+  let pendingCommit=null,pendingFailure=null,coalescing=null;
+  const restorePrior=prior=>{
+   seed=prior.seed;clock=prior.clock;store=copyStore(prior.store);ctx.nativePrior=prior.state();cleanSave=prior.fromSave?prior.text:null;projectionCache.clear();
+   try{run('nativeSystems.clearTransient()');run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');}
+   finally{delete ctx.nativePrior;}
+  };
+  // Termine la décision en attente par étapes : sérialisation, validation, puis écriture atomique. Entre deux étapes,
+  // la boucle stdio lit les commandes arrivées : une commande qui n'attend donc au plus que l'étape en cours, et une
+  // avance du calendrier reprend la décision à son compte (regroupement ci-dessus). Chaque étape renvoie vrai quand
+  // il n'y a plus rien à écrire. En cas d'échec, l'état d'avant la décision est rétabli et l'erreur est gardée pour
+  // la prochaine réponse.
+  function flushStep(){
+   const pending=pendingCommit;if(!pending)return true;
+   try{
+    if(pending.stage===0){run(memoDomains?'nativeSaveCurrent();':'save();');pending.stage=1;return false;}
+    if(pending.stage===1){run('nativeValidateSaved('+pending.full+')');pending.stage=2;return false;}
+    pendingCommit=null;
+    if(pending.tick&&committedFiles&&seed===pending.prior.seed&&sameStore(store,pending.prior.store)&&profileFilesVersion()===committedFiles)clock=pending.prior.clock;
+    else persist();
+    cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+    return true;
+   }catch(error){
+    pendingCommit=null;
+    const failure=Error('Votre dernière décision n’a pas pu être enregistrée ; elle est annulée et cette nouvelle action n’a pas été appliquée. '+error.message);failure.command=pending.command;failure.storageFailure=true;
+    try{restorePrior({...pending.prior,state:()=>({...pending.prior.state(),saveError:true})});}catch(restore){failure.message+=' Restauration impossible : '+restore.message;}
+    pendingFailure=failure;
+    return true;
+   }
+  }
+  function flushCommit(){while(!flushStep());}
+  flushBeforeClose=()=>{if(advanceSession){const session=advanceSession;advanceSession=null;try{finishAdvance(null,session,null);}catch{}}flushCommit();};
   // Instrumentation des allers-retours (CD_ENGINE_TIMING=1) : durées par phase, sans effet sur la simulation.
   const timing=options.timing===true||process.env.CD_ENGINE_TIMING==='1';let phases=null,phaseAt=0;
   const mark=label=>{if(!phases)return;const now=performance.now();phases[label]=Math.round(((phases[label]||0)+now-phaseAt)*10)/10;phaseAt=now;};
   function handleMeasured(request){
-   if(!timing)return handleCommand(request);
+   const handler=request?.command==='advance_until_event'?advanceUntilEvent:handleCommand;
+   if(!timing)return handler(request);
    phases={};phaseAt=performance.now();const started=phaseAt;
-   const response=handleCommand(request);mark('reste');phases.total=Math.round((performance.now()-started)*10)/10;
+   const response=handler(request);mark('reste');phases.total=Math.round((performance.now()-started)*10)/10;
    if(response&&typeof response==='object')response.timing=phases;phases=null;return response;
   }
-  function handleCommand(request){
+  function handleCommand(request,light=false){
    let id=null;
    try{
     if(!request||typeof request!=='object'||Array.isArray(request))throw Error('Message JSON invalide.');
@@ -467,10 +597,19 @@ function createBridge(options={}){
     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande,
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
     if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
+    if(!READ_ONLY.has(command))run('nativeSectionsFresh=false');
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
     if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
+    // Fiche d'un club (lecture seule, rien n'est écrit) : native/engine/club-sheet.cjs.
+    if(command==='club_sheet'){
+     if(!Number.isSafeInteger(payload.club)||Object.keys(payload).some(k=>k!=='club'))throw Error('Paramètres de fiche club invalides.');
+     if(!run('!!S'))throw Error('Créez ou importez une carrière.');
+     ctx.nativePayload={club:payload.club};
+     const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));
+     return {id,ok:true,model:projectKnowledge(model)};
+    }
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
@@ -512,7 +651,9 @@ function createBridge(options={}){
     const priorStateText=priorFromSave?cleanSave:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
     const priorState=()=>({state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra});
     const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
+    const defer=deferredCommits&&!advancesCareer&&!SYNC_COMMANDS.has(command)&&!resumeCheckpoint&&!restoring;
     try{
+     if(defer){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
@@ -587,6 +728,9 @@ function createBridge(options={}){
       if(run("!!S.live||S.phase==='ended'"))throw Error('Aucun nouveau match disponible.');
       if(run('nativeDailyStatus()?.matchReady===false'))throw Error('Le coup d’envoi est disponible le jour de la rencontre.');
       if(payload.reducedBench!==undefined&&typeof payload.reducedBench!=='boolean')throw Error('Confirmation de la feuille à 22 invalide.');
+      if(payload.delegated!==undefined&&typeof payload.delegated!=='boolean')throw Error('Délégation du match invalide.');
+      if(payload.espoirs!==undefined&&(!Array.isArray(payload.espoirs)||payload.espoirs.length<1||payload.espoirs.length>4||payload.reducedBench===true))throw Error('Appel d’espoirs invalide : jeunes à joindre à un match à 23.');
+      if(payload.composition!==undefined&&(typeof payload.composition!=='boolean'||payload.delegated!==true))throw Error('Choix de composition invalide : à joindre à un match délégué.');
       const reducedBench=payload.reducedBench===true;
       if(reducedBench&&!run('CDNationaleReducedBench?.vacancy(S)'))throw Error('La feuille à 22 n’est pas disponible pour cette rencontre.');
       const hadFixture=run('!!nextMatch()');
@@ -600,7 +744,20 @@ function createBridge(options={}){
          if(!legacy&&!automated&&pair.includes(S.club)&&typeof CDFranceCareer!=='undefined'&&typeof CDFranceCareer.ensureAISheet==='function'&&typeof aiRosterActive==='function'&&aiRosterActive()&&!(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);
          return nativeCreate(pair,legacy,automated,preparation);
         };
-        beginMatch(nativePayload.reducedBench===true);
+        // Match délégué : « Confier aussi la composition au staff » (cochée par défaut, mémorisée dans la
+        // carrière). Cochée, le staff refait la feuille du jour (sélection automatique : autoLineup avant et
+        // après l'entraînement, règle JIFF comprise) ; décochée, la feuille du joueur est inchangée.
+        const nativeDelegation=nativePayload.delegated===true&&S.manager?.delegation?S.manager.delegation:null;
+        const nativeStaffSheet=!!nativeDelegation&&(nativePayload.composition??nativeDelegation.matchLineup!==false);
+        const nativeLineupFlag=nativeDelegation?.lineup;
+        if(nativeDelegation){nativeDelegation.matchLineup=nativeStaffSheet;if(nativeStaffSheet)nativeDelegation.lineup=true;}
+        // Match délégué : pas de causerie d'avant-match (la commande delegate qui suit confie tout le match).
+        if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(true);
+        // Feuille incomplète : « Appeler un espoir » (jeunes choisis, places vides) ou « Jouer à 22 » (le staff n'appelle alors personne).
+        const nativeEspoirs=nativeSystems.domain('espoirsMatch'),nativeAt22=nativePayload.reducedBench===true;
+        if(Array.isArray(nativePayload.espoirs))nativeEspoirs.callUp(S,nativePayload.espoirs);
+        if(nativeAt22)nativeEspoirs.setOff(true);
+        try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
        }finally{createRugbyMatch=nativeCreate;}
       }`);}finally{
        // VM timeouts skip its inner finally; restore without executing more VM code.
@@ -623,7 +780,10 @@ function createBridge(options={}){
       run(payload.paused===false?'continueMatch()':'pauseMatch()');
      }else if(command==='delegate'){
       if(!run('!!S.live'))throw Error('Aucun match à déléguer.');
-      run("nativeSystems.domain('matchTalks').setDelegating(true);nativeSystems.domain('matchTalks').observe('delegate');");
+      // Mémorise le choix « Confier aussi la composition au staff » pour les prochains matchs délégués
+      // (la feuille du match en cours est déjà jouée : elle se règle au coup d'envoi, begin_match { delegated }).
+      if(payload.composition!==undefined){if(typeof payload.composition!=='boolean')throw Error('Choix de composition invalide.');run('if(S.manager?.delegation)S.manager.delegation.matchLineup=nativePayload.composition;');}
+      run("nativeSystems.domain('matchTalks').setDelegating(true);nativeSystems.domain('matchTalks').observe('delegate');nativeSystems.domain('matchDelegation').setActive(true);");
       try{
       const delegateLoop="for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}";
       const historicalSave=ctx.save,delegateClock=clock;
@@ -638,7 +798,7 @@ function createBridge(options={}){
        run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
        run(delegateLoop);
       }
-      }finally{run("nativeSystems.domain('matchTalks').setDelegating(false);");}
+      }finally{run("nativeSystems.domain('matchTalks').setDelegating(false);nativeSystems.domain('matchDelegation').setActive(false);");}
      }else if(command==='finish_round'){
       run('nativeConfirmMatchResult()');
      }else if(['advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation'].includes(command)){
@@ -663,9 +823,11 @@ function createBridge(options={}){
       national.validate(national.read('pendingSave.state'));
       validateCalendarState(calendarState('pendingSave.state'));
       const imported=JSON.parse(run('JSON.stringify({binding:pendingSave.state.identityPack,database:pendingSave.state.commonDatabase?.id})')),bound=imported.binding&&packs.get(imported.binding.id);if(bound&&bound.meta.databaseId!==imported.database)throw Error('Pack incompatible avec cette édition.');
-      protectCurrent(restoring?'restauration':'import',priorSeed,priorClock);
+      const beforeImport=protectCurrent(restoring?'restauration':'import',priorSeed,priorClock);
       if(restoring){seed=restoring.seed;clock=restoring.clock;}
-      run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');normalizeAcademyPotential(S);");
+      if(typeof beforeImport==='string')ctx.nativeBeforeImportText=beforeImport;
+      try{run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');normalizeAcademyPotential(S);");}
+      finally{delete ctx.nativeBeforeImportText;}
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
      let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
@@ -704,49 +866,176 @@ function createBridge(options={}){
      if(advancesCareer||command==='new_career'||command==='import')run('nativeSystems.domain("press").observeInvitation(nativePressPrevious,'+(command==='new_career')+');');
      run(`nativeKnowledge.observe(S,nativeKnowledgeBefore,nativeKnowledgeCommand,nativePayload,{observedPlayerIds:nativeKnowledgeCommand==='academy_center_scout'?(nativeSystems.domain('academyPathways').project().centers||[]).find(c=>c.id===nativePayload.centerId)?.candidates.map(p=>p.id)||[]:[]});`);
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
+     // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
+     // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »
+     // ne s'arrêtent donc pas sur elle. Les grands moments restent obligatoires.
+     if(advancesCareer&&ctx.nativeMandatoryPress)run('if(nativeSystems.domain("press").autoDelegate())nativeSystems.domain("clubMeetings").settleDelegatedPress();');
+     if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}
      mark('commande');
-     if(advancesWithinWeek)run('save()');
+     // Décision regroupée (voir COALESCING) : sa validation stricte n'est pas sautée, même un jour de semaine.
+     if(advancesWithinWeek){run('save()');if(coalescing)run('nativeValidateSaved('+coalescing.full+')');if(memoDomains&&coalescing?.full!==true)run('nativeSectionsFresh=true');}
      // Validation complète (sans reprise des sections) à la création, à l'import et à chaque fin de semaine ou
      // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
-     else run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();nativeValidateSaved('+FULL_VALIDATION.has(command)+')');
-     mark('validation_sauvegarde');const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');');mark('completion');
+      // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
+      if(defer)run('if(S&&!validatingStartup)lastSaveError=false;');
+      else{run('save();');mark('serialisation');run('nativeValidateSaved('+(FULL_VALIDATION.has(command)||coalescing?.full===true)+')');
+       // Validation partielle : elle ne modifie pas la carrière, le texte qui vient d'être assemblé sert à la projection.
+       if(memoDomains&&!FULL_VALIDATION.has(command)&&coalescing?.full!==true)run('nativeSectionsFresh=true');}}
+     mark('validation_sauvegarde');
+     // Jour intermédiaire de « Continuer » (advance_until_event) : même jour, même sérialisation et même validation
+     // que « Jour suivant » ; la projection pour l'interface et l'écriture du profil sont faites une fois, à l'arrêt.
+     if(light){cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;return {id,ok:true,light:true};}
+     const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     if(defer){
+      pendingCommit={command,stage:0,full:FULL_VALIDATION.has(command),tick:command==='tick',prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
+      // La carrière en mémoire diffère désormais du texte enregistré : aucune copie d'annulation ne peut le reprendre.
+      cleanSave=null;
+     }else{
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
      if(command==='tick'&&committedFiles&&seed===priorSeed&&sameStore(store,priorStore)&&profileFilesVersion()===committedFiles)clock=priorClock;
      else persist();
      // La sauvegarde vient d'être publiée : le texte enregistré décrit exactement la carrière en mémoire.
      cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+     // La décision regroupée est écrite avec cette commande.
+     if(coalescing&&pendingCommit===coalescing)pendingCommit=null;
+     }
      mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');
      throw error;
-    }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
+    }finally{if(savesDeferred){ctx.save=realSave;savesDeferred=false;realSave=null;}deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;delete ctx.nativeAttributeBaseline;delete ctx.nativePressPrevious;delete ctx.nativeKnowledgeBefore;delete ctx.nativeKnowledgeCommand;delete ctx.nativeKnowledgeReceipt;}
    }catch(error){projectionCache.clear();return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
+  // « Continuer » jusqu'au prochain événement (native/engine/continuer.cjs) : une commande avance N jours, chacun
+  // exactement comme « Jour suivant », et ne projette le modèle et n'écrit le profil qu'une fois, à l'arrêt.
+  // Avec `partial` et `budgetMs`, la réponse arrive au bout du budget sans modèle ({progress}) : l'interface montre
+  // la date et peut demander la suite ou l'arrêt ({stop:true}). Ces jours restent en mémoire (advanceSession) et sont
+  // écrits avant toute autre commande, à la fermeture ou à l'arrêt : jamais perdus en fonctionnement normal.
+  let advanceSession=null;
+  const advanceSignal=()=>JSON.parse(run('JSON.stringify('+continuer.SIGNAL_SOURCE+')'));
+  function finishAdvance(id,session,stop){
+   try{
+    const model=snapshotRaw({command:'advance_day',payload:{fromDate:session.lastFrom}});mark('projection');
+    persist();mark('ecriture_disque');
+    cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
+    const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
+    model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0};
+    model.meta.profileSafety=profileSafety.project();
+    const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
+   }catch(error){
+    // Écriture impossible : la carrière revient au jour de départ, comme un « Jour suivant » refusé.
+    try{restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:true})});}catch{}
+    projectionCache.clear();
+    return {id,ok:false,model:closed?null:snapshot(),error:error.message};
+   }
+  }
+  function advanceUntilEvent(request){
+   const id=request.id;let opts;
+   try{
+    if(closed)throw Error('Le moteur est fermé.');
+    opts=continuer.validate(request.payload??{});
+    if(!run('!!S'))throw Error('Créez ou importez une carrière.');
+   }catch(error){advanceSession=null;return {id:Number.isSafeInteger(id)||typeof id==='string'?id:null,ok:false,model:closed?null:snapshot(),error:error.message};}
+   const started=performance.now(),session=advanceSession;advanceSession=null;
+   if(opts.stop){
+    if(session&&session.days>0)return finishAdvance(id,session,{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'});
+    const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
+    return {id,ok:true,model:projectKnowledge(model)};
+   }
+   const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()"),start:null};
+   if(!current.start){
+    const fromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
+    current.start={seed,clock,store:copyStore(store),text:fromSave?cleanSave:run('JSON.stringify(S)'),fromSave};
+   }
+   let before=advanceSignal(),today=opts.fromDate,stop=null,n=0;
+   for(;;){
+    const r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
+    if(!r.ok){
+     // Premier jour refusé : même réponse que « Jour suivant ». Plus tard : arrêt, les jours déjà passés sont écrits.
+     if(current.days===0)return r;
+     stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:r.error};break;
+    }
+    current.days++;n++;current.lastFrom=today;
+    // Décision en attente regroupée : sérialisée et validée avec le premier jour ; les jours suivants de la même
+    // semaine retrouvent le chemin léger de « Jour suivant » (sans revalidation complète à chaque jour).
+    if(coalescing){current.absorbed=coalescing;coalescing=null;}
+    const after=advanceSignal();
+    if(after&&before&&after.pressDelegated!==before.pressDelegated)current.pressDelegated=(current.pressDelegated||0)+1;
+    stop=continuer.detect(before,after,opts,current.repriseDate);
+    before=after;today=after?.today;
+    if(stop)break;
+    if(!today){stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:'Date de carrière indisponible.'};break;}
+    if(n>=opts.maxDays||current.days>=continuer.MAX_DAYS){stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;}
+    if(opts.budgetMs>0&&performance.now()-started>=opts.budgetMs){
+     if(opts.partial){
+      // La décision regroupée fait partie des jours en mémoire : elle sera écrite avec eux (arrêt, fermeture ou
+      // commande suivante), pas séparément entre deux tranches.
+      if(current.absorbed&&pendingCommit===current.absorbed){pendingCommit=null;current.absorbed=null;}
+      advanceSession=current;return {id,ok:true,model:null,progress:{from:current.from,today,days:current.days,next:after.next,plan:continuer.plan(after,current.repriseDate)}};}
+     stop={kind:'limite',label:continuer.STOPS.limite.label,detail:'Avance interrompue après '+current.days+' jours sans événement.'};break;
+    }
+   }
+   return finishAdvance(id,current,stop);
+  }
   function handle(request){
+   // « Continuer » interrompu par une autre commande : les jours déjà passés sont écrits d'abord.
+   if(advanceSession&&request?.command!=='advance_until_event'){
+    const session=advanceSession;advanceSession=null;
+    const done=finishAdvance(null,session,null);
+    if(!done.ok){const id=Number.isSafeInteger(request?.id)||typeof request?.id==='string'?request.id:null;return {id,ok:false,model:done.model,error:done.error};}
+   }
+   // Décision en attente : regroupée dans une commande écrite avant sa réponse, écrite d'abord sinon. Une commande
+   // regroupée refusée laisse la décision en mémoire et en attente (sérialisation reprise du début).
+   coalescing=pendingCommit&&deferredCommits&&!pendingFailure&&COALESCING.has(request?.command)&&!resumeCheckpoint?pendingCommit:null;
+   if(coalescing){coalescing.stage=0;}
+   else if(pendingCommit){const started=performance.now();flushCommit();lastFlushMs=performance.now()-started;}
+   if(pendingFailure&&request?.command!=='shutdown'){
+    const failure=pendingFailure;pendingFailure=null;projectionCache.clear();
+    const id=Number.isSafeInteger(request?.id)&&request.id>=0||typeof request?.id==='string'&&request.id.length>0&&request.id.length<=100&&!/[\r\n]/.test(request.id)?request.id:null;
+    return {id,ok:false,model:closed?null:snapshot(),error:failure.message};
+   }
+   pendingFailure=null;
+   // Toute commande autre qu'une lecture peut modifier la carrière : le texte des sections n'est plus réputé à jour.
+   if(!READ_ONLY.has(request?.command))run('nativeSectionsFresh=false');
    const reading=request?.command==='snapshot';
    if(!reading)projectionCache.clear();
    allowProjectionCache=reading;
-   try{return handleMeasured(request);}finally{allowProjectionCache=false;if(!reading)projectionCache.clear();}
+   try{
+    const response=handleMeasured(request);
+    if(response?.timing){if(lastFlushMs)response.timing.ecriture_precedente=Math.round(lastFlushMs*10)/10;if(coalescing)response.timing.ecriture_regroupee=pendingCommit!==coalescing;}
+    return response;
+   }finally{if(coalescing&&pendingCommit===coalescing)coalescing.stage=0;coalescing=null;lastFlushMs=0;allowProjectionCache=false;if(!reading)projectionCache.clear();}
   }
+  // Écriture de la décision en attente (boucle stdio : dès que la réponse est partie). Renvoie la durée en ms.
+  const flush=()=>{if(!pendingCommit)return 0;const started=performance.now();flushCommit();return performance.now()-started;};
+  const pending=()=>pendingCommit?pendingCommit.command:null;
+  // Une étape de l'écriture en attente (boucle stdio) : vrai quand il ne reste rien à écrire.
+  const flushNext=()=>flushStep();
+  // Les tests réécrivent la ligne de retour ci-dessous : écriture différée exposée sur handle (handle.flush, handle.pending).
+  Object.assign(handle,{flush,pending,flushStep:flushNext});
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
-  if(options.testVm===true)return {handle,close,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
+  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
   return {handle,close};
  }catch(e){close();throw e;}
 }
 module.exports={createBridge,applicationRoot,IMPORT_LIMIT_BYTES,REQUEST_LIMIT_BYTES,WORLD_IMPORT_LIMIT_BYTES,WORLD_REQUEST_LIMIT_BYTES,EXTENDED_IMPORT_LIMIT_BYTES,EXTENDED_REQUEST_LIMIT_BYTES,CHAMP_IMPORT_LIMIT_BYTES,CHAMP_REQUEST_LIMIT_BYTES,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
- try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
+ try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');/* Match en temps forts : mode de base du jeu. Repli sur le direct d'origine : CD_MATCH_TEMPS_FORTS=0. */const niveauTempsForts=process.env.CD_MATCH_TEMPS_FORTS==='0'?null:(process.env.CD_MATCH_TEMPS_FORTS_NIVEAU||'dynamique');bridge=createBridge({dailyCalendar:true,mandatoryPress:true,internationalCareer:true,deferredCommits:true,...(niveauTempsForts?{matchHighlights:niveauTempsForts}:{}),...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity}),delta=require('./model-delta.cjs').createEncoder();
  input.on('line',line=>{
   // L'interface Godot annonce la révision du modèle qu'elle détient : réponse différentielle.
   let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
-  process.stdout.write((base===null?JSON.stringify(result):delta.encode(result,base))+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
+  // La réponse part d'abord ; la décision courante en attente est écrite ensuite, pendant que l'interface affiche.
+  // Par étapes (voir flushStep) : une commande arrivée entre deux étapes est lue sans attendre la fin de l'écriture.
+  const step=()=>{let done=true;try{done=bridge.handle.flushStep();}catch{}if(!done)setImmediate(step);};
+  process.stdout.write((base===null?JSON.stringify(result):delta.encode(result,base))+'\n',()=>setImmediate(step));if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());
 }

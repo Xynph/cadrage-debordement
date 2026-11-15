@@ -109,7 +109,7 @@ test('Vrai moteur, carrière mondiale, drapeau éteint : ni marque ni budget, an
 });
 test('Vrai moteur, carrière mondiale, drapeau allumé : chaque championnat à son niveau, budget pour les 116 clubs',()=>{
  const x=creerMonde('1'),E=require('../native/engine/league-economy.cjs').CHAMPIONNATS;
- assert.equal(x.marque.version,3);assert.deepEqual(Object.keys(x.marque.calage).sort(),['champ','guest','jlo-d1','jlo-d2','nationale','prem','srp','urc']);
+ assert.equal(x.marque.version,3);assert.deepEqual(Object.keys(x.marque.calage).sort(),['accession','champ','guest','jlo-d1','jlo-d2','nationale','prem','srp','urc'],'barème senior V2 : la PRO D2 est recalée comme les autres championnats');
  for(const [nom,c] of Object.entries(E))assert.ok(Math.abs(x.masses[nom]-c.masse)/c.masse<0.1,nom+' : masse moyenne '+Math.round(x.masses[nom])+' pour '+c.masse);
  assert.ok(x.masses.elite>x.masses.prem&&x.masses.prem>x.masses.urc&&x.masses.nationale>x.masses.champ);
  assert.equal(x.budget.clubs,116);assert.deepEqual(x.budget.divisions,Object.keys(E).sort());assert.equal(x.annonce,true);

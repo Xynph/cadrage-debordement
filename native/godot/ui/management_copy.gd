@@ -65,6 +65,12 @@ static func news(source: String) -> String:
 		_legacy_competition.compile("^.+ rejoint .+ après concurrence entre [1-9][0-9]* club\\(s\\), pour " + amount + " \\(accord fictif\\)\\.$")
 		_legacy_direct = RegEx.new()
 		_legacy_direct.compile("^.+ rejoint .+ depuis .+ : accord fictif de " + amount + ", fin de contrat (?:S[1-9][0-9]*|[0-9]{4}-[0-9]{4})\\.$")
+	# Courrier historique de fin de saison : « N contrat(s) expire(nt) » devient un accord correct.
+	var legacy_expiry := " contrat(s) expire(nt) "
+	var at_expiry := source.find(legacy_expiry)
+	if at_expiry > 0 and source.substr(0, at_expiry).is_valid_int():
+		var count := source.substr(0, at_expiry).to_int()
+		return source.substr(0, at_expiry) + (" contrat expire " if count == 1 else " contrats expirent ") + source.substr(at_expiry + legacy_expiry.length())
 	if _legacy_competition.search(source) != null:
 		return source.trim_suffix(" (accord fictif).") + "."
 	if _legacy_direct.search(source) != null:

@@ -93,7 +93,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Tests du jeu et bilan des erreurs
+      # Mobilité du manager : la fenêtre de fin de saison Monde ne s'ouvre qu'après ~850 s de saison jouée. La
+      # sauvegarde correspondante (19 Mo) est générée une fois par empreinte du moteur (cache), seulement dans les
+      # shards qui hébergent tests/native-manager-career-reverse-*.cjs (liste ci/mobilite-suites.txt).
+      - name: Planifier le shard
+        id: plan
         shell: bash
         env:
           SHARD: ${{ matrix.shard }}
@@ -101,6 +105,27 @@ jobs:
         run: |
           set -euo pipefail
           node ci/shard-tests.cjs "$SHARD" "$COVERAGE" 7 > "$RUNNER_TEMP/shard-suites.txt"
+          if grep -q -F -x -f ci/mobilite-suites.txt "$RUNNER_TEMP/shard-suites.txt"; then echo "mobilite=true" >> "$GITHUB_OUTPUT"; fi
+          echo "CD_MOBILITE_DIR=$RUNNER_TEMP/mobilite" >> "$GITHUB_ENV"
+      - name: Cache de la sauvegarde de fin de saison
+        if: ${{ steps.plan.outputs.mobilite == 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/mobilite
+          key: mobilite-fin-de-saison-${{ hashFiles('dist/**', 'native/engine/**', 'scripts/generer-sauvegarde-mobilite.cjs', 'tests/helpers/club-meetings.cjs') }}
+      - name: Générer la sauvegarde de fin de saison (absente du cache)
+        if: ${{ steps.plan.outputs.mobilite == 'true' }}
+        shell: bash
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: node scripts/generer-sauvegarde-mobilite.cjs
+      - name: Tests du jeu et bilan des erreurs
+        shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
+          COVERAGE: ${{ needs.classification.outputs.coverage }}
+        run: |
+          set -euo pipefail
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
           if [[ "${#suites[@]}" -eq 0 ]]; then
             # Couverture ciblée (web, native-art) : moins de suites que de shards.

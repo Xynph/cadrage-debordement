@@ -4,6 +4,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const Link = preload("res://ui/entity_link.gd")
@@ -428,7 +429,7 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 		D.button(panel, Rect2(376, 134, 434, 58), "Besoins, missions et rapports", func(): _staff(0), true, "arrow", false, PRIMARY, "OpenEmptyRecruitmentNeeds")
 		_section(panel, Rect2(16, 306, 798, 240), "TRAVAIL DU STAFF", "people")
 		D.text(panel, 40, 390, "%d / %d professionnels · %d place(s)" % [data.get("occupied", app.model.get("squad", []).size()), data.get("capacity", 0), data.get("places", 0)], 27, C.IVORY, 600, 740)
-		D.text(panel, 40, 429, "%d contrat(s) à échéance cette saison" % data.get("expiring", []).size(), 25, C.MUTED, 500, 740)
+		D.text(panel, 40, 429, P.plural(data.get("expiring", []).size(), "contrat arrive", "contrats arrivent") + " à échéance cette saison", 25, C.MUTED, 500, 740)
 		D.text(panel, 40, 467, "%d rapport(s) conservé(s) · %d mission(s)" % [data.get("reports", []).size(), data.get("missions", []).size()], 25, C.MUTED, 500, 740)
 		return
 	_portrait(panel, Rect2(16, 12, 345, 240), player, str(person.get("playerId", player_id)), true)
@@ -552,7 +553,7 @@ func _needs() -> void:
 		D.text(card, 109, 77, str(reasons[0]) if not reasons.is_empty() else "Couverture du poste à examiner", 24, C.MUTED, 500, 595)
 		_badge(card, Rect2(570, 15, 144, 38), ("Priorité %d" if need.get("need", false) else "Veille %d") % (i + 1), tint)
 		var tracked: int = app.model.get("market", []).filter(func(p: Dictionary): return p.get("pos") == role and str(p.id) in app.management_ui.shortlist).size()
-		D.text(card, 715, 109, "%d profil(s) suivi(s)  ›" % tracked, 24, C.IVORY, 600, 296, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(card, 715, 109, (P.plural(tracked, "profil suivi", "profils suivis") + "  ›"), 24, C.IVORY, 600, 296, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _staff(index: int, role: String = "") -> void:
 	Decisions.recruitment(app)

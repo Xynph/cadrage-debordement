@@ -65,6 +65,8 @@ func run() -> void:
 	await command("new_career",{"mode":"world-champ","club":29})
 	# Une carrière neuve ouvre d'abord son rendez-vous de direction : le moteur refuse l'activation tant qu'il n'est pas traité.
 	await ContextualFlow.settle_club_meetings(app,self,check)
+	# Le worker écrit une décision courante juste après sa réponse ; toute commande suivante attend cette écriture.
+	await command("snapshot")
 	await history()
 	var enable: Button = app.body.find_child("PlayerMatchHistoryEnable",true,false)
 	check(enable!=null,"Activation dans le véritable écran Histoire")

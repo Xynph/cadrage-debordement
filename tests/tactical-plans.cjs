@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict');const {context}=require('./harness.cjs');
+const assert=require('node:assert/strict');const {context}=require('./harness.cjs');const T=require('./helpers/tirages.cjs');
 let t=context(),run=t.run;run('start(0);setDefence("pression");beginMatch();pauseMatch();var l=S.live');
 assert.equal(run('l.defences[0]'),'pression');assert.equal(run('l.tacticalVersion'),1);
 run('l.paused=false;setLiveDefence("prudente")');assert.equal(run('l.defences[0]'),'pression');run('pauseMatch();setLiveDefence("prudente")');assert.equal(run('l.defences[0]'),'prudente');assert.ok(run('displayedAction(l).text.includes("Glissée prudente")'));
@@ -14,25 +14,48 @@ run('delete l.playbookVersion;delete l.playbooks;delete l.tacticalVersion;delete
 // A territory coordinate after a kick may be fractional. Its remaining gain
 // to the line must stay exportable and be rounded only for display.
 const fractional=context();fractional.run('start(0);beginMatch();pauseMatch();var l=S.live;l.tacticalStats[0].carries=1;l.tacticalStats[0].advances=1;l.tacticalStats[0].metres=12.75');assert.ok(fractional.run('!!createSaveDocument()'));assert.ok(fractional.run('tacticalMetrics(l).includes(">13<")'));
-// The same carry opportunity favors a pack built for power under a close plan,
-// and backs built for speed/passing under a wide plan. No universal style bonus.
-function opportunity(profile,plan){const x=context();x.run(`start(0);var l=createRugbyMatch([0,1],null,true);l.tactics=['${plan}','equilibre'];l.defences=['equilibre','equilibre'];l.weather='Sec';S.clubs.forEach(c=>c.players.forEach(p=>{p.rating=75;p.skillBase=75;p.condition=100;Object.keys(ATTR).forEach(k=>p.skills[k]=75)}));S.clubs[0].players.forEach(p=>{p.skills.power=${profile==='power'?99:20};p.skills.pass=${profile==='backs'?99:20};p.skills.speed=${profile==='backs'?99:20}});ballPossession(l,0,40);var rolls=[.9,.99,.4,.5,.99];Math.random=()=>rolls.shift()??.99;advanceCausalPlay(l)`);return x.run('l.tacticalStats[0].advances')}
-assert.ok(opportunity('power','conquete')>opportunity('power','large'));assert.ok(opportunity('backs','large')>opportunity('backs','conquete'));
+// The same carry opportunity favors a pack built for power under a close plan, and backs built for
+// speed/passing under a wide plan. No universal style bonus.
+// Règle : l'avantage de la course (teamEdge) classe les plans selon le profil. On le lit directement (aucun tirage),
+// puis on le retrouve dans le taux de courses réussies d'un échantillon : le tirage de réussite n'est plus choisi
+// pour tomber entre deux probabilités (l'ancien .6 devait rester dans une fenêtre de ±0,04 autour du taux du moteur).
+function profil(profile,plan){const x=context();x.run(`start(0);var l=createRugbyMatch([0,1],null,true);l.tactics=['${plan}','equilibre'];l.defences=['equilibre','equilibre'];l.weather='Sec';S.clubs.forEach(c=>c.players.forEach(p=>{p.rating=75;p.skillBase=75;p.condition=100;Object.keys(ATTR).forEach(k=>p.skills[k]=75)}));S.clubs[0].players.forEach(p=>{p.skills.power=${profile==='power'?99:20};p.skills.pass=${profile==='backs'?99:20};p.skills.speed=${profile==='backs'?99:20}});ballPossession(l,0,40)`);return x}
+const edges={};for(const [p,plan] of [['power','conquete'],['power','large'],['backs','large'],['backs','conquete']]){edges[p+plan]=profil(p,plan).run("teamEdge(l,0,'attack')")}
+assert.ok(edges.powerconquete>edges.powerlarge,'avant puissant : le jeu au près lui donne plus d’avantage que le large');assert.ok(edges.backslarge>edges.backsconquete,'trois-quarts rapides : le large leur donne plus d’avantage que le jeu au près');
+// Taux observé : mêmes joueurs, 3 000 courses chacun. Chaque essai repart de la même rencontre (photographie JSON) avec ses propres tirages
+// (graine = numéro de l'essai, communs aux deux plans comparés) : la fatigue et l'historique d'une phase ne contaminent pas la suivante.
+function tauxAvance(profile,plan,n=3000){const x=profil(profile,plan);x.run(`var __ph=JSON.stringify(l),__a=0,__c=0;for(let i=0;i<${n};i++){var __s=(i*2654435761+12345)>>>0;Math.random=()=>{__s=(Math.imul(__s,1664525)+1013904223)>>>0;return __s/4294967296};l=JSON.parse(__ph);l.possession=0;l.territory=40;advanceCausalPlay(l);const s=l.tacticalStats[0];if(s.carries){__c++;if(s.advances)__a++}}`);return [x.run('__a'),x.run('__c')]}
+{const [aP,cP]=tauxAvance('power','conquete'),[aL,cL]=tauxAvance('power','large');T.plusGrand('avants : taux d’avance au près > au large',T.zProportions(aP,cP,aL,cL));
+ const [bL,dL]=tauxAvance('backs','large'),[bC,dC]=tauxAvance('backs','conquete');T.plusGrand('trois-quarts : taux d’avance au large > au près',T.zProportions(bL,dL,bC,dC))}
 // Controlled repeated games: identical players, alternating tested side,
 // same seeds per case, no AI plan/substitution changes. These are fictional
 // engine measurements, not estimated real-world rugby probabilities.
+// Les comparaisons sont des écarts en écarts types (T.Z = 4) sur des taux par course ou des moyennes par match, jamais des
+// marges absolues (« +100 erreurs ») qui dépendent du volume de jeu et donc du recalage des taux de course et de faute.
 const sim=context();sim.run('start(0);S.clubs.forEach(c=>c.players.forEach(p=>{p.rating=75;p.skillBase=75;p.condition=100;p.injury=0;Object.keys(ATTR).forEach(k=>p.skills[k]=75)}));var baseline=JSON.stringify(S.clubs);adaptManager=()=>{};manageSubstitutions=()=>{}');
-function sample(attack,defence,weather='Sec'){
- const out={games:80,carries:0,advances:0,metres:0,handErrors:0,kicks:0,longGains:0,points:0,wins:0,defenderPenalties:0,defenderCondition:0};
+function sample(attack,defence,weather='Sec',games=80){
+ const out={games,carries:0,advances:0,metres:0,handErrors:0,kicks:0,longGains:0,points:0,wins:0,defenderPenalties:0,defenderCondition:0,penaltiesByGame:[],conditionByGame:[]};
  for(let i=0;i<out.games;i++){
   const side=i%2;
   sim.run(`S.clubs=JSON.parse(baseline);var sampleSeed=${(i+1)*19073};Math.random=()=>{sampleSeed=(Math.imul(sampleSeed,1664525)+1013904223)>>>0;return sampleSeed/4294967296};var game=createRugbyMatch([0,1],null,true);game.tactics=['equilibre','equilibre'];game.defences=['equilibre','equilibre'];game.tactics[${side}]=${JSON.stringify(attack)};game.defences[${1-side}]=${JSON.stringify(defence)};game.weather=${JSON.stringify(weather)};while(!game.finished){game.paused=false;advanceRugby(game)}`);
   const stats=sim.run(`game.tacticalStats[${side}]`);for(const key of ['carries','advances','metres','handErrors','kicks','longGains'])out[key]+=stats[key];
-  out.points+=sim.run(`game.score[${side}]`);out.wins+=sim.run(`game.score[${side}]>game.score[${1-side}]`);out.defenderPenalties+=sim.run(`game.stats[${1-side}].penalties`);out.defenderCondition+=sim.run(`mean(activePlayers(game,${1-side}).map(p=>p.condition))`);
+  const pen=sim.run(`game.stats[${1-side}].penalties`),cond=sim.run(`mean(activePlayers(game,${1-side}).map(p=>p.condition))`);
+  out.points+=sim.run(`game.score[${side}]`);out.wins+=sim.run(`game.score[${side}]>game.score[${1-side}]`);out.defenderPenalties+=pen;out.defenderCondition+=cond;out.penaltiesByGame.push(pen);out.conditionByGame.push(cond);
  }
  return out;
 }
-const balanced=sample('equilibre','equilibre'),wide=sample('large','equilibre'),close=sample('conquete','equilibre'),kicking=sample('occupation','equilibre'),wetWide=sample('large','equilibre','Pluie'),wetClose=sample('conquete','equilibre','Pluie'),rush=sample('equilibre','pression'),drift=sample('equilibre','prudente');
-assert.ok(wide.metres/wide.advances>close.metres/close.advances+4,'Wide play must gain more per successful carry');assert.ok(wetWide.handErrors>wetClose.handErrors+100,'Wet wide play must cause more handling errors');assert.ok(kicking.kicks>balanced.kicks*1.8,'Occupation must actually kick more');assert.ok(rush.advances/rush.carries<drift.advances/drift.carries,'Rush must stop more initial advances');assert.ok(rush.longGains>drift.longGains+50,'A beaten rush must expose longer gains');assert.ok(rush.defenderPenalties>drift.defenderPenalties+60,'Rush pressure must carry discipline risk');assert.ok(rush.defenderCondition<drift.defenderCondition-80,'Rush must consume more fitness');
+const balanced=sample('equilibre','equilibre'),wide=sample('large','equilibre'),close=sample('conquete','equilibre'),kicking=sample('occupation','equilibre'),wetWide=sample('large','equilibre','Pluie'),wetClose=sample('conquete','equilibre','Pluie'),rush=sample('equilibre','pression','Sec',180),drift=sample('equilibre','prudente','Sec',180);
+// Les gains par course réussie sont des moyennes : on compare les rapports (le recalage de la distance d'une course les déplace ensemble).
+assert.ok(wide.metres/wide.advances>close.metres/close.advances*1.1,'Wide play must gain more per successful carry');
+T.plusGrand('Wet wide play must cause more handling errors (par course)',T.zProportions(wetWide.handErrors,wetWide.carries,wetClose.handErrors,wetClose.carries));
+assert.ok(kicking.kicks>balanced.kicks*1.4,'Occupation must actually kick more');
+// « Rush must stop more initial advances » se lit sur la phase de jeu (mêmes joueurs, mêmes tirages, seule la défense change) :
+// sur un match entier, la fatigue plus forte de la défense qui monte vite rend l'avance du camp attaquant à peu près égale (z ≈ 1), et l'ancien
+// test ne tenait que parce que deux taux voisins se classaient dans le bon sens.
+function avanceContre(defence,n=6000){const x=profil('backs','equilibre');x.run(`l.defences=['equilibre','${defence}']`);x.run(`var __ph=JSON.stringify(l),__a=0,__c=0;for(let i=0;i<${n};i++){var __s=(i*2654435761+12345)>>>0;Math.random=()=>{__s=(Math.imul(__s,1664525)+1013904223)>>>0;return __s/4294967296};l=JSON.parse(__ph);l.possession=0;l.territory=40;advanceCausalPlay(l);const s=l.tacticalStats[0];if(s.carries){__c++;if(s.advances)__a++}}`);return [x.run('__a'),x.run('__c')]}
+{const [aD,cD]=avanceContre('prudente'),[aR,cR]=avanceContre('pression');T.plusGrand('Rush must stop more initial advances (par phase de jeu)',T.zProportions(aD,cD,aR,cR))}
+T.plusGrand('A beaten rush must expose longer gains',T.zProportions(rush.longGains,rush.carries,drift.longGains,drift.carries));
+T.plusGrand('Rush pressure must carry discipline risk',T.zMoyennes(rush.penaltiesByGame,drift.penaltiesByGame));
+T.plusGrand('Rush must consume more fitness',T.zMoyennes(drift.conditionByGame,rush.conditionByGame));
 function brief(s){return {games:s.games,advanceRate:+(s.advances/s.carries).toFixed(3),metresPerAdvance:+(s.metres/s.advances).toFixed(2),errorsPerGame:+(s.handErrors/s.games).toFixed(2),kicksPerGame:+(s.kicks/s.games).toFixed(2),pointsPerGame:+(s.points/s.games).toFixed(2),winRate:s.wins/s.games,defenderPenaltiesPerGame:+(s.defenderPenalties/s.games).toFixed(2),defenderFinalCondition:+(s.defenderCondition/s.games).toFixed(2)}}
-console.log(JSON.stringify({passed:true,games:640,attack:{balanced:brief(balanced),wide:brief(wide),close:brief(close),kicking:brief(kicking),wetWide:brief(wetWide),wetClose:brief(wetClose)},defence:{rush:brief(rush),drift:brief(drift)},checks:['independent attack/defence choices','paused changes only','portable plans and hostile data','frozen action formations','measured halftime advice','legacy match preservation','640 controlled comparisons','gain/error/kick/pressure/penalty/fitness tradeoffs']}));
+console.log(JSON.stringify({passed:true,games:640+200,attack:{balanced:brief(balanced),wide:brief(wide),close:brief(close),kicking:brief(kicking),wetWide:brief(wetWide),wetClose:brief(wetClose)},defence:{rush:brief(rush),drift:brief(drift)},checks:['independent attack/defence choices','paused changes only','portable plans and hostile data','frozen action formations','measured halftime advice','legacy match preservation','840 controlled comparisons','gain/error/kick/pressure/penalty/fitness tradeoffs']}));

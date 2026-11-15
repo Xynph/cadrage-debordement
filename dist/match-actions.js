@@ -2,7 +2,7 @@
 // Structured action facts are recorded by the engine, never inferred from prose.
 // Optional facts already known to the caller (no draw, no state change): why the ball left play
 // or was made dead, the colour of a card, the try's origin and whether it was converted, the tackler of a carry.
-const ACTION_CAUSES={touch:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch','period-end'],ingoal:['held-up','attacking-kick-grounded','ingoal-knock-on','kick-dead','defender-grounded'],'hand-fault':['knock-on','forward-pass'],penalty:['offside','ruck','holding','obstruction','dangerous']};
+const ACTION_CAUSES={touch:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch','period-end'],ingoal:['held-up','attacking-kick-grounded','ingoal-knock-on','kick-dead','defender-grounded'],'hand-fault':['knock-on','forward-pass'],penalty:['offside','ruck','holding','obstruction','dangerous','scrum','maul','not-release','sealing']};
 const ACTION_CARDS=['yellow','red20','red'],ACTION_TRY_ORIGINS=['open','maul','scrum'];
 const ACTION_KINDS=['message','carry','turnover','scrum','lineout','setpiece-win','setpiece-loss','kick','kickoff','drop22','goalLine','reception','touch','hand-fault','quick-tap','try','goal','miss','penalty','advantage','card','sub','tactic','break','end','ingoal'];
 const ACTION_LABELS={message:'Jeu courant',carry:'Progression',turnover:'Récupération',scrum:'Mêlée',lineout:'Touche','setpiece-win':'Ballon conservé','setpiece-loss':'Ballon récupéré',kick:'Jeu au pied',kickoff:'Renvoi au centre',drop22:'Renvoi aux 22',goalLine:'Renvoi sur la ligne',reception:'Réception',touch:'Sortie en touche','hand-fault':'Faute de main','quick-tap':'Pénalité jouée à la main',try:'Essai',goal:'Pénalité réussie',miss:'Tir manqué',penalty:'Pénalité',advantage:'Avantage',card:'Discipline',sub:'Remplacement',tactic:'Consigne',break:'Mi-temps',end:'Fin du match',ingoal:'En-but'};
@@ -27,9 +27,9 @@ function carryTackler(l,side,carrierId,gain){
   if(id==null||!active.has(id)||slot>14)return;
   const forward=slot<8,condition=Number(matchPlayer(l,opp,id)?.condition);
   let s=Math.abs(DEFENCE_LANES[slot]-lane);
-  if(gain>=22)s+=slot===14?-40:slot===10||slot===13?-8:10;
+  if(gain>=22)s+=slot===14?-40:slot===10||slot===13?-8:60; // couverture même sans arrière sur le terrain (carton, sortie)
   else if(gain>=10)s+=slot===14?12:forward?4:0;
-  else s+=forward?0:14;
+  else s+=forward?0:60; // gain court : toujours un avant (les ailiers portent plus depuis les essais réalistes : écart de couloir jusqu'à 40)
   if(slot===5||slot===6)s-=3;else if(slot===8)s+=6;
   if(Number.isFinite(condition))s+=Math.max(0,100-condition)*.2;
   if(s<score){score=s;best=id}

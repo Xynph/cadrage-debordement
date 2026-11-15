@@ -43,8 +43,9 @@ test('Sans l’option du pont, rien ne change : pas de projection, pas de pas «
 
 test('Avec la variable, le moteur projette chaque temps fort au moment où il est décidé', () => {
   assert.throws(() => createBridge({ dataDir: path.join(os.tmpdir(), 'oval-direct-refus'), matchHighlights: 'tout' }), /Niveau de temps forts inconnu/);
-  // Graine 1001 : avec le calendrier alterné, la graine 1000 ne marque aucun essai avant la 36e minute.
-  const jeu = ouvrir({ seed: 1001, matchHighlights: 'dynamique' });
+  // Graine 1002 : avec le calendrier alterné, la courbe de niveau et les notes du barème V2, les graines 1000
+  // et 1001 ne marquent aucun essai avant la 36e minute.
+  const jeu = ouvrir({ seed: 1002, matchHighlights: 'dynamique' });
   try {
     let model = demarrer(jeu);
     const vus = [];

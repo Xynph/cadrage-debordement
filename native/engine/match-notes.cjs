@@ -15,8 +15,11 @@
 //    plaquage manqué (franchissement ou essai en jeu courant subi), réception, jeu au pied,
 //    pénalité réussie ou manquée, conquête, carton ;
 //  - collectif, au prorata des minutes : essai de l'équipe, écart au score, résultat ;
-//  - influence : niveau au poste du joueur par rapport à son équipe du jour (± 0,35 au plus).
+//  - influence : niveau au poste du joueur par rapport à son équipe du jour (± 0,35 au plus) ;
+//  - poste occupé (maillots 1 à 15, 14 novembre 2026) : faits attendus du poste retirés, amplitude
+//    propre au poste (POSTES_NOTE, étalonnés en carrière Monde).
 // La somme est comprimée (tanh) autour de 6,5 : la plupart des notes entre 5,5 et 8, 9 et plus rares.
+// Homme du match : la meilleure note (30 minutes au moins).
 
 function moteur(){
  const NOTE_DEPART=6.5,NOTE_MIN=1,NOTE_MAX=10,COMPRESSION=3.2;
@@ -41,11 +44,21 @@ function moteur(){
  const B={course:.03,metresPar:24,metresMax:1.5,franchissement:.6,essai:1.5,essaiEquipe:.05,essaiSubi:-.45,
   plaquage:.08,plaquageDomine:.05,plaquageManque:-.32,recuperation:.65,ballonPerdu:-.3,reception:.06,pied:.04,piedLong:.3,cinquante22:.5,
   but:.4,butManque:-.3,toucheGagnee:.045,meleeGagnee:.06,toucheVolee:.1,meleeVolee:.12,touchePerdue:-.09,meleePerdue:-.1,volee:.35,
-  jaune:-1.4,rouge:-2.8,penalite:-.32,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,negatif:.8,base:0,reference:0};
- // Décalage attendu et écart-type de l'impact par famille de poste (FAMILIES : 0 pilier,
- // 1 talonneur, 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier,
- // 7 centre, 8 arrière), mesurés sur un match complet.
- const POSTE={0:[0.27,0.97],1:[-0.72,1.59],2:[1.57,1.51],3:[2.03,1.69],4:[0.09,1.38],5:[0.99,1.34],6:[0.47,1.17],7:[0.39,1.3],8:[-0.01,1.74]};
+  jaune:-1.4,rouge:-2.8,penalite:-.32,enAvant:-.45,ecartMax:.45,resultat:.2,echelle:1.08,negatif:.8,poste:.25};
+ // Pondération par poste (maillots 1 à 15, poste occupé sur le terrain), étalonnée en carrière
+ // Monde (docs/homme-du-match-postes-20261114.md) : [faits attendus sur 80 minutes, dispersion].
+ // Les postes n'ont pas les mêmes occasions de faits dans le journal (un troisième ligne plaque
+ // et court bien plus qu'un pilier) : on retire l'attendu du poste (moyennes par poste proches),
+ // puis la dispersion du poste fixe l'amplitude des notes (un ouvreur fait plus souvent le match,
+ // ou le rate, qu'un pilier). L'homme du match est la meilleure note : la répartition par poste
+ // vient de ces seules pondérations (aucun tirage, aucun quota).
+ // Essais réalistes (docs/essais-realistes-20261114.md) : attendus et amplitudes ré-étalonnés avec
+ // scripts/etalonner-notes-postes.cjs (441 matchs après l'apport des stats de #709 ; 795 avant, mêmes conditions que docs/homme-du-match-postes-20261114.md).
+ const POSTES_NOTE=[[0.48,1.09],[0.17,0.92],[0.26,1.01],[1.53,0.97],[1.83,1.1],[2.48,1.02],[2.57,0.99],[2.51,1.07],[0.47,1.14],[1.55,1.33],[1.44,0.86],[0.82,0.98],[0.86,0.85],[1.27,0.92],[0.34,1.02]];
+ // Repli quand seul le poste naturel du joueur est connu (FAMILIES : 0 pilier, 1 talonneur,
+ // 2 deuxième ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière).
+ const MAILLOTS_FAMILLE=[[0,2],[1],[3,4],[5,6,7],[8],[9],[10,13],[11,12],[14]];
+ const POSTE=MAILLOTS_FAMILLE.map(m=>[0,1].map(k=>m.reduce((a,i)=>a+POSTES_NOTE[i][k],0)/m.length));
  const arrondi=n=>Math.round(n*10)/10;
  const borne=(n,a,b)=>Math.max(a,Math.min(b,n));
  // Note affichée d'un total brut (impact) : compression douce autour de la base.
@@ -53,6 +66,24 @@ function moteur(){
  // journal : [{min,type,scene}] (l.events du direct, ou journal transitoire d'un match simulé).
  // contexte : {minutes:{id:minutes jouées}, cotes:{id:0|1}, niveaux:{id:-1..1}, score:[a,b],
  //             duree, fini, camp (0|1 : seulement cette équipe ; sinon les deux)}.
+ // ---- Feuille de statistiques (match-stats.cjs, 14 novembre 2026 : « les stats d'un joueur ne
+ // ressemblent pas à de vraies stats ») ----------------------------------------------------------
+ // Les chiffres comptés du journal (une trentaine de courses racontées par match : 0 à 3 plaquages
+ // pour un ailier) sont remplacés par ceux de la feuille réaliste, la même que l'écran de match :
+ // mêmes essais (mêmes marqueurs, issus du journal), plaquages, mètres, passes… L'apport de la feuille
+ // (`apports`, match-stats.apportsNote : écart au rendement attendu du poste dans ce match, somme
+ // nulle par équipe, borné) s'ajoute à l'impact brut : la note suit la ligne de stats sans déplacer
+ // la base 6,5 ni l'étalonnage par poste.
+ const DE_LA_FEUILLE={essais:'essais',plaquages:'plaquages',manques:'plaquagesManques',metres:'metres',courses:'courses',franchissements:'franchissements',recuperations:'recuperations',pertes:'ballonsPerdus',penalites:'penalitesConcedees'};
+ const EN_PLUS=['passes','offloads','defenseursBattus','points','soutiensRuck','coupsDePied'];
+ function feuilleDansNotes(joueurs,feuille,apports){
+  for(const [id,n] of Object.entries(joueurs)){
+   const f=feuille.joueurs[id];
+   for(const [k,c] of Object.entries(DE_LA_FEUILLE))n[k]=f?f[c]|0:0;
+   for(const c of EN_PLUS)n[c]=f?f[c]|0:0;
+   const a=apports?.[id];if(Number.isFinite(a))n.brut+=a;
+  }
+ }
  function noter(journal,contexte={}){
   const cotes=contexte.cotes||{},minutes=contexte.minutes||{},niveaux=contexte.niveaux||{};
   const camp=contexte.camp===0||contexte.camp===1?contexte.camp:null;
@@ -113,15 +144,28 @@ function moteur(){
    // Pénalité concédée : fautif déduit de la place défensive (au contact, sans tirage), petit
    // poids collectif pour les avants ; faute de main : le dernier porteur, poids collectif léger.
    if(kind==='penalty'&&equipe!==null){
-    const fautif=plaqueur(s.on?.[1-equipe],3,s.to?.y,i);ajoute(fautif,B.penalite,'penalites');
+    const def=s.on?.[1-equipe],cause=s.cause;
+    // Cause connue (pénalités réalistes, 14 novembre 2026) : mêlée = première ligne (1-2-3, en
+    // alternance sans tirage) ; ballon non libéré / scellement = dernier porteur de l'équipe fautive ;
+    // touche ou ballon porté = avant du lancer (talonneur, deuxième et troisième ligne). Jeu courant :
+    // plaqueur déduit de la place défensive, comme avant.
+    const parmi=(postes)=>{const ids=postes.map(p=>def?.[p]).filter(id=>id!=null);return ids.length?String(ids[i%ids.length]):null;};
+    const fautif=Array.isArray(def)&&cause==='scrum'?parmi([0,1,2])
+     :(cause==='not-release'||cause==='sealing')?(porteur[1-equipe]??plaqueur(def,3,s.to?.y,i))
+     :Array.isArray(def)&&cause==='maul'?parmi([1,3,4,5,6,7])
+     :plaqueur(def,3,s.to?.y,i);
+    ajoute(fautif,B.penalite,'penalites');
     for(const id of surLeTerrain(s,1-equipe))if(joueurs[id])joueurs[id].brut-=(s.on?.[1-equipe]?.indexOf(id)??9)<8?.02:.008;
     continue;
    }
    if(kind==='hand-fault'&&equipe!==null){if(porteur[equipe])ajoute(porteur[equipe],B.enAvant,'pertes');for(const id of surLeTerrain(s,equipe))if(joueurs[id])joueurs[id].brut-=.01;continue;}
   }
+  // Feuille de statistiques réaliste (match-stats.cjs, 14 novembre 2026) : une seule source pour les
+  // chiffres du joueur (ceux de l'écran de match) et son apport à la note (voir feuilleDansNotes).
+  if(contexte.feuille?.joueurs)feuilleDansNotes(joueurs,contexte.feuille,contexte.apports);
   if(Array.isArray(contexte.score)&&contexte.score.length===2)score=contexte.score;else if(dernierScore)score=dernierScore;
   const duree=Math.max(1,Number.isFinite(contexte.duree)?contexte.duree:80);
-  const familles=contexte.familles||{};
+  const familles=contexte.familles||{},postes=contexte.postes||{};
   for(const [id,n] of Object.entries(joueurs)){
    const m=Number.isFinite(minutes[id])?Math.max(0,minutes[id]):0;n.minutes=Math.round(m);
    const part=Math.min(1,m/Math.max(80,duree));
@@ -129,37 +173,40 @@ function moteur(){
    // Collectif : écart au score (borné) et résultat, une fois le match fini.
    const collectif=borne(ecart/32,-B.ecartMax,B.ecartMax)+(contexte.fini?(ecart>0?B.resultat:ecart<0?-B.resultat:0):0);
    const niveau=Number.isFinite(niveaux[id])?borne(niveaux[id],-1,1)*.35:0;
-   // Poste : décalage par famille (les postes n'ont pas les mêmes occasions de faits dans le
-   // journal), pour que chaque poste ait la même moyenne attendue (étalonnage, voir la doc).
-   const f=contexte.journalReduit?null:familles[id],decalage=Number.isInteger(f)&&POSTE[f]?POSTE[f][0]:0;
-   n.impact=B.echelle*n.brut+(B.base-decalage)*part+(collectif+niveau)*part;
-   n.famille=Number.isInteger(f)?f:null;
+   // Poste occupé (maillot 1 à 15), sinon poste naturel (famille) : attendu retiré, dispersion
+   // du poste, constante commune (B.poste) qui garde la moyenne générale. Journal réduit
+   // (matchs internationaux, essais seuls) : aucune pondération (voir la doc).
+   const mt=contexte.journalReduit?null:postes[id],f=contexte.journalReduit?null:familles[id];
+   const p=Number.isInteger(mt)&&POSTES_NOTE[mt]?POSTES_NOTE[mt]:Number.isInteger(f)&&POSTE[f]?POSTE[f]:null;
+   n.impact=p?p[1]*(B.echelle*n.brut-p[0]*part)+(B.poste+collectif+niveau)*part:B.echelle*n.brut+(collectif+niveau)*part;
+   n.poste=Number.isInteger(mt)&&POSTES_NOTE[mt]?mt:null;
    n.note=echelle(n.impact);
    n.metres=Math.round(n.metres);
   }
-  // Homme du match (fin de match), au moins 30 minutes : meilleure performance relative à son
-  // poste (écart à la moyenne attendue du poste, rapporté à son écart-type) ; à égalité, la
-  // meilleure note, le vainqueur, le plus de faits, puis l'identifiant.
-  const relatif=n=>{const r=Number.isInteger(n.famille)&&POSTE[n.famille]?POSTE[n.famille]:[0,1];return (n.impact-B.reference*Math.min(1,n.minutes/80))/(r[1]*.75+1.45*.25);};
+  // Homme du match (fin de match), au moins 30 minutes : la meilleure note (déjà pondérée par
+  // poste) ; à égalité, l'impact avant arrondi, le vainqueur, le plus de faits, l'identifiant.
   let hommeDuMatch=null;
   const candidats=Object.entries(joueurs).filter(([,n])=>n.minutes>=30);
-  candidats.sort(([a,x],[b,y])=>relatif(y)-relatif(x)||y.note-x.note||((score[y.cote]-score[1-y.cote])-(score[x.cote]-score[1-x.cote]))||y.faits-x.faits||(a<b?-1:a>b?1:0));
+  candidats.sort(([a,x],[b,y])=>y.note-x.note||y.impact-x.impact||((score[y.cote]-score[1-y.cote])-(score[x.cote]-score[1-x.cote]))||y.faits-x.faits||(a<b?-1:a>b?1:0));
   if(candidats.length)hommeDuMatch=candidats[0][0];
   if(camp!==null)for(const id of Object.keys(joueurs))if(joueurs[id].cote!==camp)delete joueurs[id];
-  for(const n of Object.values(joueurs)){delete n.brut;delete n.impact;delete n.famille;}
+  for(const n of Object.values(joueurs)){delete n.brut;delete n.impact;delete n.poste;}
   return {joueurs,hommeDuMatch,score:score.slice()};
  }
- return {NOTE_DEPART,noter,plaqueur,echelle,B,POSTE};
+ return {NOTE_DEPART,noter,plaqueur,echelle,B,POSTE,POSTES_NOTE,MAILLOTS_FAMILLE};
 }
 
 // ---- Domaine natif (installé dans la VM du moteur, voir native-systems.cjs) ----------------
 // État `S.matchNotes` (version 2 ; la version 1 est migrée au premier usage) :
 //  saison  : saison en cours ;
-//  joueurs : {id:{s:[matchs, somme des notes ×10, minutes, essais, plaquages, mètres, hommes du match], f:[5 dernières notes ×10]}}
+//  joueurs : {id:{s:[matchs, somme des notes ×10, minutes, essais, plaquages, mètres, hommes du match,
+//            passes, franchissements, plaquages manqués, points], f:[5 dernières notes ×10]}} (7 totaux avant le 14/11/2026)
 //            pour chaque joueur ayant joué (tous les clubs) ;
-//  detail  : {id:[[semaine, adversaire, compétition, minutes, note×10, essais, plaquages, mètres, homme du match (0/1)], …]}
+//  detail  : {id:[[semaine, adversaire, compétition, minutes, note×10, essais, plaquages, mètres, homme du match (0/1),
+//            courses, passes, franchissements, plaquages manqués, défenseurs battus, offloads, ballons récupérés,
+//            ballons perdus, points, pénalités concédées], …]} (9 champs avant le 14/11/2026)
 //            détail de la saison en cours pour les joueurs du club du manager ;
-//  passees : {id:[[saison, club, matchs, moyenne×10, essais, hommes du match], …]} 8 saisons au plus ;
+//  passees : {id:[[saison, club, matchs, moyenne×10, essais, hommes du match, plaquages, mètres], …]} 8 saisons au plus ;
 //  confiance : {id:effet cumulé de la saison sur la satisfaction (borné ±6)} ;
 //  semaine : {cle, comp, notes:[[id, club, note×10, poste, comp, minutes, essais, championnat]], matchs:[[championnat, clubA, clubB, scoreA, scoreB]]}
 //            rencontres de la journée (transitoire : vidé quand l'équipe-type est publiée) ;
@@ -172,6 +219,11 @@ function moteur(){
 // Anciennes sauvegardes : `S.matchNotes` absent = historique vide, créé au premier match.
 const files=Object.freeze([]),commands=Object.freeze([]);
 function factory(){
+ // Statistiques enregistrées (14 novembre 2026) : celles de la feuille réaliste (match-stats.cjs).
+ // Totaux de saison (tous les joueurs du monde, ~4 000) : 4 champs de plus, stockés en entiers dans le
+ // même tableau ; détail (effectif du manager seulement) : 10 champs de plus par match. Les anciennes
+ // lignes (7 totaux, détail à 9 champs, saison passée à 6) restent valides et s'affichent « — ».
+ const TOTAUX=11,DETAIL_EN_PLUS=['courses','passes','franchissements','manques','defenseursBattus','offloads','recuperations','pertes','points','penalites'];
  const VERSION=2,MAX_DETAIL=60,MAX_PASSEES=8,MAX_RECOMPENSES=40,CONFIANCE_MAX=6,MAX_SAISONS=40,MAX_SEMAINE=4000;
  const calc=CDMatchNotesMoteur;
  const state=()=>typeof S==='undefined'?null:S;
@@ -188,8 +240,8 @@ function factory(){
   const st=migrer(s.matchNotes);if(!st||st.saison===s.season)return;
   const clubDe=new Map();for(const c of s.clubs)for(const p of c.players)clubDe.set(p.id,c.id);
   for(const [id,j] of Object.entries(st.joueurs)){
-   if(j.s[0]>0){(st.passees[id]||(st.passees[id]=[])).push([st.saison,clubDe.get(id)??-1,j.s[0],Math.round(j.s[1]/j.s[0]),j.s[3],j.s[6]]);}
-   j.s=[0,0,0,0,0,0,0];
+   if(j.s[0]>0){(st.passees[id]||(st.passees[id]=[])).push([st.saison,clubDe.get(id)??-1,j.s[0],Math.round(j.s[1]/j.s[0]),j.s[3],j.s[6],j.s[4],j.s[5]]);}
+   j.s=Array(TOTAUX).fill(0);
   }
   for(const id of Object.keys(st.passees)){if(!clubDe.has(id))delete st.passees[id];else st.passees[id]=st.passees[id].slice(-MAX_PASSEES);}
   for(const id of Object.keys(st.joueurs))if(!clubDe.has(id))delete st.joueurs[id];
@@ -198,19 +250,36 @@ function factory(){
  }
  // Contexte d'un match pour le calcul : minutes, côtés, niveau au poste relatif à l'équipe.
  function contexte(l){
-  const cotes={},minutes={},niveaux={},noms={},familles={};
+  const cotes={},minutes={},niveaux={},noms={},familles={},postes={};
   for(let side=0;side<2;side++){
    const sh=l.sheets?.[side];if(!sh)continue;
+   // Poste occupé : maillot de départ, puis celui du joueur remplacé (remplacements dans l'ordre),
+   // sinon la place actuelle sur le terrain.
+   (sh.initial||[]).forEach((id,i)=>{if(id!=null&&i<15&&postes[id]===undefined)postes[id]=i;});
+   for(const r of l.subs||[])if(r&&r.side===side&&r.in!=null&&postes[r.in]===undefined&&postes[r.out]!==undefined)postes[r.in]=postes[r.out];
+   (sh.on||[]).forEach((id,i)=>{if(id!=null&&i<15&&postes[id]===undefined)postes[id]=i;});
    const ids=[...new Set([...(sh.used||[]),...(sh.on||[]).filter(Boolean)])];
    const notes=[];
    for(const id of ids){const p=typeof matchPlayer==='function'?matchPlayer(l,side,id):null;cotes[id]=side;minutes[id]=Number(sh.minutes?.[id])||0;if(p){const r=roleNote(p);notes.push([id,r]);noms[id]=p.name;if(Number.isInteger(p.fam))familles[id]=p.fam;}}
    const moyenne=notes.length?notes.reduce((n,[,r])=>n+r,0)/notes.length:0;
    for(const [id,r] of notes)niveaux[id]=Math.max(-1,Math.min(1,(r-moyenne)/10));
   }
-  return {cotes,minutes,niveaux,noms,familles,score:l.score.slice(),duree:l.minute,fini:!!l.finished};
+  for(const id of Object.keys(postes))if(cotes[id]===undefined)delete postes[id];
+  return {cotes,minutes,niveaux,noms,familles,postes,score:l.score.slice(),duree:l.minute,fini:!!l.finished};
  }
  const journalDe=l=>l.userSide>=0?l.events:(l.notesJournal||[]);
- function noterMatch(l){return calc.noter(journalDe(l),contexte(l));}
+ function noterMatch(l){const f=feuilleDe(l);return calc.noter(journalDe(l),f?{...contexte(l),feuille:f,apports:CDMatchStats.apportsNote(f)}:contexte(l));}
+ // Feuille de statistiques réaliste du match (match-stats.cjs), calculée comme celle de l'écran de
+ // match (match-direct.cjs) : même clé de rencontre (nativeMatchDirect.etat().rencontre), mêmes
+ // attributs (worker.cjs, matchDirectReader.attributs), même journal. Matchs simulés : leur journal
+ // de faits transitoire. Sans le module (VM de test minimale) : null, chiffres du journal.
+ function feuilleDe(l){
+  if(typeof CDMatchStats==='undefined'||!l?.pair)return null;
+  const s=state(),joueurs={};
+  // Attributs lus à la demande (getters) : seuls les joueurs qui agissent dans le journal en ont besoin, même valeur que la lecture directe.
+  (l.sheets||[]).forEach((sh,side)=>{for(const id of new Set([...(sh.on||[]),...(sh.bench||[]),...(sh.used||[])])){if(id==null)continue;if(typeof matchPlayer!=='function')continue;let v;Object.defineProperty(joueurs,id,{enumerable:true,configurable:true,get(){if(v===undefined){const p=matchPlayer(l,side,id);v=p&&p.skills?{skills:p.skills}:null;}return v||undefined;}});}});
+  try{return CDMatchStats.feuilleStatistiques(journalDe(l),{cle:[s?.season,s?.round,s?.phase,l.pair.join('-')].join(':'),joueurs});}catch(e){return null;}
+ }
  // Forme récente (5 dernières notes) et moyenne de saison d'un joueur, sans écrire.
  function forme(id){const j=state()?.matchNotes?.joueurs?.[id];return j&&j.f.length?j.f.reduce((n,x)=>n+x,0)/j.f.length/10:null;}
  function formeN(id){return state()?.matchNotes?.joueurs?.[id]?.f.length||0;}
@@ -300,10 +369,12 @@ function factory(){
   for(const [id,n] of Object.entries(r.joueurs)){
    if(n.minutes<=0)continue;
    const note10=Math.round(n.note*10),hdm=r.hommeDuMatch===id?1:0;
-   const j=st.joueurs[id]||(st.joueurs[id]={s:[0,0,0,0,0,0,0],f:[]});
+   const j=st.joueurs[id]||(st.joueurs[id]={s:Array(TOTAUX).fill(0),f:[]});
+   while(j.s.length<TOTAUX)j.s.push(0); // ancienne sauvegarde : 7 totaux, complétés à zéro
    j.s[0]++;j.s[1]+=note10;j.s[2]+=n.minutes;j.s[3]+=n.essais;j.s[4]+=n.plaquages;j.s[5]+=n.metres;j.s[6]+=hdm;
+   j.s[7]+=n.passes|0;j.s[8]+=n.franchissements|0;j.s[9]+=n.manques|0;j.s[10]+=n.points|0;
    j.f.push(note10);if(j.f.length>5)j.f.shift();
-   if(n.cote===user){const d=st.detail[id]||(st.detail[id]=[]);d.push([w,clubIdDe(l,1-n.cote),comp,n.minutes,note10,n.essais,n.plaquages,n.metres,hdm]);if(d.length>MAX_DETAIL)d.shift();}
+   if(n.cote===user){const d=st.detail[id]||(st.detail[id]=[]);d.push([w,clubIdDe(l,1-n.cote),comp,n.minutes,note10,n.essais,n.plaquages,n.metres,hdm,...DETAIL_EN_PLUS.map(k=>n[k]|0)]);if(d.length>MAX_DETAIL)d.shift();}
    if(reg){
     const g=groupeDe(matchPlayer(l,n.cote,id)?.pos),e=reg[id]||(reg[id]=[0,0,0,0,0,g<0?0:g,clubIdDe(l,n.cote)]);
     e[0]++;e[1]+=note10;e[2]+=n.minutes;e[3]+=n.essais;if(g>=0)e[5]=g;e[6]=clubIdDe(l,n.cote);
@@ -491,9 +562,9 @@ function factory(){
   const st=s.matchNotes;
   check(obj(st)&&(st.version===VERSION||st.version===1)&&int(st.saison,1,s.season)&&obj(st.joueurs)&&obj(st.detail)&&obj(st.passees)&&obj(st.confiance)&&Array.isArray(st.recompenses)&&st.recompenses.length<=MAX_RECOMPENSES,'schéma invalide');
   const nombres=(a,n)=>Array.isArray(a)&&a.length===n&&a.every(x=>int(x,0,1e7));
-  for(const j of Object.values(st.joueurs))check(obj(j)&&nombres(j.s,7)&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100,'joueur invalide');
-  for(const d of Object.values(st.detail))check(Array.isArray(d)&&d.length<=MAX_DETAIL&&d.every(r=>Array.isArray(r)&&r.length===9&&int(r[0],0,100)&&int(r[1],-1,100000)&&typeof r[2]==='string'&&r[2].length<=40&&int(r[3],0,240)&&int(r[4],10,100)&&[5,6,7].every(k=>int(r[k],0,100000))&&(r[8]===0||r[8]===1)),'détail invalide');
-  for(const d of Object.values(st.passees))check(Array.isArray(d)&&d.length<=MAX_PASSEES&&d.every(r=>Array.isArray(r)&&r.length===6&&int(r[0],1,s.season)&&int(r[1],-1,100000)&&int(r[2],1,500)&&int(r[3],10,100)&&int(r[4],0,10000)&&int(r[5],0,500)),'saison passée invalide');
+  for(const j of Object.values(st.joueurs))check(obj(j)&&(nombres(j.s,7)||nombres(j.s,TOTAUX))&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100,'joueur invalide');
+  for(const d of Object.values(st.detail))check(Array.isArray(d)&&d.length<=MAX_DETAIL&&d.every(r=>Array.isArray(r)&&(r.length===9||r.length===9+DETAIL_EN_PLUS.length)&&int(r[0],0,100)&&int(r[1],-1,100000)&&typeof r[2]==='string'&&r[2].length<=40&&int(r[3],0,240)&&int(r[4],10,100)&&[5,6,7].every(k=>int(r[k],0,100000))&&(r[8]===0||r[8]===1)&&r.slice(9).every(x=>int(x,0,100000))),'détail invalide');
+  for(const d of Object.values(st.passees))check(Array.isArray(d)&&d.length<=MAX_PASSEES&&d.every(r=>Array.isArray(r)&&(r.length===6||r.length===8)&&int(r[0],1,s.season)&&int(r[1],-1,100000)&&int(r[2],1,500)&&int(r[3],10,100)&&int(r[4],0,10000)&&int(r[5],0,500)&&r.slice(6).every(x=>int(x,0,1e7))),'saison passée invalide');
   for(const v of Object.values(st.confiance))check(int(v,-CONFIANCE_MAX,CONFIANCE_MAX),'confiance invalide');
   for(const r of st.recompenses)check(obj(r)&&['hdm','equipe','mois','saison','xvsaison'].includes(r.type)&&typeof r.id==='string'&&int(r.note,10,100),'distinction invalide');
   check(st.semaine===null||obj(st.semaine)&&Array.isArray(st.semaine.notes)&&st.semaine.notes.length<=MAX_SEMAINE,'journée invalide');
@@ -559,6 +630,8 @@ function factory(){
   return {ligues,defaut:ligues[0]?.id??null};
  }
  // Projection (clubLife.matchNotes) : effectif du manager, détail, distinctions, dernier match.
+ // Noms projetés des champs de détail ajoutés (même ordre que DETAIL_EN_PLUS).
+ const DETAIL_PROJETE=['courses','passes','franchissements','plaquagesManques','defenseursBattus','offloads','recuperations','ballonsPerdus','points','penalitesConcedees'];
  function project(){
   const s=state(),st=s?.matchNotes;
   const base={version:VERSION,noteDepart:calc.NOTE_DEPART,joueurs:{},recompenses:[],dernier:null,equipeType:{ligues:[],defaut:null}};
@@ -568,10 +641,14 @@ function factory(){
    const j=st.joueurs[p.id],d=courant?st.detail[p.id]||[]:[],passe=st.passees[p.id]||[],inter=st.selection?.lignes?.[p.id]||[];
    if(!j&&!passe.length&&!inter.length)continue;
    const n=courant&&j?j.s[0]:0;
+   // Totaux de la feuille réaliste (null : ancienne sauvegarde, champ inconnu, affiché « — »).
+   const total=k=>n&&j.s.length>k?j.s[k]:n?null:0;
    base.joueurs[p.id]={matchs:n,moyenne:n?Math.round(j.s[1]/n)/10:null,minutes:n?j.s[2]:0,essais:n?j.s[3]:0,plaquages:n?j.s[4]:0,metres:n?j.s[5]:0,hommeDuMatch:n?j.s[6]:0,
+    passes:total(7),franchissements:total(8),plaquagesManques:total(9),points:total(10),
     forme:(j?.f||[]).map(x=>x/10),
-    historique:d.slice().reverse().map(r=>({semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1})),
-    saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5]})),
+    historique:d.slice().reverse().map(r=>{const o={semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),competitionId:String(r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1};
+     DETAIL_PROJETE.forEach((k,i)=>{o[k]=r.length>9?r[9+i]:null;});return o;}),
+    saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5],plaquages:r.length>6?r[6]:null,metres:r.length>7?r[7]:null})),
     // Équipe-type de la saison en cours (sélections) et équipes de la saison (repères de carrière).
     selections:courant?Object.values(st.reg||{}).reduce((n,reg)=>n+(reg[p.id]?.[4]||0),0):0,
     distinctions:(st.saisons||[]).filter(f=>f.ids.includes(p.id)).map(f=>({type:'xv-saison',saison:f.saison,libelleSaison:saisonLabel(s,f.saison),championnat:nomLigueAffiche(s,f.ligue),moyenne:f.moy[f.ids.indexOf(p.id)]/10,matchs:f.matchs[f.ids.indexOf(p.id)]})).reverse(),

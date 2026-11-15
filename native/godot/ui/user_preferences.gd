@@ -4,8 +4,11 @@ signal changed
 const Atomic = preload("res://atomic_file.gd")
 const AUTOMATIC_SCREEN := -1
 const MAX_SCREEN_INDEX := 2147483647
-const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique"}
-const OPTIONAL_KEYS := ["display_screen","stadium","salary_period","match_highlights"]
+const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly","match_highlights":"dynamique","continue_messages":"importants","continue_injuries":"titulaires"}
+const OPTIONAL_KEYS := ["display_screen","stadium","salary_period","match_highlights","continue_messages","continue_injuries"]
+## « Continuer » s'arrête aussi sur : nouveaux messages (importants, tous, aucun) et blessures (titulaires ou tout l'effectif).
+const CONTINUE_MESSAGES := ["importants","tous","aucun"]
+const CONTINUE_INJURIES := ["titulaires","effectif"]
 ## Ce que le match montre : des temps forts choisis (« dynamique » par défaut) au match complet.
 const MATCH_HIGHLIGHTS := ["aucun","resume","cles","etendus","dynamique","integral"]
 const MAX_BYTES := 16 * 1024
@@ -57,7 +60,12 @@ func _validated(candidate: Variant) -> Dictionary:
 	if not match_highlights is String or match_highlights not in MATCH_HIGHLIGHTS:
 		_fail("Niveau des temps forts refusé : choisissez un niveau proposé pendant le match.")
 		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights}
+	var continue_messages: Variant = candidate.get("continue_messages",DEFAULTS.continue_messages)
+	var continue_injuries: Variant = candidate.get("continue_injuries",DEFAULTS.continue_injuries)
+	if not continue_messages is String or continue_messages not in CONTINUE_MESSAGES or not continue_injuries is String or continue_injuries not in CONTINUE_INJURIES:
+		_fail("Arrêts de « Continuer » refusés : choisissez un réglage proposé.")
+		return {}
+	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries}
 
 func load_profile(directory: String) -> bool:
 	_available = false

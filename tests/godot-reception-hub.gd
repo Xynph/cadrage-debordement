@@ -56,7 +56,7 @@ func run() -> void:
 		return message.get("international_event", {}).get("id") == mail.id)
 	check(rows.size() == 1, "La convocation apparaît une seule fois")
 	check(app.find_child("InboxOpenInternational", true, false) != null, "Le courrier de convocation propose son lien")
-	check(app.primary_button.text == "Jour suivant" and not app.primary_button.disabled, "La convocation laisse l’avance disponible")
+	check(app.primary_button.text == "Continuer" and not app.primary_button.disabled, "La convocation laisse l’avance disponible")
 	var action := app.find_child("InboxOpenInternational", true, false) as Button
 	if action != null: action.pressed.emit()
 	await settle()

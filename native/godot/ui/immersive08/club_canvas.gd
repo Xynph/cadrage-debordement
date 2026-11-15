@@ -240,12 +240,29 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 			D.bar(card, Rect2(72,145 + offset,263,6), 100.0*(division_size-int(rank)+1)/division_size)
 		D.chip(card, Rect2(355,111 + offset,120,33), position, C.MINT)
 	D.line(card, Vector2(19,158 + offset), Vector2(480,158 + offset))
-	for i in mini(2, goals.size()):
+	# Promesses publiques de la conférence de presse (en tête : c'est votre parole), puis les jalons du conseil,
+	# qui restent aussi rappelés dans le bandeau « Prochain jalon du conseil ».
+	var promises: Array = app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []) if app.model.get("clubLife", {}).get("pressPromises") is Dictionary else []
+	var shown := mini(2, promises.size())
+	for i in shown:
+		var promise: Dictionary = promises[i]
+		var progress: Dictionary = promise.get("progress", {})
+		var track: Variant = progress.get("onTrack")
+		var tint: Color = C.AMBER if track == null else (C.MINT if track else C.ALERT)
+		var y := 169 + offset + i * 84
+		U.icon(card, "flag", Vector2(23,y+15), C.GOLD, 25)
+		var title := D.text(card, 72, y+28, str(promise.get("short", "Promesse publique")), 25, C.IVORY, 700, 252)
+		title.name = "ClubPromise" + str(i+1)
+		title.tooltip_text = "Promesse publique : " + str(promise.get("label", "")) + "\n" + str(progress.get("label", ""))
+		D.text(card, 72, y+58, "Promesse publique · " + str(progress.get("short", "")), 20, C.MUTED, 500, 263)
+		D.chip(card, Rect2(344,y+12,130,32), "À suivre" if track == null else ("En bonne voie" if track else "En retard"), tint)
+		D.line(card, Vector2(19,y+75), Vector2(480,y+75), Color(C.LINE,.65))
+	for i in mini(2 - shown, goals.size()):
 		var goal: Dictionary = goals[i]
 		var kind := str(goal.get("type",""))
 		var status := str(goal.get("status","pending"))
 		var hue := C.MINT if status == "met" else C.ALERT if status == "missed" else C.AMBER
-		var y := 169 + offset + i * 84
+		var y := 169 + offset + (i + shown) * 84
 		U.icon(card, "flag", Vector2(23,y+15), hue, 25)
 		D.text(card, 72, y+28, GOALS.get(kind,"Jalon du conseil"), 25, C.IVORY, 700, 252)
 		var target: Variant = goal.get("target")
@@ -255,7 +272,7 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 		if metrics.has(kind) and target != null and float(target)>0.0 and kind != "rank":
 			D.bar(card, Rect2(72,y+63,263,6), 100.0*float(metrics[kind])/float(target), hue)
 		D.line(card, Vector2(19,y+75), Vector2(480,y+75), Color(C.LINE,.65))
-	if goals.is_empty():
+	if goals.is_empty() and shown == 0:
 		U.icon(card, "flag", Vector2(23,179 + offset), C.GOLD, 25)
 		D.text(card, 72, 201 + offset, "Aucun jalon enregistré", 26, C.IVORY, 600, 405)
 		D.text(card, 72, 238 + offset, "Fixez une échéance avec la direction.", 22, C.MUTED, 500, 400)
@@ -414,8 +431,9 @@ static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dicti
 	var cash: Variant = finance.get("cash",app.model.club.get("cash"))
 	D.text(card, 1030, 114, U.amount(cash), 43, C.ALERT if cash != null and float(cash)<0.0 else C.MINT, 700, 330)
 	D.text(card, 1030, 144, "Trésorerie du jeu", 22, C.MUTED, 500, 315)
-	D.text(card, 1366, 107, "Salaires "+G.salary_period(), 22, C.MUTED, 500, 355)
-	D.text(card, 1366, 142, G.salary_amount(finance.get("weeklyWages",app.model.get("finance",{}).get("wage",0))), 28, C.IVORY, 600, 361)
+	# Charge salariale versée (cotisations comprises) : la valeur du moteur, comme dans la répartition de Finances.
+	D.text(card, 1366, 107, "Salaires et cotisations · par semaine de jeu", 22, C.MUTED, 500, 355)
+	D.text(card, 1366, 142, G.euros(P.payroll(app.model).charge_weekly), 28, C.IVORY, 600, 361)
 	_reading_area(app,card,Rect2(1022,77,334,72),{"kind":"finance","id":"cash"},"ClubCashLink","Trésorerie")
 	_reading_area(app,card,Rect2(1358,77,379,72),{"kind":"finance","id":"wages"},"ClubWagesLink","Salaires")
 	var action := D.button(card, Rect2(1750,77,476,73), "Présenter une demande à la direction", func(): _open_strategy(app, 1), true, "arrow", false, Color("966419"), "ClubBoardRequest")

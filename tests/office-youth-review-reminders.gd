@@ -77,6 +77,8 @@ func run() -> void:
 	app._command("new_career",{"mode":"world-champ","club":0})
 	await wait_engine()
 	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
+	# Le worker écrit une décision courante juste après sa réponse ; toute commande suivante attend cette écriture.
+	app._command("snapshot");await wait_engine()
 	var players: Array=app.model.clubLife.youthDevelopment.players
 	check(players.size()>=2,"Au moins deux jeunes réellement publiés")
 	if players.size()<2: await app._close(1);return

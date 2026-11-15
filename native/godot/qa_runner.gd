@@ -190,7 +190,11 @@ func _display_reception() -> void:
 
 func _wait(limit_ms:int=20000) -> bool:
 	var deadline:=Time.get_ticks_msec()+limit_ms
+	var started := Time.get_ticks_msec()
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec()<deadline:await get_tree().process_frame
+	# Diagnostic de la recette : la commande en attente et la durée observée accompagnent tout dépassement.
+	if app.waiting or app.model.is_empty():
+		printerr("QA engine response over ", limit_ms, " ms: ", app.last_command, " (", Time.get_ticks_msec() - started, " ms, waiting=", app.waiting, ")")
 	_check(not app.waiting and not app.model.is_empty(),"Engine response is bounded")
 	return not app.waiting and not app.model.is_empty()
 
@@ -264,9 +268,8 @@ func _publish_press_invitation(restore_route: bool = true, minimize_impact: bool
 	var expected: Array[Dictionary] = []
 	var context: Dictionary = app.model.clubLife.press.context.duplicate(true)
 	for index: int in conference.questions.size():
-		if immersive and index > 0:
-			if not _press_named("PressNext", scope): return false
-			await _settle()
+		# Salle de presse rapide : un clic sur une réponse affiche de lui-même la question suivante.
+		if immersive and index > 0: await _settle()
 		var question: Dictionary = conference.questions[index]
 		var chosen: Dictionary = {}
 		if minimize_impact:
@@ -751,7 +754,14 @@ func _systems_reception() -> void:
 		_check(app.model.get("clubLife",{}).has(domain), "Bundled engine projects native domain: " + domain)
 	var press: Dictionary = app.model.clubLife.press
 	var five_tones: bool = press.conference.available
-	_check(press.people.size() == 30, "Bundled press retains all thirty journalists")
+	# Annuaire de presse du club (presse locale, PR #705) : un club français de l'Élite garde exactement ses
+	# trente journalistes français et reçoit en plus la presse européenne des coupes d'Europe (rotation).
+	var national_press: Array = press.people.filter(func(j: Dictionary): return str(j.get("region", "")) == "fr" and not j.has("leagues"))
+	var league_press: Array = press.people.filter(func(j: Dictionary): return j.has("leagues"))
+	var european_only := league_press.all(func(j: Dictionary): return str(j.get("region", "")) == "eu" and j.leagues.has("elite"))
+	_check(national_press.size() == 30 and european_only and press.people.size() == national_press.size() + league_press.size(), "Bundled press retains all thirty journalists")
+	if national_press.size() != 30 or not european_only or press.people.size() != national_press.size() + league_press.size():
+		printerr("QA press directory: national=", national_press.size(), " league=", league_press.size(), " total=", press.people.size())
 	if press.conference.available:
 		for question: Dictionary in press.conference.questions:
 			five_tones = five_tones and question.answers.size() == 5 and question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour")
@@ -821,6 +831,9 @@ func _systems_reception() -> void:
 	# envelope date changes; compare every career field and its checksum exactly.
 	var exact_import: bool = after_document.state == before_document.state and after_document.checksum == before_document.checksum and after_document.format == before_document.format and after_document.exportVersion == before_document.exportVersion
 	_check(exact_import and app.model.clubLife.academyPathways.get("active", false) == pathways_open, "New native domains survive exact import in the executable")
+	if not exact_import:
+		var differing: Array = after_document.get("state", {}).keys().filter(func(k): return JSON.stringify(after_document.state.get(k)) != JSON.stringify(before_document.get("state", {}).get(k)))
+		printerr("QA exact import: checksum=", after_document.get("checksum") == before_document.get("checksum"), " format=", after_document.get("format") == before_document.get("format"), " exportVersion=", after_document.get("exportVersion") == before_document.get("exportVersion"), " state keys=", differing.slice(0, 12))
 	var private_after: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile_path))
 	_check(private_after.seed == private_before.seed, "Executable import preserves the actual private RNG cursor")
 	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
@@ -1078,7 +1091,7 @@ func _finish() -> void:
 		_check(coach_voice_events.starts == 0 and coach_voice_events.ends == 0, "No Gabi speech event occurred during shutdown")
 	if is_instance_valid(app.soundscape): app.soundscape.dispose()
 	app.bridge.stop()
-	var deadline:=Time.get_ticks_msec()+2500
+	var deadline:=Time.get_ticks_msec()+NativeEngineBridge.STOP_GRACE_MS+500
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(app.bridge.child_pid<=0,"Owned worker stopped")
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}

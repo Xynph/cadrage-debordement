@@ -82,6 +82,15 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var salary_period := _choice(display,"Affichage des salaires",["Hebdomadaire","Mensuel","Annuel"],"PreferencesSalaryPeriod")
 	display.add_child(C.wrap(preload("res://ui/salary_display.gd").CONVENTION,17,C.MUTED))
 	var stadium := _choice(display,"Éclairage du stade",["Jour","Soirée"],"PreferencesStadiumLighting")
+	# « Continuer » s'arrête toujours sur un match, un rendez-vous ou une décision obligatoire ; en plus :
+	# Les deux arrêts de « Continuer » partagent une ligne : l'onglet tient sans défilement dans le dialogue
+	# (recette Windows : boutons de mode de fenêtre entièrement visibles en 2560 × 1440).
+	var continue_row := G.h(12); display.add_child(continue_row)
+	var continue_label := G.label("Continuer s’arrête sur",14); G.fill(continue_label); continue_row.add_child(continue_label)
+	var continue_messages := _option(continue_row,["Messages importants","Tous les messages","Aucun message"],"PreferencesContinueMessages")
+	continue_messages.tooltip_text = "Les matchs, rendez-vous et décisions obligatoires arrêtent toujours « Continuer »."
+	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
+	continue_injuries.tooltip_text = continue_messages.tooltip_text
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
@@ -97,6 +106,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		quality.select(["economy","balanced","detail"].find(profile.data.quality))
 		salary_period.select(["weekly","monthly","annual"].find(profile.data.salary_period))
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
+		continue_messages.select(maxi(0,["importants","tous","aucun"].find(str(profile.data.get("continue_messages","importants")))))
+		continue_injuries.select(1 if profile.data.get("continue_injuries") == "effectif" else 0)
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
 		if saved_screen >= screen_count:
@@ -126,6 +137,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	quality.item_selected.connect(func(index: int): profile.set_value("quality",["economy","balanced","detail"][index]); refresh.call())
 	screen.item_selected.connect(func(index: int): profile.set_value("display_screen",index-1); refresh.call())
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
+	continue_messages.item_selected.connect(func(index: int): profile.set_value("continue_messages",["importants","tous","aucun"][index]); refresh.call())
+	continue_injuries.item_selected.connect(func(index: int): profile.set_value("continue_injuries",["titulaires","effectif"][index]); refresh.call())
 	interface_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("interface_volume",int(value))
 		refresh.call())
@@ -144,14 +157,15 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	windowed.name = "PreferencesWindowed"
 	windowed.tooltip_text = "Occupe tout l’espace disponible sur l’écran choisi, avec la barre des tâches accessible."
 	display_row.add_child(windowed)
-	var links := G.v(8); display.add_child(links)
+	var links := G.h(8); display.add_child(links)
 	links.add_child(G.button("Importez un pack personnalisé",func():
 		dialog.hide(); dialog.queue_free()
 		app.pack_manager.open("career" if app._has_career() else "creation")))
 	links.add_child(G.button("Aide du coach",func():
 		dialog.hide(); dialog.queue_free()
 		app.call_deferred("_open_coach")))
-	for button in display_row.get_children(): G.fill(button)
+	links.get_child(0).name = "PreferencesPack"; links.get_child(1).name = "PreferencesCoachHelp"
+	for button in display_row.get_children() + links.get_children(): G.fill(button)
 	var initial_salary_period := str(profile.data.salary_period)
 	var close := func():
 		if initial_salary_period != str(profile.data.salary_period): app.call_deferred("_render",false)
@@ -160,7 +174,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	dialog.canceled.connect(close)
 	app.add_child(dialog)
 	refresh.call()
-	Dialogs.show_centered(dialog,Vector2i(width,600))
+	# Grands écrans : le dialogue gagne en hauteur pour que l'onglet Affichage tienne entier dans sa zone défilante.
+	Dialogs.show_centered(dialog,Vector2i(width,680 if app.get_window().size.y>=1080 else 600))
 	volume.get_line_edit().call_deferred("grab_focus")
 	return dialog
 
@@ -177,6 +192,9 @@ static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
 static func _choice(parent: Node, caption: String, values: Array, id: String) -> OptionButton:
 	var row := G.h(12); parent.add_child(row)
 	var label := G.label(caption,14); G.fill(label); row.add_child(label)
+	return _option(row,values,id)
+
+static func _option(row: Node, values: Array, id: String) -> OptionButton:
 	var option := OptionButton.new(); option.name = id; option.custom_minimum_size = Vector2(220,36)
 	for value in values: option.add_item(value)
 	row.add_child(option)
