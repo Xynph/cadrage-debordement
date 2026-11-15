@@ -47,6 +47,17 @@ Expliquer brièvement chaque phase à Léo en français, puis avancer dans le
 périmètre autorisé. Rendre le résultat, le lien de la PR et la prochaine étape
 concrète.
 
+## Kit Claude Code Game Studios (Claude et Codex)
+
+Depuis le 15/11/2026, le dépôt embarque le kit CCGS (MIT) : 49 rôles de studio
+dans `.claude/agents/`, ~78 commandes. Claude Code les charge depuis `.claude/` ;
+Codex les trouve dans `.agents/skills/` (mêmes commandes) et lit d'abord
+`.agents/skills/ccgs-studio/SKILL.md` (rôles et adaptation des commandes
+écrites pour Claude Code). Ce fichier `AGENTS.md` prime sur le kit ; le mode est
+autonome (`project.yaml`) : seules suppressions, opérations destructives et
+dépenses demandent l'accord de Léo. Une commande ajoutée ou modifiée dans
+`.claude/skills/` doit l'être aussi dans `.agents/skills/`.
+
 ## Modèles, effort et quota
 
 Règle permanente de Léo, transmise le 12 novembre 2026 :
