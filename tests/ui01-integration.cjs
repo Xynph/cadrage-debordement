@@ -30,9 +30,10 @@ check('storage location and save action survive the redesign',()=>{
  assert.ok(h.includes(g.run('storageLocationText()')));
 });
 check('offline quit calls the existing bridge only in offline mode',()=>{
+ const nativeOffline=g.run('gameStorage.offline');g.run('gameStorage.offline=false');
  assert.ok(!g.run('ui01SessionTools()').includes('CDOfflineAction'));
  g.run('gameStorage.offline=true');assert.match(g.run('ui01SessionTools()'),/CDOfflineAction\('quit'\)/);
- g.run('delete gameStorage.offline');
+ g.ctx.nativeOffline=nativeOffline;g.run('gameStorage.offline=nativeOffline');
 });
 check('save failure is an alert outside the mobile-hidden season strip',()=>{
  g.run('lastSaveError=true');const h=g.run('ui01Navigation("dashboard",S,1)');
@@ -43,7 +44,7 @@ check('save failure is an alert outside the mobile-hidden season strip',()=>{
 check('theme changes do not write or alter a career',()=>{
  const state=g.run('JSON.stringify(S)'),saved=g.store['bdt-v1'];
  for(const theme of ['tribune','analyste','system'])g.run(`ui01SetTheme(${JSON.stringify(theme)})`);
- assert.equal(g.run('JSON.stringify(S)'),state);assert.equal(g.store['bdt-v1'],saved);
+ assert.ok(g.run('JSON.stringify(S)')===state,'état Monde inchangé');assert.ok(g.store['bdt-v1']===saved,'sauvegarde Monde inchangée');
 });
 check('14 destinations are retained and render without state corruption',()=>{
  const routes=['dashboard','team','tactics','plans','staff','recruitment','match','league','history','market','formation','finance','saves','help'];
@@ -52,6 +53,17 @@ check('14 destinations are retained and render without state corruption',()=>{
   g.run(`nav(${JSON.stringify(route)})`);assert.equal(g.run('view'),route);assert.ok(g.app.innerHTML.includes('ui01-appbar'));
   assert.equal(g.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
  }
+});
+check('World calendar keeps real rest weeks, played scores and native ranking read-only',()=>{
+ const weeks=g.run('CDWorldCareer.sizing(S).rounds');
+ const rests=g.run('S.schedule.filter(pairs=>!pairs.some(p=>p.includes(S.club))).length');assert.ok(rests>0);
+ const calendar=g.run('leagueOriginal()');assert.equal((calendar.match(/world-rest-week/g)||[]).length,rests);assert.ok(calendar.includes(' / '+weeks+' SEMAINES'));
+ g.toMatch();g.week();
+ const result=g.run('S.history.find(r=>r.pair.includes(S.club))');assert.ok(result);
+ const before=g.run('JSON.stringify(S)'),disk=g.store['bdt-v1'],seed=g.seed(),ranking=g.run('JSON.stringify(ranked())');
+ const played=g.run('leagueOriginal()');assert.ok(played.includes(result.score.join(' – ')));
+ assert.ok(played.includes(g.run('S.clubs['+result.pair[0]+'].abbr')));assert.ok(played.includes(g.run('S.clubs['+result.pair[1]+'].abbr')));
+ assert.ok(g.run('JSON.stringify(S)')===before);assert.ok(g.store['bdt-v1']===disk);assert.equal(g.seed(),seed);assert.equal(g.run('JSON.stringify(ranked())'),ranking);
 });
 check('all four squad tabs preserve the 23-player sheet',()=>{
  for(const tab of ['table','sheet','depth','planning'])g.run(`squadTab=${JSON.stringify(tab)};nav('team')`);
@@ -67,7 +79,7 @@ check('blocked preference reads/writes remain non-blocking',()=>{
 });
 check('confirmation stays a native cancelable dialog',()=>{
  const before=g.run('JSON.stringify(S)');g.run('resetDialog()');assert.match(g.app.innerHTML,/aria-modal="true"/);
- g.run('closeModal()');assert.equal(g.run('JSON.stringify(S)'),before);
+ g.run('closeModal()');assert.ok(g.run('JSON.stringify(S)')===before,'état Monde inchangé');
 });
 check('CSS places confirmation above sticky navigation',()=>{
  assert.match(css,/html\[data-cd-theme\] \.modalback\{z-index:200/);
@@ -78,7 +90,7 @@ check('dark welcome cards and controls have explicit surfaces',()=>{
  assert.ok(css.includes('.modal button:not(.primary)'));
 });
 check('live cockpit keeps existing controls and save compatibility',()=>{
- g.run('nav("match");beginMatch();pauseMatch();render()');assert.ok(g.app.innerHTML.includes('v40-cockpit'));
+ g.toMatch();g.run('autoLineup();nav("match");beginMatch();pauseMatch();render()');assert.ok(g.app.innerHTML.includes('v40-cockpit'));
  assert.ok(!g.app.innerHTML.includes('ui01-appbar'));assert.equal(g.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
 });
 check('old career opens without enabling mobility implicitly',()=>{

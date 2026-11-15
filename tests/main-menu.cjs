@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {context}=require('./harness.cjs');
 const root=path.resolve(__dirname,'..');
-const g=context();
+const g=context();g.run('render()');
 const check=(name,fn)=>{fn();console.log('PASS '+name)};
 check('startup displays an actual home menu, not immediate club choice',()=>{
  assert.equal(g.run('entryScreen'),'menu');
@@ -16,15 +16,15 @@ check('startup displays an actual home menu, not immediate club choice',()=>{
 });
 check('new career selects clubs, can return to menu, and start a game',()=>{
  g.run('mainMenuNewCareer()');
- assert.match(g.app.innerHTML,/Univers fictif/);
- g.run("mainMenuChooseMode('fiction')");
+ assert.match(g.app.innerHTML,/Carrière Monde/);
+ g.run("mainMenuChooseMode('world-champ')");
  assert.equal(g.run('entryScreen'),'clubs');
  assert.match(g.app.innerHTML,/CHOISISSEZ UN CLUB/);
  g.run('mainMenuBack()');
  assert.equal(g.run('entryScreen'),'menu');
  g.run('mainMenuNewCareer()');
- g.run("mainMenuChooseMode('fiction')");
- g.run('start(0)');
+ g.run("mainMenuChooseMode('world-champ')");
+ g.run('mainMenuStartWorld(0)');
  assert.equal(g.run('entryScreen'),'game');
  assert.match(g.app.innerHTML,/Bureau du manager/);
 });
@@ -33,7 +33,7 @@ check('main menu does not erase the current save and resumes it',()=>{
  const before=g.run('JSON.stringify(S)');
  g.run('returnToMainMenu()');
  assert.equal(g.run('entryScreen'),'menu');
- assert.equal(g.run('JSON.stringify(S)'),before);
+ assert.ok(g.run('JSON.stringify(S)')===before,'état Monde inchangé');
  assert.match(g.app.innerHTML,/Saison 2026-2027/);
  assert.equal(g.run('mainMenuContinue()'),true);
  assert.equal(g.run('entryScreen'),'game');
@@ -41,7 +41,7 @@ check('main menu does not erase the current save and resumes it',()=>{
 });
 check('relaunch always opens menu with a recoverable saved career',()=>{
  const saved=JSON.parse(g.store['bdt-v1']);
- const again=context(saved);
+ const again=context(saved);again.run('render()');
  assert.equal(again.run('entryScreen'),'menu');
  assert.match(again.app.innerHTML,/Continuer ma carrière/);
  assert.doesNotMatch(again.app.innerHTML,/Aucune sauvegarde disponible/);
@@ -52,16 +52,16 @@ check('new career with an existing save requires confirmation',()=>{
  const prior=g.store['bdt-v1'];
  g.run('returnToMainMenu()');
  g.run('mainMenuNewCareer()');
- g.run("mainMenuChooseMode('fiction')");
+ g.run("mainMenuChooseMode('world-champ')");
  assert.match(g.app.innerHTML,/Conserver et continuer/);
- assert.equal(g.store['bdt-v1'],prior);
+ assert.ok(g.store['bdt-v1']===prior,'sauvegarde Monde inchangée');
  g.run('closeModal()');
- assert.equal(g.store['bdt-v1'],prior);
+ assert.ok(g.store['bdt-v1']===prior,'sauvegarde Monde inchangée');
  g.run('mainMenuNewCareer()');
- g.run("mainMenuChooseMode('fiction')");
+ g.run("mainMenuChooseMode('world-champ')");
  g.run('resetGame()');
  assert.equal(g.run('entryScreen'),'clubs');
- assert.equal(g.store['bdt-v1'],undefined);
+ assert.ok(g.store['bdt-v1']===undefined,'sauvegarde Monde inchangée');
 });
 check('theme, help and keyboard-friendly actions exist and are independent of saves',()=>{
  g.run('mainMenuBack()');
