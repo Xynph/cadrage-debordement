@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const ui=require('../dist/ui04-academy-data.js');
 
 function makeSource(g){
@@ -19,17 +19,17 @@ function deps(g){
 const g=context();g.run('start(0)');
 const before=g.run('JSON.stringify(S)'),beforeStorage=g.store['bdt-v1'];
 const source=makeSource(g),native=deps(g);
-assert.equal(source.academy.length,15);
+assert.equal(source.academy.length,60);
 assert.equal(source.professionals.length>=23,true);
 const inputCopy=JSON.stringify(source);
 const model=ui.buildCenter(source,native);
 assert.equal(model.version,1);
-assert.equal(model.totals.academy,15);
+assert.equal(model.totals.academy,source.academy.length);
 assert.equal(model.academy.length,source.academy.length);
 assert.equal(model.totals.young,source.professionals.filter(x=>x.age<=23).length);
 assert.equal(model.totals.youngMinutes,source.professionals.filter(x=>x.age<=23).reduce((s,p)=>s+(p.dev?.minutes||0),0));
-assert.equal(model.totals.promotionSlots,42-source.professionals.length);
-assert.ok(model.academy.every(p=>p.canPromote));
+assert.equal(model.totals.promotionSlots,Math.max(0,42-source.professionals.length));
+assert.ok(model.academy.every(p=>p.canPromote===(source.professionals.length<42)));
 assert.ok(model.academy.every(p=>p.history.length===source.academy.find(x=>x.id===p.id).dev.history.length));
 assert.equal(model.academy[0].note,g.run('roleNote(S.development.academy[0])'));
 assert.equal(model.academy[0].potential,g.run('potentialAtRole(S.development.academy[0])'));
@@ -39,13 +39,13 @@ assert.equal(model.academy[0].retirementSeason,g.run('retirementSeason(S.develop
 assert.equal(model.academy[0].kind,'academy');
 assert.equal(model.young.every(p=>p.kind==='professional'&&p.contractEnd!==undefined),true);
 assert.equal(JSON.stringify(source),inputCopy,'source mutated by native calculator');
-assert.equal(g.run('JSON.stringify(S)'),before,'career mutated by projection');
-assert.equal(g.store['bdt-v1'],beforeStorage,'projection saved a career');
+assert.ok(g.run('JSON.stringify(S)')===before,'career mutated by projection');
+assert.ok(g.store['bdt-v1']===beforeStorage,'projection saved a career');
 assert.ok(!JSON.stringify(model).includes('undefined'));
 
 const table=ui.table(model);
 assert.equal(table.kind,'academy');
-assert.equal(table.total,15);
+assert.equal(table.total,source.academy.length);
 assert.equal(ui.table(model,{kind:'young'}).total,model.totals.young);
 const sample=model.academy[0];
 assert.ok(ui.table(model,{search:sample.name.toLocaleUpperCase('fr')}).rows.some(p=>p.id===sample.id));
@@ -91,7 +91,7 @@ assert.equal(career.run('club().players.length'),count+1);
 assert.equal(career.run('S.development.academy.some(p=>p.id==='+JSON.stringify(firstId)+')'),false);
 assert.equal(career.run('promoteYouth('+JSON.stringify(firstId)+')'),false);
 const after=ui.buildCenter(makeSource(career),deps(career));
-assert.equal(after.totals.academy,14);
+assert.equal(after.totals.academy,source.academy.length-1);
 assert.equal(after.totals.professionalCount,count+1);
 assert.equal(career.run('club().players.find(p=>p.id==='+JSON.stringify(firstId)+').academy'),false);
 assert.ok(career.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
@@ -103,7 +103,7 @@ const archive=ui.buildCenter({...source,retired:[
 ]},native);
 assert.equal(archive.retired.length,1);
 assert.equal(archive.retired[0].careerMinutes,1080);
-assert.equal(g.run('JSON.stringify(S)'),before);
+assert.ok(g.run('JSON.stringify(S)')===before,'état Monde inchangé');
 console.log(JSON.stringify({passed:true,checks:[
  'vrais espoirs et jeunes professionnels','notes de poste et potentiels natifs','historiques et focus individuels',
  'tri et filtres déterministes','aucune mutation ni sauvegarde par lecture','anciens joueurs incomplets',
