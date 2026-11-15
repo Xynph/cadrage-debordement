@@ -214,7 +214,16 @@
       "tests/lnr05-evidence.cjs": 55,
       "tests/lnr05-match-simulation-propagation.cjs": 35,
       "tests/lnr-career.cjs": 76,
-      "tests/lnr05-physical-propagation.cjs": 58
+      "tests/lnr05-physical-propagation.cjs": 58,
+      "tests/v19-advantage.cjs": 50,
+      "tests/v20-numerical-ai.cjs": 73,
+      "tests/v21-numerical-advice.cjs": 79,
+      "tests/v22-tactical-comparison.cjs": 63,
+      "tests/v23-local-zones.cjs": 69,
+      "tests/v24-four-zones.cjs": 104,
+      "tests/v25-whatif.cjs": 60,
+      "tests/v26-dual-whatif.cjs": 67,
+      "tests/v40-match-cockpit.cjs": 51
     }
   },
   "godot": {
@@ -333,7 +342,16 @@
       "tests/lnr05-match-simulation-propagation.cjs": 1549,
       "tests/lnr-career.cjs": 1999,
       "tests/lnr-save-integrity-guards.cjs": 3022,
-      "tests/lnr05-physical-propagation.cjs": 2409
+      "tests/lnr05-physical-propagation.cjs": 2409,
+      "tests/v19-advantage.cjs": 3200,
+      "tests/v20-numerical-ai.cjs": 4672,
+      "tests/v21-numerical-advice.cjs": 4864,
+      "tests/v22-tactical-comparison.cjs": 4032,
+      "tests/v23-local-zones.cjs": 3392,
+      "tests/v24-four-zones.cjs": 2368,
+      "tests/v25-whatif.cjs": 2240,
+      "tests/v26-dual-whatif.cjs": 2496,
+      "tests/v40-match-cockpit.cjs": 3584
     }
   }
 }

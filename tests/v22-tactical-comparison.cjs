@@ -1,9 +1,9 @@
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context,matchContext}=require('./harness.cjs');
 
 function fixture(){
- const t=context();
- t.run('start(0);beginMatch();pauseMatch();var l=S.live;l.minute=10;l.weather="Sec";l.score=[0,0];l.tactics[0]="equilibre";l.defences[0]="equilibre";syncMatchPresentation(l)');
+ const t=matchContext();
+ t.run('beginMatch();pauseMatch();var l=S.live;l.minute=10;l.weather="Sec";l.score=[0,0];l.tactics[0]="equilibre";l.defences[0]="equilibre";syncMatchPresentation(l)');
  return t;
 }
 const t=fixture(),run=t.run;

@@ -5,8 +5,7 @@
   "limits": [
     "match-pass-live : contrôles JS verts, sous-test Godot ignoré localement dans cette mesure ; recette SDK encore requise",
     "mesures locales à remplacer par les mesures CI du code migré après un run conforme",
-    "la garde complète reste rouge sur les anciennes créations LNR non migrées",
-    "reprise sur deux saisons : premier lancement interrompu par le plafond externe de 600 s, réception relancée avec 1800 s ; aucune assertion supprimée"
+    "Garde statique8/8 verte ; migrations fonctionnelles encore en cours, aucune CI complète conforme à ce stade. Les signatures de suite/log bornent les reçus locaux, pas une provenance GitHub."
   ],
   "suites": [
     {
@@ -155,6 +154,96 @@
       "signal": null,
       "seconds": 49.6,
       "peakRssKb": 1973236
+    },
+    {
+      "file": "tests/v19-advantage.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 43.1,
+      "peakRssKb": 2616664,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "6bce26121034b78f21f1fde273bc4cb9cd201c4144c8cc99babe0c1c50b21ce2",
+      "logSha256": "76430c4be5ecbc8ed69a0602f08e63f92f63dca8ce1b26cf8573db5f6cdb8720"
+    },
+    {
+      "file": "tests/v20-numerical-ai.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 63.1,
+      "peakRssKb": 3825608,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "9ff5511399fccf954383745b057bd96185409ec0573af86d1232a75546ac8248",
+      "logSha256": "e1c7e6ea01a411547dd359b5ab3c3d95f52fae2d4653661dd3b699a783cd6ae6"
+    },
+    {
+      "file": "tests/v21-numerical-advice.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 68.1,
+      "peakRssKb": 3961476,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "18112db46b10c8c4fcf3cd15fef3979f09dd6ff7e651d223d8e31e8fe89f7e45",
+      "logSha256": "9dce328a02c83ae282b8802a86a721bb7fca65117c3970f75f537800d94392cd"
+    },
+    {
+      "file": "tests/v22-tactical-comparison.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 54.2,
+      "peakRssKb": 3281004,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "849f22c3f89c4ffdf86bef7cbba62947fff6e3d4631f1dc7ea06b7e86aff030f",
+      "logSha256": "04a31a31ebda991a13793b5459ceee493908ebb1cf2a82a74fe9adb0756344d7"
+    },
+    {
+      "file": "tests/v23-local-zones.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 59.2,
+      "peakRssKb": 2726352,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "9ebf4cfa11ff0b472e5d18700eea7c8a19c14f2431630210f051028ee62a62ab",
+      "logSha256": "a33de40f9b281919ac0d93481d1e9c0e99805f87fc7a88df9a53115de3cafd7f"
+    },
+    {
+      "file": "tests/v24-four-zones.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 90.4,
+      "peakRssKb": 1894192,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "96c32d3d10165345ea66d9f7bb317b096300cd4ad31b70d6a30cc9e292a61de0",
+      "logSha256": "2a3e7aa29c97d8f61b69e48d07c6d162ba19e4cbd0db6db849d9ee478ecb32d3"
+    },
+    {
+      "file": "tests/v25-whatif.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 52.1,
+      "peakRssKb": 1834484,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "9865c3ceb76d4d188ac82d7775956af83e9d4ca39dc1aee8e52adbc2900fb95e",
+      "logSha256": "3d0e9cb7e31d8fd9e8dd5a4a1ace2474d10ba59f29705caa340ae865dbb2974d"
+    },
+    {
+      "file": "tests/v26-dual-whatif.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 57.6,
+      "peakRssKb": 2024884,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "5e49fbb32d0eae2767b207f037dd3c5d5b4bb9776e5acf3cc57391c90d33084b",
+      "logSha256": "516916756055c8a4a4b2cfdebc0b7e6e1cbfb1741bd1a63a9c11f5477ceb88c0"
+    },
+    {
+      "file": "tests/v40-match-cockpit.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 43.8,
+      "peakRssKb": 2891292,
+      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "sourceSha256": "1bb61289ac1b0860afd8898f653b839ce9cd79767c8db2c06099a7c6aca58a06",
+      "logSha256": "4b829d9708c2c46444c24d2105daa614591317339cc20f2590b502c8a30f9ec2"
     }
   ]
 }
