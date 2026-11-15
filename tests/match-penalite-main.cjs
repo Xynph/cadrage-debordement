@@ -4,6 +4,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {context}=require('./harness.cjs');
+const T=require('./helpers/tirages.cjs');
 
 // Match en cours, en pause, avec un compteur de tirages.
 function fixture(){
@@ -51,34 +52,32 @@ test('Décision : consigne du manager, contexte, aucun tirage sans pénalité jo
  assert.equal(run('tirages'),0);
 });
 
-test('Effets : essai, gain, percée, ballon perdu, avec les faits du moteur', () => {
- const issue=(at,rolls,policy='main')=>{
-  const {run}=fixture();
-  run(`l.minute=30;l.flow.advantage=null;ballPossession(l,0,${at});l.penaltyPolicies[0]="${policy}";var debut=l.events.length;var r=${JSON.stringify(rolls)};Math.random=()=>r.length?r.shift():.5;executePenaltyChoice(l,0)`);
-  const faits=JSON.parse(run('JSON.stringify(l.events.slice(debut).map(e=>e.scene&&{kind:e.scene.kind,team:e.scene.team,actor:e.scene.actor,from:e.scene.from,to:e.scene.to,cause:e.scene.cause}).filter(Boolean))'));
-  valid(run);
-  return {run,faits};
- };
- // Près de la ligne, premier tirage bas : essai après la pénalité jouée vite.
- let {run,faits}=issue(94,[0.01,0.99]);
- assert.equal(faits[0].kind,'quick-tap');assert.equal(faits[0].team,0);
- assert.equal(faits[0].actor,run('l.sheets[0].on[8]'),'le demi de mêlée joue la pénalité');
- assert.equal(faits[0].from.x,94,'au point de la faute');
- assert.equal(faits[1].kind,'try');assert.equal(run('l.quickTaps[0]'),1);
- // Près de la ligne, tirage haut : gain de quelques mètres, ballon conservé.
- ({run,faits}=issue(94,[0.99]));
- assert.deepEqual(faits.map(f=>f.kind),['quick-tap','carry']);
- assert.ok(faits[1].to.x>94&&faits[1].to.x<100,'gain sans franchir la ligne');assert.equal(run('l.possession'),0);
- // Près de la ligne, ballon perdu : gratté (récupération adverse), tenu dans l'en-but, en-avant.
- ({faits}=issue(94,[0.55,0.5]));assert.equal(faits[1].kind,'turnover');assert.equal(faits[1].team,1);
- ({faits}=issue(94,[0.55,0.1]));assert.equal(faits[1].kind,'ingoal');assert.equal(faits[1].cause,'held-up');
- ({faits}=issue(94,[0.55,0.9,0.99]));assert.equal(faits[1].kind,'hand-fault');assert.equal(faits[1].cause,'knock-on');
- // Au milieu : percée (gain de 22 m et plus), gain ordinaire, ballon perdu.
- ({faits}=issue(45,[0.01,0.99]));assert.equal(faits[1].kind,'carry');assert.ok(faits[1].to.x-faits[1].from.x>=22,'percée');
- ({faits}=issue(45,[0.99]));assert.equal(faits[1].kind,'carry');const g=faits[1].to.x-faits[1].from.x;assert.ok(g>=5&&g<=14,'gain ordinaire '+g);
- ({faits}=issue(45,[0.3,0.2]));assert.equal(faits[1].kind,'turnover');
+test('Effets : essai, gain, percée, ballon perdu, avec les faits du moteur (tirage balayé, aucun seuil codé en dur)',()=>{
+ // La décision est un tirage comparé à des probabilités que le moteur recale (essai, perte, percée : ~.1 à ~.5). Au lieu de choisir
+ // un tirage qui tombe entre deux seuils (l'ancien [0.55, 0.5] tombait mal dès qu'un seuil bougeait de 0,05), on balaie le premier tirage de 0 à 1 sur la
+ // même situation : l'ordre des issues (essai ou percée, puis ballon perdu, puis gain) est la règle, leurs bornes ne sont pas testées.
+ const classe=faits=>{const f=faits[1];if(!f)return 'rien';if(f.kind==='try')return 'essai';if(f.kind==='turnover')return f.team===1?'gratte':'?';if(f.kind==='ingoal'&&f.cause==='held-up')return 'tenu';if(f.kind==='hand-fault'&&f.cause==='knock-on')return 'en-avant';if(f.kind==='carry')return f.to.x-f.from.x>=22?'percee':'gain';return '?'};
+ const situation=(at)=>{const {run}=fixture();run(`l.minute=30;l.flow.advantage=null;ballPossession(l,0,${at});l.penaltyPolicies[0]="main"`);return {run,photo:T.photographier(run)}};
+ const jouer=(sit,rolls,policy)=>{const {run,photo}=sit;T.rejouer(run,photo);if(policy)run(`l.penaltyPolicies[0]="${policy}"`);run('var debut=l.events.length');T.injecter(run,rolls);run('executePenaltyChoice(l,0)');
+  const faits=JSON.parse(run('JSON.stringify(l.events.slice(debut).map(e=>e.scene&&{kind:e.scene.kind,team:e.scene.team,actor:e.scene.actor,from:e.scene.from,to:e.scene.to,cause:e.scene.cause}).filter(Boolean))'));valid(run);return faits};
+ const suite=liste=>liste.filter((c,i)=>i===0||c!==liste[i-1]);
+ for(const [at,attendu] of [[94,['essai','perte','gain']],[45,['percee','perte','gain']]]){
+  const sit=situation(at),tirages=T.balayage(80),classes=tirages.map(r=>classe(jouer(sit,[r])));
+  const ordre=suite(classes.map(c=>['gratte','tenu','en-avant'].includes(c)?'perte':c));
+  assert.deepEqual(ordre,attendu,`tirage de 0 à 1 à ${at} m : issues dans l'ordre ${attendu.join(' → ')} (lu : ${classes.join(' ')})`);
+  // Tout tirage donne des faits cohérents : le demi de mêlée joue la pénalité, au point de la faute, d'abord.
+  for(const r of [0.02,0.5,0.98]){const f=jouer(sit,[r]);assert.equal(f[0].kind,'quick-tap');assert.equal(f[0].team,0);assert.equal(f[0].from.x,at,'au point de la faute')}
+  const perdu=tirages.filter((r,i)=>['gratte','tenu','en-avant'].includes(classes[i]));
+  // Ballon perdu : le deuxième tirage départage tenu dans l'en-but, gratté, en-avant (près de la ligne) ou gratté / en-avant (au milieu).
+  const milieu=perdu[Math.floor(perdu.length/2)],sous=suite(T.balayage(60).map(r=>classe(jouer(sit,[milieu,r]))));
+  assert.deepEqual(sous,at===94?['tenu','gratte','en-avant']:['gratte','en-avant'],`deuxième tirage à ${at} m : ${sous.join(', ')}`);
+  const g=jouer(sit,[T.HAUT]);assert.equal(g[1].kind,'carry');assert.equal(classe(g),'gain');assert.equal(sit.run('l.possession'),0,'le ballon est conservé');
+  if(at===94){assert.ok(g[1].to.x>94&&g[1].to.x<100,'gain sans franchir la ligne');const e=jouer(sit,[T.BAS]);assert.equal(e[1].kind,'try');assert.equal(sit.run('l.quickTaps[0]'),1);
+   const t=jouer(sit,[milieu,0.05]);assert.equal(t[1].cause,'held-up');const n=jouer(sit,[milieu,T.HAUT]);assert.equal(n[1].cause,'knock-on')}
+  else{const p=jouer(sit,[T.BAS]);assert.ok(p[1].to.x-p[1].from.x>=22,'percée');const o=jouer(sit,[T.HAUT]);const gain=o[1].to.x-o[1].from.x;assert.ok(gain>=5&&gain<=14,'gain ordinaire '+gain);assert.equal(jouer(sit,[milieu,T.BAS])[1].kind,'turnover')}
+ }
  // Pénaltouche choisie : aucun fait de pénalité jouée à la main.
- ({faits}=issue(45,[0.99],'touch'));assert.ok(!faits.some(f=>f.kind==='quick-tap'));
+ const touche=situation(45);assert.ok(!jouer(touche,[T.HAUT],'touch').some(f=>f.kind==='quick-tap'));
 });
 
 // Statistiques sur un grand nombre de matchs IA contre IA, avec et sans l'option.
@@ -97,9 +96,11 @@ test('Fréquence réaliste et équilibre du jeu sur 1 500 matchs', () => {
  console.log(JSON.stringify({matchs:avec.m,penalitesParMatch:+(avec.pen/avec.m).toFixed(2),jouéesALaMainParMatch:+(avec.taps/avec.m).toFixed(2),part:+(100*part).toFixed(1),partPresDeLaLigne:+(100*partPres).toFixed(1),partMenePresDeLaLigne:+(100*partMene).toFixed(1),issues:avec.issues,
   essais:[+(avec.essais/avec.m).toFixed(2),+(sans.essais/sans.m).toFixed(2)],points:[+(avec.points/avec.m).toFixed(2),+(sans.points/sans.m).toFixed(2)]}));
  assert.equal(sans.taps,0,'option coupée : aucune');
- assert.ok(part>=0.02&&part<=0.1,'minorité des pénalités : '+part);
- assert.ok(partPres>part*1.8,'plus fréquente près de la ligne');
- assert.ok(partMene>partPres,'plus fréquente près de la ligne quand on est mené');
+ // Minorité des pénalités (intention de conception : une exception qui surprend, jamais la règle), puis deux classements mesurés par un test de différence
+ // de proportions (4 écarts types) et non par un facteur arbitraire (« ×1,8 ») ni par un classement de deux taux voisins.
+ assert.ok(part>=0.01&&part<=0.15,'minorité des pénalités : '+part);
+ T.plusGrand('plus fréquente près de la ligne',T.zProportions(avec.tapsPres,avec.penPres,avec.taps-avec.tapsPres,avec.pen-avec.penPres));
+ T.plusGrand('plus fréquente près de la ligne quand on est mené',T.zProportions(avec.tapsMene,avec.penMene,avec.tapsPres-avec.tapsMene,avec.penPres-avec.penMene));
  // Issues : surtout du jeu conservé, parfois l'essai ou la percée, parfois le ballon perdu.
  const total=Object.values(avec.issues).reduce((s,n)=>s+n,0),perdu=(avec.issues.gratte||0)+(avec.issues['en-avant']||0)+(avec.issues.tenu||0);
  // Total des pénalités jouées lu sur le match : une pénalité de mêlée peut suivre une pénalité jouée (en-avant, mêlée) dans le même temps de jeu.

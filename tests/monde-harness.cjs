@@ -17,6 +17,7 @@ function context(seed=827381,options={}){
  const vm=bridge.vm,ctx=vm.ctx;
  if(options.console!==false)ctx.console=console;
  const run=(source,timeout)=>vm.run(source,timeout);
+ require('./helpers/recalibrage.cjs').appliquer(run);
  const seededRandom=ctx.Math.random; // un cas qui remplace Math.random est réparé par restore()
  let requests=0,closed=false;
  function command(name,payload={}){

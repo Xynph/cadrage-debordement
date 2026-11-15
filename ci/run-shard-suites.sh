@@ -83,6 +83,8 @@ budget() {
     tests/japan-match.cjs) echo 300s ;;
     # Continuer jusqu'au prochain événement et retouches de cohérence : carrières Monde, plus de 180 s sur le runner (délai dépassé en CI sur main, Suites 6/7 et 7/7, après #720 et #722) ; assertions inchangées.
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
+    # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
+    tests/presse-dilemmes-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).

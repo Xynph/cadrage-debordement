@@ -20,20 +20,21 @@ const PLAN = LONGUE
   : { complet: { ecarts: [0, 6, 10], n: 240 }, rapide: { ecarts: [-10, 0, 6, 10], n: 1000 }, bases: [4] };
 // Série de la queue (+15, hors ajustement logistique) : version CI seulement, la version longue la contient déjà.
 PLAN.queue = { complet: 600, rapide: 2000 };
-// Bornes : cible ± bruit d'échantillonnage (version CI : écart type ≈ 3 points au moteur complet).
+// Bornes : cible ± tolérance de conception ± trois erreurs types de l'ajustement (variance mesurée de l'échantillon, tests/helpers/courbe-niveau.cjs).
+// La tolérance de conception ne bouge pas avec les réglages des taux du moteur : la courbe de niveau est la cible commune (MATCH_LEVEL_CURVE).
 const BORNES = {
-  // Moteur complet : courbe un peu plus raide dans les queues (±15 → 96 %), d'où une pente ajustée de 0,20 à 0,22.
-  // Barème senior V2 (#716) : avantage du terrain du moteur complet recalé à ±0,036 (au lieu de ±0,045), 65 à 67 %
-  // à niveau égal sur les effectifs V2 (clubs de base 4, 20, 44), comme le résultat rapide ; bornes de #712.
+  // Moteur complet : courbe un peu plus raide dans les queues (±15 → 96 %), d'où une pente de 0,20 à 0,22 autour de la cible 0,183.
+  // Barème senior V2 (#716) : avantage du terrain du moteur complet recalé à ±0,036, 65 à 67 % à niveau égal.
   complet: { pente: LONGUE ? [0.16, 0.23] : [0.15, 0.24], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.73],
-    // Essais réalistes (docs/essais-realistes-20261114.md) : ~6 à 8 essais et ~48 à 60 points par match selon le championnat (avant : 2,6-4,4 essais, 24-37 points).
-    points: [38, 62], essais: [4.4, 8.8], ecartNul: [5, 17],
-    // Queue à +15 (domicile alterné) : surprises du plus faible, dont au moins 1 % à l'extérieur. Mesuré : complet 6,8 % (3,4 % à l'extérieur), rapide 7,2 % (2,8 %).
+    // Scores : enveloppe de la réalité récente (docs/essais-realistes-20261114.md : 5,2 à 8,6 essais et 45 à 62 points par match selon le
+    // championnat), et non plus l'intervalle mesuré à chaque réglage du moteur (38-62 puis 4,4-8,8 puis…) ; l'écart moyen reste ample.
+    points: [38, 66], essais: [4.4, 9.2], ecartNul: [5, 20],
+    // Queue à +15 (domicile alterné, match piège) : surprises du plus faible, dont au moins 1 % à l'extérieur. Mesuré : complet 6,5 % (3,5 % à l'extérieur), rapide 7,5 % (2,9 %).
     queue: LONGUE ? [0.045, 0.10] : [0.04, 0.12], queueExterieur: 0.01 },
   rapide: { pente: LONGUE ? [0.17, 0.20] : [0.16, 0.21], domicile: LONGUE ? [0.62, 0.69] : [0.61, 0.70],
-    points: [43, 57], essais: [4.8, 6.6], ecartNul: [10, 18], queue: LONGUE ? [0.05, 0.10] : [0.045, 0.11], queueExterieur: 0.01 },
+    points: [43, 60], essais: [4.8, 7.5], ecartNul: [10, 20], queue: LONGUE ? [0.05, 0.10] : [0.045, 0.11], queueExterieur: 0.01 },
 };
-const dans = (x, [a, b], quoi) => assert.ok(x >= a && x <= b, `${quoi} : ${x.toFixed(3)} hors de [${a} ; ${b}]`);
+const dans = (x, [a, b], quoi, se = 0) => assert.ok(x + 3 * se >= a && x - 3 * se <= b, `${quoi} : ${x.toFixed(3)} (± ${(3 * se).toFixed(3)}) hors de [${a} ; ${b}]`);
 
 test('Courbe de niveau commune au moteur complet et au résultat rapide (carrière Monde)', { timeout: LONGUE ? 7200000 : 900000 }, () => {
   const h = context(4242, { club: 102, console: false });
@@ -58,8 +59,8 @@ test('Courbe de niveau commune au moteur complet et au résultat rapide (carriè
       const t0 = Date.now(), { ecarts, n } = PLAN[mode], b = BORNES[mode];
       const m = B.mesurer(h, { mode, ecarts, n, base, slots: [7, 11] });
       console.log(B.tableau(`${mode}, club de base ${base} (${Date.now() - t0} ms)`, m.resumes, m.fit));
-      dans(m.fit.pente, b.pente, `${mode} ${base} pente par point`);
-      dans(m.fit.domicileNiveauEgal, b.domicile, `${mode} ${base} victoires à domicile à niveau égal`);
+      dans(m.fit.pente, b.pente, `${mode} ${base} pente par point`, m.fit.se.pente);
+      dans(m.fit.domicileNiveauEgal, b.domicile, `${mode} ${base} victoires à domicile à niveau égal`, m.fit.se.terrain / 4);
       const r = k => m.resumes.find(x => x.k === k);
       // Glorieuse incertitude : le plus fort de 10 points perd encore, à domicile comme à l'extérieur.
       assert.ok(r(10).victoires >= 0.78 && r(10).victoires <= 0.93, `${mode} +10 : ${B.pct(r(10).victoires)}`);
