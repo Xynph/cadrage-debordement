@@ -186,6 +186,17 @@ function createBridge(options={}){
   const element={innerHTML:'',textContent:'',style:{}};
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
+ function deferSaves(){
+  if(savesDeferred)return;
+  deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');
+  realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;
+ }
+ function materializeSaves(resume=false){
+  if(!savesDeferred||!realSave)return;
+  const save=realSave;
+  if(resume){ctx.save=save;savesDeferred=false;realSave=null;}
+  save();
+ }
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
   // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
   if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
@@ -653,7 +664,7 @@ function createBridge(options={}){
     const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     const defer=deferredCommits&&!advancesCareer&&!SYNC_COMMANDS.has(command)&&!resumeCheckpoint&&!restoring;
     try{
-     if(defer){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
+     if(defer)deferSaves();
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
@@ -1019,7 +1030,7 @@ function createBridge(options={}){
   Object.assign(handle,{flush,pending,flushStep:flushNext});
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
-  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
+  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},deferSaves,materializeSaves,store:()=>{materializeSaves();return store;}}};
   return {handle,close};
  }catch(e){close();throw e;}
 }

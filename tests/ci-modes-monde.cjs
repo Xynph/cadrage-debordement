@@ -19,6 +19,17 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const walk = dir => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(entry =>
   entry.isDirectory() ? walk(path.join(dir, entry.name)) : /\.c?js$/.test(entry.name) ? [path.join(dir, entry.name).split(path.sep).join('/')] : []);
 
+test('la garde reconnaît le démarrage LNR explicite, sans exécuter la carrière', () => {
+  const call = ['st', 'art'].join('') + "(0,'lnr')";
+  assert.deepEqual(legacyCreations('tests/exemple.cjs', () => call), ["start(n,'<ancien mode>')"]);
+});
+
+test('la migration conserve toutes les suites sélectionnées avant son début', () => {
+  const baseline = require('../ci/monde-suite-baseline-20261115.json');
+  const selected = new Set(allTestFiles());
+  assert.deepEqual(baseline.files.filter(file => !selected.has(file)), [], 'Une suite a disparu de la couverture.');
+});
+
 test('toute suite ou aide exécutée qui crée une carrière hors world-champ porte le drapeau et est exclue', () => {
   const offenders = [];
   for (const file of walk('tests')) {
@@ -26,8 +37,7 @@ test('toute suite ou aide exécutée qui crée une carrière hors world-champ po
     const found = legacyCreations(file);
     if (found.length) offenders.push(file + ' : ' + found.join(', '));
   }
-  assert.deepEqual(offenders, [], 'Carrière hors mode Monde dans une suite exécutée : migrer vers world-champ (club 0) ou marquer\n' +
-    'la suite en tête avec process.env.' + FLAG + "='1' (elle sera exclue de la CI)\n" + offenders.join('\n'));
+  assert.deepEqual(offenders, [], 'Carrière hors mode Monde dans une suite sélectionnée : migrer vers world-champ, sans nouvelle exclusion.\n' + offenders.join('\n'));
 });
 
 test('le drapeau, direct ou hérité par un module chargé, exclut la suite de la liste exécutée', () => {

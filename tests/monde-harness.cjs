@@ -21,6 +21,7 @@ function context(seed=827381,options={}){
  const seededRandom=ctx.Math.random; // un cas qui remplace Math.random est réparé par restore()
  let requests=0,closed=false;
  function command(name,payload={}){
+  vm.materializeSaves?.(true);
   const r=bridge.handle({id:++requests,command:name,payload});
   if(!r.ok)throw Error(name+' : '+r.error);
   return r.model;
@@ -66,8 +67,9 @@ function context(seed=827381,options={}){
  // Point de reprise en mémoire (état et curseur RNG) : plusieurs cas d'une suite partagent une carrière.
  function checkpoint(){return {text:run('JSON.stringify(S)'),seed:vm.seed()};}
  function restore(cp){ctx.Math.random=seededRandom;ctx.harnessCheckpoint=cp.text;run('S=JSON.parse(harnessCheckpoint);delete globalThis.harnessCheckpoint');vm.setSeed(cp.seed);return h;}
- function close(){if(closed)return;closed=true;live.delete(h);try{bridge.close();}finally{fs.rmSync(dataDir,{recursive:true,force:true});}}
+ function close(){if(closed)return;closed=true;live.delete(h);try{vm.materializeSaves?.(true);}finally{try{bridge.close();}finally{fs.rmSync(dataDir,{recursive:true,force:true});}}}
  const h={ctx,run,command,start,week,toMatch,season,checkpoint,restore,close,dataDir,
+  deferSaves(){vm.deferSaves();return h;},
   prepareNativeProjection(){run('nativeAttributeStore.complete(S)');},
   seed:()=>vm.seed(),setSeed:vm.setSeed,
   state:()=>JSON.parse(run('JSON.stringify(S)')),

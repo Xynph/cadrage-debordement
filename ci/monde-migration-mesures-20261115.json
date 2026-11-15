@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-15",
+  "runtime": "Node 24.22.1 local Linux, limite CPU 4, exécution directe",
+  "note": "RSS observé toutes les 100 ms ; pas une mesure max_rss_kb GitHub. Poids +15 %, mémoire +25 %. Recettes avec SDK ignoré consignées ci-dessous.",
+  "limits": [
+    "match-pass-live : contrôles JS verts, sous-test Godot ignoré localement dans cette mesure ; recette SDK encore requise",
+    "mesures locales à remplacer par les mesures CI du code migré après un run conforme",
+    "la garde complète reste rouge sur les anciennes créations LNR non migrées"
+  ],
+  "suites": [
+    {
+      "file": "tests/goalkicking.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 32,
+      "peakRssKb": 1632884
+    },
+    {
+      "file": "tests/lineout-side.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 147.2,
+      "peakRssKb": 3692720
+    },
+    {
+      "file": "tests/lineout-geometry.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 202.3,
+      "peakRssKb": 3774612
+    },
+    {
+      "file": "tests/match-pass-live.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 37,
+      "peakRssKb": 1960748
+    },
+    {
+      "file": "tests/harness-monde-compat.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 19.7,
+      "peakRssKb": 1331972
+    },
+    {
+      "file": "tests/harness-monde-saves.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 76.9,
+      "peakRssKb": 3133100
+    },
+    {
+      "file": "tests/lnr-loaded-birthyears-career.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 56.4,
+      "peakRssKb": 2604336
+    },
+    {
+      "file": "tests/public-birthdates.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 0.4,
+      "peakRssKb": 126512
+    },
+    {
+      "file": "tests/lnr-catalogue-ages.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 0.1,
+      "peakRssKb": 0
+    },
+    {
+      "file": "tests/frontrow.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 169.1,
+      "peakRssKb": 3949104
+    },
+    {
+      "file": "tests/native-save-hotpaths06.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 22.6,
+      "peakRssKb": 1234628
+    }
+  ]
+}

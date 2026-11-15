@@ -53,6 +53,11 @@ budget() {
   # Les autres réserves longues sont provisoires après les timeouts observés sur
   # 42891746395, sans retirer de contrôle.
   case "$1" in
+    # Migration Monde du 15/11, Node 24 local : géométrie 202,3 s, côté 147,2 s,
+    # première ligne 169,1 s ; mêmes scènes/assertions, sérialisation native différée.
+    tests/lineout-geometry.cjs|tests/lineout-side.cjs|tests/frontrow.cjs) echo 600s ;;
+    # Parité complète sauvegarde immédiate/différée : 76,9 s sous charge locale.
+    tests/harness-monde-saves.cjs) echo 300s ;;
     tests/world-worker-season.cjs) echo 1200s ;;
     tests/native-manager-career-worker.cjs) echo 900s ;;
     # Mobilité du manager (ex-tests/manuel) : saison lue dans la sauvegarde générée avant les suites (étape « Générer la sauvegarde de fin de saison »,

@@ -87,13 +87,13 @@ function legacySuites() { return new Set(legacyFiles().keys()); }
 // Motifs qui créent une carrière hors Monde : interdits dans une suite exécutée (qui doit alors porter le drapeau).
 const LEGACY_CREATION = [
   [/\blegacyModes\s*:\s*true\b/, 'legacyModes:true'],
-  [/\bstart\(\s*\d+\s*,\s*['"](?:france|common|fiction|custom)['"]/, "start(n,'<ancien mode>')"],
-  [/\bmode\s*:\s*['"](?:france|common|fiction|custom)['"]\s*,\s*(?:club|seed|initialSeed)\b/, "mode:'<ancien mode>'"],
+  [/\bstart\(\s*\d+\s*,\s*['"](?:france|common|fiction|custom|lnr)['"]/, "start(n,'<ancien mode>')"],
+  [/\bmode\s*:\s*['"](?:france|common|fiction|custom|lnr)['"]\s*,\s*(?:club|seed|initialSeed)\b/, "mode:'<ancien mode>'"],
   [/\bnew_career['"]?\s*,\s*\{[^}]*\bmode\s*:\s*['"](?!world-champ['"])[^'"]+['"]/, "new_career avec un mode autre que world-champ"],
-  [/\b(?:club|initialSeed)\s*:\s*\d+\s*,\s*mode\s*:\s*['"](?:france|common|fiction|custom)['"]/, "mode:'<ancien mode>'"]
+  [/\b(?:club|initialSeed)\s*:\s*\d+\s*,\s*mode\s*:\s*['"](?:france|common|fiction|custom|lnr)['"]/, "mode:'<ancien mode>'"]
 ];
-// Suite qui teste justement le refus des anciens modes : seule autorisée à en parler sans drapeau.
-const REFUSAL_SUITES = new Set(['tests/mode-monde-unique.cjs']);
+// Suites qui vérifient le refus des anciens modes avant création ; elles peuvent nommer ces modes.
+const REFUSAL_SUITES = new Set(['tests/mode-monde-unique.cjs','tests/harness-monde-compat.cjs']);
 function legacyCreations(file, read = f => fs.readFileSync(path.join(root, f), 'utf8')) {
   if (REFUSAL_SUITES.has(file)) return [];
   const text = read(file);

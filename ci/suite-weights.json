@@ -1,6 +1,6 @@
 {
   "js": {
-    "source": "médiane des wall_s CD_CPU_PROFILE de runs GitHub verts, +15 % ; provenance : 7 runs verts en 7 shards × 3 suites du 13 novembre 2026 ; liste des suites de main (mode Monde uniquement, 13/11) ; poids des suites sans mesure dans ces runs : médiane +15 % des runs verts de main du 14/11 (43583377471, 43585874226, 43593203805, 43594973495, 43603493805)",
+    "source": "médiane des wall_s CD_CPU_PROFILE de runs GitHub verts, +15 % ; provenance : 7 runs verts en 7 shards × 3 suites du 13 novembre 2026 ; liste des suites de main (mode Monde uniquement, 13/11) ; poids des suites sans mesure dans ces runs : médiane +15 % des runs verts de main du 14/11 (43583377471, 43585874226, 43593203805, 43594973495, 43603493805) ; migrations du 15/11 : mesures locales Node 24, +15 %, détaillées dans ci/monde-migration-mesures-20261115.json (aucun run GitHub inventé)",
     "runs": [
       43361688001,
       43366443437,
@@ -31,15 +31,15 @@
       "tests/development.cjs": 3,
       "tests/economy-audit.cjs": 4,
       "tests/epcr-preparation-worker.cjs": 155,
-      "tests/frontrow.cjs": 3,
+      "tests/frontrow.cjs": 195,
       "tests/integration-cloud-complete.cjs": 420,
       "tests/international-career.cjs": 5,
       "tests/japan-match.cjs": 95,
       "tests/jiff.cjs": 160,
       "tests/lifecycle-native.cjs": 214,
       "tests/lineout-approach.cjs": 13,
-      "tests/lineout-geometry.cjs": 25,
-      "tests/lineout-side.cjs": 21,
+      "tests/lineout-geometry.cjs": 233,
+      "tests/lineout-side.cjs": 170,
       "tests/lnr-career-long.cjs": 24,
       "tests/lnr-cross-season-recovery.cjs": 15,
       "tests/lnr-multiclub-continuity.cjs": 31,
@@ -62,7 +62,7 @@
       "tests/match-regles.cjs": 30,
       "tests/presse-dilemmes-monde.cjs": 170,
       "tests/match-importance.cjs": 16,
-      "tests/match-pass-live.cjs": 2,
+      "tests/match-pass-live.cjs": 43,
       "tests/match-structured-facts.cjs": 6,
       "tests/matchflow.cjs": 2,
       "tests/native-academy-appearance-bank.cjs": 190,
@@ -97,7 +97,7 @@
       "tests/native-press-worker.cjs": 275,
       "tests/native-professional-depth.cjs": 32,
       "tests/native-relationships.cjs": 50,
-      "tests/native-save-hotpaths06.cjs": 2,
+      "tests/native-save-hotpaths06.cjs": 26,
       "tests/native-systems.cjs": 16,
       "tests/noms-base-pack-monde.cjs": 86,
       "tests/opposition.cjs": 40,
@@ -200,7 +200,13 @@
       "tests/youth-portraits-origin.cjs": 13,
       "tests/world-rating-scale.cjs": 45,
       "tests/presse-promesses-monde.cjs": 196,
-      "tests/presse-promesses-saison.cjs": 380
+      "tests/presse-promesses-saison.cjs": 380,
+      "tests/goalkicking.cjs": 37,
+      "tests/harness-monde-compat.cjs": 23,
+      "tests/harness-monde-saves.cjs": 89,
+      "tests/lnr-loaded-birthyears-career.cjs": 65,
+      "tests/public-birthdates.cjs": 2,
+      "tests/lnr-catalogue-ages.cjs": 2
     }
   },
   "godot": {
@@ -261,7 +267,7 @@
     }
   },
   "memory": {
-    "source": "maximum des max_rss_kb CD_CPU_PROFILE de runs GitHub, +10 %, en Mo ; provenance : 7 runs verts en 7 shards × 3 suites du 13 novembre 2026 ; liste des suites de main (mode Monde uniquement, 13/11)",
+    "source": "maximum des max_rss_kb CD_CPU_PROFILE de runs GitHub, +10 %, en Mo ; provenance : 7 runs verts en 7 shards × 3 suites du 13 novembre 2026 ; liste des suites de main (mode Monde uniquement, 13/11) ; migrations du 15/11 : maximum RSS observé par lecture de /proc (100 ms), +25 %, recette locale distincte des mesures GitHub",
     "runs": [
       43361688001,
       43366443437,
@@ -299,7 +305,17 @@
       "tests/world-domestic-venues.cjs": 1344,
       "tests/youth-matches-worker.cjs": 2048,
       "tests/youth-matches.cjs": 1880,
-      "tests/world-rating-scale.cjs": 1900
+      "tests/world-rating-scale.cjs": 1900,
+      "tests/goalkicking.cjs": 1994,
+      "tests/lineout-side.cjs": 4508,
+      "tests/lineout-geometry.cjs": 4608,
+      "tests/match-pass-live.cjs": 2394,
+      "tests/harness-monde-compat.cjs": 1626,
+      "tests/harness-monde-saves.cjs": 3825,
+      "tests/lnr-loaded-birthyears-career.cjs": 3180,
+      "tests/public-birthdates.cjs": 155,
+      "tests/frontrow.cjs": 4821,
+      "tests/native-save-hotpaths06.cjs": 1508
     }
   }
 }
