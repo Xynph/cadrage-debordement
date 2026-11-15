@@ -1,12 +1,15 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
+// Les cas purs partagent une création World et restaurent exactement état + RNG.
+const fixture=context();fixture.start(0);const baseline=fixture.checkpoint();
+function fresh(){fixture.restore(baseline);return fixture;}
 const years=[3,5,10];
 function caseTraining(yearCount,fatigue){
- const g=context();g.run('start(0)');
+ const g=fresh();
  g.ctx.__years=yearCount;g.ctx.__fatigue=fatigue;
  const out=g.run(`(()=>{
-   const p=club().players[0];
+   const p=academyPlayer(S.club,0,S.season,9001);
    ensureDevelopment(p);
    p.age=19;p.rating=50;p.dev.potential=98;p.dev.xp=0;
    p.dev.specialization={version:1,focus:'equilibre',xp:0,bonuses:{}};
@@ -29,9 +32,9 @@ for(const year of years){
  console.log('V24 PASS '+year+' annual training cycles: balanced progression '+xp(fresh).toFixed(3)+' vs high-load '+xp(fatigued).toFixed(3));
 }
 {
- const g=context();g.run('start(0)');
+ const g=fresh();
  const legacy=g.run(`(()=>{
- const p=club().players[0];delete p.physicalLoad;
+ const p=academyPlayer(S.club,0,S.season,9001);delete p.physicalLoad;
  return JSON.stringify({factor:growthFitnessFactor(p),hadField:Object.prototype.hasOwnProperty.call(p,'physicalLoad')});
  })()`);
  const v=JSON.parse(legacy);
@@ -39,3 +42,5 @@ for(const year of years){
  console.log('V24 PASS old saves: physicalLoad absent remains absent after read-only factor');
 }
 console.log('V24 CAREER DEPTH 4/4 PASS; scenarios are controlled 3/5/10-year training cycles, not full fixture calendars');
+
+fixture.restore(baseline);fixture.close();
