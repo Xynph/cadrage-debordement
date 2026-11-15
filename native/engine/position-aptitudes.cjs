@@ -24,7 +24,15 @@ module.exports=function positionAptitudes(){
   const cached=playerCache.get(p);
   if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
    // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
-   let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
+   let same=true;
+   if(typeof nativePositionSelectionMemo!=='undefined'&&nativePositionSelectionMemo===false){
+    for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
+   }else{
+    // Même calcul que focusedBonus, comme roleNote : relire les onze valeurs,
+    // en consultant une seule fois leurs objets porteurs pendant cet appel.
+    const skills=p.skills,specialization=p.dev?.specialization,active=specialization?.version===1,bonuses=active?specialization.bonuses:null;
+    for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==skills?.[k]||cached.bonuses[i]!== (active?(bonuses[k]||0):0)){same=false;break;}}
+   }
    if(same){selectionFrame?.set(p,cached.result);return cached.result;}
   }
   // Legacy missing skills are deterministically generated on a detached object.

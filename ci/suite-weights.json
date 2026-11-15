@@ -215,7 +215,7 @@
       "tests/lnr05-match-simulation-propagation.cjs": 35,
       "tests/lnr-career.cjs": 76,
       "tests/lnr05-physical-propagation.cjs": 58,
-      "tests/world-selection-memo.cjs": 90
+      "tests/world-selection-memo.cjs": 93
     }
   },
   "godot": {

@@ -22,3 +22,11 @@ Le premier reçu ne jouait qu’une semaine de préparation sans match : il rest
 Provenance et empreintes : `ci/world-selection-memo-mesures-20261115.json`. Les durées sont une mesure locale, pas un run GitHub ; Node 22 et la CI finale restent à recevoir.
 
 Autres contrôles locaux verts sur la source finale : API/positions/qualifications/qualités mutées et projections détachées (27 contrôles), quota japonais réel (9 contrôles), remplacement en direct avec replay exact, sélection du staff Monde (4 cas, dont quelques journées, déterminisme et JIFF). La garde Monde et le rejeu des shards passent. La PR dépend de la migration #742 ; aucune fusion avant mise à jour de main et Validation CI verte.
+
+## Empreinte relue entre deux appels
+
+Un nouveau profil de15s sur les3000expériences de pénalité place derive à21,3%de temps propre, efficiency5,5% et activePlayers8,45%. La portée de sélection ne supprime pas les contrôles entre les appels de projection. Ce chemin continue à comparer les onzequalités et onzebonus ; il consulte leurs objets skills/spécialisation une fois par appel, avec le même calcul version1/bonuses[k]||0 que focusedBonus et roleNote. Aucun champ de clé ni contrôle d’invalidation supprimé, aucune nouvelle durée de cache. Le chemin de référence positionMemo=false garde la boucle originale.
+
+Régression instrumentée rouge2200/2200 puis verte2200→100accèsdev. Les projections restent identiques après mutation surplace, remplacement de bonus, changementde version et suppression ; une spécialisationactive sans objetbonus reste refusée. Revue indépendante du calcul et de l’invalidation : aucun défaut source trouvé. Node22.23.5 :27contrôlesAPI verts et parité complète des deux vraiesWorld/S/store/RNG/feuille après semaine de match,79,4s internes/maxRSS2065704Kio.250sélections ordinaires :1121,3→676,0ms ; échantillon partagé seulement, pas seuil de vitesse ni mesure de saison/FPS. Poids93s (durée interne+1s de réserve de démarrage puis15%), budget300s inchangé.
+
+Cette optimisation devient une dépendance de la réceptionMonde#742 : une campagne de12ans a coûté2929s avant une assertion finale de rejet à corriger. Le portage dans#742 recevra de nouveau la parité sur sa cible exacte. Aucune fusion main ni CI verte revendiquée pour le brouillon#744.

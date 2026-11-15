@@ -2,6 +2,7 @@
 const assert=require('node:assert/strict');
 const {context}=require('./monde-harness.cjs');
 const testStarted=performance.now();
+const fingerprintProbe=require('./helpers/position-fingerprint-probe.cjs');
 function sample(positionMemo){
  const h=context(827381,{club:0,bridge:{positionMemo}}),started=performance.now();
  try{
@@ -33,6 +34,8 @@ function sample(positionMemo){
   assert.equal(h.seed(),seed,'aucun tirage de sélection');
   assert.ok(h.run('nextReads>0&&afterFailureReads>0'),'pas de cache persistant entre deux sélections ni après une erreur');
   const reads=h.run('reads'),sheet=h.run('JSON.stringify(selected)');
+  const fingerprint=fingerprintProbe(h);
+  assert.equal(fingerprint.malformedRejected,true,'une spécialisation active malformée reste refusée');
   h.toMatch();
   const fixtureId=h.run('CDWorldCareer.userFixture(S).id');
   h.week(1);
@@ -40,7 +43,7 @@ function sample(positionMemo){
   assert.equal(h.run('S.history.filter(r=>r.fixtureId===selectionFixtureId).length'),1,'la parité couvre une vraie semaine de match du club');
   const state=h.run('JSON.stringify(S)'),stored=h.store['bdt-v1'];
   assert.ok(stored===state,'vraie sauvegarde complète matérialisée');
-  return {state,stored,seed:h.seed(),sheet,reads,selectionMs,milliseconds:Math.round((performance.now()-started)*10)/10};
+  return {state,stored,seed:h.seed(),sheet,reads,fingerprint,selectionMs,milliseconds:Math.round((performance.now()-started)*10)/10};
  }finally{h.close();}
 }
 const reference=sample(false),memo=sample(true);
@@ -49,4 +52,6 @@ assert.ok(memo.stored===reference.stored,'même sauvegarde');
 assert.equal(memo.sheet,reference.sheet,'mêmes titulaires et remplaçants');
 assert.equal(memo.seed,reference.seed,'même RNG');
 assert.ok(memo.reads<reference.reads,'le cache doit réellement supprimer des relectures de qualités');
-console.log(JSON.stringify({passed:true,scope:'world-champ, tous détaillés',selections:250,reference:{reads:reference.reads,selectionMs:reference.selectionMs,totalMs:reference.milliseconds},memo:{reads:memo.reads,selectionMs:memo.selectionMs,totalMs:memo.milliseconds},wallSeconds:Math.round((performance.now()-testStarted)/100)/10,maxRssKb:process.resourceUsage().maxRSS}));
+assert.deepEqual(memo.fingerprint.sequence,reference.fingerprint.sequence,'mêmes projections après mutations, remplacements et désactivation des bonus');
+assert.ok(memo.fingerprint.devReads<reference.fingerprint.devReads,'les contrôles exacts entre appels doivent relire moins souvent la spécialisation');
+console.log(JSON.stringify({passed:true,scope:'world-champ, tous détaillés',selections:250,reference:{fingerprintDevReads:reference.fingerprint.devReads,reads:reference.reads,selectionMs:reference.selectionMs,totalMs:reference.milliseconds},memo:{fingerprintDevReads:memo.fingerprint.devReads,reads:memo.reads,selectionMs:memo.selectionMs,totalMs:memo.milliseconds},wallSeconds:Math.round((performance.now()-testStarted)/100)/10,maxRssKb:process.resourceUsage().maxRSS}));
