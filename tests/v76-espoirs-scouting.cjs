@@ -1,12 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {componentContext:context}=require('./helpers/gestion-domaines.cjs');
 const t=context(),run=t.run;
 for(const file of ['youth-pathways-v72.js','espoirs-league-v73.js','espoirs-accession-v74.js','espoirs-movement-v75.js','espoirs-scouting-v76.js'])
   vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
 for(const name of ['CDEspoirsV73','CDEspoirsAccessionV74','CDEspoirsMovementV75','CDEspoirsScoutingV76'])
   assert.equal(run(name+'.install(globalThis)'),true,name+' install');
-run('start(0)');
+// Compatibilité de composants sur données World, sans simulation de carrière héritée.
+run('CDEspoirsV73.setup(S);CDEspoirsAccessionV74.setup(S);CDEspoirsMovementV75.ensure(S);CDEspoirsScoutingV76.ensure(S)');
 const api='CDEspoirsScoutingV76';
 assert.equal(run(api+'.centers(S).length'),44,'44 centers');
 assert.equal(run('new Set('+api+'.centers(S).map(c=>c.id)).size'),44,'44 unique identities');
@@ -36,10 +37,10 @@ assert.equal(run(api+'.players(S,'+api+'.own(S)).some(p=>p.id==='+JSON.stringify
 assert.equal(run(api+'.players(S,'+api+'.own(S)).find(p=>p.id==='+JSON.stringify(candidate.id)+').potential'),candidate.potential,'potential preserved');
 assert.equal(run('S.v76Scouting.recruited[0].fee'),fee);
 assert.equal(run('S.v76Scouting.budgets['+JSON.stringify(managed)+']'),run('72000+(function(){let h=2166136261;for(const c of '+JSON.stringify(managed+":v76")+'){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0)%7})()*8000')-1200-fee);
-assert.equal(run(api+'.valid(parseSaveDocument(JSON.stringify(createSaveDocument())).state.v76Scouting)'),true,'save roundtrip');
-assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'save size');
+assert.equal(run(api+'.valid(componentParse(JSON.stringify(componentDocument())).state.v76Scouting)'),true,'save roundtrip');
+assert.equal(run('JSON.stringify(componentDocument()).length<5*1024*1024'),true,'save size');
 const firstSeason=run('S.season');
-run('S.phase="ended";S.round=26;advanceSeason()');
+run('S.phase="ended";S.round=26;componentYear()');
 assert.equal(run('S.season'),firstSeason+1,'season advanced');
 assert.equal(run(api+'.valid(S.v76Scouting)'),true,'next season valid');
 assert.equal(run('S.v76Scouting.recruited.length'),0,'season limit resets');
@@ -48,10 +49,10 @@ assert.equal(run('S.v76Scouting.history[0].recruited[0].playerId'),candidate.id,
 assert.equal(run('S.v75Movement.elite.length+S.v75Movement.accession.length'),44,'league identities preserved');
 assert.equal(run(api+'.centers(S).every(c=>'+api+'.players(S,c).length>=15)'),true,'all clubs keep complete squad');
 assert.equal(run(api+'.centers(S).some(c=>'+api+'.players(S,c).some(p=>p.id==='+JSON.stringify(candidate.id)+'))'),true,'recruit retained after season');
-run('for(let i=0;i<4;i++){S.phase="ended";S.round=26;advanceSeason()}');
+run('for(let i=0;i<4;i++){S.phase="ended";S.round=26;componentYear()}');
 assert.equal(run('S.v76Scouting.history.length'),4,'history bounded');
 assert.equal(run('new Set('+api+'.centers(S).map(c=>c.id)).size'),44,'unique identities after five years');
 assert.equal(run(api+'.ensure({season:3,v76Scouting:{broken:true},v75Movement:S.v75Movement})'),null,'invalid state rejected');
 const legacy=run('JSON.parse(JSON.stringify(S))');delete legacy.v76Scouting;
 assert.equal(run(api+'.valid('+api+'.ensure('+JSON.stringify(legacy)+'))'),true,'legacy save without V76');
-console.log('V76 PASS: 44 academies, scouts, competing offers, atomic transfers, budget, 5 seasons, save compatibility');
+t.close();console.log('V76 composants historiques + garde Monde PASS: 44 academies, scouts, competing offers, atomic transfers, budget, 5 seasons, save compatibility');
