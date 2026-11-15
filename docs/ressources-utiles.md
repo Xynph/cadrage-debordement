@@ -77,6 +77,22 @@ vérifient séparément.
 
 ## Compétences des agents
 
+### Recherche ciblée du 15 novembre 2026 : vitesse et qualité de développement
+
+Demande de Léo : chercher sur le web, X et GitHub comment améliorer la vitesse,
+la conception et la vérification du jeu. Les lectures suivantes ne valent pas
+installation ni validation d'un outil sur Rugby Legacy. Aucun achat ni appel à
+un service de génération payant n'a été effectué.
+
+| Ressource | Provenance / vérification | Utilité et décision | Coût / licence | Statut |
+| --- | --- | --- | --- | --- |
+| [GameDevBench](https://github.com/waynchi/gamedevbench) | README et présentation des résultats lus le 15/11/2026 ; métadonnée de licence GitHub consultée. | L'étude rapporte un gain avec les retours image/vidéo. Retenir la boucle exécuter → observer → corriger ; les résultats du benchmark ne mesurent pas Rugby Legacy. | Consultation gratuite ; dépôt Apache-2.0. Lancer des agents sur le benchmark pourrait consommer du quota : non lancé. | **Retenu**, principe de vérification visuelle ; aucun paquet intégré. |
+| [Godot MCP — OREBRON](https://github.com/OREBRON/godot-mcp) | README lu le 15/11/2026 : scripts contrôlés avec le vrai Godot, entrées, arbre de scène, captures et pas à pas ; développement annoncé en 4.7.2. | Candidat pour observer et piloter une instance locale du jeu. Compatibilité avec notre pont Node et notre environnement à éprouver. | Consultation gratuite ; aucune licence identifiée par l'API GitHub à cette date, droits d'intégration à vérifier. | **À explorer** ; ni installé ni exécuté. |
+| [GdUnit4 — Scene Runner](https://github.com/godot-gdunit-labs/gdUnit4/blob/master/documentation/doc/_advanced_testing/sceneRunner.md) | Documentation et README lus le 15/11/2026 ; licence MIT déclarée par GitHub. | Entrées simulées, attente de signaux et progression par frames. Retenir ces méthodes pour nos recettes existantes, avant d'envisager un changement de framework. | Consultation gratuite ; MIT. | **Retenu**, méthodes ; aucune migration de nos suites effectuée. |
+| [Agentic FC](https://github.com/gaemi/agentic-fc) | README lu le 15/11/2026 : monde déterministe, journal d'entrées, outil séparé de calibration sur plusieurs graines. | Référence d'architecture pour le banc de mesure du barème et des matchs ; aucune conformité au rugby ni qualité d'équilibrage déduite du README. | Consultation gratuite ; MIT déclarée dans le README et les métadonnées GitHub. | **Évalué**, documentation seulement ; code non exécuté. |
+| [FM27 — Training & Tactical Effectiveness](https://www.footballmanager.com/fm27/features/fm27-training-and-tactical-effectiveness) | Page officielle lue le 15/11/2026 : réduction des clics, charge à venir et lien entre préparation et prochain adversaire. | Guider les écrans par les décisions du manager : choix, raison, conséquence observable, retour après action. | Lecture libre ; texte et visuels de l'éditeur, inspiration seulement. | **Retenu**, principes d'interface. |
+| [Profil X godot-mcp](https://x.com/godotmcp) | Profil retrouvé dans l'index le 15/11/2026 ; ouverture directe refusée (HTTP 403). Les recherches X n'ont pas livré de démonstration suffisamment documentée. | Piste vers un dépôt Godot MCP, aucune preuve d'efficacité retenue depuis X. | Non vérifié ; aucun accès payant utilisé. | **À explorer** ; contenu complet non lu. |
+
 Copies épinglées dans `.claude/skills` et `.agents/skills`, identiques dans les
 deux dossiers. Le [manifeste](../tools/agent-skills/manifest.json) liste chaque
 fichier avec son empreinte ; `node tools/agent-skills/update.cjs --check` les
