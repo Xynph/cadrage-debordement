@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const g=context(),run=g.run;
 for(const f of ['lnr-rosters-base.js','lnr-career.js'])
  vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),g.ctx);

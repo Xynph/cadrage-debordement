@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const MODES=['temoin','rotation','repos','combine'],SEEDS=[0,29],SEASONS=4;
 const selectedMode=process.env.LNR_AUDIT_MODE||'temoin',selectedSeed=Number(process.env.LNR_AUDIT_SEED||0);
 assert(MODES.includes(selectedMode)&&SEEDS.includes(selectedSeed),'scenario reconnu');

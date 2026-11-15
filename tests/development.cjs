@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict');const {context}=require('./harness.cjs');let t=context(),run=t.run;run('start(0)');
+const assert=require('node:assert/strict');const {engineContext:context}=require('./harness.cjs');let t=context(),run=t.run;run('start(0)');
 assert.equal(run('S.development.academy.length'),15);assert.equal(run('S.clubs.every(c=>c.players.every(p=>p.dev.potential>=p.rating&&p.dev.potential<=99))'),true);run('setupDevelopment();setupDevelopment();intakeYouth()');assert.equal(run('S.development.academy.length'),15);
 // Promotion moves a real prospect; wages start only after promotion and cannot be duplicated.
 run('var prospect=S.development.academy[0],before=totalWages();promoteYouth(prospect.id)');assert.equal(run('S.development.academy.length'),14);assert.equal(run('totalWages()-before'),2000);assert.ok(run('player(prospect.id)'));assert.equal(run('promoteYouth(prospect.id)'),false);assert.equal(run('prospect.contractEnd'),2);

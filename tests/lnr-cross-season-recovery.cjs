@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const modules=['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'];
 function boot(document){
  const t=context();

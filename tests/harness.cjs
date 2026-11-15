@@ -5,34 +5,44 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const {context:worldContext}=require('./monde-harness.cjs');
 const root=path.resolve(__dirname,'../dist');
 const source=fs.readFileSync(path.join(root,'game.js'),'utf8').split('\n');
-function context(saved,providedStorage){
+// Portée des anciennes recettes : les deux championnats français détaillés,
+// plus celui du manager (ajouté par le vrai réglage league-detail du jeu).
+// Le harnais natif Monde conserve son défaut « tous détaillés ».
+const DETAILED_LEAGUES=Object.freeze(['elite','accession']);
+function context(saved,providedStorage,{html=true}={}){
  if(saved)assert.equal(saved.worldMode?.version,5,'Le harnais ne recharge que la carrière Monde complète.');
  const h=worldContext(827381,{club:null});
  const rawRun=h.run,nativeStart=h.start,ctx=h.ctx,app=ctx.document.querySelector('#app');
+ const nativePresentation={render:ctx.render,toast:ctx.toast,startTimer:ctx.startTimer};
  let creating=false;
  try{
   for(const file of ['main-menu-slots.js','main-menu-v3.js','art-direction-v4.js'])rawRun(fs.readFileSync(path.join(root,file),'utf8'));
   // Le worker masque le rendu ; réutiliser les vraies fonctions du jeu pour conserver les contrôles HTML.
-  for(const name of ['render','toast','startTimer']){
+  for(const name of html?['render','toast','startTimer']:[]){
    const definition=source.find(line=>line.startsWith('function '+name+'('));
    assert.ok(definition,'Fonction de présentation absente : '+name);
    rawRun(definition);
   }
+  if(!html)Object.assign(ctx,nativePresentation);
   function start(club=0,mode){
    // Le dispatch natif appelle encore start avec le mode Monde après avoir créé sa carrière : aucun effet.
    if(creating&&mode==='world-champ')return;
    if(mode!==undefined&&mode!=='world-champ')throw Error('Le harnais autorise uniquement la carrière Monde.');
-   creating=true;try{nativeStart(club);}finally{creating=false;}
+   creating=true;try{nativeStart(club,{detailedLeagues:DETAILED_LEAGUES.slice()});}finally{creating=false;}
    rawRun('entryScreen="game";view="dashboard"');return h;
   }
   ctx.start=start;ctx.startWorld=start;h.start=start;
   ctx.toMatch=h.toMatch;
-  h.app=app;
+  if(html)h.app=app;
+  else Object.defineProperty(h,'app',{get(){throw Error('Contexte moteur sans HTML : utiliser context() pour vérifier un écran.');}});
   if(providedStorage){
    const storage=ctx.window.CDOfflineStorage;
    for(const name of ['getItem','setItem','removeItem'])if(typeof providedStorage[name]==='function')storage[name]=providedStorage[name].bind(providedStorage);
   }
   if(saved){
+   // Le worker branche le budget natif à sa première commande, y compris la
+   // lecture du menu avant import. Une reprise Web seule laisse financeWeek V1.
+   h.command('snapshot');
    ctx.harnessSavedText=JSON.stringify(saved);
    rawRun('gameStorage.setItem("bdt-v1",harnessSavedText);loadedSaveText=harnessSavedText;S=JSON.parse(harnessSavedText);validatingStartup=true;bootSavedCareer();delete globalThis.harnessSavedText');
   }
@@ -50,17 +60,18 @@ const matchBaselines=new Map();
 function matchContext(club=0,seed=827381,{deferSaves=true}={}){
  const key=club+':'+seed;
  if(!matchBaselines.has(key)){
-  const base=worldContext(seed,{club});
+  const base=worldContext(seed,{club,career:{detailedLeagues:DETAILED_LEAGUES.slice()}});
   try{
    base.toMatch();base.run('autoLineup();validateCareer(S)');
    assert.equal(base.run('sheetErrors().length'),0,'La fixture Monde doit avoir une feuille admissible.');
    matchBaselines.set(key,{state:base.state(),seed:base.seed(),text:base.run('JSON.stringify(S)')});
   }finally{base.close();}
  }
- const baseline=matchBaselines.get(key),h=context(baseline.state);
+ const baseline=matchBaselines.get(key),h=engineContext(baseline.state);
  try{
   assert.ok(h.run('JSON.stringify(S)')===baseline.text,'La reprise doit conserver exactement la fixture Monde.');
   h.setSeed(baseline.seed);if(deferSaves)h.deferSaves();return h;
  }catch(e){h.close();throw e;}
 }
-module.exports={context,matchContext};
+function engineContext(saved,providedStorage){return context(saved,providedStorage,{html:false});}
+module.exports={context,engineContext,matchContext};

@@ -5,6 +5,8 @@ const h=matchContext(30),run=h.run;
 try{
  for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),h.ctx);
  assert.equal(run('S.worldMode.version'),5);
+ assert.equal(run('S.leagueDetail.detailed.includes(CDWorldCareer.leagueId(S))'),true,'le championnat étranger du manager reste détaillé');
+ assert.equal(run('S.worldMode.fixtures.filter(f=>f.homeId===S.club||f.awayId===S.club).every(f=>!CDLeagueDetail.quickFixture(S,f))'),true);
  assert.equal(run('lnr05Enabled()'),true,'le calcul de rotation doit accepter la vraie carrière Monde');
  assert.equal(run('lnr05View()'),'','aucun ancien panneau dans le rendu Monde');
  run('club().players.forEach(p=>{p.injury=0;p.condition=S.lineup.includes(p.id)?5:100})');

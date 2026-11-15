@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const modules=['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'];
 // Les cinq attaques partent du même point réel, comme les démarrages déterministes
 // initiaux ; chaque VM recharge une copie distincte, jamais une référence partagée.

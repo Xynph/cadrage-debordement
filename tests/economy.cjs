@@ -1,25 +1,42 @@
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-let t=context(),run=t.run;run('start(0)');assert.ok(run('S.economy'));assert.equal(run('S.clubs.every(c=>c.players.every(p=>Number.isInteger(p.contractEnd)))'),true);
-// A pre-economy save must come from the historical roster policy.
-const historical=context();historical.run('var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result};start(0)');
-const original=historical.run('JSON.parse(JSON.stringify(S))');delete original.economy;delete original.manager;original.clubs.forEach(c=>c.players.forEach(p=>delete p.contractEnd));const oldSalary=original.clubs[0].players[0].salary,oldCash=original.clubs[0].cash;let migrated=context(original);assert.ok(migrated.store['bdt-backup-economy']);assert.equal(migrated.run('club().cash'),oldCash);assert.equal(migrated.run('club().players[0].salary'),oldSalary);assert.equal(migrated.run('sheetErrors().length'),0);
+const {engineContext:context}=require('./harness.cjs');
+let t=context(),run=t.run;run('start(0)');const initialRoster=run('club().players.length');assert.ok(run('S.economy'));assert.equal(run('S.clubs.every(c=>c.players.every(p=>Number.isInteger(p.contractEnd)))'),true);
+// Le domaine historique se teste sur une copie de données Monde, sans fabriquer
+// une carrière à l'ancienne politique. Une perte du vivier doit rester rejetée.
+const historical=context();historical.run('start(0)');
+const healthy=historical.state(),original=JSON.parse(JSON.stringify(healthy));
+delete original.economy;delete original.manager;original.clubs.forEach(c=>c.players.forEach(p=>delete p.contractEnd));
+const oldSalary=original.clubs[0].players[0].salary,oldCash=original.clubs[0].cash;
+historical.ctx.migrationInputText=JSON.stringify(original);historical.ctx.healthyText=JSON.stringify(healthy);
+try{
+ historical.run('S=JSON.parse(migrationInputText);migrateGame()');
+ assert.ok(historical.store['bdt-backup-economy']);
+ assert.equal(historical.run('club().cash'),oldCash);assert.equal(historical.run('club().players[0].salary'),oldSalary);
+ assert.equal(historical.run('sheetErrors().length'),0);
+ assert.throws(()=>historical.run('validateCareer(S)'),/Identité du marché différente du vivier disponible/,'aucune reconstruction silencieuse des identités perdues');
+}finally{historical.run('S=JSON.parse(healthyText);save()');}
+const beforeDamagedImport=run('JSON.stringify(S)'),diskBeforeDamagedImport=t.store['bdt-v1'];
+assert.throws(()=>t.command('import',{text:JSON.stringify(original)}),'le worker refuse la sauvegarde au vivier perdu');
+assert.ok(run('JSON.stringify(S)')===beforeDamagedImport);assert.equal(t.store['bdt-v1'],diskBeforeDamagedImport);
+const migrated=context(healthy);
+assert.equal(migrated.run('club().cash'),oldCash);assert.equal(migrated.run('club().players[0].salary'),oldSalary);assert.equal(migrated.run('sheetErrors().length'),0);
+historical.close();migrated.close();
 // Counteroffers survive reload. No money moves before explicit agreement.
-run('var id=S.market[0].id,fee=S.market[0].price,cash=club().cash;negotiateContract(id,"recruit",1000,2);var key=talkKey(id,"recruit")');assert.equal(run('S.economy.talks[key].status'),'counter');assert.equal(run('club().cash-cash'),0);assert.equal(run('club().players.length'),30);let counter=t.run('JSON.parse(JSON.stringify(S))');let restored=context(counter);restored.run('var key=Object.keys(S.economy.talks)[0],terms=S.economy.talks[key]');const reserveWage=restored.run('terms.acceptedSalary');assert.equal(restored.run('confirmContract(key)'),true);assert.equal(restored.run('club().players.length'),31);assert.equal(restored.run('club().cash'),oldCash-run('fee'));assert.equal(restored.run('player(terms.id).salary'),reserveWage);assert.equal(restored.run('player(terms.id).contractEnd'),2);assert.equal(restored.run('confirmContract(key)'),false);
+run('var id=S.market[0].id,fee=S.market[0].price,cash=club().cash;negotiateContract(id,"recruit",1000,2);var key=talkKey(id,"recruit")');assert.equal(run('S.economy.talks[key].status'),'counter');assert.equal(run('club().cash-cash'),0);assert.equal(run('club().players.length'),initialRoster);let counter=t.run('JSON.parse(JSON.stringify(S))');let restored=context(counter);restored.run('var key=Object.keys(S.economy.talks)[0],terms=S.economy.talks[key]');const reserveWage=restored.run('terms.acceptedSalary');assert.equal(restored.run('confirmContract(key)'),true);assert.equal(restored.run('club().players.length'),initialRoster+1);assert.equal(restored.run('club().cash'),oldCash-run('fee'));assert.equal(restored.run('player(terms.id).salary'),reserveWage);assert.equal(restored.run('player(terms.id).contractEnd'),2);assert.equal(restored.run('confirmContract(key)'),false);
 // Three failed proposals lock talks; new week reopens them.
 run('negotiateContract(id,"recruit",1000,2);negotiateContract(id,"recruit",1000,2)');assert.equal(run('S.economy.talks[key].status'),'withdrawn');assert.equal(run('negotiateContract(id,"recruit",100000,2)'),false);assert.equal(run('confirmContract(key)'),false);run('economyWeek()');assert.equal(run('negotiateContract(id,"recruit",100000,2)'),true);
 for(const wage of ['NaN','Infinity','-500','0','999','100001','1000.5'])assert.equal(run(`negotiateContract(id,"recruit",${wage},2)`),false);assert.equal(run('negotiateContract(id,"recruit",5000,9)'),false);
 // Insufficient cash and stale offers cannot remove players or debit money.
-run('start(0);var id=S.market[0].id;negotiateContract(id,"recruit",100000,3);var key=talkKey(id,"recruit");club().cash=0');assert.equal(run('confirmContract(key)'),false);assert.equal(run('club().players.length'),30);assert.equal(run('club().cash'),0);run('club().cash=9000000;economyWeek()');assert.equal(run('confirmContract(key)'),false);
+run('start(0);var id=S.market[0].id;negotiateContract(id,"recruit",100000,3);var key=talkKey(id,"recruit");club().cash=0');assert.equal(run('confirmContract(key)'),false);assert.equal(run('club().players.length'),initialRoster);assert.equal(run('club().cash'),0);run('club().cash=9000000;economyWeek()');assert.equal(run('confirmContract(key)'),false);
 // Renewal extends the existing deal, applies the wage now and charges only a bonus.
-run('start(0);var own=club().players[0];own.contractEnd=S.season;var oldWage=own.salary,before=club().cash;negotiateContract(own.id,"renew",15000,3);var renewalKey=talkKey(own.id,"renew"),renewFee=S.economy.talks[renewalKey].fee');assert.equal(run('confirmContract(renewalKey)'),true);assert.equal(run('own.contractEnd'),3);assert.equal(run('own.salary'),15000);assert.equal(run('before-club().cash'),run('renewFee'));assert.equal(run('club().players.length'),30);
+run('start(0);var own=club().players[0];own.contractEnd=S.season;var oldWage=own.salary,before=club().cash;negotiateContract(own.id,"renew",15000,3);var renewalKey=talkKey(own.id,"renew"),renewFee=S.economy.talks[renewalKey].fee');assert.equal(run('confirmContract(renewalKey)'),true);assert.equal(run('own.contractEnd'),3);assert.equal(run('own.salary'),15000);assert.equal(run('before-club().cash'),run('renewFee'));assert.equal(run('club().players.length'),initialRoster);
 // Actual transfers: player moves to buyer and cash is conserved across both clubs.
 run('start(0);var sold=club().players[5];toggleListing(sold.id)');assert.equal(run('S.economy.offers.length'),0);run('economyWeek();var bid=S.economy.offers.find(o=>o.playerId===sold.id),buyer=S.clubs[bid.buyer],sellerCash=club().cash,buyerCash=buyer.cash,oldTotalWages=totalWages()');assert.ok(run('bid'));assert.equal(run('acceptSale(bid.id)'),true);assert.equal(run('club().players.some(p=>p.id===sold.id)'),false);assert.equal(run('buyer.players.filter(p=>p.id===sold.id).length'),1);assert.equal(run('club().cash-sellerCash'),run('bid.fee'));assert.equal(run('buyerCash-buyer.cash'),run('bid.fee'));assert.equal(run('oldTotalWages-totalWages()'),run('sold.salary'));assert.equal(run('acceptSale(bid.id)'),false);assert.equal(run('[...S.lineup,...S.reserves].includes(sold.id)'),false);
 // Declined, cancelled and expired bids cannot be accepted.
 for(const operation of ['declineSale(bid.id)','toggleListing(sold.id)','economyWeek();economyWeek()']){run('start(0);var sold=club().players[5];toggleListing(sold.id);economyWeek();var bid=S.economy.offers[0]');run(operation);assert.equal(run('acceptSale(bid.id)'),false)}
 run('start(0);var sold=club().players[5];toggleListing(sold.id);economyWeek();var bid=S.economy.offers[0];S.clubs[bid.buyer].cash=0');assert.equal(run('acceptSale(bid.id)'),false);assert.ok(run('player(sold.id)'));
 // A live fixture locks recruitment, renewal, listing and sales.
-run('start(0);var sold=club().players[5];toggleListing(sold.id);economyWeek();var bid=S.economy.offers[0],pid=S.market[0].id;beginMatch();pauseMatch();var frozenCash=club().cash');assert.equal(run('acceptSale(bid.id)'),false);assert.equal(run('negotiateContract(pid,"recruit",10000,2)'),false);assert.equal(run('club().cash'),run('frozenCash'));assert.equal(run('club().players.length'),30);
+run('start(0);var sold=club().players[5];toggleListing(sold.id);economyWeek();var bid=S.economy.offers[0],pid=S.market[0].id;beginMatch();pauseMatch();var frozenCash=club().cash');assert.equal(run('acceptSale(bid.id)'),false);assert.equal(run('negotiateContract(pid,"recruit",10000,2)'),false);assert.equal(run('club().cash'),run('frozenCash'));assert.equal(run('club().players.length'),initialRoster);
 // Weekly wages use only current roster and accepted salaries, exactly once per charge.
 run('start(0);var wage=totalWages(),before=club().cash;financeWeek(null,false)');assert.equal(run('club().cash-before'),run('160000-wage'));
 // Offseason is reviewed before expiry, renewed players stay, unrenewed leave free.

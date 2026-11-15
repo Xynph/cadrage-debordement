@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);return t}
 test('Monde rotation: audit longitudinal de quatre saisons, sans changement du moteur',()=>{
  const g=boot(),run=g.run;run("start(0,'world-champ')");g.deferSaves();

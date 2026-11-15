@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const t=context(),run=t.run;
 run('start(0)');
 assert.equal(run('aiRosterActive()'),true);
@@ -16,10 +16,13 @@ assert.equal(run('aiRosterAuctionWinner(proposed).clubId'),1,'stable against arr
 run('proposed[2].cashBuffer=800000');
 assert.equal(run('aiRosterAuctionWinner(proposed).clubId'),1,'stable club id on tie');
 assert.equal(run('aiRosterAuctionWinner([])'),null);
+// Les directions Monde publient leur stratégie hebdomadaire avant le marché.
+run('nativeClubDirections.weekly()');
 const base=JSON.parse(run('JSON.stringify(S)'));
 assert.equal(run('aiRosterRecruitmentWeek()'),0,'first day season one excluded');
-assert.equal(run('JSON.stringify(S)'),JSON.stringify(base),'excluded window does not mutate');
-run('S.round=13;var beforeCash=club().cash;var beforeIds=S.clubs.flatMap(c=>c.players.map(p=>p.id));var available=S.market.length+S.economy.freeAgents.length;');
+assert.ok(run('JSON.stringify(S)')===JSON.stringify(base),'excluded window does not mutate');
+t.deferSaves();t.week(13);
+run('var beforeLoans=S.clubDirections.loans.length;var beforeCash=club().cash;var beforeIds=S.clubs.flatMap(c=>c.players.map(p=>p.id));var available=S.market.length+S.economy.freeAgents.length;');
 const count=run('aiRosterRecruitmentWeek()');
 assert.ok(count>=0&&count<=run('S.clubs.length*2'));
 assert.equal(run('aiRosterRecruitmentWeek()'),0,'same window idempotent');
@@ -27,24 +30,24 @@ assert.equal(run('S.economy.aiRecruitmentWindow'),'1:13');
 assert.equal(run('club().cash'),run('beforeCash'),'no human club cash mutation');
 assert.equal(run('S.clubs.every(c=>new Set(c.players.map(p=>p.id)).size===c.players.length)'),true,'no duplicate roster player');
 assert.equal(run('new Set(S.clubs.flatMap(c=>c.players.map(p=>p.id))).size===S.clubs.reduce((s,c)=>s+c.players.length,0)'),true,'exclusive player ownership');
-assert.equal(run('S.aiRoster.reports.reduce((sum,r)=>sum+r.recruited,0)'),count);
+assert.equal(run('S.aiRoster.reports.reduce((sum,r)=>sum+r.recruited+(r.bought||0),0)+S.clubDirections.loans.length-beforeLoans'),count,'libres, transferts payants et prêts totalisent exactement les mouvements');
 assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'save roundtrip');
 const historic=context();
 historic.run('start(0);delete S.aiRosterVersion;delete S.aiRoster');
 assert.equal(historic.run('aiRosterRecruitmentWeek()'),0,'legacy saves unchanged');
 const poor=context(),p=poor.run;
-p('start(0);S.round=13;for(const c of S.clubs){if(c.id!==S.club){c.cash=0;worldClub(c.id).debt=2000000}}');
+p('start(0)');poor.deferSaves();poor.week(13);
+p('for(const c of S.clubs){if(c.id!==S.club){c.cash=0;worldClub(c.id).debt=2000000}}');
 assert.equal(p('aiRosterRecruitmentWeek()'),0,'insolvent clubs excluded');
 assert.ok(p('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
 
 const depth=context(),d=depth.run;
-const professionalDepth=require('../native/engine/professional-depth.cjs');
-d(`const nativeProfessionalDepth=(${professionalDepth.toString()})();
- start(0);S.season=2;S.round=0;
+d('start(0)');depth.deferSaves();depth.week(13);
+d(`
  const buyer=S.clubs[1];
  for(const c of S.clubs)if(c.id!==buyer.id)c.cash=0;
  buyer.cash=8000000;worldClub(buyer.id).debt=0;
- buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);
+ buyer.players=buyer.players.filter(p=>p.pos!==POS[0]).slice(0,35);
  nativeProfessionalDepth.fill(S);
  const graduate=academyPlayer(0,0,1,9999);
  graduate.age=22;
@@ -55,7 +58,7 @@ assert.equal(d('buyer.players.length'),40,'native depth reaches the floor before
 assert.equal(d('aiRosterRecruitmentWeek()'),1,'a public prospect remains recruitable after the floor');
 assert.equal(d('buyer.players.length'),41);
 assert.equal(d('buyer.cash'),d('cashBefore-feesBefore'),'the transfer fee is paid');
-assert.equal(d('buyer.players.some(p=>p.id===graduate.id&&p.contractEnd===4)'),true);
+assert.equal(d('buyer.players.some(p=>p.id===graduate.id&&p.contractEnd===S.season+2)'),true);
 assert.equal(d('S.economy.freeAgents.some(p=>p.id===graduate.id)'),false);
 assert.equal(d('aiRosterRecruitmentWeek()'),0,'no duplicate recruitment in the same window');
 console.log(JSON.stringify({passed:true,signings:count,checks:['deterministic auction','priority cash tie club id','ineligible window','market idempotence','exclusive ownership','cash protection','reports','save roundtrip','legacy opt-in','insolvent clubs']}));
