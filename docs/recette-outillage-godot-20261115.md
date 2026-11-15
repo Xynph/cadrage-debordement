@@ -25,6 +25,9 @@
 - Les moniteurs `Performance` de l'exemple profil ont retourné des nombres :
   FPS, temps de traitement et de physique, mémoire, nœuds et appels de dessin.
   Ce sont des observations ponctuelles de l'interface, pas un profil CPU.
+- Depuis le checkout de livraison propre : bootstrap STDIO répété avec succès,
+  garde Monde **6/6**, compétences épinglées sans écart et contrôle des fuites
+  avec les trois sources privées : **2 094 noms, 3 829 fichiers, aucune fuite**.
 
 ## Application au développement
 
