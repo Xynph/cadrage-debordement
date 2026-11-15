@@ -10,7 +10,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const { context } = require('./harness.cjs');
+const { matchContext } = require('./harness.cjs');
 const H = require('../native/engine/match-highlights.cjs');
 
 // Niveaux où la 3D joue des temps forts. « aucun » (commentaire seul) est le choix explicite
@@ -18,8 +18,8 @@ const H = require('../native/engine/match-highlights.cjs');
 const NIVEAUX_MONTRES = ['resume', 'cles', 'etendus', 'dynamique', 'integral'];
 
 function jouer(club) {
-  const { run } = context();
-  run(`start(${club}); beginMatch(); continueMatch();`);
+  const h=matchContext(club),{run}=h;
+  run(`beginMatch(); continueMatch();`);
   for (let i = 0; i < 800 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   assert.equal(run('S.live.finished'), true);
   const events = JSON.parse(run('JSON.stringify(S.live.events)'));
@@ -30,7 +30,7 @@ function jouer(club) {
     if (e.scene?.kind !== 'try') return;
     scenes[i] = JSON.parse(run(`(()=>{const l=S.live,p=playback(l),c=p.cursor;p.cursor=${i};try{return JSON.stringify(matchScene(l))}finally{p.cursor=c}})()`));
   });
-  return { club, events, tries, scenes };
+  h.close();return { club, events, tries, scenes };
 }
 
 const matchs = [0, 3, 7, 10, 13].map(jouer);
@@ -99,24 +99,26 @@ test('Un essai « sur ballon porté » suit une touche gagnée où le ballon por
 
 test('Le fait « porte » ne change aucun tirage : le témoin qui l’ignore donne le même match', () => {
   // Témoin : la même conquête sans écrire le fait. Même journal (hors champ), même score.
-  const { run } = context();
-  run(`start(7); beginMatch(); continueMatch();`);
+  const h=matchContext(7),{run}=h;
+  run(`beginMatch(); continueMatch();`);
   run(`(()=>{const origine=contestSetPiece;contestSetPiece=function(...a){const r=origine.apply(this,a);for(const e of S.live.events)if(e.scene)delete e.scene.porte;return r}})()`);
   for (let i = 0; i < 800 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   const temoin = JSON.parse(run('JSON.stringify({events:S.live.events,score:S.live.score})'));
   const reel = matchs.find(m => m.club === 7);
   const sans = events => events.map(e => e.scene ? { ...e, scene: { ...e.scene, porte: undefined } } : e);
   assert.deepEqual(JSON.parse(JSON.stringify(sans(reel.events))), JSON.parse(JSON.stringify(sans(temoin.events))));
+  h.close();
 });
 
 test('Sauvegarde : le fait « porte » est accepté sur une conquête, refusé ailleurs', () => {
-  const { run } = context();
-  run('start(0); beginMatch(); continueMatch();');
+  const h=matchContext(),{run}=h;
+  run('beginMatch(); continueMatch();');
   for (let i = 0; i < 400 && !run('S.live.events.some(e=>e.scene?.kind==="setpiece-win")'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   run('S.live.events.find(e=>e.scene?.kind==="setpiece-win").scene.porte=true');
   assert.doesNotThrow(() => run('validateCareer(JSON.parse(JSON.stringify(S)))'));
   run('S.live.events.find(e=>e.scene&&e.scene.kind!=="setpiece-win").scene.porte=true');
   assert.throws(() => run('validateCareer(JSON.parse(JSON.stringify(S)))'));
+  h.close();
 });
 
 test('Moteur natif, minute par minute : chaque essai du score a été projeté dans un temps fort', { timeout: 600000 }, () => {
