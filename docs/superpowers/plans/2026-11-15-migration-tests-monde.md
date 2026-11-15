@@ -36,3 +36,5 @@ Les journaux détaillés restent dans le dossier de travail externe. Chaque grou
 - Harnais : régression rouge avant création observée, puis verte (World complet, refus atomiques et HTML). Second rouge/vert sur le garde natif avant toute ancienne fabrique. Discipline : tous les contrôles de pénalité, récidive, sauvegarde/import et migration de champ facultatif passent en Monde ; ajout de toMatch explicite, aucune assertion retirée.
 
 - Première ligne : suite complète verte en Monde, 146,0 s, pic RSS observé 3 510 444 Kio (Node 24 local). Aucune assertion retirée ; préparation réelle du premier match réutilisée par copies indépendantes et reprise exacte contrôlée. Budget/poids à intégrer à la tâche 7 avant CI.
+
+- Matchs, avant optimisation de sérialisation : tirs au but verts (32,0 s), côtés de touche verts (376,5 s, 205 scènes), géométrie de touche verte (579,8 s), passes en jeu vertes côté JS (71,7 s ; sous-test SDK non exécuté, recette Godot à faire). Tous les scénarios/graines/assertions conservés. Profil CPU de 10 s : 87,5 % des échantillons dans nativeSaveText, appelé par presentationTick.

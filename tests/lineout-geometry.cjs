@@ -13,7 +13,7 @@
 // choix du talonneur comme lanceur.
 // Repère : x de 0 (ligne de but de l'équipe 0) à 100, y de 0 (ligne de touche de la touche) à 70.
 const assert = require('node:assert/strict');
-const { context } = require('./harness.cjs');
+const { matchContext } = require('./harness.cjs');
 const { normalize } = require('../dist/match3d/scene-adapter.js');
 
 const EPS = 1e-9;
@@ -88,9 +88,9 @@ function verify(raw, expectedMark) {
 // Scènes réelles du moteur.
 for (const seed of [1, 2, 3, 4, 5, 6]) {
   for (const club of [0, 3, 7]) {
-    const { run } = context();
+    const h = matchContext(club), { run } = h;
     reseed(run, seed);
-    run(`start(${club}); S.tactic="${seed % 2 ? 'conquete' : 'large'}"; beginMatch(); continueMatch();`);
+    run(`S.tactic="${seed % 2 ? 'conquete' : 'large'}"; beginMatch(); continueMatch();`);
     const keys = new Set();
     for (let i = 0; i < 4000 && !run('S.live.finished'); i++) {
       run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
@@ -107,6 +107,7 @@ for (const seed of [1, 2, 3, 4, 5, 6]) {
       keys.add(key);
       verify(raw);
     }
+    h.close();
   }
 }
 for (const team of [0, 1]) for (const period of [1, 2]) {
@@ -117,12 +118,15 @@ const real = { scenes: checked, presEnBut: nearGoal };
 
 // Scènes construites : les deux équipes, les deux mi-temps, près des deux en-buts et au centre.
 // 2 et 98 : marques hors des 5 m (anciennes données) ramenées à 5 et 95 dans la scène seulement.
+const constructed = matchContext(), checkpoint = constructed.checkpoint();
+
 for (const team of [0, 1]) {
   for (const period of [1, 2]) {
     for (const [x, expected] of [[2, 5], [5, 5], [8, 8], [12, 12], [50, 50], [88, 88], [92, 92], [95, 95], [98, 95]]) {
-      const { run } = context();
+      const { run } = constructed;
+      constructed.restore(checkpoint);
       reseed(run, 9);
-      run('start(0); beginMatch(); continueMatch();');
+      run('beginMatch(); continueMatch();');
       run(`(function(){const l=S.live;l.possession=${team};l.territory=${x};if(l.flow)l.flow.period=${period};l.minute=${period === 2 ? 55 : 15};addEvent(l,"Touche","setup",{kind:"lineout",team:${team},from:{x:${x},y:4},to:{x:${x},y:4}});syncMatchPresentation(l)})()`);
       const territory = run('S.live.territory');
       const raw = JSON.parse(run('JSON.stringify(matchScene(S.live))'));
@@ -138,4 +142,6 @@ for (const team of [0, 1]) {
 }
 
 assert.ok(onGoalLine > 0, 'Des non-participants se replient sur leur ligne de but près de l’en-but');
+constructed.close();
+
 console.log(JSON.stringify({ passed: true, scenesReelles: real, scenesVerifiees: checked, parEquipeEtMiTemps: Object.fromEntries(seen), nonParticipantsSurLigneDeBut: onGoalLine }));

@@ -7,7 +7,7 @@
 // marque (loi 18.22), n'est d'aucun côté et n'est pas compté ici ; couloir, profondeurs,
 // vis-à-vis, receveurs et non-participants sont vérifiés par tests/lineout-geometry.cjs.
 const assert = require('node:assert/strict');
-const { context } = require('./harness.cjs');
+const { matchContext } = require('./harness.cjs');
 const { normalize } = require('../dist/match3d/scene-adapter.js');
 
 function reseed(run, seed) {
@@ -56,9 +56,9 @@ function verify(raw) {
 
 for (const seed of [1, 2, 3, 4]) {
   for (const club of [0, 3, 7]) {
-    const { run } = context();
+    const h = matchContext(club), { run } = h;
     reseed(run, seed);
-    run(`start(${club}); S.tactic="${seed % 2 ? 'conquete' : 'large'}"; beginMatch(); continueMatch();`);
+    run(`S.tactic="${seed % 2 ? 'conquete' : 'large'}"; beginMatch(); continueMatch();`);
     const keys = new Set();
     for (let i = 0; i < 4000 && !run('S.live.finished'); i++) {
       run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
@@ -72,6 +72,7 @@ for (const seed of [1, 2, 3, 4]) {
       keys.add(key);
       verify(raw);
     }
+    h.close();
   }
 }
 
@@ -84,11 +85,14 @@ for (const team of [0, 1]) {
 }
 
 // Scène construite à la main pour les deux équipes, aux deux extrémités du terrain.
+const constructed = matchContext(), checkpoint = constructed.checkpoint();
+
 for (const team of [0, 1]) {
   for (const x of [25, 75]) {
-    const { run } = context();
+    const { run } = constructed;
+    constructed.restore(checkpoint);
     reseed(run, 9);
-    run('start(0); beginMatch(); continueMatch();');
+    run('beginMatch(); continueMatch();');
     run(`(function(){const l=S.live;l.possession=${team};l.territory=${x};addEvent(l,"Touche","setup",{kind:"lineout",team:${team},from:{x:${x},y:4},to:{x:${x},y:4}});syncMatchPresentation(l)})()`);
     const raw = JSON.parse(run('JSON.stringify(matchScene(S.live))'));
     assert.equal(raw.kind, 'lineout');
@@ -96,5 +100,7 @@ for (const team of [0, 1]) {
     verify(raw);
   }
 }
+
+constructed.close();
 
 console.log(JSON.stringify({ passed: true, scenesVerifiees: checked, parEquipeEtMiTemps: Object.fromEntries(seen) }));

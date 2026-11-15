@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-const t=context(),run=t.run;
-run('start(0);beginMatch();pauseMatch()');
+const {matchContext}=require('./harness.cjs');
+const t=matchContext(),run=t.run;
+run('beginMatch();pauseMatch()');
 assert.ok(run('goalKickGeometry(true,35).distance')<run('goalKickGeometry(true,10).distance'));
 assert.equal(run('goalKickGeometry(true,35).angle'),0);
 assert.ok(run('goalKickGeometry(true,10).angle')>0);
@@ -16,3 +16,5 @@ run('match.weather="Sec";var kicker=chooseScorer(S.clubs[match.pair[team]],activ
 assert.ok(run('goalChance(match,team,true,35)')<run('fitChance'),'fatigued kicker should be less accurate');
 run('kicker.condition=previousCondition');
 console.log('V17 goal-kicking geometry and accuracy checks passed');
+
+t.close();

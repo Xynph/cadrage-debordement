@@ -6,12 +6,13 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const { context } = require('./harness.cjs');
+const { matchContext } = require('./harness.cjs');
 const { normalize } = require('../dist/match3d/scene-adapter.js');
 
 function play(project) {
-  const { run } = context();
-  run('start(3); S.tactic="large"; beginMatch(); continueMatch();');
+  const h = matchContext(3), { run } = h;
+  try {
+  run('S.tactic="large"; beginMatch(); continueMatch();');
   const passes = [];
   let previous;
   for (let i = 0; i < 180 && !run('S.live.finished'); i++) {
@@ -25,6 +26,7 @@ function play(project) {
     previous = scene;
   }
   return { passes, career: run('JSON.stringify(S)'), nextRandom: run('Math.random()') };
+  } finally { h.close(); }
 }
 
 const projected = play(true);
