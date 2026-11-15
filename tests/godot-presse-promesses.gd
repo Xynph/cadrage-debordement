@@ -116,8 +116,14 @@ func run() -> void:
 	await capture("promesse-bilan")
 	await click("PressReturn")
 	await wait_idle()
-	var leave_until := Time.get_ticks_msec() + 10000
-	while app.contextual_director.active_meeting() and Time.get_ticks_msec() < leave_until: await settle(6)
+	# D'autres rendez-vous obligatoires du club (bilan du conseil…) peuvent suivre la conférence : on les referme comme le fait le joueur.
+	for guard in 6:
+		if not app.contextual_director.active_meeting(): break
+		var queued: Dictionary = app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene", {})
+		if not queued.get("completed", false): app.contextual_director.command("club_meeting_ack", {"meetingId": queued.get("id")})
+		await wait_idle()
+		app.contextual_director.close_room()
+		await wait_idle()
 	app._navigate("Club")
 	await wait_idle()
 	var row: Label = null
@@ -125,7 +131,7 @@ func run() -> void:
 	while row == null and Time.get_ticks_msec() < club_until:
 		await settle(6)
 		row = app.find_child("ClubPromise1", true, false) as Label
-	var diag := "route=%s objectifs=%s actives=%d texte=%s rdv=%s attente=%s erreur=%s" % [app.route, str(app.find_child("ClubObjectives", true, false) != null), app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []).size(), "absent" if row == null else row.text, str(app.contextual_director.active_meeting()), str(app.waiting), str(app.last_error)]
+	var diag := "route=%s objectifs=%s actives=%d texte=%s rdv=%s attente=%s erreur=%s scene=%s" % [app.route, str(app.find_child("ClubObjectives", true, false) != null), app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []).size(), "absent" if row == null else row.text, str(app.contextual_director.active_meeting()), str(app.waiting), str(app.last_error), JSON.stringify(app.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")).left(300)]
 	check(row != null and row.text == str(promises.active[0].short), "Écran Club : promesse suivie dans « Objectifs de la saison » · "+diag)
 	await capture("promesse-club")
 	finish()
