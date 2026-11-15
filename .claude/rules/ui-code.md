@@ -3,6 +3,9 @@ paths:
   - "src/ui/**"
   - "Assets/**/{UI,Ui,ui}/**/*.cs"
   - "Source/**/{UI,Ui,ui}/**/*.{h,cpp}"
+  - "native/godot/ui/**"
+  - "native/godot/theme.gd"
+  - "native/godot/visual_widgets.gd"
 ---
 
 # UI Code Rules

@@ -4,6 +4,7 @@ paths:
   - "data/**/*.json"
   - "Assets/**/{Data,data}/**/*.json"
   - "Content/**/{Data,data}/**/*.json"
+  - "world-data/**/*.json"
 ---
 
 # Data File Rules

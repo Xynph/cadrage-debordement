@@ -31,6 +31,11 @@ engine:
   version: "4.7"
   language: GDScript
   rendering: GL Compatibility
+  # Le code Godot vit dans native/godot/, pas dans src/ (dossier CCGS par
+  # défaut, absent ici) : sans cette clé, les contrôles de code du kit
+  # (validate-commit, detect-gaps, /tech-debt, /code-review…) ne scannent rien.
+  code_root: native/godot
+  test_root: tests
 
 modes:
   rigor: minimal
