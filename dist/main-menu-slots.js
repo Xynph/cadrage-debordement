@@ -16,14 +16,16 @@ const CDMenuSlots=(()=>{
  const label=v=>String(v||'Ma carrière').trim().slice(0,56)||'Ma carrière';
  function envelope(state){
   const s=JSON.stringify(state);
-  if(s.length>5*1024*1024)throw Error('Carrière trop volumineuse pour cet emplacement.');
+  let cap=5*1024*1024;
+  if(state.worldMode!==undefined){if(typeof worldCareerActive!=='function'||!worldCareerActive(state))throw Error('Édition mondiale inconnue : emplacement refusé.');cap=worldSaveLimits(state)?.saveBytes;if(!Number.isSafeInteger(cap)||cap<=0)throw Error('Limite de sauvegarde mondiale indisponible.');}
+  if(s.length>cap||(typeof saveUtf8Bytes==='function'?saveUtf8Bytes(s):new TextEncoder().encode(s).length)>cap)throw Error('Carrière trop volumineuse pour cet emplacement.');
   return JSON.stringify({version:2,checksum:hash(s),state:JSON.parse(s)});
  }
  function list(){return index()}
  function create(name,state){
   const d=index();if(d.items.length>=MAX)throw Error('Limite de cinq carrières atteinte.');
-  let id;do{id='s-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*0xFFFFFF).toString(36).padStart(6,'0')}while(d.items.some(x=>x.id===id));
   const saved=envelope(state);
+  let id;do{id='s-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*0xFFFFFF).toString(36).padStart(6,'0')}while(d.items.some(x=>x.id===id));
   storage().setItem(PREFIX+id,saved);
   d.items.push({id,name:label(name),updatedAt:new Date().toISOString()});d.active=id;
   try{writeIndex(d)}catch(e){try{storage().removeItem(PREFIX+id)}catch(_){}throw e}
