@@ -121,7 +121,11 @@ func run() -> void:
 	var club_until := Time.get_ticks_msec() + 10000
 	while row == null and Time.get_ticks_msec() < club_until:
 		await settle(6)
-		row = app.root_content.find_child("ClubPromise1", true, false) as Label
+		row = app.find_child("ClubPromise1", true, false) as Label
+	if row == null:
+		print("DIAG route=", app.route, " objectifs=", app.find_child("ClubObjectives", true, false) != null, " promesses=", app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []).size(), " tab=", app.management_ui.get("club_tab", "?"), " ui=", app.management_ui.get("club_key", "?"))
+	elif row.text != str(promises.active[0].short):
+		print("DIAG texte=", row.text)
 	check(row != null and row.text == str(promises.active[0].short), "Écran Club : promesse suivie dans « Objectifs de la saison »")
 	await capture("promesse-club")
 	finish()
