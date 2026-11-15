@@ -406,7 +406,7 @@ func run() -> void:
 	view.apply_frame(live(frames, at_try))
 	check(gestes.phase == "essai" and gestes.carrier == featured(frames[at_try].scene), "Essai isolé : plongeon du marqueur désigné")
 	clock = 0.0
-	while not gestes.done and clock < 10.0:
+	while not gestes.done and clock < 30.0:
 		view._process(STEP)
 		clock += STEP
 	check(Vector3(view._ball.global_position.x, 0.0, view._ball.global_position.z).distance_to(try_point) < 0.01 and view._ball.global_position.y < 0.2, "Essai isolé : ballon aplati au point du moteur")

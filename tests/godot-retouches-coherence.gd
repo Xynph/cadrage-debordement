@@ -257,7 +257,7 @@ func delegation_a_22() -> void:
 	check(bouton != null and bouton.is_visible_in_tree(), "Bouton « Déléguer le match » visible")
 	if bouton == null: return
 	check(not bouton.disabled, "Feuille à 22 : le bouton « Déléguer le match » est actif")
-	check(bouton.tooltip_text.contains("22"), "Info-bulle : explique le match à 22 : " + bouton.tooltip_text)
+	check(bouton.tooltip_text.contains("22") and bouton.tooltip_text.contains("espoir"), "Info-bulle : explique l'appel d'un espoir et le match à 22 : " + bouton.tooltip_text)
 	await capture("delegation-22-avant")
 	bouton.pressed.emit()
 	await settle(30)
@@ -266,7 +266,16 @@ func delegation_a_22() -> void:
 	if dialogue == null: return
 	var info := dialogue.find_child("MatchDelegationReduced", true, false) as Label
 	check(info != null and info.text.contains("22") and info.text.contains("n° 17"), "La fenêtre confirme le match à 22 : " + (info.text if info != null else ""))
-	check(dialogue.get_ok_button().text == "DÉLÉGUER À 22", "Bouton de confirmation « DÉLÉGUER À 22 »")
+	var par_defaut := dialogue.find_child("FeuilleChoix_espoir0", true, false) as CheckBox
+	var a_22 := dialogue.find_child("FeuilleChoix_a22", true, false) as CheckBox
+	check(par_defaut != null and par_defaut.button_pressed and par_defaut.text.begins_with("Appeler un espoir :"), "Choix par défaut : appeler un espoir (" + (par_defaut.text if par_defaut != null else "absent") + ")")
+	check(a_22 != null and not a_22.button_pressed and a_22.text == "Jouer à 22", "Second choix : « Jouer à 22 »")
+	check(dialogue.get_ok_button().text == "DÉLÉGUER LE MATCH", "Espoir retenu : bouton « DÉLÉGUER LE MATCH »")
+	await capture("delegation-espoir")
+	if a_22 == null: return
+	a_22.button_pressed = true
+	await settle(6)
+	check(dialogue.get_ok_button().text == "DÉLÉGUER À 22", "Bouton de confirmation « DÉLÉGUER À 22 » quand le match à 22 est choisi")
 	var case_ := dialogue.find_child("MatchDelegationComposition", true, false) as CheckBox
 	check(case_ != null and case_.button_pressed, "Case « Confier aussi la composition au staff » cochée")
 	await capture("delegation-22")

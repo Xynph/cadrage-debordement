@@ -11,10 +11,12 @@
       43375411272
     ],
     "weights": {
+      "tests/feuille-espoirs.cjs": 458,
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 120,
       "tests/fiche-club-monde.cjs": 200,
       "tests/world-nouvelle-saison-rapide.cjs": 420,
+      "tests/memo-projection-monde.cjs": 200,
       "tests/delegue-composition-staff.cjs": 200,
       "tests/match-rating-curve.cjs": 129,
       "tests/animation-pipeline-runner.cjs": 7,

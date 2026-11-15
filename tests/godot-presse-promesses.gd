@@ -116,8 +116,12 @@ func run() -> void:
 	await capture("promesse-bilan")
 	await click("PressReturn")
 	app._navigate("Club")
-	await settle(12)
-	var row := app.root_content.find_child("ClubPromise1", true, false) as Label
+	await wait_idle()
+	var row: Label = null
+	var until := Time.get_ticks_msec() + 10000
+	while row == null and Time.get_ticks_msec() < until:
+		await settle(6)
+		row = app.root_content.find_child("ClubPromise1", true, false) as Label
 	check(row != null and row.text == str(promises.active[0].short), "Écran Club : promesse suivie dans « Objectifs de la saison »")
 	await capture("promesse-club")
 	finish()
