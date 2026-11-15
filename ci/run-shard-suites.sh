@@ -55,11 +55,12 @@ budget() {
   case "$1" in
     # Producteur UI, suites complètes : saves804,13s, résilience656,50s,
     # World-save303,97s et Matchday171,43s ; 21recettes reçues en World.
-    tests/saves.cjs|tests/career-resilience.cjs|tests/match-penalite-main.cjs|tests/lnr-multiclub-continuity.cjs|tests/match-essai-visible.cjs) echo 1800s ;;
+    tests/saves.cjs|tests/career-resilience.cjs|tests/match-penalite-main.cjs|tests/lnr-multiclub-continuity.cjs|tests/match-essai-visible.cjs|tests/rugby.cjs) echo 1800s ;;
     tests/world-save.cjs|tests/premium-editorial-matchday.cjs|tests/ui05-live-collective.cjs|tests/economy.cjs|tests/lnr-save-import-rollback-stress.cjs) echo 1200s ;;
     tests/matchflow.cjs|tests/match-courses.cjs|tests/lineout-approach.cjs) echo 600s ;;
     # Préparation331,4s reçue ; faits structurés189,7s avant reprise de mémoire.
-    tests/preparation.cjs|tests/match-structured-facts.cjs) echo 900s ;;
+    tests/preparation.cjs|tests/match-structured-facts.cjs|tests/v31-finance-forecasts.cjs|tests/v32-succession-planning.cjs|tests/v33-contract-renewals.cjs|tests/v34-counteroffers.cjs|tests/v35-salary-demand.cjs|tests/match-importance.cjs) echo 900s ;;
+    tests/match-highlights.cjs) echo 1800s ;;
     # Migration Monde : reçus locaux complets Node24, aucune saison/attaque retirée.
     # Journaux/empreintes et limites de mesure : monde-migration-mesures-20261115.json.
     tests/lnr-career-long.cjs|tests/lnr05-evidence-long.cjs|tests/lnr05-rotation-audit.cjs|tests/lnr05-multiseason-strategies.cjs|tests/lnr-cross-season-recovery.cjs) echo 1800s ;;

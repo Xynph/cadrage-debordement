@@ -6,7 +6,7 @@
     "mesures locales à remplacer par les mesures CI du code migré après un run conforme",
     "Garde statique8/8 verte ; migrations fonctionnelles encore en cours, aucune CI complète conforme à ce stade. Les signatures de suite/log bornent les reçus locaux, pas une provenance GitHub.",
     "currentSourceSha256 désigne le fichier relu lors de la consolidation des mesures, sans attester les dépendances exactes chargées lors d’un reçu plus ancien ; logSha256 identifie le journal réel. Seule la CI finale sur SHA recevra l’ensemble courant.",
-    "Les contrôles purs de planification ont été mesurés avec une proposition de rééquilibrage encore non intégrée. Leurs reçus verts précèdent la dernière consolidation des poids ; le rejeu est maintenant rouge et ne vaut pas CI complète conforme."
+    "Plan LPT existant conservé. Sept contrôles purs CI actuels verts sur Node22 ; ci-shard-replay est rouge avec les nouveaux vrais poids (1916,24s sur la première trace, contre1232,39s en10×2). Une proposition de rééquilibrage étudiée puis archivée ne résolvait pas le plancher de charge ; ses anciens reçus verts ne figurent plus ici. Aucun seuil ni historique modifié."
   ],
   "suites": [
     {
@@ -458,6 +458,39 @@
       "sdk": "Godot4.7.2 réel, aucun sous-test ignoré ; RSS du processus Node seulement"
     },
     {
+      "file": "tests/rugby.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 840,
+      "peakRssKb": 3502548,
+      "harness": "aad8d9dd",
+      "currentSourceSha256": "e10b3636782b7358f905c605a4d3cd0e05e5a113629fd141f2e70857a593009f",
+      "logSha256": "b0fdae4c071dda9ecbbe36839df2f8a9ec63bcbb2c16b00370a37f73b6598441"
+    },
+    {
+      "file": "tests/match-highlights.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 791.9,
+      "peakRssKb": 3981376,
+      "harness": "aad8d9dd",
+      "currentSourceSha256": "e599e3a3d6f63adfac250975bda95df66349e6d128b95bfee30509c3d7dc36d0",
+      "logSha256": "b7cf010b23fff76e179e0ec92302d655cb407a977ad3a19a58b34e7e96ad3446"
+    },
+    {
+      "file": "tests/match-importance.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 384.5,
+      "peakRssKb": 3895860,
+      "harness": "aad8d9dd",
+      "currentSourceSha256": "2d0bc67948a78e8ab2b73038ceafa83281a6c961891b46819085e65eb589e993",
+      "logSha256": "862ea209d373261f0570a4e29e2b29550493a86f29d82043411e7671f7726fa7"
+    },
+    {
       "file": "tests/lnr-career-long.cjs",
       "status": 0,
       "signal": null,
@@ -766,6 +799,28 @@
       "logSha256": "cc2ee35be0c8bc3de7a7a21374df429bed5a69d83bbc4a908b40caf7568dbc49"
     },
     {
+      "file": "tests/development.cjs",
+      "status": 0,
+      "seconds": 499.250764806,
+      "peakRssKb": 3930264,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit d1c6cd66",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "ca96ef0685ea89ef99ff6150bbe6cf7a2e6f1905a5851aec704ff79e8b3318d0",
+      "logSha256": "53ce62d9b5316c4460dce4023700dcb8586f9f91c50b74d4fa1949de8b6a92ec"
+    },
+    {
+      "file": "tests/v35-salary-demand.cjs",
+      "status": 0,
+      "seconds": 218.92702496,
+      "peakRssKb": 3175524,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit a2d734eb",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "bdf388665064cd059baed30dbc1c20b873b5ecc46e252ea9161dd3fec8e7ab84",
+      "logSha256": "cbda4b3b0261e929068151d272b68afa5a77ef1ebf0f8b91c847268bbae4ac25"
+    },
+    {
       "file": "tests/art-direction-v4.cjs",
       "status": 0,
       "seconds": 48.349003551,
@@ -1021,7 +1076,7 @@
       "seconds": 144.261852578,
       "peakRssKb": 3690000,
       "runtime": "v24.22.1",
-      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
       "currentSourceSha256": "92f96688fc3d1cba92557e6acc823f4928346e52098f95f488ba4bbbab9d4600",
       "logSha256": "551f0ef05c289482418d14881e0398b14f1f0bf261318e331d3af168081d1e3d"
     },
@@ -1031,7 +1086,7 @@
       "seconds": 331.40587739,
       "peakRssKb": 4042440,
       "runtime": "v24.22.1",
-      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
       "currentSourceSha256": "ad2cbb940c4487e4b37a68046447c14be50e57c194d26c2f1dddb23f96917c7d",
       "logSha256": "f0b818ddc07a061c5f47545bb52f1cc8fe3a4f49b98a1e7c2567cb51abb5e1ab"
     },
@@ -1041,7 +1096,7 @@
       "seconds": 275.186371559,
       "peakRssKb": 3765040,
       "runtime": "v24.22.1",
-      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
       "currentSourceSha256": "4456a942c1ae8f7adc02aaa802e58fdfe96b13c1a6463d96e7aceb3b2eb9bd43",
       "logSha256": "638e48551752ac1ba96aa7a14f6ef6d915c5513c5314b0e1eeb1c1acb547a748"
     },
@@ -1051,89 +1106,109 @@
       "seconds": 990.759714264,
       "peakRssKb": 4020000,
       "runtime": "v24.22.1",
-      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
       "currentSourceSha256": "9b99b75f5310c5fac4cdda506375b1f95c2a06e56a15e4a186a48ae01c5763b9",
       "logSha256": "60d77f2cd66e3c7992c6129c8041eaacb80fa3387a2d29bcf6ebdc480baa7757"
     },
     {
+      "file": "tests/tactical-plans.cjs",
+      "status": 0,
+      "seconds": 276.40519859700004,
+      "peakRssKb": 4042468,
+      "runtime": "v24.22.1",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
+      "currentSourceSha256": "205b4aa817603952bfab999959a1459f3de1695315c51879767d79576037f233",
+      "logSha256": "f682c2e96da134a63613fda7166ea2f9ef3f2875f3c8ca28289023f333e3d42f"
+    },
+    {
+      "file": "tests/playbook.cjs",
+      "status": 0,
+      "seconds": 154.546621542,
+      "peakRssKb": 4173112,
+      "runtime": "v24.22.1",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
+      "currentSourceSha256": "13e55bcdb67e0367a85ca676bf3493cf1e53a994eba6d8ba9aa0b16b83174347",
+      "logSha256": "49132e682d700f82f1f2db315284a0fc92903f649796b287400b4d50f1e343c4"
+    },
+    {
+      "file": "tests/opposition.cjs",
+      "status": 0,
+      "seconds": 450.070911804,
+      "peakRssKb": 3951956,
+      "runtime": "v24.22.1",
+      "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
+      "currentSourceSha256": "28231d06279a884ffb8285cc77dbc78cc33a73256596a77281b57ee86e4a8818",
+      "logSha256": "7406cd3ddc63fda91cc91b1c33a4a8a65ee6f0945b4284dc5f28dcbd9baab01a"
+    },
+    {
       "file": "tests/ci-p90-stress-guard.cjs",
       "status": 0,
-      "seconds": 1.144087943,
-      "peakRssKb": 120688,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 0.193075948,
+      "peakRssKb": 82240,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "4c5ddb961d5fc3db8f13aa65f5121de3375fba4286ef32000b4ae1c414947cc2",
-      "logSha256": "98326390ec7663c7f5f6eddb619ffff711128acad366d7129585be7a8253782c"
+      "logSha256": "273805a8985bb8370059e8ba33cd6583bd949b5e103cfb7f58bc4102d5a243b8"
     },
     {
       "file": "tests/ci-test-coverage.cjs",
       "status": 0,
-      "seconds": 1.556419534,
-      "peakRssKb": 89760,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 1.9243214679999998,
+      "peakRssKb": 103824,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "60737fd26be1b9208b840689e630448a01ceb0c2de1bfac69f7c1953e6e0fc06",
-      "logSha256": "d846458a431b3c996847bd914d15f507c6619c56fe61fbb360c3059668d0d4f4"
+      "logSha256": "6ead6a82629a96114c0fba3b2ad669043898f8c0cad4b9a02a8fe173d3c6253e"
     },
     {
       "file": "tests/ci-shard-balancing.cjs",
       "status": 0,
-      "seconds": 2.110121555,
-      "peakRssKb": 131400,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 0.337662384,
+      "peakRssKb": 108560,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "4da264c7f4c058917e9e69e8f4e42a95032dd538ed35330f4dd6568d1fbaa90d",
-      "logSha256": "643e12d49c64ca0c58bfd27d50ee45fbacc21c1eedfdd186049708df23b399b1"
+      "logSha256": "271ac36d18527605b3878c93c2910d0d5add5403cccff90c051a3353d8205b38"
     },
     {
       "file": "tests/ci-modes-monde.cjs",
       "status": 0,
-      "seconds": 6.979389766000001,
-      "peakRssKb": 283456,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 6.413371495,
+      "peakRssKb": 218036,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "8f19905b1c78bbce8e3a7e8ae55b7f083abffe3da9092bbce5793b452dab2a4a",
-      "logSha256": "a865edc29c26e1af6e1b45b4b82f44fc2e4f36d421627fba00ae619ae38cd420"
+      "logSha256": "4b682005da661a71c5e5a693649957519e226c533029c77d811d1b156817c430"
     },
     {
       "file": "tests/ci-shard-profiles.cjs",
       "status": 0,
-      "seconds": 1.939661603,
-      "peakRssKb": 118572,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 0.160124686,
+      "peakRssKb": 78040,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "e16b889195d1bf2119964515580c2efe6291bf64443991021e0a29c1105a363e",
-      "logSha256": "9a6cd82109152b0e197eb73b7de0735cb0b2019fb00554db21d807b94446b44e"
+      "logSha256": "908e190c07820074b28cf5b7694eec07ca419849e7fb25ca86fbb16ef6030404"
     },
     {
       "file": "tests/ci-sharding.cjs",
       "status": 0,
-      "seconds": 21.769914884,
-      "peakRssKb": 144512,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 4.722654391999999,
+      "peakRssKb": 82132,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "182117ff727d96ab1c25a3fc7e47439c5d1d2fa0620dc29d0f9372cfa55d069a",
-      "logSha256": "ab8dbc49d1d91e1f5d16a6c2714a2946a652838fa75fada53283621a4af8234f"
-    },
-    {
-      "file": "tests/ci-shard-replay.cjs",
-      "status": 0,
-      "seconds": 15.681042657,
-      "peakRssKb": 324228,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
-      "currentSourceSha256": "19eff84f90df8ff7b618a339efbad1a73f8d7786f0f93f324321b8d31b2f8f96",
-      "logSha256": "bde52d9f82ca4935fe34c02f88ec3954d163f8483076e64268811006b30ca350"
+      "logSha256": "f5d3da5f1a3a97d4369228047cdcec3ef5a496ae6ce58a06e10c293cc232e7e3"
     },
     {
       "file": "tests/ci-long-career-balance.cjs",
       "status": 0,
-      "seconds": 1.764614092,
-      "peakRssKb": 124212,
-      "runtime": "v24.22.1",
-      "harness": "profilcontrôles purs CI, sans carrière",
+      "seconds": 0.183997041,
+      "peakRssKb": 78920,
+      "runtime": "v22.23.5",
+      "harness": "contrôles purs CI Node22, LPT existant sans proposition, aucune carrière",
       "currentSourceSha256": "ae08918fd70a051c294c9c50ee8ec1b13112a2a432793a46607612f47c40ea95",
-      "logSha256": "7a528ee2b971f10d1988564db92497e6355786b9a5b697ad143425cf7f7e0614"
+      "logSha256": "ccfa2729e6369d2e12960a6585051388abcb12781e6786e60d9ce72366df014f"
     }
   ]
 }
