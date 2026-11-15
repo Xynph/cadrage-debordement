@@ -59,6 +59,8 @@ budget() {
     tests/world-youth-history-promotion.cjs) echo 300s ;;
     # Mentorat World,11cas complets et vrais composants publics :345,89s.
     tests/staff-mentoring.cjs) echo 900s ;;
+    # Satisfaction et relations :88,0/109,4s complètes Node22 sous charge.
+    tests/v36-satisfaction.cjs|tests/v37-relations.cjs) echo 300s ;;
     # Référence V63.2 : six saisons réelles/reprises2/4,1327,4s sous charge.
     tests/v63-2-stress-native.cjs) echo 2700s ;;
     # Producteur UI, suites complètes : saves804,13s, résilience656,50s,

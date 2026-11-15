@@ -1,9 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 function valid(run){return run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))');}
-const t=context(),r=t.run;
-r('start(0);var p=club().players.find(p=>p.contractEnd===S.season);var id=p.id;var cash=club().cash');
+let t=context(),r=t.run;
+r('start(0);var p=club().players.find(p=>p.contractEnd===S.season&&reservationWage(p,"renew",2)>1000);var id=p.id;var cash=club().cash');
 assert.equal(r('S.relationsVersion'),1);
 assert.equal(r('relationsActive()'),true);
 assert.equal(r('promiseReminders().length'),0);
@@ -12,7 +12,7 @@ assert.ok(r('coachPanel().includes("Dialogues joueur")'));
 assert.ok(valid(r));
 const snapshot=r('JSON.stringify(S)'),storage=r('localStorage.getItem("bdt-v1")');
 r('tensionsDashboard();coachPanel();contractHistoryPanel();promiseReminders()');
-assert.equal(r('JSON.stringify(S)'),snapshot);
+assert.ok(r('JSON.stringify(S)')===snapshot);
 assert.equal(r('localStorage.getItem("bdt-v1")'),storage);
 assert.equal(r('makePlayingPromise(id,"rotation")'),true);
 let reminders=JSON.parse(r('JSON.stringify(promiseReminders())'));
@@ -26,7 +26,7 @@ assert.equal(r('p.satisfaction.score'),67);
 assert.equal(r('coachConversation(id,"rassurer")'),false);
 assert.equal(r('S.economy.relationLog[0].kind'),'coach');
 assert.ok(valid(r));
-r('S.economy.week++');
+r('var observedBeforeWeek=JSON.stringify(p.satisfaction)');t.deferSaves();t.week(1);r('cash=club().cash;p=player(id);p.satisfaction=JSON.parse(observedBeforeWeek);p.satisfaction.baseline=p.dev.minutes');
 assert.equal(r('coachConversation(id,"clarifier")'),true);
 assert.equal(r('p.satisfaction.score'),67);
 assert.ok(valid(r));
@@ -51,13 +51,15 @@ assert.equal(r('S.economy.relationLog[0].kind'),'signed');
 assert.ok(r('contractHistoryPanel().includes("Signature confirmée")'));
 assert.ok(valid(r));
 const replay=JSON.parse(r('JSON.stringify(S)'));
-const restored=context(replay),q=restored.run;
+let restored=context(replay),q=restored.run;
 assert.equal(q('S.economy.relationLog[0].kind'),'signed');
 assert.ok(valid(q));
 const legacy=JSON.parse(r('JSON.stringify(S)'));
 delete legacy.relationsVersion;delete legacy.economy.relationLog;delete legacy.economy.moodLog;legacy.economy.talks={};
 for(const c of legacy.clubs)for(const p of c.players)if(p.satisfaction)delete p.satisfaction.coachMeeting;
-const historical=context(legacy),h=historical.run;
+t.ctx.relationsLegacy=legacy;try{r('validateCareer(relationsLegacy);parseSaveDocument(JSON.stringify(createSaveDocument(relationsLegacy)))')}finally{delete t.ctx.relationsLegacy;}
+t.close();t=null;r=null;
+let historical=context(legacy),h=historical.run;
 assert.equal(h('relationsActive()'),false);
 assert.equal(h('coachConversation(club().players[0].id,"ecouter")'),false);
 assert.ok(h('tensionsDashboard().includes("Activation volontaire")'));
@@ -66,12 +68,18 @@ assert.equal(h('activateRelations()'),true);
 assert.equal(h('relationsActive()'),true);
 assert.ok(valid(h));
 const invalid=JSON.parse(q('JSON.stringify(S)'));
-invalid.economy.relationLog[0].kind='unknown';
-const bad=context(),b=bad.run;b('start(0)');
-b('S.economy.relationLog=[{season:1,round:0,playerId:"p",kind:"unknown",detail:"renew",status:"ready",amount:1,minimum:1,years:1,attempt:1}]');
-assert.throws(()=>b('validateCareer(S)'));
+// Corrompre seulement le type d'une vraie signature déjà validée : aucun autre
+// champ ne peut expliquer le refus. Le candidat n'est jamais installé en S.
+const intact=q('JSON.stringify(S)'),intactSeed=restored.seed(),intactStore=restored.store['bdt-v1'];
+invalid.economy.relationLog[0].kind='unknown';restored.ctx.invalidRelationText=JSON.stringify(invalid);
+try{assert.throws(()=>q('validateCareer(JSON.parse(invalidRelationText))'));}
+finally{delete restored.ctx.invalidRelationText;}
+assert.ok(q('JSON.stringify(S)')===intact);
+assert.equal(restored.seed(),intactSeed);
+assert.ok(restored.store['bdt-v1']===intactStore);
+restored.close();restored=null;q=null;historical.close();historical=null;h=null;
 const live=context(legacy),l=live.run;
-l('beginMatch();pauseMatch()');
+live.deferSaves();live.toMatch();l('beginMatch();pauseMatch()');
 assert.equal(l('activateRelations()'),false);
-assert.equal(l('S.relationsVersion'),undefined);
+assert.equal(l('S.relationsVersion'),undefined);live.close();
 console.log(JSON.stringify({passed:true,checks:['contract log','live confirmation','promise reminders','team mood evidence','coach cooldown','legacy opt-in','save roundtrip','malformed log rejection']}));

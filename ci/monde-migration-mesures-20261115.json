@@ -1,6 +1,6 @@
 {
   "date": "2026-11-15",
-  "runtime": "Node 24.22.1 local Linux, limite CPU 4, exécution directe",
+  "runtime": "Selon reçu : Node22.23.5 ou24.22.1, Linux local sous charge partagée",
   "note": "Durées de suites complètes réellement exécutées, Node24.22.1 ou22.23.5 selon reçu, sous charge locale partagée. RSS Node observé ou resourceUsage selon le producteur ; pas une mesure GitHub, ni le cumul des processus Godot enfants. Poids au moins2s et +15%, mémoire+25%. Les SKIP SDK antérieurs sont remplacés seulement lorsqu’un reçu SDK complet existe.",
   "limits": [
     "mesures locales à remplacer par les mesures CI du code migré après un run conforme",
@@ -502,6 +502,50 @@
       "harness": "aad8d9dd",
       "currentSourceSha256": "ba396a37aa0aa107e7766e4347ef185495ef513a5d5e2ed502c0b99cc470898c",
       "logSha256": "6da0fda7258049d5dae130d66f2da49f9e7fcf5cde11d566a843aa4d85b45e38"
+    },
+    {
+      "file": "tests/v36-satisfaction.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 88,
+      "peakRssKb": 2154084,
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "currentSourceSha256": "6d05a075b1cd78198bff8528293268c5748e77c1ffb0d10aa42215fdcacd32af",
+      "logSha256": "70f044a28655bcd86215e5efd7030f0dce8d662182fe9f20ddc882e8062f2716"
+    },
+    {
+      "file": "tests/v37-relations.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 109.4,
+      "peakRssKb": 2559480,
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "currentSourceSha256": "a320a3f985cd27ed88bfd29e591ff116000db63ad9c90a960ef993b5ec99e393",
+      "logSha256": "2ee651e76d6eda35733b837035bea1625d58adcbcdc7f31a8d8fec620639141e"
+    },
+    {
+      "file": "tests/discipline.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 46.1,
+      "peakRssKb": 2129784,
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "currentSourceSha256": "48372f6f54e146062b4c199ff7848a1163c5229acf7a29c414304210a6beed73",
+      "logSha256": "ad9be02277934df30c7d6d35fb8c99049bdc8167039db75d4de0e45dad4028b5"
+    },
+    {
+      "file": "tests/godot-match-gestes-scenes.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 47.7,
+      "peakRssKb": 1561476,
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "currentSourceSha256": "9002ea4b4d126c3b16577dc935b228a1f24329b0ca617c320edcc5c2f7a21854",
+      "logSha256": "2704a208e868839561368679618acab8b5c8ffff7cb0758a7f6379212646589e"
     },
     {
       "file": "tests/lnr-career-long.cjs",
