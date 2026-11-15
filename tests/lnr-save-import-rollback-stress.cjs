@@ -1,14 +1,14 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 
 function open(clubId){
  const t=context();
  t.run('start('+clubId+')');
  return t;
 }
-function exportOf(t){return t.run('JSON.stringify(createSaveDocument())');}
+function exportOf(t){try{return t.run('JSON.stringify(createSaveDocument())');}finally{t.close();}}
 function stateOf(t){return t.run('JSON.stringify(S)');}
 function beginPreview(t,payload){return t.run('pendingSave=parseSaveDocument('+JSON.stringify(payload)+');showImportReview();!!pendingSave');}
 
@@ -31,7 +31,7 @@ for(const [home,away] of [[0,13],[13,0],[4,8]]){
   assert.equal(current.run('confirmSaveImport()'),true);
   assert.equal(stateOf(current),original);
   assert.equal(current.run('backupDocument().state.club'),away);
-  assert.equal(current.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
+  assert.equal(current.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);current.close();
  });
  for(const key of ['bdt-before-import','bdt-v1']){
   test('import rollback on quota failure '+key+' '+home+' to '+away,()=>{
@@ -50,6 +50,7 @@ for(const [home,away] of [[0,13],[13,0],[4,8]]){
     const restored=current.run('parseSaveDocument('+JSON.stringify(protectedCopy)+').state.club');
     assert.equal(restored,home);
    }
+   current.close();
   });
  }
 }

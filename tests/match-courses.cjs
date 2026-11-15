@@ -5,14 +5,14 @@
 // l'essai (ou le ballon tenu / échappé dans l'en-but), avec le score d'avant, des porteurs de
 // l'équipe en jeu et des positions qui avancent vers la ligne.
 const test=require('node:test'),assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {matchContext}=require('./harness.cjs');
 
 function jouer(k,decoupe){
- const {run}=context();if(!decoupe)run('MATCH_COURSES_DECOUPEES=false');
- run(`for (let i = 0; i < ${k*7919}; i++) Math.random(); start(${k%10}); beginMatch(); continueMatch();`);
+ const h=matchContext(k%10,827381+k*7919),{run}=h;if(!decoupe)run('MATCH_COURSES_DECOUPEES=false');
+ run(`beginMatch(); continueMatch();`);
  for(let i=0;i<3000&&!run('S.live.finished');i++)run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
  assert.ok(run('S.live.finished'),'match terminé');
- return JSON.parse(run('JSON.stringify({ev:S.live.events,score:S.live.score,tries:S.live.tries,stats:S.live.stats,tac:S.live.tacticalStats,sheets:S.live.sheets,suite:Math.random()})'));
+ const data=JSON.parse(run('JSON.stringify({ev:S.live.events,score:S.live.score,tries:S.live.tries,stats:S.live.stats,tac:S.live.tacticalStats,sheets:S.live.sheets,suite:Math.random()})'));h.close();return data;
 }
 const but=equipe=>equipe===0?100:0;
 
