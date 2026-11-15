@@ -181,15 +181,13 @@ static func _resultat(texte: String, categorie: String, ton: String, action: Dic
 
 static func _reception(model: Dictionary) -> Dictionary:
 	var dernier := dernier_resultat(model)
-	var messages: Array = model.get("messages", []) if model.get("messages") is Array else []
-	var count := messages.size()
 	if not dernier.is_empty() and dernier.issue == "defaite":
 		return _resultat("Le courrier ne rattrape pas un %d-%d. Lis ce qui concerne le groupe d'abord, la presse attendra : elle sait déjà ce qu'elle va écrire." % [dernier.pour, dernier.contre], "mauvaise_nouvelle", NEGATIF)
 	if not dernier.is_empty() and dernier.issue == "victoire":
 		return _resultat("Une victoire, ça remplit la boîte aux lettres. Profites-en, mais garde un œil sur les messages du staff : c'est là que se cachent les vrais soucis.", "bonne_nouvelle", POSITIF)
 	return _resultat(_variante(model, [
-		"%d message%s qui t'attendent. Trie comme à l'atelier : ce qui touche les joueurs avant ce qui touche les papiers." % [count, "s" if count > 1 else ""],
-		"Rien d'urgent ne crie plus fort que le reste ici. Commence par le staff, finis par les partenaires.",
+		"Trie comme à l'atelier : ce qui touche les joueurs avant ce qui touche les papiers.",
+		"Commence par les messages du staff : une décision sur le groupe mérite ton attention avant le courrier des partenaires.",
 	]), "consigne", NEUTRE)
 
 static func _bureau(model: Dictionary) -> Dictionary:
