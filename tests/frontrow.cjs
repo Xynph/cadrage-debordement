@@ -1,5 +1,6 @@
-const assert=require('node:assert/strict');const {context}=require('./harness.cjs');
-function fixture(){const t=context();t.run('start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side];Math.random=()=>.99');return t}
+const assert=require('node:assert/strict');const {context,matchContext}=require('./harness.cjs');
+let previousFixture;
+function fixture(){previousFixture?.close();const t=previousFixture=matchContext();t.run('beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side];Math.random=()=>.99');return t}
 function expire(run,minute){run(`l.minute=${minute};sh.cards=sh.cards.filter(c=>c.until>l.minute);resolveFrontExpiries(l,side)`)}
 function valid(run){assert.equal(run('!!createSaveDocument()'),true)}
 // Every specialist position can receive a card; cover is installed at the next scrum only.

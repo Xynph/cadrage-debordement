@@ -43,4 +43,24 @@ function context(saved,providedStorage){
   return h;
  }catch(e){h.close();throw e;}
 }
-module.exports={context};
+// Cas de match isolés : préparer le vrai calendrier une fois par club et graine,
+// puis charger des copies distinctes par le vrai chemin de reprise. start() reste
+// une nouvelle carrière ; ce rejeu est explicite et ne teste pas sa variabilité.
+const matchBaselines=new Map();
+function matchContext(club=0,seed=827381){
+ const key=club+':'+seed;
+ if(!matchBaselines.has(key)){
+  const base=worldContext(seed,{club});
+  try{
+   base.toMatch();base.run('autoLineup();validateCareer(S)');
+   assert.equal(base.run('sheetErrors().length'),0,'La fixture Monde doit avoir une feuille admissible.');
+   matchBaselines.set(key,{state:base.state(),seed:base.seed(),text:base.run('JSON.stringify(S)')});
+  }finally{base.close();}
+ }
+ const baseline=matchBaselines.get(key),h=context(baseline.state);
+ try{
+  assert.ok(h.run('JSON.stringify(S)')===baseline.text,'La reprise doit conserver exactement la fixture Monde.');
+  h.setSeed(baseline.seed);return h;
+ }catch(e){h.close();throw e;}
+}
+module.exports={context,matchContext};

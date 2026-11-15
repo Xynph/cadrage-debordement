@@ -34,3 +34,5 @@ Les journaux détaillés restent dans le dossier de travail externe. Chaque grou
 - Régression du harnais : rouge observé avant toute création (API start absente). Développement en cours.
 
 - Harnais : régression rouge avant création observée, puis verte (World complet, refus atomiques et HTML). Second rouge/vert sur le garde natif avant toute ancienne fabrique. Discipline : tous les contrôles de pénalité, récidive, sauvegarde/import et migration de champ facultatif passent en Monde ; ajout de toMatch explicite, aucune assertion retirée.
+
+- Première ligne : suite complète verte en Monde, 146,0 s, pic RSS observé 3 510 444 Kio (Node 24 local). Aucune assertion retirée ; préparation réelle du premier match réutilisée par copies indépendantes et reprise exacte contrôlée. Budget/poids à intégrer à la tâche 7 avant CI.
