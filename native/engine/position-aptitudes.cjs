@@ -14,7 +14,7 @@ module.exports=function positionAptitudes(){
   const cached=playerCache.get(p);
   if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
    // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
-   let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
+   const sk=p.skills,spec=p.dev?.specialization?.version===1?p.dev.specialization.bonuses:null;let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==sk?.[k]||cached.bonuses[i]!==(spec?(spec[k]||0):0)){same=false;break;}}
    if(same)return cached.result;
   }
   // Legacy missing skills are deterministically generated on a detached object.
@@ -232,11 +232,11 @@ module.exports=function positionAptitudes(){
   };
   unit=(live,side,key,filter)=>{
    const on=live.sheets[side].on,players=activePlayers(live,side);
-   const list=players.map(p=>({p,slot:on.indexOf(p.id)})).filter(({p,slot})=>!filter||filter({...p,fam:FAMILIES[slot]}));
+   const list=players.map(p=>({p,slot:on.indexOf(p.id)})).filter(({p,slot})=>!filter||filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})));
    return list.length?mean(list.map(({p,slot})=>contextualSkill(p,key,slot))):25;
   };
   sheetAverage=(team,ids,key,filter=()=>true)=>{
-   const list=ids.map((id,slot)=>({p:team.players.find(p=>p.id===id),slot})).filter(({p,slot})=>p&&filter({...p,fam:FAMILIES[slot]}));
+   const list=ids.map((id,slot)=>({p:team.players.find(p=>p.id===id),slot})).filter(({p,slot})=>p&&filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})));
    return list.length?mean(list.map(({p,slot})=>contextualSkill(p,key,slot))):25;
   };
   dossierMetrics=(team,ids)=>{
