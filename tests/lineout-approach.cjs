@@ -5,7 +5,7 @@
 // bougent pas. Une sortie qui ne mène pas à une touche (mêlée après avantage, mi-temps…) est inchangée.
 // La touche est lue dans le journal, sans le modifier ni tirer au sort.
 const assert = require('node:assert/strict');
-const { context } = require('./harness.cjs');
+const { matchContext } = require('./harness.cjs');
 
 const EPS = 1e-9;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -16,9 +16,9 @@ function reseed(run, seed) {
 let approaches = 0, plain = 0, viaAdvantage = 0, forwards = 0, longest = 0;
 for (const seed of [1, 2, 3, 4]) {
   for (const club of [0, 3, 7]) {
-    const { run } = context();
+    const h=matchContext(club),{run}=h;
     reseed(run, seed);
-    run(`start(${club}); S.tactic="${seed % 2 ? 'conquete' : 'large'}"; beginMatch(); continueMatch();`);
+    run(`S.tactic="${seed % 2 ? 'conquete' : 'large'}"; beginMatch(); continueMatch();`);
     const keys = new Set();
     for (let i = 0; i < 4000 && !run('S.live.finished'); i++) {
       run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
@@ -67,6 +67,7 @@ for (const seed of [1, 2, 3, 4]) {
         forwards++;
       }
     }
+    h.close();
   }
 }
 assert.ok(approaches >= 40, `trop peu de sorties suivies d'une touche : ${approaches}`);
