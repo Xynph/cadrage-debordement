@@ -55,6 +55,9 @@ budget() {
   case "$1" in
     tests/world-worker-season.cjs) echo 1200s ;;
     tests/native-manager-career-worker.cjs) echo 900s ;;
+    # Mobilité du manager (ex-tests/manuel) : saison lue dans la sauvegarde générée avant les suites (étape « Générer la sauvegarde de fin de saison »,
+    # hors budget ci-contre) : 63 s et 170 s sur runner GitHub (génération : 723 et 943 s), pics 3,25 Go.
+    tests/native-manager-career-reverse-offre.cjs|tests/native-manager-career-reverse-saison.cjs) echo 300s ;;
     # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
@@ -92,6 +95,8 @@ budget() {
     tests/match-choregraphe.cjs) echo 1200s ;;
     # Fluidité des commandes (#711) : six carrières Monde au worker, 129 s de sous-tests + création ; 180 s dépassées en CI (PR #716).
     tests/vitesse-commandes-monde.cjs) echo 420s ;;
+    # Mémoire des projections par domaine : trois carrières Monde successives (avec vérification, sans mémoire, avec), ~165 s en local chargé.
+    tests/memo-projection-monde.cjs) echo 600s ;;
     # Stats réalistes de la fiche (4 journées Monde ; le défaut était 26 par erreur, d'où le dépassement de 900 s) : 285 s de CPU en local, ~5-7 min en CI.
     tests/stats-fiche-joueur.cjs) echo 900s ;;
     # Carrière Monde jusqu'au premier match d'un club de League One : 73-98 s en CI sur main (3x de réserve).
@@ -140,6 +145,10 @@ budget() {
     tests/native-academy-appearance-bank.cjs) echo 420s ;;
     # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
     tests/sauvegarde-idempotente.cjs) echo 900s ;;
+    # Finitions critiques : deux carrières Monde (création + un match, ~260 s en local sous charge) ; budget ≈ 3 fois.
+    tests/finitions-critiques.cjs) echo 900s ;;
+    # Feuille incomplète : appel d'un espoir (#726), carrières Monde jouées sur plusieurs journées ; 398 s en local sous charge (CI : suite 7/7, 180 s dépassées) ; budget ≈ 3 fois.
+    tests/feuille-espoirs.cjs) echo 1200s ;;
     *) echo 180s ;;
   esac
 }

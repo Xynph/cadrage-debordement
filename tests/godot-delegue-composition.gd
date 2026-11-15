@@ -70,10 +70,14 @@ func donnees() -> void:
 	var count := sentences(texte)
 	check(not texte.is_empty() and count >= 1 and count <= 3, "Texte de Gabi : 1 à 3 phrases (%d) : %s" % [count, texte])
 	check(texte.contains("%") and not texte.contains("%d") and not texte.contains("{"), "Texte de Gabi : conditions citées, aucun gabarit oublié")
+	# Bulle courte (chiffre et proposition) ; les noms sont dans le détail dépliable (« plus »).
+	var nombre: int = (fatigue.starters as Array).size()
+	check(texte.begins_with("%d titulaire" % nombre) and texte.contains("sous 70 %") and texte.contains("— je propose"), "Alerte courte : chiffre et proposition : " + texte)
+	var detail := str(avis.get("plus", ""))
 	var noms_cites := 0
 	for starter: Dictionary in fatigue.starters.slice(0, 3):
-		if texte.contains(Avis._nom(Avis.joueur(model, str(starter.playerId)))): noms_cites += 1
-	check(noms_cites >= 1, "Gabi nomme les joueurs fatigués")
+		if detail.contains(Avis._nom(Avis.joueur(model, str(starter.playerId)))): noms_cites += 1
+	check(noms_cites >= 1, "Gabi nomme les joueurs fatigués (détail dépliable)")
 	var action: Dictionary = avis.get("action", {})
 	check(str(action.get("type", "")) == "composition" and str(action.get("libelle", "")) == "Suivre le conseil", "Conseil actionnable : « Suivre le conseil »")
 	var changes: Array = action.get("changements", [])

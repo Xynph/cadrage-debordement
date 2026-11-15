@@ -282,9 +282,14 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	else:
 		D.text(card,478,145,"—",64,C.MUTED,700,124,HORIZONTAL_ALIGNMENT_CENTER).name = "FullPlayerNoteAverage"
 	var matchs := int(notes.get("matchs",0))
-	var legende := D.text(card,416,182,"MOYENNE SAISON" + (" · %d match%s" % [matchs,"s" if matchs>1 else ""] if matchs>0 else ""),20,C.MUTED,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
+	# Deux lignes (le libellé entier ne tient pas sur 184 px) : « MOYENNE SAISON » puis « N matchs ».
+	var legende := D.text(card,416,182,"MOYENNE SAISON",20,C.MUTED,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
 	legende.name = "FullPlayerNoteMatches"
 	legende.tooltip_text = "Moyenne de la saison en cours sur %d match%s (notes de 1 à 10, 6,5 au coup d’envoi)." % [matchs,"s" if matchs>1 else ""]
+	if matchs>0:
+		var nombre := D.text(card,416,210,"%d match%s" % [matchs,"s" if matchs>1 else ""],20,C.IVORY,600,184,HORIZONTAL_ALIGNMENT_LEFT,true)
+		nombre.name = "FullPlayerNoteCount"
+		nombre.tooltip_text = legende.tooltip_text
 	NotesMatch.pastilles(card,Vector2(600,96),NotesMatch.forme(notes),Vector2(54,50),7.0,0.7).name = "FullPlayerForm"
 	var titres := int(notes.get("hommeDuMatch",0))
 	var xv := int(notes.get("selections",0))
@@ -296,6 +301,15 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	var preview := "Conservez vos observations sur ce joueur." if note.is_empty() else str(note.get("text","")).replace("\n"," ")
 	D.text(card,946,151,preview,19,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true).name="FullPlayerNotePreview"
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
+
+## Nom lisible de la compétition d'une ligne d'historique : le nom affiché du championnat (identités de compétition
+## appliquées au modèle, comme partout dans le jeu), pas l'identifiant interne du registre (« Champ Rugby »).
+static func _competition(model:Dictionary,ligne:Dictionary) -> String:
+	var id := str(ligne.get("competitionId",""))
+	if not id.is_empty():
+		for league in model.get("leagues",[]):
+			if league is Dictionary and str(league.get("id",""))==id and not str(league.get("name","")).is_empty(): return str(league.name)
+	return str(ligne.get("competition",""))
 
 ## Historique des matchs de la saison (note enregistrée, minutes, essais, plaquages, mètres, passes,
 ## franchissements : feuille réaliste du match, la même que l'écran de match), moyennes par match de la
@@ -324,7 +338,7 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 		if i%2==0: D.rect(rang,Rect2(0,0,1630,36),Color("141d1f"),3)
 		D.text(rang,4,26,"S"+G.n(int(ligne.get("semaine",0))+1),20,C.MUTED,500,70)
 		D.text(rang,84,26,str(ligne.get("adversaire","")),21,C.IVORY,600,360)
-		D.text(rang,454,26,str(ligne.get("competition","")),19,C.MUTED,500,280)
+		D.text(rang,454,26,_competition(app.model,ligne),19,C.MUTED,500,280)
 		D.text(rang,744,26,G.n(ligne.get("minutes",0))+"′",20,C.IVORY,500,70)
 		NotesMatch.pastille(rang,Rect2(820,3,72,30),float(ligne.get("note",6.5)),0.62)
 		D.text(rang,924,26,G.n(ligne.get("essais",0)),20,C.IVORY if int(ligne.get("essais",0))>0 else C.MUTED,500,80)

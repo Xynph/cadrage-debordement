@@ -65,6 +65,7 @@ var _survol := false
 var _bulle: Control
 var _bulle_titre: Label
 var _bulle_texte: Label
+var _bulle_detail: Label
 var _bulle_actions: HBoxContainer
 var _bulle_menu: HBoxContainer
 var _bulle_suivre: Button
@@ -214,6 +215,13 @@ func _build_adjoint() -> void:
 	_bulle_texte.add_theme_color_override("font_color", C.IVORY)
 	_bulle_texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(_bulle_texte)
+	# Détail dépliable (noms, remplaçants…) : la bulle reste courte, le coach déplie s'il veut.
+	_bulle_detail = Label.new(); _bulle_detail.name = "GabiBulleDetail"
+	_bulle_detail.add_theme_font_override("font", C.BODY)
+	_bulle_detail.add_theme_color_override("font_color", C.MUTED)
+	_bulle_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_bulle_detail.hide()
+	column.add_child(_bulle_detail)
 	_bulle_actions = HBoxContainer.new(); _bulle_actions.name = "GabiBulleActions"
 	_bulle_actions.add_theme_constant_override("separation", 8)
 	_bulle_actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -492,6 +500,12 @@ func _montrer(contenu: Dictionary) -> void:
 	_contenu.route = str(app.route)
 	_bulle_titre.text = str(contenu.get("titre", "GABI"))
 	_bulle_texte.text = str(contenu.get("texte", ""))
+	var plus := str(contenu.get("plus", ""))
+	_bulle_detail.text = plus
+	_bulle_detail.hide()
+	# Survol : le détail complet en info-bulle, même replié.
+	_bulle_texte.mouse_filter = Control.MOUSE_FILTER_PASS if not plus.is_empty() else Control.MOUSE_FILTER_IGNORE
+	_bulle_texte.tooltip_text = plus
 	for row in [_bulle_actions, _bulle_menu]:
 		for child in row.get_children():
 			row.remove_child(child); child.queue_free()
@@ -503,6 +517,15 @@ func _montrer(contenu: Dictionary) -> void:
 		_bulle_suivre.disabled = app.waiting or not app._live().is_empty()
 		_bulle_suivre.tooltip_text = "Applique la proposition de Gabi (tu peux toujours la défaire)"
 		_button(_bulle_actions, "Je garde mon idée", "GabiIgnorer", func(): _ecarter(); fermer_bulle())
+	if not plus.is_empty():
+		var deplier := _button(_bulle_actions, "Détail ▾", "GabiBulleDeplier", func(): pass)
+		deplier.tooltip_text = "Noms et remplaçants proposés"
+		deplier.pressed.connect(func():
+			_bulle_detail.visible = not _bulle_detail.visible
+			deplier.text = "Détail ▴" if _bulle_detail.visible else "Détail ▾"
+			_bulle_reste += 12.0 if _bulle_detail.visible else 0.0
+			_layout_bulle()
+			call_deferred("_layout_bulle"))
 	_bulle_actions.visible = _bulle_actions.get_child_count() > 0
 	if contenu.get("genre") != "fait":
 		if contenu.get("genre") != "avis" and not Avis.ecran(str(app.route), app.model).is_empty():
@@ -561,6 +584,8 @@ func _layout_bulle() -> void:
 	width = maxf(width, _bulle_actions.get_combined_minimum_size().x + 40.0)
 	width = maxf(width, _bulle_menu.get_combined_minimum_size().x + 40.0)
 	_bulle_texte.custom_minimum_size.x = width - 36.0
+	_bulle_detail.add_theme_font_size_override("font_size", px - 2)
+	_bulle_detail.custom_minimum_size.x = width - 36.0
 	_bulle.size = Vector2(width, 0)
 	_bulle.reset_size()
 	var height := _bulle.get_combined_minimum_size().y
@@ -914,14 +939,47 @@ func _moment_cle(model: Dictionary) -> bool:
 	elif Avis.crise(model) and keys.crise not in profile.data.events: due = "crise"
 	if due.is_empty(): return false
 	var moment: Array = MOMENTS_CLES[due]
-	super._deliver_context(moment[0], {"id": "moment-" + due, "text": moment[1]}, "", keys[due])
-	_moment_courant = keys[due] if expanded else ""
+	# Le voile assombri est réservé aux vrais moments clés (arrivée au club) et jamais posé sur un écran ou une
+	# fenêtre de décision (composition, match, préparation) : ailleurs, Gabi le dit dans le bandeau (indice ou bulle).
+	if due == "debut" and _grand_permis():
+		super._deliver_context(moment[0], {"id": "moment-" + due, "text": moment[1]}, "", keys[due])
+		_moment_courant = keys[due] if expanded else ""
+		return true
+	if due == "debut" and not _adjoint_actif(): return false
+	if str(_attente.get("event", "")) == keys[due]: return true
+	_dans_le_bandeau(moment[0], {"id": "moment-" + due, "text": moment[1]}, keys[due], "GABI")
 	return true
+
+## Écrans où le coach décide quelque chose : Gabi n'y recouvre jamais le contenu d'un voile.
+const ECRANS_DECISION := ["Composition", "Match", "Préparation"]
+
+## Le grand mode (portrait + voile assombri) n'est permis qu'au Bureau (l'accueil du club) et sans fenêtre ouverte :
+## jamais sur une fiche, une composition ou une fenêtre de décision.
+func _grand_permis() -> bool:
+	if not is_instance_valid(app) or _has_dialog(app): return false
+	return str(app.route) == "Bureau"
+
+## Bulle ouverte d'office : pas sur un écran ni par-dessus une fenêtre de décision (simple indice dans le bandeau).
+func _bulle_permise() -> bool:
+	return is_instance_valid(app) and not _has_dialog(app) and str(app.route) not in ECRANS_DECISION
+
+## Message de Gabi sans voile : bulle du bandeau si la limite des interventions spontanées le permet, sinon
+## simple indice dans le bandeau (le coach clique sur la tête de Gabi pour lire).
+func _dans_le_bandeau(page: String, fragment: Dictionary, event: String, titre: String) -> void:
+	var moment: Dictionary = Moments.moment(page, str(fragment.get("id", "")), app.model)
+	var message := {"genre": "contexte", "titre": titre, "texte": str(fragment.get("text", "")), "categorie": moment.categorie, "ton": moment.ton, "route": str(app.route), "visit": "", "event": event, "partout": true}
+	if _bulle_permise() and _spontane_permis():
+		_consommer(message)
+		_montrer(message)
+	else:
+		_attente = message
+		_maj_indice()
 
 ## Première visite d'un écran, contrat signé, fin de saison, trésorerie : la fin de saison et un compte
 ## dans le rouge sont des moments clés (mode grand) ; le reste passe par le bandeau (bulle ou indice).
 func _deliver_context(id: String, fragment: Dictionary, visit: String, event: String) -> void:
-	if not _adjoint_actif() or event.begins_with("season:") or event.begins_with("cash:"):
+	# Grand mode (voile) : sans bandeau, ou fin de saison hors écran de décision ; la trésorerie passe par le bandeau.
+	if not _adjoint_actif() or (event.begins_with("season:") and _grand_permis()):
 		super._deliver_context(id, fragment, visit, event)
 		return
 	var fragments: Array = Content.fragments(id)
@@ -931,7 +989,7 @@ func _deliver_context(id: String, fragment: Dictionary, visit: String, event: St
 	var page: Array = Content.page(id)
 	var moment: Dictionary = Moments.moment(id, str(short.get("id", "")), app.model)
 	var message := {"genre": "contexte", "titre": "GABI · " + str(page[1]).to_upper(), "texte": str(short.get("text", "")), "categorie": moment.categorie, "ton": moment.ton, "route": str(app.route), "visit": visit, "event": event}
-	if _spontane_permis():
+	if _bulle_permise() and _spontane_permis():
 		_consommer(message)
 		_montrer(message)
 	else:

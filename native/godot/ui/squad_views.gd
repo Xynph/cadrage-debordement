@@ -8,6 +8,7 @@ const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
+const Espoir = preload("res://ui/espoir_appel.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 
 # Keep the bound dictionary when a career reset replaces management_ui. Retiring
@@ -633,6 +634,11 @@ static func lineup(app:Control) -> Control:
 	if errors.is_empty():side.add_child(G.label("FEUILLE VALIDE",12,G.GOOD))
 	else:side.add_child(G.wrap("\n".join(errors),12,G.ALERT))
 	var vacancy := P.reduced_bench_number(app.model)
+	if not Espoir.offer(app.model).is_empty():
+		var appel := G.button("APPELER UN ESPOIR",func():Espoir.ouvrir(app,false))
+		appel.name="LineupCallEspoir"
+		appel.tooltip_text=Espoir.vacancy_text(app.model)
+		side.add_child(appel)
 	if vacancy != 0:
 		var action := G.button("MATCH · FEUILLE À 22",func():app._navigate("Match"))
 		action.name="LineupOpenMatchAt22"

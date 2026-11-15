@@ -4,17 +4,20 @@ extends ConfirmationDialog
 ## (comme le bouton « Sélection du staff », règle JIFF comprise) avant le match ; décochée, la feuille du
 ## joueur est jouée telle quelle. Le choix est mémorisé dans la carrière (decisions.delegation.matchLineup)
 ## et proposé tel quel la fois suivante.
-## Feuille à 22 (pilier de remplacement manquant, Nationale) : le staff ne peut pas inventer un joueur, la
-## délégation reste possible et la fenêtre demande la confirmation du match à 22 (begin_match reducedBench).
+## Feuille incomplète (pilier de remplacement manquant...) : la fenêtre propose « Appeler un espoir : nom, âge, poste,
+## note » (choix par défaut : le meilleur jeune du centre apte au poste, prêté pour ce match) ou « Jouer à 22 » quand la
+## règle le permet (Nationale) : begin_match { espoirs } ou { reducedBench }.
 ## Commandes : begin_match { delegated: true, composition } puis delegate (chaînées par app.queued_action).
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Avis = preload("res://guide/gabi_avis.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Espoir = preload("res://ui/espoir_appel.gd")
 
 var app: Control
 var case_composition: CheckBox
 var detail: Label
+var choix_feuille: Callable
 
 ## Valeur mémorisée du choix (cochée tant que le joueur n'a rien décidé, y compris sur une ancienne sauvegarde).
 static func composition_confiee(model: Dictionary) -> bool:
@@ -33,7 +36,8 @@ func _build() -> void:
 	name = "MatchDelegationDialog"
 	title = "Déléguer le match"
 	var vacant := P.reduced_bench_number(app.model)
-	get_ok_button().text = "DÉLÉGUER À 22" if vacant != 0 else "DÉLÉGUER LE MATCH"
+	var incomplete := vacant != 0 or not Espoir.offer(app.model).is_empty()
+	get_ok_button().text = "DÉLÉGUER LE MATCH"
 	get_cancel_button().text = "ANNULER"
 	app._prepare_dialog(self, 640)
 	var body := C.v(12)
@@ -41,10 +45,12 @@ func _build() -> void:
 	body.custom_minimum_size.x = 600
 	add_child(body)
 	body.add_child(C.wrap("L’adjoint joue la rencontre à votre place, du coup d’envoi au coup de sifflet final. Vous retrouverez le résultat, le récit et les notes du match.", 18, C.IVORY))
-	if vacant != 0:
-		var reduced := C.wrap("Feuille à 22 : %s Le match sera joué à 22 joueurs (règle de la Nationale) ; en déléguant, vous le confirmez." % P.reduced_bench_vacancy(vacant), 17, C.AMBER)
+	if incomplete:
+		# Feuille incomplète : « Appeler un espoir » (défaut) ou « Jouer à 22 », au choix, comme en vrai.
+		var reduced := C.wrap(Espoir.vacancy_text(app.model), 17, C.AMBER)
 		reduced.name = "MatchDelegationReduced"
 		body.add_child(reduced)
+		choix_feuille = Espoir.add_choices(body, app.model, true, _bouton)
 	case_composition = CheckBox.new()
 	case_composition.name = "MatchDelegationComposition"
 	case_composition.text = "Confier aussi la composition au staff"
@@ -58,12 +64,18 @@ func _build() -> void:
 	detail.name = "MatchDelegationDetail"
 	body.add_child(detail)
 	_detail()
+	_bouton()
 	confirmed.connect(_valider)
 	confirmed.connect(queue_free)
 	canceled.connect(queue_free)
 	app.add_child(self)
-	Dialogs.show_centered(self, Vector2i(640, 260 if vacant != 0 else 210))
+	Dialogs.show_centered(self, Vector2i(640, 360 if incomplete else 210))
 	get_ok_button().call_deferred("grab_focus")
+
+## Libellé du bouton selon le choix de feuille : « Déléguer à 22 » quand le match à 22 est retenu.
+func _bouton() -> void:
+	var choix: Dictionary = choix_feuille.call() if choix_feuille.is_valid() else {}
+	get_ok_button().text = "DÉLÉGUER À 22" if choix.get("id") == "a22" else "DÉLÉGUER LE MATCH"
 
 func _detail() -> void:
 	var fatigue := Avis.fatigue_donnees(app.model)
@@ -77,6 +89,6 @@ func _valider() -> void:
 	var composition := case_composition.button_pressed
 	# Le coup d'envoi puis la délégation du match : la seconde commande part dès la réponse de la première.
 	var payload := {"delegated": true, "composition": composition}
-	if P.reduced_bench_number(app.model) != 0: payload["reducedBench"] = true
+	if choix_feuille.is_valid(): payload.merge(choix_feuille.call().payload)
 	if app._command("begin_match", payload):
 		app.queued_action = {"command": "delegate", "payload": {}, "target_route": ""}
