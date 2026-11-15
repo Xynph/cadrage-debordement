@@ -12,3 +12,12 @@ native/godot/**/*.uid
 native/godot/**/*.import
 native/godot/fonts/*.import
 native/out/
+
+# Claude Code Game Studios (fichiers locaux des sessions)
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.claude/agent-memory/
+.claude/worktrees/

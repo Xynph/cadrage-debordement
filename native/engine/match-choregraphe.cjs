@@ -674,10 +674,11 @@ function simuler(e,phases,graine){
     return;
    }
    if(j.id===ballon.porteur&&d.phase==='tenu'){
-    // Il fixe la défense en avançant (cinq mètres au plus), en restant dans le terrain.
-    // Dans les cinq derniers mètres, franchir la ligne en attendant éloignait son receveur.
+    // Il fixe la défense en avançant (cinq mètres au plus), sans courir vers la ligne d'en-but :
+    // près de la ligne, il s'arrête un mètre et demi avant (jamais d'en-but ballon en main sans aplatir).
     const de=d.tenuDe||(d.tenuDe={x:j.x,y:j.y});
-    vers(j,borne(de.x+sens*5,1.5,98.5),de.y,3.2,true);return;
+    const avance=Math.max(0,Math.min(5,(ligne-de.x)*sens-1.5));
+    vers(j,de.x+sens*avance,de.y,3.2,true);return;
    }
    // Receveur désigné : en retrait et sur le côté du passeur.
    const passeur=d.phase==='ruck'?null:(ballon.porteur?parId.get(ballon.porteur):null);
