@@ -5,18 +5,18 @@
 // de décider et ne changent ni le match, ni le tirage, ni la validité des sauvegardes.
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { context } = require('./harness.cjs');
+const { matchContext } = require('./harness.cjs');
 
 const NOUVEAUX = ['cause', 'card', 'origin', 'conversion', 'tackler'];
 
-function match(club, sansFaits) {
-  const { run } = context();
+function match(club, sansFaits,keep=false) {
+  const h=matchContext(club),{run}=h;
   // Témoin : le même moteur, dont l'enregistrement de la scène ignore les nouveaux faits.
   if (sansFaits) run('var avecFaits=captureMatchAction;captureMatchAction=function(l,type,meta={}){const {cause,card,origin,conversion,tackler,...reste}=meta;return avecFaits(l,type,reste)};');
-  run(`start(${club}); beginMatch(); continueMatch();`);
+  run(`beginMatch(); continueMatch();`);
   for (let i = 0; i < 900 && !run('S.live.finished'); i++) run('if (S.live.paused) continueMatch(); presentationTick(S.live);');
   assert.equal(run('S.live.finished'), true);
-  return { run, events: JSON.parse(run('JSON.stringify(S.live.events)')), sportif: run('JSON.stringify([S.live.score,S.live.tries,S.live.stats,S.live.sheets])'), tirage: run('Math.random()') };
+  const data={...(keep?{run,close:h.close}:{}), events: JSON.parse(run('JSON.stringify(S.live.events)')), sportif: run('JSON.stringify([S.live.score,S.live.tries,S.live.stats,S.live.sheets])'), tirage: run('Math.random()') };if(!keep)h.close();return data;
 }
 
 const sans = events => events.map(e => {
@@ -27,7 +27,7 @@ const sans = events => events.map(e => {
 });
 
 // Règles du journal vérifiées sur cinq matchs de clubs différents (les volumes ci-dessous sont des gardes d'exercice, pas des taux).
-const matchs = [0, 3, 7, 1, 5].map(club => ({ club, avec: match(club, false), temoin: match(club, true) }));
+const matchs = [0, 3, 7, 1, 5].map(club => ({ club, avec: match(club, false,club===0), temoin: match(club, true) }));
 
 test('Même graine, même match : journal, score et tirage suivant inchangés hors nouveaux champs', () => {
   for (const { club, avec, temoin } of matchs) {
@@ -98,6 +98,7 @@ test('La sauvegarde accepte les nouveaux faits et refuse une valeur inconnue', (
   assert.equal(verdict('touch', 'card', 'yellow'), 'refusé');
   assert.equal(verdict('touch', 'tackler', 'x'), 'refusé');
   assert.equal(run(`(()=>{const copie=JSON.parse(JSON.stringify(S));const e=copie.live.events.find(e=>e.scene&&e.scene.kind==='carry'&&e.scene.tackler);e.scene.tackler=e.scene.actor;try{validateCareer(copie);return 'accepté'}catch(error){return 'refusé'}})()`), 'refusé', 'le plaqueur est un adversaire');
+  matchs[0].avec.close();
 });
 
 test('Plaqueur nommé : un adversaire sur le terrain, pour chaque temps de jeu, sans tirage', () => {
