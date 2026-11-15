@@ -1,5 +1,46 @@
-const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
-const root=__dirname+'/../dist/';
-function context(saved,providedStorage){const app={innerHTML:'',textContent:'',style:{}},store=saved?{'bdt-v1':JSON.stringify(saved)}:{};let seed=827381;const math=Object.create(Math);math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};const ctx=vm.createContext({console,Intl,Math:math,Date:class extends Date{static now(){return 1700000000000}},Set,JSON,document:{querySelector:()=>app},window:providedStorage?{CDOfflineStorage:providedStorage}:{},localStorage:{getItem:k=>store[k],setItem:(k,v)=>store[k]=v,removeItem:k=>delete store[k]},setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){}});vm.runInContext(fs.readFileSync(root+'season-label.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'storage.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'world-data.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'rugby.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'frontrow.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'restarts.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'matchflow.js','utf8'),ctx);for(const file of ['playbook.js','manager.js','manager-squad.js'])vm.runInContext(fs.readFileSync(root+file,'utf8'),ctx);vm.runInContext(fs.readFileSync(root+'tactical-plans.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'match-actions.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'match2d.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'match-v61-advisor.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'match-cockpit.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'economy.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'development.js','utf8'),ctx);for(const file of ['finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js'])vm.runInContext(fs.readFileSync(root+file,'utf8'),ctx);vm.runInContext(fs.readFileSync(root+'v39.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'manager-mobility.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'saves.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'opposition.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'match-preparation.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'main-menu-slots.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'main-menu-v3.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'art-direction-v4.js','utf8'),ctx);vm.runInContext(fs.readFileSync(root+'game.js','utf8'),ctx);if(process.env.CD_MATCH_COURSES==='0')ctx.MATCH_COURSES_DECOUPEES=false;const run=s=>vm.runInContext(s,ctx);require('./helpers/recalibrage.cjs').appliquer(run);return{ctx,app,store,run,setSeed:v=>{seed=v>>>0}}}
-
+'use strict';
+// Compatibilité des recettes HTML : même VM et vraie création world-champ que le jeu natif.
+// Aucun démarrage de carrière hérité ; les scénarios règlent ensuite leur fixture Monde.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {context:worldContext}=require('./monde-harness.cjs');
+const root=path.resolve(__dirname,'../dist');
+const source=fs.readFileSync(path.join(root,'game.js'),'utf8').split('\n');
+function context(saved,providedStorage){
+ if(saved)assert.equal(saved.worldMode?.version,5,'Le harnais ne recharge que la carrière Monde complète.');
+ const h=worldContext(827381,{club:null});
+ const rawRun=h.run,nativeStart=h.start,ctx=h.ctx,app=ctx.document.querySelector('#app');
+ let creating=false;
+ try{
+  for(const file of ['main-menu-slots.js','main-menu-v3.js','art-direction-v4.js'])rawRun(fs.readFileSync(path.join(root,file),'utf8'));
+  // Le worker masque le rendu ; réutiliser les vraies fonctions du jeu pour conserver les contrôles HTML.
+  for(const name of ['render','toast','startTimer']){
+   const definition=source.find(line=>line.startsWith('function '+name+'('));
+   assert.ok(definition,'Fonction de présentation absente : '+name);
+   rawRun(definition);
+  }
+  function start(club=0,mode){
+   // Le dispatch natif appelle encore start avec le mode Monde après avoir créé sa carrière : aucun effet.
+   if(creating&&mode==='world-champ')return;
+   if(mode!==undefined&&mode!=='world-champ')throw Error('Le harnais autorise uniquement la carrière Monde.');
+   creating=true;try{nativeStart(club);}finally{creating=false;}
+   rawRun('entryScreen="game";view="dashboard"');return h;
+  }
+  ctx.start=start;ctx.startWorld=start;h.start=start;
+  ctx.toMatch=h.toMatch;
+  h.app=app;
+  if(providedStorage){
+   const storage=ctx.window.CDOfflineStorage;
+   for(const name of ['getItem','setItem','removeItem'])if(typeof providedStorage[name]==='function')storage[name]=providedStorage[name].bind(providedStorage);
+  }
+  if(saved){
+   ctx.harnessSavedText=JSON.stringify(saved);
+   rawRun('gameStorage.setItem("bdt-v1",harnessSavedText);loadedSaveText=harnessSavedText;S=JSON.parse(harnessSavedText);validatingStartup=true;bootSavedCareer();delete globalThis.harnessSavedText');
+  }
+  h.run=(code,timeout)=>{
+   if(/\bCD(?:France|Common|World)Career\.start\s*\(/.test(code))throw Error('Utiliser le démarrage Monde du harnais, pas une ancienne fabrique.');
+   return rawRun(code,timeout);
+  };
+  return h;
+ }catch(e){h.close();throw e;}
+}
 module.exports={context};

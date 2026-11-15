@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 const {context}=require('./harness.cjs');
 const t=context(),run=t.run;
-run('start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide');
+run('start(0);toMatch();beginMatch();pauseMatch();var l=S.live,side=l.userSide');
 assert.equal(run('selectDisciplineIncident(0).id'),'offside');
 assert.equal(run('selectDisciplineIncident(.999).id'),'dangerous');
 assert.equal(run('selectDisciplineIncident(.50).id'),'ruck');

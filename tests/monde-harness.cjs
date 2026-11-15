@@ -30,7 +30,21 @@ function context(seed=827381,options={}){
  // que l'avance rapide et les matchs ne dépendent pas de décisions de gestion ; leurs suites dédiées
  // passent par le worker.
  const meetings=options.meetings===true;
- function start(club=0,extra={}){command('new_career',{mode:'world-champ',club,...extra});if(!meetings)run('delete S.clubMeetings;validateCareer(S)');return h;}
+ let creatingWorld=false;
+ function start(club=0,extra={}){
+  if(extra.mode!==undefined&&extra.mode!=='world-champ')throw Error('Le harnais autorise uniquement la carrière Monde.');
+  creatingWorld=true;
+  try{command('new_career',{...extra,mode:'world-champ',club});}finally{creatingWorld=false;}
+  if(!meetings)run('delete S.clubMeetings;validateCareer(S)');return h;
+ }
+ // Les appels VM sans mode passent eux aussi par la vraie création native. Le dispatch
+ // natif appelle encore start(..., 'world-champ') après sa création : ancien no-op conservé.
+ ctx.start=(club=0,mode)=>{
+  if(creatingWorld&&mode==='world-champ')return;
+  if(mode!==undefined&&mode!=='world-champ')throw Error('Le harnais autorise uniquement la carrière Monde.');
+  return start(club);
+ };
+ ctx.startWorld=ctx.start;
  // Avance rapide : finishRound() du moteur (journée complète, match du club compris), puis les
  // observations du worker (presse, rendez-vous, connaissance, profondeur pro, attributs).
  function week(n=1,{validate=true}={}){
