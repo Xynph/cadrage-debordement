@@ -32,7 +32,7 @@ test('minor stays at the centre and an adult can examine a first pro contract',(
 });
 test('specialist objective changes after reorientation but never reattributes the old gains',()=>{
  const h=setup();h.run('Y.enable(S);Y.setPlan(S,p.id,"specialist","scrum");p.skills.scrum+=1');assert.equal(review(h).objective.key,'quality');assert.equal(review(h).objective.achieved,true);
- h.run('Y.setPlan(S,p.id,"integration","scrum")');const v=review(h);assert.equal(v.objective.key,'integration');assert.match(v.basis,/ne prouvent pas/i);
+ h.run('Y.setPlan(S,p.id,"integration","scrum")');const v=review(h);assert.equal(v.objective.key,'integration');assert.match(v.basis,/n’explique pas tout/i);
 });
 // Moteur natif Monde : les profils officiels de l'édition progressent en cours de saison
 // (nativeInSeasonDevelopment) ; le modèle annuel « annual-v11 » n'existe que hors moteur natif.

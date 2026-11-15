@@ -501,7 +501,7 @@ static func _history(app: Control, canvas: Control) -> void:
 	if international: data.seasons = History.world_seasons(app,int(app.model.club.id))
 	var titles := 0
 	for year: Dictionary in data.seasons: titles += year.get("titles",[]).size()
-	var rows := [["Saisons archivées",data.seasons.size()],["Titres conservés",titles],["Rencontres au registre récent",data.events.size()]]
+	var rows := [["Saisons archivées",data.seasons.size()],["Titres conservés",titles],["Derniers résultats",data.events.size()]]
 	for i in rows.size():
 		var y := 278+i*73
 		D.text(card, 24, y, rows[i][0], 29, C.IVORY, 600, 475)
@@ -527,13 +527,13 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	list.add_child(analysis)
 	list.add_child(C.rule())
 	var years: Array = data.seasons
-	list.add_child(C.wrap("Saisons archivées et rencontres conservées dans cette carrière. Les rangs concernent la phase régulière.",22,C.MUTED,true))
+	list.add_child(C.wrap("Les saisons passées et les derniers résultats du club. Les rangs concernent la phase régulière.",22,C.MUTED,true))
 	if years.size() >= 2: _world_comparison(app,list,years)
 	if years.is_empty(): list.add_child(C.wrap("Aucune saison archivée pour ce club.",26,C.IVORY,true,700))
 	for year: Dictionary in years: list.add_child(_world_year(app,year))
 	list.add_child(C.rule())
-	list.add_child(C.label("LES RENCONTRES CONSERVÉES",27,C.GOLD,true,700))
-	if data.events.is_empty(): list.add_child(C.wrap("Aucun résultat de ce club dans le registre récent.",22,C.MUTED,true))
+	list.add_child(C.label("LES DERNIERS RÉSULTATS",27,C.GOLD,true,700))
+	if data.events.is_empty(): list.add_child(C.wrap("Pas encore de match joué par ce club.",22,C.MUTED,true))
 	for event: Dictionary in data.events:
 		var result := C.card("Saison %s · %s" % [G.season_label(event.get("season","—")),World.name_for(app.model,str(event.get("leagueId","")))])
 		list.add_child(result)

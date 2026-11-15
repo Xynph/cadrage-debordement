@@ -531,7 +531,7 @@ static func tables(app: Control) -> Control:
 		legend.add_child(G.label("MJ : matchs joués · DIFF. : différence de points · — : non renseigné", 11, G.MUTED))
 	else:
 		sheet.add_child(Semantics.legend(false))
-		sheet.add_child(G.wrap("MJ : matchs joués · DIFF. : points marqués moins encaissés · Forme : 6 résultats de championnat conservés, ancien → récent · — : non renseigné",12))
+		sheet.add_child(G.wrap("MJ : matchs joués · DIFF. : points marqués moins encaissés · Forme : 6 derniers résultats de championnat, du plus ancien au plus récent · — : non renseigné",12))
 	page.context = _standings_context(app,page)
 	page.context.hide()
 	return page

@@ -129,7 +129,7 @@ func run() -> void:
 	var office := texts(app)
 	await capture("bureau")
 	check(office.contains(opponent), "Bureau : prochaine rencontre contre " + opponent)
-	check(office.contains("%d échéances de contrat" % int(counts.by_horizon)) and office.contains("dont %d en fin de saison" % int(counts.end_of_season)), "Bureau : échéances à l'horizon ET en fin de saison, avec leur périmètre")
+	check(office.contains("%d échéances de contrat en fin de saison" % int(counts.end_of_season)), "Bureau : échéances de la saison, même définition que le courrier et Recrutement")
 	forbidden_none(office, "Bureau")
 	# Tactique, Entraînement, Compétitions : même rencontre que le Bureau
 	app._navigate("Composition")

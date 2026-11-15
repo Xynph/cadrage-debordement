@@ -152,8 +152,8 @@ static func _tasks(app: Control) -> Array:
 	if app.Immersive.Selections.nation_only(app.model): return tasks
 	if not app.model.get("selection", {}).get("valid", false): tasks.append(["Compléter la feuille de match", "Composition"])
 	if not app.model.get("meta", {}).get("trained", false): tasks.append(["Organiser la charge de la semaine", "Entraînement"])
-	var contracts := P.contracts(app.model)
-	if not contracts.is_empty(): tasks.append(["Examiner %s de contrat" % P.plural(contracts.size(), "échéance", "échéances"), "Effectif"])
+	var contracts := P.contracts_ending(app.model)
+	if not contracts.is_empty(): tasks.append(["Examiner %s de contrat en fin de saison" % P.plural(contracts.size(), "échéance", "échéances"), "Effectif"])
 	if P.group(app.model).injured > 0: tasks.append(["Consulter les indisponibilités de l’effectif", "Effectif"])
 	var reports: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", [])
 	if not reports.is_empty(): tasks.append(["Consulter %d rapport(s) de recrutement" % reports.size(), "Recrutement"])

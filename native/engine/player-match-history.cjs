@@ -69,7 +69,7 @@ function factory(){
   s.playerMatchHistory={version:1,policy:POLICY,enabled:context(s),matches:[]};return {playerMatchHistoryAction:{command}};
  }
  function project(){
-  const s=state(),enabled=active(s),base={available:!!s,enabled,context:s?context(s):null,canEnable:!!s&&!s.live&&s.phase==='league'&&s.playerMatchHistory===undefined,limit:LIMIT,recordedMatches:enabled?s.playerMatchHistory.matches.length:0,players:[],notice:'Registre activé explicitement, sans reconstruction du passé. Minutes des feuilles finales ; essais et tirs de pénalité attribués par les scènes du moteur. Plaquages, passes, transformations et mètres individuels inconnus. Ratio par 80 calculé uniquement sur les rencontres dont les minutes et l’attribution sont connues.'};
+  const s=state(),enabled=active(s),base={available:!!s,enabled,context:s?context(s):null,canEnable:!!s&&!s.live&&s.phase==='league'&&s.playerMatchHistory===undefined,limit:LIMIT,recordedMatches:enabled?s.playerMatchHistory.matches.length:0,players:[],notice:'Suivi des matchs joués depuis son activation : minutes, essais et tirs de pénalité de chaque joueur. Les plaquages, passes, transformations et mètres ne sont pas suivis.'};
   if(!enabled)return base;
   base.players=(s.clubs[s.club]?.players||[]).map(p=>{
    const matches=s.playerMatchHistory.matches.flatMap(m=>{const row=m.players.find(q=>q.id===p.id);return row?[individual(m,row)]:[];}).slice(-5).reverse();

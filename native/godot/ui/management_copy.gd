@@ -30,7 +30,9 @@ const CLAUSES = {
 	},
 	"performance": {
 		"essais et tirs de pénalité attribués par les scènes du moteur.": "essais et tirs de pénalité issus des actions enregistrées.",
-		"Statistiques collectives du moteur ; les données absentes restent inconnues.": "Statistiques collectives des rencontres ; les données absentes restent inconnues."
+		"Statistiques collectives du moteur ; les données absentes restent inconnues.": "",
+		"Les écarts ne prouvent pas une cause. ": "",
+		"Aucun historique individuel par match n’est déduit.": ""
 	},
 	"youth": {
 		"Repère de simulation à 18 ans, pas une homologation de compétition.": "Repère de parcours : 18 ans."

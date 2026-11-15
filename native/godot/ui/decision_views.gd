@@ -90,7 +90,7 @@ static func dossier(app: Control) -> void:
 	for observation: Dictionary in data.get("signals", []):
 		list.add_child(G.wrap(observation.title, 17, G.GOLD))
 		list.add_child(G.wrap(observation.evidence + " " + observation.advice, 14))
-	if data.get("signals", []).is_empty(): list.add_child(G.wrap("Aucun signal robuste : au moins trois matchs documentés et dix phases de conquête sont nécessaires. Les résultats seuls ne permettent pas d'inventer une faiblesse.", 12))
+	if data.get("signals", []).is_empty(): list.add_child(G.wrap("Pas encore de signal net : il faut au moins trois matchs et dix phases de conquête observés.", 12))
 	d.popup_centered(Vector2i(900, 580))
 
 static func training(app: Control, parent: Container, show_advice: bool) -> void:
