@@ -223,9 +223,11 @@ func _refresh() -> void:
 	var program := _reading_scroll(body, "CalendarProgramScroll", 0)
 	if view_mode == "week": _week_grid(program)
 	else: _grid(program)
-	_legend(program)
-	_context_panels(program)
 	if view_mode == "week": _week_sessions(program)
+	# Légende et « Prochains rendez-vous publiés » restent fixes sous le planning : seul le planning défile, jamais
+	# une carte coupée à mi-hauteur par le bas de la zone.
+	_legend(body)
+	_context_panels(body)
 	_detail(workspace)
 	_undated_panel()
 
@@ -687,7 +689,7 @@ func _context_panels(parent: Node) -> void:
 	var next_games: Array = fixtures.filter(func(fixture: Dictionary): return fixture.date >= reference and not fixture.get("played",false))
 	next_games.sort_custom(func(a: Dictionary,b: Dictionary): return a.date < b.date if a.date != b.date else Agenda.fixture_key(a) < Agenda.fixture_key(b))
 	if next_games.is_empty(): list.add_child(C.wrap("Aucune prochaine rencontre datée dans le calendrier publié.",17,C.MUTED))
-	for fixture: Dictionary in next_games.slice(0,5 if view_mode == "week" else 3):
+	for fixture: Dictionary in next_games.slice(0,3):
 		var line := C.h(8)
 		list.add_child(line)
 		line.add_child(C.label(str(fixture.date).right(2)+"/"+str(fixture.date).substr(5,2),18,C.GOLD,true,700))

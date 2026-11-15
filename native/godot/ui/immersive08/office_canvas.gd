@@ -6,6 +6,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
+const Avis = preload("res://guide/gabi_avis.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
@@ -243,18 +244,31 @@ static func _group(card: Panel, app: Control, w: int = 422) -> void:
 	D.text(card,24,299,"Moral du vestiaire",22,C.MUTED,500,255)
 	D.text(card,right,299,"%d / 100" % float(app.model.meta.get("morale",0)),25,C.MINT,600,120,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.line(card,Vector2(22,321),Vector2(w-22,321))
-	if group.watched > 0:
+	# Même source que l'alerte de fatigue de Gabi (selection.fatigue) : jamais « Aucune alerte » quand des titulaires
+	# du prochain match sont sous le seuil de condition.
+	var fatigue := Avis.fatigue_resume(app.model)
+	var titulaires := int(fatigue.count)
+	var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
+	if titulaires > 0 and group.watched <= 0:
+		var feuille := D.button(card,Rect2(25,337,w-50,36),texte_fatigue,func(): app._navigate("Composition"),false,"arrow",true,app.accent,"OfficeFatigueAction")
+		feuille.add_theme_color_override("font_color", C.AMBER)
+		feuille.tooltip_text = "Ouvrir la composition : Gabi propose les changements."
+	elif group.watched > 0:
 		var action := D.button(card,Rect2(25,337,w-50,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
 		action.add_theme_color_override("font_color", C.AMBER)
-		for player: Dictionary in app.model.get("squad", []):
-			var reason := U.watch_reason(player)
-			if reason.is_empty(): continue
-			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
-			example.tooltip_text = example.text
-			_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
-			break
+		if titulaires > 0:
+			var ligne := D.text(card,25,399,texte_fatigue,21,C.AMBER,500,w-52)
+			ligne.name = "OfficeFatigueLine"
+		else:
+			for player: Dictionary in app.model.get("squad", []):
+				var reason := U.watch_reason(player)
+				if reason.is_empty(): continue
+				var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,w-52)
+				example.tooltip_text = example.text
+				_label_reading(app,card,example,{"kind":"player","id":str(player.id)},"OfficeWatchedPlayer_"+str(player.id).validate_node_name(),str(player.name))
+				break
 	else:
-		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,w-52)
+		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,w-52).name = "OfficeNoAlert"
 	D.button(card,Rect2(25,412,w-50,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
 
 static func _standings(card: Panel, app: Control, w: int = 684) -> void:

@@ -79,9 +79,10 @@ func executer() -> void:
 	var j: Dictionary = joueurs[choisi]
 	mesures["par_match"] = {"plaquages": float(j.get("plaquages", 0)) / maxi(1, plus), "metres": float(j.get("metres", 0)) / maxi(1, plus), "essais": float(j.get("essais", 0)) / maxi(1, plus), "passes": float(j.get("passes", 0) if j.get("passes") != null else 0) / maxi(1, plus)}
 	await capture("notes-match-fiche")
-	# Libellés demandés : « MOYENNE SAISON · N matchs » dans la fiche, « MOY. » dans l'effectif.
+	# Libellés demandés : « MOYENNE SAISON » puis « N matchs » dans la fiche, « MOY. » dans l'effectif.
 	var libelle := app.find_child("FullPlayerNoteMatches", true, false)
-	verifier(libelle != null and str(libelle.get("text")) == "MOYENNE SAISON · " + ("%d matchs" % plus if plus > 1 else "1 match"), "libellé « MOYENNE SAISON · N matchs » de la fiche")
+	var nombre_matchs := app.find_child("FullPlayerNoteCount", true, false)
+	verifier(libelle != null and str(libelle.get("text")) == "MOYENNE SAISON" and nombre_matchs != null and str(nombre_matchs.get("text")) == ("%d matchs" % plus if plus > 1 else "1 match"), "libellé « MOYENNE SAISON » puis « N matchs » de la fiche (deux lignes, rien de tronqué)")
 	# Panneau « Sélection » : vide sans match international, puis rempli (données de présentation
 	# posées dans le modèle de l'interface uniquement, jamais dans la carrière).
 	verifier(app.find_child("PlayerSelectionNotes", true, false) != null, "panneau « Sélection » de la fiche")

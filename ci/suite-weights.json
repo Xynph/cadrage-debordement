@@ -11,6 +11,7 @@
       43375411272
     ],
     "weights": {
+      "tests/finitions-critiques.cjs": 300,
       "tests/feuille-espoirs.cjs": 458,
       "tests/ai-roster-cycle.cjs": 59,
       "tests/homme-du-match-postes.cjs": 120,
@@ -75,6 +76,8 @@
       "tests/native-coach-notes06-worker.cjs": 38,
       "tests/native-decisions.cjs": 314,
       "tests/native-manager-career-pack.cjs": 15,
+      "tests/native-manager-career-reverse-offre.cjs": 790,
+      "tests/native-manager-career-reverse-saison.cjs": 1110,
       "tests/native-match-talks.cjs": 126,
       "tests/native-nation-meetings.cjs": 62,
       "tests/native-nationale-reduced-bench.cjs": 180,
@@ -201,6 +204,7 @@
     "source": "mesure GitHub : run 43262510105 (main fd939df6, 12 novembre 2026), durées des suites +15 % ; suites en échec ou interrompues estimées",
     "runs": [],
     "weights": {
+      "tests/godot-finitions.cjs": 300,
       "tests/godot-fiche-club.cjs": 420,
       "tests/animation-pipeline-runner.cjs": 9,
       "tests/godot-atomic-file.cjs": 13,
@@ -267,6 +271,8 @@
     "default_mb": 1024,
     "budget_mb": 12288,
     "suites": {
+      "tests/native-manager-career-reverse-offre.cjs": 3580,
+      "tests/native-manager-career-reverse-saison.cjs": 3560,
       "tests/integration-cloud-complete.cjs": 3337,
       "tests/fiche-club-monde.cjs": 2048,
       "tests/jiff.cjs": 2048,
