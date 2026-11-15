@@ -1,8 +1,8 @@
 'use strict';
 // Préparation de tests/native-club-support-ui.cjs, dans un processus à part : la sauvegarde Monde fait ~50 Mo et son
 // moteur Node pèse plus d'1,3 Go ; une fois la sauvegarde écrite, ce processus se termine et rend sa mémoire avant
-// qu'on lance Godot (dont le propre moteur recharge la sauvegarde). Sur une machine à 8 Go, garder les deux en vie
-// faisait tuer l'un des processus par le système (« Réponse du moteur local illisible », « Le moteur est fermé »).
+// qu'on lance Godot (dont le propre moteur recharge la sauvegarde). Cela évite de cumuler les deux moteurs en mémoire.
+// « Réponse du moteur local illisible » ne suffit pas à prouver une mise à mort par le système.
 // Usage : node support-ui-prepare.cjs <dossier>   (le dossier reçoit PrototypeGodot/donnees.json)
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {createBridge}=require('../../native/engine/worker.cjs');

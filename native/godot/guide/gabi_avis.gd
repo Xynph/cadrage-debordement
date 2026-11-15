@@ -407,7 +407,7 @@ static func composition_courte(model: Dictionary, action: Dictionary) -> String:
 		if not poste.is_empty(): morceau += " (" + poste + ")"
 		parts.append(morceau)
 	if parts.is_empty(): return "Je changerais la feuille avant le match."
-	return "Pour le match, je changerais %s : %s. Les gars sont plus frais." % ["une chose" if parts.size() == 1 else "deux choses", " ; ".join(parts)]
+	return "Pour le match, je changerais %s : %s." % ["une chose" if parts.size() == 1 else "deux choses", " ; ".join(parts)]
 
 ## « de Smart », « d'Amos » (élision devant une voyelle).
 static func _de(nom: String) -> String:

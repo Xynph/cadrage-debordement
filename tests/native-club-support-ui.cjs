@@ -8,8 +8,8 @@
 //  - nouvelle carrière « common » refusée (seul le mode Monde existe) et briefing demandé en pré-saison (aucune rencontre
 //    à préparer : il faut être au jour d'un match) ;
 //  - devis d'agent : l'engagement affiche les semaines payées du devis (29 en Monde), pas 34 en dur ;
-//  - un moteur local tué (mémoire) laissait toutes les commandes silencieusement ignorées puis un bouton absent et 120 s
-//    d'attente : la préparation tourne dans un processus à part (mémoire rendue avant Godot) et le script s'arrête net,
+//  - un moteur local arrêté laissait toutes les commandes silencieusement ignorées puis un bouton absent et 120 s
+//    d'attente : la préparation tourne dans un processus à part (pas de cumul des moteurs) et le script s'arrête net,
 //    avec un message, si le moteur est arrêté ou si le script dépasse 100 s.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;if(!godot){console.log('SKIP native-club-support-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-ui-'));
