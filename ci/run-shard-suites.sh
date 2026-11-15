@@ -147,6 +147,10 @@ budget() {
     tests/native-academy-appearance-bank.cjs) echo 420s ;;
     # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
     tests/sauvegarde-idempotente.cjs) echo 900s ;;
+    # Promesses publiques (15/11) : six carrières Monde au worker, 170 s en local sous charge ; saison Monde complète
+    # semaine par semaine puis passage à la saison suivante, 330 s en local. Budgets ≈ 2,5 fois.
+    tests/presse-promesses-monde.cjs) echo 420s ;;
+    tests/presse-promesses-saison.cjs) echo 900s ;;
     # Finitions critiques : deux carrières Monde (création + un match, ~260 s en local sous charge) ; budget ≈ 3 fois.
     tests/finitions-critiques.cjs) echo 900s ;;
     # Feuille incomplète : appel d'un espoir (#726), carrières Monde jouées sur plusieurs journées ; 398 s en local sous charge (CI : suite 7/7, 180 s dépassées) ; budget ≈ 3 fois.

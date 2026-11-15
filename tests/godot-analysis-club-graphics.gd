@@ -146,8 +146,8 @@ func run() -> void:
 	var opponent_name:=str(opponent.name)
 	await activate(opponent,true)
 	# Fiche du club (page « Fiche club », lecture moteur `club_sheet`), 14/11/2026.
-	var until:=Time.get_ticks_msec()+30000
-	while (app.waiting or found("ClubSheetLoading")!=null) and Time.get_ticks_msec()<until: await process_frame
+	var sheet_until:=Time.get_ticks_msec()+30000
+	while (app.waiting or found("ClubSheetLoading")!=null) and Time.get_ticks_msec()<sheet_until: await process_frame
 	await settle()
 	check(app.route=="Fiche club" and int(app.management_ui.get("club_sheet",{}).get("id",-1))==int(result.opponent),"Adversaire ouvre la fiche du club du résultat exact")
 	var sheet_name:=found("ClubSheetName") as Label

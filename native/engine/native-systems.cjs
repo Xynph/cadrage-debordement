@@ -103,7 +103,9 @@ function bootstrap(){
 domains.managerPlanning=require('./manager-planning.cjs');
 // Fiche d'un club (XV type, effectif, clubs suivis) : native/engine/club-sheet.cjs.
 domains.clubSheet=require('./club-sheet.cjs');
-const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands]);
+// Promesses publiques en conférence de presse (native/engine/press-promises.cjs), servies par le domaine press.
+domains.pressPromises=require('./press-promises.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

@@ -198,7 +198,9 @@
       "tests/youth-matches.cjs": 55,
       "tests/youth-national.cjs": 2,
       "tests/youth-portraits-origin.cjs": 13,
-      "tests/world-rating-scale.cjs": 45
+      "tests/world-rating-scale.cjs": 45,
+      "tests/presse-promesses-monde.cjs": 196,
+      "tests/presse-promesses-saison.cjs": 380
     }
   },
   "godot": {
