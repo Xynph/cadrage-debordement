@@ -1,10 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
+// Les cas purs partagent une création World et restaurent exactement état + RNG.
+const fixture=context();fixture.start(0);const baseline=fixture.checkpoint();
+function fresh(){fixture.restore(baseline);return fixture;}
 function run({load=0,focused=false,injury=0,mode='normal',cycles=36,legacy=false,potential=98}={}){
- const g=context();g.run('start(0)');g.ctx.opts={load,focused,injury,mode,cycles,legacy,potential};
- return JSON.parse(g.run(`(()=>{
-  const a=opts,p=club().players[0];ensureDevelopment(p);
+ const g=fresh();g.ctx.opts={load,focused,injury,mode,cycles,legacy,potential};
+ const out=JSON.parse(g.run(`(()=>{
+  const a=opts,p=academyPlayer(S.club,0,S.season,9001);ensureDevelopment(p);
   p.age=19;p.rating=50;p.dev.xp=0;p.dev.potential=a.potential;p.condition=100;p.injury=a.injury;
   if(a.legacy)delete p.physicalLoad;else p.physicalLoad={version:1,fatigue:a.load,plan:'normal'};
   const option=developmentFocusOptions(p).find(x=>x!=='equilibre');
@@ -12,7 +15,7 @@ function run({load=0,focused=false,injury=0,mode='normal',cycles=36,legacy=false
   for(let i=0;i<a.cycles;i++)developmentTraining(p,a.mode,S.club);
   const s=p.dev.specialization;
   return JSON.stringify({rating:p.rating,xp:p.dev.xp,specialXp:s.xp,bonuses:Object.values(s.bonuses).reduce((a,b)=>a+b,0),hasLoad:Object.prototype.hasOwnProperty.call(p,'physicalLoad')});
- })()`));
+ })()`));return out;
 }
 const rating=r=>r.rating+r.xp;
 let checks=0;
@@ -34,3 +37,5 @@ assert.equal(old.hasLoad,false);assert.ok(rating(old)>50);checks++;
 const capped=run({potential:51,cycles:2000});
 assert.equal(capped.rating,51);assert.equal(capped.xp,0);checks++;
 console.log('V24 CAREER INVARIANTS '+checks+'/'+checks+' PASS: balanced/focused fatigue, injury, rest, legacy and potential cap');
+
+fixture.restore(baseline);fixture.close();
