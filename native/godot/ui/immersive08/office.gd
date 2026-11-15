@@ -5,6 +5,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const Priorities = preload("res://ui/immersive08/office_priorities.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
+const Avis = preload("res://guide/gabi_avis.gd")
 const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
@@ -612,11 +613,20 @@ static func _group(parent: VBoxContainer, app: Control) -> void:
 		caption.add_child(C.label(str(int(pair[1])) + " %", 24, pair[2]))
 		parent.add_child(C.gauge(float(pair[1]), pair[2]))
 	parent.add_child(C.rule())
-	if group.watched > 0:
-		var watched := C.button(U.watch_caption(group.watched) + "  →", app.navigation_controller.open_watched_roster)
-		watched.name = "OfficeWatchedAction"
-		watched.add_theme_color_override("font_color", C.AMBER)
-		parent.add_child(watched)
+	var fatigue := Avis.fatigue_resume(app.model)
+	var titulaires := int(fatigue.count)
+	var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
+	if group.watched > 0 or titulaires > 0:
+		if group.watched > 0:
+			var watched := C.button(U.watch_caption(group.watched) + "  →", app.navigation_controller.open_watched_roster)
+			watched.name = "OfficeWatchedAction"
+			watched.add_theme_color_override("font_color", C.AMBER)
+			parent.add_child(watched)
+		if titulaires > 0:
+			var feuille := C.button(texte_fatigue + "  →", func(): app._navigate("Composition"))
+			feuille.name = "OfficeFatigueAction"
+			feuille.add_theme_color_override("font_color", C.AMBER)
+			parent.add_child(feuille)
 	else:
 		parent.add_child(C.wrap("Aucune alerte physique", 22, C.MINT, true))
 	var roster := C.button("Consulter le groupe  →", app.navigation_controller.open_roster_group)
