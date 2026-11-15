@@ -48,12 +48,40 @@ function componentContext(){
  };
  globalThis.componentDocument=function(){nativeSystems.domain('academyPathways').validate(S);return {state:JSON.parse(JSON.stringify(S))};};
  globalThis.componentParse=function(text){const doc=JSON.parse(text);nativeSystems.domain('academyPathways').validate(doc.state);return doc;};`);
- const raw=h.run;
+ const raw=h.run,restores=[],restore=h.restore,close=h.close;
+ let closed=false;
+ h.close=()=>{if(closed)return;closed=true;for(const undo of restores.reverse())undo();restore(healthy);raw('validateCareer(S);parseSaveDocument(JSON.stringify(createSaveDocument()))');assert.ok(raw('JSON.stringify(S)')===healthy.text,'le composant ne modifie pas World');assert.equal(h.seed(),healthy.seed,'le composant ne consomme pas le RNG de World');close();};
+ const blocked=()=>{throw Error('Fixture de composants : carrière principale et IO interdits.');};
+ // Barrière effective dans la VM : un alias et les appels internes des modules
+ // rencontrent les mêmes refus, pas seulement les expressions du lanceur.
+ for(const name of ['start','startWorld','advanceSeason','finishRound','trainWeek','promoteYouth','beginDevelopmentSeason','rollDevelopmentYear',
+  'createRugbyMatch','rugbySimulate','simulate','advanceRugby','presentationTick','tick','rugbyTick','rugbyBegin','beginMatch','continueMatch','rugbyFast',
+  'financeWeek','worldWeeklyEconomy','economyWeek','managerWeek','aiRecruitmentWeek','aiRosterRecruitmentWeek',
+  'save','nativeSaveText','nativeSaveCurrent','createSaveDocument','parseSaveDocument','validateCareer','exportCareer','downloadSaveDocument','confirmSaveImport']){
+  if(typeof h.ctx[name]!=='function')continue;
+  const original=h.ctx[name];restores.push(()=>{h.ctx[name]=original;});h.ctx[name]=blocked;
+  assert.equal(raw(name),blocked,'barrière VM effective pour '+name);
+ }
+ const storageObjects=new Set(raw('[gameStorage,localStorage,window.CDOfflineStorage,window.localStorage].filter(Boolean)'));
+ for(const storage of storageObjects)for(const name of ['getItem','setItem','removeItem','clear','key']){
+  if(typeof storage[name]!=='function')continue;
+  const original=Object.getOwnPropertyDescriptor(storage,name);
+  restores.push(()=>{if(original)Object.defineProperty(storage,name,original);else delete storage[name];});
+  Object.defineProperty(storage,name,{value:blocked,writable:true,configurable:true});
+ }
+ for(const name of ['command','start','week','season','toMatch','restore']){
+  const original=h[name];restores.push(()=>{h[name]=original;});h[name]=blocked;
+ }
  h.run=(code,timeout)=>{
   if(/\b(?:start|startWorld|advanceSeason|finishRound|trainWeek|promoteYouth|beginDevelopmentSeason|rollDevelopmentYear|save|createSaveDocument|parseSaveDocument)\s*\(/.test(code))throw Error('Fixture de données uniquement : aucun cycle ni codec de carrière principale.');
   return raw(code,timeout);
  };
- h.close=(()=>{const close=h.close;let closed=false;return()=>{if(closed)return;closed=true;h.restore(healthy);raw('validateCareer(S);parseSaveDocument(JSON.stringify(createSaveDocument()))');assert.ok(raw('JSON.stringify(S)')===healthy.text,'le composant ne modifie pas World');close();};})();
+ const beforeGuard=raw('JSON.stringify(S)');
+ assert.throws(()=>h.run('{const f=save;f()}'),/carrière principale et IO interdits/,'un alias ne contourne pas la barrière');
+ assert.throws(()=>h.command('snapshot'),/carrière principale et IO interdits/,'le worker ne reçoit pas une copie historique');
+ assert.throws(()=>raw('{const f=createRugbyMatch;f([0,1])}'),/carrière principale et IO interdits/,'aucune simulation senior par alias');
+ assert.throws(()=>raw('gameStorage.setItem("component-escape","bad")'),/carrière principale et IO interdits/,'aucune écriture par le stockage');
+ assert.ok(raw('JSON.stringify(S)')===beforeGuard,'les refus de frontière sont atomiques');
  return h;
 }
 module.exports={componentContext};
