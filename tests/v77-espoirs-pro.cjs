@@ -1,12 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {componentContext:context}=require('./helpers/gestion-domaines.cjs');
 const t=context(),run=t.run;
 for(const file of ['youth-pathways-v72.js','espoirs-league-v73.js','espoirs-accession-v74.js','espoirs-movement-v75.js','espoirs-scouting-v76.js','espoirs-pro-v77.js'])
   vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
 for(const name of ['CDEspoirsV73','CDEspoirsAccessionV74','CDEspoirsMovementV75','CDEspoirsScoutingV76','CDEspoirsProV77'])
   assert.equal(run(name+'.install(globalThis)'),true,name+' installed');
-run('start(0)');
+// Compatibilité de composants sur données World, sans simulation de carrière héritée.
+run('CDEspoirsV73.setup(S);CDEspoirsAccessionV74.setup(S);CDEspoirsMovementV75.ensure(S);CDEspoirsScoutingV76.ensure(S);CDEspoirsProV77.ensure(S)');
 const api='CDEspoirsProV77',id=run('S.development.academy[0].id');
 assert.equal(run(api+'.valid(S.v77Promotions)'),true,'V77 initialized');
 assert.equal(run(api+'.academy(S).length'),15,'initial academy');
@@ -28,8 +29,8 @@ assert.equal(run('new Set(S.development.academy.map(p=>p.pos)).size'),run('new S
 assert.equal(run('CDEspoirsV73.chosen(S,S.club).filter(Boolean).length'),15,'playing XV remains intact');
 assert.equal(run('S.clubs[S.club].players.some(p=>p.id==='+JSON.stringify(id)+')'),true);
 assert.equal(run(api+'.promote(S,'+JSON.stringify(id)+',1,()=>true)'),false,'no double promotion');
-assert.equal(run('JSON.parse(JSON.stringify(parseSaveDocument(JSON.stringify(createSaveDocument())).state.v77Promotions)).promotions.length'),1,'save round trip');
-assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'under 5 MB');
+assert.equal(run('JSON.parse(JSON.stringify(componentParse(JSON.stringify(componentDocument())).state.v77Promotions)).promotions.length'),1,'save round trip');
+assert.equal(run('JSON.stringify(componentDocument()).length<5*1024*1024'),true,'under 5 MB');
 assert.equal(run('S.v77Promotions.promotions[0].salary'),run('S.clubs[S.club].players.find(p=>p.id==='+JSON.stringify(id)+').salary'),'contract on roster');
 const next=run('S.development.academy.find(p=>p.id!=='+JSON.stringify(id)+').id');
 assert.equal(run(api+'.promote(S,'+JSON.stringify(next)+',1,()=>true)'),true,'second youth');
@@ -45,15 +46,15 @@ assert.equal(run('CDEspoirsV73.chosen(S,S.club).filter(Boolean).length'),15,'XV 
 assert.equal(run('S.clubs[S.club].players.find(p=>p.id==='+JSON.stringify(id)+').academy'),false);
 assert.equal(run('S.lineup.length'),15,'native team sheet unchanged');
 assert.equal(run('S.reserves.length'),8,'native bench unchanged');
-run('S.phase="ended";S.round=26;advanceSeason()');
+run('S.phase="ended";S.round=26;componentYear()');
 assert.equal(run('S.v77Promotions.promotions.length'),0,'annual reset');
 assert.equal(run('S.v77Promotions.history[0].promotions.length'),3,'history retained');
 assert.equal(run('S.clubs[S.club].players.some(p=>p.id==='+JSON.stringify(id)+')'),true,'professional career continues');
 assert.equal(run('S.clubs[S.club].players.find(p=>p.id==='+JSON.stringify(id)+').dev.history.length>0'),true,'development season tracked');
-run('for(let i=0;i<4;i++){S.phase="ended";S.round=26;advanceSeason()}');
+run('for(let i=0;i<4;i++){S.phase="ended";S.round=26;componentYear()}');
 assert.equal(run('S.v77Promotions.history.length'),4,'history bounded');
 assert.equal(run(api+'.valid(S.v77Promotions)'),true,'future state valid');
 assert.equal(run(api+'.ensure({season:3,v77Promotions:{broken:true},v75Movement:S.v75Movement})'),null,'corrupt state rejected');
 const legacy=run('JSON.parse(JSON.stringify(S))');delete legacy.v77Promotions;
 assert.equal(run(api+'.valid('+api+'.ensure('+JSON.stringify(legacy)+'))'),true,'legacy compatible without V77');
-console.log('V77 PASS: contracts, senior roster, 23 integration, academy XV, rollback, seasons, saves');
+t.close();console.log('V77 composants historiques + garde Monde PASS: contracts, senior roster, 23 integration, academy XV, rollback, seasons, saves');

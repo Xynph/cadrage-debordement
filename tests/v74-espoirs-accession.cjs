@@ -1,13 +1,14 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {componentContext:context}=require('./helpers/gestion-domaines.cjs');
 const t=context(),run=t.run;
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/youth-pathways-v72.js','utf8'),t.ctx);
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/espoirs-league-v73.js','utf8'),t.ctx);
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/espoirs-accession-v74.js','utf8'),t.ctx);
 assert.equal(run('CDEspoirsV73.install(globalThis)'),true);
 assert.equal(run('CDEspoirsAccessionV74.install(globalThis)'),true);
-run('start(0)');
+// Fonctions publiques du composant sur copie de données World ; pas de carrière héritée.
+run('CDEspoirsV73.setup(S);CDEspoirsAccessionV74.setup(S)');
 assert.equal(run('S.v73Espoirs.groups.length'),4,'V73 must remain installed');
 assert.equal(run('S.v74Accession.groups.length'),2);
 assert.equal(run('S.v74Accession.groups.every(x=>x.length===10)'),true,'2 poules de dix');
@@ -44,14 +45,14 @@ assert.equal(run('S.v74Accession.finalists.length'),2,'deux finalistes eligibles
 assert.equal(run('Number.isInteger(S.v74Accession.champion)'),true);
 assert.equal(run('S.v73Espoirs.version'),1,'no V73 corruption');
 run('S.round=0;S.phase="league"');
-assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'save size');
-assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v74Accession.results.length'),187,'round-trip');
+assert.equal(run('JSON.stringify(componentDocument()).length<5*1024*1024'),true,'save size');
+assert.equal(run('componentParse(JSON.stringify(componentDocument())).state.v74Accession.results.length'),187,'round-trip');
 run('CDEspoirsAccessionV74.closeSeason(S)');
 assert.equal(run('S.v74Accession.history.length'),1);
 run('for(let i=0;i<3;i++){S.season++;S.round=0;S.phase="league";CDEspoirsAccessionV74.setup(S);S.round=26;S.phase="ended";CDEspoirsAccessionV74.advance(S);CDEspoirsAccessionV74.closeSeason(S)}');
 run('S.round=0;S.phase="league"');
 assert.equal(run('S.v74Accession.history.length'),4,'quatre saisons');
-assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v74Accession.history.length'),4);
+assert.equal(run('componentParse(JSON.stringify(componentDocument())).state.v74Accession.history.length'),4);
 run('delete S.v74Accession');
-assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v74Accession===undefined'),true,'legacy save accepted');
-console.log('V74 PASS: 20 clubs, 2x10, 18 rounds, 180+7 matches, 22 prospects/club, playoffs, four seasons, saves, V73 interoperability');
+assert.equal(run('componentParse(JSON.stringify(componentDocument())).state.v74Accession===undefined'),true,'legacy save accepted');
+t.close();console.log('V74 composants historiques + garde Monde PASS: 20 clubs, 2x10, 18 rounds, 180+7 matches, 22 prospects/club, playoffs, four seasons, saves, V73 interoperability');

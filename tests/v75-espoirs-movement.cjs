@@ -1,12 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {componentContext:context}=require('./helpers/gestion-domaines.cjs');
 const t=context(),run=t.run;
 for(const file of ['youth-pathways-v72.js','espoirs-league-v73.js','espoirs-accession-v74.js','espoirs-movement-v75.js'])
   vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
 for(const name of ['CDEspoirsV73','CDEspoirsAccessionV74','CDEspoirsMovementV75'])
   assert.equal(run(name+'.install(globalThis)'),true,name+' install');
-run('start(0)');
+// Compatibilité de composants sur données World, sans simulation de carrière héritée.
+run('CDEspoirsV73.setup(S);CDEspoirsAccessionV74.setup(S);CDEspoirsMovementV75.ensure(S)');
 assert.equal(run('CDEspoirsMovementV75.valid(S.v75Movement)'),true);
 assert.equal(run('S.v75Movement.elite.length'),24);
 assert.equal(run('S.v75Movement.accession.length'),20);
@@ -26,7 +27,7 @@ const shot=run('JSON.parse(JSON.stringify(CDEspoirsMovementV75.snapshot(S,CDEspo
 assert.ok(shot,'both relegated and promoted clubs must have full squads');
 assert.equal(shot.elite.every(x=>x.players.length>=15),true);
 assert.equal(shot.acc.every(x=>x.players.length>=15),true);
-run('advanceSeason()');
+run('componentYear()');
 assert.equal(run('S.season'),season+1);
 assert.equal(run('S.v75Movement.history.length'),1);
 assert.equal(run('S.v75Movement.history[0].season'),season);
@@ -44,10 +45,10 @@ for(let i=0;i<2;i++){
  assert.equal(run('S.v74Accession.fixtures.every(r=>r.every(p=>p.every(id=>id>=0&&id<20)))'),true);
 }
 assert.equal(run('CDEspoirsV73.clubPlayers(S,'+choice.relegated[0]+').some(p=>p.id==='+JSON.stringify(oldPlayers[0])+')'),true,'promoted youth retained');
-assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'export budget');
-assert.equal(run('CDEspoirsMovementV75.valid(parseSaveDocument(JSON.stringify(createSaveDocument())).state.v75Movement)'),true,'save roundtrip');
+assert.equal(run('JSON.stringify(componentDocument()).length<5*1024*1024'),true,'export budget');
+assert.equal(run('CDEspoirsMovementV75.valid(componentParse(JSON.stringify(componentDocument())).state.v75Movement)'),true,'save roundtrip');
 assert.equal(run('CDEspoirsMovementV75.transfer(S,{season:'+season+',promoted:[1,2],relegated:[1,2]},{} )'),false,'no repeat transition');
-run('for(let i=0;i<3;i++){S.phase="ended";S.round=26;advanceSeason()}');
+run('for(let i=0;i<3;i++){S.phase="ended";S.round=26;componentYear()}');
 assert.equal(run('S.v75Movement.history.length'),4,'four transitions');
 assert.equal(run('new Set([...S.v75Movement.elite,...S.v75Movement.accession]).size'),44,'no duplicates after 4 seasons');
 assert.equal(run('S.v75Movement.history.every(h=>h.swaps.length===2)'),true);
@@ -56,4 +57,4 @@ assert.equal(run('CDEspoirsMovementV75.ensure({season:3,v75Movement:{broken:true
 const a=run('JSON.parse(JSON.stringify(S))');
 delete a.v75Movement;
 assert.equal(run('CDEspoirsMovementV75.ensure('+JSON.stringify(a)+').elite.length'),24,'legacy save without V75');
-console.log('V75 PASS: 2 promoted/2 relegated, 44 identities, real rosters, fixtures, four seasons, saves');
+t.close();console.log('V75 composants historiques + garde Monde PASS: 2 promoted/2 relegated, 44 identities, real rosters, fixtures, four seasons, saves');
