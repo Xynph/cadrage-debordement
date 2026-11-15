@@ -2,7 +2,7 @@
 // Export v3 des carrières mondiales : les champs copiés des registres ne sont pas
 // écrits et sont reconstruits à la lecture. Anciennes versions toujours lues.
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {context}=require('./helpers/ui-save-codec.cjs');
 
 const {ctx,run}=context();
 const profile=id=>({position:{primary:'Pilier gauche',qualifications:['Pilier gauche'],basis:'estimated'},note:'profil '+id,history:[1,2,3]});
