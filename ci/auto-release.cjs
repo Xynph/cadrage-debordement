@@ -219,7 +219,7 @@ async function runAuto(event,env,services={}){
   sleep:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
   execGate:(number,expected,merge)=>runGate(number,expected,merge,main,js),
   watch:id=>execFileSync('gh',['run','watch',String(id),'--repo',REPO,'--interval','30','--exit-status'],
-    {stdio:'inherit',timeout:32*60*1000})
+    {stdio:'inherit',timeout:(process.env.RUNNER_ENVIRONMENT === 'self-hosted' ? 300 : 32)*60*1000})
  });
 }
 

@@ -126,7 +126,7 @@ async function main(){
      throw Error('Gate refuse pour PR #'+pr+' (code '+String(e.status??'inconnu')+')'+JSON.stringify({stdout,stderr}));
     }
    },
-   watch:id=>execFileSync('gh',['run','watch',String(id),'--repo',REPO,'--interval','30','--exit-status'],{stdio:'inherit',timeout:32*60*1000})});
+   watch:id=>execFileSync('gh',['run','watch',String(id),'--repo',REPO,'--interval','30','--exit-status'],{stdio:'inherit',timeout:(process.env.RUNNER_ENVIRONMENT === 'self-hosted' ? 300 : 32)*60*1000})});
  }catch(e){error=e;}
  const runUrl='https://github.com/'+REPO+'/actions/runs/'+process.env.GITHUB_RUN_ID;
  const message=error?'ÉCHEC — aucune livraison validée. Une fusion peut avoir eu lieu avant cet échec : consulter le run et main avant toute nouvelle commande.':(result.mode==='check'||result.mode==='repair-check')?'CONTRÔLE VERT — aucune fusion effectuée.':'SUCCÈS — fusion '+result.mergedSha+' ; CI post-fusion 7/7 : https://github.com/'+REPO+'/actions/runs/'+result.postRun;

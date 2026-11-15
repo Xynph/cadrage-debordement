@@ -28,7 +28,8 @@ concurrency:
 
 jobs:
   classification:
-    runs-on: ubuntu-24.04
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 5
     outputs:
       coverage: ${{ steps.diff.outputs.coverage }}
@@ -74,20 +75,22 @@ jobs:
   shards:
     name: Suites ${{ matrix.shard }}/7
     needs: classification
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' && github.event_name != 'schedule' }}
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' && needs.classification.outputs.draft != 'true' && github.event_name != 'schedule') }}
+
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4, 5, 6, 7]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     # Sept lots équilibrés (ci/shard-tests.cjs, poids ci/suite-weights.json), toutes
     # les suites conservées, trois au plus par runner (deux dès qu'une suite exclusive
     # tourne : 2 cœurs physiques) sous budget mémoire.
     # Nombre de shards et parallélisme : ci/ci-jobs.cjs (SHARD_COUNT, SHARD_PARALLEL).
     # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
-    timeout-minutes: ${{ github.event.repository.private && 120 || 50 }}
+    timeout-minutes: 120
     env:
-      CD_SHARD_MEMORY_MB: ${{ github.event.repository.private && '5120' || '12288' }}
+      CD_SHARD_MEMORY_MB: '5120'
+      CD_SHARD_PARALLEL: '1'
     steps:
       - uses: actions/checkout@v5
         with:
@@ -126,7 +129,6 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
           COVERAGE: ${{ needs.classification.outputs.coverage }}
-          PRIVATE_REPO: ${{ github.event.repository.private }}
         run: |
           set -euo pipefail
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
@@ -140,11 +142,7 @@ jobs:
           # Trois suites au plus (4 vCPU = 2 cœurs physiques) : deux dès qu'une suite
           # exclusive (longue ou machine virtuelle à délai interne) tourne ; budget mémoire
           # de 12 Go. Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
-          if [[ "$PRIVATE_REPO" == true ]]; then
-            bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/7 ($COVERAGE)" 1
-          else
           bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/7 ($COVERAGE)" 3
-          fi
   godot:
     name: Godot ${{ matrix.shard }}/3
     needs: classification
@@ -157,13 +155,14 @@ jobs:
     #  - créneau régulier (schedule) sur main : informatif (continue-on-error), ni suites JS ni verdict.
     # Pas lancé sur chaque fusion dans main (rafales de fusions automatiques) ; recette Godot ciblée
     # d'une PR : étiquette `godot-sdk` (godot-sdk.yml, workflow à part, non requis).
-    if: ${{ needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.classification.outputs.draft != 'true' && needs.classification.outputs.godot == 'true')) }}
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (needs.classification.result == 'success' && (needs.classification.outputs.coverage == 'full' || needs.classification.outputs.coverage == 'native-art') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.classification.outputs.draft != 'true' && needs.classification.outputs.godot == 'true'))) }}
+
     continue-on-error: ${{ github.event_name == 'schedule' }}
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 55
     env:
       # Version exacte épinglée : archive officielle godotengine/godot-builds, somme
@@ -252,9 +251,10 @@ jobs:
             bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/3"
   validation:
     name: Validation CI
-    if: ${{ always() && github.event_name != 'schedule' }}
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (always() && github.event_name != 'schedule') }}
+
     needs: [classification, shards, godot]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 5
     steps:
       - name: Publier le verdict natif (sans écriture API)

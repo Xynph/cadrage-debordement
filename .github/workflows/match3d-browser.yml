@@ -10,7 +10,8 @@ permissions:
 jobs:
   match3d:
     name: MATCH 3D — 2D/3D, caméras, WebGL, sauvegardes et offline
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5

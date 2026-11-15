@@ -21,7 +21,7 @@
 set -uo pipefail
 list="${1:?Usage : bash ci/run-shard-suites.sh <liste> <titre> [parallèle]}"
 title="${2:?titre requis}"
-parallel="${3:-1}"
+parallel="${CD_SHARD_PARALLEL:-${3:-1}}"
 [[ "$parallel" =~ ^[1-8]$ ]] || { echo "Parallélisme invalide : $parallel (1 à 8)" >&2; exit 2; }
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"

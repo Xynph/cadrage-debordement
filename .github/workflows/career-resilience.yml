@@ -17,7 +17,8 @@ concurrency:
 jobs:
   long-careers:
     name: Carriere ${{ matrix.scenario }} - 15 saisons
-    runs-on: ubuntu-24.04
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -47,9 +48,10 @@ jobs:
           if-no-files-found: error
   evidence:
     name: Validation carrieres longues
-    if: ${{ always() }}
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (always()) }}
+
     needs: long-careers
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5

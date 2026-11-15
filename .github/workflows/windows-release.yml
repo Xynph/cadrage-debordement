@@ -35,12 +35,8 @@ concurrency:
 jobs:
   qualify-graphics:
     name: Préqualification graphique courte du véritable EXE
-    if: >-
-      github.event_name == 'pull_request' && (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true') &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke') &&
-      (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-graphics-smoke')
-    runs-on: windows-2022
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name == 'pull_request' && github.event.repository.private == true && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke') && (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-graphics-smoke')) }}
+    runs-on: [self-hosted, Windows, X64, rl27-windows]
     timeout-minutes: 15
     permissions:
       contents: read
@@ -72,12 +68,8 @@ jobs:
 
   qualify-pr:
     name: Qualification ciblée du véritable EXE
-    if: >-
-      github.event_name == 'pull_request' && (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true') &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'windows-receipt') &&
-      (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-receipt')
-    runs-on: windows-2022
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name == 'pull_request' && github.event.repository.private == true && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.labels.*.name, 'windows-receipt') && (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-receipt')) }}
+    runs-on: [self-hosted, Windows, X64, rl27-windows]
     timeout-minutes: 120
     permissions:
       contents: read
@@ -113,11 +105,8 @@ jobs:
     # Machines Windows gratuites du dépôt public. Hors de tests.yml : jamais requis par
     # la règle de main (seul « Validation CI » l'est), donc non bloquant pour les PR.
     name: Recette Windows EXE (non bloquante)
-    if: >-
-      (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true') && (
-        (github.event_name == 'schedule' && github.ref == 'refs/heads/main') ||
-        (github.event_name == 'workflow_dispatch' && inputs.source_sha == ''))
-    runs-on: windows-2022
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event.repository.private == true && (   (github.event_name == 'schedule' && github.ref == 'refs/heads/main') ||   (github.event_name == 'workflow_dispatch' && inputs.source_sha == ''))) }}
+    runs-on: [self-hosted, Windows, X64, rl27-windows]
     timeout-minutes: 90
     permissions:
       contents: read
@@ -180,10 +169,8 @@ jobs:
 
   receive-main:
     name: Paquet main et preuves Windows en brouillon
-    if: >-
-      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
-      inputs.source_sha != '' && (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true')
-    runs-on: windows-2022
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.source_sha != '' && github.event.repository.private == true) }}
+    runs-on: [self-hosted, Windows, X64, rl27-windows]
     timeout-minutes: 120
     permissions:
       contents: write

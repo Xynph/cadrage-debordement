@@ -21,20 +21,12 @@ permissions: {}
 
 jobs:
   check:
-    if: >-
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.ref == 'refs/heads/main' &&
-      github.actor == 'Xynph' &&
-      github.actor_id == '350229047' &&
-      github.triggering_actor == 'Xynph' &&
-      github.event.sender.id == 350229047 &&
-      github.run_attempt == 1 &&
-      inputs.mode == 'check'
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/main' && github.actor == 'Xynph' && github.actor_id == '350229047' && github.triggering_actor == 'Xynph' && github.event.sender.id == 350229047 && github.run_attempt == 1 && inputs.mode == 'check') }}
     permissions:
       contents: read
       pull-requests: read
       actions: read
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -50,16 +42,7 @@ jobs:
         run: node ci/auto-release.cjs
 
   merge:
-    if: >-
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.ref == 'refs/heads/main' &&
-      github.actor == 'Xynph' &&
-      github.actor_id == '350229047' &&
-      github.triggering_actor == 'Xynph' &&
-      github.event.sender.id == 350229047 &&
-      github.run_attempt == 1 &&
-      inputs.mode == 'merge' &&
-      vars.CD_ORDINARY_MERGE_ENABLED == 'true'
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/main' && github.actor == 'Xynph' && github.actor_id == '350229047' && github.triggering_actor == 'Xynph' && github.event.sender.id == 350229047 && github.run_attempt == 1 && inputs.mode == 'merge' && vars.CD_ORDINARY_MERGE_ENABLED == 'true') }}
     permissions:
       contents: write
       pull-requests: read
@@ -67,8 +50,8 @@ jobs:
     concurrency:
       group: chat-release-gate-main
       cancel-in-progress: false
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    runs-on: [self-hosted, Linux, X64, rl27-control]
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

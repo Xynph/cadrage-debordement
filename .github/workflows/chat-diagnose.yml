@@ -5,21 +5,14 @@ on:
 permissions: {}
 jobs:
   diagnose:
-    if: >-
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.event.issue.number == 73 &&
-      !github.event.issue.pull_request &&
-      github.event.comment.user.id == 350229047 &&
-      github.event.comment.user.login == 'Xynph' &&
-      github.event.comment.user.type == 'User' &&
-      startsWith(github.event.comment.body, '/cd-diagnose ')
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.repository == 'Xynph/cadrage-debordement' && github.event.issue.number == 73 && !github.event.issue.pull_request && github.event.comment.user.id == 350229047 && github.event.comment.user.login == 'Xynph' && github.event.comment.user.type == 'User' && startsWith(github.event.comment.body, '/cd-diagnose ')) }}
     permissions:
       contents: read
       actions: read
       checks: read
       pull-requests: read
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

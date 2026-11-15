@@ -42,15 +42,12 @@ concurrency:
 jobs:
   sdk:
     name: ${{ matrix.family == 'full' && 'sdk' || format('sdk-{0}', matrix.family) }}
-    if: >-
-      ${{ github.event_name != 'pull_request' || (!github.event.pull_request.draft &&
-      contains(github.event.pull_request.labels.*.name, 'godot-sdk') &&
-      (github.event.action == 'ready_for_review' || github.event.label.name == 'godot-sdk')) }}
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name != 'pull_request' || (!github.event.pull_request.draft && contains(github.event.pull_request.labels.*.name, 'godot-sdk') && (github.event.action == 'ready_for_review' || github.event.label.name == 'godot-sdk'))) }}
     strategy:
       fail-fast: false
       matrix:
         family: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.scope == 'targeted' && '["targeted"]' || github.event_name == 'workflow_dispatch' && inputs.scope == 'followup' && '["portraits-staff","layouts"]' || '["full","portraits-staff","layouts"]') }}
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 45
     env:
       CD_GODOT_SDK_SCOPE: ${{ matrix.family == 'full' && 'full' || 'followup' }}

@@ -7,7 +7,8 @@ permissions:
   contents: read
 jobs:
   audit:
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09

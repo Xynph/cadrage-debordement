@@ -11,8 +11,9 @@ concurrency:
 jobs:
   node:
     # Tests Node ordinaires déjà exécutés dans le shard complet CI sur chaque PR.
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name == 'workflow_dispatch') }}
+
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
@@ -37,7 +38,8 @@ jobs:
           node tests/lnr05-evidence-long.cjs
   longitudinal-audit:
     name: "Audit 4 saisons / ${{ matrix.mode }} / graine ${{ matrix.seed }}"
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 12
     strategy:
       fail-fast: false
@@ -57,7 +59,8 @@ jobs:
           LNR_AUDIT_SEED: ${{ matrix.seed }}
         run: node tests/lnr05-multiseason-strategies.cjs
   chromium:
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5

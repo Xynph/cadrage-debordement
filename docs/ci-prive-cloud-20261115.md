@@ -1,117 +1,104 @@
-# GitHub privé et travail sans le PC personnel — 15 novembre 2026
+# GitHub privé et tests sur PC personnel — décision du 15 novembre 2026
 
-## Choix et plan d'exécution
-Léo demande de conserver GitHub, de préparer le dépôt privé et de pouvoir travailler
-depuis son PC professionnel sans installation locale. Les PR et leurs contrôles
-obligatoires restent dans le cloud. Le PC personnel est réservé à la recette GPU :
-il n'est jamais une dépendance de Validation CI. Blacksmith est différé : transfert
-à une organisation et coût à évaluer, le plan Pro personnel ne suit pas un transfert.
+## Organisation retenue par Léo
+GitHub garde le code privé, les branches, PR, revues et la coordination Claude/Codex.
+GitHub Actions orchestre les contrôles, mais leur calcul s'effectue uniquement sur le
+PC personnel. Aucune machine de calcul GitHub hébergée ni Blacksmith, aucun repli cloud.
+Budget supplémentaire autorisé : 0 EUR, calcul, stockage et services tiers compris.
+Le PC professionnel ne reçoit ni installation du jeu, ni runner, ni données privées.
 
-1. Préparer Windows cloud pour le privé avec activation explicite.
-2. Préparer le checkout authentifié dans oval-legacy-recette-windows.
-3. Valider les workflows et ouvrir des PR brouillons, sans lancer la recette matérielle.
-4. Mesurer l'usage et recevoir les tests sur une machine de caractéristiques privées.
-5. Fusionner via le gate, configurer les accès puis seulement changer la visibilité.
+Quand le PC personnel est éteint, les nouvelles exécutions attendent puis peuvent
+expirer ; les contrôles rouges/manquants ne sont jamais contournés. On peut lire,
+modifier le code, préparer et revoir des PR à distance. Les fusions attendent les
+contrôles exacts et verts. La gratuité ne garantit pas une disponibilité permanente.
 
-## Budget arrêté par Léo — 15 novembre 2026
-**0 EUR de nouvelle dépense cloud autorisée**, y compris dépassement de calcul,
-stockage d'artefacts, caches payants et services tiers. L'abonnement Pro existant
-n'est pas modifié. Les ressources incluses dans cet abonnement restent utilisables.
-Aucun abonnement, runner payant ou achat de minutes ne doit être activé.
+## Préparation livrée dans #743, non activée
+Les 57 workflows du main de référence b807b5c4 sont préparés pour 77 jobs personnels :
+- Linux de test : [self-hosted, Linux, X64, rl27-linux] ;
+- Linux de contrôle : [self-hosted, Linux, X64, rl27-control] ;
+- Windows de test : [self-hosted, Windows, X64, rl27-windows].
+Tous exigent un dépôt privé ; les PR de forks sont refusées.
+Les dépendances, étapes et tests sont conservés. La garde Windows réservée auparavant
+au dépôt public est remplacée par la garde privée.
+Le profil Linux cloud privé antérieur et CD_PRIVATE_WINDOWS_CLOUD sont abandonnés.
 
-Avant passage en privé : vérifier dans Billing les mécanismes effectifs de blocage
-des dépenses pour tous les postes Actions/stockage ; une alerte seule ne suffit pas.
-Ne pas supposer qu'une valeur de budget égale à zéro dans l'interface bloque les
-dépenses : recevoir le comportement réel du compte. Ces réglages administrateur
-ne sont PAS appliqués par cette PR et restent non vérifiés.
+Les sept shards JS sont conservés. Chaque agent de test lance une seule suite à la
+fois (CD_SHARD_PARALLEL=1), avec 5120 Mo de réservation (CD_SHARD_MEMORY_MB).
+L'ordonnanceur valide toujours le parallélisme. Délai d'un shard : 120 minutes.
+Le contrôle de fusion doit tourner sur un agent distinct de ceux qu'il attend :
+les jobs d'administration et classification/Validation CI ciblent rl27-control.
+Les scripts de fusion conservent leurs critères, SHA et verdicts ; seule leur attente
+bornée de CI passe de 32 à 300 minutes sur self-hosted, avec un job limité à 330 min.
+Cette borne devra être reçue sur le matériel réel ; un dépassement reste un échec.
 
-Une fois le calcul inclus épuisé, laisser les jobs cloud bloqués. Sans PC personnel,
-le code et les PR restent accessibles, mais les tests obligatoires et les fusions
-attendent le renouvellement du quota ou un runner gratuit disponible.
-Ne jamais contourner Validation CI ni diminuer la couverture pour fusionner.
-Les contrôles rapides et obligatoires doivent être prioritaires dans le quota ;
-toute optimisation des créneaux devra préserver la couverture et être validée.
+Le runner RTX existant dans oval-legacy-recette-windows reste distinct. Sa PR #3
+prépare le checkout privé ; son enregistrement actuel ne dessert pas automatiquement
+cadrage-debordement. Il faut enregistrer les nouveaux agents dans le dépôt principal.
+Ne pas remplacer ni arrêter le service RTX existant pour faire cette installation.
 
-Compte tenu de la consommation mesurée, une CI privée disponible en continu sans
-PC personnel ne peut pas être promise avec ce budget. Conserver le dépôt public
-tant que les protections de facturation et les prérequis techniques ne sont pas
-vérifiés ; ceci ne vaut pas annulation du choix de préparer le privé.
-Blacksmith ne pourra être envisagé que dans ses ressources gratuites, sans achat,
-sans engagement payant et après vérification des conditions.
+## Ce qui reste accessible uniquement avec le PC et l'administration
+Le PC personnel sera disponible plus tard le 15/11. Rien n'y a été installé dans
+cette session. La copie locale de préparation est isolée dans /tmp, pas une
+modification du checkout utilisé par les autres chantiers.
 
-## État et réglages GitHub restants
-La préparation seule ne bascule pas le dépôt et n'ajoute aucun budget payant.
-Le connecteur disponible n'expose pas l'administration des secrets, de la
-facturation ou de la visibilité ; le jeton gh local est invalide.
+1. Vérifier le PC : Windows, RAM/CPU, virtualisation, espace, réseau, service RTX
+   existant et capacité de GPU. Créer un environnement Linux Ubuntu 24.04 isolé
+   (VM sans dossiers personnels montés), avec Node 22, Python, Git, gh, bash,
+   outils de build, Xvfb/Mesa et dépendances nécessaires aux workflows. Aucun
+   environnement Linux personnel existant n'est présumé adapté ou isolé.
+2. Enregistrer des agents officiels GitHub dans des dossiers/comptes dédiés :
+   contrôle Linux distinct ; agents Linux de test ; agent Windows non administrateur
+   avec accès limité aux seuls dossiers de travail. Aucun accès aux profils,
+   documents, navigateurs ou clés personnels. Dimensionner le nombre d'agents de
+   test et la RAM sur mesures ; plusieurs services ne créent pas de puissance.
+   Vérifier les dépendances Windows (les images hébergées préinstallaient des outils).
+3. Configurer le secret CADRAGE_SOURCE_READ_TOKEN dans le dépôt de recette RTX :
+   lecture Contents du seul dépôt source, durée limitée. Ne jamais mettre le jeton
+   dans le chat, une issue ou un fichier. Le token de dispatch existant est distinct.
+4. Vérifier dans Billing le blocage EFFECTIF de toute dépense Actions/stockage.
+   Une alerte seule ne suffit pas ; ne pas supposer qu'un budget affiché à zéro
+   équivaut à un blocage. Les artefacts, caches et logs restent des services GitHub,
+   même avec des runners personnels. Les uploads/downloads inter-jobs existants
+   sont conservés pour ne pas casser les recettes : rester dans les allocations
+   incluses, réduire leur rétention ou conserver les preuves localement si nécessaire.
+   Le stockage supplémentaire reste interdit. Ne rien activer sans contrôle effectif.
+5. Recevoir les recettes sur le PC : service seul, échantillon Linux, sept shards,
+   trois Godot, Windows et pipeline qui échange des artefacts. La migration Monde
+   #742 doit être reçue au préalable ; aucun ancien mode de carrière n'est relancé.
+6. Organiser une fenêtre de bascule avec l'intégrateur #591 : actualiser le main,
+   gérer le démarrage privé des nouveaux workflows et recevoir la CI PR exacte,
+   fusionner par le gate existant, puis recevoir le SHA réellement fusionné.
+   Les nouveaux jobs sont volontairement inactifs sur le dépôt public : il n'y a
+   pas de bootstrap public auto-hébergé autorisé par cette préparation. La procédure
+   administrative de transition doit être vérifiée sur place ; ne pas fusionner en
+   considérant les jobs sautés comme une preuve verte, ni supprimer les protections.
+7. Vérifier apps Codex/Claude, protections Pro privé, environnements et liens de
+   livraison qui lisaient les sources publiquement. Les réglages d'administration
+   et la visibilité ne sont pas modifiés par les commits de cette PR.
 
-- Vérifier GitHub Pro actif pour Xynph, les protections de main et l'accès des apps
-  Codex/Claude après bascule. Le ruleset actuel exige PR et Validation CI, sans
-  merge queue native.
-- Billing : relever le calcul inclus restant sur tout le compte, créer alertes et
-  blocage de dépassement avant toute CI privée. Sans crédit ni dépense autorisée,
-  les jobs hébergés peuvent s'arrêter : le travail sur les branches reste possible,
-  mais aucune fusion sans Validation CI.
-- Pro inclut actuellement 18 USD de calcul, équivalant à 3000 minutes Linux à
-  0,006 USD/min ; Windows standard coûte 0,010 USD/min. Artefacts : 1 Go partagé
-  avec Packages ; cache : allocation distincte 10 Go/dépôt.
-- Mesurer les durées effectives par job et tentative, pas le délai mural des runs.
-  Le relevé historique de 14900 minutes/12 h précède les optimisations et ne donne
-  pas le coût actuel.
-- Important : les runners Linux standard privés ont moins de RAM/CPU que les
-  runners publics utilisés ici. L'ordonnanceur JS réserve 12 Go de RAM et lance
-  jusqu'à trois suites. Ne pas basculer avant recette du profil privé et adaptation
-  vérifiée des shards/parallélisme ; ne réduire aucune couverture pour économiser.
-- Dans oval-legacy-recette-windows, créer le secret CADRAGE_SOURCE_READ_TOKEN :
-  jeton à durée limitée, limité au seul dépôt cadrage-debordement, Contents read.
-  Ne jamais coller le jeton dans une issue ou le chat. Le GITHUB_TOKEN du dépôt de
-  recette ne suffit pas à lire un autre dépôt privé. Le checkout ne conserve pas
-  les identifiants Git et valide que le SHA appartient à main.
-- Le secret OVAL_RECETTE_DISPATCH_TOKEN existant concerne le déclenchement,
-  pas la lecture des sources. Vérifier séparément sa portée.
-- CD_PRIVATE_WINDOWS_CLOUD=true (variable du dépôt principal) autorise les recettes
-  Windows hébergées en privé. Par défaut elles restent désactivées en privé afin
-  de ne pas introduire des dépenses récurrentes. Son activation exige un blocage des dépenses vérifié
-  et la vérification des créneaux toutes les 4 h et des artefacts sur 14 jours.
-- Auditer les environnements GitHub (dont recette-pc-leo) et leurs restrictions
-  disponibles sur Pro privé, les téléchargements anonymes/URLs publiques et les
-  outils de livraison avant bascule. Le checkout RTX n'est pas cet audit complet.
+Le connecteur n'expose pas les mutations de visibilité, secrets ou facturation.
+Le navigateur administratif n'a pas pu être utilisé. Le dépôt reste public.
+Aucune dépense engagée, aucune recette PC exécutée, aucune fusion revendiquée.
 
-## Relevé effectué et adaptation préparée
-Les 155 runs de Tests JavaScript créés le 14/11 UTC totalisent 1336 jobs
-exécutés, 829094 secondes (13818,2 minutes), toutes tentatives retournées par
-l'API incluses, aucune page de jobs manquante. Leur exécution peut déborder
-sur le jour suivant : ce n'est pas une facture journalière.
-Les autres workflows sont exclus. Rapport : ci-usage-20261114.json.
-Au tarif Linux standard privé, à durée identique : 82,91 USD avant quota
-(87,26 USD en arrondissant chaque job à la minute supérieure).
-Ce coût est hypothétique : le matériel privé et les durées diffèrent.
+## Sauvegarde indépendante à réaliser sur le PC
+GitHub n'est pas l'unique sauvegarde. Prévoir une copie chiffrée et versionnée sur
+un autre support choisi par Léo, avec essai de restauration : dépôts Git et branches,
+actifs privés, sauvegardes du jeu et configuration de reprise. Aucun jeton ne doit
+être sauvegardé en clair. Aucun support disponible n'est présumé ; aucune sauvegarde
+n'a été créée dans cette session.
 
-Le workflow principal prépare le profil privé : une suite par shard,
-5120 Mo de budget mémoire, délai global de 120 min, sept shards conservés.
-Le profil public reste à trois suites, 12288 Mo, 50 min. Simulation locale sur les
-553 suites sélectionnées par main : aucune perte ni duplication, réservation
-maximale 3580 Mo, shard le plus long estimé à 34,3 min. Cette simulation n'est
-ni une réception de la CI privée ni une validation des suites.
-La migration Monde #742 bloque la réception complète de main ; ne pas lancer
-les anciennes suites pour contourner cette coordination.
-Les autres workflows hébergés restent à recevoir avant bascule.
+## Vérifications effectuées
+YAML des 57 workflows, garde privée/forks et absence de runner hébergé pour 77 jobs.
+Tests locaux verts : ci-pc-only, ci-report (37 verdicts), ci-sharding, ci-shard-replay,
+ci-quick-check, ci-runs-watchdog, ci-run-metrics, release-gate, chat-release (46 cas),
+auto-release (14 cas), pr-preflight. Les critères des gates ne sont pas relâchés.
+Ces vérifications portent sur l'infrastructure, pas sur une recette matérielle ni
+sur la batterie fonctionnelle entière. Brouillon jusqu'à réception sur le PC.
 
-## Sans PC personnel
-Édition, PR et tests hébergés peuvent fonctionner sans le PC. L'EXE cloud utilise
-un environnement distinct de la vraie RTX : aucune preuve matérielle n'est revendiquée.
-Les recettes RTX attendent le runner ; elles ne basculent pas automatiquement dans
-le cloud et n'empêchent pas Validation CI. Aucun job RTX n'est lancé pour cette préparation.
+## Relevé conservé
+docs/ci-usage-20261114.json documente 155 runs du workflow principal créés le 14/11 UTC,
+13818,2 minutes de jobs, hors autres workflows ; les exécutions peuvent déborder sur
+le jour suivant. Les coûts cloud hypothétiques de ce relevé ne sont plus un budget
+proposé : la décision actuelle est calcul exclusivement personnel.
 
-## Vérifications
-Préparation statique uniquement : syntaxe YAML, quatre gardes Windows avec activation
-privée explicite, checkout sans persistance, contrôle d'ascendance et runner RTX inchangés.
-La recette Windows native, le secret privé, la RAM en CI privée et la facturation ne sont
-pas validés. Les PR restent brouillons jusqu'à réception et coordination #591.
-
-Sources officielles :
-- https://docs.github.com/en/billing/concepts/product-billing/github-actions
-- https://docs.github.com/en/billing/reference/actions-runner-pricing
-- https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-
-Exécution dans une seule session ; modèle/effort effectifs non exposés.
-Recommandation GPT-6.1 Sol : moyen.
+Modèle/effort effectifs non exposés ; recommandation GPT-6.1 Sol : moyen.

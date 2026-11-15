@@ -18,7 +18,8 @@ concurrency:
 jobs:
   transactions:
     name: Transactions natives et reproductions
-    runs-on: ubuntu-24.04
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
@@ -47,7 +48,8 @@ jobs:
           retention-days: 14
   campaigns:
     name: '${{ matrix.profile }} - graine ${{ matrix.seed }} - 15 saisons'
-    runs-on: ubuntu-24.04
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -73,9 +75,10 @@ jobs:
           retention-days: 14
   summary:
     name: Validation du diagnostic economique
-    if: always()
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (always()) }}
+
     needs: [transactions, campaigns]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5

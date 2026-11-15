@@ -5,7 +5,8 @@ on:
   workflow_dispatch:
 jobs:
   chromium-v49:
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

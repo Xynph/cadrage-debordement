@@ -15,7 +15,7 @@ assert.match(yaml,/CLASSIFICATION: \$\{\{ needs\.classification\.result \}\}/);
 assert.match(yaml,/SHARDS: \$\{\{ needs\.shards\.result \}\}/);
 assert.match(yaml,/COVERAGE: \$\{\{ needs\.classification\.outputs\.coverage \}\}/);
 // Verdict toujours publié, sauf sur créneau régulier (Godot seul, ignoré par les gates).
-assert.match(yaml,/if: \$\{\{ always\(\) && github\.event_name != 'schedule' \}\}/);
+assert.ok(yaml.includes("&& (always() && github.event_name != 'schedule') }}"), 'Verdict toujours exécuté, hors schedule, sous la garde PC privé');
 // Débit : brouillons en CI légère, batterie complète au passage en prête, annulation sur main.
 assert.match(yaml,/types: \[opened, synchronize, reopened, ready_for_review\]/);
 // État brouillon lu en direct (course push + passage en prête, #590).

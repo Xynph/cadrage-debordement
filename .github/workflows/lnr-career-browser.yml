@@ -11,8 +11,9 @@ concurrency:
 jobs:
   node:
     # tests/lnr-career.cjs est déjà exécuté par Tests JavaScript en PR.
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name == 'workflow_dispatch') }}
+
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
@@ -29,8 +30,9 @@ jobs:
           node tests/lnr-career.cjs
   long-career:
     # tests/lnr-career-long.cjs est déjà exécuté par Tests JavaScript en PR.
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name == 'workflow_dispatch') }}
+
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
@@ -41,7 +43,8 @@ jobs:
           node-version: '24'
       - run: node tests/lnr-career-long.cjs
   chromium:
-    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: [self-hosted, Linux, X64, rl27-linux]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5

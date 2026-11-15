@@ -20,16 +20,12 @@ concurrency:
   cancel-in-progress: false
 jobs:
   simulation:
-    if: >-
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.ref == 'refs/heads/main' &&
-      github.actor_id == '350229047' && github.actor == 'Xynph' &&
-      github.triggering_actor == 'Xynph'
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/main' && github.actor_id == '350229047' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph') }}
     permissions:
       contents: read
       actions: read
       pull-requests: read
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -49,19 +45,13 @@ jobs:
         run: node ci/delivery-readiness.cjs "$CD_PR" "$CD_SHA"
   publication:
     needs: simulation
-    if: >-
-      needs.simulation.result == 'success' && inputs.publish == true &&
-      vars.CD_DELIVERY_PUBLISH == 'true' &&
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.ref == 'refs/heads/main' &&
-      github.actor_id == '350229047' && github.actor == 'Xynph' &&
-      github.triggering_actor == 'Xynph'
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (needs.simulation.result == 'success' && inputs.publish == true && vars.CD_DELIVERY_PUBLISH == 'true' && github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/main' && github.actor_id == '350229047' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph') }}
     permissions:
       contents: read
       actions: read
       pull-requests: read
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

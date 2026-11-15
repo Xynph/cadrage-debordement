@@ -5,14 +5,7 @@ on:
 permissions: {}
 jobs:
   guarded-merge:
-    if: >-
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.event.issue.number == 73 &&
-      !github.event.issue.pull_request &&
-      github.event.comment.user.id == 350229047 &&
-      github.event.comment.user.login == 'Xynph' &&
-      github.event.comment.user.type == 'User' &&
-      (startsWith(github.event.comment.body, '/cd-merge ') || startsWith(github.event.comment.body, '/cd-check ') || startsWith(github.event.comment.body, '/cd-repair-check ') || startsWith(github.event.comment.body, '/cd-repair-merge '))
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.repository == 'Xynph/cadrage-debordement' && github.event.issue.number == 73 && !github.event.issue.pull_request && github.event.comment.user.id == 350229047 && github.event.comment.user.login == 'Xynph' && github.event.comment.user.type == 'User' && (startsWith(github.event.comment.body, '/cd-merge ') || startsWith(github.event.comment.body, '/cd-check ') || startsWith(github.event.comment.body, '/cd-repair-check ') || startsWith(github.event.comment.body, '/cd-repair-merge '))) }}
     permissions:
       contents: write
       pull-requests: read
@@ -21,8 +14,8 @@ jobs:
     concurrency:
       group: chat-release-gate-main
       cancel-in-progress: false
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
+    runs-on: [self-hosted, Linux, X64, rl27-control]
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

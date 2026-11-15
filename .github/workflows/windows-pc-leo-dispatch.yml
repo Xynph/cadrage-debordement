@@ -10,12 +10,8 @@ permissions: {}
 jobs:
   transmettre:
     name: Transmettre le SHA au dépôt privé
-    if: >-
-      github.repository == 'Xynph/cadrage-debordement' &&
-      github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' ||
-        (github.event_name == 'workflow_dispatch' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph'))
-    runs-on: ubuntu-24.04
+    if: ${{ github.event.repository.private && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/main' && (github.event_name == 'push' ||   (github.event_name == 'workflow_dispatch' && github.actor == 'Xynph' && github.triggering_actor == 'Xynph'))) }}
+    runs-on: [self-hosted, Linux, X64, rl27-control]
     timeout-minutes: 5
     environment: recette-pc-leo
     steps:
