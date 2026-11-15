@@ -5,6 +5,7 @@ argument-hint: "[feature or area to design audio for] [--review full|lean|solo]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, TaskCreate, TaskGet, TaskList, TaskUpdate, Bash(bash "*/.claude/skills/team-audio/../../hooks/yaml-helper.sh" resolve_config *)
 model: sonnet
+disable-model-invocation: true
 ---
 
 # Team Audio

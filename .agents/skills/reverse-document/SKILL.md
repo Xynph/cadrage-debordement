@@ -6,6 +6,7 @@ user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(bash "*/.claude/skills/reverse-document/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/game-read.sh *)
 model: sonnet
 # Read-only diagnostic skill — no specialist agent delegation needed
+disable-model-invocation: true
 ---
 
 # Reverse Documentation

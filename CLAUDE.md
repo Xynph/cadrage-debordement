@@ -43,6 +43,20 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
   sous-agent sans accord » d'`AGENTS.md` s'applique. `log-reader` (Haiku) lit
   les journaux de tests et de CI sans rien modifier.
 
+## Économie de tokens
+
+- Un chantier = une session. Entre deux chantiers : passation dans la PR,
+  puis `/clear` (le contexte accumulé est relu à chaque tour).
+- Chercher d'abord en mode « fichiers » (Grep `files_with_matches`), puis lire
+  la plage utile (`offset`/`limit`). Jamais `DEVELOPPEMENT.md` (250 Ko) ni
+  `README.md` en entier : chercher la section.
+- `.ignore` exclut des recherches les bases du monde et données d'une ligne
+  (jusqu'à 11 Mo) : les interroger avec `node -e` ou `jq`, pas avec Grep.
+- Journaux de CI et sorties de tests longues : `log-reader` (Haiku), qui rend
+  seulement les échecs.
+- 53 commandes CCGS hors sujet sont masquées au modèle
+  (`disable-model-invocation`) mais restent utilisables en tapant `/nom`.
+
 ## Modèle et effort côté Claude
 
 `AGENTS.md` demande de recommander l'effort de GPT‑6.1 Sol à Codex ; côté
