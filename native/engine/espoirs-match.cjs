@@ -227,7 +227,21 @@ function factory(){
  const ownWorld=s=>!!s&&s===state()&&Array.isArray(s.development?.academy)&&worldOn(s)&&Array.isArray(s.lineup)&&Array.isArray(s.reserves);
  const ownRegistered=s=>typeof CDWorldJapanQuota!=='undefined'&&CDWorldJapanQuota.activeClub&&CDWorldJapanQuota.activeClub(s,s.club);
  const slotOk=(p,slot)=>slot<15?slotEligible(p,slot):benchEligible(p,slot-15);
- const noteAt=(p,slot)=>typeof nativePositionAptitudes!=='undefined'?nativePositionAptitudes.rating(p,slot):(p.rating||0);
+ // Les qualités d'un jeune du centre sont parfois plus généreuses que son niveau (pilier de niveau 64 dont le rôle
+ // pèse 82) : la note au poste affichée, le choix du staff et la force du jeune dans le match doivent être celles
+ // d'un joueur de ce niveau, comme pour un pro (note au poste = niveau au poste naturel). Copie recalée : décalage
+ // uniforme des qualités pour que la note de son rôle égale son niveau (deux passes : bornes 15-99).
+ function calibrated(p){
+  if(typeof roleNote!=='function'||!p?.skills||!Number.isFinite(p.rating))return p;
+  let q=p;
+  for(let pass=0;pass<2;pass++){
+   const gap=Math.round(p.rating-roleNote(q));if(Math.abs(gap)<=1)break;
+   const skills={};for(const k of Object.keys(q.skills))skills[k]=Math.max(15,Math.min(99,Math.round(q.skills[k]+gap)));
+   q={...q,skills};
+  }
+  return q;
+ }
+ const noteAt=(p,slot)=>typeof nativePositionAptitudes!=='undefined'?nativePositionAptitudes.rating(calibrated(p),slot):(p.rating||0);
  const slotLabel=slot=>slot<15?POS[slot]:BENCH_LABELS[slot-15];
  const slotNumber=slot=>typeof nativePositionAptitudes!=='undefined'?nativePositionAptitudes.positionNumber(slot):slot+1;
  // Marqueur de prêt du club du joueur : identifiant de la rencontre pour laquelle le jeune est appelé (texte compact) ;
@@ -279,7 +293,10 @@ function factory(){
  }
  function loanOut(s,p){
   const pool=s.development.academy,at=pool.indexOf(p);if(at<0)throw Error('Espoir introuvable au centre.');
-  pool.splice(at,1);p.espoirLoan=ownFixtureId(s)||true;p.academy=false;p.contractEnd=s.season;s.clubs[s.club].players.push(p);
+  pool.splice(at,1);p.espoirLoan=ownFixtureId(s)||true;p.academy=false;p.contractEnd=s.season;
+  // Prêté à l'équipe première : ses qualités rejoignent son niveau (il joue comme le joueur de ce niveau qu'annonce l'offre).
+  const fit=calibrated(p);if(fit!==p)p.skills=fit.skills;
+  s.clubs[s.club].players.push(p);
  }
  // Rend au centre les jeunes appelés : `which` = 'all' (tous), 'unused' (hors feuille) ou 'stale' (rencontre passée) ;
  // jamais pendant leur match.
@@ -364,10 +381,14 @@ function factory(){
   const side=l.userSide,sh=l.sheets?.[side];if(!sh)return;
   for(const p of s.clubs[s.club].players){
    if(!p.espoirLoan)continue;
-   const minutes=sh.minutes?.[p.id]||0;if(!minutes)continue;
-   if(typeof growPlayer==='function'&&typeof ageGrowth==='function'){try{growPlayer(p,.1*ageGrowth(p),false);}catch(e){/* progression facultative */}}
-   if(p.satisfaction&&typeof p.satisfaction.score==='number')p.satisfaction.score=Math.min(100,p.satisfaction.score+4);
-   if(typeof news==='function')news(`${p.name}, appelé du centre de formation, a disputé ${Math.round(minutes)} minutes avec l’équipe première : de l’expérience et de la confiance.`);
+   const minutes=sh.minutes?.[p.id]||0;
+   // Inscrit sur la feuille mais jamais entré en jeu : une petite expérience (le tiers de celle d'un joueur qui joue).
+   const inscrit=!minutes&&[...(sh.on||[]),...(sh.bench||[])].includes(p.id);
+   if(!minutes&&!inscrit)continue;
+   const part=minutes?0.1:0.033;
+   if(typeof growPlayer==='function'&&typeof ageGrowth==='function'){try{growPlayer(p,part*ageGrowth(p),false);}catch(e){/* progression facultative */}}
+   if(p.satisfaction&&typeof p.satisfaction.score==='number')p.satisfaction.score=Math.min(100,p.satisfaction.score+(minutes?4:1));
+   if(typeof news==='function')news(minutes?`${p.name}, appelé du centre de formation, a disputé ${Math.round(minutes)} minutes avec l’équipe première : de l’expérience et de la confiance.`:`${p.name}, appelé du centre de formation, était sur la feuille sans entrer en jeu : un peu d’expérience au contact de l’équipe première.`);
   }
  }
  function execute(command,payload){
@@ -459,6 +480,6 @@ function factory(){
   }
   return true;
  }
- return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences,offers,callUp,callUpProposed,returnOwn,setOff,completeOwn};
+ return {project,validate,execute,installHooks,withArmed,plan,sheetFor,returnLoans,summary,seasonGoal,ensure,absences,offers,callUp,callUpProposed,returnOwn,setOff,completeOwn,rewardOwn};
 }
 module.exports={files,commands,factory};

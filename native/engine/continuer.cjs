@@ -153,4 +153,21 @@ function detect(before, after, settings, repriseDate = null) {
   return null;
 }
 
-module.exports = { STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, SIGNAL_SOURCE, validate, detect, routine };
+// Prochain arrêt PRÉVISIBLE depuis l'état du jour (pour le panneau « Continuer ») : le premier de la rencontre du
+// club (jour de match), de la reprise de l'entraînement et d'un rendez-vous déjà en file (le jour suivant).
+// Les arrêts imprévisibles (blessure, courrier, message) ne comptent pas : ils interrompent sans prévenir.
+// Rend {kind, date, opponent|detail} ou null.
+function plan(after, repriseDate = null) {
+  if (!after || !after.today) return null;
+  const candidates = [];
+  if (after.next && after.next.date >= after.today) candidates.push({ kind: 'match', date: after.next.date, opponent: after.next.opponent });
+  if (repriseDate && repriseDate > after.today) candidates.push({ kind: 'reprise', date: repriseDate });
+  if (after.meeting && !after.meeting.completed) {
+    const label = ({ press: 'Conférence de presse', medical: 'Point médical', board: 'Rendez-vous avec la direction' })[after.meeting.kind] || 'Rendez-vous du club';
+    candidates.push({ kind: 'rendez_vous', date: new Date(Date.parse(after.today) + 86400000).toISOString().slice(0, 10), detail: label });
+  }
+  candidates.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return candidates[0] || null;
+}
+
+module.exports = { plan, STOPS, MAX_DAYS, MESSAGE_MODES, INJURY_MODES, SIGNAL_SOURCE, validate, detect, routine };
