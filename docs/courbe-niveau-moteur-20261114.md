@@ -151,3 +151,36 @@ l'étude) est pénalisé ; d'où le choix d'un club humain hors des championnats
   régénérée par `node tests/godot-match-gestes-scenes.cjs` ; `tools/animation-replay/fixture.js`
   régénérée, avec un tirage fixe de 0,5 au lieu de 0,43 (à 0,43, la course franchit désormais et
   marque : la fixture veut une course sans essai, puis l'essai).
+
+## Queue de la courbe : match piège (15 novembre 2026, `MATCH_LEVEL_CURVE` version 2)
+
+Constat (vrais effectifs du barème V2, 3 paires de clubs par écart, domicile alterné) : à ≈ 16 points d'écart, le
+moteur complet ne laissait au plus faible que **0,4 %** de victoires à l'extérieur (2,2 % sur terrain neutre), contre
+3,5 % au résultat rapide. À ≈ 10 points, en revanche, les deux moteurs étaient déjà dans la cible (banc : 5,5 % à
+l'extérieur au complet, 5,9 % au rapide ; terrain neutre 11,1 / 12,6 %) : le « < 1 % à −10 » ne s'est pas reproduit,
+la sécheresse commence au-delà de ≈ 12 points. Cause : le moteur complet cumule l'avantage sur des dizaines de temps de
+jeu, son écart de score suit une loi presque normale, dont la queue est plus fine que la logistique visée.
+
+Réglage (mêmes paramètres pour les deux moteurs, `MATCH_LEVEL_CURVE.piege`) : au-delà de 10 points d'écart de niveau,
+le favori peut « prendre son adversaire de haut » (rotation, relâchement, jour sans) avec une probabilité de
+0,04 par point au-delà de 10 (au plus 0,3) ; ce jour-là il joue avec 40 % de l'écart en moins (`matchTrapOffset`,
+tiré une fois par match). Le moteur complet le traduit en `l.levelTrap` (× 2,8 : son terme de niveau ne porte
+qu'une partie de l'écart, le reste passe par les compétences), le résultat rapide dans l'écart de puissance ; sa
+borne d'avantage passe de ±2 à ±3 (`rapide.borne`), qui ne joue qu'au-delà de 11,7 points avec le terrain. **Rien ne
+change jusqu'à 10 points** : ni tirage ni résultat (séries 0, +6, +10 du banc identiques à l'unité près).
+
+| Mesure (plus faible gagne) | Complet avant → après | Rapide avant → après | Cible logistique |
+| --- | ---: | ---: | ---: |
+| Banc club 4, −15 à l'extérieur | 2,0 → 2,9 % | 4,8 → 2,8 % | 3,3 % |
+| Banc club 4, −15 neutre | 2,1 → 5,3 % | 5,1 → 6,7 % | 6,0 % |
+| Banc club 4, −15 à domicile | 6,1 → 10,7 % | 9,5 → 11,7 % | 10,8 % |
+| Vrais effectifs ≈ 16, à l'extérieur | 0,4 → 3,1 % | 3,5 → 2,8 % | 2,7 % |
+| Vrais effectifs ≈ 16, neutre | 2,8 → 5,1 % | 3,7 → 5,6 % | 5,1 % |
+| Vrais effectifs ≈ 10, à l'extérieur | 9,8 → 9,8 % | 7,0 → 7,0 % | 7,8 % |
+| Banc club 4, −10 à l'extérieur / neutre | 5,5 / 11,1 % (inchangé) | 5,9 / 12,6 % (inchangé) | 7,8 / 13,8 % |
+
+Banc : 1 000 à 2 000 matchs complets et 4 000 rapides par point ; vrais effectifs : 450 matchs complets et 3 000 à
+4 500 rapides par configuration (± 0,8 point au complet). Le banc CI (`tests/match-rating-curve.cjs`) ajoute une
+série à +15 hors ajustement (600 complets, 2 000 rapides) : surprises 4-12 % au complet, 4,5-11 % au rapide, au moins
+1 % à l'extérieur, écart entre moteurs ≤ 5 points ; les autres bornes sont inchangées. Version CI mesurée : complet
+6,5 % (3,5 % à l'extérieur), rapide 7,5 % (2,9 %).

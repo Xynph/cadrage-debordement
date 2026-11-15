@@ -25,7 +25,7 @@ const VM_SOURCE = String.raw`globalThis.__bancCourbe=function(o){
    const fortSlot=slots[(i>>1)%2],faibleSlot=slots[1-(i>>1)%2];
    S.clubs[faibleSlot]=copie(faibleSlot,'a',0);S.clubs[fortSlot]=copie(fortSlot,'b',o.k);
    const strongHome=i%2===0,pair=strongHome?[fortSlot,faibleSlot]:[faibleSlot,fortSlot];
-   const f={id:'banc-courbe-'+i,week:S.round,date,homeId:pair[0],awayId:pair[1],competitionId:o.competitionId||'elite',phase:'league',round:1,neutral:false};
+   const f={id:'banc-courbe-'+i,week:S.round,date,homeId:pair[0],awayId:pair[1],competitionId:o.competitionId||'elite',phase:'league',round:1,neutral:!!o.neutral};
    let score,tries;
    if(o.mode==='rapide'){const r=CDLeagueDetail.simulate(S,f);score=r.score;tries=r.tries;}
    else{S.worldMode.fixtures.push(f);

@@ -676,3 +676,17 @@ d'un match importé en pause (comportement voulu depuis le 11 novembre : le prem
 joue, puis le match attend) ; les sigles des clubs dans les textes du moteur (« FDG », « SDB »)
 ne correspondent pas aux noms affichés par le bandeau quand un pack de noms est actif (identités,
 hors de ce chantier).
+
+## Correctifs du 15 novembre 2026 (« aucune mise en scène dans la durée voulue »)
+
+Constat en carrière Monde (club 102, graine 7, sous-test natif de `tests/match-choregraphe.cjs`, désormais
+world-champ et sans CD_MODES_HERITES) : deux temps forts sans chorégraphie.
+
+- **Coup d'envoi repris par l'équipe qui botte** : le receveur désigné suivait la chasse de son camp et s'arrêtait
+  à distance du point de chute ; la scène était abandonnée après 8 s de rebond. Il va désormais au ballon, quel que
+  soit son camp. Côté moteur (`dist/restarts.js`), le receveur d'un renvoi conservé n'est plus jamais le botteur
+  (`actionPlayer` les tirait dans deux listes qui se recoupent) : un partenaire, de préférence un trois-quarts.
+- **Plusieurs franchissements enchaînés** (69 → 46 → 33 → 8 m puis porté) : chaque fait a sa course, son plaquage et
+  son ruck, plus que les 6 s accordées par fait (44 s pour 43 permises). Quand aucune mise en scène ne tient dans la
+  durée nominale, le chorégraphe accepte la plus proche jusqu'au plafond (`DUREE_PLAFOND`, 50 s) ; `dureeMax` le dit.
+- Jeu d'essai : `tests/fixtures/match-choregraphe-regressions.json` (les deux entrées capturées).

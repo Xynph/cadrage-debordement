@@ -93,6 +93,8 @@ budget() {
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
     tests/match-rating-curve.cjs) echo 420s ;;
+    # Chorégraphe (#591, 15/11) : sous-test natif passé au Monde, deux carrières world-champ jouées minute par minute (drapeau éteint puis allumé), 580 s en local sous charge.
+    tests/match-choregraphe.cjs) echo 1200s ;;
     # Fluidité des commandes (#711) : six carrières Monde au worker, 129 s de sous-tests + création ; 180 s dépassées en CI (PR #716).
     tests/vitesse-commandes-monde.cjs) echo 420s ;;
     # Mémoire des projections par domaine : trois carrières Monde successives (avec vérification, sans mémoire, avec), ~165 s en local chargé.

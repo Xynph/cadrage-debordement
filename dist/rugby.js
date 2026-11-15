@@ -103,7 +103,7 @@ function makeStats(){return{possession:0,territory:0,scrums:0,scrumsWon:0,lineou
 function createRugbyMatch(pair,legacy=null,automated=false,preparation=null){if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);const userSide=automated?-1:pair.indexOf(S.club);const sheets=pair.map((ci,s)=>{let c=S.clubs[ci],sel=ci===S.club?buildSheet(c,S.lineup,S.reserves):buildSheet(c);return{on:sel.lineup,bench:sel.bench,initial:[...sel.lineup],used:[...sel.lineup.filter(Boolean)],minutes:{},cards:[],yellowCounts:{},sentOff:[],subs:0}});
 const l={engine:2,pair:[...pair],minute:0,score:[0,0],tries:[0,0],events:[],finished:false,paused:false,halftime:false,userSide,sheets,stats:[makeStats(),makeStats()],tactics:pair.map(ci=>ci===S.club?S.tactic:['equilibre','large','conquete','occupation'][rand(0,3)]),weather:['Sec','Sec','Pluie','Vent'][rand(0,3)],possession:rand(0,1),territory:50,subs:[],pending:null};
 if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)){l.franceContext=CDFranceCareer.context(pair);if(!l.franceContext)throw Error('Rencontre hors du calendrier France.');}
-if(!legacy){if(S.developmentFocusVersion===1)l.developmentFocusVersion=1;if(S.physicalLoadVersion===1)l.physicalLoadVersion=1;initializeManagers(l,automated);initializeMatchRules(l);initializeMatchFlow(l);initializeTacticalPlans(l);initializePlaybooks(l);initializeCollectivePreparation(l);initializeRestarts(l);initializePreparation(l,preparation)}
+if(!legacy){if(S.developmentFocusVersion===1)l.developmentFocusVersion=1;if(S.physicalLoadVersion===1)l.physicalLoadVersion=1;initializeManagers(l,automated);initializeMatchRules(l);initializeMatchFlow(l);initializeTacticalPlans(l);initializePlaybooks(l);initializeCollectivePreparation(l);initializeRestarts(l);initializePreparation(l,preparation);const trap=matchTrapOffset(teamLevel(activePlayers(l,0))-teamLevel(activePlayers(l,1)));if(trap)l.levelTrap=trap*MATCH_LEVEL_CURVE.complet.piege}
 if(legacy){l.minute=legacy.minute;l.score=[...legacy.score];l.tries=[...legacy.tries];l.events=[...legacy.events];l.finished=legacy.finished;l.halftime=l.minute>=40;l.paused=l.minute===40&&!l.finished;if(userSide>=0){l.tactics[userSide]=S.tactic;l.tactics[1-userSide]=legacy.opponentTactic||'equilibre';let s=sheets[userSide];s.used=[...new Set([...(legacy.used||[]),...s.on])];s.bench=s.bench.filter(id=>!s.used.includes(id));for(let id of s.used)s.minutes[id]=l.minute/Math.max(1,s.used.length)*15}}
 return l}
 // Courbe de niveau commune (lot 0 « notes réalistes », 14/11/2026, docs/courbe-niveau-moteur-20261114.md).
@@ -118,9 +118,17 @@ return l}
 // 65-67 % à domicile à niveau égal, comme le résultat rapide (docs/courbe-niveau-moteur-20261114.md).
 // Avant le 14/11/2026 : pas de terme de niveau, terrain ±0,018 (56 %), résultat rapide (Δ+2,5)/8.
 // Coefficients de jeu calés par mesure, pas des probabilités réelles.
-const MATCH_LEVEL_CURVE=Object.freeze({version:1,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.036}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3})});
+// Version 2 (15/11/2026) : « match piège ». Au-delà de `seuil` points d'écart, le favori peut prendre son
+// adversaire de haut (rotation, relâchement, jour sans) : probabilité parPoint × (écart − seuil), au plus `max` ;
+// ce jour-là il joue avec `part` × l'écart en moins. Tiré une fois par match, mêmes réglages pour les deux
+// moteurs ; rien en deçà du seuil (cœur de la courbe et tirages inchangés). Sans lui, le moteur complet ne
+// laissait presque aucune surprise à l'extérieur à 15-16 points (0,4 %, contre 3,5 % au résultat rapide).
+const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183,terrain:.64}),forme:Object.freeze([.57,.0043]),complet:Object.freeze({parPoint:.005,terrain:.036,piege:2.8}),rapide:Object.freeze({diviseur:7.5,essais:.42,terrain:3.3,borne:3}),piege:Object.freeze({seuil:10,parPoint:.04,max:.3,part:.4})});
+// Décalage d'écart du match piège (points de niveau, du point de vue du camp 0) pour un écart `gap`
+// (niveau du camp 0 − niveau du camp 1). 0 sans tirage en deçà du seuil.
+function matchTrapOffset(gap,rnd=Math.random){const c=MATCH_LEVEL_CURVE.piege,d=Math.abs(Number(gap)||0),q=Math.min(c.max,c.parPoint*(d-c.seuil));if(!(q>0)||rnd()>=q)return 0;return -Math.sign(gap)*c.part*d}
 function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
-function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side)))}
+function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side))+(Number(l.levelTrap)||0)*(side===0?1:-1))}
 function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.
 if(l.advantageModel===2&&kind==='attack'&&t==='large')b+=(on.length-activePlayers(l,opp).length)*.018;
