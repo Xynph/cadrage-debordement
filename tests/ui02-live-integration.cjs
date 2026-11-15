@@ -21,7 +21,7 @@ for(const file of ['ui02-player-data.js','ui02-player-components.js','ui02-playe
  vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),g.ctx,{filename:file});
 }
 vm.runInContext(fs.readFileSync(path.join(root,'ui-preferences.js'),'utf8'),g.ctx,{filename:'ui-preferences.js'});
-g.run('start(0)');
+g.run('start(0);render()');
 assert.match(g.app.innerHTML,/ui01-appbar/);
 g.run("nav('team')");
 assert.match(g.app.innerHTML,/cd02-roster/);
@@ -76,17 +76,18 @@ g.run('squadTab="planning";render()');
 assert.match(g.app.innerHTML,/Plan sur 3 saisons|succession|Saison/i);
 g.run("squadTab='table';render()");
 assert.equal(g.run('JSON.stringify(club().players[0])'),pBefore,'player projection mutated native source');
-assert.equal(g.run('JSON.stringify(S)'),base,'pure presentation changed career');
-assert.equal(g.store['bdt-v1'],save,'preferences overwrote career save');
+assert.ok(g.run('JSON.stringify(S)')===base,'pure presentation changed career');
+assert.ok(g.store['bdt-v1']===save,'preferences overwrote career save');
 // Storage-denial fallback: selection remains active and the user sees the failure.
-g.ctx.localStorage.setItem=()=>{throw Error('Quota')};
+const nativeSetItem=g.ctx.localStorage.setItem;g.ctx.localStorage.setItem=()=>{throw Error('Quota')};
 assert.ok(g.run('ui02SetColumns(["name","condition"])'));
 assert.equal(g.run('ui02StorageError'),true);
 assert.match(g.app.innerHTML,/Préférences de colonnes non enregistrées/);
+g.ctx.localStorage.setItem=nativeSetItem;
 const savedState=JSON.parse(base);
 const restored=context(savedState);
 assert.ok(restored.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
-g.run("nav('match');beginMatch();pauseMatch();render()");
+g.toMatch();g.run("nav('match');beginMatch();pauseMatch();render()");
 assert.match(g.app.innerHTML,/v40-cockpit/);
 assert.doesNotMatch(g.app.innerHTML,/cd02-player/);
 // The original harness, without opt-in scripts, must still expose its legacy table.

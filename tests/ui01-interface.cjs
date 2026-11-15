@@ -33,7 +33,7 @@ const known=['dashboard','team','tactics','plans','staff','recruitment','match',
 for(const route of known){
  assert.equal(a.run('UI01_GROUPS.some(g=>g.tabs.some(x=>x[0]==='+JSON.stringify(route)+'))'),true,route);
 }
-a.run('start(0)');
+a.run('start(0);render()');
 assert.ok(a.app.innerHTML.includes('ui01-appbar'));
 assert.ok(a.app.innerHTML.includes('ui01-secondary-nav'));
 assert.ok(a.app.innerHTML.includes('Système'));
@@ -59,9 +59,9 @@ dark=true;change();
 assert.equal(rootAttrs['data-cd-theme'],'analyste','system follows OS changes');
 assert.equal(a.run('ui01SetTheme("invalid")'),false);
 assert.equal(a.run('ui01Pref'),'system');
-assert.equal(a.run('JSON.stringify(S)'),saved,'UI settings must not mutate career');
-assert.equal(a.store['bdt-v1'],savedText,'theme must not write a career save');
-a.run('nav("match");beginMatch();pauseMatch();render()');
+assert.ok(a.run('JSON.stringify(S)')===saved,'UI settings must not mutate career');
+assert.ok(a.store['bdt-v1']===savedText,'theme must not write a career save');
+a.toMatch();a.run('nav("match");beginMatch();pauseMatch();render()');
 assert.ok(a.app.innerHTML.includes('live-layout'));
 assert.ok(a.app.innerHTML.includes('v40-cockpit'));
 assert.ok(!a.app.innerHTML.includes('ui01-appbar'),'preserve V40 live controls');
