@@ -1,15 +1,18 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {planningContext:context}=require('./helpers/gestion-domaines.cjs');
+const {engineContext}=require('./harness.cjs');
+const storageSnapshot=t=>t.storageText?t.storageText():t.store['bdt-v1'];
 function testPure(t,expr){
- const state=t.run('JSON.stringify(S)'),stored=t.run('localStorage.getItem("bdt-v1")');
+ const state=t.run('JSON.stringify(S)'),stored=storageSnapshot(t);
  const result=JSON.parse(t.run('JSON.stringify('+expr+')'));
- assert.equal(t.run('JSON.stringify(S)'),state,'The model must not change the saved career');
- assert.equal(t.run('localStorage.getItem("bdt-v1")'),stored,'The model must not persist anything');
+ assert.ok(t.run('JSON.stringify(S)')===state,'The model must not change the saved career');
+ assert.equal(storageSnapshot(t),stored,'The model must not persist anything');
  return result;
 }
+(()=>{
 const base=context(),r=base.run;
-r('start(0)');
+r('void 0');
 const priorities=testPure(base,'renewalPriorities(S,3,2)');
 assert.ok(priorities.length>=3,'At least three candidates must be available in the starter club');
 assert.ok(priorities.every(p=>p.score>=0&&p.score<=100));
@@ -63,14 +66,22 @@ assert.equal(testPure(base,'renewalCompare(S,'+JSON.stringify(chosen)+',4,2)').v
 
 // Valeur V29 : une qualité ciblée acquise affecte la vraie note au poste,
 // et donc le constat sportif, sans génération fictive de points gratuits.
+
+base.close();
+})();
+(()=>{
 const skillCase=context(),sk=skillCase.run;
-sk('start(0);var p=club().players.find(x=>x.fam===0&&x.contractEnd<=S.season+1);var before=renewalPriorities(S,3,2).find(x=>x.id===p.id)?.here;var k=Object.keys(ROLE_WEIGHTS[p.fam])[0];ensureSpecialization(p).bonuses[k]=4;var after=renewalPriorities(S,3,2).find(x=>x.id===p.id)?.here');
+sk('var p=club().players.find(x=>x.fam===0&&x.contractEnd<=S.season+1);var before=renewalPriorities(S,3,2).find(x=>x.id===p.id)?.here;var k=Object.keys(ROLE_WEIGHTS[p.fam])[0];ensureSpecialization(p).bonuses[k]=4;var after=renewalPriorities(S,3,2).find(x=>x.id===p.id)?.here');
 assert.ok(sk('after>before'));
 
 // V30 : renforcer la pénurie d'un poste augmente le besoin d'effectif,
 // sans changer les qualifications spécifiques de première ligne.
+
+skillCase.close();
+})();
+(()=>{
 const depth=context(),d=depth.run;
-d('start(0);var p=club().players.find(x=>x.pos===POS[0]);var before=recruitmentNeed(club(),0).score;club().players=club().players.filter(q=>q.pos!==POS[0]||q.id===p.id);var after=recruitmentNeed(club(),0).score');
+d('var p=club().players.find(x=>x.pos===POS[0]);var before=recruitmentNeed(club(),0).score;club().players=club().players.filter(q=>q.pos!==POS[0]||q.id===p.id);var after=recruitmentNeed(club(),0).score');
 assert.ok(d('after>=before'));
 assert.equal(d('slotEligible(p,2)'),false);
 const newPriority=testPure(depth,'renewalPriorities(S,3,2)');
@@ -79,8 +90,12 @@ assert.ok(newPriority.every(x=>x.projection.years.every(y=>y.covered<=15)));
 
 // Retraite et fin de contrat : respecter exactement la durée minimale du moteur,
 // sans afficher un contrat impossible comme renouvelable.
+
+depth.close();
+})();
+(()=>{
 const retire=context(),rt=retire.run;
-rt('start(0);var p=club().players.find(x=>x.contractEnd===S.season);var id=p.id;p.dev.retireAge=p.age+1');
+rt('var p=club().players.find(x=>x.contractEnd===S.season);var id=p.id;p.dev.retireAge=p.age+1');
 assert.equal(rt('renewalEligibleYears(S,p,2)'),null);
 assert.equal(rt('renewalPriorities(S,3,2).some(x=>x.id===id)'),false);
 rt('p.dev.retireAge=p.age+3');
@@ -90,17 +105,25 @@ assert.ok(term.years<=3);
 assert.equal(rt('forecastQuote(S,{kind:"renew",id,years:'+term.years+'}).valid'),true);
 
 // L'impossibilité financière est explicitée, pas contournée.
+
+retire.close();
+})();
+(()=>{
 const unaffordable=context(),u=unaffordable.run;
-u('start(0);club().cash=0');
+u('club().cash=0');
 const zero=testPure(unaffordable,'renewalCompare(S,renewalPriorities(S,3,2).slice(0,2).map(x=>x.id),3,2)');
 assert.ok(zero.valid);
 assert.ok(zero.cases.slice(1).some(c=>c.valid&&!c.executable));
 assert.equal(u('club().cash'),0);
 
 // Ancienne V32 en match suspendu : les contrats, minutes et sauvegarde sont intacts.
-const from=context();from.run('start(0);beginMatch();pauseMatch()');
+
+unaffordable.close();
+})();
+(()=>{
+const from=engineContext();from.start(0);from.deferSaves();from.toMatch();from.run('beginMatch();pauseMatch()');
 const legacy=JSON.parse(from.run('JSON.stringify(S)'));
-const resumed=context(legacy),l=resumed.run;
+const resumed=engineContext(legacy),l=resumed.run;
 const oldCash=l('club().cash'),oldLedger=l('JSON.stringify(S.ledger)'),oldRound=l('S.round');
 const live=testPure(resumed,'renewalCompare(S,renewalPriorities(S,3,2).slice(0,2).map(x=>x.id),3,2)');
 assert.ok(live.valid);
@@ -114,9 +137,13 @@ assert.ok(l('!!createSaveDocument()'));
 const exported=l('JSON.stringify(createSaveDocument())');
 assert.equal(l('parseSaveDocument('+JSON.stringify(exported)+').state.live.minute'),legacy.live.minute);
 
-// Calibration sur quatre intersaisons : répéter le diagnostic après la vraie
-// transition de saison et garder les sauvegardes, finances et 23 rugby valides.
-const seasons=context(),y=seasons.run;seasons.run('start(0)');
+// Calibration pure sur quatre années d’entrée : âge, contrats glissants et
+// financement sont des hypothèses du modèle ; les effets World restent séparés.
+
+from.close();resumed.close();
+})();
+(()=>{
+const seasons=context(),y=seasons.run;seasons.run('void 0');
 const measured=[];
 for(let i=0;i<4;i++){
  const ranked=testPure(seasons,'renewalPriorities(S,3,2)');
@@ -124,9 +151,12 @@ for(let i=0;i<4;i++){
  assert.ok(scenario.valid&&scenario.cases.every(c=>c.valid&&c.coverage.length===3));
  assert.ok(scenario.cases.every(c=>Number.isFinite(c.cashCentral)&&c.coverage.every(n=>n<=15)));
  measured.push({season:y('S.season'),candidates:ranked.length,leaders:ranked.slice(0,3).map(x=>({score:x.score,slot:x.primarySlot,gain:x.futureDelta})),cash:scenario.cases.at(-1).cashCentral});
- y('S.phase="ended";S.round=26;advanceSeason()');
+ y('componentPlanningYear()');
  assert.equal(y('S.season'),i+2);
  assert.equal(y('sheetErrors().length'),0);
- assert.ok(y('!!createSaveDocument()'));
+ assert.ok(y('!!componentParse(JSON.stringify(componentDocument()))'));
 }
-console.log(JSON.stringify({passed:true,seasons:4,measured,checks:['deterministic ranking','V29 skill','V30 needs','V32 succession','V31 fees and cash','multi-renewal cumulative effects','retirement limits','cash warning','pure career and storage','legacy paused match','four interseasons']}));
+console.log(JSON.stringify({passed:true,seasons:4,scope:'historical component inputs; native World integration checked separately',measured,checks:['deterministic ranking','V29 skill','V30 needs','V32 succession','V31 fees and cash','multi-renewal cumulative effects','retirement limits','cash warning','pure career and storage','legacy paused match','four historical planning input years']}));
+
+seasons.close();
+})();
