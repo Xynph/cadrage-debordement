@@ -98,6 +98,17 @@ deux dossiers. Le [manifeste](../tools/agent-skills/manifest.json) liste chaque
 fichier avec son empreinte ; `node tools/agent-skills/update.cjs --check` les
 vérifie hors ligne et `--commit <sha>` met le kit à jour depuis la source.
 
+## Pilotage Godot retenu le 15 novembre 2026
+
+| Ressource | Provenance / relevé | Utilité | Coût / licence | Statut et preuve |
+| --- | --- | --- | --- | --- |
+| [Fulviuus/godot-mcp](https://github.com/Fulviuus/godot-mcp/tree/8f9760caca300680bfffe564faf98c17b38a8e59) | Recherche GitHub du 15/11 ; dépôt, licence, manifeste et démarrage inspectés, version 2.0.2 épinglée. | Piloter le vrai jeu, inspecter la scène, évaluer du GDScript et capturer l'écran. | MIT, Node/Godot locaux ; aucun modèle ou service facturé requis. | **Intégré** via `tools/godot-agent/` : installation externe, bootstrap STDIO éprouvé avec les 28 outils et `godot_project_info`, carrière Monde pilotée et PNG observé via HTTP. Configuration Codex/Claude déclarée ; chargement natif de la session à vérifier après réouverture du projet de confiance. |
+| [Profiler Godot](https://docs.godotengine.org/en/latest/tutorials/scripting/debug/the_profiler.html) | Documentation officielle consultée le 15/11. | Distinguer coût des scripts, rendu et moteur avant une optimisation. | Documentation libre à consulter ; aucun nouvel outil payant. | **Retenu** ; aucun gain global ni profil CPU n'est revendiqué sans mesure. |
+
+Les candidats à licence non vérifiée restent des références et ne sont pas
+installés. Les résultats locaux, dimensions et limites sont consignés dans
+[la recette de l'outillage](recette-outillage-godot-20261115.md).
+
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
 | [awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills/tree/dcf3bbbb83f365632402c086bf595048aa24aaa8) | Dépôt demandé par Léo. Cloné le 11 novembre 2026 au commit `dcf3bbbb83f3` ; les 14 compétences retenues ont été relues (31 fichiers Markdown, aucun script). | Godot 4.7 : `godot-gdscript`, `godot-ui-control`, `godot-gdscript-headless-testing`, `godot-export`, `godot-3d-essentials`, `godot-shaders`, `godot-audio`, `godot-animation`. Transversal : `save-systems`, `game-ui-ux`, `game-feel`, `game-ai`, `procedural-gen`, `performance-optimization`. | Gratuit. Apache-2.0 ; licence et notice copiées dans `_licences/` de chaque dossier. | **Intégré** comme aide aux agents, hors du jeu distribué. Relire le diff à chaque mise à jour : une compétence est une consigne donnée aux agents. Les 63 autres compétences du dépôt (Unity, Unreal, Roblox, genres) ne sont pas copiées. |

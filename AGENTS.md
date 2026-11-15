@@ -58,6 +58,14 @@ autonome (`project.yaml`) : seules suppressions, opérations destructives et
 dépenses demandent l'accord de Léo. Une commande ajoutée ou modifiée dans
 `.claude/skills/` doit l'être aussi dans `.agents/skills/`.
 
+Pour une évolution de gameplay ou d'interface, appliquer la
+[boucle courte](docs/developpement-jeu-boucle-courte.md) : décision de manager,
+reproduction Monde, rejeu ciblé, puis observation dans le vrai Godot et recette
+complète. Le [pont local](tools/godot-agent/README.md) fournit le pilotage et les
+captures sur une copie de développement. Lire aussi
+`.agents/skills/rugby-legacy-boucle-courte/SKILL.md` ; un seul Godot à la fois,
+aucun agent supplémentaire sans accord de Léo.
+
 ## Modèles, effort et quota
 
 Règle permanente de Léo, transmise le 12 novembre 2026 :
