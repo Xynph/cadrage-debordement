@@ -20,7 +20,7 @@
    }
   },
   "native/engine/world-niveaux-v2.json": {
-   "sha256": "6853a7e053ba6bb7f0cd7659daab80be42b9cefe156facb82f8a6d9dc848e10d",
+   "sha256": "734756c45f1461f6e0d0f7c81f60b1baf83e085ecbea5273c2a3b8ecb955b026",
    "sources": {
     "data/scouting/review-v12/career-evidence.json": "0a7f60a8611ef52537926f7b30d738d55da24b4cc5ddb91cb3d6fdeabcebb4ef",
     "data/scouting/review-v12/season-evidence.json": "3a63cbab6cf678e7522696eef3acb090edc04ebd9a02956040351de82291300e",
@@ -34,9 +34,9 @@
     "niveaux/clubs-prem.csv": "67d9afabc1e04d3a967bbb46031450fac9cd9aa6d49238d39b12c08d17754614",
     "niveaux/clubs-srp.csv": "2fbb9673a4a13fe631eb3abf7e386fbc901d949fa592e008a738f01f14b10f9b",
     "niveaux/clubs-urc.csv": "0a764a01baebbefd094e03e14b24bdfba5f8cc34f190b148653d69f3c7e6a611",
-    "niveaux/niveaux-accession.csv": "ebf55fa460d4f90e485a78b4a5bd8dd15c0ee382de177170765424045674a0e2",
+    "niveaux/niveaux-accession.csv": "d6eb5c30aeadca499fb9eba7f7980233b312f4d9e23ba8bbccd12cacc22de6d4",
     "niveaux/niveaux-champ.csv": "eb09319ae3d3797984d41163c1ff65a6a97c8ab2d341eaaadb1a1b5096d100c3",
-    "niveaux/niveaux-elite.csv": "49b515e106fe58894741a7f46dacb875ad4c7a44f00fb433211db4fe7c36da53",
+    "niveaux/niveaux-elite.csv": "442b31716cb15aeaebfb6f37fbf888d1e9e2ff380e0e68faf63680b348cd88c2",
     "niveaux/niveaux-guest.csv": "7f6e210c044ed8488116aae0f41030c80623bc50b0cc8a7d5d62af36fc4f0504",
     "niveaux/niveaux-jlo-d1.csv": "9a6003ea565f0102d154c30d7664fd034c1b0c3df8a12e7dc05cfcf6a55da259",
     "niveaux/niveaux-jlo-d2.csv": "7d329e7dea40491e37bea3183fda2bdd30fc61a66dd197757451a292d76dc9a7",
