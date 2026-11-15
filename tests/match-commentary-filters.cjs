@@ -1,11 +1,11 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-const g=context();
-g.run('start(0);beginMatch();pauseMatch()');
+const {engineContext:context,matchContext}=require('./harness.cjs');
+const g=matchContext();
+g.run('beginMatch();pauseMatch()');
 const before=g.run('JSON.stringify(S)');
-const rng=context();
-rng.run('start(0);beginMatch();pauseMatch()');
+const rng=matchContext();
+rng.run('beginMatch();pauseMatch()');
 for(const filter of ['all','highlights','scores','discipline']){
  assert.equal(g.run(`setCommentaryFilter('${filter}')`),true);
  assert.equal(g.run('commentaryFilter'),filter);

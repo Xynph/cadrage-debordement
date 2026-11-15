@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-function fixture(){const t=context();t.run('start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side]');return t}
+const {engineContext:context,matchContext}=require('./harness.cjs');
+function fixture(){const t=matchContext();t.run('beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side]');return t}
 let t=fixture(),run=t.run;
 assert.equal(run('l.rulesProfile'),'fr-pro-2025');
 // Four returns, even if unused bench players remain. An incoming substitute may leave again.

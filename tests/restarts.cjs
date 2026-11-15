@@ -1,5 +1,5 @@
-const assert=require('node:assert/strict');const {context}=require('./harness.cjs');
-function fixture(){const t=context();t.run('start(0);beginMatch();pauseMatch();var l=S.live;delete l.flowVersion;delete l.flow;Math.random=()=>.99');return t}
+const assert=require('node:assert/strict');const {engineContext:context,matchContext}=require('./harness.cjs');
+function fixture(){const t=matchContext();t.run('beginMatch();pauseMatch();var l=S.live;delete l.flowVersion;delete l.flow;Math.random=()=>.99');return t}
 function valid(run){assert.equal(run('!!createSaveDocument()'),true)}
 let t=fixture(),run=t.run;
 assert.equal(run('l.restartVersion'),1);assert.equal(run('l.restartLog[0].cause'),'start');assert.equal(run('l.restartLog[0].team'),run('l.firstKickoff'));

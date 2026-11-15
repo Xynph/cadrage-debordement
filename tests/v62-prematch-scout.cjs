@@ -1,11 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-const t=context(),run=t.run;
-run('start(0)');
+const {engineContext:context,matchContext}=require('./harness.cjs');
+const t=matchContext(),run=t.run;
 const before=run('JSON.stringify(S)');
-const randomBefore=context();
-randomBefore.run('start(0)');
+const randomBefore=matchContext();
 assert.equal(run('JSON.stringify(dossierScoutSignals([]))'),'[]');
 const fixture=[
  {stats:{scrums:4,scrumsWon:2,lineouts:4,lineoutsWon:4,penalties:10}},

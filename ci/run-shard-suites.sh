@@ -53,6 +53,12 @@ budget() {
   # Les autres réserves longues sont provisoires après les timeouts observés sur
   # 42891746395, sans retirer de contrôle.
   case "$1" in
+    # Migration Monde : reçus locaux complets Node24, aucune saison/attaque retirée.
+    # Journaux/empreintes et limites de mesure : monde-migration-mesures-20261115.json.
+    tests/lnr-career-long.cjs|tests/lnr05-evidence-long.cjs|tests/lnr05-rotation-audit.cjs|tests/lnr05-multiseason-strategies.cjs|tests/lnr-cross-season-recovery.cjs) echo 1800s ;;
+    tests/lnr05-fatigue-scenarios.cjs|tests/lnr-save-resume-continuation.cjs) echo 1200s ;;
+    tests/career-integration.cjs|tests/ai-transfer-competition.cjs|tests/sale-negotiation.cjs|tests/restarts.cjs) echo 600s ;;
+    tests/match-rules.cjs) echo 360s ;;
     # Audit du repos Monde : saison réelle de 46 semaines, reprise en VM à la semaine 15 ;
     # 543,6 s en local sous trois suites concurrentes (Node 24), toutes assertions conservées.
     tests/lnr05-rest-policy-audit.cjs) echo 1800s ;;

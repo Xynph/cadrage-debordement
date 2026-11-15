@@ -37,13 +37,6 @@
       "peakRssKb": 1960748
     },
     {
-      "file": "tests/harness-monde-compat.cjs",
-      "status": 0,
-      "signal": null,
-      "seconds": 19.7,
-      "peakRssKb": 1331972
-    },
-    {
       "file": "tests/harness-monde-saves.cjs",
       "status": 0,
       "signal": null,
@@ -91,13 +84,6 @@
       "signal": null,
       "seconds": 43.6,
       "peakRssKb": 1850668
-    },
-    {
-      "file": "tests/lnr05-rest-policy-audit.cjs",
-      "status": 0,
-      "signal": null,
-      "seconds": 543.6,
-      "peakRssKb": 2291568
     },
     {
       "file": "tests/lnr05-monde-rotation.cjs",
@@ -161,7 +147,8 @@
       "signal": null,
       "seconds": 43.1,
       "peakRssKb": 2616664,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "6bce26121034b78f21f1fde273bc4cb9cd201c4144c8cc99babe0c1c50b21ce2",
       "logSha256": "76430c4be5ecbc8ed69a0602f08e63f92f63dca8ce1b26cf8573db5f6cdb8720"
     },
@@ -171,7 +158,8 @@
       "signal": null,
       "seconds": 63.1,
       "peakRssKb": 3825608,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "9ff5511399fccf954383745b057bd96185409ec0573af86d1232a75546ac8248",
       "logSha256": "e1c7e6ea01a411547dd359b5ab3c3d95f52fae2d4653661dd3b699a783cd6ae6"
     },
@@ -181,7 +169,8 @@
       "signal": null,
       "seconds": 68.1,
       "peakRssKb": 3961476,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "18112db46b10c8c4fcf3cd15fef3979f09dd6ff7e651d223d8e31e8fe89f7e45",
       "logSha256": "9dce328a02c83ae282b8802a86a721bb7fca65117c3970f75f537800d94392cd"
     },
@@ -191,7 +180,8 @@
       "signal": null,
       "seconds": 54.2,
       "peakRssKb": 3281004,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "849f22c3f89c4ffdf86bef7cbba62947fff6e3d4631f1dc7ea06b7e86aff030f",
       "logSha256": "04a31a31ebda991a13793b5459ceee493908ebb1cf2a82a74fe9adb0756344d7"
     },
@@ -201,7 +191,8 @@
       "signal": null,
       "seconds": 59.2,
       "peakRssKb": 2726352,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "9ebf4cfa11ff0b472e5d18700eea7c8a19c14f2431630210f051028ee62a62ab",
       "logSha256": "a33de40f9b281919ac0d93481d1e9c0e99805f87fc7a88df9a53115de3cafd7f"
     },
@@ -211,7 +202,8 @@
       "signal": null,
       "seconds": 90.4,
       "peakRssKb": 1894192,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "96c32d3d10165345ea66d9f7bb317b096300cd4ad31b70d6a30cc9e292a61de0",
       "logSha256": "2a3e7aa29c97d8f61b69e48d07c6d162ba19e4cbd0db6db849d9ee478ecb32d3"
     },
@@ -221,7 +213,8 @@
       "signal": null,
       "seconds": 52.1,
       "peakRssKb": 1834484,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "9865c3ceb76d4d188ac82d7775956af83e9d4ca39dc1aee8e52adbc2900fb95e",
       "logSha256": "3d0e9cb7e31d8fd9e8dd5a4a1ace2474d10ba59f29705caa340ae865dbb2974d"
     },
@@ -231,7 +224,8 @@
       "signal": null,
       "seconds": 57.6,
       "peakRssKb": 2024884,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "5e49fbb32d0eae2767b207f037dd3c5d5b4bb9776e5acf3cc57391c90d33084b",
       "logSha256": "516916756055c8a4a4b2cfdebc0b7e6e1cbfb1741bd1a63a9c11f5477ceb88c0"
     },
@@ -241,9 +235,439 @@
       "signal": null,
       "seconds": 43.8,
       "peakRssKb": 2891292,
-      "harness": "aad8d9dd / World v5, elite+accession+championnat du manager détaillés, finale toujours moteur complet",
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
       "sourceSha256": "1bb61289ac1b0860afd8898f653b839ce9cd79767c8db2c06099a7c6aca58a06",
       "logSha256": "4b829d9708c2c46444c24d2105daa614591317339cc20f2590b502c8a30f9ec2"
+    },
+    {
+      "file": "tests/v61-match-advisor.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 51.1,
+      "peakRssKb": 3287636,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "7087ba015462a10dbb086785a7d7323f5713d77dab80478c8fddbffa175e8808",
+      "logSha256": "f33810574b61d49f623766e81d73274a6576eaf68f83232a0c0cb7bf0af88452"
+    },
+    {
+      "file": "tests/v62-prematch-scout.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 49.8,
+      "peakRssKb": 2337940,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "49939b384c19f27b410bf5ff0bb16187b4af1c2f46e691ac288f1d4c64034f93",
+      "logSha256": "db48ced2c7017c5a81e56d059dad566360a5671d8905047b93348942e3777dbc"
+    },
+    {
+      "file": "tests/v63-adaptive-defence.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 47.6,
+      "peakRssKb": 2274452,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "3f08e933a9a3f65f02d1d66477723825f59d05f402aa61ac1902545c36740744",
+      "logSha256": "93939f7e6d88d3a6f62eb4ed88405281a892ccfbe57d2c2b087a3a88c434aa45"
+    },
+    {
+      "file": "tests/match-commentary-filters.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 30.8,
+      "peakRssKb": 2060748,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "34e5247613a34cb958a0652ab70e9243f3dbd4bd831dd3c28cd1e6ca4b521e45",
+      "logSha256": "3f1496dfcf0513ecbbf8d1ed70140c3fcffb87d3c69785f9b63070e500a8078e"
+    },
+    {
+      "file": "tests/match-actions.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 48.2,
+      "peakRssKb": 2756764,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "a98de3a7c9f6262edb44c5691edc18bab8721c404c38466b280988024d8825ab",
+      "logSha256": "c3f85549b6b7c5f036cb078f092d249d476e7e5490d7abdd3ceccd915391f20b"
+    },
+    {
+      "file": "tests/match-rules.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 136.3,
+      "peakRssKb": 4401888,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "3a451163e41dfa35d15752d1eacdb75609969d9e0c6dfb2eacf8c9760a54bbc6",
+      "logSha256": "3defad0ce93861fac574471199b7e63bde8a9fc8ed55b75a5ea69bdb40e44871"
+    },
+    {
+      "file": "tests/restarts.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 173.2,
+      "peakRssKb": 3883780,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "782c10a6d2b7a7a49b4d5d37a14a6a5367c35ca0737bebb73e886586642685a1",
+      "logSha256": "6f0dbce572cc6b03080dd672e5e8ea4a92636d48daaa16d5a41b5ff54db15381"
+    },
+    {
+      "file": "tests/matchday-center.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 39.9,
+      "peakRssKb": 1559456,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "9462a74462b67074eeaf61d0b696a26b0bfaa924c96d52b0dfd438b122e51c81",
+      "logSha256": "d72dfc04a677c3261df0c255f51f300ca065ea17f85f016f74258a6317fa6f92"
+    },
+    {
+      "file": "tests/matchday-lineup.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 29.9,
+      "peakRssKb": 1444040,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "898462d5ec6c2f434e8aa721e7987c333a90761025835988614c34c61b2fc209",
+      "logSha256": "9d96bd350699184e5d770d696d2170cd86e4b568f695ec76d5a17a98dd47cd6a"
+    },
+    {
+      "file": "tests/matchday-matchplan.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 30.1,
+      "peakRssKb": 1418552,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "8ca73e07f964773ba64a8001b1d906c70eb6ff0f414f162b97d3ed3c321e0420",
+      "logSha256": "a882cabf629f461fe537e8d224a9f3938ab741beafdc870b44e46fb304b6dc67"
+    },
+    {
+      "file": "tests/rotation-choices.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 37.1,
+      "peakRssKb": 1424344,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "78abd22a4297b433e0c39824893b29ac02cc95582fdde9519ff024373ccd775e",
+      "logSha256": "4367c0181c32dbafb24f1b6f29bfeec3b23f367c558eddaa42023c9570a0b02d"
+    },
+    {
+      "file": "tests/squad-health-center.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 35.5,
+      "peakRssKb": 1316536,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "aad8d9dd",
+      "sourceSha256": "49c7be1c9d875a1e752a1edf0cc2d930dd82f2f5e021be2a35883a2decf27db1",
+      "logSha256": "41dc5e1fac365bb0788ee91d866a308e22199beda00fee41fa4631b12b3bc98c"
+    },
+    {
+      "file": "tests/lnr-career-long.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 1020.9,
+      "peakRssKb": 2499856,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "3c6542011aee821c0e173fb72894e40172ba0a6464b5f49fccdfc583739f7580",
+      "logSha256": "fddbe20ddb7ceede291f40fde33b883cd403fdf3d459e9a684f2a27048979fd9"
+    },
+    {
+      "file": "tests/lnr05-evidence-long.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 862.3,
+      "peakRssKb": 2611320,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "8174b54f73a1928a4caab35771edd6a6704b5df52c1ba6014bc0761595bbfc77",
+      "logSha256": "c305757c7d8e109d523db5416fbb8941130a7372e936155125bcc3e862752c59"
+    },
+    {
+      "file": "tests/lnr05-rotation-audit.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 830.5,
+      "peakRssKb": 3090688,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "999a450da401eb6f4e64dfad0800c7df7aa4643e54627bc90bb5388c59483a51",
+      "logSha256": "f68724ab7fd0f85eb3857fb2c12b86f0a8f459a8b40d73ba9fade0b9ef13ff99"
+    },
+    {
+      "file": "tests/lnr05-fatigue-scenarios.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 590.7,
+      "peakRssKb": 2924804,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "af99d4368b41c45ed23ce999c2e3645ca05528cb30f0f64968d673dd97b0e54e",
+      "logSha256": "704ee28655a5fc680a8264c508e9ca47afe530454dca331209b0e86ba369e999"
+    },
+    {
+      "file": "tests/lnr05-multiseason-strategies.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 776.7,
+      "peakRssKb": 1734648,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "2c4cac7bc904f43e134b477d3e5e859fedd4bb90bc39b1d97dc84011584f11c8",
+      "logSha256": "e3712716004d14bd98f660e3203ad557df2cf74917cb6f15168c806363beaea4"
+    },
+    {
+      "file": "tests/harness-monde-compat.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 46.2,
+      "peakRssKb": 1714924,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "0ae0584e9659ba63bd1b0798d3800b67602df499ea9f1ec2f7bed2634b0ecd98",
+      "logSha256": "2e427bcb82aa99217144ab0eaa83c5ec0ace13b3f4148bcef2f1aef4e4a0e23e"
+    },
+    {
+      "file": "tests/lnr-cross-season-recovery.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 605.5,
+      "peakRssKb": 2679396,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "e1281804471024baa8fb42624528690276cd9cdc2798b9b6c9e3f3e5f54af401",
+      "logSha256": "d61446a92b2f70429f8c0eca5eacf4e1b971bb0bc6ef95fe43e8df722c50220f"
+    },
+    {
+      "file": "tests/lnr-save-resume-continuation.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 515.8,
+      "peakRssKb": 3049972,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "2105a96e70882639eb18eaf939a547781afe50c725432653be58f5d2dc1bcea4",
+      "logSha256": "45aad245f3b741655ce58492e59a06ad5ff7e617f17d67953c8b920c56498174"
+    },
+    {
+      "file": "tests/lnr05-rest-policy-audit.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 223.3,
+      "peakRssKb": 1943184,
+      "runtime": "Node24.22.1 local Linux sous charge",
+      "harness": "avant aad8d9dd, rebranchement partagé de reprise reçu séparément",
+      "sourceSha256": "664a05d5c728b282c50ca71c884aaddd8a2b0df969888aba3fb077c4ba66832f",
+      "logSha256": "3106678379944d5349afb1a9b53500f952b36c2f6594ecd49cff7c462ab0c48c"
+    },
+    {
+      "file": "tests/career-integration.cjs",
+      "status": 0,
+      "seconds": 235.179072261,
+      "peakRssKb": 4080760,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 1f48acf9",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "bea20723c5a13e5fdb74095fe1ea425f2b966246636ebeb2128a14d7f99cdb3f",
+      "logSha256": "b9e70ecb5259794ead787154f726aeb791a25fc54c5da5cb4282fdf85320a2c4"
+    },
+    {
+      "file": "tests/finance-v2-playable.cjs",
+      "status": 0,
+      "seconds": 24.316644028,
+      "peakRssKb": 1400400,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b7b7952c",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "dc1cdb79a686fbf730600853108dc3d161acf3804c9aed7a0e64efb3a6e86a1c",
+      "logSha256": "30b68662e34571dd540bbdf3d5f5881d9487870fe23a73645a7927c6397d5ef1"
+    },
+    {
+      "file": "tests/v58-native-coach-opportunities.cjs",
+      "status": 0,
+      "seconds": 38.734991985,
+      "peakRssKb": 1576824,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b7b7952c",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "f6f9d5bccb31f29350eea56c8ff44c9e387ec781542743692a7b1c262b8f54f0",
+      "logSha256": "2faf18cea808427e60fb6b90f405cb4d08aa9a16b1ec4cd6c8f4cee31bce8bf0"
+    },
+    {
+      "file": "tests/v73-espoirs-league.cjs",
+      "status": 0,
+      "seconds": 41.221335674,
+      "peakRssKb": 1268004,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit db2c7462+c071cc41",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "88f349321f2bfa80fe3f7976c5363f3fd26f70f968f494a7f128b08c9d448a9b",
+      "logSha256": "91be6a4999602421d830155c2f75cffbe919830b95c163561190049d323ce1f0"
+    },
+    {
+      "file": "tests/v74-espoirs-accession.cjs",
+      "status": 0,
+      "seconds": 35.27166297,
+      "peakRssKb": 1272108,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 18ab03bf+c071cc41",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "715996c5b05a903f3c575e974082970b97a46f96ecc822f959ac95eabcf75a38",
+      "logSha256": "082e70835121fab88c70838e149f097023dd86feae5b2c545d89a029d7c113a5"
+    },
+    {
+      "file": "tests/v75-espoirs-movement.cjs",
+      "status": 0,
+      "seconds": 29.774987963,
+      "peakRssKb": 1267064,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 18ab03bf+c071cc41",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "e0afe212fa549c75b12e7d50c8431c589164064ebd10b9bcd1e619f7feaf7759",
+      "logSha256": "139480c86186d69fde6f9f8792114c7db9441f41fe541c1d3be5c7ccd854c441"
+    },
+    {
+      "file": "tests/v76-espoirs-scouting.cjs",
+      "status": 0,
+      "seconds": 28.041358375,
+      "peakRssKb": 1257560,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 18ab03bf+c071cc41",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "103d79ec5a81836818a881423526210a0564f29992a085757683f4a5564cb682",
+      "logSha256": "695e2e5b53877e20387dc8bae3816eb7f8f164819b8a44cafccd3eba1c4c1776"
+    },
+    {
+      "file": "tests/v77-espoirs-pro.cjs",
+      "status": 0,
+      "seconds": 27.634538668,
+      "peakRssKb": 1292748,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 18ab03bf+c071cc41",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "f7ba914d8c049c81388585f58164315608211538c11631b3a88dafd81b249388",
+      "logSha256": "e46acd9c32b294fbad286cb1d489289ca85fd989a7c257e744baf0e364cb30ad"
+    },
+    {
+      "file": "tests/v78-v81-espoirs-parcours.cjs",
+      "status": 0,
+      "seconds": 27.751661737,
+      "peakRssKb": 1274160,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit f5f8695f+c071cc41",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "4748b572fead46ede09ce0a8e064a556e2d12d5ec0f0d4f6c7f434be6e095c84",
+      "logSha256": "56bbfa330dbbe03d1fc7d759b70980cfb2c145298434d2a85d7bc1486aca98bc"
+    },
+    {
+      "file": "tests/v72-youth-pathways.cjs",
+      "status": 0,
+      "seconds": 49.823427699,
+      "peakRssKb": 2195096,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 22b87aae",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "25aa15c44d9211eac1e4955a9af770179e787099b43c66d1a9b1732f63d658d2",
+      "logSha256": "06d881413e3c41e3ebed635e3e39b9b2b1bbf19a2670be39bad1e7ff87b0eab0"
+    },
+    {
+      "file": "tests/v24-career-depth.cjs",
+      "status": 0,
+      "seconds": 19.99406589,
+      "peakRssKb": 1111200,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit faa76090",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "4c7814669d3e46bbb22909086f133a09367812b7ac933faae70e0edaf9b276a3",
+      "logSha256": "c1cb58c8486452a3a0d39d1a936046c0b1975c342e4f33f6914d0ccb3ca14eb5"
+    },
+    {
+      "file": "tests/v24-career-invariants.cjs",
+      "status": 0,
+      "seconds": 19.768689623,
+      "peakRssKb": 1142424,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit faa76090",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "b2854df54106ca0420241b22fa3c7b2efd1f6f27952946cbce3bab15faa2704e",
+      "logSha256": "3f20bdc908ba8cf2bb3b1282db82f9dc4da4b1b004d1ea9f1f20e060c3e5d781"
+    },
+    {
+      "file": "tests/manager.cjs",
+      "status": 0,
+      "seconds": 45.675562604,
+      "peakRssKb": 1937096,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit ec5545bd",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "2aaf4dbfb8b644d096798b04588e2fd318229a54771e63dc12b0425c6479a1bc",
+      "logSha256": "682545770d6afcf78e323c271dbe9560e5a6f6e976d66e23f2938ab122e8d0e1"
+    },
+    {
+      "file": "tests/sale-negotiation.cjs",
+      "status": 0,
+      "seconds": 206.508988565,
+      "peakRssKb": 2586612,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b99cdaf4",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "e877fb91405e12da1042f8bb3b5bd4ad10515f26309bf33cdffd9a6502f88add",
+      "logSha256": "632c05f43801879bc45752f97014ae88fd3c27e346cd4dcc65b8c7fd3342832d"
+    },
+    {
+      "file": "tests/v70-relations-duos.cjs",
+      "status": 0,
+      "seconds": 29.987640396,
+      "peakRssKb": 1330048,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b99cdaf4",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "f7dc25a00d2a6585af5b92e8b5c0f8da84e28156fc9b20b42bfda1234e201c20",
+      "logSha256": "e6c2b018747fbad36425724a8314af82738c26717c4a07e1fc41dae5a98538ae"
+    },
+    {
+      "file": "tests/v71-bureau-agents.cjs",
+      "status": 0,
+      "seconds": 30.986474215,
+      "peakRssKb": 1273976,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b99cdaf4",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "6e0088994859e00dd3e52164892d6aed7c2b79fbd1d30d9a4720f8c356535310",
+      "logSha256": "e16c0a58c4383c7b480dd18ed49721892e56cf126a73160f42057baea87373d3"
+    },
+    {
+      "file": "tests/v39-team-dynamics.cjs",
+      "status": 0,
+      "seconds": 126.351801198,
+      "peakRssKb": 3121480,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 22b87aae",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "8eb532cafa6dcdc3a2df6662e46bd58d9b7c4304247e21eb16b4e29ebfd34c25",
+      "logSha256": "fea79313f4727466bd554fbcbef9f6f68e735342c23d79f002c590bb878e6b98"
+    },
+    {
+      "file": "tests/ai-transfer-competition.cjs",
+      "status": 0,
+      "seconds": 221.277425031,
+      "peakRssKb": 3024836,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit d2fd8933",
+      "measurement": "resourceUsage à la frontière du listener exit v1 ; codeOS0 confirmé, nettoyage ultérieur non inclus",
+      "sourceSha256": "676e1a2bb9db3cca64181f32d069c1665414e9ec8fa8b42e4a9c1d3fb7586af7",
+      "logSha256": "61d2ab4b2a60845eebb152f5ec988417ea36f12a08c3cc9fbbf75d80685a0176"
     }
   ]
 }

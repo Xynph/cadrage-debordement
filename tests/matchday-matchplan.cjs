@@ -4,7 +4,7 @@ const {context}=require('./harness.cjs');
 const t=context(),run=t.run;
 for(const file of ['matchday-lineup.js','matchday-matchplan.js','matchday-center.js'])
  vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
-run('start(0)');
+run('start(0)');t.toMatch();
 const start=run('JSON.stringify(S)'),saved=t.store['bdt-v1'];
 const modes=['staff','protection','initiative'];
 for(const mode of modes){

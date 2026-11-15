@@ -1,6 +1,6 @@
 # Migration des recettes vers la carrière Monde
 
-Exécution native dans la session courante, sans sous-agent. Décision explicite de Léo le 15/11 : migrer avant fusion, sans réduction de couverture ni nouvelle quarantaine. Ce document est le plan d'application de cette décision et d'AGENTS.md.
+Exécution native dans la session courante ; deux producteurs en sous-agents autorisés ensuite explicitement par Léo, root seul intégrateur. Décision explicite de Léo le 15/11 : migrer avant fusion, sans réduction de couverture ni nouvelle quarantaine. Ce document est le plan d'application de cette décision et d'AGENTS.md.
 
 Objectif : toutes les recettes sélectionnées créent seulement world-champ ; les scénarios, assertions et contrôles de persistance restent couverts.
 Architecture : réutiliser la VM native par le harnais commun, conserver le rendu HTML réel pour les recettes de présentation, préparer explicitement la semaine du match et les situations contrôlées. Les reprises rechargent un état Monde complet. Ne pas fabriquer un ancien effectif étiqueté Monde.
@@ -67,3 +67,5 @@ La commande initiale du worker branche `club-budget.cjs` à la demande. Une simp
 - Deux sous-agents autorisés explicitement par Léo : gestion (43 fichiers) et UI/sauvegardes (21 fichiers), base b08e39a3, worktrees disjoints. Root seul intégrateur. Le ledger et les rapports de travail sont externes au dépôt, dans migration-coordination ; les rapports reçus ne sont pas encore tous intégrés ni une CI verte.
 
 - Intégration partielle des17 recettes gestion reçues : carrière, finances, manager, vente/relations et composants juniors revus. Les composants historiques restent isolés par barrières VM/IO ; pas de carrière ancienne. V19–V26 reçues en entier sur vraies fixtures Monde, imports/anciens marqueurs de match/lecture seule conservés ; durées et RSS réels ajoutés au registre, aucune CI inventée. Les autres ports du lot match restent en réception.
+
+- Réceptions supplémentaires : cockpit, conseiller, scout, défense adaptative, règles de changements, reprises, trois outils de préparation, rotation et santé sont verts. Le premier port de matchflow a révélé un score forgé incohérent avec les statistiques : fixture reconstruite par vrais essais/transformations, réception à refaire. Match2D utilisait le vieux tableau CLUBS pour le libellé : traduit vers le club de la paire World, réception à refaire. Le briefing V69 était chargé deux fois par rapport au worker : doublon retiré, réception à refaire. Aucun validateur affaibli. Budgets/poids réels des longues recettes LNR et des18 recettes gestion intégrées ; la batterie complète reste en attente.

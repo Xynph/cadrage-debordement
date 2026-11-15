@@ -1,8 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-const main=context(),run=main.run;
-run('start(0);beginMatch();pauseMatch();var l=S.live,viewState=matchViewState(l);var selfSide=l.userSide');
+const {engineContext:context,matchContext}=require('./harness.cjs');
+const main=matchContext(),run=main.run;
+run('beginMatch();pauseMatch();var l=S.live,viewState=matchViewState(l);var selfSide=l.userSide');
 assert.equal(run('!!l'),true);
 assert.equal(run('!!l.paused'),true);
 assert.ok(run('matchCockpitView(viewState).includes("v40-cockpit")'));
@@ -22,9 +22,9 @@ const saved=run('JSON.stringify(S)'),storage=run('localStorage.getItem("bdt-v1")
 for(let i=0;i<3;i++)run('matchCockpitView(matchViewState(l));matchCockpitMetrics(l);matchCockpitRoster(l,selfSide)');
 assert.equal(run('JSON.stringify(S)'),saved,'read-only UI must not mutate match/save');
 assert.equal(run('localStorage.getItem("bdt-v1")'),storage);
-const p1=context(),p2=context();
-p1.run('start(0);beginMatch();pauseMatch();matchCockpitView(matchViewState(S.live))');
-p2.run('start(0);beginMatch();pauseMatch()');
+const p1=matchContext(),p2=matchContext();
+p1.run('beginMatch();pauseMatch();matchCockpitView(matchViewState(S.live))');
+p2.run('beginMatch();pauseMatch()');
 assert.equal(p1.run('Math.random()'),p2.run('Math.random()'),'presentation must not consume match RNG');
 assert.equal(run('chooseMatchCockpitFocus("analyse")'),true);
 assert.equal(run('matchCockpitFocus'),'analyse');

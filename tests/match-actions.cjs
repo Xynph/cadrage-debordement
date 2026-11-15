@@ -1,6 +1,6 @@
-const assert=require('node:assert/strict');const {context}=require('./harness.cjs');const T=require('./helpers/tirages.cjs');
+const assert=require('node:assert/strict');const {engineContext:context,matchContext}=require('./harness.cjs');const T=require('./helpers/tirages.cjs');
 // Pénalités de conquête (penalitesVersion) coupées : ce test suit la présentation d'une touche ou d'une mêlée dont l'issue est fixée.
-function fixture(){const t=context();t.run('start(0);beginMatch();pauseMatch();var l=S.live;delete l.penalitesVersion;l.paused=false;syncMatchPresentation(l)');return t}
+function fixture(){const t=matchContext();t.run('beginMatch();pauseMatch();var l=S.live;delete l.penalitesVersion;l.paused=false;syncMatchPresentation(l)');return t}
 let t=fixture(),run=t.run;
 // Every subevent has its own position and roster. The model may already be at
 // reception, while the viewer must still see the scoring side at the try line.

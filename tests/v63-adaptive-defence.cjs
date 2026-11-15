@@ -1,8 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-const t=context(),run=t.run;
-run('start(0);beginMatch();pauseMatch();var l=S.live');
+const {engineContext:context,matchContext}=require('./harness.cjs');
+const t=matchContext(),run=t.run;
+run('beginMatch();pauseMatch();var l=S.live');
 const opp=run('1-l.userSide'),user=1-opp;
 const prep=(data)=>run(`l.minute=35;l.score=[0,0];l.score[l.userSide]=7;l.score[1-l.userSide]=7;l.weather='Beau';l.tactics[l.userSide]='large';l.defences[1-l.userSide]='equilibre';l.tacticalStats[l.userSide]=Object.assign(emptyTacticalStats(),${JSON.stringify(data)});l.stats[1-l.userSide].penalties=0`);
 const decision=()=>run('opponentDefenceDecision(l,1-l.userSide)');
@@ -30,13 +30,13 @@ assert.equal(run('opponentDefenceDecision(l,1-l.userSide).plan'),'prudente');
 assert.equal(run('JSON.stringify(S)'),original,'décision sans mutation ou RNG');
 // Le test de fatigue altère volontairement une fixture de match ; ne pas exporter
 // cette fixture artificielle. Vérifier la persistance sur une vraie carrière valide.
-const saveCase=context();
-saveCase.run('start(0);beginMatch();pauseMatch()');
+const saveCase=matchContext();
+saveCase.run('beginMatch();pauseMatch()');
 const saved=saveCase.run('JSON.stringify(createSaveDocument())'),restored=context();
 restored.run('pendingSave=parseSaveDocument('+JSON.stringify(saved)+');confirmSaveImport()');
 assert.equal(restored.run('S.live.defences[1-S.live.userSide]'),saveCase.run('S.live.defences[1-S.live.userSide]'),'défense conservée au chargement');
 assert.equal(restored.run('S.live.tacticalVersion'),saveCase.run('S.live.tacticalVersion'),'même modèle tactique');
 assert.equal(restored.run('opponentDefenceDecision(S.live,1-S.live.userSide)'),null,'aucune adaptation sans signal enregistré');
-const legacy=context();legacy.run('start(0);beginMatch();var x=S.live;delete x.tacticalVersion');
+const legacy=matchContext();legacy.run('beginMatch();var x=S.live;delete x.tacticalVersion');
 assert.equal(legacy.run('opponentDefenceDecision(x,1-x.userSide)'),null,'ancien moteur inchangé');
 console.log('V63 adaptive defensive AI: evidence, reaction, discipline, fatigue, save/import, legacy PASS');

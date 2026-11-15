@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const {context}=require('./harness.cjs');
 const t=context(),run=t.run;
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/matchday-center.js','utf8'),t.ctx);
-run('start(0)');
+run('start(0)');t.toMatch();
 const before=run('JSON.stringify(S)'),snapshot=run('matchdayReadiness()');
 assert.equal(snapshot.selected,run('starters().length'),'Xv issus de la vraie sélection');
 assert.equal(snapshot.substitutes,run('S.reserves.length'),'banc issu de la vraie sélection');

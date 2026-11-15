@@ -4,7 +4,7 @@ const {context}=require('./harness.cjs');
 const t=context(),run=t.run;
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/matchday-lineup.js','utf8'),t.ctx);
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/matchday-center.js','utf8'),t.ctx);
-run('start(0)');
+run('start(0)');t.toMatch();
 const state=run('JSON.stringify(S)'),stored=t.store['bdt-v1'];
 const balanced=run("matchday02Proposal('equilibre')");
 assert.equal(balanced.sheet.lineup.length,15);
