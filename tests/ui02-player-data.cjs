@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const ui=require('../dist/ui02-player-data.js');
 const g=context();
 g.run('start(0)');
@@ -41,8 +41,8 @@ const legacy=JSON.parse(JSON.stringify(players[0]));delete legacy.skills;delete 
 const old=JSON.stringify(legacy),legacyView=ui.playerView(legacy,deps,ctx);
 assert.equal(JSON.stringify(legacy),old);
 assert.ok(Number.isFinite(legacyView.note)&&Number.isFinite(legacyView.potential));
-assert.equal(g.run('JSON.stringify(S)'),before,'UI projection changed the career');
-assert.equal(g.store['bdt-v1'],saved,'UI projection wrote a save');
+assert.ok(g.run('JSON.stringify(S)')===before,'UI projection changed the career');
+assert.ok(g.store['bdt-v1']===saved,'UI projection wrote a save');
 const resume=context(JSON.parse(before));
 assert.ok(resume.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
 console.log(JSON.stringify({passed:true,checks:['real native skills','role rating','native potential','load','configurable columns','sorting','search','injuries','contracts','comparison','legacy','unchanged career','saved game']}));
