@@ -175,7 +175,7 @@ static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dicti
 	var fatigue := Avis.fatigue(model)
 	var cash_fatigue := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
 	if cash_fatigue >= 0 and not fixture.is_empty() and not fatigue.is_empty():
-		return fatigue.merged({"texte": _fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
+		return fatigue.merged({"texte": Avis.fatigue_courte(model, fatigue)}, true) if not fatigue.get("action", {}).is_empty() else fatigue
 	var du_jour := Avis.conseil_jour_de_match(model)
 	if not du_jour.is_empty(): return du_jour
 	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
@@ -197,17 +197,4 @@ static func conseil(model: Dictionary, fixture: Dictionary, jours: int) -> Dicti
 	if fixture.is_empty():
 		return _ecran("Club", "Pas de match en vue : passe voir le club, les installations et le staff.", "consigne", Avis.NEUTRE, "Ouvrir le club")
 	return _ecran("Préparation", "Prépare le prochain match dans l'ordre : l'effectif, la composition, puis le plan de jeu.", "consigne", Avis.POSITIF, "Ouvrir la préparation")
-
-## Version courte du conseil de fatigue pour le carnet (le détail reste dans la bulle de Gabi).
-static func _fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
-	var parts := PackedStringArray()
-	for change: Variant in avis.get("action", {}).get("changements", []):
-		if not change is Dictionary: continue
-		var sortant := Avis.joueur(model, str(change.get("sortant", "")))
-		var entrant := Avis.joueur(model, str(change.get("playerId", "")))
-		parts.append("%s (%d %%) pour %s" % [Avis._nom(entrant), int(Avis.condition(entrant)), Avis._nom(sortant)])
-	var total := int(Avis.fatigue_donnees(model).get("count", parts.size()))
-	var qui := "%d des %d titulaires fatigués" % [parts.size(), total] if total > parts.size() else "%d titulaires fatigués" % parts.size()
-	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
-	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
 

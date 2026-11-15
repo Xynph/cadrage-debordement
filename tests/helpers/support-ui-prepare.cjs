@@ -26,6 +26,7 @@ try{
  // ainsi aucun rendez-vous caché qui s'ouvrirait en pleine réunion de soutien et refuserait toutes les commandes suivantes.
  const hurt=model.clubLife.clubSupport.medical.players.find(x=>x.injury>0);assert.ok(hurt,'Le blessé injecté doit apparaître au suivi médical');
  model=req('medical_protocol',{context:model.clubLife.clubSupport.context,id:hurt.id,protocol:'standard'});
- settleClubMeetings(model,req);
+ model=settleClubMeetings(model,req);
+ assert.ok(model.clubLife.clubMeetings.receipts.some(r=>r.kind==='medical'&&r.playerId===hurt.id&&r.completed&&r.decision.command==='medical_protocol'),'Le protocole du blessé doit avoir été décidé et le rendez-vous terminé par les commandes publiques');
  assert.equal(req('snapshot').clubLife.clubMeetings.scene,null,'Aucun rendez-vous en attente avant de lancer Godot');
 }finally{b.close();}

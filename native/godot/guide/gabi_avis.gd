@@ -418,9 +418,27 @@ static func _de(nom: String) -> String:
 ## Bureau (« Ton avis, Gabi ? », fil du bandeau) disent exactement la même chose ce jour-là.
 static func conseil_jour_de_match(model: Dictionary) -> Dictionary:
 	if not _jour_de_match(model): return {}
+	var repos := fatigue(model)
+	var cash := _nombre(model.get("finance", {}).get("cash") if model.get("finance") is Dictionary else null, 0.0)
+	if cash >= 0 and not repos.is_empty():
+		return repos.merged({"texte": fatigue_courte(model, repos)}, true) if not repos.get("action", {}).is_empty() else repos
 	var compo := composition(model)
 	if compo.get("action", {}).is_empty(): return {}
 	return compo.merged({"texte": composition_courte(model, compo.action)}, true)
+## Version courte du conseil de fatigue pour le carnet (le détail reste dans la bulle de Gabi).
+static func fatigue_courte(model: Dictionary, avis: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for change: Variant in avis.get("action", {}).get("changements", []):
+		if not change is Dictionary: continue
+		var sortant := joueur(model, str(change.get("sortant", "")))
+		var entrant := joueur(model, str(change.get("playerId", "")))
+		parts.append("%s (%d %%) pour %s" % [_nom(entrant), int(condition(entrant)), _nom(sortant)])
+	var total := int(fatigue_donnees(model).get("count", parts.size()))
+	var qui := "%d des %d titulaires fatigués" % [parts.size(), total] if total > parts.size() else "%d titulaires fatigués" % parts.size()
+	if parts.size() > 2: return "Je ferais souffler %s : %s et %d autre%s." % [qui, ", ".join(parts.slice(0, 2)), parts.size() - 2, "s" if parts.size() > 3 else ""]
+	return "Je ferais souffler les fatigués : %s." % " ; ".join(parts)
+
+
 ## Alerte de fatigue : des titulaires de la feuille du prochain match sont sous 70 % de condition.
 ## Le moteur (selection.fatigue, position-aptitudes.cjs) propose pour chacun le meilleur remplaçant frais au
 ## poste, règle JIFF et admissibilité comprises ; Gabi le dit et « Suivre le conseil » les fait souffler

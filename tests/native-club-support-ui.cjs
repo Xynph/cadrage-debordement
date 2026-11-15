@@ -1,7 +1,7 @@
 'use strict';
 // Écran « Travail du club » (soutien) piloté par les vrais contrôles Godot, sur une carrière Monde préparée par Node
 // (tests/helpers/support-ui-prepare.cjs : jour du premier match, un joueur blessé, rendez-vous du club réglés).
-// Stabilisée le 14/11 (rouge 3 fois sur 4 avant). Causes corrigées :
+// Reprise du 15/11 (rouge 3 fois sur 4 avant). Causes traitées :
 //  - un blessé injecté hors moteur ouvre son rendez-vous médical à la première commande acceptée (ici la réunion de
 //    soutien) : le jeu bloque alors toute navigation et toute commande tant qu'il n'est pas réglé (comportement voulu) ;
 //    la préparation le règle maintenant avant de rendre la sauvegarde ;
@@ -97,7 +97,7 @@ func run() -> void:
  var injured: Dictionary = {}
  for candidate: Dictionary in app.model.clubLife.clubSupport.medical.players:
   if int(candidate.injury) > 0: injured = candidate; break
- # Carrière neuve : un blessé n'est pas garanti. Sans blessé, aucun sélecteur de protocole ne doit être proposé.
+ check(not injured.is_empty(), "Le blessé préparé est présent : parcours médical obligatoire")
  if injured.is_empty():
   check(page.find_children("MedicalProtocol_*", "OptionButton", true, false).is_empty(), "Aucun sélecteur de protocole sans joueur blessé")
  else:
@@ -131,4 +131,4 @@ func run() -> void:
  print("SUPPORT UI ",checks," contrôles ; ",failures.size()," échec(s)")
  quit(0 if failures.is_empty() else 1)
 `);
-const r=spawnSync(godot,[...(process.env.CD_SUPPORT_GRAPHICS==='1'?[]:['--headless']),'--log-file',path.join(root,'godot-live.log'),'--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',script],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(root,'PrototypeGodot'),CD_SUPPORT_CAPTURES:root}});const log=(r.stdout||'')+(r.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});console.log(log);console.log('Preuves support '+root);if(r.error){fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});try{console.log(fs.readFileSync(path.join(root,'godot-live.log'),'utf8'));}catch{}throw r.error;}assert.equal(r.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
+const r=spawnSync(godot,[...(process.env.CD_SUPPORT_GRAPHICS==='1'?[]:['--headless']),'--log-file',path.join(root,'godot-live.log'),'--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',script],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(root,'PrototypeGodot'),CD_SUPPORT_CAPTURES:root}});const log=(r.stdout||'')+(r.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});console.log(log);console.log('Preuves support '+root);if(r.error){fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});try{console.log(fs.readFileSync(path.join(root,'godot-live.log'),'utf8'));}catch{}throw r.error;}assert.equal(r.status,0,log);assert.match(log,/SUPPORT UI \d+ contrôles ; 0 échec\(s\)/);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);

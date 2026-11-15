@@ -134,6 +134,9 @@ func _composition() -> void:
 func _bureau_jour_de_match(tired: Dictionary, advice: Dictionary) -> void:
 	var jour := tired.duplicate(true)
 	if not jour.get("next") is Dictionary: _check(false, "Bureau jour de match : le modèle a une rencontre du jour"); return
+	# Ce scénario a changé les conditions à la main ; on teste ici le conseil général sans
+	# réutiliser une projection de fatigue calculée sur l'ancien effectif.
+	jour.selection.erase("fatigue")
 	jour.meta.calendarCadence = {"matchReady": true}
 	jour.meta.trust = 80
 	jour.meta.erase("serie")
@@ -146,6 +149,15 @@ func _bureau_jour_de_match(tired: Dictionary, advice: Dictionary) -> void:
 	_check(str(bulle.texte) == str(carnet.texte) and bulle.action == carnet.action, "Bureau jour de match : bulle et carnet disent la même chose : " + str(bulle.texte))
 	_check(not str(bulle.texte).contains("Vérifie la feuille"), "Bureau jour de match : plus de « vérifie la feuille » générique")
 	_check(str(bulle.texte).contains(Avis._nom(Avis.joueur(jour, str(changes[0].playerId)))), "Bureau jour de match : le joueur entrant est nommé : " + str(bulle.texte))
+	var fatigue := jour.duplicate(true)
+	var change: Dictionary = changes[0].duplicate(true)
+	change.merge({"condition": 58, "entrantCondition": 100, "rating": 75}, true)
+	fatigue.selection.fatigue = {"threshold": 70, "count": 1, "starters": [{"playerId": change.sortant, "condition": 58}], "changes": [change]}
+	var bulle_fatigue := Avis.avis("Bureau", fatigue)
+	var carnet_fatigue := Semaine.conseil(fatigue, Semaine.prochain_match(fatigue), 0)
+	_check(bulle_fatigue == carnet_fatigue, "Jour de match avec alerte fatigue : mêmes texte et changements au Bureau et au carnet")
+	_check(bulle_fatigue.action.changements.size() == 1 and bulle_fatigue.action.changements[0].playerId == change.playerId, "Jour de match : la proposition moteur de fatigue est prioritaire")
+	_check(str(bulle_fatigue.texte).contains(Avis._nom(Avis.joueur(fatigue, str(change.playerId)))) and str(bulle_fatigue.texte).contains("100 %"), "Jour de match : remplaçant frais nommé avec sa condition")
 	# Feuille déjà bonne (aucun remplaçant) : retour à la consigne de jour de match.
 	var bonne := jour.duplicate(true)
 	for assignment: Dictionary in bonne.selection.slots: assignment.eligibleIds = []
