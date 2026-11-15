@@ -17,11 +17,11 @@ if(!godot||!fs.existsSync(godot)){console.error('CD_GODOT_EXE doit désigner l�
 if(!path.isAbsolute(film)){console.error('CD_ENTRACTE_2D_FILM doit être absolu.');process.exit(2);}
 const seed=/^\d+$/.test(process.env.CD_ENTRACTE_2D_SEED||'')?process.env.CD_ENTRACTE_2D_SEED:'7';
 const work=fs.mkdtempSync(path.join(os.tmpdir(),'cd-entracte-2d-'));
-const {context}=require('./harness.cjs');
-const source=context();
-source.run('start(0);beginMatch()');
+const {matchContext}=require('./harness.cjs');
+const source=matchContext(0,Number(seed));
+source.run('beginMatch()');
 const save=path.join(work,'live.json');
-fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
+try{fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));}finally{source.close();}
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(work,'PrototypeGodot'),CD_GODOT_SEED:seed,CD_ENTRACTE_2D_SAVE:save};
 for(const nom of ['CD_MATCH_TEMPS_FORTS','CD_MATCH_TEMPS_FORTS_NIVEAU','CD_MATCH_TEMPS_FORTS_HORLOGE','CD_MATCH_TEMPS_FORTS_VITESSE','CD_MATCH_TEMPS_FORTS_ENTRACTE'])delete env[nom];
 // Le projet s'ouvre en plein écran 1440×900 et --write-movie filme la fenêtre (image rognée) :
@@ -29,8 +29,14 @@ for(const nom of ['CD_MATCH_TEMPS_FORTS','CD_MATCH_TEMPS_FORTS_NIVEAU','CD_MATCH
 const images=path.join(work,'images');fs.mkdirSync(images);env.CD_ENTRACTE_2D_IMAGES=images;
 const result=spawnSync(godot,['--rendering-method','gl_compatibility','--windowed','--resolution','1280x720','--fixed-fps','30','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-entracte-2d-capture.gd')],{env,encoding:'utf8',timeout:3600000,maxBuffer:64*1024*1024});
 const output=(result.stdout||'')+(result.stderr||'');
-if(result.status===0){const f=spawnSync('ffmpeg',['-y','-v','error','-framerate','30','-i',path.join(images,'%05d.jpg'),'-c:v','libx264','-crf','20','-preset','fast','-pix_fmt','yuv420p','-movflags','+faststart',film],{encoding:'utf8'});if(f.status!==0)console.error('ffmpeg : '+(f.stderr||f.error));}
+let encode;
+if(result.status===0&&!/SCRIPT ERROR|Parse Error/.test(output)){
+ encode=spawnSync('ffmpeg',['-y','-v','error','-framerate','30','-i',path.join(images,'%05d.jpg'),'-c:v','libx264','-crf','20','-preset','fast','-pix_fmt','yuv420p','-movflags','+faststart',film],{encoding:'utf8'});
+ if(encode.status!==0)console.error('ffmpeg : '+(encode.stderr||encode.error));
+}
 fs.rmSync(work,{recursive:true,force:true});
 console.log(output.split('\n').filter(l=>/FILM|CAPTURE|ERROR|SCRIPT/.test(l)).join('\n'));
 if(result.error)throw result.error;
+if(encode?.error)throw encode.error;
+if(result.status===0&&(!encode||encode.status!==0||!fs.existsSync(film)||fs.statSync(film).size===0))process.exit(1);
 process.exit(result.status||0);

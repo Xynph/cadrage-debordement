@@ -43,6 +43,14 @@ func run() -> void:
 		return
 	while app.waiting: await process_frame
 	for i in 8: await process_frame
+	# La vraie reprise Monde peut d'abord ouvrir la causerie d'avant-match.
+	# La passer par sa commande publique avant de chercher l'écran du direct.
+	var deadline := Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < deadline and (surface() == null or surface().regie == null):
+		var causerie: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+		if causerie is Dictionary and not app.waiting and app.contextual_director.kind == "locker":
+			app._command("match_talk_continue", {"key": causerie.key, "phase": causerie.phase, "skip": true})
+		for i in 10: await process_frame
 	var view := surface()
 	if view == null or view.regie == null:
 		push_error("Direct en temps forts absent : " + str(app.last_error))

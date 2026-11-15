@@ -41,18 +41,18 @@ if(!/^(0|[1-9]\d*)$/.test(seed)){console.error('CD_MATCH_TEMPS_FORTS_SEED invali
 const work=fs.mkdtempSync(path.join(os.tmpdir(),'cd-temps-forts-capture-'));
 const save=path.join(work,'live.json');
 // CD_MATCH_TEMPS_FORTS_EXPORT : export d'une carrière Monde arrêtée au match (seul mode de carrière
-// depuis le 13/11/2026) ; sans lui, l'ancien harnais (à migrer).
+// depuis le 13/11/2026) ; sans lui, un vrai point de reprise Monde au jour du match.
 const exporte=process.env.CD_MATCH_TEMPS_FORTS_EXPORT||'';
 if(exporte){
  if(!path.isAbsolute(exporte)||!fs.existsSync(exporte)){console.error('CD_MATCH_TEMPS_FORTS_EXPORT doit désigner un export existant.');process.exit(2);}
  fs.copyFileSync(exporte,save);
 }else{
- const {context}=require('./harness.cjs');
- const source=context();
+ const {matchContext}=require('./harness.cjs');
+ const source=matchContext(club,Number(seed));
  const touche=process.env.CD_MATCH_TEMPS_FORTS_TOUCHE||'';
  if(touche&&!/^[a-z]+$/.test(touche)){console.error('CD_MATCH_TEMPS_FORTS_TOUCHE invalide.');process.exit(2);}
- source.run(`start(${club});${touche?`setPlaybookChoice('lineout','${touche}');`:''}beginMatch()`);
- fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));
+ source.run(`${touche?`setPlaybookChoice('lineout','${touche}');`:''}beginMatch()`);
+ fs.writeFileSync(save,source.run('JSON.stringify(createSaveDocument())'));source.close();
 }
 const extra=(process.env.CD_MATCH_TEMPS_FORTS_GODOT_ARGS||'').split(/\s+/).filter(Boolean);
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(work,'PrototypeGodot'),

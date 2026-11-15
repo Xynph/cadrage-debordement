@@ -231,8 +231,8 @@ func run() -> void:
 			elif regie != null and regie.etat == regie.INTER:
 				preroll.clear()
 			if not report.liaisons.is_empty(): report.liaisons[-1]["derniere"] = report.images.size()
-		var over: bool = live.is_empty()
-		if liaisons_seules and liaisons_max > 0 and liaisons_vues >= liaisons_max and not dans_liaison and apres_liaison <= 0.0: over = true or live.get("finished", false) or (last_minute > 0 and int(live.get("minute", 0)) >= last_minute)
+		var over: bool = live.is_empty() or live.get("finished", false) or (last_minute > 0 and int(live.get("minute", 0)) >= last_minute)
+		if liaisons_seules and liaisons_max > 0 and liaisons_vues >= liaisons_max and not dans_liaison and apres_liaison <= 0.0: over = true
 		if not types_voulus.is_empty() and types_vus.size() >= types_voulus.size() and queue <= 0.0: over = true
 		if over and (regie == null or regie.etat != regie.JEU): ending += delta
 		if ending >= 3.0 or now - started > limit_ms: break

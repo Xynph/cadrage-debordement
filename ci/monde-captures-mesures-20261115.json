@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-15",
+  "scope": "Ouverture réelle d’un match World dans Godot, capture manuelle bornée ; pas un match entier",
+  "runtime": {
+    "node": "22.23.5",
+    "godot": "4.7.2",
+    "display": "Xvfb :99",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "audio": "Dummy"
+  },
+  "passed": true,
+  "fullSuite": false,
+  "opening": {
+    "images": 3,
+    "size": [
+      1280,
+      720
+    ],
+    "highlights": 1,
+    "captureSeconds": 30.5,
+    "minute": 0.0,
+    "finished": false,
+    "configuredDurationLimitSeconds": 30,
+    "configuredMinuteLimit": 1,
+    "minuteLimitReached": false,
+    "scriptErrors": 0
+  },
+  "sha256": {
+    "tests/godot-match-entracte-2d-capture.cjs": "a332a57271e4a5aa32337ace72fe7dd21993aef214efa0b6e93bbf5bc1ca1cff",
+    "tests/godot-match-entracte-2d-capture.gd": "3f72a0de27d7721299bbb8a6152e67016b9be888a6413a8dda5c28de6f8586b1",
+    "tests/godot-match-temps-forts-capture.cjs": "678371bb91f195b6d01d6d5605a3346e5d6faec016f0f63b1b9be9796c3697aa",
+    "tests/godot-match-temps-forts-capture.gd": "393ddb09775017a07aee2bdb45bd3cac846ce78958a997c420af95e69330bc3d"
+  },
+  "receiptSha256": {
+    "report.json": "b59dbcafbb688b494829c26abff23dcea27003f3f458004eba56d487035eafcb",
+    "godot.log": "438206e82901b6df210d27044c2a8b8a1c842a1e6c7adc180cbee80b4d8190e9"
+  },
+  "limits": [
+    "Deux essais précédents interrompus à180s, non reçus complets.",
+    "Le reçu atteint la borne de durée ; le nouvel arrêt à la minute est relu et compilé, mais pas atteint dans ce reçu.",
+    "Le film entracte est seulement relu et compilé par Godot --check-only, aucun film complet ni encodage reçu.",
+    "Rendu logiciel sous charge ; aucune preuve de fluidité GPU, de FPS, d’écoute humaine ou de Windows.",
+    "Aucune image ni sauvegarde de travail ajoutée au dépôt."
+  ]
+}
