@@ -137,7 +137,15 @@ function simuler(e,phases,graine){
  const tenir=j=>{ballon.porteur=j.id;ballon.vol=null;ballon.sol=false;ballon.depose=null;if(porteurs.at(-1)?.[1]!==j.id)porteurs.push([r1(t),j.id])};
  const lacher=()=>{ballon.porteur=null;if(porteurs.at(-1)?.[1]!==null)porteurs.push([r1(t),null])};
  const debout=j=>!['plaquage','plaque','plaquage_rate','au_sol','se_relever','ruck','aplati','melee','saut','soutien_saut','maul','placement'].includes(j.etat);
- const vers=(j,x,y,allure,arrive=true)=>{j.cible={x:borne(x,-3,103),y:borne(y,1.5,68.5)};j.allure=Math.min(allure,j.vmax);j.arrive=arrive};
+ const vers=(j,x,y,allure,arrive=true)=>{
+  // Même l'arrière et le couvreur doivent se replacer derrière leur ligne de ruck.
+  // Leur cible de couverture ne peut les maintenir hors-jeu près de la ligne d'essai.
+  if(d.phase==='ruck'&&d.ruck&&j!==d.ruck.ramasseur&&!d.ruck.lies.includes(j)){
+   const s=j.side===d.ruck.camp?d.ruck.s:-d.ruck.s,l=horsJeu(j.side);
+   x=s>0?Math.min(x,l-0.2):Math.max(x,l+0.2);
+  }
+  j.cible={x:borne(x,-3,103),y:borne(y,1.5,68.5)};j.allure=Math.min(allure,j.vmax);j.arrive=arrive;
+ };
  const jalon=plan=>{if(Number.isInteger(plan)&&!jalons.some(([,k])=>k===plan))jalons.push([r1(t),plan])};
 
  // --- Script du metteur en scène : étapes du moteur, puis temps de jeu ajoutés avant le fait clé.
@@ -666,9 +674,10 @@ function simuler(e,phases,graine){
     return;
    }
    if(j.id===ballon.porteur&&d.phase==='tenu'){
-    // Il fixe la défense en avançant (cinq mètres au plus), sans courir vers la ligne d'en-but.
+    // Il fixe la défense en avançant (cinq mètres au plus), en restant dans le terrain.
+    // Dans les cinq derniers mètres, franchir la ligne en attendant éloignait son receveur.
     const de=d.tenuDe||(d.tenuDe={x:j.x,y:j.y});
-    vers(j,de.x+sens*5,de.y,3.2,true);return;
+    vers(j,borne(de.x+sens*5,1.5,98.5),de.y,3.2,true);return;
    }
    // Receveur désigné : en retrait et sur le côté du passeur.
    const passeur=d.phase==='ruck'?null:(ballon.porteur?parId.get(ballon.porteur):null);

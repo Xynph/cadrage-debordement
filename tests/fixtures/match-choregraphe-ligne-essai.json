@@ -1,0 +1,383 @@
+{
+  "source": "Carrière world-champ, club 102, graine 7, 44e minute ; porteur à 3 m de la ligne, premier receveur éloigné",
+  "entree": {
+    "type": "essai_jeu_courant",
+    "equipe": 1,
+    "porteur": "world:champ:20209ca3118f2fba5aa2",
+    "possession": 1,
+    "ballon": {
+      "x": 3,
+      "y": 15
+    },
+    "joueurs": [
+      {
+        "id": "world:champ:3d0c771a188d029b30b9",
+        "side": 0,
+        "slot": 0,
+        "x": 1.5,
+        "y": 10
+      },
+      {
+        "id": "world:champ:ebce784b0e7739c33536",
+        "side": 0,
+        "slot": 1,
+        "x": 1.5,
+        "y": 16.5
+      },
+      {
+        "id": "world:champ:f8ded3e53121aa71cf5d",
+        "side": 0,
+        "slot": 2,
+        "x": 1.5,
+        "y": 23
+      },
+      {
+        "id": "world:champ:ff96c6fe404b86ad233d",
+        "side": 0,
+        "slot": 3,
+        "x": 1.5,
+        "y": 29.5
+      },
+      {
+        "id": "world:champ:1269e18293d7bbb93185",
+        "side": 0,
+        "slot": 4,
+        "x": 1.5,
+        "y": 36
+      },
+      {
+        "id": "world:champ:026b19eec5fd9f8244f3",
+        "side": 0,
+        "slot": 5,
+        "x": 1.5,
+        "y": 42.5
+      },
+      {
+        "id": "world:champ:1305acfb7c02e4737f8f",
+        "side": 0,
+        "slot": 6,
+        "x": 1.5,
+        "y": 49
+      },
+      {
+        "id": "world:champ:bab600c1cfa25482753f",
+        "side": 0,
+        "slot": 7,
+        "x": 1.5,
+        "y": 55.5
+      },
+      {
+        "id": "world:champ:6112429e65e05b2e46ec",
+        "side": 0,
+        "slot": 8,
+        "x": 1.5,
+        "y": 5
+      },
+      {
+        "id": "world:champ:ed3f8db269e3240b2e35",
+        "side": 0,
+        "slot": 9,
+        "x": 1.5,
+        "y": 15
+      },
+      {
+        "id": "world:champ:03663c21bf318d69c276",
+        "side": 0,
+        "slot": 10,
+        "x": 1.5,
+        "y": 25
+      },
+      {
+        "id": "world:champ:14c012c31932c42be038",
+        "side": 0,
+        "slot": 11,
+        "x": 1.5,
+        "y": 35
+      },
+      {
+        "id": "world:champ:2764a929526753e136e0",
+        "side": 0,
+        "slot": 12,
+        "x": 1.5,
+        "y": 45
+      },
+      {
+        "id": "world:champ:deb37c3d610614be22f4",
+        "side": 0,
+        "slot": 13,
+        "x": 1.5,
+        "y": 55
+      },
+      {
+        "id": "world:champ:13c2e676669a086935ff",
+        "side": 0,
+        "slot": 14,
+        "x": 1.5,
+        "y": 65
+      },
+      {
+        "id": "world:champ:1829a69149e374127b55",
+        "side": 1,
+        "slot": 0,
+        "x": 9,
+        "y": 8
+      },
+      {
+        "id": "world:champ:7a61f3078518fe633645",
+        "side": 1,
+        "slot": 1,
+        "x": 12,
+        "y": 10
+      },
+      {
+        "id": "world:champ:5e115bb91a6aa781b10b",
+        "side": 1,
+        "slot": 2,
+        "x": 15,
+        "y": 12
+      },
+      {
+        "id": "world:champ:384fde29bdeb14295e0d",
+        "side": 1,
+        "slot": 3,
+        "x": 9,
+        "y": 13
+      },
+      {
+        "id": "world:champ:4c4885aae167c91efe9d",
+        "side": 1,
+        "slot": 4,
+        "x": 12,
+        "y": 15
+      },
+      {
+        "id": "world:champ:6f4f701b56eaef769087",
+        "side": 1,
+        "slot": 5,
+        "x": 15,
+        "y": 17
+      },
+      {
+        "id": "world:champ:7c8b8a958fb0522bb063",
+        "side": 1,
+        "slot": 6,
+        "x": 9,
+        "y": 18
+      },
+      {
+        "id": "world:champ:0660082e64e50e0940db",
+        "side": 1,
+        "slot": 7,
+        "x": 12,
+        "y": 20
+      },
+      {
+        "id": "world:champ:01dc5ae9176e9a2d51f4",
+        "side": 1,
+        "slot": 8,
+        "x": 15,
+        "y": 7
+      },
+      {
+        "id": "world:champ:7f37929a4d436686fbf8",
+        "side": 1,
+        "slot": 9,
+        "x": 17.8,
+        "y": 16.3
+      },
+      {
+        "id": "world:champ:970c4ea303adc532baab",
+        "side": 1,
+        "slot": 10,
+        "x": 20.6,
+        "y": 25.6
+      },
+      {
+        "id": "world:champ:1716f7319d2a66daaf26",
+        "side": 1,
+        "slot": 11,
+        "x": 23.4,
+        "y": 34.900000000000006
+      },
+      {
+        "id": "world:champ:de88f4c2151b981e6bf2",
+        "side": 1,
+        "slot": 12,
+        "x": 26.2,
+        "y": 44.2
+      },
+      {
+        "id": "world:champ:20209ca3118f2fba5aa2",
+        "side": 1,
+        "slot": 13,
+        "x": 3,
+        "y": 15
+      },
+      {
+        "id": "world:champ:9b7f326cee2f173345bb",
+        "side": 1,
+        "slot": 14,
+        "x": 31.799999999999997,
+        "y": 62.800000000000004
+      }
+    ],
+    "profils": {
+      "world:champ:3d0c771a188d029b30b9": {
+        "vmax": 6.77,
+        "amax": 3.48
+      },
+      "world:champ:ebce784b0e7739c33536": {
+        "vmax": 7.19,
+        "amax": 3.66
+      },
+      "world:champ:f8ded3e53121aa71cf5d": {
+        "vmax": 6.77,
+        "amax": 3.48
+      },
+      "world:champ:ff96c6fe404b86ad233d": {
+        "vmax": 7.01,
+        "amax": 3.58
+      },
+      "world:champ:1269e18293d7bbb93185": {
+        "vmax": 6.92,
+        "amax": 3.54
+      },
+      "world:champ:026b19eec5fd9f8244f3": {
+        "vmax": 7.52,
+        "amax": 3.81
+      },
+      "world:champ:1305acfb7c02e4737f8f": {
+        "vmax": 7.43,
+        "amax": 3.77
+      },
+      "world:champ:bab600c1cfa25482753f": {
+        "vmax": 7.34,
+        "amax": 3.73
+      },
+      "world:champ:6112429e65e05b2e46ec": {
+        "vmax": 7.68,
+        "amax": 3.88
+      },
+      "world:champ:ed3f8db269e3240b2e35": {
+        "vmax": 7.39,
+        "amax": 3.75
+      },
+      "world:champ:03663c21bf318d69c276": {
+        "vmax": 7.84,
+        "amax": 3.95
+      },
+      "world:champ:14c012c31932c42be038": {
+        "vmax": 7.77,
+        "amax": 3.92
+      },
+      "world:champ:2764a929526753e136e0": {
+        "vmax": 7.67,
+        "amax": 3.87
+      },
+      "world:champ:deb37c3d610614be22f4": {
+        "vmax": 7.76,
+        "amax": 3.91
+      },
+      "world:champ:13c2e676669a086935ff": {
+        "vmax": 7.64,
+        "amax": 3.86
+      },
+      "world:champ:1829a69149e374127b55": {
+        "vmax": 6.86,
+        "amax": 3.52
+      },
+      "world:champ:7a61f3078518fe633645": {
+        "vmax": 7.24,
+        "amax": 3.69
+      },
+      "world:champ:5e115bb91a6aa781b10b": {
+        "vmax": 6.71,
+        "amax": 3.45
+      },
+      "world:champ:384fde29bdeb14295e0d": {
+        "vmax": 6.79,
+        "amax": 3.48
+      },
+      "world:champ:4c4885aae167c91efe9d": {
+        "vmax": 6.97,
+        "amax": 3.56
+      },
+      "world:champ:6f4f701b56eaef769087": {
+        "vmax": 7.53,
+        "amax": 3.81
+      },
+      "world:champ:7c8b8a958fb0522bb063": {
+        "vmax": 7.46,
+        "amax": 3.78
+      },
+      "world:champ:0660082e64e50e0940db": {
+        "vmax": 7.43,
+        "amax": 3.77
+      },
+      "world:champ:01dc5ae9176e9a2d51f4": {
+        "vmax": 7.65,
+        "amax": 3.86
+      },
+      "world:champ:7f37929a4d436686fbf8": {
+        "vmax": 7.46,
+        "amax": 3.78
+      },
+      "world:champ:970c4ea303adc532baab": {
+        "vmax": 7.9,
+        "amax": 3.98
+      },
+      "world:champ:1716f7319d2a66daaf26": {
+        "vmax": 7.76,
+        "amax": 3.91
+      },
+      "world:champ:de88f4c2151b981e6bf2": {
+        "vmax": 7.69,
+        "amax": 3.88
+      },
+      "world:champ:20209ca3118f2fba5aa2": {
+        "vmax": 7.85,
+        "amax": 3.95
+      },
+      "world:champ:9b7f326cee2f173345bb": {
+        "vmax": 7.66,
+        "amax": 3.87
+      }
+    },
+    "etapes": [
+      {
+        "k": "porte",
+        "joueur": "world:champ:9b7f326cee2f173345bb",
+        "x": 1,
+        "depuis": 3,
+        "plan": 0,
+        "plaqueur": "world:champ:ebce784b0e7739c33536"
+      },
+      {
+        "k": "essai",
+        "joueur": "world:champ:7a61f3078518fe633645",
+        "plan": 1,
+        "cle": true
+      }
+    ],
+    "ouverture": {
+      "k": "jeu"
+    },
+    "premier": 0,
+    "dernier": 1,
+    "plan": 0,
+    "jalonsAttendus": [
+      0,
+      1
+    ],
+    "graine": 927345335,
+    "defense": [
+      "pression",
+      "equilibre"
+    ],
+    "marqueur": "world:champ:7a61f3078518fe633645",
+    "essai": {
+      "x": 0,
+      "y": 35
+    }
+  }
+}

@@ -2,14 +2,17 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { context } = require('../../tests/harness.cjs');
+const { context } = require('../../tests/monde-harness.cjs');
 const T = require('../../tests/helpers/tirages.cjs');
 const { normalize } = require('../../dist/match3d/scene-adapter.js');
 
 function record() {
-  const { run } = context();
+  const h = context(827381, { club: 0 });
+  try {
+  h.toMatch();
+  const { run } = h;
   run(`
-    start(0); beginMatch(); pauseMatch();
+    beginMatch(); pauseMatch();
     var live = S.live;
     live.paused = false; syncMatchPresentation(live);
     ballPossession(live, 0, 85);
@@ -38,6 +41,7 @@ function record() {
     };
   });
   return { teams: Array.from(run('live.pair.map(i => S.clubs[i].abbr)')), phases };
+  } finally { h.close(); }
 }
 
 function fixtureScript() {

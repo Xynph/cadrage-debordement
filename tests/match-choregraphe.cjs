@@ -23,12 +23,22 @@ const C = require('../native/engine/match-choregraphe.cjs');
 const ENTREES = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-essais.json'), 'utf8'));
 const TRANCHE2 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche2.json'), 'utf8'));
 const TRANCHE3 = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-tranche3.json'), 'utf8'));
+const LIGNE_ESSAI = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'match-choregraphe-ligne-essai.json'), 'utf8'));
 const ETATS_CHUTE = new Set(['plaquage', 'plaque', 'plaquage_rate', 'aplati', 'au_sol']);
 const SOL = new Set(['plaque', 'au_sol', 'aplati', 'se_relever']);
 const COMPOSES = ENTREES.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
 const COMPOSES2 = TRANCHE2.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
 const COMPOSES3 = TRANCHE3.map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
-const TOUS = [...COMPOSES, ...COMPOSES2, ...COMPOSES3];
+const COMPOSES_LIGNE = [LIGNE_ESSAI, {
+  source: LIGNE_ESSAI.source + ' (terrain retourné)',
+  entree: { ...LIGNE_ESSAI.entree,
+    joueurs: LIGNE_ESSAI.entree.joueurs.map(j => ({ ...j, x: 100 - j.x })),
+    ballon: { ...LIGNE_ESSAI.entree.ballon, x: 100 - LIGNE_ESSAI.entree.ballon.x },
+    essai: { ...LIGNE_ESSAI.entree.essai, x: 100 - LIGNE_ESSAI.entree.essai.x },
+    etapes: LIGNE_ESSAI.entree.etapes.map(s => ({ ...s, ...(s.x == null ? {} : { x: 100 - s.x }), ...(s.depuis == null ? {} : { depuis: 100 - s.depuis }) })),
+  },
+}].map(({ source, entree }) => ({ source, entree, c: C.composer(entree) }));
+const TOUS = [...COMPOSES, ...COMPOSES2, ...COMPOSES3, ...COMPOSES_LIGNE];
 
 const etatA = (j, t) => { let s = 'course'; for (const [u, x] of j.etats) if (u <= t + 1e-6) s = x; return s; };
 const enContact = (c, t, a, b) => c.contacts.some(([t0, t1, x, y]) => t >= t0 - 0.25 && t <= t1 + 0.25 && (x === a && y === b || x === b && y === a));
@@ -467,6 +477,19 @@ test('Régressions : franchissements enchaînés jusqu’au plafond ; coup d’e
     const c = C.composer({ ...envoi, ouverture: { ...envoi.ouverture, receveur: j.id } });
     const prise = c.evenements.find(e => ['reception', 'ramassage'].includes(e.type) && e.joueur === j.id);
     assert.ok(prise, `n° ${j.slot + 1} de l’équipe qui botte : il reprend le ballon`);
+  }
+});
+
+test('Près de la ligne : le passeur attend dans le terrain et sert le porteur nommé, dans les deux sens', () => {
+  for (const { source, entree, c } of COMPOSES_LIGNE) {
+    assert.ok(c.duree >= C.DUREE_MIN && c.duree <= c.dureeMax && c.dureeMax <= C.DUREE_PLAFOND, source);
+    assert.deepEqual(c.jalons.map(([, k]) => k), entree.jalonsAttendus, 'tous les faits conservés');
+    const passe = c.evenements.find(e => e.type === 'passe');
+    assert.ok(passe && passe.vers === entree.etapes[0].joueur, 'le porteur décidé par le moteur reçoit le ballon');
+    const passeur = c.joueurs.find(j => j.id === entree.porteur);
+    assert.ok(passeur.x.slice(0, indice(c, passe.t) + 1).every(x => x > 0 && x < 100), 'le passeur reste dans le terrain avant sa passe');
+    assert.equal(c.marqueur, entree.marqueur, 'le marqueur décidé par le moteur est conservé');
+    assert.ok(Math.abs(c.essai.x - (entree.essai.x === 0 ? -C.EN_BUT : 100 + C.EN_BUT)) < 0.01);
   }
 });
 
