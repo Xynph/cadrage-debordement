@@ -50,6 +50,26 @@ facturation ou de la visibilité ; le jeton gh local est invalide.
   disponibles sur Pro privé, les téléchargements anonymes/URLs publiques et les
   outils de livraison avant bascule. Le checkout RTX n'est pas cet audit complet.
 
+## Relevé effectué et adaptation préparée
+Les 155 runs de Tests JavaScript créés le 14/11 UTC totalisent 1336 jobs
+exécutés, 829094 secondes (13818,2 minutes), toutes tentatives retournées par
+l'API incluses, aucune page de jobs manquante. Leur exécution peut déborder
+sur le jour suivant : ce n'est pas une facture journalière.
+Les autres workflows sont exclus. Rapport : ci-usage-20261114.json.
+Au tarif Linux standard privé, à durée identique : 82,91 USD avant quota
+(87,26 USD en arrondissant chaque job à la minute supérieure).
+Ce coût est hypothétique : le matériel privé et les durées diffèrent.
+
+Le workflow principal prépare le profil privé : une suite par shard,
+5120 Mo de budget mémoire, délai global de 120 min, sept shards conservés.
+Le profil public reste à trois suites, 12288 Mo, 50 min. Simulation locale sur les
+553 suites sélectionnées par main : aucune perte ni duplication, réservation
+maximale 3580 Mo, shard le plus long estimé à 34,3 min. Cette simulation n'est
+ni une réception de la CI privée ni une validation des suites.
+La migration Monde #742 bloque la réception complète de main ; ne pas lancer
+les anciennes suites pour contourner cette coordination.
+Les autres workflows hébergés restent à recevoir avant bascule.
+
 ## Sans PC personnel
 Édition, PR et tests hébergés peuvent fonctionner sans le PC. L'EXE cloud utilise
 un environnement distinct de la vraie RTX : aucune preuve matérielle n'est revendiquée.

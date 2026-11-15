@@ -85,7 +85,9 @@ jobs:
     # tourne : 2 cœurs physiques) sous budget mémoire.
     # Nombre de shards et parallélisme : ci/ci-jobs.cjs (SHARD_COUNT, SHARD_PARALLEL).
     # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
-    timeout-minutes: 50
+    timeout-minutes: ${{ github.event.repository.private && 120 || 50 }}
+    env:
+      CD_SHARD_MEMORY_MB: ${{ github.event.repository.private && '5120' || '12288' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -124,6 +126,7 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
           COVERAGE: ${{ needs.classification.outputs.coverage }}
+          PRIVATE_REPO: ${{ github.event.repository.private }}
         run: |
           set -euo pipefail
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
@@ -137,7 +140,11 @@ jobs:
           # Trois suites au plus (4 vCPU = 2 cœurs physiques) : deux dès qu'une suite
           # exclusive (longue ou machine virtuelle à délai interne) tourne ; budget mémoire
           # de 12 Go. Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
+          if [[ "$PRIVATE_REPO" == true ]]; then
+            bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/7 ($COVERAGE)" 1
+          else
           bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/7 ($COVERAGE)" 3
+          fi
   godot:
     name: Godot ${{ matrix.shard }}/3
     needs: classification
