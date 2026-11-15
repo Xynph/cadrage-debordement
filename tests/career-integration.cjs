@@ -9,7 +9,7 @@ assert.equal(run('S.integratedManagementVersion'),1);
 assert.ok(valid(run));
 const before=run('JSON.stringify(S)'),stored=run('localStorage.getItem("bdt-v1")');
 run('careerFinancePanel();careerBoardPanel();careerAcademyPanel();careerRecruitmentPanel();careerHistoryView()');
-assert.equal(run('JSON.stringify(S)'),before,'all dashboards are read-only');
+assert.ok(run('JSON.stringify(S)')===before,'all dashboards are read-only');
 assert.equal(run('localStorage.getItem("bdt-v1")'),stored);
 assert.equal(run('careerBudgetModel().weeklyIncome'),160000);
 assert.equal(run('careerFinancialAnalysis().comparison.scenarios.length'),3);
