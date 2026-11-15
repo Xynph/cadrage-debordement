@@ -3,7 +3,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm'),fs=require('node:fs');
 const V70=require('../dist/relations-duos-v70.js');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const p=(id,fam,score=65,condition=85,mental=70)=>({id,name:id,injury:0,fam,condition,skills:{mental},satisfaction:{score}});
 function state(){
  return {version:2,club:0,season:1,phase:'league',round:4,trained:false,live:null,trust:75,
@@ -99,6 +99,6 @@ test('V70 : moteur natif, export/import et ancienne sauvegarde sans nouveau cham
  const snapshot=t.run('createSaveDocument()');
  const checked=t.run('parseSaveDocument('+JSON.stringify(JSON.stringify(snapshot))+')');
  assert.equal(checked.state.v70Relations.pairs[0].score,20);
- const match=t.run('createRugbyMatch(nextMatch())');
+ t.deferSaves();t.toMatch();const match=t.run('createRugbyMatch(nextMatch())');
  assert.equal(match.v70Relations?.version,1);
 });

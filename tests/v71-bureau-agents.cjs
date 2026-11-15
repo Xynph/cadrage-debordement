@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const t=context(),run=t.run;
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/bureau-agents-v71.js','utf8'),t.ctx);
 assert.equal(run('CDAgentsV71.install(globalThis)'),true);
@@ -41,8 +41,8 @@ assert.equal(run('S.v71AgentDesk.history.length'),1,'pas de doublon apres signat
 assert.equal(run('CDAgentsV71.perform(S,'+JSON.stringify(id)+',2,"ferme",'+bridge+')'),false,'pas de prolongation a echeance inchangee');
 run('delete S.v71AgentDesk');
 assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v71AgentDesk===undefined'),true,'ancienne sauvegarde acceptee');
-run('S.live={finished:false}');
+t.deferSaves();t.toMatch();run('beginMatch();pauseMatch()');
 assert.equal(run('CDAgentsV71.perform(S,'+JSON.stringify(id)+',3,"securiser",'+bridge+')'),false,'aucune offre pendant un match');
-run('S.live=null');
+
 assert.equal(run('CDAgentsV71.install(globalThis)'),true,'installation idempotente');
 console.log('V71 PASS : bureau, devis, duree, ecriture contrat, signature, import historique et verrou match');
