@@ -18,6 +18,8 @@ const LONGUE = process.env.CD_COURBE_LONGUE === '1';
 const PLAN = LONGUE
   ? { complet: { ecarts: [-15, -10, -6, -3, 0, 3, 6, 10, 15], n: 600 }, rapide: { ecarts: [-15, -10, -6, -3, 0, 3, 6, 10, 15], n: 4000 }, bases: [4, 20, 44] }
   : { complet: { ecarts: [0, 6, 10], n: 240 }, rapide: { ecarts: [-10, 0, 6, 10], n: 1000 }, bases: [4] };
+// Série de la queue (+15, hors ajustement logistique) : version CI seulement, la version longue la contient déjà.
+PLAN.queue = { complet: 600, rapide: 2000 };
 // Bornes : cible ± bruit d'échantillonnage (version CI : écart type ≈ 3 points au moteur complet).
 const BORNES = {
   // Moteur complet : courbe un peu plus raide dans les queues (±15 → 96 %), d'où une pente ajustée de 0,20 à 0,22.
@@ -25,9 +27,11 @@ const BORNES = {
   // à niveau égal sur les effectifs V2 (clubs de base 4, 20, 44), comme le résultat rapide ; bornes de #712.
   complet: { pente: LONGUE ? [0.16, 0.23] : [0.15, 0.24], domicile: LONGUE ? [0.61, 0.71] : [0.58, 0.73],
     // Essais réalistes (docs/essais-realistes-20261114.md) : ~6 à 8 essais et ~48 à 60 points par match selon le championnat (avant : 2,6-4,4 essais, 24-37 points).
-    points: [38, 62], essais: [4.4, 8.8], ecartNul: [5, 17] },
+    points: [38, 62], essais: [4.4, 8.8], ecartNul: [5, 17],
+    // Queue à +15 (domicile alterné) : surprises du plus faible, dont au moins 1 % à l'extérieur. Mesuré : complet 6,8 % (3,4 % à l'extérieur), rapide 7,2 % (2,8 %).
+    queue: LONGUE ? [0.045, 0.10] : [0.04, 0.12], queueExterieur: 0.01 },
   rapide: { pente: LONGUE ? [0.17, 0.20] : [0.16, 0.21], domicile: LONGUE ? [0.62, 0.69] : [0.61, 0.70],
-    points: [43, 57], essais: [4.8, 6.6], ecartNul: [10, 18] },
+    points: [43, 57], essais: [4.8, 6.6], ecartNul: [10, 18], queue: LONGUE ? [0.05, 0.10] : [0.045, 0.11], queueExterieur: 0.01 },
 };
 const dans = (x, [a, b], quoi) => assert.ok(x >= a && x <= b, `${quoi} : ${x.toFixed(3)} hors de [${a} ; ${b}]`);
 
@@ -35,13 +39,20 @@ test('Courbe de niveau commune au moteur complet et au résultat rapide (carriè
   const h = context(4242, { club: 102, console: false });
   try {
     assert.equal(h.run('CDWorldEditions.forState(S).mode'), 'world-champ');
-    assert.equal(h.run('MATCH_LEVEL_CURVE.version'), 1);
+    assert.equal(h.run('MATCH_LEVEL_CURVE.version'), 2);
     assert.equal(h.run('Object.isFrozen(MATCH_LEVEL_CURVE)&&Object.isFrozen(MATCH_LEVEL_CURVE.complet)'), true);
     // Niveau d'équipe : note × forme, 1,00 à 100 % de condition.
     assert.equal(h.run('teamLevel([{rating:80,condition:100},{rating:70,condition:100}])').toFixed(3), '75.000');
     assert.equal(h.run('teamLevel([{rating:80,condition:80}])').toFixed(3), (80 * (0.57 + 0.0043 * 80)).toFixed(3));
+    // Match piège : rien jusqu'à 10 points d'écart ; au-delà, probabilité 0,04 par point (au plus 0,3), le favori joue
+    // ce jour-là avec 40 % de l'écart en moins (décalage du point de vue du camp 0), x 2,8 au moteur complet.
+    const piege = (gap, u) => h.run(`matchTrapOffset(${gap},()=>${u})`);
+    assert.equal(piege(10, 0), 0); assert.equal(piege(-10, 0), 0);
+    assert.equal(piege(16, 0.23).toFixed(2), '-6.40'); assert.equal(piege(-16, 0.23).toFixed(2), '6.40');
+    assert.equal(piege(16, 0.25), 0); assert.equal(piege(30, 0.29).toFixed(2), '-12.00'); assert.equal(piege(30, 0.31), 0);
+    assert.equal(h.run('MATCH_LEVEL_CURVE.complet.piege'), 2.8);
     const cp = h.checkpoint();
-    const pentes = {};
+    const pentes = {}, queues = {};
     for (const base of PLAN.bases) for (const mode of ['complet', 'rapide']) {
       h.restore(cp);
       const t0 = Date.now(), { ecarts, n } = PLAN[mode], b = BORNES[mode];
@@ -61,12 +72,26 @@ test('Courbe de niveau commune au moteur complet et au résultat rapide (carriè
       dans(r(0).ecart, b.ecartNul, `${mode} écart moyen à niveau égal`);
       for (const x of m.resumes) assert.ok(x.points < b.points[1] + 12, `${mode} ${x.k} : ${x.points.toFixed(1)} points par match`);
       pentes[base + mode] = m.fit;
+      // Queue de la courbe (match piège, MATCH_LEVEL_CURVE.piege, 15/11/2026) : à 15 points d'écart, le plus faible
+      // gagne encore ≈ 3 % à l'extérieur et ≈ 10 % chez lui (cible logistique 3,3 % et 10,8 %). Avant, le moteur complet
+      // n'en laissait presque plus à l'extérieur (vrais effectifs V2 à ≈ 16 points : 0,4 %, contre 3,5 % au résultat rapide).
+      if (!LONGUE || !r(15)) {
+        h.restore(cp);
+        const q = B.mesurer(h, { mode, ecarts: [15], n: PLAN.queue[mode], base, slots: [7, 11] });
+        console.log(B.tableau(`${mode}, club de base ${base}, queue`, q.resumes));
+        queues[base + mode] = q.resumes[0];
+      } else queues[base + mode] = r(15);
+      const t = queues[base + mode];
+      dans(1 - t.victoires, b.queue, `${mode} ${base} surprises à 15 points`);
+      assert.ok(t.aDomicile < 1 - b.queueExterieur, `${mode} ${base} surprises à 15 points à l'extérieur : ${B.pct(1 - t.aDomicile)}`);
     }
     // Les deux moteurs suivent la même courbe (à l'échantillonnage près).
     for (const base of PLAN.bases) {
       const c = pentes[base + 'complet'], r = pentes[base + 'rapide'];
       assert.ok(Math.abs(c.pente - r.pente) <= 0.05, `pentes complet ${c.pente.toFixed(3)} / rapide ${r.pente.toFixed(3)}`);
       assert.ok(Math.abs(c.domicileNiveauEgal - r.domicileNiveauEgal) <= 0.08, 'avantage du terrain des deux moteurs');
+      const qc = queues[base + 'complet'], qr = queues[base + 'rapide'];
+      assert.ok(Math.abs(qc.victoires - qr.victoires) <= 0.05, `queue à 15 points : complet ${B.pct(1 - qc.victoires)} / rapide ${B.pct(1 - qr.victoires)}`);
     }
   } finally { h.close(); }
 });

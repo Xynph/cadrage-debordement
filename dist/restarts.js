@@ -32,7 +32,11 @@ function performKickRestart(l,kind,team,cause,by){
  const policy=kickoffPolicy(l,team,kind),kicker=actionPlayer(l,team,'kicker');addEvent(l,`${kicker?.name||S.clubs[l.pair[team]].abbr} (${S.clubs[l.pair[team]].abbr}) effectue le ${name}${cause==='score'?' après les points encaissés':''}${policy.choice!=='normal'?' · '+KICKOFF_MOVES[policy.choice][0].toLowerCase():''}.`,'restart',{kind,team,actor:kicker?.id||null,from:{x:at,y:35},to:{x:at,y:35},possession:team,move:policy.choice});
  const distance=policy.distance?rand(...policy.distance):kind==='kickoff'?rand(15,25):kind==='drop22'?rand(20,32):rand(18,30),landing=clamp(at+(team===0?1:-1)*distance,1,99);
  const retain=Math.random()<clamp(.12+policy.retain+(unit(l,team,'kick')-unit(l,1-team,'mental'))*.002,.05,.22);
- ballPossession(l,retain?team:1-team,landing);const receiver=actionPlayer(l,l.possession,'receiver');addEvent(l,`${receiver?.name||S.clubs[l.pair[l.possession]].abbr} (${S.clubs[l.pair[l.possession]].abbr}) récupère le ballon à la réception.`,'play',{kind:'reception',team:l.possession,actor:receiver?.id||null,from:{x:at,y:35},to:{x:landing,y:35}});return true;
+ ballPossession(l,retain?team:1-team,landing);let receiver=actionPlayer(l,l.possession,'receiver');
+ // Ballon repris par l'équipe qui botte : un partenaire qui a suivi le coup de pied, jamais le botteur lui-même
+ // (il botte du centre, le ballon tombe 15 à 25 m plus loin ; le chorégraphe ne peut pas mettre en scène un botteur receveur).
+ if(retain&&kicker&&receiver?.id===kicker.id){const others=activePlayers(l,team).filter(p=>p.id!==kicker.id),chasers=others.filter(p=>p.fam>=6),pool=chasers.length?chasers:others;if(pool.length)receiver=pool[(l.minute+team)%pool.length];}
+ addEvent(l,`${receiver?.name||S.clubs[l.pair[l.possession]].abbr} (${S.clubs[l.pair[l.possession]].abbr}) récupère le ballon à la réception.`,'play',{kind:'reception',team:l.possession,actor:receiver?.id||null,from:{x:at,y:35},to:{x:landing,y:35}});return true;
 }
 function handFault(l,offender,forward=false){
  tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
