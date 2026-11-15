@@ -212,6 +212,8 @@ function createBridge(options={}){
   const memoDomains=options.memoDomains!==false&&process.env.CD_MEMO_DOMAINES!=='0';
   ctx.nativeMemoDomains=memoDomains;ctx.nativeVerifyMemo=options.verifyMemo===true||process.env.CD_VERIFIER_MEMO==='1';
   ctx.nativePotentialEvolutionValidate=potentialEvolutionValidation.validate;
+  // Comparaison de fidélité interne ; jamais une commande du protocole.
+  ctx.nativePositionSelectionMemo=options.positionMemo!==false;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   // Libellé de saison : la même fonction (dist/season-label.js) sert au processus Node (projection du modèle) et à la VM.
   if(typeof globalThis.libelleSaison!=='function')globalThis.libelleSaison=require(path.join(dist,'season-label.js')).libelleSaison;

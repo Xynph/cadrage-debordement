@@ -1,0 +1,32 @@
+{
+  "runtime": "Node 24.22.1, Linux local",
+  "sourceBase": "e0dc63808391a8ee524cc7eb2c6fba860f7a11b0",
+  "scope": "World v5, 116 clubs, tous les championnats détaillés ; contrôles de sélection + vraie semaine Monde",
+  "receipt": {
+    "passed": true,
+    "scope": "world-champ, tous détaillés",
+    "selections": 250,
+    "reference": {
+      "reads": 6489,
+      "selectionMs": 691.5,
+      "totalMs": 7035.8
+    },
+    "memo": {
+      "reads": 912,
+      "selectionMs": 483.3,
+      "totalMs": 7097.3
+    },
+    "wallSeconds": 52.8,
+    "maxRssKb": 1977772
+  },
+  "limits": [
+    "une mesure locale, Node22 CI à recevoir",
+    "le gain de sélection ne constitue pas une mesure de gain sur une saison ou sur les FPS",
+    "250 sélections après50 échauffements, objets ordinaires ; Proxy utilisé seulement pour compter les lectures puis retiré avant chronométrage"
+  ],
+  "sha256": {
+    "native/engine/position-aptitudes.cjs": "5e4bca790d5ed1edfd62441df77018c766814421af90199066e2be1679d7aeec",
+    "native/engine/worker.cjs": "03d3ce0a3d9554a4abb86cd7441515387d07067b2c3a348cd7ec422a894192ad",
+    "tests/world-selection-memo.cjs": "01cdad96510045e841eda122d589aa92ab02b1386a58d4a370752df6397c94f9"
+  }
+}

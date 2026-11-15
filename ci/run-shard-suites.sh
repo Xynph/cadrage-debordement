@@ -53,6 +53,8 @@ budget() {
   # Les autres réserves longues sont provisoires après les timeouts observés sur
   # 42891746395, sans retirer de contrôle.
   case "$1" in
+    # Parité sélection World tous détaillés : 52,8 s local Node24,250 sélections par variante.
+    tests/world-selection-memo.cjs) echo 300s ;;
     # Audit du repos Monde : saison réelle de 46 semaines, reprise en VM à la semaine 15 ;
     # 543,6 s en local sous trois suites concurrentes (Node 24), toutes assertions conservées.
     tests/lnr05-rest-policy-audit.cjs) echo 1800s ;;
