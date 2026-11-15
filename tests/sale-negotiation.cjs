@@ -1,9 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 function setup(){
  const t=context(),r=t.run;
- r('start(0);var listed=club().players[5];toggleListing(listed.id);economyWeek();var offer=S.economy.offers.find(o=>o.playerId===listed.id)');
+ t.start(0);t.deferSaves();t.toMatch();r('var listed=club().players[5];toggleListing(listed.id);economyWeek();var offer=S.economy.offers.find(o=>o.playerId===listed.id)');
  assert.ok(r('offer'));
  return r;
 }
