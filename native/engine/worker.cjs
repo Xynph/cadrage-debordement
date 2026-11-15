@@ -902,6 +902,7 @@ function createBridge(options={}){
      if(coalescing&&pendingCommit===coalescing)pendingCommit=null;
      }
      mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
+     continuePlan(model);
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
@@ -917,6 +918,13 @@ function createBridge(options={}){
   // écrits avant toute autre commande, à la fermeture ou à l'arrêt : jamais perdus en fonctionnement normal.
   let advanceSession=null;
   const advanceSignal=()=>JSON.parse(run('JSON.stringify('+continuer.SIGNAL_SOURCE+')'));
+  // Prochain arrêt prévisible de « Continuer » (info-bulle du bouton) : rencontre du club, reprise de
+  // l'entraînement ou rendez-vous en file. Lecture seule, seulement en calendrier journalier.
+  const repriseDate=()=>run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()");
+  function continuePlan(model){
+   if(!model?.meta?.calendarCadence)return;
+   try{model.meta.continuePlan=continuer.plan(advanceSignal(),repriseDate());mark('prochain_arret');}catch{delete model.meta.continuePlan;}
+  }
   function finishAdvance(id,session,stop){
    try{
     const model=snapshotRaw({command:'advance_day',payload:{fromDate:session.lastFrom}});mark('projection');
@@ -924,7 +932,7 @@ function createBridge(options={}){
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
     const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
     model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0};
-    model.meta.profileSafety=profileSafety.project();
+    model.meta.profileSafety=profileSafety.project();continuePlan(model);
     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
    }catch(error){
     // Écriture impossible : la carrière revient au jour de départ, comme un « Jour suivant » refusé.
@@ -946,7 +954,7 @@ function createBridge(options={}){
     const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
     return {id,ok:true,model:projectKnowledge(model)};
    }
-   const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()"),start:null};
+   const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:repriseDate(),start:null};
    if(!current.start){
     const fromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
     current.start={seed,clock,store:copyStore(store),text:fromSave?cleanSave:run('JSON.stringify(S)'),fromSave};
