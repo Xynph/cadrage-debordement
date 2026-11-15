@@ -5,6 +5,7 @@ paths:
   - "Assets/**/*.{shader,hlsl,cginc,compute,shadergraph}"
   - "Shaders/**"
   - "**/*.{usf,ush}"
+  - "native/godot/shaders/**"
 ---
 
 # Shader Code Standards

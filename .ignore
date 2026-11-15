@@ -1,0 +1,32 @@
+# Exclus des recherches des agents (ripgrep : Grep/Glob de Claude Code, rg de Codex).
+# Les fichiers restent lisibles par leur chemin ; ils ne sortent plus dans les
+# résultats de recherche, où une seule ligne peut peser plusieurs centaines de
+# milliers de tokens. Pour chercher dedans exprès : rg --no-ignore …
+
+# Données générées ou minifiées sur une seule ligne (0,5 à 2 Mo par ligne)
+dist/rugby-common-rosters.js
+dist/rugby-roster-foundation.js
+dist/lnr-ratings-v12.js
+dist/lnr-rosters-base.js
+dist/lnr-birthyears-data.js
+dist/match3d/vendor/
+dist/match3d/assets/*.gltf
+tests/fixtures/*.json
+tests/*-evidence.json
+
+# Bases du monde (1 à 11 Mo chacune) : interroger avec node/jq, pas avec Grep
+native/engine/world-*.json
+native/engine/player-real-facts.json
+data/world/foreign-inputs.json
+data/player-real-facts/observations.json
+data/names/*.json
+dist/assets/club-atlas/manifest.json
+
+# Copie des commandes pour Codex, identique à .claude/skills (doublon de chaque résultat)
+.agents/skills/
+
+# Rapports et preuves datés (historique) : à ouvrir par lien, pas à fouiller
+docs/*-2026*/
+docs/qa/
+docs/godot-captures/
+docs/*.json

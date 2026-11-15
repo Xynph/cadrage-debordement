@@ -4,6 +4,7 @@ description: "Asks a few questions, writes a one-page brief, builds a playable b
 argument-hint: "[what to make] [--from <your game>] [--path html|engine|paper] [--review full|lean|solo] [--spike]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/prototype/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/one-shot-new.sh *), Bash(bash .claude/scripts/page-shot.sh *), Bash(bash .claude/scripts/vendor-three.sh *), Bash(bash .claude/scripts/one-shot-check.sh *), Bash(bash .claude/scripts/one-shot-run.sh *), Bash(bash .claude/scripts/one-shot-tune.sh *), Bash(bash .claude/scripts/one-shot-share.sh *), Bash(bash .claude/scripts/references-save.sh *), Bash(bash .claude/scripts/one-shot-grow.sh *), Bash(bash .claude/scripts/door-in.sh *), Bash(bash .claude/scripts/test-run.sh web*), Bash(npm ci), Bash(npm install --save-exact *), Bash(npm run *), Bash(npm test), Bash(git rev-parse *), Bash(git init), Bash(git add prototypes/*), Bash(git add -- *), Bash(git rm src/*), Bash(git tag grown/*), Bash(git tag baseline/*), Bash(git commit -m *), Bash(git tag one-shot/*), Bash(git status *), Bash(git diff *), Bash(git log *), Bash(git restore --source *), Bash(printenv CLAUDE_CODE_EFFORT_LEVEL)
+disable-model-invocation: true
 ---
 
 !`bash "${CLAUDE_SKILL_DIR}/../../hooks/yaml-helper.sh" resolve_config --keys review_mode,automation,workflow`

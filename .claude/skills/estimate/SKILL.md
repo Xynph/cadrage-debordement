@@ -5,6 +5,7 @@ argument-hint: "[task-description]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep
 model: sonnet
+disable-model-invocation: true
 ---
 
 # Estimate

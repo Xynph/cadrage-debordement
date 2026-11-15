@@ -5,6 +5,7 @@ argument-hint: "[version number or 'next'] [--review full|lean|solo]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, TaskCreate, TaskGet, TaskList, TaskUpdate, Bash(bash "*/.claude/skills/team-release/../../hooks/yaml-helper.sh" resolve_config *)
 model: sonnet
+disable-model-invocation: true
 ---
 # Team Release
 

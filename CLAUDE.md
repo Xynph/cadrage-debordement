@@ -2,7 +2,7 @@
 
 Jeu de management de rugby à XV (dépôt historique « Cadrage Débordement »).
 Ce dépôt embarque le kit **Claude Code Game Studios** (CCGS, licence MIT,
-voir `.claude/LICENSE-CCGS.txt`) : 49 agents de studio (directeurs, chefs de
+voir `.claude/LICENSE-CCGS.txt`) : 37 agents de studio (Unity, Unreal, C# et réseau retirés) + `log-reader` (directeurs, chefs de
 département, spécialistes), ~78 commandes `/…`, hooks et règles par dossier.
 
 ## Ordre de priorité des règles
@@ -32,7 +32,49 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
   elles vont dans le dépôt privé `rugby-reel-donnees` (pack Rugby Réel).
 - Agents : modèle le plus puissant seulement pour la conception et le difficile
   (match 3D, interfaces nouvelles, moteur, économie) ; modèle léger pour le
-  mécanique. Un agent ne dépasse jamais le réglage de la conversation.
+  mécanique. Un agent ne dépasse jamais le réglage de la conversation. Pour
+  cette raison, aucun agent ni commande du kit n'est épinglé sur `opus` : les
+  trois agents directeurs (`creative-director`, `technical-director`,
+  `producer`) suivent le modèle de la session (`inherit`), et
+  `/architecture-review`, `/gate-check`, `/review-all-gdds` n'ont plus de
+  `model:` (modifications locales à reporter après chaque mise à jour CCGS).
+- Lancer une commande `/team-…` (qui ouvre plusieurs sous-agents) vaut accord
+  de Léo pour ces sous-agents ; hors de ces commandes, la règle « aucun
+  sous-agent sans accord » d'`AGENTS.md` s'applique. `log-reader` (Haiku) lit
+  les journaux de tests et de CI sans rien modifier.
+
+## Économie de tokens
+
+- Un chantier = une session. Entre deux chantiers : passation dans la PR,
+  puis `/clear` (le contexte accumulé est relu à chaque tour).
+- Chercher d'abord en mode « fichiers » (Grep `files_with_matches`), puis lire
+  la plage utile (`offset`/`limit`). Jamais `DEVELOPPEMENT.md` (250 Ko) ni
+  `README.md` en entier : chercher la section.
+- `.ignore` exclut des recherches les bases du monde et données d'une ligne
+  (jusqu'à 11 Mo) : les interroger avec `node -e` ou `jq`, pas avec Grep.
+- Journaux de CI et sorties de tests longues : `log-reader` (Haiku), qui rend
+  seulement les échecs.
+- 53 commandes CCGS hors sujet sont masquées au modèle
+  (`disable-model-invocation`) mais restent utilisables en tapant `/nom`.
+
+## Modèle et effort côté Claude
+
+`AGENTS.md` demande de recommander l'effort de GPT‑6.1 Sol à Codex ; côté
+Claude, recommander plutôt le réglage Claude adapté à la prochaine étape
+(article « Which Claude model should you build with? », lu le 15/11/2026) :
+
+| Tâche Rugby Legacy | Réglage conseillé |
+| --- | --- |
+| Correctif cadré, test qui échoue, régénération, docs | Sonnet 5.5, `medium` |
+| Code courant, débogage, lot multi-PR | Opus 5.5, `medium` puis `high` |
+| Match 3D, moteur, économie, refonte d'interface, architecture | Opus 5.5 `high` ; Fable 5.2 si `high` ne suffit pas |
+| Lecture de journaux, recherche de fichiers | sous-agent Haiku (`log-reader`) |
+
+Ordre d'escalade : 1) se donner un moyen de vérifier (test, build, capture),
+2) monter l'effort d'un cran, 3) seulement ensuite changer de modèle, en
+repartant d'un effort plus bas. Au-delà de `high`, un cran d'effort coûte
+autant qu'un modèle plus grand. Changer de modèle en fin d'étape (le cache et
+une partie du raisonnement sont perdus au changement).
 
 ## Technique
 
@@ -41,8 +83,19 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
 - `project.yaml` : configuration CCGS (moteur, rigueur `minimal`, automatisation
   `autonomous`).
 - L'arborescence CCGS par défaut (`src/`, `design/`, `production/`) n'est pas
-  imposée : les commandes s'adaptent à la structure existante. Les documents de
-  conception CCGS (GDD, ADR) vont dans `docs/`.
+  imposée : `project.yaml` déclare `engine.code_root: native/godot` et
+  `engine.test_root: tests`, et les règles `.claude/rules/` visent aussi
+  `native/godot/`. Les documents de conception CCGS (GDD) vont dans
+  `docs/gdd/`, les ADR dans `docs/architecture/`.
+- Les commandes de lancement et de test du tableau CCGS (gdUnit4, projet à la
+  racine) ne s'appliquent pas. Commandes réelles :
+  - retour rapide : `node ci/quick-check.cjs <liste-des-fichiers-modifiés>` ;
+  - une suite JS : `node tests/<suite>.cjs` ;
+  - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
+  - projet Godot : `godot --path native/godot`.
+
+Version du moteur et écarts avec les connaissances du modèle :
+@docs/engine-reference/godot/VERSION.md
 
 ## Commandes CCGS utiles ici
 

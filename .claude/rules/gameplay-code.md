@@ -4,6 +4,7 @@ paths:
   - "src/game/**"
   - "Assets/**/{Gameplay,gameplay}/**/*.cs"
   - "Source/**/{Gameplay,gameplay}/**/*.{h,cpp}"
+  - "native/godot/match_*.gd"
 ---
 
 # Gameplay Code Rules
