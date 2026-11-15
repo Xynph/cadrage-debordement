@@ -245,7 +245,7 @@ func install_entrypoints() -> void:
 		if is_instance_valid(app.body) and app.body.find_child("ContextualObserveTraining", true, false) == null: _add_training_entry(app.body)
 
 func _add_training_entry(parent: Node) -> void:
-	var button := S.G.button("OBSERVER LA PRÉPARATION", open_training)
+	var button := S.G.button("VOIR L’ENTRAÎNEMENT", open_training)
 	button.name = "ContextualObserveTraining"
 	button.disabled = not _live().is_empty() or app.model.get("meta", {}).get("phase") == "ended"
 	parent.add_child(button)

@@ -45,7 +45,7 @@ static func build(app: Control, international: Dictionary, fixture: Dictionary, 
 	var suggested: Array = suggestion.get("lineup", []) + suggestion.get("reserves", []) if suggestion is Dictionary else []
 	var top := G.h(12)
 	view.add_child(top)
-	var instructions := G.wrap("Choisissez vos joueurs par poste. Le moteur complète les places automatiques au coup d’envoi.", 15)
+	var instructions := G.wrap("Choisissez vos joueurs par poste. Les places vides sont complétées automatiquement au coup d’envoi.", 15)
 	G.fill(instructions)
 	top.add_child(instructions)
 	var reset := Button.new()
