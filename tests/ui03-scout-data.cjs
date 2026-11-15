@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
 const ui=require('../dist/ui03-scout-data.js');
 
 const g=context();g.run('start(0)');
@@ -28,8 +28,8 @@ assert.ok(!Object.hasOwn(initial,'dev'));
 assert.ok(!Object.hasOwn(initial,'potential'));
 assert.ok(!JSON.stringify(center).includes('"skillBase"'));
 assert.equal(JSON.stringify(source),original);
-assert.equal(g.run('JSON.stringify(S)'),saved,'projection mutated career');
-assert.equal(g.store['bdt-v1'],storage,'projection wrote native save');
+assert.ok(g.run('JSON.stringify(S)')===saved,'projection mutated career');
+assert.ok(g.store['bdt-v1']===storage,'projection wrote native save');
 
 const tampered=JSON.parse(JSON.stringify(source));
 tampered.pool[0].rating=99;tampered.pool[0].skills={speed:99,tackle:99};
@@ -64,7 +64,7 @@ let projected=ui.buildCenter(pub,{evidence:s.run('recruitmentEvidence')});
 assert.equal(projected.totals.active,1);
 assert.equal(projected.missions[0].remaining,2);
 assert.equal(projected.reports.length,0);
-assert.equal(s.run('JSON.stringify(S)'),before);
+assert.ok(s.run('JSON.stringify(S)')===before,'état Monde inchangé');
 s.run('S.economy.week++;managerWeek();S.economy.week++;managerWeek()');
 assert.ok(s.run('S.manager.reports.length')>0);
 assert.equal(s.run('S.manager.missions[0].status'),'done');
@@ -79,7 +79,7 @@ assert.ok(row.potentialMin!==null&&row.potentialMax!==null);
 assert.ok(projected.reports.some(r=>r.playerId===row.id&&r.grade!==null&&r.available));
 assert.equal(projected.totals.watch,1);
 assert.equal(ui.candidateTable(projected,{observedOnly:true,watchedOnly:true}).total,1);
-assert.equal(s.run('JSON.stringify(S)'),before,'report projection mutated career');
+assert.ok(s.run('JSON.stringify(S)')===before,'report projection mutated career');
 assert.ok(s.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
 s.run('S.economy.week+=20');
 pub.week=s.run('S.economy.week');

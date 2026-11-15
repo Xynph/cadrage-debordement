@@ -32,8 +32,8 @@ assert.match(g.run('tactics()'),/ui05-collective/,'UI05 must be embedded in play
 
 g.run("nav('tactics')");
 assert.match(g.app.innerHTML,/ui05-collective/);
-assert.equal(g.run('JSON.stringify(S)'),initial,'projection mutated career');
-assert.equal(g.store['bdt-v1'],save,'projection saved career');
+assert.ok(g.run('JSON.stringify(S)')===initial,'projection mutated career');
+assert.ok(g.store['bdt-v1']===save,'projection saved career');
 assert.equal(g.run('S.collectiveFocus'),'aucune');
 const beforeRoll=g.run('Math.random()');
 const ref=context();ref.run('start(0)');assert.equal(beforeRoll,ref.run('Math.random()'),'projection changed random stream');
@@ -57,7 +57,7 @@ assert.equal((x.run('collectivePreparationCard()').match(/ disabled/g)||[]).leng
 assert.equal(x.run('setCollectiveFocus("conquete")'),false);
 x.run('S.trained=false;S.phase="ended"');
 assert.equal(x.run('collectivePreparationCard()'),'');
-const active=context();active.run('start(0);beginMatch();pauseMatch()');
+const active=context();active.run('start(0)');active.toMatch();active.run('beginMatch();pauseMatch()');
 assert.match(active.run('collectivePreparationCard()'),/Choix verrouillé/);
 assert.equal(active.run('setCollectiveFocus("conquete")'),false);
 assert.equal(active.run('S.live.collectivePreparation.focus[0]'),'aucune');
@@ -70,7 +70,7 @@ const front=a.run('club().players.find(p=>p.fam<=3&&!p.injury).id');
 a.run('var p=player('+JSON.stringify(front)+')');
 b.run('var p=player('+JSON.stringify(front)+')');
 assert.equal(b.run('physicalLoadValue(p)')-a.run('physicalLoadValue(p)'),4);
-b.run('var l=createRugbyMatch([0,1])');
+b.toMatch();b.run('var l=createRugbyMatch(nextMatch())');
 const effect=b.run('collectivePreparationBonus(l,0,"conquete")');
 assert.ok(effect>0&&effect<=.04);
 assert.ok(!fs.readFileSync(path.resolve(__dirname,'..','dist','index.html'),'utf8').includes('ui05-preparation.js'));
