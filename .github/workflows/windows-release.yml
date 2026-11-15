@@ -36,7 +36,7 @@ jobs:
   qualify-graphics:
     name: Préqualification graphique courte du véritable EXE
     if: >-
-      github.event_name == 'pull_request' && github.event.repository.private == false &&
+      github.event_name == 'pull_request' && (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true') &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'windows-graphics-smoke') &&
       (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-graphics-smoke')
@@ -73,7 +73,7 @@ jobs:
   qualify-pr:
     name: Qualification ciblée du véritable EXE
     if: >-
-      github.event_name == 'pull_request' && github.event.repository.private == false &&
+      github.event_name == 'pull_request' && (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true') &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'windows-receipt') &&
       (github.event.action == 'ready_for_review' || github.event.label.name == 'windows-receipt')
@@ -114,7 +114,7 @@ jobs:
     # la règle de main (seul « Validation CI » l'est), donc non bloquant pour les PR.
     name: Recette Windows EXE (non bloquante)
     if: >-
-      github.event.repository.private == false && (
+      (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true') && (
         (github.event_name == 'schedule' && github.ref == 'refs/heads/main') ||
         (github.event_name == 'workflow_dispatch' && inputs.source_sha == ''))
     runs-on: windows-2022
@@ -182,7 +182,7 @@ jobs:
     name: Paquet main et preuves Windows en brouillon
     if: >-
       github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
-      inputs.source_sha != '' && github.event.repository.private == false
+      inputs.source_sha != '' && (github.event.repository.private == false || vars.CD_PRIVATE_WINDOWS_CLOUD == 'true')
     runs-on: windows-2022
     timeout-minutes: 120
     permissions:
