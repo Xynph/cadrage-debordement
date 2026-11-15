@@ -4,6 +4,9 @@ extends Control
 ## réponse en un clic (la question suivante s'affiche d'elle-même), publication quand tout est répondu. « Envoyer mon
 ## adjoint » confie une conférence ordinaire à Gabi (ton prudent, léger coût annoncé) ; les grands moments restent
 ## au manager. Le réglage « Conférences ordinaires : y aller / envoyer l'adjoint » est une préférence de carrière.
+## Promesses publiques (15/11/2026) : en début de saison, la presse demande un objectif chiffré. Le manager peut en
+## annoncer un (vraisemblance et réactions affichées avant de publier), refuser de promettre, ou ne pas répondre.
+## Les promesses en cours restent rappelées en tête de la salle de presse.
 const S = preload("res://ui/contextual/skin.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const Press = preload("res://ui/press_view.gd")
@@ -31,6 +34,8 @@ var _context := ""
 var _fingerprint := ""
 var _request_in_flight := false
 var _was_waiting := false
+var promise_choice := ""
+const REALISM_COLORS := {"modeste":Color("7f9bb3"), "realiste":Color("5fae7c"), "ambitieux":Color("d39b3f"), "irrealiste":Color("c9584b")}
 
 func _ready() -> void:
 	name = "ContextualPress"
@@ -55,10 +60,11 @@ func update_frame(value: Dictionary, projection: Dictionary = {}) -> void:
 		question_index = 0
 		_request_in_flight = false
 		choices = {}
+		promise_choice = ""
 	if _available(): choices = Press._conference_draft(app, data)
 	if not app.waiting: _request_in_flight = false
 	question_index = clampi(question_index, 0, maxi(0, _questions().size() - 1))
-	var fingerprint := JSON.stringify([meeting, data.get("context"), data.get("conference"), data.get("lastOutcome"), data.get("history"), data.get("people"), data.get("policy")])
+	var fingerprint := JSON.stringify([meeting, data.get("context"), data.get("conference"), data.get("lastOutcome"), data.get("history"), data.get("people"), data.get("policy"), _promises()])
 	if fingerprint != _fingerprint:
 		_fingerprint = fingerprint
 		_render_ui()
@@ -94,6 +100,7 @@ func _render_ui() -> void:
 	top.add_child(heading)
 	S.heading(heading, model.get("club", {}), "La conférence de presse", "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
 	if _available(): _render_moment(top)
+	_render_promise_banner(column)
 	if _available(): _render_conference(column)
 	elif not _current_outcome().is_empty(): _render_outcome(column, _current_outcome())
 	else:
@@ -193,6 +200,7 @@ func _render_conference(column: VBoxContainer) -> void:
 		var source := S.wrap(str(question.followUp.get("label", "")), 12, S.GOLD)
 		source.name = "PressArchivedSource"
 		transcript.add_child(source)
+	_render_promise_offer(left)
 	var surface := S.panel(content, 14)
 	surface.get_parent().custom_minimum_size.x = 600
 	surface.get_parent().size_flags_horizontal = Control.SIZE_FILL
@@ -385,6 +393,12 @@ func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
 	for metric: String in metrics:
 		if before.has(metric) and after.has(metric) and delta.has(metric):
 			list.add_child(S.label("%s : %s → %s (%+.0f)" % [metrics[metric], S.G.n(before[metric]), S.G.n(after[metric]), float(delta[metric])], 14, S.GOLD))
+	for promise: Dictionary in _promises().get("active", []):
+		if "%d:%d:%d" % [int(promise.get("season", -1)), int(promise.get("week", -1)), int(promise.get("club", -1))] != _context: continue
+		var announce: Dictionary = promise.get("announce", {})
+		var line := S.wrap("Promesse publique : « %s » (%s) · supporters %+d · médias %+d · confiance %+d · pression %+d" % [str(promise.get("label", "")), str(promise.get("realismLabel", "")), int(announce.get("fanTrust", 0)), int(announce.get("mediaTrust", 0)), int(announce.get("trust", 0)), int(announce.get("boardPressure", 0))], 14, S.GOLD)
+		line.name = "PressPromiseAnnounced"
+		list.add_child(line)
 	for exchange: Dictionary in outcome.get("exchanges", []):
 		var name_label := "Identité indisponible"
 		for person: Dictionary in data.get("people", []):
@@ -398,6 +412,90 @@ func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
 		var answer: Variant = record.get("answer", record.get("answerText"))
 		if question is String: list.add_child(S.wrap(question, 14))
 		if answer is String: list.add_child(S.wrap(("Gabi : " if record.get("delegated", false) else "") + answer, 15, S.TEXT))
+
+func _promises() -> Dictionary:
+	var value: Variant = model.get("clubLife", {}).get("pressPromises")
+	return value if value is Dictionary else {}
+
+func _promise_offer() -> Dictionary:
+	var offer: Variant = data.get("conference", {}).get("promise")
+	return offer if offer is Dictionary else {}
+
+func _promise_option(id: String) -> Variant:
+	var offer := _promise_offer()
+	if offer.is_empty(): return null
+	if id == "refuse": return offer.get("refuse")
+	for option: Dictionary in offer.get("options", []):
+		if str(option.get("id", "")) == id: return option
+	return null
+
+## Rappel permanent des promesses en cours : ce que la presse vous ressortira.
+func _render_promise_banner(column: VBoxContainer) -> void:
+	var active: Array = _promises().get("active", [])
+	if active.is_empty(): return
+	var row := HFlowContainer.new()
+	row.name = "PressPromiseBanner"
+	row.add_theme_constant_override("h_separation", 10)
+	column.add_child(row)
+	row.add_child(S.label("VOS PROMESSES PUBLIQUES", 12, S.GOLD))
+	for promise: Dictionary in active:
+		var progress: Dictionary = promise.get("progress", {})
+		var track: Variant = progress.get("onTrack")
+		var tint: Color = S.MUTED if track == null else (POSITIVE if track else NEGATIVE)
+		var chip := PanelContainer.new()
+		chip.add_theme_stylebox_override("panel", S.G.T.box(Color(tint, 0.16), 4, Color(tint, 0.7)))
+		chip.add_child(S.label("%s · %s" % [str(promise.get("label", "")), str(progress.get("label", ""))], 12, S.TEXT))
+		chip.tooltip_text = "Annoncée saison %s, semaine %d · %s" % [str(promise.get("seasonLabel", "")), int(promise.get("week", 0)) + 1, str(promise.get("realismLabel", ""))]
+		row.add_child(chip)
+
+## Question d'objectif (facultative) : chaque objectif affiche sa vraisemblance et les réactions à l'annonce.
+func _render_promise_offer(parent: Control) -> void:
+	var offer := _promise_offer()
+	if offer.is_empty(): return
+	var box := S.panel(parent, 12)
+	box.get_parent().get_parent().name = "PressPromiseOffer"
+	box.add_child(S.label("OBJECTIF PUBLIC · FACULTATIF", 12, S.GOLD))
+	box.add_child(S.wrap(str(offer.get("question", "")), 15, S.TEXT))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	box.add_child(flow)
+	var entries: Array = offer.get("options", []).duplicate()
+	if offer.get("refuse") is Dictionary: entries.append(offer.refuse)
+	for option: Dictionary in entries:
+		var id := str(option.get("id", ""))
+		var refuse := id == "refuse"
+		var caption := "Ne rien promettre" if refuse else "%s · %s" % [str(option.get("label", "")), str(option.get("realismLabel", ""))]
+		var button := S.button(caption, func(): _choose_promise(id))
+		button.name = "PressPromise_" + id.replace(":", "_")
+		button.custom_minimum_size.y = 32
+		button.add_theme_font_size_override("font_size", 12)
+		var tips: Array[String] = [str(option.get("consequence", ""))]
+		if option.get("reference") != null: tips.append(str(option.reference))
+		if option.get("boardNote") != null: tips.append(str(option.boardNote))
+		button.tooltip_text = "\n".join(tips)
+		var accent: Color = S.MUTED if refuse else REALISM_COLORS.get(str(option.get("realism", "")), S.GOLD)
+		if id == promise_choice: S.selected(button, accent)
+		else:
+			var style: StyleBoxFlat = (button.get_theme_stylebox("normal") as StyleBoxFlat).duplicate()
+			style.border_width_left = 4
+			style.border_color = Color(accent, 0.8)
+			button.add_theme_stylebox_override("normal", style)
+		flow.add_child(button)
+	var chosen: Variant = _promise_option(promise_choice)
+	var detail := "Sans réponse, la question reviendra à une prochaine conférence. " + str(offer.get("notice", ""))
+	if chosen is Dictionary:
+		detail = ("Vous refusez de vous engager. " if promise_choice == "refuse" else "Annonce : « %s » · %s. " % [str(chosen.get("label", "")), str(chosen.get("realismLabel", ""))]) + str(chosen.get("consequence", ""))
+		if chosen.get("boardNote") != null: detail += " · " + str(chosen.boardNote)
+	var summary := S.wrap(detail, 12, S.GOLD if chosen is Dictionary else S.MUTED)
+	summary.name = "PressPromiseSummary"
+	box.add_child(summary)
+
+## Un second clic sur l'objectif retenu l'annule (aucune promesse ni refus publiés).
+func _choose_promise(id: String) -> void:
+	if app.waiting or _request_in_flight or not _available(): return
+	promise_choice = "" if promise_choice == id else id
+	_render_ui()
 
 ## Un clic : la réponse est retenue et la prochaine question sans réponse s'affiche.
 func _choose_answer(question_id: String, answer_id: String) -> void:
@@ -464,6 +562,7 @@ func _publish() -> void:
 	var payload := {"context":data.get("context", {}).duplicate(true), "answers":answers}
 	var invitation: Variant = data.get("conference", {}).get("invitationId")
 	if invitation is String and not invitation.is_empty(): payload.invitationId = invitation
+	if not promise_choice.is_empty() and _promise_option(promise_choice) != null: payload.promise = promise_choice
 	director.command("press_conference", payload)
 	_refresh_buttons()
 

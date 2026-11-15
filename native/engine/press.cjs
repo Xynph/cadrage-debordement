@@ -14,6 +14,8 @@ function factory(){
  const priorityThemes={arrival:['carriere','vestiaire','formation'],knockout:['phase_finale','avant_match'],season_review:['classement','carriere','supporters']};
  const requiredReason='Ouvrez l’invitation dans Réception et publiez vos réponses avant de poursuivre.';
  const mandatory=()=>typeof nativeMandatoryPress!=='undefined'&&nativeMandatoryPress;
+ // Promesses publiques (press-promises.cjs) : la question d'objectif s'ajoute à une conférence tenue en personne.
+ const promises=()=>typeof nativeSystems!=='undefined'?nativeSystems.domain('pressPromises'):null;
  // Conférence rapide (consolidation du 14/11/2026, façon FM) : 3 questions au plus pour une conférence ordinaire,
  // 4 pour un grand moment (arrivée, phase finale, bilan de saison, derby, crise). Une conférence ordinaire peut être
  // confiée à l'adjoint (Gabi) : réponses prudentes, léger coût auprès de la presse (médias −2, relation −1 avec
@@ -407,7 +409,7 @@ function factory(){
   const required=mandatory()&&!!questions;
   const reason=S.live?'Conférence indisponible pendant un match.':required?requiredReason:
    questions?'':mandatory()?'Aucune invitation de presse en attente.':'Conférence déjà réalisée cette semaine.';
-  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,policy:{ordinary:policyOf(S),notice:'Conférences ordinaires : avec l’adjoint, Gabi les tient à votre place dès leur ouverture, sans arrêter l’avance. Arrivée, phase finale, bilan de saison, derby et crise restent les vôtres.'},conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,moment:questions?moment(S,invitation):null,questionLimit:questions?questions.length:0,situation:sit?{...sit,label:sit.slump?'Deux défaites de suite':sit.run?'Deux victoires de suite':sit.derby?'Derby':''}:null,delegation:delegationState(S,invitation,questions),memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(delegatedAt(S,{season:h.season,week:h.week,club:h.club})?{delegated:true}:{}),...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
+  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,policy:{ordinary:policyOf(S),notice:'Conférences ordinaires : avec l’adjoint, Gabi les tient à votre place dès leur ouverture, sans arrêter l’avance. Arrivée, phase finale, bilan de saison, derby et crise restent les vôtres.'},conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,moment:questions?moment(S,invitation):null,promise:questions?promises()?.offer(S,invitation,moment(S,invitation))??null:null,questionLimit:questions?questions.length:0,situation:sit?{...sit,label:sit.slump?'Deux défaites de suite':sit.run?'Deux victoires de suite':sit.derby?'Derby':''}:null,delegation:delegationState(S,invitation,questions),memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(delegatedAt(S,{season:h.season,week:h.week,club:h.club})?{delegated:true}:{}),...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
  }
  // Série de conférences déléguées en cours : nombre de conférences consécutives tenues par l'adjoint juste avant
  // celle-ci (une conférence menée en personne remet la série à zéro).
@@ -476,7 +478,7 @@ function factory(){
    validate(S);return {pressPolicy:{ordinary:payload.ordinary}};
   }
   check(!S.live,'Conférence indisponible pendant un match.');validate(S);
-  const allowed=command==='press_delegate'?['context','invitationId']:['context','answers','invitationId'];
+  const allowed=command==='press_delegate'?['context','invitationId']:['context','answers','invitationId','promise'];
   check(keys(payload,allowed)&&keys(payload.context,['season','week','club'])&&Object.keys(payload.context).length===3&&(command==='press_delegate'||Array.isArray(payload.answers)),'Paramètres de conférence de presse invalides.');
   check(JSON.stringify(context(S))===JSON.stringify({season:payload.context.season,week:payload.context.week,club:payload.context.club}),'Préparation de conférence périmée.');
   const invitation=pendingInvitation(S);
@@ -488,7 +490,12 @@ function factory(){
   }
   check(payload.answers.length===questions.length,'Réponses de conférence incomplètes.');
   questions.forEach((q,i)=>check(keys(payload.answers[i],['questionId','answerId'])&&payload.answers[i].questionId===q.id&&q.answers.some(a=>a.id===payload.answers[i].answerId),'Question ou réponse de conférence périmée.'));
-  return publish(invitation,questions,payload.answers,null);
+  // Objectif public facultatif : vérifié avant la publication, annoncé juste après (même commande, même sauvegarde).
+  const promise=payload.promise;
+  if(promise!==undefined){check(!!promises(),'Promesses publiques indisponibles.');promises().assertChoice(S,promise,invitation);}
+  const published=publish(invitation,questions,payload.answers,null);
+  if(promise!==undefined){published.pressPromise=promises().announce(S,promise,invitation);promises().validate(S);}
+  return published;
  }
  // Réglage « envoyer l'adjoint » : appelé par le moteur après une avance du calendrier, avant la sauvegarde. Une
  // conférence ordinaire qui vient de s'ouvrir est tenue par Gabi ; un grand moment reste au manager.

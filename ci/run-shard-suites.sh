@@ -138,6 +138,10 @@ budget() {
     tests/native-academy-appearance-bank.cjs) echo 420s ;;
     # Carrière Monde : création, un match, trois rechargements du profil (~340 s en local).
     tests/sauvegarde-idempotente.cjs) echo 900s ;;
+    # Promesses publiques (15/11) : six carrières Monde au worker, 170 s en local sous charge ; saison Monde complète
+    # semaine par semaine puis passage à la saison suivante, 330 s en local. Budgets ≈ 2,5 fois.
+    tests/presse-promesses-monde.cjs) echo 420s ;;
+    tests/presse-promesses-saison.cjs) echo 900s ;;
     *) echo 180s ;;
   esac
 }
