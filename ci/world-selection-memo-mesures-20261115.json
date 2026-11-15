@@ -1,0 +1,117 @@
+{
+  "runtime": "Node22.23.5, Linux local partagé",
+  "sourceBase": "e0dc63808391a8ee524cc7eb2c6fba860f7a11b0",
+  "scope": "Worldv5/116/tousdétaillés, cache de sélection et empreinte exacte entre appels, mutations de bonus, erreur tardive, vraie semaine de match/S/store/RNG",
+  "receipt": {
+    "passed": true,
+    "scope": "world-champ, tous détaillés",
+    "selections": 250,
+    "reference": {
+      "fingerprintDevReads": 2200,
+      "reads": 6489,
+      "selectionMs": 1121.3,
+      "totalMs": 19338.6
+    },
+    "memo": {
+      "fingerprintDevReads": 100,
+      "reads": 912,
+      "selectionMs": 676,
+      "totalMs": 18501.8
+    },
+    "wallSeconds": 79.4,
+    "maxRssKb": 2065704
+  },
+  "limits": [
+    "Node22 local reçu ; CI finale et performances de saison/FPS encore à recevoir",
+    "le gain de sélection ne constitue pas une mesure de gain sur une saison ou sur les FPS",
+    "250 sélections après50 échauffements, objets ordinaires ; Proxy utilisé seulement pour compter les lectures puis retiré avant chronométrage",
+    "Le reçu initial portait sur une semaine de préparation sans match ; il est conservé comme previousReceipt et ne prouve pas la parité après match. Le reçu courant la vérifie explicitement.",
+    "Une réception intermédiaire erreur tardive sans match a observé maxRSS2111236Kio ; la réservation mémoire garde ce maximum avec marge25%.",
+    "Nouveau reçu avec heapmax3072Mo, quatre créneaux CPU transitoires bornés, pas un gain garanti sur la durée totale ; APIpositions27contrôles verte Node22.",
+    "Sur le port root sous charge,250sélections581,9→744,4ms : la variabilité contredit un gain de temps garanti. Réduction de lectures prouvée, gains semaine/saison/FPS non établis. Reçu process88,86s/2111968Kio."
+  ],
+  "sha256": {
+    "native/engine/position-aptitudes.cjs": "d9e4db1e4fe3a3888915891a950d52ae1acf80ddeeef9097d4add9454f61d450",
+    "native/engine/worker.cjs": "374ec4a7025e0992e64721ce6d189ec4b3e6678218994fb15b5ac88d606a5190",
+    "tests/world-selection-memo.cjs": "a017f4fc28e2961ff35ad6c3bbd097a642eab01e52457bcbe78edcc63eee3174",
+    "tests/helpers/position-fingerprint-probe.cjs": "85030310ab2e6da45a1d0af24101f6808a05d34d5f1f3bf289eb800277d8ac76"
+  },
+  "previousReceipt": {
+    "passed": true,
+    "scope": "world-champ, tous détaillés",
+    "selections": 250,
+    "reference": {
+      "reads": 6489,
+      "selectionMs": 691.5,
+      "totalMs": 7035.8
+    },
+    "memo": {
+      "reads": 912,
+      "selectionMs": 483.3,
+      "totalMs": 7097.3
+    },
+    "wallSeconds": 52.8,
+    "maxRssKb": 1977772
+  },
+  "logSha256": "a44d7f7ad797ee7e7317b03f71737a9f55d28d84ad78e27227c322bbb8b51329",
+  "previousMatchReceipt": {
+    "passed": true,
+    "scope": "world-champ, tous détaillés",
+    "selections": 250,
+    "reference": {
+      "reads": 6489,
+      "selectionMs": 1063.4,
+      "totalMs": 20926.9
+    },
+    "memo": {
+      "reads": 912,
+      "selectionMs": 423.6,
+      "totalMs": 14065.9
+    },
+    "wallSeconds": 77.2,
+    "maxRssKb": 1935284
+  },
+  "processReceiptPrevious": {
+    "code": 0,
+    "elapsedSeconds": 78.08007475800001,
+    "maxRSSKiB": 1935284,
+    "node": "v24.22.1"
+  },
+  "receiptTiming": "79,4s internes après import des dépendances ; ancien processReceipt conservé, aucune duréeOS inventée pour le nouveau reçu",
+  "redGreen": {
+    "red": "compteurs2200/2200, assertion moinsdelecturesrouge",
+    "green": "2200/100, projectionsmutéesetmalformé conservés, mêmeS/RNG"
+  },
+  "portRootReceipt": {
+    "base": "230f2639",
+    "receipt": {
+      "passed": true,
+      "scope": "world-champ, tous détaillés",
+      "selections": 250,
+      "reference": {
+        "fingerprintDevReads": 2200,
+        "reads": 6489,
+        "selectionMs": 581.9,
+        "totalMs": 13802.2
+      },
+      "memo": {
+        "fingerprintDevReads": 100,
+        "reads": 912,
+        "selectionMs": 744.4,
+        "totalMs": 24357
+      },
+      "wallSeconds": 87.6,
+      "maxRssKb": 2111968
+    },
+    "processReceipt": {
+      "measurement": true,
+      "code": 0,
+      "elapsedSeconds": 88.859660401,
+      "maxRSSKiB": 2111968,
+      "node": "v22.23.5",
+      "boundary": "after exit listeners and harness cleanup",
+      "preloadVersion": 2
+    },
+    "codeSource": "combo complet selectionScope + empreinte + option interne, port exact de ba64f613"
+  }
+}

@@ -6,16 +6,34 @@ module.exports=function positionAptitudes(){
  const cover=[2,1,3,4,6,9,10,11],adjacent=[[],[],[3],[2],[5,6],[4,8,7],[7,8],[6,8,5],[6,5,7]];
  const critical=[['scrum','power'],['lineout','scrum'],['lineout','tackle'],['tackle','stamina'],['pass','mental'],['pass','kick'],['speed'],['pass','tackle'],['kick','speed']];
  const cache=new Map(),playerCache=new WeakMap(),keys=Object.keys(ATTR);
+ // Une sélection est synchrone et ne modifie aucune qualité. Les contrôles
+ // complets restent actifs entre deux sélections (entraînement, qualification,
+ // remplacement d'objet). Le finally interdit toute réutilisation après erreur.
+ let selectionFrame=null;
+ function selectionScope(fn){return function(...args){
+  const previous=selectionFrame;
+  if(!previous&&(typeof nativePositionSelectionMemo==='undefined'||nativePositionSelectionMemo!==false))selectionFrame=new WeakMap();
+  try{return fn.apply(this,args);}finally{selectionFrame=previous;}
+ };}
  const compareId=(a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0;
  function positionNumber(slot){return slot<15?slot+1:cover[slot-15]??null;}
  function derive(p){
   if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
+  const selected=selectionFrame?.get(p);if(selected)return selected;
   const qualifierKey=[p.nationaleQualifications?.join('|'),p.worldProfile?.position?.qualifications?.join('|'),p.worldRatingsVersion].join(';');
   const cached=playerCache.get(p);
   if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
    // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
-   let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
-   if(same)return cached.result;
+   let same=true;
+   if(typeof nativePositionSelectionMemo!=='undefined'&&nativePositionSelectionMemo===false){
+    for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==p.skills?.[k]||cached.bonuses[i]!==focusedBonus(p,k)){same=false;break;}}
+   }else{
+    // Même calcul que focusedBonus, comme roleNote : relire les onze valeurs,
+    // en consultant une seule fois leurs objets porteurs pendant cet appel.
+    const skills=p.skills,specialization=p.dev?.specialization,active=specialization?.version===1,bonuses=active?specialization.bonuses:null;
+    for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==skills?.[k]||cached.bonuses[i]!== (active?(bonuses[k]||0):0)){same=false;break;}}
+   }
+   if(same){selectionFrame?.set(p,cached.result);return cached.result;}
   }
   // Legacy missing skills are deterministically generated on a detached object.
   const q=p.skills?p:{...p};ensureSkills(q);
@@ -52,6 +70,7 @@ module.exports=function positionAptitudes(){
    if(cache.size>=32768)cache.delete(cache.keys().next().value);cache.set(key,result);
   }
   playerCache.set(p,{id:p.id,name:p.name,rating:p.rating,skillBase:p.skillBase,pos:p.pos,fam:p.fam,qualifierKey,skills:keys.map(k=>p.skills?.[k]),bonuses:keys.map(k=>focusedBonus(p,k)),result});
+  selectionFrame?.set(p,result);
   return result;
  }
  function project(p){
@@ -225,11 +244,11 @@ module.exports=function positionAptitudes(){
     return !preferred.some(Boolean)&&!bench.some(Boolean)?jiffFit(team,sheet):sheet;
    }finally{reservations=null;}
   }
-  buildSheet=(team,preferred=[],bench=[])=>reservedBuild(oldBuild,team,preferred,bench);
-  managerSheet=(team,...args)=>{
+  buildSheet=selectionScope((team,preferred=[],bench=[])=>reservedBuild(oldBuild,team,preferred,bench));
+  managerSheet=selectionScope((team,...args)=>{
    if(reservations)return oldManager(team,...args);
    reservations=reserveFront(team,[],[]);try{return jiffFit(team,improveBench(team,oldManager(team,...args)));}finally{reservations=null;}
-  };
+  });
   unit=(live,side,key,filter)=>{
    const on=live.sheets[side].on,players=activePlayers(live,side);
    const list=players.map(p=>({p,slot:on.indexOf(p.id)})).filter(({p,slot})=>!filter||filter({...p,fam:FAMILIES[slot]}));

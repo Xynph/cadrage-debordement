@@ -280,7 +280,8 @@
       "tests/ci-p90-stress-guard.cjs": 2,
       "tests/ci-test-coverage.cjs": 3,
       "tests/ci-shard-profiles.cjs": 2,
-      "tests/ci-long-career-balance.cjs": 2
+      "tests/ci-long-career-balance.cjs": 2,
+      "tests/world-selection-memo.cjs": 103
     }
   },
   "godot": {
@@ -496,7 +497,8 @@
       "tests/ci-modes-monde.cjs": 1024,
       "tests/ci-shard-profiles.cjs": 1024,
       "tests/ci-sharding.cjs": 1024,
-      "tests/ci-long-career-balance.cjs": 1024
+      "tests/ci-long-career-balance.cjs": 1024,
+      "tests/world-selection-memo.cjs": 2624
     }
   }
 }
