@@ -26,7 +26,8 @@ const sans = events => events.map(e => {
   return { ...e, scene };
 });
 
-const matchs = [0, 3, 7].map(club => ({ club, avec: match(club, false), temoin: match(club, true) }));
+// Règles du journal vérifiées sur cinq matchs de clubs différents (les volumes ci-dessous sont des gardes d'exercice, pas des taux).
+const matchs = [0, 3, 7, 1, 5].map(club => ({ club, avec: match(club, false), temoin: match(club, true) }));
 
 test('Même graine, même match : journal, score et tirage suivant inchangés hors nouveaux champs', () => {
   for (const { club, avec, temoin } of matchs) {

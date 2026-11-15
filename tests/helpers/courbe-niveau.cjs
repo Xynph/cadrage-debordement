@@ -71,7 +71,12 @@ function ajuster(series) {
     a += 0.02 * ga / pts.length; b += 0.5 * gb / pts.length;
   }
   const P = x => 1 / (1 + Math.exp(-x));
-  return { pente: a, terrain: b, domicileNiveauEgal: P(b), neutre: k => P(a * k), domicile: k => P(a * k + b) };
+  // Erreur type de l'ajustement (information de Fisher, matrice 2 × 2 inversée) : la variance d'échantillon des bornes des tests
+  // de courbe (tests/match-rating-curve.cjs), à la place d'un intervalle lu sur une série.
+  let ikk = 0, ikd = 0, idd = 0;
+  for (const [k, d] of pts) { const p = P(a * k + b * d), w = p * (1 - p); ikk += w * k * k; ikd += w * k * d; idd += w * d * d; }
+  const det = ikk * idd - ikd * ikd || 1e-12, se = { pente: Math.sqrt(idd / det), terrain: Math.sqrt(ikk / det) };
+  return { pente: a, terrain: b, se, domicileNiveauEgal: P(b), neutre: k => P(a * k), domicile: k => P(a * k + b) };
 }
 
 const pct = x => (100 * x).toFixed(1) + ' %';
