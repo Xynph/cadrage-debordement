@@ -55,7 +55,7 @@ budget() {
   case "$1" in
     # Producteur UI, suites complètes : saves804,13s, résilience656,50s,
     # World-save303,97s et Matchday171,43s ; 21recettes reçues en World.
-    tests/saves.cjs|tests/career-resilience.cjs|tests/match-penalite-main.cjs|tests/lnr-multiclub-continuity.cjs) echo 1800s ;;
+    tests/saves.cjs|tests/career-resilience.cjs|tests/match-penalite-main.cjs|tests/lnr-multiclub-continuity.cjs|tests/match-essai-visible.cjs) echo 1800s ;;
     tests/world-save.cjs|tests/premium-editorial-matchday.cjs|tests/ui05-live-collective.cjs|tests/economy.cjs|tests/lnr-save-import-rollback-stress.cjs) echo 1200s ;;
     tests/matchflow.cjs|tests/match-courses.cjs|tests/lineout-approach.cjs) echo 600s ;;
     # Préparation331,4s reçue ; faits structurés189,7s avant reprise de mémoire.

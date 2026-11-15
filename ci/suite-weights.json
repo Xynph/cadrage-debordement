@@ -57,13 +57,13 @@
       "tests/match-courses.cjs": 292,
       "tests/match-direct.cjs": 370,
       "tests/match-choregraphe.cjs": 580,
-      "tests/match-essai-visible.cjs": 74,
+      "tests/match-essai-visible.cjs": 1140,
       "tests/match-highlights.cjs": 30,
       "tests/match-regles.cjs": 30,
       "tests/presse-dilemmes-monde.cjs": 170,
       "tests/match-importance.cjs": 16,
       "tests/match-pass-live.cjs": 57,
-      "tests/match-structured-facts.cjs": 219,
+      "tests/match-structured-facts.cjs": 317,
       "tests/matchflow.cjs": 222,
       "tests/native-academy-appearance-bank.cjs": 190,
       "tests/native-academy-groups.cjs": 101,
@@ -283,7 +283,7 @@
     }
   },
   "godot": {
-    "source": "mesure GitHub : run 43262510105 (main fd939df6, 12 novembre 2026), durées des suites +15 % ; suites en échec ou interrompues estimées",
+    "source": "mesure GitHub : run 43262510105 (main fd939df6, 12 novembre 2026), durées des suites +15 % ; suites en échec ou interrompues estimées ; réceptions Monde locales Node22.23.5/SDK4.7.2 du15/11 : durée complète réelle +15%, voir monde-migration-mesures-20261115.json, aucun runGitHub inventé",
     "runs": [],
     "weights": {
       "tests/godot-finitions.cjs": 300,
@@ -297,15 +297,15 @@
       "tests/godot-match-framing.cjs": 3,
       "tests/godot-regen-bank-v2.cjs": 7,
       "tests/godot-regen-portraits.cjs": 2,
-      "tests/godot-soundscape06.cjs": 2,
-      "tests/match-pass-live.cjs": 2,
+      "tests/godot-soundscape06.cjs": 41,
+      "tests/match-pass-live.cjs": 57,
       "tests/godot-analysis-club-graphics.cjs": 2,
       "tests/godot-entity-projections.cjs": 2,
       "tests/godot-gabi-composition.cjs": 2,
       "tests/godot-match-animations.cjs": 2,
       "tests/godot-match-choregraphie.cjs": 19,
       "tests/godot-match-entracte-2d-capture.cjs": 2,
-      "tests/godot-match-gestes.cjs": 4,
+      "tests/godot-match-gestes.cjs": 45,
       "tests/godot-match-presentation.cjs": 2,
       "tests/godot-match-silhouettes.cjs": 2,
       "tests/godot-reader-history.cjs": 141,
@@ -486,7 +486,8 @@
       "tests/animation-replay.cjs": 2496,
       "tests/godot-soundscape06.cjs": 1920,
       "tests/lineout-approach.cjs": 4544,
-      "tests/preparation.cjs": 4992
+      "tests/preparation.cjs": 4992,
+      "tests/match-essai-visible.cjs": 4928
     }
   }
 }

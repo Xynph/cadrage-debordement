@@ -367,17 +367,6 @@
       "logSha256": "41dc5e1fac365bb0788ee91d866a308e22199beda00fee41fa4631b12b3bc98c"
     },
     {
-      "file": "tests/match-structured-facts.cjs",
-      "status": 0,
-      "signal": null,
-      "seconds": 189.7,
-      "peakRssKb": 4312420,
-      "runtime": "Node24.22.1 local Linux sous charge",
-      "harness": "aad8d9dd",
-      "currentSourceSha256": "079b496b275a351f77d1e4ac63c55d70100a8f24dfef3129ee75d46255770905",
-      "logSha256": "9fc54901c8dd29708c4f0fcf6a30e07b7d4ff756518463d2846a011b1e7998db"
-    },
-    {
       "file": "tests/match-courses.cjs",
       "status": 0,
       "signal": null,
@@ -419,8 +408,7 @@
       "runtime": "Node24.22.1 local Linux sous charge",
       "harness": "aad8d9dd",
       "currentSourceSha256": "feb7fd71bfd2b19061ce0546e475e6d7cbc374d343e1beefa728b9ccbd9dd86c",
-      "logSha256": "63e064c1bc36f3460c77e3b811394282cbde72f303d6babf0e3094b5fa8b33e7",
-      "measurementNote": "Reçu complet avant le contrôle du compteur injecté ajouté après revue ; ce contrôle final est reçu séparément sur Effets, Node22.23.5/165.58s. Capture CPU15s incluse dans le reçu complet."
+      "logSha256": "63e064c1bc36f3460c77e3b811394282cbde72f303d6babf0e3094b5fa8b33e7"
     },
     {
       "file": "tests/godot-match-gestes.cjs",
@@ -1033,7 +1021,7 @@
       "seconds": 144.261852578,
       "peakRssKb": 3690000,
       "runtime": "v24.22.1",
-      "harness": "producteurUI/f21db96d, 116clubsWorld, sans744",
+      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
       "currentSourceSha256": "92f96688fc3d1cba92557e6acc823f4928346e52098f95f488ba4bbbab9d4600",
       "logSha256": "551f0ef05c289482418d14881e0398b14f1f0bf261318e331d3af168081d1e3d"
     },
@@ -1043,9 +1031,29 @@
       "seconds": 331.40587739,
       "peakRssKb": 4042440,
       "runtime": "v24.22.1",
-      "harness": "producteurUI/f21db96d, 116clubsWorld, sans744",
+      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
       "currentSourceSha256": "ad2cbb940c4487e4b37a68046447c14be50e57c194d26c2f1dddb23f96917c7d",
       "logSha256": "f0b818ddc07a061c5f47545bb52f1cc8fe3a4f49b98a1e7c2567cb51abb5e1ab"
+    },
+    {
+      "file": "tests/match-structured-facts.cjs",
+      "status": 0,
+      "seconds": 275.186371559,
+      "peakRssKb": 3765040,
+      "runtime": "v24.22.1",
+      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
+      "currentSourceSha256": "4456a942c1ae8f7adc02aaa802e58fdfe96b13c1a6463d96e7aceb3b2eb9bd43",
+      "logSha256": "638e48551752ac1ba96aa7a14f6ef6d915c5513c5314b0e1eeb1c1acb547a748"
+    },
+    {
+      "file": "tests/match-essai-visible.cjs",
+      "status": 0,
+      "seconds": 990.759714264,
+      "peakRssKb": 4020000,
+      "runtime": "v24.22.1",
+      "harness": "producteurUI/06e917d3f537915dc05af2fa928e8491c7316907, 116clubsWorld, sans744",
+      "currentSourceSha256": "9b99b75f5310c5fac4cdda506375b1f95c2a06e56a15e4a186a48ae01c5763b9",
+      "logSha256": "60d77f2cd66e3c7992c6129c8041eaacb80fa3387a2d29bcf6ebdc480baa7757"
     },
     {
       "file": "tests/ci-p90-stress-guard.cjs",
