@@ -55,6 +55,9 @@ budget() {
   case "$1" in
     tests/world-worker-season.cjs) echo 1200s ;;
     tests/native-manager-career-worker.cjs) echo 900s ;;
+    # Mobilité du manager (ex-tests/manuel) : saison lue dans la sauvegarde générée avant les suites (étape « Générer la sauvegarde de fin de saison »,
+    # hors budget ci-contre) : 90 s et 172 s en local sous charge, pics 2,4 et 2,2 Go.
+    tests/native-manager-career-reverse-offre.cjs|tests/native-manager-career-reverse-saison.cjs) echo 300s ;;
     # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
