@@ -4,14 +4,20 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');
-const {context}=require('../harness.cjs');
+const {engineContext}=require('../harness.cjs');
+const contexts=new Set();
+function context(...args){const g=engineContext(...args);contexts.add(g);return g;}
+function releaseExcept(...keepers){const keep=new Set(keepers);for(const g of contexts)if(!keep.has(g)){g.close();contexts.delete(g);}}
 const ROOT=path.resolve(__dirname,'../..');
 const BASE_SHA='3655df2302d2f2ccbe37674ef473bb96cb91c6f5';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const hash=x=>crypto.createHash('sha256').update(x).digest('hex');
 const data=(g,expression='S')=>JSON.parse(g.run('JSON.stringify('+expression+')'));
 function sources(){
- const files=fs.readdirSync(path.join(ROOT,'dist')).filter(x=>x.endsWith('.js')).map(x=>'dist/'+x).concat('tests/harness.cjs','tests/career-resilience/native.cjs','ci/career-resilience-run.cjs').sort();
+ const nativeFiles=[];
+ function collectNative(relative){for(const entry of fs.readdirSync(path.join(ROOT,relative),{withFileTypes:true})){const file=relative+'/'+entry.name;if(entry.isDirectory())collectNative(file);else if(entry.isFile()&&/\.(cjs|json)$/.test(entry.name))nativeFiles.push(file);}}
+ collectNative('native/engine');
+ const files=fs.readdirSync(path.join(ROOT,'dist')).filter(x=>x.endsWith('.js')).map(x=>'dist/'+x).concat(nativeFiles,'tests/harness.cjs','tests/monde-harness.cjs','tests/career-resilience/native.cjs','ci/career-resilience-run.cjs').sort();
  const hashes=Object.fromEntries(files.map(f=>[f,hash(fs.readFileSync(path.join(ROOT,f)))]));
  return {digest:hash(JSON.stringify(hashes)),hashes};
 }
@@ -27,16 +33,24 @@ function fresh(clubId=0,seed=827381){
  g.run('start('+clubId+')');assert.equal(g.run('managerMobilityEnable()'),true);
  return g;
 }
-function restore(document,random,storage){
+function restore(document,random,storage,expectedText){
  // Use the actual parser AND confirmed import, not just JSON.parse.
- const g=context(undefined,storage);g.ctx.__incoming=JSON.stringify(document);
+ const g=context(undefined,storage);
+ // Même branchement natif que context(saved), sans projeter le menu.
+ g.prepareCommands();g.ctx.__incoming=JSON.stringify(document);
  g.run('pendingSave=parseSaveDocument(__incoming)');
+ const decodedText=g.run('JSON.stringify(pendingSave.state)');
+ if(expectedText!==undefined)assert.ok(decodedText===expectedText,'Export/parse changed the complete saved snapshot');
  assert.equal(g.run('confirmSaveImport()'),true,'Native import rejected');
- assert.deepEqual(data(g),document.state,'Import changed the saved career');
+ assert.ok(g.run('JSON.stringify(S)')===decodedText,'Import changed the decoded career (export v'+document.exportVersion+')');
+ delete g.ctx.__incoming;
  return setRng(g,random);
 }
 function capture(g){return {document:data(g,'createSaveDocument()'),rng:rng(g)};}
-function fork(g,storage){const s=capture(g);return restore(s.document,s.rng,storage);}
+// Le format v3 contient des références compactes : comparer l'état développé,
+// et le garder identique au véritable instantané source (pause d'export comprise).
+function expectedSnapshotText(g){return g.run('JSON.stringify(S.live&&!S.live.finished?{...S,live:{...S.live,paused:true}}:S)');}
+function fork(g,storage){const expected=expectedSnapshotText(g),s=capture(g);return restore(s.document,s.rng,storage,expected);}
 function check(stats,label,fn){
  try{const value=fn();stats.passed++;stats.byCheck[label]=(stats.byCheck[label]||0)+1;return value;}
  catch(e){stats.failed.push({label,error:e.message});throw e;}
@@ -46,19 +60,19 @@ function verified(g,stats,label){
  return check(stats,label,()=>{
   const doc=data(g,'createSaveDocument()');g.ctx.__verify=JSON.stringify(doc);
   assert.equal(g.run('parseSaveDocument(__verify).checksum'),doc.checksum);
-  assert.equal(doc.state.clubs.length,14);
+  assert.equal(doc.state.clubs.length,116);
   assert.ok(doc.state.clubs.every(c=>Number.isFinite(c.cash)));
   assert.ok(doc.state.worldManagement.clubInfo.every(c=>Number.isFinite(c.debt)&&c.debt>=0&&c.facilities>=1&&c.facilities<=10&&c.reputation>=0&&c.reputation<=100));
   assert.ok(g.run('S.lineup.filter(Boolean).every(id=>club().players.some(p=>p.id===id))'));
-  assert.ok(Buffer.byteLength(JSON.stringify(doc),'utf8')<=5*1024*1024);
+  assert.ok(Buffer.byteLength(JSON.stringify(doc),'utf8')<=g.run('CDWorldCareer.edition(S).limits.saveBytes'));
   return doc;
  });
 }
-function reload(g,stats,label){const doc=verified(g,stats,label);const restored=restore(doc,rng(g));stats.reloads++;return restored;}
+function reload(g,stats,label){const expected=expectedSnapshotText(g),doc=verified(g,stats,label);const restored=restore(doc,rng(g),undefined,expected);stats.reloads++;return restored;}
 function round(g,stats){
  const previous=data(g,'({club:S.club,cash:club().cash,round:S.round,phase:S.phase,season:S.season})');
  g.run('globalThis.__ledgerBefore=new Set(S.ledger)');
- g.run('finishRound()');
+ g.week();
  const created=data(g,'S.ledger.filter(e=>!__ledgerBefore.has(e))');delete g.ctx.__ledgerBefore;
  check(stats,'native-round-ledger-reconciliation',()=>{
   assert.equal(g.run('S.club'),previous.club);
@@ -116,4 +130,4 @@ function unseal(envelope){
  assert.ok(envelope.payload&&envelope.payload.sourceDigest===sources().digest,'Native sources changed between segments');
  return envelope.payload;
 }
-module.exports={ROOT,BASE_SHA,clone,hash,data,sources,setRng,rng,fresh,restore,capture,fork,check,newStats,verified,reload,round,academies,players,moveCompared,controlledTarget,seal,unseal};
+module.exports={releaseExcept,ROOT,BASE_SHA,clone,hash,data,sources,setRng,rng,fresh,restore,capture,fork,check,newStats,verified,reload,round,academies,players,moveCompared,controlledTarget,seal,unseal};
