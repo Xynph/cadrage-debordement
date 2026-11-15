@@ -206,7 +206,7 @@ function factory(){
  function review(s,p,stage,current,row){
   const result=historicalReview(s,p,stage,current,row),history=measuredHistory(row),recent=recentReview(s,current,row,history);
   result.recent=recent;result.shortTermObjective=shortTermObjective(s,current,row,history);
-  result.basis+=' La fenêtre récente et l’objectif daté utilisent leurs propres bornes observées, présentées séparément.';
+  result.basis+=' La période récente et l’objectif daté sont mesurés séparément.';
   if(!row||result.status==='context'||result.recommendation.key==='recover'||stage!=='professional')return result;
   if(!recent.available){
    if(recent.reason==='counter'||recent.reason==='context'){
