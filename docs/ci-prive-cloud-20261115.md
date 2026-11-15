@@ -13,6 +13,32 @@ il n'est jamais une dépendance de Validation CI. Blacksmith est différé : tra
 4. Mesurer l'usage et recevoir les tests sur une machine de caractéristiques privées.
 5. Fusionner via le gate, configurer les accès puis seulement changer la visibilité.
 
+## Budget arrêté par Léo — 15 novembre 2026
+**0 EUR de nouvelle dépense cloud autorisée**, y compris dépassement de calcul,
+stockage d'artefacts, caches payants et services tiers. L'abonnement Pro existant
+n'est pas modifié. Les ressources incluses dans cet abonnement restent utilisables.
+Aucun abonnement, runner payant ou achat de minutes ne doit être activé.
+
+Avant passage en privé : vérifier dans Billing les mécanismes effectifs de blocage
+des dépenses pour tous les postes Actions/stockage ; une alerte seule ne suffit pas.
+Ne pas supposer qu'une valeur de budget égale à zéro dans l'interface bloque les
+dépenses : recevoir le comportement réel du compte. Ces réglages administrateur
+ne sont PAS appliqués par cette PR et restent non vérifiés.
+
+Une fois le calcul inclus épuisé, laisser les jobs cloud bloqués. Sans PC personnel,
+le code et les PR restent accessibles, mais les tests obligatoires et les fusions
+attendent le renouvellement du quota ou un runner gratuit disponible.
+Ne jamais contourner Validation CI ni diminuer la couverture pour fusionner.
+Les contrôles rapides et obligatoires doivent être prioritaires dans le quota ;
+toute optimisation des créneaux devra préserver la couverture et être validée.
+
+Compte tenu de la consommation mesurée, une CI privée disponible en continu sans
+PC personnel ne peut pas être promise avec ce budget. Conserver le dépôt public
+tant que les protections de facturation et les prérequis techniques ne sont pas
+vérifiés ; ceci ne vaut pas annulation du choix de préparer le privé.
+Blacksmith ne pourra être envisagé que dans ses ressources gratuites, sans achat,
+sans engagement payant et après vérification des conditions.
+
 ## État et réglages GitHub restants
 La préparation seule ne bascule pas le dépôt et n'ajoute aucun budget payant.
 Le connecteur disponible n'expose pas l'administration des secrets, de la
@@ -44,8 +70,8 @@ facturation ou de la visibilité ; le jeton gh local est invalide.
   pas la lecture des sources. Vérifier séparément sa portée.
 - CD_PRIVATE_WINDOWS_CLOUD=true (variable du dépôt principal) autorise les recettes
   Windows hébergées en privé. Par défaut elles restent désactivées en privé afin
-  de ne pas introduire des dépenses récurrentes. Son activation nécessite budget
-  décidé et vérification des créneaux toutes les 4 h et des artefacts sur 14 jours.
+  de ne pas introduire des dépenses récurrentes. Son activation exige un blocage des dépenses vérifié
+  et la vérification des créneaux toutes les 4 h et des artefacts sur 14 jours.
 - Auditer les environnements GitHub (dont recette-pc-leo) et leurs restrictions
   disponibles sur Pro privé, les téléchargements anonymes/URLs publiques et les
   outils de livraison avant bascule. Le checkout RTX n'est pas cet audit complet.
