@@ -124,7 +124,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-01-24",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -214,7 +213,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-04-25",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -304,7 +302,6 @@
           "age": 34,
           "birthYear": 1992,
           "ageEstimated": false,
-          "birthDate": "1992-07-17",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -394,7 +391,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-09-24",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -573,7 +569,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-01-14",
           "rating": 68,
           "condition": 94,
           "injury": 0,
@@ -663,7 +658,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-06-21",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -753,7 +747,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-01-01",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -843,7 +836,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-10-01",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -933,7 +925,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-06-22",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -1023,7 +1014,6 @@
           "age": 36,
           "birthYear": 1990,
           "ageEstimated": false,
-          "birthDate": "1990-10-11",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -1113,7 +1103,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-01-24",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -1203,7 +1192,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-04-16",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -1293,7 +1281,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-09-26",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -1383,7 +1370,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-07-07",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -1473,7 +1459,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-03-24",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -1563,7 +1548,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-02-27",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -1653,7 +1637,6 @@
           "age": 33,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-09-07",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -1832,7 +1815,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-03-14",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -1922,7 +1904,6 @@
           "age": 31,
           "birthYear": 1995,
           "ageEstimated": false,
-          "birthDate": "1995-08-20",
           "rating": 57,
           "condition": 94,
           "injury": 0,
@@ -2012,7 +1993,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-09-07",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -2102,7 +2082,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-06-22",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -2192,7 +2171,6 @@
           "age": 33,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-09-13",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -2282,7 +2260,6 @@
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-05-02",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -2372,7 +2349,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-09-07",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -2462,7 +2438,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-06-07",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -2552,7 +2527,6 @@
           "age": 28,
           "birthYear": 1998,
           "ageEstimated": false,
-          "birthDate": "1998-04-01",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -2642,7 +2616,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-03-24",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -2732,7 +2705,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-09-09",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -2822,7 +2794,6 @@
           "age": 33,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-04-23",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -3001,7 +2972,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-01-12",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -3091,7 +3061,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-04-22",
           "rating": 55,
           "condition": 94,
           "injury": 0,
@@ -3270,7 +3239,6 @@
           "age": 32,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-11-10",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -3360,7 +3328,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-03-26",
           "rating": 57,
           "condition": 94,
           "injury": 0,
@@ -3450,7 +3417,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-03-14",
           "rating": 72,
           "condition": 94,
           "injury": 0,
@@ -3629,7 +3595,6 @@
           "age": 33,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-06-09",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -3719,7 +3684,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-09-07",
           "rating": 54,
           "condition": 94,
           "injury": 0,
@@ -3809,7 +3773,6 @@
           "age": 33,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-04-03",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -3899,7 +3862,6 @@
           "age": 20,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-11-28",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -4078,7 +4040,6 @@
           "age": 29,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-11-13",
           "rating": 69,
           "condition": 94,
           "injury": 0,
@@ -4257,7 +4218,6 @@
           "age": 25,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-11-27",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -4347,7 +4307,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-03-07",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -35153,7 +35112,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-03-29",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -35243,7 +35201,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-08-27",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -35333,7 +35290,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-06-21",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -35423,7 +35379,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-09-26",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -35513,7 +35468,6 @@
           "age": 19,
           "birthYear": 2007,
           "ageEstimated": false,
-          "birthDate": "2007-01-17",
           "rating": 72,
           "condition": 94,
           "injury": 0,
@@ -35603,7 +35557,6 @@
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-05-19",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -35693,7 +35646,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-04-03",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -35783,7 +35735,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-07-05",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -35873,7 +35824,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-08-14",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -35963,7 +35913,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-07-05",
           "rating": 69,
           "condition": 94,
           "injury": 0,
@@ -36053,7 +36002,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-10-07",
           "rating": 68,
           "condition": 94,
           "injury": 0,
@@ -36143,7 +36091,6 @@
           "age": 19,
           "birthYear": 2007,
           "ageEstimated": false,
-          "birthDate": "2007-01-19",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -36233,7 +36180,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-08-21",
           "rating": 71,
           "condition": 94,
           "injury": 0,
@@ -36323,7 +36269,6 @@
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-02-17",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -36413,7 +36358,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-04-03",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -36503,7 +36447,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-05-19",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -36593,7 +36536,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-06-09",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -36683,7 +36625,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-05-11",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -36773,7 +36714,6 @@
           "age": 28,
           "birthYear": 1998,
           "ageEstimated": false,
-          "birthDate": "1998-05-19",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -36952,7 +36892,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-04-26",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -37042,7 +36981,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-01-08",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -37132,7 +37070,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-07-01",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -37222,7 +37159,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-09-25",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -37312,7 +37248,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-01-03",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -37402,7 +37337,6 @@
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-02-28",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -37492,7 +37426,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-07-08",
           "rating": 71,
           "condition": 94,
           "injury": 0,
@@ -37582,7 +37515,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-01-08",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -37672,7 +37604,6 @@
           "age": 32,
           "birthYear": 1994,
           "ageEstimated": false,
-          "birthDate": "1994-06-23",
           "rating": 57,
           "condition": 94,
           "injury": 0,
@@ -37762,7 +37693,6 @@
           "age": 26,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-11-16",
           "rating": 71,
           "condition": 94,
           "injury": 0,
@@ -37852,7 +37782,6 @@
           "age": 34,
           "birthYear": 1992,
           "ageEstimated": false,
-          "birthDate": "1992-05-24",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -38031,7 +37960,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-10-10",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -38121,7 +38049,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-03-08",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -38211,7 +38138,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-08-09",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -38301,7 +38227,6 @@
           "age": 28,
           "birthYear": 1998,
           "ageEstimated": false,
-          "birthDate": "1998-01-25",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -38391,7 +38316,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-02-19",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -38481,7 +38405,6 @@
           "age": 31,
           "birthYear": 1995,
           "ageEstimated": false,
-          "birthDate": "1995-05-06",
           "rating": 53,
           "condition": 94,
           "injury": 0,
@@ -38571,7 +38494,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-10-08",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -38661,7 +38583,6 @@
           "age": 32,
           "birthYear": 1994,
           "ageEstimated": false,
-          "birthDate": "1994-08-17",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -38751,7 +38672,6 @@
           "age": 20,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-12-23",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -38841,7 +38761,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-05-19",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -38931,7 +38850,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-06-25",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -39021,7 +38939,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-05-26",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -39132,7 +39049,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-26",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -39222,7 +39138,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-23",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -39312,7 +39227,6 @@
           "age": 28,
           "birthYear": 1998,
           "ageEstimated": false,
-          "birthDate": "1998-07-24",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -39491,7 +39405,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-01",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -39581,7 +39494,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-03-24",
           "rating": 69,
           "condition": 94,
           "injury": 0,
@@ -39671,7 +39583,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-05-15",
           "rating": 72,
           "condition": 94,
           "injury": 0,
@@ -39761,7 +39672,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-02-14",
           "rating": 56,
           "condition": 94,
           "injury": 0,
@@ -39851,7 +39761,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-03-18",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -39941,7 +39850,6 @@
           "age": 31,
           "birthYear": 1995,
           "ageEstimated": false,
-          "birthDate": "1995-06-05",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -40031,7 +39939,6 @@
           "age": 35,
           "birthYear": 1991,
           "ageEstimated": false,
-          "birthDate": "1991-06-15",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -40121,7 +40028,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-09-24",
           "rating": 73,
           "condition": 94,
           "injury": 0,
@@ -40211,7 +40117,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-05-12",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -40301,7 +40206,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-10-29",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -40391,7 +40295,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-01-17",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -40481,7 +40384,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-02-24",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -40660,7 +40562,6 @@
           "age": 39,
           "birthYear": 1987,
           "ageEstimated": false,
-          "birthDate": "1987-06-30",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -40750,7 +40651,6 @@
           "age": 26,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-12-03",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -40840,7 +40740,6 @@
           "age": 31,
           "birthYear": 1995,
           "ageEstimated": false,
-          "birthDate": "1995-03-26",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -40930,7 +40829,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-04-01",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -41020,7 +40918,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-09-10",
           "rating": 56,
           "condition": 94,
           "injury": 0,
@@ -41110,7 +41007,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-10-05",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -41200,7 +41096,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-03-26",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -41290,7 +41185,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-08-25",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -41469,7 +41363,6 @@
           "age": 36,
           "birthYear": 1990,
           "ageEstimated": false,
-          "birthDate": "1990-06-05",
           "rating": 71,
           "condition": 94,
           "injury": 0,
@@ -41559,7 +41452,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-07",
           "rating": 68,
           "condition": 94,
           "injury": 0,
@@ -41649,7 +41541,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-06-28",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -41739,7 +41630,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-02-02",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -41829,7 +41719,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-07-17",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -41919,7 +41808,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-02-01",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -42009,7 +41897,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-05-04",
           "rating": 57,
           "condition": 94,
           "injury": 0,
@@ -42099,7 +41986,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-03-26",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -42189,7 +42075,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-04-20",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -42279,7 +42164,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-02-21",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -42369,7 +42253,6 @@
           "age": 31,
           "birthYear": 1994,
           "ageEstimated": false,
-          "birthDate": "1994-12-31",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -42459,7 +42342,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-08-11",
           "rating": 68,
           "condition": 94,
           "injury": 0,
@@ -42549,7 +42431,6 @@
           "age": 28,
           "birthYear": 1998,
           "ageEstimated": false,
-          "birthDate": "1998-09-08",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -42639,7 +42520,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-02-15",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -42729,7 +42609,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-02-07",
           "rating": 58,
           "condition": 94,
           "injury": 0,
@@ -42819,7 +42698,6 @@
           "age": 25,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-12-07",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -47223,7 +47101,6 @@
           "age": 19,
           "birthYear": 2007,
           "ageEstimated": false,
-          "birthDate": "2007-06-06",
           "rating": 57,
           "condition": 94,
           "injury": 0,
@@ -47313,7 +47190,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-08-01",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -47403,7 +47279,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-02-12",
           "rating": 56,
           "condition": 94,
           "injury": 0,
@@ -47493,7 +47368,6 @@
           "age": 23,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-12-24",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -47583,7 +47457,6 @@
           "age": 19,
           "birthYear": 2007,
           "ageEstimated": false,
-          "birthDate": "2007-05-17",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -47673,7 +47546,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-03-01",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -47763,7 +47635,6 @@
           "age": 28,
           "birthYear": 1998,
           "ageEstimated": false,
-          "birthDate": "1998-02-09",
           "rating": 74,
           "condition": 94,
           "injury": 0,
@@ -47853,7 +47724,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-09-25",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -47943,7 +47813,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-06-06",
           "rating": 73,
           "condition": 94,
           "injury": 0,
@@ -48033,7 +47902,6 @@
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-07-08",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -48123,7 +47991,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-01-14",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -48213,7 +48080,6 @@
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-10-16",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -48303,7 +48169,6 @@
           "age": 36,
           "birthYear": 1990,
           "ageEstimated": false,
-          "birthDate": "1990-03-16",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -48393,7 +48258,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-06-27",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -48483,7 +48347,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-06-12",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -48573,7 +48436,6 @@
           "age": 23,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-05-20",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -48663,7 +48525,6 @@
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "birthDate": "2002-03-08",
           "rating": 67,
           "condition": 94,
           "injury": 0,
@@ -48753,7 +48614,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-02",
           "rating": 63,
           "condition": 94,
           "injury": 0,
@@ -48843,7 +48703,6 @@
           "age": 20,
           "birthYear": 2006,
           "ageEstimated": false,
-          "birthDate": "2006-09-14",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -48933,7 +48792,6 @@
           "age": 30,
           "birthYear": 1996,
           "ageEstimated": false,
-          "birthDate": "1996-03-14",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -49023,7 +48881,6 @@
           "age": 25,
           "birthYear": 2000,
           "ageEstimated": false,
-          "birthDate": "2000-12-22",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -49113,7 +48970,6 @@
           "age": 30,
           "birthYear": 1995,
           "ageEstimated": false,
-          "birthDate": "1995-12-12",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -49203,7 +49059,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-09-12",
           "rating": 69,
           "condition": 94,
           "injury": 0,
@@ -49293,7 +49148,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-10-17",
           "rating": 64,
           "condition": 94,
           "injury": 0,
@@ -49383,7 +49237,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-08-28",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -49473,7 +49326,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-02-08",
           "rating": 73,
           "condition": 94,
           "injury": 0,
@@ -49563,7 +49415,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-05-18",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -49653,7 +49504,6 @@
           "age": 28,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-11-27",
           "rating": 65,
           "condition": 94,
           "injury": 0,
@@ -49743,7 +49593,6 @@
           "age": 27,
           "birthYear": 1999,
           "ageEstimated": false,
-          "birthDate": "1999-08-24",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -49833,7 +49682,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-11",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -49923,7 +49771,6 @@
           "age": 33,
           "birthYear": 1993,
           "ageEstimated": false,
-          "birthDate": "1993-08-22",
           "rating": 70,
           "condition": 94,
           "injury": 0,
@@ -50013,7 +49860,6 @@
           "age": 25,
           "birthYear": 2001,
           "ageEstimated": false,
-          "birthDate": "2001-08-23",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -50103,7 +49949,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-03-31",
           "rating": 62,
           "condition": 94,
           "injury": 0,
@@ -50193,7 +50038,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-10-19",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -50283,7 +50127,6 @@
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
-          "birthDate": "2005-07-15",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -50373,7 +50216,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-02-28",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -50463,7 +50305,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-04-22",
           "rating": 59,
           "condition": 94,
           "injury": 0,
@@ -50553,7 +50394,6 @@
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
-          "birthDate": "2004-08-12",
           "rating": 66,
           "condition": 94,
           "injury": 0,
@@ -50643,7 +50483,6 @@
           "age": 29,
           "birthYear": 1997,
           "ageEstimated": false,
-          "birthDate": "1997-04-12",
           "rating": 61,
           "condition": 94,
           "injury": 0,
@@ -50733,7 +50572,6 @@
           "age": 22,
           "birthYear": 2003,
           "ageEstimated": false,
-          "birthDate": "2003-12-12",
           "rating": 60,
           "condition": 94,
           "injury": 0,
@@ -56330,7 +56168,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-03-29",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -56463,7 +56300,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -56790,7 +56626,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-08-27",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -56857,7 +56692,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-01-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57119,7 +56953,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-06-21",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57251,7 +57084,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-09-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57513,7 +57345,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-04-25",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57709,7 +57540,6 @@
       "age": {
         "value": 19,
         "birthYear": 2007,
-        "birthDate": "2007-01-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57776,7 +57606,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-23",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57908,7 +57737,6 @@
       "age": {
         "value": 26,
         "birthYear": 2000,
-        "birthDate": "2000-05-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -57975,7 +57803,6 @@
       "age": {
         "value": 34,
         "birthYear": 1992,
-        "birthDate": "1992-07-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -58106,7 +57933,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-09-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -58172,7 +57998,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-04-03",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -58762,7 +58587,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-07-05",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -58829,7 +58653,6 @@
       "age": {
         "value": 28,
         "birthYear": 1998,
-        "birthDate": "1998-07-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -58961,7 +58784,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-08-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -59093,7 +58915,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-07-05",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -59160,7 +58981,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-01-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -59422,7 +59242,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-06-21",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -59686,7 +59505,6 @@
       "age": {
         "value": 19,
         "birthYear": 2007,
-        "birthDate": "2007-06-06",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -59753,7 +59571,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-01-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -59819,7 +59636,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-10-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -60344,7 +60160,6 @@
       "age": {
         "value": 19,
         "birthYear": 2007,
-        "birthDate": "2007-01-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -60608,7 +60423,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-10-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -60869,7 +60683,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -61002,7 +60815,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-08-21",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -61134,7 +60946,6 @@
       "age": {
         "value": 26,
         "birthYear": 2000,
-        "birthDate": "2000-02-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -61657,7 +61468,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-06-22",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -61723,7 +61533,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-08-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -62116,7 +61925,6 @@
       "age": {
         "value": 36,
         "birthYear": 1990,
-        "birthDate": "1990-10-11",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -62639,7 +62447,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-04-03",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -62772,7 +62579,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-05-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -62853,7 +62659,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-06-09",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -62934,7 +62739,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-02-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -63015,7 +62819,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-01-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -64112,7 +63915,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-04-16",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -64272,7 +64074,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-09-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -64741,7 +64542,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-05-11",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -65213,7 +65013,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-03-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -65374,7 +65173,6 @@
       "age": {
         "value": 28,
         "birthYear": 1998,
-        "birthDate": "1998-05-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -65455,7 +65253,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-05-15",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -65690,7 +65487,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-07-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -66169,7 +65965,6 @@
       "age": {
         "value": 23,
         "birthYear": 2002,
-        "birthDate": "2002-12-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -66407,7 +66202,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-02-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -68218,7 +68012,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-03-18",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -68453,7 +68246,6 @@
       "age": {
         "value": 19,
         "birthYear": 2007,
-        "birthDate": "2007-05-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -68687,7 +68479,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-03-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -68996,7 +68787,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-02-27",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -69156,7 +68946,6 @@
       "age": {
         "value": 33,
         "birthYear": 1993,
-        "birthDate": "1993-09-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -69712,7 +69501,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-03-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -69874,7 +69662,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-04-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -70193,7 +69980,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-01-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -70747,7 +70533,6 @@
       "age": {
         "value": 31,
         "birthYear": 1995,
-        "birthDate": "1995-08-20",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -70826,7 +70611,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-09-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -71381,7 +71165,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-06-22",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -71692,7 +71475,6 @@
       "age": {
         "value": 31,
         "birthYear": 1995,
-        "birthDate": "1995-06-05",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -71774,7 +71556,6 @@
       "age": {
         "value": 33,
         "birthYear": 1993,
-        "birthDate": "1993-09-13",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -71934,7 +71715,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-03-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -72016,7 +71796,6 @@
       "age": {
         "value": 28,
         "birthYear": 1998,
-        "birthDate": "1998-02-09",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -72494,7 +72273,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-07-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -72654,7 +72432,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-09-25",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -72969,7 +72746,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-09-25",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -73439,7 +73215,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-06-06",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -73600,7 +73375,6 @@
       "age": {
         "value": 26,
         "birthYear": 2000,
-        "birthDate": "2000-07-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -73762,7 +73536,6 @@
       "age": {
         "value": 35,
         "birthYear": 1991,
-        "birthDate": "1991-06-15",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74082,7 +73855,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-01-03",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74398,7 +74170,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-01-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74479,7 +74250,6 @@
       "age": {
         "value": 26,
         "birthYear": 2000,
-        "birthDate": "2000-05-02",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74559,7 +74329,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-09-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74796,7 +74565,6 @@
       "age": {
         "value": 26,
         "birthYear": 2000,
-        "birthDate": "2000-10-16",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74877,7 +74645,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-05-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -74955,7 +74722,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-10-29",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -75035,7 +74801,6 @@
       "age": {
         "value": 26,
         "birthYear": 2000,
-        "birthDate": "2000-02-28",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -75117,7 +74882,6 @@
       "age": {
         "value": 36,
         "birthYear": 1990,
-        "birthDate": "1990-03-16",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -75359,7 +75123,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-01-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -75440,7 +75203,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-07-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -75839,7 +75601,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-01-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -76001,7 +75762,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-09-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -76082,7 +75842,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-06-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -76244,7 +76003,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-06-27",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -76799,7 +76557,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-06-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -77037,7 +76794,6 @@
       "age": {
         "value": 32,
         "birthYear": 1994,
-        "birthDate": "1994-06-23",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -77357,7 +77113,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-02-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -77439,7 +77194,6 @@
       "age": {
         "value": 28,
         "birthYear": 1998,
-        "birthDate": "1998-04-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -77600,7 +77354,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-05-20",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -78154,7 +77907,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-03-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -78308,7 +78060,6 @@
       "age": {
         "value": 26,
         "birthYear": 1999,
-        "birthDate": "1999-11-16",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -78864,7 +78615,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-03-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -79413,7 +79163,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-02",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -79812,7 +79561,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-09-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -79889,7 +79637,6 @@
       "age": {
         "value": 34,
         "birthYear": 1992,
-        "birthDate": "1992-05-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -79970,7 +79717,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-09-09",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -80993,7 +80739,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-10-10",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -81153,7 +80898,6 @@
       "age": {
         "value": 39,
         "birthYear": 1987,
-        "birthDate": "1987-06-30",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -81624,7 +81368,6 @@
       "age": {
         "value": 33,
         "birthYear": 1993,
-        "birthDate": "1993-04-23",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -81942,7 +81685,6 @@
       "age": {
         "value": 26,
         "birthYear": 1999,
-        "birthDate": "1999-12-03",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -82102,7 +81844,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-03-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -82579,7 +82320,6 @@
       "age": {
         "value": 25,
         "birthYear": 2000,
-        "birthDate": "2000-12-22",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -82739,7 +82479,6 @@
       "age": {
         "value": 30,
         "birthYear": 1995,
-        "birthDate": "1995-12-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -82821,7 +82560,6 @@
       "age": {
         "value": 31,
         "birthYear": 1995,
-        "birthDate": "1995-03-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -83689,7 +83427,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-01-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -83847,7 +83584,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-09-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -85183,7 +84919,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-10-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -85343,7 +85078,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-08-28",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -85743,7 +85477,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-04-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -85896,7 +85629,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-04-22",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -86131,7 +85863,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-02-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -86606,7 +86337,6 @@
       "age": {
         "value": 32,
         "birthYear": 1993,
-        "birthDate": "1993-11-10",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -86765,7 +86495,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-03-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -86846,7 +86575,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-03-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -87164,7 +86892,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-05-18",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -87475,7 +87202,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-09-10",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -87952,7 +87678,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-10-05",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -88425,7 +88150,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-03-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -88585,7 +88309,6 @@
       "age": {
         "value": 28,
         "birthYear": 1997,
-        "birthDate": "1997-11-27",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -89218,7 +88941,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-03-14",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -89378,7 +89100,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-08-25",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -89696,7 +89417,6 @@
       "age": {
         "value": 33,
         "birthYear": 1993,
-        "birthDate": "1993-06-09",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -89777,7 +89497,6 @@
       "age": {
         "value": 36,
         "birthYear": 1990,
-        "birthDate": "1990-06-05",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -90096,7 +89815,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-08-09",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -90177,7 +89895,6 @@
       "age": {
         "value": 28,
         "birthYear": 1998,
-        "birthDate": "1998-01-25",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -90968,7 +90685,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-09-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -91049,7 +90765,6 @@
       "age": {
         "value": 33,
         "birthYear": 1993,
-        "birthDate": "1993-04-03",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -91129,7 +90844,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -91290,7 +91004,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-06-28",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -91445,7 +91158,6 @@
       "age": {
         "value": 20,
         "birthYear": 2005,
-        "birthDate": "2005-11-28",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -91522,7 +91234,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-02-02",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -92877,7 +92588,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-08-24",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -93905,7 +93615,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-07-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -93985,7 +93694,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-11",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -94062,7 +93770,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-02-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -94298,7 +94005,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-02-01",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -94376,7 +94082,6 @@
       "age": {
         "value": 33,
         "birthYear": 1993,
-        "birthDate": "1993-08-22",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -94617,7 +94322,6 @@
       "age": {
         "value": 31,
         "birthYear": 1995,
-        "birthDate": "1995-05-06",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -94777,7 +94481,6 @@
       "age": {
         "value": 25,
         "birthYear": 2001,
-        "birthDate": "2001-08-23",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -95653,7 +95356,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-05-04",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -95733,7 +95435,6 @@
       "age": {
         "value": 23,
         "birthYear": 2003,
-        "birthDate": "2003-10-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -95973,7 +95674,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-03-31",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -96684,7 +96384,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-03-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -97243,7 +96942,6 @@
       "age": {
         "value": 29,
         "birthYear": 1996,
-        "birthDate": "1996-11-13",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -97641,7 +97339,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-04-20",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -97879,7 +97576,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-10-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -97956,7 +97652,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-02-21",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -98116,7 +97811,6 @@
       "age": {
         "value": 31,
         "birthYear": 1994,
-        "birthDate": "1994-12-31",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -98270,7 +97964,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-07-15",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -98422,7 +98115,6 @@
       "age": {
         "value": 21,
         "birthYear": 2005,
-        "birthDate": "2005-08-11",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -98574,7 +98266,6 @@
       "age": {
         "value": 32,
         "birthYear": 1994,
-        "birthDate": "1994-08-17",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -98736,7 +98427,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-02-28",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -99054,7 +98744,6 @@
       "age": {
         "value": 28,
         "birthYear": 1998,
-        "birthDate": "1998-09-08",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -99132,7 +98821,6 @@
       "age": {
         "value": 25,
         "birthYear": 2000,
-        "birthDate": "2000-11-27",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -99370,7 +99058,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-04-22",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -99765,7 +99452,6 @@
       "age": {
         "value": 30,
         "birthYear": 1996,
-        "birthDate": "1996-02-15",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -99847,7 +99533,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-08-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -100316,7 +100001,6 @@
       "age": {
         "value": 20,
         "birthYear": 2006,
-        "birthDate": "2006-03-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -100392,7 +100076,6 @@
       "age": {
         "value": 20,
         "birthYear": 2005,
-        "birthDate": "2005-12-23",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -100469,7 +100152,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-05-19",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -100548,7 +100230,6 @@
       "age": {
         "value": 29,
         "birthYear": 1997,
-        "birthDate": "1997-04-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -100702,7 +100383,6 @@
       "age": {
         "value": 22,
         "birthYear": 2004,
-        "birthDate": "2004-02-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -101493,7 +101173,6 @@
       "age": {
         "value": 25,
         "birthYear": 2000,
-        "birthDate": "2000-12-07",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -101655,7 +101334,6 @@
       "age": {
         "value": 24,
         "birthYear": 2002,
-        "birthDate": "2002-06-25",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -102210,7 +101888,6 @@
       "age": {
         "value": 27,
         "birthYear": 1999,
-        "birthDate": "1999-05-26",
         "basis": "official",
         "rule": "published-date-of-birth"
       },
@@ -103160,7 +102837,6 @@
       "age": {
         "value": 22,
         "birthYear": 2003,
-        "birthDate": "2003-12-12",
         "basis": "official",
         "rule": "published-date-of-birth"
       },

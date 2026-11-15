@@ -23,7 +23,7 @@ function build(){
  }
  if(clubs.length!==30||clubs.reduce((n,c)=>n+c.players.length,0)!==1592||new Set(clubs.flatMap(c=>c.players.map(p=>p.id))).size!==1592)throw Error('Catalogue commun attendu : 30 clubs et 1592 identifiants uniques.');
  if(names.size!==1592)throw Error('Un nom de base par identifiant attendu.');
- for(const c of clubs)for(const p of c.players)p.name=baseName(p.id,p.name);
+ for(const c of clubs)for(const p of c.players){p.name=baseName(p.id,p.name);delete p.birthDate;}
  const marker={id:'rugby-common-2026-10-31-v1',version:1};
  return {version:1,id:marker.id,marker,sourceEncoding:'utf8-lf',snapshot:'2026-10-31',ratingsVersion:1,playerCount:clubs.reduce((n,c)=>n+c.players.length,0),clubCount:clubs.length,sources,clubs};
 }
