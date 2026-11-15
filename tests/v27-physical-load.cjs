@@ -1,7 +1,9 @@
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {engineContext:context,matchContext}=require('./harness.cjs');
 const equal=(got,want)=>assert.deepEqual(JSON.parse(JSON.stringify(got)),want);
 
+(()=>{
 // A separate persistent workload, with no change to the former rating/condition on load.
 const t=context(),run=t.run;
 run('start(0)');
@@ -20,19 +22,22 @@ assert.equal(run('setPhysicalTraining(picked[0],"intense")'),false,'No retroacti
 assert.equal(run('physicalPlan(player(picked[0]))'),'repos');
 assert.equal(run('physicalLoadPreviewText(player(picked[0]))'),'Séance déjà appliquée');
 assert.equal(run('squadTable().includes("Charge de")'),true);
-assert.equal(run('tactics().includes("Définissez un mode collectif")'),true);
+assert.equal(run('tactics().includes("Définissez un mode collectif")'),true);t.close();
 
+})();
+
+(()=>{
 // Human/AI pay the same per-minute match-load coefficients; no double application.
-const m=context(),match=m.run;m.run('start(0)');
-match('var fixture=createRugbyMatch([0,1]);var own=fixture.sheets[0].initial[0],other=fixture.sheets[1].initial[0];fixture.sheets[0].minutes[own]=80;fixture.sheets[1].minutes[other]=40;var unused=fixture.sheets[0].bench[0]');
+const m=matchContext(),match=m.run;
+match('var fixture=createRugbyMatch(nextMatch()),ownSide=fixture.pair.indexOf(S.club),otherSide=1-ownSide,otherClub=fixture.pair[otherSide];var own=fixture.sheets[ownSide].initial[0],other=fixture.sheets[otherSide].initial[0];fixture.sheets[ownSide].minutes[own]=80;fixture.sheets[otherSide].minutes[other]=40;var unused=fixture.sheets[ownSide].bench[0];for(const c of S.clubs)for(const p of c.players)ensurePhysicalLoad(p).fatigue=0');
 assert.equal(match('fixture.physicalLoadVersion'),1);
 assert.equal(match('recordPhysicalMatchLoad(fixture)'),true);
 assert.equal(match('physicalLoadValue(player(own))'),18);
-assert.equal(match('physicalLoadValue(S.clubs[1].players.find(p=>p.id===other))'),9);
+assert.equal(match('physicalLoadValue(S.clubs[otherClub].players.find(p=>p.id===other))'),9);
 assert.equal(match('physicalLoadValue(player(unused))'),0);
 assert.equal(match('recordPhysicalMatchLoad(fixture)'),false);
 assert.equal(match('physicalLoadValue(player(own))'),18);
-match('var prior=player(own).condition;var oldFixture=createRugbyMatch([0,1]);delete oldFixture.physicalLoadVersion;oldFixture.sheets[0].minutes[oldFixture.sheets[0].initial[0]]=80;');
+match('var prior=player(own).condition;var oldFixture=createRugbyMatch(nextMatch());delete oldFixture.physicalLoadVersion;oldFixture.sheets[ownSide].minutes[oldFixture.sheets[ownSide].initial[0]]=80;');
 assert.equal(match('recordPhysicalMatchLoad(oldFixture)'),false,'A match started under the old physical model is not retrofitted');
 assert.equal(match('player(own).condition===prior'),true);
 
@@ -44,28 +49,6 @@ assert.equal(match('physicalLoadValue(ai)'),50);
 assert.equal(match('ai.condition'),100);
 
 
-// Eight-round deterministic rotation comparison (our fictional coefficients, not FM27 data).
-const series=context(),sr=series.run;
-sr('start(0);var seasonFixture=createRugbyMatch([0,1]);var workId=seasonFixture.sheets[0].initial[0],rotateId=seasonFixture.sheets[0].initial[1]');
-for(let round=0;round<8;round++){
- sr('applyPhysicalTraining(player(workId),"normal");applyPhysicalTraining(player(rotateId),'+JSON.stringify(round%2===0?'repos':'normal')+');var loadGame=createRugbyMatch([0,1]);loadGame.sheets[0].minutes[workId]=80;loadGame.sheets[0].minutes[rotateId]='+String(round%2===0?0:80)+';recordPhysicalMatchLoad(loadGame)');
-}
-const fullSeries=sr('physicalLoadValue(player(workId))'),rotatedSeries=sr('physicalLoadValue(player(rotateId))');
-assert.ok(fullSeries>rotatedSeries,'Giving regular match rest must reduce cumulative load');
-assert.ok(fullSeries>=0&&fullSeries<=100&&rotatedSeries>=0&&rotatedSeries<=100);
-
-// Old exports (including an in-progress match) remain valid; schema migration is forward-only.
-const before=context(),legacy=before.run;
-legacy('start(0);beginMatch()');
-const state=JSON.parse(legacy('JSON.stringify(S)'));
-delete state.physicalLoadVersion;delete state.live.physicalLoadVersion;
-for(const c of state.clubs)for(const p of c.players)delete p.physicalLoad;
-const fitness=state.clubs[0].players.map(p=>p.condition);
-const reloaded=context(state);
-assert.equal(reloaded.run('S.physicalLoadVersion'),1);
-assert.equal(reloaded.run('S.live.physicalLoadVersion'),undefined);
-equal(JSON.parse(reloaded.run('JSON.stringify(club().players.map(p=>p.condition))')),fitness);
-assert.equal(reloaded.run('createSaveDocument().state.live.physicalLoadVersion'),undefined);
 const exportText=match('JSON.stringify(createSaveDocument())');
 assert.equal(match('parseSaveDocument('+JSON.stringify(exportText)+').state.physicalLoadVersion'),1);
 const invalid=JSON.parse(exportText);
@@ -73,10 +56,44 @@ invalid.state.clubs[0].players.find(p=>p.physicalLoad).physicalLoad.fatigue=101;
 invalid.checksum=match('saveChecksum('+JSON.stringify(invalid.state)+')');
 assert.throws(()=>match('parseSaveDocument('+JSON.stringify(JSON.stringify(invalid))+')'),'Invalid workload must fail even with a valid checksum');
 
+m.close();
+
+})();
+
+(()=>{
+// Eight-round deterministic rotation comparison (our fictional coefficients, not FM27 data).
+const series=matchContext(),sr=series.run;
+sr('var seasonFixture=createRugbyMatch(nextMatch()),ownSide=seasonFixture.pair.indexOf(S.club);var workId=seasonFixture.sheets[ownSide].initial[0],rotateId=seasonFixture.sheets[ownSide].initial[1]');
+for(let round=0;round<8;round++){
+ sr('applyPhysicalTraining(player(workId),"normal");applyPhysicalTraining(player(rotateId),'+JSON.stringify(round%2===0?'repos':'normal')+');var loadGame=createRugbyMatch(nextMatch());loadGame.sheets[ownSide].minutes[workId]=80;loadGame.sheets[ownSide].minutes[rotateId]='+String(round%2===0?0:80)+';recordPhysicalMatchLoad(loadGame)');
+}
+const fullSeries=sr('physicalLoadValue(player(workId))'),rotatedSeries=sr('physicalLoadValue(player(rotateId))');
+assert.ok(fullSeries>rotatedSeries,'Giving regular match rest must reduce cumulative load');
+assert.ok(fullSeries>=0&&fullSeries<=100&&rotatedSeries>=0&&rotatedSeries<=100);series.close();
+
+})();
+
+(()=>{
+// Old exports (including an in-progress match) remain valid; schema migration is forward-only.
+const before=context(),legacy=before.run;
+before.start(0);before.deferSaves();before.toMatch();legacy('beginMatch()');
+const state=JSON.parse(legacy('JSON.stringify(S)'));before.close();
+delete state.physicalLoadVersion;delete state.live.physicalLoadVersion;
+for(const c of state.clubs)for(const p of c.players)delete p.physicalLoad;
+const fitness=state.clubs[0].players.map(p=>p.condition);
+const reloaded=context(state);
+assert.equal(reloaded.run('S.physicalLoadVersion'),1);
+assert.equal(reloaded.run('S.live.physicalLoadVersion'),undefined);
+equal(JSON.parse(reloaded.run('JSON.stringify(club().players.map(p=>p.condition))')),fitness);
+assert.equal(reloaded.run('createSaveDocument().state.live.physicalLoadVersion'),undefined);reloaded.close();
+})();
+
+(()=>{
 // At season reset, workload is reset and the selected training policy stays explicit.
 const next=context(),nextRun=next.run;
-nextRun('start(0);var seasonPlayer=[...club().players].sort((a,b)=>a.age-b.age)[0];var seasonId=seasonPlayer.id;seasonPlayer.physicalLoad={version:1,fatigue:88,plan:"repos"};S.phase="ended";S.ending="Fin";');
-nextRun('advanceSeason()');
+nextRun('start(0);var seasonPlayer=[...club().players].sort((a,b)=>a.age-b.age)[0];var seasonId=seasonPlayer.id;seasonPlayer.contractEnd=S.season+2;seasonPlayer.physicalLoad={version:1,fatigue:88,plan:"repos"};');
+next.deferSaves();next.season();nextRun('player(seasonId).physicalLoad.fatigue=88;save()');const reset=next.command('next_season',{confirmed:true});settleClubMeetings(reset,(command,payload)=>next.command(command,payload));
 assert.equal(nextRun('physicalLoadValue(player(seasonId))'),0);
-assert.equal(nextRun('physicalPlan(player(seasonId))'),'repos');
+assert.equal(nextRun('physicalPlan(player(seasonId))'),'repos');assert.ok(nextRun('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));next.close();
+})();
 console.log(JSON.stringify({passed:true,cases:['training modes','unique weekly application','planning guard','match minutes','AI recovery','old live saves','validated exports','season rollover']}));

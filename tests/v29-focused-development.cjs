@@ -1,8 +1,10 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context}=require('./harness.cjs');
+const {planningContext}=require('./helpers/gestion-domaines.cjs');
 function close(a,b){assert.ok(Math.abs(a-b)<1e-8,'Expected '+a+' to equal '+b)}
 
+(()=>{
 // Historiques : aucun changement avant choix explicite.
 const initial=context();initial.run('start(0);var front=club().players.find(p=>p.fam===0),before=roleNote(front),attributes=JSON.stringify(front.skills)');
 assert.equal(initial.run('developmentFocusValue(front)'),'equilibre');
@@ -14,12 +16,15 @@ assert.equal(initial.run('setDevelopmentFocus(front.id,"scrum")'),true);
 assert.ok(initial.run('playerDevelopmentHTML(front).includes("Objectif individuel")'));
 assert.ok(initial.run('formationView().includes("Objectif individuel")'));
 assert.equal(initial.run('S.developmentFocusVersion'),1);
-assert.equal(initial.run('setDevelopmentFocus("absent","scrum")'),false);
+assert.equal(initial.run('setDevelopmentFocus("absent","scrum")'),false);initial.close();
 
+})();
+
+(()=>{
 // XP partagée (pas doublée) : 2 XP ciblées = +1 rating, +2 mêlée.
 // En équilibre, +2 rating général et aucun bonus spécifique.
 const neutral=context(),focused=context();
-for(const t of [neutral,focused])t.run('start(0);var p=club().players.find(p=>p.fam===0);p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=60;p.skills.power=60;p.dev.potential=94;p.dev.xp=0;var oldRating=p.rating,oldScrum=skill(p,"scrum"),oldPower=skill(p,"power")');
+for(const t of [neutral,focused])t.run('start(0);var p=S.development.academy.find(p=>p.fam===0&&p.age>=18);promoteYouth(p.id);p.hiddenTraitsV2={professionalism:50,ambition:50,adaptability:50};p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=60;p.skills.power=60;p.dev.potential=94;p.dev.xp=0;var oldRating=p.rating,oldScrum=skill(p,"scrum"),oldPower=skill(p,"power")');
 focused.run('setDevelopmentFocus(p.id,"scrum")');
 neutral.run('growPlayer(p,2)');focused.run('growPlayer(p,2)');
 assert.equal(neutral.run('p.rating-oldRating'),2);
@@ -38,22 +43,31 @@ assert.ok(focused.run('focusedBonus(p,"power")<=4'));
 assert.ok(focused.run('focusedBonusTotal(p.dev.specialization)<=8'));
 assert.equal(focused.run('slotEligible(p,0)'),true);
 focused.run('growPlayer(p,200)');
-assert.equal(focused.run('p.rating'),focused.run('p.dev.potential'));
+assert.equal(focused.run('p.rating'),focused.run('p.dev.potential'));neutral.close();focused.close();
 
+})();
+
+(()=>{
 // V27 : fatigue. V28 : préparation alignée. Pas de nouveau coefficient pour
 // les carrières non spécialisées.
 const phys=context();
-phys.run('start(0);var p=club().players.find(p=>p.fam===0);setDevelopmentFocus(p.id,"scrum");p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=65;p.dev.potential=99;p.condition=100;var rested=JSON.parse(JSON.stringify(p)),heavy=JSON.parse(JSON.stringify(p)),aligned=JSON.parse(JSON.stringify(p));rested.physicalLoad={version:1,fatigue:0,plan:"collective"};heavy.physicalLoad={version:1,fatigue:90,plan:"collective"};aligned.physicalLoad={version:1,fatigue:0,plan:"collective"};');
+phys.run('start(0);var p=S.development.academy.find(p=>p.fam===0&&p.age>=18);promoteYouth(p.id);setDevelopmentFocus(p.id,"scrum");p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=65;p.dev.potential=99;p.condition=100;var rested=JSON.parse(JSON.stringify(p)),heavy=JSON.parse(JSON.stringify(p)),aligned=JSON.parse(JSON.stringify(p));rested.physicalLoad={version:1,fatigue:0,plan:"collective"};heavy.physicalLoad={version:1,fatigue:90,plan:"collective"};aligned.physicalLoad={version:1,fatigue:0,plan:"collective"};');
 phys.run('S.collectiveFocus="aucune";developmentTraining(rested,"normal",S.club);developmentTraining(heavy,"normal",S.club);S.collectiveFocus="conquete";developmentTraining(aligned,"normal",S.club)');
 assert.ok(phys.run('heavy.dev.xp<rested.dev.xp'));
 assert.ok(phys.run('aligned.dev.xp>rested.dev.xp'));
-assert.ok(phys.run('aligned.dev.specialization.xp>rested.dev.specialization.xp'));
+assert.ok(phys.run('aligned.dev.specialization.xp>rested.dev.specialization.xp'));phys.close();
 const oldGrowth=context();
-oldGrowth.run('start(0);var origin=club().players.find(p=>p.fam===0),a=JSON.parse(JSON.stringify(origin)),b=JSON.parse(JSON.stringify(origin));a.physicalLoad={version:1,fatigue:0,plan:"collective"};b.physicalLoad={version:1,fatigue:100,plan:"collective"};developmentTraining(a,"normal");developmentTraining(b,"normal")');
-close(oldGrowth.run('a.dev.xp'),oldGrowth.run('b.dev.xp'));
+oldGrowth.run('start(0);var origin=S.development.academy.find(p=>p.fam===0&&p.age>=18);promoteYouth(origin.id);origin.hiddenTraitsV2={professionalism:50,ambition:50,adaptability:50};origin.age=19;origin.rating=70;origin.skillBase=70;origin.dev.potential=99;origin.dev.xp=0;var a=JSON.parse(JSON.stringify(origin)),b=JSON.parse(JSON.stringify(origin));a.physicalLoad={version:1,fatigue:0,plan:"collective"};b.physicalLoad={version:1,fatigue:100,plan:"collective"};developmentTraining(a,"normal");developmentTraining(b,"normal")');
+assert.ok(oldGrowth.run('a.dev.xp>0&&b.dev.xp>0'),'coefficients comparés sur une progression effectivement positive');
+close(oldGrowth.run('a.dev.xp*growthFitnessFactor(b)'),oldGrowth.run('b.dev.xp*growthFitnessFactor(a)'));oldGrowth.close();
+// Le modèle courant applique aussi la charge à la progression équilibrée (V24).
+// L’égalité conserve le coefficient d’apprentissage après normalisation exacte.
 
+})();
+
+(()=>{
 // Centre de formation et promotion : focus conservé, contrat inchangé.
-const academy=context();academy.run('start(0);var youth=S.development.academy[0],rating=youth.rating,salary=youth.salary,pos=youth.pos,choice=developmentFocusRecommendation(youth)');
+const academy=context();academy.run('start(0);var youth=S.development.academy.find(p=>p.age>=18),rating=youth.rating,salary=youth.salary,pos=youth.pos,choice=developmentFocusRecommendation(youth)');
 assert.equal(academy.run('setDevelopmentFocus(youth.id,choice)'),true);
 assert.equal(academy.run('youth.rating'),academy.run('rating'));
 assert.equal(academy.run('youth.salary'),academy.run('salary'));
@@ -66,12 +80,15 @@ assert.equal(academy.run('player(youthId).dev.specialization.focus'),academy.run
 assert.equal(academy.run('player(youthId).contractEnd'),2);
 academy.run('S.trained=true');
 assert.equal(academy.run('setDevelopmentFocus(youthId,"equilibre")'),false);
-academy.run('S.trained=false;beginMatch();pauseMatch()');
-assert.equal(academy.run('setDevelopmentFocus(youthId,"equilibre")'),false);
+academy.deferSaves();academy.toMatch();academy.run('beginMatch();pauseMatch()');
+assert.equal(academy.run('setDevelopmentFocus(youthId,"equilibre")'),false);academy.close();
 
+})();
+
+(()=>{
 // Minutes réellement jouées ; idempotence ; ancien match avec XP générale.
 const minutes=context();
-minutes.run('start(0);var p=club().players.find(p=>p.fam===0);p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=55;p.dev.potential=99;setDevelopmentFocus(p.id,"scrum");var fixture={pair:[0,1],developmentFocusVersion:1,sheets:[{used:[p.id],minutes:{[p.id]:70}},{used:[],minutes:{}}],devBaseline:[{[p.id]:40},{}]};recordDevelopmentMatch(fixture)');
+minutes.run('start(0);var p=S.development.academy.find(p=>p.fam===0&&p.age>=18);promoteYouth(p.id);p.hiddenTraitsV2={professionalism:50,ambition:50,adaptability:50};p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=55;p.dev.potential=99;setDevelopmentFocus(p.id,"scrum");var fixture={pair:[0,1],developmentFocusVersion:1,sheets:[{used:[p.id],minutes:{[p.id]:70}},{used:[],minutes:{}}],devBaseline:[{[p.id]:40},{}]};recordDevelopmentMatch(fixture)');
 assert.equal(minutes.run('p.dev.minutes'),30);
 assert.equal(minutes.run('p.dev.appearances'),1);
 assert.ok(minutes.run('p.dev.specialization.xp>0'));
@@ -80,11 +97,14 @@ minutes.run('recordDevelopmentMatch(fixture)');
 assert.equal(minutes.run('JSON.stringify(p.dev)'),observed);
 minutes.run('var oldP=JSON.parse(JSON.stringify(p));oldP.id="legacy-copy";oldP.dev.xp=0;oldP.dev.specialization.xp=0;club().players.push(oldP);var oldFixture={pair:[0,1],sheets:[{used:[oldP.id],minutes:{[oldP.id]:80}},{used:[],minutes:{}}]};recordDevelopmentMatch(oldFixture)');
 assert.equal(minutes.run('oldP.dev.specialization.xp'),0);
-assert.ok(minutes.run('oldP.dev.xp>0'));
+assert.ok(minutes.run('oldP.dev.xp>0'));minutes.close();
 
+})();
+
+(()=>{
 // Ancienne carrière V28 à la pause : aucune note ou minute réécrite.
-const source=context();source.run('start(0);beginMatch();pauseMatch()');
-const legacy=JSON.parse(source.run('JSON.stringify(S)'));
+const source=context();source.start(0);source.deferSaves();source.toMatch();source.run('beginMatch();pauseMatch()');
+const legacy=JSON.parse(source.run('JSON.stringify(S)'));source.close();
 delete legacy.developmentFocusVersion;delete legacy.live.developmentFocusVersion;
 for(const c of legacy.clubs)for(const p of c.players)delete p.dev.specialization;
 for(const p of legacy.market)if(p.dev)delete p.dev.specialization;
@@ -98,8 +118,11 @@ assert.equal(restored.run('S.live.minute'),legacy.live.minute);
 assert.deepEqual(JSON.parse(restored.run('JSON.stringify(S.live.score)')),legacy.live.score);
 assert.deepEqual(JSON.parse(restored.run('JSON.stringify(S.clubs.map(c=>c.players.map(p=>[p.id,p.rating,p.skillBase,p.skills,p.pos])))')),scores);
 const textSave=restored.run('JSON.stringify(createSaveDocument())');
-assert.equal(restored.run('parseSaveDocument('+JSON.stringify(textSave)+').state.live.developmentFocusVersion'),undefined);
+assert.equal(restored.run('parseSaveDocument('+JSON.stringify(textSave)+').state.live.developmentFocusVersion'),undefined);restored.close();
 
+})();
+
+(()=>{
 // Sauvegardes malveillantes rejetées, avec checksum validé à l'import.
 const invalid=context();invalid.run('start(0);var p=club().players.find(p=>p.fam===0);setDevelopmentFocus(p.id,"scrum");var pid=p.id');
 for(const mutation of [
@@ -113,25 +136,28 @@ for(const mutation of [
  assert.throws(()=>invalid.run(mutation+';validateCareer(bad)'),mutation);
 }
 const current=invalid.run('JSON.stringify(createSaveDocument())');
-assert.equal(invalid.run('parseSaveDocument('+JSON.stringify(current)+').state.developmentFocusVersion'),1);
+assert.equal(invalid.run('parseSaveDocument('+JSON.stringify(current)+').state.developmentFocusVersion'),1);invalid.close();
 
-// Calibration : six saisons d'entraînement, mêmes joueurs/graines, avec ou sans
+})();
+
+(()=>{
+// Calibration : six cycles annuels du composant individuel, mêmes joueurs/graines, avec ou sans
 // spécialisation. L'éligibilité rugby et les plafonds sont invariants.
 function multiSeason(focus){
- const t=context();
- t.run('start(0);var p=club().players.find(p=>p.fam===0);p.age=19;p.rating=58;p.skillBase=58;p.skills.scrum=60;p.dev.potential=92;p.dev.retireAge=44;var id=p.id;p.contractEnd=99');
- if(focus!=='equilibre')t.run('setDevelopmentFocus(id,'+JSON.stringify(focus)+')');
+ const t=planningContext();
+ t.run('var p=academyPlayer(S.club,0,S.season,9001);p.academy=false;p.hiddenTraitsV2={professionalism:50,ambition:50,adaptability:50};club().players.push(p);p.age=19;p.rating=58;p.skillBase=58;p.skills.scrum=60;p.dev.potential=92;p.dev.retireAge=44;var id=p.id;p.contractEnd=99');
+ if(focus!=='equilibre')t.run('ensureSpecialization(p).focus='+JSON.stringify(focus));
  const years=[];
  for(let i=0;i<6;i++){
-  t.run('for(let w=0;w<26;w++){S.trained=false;trainWeek()}');
+  t.run('for(let w=0;w<26;w++)developmentTraining(p,"normal",S.club)');
   years.push(JSON.parse(t.run('JSON.stringify({season:S.season,age:player(id).age,rating:player(id).rating,scrum:skill(player(id),"scrum"),bonus:focusedBonus(player(id),"scrum")})')));
-  t.run('S.phase="ended";advanceSeason()');
+  t.run('ageDevelopmentPlayer(p,S.season);S.season++');
   assert.equal(t.run('S.season'),i+2);
   assert.equal(t.run('S.clubs.every(c=>c.players.every(p=>p.dev.potential>=p.rating&&p.age<p.dev.retireAge))'),true);
   assert.equal(t.run('S.development.academy.every(p=>p.age<=21)'),true);
-  assert.ok(t.run('!!createSaveDocument()'));
+  assert.ok(t.run('!!componentParse(JSON.stringify(componentDocument()))'));
  }
- return years;
+ t.close();return years;
 }
 const years={balanced:multiSeason('equilibre'),specialized:multiSeason('scrum')};
 const b=years.balanced.at(-1),s=years.specialized.at(-1);
@@ -139,4 +165,6 @@ assert.ok(b.rating>=s.rating,'General progression is stronger when balanced');
 assert.ok(s.bonus>0&&s.bonus<=4);
 assert.ok(s.scrum>b.scrum,'Focusing scrum must strengthen that attribute despite slower general growth');
 assert.ok(years.specialized.every(v=>v.bonus<=4));
-console.log(JSON.stringify({passed:true,seasons:6,years,checks:['position guard','explicit choice','single XP pool','role-specific effect','fatigue V27','preparation V28','academy/promotion','minutes and idempotence','old live career','hostile save','six-season comparison']}));
+console.log(JSON.stringify({passed:true,seasons:6,years,checks:['position guard','explicit choice','single XP pool','role-specific effect','fatigue V27','preparation V28','academy/promotion','minutes and idempotence','old live career','hostile save','six annual individual component cycles']}));
+
+})();

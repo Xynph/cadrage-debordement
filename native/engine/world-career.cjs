@@ -379,6 +379,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    delete S.worldMode.resultConfirmed;
   }
   planStages(S);sync(S);
+  awardChampionPrize(S,S.worldMode.leagues.elite.champion,'elite');
   if(S.phase==='ended'){check(S.worldMode.movement&&(!JP||S.worldMode.japan?.movement)&&(!N||S.worldMode.nationale?.movement?.status==='ready')&&IDS.every(id=>S.worldMode.leagues[id].champion!==null)&&['champions','challenge'].every(id=>S.worldMode.europe[id].champion!==null),'saison terminée sans titres et mouvements.');const titleLeague=edition.version>=2?leagueId(S):'elite';S.ending=S.clubs[S.worldMode.leagues[titleLeague].champion].name+' remporte '+(edition.version>=2?REG.leagues.find(l=>l.id===titleLeague).name:'le championnat')+'. La prochaine campagne se prépare déjà.';S.worldManagement.champion=S.worldMode.leagues.elite.champion;for(const id of IDS)careerRecord('trophy',REG.leagues.find(l=>l.id===id).name,S.worldMode.leagues[id].champion,'world-'+id);news(S.ending);}
   refreshMarket();repairSheet();save();view='dashboard';
  }

@@ -1,11 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
-const h=context(),r=h.run,started=Date.now();r('start(0)');
+const reception=require('./helpers/gestion-reception.cjs');
+const {engineContext:context}=require('./harness.cjs');
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const h=context(),r=h.run,started=Date.now();r('start(0)');h.deferSaves();reception.traceValidation(h);
 const initial=r('aiRosterAccessibleCount()'),reference=r('S.aiRoster.population.referenceAccessible'),years=[];
 let recruits=0,promotions=0,retired=0,graduates=0,emerged=0;const observedRetired=new Set();
 for(let season=1;season<=12;season++){
- r('while(S.phase==="league")finishRound();while(S.phase!=="ended")finishRound()');
+ console.log('Population World : saison '+season+' / 12');h.season();
  assert.equal(r('S.season'),season);
  assert.equal(r('new Set(S.clubs.flatMap(c=>c.players.map(p=>p.id))).size'),r('S.clubs.reduce((n,c)=>n+c.players.length,0)'));
  assert.equal(r('S.economy.freeAgents.every(p=>!p.academy&&p.age<p.dev.retireAge&&!S.clubs.some(c=>c.players.some(q=>q.id===p.id)))'),true);
@@ -18,14 +20,14 @@ for(let season=1;season<=12;season++){
  graduates+=r('S.aiRoster.population.history.filter(x=>x.season===S.season).reduce((n,x)=>n+x.graduated,0)');
  emerged+=r('S.aiRoster.population.history.filter(x=>x.season===S.season).reduce((n,x)=>n+x.emerged,0)');
  assert.ok(row.available<=r('aiRosterFreeAgentLimit()'));
- assert.ok(row.bytes<8*1024*1024);
+ assert.ok(row.bytes<r('worldSaveLimits(S).saveBytes'),'export World sous le plafond natif courant');
  if([5,10].includes(season)){
   const before=r('JSON.stringify(S)'),reload=context(JSON.parse(before));
-  assert.equal(reload.run('JSON.stringify(S)'),before,'reopening preserves IDs, pool, contracts, origin and policy');
+  assert.ok(reload.run('JSON.stringify(S)')===before,'reopening preserves IDs, pool, contracts, origin and policy');reload.close();
  }
- if(season<12)r('advanceSeason()');
+ if(season<12){reception.checkpoint(h,'population-end-'+season,{completedRealSeasons:season,years,recruits,promotions,retired,graduates,emerged,observedRetired:[...observedRetired]});const model=h.command('next_season',{confirmed:true});settleClubMeetings(model,(command,payload)=>h.command(command,payload));h.deferSaves();assert.equal(r('S.development.intakeSeason'),season+1);assert.ok(r('S.aiRoster.academies.every(a=>a.intakeSeason===S.season)'),'générations actuelles renouvelées dans les115centres');}
 }
 assert.ok(recruits>0&&promotions>0&&retired>0&&graduates>0&&emerged>0,'all renewal paths must execute: '+JSON.stringify({recruits,promotions,retired,graduates,emerged,years}));
 assert.ok(years.at(-1).min>=30,'renewal must maintain useful AI depth, not merely 23 emergency players');
 assert.ok(years.at(-1).accessible>=reference,'professionals plus available candidates must not keep disappearing');
-console.log(JSON.stringify({passed:true,initial,reference,recruits,promotions,retired,graduates,emerged,years,elapsedMs:Date.now()-started}));
+h.close();console.log(JSON.stringify({passed:true,initial,reference,recruits,promotions,retired,graduates,emerged,years,elapsedMs:Date.now()-started}));

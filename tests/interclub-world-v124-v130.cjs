@@ -1,5 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const api=require('../dist/interclub-world-v124-v130.js');
@@ -78,23 +79,25 @@ const m=(a,b,x,y)=>({pair:[a,b],score:[x,y],tries:[1,1]});
 }
 {
  // Real integration: load native game and public saved-state APIs from the existing VM harness.
- const {context}=require('./harness.cjs');
+ const {engineContext:context}=require('./harness.cjs');
  const test=context();
  test.run('start(0)');
  const legacy=test.run('JSON.stringify(createSaveDocument())');
  assert.equal(test.run('S.interclubWorld'),undefined);
- // New module's install is exercised by the same global objects as real game.js.
+ // Le bootstrap natif installe ses hooks clubWorld ; le rechargement de l’API
+ // publique garde ces vrais hooks sur les mêmes objets globaux.
  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/interclub-world-v124-v130.js'),'utf8'),test.ctx);
  assert.equal(test.run('typeof CDInterclubWorld'),'object');
- test.run('record({pair:[0,1],score:[24,19],tries:[2,2]})');
- assert.equal(test.run('S.interclubWorld.events.length'),1);
+ test.deferSaves();test.toMatch();test.run('var actualPair=nextMatch(),pairKey=actualPair.slice().sort((a,b)=>a-b).join(":")');test.week(1);
+ assert.equal(test.run('S.interclubWorld.pairs[pairKey].games'),1,'la vraie rencontre du manager est observée une fois');
  const saved=test.run('JSON.stringify(createSaveDocument())');
- assert.equal(test.run('parseSaveDocument('+JSON.stringify(saved)+').state.interclubWorld.events.length'),1);
+ assert.equal(test.run('parseSaveDocument('+JSON.stringify(saved)+').state.interclubWorld.events.length'),test.run('S.interclubWorld.events.length'));
  assert.equal(test.run('parseSaveDocument('+JSON.stringify(legacy)+').state.interclubWorld'),undefined,'legacy JSON accepted');
  const before=test.run('JSON.stringify(S.interclubWorld)');
- test.run('S.phase="ended";S.round=26;advanceSeason()');
+ test.season();test.run('var gamesBeforeAnnual=S.interclubWorld.pairs[pairKey].games');const next=test.command('next_season',{confirmed:true});settleClubMeetings(next,(command,payload)=>test.command(command,payload));test.run('parseSaveDocument(JSON.stringify(createSaveDocument()))');
  assert.equal(test.run('S.interclubWorld.years.length'),1);
- assert.equal(test.run('S.interclubWorld.pairs["0:1"].games'),1);
+ assert.equal(test.run('S.interclubWorld.pairs[pairKey].games'),test.run('gamesBeforeAnnual'));
  assert.ok(test.run('JSON.stringify(S.interclubWorld)')!==before);
+ test.close();
 }
-console.log('V124-V130 PASS: deterministic sports context, persistent rivalries, 15 seasons, reactions, native save export/import and interseason.');
+console.log('V124-V130 PASS: deterministic sports context, persistent rivalries, 15 component input years, reactions, native World save export/import and real interseason.');
