@@ -40,9 +40,9 @@ function context(saved,providedStorage,{html=true}={}){
    for(const name of ['getItem','setItem','removeItem'])if(typeof providedStorage[name]==='function')storage[name]=providedStorage[name].bind(providedStorage);
   }
   if(saved){
-   // Le worker branche le budget natif à sa première commande, y compris la
-   // lecture du menu avant import. Une reprise Web seule laisse financeWeek V1.
-   h.command('snapshot');
+   // Même initialisation que la première commande du worker, sans projeter
+   // tous les choix du menu à chaque reprise. Une reprise Web seule laisse financeWeek V1.
+   h.prepareCommands();
    ctx.harnessSavedText=JSON.stringify(saved);
    rawRun('gameStorage.setItem("bdt-v1",harnessSavedText);loadedSaveText=harnessSavedText;S=JSON.parse(harnessSavedText);validatingStartup=true;bootSavedCareer();delete globalThis.harnessSavedText');
   }

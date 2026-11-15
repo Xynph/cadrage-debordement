@@ -186,6 +186,9 @@ function createBridge(options={}){
   const element={innerHTML:'',textContent:'',style:{}};
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
+ function prepareCommands(){
+  if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
+ }
  function deferSaves(){
   if(savesDeferred)return;
   deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');
@@ -607,7 +610,7 @@ function createBridge(options={}){
     let command=request.command,restoring=null;
     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande,
     // y compris le premier snapshot en lecture seule après une reprise (plancher et prévision).
-    if(!ctx.nativeClubBudget){ctx.nativeClubBudget=require('./club-budget.cjs');ctx.nativeStartingSalaries=require('./starting-salaries.cjs');ctx.nativeLeagueEconomy=require('./league-economy.cjs');run(ctx.nativeClubBudget.BRANCHEMENT);}
+    prepareCommands();
     if(!READ_ONLY.has(command))run('nativeSectionsFresh=false');
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};cleanSave=null;run('S=null;loadSaveFailure="";lastSaveError=false;nativeSaveSections=null;');return {id,ok:true,model:snapshot()};}
@@ -1030,7 +1033,7 @@ function createBridge(options={}){
   Object.assign(handle,{flush,pending,flushStep:flushNext});
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
-  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},deferSaves,materializeSaves,store:()=>{materializeSaves();return store;}}};
+  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},prepareCommands,deferSaves,materializeSaves,store:()=>{materializeSaves();return store;}}};
   return {handle,close};
  }catch(e){close();throw e;}
 }

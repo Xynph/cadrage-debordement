@@ -3,11 +3,16 @@ const assert=require('node:assert/strict'),{context,engineContext}=require('./ha
 assert.equal(typeof engineContext,'function','Les recettes du moteur doivent pouvoir utiliser la vraie VM native sans rendu HTML.');
 const native=require('./monde-harness.cjs').context(827381,{club:null});
 try{
+ assert.equal(typeof native.prepareCommands,'function','Initialisation native sans calculer un modèle de menu.');
+ const nativeSeed=native.seed();native.prepareCommands();
+ assert.equal(typeof native.ctx.nativeClubBudget,'object');
+ assert.equal(native.run('S'),null);assert.equal(native.seed(),nativeSeed);
  const originalMakePlayer=native.ctx.makePlayer;
  native.ctx.makePlayer=()=>{throw Error('Ancienne fabrique atteinte avant le refus');};
  assert.throws(()=>native.run('start(0,"fiction")'),/uniquement.*Monde/);
  assert.equal(native.run('S'),null,'Le refus précède toute création.');
  native.ctx.makePlayer=originalMakePlayer;native.start(0);
+ assert.ok(native.store['bdt-v1']===native.run('JSON.stringify(S)'),'la fixture modifiée par le harnais est réellement sauvegardée');
  assert.equal(native.run('S.leagueDetail??null'),null,'le harnais natif existant conserve tous les championnats détaillés');
  assert.equal(native.run('S.worldMode.fixtures.every(f=>!CDLeagueDetail.quickFixture(S,f))'),true);
 }finally{native.close();}
