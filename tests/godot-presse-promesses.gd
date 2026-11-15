@@ -115,6 +115,9 @@ func run() -> void:
 	check(node("PressPromiseBanner") != null, "Bandeau des promesses en cours")
 	await capture("promesse-bilan")
 	await click("PressReturn")
+	await wait_idle()
+	var leave_until := Time.get_ticks_msec() + 10000
+	while app.contextual_director.active_meeting() and Time.get_ticks_msec() < leave_until: await settle(6)
 	app._navigate("Club")
 	await wait_idle()
 	var row: Label = null
@@ -122,7 +125,7 @@ func run() -> void:
 	while row == null and Time.get_ticks_msec() < club_until:
 		await settle(6)
 		row = app.find_child("ClubPromise1", true, false) as Label
-	var diag := "route=%s objectifs=%s actives=%d texte=%s" % [app.route, str(app.find_child("ClubObjectives", true, false) != null), app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []).size(), "absent" if row == null else row.text]
+	var diag := "route=%s objectifs=%s actives=%d texte=%s rdv=%s attente=%s erreur=%s" % [app.route, str(app.find_child("ClubObjectives", true, false) != null), app.model.get("clubLife", {}).get("pressPromises", {}).get("active", []).size(), "absent" if row == null else row.text, str(app.contextual_director.active_meeting()), str(app.waiting), str(app.last_error)]
 	check(row != null and row.text == str(promises.active[0].short), "Écran Club : promesse suivie dans « Objectifs de la saison » · "+diag)
 	await capture("promesse-club")
 	finish()
