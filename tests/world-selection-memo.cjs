@@ -17,13 +17,27 @@ function sample(positionMemo){
    selectionReads=0;buildSheet(club());var afterFailureReads=selectionReads;
    for(const p of club().players)p.skills=originalSkills.get(p);
    for(let i=0;i<50;i++)buildSheet(club());`);
+  // Remplir effectivement le cache de portée avant une erreur. Le faux accès
+  // équipe appelle le vrai derive puis échoue ; aucun joueur World n'est modifié.
+  h.run(`var lateProbe={...club().players[0],skills:Object.fromEntries(Object.keys(ATTR).map(k=>[k,20]))};
+   var lateBefore=JSON.stringify(nativePositionAptitudes.project(lateProbe));
+   var lateDerived=false,lateTeam=Object.create(club());
+   Object.defineProperty(lateTeam,'players',{get(){nativePositionAptitudes.project(lateProbe);lateDerived=true;throw Error('selection-late-error')}});`);
+  assert.throws(()=>h.run('buildSheet(lateTeam)'),/selection-late-error/);
+  assert.equal(h.run('lateDerived'),true,'derive appelé dans la portée avant l’erreur');
+  h.run('for(const key of Object.keys(ATTR))lateProbe.skills[key]=99;var lateAfter=JSON.stringify(nativePositionAptitudes.project(lateProbe))');
+  assert.notEqual(h.run('lateAfter'),h.run('lateBefore'),'après erreur tardive, la qualité modifiée doit invalider la projection');
   const selectionStarted=performance.now();h.run('for(let i=0;i<250;i++)buildSheet(club())');
   const selectionMs=Math.round((performance.now()-selectionStarted)*10)/10;
   assert.ok(h.run('JSON.stringify(S)')===before,'une sélection conserve tout l’état');
   assert.equal(h.seed(),seed,'aucun tirage de sélection');
   assert.ok(h.run('nextReads>0&&afterFailureReads>0'),'pas de cache persistant entre deux sélections ni après une erreur');
   const reads=h.run('reads'),sheet=h.run('JSON.stringify(selected)');
+  h.toMatch();
+  const fixtureId=h.run('CDWorldCareer.userFixture(S).id');
   h.week(1);
+  h.ctx.selectionFixtureId=fixtureId;
+  assert.equal(h.run('S.history.filter(r=>r.fixtureId===selectionFixtureId).length'),1,'la parité couvre une vraie semaine de match du club');
   const state=h.run('JSON.stringify(S)'),stored=h.store['bdt-v1'];
   assert.ok(stored===state,'vraie sauvegarde complète matérialisée');
   return {state,stored,seed:h.seed(),sheet,reads,selectionMs,milliseconds:Math.round((performance.now()-started)*10)/10};

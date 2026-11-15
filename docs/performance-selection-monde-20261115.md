@@ -8,12 +8,16 @@ Une WeakMap locale à la sélection garde le résultat par objet joueur. Les app
 
 `tests/world-selection-memo.cjs` crée deux vraies carrières world-champ, tous championnats détaillés. Avec et sans cache, il exige les mêmes titulaires/remplaçants, le même état complet après une semaine, la même sauvegarde et le même curseur RNG. Les lectures de qualités sont comptées avec un Proxy retiré avant le chronométrage. Le chronométrage porte sur 250 sélections d’objets ordinaires après 50 échauffements ; il n’est pas un seuil de test.
 
-Recette Node 24.22.1, Linux local :
+Recette Node24.22.1, Linux local sous charge :
 
-- 6 489 → 912 lectures pour une sélection, soit 7,1 fois moins ; régression rouge avant correction, verte après.
-- 250 sélections : 691,5 → 483,3 ms, environ 30 % de temps en moins sur cet échantillon.
-- Sélection + semaine dans les variantes : 7 035,8 et 7 097,3 ms. Ce reçu ne démontre pas un gain sur une semaine entière, une saison ou les FPS.
-- Suite complète : 52,8 s ; maxRSS kernel 1 977 772 Kio. Poids 61 s (+15 %), réservation mémoire +25 %, budget 300 s.
+- 6489 →912 lectures pour une sélection, soit7,1fois moins ; régression rouge avant correction, verte après.
+- Dernier échantillon de250sélections ordinaires :1063,4→423,6ms. L’échantillon initial était691,5→483,3ms ; ces mesures partagées varient et ne fixent aucun seuil de vitesse.
+- Réception renforcée : le cache est effectivement rempli avant une erreur tardive ; une modification de qualités après l’erreur doit changer la projection. Aucune qualité de joueur World n’est modifiée par ce cas isolé.
+- Les deux variantes avancent ensuite jusqu’au vrai match du club et clôturent sa semaine, tous championnats détaillés. Un résultat du club est exigé ; état complet, sauvegarde et RNG restent strictement identiques.
+- Durée par variante après création, contrôles de sélection et préparation/match compris :20926,9 et14065,9ms. Ce reçu partagé ne démontre ni un gain garanti de saison ni un gain de FPS.
+- Suite complète renforcée :78,08s mesurées jusqu’à la sortie du processus ; maxRSS1935284Kio. Poids90s (+15%), réservation2624Mo (maximum2111236Kio d’une réception intermédiaire +25%), budget300s.
+
+Le premier reçu ne jouait qu’une semaine de préparation sans match : il reste archivé et n’est plus présenté comme preuve de parité après match. Une revue indépendante de la portée du cache, de ses wrappers synchrones et du `finally` n’a trouvé aucun défaut de production ; sa réserve sur l’erreur précoce a conduit au cas tardif ci-dessus.
 
 Provenance et empreintes : `ci/world-selection-memo-mesures-20261115.json`. Les durées sont une mesure locale, pas un run GitHub ; Node 22 et la CI finale restent à recevoir.
 

@@ -1,8 +1,37 @@
 {
   "runtime": "Node 24.22.1, Linux local",
   "sourceBase": "e0dc63808391a8ee524cc7eb2c6fba860f7a11b0",
-  "scope": "World v5, 116 clubs, tous les championnats détaillés ; contrôles de sélection + vraie semaine Monde",
+  "scope": "World v5,116clubs,tousdétaillés ; sélection, erreur tardive après cache rempli, préparation réelle et semaine de match avec résultat du club",
   "receipt": {
+    "passed": true,
+    "scope": "world-champ, tous détaillés",
+    "selections": 250,
+    "reference": {
+      "reads": 6489,
+      "selectionMs": 1063.4,
+      "totalMs": 20926.9
+    },
+    "memo": {
+      "reads": 912,
+      "selectionMs": 423.6,
+      "totalMs": 14065.9
+    },
+    "wallSeconds": 77.2,
+    "maxRssKb": 1935284
+  },
+  "limits": [
+    "une mesure locale, Node22 CI à recevoir",
+    "le gain de sélection ne constitue pas une mesure de gain sur une saison ou sur les FPS",
+    "250 sélections après50 échauffements, objets ordinaires ; Proxy utilisé seulement pour compter les lectures puis retiré avant chronométrage",
+    "Le reçu initial portait sur une semaine de préparation sans match ; il est conservé comme previousReceipt et ne prouve pas la parité après match. Le reçu courant la vérifie explicitement.",
+    "Une réception intermédiaire erreur tardive sans match a observé maxRSS2111236Kio ; la réservation mémoire garde ce maximum avec marge25%."
+  ],
+  "sha256": {
+    "native/engine/position-aptitudes.cjs": "5e4bca790d5ed1edfd62441df77018c766814421af90199066e2be1679d7aeec",
+    "native/engine/worker.cjs": "03d3ce0a3d9554a4abb86cd7441515387d07067b2c3a348cd7ec422a894192ad",
+    "tests/world-selection-memo.cjs": "95639b53bc9d6374515cb438c21d34d1cb90b92ee17f22c4bfa0ee28b102764b"
+  },
+  "previousReceipt": {
     "passed": true,
     "scope": "world-champ, tous détaillés",
     "selections": 250,
@@ -19,14 +48,11 @@
     "wallSeconds": 52.8,
     "maxRssKb": 1977772
   },
-  "limits": [
-    "une mesure locale, Node22 CI à recevoir",
-    "le gain de sélection ne constitue pas une mesure de gain sur une saison ou sur les FPS",
-    "250 sélections après50 échauffements, objets ordinaires ; Proxy utilisé seulement pour compter les lectures puis retiré avant chronométrage"
-  ],
-  "sha256": {
-    "native/engine/position-aptitudes.cjs": "5e4bca790d5ed1edfd62441df77018c766814421af90199066e2be1679d7aeec",
-    "native/engine/worker.cjs": "03d3ce0a3d9554a4abb86cd7441515387d07067b2c3a348cd7ec422a894192ad",
-    "tests/world-selection-memo.cjs": "01cdad96510045e841eda122d589aa92ab02b1386a58d4a370752df6397c94f9"
-  }
+  "processReceipt": {
+    "code": 0,
+    "elapsedSeconds": 78.08007475800001,
+    "maxRSSKiB": 1935284,
+    "node": "v24.22.1"
+  },
+  "logSha256": "a44d7f7ad797ee7e7317b03f71737a9f55d28d84ad78e27227c322bbb8b51329"
 }
