@@ -187,6 +187,8 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 		if view.drawer.visible and view.drawer_tab == "Banc": view._update_drawer()
 		else: view._toggle_drawer("Banc"))
 	between.score_joue.connect(_score_joue)
+	# « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier.
+	between.levier_choisi.connect(func(route: String): app._navigate(route))
 	# Terrain 2D : il suit l'horloge de l'entracte et repart de la dernière image connue.
 	between.terrain.cadence = float(HORLOGES[horloge]) / maxf(vitesse, 0.01)
 	if preferences != null: between.terrain.calme = bool(preferences.data.get("reduced_motion", false))

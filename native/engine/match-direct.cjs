@@ -9,6 +9,7 @@ const selection=require('./match-highlights.cjs');
 const choregraphe=require('./match-choregraphe.cjs');
 const notesMatch=require('./match-notes.cjs');
 const feuilleStats=require('./match-stats.cjs');
+const pourquoi=require('./match-pourquoi.cjs');
 
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
@@ -59,7 +60,9 @@ function lecteur(){
    const xvAdverseActuel=feuille?feuille.on.map(id=>id==null?null:String(id)):[];
    // Contexte de la note de match (feuille, minutes, niveau au poste), même calcul qu'en fin de match.
    const notes=typeof CDMatchNotes!=='undefined'?CDMatchNotes.contexte(l):null;
-   return {notes,rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,xvAdverseActuel,
+   // Énergie moyenne des deux XV sur le terrain (« Pourquoi » d'après-match, match-pourquoi.cjs).
+   const energie=l.userSide>=0?[l.userSide,1-l.userSide].map(side=>{const on=l.sheets[side].on.map(id=>id==null?null:matchPlayer(l,side,id)).filter(Boolean);return on.length?Math.round(on.reduce((n,p)=>n+(p.condition??100),0)/on.length):null;}):null;
+   return {notes,energie,rencontre:[S.season,S.round,S.phase,l.pair.join('-')].join(':'),horloge:matchClock(l),camp:l.userSide,possession:l.possession,territoire:l.territory,cartons,effectifAdverse,xvAdverseActuel,
     tactique:l.tacticalStats?l.tacticalStats.map(s=>({longGains:s.longGains,handErrors:s.handErrors,metres:Math.round(s.metres)})):null};
   }
  };
@@ -354,6 +357,11 @@ function project(model,niveau,lire,options={}){
   if(n){const fiche=(etat.effectifAdverse||[]).find(p=>String(p.id)===h);
    // Clé `joueur` (pas id/name), comme le XV adverse : la couche « connaissance » ne la masque pas.
    direct.hommeDuMatch={joueur:h,camp:n.cote,nom:etat.notes.noms?.[h]||fiche?.name||'',note:n.note,essais:n.essais,plaquages:n.plaquages,metres:n.metres};}
+ }
+ // « Pourquoi » d'après-match : trois raisons au plus, tirées des faits mesurés ci-dessus (match-pourquoi.cjs).
+ if(live.finished&&borne>=events.length){
+  try{const f=pourquoi.faits({...direct,notes:direct.notes},{energie:Array.isArray(etat.energie)&&etat.energie.every(Number.isFinite)?etat.energie:null,noms:etat.notes?.noms||{}});direct.pourquoi=pourquoi.raisons(f);}
+  catch(error){direct.pourquoi={issue:null,raisons:[]};}
  }
  direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
  direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];

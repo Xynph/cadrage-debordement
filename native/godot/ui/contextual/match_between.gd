@@ -26,6 +26,8 @@ signal horloge_choisie(valeur: String)
 signal delegation_demandee
 ## Un joueur de Mon XV choisi : le banc s'ouvre sur lui.
 signal joueur_choisi(poste: int)
+## « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier (route du jeu).
+signal levier_choisi(route: String)
 ## Score du dernier fait joué sur le terrain (le moteur a parfois une minute d'avance).
 signal score_joue(score: Array)
 ## Caméra du direct 3D choisie dans le menu Plus (« tv », « tactical », « action »).
@@ -785,7 +787,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
-		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs])
+		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch")])
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
@@ -1220,7 +1222,8 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	# Coup de sifflet final : Gabi annonce l'homme du match (note enregistrée, match-notes.cjs).
 	var fini: bool = live.get("finished", false)
 	var homme: Variant = direct.get("hommeDuMatch")
-	adjoint_cadre.visible = not fini or homme is Dictionary
+	var pourquoi: Variant = direct.get("pourquoi")
+	adjoint_cadre.visible = not fini or homme is Dictionary or (pourquoi is Dictionary and not (pourquoi.get("raisons", []) as Array).is_empty())
 	var carte := S.G.h(px(18))
 	adjoint.add_child(carte)
 	var portrait := TextureRect.new()
@@ -1280,6 +1283,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		etiquette.mouse_filter = Control.MOUSE_FILTER_PASS
 		colonne.add_child(etiquette)
 	var actions := S.G.h(px(10))
+	if fini: _remplir_pourquoi(colonne, direct, actions)
 	colonne.add_child(actions)
 	# L'action qui va avec la phrase : remplacer le joueur signalé, ou appliquer les consignes
 	# proposées (seulement si l'adjoint propose autre chose que les consignes en place).
@@ -1297,6 +1301,43 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		bouton.name = "MatchBetweenApplyAdvice"
 		bouton.custom_minimum_size.y = px(56)
 		bouton.tooltip_text = "Appliquer les consignes proposées." if possible else "Mettez le match en pause pour modifier vos consignes."
+		actions.add_child(bouton)
+
+const LEVIER_TEINTES := {"composition": Color("8fb3e0"), "condition": Color("9fd39a"), "tactique": Color("e0b35a"), "discipline": Color("f0b080"), "preparation": Color("c9a4e8")}
+
+## « Pourquoi » au coup de sifflet final (moteur : native/engine/match-pourquoi.cjs, `direct.pourquoi`) :
+## trois raisons au plus, classées, chacune avec son levier ; une action par écran concerné.
+func _remplir_pourquoi(colonne: VBoxContainer, direct: Dictionary, actions: HBoxContainer) -> void:
+	var bloc: Variant = direct.get("pourquoi")
+	if not bloc is Dictionary or not bloc.get("raisons") is Array or bloc.raisons.is_empty(): return
+	var titre: String = {"victoire": "Pourquoi on a gagné", "defaite": "Pourquoi on a perdu", "nul": "Pourquoi ce nul"}.get(str(bloc.get("issue", "")), "Pourquoi ce résultat")
+	var entete := _texte(titre, 22, OR)
+	entete.name = "MatchWhyTitle"
+	colonne.add_child(entete)
+	var routes := {}
+	for raison: Variant in bloc.raisons:
+		if not raison is Dictionary: continue
+		var ligne := S.G.h(px(10))
+		ligne.name = "MatchWhy%d" % int(raison.get("rang", 0))
+		colonne.add_child(ligne)
+		var levier := _texte(str(raison.get("levierLabel", "")).to_upper(), 18, LEVIER_TEINTES.get(str(raison.get("levier", "")), FAIBLE))
+		levier.custom_minimum_size.x = px(150)
+		levier.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		ligne.add_child(levier)
+		var texte := _texte(str(raison.get("texte", "")), 22, IVOIRE if raison.get("sens") == "negatif" else Color("cfe8c8"), true)
+		texte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		texte.max_lines_visible = 2
+		texte.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		texte.tooltip_text = str(raison.get("texte", ""))
+		texte.mouse_filter = Control.MOUSE_FILTER_PASS
+		ligne.add_child(texte)
+		var route := str(raison.get("route", ""))
+		if route.is_empty() or routes.has(route): continue
+		routes[route] = true
+		var bouton := _bouton(str(raison.get("action", "Voir")), func(): levier_choisi.emit(route), true, routes.size() == 1)
+		bouton.name = "MatchWhyAction_" + str(raison.get("levier", ""))
+		bouton.custom_minimum_size.y = px(48)
+		bouton.tooltip_text = "Ouvrir l’écran " + route + " (le résultat reste à valider)."
 		actions.add_child(bouton)
 
 ## Relevés successifs (taille du journal, composition, conseil de l'adjoint) : l'écran montre le
