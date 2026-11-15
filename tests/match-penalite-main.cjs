@@ -3,19 +3,35 @@
 // Conception : docs/match-choregraphe-20261112.md, § 12.
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {engineContext:context,matchContext}=require('./harness.cjs');
 const T=require('./helpers/tirages.cjs');
 
 // Match en cours, en pause, avec un compteur de tirages.
-function fixture(){
- const t=context();
- t.run('start(0);beginMatch();pauseMatch();var l=S.live;var tirages=0;var aleaBase=Math.random;Math.random=function(){tirages++;return aleaBase()};');
+const exportsValides=new WeakMap();
+function fixture(teardown){
+ const t=matchContext();if(teardown)teardown.after(()=>t.close());
+ exportsValides.set(t.run,{states:new Set(),seed:t.seed,hits:0,misses:0});
+ t.run('beginMatch();pauseMatch();var l=S.live;var tirages=0;var aleaBase=Math.random;Math.random=function(){tirages++;return aleaBase()};');
  return t;
 }
-const valid=run=>assert.equal(run('!!createSaveDocument()'),true,'sauvegarde valide');
+// Même VM, mêmes fonctions d'export et mêmes plafonds pendant chaque balayage.
+// Réutiliser seulement un succès pour une entrée S COMPLÈTE strictement identique.
+// Toute autre entrée, même dans un autre club, repasse par le véritable export.
+function valid(run){
+ const cache=exportsValides.get(run),text=run('JSON.stringify(S)');
+ if(cache.states.has(text)){cache.hits++;return;}
+ cache.misses++;const seed=cache.seed(),draws=T.consommes(run);
+ assert.equal(run('!!createSaveDocument()'),true,'sauvegarde valide');
+ assert.ok(run('JSON.stringify(S)')===text,'export sans mutation de la carrière complète');
+ assert.equal(cache.seed(),seed,'export sans consommation du générateur natif');
+ assert.equal(T.consommes(run),draws,'export sans consommation du tirage injecté');
+ // Borne mémoire locale ; une éviction conduit à une vraie revalidation.
+ if(cache.states.size===8)cache.states.delete(cache.states.values().next().value);
+ cache.states.add(text);
+}
 
-test('Les nouvelles rencontres connaissent la pénalité jouée à la main ; les anciennes non', () => {
- const {run}=fixture();
+test('Les nouvelles rencontres connaissent la pénalité jouée à la main ; les anciennes non', (t) => {
+ const {run}=fixture(t);
  assert.equal(run('l.quickTapVersion'),1);
  assert.equal(run('quickTapRules(l)'),true);
  assert.equal(run('PENALTY_POLICIES.main'),'Jouer vite à la main');
@@ -23,12 +39,12 @@ test('Les nouvelles rencontres connaissent la pénalité jouée à la main ; les
  assert.equal(run('quickTapRules(l)'),false,'match commencé avant : règles d’origine');
  run('executePenaltyChoice(l,0)');
  assert.ok(!run('l.events.some(e=>e.scene?.kind==="quick-tap")'),'aucune pénalité jouée à la main');
- const t=context();t.run('QUICK_TAP_RULES=0;start(0);beginMatch();pauseMatch()');
- assert.equal(t.run('S.live.quickTapVersion'),undefined,'option coupée : la rencontre garde les règles d’avant');
+ const off=matchContext();t.after(()=>off.close());off.run('QUICK_TAP_RULES=0;beginMatch();pauseMatch()');
+ assert.equal(off.run('S.live.quickTapVersion'),undefined,'option coupée : la rencontre garde les règles d’avant');
 });
 
-test('Décision : consigne du manager, contexte, aucun tirage sans pénalité jouée', () => {
- const {run}=fixture();
+test('Décision : consigne du manager, contexte, aucun tirage sans pénalité jouée', (t) => {
+ const {run}=fixture(t);
  // Consigne « jouer vite à la main » : toujours ; « points » et « pénaltouche » : jamais.
  run('l.minute=20;ballPossession(l,0,60);l.penaltyPolicies=["main","auto"]');
  assert.equal(run('wantsQuickTap(l,0,40)'),true);
@@ -52,12 +68,12 @@ test('Décision : consigne du manager, contexte, aucun tirage sans pénalité jo
  assert.equal(run('tirages'),0);
 });
 
-test('Effets : essai, gain, percée, ballon perdu, avec les faits du moteur (tirage balayé, aucun seuil codé en dur)',()=>{
+test('Effets : essai, gain, percée, ballon perdu, avec les faits du moteur (tirage balayé, aucun seuil codé en dur)',(testContext)=>{
  // La décision est un tirage comparé à des probabilités que le moteur recale (essai, perte, percée : ~.1 à ~.5). Au lieu de choisir
  // un tirage qui tombe entre deux seuils (l'ancien [0.55, 0.5] tombait mal dès qu'un seuil bougeait de 0,05), on balaie le premier tirage de 0 à 1 sur la
  // même situation : l'ordre des issues (essai ou percée, puis ballon perdu, puis gain) est la règle, leurs bornes ne sont pas testées.
  const classe=faits=>{const f=faits[1];if(!f)return 'rien';if(f.kind==='try')return 'essai';if(f.kind==='turnover')return f.team===1?'gratte':'?';if(f.kind==='ingoal'&&f.cause==='held-up')return 'tenu';if(f.kind==='hand-fault'&&f.cause==='knock-on')return 'en-avant';if(f.kind==='carry')return f.to.x-f.from.x>=22?'percee':'gain';return '?'};
- const situation=(at)=>{const {run}=fixture();run(`l.minute=30;l.flow.advantage=null;ballPossession(l,0,${at});l.penaltyPolicies[0]="main"`);return {run,photo:T.photographier(run)}};
+ const situation=(at)=>{const bridge=fixture();const {run}=bridge;run(`l.minute=30;l.flow.advantage=null;ballPossession(l,0,${at});l.penaltyPolicies[0]="main"`);return {run,bridge,photo:T.photographier(run)}};
  const jouer=(sit,rolls,policy)=>{const {run,photo}=sit;T.rejouer(run,photo);if(policy)run(`l.penaltyPolicies[0]="${policy}"`);run('var debut=l.events.length');T.injecter(run,rolls);run('executePenaltyChoice(l,0)');
   const faits=JSON.parse(run('JSON.stringify(l.events.slice(debut).map(e=>e.scene&&{kind:e.scene.kind,team:e.scene.team,actor:e.scene.actor,from:e.scene.from,to:e.scene.to,cause:e.scene.cause}).filter(Boolean))'));valid(run);return faits};
  const suite=liste=>liste.filter((c,i)=>i===0||c!==liste[i-1]);
@@ -75,23 +91,34 @@ test('Effets : essai, gain, percée, ballon perdu, avec les faits du moteur (tir
   if(at===94){assert.ok(g[1].to.x>94&&g[1].to.x<100,'gain sans franchir la ligne');const e=jouer(sit,[T.BAS]);assert.equal(e[1].kind,'try');assert.equal(sit.run('l.quickTaps[0]'),1);
    const t=jouer(sit,[milieu,0.05]);assert.equal(t[1].cause,'held-up');const n=jouer(sit,[milieu,T.HAUT]);assert.equal(n[1].cause,'knock-on')}
   else{const p=jouer(sit,[T.BAS]);assert.ok(p[1].to.x-p[1].from.x>=22,'percée');const o=jouer(sit,[T.HAUT]);const gain=o[1].to.x-o[1].from.x;assert.ok(gain>=5&&gain<=14,'gain ordinaire '+gain);assert.equal(jouer(sit,[milieu,T.BAS])[1].kind,'turnover')}
+  // Une altération hors du match doit manquer le cache et être rejetée par
+  // le vrai validateur ; restaurer l'entrée retrouve ensuite son reçu valide.
+  valid(sit.run);const before=exportsValides.get(sit.run).misses;
+  sit.run('var untouchedClub=S.clubs.findIndex((c,i)=>!l.pair.includes(i));var oldCondition=S.clubs[untouchedClub].players[0].condition;S.clubs[untouchedClub].players[0].condition=1001');
+  assert.throws(()=>valid(sit.run),'altération d’un autre club rejetée');
+  assert.equal(exportsValides.get(sit.run).misses,before+1,'nouvel état complet réellement exporté');
+  sit.run('S.clubs[untouchedClub].players[0].condition=oldCondition');valid(sit.run);
+  console.log(JSON.stringify({position:at,exportValidation:exportsValides.get(sit.run).misses,reusedExactStates:exportsValides.get(sit.run).hits}));
+  sit.bridge.close();
  }
  // Pénaltouche choisie : aucun fait de pénalité jouée à la main.
- const touche=situation(45);assert.ok(!jouer(touche,[T.HAUT],'touch').some(f=>f.kind==='quick-tap'));
+ const touche=situation(45);try{assert.ok(!jouer(touche,[T.HAUT],'touch').some(f=>f.kind==='quick-tap'));}finally{touche.bridge.close();}
 });
 
 // Statistiques sur un grand nombre de matchs IA contre IA, avec et sans l'option.
 function bilan(sans,n){
- const t=context();t.run('start(0)');if(sans)t.run('QUICK_TAP_RULES=0');
- return JSON.parse(t.run(`(function(){const a={m:0,pen:0,taps:0,tapsTotal:0,penPres:0,tapsPres:0,penMene:0,tapsMene:0,essais:0,points:0,buts:0,issues:{}};
+ const t=matchContext();if(sans)t.run('QUICK_TAP_RULES=0');
+ t.run(`globalThis.bilanProbe=(function(){const a={m:0,pen:0,taps:0,tapsTotal:0,penPres:0,tapsPres:0,penMene:0,tapsMene:0,essais:0,points:0,buts:0,issues:{}};
   const base=executePenaltyChoice;
   executePenaltyChoice=function(l,side){const d=side===0?100-l.territory:l.territory,mene=l.score[side]<l.score[1-side],avant=l.quickTaps?.[side]||0;a.pen++;if(d<=12){a.penPres++;if(mene)a.penMene++}const r=base(l,side);if((l.quickTaps?.[side]||0)>avant){a.taps++;if(d<=12){a.tapsPres++;if(mene)a.tapsMene++}}return r};
-  try{for(let i=0;i<${n};i++){const C=S.clubs.length,x=i%C,y=(i*5+3+Math.floor(i/C))%C;if(x===y)continue;const l=createRugbyMatch([x,y],null,true);l.quickTapLog=[];
-   while(!l.finished){l.paused=false;advanceRugby(l)}a.m++;a.essais+=l.tries[0]+l.tries[1];a.points+=l.score[0]+l.score[1];a.buts+=l.stats[0].goals+l.stats[1].goals;a.tapsTotal+=(l.quickTaps?.[0]||0)+(l.quickTaps?.[1]||0);for(const q of l.quickTapLog)a.issues[q.issue]=(a.issues[q.issue]||0)+1}}
-  finally{executePenaltyChoice=base}return JSON.stringify(a)})()`));
+  const pairs=roundPairs();if(!pairs.length)throw Error('La fixture World doit avoir des rencontres réelles');a.fixtures=pairs.length;let cursor=0;return {step(count){const end=Math.min(${n},cursor+count);for(;cursor<end;cursor++){const i=cursor,l=createRugbyMatch(pairs[i%pairs.length],null,true);l.quickTapLog=[];
+   while(!l.finished){l.paused=false;advanceRugby(l)}a.m++;a.essais+=l.tries[0]+l.tries[1];a.points+=l.score[0]+l.score[1];a.buts+=l.stats[0].goals+l.stats[1].goals;a.tapsTotal+=(l.quickTaps?.[0]||0)+(l.quickTaps?.[1]||0);for(const q of l.quickTapLog)a.issues[q.issue]=(a.issues[q.issue]||0)+1}
+  },close(){executePenaltyChoice=base;return JSON.stringify(a)}}})()`);
+ try{for(let count=0;count<n;count+=25)t.run('bilanProbe.step(25)');return JSON.parse(t.run('bilanProbe.close()'));}
+ finally{t.run('if(bilanProbe)bilanProbe.close();delete globalThis.bilanProbe');t.close();}
 }
 test('Fréquence réaliste et équilibre du jeu sur 1 500 matchs', () => {
- const avec=bilan(false,1500),sans=bilan(true,1500);
+ const avec=bilan(false,1500),sans=bilan(true,1500);assert.equal(avec.m,1500);assert.equal(sans.m,1500);assert.ok(avec.fixtures>=7,'au moins les14équipes de la portée historique sur de vraies rencontres World');
  const part=avec.taps/avec.pen,partPres=avec.tapsPres/avec.penPres,partMene=avec.tapsMene/Math.max(1,avec.penMene);
  console.log(JSON.stringify({matchs:avec.m,penalitesParMatch:+(avec.pen/avec.m).toFixed(2),jouéesALaMainParMatch:+(avec.taps/avec.m).toFixed(2),part:+(100*part).toFixed(1),partPresDeLaLigne:+(100*partPres).toFixed(1),partMenePresDeLaLigne:+(100*partMene).toFixed(1),issues:avec.issues,
   essais:[+(avec.essais/avec.m).toFixed(2),+(sans.essais/sans.m).toFixed(2)],points:[+(avec.points/avec.m).toFixed(2),+(sans.points/sans.m).toFixed(2)]}));
