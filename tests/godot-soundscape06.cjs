@@ -6,7 +6,7 @@ const godot=process.env.CD_GODOT_EXECUTABLE||process.env.CD_GODOT_EXE;
 test('Soundscape natif : préférences atomiques, bus et déduplication sous Dummy explicite',{skip:!godot&&'SDK Godot requis'},()=>{
  const base=process.env.CD_SOUNDS_PROOF||os.tmpdir();fs.mkdirSync(base,{recursive:true});
  const proof=fs.mkdtempSync(path.join(base,'cd-soundscape06-é '));
- const source=require('./harness.cjs').context();source.run('start(0);beginMatch();while(S.live.minute<80&&!S.live.finished){S.live.paused=false;advanceRugby(S.live)}');
+ const source=require('./harness.cjs').matchContext();source.run('beginMatch();while(S.live.minute<80&&!S.live.finished){S.live.paused=false;advanceRugby(S.live)}');
  const events=JSON.parse(source.run('JSON.stringify(S.live.events)'));
  assert.ok(events.some(e=>['try','goal','miss'].includes(e.scene?.kind)),'Vraie fixture avec réaction disponible');
  fs.writeFileSync(path.join(proof,'engine-events.json'),JSON.stringify(events));

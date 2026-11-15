@@ -2,14 +2,14 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { context } = require('../../tests/harness.cjs');
+const { matchContext } = require('../../tests/harness.cjs');
 const T = require('../../tests/helpers/tirages.cjs');
 const { normalize } = require('../../dist/match3d/scene-adapter.js');
 
 function record() {
-  const { run } = context();
+  const h=matchContext(),{run}=h;
   run(`
-    start(0); beginMatch(); pauseMatch();
+    beginMatch(); pauseMatch();
     var live = S.live;
     live.paused = false; syncMatchPresentation(live);
     ballPossession(live, 0, 85);
@@ -37,7 +37,7 @@ function record() {
       score: Array.from(run('matchViewState(live).score')),
     };
   });
-  return { teams: Array.from(run('live.pair.map(i => S.clubs[i].abbr)')), phases };
+  const teams=Array.from(run('live.pair.map(i => S.clubs[i].abbr)'));h.close();return {teams,phases};
 }
 
 function fixtureScript() {
