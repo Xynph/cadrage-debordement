@@ -2,7 +2,7 @@
 
 Jeu de management de rugby à XV (dépôt historique « Cadrage Débordement »).
 Ce dépôt embarque le kit **Claude Code Game Studios** (CCGS, licence MIT,
-voir `.claude/LICENSE-CCGS.txt`) : 49 agents de studio + `log-reader` (directeurs, chefs de
+voir `.claude/LICENSE-CCGS.txt`) : 37 agents de studio (Unity, Unreal, C# et réseau retirés) + `log-reader` (directeurs, chefs de
 département, spécialistes), ~78 commandes `/…`, hooks et règles par dossier.
 
 ## Ordre de priorité des règles
