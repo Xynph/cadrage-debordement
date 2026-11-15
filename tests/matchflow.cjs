@@ -1,5 +1,6 @@
-const assert=require('node:assert/strict');const {context}=require('./harness.cjs');
-function fixture(){const t=context();t.run('start(0);beginMatch();pauseMatch();var l=S.live;Math.random=()=>.99');return t}
+const assert=require('node:assert/strict');const {engineContext:context,matchContext}=require('./harness.cjs');
+let previousFixture;
+function fixture(){previousFixture?.close();const t=matchContext();previousFixture=t;t.run('beginMatch();pauseMatch();var l=S.live;Math.random=()=>.99');return t}
 function valid(run){assert.equal(run('!!createSaveDocument()'),true)}
 let t=fixture(),run=t.run;
 // Real territorial benefit ends advantage; no benefit returns to the original place.
@@ -22,14 +23,16 @@ t=fixture();run=t.run;run('l.minute=39;offerAdvantage(l,"penalty",0,1,70,{force:
 // A try at expired time still includes its conversion, but no unnecessary kick-off.
 t=fixture();run=t.run;run('l.minute=40;Math.random=()=>0;scoreTry(l,0,"open")');assert.equal(run('l.score[0]'),7);assert.equal(run('atHalftime(l)'),true);assert.equal(run('l.restartLog.some(r=>r.cause==="score")'),false);valid(run);
 // Each second half has its own forty playing minutes, after first-half overrun.
-t=fixture();run=t.run;run('l.minute=43;endFlowPeriod(l);var firstEnd=l.flow.firstEnd;continueMatch();Math.random=()=>.99');assert.equal(run('l.flow.period'),2);assert.equal(run('l.flow.fullEnd'),83);assert.equal(run('matchClock(l)'),'40′');assert.equal(run('l.restartLog.at(-1).minute'),43);valid(run);
-run('l.minute=82;l.score=[12,7];ballPossession(l,0,50);advanceRugby(l)');assert.equal(run('l.minute'),83);assert.equal(run('l.finished'),false);valid(run);
+t=fixture();run=t.run;run('Math.random=()=>0;scoreTry(l,0,"open");Math.random=()=>.99;scoreTry(l,0,"open");Math.random=()=>0;scoreTry(l,1,"open");l.minute=43;endFlowPeriod(l);var firstEnd=l.flow.firstEnd;continueMatch();Math.random=()=>.99');assert.equal(run('l.score.join("-")'),'12-7','score produit par les vrais essais et transformations');assert.equal(run('l.flow.period'),2);assert.equal(run('l.flow.fullEnd'),83);assert.equal(run('matchClock(l)'),'40′');assert.equal(run('l.restartLog.at(-1).minute'),43);valid(run);
+run('l.minute=82;ballPossession(l,0,50);advanceRugby(l)');assert.equal(run('l.minute'),83);assert.equal(run('l.finished'),false);valid(run);
 run('while(!l.finished)advanceRugby(l)');assert.ok(run('l.minute>=83'));assert.equal(run('l.flow.ballDead'),true);valid(run);
 // Exclusion clocks include overrun but never tick through the interval.
 t=fixture();run=t.run;run('l.minute=35;var sh=l.sheets[l.userSide],id=sh.on[3];giveMatchCard(l,l.userSide,id);l.minute=43;endFlowPeriod(l);var until=sh.cards[0].until');assert.equal(run('until'),45);run('advanceRugby(l)');assert.equal(run('l.minute'),43);run('continueMatch();advanceRugby(l);advanceRugby(l)');assert.equal(run('sh.cards.some(c=>c.id===id)'),false);valid(run);
 // Ongoing advantage and expired-time play round-trip without being replaced by a fresh fixture.
-t=fixture();run=t.run;run('l.minute=41;offerAdvantage(l,"penalty",0,1,55,{force:true})');const snapshot=run('JSON.parse(JSON.stringify(S))'),loaded=context(snapshot);assert.equal(loaded.run('JSON.stringify(S)'),JSON.stringify(snapshot));const portable=run('JSON.stringify(createSaveDocument())'),imported=context();imported.run(`pendingSave=parseSaveDocument(${JSON.stringify(portable)});confirmSaveImport()`);assert.equal(imported.run('S.live.flow.advantage.at'),55);assert.equal(imported.run('S.live.minute'),41);
+t=fixture();run=t.run;run('l.minute=41;offerAdvantage(l,"penalty",0,1,55,{force:true})');const snapshot=run('JSON.parse(JSON.stringify(S))'),loaded=context(snapshot);assert.ok(loaded.run('JSON.stringify(S)')===JSON.stringify(snapshot),'reprise exacte de l’avantage en temps expiré');const portable=run('JSON.stringify(createSaveDocument())'),imported=context();imported.prepareCommands();assert.equal(imported.run(`pendingSave=parseSaveDocument(${JSON.stringify(portable)});confirmSaveImport()`),true,'import natif de l’avantage confirmé');assert.equal(imported.run('S.live.flow.advantage.at'),55);assert.equal(imported.run('S.live.minute'),41);
 for(const mutate of [d=>d.state.live.flowVersion=99,d=>d.state.live.flow.period=3,d=>d.state.live.flow.advantage.offender=0,d=>d.state.live.flow.resolvingAward=true,d=>d.state.live.finished=true]){const d=JSON.parse(run('JSON.stringify(createSaveDocument())'));mutate(d);assert.throws(()=>run(`var bad=JSON.parse(${JSON.stringify(JSON.stringify(d))});bad.checksum=saveChecksum(bad.state);parseSaveDocument(JSON.stringify(bad))`))}
+loaded.close();imported.close();
 // Existing version-nine matches are preserved exactly and can still be visualized.
-t=fixture();run=t.run;run('delete l.flowVersion;delete l.flow;l.minute=27;var before=JSON.stringify(S)');const old=context(run('JSON.parse(before)'));assert.equal(old.run('JSON.stringify(S)'),run('before'));assert.equal(old.run('flowRules(S.live)'),false);assert.ok(old.run('match2D(S.live).includes("<svg")'));assert.equal(old.run('!!createSaveDocument()'),true);
+t=fixture();run=t.run;run('delete l.flowVersion;delete l.flow;l.minute=27;var before=JSON.stringify(S)');const old=context(run('JSON.parse(before)'));assert.ok(old.run('JSON.stringify(S)')===run('before'),'reprise exacte du match version neuf');assert.equal(old.run('flowRules(S.live)'),false);assert.ok(old.run('match2D(S.live).includes("<svg")'));assert.equal(old.run('!!createSaveDocument()'),true);
+old.close();t.close();
 console.log(JSON.stringify({passed:true,checks:['benefit and original-fault return','single penalty count','most favorable repeated fault','unsafe play excluded','live-ball overrun','penalty-touch exception','pre-horn advantage restart','missed penalty dead after horn','conversion after horn','separate forty-minute halves','playing-time exclusions','overrun/advantage reload and import','hostile flow data','version-nine preservation']}));
