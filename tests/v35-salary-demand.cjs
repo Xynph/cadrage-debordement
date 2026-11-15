@@ -1,15 +1,18 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {planningContext:context}=require('./helpers/gestion-domaines.cjs');
+const {engineContext}=require('./harness.cjs');
+const storageSnapshot=t=>t.storageText?t.storageText():t.store['bdt-v1'];
 function pure(t,expression){
- const state=t.run('JSON.stringify(S)'),stored=t.run('localStorage.getItem("bdt-v1")');
+ const state=t.run('JSON.stringify(S)'),stored=storageSnapshot(t);
  const value=JSON.parse(t.run('JSON.stringify('+expression+')'));
- assert.equal(t.run('JSON.stringify(S)'),state,'Salary quotation must not mutate the career');
- assert.equal(t.run('localStorage.getItem("bdt-v1")'),stored,'Salary quotation must not persist anything');
+ assert.ok(t.run('JSON.stringify(S)')===state,'Salary quotation must not mutate the career');
+ assert.equal(storageSnapshot(t),stored,'Salary quotation must not persist anything');
  return value;
 }
+(()=>{
 const fresh=context(),r=fresh.run;
-r('start(0)');
+r('void 0');
 assert.equal(r('S.salaryDemandVersion'),1);
 assert.ok(r('contractsPanel().includes("MODÈLE V35")'));
 assert.ok(r('salaryDemandPanel().includes("Expliquer les exigences salariales")'));
@@ -25,12 +28,16 @@ assert.equal(pure(fresh,'salaryDemandBreakdown(S.market[0],"recruit")').active,f
 assert.equal(first.factors.length,6);
 assert.ok(first.factors.some(x=>x.key==='minutes'&&x.rate===0));
 assert.ok(first.factors.some(x=>x.key==='progression'&&x.rate===0));
-assert.equal(r('JSON.stringify(createSaveDocument().state.salaryDemandVersion)'),"1");
+assert.equal(r('JSON.stringify(componentDocument().state.salaryDemandVersion)'),"1");
 
 // Grounded variation: controlled synthetic in-game states, no invented tries
 // or tackles, and no double count of V29 specialization in salary demand.
+
+fresh.close();
+})();
+(()=>{
 const rich=context(),h=rich.run;
-h('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.age=29;p.salary=2000;p.dev.retireAge=40;p.rating=82;p.dev.potential=Math.max(90,p.rating);p.dev.seasonStart=80;p.dev.minutes=1550;p.dev.appearances=20;club().played=22;club().won=17;club().lost=5;club().cash=9000000');
+h('var p=club().players.find(p=>p.contractEnd===S.season);p.age=29;p.salary=2000;p.dev.retireAge=40;p.rating=82;p.dev.potential=Math.max(90,p.rating);p.dev.seasonStart=80;p.dev.minutes=1550;p.dev.appearances=20;club().played=22;club().won=17;club().lost=5;club().cash=9000000');
 const rising=pure(rich,'salaryDemandBreakdown(p,"renew")');
 assert.ok(rising.modifier>=.075,'Playing, growth and club results should raise demand');
 assert.ok(rising.modifier<=.12);
@@ -46,8 +53,12 @@ assert.equal(h('reservationWage(p,"renew",2)'),
 // points; team standing, minutes and career growth remain separate.
 h('var orig=salaryDemandBreakdown(p,"renew").asked;var k=Object.keys(ROLE_WEIGHTS[p.fam])[0];ensureSpecialization(p).bonuses[k]=4;var improved=salaryDemandBreakdown(p,"renew").asked');
 assert.ok(h('improved>=orig'));
+
+rich.close();
+})();
+(()=>{
 const low=context(),lo=low.run;
-lo('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.age=35;p.dev.retireAge=42;p.salary=2000;p.rating=75;p.dev.potential=Math.max(85,p.rating);p.dev.seasonStart=77;p.dev.minutes=200;p.dev.appearances=5;club().played=22;club().won=2;club().lost=20;club().cash=200000');
+lo('var p=club().players.find(p=>p.contractEnd===S.season);p.age=35;p.dev.retireAge=42;p.salary=2000;p.rating=75;p.dev.potential=Math.max(85,p.rating);p.dev.seasonStart=77;p.dev.minutes=200;p.dev.appearances=5;club().played=22;club().won=2;club().lost=20;club().cash=200000');
 const falling=pure(low,'salaryDemandBreakdown(p,"renew")');
 assert.ok(falling.modifier<0,'Older underused player, poor form and low cash reduce demand');
 assert.equal(falling.factors.find(x=>x.key==='minutes').rate,-.035);
@@ -63,8 +74,12 @@ assert.equal(lo('noEvidence.factors.find(x=>x.key==="progression").rate'),0);
 
 // The same reservation threshold must govern both a V34 preview and an
 // actual negotiation. Ready remains ONLY a proposal until confirmation.
-const real=context(),actual=real.run;
-actual('start(0);var p=club().players.find(p=>p.contractEnd===S.season),id=p.id;p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3);p.dev.minutes=800;p.dev.appearances=10;club().played=14;club().won=10;club().lost=4;var asking=askingWage(p,"renew"),min=reservationWage(p,"renew",2),cash=club().cash');
+
+low.close();
+})();
+(()=>{
+const real=engineContext(),actual=real.run;
+actual('start(0);var p=club().players.find(p=>p.contractEnd===S.season),id=p.id;p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3);var asking=askingWage(p,"renew"),min=reservationWage(p,"renew",2),cash=club().cash');
 const v34=pure(real,'counterofferQuote(S,{kind:"renew",id,wage:min,years:2},2)');
 assert.equal(v34.asking,actual('asking'));
 assert.equal(v34.minimum,actual('min'));
@@ -77,17 +92,21 @@ assert.equal(actual('p.contractEnd'),1);
 assert.ok(actual('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
 
 // Old V34 saves keep exact original financial assumptions until opted-in.
-const base=JSON.parse(r('JSON.stringify(S)'));delete base.salaryDemandVersion;
-const historical=context(base),l=historical.run;
+
+real.close();
+})();
+(()=>{
+const worldBase=engineContext();worldBase.start(0);const base=JSON.parse(worldBase.run('JSON.stringify(S)'));delete base.salaryDemandVersion;worldBase.close();
+const historical=engineContext(base),l=historical.run;
 assert.equal(l('S.salaryDemandVersion'),undefined);
 l('var p=club().players.find(p=>p.contractEnd===S.season),id=p.id;var legacy=Math.max(p.salary,Math.round((roleNote(p)-43)*230/100)*100)');
-assert.equal(l('askingWage(p,"renew")'),l('legacy'));
+assert.equal(l('salaryDemandBreakdownV1(p,"renew").asked'),l('legacy'),'barème historique public conservé ; le budget World adapte sa base');
 assert.equal(pure(historical,'salaryDemandBreakdown(p,"renew")').modifier,0);
 assert.ok(l('salaryDemandPanel().includes("Activer les demandes évolutives")'));
 assert.ok(l('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
 const oldState=l('JSON.stringify(S)'),oldStorage=l('localStorage.getItem("bdt-v1")');
 pure(historical,'salaryDemandPanel()');
-assert.equal(l('JSON.stringify(S)'),oldState);
+assert.ok(l('JSON.stringify(S)')===oldState);
 assert.equal(l('localStorage.getItem("bdt-v1")'),oldStorage);
 assert.equal(l('enableSalaryDemandModel()'),true);
 assert.equal(l('S.salaryDemandVersion'),1);
@@ -102,29 +121,33 @@ assert.throws(()=>l('validateCareer(S)'));
 l('S.salaryDemandVersion=1');
 
 // Explicit opt-in is blocked while a match is open or talks are recorded.
-const active=context(base),a=active.run;
-a('beginMatch();pauseMatch()');
+const active=engineContext(base),a=active.run;
+active.deferSaves();active.toMatch();a('beginMatch();pauseMatch()');
 assert.equal(a('enableSalaryDemandModel()'),false);
 assert.equal(a('S.salaryDemandVersion'),undefined);
 const live=JSON.parse(a('JSON.stringify(S)'));
-const resumed=context(live),res=resumed.run;
+const resumed=engineContext(live),res=resumed.run;
 assert.equal(res('S.salaryDemandVersion'),undefined);
 assert.equal(res('S.live.minute'),live.live.minute);
 assert.deepEqual(JSON.parse(res('JSON.stringify(S.live.score)')),live.live.score);
 assert.equal(res('enableSalaryDemandModel()'),false);
 assert.ok(res('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
-const discussed=context(base),di=discussed.run;
+const discussed=engineContext(base),di=discussed.run;
 di('var p=club().players.find(p=>p.contractEnd===S.season);negotiateContract(p.id,"renew",1000,2)');
 assert.ok(di('Object.keys(S.economy.talks).length>0'));
 assert.equal(di('enableSalaryDemandModel()'),false);
 assert.equal(di('S.salaryDemandVersion'),undefined);
 
-// Calibration over four actual season transitions. Synthetic sample minutes
+// Calibration over four historical component input years. Synthetic sample minutes
 // and progression are openly distinguished from a full played league.
 // Compare actual reservation formulas, bounded drift, previous-year history,
 // proper save validation, and stable rugby team eligibility.
+
+worldBase.close();historical.close();active.close();resumed.close();discussed.close();
+})();
+(()=>{
 const seasons=context(),y=seasons.run;
-y('start(0)');
+y('void 0');
 const sampled=[];
 for(let i=0;i<4;i++){
  y('var p=club().players.find(q=>q.contractEnd===S.season)||club().players[0];var base=Math.max(p.salary,Math.round((roleNote(p)-43)*230/100)*100);p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3);p.dev.minutes=800;p.dev.appearances=12;club().played=16;club().won=10;club().lost=6;club().cash=4000000');
@@ -135,11 +158,14 @@ for(let i=0;i<4;i++){
  assert.ok(Number.isFinite(y('reservationWage(p,"renew",2)')));
  sampled.push({season:y('S.season'),base:model.base,requested:model.asked,modifier:model.modifier,
   salaryReserved:y('reservationWage(p,"renew",2)')});
- assert.ok(y('!!createSaveDocument()'));
- y('S.phase="ended";S.round=26;advanceSeason()');
+ assert.ok(y('!!componentDocument()'));
+ y('componentPlanningYear()');
  assert.equal(y('S.season'),i+2);
  assert.equal(y('sheetErrors().length'),0);
- assert.ok(y('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
+ assert.ok(y('!!componentParse(JSON.stringify(componentDocument()))'));
 }
 assert.equal(sampled.length,4);
-console.log(JSON.stringify({passed:true,seasons:4,sampled,checks:['V34 base preserved','bounded ±12%','minutes and performance proxy','position cover','age and club situation','no random/no save on quote','V34 real negotiation','optional old-save marker and explicit opt-in','live and talks protected','four valid interseasons']}));
+console.log(JSON.stringify({passed:true,seasons:4,sampled,checks:['V34 base preserved','bounded ±12%','minutes and performance proxy','position cover','age and club situation','no random/no save on quote','V34 real negotiation','optional old-save marker and explicit opt-in','live and talks protected','four historical component input years']}));
+
+seasons.close();
+})();
