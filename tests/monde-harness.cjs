@@ -36,7 +36,7 @@ function context(seed=827381,options={}){
   if(extra.mode!==undefined&&extra.mode!=='world-champ')throw Error('Le harnais autorise uniquement la carrière Monde.');
   creatingWorld=true;
   try{command('new_career',{...extra,mode:'world-champ',club});}finally{creatingWorld=false;}
-  if(!meetings)run('delete S.clubMeetings;validateCareer(S)');return h;
+  if(!meetings)run('delete S.clubMeetings;validateCareer(S);save()');return h;
  }
  // Les appels VM sans mode passent eux aussi par la vraie création native. Le dispatch
  // natif appelle encore start(..., 'world-champ') après sa création : ancien no-op conservé.
@@ -69,6 +69,7 @@ function context(seed=827381,options={}){
  function restore(cp){ctx.Math.random=seededRandom;ctx.harnessCheckpoint=cp.text;run('S=JSON.parse(harnessCheckpoint);delete globalThis.harnessCheckpoint');vm.setSeed(cp.seed);return h;}
  function close(){if(closed)return;closed=true;live.delete(h);try{vm.materializeSaves?.(true);}finally{try{bridge.close();}finally{fs.rmSync(dataDir,{recursive:true,force:true});}}}
  const h={ctx,run,command,start,week,toMatch,season,checkpoint,restore,close,dataDir,
+  prepareCommands(){vm.prepareCommands();return h;},
   deferSaves(){vm.deferSaves();return h;},
   prepareNativeProjection(){run('nativeAttributeStore.complete(S)');},
   seed:()=>vm.seed(),setSeed:vm.setSeed,
