@@ -9,8 +9,8 @@ function boot(document){
  const t=context();
  for(const file of modules)vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
  if(document)t.run('S=parseSaveDocument('+JSON.stringify(document)+').state');
- else t.run("start(0,'lnr')");
- return t;
+ else t.run("start(0,'world-champ')");
+ t.deferSaves();return t;
 }
 function checkpoint(t){
  const json=t.run('JSON.stringify(createSaveDocument())');
@@ -18,15 +18,15 @@ function checkpoint(t){
  const fresh=boot(json);
  const projection='JSON.stringify({round:S.round,phase:S.phase,club:S.club,wins:club().won,players:club().players.map(p=>({id:p.id,condition:p.condition,physicalLoad:p.physicalLoad,injury:p.injury}))})';
  assert.equal(fresh.run(projection),t.run(projection),'checkpoint retains key career and physical state');
- return fresh;
+ t.close();return fresh;
 }
 function advance(t){t.run('trainWeek();finishRound()');}
-test('LNR native save survives midseason and endseason transitions across fresh VM contexts',()=>{
+test('Monde : sauvegarde native survives midseason and endseason transitions across fresh VM contexts',()=>{
  let t=boot(),first=0,second=0;
  for(let i=0;i<14;i++){advance(t);first++;}
  assert.notEqual(t.run('S.phase'),'ended');
  t=checkpoint(t);
- while(t.run("S.phase!=='ended'")&&first<42){advance(t);first++;}
+ while(t.run("S.phase!=='ended'")&&first<80){advance(t);first++;}
  assert.equal(t.run('S.phase'),'ended');
  assert(first>=25);
  t=checkpoint(t);
@@ -38,7 +38,7 @@ test('LNR native save survives midseason and endseason transitions across fresh 
  const before=t.run('S.round');
  advance(t);second++;
  assert(t.run('S.round')!==before||t.run('S.phase')==='ended','reloaded next season advances');
- while(t.run("S.phase!=='ended'")&&second<42){advance(t);second++;}
+ while(t.run("S.phase!=='ended'")&&second<80){advance(t);second++;}
  assert.equal(t.run('S.phase'),'ended');
  assert(second>=25);
  const end=checkpoint(t);

@@ -5,7 +5,8 @@
   "limits": [
     "match-pass-live : contrôles JS verts, sous-test Godot ignoré localement dans cette mesure ; recette SDK encore requise",
     "mesures locales à remplacer par les mesures CI du code migré après un run conforme",
-    "la garde complète reste rouge sur les anciennes créations LNR non migrées"
+    "la garde complète reste rouge sur les anciennes créations LNR non migrées",
+    "reprise sur deux saisons : premier lancement interrompu par le plafond externe de 600 s, réception relancée avec 1800 s ; aucune assertion supprimée"
   ],
   "suites": [
     {
@@ -84,6 +85,76 @@
       "signal": null,
       "seconds": 22.6,
       "peakRssKb": 1234628
+    },
+    {
+      "file": "tests/lnr-player-facts.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 43.6,
+      "peakRssKb": 1850668
+    },
+    {
+      "file": "tests/lnr05-rest-policy-audit.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 543.6,
+      "peakRssKb": 2291568
+    },
+    {
+      "file": "tests/lnr05-monde-rotation.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 54.2,
+      "peakRssKb": 2317488
+    },
+    {
+      "file": "tests/lnr05-matchday-decision.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 22.1,
+      "peakRssKb": 1269360
+    },
+    {
+      "file": "tests/lnr05-matchday-advice.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 40.4,
+      "peakRssKb": 1743440
+    },
+    {
+      "file": "tests/lnr05-evidence.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 47.7,
+      "peakRssKb": 1618576
+    },
+    {
+      "file": "tests/lnr05-match-simulation-propagation.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 30.3,
+      "peakRssKb": 1268452
+    },
+    {
+      "file": "tests/lnr-career.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 65.9,
+      "peakRssKb": 1637076
+    },
+    {
+      "file": "tests/lnr-save-integrity-guards.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 114.7,
+      "peakRssKb": 2475524
+    },
+    {
+      "file": "tests/lnr05-physical-propagation.cjs",
+      "status": 0,
+      "signal": null,
+      "seconds": 49.6,
+      "peakRssKb": 1973236
     }
   ]
 }

@@ -7,18 +7,18 @@ assert(MODES.includes(selectedMode)&&SEEDS.includes(selectedSeed),'scenario reco
 function boot(offset){
  const t=context();
  for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
- t.run('for(let i=0;i<'+offset+';i++)Math.random()');t.run("start(0,'lnr')");
- return t;
+ t.run('for(let i=0;i<'+offset+';i++)Math.random()');t.run("start(0,'world-champ')");
+ t.deferSaves();return t;
 }
 function snapshot(run){return run('({condition:club().players.reduce((n,p)=>n+p.condition,0)/club().players.length,load:club().players.reduce((n,p)=>n+physicalLoadValue(p),0)/club().players.length,injured:club().players.filter(p=>p.injury).length,wins:club().won})')}
-test('LNR quatre strategies, quatre saisons, deux graines, entrainement et rencontres natives',()=>{
+test('Monde quatre strategies, quatre saisons, deux graines, entrainement et rencontres natives',()=>{
  const results=[];
  for(const seed of [selectedSeed])for(const mode of [selectedMode]){
   const t=boot(seed),run=t.run,years=[];let matches=0,rotations=0,recovery=0,minutes=0;
   run('var auditMinutes=0;var auditLastMatch=null;var originalMatchFactory=createRugbyMatch;createRugbyMatch=function(pair,legacy,automated,preparation){const l=originalMatchFactory(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))auditLastMatch=l;return l;}');
   for(let season=1;season<=SEASONS;season++){
    let rounds=0;const start=snapshot(run);let proposed=0,trained=0;
-   while(run("S.phase!=='ended'")&&rounds<42){
+   while(run("S.phase!=='ended'")&&rounds<80){
     if(mode==='rotation'||mode==='combine'){
      const choices=run('lnr05AdviceCandidates(3).map(x=>({id:x.id,token:x.proposal.token}))');
      proposed+=choices.length;

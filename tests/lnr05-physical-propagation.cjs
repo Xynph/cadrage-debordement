@@ -1,8 +1,8 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
-function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);t.run("start(0,'lnr')");return t}
-test('LNR: le plan de repos requiert trainWeek avant la simulation de la journee',()=>{
+function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);t.run("start(0,'world-champ')");return t}
+test('Monde: le plan de repos requiert trainWeek avant la simulation de la journee',()=>{
  const untouched=boot(),rest=boot();
  const p=rest.run('club().players[0].id'),id=JSON.stringify(p);
  for(const t of [untouched,rest])t.run('club().players[0].condition=30');

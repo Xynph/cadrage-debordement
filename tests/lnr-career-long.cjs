@@ -4,13 +4,13 @@ const {context}=require('./harness.cjs');
 const g=context(),run=g.run;
 for(const f of ['lnr-rosters-base.js','lnr-career.js'])
  vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),g.ctx);
-run("start(0,'lnr')");
+run("start(0,'world-champ')");g.deferSaves();
 const initial=run('S.clubs[0].players[0].id'),name=run('S.clubs[0].name');
 const check=()=>assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'export after a season');
 check();
 for(let year=1;year<=4;year++){
  let loops=0;
- while(run("S.phase!=='ended'")&&loops++<42){
+ while(run("S.phase!=='ended'")&&loops++<80){
   run('finishRound()');
  }
  assert.equal(run('S.phase'),'ended','season '+year+' completes with native match flow');
@@ -19,7 +19,7 @@ for(let year=1;year<=4;year++){
  if(year<4){
   run('advanceSeason()');
   assert.equal(run('S.season'),year+1);
-  assert.equal(run('lnrCareerMode(S)'),true);
+  assert.equal(run('S.worldMode.version'),5);
   check();
  }
 }

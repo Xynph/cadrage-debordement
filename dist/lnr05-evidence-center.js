@@ -2,7 +2,8 @@
 // LNR-02: données sourcées en lecture seule ; décisions par moteur natif.
 let lnr05Filter='all',lnr05Selected=null;
 const LNR05_LOOKUP=new Map(LNR05_EVIDENCE.players.map(p=>[p[0],p]));
-function lnr05Enabled(){return typeof S!=='undefined'&&!!S&&typeof lnrCareerMode==='function'&&lnrCareerMode(S)}
+// Les calculs de feuille sont communs ; le dossier historique garde son entrée séparée.
+function lnr05Enabled(){return typeof S!=='undefined'&&!!S&&((typeof CDWorldEditions!=='undefined'&&CDWorldEditions.forState(S)?.mode==='world-champ')||(typeof lnrCareerMode==='function'&&lnrCareerMode(S)))}
 function lnr05Proof(id){return LNR05_LOOKUP.get(id)||null}
 function lnr05Escape(v){return typeof lnrEscape==='function'?lnrEscape(v):String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function lnr05Measure(v,suffix){return v==null?'Non renseigné':v+suffix}
@@ -20,7 +21,7 @@ function lnr05FilterBy(mode){
 function lnr05Pick(id){if(!lnr05Enabled()||!player(id))return false;lnr05Selected=id;render();return true}
 function lnr05Proposal(id){
  if(!lnr05Enabled()||lnr05Locked())return null;
- const p=player(id);if(!p||!p.id.startsWith('lnr:')||p.injury)return null;
+ const p=player(id);if(!p||p.injury||(lnrCareerMode(S)&&!p.id.startsWith('lnr:')))return null;
  const prior=[...S.lineup,...S.reserves],already=prior.indexOf(id),token=lnr05Token();
  if(already!==-1)return {already:true,slot:already,token};
  const slot=Array.from({length:23},(_,i)=>i).find(i=>i<15?slotEligible(p,i):benchEligible(p,i-15));
@@ -49,7 +50,7 @@ function lnr05Health(){if(lnr05Enabled()){squadTab='health';render()}}
 function lnr05AdviceCandidates(limit=3){
  if(!lnr05Enabled()||lnr05Locked())return [];
  const chosen=new Set([...S.lineup,...S.reserves]);
- return club().players.filter(p=>p.id.startsWith('lnr:')&&!chosen.has(p.id)&&!p.injury)
+ return club().players.filter(p=>(!lnrCareerMode(S)||p.id.startsWith('lnr:'))&&!chosen.has(p.id)&&!p.injury)
   .map(p=>{
    const proposal=lnr05Proposal(p.id);
    if(!proposal?.valid||!Number.isInteger(proposal.slot)||proposal.slot>=15)return null;
@@ -78,12 +79,17 @@ function lnr05AdviceView(){
  return '<section class="lnr05-advice" aria-label="Conseils avant-match à 23">'+
   '<h3>Options de rotation avant-match</h3>'+ 
   '<p class="help">Plan tactique actuellement sélectionné : '+lnr05Escape(typeof TACTICS!=='undefined'&&TACTICS[S.tactic]?TACTICS[S.tactic][0]:'Non renseigné')+'. Le plan influe sur le match, mais cette recommandation ne fabrique pas de coefficient tactique individuel.</p>'+
-  '<p class="help">Suggestions pour tous les joueurs LNR aptes du club, avec ou sans mesures individuelles. Notes au poste, condition et charge sont des données simulées. Les compatibilités de poste viennent des règles natives ; aucun bonus tactique chiffré non attesté. Le score ne prédit pas le résultat du match. Le XV reste inchangé jusqu’à confirmation.</p>'+
+  '<p class="help">Suggestions pour tous les joueurs aptes du club, avec ou sans mesures individuelles. Notes au poste, condition et charge sont des données simulées. Les compatibilités de poste viennent des règles natives ; aucun bonus tactique chiffré non attesté. Le score ne prédit pas le résultat du match. Le XV reste inchangé jusqu’à confirmation.</p>'+
   (rows?'<ol>'+rows+'</ol><p class="help">Sélectionnez une option pour prévisualiser la feuille et confirmer manuellement.</p>':
    '<p class="help">Aucun remplacement titulaire améliorant ces critères et validé par la feuille native, ou match verrouillé.</p>')+
   '</section>';
 }
 function lnr05View(){
+ if(typeof S==='undefined'||!S||!lnrCareerMode(S))return '';
+ return lnr05ReferenceContent();
+}
+// Rendu pur des références, testé indépendamment de l’écran Monde qui ne l’insère pas.
+function lnr05ReferenceContent(){
  if(!lnr05Enabled())return '';
  const roster=club().players.filter(p=>typeof p.id==='string'&&p.id.startsWith('lnr:'));
  const measured=roster.filter(p=>lnr05Proof(p.id)).length;

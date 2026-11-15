@@ -7,15 +7,15 @@ assert(['persistent','weekly'].includes(mode));
 function boot(){
  const t=context();
  for(const file of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
- t.run('for(let i=0;i<'+(seed*17)+';i++)Math.random()');t.run("start(0,'lnr')");
- return t;
+ t.run('for(let i=0;i<'+(seed*17)+';i++)Math.random()');t.run("start(0,'world-champ')");
+ t.deferSaves();return t;
 }
 test('repos persistant versus repos ponctuel: suivi et veritable reprise native',()=>{
  let t=boot(),r=t.run;
- r('var auditMinutes=0,auditLastMatch=null,origMatch=createRugbyMatch;createRugbyMatch=function(pair,legacy,automated,preparation){const l=origMatch(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))auditLastMatch=l;return l;}');
+ const attach=t=>t.run('var auditMinutes=0,auditLastMatch=null,origMatch=createRugbyMatch;createRugbyMatch=function(pair,legacy,automated,preparation){const l=origMatch(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))auditLastMatch=l;return l;}');attach(t);
  const stats={seed,mode,rounds:0,assigned:0,restPlayerWeeks:0,newInjuries:0,minutes:0,checkpoints:0,beforeCondition:0,afterTrainingCondition:0,afterMatchCondition:0,beforeLoad:0,afterTrainingLoad:0,afterMatchLoad:0};
  const sample=()=>r('({condition:club().players.reduce((a,p)=>a+p.condition,0)/club().players.length,load:club().players.reduce((a,p)=>a+physicalLoadValue(p),0)/club().players.length,injured:club().players.filter(p=>p.injury).length})');
- while(r("S.phase!=='ended'")&&stats.rounds<42){
+ while(r("S.phase!=='ended'")&&stats.rounds<80){
   if(mode==='weekly')r("club().players.forEach(p=>{if(p.physicalLoad&&p.physicalLoad.plan==='repos')p.physicalLoad.plan='normal'})");
   const assigned=r("club().players.filter(p=>p.condition<65||physicalLoadValue(p)>45).map(p=>setPhysicalTraining(p.id,'repos')).filter(Boolean).length");
   stats.assigned+=assigned;
@@ -38,11 +38,12 @@ test('repos persistant versus repos ponctuel: suivi et veritable reprise native'
    assert.equal(resumed.run('S.round'),r('S.round'),'vraie reprise sauvegarde meme journee');
    assert.equal(resumed.run('club().players[0].condition'),r('club().players[0].condition'),'condition reprise identique');
    assert.equal(resumed.run('S.phase'),r('S.phase'),'phase reprise identique');
+   resumed.setSeed(t.seed());t.close();t=resumed;r=t.run;t.deferSaves();attach(t);
    stats.checkpoints++;
   }
  }
- assert.equal(r('S.phase'),'ended');assert(stats.rounds>=25);assert.equal(stats.checkpoints,1);
+ assert.equal(r('S.phase'),'ended');assert.equal(stats.rounds,46,'calendrier Monde complet');assert.equal(stats.checkpoints,1);
  for(const key of ['beforeCondition','afterTrainingCondition','afterMatchCondition','beforeLoad','afterTrainingLoad','afterMatchLoad'])stats[key]=Number((stats[key]/stats.rounds).toFixed(3));
  stats.final=sample();stats.wins=r('club().won');
- console.log(JSON.stringify({passed:true,observational:true,...stats}));
+ console.log(JSON.stringify({passed:true,observational:true,...stats}));t.close();
 });

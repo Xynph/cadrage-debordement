@@ -1,14 +1,14 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
-function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);t.run("start(0,'lnr')");return t}
+function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);t.run("start(0,'world-champ')");t.deferSaves();return t}
 function metrics(run){return run('({injured:club().players.filter(p=>p.injury).length,condition:club().players.reduce((a,p)=>a+p.condition,0)/club().players.length,load:club().players.reduce((a,p)=>a+physicalLoadValue(p),0)/club().players.length})')}
-test('LNR: trois strategies comparables, saisons completes et sauvegardes',()=>{
+test('Monde: trois strategies comparables, saisons completes et sauvegardes',()=>{
  const outcomes=[];
  for(const mode of ['temoin','rotation','repos']){
   const t=boot(),run=t.run,baseline=metrics(run);
   let steps=0,applied=0,proposed=0,planned=0;
-  while(run("S.phase!=='ended'")&&steps<42){
+  while(run("S.phase!=='ended'")&&steps<80){
    if(mode==='repos'){
     // Politique explicite sur le moteur existant ; ne pas injecter de condition.
     planned+=run("club().players.filter(p=>p.condition<65||physicalLoadValue(p)>45).map(p=>setPhysicalTraining(p.id,'repos')).filter(Boolean).length");

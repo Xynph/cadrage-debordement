@@ -108,7 +108,7 @@ function lnrPlayerFacts(club,player){
  const id=player[0],birth=typeof LNR_BIRTHYEARS_DATA==='undefined'?null:lnrBirthAge(id);
  const gamePlayer=S.clubs.flatMap(c=>c.players).find(p=>p.id===id);
  const fact=(label,value)=>'<dt>'+lnrEscape(label)+'</dt><dd>'+lnrEscape(value)+'</dd>';
- const provenance='<p class="help">Source des identités, groupes et nationalités : effectif LNR au 31/10/2026. Année de naissance : compilation DATA-06. Les trois dates complètes sont les seules confirmées par l’utilisateur, non vérifiées indépendamment.</p>';
+ const provenance='<p class="help">Source des identités, groupes et nationalités : effectif LNR au 31/10/2026. Année de naissance : compilation DATA-06. Les âges et années de référence sont publics ; les dates complètes restent dans le dépôt privé.</p>';
  const real='<dl>'+fact('Identifiant LNR',id)+fact('Nom LNR',player[1])+fact('Groupe de poste LNR',player[2])+fact('Nationalité LNR',player[3]||'Non renseignée')+
   fact('Naissance',birth?(birth.birthDate?birth.birthDate:String(birth.birthYear)+(birth.ageEstimated?' (année seulement)':'')):'Non disponible')+
   fact('Âge au 01/07/2026',birth?String(birth.age)+(birth.ageEstimated?' (estimé)':birth.birthDate?' (date complète)':' (âge de référence)'):'Non disponible')+'</dl>';

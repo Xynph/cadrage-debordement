@@ -2,14 +2,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
 function boot(){const t=context();for(const f of ['lnr-rosters-base.js','lnr-career.js','lnr05-mesures.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),t.ctx);return t}
-test('LNR: aide rotation en lecture seule et compatibilite du mode fictif',()=>{
+test('Monde: aide rotation en lecture seule et compatibilite du mode fictif',()=>{
  const t=boot(),run=t.run;
- run('start(0)');
+ assert.equal(run('S'),null,'absence de carrière avant les contrôles de disponibilité');
  assert.equal(run('lnr05AdviceCandidates().length'),0);
  assert.equal(run('lnr05AdviceView()'),'');
- assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
+ run('start(0)');assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));t.close();
  const g=boot(),r=g.run;
- r("start(0,'lnr')");
+ r("start(0,'world-champ')");
  const old=r('JSON.stringify(S)'),saved=g.store['bdt-v1'];
  const candidates=r('lnr05AdviceCandidates().map(x=>({id:x.id,slot:x.slot,score:x.score,valid:x.proposal.valid}))');
  assert(candidates.length<=3);

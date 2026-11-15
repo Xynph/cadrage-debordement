@@ -44,12 +44,12 @@
       "tests/lnr-cross-season-recovery.cjs": 15,
       "tests/lnr-multiclub-continuity.cjs": 31,
       "tests/lnr-save-import-rollback-stress.cjs": 2,
-      "tests/lnr-save-integrity-guards.cjs": 11,
+      "tests/lnr-save-integrity-guards.cjs": 132,
       "tests/lnr-save-resume-continuation.cjs": 15,
       "tests/lnr05-evidence-long.cjs": 25,
       "tests/lnr05-fatigue-scenarios.cjs": 24,
       "tests/lnr05-multiseason-strategies.cjs": 26,
-      "tests/lnr05-rest-policy-audit.cjs": 7,
+      "tests/lnr05-rest-policy-audit.cjs": 626,
       "tests/lnr05-rotation-audit.cjs": 27,
       "tests/management-day-worker.cjs": 267,
       "tests/management-france-day-worker.cjs": 201,
@@ -206,7 +206,15 @@
       "tests/harness-monde-saves.cjs": 89,
       "tests/lnr-loaded-birthyears-career.cjs": 65,
       "tests/public-birthdates.cjs": 2,
-      "tests/lnr-catalogue-ages.cjs": 2
+      "tests/lnr-catalogue-ages.cjs": 2,
+      "tests/lnr-player-facts.cjs": 51,
+      "tests/lnr05-monde-rotation.cjs": 63,
+      "tests/lnr05-matchday-decision.cjs": 26,
+      "tests/lnr05-matchday-advice.cjs": 47,
+      "tests/lnr05-evidence.cjs": 55,
+      "tests/lnr05-match-simulation-propagation.cjs": 35,
+      "tests/lnr-career.cjs": 76,
+      "tests/lnr05-physical-propagation.cjs": 58
     }
   },
   "godot": {
@@ -315,7 +323,17 @@
       "tests/lnr-loaded-birthyears-career.cjs": 3180,
       "tests/public-birthdates.cjs": 155,
       "tests/frontrow.cjs": 4821,
-      "tests/native-save-hotpaths06.cjs": 1508
+      "tests/native-save-hotpaths06.cjs": 1508,
+      "tests/lnr-player-facts.cjs": 2260,
+      "tests/lnr05-rest-policy-audit.cjs": 2798,
+      "tests/lnr05-monde-rotation.cjs": 2829,
+      "tests/lnr05-matchday-decision.cjs": 1550,
+      "tests/lnr05-matchday-advice.cjs": 2129,
+      "tests/lnr05-evidence.cjs": 1976,
+      "tests/lnr05-match-simulation-propagation.cjs": 1549,
+      "tests/lnr-career.cjs": 1999,
+      "tests/lnr-save-integrity-guards.cjs": 3022,
+      "tests/lnr05-physical-propagation.cjs": 2409
     }
   }
 }

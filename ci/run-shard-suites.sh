@@ -53,6 +53,9 @@ budget() {
   # Les autres réserves longues sont provisoires après les timeouts observés sur
   # 42891746395, sans retirer de contrôle.
   case "$1" in
+    # Audit du repos Monde : saison réelle de 46 semaines, reprise en VM à la semaine 15 ;
+    # 543,6 s en local sous trois suites concurrentes (Node 24), toutes assertions conservées.
+    tests/lnr05-rest-policy-audit.cjs) echo 1800s ;;
     # Migration Monde du 15/11, Node 24 local : géométrie 202,3 s, côté 147,2 s,
     # première ligne 169,1 s ; mêmes scènes/assertions, sérialisation native différée.
     tests/lineout-geometry.cjs|tests/lineout-side.cjs|tests/frontrow.cjs) echo 600s ;;
