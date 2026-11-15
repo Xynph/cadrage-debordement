@@ -62,7 +62,7 @@ test('production navigation loads dashboard before native finance panels',()=>{
 
 test('native match engine: facility purchase and academy training survive save import',()=>{
  const vm=require('node:vm');
- const {context}=require('./harness.cjs');
+ const {engineContext:context}=require('./harness.cjs');
  const g=context(),run=g.run;
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../dist/finance-v2.js'),'utf8'),g.ctx);
  run('start(0)');
