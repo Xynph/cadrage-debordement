@@ -123,11 +123,11 @@
       "tests/tactical-plans.cjs": 318,
       "tests/v28-collective-preparation.cjs": 3,
       "tests/v29-focused-development.cjs": 5,
-      "tests/v33-contract-renewals.cjs": 2,
-      "tests/v34-counteroffers.cjs": 2,
+      "tests/v33-contract-renewals.cjs": 271,
+      "tests/v34-counteroffers.cjs": 314,
       "tests/v35-salary-demand.cjs": 252,
       "tests/v63-1-long-career.cjs": 78,
-      "tests/v63-2-stress-native.cjs": 102,
+      "tests/v63-2-stress-native.cjs": 1527,
       "tests/v76-espoirs-scouting.cjs": 33,
       "tests/windows-package.cjs": 8,
       "tests/world-career.cjs": 76,
@@ -274,14 +274,18 @@
       "tests/godot-match-gestes.cjs": 45,
       "tests/animation-replay.cjs": 47,
       "tests/godot-soundscape06.cjs": 41,
+      "tests/playbook.cjs": 178,
+      "tests/world-selection-memo.cjs": 103,
       "tests/ci-sharding.cjs": 6,
       "tests/ci-modes-monde.cjs": 8,
-      "tests/playbook.cjs": 178,
+      "tests/v31-finance-forecasts.cjs": 211,
+      "tests/v32-succession-planning.cjs": 228,
+      "tests/staff-mentoring.cjs": 398,
+      "tests/world-youth-history-promotion.cjs": 49,
       "tests/ci-p90-stress-guard.cjs": 2,
       "tests/ci-test-coverage.cjs": 3,
       "tests/ci-shard-profiles.cjs": 2,
-      "tests/ci-long-career-balance.cjs": 2,
-      "tests/world-selection-memo.cjs": 103
+      "tests/ci-long-career-balance.cjs": 2
     }
   },
   "godot": {
@@ -492,13 +496,20 @@
       "tests/tactical-plans.cjs": 4992,
       "tests/playbook.cjs": 5120,
       "tests/opposition.cjs": 4864,
+      "tests/world-selection-memo.cjs": 2624,
+      "tests/v63-2-stress-native.cjs": 3968,
+      "tests/v31-finance-forecasts.cjs": 3648,
+      "tests/v32-succession-planning.cjs": 3968,
+      "tests/v33-contract-renewals.cjs": 4160,
+      "tests/v34-counteroffers.cjs": 4160,
+      "tests/staff-mentoring.cjs": 4736,
+      "tests/world-youth-history-promotion.cjs": 2112,
       "tests/ci-p90-stress-guard.cjs": 1024,
       "tests/ci-test-coverage.cjs": 1024,
       "tests/ci-modes-monde.cjs": 1024,
       "tests/ci-shard-profiles.cjs": 1024,
       "tests/ci-sharding.cjs": 1024,
-      "tests/ci-long-career-balance.cjs": 1024,
-      "tests/world-selection-memo.cjs": 2624
+      "tests/ci-long-career-balance.cjs": 1024
     }
   }
 }

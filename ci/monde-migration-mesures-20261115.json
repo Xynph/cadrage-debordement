@@ -6,7 +6,8 @@
     "mesures locales à remplacer par les mesures CI du code migré après un run conforme",
     "Garde statique8/8 verte ; migrations fonctionnelles encore en cours, aucune CI complète conforme à ce stade. Les signatures de suite/log bornent les reçus locaux, pas une provenance GitHub.",
     "currentSourceSha256 désigne le fichier relu lors de la consolidation des mesures, sans attester les dépendances exactes chargées lors d’un reçu plus ancien ; logSha256 identifie le journal réel. Seule la CI finale sur SHA recevra l’ensemble courant.",
-    "Plan LPT existant conservé. Sept contrôles purs CI actuels verts sur Node22 ; ci-shard-replay est rouge avec les nouveaux vrais poids (1916,24s sur la première trace, contre1232,39s en10×2). Une proposition de rééquilibrage étudiée puis archivée ne résolvait pas le plancher de charge ; ses anciens reçus verts ne figurent plus ici. Aucun seuil ni historique modifié."
+    "Plan LPT existant conservé. Sept contrôles purs CI actuels verts sur Node22 ; ci-shard-replay est rouge avec les nouveaux vrais poids (1916,24s sur la première trace, contre1232,39s en10×2). Une proposition de rééquilibrage étudiée puis archivée ne résolvait pas le plancher de charge ; ses anciens reçus verts ne figurent plus ici. Aucun seuil ni historique modifié.",
+    "V63.1 : tentative12années jouées rouge sur assertion finale de constructeur ; aucun poids vert issu de cet échec. Reprise complète en cours avec vrai validateur. V63.2 : référence6années reçue1327,4s ; deux scénarios indépendants5années encore en cours de réception, sans perte des16années/six reprises."
   ],
   "suites": [
     {
@@ -408,7 +409,8 @@
       "runtime": "Node24.22.1 local Linux sous charge",
       "harness": "aad8d9dd",
       "currentSourceSha256": "feb7fd71bfd2b19061ce0546e475e6d7cbc374d343e1beefa728b9ccbd9dd86c",
-      "logSha256": "63e064c1bc36f3460c77e3b811394282cbde72f303d6babf0e3094b5fa8b33e7"
+      "logSha256": "63e064c1bc36f3460c77e3b811394282cbde72f303d6babf0e3094b5fa8b33e7",
+      "limits": "Reçu complet antérieur811,1s ; version finale avec compteur RNG injecté reçue seulement sur Effets Node22,165,58s. Statistiques inchangées du reçu complet ; aucune seconde recette complète sur ce SHA."
     },
     {
       "file": "tests/godot-match-gestes.cjs",
@@ -489,6 +491,17 @@
       "harness": "aad8d9dd",
       "currentSourceSha256": "2d0bc67948a78e8ab2b73038ceafa83281a6c961891b46819085e65eb589e993",
       "logSha256": "862ea209d373261f0570a4e29e2b29550493a86f29d82043411e7671f7726fa7"
+    },
+    {
+      "file": "tests/v63-2-stress-native.cjs",
+      "status": 0,
+      "signal": null,
+      "runtime": "v22.23.5",
+      "seconds": 1327.4,
+      "peakRssKb": 3236408,
+      "harness": "aad8d9dd",
+      "currentSourceSha256": "ba396a37aa0aa107e7766e4347ef185495ef513a5d5e2ed502c0b99cc470898c",
+      "logSha256": "6da0fda7258049d5dae130d66f2da49f9e7fcf5cde11d566a843aa4d85b45e38"
     },
     {
       "file": "tests/lnr-career-long.cjs",
@@ -821,6 +834,61 @@
       "logSha256": "cbda4b3b0261e929068151d272b68afa5a77ef1ebf0f8b91c847268bbae4ac25"
     },
     {
+      "file": "tests/v31-finance-forecasts.cjs",
+      "status": 0,
+      "seconds": 182.794744993,
+      "peakRssKb": 2957464,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b0e6ed19",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "df7d218229a3486d77e95cdaa08a1e48ece35f239859e68b540fae3a8efddf59",
+      "logSha256": "614f0e008d93a469cc382e2c642dc2eea0838b0c807d46cf9c18bc5c1368f226"
+    },
+    {
+      "file": "tests/v32-succession-planning.cjs",
+      "status": 0,
+      "seconds": 198.240785596,
+      "peakRssKb": 3248364,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit b10aa03a",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "8ee5e6268246067af311d8720adec7490ac53748aea4302196197846ac835589",
+      "logSha256": "84def5769f48e98b5046be1e09582778b72d79ac3f963635534388c1d65cf946"
+    },
+    {
+      "file": "tests/v33-contract-renewals.cjs",
+      "status": 0,
+      "seconds": 235.356708315,
+      "peakRssKb": 3395196,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit e46e8bb6",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "b9e19ee3f5e8b98e2b4efc7de860b781a63cbb33a526867835408c7ecc4f1d54",
+      "logSha256": "8138a373585710a08c146756b03b5fd3fc19e33b5525af70967f0cbe469fac7d"
+    },
+    {
+      "file": "tests/v34-counteroffers.cjs",
+      "status": 0,
+      "seconds": 272.309321329,
+      "peakRssKb": 3362052,
+      "runtime": "v24.22.1",
+      "harness": "branche producteur, commit 634c411c",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "ac422744eb8bbbd7129420a59dff11292a4042777efb577a8ba3ec263d56eb75",
+      "logSha256": "8ae49bde101f5494344e9dd4ffb27e1e6bdc5d36a5b4b09d148c0ca0a7edb914"
+    },
+    {
+      "file": "tests/staff-mentoring.cjs",
+      "status": 0,
+      "seconds": 345.886301771,
+      "peakRssKb": 3867964,
+      "runtime": "v22.23.5",
+      "harness": "branche producteur, commit bd8d2da2",
+      "measurement": "after exit listeners and harness cleanup; process.resourceUsage().maxRSS; preload v2",
+      "currentSourceSha256": "5b77ee7f63b2bc9ba24d79046368c18ceca7541555e1348590df7351a3181870",
+      "logSha256": "ebad57e97961c63b11f19e05aacb10750466fcb22a6763c7d393e5cc71e2d58c"
+    },
+    {
       "file": "tests/art-direction-v4.cjs",
       "status": 0,
       "seconds": 48.349003551,
@@ -1139,6 +1207,16 @@
       "harness": "producteurUI/559dbede70ce9f67c7358103b52190bc201fa5b2, 116clubsWorld, sans744",
       "currentSourceSha256": "28231d06279a884ffb8285cc77dbc78cc33a73256596a77281b57ee86e4a8818",
       "logSha256": "7406cd3ddc63fda91cc91b1c33a4a8a65ee6f0945b4284dc5f28dcbd9baab01a"
+    },
+    {
+      "file": "tests/world-youth-history-promotion.cjs",
+      "status": 0,
+      "seconds": 42.315288115,
+      "peakRssKb": 1692996,
+      "runtime": "v24.22.1",
+      "harness": "11b98fec + dépendance performance86df544c, six sources vérifiées SHA256 sur root ; recette promotion, pas campagne10ans",
+      "currentSourceSha256": "2016913932c9dbb6dc39cddf431d250eaa8f10ef9b80c4c90d6250cb7376ae52",
+      "logSha256": "aab0f1325688b8cfeb34188af8a80cbafa7a6dd8b793b94f27335c173f8a368c"
     },
     {
       "file": "tests/ci-p90-stress-guard.cjs",

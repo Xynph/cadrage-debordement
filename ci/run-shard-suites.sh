@@ -55,6 +55,12 @@ budget() {
   case "$1" in
     # Parité complète de sélection/empreinte World :88,86s Node22, sans seuil chronométrique.
     tests/world-selection-memo.cjs) echo 300s ;;
+    # Promotion et conservation d'historique :42,32s après dépendance performance.
+    tests/world-youth-history-promotion.cjs) echo 300s ;;
+    # Mentorat World,11cas complets et vrais composants publics :345,89s.
+    tests/staff-mentoring.cjs) echo 900s ;;
+    # Référence V63.2 : six saisons réelles/reprises2/4,1327,4s sous charge.
+    tests/v63-2-stress-native.cjs) echo 2700s ;;
     # Producteur UI, suites complètes : saves804,13s, résilience656,50s,
     # World-save303,97s et Matchday171,43s ; 21recettes reçues en World.
     tests/saves.cjs|tests/career-resilience.cjs|tests/match-penalite-main.cjs|tests/lnr-multiclub-continuity.cjs|tests/match-essai-visible.cjs|tests/rugby.cjs) echo 1800s ;;
