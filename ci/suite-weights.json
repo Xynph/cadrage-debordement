@@ -177,6 +177,7 @@
       "tests/native-stats-melees.cjs": 35,
       "tests/player-population.cjs": 2,
       "tests/press-regional-world.cjs": 140,
+      "tests/reactivite-projection.cjs": 300,
       "tests/salary-floor-resume.cjs": 22,
       "tests/sauvegarde-idempotente.cjs": 233,
       "tests/sauvegarde-journal-monde.cjs": 180,
