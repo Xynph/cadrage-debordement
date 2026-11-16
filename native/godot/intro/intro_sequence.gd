@@ -9,10 +9,11 @@ signal finished
 const C = preload("res://ui/immersive08/components.gd")
 const DATA_PATH := "res://intro/intro.json"
 const CARTES := {
-	"presente": preload("res://intro/carte_presente.gd"),
+	"prologue": preload("res://intro/carte_prologue.gd"),
 	"stade": preload("res://intro/carte_stade.gd"),
 	"titre": preload("res://intro/carte_titre.gd"),
 }
+const MEMO_FILE := "intro-memo.json"
 const MODES := ["complete", "short"]
 
 var app: Control
@@ -22,6 +23,9 @@ var mode := "complete"
 ## Premier lancement : aucun réglage Introduction n'est encore enregistré.
 var first_run := false
 var reduced_motion := false
+## Index de la dernière phrase du stade montrée (mémo du dossier de profil, -1 : aucune).
+var last_phrase := -1
+var _memo_path := ""
 ## Gain de l'ambiance du stade (volume global × ambiance du stade, réglages du profil).
 var stadium_gain := 0.25
 var engine_ready := false
@@ -54,7 +58,9 @@ static func enabled() -> bool:
 static func read_profile(root: String) -> Dictionary:
 	# Même dossier que le moteur (native/engine/worker.cjs) : <dossier>/PrototypeGodot, sauf s'il y est déjà.
 	var directory := root if root.get_file() == "PrototypeGodot" else root.path_join("PrototypeGodot")
-	var result := {"mode": "complete", "first": true, "reduced_motion": false, "gain": 0.75 * 0.25}
+	var result := {"mode": "complete", "first": true, "reduced_motion": false, "gain": 0.75 * 0.25, "memo": directory.path_join(MEMO_FILE), "last_phrase": -1}
+	var memo := _json(result.memo)
+	if memo.has("derniere_phrase") and typeof(memo.derniere_phrase) in [TYPE_INT, TYPE_FLOAT]: result.last_phrase = int(memo.derniere_phrase)
 	var interface := _json(directory.path_join("interface.json"))
 	if FileAccess.file_exists(directory.path_join("interface.json")) and interface.is_empty():
 		result.mode = "short"; result.first = false # Fichier illisible : rien d'imposé au joueur.
@@ -89,6 +95,8 @@ func setup(host: Control, profile_directory: String) -> void:
 	first_run = bool(profile.first) and forced_mode.is_empty()
 	reduced_motion = bool(profile.reduced_motion)
 	stadium_gain = float(profile.gain)
+	last_phrase = int(profile.last_phrase)
+	_memo_path = str(profile.memo)
 	order = (data.get("sequence_complete" if mode == "complete" else "sequence_courte", ["titre"]) as Array).filter(func(id): return CARTES.has(str(id)))
 	if order.is_empty(): order = ["titre"]
 	_root = Control.new()
@@ -106,6 +114,27 @@ func setup(host: Control, profile_directory: String) -> void:
 		app.bridge.model_changed.connect(_on_model)
 		app.bridge.command_failed.connect(_on_failed)
 	_goto(0)
+
+## Index de la phrase d'ambiance : tiré au hasard, jamais celui du lancement précédent. `roll` (0..1) rend le tirage
+## testable ; avec un seul choix, pas d'alternative.
+static func next_phrase(count: int, last: int, roll: float) -> int:
+	if count <= 1: return 0
+	var pool := count - 1 if last >= 0 and last < count else count
+	var pick := mini(int(roll * pool), pool - 1)
+	return pick + 1 if last >= 0 and last < count and pick >= last else pick
+
+## Tire la phrase de la carte du stade et la mémorise (écriture d'un petit fichier, sans bloquer ni signaler :
+## un mémo perdu ne coûte qu'une répétition possible).
+func draw_phrase(count: int) -> int:
+	var index := next_phrase(count, last_phrase, randf())
+	last_phrase = index
+	if not _memo_path.is_empty():
+		DirAccess.make_dir_recursive_absolute(_memo_path.get_base_dir())
+		var file := FileAccess.open(_memo_path, FileAccess.WRITE)
+		if file != null:
+			file.store_string(JSON.stringify({"derniere_phrase": index}) + "\n")
+			file.close()
+	return index
 
 func card_data(id: String) -> Dictionary:
 	return data.get("cartes", {}).get(id, {})

@@ -1,7 +1,7 @@
 extends Control
-## Carte 1 : « <éditeur> présente ». Fond vert profond (canvas_intro_fond.gdshader) avec lumières floues,
-## filet doré qui se trace depuis le centre, nom de l'éditeur en Barlow Condensed dont l'interlettrage se
-## resserre en apparaissant, mention « présente » en or. Textes, durées et intensités dans intro.json.
+## Carte 1 : prologue d'ambiance, sans nom d'éditeur. Fond vert profond (canvas_intro_fond.gdshader) avec
+## lumières floues, filet doré qui se trace depuis le centre, phrase en Barlow Condensed dont l'interlettrage
+## se resserre en apparaissant, surtitre en or. Textes, durées et intensités dans intro.json.
 const C = preload("res://ui/immersive08/components.gd")
 const Plan = preload("res://intro/plan.gd")
 
@@ -23,22 +23,22 @@ func configure(sequence: Node, spec: Dictionary) -> void:
 	_spec = spec
 	_calm = sequence != null and sequence.reduced_motion
 	_ground = Plan.painted(self, "res://intro/canvas_intro_fond.gdshader")
-	_ground.name = "IntroPresenteFond"
+	_ground.name = "IntroPrologueFond"
 	_ground.material.set_shader_parameter("bokeh", float(spec.get("lumieres_floues", 0.5)))
 	_ground.material.set_shader_parameter("grain", float(spec.get("grain", 0.035)))
 	var plan := Plan.layer(self)
-	_rule = Plan.painted(plan, "res://intro/canvas_intro_filet.gdshader", Rect2(1280 - 560, 742 - 20, 1120, 40))
+	_rule = Plan.painted(plan, "res://intro/canvas_intro_filet.gdshader", Rect2(1280 - 560, 790 - 20, 1120, 40))
 	_rule.name = "IntroFilet"
 	_rule.material.set_shader_parameter("rect_size", Vector2(1120, 40) * C.density)
 	_rule.material.set_shader_parameter("progress", 0.0)
 	_words = Control.new()
-	_words.name = "IntroPresenteTexte"
+	_words.name = "IntroPrologueTexte"
 	_words.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plan.add_child(_words)
-	_name = Plan.spaced(_words, str(spec.get("editeur", "")), 1280, 700, 66, C.IVORY, C.DISPLAY, float(spec.get("interlettrage_depart", 34)))
-	_name.name = "IntroEditeur"
-	_mention = Plan.spaced(_words, str(spec.get("mention", "")), 1280, 806, 24, C.GOLD, C.BOLD, float(spec.get("interlettrage_mention", 14)))
-	_mention.name = "IntroMention"
+	_name = Plan.spaced(_words, str(spec.get("texte", "")), 1280, 748, 62, C.IVORY, C.DISPLAY, float(spec.get("interlettrage_depart", 34)))
+	_name.name = "IntroProloguePhrase"
+	_mention = Plan.spaced(_words, str(spec.get("surtitre", "")), 1280, 648, 24, C.GOLD, C.BOLD, float(spec.get("interlettrage_mention", 14)))
+	_mention.name = "IntroPrologueSurtitre"
 	_name.modulate.a = 0.0
 	_mention.modulate.a = 0.0
 

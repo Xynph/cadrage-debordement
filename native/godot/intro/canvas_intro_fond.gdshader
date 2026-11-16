@@ -1,7 +1,7 @@
 shader_type canvas_item;
 render_mode unshaded;
 
-// Fond de la carte « présente » (ouverture, Rugby Legacy 27, novembre 2026) : dégradé radial vert profond
+// Fond de la carte « prologue » (ouverture, Rugby Legacy 27, novembre 2026) : dégradé radial vert profond
 // vers l'encre du thème, quelques lumières de stade très floues qui dérivent (bokeh), vignette et grain.
 // Cible : GL Compatibility, plein écran, aucune texture.
 

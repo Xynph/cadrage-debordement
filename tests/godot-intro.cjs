@@ -1,6 +1,6 @@
 'use strict';
 // Ouverture du jeu (native/godot/intro/) : trois lancements du vrai jeu, sans carrière.
-//   premier : séquence complète (présente, stade, titre), passage par touche, réglage « Courte » écrit ;
+//   premier : séquence complète (prologue, stade, titre), passage par touche, réglage « Courte » écrit ;
 //   second  : même profil, écran titre seul ;
 //   qa      : profil de test sans CD_GODOT_INTRO, aucune introduction.
 // Chaque phase vérifie aussi, image par image, qu'aucun texte de deux cartes n'est lisible à la fois.

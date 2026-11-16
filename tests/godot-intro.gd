@@ -89,19 +89,19 @@ func run() -> void:
 		check(sequence.get_node("IntroRoot/IntroGround").color.a == 1.0, "Fond du thème posé dès la première image (pas d'écran noir)")
 		watch_overlap()
 		if phase == "film":
-			for moment in [["presente", 0.35, "v2-1-presente-debut"], ["presente", 1.3, "v2-1-presente-milieu"], ["presente", 2.9, "v2-1-presente-fin"], ["stade", 0.35, "v2-2-stade-fondu"], ["stade", 2.4, "v2-2-stade-milieu"], ["stade", 5.6, "v2-2-stade-fin"], ["titre", 0.45, "v2-3-titre-fondu"], ["titre", 1.4, "v2-3-titre-revelation"]]:
+			for moment in [["prologue", 3.2, "v3-1-prologue"], ["stade", 4.5, "v3-2-stade"], ["titre", 2.6, "v3-3-titre-revelation"]]:
 				await shoot(sequence, moment[0], moment[1], moment[2])
 			await until(func(): return sequence.engine_ready, 60.0)
-			await shoot(sequence, "titre", float(sequence.current._time) + 2.0, "v2-3-titre-pret")
-			check(sequence.shown == ["presente", "stade", "titre"], "Film : présente, stade, titre sans toucher au clavier (%s)" % [sequence.shown])
+			await shoot(sequence, "titre", float(sequence.current._time) + 2.0, "v3-3-titre-pret")
+			check(sequence.shown == ["prologue", "stade", "titre"], "Film : prologue, stade, titre sans toucher au clavier (%s)" % [sequence.shown])
 			check(watched_frames > 0 and overlaps == 0, "Fondus : aucun texte de deux cartes visible à la fois (%d images en fondu, %d chevauchements)" % [watched_frames, overlaps])
 			await finish(); return
 		if phase == "premier":
 			check(sequence.mode == "complete" and sequence.first_run, "Premier lancement : séquence complète")
-			check(sequence.current_id() == "presente", "Carte 1 : présente")
+			check(sequence.current_id() == "prologue", "Carte 1 : prologue")
 			await wait(1.2)
-			await capture("intro-1-presente")
-			check(sequence.current_id() == "presente", "Carte 1 tenue tant qu'on ne la passe pas")
+			await capture("intro-1-prologue")
+			check(sequence.current_id() == "prologue", "Carte 1 tenue tant qu'on ne la passe pas")
 			await wait(0.3)
 			await press()
 			check(sequence.current_id() == "stade", "Une touche passe à la carte 2 (stade)")
@@ -109,13 +109,34 @@ func run() -> void:
 			var look: ShaderMaterial = stade.picture.material
 			check(look.shader.resource_path.ends_with("canvas_intro_stade.gdshader") and look.get_shader_parameter("image") != null and look.get_shader_parameter("depth_map") != null, "Stade : illustration animée par le shader (image + profondeur), pas la vue 3D du match")
 			check(not str(stade.phrase.get("texte", "")).is_empty(), "Phrase d'ambiance tirée de intro.json")
+			var memo: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("PrototypeGodot").path_join("intro-memo.json")))
+			check(memo is Dictionary and int(memo.get("derniere_phrase", -2)) == stade.phrase_index, "Index de la phrase mémorisé dans le profil (%s)" % [memo])
+			var raw := FileAccess.get_file_as_string("res://intro/intro.json").to_lower()
+			check(not raw.contains("cadrage") and not raw.contains("débordement") and not raw.contains("presente"), "Ouverture : aucun nom d'éditeur abandonné dans intro.json")
+			var phrases: Array = sequence.card_data("stade").phrases
+			var complete := true
+			for entry in phrases: complete = complete and not str(entry.get("texte", "")).is_empty() and not str(entry.get("surtitre", "")).is_empty()
+			check(phrases.size() >= 10 and complete, "Phrases d'ambiance : au moins 10, toutes complètes (%d)" % phrases.size())
+			var repeats := 0
+			var seen := {}
+			var previous_index := -1
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 27
+			for _i in 400:
+				var drawn: int = sequence.get_script().next_phrase(phrases.size(), previous_index, rng.randf())
+				if drawn == previous_index or drawn < 0 or drawn >= phrases.size(): repeats += 1
+				seen[drawn] = true
+				previous_index = drawn
+			for edge in [0.0, 0.999999]:
+				for last in phrases.size(): if sequence.get_script().next_phrase(phrases.size(), last, edge) == last: repeats += 1
+			check(repeats == 0 and seen.size() == phrases.size(), "Tirage des phrases : jamais deux fois de suite la même, toutes accessibles (%d répétitions, %d/%d vues)" % [repeats, seen.size(), phrases.size()])
 			await wait(2.6)
 			await capture("intro-2-stade")
 			check(sequence.current_id() == "stade" or sequence.engine_ready, "Carte 2 tenue tant que le moteur démarre")
 			await press()
 			await until(func(): return sequence.current_id() == "titre", 2.0)
 			check(sequence.current_id() == "titre", "Une touche passe à l'écran titre")
-			check(sequence.shown == ["presente", "stade", "titre"], "Ordre des cartes : présente, stade, titre (%s)" % [sequence.shown])
+			check(sequence.shown == ["prologue", "stade", "titre"], "Ordre des cartes : prologue, stade, titre (%s)" % [sequence.shown])
 			var titre: Control = sequence.current
 			check(titre._prompt.text.begins_with("APPUIE"), "Invitation au tutoiement (« Appuie »)")
 			check(titre.get_node_or_null("IntroPlan/IntroConseil") == null, "Écran titre épuré : pas de bloc de conseil")

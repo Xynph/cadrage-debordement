@@ -11,8 +11,9 @@ const BED := "res://audio/assets/stadium-bed.wav"
 const CLAMEUR := "res://audio/assets/stadium-try.wav"
 
 var automatic := true
-## Phrase retenue (surtitre, texte) : tirée au hasard dans intro.json.
+## Phrase retenue (surtitre, texte) : tirée dans intro.json, jamais deux lancements de suite la même.
 var phrase: Dictionary = {}
+var phrase_index := -1
 ## Rectangle peint par le shader du stade (contrôle des tests).
 var picture: ColorRect
 var _sequence: Node
@@ -38,7 +39,10 @@ func configure(sequence: Node, spec: Dictionary) -> void:
 	apply_look(picture.material as ShaderMaterial, spec, _calm)
 	var plan := Plan.layer(self)
 	var phrases: Array = spec.get("phrases", [])
-	if not phrases.is_empty(): phrase = phrases[randi() % phrases.size()]
+	if not phrases.is_empty():
+		var picked: int = _sequence.draw_phrase(phrases.size()) if _sequence != null else randi() % phrases.size()
+		phrase = phrases[picked]
+		phrase_index = picked
 	_caption = Control.new()
 	_caption.name = "IntroPhrase"
 	_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
