@@ -92,7 +92,7 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   fi
   if veut audio; then
     mkdir -p "$cap/audio"
-    phase "captures paramètres audio (3 cases, volume Musique)" captures-audio.log \
+    phase "captures paramètres audio (onglet Son)" captures-audio.log \
       env CD_AMBIANCE_CAPTURE="$cap/audio" node --test tests/godot-ambiance.cjs
   fi
   echo "- Captures PNG :$(echo "$quoi" | tr -s ' ') $(find "$cap" -name '*.png' | wc -l) fichier(s)" >> "$out/resume.md"

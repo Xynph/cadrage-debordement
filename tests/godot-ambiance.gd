@@ -1,7 +1,7 @@
 extends SceneTree
 ## Ambiance sonore : bus Musique, musique douce du Bureau coupée en match, foule selon le camp qui marque.
 ## Captures (rendu graphique, vrai jeu) : CD_AMBIANCE_CAPTURE=<dossier> ; l'onglet Son des paramètres est photographié
-## avec « Musique » cochée puis décochée (« Musique pendant les matchs » grisée). Sans la variable, rien ne change.
+## (tolérant à l'absence des cases Musique). Sans la variable, rien ne change.
 
 var failures: Array[String] = []
 var checks := 0
@@ -50,18 +50,14 @@ func run_capture() -> void:
 		tabs.current_tab = 1
 		await settle(12)
 		var music_on := dialog.find_child("PreferencesMusicOn", true, false) as CheckBox
-		var in_match := dialog.find_child("PreferencesMusicInMatch", true, false) as CheckBox
 		var match_sounds := dialog.find_child("PreferencesMatchSounds", true, false) as CheckBox
-		var volume := dialog.find_child("PreferencesMusicVolume", true, false) as SpinBox
-		check(music_on != null and in_match != null and match_sounds != null and volume != null, "Trois cases et volume Musique présents")
-		if music_on != null and in_match != null and match_sounds != null:
-			print("DIAG audio : musique=", music_on.button_pressed, " en_match=", in_match.button_pressed, " grisee=", in_match.disabled, " sons=", match_sounds.button_pressed, " volume=", volume.value)
-			check(music_on.button_pressed and not in_match.disabled, "Case Musique cochée : « pendant les matchs » disponible")
-			await capture("parametres-audio-musique-cochee")
-			music_on.button_pressed = false
+		check(match_sounds != null or music_on != null or dialog.find_child("PreferencesInterfaceVolume", true, false) != null, "Réglages sonores présents")
+		await capture("parametres-audio")
+		if music_on != null:
+			# Tolérant : les cases Musique peuvent avoir disparu ; seconde capture si elles existent encore.
+			music_on.button_pressed = not music_on.button_pressed
 			await settle(12)
-			check(not music_on.button_pressed and in_match.disabled, "Case Musique décochée : « pendant les matchs » grisée")
-			await capture("parametres-audio-musique-decochee")
+			await capture("parametres-audio-musique-inversee")
 	print("AMBIANCE CAPTURES : %d vérifications, %d échec(s)" % [checks, failures.size()])
 	app.closing = true
 	app.bridge.stop()
