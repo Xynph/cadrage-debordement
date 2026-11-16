@@ -134,10 +134,7 @@ const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183
 function matchTrapOffset(gap,rnd=Math.random){const c=MATCH_LEVEL_CURVE.piege,d=Math.abs(Number(gap)||0),q=Math.min(c.max,c.parPoint*(d-c.seuil));if(!(q>0)||rnd()>=q)return 0;return -Math.sign(gap)*c.part*d}
 function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
 function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side))+(Number(l.levelTrap)||0)*(side===0?1:-1))}
-function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);
-// Moyennes d'attaque et de défense calculées seulement sans règles tactiques (sinon tacticalEdge les remplace) : unit est
-// une lecture pure, même valeur et même ordre d'opérations qu'avant (lot 36).
-let b=(tacticalRules(l)?tacticalEdge(l,side):((unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25)-(unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28))*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
+function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.
 if(l.advantageModel===2&&kind==='attack'&&t==='large')b+=(on.length-activePlayers(l,opp).length)*.018;
 if(kind==='attack'&&!tacticalRules(l)){if(t==='large')b+=(unit(l,side,'pass',p=>p.fam>=4)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.003:.006)+(l.balanceVersion===2?.015:.035);if(t==='conquete')b+=(unit(l,side,'power',p=>p.fam<=3)-(l.balanceVersion===2?75:65))*(l.balanceVersion===2?.002:.004);if(weather==='Pluie'&&t==='large')b-=.075;if(weather==='Vent'&&t==='occupation')b-=.025}
