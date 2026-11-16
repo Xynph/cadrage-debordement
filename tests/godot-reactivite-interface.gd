@@ -9,8 +9,14 @@ extends SceneTree
 ##   intactes après plusieurs rendus).
 ## - Fiche club : seconde ouverture du même jour sans commande moteur ; « Suivre » bascule dès le clic sans relire
 ##   la fiche.
+## - Rafraîchissement par écran (ui/screen_refresh.gd) : règles de la table ; sur 10 écrans, une réponse sans section
+##   lue par l'écran le garde tel quel (rendu mesuré avant/après), et l'écran gardé est identique au rendu complet
+##   (signature de l'arbre : textes, boutons grisés ou enfoncés, éléments visibles) ; une décision lue par l'écran le
+##   redessine toujours.
 ## Imprime une ligne REACTIVITE {checks, failures, mesures}.
 const Flow = preload("helpers/contextual_flow.gd")
+const ScreenRefresh = preload("res://ui/screen_refresh.gd")
+const ECRANS := ["Bureau", "Effectif", "Composition", "Calendrier", "Classements", "Club", "Finances", "Recrutement", "Staff", "Préparation"]
 const SEUIL_HORS_MOTEUR_MS := 150.0
 var app: Control
 var checks := 0
@@ -63,8 +69,10 @@ func run() -> void:
 	await command("new_career", {"mode": "world-champ", "club": 0})
 	await Flow.settle_club_meetings(app, self, check)
 	check(app.model.get("club") is Dictionary, "Carrière Monde créée")
+	plan_rules()
 	await decisions()
 	await integrity()
+	await refresh_screens()
 	await club_sheet()
 	print("REACTIVITE ", JSON.stringify({"checks": checks, "failures": failures, "mesures": mesures}))
 	quit(0 if failures.is_empty() else 1)
@@ -128,7 +136,7 @@ func decisions() -> void:
 
 ## Sections reprises sans copie : un instantané différentiel = un instantané complet.
 func integrity() -> void:
-	for target in ["Bureau", "Effectif", "Composition", "Calendrier", "Classements", "Club", "Finances", "Recrutement", "Staff", "Préparation"]:
+	for target: String in ECRANS:
 		app._navigate(target)
 		await settle(2)
 	await command("auto_lineup")
@@ -178,3 +186,146 @@ func club_sheet() -> void:
 	check(app.bridge.last_response_ok and app.last_command == "club_follow", "Suivi confirmé sans relire la fiche (" + app.last_error + ")")
 	var followed: Array = app.bridge.model.get("clubLife", {}).get("clubSheet", {}).get("followed", [])
 	check(followed.any(func(v: Variant) -> bool: return int(v) == others[0]), "Club suivi enregistré par le moteur")
+
+## Règles du choix après une réponse (table d'essai, sans moteur).
+const RULE_DATA := {"toujours_complet": ["Accueil"], "sections": {"meta.autosave": {"ecrans": []}, "clubLife.clubSheet": {"ecrans": ["Fiche club"]}, "decisions.delegation": {"ecrans": ["Staff"]}}}
+const RULE_MODEL := {"meta": {"calendarToday": "2026-07-01"}}
+
+func rule(route: String, rendered: Dictionary, changes: Dictionary, full := false) -> String:
+	return ScreenRefresh.plan(route, rendered, ScreenRefresh.stamp(11, route, false, RULE_MODEL, "", false), changes, full, RULE_DATA)
+
+func plan_rules() -> void:
+	var shown := ScreenRefresh.stamp(11, "Classements", false, RULE_MODEL, "", false)
+	check(rule("Classements", shown, {}) == ScreenRefresh.NONE, "Règle : rien de changé, écran gardé")
+	check(rule("Classements", shown, {"meta": {"autosave": true}, "clubLife": {"clubSheet": true}}) == ScreenRefresh.NONE, "Règle : sections non lues par l'écran, écran gardé")
+	check(rule("Staff", ScreenRefresh.stamp(11, "Staff", false, RULE_MODEL, "", false), {"decisions": {"delegation": true}}) == ScreenRefresh.FULL, "Règle : section lue par l'écran, rendu complet")
+	check(rule("Classements", shown, {"squad": true}) == ScreenRefresh.FULL, "Règle : section inconnue, rendu complet")
+	check(rule("Classements", shown, {"meta": {}}) == ScreenRefresh.FULL, "Règle : sous-section retirée, rendu complet")
+	check(rule("Classements", shown, {}, true) == ScreenRefresh.FULL, "Règle : réponse complète, rendu complet")
+	check(rule("Classements", ScreenRefresh.stamp(11, "Classements", true, RULE_MODEL, "", false), {}) == ScreenRefresh.FULL, "Règle : écran construit pendant l'attente, rendu complet")
+	check(rule("Classements", ScreenRefresh.stamp(11, "Classements", false, {"meta": {"calendarToday": "2026-06-30"}}, "", false), {}) == ScreenRefresh.FULL, "Règle : autre jour, rendu complet")
+	check(rule("Classements", ScreenRefresh.stamp(11, "Club", false, RULE_MODEL, "", false), {}) == ScreenRefresh.FULL, "Règle : autre écran, rendu complet")
+	check(rule("Classements", ScreenRefresh.stamp(12, "Classements", false, RULE_MODEL, "", false), {}) == ScreenRefresh.FULL, "Règle : écran remplacé, rendu complet")
+	check(rule("Classements", ScreenRefresh.stamp(11, "Classements", false, RULE_MODEL, "", false, true), {}) == ScreenRefresh.FULL, "Règle : voyant d'alerte différent, rendu complet")
+	check(rule("Accueil", ScreenRefresh.stamp(11, "Accueil", false, RULE_MODEL, "", false), {}) == ScreenRefresh.FULL, "Règle : écran toujours complet")
+	check(ScreenRefresh.edit_ids([[["clubLife", "clubSheet", "followed"], []], [["tactics", "attack"], "x"]]) == ["clubLife.clubSheet", "tactics"], "Règle : sections des retouches optimistes")
+	check(ScreenRefresh.table().get("sections", {}).has("meta.autosave"), "Table du jeu chargée (res://ui/screen_refresh.json)")
+
+## Signature de l'écran affiché : par position dans l'arbre, type, textes, boutons grisés ou enfoncés (éléments
+## visibles seulement).
+func signature() -> Array:
+	var lines: Array = []
+	if is_instance_valid(app.root_content): sign_tree(app.root_content, "", lines)
+	return lines
+
+func sign_tree(node: Node, path: String, lines: Array) -> void:
+	for index in node.get_child_count():
+		var child := node.get_child(index)
+		if child is CanvasItem and not (child as CanvasItem).visible: continue
+		var here := "%s/%d" % [path, index]
+		var line := here + " " + child.get_class()
+		if child is Label: line += " «%s»" % (child as Label).text
+		elif child is RichTextLabel: line += " «%s»" % (child as RichTextLabel).get_parsed_text()
+		elif child is LineEdit: line += " «%s»%s" % [(child as LineEdit).text, "" if (child as LineEdit).editable else " lecture"]
+		elif child is Button: line += " «%s»" % (child as Button).text
+		if child is BaseButton: line += "%s%s" % [" grisé" if (child as BaseButton).disabled else "", " enfoncé" if (child as BaseButton).button_pressed else ""]
+		lines.append(line)
+		sign_tree(child, here, lines)
+
+## Signature une fois l'écran stable (lignes progressives, chargements différés).
+func stable_signature() -> Array:
+	var previous := signature()
+	for attempt in 30:
+		await settle(3)
+		var current := signature()
+		if current == previous: return current
+		previous = current
+	return previous
+
+## Lignes présentes d'un côté seulement (multiensemble).
+func differences(a: Array, b: Array) -> Dictionary:
+	var counts := {}
+	for line: String in a: counts[line] = int(counts.get(line, 0)) + 1
+	for line: String in b: counts[line] = int(counts.get(line, 0)) - 1
+	var result := {}
+	for line: String in counts:
+		if int(counts[line]) != 0: result[line] = true
+	return result
+
+## L'écran affiché (gardé) est identique à un rendu complet du même modèle ; les lignes qui changent d'un rendu
+## complet à l'autre (animations, horloge) sont écartées.
+func same_as_full_render(label: String) -> void:
+	var shown: Array = await stable_signature()
+	app._render(false)
+	var full: Array = await stable_signature()
+	app._render(false)
+	var again: Array = await stable_signature()
+	var noise := differences(full, again)
+	var real: Array = differences(shown, full).keys().filter(func(line: String) -> bool: return not noise.has(line))
+	check(not shown.is_empty() and real.is_empty(), "%s : écran gardé identique au rendu complet (%d ligne(s), écarts : %s)" % [label, shown.size(), " | ".join(real.slice(0, 4))])
+
+func last_render_ms(log_size: int) -> float:
+	return float(app.timing_log[-1].get("rendu_ms", 0.0)) if app.timing_log.size() > log_size else -1.0
+
+## Rafraîchissement par écran sur 10 écrans : « Sauvegarder » (barre latérale, tout écran ; seul l'état du journal
+## change) mesuré avec le rendu complet (témoin) puis par écran ; « Suivre un club » (décision optimiste lue par la
+## seule fiche club) sans aucun rendu ; une décision lue par l'écran le redessine.
+func refresh_screens() -> void:
+	var avant: Array = []
+	var apres: Array = []
+	var suivi_rendus := {"avant": 0, "apres": 0}
+	var own := int(app.model.get("club", {}).get("id", 0))
+	var other := -1
+	for division: Dictionary in app.model.get("leagues", []):
+		for row: Dictionary in division.get("rows", []):
+			if other < 0 and int(row.get("id", -1)) != own: other = int(row.id)
+	for target: String in ECRANS:
+		app._navigate(target)
+		await settle(4)
+		check(app.route == target, "Écran ouvert : " + target)
+		if app.route != target: continue
+		# Témoin : rendu complet à chaque réponse (comportement d'avant).
+		app.refresh_by_screen = false
+		var log_size: int = app.timing_log.size()
+		await command("save")
+		check(app.last_refresh == ScreenRefresh.FULL, "%s : témoin en rendu complet" % target)
+		avant.append(last_render_ms(log_size))
+		app.refresh_by_screen = true
+		await settle(2)
+		var renders: int = app.screen_renders
+		var content: Node = app.root_content
+		log_size = app.timing_log.size()
+		await command("save")
+		apres.append(last_render_ms(log_size))
+		check(app.last_refresh == ScreenRefresh.NONE and app.screen_renders == renders and app.root_content == content, "%s : sauvegarde sans section lue, écran gardé (%s, %d rendu(s), sections %s)" % [target, app.last_refresh, app.screen_renders - renders, str(app.bridge.last_changes.keys())])
+		await same_as_full_render(target + " après sauvegarde")
+		# Décision optimiste lue par la seule fiche club : témoin (deux rendus), puis aucun.
+		if other >= 0 and target in ["Bureau", "Classements", "Staff"]:
+			for mode: String in ["avant", "apres"]:
+				app.refresh_by_screen = mode == "apres"
+				await settle(2)
+				renders = app.screen_renders
+				var followed: Array = app.model.get("clubLife", {}).get("clubSheet", {}).get("followed", [])
+				var follow := not followed.any(func(v: Variant) -> bool: return int(v) == other)
+				await command("club_follow", {"club": other, "follow": follow})
+				suivi_rendus[mode] += app.screen_renders - renders
+			check(app.last_refresh == ScreenRefresh.NONE, "%s : suivi d'un club sans rendu de l'écran (%s)" % [target, app.last_refresh])
+			await same_as_full_render(target + " après suivi d'un club")
+	app.refresh_by_screen = true
+	# Décision lue par l'écran : niveau adverse sur Préparation, toujours redessiné.
+	app._navigate("Préparation")
+	await settle(4)
+	var level: Dictionary = app.model.get("decisions", {}).get("difficulty", {})
+	var options: Array = level.get("options", [])
+	if level.get("available", false) and options.size() >= 2:
+		var wanted := str(options[0].id) if str(options[0].id) != str(level.get("selected", "")) else str(options[1].id)
+		var renders: int = app.screen_renders
+		await command("set_opponent_level", {"level": wanted})
+		check(app.last_refresh == ScreenRefresh.FULL and app.screen_renders > renders, "Préparation : niveau adverse redessiné (%s)" % app.last_refresh)
+		await same_as_full_render("Préparation après niveau adverse")
+	else: check(false, "Niveau adverse disponible sur une carrière neuve")
+	var mesures_avant := avant.filter(func(v: float) -> bool: return v >= 0.0)
+	var mesures_apres := apres.filter(func(v: float) -> bool: return v >= 0.0)
+	check(mesures_avant.size() == ECRANS.size() and mesures_apres.size() == ECRANS.size(), "Mesures CD_TIMING de la sauvegarde (%d/%d)" % [mesures_avant.size(), mesures_apres.size()])
+	mesures["sauvegarde_rendu_ms"] = {"avant_mediane": median(mesures_avant), "apres_mediane": median(mesures_apres), "avant": mesures_avant, "apres": mesures_apres}
+	mesures["suivi_club_rendus"] = suivi_rendus

@@ -858,102 +858,13 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	if players.is_empty():list.add_child(G.wrap("Aucune piste ne correspond. Modifiez la recherche, le filtre Suivis ou réinitialisez les filtres.",15))
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.market.scroll))
 
+## Entrée unique du comparateur de joueurs (Effectif, fiche joueur) : même fenêtre que le Recrutement.
 static func comparison(app:Control) -> void:
-	var opener := app.get_viewport().gui_get_focus_owner() as Button
-	var return_focus := str(opener.name) if opener != null else ""
+	var opener:=app.get_viewport().gui_get_focus_owner() as Button
+	var return_focus:=str(opener.name) if opener!=null else ""
 	U.remember(app)
 	U.sync(app)
-	app._clear_dialogs()
-	var d:=AcceptDialog.new()
-	d.name="PlayerComparison"
-	app._prepare_dialog(d,880)
-	d.title="Comparer deux dossiers"
-	d.get_ok_button().text="RETOUR À LA FICHE" if app.get_meta("immersive08_full_player",false) else "RETOUR À L’EFFECTIF"
-	var content:=G.v(10)
-	d.add_child(content)
-	content.add_child(G.label("La note globale est sur 100. Tenez compte du poste et de la condition des joueurs.",12,G.MUTED))
-	var selectors:=G.h(12)
-	content.add_child(selectors)
-	var ids:Array=app.management_ui.compare.duplicate()
-	while ids.size()<2:ids.append("")
-	var choices:Array=[]
-	for slot in 2:
-		var choice:=OptionButton.new()
-		choice.name="ComparisonPlayer"+str(slot)
-		choice.fit_to_longest_item=false
-		choice.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
-		G.fill(choice)
-		choice.custom_minimum_size=Vector2(180,38)
-		choice.add_item("Choisir le dossier "+str(slot+1))
-		choice.set_item_metadata(0,"")
-		for p:Dictionary in app.model.get("squad",[]):
-			choice.add_item(str(p.name)+" · "+str(p.pos))
-			var index:=choice.item_count-1
-			choice.set_item_metadata(index,str(p.id))
-			if str(p.id)==ids[slot]:choice.select(index)
-		selectors.add_child(choice)
-		choices.append(choice)
-	var list:=G.scroll(content)
-	list.get_parent().custom_minimum_size.y=260
-	list.get_parent().name="ComparisonScroll"
-	var refresh:=func():
-		var current:Array=[]
-		for choice:OptionButton in choices:
-			var id:String=choice.get_item_metadata(choice.selected)
-			current.append(id)
-		app.management_ui.compare=[]
-		for id in current:
-			if not id.is_empty() and id not in app.management_ui.compare:app.management_ui.compare.append(id)
-		_comparison_rows(app,list,current)
-	for choice:OptionButton in choices:choice.item_selected.connect(func(_index:int):refresh.call())
-	refresh.call()
-	var close := func():
-		d.hide()
-		d.queue_free()
-		app._render()
-		ClubUI.focus(app, return_focus)
-	d.confirmed.connect(close)
-	d.canceled.connect(close)
-	app.add_child(d)
-	Dialogs.show_centered(d,Vector2i(880,460))
-
-static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
-	_empty(list)
-	var players:Array=[]
-	for id in ids:
-		var found:Dictionary={}
-		for p:Dictionary in app.model.get("squad",[]):
-			if str(p.id)==id:found=p
-		players.append(found)
-	if ids[0]==ids[1] and not str(ids[0]).is_empty():list.add_child(G.wrap("Choisissez deux joueurs distincts.",14,G.ALERT));return
-	var dossiers := G.h(14)
-	list.add_child(dossiers)
-	for p: Dictionary in players:
-		var card := G.card(dossiers, G.accent_ink(app.accent))
-		G.fill(card.get_parent())
-		if not p.is_empty(): G.person(card, p, p.name, str(p.pos) + " · " + G.n(p.age) + " ans", 58)
-		else: card.add_child(G.wrap("Choisissez un dossier", 18, G.MUTED))
-	var columns:=GridContainer.new()
-	columns.columns=3
-	columns.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	columns.add_theme_constant_override("h_separation",18)
-	columns.add_theme_constant_override("v_separation",10)
-	list.add_child(columns)
-	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Niveau / 100","rating"],["Condition · %","condition"],["Salaire "+G.salary_period(),"salary"],["Fin de contrat","contractEnd"]]
-	for row in rows:
-		columns.add_child(G.label(row[0],13,G.MUTED))
-		for p:Dictionary in players:
-			var value:Variant="—"
-			if not p.is_empty():
-				value=p.get(row[1],"—")
-				if row[1]=="rating":value=G.rating_text(p,true)
-				elif row[1]=="salary":value=G.salary_amount(value)
-				elif row[1]=="contractEnd":value=G.contract_year(value)
-				elif value is float:value=G.n(value)
-			var label:=G.wrap(str(value),14,G.INK)
-			label.custom_minimum_size.x=180
-			G.fill(label)
-			columns.add_child(label)
+	load("res://ui/immersive08/recruitment_comparison.gd").open(app,"",{},return_focus)
 
 static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	preload("res://ui/contract_negotiation.gd").open(app,p,recruiting)

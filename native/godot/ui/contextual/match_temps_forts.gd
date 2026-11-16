@@ -265,9 +265,15 @@ func _presenter(valeur: bool) -> void:
 	var sons: Variant = app.get("soundscape") if is_instance_valid(app) else null
 	if is_instance_valid(sons) and sons.has_method("set_presenting"): sons.set_presenting(valeur)
 
-func _sonner(kind: String) -> void:
+func _sonner(kind: String, camp: int = -1) -> void:
 	var sons: Variant = app.get("soundscape")
-	if is_instance_valid(sons) and sons.has_method("play_shown"): sons.play_shown(kind)
+	if is_instance_valid(sons) and sons.has_method("play_shown"): sons.play_shown(kind, camp)
+
+## Camp (0 domicile, 1 extérieur) du fait montré, -1 si le plan ne le dit pas.
+func _camp_du_plan(plan: Dictionary) -> int:
+	var fait: Variant = plan.get("scene")
+	var camp: Variant = fait.get("team", -1) if fait is Dictionary else -1
+	return int(camp) if typeof(camp) in [TYPE_INT, TYPE_FLOAT] else -1
 
 ## Le match tel que l'image le permet : pendant un temps fort, le journal s'arrête à
 ## l'action montrée (le moteur a une minute d'avance).
@@ -875,7 +881,7 @@ func _lire_choregraphie(reel: float) -> void:
 			index = k
 		_jalon_montre = true
 		if str(tf.plans[index].get("kind", "")) == "try":
-			_sonner("try")
+			_sonner("try", _camp_du_plan(tf.plans[index]))
 			# Essai aplati et annoncé : le bandeau passe aussitôt au nouveau score (+5).
 			_score = tf.plans[index].get("score", _score)
 		# Tir au but : son jalon est le passage du ballon, le résultat est à l'écran.
@@ -883,7 +889,7 @@ func _lire_choregraphie(reel: float) -> void:
 			_resultat_sonne = true
 			# Transformation ou tir vus : le score suit (+2 / +3), pas avant.
 			_score = tf.plans[index].get("score", _score)
-			_sonner("goal" if str(tf.plans[index].get("kind", "")) == "goal" else "miss")
+			_sonner("goal" if str(tf.plans[index].get("kind", "")) == "goal" else "miss", _camp_du_plan(tf.plans[index]))
 		_habiller()
 	var echue := _tenu > float(pistes.get("duree", 0.0)) / maxf(vitesse, 0.01) + ECHEANCE_CHOREGRAPHIE
 	if stage.choregraphie_active() and not stage.choregraphie_finie() and not echue:
@@ -917,6 +923,7 @@ func _jouer(plan: Dictionary) -> void:
 	# La clameur et la légende de l'essai partent quand l'essai est à l'écran : fin de la course,
 	# ou geste d'essai de la vue aplati (course, ballon porté), voir _essai_attendu.
 	_essai_montre = str(plan.get("kind", "")) != "try"
+	if str(plan.get("kind", "")) == "penalty": _sonner("penalty", _camp_du_plan(plan))
 	if float(plan.get("mouvement", 0.0)) > 0.0:
 		_depuis = _derniers.duplicate()
 		stage.apply_frame(_image(_interpole(scene, clampf(PAS / float(plan.mouvement), 0.0, 1.0)), false, int(plan.index)))
@@ -956,7 +963,7 @@ func _lire(delta: float, reel: float) -> void:
 		# Le résultat est à l'écran : le bandeau du score le suit (la transformation vaut +2 à cet instant).
 		_score = marque
 		_habiller()
-		_sonner("goal" if reussi else "miss")
+		_sonner("goal" if reussi else "miss", _camp_du_plan(plan))
 	_legender_essai()
 	var mouvement := float(plan.get("mouvement", 0.0))
 	if mouvement > 0.0 and temps < mouvement + PAS:
@@ -1156,7 +1163,7 @@ func _legender_essai() -> void:
 	if phase != "jeu" or _essai_montre or index < 0 or index >= tf.plans.size(): return
 	if _essai_attendu(tf.plans[index]): return
 	_essai_montre = true
-	_sonner("try")
+	_sonner("try", _camp_du_plan(tf.plans[index]))
 	# L'essai est aplati et légendé : le bandeau du score passe au nouveau score (+5) au même instant.
 	_score = tf.plans[index].get("score", _score)
 	_habiller()
