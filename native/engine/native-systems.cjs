@@ -10,7 +10,8 @@ const commands=Object.freeze(Object.values(domains).flatMap(d=>d.commands));
 if(new Set(commands).size!==commands.length)throw Error('Commandes natives de domaine en double.');
 function bootstrap(){
  const definitions=Object.entries(domains).map(([key,d])=>JSON.stringify(key)+':('+d.factory.toString()+')()').join(',');
- return `const nativeStaffCareerSources=(()=>{const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};return freeze(typeof nativeStaffCareerSourcesText==='string'?JSON.parse(nativeStaffCareerSourcesText):{});})();
+ return `${domains.clubMail.prelude}
+ const nativeStaffCareerSources=(()=>{const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};return freeze(typeof nativeStaffCareerSourcesText==='string'?JSON.parse(nativeStaffCareerSourcesText):{});})();
  let nativeStaffTransition=null;
  const CDMatchNotesMoteur=(${matchNotes.moteur.toString()})();
  const CDMatchStats=(${matchStats.fabrique.toString()})();
@@ -105,7 +106,9 @@ domains.managerPlanning=require('./manager-planning.cjs');
 domains.clubSheet=require('./club-sheet.cjs');
 // Promesses publiques en conférence de presse (native/engine/press-promises.cjs), servies par le domaine press.
 domains.pressPromises=require('./press-promises.cjs');
-const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands]);
+// Courrier du club avec réponses (native/engine/club-mail.cjs) ; ses données sont injectées dans la VM par le prélude.
+domains.clubMail=require('./club-mail.cjs');
+const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files])]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

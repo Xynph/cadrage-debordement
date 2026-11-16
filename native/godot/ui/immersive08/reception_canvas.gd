@@ -11,6 +11,7 @@ const Press = preload("res://ui/press_view.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Reading = preload("res://ui/immersive08/reception_reading.gd")
+const ClubMail = preload("res://ui/club_mail.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail"}
@@ -97,6 +98,9 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"id":notice.id, "subject":"Changement de date", "text":text, "category":"Compétitions",
 			"route":"Calendrier", "position":source.size()+index+1, "calendar_notice":notice
 		})
+	# Courrier du club (club-mail.cjs) : les plus récents en tête.
+	if not national:
+		for item: Dictionary in ClubMail.messages(app.model): messages.push_front(item)
 	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
 	var invitations: Array = [] if national else press.get("invitations", [])
 	for index in range(invitations.size() - 1, -1, -1):
@@ -470,10 +474,12 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		if message.get("press_invitation", {}).get("status") == "pending": badge = "À traiter"
 		elif message.get("calendar_notice", {}).get("status") == "pending": badge = "À décider"
 		elif message.has("international_event"): badge = "Sélections"
+		elif message.has("club_mail"): badge = "À répondre" if ClubMail.awaiting(app.model, message.club_mail) else str(message.club_mail.get("categorieLabel", "Courrier"))
 		D.chip(row,Rect2(544,7,150,24),badge,COLORS[message.category])
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
 
 static func _row_id(message: Dictionary) -> String:
+	if message.has("club_mail"): return "InboxClubMail_" + str(message.id).replace("-", "_")
 	if message.get("press_invitation", {}).get("status") == "pending": return "InboxPressInvitation"
 	if message.has("press_invitation"): return "InboxPressMessage_" + str(message.position)
 	return "InboxMessage_" + str(message.position)
@@ -584,6 +590,8 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				var action := D.button(card,Rect2(26,top,545,38),caption,_open_related.bind(app, message, app._open_press_invitation.bind(invitation.id)),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
 				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
 				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
+	elif message.has("club_mail"):
+		_club_mail_actions(card, app, state, message, top)
 	elif message.get("calendar_notice", {}).get("status") == "pending":
 		var recalibrate := D.button(card,Rect2(26,top,545,38),"Recaler la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")
@@ -629,6 +637,35 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
+
+## Courrier du club : une rangée de réponses (si le mail en attend une), puis l'écran concerné et le classement.
+static func _club_mail_actions(card: Panel, app: Control, state: Dictionary, message: Dictionary, top: int) -> void:
+	var mail: Dictionary = message.club_mail
+	var mark: Dictionary = state.marks.get(message.id,{})
+	var y := top
+	if ClubMail.awaiting(app.model, mail):
+		var options: Array = mail.get("reponses", [])
+		var count := options.size()
+		var width := (1112.0 - 16.0 * (count - 1)) / count
+		for index in count:
+			var option: Dictionary = options[index]
+			var action := D.button(card,Rect2(26+index*(width+16),y,width,38),str(option.get("libelle","")),
+				_reply_club_mail.bind(app,str(mail.id),str(option.get("id",""))),index==0,"check",false,app.accent,"InboxClubMailReply_" + str(option.get("id","")))
+			action.disabled = app.waiting or not option.get("disponible", false)
+			var detail := str(option.get("effets",""))
+			action.tooltip_text = (detail if not detail.is_empty() else "Sans effet chiffré.") + ("" if option.get("disponible", false) else "\n" + str(option.get("raison","")))
+		y += 48
+	var ecran := str(mail.get("ecran",""))
+	var joueur := str(mail.get("joueur","")) if mail.get("joueur") is String else ""
+	D.button(card,Rect2(26,y,545,38),ClubMail.caption(ecran),_open_related.bind(app, message, ClubMail.open_screen.bind(app, ecran, joueur)),y==top,"arrow",false,app.accent,"InboxClubMailOpen")
+	D.button(card,Rect2(589,y,549,38),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+		mark.archived=not mark.get("archived",false)
+		mark.read=true
+		state.marks[message.id]=mark
+		_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
+
+static func _reply_club_mail(app: Control, mail_id: String, choice: String) -> void:
+	ClubMail.reply(app, mail_id, choice)
 
 static func _open_international(app: Control, event: Dictionary) -> void:
 	if _is_club_return(app, event):
