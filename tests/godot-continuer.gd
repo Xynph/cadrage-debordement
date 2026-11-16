@@ -137,7 +137,7 @@ func run() -> void:
 	await wait_idle()
 	var stopped: Dictionary = app.model.get("meta", {}).get("advanceUntilEvent", {})
 	check(today() > before, "Les jours déjà passés sont gardés après « Arrêter »")
-	check(first_progress[0] == false or stopped.get("stop", {}).get("kind") in ["arret", "match", "rendez_vous", "conference", "reprise", "ouverture", "message", "international", "decision", "a_noter"], "Arrêt demandé ou événement du même jour : " + JSON.stringify(stopped.get("stop", {})))
+	check(first_progress[0] == false or stopped.get("stop", {}).get("kind") in ["arret", "match", "rendez_vous", "conference", "reprise", "ouverture", "message", "international", "decision", "a_noter", "info"], "Arrêt demandé ou événement du même jour : " + JSON.stringify(stopped.get("stop", {})))
 	check(not str(app.model.get("meta", {}).get("dataDir", "")).is_empty(), "Profil de carrière présent")
 	# 4. Info-bulle de « Continuer » : le prochain arrêt prévu par le moteur (meta.continuePlan).
 	await Flow.settle_club_meetings(app, self, check)

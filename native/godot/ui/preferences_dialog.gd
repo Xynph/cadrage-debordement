@@ -94,11 +94,9 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var continue_row := G.h(12); display.add_child(continue_row)
 	var continue_label := G.label("Continuer s’arrête sur",14); G.fill(continue_label); continue_row.add_child(continue_label)
 	var continue_messages := _option(continue_row,["Messages importants","Tous les messages","Aucun message"],"PreferencesContinueMessages")
-	continue_messages.tooltip_text = "Les matchs, rendez-vous et décisions obligatoires arrêtent toujours « Continuer »."
+	continue_messages.tooltip_text = "Les matchs, rendez-vous et décisions obligatoires arrêtent toujours « Continuer », comme les moments à savoir (veille et lendemain de match, rapport médical, fin de phase, mi-saison, marché, recruteur), parfois plusieurs fois le même jour."
 	var continue_injuries := _option(continue_row,["Blessures : titulaires","Blessures : tout l’effectif"],"PreferencesContinueInjuries")
 	continue_injuries.tooltip_text = continue_messages.tooltip_text
-	var continue_flow := _option(continue_row,["Flux : allégé","Flux : équilibré","Flux : complet"],"PreferencesContinueFlow")
-	continue_flow.tooltip_text = "Éléments « À noter » qui arrêtent « Continuer » (ils restent tous en Réception).\nAllégé : veille de match. Équilibré : + amicaux, stage, dernier point recrutement. Complet : + retour des internationaux.\nLes décisions à prendre arrêtent toujours."
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
@@ -116,7 +114,6 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
 		continue_messages.select(maxi(0,["importants","tous","aucun"].find(str(profile.data.get("continue_messages","importants")))))
 		continue_injuries.select(1 if profile.data.get("continue_injuries") == "effectif" else 0)
-		continue_flow.select(maxi(0,["allege","equilibre","complet"].find(str(profile.data.get("continue_flow","equilibre")))))
 		autosave.select(maxi(0,profile.AUTOSAVE.find(str(profile.data.get("autosave","semaine")))))
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
@@ -159,7 +156,6 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
 	continue_messages.item_selected.connect(func(index: int): profile.set_value("continue_messages",["importants","tous","aucun"][index]); refresh.call())
 	continue_injuries.item_selected.connect(func(index: int): profile.set_value("continue_injuries",["titulaires","effectif"][index]); refresh.call())
-	continue_flow.item_selected.connect(func(index: int): profile.set_value("continue_flow",["allege","equilibre","complet"][index]); refresh.call())
 	autosave.item_selected.connect(func(index: int): profile.set_value("autosave",profile.AUTOSAVE[index]); refresh.call())
 	interface_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("interface_volume",int(value))
