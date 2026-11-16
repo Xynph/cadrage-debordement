@@ -1,0 +1,2 @@
+tests/godot-ballon-texture.cjs
+tests/godot-office-ui.cjs

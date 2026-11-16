@@ -1,0 +1,71 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-office-ui.cjs
+::group::tests/godot-ballon-texture.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+CD_IMPORT_BEGIN
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+uid="uid://dpfy3rqupjyrn"
+path="res://.godot/imported/ballon.glb-bd7e72d5ba1484917b3b46d5b624ac42.scn"
+
+[deps]
+
+source_file="res://art/office_props/ballon.glb"
+dest_files=["res://.godot/imported/ballon.glb-bd7e72d5ba1484917b3b46d5b624ac42.scn"]
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=true
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=3
+gltf/texture_map_mode=0
+CD_IMPORT_END
+{"checks":8,"failures":[],"passed":true}
+TAP version 13
+# Subtest: Ballon du Bureau : texture embarquée et aucun UID invalide dans le journal Godot
+ok 1 - Ballon du Bureau : texture embarquée et aucun UID invalide dans le journal Godot
+  ---
+  duration_ms: 150.099393
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 155.219535
+CD_CPU_PROFILE suite=tests/godot-ballon-texture.cjs user_s=0.11 system_s=0.02 wall_s=0.18 cpu_pct=76% max_rss_kb=102640
+PASS tests/godot-ballon-texture.cjs (0 s)
+::endgroup::
