@@ -150,19 +150,35 @@ func _build_seating() -> void:
 			foot.look_at(Vector3(x, .55, 2.25), Vector3.FORWARD)
 
 # Seated journalists, seen from the camera behind the audience. Fixed seats and muted jacket colours: the room is
-# identical at every visit. One raises a microphone towards the stage, two take notes.
-const PRESS_SEATS := [[0, 1, "394a5c", "raise"], [0, 3, "5b4a3e", "notes"], [1, 0, "2f3b35", "sit"],
+# identical at every visit. The journalist who asks the current question raises a microphone towards the stage
+# (`ask`, called by the press view at each question); the others take notes or listen.
+const PRESS_SEATS := [[0, 1, "394a5c", "notes"], [0, 3, "5b4a3e", "notes"], [1, 0, "2f3b35", "sit"],
 	[1, 2, "6a6d70", "notes"], [1, 4, "4a3f52", "sit"], [2, 1, "3e4f45", "sit"], [2, 3, "56493a", "sit"]]
 const HAIR := ["1e1a17", "3b2a1f", "6b5a48", "2a2725", "8c8a85"]
+var _press_corps: Array[Node3D] = []
 
 func _build_press_corps() -> void:
 	var skin := _material(Color("b48a6e"))
 	for i in PRESS_SEATS.size():
 		var seat: Array = PRESS_SEATS[i]
 		var origin := Vector3(-3.4 + int(seat[1]) * 1.65, 0, -.2 + int(seat[0]) * 1.65)
-		_journalist("Journalist%d" % i, origin, _material(Color(str(seat[2]))), _material(Color(HAIR[i % HAIR.size()])), skin, str(seat[3]))
+		_press_corps.append(_journalist("Journalist%d" % i, origin, _material(Color(str(seat[2]))), _material(Color(HAIR[i % HAIR.size()])), skin, str(seat[3])))
+	ask(0)
 
-func _journalist(id: String, origin: Vector3, jacket: StandardMaterial3D, hair: StandardMaterial3D, skin: StandardMaterial3D, pose: String) -> void:
+## Question `index` of the conference: one journalist (in a fixed rotation) holds out the microphone.
+func ask(index: int) -> void:
+	if _press_corps.is_empty(): return
+	var asking := posmod(index, _press_corps.size())
+	for i in _press_corps.size():
+		_press_corps[i].get_node("Asking").visible = i == asking
+		_press_corps[i].get_node("Pose").visible = i != asking
+
+func asking_journalist() -> int:
+	for i in _press_corps.size():
+		if _press_corps[i].get_node("Asking").visible: return i
+	return -1
+
+func _journalist(id: String, origin: Vector3, jacket: StandardMaterial3D, hair: StandardMaterial3D, skin: StandardMaterial3D, pose: String) -> Node3D:
 	var person := Node3D.new()
 	person.name = id
 	person.position = origin
@@ -196,30 +212,38 @@ func _journalist(id: String, origin: Vector3, jacket: StandardMaterial3D, hair: 
 	cap.material_override = hair
 	cap.position = Vector3(0, 1.48, .055)
 	person.add_child(cap)
-	match pose:
-		"raise":
-			# Arm raised towards the stage (the stage is towards -z), microphone in hand.
-			var arm := _limb(person, Vector3(.19, 1.32, -.05), .055, .5, jacket)
-			arm.rotation_degrees = Vector3(-52, 0, -12)
-			var mic := _limb(person, Vector3(.27, 1.66, -.3), .03, .2, _metal)
-			mic.rotation_degrees = Vector3(-70, 0, 0)
-			var grille := MeshInstance3D.new()
-			var ball := SphereMesh.new()
-			ball.radius = .045
-			ball.height = .09
-			grille.mesh = ball
-			grille.material_override = _material(Color("2b302e"), .3)
-			grille.position = Vector3(.27, 1.7, -.4)
-			person.add_child(grille)
-		"notes":
-			for side in [-1.0, 1.0]:
-				var forearm := _limb(person, Vector3(.17 * side, 1.0, -.16), .05, .34, jacket)
-				forearm.rotation_degrees = Vector3(-78, 0, 0)
-			_box_in(person, "Notebook", Vector3(0, 1.02, -.34), Vector3(.24, .02, .17), _material(Color("e9e4d4")))
-		_:
-			for side in [-1.0, 1.0]:
-				var arm := _limb(person, Vector3(.24 * side, 1.0, 0), .05, .42, jacket)
-				arm.rotation_degrees.z = 8 * side
+	var resting := Node3D.new()
+	resting.name = "Pose"
+	person.add_child(resting)
+	if pose == "notes":
+		for side in [-1.0, 1.0]:
+			var forearm := _limb(resting, Vector3(.17 * side, 1.0, -.16), .05, .34, jacket)
+			forearm.rotation_degrees = Vector3(-78, 0, 0)
+		_box_in(resting, "Notebook", Vector3(0, 1.02, -.34), Vector3(.24, .02, .17), _material(Color("e9e4d4")))
+	else:
+		for side in [-1.0, 1.0]:
+			var arm := _limb(resting, Vector3(.24 * side, 1.0, 0), .05, .42, jacket)
+			arm.rotation_degrees.z = 8 * side
+	# Arm raised towards the stage (the stage is towards -z), microphone in hand; the other arm rests.
+	var asking := Node3D.new()
+	asking.name = "Asking"
+	asking.visible = false
+	person.add_child(asking)
+	var raised := _limb(asking, Vector3(.19, 1.32, -.05), .055, .5, jacket)
+	raised.rotation_degrees = Vector3(-52, 0, -12)
+	var other := _limb(asking, Vector3(-.24, 1.0, 0), .05, .42, jacket)
+	other.rotation_degrees.z = -8
+	var mic := _limb(asking, Vector3(.27, 1.66, -.3), .03, .2, _metal)
+	mic.rotation_degrees = Vector3(-70, 0, 0)
+	var grille := MeshInstance3D.new()
+	var ball := SphereMesh.new()
+	ball.radius = .045
+	ball.height = .09
+	grille.mesh = ball
+	grille.material_override = _material(Color("2b302e"), .3)
+	grille.position = Vector3(.27, 1.7, -.4)
+	asking.add_child(grille)
+	return person
 
 func _limb(parent: Node3D, position_: Vector3, radius: float, length: float, material: Material) -> MeshInstance3D:
 	var limb := MeshInstance3D.new()
