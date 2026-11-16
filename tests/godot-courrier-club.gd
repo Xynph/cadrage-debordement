@@ -19,6 +19,7 @@ var checks := 0
 var failures: Array[String] = []
 var capture_dir := OS.get_environment("CD_COURRIER_CAPTURES")
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
+const C = preload("res://ui/immersive08/components.gd")
 
 func _initialize() -> void: call_deferred("run")
 
@@ -166,7 +167,7 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	var text := node("InboxMessageText") as Label
 	check(text != null and text.text.contains(str(mail.get("corps", "")).left(30)), "Le mail sélectionné est ouvert · " + tag)
 	if text != null:
-		check(text.get_theme_font_size("font_size") >= 13, "Texte du mail lisible (%d px) · %s" % [text.get_theme_font_size("font_size"), tag])
+		check(text.get_theme_font_size("font_size") >= maxi(12, roundi(20 * C.density)), "Texte du mail lisible (%d px) · %s" % [text.get_theme_font_size("font_size"), tag])
 		var scroll := text.get_parent() as ScrollContainer
 		if scroll != null: check(not scroll.get_v_scroll_bar().visible, "Pas de défilement inutile du mail · " + tag)
 	var actions: Array = detail.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.is_visible_in_tree())
@@ -197,10 +198,11 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	other = node(Reception._row_id(Reception._messages(app).filter(func(item: Dictionary) -> bool: return str(item.id) == other_id)[0])) as Button
 	check(other != null and other.find_child("UnreadDot", true, false) != null, "Non lu mis en évidence · " + tag)
 	if other == null: return
+	var other_text := str(other.get_meta("message_text"))
 	other.pressed.emit()
 	await settle()
 	check(state.marks.get(other_id, {}).get("read", false), "Ouvert = lu · " + tag)
-	check((node("InboxMessageText") as Label).text == str(other.get_meta("message_text")), "Le mail cliqué s'ouvre en grand · " + tag)
+	check((node("InboxMessageText") as Label).text == other_text, "Le mail cliqué s'ouvre en grand · " + tag)
 	var toggle := node("InboxToggleRead") as Button
 	check(toggle != null, "Marquer non lu proposé · " + tag)
 	if toggle != null:
