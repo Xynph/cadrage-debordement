@@ -142,7 +142,7 @@ func _continuer() -> bool:
 
 func _menu(rang: int) -> bool:
 	if not actif(): return false
-	var entrees := app.root_content.find_children("Nav_*", "Button", true, false)
+	var entrees: Array = app.root_content.find_children("Nav_*", "Button", true, false)
 	if rang >= entrees.size(): return false
 	var bouton: Button = entrees[rang]
 	if bouton.disabled or not bouton.is_visible_in_tree(): return false
