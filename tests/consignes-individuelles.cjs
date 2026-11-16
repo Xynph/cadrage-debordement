@@ -38,7 +38,9 @@ test('Commande set_tactics : désignation, retour au staff, refus et sauvegarde'
     assert.equal(r.candidates.length, 15, 'candidats : le XV de départ');
   }
   const buteur = view.roles[0];
-  assert.equal(buteur.staff.id, buteur.candidates[0].id, 'le staff choisit le meilleur buteur du XV');
+  // Jugement du staff (docs/jugement-staff-20261116.md) : le staff choisit celui qu'il juge le meilleur, au plus
+  // à quelques points du meilleur réel.
+  assert.ok(buteur.candidates.some(p => p.id === buteur.staff.id) && buteur.candidates[0].value - buteur.staff.value <= 10, 'le staff choisit un des meilleurs buteurs du XV');
   assert.equal(view.roles[2].staff.pos, 'Talonneur', 'le talonneur lance en touche');
   assert.equal(view.alerte, null);
   // Désigner le moins bon buteur du XV : alerte (Gabi la relaie à l'écran Composition).
@@ -83,7 +85,7 @@ test('Coup d’envoi : les désignations du manager sont copiées, l’IA garde 
   assert.throws(() => tactic(h, {roles: {buteur: null}}), /avant le coup d’envoi/);
   h.run('S.live=null');
   // Rencontre commencée avant les consignes individuelles : règles d'origine.
-  h.run('delete l.playerRolesVersion');
+  h.run('delete l.playerRolesVersion;delete l.staffJudgementVersion');
   assert.equal(h.run('goalKicker(l,moi).id===chooseScorer(S.clubs[l.pair[moi]],activePlayers(l,moi).map(p=>p.id)).id'), true);
   assert.equal(h.run('lineoutThrowEdge(l,moi)'), 0);
   // Option coupée : la rencontre ne connaît pas les rôles.

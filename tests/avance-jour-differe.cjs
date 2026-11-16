@@ -159,3 +159,36 @@ test('Continuer : un jour en échec après modification ramène au début de l�
     assert.ok(model.meta.calendarToday > attendu.date, 'la carrière continue');
   } finally { jeu.fermer(); }
 });
+
+test('Sauvegarde en arrière-plan : le moteur signale persist started puis done (ou failed), sans changer la carrière', { timeout: 900000 }, () => {
+  const parcours = (options, echec = false) => {
+    const evenements = [];
+    const jeu = ouvrir(options.avec ? { onEvent: e => evenements.push(e) } : {});
+    try {
+      let model = jeu.call('snapshot');
+      assert.ok(veille(jeu));
+      if (echec) jeu.bridge.vm.run('nativeValidateSaved=function(){throw Error("contrôle simulé");};');
+      model = jour(jeu, model);                                 // clôture de semaine : validation et sauvegarde dues
+      assert.deepEqual(evenements, [], 'rien avant la réponse ni avant la première étape');
+      assert.equal(jeu.bridge.handle.pending(), 'advance_day');
+      const etapes = [];
+      while (!jeu.bridge.handle.flushStep()) etapes.push(evenements.map(e => e.state).join('>'));
+      const attendu = echec ? ['started', 'failed'] : ['started', 'done'];
+      assert.deepEqual(evenements.map(e => e.state), options.avec ? attendu : [], 'début puis fin, une seule fois');
+      if (options.avec) {
+        assert.ok(evenements.every(e => e.event === 'persist'));
+        // Travail en plusieurs étapes : le début est signalé dès la première (avant l'écriture) ; en une seule, début et fin
+        // tombent dans le même appel, dans cet ordre (contrôlé ci-dessus).
+        if (etapes.length) assert.equal(etapes[0], 'started', 'début signalé dès la première étape, avant l’écriture');
+        if (echec) assert.match(evenements[1].message, /dernière journée n’a pas pu être enregistrée.*contrôle simulé/);
+      }
+      // Jour calme suivant : rien à écrire, aucun signal.
+      const avant = evenements.length;
+      if (!echec) { model = jour(jeu, model); while (!jeu.bridge.handle.flushStep()); assert.equal(evenements.length, avant, 'jour calme : aucun signal'); }
+      return etat(jeu);
+    } finally { jeu.fermer(); }
+  };
+  const avec = parcours({ avec: true }), sans = parcours({ avec: false });
+  assert.deepEqual(avec, sans, 'même carrière et même graine avec ou sans écouteur');
+  parcours({ avec: true }, true);
+});
