@@ -25,10 +25,18 @@ const STOP_AFTER_REPLY_MS := 2000
 ## atteint 4,7 Go puis a été tué sur un PC de 8 Go) alors qu'une carrière n'en retient que ~0,6 Go. Plafond de
 ## 2 Go et jeune génération de 32 Mo : pic mesuré 1,9 Go au lieu de 3,6 Go sur 12 semaines, durées inchangées.
 const NODE_MEMORY_ARGS := ["--max-old-space-size=2048", "--max-semi-space-size=32"]
+## Modèle confirmé par le moteur (dernière réponse appliquée). Les sections que le moteur n'a pas changées sont les
+## mêmes objets d'une réponse à l'autre : l'interface les lit sans les modifier (copie avant toute retouche locale,
+## voir optimistic_decisions.gd).
 var model: Dictionary = {}
 var last_response_ok := false
-## Dernière mesure du pont (commande, moteur_ms, analyse_ms, file_ms, octets).
+## Dernière mesure du pont (commande, moteur_ms, analyse_ms, composition_ms, file_ms, octets, sections).
 var last_timing: Dictionary = {}
+## Sections changées par la dernière réponse appliquée : {clé: true} pour une section entière, {clé: {nom: true}}
+## pour une sous-section de clubLife/meta/staff/decisions/live. Vide : rien n'a changé (lecture, refus sans effet).
+## Réponse complète (premier modèle, révision perdue) : last_full_model vaut true.
+var last_changes: Dictionary = {}
+var last_full_model := false
 var child_pid: int = -1
 var _stdio: FileAccess
 var _stderr: FileAccess
@@ -40,8 +48,8 @@ var _queue: Array[Dictionary] = []
 var _next_id: int = 0
 var _stopping: bool = false
 var _stop_deadline_ms: int = 0
-# Modèle de référence des réponses différentielles : propriété exclusive du fil d’E/S.
-var _base_model: Dictionary = {}
+# Révision du modèle annoncée au moteur : propriété du fil d’E/S. Le modèle lui-même (`model`) appartient au fil
+# principal, qui applique les patchs dans l'ordre des réponses (call_deferred garde cet ordre).
 var _base_revision: int = -1
 
 static func import_preflight(text: String, byte_count: int) -> String:
@@ -92,7 +100,6 @@ func start(data_dir: String) -> void:
 	_stopping = false
 	_stop_deadline_ms = 0
 	_wake = Semaphore.new()
-	_base_model = {}
 	_base_revision = -1
 	_thread = Thread.new()
 	var error := _thread.start(_io_loop)
@@ -192,44 +199,65 @@ func _io_loop() -> void:
 			call_deferred("_transport_error", str(response.get("error", "Réponse sans identifiant : moteur fermé.")))
 			return
 		if response.get("patch") is Dictionary:
-			var rebuilt := _apply_patch(response.patch)
-			if rebuilt.is_empty() and not response.patch.get("keys", []).is_empty():
+			# Lot 23 : plus de reconstruction ni de copie profonde du modèle complet (~13 Mo, 250-850 ms par réponse)
+			# ici. Le fil principal ne remplace que les sections changées (`apply_patch` dans `_accept`), sans copie.
+			if not well_formed_patch(response["patch"]):
 				call_deferred("_transport_error", "Réponse différentielle du moteur illisible.")
 				return
-			response.erase("patch")
-			# Copie profonde : l’interface reçoit un modèle neuf, comme une réponse complète.
-			response["model"] = rebuilt.duplicate(true)
+			_base_revision = int(response["patch"].get("rev", -1))
 		# Mesure du pont : moteur + transfert, puis analyse JSON (fil d’E/S).
 		response["_pont"] = {"command": str(request.command), "moteur_ms": (received_us - sent_us) / 1000.0, "analyse_ms": (Time.get_ticks_usec() - received_us) / 1000.0, "octets": line.length(), "recu_us": Time.get_ticks_usec()}
+		parser = null
 		call_deferred("_accept", response)
 		if request.command == "shutdown":
 			return
 
-## Reconstruit le modèle complet (mêmes clés, même ordre) à partir de la référence.
-func _apply_patch(patch: Dictionary) -> Dictionary:
-	var keys: Variant = patch.get("keys")
-	var changed: Variant = patch.get("set")
-	var nested: Variant = patch.get("sub")
-	if not (keys is Array and changed is Dictionary and nested is Dictionary): return {}
+## Forme d'un patch (native/engine/model-delta.cjs) : {rev, full, keys, set, sub:{clé:{keys, set}}}.
+static func well_formed_patch(patch: Dictionary) -> bool:
+	if not (patch.get("keys") is Array and patch.get("set") is Dictionary and patch.get("sub") is Dictionary): return false
+	var nested: Dictionary = patch["sub"]
+	for part: Variant in nested.values():
+		if not (part is Dictionary and part.get("keys") is Array and part.get("set") is Dictionary): return false
+	return true
+
+## Applique un patch au modèle `previous` (mêmes clés, même ordre qu'une réponse complète) et note les sections
+## changées dans `changes`. Seules les sections changées sont neuves ; les autres sont reprises telles quelles (sans
+## copie). Renvoie {} si le patch exige une section absente de `previous` (révision perdue).
+## Exemple : `var next := NativeEngineBridge.apply_patch(model, patch, changes)`.
+static func apply_patch(previous: Dictionary, patch: Dictionary, changes: Dictionary) -> Dictionary:
+	if not well_formed_patch(patch): return {}
+	var keys: Array = patch["keys"]
+	var changed: Dictionary = patch["set"]
+	var nested: Dictionary = patch["sub"]
 	var full := bool(patch.get("full", true))
 	var next: Dictionary = {}
 	for key: Variant in keys:
 		if nested.has(key):
-			var part: Variant = nested[key]
-			if not (part is Dictionary and part.get("keys") is Array and part.get("set") is Dictionary): return {}
-			var previous: Variant = {} if full else _base_model.get(key)
-			var before: Dictionary = previous if previous is Dictionary else {}
+			var part: Dictionary = nested[key]
+			var part_set: Dictionary = part["set"]
+			var part_keys: Array = part["keys"]
+			var earlier: Variant = null if full else previous.get(key)
+			var before: Dictionary = earlier if earlier is Dictionary else {}
 			var inner: Dictionary = {}
-			for name: Variant in part.keys:
-				if part.set.has(name): inner[name] = part.set[name]
+			var touched: Dictionary = {}
+			for name: Variant in part_keys:
+				if part_set.has(name):
+					inner[name] = part_set[name]
+					touched[name] = true
 				elif before.has(name): inner[name] = before[name]
 				else: return {}
+			# Sous-section retirée : la section a changé aussi.
+			if not (earlier is Dictionary): changes[key] = true
+			elif not touched.is_empty() or before.size() != inner.size(): changes[key] = touched
 			next[key] = inner
-		elif changed.has(key): next[key] = changed[key]
-		elif not full and _base_model.has(key): next[key] = _base_model[key]
+		elif changed.has(key):
+			next[key] = changed[key]
+			changes[key] = true
+		elif not full and previous.has(key): next[key] = previous[key]
 		else: return {}
-	_base_model = next
-	_base_revision = int(patch.get("rev", -1))
+	if not full:
+		for key: Variant in previous:
+			if not next.has(key): changes[key] = true
 	return next
 
 func _accept(response: Dictionary) -> void:
@@ -239,6 +267,24 @@ func _accept(response: Dictionary) -> void:
 		_stop_deadline_ms = mini(_stop_deadline_ms, Time.get_ticks_msec() + STOP_AFTER_REPLY_MS)
 	last_timing["file_ms"] = (Time.get_ticks_usec() - int(last_timing.get("recu_us", Time.get_ticks_usec()))) / 1000.0
 	last_response_ok = bool(response.get("ok", false))
+	if response.get("patch") is Dictionary:
+		var composed_us := Time.get_ticks_usec()
+		var changes: Dictionary = {}
+		var patch: Dictionary = response["patch"]
+		var next := apply_patch(model, patch, changes)
+		var patch_keys: Variant = patch.get("keys")
+		if next.is_empty() and not (patch_keys is Array and patch_keys.is_empty()):
+			_transport_error("Réponse différentielle du moteur illisible.")
+			return
+		response.erase("patch")
+		response["model"] = next
+		last_full_model = bool(patch.get("full", true))
+		last_changes = changes
+		last_timing["composition_ms"] = (Time.get_ticks_usec() - composed_us) / 1000.0
+		last_timing["sections"] = changes.keys()
+	elif response.get("model") is Dictionary:
+		last_full_model = true
+		last_changes = {}
 	if response.get("model") is Dictionary:
 		model = response.model
 		model_changed.emit(model)
