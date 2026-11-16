@@ -183,9 +183,9 @@ static func _territory(app: Control) -> Control:
 	var text := G.v(6)
 	G.fill(text)
 	row.add_child(text)
-	text.add_child(G.wrap(c.get("name", "Votre club"), 28, G.INK))
+	text.add_child(G.wrap(c.get("name", "Ton club"), 28, G.INK))
 	text.add_child(G.wrap("Un territoire, une identité, une saison à écrire.", 16, G.accent_ink(app.accent)))
-	text.add_child(G.wrap("Retrouvez les repères du territoire et l’histoire du club.", 13))
+	text.add_child(G.wrap("Retrouve les repères du territoire et l’histoire du club.", 13))
 	row.add_child(G.button("CRÉDITS & LICENCES", app._credits))
 	return page
 
@@ -451,7 +451,7 @@ static func tables(app: Control) -> Control:
 		G.chapter(toolbar,"07","Les classements","",app.accent)
 		G.fill(toolbar.get_child(0))
 	else:
-		G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
+		G.chapter(sheet,"07","La course du championnat","Le classement de ta carrière, dans l’ordre de la compétition.",app.accent)
 	var archives:=G.button("ARCHIVES DES SAISONS",func():season_archives(app))
 	archives.name="OpenArchives"
 	if not international: sheet.add_child(archives)
@@ -597,7 +597,7 @@ static func season_archives(app:Control) -> void:
 		for league_id in divisions:
 			var ranks: Array = standings.get(league_id,[])
 			var position:=ranks.find(app.model.club.id)
-			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id, app.model),position+1,ranks.size()],14,G.accent_ink(app.accent)))
+			if position>=0:list.add_child(G.wrap("Ton club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id, app.model),position+1,ranks.size()],14,G.accent_ink(app.accent)))
 		var barrages: Array = world.japan_barrages(year)
 		if not barrages.is_empty(): list.add_child(G.section("MOUVEMENTS FRANÇAIS"))
 		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:
@@ -627,7 +627,7 @@ static func finance(app: Control) -> Control:
 	G.fill(page,true)
 	var info: Dictionary = app.model.get("finance", {})
 	var journal := G.panel(page,1.65)
-	G.chapter(journal,"08","Le journal des flux","Les opérations réellement enregistrées dans votre carrière",app.accent)
+	G.chapter(journal,"08","Le journal des flux","Les opérations réellement enregistrées dans ta carrière",app.accent)
 	var columns := G.h()
 	journal.add_child(columns)
 	columns.add_child(G.cell("OPÉRATION",180,G.MUTED,true))

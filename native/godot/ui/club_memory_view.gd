@@ -135,7 +135,7 @@ static func _comparison(parent: Node, app: Control, seasons: Array) -> void:
 		var a: int = int(app.management_ui.get("club_memory_season_a", seasons[0].season))
 		var b: int = int(app.management_ui.get("club_memory_season_b", seasons[1].season))
 		if a == b:
-			result.add_child(G.wrap("Même saison sélectionnée : choisissez deux saisons différentes pour les comparer.", 15))
+			result.add_child(G.wrap("Même saison sélectionnée : choisis deux saisons différentes pour les comparer.", 15))
 			return
 		for chosen: int in [a, b]:
 			for year: Dictionary in seasons:
@@ -191,7 +191,7 @@ static func build(app: Control) -> Control:
 			card.add_child(G.wrap("%s  %d — %d  %s" % [event.home_name, int(event.home), int(event.away), event.away_name], 21, G.INK))
 			if int(event.home) == int(event.away) and event.get("winner") != null: card.add_child(G.wrap("Vainqueur après départage : " + event.winner_name, 14, G.INK))
 		if not str(event.get("reaction", "")).is_empty(): card.add_child(G.wrap("Réaction du banc · %s\n« %s »" % [event.get("reaction_club_name", "Banc"), event.reaction], 14))
-	list.add_child(G.wrap("Retrouvez le résultat, les réactions des bancs et l’évolution de la rivalité pour chaque rencontre.", 12))
+	list.add_child(G.wrap("Retrouve le résultat, les réactions des bancs et l’évolution de la rivalité pour chaque rencontre.", 12))
 	list.add_child(G.separator())
 	list.add_child(G.section("Le parcours du coach, à part", "Les arrivées du manager, distinctes du palmarès du club."))
 	if data.manager_current_from != null: list.add_child(G.wrap("Mandat actuel depuis la saison " + G.season_label(data.manager_current_from), 15, G.INK))

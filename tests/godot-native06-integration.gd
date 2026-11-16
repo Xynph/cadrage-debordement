@@ -138,7 +138,7 @@ func event_routing() -> void:
 	app.pause_menu(); await qa._wait(); await settle()
 	var menu: AcceptDialog
 	for child in app.get_children():
-		if child is AcceptDialog and child.visible and child.title == "Votre carrière": menu = child
+		if child is AcceptDialog and child.visible and child.title == "Ta carrière": menu = child
 	check(menu != null and app.model.live.paused,"Le menu réel met le direct en pause")
 	if menu != null: menu.custom_action.emit("settings")
 	await settle()

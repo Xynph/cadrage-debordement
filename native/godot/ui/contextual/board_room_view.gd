@@ -91,7 +91,7 @@ func _draw() -> void:
 	if not _local_notice.is_empty():facts_scroll.add_child(S.wrap(_local_notice,14,S.GOLD))
 	facts_scroll.add_child(S.label("Les jalons suivis",18,S.GOLD))
 	var goals: Array=board.get("objectives",[])
-	if goals.is_empty():facts_scroll.add_child(S.wrap("Aucun jalon enregistré. Vous pouvez en définir un pour suivre votre projet.",14))
+	if goals.is_empty():facts_scroll.add_child(S.wrap("Aucun jalon enregistré. Tu peux en définir un pour suivre ton projet.",14))
 	for goal: Dictionary in goals:
 		var type: String=str(goal.get("type",""));var metrics: Dictionary=board.get("metrics",{})
 		var status: String={"pending":"À suivre","met":"Atteint","missed":"Manqué","unverified":"Non vérifiable"}.get(str(goal.get("status","")),"Non renseigné")
@@ -112,9 +112,9 @@ func _draw() -> void:
 	var list := S.G.scroll(actions);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)
 	list.add_child(S.label("Arbitrer le projet du club",21,S.GOLD))
 	if meeting_data.get("completed",false):
-		list.add_child(S.wrap("Votre décision est enregistrée. Vous pouvez terminer l’échange.",15,S.GOLD))
+		list.add_child(S.wrap("Ta décision est enregistrée. Tu peux terminer l’échange.",15,S.GOLD))
 	else:
-		list.add_child(S.wrap("Après avoir examiné ce bilan, vous pouvez confirmer les priorités actuelles ou choisir un arbitrage autorisé.",14))
+		list.add_child(S.wrap("Après avoir examiné ce bilan, tu peux confirmer les priorités actuelles ou choisir un arbitrage autorisé.",14))
 		var acknowledge := S.button("CONFIRMER LES PRIORITÉS ACTUELLES",_acknowledge,_ack_available(),true);acknowledge.name="BoardMeetingAck";list.add_child(acknowledge)
 	list.add_child(S.wrap("Ces projets améliorent l’organisation du club. La confiance de la direction se mesure dans les bilans.",13))
 	var priorities := GridContainer.new();priorities.columns=2;priorities.add_theme_constant_override("h_separation",8);priorities.add_theme_constant_override("v_separation",8);list.add_child(priorities)
@@ -129,7 +129,7 @@ func _draw() -> void:
 		var button := S.button(str(project.get("label","Projet"))+" · "+_display(project.get("cost"),true)+( " · engagé" if project.get("used",false) else ""),func():_request_project(str(project.get("id",""))),enabled)
 		button.name="BoardProject_"+str(project.get("id",""));list.add_child(button)
 	_build_objective_form(list,strategy)
-	var close := S.button("REVENIR À LA GESTION" if meeting_data.get("completed",false) else "CONFIRMEZ VOTRE DÉCISION POUR TERMINER",_close_meeting,bool(meeting_data.get("completed",false)) and not app.waiting);close.name="BoardRoomClose";frame.add_child(close)
+	var close := S.button("REVENIR À LA GESTION" if meeting_data.get("completed",false) else "CONFIRMEZ TA DÉCISION POUR TERMINER",_close_meeting,bool(meeting_data.get("completed",false)) and not app.waiting);close.name="BoardRoomClose";frame.add_child(close)
 	director._refresh_controls()
 
 func _close_meeting() -> void:
@@ -188,7 +188,7 @@ func _request_project(id: String) -> void:
 	app.confirm_decision("club_board_project",payload,"Engager le club","Financer %s pour %s ? Paiement unique, sans bonus de match."%[str(project.get("label",id)),S.G.euros(cost)],func():
 		var fresh := _current_strategy();var quote := _find_project(fresh,id)
 		if fresh.get("context",{})!=context or not _project_available(fresh,quote) or float(quote.get("cost",-1))!=cost:
-			_local_notice="Le contexte ou le devis a changé. Vérifiez les moyens disponibles avant de réessayer."
+			_local_notice="Le contexte ou le devis a changé. Vérifie les moyens disponibles avant de réessayer."
 			update_frame(app.model,meeting_data);return
 		director.command("club_board_project",payload))
 

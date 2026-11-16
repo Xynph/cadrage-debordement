@@ -49,7 +49,7 @@ func _build() -> void:
 	var body := G.v(10)
 	body.custom_minimum_size.x = width - 54
 	scroll.add_child(body)
-	body.add_child(G.wrap("Créez et échangez un calendrier. Les formats 14 clubs aller-retour permettent de lancer une carrière ; les autres restent échangeables. Aucune compétition officielle n’est modifiée.", 17))
+	body.add_child(G.wrap("Crée et échange un calendrier. Les formats 14 clubs aller-retour permettent de lancer une carrière ; les autres restent échangeables. Aucune compétition officielle n’est modifiée.", 17))
 	title_input = LineEdit.new()
 	title_input.name = "CompetitionEditorTitle"
 	title_input.text = "Ma ligue"
@@ -88,10 +88,10 @@ func _build() -> void:
 	copy_button = G.button("COPIER JSON", _copy)
 	copy_button.disabled = true
 	tools.add_child(copy_button)
-	message = G.wrap("Votre brouillon reste dans cette fenêtre jusqu’à sa fermeture. Exportez-le pour le conserver.", 14)
+	message = G.wrap("Ton brouillon reste dans cette fenêtre jusqu’à sa fermeture. Exporte-le pour le conserver.", 14)
 	message.name = "CompetitionEditorMessage"
 	body.add_child(message)
-	launch_notice = G.wrap("Vérifiez le calendrier pour connaître son format jouable.", 14)
+	launch_notice = G.wrap("Vérifie le calendrier pour connaître son format jouable.", 14)
 	launch_notice.name = "CustomCompetitionSupport"
 	body.add_child(launch_notice)
 	play_club = OptionButton.new()
@@ -123,7 +123,7 @@ func _document_changed() -> void:
 	play_club.disabled = true
 	export_button.disabled = true
 	copy_button.disabled = true
-	fixture_output.text = "Document modifié : vérifiez-le pour actualiser l’aperçu."
+	fixture_output.text = "Document modifié : vérifie-le pour actualiser l’aperçu."
 	message.text = "Brouillon non vérifié. Les noms, journées et confrontations seront contrôlés."
 
 func _generate() -> void:
@@ -143,13 +143,13 @@ func _validate() -> void:
 		return
 	var parser := JSON.new()
 	if parser.parse(json_input.text) != OK or not parser.data is Dictionary:
-		message.text = "JSON illisible : fournissez un objet calendrier complet."
+		message.text = "JSON illisible : fournis un objet calendrier complet."
 		return
 	_request({"action":"validate", "document":parser.data})
 
 func _request(payload: Dictionary) -> void:
 	if pending or app.waiting:
-		message.text = "Une action est en cours. Réessayez après sa réponse."
+		message.text = "Une action est en cours. Réessaie après sa réponse."
 		return
 	pending = true
 	generate_button.disabled = true
@@ -285,17 +285,17 @@ func _playable_template() -> void:
 
 func _launch() -> void:
 	if app.model.get("live") is Dictionary and not app.model.live.is_empty():
-		message.text = "Terminez et validez le match avant de créer une autre carrière."
+		message.text = "Termine et valide le match avant de créer une autre carrière."
 		return
 	if pending or app.waiting or validated_text.is_empty() or not preview.get("launch", {}).get("playable", false): return
 	if validated_text != json_input.text:
 		_document_changed()
-		message.text = "Vérifiez votre document modifié avant de créer une carrière."
+		message.text = "Vérifie ton document modifié avant de créer une carrière."
 		return
 	var confirmation := ConfirmationDialog.new()
 	confirmation.name = "CustomCompetitionConfirmation"
 	confirmation.title = "Nouvelle carrière"
-	var explanation := "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exportez-la avant de poursuivre si vous souhaitez la conserver.\n14 clubs, 26 journées et les phases finales prévues ; les couleurs, budgets et niveaux des clubs sont conservés." % play_club.get_item_text(play_club.selected)
+	var explanation := "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exporte-la avant de poursuivre si tu souhaites la conserver.\n14 clubs, 26 journées et les phases finales prévues ; les couleurs, budgets et niveaux des clubs sont conservés." % play_club.get_item_text(play_club.selected)
 	confirmation.get_ok_button().text = "CRÉER ET REMPLACER"
 	confirmation.get_cancel_button().text = "GARDER LE BROUILLON"
 	app._prepare_dialog(confirmation, mini(760, app.get_window().size.x - 96))

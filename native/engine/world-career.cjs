@@ -64,7 +64,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   const status=dailyStatus(s);
   if(!status||s.phase==='ended')throw Error('Avance journalière indisponible.');
   if(fromDate!==calendarToday(s))throw Error('La date de carrière a changé.');
-  if(!status.canAdvance)throw Error(s.live?'Terminez et validez le résultat avant de continuer.':'Jouez la rencontre prévue aujourd’hui avant de continuer.');
+  if(!status.canAdvance)throw Error(s.live?'Termine et valide le résultat avant de continuer.':'Joue la rencontre prévue aujourd’hui avant de continuer.');
   if(status.day===6){
    finishWeek();
    return true;
@@ -309,7 +309,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   check(playable.has(id),'club jouable invalide.');
   S={version:2,commonDatabase:copy(REG.marker),rosterFoundation:copy(CDRosterFoundation.marker),club:id,season:1,round:0,
    clubs:REG.clubs.map(c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,base:c.base,cash:c.cashMillions*1e6,goal:c.goal||'Développer le projet sportif',stadium:c.stadium,stadiumCapacity:stadiumCapacity(c.id),points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[],players:initialRoster(c)})),
-   schedule:[],lineup:[],reserves:[],tactic:'equilibre',training:'normal',physicalLoadVersion:1,collectivePrepVersion:1,collectiveFocus:'aucune',developmentFocusVersion:1,recruitmentIntelVersion:1,salaryDemandVersion:1,satisfactionVersion:1,relationsVersion:1,objectivesVersion:1,v39Version:1,integratedManagementVersion:1,worldVersion:1,morale:75,trust:70,history:[],news:['Le vestiaire vous attend. À vous de donner le cap pour cette nouvelle saison.'],market:[],marketWeek:-1,phase:'league',playoff:null,live:null,lastReport:null,ledger:[],trained:false};
+   schedule:[],lineup:[],reserves:[],tactic:'equilibre',training:'normal',physicalLoadVersion:1,collectivePrepVersion:1,collectiveFocus:'aucune',developmentFocusVersion:1,recruitmentIntelVersion:1,salaryDemandVersion:1,satisfactionVersion:1,relationsVersion:1,objectivesVersion:1,v39Version:1,integratedManagementVersion:1,worldVersion:1,morale:75,trust:70,history:[],news:['Le vestiaire t’attend. À toi de donner le cap pour cette nouvelle saison.'],market:[],marketWeek:-1,phase:'league',playoff:null,live:null,lastReport:null,ledger:[],trained:false};
   if(startingTerms)for(const club of S.clubs){
    if(!['prem','urc','champ'].includes(REG.clubs[club.id].leagueId))continue;
    for(const player of club.players){
@@ -386,7 +386,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   refreshMarket();repairSheet();save();view='dashboard';
  }
  function advance(){
-  check(active(S)&&S.phase==='ended'&&!S.live,'terminez la saison avant l’intersaison.');
+  check(active(S)&&S.phase==='ended'&&!S.live,'termine la saison avant l’intersaison.');
   worldEndSeason();careerSeasonEnd();closeIndividualObjectivesSeason();rollDevelopmentYear();worldPrepareRenewalLiquidity();settleContracts();
   // Build next year's entrants before clearing the results they are based on.
   S.season++;newSeason(S);S.history=[];S.lastReport=null;S.ending=null;S.trained=false;
@@ -551,7 +551,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
     const fixture=userFixture(S);
     if(fixture&&[...S.lineup,...S.reserves].some(id=>id&&clubReleaseOn(S,id,fixture.date))){
      const sheet=buildSheet(matchRoster(S,club()),S.lineup,S.reserves);
-     check([...sheet.lineup,...sheet.bench].filter(Boolean).length>=(reducedBench?22:23),'des joueurs sont en sélection. Complétez la feuille de match du club.');
+     check([...sheet.lineup,...sheet.bench].filter(Boolean).length>=(reducedBench?22:23),'des joueurs sont en sélection. Complète la feuille de match du club.');
      S.lineup=sheet.lineup;S.reserves=sheet.bench;
     }
    }

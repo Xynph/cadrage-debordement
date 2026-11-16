@@ -64,7 +64,7 @@ static func vacancy_text(model: Dictionary) -> String:
 		for slot_offer: Dictionary in value.slots: parts.append("n° %d (%s)" % [int(slot_offer.number), str(slot_offer.label).to_lower()])
 		var texte := "Feuille incomplète : place%s %s sans joueur disponible." % ["s" if parts.size() > 1 else "", " et ".join(parts)]
 		# Le match à 22 reste proposé quand la règle le permet : on dit quelle place resterait vide.
-		if vacant != 0: texte += " Appelez un espoir, ou jouez à 22 (n° %d non pourvu)." % vacant
+		if vacant != 0: texte += " Appelle un espoir, ou joue à 22 (n° %d non pourvu)." % vacant
 		return texte
 	if vacant != 0: return P.reduced_bench_vacancy(vacant)
 	return ""
@@ -114,7 +114,7 @@ static func ouvrir(app: Control, begin_match: bool) -> ConfirmationDialog:
 	var has_22 := begin_match and P.reduced_bench_number(app.model) != 0
 	var pick := add_choices(body, app.model, begin_match)
 	var note := "Comme en vrai, le jeune est prêté à l'équipe première pour ce match seulement : pas de contrat professionnel, il retourne au centre ensuite et gagne de l'expérience."
-	if has_22: note += "\nÀ 22, vous commencez avec 15 titulaires et 7 remplaçants ; si la première ligne ne peut plus être complétée, les mêlées deviennent non disputées."
+	if has_22: note += "\nÀ 22, tu commences avec 15 titulaires et 7 remplaçants ; si la première ligne ne peut plus être complétée, les mêlées deviennent non disputées."
 	body.add_child(C.wrap(note, 15, C.MUTED))
 	dialog.get_ok_button().text = "COUP D'ENVOI" if begin_match else "APPELER LE JEUNE"
 	dialog.get_cancel_button().text = "ANNULER"

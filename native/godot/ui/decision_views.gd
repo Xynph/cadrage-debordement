@@ -11,7 +11,7 @@ static func population(app: Control, parent: Container) -> void:
 		card.add_child(G.wrap("Sorties des centres de formation et jeunes issus de petits clubs rejoignent durablement le recrutement.", 13))
 		if data.get("knownAccessible") != null: card.add_child(G.wrap("%s joueurs en activité ou disponibles dans le circuit professionnel." % G.n(data.knownAccessible), 12))
 	elif data.get("canEnable", false):
-		card.add_child(G.wrap("Votre ancienne partie peut adopter le renouvellement durable des effectifs et les carrières du staff. Les joueurs actuels sont conservés.", 13))
+		card.add_child(G.wrap("Ton ancienne partie peut adopter le renouvellement durable des effectifs et les carrières du staff. Les joueurs actuels sont conservés.", 13))
 		var activate := G.button("ACTIVER LE RENOUVELLEMENT", func():
 			var payload := {"confirmed":true,"context":{"season":int(app.model.meta.season),"week":int(app.model.meta.get("week", app.model.meta.get("round", 0))),"club":int(app.model.club.id)}}
 			app.confirm("Renouveler les effectifs", "Les prochains départs seront compensés par les centres de formation et le vivier de petits clubs. Les membres du staff pourront aussi changer de poste et prendre leur retraite. Confirmer ?", func(): app._command("population_enable", payload)))
@@ -38,7 +38,7 @@ static func dossier_summary(app: Control, parent: Container) -> void:
 		metrics.add_child(c)
 		c.add_child(G.label("%s / %s" % [G.n(sector.own), G.n(sector.opponent)], 24, G.GOOD if sector.own >= sector.opponent else G.ALERT, true))
 		c.add_child(G.wrap(sector.label, 11))
-	card.add_child(G.wrap("Votre XV / projection adverse · évaluations sur 100, ajustées à la condition.", 11))
+	card.add_child(G.wrap("Ton XV / projection adverse · évaluations sur 100, ajustées à la condition.", 11))
 
 static func dialog(app: Control, title: String, id: String, width: int = 880) -> Array:
 	app._clear_dialogs()
@@ -201,7 +201,7 @@ static func recruitment(app: Control) -> void:
 	tabs.add_child(reports)
 	var list: VBoxContainer = G.scroll(needs)
 	list.add_child(G.label("Les postes à anticiper", 18, G.INK, true))
-	list.add_child(G.wrap("Aptitude actuelle, contrats et relève. Vous gardez la décision.", 12))
+	list.add_child(G.wrap("Aptitude actuelle, contrats et relève. Tu gardes la décision.", 12))
 	for need: Dictionary in data.get("needs", []):
 		var row := G.h(10)
 		list.add_child(row)
@@ -235,7 +235,7 @@ static func recruitment(app: Control) -> void:
 	for job: Dictionary in data.get("missions", []): list.add_child(G.wrap("Mission %s · %s" % [job.id, "en cours, %s journée(s)" % G.n(job.remaining) if job.status == "active" else "en attente" if job.status == "queued" else "terminée"], 13))
 	var available_reports: Array = data.get("reports", [])
 	if available_reports.is_empty():
-		reports.add_child(G.wrap("Aucun rapport. Confiez une mission pour recevoir des profils datés.", 13))
+		reports.add_child(G.wrap("Aucun rapport. Confie une mission pour recevoir des profils datés.", 13))
 	else:
 		var picker := OptionButton.new()
 		picker.name = "ScoutReportPicker"
@@ -325,7 +325,7 @@ static func match_notes(app: Control, parent: Container, model: Dictionary) -> v
 		parent.add_child(G.wrap("Conseil indicatif. Mise en pause requise ; les consignes locales gardent leur priorité.", 11))
 	var report: Variant = data.get("report")
 	if (live.is_empty() or live.get("finished", false)) and report is Dictionary:
-		parent.add_child(G.section("Dernière rencontre · vos choix, les faits" if live.is_empty() else "Vos choix, les faits"))
+		parent.add_child(G.section("Dernière rencontre · tes choix, les faits" if live.is_empty() else "Tes choix, les faits"))
 		if live.is_empty():
 			var context := _last_match_context(report)
 			if not context.is_empty():

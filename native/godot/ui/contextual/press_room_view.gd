@@ -113,8 +113,8 @@ func _render_ui() -> void:
 	column.add_child(footer)
 	var notice_surface := S.panel(footer, 8)
 	S.G.fill(notice_surface.get_parent().get_parent())
-	var notice_text := "Vos réponses ont été communiquées à la presse." if meeting.get("completed", false) else "Un clic par question : la suivante s’affiche d’elle-même. Publiez quand tout est répondu."
-	if meeting.get("completed", false) and _current_outcome().get("delegated", false): notice_text = "Gabi a répondu à votre place. La presse en a pris note."
+	var notice_text := "Tes réponses ont été communiquées à la presse." if meeting.get("completed", false) else "Un clic par question : la suivante s’affiche d’elle-même. Publie quand tout est répondu."
+	if meeting.get("completed", false) and _current_outcome().get("delegated", false): notice_text = "Gabi a répondu à ta place. La presse en a pris note."
 	var notice := S.wrap(notice_text, 12, S.TEXT)
 	notice_surface.add_child(notice)
 	# The persisted meeting domain alone unlocks the exit. A local draft or
@@ -189,7 +189,7 @@ func _render_conference(column: VBoxContainer) -> void:
 	var relation: Dictionary = question.get("relation", {})
 	if relation.has("label"):
 		var encounters := int(relation.get("encounters", 0))
-		var met := "première rencontre" if encounters == 0 else "%d échange%s avec vous" % [encounters, "s" if encounters > 1 else ""]
+		var met := "première rencontre" if encounters == 0 else "%d échange%s avec toi" % [encounters, "s" if encounters > 1 else ""]
 		var relation_label := S.wrap("Relation : " + str(relation.label) + " · " + met, 13, S.GOLD)
 		relation_label.name = "PressJournalistRelation"
 		words.add_child(relation_label)
@@ -218,7 +218,7 @@ func _render_conference(column: VBoxContainer) -> void:
 	var spacer := Control.new()
 	S.G.fill(spacer)
 	progress.add_child(spacer)
-	progress.add_child(S.label("Votre ton", 14, S.MUTED))
+	progress.add_child(S.label("Ton registre", 14, S.MUTED))
 	var list := S.G.scroll(surface)
 	list.name = "PressAnswers"
 	var group := ButtonGroup.new()
@@ -366,7 +366,7 @@ func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
 	var list := S.G.scroll(surface)
 	var delegated: bool = outcome.get("delegated", false)
 	list.add_child(S.label("Gabi a tenu la conférence" if delegated else "Conférence publiée", 25, S.GOLD))
-	list.add_child(S.wrap("Ton prudent, la presse attendait le manager : médias −2 et relation −1 avec chaque journaliste." if delegated else "Vos réponses sont enregistrées. Voici ce qu’elles ont changé.", 15, S.TEXT))
+	list.add_child(S.wrap("Ton prudent, la presse attendait le manager : médias −2 et relation −1 avec chaque journaliste." if delegated else "Tes réponses sont enregistrées. Voici ce qu’elles ont changé.", 15, S.TEXT))
 	# Les trois conséquences qui comptent, en grand : moral, relation presse, confiance.
 	var headline := S.G.h(10)
 	headline.name = "PressOutcomeHeadline"
@@ -437,7 +437,7 @@ func _render_promise_banner(column: VBoxContainer) -> void:
 	row.name = "PressPromiseBanner"
 	row.add_theme_constant_override("h_separation", 10)
 	column.add_child(row)
-	row.add_child(S.label("VOS PROMESSES PUBLIQUES", 12, S.GOLD))
+	row.add_child(S.label("TES PROMESSES PUBLIQUES", 12, S.GOLD))
 	for promise: Dictionary in active:
 		var progress: Dictionary = promise.get("progress", {})
 		var track: Variant = progress.get("onTrack")
@@ -485,7 +485,7 @@ func _render_promise_offer(parent: Control) -> void:
 	var chosen: Variant = _promise_option(promise_choice)
 	var detail := "Sans réponse, la question reviendra à une prochaine conférence. " + str(offer.get("notice", ""))
 	if chosen is Dictionary:
-		detail = ("Vous refusez de vous engager. " if promise_choice == "refuse" else "Annonce : « %s » · %s. " % [str(chosen.get("label", "")), str(chosen.get("realismLabel", ""))]) + str(chosen.get("consequence", ""))
+		detail = ("Tu refuses de t’engager. " if promise_choice == "refuse" else "Annonce : « %s » · %s. " % [str(chosen.get("label", "")), str(chosen.get("realismLabel", ""))]) + str(chosen.get("consequence", ""))
 		if chosen.get("boardNote") != null: detail += " · " + str(chosen.boardNote)
 	var summary := S.wrap(detail, 12, S.GOLD if chosen is Dictionary else S.MUTED)
 	summary.name = "PressPromiseSummary"
@@ -544,7 +544,7 @@ func _refresh_selection() -> void:
 			button.add_theme_color_override("font_color", S.TEXT)
 	if is_instance_valid(_draft_status):
 		var total := _questions().size()
-		_draft_status.text = "Toutes les réponses sont prêtes : publiez." if choices.size() >= total else "%d / %d réponses · rien n’est publié" % [choices.size(), total]
+		_draft_status.text = "Toutes les réponses sont prêtes : publie." if choices.size() >= total else "%d / %d réponses · rien n’est publié" % [choices.size(), total]
 
 func _complete() -> bool:
 	if not _available(): return false

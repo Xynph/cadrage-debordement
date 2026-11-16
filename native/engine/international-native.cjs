@@ -103,7 +103,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       const clubRelease = mail.kind === 'international_release';
       const count = clubRelease ? camp.playerIds.filter(id => club.has(id)).length : camp.playerIds.length;
       const start = clubRelease
-        ? `${count} ${count === 1 ? 'joueur de votre club rejoint' : 'joueurs de votre club rejoignent'} la sélection de ${teamNames[camp.nation]}`
+        ? `${count} ${count === 1 ? 'joueur de ton club rejoint' : 'joueurs de ton club rejoignent'} la sélection de ${teamNames[camp.nation]}`
         : `${count} joueurs sont convoqués avec la sélection de ${teamNames[camp.nation]}`;
       const through = camp.competitionId.startsWith('rugby-world-cup-')
         ? ' La date de retour dépend du parcours dans la compétition.'
@@ -192,8 +192,8 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const fixture = career.currentFixture ? career.currentFixture(state,nation) : career.project(state, {players,managedNation:nation}).currentFixture;
     if (!fixture || fixture.result) return [];
     return [{
-      id:'match-day/'+fixture.id,kind:'international_match',title:'Jour de match avec votre sélection',
-      body:teamNames[fixture.homeId]+' – '+teamNames[fixture.awayId]+'. Votre feuille de match est prête à vérifier.',
+      id:'match-day/'+fixture.id,kind:'international_match',title:'Jour de match avec ta sélection',
+      body:teamNames[fixture.homeId]+' – '+teamNames[fixture.awayId]+'. Ta feuille de match est prête à vérifier.',
       date:state.date,action:'international',nation,
     }];
   }
@@ -248,11 +248,11 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const newProfile = {career:career.initial(date, seed), role:assigned, mail:[]};
     const nation = assigned.nation;
     newProfile.mail.push(nation ? {
-      id:'national-welcome',kind:'international_job',title:'Votre nomination internationale',
-      body:'Vous prenez en charge la sélection de ' + teamNames[nation] + '.',date,action:'international',nation,
+      id:'national-welcome',kind:'international_job',title:'Ta nomination internationale',
+      body:'Tu prends en charge la sélection de ' + teamNames[nation] + '.',date,action:'international',nation,
     } : {
       id:'national-jobs',kind:'international_job',title:'Les postes de sélectionneur',
-      body:'Consultez les sélections ouvertes aux candidatures. Vous pouvez garder votre club ou vous consacrer à une sélection.',date,action:'national_job',
+      body:'Consulte les sélections ouvertes aux candidatures. Tu peux garder ton club ou te consacrer à une sélection.',date,action:'national_job',
     });
     write(advanceProfile(newProfile,date,true));
   }
@@ -263,14 +263,14 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const offSeason = ended();
     const date = profile.career.date;
     if (from !== date) throw Error('La date de carrière a changé.');
-    if (offSeason && date >= nextOpening()) throw Error('Commencez la saison suivante.');
+    if (offSeason && date >= nextOpening()) throw Error('Commence la saison suivante.');
     write(advanceProfile(profile,dateAfter(date)));
     return offSeason;
   }
 
   function checkSeason() {
     const profile = read();
-    if (profile && ended() && profile.career.date !== nextOpening()) throw Error('Terminez les journées de l’intersaison avant de changer de saison.');
+    if (profile && ended() && profile.career.date !== nextOpening()) throw Error('Termine les journées de l’intersaison avant de changer de saison.');
   }
 
   function command(command, payload) {
@@ -278,7 +278,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     if (!profile) throw Error('Les sélections sont indisponibles dans cette carrière.');
     const date = profile.career.date;
     const before = role(profile);
-    if (run('!!S.live&&!S.worldMode?.resultConfirmed')) throw Error('Terminez et validez le match du club avant cette décision.');
+    if (run('!!S.live&&!S.worldMode?.resultConfirmed')) throw Error('Termine et valide le match du club avant cette décision.');
     if (command === 'national_play_match') {
       if (payload.fromDate !== date || typeof payload.fixtureId !== 'string') throw Error('La rencontre internationale a changé.');
       const played = career.play(profile.career,{date,fixtureId:payload.fixtureId,managedNation:before.nation,
@@ -286,7 +286,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       write({...profile,career:played.state,mail:append(profile,played.mail)});
       return;
     }
-    if (payload.confirmed !== true) throw Error('Confirmez le changement de mandat.');
+    if (payload.confirmed !== true) throw Error('Confirme le changement de mandat.');
     const leaving = command === 'national_leave_job';
     const mode = leaving ? 'club' : payload.role;
     if (!leaving && !['dual','nation'].includes(mode)) throw Error('Mandat de sélectionneur invalide.');
@@ -294,13 +294,13 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const offer = manager.nationalOffers(profile.role,teamIds).includes(nation) ? nation : null;
     const next = manager.applyManagerRole(profile.role,{mode,nation,date,fromMode:before.mode,fromNation:before.nation},
       {supportedNations:teamIds,date,nationalOffer:offer,matchInProgress:false});
-    let detail = 'Vous poursuivez votre travail en club.';
-    if (nation && mode === 'dual') detail = 'Vous gardez votre club et prenez en charge la sélection de '+teamNames[nation]+'.';
+    let detail = 'Tu poursuis ton travail en club.';
+    if (nation && mode === 'dual') detail = 'Tu gardes ton club et prends en charge la sélection de '+teamNames[nation]+'.';
     if (nation && mode === 'nation') detail = before.club
-      ? 'Vous quittez votre poste en club pour vous consacrer à la sélection de '+teamNames[nation]+'.'
-      : 'Vous prenez en charge la sélection de '+teamNames[nation]+'.';
+      ? 'Tu quittes ton poste en club pour te consacrer à la sélection de '+teamNames[nation]+'.'
+      : 'Tu prends en charge la sélection de '+teamNames[nation]+'.';
     const mail = {id:`national-job/${date}/${profile.role.history.length}/${nation??'club'}`,kind:'international_job',date,
-      title:nation?'Mandat international confirmé':'Fin de votre mandat international',
+      title:nation?'Mandat international confirmé':'Fin de ton mandat international',
       body:detail,action:'international',...(nation?{nation}:{})};
     write({...profile,role:next,mail:append(profile,[mail,...(nation ? matchMail(profile.career,roster(),nation) : [])])});
   }

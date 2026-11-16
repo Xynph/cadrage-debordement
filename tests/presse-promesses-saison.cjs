@@ -30,14 +30,14 @@ test('saison complète : rappels, verdicts aux échéances, sauvegarde', { timeo
   conference(domicile.id);
   assert.equal(projection().press.conference.promise ?? null, null, 'deux promesses au plus par saison');
   // Saison semaine par semaine : chaque rappel arrive dans le courrier (presse) avec le mot de Gabi.
-  const attendus = { 'mi-saison': 'La presse fait les comptes', sprint: 'Sprint final : votre promesse en question' };
+  const attendus = { 'mi-saison': 'La presse fait les comptes', sprint: 'Sprint final : ta promesse en question' };
   let vus = [];
   for (let i = 0; i < 80 && h.run("S.phase!=='ended'"); i++) {
     h.week(1, { validate: false });
     const rappels = promesses().promises.find(p => p.kind === 'home_wins').reminders;
     for (const r of rappels.filter(r => !vus.includes(r))) {
       assert.ok(titres().includes(attendus[r]), 'rappel de la presse : ' + r);
-      assert.ok(titres().includes('Gabi : votre promesse'), 'rappel de Gabi : ' + r);
+      assert.ok(titres().includes('Gabi : ta promesse'), 'rappel de Gabi : ' + r);
     }
     vus = rappels;
   }

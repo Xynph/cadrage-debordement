@@ -302,7 +302,7 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
 	var note := _note(app,player)
-	var preview := "Conservez vos observations sur ce joueur." if note.is_empty() else str(note.get("text","")).replace("\n"," ")
+	var preview := "Conserve tes observations sur ce joueur." if note.is_empty() else str(note.get("text","")).replace("\n"," ")
 	D.text(card,946,151,preview,19,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true).name="FullPlayerNotePreview"
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
 
@@ -434,7 +434,7 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
-		var heading := PlayerAttributes.GENERATED_TITLE if PlayerAttributes.is_generated(player) else "Repères du joueur dans votre carrière"
+		var heading := PlayerAttributes.GENERATED_TITLE if PlayerAttributes.is_generated(player) else "Repères du joueur dans ta carrière"
 		D.text(card,24,120,heading,31,C.IVORY,700,686).name = "PlayerSourcesHeading"
 		D.text(card,24,179,str(player.get("pos","—"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return

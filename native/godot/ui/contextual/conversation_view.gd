@@ -59,7 +59,7 @@ func _draw() -> void:
 		panel.add_child(S.wrap(str(decision.get("summary", "Décision enregistrée.")), 17, S.TEXT))
 		surface.add_child(S.button("RETOURNER AU COURRIER  →", _close, true, true))
 	else:
-		panel.add_child(S.label("Votre réponse", 17, S.GOLD))
+		panel.add_child(S.label("Ta réponse", 17, S.GOLD))
 		for option: Dictionary in invitation.get("options", []):
 			var button := S.button(str(option.get("text", "")), func(): selected_choice = str(option.get("id", "")); _draw(), invitation.get("available", true))
 			button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

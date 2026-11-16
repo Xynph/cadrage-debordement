@@ -454,7 +454,7 @@ func _next_match() -> void:
 			D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionScheduledAdvance")
 			return
 		D.text(panel, 36, 130, "Aucune rencontre programmée", 39, C.IVORY, 800, 810)
-		D.text(panel, 37, 174, app.model.meta.get("roundLabel", "Consultez le calendrier du club."), 27, C.MUTED, 500, 802)
+		D.text(panel, 37, 174, app.model.meta.get("roundLabel", "Consulte le calendrier du club."), 27, C.MUTED, 500, 802)
 		D.button(panel, Rect2(166, 247, 589, 60), "Voir le calendrier du club", func(): _switch("calendar"), true, "calendar", false, PRIMARY, "CompetitionCalendarLink")
 		return
 	var home: Dictionary = next_fixture.get("home", {})

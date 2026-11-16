@@ -143,8 +143,8 @@ func _field(zones: Array) -> void:
 		var y: float = 608.0 * centers[i]
 		D.rect(field, Rect2(53, y - 24, 414, 49), Color("103127"), 5, GREEN if field.current == i else Color("45675a"))
 		D.text(field, 260, y + 11, "%02d  ·  %s" % [i + 1, zones[i].label], 29, C.IVORY, 700, 391, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 346, 763, "VOTRE EN-BUT", 21, GREEN, 700, 602, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 346, 797, "Orientation selon votre équipe", 21, C.MUTED, 500, 602, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel, 346, 763, "TON EN-BUT", 21, GREEN, 700, 602, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel, 346, 797, "Orientation selon ton équipe", 21, C.MUTED, 500, 602, HORIZONTAL_ALIGNMENT_CENTER)
 
 func _phases() -> void:
 	var phases: Array = data.get("setPieces", [])

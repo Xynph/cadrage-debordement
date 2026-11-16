@@ -53,7 +53,7 @@ static func squad(app: Control) -> Control:
 	page.name="CarnetSquad"
 	var table := G.panel(page,1.4)
 	table.add_theme_constant_override("separation",4)
-	G.chapter(table,"01","Le groupe professionnel","Rechercher, consulter et comparer sans perdre votre place.",app.accent)
+	G.chapter(table,"01","Le groupe professionnel","Rechercher, consulter et comparer sans perdre ta place.",app.accent)
 	if app.model.get("epcrPreparation") is Dictionary:
 		var europe := G.button("Préparer l’Europe",func():load("res://ui/epcr_preparation_dialog.gd").open(app))
 		europe.name = "OpenEpcrPreparation"
@@ -217,7 +217,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 	compare.text="COMPARER (%d/2)"%app.management_ui.compare.size()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
 	state.visible_player=app.selected_player
-	if players.is_empty():list.add_child(G.wrap("Aucun joueur ne correspond. Modifiez la recherche ou réinitialisez les filtres.",15))
+	if players.is_empty():list.add_child(G.wrap("Aucun joueur ne correspond. Modifie la recherche ou réinitialise les filtres.",15))
 	var revealed: Button = null
 	# Reprise : internationaux encore en congés après leur tournée d'été (reprise.cjs).
 	var on_leave := {}
@@ -306,7 +306,7 @@ static func _show_profile(app:Control,parent:VBoxContainer) -> void:
 	parent.set_meta("player_id",app.selected_player)
 	for p:Dictionary in app.model.get("squad",[]):
 		if str(p.id)==app.selected_player:_profile(app,parent,p);return
-	parent.add_child(G.wrap("Sélectionnez un joueur pour consulter son dossier.",15))
+	parent.add_child(G.wrap("Sélectionne un joueur pour consulter son dossier.",15))
 
 static func player_load_unavailable_reason(app: Control) -> String:
 	var meta: Dictionary = app.model.get("meta", {})
@@ -603,7 +603,7 @@ static func lineup(app:Control) -> Control:
 	page.name="CarnetLineup"
 	var pitch:=G.panel(page,1.15)
 	if app.size.y<=760:pitch.add_theme_constant_override("separation",3)
-	G.chapter(pitch,"02","La feuille de match","Titulaire ou remplaçant : choisissez un poste.",app.accent)
+	G.chapter(pitch,"02","La feuille de match","Titulaire ou remplaçant : choisis un poste.",app.accent)
 	var condition := G.label("Condition du XV · " + P.lineup_condition(app.model), 15)
 	condition.name = "LineupCondition"
 	pitch.add_child(condition)
@@ -687,7 +687,7 @@ static func lineup(app:Control) -> Control:
 		b.set_meta("player_id",str(p.id))
 		b.name="LineupPlayer"+str(p.id).replace(":","_")
 		b.disabled=not app._live().is_empty() or float(p.get("injury",0))>0 or (eligible is Array and p.id not in eligible)
-		if b.disabled:b.tooltip_text+="\nIndisponible ou qualification incompatible avec ce poste. Pendant un match, utilisez les remplacements."
+		if b.disabled:b.tooltip_text+="\nIndisponible ou qualification incompatible avec ce poste. Pendant un match, utilise les remplacements."
 		var inset := G.margin(8)
 		inset.add_theme_constant_override("margin_top",0)
 		inset.add_theme_constant_override("margin_bottom",0)
@@ -816,7 +816,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	var capacity:=2 if app.size.y<=760 else 4 if app.size.y<=940 else 6
 	app.management_ui.market.page_size=capacity
 	var bounds:=_page_range(list.get_parent().get_parent().find_child("MarketPagination",false,false),app.management_ui.market,players.size(),capacity)
-	count.text="%d / %d pistes · %d joueurs suivis dans votre carrière"%[players.size(),app.model.get("market",[]).size(),app.management_ui.shortlist.size()]
+	count.text="%d / %d pistes · %d joueurs suivis dans ta carrière"%[players.size(),app.model.get("market",[]).size(),app.management_ui.shortlist.size()]
 	var grid:=GridContainer.new()
 	grid.columns=2
 	grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -855,7 +855,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		G.fill(track);G.fill(b)
 		actions.add_child(track)
 		actions.add_child(b)
-	if players.is_empty():list.add_child(G.wrap("Aucune piste ne correspond. Modifiez la recherche, le filtre Suivis ou réinitialisez les filtres.",15))
+	if players.is_empty():list.add_child(G.wrap("Aucune piste ne correspond. Modifie la recherche, le filtre Suivis ou réinitialise les filtres.",15))
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.market.scroll))
 
 ## Entrée unique du comparateur de joueurs (Effectif, fiche joueur) : même fenêtre que le Recrutement.

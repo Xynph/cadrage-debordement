@@ -233,7 +233,7 @@ func _update_candidates() -> void:
 		player_choice.select(selected)
 		candidate_id = str(candidate_rows[selected].id)
 		_quote_candidate()
-	player_choice.tooltip_text = "Au plus 60 résultats ; précisez la recherche pour les autres joueurs."
+	player_choice.tooltip_text = "Au plus 60 résultats ; précise la recherche pour les autres joueurs."
 
 func _quote_candidate() -> void:
 	var rows := candidate_rows.filter(func(p: Dictionary): return p.id == candidate_id)
@@ -258,7 +258,7 @@ func _goal() -> void:
 			if row.events.is_empty(): _text("Aucun événement à signaler pour cet indicateur.", C.MUTED)
 			else:
 				for event: Dictionary in row.events: _text("%s min · %s" % [str(event.get("minute", "?")), str(event.get("text", event.kind))])
-	else: _text("Choisissez un objectif ; seules les rencontres jouées ensuite seront suivies.")
+	else: _text("Choisis un objectif ; seules les rencontres jouées ensuite seront suivies.")
 	var choice := _select("PlannerGoalMetric", ["Touches conservées · minimum %", "Mêlées conservées · minimum %", "Pénalités concédées · maximum par match"], 0, func(index: int):
 		var target := find_child("PlannerGoalTarget", true, false) as SpinBox
 		if target != null: target.value = 8 if index == 2 else 80)

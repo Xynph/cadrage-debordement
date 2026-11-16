@@ -52,7 +52,7 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 		return page
 	paper.add_child(G.wrap(Copy.notice("academy", data.description), 13))
 	if not data.get("active", false):
-		paper.add_child(G.wrap("Les %d Espoirs actuels restent dans votre centre. Activer les parcours ajoute la détection, les mentorats et les compétitions juniors à cette carrière." % data.players.size(), 18))
+		paper.add_child(G.wrap("Les %d Espoirs actuels restent dans ton centre. Activer les parcours ajoute la détection, les mentorats et les compétitions juniors à cette carrière." % data.players.size(), 18))
 		_action(paper, app, data, "ACTIVER LES PARCOURS", "academy_activate", {}, 0)
 		return page
 	var summary := G.h(18)
@@ -217,7 +217,7 @@ static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, 
 	if data.loans.is_empty(): list.add_child(G.wrap("Aucun prêt en cours. Les joueurs de la feuille de 23 doivent d’abord être retirés de la sélection.",15))
 
 static func _history(list: VBoxContainer, data: Dictionary) -> void:
-	list.add_child(G.section("La mémoire des générations", "Quinze saisons maximum, archivées une seule fois. Retrouvez les résultats des générations précédentes."))
+	list.add_child(G.section("La mémoire des générations", "Quinze saisons maximum, archivées une seule fois. Retrouve les résultats des générations précédentes."))
 	if data.generations.is_empty(): list.add_child(G.wrap("La première génération sera archivée à la fin de cette saison.",18))
 	for generation: Dictionary in data.generations:
 		list.add_child(G.section("Saison %s" % G.season_label(generation.season), "%d joueurs suivis · %d promotions · réputation %d" % [generation.players.size(),generation.graduates,generation.reputation]))
@@ -242,11 +242,11 @@ static func open_professional(app: Control, player_id: String) -> AcceptDialog:
 	var data: Dictionary = app.model.get("clubLife",{}).get("academyPathways",{})
 	if not data.get("available",false): list.add_child(G.wrap(str(data.get("reason","Parcours indisponible dans cette édition.")),16))
 	elif not data.get("active",false):
-		list.add_child(G.wrap("Le prêt nécessite les parcours du centre. Leur activation est une décision distincte ; revenez ensuite à ce joueur pour choisir son club d’accueil.",16))
+		list.add_child(G.wrap("Le prêt nécessite les parcours du centre. Leur activation est une décision distincte ; reviens ensuite à ce joueur pour choisir son club d’accueil.",16))
 		_action(list,app,data,"ACTIVER LES PARCOURS","academy_activate",{},0)
 	else:
 		var eligible: Array = data.get("seniors",[]).filter(func(p: Dictionary): return str(p.id)==player_id and p.get("loanEligible",false))
-		if eligible.is_empty(): list.add_child(G.wrap("Ce joueur n’est plus éligible au prêt dans le contexte actuel. Vérifiez notamment sa présence sur la feuille de 23 et son contrat.",16))
+		if eligible.is_empty(): list.add_child(G.wrap("Ce joueur n’est plus éligible au prêt dans le contexte actuel. Vérifie notamment sa présence sur la feuille de 23 et son contrat.",16))
 		else: _professionals(list,app,data,player_id)
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)

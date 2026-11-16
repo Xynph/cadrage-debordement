@@ -50,7 +50,7 @@ function createStore(dataDir) {
     if (names.length > 32) refusal('trop de dossiers dans les copies de sécurité.');
     const entries = []; let usedBytes = 0;
     for (const id of names) {
-      if (!validId(id)) refusal('dossier inattendu ; vérifiez les copies avant de continuer.');
+      if (!validId(id)) refusal('dossier inattendu ; vérifie les copies avant de continuer.');
       const target = location(id);
       const files = fs.readdirSync(target);
       if (files.some(name => !FILES.includes(name))) refusal('fichier inattendu dans une copie.');
@@ -61,7 +61,7 @@ function createStore(dataDir) {
         bytes += stat.size;
       }
       usedBytes += bytes;
-      if(id.startsWith('.preparation-')) { entries.push({id,bytes,available:false,interrupted:true,createdAt:new Date(fs.statSync(target).birthtimeMs).toISOString(),error:'Préparation interrompue : copie non publiée. Vous pouvez la supprimer explicitement.'}); continue; }
+      if(id.startsWith('.preparation-')) { entries.push({id,bytes,available:false,interrupted:true,createdAt:new Date(fs.statSync(target).birthtimeMs).toISOString(),error:'Préparation interrompue : copie non publiée. Tu peux la supprimer explicitement.'}); continue; }
       try {
         const meta = JSON.parse(read(path.join(target, 'copie.json'), LIMITS.manifest));
         if (meta.version !== 1 || meta.id !== id || !Number.isFinite(Date.parse(meta.createdAt)) ||
@@ -116,7 +116,7 @@ function createStore(dataDir) {
     const manifest = Buffer.from(JSON.stringify(meta), 'utf8');
     const bytes = profile.length + save.length + manifest.length;
     if (state.entries.length >= LIMITS.entries || state.usedBytes + bytes > LIMITS.bytes)
-      refusal('limite atteinte (8 copies ou 256 Mio). Supprimez explicitement une copie dans « Copies de sécurité », puis réessayez.');
+      refusal('limite atteinte (8 copies ou 256 Mio). Supprime explicitement une copie dans « Copies de sécurité », puis réessaie.');
     if (manifest.length > LIMITS.manifest) refusal('descriptif trop volumineux.');
     ensure(true);
     const temporary = path.join(root, '.preparation-' + id), target = path.join(root, id);

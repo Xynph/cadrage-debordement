@@ -198,7 +198,7 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   const nationalePack=nationaleDatabase?compatible(getOnce(nationaleCreation),nationaleDatabase.id):null;
   const champPack=champDatabase?compatible(getOnce(champCreation),champDatabase.id):null;
   const preferred=champ?champCreation:nationale?nationaleCreation:japan?japanCreation:pacific?pacificCreation:world?worldCreation:creation,creationPack=champ?champPack:nationale?nationalePack:japan?japanPack:pacific?pacificPack:world?internationalCreation:legacyCreation,missing=[];
-  if(binding&&(!active||active.meta.digest!==binding.digest))missing.push('Pack de carrière absent : '+binding.id+'. Présentation de base ; réimportez le pack.');
+  if(binding&&(!active||active.meta.digest!==binding.digest))missing.push('Pack de carrière absent : '+binding.id+'. Présentation de base ; réimporte le pack.');
   if(preferred!=='base'&&!creationPack)missing.push('Pack de création absent : '+preferred+'. Présentation de base.');
   const chosen=binding&&active?.meta.digest===binding.digest?active:null;
   const replacements=new Map();if(chosen){for(const c of edition.clubs){const cp=chosen.clubs[c.id];if(cp?.name)replacements.set(c.name,cp.name);}for(const p of identityPlayers(edition)){const pp=playerIdentity(chosen,p.id);if(pp?.name)replacements.set(p.name,pp.name);}for(const c of model.meta.catalogue){if(chosen.clubs[c.id]?.name)replacements.set(c.name,chosen.clubs[c.id].name);}}

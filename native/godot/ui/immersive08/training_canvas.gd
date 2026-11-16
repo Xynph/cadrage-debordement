@@ -17,19 +17,19 @@ const GREEN = Color("59eb89")
 const PALE_GOLD = Color("f7ce72")
 const SLOTS = [
 	["train", "Séance collective", "Choisir la charge", "Une séance collective agit sur la récupération et le développement.", "Modifier la séance"],
-	["flag", "Travail spécifique", "Préparation ciblée", "Choisissez le travail spécifique avant d’effectuer la séance.", "Modifier le travail"],
+	["flag", "Travail spécifique", "Préparation ciblée", "Choisis le travail spécifique avant d’effectuer la séance.", "Modifier le travail"],
 	["people", "Plan des groupes", "Répartir les charges", "Le plan affecte des charges individuelles et conserve la séance disponible.", "Voir les plans"],
-	["people", "Avants et arrières", "Condition et charge", "Comparez les groupes de poste et les charges effectives de l’effectif.", "Voir les groupes"],
+	["people", "Avants et arrières", "Condition et charge", "Compare les groupes de poste et les charges effectives de l’effectif.", "Voir les groupes"],
 	["star", "Axes individuels", "Développement", "Les spécialisations disponibles dépendent du profil et de la semaine.", "Suivre les joueurs"],
-	["train", "Charge individuelle", "Exceptions au collectif", "Ajustez les charges avant la séance. Les joueurs blessés récupèrent.", "Ajuster les charges"],
+	["train", "Charge individuelle", "Exceptions au collectif", "Ajuste les charges avant la séance. Les joueurs blessés récupèrent.", "Ajuster les charges"],
 	["heart", "Récupération", "Vigilance physique", "L’effectif met en évidence la charge cumulée et la condition actuelle.", "Voir les joueurs"],
 	["heart", "Suivi médical", "Disponibilité et reprise", "Les protocoles médicaux seront appliqués à la séance suivante.", "Ouvrir le suivi"],
-	["tactic", "Plan de jeu", "Consignes collectives", "Ouvrez vos choix de jeu et les consignes de préparation du match.", "Ouvrir le plan de jeu"],
+	["tactic", "Plan de jeu", "Consignes collectives", "Ouvre tes choix de jeu et les consignes de préparation du match.", "Ouvrir le plan de jeu"],
 	["shield", "Niveau adverse", "Entraîneurs adverses", "Le niveau détermine les exigences des entraîneurs adverses.", "Ajuster le niveau"],
-	["people", "Feuille de match", "XV et banc", "Contrôlez la qualification et la disponibilité des joueurs de la feuille.", "Ouvrir la composition"],
-	["ball", "Jour de match", "Prochaine rencontre", "Retrouvez les informations de la prochaine rencontre.", "Aller au jour de match"],
-	["info", "Conseil du staff", "État du groupe", "Consultez le diagnostic actuel et les responsabilités de l’encadrement.", "Voir les conseils"],
-	["people", "Délégation", "Charge et sélection", "Confiez la sélection ou la charge collective au staff.", "Voir la délégation"],
+	["people", "Feuille de match", "XV et banc", "Contrôle la qualification et la disponibilité des joueurs de la feuille.", "Ouvrir la composition"],
+	["ball", "Jour de match", "Prochaine rencontre", "Retrouve les informations de la prochaine rencontre.", "Aller au jour de match"],
+	["info", "Conseil du staff", "État du groupe", "Consulte le diagnostic actuel et les responsabilités de l’encadrement.", "Voir les conseils"],
+	["people", "Délégation", "Charge et sélection", "Confie la sélection ou la charge collective au staff.", "Voir la délégation"],
 ]
 
 var app: Control
@@ -104,7 +104,7 @@ func _build() -> void:
 		app._navigate("Préparation"), false, "", "TrainingBackToPreparation")
 	dossier.tooltip_text = "Revenir au dossier de préparation et aux consignes de jeu"
 	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, true, "arrow", "TrainingValidateWeek")
-	validate.tooltip_text = "Séance déjà effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Vous pourrez choisir sa charge."
+	validate.tooltip_text = "Séance déjà effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Tu pourras choisir sa charge."
 	validate.disabled = trained or locked
 	validate.add_theme_font_size_override("font_size", C.px(33))
 	D.line(self, Vector2(2, 234), Vector2(1741, 234))
@@ -199,7 +199,7 @@ func _week(fixture: Dictionary) -> void:
 	D.photo(art, "training-session", Rect2(2, 2, 1016, 373))
 	_axes(D.panel(self, Rect2(1039, 840, 560, 341), "Axes individuels", "star", "", "TrainingAxes"))
 	_staff_cards(D.panel(self, Rect2(1614, 840, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
-	D.text(self, 2244, 1217, "Charges et condition issues de votre carrière", 17, C.MUTED, 500, 622, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(self, 2244, 1217, "Charges et condition issues de ta carrière", 17, C.MUTED, 500, 622, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _slot_style(hit: Button, selected: bool, match_slot: bool) -> void:
 	var fill := Color("20382d") if selected else Color("32291d") if match_slot else Color("10191a")
@@ -340,7 +340,7 @@ func _staff_cards(tile: Panel) -> void:
 		if i < 2:
 			var key := "training" if i == 0 else "lineup"
 			var delegated: bool = app.model.get("decisions", {}).get("delegation", {}).get(key, false)
-			D.chip(tile, Rect2(width - 177, y + 7, 155, 36), "Délégué" if delegated else "À votre main", GREEN if delegated else C.IVORY)
+			D.chip(tile, Rect2(width - 177, y + 7, 155, 36), "Délégué" if delegated else "À ta main", GREEN if delegated else C.IVORY)
 		D.line(tile, Vector2(17, y + 82), Vector2(width - 20, y + 82), Color(C.LINE, .65))
 		var person_key := str(tile.name)+"_"+str(person.get("id","")).validate_node_name()
 		_person_link(tile,Rect2(17,y+2,82,73),"staff",person,"TrainingStaffPortrait_"+person_key)
@@ -349,7 +349,7 @@ func _staff_cards(tile: Panel) -> void:
 func _groups() -> void:
 	var section := D.panel(self, Rect2(4, 260, 1740, 950), "Plans de travail", "people", "", "TrainingGroupPlans")
 	var data: Dictionary = support.get("training", {})
-	D.text(section, 25, 97, "Appliquer un plan répartit les charges individuelles. Vous lancez ensuite la séance collective.", 27, C.IVORY, 500, 1630)
+	D.text(section, 25, 97, "Appliquer un plan répartit les charges individuelles. Tu lances ensuite la séance collective.", 27, C.IVORY, 500, 1630)
 	if data.get("plans", []).is_empty(): D.text(section, 25, 154, "Aucun plan proposé pour cette carrière.", 23, C.MUTED, 500, 1620)
 	var plans: Array = data.get("plans", [])
 	for i in plans.size():
@@ -446,7 +446,7 @@ func _mode_dialog(validate: bool) -> void:
 	var window := _dialog("TrainingSessionDialog", "Effectuer la séance" if validate else "Modifier la séance")
 	var body: VBoxContainer = window[1]
 	var dialog: AcceptDialog = window[0]
-	body.add_child(C.wrap("Une séance collective peut être effectuée chaque semaine. Ajustez d’abord la préparation spécifique et les charges individuelles.", 22, C.IVORY, true))
+	body.add_child(C.wrap("Une séance collective peut être effectuée chaque semaine. Ajuste d’abord la préparation spécifique et les charges individuelles.", 22, C.IVORY, true))
 	if trained or locked:
 		body.add_child(C.wrap("Séance effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison.", 22, C.MUTED, true))
 	else:

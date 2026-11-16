@@ -1274,7 +1274,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	var colonne := S.G.v(px(8))
 	S.G.fill(colonne)
 	carte.add_child(colonne)
-	colonne.add_child(_texte("Gabi, votre adjoint", 22, FAIBLE))
+	colonne.add_child(_texte("Gabi, ton adjoint", 22, FAIBLE))
 	var graves := alertes_xv.filter(func(a: Dictionary): return a.alerte != "fatigué")
 	var fatigues := alertes_xv.filter(func(a: Dictionary): return a.alerte == "fatigué")
 	var phrases: Array = []
@@ -1331,7 +1331,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		var bouton := _bouton("Appliquer", func(): appliquer.call(conseil), possible, true)
 		bouton.name = "MatchBetweenApplyAdvice"
 		bouton.custom_minimum_size.y = px(56)
-		bouton.tooltip_text = "Appliquer les consignes proposées." if possible else "Mettez le match en pause pour modifier vos consignes."
+		bouton.tooltip_text = "Appliquer les consignes proposées." if possible else "Mets le match en pause pour modifier tes consignes."
 		actions.add_child(bouton)
 
 const LEVIER_TEINTES := {"composition": Color("8fb3e0"), "condition": Color("9fd39a"), "tactique": Color("e0b35a"), "discipline": Color("f0b080"), "preparation": Color("c9a4e8")}
@@ -1393,7 +1393,7 @@ func _passe(model: Dictionary, live: Dictionary, direct: Dictionary) -> Dictiona
 ## occupation, possession et score de ce qui a été montré.
 func _lecture_generale(direct: Dictionary) -> String:
 	var camp := int(direct.get("camp", -1))
-	if not camp in [0, 1] or est_court(direct): return "Le match se met en place : je vous signale le premier joueur en difficulté."
+	if not camp in [0, 1] or est_court(direct): return "Le match se met en place : je te signale le premier joueur en difficulté."
 	var valeurs := {}
 	for rang: Variant in direct.get("tableau", []):
 		if rang is Dictionary and not rang.get("vide", false): valeurs[str(rang.get("cle", ""))] = rang.get("valeurs", [0, 0])
@@ -1401,14 +1401,14 @@ func _lecture_generale(direct: Dictionary) -> String:
 	var ecart := int(score[camp]) - int(score[1 - camp]) if score.size() == 2 else 0
 	if valeurs.has("occupation"):
 		var o := int(valeurs.occupation[camp])
-		if o >= SEUIL_LECTURE: return ("On joue dans leur moitié (%d %% d’occupation) : restez patients, les points viendront." % o) if ecart <= 0 else ("On mène et on occupe leur camp (%d %%) : gardez cette pression." % o)
+		if o >= SEUIL_LECTURE: return ("On joue dans leur moitié (%d %% d’occupation) : reste patients, les points viendront." % o) if ecart <= 0 else ("On mène et on occupe leur camp (%d %%) : garde cette pression." % o)
 		if o <= 100 - SEUIL_LECTURE: return "On joue beaucoup dans notre moitié (%d %% d’occupation) : un dégagement au pied nous ferait du bien." % o
 	if valeurs.has("possession"):
 		var p := int(valeurs.possession[camp])
 		if p >= SEUIL_LECTURE: return "On a le ballon (%d %%) : cherchons maintenant à gagner la ligne d’avantage." % p
 		if p <= 100 - SEUIL_LECTURE: return "Ils ont davantage le ballon (%d %%) : une défense qui monte groupée les gênera." % (100 - p)
 	if ecart < 0: return "Menés de %d point%s, mais le match reste ouvert : pas de précipitation." % [-ecart, "s" if -ecart > 1 else ""]
-	return "Début de match équilibré : j’observe leur organisation et je vous signale le premier joueur en difficulté."
+	return "Début de match équilibré : j’observe leur organisation et je te signale le premier joueur en difficulté."
 
 ## Part (possession, occupation) à partir de laquelle l'adjoint en parle : un écart net, pas 58/42.
 const SEUIL_LECTURE := 62
@@ -1442,5 +1442,5 @@ func montrer_arret(valeur: Dictionary) -> void:
 		return
 	var titre := "CARTON ROUGE" if valeur.get("rouge", false) else "CARTON JAUNE"
 	arret_titre.text = "%s · %s" % [titre, str(valeur.get("horloge", ""))]
-	arret_texte.text = str(valeur.get("texte", "")) + "\nLe match est en pause : réorganisez votre équipe si besoin, puis reprenez."
+	arret_texte.text = str(valeur.get("texte", "")) + "\nLe match est en pause : réorganise ton équipe si besoin, puis reprends."
 	arret.show()

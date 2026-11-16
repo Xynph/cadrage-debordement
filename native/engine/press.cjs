@@ -12,7 +12,7 @@ function factory(){
  const invitationLimit=24;
  const invitationKinds=['arrival','weekly','knockout','season_review'];
  const priorityThemes={arrival:['carriere','vestiaire','formation'],knockout:['phase_finale','avant_match'],season_review:['classement','carriere','supporters']};
- const requiredReason='Ouvrez l’invitation dans Réception et publiez vos réponses avant de poursuivre.';
+ const requiredReason='Ouvre l’invitation dans Réception et publie tes réponses avant de poursuivre.';
  const mandatory=()=>typeof nativeMandatoryPress!=='undefined'&&nativeMandatoryPress;
  // Promesses publiques (press-promises.cjs) : la question d'objectif s'ajoute à une conférence tenue en personne.
  const promises=()=>typeof nativeSystems!=='undefined'?nativeSystems.domain('pressPromises'):null;
@@ -23,7 +23,7 @@ function factory(){
  // l'adjoint, la conférence ordinaire est tenue dès son ouverture, sans arrêter « Jour suivant » ni « Continuer ».
  const ORDINARY_MAX=3,MAJOR_COUNT=4,delegationLimit=60,POLICIES=['moi','adjoint'];
  const delegationCost=Object.freeze({mediaTrust:-2,relation:-1});
- const delegationNotice='Gabi répond à votre place sur un ton prudent : ni moral ni confiance gagnés. Coût : médias −2 et relation −1 avec chaque journaliste présent.';
+ const delegationNotice='Gabi répond à ta place sur un ton prudent : ni moral ni confiance gagnés. Coût : médias −2 et relation −1 avec chaque journaliste présent.';
  const policyOf=s=>s?.pressDelegation?.ordinary==='adjoint'?'adjoint':'moi';
  const sameContext=(a,b)=>!!a&&!!b&&a.season===b.season&&a.week===b.week&&a.club===b.club;
  const delegatedAt=(s,c)=>(s.pressDelegation?.delegated||[]).some(d=>sameContext(d,c));
@@ -38,7 +38,7 @@ function factory(){
   const rival=nextOpponentId(s);
   if(rival!==null){
    const own=s.clubs?.[s.club]?.id??s.club,pair=[own,rival].sort((a,b)=>a<b?-1:a>b?1:0),tension=s.interclubWorld?.pairs?.[pair[0]+':'+pair[1]]?.tension;
-   if(Number.isFinite(tension)&&tension>=60)return {kind:'derby',label:'Derby face à '+(facts.fixture?.opponent||'votre rival')};
+   if(Number.isFinite(tension)&&tension>=60)return {kind:'derby',label:'Derby face à '+(facts.fixture?.opponent||'ton rival')};
   }
   if((s.trust??50)<35||(s.pressRelations?.boardPressure??0)>=75)return {kind:'crise',label:'Climat de crise'};
   return null;
@@ -308,7 +308,7 @@ function factory(){
   const write=(question,answers)=>({...q,question,answers:q.answers.map((a,i)=>({...a,text:answers[i]}))});
   if(fixture&&(q.theme==='avant_match'||q.theme==='phase_finale'&&fixture.stage)){
    const match=(fixture.stage||'le match')+' face à '+fixture.opponent;
-   return write('Pour '+match+', quelle est votre priorité ?',[
+   return write('Pour '+match+', quelle est ta priorité ?',[
     'Pour '+match+', je veux qu’on sorte proprement de nos 22 mètres avant de chercher les extérieurs.',
     'Je privilégierai les joueurs qui connaissent nos annonces en touche. Chaque changement devra servir le plan de match.',
     'Je veux qu’on joue dans leur camp dès le coup d’envoi. À nous de leur faire remonter le terrain.',
@@ -329,14 +329,14 @@ function factory(){
    else review='Le score de '+match+' est resté à égalité. '+(defense
     ?'Je veux travailler la relance après récupération pour tirer profit d’un ballon gagné.'
     :'Je veux travailler comment transformer les possessions près de la ligne en points.');
-   if(defense)return write('Après le '+match+', que voulez-vous travailler en défense ?',[
+   if(defense)return write('Après le '+match+', que veux-tu travailler en défense ?',[
     'Je veux que le premier rideau monte ensemble et que le fond du terrain reste couvert.',
     review,
     'Nous devons fermer l’axe et pousser l’adversaire vers la touche.',
     'Je veux revoir nos replis après perte de balle avant de changer l’organisation.',
     'Le plus court chemin vers le bon plaquage commence souvent par un pas ensemble.'
    ]);
-   return write('Après le '+match+', quelle priorité fixez-vous à votre attaque ?',[
+   return write('Après le '+match+', quelle priorité fixes-tu à ton attaque ?',[
     'Je veux des soutiens proches du porteur pour pouvoir rejouer vite après le premier contact.',
     review,
     'Je veux qu’on attaque l’axe avant d’écarter. À nous de fixer leur défense.',
@@ -344,24 +344,24 @@ function factory(){
     'Un porteur ne devrait pas avoir à lancer un avis de recherche. Je veux du soutien dès le contact.'
    ]);
   }
-  if(injured&&q.theme==='blessures')return write(injured+' est indisponible. Comment gérez-vous cette absence ?',[
+  if(injured&&q.theme==='blessures')return write(injured+' est indisponible. Comment gères-tu cette absence ?',[
    'Pendant l’absence de '+injured+', je prépare un joueur qui connaît déjà les annonces du poste.',
    'Je ne donnerai pas de date pour '+injured+'. Nous préparerons la suite avec le groupe disponible.',
    'Je veux que les joueurs disponibles prennent leur place. Le groupe doit pouvoir avancer pendant cette absence.',
    'Je garderai les détails pour le joueur et le staff. Le retour dépendra de sa disponibilité.',
    'Le calendrier ne soigne personne. Je préfère travailler dès maintenant la couverture du poste.'
   ]);
-  if(q.id.startsWith('joueurs-0-'))return write('Quelle place voulez-vous donner aux jeunes dans votre groupe ?',[
+  if(q.id.startsWith('joueurs-0-'))return write('Quelle place veux-tu donner aux jeunes dans ton groupe ?',[
    'Je veux travailler avec eux la réception, la passe sous pression et le placement en défense, avec une consigne claire à chaque exercice.',
    'Je regarderai ce qu’ils arrivent à reproduire dans les oppositions avant de décider de leur rôle dans le groupe.',
    'Je veux qu’ils demandent le ballon et annoncent leurs intentions. Leur place se construit aussi dans les soutiens et les replis.',
    'Je préparerai leur utilisation avec le staff, selon leurs repères et leur disponibilité. Je ne fixerai pas une titularisation à l’avance.',
    'Les jeunes n’ont pas besoin de porter tout le club sur leurs épaules. Je veux d’abord des passes et des soutiens autour d’eux.'
   ]);
-  const questions={blessures:'Comment préparez-vous votre effectif aux indisponibilités ?',
-   formation:'Comment préparez-vous les jeunes à trouver leur place dans le groupe ?',
-   crise:'Quand la confiance est sous pression, quelle priorité gardez-vous pour le groupe ?',
-   phase_finale:'Comment préparez-vous un match à élimination directe ?'};
+  const questions={blessures:'Comment prépares-tu ton effectif aux indisponibilités ?',
+   formation:'Comment prépares-tu les jeunes à trouver leur place dans le groupe ?',
+   crise:'Quand la confiance est sous pression, quelle priorité gardes-tu pour le groupe ?',
+   phase_finale:'Comment prépares-tu un match à élimination directe ?'};
   return preparationReplies[q.theme]?write(questions[q.theme]||q.question,preparationReplies[q.theme]):q;
  }
  // A callback is a quotation from this saved career, never a reconstruction
@@ -375,7 +375,7 @@ function factory(){
    const q=contextualQuestion(base,facts);
    const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix)&&!delegatedAt(s,{season:h.season,week:h.week,club:h.club}));
    for(const h of sources.slice().reverse()){
-    const reminder=prefix+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+', semaine '+(h.week+1)+', pour ce club, vous aviez répondu : « '+h.answerText+' ». ';
+    const reminder=prefix+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+', semaine '+(h.week+1)+', pour ce club, tu avais répondu : « '+h.answerText+' ». ';
     if(history.some(p=>p.journalist?.id===q.journalist.id&&p.club===s.club&&p.season===s.season&&p.questionText?.startsWith(reminder)))continue;
     const question=reminder+q.question;if(!text(question))continue;
     return {...q,question,followUp:{context:{season:h.season,week:h.week,club:h.club},quote:h.answerText,question:h.questionText,label:'Déclaration archivée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+' · semaine '+(h.week+1)+' · même club et même journaliste'}};
@@ -409,7 +409,7 @@ function factory(){
   const required=mandatory()&&!!questions;
   const reason=S.live?'Conférence indisponible pendant un match.':required?requiredReason:
    questions?'':mandatory()?'Aucune invitation de presse en attente.':'Conférence déjà réalisée cette semaine.';
-  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,policy:{ordinary:policyOf(S),notice:'Conférences ordinaires : avec l’adjoint, Gabi les tient à votre place dès leur ouverture, sans arrêter l’avance. Arrivée, phase finale, bilan de saison, derby et crise restent les vôtres.'},conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,moment:questions?moment(S,invitation):null,promise:questions?promises()?.offer(S,invitation,moment(S,invitation))??null:null,questionLimit:questions?questions.length:0,situation:sit?{...sit,label:sit.slump?'Deux défaites de suite':sit.run?'Deux victoires de suite':sit.derby?'Derby':''}:null,delegation:delegationState(S,invitation,questions),memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(delegatedAt(S,{season:h.season,week:h.week,club:h.club})?{delegated:true}:{}),...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
+  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,invitations,policy:{ordinary:policyOf(S),notice:'Conférences ordinaires : avec l’adjoint, Gabi les tient à ta place dès leur ouverture, sans arrêter l’avance. Arrivée, phase finale, bilan de saison, derby et crise restent les tiennes.'},conference:{available:!!questions,required,invitationId:invitation?.id??null,reason,moment:questions?moment(S,invitation):null,promise:questions?promises()?.offer(S,invitation,moment(S,invitation))??null:null,questionLimit:questions?questions.length:0,situation:sit?{...sit,label:sit.slump?'Deux défaites de suite':sit.run?'Deux victoires de suite':sit.derby?'Derby':''}:null,delegation:delegationState(S,invitation,questions),memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,...(delegatedAt(S,{season:h.season,week:h.week,club:h.club})?{delegated:true}:{}),...(h.journalist&&reporter(h.journalist.id)?{journalist:signature(h.journalist.id)}:{}),question:h.questionText??null,answer:h.answerText??null})),lastOutcome};
  }
  // Série de conférences déléguées en cours : nombre de conférences consécutives tenues par l'adjoint juste avant
  // celle-ci (une conférence menée en personne remet la série à zéro).
@@ -457,7 +457,7 @@ function factory(){
   S.pressConference.lastOutcome={context:context(S),before,after,delta,exchanges:scores.map(e=>{const after=S.pressPeople.contacts[e.journalistId].score;return {...e,after,delta:after-e.before};}),...(delegation?{delegated:true}:{})};
   if(delegation?.auto&&typeof managerMessage==='function'){
    const signed=n=>(n>=0?'+':'−')+Math.abs(n);
-   managerMessage('Conférence tenue par Gabi','Votre adjoint a répondu à '+questions.length+' questions sur un ton prudent. Moral '+signed(delta.morale)+' · médias '+signed(delta.mediaTrust)+' · confiance '+signed(delta.trust)+'. Les conférences importantes restent les vôtres.'+(penalty?' Conférences déléguées de suite : la direction y voit une fuite devant la presse (confiance −'+penalty+').':''),'staff','dashboard');
+   managerMessage('Conférence tenue par Gabi','Ton adjoint a répondu à '+questions.length+' questions sur un ton prudent. Moral '+signed(delta.morale)+' · médias '+signed(delta.mediaTrust)+' · confiance '+signed(delta.trust)+'. Les conférences importantes restent les tiennes.'+(penalty?' Conférences déléguées de suite : la direction y voit une fuite devant la presse (confiance −'+penalty+').':''),'staff','dashboard');
   }
   validate(S);return {pressOutcome:{...copy(S.pressConference.lastOutcome),...(invitation?{invitationId:invitation.id}:{})}};
  }
@@ -471,7 +471,7 @@ function factory(){
   return {allowed:true,reason:penalty?delegationNotice+' '+(run+1)+'e conférence de suite confiée à l’adjoint : confiance de la direction −'+penalty+'.':delegationNotice,streak:run,trustPenalty:penalty};
  }
  function execute(command,payload){
-  check(['press_conference','press_delegate','press_policy'].includes(command),'Commande de presse inconnue.');check(!!S,'Créez ou importez une carrière.');
+  check(['press_conference','press_delegate','press_policy'].includes(command),'Commande de presse inconnue.');check(!!S,'Crée ou importe une carrière.');
   if(command==='press_policy'){
    check(keys(payload,['ordinary'])&&POLICIES.includes(payload.ordinary),'Réglage de conférence invalide.');validate(S);
    const own=S.pressDelegation||{version:1,ordinary:'moi',delegated:[]};S.pressDelegation={...own,ordinary:payload.ordinary};

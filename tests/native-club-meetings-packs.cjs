@@ -18,7 +18,7 @@ const exported=()=>good('export').meta.exportText,state=()=>JSON.parse(exported(
 const withoutPack=s=>{const v=structuredClone(s);delete v.identityPack;return v;};
 const room=()=>model.clubLife.clubMeetings.scene,meetings=()=>JSON.stringify(model.clubLife.clubMeetings);
 const names=()=>model.squad.map(p=>p.name),questions=()=>model.clubLife.press.conference.questions.map(q=>({id:q.id,answers:q.answers.map(a=>a.id)}));
-const refusal=/Rendez-vous du club : terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre\./;
+const refusal=/Rendez-vous du club : termine le rendez-vous en attente, dans ton courrier, en Réception, avant de poursuivre\./;
 try{
  bridge=createBridge({dataDir:path.join(root,'carriere'),seed:321,now:1700000000000});
  good('new_career',{mode:'world-champ',club:1});

@@ -43,7 +43,7 @@ func run() -> void:
 	var sentence := app.find_child("CreationStartSentence",true,false) as Label
 	check(sentence!=null and sentence.text.contains("13 juillet 2026"),"Phrase claire des conséquences")
 	choice.select(1); choice.item_selected.emit(1); await settle()
-	check(sentence.text.contains("reprise de votre club"),"La phrase suit le choix")
+	check(sentence.text.contains("reprise de ton club"),"La phrase suit le choix")
 	choice.select(0); choice.item_selected.emit(0); await settle()
 	await capture("reprise-creation")
 	var start := app.find_child("CreationStart",true,false) as Button

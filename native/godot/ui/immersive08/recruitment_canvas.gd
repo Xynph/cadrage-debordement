@@ -373,7 +373,7 @@ func _refresh() -> void:
 	_build_rows(visible, current, 0, built)
 	if built < visible.size(): _build_remaining(visible, current, built, _generation)
 	if results.is_empty():
-		var caption := "Aucun rapport conservé. Confiez une mission pour observer des pistes." if tab == 3 else "Aucune piste ne correspond aux filtres actuels."
+		var caption := "Aucun rapport conservé. Confie une mission pour observer des pistes." if tab == 3 else "Aucune piste ne correspond aux filtres actuels."
 		D.text(table_rows, 24, 58, caption, 27, C.MUTED, 500, LEFT - 50)
 	if tab == 3:
 		_profile(_market_player(str(selection.get("playerId", ""))), selection)

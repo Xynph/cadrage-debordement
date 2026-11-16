@@ -171,7 +171,7 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 		if int(years.get_item_metadata(index)) == int(draft.get("years",-1)): years.select(index)
 	list.add_child(years)
 	if draft.get("status","") == "refused":
-		var retry := G.wrap("Le contrat n’a pas été appliqué. Votre durée est conservée ; vérifiez le devis puis réessayez.",14,G.ALERT)
+		var retry := G.wrap("Le contrat n’a pas été appliqué. Ta durée est conservée ; vérifie le devis puis réessaie.",14,G.ALERT)
 		retry.name = "StaffContractRetryNotice"
 		list.add_child(retry)
 	var remember := func():
@@ -248,7 +248,7 @@ static func _mentor_overview(app: Control, data: Dictionary) -> void:
 		activate.disabled = not data.get("canEnable", false)
 		parent.add_child(activate)
 	else:
-		if int(data.get("dormantAssignments", 0)) > 0: parent.add_child(G.wrap("%d lien(s) devenus indisponibles seront libérés lors de votre prochaine affectation." % int(data.dormantAssignments), 12))
+		if int(data.get("dormantAssignments", 0)) > 0: parent.add_child(G.wrap("%d lien(s) devenus indisponibles seront libérés lors de ta prochaine affectation." % int(data.dormantAssignments), 12))
 		for assignment: Dictionary in data.get("assignments", []):
 			parent.add_child(G.wrap("%s → %s · %s · %d/8 séances · %d %% ciblés%s" % [assignment.staffName, assignment.playerName, assignment.focus, int(assignment.sessions), roundi(float(assignment.targetShare) * 100), " · " + str(assignment.reason) if not assignment.get("active", false) else ""], 13))
 			var remove := G.button("LIBÉRER LE MENTOR", func():

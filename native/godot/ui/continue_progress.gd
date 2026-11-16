@@ -280,7 +280,7 @@ func finish(info: Dictionary) -> void:
 	detail.text = str(stop.get("detail", "")) if stop.get("detail") != null else ""
 	# Conférences ordinaires tenues par Gabi pendant l'avance (réglage « envoyer l'adjoint ») : dites, sans arrêt.
 	var delegated := int(info.get("pressDelegated", 0))
-	hint.text = ("Gabi a tenu %s à votre place. " % ("la conférence de presse" if delegated == 1 else "%d conférences de presse" % delegated) if delegated > 0 else "") + "Carrière sauvegardée."
+	hint.text = ("Gabi a tenu %s à ta place. " % ("la conférence de presse" if delegated == 1 else "%d conférences de presse" % delegated) if delegated > 0 else "") + "Carrière sauvegardée."
 	# Autres arrêts du même jour (façon FM) : un nouvel appui sur Continuer les montre sans avancer.
 	var queued := int(info.get("queued", 0))
 	if queued > 0: hint.text = ("Encore %d élément%s aujourd’hui : Continuer pour %s. " % [queued, "s" if queued > 1 else "", "les voir" if queued > 1 else "le voir"]) + hint.text

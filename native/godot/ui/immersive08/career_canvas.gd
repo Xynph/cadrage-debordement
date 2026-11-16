@@ -74,7 +74,7 @@ static func _mandate(card: Panel, app: Control, data: Dictionary) -> void:
 	var active: bool = data.get("active",false)
 	var pending: Variant = data.get("pending")
 	var window: bool = data.get("window",false)
-	D.text(card,23,108,"VOTRE CLUB",25,C.GOLD,700,804)
+	D.text(card,23,108,"TON CLUB",25,C.GOLD,700,804)
 	D.text(card,23,162,G.club_name(app.model.club),46,C.IVORY,700,803)
 	D.text(card,23,198,"Mandat depuis la saison "+G.season_label(data.get("currentFrom",app.model.meta.get("season",1))),26,C.MUTED,500,804)
 	D.line(card,Vector2(23,221),Vector2(832,221))

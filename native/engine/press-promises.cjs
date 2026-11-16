@@ -33,7 +33,7 @@ function factory(){
  const KEPT={modeste:{fanTrust:2,mediaTrust:1,boardPressure:-1,trust:1,credibility:2},realiste:{fanTrust:5,mediaTrust:2,boardPressure:-3,trust:3,credibility:5},ambitieux:{fanTrust:8,mediaTrust:3,boardPressure:-5,trust:5,credibility:8},irrealiste:{fanTrust:10,mediaTrust:4,boardPressure:-6,trust:6,credibility:10}};
  const BROKEN={modeste:{fanTrust:-8,mediaTrust:-3,boardPressure:6,trust:-6,credibility:-10},realiste:{fanTrust:-6,mediaTrust:-2,boardPressure:5,trust:-4,credibility:-7},ambitieux:{fanTrust:-5,mediaTrust:-2,boardPressure:4,trust:-3,credibility:-5},irrealiste:{fanTrust:-7,mediaTrust:-4,boardPressure:7,trust:-5,credibility:-9}};
  const GAUGES=['fanTrust','mediaTrust','boardPressure','trust'];
- const QUESTION='Les supporters veulent un chiffre : quel objectif annoncez-vous publiquement pour cette saison ?';
+ const QUESTION='Les supporters veulent un chiffre : quel objectif annonces-tu publiquement pour cette saison ?';
  const signed=n=>(n>0?'+':n<0?'−':'')+Math.abs(Math.round(n));
  const effectText=e=>'Supporters '+signed(e.fanTrust)+' · médias '+signed(e.mediaTrust)+' · confiance '+signed(e.trust)+' · pression '+signed(e.boardPressure);
  const ordinal=n=>n===1?'1re':n+'e';
@@ -126,10 +126,10 @@ function factory(){
   st.promises=[...st.promises,promise].slice(-LIMIT);
   const club=s.clubs[s.club]?.name||'le club';
   if(o.realism==='irrealiste'){
-   message('La presse doute de votre promesse','« '+o.label+' » : la presse locale juge l’annonce intenable pour '+club+'. Médias '+signed(effects.mediaTrust)+'. Elle vous le rappellera.');
+   message('La presse doute de ta promesse','« '+o.label+' » : la presse locale juge l’annonce intenable pour '+club+'. Médias '+signed(effects.mediaTrust)+'. Elle te le rappellera.');
    message('La direction s’inquiète','Le conseil n’aime pas les promesses publiques qu’il juge irréalistes : « '+o.label+' ». Pression '+signed(effects.boardPressure)+', confiance '+signed(effects.trust)+'.');
   }else if(o.realism==='modeste')message('La direction attendait plus d’ambition','« '+o.label+' » : le conseil trouve l’objectif timide pour '+club+'. Confiance '+signed(effects.trust)+'.');
-  else if(o.realism==='ambitieux')message('Les supporters y croient','« '+o.label+' » : l’annonce enflamme les tribunes (supporters '+signed(effects.fanTrust)+'), mais le conseil vous attend au tournant (pression '+signed(effects.boardPressure)+').');
+  else if(o.realism==='ambitieux')message('Les supporters y croient','« '+o.label+' » : l’annonce enflamme les tribunes (supporters '+signed(effects.fanTrust)+'), mais le conseil t’attend au tournant (pression '+signed(effects.boardPressure)+').');
   return {choice,promise:copy(promise),effects};
  }
  // Valeur mesurée à ce jour (ou au verdict) ; null quand elle ne se mesure qu'au tirage suivant.
@@ -160,8 +160,8 @@ function factory(){
   Object.assign(verdict,own?applyEffects(s,{trust:base.trust,boardPressure:base.boardPressure},scale):{trust:0,boardPressure:0});
   const st=ensure(s),before=st.credibility;st.credibility=clamp(before+base.credibility,0,100);verdict.credibility=st.credibility-before;
   p.status=kept?'kept':'broken';p.verdict=verdict;p.result={value,season:s.season,week:weekOf(s)};
-  message(kept?'Promesse tenue : '+p.label:'Promesse non tenue : '+p.label,detail+' Supporters '+signed(verdict.fanTrust)+' · confiance '+signed(verdict.trust)+' · crédibilité '+signed(verdict.credibility)+'.'+(own?'':' (Promesse faite à votre ancien club.)'));
-  if(!kept&&own)message('Gabi : après la promesse manquée','« La presse va ressortir votre déclaration. Ne promettons plus que ce que l’effectif peut tenir, et parlons-en au conseil avant de l’annoncer. »','staff');
+  message(kept?'Promesse tenue : '+p.label:'Promesse non tenue : '+p.label,detail+' Supporters '+signed(verdict.fanTrust)+' · confiance '+signed(verdict.trust)+' · crédibilité '+signed(verdict.credibility)+'.'+(own?'':' (Promesse faite à ton ancien club.)'));
+  if(!kept&&own)message('Gabi : après la promesse manquée','« La presse va ressortir ta déclaration. Ne promettons plus que ce que l’effectif peut tenir, et parlons-en au conseil avant de l’annoncer. »','staff');
  }
  // Verdicts mesurables en fin de saison régulière (classement, victoires à domicile, jeunes).
  function settleSeason(s){
@@ -197,9 +197,9 @@ function factory(){
    if(s.phase==='ended')continue;
    const rows=table(s,p.leagueId),row=rows.find(r=>r.id===clubKey(s,p.club));if(!row)continue;
    const total=Math.max(1,(rows.length-1)*2),pr=progress(s,p);
-   const remind=(key,title,body,staff)=>{if(p.reminders.includes(key))return;p.reminders.push(key);message(title,body);message('Gabi : votre promesse',staff,'staff');};
-   if(row.played>=total/2)remind('mi-saison','La presse fait les comptes','Mi-saison : la presse rappelle votre promesse « '+p.label+' ». '+pr.label+'.',pr.onTrack?'« On est dans les temps pour « '+p.label+' ». Gardons le cap sans en rajouter devant les micros. »':'« On est en retard sur « '+p.label+' ». Il faut un plan, ou préparer le conseil à un échec. »');
-   if(total-row.played<=3)remind('sprint','Sprint final : votre promesse en question','Les derniers matchs du championnat approchent : « '+p.label+' ». '+pr.label+'.',pr.onTrack?'« Encore un effort : la promesse est à portée. »':'« Ça va être très dur de tenir « '+p.label+' ». Assumons-le plutôt que de chercher des excuses. »');
+   const remind=(key,title,body,staff)=>{if(p.reminders.includes(key))return;p.reminders.push(key);message(title,body);message('Gabi : ta promesse',staff,'staff');};
+   if(row.played>=total/2)remind('mi-saison','La presse fait les comptes','Mi-saison : la presse rappelle ta promesse « '+p.label+' ». '+pr.label+'.',pr.onTrack?'« On est dans les temps pour « '+p.label+' ». Gardons le cap sans en rajouter devant les micros. »':'« On est en retard sur « '+p.label+' ». Il faut un plan, ou préparer le conseil à un échec. »');
+   if(total-row.played<=3)remind('sprint','Sprint final : ta promesse en question','Les derniers matchs du championnat approchent : « '+p.label+' ». '+pr.label+'.',pr.onTrack?'« Encore un effort : la promesse est à portée. »':'« Ça va être très dur de tenir « '+p.label+' ». Assumons-le plutôt que de chercher des excuses. »');
   }
  }
  // Réputation du manager : la crédibilité publique déplace son profil de ±8 au plus.

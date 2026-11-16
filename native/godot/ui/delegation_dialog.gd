@@ -44,7 +44,7 @@ func _build() -> void:
 	body.name = "MatchDelegationBody"
 	body.custom_minimum_size.x = 600
 	add_child(body)
-	body.add_child(C.wrap("L’adjoint joue la rencontre à votre place, du coup d’envoi au coup de sifflet final. Vous retrouverez le résultat, le récit et les notes du match.", 18, C.IVORY))
+	body.add_child(C.wrap("L’adjoint joue la rencontre à ta place, du coup d’envoi au coup de sifflet final. Tu retrouveras le résultat, le récit et les notes du match.", 18, C.IVORY))
 	if incomplete:
 		# Feuille incomplète : « Appeler un espoir » (défaut) ou « Jouer à 22 », au choix, comme en vrai.
 		var reduced := C.wrap(Espoir.vacancy_text(app.model), 17, C.AMBER)
@@ -81,9 +81,9 @@ func _detail() -> void:
 	var fatigue := Avis.fatigue_donnees(app.model)
 	var fatigues := int(fatigue.get("count", 0)) if not fatigue.is_empty() else 0
 	if case_composition.button_pressed:
-		detail.text = "Le staff refait la feuille avant le coup d’envoi : les joueurs fatigués se reposent, les mieux placés jouent. Vous pouvez décocher pour garder votre feuille."
+		detail.text = "Le staff refait la feuille avant le coup d’envoi : les joueurs fatigués se reposent, les mieux placés jouent. Tu peux décocher pour garder ta feuille."
 	else:
-		detail.text = "Votre feuille est jouée telle quelle%s. Sans rotation, le groupe s’épuise de semaine en semaine." % (" : %d titulaire%s sous 70 %% de condition" % [fatigues, "s" if fatigues > 1 else ""] if fatigues > 0 else "")
+		detail.text = "Ta feuille est jouée telle quelle%s. Sans rotation, le groupe s’épuise de semaine en semaine." % (" : %d titulaire%s sous 70 %% de condition" % [fatigues, "s" if fatigues > 1 else ""] if fatigues > 0 else "")
 
 func _valider() -> void:
 	var composition := case_composition.button_pressed

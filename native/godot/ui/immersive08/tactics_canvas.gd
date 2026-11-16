@@ -178,7 +178,7 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	for slot in 15:
 		var player:=_player(app,slot)
 		if not player.is_empty():defensive+=float(player.get("attributes",{}).get("tackle",0));selected_count+=1
-	var attack_description:="Consultez le plan de jeu."
+	var attack_description:="Consulte le plan de jeu."
 	for option:Dictionary in app.model.get("tactics",{}).get("attacks",[]):
 		if option.get("id")==app.model.get("tactics",{}).get("attack"):attack_description=str(option.get("description",""))
 	var defense_description:="Choisir les consignes défensives."
@@ -361,7 +361,7 @@ static func _outside(card: Panel,app: Control) -> void:
 		Selection.wire(action,app,str(person.id),-1,-1,str(person.name))
 		action.pressed.connect(func():
 			if not Selection.eligible(app,str(person.id),app.selected_slot):
-				app.notice("Affectation indisponible","Ce joueur ne peut pas occuper ce poste. Consultez ses qualifications, sa disponibilité et le contexte du match.")
+				app.notice("Affectation indisponible","Ce joueur ne peut pas occuper ce poste. Consulte ses qualifications, sa disponibilité et le contexte du match.")
 				return
 			Selection.apply(app,Selection.payload(app,str(person.id),-1),app.selected_slot))
 	D.text(card,578,38,str(people.size())+" joueurs",18,C.MUTED,500,120,HORIZONTAL_ALIGNMENT_RIGHT)

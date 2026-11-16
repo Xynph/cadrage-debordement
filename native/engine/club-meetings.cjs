@@ -25,7 +25,7 @@ module.exports={
   // Réglage « Conférences ordinaires : y aller / envoyer l'adjoint » (press_policy) : préférence de carrière, sans effet immédiat.
   const presentationCommands=['pack_inspect','pack_install','pack_select','club_follow','press_policy'];
   const passive=command=>readCommands.includes(command)||presentationCommands.includes(command);
-  const pending='terminez le rendez-vous en attente, dans votre courrier, en Réception, avant de poursuivre';
+  const pending='termine le rendez-vous en attente, dans ton courrier, en Réception, avant de poursuivre';
   const stage=p=>p.medicalV68?.stage||null;
   const medicalAvailable=s=>!s.live&&!s.trained&&s.phase==='league';
   const priority=s=>s.v105to110?.priority||'stabilite';
@@ -103,7 +103,7 @@ module.exports={
   function project(){
    const st=S?.clubMeetings,active=hasClub();
    const display=e=>({...copy(e),ackAllowed:ackAllowed(e)});
-   return {scene:active&&st?.current?display(st.current):null,queue:(active?st?.queue||[]:[]).map(display),receipts:copy(st?.receipts||[]),notice:active?'Rendez-vous de carrière obligatoires. Les décisions sont appliquées par les systèmes existants ; lire un bilan n’accorde aucun effet sportif.':'Vous vous consacrez à votre sélection. Les reçus des rendez-vous du club restent consultables.'};
+   return {scene:active&&st?.current?display(st.current):null,queue:(active?st?.queue||[]:[]).map(display),receipts:copy(st?.receipts||[]),notice:active?'Rendez-vous de carrière obligatoires. Les décisions sont appliquées par les systèmes existants ; lire un bilan n’accorde aucun effet sportif.':'Tu te consacres à ta sélection. Les reçus des rendez-vous du club restent consultables.'};
   }
   function add(st,kind,reason,sourceKey,playerId){
    if(st.seen.includes(sourceKey)||st.queue.length>=80)return;
@@ -206,7 +206,7 @@ module.exports={
     check(ackAllowed(e),'une décision réelle est encore requise');
     complete(e,command,e.kind==='board'?priority(S):stage(roster().find(p=>p.id===e.playerId))==='reprise'?'maintain':'read');
    }else{
-    check(e.completed&&e.decision,'terminez les échanges ou la décision avant de continuer');
+    check(e.completed&&e.decision,'termine les échanges ou la décision avant de continuer');
     st.receipts.push(copy(e));st.receipts=st.receipts.slice(-96);st.current=null;promote(st);
    }
    validate(S);return {clubMeetingDecision:{command,meetingId:e.id,kind:e.kind,completed:e.completed}};

@@ -29,5 +29,5 @@ static func confirm(app: Control, quote: Dictionary) -> void:
 		G.salary(quote.totalWeeklySalary), G.salary(quote.weeklySalary)
 	]
 	if quote.get("reviewAfterTraining", false):
-		detail += "\n\nUn retour de blessure pourrait réduire le besoin. Si vous prévoyez une séance, revérifiez la feuille ensuite avant de signer."
+		detail += "\n\nUn retour de blessure pourrait réduire le besoin. Si tu prévois une séance, revérifie la feuille ensuite avant de signer."
 	app.confirm("Renforts d’urgence", detail, func(): app._command("promote_cover", {"confirmed": true, "expectedSlots": slots}), true)
