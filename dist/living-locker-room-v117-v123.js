@@ -9,9 +9,9 @@
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&amp;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const TRAITS=['Ambitieux','Loyal','Exigeant','Discret','Protecteur','Competiteur','Sensible','Collectif'];
  const CHOICES=Object.freeze({
-  ecouter:{label:"L'ecouter",detail:"Satisfaction +4 ; moral collectif +1",sat:4,morale:1,trust:0},
+  ecouter:{label:"L’écouter",detail:"Satisfaction +4 ; moral collectif +1",sat:4,morale:1,trust:0},
   cadrer:{label:"Rappeler les exigences",detail:"Satisfaction -3 ; confiance de direction +2 ; moral -1",sat:-3,morale:-1,trust:2},
-  responsabiliser:{label:"Lui donner un role dans le groupe",detail:"Satisfaction +2 ; moral +2 ; engagement de temps de jeu a suivre",sat:2,morale:2,trust:0}
+  responsabiliser:{label:"Lui donner un rôle dans le groupe",detail:"Satisfaction +2 ; moral +2 ; engagement de temps de jeu à suivre",sat:2,morale:2,trust:0}
  });
  const hash=x=>{let h=2166136261;for(const c of String(x)){h=Math.imul(h^c.charCodeAt(0),16777619)}return h>>>0};
  function personality(p){
@@ -41,10 +41,10 @@
   }).sort((a,b)=>(Number(previous.has(a.p.id))-Number(previous.has(b.p.id)))||(b.urgency-a.urgency)||(hash(key+a.p.id)-hash(key+b.p.id)));
   const selected=pool[0];if(!selected)return null;
   const label={tension:'Un joueur doute de sa place',fatigue:'Un cadre tire sur la corde',
-   revelation:'Un jeune attend un signal',contrat:'Une echeance contractuelle pese sur le groupe',
-   leadership:'Un leader veut etre entendu',ambition:'Un joueur demande un entretien'}[selected.kind];
-  const context={tension:'Son niveau de satisfaction est bas.',fatigue:'Sa condition physique exige une attention particuliere.',
-   revelation:'Ses minutes en equipe premiere commencent a compter.',contrat:'Son contrat arrive a echeance cette saison.',
+   revelation:'Un jeune attend un signal',contrat:'Une échéance contractuelle pèse sur le groupe',
+   leadership:'Un leader veut être entendu',ambition:'Un joueur demande un entretien'}[selected.kind];
+  const context={tension:'Son niveau de satisfaction est bas.',fatigue:'Sa condition physique exige une attention particulière.',
+   revelation:'Ses minutes en équipe première commencent à compter.',contrat:'Son contrat arrive à échéance cette saison.',
    leadership:'Son influence potentielle dans le groupe est importante.',ambition:'Son projet individuel et celui du club doivent etre alignes.'}[selected.kind];
   return {key,playerId:selected.p.id,kind:selected.kind,title:label,context,trait:selected.leader.trait,leadership:selected.leader.leadership};
  }
@@ -115,12 +115,12 @@
   return '<section class="card" aria-label="Monde vivant et vestiaire V117">'+
    '<div class="cardtitle"><h2>Monde vivant · Vie du vestiaire</h2><span class="tag">'+(event?'DECISION A PRENDRE':'SUIVI DU GROUPE')+'</span></div>'+
    (event?'<h3>'+esc(event.title)+'</h3><p><strong>'+esc(p?.name||'Joueur')+'</strong> · '+esc(event.trait)+
-    ' · leadership '+event.leadership+'/100</p><p>'+esc(event.context)+'</p><p class="help">Une decision maximum par semaine, sans evenement aleatoire gratuit. Les profils restent stables dans la carriere.</p><div class="row">'+buttons+'</div>':
+    ' · leadership '+event.leadership+'/100</p><p>'+esc(event.context)+'</p><p class="help">Une décision maximum par semaine, sans événement aléatoire gratuit. Les profils restent stables dans la carriere.</p><div class="row">'+buttons+'</div>':
     '<p>Votre entretien de cette semaine a ete traite. Les consequences restent dans la sauvegarde.</p>')+
-   '<details><summary>Suivi des engagements ('+pending.length+') et decisions ('+latest.length+')</summary><ul>'+
+   '<details><summary>Suivi des engagements ('+pending.length+') et décisions ('+latest.length+')</summary><ul>'+
    pending.slice(-5).map(x=>'<li>Engagement : '+esc(roster(s).find(p=>p.id===x.playerId)?.name||'Joueur parti')+' · '+x.target+' minutes avant semaine '+x.dueWeek+'</li>').join('')+
    latest.map(x=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(x.season)+' / semaine '+x.week+' : '+esc(x.title)+' — '+esc(CHOICES[x.choice]?.label||x.choice)+'</li>').join('')+
-   '</ul></details><p class="help">Les decisions ajustent la satisfaction V36/V64, le moral collectif utilise par le moteur et la confiance de direction. Les engagements sont controles deux semaines plus tard.</p></section>';
+   '</ul></details><p class="help">Les décisions ajustent la satisfaction V36/V64, le moral collectif utilise par le moteur et la confiance de direction. Les engagements sont contrôlés deux semaines plus tard.</p></section>';
  }
  function install(root){
   if(!root||typeof root.render!=='function'||typeof root.managerWeek!=='function'||typeof root.managerMessage!=='function'||typeof root.save!=='function')return false;

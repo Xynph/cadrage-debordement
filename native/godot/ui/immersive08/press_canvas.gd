@@ -124,7 +124,7 @@ func _sidebar() -> void:
 	var conference: Dictionary = data.get("conference", {})
 	var section := D.panel(self, Rect2(LEFT + 16, 405, RIGHT, 437), "La salle de presse", "people", "", "PressConferenceBrief")
 	D.photo(section, "press-room", Rect2(16, 67, 424, 171))
-	D.scenario_photo(section, "camera", Rect2(452, 67, RIGHT - 468, 171))
+	D.photo(section, "mail-staff", Rect2(452, 67, RIGHT - 468, 171), .3)
 	var available: bool = conference.get("available", false)
 	var questions: Array = conference.get("questions", [])
 	var status := "Conférence ouverte" if available else "Conférence indisponible"

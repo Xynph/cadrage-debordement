@@ -216,7 +216,7 @@ static func build(app: Control) -> Control:
 	var national: bool = app.Immersive.Selections.nation_only(app.model)
 	_activity_filters(D.panel(page, Rect2(0,288,298,255),"","","","InboxActivityFilters"), app, state, unfiltered)
 	var lounge := D.panel(page, Rect2(0, 561, 298, 196), "Sélection" if national else "Accueil du club", "home")
-	D.scenario_photo(lounge, "lounge", Rect2(12, 50, 274, 132))
+	D.photo(lounge, "hospitality", Rect2(12, 50, 274, 132), .4)
 	var category_view: Dictionary = state.duplicate()
 	category_view.category = "Tous"
 	_category_chart(D.panel(page,Rect2(0,775,298,349),"","","","InboxCategoryChart"), app, state, messages.filter(func(item: Dictionary): return _visible(item,category_view)))
