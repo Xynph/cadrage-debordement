@@ -22,6 +22,12 @@ func write(path: String, content: String) -> void:
 		file.store_string(content)
 		file.close()
 
+## Horloge de jeu injectée dans la régie : l'anti-rebond ne dépend plus du temps réel.
+var clock_ms := [0]
+
+func advance_ms(ms: int) -> void:
+	clock_ms[0] += ms
+
 ## Fait avancer le fondu de la musique de « seconds » secondes simulées.
 func step_music(audio: Node, seconds: float) -> void:
 	for i in int(seconds / 0.1):
@@ -116,7 +122,7 @@ func run() -> void:
 	check(prefs.set_value("music_on", true) and prefs.set_value("music_in_match", false), "Retour aux réglages par défaut")
 	# Sons de match.
 	audio.set_presenting(true)
-	await create_timer(0.45).timeout
+	advance_ms(450)
 	check(prefs.set_value("match_sounds", false) and not audio._bed.playing and not audio._reaction.playing, "Décocher « Sons de match » coupe l'ambiance du stade")
 	check(not audio.play_shown("try", 0) and not audio.play_shown("penalty", 1), "Sons de match décochés : ni foule ni sifflets")
 	step_music(audio, 3.0)
@@ -138,22 +144,38 @@ func run() -> void:
 	check(audio._crowd_cue("try", 1) == {"id": "stadium-try", "mood": "deception"}, "Essai adverse : déception")
 	check(audio._crowd_cue("penalty", 1) == {"id": "crowd-whistle", "mood": "sifflets"}, "Pénalité accordée à l'extérieur : sifflets")
 	check(audio._crowd_cue("penalty", 0).is_empty() and audio._crowd_cue("scrum", 1).is_empty(), "Pénalité pour le domicile ou autre fait : rien")
+	audio.game_clock = func(): return clock_ms[0]
 	audio.refresh_visibility("Match", true)
 	audio.set_presenting(true)
-	check(audio.play_shown("try", 0) and moods.back() == "joie", "Réaction jouée : joie")
-	await create_timer(0.45).timeout
-	check(audio.play_shown("try", 1) and moods.back() == "deception" and audio._reaction.pitch_scale < 1.0, "Réaction jouée : déception, plus grave")
-	await create_timer(0.45).timeout
-	check(audio.play_shown("penalty", 1) and moods.back() == "sifflets" and cues.back() == "crowd-whistle", "Réaction jouée : sifflets")
-	await create_timer(0.45).timeout
-	check(not audio.play_shown("penalty", 0), "Pénalité pour le domicile : pas de sifflets")
+	advance_ms(450)
+	# Règle d'anti-rebond (350 ms de jeu) : la plus importante gagne, un rejet ne décale pas le repère.
+	check(audio.play_shown("penalty", 1), "Sifflets joués")
+	advance_ms(100)
+	check(audio.play_shown("try", 0) and moods.back() == "joie", "Essai à 100 ms des sifflets : l'essai prend le dessus")
+	advance_ms(100)
+	check(not audio.play_shown("penalty", 1) and not audio.play_shown("try", 1), "Sifflets ou même importance dans la fenêtre : ignorés")
+	advance_ms(260)
+	check(audio.play_shown("try", 1) and moods.back() == "deception", "360 ms après l'essai (le rejet n'a pas décalé le repère) : déception adverse jouée")
+	advance_ms(349)
+	check(not audio.play_shown("penalty", 1), "349 ms : encore dans la fenêtre")
+	advance_ms(1)
+	check(audio.play_shown("penalty", 1), "350 ms : fenêtre close")
+	advance_ms(450)
+	for round in 5:
+		check(audio.play_shown("try", 0) and moods.back() == "joie", "Réaction jouée : joie (tour %d)" % round)
+		advance_ms(450)
+		check(audio.play_shown("try", 1) and moods.back() == "deception" and audio._reaction.pitch_scale < 1.0, "Réaction jouée : déception, plus grave (tour %d)" % round)
+		advance_ms(450)
+		check(audio.play_shown("penalty", 1) and moods.back() == "sifflets" and cues.back() == "crowd-whistle", "Réaction jouée : sifflets (tour %d)" % round)
+		advance_ms(450)
+		check(not audio.play_shown("penalty", 0), "Pénalité pour le domicile : pas de sifflets (tour %d)" % round)
 	# Même chemin via le journal moteur.
 	var scene_try := {"kind": "try", "team": 1, "to": [1, 2]}
 	var event := {"min": 12, "text": "Essai adverse", "scene": scene_try}
 	var model := {"club": {"id": 0}, "meta": {"dataDir": directory, "season": 1, "round": 0, "phase": "league", "mode": "world-champ"},
 		"live": {"pair": [0, 1], "paused": false, "finished": false, "atBreak": false, "events": [], "scene": {}}}
 	audio.observe_model(model, "Match", "snapshot", true)
-	await create_timer(0.45).timeout
+	advance_ms(450)
 	check(audio._crowd_cue_for(event) == {"id": "stadium-try", "mood": "deception"}, "Journal moteur : essai de l'extérieur lu comme déception")
 
 	check(not audio.preferences.set_value("music_volume", 101), "Volume musique hors 0..100 refusé")

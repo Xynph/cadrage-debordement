@@ -1,0 +1,3 @@
+{
+  "expression": "return {\"waiting\":scene.waiting, \"connection_error\":scene.connection_error, \"mode\":scene.model.get(\"meta\",{}).get(\"mode\"), \"error\":scene.last_error}"
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "_doc": "Arrêts informatifs de « Continuer » pendant la saison (continuer.cjs, kind « info »), toujours actifs (décision de Léo, 16/11/2026 : pas de niveaux). Aucun n'attend de réponse ; ils ne changent rien à la carrière (lecture seule). priorite : ordre des arrêts d'un même jour (plus petit d'abord). maxParJour : arrêts au plus le même jour, arrêt principal compris ; au-delà, le dernier arrêt regroupe le reste.",
+  "maxParJour": 3,
+  "types": {
+    "veille": {
+      "label": "Veille de match",
+      "priorite": 10
+    },
+    "medical": {
+      "label": "Rapport médical",
+      "priorite": 20,
+      "semainesMin": 4
+    },
+    "lendemain": {
+      "label": "Bilan du match",
+      "priorite": 30
+    },
+    "fin_phase": {
+      "label": "Fin de phase",
+      "priorite": 40
+    },
+    "mi_saison": {
+      "label": "Mi-saison",
+      "priorite": 50
+    },
+    "mercato": {
+      "label": "Marché des transferts",
+      "priorite": 60,
+      "semaines": [
+        13
+      ],
+      "semainesAvant": 1
+    },
+    "recruteur": {
+      "label": "Rapport de recruteur",
+      "priorite": 70
+    }
+  },
+  "phases": {
+    "league": "phase régulière",
+    "pool": "phase de poules",
+    "barrage": "barrages",
+    "elimination": "barrages",
+    "r16": "huitièmes de finale",
+    "quarter": "quarts de finale",
+    "semi": "demi-finales",
+    "final": "finale",
+    "promotion": "barrages d’accession"
+  },
+  "competitions": {
+    "champions": "Coupe des champions",
+    "challenge": "Challenge européen"
+  }
+}
