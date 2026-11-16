@@ -116,6 +116,17 @@ static func _messages(app: Control) -> Array[Dictionary]:
 	# Courrier du club (club-mail.cjs) : les plus récents en tête.
 	if not national:
 		for item: Dictionary in ClubMail.messages(app.model): messages.push_front(item)
+		# Invitations du club (entretiens, moments au club) : des messages à faire, comme le courrier du club.
+		var scenes: Array = app.model.get("clubLife", {}).get("sceneInvitations", {}).get("invitations", [])
+		for index in range(scenes.size() - 1, -1, -1):
+			var scene: Dictionary = scenes[index]
+			if scene.get("status") != "pending" or not scene.get("available", false): continue
+			var reason := str(scene.get("reason", "")).strip_edges()
+			messages.push_front({
+				"id":"invitation:" + str(scene.id), "subject":str(scene.get("title", "Invitation du club")),
+				"text":reason if not reason.is_empty() else "Le club vous invite à un moment de rencontre.",
+				"category":"Club", "route":"Bureau", "position":200000 + index, "scene_invitation":scene
+			})
 	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
 	var invitations: Array = [] if national else press.get("invitations", [])
 	for index in range(invitations.size() - 1, -1, -1):
@@ -314,7 +325,7 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 		["À faire (%d)" % todo, "InboxActivity_todo", 0, "todo", Reading.LABELS.todo + ". Les messages sans décision explicite restent des informations."],
 		["Favoris", "InboxFolder2", 2, "all", "Messages favoris"],
 	]
-	var widths := [96, 150, 140, 112]
+	var widths := [88, 138, 130, 104]
 	var x := 12
 	for index in filters.size():
 		var filter: Array = filters[index]
@@ -336,13 +347,14 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 	var subject := OptionButton.new()
 	subject.name = "InboxSubject"
 	subject.fit_to_longest_item = false
+	subject.clip_text = true
 	subject.add_theme_font_override("font",C.BOLD)
-	subject.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
+	subject.add_theme_font_size_override("font_size",maxi(12,C.px(17)))
 	subject.tooltip_text = "Sujet : services du club, archives, messages en attente ou d'information"
 	var entries: Array = []
 	for category: String in SUBJECTS:
 		var count := all_subjects.size() if category == "Tous" else all_subjects.filter(func(message: Dictionary): return message.category == category).size()
-		entries.append({"kind":"category", "value":category, "label":("Tous les sujets" if category == "Tous" else category) + " (%d)" % count, "short":"Sujet ▾" if category == "Tous" else category + " ▾"})
+		entries.append({"kind":"category", "value":category, "label":("Tous les sujets" if category == "Tous" else category) + " (%d)" % count, "short":"Sujet" if category == "Tous" else category})
 	var chosen_entry := -1
 	for index in entries.size():
 		if entries[index].kind == "category" and entries[index].value == state.category: chosen_entry = index
@@ -357,7 +369,7 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 		var count_text := ""
 		if extra[0] == "archives": count_text = " (%d)" % (messages_archived(app))
 		else: count_text = " (%d)" % statuses[extra[0]]
-		entries.append({"kind":extra[0], "value":extra[0], "label":str(extra[1]) + count_text, "short":str(extra[1]) + " ▾"})
+		entries.append({"kind":extra[0], "value":extra[0], "label":str(extra[1]) + count_text, "short":str(extra[1])})
 		subject.add_item(entries[-1].label, entries.size() - 1)
 		if (extra[0] == "archives" and archive_selected) or (extra[0] != "archives" and extra_selected and state.activity_filter == extra[0]): chosen_entry = entries.size() - 1
 	subject.select(subject.get_item_index(maxi(chosen_entry, 0)))
