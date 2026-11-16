@@ -25,7 +25,10 @@ function ouvrir(options = {}) {
   let id = 0;
   const brut = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
   const call = (command, payload = {}) => { const r = brut(command, payload); assert.equal(r.ok, true, command + ' : ' + r.error); return r.model; };
-  const regler = model => settleClubMeetings(model, call);
+  // Rendez-vous du jour réglés, puis décisions de la préparation dues ce jour (reprise.cjs) confiées à Gabi
+  // (choix prudent, sans effet) : « Continuer » refuse de repartir tant qu'elles attendent.
+  const confier = model => { for (const decision of model?.clubLife?.reprise?.due || []) model = call('reprise_decide', { decision, option: 'staff' }); return model; };
+  const regler = model => confier(settleClubMeetings(model, call));
   return {
     brut, call, regler, dataDir, bridge,
     fermer: () => { try { bridge.close(); } catch (e) { /* déjà fermé */ } if (!options.dataDir) fs.rmSync(dataDir, { recursive: true, force: true }); },

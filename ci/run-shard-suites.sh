@@ -97,9 +97,6 @@ budget() {
     tests/match-choregraphe.cjs) echo 1200s ;;
     # Fluidité des commandes (#711) : six carrières Monde au worker, 129 s de sous-tests + création ; 180 s dépassées en CI (PR #716).
     tests/vitesse-commandes-monde.cjs) echo 420s ;;
-    # Réactivité de la projection (#767, #777) : trois carrières Monde successives (projection d'avant, vérification, sections),
-    # 257-330 s en local sous charge ; 180 s dépassées en CI (Suites 7/7 de #767 et #777). Budget ≈ 3 fois.
-    tests/reactivite-projection.cjs) echo 900s ;;
     # Mémoire des projections par domaine : trois carrières Monde successives (avec vérification, sans mémoire, avec), ~165 s en local chargé.
     tests/memo-projection-monde.cjs) echo 600s ;;
     # Stats réalistes de la fiche (4 journées Monde ; le défaut était 26 par erreur, d'où le dépassement de 900 s) : 285 s de CPU en local, ~5-7 min en CI.

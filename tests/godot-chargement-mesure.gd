@@ -42,7 +42,7 @@ func run() -> void:
 	var until := Time.get_ticks_msec() + 30000
 	while app.model.is_empty() and Time.get_ticks_msec() < until: await process_frame
 	app.timer.stop()
-	await command("new_career", {"mode": "common", "club": 0})
+	await command("new_career", {"mode": "world-champ", "club": 0})
 	await Flow.settle_club_meetings(app, self, check)
 	if is_instance_valid(app.coach): app.coach.close()
 	var rounds := int(OS.get_environment("CD_MESURE_TOURS")) if OS.has_environment("CD_MESURE_TOURS") else 2

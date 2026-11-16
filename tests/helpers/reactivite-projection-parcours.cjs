@@ -1,27 +1,15 @@
 'use strict';
-// Réactivité du moteur (lots 19 et 20) : projection par sections (projection-sections.cjs), versions des sections de la
-// carrière (state-versions.cjs), réponses légères aux commandes refusées et direct du match allégé.
-//
-// Sur la même graine, carrière Monde (`world-champ`, cadence de la semaine pour atteindre vite un match) :
-//   1. modèles identiques section par section, et profil écrit identique, entre la projection d'avant
-//      (projectionSections:false) et la projection par sections, avec et sans le mode vérification (chaque section
-//      reprise recalculée et comparée, chaque section de la carrière relue pour contrôler state-versions.cjs ; les
-//      commandes déclarées sans effet sur les joueurs relèvent quand même qualités et connaissance et refusent toute
-//      progression ; catalogues de création et carrière internationale repris sont recalculés et comparés) ;
-//   2. pendant le direct, seules les sections gardées (grands domaines, carrière internationale, développement,
-//      planification) peuvent différer, et elles valent la dernière réponse complète ; après le match, tout est égal ;
-//   3. une commande refusée sans effet part comme un patch « rien n'a changé » qui reconstruit le même modèle qu'un
-//      instantané complet ; sans révision concordante, la réponse redevient complète ;
-//   4. une lecture (fiche club, instantané) ne recalcule pas les grands domaines (sections reprises).
+// Parcours communs à reactivite-projection-verification.cjs, reactivite-projection-rapide.cjs et
+// reactivite-projection-decisions.cjs (ancienne suite unique reactivite-projection.cjs, au-delà des 180 s du lanceur) :
+// un parcours Monde par processus, comparaison par étapes.
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { test } = require('node:test');
-const M = require('./helpers/carriere-monde.cjs');
-const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
-const { createEncoder, sectionTexts, TEXTS } = require('../native/engine/model-delta.cjs');
+const M = require('./carriere-monde.cjs');
+const { skipMatchTalk } = require('./scene-match-talks.cjs');
+const { createEncoder, sectionTexts, TEXTS } = require('../../native/engine/model-delta.cjs');
 
 const KEPT_LIVE = /^(clubLife\.(interclubMarket|managerCareer|regenScouting|clubSupport|staffCareer|coachNotebook|youthDevelopment|staffMentoring|clubWorld|performanceAnalysis|staffEmployment)|staff(\..*)?|international|decisions\.development|managerPlanning)$/;
 const DOSSIER = path.join(os.tmpdir(), 'rl27-reactivite-' + process.pid);
@@ -35,7 +23,35 @@ function flat(model) {
   return out;
 }
 
+// Décisions sur un joueur du club et délégation (lot 20, #777) : seconde consigne de charge (champ déjà présent),
+// délégations de la composition et de l'entraînement, axe de progression, plan de travail. Sans match : la suite
+// reactivite-projection-decisions.cjs compare la projection d'avant, le mode vérification et la projection rapide.
+function decisions(options) {
+  fs.rmSync(DOSSIER, { recursive: true, force: true });
+  const jeu = M.ouvrir({ hebdomadaire: true, deferredCommits: true, testVm: true, dataDir: DOSSIER, ...options });
+  const etapes = [];
+  try {
+    if (options.projectionSections !== false) jeu.bridge.vm.run("{const d=nativeSystems.domain('interclubMarket'),o=d.project;globalThis.__marche=0;d.project=function(){__marche++;return o.apply(this,arguments);};}");
+    const marche = () => options.projectionSections !== false ? jeu.bridge.vm.run('__marche') : 0;
+    const note = (etiquette, model) => { const textes = flat(model); textes.set('meta.dataDir', ''); etapes.push({ etiquette, textes, live: false, joint: !!model[TEXTS] }); return model; };
+    const call = (command, payload) => { const model = jeu.call(command, payload); jeu.bridge.handle.flush(); return note(command, model); };
+    let model = note('création', M.creer(jeu));
+    model = call('set_player_load', { playerId: model.squad[4].id, mode: 'repos' });
+    const avantDecisions = marche();
+    model = call('set_player_load', { playerId: model.squad[4].id, mode: 'normal' });
+    for (const [key, enabled] of [['lineup', true], ['training', true], ['training', false], ['lineup', false]]) model = call('set_delegation', { key, enabled });
+    const decisionsMarche = marche() - avantDecisions;
+    model = call('set_development_focus', { playerId: model.squad[6].id, focus: 'stamina' });
+    model = call('training_plan', { plan: model.clubLife.clubSupport.training.plans[0].key, context: model.clubLife.clubSupport.context });
+    note('instantané', jeu.call('snapshot'));
+    jeu.bridge.handle.flush();
+    const profil = sha(fs.readFileSync(path.join(DOSSIER, 'PrototypeGodot', 'donnees.json'), 'utf8'));
+    return { etapes, profil, lecturesMarche: 0, decisionsMarche };
+  } finally { jeu.fermer(); fs.rmSync(DOSSIER, { recursive: true, force: true }); }
+}
+
 function parcours(options) {
+  if (options.scenario === 'decisions') { const { scenario, ...reste } = options; return decisions(reste); }
   fs.rmSync(DOSSIER, { recursive: true, force: true });
   const jeu = M.ouvrir({ hebdomadaire: true, deferredCommits: true, testVm: true, dataDir: DOSSIER, ...options });
   const etapes = [];
@@ -53,14 +69,6 @@ function parcours(options) {
     for (let i = 0; i < 2; i++) model = call('set_tactics', { attack: model.tactics.attacks.find(o => o.id !== model.tactics.attack).id, defense: model.tactics.defense });
     model = call('auto_lineup');
     model = call('set_player_load', { playerId: model.squad[4].id, mode: 'repos' });
-    // Décisions sur un joueur du club et délégation (lot 20) : seul le club du manager est relu ; la seconde consigne
-    // de charge (champ déjà présent) et la délégation ne recalculent pas le marché entre clubs.
-    const avantDecisions = marche();
-    model = call('set_player_load', { playerId: model.squad[4].id, mode: 'normal' });
-    for (const [key, enabled] of [['lineup', true], ['training', true], ['training', false], ['lineup', false]]) model = call('set_delegation', { key, enabled });
-    const decisionsMarche = marche() - avantDecisions;
-    model = call('set_development_focus', { playerId: model.squad[6].id, focus: 'stamina' });
-    model = call('training_plan', { plan: model.clubLife.clubSupport.training.plans[0].key, context: model.clubLife.clubSupport.context });
     model = call('set_opponent_level', { level: 'decouverte' });
     model = call('set_collective_focus', { focus: 'conquete' });
     // Refus sans effet (rendez-vous inconnu) : modèle complet ici, comparé plus bas à la réponse légère.
@@ -81,7 +89,7 @@ function parcours(options) {
     note('après le match', jeu.call('snapshot'));
     jeu.bridge.handle.flush();
     const profil = sha(fs.readFileSync(path.join(DOSSIER, 'PrototypeGodot', 'donnees.json'), 'utf8'));
-    return { etapes, profil, lecturesMarche, decisionsMarche };
+    return { etapes, profil, lecturesMarche };
   } finally { jeu.fermer(); fs.rmSync(DOSSIER, { recursive: true, force: true }); }
 }
 
@@ -120,50 +128,4 @@ function comparer(reference, autre, nom) {
   return gardees;
 }
 
-test('Projection par sections : mêmes modèles et même profil, direct allégé, lectures sans grands domaines', { timeout: 1800000 }, () => {
-  // Un seul pont Monde à la fois (machine de 8 Go).
-  const avant = parcoursIsole({ projectionSections: false });
-  const verifie = parcoursIsole({ verifyProjection: true, verifyMemo: true, verifyCleanCopy: true });
-  comparer(avant, verifie, 'vérification');
-  const rapide = parcoursIsole({});
-  assert.ok(comparer(avant, rapide, 'sections') > 0, 'direct : des sections gardées de la dernière réponse complète');
-  assert.ok(rapide.etapes.slice(2).every(e => e.joint), 'textes des sections joints aux réponses');
-  assert.equal(rapide.lecturesMarche, 0, 'instantané et fiches club sans recalcul du marché entre clubs');
-  assert.equal(rapide.decisionsMarche, 0, 'charge d’un joueur et délégation sans recalcul du marché entre clubs');
-});
-
-test('Commande refusée : réponse légère « rien n’a changé », même modèle reconstruit', { timeout: 600000 }, () => {
-  fs.rmSync(DOSSIER, { recursive: true, force: true });
-  const jeu = M.ouvrir({ hebdomadaire: true, deferredCommits: true, lightErrors: true, dataDir: DOSSIER });
-  try {
-    const encoder = createEncoder();
-    let base = -1, model = null, id = 100;
-    const envoyer = (command, payload = {}) => {
-      const result = jeu.bridge.handle({ id: ++id, command, payload });
-      const ligne = encoder.encode(result, base), reponse = JSON.parse(ligne);
-      if (reponse.patch) { model = encoder.apply(model, reponse.patch); base = reponse.patch.rev; }
-      jeu.bridge.handle.flush();
-      return { reponse, octets: ligne.length };
-    };
-    envoyer('new_career', { mode: 'world-champ', club: 102 });
-    model = jeu.regler(model);
-    envoyer('snapshot');
-    const avant = JSON.stringify(model);
-    const refus = envoyer('club_meeting_ack', { meetingId: 'inconnu' });
-    assert.equal(refus.reponse.ok, false);
-    assert.match(refus.reponse.error, /rendez-vous/i);
-    assert.equal(refus.reponse.patch.full, false);
-    assert.deepEqual(refus.reponse.patch.set, {}, 'aucune section renvoyée');
-    assert.ok(refus.octets < 4096, 'réponse légère (' + refus.octets + ' octets)');
-    assert.equal(JSON.stringify(model), avant, 'modèle reconstruit inchangé');
-    // Modèle d'un instantané complet : le même.
-    const complet = envoyer('snapshot');
-    assert.equal(complet.reponse.ok, true);
-    assert.equal(JSON.stringify(model), avant, 'instantané identique au modèle gardé');
-    // Révision inconnue : la réponse au refus redevient complète.
-    const result = jeu.bridge.handle({ id: ++id, command: 'club_meeting_ack', payload: { meetingId: 'inconnu' } });
-    const plein = JSON.parse(encoder.encode(result, 999999));
-    assert.equal(plein.patch.full, true);
-    assert.equal(JSON.stringify(encoder.apply(null, plein.patch)), avant, 'réponse complète identique');
-  } finally { jeu.fermer(); fs.rmSync(DOSSIER, { recursive: true, force: true }); }
-});
+module.exports = { DOSSIER, M, createEncoder, parcoursIsole, comparer };
