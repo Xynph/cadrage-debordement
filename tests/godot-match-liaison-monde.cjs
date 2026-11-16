@@ -14,7 +14,10 @@ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-liaison-monde-'));
  const bridge=createBridge({dataDir,seed:7,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true});
  let id=0;const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
  let model=call('new_career',{mode:'world-champ',club:0});
- for(let day=0;day<40;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
+ // Avant-saison Monde (13/07 → 17/08, cinq semaines) puis semaines jusqu'à la 1re rencontre du club : jusqu'à
+ // ~70 jours (même garde que tests/helpers/carriere-monde.cjs, jusquAuMatch). 40 jours ne suffisaient plus.
+ for(let day=0;day<150;day++){model=settleClubMeetings(model,call);if(model.meta.calendarCadence?.matchReady)break;model=call('advance_day',{fromDate:model.meta.calendarToday});}
+ assert.equal(model.meta.calendarCadence?.matchReady,true,'jour de la 1re rencontre atteint ('+model.meta.calendarToday+')');
  model=settleClubMeetings(model,call);model=call('auto_lineup');if(!model.selection?.valid)call('promote_cover',{confirmed:true});
  assert.ok(call('begin_match').live,'match Monde commencé');
  fs.writeFileSync(path.join(directory,'monde.json'),call('export').meta.exportText);
