@@ -11,8 +11,10 @@
 //   5. des seuils de temps larges (machines de CI partagées) contre les régressions de fluidité ;
 //   6. une avance du calendrier envoyée juste après une décision la reprend à son compte (validée et écrite avec
 //      elle) au lieu d'attendre son écriture séparée ; refusée, elle laisse la décision en attente ;
-//   7. le vrai worker stdio : jour envoyé aussitôt après une décision (regroupé), puis « shutdown » envoyé aussitôt
-//      après une autre décision : réponse, décision écrite, sortie propre (recette Windows, run 43603330612).
+//   7. le vrai worker stdio (journal d'actions, docs/sauvegarde-journal-20261116.md) : jour envoyé aussitôt après une
+//      décision (aucune écriture à attendre), puis « shutdown » envoyé aussitôt après une autre décision : réponse,
+//      sauvegarde complète à la fermeture, sortie propre (recette Windows, run 43603330612).
+//   Les essais 1 à 6 gardent le chemin sans journal (option journal absente, CD_JOURNAL=0).
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -220,7 +222,9 @@ test('Worker stdio réel : jour aussitôt après une décision, puis fermeture a
     assert.equal(r.ok, true, r.error);
     assert.notEqual(r.model.meta.calendarToday, jour);
     console.log('stdio : jour après décision', Math.round(dureeJour), 'ms ; phases', JSON.stringify(r.timing));
-    assert.equal(r.timing.ecriture_regroupee, true, 'le jour reprend la décision au lieu d\'attendre son écriture');
+    // Journal d'actions : la décision est déjà notée, le jour n'attend aucune écriture précédente.
+    assert.equal(r.timing.ecriture_precedente, undefined, 'aucune écriture de décision à attendre');
+    assert.equal(r.timing.ecriture_regroupee, undefined, 'rien à regrouper');
     // Dernière décision puis fermeture immédiate : la réponse à shutdown suit l'écriture, puis le worker sort.
     r = await envoyer('set_tactics', { attack: autreAttaque(r.model), defense: r.model.tactics.defense });
     assert.equal(r.ok, true, r.error);
@@ -233,6 +237,7 @@ test('Worker stdio réel : jour aussitôt après une décision, puis fermeture a
     assert.equal(fin.code, 0, 'sortie propre');
     console.log('stdio : shutdown après décision, sortie en', Math.round(fin.at - envoi), 'ms');
     assert.equal(tactique(dir), derniere, 'la dernière décision est écrite avant la sortie');
+    assert.equal(fs.readFileSync(path.join(dir, 'PrototypeGodot', 'journal-actions.jsonl'), 'utf8').trim().split('\n').length, 1, 'journal remis à zéro par la sauvegarde de fermeture');
     assert.ok(!fs.existsSync(path.join(dir, 'PrototypeGodot', 'profil.lock')), 'verrou rendu');
   } finally {
     if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');

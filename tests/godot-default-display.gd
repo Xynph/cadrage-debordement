@@ -48,6 +48,17 @@ func run() -> void:
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
 	check(tabs != null and tabs.get_tab_count() == 3,"Trois rubriques de paramètres accessibles")
+	# Fréquence de la sauvegarde complète (Confort) : trois choix, chaque semaine par défaut, enregistrée dans le profil
+	# où le moteur la lit (native/engine/action-journal.cjs).
+	var autosave: OptionButton = dialog.find_child("PreferencesAutosave",true,false)
+	check(autosave != null and autosave.is_visible_in_tree() and autosave.item_count == 3 and autosave.selected == 1,"Sauvegarde automatique : chaque jour, chaque semaine (défaut), chaque mois")
+	if autosave != null:
+		autosave.grab_focus(); await settle(); await key(KEY_SPACE); await key(KEY_UP); await key(KEY_ENTER)
+		check(app.user_preferences.data.autosave == "jour" and autosave.get_item_text(autosave.selected) == "Chaque jour","Fréquence de sauvegarde choisie au clavier")
+		var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(str(app.model.meta.dataDir).path_join("interface.json")))
+		check(saved is Dictionary and saved.get("autosave") == "jour","Fréquence enregistrée dans le profil lu par le moteur")
+		await capture("preferences-sauvegarde")
+	check(app._settled_status_text().begins_with("Sauvegarde automatique"),"Ligne d’état de la sauvegarde automatique")
 	if tabs != null: tabs.current_tab = 2
 	await settle()
 	var fullscreen: Button = dialog.find_child("PreferencesFullscreen",true,false)

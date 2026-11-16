@@ -189,7 +189,7 @@ static func _person(app: Control, parent: VBoxContainer, person: Dictionary) -> 
 	card.add_child(row)
 	var appearance := person.duplicate(true)
 	appearance.portraitRole = "staff"
-	var photo := G.portrait(0, 82, appearance)
+	var photo := G.portrait_lazy(0, 82, appearance)
 	photo.custom_minimum_size.y = 104
 	row.add_child(portrait_link(app, photo, person))
 	var text := G.v(5)
