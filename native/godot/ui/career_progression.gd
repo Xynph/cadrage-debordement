@@ -14,6 +14,11 @@ static func daily(meta: Dictionary, fixture: Variant, route: String) -> Dictiona
 		if route == "Préparation":
 			return {"route": "Match", "label": "ALLER AU MATCH  →", "short": "Jour de match"}
 		return {"route": "Préparation", "label": "PRÉPARER LE MATCH  →", "short": "Préparer"}
+	# « Doit répondre » (façon FM) : une décision de la préparation attend ; le bouton change de libellé et ouvre
+	# « La reprise » au lieu d'avancer (reprise.cjs, meta.decisionsDue).
+	var due: Array = meta.get("decisionsDue", []) if meta.get("decisionsDue") is Array else []
+	if not due.is_empty():
+		return {"open": "reprise", "label": "DÉCISION ATTENDUE  →", "short": "Décision attendue", "tooltip": "Décision attendue : Gabi attend votre réponse dans « La reprise » avant de continuer."}
 	var today := str(meta.get("calendarToday", ""))
 	if today.is_empty() or not bool(cadence.get("canAdvance", false)):
 		return {"disabled": true, "label": str(cadence.get("reason", "L’avance est indisponible.")), "short": "Continuer"}
@@ -35,6 +40,8 @@ static func continue_tooltip(meta: Dictionary) -> String:
 		match str(plan.get("kind", "")):
 			"match": what = "Match contre " + str(plan.get("opponent", "l’adversaire")) if not str(plan.get("opponent", "")).is_empty() else "Jour de match"
 			"reprise": what = "Reprise de l’entraînement"
+			"decision": what = "Décision attendue : " + str(plan.get("detail", "")).to_lower()
+			"a_noter": what = "À noter : " + str(plan.get("detail", ""))
 			_: what = str(plan.get("detail", "Rendez-vous du club"))
 		lines.append("Prochain arrêt prévu : %s, %s%s." % [what, short_date(date), in_days(today, date)])
 	lines.append("Arrêt plus tôt si un rendez-vous, un courrier important, une offre ou la blessure d’un titulaire l’exige.")
@@ -69,4 +76,5 @@ static func next_day(meta: Dictionary, fixture: Variant) -> Dictionary:
 static func continue_stops(preferences: Dictionary) -> Dictionary:
 	var messages := str(preferences.get("continue_messages", "importants"))
 	var blessures := str(preferences.get("continue_injuries", "titulaires"))
-	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires"}
+	var flux := str(preferences.get("continue_flow", "equilibre"))
+	return {"messages": messages if messages in ["importants", "tous", "aucun"] else "importants", "blessures": blessures if blessures in ["titulaires", "effectif"] else "titulaires", "flux": flux if flux in ["allege", "equilibre", "complet"] else "equilibre"}
