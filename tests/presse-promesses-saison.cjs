@@ -1,5 +1,5 @@
 'use strict';
-// Promesses publiques sur une saison Monde complète (world-champ, club 0, Top 14) : deux promesses annoncées en
+// Promesses publiques sur une saison Monde complète (world-champ, club 0, Top 14, verdicts comparés au réel) : deux promesses annoncées en
 // conférence (maintien à l'arrivée, victoires à domicile la semaine suivante), rappels de la presse et de Gabi à
 // mi-saison et pour le sprint final, verdict des victoires à domicile à la fin de la saison régulière, verdict du
 // maintien au passage à la saison suivante, puis sauvegarde et rechargement. Cas rapides : presse-promesses-monde.cjs.
@@ -52,10 +52,16 @@ test('saison complète : rappels, verdicts aux échéances, sauvegarde', { timeo
   assert.equal(victoires.result.value, reelles, 'compte des victoires à domicile du championnat');
   assert.equal(victoires.status === 'kept', reelles >= victoires.target);
   assert.equal(maintien.status, 'pending', 'le maintien attend le passage à la saison suivante');
+  const division = () => h.run('CDWorldCareer.leagueId(S,S.club)');
+  const avant = division();
   h.run('advanceSeason();validateCareer(S)');
   const suite = promesses().promises.find(p => p.kind === 'maintien');
-  console.log('maintien :', suite.status, '· crédibilité', promesses().credibility);
-  assert.equal(suite.status, 'kept', 'le favori reste en Top 14');
+  console.log('maintien :', suite.status, '· division', avant, '→', division(), '· crédibilité', promesses().credibility);
+  // Verdict comparé à la division réelle (comme les victoires à domicile) : le club 0 finit dans la seconde
+  // moitié du Top 14 avec cette graine (11e sur main), et tout changement du moteur de match (ex. jugement du
+  // staff, #803) déplace le tirage ; exiger le maintien testait le scénario, pas la promesse.
+  assert.ok(['kept', 'broken'].includes(suite.status), 'maintien jugé au passage à la saison suivante');
+  assert.equal(suite.status === 'kept', division() === avant, 'verdict du maintien conforme à la division');
   assert.equal(h.run('S.season'), 2);
   const vue = projection().pressPromises;
   assert.equal(vue.active.length, 0);

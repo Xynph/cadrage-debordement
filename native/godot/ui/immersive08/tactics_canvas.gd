@@ -10,6 +10,7 @@ const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const PersonName = preload("res://ui/person_name.gd")
+const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 
 class Pitch extends Control:
 	func _draw() -> void:
@@ -64,6 +65,11 @@ static func build(app:Control) -> Control:
 	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160),.5)
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
 	_nationale_qualification(composition,app.model.get("selection",{}))
+	if not Roles.view(app.model).is_empty():
+		var roles:=D.button(composition,Rect2(790,190,254,30),"TIREURS ET LANCEUR",func():Roles.open(app),false,"ball",true,app.accent,"LineupRoles")
+		roles.tooltip_text="Désigner le buteur, son remplaçant, le lanceur en touche et le joueur au pied d’occupation."
+		roles.accessibility_name=roles.tooltip_text
+		roles.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
 	if app.model.get("tactics",{}).get("attack")=="occupation":
 		var overlay := TextureRect.new()
 		overlay.name = "TacticsOccupationOverlay"

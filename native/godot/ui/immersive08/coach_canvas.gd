@@ -21,6 +21,7 @@ const GabiPortrait = preload("res://guide/coach_portrait_3d.gd")
 const Avis = preload("res://guide/gabi_avis.gd")
 const Semaine = preload("res://guide/gabi_semaine.gd")
 const Medaillon = preload("res://guide/gabi_medaillon.gd")
+const PremiersPas = preload("res://guide/gabi_premiers_pas.gd")
 const ACCENT = Color("176e49")
 const FOND = Color("10241b")
 ## Bulle spontanée (première visite d'un écran, conseil de composition) : au plus une par jour de jeu.
@@ -805,6 +806,7 @@ func bureau_disponible() -> bool:
 ## Appelé par office_canvas.gd : carnet de la semaine (synthèse et conseil) au-dessus, Gabi debout dessous.
 func installer_bureau(zone: Control) -> void:
 	_bureau = zone
+	PremiersPas.observer(profile, str(app.route), app.model, str(app.last_command), bool(app.bridge.last_response_ok))
 	_semaine = Semaine.synthese(app.model)
 	zone.resized.connect(_disposer_bureau.bind(zone))
 	_disposer_bureau(zone)
@@ -897,6 +899,39 @@ func _disposer_bureau(zone: Control) -> void:
 		var physical := _bureau_figure.size * _bureau_figure.get_global_transform_with_canvas().get_scale().y
 		if physical.x < 8: physical = _bureau_figure.size
 		source.set_render_size(Vector2i(roundi(physical.x * 1.25), roundi(physical.y * 1.25)))
+
+## Appelé par main.gd après chaque rendu : coche les objectifs des premiers pas sur l'événement réel.
+func observer_premiers_pas(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
+	PremiersPas.observer(profile, route, model, command, response_ok)
+
+## « Premiers pas » : une carte à part sous la frise du Bureau (jamais dans la colonne de Gabi, dont elle
+## réduirait la figure). Un objectif à la fois, avec son bouton d'action ; se coche sur l'événement réel
+## (gabi_premiers_pas.gd). Masquable ; disparaît une fois fini ou à la 1re journée. Renvoie la hauteur prise (0 : rien).
+func carte_premiers_pas(page: Control, rect: Rect2) -> float:
+	if not PremiersPas.visible(app.model, profile.data): return 0.0
+	var liste := PremiersPas.objectifs(app.model, profile.data)
+	var objectif := PremiersPas.courant(liste)
+	if objectif.is_empty(): return 0.0
+	var carte := D.panel(page, rect, "", "", "", "GabiPremiersPasCarte")
+	carte.add_theme_stylebox_override("panel", D.surface(rect.size.x, rect.size.y, Color("13241f"), Color("0b1512"), Color(C.GOLD, .45)))
+	var pad := 22.0
+	var boutons_w := 300.0 + 78.0 + 24.0
+	var libelle := "PREMIERS PAS · %d SUR %d" % [PremiersPas.faits(liste), liste.size()]
+	_ligne_carnet(carte, pad, 18.0, rect.size.x - pad * 2 - 34 - boutons_w - 16, libelle, str(objectif.texte), "check", C.MINT, "GabiPremiersPas")
+	var action: Dictionary = objectif.action
+	var bouton := D.button(carte, Rect2(rect.size.x - pad - 78 - 24 - 300, (rect.size.y - 42) / 2, 300, 42), str(objectif.libelle), func(): _suivre_premier_pas(action), false, "arrow", true, ACCENT, "GabiPremiersPasAction")
+	bouton.tooltip_text = str(objectif.titre)
+	bouton.disabled = app.waiting or not app._live().is_empty()
+	var masquer := D.button(carte, Rect2(rect.size.x - pad - 78, (rect.size.y - 42) / 2, 78, 42), "Masquer", func():
+		PremiersPas.masquer(profile)
+		app.call_deferred("_render"), false, "", true, ACCENT, "GabiPremiersPasMasquer")
+	masquer.tooltip_text = "Ne plus afficher les premiers pas"
+	return rect.size.y
+
+func _suivre_premier_pas(action: Dictionary) -> void:
+	if app.waiting or not app._live().is_empty(): return
+	if str(action.get("type", "")) == "reprise": app._open_reprise_decision()
+	else: suivre_conseil(action)
 
 ## Gabi en pied : un second portrait 3D (même modèle), cadré en entier ; repli : le portrait 2D du guide.
 func _source_pied() -> TextureRect:

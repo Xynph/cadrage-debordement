@@ -73,6 +73,10 @@ static func build(app: Control) -> Control:
 		page.resized.connect(follow)
 		follow.call()
 		app.coach.installer_bureau(zone)
+		# Premiers pas de Gabi : carte sous la frise, hors de la colonne de Gabi (sa figure garde toute sa hauteur).
+		if app.coach.has_method("carte_premiers_pas"):
+			var haut: float = app.coach.carte_premiers_pas(page, Rect2(0, 1124 + GAP, main_w, 128))
+			if haut > 0.0: page.custom_minimum_size.y += C.px(haut + GAP)
 	return page
 
 static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:

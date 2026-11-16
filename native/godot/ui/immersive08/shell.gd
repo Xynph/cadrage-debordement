@@ -2,6 +2,7 @@ extends RefCounted
 const CLUB_CHROME := Color("11191e")
 const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
@@ -111,6 +112,7 @@ static func render(app: Control) -> bool:
 	C.fill(workspace, true)
 	shell.add_child(workspace)
 	_topbar(workspace, app, layout)
+	Raccourcis.installer(app)
 	var inset := C.margin(32)
 	app.workspace_inset = inset
 	inset.add_theme_constant_override("margin_top", C.px(22))
@@ -290,6 +292,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 			if destination=="Préparation": open_training(app)
 			else: app._navigate(destination),selected,"",false,app.accent,"Nav_"+entry[1])
 		if selected: _club_button(action,CLUB_CHROME.lerp(club_accent,.46),club_edge)
+		if i<9: action.tooltip_text=str(entry[1])+" ("+str(i+1)+")"
 		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(26)))
 		var style:StyleBox=action.get_theme_stylebox("normal").duplicate() if selected else C.box(Color.TRANSPARENT,Color.TRANSPARENT,4,0)
 		style.content_margin_left=C.px(58);action.add_theme_stylebox_override("normal",style)
@@ -583,9 +586,10 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
-	if app.route != "Bureau":
-		var shortcuts := D.text(row,782,36-FOOTER_RISE,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
-		shortcuts.name = "ImmersiveShortcuts"
+	# Rappel des raccourcis sur tous les écrans, Bureau compris : le pied de page est hors de la zone défilante
+	# (Gabi, blocs et frise y restent), donc il ne recouvre rien ; le bouton Continuer est dans le bandeau du haut.
+	var shortcuts := D.text(row,782,36-FOOTER_RISE,Raccourcis.pied_de_page(),17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+	shortcuts.name = "ImmersiveShortcuts"
 	if app.decision_feedback != null:
 		var feedback: Button = app.decision_feedback.control()
 		feedback.add_theme_font_override("font",C.DISPLAY)
