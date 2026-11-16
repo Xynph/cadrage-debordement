@@ -68,10 +68,6 @@ const COMPACT_ART = {
 	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
 }
 
-const COMPACT_SCENARIO_ART := {
-	"Club": "treadmill", "Presse": "camera", "Vestiaire": "sneaker", "Formation": "chair",
-}
-
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
 	var window := app.get_window()
@@ -502,8 +498,6 @@ static func _heading(parent: Node, app: Control) -> void:
 			FinanceCanvas.hospitality(image, Rect2(2,2,806,85))
 		else:
 			D.photo(image,COMPACT_ART[app.route],Rect2(2,2,806,85),.16)
-		if COMPACT_SCENARIO_ART.has(app.route):
-			D.scenario_photo(image, COMPACT_SCENARIO_ART[app.route], Rect2(613, 3, 190, 83))
 	var values := P.group(app.model)
 	var injury_count: int = values.injured
 	var injury_caption := "%d blessé%s" % [injury_count, "s" if injury_count > 1 else ""]

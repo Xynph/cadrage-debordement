@@ -117,7 +117,7 @@ static func build(app:Control) -> Control:
 			if domain.get("key")==key:found=domain
 		var tile:=_card(page,Rect2(280+i*562,1186,546,158),["MÊLÉE","TOUCHE","JEU AU PIED"][i],["trophy","flag","ball"][i],"TacticsMatchup"+str(i))
 		if found.is_empty():
-			D.text(tile,25,105,"Aucune projection du staff",25,C.MUTED,500,496).name="TacticsNoReport"
+			D.text(tile,25,105,"Projection du staff la semaine du match",25,C.MUTED,500,496).name="TacticsNoReport"
 			continue
 		D.text(tile,28,105,G.n(found.get("own","—")),48,C.MINT,700,85)
 		D.text(tile,105,96,"VS",20,C.MUTED,500,60)
@@ -159,11 +159,13 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 		var y:=162+i*69
 		D.text(card,23,y,["Conquête · mêlée","Passe et vitesse","Puissance des avants","Jeu au pied","Discipline"][i],24,C.IVORY,600,500)
 		if found.is_empty():
-			D.text(card,23,y+29,"Analyse indisponible",18,C.MUTED,500,400)
+			D.bar(card,Rect2(23,y+14,383,7),0.0)
 			continue
 		D.text(card,23,y+29,"XV sélectionné",18,C.MUTED,500,160)
 		D.text(card,525,y+29,G.n(found.get("own","—"))+" / 100",18,C.MUTED,500,85,HORIZONTAL_ALIGNMENT_RIGHT).name="TacticsDomainValue_"+str(keys[i])
 		D.bar(card,Rect2(154,y+14,252,7),float(found.get("own",0)))
+	if domains.is_empty():
+		D.text(card,23,497,"Analyse du staff livrée la semaine du match.",18,C.MUTED,500,500,HORIZONTAL_ALIGNMENT_LEFT,true).name="TacticsAnalysisPending"
 	var domain_values:Dictionary={}
 	for domain:Dictionary in domains:domain_values[str(domain.get("key",""))]=float(domain.get("own",0))
 	var defensive:=0.0;var selected_count:=0

@@ -283,6 +283,8 @@ static func build(app: Control) -> Control:
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	page.add_child(tabs)
+	# Onglets lisibles : même corps que les boutons de la page, jamais sous 14 px.
+	tabs.add_theme_font_size_override("font_size", maxi(14, C.px(20)))
 	tabs.add_child(_callups(app, international, names))
 	tabs.add_child(_editions(app, international, names))
 	tabs.add_child(_offers(app, international, role))

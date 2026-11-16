@@ -1220,9 +1220,9 @@ func _credits() -> void:
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
 	d.title = "Rugby Legacy 27 · Crédits"
-	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
+	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\nIllustrations de la collection Scenario 3D, © Scenario, licence CC BY 4.0 (aperçus conservés à l’échelle, sans recadrage).\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
 	add_child(d)
-	d.popup_centered(Vector2i(760,260))
+	d.popup_centered(Vector2i(760,300))
 	d.confirmed.connect(d.queue_free)
 
 func request_quit() -> void:

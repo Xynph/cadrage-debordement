@@ -52,9 +52,6 @@ func _hero() -> void:
 func _workbench() -> void:
 	var surface := D.panel(self, Rect2(0, 218, 1513, 1005), "", "", "", "CentreWorkbench")
 	surface.clip_contents = true
-	if not data.get("available", false):
-		_unavailable(surface)
-		return
 	if not data.get("active", false):
 		_preview(surface)
 		return
@@ -89,13 +86,15 @@ func _workbench() -> void:
 	_restore_scroll.call_deferred(active, scrolls.get(active))
 
 func _pathway_status() -> String:
-	if not data.get("available", false): return "Parcours indisponibles"
+	if not data.get("available", false): return "Relève suivie en formation"
 	return "Parcours actifs" if data.get("active", false) else "Parcours à activer"
 
 func _preview(surface: Panel) -> void:
+	var open: bool = data.get("available", false)
 	D.text(surface, 30, 56, "LES PARCOURS DU CENTRE", 28, GOLD, 700, 1420)
-	D.text(surface, 28, 127, "Trois outils pour suivre la relève.", 58, C.IVORY, 800, 1440)
-	_note(surface, Rect2(31, 152, 1450, 52), Copy.notice("academy", data.get("description", "")), 24)
+	D.text(surface, 28, 127, "Trois outils pour suivre la relève." if open else "La relève se prépare au centre.", 58, C.IVORY, 800, 1440)
+	var intro := Copy.notice("academy", data.get("description", "")) if open else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs. D’ici là, la formation suit vos %s Espoirs : progression, promotions et spécialisations." % G.n(data.get("players", []).size())
+	_note(surface, Rect2(31, 152, 1450, 52), intro, 24)
 	var offers := [
 		["Detection", "Détection", "scouting", "search", "Mener la campagne de détection du centre pour préparer la prochaine génération."],
 		["Mentoring", "Mentorat", "analysis-room", "people", "Associer un Espoir à un joueur senior du même poste et suivre son accompagnement."],
@@ -106,12 +105,21 @@ func _preview(surface: Panel) -> void:
 		var card := D.panel(surface, Rect2(25 + i * 490, 222, 483, 469), "", "", "", "CentreOffer" + str(offer[0]))
 		card.clip_contents = true
 		D.photo(card, offer[2], Rect2(13, 13, 457, 236), .4)
+		if not open: D.chip(card, Rect2(27, 27, 238, 30), "AU CALENDRIER DES ESPOIRS", GOLD)
 		D.line(card, Vector2(15, 271), Vector2(468, 271))
 		var icon := C.icon(offer[3], 32, GOLD)
 		card.add_child(icon)
 		D.place(icon, Rect2(19, 294, 32, 32))
 		D.text(card, 63, 325, offer[1], 38, C.IVORY, 800, 395)
 		_note(card, Rect2(21, 352, 435, 103), offer[4], 26)
+	if not open:
+		var follow := D.panel(surface, Rect2(25, 713, 1463, 267), "En attendant", "school", "", "CentreFollow")
+		D.text(follow, 24, 117, "Vos %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
+		_note(follow, Rect2(25, 143, 840, 85), "Leur progression, leurs promotions et leurs spécialisations se suivent dans Formation.", 25)
+		var go := D.button(follow, Rect2(918, 130, 513, 66), "Consulter les Espoirs", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreUnavailableFormation")
+		go.add_theme_font_override("font", C.BOLD)
+		go.add_theme_font_size_override("font_size", C.px(31))
+		return
 	var activation := D.panel(surface, Rect2(25, 713, 1463, 267), "Avant d’activer", "school", "", "CentreActivation")
 	D.text(activation, 24, 117, "Vos %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
 	var locked: bool = data.get("locked", false)
@@ -123,15 +131,6 @@ func _preview(surface: Panel) -> void:
 	action.add_theme_font_override("font", C.BOLD)
 	action.add_theme_font_size_override("font_size", C.px(31))
 	D.place(action, Rect2(918, 130, 513, 66))
-
-func _unavailable(surface: Panel) -> void:
-	D.text(surface, 30, 56, "LES PARCOURS DU CENTRE", 28, GOLD, 700, 1420)
-	D.text(surface, 28, 129, _pathway_status(), 57, C.IVORY, 800, 1440)
-	var reason := str(data.get("reason", "Le centre est disponible dans une carrière active."))
-	_note(surface, Rect2(31, 162, 1415, 94), reason, 29)
-	D.photo(surface, "analysis-room", Rect2(29, 285, 1455, 492), .52)
-	D.text(surface, 31, 847, "Retrouvez vos Espoirs et leur progression dans Formation.", 31, C.IVORY, 600, 1430)
-	D.button(surface, Rect2(31, 872, 477, 62), "Consulter la formation", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreUnavailableFormation")
 
 func _note(parent: Control, rectangle: Rect2, text: String, pixels: int) -> void:
 	var label := C.wrap("", pixels, C.MUTED)
@@ -174,6 +173,7 @@ func _summary() -> void:
 		["COHÉSION DU CENTRE", G.n(data.get("cohesion", "—")), "heart", GREEN],
 		["RÉPUTATION", G.n(data.get("reputation", "—")), "star", GOLD],
 	]
+	facts = facts.filter(func(fact: Array): return str(fact[1]) != "—")
 	for i in facts.size():
 		var entry: Array = facts[i]
 		var rect := Rect2(18 + (i % 2) * 345, 73 + floori(i / 2.0) * 108, 334, 97)
@@ -191,7 +191,7 @@ func _summary() -> void:
 	D.text(panel, 22, 394, round, 39, C.IVORY, 700, 672)
 	var note := Copy.notice("academy", data.get("description", "Le centre est disponible dans une carrière active."))
 	if not active:
-		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Formation présente les Espoirs et leurs spécialisations."
+		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs."
 	var lines := D.words(note, 69, 3)
 	for i in lines.size(): D.text(panel, 23, 439 + i * 27, lines[i], 23, C.MUTED, 500, 675)
 	D.button(panel, Rect2(21, 522, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
