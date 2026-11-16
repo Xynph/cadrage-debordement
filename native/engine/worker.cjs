@@ -31,7 +31,7 @@ const franceCalendar=require('./france-calendar-cadence.cjs');
 const confirmMatchResult=require('./match-result.cjs');
 const matchDirect=require('./match-direct.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
-const worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
+const jsonCopy=require('./json-copy.cjs'),worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
 const clubPalmares=require('./club-palmares.cjs'),gabiRepliques=require('./gabi-repliques.cjs');
 const {createWorldEditions}=require('./world-editions.cjs');
@@ -233,7 +233,7 @@ function createBridge(options={}){
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
   if(nationaleRegistry)ctx.nativeWorldNationaleRegistryText=JSON.stringify(nationaleRegistry);
   if(champRegistry)ctx.nativeWorldChampRegistryText=JSON.stringify(champRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
+  run(`const nativeJsonCopy=(${jsonCopy.toString()})();render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',nativeSaveText(S));lastSaveError=false;}};
    /* Sauvegarde incrémentale : le texte de la carrière est assemblé section par section (premier niveau de S),
       identique à JSON.stringify(S) ; ces textes servent ensuite à la validation (sections inchangées) et à
       l'écriture du profil (encodage des seules sections modifiées). */
@@ -827,7 +827,8 @@ function createBridge(options={}){
      // save() puis la validation (voir plus bas) ; les save() internes du moteur (fin de semaine, coup d'envoi…)
      // sérialisaient donc ~25 Mo pour rien. Ils sont différés comme pour une décision ; une lecture de la carrière
      // enregistrée pendant la commande la sérialise d'abord (storage.getItem).
-     if(defer||advancesCareer&&!restoring&&!resumeCheckpoint){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
+     // Création : même règle, la commande se termine aussi par save() puis la validation complète.
+     if(defer||(advancesCareer||command==='new_career')&&!restoring&&!resumeCheckpoint){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
