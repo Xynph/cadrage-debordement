@@ -30,10 +30,8 @@ func wait_model() -> void:
 ## Attente légère : quelques images pour la mise en page, puis la fin de l'animation d'ouverture de la bulle
 ## (signal d'état plutôt que délai fixe de 0,3 s + 10 images, appelé ~60 fois).
 func settle() -> void:
-	for i in 4: await process_frame
-	var coach: Control = app.coach if app != null else null
-	var until := Time.get_ticks_msec() + 2000
-	while coach != null and coach._bulle_tween != null and coach._bulle_tween.is_running() and Time.get_ticks_msec() < until: await process_frame
+	await create_timer(.3).timeout
+	for i in 10: await process_frame
 
 ## Durée de chaque phase (diagnostic CI : GABI_PHASE <nom> <ms>).
 var _phase_start := 0
