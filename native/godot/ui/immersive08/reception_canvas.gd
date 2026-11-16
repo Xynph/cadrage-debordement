@@ -241,12 +241,27 @@ static func build(app: Control) -> Control:
 	_fit.call_deferred(app, page)
 	return page
 
+## Hauteur d'une rangée de boutons : gabarit approuvé, sans descendre sous la hauteur minimale réelle d'un bouton
+## (police plancher de 12 px) quand la fenêtre est petite.
+static func _h(base: float) -> float:
+	return maxf(base, 32.0 / C.density)
+
+## Ordonnées de l'en-tête de liste : dossiers, états, sujet, puis filet au-dessus des messages.
+static func _header_rows() -> Array[float]:
+	var folders := 16.0 + _h(44)
+	var states := folders + _h(44) + 10
+	var subject := states + _h(44) + 10
+	return [folders, states, subject, subject + _h(44) + 8]
+
 static func _height(state: Dictionary) -> float:
 	return clampf(float(state.get("page_height", PAGE.y)), MIN_HEIGHT, PAGE.y)
 
 ## La boîte tient dans la hauteur visible de l'espace de travail : liste et pied du mail sans défilement de page.
 ## Une seule reconstruction quand la hauteur disponible change (taille de fenêtre, bandeau au-dessus de la boîte).
 static func _fit(app: Control, page: Control) -> void:
+	if is_instance_valid(page) and page.is_inside_tree():
+		await page.get_tree().process_frame
+		await page.get_tree().process_frame
 	if not is_instance_valid(page) or not page.is_inside_tree() or app.route != "Réception": return
 	var workspace := app.body_scroll as Control
 	if not is_instance_valid(workspace): return
@@ -272,7 +287,7 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, messages
 	var captions := ["Tous", "Non lus (%d)" % unread(app), "Favoris", "Archives"]
 	for index in captions.size():
 		var id := "InboxFolder"+str(index)
-		var row := D.button(card,Rect2(12+index*169,60,163,44),captions[index],func():
+		var row := D.button(card,Rect2(12+index*169,_header_rows()[0],163,_h(44)),captions[index],func():
 			state.folder=index
 			state.category="Tous"
 			state.scroll=0
@@ -287,7 +302,7 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, messages
 	for index in keys.size():
 		var key: String = keys[index]
 		var id := "InboxActivity_" + key
-		var action := D.button(card,Rect2(x,114,widths[index],44),"%s (%d)" % [ACTIVITY_CAPTIONS[key], counts[key]],func():
+		var action := D.button(card,Rect2(x,_header_rows()[1],widths[index],_h(44)),"%s (%d)" % [ACTIVITY_CAPTIONS[key], counts[key]],func():
 			state.activity_filter = key
 			state.selected = ""
 			state.scroll = 0
@@ -312,7 +327,7 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, messages
 		state.scroll = 0
 		_redraw(app,"InboxSubject"))
 	card.add_child(subject)
-	D.place(subject,Rect2(12,168,676,44))
+	D.place(subject,Rect2(12,_header_rows()[2],676,_h(44)))
 
 static func _open_related(app: Control, message: Dictionary, action: Callable) -> void:
 	if message.is_empty():
@@ -357,22 +372,22 @@ static func _attachments(card: Panel, app: Control, state: Dictionary, message: 
 		if Competition.target_available(app,str(target.kind),target.id):
 			if draw:
 				var link := Link.button(app,caption,target,"InboxContextFixture")
-				card.add_child(link); D.place(link,Rect2(x,links_top,520,40))
+				card.add_child(link); D.place(link,Rect2(x,links_top,520,_h(40)))
 			x += 536
 	elif next is Dictionary and not next.is_empty() and not national:
 		if draw:
-			var prep := D.button(card,Rect2(x,links_top,620,40),"Dossier de préparation · "+str(next.get("label","Prochain match")),_open_related.bind(app,message,Callable(app,"_navigate").bind("Préparation")),false,"tactic",true,app.accent,"InboxPreparation")
+			var prep := D.button(card,Rect2(x,links_top,620,_h(40)),"Dossier de préparation · "+str(next.get("label","Prochain match")),_open_related.bind(app,message,Callable(app,"_navigate").bind("Préparation")),false,"tactic",true,app.accent,"InboxPreparation")
 			prep.tooltip_text = "Ouvrir l’analyse de la prochaine rencontre · " + P.fixture_date(next)
 		x += 636
 	else:
-		if draw: D.button(card,Rect2(x,links_top,300,40),"Calendrier",_open_related.bind(app,message,Callable(app,"_navigate").bind("Calendrier")),false,"calendar",true,app.accent,"InboxContextCalendar")
+		if draw: D.button(card,Rect2(x,links_top,300,_h(40)),"Calendrier",_open_related.bind(app,message,Callable(app,"_navigate").bind("Calendrier")),false,"calendar",true,app.accent,"InboxContextCalendar")
 		x += 316
 	if message.get("category") == "Médical" and not national:
 		var group := P.group(app.model)
 		if draw:
-			_metric(card,Rect2(x,links_top,250,40),"people","%d disponibles" % group.available,C.MINT)
-			_metric(card,Rect2(x+262,links_top,220,40),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
-	y = links_top + 52
+			_metric(card,Rect2(x,links_top,250,_h(40)),"people","%d disponibles" % group.available,C.MINT)
+			_metric(card,Rect2(x+262,links_top,220,_h(40)),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
+	y = links_top + _h(40) + 12
 	# Fiches des joueurs concernés (fin de contrat).
 	if message.get("season_expiry", false):
 		var expiring: Array = app.model.get("decisions", {}).get("recruitment", {}).get("expiring", [])
@@ -404,11 +419,11 @@ static func _attachments(card: Panel, app: Control, state: Dictionary, message: 
 			for index in tasks.size():
 				if not draw: break
 				var task: Array = tasks[index]
-				var action := D.button(card,Rect2(26+index*(cell+16),y+30,cell,40),task[0],func():
+				var action := D.button(card,Rect2(26+index*(cell+16),y+30,cell,_h(40)),task[0],func():
 					if task[1]=="Entraînement": app.Immersive.open_training(app)
 					else: app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
 				action.tooltip_text = task[0]
-			y += 82
+			y += _h(40) + 42
 	return y - top
 
 static func _open_current_player(app: Control, player_id: String) -> void:
@@ -416,25 +431,26 @@ static func _open_current_player(app: Control, player_id: String) -> void:
 
 static func _list(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
 	D.text(card,22,40,"Messages (%d)" % messages.size(),26,C.IVORY,700,420)
-	D.button(card,Rect2(470,8,218,44),"Plus anciens" if state.oldest_first else "Plus récents",func():
+	D.button(card,Rect2(470,8,218,_h(44)),"Plus anciens" if state.oldest_first else "Plus récents",func():
 		state.oldest_first=not state.oldest_first
 		state.scroll=0
 		_redraw(app,"InboxSort"),false,"clock",true,app.accent,"InboxSort")
-	D.line(card,Vector2(1,220),Vector2(LIST_WIDTH-1,220))
+	var top := _header_rows()[3]
+	D.line(card,Vector2(1,top),Vector2(LIST_WIDTH-1,top))
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxMessageScroll"
 	scroll.tooltip_text = "↑ ↓ choisir · Entrée ouvrir le courrier"
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	card.add_child(scroll)
-	D.place(scroll,Rect2(3,222,LIST_WIDTH-6,_height(state)-232))
+	D.place(scroll,Rect2(3,top+2,LIST_WIDTH-6,_height(state)-top-12))
 	var rows := C.v(1)
 	rows.name = "InboxMessageRows"
 	C.fill(rows)
 	scroll.add_child(rows)
 	if messages.is_empty():
-		D.text(card,26,272,"Aucun message dans cette vue.",24,C.MUTED,600,640)
-		D.text(card,26,310,"Choisissez un autre dossier ou filtre.",19,C.MUTED,400,640,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,26,top+52,"Aucun message dans cette vue.",24,C.MUTED,600,640)
+		D.text(card,26,top+90,"Choisissez un autre dossier ou filtre.",19,C.MUTED,400,640,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var list_entries: Array[Dictionary] = []
 	for group: Dictionary in Reading.groups(messages):
 		var linked: Array = group.messages
@@ -586,7 +602,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	# Pied du mail : réponses et actions, toujours visibles en bas.
 	var reply := _reply_row(app, message)
 	var height := _height(state)
-	var footer_top := height - 26 - (reply + 100)
+	var footer_top := height - 26 - (reply + _h(46) + 10 + _h(44))
 	var focused := message.has("press_invitation") or message.has("calendar_notice") or message.has("club_mail") or not event.is_empty()
 	var attachments := _attachments(card,app,state,message,0,focused,false)
 	if footer_top - 30 - attachments - 252 < 80: # Fenêtre basse : les priorités de la semaine restent au Bureau.
@@ -633,15 +649,15 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			var receipt: bool = invitation.status == "published" and outcome is Dictionary and outcome.get("invitationId") == invitation.id
 			if invitation.status == "pending" or receipt:
 				var caption := "Consulter le compte rendu" if receipt else "Ouvrir la conférence"
-				var action := D.button(card,Rect2(26,top,HALF,46),caption,_open_related.bind(app, message, app._open_press_invitation.bind(invitation.id)),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
+				var action := D.button(card,Rect2(26,top,HALF,_h(46)),caption,_open_related.bind(app, message, app._open_press_invitation.bind(invitation.id)),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
 				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
 				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
 	elif message.has("club_mail"):
 		_club_mail_actions(card, app, state, message, top)
 	elif message.get("calendar_notice", {}).get("status") == "pending":
-		var recalibrate := D.button(card,Rect2(26,top,HALF,46),"Recaler la préparation",
+		var recalibrate := D.button(card,Rect2(26,top,HALF,_h(46)),"Recaler la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")
-		var keep := D.button(card,Rect2(26+HALF+18,top,HALF,46),"Conserver la préparation",
+		var keep := D.button(card,Rect2(26+HALF+18,top,HALF,_h(46)),"Conserver la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"keep"),false,"check",false,app.accent,"InboxKeepPreparation")
 		recalibrate.disabled = app.waiting
 		keep.disabled = app.waiting
@@ -654,12 +670,12 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				if not edition.is_empty():
 					var caption: String = app.Immersive.Selections.host_mail_caption(edition)
 					var open: Callable = app.Immersive.Selections.open_host.bind(app, edition)
-					D.button(card,Rect2(26,top,HALF,46),caption,_open_related.bind(app, message, open),true,"arrow",false,app.accent,"InboxOpenInternational")
+					D.button(card,Rect2(26,top,HALF,_h(46)),caption,_open_related.bind(app, message, open),true,"arrow",false,app.accent,"InboxOpenInternational")
 			elif destination in ["international", "national_job"]:
 				var caption := "Voir les offres de sélection" if destination == "national_job" else "Ouvrir les sélections"
 				if _has_match_sheet(app, event): caption = "Préparer la feuille de match"
 				elif _is_club_return(app, event): caption = "Voir l’effectif"
-				D.button(card,Rect2(26,top,HALF,46),caption,_open_related.bind(app, message, _open_international.bind(app,event)),true,"arrow",false,app.accent,"InboxOpenInternational")
+				D.button(card,Rect2(26,top,HALF,_h(46)),caption,_open_related.bind(app, message, _open_international.bind(app,event)),true,"arrow",false,app.accent,"InboxOpenInternational")
 		else:
 			var caption := "Ouvrir · " + str(message.route)
 			var open := Callable(app, "_navigate").bind(message.route)
@@ -668,19 +684,19 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				if not current.is_empty():
 					caption = "Voir les échéances actuelles (%d)" % current.count
 					open = _open_expiry_roster.bind(app, current.roster)
-			D.button(card,Rect2(26,top,HALF,46),caption,_open_related.bind(app, message, open),true,"arrow",false,app.accent,"InboxOpenMessageAction")
-		D.button(card,Rect2(26+HALF+18,top,HALF,46),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+			D.button(card,Rect2(26,top,HALF,_h(46)),caption,_open_related.bind(app, message, open),true,"arrow",false,app.accent,"InboxOpenMessageAction")
+		D.button(card,Rect2(26+HALF+18,top,HALF,_h(46)),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
 			mark.archived=not mark.get("archived",false)
 			mark.read=true
 			state.marks[message.id]=mark
 			_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
-	var below := top + 56 + _reply_row(app, message)
-	D.button(card,Rect2(26,below,340,44),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
+	var below := top + _h(46) + 10 + _reply_row(app, message)
+	D.button(card,Rect2(26,below,340,_h(44)),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
 		mark.favorite=not mark.get("favorite",false)
 		state.marks[message.id]=mark
 		_redraw(app,"InboxToggleFavorite"),false,"star",true,app.accent,"InboxToggleFavorite")
 	if not mark.get("archived",false):
-		D.button(card,Rect2(382,below,340,44),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
+		D.button(card,Rect2(382,below,340,_h(44)),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
@@ -696,24 +712,24 @@ static func _club_mail_actions(card: Panel, app: Control, state: Dictionary, mes
 		var width := (DETAIL_WIDTH - 52.0 - 16.0 * (count - 1)) / count
 		for index in count:
 			var option: Dictionary = options[index]
-			var action := D.button(card,Rect2(26+index*(width+16),y,width,46),str(option.get("libelle","")),
+			var action := D.button(card,Rect2(26+index*(width+16),y,width,_h(46)),str(option.get("libelle","")),
 				_reply_club_mail.bind(app,str(mail.id),str(option.get("id",""))),index==0,"check",false,app.accent,"InboxClubMailReply_" + str(option.get("id","")))
 			action.disabled = app.waiting or not option.get("disponible", false)
 			var detail := str(option.get("effets",""))
 			action.tooltip_text = (detail if not detail.is_empty() else "Sans effet chiffré.") + ("" if option.get("disponible", false) else "\n" + str(option.get("raison","")))
-		y += 56
+		y += _h(46) + 10
 	var ecran := str(mail.get("ecran",""))
 	var joueur := str(mail.get("joueur","")) if mail.get("joueur") is String else ""
-	D.button(card,Rect2(26,y,HALF,46),ClubMail.caption(ecran),_open_related.bind(app, message, ClubMail.open_screen.bind(app, ecran, joueur)),y==top,"arrow",false,app.accent,"InboxClubMailOpen")
-	D.button(card,Rect2(26+HALF+18,y,HALF,46),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+	D.button(card,Rect2(26,y,HALF,_h(46)),ClubMail.caption(ecran),_open_related.bind(app, message, ClubMail.open_screen.bind(app, ecran, joueur)),y==top,"arrow",false,app.accent,"InboxClubMailOpen")
+	D.button(card,Rect2(26+HALF+18,y,HALF,_h(46)),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
 		mark.archived=not mark.get("archived",false)
 		mark.read=true
 		state.marks[message.id]=mark
 		_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
 
 ## Hauteur de la rangée de réponses d'un mail du club qui en attend une (0 sinon).
-static func _reply_row(app: Control, message: Dictionary) -> int:
-	return 56 if message.has("club_mail") and ClubMail.awaiting(app.model, message.club_mail) else 0
+static func _reply_row(app: Control, message: Dictionary) -> float:
+	return _h(46) + 10 if message.has("club_mail") and ClubMail.awaiting(app.model, message.club_mail) else 0.0
 
 static func _reply_club_mail(app: Control, mail_id: String, choice: String) -> void:
 	ClubMail.reply(app, mail_id, choice)
