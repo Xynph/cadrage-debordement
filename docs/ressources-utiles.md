@@ -175,16 +175,16 @@ relevé n’est pas une nouvelle vérification en ligne de leurs pages.
   (Haiku) ajouté pour la lecture des journaux. Aucun service payant utilisé.
 - **Preuve :** décision consignée dans le ticket commun #591 le 12/11/2026.
 
-## Son et musique — 16 novembre 2026
+## Son (la musique est abandonnée) — 16 novembre 2026
 
-Chantier « son et ambiance » (branche `claude/son-ambiance-20261116`). Réseau de la machine cloud limité à GitHub, npm et pip : OpenGameArt et kenney.nl répondent 403, aucune musique n'a donc pu être vue ni écoutée. Aucun morceau tiers n'est intégré ; le jeu cherche `native/godot/audio/music/bureau.ogg` (Bureau, Réception) et `menus.ogg` (autres écrans), OGG en boucle, moins de 3 Mo, et reste silencieux tant qu'ils manquent.
+Chantier « son et ambiance » (branche `claude/son-ambiance-20261116`). **Décision de Léo du 16/11/2026 (19h20) : pas de musique dans le jeu.** Le lecteur de musique, le bus « Musique », les réglages et les cases correspondantes ont été retirés (branche `claude/sans-musique-20261116`) ; un ancien `sound.json` qui contient encore les champs de musique se charge, ces champs sont ignorés. Restent les sons de match (foule, sifflets, stade) et le volume des effets.
 
 | Ressource | Provenance / relevé | Utilité pour le jeu | Coût / licence | Statut et suite |
 | --- | --- | --- | --- | --- |
 | Sifflets de foule `crowd-whistle.wav` (`scripts/build-native-crowd.cjs`) | Synthèse déterministe écrite pour le jeu le 16 novembre 2026 ; aucun échantillon tiers ; non écoutée par l'agent. | Sifflets du public à domicile sur pénalité accordée à l'extérieur. | Original du projet, sans attribution. | **Intégré** (PR « ambiance sonore »). Écoute à faire par Léo. |
-| [Kenney — Music Jingles](https://kenney.nl/assets/music-jingles) | Connu des assets Kenney, **non rouvert** le 16 novembre 2026 (403 du proxy). | Courts motifs : peu adaptés à une boucle de fond, éventuellement pour des transitions. | CC0 annoncée par Kenney, à revérifier sur la page avant import. | **À explorer**. |
-| [OpenGameArt — musique CC0, recherche « ambient »](https://opengameart.org/art-search-advanced?keys=ambient&field_art_type_tid%5B0%5D=12&field_art_licenses_tid%5B0%5D=4) | Adresse de recherche construite de mémoire, **non ouverte** le 16 novembre 2026 (403). | Trouver un morceau doux en boucle pour `bureau.ogg` et un second pour `menus.ogg`. | Filtre CC0 de la recherche ; contrôler la licence portée par chaque fiche. | **À explorer**. Retenir seulement un morceau écouté, CC0 ou sans attribution, OGG < 3 Mo ; le consigner ici avec lien de la fiche, auteur et date. |
-| [Free Music Archive — filtre domaine public / CC0](https://freemusicarchive.org/search?adv=1&music-filter-CC-attribution-only=0) | Adresse non vérifiée, non ouverte le 16 novembre 2026. | Autre source de pistes calmes sans attribution. | Licence propre à chaque piste ; écarter tout CC-BY. | **À explorer**. |
+| [Kenney — Music Jingles](https://kenney.nl/assets/music-jingles) | Connu des assets Kenney, **non rouvert** le 16 novembre 2026 (403 du proxy). | Courts motifs : peu adaptés à une boucle de fond, éventuellement pour des transitions. | CC0 annoncée par Kenney, à revérifier sur la page avant import. | **Écarté** (abandonné, décision de Léo du 16/11/2026 : plus de musique dans le jeu). |
+| [OpenGameArt — musique CC0, recherche « ambient »](https://opengameart.org/art-search-advanced?keys=ambient&field_art_type_tid%5B0%5D=12&field_art_licenses_tid%5B0%5D=4) | Adresse de recherche construite de mémoire, **non ouverte** le 16 novembre 2026 (403). | Trouver un morceau doux en boucle pour `bureau.ogg` et un second pour `menus.ogg`. | Filtre CC0 de la recherche ; contrôler la licence portée par chaque fiche. | **Écarté** (abandonné, décision de Léo du 16/11/2026 : plus de musique dans le jeu). |
+| [Free Music Archive — filtre domaine public / CC0](https://freemusicarchive.org/search?adv=1&music-filter-CC-attribution-only=0) | Adresse non vérifiée, non ouverte le 16 novembre 2026. | Autre source de pistes calmes sans attribution. | Licence propre à chaque piste ; écarter tout CC-BY. | **Écarté** (abandonné, décision de Léo du 16/11/2026 : plus de musique dans le jeu). |
 
 ## Modèle pour une nouvelle entrée
 
