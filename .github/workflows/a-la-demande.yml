@@ -11,11 +11,17 @@ name: Tests en ligne à la demande
 # sous runs/<run_id>/, lisibles depuis la session Claude (artefacts et stockage bloqués par le proxy) ;
 # l'artefact reste disponible 7 jours pour Léo. La branche de repli en-ligne/<horodatage> est supprimée
 # par le workflow ; l'entrée `menage` supprime les branches en-ligne/* et tmp/* de plus d'un jour.
+run-name: "En ligne ${{ inputs.cle || github.ref_name }}"
 on:
   push:
     branches: ['en-ligne/**']
   workflow_dispatch:
     inputs:
+      cle:
+        description: 'Identifiant unique posé par ci/en-ligne.sh pour retrouver ce run (évite les courses entre agents)'
+        type: string
+        required: false
+        default: ''
       ref:
         description: 'Branche à tester'
         type: string

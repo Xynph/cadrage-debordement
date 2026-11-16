@@ -36,7 +36,8 @@ fi
 
 debut="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 branche=""
-body="$(printf '{"ref":"main","inputs":{"ref":"%s","suites":"%s","captures":"%s","captures_quoi":"%s","mesures":"%s"}}' "$ref" "$suites" "$captures" "$quoi" "$mesures")"
+cle="$(date -u +%Y%m%d%H%M%S)-$$-$RANDOM"
+body="$(printf '{"ref":"main","inputs":{"cle":"%s","ref":"%s","suites":"%s","captures":"%s","captures_quoi":"%s","mesures":"%s"}}' "$cle" "$ref" "$suites" "$captures" "$quoi" "$mesures")"
 if echo "$body" | gh api -X POST "repos/$repo/actions/workflows/$wf/dispatches" --input - >/dev/null 2>&1; then
   echo "Lancé (dispatch) : ref=$ref suites='${suites}' captures=$captures mesures=$mesures"
 else
@@ -70,7 +71,7 @@ for _ in $(seq 1 12); do
   if [[ -n "$branche" ]]; then
     run="$(gh api "repos/$repo/actions/workflows/$wf/runs?event=push&branch=$branche&per_page=1" --jq '.workflow_runs[0].id // empty' 2>/dev/null)"
   else
-    run="$(gh api "repos/$repo/actions/workflows/$wf/runs?event=workflow_dispatch&created=>=$debut&per_page=5" --jq '.workflow_runs | sort_by(.created_at) | last | .id // empty' 2>/dev/null)"
+    run="$(gh api "repos/$repo/actions/workflows/$wf/runs?event=workflow_dispatch&created=>=$debut&per_page=30" --jq "[.workflow_runs[] | select(.display_title | contains(\"$cle\"))] | last | .id // empty" 2>/dev/null)"
   fi
   [[ -n "$run" ]] && break
 done
