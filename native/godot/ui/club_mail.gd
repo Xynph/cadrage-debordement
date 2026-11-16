@@ -84,6 +84,8 @@ static func prepare(app: Control, ecran: String, joueur: String, deferred: bool)
 ## Bouton « Ouvrir » d'un mail ou réponse qui ouvre l'écran (« ouvrir » dans les données).
 static func open_screen(app: Control, ecran: String, joueur: String) -> void:
 	var target := prepare(app, ecran, joueur, false)
+	# La Presse ne s'ouvre que depuis un courrier (main._navigate) : le mail du club en est l'origine.
+	if target == "Presse" and not app.has_meta("press_mail_origin"): app.set_meta("press_mail_origin", "courrier-club")
 	if not target.is_empty(): app._navigate(target, false)
 
 ## Arrêt informatif de « Continuer » : ouvre l'écran utile au lieu du seul panneau. Rend la route à afficher
