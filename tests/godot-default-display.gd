@@ -47,7 +47,7 @@ func run() -> void:
 	app.settings(); await settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
-	check(tabs != null and tabs.get_tab_count() == 3,"Trois rubriques de paramètres accessibles")
+	check(tabs != null and tabs.get_tab_count() == 4,"Quatre rubriques de paramètres accessibles")
 	# Fréquence de la sauvegarde complète (Confort) : trois choix, chaque semaine par défaut, enregistrée dans le profil
 	# où le moteur la lit (native/engine/action-journal.cjs).
 	var autosave: OptionButton = dialog.find_child("PreferencesAutosave",true,false)

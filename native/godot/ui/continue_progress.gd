@@ -271,6 +271,7 @@ func request_stop() -> void:
 func finish(info: Dictionary) -> void:
 	running = false
 	stopping = false
+	_kill_tween()
 	var stop: Dictionary = info.get("stop", {}) if info.get("stop") is Dictionary else {}
 	var days := int(info.get("days", 0))
 	_show_date(str(info.get("to", _from)), days)

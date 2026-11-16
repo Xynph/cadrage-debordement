@@ -131,6 +131,30 @@ func present(message: String, animate: bool = true, delay_seconds: float = 0.0) 
 		_show_frame()
 
 
+## Panneau posé tout de suite, opaque et sans fondu : juste avant un travail lourd du fil principal
+## (scène 3D du coup d’envoi), l’image doit être à l’écran avant le gel, jamais un écran figé sans message.
+func reveal_now(message: String = "") -> void:
+	var text := message.strip_edges()
+	if not text.is_empty():
+		_status.text = text
+		_status.accessibility_name = text
+	# Au-dessus des scènes contextuelles (vestiaire), ajoutées après lui au même plan.
+	if get_parent() != null: get_parent().move_child(self, -1)
+	if not visible or _closing:
+		_closing = false
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		show()
+		_elapsed = 0.0
+	_reveal.stop()
+	_kill_tween()
+	_frame.show()
+	_shown_for = 0.0
+	_set_alpha(1.0)
+	modulate.a = 1.0
+	set_process(true)
+	queue_redraw()
+
+
 func dismiss() -> void:
 	_reveal.stop()
 	if not visible or not _frame.visible or not is_inside_tree():

@@ -550,13 +550,17 @@ worldNewSeason=function(fundingAlreadyPaid){
 // Forces des clubs pour les demandes salariales : une projection en interroge des centaines d'affilée (marché, contrats).
 // Même tableau tant que la carrière, les divisions et les forces des clubs sont inchangées (lu seulement par demande()).
 let budgetForcesDemandeMemo=null;
+// Pendant une projection (worker.cjs, nativeProjectionActive : numéro de la projection en cours), la carrière n'est pas
+// modifiée : la clé vérifiée une fois vaut pour toute la projection.
 const budgetForcesDemande=()=>{
  if(budgetFrance())return budgetForces();
+ const projection=typeof nativeProjectionActive==='function'?nativeProjectionActive():0,m=budgetForcesDemandeMemo;
+ if(projection&&m&&m.etat===S&&m.projection===projection)return m.forces;
  const ligues=S.worldMode.leagues;let cle=String(S.clubs.length);
  for(const k of Object.keys(ligues))cle+='|'+k+':'+ligues[k].members.join(',');
  for(const c of S.clubs)cle+='|'+c.id+':'+c.base;
- const m=budgetForcesDemandeMemo;if(m&&m.etat===S&&m.cle===cle)return m.forces;
- budgetForcesDemandeMemo={etat:S,cle,forces:budgetForces()};return budgetForcesDemandeMemo.forces;
+ if(m&&m.etat===S&&m.cle===cle){m.projection=projection;return m.forces;}
+ budgetForcesDemandeMemo={etat:S,cle,forces:budgetForces(),projection};return budgetForcesDemandeMemo.forces;
 };
 // Salaire demandé au club joué : même règle que les salaires de départ, puis l'attrait du championnat pour une recrue.
 salaryDemandBreakdown=function(p,kind='renew',s=S){

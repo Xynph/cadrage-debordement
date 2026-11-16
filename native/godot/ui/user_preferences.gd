@@ -17,6 +17,8 @@ const CONTINUE_MESSAGES := ["importants","tous","aucun"]
 const CONTINUE_INJURIES := ["titulaires","effectif"]
 ## Ce que le match montre : des temps forts choisis (« dynamique » par défaut) au match complet.
 const MATCH_HIGHLIGHTS := ["aucun","resume","cles","etendus","dynamique","integral"]
+## Anciennes clés ignorées à la lecture (jamais refusées, jamais réécrites) : l'introduction se joue toujours en entier.
+const LEGACY_KEYS := ["intro"]
 const MAX_BYTES := 16 * 1024
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -33,7 +35,7 @@ func _validated(candidate: Variant) -> Dictionary:
 		return {}
 	for key in candidate:
 		if key in RETIRED_KEYS: continue
-		if not DEFAULTS.has(key):
+		if not DEFAULTS.has(key) and key not in LEGACY_KEYS:
 			_fail("Préférences refusées : champ inconnu « %s ». Le fichier original est conservé." % key)
 			return {}
 	for key in DEFAULTS:

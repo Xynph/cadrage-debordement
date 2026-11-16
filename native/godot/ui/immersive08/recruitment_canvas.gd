@@ -1,5 +1,6 @@
 extends Control
 ## Tableau des pistes, dossiers datés et décisions de recrutement de la carrière.
+const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -440,7 +441,7 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		var target := str(row.name)
 		_refresh()
 		var focused := table_rows.get_node_or_null(target) as Button
-		if focused != null: focused.grab_focus.call_deferred())
+		if focused != null: FocusLater.grab(focused))
 
 func _profile(player: Dictionary, report: Dictionary) -> void:
 	_clear(dossier)

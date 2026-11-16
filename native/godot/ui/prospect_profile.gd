@@ -1,5 +1,6 @@
 extends RefCounted
 ## Dossier de lecture des seuls candidats publiés par la fenêtre appelante.
+const FocusLater := preload("res://ui/focus_later.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
@@ -103,7 +104,7 @@ static func open_target(app: Control, source: String, id: String, owner: Window)
 	dialog.canceled.connect(close)
 	owner.add_child(dialog)
 	Dialogs.show_centered(dialog, preferred)
-	dialog.get_ok_button().grab_focus.call_deferred()
+	FocusLater.grab(dialog.get_ok_button())
 	return true
 
 static func _restore_focus(owner: Window, reference: WeakRef) -> void:
