@@ -157,6 +157,7 @@ func run() -> void:
 		p.merge({"rating":99,"potential":100,"ratingRange":{"min":70+i*2,"max":78+i*2},"potentialRange":{"min":80+i*2,"max":90+i*2},"knowledge":{"owned":false,"stage":"observed"},"attributesV2":original.squad[0].get("attributesV2",{})},true)
 		fixture.append(p)
 	app.model.market=fixture
+	app.management_ui.compare=[str(fixture[0].id),str(fixture[1].id)]
 	Comparison.open(app,str(fixture[0].id),{});await settle()
 	var comparison: AcceptDialog=app.find_child("MarketComparison",true,false)
 	var rating_row: HBoxContainer=comparison.find_child("MarketComparisonRow_rating",true,false)
