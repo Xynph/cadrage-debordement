@@ -827,7 +827,8 @@ function createBridge(options={}){
      // save() puis la validation (voir plus bas) ; les save() internes du moteur (fin de semaine, coup d'envoi…)
      // sérialisaient donc ~25 Mo pour rien. Ils sont différés comme pour une décision ; une lecture de la carrière
      // enregistrée pendant la commande la sérialise d'abord (storage.getItem).
-     if(defer||advancesCareer&&!restoring&&!resumeCheckpoint){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
+     // Création : même règle, la commande se termine aussi par save() puis la validation complète.
+     if(defer||(advancesCareer||command==='new_career')&&!restoring&&!resumeCheckpoint){deferringSave??=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');realSave=ctx.save;ctx.save=deferringSave;savesDeferred=true;}
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
