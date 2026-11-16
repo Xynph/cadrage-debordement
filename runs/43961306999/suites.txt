@@ -1,0 +1,2 @@
+tests/reactivite-projection-verification.cjs
+tests/reactivite-projection-decisions.cjs
