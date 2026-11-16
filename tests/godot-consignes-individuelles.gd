@@ -50,6 +50,20 @@ func _initialize() -> void:
 	check(buteur != null and buteur.disabled, "Pendant le match : listes verrouillées")
 	locked.queue_free()
 	check(Roles.view({}).is_empty() and Roles.rows({}).is_empty(), "Projection absente : rien à afficher")
+	# Jugement du staff : avis qui s'écarte de la fiche, confiance, sang-froid révélé, membre du staff nommé.
+	var juge := model()
+	var lignes: Array = juge.tactics.roles.roles[0].candidates
+	lignes[1] = {"id": "p11", "name": "Léo Petit", "pos": "Ailier", "value": 42, "estimation": 47, "confiance": {"value": 9, "label": "En pleine confiance"}, "sangFroid": {"min": 58, "max": 66}}
+	lignes[0] = {"id": "p10", "name": "Hugo Martin", "pos": "Demi d’ouverture", "value": 81, "estimation": 81, "confiance": {"value": 0, "label": "Normale"}, "sangFroid": null}
+	juge.tactics.roles["avis"] = {"arrieres": {"name": "Aleki Afamasaga", "roleLabel": "Entraîneur de l’attaque"}, "avants": null}
+	var detail := str(Roles.rows(juge)[0].labels[2])
+	check(detail.contains("avis du staff 47") and detail.contains("En pleine confiance") and detail.contains("sang-froid 58–66"), "Détails du jugement : avis, confiance, sang-froid")
+	check(not str(Roles.rows(juge)[0].labels[1]).contains("avis du staff") and not str(Roles.rows(juge)[0].labels[1]).contains("Normale"), "Rien d’affiché quand l’avis égale la fiche et la confiance est normale")
+	check(Roles.judge_text(juge).contains("Afamasaga") and Roles.judge_text(model()).is_empty(), "Membre du staff qui juge nommé")
+	var avec_juge := Roles.body(juge, func(_p: Dictionary): pass)
+	root.add_child(avec_juge)
+	check(avec_juge.find_child("TacticsRolesJudge", true, false) != null, "Note du staff affichée")
+	avec_juge.queue_free()
 	var avis := Gabi.buteur_mediocre(with_alert)
 	check(str(avis.get("texte", "")).contains("Léo Petit") and str(avis.get("categorie", "")) == "mise_en_garde", "Gabi signale le buteur médiocre")
 	check(Gabi.buteur_mediocre(model()).is_empty(), "Gabi se tait sans alerte")
