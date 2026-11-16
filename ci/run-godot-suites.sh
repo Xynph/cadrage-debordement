@@ -50,6 +50,8 @@ declare -A suite_limits=(
   [tests/godot-delegue-composition.cjs]=900
   # Finitions critiques : carrière Monde (création, un match, jour de match suivant) côté Node puis un passage Godot ; ~4 min en local.
   [tests/godot-finitions.cjs]=900
+  # Gabi dans le bandeau : 369 contrôles sur dix écrans en 1080p ; 208 à 250 s mesurés sur runner (runs 43861526216 et 43852926207), donc à 50 s du plafond de 300 s : plafond 600 s.
+  [tests/godot-gabi-bandeau.cjs]=600
 )
 # Suites INFORMATIVES : exécutées et journalisées, mais un échec n'empêche pas le job (avertissement + ligne
 # « informatif » dans le résumé). Une suite n'y reste que tant qu'elle est instable ; à retirer dès qu'elle est stabilisée.

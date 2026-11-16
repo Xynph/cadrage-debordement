@@ -115,7 +115,7 @@ function factory(){
  const factsOf=id=>typeof nativeFacts!=='undefined'?nativeFacts.source(id):null;
  let tourMemo=null;
  function tourists(s){
-  const key=s.season+':'+s.round+':'+(s.preseason?.today||'');
+  const key=s.season+':'+s.round+':'+(s.preseason?.today||'')+':'+(s.national?.career?.callups||[]).map(c=>c.nation+c.through+(c.playerIds?.length||0)).join(',');
   if(tourMemo&&tourMemo.s===s&&tourMemo.key===key)return tourMemo.map;
   const map=touristsNow(s);tourMemo={s,key,map};return map;
  }
