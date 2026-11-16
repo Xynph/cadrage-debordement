@@ -259,7 +259,9 @@ function pruneStaffJudgement(){
 // Les clubs de l'IA gardent la vraie note (performance, stabilité des résultats). Les choix explicites du
 // manager ne passent jamais par là : seules les places laissées au staff sont concernées.
 function staffSheetJudges(c){return STAFF_JUDGEMENT_RULES&&c&&S&&c.id===S.club?staffJudges(c.id):null}
-function perceivedFit(judges,p,f=p.fam){return (roleNote(p,f)+judgementError(f<=3?judges.avants:judges.arrieres,p.id,'poste'+f))*(.5+p.condition*.005)}
+// La perception s'ajoute à la note du moteur (fitScore, éventuellement remplacée par les aptitudes au poste) : elle ne
+// change que l'ordre de préférence, jamais la base de calcul ni l'admissibilité.
+function perceivedFit(judges,p,f=p.fam){return fitScore(p,f)+judgementError(f<=3?judges.avants:judges.arrieres,p.id,'poste'+f)*(.5+p.condition*.005)}
 // Remplacements décidés par le staff en match (match délégué, « faire les changements ») : seulement pour le
 // club du manager et les rencontres commencées avec ces règles (`staffJudgementSubs`, copié au coup d'envoi).
 function staffSubsFit(l,side){if(!(l?.staffJudgementSubs===1&&l.pair?.[side]===S.club&&l.staffJudges?.[side]))return fitScore;const j=l.staffJudges[side];return (p,f=p.fam)=>perceivedFit(j,p,f)}
