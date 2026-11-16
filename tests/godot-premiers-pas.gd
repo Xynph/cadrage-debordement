@@ -42,7 +42,7 @@ func faits() -> int:
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
-	app._command("new_career", {"club": 0, "mode": "world-champ"}); await wait_model()
+	app._command("new_career", {"club": 0, "mode": "world-champ", "start": "premiers-clubs"}); await wait_model()
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(str(app.model.meta.get("mode")) == "world", "Carrière Monde")
 	var coach: Control = app.coach
@@ -81,7 +81,7 @@ func run() -> void:
 	var sur_disque: Variant = JSON.parse_string(FileAccess.get_file_as_string(coach.profile.directory.path_join("guide.json")))
 	check(sur_disque is Dictionary and sur_disque.get("premiers_pas", {}).get("fin") == "termine", "guide.json (hors carrière) garde la fin")
 	# Nouvelle carrière : la carte ne revient pas.
-	app._command("new_career", {"club": 1, "mode": "world-champ"}); await wait_model()
+	app._command("new_career", {"club": 1, "mode": "world-champ", "start": "premiers-clubs"}); await wait_model()
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	await bureau()
 	check(carte() == null, "Nouvelle carrière : pas de carte")

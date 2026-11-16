@@ -851,7 +851,6 @@ func _disposer_bureau(zone: Control) -> void:
 			_bureau_suivre.tooltip_text = str(action.get("detail", "Applique la proposition de Gabi (tu peux toujours la défaire)"))
 			_bureau_suivre.disabled = app.waiting or not app._live().is_empty()
 			y += 42 + 16
-	y = _premiers_pas(carnet, pad, y, w, text_w)
 	var carnet_h := y + 6
 	D.place(carnet, Rect2(0, 0, w, carnet_h))
 	# Gabi debout, en entier, sous son carnet : il occupe le reste de la zone, pieds en bas.
@@ -905,26 +904,29 @@ func _disposer_bureau(zone: Control) -> void:
 func observer_premiers_pas(route: String, model: Dictionary, command: String, response_ok: bool) -> void:
 	PremiersPas.observer(profile, route, model, command, response_ok)
 
-## « Premiers pas » : un objectif à la fois sous le conseil de la semaine, avec son bouton d'action ; se coche
-## sur l'événement réel (gabi_premiers_pas.gd). Masquable ; disparaît une fois fini ou à la 1re journée.
-func _premiers_pas(carnet: Control, pad: float, y: float, w: float, text_w: float) -> float:
-	if not PremiersPas.visible(app.model, profile.data): return y
+## « Premiers pas » : une carte à part sous la frise du Bureau (jamais dans la colonne de Gabi, dont elle
+## réduirait la figure). Un objectif à la fois, avec son bouton d'action ; se coche sur l'événement réel
+## (gabi_premiers_pas.gd). Masquable ; disparaît une fois fini ou à la 1re journée. Renvoie la hauteur prise (0 : rien).
+func carte_premiers_pas(page: Control, rect: Rect2) -> float:
+	if not PremiersPas.visible(app.model, profile.data): return 0.0
 	var liste := PremiersPas.objectifs(app.model, profile.data)
 	var objectif := PremiersPas.courant(liste)
-	if objectif.is_empty(): return y
-	D.line(carnet, Vector2(pad, y), Vector2(w - pad, y), Color(C.GOLD, .3))
-	y += 12
+	if objectif.is_empty(): return 0.0
+	var carte := D.panel(page, rect, "", "", "", "GabiPremiersPasCarte")
+	carte.add_theme_stylebox_override("panel", D.surface(rect.size.x, rect.size.y, Color("13241f"), Color("0b1512"), Color(C.GOLD, .45)))
+	var pad := 22.0
+	var boutons_w := 300.0 + 78.0 + 24.0
 	var libelle := "PREMIERS PAS · %d SUR %d" % [PremiersPas.faits(liste), liste.size()]
-	y = _ligne_carnet(carnet, pad, y, text_w, libelle, str(objectif.texte), "check", C.MINT, "GabiPremiersPas")
+	_ligne_carnet(carte, pad, 18.0, rect.size.x - pad * 2 - 34 - boutons_w - 16, libelle, str(objectif.texte), "check", C.MINT, "GabiPremiersPas")
 	var action: Dictionary = objectif.action
-	var bouton := D.button(carnet, Rect2(pad + 34, y - 2, w - pad * 2 - 34 - 84, 42), str(objectif.libelle), func(): _suivre_premier_pas(action), false, "arrow", true, ACCENT, "GabiPremiersPasAction")
+	var bouton := D.button(carte, Rect2(rect.size.x - pad - 78 - 24 - 300, (rect.size.y - 42) / 2, 300, 42), str(objectif.libelle), func(): _suivre_premier_pas(action), false, "arrow", true, ACCENT, "GabiPremiersPasAction")
 	bouton.tooltip_text = str(objectif.titre)
 	bouton.disabled = app.waiting or not app._live().is_empty()
-	var masquer := D.button(carnet, Rect2(w - pad - 78, y - 2, 78, 42), "Masquer", func():
+	var masquer := D.button(carte, Rect2(rect.size.x - pad - 78, (rect.size.y - 42) / 2, 78, 42), "Masquer", func():
 		PremiersPas.masquer(profile)
 		app.call_deferred("_render"), false, "", true, ACCENT, "GabiPremiersPasMasquer")
 	masquer.tooltip_text = "Ne plus afficher les premiers pas"
-	return y + 42 + 16
+	return rect.size.y
 
 func _suivre_premier_pas(action: Dictionary) -> void:
 	if app.waiting or not app._live().is_empty(): return
