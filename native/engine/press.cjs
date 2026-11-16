@@ -513,6 +513,8 @@ function factory(){
   const wrapped=function(...args){const result=previous(...args);if(S?.pressRelations)while(S.pressRelations.season<S.season)S.pressRelations=CDPressRelations.nextSeason(S.pressRelations);return result;};
   wrapped.__nativePressSeason=true;advanceSeason=wrapped;return true;
  }
- return {project,validate,execute,installHooks,context,observeInvitation,guardProgress,requiresConference,autoDelegate};
+ // Mémoire de projection (native-systems.cjs, MEMO_DOMAINS) : la presse obligatoire est un réglage hors de S.
+ const memoKey=()=>mandatory()?'1':'0';
+ return {project,memoKey,validate,execute,installHooks,context,observeInvitation,guardProgress,requiresConference,autoDelegate};
 }
 module.exports={files,commands,factory};
