@@ -8,15 +8,29 @@ module.exports=function positionAptitudes(){
  const cache=new Map(),playerCache=new WeakMap(),keys=Object.keys(ATTR);
  const compareId=(a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0;
  function positionNumber(slot){return slot<15?slot+1:cover[slot-15]??null;}
+ // Clé des qualifications du joueur. Quand ses deux listes ont exactement les mêmes éléments que lors du dernier calcul
+ // (donc la même jointure) et la même version de notes, la clé mémorisée est reprise sans réassembler de chaînes.
+ const sameItems=(copy,list)=>{
+  if(list===undefined||list===null)return copy===list;
+  if(!Array.isArray(list)||!Array.isArray(copy)||copy.length!==list.length)return false;
+  for(let i=0;i<list.length;i++)if(copy[i]!==list[i])return false;
+  return true;
+ };
+ function qualifiers(p,cached){
+  const a=p.nationaleQualifications,b=p.worldProfile?.position?.qualifications,v=p.worldRatingsVersion;
+  if(cached&&cached.qv===v&&sameItems(cached.qa,a)&&sameItems(cached.qb,b))return cached.qualifierKey;
+  return [a?.join('|'),b?.join('|'),v].join(';');
+ }
  function derive(p){
   if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
-  const qualifierKey=[p.nationaleQualifications?.join('|'),p.worldProfile?.position?.qualifications?.join('|'),p.worldRatingsVersion].join(';');
-  const cached=playerCache.get(p);
+  const cached=playerCache.get(p),qualifierKey=qualifiers(p,cached);
   if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
    // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
    const sk=p.skills,spec=p.dev?.specialization?.version===1?p.dev.specialization.bonuses:null;let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==sk?.[k]||cached.bonuses[i]!==(spec?(spec[k]||0):0)){same=false;break;}}
    if(same)return cached.result;
   }
+  // Listes de qualifications telles qu'elles ont donné qualifierKey (relevées avant tout calcul).
+  const qa=p.nationaleQualifications,qb=p.worldProfile?.position?.qualifications,qualifierSource={qa:Array.isArray(qa)?qa.slice():qa,qb:Array.isArray(qb)?qb.slice():qb,qv:p.worldRatingsVersion};
   // Legacy missing skills are deterministically generated on a detached object.
   const q=p.skills?p:{...p};ensureSkills(q);
   const qualities=keys.map(k=>skill(q,k));
@@ -51,7 +65,7 @@ module.exports=function positionAptitudes(){
    result={primaryPosition:primary,primaryPositions,secondaryPositions:secondary,positionRatings:ratings,qualifiedFrontRowPositions:front,_familyNotes:familyNotes};
    if(cache.size>=32768)cache.delete(cache.keys().next().value);cache.set(key,result);
   }
-  playerCache.set(p,{id:p.id,name:p.name,rating:p.rating,skillBase:p.skillBase,pos:p.pos,fam:p.fam,qualifierKey,skills:keys.map(k=>p.skills?.[k]),bonuses:keys.map(k=>focusedBonus(p,k)),result});
+  playerCache.set(p,{id:p.id,name:p.name,rating:p.rating,skillBase:p.skillBase,pos:p.pos,fam:p.fam,qualifierKey,...qualifierSource,skills:keys.map(k=>p.skills?.[k]),bonuses:keys.map(k=>focusedBonus(p,k)),result});
   return result;
  }
  function project(p){
@@ -123,7 +137,9 @@ module.exports=function positionAptitudes(){
   fitScore=(p,f=p.fam)=>{
    const n=FAMILIES.indexOf(f);return (f===p.fam?baseNote(p):rating(p,n))*(.5+p.condition*.005);
   };
-  strategicPlayerScore=(p,slot,...args)=>oldStrategic({...p,fam:FAMILIES[slot]},slot,...args)*efficiency(p,slot);
+  // Joueur vu au poste du maillot : vue légère (prototype = le joueur, seule la famille est propre) au lieu d'une copie
+  // complète à chaque note ; oldStrategic ne fait que lire (comme unit et sheetAverage ci-dessous).
+  strategicPlayerScore=(p,slot,...args)=>oldStrategic(Object.assign(Object.create(p),{fam:FAMILIES[slot]}),slot,...args)*efficiency(p,slot);
   function improveBench(team,sheet,preferred=[]){
    const used=new Set(sheet.lineup.filter(Boolean)),wanted=[],pool=availablePool(team);
    for(let i=0;i<8;i++){
@@ -231,9 +247,11 @@ module.exports=function positionAptitudes(){
    reservations=reserveFront(team,[],[]);try{return jiffFit(team,improveBench(team,oldManager(team,...args)));}finally{reservations=null;}
   };
   unit=(live,side,key,filter)=>{
-   const on=live.sheets[side].on,players=activePlayers(live,side);
-   const list=players.map(p=>({p,slot:on.indexOf(p.id)})).filter(({p,slot})=>!filter||filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})));
-   return list.length?mean(list.map(({p,slot})=>contextualSkill(p,key,slot))):25;
+   // Une seule passe sans objets intermédiaires (appelée des dizaines de fois par action) : mêmes joueurs retenus,
+   // mêmes valeurs dans le même ordre, donc la même moyenne. Filtre et note ne modifient pas les joueurs.
+   const on=live.sheets[side].on,players=activePlayers(live,side),values=[];
+   for(const p of players){const slot=on.indexOf(p.id);if(filter&&!filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})))continue;values.push(contextualSkill(p,key,slot));}
+   return values.length?mean(values):25;
   };
   sheetAverage=(team,ids,key,filter=()=>true)=>{
    const list=ids.map((id,slot)=>({p:team.players.find(p=>p.id===id),slot})).filter(({p,slot})=>p&&filter(Object.assign(Object.create(p),{fam:FAMILIES[slot]})));

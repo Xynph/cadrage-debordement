@@ -21,6 +21,8 @@ module.exports=function worldDispatcher(editions,makeCareer){
   installHooks(){for(const career of byEdition.values())career.installHooks();},
   sourcePlayerKnown:id=>edition(S)!==null&&current(S).sourcePlayerKnown(id),
   sourcePlayer:(s,id)=>current(s).sourcePlayer(id),
+  // Même lecture pour une édition déjà connue (editions.forState(s) lu une fois par l'appelant pour toute une liste).
+  sourcePlayerIn:(e,id)=>{const result=byEdition.get(e);if(!result)throw Error('Édition de carrière mondiale indisponible.');return result.sourcePlayer(id);},
   previewRoster:(database,id)=>byEdition.get(editions.forDatabase(database)).previewRoster(id),
   sizing:onState('sizing'),leagueId:onState('leagueId'),ranked:onState('ranked'),rows:onState('rows'),
   cupTables:onState('cupTables'),fixtures:onState('fixtures'),userFixture:onState('userFixture'),calendarToday:onState('calendarToday'),

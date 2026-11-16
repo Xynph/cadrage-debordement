@@ -31,7 +31,9 @@ function createWorldEditions(base,pacific=null,japan=null,nationale=null,champ=n
   const limits=Object.freeze(version===5?{maxMatches:1600,saveBytes:24*1024*1024,maxSaveNodes:2600000,requestBytes:50*1024*1024}:{maxMatches:version===4?1400:1200,saveBytes:(version===4?20:16)*1024*1024,maxSaveNodes:version===4?2100000:1500000,requestBytes:(version===4?42:34)*1024*1024});
   return Object.freeze({...def,limits,leagueIds:Object.freeze(leagueIds),members:Object.freeze(members),playable:Object.freeze(registry.clubs.filter(c=>Object.hasOwn(members,c.leagueId)).map(c=>c.id)),guests:Object.freeze(guests)});
  });
- const pick=(key,value)=>entries.find(e=>e[key]===value)||null;
+ // Recherche par identifiant ou par mode : index (première édition de chaque valeur, comme entries.find).
+ const index=key=>{const m=new Map();for(const e of entries)if(!m.has(e[key]))m.set(e[key],e);return m;},indexes={id:index('id'),mode:index('mode')};
+ const pick=(key,value)=>(Object.hasOwn(indexes,key)?indexes[key].get(value):entries.find(e=>e[key]===value))||null;
  const forState=s=>{
   const def=pick('id',s?.worldMode?.catalogue);
   return def&&s.worldMode.version===def.version&&exactMarker(s.commonDatabase,def.id,def.version)&&s.franceMode===undefined&&s.lnrMode===undefined?def:null;

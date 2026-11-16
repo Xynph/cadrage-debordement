@@ -21,6 +21,10 @@ const LINE_FEED := 10
 ## ce délai sans réponse, ou STOP_AFTER_REPLY_MS après sa réponse : un arrêt à 2 s perdait cette décision.
 const STOP_GRACE_MS := 20000
 const STOP_AFTER_REPLY_MS := 2000
+## Mémoire du moteur : sans plafond, Node laisse son tas grossir jusqu'à la mémoire physique (le moteur Monde a
+## atteint 4,7 Go puis a été tué sur un PC de 8 Go) alors qu'une carrière n'en retient que ~0,6 Go. Plafond de
+## 2 Go et jeune génération de 32 Mo : pic mesuré 1,9 Go au lieu de 3,6 Go sur 12 semaines, durées inchangées.
+const NODE_MEMORY_ARGS := ["--max-old-space-size=2048", "--max-semi-space-size=32"]
 var model: Dictionary = {}
 var last_response_ok := false
 ## Dernière mesure du pont (commande, moteur_ms, analyse_ms, file_ms, octets).
@@ -78,7 +82,7 @@ func start(data_dir: String) -> void:
 		command_failed.emit("Le dossier PrototypeGodot doit être absolu.")
 		return
 	# No command interpreter, network server, or browser process.
-	var process := OS.execute_with_pipe(node_path, PackedStringArray([worker_path, "--data-dir", data_dir]), true)
+	var process := OS.execute_with_pipe(node_path, PackedStringArray(NODE_MEMORY_ARGS + [worker_path, "--data-dir", data_dir]), true)
 	if process.is_empty():
 		command_failed.emit("Impossible de démarrer le moteur local.")
 		return
