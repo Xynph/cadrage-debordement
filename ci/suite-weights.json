@@ -203,6 +203,7 @@
       "tests/world-nationale-squad.cjs": 18,
       "tests/continuer-arrets-saison.cjs": 115,
       "tests/club-mail.cjs": 140,
+      "tests/godot-forme-adverse.cjs": 120,
       "tests/world-reprise-decisions.cjs": 118,
       "tests/world-reprise-preparation.cjs": 99,
       "tests/world-reprise.cjs": 41,
