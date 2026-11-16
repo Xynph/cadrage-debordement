@@ -93,7 +93,7 @@ une partie du raisonnement sont perdus au changement).
   - une suite JS : `node tests/<suite>.cjs` ;
   - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
   - projet Godot : `godot --path native/godot`.
-- PC de Léo indisponible : tests lourds, suites Godot et captures se lancent en ligne via `bash ci/en-ligne.sh` ; en local seulement lecture, édition et contrôles légers (syntaxe, `node tests/<suite>.cjs` rapides sans Godot).
+- PC de Léo indisponible : voir `AGENTS.md` (tests en ligne via `bash ci/en-ligne.sh`).
 
 Version du moteur et écarts avec les connaissances du modèle :
 @docs/engine-reference/godot/VERSION.md
@@ -106,13 +106,15 @@ Version du moteur et écarts avec les connaissances du modèle :
   `/perf-profile`, `/playtest-report`, `/tech-debt`, `/bug-triage`,
   `/team-polish`, `/team-ui`, `/team-qa`.
 
-## Coordination
+## Coordination et normes (à lire à la demande)
 
-@.claude/docs/coordination-rules.md
-
-## Normes de code
-
-@.claude/docs/coding-standards.md
+Ces deux documents du kit ne sont plus chargés à chaque tour (≈ 9 Ko économisés) :
+- `.claude/docs/coordination-rules.md` : délégation entre agents, sous-agents en
+  parallèle, rien à envoyer en amont (moteur, plugins).
+- `.claude/docs/coding-standards.md` : normes génériques CCGS ; ici, seules
+  comptent les règles suivantes : commits Conventional Commits en français,
+  valeurs de jeu dans les données, tests déterministes, jamais désactiver un
+  test rouge, et tout changement visible vérifié par une capture.
 
 ## Contexte de session
 
