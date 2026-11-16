@@ -72,3 +72,39 @@ test('Monde : masse salariale, échéances, marge et prochaine rencontre disent 
   }
  }finally{call('shutdown');bridge.close?.();fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('Monde : « échéances de contrat » du Bureau, du courrier et de Recrutement ont une seule définition',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-echeances-'));
+ let id=0;const bridge=createBridge({dataDir:dir,seed:27,now:1794178800000,dailyCalendar:true});
+ const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
+ try{
+  const m=settleClubMeetings(call('new_career',{mode:'world-champ',club:LYON}),call);
+  const season=m.meta.season;
+  // Définition du Bureau (office_priorities.gd) et de Réception (reception_canvas.gd) : contrat finissant à la saison en cours.
+  const bureau=m.squad.filter(p=>p.contractEnd!=null&&p.contractEnd<=season).length;
+  const courrier=m.messages.map(t=>/^(\d+) contrats? expirent? à la fin de cette saison/.exec(String(t.text||t))).find(Boolean);
+  assert.ok(courrier,'le courrier « Les échéances du groupe » est publié à la création');
+  assert.ok(bureau>0&&bureau<m.squad.length,'des échéances existent sans toucher tout l’effectif');
+  assert.equal(Number(courrier[1]),bureau,'Bureau = courrier');
+  assert.equal(m.decisions.recruitment.expiring.length,bureau,'Bureau = Recrutement');
+  assert.equal(m.figures.contracts.endOfSeason,bureau,'Bureau = chiffres partagés');
+  // L’horizon plus large (saison suivante comprise) reste un autre chiffre, jamais présenté comme « fin de saison ».
+  assert.ok(m.figures.contracts.byHorizon>bureau);
+ }finally{call('shutdown');bridge.close?.();fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('Monde : le courrier du centre de formation donne l’effectif total, identique à Formation',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-centre-'));
+ let id=0;const bridge=createBridge({dataDir:dir,seed:27,now:1794178800000,dailyCalendar:true});
+ const call=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+' : '+r.error);return r.model;};
+ try{
+  const m=settleClubMeetings(call('new_career',{mode:'world-champ',club:LYON}),call);
+  const total=(m.decisions.development.academy||[]).length;
+  const lettre=m.messages.map(t=>/Le centre compte désormais (\d+) jeunes : (\d+) Crabos et (\d+) Espoirs/.exec(String(t.text||t))).find(Boolean);
+  if(lettre){
+   assert.equal(Number(lettre[1]),total,'courrier = effectif de Formation');
+   assert.equal(Number(lettre[2])+Number(lettre[3]),total,'Crabos + Espoirs = effectif');
+  }
+  assert.ok(m.messages.every(t=>!/Effectif : \d+ Crabos/.test(String(t.text||t))),'plus de décompte partiel ambigu');
+ }finally{call('shutdown');bridge.close?.();fs.rmSync(dir,{recursive:true,force:true});}
+});

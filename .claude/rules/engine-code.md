@@ -3,6 +3,10 @@ paths:
   - "src/core/**"
   - "Assets/**/{Core,core}/**/*.cs"
   - "Source/**/{Core,core}/**/*.{h,cpp}"
+  - "native/godot/main.gd"
+  - "native/godot/engine_bridge.gd"
+  - "native/godot/atomic_file.gd"
+  - "native/godot/pack_manager.gd"
 ---
 
 # Engine Code Rules

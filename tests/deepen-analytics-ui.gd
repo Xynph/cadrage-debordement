@@ -36,7 +36,7 @@ func run() -> void:
 		check(picker != null, "Choix du joueur " + str(size))
 		check(picker.item_count == model.clubLife.playerMatchHistory.players.size(), "Effectif actuel réel " + str(size))
 		var details: Control = panel.find_child("PerformancePlayerDetail",true,false)
-		check(all_text(details).contains("minutes connues") and all_text(details).contains("par 80 min"), "Minutes et ratios mesurés " + str(size))
+		check(all_text(details).contains("minutes jouées") and all_text(details).contains("par 80 min"), "Minutes et ratios mesurés " + str(size))
 		picker.select(1)
 		picker.item_selected.emit(1)
 		check(all_text(details).contains(str(model.clubLife.playerMatchHistory.players[1].name)), "Changement du joueur " + str(size))

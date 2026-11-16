@@ -529,6 +529,10 @@ func _failed(message: String) -> void:
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
+	# Moteur arrêté : le bouton principal devient « Relancer » (primary_action), la carrière reprend de sa sauvegarde.
+	if connection_error:
+		if is_instance_valid(primary_button): _update_live_bar()
+		message += "\n\nLe moteur du jeu s’est arrêté. Cliquez sur « Relancer » (bouton principal) : la carrière reprend à sa dernière sauvegarde."
 	# The immersive scene owns its visible error panel; a second modal would
 	# survive a successful retry and obscure the resumed match.
 	if is_instance_valid(contextual_director) and contextual_director.active() and not connection_error: return
@@ -986,7 +990,8 @@ func _update_live_bar() -> void:
 				primary_button.disabled = bool(daily.get("disabled", false))
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
-		primary_button.tooltip_text = action
+		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
+		primary_button.tooltip_text = primary_tooltip()
 	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
 
 func _press_required() -> bool:
@@ -996,7 +1001,16 @@ func _daily_progression() -> Dictionary:
 	var fixture: Variant = null if Immersive.Selections.nation_only(model) else model.get("next")
 	return CareerProgression.daily(model.get("meta", {}), fixture, route)
 
+## Info-bulle du bouton principal : pour « Continuer », le prochain arrêt prévu (career_progression.gd).
+func primary_tooltip() -> String:
+	if connection_error and bridge.child_pid <= 0: return "Le moteur du jeu s’est arrêté. Cliquez pour le relancer : la carrière reprend à sa dernière sauvegarde."
+	if _live().is_empty() and not _press_required() and Immersive.Selections.current_fixture(model).is_empty() and not model.get("meta", {}).get("canAdvanceSeason", false):
+		var daily := _daily_progression()
+		if daily.has("tooltip"): return str(daily.tooltip)
+	return primary_text()
+
 func primary_text() -> String:
+	if connection_error and bridge.child_pid <= 0: return "RELANCER LE MOTEUR  →"
 	var live := _live()
 	if not live.is_empty():
 		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
@@ -1013,6 +1027,11 @@ func primary_text() -> String:
 
 func primary_action() -> void:
 	if waiting and (last_command != "tick" or not queued_action.is_empty()): return
+	# Moteur arrêté (processus tué, mémoire saturée…) : « Continuer » le relance au lieu de rouvrir en boucle
+	# l'écran de l'événement en attente, dont aucune décision ne pourrait être enregistrée.
+	if connection_error and bridge.child_pid <= 0:
+		reconnect()
+		return
 	if not _live().is_empty():
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
@@ -1201,9 +1220,9 @@ func _credits() -> void:
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
 	d.title = "Rugby Legacy 27 · Crédits"
-	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
+	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\nIllustrations de la collection Scenario 3D, © Scenario, licence CC BY 4.0 (aperçus conservés à l’échelle, sans recadrage).\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
 	add_child(d)
-	d.popup_centered(Vector2i(760,260))
+	d.popup_centered(Vector2i(760,300))
 	d.confirmed.connect(d.queue_free)
 
 func request_quit() -> void:

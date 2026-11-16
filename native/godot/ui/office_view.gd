@@ -416,7 +416,7 @@ static func _results(parent: Node, app: Control) -> void:
 		chart.accent = Color("a6d2ae")
 		chart.custom_minimum_size.y = 62
 		block.add_child(chart)
-		block.add_child(_text("Écart de score · rencontres conservées, de la plus ancienne à la plus récente", 12, G.MUTED))
+		block.add_child(_text("Écart de score · derniers matchs, du plus ancien au plus récent", 12, G.MUTED))
 
 # The projection already ranks these rows, including competition tie-breakers.
 static func standings_window(model: Dictionary) -> Array:

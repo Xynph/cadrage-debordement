@@ -5,6 +5,7 @@ argument-hint: "[sprint-number or blank for current]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash(bash "*/.claude/skills/sprint-status/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash "*/.claude/skills/sprint-status/../../scripts/story-status.sh"), Bash(bash .claude/scripts/story-status.sh*)
 model: haiku
+disable-model-invocation: true
 ---
 
 !`bash "${CLAUDE_SKILL_DIR}/../../hooks/yaml-helper.sh" resolve_config --keys story_granularity,workflow`

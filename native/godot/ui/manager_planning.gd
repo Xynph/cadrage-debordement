@@ -251,11 +251,11 @@ func _quote_candidate() -> void:
 func _goal() -> void:
 	var goal: Variant = data.get("goal")
 	if goal is Dictionary:
-		_text("Objectif %s · cible %s · mesure %s sur %d rencontre(s) documentée(s)" % [METRIC_LABELS.get(goal.metric, goal.metric), str(goal.target), "inconnue" if goal.value == null else str(snappedf(float(goal.value), 0.1)), goal.measuredMatches])
+		_text("Objectif %s · cible %s · %s" % [METRIC_LABELS.get(goal.metric, goal.metric), str(goal.target), "pas encore de match joué" if goal.value == null else "mesure %s sur %d match(s)" % [str(snappedf(float(goal.value), 0.1)), goal.measuredMatches]])
 		_text(goal.notice, C.GOLD)
 		for row: Dictionary in goal.rows:
-			_text("%s · %s · %s · mesure %s" % [row.get("opponentName", "Adversaire"), "domicile" if row.get("home", false) else "extérieur", str(row.get("phase", "")), "inconnue" if row.value == null else str(snappedf(float(row.value), 0.1))])
-			if row.events.is_empty(): _text("Aucun événement détaillé conservé pour cet indicateur.", C.MUTED)
+			_text("%s · %s · %s · mesure %s" % [row.get("opponentName", "Adversaire"), "domicile" if row.get("home", false) else "extérieur", str(row.get("phase", "")), "—" if row.value == null else str(snappedf(float(row.value), 0.1))])
+			if row.events.is_empty(): _text("Aucun événement à signaler pour cet indicateur.", C.MUTED)
 			else:
 				for event: Dictionary in row.events: _text("%s min · %s" % [str(event.get("minute", "?")), str(event.get("text", event.kind))])
 	else: _text("Choisissez un objectif ; seules les rencontres jouées ensuite seront suivies.")

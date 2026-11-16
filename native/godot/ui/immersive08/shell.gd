@@ -68,10 +68,6 @@ const COMPACT_ART = {
 	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
 }
 
-const COMPACT_SCENARIO_ART := {
-	"Club": "treadmill", "Presse": "camera", "Vestiaire": "sneaker", "Formation": "chair",
-}
-
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
 	var window := app.get_window()
@@ -402,7 +398,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var action_right := 2278 - (NEXT_DAY_WIDTH + 6 if single_day else 0)
 	app.primary_button = D.button(panel,Rect2(action_left,17,action_right-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
-	app.primary_button.tooltip_text = app.primary_text()
+	app.primary_button.tooltip_text = app.primary_tooltip() if app.has_method("primary_tooltip") else app.primary_text()
 	var next_day: Button = null
 	if single_day:
 		next_day = D.button(panel,Rect2(2278-NEXT_DAY_WIDTH,17,NEXT_DAY_WIDTH,45),"+1 j",app.next_day_action,false,"",true,app.accent,"ImmersiveNextDay")
@@ -502,8 +498,6 @@ static func _heading(parent: Node, app: Control) -> void:
 			FinanceCanvas.hospitality(image, Rect2(2,2,806,85))
 		else:
 			D.photo(image,COMPACT_ART[app.route],Rect2(2,2,806,85),.16)
-		if COMPACT_SCENARIO_ART.has(app.route):
-			D.scenario_photo(image, COMPACT_SCENARIO_ART[app.route], Rect2(613, 3, 190, 83))
 	var values := P.group(app.model)
 	var injury_count: int = values.injured
 	var injury_caption := "%d blessé%s" % [injury_count, "s" if injury_count > 1 else ""]

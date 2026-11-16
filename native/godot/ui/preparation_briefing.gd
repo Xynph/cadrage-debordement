@@ -26,7 +26,7 @@ static func project(model: Dictionary) -> Dictionary:
 			var reasons: Array = selection.get("errors", [])
 			result.append(_check("selection", "Compléter la feuille", str(reasons[0]) if not reasons.is_empty() else "Vérifiez les postes et le banc dans la composition.", "selection", "Vérifier la composition", "urgent"))
 		if not fixture.is_empty() and meta.get("calendarCadence", {}).get("matchReady", false):
-			result.append(_check("day", "C’est le jour du match", "Le calendrier du moteur autorise la préparation du coup d’envoi aujourd’hui.", "match", "Ouvrir le jour de match", "important"))
+			result.append(_check("day", "C’est le jour du match", "Le calendrier autorise la préparation du coup d’envoi aujourd’hui.", "match", "Ouvrir le jour de match", "important"))
 		var availability: Dictionary = model.get("international", {}).get("availability", {})
 		var absent := int(availability.get("absentCount", 0))
 		if availability.get("clubManaged", false) and absent > 0:
@@ -37,7 +37,7 @@ static func project(model: Dictionary) -> Dictionary:
 		if not injured.is_empty():
 			result.append(_check("injuries", "%d joueur%s blessé%s" % [injured.size(), "s" if injured.size() > 1 else "", "s" if injured.size() > 1 else ""], "Consultez les indisponibilités et les solutions de remplacement dans votre effectif.", "squad", "Ouvrir l’effectif", "important"))
 		if not fixture.is_empty() and selection.get("valid", false):
-			result.append(_check("sheet", "Feuille projetée valide", "La validation vient du moteur. Vérifiez les titulaires, le banc et les choix individuels.", "selection", "Consulter la composition"))
+			result.append(_check("sheet", "Feuille projetée valide", "La feuille est valide. Vérifiez les titulaires, le banc et les choix individuels.", "selection", "Consulter la composition"))
 		if not fixture.is_empty():
 			var when := P.fixture_date(fixture, true)
 			result.append(_check("calendar", "Vérifier le rendez-vous", when if not when.is_empty() else "Date non publiée : consultez le calendrier de la carrière.", "calendar", "Ouvrir le calendrier"))

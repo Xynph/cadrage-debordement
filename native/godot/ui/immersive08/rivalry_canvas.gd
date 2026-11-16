@@ -126,22 +126,48 @@ func _pairs() -> void:
 	state.page = clampi(int(state.get("page", 0)), 0, pages - 1)
 	var visible := pairs.slice(int(state.page) * 10, (int(state.page) + 1) * 10)
 	if not visible.is_empty() and not visible.any(func(pair: Dictionary): return _pair_key(pair) == selected): selected = _pair_key(visible[0])
-	var header := D.rect(panel, Rect2(1, 120, LEFT - 2, 38), Color("1c2829"), 4)
-	D.text(header, 23, 27, "FACE-À-FACE", 23, C.IVORY, 700, 320)
-	D.text(header, 767, 27, "MATCHS", 23, C.MUTED, 600, 101, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(header, 956, 27, "V / N / V", 23, C.MUTED, 600, 180, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(header, 1219, 27, "TENSION DU DUEL", 23, C.MUTED, 600, 270, HORIZONTAL_ALIGNMENT_CENTER)
+	if not visible.is_empty():
+		var header := D.rect(panel, Rect2(1, 120, LEFT - 2, 38), Color("1c2829"), 4)
+		D.text(header, 23, 27, "FACE-À-FACE", 23, C.IVORY, 700, 320)
+		D.text(header, 767, 27, "MATCHS", 23, C.MUTED, 600, 101, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(header, 956, 27, "V / N / V", 23, C.MUTED, 600, 180, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(header, 1219, 27, "TENSION DU DUEL", 23, C.MUTED, 600, 270, HORIZONTAL_ALIGNMENT_CENTER)
 	var pair_selected: Dictionary = {}
 	for i in visible.size():
 		var pair: Dictionary = visible[i]
 		if _pair_key(pair) == selected: pair_selected = pair
 		_pair_row(panel, pair, i, _pair_key(pair) == selected)
-	if visible.is_empty():
-		var message := "Aucune confrontation du club enregistrée." if only_club else "Les premiers duels apparaîtront après les rencontres disputées."
-		D.text(panel, 26, 225, message, 28, C.MUTED, 500, LEFT - 49)
-	D.text(panel, 23, 804, "%d duel(s) · Intensité et réactions des bancs" % pairs.size(), 22, C.MUTED, 500, 690)
+	if visible.is_empty(): _first_fixtures(panel)
+	if not pairs.is_empty(): D.text(panel, 23, 804, "%d duel(s) · Intensité et réactions des bancs" % pairs.size(), 22, C.MUTED, 500, 690)
 	_pager(panel, "page", pages, 957, 778)
 	_duel(pair_selected)
+
+## Avant la première journée : les affiches à venir du club tiennent lieu de mémoire des duels.
+func _upcoming() -> Array:
+	var result: Array = []
+	for fixture: Dictionary in app.model.get("calendar", []):
+		if fixture.get("played", false): continue
+		var home: Dictionary = fixture.get("home", {}) if fixture.get("home") is Dictionary else {}
+		var away: Dictionary = fixture.get("away", {}) if fixture.get("away") is Dictionary else {}
+		if own.get("id") not in [home.get("id"), away.get("id")]: continue
+		result.append(fixture)
+		if result.size() >= 8: break
+	return result
+
+func _first_fixtures(panel: Panel) -> void:
+	D.text(panel, 26, 150, "Les duels s’écrivent à chaque rencontre. Vos premières affiches :", 28, C.IVORY, 600, LEFT - 49)
+	var upcoming := _upcoming()
+	for i in upcoming.size():
+		var fixture: Dictionary = upcoming[i]
+		var home: Dictionary = fixture.get("home", {})
+		var is_home: bool = home.get("id") == own.get("id")
+		var opponent: Dictionary = fixture.get("away", {}) if is_home else home
+		var row := D.rect(panel, Rect2(2, 180 + 70 * i, LEFT - 4, 62), Color("131d20") if i % 2 == 0 else Color("101819"), 3, Color(C.LINE, .55))
+		row.name = "RivalryFirstFixture" + str(i)
+		_crest(row, opponent.get("id"), Rect2(18, 9, 43, 43))
+		D.text(row, 78, 40, G.club_name(opponent) if not opponent.is_empty() else "Adversaire à confirmer", 29, C.IVORY, 700, 700)
+		D.text(row, 800, 40, P.fixture_date(fixture), 25, C.MUTED, 600, 360)
+		D.text(row, 1190, 40, "À domicile" if is_home else "À l’extérieur", 25, C.MINT if is_home else C.MUTED, 600, 200, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _pair_row(parent: Panel, pair: Dictionary, index: int, selected: bool) -> void:
 	var a: Variant = pair.get("a")
@@ -172,8 +198,15 @@ func _duel(pair: Dictionary) -> void:
 	var image := D.photo(panel, "club-forest", Rect2(15, 68, RIGHT - 30, 161))
 	image.tooltip_text = "Le territoire du club"
 	if pair.is_empty():
-		D.text(panel, 23, 292, "Aucun duel à consulter", 35, C.IVORY, 800, RIGHT - 46)
-		_notice(panel, Rect2(23, 331, RIGHT - 46, 140), "La mémoire des confrontations s’étoffe à chaque journée de compétition.")
+		var first: Array = _upcoming()
+		D.text(panel, 23, 292, "Votre première affiche" if not first.is_empty() else "Les duels de la saison", 35, C.IVORY, 800, RIGHT - 46)
+		if not first.is_empty():
+			var fixture: Dictionary = first[0]
+			var home: Dictionary = fixture.get("home", {})
+			var opponent: Dictionary = fixture.get("away", {}) if home.get("id") == own.get("id") else home
+			D.text(panel, 23, 445, G.club_name(opponent), 44, C.GOLD, 800, RIGHT - 46)
+			D.text(panel, 23, 495, P.fixture_date(fixture), 30, C.IVORY, 600, RIGHT - 46)
+		_notice(panel, Rect2(23, 331, RIGHT - 46, 50) if not first.is_empty() else Rect2(23, 331, RIGHT - 46, 140), "La mémoire des confrontations s’étoffe à chaque journée de compétition.")
 		_notice(panel, Rect2(23, 674, RIGHT - 46, 132), str(data.get("notice", "")))
 		return
 	var a: Variant = pair.get("a")
@@ -243,7 +276,7 @@ func _echo_detail(event: Dictionary) -> void:
 	view[0].popup_centered(Vector2i(940, 520))
 
 func _archives() -> void:
-	var panel := D.panel(workspace, Rect2(0, 0, LEFT, 828), "Le palmarès conservé", "trophy", "", "RivalryArchives")
+	var panel := D.panel(workspace, Rect2(0, 0, LEFT, 828), "Le palmarès", "trophy", "", "RivalryArchives")
 	var scroll := ScrollContainer.new()
 	scroll.name = "RivalryArchiveScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

@@ -118,7 +118,7 @@ func cases(dialog: AcceptDialog, original: Dictionary, model_before: String, dis
 	await settle()
 	check(dialog.selection==[0,1],"Première séquence limitée aux faits du plan source")
 	check(dialog.phase_summary.text.contains("0 — 0") and dialog.phase_summary.text.contains("5 — 0"),"Bilan début et fin issus des scores enregistrés")
-	check(dialog.phase_summary.text.contains("ne prouve pas"),"Aucune causalité tactique inventée")
+	check(dialog.phase_summary.text.contains("ne suffit pas à juger"),"Aucune causalité tactique inventée")
 	await key(dialog.show_summary)
 	check(dialog.phase_summary.visible,"Bilan de séquence ouvert au clavier")
 	check(dialog.content_scroll.get_global_rect().encloses(dialog.phase_summary.get_global_rect()),"Bilan de séquence entièrement révélé après sa mise en page")

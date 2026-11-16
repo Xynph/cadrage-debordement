@@ -164,14 +164,14 @@ static func build(app: Control) -> Control:
 	var nationale: bool = app.model.get("meta",{}).get("edition") == "world-nationale"
 	var champ: bool = app.model.get("meta",{}).get("edition") == "world-champ"
 	if japanese or nationale or champ: data.seasons = world_seasons(app,data.club_id)
-	G.chapter(sheet, "21", "L’histoire de " + data.club_name, "Les faits conservés pour ce club, quelle que soit la carrière de son coach.", app.accent)
+	G.chapter(sheet, "21", "L’histoire de " + data.club_name, "Les saisons et les résultats de ce club, quel que soit son entraîneur.", app.accent)
 	var list := G.scroll(sheet)
 	list.get_parent().name = "ClubMemoryScroll"
-	var notice := "Points, scores de saisons, affluence, finances et évolution des attributs ne sont pas conservés dans ces archives."
-	if japanese: notice = "Les rangs de phase régulière et les scores des barrages japonais sont conservés."
-	if nationale: notice = "Les rangs de phase régulière, les mouvements et le barrage Pro D2 / Nationale sont conservés."
-	if champ: notice = "Les rangs de phase régulière, les titres et les mouvements archivés sont présentés ici."
-	list.add_child(G.wrap("Identités du pack actuel · 15 dernières saisons archivées au maximum. "+notice,13))
+	var notice := "Les points, scores de saisons, affluence et finances ne figurent pas dans ces archives."
+	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais."
+	if nationale: notice = "Rangs de phase régulière, mouvements et barrage Pro D2 / Nationale."
+	if champ: notice = "Rangs de phase régulière, titres et mouvements."
+	list.add_child(G.wrap("Les 15 dernières saisons au maximum. "+notice,13))
 	list.add_child(preload("res://ui/performance_analysis_view.gd").build(app))
 	list.add_child(G.separator())
 	_comparison(list, app, data.seasons)
@@ -182,8 +182,8 @@ static func build(app: Control) -> Control:
 		if data.historical: list.add_child(G.wrap("Les saisons de la ligue historique à 14 ne sont pas conservées dans ce carnet par division.", 14))
 	for year: Dictionary in data.seasons: _season(list, year, app)
 	list.add_child(G.separator())
-	list.add_child(G.section("Les rencontres conservées", "Uniquement les rencontres impliquant ce club. Ce registre récent n’est pas un historique exhaustif."))
-	if data.events.is_empty(): list.add_child(G.wrap("Aucune rencontre de ce club n’est conservée dans le registre récent.", 16))
+	list.add_child(G.section("Les derniers résultats", "Les matchs récents de ce club."))
+	if data.events.is_empty(): list.add_child(G.wrap("Pas encore de match joué par ce club.", 16))
 	for event: Dictionary in data.events:
 		var card := G.card(list, G.LINE)
 		card.add_child(G.wrap(_date(event), 13, G.GOLD))
@@ -193,9 +193,9 @@ static func build(app: Control) -> Control:
 		if not str(event.get("reaction", "")).is_empty(): card.add_child(G.wrap("Réaction du banc · %s\n« %s »" % [event.get("reaction_club_name", "Banc"), event.reaction], 14))
 	list.add_child(G.wrap("Retrouvez le résultat, les réactions des bancs et l’évolution de la rivalité pour chaque rencontre.", 12))
 	list.add_child(G.separator())
-	list.add_child(G.section("Le parcours du coach, à part", "Les prises de poste concernent le manager ; elles ne constituent pas le palmarès du club actuel."))
+	list.add_child(G.section("Le parcours du coach, à part", "Les arrivées du manager, distinctes du palmarès du club."))
 	if data.manager_current_from != null: list.add_child(G.wrap("Mandat actuel depuis la saison " + G.season_label(data.manager_current_from), 15, G.INK))
-	if data.manager_history.is_empty(): list.add_child(G.wrap("Aucune prise de poste antérieure enregistrée.", 14))
+	if data.manager_history.is_empty(): list.add_child(G.wrap("Aucune arrivée précédente.", 14))
 	for move: Dictionary in data.manager_history:
-		list.add_child(G.wrap("Saison %s · %s → %s" % [G.season_label(move.arrivalSeason) if move.has("arrivalSeason") else "non conservée", move.from_name, move.to_name], 15))
+		list.add_child(G.wrap("Saison %s · %s → %s" % [G.season_label(move.arrivalSeason) if move.has("arrivalSeason") else "—", move.from_name, move.to_name], 15))
 	return page

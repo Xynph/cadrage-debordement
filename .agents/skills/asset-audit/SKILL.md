@@ -6,6 +6,7 @@ user-invocable: true
 allowed-tools: Read, Glob, Grep, Bash(stat *), Bash(file *), Bash(od *), Bash(wc *), Bash(du *)
 model: sonnet
 # Read-only diagnostic skill — no specialist agent delegation needed
+disable-model-invocation: true
 ---
 
 # Asset Audit

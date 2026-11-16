@@ -5,6 +5,7 @@ argument-hint: "static [skill-name | all] | spec [skill-or-agent-name] | categor
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(bash "*/.claude/skills/skill-test/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/agent-check.sh*), Bash(bash .claude/scripts/compat-inventory.sh*)
 model: sonnet
+disable-model-invocation: true
 ---
 
 !`bash "${CLAUDE_SKILL_DIR}/../../hooks/yaml-helper.sh" resolve_config --keys automation`

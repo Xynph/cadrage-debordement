@@ -12,7 +12,7 @@ test('untracked young player has no fabricated assessment or minute delta',()=>{
 });
 test('interim review measures a general objective against the original dated reference',()=>{
  const h=setup();h.run('Y.enable(S);Y.setPlan(S,p.id,"general",null);p.rating+=1;p.dev.careerMinutes+=80;S.round=4;Y.observe(S,"trainWeek")');
- const v=review(h);assert.equal(v.objective.key,'general');assert.equal(v.objective.target,1);assert.equal(v.objective.achieved,true);assert.equal(v.evidence.ratingDelta,1);assert.equal(v.evidence.minutesDelta,80);assert.equal(v.evidence.from.week,0);assert.equal(v.evidence.to.week,4);assert.match(v.basis,/référence initiale/);
+ const v=review(h);assert.equal(v.objective.key,'general');assert.equal(v.objective.target,1);assert.equal(v.objective.achieved,true);assert.equal(v.evidence.ratingDelta,1);assert.equal(v.evidence.minutesDelta,80);assert.equal(v.evidence.from.week,0);assert.equal(v.evidence.to.week,4);assert.match(v.basis,/début du suivi/);
 });
 test('recent baseline does not manufacture a lack of game time',()=>{
  const h=setup();h.run('promoteYouth(p.id);Y.enable(S);S.round=1');const v=review(h);assert.equal(v.status,'observing');assert.notEqual(v.recommendation.key,'minutes');assert.notEqual(v.recommendation.key,'loan');
@@ -32,7 +32,7 @@ test('minor stays at the centre and an adult can examine a first pro contract',(
 });
 test('specialist objective changes after reorientation but never reattributes the old gains',()=>{
  const h=setup();h.run('Y.enable(S);Y.setPlan(S,p.id,"specialist","scrum");p.skills.scrum+=1');assert.equal(review(h).objective.key,'quality');assert.equal(review(h).objective.achieved,true);
- h.run('Y.setPlan(S,p.id,"integration","scrum")');const v=review(h);assert.equal(v.objective.key,'integration');assert.match(v.basis,/ne prouvent pas/i);
+ h.run('Y.setPlan(S,p.id,"integration","scrum")');const v=review(h);assert.equal(v.objective.key,'integration');assert.match(v.basis,/n’explique pas tout/i);
 });
 // Moteur natif Monde : les profils officiels de l'édition progressent en cours de saison
 // (nativeInSeasonDevelopment) ; le modèle annuel « annual-v11 » n'existe que hors moteur natif.

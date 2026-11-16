@@ -48,6 +48,17 @@ test('Règle d’arrêt : obligatoires jamais ignorés, réglages des messages e
   // Gabi : fatigue des titulaires seulement à l'approche d'un match.
   assert.equal(C.detect(base, { ...base, tired: ['t1'] }, o).kind, 'fatigue');
   assert.equal(C.detect(base, { ...base, tired: ['t1'], next: { date: '2026-10-30', opponent: 'X' } }, o), null);
+  // Offre reçue pour un joueur de l'effectif (S.economy.offers) : arrêt facultatif, actif par défaut.
+  const offres = { ...base, offers: [{ id: 'o1', player: 'Remplaçant' }] };
+  assert.equal(C.detect({ ...base, offers: [] }, offres, o).kind, 'offre');
+  assert.match(C.detect({ ...base, offers: [] }, offres, o).detail, /Offre reçue pour Remplaçant/);
+  assert.equal(C.detect(offres, offres, o), null, 'une offre déjà vue n’arrête plus');
+  assert.equal(C.detect({ ...base, offers: [] }, offres, C.validate({ fromDate: '2026-09-01', stops: { ignorer: ['offre'] } })), null);
+  // Prochain arrêt prévisible (info-bulle) : le plus proche de la rencontre, de la reprise et d'un rendez-vous en file.
+  assert.deepEqual(C.plan(base), { kind: 'match', date: '2026-09-05', opponent: 'Rivaux' });
+  assert.deepEqual(C.plan(base, '2026-09-03'), { kind: 'reprise', date: '2026-09-03' });
+  assert.equal(C.plan({ ...base, meeting: { kind: 'board', id: 'b' } }).kind, 'rendez_vous');
+  assert.equal(C.plan({ ...base, next: null }), null);
   assert.throws(() => C.validate({ fromDate: '2026-09-01', maxDays: 0 }), /jours/);
   assert.throws(() => C.validate({ fromDate: '2026-09-01', inconnu: 1 }), /invalides/);
 });
@@ -103,6 +114,18 @@ test('Une seule commande : du 13/07 au jour du premier match', { timeout: 150000
     const refus = jeu.brut('advance_until_event', { fromDate: model.meta.calendarToday });
     assert.equal(refus.ok, false);
     assert.match(refus.error, /rencontre/i);
+    // Le prochain arrêt annoncé (info-bulle) était bien ce match.
+    assert.equal(model.meta.continuePlan?.kind, 'match', JSON.stringify(model.meta.continuePlan));
+    assert.equal(model.meta.continuePlan.date, model.meta.calendarToday);
+    // Après le match (résultat confirmé, rencontre gardée jusqu'à la clôture de la semaine) : Continuer repart
+    // sans s'arrêter aussitôt sur un faux « Avance impossible » (constaté le 16/11/2026 : 1 jour puis blocage).
+    model = M.jouerLeMatch(jeu, model);
+    const jourDuMatch = model.meta.calendarToday;
+    model = avancer(jeu, model, { stops: { messages: 'aucun', ignorer: FACULTATIFS } });
+    const apres = model.meta.advanceUntilEvent;
+    console.log('après le match :', apres.days, 'jours ·', apres.stop.kind, '·', apres.stop.detail);
+    assert.notEqual(apres.stop.kind, 'blocage', JSON.stringify(apres));
+    assert.ok(model.meta.calendarToday > jourDuMatch);
   } finally { jeu.bridge.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 

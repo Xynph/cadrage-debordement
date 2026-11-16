@@ -5,6 +5,7 @@ argument-hint: "[system-name | all | scaffold]"
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Bash(bash "*/.claude/skills/test-helpers/../../hooks/yaml-helper.sh" resolve_config *)
 model: sonnet
+disable-model-invocation: true
 ---
 
 !`bash "${CLAUDE_SKILL_DIR}/../../hooks/yaml-helper.sh" resolve_config --keys automation`

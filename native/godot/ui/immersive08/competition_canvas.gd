@@ -675,27 +675,39 @@ func _stats() -> void:
 	D.text(aggregate, 28, 248, "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière.", 26, C.MUTED, 500, 1210)
 
 func _bottom() -> void:
-	var recent := _panel(self, Rect2(0, 1013, 964, 211), "DERNIERS RÉSULTATS", "", "CompetitionRecentResults")
+	var started: bool = league.get("rows", []).any(func(club: Dictionary): return float(club.get("played", 0)) > 0)
+	if not started:
+		_opening_strip()
+		return
+	var recent := _panel(self, Rect2(0, 1013, 1104, 211), "DERNIERS RÉSULTATS", "", "CompetitionRecentResults")
 	var results: Array = season_results.filter(func(result: Dictionary): return _competition_id(result,league.id) == league.id and result.get("pair") is Array and result.get("score") is Array).slice(0, 3)
 	for i in results.size():
 		var result: Dictionary = results[i]
 		var clubs := _matchup(result)
-		var tile := D.rect(recent, Rect2(13 + i * 314, 59, 302, 138), Color("111d1f"), 8, Color(C.LINE, .60))
+		var tile := D.rect(recent, Rect2(13 + i * 357, 59, 345, 138), Color("111d1f"), 8, Color(C.LINE, .60))
 		_crest(tile, clubs[0], Rect2(14, 16, 49, 49))
-		D.text(tile, 74, 39, G.club_name(clubs[0]), 25, C.IVORY, 700, 220)
-		D.text(tile, 74, 68, "vs " + G.club_name(clubs[1]), 22, C.IVORY, 500, 220)
+		D.text(tile, 74, 39, G.club_name(clubs[0]), 25, C.IVORY, 700, 260)
+		D.text(tile, 74, 68, "vs " + G.club_name(clubs[1]), 22, C.IVORY, 500, 260)
 		_box_tag(tile, Rect2(74, 84, 155, 39), _score(result), WIN)
-	if results.is_empty(): D.text(recent, 21, 122, "Aucun résultat enregistré pour cette division.", 27, C.MUTED, 500, 924)
-	_leader(Rect2(980, 1013, 377, 211), "MEILLEURE ATTAQUE", "flag", "pf", "Points marqués", true)
-	_leader(Rect2(1373, 1013, 376, 211), "MEILLEURE DÉFENSE", "shield", "pa", "Points encaissés", false)
-	var scorer := _panel(self, Rect2(1765, 1013, 483, 211), "MEILLEUR RÉALISATEUR", "ball", "CompetitionScoring")
-	D.photo(scorer, "player-hero", Rect2(6, 51, 158, 155))
-	var caption := D.rect(scorer, Rect2(6, 181, 158, 25), Color("101819e8"), 3)
-	D.text(caption, 79, 18, "ILLUSTRATION", 16, C.IVORY, 700, 158, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(scorer, 180, 89, "Donnée indisponible", 26, C.IVORY, 700, 280)
-	D.text(scorer, 180, 123, "Points individuels", 22, C.MUTED, 500, 280)
-	D.text(scorer, 180, 150, "non conservés par la carrière.", 22, C.MUTED, 500, 287)
-	D.text(scorer, 180, 191, "—", 45, C.IVORY, 800, 284)
+	if results.is_empty(): D.text(recent, 21, 122, "Aucun résultat enregistré pour cette division.", 27, C.MUTED, 500, 1060)
+	_leader(Rect2(1120, 1013, 553, 211), "MEILLEURE ATTAQUE", "flag", "pf", "Points marqués", true)
+	_leader(Rect2(1689, 1013, 559, 211), "MEILLEURE DÉFENSE", "shield", "pa", "Points encaissés", false)
+
+## Avant la première journée : le coup d’envoi et le format de la saison remplacent les classements vides.
+func _opening_strip() -> void:
+	var panel := _panel(self, Rect2(0, 1013, 2248, 211), "L’OUVERTURE DE LA SAISON", "trophy", "CompetitionOpeningStrip")
+	var first := fixtures.filter(func(fixture: Dictionary): return not fixture.get("played", false))
+	var rounds := 0
+	for fixture: Dictionary in fixtures:
+		if _competition_id(fixture, league.id) == league.id and own.get("id") in [fixture.get("home", {}).get("id"), fixture.get("away", {}).get("id")]: rounds += 1
+	var facts: Array = [["COUP D’ENVOI", "" if first.is_empty() else _date(first[0]), "Le championnat s’ouvre après la préparation d’avant-saison."],
+		["LE CHAMPIONNAT", "%s clubs" % G.n(league.get("rows", []).size()), "%s journées à jouer" % G.n(rounds) if rounds > 0 else "Chaque point comptera."],
+		["À SUIVRE", "Attaque · défense", "Meilleure attaque, meilleure défense et derniers résultats s’affichent dès la 1re journée."]]
+	for i in facts.size():
+		var tile := D.rect(panel, Rect2(13 + i * 741, 59, 729, 138), Color("111d1f"), 8, Color(C.LINE, .60))
+		D.text(tile, 22, 38, facts[i][0], 22, C.MUTED, 700, 680)
+		D.text(tile, 22, 84, facts[i][1] if not str(facts[i][1]).is_empty() else "À venir", 40, C.IVORY, 800, 680)
+		D.text(tile, 22, 119, facts[i][2], 21, C.MUTED, 500, 690)
 
 func _leader(area: Rect2, title: String, icon_id: String, metric: String, caption: String, high: bool) -> void:
 	var panel := _panel(self, area, title, icon_id, "CompetitionLeader_" + metric)
@@ -723,12 +735,16 @@ func _leader(area: Rect2, title: String, icon_id: String, metric: String, captio
 	D.text(panel, 105, 166 if wrap_name else 151, S.count_text(best.get(metric)), 48 if wrap_name else 56, C.IVORY, 800, 235)
 	D.text(panel, 105, 201 if wrap_name else 183, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 23, C.MUTED, 500, 252)
 
+## Intitulés courts des onglets quand les championnats sont nombreux : lisibles, jamais en dessous du corps minimal.
+const TAB_ALIASES := {"Élite anglaise": "Anglaise", "Intercontinentale": "Interco.", "Accession anglaise": "Access. ang.", "Accession angl.": "Access. ang.", "Coupe Accession": "Coupe Acc."}
+
 func _division_choices(parent: Node, x: float, y: float) -> void:
 	var gap := 8 if international else 13
 	var width := floori((LEFT-2*x-gap*(leagues.size()-1))/leagues.size()) if international else 228
 	for i in leagues.size():
 		var division: Dictionary = leagues[i]
 		var caption := _league_short(division)
+		if international and leagues.size() >= 8: caption = TAB_ALIASES.get(caption, caption)
 		var button := D.button(parent,Rect2(x+(width+gap)*i,y,width,34),caption,func():
 			app.table_division = division.id
 			var owner_app := app
@@ -752,7 +768,7 @@ func _fit_caption(button: Button, caption: String, width: int) -> void:
 	var room := float(width) - style.content_margin_left - style.content_margin_right
 	var font := button.get_theme_font("font")
 	var size := button.get_theme_font_size("font_size")
-	var minimum := maxi(10, C.px(14))
+	var minimum := maxi(12, C.px(18))
 	while size > minimum and font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > room: size -= 1
 	var words := caption.split(" ")
 	var index := words.size() - 1

@@ -285,7 +285,7 @@ static func open_adjustment(app: Control, player: Dictionary) -> void:
 	body.add_child(C.wrap(str(player.name) + " · " + str(player.pos), 24, C.IVORY))
 	body.add_child(C.wrap("Ce choix prépare la séance suivante. Il ne lance aucun entraînement et ne modifie pas les convocations.", 18, C.MUTED))
 	if float(player.get("injury", 0)) > 0:
-		body.add_child(C.wrap("Blessure : le moteur applique la récupération pendant la séance, quel que soit le plan choisi.", 18, C.GOLD))
+		body.add_child(C.wrap("Blessure : la récupération se fait pendant la séance, quel que soit le plan choisi.", 18, C.GOLD))
 	var blocker := load_blocker(app)
 	if not blocker.is_empty(): body.add_child(C.wrap(blocker, 18, C.GOLD))
 	for mode: String in PLANS:

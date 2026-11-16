@@ -129,7 +129,7 @@ func run() -> void:
 	var office := texts(app)
 	await capture("bureau")
 	check(office.contains(opponent), "Bureau : prochaine rencontre contre " + opponent)
-	check(office.contains("%d échéances de contrat" % int(counts.by_horizon)) and office.contains("dont %d en fin de saison" % int(counts.end_of_season)), "Bureau : échéances à l'horizon ET en fin de saison, avec leur périmètre")
+	check(office.contains("%d échéances de contrat en fin de saison" % int(counts.end_of_season)), "Bureau : échéances de la saison, même définition que le courrier et Recrutement")
 	forbidden_none(office, "Bureau")
 	# Tactique, Entraînement, Compétitions : même rencontre que le Bureau
 	app._navigate("Composition")
@@ -170,7 +170,7 @@ func run() -> void:
 	var dump := FileAccess.open(output.path_join("finances.txt"), FileAccess.WRITE)
 	dump.store_string(money)
 	dump.close()
-	check(money.to_lower().contains("masse salariale · joueurs") and money.contains(G.salary_amount(payroll.players_weekly)), "Finances : masse salariale des joueurs = " + G.salary_amount(payroll.players_weekly))
+	check(money.to_lower().contains("salaires des joueurs") and money.contains(G.salary_amount(payroll.players_weekly)), "Finances : masse salariale des joueurs = " + G.salary_amount(payroll.players_weekly))
 	check(money.contains("hors cotisations"), "Finances : « hors cotisations » annoncé")
 	check(money.contains("Salaires et cotisations") and money.contains(G.euros(payroll.charge_weekly)), "Finances : la répartition donne la même charge que le Club")
 	check(money.to_lower().count("masse salariale") == money.to_lower().count("masse salariale · joueurs"), "Finances : « Masse salariale » toujours qualifiée")

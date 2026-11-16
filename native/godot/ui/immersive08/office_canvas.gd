@@ -180,9 +180,6 @@ static func _fixture(card: Panel, app: Control, w: int = 1360) -> void:
 	D.text(card,29,327,"Feuille complète" if valid else "Feuille à préparer",21,C.MINT if valid else C.AMBER,700,310)
 	D.button(card,Rect2(27,348,320,51),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
 	D.button(card,Rect2(362,348,190,51),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
-	if P.fixture_location_kind(next, app.model.club.id) == "away":
-		var bag := Rect2(w - 284, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
-		D.scenario_photo(card, "travel-bag", bag)
 
 static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> void:
 	D.text(card,27,45,match_info.heading,22,C.GOLD,700,205).name = "OfficeLiveHeading"

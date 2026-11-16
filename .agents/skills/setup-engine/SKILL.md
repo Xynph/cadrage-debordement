@@ -5,6 +5,7 @@ argument-hint: "[engine] | [engine version] | refresh | upgrade [old-version] [n
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Edit, WebSearch, WebFetch, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/setup-engine/../../hooks/yaml-helper.sh" resolve_config *), Bash(godot --version), Bash(godot --headless --path . --import), Bash(command -v godot), Bash(uname -s), Bash(bash .claude/scripts/project-coherence.sh*), Bash(node --version), Bash(npm ci*), Bash(npm run build*), Bash(bash .claude/scripts/web-scaffold.sh*), Bash(bash .claude/scripts/web-detect.sh*), Bash(pnpm install --frozen-lockfile*), Bash(yarn install --frozen-lockfile*), Bash(yarn install --immutable*), Bash(bun install --frozen-lockfile*), Bash(pnpm run build*), Bash(yarn run build*), Bash(bun run build*), Bash(bash .claude/scripts/test-run.sh web*), Bash(bash .claude/scripts/page-shot.sh *)
 model: sonnet
+disable-model-invocation: true
 ---
 
 # Engine Setup

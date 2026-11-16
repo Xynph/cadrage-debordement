@@ -5,6 +5,7 @@ argument-hint: "[duration: 30m | 1h | 2h | 4h] [focus: memory | stability | bala
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Bash(bash "*/.claude/skills/soak-test/../../hooks/yaml-helper.sh" resolve_config *)
 model: sonnet
+disable-model-invocation: true
 ---
 
 !`bash "${CLAUDE_SKILL_DIR}/../../hooks/yaml-helper.sh" resolve_config --keys automation,workflow`

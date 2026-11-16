@@ -528,7 +528,8 @@ func _montrer(contenu: Dictionary) -> void:
 			call_deferred("_layout_bulle"))
 	_bulle_actions.visible = _bulle_actions.get_child_count() > 0
 	if contenu.get("genre") != "fait":
-		if contenu.get("genre") != "avis" and not Avis.ecran(str(app.route), app.model).is_empty():
+		# « Ton avis, Gabi ? » sur chaque écran : sans avis propre à l'écran, Gabi répond par sa visite guidée.
+		if contenu.get("genre") != "avis":
 			_button(_bulle_menu, "Ton avis, Gabi ?", "GabiMenuAvis", demander_avis)
 		_button(_bulle_menu, "Aide de l'écran", "GabiMenuAide", func(): fermer_bulle(); open_help())
 		_button(_bulle_menu, "Visite guidée", "GabiMenuVisite", func(): fermer_bulle(); open_tour())
@@ -602,10 +603,64 @@ func _layout_bulle() -> void:
 		_bulle.vers_droite = true
 		_bulle.pointe_y = clampf(tete - y, 24.0, height - 24.0)
 	else: _bulle.vers_droite = false
+	# Générique : la bulle ne recouvre aucun contrôle interactif de l'écran (boutons, champs, curseurs).
+	var libre := _position_libre(Vector2(x, y), Vector2(width, height), topbar.end.y + 12.0)
+	x = libre.x; y = libre.y
 	if _bulle_tween == null or not _bulle_tween.is_running(): _bulle.global_position = Vector2(x, y)
 	else: _bulle.global_position.x = x
 	_bulle.pointe_x = clampf(face.get_center().x - x, 24.0, width - 24.0)
 	_bulle.queue_redraw()
+
+## Contrôles interactifs visibles sous la bulle (hors bulle et hors Gabi) : zones à ne pas recouvrir.
+func _zones_interactives() -> Array[Rect2]:
+	var zones: Array[Rect2] = []
+	var pile: Array[Node] = [app]
+	while not pile.is_empty():
+		var node: Node = pile.pop_back()
+		if node == _bulle: continue
+		if node is Control:
+			var c := node as Control
+			if not c.visible: continue
+			var interactif := (c is BaseButton or c is LineEdit or c is TextEdit or c is Range) and c.mouse_filter != Control.MOUSE_FILTER_IGNORE
+			if interactif and c.is_visible_in_tree():
+				var r := c.get_global_rect()
+				if r.size.x > 4.0 and r.size.y > 4.0 and not (is_instance_valid(_bandeau) and _bandeau.is_ancestor_of(c)) and not (is_instance_valid(_bureau_figure) and (_bureau_figure == c or _bureau_figure.is_ancestor_of(c))):
+					zones.append(r)
+		for child in node.get_children(): pile.append(child)
+	return zones
+
+static func _aire_commune(a: Rect2, b: Rect2) -> float:
+	var r := a.intersection(b)
+	return r.size.x * r.size.y if r.size.x > 0.0 and r.size.y > 0.0 else 0.0
+
+## Position la plus proche de `voulue` où la bulle (taille `taille`) ne recouvre aucun contrôle interactif ;
+## à défaut, celle qui en recouvre le moins. Le haut est borné par `y_min` (sous la barre du haut).
+func _position_libre(voulue: Vector2, taille: Vector2, y_min: float) -> Vector2:
+	var zones := _zones_interactives()
+	var marge := 4.0
+	var recouvrement := func(p: Vector2) -> float:
+		var total := 0.0
+		for z: Rect2 in zones: total += _aire_commune(Rect2(p, taille).grow(marge), z)
+		return total
+	if zones.is_empty() or recouvrement.call(voulue) <= 0.0: return voulue
+	var xs: Array[float] = [voulue.x, 8.0, app.size.x - taille.x - 8.0]
+	var ys: Array[float] = [voulue.y]
+	for z: Rect2 in zones:
+		xs.append(z.end.x + 8.0); xs.append(z.position.x - taille.x - 8.0)
+		ys.append(z.end.y + 8.0); ys.append(z.position.y - taille.y - 8.0)
+	var meilleur := voulue
+	var meilleur_aire := recouvrement.call(voulue) as float
+	var meilleure_distance := 0.0
+	for cy: float in ys:
+		var py := clampf(cy, y_min, maxf(y_min, app.size.y - taille.y - 8.0))
+		for cx: float in xs:
+			var px := clampf(cx, 8.0, maxf(8.0, app.size.x - taille.x - 8.0))
+			var p := Vector2(px, py)
+			var aire := recouvrement.call(p) as float
+			var distance := p.distance_to(voulue)
+			if aire < meilleur_aire - 0.5 or (absf(aire - meilleur_aire) <= 0.5 and distance < meilleure_distance):
+				meilleur = p; meilleur_aire = aire; meilleure_distance = distance
+	return meilleur
 
 func fermer_bulle() -> void:
 	if is_instance_valid(_bulle): _bulle.hide()
@@ -989,6 +1044,10 @@ func _deliver_context(id: String, fragment: Dictionary, visit: String, event: St
 	var page: Array = Content.page(id)
 	var moment: Dictionary = Moments.moment(id, str(short.get("id", "")), app.model)
 	var message := {"genre": "contexte", "titre": "GABI · " + str(page[1]).to_upper(), "texte": str(short.get("text", "")), "categorie": moment.categorie, "ton": moment.ton, "route": str(app.route), "visit": visit, "event": event}
+	if event.is_empty():
+		# Réplique spontanée : l'information utile d'abord (gabi-repliques.cjs), l'ambiance seulement en complément et plus rarement.
+		message = _replique_utile(message, str(short.get("text", "")))
+		if message.is_empty(): return
 	if _bulle_permise() and _spontane_permis():
 		_consommer(message)
 		_montrer(message)
@@ -996,7 +1055,29 @@ func _deliver_context(id: String, fragment: Dictionary, visit: String, event: St
 		_attente = message
 		_maj_indice()
 
+## Informations déjà dites pendant cette session (clé moteur) : Gabi ne se répète pas d'un écran à l'autre.
+var _infos_dites: Dictionary = {}
+
+## Remplace la réplique d'ambiance par l'information utile du moteur (`model.gabi`), avec son bouton d'action.
+## Retourne {} quand il n'y a rien d'utile à dire et que l'ambiance n'est pas de tour : Gabi se tait.
+func _replique_utile(ambiance: Dictionary, texte_ambiance: String) -> Dictionary:
+	var gabi: Dictionary = app.model.get("gabi", {}) if app.model.get("gabi") is Dictionary else {}
+	var utile: Dictionary = gabi.get("replique", {}) if gabi.get("replique") is Dictionary else {}
+	var complement := bool(gabi.get("ambiance", false)) and not texte_ambiance.is_empty()
+	if utile.is_empty() or _infos_dites.has(str(utile.get("cle", ""))):
+		# Rien de nouveau : l'ambiance seule n'ouvre une bulle que quand elle est de tour.
+		return ambiance if complement and utile.is_empty() else {}
+	var message: Dictionary = ambiance.duplicate(true)
+	message.texte = str(utile.texte) + ("\n" + texte_ambiance if complement else "")
+	message.titre = "GABI · " + {"courrier": "COURRIER", "feuille": "LA FEUILLE", "blesses": "INFIRMERIE", "condition": "CONDITION", "contrat": "CONTRATS", "match": "PROCHAIN MATCH"}.get(str(utile.get("genre", "")), "UN MOT")
+	message.categorie = "mise_en_garde" if str(utile.get("genre", "")) in ["feuille", "blesses", "condition", "contrat"] else "consigne"
+	message.ton = Avis.NEUTRE
+	if utile.get("action") is Dictionary: message.action = (utile.action as Dictionary).duplicate(true)
+	message.info = str(utile.get("cle", ""))
+	return message
+
 func _consommer(message: Dictionary) -> void:
+	if not str(message.get("info", "")).is_empty(): _infos_dites[str(message.info)] = true
 	var visit := str(message.get("visit", ""))
 	var event := str(message.get("event", ""))
 	var changed := false

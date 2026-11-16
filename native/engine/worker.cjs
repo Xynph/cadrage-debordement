@@ -30,6 +30,7 @@ const matchDirect=require('./match-direct.cjs');
 const calendarPlanning=require('./calendar-planning.cjs'),calendarMail=require('./calendar-mail.cjs');
 const worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),publishedVenue=require('./world-venues.cjs'),worldRegistry=require('./world-registry.json');
 const clubHistory=require('./club-history.json');
+const clubPalmares=require('./club-palmares.cjs'),gabiRepliques=require('./gabi-repliques.cjs');
 const {createWorldEditions}=require('./world-editions.cjs');
 const {extendWorldRegistry,extendJapanRegistry,extendNationaleRegistry,extendChampRegistry}=require('./world-pacific-registry.cjs');
 const pacificSource=path.join(__dirname,'world-pacific-extension.json');
@@ -429,11 +430,13 @@ function createBridge(options={}){
    try{return readProjection('nativeSystems.projectText(nativeCurrentSections())',true);}
    catch(error){if(ctx.nativeVerifyMemo)throw error;run('nativeSystems.clearMemo();nativeSectionsFresh=false;');return readProjection('nativeSystems.project()');}
   };
-  const snapshotRaw=operation=>{if(!projectionMemo)return snapshotProjection(operation);run('nativeProjectionMemo(true)');try{return snapshotProjection(operation);}finally{run('nativeProjectionMemo(false)');}};
+  // Palmarès connu dès le jour 1 (club-history.json) fusionné aux saisons archivées : club du manager et fiche club.
+  const attachPalmares=model=>{if(model?.club&&model.meta?.mode==='world'&&Number.isSafeInteger(model.club.id))model.club.palmares=clubPalmares.build({history:clubHistory[model.club.id],archives:model.archives,clubId:model.club.id,clubName:model.club.name});if(model?.club&&model.meta?.hasCareer)model.gabi=gabiRepliques.choisir(model);return model;};
+  const snapshotRaw=operation=>{if(!projectionMemo)return attachPalmares(snapshotProjection(operation));run('nativeProjectionMemo(true)');try{return attachPalmares(snapshotProjection(operation));}finally{run('nativeProjectionMemo(false)');}};
   const snapshotProjection=operation=>{updatePressPolicy();const m=readProjection('nativeModel()');projectFranceCalendar(m);m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=memoDomains?projectClubLife():readProjection('nativeSystems.project()');national.project(m);m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography});}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
-  const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
+  const snapshot=operation=>{const m=snapshotRaw(operation);continuePlan(m);return projectKnowledge(m);};
   const backup=path.join(dataDir,'donnees-precedentes.json');
   let committedFiles='';
   // Texte de la dernière sauvegarde publiée tant que la carrière en mémoire n'a pas changé depuis ;
@@ -607,7 +610,7 @@ function createBridge(options={}){
      if(!Number.isSafeInteger(payload.club)||Object.keys(payload).some(k=>k!=='club'))throw Error('Paramètres de fiche club invalides.');
      if(!run('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativePayload={club:payload.club};
-     const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));
+     const model=snapshotRaw();model.clubSheet=JSON.parse(run('JSON.stringify(nativeSystems.domain("clubSheet").sheet(nativePayload.club))'));model.clubSheet.palmares=clubPalmares.build({history:clubHistory[payload.club],archives:model.archives,clubId:payload.club,clubName:model.clubSheet.name});
      return {id,ok:true,model:projectKnowledge(model)};
     }
     if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
@@ -902,6 +905,7 @@ function createBridge(options={}){
      if(coalescing&&pendingCommit===coalescing)pendingCommit=null;
      }
      mark('ecriture_disque');model.meta.profileSafety=profileSafety.project();if(restoring)model.meta.profileSafetyReceipt={command:'restore_checkpoint',id:restoring.id};
+     continuePlan(model);
      const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
@@ -917,6 +921,13 @@ function createBridge(options={}){
   // écrits avant toute autre commande, à la fermeture ou à l'arrêt : jamais perdus en fonctionnement normal.
   let advanceSession=null;
   const advanceSignal=()=>JSON.parse(run('JSON.stringify('+continuer.SIGNAL_SOURCE+')'));
+  // Prochain arrêt prévisible de « Continuer » (info-bulle du bouton) : rencontre du club, reprise de
+  // l'entraînement ou rendez-vous en file. Lecture seule, seulement en calendrier journalier.
+  const repriseDate=()=>run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()");
+  function continuePlan(model){
+   if(!model?.meta?.calendarCadence)return;
+   try{model.meta.continuePlan=continuer.plan(advanceSignal(),repriseDate());mark('prochain_arret');}catch{delete model.meta.continuePlan;}
+  }
   function finishAdvance(id,session,stop){
    try{
     const model=snapshotRaw({command:'advance_day',payload:{fromDate:session.lastFrom}});mark('projection');
@@ -924,7 +935,7 @@ function createBridge(options={}){
     cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
     const absorbed=session.absorbed||coalescing;if(absorbed&&pendingCommit===absorbed)pendingCommit=null;
     model.meta.advanceUntilEvent={days:session.days,from:session.from,to:model.meta.calendarToday??null,stop:stop??{kind:'arret',label:continuer.STOPS.arret.label,detail:null},pressDelegated:session.pressDelegated||0};
-    model.meta.profileSafety=profileSafety.project();
+    model.meta.profileSafety=profileSafety.project();continuePlan(model);
     const known=projectKnowledge(model);mark('connaissance');return {id,ok:true,model:known};
    }catch(error){
     // Écriture impossible : la carrière revient au jour de départ, comme un « Jour suivant » refusé.
@@ -946,7 +957,7 @@ function createBridge(options={}){
     const model=snapshotRaw();model.meta.advanceUntilEvent={days:0,from:opts.fromDate,to:model.meta.calendarToday??null,stop:{kind:'arret',label:continuer.STOPS.arret.label,detail:'Vous avez arrêté l’avance.'}};
     return {id,ok:true,model:projectKnowledge(model)};
    }
-   const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:run("(()=>{try{return CDReprise.project()?.club?.date??null}catch(e){return null}})()"),start:null};
+   const current=session||{days:0,from:opts.fromDate,lastFrom:null,repriseDate:repriseDate(),start:null};
    if(!current.start){
     const fromSave=cleanSave!==null&&store['bdt-v1']===cleanSave;
     current.start={seed,clock,store:copyStore(store),text:fromSave?cleanSave:run('JSON.stringify(S)'),fromSave};

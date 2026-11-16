@@ -295,7 +295,25 @@ func bureau() -> void:
 	check(not coach._bulle.get_global_rect().intersects(colonne), "Bureau : la bulle ne recouvre pas la colonne de Gabi")
 	check(Rect2(Vector2.ZERO, app.size).grow(1).encloses(coach._bulle.get_global_rect()), "Bureau : bulle entière dans l'application")
 	await capture("bureau-bulle")
+	# Une réplique spontanée commence par l'information utile du moteur, avec son bouton d'action.
+	app.model["gabi"] = {"replique": {"cle": "test:1", "genre": "match", "texte": "Prochain match demain contre Les Ormes.", "action": {"type": "ecran", "route": "Préparation", "libelle": "Ouvrir la préparation"}}, "ambiance": false}
+	var utile: Dictionary = coach._replique_utile({"genre": "contexte", "titre": "GABI · BUREAU", "texte": "La cafetière peut attendre."}, "La cafetière peut attendre.")
+	check(str(utile.get("texte", "")).begins_with("Prochain match") and not str(utile.get("texte", "")).contains("cafetière"), "Réplique spontanée : l'info utile d'abord, sans ambiance quand elle n'est pas de tour")
+	check(utile.get("action") is Dictionary and str(utile.action.get("libelle", "")) == "Ouvrir la préparation", "Réplique spontanée : bouton d'action présent")
+	coach._montrer(utile); await settle(); await settle()
+	check(coach._bulle.visible and coach._bulle.find_child("GabiSuivreConseil", true, false) != null, "La bulle utile porte son bouton d'action")
+	# Générique : aucune zone interactive visible (boutons) n'est recouverte par la bulle ouverte au Bureau.
+	var recouverts := 0
+	for node: Node in app.root_content.find_children("*", "BaseButton", true, false):
+		var bouton := node as BaseButton
+		if bouton.is_visible_in_tree() and bouton.mouse_filter != Control.MOUSE_FILTER_IGNORE and not coach._bulle.is_ancestor_of(bouton) and not inside(bouton, zone) and not inside(bouton, coach._bandeau) and bouton.get_global_rect().size.x > 4.0:
+			if bouton.get_global_rect().intersects(coach._bulle.get_global_rect()): recouverts += 1
+	check(recouverts == 0, "Bureau : la bulle ne recouvre aucun bouton (%d recouverts)" % recouverts)
+	await capture("bureau-bulle-utile")
 	coach.fermer_bulle(); await settle()
+	check(coach._replique_utile({"genre": "contexte", "texte": "x"}, "").is_empty() == false, "Info déjà dite : la réplique reste libre avant consommation")
+	coach._consommer(utile)
+	check(coach._replique_utile({"genre": "contexte", "texte": "x"}, "x").is_empty(), "Info déjà dite : Gabi se tait au lieu de se répéter")
 	await capture("bureau")
 
 ## Réglage pour couper Gabi : bandeau vide, Bureau classique ; F1 (aide) le réactive.
