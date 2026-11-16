@@ -1,0 +1,4 @@
+tests/league-detail.cjs
+tests/world-championnats-suivis.cjs
+tests/godot-championnats-suivis.cjs
+tests/godot-preferences.cjs

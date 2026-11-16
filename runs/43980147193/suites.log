@@ -1,0 +1,93 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-preferences.cjs
+::group::tests/league-detail.cjs
+{"points":49.31111111111111,"tries":5.588888888888889,"homeWins":0.5888888888888889,"injured":0.006289308176100629,"played":0.3836477987421384}
+TAP version 13
+# Subtest: Estimation : plus de championnats détaillés, jamais plus rapide
+ok 1 - Estimation : plus de championnats détaillés, jamais plus rapide
+  ---
+  duration_ms: 1.763703
+  type: 'test'
+  ...
+# Subtest: Vitesse estimée : seuils en données, 5 étoiles ≤ 3 s, 1 étoile ≥ 15 s par semaine
+ok 2 - Vitesse estimée : seuils en données, 5 étoiles ≤ 3 s, 1 étoile ≥ 15 s par semaine
+  ---
+  duration_ms: 0.342415
+  type: 'test'
+  ...
+# Subtest: Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du club d’abord
+ok 3 - Choix automatique selon le PC : déterministe, vise 4 étoiles, pays du club d’abord
+  ---
+  duration_ms: 0.586893
+  type: 'test'
+  ...
+# Subtest: Banc d’essai : mesure positive et stable
+ok 4 - Banc d’essai : mesure positive et stable
+  ---
+  duration_ms: 65.3399
+  type: 'test'
+  ...
+# Subtest: Carrière Monde : choix enregistré, validé, résultats rapides cohérents sur une saison
+ok 5 - Carrière Monde : choix enregistré, validé, résultats rapides cohérents sur une saison
+  ---
+  duration_ms: 46940.45361
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47014.160845
+CD_CPU_PROFILE suite=tests/league-detail.cjs user_s=45.85 system_s=5.63 wall_s=47.72 cpu_pct=107% max_rss_kb=2807880
+PASS tests/league-detail.cjs (48 s)
+::endgroup::
+::group::tests/world-championnats-suivis.cjs
+TAP version 13
+# Subtest: Tout suivre en détail : même carrière, même flux de hasard que sans réglage
+ok 1 - Tout suivre en détail : même carrière, même flux de hasard que sans réglage
+  ---
+  duration_ms: 19398.442446
+  type: 'test'
+  ...
+# Subtest: Réglage par défaut, déterminisme entre réglages et migration de la version 1
+ok 2 - Réglage par défaut, déterminisme entre réglages et migration de la version 1
+  ---
+  duration_ms: 27424.582544
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46829.217804
+CD_CPU_PROFILE suite=tests/world-championnats-suivis.cjs user_s=57.78 system_s=2.94 wall_s=47.14 cpu_pct=128% max_rss_kb=2356440
+PASS tests/world-championnats-suivis.cjs (47 s)
+::endgroup::
+::group::tests/godot-championnats-suivis.cjs
+Championnats suivis (Godot) : {"auto":{"etoiles":2,"temps":"≈ 10 s par semaine de jeu · ≈ 8 min par saison","verdict":"Lente"},"defaut":{"etoiles":2,"temps":"≈ 10 s par semaine de jeu · ≈ 8 min par saison","verdict":"Lente"},"tout":{"etoiles":2,"temps":"≈ 12 s par semaine de jeu · ≈ 9 min par saison","verdict":"Lente"}}
+TAP version 13
+# Subtest: Championnats suivis : choix, vitesse de jeu estimée (5 étoiles), choix automatique et classement en consultation
+ok 1 - Championnats suivis : choix, vitesse de jeu estimée (5 étoiles), choix automatique et classement en consultation
+  ---
+  duration_ms: 17292.033628
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17295.920163
+CD_CPU_PROFILE suite=tests/godot-championnats-suivis.cjs user_s=17.37 system_s=1.97 wall_s=17.59 cpu_pct=109% max_rss_kb=1316384
+PASS tests/godot-championnats-suivis.cjs (17 s)
+::endgroup::
