@@ -1,0 +1,74 @@
+{
+  "_doc": "Rafraîchissement par écran (ui/screen_refresh.gd). Après une réponse du moteur, l'écran affiché n'est redessiné que si une section changée (engine_bridge.last_changes) figure ici avec cet écran dans « ecrans ». Section absente de la table : rendu complet. « lecteurs » : fichiers .gd de native/godot qui citent le nom de la section, vérifiés par tests/rafraichissement-ecrans-table.cjs ; un nouveau lecteur fait échouer ce test jusqu'à ce que « ecrans » soit revu. « ecrans » : routes de main.gd (« * » : tous les écrans).",
+  "toujours_complet": [
+    "Accueil",
+    "Création",
+    "Packs",
+    "Match"
+  ],
+  "sections": {
+    "meta.autosave": {
+      "ecrans": [],
+      "lecteurs": [
+        "main.gd",
+        "ui/preferences_dialog.gd",
+        "ui/user_preferences.gd"
+      ],
+      "note": "état du journal de sauvegarde, changé à chaque décision : ligne d'état mise à jour en place à chaque réponse ; le voyant de la barre latérale (alerte) fait partie de l'état noté au rendu (status_error), tout changement donne le rendu complet ; préférences : réglage local du même nom"
+    },
+    "meta.clubFollow": {
+      "ecrans": [],
+      "lecteurs": [],
+      "note": "accusé de réception de « Suivre le club », lu par aucun écran"
+    },
+    "meta.pressPolicy": {
+      "ecrans": [],
+      "lecteurs": [],
+      "note": "accusé de réception de la politique de presse, lu par aucun écran"
+    },
+    "meta.lineupChange": {
+      "ecrans": [],
+      "lecteurs": [],
+      "note": "accusé de réception d'un changement de composition, lu par aucun écran"
+    },
+    "clubLife.clubSheet": {
+      "ecrans": [
+        "Fiche club"
+      ],
+      "lecteurs": [
+        "ui/immersive08/club_sheet_canvas.gd",
+        "ui/navigation_controller.gd",
+        "ui/optimistic_decisions.gd"
+      ],
+      "note": "clubs suivis : fiche d'un club ; la recherche (navigation_controller) relit le modèle à chaque frappe"
+    },
+    "decisions.difficulty": {
+      "ecrans": [
+        "Préparation"
+      ],
+      "lecteurs": [
+        "ui/decision_views.gd",
+        "ui/immersive08/training_canvas.gd",
+        "ui/optimistic_decisions.gd"
+      ],
+      "note": "niveau adverse : entraînement (training_canvas, onglet de Préparation) et decision_views.training (preparation_view)"
+    },
+    "decisions.delegation": {
+      "ecrans": [
+        "Préparation",
+        "Staff",
+        "Match"
+      ],
+      "lecteurs": [
+        "ui/contextual/match_temps_forts.gd",
+        "ui/contextual/press_room_view.gd",
+        "ui/delegation_dialog.gd",
+        "ui/immersive08/match_canvas.gd",
+        "ui/immersive08/training_canvas.gd",
+        "ui/optimistic_decisions.gd",
+        "ui/staff_view.gd"
+      ],
+      "note": "délégation à l'adjoint : entraînement (Préparation), staff_view.build (Staff), match ; scènes contextuelles et fenêtre de délégation se redessinent seules"
+    }
+  }
+}
