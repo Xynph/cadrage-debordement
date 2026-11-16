@@ -11,7 +11,7 @@ assert.ok(run('matchCockpitView(viewState).includes("v40-stats")'));
 assert.ok(run('matchCockpitView(viewState).includes("v40-tactics")'));
 assert.ok(run('matchCockpitView(viewState).includes("match-field")'));
 assert.ok(run('matchCockpitView(viewState).includes("Commentaires du match")'));
-assert.ok(run('matchCockpitRoster(l,selfSide).includes("Votre effectif en match")'));
+assert.ok(run('matchCockpitRoster(l,selfSide).includes("Ton effectif en match")'));
 assert.ok(run('matchCockpitRoster(l,1-selfSide).includes("Effectif adverse")'));
 assert.ok(run('matchCockpitRoster(l,selfSide).includes("Les remplaçants")'));
 assert.equal(run('S.live.sheets[selfSide].on.length'),15);
